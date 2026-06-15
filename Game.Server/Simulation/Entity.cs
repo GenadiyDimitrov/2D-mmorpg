@@ -122,6 +122,15 @@ public class Entity
 
     public Dictionary<int, int> SkillCooldowns { get; } = new();
 
+    // ----- Potion channel (separate from natural regen; ticks in combat too) ----
+    /// <summary>Shared cooldown across ALL potions, in ticks.</summary>
+    public int PotionCooldown { get; set; }
+    /// <summary>Active heal-over-time potion: rarity decides override priority.</summary>
+    public int PotionRarity { get; set; } = -1;       // -1 = none
+    public float PotionHealPercentPerSecond { get; set; }
+    public int PotionEffectTicks { get; set; }
+    public string PotionEffectName { get; set; } = "";
+
     public bool Dead { get; set; }
 
     // ----- Mob-only state ----------------------------------------------------------------

@@ -87,3 +87,16 @@ public record TradeStateUpdate(
     InventoryItemDto[] TheirOffer,
     bool MyReady,
     bool TheirReady);
+
+
+/// <summary>Server -> owning client: full derived stats for the Stats window.
+/// Sent whenever stats change (level, equip, class change).</summary>
+public record StatsUpdate(
+    int Con, int Atk, int Wit, int Dex,
+    int MaxHp, int MaxMp, int AttackPower, int Defence,
+    int Accuracy, int Evasion, float CritChance, float BasicAttackRange,
+    int SecondClass);
+
+/// <summary>Server -> owning client: a potion cooldown started (seconds),
+/// or an active potion effect changed. Cooldown 0 = ready.</summary>
+public record PotionStatus(float CooldownSeconds, string ActiveEffect);

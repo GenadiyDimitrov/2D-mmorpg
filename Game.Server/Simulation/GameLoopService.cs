@@ -77,6 +77,7 @@ public class GameLoopService : BackgroundService
                 case RespawnCmd c: HandleRespawn(c); break;
                 case ClassChangeCmd c: HandleClassChange(c); break;
                 case EquipCmd c: HandleEquip(c); break;
+                case UsePotionCmd c: HandleUsePotion(c); break;
                 case TradeRequestCmd c: HandleTradeRequest(c); break;
                 case TradeRespondCmd c: HandleTradeRespond(c); break;
                 case TradeOfferCmd c: HandleTradeOffer(c); break;
@@ -130,8 +131,11 @@ public class GameLoopService : BackgroundService
         entity.Mp = entity.MaxMp;
 
         // Starter gear so the inventory has something in it.
-        entity.Inventory.Add(new InventoryItem { DefId = 1 });  // Rusty Sword
-        entity.Inventory.Add(new InventoryItem { DefId = 9 });  // Leather Vest
+        entity.Inventory.Add(new InventoryItem { DefId = 1 });   // Rusty Sword
+        entity.Inventory.Add(new InventoryItem { DefId = 9 });   // Leather Vest
+        entity.Inventory.Add(new InventoryItem { DefId = 30 });  // Minor Healing Potion
+        entity.Inventory.Add(new InventoryItem { DefId = 30 });
+        entity.Inventory.Add(new InventoryItem { DefId = 32 });  // Greater Healing Potion
 
         _world.Entities[entity.Id] = entity;
         _world.EntityToConnection[entity.Id] = join.ConnectionId;
@@ -141,6 +145,7 @@ public class GameLoopService : BackgroundService
         join.Result.TrySetResult(new LoginResult(true, null, entity.Id, entity.X, entity.Y));
 
         SendInventory(entity);
+        SendStats(entity);
         BroadcastSystem($"{entity.Name} entered the world.");
         _log.LogInformation("Player {Name} joined ({Race} {Class})",
             entity.Name, entity.Race, entity.BaseClass);
@@ -301,6 +306,7 @@ public class GameLoopService : BackgroundService
         player.Hp = player.MaxHp;
         player.Mp = player.MaxMp;
 
+        SendStats(player);
         BroadcastSystem($"{player.Name} has become a {def.Name}!");
     }
 
@@ -347,6 +353,84 @@ public class GameLoopService : BackgroundService
 
         player.RecomputeDerived();
         SendInventory(player);
+        SendStats(player);
+    }
+
+    private void HandleUsePotion(UsePotionCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
+            return;
+
+        var item = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
+        if (item is null || ItemCatalog.Get(item.DefId) is not ItemDef def || !ItemCatalog.IsPotion(def))
+            return;
+
+        if (player.PotionCooldown > 0)
+        {
+            SendSystemToEntity(player,
+                $"Potions on cooldown ({player.PotionCooldown / GameConstants.TickRate}s).");
+            return;
+        }
+
+        int rarity = (int)def.Rarity;
+
+        // Instant potions (rare): heal now, no lingering effect.
+        if (def.InstantHealPercent > 0)
+        {
+            int amount = Math.Max(1, (int)(player.MaxHp * def.InstantHealPercent));
+            player.Hp = Math.Min(player.MaxHp, player.Hp + amount);
+            BroadcastCombat(player, player, amount, CombatOutcome.Heal, def.Name);
+            ClearPotionEffect(player); // a stronger instant cancels any HoT
+        }
+        else
+        {
+            // Heal-over-time. Rarity override: higher cancels lower; same restarts.
+            // (Cooldown > effect duration means same-rarity restart shouldn't
+            //  normally happen, but we handle it safely.)
+            if (rarity >= player.PotionRarity)
+            {
+                player.PotionRarity = rarity;
+                player.PotionHealPercentPerSecond = def.HealPercentPerSecond;
+                player.PotionEffectTicks = def.PotionDurationTicks;
+                player.PotionEffectName = def.Name;
+            }
+        }
+
+        // Consume one potion and start the SHARED cooldown.
+        player.Inventory.Remove(item);
+        player.PotionCooldown = def.PotionCooldownTicks;
+
+        SendInventory(player);
+        SendPotionStatus(player);
+    }
+
+    private static void ClearPotionEffect(Entity player)
+    {
+        player.PotionRarity = -1;
+        player.PotionHealPercentPerSecond = 0f;
+        player.PotionEffectTicks = 0;
+        player.PotionEffectName = "";
+    }
+
+    /// <summary>Potion channel: ticks every second regardless of combat,
+    /// independent of natural regen. Called from the regen tick.</summary>
+    private void TickPotionHeal(Entity player)
+    {
+        if (player.PotionEffectTicks <= 0 || player.Dead)
+            return;
+
+        if (player.Hp < player.MaxHp)
+        {
+            int amount = Math.Max(1, (int)(player.MaxHp * player.PotionHealPercentPerSecond));
+            player.Hp = Math.Min(player.MaxHp, player.Hp + amount);
+            BroadcastCombat(player, player, amount, CombatOutcome.Heal, player.PotionEffectName);
+        }
+    }
+
+    private void SendPotionStatus(Entity player)
+    {
+        float cd = player.PotionCooldown / (float)GameConstants.TickRate;
+        SendTo(player, "Potion", new PotionStatus(cd, player.PotionEffectName));
     }
 
     // ----- Trade ---------------------------------------------------------------------------
@@ -616,6 +700,9 @@ public class GameLoopService : BackgroundService
             if (entity.AttackCooldown > 0)
                 entity.AttackCooldown--;
 
+            if (entity.Kind == EntityKind.Player)
+                TickPotion(entity);
+
             TickSkillCooldowns(entity);
             TickBuffs(entity);
 
@@ -648,6 +735,35 @@ public class GameLoopService : BackgroundService
             if (--entity.SkillCooldowns[key] <= 0)
                 entity.SkillCooldowns.Remove(key);
         }
+    }
+
+    private void TickPotion(Entity entity)
+    {
+        bool changed = false;
+
+        if (entity.PotionCooldown > 0)
+        {
+            entity.PotionCooldown--;
+            if (entity.PotionCooldown == 0)
+                changed = true;
+        }
+
+        if (entity.PotionEffectTicks > 0)
+        {
+            // Heal-over-time fires once per second.
+            if (entity.PotionEffectTicks % GameConstants.RegenIntervalTicks == 0)
+                TickPotionHeal(entity);
+
+            entity.PotionEffectTicks--;
+            if (entity.PotionEffectTicks <= 0)
+            {
+                ClearPotionEffect(entity);
+                changed = true;
+            }
+        }
+
+        if (changed)
+            SendPotionStatus(entity);
     }
 
     private static void TickBuffs(Entity entity)
@@ -1078,19 +1194,29 @@ public class GameLoopService : BackgroundService
 
     private void RollDrop(Entity killer, Entity mob)
     {
-        var def = ItemCatalog.RollDrop(mob.Level, _rng);
-        if (def is null)
+        var drops = LootTables.Roll(mob.Name, mob.Level, _rng);
+        if (drops.Count == 0)
             return;
 
-        if (killer.Inventory.Count >= GameConstants.InventorySize)
+        bool looted = false;
+        foreach (var itemId in drops)
         {
-            SendSystemToEntity(killer, $"{mob.Name} dropped {def.Name} — inventory full!");
-            return;
+            if (ItemCatalog.Get(itemId) is not ItemDef def)
+                continue;
+
+            if (killer.Inventory.Count >= GameConstants.InventorySize)
+            {
+                SendSystemToEntity(killer, $"{mob.Name} dropped {def.Name} — inventory full!");
+                continue;
+            }
+
+            killer.Inventory.Add(new InventoryItem { DefId = def.Id });
+            SendSystemToEntity(killer, $"You looted: {def.Name} [{def.Grade}/{def.Rarity}]");
+            looted = true;
         }
 
-        killer.Inventory.Add(new InventoryItem { DefId = def.Id });
-        SendSystemToEntity(killer, $"You looted: {def.Name} [{def.Grade}/{def.Rarity}]");
-        SendInventory(killer);
+        if (looted)
+            SendInventory(killer);
     }
 
     private void AwardExp(Entity player, int amount)
@@ -1110,6 +1236,7 @@ public class GameLoopService : BackgroundService
             player.RecomputeDerived();
             player.Hp = player.MaxHp;
             player.Mp = player.MaxMp;
+            SendStats(player);
             BroadcastSystem($"{player.Name} reached level {player.Level}!");
 
             if (player.Level >= GameConstants.ClassChangeLevel && player.SecondClass == 0)
@@ -1255,6 +1382,12 @@ public class GameLoopService : BackgroundService
     private void SendInventory(Entity player) =>
         SendTo(player, "Inventory", new InventoryUpdate(
             player.Inventory.Select(i => i.ToDto()).ToArray()));
+
+    private void SendStats(Entity p) =>
+        SendTo(p, "Stats", new StatsUpdate(
+            p.Con, p.AtkStat, p.Wit, p.Dex,
+            p.MaxHp, p.MaxMp, p.AttackPower, p.Defence,
+            p.Accuracy, p.Evasion, p.CritChance, p.BasicAttackRange, p.SecondClass));
 
     private void CancelCast(Entity entity)
     {

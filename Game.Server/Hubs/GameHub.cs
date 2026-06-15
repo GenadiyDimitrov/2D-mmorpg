@@ -65,6 +65,12 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task UsePotion(Guid instanceId)
+    {
+        _world.Commands.Enqueue(new UsePotionCmd(Context.ConnectionId, instanceId));
+        return Task.CompletedTask;
+    }
+
     public Task TradeRequest(Guid targetId)
     {
         _world.Commands.Enqueue(new TradeRequestCmd(Context.ConnectionId, targetId));

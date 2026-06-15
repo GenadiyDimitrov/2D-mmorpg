@@ -69,6 +69,8 @@ public partial class MainWindow : Window
         _net.InventoryReceived += i => Dispatcher.BeginInvoke(() => OnInventory(i));
         _net.TradeRequestReceived += t => Dispatcher.BeginInvoke(() => OnTradeRequest(t));
         _net.TradeStateReceived += t => Dispatcher.BeginInvoke(() => OnTradeState(t));
+        _net.StatsReceived += st => Dispatcher.BeginInvoke(() => OnStats(st));
+        _net.PotionReceived += pt => Dispatcher.BeginInvoke(() => OnPotion(pt));
         _net.Disconnected += reason => Dispatcher.BeginInvoke(() =>
         {
             _inGame = false;
@@ -119,6 +121,7 @@ public partial class MainWindow : Window
 
             LoginPanel.Visibility = Visibility.Collapsed;
             ChatPanel.Visibility = Visibility.Visible;
+            StatsButton.Visibility = Visibility.Visible;
             InventoryButton.Visibility = Visibility.Visible;
             ClassButton.Visibility = Visibility.Visible;
 
@@ -196,6 +199,21 @@ public partial class MainWindow : Window
         if (e.Key is Key.I)
         {
             ToggleInventory();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key is Key.C)
+        {
+            ToggleStats();
+            e.Handled = true;
+            return;
+        }
+
+        // Potion hotkeys: Q (first), E (second potion stack).
+        if (e.Key is Key.Q or Key.E)
+        {
+            UsePotionHotkey(e.Key == Key.Q ? 0 : 1);
             e.Handled = true;
             return;
         }
@@ -470,11 +488,10 @@ public partial class MainWindow : Window
             _camX = me.CurX;
             _camY = me.CurY;
 
-            var vitals = _myDto is null ? "" :
-                $"  HP {_myDto.Hp}/{_myDto.MaxHp}  MP {_myDto.Mp}/{_myDto.MaxMp}";
             var cls = _mySecondClass > 0 ? $" {ClassCatalog.Get(_mySecondClass)?.Name}" : "";
             var zone = _myDto is not null && GameConstants.InSafeZone(_myDto.X, _myDto.Y) ? "  [SAFE]" : "";
-            StatusText.Text = $"{_myName}{cls}  Lv{_level}{vitals}  EXP {_exp}/{_expToNext}{zone}";
+            StatusText.Text = $"{_myName}{cls}  Lv{_level}{zone}";
+            UpdateVitalBars();
         }
 
         double cw = WorldCanvas.ActualWidth;
@@ -492,7 +509,24 @@ public partial class MainWindow : Window
         UpdateFloatingTexts(now, cw, ch);
         UpdateGridLines(cw, ch);
         UpdateSkillCooldowns(now);
+        UpdatePotionBar(now);
         UpdateCastBar(now);
+    }
+
+    private void UpdatePotionBar(double now)
+    {
+        bool onCd = now < _potionCooldownEndsAt;
+        double remaining = _potionCooldownEndsAt - now;
+        foreach (var slot in _potionSlots)
+        {
+            slot.Button.IsEnabled = !onCd && _myDto is not { Dead: true };
+            slot.Button.Opacity = onCd ? 0.5 : 1.0;
+        }
+        // Surface the shared cooldown on the cast text area when idle.
+        if (onCd && CastBar.Visibility != Visibility.Visible && _potionSlots.Count > 0)
+        {
+            // lightweight: no separate label; status line shows it.
+        }
     }
 
     private void UpdateSkillCooldowns(double now)
@@ -526,6 +560,26 @@ public partial class MainWindow : Window
             return;
         }
         CastFill.Width = 226 * Math.Clamp(progress, 0, 1);
+    }
+
+    private const double BarWidth = 240;
+
+    private void UpdateVitalBars()
+    {
+        if (_myDto is null)
+            return;
+
+        double hp = _myDto.MaxHp > 0 ? (double)_myDto.Hp / _myDto.MaxHp : 0;
+        double mp = _myDto.MaxMp > 0 ? (double)_myDto.Mp / _myDto.MaxMp : 0;
+        double xp = _expToNext > 0 ? (double)_exp / _expToNext : 0;
+
+        HpBarFill.Width = BarWidth * Math.Clamp(hp, 0, 1);
+        MpBarFill.Width = BarWidth * Math.Clamp(mp, 0, 1);
+        ExpBarFill.Width = BarWidth * Math.Clamp(xp, 0, 1);
+
+        HpBarText.Text = $"HP  {_myDto.Hp} / {_myDto.MaxHp}";
+        MpBarText.Text = $"MP  {_myDto.Mp} / {_myDto.MaxMp}";
+        ExpBarText.Text = $"EXP  {_exp} / {_expToNext}  (Lv {_level})";
     }
 
     // -----------------------------------------------------------------------

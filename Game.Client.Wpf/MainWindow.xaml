@@ -12,16 +12,39 @@
                 ClipToBounds="True"
                 MouseLeftButtonDown="WorldCanvas_MouseLeftButtonDown"/>
 
-        <TextBlock x:Name="StatusText"
-                   Margin="12,8,0,0"
-                   HorizontalAlignment="Left" VerticalAlignment="Top"
-                   Foreground="#FFB9C4CC" FontFamily="Consolas" FontSize="13"
-                   Text="Not connected"/>
+        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12,8,0,0" Width="240">
+            <TextBlock x:Name="StatusText" Foreground="#FFD8E0E6"
+                       FontFamily="Consolas" FontSize="12" Text="Not connected" Margin="0,0,0,4"/>
+
+            <Grid Margin="0,1,0,1">
+                <Border Background="#50000000" Height="16" CornerRadius="3"/>
+                <Rectangle x:Name="HpBarFill" Fill="#FFD24B4B" Height="16"
+                           HorizontalAlignment="Left" Width="0" RadiusX="3" RadiusY="3"/>
+                <TextBlock x:Name="HpBarText" Foreground="White" FontSize="10"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+            <Grid Margin="0,1,0,1">
+                <Border Background="#50000000" Height="16" CornerRadius="3"/>
+                <Rectangle x:Name="MpBarFill" Fill="#FF3F7FD8" Height="16"
+                           HorizontalAlignment="Left" Width="0" RadiusX="3" RadiusY="3"/>
+                <TextBlock x:Name="MpBarText" Foreground="White" FontSize="10"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+            <Grid Margin="0,1,0,1">
+                <Border Background="#50000000" Height="14" CornerRadius="3"/>
+                <Rectangle x:Name="ExpBarFill" Fill="#FFC9A227" Height="14"
+                           HorizontalAlignment="Left" Width="0" RadiusX="3" RadiusY="3"/>
+                <TextBlock x:Name="ExpBarText" Foreground="White" FontSize="9"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+        </StackPanel>
 
         <!-- Top-right buttons -->
         <StackPanel Orientation="Horizontal"
                     HorizontalAlignment="Right" VerticalAlignment="Top"
                     Margin="0,8,12,0">
+            <Button x:Name="StatsButton" Content="Stats (C)" Width="80" Height="28"
+                    Margin="0,0,6,0" Click="StatsButton_Click" Visibility="Collapsed"/>
             <Button x:Name="InventoryButton" Content="Inventory (I)" Width="110" Height="28"
                     Margin="0,0,6,0" Click="InventoryButton_Click" Visibility="Collapsed"/>
             <Button x:Name="ClassButton" Content="Class" Width="70" Height="28"
@@ -87,7 +110,8 @@
                         <ItemsControl x:Name="SystemList"/>
                     </ScrollViewer>
                 </Border>
-                <TabControl x:Name="ChatTabs" Background="Transparent" BorderThickness="0" Padding="2">
+                <TabControl x:Name="ChatTabs" Background="Transparent" BorderThickness="0"
+                            Padding="2" TabStripPlacement="Bottom">
                     <TabItem Header="All">
                         <ScrollViewer x:Name="AllScroll" VerticalScrollBarVisibility="Auto">
                             <ItemsControl x:Name="AllList"/>
@@ -225,6 +249,46 @@
                     </DockPanel>
                 </Grid>
             </DockPanel>
+        </Border>
+
+        <!-- Potion bar (left of skill bar, bottom) -->
+        <StackPanel x:Name="PotionBar" Orientation="Horizontal"
+                    HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                    Margin="0,0,0,52" Visibility="Collapsed"/>
+
+        <!-- Stats window -->
+        <Border x:Name="StatsPanel"
+                Width="260"
+                HorizontalAlignment="Right" VerticalAlignment="Center"
+                Margin="0,0,320,0" Padding="14"
+                Background="#E0182838" CornerRadius="8"
+                Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock Text="Character Stats" Foreground="White"
+                           FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
+                <ItemsControl x:Name="StatsList"/>
+                <Button Content="Close" Height="26" Margin="0,10,0,0" Click="StatsClose_Click"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Equip comparison popup -->
+        <Border x:Name="EquipPopup"
+                Width="320"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="#F01C2636" CornerRadius="10" Padding="18"
+                Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock x:Name="EquipPopupTitle" Foreground="White"
+                           FontSize="16" FontWeight="Bold" Margin="0,0,0,2"/>
+                <TextBlock x:Name="EquipPopupSubtitle" Foreground="#FF9FB0BE"
+                           FontSize="11" Margin="0,0,0,10"/>
+                <ItemsControl x:Name="EquipCompareList"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+                    <Button x:Name="EquipConfirmButton" Content="Equip" Width="90" Height="30"
+                            Margin="0,0,8,0" Click="EquipConfirm_Click"/>
+                    <Button Content="Close" Width="80" Height="30" Click="EquipPopupClose_Click"/>
+                </StackPanel>
+            </StackPanel>
         </Border>
 
         <!-- Death overlay -->

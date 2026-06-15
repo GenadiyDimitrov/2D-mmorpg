@@ -4,7 +4,7 @@ public enum ItemGrade { F = 0, E = 1, B = 2, A = 3, S = 4 }
 
 public enum ItemRarity { Common = 0, Uncommon = 1, Rare = 2 }
 
-public enum EquipSlot { Weapon = 0, Armor = 1 }
+public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2 }
 
 public enum ArmorWeight { None = 0, Heavy = 1, Light = 2, Robe = 3 }
 
@@ -22,7 +22,14 @@ public record ItemDef(
     int HpBonus = 0,
     int MpBonus = 0,
     int EvaBonus = 0,
-    float WeaponRange = 0);
+    float WeaponRange = 0,
+    // ----- Consumables (potions) -----
+    // HealPercentPerSecond > 0 = heal-over-time potion; InstantHealPercent > 0
+    // = instant heal. PotionDurationTicks/PotionCooldownTicks in server ticks.
+    float HealPercentPerSecond = 0f,
+    float InstantHealPercent = 0f,
+    int PotionDurationTicks = 0,
+    int PotionCooldownTicks = 0);
 
 public static class ItemCatalog
 {
@@ -53,7 +60,19 @@ public static class ItemCatalog
         new(18, "Full Plate",     EquipSlot.Armor,  ItemGrade.E, ItemRarity.Common,   ArmorWeight.Heavy, DefBonus: 13, HpBonus: 80),
         new(19, "Shadow Garb",    EquipSlot.Armor,  ItemGrade.E, ItemRarity.Common,   ArmorWeight.Light, DefBonus: 9,  EvaBonus: 11),
         new(20, "Arcane Robe",    EquipSlot.Armor,  ItemGrade.E, ItemRarity.Common,   ArmorWeight.Robe,  DefBonus: 7,  MpBonus: 90),
+
+        // ----- Potions (Consumables) ------------------------------------------------
+        // Shared 30s cooldown across all potions; higher rarity cancels lower,
+        // same rarity restarts (see server PotionEffect channel).
+        new(30, "Minor Healing Potion", EquipSlot.Consumable, ItemGrade.F, ItemRarity.Common,
+            HealPercentPerSecond: 0.01f, PotionDurationTicks: 150, PotionCooldownTicks: 300),
+        new(31, "Healing Potion",       EquipSlot.Consumable, ItemGrade.F, ItemRarity.Uncommon,
+            HealPercentPerSecond: 0.02f, PotionDurationTicks: 150, PotionCooldownTicks: 300),
+        new(32, "Greater Healing Potion", EquipSlot.Consumable, ItemGrade.F, ItemRarity.Rare,
+            InstantHealPercent: 0.50f, PotionCooldownTicks: 300),
     }.ToDictionary(i => i.Id);
+
+    public static bool IsPotion(ItemDef def) => def.Slot == EquipSlot.Consumable;
 
     public static ItemDef? Get(int id) => All.GetValueOrDefault(id);
 
@@ -66,30 +85,97 @@ public static class ItemCatalog
         ItemGrade.A => 60,
         _ => 80
     };
+}
 
-    /// <summary>Roll a drop for a mob kill. Null = no drop. 30% drop chance;
-    /// of drops: 70% common, 25% uncommon, 5% rare. Higher-level mobs can
-    /// drop E grade.</summary>
-    public static ItemDef? RollDrop(int mobLevel, Random rng)
+/// <summary>One possible drop: an item, its chance, and the mob-level band
+/// it applies to. A mob rolls every entry in its table independently.</summary>
+public record LootEntry(int ItemId, float Chance, int MinLevel, int MaxLevel);
+
+/// <summary>
+/// Per-mob loot tables, keyed by mob name. Each mob type drops different
+/// gear; entries are gated by the killed mob's level so a low boar gives F
+/// gear and a high one gives E gear (design doc).
+/// Every mob also rolls the shared potion table on top of its own.
+/// </summary>
+public static class LootTables
+{
+    // Potions any mob can drop (low chance), independent of type.
+    private static readonly LootEntry[] SharedPotions =
     {
-        if (rng.NextDouble() >= 0.30)
-            return null;
+        new(30, 0.10f, 1, 30),   // Minor Healing Potion (common)
+        new(31, 0.04f, 4, 30),   // Healing Potion (uncommon)
+        new(32, 0.01f, 8, 30),   // Greater Healing Potion (rare)
+    };
 
-        double rarityRoll = rng.NextDouble();
-        var rarity = rarityRoll < 0.70 ? ItemRarity.Common
-            : rarityRoll < 0.95 ? ItemRarity.Uncommon
-            : ItemRarity.Rare;
+    private static readonly Dictionary<string, LootEntry[]> Tables = new()
+    {
+        // Boar — weapons (F 1-10, E 11+)
+        ["Boar"] = new[]
+        {
+            new LootEntry(3, 0.18f, 1, 10),   // Old Staff
+            new LootEntry(1, 0.18f, 1, 10),   // Rusty Sword
+            new LootEntry(6, 0.06f, 1, 10),   // Oak Staff (uncommon)
+            new LootEntry(16, 0.12f, 11, 30), // Runed Staff (E)
+            new LootEntry(14, 0.12f, 11, 30), // Steel Sword (E)
+        },
+        // Wolf — armor (F 1-10, E 11+)
+        ["Wolf"] = new[]
+        {
+            new LootEntry(9, 0.18f, 1, 10),   // Leather Vest
+            new LootEntry(8, 0.14f, 1, 10),   // Chainmail
+            new LootEntry(12, 0.05f, 1, 10),  // Scout Leather (uncommon)
+            new LootEntry(19, 0.12f, 11, 30), // Shadow Garb (E)
+            new LootEntry(18, 0.10f, 11, 30), // Full Plate (E)
+        },
+        // Slime — robes & mage gear
+        ["Slime"] = new[]
+        {
+            new LootEntry(10, 0.18f, 1, 10),  // Padded Robe
+            new LootEntry(3, 0.12f, 1, 10),   // Old Staff
+            new LootEntry(13, 0.05f, 1, 10),  // Mystic Robe (rare)
+            new LootEntry(20, 0.12f, 11, 30), // Arcane Robe (E)
+        },
+        // Spider (aggressive) — light armor + daggers, better odds
+        ["Spider"] = new[]
+        {
+            new LootEntry(9, 0.20f, 1, 10),   // Leather Vest
+            new LootEntry(12, 0.10f, 1, 10),  // Scout Leather (uncommon)
+            new LootEntry(5, 0.10f, 1, 10),   // Hunting Bow (uncommon)
+            new LootEntry(19, 0.16f, 11, 30), // Shadow Garb (E)
+            new LootEntry(15, 0.10f, 11, 30), // Composite Bow (E)
+        },
+        // Bandit (aggressive) — swords + the best F drops
+        ["Bandit"] = new[]
+        {
+            new LootEntry(1, 0.18f, 1, 10),   // Rusty Sword
+            new LootEntry(4, 0.10f, 1, 10),   // Soldier Sword (uncommon)
+            new LootEntry(7, 0.05f, 1, 10),   // Knight's Blade (rare)
+            new LootEntry(11, 0.06f, 1, 10),  // Plate Armor (uncommon)
+            new LootEntry(17, 0.12f, 11, 30), // Crusader Blade (E)
+        },
+    };
 
-        var grade = mobLevel >= 13 && rng.NextDouble() < 0.5 ? ItemGrade.E : ItemGrade.F;
+    /// <summary>Roll all drops for one kill. Returns 0..N item ids (each table
+    /// entry is an independent roll, plus the shared potion table).</summary>
+    public static List<int> Roll(string mobName, int mobLevel, Random rng)
+    {
+        var drops = new List<int>();
 
-        var pool = All.Values
-            .Where(i => i.Grade == grade && i.Rarity == rarity)
-            .ToArray();
+        if (Tables.TryGetValue(mobName, out var table))
+            RollEntries(table, mobLevel, rng, drops);
 
-        // E grade has no uncommon armor / rare items yet — degrade gracefully.
-        if (pool.Length == 0)
-            pool = All.Values.Where(i => i.Grade == grade).ToArray();
+        RollEntries(SharedPotions, mobLevel, rng, drops);
+        return drops;
+    }
 
-        return pool.Length == 0 ? null : pool[rng.Next(pool.Length)];
+    private static void RollEntries(LootEntry[] table, int mobLevel, Random rng, List<int> drops)
+    {
+        foreach (var entry in table)
+        {
+            if (mobLevel < entry.MinLevel || mobLevel > entry.MaxLevel)
+                continue;
+            if (rng.NextDouble() < entry.Chance)
+                drops.Add(entry.ItemId);
+        }
     }
 }

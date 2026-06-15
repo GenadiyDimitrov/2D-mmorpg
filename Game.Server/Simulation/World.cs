@@ -77,6 +77,9 @@ public record ClassChangeCmd(string ConnectionId, int ClassId) : IGameCommand;
 /// <summary>Equip or unequip an inventory item (toggles).</summary>
 public record EquipCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
 
+/// <summary>Drink a potion from the inventory.</summary>
+public record UsePotionCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
+
 public record TradeRequestCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 public record TradeRespondCmd(string ConnectionId, bool Accept) : IGameCommand;
 public record TradeOfferCmd(string ConnectionId, Guid[] InstanceIds) : IGameCommand;

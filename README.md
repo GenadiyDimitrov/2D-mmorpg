@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 4
+# L2-like MMORPG — Phase 4.5 (UI & loot refinement)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,42 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 4.5 (this build)
+
+### UI overhaul
+- **Three colored vital bars** top-left: HP (red), MP (blue), EXP (gold),
+  each with live numbers, replacing the old text line.
+- **Stats window** — the *Stats* button (or **C**) opens a panel next to the
+  inventory showing CON/ATK/WIT/DEX, max HP/MP, attack power, defence,
+  accuracy/evasion, crit %, and attack range. It updates live on level-up,
+  equip, and class change.
+- **Equip comparison popup** — clicking an inventory item opens a popup that
+  diffs the item against what's equipped in that slot (green = upgrade, red =
+  downgrade) with **Equip/Close** buttons, instead of equipping instantly.
+- **Chat tabs fixed** — the All/World/Local/Whisper tabs now sit at the bottom
+  of the chat box (inside it), not floating above the panel.
+
+### Per-mob loot tables
+- Drops are now **per mob type**, not a global roll. Each mob has a loot table
+  of (item, chance, mob-level band): Boars drop weapons, Wolves drop armor,
+  Slimes drop robes/mage gear, Spiders drop light armor + bows, Bandits drop
+  swords and the best F-grade gear. Low-level kills give F grade; level-11+
+  kills give E grade — all defined in `LootTables` in `Game.Shared/Items.cs`,
+  one dictionary keyed by mob name. Each table entry rolls independently, so a
+  kill can drop zero, one, or several items.
+
+### Potions (grade/rarity based)
+- Three healing potions on a **shared 30s cooldown**, used from the **potion
+  action bar** (hotkeys **Q**/**E**) or by **clicking them in the inventory**:
+  - *Minor* (common): heals 1% max HP/sec for 15s
+  - *Healing* (uncommon): 2% max HP/sec for 15s
+  - *Greater* (rare): instant 50% max HP heal
+- Potions are a **separate effect channel from natural regen** — they tick
+  during combat too. **Rarity override**: a higher-rarity potion cancels a
+  lower one's effect; same rarity restarts it (safe-guarded, though the
+  cooldown normally prevents it). You start with two Minor and one Greater to
+  test. Any mob can also drop potions on top of its gear table.
 
 ## New in Phase 4
 

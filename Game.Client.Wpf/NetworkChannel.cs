@@ -19,6 +19,8 @@ public class NetworkChannel : IAsyncDisposable
     public event Action<InventoryUpdate>? InventoryReceived;
     public event Action<TradeRequestNotice>? TradeRequestReceived;
     public event Action<TradeStateUpdate>? TradeStateReceived;
+    public event Action<StatsUpdate>? StatsReceived;
+    public event Action<PotionStatus>? PotionReceived;
     public event Action<string>? Disconnected;
 
     public bool IsConnected => _connection?.State == HubConnectionState.Connected;
@@ -38,6 +40,8 @@ public class NetworkChannel : IAsyncDisposable
         _connection.On<InventoryUpdate>("Inventory", i => InventoryReceived?.Invoke(i));
         _connection.On<TradeRequestNotice>("TradeRequest", t => TradeRequestReceived?.Invoke(t));
         _connection.On<TradeStateUpdate>("Trade", t => TradeStateReceived?.Invoke(t));
+        _connection.On<StatsUpdate>("Stats", st => StatsReceived?.Invoke(st));
+        _connection.On<PotionStatus>("Potion", pt => PotionReceived?.Invoke(pt));
         _connection.Closed += ex =>
         {
             Disconnected?.Invoke(ex?.Message ?? "Connection closed.");
@@ -67,6 +71,9 @@ public class NetworkChannel : IAsyncDisposable
 
     public Task EquipItemAsync(Guid instanceId) =>
         _connection!.SendAsync("EquipItem", instanceId);
+
+    public Task UsePotionAsync(Guid instanceId) =>
+        _connection!.SendAsync("UsePotion", instanceId);
 
     public Task TradeRequestAsync(Guid targetId) =>
         _connection!.SendAsync("TradeRequest", targetId);
