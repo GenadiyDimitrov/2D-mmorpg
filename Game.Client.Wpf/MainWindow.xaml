@@ -37,14 +37,27 @@
                 <TextBlock x:Name="ExpBarText" Foreground="White" FontSize="9"
                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Grid>
+
+            <ItemsControl x:Name="BuffBar" Margin="0,6,0,0">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
         </StackPanel>
 
         <!-- Top-right buttons -->
         <StackPanel Orientation="Horizontal"
                     HorizontalAlignment="Right" VerticalAlignment="Top"
                     Margin="0,8,12,0">
+            <Button x:Name="SkillsButton" Content="Skills (K)" Width="80" Height="28"
+                    Margin="0,0,6,0" Click="SkillsButton_Click" Visibility="Collapsed"/>
             <Button x:Name="StatsButton" Content="Stats (C)" Width="80" Height="28"
                     Margin="0,0,6,0" Click="StatsButton_Click" Visibility="Collapsed"/>
+            <Button x:Name="DebugButton" Content="Debug" Width="64" Height="28"
+                    Margin="0,0,6,0" Click="DebugButton_Click" Visibility="Collapsed"
+                    Background="#FF553333" Foreground="White"/>
             <Button x:Name="InventoryButton" Content="Inventory (I)" Width="110" Height="28"
                     Margin="0,0,6,0" Click="InventoryButton_Click" Visibility="Collapsed"/>
             <Button x:Name="ClassButton" Content="Class" Width="70" Height="28"
@@ -251,10 +264,10 @@
             </DockPanel>
         </Border>
 
-        <!-- Potion bar (left of skill bar, bottom) -->
+        <!-- Fixed potion squares (bottom right of skill bar) -->
         <StackPanel x:Name="PotionBar" Orientation="Horizontal"
-                    HorizontalAlignment="Center" VerticalAlignment="Bottom"
-                    Margin="0,0,0,52" Visibility="Collapsed"/>
+                    HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                    Margin="0,0,12,12" Visibility="Collapsed"/>
 
         <!-- Stats window -->
         <Border x:Name="StatsPanel"
@@ -305,27 +318,114 @@
             </StackPanel>
         </Border>
 
-        <!-- Login overlay -->
+        <!-- Login / character creation (class tree) -->
         <Border x:Name="LoginPanel"
-                Width="340"
+                Width="720" MaxHeight="640"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
-                Background="#E0182028" CornerRadius="10" Padding="24">
+                Background="#E0141C28" CornerRadius="10" Padding="22">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="Create Your Character"
+                           Foreground="White" FontSize="22" FontWeight="Bold"
+                           HorizontalAlignment="Center" Margin="0,0,0,12"/>
+
+                <!-- Bottom: name + connect -->
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                            HorizontalAlignment="Center" Margin="0,14,0,0">
+                    <TextBlock Text="Name:" Foreground="#FFB9C4CC" VerticalAlignment="Center"
+                               Margin="0,0,8,0"/>
+                    <TextBox x:Name="NameInput" Width="160" Height="28" MaxLength="16"
+                             Background="#60000000" Foreground="White"
+                             BorderBrush="#FF445566" CaretBrush="White" VerticalContentAlignment="Center"/>
+                    <Button x:Name="ConnectButton" Content="Connect &amp; Play"
+                            Width="150" Height="30" Margin="12,0,0,0"
+                            FontWeight="SemiBold" Click="ConnectButton_Click"
+                            IsEnabled="False"/>
+                </StackPanel>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="260"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: the tree of buttons -->
+                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Margin="0,0,12,0">
+                        <StackPanel x:Name="CreationTree"/>
+                    </ScrollViewer>
+
+                    <!-- Right: description of the current selection -->
+                    <Border Grid.Column="1" Background="#40000000" CornerRadius="6" Padding="14">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <TextBlock x:Name="CreationTitle" Foreground="#FFFFD27F"
+                                           FontSize="17" FontWeight="Bold" Margin="0,0,0,6"/>
+                                <TextBlock x:Name="CreationBody" Foreground="#FFD8E0E6"
+                                           FontSize="13" TextWrapping="Wrap"/>
+                                <ItemsControl x:Name="CreationSkills" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+
+                <TextBlock x:Name="LoginError" DockPanel.Dock="Bottom"
+                           Foreground="#FFFF6B6B" TextWrapping="Wrap"
+                           HorizontalAlignment="Center" Margin="0,8,0,0" Visibility="Collapsed"/>
+            </DockPanel>
+        </Border>
+
+        <!-- Skills window -->
+        <Border x:Name="SkillsPanel"
+                Width="380" MaxHeight="520"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="#E0182838" CornerRadius="8" Padding="14"
+                Visibility="Collapsed">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="Skills" Foreground="White"
+                           FontSize="16" FontWeight="Bold" Margin="0,0,0,4"/>
+                <TextBlock DockPanel.Dock="Top" Foreground="#FF9FB0BE" FontSize="11"
+                           TextWrapping="Wrap" Margin="0,0,0,8"
+                           Text="Click 'To Bar' to assign a skill to a free action slot. Re-click an assigned skill in the bar to remove it."/>
+                <Button DockPanel.Dock="Bottom" Content="Close" Height="26"
+                        Margin="0,10,0,0" Click="SkillsClose_Click"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl x:Name="SkillsList"/>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- Enchant popup -->
+        <Border x:Name="EnchantPopup"
+                Width="360"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="#F01C2636" CornerRadius="10" Padding="18"
+                Visibility="Collapsed">
             <StackPanel>
-                <TextBlock Text="Enter the World" Foreground="White" FontSize="22" FontWeight="Bold"
-                           HorizontalAlignment="Center" Margin="0,0,0,18"/>
-                <TextBlock Text="Character name" Foreground="#FFB9C4CC" Margin="0,0,0,4"/>
-                <TextBox x:Name="NameInput" Height="28" MaxLength="16"
-                         Background="#60000000" Foreground="White"
-                         BorderBrush="#FF445566" CaretBrush="White"/>
-                <TextBlock Text="Race" Foreground="#FFB9C4CC" Margin="0,12,0,4"/>
-                <ComboBox x:Name="RaceCombo" Height="28"/>
-                <TextBlock Text="Class" Foreground="#FFB9C4CC" Margin="0,12,0,4"/>
-                <ComboBox x:Name="ClassCombo" Height="28"/>
-                <Button x:Name="ConnectButton" Content="Connect &amp; Play" Height="34" Margin="0,20,0,0"
-                        FontSize="14" FontWeight="SemiBold" Click="ConnectButton_Click"/>
-                <TextBlock x:Name="LoginError" Foreground="#FFFF6B6B" TextWrapping="Wrap"
-                           Margin="0,10,0,0" Visibility="Collapsed"/>
+                <TextBlock x:Name="EnchantTitle" Foreground="White" FontSize="16"
+                           FontWeight="Bold" Margin="0,0,0,4"/>
+                <TextBlock x:Name="EnchantInfo" Foreground="#FFB9C4CC" FontSize="12"
+                           TextWrapping="Wrap" Margin="0,0,0,10"/>
+                <TextBlock Text="Choose a scroll:" Foreground="#FF9FB0BE" FontSize="12" Margin="0,0,0,4"/>
+                <ItemsControl x:Name="EnchantScrollList"/>
+                <Button Content="Close" Height="28" Margin="0,12,0,0" Click="EnchantClose_Click"/>
             </StackPanel>
+        </Border>
+
+        <!-- Debug menu -->
+        <Border x:Name="DebugPanel"
+                Width="280" MaxHeight="520"
+                HorizontalAlignment="Right" VerticalAlignment="Top"
+                Margin="0,44,12,0" Padding="12"
+                Background="#F0301A1A" CornerRadius="8"
+                Visibility="Collapsed">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="DEBUG (test only)" Foreground="#FFFF9999"
+                           FontWeight="Bold" Margin="0,0,0,8"/>
+                <Button DockPanel.Dock="Bottom" Content="Close" Height="24"
+                        Margin="0,8,0,0" Click="DebugClose_Click"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="DebugList"/>
+                </ScrollViewer>
+            </DockPanel>
         </Border>
 
     </Grid>

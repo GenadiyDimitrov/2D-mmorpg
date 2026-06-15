@@ -70,7 +70,7 @@ public record CastInfo(string SkillName, float Seconds);
 
 
 /// <summary>One item instance in a player's inventory.</summary>
-public record InventoryItemDto(Guid InstanceId, int DefId, bool Equipped);
+public record InventoryItemDto(Guid InstanceId, int DefId, bool Equipped, int Enchant);
 
 /// <summary>Server -> owning client: full inventory sync (sent on change).</summary>
 public record InventoryUpdate(InventoryItemDto[] Items);
@@ -100,3 +100,14 @@ public record StatsUpdate(
 /// <summary>Server -> owning client: a potion cooldown started (seconds),
 /// or an active potion effect changed. Cooldown 0 = ready.</summary>
 public record PotionStatus(float CooldownSeconds, string ActiveEffect);
+
+
+/// <summary>One active buff/debuff on the player, for the buff bar + tooltip.</summary>
+public record BuffDto(string Name, string Description, float SecondsLeft, bool IsDebuff);
+
+/// <summary>Server -> owning client: the player's current buffs (sent each
+/// second while any are active, and once when the last one drops).</summary>
+public record BuffUpdate(BuffDto[] Buffs);
+
+/// <summary>Server -> owning client: the result of an enchant attempt.</summary>
+public record EnchantResultDto(string ItemName, int NewEnchant, string Outcome, bool Destroyed);

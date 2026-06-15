@@ -80,6 +80,18 @@ public record EquipCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
 /// <summary>Drink a potion from the inventory.</summary>
 public record UsePotionCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
 
+/// <summary>Apply an enchant scroll to a target item.</summary>
+public record EnchantCmd(string ConnectionId, Guid ScrollInstanceId, Guid TargetInstanceId) : IGameCommand;
+
+/// <summary>Destroy an inventory item (later: sell/dismantle).</summary>
+public record RemoveItemCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
+
+/// <summary>DEBUG-only: grant an item by def id.</summary>
+public record DebugGiveCmd(string ConnectionId, int DefId) : IGameCommand;
+
+/// <summary>DEBUG-only: grant one level.</summary>
+public record DebugLevelCmd(string ConnectionId) : IGameCommand;
+
 public record TradeRequestCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 public record TradeRespondCmd(string ConnectionId, bool Accept) : IGameCommand;
 public record TradeOfferCmd(string ConnectionId, Guid[] InstanceIds) : IGameCommand;

@@ -9,6 +9,9 @@ public class BuffInstance
     public required float Magnitude { get; init; }
     public int TicksRemaining { get; set; }
     public required string Name { get; init; }
+    public string Description { get; init; } = "";
+
+    public bool IsDebuff => Type == SkillEffect.DebuffDef;
 }
 
 /// <summary>One item instance in a player's inventory.</summary>
@@ -17,8 +20,9 @@ public class InventoryItem
     public Guid InstanceId { get; } = Guid.NewGuid();
     public required int DefId { get; init; }
     public bool Equipped { get; set; }
+    public int Enchant { get; set; }
 
-    public InventoryItemDto ToDto() => new(InstanceId, DefId, Equipped);
+    public InventoryItemDto ToDto() => new(InstanceId, DefId, Equipped, Enchant);
 }
 
 /// <summary>
@@ -163,11 +167,11 @@ public class Entity
             if (!item.Equipped || ItemCatalog.Get(item.DefId) is not ItemDef def)
                 continue;
 
-            AttackPower += def.AtkBonus;
-            Defence += def.DefBonus;
-            MaxHp += def.HpBonus;
-            MaxMp += def.MpBonus;
-            Evasion += def.EvaBonus;
+            AttackPower += EnchantRules.BonusAt(def.AtkBonus, item.Enchant);
+            Defence += EnchantRules.BonusAt(def.DefBonus, item.Enchant);
+            MaxHp += EnchantRules.BonusAt(def.HpBonus, item.Enchant);
+            MaxMp += EnchantRules.BonusAt(def.MpBonus, item.Enchant);
+            Evasion += EnchantRules.BonusAt(def.EvaBonus, item.Enchant);
 
             if (def.WeaponRange > 0)
             {

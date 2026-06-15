@@ -55,11 +55,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        RaceCombo.ItemsSource = Enum.GetValues<Race>();
-        RaceCombo.SelectedIndex = 0;
-        ClassCombo.ItemsSource = Enum.GetValues<BaseClass>();
-        ClassCombo.SelectedIndex = 0;
         WhisperNames.ItemsSource = _whisperNames;
+        BuildCreationTree();
 
         _net.SnapshotReceived += s => Dispatcher.BeginInvoke(() => ApplySnapshot(s));
         _net.ChatReceived += m => Dispatcher.BeginInvoke(() => AppendChat(m));
@@ -71,6 +68,8 @@ public partial class MainWindow : Window
         _net.TradeStateReceived += t => Dispatcher.BeginInvoke(() => OnTradeState(t));
         _net.StatsReceived += st => Dispatcher.BeginInvoke(() => OnStats(st));
         _net.PotionReceived += pt => Dispatcher.BeginInvoke(() => OnPotion(pt));
+        _net.BuffsReceived += b => Dispatcher.BeginInvoke(() => OnBuffs(b));
+        _net.EnchantReceived += en => Dispatcher.BeginInvoke(() => OnEnchant(en));
         _net.Disconnected += reason => Dispatcher.BeginInvoke(() =>
         {
             _inGame = false;
@@ -100,9 +99,6 @@ public partial class MainWindow : Window
                 await _net.ConnectAsync(ServerUrl);
             }
 
-            _myRace = (Race)RaceCombo.SelectedItem!;
-            _myBaseClass = (BaseClass)ClassCombo.SelectedItem!;
-
             var result = await _net.LoginAsync(new LoginRequest(NameInput.Text, _myRace, _myBaseClass));
 
             if (!result.Success)
@@ -117,13 +113,18 @@ public partial class MainWindow : Window
             _camY = result.Y;
             _inGame = true;
 
-            RebuildSkillBar();
+            EnsureSkillBarSlots();
 
             LoginPanel.Visibility = Visibility.Collapsed;
             ChatPanel.Visibility = Visibility.Visible;
+            SkillsButton.Visibility = Visibility.Visible;
             StatsButton.Visibility = Visibility.Visible;
             InventoryButton.Visibility = Visibility.Visible;
             ClassButton.Visibility = Visibility.Visible;
+#if DEBUG
+            DebugButton.Visibility = Visibility.Visible;
+#endif
+            EnsureSkillBarSlots();
 
             AppendChat(new ChatMessage("SYSTEM",
                 "Click ground = move, click target = attack, 1-5 = skills, I = inventory. " +
@@ -152,27 +153,105 @@ public partial class MainWindow : Window
     // Skill bar (rebuilt on class change to include the signature skill)
     // -----------------------------------------------------------------------
 
-    private void RebuildSkillBar()
+    private const int SkillBarSlots = 8;
+
+    /// <summary>The skill assigned to each bar slot (null = empty).</summary>
+    private readonly int?[] _skillBar = new int?[SkillBarSlots];
+
+    private void EnsureSkillBarSlots()
+    {
+        // First time: auto-place currently available skills into free slots.
+        AutoPlaceNewSkills();
+        RenderSkillBar();
+    }
+
+    /// <summary>Drop assignments the character can no longer use, then fill any
+    /// free slots with newly-available skills (auto-place on acquire).</summary>
+    private void AutoPlaceNewSkills()
+    {
+        Archetype? archetype = _mySecondClass > 0
+            ? ClassCatalog.Get(_mySecondClass)?.Archetype : null;
+        var available = SkillCatalog.ForCharacter(_myBaseClass, archetype).Select(d => d.Id).ToHashSet();
+
+        // Remove now-invalid assignments.
+        for (int i = 0; i < _skillBar.Length; i++)
+            if (_skillBar[i] is int id && !available.Contains(id))
+                _skillBar[i] = null;
+
+        // Auto-place any available skill not already on the bar.
+        var onBar = _skillBar.Where(x => x.HasValue).Select(x => x!.Value).ToHashSet();
+        foreach (var id in available)
+        {
+            if (onBar.Contains(id))
+                continue;
+            int free = Array.IndexOf(_skillBar, null);
+            if (free < 0)
+                break;
+            _skillBar[free] = id;
+            onBar.Add(id);
+        }
+    }
+
+    /// <summary>Assign a skill to the first free slot (from the Skills window).</summary>
+    private void AssignSkillToBar(int skillId)
+    {
+        if (_skillBar.Any(x => x == skillId))
+            return; // already on the bar
+        int free = Array.IndexOf(_skillBar, null);
+        if (free < 0)
+        {
+            AppendChat(new ChatMessage("SYSTEM", "Skill bar is full.", ChatChannel.System));
+            return;
+        }
+        _skillBar[free] = skillId;
+        RenderSkillBar();
+        if (SkillsPanel.Visibility == Visibility.Visible)
+            RefreshSkillsWindow();
+    }
+
+    private void RemoveSkillFromBar(int slotIndex)
+    {
+        if (slotIndex >= 0 && slotIndex < _skillBar.Length)
+        {
+            _skillBar[slotIndex] = null;
+            RenderSkillBar();
+            if (SkillsPanel.Visibility == Visibility.Visible)
+                RefreshSkillsWindow();
+        }
+    }
+
+    private void RenderSkillBar()
     {
         SkillBar.Children.Clear();
         _skillSlots.Clear();
 
-        Archetype? archetype = _mySecondClass > 0
-            ? ClassCatalog.Get(_mySecondClass)?.Archetype : null;
-
-        int key = 1;
-        foreach (var def in SkillCatalog.ForCharacter(_myBaseClass, archetype))
+        for (int i = 0; i < _skillBar.Length; i++)
         {
+            int hotkey = i + 1;
             var button = new Button
             {
-                Width = 118, Height = 36, Margin = new Thickness(3, 0, 3, 0),
-                FontSize = 11, Content = $"{key}. {def.Name}"
+                Width = 104, Height = 38, Margin = new Thickness(3, 0, 3, 0), FontSize = 11
             };
-            var slot = new SkillSlot { Def = def, Button = button, Key = key };
-            button.Click += (_, _) => UseSkill(slot);
-            _skillSlots.Add(slot);
+
+            if (_skillBar[i] is int id && SkillCatalog.Get(id) is SkillDef def)
+            {
+                button.Content = $"{hotkey}. {def.Name}";
+                var slot = new SkillSlot { Def = def, Button = button, Key = hotkey };
+                int slotIndex = i;
+                // Left-click = cast; right-click = remove from bar.
+                button.Click += (_, _) => UseSkill(slot);
+                button.MouseRightButtonUp += (_, _) => RemoveSkillFromBar(slotIndex);
+                button.ToolTip = "Right-click to remove from bar";
+                _skillSlots.Add(slot);
+            }
+            else
+            {
+                button.Content = $"{hotkey}.";
+                button.Opacity = 0.4;
+                button.IsHitTestVisible = false;
+            }
+
             SkillBar.Children.Add(button);
-            key++;
         }
 
         SkillBar.Visibility = Visibility.Visible;
@@ -210,6 +289,13 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (e.Key is Key.K)
+        {
+            ToggleSkills();
+            e.Handled = true;
+            return;
+        }
+
         // Potion hotkeys: Q (first), E (second potion stack).
         if (e.Key is Key.Q or Key.E)
         {
@@ -218,21 +304,27 @@ public partial class MainWindow : Window
             return;
         }
 
-        int index = e.Key switch
+        int hotkey = e.Key switch
         {
-            Key.D1 or Key.NumPad1 => 0,
-            Key.D2 or Key.NumPad2 => 1,
-            Key.D3 or Key.NumPad3 => 2,
-            Key.D4 or Key.NumPad4 => 3,
-            Key.D5 or Key.NumPad5 => 4,
-            Key.D6 or Key.NumPad6 => 5,
+            Key.D1 or Key.NumPad1 => 1,
+            Key.D2 or Key.NumPad2 => 2,
+            Key.D3 or Key.NumPad3 => 3,
+            Key.D4 or Key.NumPad4 => 4,
+            Key.D5 or Key.NumPad5 => 5,
+            Key.D6 or Key.NumPad6 => 6,
+            Key.D7 or Key.NumPad7 => 7,
+            Key.D8 or Key.NumPad8 => 8,
             _ => -1
         };
 
-        if (index >= 0 && index < _skillSlots.Count)
+        if (hotkey > 0)
         {
-            UseSkill(_skillSlots[index]);
-            e.Handled = true;
+            var slot = _skillSlots.FirstOrDefault(sl => sl.Key == hotkey);
+            if (slot is not null)
+            {
+                UseSkill(slot);
+                e.Handled = true;
+            }
         }
     }
 
@@ -284,7 +376,7 @@ public partial class MainWindow : Window
                 if (dto.SecondClass != _mySecondClass)
                 {
                     _mySecondClass = dto.SecondClass;
-                    RebuildSkillBar();
+                    EnsureSkillBarSlots();
                 }
                 DeathOverlay.Visibility = dto.Dead ? Visibility.Visible : Visibility.Collapsed;
             }

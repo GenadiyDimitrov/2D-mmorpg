@@ -16,6 +16,8 @@ public partial class MainWindow
     private string _potionEffect = "";
     private readonly List<PotionSlot> _potionSlots = new();
     private Guid? _equipPopupInstanceId;
+    private Guid? _enchantTargetId;
+    private bool _creationReady;
 
     // =======================================================================
     // Inventory
@@ -27,7 +29,7 @@ public partial class MainWindow
         _inventory.AddRange(update.Items);
 
         RefreshInventoryPanel();
-        RefreshPotionBar();
+        RebuildPotionBar();
         if (_tradeActive)
             RefreshTradeBag();
     }
@@ -54,11 +56,41 @@ public partial class MainWindow
             if (def is null)
                 continue;
 
+            var row = new DockPanel { Margin = new Thickness(0, 0, 0, 4) };
+            var dto = item;
+
+            // Remove (X) button — destroy item.
+            var remove = new Button
+            {
+                Content = "X", Width = 24, Height = 28, FontSize = 11,
+                Foreground = Brushes.White,
+                Background = new SolidColorBrush(Color.FromArgb(120, 160, 60, 60)),
+                ToolTip = "Destroy this item"
+            };
+            remove.Click += async (_, _) => await _net.RemoveItemAsync(dto.InstanceId);
+            DockPanel.SetDock(remove, Dock.Right);
+            row.Children.Add(remove);
+
+            // Enchant (+) button — only for equippable gear.
+            if (ItemCatalog.IsEquippable(def))
+            {
+                var enchant = new Button
+                {
+                    Content = "+", Width = 24, Height = 28, FontSize = 13, FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.White, Margin = new Thickness(0, 0, 3, 0),
+                    Background = new SolidColorBrush(Color.FromArgb(120, 90, 110, 160)),
+                    ToolTip = "Enchant this item"
+                };
+                enchant.Click += (_, _) => OpenEnchantPopup(dto);
+                DockPanel.SetDock(enchant, Dock.Right);
+                row.Children.Add(enchant);
+            }
+
+            // Main item button — opens equip/compare popup (potions drink).
             var button = new Button
             {
-                Content = ItemLabel(def, item.Equipped),
-                Height = 30,
-                Margin = new Thickness(0, 0, 0, 4),
+                Content = ItemLabel(def, item.Equipped, item.Enchant),
+                Height = 28,
                 HorizontalContentAlignment = HorizontalAlignment.Left,
                 Padding = new Thickness(8, 0, 0, 0),
                 Foreground = item.Equipped ? Brushes.LightGreen : RarityBrush(def.Rarity),
@@ -66,18 +98,20 @@ public partial class MainWindow
                     ? new SolidColorBrush(Color.FromArgb(60, 80, 220, 120))
                     : new SolidColorBrush(Color.FromArgb(40, 80, 100, 130))
             };
-            var dto = item;
             button.Click += (_, _) => ShowEquipPopup(dto);
-            InventoryList.Items.Add(button);
+            row.Children.Add(button);
+
+            InventoryList.Items.Add(row);
         }
     }
 
-    private static string ItemLabel(ItemDef def, bool equipped)
+    private static string ItemLabel(ItemDef def, bool equipped, int enchant)
     {
         string tag = equipped ? "[E] " : "";
+        string ench = enchant > 0 ? $"+{enchant} " : "";
         string req = ItemCatalog.RequiredLevel(def.Grade) > 0
             ? $" (Lv{ItemCatalog.RequiredLevel(def.Grade)})" : "";
-        return $"{tag}{def.Name}  {def.Grade}/{def.Rarity}{req}";
+        return $"{tag}{ench}{def.Name}  {def.Grade}/{def.Rarity}{req}";
     }
 
     private static Brush RarityBrush(ItemRarity rarity) => rarity switch
@@ -342,44 +376,15 @@ public partial class MainWindow
         _potionEffect = status.ActiveEffect;
     }
 
-    /// <summary>Rebuilds the potion action bar from inventory: one slot per
-    /// distinct potion type, showing the count.</summary>
-    private void RefreshPotionBar()
-    {
-        PotionBar.Children.Clear();
-        _potionSlots.Clear();
-
-        var potionGroups = _inventory
-            .Select(i => (Item: i, Def: ItemCatalog.Get(i.DefId)))
-            .Where(t => t.Def is not null && ItemCatalog.IsPotion(t.Def!))
-            .GroupBy(t => t.Def!.Id)
-            .OrderBy(g => g.Key);
-
-        foreach (var group in potionGroups)
-        {
-            var def = ItemCatalog.Get(group.Key)!;
-            var first = group.First().Item;
-            int count = group.Count();
-
-            var button = new Button
-            {
-                Width = 110, Height = 30, Margin = new Thickness(3, 0, 3, 0),
-                FontSize = 10, Foreground = RarityBrush(def.Rarity),
-                Content = $"{def.Name} x{count}"
-            };
-            var instanceId = first.InstanceId;
-            button.Click += async (_, _) => await DrinkPotion(instanceId);
-            _potionSlots.Add(new PotionSlot { Button = button, InstanceId = instanceId });
-            PotionBar.Children.Add(button);
-        }
-
-        PotionBar.Visibility = _potionSlots.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-    }
-
     private async void UsePotionHotkey(int index)
     {
-        if (index >= 0 && index < _potionSlots.Count)
-            await DrinkPotion(_potionSlots[index].InstanceId);
+        // Q -> first potion square (Minor), E -> second (Healing).
+        if (index < 0 || index >= PotionSquares.Length)
+            return;
+        int defId = PotionSquares[index].DefId;
+        var item = _inventory.FirstOrDefault(i => i.DefId == defId);
+        if (item is not null)
+            await DrinkPotion(item.InstanceId);
     }
 
     private async Task DrinkPotion(Guid instanceId)
@@ -417,15 +422,23 @@ public partial class MainWindow
             .FirstOrDefault(t => t.Item.Equipped && t.Def is not null &&
                                  t.Def!.Slot == def.Slot && t.Item.InstanceId != item.InstanceId);
 
+        bool hasCurrent = current.Item is not null;
+        int curEnch = current.Item?.Enchant ?? 0;
+        int newEnch = item.Enchant;
+
+        // Enchant-aware bonuses (a +5 sword really is stronger than a +0).
+        int CurB(int b) => EnchantRules.BonusAt(b, curEnch);
+        int NewB(int b) => item.Equipped ? 0 : EnchantRules.BonusAt(b, newEnch);
+
         EquipCompareList.Items.Clear();
-        AddCompareRow("Attack", current.Def?.AtkBonus ?? 0, item.Equipped ? 0 : def.AtkBonus, current.Item is not null);
-        AddCompareRow("Defence", current.Def?.DefBonus ?? 0, item.Equipped ? 0 : def.DefBonus, current.Item is not null);
-        AddCompareRow("Max HP", current.Def?.HpBonus ?? 0, item.Equipped ? 0 : def.HpBonus, current.Item is not null);
-        AddCompareRow("Max MP", current.Def?.MpBonus ?? 0, item.Equipped ? 0 : def.MpBonus, current.Item is not null);
-        AddCompareRow("Evasion", current.Def?.EvaBonus ?? 0, item.Equipped ? 0 : def.EvaBonus, current.Item is not null);
+        AddCompareRow("Attack", CurB(current.Def?.AtkBonus ?? 0), NewB(def.AtkBonus), hasCurrent);
+        AddCompareRow("Defence", CurB(current.Def?.DefBonus ?? 0), NewB(def.DefBonus), hasCurrent);
+        AddCompareRow("Max HP", CurB(current.Def?.HpBonus ?? 0), NewB(def.HpBonus), hasCurrent);
+        AddCompareRow("Max MP", CurB(current.Def?.MpBonus ?? 0), NewB(def.MpBonus), hasCurrent);
+        AddCompareRow("Evasion", CurB(current.Def?.EvaBonus ?? 0), NewB(def.EvaBonus), hasCurrent);
         if (def.WeaponRange > 0 || (current.Def?.WeaponRange ?? 0) > 0)
             AddCompareRow("Range", (int)(current.Def?.WeaponRange ?? 0),
-                item.Equipped ? 0 : (int)def.WeaponRange, current.Item is not null);
+                item.Equipped ? 0 : (int)def.WeaponRange, hasCurrent);
 
         EquipConfirmButton.Content = item.Equipped ? "Unequip" : "Equip";
         EquipPopup.Visibility = Visibility.Visible;
@@ -481,6 +494,479 @@ public partial class MainWindow
     {
         public required Button Button { get; init; }
         public required Guid InstanceId { get; init; }
+    }
+
+
+    // =======================================================================
+    // Character creation — class tree
+    // =======================================================================
+
+    private void BuildCreationTree()
+    {
+        CreationTree.Children.Clear();
+        AddTreeHeader("1. Choose a Race");
+
+        foreach (var race in Enum.GetValues<Race>())
+        {
+            var btn = TreeButton(race.ToString(), 0);
+            btn.Click += (_, _) => SelectRace(race);
+            CreationTree.Children.Add(btn);
+        }
+
+        ShowCreationInfo("Welcome",
+            "Pick a race, then a base class, then preview a second class. " +
+            "Races set your starting stats; base class sets your playstyle.\n\n" +
+            "Ork/Demon: high CON/ATK, low WIT/DEX — brawlers.\n" +
+            "Elf/Angel: high DEX/WIT, low CON/ATK — finesse & magic.\n" +
+            "Human: balanced.", null);
+    }
+
+    private void SelectRace(Race race)
+    {
+        _myRace = race;
+        _creationReady = false;
+        ConnectButton.IsEnabled = false;
+
+        BuildCreationTree(); // reset, then expand under the chosen race
+        // Re-render with race expanded.
+        CreationTree.Children.Clear();
+        AddTreeHeader("1. Race");
+        foreach (var r in Enum.GetValues<Race>())
+        {
+            var btn = TreeButton(r.ToString(), 0, selected: r == race);
+            btn.Click += (_, _) => SelectRace(r);
+            CreationTree.Children.Add(btn);
+        }
+
+        AddTreeHeader("2. Choose Base Class");
+        foreach (var bc in Enum.GetValues<BaseClass>())
+        {
+            var btn = TreeButton(bc.ToString(), 1);
+            btn.Click += (_, _) => SelectBaseClass(race, bc);
+            CreationTree.Children.Add(btn);
+        }
+
+        var stats = StatCalculator.GetBaseStats(race, BaseClass.Fighter);
+        var mstats = StatCalculator.GetBaseStats(race, BaseClass.Mage);
+        ShowCreationInfo($"{race}",
+            $"Fighter base stats: CON {stats.Con}, ATK {stats.Atk}, WIT {stats.Wit}, DEX {stats.Dex}\n" +
+            $"Mage base stats:    CON {mstats.Con}, ATK {mstats.Atk}, WIT {mstats.Wit}, DEX {mstats.Dex}\n\n" +
+            "Now choose Fighter or Mage to see its second-class paths.", null);
+    }
+
+    private void SelectBaseClass(Race race, BaseClass baseClass)
+    {
+        _myRace = race;
+        _myBaseClass = baseClass;
+        _creationReady = true;
+        ConnectButton.IsEnabled = true; // you can create now; 2nd class is preview only
+
+        CreationTree.Children.Clear();
+        AddTreeHeader("1. Race");
+        var rb = TreeButton(race.ToString(), 0, selected: true);
+        rb.Click += (_, _) => SelectRace(race);
+        CreationTree.Children.Add(rb);
+
+        AddTreeHeader("2. Base Class");
+        foreach (var bc in Enum.GetValues<BaseClass>())
+        {
+            var btn = TreeButton(bc.ToString(), 1, selected: bc == baseClass);
+            btn.Click += (_, _) => SelectBaseClass(race, bc);
+            CreationTree.Children.Add(btn);
+        }
+
+        AddTreeHeader("3. Preview Second Class (at Lv20)");
+        foreach (var sc in ClassCatalog.OptionsFor(race, baseClass))
+        {
+            var btn = TreeButton($"{sc.Name}  ({sc.Archetype})", 2);
+            btn.Click += (_, _) => PreviewSecondClass(sc);
+            CreationTree.Children.Add(btn);
+        }
+
+        var stats = StatCalculator.GetBaseStats(race, baseClass);
+        string passive = baseClass == BaseClass.Fighter
+            ? "Fighters: lower HP, more attack/defence focus; can use all armor."
+            : "Mages: spell-casters; WIT shortens cast time; robe specialists.";
+        var skills = SkillCatalog.ForCharacter(baseClass, null).ToList();
+        ShowCreationInfo($"{race} {baseClass}",
+            $"Base stats: CON {stats.Con}, ATK {stats.Atk}, WIT {stats.Wit}, DEX {stats.Dex}\n\n" +
+            passive + "\n\nStarting skills:", skills);
+    }
+
+    private void PreviewSecondClass(SecondClassDef sc)
+    {
+        var (con, atk, wit, dex) = ClassCatalog.StatBonus(sc.Archetype);
+        string role = sc.Archetype switch
+        {
+            Archetype.Tank => "Fortress: heavy armor + shield, soaks damage.",
+            Archetype.Warrior => "Heavy 2-hander: huge hits, less defence than a tank.",
+            Archetype.Rogue => "Fast dual-wield melee: evasion, crits, DoTs.",
+            Archetype.Archer => "Ranged bow: +500 attack range (cap 1100), heavy hits.",
+            Archetype.Healer => "Robe support: heals/buffs, +500 spell range (cap 900).",
+            Archetype.Nuker => "Robe caster: big damage spells, +500 spell range.",
+            _ => ""
+        };
+        var skills = SkillCatalog.ForCharacter(sc.Base, sc.Archetype).ToList();
+        ShowCreationInfo($"{sc.Name}  ({sc.Archetype})",
+            role + $"\n\nClass-change bonus: +{con} CON, +{atk} ATK, +{wit} WIT, +{dex} DEX.\n\n" +
+            "Skills (base + signature):", skills);
+    }
+
+    private void ShowCreationInfo(string title, string body, List<SkillDef>? skills)
+    {
+        CreationTitle.Text = title;
+        CreationBody.Text = body;
+        CreationSkills.Items.Clear();
+        if (skills is null)
+            return;
+
+        foreach (var def in skills)
+        {
+            var tb = new TextBlock
+            {
+                Foreground = Brushes.LightSkyBlue, FontSize = 12,
+                TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0),
+                Text = $"• {def.Name} — {SkillCatalog.DescriptionOf(def.Id)}"
+            };
+            CreationSkills.Items.Add(tb);
+        }
+    }
+
+    private void AddTreeHeader(string text) =>
+        CreationTree.Children.Add(new TextBlock
+        {
+            Text = text, Foreground = Brushes.Gray, FontSize = 11,
+            FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 4)
+        });
+
+    private static System.Windows.Controls.Button TreeButton(string text, int indent, bool selected = false)
+    {
+        return new System.Windows.Controls.Button
+        {
+            Content = text,
+            Height = 30,
+            Margin = new Thickness(indent * 16, 0, 0, 4),
+            HorizontalContentAlignment = HorizontalAlignment.Left,
+            Padding = new Thickness(8, 0, 0, 0),
+            FontSize = 12,
+            Background = selected
+                ? new SolidColorBrush(Color.FromArgb(110, 90, 150, 220))
+                : new SolidColorBrush(Color.FromArgb(40, 80, 100, 130)),
+            Foreground = Brushes.White
+        };
+    }
+
+    // =======================================================================
+    // Skills window
+    // =======================================================================
+
+    private void SkillsButton_Click(object sender, RoutedEventArgs e) => ToggleSkills();
+    private void SkillsClose_Click(object sender, RoutedEventArgs e) =>
+        SkillsPanel.Visibility = Visibility.Collapsed;
+
+    private void ToggleSkills()
+    {
+        SkillsPanel.Visibility = SkillsPanel.Visibility == Visibility.Visible
+            ? Visibility.Collapsed : Visibility.Visible;
+        if (SkillsPanel.Visibility == Visibility.Visible)
+            RefreshSkillsWindow();
+    }
+
+    private void RefreshSkillsWindow()
+    {
+        SkillsList.Items.Clear();
+        Archetype? archetype = _mySecondClass > 0 ? ClassCatalog.Get(_mySecondClass)?.Archetype : null;
+
+        foreach (var def in SkillCatalog.ForCharacter(_myBaseClass, archetype))
+        {
+            bool onBar = _skillBar.Any(x => x == def.Id);
+
+            var panel = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
+            var header = new DockPanel();
+            var name = new TextBlock
+            {
+                Text = def.Name, Foreground = Brushes.White, FontSize = 13,
+                FontWeight = FontWeights.Bold
+            };
+            var assign = new Button
+            {
+                Content = onBar ? "On Bar" : "To Bar",
+                Height = 22, Width = 70, FontSize = 10, IsEnabled = !onBar
+            };
+            int id = def.Id;
+            assign.Click += (_, _) => AssignSkillToBar(id);
+            DockPanel.SetDock(assign, Dock.Right);
+            header.Children.Add(assign);
+            header.Children.Add(name);
+            panel.Children.Add(header);
+
+            panel.Children.Add(new TextBlock
+            {
+                Text = SkillCatalog.DescriptionOf(def.Id),
+                Foreground = Brushes.Gainsboro, FontSize = 11, TextWrapping = TextWrapping.Wrap
+            });
+
+            string duration = def.DurationTicks > 0
+                ? $"  Duration {def.DurationTicks * GameConstants.TickSeconds:0}s" : "";
+            panel.Children.Add(new TextBlock
+            {
+                Text = $"MP {def.MpCost}   Cast {def.CastTicks * GameConstants.TickSeconds:0.0}s   " +
+                       $"Cooldown {def.CooldownTicks * GameConstants.TickSeconds:0}s{duration}",
+                Foreground = Brushes.SkyBlue, FontSize = 10, Margin = new Thickness(0, 2, 0, 0)
+            });
+
+            SkillsList.Items.Add(panel);
+        }
+    }
+
+    // =======================================================================
+    // Buff bar
+    // =======================================================================
+
+    private void OnBuffs(BuffUpdate update)
+    {
+        BuffBar.Items.Clear();
+        foreach (var buff in update.Buffs)
+        {
+            var pill = new Border
+            {
+                Background = buff.IsDebuff
+                    ? new SolidColorBrush(Color.FromArgb(200, 120, 40, 40))
+                    : new SolidColorBrush(Color.FromArgb(200, 40, 80, 120)),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(6, 2, 6, 2),
+                Margin = new Thickness(0, 0, 4, 4),
+                Child = new TextBlock
+                {
+                    Text = $"{buff.Name}  {buff.SecondsLeft:0}s",
+                    Foreground = Brushes.White, FontSize = 11
+                },
+                ToolTip = $"{buff.Name}\n{buff.Description}\n{buff.SecondsLeft:0}s remaining"
+            };
+            BuffBar.Items.Add(pill);
+        }
+    }
+
+    // =======================================================================
+    // Fixed potion squares (always visible, color-coded, count badge)
+    // =======================================================================
+
+    private static readonly (int DefId, Color Color)[] PotionSquares =
+    {
+        (30, Color.FromRgb(120, 200, 120)),  // Minor — green
+        (31, Color.FromRgb(90, 150, 230)),   // Healing — blue
+        (32, Color.FromRgb(220, 170, 70)),   // Greater — gold
+    };
+
+    private void RebuildPotionBar()
+    {
+        PotionBar.Children.Clear();
+        _potionSlots.Clear();
+
+        foreach (var (defId, color) in PotionSquares)
+        {
+            var def = ItemCatalog.Get(defId);
+            if (def is null)
+                continue;
+
+            var stack = _inventory.Where(i => i.DefId == defId).ToList();
+            int count = stack.Count;
+
+            var badge = new TextBlock
+            {
+                Text = CountBadge(count),
+                Foreground = Brushes.White, FontSize = 11, FontWeight = FontWeights.Bold,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                Margin = new Thickness(0, 0, 3, 1)
+            };
+
+            var label = new TextBlock
+            {
+                Text = def.Rarity.ToString()[..1],  // M/U/R-ish initial of rarity
+                Foreground = Brushes.White, FontSize = 16, FontWeight = FontWeights.Bold,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            var grid = new Grid();
+            grid.Children.Add(label);
+            grid.Children.Add(badge);
+
+            var button = new Button
+            {
+                Width = 46, Height = 46, Margin = new Thickness(4, 0, 0, 0),
+                Background = new SolidColorBrush(color),
+                Content = grid,
+                IsEnabled = count > 0,
+                ToolTip = $"{def.Name}\n{PotionTooltip(def)}"
+            };
+            if (count == 0)
+                button.Opacity = 0.4;
+
+            int id = defId;
+            button.Click += async (_, _) =>
+            {
+                var firstStack = _inventory.FirstOrDefault(i => i.DefId == id);
+                if (firstStack is not null)
+                    await DrinkPotion(firstStack.InstanceId);
+            };
+
+            _potionSlots.Add(new PotionSlot { Button = button, InstanceId = Guid.Empty });
+            PotionBar.Children.Add(button);
+        }
+
+        PotionBar.Visibility = Visibility.Visible;
+    }
+
+    private static string CountBadge(int count) =>
+        count >= 100 ? "99+" : count.ToString();
+
+    private static string PotionTooltip(ItemDef def)
+    {
+        if (def.InstantHealPercent > 0)
+            return $"Instant heal {def.InstantHealPercent * 100:0}% HP. CD {def.PotionCooldownTicks / GameConstants.TickRate}s.";
+        return $"Heal {def.HealPercentPerSecond * 100:0}%/s for " +
+               $"{def.PotionDurationTicks / GameConstants.TickRate}s. CD {def.PotionCooldownTicks / GameConstants.TickRate}s.";
+    }
+
+    // =======================================================================
+    // Enchant popup
+    // =======================================================================
+
+    private void OpenEnchantPopup(InventoryItemDto item)
+    {
+        if (ItemCatalog.Get(item.DefId) is not ItemDef def || !ItemCatalog.IsEquippable(def))
+            return;
+
+        _enchantTargetId = item.InstanceId;
+        EnchantTitle.Text = $"Enchant {def.Name} +{item.Enchant}";
+
+        float chance = EnchantRules.SuccessChance(item.Enchant) * 100;
+        EnchantInfo.Text = item.Enchant >= EnchantRules.MaxEnchant
+            ? "This item is at maximum enchant (+16)."
+            : $"Next: +{item.Enchant} -> +{item.Enchant + 1}   Success: {chance:0}%\n" +
+              "Common scroll: item BREAKS on fail.\n" +
+              "Uncommon scroll: enchant RESETS to +0 on fail.\n" +
+              "Rare scroll: enchant drops by 1 on fail.";
+
+        EnchantScrollList.Items.Clear();
+        bool maxed = item.Enchant >= EnchantRules.MaxEnchant;
+
+        foreach (var scrollDefId in new[] { 40, 41, 42 })
+        {
+            var scrollDef = ItemCatalog.Get(scrollDefId)!;
+            int count = _inventory.Count(i => i.DefId == scrollDefId);
+
+            var button = new Button
+            {
+                Content = $"{scrollDef.Name}  x{count}",
+                Height = 30, Margin = new Thickness(0, 0, 0, 4),
+                Foreground = RarityBrush(scrollDef.Rarity),
+                IsEnabled = count > 0 && !maxed,
+                HorizontalContentAlignment = HorizontalAlignment.Left,
+                Padding = new Thickness(8, 0, 0, 0)
+            };
+            button.Click += async (_, _) =>
+            {
+                var scroll = _inventory.FirstOrDefault(i => i.DefId == scrollDefId);
+                if (scroll is not null && _enchantTargetId is Guid tid)
+                    await _net.EnchantAsync(scroll.InstanceId, tid);
+            };
+            EnchantScrollList.Items.Add(button);
+        }
+
+        EquipPopup.Visibility = Visibility.Collapsed;
+        EnchantPopup.Visibility = Visibility.Visible;
+    }
+
+    private void OnEnchant(EnchantResultDto result)
+    {
+        // Refresh the popup if still open (inventory update drives the list).
+        if (EnchantPopup.Visibility == Visibility.Visible && _enchantTargetId is Guid tid)
+        {
+            var item = _inventory.FirstOrDefault(i => i.InstanceId == tid);
+            if (item is null || result.Destroyed)
+            {
+                EnchantPopup.Visibility = Visibility.Collapsed;
+                _enchantTargetId = null;
+            }
+            else
+            {
+                OpenEnchantPopup(item);
+            }
+        }
+    }
+
+    private void EnchantClose_Click(object sender, RoutedEventArgs e)
+    {
+        EnchantPopup.Visibility = Visibility.Collapsed;
+        _enchantTargetId = null;
+    }
+
+    // =======================================================================
+    // Debug menu
+    // =======================================================================
+
+    private void DebugButton_Click(object sender, RoutedEventArgs e)
+    {
+        BuildDebugMenu();
+        DebugPanel.Visibility = DebugPanel.Visibility == Visibility.Visible
+            ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private void DebugClose_Click(object sender, RoutedEventArgs e) =>
+        DebugPanel.Visibility = Visibility.Collapsed;
+
+    private void BuildDebugMenu()
+    {
+        DebugList.Children.Clear();
+
+        DebugList.Children.Add(DebugAction("Level +1", async () => await _net.DebugLevelAsync()));
+
+        AddDebugHeader("Scrolls");
+        DebugList.Children.Add(DebugGiveButton(40, "Common Scroll"));
+        DebugList.Children.Add(DebugGiveButton(41, "Uncommon Scroll"));
+        DebugList.Children.Add(DebugGiveButton(42, "Rare Scroll"));
+
+        AddDebugHeader("Potions");
+        DebugList.Children.Add(DebugGiveButton(30, "Minor Potion"));
+        DebugList.Children.Add(DebugGiveButton(31, "Healing Potion"));
+        DebugList.Children.Add(DebugGiveButton(32, "Greater Potion"));
+
+        AddDebugHeader("Gear (F)");
+        DebugList.Children.Add(DebugGiveButton(7, "Knight's Blade (rare)"));
+        DebugList.Children.Add(DebugGiveButton(11, "Plate Armor"));
+        DebugList.Children.Add(DebugGiveButton(13, "Mystic Robe"));
+
+        AddDebugHeader("Gear (E)");
+        DebugList.Children.Add(DebugGiveButton(17, "Crusader Blade"));
+        DebugList.Children.Add(DebugGiveButton(18, "Full Plate"));
+        DebugList.Children.Add(DebugGiveButton(20, "Arcane Robe"));
+    }
+
+    private void AddDebugHeader(string text) =>
+        DebugList.Children.Add(new TextBlock
+        {
+            Text = text, Foreground = Brushes.Gray, FontSize = 10,
+            FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 6, 0, 2)
+        });
+
+    private System.Windows.Controls.Button DebugGiveButton(int defId, string label)
+    {
+        return DebugAction(label, async () => await _net.DebugGiveAsync(defId));
+    }
+
+    private System.Windows.Controls.Button DebugAction(string label, Func<Task> action)
+    {
+        var button = new System.Windows.Controls.Button
+        {
+            Content = label, Height = 26, Margin = new Thickness(0, 0, 0, 3),
+            FontSize = 11, HorizontalContentAlignment = HorizontalAlignment.Left,
+            Padding = new Thickness(6, 0, 0, 0)
+        };
+        button.Click += async (_, _) => await action();
+        return button;
     }
 
 }

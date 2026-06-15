@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 4.5 (UI & loot refinement)
+# L2-like MMORPG — Phase 4.6 (skills, buffs, enchanting, creation tree)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,55 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 4.6 (this build)
+
+### Character creation — class tree
+- The login screen is now a **button tree** instead of dropdowns:
+  Race → Base Class → preview each Second Class. The right pane shows base
+  stats (CON/ATK/WIT/DEX to compare), the class fantasy, the class-change
+  stat bonus, and the full skill list with descriptions — so you know what
+  you're getting into before creating. Name + Connect sit at the bottom.
+
+### Skills window (K)
+- Lists every skill you have with **description, MP cost, cast time,
+  cooldown, and duration**. Each has a **To Bar** button.
+
+### Configurable skill bar
+- 8 slots. New skills **auto-fill the first free slot** when acquired (e.g.
+  your signature skill on class change), but you can **assign** from the
+  Skills window and **remove** by right-clicking a slot. Hotkeys 1-8.
+
+### Buff bar + tooltips
+- Active buffs/debuffs show as pills under the vital bars with **time left**;
+  hover for a tooltip with the description and remaining seconds. Cast War Cry
+  and you'll see the buff and its countdown. Debuffs are tinted red.
+
+### Potions — fixed squares
+- Three **always-visible colored squares** (green/blue/gold) bottom-right,
+  with a **count badge** (caps at "99+"), **disabled when you have none**.
+  Click or hotkeys Q/E. Counts also show as "99+" in the inventory.
+
+### Inventory: remove + enchant
+- Each item row has an **X** (destroy — sell/dismantle comes later) and, for
+  gear, a **+** (enchant). The equip-compare popup is now **enchant-aware**
+  (a +5 sword compares correctly against a +0).
+
+### Enchanting
+- Enchant gear **+1 to +16** with success bands from the design doc: **100%**
+  to +3, **66%** +4-6, **40%** +7-9, **20%** +10-16. Each enchant level adds
+  +20% of base bonus +1 flat. Three scrolls differ on failure:
+  - **Common**: the item **breaks**.
+  - **Uncommon**: enchant **resets to +0**.
+  - **Rare**: enchant **drops by 1**.
+  Scrolls **drop rarely from higher-level mobs** (rarer than any other loot;
+  the better the scroll, the higher the level floor and the lower the odds).
+
+### Debug menu (DEBUG builds only)
+- A **Debug** button (only compiled in Debug configuration) opens a panel to
+  grant scrolls, potions, F/E gear, and **Level +1** for testing. Both the
+  client button and the server endpoints are `#if DEBUG`-gated, so a Release
+  build has none of it.
 
 ## New in Phase 4.5 (this build)
 

@@ -71,6 +71,36 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task Enchant(Guid scrollInstanceId, Guid targetInstanceId)
+    {
+        _world.Commands.Enqueue(new EnchantCmd(Context.ConnectionId, scrollInstanceId, targetInstanceId));
+        return Task.CompletedTask;
+    }
+
+    public Task RemoveItem(Guid instanceId)
+    {
+        _world.Commands.Enqueue(new RemoveItemCmd(Context.ConnectionId, instanceId));
+        return Task.CompletedTask;
+    }
+
+    // Debug endpoints — the server still gates them behind #if DEBUG so a
+    // release build simply ignores the calls.
+    public Task DebugGive(int defId)
+    {
+#if DEBUG
+        _world.Commands.Enqueue(new DebugGiveCmd(Context.ConnectionId, defId));
+#endif
+        return Task.CompletedTask;
+    }
+
+    public Task DebugLevel()
+    {
+#if DEBUG
+        _world.Commands.Enqueue(new DebugLevelCmd(Context.ConnectionId));
+#endif
+        return Task.CompletedTask;
+    }
+
     public Task TradeRequest(Guid targetId)
     {
         _world.Commands.Enqueue(new TradeRequestCmd(Context.ConnectionId, targetId));

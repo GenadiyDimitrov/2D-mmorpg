@@ -78,6 +78,10 @@ public class GameLoopService : BackgroundService
                 case ClassChangeCmd c: HandleClassChange(c); break;
                 case EquipCmd c: HandleEquip(c); break;
                 case UsePotionCmd c: HandleUsePotion(c); break;
+                case EnchantCmd c: HandleEnchant(c); break;
+                case RemoveItemCmd c: HandleRemoveItem(c); break;
+                case DebugGiveCmd c: HandleDebugGive(c); break;
+                case DebugLevelCmd c: HandleDebugLevel(c); break;
                 case TradeRequestCmd c: HandleTradeRequest(c); break;
                 case TradeRespondCmd c: HandleTradeRespond(c); break;
                 case TradeOfferCmd c: HandleTradeOffer(c); break;
@@ -355,6 +359,122 @@ public class GameLoopService : BackgroundService
         SendInventory(player);
         SendStats(player);
     }
+
+    private void HandleEnchant(EnchantCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
+            return;
+
+        var scroll = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.ScrollInstanceId);
+        var target = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.TargetInstanceId);
+
+        if (scroll is null || target is null ||
+            ItemCatalog.Get(scroll.DefId) is not ItemDef scrollDef ||
+            ItemCatalog.Get(target.DefId) is not ItemDef targetDef ||
+            !ItemCatalog.IsScroll(scrollDef) || !ItemCatalog.IsEquippable(targetDef))
+        {
+            SendSystemToEntity(player, "Invalid enchant.");
+            return;
+        }
+
+        if (target.Enchant >= EnchantRules.MaxEnchant)
+        {
+            SendSystemToEntity(player, $"{targetDef.Name} is already at max enchant.");
+            return;
+        }
+
+        var (result, newLevel) = EnchantRules.Attempt(target.Enchant, scrollDef.ScrollKind, _rng);
+
+        // The scroll is always consumed.
+        player.Inventory.Remove(scroll);
+
+        bool destroyed = false;
+        string outcome;
+        switch (result)
+        {
+            case EnchantResult.Success:
+                target.Enchant = newLevel;
+                outcome = $"Success! {targetDef.Name} is now +{newLevel}.";
+                break;
+            case EnchantResult.Broke:
+                player.Inventory.Remove(target);
+                destroyed = true;
+                outcome = $"{targetDef.Name} shattered!";
+                break;
+            case EnchantResult.Reset:
+                target.Enchant = 0;
+                outcome = $"Enchant failed — {targetDef.Name} reset to +0.";
+                break;
+            case EnchantResult.Downgraded:
+                target.Enchant = newLevel;
+                outcome = $"Enchant failed — {targetDef.Name} dropped to +{newLevel}.";
+                break;
+            default:
+                outcome = "Nothing happened.";
+                break;
+        }
+
+        if (target.Equipped && !destroyed)
+            player.RecomputeDerived();
+
+        SendTo(player, "Enchant", new EnchantResultDto(
+            targetDef.Name, destroyed ? 0 : target.Enchant, outcome, destroyed));
+        SendSystemToEntity(player, outcome);
+        SendInventory(player);
+        if (target.Equipped || destroyed)
+            SendStats(player);
+    }
+
+    private void HandleRemoveItem(RemoveItemCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+
+        var item = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
+        if (item is null)
+            return;
+
+        // Block destroying items that are currently in a trade offer.
+        if (_world.ActiveTrades.TryGetValue(player.Id, out var trade) &&
+            trade.OfferOf(player).Contains(item.InstanceId))
+            return;
+
+        bool wasEquipped = item.Equipped;
+        player.Inventory.Remove(item);
+
+        if (wasEquipped)
+            player.RecomputeDerived();
+
+        SendInventory(player);
+        if (wasEquipped)
+            SendStats(player);
+    }
+
+#pragma warning disable CS1998
+    private void HandleDebugGive(DebugGiveCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+        if (ItemCatalog.Get(cmd.DefId) is not ItemDef def)
+            return;
+        if (player.Inventory.Count >= GameConstants.InventorySize)
+        {
+            SendSystemToEntity(player, "Inventory full.");
+            return;
+        }
+        player.Inventory.Add(new InventoryItem { DefId = def.Id });
+        SendSystemToEntity(player, $"[DEBUG] Added {def.Name}.");
+        SendInventory(player);
+    }
+
+    private void HandleDebugLevel(DebugLevelCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+        AwardExp(player, (int)StatCalculator.ExpToNext(player.Level));
+        SendSystemToEntity(player, $"[DEBUG] Level up -> {player.Level}.");
+    }
+#pragma warning restore CS1998
 
     private void HandleUsePotion(UsePotionCmd cmd)
     {
@@ -721,7 +841,11 @@ public class GameLoopService : BackgroundService
             _world.Grid.UpdatePosition(entity);
 
             if (regenTick)
+            {
                 Regenerate(entity);
+                if (entity.Kind == EntityKind.Player)
+                    PushBuffs(entity);
+            }
         }
     }
 
@@ -1010,6 +1134,7 @@ public class GameLoopService : BackgroundService
             {
                 ApplyBuff(target, def);
                 BroadcastCombat(caster, target, 0, CombatOutcome.Buff, def.Name);
+                if (target.Kind == EntityKind.Player) PushBuffs(target);
                 break;
             }
 
@@ -1025,6 +1150,7 @@ public class GameLoopService : BackgroundService
                 {
                     ApplyBuff(target, def);
                     BroadcastCombat(caster, target, 0, CombatOutcome.Buff, def.Name);
+                    if (target.Kind == EntityKind.Player) PushBuffs(target);
                 }
 
                 AfterOffensiveSkill(caster, target);
@@ -1050,7 +1176,8 @@ public class GameLoopService : BackgroundService
             Type = def.Effect,
             Magnitude = def.Magnitude,
             TicksRemaining = def.DurationTicks,
-            Name = def.Name
+            Name = def.Name,
+            Description = SkillCatalog.DescriptionOf(def.Id)
         });
     }
 
@@ -1382,6 +1509,25 @@ public class GameLoopService : BackgroundService
     private void SendInventory(Entity player) =>
         SendTo(player, "Inventory", new InventoryUpdate(
             player.Inventory.Select(i => i.ToDto()).ToArray()));
+
+    private readonly HashSet<Guid> _hadBuffs = new();
+
+    private void PushBuffs(Entity player)
+    {
+        if (player.Buffs.Count == 0)
+        {
+            // Only send the empty update once, when buffs just expired.
+            if (_hadBuffs.Remove(player.Id))
+                SendTo(player, "Buffs", new BuffUpdate(Array.Empty<BuffDto>()));
+            return;
+        }
+
+        _hadBuffs.Add(player.Id);
+        var dtos = player.Buffs.Select(b => new BuffDto(
+            b.Name, b.Description,
+            b.TicksRemaining * GameConstants.TickSeconds, b.IsDebuff)).ToArray();
+        SendTo(player, "Buffs", new BuffUpdate(dtos));
+    }
 
     private void SendStats(Entity p) =>
         SendTo(p, "Stats", new StatsUpdate(

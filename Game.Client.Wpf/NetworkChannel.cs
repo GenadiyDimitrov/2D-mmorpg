@@ -21,6 +21,8 @@ public class NetworkChannel : IAsyncDisposable
     public event Action<TradeStateUpdate>? TradeStateReceived;
     public event Action<StatsUpdate>? StatsReceived;
     public event Action<PotionStatus>? PotionReceived;
+    public event Action<BuffUpdate>? BuffsReceived;
+    public event Action<EnchantResultDto>? EnchantReceived;
     public event Action<string>? Disconnected;
 
     public bool IsConnected => _connection?.State == HubConnectionState.Connected;
@@ -42,6 +44,8 @@ public class NetworkChannel : IAsyncDisposable
         _connection.On<TradeStateUpdate>("Trade", t => TradeStateReceived?.Invoke(t));
         _connection.On<StatsUpdate>("Stats", st => StatsReceived?.Invoke(st));
         _connection.On<PotionStatus>("Potion", pt => PotionReceived?.Invoke(pt));
+        _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));
+        _connection.On<EnchantResultDto>("Enchant", en => EnchantReceived?.Invoke(en));
         _connection.Closed += ex =>
         {
             Disconnected?.Invoke(ex?.Message ?? "Connection closed.");
@@ -74,6 +78,18 @@ public class NetworkChannel : IAsyncDisposable
 
     public Task UsePotionAsync(Guid instanceId) =>
         _connection!.SendAsync("UsePotion", instanceId);
+
+    public Task EnchantAsync(Guid scrollId, Guid targetId) =>
+        _connection!.SendAsync("Enchant", scrollId, targetId);
+
+    public Task RemoveItemAsync(Guid instanceId) =>
+        _connection!.SendAsync("RemoveItem", instanceId);
+
+    public Task DebugGiveAsync(int defId) =>
+        _connection!.SendAsync("DebugGive", defId);
+
+    public Task DebugLevelAsync() =>
+        _connection!.SendAsync("DebugLevel");
 
     public Task TradeRequestAsync(Guid targetId) =>
         _connection!.SendAsync("TradeRequest", targetId);

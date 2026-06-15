@@ -18,7 +18,8 @@ public record SkillDef(
     int Power,
     int DurationTicks = 0,
     float Magnitude = 0f,
-    Archetype? RequiredArchetype = null);
+    Archetype? RequiredArchetype = null,
+    string Description = "");
 
 public static class SkillCatalog
 {
@@ -58,6 +59,24 @@ public static class SkillCatalog
             MpCost: 28, CastTicks: 14, CooldownTicks: 60, Range: 600, Power: 75,
             RequiredArchetype: Archetype.Nuker),
     }.ToDictionary(s => s.Id);
+
+    private static readonly Dictionary<int, string> Descriptions = new()
+    {
+        [1] = "A forceful melee blow. Bonus accuracy, but can still miss.",
+        [2] = "Battle shout: increases your Attack Power by 20% for 30s.",
+        [3] = "Hurls a bolt of force at range. Spells fail rather than miss.",
+        [4] = "Restores a chunk of your own HP. Scales with WIT.",
+        [5] = "Curses the target, lowering its Defence by 30% for 15s.",
+        [10] = "Tank stance: raises your Defence by 50% for 25s.",
+        [11] = "A devastating two-hand strike for heavy damage.",
+        [12] = "Two rapid dagger slashes. Short cast, short cooldown.",
+        [13] = "A long-range aimed shot dealing heavy damage.",
+        [14] = "A powerful heal that can target an ally at range.",
+        [15] = "A burst of flame dealing large magic damage.",
+    };
+
+    public static string DescriptionOf(int id) =>
+        Descriptions.GetValueOrDefault(id, "");
 
     public static SkillDef? Get(int id) => All.GetValueOrDefault(id);
 

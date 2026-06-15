@@ -4,9 +4,14 @@ public enum ItemGrade { F = 0, E = 1, B = 2, A = 3, S = 4 }
 
 public enum ItemRarity { Common = 0, Uncommon = 1, Rare = 2 }
 
-public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2 }
+public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2, Scroll = 3 }
 
 public enum ArmorWeight { None = 0, Heavy = 1, Light = 2, Robe = 3 }
+
+/// <summary>Enchant scroll failure behaviour (design doc):
+/// Common  -> item breaks on fail; Uncommon -> enchant resets to +0;
+/// Rare    -> enchant drops by 1 (never breaks).</summary>
+public enum ScrollKind { None = 0, Common = 1, Uncommon = 2, Rare = 3 }
 
 /// <summary>An item template. WeaponRange &gt; 0 marks ranged weapons (bows,
 /// staves) and becomes the wielder's basic-attack range.</summary>
@@ -29,7 +34,8 @@ public record ItemDef(
     float HealPercentPerSecond = 0f,
     float InstantHealPercent = 0f,
     int PotionDurationTicks = 0,
-    int PotionCooldownTicks = 0);
+    int PotionCooldownTicks = 0,
+    ScrollKind ScrollKind = ScrollKind.None);
 
 public static class ItemCatalog
 {
@@ -70,7 +76,19 @@ public static class ItemCatalog
             HealPercentPerSecond: 0.02f, PotionDurationTicks: 150, PotionCooldownTicks: 300),
         new(32, "Greater Healing Potion", EquipSlot.Consumable, ItemGrade.F, ItemRarity.Rare,
             InstantHealPercent: 0.50f, PotionCooldownTicks: 300),
+
+        // ----- Enchant scrolls --------------------------------------------------------
+        new(40, "Enchant Scroll (Common)",   EquipSlot.Scroll, ItemGrade.F, ItemRarity.Common,
+            ScrollKind: ScrollKind.Common),
+        new(41, "Enchant Scroll (Uncommon)", EquipSlot.Scroll, ItemGrade.F, ItemRarity.Uncommon,
+            ScrollKind: ScrollKind.Uncommon),
+        new(42, "Enchant Scroll (Rare)",     EquipSlot.Scroll, ItemGrade.F, ItemRarity.Rare,
+            ScrollKind: ScrollKind.Rare),
     }.ToDictionary(i => i.Id);
+
+    public static bool IsScroll(ItemDef def) => def.Slot == EquipSlot.Scroll;
+    public static bool IsEquippable(ItemDef def) =>
+        def.Slot is EquipSlot.Weapon or EquipSlot.Armor;
 
     public static bool IsPotion(ItemDef def) => def.Slot == EquipSlot.Consumable;
 
@@ -105,6 +123,15 @@ public static class LootTables
         new(30, 0.10f, 1, 30),   // Minor Healing Potion (common)
         new(31, 0.04f, 4, 30),   // Healing Potion (uncommon)
         new(32, 0.01f, 8, 30),   // Greater Healing Potion (rare)
+    };
+
+    // Enchant scrolls: rarer than everything else, and only from higher-level
+    // mobs (the stronger the scroll, the higher the floor and the lower the odds).
+    private static readonly LootEntry[] SharedScrolls =
+    {
+        new(40, 0.030f, 5, 30),   // Common scroll (item breaks on fail)
+        new(41, 0.015f, 9, 30),   // Uncommon scroll (resets on fail)
+        new(42, 0.006f, 13, 30),  // Rare scroll (downgrades on fail)
     };
 
     private static readonly Dictionary<string, LootEntry[]> Tables = new()
@@ -165,6 +192,7 @@ public static class LootTables
             RollEntries(table, mobLevel, rng, drops);
 
         RollEntries(SharedPotions, mobLevel, rng, drops);
+        RollEntries(SharedScrolls, mobLevel, rng, drops);
         return drops;
     }
 
