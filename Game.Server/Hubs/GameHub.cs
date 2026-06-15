@@ -38,6 +38,18 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task Attack(Guid targetId)
+    {
+        _world.Commands.Enqueue(new AttackCmd(Context.ConnectionId, targetId));
+        return Task.CompletedTask;
+    }
+
+    public Task Respawn()
+    {
+        _world.Commands.Enqueue(new RespawnCmd(Context.ConnectionId));
+        return Task.CompletedTask;
+    }
+
     public Task Chat(string text, ChatChannel channel)
     {
         _world.Commands.Enqueue(new ChatCmd(Context.ConnectionId, text, channel));

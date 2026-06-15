@@ -28,4 +28,29 @@ public static class GameConstants
     public const float BasePlayerSpeed = 250f;
 
     public const int MaxCharacterNameLength = 16;
+
+    // ----- Combat (Phase 2) -------------------------------------------------
+
+    /// <summary>Base melee range. Design doc: base attack range is 40;
+    /// we use 80 for a forgiving feel until weapons define ranges.</summary>
+    public const float MeleeRange = 80f;
+
+    /// <summary>Ticks between player basic attacks (1.5s). Attack-speed
+    /// stats/buffs will modify this in a later phase.</summary>
+    public const int PlayerAttackIntervalTicks = 15;
+
+    /// <summary>Ticks between mob basic attacks (2.0s).</summary>
+    public const int MobAttackIntervalTicks = 20;
+
+    /// <summary>Aggressive mobs attack players that come this close.</summary>
+    public const float MobAggroRange = 1000f;
+
+    /// <summary>A mob chased this far from home resets: returns and heals.</summary>
+    public const float MobLeashRange = 4000f;
+
+    /// <summary>Ticks until a dead mob respawns at its home position (10s).</summary>
+    public const int MobRespawnTicks = 100;
+
+    /// <summary>Out-of-combat regen is applied once per this many ticks (1s).</summary>
+    public const int RegenIntervalTicks = 10;
 }

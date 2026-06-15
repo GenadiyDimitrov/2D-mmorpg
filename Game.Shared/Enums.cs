@@ -25,3 +25,11 @@ public enum ChatChannel
     World = 1,   // visible to everyone (slow mode comes later)
     System = 2   // server / admin messages
 }
+
+public enum CombatOutcome
+{
+    Hit = 0,
+    Crit = 1,
+    Miss = 2,
+    Death = 3
+}

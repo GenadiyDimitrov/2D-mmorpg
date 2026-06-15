@@ -15,6 +15,8 @@ public class NetworkChannel : IAsyncDisposable
 
     public event Action<WorldSnapshot>? SnapshotReceived;
     public event Action<ChatMessage>? ChatReceived;
+    public event Action<CombatEvent>? CombatReceived;
+    public event Action<ProgressUpdate>? ProgressReceived;
     public event Action<string>? Disconnected;
 
     public bool IsConnected => _connection?.State == HubConnectionState.Connected;
@@ -28,6 +30,8 @@ public class NetworkChannel : IAsyncDisposable
 
         _connection.On<WorldSnapshot>("Snapshot", s => SnapshotReceived?.Invoke(s));
         _connection.On<ChatMessage>("Chat", m => ChatReceived?.Invoke(m));
+        _connection.On<CombatEvent>("Combat", c => CombatReceived?.Invoke(c));
+        _connection.On<ProgressUpdate>("Progress", p => ProgressReceived?.Invoke(p));
         _connection.Closed += ex =>
         {
             Disconnected?.Invoke(ex?.Message ?? "Connection closed.");
@@ -42,6 +46,12 @@ public class NetworkChannel : IAsyncDisposable
 
     public Task MoveAsync(float targetX, float targetY) =>
         _connection!.SendAsync("Move", new MoveCommand(targetX, targetY));
+
+    public Task AttackAsync(Guid targetId) =>
+        _connection!.SendAsync("Attack", targetId);
+
+    public Task RespawnAsync() =>
+        _connection!.SendAsync("Respawn");
 
     public Task ChatAsync(string text, ChatChannel channel) =>
         _connection!.SendAsync("Chat", text, channel);
