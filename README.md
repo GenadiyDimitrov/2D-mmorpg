@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 4.6 (skills, buffs, enchanting, creation tree)
+# L2-like MMORPG — Phase 4.7 (stacking, class identity, skill progression)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,48 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 4.7 (this build)
+
+### Where to edit skills (for you)
+- **`Game.Shared/Skills.cs`** is now the single skill-design file, split into:
+  - `SkillCatalog.All` — every skill's numbers + description.
+  - `ClassProgression` — **which skills each class gets**, whether a skill
+    **replaces** a base skill, and the **unlock level**.
+- To give the Witch a DoT the Sorcerer doesn't get: add the `SkillDef`, then
+  add a row to `ClassProgression.RaceOverrides` keyed `(Race.Ork, Archetype.Nuker)`
+  with `new SkillGrant(id, unlockLevel: 25)`. Nothing else changes — the server
+  validates and the client renders from these tables. The hooks for per-race,
+  level-gated flavour skills (DoT vs burst vs control) are already in place.
+
+### Base skills upgrade on class change
+- Second classes now **transform** the base kit instead of just adding a skill:
+  - **Tank**: keeps Power Strike; War Cry → **Fortify** (+50% def).
+  - **Warrior**: keeps War Cry; Power Strike → **Mighty Blow**.
+  - **Rogue**: keeps War Cry; Power Strike → **Twin Slash**.
+  - **Archer**: keeps War Cry; Power Strike → **Power Shot** (ranged).
+  - **Healer** (Cleric/Shaman/Priest): Heal → **Greater Heal**, Magic Bolt →
+    **Holy Strike** (weaker nuke), keeps Weakness.
+  - **Nuker** (Sorcerer/Witch/Inquisitor): Magic Bolt → **Flamebolt** (strong
+    nuke), keeps Heal, Weakness → **Greater Weakness**.
+
+### Class identity through numbers
+- **Mages** basic-attack for ~15% of attack power — they live on skills + MP.
+- **Fighters/Warriors** hit full (110%) and brawl with attack + skills.
+- **Archers** hit full + **+15% crit** — kite with basic attacks and crits.
+- **Rogues** hit 65% but get **+20% crit and +evasion** — skills + crits.
+- **Tanks** hit 55% but bring standout defence (Fortify, heavy armor).
+- Mage main skills now **~4s cast (WIT reduces) and ~1s cooldown** so they
+  chain-cast, and hit meaningfully harder than a mage's basic attack.
+
+### Stackable consumables
+- Potions and enchant scrolls now **stack into one inventory slot** with a
+  quantity (1 → 2 → … → "99+"). Drops merge into the stack, using one consumes
+  one, trading moves the whole stack and **merges** into the receiver's stack.
+  Gear stays one-per-slot (each piece keeps its own enchant level).
+
+### Chat moved up
+- The chat panel sits higher so it no longer overlaps the skill bar buttons.
 
 ## New in Phase 4.6 (this build)
 

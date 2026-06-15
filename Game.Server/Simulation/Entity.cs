@@ -22,7 +22,10 @@ public class InventoryItem
     public bool Equipped { get; set; }
     public int Enchant { get; set; }
 
-    public InventoryItemDto ToDto() => new(InstanceId, DefId, Equipped, Enchant);
+    /// <summary>Stack size for consumables/scrolls. Gear is always 1.</summary>
+    public int Quantity { get; set; } = 1;
+
+    public InventoryItemDto ToDto() => new(InstanceId, DefId, Equipped, Enchant, Quantity);
 }
 
 /// <summary>
@@ -66,7 +69,8 @@ public class Entity
     public int MaxHp { get; set; }
     public int Mp { get; set; }
     public int MaxMp { get; set; }
-    public int AttackPower { get; set; }
+    public int AttackPower { get; set; }      // feeds SKILLS
+    public int BasicAttackPower { get; set; } // feeds auto-attacks (archetype-scaled)
     public int Defence { get; set; }
     public int Accuracy { get; set; }
     public int Evasion { get; set; }
@@ -92,6 +96,19 @@ public class Entity
                 if (buff.Type == SkillEffect.BuffAtk)
                     multiplier += buff.Magnitude;
             return AttackPower * multiplier;
+        }
+    }
+
+    /// <summary>Buffed attack power for BASIC attacks (archetype-scaled).</summary>
+    public float EffectiveBasicAttack
+    {
+        get
+        {
+            float multiplier = 1f;
+            foreach (var buff in Buffs)
+                if (buff.Type == SkillEffect.BuffAtk)
+                    multiplier += buff.Magnitude;
+            return BasicAttackPower * multiplier;
         }
     }
 
@@ -183,6 +200,15 @@ public class Entity
                 BasicAttackRange = range;
             }
         }
+
+        // Archetype identity: scale basic-attack power, add crit/eva for
+        // archers & rogues. Skills keep using full AttackPower.
+        var arch = Archetype;
+        BasicAttackPower = Math.Max(1,
+            (int)(AttackPower * StatCalculator.BasicAttackMultiplier(arch)));
+        CritChance = Math.Clamp(
+            CritChance + StatCalculator.ArchetypeCritBonus(arch), 0f, 0.75f);
+        Evasion += StatCalculator.ArchetypeEvasionBonus(arch, Level);
 
         Hp = Math.Min(Hp, MaxHp);
         Mp = Math.Min(Mp, MaxMp);

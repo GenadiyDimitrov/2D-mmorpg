@@ -2,9 +2,9 @@ namespace Game.Shared;
 
 /// <summary>
 /// A skill definition. All timings are in server ticks (10 t/s).
-/// Range 0 means self-targeted. Magnitude/DurationTicks apply to buffs.
-/// RequiredArchetype null = base-class skill (kept after class change);
-/// set = signature skill unlocked by the second class.
+/// Range 0 means self-targeted (or "use my basic-attack range" for melee
+/// damage skills — see SkillMath.EffectiveRange). Magnitude/DurationTicks
+/// apply to buffs.
 /// </summary>
 public record SkillDef(
     int Id,
@@ -18,79 +18,204 @@ public record SkillDef(
     int Power,
     int DurationTicks = 0,
     float Magnitude = 0f,
-    Archetype? RequiredArchetype = null,
     string Description = "");
+
+// ===========================================================================
+//  WHERE TO EDIT SKILLS
+//
+//  1. SkillCatalog.All           -> define every skill (its numbers + text).
+//  2. ClassProgression           -> decide which skills each class gets,
+//                                    whether they REPLACE a base skill, and at
+//                                    what level they unlock.
+//
+//  To add, e.g., a Witch DoT at level 25 the Sorcerer doesn't get:
+//    - add a SkillDef in SkillCatalog.All
+//    - add a SkillGrant(thatId, unlockLevel: 25) to a Race-specific row in
+//      ClassProgression.RaceOverrides ((Race.Ork, Archetype.Nuker)).
+//  No other code changes needed — server validates and client renders from
+//  these tables.
+// ===========================================================================
+
+/// <summary>One skill a class receives. ReplacesSkillId != 0 means this skill
+/// upgrades/removes a base skill (e.g. Flamebolt replaces Magic Bolt).
+/// UnlockLevel gates it (20 = on class change; 25/30/... = later unlocks).</summary>
+public record SkillGrant(int SkillId, int UnlockLevel = 20, int ReplacesSkillId = 0);
 
 public static class SkillCatalog
 {
+    // ----- Skill ids (named for readability in the progression tables) ---------
+    public const int PowerStrike = 1, WarCry = 2, MagicBolt = 3, Heal = 4, Weakness = 5;
+    public const int Fortify = 10, MightyBlow = 11, TwinSlash = 12, PowerShot = 13;
+    public const int GreaterHeal = 14, FlameBolt = 15, HolyStrike = 16, StrongWeakness = 17;
+
     private static readonly Dictionary<int, SkillDef> All = new SkillDef[]
     {
-        // ----- Base class skills (kept after class change) ----------------------
-        new(1, "Power Strike", BaseClass.Fighter, SkillEffect.PhysicalDamage,
-            MpCost: 10, CastTicks: 5, CooldownTicks: 30, Range: 0, Power: 25),
-        new(2, "War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
+        // ===== Base class skills =====
+        // Mage main skills: ~4s cast (WIT reduces), ~1s cooldown -> chain-cast.
+        new(PowerStrike, "Power Strike", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+            MpCost: 10, CastTicks: 5, CooldownTicks: 30, Range: 0, Power: 30,
+            Description: "A forceful melee blow. Bonus accuracy, but can still miss."),
+        new(WarCry, "War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,
-            DurationTicks: 300, Magnitude: 0.20f),
-        new(3, "Magic Bolt", BaseClass.Mage, SkillEffect.MagicDamage,
-            MpCost: 12, CastTicks: 10, CooldownTicks: 20, Range: 600, Power: 30),
-        new(4, "Heal", BaseClass.Mage, SkillEffect.Heal,
-            MpCost: 20, CastTicks: 15, CooldownTicks: 80, Range: 0, Power: 60),
-        new(5, "Weakness", BaseClass.Mage, SkillEffect.DebuffDef,
-            MpCost: 15, CastTicks: 10, CooldownTicks: 120, Range: 600, Power: 0,
-            DurationTicks: 150, Magnitude: 0.30f),
+            DurationTicks: 300, Magnitude: 0.20f,
+            Description: "Battle shout: +20% Attack Power for 30s."),
+        new(MagicBolt, "Magic Bolt", BaseClass.Mage, SkillEffect.MagicDamage,
+            MpCost: 12, CastTicks: 40, CooldownTicks: 10, Range: 600, Power: 45,
+            Description: "Hurls a bolt of force. Spells fail rather than miss."),
+        new(Heal, "Heal", BaseClass.Mage, SkillEffect.Heal,
+            MpCost: 20, CastTicks: 40, CooldownTicks: 10, Range: 0, Power: 60,
+            Description: "Restores your own HP. Scales with WIT."),
+        new(Weakness, "Weakness", BaseClass.Mage, SkillEffect.DebuffDef,
+            MpCost: 15, CastTicks: 40, CooldownTicks: 30, Range: 600, Power: 0,
+            DurationTicks: 150, Magnitude: 0.30f,
+            Description: "Curses the target: -30% Defence for 15s."),
 
-        // ----- Second-class signature skills -----------------------------------------
-        new(10, "Fortify", BaseClass.Fighter, SkillEffect.BuffDef,
+        // ===== Fighter second-class skills =====
+        new(Fortify, "Fortify", BaseClass.Fighter, SkillEffect.BuffDef,
             MpCost: 20, CastTicks: 5, CooldownTicks: 250, Range: 0, Power: 0,
-            DurationTicks: 250, Magnitude: 0.50f, RequiredArchetype: Archetype.Tank),
-        new(11, "Mighty Blow", BaseClass.Fighter, SkillEffect.PhysicalDamage,
-            MpCost: 18, CastTicks: 7, CooldownTicks: 80, Range: 0, Power: 65,
-            RequiredArchetype: Archetype.Warrior),
-        new(12, "Twin Slash", BaseClass.Fighter, SkillEffect.PhysicalDamage,
-            MpCost: 12, CastTicks: 3, CooldownTicks: 35, Range: 0, Power: 40,
-            RequiredArchetype: Archetype.Rogue),
-        new(13, "Power Shot", BaseClass.Fighter, SkillEffect.PhysicalDamage,
-            MpCost: 16, CastTicks: 8, CooldownTicks: 50, Range: 900, Power: 55,
-            RequiredArchetype: Archetype.Archer),
-        new(14, "Greater Heal", BaseClass.Mage, SkillEffect.Heal,
-            MpCost: 35, CastTicks: 18, CooldownTicks: 100, Range: 600, Power: 140,
-            RequiredArchetype: Archetype.Healer),
-        new(15, "Flame Burst", BaseClass.Mage, SkillEffect.MagicDamage,
-            MpCost: 28, CastTicks: 14, CooldownTicks: 60, Range: 600, Power: 75,
-            RequiredArchetype: Archetype.Nuker),
+            DurationTicks: 250, Magnitude: 0.50f,
+            Description: "Tank stance: +50% Defence for 25s."),
+        new(MightyBlow, "Mighty Blow", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+            MpCost: 18, CastTicks: 7, CooldownTicks: 60, Range: 0, Power: 85,
+            Description: "A devastating two-hand strike for heavy damage."),
+        new(TwinSlash, "Twin Slash", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+            MpCost: 12, CastTicks: 3, CooldownTicks: 25, Range: 0, Power: 55,
+            Description: "Two rapid dagger slashes. Short cast and cooldown."),
+        new(PowerShot, "Power Shot", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+            MpCost: 16, CastTicks: 8, CooldownTicks: 40, Range: 900, Power: 70,
+            Description: "A long-range aimed shot dealing heavy damage."),
+
+        // ===== Mage second-class skills =====
+        new(GreaterHeal, "Greater Heal", BaseClass.Mage, SkillEffect.Heal,
+            MpCost: 35, CastTicks: 45, CooldownTicks: 15, Range: 600, Power: 150,
+            Description: "A powerful heal that can target an ally at range."),
+        new(FlameBolt, "Flamebolt", BaseClass.Mage, SkillEffect.MagicDamage,
+            MpCost: 24, CastTicks: 45, CooldownTicks: 10, Range: 600, Power: 95,
+            Description: "A searing bolt — the nuker's stronger basic attack."),
+        new(HolyStrike, "Holy Strike", BaseClass.Mage, SkillEffect.MagicDamage,
+            MpCost: 20, CastTicks: 45, CooldownTicks: 10, Range: 600, Power: 70,
+            Description: "A bolt of light — the healer's offensive spell."),
+        new(StrongWeakness, "Greater Weakness", BaseClass.Mage, SkillEffect.DebuffDef,
+            MpCost: 22, CastTicks: 40, CooldownTicks: 30, Range: 600, Power: 0,
+            DurationTicks: 200, Magnitude: 0.45f,
+            Description: "A deeper curse: -45% Defence for 20s."),
     }.ToDictionary(s => s.Id);
-
-    private static readonly Dictionary<int, string> Descriptions = new()
-    {
-        [1] = "A forceful melee blow. Bonus accuracy, but can still miss.",
-        [2] = "Battle shout: increases your Attack Power by 20% for 30s.",
-        [3] = "Hurls a bolt of force at range. Spells fail rather than miss.",
-        [4] = "Restores a chunk of your own HP. Scales with WIT.",
-        [5] = "Curses the target, lowering its Defence by 30% for 15s.",
-        [10] = "Tank stance: raises your Defence by 50% for 25s.",
-        [11] = "A devastating two-hand strike for heavy damage.",
-        [12] = "Two rapid dagger slashes. Short cast, short cooldown.",
-        [13] = "A long-range aimed shot dealing heavy damage.",
-        [14] = "A powerful heal that can target an ally at range.",
-        [15] = "A burst of flame dealing large magic damage.",
-    };
-
-    public static string DescriptionOf(int id) =>
-        Descriptions.GetValueOrDefault(id, "");
 
     public static SkillDef? Get(int id) => All.GetValueOrDefault(id);
 
-    /// <summary>Skills available to a character: base-class skills plus the
-    /// signature skill of their second-class archetype (if any).</summary>
-    public static IEnumerable<SkillDef> ForCharacter(BaseClass cls, Archetype? archetype) =>
-        All.Values
-            .Where(s => s.Class == cls &&
-                        (s.RequiredArchetype is null || s.RequiredArchetype == archetype))
-            .OrderBy(s => s.Id);
+    public static string DescriptionOf(int id) => Get(id)?.Description ?? "";
+}
 
-    /// <summary>Range 0 = melee skill: uses the character's basic-attack range
-    /// (so an archer's bow skills are ranged). Mage second classes get +500
-    /// spell range capped at 900 (design doc).</summary>
+/// <summary>
+/// THE place to define what each class knows. Add later unlocks (level 25+)
+/// and per-class flavour skills here.
+/// </summary>
+public static class ClassProgression
+{
+    // Base kits (before class change): shared by a base class.
+    private static readonly SkillGrant[] BaseFighter =
+    {
+        new(SkillCatalog.PowerStrike), new(SkillCatalog.WarCry)
+    };
+    private static readonly SkillGrant[] BaseMage =
+    {
+        new(SkillCatalog.MagicBolt), new(SkillCatalog.Heal), new(SkillCatalog.Weakness)
+    };
+
+    /// <summary>Second-class kits, shared by all races of an archetype.
+    /// ReplacesSkillId removes the base skill and swaps in the upgrade.</summary>
+    private static readonly Dictionary<Archetype, SkillGrant[]> SecondClassByArchetype = new()
+    {
+        [Archetype.Tank] = new[]
+        {
+            new SkillGrant(SkillCatalog.PowerStrike),
+            new SkillGrant(SkillCatalog.Fortify, 20, SkillCatalog.WarCry),
+        },
+        [Archetype.Warrior] = new[]
+        {
+            new SkillGrant(SkillCatalog.WarCry),
+            new SkillGrant(SkillCatalog.MightyBlow, 20, SkillCatalog.PowerStrike),
+        },
+        [Archetype.Rogue] = new[]
+        {
+            new SkillGrant(SkillCatalog.WarCry),
+            new SkillGrant(SkillCatalog.TwinSlash, 20, SkillCatalog.PowerStrike),
+        },
+        [Archetype.Archer] = new[]
+        {
+            new SkillGrant(SkillCatalog.WarCry),
+            new SkillGrant(SkillCatalog.PowerShot, 20, SkillCatalog.PowerStrike),
+        },
+        [Archetype.Healer] = new[]
+        {
+            new SkillGrant(SkillCatalog.GreaterHeal, 20, SkillCatalog.Heal),
+            new SkillGrant(SkillCatalog.HolyStrike, 20, SkillCatalog.MagicBolt),
+            new SkillGrant(SkillCatalog.Weakness),
+        },
+        [Archetype.Nuker] = new[]
+        {
+            new SkillGrant(SkillCatalog.FlameBolt, 20, SkillCatalog.MagicBolt),
+            new SkillGrant(SkillCatalog.Heal),
+            new SkillGrant(SkillCatalog.StrongWeakness, 20, SkillCatalog.Weakness),
+        },
+    };
+
+    /// <summary>Per-(Race, Archetype) EXTRA skills for true class identity.
+    /// Add level-25+ flavour here so the Witch and Sorcerer diverge. These are
+    /// ADDED on top of the shared archetype kit.
+    /// Example (commented until you define the skills):
+    ///   [(Race.Ork, Archetype.Nuker)]   = new[] { new SkillGrant(dotId, 25) },
+    ///   [(Race.Human, Archetype.Nuker)] = new[] { new SkillGrant(burstId, 25) },
+    /// </summary>
+    private static readonly Dictionary<(Race, Archetype), SkillGrant[]> RaceOverrides = new()
+    {
+        // (empty for now — ready for per-class skills)
+    };
+
+    /// <summary>All skill grants a character has access to (ignoring level).</summary>
+    public static IEnumerable<SkillGrant> Grants(Race race, BaseClass baseClass, Archetype? archetype)
+    {
+        if (archetype is null)
+            return baseClass == BaseClass.Fighter ? BaseFighter : BaseMage;
+
+        IEnumerable<SkillGrant> grants = SecondClassByArchetype.TryGetValue(archetype.Value, out var kit)
+            ? kit
+            : Array.Empty<SkillGrant>();
+
+        if (RaceOverrides.TryGetValue((race, archetype.Value), out var extra))
+            grants = grants.Concat(extra);
+
+        return grants;
+    }
+
+    /// <summary>Skills the character can actually use right now (unlock level met).
+    /// Resolves replacements: if an upgrade is unlocked, the replaced base skill
+    /// is hidden.</summary>
+    public static IEnumerable<SkillDef> UsableSkills(Race race, BaseClass baseClass, Archetype? archetype, int level)
+    {
+        var grants = Grants(race, baseClass, archetype).ToList();
+
+        var replaced = grants
+            .Where(g => g.ReplacesSkillId != 0 && level >= g.UnlockLevel)
+            .Select(g => g.ReplacesSkillId)
+            .ToHashSet();
+
+        foreach (var grant in grants)
+        {
+            if (level < grant.UnlockLevel) continue;
+            if (replaced.Contains(grant.SkillId)) continue;
+            if (SkillCatalog.Get(grant.SkillId) is SkillDef def)
+                yield return def;
+        }
+    }
+
+    public static bool CanUse(int skillId, Race race, BaseClass baseClass, Archetype? archetype, int level) =>
+        UsableSkills(race, baseClass, archetype, level).Any(s => s.Id == skillId);
+}
+
+/// <summary>Combat math + range/cast helpers.</summary>
+public static class SkillMath
+{
     public static float EffectiveRange(SkillDef def, Archetype? archetype, float basicAttackRange)
     {
         if (def.Range <= 0)
@@ -105,12 +230,9 @@ public static class SkillCatalog
         return def.Range;
     }
 
-    /// <summary>WIT shortens cast times. 25 WIT ≈ 15% faster; cap 50%.</summary>
     public static int AdjustedCastTicks(int baseTicks, int wit) =>
         Math.Max(2, (int)MathF.Round(baseTicks * (1f - Math.Min(0.5f, wit * 0.006f))));
 
-    /// <summary>Spell fail chance: 3% base + 2% per level the target is above
-    /// the caster (never below 1%, capped at 80%).</summary>
     public static float SpellFailChance(int casterLevel, int targetLevel) =>
         Math.Clamp(0.03f + (targetLevel - casterLevel) * 0.02f, 0.01f, 0.80f);
 
@@ -123,7 +245,5 @@ public static class SkillCatalog
     public static int HealAmount(int power, int wit) => power + wit * 2;
 
     public const float CritMultiplierSkills = 2.0f;
-
-    /// <summary>Accuracy bonus on physical skills.</summary>
     public const int PhysicalSkillAccuracyBonus = 10;
 }

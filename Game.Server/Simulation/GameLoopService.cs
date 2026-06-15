@@ -135,11 +135,10 @@ public class GameLoopService : BackgroundService
         entity.Mp = entity.MaxMp;
 
         // Starter gear so the inventory has something in it.
-        entity.Inventory.Add(new InventoryItem { DefId = 1 });   // Rusty Sword
-        entity.Inventory.Add(new InventoryItem { DefId = 9 });   // Leather Vest
-        entity.Inventory.Add(new InventoryItem { DefId = 30 });  // Minor Healing Potion
-        entity.Inventory.Add(new InventoryItem { DefId = 30 });
-        entity.Inventory.Add(new InventoryItem { DefId = 32 });  // Greater Healing Potion
+        entity.Inventory.Add(new InventoryItem { DefId = 1 });  // Rusty Sword
+        entity.Inventory.Add(new InventoryItem { DefId = 9 });  // Leather Vest
+        AddItem(entity, 30, 5);   // Minor Healing Potions (stack)
+        AddItem(entity, 32, 2);   // Greater Healing Potions (stack)
 
         _world.Entities[entity.Id] = entity;
         _world.EntityToConnection[entity.Id] = join.ConnectionId;
@@ -210,8 +209,8 @@ public class GameLoopService : BackgroundService
             return;
 
         var def = SkillCatalog.Get(cmd.SkillId);
-        if (def is null || def.Class != caster.BaseClass ||
-            (def.RequiredArchetype is not null && def.RequiredArchetype != caster.Archetype))
+        if (def is null ||
+            !ClassProgression.CanUse(def.Id, caster.Race, caster.BaseClass, caster.Archetype, caster.Level))
             return;
 
         if (caster.SkillCooldowns.TryGetValue(def.Id, out int cd) && cd > 0)
@@ -385,8 +384,8 @@ public class GameLoopService : BackgroundService
 
         var (result, newLevel) = EnchantRules.Attempt(target.Enchant, scrollDef.ScrollKind, _rng);
 
-        // The scroll is always consumed.
-        player.Inventory.Remove(scroll);
+        // The scroll is always consumed (one from the stack).
+        ConsumeOne(player, scroll);
 
         bool destroyed = false;
         string outcome;
@@ -440,7 +439,11 @@ public class GameLoopService : BackgroundService
             return;
 
         bool wasEquipped = item.Equipped;
-        player.Inventory.Remove(item);
+
+        if (item.Quantity > 1)
+            item.Quantity--;             // drop one from the stack
+        else
+            player.Inventory.Remove(item);
 
         if (wasEquipped)
             player.RecomputeDerived();
@@ -457,12 +460,11 @@ public class GameLoopService : BackgroundService
             return;
         if (ItemCatalog.Get(cmd.DefId) is not ItemDef def)
             return;
-        if (player.Inventory.Count >= GameConstants.InventorySize)
+        if (!AddItem(player, def.Id))
         {
             SendSystemToEntity(player, "Inventory full.");
             return;
         }
-        player.Inventory.Add(new InventoryItem { DefId = def.Id });
         SendSystemToEntity(player, $"[DEBUG] Added {def.Name}.");
         SendInventory(player);
     }
@@ -516,8 +518,8 @@ public class GameLoopService : BackgroundService
             }
         }
 
-        // Consume one potion and start the SHARED cooldown.
-        player.Inventory.Remove(item);
+        // Consume one potion from the stack and start the SHARED cooldown.
+        ConsumeOne(player, item);
         player.PotionCooldown = def.PotionCooldownTicks;
 
         SendInventory(player);
@@ -679,15 +681,9 @@ public class GameLoopService : BackgroundService
         }
 
         foreach (var item in itemsA!)
-        {
-            session.A.Inventory.Remove(item);
-            session.B.Inventory.Add(item);
-        }
+            TransferItem(session.A, session.B, item);
         foreach (var item in itemsB!)
-        {
-            session.B.Inventory.Remove(item);
-            session.A.Inventory.Add(item);
-        }
+            TransferItem(session.B, session.A, item);
 
         SendSystemToEntity(session.A, "Trade completed.");
         SendSystemToEntity(session.B, "Trade completed.");
@@ -1016,7 +1012,7 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        float range = SkillCatalog.EffectiveRange(def, caster.Archetype, caster.BasicAttackRange);
+        float range = SkillMath.EffectiveRange(def, caster.Archetype, caster.BasicAttackRange);
 
         if (!selfTargeted && DistanceSq(caster, target) > range * range)
         {
@@ -1030,7 +1026,7 @@ public class GameLoopService : BackgroundService
         caster.QueuedSkillId = null;
         caster.CastingSkillId = def.Id;
         caster.CastTargetId = targetId;
-        caster.CastTicksRemaining = SkillCatalog.AdjustedCastTicks(def.CastTicks, caster.Wit);
+        caster.CastTicksRemaining = SkillMath.AdjustedCastTicks(def.CastTicks, caster.Wit);
 
         if (_world.EntityToConnection.TryGetValue(caster.Id, out var conn))
         {
@@ -1057,7 +1053,7 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        float range = SkillCatalog.EffectiveRange(def, caster.Archetype, caster.BasicAttackRange);
+        float range = SkillMath.EffectiveRange(def, caster.Archetype, caster.BasicAttackRange);
         if (!selfTargeted && DistanceSq(caster, target) > range * range * 1.7f)
         {
             SendSystemToEntity(caster, "Target out of range.");
@@ -1072,7 +1068,7 @@ public class GameLoopService : BackgroundService
             case SkillEffect.PhysicalDamage:
             {
                 float miss = StatCalculator.MissChance(
-                    caster.Accuracy + SkillCatalog.PhysicalSkillAccuracyBonus,
+                    caster.Accuracy + SkillMath.PhysicalSkillAccuracyBonus,
                     target.Evasion);
 
                 if (_rng.NextDouble() < miss)
@@ -1081,7 +1077,7 @@ public class GameLoopService : BackgroundService
                 }
                 else
                 {
-                    int damage = SkillCatalog.PhysicalSkillDamage(
+                    int damage = SkillMath.PhysicalSkillDamage(
                         def.Power, caster.EffectiveAttack, target.EffectiveDefence);
 
                     if (_rng.NextDouble() < caster.CritChance)
@@ -1103,7 +1099,7 @@ public class GameLoopService : BackgroundService
 
             case SkillEffect.MagicDamage:
             {
-                float fail = SkillCatalog.SpellFailChance(caster.Level, target.Level);
+                float fail = SkillMath.SpellFailChance(caster.Level, target.Level);
 
                 if (_rng.NextDouble() < fail)
                 {
@@ -1111,7 +1107,7 @@ public class GameLoopService : BackgroundService
                 }
                 else
                 {
-                    int damage = SkillCatalog.MagicSkillDamage(
+                    int damage = SkillMath.MagicSkillDamage(
                         def.Power, caster.EffectiveAttack, caster.Wit, target.EffectiveDefence);
                     target.Hp -= damage;
                     BroadcastCombat(caster, target, damage, CombatOutcome.Hit, def.Name);
@@ -1123,7 +1119,7 @@ public class GameLoopService : BackgroundService
 
             case SkillEffect.Heal:
             {
-                int amount = SkillCatalog.HealAmount(def.Power, caster.Wit);
+                int amount = SkillMath.HealAmount(def.Power, caster.Wit);
                 target.Hp = Math.Min(target.MaxHp, target.Hp + amount);
                 BroadcastCombat(caster, target, amount, CombatOutcome.Heal, def.Name);
                 break;
@@ -1140,7 +1136,7 @@ public class GameLoopService : BackgroundService
 
             case SkillEffect.DebuffDef:
             {
-                float fail = SkillCatalog.SpellFailChance(caster.Level, target.Level);
+                float fail = SkillMath.SpellFailChance(caster.Level, target.Level);
 
                 if (_rng.NextDouble() < fail)
                 {
@@ -1266,7 +1262,7 @@ public class GameLoopService : BackgroundService
         else
         {
             int damage = StatCalculator.BasicAttackDamage(
-                (int)attacker.EffectiveAttack, (int)target.EffectiveDefence);
+                (int)attacker.EffectiveBasicAttack, (int)target.EffectiveDefence);
 
             if (_rng.NextDouble() < attacker.CritChance)
             {
@@ -1331,13 +1327,12 @@ public class GameLoopService : BackgroundService
             if (ItemCatalog.Get(itemId) is not ItemDef def)
                 continue;
 
-            if (killer.Inventory.Count >= GameConstants.InventorySize)
+            if (!AddItem(killer, def.Id))
             {
                 SendSystemToEntity(killer, $"{mob.Name} dropped {def.Name} — inventory full!");
                 continue;
             }
 
-            killer.Inventory.Add(new InventoryItem { DefId = def.Id });
             SendSystemToEntity(killer, $"You looted: {def.Name} [{def.Grade}/{def.Rarity}]");
             looted = true;
         }
@@ -1504,6 +1499,59 @@ public class GameLoopService : BackgroundService
     {
         if (_world.EntityToConnection.TryGetValue(entity.Id, out var conn))
             _ = _hub.Clients.Client(conn).SendAsync(method, payload);
+    }
+
+    /// <summary>Add an item to inventory, stacking consumables/scrolls.
+    /// Returns false if there was no room for a new stack.</summary>
+    private static bool AddItem(Entity player, int defId, int quantity = 1)
+    {
+        if (ItemCatalog.Get(defId) is not ItemDef def)
+            return false;
+
+        bool stackable = def.Slot is EquipSlot.Consumable or EquipSlot.Scroll;
+        if (stackable)
+        {
+            var existing = player.Inventory.FirstOrDefault(i => i.DefId == defId);
+            if (existing is not null)
+            {
+                existing.Quantity += quantity;
+                return true;
+            }
+        }
+
+        if (player.Inventory.Count >= GameConstants.InventorySize)
+            return false;
+
+        player.Inventory.Add(new InventoryItem { DefId = defId, Quantity = stackable ? quantity : 1 });
+        return true;
+    }
+
+    /// <summary>Move an item from one player to another, merging stacks of
+    /// consumables/scrolls on the receiving side.</summary>
+    private static void TransferItem(Entity from, Entity to, InventoryItem item)
+    {
+        from.Inventory.Remove(item);
+
+        if (ItemCatalog.Get(item.DefId) is ItemDef def &&
+            def.Slot is EquipSlot.Consumable or EquipSlot.Scroll)
+        {
+            var existing = to.Inventory.FirstOrDefault(i => i.DefId == item.DefId);
+            if (existing is not null)
+            {
+                existing.Quantity += item.Quantity;
+                return;
+            }
+        }
+
+        to.Inventory.Add(item);
+    }
+
+    /// <summary>Consume one from a stack; removes the stack at zero.</summary>
+    private static void ConsumeOne(Entity player, InventoryItem item)
+    {
+        item.Quantity--;
+        if (item.Quantity <= 0)
+            player.Inventory.Remove(item);
     }
 
     private void SendInventory(Entity player) =>

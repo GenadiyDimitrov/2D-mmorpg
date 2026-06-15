@@ -171,7 +171,8 @@ public partial class MainWindow : Window
     {
         Archetype? archetype = _mySecondClass > 0
             ? ClassCatalog.Get(_mySecondClass)?.Archetype : null;
-        var available = SkillCatalog.ForCharacter(_myBaseClass, archetype).Select(d => d.Id).ToHashSet();
+        var available = ClassProgression.UsableSkills(_myRace, _myBaseClass, archetype, _level)
+            .Select(d => d.Id).ToHashSet();
 
         // Remove now-invalid assignments.
         for (int i = 0; i < _skillBar.Length; i++)
@@ -518,9 +519,19 @@ public partial class MainWindow : Window
 
     private void OnProgress(ProgressUpdate progress)
     {
+        bool leveled = progress.Level != _level;
         _level = progress.Level;
         _exp = progress.Exp;
         _expToNext = progress.ExpToNext;
+
+        if (leveled)
+        {
+            // New level may unlock skills (e.g. level-25 flavour skills later).
+            AutoPlaceNewSkills();
+            RenderSkillBar();
+            if (SkillsPanel.Visibility == Visibility.Visible)
+                RefreshSkillsWindow();
+        }
     }
 
     private void UpdateTargetFrame()

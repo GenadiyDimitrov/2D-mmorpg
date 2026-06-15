@@ -89,7 +89,7 @@ public partial class MainWindow
             // Main item button — opens equip/compare popup (potions drink).
             var button = new Button
             {
-                Content = ItemLabel(def, item.Equipped, item.Enchant),
+                Content = ItemLabel(def, item.Equipped, item.Enchant, item.Quantity),
                 Height = 28,
                 HorizontalContentAlignment = HorizontalAlignment.Left,
                 Padding = new Thickness(8, 0, 0, 0),
@@ -105,13 +105,14 @@ public partial class MainWindow
         }
     }
 
-    private static string ItemLabel(ItemDef def, bool equipped, int enchant)
+    private static string ItemLabel(ItemDef def, bool equipped, int enchant, int quantity)
     {
         string tag = equipped ? "[E] " : "";
         string ench = enchant > 0 ? $"+{enchant} " : "";
+        string qty = quantity > 1 ? $"  x{(quantity >= 100 ? "99+" : quantity.ToString())}" : "";
         string req = ItemCatalog.RequiredLevel(def.Grade) > 0
             ? $" (Lv{ItemCatalog.RequiredLevel(def.Grade)})" : "";
-        return $"{tag}{ench}{def.Name}  {def.Grade}/{def.Rarity}{req}";
+        return $"{tag}{ench}{def.Name}  {def.Grade}/{def.Rarity}{req}{qty}";
     }
 
     private static Brush RarityBrush(ItemRarity rarity) => rarity switch
@@ -243,7 +244,7 @@ public partial class MainWindow
 
             var button = new Button
             {
-                Content = $"{def.Name}  {def.Grade}/{def.Rarity}",
+                Content = $"{def.Name}{(item.Quantity > 1 ? $" x{item.Quantity}" : "")}  {def.Grade}/{def.Rarity}",
                 Height = 26,
                 Margin = new Thickness(0, 0, 0, 3),
                 HorizontalContentAlignment = HorizontalAlignment.Left,
@@ -278,7 +279,7 @@ public partial class MainWindow
 
             var button = new Button
             {
-                Content = $"{def.Name}  {def.Grade}/{def.Rarity}",
+                Content = $"{def.Name}{(item.Quantity > 1 ? $" x{item.Quantity}" : "")}  {def.Grade}/{def.Rarity}",
                 Height = 26,
                 Margin = new Thickness(0, 0, 0, 3),
                 HorizontalContentAlignment = HorizontalAlignment.Left,
@@ -587,7 +588,7 @@ public partial class MainWindow
         string passive = baseClass == BaseClass.Fighter
             ? "Fighters: lower HP, more attack/defence focus; can use all armor."
             : "Mages: spell-casters; WIT shortens cast time; robe specialists.";
-        var skills = SkillCatalog.ForCharacter(baseClass, null).ToList();
+        var skills = ClassProgression.UsableSkills(race, baseClass, null, 1).ToList();
         ShowCreationInfo($"{race} {baseClass}",
             $"Base stats: CON {stats.Con}, ATK {stats.Atk}, WIT {stats.Wit}, DEX {stats.Dex}\n\n" +
             passive + "\n\nStarting skills:", skills);
@@ -606,7 +607,7 @@ public partial class MainWindow
             Archetype.Nuker => "Robe caster: big damage spells, +500 spell range.",
             _ => ""
         };
-        var skills = SkillCatalog.ForCharacter(sc.Base, sc.Archetype).ToList();
+        var skills = ClassProgression.UsableSkills(sc.Race, sc.Base, sc.Archetype, 20).ToList();
         ShowCreationInfo($"{sc.Name}  ({sc.Archetype})",
             role + $"\n\nClass-change bonus: +{con} CON, +{atk} ATK, +{wit} WIT, +{dex} DEX.\n\n" +
             "Skills (base + signature):", skills);
@@ -677,7 +678,7 @@ public partial class MainWindow
         SkillsList.Items.Clear();
         Archetype? archetype = _mySecondClass > 0 ? ClassCatalog.Get(_mySecondClass)?.Archetype : null;
 
-        foreach (var def in SkillCatalog.ForCharacter(_myBaseClass, archetype))
+        foreach (var def in ClassProgression.UsableSkills(_myRace, _myBaseClass, archetype, _level))
         {
             bool onBar = _skillBar.Any(x => x == def.Id);
 
@@ -769,8 +770,8 @@ public partial class MainWindow
             if (def is null)
                 continue;
 
-            var stack = _inventory.Where(i => i.DefId == defId).ToList();
-            int count = stack.Count;
+            var stack = _inventory.FirstOrDefault(i => i.DefId == defId);
+            int count = stack?.Quantity ?? 0;
 
             var badge = new TextBlock
             {
@@ -856,7 +857,7 @@ public partial class MainWindow
         foreach (var scrollDefId in new[] { 40, 41, 42 })
         {
             var scrollDef = ItemCatalog.Get(scrollDefId)!;
-            int count = _inventory.Count(i => i.DefId == scrollDefId);
+            int count = _inventory.FirstOrDefault(i => i.DefId == scrollDefId)?.Quantity ?? 0;
 
             var button = new Button
             {

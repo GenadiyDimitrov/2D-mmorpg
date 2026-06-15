@@ -78,4 +78,35 @@ public static class StatCalculator
     /// out-stat lower-level characters.</summary>
     public static BaseStats MobStats(int level) =>
         new(Con: 15 + level * 2, Atk: 8 + level * 3, Wit: 5, Dex: 10 + level);
+
+    /// <summary>Per-archetype basic-attack damage multiplier — the core of
+    /// class identity. Mages barely autoattack (rely on skills/MP); fighters &
+    /// archers hit full; rogues & tanks are reduced (they lean on crits/skills
+    /// and defence respectively). Base classes use 1.0 until they specialize.</summary>
+    public static float BasicAttackMultiplier(Archetype? archetype) => archetype switch
+    {
+        Archetype.Warrior => 1.10f,
+        Archetype.Archer => 1.00f,
+        Archetype.Rogue => 0.65f,   // leans on crits + skills
+        Archetype.Tank => 0.55f,    // leans on defence
+        Archetype.Healer => 0.15f,  // mages: near-zero basic attack
+        Archetype.Nuker => 0.15f,
+        _ => 1.0f                    // base Fighter/Mage before class change
+    };
+
+    /// <summary>Extra crit chance from archetype (archers & rogues spike here).</summary>
+    public static float ArchetypeCritBonus(Archetype? archetype) => archetype switch
+    {
+        Archetype.Archer => 0.15f,
+        Archetype.Rogue => 0.20f,
+        _ => 0f
+    };
+
+    /// <summary>Extra evasion from archetype (rogues are slippery).</summary>
+    public static int ArchetypeEvasionBonus(Archetype? archetype, int level) => archetype switch
+    {
+        Archetype.Rogue => 10 + level,
+        Archetype.Archer => 5 + level / 2,
+        _ => 0
+    };
 }

@@ -106,9 +106,9 @@
 
         <!-- Chat -->
         <Border x:Name="ChatPanel"
-                Width="460" Height="320"
+                Width="460" Height="300"
                 HorizontalAlignment="Left" VerticalAlignment="Bottom"
-                Margin="10" Padding="6"
+                Margin="10,10,10,64" Padding="6"
                 Background="#A0000000" CornerRadius="6"
                 Visibility="Collapsed">
             <DockPanel>
