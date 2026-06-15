@@ -6,7 +6,7 @@ namespace Game.Server.Simulation;
 
 /// <summary>
 /// The heart of the server: a fixed-tick loop (10 t/s).
-/// Each tick: drain commands -> simulate (AI, chase, combat, regen) ->
+/// Each tick: drain commands -> simulate (AI, skills, combat, regen) ->
 /// broadcast snapshots.
 /// </summary>
 public class GameLoopService : BackgroundService
@@ -18,10 +18,22 @@ public class GameLoopService : BackgroundService
         ("Spider", true), ("Bandit", true)
     };
 
+    // Level-banded hunting grounds: rings around the town (safe zone).
+    // A mob's level is decided by where its home is — and leashing keeps it
+    // there, so a lvl-15 Bandit never wanders into the lvl 1-3 ring.
+    private static readonly (float MinDist, float MaxDist, int MinLvl, int MaxLvl, int Count)[] SpawnBands =
+    {
+        (1300f, 3500f, 1, 3, 14),
+        (3500f, 6000f, 4, 7, 12),
+        (6000f, 8500f, 8, 12, 10),
+        (8500f, 10500f, 13, 18, 10),
+    };
+
     private readonly World _world;
     private readonly IHubContext<GameHub> _hub;
     private readonly ILogger<GameLoopService> _log;
     private readonly Random _rng = new();
+    private int _tick;
 
     public GameLoopService(World world, IHubContext<GameHub> hub, ILogger<GameLoopService> log)
     {
@@ -32,7 +44,7 @@ public class GameLoopService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        SpawnMobs(20);
+        SpawnMobs();
         _log.LogInformation("Game loop started at {Rate} ticks/sec", GameConstants.TickRate);
 
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(GameConstants.TickSeconds));
@@ -66,6 +78,7 @@ public class GameLoopService : BackgroundService
                 case LeaveCommand leave: HandleLeave(leave); break;
                 case MoveCmd move: HandleMove(move); break;
                 case AttackCmd attack: HandleAttack(attack); break;
+                case SkillCmd skill: HandleSkill(skill); break;
                 case RespawnCmd respawn: HandleRespawn(respawn); break;
                 case ChatCmd chat: HandleChat(chat); break;
             }
@@ -147,13 +160,12 @@ public class GameLoopService : BackgroundService
         if (!TryGetPlayer(move.ConnectionId, out var entity) || entity.Dead)
             return;
 
-        // Clicking the ground cancels the current engagement (classic MMO).
+        // Clicking the ground cancels engagement, queued skills and casting.
         entity.Engaged = false;
         entity.CombatTargetId = null;
+        entity.QueuedSkillId = null;
+        CancelCast(entity, move.ConnectionId);
 
-        // Server-side validation: destination clamped to the zone. Speed is
-        // enforced implicitly — the entity moves at its own Speed regardless
-        // of what the client claims.
         entity.TargetX = Math.Clamp(move.Move.TargetX, 0, GameConstants.ZoneWidth);
         entity.TargetY = Math.Clamp(move.Move.TargetY, 0, GameConstants.ZoneHeight);
     }
@@ -168,12 +180,62 @@ public class GameLoopService : BackgroundService
             target.Dead)
             return;
 
-        // Target must be within view range to engage.
         if (DistanceSq(attacker, target) > GameConstants.ViewRange * GameConstants.ViewRange)
             return;
 
+        attacker.QueuedSkillId = null;
+        CancelCast(attacker, attack.ConnectionId);
         attacker.CombatTargetId = target.Id;
         attacker.Engaged = true;
+    }
+
+    private void HandleSkill(SkillCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var caster) || caster.Dead)
+            return;
+
+        var def = SkillCatalog.Get(cmd.SkillId);
+        if (def is null || def.Class != caster.BaseClass)
+            return;
+
+        if (caster.SkillCooldowns.TryGetValue(def.Id, out int cd) && cd > 0)
+        {
+            SendSystemTo(cmd.ConnectionId, $"{def.Name} is not ready.");
+            return;
+        }
+
+        if (caster.Mp < def.MpCost)
+        {
+            SendSystemTo(cmd.ConnectionId, "Not enough MP.");
+            return;
+        }
+
+        bool offensive = def.Effect is SkillEffect.PhysicalDamage
+            or SkillEffect.MagicDamage or SkillEffect.DebuffDef;
+
+        Guid targetId;
+        if (offensive)
+        {
+            if (cmd.TargetId is not Guid tid ||
+                tid == caster.Id ||
+                !_world.Entities.TryGetValue(tid, out var target) ||
+                target.Dead ||
+                DistanceSq(caster, target) > GameConstants.ViewRange * GameConstants.ViewRange)
+            {
+                SendSystemTo(cmd.ConnectionId, $"{def.Name} needs a target.");
+                return;
+            }
+            targetId = tid;
+        }
+        else
+        {
+            targetId = caster.Id; // self-targeted (Heal, War Cry)
+        }
+
+        CancelCast(caster, cmd.ConnectionId);
+        caster.QueuedSkillId = def.Id;
+        caster.QueuedTargetId = targetId;
+        // Engaged auto-attack resumes after the skill (set on execution).
     }
 
     private void HandleRespawn(RespawnCmd respawn)
@@ -184,6 +246,7 @@ public class GameLoopService : BackgroundService
         entity.Dead = false;
         entity.Hp = entity.MaxHp;
         entity.Mp = entity.MaxMp;
+        entity.Buffs.Clear();
         entity.X = GameConstants.ZoneWidth / 2 + _rng.Next(-300, 300);
         entity.Y = GameConstants.ZoneHeight / 2 + _rng.Next(-300, 300);
         entity.TargetX = null;
@@ -202,6 +265,29 @@ public class GameLoopService : BackgroundService
 
         // Players cannot send System messages (that is for admins, later).
         var channel = chat.Channel == ChatChannel.System ? ChatChannel.Local : chat.Channel;
+
+        if (channel == ChatChannel.Whisper)
+        {
+            var targetName = chat.WhisperTarget?.Trim();
+            if (string.IsNullOrEmpty(targetName))
+                return;
+
+            var target = _world.Entities.Values.FirstOrDefault(e =>
+                e.Kind == EntityKind.Player &&
+                string.Equals(e.Name, targetName, StringComparison.OrdinalIgnoreCase));
+
+            if (target is null || !_world.EntityToConnection.TryGetValue(target.Id, out var targetConn))
+            {
+                SendSystemTo(chat.ConnectionId, $"{targetName} is not online.");
+                return;
+            }
+
+            var whisper = new ChatMessage(sender.Name, text, ChatChannel.Whisper, target.Name);
+            _ = _hub.Clients.Client(targetConn).SendAsync("Chat", whisper);
+            _ = _hub.Clients.Client(chat.ConnectionId).SendAsync("Chat", whisper); // echo
+            return;
+        }
+
         var message = new ChatMessage(sender.Name, text, channel);
 
         if (channel == ChatChannel.World)
@@ -222,8 +308,6 @@ public class GameLoopService : BackgroundService
     // 2. Simulation
     // =========================================================================
 
-    private int _tick;
-
     private void Simulate()
     {
         _tick++;
@@ -233,6 +317,9 @@ public class GameLoopService : BackgroundService
         {
             if (entity.AttackCooldown > 0)
                 entity.AttackCooldown--;
+
+            TickSkillCooldowns(entity);
+            TickBuffs(entity);
 
             if (entity.Dead)
             {
@@ -244,12 +331,33 @@ public class GameLoopService : BackgroundService
             if (entity.Kind == EntityKind.Mob)
                 MobAi(entity);
 
-            UpdateCombat(entity);
+            UpdateAction(entity);
             MoveTowardTarget(entity);
             _world.Grid.UpdatePosition(entity);
 
             if (regenTick)
                 Regenerate(entity);
+        }
+    }
+
+    private static void TickSkillCooldowns(Entity entity)
+    {
+        if (entity.SkillCooldowns.Count == 0)
+            return;
+
+        foreach (var key in entity.SkillCooldowns.Keys.ToList())
+        {
+            if (--entity.SkillCooldowns[key] <= 0)
+                entity.SkillCooldowns.Remove(key);
+        }
+    }
+
+    private static void TickBuffs(Entity entity)
+    {
+        for (int i = entity.Buffs.Count - 1; i >= 0; i--)
+        {
+            if (--entity.Buffs[i].TicksRemaining <= 0)
+                entity.Buffs.RemoveAt(i);
         }
     }
 
@@ -277,7 +385,8 @@ public class GameLoopService : BackgroundService
         {
             foreach (var candidate in _world.Grid.Nearby(mob))
             {
-                if (candidate.Kind != EntityKind.Player || candidate.Dead)
+                if (candidate.Kind != EntityKind.Player || candidate.Dead ||
+                    GameConstants.InSafeZone(candidate.X, candidate.Y))
                     continue;
 
                 if (DistanceSq(mob, candidate) <=
@@ -292,8 +401,15 @@ public class GameLoopService : BackgroundService
 
         if (_rng.NextDouble() < 0.7)
         {
-            mob.TargetX = Math.Clamp(mob.HomeX + _rng.Next(-1500, 1501), 0, GameConstants.ZoneWidth);
-            mob.TargetY = Math.Clamp(mob.HomeY + _rng.Next(-1500, 1501), 0, GameConstants.ZoneHeight);
+            float tx = Math.Clamp(mob.HomeX + _rng.Next(-1000, 1001), 0, GameConstants.ZoneWidth);
+            float ty = Math.Clamp(mob.HomeY + _rng.Next(-1000, 1001), 0, GameConstants.ZoneHeight);
+
+            // Mobs never walk into the safe zone.
+            if (!GameConstants.InSafeZone(tx, ty))
+            {
+                mob.TargetX = tx;
+                mob.TargetY = ty;
+            }
         }
     }
 
@@ -302,6 +418,7 @@ public class GameLoopService : BackgroundService
         mob.Engaged = false;
         mob.CombatTargetId = null;
         mob.Hp = mob.MaxHp;
+        mob.Buffs.Clear();
         mob.TargetX = mob.HomeX;
         mob.TargetY = mob.HomeY;
     }
@@ -310,6 +427,7 @@ public class GameLoopService : BackgroundService
     {
         mob.Dead = false;
         mob.Hp = mob.MaxHp;
+        mob.Mp = mob.MaxMp;
         mob.X = mob.HomeX;
         mob.Y = mob.HomeY;
         mob.TargetX = null;
@@ -317,24 +435,272 @@ public class GameLoopService : BackgroundService
         _world.Grid.Add(mob);
     }
 
-    // ----- Combat -----------------------------------------------------------------
+    // ----- Action state machine: casting > queued skill > auto-attack ------------
 
-    /// <summary>L2-style engagement: run into range, then auto-attack on cooldown.
-    /// The *intent* always reaches the target (lag-friendly); the stats decide
-    /// whether it misses, crits, or lands.</summary>
-    private void UpdateCombat(Entity attacker)
+    private void UpdateAction(Entity entity)
     {
-        if (!attacker.Engaged || attacker.CombatTargetId is not Guid targetId)
+        if (entity.CastingSkillId is int castingId)
+        {
+            UpdateCasting(entity, castingId);
             return;
+        }
+
+        if (entity.QueuedSkillId is int queuedId)
+        {
+            UpdateQueuedSkill(entity, queuedId);
+            return;
+        }
+
+        if (entity.Engaged)
+            UpdateAutoAttack(entity);
+    }
+
+    private void UpdateCasting(Entity caster, int skillId)
+    {
+        if (--caster.CastTicksRemaining > 0)
+            return;
+
+        caster.CastingSkillId = null;
+        var def = SkillCatalog.Get(skillId);
+        if (def is not null)
+            ExecuteSkill(caster, def);
+    }
+
+    private void UpdateQueuedSkill(Entity caster, int skillId)
+    {
+        var def = SkillCatalog.Get(skillId);
+        if (def is null || caster.QueuedTargetId is not Guid targetId)
+        {
+            caster.QueuedSkillId = null;
+            return;
+        }
+
+        bool selfTargeted = targetId == caster.Id;
+        Entity? target = selfTargeted ? caster
+            : _world.Entities.GetValueOrDefault(targetId);
+
+        if (target is null || target.Dead ||
+            (!selfTargeted && DistanceSq(caster, target) >
+                GameConstants.ViewRange * GameConstants.ViewRange))
+        {
+            caster.QueuedSkillId = null;
+            return;
+        }
+
+        if (!selfTargeted && def.Range > 0 &&
+            DistanceSq(caster, target) > def.Range * def.Range)
+        {
+            // Run into skill range (L2-style), re-aiming every tick.
+            caster.TargetX = target.X;
+            caster.TargetY = target.Y;
+            return;
+        }
+
+        // In range: stand still and start the wind-up.
+        caster.TargetX = null;
+        caster.TargetY = null;
+        caster.QueuedSkillId = null;
+        caster.CastingSkillId = def.Id;
+        caster.CastTargetId = targetId;
+        caster.CastTicksRemaining = SkillCatalog.AdjustedCastTicks(def.CastTicks, caster.Wit);
+
+        if (_world.EntityToConnection.TryGetValue(caster.Id, out var conn))
+        {
+            _ = _hub.Clients.Client(conn).SendAsync("Cast", new CastInfo(
+                def.Name, caster.CastTicksRemaining * GameConstants.TickSeconds));
+        }
+    }
+
+    private void ExecuteSkill(Entity caster, SkillDef def)
+    {
+        if (caster.Mp < def.MpCost)
+        {
+            SendSystemToEntity(caster, "Not enough MP.");
+            return;
+        }
+
+        bool selfTargeted = caster.CastTargetId == caster.Id || def.Range == 0 &&
+            def.Effect is SkillEffect.Heal or SkillEffect.BuffAtk;
+
+        Entity? target = selfTargeted ? caster
+            : caster.CastTargetId is Guid tid ? _world.Entities.GetValueOrDefault(tid) : null;
+
+        if (target is null || (target.Dead && target != caster))
+        {
+            SendSystemToEntity(caster, "Target lost.");
+            return;
+        }
+
+        // Allow slight drift during the cast, but not kiting across the map.
+        if (!selfTargeted && def.Range > 0 &&
+            DistanceSq(caster, target) > def.Range * def.Range * 1.7f)
+        {
+            SendSystemToEntity(caster, "Target out of range.");
+            return;
+        }
+
+        caster.Mp -= def.MpCost;
+        caster.SkillCooldowns[def.Id] = def.CooldownTicks;
+
+        switch (def.Effect)
+        {
+            case SkillEffect.PhysicalDamage:
+            {
+                // Physical skills carry bonus accuracy but can still miss.
+                float miss = StatCalculator.MissChance(
+                    caster.Accuracy + SkillCatalog.PhysicalSkillAccuracyBonus,
+                    target.Evasion);
+
+                if (_rng.NextDouble() < miss)
+                {
+                    BroadcastCombat(caster, target, 0, CombatOutcome.Miss, def.Name);
+                }
+                else
+                {
+                    int damage = SkillCatalog.PhysicalSkillDamage(
+                        def.Power, caster.EffectiveAttack, target.EffectiveDefence);
+
+                    if (_rng.NextDouble() < caster.CritChance)
+                    {
+                        damage = (int)(damage * StatCalculator.CritMultiplier);
+                        BroadcastCombat(caster, target, damage, CombatOutcome.Crit, def.Name);
+                    }
+                    else
+                    {
+                        BroadcastCombat(caster, target, damage, CombatOutcome.Hit, def.Name);
+                    }
+
+                    target.Hp -= damage;
+                }
+
+                AfterOffensiveSkill(caster, target);
+                break;
+            }
+
+            case SkillEffect.MagicDamage:
+            {
+                // Spells don't miss — they fail (level difference).
+                float fail = SkillCatalog.SpellFailChance(caster.Level, target.Level);
+
+                if (_rng.NextDouble() < fail)
+                {
+                    BroadcastCombat(caster, target, 0, CombatOutcome.Fail, def.Name);
+                }
+                else
+                {
+                    int damage = SkillCatalog.MagicSkillDamage(
+                        def.Power, caster.EffectiveAttack, caster.Wit, target.EffectiveDefence);
+                    target.Hp -= damage;
+                    BroadcastCombat(caster, target, damage, CombatOutcome.Hit, def.Name);
+                }
+
+                AfterOffensiveSkill(caster, target);
+                break;
+            }
+
+            case SkillEffect.Heal:
+            {
+                int amount = SkillCatalog.HealAmount(def.Power, caster.Wit);
+                target.Hp = Math.Min(target.MaxHp, target.Hp + amount);
+                BroadcastCombat(caster, target, amount, CombatOutcome.Heal, def.Name);
+                break;
+            }
+
+            case SkillEffect.BuffAtk:
+            {
+                ApplyBuff(target, def);
+                BroadcastCombat(caster, target, 0, CombatOutcome.Buff, def.Name);
+                break;
+            }
+
+            case SkillEffect.DebuffDef:
+            {
+                // Debuffs are spells: they can fail too.
+                float fail = SkillCatalog.SpellFailChance(caster.Level, target.Level);
+
+                if (_rng.NextDouble() < fail)
+                {
+                    BroadcastCombat(caster, target, 0, CombatOutcome.Fail, def.Name);
+                }
+                else
+                {
+                    ApplyBuff(target, def);
+                    BroadcastCombat(caster, target, 0, CombatOutcome.Buff, def.Name);
+                }
+
+                AfterOffensiveSkill(caster, target);
+                break;
+            }
+        }
+
+        if (target.Hp <= 0 && !target.Dead)
+            Kill(target, caster);
+    }
+
+    private static void ApplyBuff(Entity target, SkillDef def)
+    {
+        // Re-applying refreshes the duration instead of stacking.
+        var existing = target.Buffs.FirstOrDefault(b => b.Name == def.Name);
+        if (existing is not null)
+        {
+            existing.TicksRemaining = def.DurationTicks;
+            return;
+        }
+
+        target.Buffs.Add(new BuffInstance
+        {
+            Type = def.Effect,
+            Magnitude = def.Magnitude,
+            TicksRemaining = def.DurationTicks,
+            Name = def.Name
+        });
+    }
+
+    private void AfterOffensiveSkill(Entity caster, Entity target)
+    {
+        // Auto-attack continues after the skill (L2-style)...
+        if (!target.Dead)
+        {
+            caster.CombatTargetId = target.Id;
+            caster.Engaged = true;
+        }
+
+        // ...and the victim retaliates if it's a peaceful mob.
+        Retaliate(target, caster);
+    }
+
+    private static void Retaliate(Entity victim, Entity attacker)
+    {
+        if (victim.Kind == EntityKind.Mob && !victim.Engaged && !victim.Dead)
+        {
+            victim.CombatTargetId = attacker.Id;
+            victim.Engaged = true;
+        }
+    }
+
+    // ----- Auto-attack ---------------------------------------------------------------
+
+    private void UpdateAutoAttack(Entity attacker)
+    {
+        if (attacker.CombatTargetId is not Guid targetId)
+        {
+            attacker.Engaged = false;
+            return;
+        }
 
         if (!_world.Entities.TryGetValue(targetId, out var target) ||
             target.Dead ||
             DistanceSq(attacker, target) > GameConstants.ViewRange * GameConstants.ViewRange)
         {
-            attacker.Engaged = false;
-            attacker.CombatTargetId = null;
-            if (attacker.Kind == EntityKind.Mob)
-                ResetMob(attacker);
+            Disengage(attacker);
+            return;
+        }
+
+        // Mobs drop aggro on players standing in the safe zone.
+        if (attacker.Kind == EntityKind.Mob &&
+            GameConstants.InSafeZone(target.X, target.Y))
+        {
+            ResetMob(attacker);
             return;
         }
 
@@ -360,41 +726,41 @@ public class GameLoopService : BackgroundService
         ResolveBasicAttack(attacker, target);
     }
 
+    private void Disengage(Entity entity)
+    {
+        entity.Engaged = false;
+        entity.CombatTargetId = null;
+        if (entity.Kind == EntityKind.Mob)
+            ResetMob(entity);
+    }
+
     private void ResolveBasicAttack(Entity attacker, Entity target)
     {
         float missChance = StatCalculator.MissChance(attacker.Accuracy, target.Evasion);
 
-        CombatOutcome outcome;
-        int damage = 0;
-
         if (_rng.NextDouble() < missChance)
         {
-            outcome = CombatOutcome.Miss;
+            BroadcastCombat(attacker, target, 0, CombatOutcome.Miss);
         }
         else
         {
-            damage = StatCalculator.BasicAttackDamage(attacker.AttackPower, target.Defence);
+            int damage = StatCalculator.BasicAttackDamage(
+                (int)attacker.EffectiveAttack, (int)target.EffectiveDefence);
+
             if (_rng.NextDouble() < attacker.CritChance)
             {
                 damage = (int)(damage * StatCalculator.CritMultiplier);
-                outcome = CombatOutcome.Crit;
+                BroadcastCombat(attacker, target, damage, CombatOutcome.Crit);
             }
             else
             {
-                outcome = CombatOutcome.Hit;
+                BroadcastCombat(attacker, target, damage, CombatOutcome.Hit);
             }
 
             target.Hp -= damage;
         }
 
-        BroadcastCombat(attacker, target, damage, outcome);
-
-        // Mobs retaliate when attacked (even on a miss).
-        if (target.Kind == EntityKind.Mob && !target.Engaged && !target.Dead)
-        {
-            target.CombatTargetId = attacker.Id;
-            target.Engaged = true;
-        }
+        Retaliate(target, attacker);
 
         if (target.Hp <= 0)
             Kill(target, attacker);
@@ -406,10 +772,12 @@ public class GameLoopService : BackgroundService
         victim.Dead = true;
         victim.Engaged = false;
         victim.CombatTargetId = null;
+        victim.QueuedSkillId = null;
+        victim.CastingSkillId = null;
         victim.TargetX = null;
         victim.TargetY = null;
+        victim.Buffs.Clear();
 
-        // Killer disengages from a dead target automatically next tick.
         BroadcastCombat(killer, victim, 0, CombatOutcome.Death);
 
         if (victim.Kind == EntityKind.Mob)
@@ -457,20 +825,26 @@ public class GameLoopService : BackgroundService
 
     private void Regenerate(Entity entity)
     {
-        if (entity.Engaged)
+        if (entity.Engaged || entity.CastingSkillId is not null)
             return; // out-of-combat regen only
+
+        // Safe zone: regen several times faster (until we add /sit).
+        int multiplier = entity.Kind == EntityKind.Player &&
+                         GameConstants.InSafeZone(entity.X, entity.Y)
+            ? GameConstants.SafeZoneRegenMultiplier
+            : 1;
 
         if (entity.Hp < entity.MaxHp)
         {
             int regen = Math.Max(1,
-                (int)StatCalculator.HpRegenPerSecond(entity.Con, entity.Level));
+                (int)StatCalculator.HpRegenPerSecond(entity.Con, entity.Level)) * multiplier;
             entity.Hp = Math.Min(entity.MaxHp, entity.Hp + regen);
         }
 
         if (entity.Mp < entity.MaxMp)
         {
             int regen = Math.Max(1,
-                (int)StatCalculator.MpRegenPerSecond(entity.Wit, entity.Level));
+                (int)StatCalculator.MpRegenPerSecond(entity.Wit, entity.Level)) * multiplier;
             entity.Mp = Math.Min(entity.MaxMp, entity.Mp + regen);
         }
     }
@@ -487,17 +861,32 @@ public class GameLoopService : BackgroundService
         float dist = MathF.Sqrt(dx * dx + dy * dy);
         float step = e.Speed * GameConstants.TickSeconds;
 
+        float nx, ny;
         if (dist <= step)
         {
-            e.X = tx;
-            e.Y = ty;
-            e.TargetX = null;
-            e.TargetY = null;
+            nx = tx;
+            ny = ty;
         }
         else
         {
-            e.X += dx / dist * step;
-            e.Y += dy / dist * step;
+            nx = e.X + dx / dist * step;
+            ny = e.Y + dy / dist * step;
+        }
+
+        // Mobs cannot set foot inside the safe zone, ever.
+        if (e.Kind == EntityKind.Mob && GameConstants.InSafeZone(nx, ny))
+        {
+            e.TargetX = null;
+            e.TargetY = null;
+            return;
+        }
+
+        e.X = nx;
+        e.Y = ny;
+        if (nx == tx && ny == ty)
+        {
+            e.TargetX = null;
+            e.TargetY = null;
         }
     }
 
@@ -518,12 +907,10 @@ public class GameLoopService : BackgroundService
                 continue;
 
             var visible = _world.Grid.Nearby(player)
-                .Where(e => !e.Dead || e.Kind == EntityKind.Player) // player corpses visible
                 .Select(e => e.ToDto())
                 .ToList();
 
-            // A dead player was removed from no grid — but make sure the
-            // viewer always sees themselves even in edge cases.
+            // Defensive: the viewer must always see themselves.
             if (!visible.Any(d => d.Id == player.Id))
                 visible.Add(player.ToDto());
 
@@ -542,10 +929,11 @@ public class GameLoopService : BackgroundService
         }
     }
 
-    private void BroadcastCombat(Entity attacker, Entity target, int damage, CombatOutcome outcome)
+    private void BroadcastCombat(Entity attacker, Entity target, int damage,
+        CombatOutcome outcome, string? skill = null)
     {
         var evt = new CombatEvent(
-            attacker.Id, attacker.Name, target.Id, target.Name, damage, outcome);
+            attacker.Id, attacker.Name, target.Id, target.Name, damage, outcome, skill);
 
         foreach (var nearby in _world.Grid.Nearby(attacker))
         {
@@ -556,6 +944,26 @@ public class GameLoopService : BackgroundService
 
     private void BroadcastSystem(string text) =>
         _ = _hub.Clients.All.SendAsync("Chat", new ChatMessage("SYSTEM", text, ChatChannel.System));
+
+    private void SendSystemTo(string connectionId, string text) =>
+        _ = _hub.Clients.Client(connectionId)
+            .SendAsync("Chat", new ChatMessage("SYSTEM", text, ChatChannel.System));
+
+    private void SendSystemToEntity(Entity entity, string text)
+    {
+        if (_world.EntityToConnection.TryGetValue(entity.Id, out var conn))
+            SendSystemTo(conn, text);
+    }
+
+    private void CancelCast(Entity entity, string connectionId)
+    {
+        if (entity.CastingSkillId is null)
+            return;
+
+        entity.CastingSkillId = null;
+        entity.CastTargetId = null;
+        _ = _hub.Clients.Client(connectionId).SendAsync("Cast", new CastInfo("", 0f));
+    }
 
     // =========================================================================
     // Helpers / spawning
@@ -575,39 +983,50 @@ public class GameLoopService : BackgroundService
         return dx * dx + dy * dy;
     }
 
-    private void SpawnMobs(int count)
+    /// <summary>Mobs spawn in level-banded rings around the town: the further
+    /// from the safe zone, the higher the level. Leashing keeps them in band.</summary>
+    private void SpawnMobs()
     {
         float cx = GameConstants.ZoneWidth / 2;
         float cy = GameConstants.ZoneHeight / 2;
 
-        for (int i = 0; i < count; i++)
+        foreach (var band in SpawnBands)
         {
-            var (name, aggressive) = MobTypes[_rng.Next(MobTypes.Length)];
-            int level = _rng.Next(1, 6);
-            var stats = StatCalculator.MobStats(level);
-
-            var mob = new Entity
+            for (int i = 0; i < band.Count; i++)
             {
-                Name = name,
-                Kind = EntityKind.Mob,
-                X = Math.Clamp(cx + _rng.Next(-5000, 5001), 0, GameConstants.ZoneWidth),
-                Y = Math.Clamp(cy + _rng.Next(-5000, 5001), 0, GameConstants.ZoneHeight),
-                Speed = 160,
-                Level = level,
-                Con = stats.Con,
-                AtkStat = stats.Atk,
-                Wit = stats.Wit,
-                Dex = stats.Dex,
-                Aggressive = aggressive
-            };
-            mob.RecomputeDerived();
-            mob.Hp = mob.MaxHp;
-            mob.Mp = mob.MaxMp;
-            mob.HomeX = mob.X;
-            mob.HomeY = mob.Y;
+                double angle = _rng.NextDouble() * Math.PI * 2;
+                double dist = band.MinDist + _rng.NextDouble() * (band.MaxDist - band.MinDist);
 
-            _world.Entities[mob.Id] = mob;
-            _world.Grid.Add(mob);
+                float x = Math.Clamp(cx + (float)(Math.Cos(angle) * dist), 0, GameConstants.ZoneWidth);
+                float y = Math.Clamp(cy + (float)(Math.Sin(angle) * dist), 0, GameConstants.ZoneHeight);
+
+                var (name, aggressive) = MobTypes[_rng.Next(MobTypes.Length)];
+                int level = _rng.Next(band.MinLvl, band.MaxLvl + 1);
+                var stats = StatCalculator.MobStats(level);
+
+                var mob = new Entity
+                {
+                    Name = name,
+                    Kind = EntityKind.Mob,
+                    X = x,
+                    Y = y,
+                    Speed = 160,
+                    Level = level,
+                    Con = stats.Con,
+                    AtkStat = stats.Atk,
+                    Wit = stats.Wit,
+                    Dex = stats.Dex,
+                    Aggressive = aggressive
+                };
+                mob.RecomputeDerived();
+                mob.Hp = mob.MaxHp;
+                mob.Mp = mob.MaxMp;
+                mob.HomeX = mob.X;
+                mob.HomeY = mob.Y;
+
+                _world.Entities[mob.Id] = mob;
+                _world.Grid.Add(mob);
+            }
         }
     }
 }

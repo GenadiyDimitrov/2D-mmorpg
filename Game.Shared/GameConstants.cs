@@ -29,7 +29,22 @@ public static class GameConstants
 
     public const int MaxCharacterNameLength = 16;
 
-    // ----- Combat (Phase 2) -------------------------------------------------
+    // ----- Safe zone (town) ---------------------------------------------------
+
+    /// <summary>No mobs spawn or enter; aggro clears on players inside;
+    /// natural regen is multiplied while inside.</summary>
+    public const float SafeZoneRadius = 1200f;
+
+    public const int SafeZoneRegenMultiplier = 5;
+
+    public static bool InSafeZone(float x, float y)
+    {
+        float dx = x - ZoneWidth / 2;
+        float dy = y - ZoneHeight / 2;
+        return dx * dx + dy * dy <= SafeZoneRadius * SafeZoneRadius;
+    }
+
+    // ----- Combat ----------------------------------------------------------------
 
     /// <summary>Base melee range. Design doc: base attack range is 40;
     /// we use 80 for a forgiving feel until weapons define ranges.</summary>
@@ -43,14 +58,20 @@ public static class GameConstants
     public const int MobAttackIntervalTicks = 20;
 
     /// <summary>Aggressive mobs attack players that come this close.</summary>
-    public const float MobAggroRange = 1000f;
+    public const float MobAggroRange = 400f;
 
-    /// <summary>A mob chased this far from home resets: returns and heals.</summary>
-    public const float MobLeashRange = 4000f;
+    /// <summary>A mob chased this far from home resets: returns and heals.
+    /// Kept tight to match the short aggro range.</summary>
+    public const float MobLeashRange = 1500f;
 
     /// <summary>Ticks until a dead mob respawns at its home position (10s).</summary>
     public const int MobRespawnTicks = 100;
 
     /// <summary>Out-of-combat regen is applied once per this many ticks (1s).</summary>
     public const int RegenIntervalTicks = 10;
+
+    // ----- Chat ---------------------------------------------------------------------
+
+    /// <summary>Client keeps at most this many lines per chat tab.</summary>
+    public const int ChatHistoryLimit = 150;
 }

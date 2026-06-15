@@ -2,6 +2,15 @@ using Game.Shared;
 
 namespace Game.Server.Simulation;
 
+/// <summary>A timed stat modifier (buff or debuff) on an entity.</summary>
+public class BuffInstance
+{
+    public required SkillEffect Type { get; init; }
+    public required float Magnitude { get; init; }
+    public int TicksRemaining { get; set; }
+    public required string Name { get; init; }
+}
+
 /// <summary>
 /// Live server-side state of one thing in the world.
 /// Lives only in memory — persistence (EF Core snapshots) is a later phase.
@@ -47,20 +56,60 @@ public class Entity
 
     public long Exp { get; set; }
 
-    // ----- Combat state -------------------------------------------------------
+    // ----- Buffs / debuffs -------------------------------------------------------
+
+    public List<BuffInstance> Buffs { get; } = new();
+
+    public float EffectiveAttack
+    {
+        get
+        {
+            float multiplier = 1f;
+            foreach (var buff in Buffs)
+                if (buff.Type == SkillEffect.BuffAtk)
+                    multiplier += buff.Magnitude;
+            return AttackPower * multiplier;
+        }
+    }
+
+    public float EffectiveDefence
+    {
+        get
+        {
+            float multiplier = 1f;
+            foreach (var buff in Buffs)
+                if (buff.Type == SkillEffect.DebuffDef)
+                    multiplier -= buff.Magnitude;
+            return Defence * Math.Max(0f, multiplier);
+        }
+    }
+
+    // ----- Combat / skill state -----------------------------------------------------
 
     /// <summary>Who this entity is trying to attack. Null = peaceful.</summary>
     public Guid? CombatTargetId { get; set; }
 
-    /// <summary>True while actively chasing/attacking the combat target.</summary>
+    /// <summary>True while actively chasing/auto-attacking the combat target.</summary>
     public bool Engaged { get; set; }
 
     /// <summary>Ticks until the next basic attack is allowed.</summary>
     public int AttackCooldown { get; set; }
 
+    /// <summary>Skill waiting for the entity to get into range.</summary>
+    public int? QueuedSkillId { get; set; }
+    public Guid? QueuedTargetId { get; set; }
+
+    /// <summary>Skill currently being cast (wind-up).</summary>
+    public int? CastingSkillId { get; set; }
+    public Guid? CastTargetId { get; set; }
+    public int CastTicksRemaining { get; set; }
+
+    /// <summary>skillId -> ticks until ready again.</summary>
+    public Dictionary<int, int> SkillCooldowns { get; } = new();
+
     public bool Dead { get; set; }
 
-    // ----- Mob-only state ------------------------------------------------------
+    // ----- Mob-only state ------------------------------------------------------------
 
     /// <summary>Spawn point; mobs leash and respawn here.</summary>
     public float HomeX { get; set; }
@@ -92,5 +141,6 @@ public class Entity
     }
 
     public EntityDto ToDto() =>
-        new(Id, Name, Kind, Race, BaseClass, X, Y, Speed, Level, Hp, MaxHp, Dead);
+        new(Id, Name, Kind, Race, BaseClass, X, Y, Speed, Level,
+            Hp, MaxHp, Mp, MaxMp, Dead);
 }

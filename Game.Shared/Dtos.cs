@@ -29,28 +29,32 @@ public record EntityDto(
     int Level,
     int Hp,
     int MaxHp,
+    int Mp,
+    int MaxMp,
     bool Dead);
 
 /// <summary>Client -> Server: "move me toward this point" (click-to-move).
-/// Moving cancels any current attack engagement (classic MMO behavior).</summary>
+/// Moving cancels engagement, queued skills, and casting (classic MMO).</summary>
 public record MoveCommand(float TargetX, float TargetY);
 
 /// <summary>Server -> Client, every tick: everything you can currently see
 /// (including yourself). Anything not listed has left your view range.</summary>
 public record WorldSnapshot(EntityDto[] Entities);
 
-/// <summary>Server -> Client: a chat line.</summary>
-public record ChatMessage(string From, string Text, ChatChannel Channel);
+/// <summary>Server -> Client: a chat line. To is set for whispers.</summary>
+public record ChatMessage(string From, string Text, ChatChannel Channel, string? To = null);
 
-/// <summary>Server -> Clients near the fight: one resolved attack.
-/// Damage is 0 for Miss; Death is sent in addition to the killing blow.</summary>
+/// <summary>Server -> Clients near the fight: one resolved combat action.
+/// Damage doubles as the heal amount for Heal; Skill is set for skill-based
+/// outcomes (and carries the buff/debuff name for Buff).</summary>
 public record CombatEvent(
     Guid AttackerId,
     string AttackerName,
     Guid TargetId,
     string TargetName,
     int Damage,
-    CombatOutcome Outcome);
+    CombatOutcome Outcome,
+    string? Skill = null);
 
 /// <summary>Server -> the owning client: exp/level progress after a kill.</summary>
 public record ProgressUpdate(
@@ -58,3 +62,7 @@ public record ProgressUpdate(
     long Exp,
     long ExpToNext,
     bool LeveledUp);
+
+/// <summary>Server -> the casting client: show/update the cast bar.
+/// Seconds &lt;= 0 means the cast was cancelled — hide the bar.</summary>
+public record CastInfo(string SkillName, float Seconds);

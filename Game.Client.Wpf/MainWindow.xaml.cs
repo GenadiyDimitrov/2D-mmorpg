@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
@@ -22,7 +23,11 @@ public partial class MainWindow : Window
     private readonly Dictionary<Guid, EntityVisual> _visuals = new();
     private readonly List<(Line Visual, bool Vertical, double WorldCoord)> _gridLines = new();
     private readonly List<FloatingText> _floatingTexts = new();
+    private readonly List<SkillSlot> _skillSlots = new();
+    private readonly ObservableCollection<string> _whisperNames = new();
     private readonly Stopwatch _clock = Stopwatch.StartNew();
+
+    private Ellipse? _safeZoneVisual;
 
     private Guid _myId;
     private string _myName = "";
@@ -37,6 +42,10 @@ public partial class MainWindow : Window
     private long _exp;
     private long _expToNext = StatCalculator.ExpToNext(1);
 
+    private string _castName = "";
+    private double _castStart;
+    private double _castDuration;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -45,11 +54,13 @@ public partial class MainWindow : Window
         RaceCombo.SelectedIndex = 0;
         ClassCombo.ItemsSource = Enum.GetValues<BaseClass>();
         ClassCombo.SelectedIndex = 0;
+        WhisperNames.ItemsSource = _whisperNames;
 
         _net.SnapshotReceived += s => Dispatcher.BeginInvoke(() => ApplySnapshot(s));
         _net.ChatReceived += m => Dispatcher.BeginInvoke(() => AppendChat(m));
         _net.CombatReceived += c => Dispatcher.BeginInvoke(() => OnCombatEvent(c));
         _net.ProgressReceived += p => Dispatcher.BeginInvoke(() => OnProgress(p));
+        _net.CastReceived += c => Dispatcher.BeginInvoke(() => OnCast(c));
         _net.Disconnected += reason => Dispatcher.BeginInvoke(() =>
         {
             _inGame = false;
@@ -57,7 +68,8 @@ public partial class MainWindow : Window
             LoginPanel.Visibility = Visibility.Visible;
         });
 
-        Loaded += (_, _) => BuildGridLines();
+        Loaded += (_, _) => BuildWorldDecor();
+        PreviewKeyDown += OnPreviewKeyDown;
         CompositionTarget.Rendering += OnRenderFrame;
     }
 
@@ -97,11 +109,13 @@ public partial class MainWindow : Window
             _camY = result.Y;
             _inGame = true;
 
+            BuildSkillBar((BaseClass)ClassCombo.SelectedItem!);
+
             LoginPanel.Visibility = Visibility.Collapsed;
             ChatPanel.Visibility = Visibility.Visible;
             AppendChat(new ChatMessage("SYSTEM",
-                "Welcome! Left-click ground to move, left-click a mob to attack. " +
-                "Enter sends local chat, '/all text' sends world chat.",
+                "Welcome! Click ground = move, click mob = attack, keys 1-5 = skills. " +
+                "Chat: plain = local, '!text' = world, '/w Name text' = whisper.",
                 ChatChannel.System));
         }
         catch (Exception ex)
@@ -120,6 +134,92 @@ public partial class MainWindow : Window
         LoginError.Text = text;
         LoginError.Visibility = Visibility.Visible;
         StatusText.Text = "Not connected";
+    }
+
+    // -----------------------------------------------------------------------
+    // Skill bar
+    // -----------------------------------------------------------------------
+
+    private void BuildSkillBar(BaseClass cls)
+    {
+        SkillBar.Children.Clear();
+        _skillSlots.Clear();
+
+        int key = 1;
+        foreach (var def in SkillCatalog.ForClass(cls))
+        {
+            var button = new Button
+            {
+                Width = 118,
+                Height = 36,
+                Margin = new Thickness(3, 0, 3, 0),
+                FontSize = 11,
+                Content = $"{key}. {def.Name}"
+            };
+
+            var slot = new SkillSlot { Def = def, Button = button, Key = key };
+            button.Click += (_, _) => UseSkill(slot);
+
+            _skillSlots.Add(slot);
+            SkillBar.Children.Add(button);
+            key++;
+        }
+
+        SkillBar.Visibility = Visibility.Visible;
+    }
+
+    private async void UseSkill(SkillSlot slot)
+    {
+        if (!_inGame || _myDto is { Dead: true })
+            return;
+
+        double now = _clock.Elapsed.TotalSeconds;
+        if (slot.ReadyAt > now)
+            return;
+
+        // Optimistic cooldown; the server enforces the real one regardless.
+        slot.ReadyAt = now + slot.Def.CooldownTicks * GameConstants.TickSeconds;
+
+        await _net.UseSkillAsync(slot.Def.Id, _targetId);
+    }
+
+    private void OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (!_inGame || ChatInput.IsKeyboardFocusWithin)
+            return;
+
+        int index = e.Key switch
+        {
+            Key.D1 or Key.NumPad1 => 0,
+            Key.D2 or Key.NumPad2 => 1,
+            Key.D3 or Key.NumPad3 => 2,
+            Key.D4 or Key.NumPad4 => 3,
+            Key.D5 or Key.NumPad5 => 4,
+            _ => -1
+        };
+
+        if (index >= 0 && index < _skillSlots.Count)
+        {
+            UseSkill(_skillSlots[index]);
+            e.Handled = true;
+        }
+    }
+
+    private void OnCast(CastInfo cast)
+    {
+        if (cast.Seconds <= 0)
+        {
+            CastBar.Visibility = Visibility.Collapsed;
+            _castDuration = 0;
+            return;
+        }
+
+        _castName = cast.SkillName;
+        _castStart = _clock.Elapsed.TotalSeconds;
+        _castDuration = cast.Seconds;
+        CastText.Text = cast.SkillName;
+        CastFill.Width = 0;
+        CastBar.Visibility = Visibility.Visible;
     }
 
     // -----------------------------------------------------------------------
@@ -167,6 +267,22 @@ public partial class MainWindow : Window
         UpdateTargetFrame();
     }
 
+    /// <summary>Mob name color by level difference vs me (design doc):
+    /// gray = very weak, green = weak, white = normal, yellow = strong,
+    /// red = very strong.</summary>
+    private Brush MobNameBrush(int mobLevel)
+    {
+        int diff = mobLevel - _level;
+        return diff switch
+        {
+            <= -6 => Brushes.Gray,
+            <= -2 => Brushes.LightGreen,
+            <= 1 => Brushes.White,
+            <= 5 => Brushes.Yellow,
+            _ => Brushes.Red
+        };
+    }
+
     private void UpdateVisualState(EntityVisual visual, EntityDto dto)
     {
         double ratio = dto.MaxHp > 0 ? Math.Clamp((double)dto.Hp / dto.MaxHp, 0, 1) : 0;
@@ -175,6 +291,9 @@ public partial class MainWindow : Window
         visual.Label.Text = dto.Dead
             ? $"{dto.Name}  Lv{dto.Level} (dead)"
             : $"{dto.Name}  Lv{dto.Level}";
+
+        if (dto.Kind == EntityKind.Mob)
+            visual.Label.Foreground = MobNameBrush(dto.Level);
     }
 
     private EntityVisual CreateVisual(EntityDto dto)
@@ -199,7 +318,7 @@ public partial class MainWindow : Window
 
         var label = new TextBlock
         {
-            Foreground = dto.Kind == EntityKind.Mob ? Brushes.LightCoral : Brushes.White,
+            Foreground = dto.Kind == EntityKind.Mob ? MobNameBrush(dto.Level) : Brushes.White,
             FontSize = 11,
             TextAlignment = TextAlignment.Center
         };
@@ -235,14 +354,13 @@ public partial class MainWindow : Window
 
     private void OnCombatEvent(CombatEvent evt)
     {
-        // Floating text anchors to the target (or the attacker as fallback).
         EntityVisual? anchor =
             _visuals.TryGetValue(evt.TargetId, out var tv) ? tv :
             _visuals.TryGetValue(evt.AttackerId, out var av) ? av : null;
 
         if (evt.Outcome == CombatOutcome.Death)
         {
-            AppendChat(new ChatMessage("COMBAT",
+            AppendChat(new ChatMessage("SYSTEM",
                 $"{evt.AttackerName} slew {evt.TargetName}.", ChatChannel.System));
             if (_targetId == evt.TargetId)
             {
@@ -258,7 +376,10 @@ public partial class MainWindow : Window
         (string text, Brush brush) = evt.Outcome switch
         {
             CombatOutcome.Miss => ("miss", Brushes.Gray),
+            CombatOutcome.Fail => ("fail", Brushes.MediumPurple),
             CombatOutcome.Crit => ($"{evt.Damage}!", Brushes.Orange),
+            CombatOutcome.Heal => ($"+{evt.Damage}", Brushes.LightGreen),
+            CombatOutcome.Buff => (evt.Skill ?? "buff", Brushes.LightSkyBlue),
             _ => (evt.Damage.ToString(),
                   evt.TargetId == _myId ? Brushes.OrangeRed : Brushes.White)
         };
@@ -330,16 +451,18 @@ public partial class MainWindow : Window
             visual.CurY += (visual.TargetY - visual.CurY) * lerp;
         }
 
-        // Camera follows my own (interpolated) entity.
         if (_visuals.TryGetValue(_myId, out var me))
         {
             _camX = me.CurX;
             _camY = me.CurY;
 
-            var hp = _myDto is null ? "" : $"  HP {_myDto.Hp}/{_myDto.MaxHp}";
+            var vitals = _myDto is null ? "" :
+                $"  HP {_myDto.Hp}/{_myDto.MaxHp}  MP {_myDto.Mp}/{_myDto.MaxMp}";
+            var zone = _myDto is not null &&
+                       GameConstants.InSafeZone(_myDto.X, _myDto.Y) ? "  [SAFE]" : "";
             StatusText.Text =
-                $"{_myName}  Lv{_level}{hp}  EXP {_exp}/{_expToNext}  " +
-                $"({(int)_camX},{(int)_camY})  visible: {_visuals.Count}";
+                $"{_myName}  Lv{_level}{vitals}  EXP {_exp}/{_expToNext}{zone}  " +
+                $"({(int)_camX},{(int)_camY})";
         }
 
         double cw = WorldCanvas.ActualWidth;
@@ -353,8 +476,92 @@ public partial class MainWindow : Window
             Canvas.SetTop(visual.Root, (visual.CurY - _camY) * Scale + ch / 2 - 18);
         }
 
+        UpdateSafeZoneVisual(cw, ch);
         UpdateFloatingTexts(now, cw, ch);
         UpdateGridLines(cw, ch);
+        UpdateSkillCooldowns(now);
+        UpdateCastBar(now);
+    }
+
+    private void UpdateSkillCooldowns(double now)
+    {
+        foreach (var slot in _skillSlots)
+        {
+            double remaining = slot.ReadyAt - now;
+            if (remaining > 0)
+            {
+                slot.Button.IsEnabled = false;
+                slot.Button.Content = $"{slot.Key}. {slot.Def.Name} ({remaining:0}s)";
+            }
+            else
+            {
+                slot.Button.IsEnabled = _myDto is not { Dead: true };
+                slot.Button.Content = $"{slot.Key}. {slot.Def.Name}";
+            }
+        }
+    }
+
+    private void UpdateCastBar(double now)
+    {
+        if (_castDuration <= 0 || CastBar.Visibility != Visibility.Visible)
+            return;
+
+        double progress = (now - _castStart) / _castDuration;
+        if (progress >= 1)
+        {
+            CastBar.Visibility = Visibility.Collapsed;
+            _castDuration = 0;
+            return;
+        }
+
+        CastFill.Width = 226 * Math.Clamp(progress, 0, 1);
+    }
+
+    // -----------------------------------------------------------------------
+    // World decor: safe zone circle + world-anchored grid
+    // -----------------------------------------------------------------------
+
+    private void BuildWorldDecor()
+    {
+        // Safe zone (town): green ground.
+        _safeZoneVisual = new Ellipse
+        {
+            Width = GameConstants.SafeZoneRadius * 2 * Scale,
+            Height = GameConstants.SafeZoneRadius * 2 * Scale,
+            Fill = new SolidColorBrush(Color.FromArgb(55, 70, 200, 90)),
+            Stroke = new SolidColorBrush(Color.FromArgb(120, 90, 220, 110)),
+            StrokeThickness = 2
+        };
+        WorldCanvas.Children.Insert(0, _safeZoneVisual);
+
+        var brush = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255));
+        brush.Freeze();
+
+        for (double x = 0; x <= GameConstants.ZoneWidth; x += GridStep)
+        {
+            var line = new Line { Stroke = brush, StrokeThickness = 1 };
+            _gridLines.Add((line, true, x));
+            WorldCanvas.Children.Insert(0, line);
+        }
+
+        for (double y = 0; y <= GameConstants.ZoneHeight; y += GridStep)
+        {
+            var line = new Line { Stroke = brush, StrokeThickness = 1 };
+            _gridLines.Add((line, false, y));
+            WorldCanvas.Children.Insert(0, line);
+        }
+    }
+
+    private void UpdateSafeZoneVisual(double cw, double ch)
+    {
+        if (_safeZoneVisual is null)
+            return;
+
+        double r = GameConstants.SafeZoneRadius * Scale;
+        Canvas.SetLeft(_safeZoneVisual,
+            (GameConstants.ZoneWidth / 2 - _camX) * Scale + cw / 2 - r);
+        Canvas.SetTop(_safeZoneVisual,
+            (GameConstants.ZoneHeight / 2 - _camY) * Scale + ch / 2 - r);
     }
 
     private void UpdateFloatingTexts(double now, double cw, double ch)
@@ -374,30 +581,6 @@ public partial class MainWindow : Window
             ft.Visual.Opacity = 1.0 - age / 1.2;
             Canvas.SetLeft(ft.Visual, (ft.WorldX - _camX) * Scale + cw / 2 - 8);
             Canvas.SetTop(ft.Visual, (ft.WorldY - _camY) * Scale + ch / 2 - 34 - age * 38);
-        }
-    }
-
-    // -----------------------------------------------------------------------
-    // World-anchored background grid (gives the feeling of movement)
-    // -----------------------------------------------------------------------
-
-    private void BuildGridLines()
-    {
-        var brush = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255));
-        brush.Freeze();
-
-        for (double x = 0; x <= GameConstants.ZoneWidth; x += GridStep)
-        {
-            var line = new Line { Stroke = brush, StrokeThickness = 1 };
-            _gridLines.Add((line, true, x));
-            WorldCanvas.Children.Insert(0, line);
-        }
-
-        for (double y = 0; y <= GameConstants.ZoneHeight; y += GridStep)
-        {
-            var line = new Line { Stroke = brush, StrokeThickness = 1 };
-            _gridLines.Add((line, false, y));
-            WorldCanvas.Children.Insert(0, line);
         }
     }
 
@@ -465,7 +648,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Otherwise: ground click = move (server cancels any engagement).
+        // Otherwise: ground click = move (server cancels engagement/casting).
         double worldX = _camX + (click.X - cw / 2) / Scale;
         double worldY = _camY + (click.Y - ch / 2) / Scale;
         await _net.MoveAsync((float)worldX, (float)worldY);
@@ -476,50 +659,115 @@ public partial class MainWindow : Window
         await _net.RespawnAsync();
     }
 
+    // -----------------------------------------------------------------------
+    // Chat: '!text' = world, '/w Name text' = whisper, plain = local
+    // -----------------------------------------------------------------------
+
     private async void ChatInput_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key != Key.Enter || !_inGame)
             return;
 
-        string text = ChatInput.Text.Trim();
+        string raw = ChatInput.Text.Trim();
         ChatInput.Clear();
 
-        if (text.Length == 0)
+        if (raw.Length == 0)
             return;
 
-        var channel = ChatChannel.Local;
-        if (text.StartsWith("/all ", StringComparison.OrdinalIgnoreCase))
+        if (raw.StartsWith('!'))
         {
-            channel = ChatChannel.World;
-            text = text[5..].Trim();
-            if (text.Length == 0)
-                return;
+            string text = raw[1..].Trim();
+            if (text.Length > 0)
+                await _net.ChatAsync(text, ChatChannel.World);
+            return;
         }
 
-        await _net.ChatAsync(text, channel);
+        if (raw.StartsWith("/w ", StringComparison.OrdinalIgnoreCase))
+        {
+            var rest = raw[3..].Trim();
+            int space = rest.IndexOf(' ');
+            if (space <= 0 || space == rest.Length - 1)
+            {
+                AppendChat(new ChatMessage("SYSTEM",
+                    "Usage: /w CharName message", ChatChannel.System));
+                return;
+            }
+
+            string name = rest[..space];
+            string text = rest[(space + 1)..].Trim();
+            RememberWhisperName(name);
+            await _net.ChatAsync(text, ChatChannel.Whisper, name);
+            return;
+        }
+
+        await _net.ChatAsync(raw, ChatChannel.Local);
+    }
+
+    private void RememberWhisperName(string name)
+    {
+        if (!_whisperNames.Any(n => string.Equals(n, name, StringComparison.OrdinalIgnoreCase)))
+            _whisperNames.Add(name);
+    }
+
+    private bool _whisperSelectionGuard;
+
+    private void WhisperNames_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_whisperSelectionGuard || WhisperNames.SelectedItem is not string name)
+            return;
+
+        ChatInput.Text = $"/w {name} ";
+        ChatInput.Focus();
+        ChatInput.CaretIndex = ChatInput.Text.Length;
+
+        _whisperSelectionGuard = true;
+        WhisperNames.SelectedIndex = -1;
+        _whisperSelectionGuard = false;
     }
 
     private void AppendChat(ChatMessage message)
     {
-        Brush brush = message.Channel switch
+        switch (message.Channel)
         {
-            ChatChannel.World => Brushes.Gold,
-            ChatChannel.System => Brushes.LightGreen,
-            _ => Brushes.White
-        };
+            case ChatChannel.System:
+                // 1st row: system panel only.
+                AddChatLine(SystemList, SystemScroll,
+                    $"{message.From}: {message.Text}", Brushes.LightGreen);
+                break;
 
-        ChatList.Items.Add(new TextBlock
+            case ChatChannel.World:
+                AddChatLine(AllList, AllScroll, $"[W] {message.From}: {message.Text}", Brushes.Gold);
+                AddChatLine(WorldList, WorldScroll, $"{message.From}: {message.Text}", Brushes.Gold);
+                break;
+
+            case ChatChannel.Whisper:
+                RememberWhisperName(message.From == _myName ? message.To ?? "" : message.From);
+                string line = $"{message.From} -> {message.To}: {message.Text}";
+                AddChatLine(AllList, AllScroll, $"[PM] {line}", Brushes.Violet);
+                AddChatLine(WhisperList, WhisperScroll, line, Brushes.Violet);
+                break;
+
+            default: // Local
+                AddChatLine(AllList, AllScroll, $"{message.From}: {message.Text}", Brushes.White);
+                AddChatLine(LocalList, LocalScroll, $"{message.From}: {message.Text}", Brushes.White);
+                break;
+        }
+    }
+
+    private static void AddChatLine(ItemsControl list, ScrollViewer scroll, string text, Brush brush)
+    {
+        list.Items.Add(new TextBlock
         {
-            Text = $"[{message.Channel}] {message.From}: {message.Text}",
+            Text = text,
             Foreground = brush,
             FontSize = 12,
             TextWrapping = TextWrapping.Wrap
         });
 
-        if (ChatList.Items.Count > 100)
-            ChatList.Items.RemoveAt(0);
+        while (list.Items.Count > GameConstants.ChatHistoryLimit)
+            list.Items.RemoveAt(0);
 
-        ChatScroll.ScrollToEnd();
+        scroll.ScrollToEnd();
     }
 
     protected override async void OnClosed(EventArgs e)
@@ -529,7 +777,7 @@ public partial class MainWindow : Window
     }
 
     // -----------------------------------------------------------------------
-    // Visual state holders
+    // State holders
     // -----------------------------------------------------------------------
 
     /// <summary>Visual + interpolation state for one entity on screen.</summary>
@@ -552,5 +800,13 @@ public partial class MainWindow : Window
         public double WorldX { get; init; }
         public double WorldY { get; init; }
         public double Born { get; init; }
+    }
+
+    private class SkillSlot
+    {
+        public required SkillDef Def { get; init; }
+        public required Button Button { get; init; }
+        public required int Key { get; init; }
+        public double ReadyAt { get; set; }
     }
 }

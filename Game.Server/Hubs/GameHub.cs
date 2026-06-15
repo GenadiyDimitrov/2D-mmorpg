@@ -50,9 +50,15 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
-    public Task Chat(string text, ChatChannel channel)
+    public Task Chat(string text, ChatChannel channel, string? whisperTarget)
     {
-        _world.Commands.Enqueue(new ChatCmd(Context.ConnectionId, text, channel));
+        _world.Commands.Enqueue(new ChatCmd(Context.ConnectionId, text, channel, whisperTarget));
+        return Task.CompletedTask;
+    }
+
+    public Task UseSkill(int skillId, Guid? targetId)
+    {
+        _world.Commands.Enqueue(new SkillCmd(Context.ConnectionId, skillId, targetId));
         return Task.CompletedTask;
     }
 

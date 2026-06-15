@@ -46,7 +46,14 @@ public record LeaveCommand(string ConnectionId) : IGameCommand;
 
 public record MoveCmd(string ConnectionId, MoveCommand Move) : IGameCommand;
 
-public record ChatCmd(string ConnectionId, string Text, ChatChannel Channel) : IGameCommand;
+public record ChatCmd(
+    string ConnectionId,
+    string Text,
+    ChatChannel Channel,
+    string? WhisperTarget = null) : IGameCommand;
+
+/// <summary>Use a skill, optionally on a target (offensive skills).</summary>
+public record SkillCmd(string ConnectionId, int SkillId, Guid? TargetId) : IGameCommand;
 
 /// <summary>Engage a target: run into range and auto-attack (L2-style).</summary>
 public record AttackCmd(string ConnectionId, Guid TargetId) : IGameCommand;

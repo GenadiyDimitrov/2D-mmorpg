@@ -1,7 +1,7 @@
 <Window x:Class="Game.Client.Wpf.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="L2-like — Phase 2"
+        Title="L2-like — Phase 3"
         Width="1280" Height="800"
         WindowStartupLocation="CenterScreen"
         Background="#FF101418">
@@ -39,9 +39,33 @@
             </StackPanel>
         </Border>
 
-        <!-- Chat -->
+        <!-- Skill bar (bottom center) -->
+        <StackPanel x:Name="SkillBar"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                    Margin="0,0,0,12"
+                    Visibility="Collapsed"/>
+
+        <!-- Cast bar (above the skill bar) -->
+        <Border x:Name="CastBar"
+                Width="230" Height="18"
+                HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                Margin="0,0,0,58"
+                Background="#90000000" CornerRadius="4"
+                Visibility="Collapsed">
+            <Grid>
+                <Rectangle x:Name="CastFill"
+                           Fill="#FF4488DD"
+                           HorizontalAlignment="Left" Width="0" RadiusX="3" RadiusY="3"/>
+                <TextBlock x:Name="CastText"
+                           Foreground="White" FontSize="11"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- Chat: system panel on top, tabbed chats below -->
         <Border x:Name="ChatPanel"
-                Width="420" Height="230"
+                Width="460" Height="320"
                 HorizontalAlignment="Left" VerticalAlignment="Bottom"
                 Margin="10" Padding="6"
                 Background="#A0000000" CornerRadius="6"
@@ -53,9 +77,45 @@
                          Background="#60000000" Foreground="White"
                          BorderBrush="#FF445566" CaretBrush="White"
                          KeyDown="ChatInput_KeyDown"/>
-                <ScrollViewer x:Name="ChatScroll" VerticalScrollBarVisibility="Auto">
-                    <ItemsControl x:Name="ChatList"/>
-                </ScrollViewer>
+
+                <!-- 1st row: system chat -->
+                <Border DockPanel.Dock="Top" Height="62" Margin="0,0,0,4"
+                        Background="#40000000" CornerRadius="4" Padding="4">
+                    <ScrollViewer x:Name="SystemScroll" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="SystemList"/>
+                    </ScrollViewer>
+                </Border>
+
+                <!-- 2nd row: tabbed chat -->
+                <TabControl x:Name="ChatTabs"
+                            Background="Transparent" BorderThickness="0"
+                            Padding="2">
+                    <TabItem Header="All">
+                        <ScrollViewer x:Name="AllScroll" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="AllList"/>
+                        </ScrollViewer>
+                    </TabItem>
+                    <TabItem Header="World">
+                        <ScrollViewer x:Name="WorldScroll" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="WorldList"/>
+                        </ScrollViewer>
+                    </TabItem>
+                    <TabItem Header="Local">
+                        <ScrollViewer x:Name="LocalScroll" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="LocalList"/>
+                        </ScrollViewer>
+                    </TabItem>
+                    <TabItem Header="Whisper">
+                        <DockPanel>
+                            <ComboBox x:Name="WhisperNames"
+                                      DockPanel.Dock="Top" Height="24" Margin="0,2,0,4"
+                                      SelectionChanged="WhisperNames_SelectionChanged"/>
+                            <ScrollViewer x:Name="WhisperScroll" VerticalScrollBarVisibility="Auto">
+                                <ItemsControl x:Name="WhisperList"/>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </TabItem>
+                </TabControl>
             </DockPanel>
         </Border>
 
