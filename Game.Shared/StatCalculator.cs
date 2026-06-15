@@ -70,9 +70,9 @@ public static class StatCalculator
     // ----- Progression -------------------------------------------------------
 
     /// <summary>Exp required to go from <paramref name="level"/> to the next.</summary>
-    public static long ExpToNext(int level) => 50L * level * level;
+    public static long ExpToNext(int level) => 25L * level * level;
 
-    public static int MobExpReward(int mobLevel) => 20 + mobLevel * 15;
+    public static int MobExpReward(int mobLevel) => 40 + mobLevel * 35;
 
     /// <summary>Mob stat block by level. Per design: higher-level mobs must
     /// out-stat lower-level characters.</summary>

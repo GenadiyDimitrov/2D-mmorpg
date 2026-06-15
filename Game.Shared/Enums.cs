@@ -44,5 +44,6 @@ public enum SkillEffect
     MagicDamage = 1,
     Heal = 2,
     BuffAtk = 3,
-    DebuffDef = 4
+    DebuffDef = 4,
+    BuffDef = 5
 }

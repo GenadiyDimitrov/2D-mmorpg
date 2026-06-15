@@ -6,12 +6,10 @@ namespace Game.Server.Simulation;
 
 /// <summary>
 /// The heart of the server: a fixed-tick loop (10 t/s).
-/// Each tick: drain commands -> simulate (AI, skills, combat, regen) ->
-/// broadcast snapshots.
+/// Each tick: drain commands -> simulate -> broadcast snapshots.
 /// </summary>
 public class GameLoopService : BackgroundService
 {
-    // Spiders and Bandits attack on sight; the rest only retaliate.
     private static readonly (string Name, bool Aggressive)[] MobTypes =
     {
         ("Wolf", false), ("Boar", false), ("Slime", false),
@@ -19,8 +17,6 @@ public class GameLoopService : BackgroundService
     };
 
     // Level-banded hunting grounds: rings around the town (safe zone).
-    // A mob's level is decided by where its home is — and leashing keeps it
-    // there, so a lvl-15 Bandit never wanders into the lvl 1-3 ring.
     private static readonly (float MinDist, float MaxDist, int MinLvl, int MaxLvl, int Count)[] SpawnBands =
     {
         (1300f, 3500f, 1, 3, 14),
@@ -58,14 +54,13 @@ public class GameLoopService : BackgroundService
             }
             catch (Exception ex)
             {
-                // One bad tick must never kill the world.
                 _log.LogError(ex, "Unhandled error in game tick");
             }
         }
     }
 
     // =========================================================================
-    // 1. Commands (the only place hub input enters the simulation)
+    // 1. Commands
     // =========================================================================
 
     private void ProcessCommands()
@@ -74,13 +69,20 @@ public class GameLoopService : BackgroundService
         {
             switch (cmd)
             {
-                case JoinCommand join: HandleJoin(join); break;
-                case LeaveCommand leave: HandleLeave(leave); break;
-                case MoveCmd move: HandleMove(move); break;
-                case AttackCmd attack: HandleAttack(attack); break;
-                case SkillCmd skill: HandleSkill(skill); break;
-                case RespawnCmd respawn: HandleRespawn(respawn); break;
-                case ChatCmd chat: HandleChat(chat); break;
+                case JoinCommand c: HandleJoin(c); break;
+                case LeaveCommand c: HandleLeave(c); break;
+                case MoveCmd c: HandleMove(c); break;
+                case AttackCmd c: HandleAttack(c); break;
+                case SkillCmd c: HandleSkill(c); break;
+                case RespawnCmd c: HandleRespawn(c); break;
+                case ClassChangeCmd c: HandleClassChange(c); break;
+                case EquipCmd c: HandleEquip(c); break;
+                case TradeRequestCmd c: HandleTradeRequest(c); break;
+                case TradeRespondCmd c: HandleTradeRespond(c); break;
+                case TradeOfferCmd c: HandleTradeOffer(c); break;
+                case TradeReadyCmd c: HandleTradeReady(c); break;
+                case TradeCancelCmd c: HandleTradeCancel(c); break;
+                case ChatCmd c: HandleChat(c); break;
             }
         }
     }
@@ -127,6 +129,10 @@ public class GameLoopService : BackgroundService
         entity.Hp = entity.MaxHp;
         entity.Mp = entity.MaxMp;
 
+        // Starter gear so the inventory has something in it.
+        entity.Inventory.Add(new InventoryItem { DefId = 1 });  // Rusty Sword
+        entity.Inventory.Add(new InventoryItem { DefId = 9 });  // Leather Vest
+
         _world.Entities[entity.Id] = entity;
         _world.EntityToConnection[entity.Id] = join.ConnectionId;
         _world.ConnectionToEntity[join.ConnectionId] = entity.Id;
@@ -134,6 +140,7 @@ public class GameLoopService : BackgroundService
 
         join.Result.TrySetResult(new LoginResult(true, null, entity.Id, entity.X, entity.Y));
 
+        SendInventory(entity);
         BroadcastSystem($"{entity.Name} entered the world.");
         _log.LogInformation("Player {Name} joined ({Race} {Class})",
             entity.Name, entity.Race, entity.BaseClass);
@@ -148,10 +155,12 @@ public class GameLoopService : BackgroundService
 
         if (_world.Entities.Remove(entityId, out var entity))
         {
+            CancelTradeFor(entity, notifyPartnerOnly: true);
+            _world.PendingTradeRequests.Remove(entity.Id);
+
             if (!entity.Dead)
                 _world.Grid.Remove(entity);
             BroadcastSystem($"{entity.Name} left the world.");
-            _log.LogInformation("Player {Name} left", entity.Name);
         }
     }
 
@@ -160,11 +169,10 @@ public class GameLoopService : BackgroundService
         if (!TryGetPlayer(move.ConnectionId, out var entity) || entity.Dead)
             return;
 
-        // Clicking the ground cancels engagement, queued skills and casting.
         entity.Engaged = false;
         entity.CombatTargetId = null;
         entity.QueuedSkillId = null;
-        CancelCast(entity, move.ConnectionId);
+        CancelCast(entity);
 
         entity.TargetX = Math.Clamp(move.Move.TargetX, 0, GameConstants.ZoneWidth);
         entity.TargetY = Math.Clamp(move.Move.TargetY, 0, GameConstants.ZoneHeight);
@@ -177,14 +185,12 @@ public class GameLoopService : BackgroundService
 
         if (attack.TargetId == attacker.Id ||
             !_world.Entities.TryGetValue(attack.TargetId, out var target) ||
-            target.Dead)
-            return;
-
-        if (DistanceSq(attacker, target) > GameConstants.ViewRange * GameConstants.ViewRange)
+            target.Dead ||
+            DistanceSq(attacker, target) > GameConstants.ViewRange * GameConstants.ViewRange)
             return;
 
         attacker.QueuedSkillId = null;
-        CancelCast(attacker, attack.ConnectionId);
+        CancelCast(attacker);
         attacker.CombatTargetId = target.Id;
         attacker.Engaged = true;
     }
@@ -195,18 +201,19 @@ public class GameLoopService : BackgroundService
             return;
 
         var def = SkillCatalog.Get(cmd.SkillId);
-        if (def is null || def.Class != caster.BaseClass)
+        if (def is null || def.Class != caster.BaseClass ||
+            (def.RequiredArchetype is not null && def.RequiredArchetype != caster.Archetype))
             return;
 
         if (caster.SkillCooldowns.TryGetValue(def.Id, out int cd) && cd > 0)
         {
-            SendSystemTo(cmd.ConnectionId, $"{def.Name} is not ready.");
+            SendSystemToEntity(caster, $"{def.Name} is not ready.");
             return;
         }
 
         if (caster.Mp < def.MpCost)
         {
-            SendSystemTo(cmd.ConnectionId, "Not enough MP.");
+            SendSystemToEntity(caster, "Not enough MP.");
             return;
         }
 
@@ -222,20 +229,26 @@ public class GameLoopService : BackgroundService
                 target.Dead ||
                 DistanceSq(caster, target) > GameConstants.ViewRange * GameConstants.ViewRange)
             {
-                SendSystemTo(cmd.ConnectionId, $"{def.Name} needs a target.");
+                SendSystemToEntity(caster, $"{def.Name} needs a target.");
                 return;
             }
             targetId = tid;
         }
+        else if (def.Effect is SkillEffect.Heal && def.Range > 0 &&
+                 cmd.TargetId is Guid allyId &&
+                 _world.Entities.TryGetValue(allyId, out var ally) &&
+                 ally.Kind == EntityKind.Player && !ally.Dead)
+        {
+            targetId = allyId; // ranged heal on a targeted player
+        }
         else
         {
-            targetId = caster.Id; // self-targeted (Heal, War Cry)
+            targetId = caster.Id; // self-targeted
         }
 
-        CancelCast(caster, cmd.ConnectionId);
+        CancelCast(caster);
         caster.QueuedSkillId = def.Id;
         caster.QueuedTargetId = targetId;
-        // Engaged auto-attack resumes after the skill (set on execution).
     }
 
     private void HandleRespawn(RespawnCmd respawn)
@@ -254,6 +267,293 @@ public class GameLoopService : BackgroundService
         _world.Grid.UpdatePosition(entity);
     }
 
+    // ----- Class change ------------------------------------------------------------
+
+    private void HandleClassChange(ClassChangeCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
+            return;
+
+        if (player.SecondClass != 0)
+        {
+            SendSystemToEntity(player, "You have already chosen your path.");
+            return;
+        }
+
+        if (player.Level < GameConstants.ClassChangeLevel)
+        {
+            SendSystemToEntity(player,
+                $"Class change requires level {GameConstants.ClassChangeLevel}.");
+            return;
+        }
+
+        var def = ClassCatalog.Get(cmd.ClassId);
+        if (def is null || def.Race != player.Race || def.Base != player.BaseClass)
+            return;
+
+        player.SecondClass = def.Id;
+        var (con, atk, wit, dex) = ClassCatalog.StatBonus(def.Archetype);
+        player.Con += con;
+        player.AtkStat += atk;
+        player.Wit += wit;
+        player.Dex += dex;
+        player.RecomputeDerived();
+        player.Hp = player.MaxHp;
+        player.Mp = player.MaxMp;
+
+        BroadcastSystem($"{player.Name} has become a {def.Name}!");
+    }
+
+    // ----- Equipment ------------------------------------------------------------------
+
+    private void HandleEquip(EquipCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
+            return;
+
+        var item = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
+        if (item is null || ItemCatalog.Get(item.DefId) is not ItemDef def)
+            return;
+
+        if (item.Equipped)
+        {
+            item.Equipped = false;
+        }
+        else
+        {
+            if (player.Level < ItemCatalog.RequiredLevel(def.Grade))
+            {
+                SendSystemToEntity(player,
+                    $"{def.Name} requires level {ItemCatalog.RequiredLevel(def.Grade)}.");
+                return;
+            }
+
+            // Items being traded cannot be equipped mid-trade.
+            if (_world.ActiveTrades.TryGetValue(player.Id, out var trade) &&
+                trade.OfferOf(player).Contains(item.InstanceId))
+                return;
+
+            // One item per slot: unequip the current one.
+            foreach (var other in player.Inventory)
+            {
+                if (other.Equipped &&
+                    ItemCatalog.Get(other.DefId) is ItemDef otherDef &&
+                    otherDef.Slot == def.Slot)
+                    other.Equipped = false;
+            }
+
+            item.Equipped = true;
+        }
+
+        player.RecomputeDerived();
+        SendInventory(player);
+    }
+
+    // ----- Trade ---------------------------------------------------------------------------
+
+    private void HandleTradeRequest(TradeRequestCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var requester) || requester.Dead)
+            return;
+
+        if (_world.ActiveTrades.ContainsKey(requester.Id))
+            return;
+
+        if (!_world.Entities.TryGetValue(cmd.TargetId, out var target) ||
+            target.Kind != EntityKind.Player || target.Dead ||
+            _world.ActiveTrades.ContainsKey(target.Id))
+        {
+            SendSystemToEntity(requester, "That player cannot trade right now.");
+            return;
+        }
+
+        if (DistanceSq(requester, target) > GameConstants.TradeRange * GameConstants.TradeRange)
+        {
+            SendSystemToEntity(requester, "Too far away to trade.");
+            return;
+        }
+
+        _world.PendingTradeRequests[target.Id] = requester.Id;
+
+        if (_world.EntityToConnection.TryGetValue(target.Id, out var conn))
+            _ = _hub.Clients.Client(conn).SendAsync("TradeRequest",
+                new TradeRequestNotice(requester.Id, requester.Name));
+
+        SendSystemToEntity(requester, $"Trade request sent to {target.Name}.");
+    }
+
+    private void HandleTradeRespond(TradeRespondCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var responder))
+            return;
+
+        if (!_world.PendingTradeRequests.Remove(responder.Id, out var requesterId))
+            return;
+
+        if (!_world.Entities.TryGetValue(requesterId, out var requester) || requester.Dead)
+            return;
+
+        if (!cmd.Accept)
+        {
+            SendSystemToEntity(requester, $"{responder.Name} declined the trade.");
+            return;
+        }
+
+        if (_world.ActiveTrades.ContainsKey(requester.Id) ||
+            _world.ActiveTrades.ContainsKey(responder.Id))
+            return;
+
+        var session = new TradeSession { A = requester, B = responder };
+        _world.ActiveTrades[requester.Id] = session;
+        _world.ActiveTrades[responder.Id] = session;
+        SendTradeState(session);
+    }
+
+    private void HandleTradeOffer(TradeOfferCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) ||
+            !_world.ActiveTrades.TryGetValue(player.Id, out var session))
+            return;
+
+        var offer = session.OfferOf(player);
+        offer.Clear();
+
+        foreach (var instanceId in cmd.InstanceIds.Distinct()
+                     .Take(GameConstants.TradeMaxOfferSlots))
+        {
+            var item = player.Inventory.FirstOrDefault(i => i.InstanceId == instanceId);
+            if (item is not null && !item.Equipped)
+                offer.Add(instanceId);
+        }
+
+        // Changing an offer resets both ready flags (no bait-and-switch).
+        session.ReadyA = false;
+        session.ReadyB = false;
+        SendTradeState(session);
+    }
+
+    private void HandleTradeReady(TradeReadyCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) ||
+            !_world.ActiveTrades.TryGetValue(player.Id, out var session))
+            return;
+
+        session.SetReady(player, true);
+
+        if (session.ReadyA && session.ReadyB)
+            CompleteTrade(session);
+        else
+            SendTradeState(session);
+    }
+
+    private void HandleTradeCancel(TradeCancelCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+
+        _world.PendingTradeRequests.Remove(player.Id);
+        CancelTradeFor(player, notifyPartnerOnly: false);
+    }
+
+    private void CompleteTrade(TradeSession session)
+    {
+        var itemsA = ResolveOffer(session.A, session.OfferA);
+        var itemsB = ResolveOffer(session.B, session.OfferB);
+
+        bool valid = itemsA is not null && itemsB is not null &&
+            session.A.Inventory.Count - itemsA.Count + itemsB.Count
+                <= GameConstants.InventorySize &&
+            session.B.Inventory.Count - itemsB.Count + itemsA.Count
+                <= GameConstants.InventorySize;
+
+        if (!valid)
+        {
+            SendSystemToEntity(session.A, "Trade failed (items changed or bags full).");
+            SendSystemToEntity(session.B, "Trade failed (items changed or bags full).");
+            CloseTrade(session);
+            return;
+        }
+
+        foreach (var item in itemsA!)
+        {
+            session.A.Inventory.Remove(item);
+            session.B.Inventory.Add(item);
+        }
+        foreach (var item in itemsB!)
+        {
+            session.B.Inventory.Remove(item);
+            session.A.Inventory.Add(item);
+        }
+
+        SendSystemToEntity(session.A, "Trade completed.");
+        SendSystemToEntity(session.B, "Trade completed.");
+        CloseTrade(session);
+        SendInventory(session.A);
+        SendInventory(session.B);
+    }
+
+    private static List<InventoryItem>? ResolveOffer(Entity owner, List<Guid> offer)
+    {
+        var items = new List<InventoryItem>();
+        foreach (var id in offer)
+        {
+            var item = owner.Inventory.FirstOrDefault(i => i.InstanceId == id);
+            if (item is null || item.Equipped)
+                return null;
+            items.Add(item);
+        }
+        return items;
+    }
+
+    private void CancelTradeFor(Entity player, bool notifyPartnerOnly)
+    {
+        if (!_world.ActiveTrades.TryGetValue(player.Id, out var session))
+            return;
+
+        var partner = session.PartnerOf(player);
+        SendSystemToEntity(partner, $"{player.Name} cancelled the trade.");
+        if (!notifyPartnerOnly)
+            SendSystemToEntity(player, "Trade cancelled.");
+        CloseTrade(session);
+    }
+
+    private void CloseTrade(TradeSession session)
+    {
+        _world.ActiveTrades.Remove(session.A.Id);
+        _world.ActiveTrades.Remove(session.B.Id);
+
+        var closed = new TradeStateUpdate(false, "", Array.Empty<InventoryItemDto>(),
+            Array.Empty<InventoryItemDto>(), false, false);
+        SendTo(session.A, "Trade", closed);
+        SendTo(session.B, "Trade", closed);
+    }
+
+    private void SendTradeState(TradeSession session)
+    {
+        SendTo(session.A, "Trade", BuildTradeState(session, session.A));
+        SendTo(session.B, "Trade", BuildTradeState(session, session.B));
+    }
+
+    private TradeStateUpdate BuildTradeState(TradeSession session, Entity viewer)
+    {
+        var partner = session.PartnerOf(viewer);
+        return new TradeStateUpdate(
+            true,
+            partner.Name,
+            OfferDtos(viewer, session.OfferOf(viewer)),
+            OfferDtos(partner, session.OfferOf(partner)),
+            session.ReadyOf(viewer),
+            session.ReadyOf(partner));
+    }
+
+    private static InventoryItemDto[] OfferDtos(Entity owner, List<Guid> offer) =>
+        offer.Select(id => owner.Inventory.FirstOrDefault(i => i.InstanceId == id))
+            .Where(i => i is not null)
+            .Select(i => i!.ToDto())
+            .ToArray();
+
+    // ----- Chat -----------------------------------------------------------------------------
+
     private void HandleChat(ChatCmd chat)
     {
         if (!TryGetPlayer(chat.ConnectionId, out var sender))
@@ -263,7 +563,6 @@ public class GameLoopService : BackgroundService
         if (text.Length is 0 or > 200)
             return;
 
-        // Players cannot send System messages (that is for admins, later).
         var channel = chat.Channel == ChatChannel.System ? ChatChannel.Local : chat.Channel;
 
         if (channel == ChatChannel.Whisper)
@@ -284,7 +583,7 @@ public class GameLoopService : BackgroundService
 
             var whisper = new ChatMessage(sender.Name, text, ChatChannel.Whisper, target.Name);
             _ = _hub.Clients.Client(targetConn).SendAsync("Chat", whisper);
-            _ = _hub.Clients.Client(chat.ConnectionId).SendAsync("Chat", whisper); // echo
+            _ = _hub.Clients.Client(chat.ConnectionId).SendAsync("Chat", whisper);
             return;
         }
 
@@ -296,7 +595,6 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        // Local: only players within view range hear it.
         foreach (var nearby in _world.Grid.Nearby(sender))
         {
             if (_world.EntityToConnection.TryGetValue(nearby.Id, out var conn))
@@ -367,7 +665,6 @@ public class GameLoopService : BackgroundService
     {
         if (mob.Engaged)
         {
-            // Leash: chased too far from home -> reset, walk back, heal full.
             float dx = mob.X - mob.HomeX;
             float dy = mob.Y - mob.HomeY;
             if (dx * dx + dy * dy > GameConstants.MobLeashRange * GameConstants.MobLeashRange)
@@ -378,9 +675,8 @@ public class GameLoopService : BackgroundService
         if (--mob.WanderTicks > 0)
             return;
 
-        mob.WanderTicks = _rng.Next(30, 120); // next decision in 3-12s
+        mob.WanderTicks = _rng.Next(30, 120);
 
-        // Aggressive mobs look for prey at each decision point.
         if (mob.Aggressive)
         {
             foreach (var candidate in _world.Grid.Nearby(mob))
@@ -404,7 +700,6 @@ public class GameLoopService : BackgroundService
             float tx = Math.Clamp(mob.HomeX + _rng.Next(-1000, 1001), 0, GameConstants.ZoneWidth);
             float ty = Math.Clamp(mob.HomeY + _rng.Next(-1000, 1001), 0, GameConstants.ZoneHeight);
 
-            // Mobs never walk into the safe zone.
             if (!GameConstants.InSafeZone(tx, ty))
             {
                 mob.TargetX = tx;
@@ -441,7 +736,12 @@ public class GameLoopService : BackgroundService
     {
         if (entity.CastingSkillId is int castingId)
         {
-            UpdateCasting(entity, castingId);
+            if (--entity.CastTicksRemaining <= 0)
+            {
+                entity.CastingSkillId = null;
+                if (SkillCatalog.Get(castingId) is SkillDef def)
+                    ExecuteSkill(entity, def);
+            }
             return;
         }
 
@@ -453,17 +753,6 @@ public class GameLoopService : BackgroundService
 
         if (entity.Engaged)
             UpdateAutoAttack(entity);
-    }
-
-    private void UpdateCasting(Entity caster, int skillId)
-    {
-        if (--caster.CastTicksRemaining > 0)
-            return;
-
-        caster.CastingSkillId = null;
-        var def = SkillCatalog.Get(skillId);
-        if (def is not null)
-            ExecuteSkill(caster, def);
     }
 
     private void UpdateQueuedSkill(Entity caster, int skillId)
@@ -487,16 +776,15 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        if (!selfTargeted && def.Range > 0 &&
-            DistanceSq(caster, target) > def.Range * def.Range)
+        float range = SkillCatalog.EffectiveRange(def, caster.Archetype, caster.BasicAttackRange);
+
+        if (!selfTargeted && DistanceSq(caster, target) > range * range)
         {
-            // Run into skill range (L2-style), re-aiming every tick.
             caster.TargetX = target.X;
             caster.TargetY = target.Y;
             return;
         }
 
-        // In range: stand still and start the wind-up.
         caster.TargetX = null;
         caster.TargetY = null;
         caster.QueuedSkillId = null;
@@ -519,9 +807,7 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        bool selfTargeted = caster.CastTargetId == caster.Id || def.Range == 0 &&
-            def.Effect is SkillEffect.Heal or SkillEffect.BuffAtk;
-
+        bool selfTargeted = caster.CastTargetId == caster.Id;
         Entity? target = selfTargeted ? caster
             : caster.CastTargetId is Guid tid ? _world.Entities.GetValueOrDefault(tid) : null;
 
@@ -531,9 +817,8 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        // Allow slight drift during the cast, but not kiting across the map.
-        if (!selfTargeted && def.Range > 0 &&
-            DistanceSq(caster, target) > def.Range * def.Range * 1.7f)
+        float range = SkillCatalog.EffectiveRange(def, caster.Archetype, caster.BasicAttackRange);
+        if (!selfTargeted && DistanceSq(caster, target) > range * range * 1.7f)
         {
             SendSystemToEntity(caster, "Target out of range.");
             return;
@@ -546,7 +831,6 @@ public class GameLoopService : BackgroundService
         {
             case SkillEffect.PhysicalDamage:
             {
-                // Physical skills carry bonus accuracy but can still miss.
                 float miss = StatCalculator.MissChance(
                     caster.Accuracy + SkillCatalog.PhysicalSkillAccuracyBonus,
                     target.Evasion);
@@ -579,7 +863,6 @@ public class GameLoopService : BackgroundService
 
             case SkillEffect.MagicDamage:
             {
-                // Spells don't miss — they fail (level difference).
                 float fail = SkillCatalog.SpellFailChance(caster.Level, target.Level);
 
                 if (_rng.NextDouble() < fail)
@@ -607,6 +890,7 @@ public class GameLoopService : BackgroundService
             }
 
             case SkillEffect.BuffAtk:
+            case SkillEffect.BuffDef:
             {
                 ApplyBuff(target, def);
                 BroadcastCombat(caster, target, 0, CombatOutcome.Buff, def.Name);
@@ -615,7 +899,6 @@ public class GameLoopService : BackgroundService
 
             case SkillEffect.DebuffDef:
             {
-                // Debuffs are spells: they can fail too.
                 float fail = SkillCatalog.SpellFailChance(caster.Level, target.Level);
 
                 if (_rng.NextDouble() < fail)
@@ -639,7 +922,6 @@ public class GameLoopService : BackgroundService
 
     private static void ApplyBuff(Entity target, SkillDef def)
     {
-        // Re-applying refreshes the duration instead of stacking.
         var existing = target.Buffs.FirstOrDefault(b => b.Name == def.Name);
         if (existing is not null)
         {
@@ -658,14 +940,12 @@ public class GameLoopService : BackgroundService
 
     private void AfterOffensiveSkill(Entity caster, Entity target)
     {
-        // Auto-attack continues after the skill (L2-style)...
         if (!target.Dead)
         {
             caster.CombatTargetId = target.Id;
             caster.Engaged = true;
         }
 
-        // ...and the victim retaliates if it's a peaceful mob.
         Retaliate(target, caster);
     }
 
@@ -696,7 +976,6 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        // Mobs drop aggro on players standing in the safe zone.
         if (attacker.Kind == EntityKind.Mob &&
             GameConstants.InSafeZone(target.X, target.Y))
         {
@@ -704,15 +983,14 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        if (DistanceSq(attacker, target) > GameConstants.MeleeRange * GameConstants.MeleeRange)
+        float range = attacker.BasicAttackRange;
+        if (DistanceSq(attacker, target) > range * range)
         {
-            // Chase: re-aim at the target's current position every tick.
             attacker.TargetX = target.X;
             attacker.TargetY = target.Y;
             return;
         }
 
-        // In range: stand and fight.
         attacker.TargetX = null;
         attacker.TargetY = null;
 
@@ -782,18 +1060,37 @@ public class GameLoopService : BackgroundService
 
         if (victim.Kind == EntityKind.Mob)
         {
-            // Corpse disappears: out of the grid until respawn.
             _world.Grid.Remove(victim);
             victim.RespawnTicks = GameConstants.MobRespawnTicks;
 
             if (killer.Kind == EntityKind.Player)
+            {
                 AwardExp(killer, StatCalculator.MobExpReward(victim.Level));
+                RollDrop(killer, victim);
+            }
         }
         else
         {
-            // Player corpse stays visible where it fell.
+            CancelTradeFor(victim, notifyPartnerOnly: false);
             BroadcastSystem($"{victim.Name} was slain by {killer.Name}.");
         }
+    }
+
+    private void RollDrop(Entity killer, Entity mob)
+    {
+        var def = ItemCatalog.RollDrop(mob.Level, _rng);
+        if (def is null)
+            return;
+
+        if (killer.Inventory.Count >= GameConstants.InventorySize)
+        {
+            SendSystemToEntity(killer, $"{mob.Name} dropped {def.Name} — inventory full!");
+            return;
+        }
+
+        killer.Inventory.Add(new InventoryItem { DefId = def.Id });
+        SendSystemToEntity(killer, $"You looted: {def.Name} [{def.Grade}/{def.Rarity}]");
+        SendInventory(killer);
     }
 
     private void AwardExp(Entity player, int amount)
@@ -811,9 +1108,13 @@ public class GameLoopService : BackgroundService
         if (leveled)
         {
             player.RecomputeDerived();
-            player.Hp = player.MaxHp;   // level-up heals — feels great, costs nothing
+            player.Hp = player.MaxHp;
             player.Mp = player.MaxMp;
             BroadcastSystem($"{player.Name} reached level {player.Level}!");
+
+            if (player.Level >= GameConstants.ClassChangeLevel && player.SecondClass == 0)
+                SendSystemToEntity(player,
+                    "You may now choose a second class! (Class button, top right)");
         }
 
         if (_world.EntityToConnection.TryGetValue(player.Id, out var conn))
@@ -826,9 +1127,8 @@ public class GameLoopService : BackgroundService
     private void Regenerate(Entity entity)
     {
         if (entity.Engaged || entity.CastingSkillId is not null)
-            return; // out-of-combat regen only
+            return;
 
-        // Safe zone: regen several times faster (until we add /sit).
         int multiplier = entity.Kind == EntityKind.Player &&
                          GameConstants.InSafeZone(entity.X, entity.Y)
             ? GameConstants.SafeZoneRegenMultiplier
@@ -873,7 +1173,6 @@ public class GameLoopService : BackgroundService
             ny = e.Y + dy / dist * step;
         }
 
-        // Mobs cannot set foot inside the safe zone, ever.
         if (e.Kind == EntityKind.Mob && GameConstants.InSafeZone(nx, ny))
         {
             e.TargetX = null;
@@ -891,7 +1190,7 @@ public class GameLoopService : BackgroundService
     }
 
     // =========================================================================
-    // 3. Broadcast — each player gets a personalized snapshot of what they see
+    // 3. Broadcast
     // =========================================================================
 
     private async Task BroadcastSnapshotsAsync()
@@ -910,7 +1209,6 @@ public class GameLoopService : BackgroundService
                 .Select(e => e.ToDto())
                 .ToList();
 
-            // Defensive: the viewer must always see themselves.
             if (!visible.Any(d => d.Id == player.Id))
                 visible.Add(player.ToDto());
 
@@ -918,15 +1216,8 @@ public class GameLoopService : BackgroundService
                 .SendAsync("Snapshot", new WorldSnapshot(visible.ToArray())));
         }
 
-        try
-        {
-            await Task.WhenAll(sends);
-        }
-        catch
-        {
-            // A client that disconnected mid-send will throw; the
-            // LeaveCommand from OnDisconnectedAsync cleans it up next tick.
-        }
+        try { await Task.WhenAll(sends); }
+        catch { /* disconnects clean up via LeaveCommand */ }
     }
 
     private void BroadcastCombat(Entity attacker, Entity target, int damage,
@@ -955,14 +1246,24 @@ public class GameLoopService : BackgroundService
             SendSystemTo(conn, text);
     }
 
-    private void CancelCast(Entity entity, string connectionId)
+    private void SendTo(Entity entity, string method, object payload)
+    {
+        if (_world.EntityToConnection.TryGetValue(entity.Id, out var conn))
+            _ = _hub.Clients.Client(conn).SendAsync(method, payload);
+    }
+
+    private void SendInventory(Entity player) =>
+        SendTo(player, "Inventory", new InventoryUpdate(
+            player.Inventory.Select(i => i.ToDto()).ToArray()));
+
+    private void CancelCast(Entity entity)
     {
         if (entity.CastingSkillId is null)
             return;
 
         entity.CastingSkillId = null;
         entity.CastTargetId = null;
-        _ = _hub.Clients.Client(connectionId).SendAsync("Cast", new CastInfo("", 0f));
+        SendTo(entity, "Cast", new CastInfo("", 0f));
     }
 
     // =========================================================================
@@ -983,8 +1284,6 @@ public class GameLoopService : BackgroundService
         return dx * dx + dy * dy;
     }
 
-    /// <summary>Mobs spawn in level-banded rings around the town: the further
-    /// from the safe zone, the higher the level. Leashing keeps them in band.</summary>
     private void SpawnMobs()
     {
         float cx = GameConstants.ZoneWidth / 2;

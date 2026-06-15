@@ -11,9 +11,18 @@ public class BuffInstance
     public required string Name { get; init; }
 }
 
+/// <summary>One item instance in a player's inventory.</summary>
+public class InventoryItem
+{
+    public Guid InstanceId { get; } = Guid.NewGuid();
+    public required int DefId { get; init; }
+    public bool Equipped { get; set; }
+
+    public InventoryItemDto ToDto() => new(InstanceId, DefId, Equipped);
+}
+
 /// <summary>
 /// Live server-side state of one thing in the world.
-/// Lives only in memory — persistence (EF Core snapshots) is a later phase.
 /// Mutated exclusively by the game-loop thread.
 /// </summary>
 public class Entity
@@ -25,23 +34,28 @@ public class Entity
     public Race Race { get; init; }
     public BaseClass BaseClass { get; init; }
 
+    /// <summary>0 = none; otherwise a ClassCatalog id.</summary>
+    public int SecondClass { get; set; }
+
+    public Archetype? Archetype =>
+        SecondClass > 0 ? ClassCatalog.Get(SecondClass)?.Archetype : null;
+
     public float X { get; set; }
     public float Y { get; set; }
 
-    /// <summary>Click-to-move destination. Null = standing still.</summary>
     public float? TargetX { get; set; }
     public float? TargetY { get; set; }
 
     public float Speed { get; set; } = GameConstants.BasePlayerSpeed;
 
-    // ----- Core stats (CON/ATK/WIT/DEX per the design doc) ------------------
+    // ----- Core stats (CON/ATK/WIT/DEX) --------------------------------------
 
     public int Con { get; set; }
     public int AtkStat { get; set; }
     public int Wit { get; set; }
     public int Dex { get; set; }
 
-    // ----- Derived stats (recomputed on level-up) ----------------------------
+    // ----- Derived stats (recomputed on level-up / equip / class change) -------
 
     public int Level { get; set; } = 1;
     public int Hp { get; set; }
@@ -53,10 +67,15 @@ public class Entity
     public int Accuracy { get; set; }
     public int Evasion { get; set; }
     public float CritChance { get; set; }
+    public float BasicAttackRange { get; set; } = GameConstants.MeleeRange;
 
     public long Exp { get; set; }
 
-    // ----- Buffs / debuffs -------------------------------------------------------
+    // ----- Inventory (players only) ----------------------------------------------
+
+    public List<InventoryItem> Inventory { get; } = new();
+
+    // ----- Buffs / debuffs ------------------------------------------------------------
 
     public List<BuffInstance> Buffs { get; } = new();
 
@@ -78,57 +97,47 @@ public class Entity
         {
             float multiplier = 1f;
             foreach (var buff in Buffs)
-                if (buff.Type == SkillEffect.DebuffDef)
+            {
+                if (buff.Type == SkillEffect.BuffDef)
+                    multiplier += buff.Magnitude;
+                else if (buff.Type == SkillEffect.DebuffDef)
                     multiplier -= buff.Magnitude;
+            }
             return Defence * Math.Max(0f, multiplier);
         }
     }
 
-    // ----- Combat / skill state -----------------------------------------------------
+    // ----- Combat / skill state ----------------------------------------------------------
 
-    /// <summary>Who this entity is trying to attack. Null = peaceful.</summary>
     public Guid? CombatTargetId { get; set; }
-
-    /// <summary>True while actively chasing/auto-attacking the combat target.</summary>
     public bool Engaged { get; set; }
-
-    /// <summary>Ticks until the next basic attack is allowed.</summary>
     public int AttackCooldown { get; set; }
 
-    /// <summary>Skill waiting for the entity to get into range.</summary>
     public int? QueuedSkillId { get; set; }
     public Guid? QueuedTargetId { get; set; }
 
-    /// <summary>Skill currently being cast (wind-up).</summary>
     public int? CastingSkillId { get; set; }
     public Guid? CastTargetId { get; set; }
     public int CastTicksRemaining { get; set; }
 
-    /// <summary>skillId -> ticks until ready again.</summary>
     public Dictionary<int, int> SkillCooldowns { get; } = new();
 
     public bool Dead { get; set; }
 
-    // ----- Mob-only state ------------------------------------------------------------
+    // ----- Mob-only state ----------------------------------------------------------------
 
-    /// <summary>Spawn point; mobs leash and respawn here.</summary>
     public float HomeX { get; set; }
     public float HomeY { get; set; }
-
-    /// <summary>Attacks players on sight within MobAggroRange.</summary>
     public bool Aggressive { get; set; }
-
-    /// <summary>Mob AI: ticks until the next wander decision.</summary>
     public int WanderTicks { get; set; }
-
-    /// <summary>Dead mob: ticks until respawn.</summary>
     public int RespawnTicks { get; set; }
 
     /// <summary>Interest-management cell. Maintained by CellGrid.</summary>
     public (int Cx, int Cy) Cell { get; set; }
 
-    /// <summary>Recomputes everything derived from core stats + level.
-    /// Call on creation and on every level-up.</summary>
+    /// <summary>Recomputes everything derived from core stats, level and
+    /// equipped items. Call on creation, level-up, equip changes and class
+    /// change.</summary>
     public void RecomputeDerived()
     {
         MaxHp = StatCalculator.MaxHp(Con, Level);
@@ -138,9 +147,35 @@ public class Entity
         Accuracy = StatCalculator.Accuracy(Dex, Level);
         Evasion = StatCalculator.Evasion(Dex, Level);
         CritChance = StatCalculator.CritChance(Dex);
+        BasicAttackRange = GameConstants.MeleeRange;
+
+        foreach (var item in Inventory)
+        {
+            if (!item.Equipped || ItemCatalog.Get(item.DefId) is not ItemDef def)
+                continue;
+
+            AttackPower += def.AtkBonus;
+            Defence += def.DefBonus;
+            MaxHp += def.HpBonus;
+            MaxMp += def.MpBonus;
+            Evasion += def.EvaBonus;
+
+            if (def.WeaponRange > 0)
+            {
+                float range = def.WeaponRange;
+                // Archer second classes shoot further (cap per design doc).
+                if (Archetype == Game.Shared.Archetype.Archer)
+                    range = Math.Min(GameConstants.MaxBasicAttackRange,
+                        range + GameConstants.ArcherRangeBonus);
+                BasicAttackRange = range;
+            }
+        }
+
+        Hp = Math.Min(Hp, MaxHp);
+        Mp = Math.Min(Mp, MaxMp);
     }
 
     public EntityDto ToDto() =>
         new(Id, Name, Kind, Race, BaseClass, X, Y, Speed, Level,
-            Hp, MaxHp, Mp, MaxMp, Dead);
+            Hp, MaxHp, Mp, MaxMp, SecondClass, Dead);
 }

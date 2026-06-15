@@ -1,9 +1,10 @@
-# L2-like MMORPG — Phase 3
+# L2-like MMORPG — Phase 4
 
-Server-authoritative multiplayer prototype. Phases 1-2 gave us login, movement,
-interest management, combat, exp and death. **Phase 3 adds skills, MP, cast
-times, buffs/debuffs — plus the world structure feedback round: a safe-zone
-town, level-banded hunting grounds, tighter aggro, and a full chat overhaul.**
+Server-authoritative multiplayer prototype. Phases 1-3 built movement,
+interest management, combat, skills, buffs, the safe-zone town and banded
+hunting grounds. **Phase 4 adds the RPG progression layer: the second-class
+tree at level 20, items & equipment with grades, monster drops, inventory,
+and a full trade-window system.**
 
 ## Run it (click and play)
 
@@ -20,76 +21,84 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 
 | Action | Input |
 |---|---|
-| Move | Left-click the ground |
-| Target & attack | Left-click a mob/player |
-| Skills | Keys **1-5** or skill bar buttons |
-| Local chat | plain text + Enter |
-| World chat | `!your message` |
-| Whisper | `/w CharName message` (or pick a name in the Whisper tab) |
-| Respawn | Button on the death overlay |
+| Move | Left-click ground |
+| Target a mob & attack | Left-click a mob |
+| Target a player (to trade) | Left-click a player |
+| Skills | Keys **1-6** or skill bar |
+| Inventory | **I** or the Inventory button |
+| Equip / unequip | Click an item in the inventory |
+| Second class (lvl 20) | Class button (top right) |
+| Trade | Target a player → *Request Trade* in the target frame |
+| Local / World / Whisper | plain / `!text` / `/w Name text` |
 
-## New in Phase 3
+## New in Phase 4
 
-### World structure
-- **Safe zone (town)** — the green circle in the center. No mobs spawn or
-  enter it, aggroed mobs drop aggro the moment you step inside, and natural
-  regen is **5x** while there (until /sit exists).
-- **Level-banded hunting grounds** — mobs spawn in rings around town:
-  1300-3500 → lvl 1-3, 3500-6000 → 4-7, 6000-8500 → 8-12, 8500+ → 13-18.
-  A mob's level comes from its home position, and leashing (1500) keeps it
-  there — no lvl-15 Bandit wandering into the starter ring.
-- **Mob name colors by level difference**: gray (very weak, -6 and below),
-  green (weak), white (normal), yellow (strong, +2..+5), red (very strong).
-- **Aggro reduced to 400** so aggressive mobs (Spiders, Bandits) are a
-  danger you walk into, not a death sentence.
+### Second-class tree (level 20)
+- At level 20 the **Class** button opens your six race/base-appropriate
+  options — the 18 design-doc classes (Beast, Templar, Knight, Cleric,
+  Sorcerer, …) mapped onto 6 archetypes: **Tank, Warrior, Rogue, Archer,
+  Healer, Nuker**.
+- Choosing one is permanent, grants a permanent core-stat bonus, full-heals
+  you, and unlocks a **signature skill** that joins your skill bar:
+  Fortify (Tank), Mighty Blow (Warrior), Twin Slash (Rogue), Power Shot
+  (Archer), Greater Heal (Healer), Flame Burst (Nuker).
+- Archetype range rules from the doc are in: **Archer** second classes get
+  +500 basic-attack range with a bow (capped 1100); **Healer/Nuker** get
+  +500 spell range (capped 900).
 
-### Skills (keys 1-5)
-- **Fighter**: Power Strike (physical nuke, +10 accuracy but can still miss),
-  War Cry (+20% attack for 30s).
-- **Mage**: Magic Bolt (600 range), Heal (self), Weakness (-30% target
-  defence for 15s).
-- **Cast times** scale with WIT (`SkillCatalog.AdjustedCastTicks`) — a cast
-  bar shows the wind-up; moving cancels it.
-- **Spells don't miss — they fail**: 3% base + 2% per level the target is
-  above the caster, exactly per the design doc. Physical skills roll the
-  normal accuracy check with a +10 bonus.
-- Out-of-range skill use runs you into range first (L2-style), and after an
-  offensive skill your auto-attack continues.
-- MP costs, per-skill cooldowns, and all formulas are server-enforced;
-  the client's cooldown display is only cosmetic.
+### Items & equipment
+- Grades **F/E/B/A/S** gate by level (0/20/40/60/80); rarities Common,
+  Uncommon, Rare. Weapons add attack (bows/staves also set ranged range);
+  armor comes in Heavy/Light/Robe with def/HP/eva/MP profiles.
+- Equip/unequip from the inventory; one item per slot (weapon, armor).
+  Equipping recomputes all derived stats server-side and re-validates the
+  level requirement. You start with a Rusty Sword and Leather Vest.
 
-### Chat overhaul
-- **System panel on top** (1st row), tabbed chat below (2nd row):
-  **All / World / Local / Whisper**.
-- World chat is now `!message`. Whispers are `/w Name message`; the Whisper
-  tab keeps a dropdown of everyone you've whispered with — click a name to
-  pre-fill `/w Name `.
-- Every tab keeps the last 150 lines.
+### Drops
+- Killing a mob has a 30% drop chance (70/25/5 common/uncommon/rare);
+  level-13+ mobs can drop E-grade gear. Loot lands in your bag (30 slots)
+  and pops a system message.
+
+### Trade window
+- Target a player within range → *Request Trade*. They get an accept/decline
+  prompt. The window matches the design doc: **their offer on top, your
+  offer in the middle, your bag on the bottom**, Ready/Cancel in the footer.
+- Click bag items to add (max 10), click your offered items to pull them
+  back. **Any change resets both Ready flags** — no bait-and-switch.
+- The trade commits only when both press Ready; the server re-validates both
+  inventories inside a single step (items still owned, bags have room) before
+  swapping. Equipped items can't be traded; disconnect/death cancels safely.
 
 ## What's where
 
 ```
-Game.Shared        DTOs, enums, GameConstants, StatCalculator, SkillCatalog
+Game.Shared
+  GameConstants, StatCalculator     core + combat + progression formulas
+  Enums, Dtos, CastInfo             wire contracts
+  Skills (SkillCatalog)             base + archetype signature skills, ranges
+  Items (ItemCatalog)               item defs, grade gates, drop rolls
+  Classes (ClassCatalog)            18 classes -> 6 archetypes, stat bonuses
 Game.Server
-  Hubs/GameHub     thin connection layer — only enqueues commands
+  Hubs/GameHub                      thin: every call -> a queued command
   Simulation/
-    World          live state + the command queue (single-writer model)
-    Entity         stats, buffs, skill/cast state
-    CellGrid       interest management (3000-unit cells, 3x3 lookup)
-    GameLoopService  10 t/s: commands -> AI/skills/combat/regen -> snapshots
+    World, TradeSession             state + command queue (single writer)
+    Entity                          stats/buffs/inventory/equip/2nd class
+    CellGrid                        interest management
+    GameLoopService                 10 t/s: cmds -> AI/skills/combat -> snaps
 Game.Client.Wpf
-  NetworkChannel   the transport seam (reusable in Unity as-is)
-  MainWindow       rendering, skill bar, cast bar, tabbed chat, safe zone
+  NetworkChannel                    transport seam (Unity-reusable)
+  MainWindow / .Phase4              world view + inventory/class/trade UI
 ```
 
-The action priority per entity per tick is a tiny state machine:
-**casting > queued skill (chasing into range) > auto-attack**. Hub threads
-still only enqueue commands; the loop is the single writer; zero locks.
+The concurrency model is unchanged and still the whole point: hub threads
+only enqueue commands, the loop is the single writer, **zero locks** — even
+trade (a two-party, item-moving transaction) is just commands resolved on
+the loop thread, so it can't race.
 
 ## Roadmap
 
-- **Phase 4** — the class tree (2nd classes at lvl 20 with converted skills
-  — it gets its own phase because it expands the SkillCatalog heavily),
-  items, inventory, drops, equipment grades, the trade window
-- **Phase 5** — EF Core persistence, accounts & auth, admin role
-  (ban/kick/jail), multiple zones, environment objects, Unity client
+- **Phase 5** — EF Core persistence (accounts, character save/load), real
+  login/auth, admin role (ban/kick/jail, god mode), boss monsters with the
+  ±10 level paralysis rule, shields/orbs proc items, environment terrain
+- **Phase 6** — the Unity 2D client (reuses Game.Shared + NetworkChannel),
+  then multiple seamless zones toward the 75k×75k world

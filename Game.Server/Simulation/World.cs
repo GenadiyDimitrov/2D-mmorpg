@@ -3,26 +3,42 @@ using Game.Shared;
 
 namespace Game.Server.Simulation;
 
+/// <summary>A live trade between two players. Owned by the loop thread.</summary>
+public class TradeSession
+{
+    public required Entity A { get; init; }
+    public required Entity B { get; init; }
+    public List<Guid> OfferA { get; } = new();
+    public List<Guid> OfferB { get; } = new();
+    public bool ReadyA { get; set; }
+    public bool ReadyB { get; set; }
+
+    public Entity PartnerOf(Entity e) => e == A ? B : A;
+    public List<Guid> OfferOf(Entity e) => e == A ? OfferA : OfferB;
+    public bool ReadyOf(Entity e) => e == A ? ReadyA : ReadyB;
+    public void SetReady(Entity e, bool value) { if (e == A) ReadyA = value; else ReadyB = value; }
+}
+
 /// <summary>
 /// All live game state. The SignalR hub never touches the dictionaries
 /// directly — it only enqueues commands. The game loop drains the queue,
-/// so every mutation happens on a single thread. That is the whole
-/// concurrency model: one writer, zero locks.
+/// so every mutation happens on a single thread. One writer, zero locks.
 /// </summary>
 public class World
 {
-    /// <summary>Commands from hub threads to the simulation thread.</summary>
     public ConcurrentQueue<IGameCommand> Commands { get; } = new();
 
     // Everything below is owned by the game-loop thread.
 
     public Dictionary<Guid, Entity> Entities { get; } = new();
-
-    /// <summary>Player entity id -> SignalR connection id (for sending snapshots).</summary>
     public Dictionary<Guid, string> EntityToConnection { get; } = new();
-
-    /// <summary>SignalR connection id -> player entity id (for handling commands).</summary>
     public Dictionary<string, Guid> ConnectionToEntity { get; } = new();
+
+    /// <summary>Both participants map to the same session.</summary>
+    public Dictionary<Guid, TradeSession> ActiveTrades { get; } = new();
+
+    /// <summary>targetEntityId -> requesterEntityId (one pending request each).</summary>
+    public Dictionary<Guid, Guid> PendingTradeRequests { get; } = new();
 
     public CellGrid Grid { get; } = new(
         GameConstants.ZoneWidth, GameConstants.ZoneHeight, GameConstants.CellSize);
@@ -34,9 +50,6 @@ public class World
 
 public interface IGameCommand { }
 
-/// <summary>Player wants to enter the world. The hub awaits the
-/// TaskCompletionSource so login feels like a normal request/response
-/// even though it is processed inside the tick loop.</summary>
 public record JoinCommand(
     string ConnectionId,
     LoginRequest Request,
@@ -52,11 +65,20 @@ public record ChatCmd(
     ChatChannel Channel,
     string? WhisperTarget = null) : IGameCommand;
 
-/// <summary>Use a skill, optionally on a target (offensive skills).</summary>
-public record SkillCmd(string ConnectionId, int SkillId, Guid? TargetId) : IGameCommand;
-
-/// <summary>Engage a target: run into range and auto-attack (L2-style).</summary>
 public record AttackCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 
-/// <summary>Dead player asks to respawn at the spawn point.</summary>
+public record SkillCmd(string ConnectionId, int SkillId, Guid? TargetId) : IGameCommand;
+
 public record RespawnCmd(string ConnectionId) : IGameCommand;
+
+/// <summary>Advance to a second class (level 20+, once).</summary>
+public record ClassChangeCmd(string ConnectionId, int ClassId) : IGameCommand;
+
+/// <summary>Equip or unequip an inventory item (toggles).</summary>
+public record EquipCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
+
+public record TradeRequestCmd(string ConnectionId, Guid TargetId) : IGameCommand;
+public record TradeRespondCmd(string ConnectionId, bool Accept) : IGameCommand;
+public record TradeOfferCmd(string ConnectionId, Guid[] InstanceIds) : IGameCommand;
+public record TradeReadyCmd(string ConnectionId) : IGameCommand;
+public record TradeCancelCmd(string ConnectionId) : IGameCommand;

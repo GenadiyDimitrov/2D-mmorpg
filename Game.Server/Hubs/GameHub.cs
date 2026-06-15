@@ -14,8 +14,6 @@ public class GameHub : Hub
 
     public GameHub(World world) => _world = world;
 
-    /// <summary>Enter the world. Awaits the simulation thread's answer so the
-    /// client gets a normal request/response experience.</summary>
     public async Task<LoginResult> Login(LoginRequest request)
     {
         var tcs = new TaskCompletionSource<LoginResult>(
@@ -23,7 +21,6 @@ public class GameHub : Hub
 
         _world.Commands.Enqueue(new JoinCommand(Context.ConnectionId, request, tcs));
 
-        // The loop runs at 10 t/s, so this resolves within ~100 ms.
         var timeout = Task.Delay(TimeSpan.FromSeconds(5));
         var finished = await Task.WhenAny(tcs.Task, timeout);
 
@@ -44,21 +41,63 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task UseSkill(int skillId, Guid? targetId)
+    {
+        _world.Commands.Enqueue(new SkillCmd(Context.ConnectionId, skillId, targetId));
+        return Task.CompletedTask;
+    }
+
     public Task Respawn()
     {
         _world.Commands.Enqueue(new RespawnCmd(Context.ConnectionId));
         return Task.CompletedTask;
     }
 
-    public Task Chat(string text, ChatChannel channel, string? whisperTarget)
+    public Task ChangeClass(int classId)
     {
-        _world.Commands.Enqueue(new ChatCmd(Context.ConnectionId, text, channel, whisperTarget));
+        _world.Commands.Enqueue(new ClassChangeCmd(Context.ConnectionId, classId));
         return Task.CompletedTask;
     }
 
-    public Task UseSkill(int skillId, Guid? targetId)
+    public Task EquipItem(Guid instanceId)
     {
-        _world.Commands.Enqueue(new SkillCmd(Context.ConnectionId, skillId, targetId));
+        _world.Commands.Enqueue(new EquipCmd(Context.ConnectionId, instanceId));
+        return Task.CompletedTask;
+    }
+
+    public Task TradeRequest(Guid targetId)
+    {
+        _world.Commands.Enqueue(new TradeRequestCmd(Context.ConnectionId, targetId));
+        return Task.CompletedTask;
+    }
+
+    public Task TradeRespond(bool accept)
+    {
+        _world.Commands.Enqueue(new TradeRespondCmd(Context.ConnectionId, accept));
+        return Task.CompletedTask;
+    }
+
+    public Task TradeOffer(Guid[] instanceIds)
+    {
+        _world.Commands.Enqueue(new TradeOfferCmd(Context.ConnectionId, instanceIds));
+        return Task.CompletedTask;
+    }
+
+    public Task TradeReady()
+    {
+        _world.Commands.Enqueue(new TradeReadyCmd(Context.ConnectionId));
+        return Task.CompletedTask;
+    }
+
+    public Task TradeCancel()
+    {
+        _world.Commands.Enqueue(new TradeCancelCmd(Context.ConnectionId));
+        return Task.CompletedTask;
+    }
+
+    public Task Chat(string text, ChatChannel channel, string? whisperTarget)
+    {
+        _world.Commands.Enqueue(new ChatCmd(Context.ConnectionId, text, channel, whisperTarget));
         return Task.CompletedTask;
     }
 

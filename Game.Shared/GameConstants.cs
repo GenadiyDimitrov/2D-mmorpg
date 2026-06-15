@@ -74,4 +74,20 @@ public static class GameConstants
 
     /// <summary>Client keeps at most this many lines per chat tab.</summary>
     public const int ChatHistoryLimit = 150;
+
+    // ----- Items / progression / trade (Phase 4) -------------------------------
+
+    public const int InventorySize = 30;
+
+    public const int ClassChangeLevel = 20;
+
+    /// <summary>Archer second classes: +500 basic-attack range with a ranged
+    /// weapon, capped at 1100 (design doc).</summary>
+    public const float ArcherRangeBonus = 500f;
+    public const float MaxBasicAttackRange = 1100f;
+
+    public const int TradeMaxOfferSlots = 10;
+
+    /// <summary>Both characters must be this close to start a trade.</summary>
+    public const float TradeRange = 300f;
 }

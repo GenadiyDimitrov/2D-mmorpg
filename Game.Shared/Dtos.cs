@@ -31,6 +31,7 @@ public record EntityDto(
     int MaxHp,
     int Mp,
     int MaxMp,
+    int SecondClass,
     bool Dead);
 
 /// <summary>Client -> Server: "move me toward this point" (click-to-move).
@@ -66,3 +67,23 @@ public record ProgressUpdate(
 /// <summary>Server -> the casting client: show/update the cast bar.
 /// Seconds &lt;= 0 means the cast was cancelled — hide the bar.</summary>
 public record CastInfo(string SkillName, float Seconds);
+
+
+/// <summary>One item instance in a player's inventory.</summary>
+public record InventoryItemDto(Guid InstanceId, int DefId, bool Equipped);
+
+/// <summary>Server -> owning client: full inventory sync (sent on change).</summary>
+public record InventoryUpdate(InventoryItemDto[] Items);
+
+/// <summary>Server -> client: someone wants to trade with you.</summary>
+public record TradeRequestNotice(Guid FromId, string FromName);
+
+/// <summary>Server -> both traders: full trade state (sent on every change).
+/// Active=false closes the trade window.</summary>
+public record TradeStateUpdate(
+    bool Active,
+    string PartnerName,
+    InventoryItemDto[] MyOffer,
+    InventoryItemDto[] TheirOffer,
+    bool MyReady,
+    bool TheirReady);

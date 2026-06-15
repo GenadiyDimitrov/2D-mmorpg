@@ -4,10 +4,8 @@ using Microsoft.AspNetCore.SignalR.Client;
 namespace Game.Client.Wpf;
 
 /// <summary>
-/// The single seam between game code and the wire. Today it wraps SignalR;
-/// if the transport ever changes (LiteNetLib, raw TCP), only this file does.
-/// The same class drops into the Unity client later — it has no WPF
-/// dependencies at all.
+/// The single seam between game code and the wire. No WPF dependencies —
+/// reusable in the Unity client as-is.
 /// </summary>
 public class NetworkChannel : IAsyncDisposable
 {
@@ -18,6 +16,9 @@ public class NetworkChannel : IAsyncDisposable
     public event Action<CombatEvent>? CombatReceived;
     public event Action<ProgressUpdate>? ProgressReceived;
     public event Action<CastInfo>? CastReceived;
+    public event Action<InventoryUpdate>? InventoryReceived;
+    public event Action<TradeRequestNotice>? TradeRequestReceived;
+    public event Action<TradeStateUpdate>? TradeStateReceived;
     public event Action<string>? Disconnected;
 
     public bool IsConnected => _connection?.State == HubConnectionState.Connected;
@@ -34,6 +35,9 @@ public class NetworkChannel : IAsyncDisposable
         _connection.On<CombatEvent>("Combat", c => CombatReceived?.Invoke(c));
         _connection.On<ProgressUpdate>("Progress", p => ProgressReceived?.Invoke(p));
         _connection.On<CastInfo>("Cast", c => CastReceived?.Invoke(c));
+        _connection.On<InventoryUpdate>("Inventory", i => InventoryReceived?.Invoke(i));
+        _connection.On<TradeRequestNotice>("TradeRequest", t => TradeRequestReceived?.Invoke(t));
+        _connection.On<TradeStateUpdate>("Trade", t => TradeStateReceived?.Invoke(t));
         _connection.Closed += ex =>
         {
             Disconnected?.Invoke(ex?.Message ?? "Connection closed.");
@@ -57,6 +61,27 @@ public class NetworkChannel : IAsyncDisposable
 
     public Task RespawnAsync() =>
         _connection!.SendAsync("Respawn");
+
+    public Task ChangeClassAsync(int classId) =>
+        _connection!.SendAsync("ChangeClass", classId);
+
+    public Task EquipItemAsync(Guid instanceId) =>
+        _connection!.SendAsync("EquipItem", instanceId);
+
+    public Task TradeRequestAsync(Guid targetId) =>
+        _connection!.SendAsync("TradeRequest", targetId);
+
+    public Task TradeRespondAsync(bool accept) =>
+        _connection!.SendAsync("TradeRespond", accept);
+
+    public Task TradeOfferAsync(Guid[] instanceIds) =>
+        _connection!.SendAsync("TradeOffer", instanceIds);
+
+    public Task TradeReadyAsync() =>
+        _connection!.SendAsync("TradeReady");
+
+    public Task TradeCancelAsync() =>
+        _connection!.SendAsync("TradeCancel");
 
     public Task ChatAsync(string text, ChatChannel channel, string? whisperTarget = null) =>
         _connection!.SendAsync("Chat", text, channel, whisperTarget);
