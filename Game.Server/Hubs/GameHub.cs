@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using Game.Server.Persistence;
 using Game.Server.Simulation;
 using Game.Shared;
 using Microsoft.AspNetCore.SignalR;
@@ -5,29 +7,96 @@ using Microsoft.AspNetCore.SignalR;
 namespace Game.Server.Hubs;
 
 /// <summary>
-/// Thin connection layer. No game logic lives here — every call becomes a
-/// command on the world queue and is executed by the game-loop thread.
+/// Connection layer. Auth + character selection happen here (async DB I/O,
+/// off the game loop). Once a player enters the world, gameplay calls become
+/// commands on the world queue, exactly as before.
 /// </summary>
 public class GameHub : Hub
 {
     private readonly World _world;
+    private readonly PersistenceService _db;
 
-    public GameHub(World world) => _world = world;
+    // Connection -> authenticated account (set after login/register).
+    private static readonly ConcurrentDictionary<string, AuthState> Sessions = new();
 
-    public async Task<LoginResult> Login(LoginRequest request)
+    private record AuthState(int AccountId, bool IsAdmin);
+
+    public GameHub(World world, PersistenceService db)
     {
+        _world = world;
+        _db = db;
+    }
+
+    // ----- Auth --------------------------------------------------------------
+
+    public async Task<AuthResponse> Register(AuthRequest request)
+    {
+        var result = await _db.RegisterAsync(request.Username, request.Password);
+        if (result.Success)
+            Sessions[Context.ConnectionId] = new AuthState(result.AccountId, result.IsAdmin);
+        return new AuthResponse(result.Success, result.Error, result.IsAdmin);
+    }
+
+    public async Task<AuthResponse> Login(AuthRequest request)
+    {
+        var result = await _db.LoginAsync(request.Username, request.Password);
+        if (result.Success)
+            Sessions[Context.ConnectionId] = new AuthState(result.AccountId, result.IsAdmin);
+        return new AuthResponse(result.Success, result.Error, result.IsAdmin);
+    }
+
+    // ----- Character selection ----------------------------------------------
+
+    public async Task<CharacterList> ListCharacters()
+    {
+        if (!Sessions.TryGetValue(Context.ConnectionId, out var auth))
+            return new CharacterList(Array.Empty<CharacterSlot>());
+
+        var chars = await _db.ListCharactersAsync(auth.AccountId);
+        return new CharacterList(chars
+            .Select(c => new CharacterSlot(c.Id, c.Name, c.Race, c.BaseClass, c.SecondClass, c.Level))
+            .ToArray());
+    }
+
+    public async Task<string?> CreateCharacter(CreateCharacterRequest request)
+    {
+        if (!Sessions.TryGetValue(Context.ConnectionId, out var auth))
+            return "Not logged in.";
+
+        var (success, error) = await _db.CreateCharacterAsync(
+            auth.AccountId, request.Name, request.Race, request.BaseClass);
+        return success ? null : error;
+    }
+
+    /// <summary>Load a character from the DB and hand it to the game loop.</summary>
+    public async Task<LoginResult> EnterWorld(EnterWorldRequest request)
+    {
+        if (!Sessions.TryGetValue(Context.ConnectionId, out var auth))
+            return new LoginResult(false, "Not logged in.", Guid.Empty, 0, 0);
+
+        // Reject if this character is already in the world.
+        if (_world.Entities.Values.Any(e =>
+                e.Kind == EntityKind.Player && e.PersistentId == request.CharacterId))
+            return new LoginResult(false, "That character is already online.", Guid.Empty, 0, 0);
+
+        var entity = await _db.LoadCharacterAsync(auth.AccountId, request.CharacterId);
+        if (entity is null)
+            return new LoginResult(false, "Character not found.", Guid.Empty, 0, 0);
+
+        entity.IsAdmin = auth.IsAdmin;
+
         var tcs = new TaskCompletionSource<LoginResult>(
             TaskCreationOptions.RunContinuationsAsynchronously);
-
-        _world.Commands.Enqueue(new JoinCommand(Context.ConnectionId, request, tcs));
+        _world.Commands.Enqueue(new EnterWorldCommand(Context.ConnectionId, entity, tcs));
 
         var timeout = Task.Delay(TimeSpan.FromSeconds(5));
         var finished = await Task.WhenAny(tcs.Task, timeout);
-
         return finished == tcs.Task
             ? await tcs.Task
             : new LoginResult(false, "Server busy, try again.", Guid.Empty, 0, 0);
     }
+
+    // ----- Gameplay (unchanged: enqueue commands) ----------------------------
 
     public Task Move(MoveCommand command)
     {
@@ -83,24 +152,6 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
-    // Debug endpoints — the server still gates them behind #if DEBUG so a
-    // release build simply ignores the calls.
-    public Task DebugGive(int defId)
-    {
-#if DEBUG
-        _world.Commands.Enqueue(new DebugGiveCmd(Context.ConnectionId, defId));
-#endif
-        return Task.CompletedTask;
-    }
-
-    public Task DebugLevel()
-    {
-#if DEBUG
-        _world.Commands.Enqueue(new DebugLevelCmd(Context.ConnectionId));
-#endif
-        return Task.CompletedTask;
-    }
-
     public Task TradeRequest(Guid targetId)
     {
         _world.Commands.Enqueue(new TradeRequestCmd(Context.ConnectionId, targetId));
@@ -137,8 +188,37 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    // ----- Admin commands ----------------------------------------------------
+
+    public Task AdminCommand(string command, string argument)
+    {
+        if (!Sessions.TryGetValue(Context.ConnectionId, out var auth) || !auth.IsAdmin)
+            return Task.CompletedTask;
+        _world.Commands.Enqueue(new AdminCmd(Context.ConnectionId, command, argument));
+        return Task.CompletedTask;
+    }
+
+    // ----- Debug (DEBUG builds only) -----------------------------------------
+
+    public Task DebugGive(int defId)
+    {
+#if DEBUG
+        _world.Commands.Enqueue(new DebugGiveCmd(Context.ConnectionId, defId));
+#endif
+        return Task.CompletedTask;
+    }
+
+    public Task DebugLevel()
+    {
+#if DEBUG
+        _world.Commands.Enqueue(new DebugLevelCmd(Context.ConnectionId));
+#endif
+        return Task.CompletedTask;
+    }
+
     public override Task OnDisconnectedAsync(Exception? exception)
     {
+        Sessions.TryRemove(Context.ConnectionId, out _);
         _world.Commands.Enqueue(new LeaveCommand(Context.ConnectionId));
         return base.OnDisconnectedAsync(exception);
     }

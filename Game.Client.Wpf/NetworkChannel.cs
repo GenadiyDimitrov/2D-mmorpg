@@ -24,6 +24,7 @@ public class NetworkChannel : IAsyncDisposable
     public event Action<BuffUpdate>? BuffsReceived;
     public event Action<EnchantResultDto>? EnchantReceived;
     public event Action<string>? Disconnected;
+    public event Action<string>? ForceDisconnected;
 
     public bool IsConnected => _connection?.State == HubConnectionState.Connected;
 
@@ -46,6 +47,7 @@ public class NetworkChannel : IAsyncDisposable
         _connection.On<PotionStatus>("Potion", pt => PotionReceived?.Invoke(pt));
         _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));
         _connection.On<EnchantResultDto>("Enchant", en => EnchantReceived?.Invoke(en));
+        _connection.On<string>("ForceDisconnect", reason => ForceDisconnected?.Invoke(reason));
         _connection.Closed += ex =>
         {
             Disconnected?.Invoke(ex?.Message ?? "Connection closed.");
@@ -55,8 +57,24 @@ public class NetworkChannel : IAsyncDisposable
         await _connection.StartAsync();
     }
 
-    public Task<LoginResult> LoginAsync(LoginRequest request) =>
-        _connection!.InvokeAsync<LoginResult>("Login", request);
+    public Task<AuthResponse> RegisterAsync(string username, string password) =>
+        _connection!.InvokeAsync<AuthResponse>("Register", new AuthRequest(username, password));
+
+    public Task<AuthResponse> LoginAsync(string username, string password) =>
+        _connection!.InvokeAsync<AuthResponse>("Login", new AuthRequest(username, password));
+
+    public Task<CharacterList> ListCharactersAsync() =>
+        _connection!.InvokeAsync<CharacterList>("ListCharacters");
+
+    public Task<string?> CreateCharacterAsync(string name, Race race, BaseClass baseClass) =>
+        _connection!.InvokeAsync<string?>("CreateCharacter",
+            new CreateCharacterRequest(name, race, baseClass));
+
+    public Task<LoginResult> EnterWorldAsync(int characterId) =>
+        _connection!.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(characterId));
+
+    public Task AdminCommandAsync(string command, string argument) =>
+        _connection!.SendAsync("AdminCommand", command, argument);
 
     public Task MoveAsync(float targetX, float targetY) =>
         _connection!.SendAsync("Move", new MoveCommand(targetX, targetY));

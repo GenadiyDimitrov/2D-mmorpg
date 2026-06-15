@@ -70,7 +70,7 @@ public record CastInfo(string SkillName, float Seconds);
 
 
 /// <summary>One item instance in a player's inventory.</summary>
-public record InventoryItemDto(Guid InstanceId, int DefId, bool Equipped, int Enchant, int Quantity);
+public record InventoryItemDto(Guid InstanceId, int DefId, bool Equipped, int Enchant, int Quantity, ItemAttribute[] Attributes);
 
 /// <summary>Server -> owning client: full inventory sync (sent on change).</summary>
 public record InventoryUpdate(InventoryItemDto[] Items);
@@ -95,7 +95,8 @@ public record StatsUpdate(
     int Con, int Atk, int Wit, int Dex,
     int MaxHp, int MaxMp, int AttackPower, int Defence,
     int Accuracy, int Evasion, float CritChance, float BasicAttackRange,
-    int SecondClass);
+    int SecondClass, float MoveSpeed, float CastModifier,
+    float CastSpeedMult, float AttackSpeedMult);
 
 /// <summary>Server -> owning client: a potion cooldown started (seconds),
 /// or an active potion effect changed. Cooldown 0 = ready.</summary>
@@ -111,3 +112,25 @@ public record BuffUpdate(BuffDto[] Buffs);
 
 /// <summary>Server -> owning client: the result of an enchant attempt.</summary>
 public record EnchantResultDto(string ItemName, int NewEnchant, string Outcome, bool Destroyed);
+
+
+// ----- Accounts & character selection (Phase 5) ----------------------------
+
+/// <summary>Client -> Server: register or login.</summary>
+public record AuthRequest(string Username, string Password);
+
+/// <summary>Server -> Client: auth outcome. Token is the account id used for
+/// subsequent character calls within this connection.</summary>
+public record AuthResponse(bool Success, string? Error, bool IsAdmin);
+
+/// <summary>One character on the account, for the selection screen.</summary>
+public record CharacterSlot(int Id, string Name, Race Race, BaseClass BaseClass, int SecondClass, int Level);
+
+/// <summary>Server -> Client: the account's characters.</summary>
+public record CharacterList(CharacterSlot[] Characters);
+
+/// <summary>Client -> Server: create a new character on the account.</summary>
+public record CreateCharacterRequest(string Name, Race Race, BaseClass BaseClass);
+
+/// <summary>Client -> Server: enter the world with one of the account's characters.</summary>
+public record EnterWorldRequest(int CharacterId);

@@ -98,6 +98,7 @@ public partial class MainWindow
                     ? new SolidColorBrush(Color.FromArgb(60, 80, 220, 120))
                     : new SolidColorBrush(Color.FromArgb(40, 80, 100, 130))
             };
+            button.ToolTip = BuildItemTooltip(def, dto);
             button.Click += (_, _) => ShowEquipPopup(dto);
             row.Children.Add(button);
 
@@ -113,6 +114,25 @@ public partial class MainWindow
         string req = ItemCatalog.RequiredLevel(def.Grade) > 0
             ? $" (Lv{ItemCatalog.RequiredLevel(def.Grade)})" : "";
         return $"{tag}{ench}{def.Name}  {def.Grade}/{def.Rarity}{req}{qty}";
+    }
+
+    private static string BuildItemTooltip(ItemDef def, InventoryItemDto item)
+    {
+        var lines = new List<string> { $"{def.Name}  {def.Grade}/{def.Rarity}" };
+        if (item.Enchant > 0) lines.Add($"Enchant: +{item.Enchant}");
+        if (def.AtkBonus > 0) lines.Add($"Attack +{EnchantRules.BonusAt(def.AtkBonus, item.Enchant)}");
+        if (def.DefBonus > 0) lines.Add($"Defence +{EnchantRules.BonusAt(def.DefBonus, item.Enchant)}");
+        if (def.HpBonus > 0) lines.Add($"Max HP +{EnchantRules.BonusAt(def.HpBonus, item.Enchant)}");
+        if (def.MpBonus > 0) lines.Add($"Max MP +{EnchantRules.BonusAt(def.MpBonus, item.Enchant)}");
+        if (def.EvaBonus > 0) lines.Add($"Evasion +{EnchantRules.BonusAt(def.EvaBonus, item.Enchant)}");
+        if (def.WeaponRange > 0) lines.Add($"Range {def.WeaponRange:0}");
+        if (item.Attributes.Length > 0)
+        {
+            lines.Add("— Attributes —");
+            foreach (var a in item.Attributes)
+                lines.Add($"{AttributeSystem.DisplayName(a.Type)} +{a.Value}%");
+        }
+        return string.Join("\n", lines);
     }
 
     private static Brush RarityBrush(ItemRarity rarity) => rarity switch
@@ -350,6 +370,24 @@ public partial class MainWindow
         StatsList.Items.Add(MakeStatRow("Accuracy / Evasion", $"{st.Accuracy} / {st.Evasion}"));
         StatsList.Items.Add(MakeStatRow("Crit Chance", $"{st.CritChance * 100:0.#}%"));
         StatsList.Items.Add(MakeStatRow("Attack Range", $"{st.BasicAttackRange:0}"));
+        StatsList.Items.Add(MakeStatRow("Move Speed", $"{st.MoveSpeed:0}"));
+
+        // Cast reduction: WIT vs baseline 25 (negative modifier = faster),
+        // combined with item Cast Speed attributes.
+        float witPct = -st.CastModifier * 100f;            // +12 = 12% faster from WIT
+        float itemPct = (1f - st.CastSpeedMult) * 100f;    // item cast-speed attribute
+        float totalFaster = witPct + itemPct;
+        string castLabel = totalFaster >= 0
+            ? $"{totalFaster:0.#}% faster"
+            : $"{-totalFaster:0.#}% slower";
+        StatsList.Items.Add(MakeStatRow("Cast Speed", castLabel));
+        StatsList.Items.Add(MakeStatRow("  from WIT", $"{(witPct>=0?"+":"")}{witPct:0.#}% (base 25 WIT)"));
+        if (itemPct > 0)
+            StatsList.Items.Add(MakeStatRow("  from items", $"+{itemPct:0.#}%"));
+
+        float atkSpeedPct = (1f - st.AttackSpeedMult) * 100f;
+        if (atkSpeedPct > 0)
+            StatsList.Items.Add(MakeStatRow("Attack Speed", $"+{atkSpeedPct:0.#}%"));
     }
 
     private static Grid MakeStatRow(string label, string value)
@@ -423,26 +461,78 @@ public partial class MainWindow
             .FirstOrDefault(t => t.Item.Equipped && t.Def is not null &&
                                  t.Def!.Slot == def.Slot && t.Item.InstanceId != item.InstanceId);
 
-        bool hasCurrent = current.Item is not null;
-        int curEnch = current.Item?.Enchant ?? 0;
-        int newEnch = item.Enchant;
+        // The clicked item is the SUBJECT — always show ITS real stats. The
+        // delta column compares against whatever is equipped in that slot
+        // (empty if nothing, or if you clicked the equipped item itself).
+        bool isEquippedItem = item.Equipped;
+        bool hasOther = current.Item is not null;
+        int subjectEnch = item.Enchant;
+        int otherEnch = current.Item?.Enchant ?? 0;
 
-        // Enchant-aware bonuses (a +5 sword really is stronger than a +0).
-        int CurB(int b) => EnchantRules.BonusAt(b, curEnch);
-        int NewB(int b) => item.Equipped ? 0 : EnchantRules.BonusAt(b, newEnch);
+        // "Other" = the equipped item we diff against (none when clicking the
+        // equipped item, so the delta column simply hides).
+        int Subj(int b) => EnchantRules.BonusAt(b, subjectEnch);
+        int Other(int b) => EnchantRules.BonusAt(b, otherEnch);
+        bool showDelta = hasOther && !isEquippedItem;
 
         EquipCompareList.Items.Clear();
-        AddCompareRow("Attack", CurB(current.Def?.AtkBonus ?? 0), NewB(def.AtkBonus), hasCurrent);
-        AddCompareRow("Defence", CurB(current.Def?.DefBonus ?? 0), NewB(def.DefBonus), hasCurrent);
-        AddCompareRow("Max HP", CurB(current.Def?.HpBonus ?? 0), NewB(def.HpBonus), hasCurrent);
-        AddCompareRow("Max MP", CurB(current.Def?.MpBonus ?? 0), NewB(def.MpBonus), hasCurrent);
-        AddCompareRow("Evasion", CurB(current.Def?.EvaBonus ?? 0), NewB(def.EvaBonus), hasCurrent);
-        if (def.WeaponRange > 0 || (current.Def?.WeaponRange ?? 0) > 0)
-            AddCompareRow("Range", (int)(current.Def?.WeaponRange ?? 0),
-                item.Equipped ? 0 : (int)def.WeaponRange, hasCurrent);
+        AddStatRow2("Attack", Subj(def.AtkBonus), showDelta ? Subj(def.AtkBonus) - Other(current.Def!.AtkBonus) : (int?)null);
+        AddStatRow2("Defence", Subj(def.DefBonus), showDelta ? Subj(def.DefBonus) - Other(current.Def!.DefBonus) : (int?)null);
+        AddStatRow2("Max HP", Subj(def.HpBonus), showDelta ? Subj(def.HpBonus) - Other(current.Def!.HpBonus) : (int?)null);
+        AddStatRow2("Max MP", Subj(def.MpBonus), showDelta ? Subj(def.MpBonus) - Other(current.Def!.MpBonus) : (int?)null);
+        AddStatRow2("Evasion", Subj(def.EvaBonus), showDelta ? Subj(def.EvaBonus) - Other(current.Def!.EvaBonus) : (int?)null);
+        if (def.WeaponRange > 0)
+            AddStatRow2("Range", (int)def.WeaponRange,
+                showDelta ? (int)def.WeaponRange - (int)(current.Def?.WeaponRange ?? 0) : (int?)null);
+
+        // Rolled attributes on THIS item instance.
+        if (item.Attributes.Length > 0)
+        {
+            EquipCompareList.Items.Add(new TextBlock
+            {
+                Text = "Attributes:", Foreground = Brushes.Gold, FontSize = 12,
+                FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 6, 0, 2)
+            });
+            foreach (var attr in item.Attributes)
+                AddStatRow2($"  {AttributeSystem.DisplayName(attr.Type)}", attr.Value, null, suffix: "%");
+        }
 
         EquipConfirmButton.Content = item.Equipped ? "Unequip" : "Equip";
         EquipPopup.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>Row showing an item's own stat value plus an optional delta
+    /// (vs the equipped item). Delta null = no comparison column.</summary>
+    private void AddStatRow2(string label, int value, int? delta, string suffix = "")
+    {
+        var grid = new Grid { Margin = new Thickness(0, 0, 0, 3) };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(70) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition());
+
+        var l = new TextBlock { Text = label, Foreground = Brushes.Gainsboro, FontSize = 12 };
+        var v = new TextBlock
+        {
+            Text = $"{value}{suffix}", Foreground = Brushes.White, FontSize = 12,
+            FontWeight = FontWeights.SemiBold
+        };
+        Grid.SetColumn(v, 1);
+        grid.Children.Add(l);
+        grid.Children.Add(v);
+
+        if (delta is int d && d != 0)
+        {
+            var deltaText = new TextBlock
+            {
+                Text = d > 0 ? $"(+{d})" : $"({d})",
+                Foreground = d > 0 ? Brushes.LightGreen : Brushes.IndianRed,
+                FontSize = 12, FontWeight = FontWeights.SemiBold
+            };
+            Grid.SetColumn(deltaText, 2);
+            grid.Children.Add(deltaText);
+        }
+
+        EquipCompareList.Items.Add(grid);
     }
 
     /// <summary>Row showing current -> new with a colored delta.</summary>
@@ -773,6 +863,16 @@ public partial class MainWindow
             var stack = _inventory.FirstOrDefault(i => i.DefId == defId);
             int count = stack?.Quantity ?? 0;
 
+            // Rarity letter top-left, count bottom-right — clearly separated.
+            var letter = new TextBlock
+            {
+                Text = RarityLetter(def.Rarity),
+                Foreground = Brushes.White, FontSize = 15, FontWeight = FontWeights.Bold,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(4, 1, 0, 0)
+            };
+
             var badge = new TextBlock
             {
                 Text = CountBadge(count),
@@ -782,16 +882,8 @@ public partial class MainWindow
                 Margin = new Thickness(0, 0, 3, 1)
             };
 
-            var label = new TextBlock
-            {
-                Text = def.Rarity.ToString()[..1],  // M/U/R-ish initial of rarity
-                Foreground = Brushes.White, FontSize = 16, FontWeight = FontWeights.Bold,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-
             var grid = new Grid();
-            grid.Children.Add(label);
+            grid.Children.Add(letter);
             grid.Children.Add(badge);
 
             var button = new Button
@@ -822,6 +914,14 @@ public partial class MainWindow
 
     private static string CountBadge(int count) =>
         count >= 100 ? "99+" : count.ToString();
+
+    private static string RarityLetter(ItemRarity rarity) => rarity switch
+    {
+        ItemRarity.Common => "C",
+        ItemRarity.Uncommon => "U",
+        ItemRarity.Rare => "R",
+        _ => "?"
+    };
 
     private static string PotionTooltip(ItemDef def)
     {

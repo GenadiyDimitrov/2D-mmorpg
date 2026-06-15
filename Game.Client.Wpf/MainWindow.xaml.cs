@@ -31,6 +31,7 @@ public partial class MainWindow : Window
     private Race _myRace;
     private BaseClass _myBaseClass;
     private int _mySecondClass;
+    private bool _isAdmin;
     private EntityDto? _myDto;
     private Guid? _targetId;
     private double _camX = GameConstants.ZoneWidth / 2;
@@ -57,6 +58,7 @@ public partial class MainWindow : Window
 
         WhisperNames.ItemsSource = _whisperNames;
         BuildCreationTree();
+        _ = ConnectToServerAsync();
 
         _net.SnapshotReceived += s => Dispatcher.BeginInvoke(() => ApplySnapshot(s));
         _net.ChatReceived += m => Dispatcher.BeginInvoke(() => AppendChat(m));
@@ -70,11 +72,17 @@ public partial class MainWindow : Window
         _net.PotionReceived += pt => Dispatcher.BeginInvoke(() => OnPotion(pt));
         _net.BuffsReceived += b => Dispatcher.BeginInvoke(() => OnBuffs(b));
         _net.EnchantReceived += en => Dispatcher.BeginInvoke(() => OnEnchant(en));
+        _net.ForceDisconnected += reason => Dispatcher.BeginInvoke(() =>
+        {
+            _inGame = false;
+            MessageBox.Show(reason, "Disconnected");
+            ShowAccountPanel();
+        });
         _net.Disconnected += reason => Dispatcher.BeginInvoke(() =>
         {
             _inGame = false;
             StatusText.Text = $"Disconnected: {reason}";
-            LoginPanel.Visibility = Visibility.Visible;
+            ShowAccountPanel();
         });
 
         Loaded += (_, _) => BuildWorldDecor();
@@ -86,36 +94,128 @@ public partial class MainWindow : Window
     // Login
     // -----------------------------------------------------------------------
 
-    private async void ConnectButton_Click(object sender, RoutedEventArgs e)
+    private async Task ConnectToServerAsync()
     {
-        ConnectButton.IsEnabled = false;
-        LoginError.Visibility = Visibility.Collapsed;
+        try
+        {
+            StatusText.Text = "Connecting...";
+            await _net.ConnectAsync(ServerUrl);
+            StatusText.Text = "Connected.";
+        }
+        catch (Exception ex)
+        {
+            ShowAccountError($"Could not reach the server at {ServerUrl}.\n" +
+                             $"Is Game.Server running?\n({ex.Message})");
+        }
+    }
+
+    private bool _registerMode;
+
+    private void ToggleAuth_Click(object sender, RoutedEventArgs e)
+    {
+        _registerMode = !_registerMode;
+        AccountModeText.Text = _registerMode ? "Create a new account" : "Log in to your account";
+        LoginActionButton.Content = _registerMode ? "Register" : "Log In";
+        ToggleAuthButton.Content = _registerMode
+            ? "Have an account? Log in" : "Need an account? Register";
+        AccountError.Visibility = Visibility.Collapsed;
+    }
+
+    private async void LoginAction_Click(object sender, RoutedEventArgs e)
+    {
+        AccountError.Visibility = Visibility.Collapsed;
+        LoginActionButton.IsEnabled = false;
 
         try
         {
             if (!_net.IsConnected)
-            {
-                StatusText.Text = "Connecting...";
                 await _net.ConnectAsync(ServerUrl);
-            }
 
-            var result = await _net.LoginAsync(new LoginRequest(NameInput.Text, _myRace, _myBaseClass));
+            string user = UsernameInput.Text;
+            string pass = PasswordInput.Password;
+
+            var result = _registerMode
+                ? await _net.RegisterAsync(user, pass)
+                : await _net.LoginAsync(user, pass);
 
             if (!result.Success)
             {
-                ShowLoginError(result.Error ?? "Login failed.");
+                ShowAccountError(result.Error ?? "Authentication failed.");
+                return;
+            }
+
+            _isAdmin = result.IsAdmin;
+            await ShowCharacterSelectAsync();
+        }
+        catch (Exception ex)
+        {
+            ShowAccountError($"Connection error: {ex.Message}");
+        }
+        finally
+        {
+            LoginActionButton.IsEnabled = true;
+        }
+    }
+
+    private async Task ShowCharacterSelectAsync()
+    {
+        AccountPanel.Visibility = Visibility.Collapsed;
+        CreatePanel.Visibility = Visibility.Collapsed;
+        CharacterSelectPanel.Visibility = Visibility.Visible;
+
+        var list = await _net.ListCharactersAsync();
+        CharacterSlots.Children.Clear();
+
+        if (list.Characters.Length == 0)
+        {
+            CharacterSlots.Children.Add(new TextBlock
+            {
+                Text = "No characters yet. Create one below.",
+                Foreground = Brushes.Gray, Margin = new Thickness(0, 0, 0, 8)
+            });
+        }
+
+        foreach (var c in list.Characters)
+        {
+            string cls = c.SecondClass > 0
+                ? ClassCatalog.Get(c.SecondClass)?.Name ?? c.BaseClass.ToString()
+                : c.BaseClass.ToString();
+
+            var button = new Button
+            {
+                Content = $"{c.Name}   Lv{c.Level}  {c.Race} {cls}",
+                Height = 40, Margin = new Thickness(0, 0, 0, 6), FontSize = 13,
+                HorizontalContentAlignment = HorizontalAlignment.Left,
+                Padding = new Thickness(10, 0, 0, 0)
+            };
+            int id = c.Id;
+            button.Click += async (_, _) => await EnterWorldAsync(id);
+            CharacterSlots.Children.Add(button);
+        }
+    }
+
+    private async Task EnterWorldAsync(int characterId)
+    {
+        try
+        {
+            var result = await _net.EnterWorldAsync(characterId);
+            if (!result.Success)
+            {
+                MessageBox.Show(result.Error ?? "Could not enter world.", "Error");
                 return;
             }
 
             _myId = result.EntityId;
-            _myName = NameInput.Text.Trim();
             _camX = result.X;
             _camY = result.Y;
             _inGame = true;
 
             EnsureSkillBarSlots();
 
-            LoginPanel.Visibility = Visibility.Collapsed;
+            CharacterSelectPanel.Visibility = Visibility.Collapsed;
+            CreatePanel.Visibility = Visibility.Collapsed;
+            AccountPanel.Visibility = Visibility.Collapsed;
+
             ChatPanel.Visibility = Visibility.Visible;
             SkillsButton.Visibility = Visibility.Visible;
             StatsButton.Visibility = Visibility.Visible;
@@ -124,17 +224,58 @@ public partial class MainWindow : Window
 #if DEBUG
             DebugButton.Visibility = Visibility.Visible;
 #endif
-            EnsureSkillBarSlots();
 
             AppendChat(new ChatMessage("SYSTEM",
-                "Click ground = move, click target = attack, 1-5 = skills, I = inventory. " +
-                "Chat: plain = local, '!text' = world, '/w Name text' = whisper.",
+                "Click ground = move, click target = attack, 1-8 = skills, I = inventory." +
+                (_isAdmin ? " Admin: type /help in chat." : ""),
                 ChatChannel.System));
         }
         catch (Exception ex)
         {
-            ShowLoginError($"Could not reach the server at {ServerUrl}.\n" +
-                           $"Is Game.Server running?\n({ex.Message})");
+            MessageBox.Show($"Enter world failed: {ex.Message}", "Error");
+        }
+    }
+
+    private void NewCharacter_Click(object sender, RoutedEventArgs e)
+    {
+        CharacterSelectPanel.Visibility = Visibility.Collapsed;
+        CreatePanel.Visibility = Visibility.Visible;
+    }
+
+    private void BackToSelect_Click(object sender, RoutedEventArgs e)
+    {
+        CreatePanel.Visibility = Visibility.Collapsed;
+        _ = ShowCharacterSelectAsync();
+    }
+
+    /// <summary>"Create Character" button on the creation tree.</summary>
+    private async void ConnectButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_creationReady)
+            return;
+
+        ConnectButton.IsEnabled = false;
+        LoginError.Visibility = Visibility.Collapsed;
+
+        try
+        {
+            string name = NameInput.Text.Trim();
+            var error = await _net.CreateCharacterAsync(name, _myRace, _myBaseClass);
+            if (error is not null)
+            {
+                LoginError.Text = error;
+                LoginError.Visibility = Visibility.Visible;
+                return;
+            }
+
+            // Created — go back to selection (the new character is listed).
+            CreatePanel.Visibility = Visibility.Collapsed;
+            await ShowCharacterSelectAsync();
+        }
+        catch (Exception ex)
+        {
+            LoginError.Text = $"Create failed: {ex.Message}";
+            LoginError.Visibility = Visibility.Visible;
         }
         finally
         {
@@ -142,12 +283,27 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ShowLoginError(string text)
+    private void ShowAccountPanel()
     {
-        LoginError.Text = text;
-        LoginError.Visibility = Visibility.Visible;
-        StatusText.Text = "Not connected";
+        AccountPanel.Visibility = Visibility.Visible;
+        CharacterSelectPanel.Visibility = Visibility.Collapsed;
+        CreatePanel.Visibility = Visibility.Collapsed;
+        ChatPanel.Visibility = Visibility.Collapsed;
+        SkillsButton.Visibility = Visibility.Collapsed;
+        StatsButton.Visibility = Visibility.Collapsed;
+        InventoryButton.Visibility = Visibility.Collapsed;
+        ClassButton.Visibility = Visibility.Collapsed;
+        DebugButton.Visibility = Visibility.Collapsed;
+        SkillBar.Visibility = Visibility.Collapsed;
+        PotionBar.Visibility = Visibility.Collapsed;
     }
+
+    private void ShowAccountError(string text)
+    {
+        AccountError.Text = text;
+        AccountError.Visibility = Visibility.Visible;
+    }
+
 
     // -----------------------------------------------------------------------
     // Skill bar (rebuilt on class change to include the signature skill)
@@ -340,7 +496,16 @@ public partial class MainWindow : Window
 
         _castStart = _clock.Elapsed.TotalSeconds;
         _castDuration = cast.Seconds;
-        CastText.Text = cast.SkillName;
+
+        // Show the effective cast-speed bonus next to the skill name.
+        string castMod = "";
+        if (_stats is StatsUpdate st)
+        {
+            float faster = (-st.CastModifier + (1f - st.CastSpeedMult)) * 100f;
+            if (Math.Abs(faster) >= 0.5f)
+                castMod = faster > 0 ? $"  (-{faster:0}% cast)" : $"  (+{-faster:0}% cast)";
+        }
+        CastText.Text = cast.SkillName + castMod;
         CastFill.Width = 0;
         CastBar.Visibility = Visibility.Visible;
     }
@@ -830,6 +995,18 @@ public partial class MainWindow : Window
             string text = raw[1..].Trim();
             if (text.Length > 0)
                 await _net.ChatAsync(text, ChatChannel.World);
+            return;
+        }
+
+        // Admin slash-commands (only sent if server granted admin).
+        if (_isAdmin && raw.StartsWith('/') &&
+            !raw.StartsWith("/w ", StringComparison.OrdinalIgnoreCase))
+        {
+            var body = raw[1..].Trim();
+            int sp = body.IndexOf(' ');
+            string acmd = sp < 0 ? body : body[..sp];
+            string aarg = sp < 0 ? "" : body[(sp + 1)..].Trim();
+            await _net.AdminCommandAsync(acmd, aarg);
             return;
         }
 

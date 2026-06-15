@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 4.7 (stacking, class identity, skill progression)
+# L2-like MMORPG — Phase 5 (persistence, accounts, admin)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,77 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 5 (this build)
+
+### Persistence (EF Core + SQLite)
+- Characters and inventory now **survive server restarts**. The database is a
+  single SQLite file (`game.db`) created automatically next to the server on
+  first run — **no database server to install**.
+- Characters **auto-save every 60s** and on logout; you log back in **where
+  you left off** with your level, exp, stats, second class, and full inventory.
+- Rolled item attributes persist via an EF Core **JSON column** (`OwnsMany …
+  ToJson()`), so adding a new attribute type never needs a migration. Attributes
+  roll once at drop time and are immutable thereafter (ready for a future
+  "legendary reroll stone").
+- **Swapping databases is one line** in `Program.cs`: replace `UseSqlite` with
+  `UseNpgsql`/`UseSqlServer`; all the EF Core code is provider-agnostic.
+
+### Accounts & character selection
+- The flow is now **Register/Login → Character Select → Create/Enter**:
+  - Account login screen with username + password (**PBKDF2-hashed**, never
+    stored or sent in plaintext form).
+  - Character selection lists all characters on the account; create new ones
+    via the class-tree screen, then pick one to enter the world.
+- **The first account registered becomes an admin** (convenient for testing).
+
+### Admin role
+- Admins use **slash-commands in chat**: `/help`, `/kick <name>`,
+  `/ban <name>`, `/unban <name>`, `/jail <name>`, `/unjail <name>`, `/god`,
+  `/where <name>`.
+- **God mode** makes you immune to damage. **Jail** pins a player to the jail
+  corner until released. **Ban** persists (works offline) and force-disconnects
+  the player if they're online. Non-admin accounts can't invoke any of these —
+  the server validates the admin flag, not the client.
+
+> **First build note:** the server now references EF Core, so the first
+> `dotnet build`/restore needs internet to pull the NuGet packages. After that
+> it runs offline. The `game.db` file is created on first launch.
+
+## New in Phase 4.8 (this build)
+
+### Item attributes (rolled per drop)
+- Weapons and armor now roll **random bonus attributes** when they drop, so two
+  Steel Swords differ. **Count by rarity**: F common 0 / uncommon 1 / rare 2;
+  E common 1 / uncommon 2 / rare 3 (and so on by grade).
+- The **attribute pool and roll ranges scale by grade**, defined in
+  `Game.Shared/Attributes.cs`:
+  - **F grade** pool: Max HP%, Move Speed% — rolls 1–10%.
+  - **E grade** pool adds Max MP%, Cast Speed%, Attack Speed%, Attack% — HP/MP
+    roll 10–30%, the rest 1–20%.
+  - B/A/S inherit the bigger pool with stronger ranges (ready to tune).
+- Attributes live on the **item instance**, show in the **inventory tooltip**
+  and the **equip-comparison popup**, and feed real stats: HP/MP/Attack %,
+  move speed, and **Cast Speed / Attack Speed** (which shorten cast time and
+  basic-attack interval).
+
+### Cast speed display (WIT-centered)
+- Cast reduction is now centered on **WIT 25 = baseline (0%)**. Each point
+  above 25 casts faster, each below slower (1.2%/point). The Stats window shows
+  **Cast Speed** broken into the WIT contribution and item contribution, and
+  the **cast bar** shows the effective bonus next to the skill name.
+
+### Base-skill unlock levels
+- Per your fix, base skills no longer wait for class change: **Power Strike @1,
+  War Cry @5** (Fighter); **Magic Bolt @1, Weakness @3, Heal @5** (Mage).
+
+### Fixes
+- **Potion buttons**: the rarity letter (C/U/R, top-left) and the count
+  (bottom-right) are now separated and readable.
+- **Equip-comparison popup**: clicking an item now always shows **its own
+  stats**, with the difference vs the equipped item as a secondary column.
+  Clicking the equipped item (or an item with no counterpart) shows real values
+  instead of zeros, and lists the item's rolled attributes.
 
 ## New in Phase 4.7 (this build)
 

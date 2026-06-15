@@ -50,9 +50,9 @@ public class World
 
 public interface IGameCommand { }
 
-public record JoinCommand(
+public record EnterWorldCommand(
     string ConnectionId,
-    LoginRequest Request,
+    Entity Entity,
     TaskCompletionSource<LoginResult> Result) : IGameCommand;
 
 public record LeaveCommand(string ConnectionId) : IGameCommand;
@@ -91,6 +91,9 @@ public record DebugGiveCmd(string ConnectionId, int DefId) : IGameCommand;
 
 /// <summary>DEBUG-only: grant one level.</summary>
 public record DebugLevelCmd(string ConnectionId) : IGameCommand;
+
+/// <summary>Admin command (kick/ban/jail/unjail/god). Validated in the hub.</summary>
+public record AdminCmd(string ConnectionId, string Command, string Argument) : IGameCommand;
 
 public record TradeRequestCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 public record TradeRespondCmd(string ConnectionId, bool Accept) : IGameCommand;

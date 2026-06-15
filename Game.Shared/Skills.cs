@@ -115,11 +115,11 @@ public static class ClassProgression
     // Base kits (before class change): shared by a base class.
     private static readonly SkillGrant[] BaseFighter =
     {
-        new(SkillCatalog.PowerStrike), new(SkillCatalog.WarCry)
+        new(SkillCatalog.PowerStrike, 1), new(SkillCatalog.WarCry, 5)
     };
     private static readonly SkillGrant[] BaseMage =
     {
-        new(SkillCatalog.MagicBolt), new(SkillCatalog.Heal), new(SkillCatalog.Weakness)
+        new(SkillCatalog.MagicBolt, 1), new(SkillCatalog.Weakness, 3), new(SkillCatalog.Heal, 5)
     };
 
     /// <summary>Second-class kits, shared by all races of an archetype.
@@ -230,8 +230,18 @@ public static class SkillMath
         return def.Range;
     }
 
+    /// <summary>WIT 25 is the baseline (0% modifier). Each point above 25
+    /// speeds casting, each point below slows it, at 1.2% per point. Negative
+    /// result = faster. Clamped to [-50%, +50%].</summary>
+    public const int CastBaselineWit = 25;
+    public const float CastPercentPerWit = 0.012f;
+
+    /// <summary>Cast-time modifier as a fraction. Negative = faster.</summary>
+    public static float CastModifier(int wit) =>
+        Math.Clamp((CastBaselineWit - wit) * CastPercentPerWit, -0.50f, 0.50f);
+
     public static int AdjustedCastTicks(int baseTicks, int wit) =>
-        Math.Max(2, (int)MathF.Round(baseTicks * (1f - Math.Min(0.5f, wit * 0.006f))));
+        Math.Max(2, (int)MathF.Round(baseTicks * (1f + CastModifier(wit))));
 
     public static float SpellFailChance(int casterLevel, int targetLevel) =>
         Math.Clamp(0.03f + (targetLevel - casterLevel) * 0.02f, 0.01f, 0.80f);

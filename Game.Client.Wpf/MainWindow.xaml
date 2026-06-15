@@ -318,8 +318,62 @@
             </StackPanel>
         </Border>
 
-        <!-- Login / character creation (class tree) -->
-        <Border x:Name="LoginPanel"
+        <!-- Account login / register -->
+        <Border x:Name="AccountPanel"
+                Width="340"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="#E0141C28" CornerRadius="10" Padding="24">
+            <StackPanel>
+                <TextBlock Text="L2-like" Foreground="White" FontSize="26" FontWeight="Bold"
+                           HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                <TextBlock x:Name="AccountModeText" Text="Log in to your account"
+                           Foreground="#FFB9C4CC" FontSize="13"
+                           HorizontalAlignment="Center" Margin="0,0,0,16"/>
+
+                <TextBlock Text="Username" Foreground="#FFB9C4CC" Margin="0,0,0,4"/>
+                <TextBox x:Name="UsernameInput" Height="30" MaxLength="20"
+                         Background="#60000000" Foreground="White"
+                         BorderBrush="#FF445566" CaretBrush="White" VerticalContentAlignment="Center"/>
+
+                <TextBlock Text="Password" Foreground="#FFB9C4CC" Margin="0,12,0,4"/>
+                <PasswordBox x:Name="PasswordInput" Height="30" MaxLength="40"
+                             Background="#60000000" Foreground="White"
+                             BorderBrush="#FF445566" VerticalContentAlignment="Center"/>
+
+                <Button x:Name="LoginActionButton" Content="Log In"
+                        Height="34" Margin="0,18,0,0" FontWeight="SemiBold"
+                        Click="LoginAction_Click"/>
+                <Button x:Name="ToggleAuthButton" Content="Need an account? Register"
+                        Height="26" Margin="0,8,0,0" Background="Transparent"
+                        Foreground="#FF7FB0FF" BorderThickness="0"
+                        Click="ToggleAuth_Click"/>
+
+                <TextBlock x:Name="AccountError" Foreground="#FFFF6B6B" TextWrapping="Wrap"
+                           Margin="0,10,0,0" Visibility="Collapsed"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Character selection -->
+        <Border x:Name="CharacterSelectPanel"
+                Width="420" MaxHeight="560"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="#E0141C28" CornerRadius="10" Padding="22"
+                Visibility="Collapsed">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="Select Character"
+                           Foreground="White" FontSize="20" FontWeight="Bold"
+                           HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                <Button DockPanel.Dock="Bottom" x:Name="NewCharacterButton"
+                        Content="Create New Character" Height="34" Margin="0,12,0,0"
+                        FontWeight="SemiBold" Click="NewCharacter_Click"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="CharacterSlots"/>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- Character creation (class tree) -->
+        <Border x:Name="CreatePanel"
                 Width="720" MaxHeight="640"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 Background="#E0141C28" CornerRadius="10" Padding="22">
@@ -336,10 +390,13 @@
                     <TextBox x:Name="NameInput" Width="160" Height="28" MaxLength="16"
                              Background="#60000000" Foreground="White"
                              BorderBrush="#FF445566" CaretBrush="White" VerticalContentAlignment="Center"/>
-                    <Button x:Name="ConnectButton" Content="Connect &amp; Play"
+                    <Button x:Name="ConnectButton" Content="Create Character"
                             Width="150" Height="30" Margin="12,0,0,0"
                             FontWeight="SemiBold" Click="ConnectButton_Click"
                             IsEnabled="False"/>
+                    <Button x:Name="BackToSelectButton" Content="Back"
+                            Width="70" Height="30" Margin="8,0,0,0"
+                            Click="BackToSelect_Click"/>
                 </StackPanel>
 
                 <Grid>

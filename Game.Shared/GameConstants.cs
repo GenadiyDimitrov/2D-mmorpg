@@ -90,4 +90,13 @@ public static class GameConstants
 
     /// <summary>Both characters must be this close to start a trade.</summary>
     public const float TradeRange = 300f;
+
+    // ----- Admin / jail (Phase 5) ----------------------------------------------
+
+    /// <summary>Jail is a corner of the map; jailed players are pinned here.</summary>
+    public const float JailX = 500f;
+    public const float JailY = 500f;
+
+    /// <summary>Periodic character auto-save interval (ticks). 600 = 60s.</summary>
+    public const int AutoSaveIntervalTicks = 600;
 }

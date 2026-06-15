@@ -28,14 +28,17 @@ public class GameLoopService : BackgroundService
     private readonly World _world;
     private readonly IHubContext<GameHub> _hub;
     private readonly ILogger<GameLoopService> _log;
+    private readonly Game.Server.Persistence.PersistenceService _db;
     private readonly Random _rng = new();
     private int _tick;
 
-    public GameLoopService(World world, IHubContext<GameHub> hub, ILogger<GameLoopService> log)
+    public GameLoopService(World world, IHubContext<GameHub> hub,
+        ILogger<GameLoopService> log, Game.Server.Persistence.PersistenceService db)
     {
         _world = world;
         _hub = hub;
         _log = log;
+        _db = db;
     }
 
     protected override async Task ExecuteAsync(CancellationToken ct)
@@ -69,7 +72,8 @@ public class GameLoopService : BackgroundService
         {
             switch (cmd)
             {
-                case JoinCommand c: HandleJoin(c); break;
+                case EnterWorldCommand c: HandleEnterWorld(c); break;
+                case AdminCmd c: HandleAdmin(c); break;
                 case LeaveCommand c: HandleLeave(c); break;
                 case MoveCmd c: HandleMove(c); break;
                 case AttackCmd c: HandleAttack(c); break;
@@ -92,66 +96,27 @@ public class GameLoopService : BackgroundService
         }
     }
 
-    private void HandleJoin(JoinCommand join)
+    private void HandleEnterWorld(EnterWorldCommand cmd)
     {
-        var name = join.Request.CharacterName.Trim();
+        var entity = cmd.Entity;
 
-        if (name.Length is 0 or > GameConstants.MaxCharacterNameLength)
-        {
-            join.Result.TrySetResult(new LoginResult(false,
-                $"Name must be 1-{GameConstants.MaxCharacterNameLength} characters.",
-                Guid.Empty, 0, 0));
-            return;
-        }
-
-        bool taken = _world.Entities.Values.Any(e =>
-            e.Kind == EntityKind.Player &&
-            string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
-
-        if (taken)
-        {
-            join.Result.TrySetResult(new LoginResult(false,
-                "That name is already online.", Guid.Empty, 0, 0));
-            return;
-        }
-
-        var stats = StatCalculator.GetBaseStats(join.Request.Race, join.Request.BaseClass);
-        var entity = new Entity
-        {
-            Name = name,
-            Kind = EntityKind.Player,
-            Race = join.Request.Race,
-            BaseClass = join.Request.BaseClass,
-            X = GameConstants.ZoneWidth / 2 + _rng.Next(-300, 300),
-            Y = GameConstants.ZoneHeight / 2 + _rng.Next(-300, 300),
-            Speed = GameConstants.BasePlayerSpeed,
-            Con = stats.Con,
-            AtkStat = stats.Atk,
-            Wit = stats.Wit,
-            Dex = stats.Dex
-        };
-        entity.RecomputeDerived();
-        entity.Hp = entity.MaxHp;
-        entity.Mp = entity.MaxMp;
-
-        // Starter gear so the inventory has something in it.
-        entity.Inventory.Add(new InventoryItem { DefId = 1 });  // Rusty Sword
-        entity.Inventory.Add(new InventoryItem { DefId = 9 });  // Leather Vest
-        AddItem(entity, 30, 5);   // Minor Healing Potions (stack)
-        AddItem(entity, 32, 2);   // Greater Healing Potions (stack)
+        // Spawn position: where they logged off, nudged into the world bounds.
+        entity.X = Math.Clamp(entity.X, 0, GameConstants.ZoneWidth);
+        entity.Y = Math.Clamp(entity.Y, 0, GameConstants.ZoneHeight);
 
         _world.Entities[entity.Id] = entity;
-        _world.EntityToConnection[entity.Id] = join.ConnectionId;
-        _world.ConnectionToEntity[join.ConnectionId] = entity.Id;
+        _world.EntityToConnection[entity.Id] = cmd.ConnectionId;
+        _world.ConnectionToEntity[cmd.ConnectionId] = entity.Id;
         _world.Grid.Add(entity);
 
-        join.Result.TrySetResult(new LoginResult(true, null, entity.Id, entity.X, entity.Y));
+        cmd.Result.TrySetResult(new LoginResult(true, null, entity.Id, entity.X, entity.Y));
 
         SendInventory(entity);
         SendStats(entity);
+        if (entity.IsAdmin)
+            SendSystemToEntity(entity, "Admin privileges active. Type /help for commands.");
         BroadcastSystem($"{entity.Name} entered the world.");
-        _log.LogInformation("Player {Name} joined ({Race} {Class})",
-            entity.Name, entity.Race, entity.BaseClass);
+        _log.LogInformation("Player {Name} entered (char {Id})", entity.Name, entity.PersistentId);
     }
 
     private void HandleLeave(LeaveCommand leave)
@@ -168,8 +133,27 @@ public class GameLoopService : BackgroundService
 
             if (!entity.Dead)
                 _world.Grid.Remove(entity);
+
+            // Persist on logout (fire-and-forget off the loop thread).
+            SaveEntity(entity);
             BroadcastSystem($"{entity.Name} left the world.");
         }
+    }
+
+    /// <summary>Snapshot a character to the DB without blocking the tick loop.</summary>
+    private void SaveEntity(Entity entity)
+    {
+        if (entity.PersistentId is null)
+            return;
+        _ = Task.Run(() => _db.SaveCharacterAsync(entity));
+    }
+
+    /// <summary>Periodic snapshot of every online player (crash safety).</summary>
+    private void AutoSaveAll()
+    {
+        foreach (var entity in _world.Entities.Values)
+            if (entity.Kind == EntityKind.Player && entity.PersistentId is not null)
+                SaveEntity(entity);
     }
 
     private void HandleMove(MoveCmd move)
@@ -754,7 +738,106 @@ public class GameLoopService : BackgroundService
 
     // ----- Chat -----------------------------------------------------------------------------
 
-    private void HandleChat(ChatCmd chat)
+    private void HandleAdmin(AdminCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var admin) || !admin.IsAdmin)
+            return;
+
+        var command = cmd.Command.ToLowerInvariant();
+        var arg = cmd.Argument.Trim();
+
+        switch (command)
+        {
+            case "help":
+                SendSystemToEntity(admin,
+                    "Admin: /kick <name>, /ban <name>, /unban <name>, /jail <name>, " +
+                    "/unjail <name>, /god, /where <name>");
+                break;
+
+            case "god":
+                admin.GodMode = !admin.GodMode;
+                SendSystemToEntity(admin, $"God mode {(admin.GodMode ? "ON" : "OFF")}.");
+                break;
+
+            case "kick":
+                if (FindOnlinePlayer(arg) is Entity kickTarget &&
+                    _world.EntityToConnection.TryGetValue(kickTarget.Id, out var kickConn))
+                {
+                    SendSystemToEntity(kickTarget, "You have been kicked by an admin.");
+                    SaveEntity(kickTarget);
+                    _ = _hub.Clients.Client(kickConn).SendAsync("ForceDisconnect", "Kicked by admin.");
+                    BroadcastSystem($"{kickTarget.Name} was kicked.");
+                }
+                else SendSystemToEntity(admin, $"{arg} is not online.");
+                break;
+
+            case "ban":
+                BanPlayer(admin, arg, true);
+                break;
+            case "unban":
+                BanPlayer(admin, arg, false);
+                break;
+
+            case "jail":
+                if (FindOnlinePlayer(arg) is Entity jailTarget)
+                {
+                    jailTarget.Jailed = true;
+                    jailTarget.X = GameConstants.JailX;
+                    jailTarget.Y = GameConstants.JailY;
+                    jailTarget.TargetX = null;
+                    jailTarget.TargetY = null;
+                    jailTarget.Engaged = false;
+                    _world.Grid.UpdatePosition(jailTarget);
+                    SendSystemToEntity(jailTarget, "You have been jailed.");
+                    SendSystemToEntity(admin, $"{jailTarget.Name} jailed.");
+                }
+                else SendSystemToEntity(admin, $"{arg} is not online.");
+                break;
+
+            case "unjail":
+                if (FindOnlinePlayer(arg) is Entity unjailTarget)
+                {
+                    unjailTarget.Jailed = false;
+                    SendSystemToEntity(unjailTarget, "You have been released.");
+                    SendSystemToEntity(admin, $"{unjailTarget.Name} released.");
+                }
+                else SendSystemToEntity(admin, $"{arg} is not online.");
+                break;
+
+            case "where":
+                if (FindOnlinePlayer(arg) is Entity who)
+                    SendSystemToEntity(admin, $"{who.Name} is at ({(int)who.X}, {(int)who.Y}).");
+                else SendSystemToEntity(admin, $"{arg} is not online.");
+                break;
+
+            default:
+                SendSystemToEntity(admin, $"Unknown command: {command}");
+                break;
+        }
+    }
+
+    private Entity? FindOnlinePlayer(string name) =>
+        _world.Entities.Values.FirstOrDefault(e =>
+            e.Kind == EntityKind.Player &&
+            string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
+
+    private void BanPlayer(Entity admin, string name, bool banned)
+    {
+        // Persist the ban (works even if the target is offline).
+        _ = Task.Run(async () =>
+        {
+            bool ok = await _db.SetBannedByCharacterNameAsync(name, banned);
+            // Kick if currently online and being banned.
+            if (ok && banned && FindOnlinePlayer(name) is Entity target &&
+                _world.EntityToConnection.TryGetValue(target.Id, out var conn))
+            {
+                _ = _hub.Clients.Client(conn).SendAsync("ForceDisconnect", "You have been banned.");
+            }
+        });
+        SendSystemToEntity(admin, $"{(banned ? "Banned" : "Unbanned")} {name}.");
+    }
+
+        private void HandleChat(ChatCmd chat)
     {
         if (!TryGetPlayer(chat.ConnectionId, out var sender))
             return;
@@ -811,6 +894,9 @@ public class GameLoopService : BackgroundService
         _tick++;
         bool regenTick = _tick % GameConstants.RegenIntervalTicks == 0;
 
+        if (_tick % GameConstants.AutoSaveIntervalTicks == 0)
+            AutoSaveAll();
+
         foreach (var entity in _world.Entities.Values)
         {
             if (entity.AttackCooldown > 0)
@@ -831,6 +917,18 @@ public class GameLoopService : BackgroundService
 
             if (entity.Kind == EntityKind.Mob)
                 MobAi(entity);
+
+            if (entity.Jailed)
+            {
+                // Pinned: ignore any movement/skills, keep them at jail.
+                entity.TargetX = null;
+                entity.TargetY = null;
+                entity.X = GameConstants.JailX;
+                entity.Y = GameConstants.JailY;
+                entity.Engaged = false;
+                _world.Grid.UpdatePosition(entity);
+                continue;
+            }
 
             UpdateAction(entity);
             MoveTowardTarget(entity);
@@ -1026,7 +1124,8 @@ public class GameLoopService : BackgroundService
         caster.QueuedSkillId = null;
         caster.CastingSkillId = def.Id;
         caster.CastTargetId = targetId;
-        caster.CastTicksRemaining = SkillMath.AdjustedCastTicks(def.CastTicks, caster.Wit);
+        caster.CastTicksRemaining = Math.Max(2,
+            (int)(SkillMath.AdjustedCastTicks(def.CastTicks, caster.Wit) * caster.CastSpeedMultiplier));
 
         if (_world.EntityToConnection.TryGetValue(caster.Id, out var conn))
         {
@@ -1090,7 +1189,7 @@ public class GameLoopService : BackgroundService
                         BroadcastCombat(caster, target, damage, CombatOutcome.Hit, def.Name);
                     }
 
-                    target.Hp -= damage;
+                    ApplyDamage(target, damage);
                 }
 
                 AfterOffensiveSkill(caster, target);
@@ -1109,7 +1208,7 @@ public class GameLoopService : BackgroundService
                 {
                     int damage = SkillMath.MagicSkillDamage(
                         def.Power, caster.EffectiveAttack, caster.Wit, target.EffectiveDefence);
-                    target.Hp -= damage;
+                    ApplyDamage(target, damage);
                     BroadcastCombat(caster, target, damage, CombatOutcome.Hit, def.Name);
                 }
 
@@ -1236,9 +1335,11 @@ public class GameLoopService : BackgroundService
         if (attacker.AttackCooldown > 0)
             return;
 
-        attacker.AttackCooldown = attacker.Kind == EntityKind.Player
+        int baseInterval = attacker.Kind == EntityKind.Player
             ? GameConstants.PlayerAttackIntervalTicks
             : GameConstants.MobAttackIntervalTicks;
+        attacker.AttackCooldown = Math.Max(2,
+            (int)(baseInterval * attacker.AttackSpeedMultiplier));
 
         ResolveBasicAttack(attacker, target);
     }
@@ -1274,13 +1375,22 @@ public class GameLoopService : BackgroundService
                 BroadcastCombat(attacker, target, damage, CombatOutcome.Hit);
             }
 
-            target.Hp -= damage;
+            ApplyDamage(target, damage);
         }
 
         Retaliate(target, attacker);
 
         if (target.Hp <= 0)
             Kill(target, attacker);
+    }
+
+    /// <summary>Apply damage unless the target is in god mode.</summary>
+    private static int ApplyDamage(Entity target, int damage)
+    {
+        if (target.GodMode)
+            return 0;
+        target.Hp -= damage;
+        return damage;
     }
 
     private void Kill(Entity victim, Entity killer)
@@ -1503,7 +1613,7 @@ public class GameLoopService : BackgroundService
 
     /// <summary>Add an item to inventory, stacking consumables/scrolls.
     /// Returns false if there was no room for a new stack.</summary>
-    private static bool AddItem(Entity player, int defId, int quantity = 1)
+    private bool AddItem(Entity player, int defId, int quantity = 1)
     {
         if (ItemCatalog.Get(defId) is not ItemDef def)
             return false;
@@ -1522,7 +1632,10 @@ public class GameLoopService : BackgroundService
         if (player.Inventory.Count >= GameConstants.InventorySize)
             return false;
 
-        player.Inventory.Add(new InventoryItem { DefId = defId, Quantity = stackable ? quantity : 1 });
+        var newItem = new InventoryItem { DefId = defId, Quantity = stackable ? quantity : 1 };
+        if (def.Slot is EquipSlot.Weapon or EquipSlot.Armor)
+            newItem.Attributes = AttributeSystem.Roll(def, _rng);
+        player.Inventory.Add(newItem);
         return true;
     }
 
@@ -1581,7 +1694,8 @@ public class GameLoopService : BackgroundService
         SendTo(p, "Stats", new StatsUpdate(
             p.Con, p.AtkStat, p.Wit, p.Dex,
             p.MaxHp, p.MaxMp, p.AttackPower, p.Defence,
-            p.Accuracy, p.Evasion, p.CritChance, p.BasicAttackRange, p.SecondClass));
+            p.Accuracy, p.Evasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
+            p.Speed, SkillMath.CastModifier(p.Wit), p.CastSpeedMultiplier, p.AttackSpeedMultiplier));
 
     private void CancelCast(Entity entity)
     {

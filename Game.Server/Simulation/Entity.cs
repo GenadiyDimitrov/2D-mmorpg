@@ -25,7 +25,14 @@ public class InventoryItem
     /// <summary>Stack size for consumables/scrolls. Gear is always 1.</summary>
     public int Quantity { get; set; } = 1;
 
-    public InventoryItemDto ToDto() => new(InstanceId, DefId, Equipped, Enchant, Quantity);
+    /// <summary>Rolled bonus attributes (gear only).</summary>
+    public List<ItemAttribute> Attributes { get; set; } = new();
+
+    /// <summary>DB instance id, preserved across saves (null = never persisted).</summary>
+    public Guid? PersistentInstanceId { get; set; }
+
+    public InventoryItemDto ToDto() =>
+        new(InstanceId, DefId, Equipped, Enchant, Quantity, Attributes.ToArray());
 }
 
 /// <summary>
@@ -40,6 +47,18 @@ public class Entity
 
     public Race Race { get; init; }
     public BaseClass BaseClass { get; init; }
+
+    /// <summary>DB character id (null for mobs / unsaved).</summary>
+    public int? PersistentId { get; set; }
+
+    /// <summary>Account-level admin flag (elevated commands, god mode).</summary>
+    public bool IsAdmin { get; set; }
+
+    /// <summary>God mode: takes no damage (admin only).</summary>
+    public bool GodMode { get; set; }
+
+    /// <summary>Jailed players are teleported to jail and cannot move out.</summary>
+    public bool Jailed { get; set; }
 
     /// <summary>0 = none; otherwise a ClassCatalog id.</summary>
     public int SecondClass { get; set; }
@@ -76,6 +95,11 @@ public class Entity
     public int Evasion { get; set; }
     public float CritChance { get; set; }
     public float BasicAttackRange { get; set; } = GameConstants.MeleeRange;
+
+    /// <summary>Cast-time multiplier from item Cast Speed attributes (0.8 = 20% faster).</summary>
+    public float CastSpeedMultiplier { get; set; } = 1f;
+    /// <summary>Attack-interval multiplier from Attack Speed attributes.</summary>
+    public float AttackSpeedMultiplier { get; set; } = 1f;
 
     public long Exp { get; set; }
 
@@ -178,6 +202,9 @@ public class Entity
         Evasion = StatCalculator.Evasion(Dex, Level);
         CritChance = StatCalculator.CritChance(Dex);
         BasicAttackRange = GameConstants.MeleeRange;
+        Speed = GameConstants.BasePlayerSpeed;
+        CastSpeedMultiplier = 1f;
+        AttackSpeedMultiplier = 1f;
 
         foreach (var item in Inventory)
         {
@@ -200,6 +227,32 @@ public class Entity
                 BasicAttackRange = range;
             }
         }
+
+        // ----- Item attributes (rolled per drop) -----
+        float hpPct = 0, mpPct = 0, speedPct = 0, castPct = 0, atkSpeedPct = 0, atkPct = 0;
+        foreach (var item in Inventory)
+        {
+            if (!item.Equipped) continue;
+            foreach (var attr in item.Attributes)
+            {
+                switch (attr.Type)
+                {
+                    case AttributeType.HealthPercent: hpPct += attr.Value; break;
+                    case AttributeType.ManaPercent: mpPct += attr.Value; break;
+                    case AttributeType.SpeedPercent: speedPct += attr.Value; break;
+                    case AttributeType.CastSpeedPercent: castPct += attr.Value; break;
+                    case AttributeType.AttackSpeedPercent: atkSpeedPct += attr.Value; break;
+                    case AttributeType.AttackPercent: atkPct += attr.Value; break;
+                }
+            }
+        }
+
+        MaxHp += (int)(MaxHp * hpPct / 100f);
+        MaxMp += (int)(MaxMp * mpPct / 100f);
+        AttackPower += (int)(AttackPower * atkPct / 100f);
+        Speed = GameConstants.BasePlayerSpeed * (1f + speedPct / 100f);
+        CastSpeedMultiplier = Math.Max(0.4f, 1f - castPct / 100f);
+        AttackSpeedMultiplier = Math.Max(0.4f, 1f - atkSpeedPct / 100f);
 
         // Archetype identity: scale basic-attack power, add crit/eva for
         // archers & rogues. Skills keep using full AttackPower.
