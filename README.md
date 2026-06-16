@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 5.1 (string item keys, weapon matrix)
+# L2-like MMORPG — Phase 5.2 (visible world: border, roads, spawn zones)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,44 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 5.2 (this build)
+
+### The world is now visible and editable from one file
+- **`Game.Shared/WorldMap.cs` is the single source of truth** for world layout —
+  the server (spawning, collision) and client (drawing) both read it. To reshape
+  the world you edit this one file.
+
+### World border
+- The playable rectangle is drawn as a **dashed outline**, so the edge is
+  visible instead of an invisible wall. Defined by `WorldMap.Border`.
+
+### Roads
+- **Thick, semi-transparent grey strips** lead from town toward the hunting
+  grounds; **mobs don't spawn on roads**, giving safe-ish corridors. Each road
+  is a list of points with a half-width in `WorldMap.Roads` — add or reshape a
+  road by editing its point list.
+
+### Spawn zones (visible + self-documenting)
+- Each spawn zone is drawn as a **light semi-transparent red disc** with a
+  **label showing its level band and mob types**, so you can see at a glance
+  where things spawn and what you'll meet. (Placeholder colour until real
+  environment art.)
+- **Fully editable** in `WorldMap.SpawnZones`. Your example —
+  *"at (1000,1000) radius 800 spawn level 5-7 boars and spiders"* — is one line:
+  ```csharp
+  new(X: 1000, Y: 1000, Radius: 800, MinLevel: 5, MaxLevel: 7,
+      MobTypes: new[] { "Boar", "Spider" }, MobCount: 10),
+  ```
+  The server spawns each zone independently (random point in the disc, avoiding
+  the safe zone and roads), picks a random mob type and a level in the band, and
+  the client tints + labels it automatically. Add as many zones as you like.
+
+### How spawning works (for editing)
+- On startup the server loops every `SpawnZone` and spawns `MobCount` mobs in
+  it. Each mob remembers its home point and wanders/leashes around it; on death
+  it respawns at home after the respawn timer. Change a zone's numbers and both
+  the spawn behaviour and the on-screen overlay update together.
 
 ## New in Phase 5.1 (this build)
 

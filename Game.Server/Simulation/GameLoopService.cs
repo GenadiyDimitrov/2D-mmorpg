@@ -10,20 +10,15 @@ namespace Game.Server.Simulation;
 /// </summary>
 public class GameLoopService : BackgroundService
 {
-    private static readonly (string Name, bool Aggressive)[] MobTypes =
+    // Which mob types are aggressive (chase on sight). Names match WorldMap zones.
+    private static readonly Dictionary<string, bool> MobAggression = new()
     {
-        ("Wolf", false), ("Boar", false), ("Slime", false),
-        ("Spider", true), ("Bandit", true)
+        ["Wolf"] = false, ["Boar"] = false, ["Slime"] = false,
+        ["Spider"] = true, ["Bandit"] = true,
     };
 
-    // Level-banded hunting grounds: rings around the town (safe zone).
-    private static readonly (float MinDist, float MaxDist, int MinLvl, int MaxLvl, int Count)[] SpawnBands =
-    {
-        (1300f, 3500f, 1, 3, 14),
-        (3500f, 6000f, 4, 7, 12),
-        (6000f, 8500f, 8, 12, 10),
-        (8500f, 10500f, 13, 18, 10),
-    };
+    private static bool IsAggressive(string mobName) =>
+        MobAggression.GetValueOrDefault(mobName, false);
 
     private readonly World _world;
     private readonly IHubContext<GameHub> _hub;
@@ -1731,46 +1726,57 @@ public class GameLoopService : BackgroundService
 
     private void SpawnMobs()
     {
-        float cx = GameConstants.ZoneWidth / 2;
-        float cy = GameConstants.ZoneHeight / 2;
+        foreach (var zone in WorldMap.SpawnZones)
+            for (int i = 0; i < zone.MobCount; i++)
+                SpawnOneInZone(zone);
+    }
 
-        foreach (var band in SpawnBands)
+    /// <summary>Place a single mob somewhere inside a spawn zone, avoiding the
+    /// safe zone and roads. Falls back to the zone center if it can't find a
+    /// clear spot in a few tries.</summary>
+    private void SpawnOneInZone(SpawnZone zone)
+    {
+        float x = zone.X, y = zone.Y;
+        for (int attempt = 0; attempt < 8; attempt++)
         {
-            for (int i = 0; i < band.Count; i++)
+            double angle = _rng.NextDouble() * Math.PI * 2;
+            double dist = Math.Sqrt(_rng.NextDouble()) * zone.Radius; // uniform in disc
+            float tx = zone.X + (float)(Math.Cos(angle) * dist);
+            float ty = zone.Y + (float)(Math.Sin(angle) * dist);
+            (tx, ty) = WorldMap.ClampToBorder(tx, ty);
+
+            if (!GameConstants.InSafeZone(tx, ty) && !WorldMap.OnRoad(tx, ty))
             {
-                double angle = _rng.NextDouble() * Math.PI * 2;
-                double dist = band.MinDist + _rng.NextDouble() * (band.MaxDist - band.MinDist);
-
-                float x = Math.Clamp(cx + (float)(Math.Cos(angle) * dist), 0, GameConstants.ZoneWidth);
-                float y = Math.Clamp(cy + (float)(Math.Sin(angle) * dist), 0, GameConstants.ZoneHeight);
-
-                var (name, aggressive) = MobTypes[_rng.Next(MobTypes.Length)];
-                int level = _rng.Next(band.MinLvl, band.MaxLvl + 1);
-                var stats = StatCalculator.MobStats(level);
-
-                var mob = new Entity
-                {
-                    Name = name,
-                    Kind = EntityKind.Mob,
-                    X = x,
-                    Y = y,
-                    Speed = 160,
-                    Level = level,
-                    Con = stats.Con,
-                    AtkStat = stats.Atk,
-                    Wit = stats.Wit,
-                    Dex = stats.Dex,
-                    Aggressive = aggressive
-                };
-                mob.RecomputeDerived();
-                mob.Hp = mob.MaxHp;
-                mob.Mp = mob.MaxMp;
-                mob.HomeX = mob.X;
-                mob.HomeY = mob.Y;
-
-                _world.Entities[mob.Id] = mob;
-                _world.Grid.Add(mob);
+                x = tx; y = ty;
+                break;
             }
         }
+
+        string name = zone.MobTypes[_rng.Next(zone.MobTypes.Length)];
+        int level = _rng.Next(zone.MinLevel, zone.MaxLevel + 1);
+        var stats = StatCalculator.MobStats(level);
+
+        var mob = new Entity
+        {
+            Name = name,
+            Kind = EntityKind.Mob,
+            X = x,
+            Y = y,
+            Speed = 160,
+            Level = level,
+            Con = stats.Con,
+            AtkStat = stats.Atk,
+            Wit = stats.Wit,
+            Dex = stats.Dex,
+            Aggressive = IsAggressive(name)
+        };
+        mob.RecomputeDerived();
+        mob.Hp = mob.MaxHp;
+        mob.Mp = mob.MaxMp;
+        mob.HomeX = mob.X;
+        mob.HomeY = mob.Y;
+
+        _world.Entities[mob.Id] = mob;
+        _world.Grid.Add(mob);
     }
 }

@@ -25,6 +25,10 @@ public partial class MainWindow : Window
     private readonly Stopwatch _clock = Stopwatch.StartNew();
 
     private Ellipse? _safeZoneVisual;
+    // World-map decor (positioned each frame like the safe zone).
+    private readonly List<(Ellipse Visual, TextBlock Label, float X, float Y, float Radius)> _spawnZoneVisuals = new();
+    private readonly List<(Polyline Visual, MapPoint[] Points)> _roadVisuals = new();
+    private System.Windows.Shapes.Rectangle? _borderVisual;
 
     private Guid _myId;
     private string _myName = "";
@@ -774,6 +778,7 @@ public partial class MainWindow : Window
         }
 
         UpdateSafeZoneVisual(cw, ch);
+        UpdateWorldDecor(cw, ch);
         UpdateFloatingTexts(now, cw, ch);
         UpdateGridLines(cw, ch);
         UpdateSkillCooldowns(now);
@@ -866,6 +871,65 @@ public partial class MainWindow : Window
         };
         WorldCanvas.Children.Insert(0, _safeZoneVisual);
 
+        // Spawn zones: very light, semi-transparent red discs (placeholder until
+        // real environment art). Drawn beneath entities.
+        foreach (var zone in WorldMap.SpawnZones)
+        {
+            var disc = new Ellipse
+            {
+                Width = zone.Radius * 2 * Scale,
+                Height = zone.Radius * 2 * Scale,
+                Fill = new SolidColorBrush(Color.FromArgb(38, 225, 70, 70)),
+                Stroke = new SolidColorBrush(Color.FromArgb(110, 235, 90, 90)),
+                StrokeThickness = 2,
+                IsHitTestVisible = false
+            };
+
+            // Label: level band + mob types, so the map is self-documenting.
+            var label = new TextBlock
+            {
+                Text = $"Lv {zone.MinLevel}-{zone.MaxLevel}\n{string.Join(", ", zone.MobTypes)}",
+                Foreground = new SolidColorBrush(Color.FromArgb(200, 255, 210, 210)),
+                FontSize = 12,
+                FontWeight = FontWeights.SemiBold,
+                TextAlignment = TextAlignment.Center,
+                IsHitTestVisible = false
+            };
+
+            _spawnZoneVisuals.Add((disc, label, zone.X, zone.Y, zone.Radius));
+            WorldCanvas.Children.Insert(0, disc);
+            WorldCanvas.Children.Add(label); // labels on top of the tint
+        }
+
+        // Roads: thick, semi-transparent grey strips where mobs don't spawn.
+        foreach (var road in WorldMap.Roads)
+        {
+            var line = new Polyline
+            {
+                Stroke = new SolidColorBrush(Color.FromArgb(85, 190, 190, 190)),
+                StrokeThickness = road.Width * 2 * Scale,
+                StrokeStartLineCap = PenLineCap.Round,
+                StrokeEndLineCap = PenLineCap.Round,
+                StrokeLineJoin = PenLineJoin.Round,
+                IsHitTestVisible = false
+            };
+            _roadVisuals.Add((line, road.Points));
+            WorldCanvas.Children.Insert(0, line);
+        }
+
+        // World border outline so the edge is visible (not an invisible wall).
+        _borderVisual = new System.Windows.Shapes.Rectangle
+        {
+            Width = (WorldMap.Border.MaxX - WorldMap.Border.MinX) * Scale,
+            Height = (WorldMap.Border.MaxY - WorldMap.Border.MinY) * Scale,
+            Stroke = new SolidColorBrush(Color.FromArgb(200, 220, 140, 70)),
+            StrokeThickness = 5,
+            StrokeDashArray = new DoubleCollection { 6, 4 },
+            Fill = null,
+            IsHitTestVisible = false
+        };
+        WorldCanvas.Children.Add(_borderVisual);
+
         var brush = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255));
         brush.Freeze();
 
@@ -890,6 +954,40 @@ public partial class MainWindow : Window
         double r = GameConstants.SafeZoneRadius * Scale;
         Canvas.SetLeft(_safeZoneVisual, (GameConstants.ZoneWidth / 2 - _camX) * Scale + cw / 2 - r);
         Canvas.SetTop(_safeZoneVisual, (GameConstants.ZoneHeight / 2 - _camY) * Scale + ch / 2 - r);
+    }
+
+    private void UpdateWorldDecor(double cw, double ch)
+    {
+        // Spawn-zone discs + centered labels.
+        foreach (var (visual, label, zx, zy, radius) in _spawnZoneVisuals)
+        {
+            double r = radius * Scale;
+            double cx = (zx - _camX) * Scale + cw / 2;
+            double cy = (zy - _camY) * Scale + ch / 2;
+            Canvas.SetLeft(visual, cx - r);
+            Canvas.SetTop(visual, cy - r);
+
+            label.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(label, cx - label.DesiredSize.Width / 2);
+            Canvas.SetTop(label, cy - label.DesiredSize.Height / 2);
+        }
+
+        // Road polylines (rebuild points in screen space).
+        foreach (var (visual, points) in _roadVisuals)
+        {
+            var pc = new PointCollection(points.Length);
+            foreach (var pt in points)
+                pc.Add(new Point((pt.X - _camX) * Scale + cw / 2,
+                                 (pt.Y - _camY) * Scale + ch / 2));
+            visual.Points = pc;
+        }
+
+        // Border rectangle.
+        if (_borderVisual is not null)
+        {
+            Canvas.SetLeft(_borderVisual, (WorldMap.Border.MinX - _camX) * Scale + cw / 2);
+            Canvas.SetTop(_borderVisual, (WorldMap.Border.MinY - _camY) * Scale + ch / 2);
+        }
     }
 
     private void UpdateFloatingTexts(double now, double cw, double ch)
