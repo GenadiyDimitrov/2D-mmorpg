@@ -386,6 +386,14 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>The per-class display name for a skill (cleric's wind_walk =
+    /// "Holy Speed"); falls back to the canonical name.</summary>
+    private string SkillDisplayName(string skillId, string fallback)
+    {
+        Archetype? arch = _mySecondClass > 0 ? ClassCatalog.Get(_mySecondClass)?.Archetype : null;
+        return ClassSkills.DisplayName(skillId, _myRace, _myBaseClass, arch);
+    }
+
     private void RenderSkillBar()
     {
         SkillBar.Children.Clear();
@@ -401,7 +409,7 @@ public partial class MainWindow : Window
 
             if (_skillBar[i] is string id && SkillCatalog.Get(id) is SkillDef def)
             {
-                button.Content = $"{hotkey}. {def.Name}";
+                button.Content = $"{hotkey}. {SkillDisplayName(def.Id, def.Name)}";
                 var slot = new SkillSlot { Def = def, Button = button, Key = hotkey };
                 int slotIndex = i;
                 // Left-click = cast; right-click = remove from bar.

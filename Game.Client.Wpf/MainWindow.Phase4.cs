@@ -853,7 +853,8 @@ public partial class MainWindow
 
                 var name = new TextBlock
                 {
-                    Text = def.Name, Foreground = Brushes.White, FontSize = 13,
+                    Text = SkillDisplayName(def.Id, def.Name),
+                    Foreground = Brushes.White, FontSize = 13,
                     VerticalAlignment = VerticalAlignment.Center,
                     ToolTip = SkillTooltip(def)
                 };
@@ -903,7 +904,7 @@ public partial class MainWindow
 
                 var name = new TextBlock
                 {
-                    Text = $"{def.Name}  (SP {def.SpCost})",
+                    Text = $"{SkillDisplayName(def.Id, def.Name)}  (SP {def.SpCost})",
                     Foreground = canLearn ? Brushes.White : Brushes.Gray,
                     FontSize = 13, VerticalAlignment = VerticalAlignment.Center,
                     ToolTip = SkillTooltip(def)

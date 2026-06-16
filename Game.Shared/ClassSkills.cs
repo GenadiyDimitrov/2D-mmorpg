@@ -3,7 +3,13 @@ namespace Game.Shared;
 /// <summary>One skill a class can learn, and the level at which it becomes
 /// learnable. SpCost comes from the SkillDef; level gates visibility in the
 /// "Skills to Learn" tab.</summary>
-public readonly record struct ClassSkill(string SkillId, int LearnLevel);
+/// <summary>One skill a class can learn at LearnLevel. DisplayName/Icon are
+/// OPTIONAL per-class presentation overrides — the underlying skill id, effect,
+/// and BuffKey stay shared, but this class sees its own name/icon on the skill
+/// bar, buff bar and skills window. Leave them null to use the SkillDef's
+/// canonical name.</summary>
+public readonly record struct ClassSkill(
+    string SkillId, int LearnLevel, string? DisplayName = null, string? Icon = null);
 
 /// <summary>
 /// THE place to manage which class learns which skill, and when. The actual
@@ -77,5 +83,24 @@ public static class ClassSkills
             if (cs.SkillId == skillId)
                 return true;
         return false;
+    }
+
+    /// <summary>The class-specific display name for a skill (falls back to the
+    /// SkillDef's canonical name). Same shared id, different label per class.</summary>
+    public static string DisplayName(string skillId, Race race, BaseClass baseClass, Archetype? archetype)
+    {
+        foreach (var cs in ForClass(race, baseClass, archetype))
+            if (cs.SkillId == skillId && !string.IsNullOrEmpty(cs.DisplayName))
+                return cs.DisplayName!;
+        return SkillCatalog.Get(skillId)?.Name ?? skillId;
+    }
+
+    /// <summary>The class-specific icon key for a skill (null if none set).</summary>
+    public static string? Icon(string skillId, Race race, BaseClass baseClass, Archetype? archetype)
+    {
+        foreach (var cs in ForClass(race, baseClass, archetype))
+            if (cs.SkillId == skillId && !string.IsNullOrEmpty(cs.Icon))
+                return cs.Icon;
+        return null;
     }
 }

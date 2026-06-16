@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 6 (skill learning, string skill ids, per-class files)
+# L2-like MMORPG — Phase 6.1 (per-class skill names, party buffs)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,38 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 6.1 (this build)
+
+### Same skill, different name/icon per class
+- A shared skill keeps **one id, one effect, one BuffKey** but can show a
+  **different name (and, later, icon) per class** — set on the class's
+  registration: `new ClassSkill(WindWalk, 20, DisplayName: "Holy Speed")`.
+- So 10 classes can all use `wind_walk`; each sees its own label on the **skill
+  bar, buff bar, and skills window**, while mechanically it's one buff that
+  `improved_movement` replaces with a single `Replaces` entry. The buff bar shows
+  the **casting class's** name (a cleric's buff reads "Holy Speed").
+- Example: the Human Cleric's Wind Walk displays as **"Holy Speed"**.
+
+### Party (area) buffs
+- `SkillDef` gained a **`TargetMode`**: `SelfOrTarget` (default), `SelfOnly`, or
+  `AlliesInRadius`. An area buff hits the **caster + nearby player characters**
+  within `AreaRadius` (a stand-in for real party groups, which come later).
+- Added **Mass Wind Walk** (id `mass_wind_walk`): same effect and **same BuffKey
+  (`wind_walk`)** as the single-target version, but buffs nearby allies for more
+  MP and a longer cooldown. Because it shares the BuffKey, `improved_movement`
+  (or any `Replaces: ["wind_walk"]`) supersedes it too — one entry covers both
+  the single and party versions. The Cleric's party version shows as
+  **"Holy Procession"**.
+
+### Design note (ids vs structure)
+- **Skill ids stay flat and shared** (`wind_walk`, `holy_strike`) — that's the
+  ability's identity, so stacking/replace logic stays simple and a buff shared by
+  many classes needs only one `Replaces` entry.
+- **The class tree's structure lives in `RaceAndClasses/`** — which class learns
+  which skill, at what level, and under what display name. Per-class *uniqueness*
+  (a genuinely different ability) gets its own flat id; per-class *flavour* (a
+  rename of a shared skill) is just a `DisplayName` on the registration.
 
 ## New in Phase 6 (this build)
 

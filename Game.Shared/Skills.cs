@@ -23,7 +23,9 @@ public record SkillDef(
     string[]? Replaces = null,
     string Description = "",
     int SpCost = 1,
-    SkillCategory Category = SkillCategory.Physical)
+    SkillCategory Category = SkillCategory.Physical,
+    TargetMode TargetMode = TargetMode.SelfOrTarget,
+    float AreaRadius = 0f)
 {
     public float MagnitudeOf(SkillEffect effect, ModifierMode mode)
     {
@@ -37,6 +39,11 @@ public record SkillDef(
 
 /// <summary>Skill window grouping.</summary>
 public enum SkillCategory { Physical = 0, Magic = 1, Buff = 2, Debuff = 3, Heal = 4 }
+
+/// <summary>Who a (beneficial) skill affects. SelfOnly = caster only;
+/// AlliesInRadius = caster + nearby player characters (a "party" buff until real
+/// party groups exist).</summary>
+public enum TargetMode { SelfOrTarget = 0, SelfOnly = 1, AlliesInRadius = 2 }
 
 // ===========================================================================
 //  SKILL CATALOG — every skill, keyed by string id.
@@ -69,6 +76,7 @@ public static class SkillCatalog
     public const string HpBoost2 = "hp_boost_2";
     public const string HpBoost3 = "hp_boost_3";
     public const string WindWalk = "wind_walk";
+    public const string MassWindWalk = "mass_wind_walk";
 
     private static readonly Dictionary<string, SkillDef> All = BuildCatalog();
 
@@ -191,15 +199,29 @@ public static class SkillCatalog
             // ---- Wind Walk (move-speed self buff, learnable) ----
             new(WindWalk, "Wind Walk", BaseClass.Mage,
                 SkillEffect.BuffMoveSpeed | SkillEffect.BuffEvasion,
-                MpCost: 20, CastTicks: 10, CooldownTicks: 5, Range: 0, Power: 0,
-                DurationTicks: 6000, BuffKey: "wind_walk", Rank: 1,
+                MpCost: 30, CastTicks: 10, CooldownTicks: 10, Range: 0, Power: 0,
+                DurationTicks: 12000, BuffKey: "wind_walk", Rank: 1,
                 Magnitudes: new EffectMagnitude[]
                 {
                     new(SkillEffect.BuffMoveSpeed, 33, ModifierMode.Flat),
                     new(SkillEffect.BuffEvasion, 5, ModifierMode.Flat),
                 },
-                Category: SkillCategory.Buff, SpCost: 2,
-                Description: "Move +33 and Evasion +5 for a long duration."),
+                Category: SkillCategory.Buff, SpCost: 2, TargetMode: TargetMode.SelfOnly,
+                Description: "Move +33 and Evasion +5 for 20 minutes (self)."),
+
+            // Party version: same effect + same BuffKey, but buffs nearby allies.
+            new(MassWindWalk, "Mass Wind Walk", BaseClass.Mage,
+                SkillEffect.BuffMoveSpeed | SkillEffect.BuffEvasion,
+                MpCost: 120, CastTicks: 15, CooldownTicks: 50, Range: 0, Power: 0,
+                DurationTicks: 12000, BuffKey: "wind_walk", Rank: 1,
+                Magnitudes: new EffectMagnitude[]
+                {
+                    new(SkillEffect.BuffMoveSpeed, 33, ModifierMode.Flat),
+                    new(SkillEffect.BuffEvasion, 5, ModifierMode.Flat),
+                },
+                Category: SkillCategory.Buff, SpCost: 4,
+                TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
+                Description: "Move +33 and Evasion +5 to nearby allies for 20 minutes."),
         };
 
         var dict = new Dictionary<string, SkillDef>();

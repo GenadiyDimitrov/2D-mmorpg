@@ -1335,9 +1335,28 @@ var effect = def.Effect;
         // ---- Beneficial buffs (any of the buff flags) ----
         if ((effect & SkillEffect.AnyBuff) != 0)
         {
-            ApplyBuff(target, def);
-            BroadcastCombat(caster, target, 0, CombatOutcome.Buff, def.Name);
-            if (target.Kind == EntityKind.Player) PushBuffs(target);
+            // The display name is the CASTER's class label for this skill, so a
+            // cleric's Wind Walk shows as "Holy Speed" wherever it lands.
+            string buffName = ClassSkills.DisplayName(
+                def.Id, caster.Race, caster.BaseClass, caster.Archetype);
+
+            if (def.TargetMode == TargetMode.AlliesInRadius)
+            {
+                // Buff the caster + every nearby player character in range.
+                foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
+                {
+                    ApplyBuff(ally, def, buffName);
+                    BroadcastCombat(caster, ally, 0, CombatOutcome.Buff, buffName);
+                    if (ally.Kind == EntityKind.Player) PushBuffs(ally);
+                }
+            }
+            else
+            {
+                var buffTarget = def.TargetMode == TargetMode.SelfOnly ? caster : target;
+                ApplyBuff(buffTarget, def, buffName);
+                BroadcastCombat(caster, buffTarget, 0, CombatOutcome.Buff, buffName);
+                if (buffTarget.Kind == EntityKind.Player) PushBuffs(buffTarget);
+            }
         }
 
         if (offensive)
@@ -1352,9 +1371,10 @@ var effect = def.Effect;
     ///     (weaker self-recast is ignored entirely); on apply, replace it.
     /// (2) Replaces: unconditionally remove any active buff whose key is listed,
     ///     regardless of rank or magnitude.</summary>
-    private static void ApplyBuff(Entity target, SkillDef def)
+    private static void ApplyBuff(Entity target, SkillDef def, string? displayName = null)
     {
         string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
+        string shownName = string.IsNullOrEmpty(displayName) ? def.Name : displayName!;
 
         // Rule 1 — same-key rank comparison.
         var same = target.Buffs.FirstOrDefault(b => b.Key == key);
@@ -1374,7 +1394,7 @@ var effect = def.Effect;
             Effect = def.Effect,
             Magnitudes = def.Magnitudes ?? Array.Empty<EffectMagnitude>(),
             TicksRemaining = def.DurationTicks,
-            Name = def.Name,
+            Name = shownName,
             Key = key,
             Rank = def.Rank,
             Replaces = def.Replaces ?? Array.Empty<string>(),
@@ -1787,6 +1807,22 @@ var effect = def.Effect;
             player.Inventory.Select(i => i.ToDto()).ToArray()));
 
     private readonly HashSet<Guid> _hadBuffs = new();
+
+    /// <summary>Caster + nearby player characters within radius (party stand-in
+    /// until real groups exist). Uses the grid's neighbourhood for efficiency.</summary>
+    private IEnumerable<Entity> PlayersInRadius(Entity caster, float radius)
+    {
+        float r2 = radius * radius;
+        yield return caster;
+        foreach (var e in _world.Grid.Nearby(caster))
+        {
+            if (e.Kind != EntityKind.Player || e.Dead || e.Id == caster.Id)
+                continue;
+            float dx = e.X - caster.X, dy = e.Y - caster.Y;
+            if (dx * dx + dy * dy <= r2)
+                yield return e;
+        }
+    }
 
     private void PushBuffs(Entity player)
     {

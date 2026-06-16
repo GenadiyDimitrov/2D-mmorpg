@@ -16,7 +16,9 @@ public static partial class ClassSkillTables
         // Cleric (Healer) learnable progression — these show in "Skills to Learn"
         // at their level and are learned by spending SP.
         ClassSkills.Register(Race.Human, BaseClass.Mage, Archetype.Healer,
-            new ClassSkill(WindWalk, 20),
+            // Cleric sees Wind Walk as "Holy Speed" (same shared wind_walk id).
+            new ClassSkill(WindWalk, 20, DisplayName: "Holy Speed"),
+            new ClassSkill(MassWindWalk, 30, DisplayName: "Holy Procession"),
             new ClassSkill(HpBoost1, 20),   // +5%  Max HP at 20
             new ClassSkill(HpBoost2, 30),   // +15% Max HP at 30
             new ClassSkill(HpBoost3, 40));  // +35% Max HP at 40
