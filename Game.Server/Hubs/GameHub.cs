@@ -110,9 +110,15 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
-    public Task UseSkill(int skillId, Guid? targetId)
+    public Task UseSkill(string skillId, Guid? targetId)
     {
         _world.Commands.Enqueue(new SkillCmd(Context.ConnectionId, skillId, targetId));
+        return Task.CompletedTask;
+    }
+
+    public Task LearnSkill(string skillId)
+    {
+        _world.Commands.Enqueue(new LearnSkillCmd(Context.ConnectionId, skillId));
         return Task.CompletedTask;
     }
 

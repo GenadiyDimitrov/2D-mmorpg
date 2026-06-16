@@ -441,22 +441,55 @@
 
         <!-- Skills window -->
         <Border x:Name="SkillsPanel"
-                Width="380" MaxHeight="520"
+                Width="420" MaxHeight="560"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 Background="#E0182838" CornerRadius="8" Padding="14"
                 Visibility="Collapsed">
             <DockPanel>
-                <TextBlock DockPanel.Dock="Top" Text="Skills" Foreground="White"
-                           FontSize="16" FontWeight="Bold" Margin="0,0,0,4"/>
-                <TextBlock DockPanel.Dock="Top" Foreground="#FF9FB0BE" FontSize="11"
-                           TextWrapping="Wrap" Margin="0,0,0,8"
-                           Text="Click 'To Bar' to assign a skill to a free action slot. Re-click an assigned skill in the bar to remove it."/>
+                <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+                    <TextBlock Text="Skills" Foreground="White"
+                               FontSize="16" FontWeight="Bold" HorizontalAlignment="Left"/>
+                    <TextBlock x:Name="SkillPointsText" Foreground="#FFE8E2C8"
+                               FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Right"
+                               Text="SP: 0"/>
+                </Grid>
+
+                <!-- Tabs -->
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                    <Button x:Name="TabLearned" Content="Learned" Width="120" Height="28"
+                            Click="SkillTabLearned_Click"/>
+                    <Button x:Name="TabLearn" Content="Skills to Learn" Width="140" Height="28"
+                            Margin="6,0,0,0" Click="SkillTabLearn_Click"/>
+                </StackPanel>
+
                 <Button DockPanel.Dock="Bottom" Content="Close" Height="26"
                         Margin="0,10,0,0" Click="SkillsClose_Click"/>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <ItemsControl x:Name="SkillsList"/>
                 </ScrollViewer>
             </DockPanel>
+        </Border>
+
+        <!-- Learn confirmation popup -->
+        <Border x:Name="LearnPopup"
+                Width="360"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="#F01C2636" CornerRadius="10" Padding="18"
+                Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock x:Name="LearnTitle" Foreground="White" FontSize="16"
+                           FontWeight="Bold" Margin="0,0,0,6"/>
+                <TextBlock x:Name="LearnBody" Foreground="#FFB9C4CC" FontSize="12"
+                           TextWrapping="Wrap" Margin="0,0,0,8"/>
+                <TextBlock x:Name="LearnCost" FontSize="13" FontWeight="SemiBold"
+                           Margin="0,0,0,12"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="LearnConfirm" Content="Learn" Width="90" Height="30"
+                            Click="LearnConfirm_Click"/>
+                    <Button Content="Cancel" Width="90" Height="30" Margin="8,0,0,0"
+                            Click="LearnCancel_Click"/>
+                </StackPanel>
+            </StackPanel>
         </Border>
 
         <!-- Enchant popup -->

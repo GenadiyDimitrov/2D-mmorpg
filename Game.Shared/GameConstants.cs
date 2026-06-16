@@ -99,4 +99,7 @@ public static class GameConstants
 
     /// <summary>Periodic character auto-save interval (ticks). 600 = 60s.</summary>
     public const int AutoSaveIntervalTicks = 600;
+
+    /// <summary>Skill points earned per exp point (≈ 1/4 of exp).</summary>
+    public const float SkillPointRatio = 0.25f;
 }

@@ -97,7 +97,7 @@ public record StatsUpdate(
     int MaxHp, int MaxMp, int AttackPower, int Defence,
     int Accuracy, int Evasion, float CritChance, float BasicAttackRange,
     int SecondClass, float MoveSpeed, float CastModifier,
-    float CastSpeedMult, float AttackSpeedMult);
+    float CastSpeedMult, float AttackSpeedMult, int SkillPoints);
 
 /// <summary>Server -> owning client: a potion cooldown started (seconds),
 /// or an active potion effect changed. Cooldown 0 = ready.</summary>
@@ -106,6 +106,9 @@ public record PotionStatus(float CooldownSeconds, string ActiveEffect);
 
 /// <summary>One active buff/debuff on the player, for the buff bar + tooltip.</summary>
 public record BuffDto(string Name, string Description, float SecondsLeft, bool IsDebuff);
+
+/// <summary>Server -> client: the character's learned skill ids + SP balance.</summary>
+public record LearnedSkills(string[] SkillIds, int SkillPoints);
 
 /// <summary>Server -> owning client: the player's current buffs (sent each
 /// second while any are active, and once when the last one drops).</summary>

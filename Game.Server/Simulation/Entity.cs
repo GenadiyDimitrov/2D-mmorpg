@@ -78,6 +78,12 @@ public class Entity
     /// <summary>DB character id (null for mobs / unsaved).</summary>
     public int? PersistentId { get; set; }
 
+    /// <summary>Unspent skill points (earned with exp, spent to learn skills).</summary>
+    public int SkillPoints { get; set; }
+
+    /// <summary>Skill ids the character has learned (and can therefore use).</summary>
+    public HashSet<string> LearnedSkills { get; } = new();
+
     /// <summary>Account-level admin flag (elevated commands, god mode).</summary>
     public bool IsAdmin { get; set; }
 
@@ -214,14 +220,14 @@ public class Entity
     public bool Engaged { get; set; }
     public int AttackCooldown { get; set; }
 
-    public int? QueuedSkillId { get; set; }
+    public string? QueuedSkillId { get; set; }
     public Guid? QueuedTargetId { get; set; }
 
-    public int? CastingSkillId { get; set; }
+    public string? CastingSkillId { get; set; }
     public Guid? CastTargetId { get; set; }
     public int CastTicksRemaining { get; set; }
 
-    public Dictionary<int, int> SkillCooldowns { get; } = new();
+    public Dictionary<string, int> SkillCooldowns { get; } = new();
 
     // ----- Potion channel (separate from natural regen; ticks in combat too) ----
     /// <summary>Shared cooldown across ALL potions, in ticks.</summary>
@@ -289,7 +295,7 @@ public class Entity
         }
 
         // ----- Item attributes (rolled per drop) -----
-        float hpPct = 0, mpPct = 0, speedPct = 0, castPct = 0, atkSpeedPct = 0, atkPct = 0;
+        float hpPct = 0, mpPct = 0, speedPct = 0, castPct = 0, atkSpeedPct = 0, atkPct = 0, evaPct = 0, defPct = 0;
         foreach (var item in Inventory)
         {
             if (!item.Equipped) continue;
@@ -303,6 +309,8 @@ public class Entity
                     case AttributeType.CastSpeedPercent: castPct += attr.Value; break;
                     case AttributeType.AttackSpeedPercent: atkSpeedPct += attr.Value; break;
                     case AttributeType.AttackPercent: atkPct += attr.Value; break;
+                    case AttributeType.EvasionPercent: evaPct += attr.Value; break;
+                    case AttributeType.DefencePercent: defPct += attr.Value; break;
                 }
             }
         }
@@ -310,6 +318,8 @@ public class Entity
         MaxHp += (int)(MaxHp * hpPct / 100f);
         MaxMp += (int)(MaxMp * mpPct / 100f);
         AttackPower += (int)(AttackPower * atkPct / 100f);
+        Evasion += (int)(Evasion * evaPct / 100f);
+        Defence += (int)(Defence * defPct / 100f);
         Speed = GameConstants.BasePlayerSpeed * (1f + speedPct / 100f);
         CastSpeedMultiplier = Math.Max(0.4f, 1f - castPct / 100f);
         AttackSpeedMultiplier = Math.Max(0.4f, 1f - atkSpeedPct / 100f);
@@ -322,6 +332,16 @@ public class Entity
         CritChance = Math.Clamp(
             CritChance + StatCalculator.ArchetypeCritBonus(arch), 0f, 0.75f);
         Evasion += StatCalculator.ArchetypeEvasionBonus(arch, Level);
+
+        // Skill-buff Max HP/MP (e.g. HP Boost line).
+        float buffHpPct = 0f, buffMpPct = 0f;
+        foreach (var buff in Buffs)
+        {
+            if (buff.Has(SkillEffect.BuffHp)) buffHpPct += buff.Percent(SkillEffect.BuffHp);
+            if (buff.Has(SkillEffect.BuffMp)) buffMpPct += buff.Percent(SkillEffect.BuffMp);
+        }
+        if (buffHpPct != 0) MaxHp += (int)(MaxHp * buffHpPct);
+        if (buffMpPct != 0) MaxMp += (int)(MaxMp * buffMpPct);
 
         Hp = Math.Min(Hp, MaxHp);
         Mp = Math.Min(Mp, MaxMp);

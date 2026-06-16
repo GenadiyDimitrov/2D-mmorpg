@@ -174,8 +174,12 @@ public class PersistenceService
             Level = rec.Level,
             Exp = rec.Exp,
             SecondClass = rec.SecondClass,
-            PersistentId = rec.Id
+            PersistentId = rec.Id,
+            SkillPoints = rec.SkillPoints
         };
+
+        foreach (var id in rec.LearnedSkillsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            entity.LearnedSkills.Add(id);
 
         foreach (var item in rec.Items)
         {
@@ -216,6 +220,8 @@ public class PersistenceService
         rec.Level = entity.Level;
         rec.Exp = entity.Exp;
         rec.SecondClass = entity.SecondClass;
+        rec.SkillPoints = entity.SkillPoints;
+        rec.LearnedSkillsCsv = string.Join(',', entity.LearnedSkills);
         rec.Con = entity.Con;
         rec.Atk = entity.AtkStat;
         rec.Wit = entity.Wit;

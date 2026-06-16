@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 5.4 (flags-based buff system)
+# L2-like MMORPG — Phase 6 (skill learning, string skill ids, per-class files)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,60 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 6 (this build)
+
+> **IMPORTANT — delete any old `game.db` before running.** Skill ids changed
+> from ints to strings and characters now store learned skills + skill points,
+> so the schema changed. Delete `game.db` (in `Game.Server/bin/Debug/net8.0/`)
+> and a fresh one is created on launch.
+
+### Skills are now learned with Skill Points
+- Skills must be **learned** before use. You earn **Skill Points (SP)** alongside
+  exp (≈ 1/4 of exp; tune `GameConstants.SkillPointRatio`).
+- The **Skills window (K)** now has **two tabs**:
+  - **Learned** — your usable skills, grouped by category (Physical / Magic /
+    Buffs / Debuffs / Heals), each with a **To Bar** button.
+  - **Skills to Learn** — unlearned skills **grouped by required level**, with a
+    **Learn** button that's enabled only when your level + SP (and previous rank,
+    for ranked lines) allow. Clicking Learn opens a **confirm popup** showing the
+    description, details, and **SP cost in green/red**; confirm to learn it,
+    after which it moves to the Learned tab and can be dragged to the bar.
+- Hovering a skill shows its description + MP/cast/cooldown/duration.
+- The **core class kit** (the mandatory upgrades like Greater Heal) is granted
+  **free** on class change / level-up; the **extras** (HP Boost ranks, Wind Walk)
+  are the ones you spend SP to learn. Learned skills + SP **persist**.
+
+### String skill ids + per-class skill files
+- Skill ids are now **stable strings** (`magic_bolt`, `greater_heal`,
+  `hp_boost_1`). Same benefits as item keys: readable, reorder-safe,
+  collision-guarded at startup.
+- **One place to manage class skills:** `Game.Shared/RaceAndClasses/`. Each
+  partial file registers a race+class line's skills with learn-levels, e.g.
+  `Classes.Human.Mage.cs` declares the Human cleric/sorcerer learnable skills.
+  Adding a skill to a class is a one-line `ClassSkills.Register(...)` edit.
+- Example HP Boost line (3 ranks at 40/56/72 style levels) and Wind Walk are
+  authored there to show the pattern; ranked skills must be learned in order.
+
+### God race + God items (debug)
+- A **God race (enum 99)** is creatable **only in DEBUG builds** but fully usable
+  once made, with two God second classes (Demigod / Ascendant).
+- Removed `legendary_windforce`; added two **God-tier** items (debug menu):
+  **God's Judgment** (sword, attack + range 1000, all 8 attributes at 100%) and
+  **God's Robes** (def/hp/mp/eva 1000, all armor attributes at 100%).
+
+### New rarities & attributes
+- Rarities extended: **Epic (3), Legendary (4), God (99)** — higher rarities roll
+  more attributes.
+- Two new attributes: **Evasion %** and **Defence %**, available on **E-grade and
+  up** gear, and they apply to your real stats.
+
+### Quest groundwork (data types only)
+- Added quest **data types** (`QuestDef`, `QuestStep`, `QuestReward`,
+  `CharacterQuestState`) and a nullable **`RequiredQuestId`** hook on second
+  classes — so class-change-by-quest drops in later without a refactor. The live
+  quest system (NPCs, dialog UI, tracking) is a **future phase**; an
+  `EntityKind.Npc` is reserved for it.
 
 ## New in Phase 5.4 (this build)
 

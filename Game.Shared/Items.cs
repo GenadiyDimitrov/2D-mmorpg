@@ -2,7 +2,7 @@ namespace Game.Shared;
 
 public enum ItemGrade { F = 0, E = 1, B = 2, A = 3, S = 4 }
 
-public enum ItemRarity { Common = 0, Uncommon = 1, Rare = 2 }
+public enum ItemRarity { Common = 0, Uncommon = 1, Rare = 2, Epic = 3, Legendary = 4, God = 99 }
 
 public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2, Scroll = 3 }
 
@@ -58,7 +58,8 @@ public static class ItemCatalog
     public const string ScrollCommon = "scroll_common";
     public const string ScrollUncommon = "scroll_uncommon";
     public const string ScrollRare = "scroll_rare";
-    public const string LegendaryBow = "legendary_windforce";
+    public const string GodWeapon = "god_judgment";
+    public const string GodArmor = "god_robes";
 
     public static string WeaponKey(WeaponType type, ItemGrade grade, ItemRarity rarity) =>
         $"{type.ToString().ToLowerInvariant()}_{grade.ToString().ToLowerInvariant()}_{rarity.ToString().ToLowerInvariant()}";
@@ -187,18 +188,34 @@ public static class ItemCatalog
             ItemGrade.F, ItemRarity.Rare, ScrollKind: ScrollKind.Rare));
 
         // ===================================================================
-        //  LEGENDARY one-off — a bow with 5 fixed attributes (debug for now).
+        //  GOD-TIER one-offs (debug). Every attribute maxed at 100%.
         // ===================================================================
-        list.Add(new ItemDef(LegendaryBow, "Windforce", EquipSlot.Weapon,
-            ItemGrade.E, ItemRarity.Rare, WeaponType: WeaponType.Bow,
-            AtkBonus: 40, WeaponRange: 400,
+        list.Add(new ItemDef(GodWeapon, "God's Judgment", EquipSlot.Weapon,
+            ItemGrade.S, ItemRarity.God, WeaponType: WeaponType.Sword,
+            AtkBonus: 1000, WeaponRange: 1000,
             FixedAttributes: new ItemAttribute[]
             {
-                new(AttributeType.AttackPercent, 30),
-                new(AttributeType.AttackSpeedPercent, 25),
-                new(AttributeType.SpeedPercent, 20),
-                new(AttributeType.HealthPercent, 30),
-                new(AttributeType.ManaPercent, 20),
+                new(AttributeType.AttackPercent, 100),
+                new(AttributeType.AttackSpeedPercent, 100),
+                new(AttributeType.CastSpeedPercent, 100),
+                new(AttributeType.SpeedPercent, 100),
+                new(AttributeType.HealthPercent, 100),
+                new(AttributeType.ManaPercent, 100),
+                new(AttributeType.EvasionPercent, 100),
+                new(AttributeType.DefencePercent, 100),
+            }));
+
+        list.Add(new ItemDef(GodArmor, "God's Robes", EquipSlot.Armor,
+            ItemGrade.S, ItemRarity.God, Weight: ArmorWeight.Robe,
+            DefBonus: 1000, HpBonus: 1000, MpBonus: 1000, EvaBonus: 1000,
+            FixedAttributes: new ItemAttribute[]
+            {
+                new(AttributeType.HealthPercent, 100),
+                new(AttributeType.ManaPercent, 100),
+                new(AttributeType.DefencePercent, 100),
+                new(AttributeType.EvasionPercent, 100),
+                new(AttributeType.SpeedPercent, 100),
+                new(AttributeType.CastSpeedPercent, 100),
             }));
 
         // ----- Duplicate-key guard: clear startup error instead of a crash ---

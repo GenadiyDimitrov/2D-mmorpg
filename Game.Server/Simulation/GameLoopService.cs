@@ -78,6 +78,7 @@ public class GameLoopService : BackgroundService
                 case MoveCmd c: HandleMove(c); break;
                 case AttackCmd c: HandleAttack(c); break;
                 case SkillCmd c: HandleSkill(c); break;
+                case LearnSkillCmd c: HandleLearnSkill(c); break;
                 case RespawnCmd c: HandleRespawn(c); break;
                 case ClassChangeCmd c: HandleClassChange(c); break;
                 case EquipCmd c: HandleEquip(c); break;
@@ -111,8 +112,10 @@ public class GameLoopService : BackgroundService
 
         cmd.Result.TrySetResult(new LoginResult(true, null, entity.Id, entity.X, entity.Y, GameClock.Epoch));
 
+        AutoLearnCoreSkills(entity);
         SendInventory(entity);
         SendStats(entity);
+        SendLearned(entity);
         if (entity.IsAdmin)
             SendSystemToEntity(entity, "Admin privileges active. Type /help for commands.");
         BroadcastSystem($"{entity.Name} entered the world.");
@@ -187,14 +190,88 @@ public class GameLoopService : BackgroundService
         attacker.Engaged = true;
     }
 
+    /// <summary>Grant (for free) the class's core skills whose level is met.
+    /// Core skills are those with SpCost &lt;= 1 (the mandatory kit); the pricier
+    /// extras (HP Boost, Wind Walk) must be learned with SP from the window.</summary>
+    private void AutoLearnCoreSkills(Entity player)
+    {
+        foreach (var cs in ClassSkills.LearnableAt(player.Race, player.BaseClass, player.Archetype, player.Level))
+        {
+            var def = SkillCatalog.Get(cs.SkillId);
+            if (def is not null && def.SpCost <= 1)
+                player.LearnedSkills.Add(def.Id);
+        }
+    }
+
+    private void HandleLearnSkill(LearnSkillCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+
+        var def = SkillCatalog.Get(cmd.SkillId);
+        if (def is null)
+            return;
+
+        if (player.LearnedSkills.Contains(def.Id))
+        {
+            SendSystemToEntity(player, $"{def.Name} is already learned.");
+            return;
+        }
+
+        // Must be on this class's list and the level gate met.
+        int learnLevel = ClassSkills.LearnLevelOf(def.Id, player.Race, player.BaseClass, player.Archetype);
+        if (learnLevel == 0)
+        {
+            SendSystemToEntity(player, $"Your class cannot learn {def.Name}.");
+            return;
+        }
+        if (player.Level < learnLevel)
+        {
+            SendSystemToEntity(player, $"{def.Name} requires level {learnLevel}.");
+            return;
+        }
+
+        // For ranked lines (e.g. HP Boost 1/2/3), require the previous rank first.
+        if (def.Rank > 1 && !HasPreviousRank(player, def))
+        {
+            SendSystemToEntity(player, $"Learn the previous rank of {def.Name} first.");
+            return;
+        }
+
+        if (player.SkillPoints < def.SpCost)
+        {
+            SendSystemToEntity(player, $"Not enough skill points ({def.SpCost} needed).");
+            return;
+        }
+
+        player.SkillPoints -= def.SpCost;
+        player.LearnedSkills.Add(def.Id);
+        SendSystemToEntity(player, $"Learned {def.Name}!");
+        SendStats(player);
+        SendLearned(player);
+        SaveEntity(player);
+    }
+
+    /// <summary>True if the character has the rank-1..(rank-1) of a skill's
+    /// BuffKey line learned (so ranks must be learned in order).</summary>
+    private static bool HasPreviousRank(Entity player, SkillDef def)
+    {
+        foreach (var learnedId in player.LearnedSkills)
+        {
+            var l = SkillCatalog.Get(learnedId);
+            if (l is not null && l.BuffKey == def.BuffKey && l.Rank == def.Rank - 1)
+                return true;
+        }
+        return false;
+    }
+
     private void HandleSkill(SkillCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var caster) || caster.Dead)
             return;
 
         var def = SkillCatalog.Get(cmd.SkillId);
-        if (def is null ||
-            !ClassProgression.CanUse(def.Id, caster.Race, caster.BaseClass, caster.Archetype, caster.Level))
+        if (def is null || !caster.LearnedSkills.Contains(def.Id))
             return;
 
         if (caster.SkillCooldowns.TryGetValue(def.Id, out int cd) && cd > 0)
@@ -209,8 +286,8 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        bool offensive = def.Effect is SkillEffect.PhysicalDamage
-            or SkillEffect.MagicDamage or SkillEffect.DebuffDef;
+        bool offensive = (def.Effect & (SkillEffect.PhysicalDamage
+            | SkillEffect.MagicDamage | SkillEffect.DebuffDef)) != 0;
 
         Guid targetId;
         if (offensive)
@@ -226,7 +303,7 @@ public class GameLoopService : BackgroundService
             }
             targetId = tid;
         }
-        else if (def.Effect is SkillEffect.Heal && def.Range > 0 &&
+        else if (def.Effect.HasFlag(SkillEffect.Heal) && def.Range > 0 &&
                  cmd.TargetId is Guid allyId &&
                  _world.Entities.TryGetValue(allyId, out var ally) &&
                  ally.Kind == EntityKind.Player && !ally.Dead)
@@ -289,11 +366,13 @@ public class GameLoopService : BackgroundService
         player.AtkStat += atk;
         player.Wit += wit;
         player.Dex += dex;
+        AutoLearnCoreSkills(player);
         player.RecomputeDerived();
         player.Hp = player.MaxHp;
         player.Mp = player.MaxMp;
 
         SendStats(player);
+        SendLearned(player);
         BroadcastSystem($"{player.Name} has become a {def.Name}!");
     }
 
@@ -984,11 +1063,19 @@ public class GameLoopService : BackgroundService
 
     private static void TickBuffs(Entity entity)
     {
+        bool maxStatBuffExpired = false;
         for (int i = entity.Buffs.Count - 1; i >= 0; i--)
         {
             if (--entity.Buffs[i].TicksRemaining <= 0)
+            {
+                var expired = entity.Buffs[i];
+                if (expired.Has(SkillEffect.BuffHp) || expired.Has(SkillEffect.BuffMp))
+                    maxStatBuffExpired = true;
                 entity.Buffs.RemoveAt(i);
+            }
         }
+        if (maxStatBuffExpired)
+            entity.RecomputeDerived();
     }
 
     // ----- Mob AI --------------------------------------------------------------
@@ -1293,6 +1380,10 @@ var effect = def.Effect;
             Replaces = def.Replaces ?? Array.Empty<string>(),
             Description = SkillCatalog.DescriptionOf(def.Id)
         });
+
+        // Max HP/MP buffs change derived stats — recompute so they take effect.
+        if (def.Effect.HasFlag(SkillEffect.BuffHp) || def.Effect.HasFlag(SkillEffect.BuffMp))
+            target.RecomputeDerived();
     }
 
     private void AfterOffensiveSkill(Entity caster, Entity target)
@@ -1472,6 +1563,8 @@ var effect = def.Effect;
     private void AwardExp(Entity player, int amount)
     {
         player.Exp += amount;
+        // Skill points accrue at a fraction of exp (tune SkillPointRatio).
+        player.SkillPoints += Math.Max(1, (int)(amount * GameConstants.SkillPointRatio));
 
         bool leveled = false;
         while (player.Exp >= StatCalculator.ExpToNext(player.Level))
@@ -1483,10 +1576,12 @@ var effect = def.Effect;
 
         if (leveled)
         {
+            AutoLearnCoreSkills(player);
             player.RecomputeDerived();
             player.Hp = player.MaxHp;
             player.Mp = player.MaxMp;
             SendStats(player);
+            SendLearned(player);
             BroadcastSystem($"{player.Name} reached level {player.Level}!");
 
             if (player.Level >= GameConstants.ClassChangeLevel && player.SecondClass == 0)
@@ -1710,12 +1805,15 @@ var effect = def.Effect;
         SendTo(player, "Buffs", new BuffUpdate(dtos));
     }
 
+    private void SendLearned(Entity p) =>
+        SendTo(p, "Learned", new LearnedSkills(p.LearnedSkills.ToArray(), p.SkillPoints));
+
     private void SendStats(Entity p) =>
         SendTo(p, "Stats", new StatsUpdate(
             p.Con, p.AtkStat, p.Wit, p.Dex,
             p.MaxHp, p.MaxMp, p.AttackPower, p.Defence,
             p.Accuracy, p.Evasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
-            p.Speed, SkillMath.CastModifier(p.Wit), p.CastSpeedMultiplier, p.AttackSpeedMultiplier));
+            p.Speed, SkillMath.CastModifier(p.Wit), p.CastSpeedMultiplier, p.AttackSpeedMultiplier, p.SkillPoints));
 
     private void CancelCast(Entity entity)
     {

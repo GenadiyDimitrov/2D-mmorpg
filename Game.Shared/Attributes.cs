@@ -12,7 +12,9 @@ public enum AttributeType
     SpeedPercent = 2,
     CastSpeedPercent = 3,   // shortens cast time (stacks with WIT)
     AttackSpeedPercent = 4, // shortens basic-attack interval
-    AttackPercent = 5
+    AttackPercent = 5,
+    EvasionPercent = 6,
+    DefencePercent = 7
 }
 
 /// <summary>One rolled attribute on an item instance.</summary>
@@ -33,7 +35,16 @@ public static class AttributeSystem
     public static int AttributeCount(ItemGrade grade, ItemRarity rarity)
     {
         int gradeBonus = (int)grade;                 // F=0, E=1, B=2, A=3, S=4
-        int rarityBonus = (int)rarity;               // common=0, uncommon=1, rare=2
+        int rarityBonus = rarity switch
+        {
+            ItemRarity.Common => 0,
+            ItemRarity.Uncommon => 1,
+            ItemRarity.Rare => 2,
+            ItemRarity.Epic => 3,
+            ItemRarity.Legendary => 4,
+            ItemRarity.God => 6,
+            _ => 0
+        };
         return gradeBonus + rarityBonus;
     }
 
@@ -54,6 +65,8 @@ public static class AttributeSystem
             [AttributeType.CastSpeedPercent]   = (1, 20),
             [AttributeType.AttackSpeedPercent] = (1, 20),
             [AttributeType.AttackPercent]      = (1, 20),
+            [AttributeType.EvasionPercent]     = (1, 15),
+            [AttributeType.DefencePercent]     = (1, 15),
         },
         // B/A/S inherit E's pool with stronger ranges until tuned individually.
         [ItemGrade.B] = new()
@@ -64,6 +77,8 @@ public static class AttributeSystem
             [AttributeType.CastSpeedPercent]   = (5, 25),
             [AttributeType.AttackSpeedPercent] = (5, 25),
             [AttributeType.AttackPercent]      = (5, 25),
+            [AttributeType.EvasionPercent]     = (5, 20),
+            [AttributeType.DefencePercent]     = (5, 20),
         },
         [ItemGrade.A] = new()
         {
@@ -73,6 +88,8 @@ public static class AttributeSystem
             [AttributeType.CastSpeedPercent]   = (8, 30),
             [AttributeType.AttackSpeedPercent] = (8, 30),
             [AttributeType.AttackPercent]      = (8, 30),
+            [AttributeType.EvasionPercent]     = (8, 25),
+            [AttributeType.DefencePercent]     = (8, 25),
         },
         [ItemGrade.S] = new()
         {
@@ -82,6 +99,8 @@ public static class AttributeSystem
             [AttributeType.CastSpeedPercent]   = (10, 35),
             [AttributeType.AttackSpeedPercent] = (10, 35),
             [AttributeType.AttackPercent]      = (10, 35),
+            [AttributeType.EvasionPercent]     = (10, 30),
+            [AttributeType.DefencePercent]     = (10, 30),
         },
     };
 
@@ -123,6 +142,8 @@ public static class AttributeSystem
         AttributeType.CastSpeedPercent => "Cast Speed",
         AttributeType.AttackSpeedPercent => "Attack Speed",
         AttributeType.AttackPercent => "Attack",
+        AttributeType.EvasionPercent => "Evasion",
+        AttributeType.DefencePercent => "Defence",
         _ => type.ToString()
     };
 }

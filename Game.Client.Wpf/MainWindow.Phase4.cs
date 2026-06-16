@@ -331,8 +331,11 @@ public partial class MainWindow
     private void OnStats(StatsUpdate stats)
     {
         _stats = stats;
+        _skillPoints = stats.SkillPoints;
         if (StatsPanel.Visibility == Visibility.Visible)
             RefreshStatsPanel();
+        if (SkillsPanel.Visibility == Visibility.Visible)
+            SkillPointsText.Text = $"SP: {_skillPoints}";
     }
 
     private void StatsButton_Click(object sender, RoutedEventArgs e) => ToggleStats();
@@ -592,12 +595,23 @@ public partial class MainWindow
     // Character creation — class tree
     // =======================================================================
 
+    private static IEnumerable<Race> SelectableRaces()
+    {
+        foreach (var race in Enum.GetValues<Race>())
+        {
+#if !DEBUG
+            if (race == Race.God) continue;   // God race only creatable in DEBUG
+#endif
+            yield return race;
+        }
+    }
+
     private void BuildCreationTree()
     {
         CreationTree.Children.Clear();
         AddTreeHeader("1. Choose a Race");
 
-        foreach (var race in Enum.GetValues<Race>())
+        foreach (var race in SelectableRaces())
         {
             var btn = TreeButton(race.ToString(), 0);
             btn.Click += (_, _) => SelectRace(race);
@@ -622,7 +636,7 @@ public partial class MainWindow
         // Re-render with race expanded.
         CreationTree.Children.Clear();
         AddTreeHeader("1. Race");
-        foreach (var r in Enum.GetValues<Race>())
+        foreach (var r in SelectableRaces())
         {
             var btn = TreeButton(r.ToString(), 0, selected: r == race);
             btn.Click += (_, _) => SelectRace(r);
@@ -678,7 +692,9 @@ public partial class MainWindow
         string passive = baseClass == BaseClass.Fighter
             ? "Fighters: lower HP, more attack/defence focus; can use all armor."
             : "Mages: spell-casters; WIT shortens cast time; robe specialists.";
-        var skills = ClassProgression.UsableSkills(race, baseClass, null, 1).ToList();
+        var skills = ClassSkills.ForClass(race, baseClass, null)
+            .Select(cs => SkillCatalog.Get(cs.SkillId))
+            .Where(d => d is not null).Select(d => d!).ToList();
         ShowCreationInfo($"{race} {baseClass}",
             $"Base stats: CON {stats.Con}, ATK {stats.Atk}, WIT {stats.Wit}, DEX {stats.Dex}\n\n" +
             passive + "\n\nStarting skills:", skills);
@@ -697,7 +713,9 @@ public partial class MainWindow
             Archetype.Nuker => "Robe caster: big damage spells, +500 spell range.",
             _ => ""
         };
-        var skills = ClassProgression.UsableSkills(sc.Race, sc.Base, sc.Archetype, 20).ToList();
+        var skills = ClassSkills.ForClass(sc.Race, sc.Base, sc.Archetype)
+            .Select(cs => SkillCatalog.Get(cs.SkillId))
+            .Where(d => d is not null).Select(d => d!).ToList();
         ShowCreationInfo($"{sc.Name}  ({sc.Archetype})",
             role + $"\n\nClass-change bonus: +{con} CON, +{atk} ATK, +{wit} WIT, +{dex} DEX.\n\n" +
             "Skills (base + signature):", skills);
@@ -763,51 +781,224 @@ public partial class MainWindow
             RefreshSkillsWindow();
     }
 
+    private bool _skillTabLearn; // false = Learned, true = Learn
+    private string? _pendingLearnId;
+
+    private void SkillTabLearned_Click(object sender, RoutedEventArgs e)
+    {
+        _skillTabLearn = false;
+        RefreshSkillsWindow();
+    }
+
+    private void SkillTabLearn_Click(object sender, RoutedEventArgs e)
+    {
+        _skillTabLearn = true;
+        RefreshSkillsWindow();
+    }
+
+    private Archetype? CurrentArchetype =>
+        _mySecondClass > 0 ? ClassCatalog.Get(_mySecondClass)?.Archetype : null;
+
     private void RefreshSkillsWindow()
     {
         SkillsList.Items.Clear();
-        Archetype? archetype = _mySecondClass > 0 ? ClassCatalog.Get(_mySecondClass)?.Archetype : null;
+        SkillPointsText.Text = $"SP: {_skillPoints}";
 
-        foreach (var def in ClassProgression.UsableSkills(_myRace, _myBaseClass, archetype, _level))
+        // Tab highlight.
+        TabLearned.FontWeight = _skillTabLearn ? FontWeights.Normal : FontWeights.Bold;
+        TabLearn.FontWeight = _skillTabLearn ? FontWeights.Bold : FontWeights.Normal;
+
+        if (_skillTabLearn)
+            BuildLearnTab();
+        else
+            BuildLearnedTab();
+    }
+
+    /// <summary>Tab 1: skills you've learned, grouped by category, usable/bar-able.</summary>
+    private void BuildLearnedTab()
+    {
+        var learned = _learnedSkills
+            .Select(id => SkillCatalog.Get(id))
+            .Where(d => d is not null).Select(d => d!)
+            .OrderBy(d => d.Category).ThenBy(d => d.Name)
+            .ToList();
+
+        if (learned.Count == 0)
         {
-            bool onBar = _skillBar.Any(x => x == def.Id);
-
-            var panel = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
-            var header = new DockPanel();
-            var name = new TextBlock
+            SkillsList.Items.Add(new TextBlock
             {
-                Text = def.Name, Foreground = Brushes.White, FontSize = 13,
-                FontWeight = FontWeights.Bold
-            };
-            var assign = new Button
-            {
-                Content = onBar ? "On Bar" : "To Bar",
-                Height = 22, Width = 70, FontSize = 10, IsEnabled = !onBar
-            };
-            int id = def.Id;
-            assign.Click += (_, _) => AssignSkillToBar(id);
-            DockPanel.SetDock(assign, Dock.Right);
-            header.Children.Add(assign);
-            header.Children.Add(name);
-            panel.Children.Add(header);
-
-            panel.Children.Add(new TextBlock
-            {
-                Text = SkillCatalog.DescriptionOf(def.Id),
-                Foreground = Brushes.Gainsboro, FontSize = 11, TextWrapping = TextWrapping.Wrap
+                Text = "No skills learned yet. Check the 'Skills to Learn' tab.",
+                Foreground = Brushes.Gray, Margin = new Thickness(0, 6, 0, 0)
             });
-
-            string duration = def.DurationTicks > 0
-                ? $"  Duration {def.DurationTicks * GameConstants.TickSeconds:0}s" : "";
-            panel.Children.Add(new TextBlock
-            {
-                Text = $"MP {def.MpCost}   Cast {def.CastTicks * GameConstants.TickSeconds:0.0}s   " +
-                       $"Cooldown {def.CooldownTicks * GameConstants.TickSeconds:0}s{duration}",
-                Foreground = Brushes.SkyBlue, FontSize = 10, Margin = new Thickness(0, 2, 0, 0)
-            });
-
-            SkillsList.Items.Add(panel);
+            return;
         }
+
+        foreach (var group in learned.GroupBy(d => d.Category))
+        {
+            AddSkillGroupHeader(CategoryName(group.Key));
+            foreach (var def in group)
+            {
+                bool onBar = _skillBar.Any(x => x == def.Id);
+                var row = new DockPanel { Margin = new Thickness(0, 0, 0, 6) };
+
+                var assign = new Button
+                {
+                    Content = onBar ? "On Bar" : "To Bar",
+                    Height = 24, Width = 70, FontSize = 10, IsEnabled = !onBar
+                };
+                string id = def.Id;
+                assign.Click += (_, _) => AssignSkillToBar(id);
+                DockPanel.SetDock(assign, Dock.Right);
+                row.Children.Add(assign);
+
+                var name = new TextBlock
+                {
+                    Text = def.Name, Foreground = Brushes.White, FontSize = 13,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    ToolTip = SkillTooltip(def)
+                };
+                row.Children.Add(name);
+                SkillsList.Items.Add(row);
+            }
+        }
+    }
+
+    /// <summary>Tab 2: learnable skills grouped by required level, with Learn
+    /// buttons enabled when level + SP (+ previous rank) allow.</summary>
+    private void BuildLearnTab()
+    {
+        var all = ClassSkills.ForClass(_myRace, _myBaseClass, CurrentArchetype);
+
+        // Unlearned only, grouped by learn level.
+        var groups = all
+            .Where(cs => !_learnedSkills.Contains(cs.SkillId))
+            .GroupBy(cs => cs.LearnLevel)
+            .OrderBy(g => g.Key);
+
+        bool any = false;
+        foreach (var group in groups)
+        {
+            any = true;
+            bool levelMet = _level >= group.Key;
+            AddSkillGroupHeader($"Level {group.Key}" + (levelMet ? "" : "  (locked)"));
+
+            foreach (var cs in group)
+            {
+                var def = SkillCatalog.Get(cs.SkillId);
+                if (def is null) continue;
+
+                bool prevRankOk = def.Rank <= 1 || HasPreviousRankLearned(def);
+                bool canLearn = levelMet && _skillPoints >= def.SpCost && prevRankOk;
+
+                var row = new DockPanel { Margin = new Thickness(0, 0, 0, 6) };
+                var learn = new Button
+                {
+                    Content = "Learn", Height = 24, Width = 70, FontSize = 10,
+                    IsEnabled = canLearn
+                };
+                string id = def.Id;
+                learn.Click += (_, _) => OpenLearnPopup(id);
+                DockPanel.SetDock(learn, Dock.Right);
+                row.Children.Add(learn);
+
+                var name = new TextBlock
+                {
+                    Text = $"{def.Name}  (SP {def.SpCost})",
+                    Foreground = canLearn ? Brushes.White : Brushes.Gray,
+                    FontSize = 13, VerticalAlignment = VerticalAlignment.Center,
+                    ToolTip = SkillTooltip(def)
+                };
+                row.Children.Add(name);
+                SkillsList.Items.Add(row);
+            }
+        }
+
+        if (!any)
+            SkillsList.Items.Add(new TextBlock
+            {
+                Text = "Nothing left to learn for this class right now.",
+                Foreground = Brushes.Gray, Margin = new Thickness(0, 6, 0, 0)
+            });
+    }
+
+    private bool HasPreviousRankLearned(SkillDef def)
+    {
+        foreach (var id in _learnedSkills)
+        {
+            var l = SkillCatalog.Get(id);
+            if (l is not null && l.BuffKey == def.BuffKey && l.Rank == def.Rank - 1)
+                return true;
+        }
+        return false;
+    }
+
+    private void OpenLearnPopup(string skillId)
+    {
+        var def = SkillCatalog.Get(skillId);
+        if (def is null) return;
+
+        _pendingLearnId = skillId;
+        LearnTitle.Text = def.Name;
+        LearnBody.Text = SkillTooltip(def);
+        bool enough = _skillPoints >= def.SpCost;
+        LearnCost.Text = $"Cost: {def.SpCost} SP   (you have {_skillPoints})";
+        LearnCost.Foreground = enough ? Brushes.LightGreen : Brushes.IndianRed;
+        LearnConfirm.IsEnabled = enough;
+        LearnPopup.Visibility = Visibility.Visible;
+    }
+
+    private async void LearnConfirm_Click(object sender, RoutedEventArgs e)
+    {
+        if (_pendingLearnId is string id)
+            await _net.LearnSkillAsync(id);
+        LearnPopup.Visibility = Visibility.Collapsed;
+        _pendingLearnId = null;
+    }
+
+    private void LearnCancel_Click(object sender, RoutedEventArgs e)
+    {
+        LearnPopup.Visibility = Visibility.Collapsed;
+        _pendingLearnId = null;
+    }
+
+    private void AddSkillGroupHeader(string text) =>
+        SkillsList.Items.Add(new TextBlock
+        {
+            Text = text, Foreground = Brushes.Gray, FontSize = 11,
+            FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 4)
+        });
+
+    private static string CategoryName(SkillCategory c) => c switch
+    {
+        SkillCategory.Physical => "Physical Skills",
+        SkillCategory.Magic => "Magic Skills",
+        SkillCategory.Buff => "Buffs",
+        SkillCategory.Debuff => "Debuffs",
+        SkillCategory.Heal => "Heals",
+        _ => "Other"
+    };
+
+    private static string SkillTooltip(SkillDef def)
+    {
+        string duration = def.DurationTicks > 0
+            ? $"  Duration {def.DurationTicks * GameConstants.TickSeconds:0}s" : "";
+        return $"{def.Description}\n" +
+               $"MP {def.MpCost}   Cast {def.CastTicks * GameConstants.TickSeconds:0.0}s   " +
+               $"Cooldown {def.CooldownTicks * GameConstants.TickSeconds:0}s{duration}";
+    }
+
+    /// <summary>Server -> client: learned skill ids + SP. Refresh bar + window.</summary>
+    private void OnLearned(LearnedSkills learned)
+    {
+        _learnedSkills.Clear();
+        foreach (var id in learned.SkillIds)
+            _learnedSkills.Add(id);
+        _skillPoints = learned.SkillPoints;
+
+        AutoPlaceNewSkills();
+        RenderSkillBar();
+        if (SkillsPanel.Visibility == Visibility.Visible)
+            RefreshSkillsWindow();
     }
 
     // =======================================================================
@@ -1026,7 +1217,8 @@ public partial class MainWindow
         DebugList.Children.Add(DebugAction("Level +1", async () => await _net.DebugLevelAsync()));
 
         AddDebugHeader("Legendary");
-        DebugList.Children.Add(DebugGiveButton(ItemCatalog.LegendaryBow, "Windforce (5-attr bow)"));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.GodWeapon, "God's Judgment"));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.GodArmor, "God's Robes"));
 
         AddDebugHeader("Rare Weapons (E)");
         DebugList.Children.Add(DebugGiveButton(

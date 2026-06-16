@@ -67,7 +67,10 @@ public record ChatCmd(
 
 public record AttackCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 
-public record SkillCmd(string ConnectionId, int SkillId, Guid? TargetId) : IGameCommand;
+public record SkillCmd(string ConnectionId, string SkillId, Guid? TargetId) : IGameCommand;
+
+/// <summary>Learn a skill by spending skill points.</summary>
+public record LearnSkillCmd(string ConnectionId, string SkillId) : IGameCommand;
 
 public record RespawnCmd(string ConnectionId) : IGameCommand;
 

@@ -4,7 +4,8 @@ public enum Race
 {
     Human = 0,
     Elf = 1,
-    Ork = 2
+    Ork = 2,
+    God = 99   // debug-only race (creatable in DEBUG builds; usable once made)
 }
 
 public enum BaseClass
@@ -16,7 +17,8 @@ public enum BaseClass
 public enum EntityKind
 {
     Player = 0,
-    Mob = 1
+    Mob = 1,
+    Npc = 2    // groundwork for quests: stationary, non-combat, talkable
 }
 
 public enum ChatChannel
@@ -58,12 +60,15 @@ public enum SkillEffect
     BuffAtkSpeed   = 1 << 6,   // shortens basic-attack interval
     BuffCastSpeed  = 1 << 7,   // shortens cast time
     BuffEvasion    = 1 << 8,
-    DebuffDef      = 1 << 9,
-    // Room to grow: BuffHp = 1 << 10, BuffMp = 1 << 11, DebuffSpeed = 1 << 12, ...
+    BuffHp         = 1 << 9,
+    BuffMp         = 1 << 10,
+    DebuffDef      = 1 << 11,
+    // Room to grow: DebuffSpeed = 1 << 12, Stun = 1 << 13, ...
 
     // Convenience masks.
     AnyDamage = PhysicalDamage | MagicDamage,
-    AnyBuff   = BuffAtk | BuffDef | BuffMoveSpeed | BuffAtkSpeed | BuffCastSpeed | BuffEvasion,
+    AnyBuff   = BuffAtk | BuffDef | BuffMoveSpeed | BuffAtkSpeed | BuffCastSpeed
+              | BuffEvasion | BuffHp | BuffMp,
 }
 
 /// <summary>Whether a magnitude is a flat add or a percentage of the base stat.

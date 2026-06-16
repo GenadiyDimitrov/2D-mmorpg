@@ -74,6 +74,7 @@ public partial class MainWindow : Window
         _net.TradeRequestReceived += t => Dispatcher.BeginInvoke(() => OnTradeRequest(t));
         _net.TradeStateReceived += t => Dispatcher.BeginInvoke(() => OnTradeState(t));
         _net.StatsReceived += st => Dispatcher.BeginInvoke(() => OnStats(st));
+        _net.LearnedReceived += l => Dispatcher.BeginInvoke(() => OnLearned(l));
         _net.PotionReceived += pt => Dispatcher.BeginInvoke(() => OnPotion(pt));
         _net.BuffsReceived += b => Dispatcher.BeginInvoke(() => OnBuffs(b));
         _net.EnchantReceived += en => Dispatcher.BeginInvoke(() => OnEnchant(en));
@@ -319,8 +320,12 @@ public partial class MainWindow : Window
 
     private const int SkillBarSlots = 8;
 
-    /// <summary>The skill assigned to each bar slot (null = empty).</summary>
-    private readonly int?[] _skillBar = new int?[SkillBarSlots];
+    /// <summary>The skill (string id) assigned to each bar slot (null = empty).</summary>
+    private readonly string?[] _skillBar = new string?[SkillBarSlots];
+
+    /// <summary>Learned skill ids + current SP (from the server).</summary>
+    private readonly HashSet<string> _learnedSkills = new();
+    private int _skillPoints;
 
     private void EnsureSkillBarSlots()
     {
@@ -333,32 +338,28 @@ public partial class MainWindow : Window
     /// free slots with newly-available skills (auto-place on acquire).</summary>
     private void AutoPlaceNewSkills()
     {
-        Archetype? archetype = _mySecondClass > 0
-            ? ClassCatalog.Get(_mySecondClass)?.Archetype : null;
-        var available = ClassProgression.UsableSkills(_myRace, _myBaseClass, archetype, _level)
-            .Select(d => d.Id).ToHashSet();
+        // Availability = learned skills.
+        var available = _learnedSkills;
 
-        // Remove now-invalid assignments.
+        // Remove assignments no longer learned.
         for (int i = 0; i < _skillBar.Length; i++)
-            if (_skillBar[i] is int id && !available.Contains(id))
+            if (_skillBar[i] is string id && !available.Contains(id))
                 _skillBar[i] = null;
 
-        // Auto-place any available skill not already on the bar.
-        var onBar = _skillBar.Where(x => x.HasValue).Select(x => x!.Value).ToHashSet();
+        // Auto-place any learned skill not already on the bar.
+        var onBar = _skillBar.Where(x => x is not null).Select(x => x!).ToHashSet();
         foreach (var id in available)
         {
-            if (onBar.Contains(id))
-                continue;
+            if (onBar.Contains(id)) continue;
             int free = Array.IndexOf(_skillBar, null);
-            if (free < 0)
-                break;
+            if (free < 0) break;
             _skillBar[free] = id;
             onBar.Add(id);
         }
     }
 
     /// <summary>Assign a skill to the first free slot (from the Skills window).</summary>
-    private void AssignSkillToBar(int skillId)
+    private void AssignSkillToBar(string skillId)
     {
         if (_skillBar.Any(x => x == skillId))
             return; // already on the bar
@@ -398,7 +399,7 @@ public partial class MainWindow : Window
                 Width = 104, Height = 38, Margin = new Thickness(3, 0, 3, 0), FontSize = 11
             };
 
-            if (_skillBar[i] is int id && SkillCatalog.Get(id) is SkillDef def)
+            if (_skillBar[i] is string id && SkillCatalog.Get(id) is SkillDef def)
             {
                 button.Content = $"{hotkey}. {def.Name}";
                 var slot = new SkillSlot { Def = def, Button = button, Key = hotkey };

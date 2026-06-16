@@ -38,6 +38,11 @@ public class CharacterRecord
     public int Level { get; set; } = 1;
     public long Exp { get; set; }
 
+    public int SkillPoints { get; set; }
+
+    /// <summary>Learned skill ids, comma-separated (simple + migration-free).</summary>
+    public string LearnedSkillsCsv { get; set; } = "";
+
     // Core stats are derived from race/class/level, but second-class and item
     // bonuses are permanent additions, so we persist the raw core stats.
     public int Con { get; set; }

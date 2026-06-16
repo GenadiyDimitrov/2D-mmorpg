@@ -44,6 +44,7 @@ public class NetworkChannel : IAsyncDisposable
         _connection.On<TradeRequestNotice>("TradeRequest", t => TradeRequestReceived?.Invoke(t));
         _connection.On<TradeStateUpdate>("Trade", t => TradeStateReceived?.Invoke(t));
         _connection.On<StatsUpdate>("Stats", st => StatsReceived?.Invoke(st));
+        _connection.On<LearnedSkills>("Learned", l => LearnedReceived?.Invoke(l));
         _connection.On<PotionStatus>("Potion", pt => PotionReceived?.Invoke(pt));
         _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));
         _connection.On<EnchantResultDto>("Enchant", en => EnchantReceived?.Invoke(en));
@@ -82,8 +83,13 @@ public class NetworkChannel : IAsyncDisposable
     public Task AttackAsync(Guid targetId) =>
         _connection!.SendAsync("Attack", targetId);
 
-    public Task UseSkillAsync(int skillId, Guid? targetId) =>
+    public event Action<LearnedSkills>? LearnedReceived;
+
+    public Task UseSkillAsync(string skillId, Guid? targetId) =>
         _connection!.SendAsync("UseSkill", skillId, targetId);
+
+    public Task LearnSkillAsync(string skillId) =>
+        _connection!.SendAsync("LearnSkill", skillId);
 
     public Task RespawnAsync() =>
         _connection!.SendAsync("Respawn");

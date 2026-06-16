@@ -13,7 +13,11 @@ public enum Archetype
     Nuker = 5     // robe+2h: damage spells (+500 spell range)
 }
 
-public record SecondClassDef(int Id, string Name, Race Race, BaseClass Base, Archetype Archetype);
+/// <summary>A second class. RequiredQuestId is groundwork for class-change
+/// quests — null means level-gated only (current behaviour); when the quest
+/// system lands, a non-null id will require that quest be completed first.</summary>
+public record SecondClassDef(int Id, string Name, Race Race, BaseClass Base, Archetype Archetype,
+    string? RequiredQuestId = null);
 
 public static class ClassCatalog
 {
@@ -40,6 +44,9 @@ public static class ClassCatalog
         new(16, "Marksman",    Race.Human, BaseClass.Fighter, Archetype.Archer),
         new(17, "Cleric",      Race.Human, BaseClass.Mage,    Archetype.Healer),
         new(18, "Sorcerer",    Race.Human, BaseClass.Mage,    Archetype.Nuker),
+        // God race (debug-only): one fighter path + one mage path.
+        new(98, "Demigod",     Race.God,   BaseClass.Fighter, Archetype.Warrior),
+        new(99, "Ascendant",   Race.God,   BaseClass.Mage,    Archetype.Nuker),
     }.ToDictionary(c => c.Id);
 
     public static SecondClassDef? Get(int id) => All.GetValueOrDefault(id);
