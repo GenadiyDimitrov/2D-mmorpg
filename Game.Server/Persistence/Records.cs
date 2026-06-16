@@ -60,7 +60,7 @@ public class ItemRecord
     /// <summary>The live-game InstanceId, preserved across saves.</summary>
     public Guid InstanceId { get; set; }
 
-    public int DefId { get; set; }
+    public required string DefId { get; set; }
     public bool Equipped { get; set; }
     public int Enchant { get; set; }
     public int Quantity { get; set; } = 1;

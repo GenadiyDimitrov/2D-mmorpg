@@ -200,10 +200,13 @@ public class GameHub : Hub
 
     // ----- Debug (DEBUG builds only) -----------------------------------------
 
-    public Task DebugGive(int defId)
+    public Task DebugGive(string defId, int quantity)
     {
 #if DEBUG
         _world.Commands.Enqueue(new DebugGiveCmd(Context.ConnectionId, defId));
+        // Extra copies for stackables (debug convenience: 10 potions/scrolls).
+        for (int i = 1; i < Math.Max(1, quantity); i++)
+            _world.Commands.Enqueue(new DebugGiveCmd(Context.ConnectionId, defId));
 #endif
         return Task.CompletedTask;
     }

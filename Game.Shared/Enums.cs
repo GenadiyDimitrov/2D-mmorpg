@@ -45,5 +45,6 @@ public enum SkillEffect
     Heal = 2,
     BuffAtk = 3,
     DebuffDef = 4,
-    BuffDef = 5
+    BuffDef = 5,
+    BuffAtkSpeed = 6  // combined: attack% (Magnitude) + move speed% (Magnitude2)
 }

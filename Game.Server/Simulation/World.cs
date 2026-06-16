@@ -87,7 +87,7 @@ public record EnchantCmd(string ConnectionId, Guid ScrollInstanceId, Guid Target
 public record RemoveItemCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
 
 /// <summary>DEBUG-only: grant an item by def id.</summary>
-public record DebugGiveCmd(string ConnectionId, int DefId) : IGameCommand;
+public record DebugGiveCmd(string ConnectionId, string DefId) : IGameCommand;
 
 /// <summary>DEBUG-only: grant one level.</summary>
 public record DebugLevelCmd(string ConnectionId) : IGameCommand;

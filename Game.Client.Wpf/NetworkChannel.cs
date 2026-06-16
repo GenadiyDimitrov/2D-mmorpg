@@ -103,8 +103,8 @@ public class NetworkChannel : IAsyncDisposable
     public Task RemoveItemAsync(Guid instanceId) =>
         _connection!.SendAsync("RemoveItem", instanceId);
 
-    public Task DebugGiveAsync(int defId) =>
-        _connection!.SendAsync("DebugGive", defId);
+    public Task DebugGiveAsync(string defId, int quantity = 1) =>
+        _connection!.SendAsync("DebugGive", defId, quantity);
 
     public Task DebugLevelAsync() =>
         _connection!.SendAsync("DebugLevel");

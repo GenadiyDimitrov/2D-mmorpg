@@ -115,21 +115,32 @@ public class PersistenceService
         };
 
         // Starter gear so a brand-new character isn't empty.
-        record.Items.Add(NewItem(1));   // Rusty Sword
-        record.Items.Add(NewItem(9));   // Leather Vest
-        record.Items.Add(NewItem(30, 5)); // Minor Healing Potions
-        record.Items.Add(NewItem(32, 2)); // Greater Healing Potions
+        // Starter gear keyed by stable string ids. Give a weapon matching the
+        // base class's playstyle and the appropriate armor.
+        string starterWeapon = baseClass == BaseClass.Mage
+            ? ItemCatalog.WeaponKey(WeaponType.Staff, ItemGrade.F, ItemRarity.Common)
+            : ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.F, ItemRarity.Common);
+        string starterArmor = baseClass == BaseClass.Mage
+            ? ItemCatalog.ArmorKey(ArmorWeight.Robe, ItemGrade.F, ItemRarity.Common)
+            : ItemCatalog.ArmorKey(ArmorWeight.Light, ItemGrade.F, ItemRarity.Common);
+
+        record.Items.Add(NewItem(starterWeapon));
+        record.Items.Add(NewItem(starterArmor));
+        record.Items.Add(NewItem(ItemCatalog.MinorPotion, 5));
+        record.Items.Add(NewItem(ItemCatalog.GreaterPotion, 2));
 
         db.Characters.Add(record);
         await db.SaveChangesAsync();
         return (true, null);
     }
 
-    private static ItemRecord NewItem(int defId, int qty = 1)
+    private static ItemRecord NewItem(string defId, int qty = 1)
     {
         var rec = new ItemRecord { InstanceId = Guid.NewGuid(), DefId = defId, Quantity = qty };
         if (ItemCatalog.Get(defId) is ItemDef def && def.Slot is EquipSlot.Weapon or EquipSlot.Armor)
-            rec.Attributes = AttributeSystem.Roll(def, Random.Shared);
+            rec.Attributes = def.FixedAttributes is { Length: > 0 } fixedAttrs
+                ? fixedAttrs.ToList()
+                : AttributeSystem.Roll(def, Random.Shared);
         return rec;
     }
 

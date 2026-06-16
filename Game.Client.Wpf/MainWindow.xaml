@@ -376,7 +376,8 @@
         <Border x:Name="CreatePanel"
                 Width="720" MaxHeight="640"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
-                Background="#E0141C28" CornerRadius="10" Padding="22">
+                Background="#E0141C28" CornerRadius="10" Padding="22"
+                Visibility="Collapsed">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="Create Your Character"
                            Foreground="White" FontSize="22" FontWeight="Bold"

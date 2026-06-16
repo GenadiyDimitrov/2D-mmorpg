@@ -420,7 +420,7 @@ public partial class MainWindow
         // Q -> first potion square (Minor), E -> second (Healing).
         if (index < 0 || index >= PotionSquares.Length)
             return;
-        int defId = PotionSquares[index].DefId;
+        string defId = PotionSquares[index].DefId;
         var item = _inventory.FirstOrDefault(i => i.DefId == defId);
         if (item is not null)
             await DrinkPotion(item.InstanceId);
@@ -842,11 +842,11 @@ public partial class MainWindow
     // Fixed potion squares (always visible, color-coded, count badge)
     // =======================================================================
 
-    private static readonly (int DefId, Color Color)[] PotionSquares =
+    private static readonly (string DefId, Color Color)[] PotionSquares =
     {
-        (30, Color.FromRgb(120, 200, 120)),  // Minor — green
-        (31, Color.FromRgb(90, 150, 230)),   // Healing — blue
-        (32, Color.FromRgb(220, 170, 70)),   // Greater — gold
+        (ItemCatalog.MinorPotion, Color.FromRgb(120, 200, 120)),  // green
+        (ItemCatalog.HealingPotion, Color.FromRgb(90, 150, 230)), // blue
+        (ItemCatalog.GreaterPotion, Color.FromRgb(220, 170, 70)), // gold
     };
 
     private void RebuildPotionBar()
@@ -954,7 +954,7 @@ public partial class MainWindow
         EnchantScrollList.Items.Clear();
         bool maxed = item.Enchant >= EnchantRules.MaxEnchant;
 
-        foreach (var scrollDefId in new[] { 40, 41, 42 })
+        foreach (var scrollDefId in new[] { ItemCatalog.ScrollCommon, ItemCatalog.ScrollUncommon, ItemCatalog.ScrollRare })
         {
             var scrollDef = ItemCatalog.Get(scrollDefId)!;
             int count = _inventory.FirstOrDefault(i => i.DefId == scrollDefId)?.Quantity ?? 0;
@@ -1025,25 +1025,36 @@ public partial class MainWindow
 
         DebugList.Children.Add(DebugAction("Level +1", async () => await _net.DebugLevelAsync()));
 
-        AddDebugHeader("Scrolls");
-        DebugList.Children.Add(DebugGiveButton(40, "Common Scroll"));
-        DebugList.Children.Add(DebugGiveButton(41, "Uncommon Scroll"));
-        DebugList.Children.Add(DebugGiveButton(42, "Rare Scroll"));
+        AddDebugHeader("Legendary");
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.LegendaryBow, "Windforce (5-attr bow)"));
 
-        AddDebugHeader("Potions");
-        DebugList.Children.Add(DebugGiveButton(30, "Minor Potion"));
-        DebugList.Children.Add(DebugGiveButton(31, "Healing Potion"));
-        DebugList.Children.Add(DebugGiveButton(32, "Greater Potion"));
+        AddDebugHeader("Rare Weapons (E)");
+        DebugList.Children.Add(DebugGiveButton(
+            ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.E, ItemRarity.Rare), "Rare Sword"));
+        DebugList.Children.Add(DebugGiveButton(
+            ItemCatalog.WeaponKey(WeaponType.Dual, ItemGrade.E, ItemRarity.Rare), "Rare Daggers"));
+        DebugList.Children.Add(DebugGiveButton(
+            ItemCatalog.WeaponKey(WeaponType.Bow, ItemGrade.E, ItemRarity.Rare), "Rare Bow"));
+        DebugList.Children.Add(DebugGiveButton(
+            ItemCatalog.WeaponKey(WeaponType.Staff, ItemGrade.E, ItemRarity.Rare), "Rare Staff"));
 
-        AddDebugHeader("Gear (F)");
-        DebugList.Children.Add(DebugGiveButton(7, "Knight's Blade (rare)"));
-        DebugList.Children.Add(DebugGiveButton(11, "Plate Armor"));
-        DebugList.Children.Add(DebugGiveButton(13, "Mystic Robe"));
+        AddDebugHeader("Rare Armor (E)");
+        DebugList.Children.Add(DebugGiveButton(
+            ItemCatalog.ArmorKey(ArmorWeight.Heavy, ItemGrade.E, ItemRarity.Rare), "Rare Heavy"));
+        DebugList.Children.Add(DebugGiveButton(
+            ItemCatalog.ArmorKey(ArmorWeight.Light, ItemGrade.E, ItemRarity.Rare), "Rare Light"));
+        DebugList.Children.Add(DebugGiveButton(
+            ItemCatalog.ArmorKey(ArmorWeight.Robe, ItemGrade.E, ItemRarity.Rare), "Rare Robe"));
 
-        AddDebugHeader("Gear (E)");
-        DebugList.Children.Add(DebugGiveButton(17, "Crusader Blade"));
-        DebugList.Children.Add(DebugGiveButton(18, "Full Plate"));
-        DebugList.Children.Add(DebugGiveButton(20, "Arcane Robe"));
+        AddDebugHeader("Scrolls (x10)");
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.ScrollCommon, "Common Scroll x10", 10));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.ScrollUncommon, "Uncommon Scroll x10", 10));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.ScrollRare, "Rare Scroll x10", 10));
+
+        AddDebugHeader("Potions (x10)");
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.MinorPotion, "Minor Potion x10", 10));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.HealingPotion, "Healing Potion x10", 10));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.GreaterPotion, "Greater Potion x10", 10));
     }
 
     private void AddDebugHeader(string text) =>
@@ -1053,9 +1064,9 @@ public partial class MainWindow
             FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 6, 0, 2)
         });
 
-    private System.Windows.Controls.Button DebugGiveButton(int defId, string label)
+    private System.Windows.Controls.Button DebugGiveButton(string defId, string label, int qty = 1)
     {
-        return DebugAction(label, async () => await _net.DebugGiveAsync(defId));
+        return DebugAction(label, async () => await _net.DebugGiveAsync(defId, qty));
     }
 
     private System.Windows.Controls.Button DebugAction(string label, Func<Task> action)

@@ -1226,6 +1226,7 @@ public class GameLoopService : BackgroundService
 
             case SkillEffect.BuffAtk:
             case SkillEffect.BuffDef:
+            case SkillEffect.BuffAtkSpeed:
             {
                 ApplyBuff(target, def);
                 BroadcastCombat(caster, target, 0, CombatOutcome.Buff, def.Name);
@@ -1270,6 +1271,7 @@ public class GameLoopService : BackgroundService
         {
             Type = def.Effect,
             Magnitude = def.Magnitude,
+            Magnitude2 = def.Magnitude2,
             TicksRemaining = def.DurationTicks,
             Name = def.Name,
             Description = SkillCatalog.DescriptionOf(def.Id)
@@ -1518,7 +1520,7 @@ public class GameLoopService : BackgroundService
         float dx = tx - e.X;
         float dy = ty - e.Y;
         float dist = MathF.Sqrt(dx * dx + dy * dy);
-        float step = e.Speed * GameConstants.TickSeconds;
+        float step = e.EffectiveSpeed * GameConstants.TickSeconds;
 
         float nx, ny;
         if (dist <= step)
@@ -1613,7 +1615,7 @@ public class GameLoopService : BackgroundService
 
     /// <summary>Add an item to inventory, stacking consumables/scrolls.
     /// Returns false if there was no room for a new stack.</summary>
-    private bool AddItem(Entity player, int defId, int quantity = 1)
+    private bool AddItem(Entity player, string defId, int quantity = 1)
     {
         if (ItemCatalog.Get(defId) is not ItemDef def)
             return false;
@@ -1634,7 +1636,9 @@ public class GameLoopService : BackgroundService
 
         var newItem = new InventoryItem { DefId = defId, Quantity = stackable ? quantity : 1 };
         if (def.Slot is EquipSlot.Weapon or EquipSlot.Armor)
-            newItem.Attributes = AttributeSystem.Roll(def, _rng);
+            newItem.Attributes = def.FixedAttributes is { Length: > 0 } fixedAttrs
+                ? fixedAttrs.ToList()                    // legendary one-off
+                : AttributeSystem.Roll(def, _rng);       // normal random roll
         player.Inventory.Add(newItem);
         return true;
     }

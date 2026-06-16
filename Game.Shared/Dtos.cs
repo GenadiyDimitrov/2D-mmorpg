@@ -70,7 +70,7 @@ public record CastInfo(string SkillName, float Seconds);
 
 
 /// <summary>One item instance in a player's inventory.</summary>
-public record InventoryItemDto(Guid InstanceId, int DefId, bool Equipped, int Enchant, int Quantity, ItemAttribute[] Attributes);
+public record InventoryItemDto(Guid InstanceId, string DefId, bool Equipped, int Enchant, int Quantity, ItemAttribute[] Attributes);
 
 /// <summary>Server -> owning client: full inventory sync (sent on change).</summary>
 public record InventoryUpdate(InventoryItemDto[] Items);

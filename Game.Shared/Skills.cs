@@ -18,6 +18,7 @@ public record SkillDef(
     int Power,
     int DurationTicks = 0,
     float Magnitude = 0f,
+    float Magnitude2 = 0f,
     string Description = "");
 
 // ===========================================================================
@@ -47,6 +48,7 @@ public static class SkillCatalog
     public const int PowerStrike = 1, WarCry = 2, MagicBolt = 3, Heal = 4, Weakness = 5;
     public const int Fortify = 10, MightyBlow = 11, TwinSlash = 12, PowerShot = 13;
     public const int GreaterHeal = 14, FlameBolt = 15, HolyStrike = 16, StrongWeakness = 17;
+    public const int BattleFury = 18, GreaterWarCry = 19;
 
     private static readonly Dictionary<int, SkillDef> All = new SkillDef[]
     {
@@ -99,6 +101,18 @@ public static class SkillCatalog
             MpCost: 22, CastTicks: 40, CooldownTicks: 30, Range: 600, Power: 0,
             DurationTicks: 200, Magnitude: 0.45f,
             Description: "A deeper curse: -45% Defence for 20s."),
+
+        // Rogue/Archer: replaces War Cry with attack + move speed.
+        new(BattleFury, "Battle Fury", BaseClass.Fighter, SkillEffect.BuffAtkSpeed,
+            MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,
+            DurationTicks: 300, Magnitude: 0.20f, Magnitude2: 0.15f,
+            Description: "+20% Attack and +15% Move Speed for 30s."),
+
+        // Warrior: upgrades War Cry to a stronger attack buff.
+        new(GreaterWarCry, "Greater War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
+            MpCost: 18, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,
+            DurationTicks: 300, Magnitude: 0.30f,
+            Description: "Battle shout: +30% Attack Power for 30s."),
     }.ToDictionary(s => s.Id);
 
     public static SkillDef? Get(int id) => All.GetValueOrDefault(id);
@@ -133,17 +147,17 @@ public static class ClassProgression
         },
         [Archetype.Warrior] = new[]
         {
-            new SkillGrant(SkillCatalog.WarCry),
+            new SkillGrant(SkillCatalog.GreaterWarCry, 20, SkillCatalog.WarCry),
             new SkillGrant(SkillCatalog.MightyBlow, 20, SkillCatalog.PowerStrike),
         },
         [Archetype.Rogue] = new[]
         {
-            new SkillGrant(SkillCatalog.WarCry),
+            new SkillGrant(SkillCatalog.BattleFury, 20, SkillCatalog.WarCry),
             new SkillGrant(SkillCatalog.TwinSlash, 20, SkillCatalog.PowerStrike),
         },
         [Archetype.Archer] = new[]
         {
-            new SkillGrant(SkillCatalog.WarCry),
+            new SkillGrant(SkillCatalog.BattleFury, 20, SkillCatalog.WarCry),
             new SkillGrant(SkillCatalog.PowerShot, 20, SkillCatalog.PowerStrike),
         },
         [Archetype.Healer] = new[]

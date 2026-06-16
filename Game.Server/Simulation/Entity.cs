@@ -7,6 +7,7 @@ public class BuffInstance
 {
     public required SkillEffect Type { get; init; }
     public required float Magnitude { get; init; }
+    public float Magnitude2 { get; init; }
     public int TicksRemaining { get; set; }
     public required string Name { get; init; }
     public string Description { get; init; } = "";
@@ -18,7 +19,7 @@ public class BuffInstance
 public class InventoryItem
 {
     public Guid InstanceId { get; } = Guid.NewGuid();
-    public required int DefId { get; init; }
+    public required string DefId { get; init; }
     public bool Equipped { get; set; }
     public int Enchant { get; set; }
 
@@ -111,28 +112,30 @@ public class Entity
 
     public List<BuffInstance> Buffs { get; } = new();
 
-    public float EffectiveAttack
+    private float AttackBuffMultiplier()
     {
-        get
-        {
-            float multiplier = 1f;
-            foreach (var buff in Buffs)
-                if (buff.Type == SkillEffect.BuffAtk)
-                    multiplier += buff.Magnitude;
-            return AttackPower * multiplier;
-        }
+        float multiplier = 1f;
+        foreach (var buff in Buffs)
+            if (buff.Type is SkillEffect.BuffAtk or SkillEffect.BuffAtkSpeed)
+                multiplier += buff.Magnitude;
+        return multiplier;
     }
 
+    public float EffectiveAttack => AttackPower * AttackBuffMultiplier();
+
     /// <summary>Buffed attack power for BASIC attacks (archetype-scaled).</summary>
-    public float EffectiveBasicAttack
+    public float EffectiveBasicAttack => BasicAttackPower * AttackBuffMultiplier();
+
+    /// <summary>Current move speed including the move-speed portion of buffs.</summary>
+    public float EffectiveSpeed
     {
         get
         {
             float multiplier = 1f;
             foreach (var buff in Buffs)
-                if (buff.Type == SkillEffect.BuffAtk)
-                    multiplier += buff.Magnitude;
-            return BasicAttackPower * multiplier;
+                if (buff.Type == SkillEffect.BuffAtkSpeed)
+                    multiplier += buff.Magnitude2;
+            return Speed * multiplier;
         }
     }
 

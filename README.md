@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 5 (persistence, accounts, admin)
+# L2-like MMORPG — Phase 5.1 (string item keys, weapon matrix)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,49 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 5.1 (this build)
+
+> **IMPORTANT — delete any old `game.db` before running.** Item IDs changed from
+> integers to string keys, so the database schema changed. Delete the `game.db`
+> file next to the server (or just let this fresh build create a new one). Old
+> saves are not compatible.
+
+### Item IDs are now stable string keys
+- Every item has a permanent **string key** (e.g. `sword_e_rare`,
+  `robe_f_common`, `potion_minor`) instead of a fragile integer. Keys are the
+  item's identity — stored in saves, referenced by loot tables and the debug
+  menu. **You never renumber**; new items just get new keys, and you can place
+  them anywhere in the file. A **duplicate-key guard** at startup throws a clear
+  error naming the collision instead of a cryptic crash.
+
+### Full weapon & armor matrix
+- Weapons are generated for **every type × grade × rarity**: sword, dual,
+  bow, staff × {F, E} × {common, uncommon, rare} — keys like
+  `bow_e_rare`. Armor likewise: heavy, light, robe × grade × rarity.
+- **All classes can equip any weapon**; your skills determine whether a given
+  weapon is actually good for you (matches the design doc). Bows/staves carry
+  range; staves add MP; daggers are lower per-hit but suit the rogue's crit kit.
+- Loot tables and starter gear now reference these keys; mages start with a
+  staff + robe, fighters with a sword + leather.
+
+### Legendary one-off
+- **Windforce** (`legendary_windforce`): an E-grade bow with **5 fixed
+  attributes** (Attack +30%, Attack Speed +25%, Move Speed +20%, HP +30%,
+  MP +20%). Spawn it from the debug menu. Fixed attributes never reroll, unlike
+  normal drops.
+
+### Debug menu (DEBUG builds)
+- Level +1; Windforce; a **Rare E of each weapon** (sword/dual/bow/staff);
+  a **Rare E of each armor** (heavy/light/robe); and **x10** buttons for every
+  scroll and potion (no more clicking one at a time). No shield yet — that
+  arrives with block mechanics.
+
+### War Cry split by class
+- **Rogue & Archer**: War Cry becomes **Battle Fury** — +20% Attack **and**
+  +15% Move Speed for 30s.
+- **Warrior**: War Cry upgrades to **Greater War Cry** — +30% Attack.
+- **Tank**: still swaps War Cry for **Fortify** (+50% Defence).
 
 ## New in Phase 5 (this build)
 
