@@ -2,17 +2,43 @@ using Game.Shared;
 
 namespace Game.Server.Simulation;
 
-/// <summary>A timed stat modifier (buff or debuff) on an entity.</summary>
+/// <summary>A timed stat modifier (buff or debuff) on an entity. Carries a
+/// flags Effect (one buff can touch several stats) and a per-effect magnitude
+/// array with flat/percent modes. Identified by Key; same-Key buffs compare by
+/// Rank; a buff also unconditionally removes any active buff in Replaces.</summary>
 public class BuffInstance
 {
-    public required SkillEffect Type { get; init; }
-    public required float Magnitude { get; init; }
-    public float Magnitude2 { get; init; }
+    public required SkillEffect Effect { get; init; }
+    public required EffectMagnitude[] Magnitudes { get; init; }
     public int TicksRemaining { get; set; }
     public required string Name { get; init; }
     public string Description { get; init; } = "";
 
-    public bool IsDebuff => Type == SkillEffect.DebuffDef;
+    public string Key { get; init; } = "";
+    public int Rank { get; init; }
+    public string[] Replaces { get; init; } = Array.Empty<string>();
+
+    public bool Has(SkillEffect flag) => (Effect & flag) != 0;
+
+    public bool IsDebuff => Has(SkillEffect.DebuffDef);
+
+    /// <summary>Sum of this buff's flat entries for an effect.</summary>
+    public float Flat(SkillEffect flag)
+    {
+        float sum = 0f;
+        foreach (var m in Magnitudes)
+            if (m.Effect == flag && m.Mode == ModifierMode.Flat) sum += m.Value;
+        return sum;
+    }
+
+    /// <summary>Sum of this buff's percent entries for an effect.</summary>
+    public float Percent(SkillEffect flag)
+    {
+        float sum = 0f;
+        foreach (var m in Magnitudes)
+            if (m.Effect == flag && m.Mode == ModifierMode.Percent) sum += m.Value;
+        return sum;
+    }
 }
 
 /// <summary>One item instance in a player's inventory.</summary>
@@ -112,46 +138,73 @@ public class Entity
 
     public List<BuffInstance> Buffs { get; } = new();
 
-    private float AttackBuffMultiplier()
+    /// <summary>Apply all buffs for one effect to a base value using the
+    /// standard formula: (base + sum flats) * (1 + sum percents). Optionally a
+    /// second (debuff) flag subtracts its percents/flats (used for defence).</summary>
+    private float ModifiedStat(float baseValue, SkillEffect plusFlag, SkillEffect minusFlag = SkillEffect.None)
     {
-        float multiplier = 1f;
+        float flat = 0f, percent = 0f;
         foreach (var buff in Buffs)
-            if (buff.Type is SkillEffect.BuffAtk or SkillEffect.BuffAtkSpeed)
-                multiplier += buff.Magnitude;
-        return multiplier;
+        {
+            if (buff.Has(plusFlag))
+            {
+                flat += buff.Flat(plusFlag);
+                percent += buff.Percent(plusFlag);
+            }
+            if (minusFlag != SkillEffect.None && buff.Has(minusFlag))
+            {
+                flat -= buff.Flat(minusFlag);
+                percent -= buff.Percent(minusFlag);
+            }
+        }
+        return Math.Max(0f, (baseValue + flat) * (1f + percent));
     }
 
-    public float EffectiveAttack => AttackPower * AttackBuffMultiplier();
+    public float EffectiveAttack => ModifiedStat(AttackPower, SkillEffect.BuffAtk);
 
     /// <summary>Buffed attack power for BASIC attacks (archetype-scaled).</summary>
-    public float EffectiveBasicAttack => BasicAttackPower * AttackBuffMultiplier();
+    public float EffectiveBasicAttack => ModifiedStat(BasicAttackPower, SkillEffect.BuffAtk);
 
-    /// <summary>Current move speed including the move-speed portion of buffs.</summary>
-    public float EffectiveSpeed
+    /// <summary>Move speed including move-speed buffs (flat + percent).</summary>
+    public float EffectiveSpeed => ModifiedStat(Speed, SkillEffect.BuffMoveSpeed);
+
+    /// <summary>Defence including BuffDef (adds) and DebuffDef (subtracts).</summary>
+    public float EffectiveDefence =>
+        ModifiedStat(Defence, SkillEffect.BuffDef, SkillEffect.DebuffDef);
+
+    /// <summary>Evasion including evasion buffs (flat + percent).</summary>
+    public float EffectiveEvasion => ModifiedStat(Evasion, SkillEffect.BuffEvasion);
+
+    /// <summary>Cast-speed buff multiplier (1 = none; 0.8 = 20% faster).
+    /// Combines item cast-speed (CastSpeedMultiplier) with skill buffs.</summary>
+    public float EffectiveCastSpeedMultiplier
     {
         get
         {
-            float multiplier = 1f;
+            float pct = 0f, flat = 0f;
             foreach (var buff in Buffs)
-                if (buff.Type == SkillEffect.BuffAtkSpeed)
-                    multiplier += buff.Magnitude2;
-            return Speed * multiplier;
+                if (buff.Has(SkillEffect.BuffCastSpeed))
+                {
+                    pct += buff.Percent(SkillEffect.BuffCastSpeed);
+                    flat += buff.Flat(SkillEffect.BuffCastSpeed);
+                }
+            // Buff reduces cast time; combine with item multiplier.
+            float buffMul = Math.Max(0.3f, 1f - pct) ;
+            return CastSpeedMultiplier * buffMul;
         }
     }
 
-    public float EffectiveDefence
+    /// <summary>Attack-speed buff multiplier from skills, combined with items.</summary>
+    public float EffectiveAttackSpeedMultiplier
     {
         get
         {
-            float multiplier = 1f;
+            float pct = 0f;
             foreach (var buff in Buffs)
-            {
-                if (buff.Type == SkillEffect.BuffDef)
-                    multiplier += buff.Magnitude;
-                else if (buff.Type == SkillEffect.DebuffDef)
-                    multiplier -= buff.Magnitude;
-            }
-            return Defence * Math.Max(0f, multiplier);
+                if (buff.Has(SkillEffect.BuffAtkSpeed))
+                    pct += buff.Percent(SkillEffect.BuffAtkSpeed);
+            float buffMul = Math.Max(0.3f, 1f - pct);
+            return AttackSpeedMultiplier * buffMul;
         }
     }
 

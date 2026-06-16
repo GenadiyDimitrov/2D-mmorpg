@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 5.3 (day/night, respawn timers, elites & bosses)
+# L2-like MMORPG — Phase 5.4 (flags-based buff system)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,48 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 5.4 (this build)
+
+### Buff system rebuilt for a future buffer class
+- **`SkillEffect` is now a `[Flags]` enum.** One skill can carry several effects
+  at once: `Effect = BuffAtk | BuffMoveSpeed | BuffCastSpeed`. No more inventing
+  a new enum member per combination — add a flag once and combine freely.
+- **Per-effect magnitudes with flat OR percent.** A skill carries
+  `EffectMagnitude[]`, each entry `(Effect, Value, Mode)` where Mode is
+  `Flat` or `Percent`. So Wind Walk = `(BuffMoveSpeed, 33, Flat)`, a haste buff =
+  `(BuffMoveSpeed, 0.30, Percent)`, and you can even put **both on one buff**
+  (33 flat + 5%). Stats combine as **`(base + ΣFlat) × (1 + ΣPercent)`** per stat.
+- **Working cast-speed, attack-speed, and evasion buffs** (not just from items
+  now) — a buffer skill can buff them directly.
+
+### Buff stacking rules (exactly two mechanisms)
+- **Explicit `Replaces` (unconditional):** a buff lists buff keys it overrides,
+  e.g. `improved_movement` with `Replaces = ["wind_walk", "agility"]`. Casting it
+  removes those buffs **no matter their rank or magnitude** — the author declared
+  the override.
+- **Same `BuffKey` compares by `Rank`:** recasting the same buff applies only if
+  the incoming `Rank ≥ existing Rank` (a full replace, refreshing duration).
+  A **weaker** recast does nothing — no downgrade, no refresh. Equal rank = refresh.
+- Unrelated buffs (different key, not in a `Replaces` list) simply **stack**.
+- Current skills use this already: War Cry (`might` rank 1) and Greater War Cry
+  (`might` rank 2) auto-supersede by rank; Weakness/Greater Weakness likewise
+  (`curse_def` rank 1/2); Battle Fury is a two-effect buff (atk + move speed).
+
+### How to author a buff (for the future buffer class)
+```csharp
+new(skillId, "Improved Movement", BaseClass.Mage,
+    SkillEffect.BuffMoveSpeed | SkillEffect.BuffEvasion,
+    MpCost: 30, CastTicks: 20, CooldownTicks: 20, Range: 600, Power: 0,
+    DurationTicks: 1200, BuffKey: "improved_movement", Rank: 1,
+    Replaces: new[] { "wind_walk", "agility" },
+    Magnitudes: new EffectMagnitude[]
+    {
+        new(SkillEffect.BuffMoveSpeed, 40, ModifierMode.Flat),
+        new(SkillEffect.BuffEvasion,   10, ModifierMode.Flat),
+    },
+    Description: "Combines and improves Wind Walk and Agility."),
+```
 
 ## New in Phase 5.3 (this build)
 

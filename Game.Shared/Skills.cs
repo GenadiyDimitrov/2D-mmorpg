@@ -17,9 +17,23 @@ public record SkillDef(
     float Range,
     int Power,
     int DurationTicks = 0,
-    float Magnitude = 0f,
-    float Magnitude2 = 0f,
-    string Description = "");
+    EffectMagnitude[]? Magnitudes = null,
+    string BuffKey = "",
+    int Rank = 0,
+    string[]? Replaces = null,
+    string Description = "")
+{
+    /// <summary>Total magnitude for an effect+mode (0 if absent). Sums entries
+    /// so a buff can carry e.g. two BuffMoveSpeed lines (one flat, one percent).</summary>
+    public float MagnitudeOf(SkillEffect effect, ModifierMode mode)
+    {
+        if (Magnitudes is null) return 0f;
+        float sum = 0f;
+        foreach (var m in Magnitudes)
+            if (m.Effect == effect && m.Mode == mode) sum += m.Value;
+        return sum;
+    }
+}
 
 // ===========================================================================
 //  WHERE TO EDIT SKILLS
@@ -59,7 +73,8 @@ public static class SkillCatalog
             Description: "A forceful melee blow. Bonus accuracy, but can still miss."),
         new(WarCry, "War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,
-            DurationTicks: 300, Magnitude: 0.20f,
+            DurationTicks: 300, BuffKey: "might", Rank: 1,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtk, 0.20f) },
             Description: "Battle shout: +20% Attack Power for 30s."),
         new(MagicBolt, "Magic Bolt", BaseClass.Mage, SkillEffect.MagicDamage,
             MpCost: 12, CastTicks: 40, CooldownTicks: 10, Range: 600, Power: 45,
@@ -69,13 +84,15 @@ public static class SkillCatalog
             Description: "Restores your own HP. Scales with WIT."),
         new(Weakness, "Weakness", BaseClass.Mage, SkillEffect.DebuffDef,
             MpCost: 15, CastTicks: 40, CooldownTicks: 30, Range: 600, Power: 0,
-            DurationTicks: 150, Magnitude: 0.30f,
+            DurationTicks: 150, BuffKey: "curse_def", Rank: 1,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.DebuffDef, 0.30f) },
             Description: "Curses the target: -30% Defence for 15s."),
 
         // ===== Fighter second-class skills =====
         new(Fortify, "Fortify", BaseClass.Fighter, SkillEffect.BuffDef,
             MpCost: 20, CastTicks: 5, CooldownTicks: 250, Range: 0, Power: 0,
-            DurationTicks: 250, Magnitude: 0.50f,
+            DurationTicks: 250, BuffKey: "fortify", Rank: 1,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffDef, 0.50f) },
             Description: "Tank stance: +50% Defence for 25s."),
         new(MightyBlow, "Mighty Blow", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: 18, CastTicks: 7, CooldownTicks: 60, Range: 0, Power: 85,
@@ -99,19 +116,27 @@ public static class SkillCatalog
             Description: "A bolt of light — the healer's offensive spell."),
         new(StrongWeakness, "Greater Weakness", BaseClass.Mage, SkillEffect.DebuffDef,
             MpCost: 22, CastTicks: 40, CooldownTicks: 30, Range: 600, Power: 0,
-            DurationTicks: 200, Magnitude: 0.45f,
+            DurationTicks: 200, BuffKey: "curse_def", Rank: 2,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.DebuffDef, 0.45f) },
             Description: "A deeper curse: -45% Defence for 20s."),
 
         // Rogue/Archer: replaces War Cry with attack + move speed.
-        new(BattleFury, "Battle Fury", BaseClass.Fighter, SkillEffect.BuffAtkSpeed,
+        new(BattleFury, "Battle Fury", BaseClass.Fighter,
+            SkillEffect.BuffAtk | SkillEffect.BuffMoveSpeed,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,
-            DurationTicks: 300, Magnitude: 0.20f, Magnitude2: 0.15f,
+            DurationTicks: 300, BuffKey: "battle_fury", Rank: 1,
+            Magnitudes: new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffAtk, 0.20f),
+                new(SkillEffect.BuffMoveSpeed, 0.15f),
+            },
             Description: "+20% Attack and +15% Move Speed for 30s."),
 
         // Warrior: upgrades War Cry to a stronger attack buff.
         new(GreaterWarCry, "Greater War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
             MpCost: 18, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,
-            DurationTicks: 300, Magnitude: 0.30f,
+            DurationTicks: 300, BuffKey: "might", Rank: 2,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtk, 0.30f) },
             Description: "Battle shout: +30% Attack Power for 30s."),
     }.ToDictionary(s => s.Id);
 

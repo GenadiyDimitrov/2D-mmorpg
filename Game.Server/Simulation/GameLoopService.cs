@@ -1133,7 +1133,7 @@ public class GameLoopService : BackgroundService
         caster.CastingSkillId = def.Id;
         caster.CastTargetId = targetId;
         caster.CastTicksRemaining = Math.Max(2,
-            (int)(SkillMath.AdjustedCastTicks(def.CastTicks, caster.Wit) * caster.CastSpeedMultiplier));
+            (int)(SkillMath.AdjustedCastTicks(def.CastTicks, caster.Wit) * caster.EffectiveCastSpeedMultiplier));
 
         if (_world.EntityToConnection.TryGetValue(caster.Id, out var conn))
         {
@@ -1170,118 +1170,127 @@ public class GameLoopService : BackgroundService
         caster.Mp -= def.MpCost;
         caster.SkillCooldowns[def.Id] = def.CooldownTicks;
 
-        switch (def.Effect)
+var effect = def.Effect;
+        bool offensive = false;
+
+        // ---- Damage (physical) ----
+        if (effect.HasFlag(SkillEffect.PhysicalDamage))
         {
-            case SkillEffect.PhysicalDamage:
+            offensive = true;
+            float miss = StatCalculator.MissChance(
+                caster.Accuracy + SkillMath.PhysicalSkillAccuracyBonus, target.EffectiveEvasion);
+
+            if (_rng.NextDouble() < miss)
             {
-                float miss = StatCalculator.MissChance(
-                    caster.Accuracy + SkillMath.PhysicalSkillAccuracyBonus,
-                    target.Evasion);
-
-                if (_rng.NextDouble() < miss)
-                {
-                    BroadcastCombat(caster, target, 0, CombatOutcome.Miss, def.Name);
-                }
-                else
-                {
-                    int damage = SkillMath.PhysicalSkillDamage(
-                        def.Power, caster.EffectiveAttack, target.EffectiveDefence);
-
-                    if (_rng.NextDouble() < caster.CritChance)
-                    {
-                        damage = (int)(damage * StatCalculator.CritMultiplier);
-                        BroadcastCombat(caster, target, damage, CombatOutcome.Crit, def.Name);
-                    }
-                    else
-                    {
-                        BroadcastCombat(caster, target, damage, CombatOutcome.Hit, def.Name);
-                    }
-
-                    ApplyDamage(target, damage);
-                }
-
-                AfterOffensiveSkill(caster, target);
-                break;
+                BroadcastCombat(caster, target, 0, CombatOutcome.Miss, def.Name);
             }
-
-            case SkillEffect.MagicDamage:
+            else
             {
-                float fail = SkillMath.SpellFailChance(caster.Level, target.Level);
+                int damage = SkillMath.PhysicalSkillDamage(
+                    def.Power, caster.EffectiveAttack, target.EffectiveDefence);
 
-                if (_rng.NextDouble() < fail)
+                if (_rng.NextDouble() < caster.CritChance)
                 {
-                    BroadcastCombat(caster, target, 0, CombatOutcome.Fail, def.Name);
+                    damage = (int)(damage * StatCalculator.CritMultiplier);
+                    BroadcastCombat(caster, target, damage, CombatOutcome.Crit, def.Name);
                 }
                 else
                 {
-                    int damage = SkillMath.MagicSkillDamage(
-                        def.Power, caster.EffectiveAttack, caster.Wit, target.EffectiveDefence);
-                    ApplyDamage(target, damage);
                     BroadcastCombat(caster, target, damage, CombatOutcome.Hit, def.Name);
                 }
-
-                AfterOffensiveSkill(caster, target);
-                break;
+                ApplyDamage(target, damage);
             }
+        }
 
-            case SkillEffect.Heal:
+        // ---- Damage (magic) ----
+        if (effect.HasFlag(SkillEffect.MagicDamage))
+        {
+            offensive = true;
+            float fail = SkillMath.SpellFailChance(caster.Level, target.Level);
+            if (_rng.NextDouble() < fail)
             {
-                int amount = SkillMath.HealAmount(def.Power, caster.Wit);
-                target.Hp = Math.Min(target.MaxHp, target.Hp + amount);
-                BroadcastCombat(caster, target, amount, CombatOutcome.Heal, def.Name);
-                break;
+                BroadcastCombat(caster, target, 0, CombatOutcome.Fail, def.Name);
             }
+            else
+            {
+                int damage = SkillMath.MagicSkillDamage(
+                    def.Power, caster.EffectiveAttack, caster.Wit, target.EffectiveDefence);
+                ApplyDamage(target, damage);
+                BroadcastCombat(caster, target, damage, CombatOutcome.Hit, def.Name);
+            }
+        }
 
-            case SkillEffect.BuffAtk:
-            case SkillEffect.BuffDef:
-            case SkillEffect.BuffAtkSpeed:
+        // ---- Heal ----
+        if (effect.HasFlag(SkillEffect.Heal))
+        {
+            int amount = SkillMath.HealAmount(def.Power, caster.Wit);
+            target.Hp = Math.Min(target.MaxHp, target.Hp + amount);
+            BroadcastCombat(caster, target, amount, CombatOutcome.Heal, def.Name);
+        }
+
+        // ---- Debuff (defence) — can miss like a spell ----
+        if (effect.HasFlag(SkillEffect.DebuffDef))
+        {
+            offensive = true;
+            float fail = SkillMath.SpellFailChance(caster.Level, target.Level);
+            if (_rng.NextDouble() < fail)
+            {
+                BroadcastCombat(caster, target, 0, CombatOutcome.Fail, def.Name);
+            }
+            else
             {
                 ApplyBuff(target, def);
                 BroadcastCombat(caster, target, 0, CombatOutcome.Buff, def.Name);
                 if (target.Kind == EntityKind.Player) PushBuffs(target);
-                break;
-            }
-
-            case SkillEffect.DebuffDef:
-            {
-                float fail = SkillMath.SpellFailChance(caster.Level, target.Level);
-
-                if (_rng.NextDouble() < fail)
-                {
-                    BroadcastCombat(caster, target, 0, CombatOutcome.Fail, def.Name);
-                }
-                else
-                {
-                    ApplyBuff(target, def);
-                    BroadcastCombat(caster, target, 0, CombatOutcome.Buff, def.Name);
-                    if (target.Kind == EntityKind.Player) PushBuffs(target);
-                }
-
-                AfterOffensiveSkill(caster, target);
-                break;
             }
         }
 
-        if (target.Hp <= 0 && !target.Dead)
+        // ---- Beneficial buffs (any of the buff flags) ----
+        if ((effect & SkillEffect.AnyBuff) != 0)
+        {
+            ApplyBuff(target, def);
+            BroadcastCombat(caster, target, 0, CombatOutcome.Buff, def.Name);
+            if (target.Kind == EntityKind.Player) PushBuffs(target);
+        }
+
+        if (offensive)
+            AfterOffensiveSkill(caster, target);
+
+                if (target.Hp <= 0 && !target.Dead)
             Kill(target, caster);
     }
 
+    /// <summary>Apply a buff with the two stacking rules:
+    /// (1) Same BuffKey: apply only if the incoming Rank >= existing Rank
+    ///     (weaker self-recast is ignored entirely); on apply, replace it.
+    /// (2) Replaces: unconditionally remove any active buff whose key is listed,
+    ///     regardless of rank or magnitude.</summary>
     private static void ApplyBuff(Entity target, SkillDef def)
     {
-        var existing = target.Buffs.FirstOrDefault(b => b.Name == def.Name);
-        if (existing is not null)
+        string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
+
+        // Rule 1 — same-key rank comparison.
+        var same = target.Buffs.FirstOrDefault(b => b.Key == key);
+        if (same is not null)
         {
-            existing.TicksRemaining = def.DurationTicks;
-            return;
+            if (def.Rank < same.Rank)
+                return;                         // weaker: do nothing (no refresh)
+            target.Buffs.Remove(same);          // equal/stronger: full replace
         }
+
+        // Rule 2 — explicit Replaces list (unconditional).
+        if (def.Replaces is { Length: > 0 })
+            target.Buffs.RemoveAll(b => def.Replaces.Contains(b.Key));
 
         target.Buffs.Add(new BuffInstance
         {
-            Type = def.Effect,
-            Magnitude = def.Magnitude,
-            Magnitude2 = def.Magnitude2,
+            Effect = def.Effect,
+            Magnitudes = def.Magnitudes ?? Array.Empty<EffectMagnitude>(),
             TicksRemaining = def.DurationTicks,
             Name = def.Name,
+            Key = key,
+            Rank = def.Rank,
+            Replaces = def.Replaces ?? Array.Empty<string>(),
             Description = SkillCatalog.DescriptionOf(def.Id)
         });
     }
@@ -1349,7 +1358,7 @@ public class GameLoopService : BackgroundService
             ? GameConstants.PlayerAttackIntervalTicks
             : GameConstants.MobAttackIntervalTicks;
         attacker.AttackCooldown = Math.Max(2,
-            (int)(baseInterval * attacker.AttackSpeedMultiplier));
+            (int)(baseInterval * attacker.EffectiveAttackSpeedMultiplier));
 
         ResolveBasicAttack(attacker, target);
     }
@@ -1364,7 +1373,7 @@ public class GameLoopService : BackgroundService
 
     private void ResolveBasicAttack(Entity attacker, Entity target)
     {
-        float missChance = StatCalculator.MissChance(attacker.Accuracy, target.Evasion);
+        float missChance = StatCalculator.MissChance(attacker.Accuracy, target.EffectiveEvasion);
 
         if (_rng.NextDouble() < missChance)
         {

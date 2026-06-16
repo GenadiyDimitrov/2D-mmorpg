@@ -38,13 +38,41 @@ public enum CombatOutcome
     Buff = 6     // a buff/debuff was applied (Skill carries the name)
 }
 
+/// <summary>
+/// What a skill does. A [Flags] enum so ONE skill can carry several effects:
+/// Effect = BuffAtk | BuffMoveSpeed | BuffCastSpeed. Each effect's amount is
+/// stored separately in the skill's Magnitudes map (see EffectMagnitude), so a
+/// buffer-class skill is just "list the flags, give each a number" — no new
+/// enum member per combination.
+/// </summary>
+[Flags]
 public enum SkillEffect
 {
-    PhysicalDamage = 0,
-    MagicDamage = 1,
-    Heal = 2,
-    BuffAtk = 3,
-    DebuffDef = 4,
-    BuffDef = 5,
-    BuffAtkSpeed = 6  // combined: attack% (Magnitude) + move speed% (Magnitude2)
+    None           = 0,
+    PhysicalDamage = 1 << 0,
+    MagicDamage    = 1 << 1,
+    Heal           = 1 << 2,
+    BuffAtk        = 1 << 3,
+    BuffDef        = 1 << 4,
+    BuffMoveSpeed  = 1 << 5,
+    BuffAtkSpeed   = 1 << 6,   // shortens basic-attack interval
+    BuffCastSpeed  = 1 << 7,   // shortens cast time
+    BuffEvasion    = 1 << 8,
+    DebuffDef      = 1 << 9,
+    // Room to grow: BuffHp = 1 << 10, BuffMp = 1 << 11, DebuffSpeed = 1 << 12, ...
+
+    // Convenience masks.
+    AnyDamage = PhysicalDamage | MagicDamage,
+    AnyBuff   = BuffAtk | BuffDef | BuffMoveSpeed | BuffAtkSpeed | BuffCastSpeed | BuffEvasion,
 }
+
+/// <summary>Whether a magnitude is a flat add or a percentage of the base stat.
+/// Combined per stat as: final = (base + Sum(flat)) * (1 + Sum(percent)).</summary>
+public enum ModifierMode { Percent = 0, Flat = 1 }
+
+/// <summary>One effect's magnitude on a skill/buff, e.g. (BuffMoveSpeed, 33, Flat)
+/// or (BuffAtk, 0.20f, Percent). A skill carries an array so each stat has its
+/// own value AND its own flat/percent mode (you can even list the same effect
+/// twice: one Flat, one Percent).</summary>
+public readonly record struct EffectMagnitude(
+    SkillEffect Effect, float Value, ModifierMode Mode = ModifierMode.Percent);
