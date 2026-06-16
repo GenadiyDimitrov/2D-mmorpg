@@ -36,6 +36,7 @@ public partial class MainWindow : Window
     private BaseClass _myBaseClass;
     private int _mySecondClass;
     private bool _isAdmin;
+    private DateTime _serverEpoch = DateTime.UtcNow;
     private EntityDto? _myDto;
     private Guid? _targetId;
     private double _camX = GameConstants.ZoneWidth / 2;
@@ -213,6 +214,9 @@ public partial class MainWindow : Window
             _camX = result.X;
             _camY = result.Y;
             _inGame = true;
+            _serverEpoch = result.ServerEpochUtc == default ? DateTime.UtcNow : result.ServerEpochUtc;
+            GameClock.Epoch = _serverEpoch;
+            ClockPanel.Visibility = Visibility.Visible;
 
             EnsureSkillBarSlots();
 
@@ -777,6 +781,7 @@ public partial class MainWindow : Window
             Canvas.SetTop(visual.Root, (visual.CurY - _camY) * Scale + ch / 2 - 18);
         }
 
+        UpdateClock();
         UpdateSafeZoneVisual(cw, ch);
         UpdateWorldDecor(cw, ch);
         UpdateFloatingTexts(now, cw, ch);
@@ -875,21 +880,36 @@ public partial class MainWindow : Window
         // real environment art). Drawn beneath entities.
         foreach (var zone in WorldMap.SpawnZones)
         {
+            // Elites/bosses get a distinct colour so they stand out on the map.
+            (byte a, byte r, byte g, byte b) fill = zone.Rank switch
+            {
+                MobRank.Boss => ((byte)55, (byte)220, (byte)60, (byte)200),   // purple
+                MobRank.Elite => ((byte)55, (byte)230, (byte)160, (byte)40),  // amber
+                _ => ((byte)38, (byte)225, (byte)70, (byte)70)                // red
+            };
+
             var disc = new Ellipse
             {
                 Width = zone.Radius * 2 * Scale,
                 Height = zone.Radius * 2 * Scale,
-                Fill = new SolidColorBrush(Color.FromArgb(38, 225, 70, 70)),
-                Stroke = new SolidColorBrush(Color.FromArgb(110, 235, 90, 90)),
+                Fill = new SolidColorBrush(Color.FromArgb(fill.a, fill.r, fill.g, fill.b)),
+                Stroke = new SolidColorBrush(Color.FromArgb((byte)120, fill.r, fill.g, fill.b)),
                 StrokeThickness = 2,
                 IsHitTestVisible = false
             };
 
-            // Label: level band + mob types, so the map is self-documenting.
+            // Label: level band + mob types; elites/bosses also show rank,
+            // respawn range "[X ±Y]", and any day/night restriction.
+            string text = $"Lv {zone.MinLevel}-{zone.MaxLevel}\n{string.Join(", ", zone.MobTypes)}";
+            if (zone.Rank != MobRank.Normal)
+                text = $"[{zone.Rank}] {zone.MobTypes[0]}\nLv {zone.MinLevel}\nRespawn {zone.RespawnLabel}";
+            if (zone.Active != ActiveTime.Always)
+                text += $"\n({zone.Active}-only)";
+
             var label = new TextBlock
             {
-                Text = $"Lv {zone.MinLevel}-{zone.MaxLevel}\n{string.Join(", ", zone.MobTypes)}",
-                Foreground = new SolidColorBrush(Color.FromArgb(200, 255, 210, 210)),
+                Text = text,
+                Foreground = new SolidColorBrush(Color.FromArgb(210, 255, 235, 235)),
                 FontSize = 12,
                 FontWeight = FontWeights.SemiBold,
                 TextAlignment = TextAlignment.Center,
@@ -898,7 +918,7 @@ public partial class MainWindow : Window
 
             _spawnZoneVisuals.Add((disc, label, zone.X, zone.Y, zone.Radius));
             WorldCanvas.Children.Insert(0, disc);
-            WorldCanvas.Children.Add(label); // labels on top of the tint
+            WorldCanvas.Children.Add(label);
         }
 
         // Roads: thick, semi-transparent grey strips where mobs don't spawn.
@@ -954,6 +974,16 @@ public partial class MainWindow : Window
         double r = GameConstants.SafeZoneRadius * Scale;
         Canvas.SetLeft(_safeZoneVisual, (GameConstants.ZoneWidth / 2 - _camX) * Scale + cw / 2 - r);
         Canvas.SetTop(_safeZoneVisual, (GameConstants.ZoneHeight / 2 - _camY) * Scale + ch / 2 - r);
+    }
+
+    private void UpdateClock()
+    {
+        double hour = GameClock.HourOfDay(DateTime.UtcNow);
+        var phase = GameClock.PhaseAt(hour);
+        ClockText.Text = $"{GameClock.Format(hour)}  {phase}";
+        ClockText.Foreground = phase == DayPhase.Day
+            ? new SolidColorBrush(Color.FromRgb(232, 226, 200))   // warm day
+            : new SolidColorBrush(Color.FromRgb(150, 180, 230));  // cool night
     }
 
     private void UpdateWorldDecor(double cw, double ch)

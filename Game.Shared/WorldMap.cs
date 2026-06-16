@@ -24,22 +24,47 @@ public static class WorldMap
     public static readonly SpawnZone[] SpawnZones =
     {
         // --- Starter ring near town (town center is the map middle) ---
+        // MaxCount = population cap; RespawnSeconds/Variance = delay after a kill.
         new(X: 6000,  Y: 4000,  Radius: 1400, MinLevel: 1,  MaxLevel: 3,
-            MobTypes: new[] { "Wolf", "Boar" },            MobCount: 10),
+            MobTypes: new[] { "Wolf", "Boar" }, MaxCount: 10,
+            RespawnSeconds: 8, RespawnVariance: 3),
         new(X: 9000,  Y: 4000,  Radius: 1400, MinLevel: 1,  MaxLevel: 3,
-            MobTypes: new[] { "Slime", "Boar" },           MobCount: 10),
+            MobTypes: new[] { "Slime", "Boar" }, MaxCount: 10,
+            RespawnSeconds: 8, RespawnVariance: 3),
 
         // --- Mid-level fields ---
         new(X: 3000,  Y: 7000,  Radius: 1600, MinLevel: 4,  MaxLevel: 7,
-            MobTypes: new[] { "Boar", "Spider" },          MobCount: 12),
+            MobTypes: new[] { "Boar", "Spider" }, MaxCount: 12,
+            RespawnSeconds: 12, RespawnVariance: 4),
         new(X: 12000, Y: 7000,  Radius: 1600, MinLevel: 4,  MaxLevel: 7,
-            MobTypes: new[] { "Wolf", "Spider" },          MobCount: 12),
+            MobTypes: new[] { "Wolf", "Spider" }, MaxCount: 12,
+            RespawnSeconds: 12, RespawnVariance: 4),
 
         // --- Higher-level, further out ---
         new(X: 2500,  Y: 11000, Radius: 1800, MinLevel: 8,  MaxLevel: 12,
-            MobTypes: new[] { "Spider", "Bandit" },        MobCount: 12),
+            MobTypes: new[] { "Spider", "Bandit" }, MaxCount: 12,
+            RespawnSeconds: 15, RespawnVariance: 5),
         new(X: 12500, Y: 11000, Radius: 1800, MinLevel: 13, MaxLevel: 18,
-            MobTypes: new[] { "Bandit" },                  MobCount: 10),
+            MobTypes: new[] { "Bandit" }, MaxCount: 10,
+            RespawnSeconds: 18, RespawnVariance: 6),
+
+        // --- Day/night example: same spot, different mobs by time of day. ---
+        new(X: 7500,  Y: 9500,  Radius: 1500, MinLevel: 5,  MaxLevel: 9,
+            MobTypes: new[] { "Boar", "Wolf" }, MaxCount: 10,
+            RespawnSeconds: 12, RespawnVariance: 4, Active: ActiveTime.Day),
+        new(X: 7500,  Y: 9500,  Radius: 1500, MinLevel: 7,  MaxLevel: 11,
+            MobTypes: new[] { "Spider", "Bandit" }, MaxCount: 10,
+            RespawnSeconds: 12, RespawnVariance: 4, Active: ActiveTime.Night),
+
+        // --- Elite: single tough mob, ~2min ±30s respawn. ---
+        new(X: 4000,  Y: 9000,  Radius: 300,  MinLevel: 12, MaxLevel: 12,
+            MobTypes: new[] { "Bandit" }, MaxCount: 1,
+            RespawnSeconds: 120, RespawnVariance: 30, Rank: MobRank.Elite),
+
+        // --- Boss: ~21h ±3h respawn, persisted across restarts. ---
+        new(X: 11000, Y: 13000, Radius: 250,  MinLevel: 20, MaxLevel: 20,
+            MobTypes: new[] { "Bandit" }, MaxCount: 1,
+            RespawnSeconds: 21 * 3600, RespawnVariance: 3 * 3600, Rank: MobRank.Boss),
     };
 
     /// <summary>
@@ -90,10 +115,51 @@ public record WorldBorder(float MinX, float MinY, float MaxX, float MaxY);
 
 public record MapPoint(float X, float Y);
 
+/// <summary>Mob rank — drives default respawn timing and lets the UI label
+/// elites/bosses. Normal uses the zone's respawn range; Elite/Boss usually set
+/// long ranges explicitly.</summary>
+public enum MobRank { Normal = 0, Elite = 1, Boss = 2 }
+
+/// <summary>When a zone is active. Always = 24h; Day/Night gate by the game
+/// clock so you can run day-only and night-only zones (overlap two zones at the
+/// same spot with different mobs to swap them at dusk/dawn).</summary>
+public enum ActiveTime { Always = 0, Day = 1, Night = 2 }
+
+/// <summary>
+/// A spawn zone: a disc that maintains up to MaxCount living mobs. When a mob
+/// dies the zone waits RespawnSeconds (± Variance) then respawns it — but never
+/// exceeds MaxCount, and only while the zone is active for the current time of
+/// day. Respawn timing is authored in SECONDS (real seconds); the in-game
+/// description shows "[center ±variance]".
+/// </summary>
 public record SpawnZone(
     float X, float Y, float Radius,
     int MinLevel, int MaxLevel,
-    string[] MobTypes, int MobCount);
+    string[] MobTypes, int MaxCount,
+    double RespawnSeconds = 10, double RespawnVariance = 0,
+    MobRank Rank = MobRank.Normal,
+    ActiveTime Active = ActiveTime.Always)
+{
+    /// <summary>Stable id from coordinates+rank, used to persist boss timers.</summary>
+    public string Id => $"{(int)X}_{(int)Y}_{Rank}";
+
+    public bool IsActiveAt(DayPhase phase) => Active switch
+    {
+        ActiveTime.Day => phase == DayPhase.Day,
+        ActiveTime.Night => phase == DayPhase.Night,
+        _ => true
+    };
+
+    /// <summary>Human-readable respawn label, e.g. "2m 0s ±30s" or "21h ±3h".</summary>
+    public string RespawnLabel => $"{Fmt(RespawnSeconds)} ±{Fmt(RespawnVariance)}";
+
+    private static string Fmt(double seconds)
+    {
+        if (seconds >= 3600) return $"{seconds / 3600:0.#}h";
+        if (seconds >= 60) return $"{(int)(seconds / 60)}m {(int)(seconds % 60)}s";
+        return $"{(int)seconds}s";
+    }
+}
 
 public record RoadPath(float Width, MapPoint[] Points)
 {

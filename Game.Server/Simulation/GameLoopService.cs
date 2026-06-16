@@ -25,7 +25,11 @@ public class GameLoopService : BackgroundService
     private readonly ILogger<GameLoopService> _log;
     private readonly Game.Server.Persistence.PersistenceService _db;
     private readonly Random _rng = new();
-    private int _tick;
+    private long _tick;
+
+    /// <summary>Per-zone spawner runtime (population + respawn scheduling).</summary>
+    private readonly List<ZoneRuntime> _zones = new();
+    private DayPhase _lastPhase = DayPhase.Day;
 
     public GameLoopService(World world, IHubContext<GameHub> hub,
         ILogger<GameLoopService> log, Game.Server.Persistence.PersistenceService db)
@@ -38,7 +42,8 @@ public class GameLoopService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        SpawnMobs();
+        GameClock.Epoch = DateTime.UtcNow;
+        await InitZonesAsync();
         _log.LogInformation("Game loop started at {Rate} ticks/sec", GameConstants.TickRate);
 
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(GameConstants.TickSeconds));
@@ -104,7 +109,7 @@ public class GameLoopService : BackgroundService
         _world.ConnectionToEntity[cmd.ConnectionId] = entity.Id;
         _world.Grid.Add(entity);
 
-        cmd.Result.TrySetResult(new LoginResult(true, null, entity.Id, entity.X, entity.Y));
+        cmd.Result.TrySetResult(new LoginResult(true, null, entity.Id, entity.X, entity.Y, GameClock.Epoch));
 
         SendInventory(entity);
         SendStats(entity);
@@ -892,6 +897,8 @@ public class GameLoopService : BackgroundService
         if (_tick % GameConstants.AutoSaveIntervalTicks == 0)
             AutoSaveAll();
 
+        UpdateZones();
+
         foreach (var entity in _world.Entities.Values)
         {
             if (entity.AttackCooldown > 0)
@@ -904,11 +911,7 @@ public class GameLoopService : BackgroundService
             TickBuffs(entity);
 
             if (entity.Dead)
-            {
-                if (entity.Kind == EntityKind.Mob && --entity.RespawnTicks <= 0)
-                    RespawnMob(entity);
                 continue;
-            }
 
             if (entity.Kind == EntityKind.Mob)
                 MobAi(entity);
@@ -1047,16 +1050,26 @@ public class GameLoopService : BackgroundService
         mob.TargetY = mob.HomeY;
     }
 
-    private void RespawnMob(Entity mob)
+    /// <summary>A mob died: remove it from the world and let its zone schedule
+    /// the next spawn. Boss/elite respawn times are persisted to survive restarts.</summary>
+    private void OnMobKilled(Entity mob)
     {
-        mob.Dead = false;
-        mob.Hp = mob.MaxHp;
-        mob.Mp = mob.MaxMp;
-        mob.X = mob.HomeX;
-        mob.Y = mob.HomeY;
-        mob.TargetX = null;
-        mob.TargetY = null;
-        _world.Grid.Add(mob);
+        _world.Grid.Remove(mob);
+        _world.Entities.Remove(mob.Id, out _);
+
+        var zr = _zones.FirstOrDefault(z => z.Zone.Id == mob.ZoneId);
+        if (zr is null)
+            return;
+
+        zr.OnDeath(_tick, _rng);
+
+        // Persist boss/elite respawn time (real-world) so it survives a restart.
+        if (zr.Zone.Rank != MobRank.Normal && zr.NextPendingTick is long nextTick)
+        {
+            double secondsAway = (nextTick - _tick) / (double)GameConstants.TickRate;
+            var respawnAt = DateTime.UtcNow.AddSeconds(secondsAway);
+            _ = Task.Run(() => _db.SaveBossTimerAsync(zr.Zone.Id, respawnAt));
+        }
     }
 
     // ----- Action state machine: casting > queued skill > auto-attack ------------
@@ -1406,14 +1419,13 @@ public class GameLoopService : BackgroundService
 
         if (victim.Kind == EntityKind.Mob)
         {
-            _world.Grid.Remove(victim);
-            victim.RespawnTicks = GameConstants.MobRespawnTicks;
-
             if (killer.Kind == EntityKind.Player)
             {
                 AwardExp(killer, StatCalculator.MobExpReward(victim.Level));
                 RollDrop(killer, victim);
             }
+
+            OnMobKilled(victim);
         }
         else
         {
@@ -1724,23 +1736,101 @@ public class GameLoopService : BackgroundService
         return dx * dx + dy * dy;
     }
 
-    private void SpawnMobs()
+    /// <summary>Build zone runtimes, restore persisted boss timers, then fill
+    /// each zone to its cap for the current time of day.</summary>
+    private async Task InitZonesAsync()
     {
+        _zones.Clear();
         foreach (var zone in WorldMap.SpawnZones)
-            for (int i = 0; i < zone.MobCount; i++)
-                SpawnOneInZone(zone);
+            _zones.Add(new ZoneRuntime(zone));
+
+        _lastPhase = GameClock.CurrentPhase(DateTime.UtcNow);
+
+        // Restore boss/elite timers so long respawns survive a restart.
+        var timers = await _db.LoadBossTimersAsync();
+
+        foreach (var zr in _zones)
+        {
+            // Boss/elite with a persisted "still dead" timer: schedule instead of fill.
+            if (zr.Zone.Rank != MobRank.Normal &&
+                timers.TryGetValue(zr.Zone.Id, out var respawnAt))
+            {
+                if (respawnAt > DateTime.UtcNow)
+                {
+                    long ticks = _tick + (long)((respawnAt - DateTime.UtcNow).TotalSeconds * GameConstants.TickRate);
+                    zr.ScheduleAt(ticks);
+                    continue; // don't spawn yet
+                }
+            }
+
+            int fill = zr.InitialFill(_lastPhase);
+            for (int i = 0; i < fill; i++)
+                SpawnOneInZone(zr);
+        }
     }
 
-    /// <summary>Place a single mob somewhere inside a spawn zone, avoiding the
-    /// safe zone and roads. Falls back to the zone center if it can't find a
-    /// clear spot in a few tries.</summary>
-    private void SpawnOneInZone(SpawnZone zone)
+    /// <summary>Per-tick: spawn any matured respawns (cap + time-of-day aware),
+    /// and when the day/night phase flips, swap day-only/night-only populations.</summary>
+    private void UpdateZones()
     {
+        var phase = GameClock.CurrentPhase(DateTime.UtcNow);
+
+        if (phase != _lastPhase)
+        {
+            _lastPhase = phase;
+            OnPhaseChanged(phase);
+        }
+
+        foreach (var zr in _zones)
+        {
+            int due = zr.DueToSpawn(_tick, phase);
+            for (int i = 0; i < due; i++)
+                SpawnOneInZone(zr);
+        }
+    }
+
+    /// <summary>When day flips to night (or back), despawn zones that are no
+    /// longer active and fill zones that just became active.</summary>
+    private void OnPhaseChanged(DayPhase phase)
+    {
+        // Despawn living mobs from zones that are now inactive.
+        foreach (var zr in _zones)
+        {
+            if (zr.Zone.IsActiveAt(phase))
+                continue;
+            var toRemove = _world.Entities.Values
+                .Where(e => e.Kind == EntityKind.Mob && e.ZoneId == zr.Zone.Id && !e.Dead)
+                .ToList();
+            foreach (var mob in toRemove)
+            {
+                _world.Grid.Remove(mob);
+                _world.Entities.Remove(mob.Id, out _);
+            }
+        }
+
+        // Re-init zone alive-counts and fill those now active (and empty).
+        foreach (var zr in _zones)
+        {
+            int alive = _world.Entities.Values.Count(e =>
+                e.Kind == EntityKind.Mob && e.ZoneId == zr.Zone.Id && !e.Dead);
+            int need = zr.Zone.IsActiveAt(phase) ? zr.Zone.MaxCount - alive : 0;
+            for (int i = 0; i < need; i++)
+                SpawnOneInZone(zr);
+        }
+
+        BroadcastSystem(phase == DayPhase.Night ? "Night falls." : "Day breaks.");
+    }
+
+    /// <summary>Place a single mob in a zone, avoiding the safe zone and roads.
+    /// Increments the zone's alive count and tags the mob with its zone id.</summary>
+    private void SpawnOneInZone(ZoneRuntime zr)
+    {
+        var zone = zr.Zone;
         float x = zone.X, y = zone.Y;
         for (int attempt = 0; attempt < 8; attempt++)
         {
             double angle = _rng.NextDouble() * Math.PI * 2;
-            double dist = Math.Sqrt(_rng.NextDouble()) * zone.Radius; // uniform in disc
+            double dist = Math.Sqrt(_rng.NextDouble()) * zone.Radius;
             float tx = zone.X + (float)(Math.Cos(angle) * dist);
             float ty = zone.Y + (float)(Math.Sin(angle) * dist);
             (tx, ty) = WorldMap.ClampToBorder(tx, ty);
@@ -1756,21 +1846,35 @@ public class GameLoopService : BackgroundService
         int level = _rng.Next(zone.MinLevel, zone.MaxLevel + 1);
         var stats = StatCalculator.MobStats(level);
 
+        // Elites/bosses are tougher versions of the base mob.
+        float hpMul = zone.Rank switch { MobRank.Elite => 4f, MobRank.Boss => 20f, _ => 1f };
+        float atkMul = zone.Rank switch { MobRank.Elite => 1.5f, MobRank.Boss => 2.5f, _ => 1f };
+
+        string displayName = zone.Rank switch
+        {
+            MobRank.Elite => $"Elite {name}",
+            MobRank.Boss => $"{name} Lord",
+            _ => name
+        };
+
         var mob = new Entity
         {
-            Name = name,
+            Name = displayName,
             Kind = EntityKind.Mob,
             X = x,
             Y = y,
             Speed = 160,
             Level = level,
             Con = stats.Con,
-            AtkStat = stats.Atk,
+            AtkStat = (int)(stats.Atk * atkMul),
             Wit = stats.Wit,
             Dex = stats.Dex,
-            Aggressive = IsAggressive(name)
+            Aggressive = IsAggressive(name) || zone.Rank != MobRank.Normal,
+            ZoneId = zone.Id,
+            Rank = zone.Rank
         };
         mob.RecomputeDerived();
+        mob.MaxHp = (int)(mob.MaxHp * hpMul);
         mob.Hp = mob.MaxHp;
         mob.Mp = mob.MaxMp;
         mob.HomeX = mob.X;
@@ -1778,5 +1882,6 @@ public class GameLoopService : BackgroundService
 
         _world.Entities[mob.Id] = mob;
         _world.Grid.Add(mob);
+        zr.OnSpawned();
     }
 }

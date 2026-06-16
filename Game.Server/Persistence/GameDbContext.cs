@@ -7,6 +7,7 @@ public class GameDbContext : DbContext
     public DbSet<AccountRecord> Accounts => Set<AccountRecord>();
     public DbSet<CharacterRecord> Characters => Set<CharacterRecord>();
     public DbSet<ItemRecord> Items => Set<ItemRecord>();
+    public DbSet<BossTimerRecord> BossTimers => Set<BossTimerRecord>();
 
     public GameDbContext(DbContextOptions<GameDbContext> options) : base(options) { }
 
@@ -37,5 +38,7 @@ public class GameDbContext : DbContext
             // Adding a new AttributeType never needs a migration this way.
             e.OwnsMany(i => i.Attributes, a => a.ToJson());
         });
+
+        b.Entity<BossTimerRecord>(e => e.HasIndex(t => t.ZoneId).IsUnique());
     }
 }

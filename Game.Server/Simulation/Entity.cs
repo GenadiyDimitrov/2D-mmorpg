@@ -185,6 +185,10 @@ public class Entity
 
     public float HomeX { get; set; }
     public float HomeY { get; set; }
+
+    /// <summary>Spawn zone this mob belongs to (for zone-managed respawn).</summary>
+    public string? ZoneId { get; set; }
+    public MobRank Rank { get; set; }
     public bool Aggressive { get; set; }
     public int WanderTicks { get; set; }
     public int RespawnTicks { get; set; }

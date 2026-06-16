@@ -238,6 +238,36 @@ public class PersistenceService
         await db.SaveChangesAsync();
     }
 
+    // ----- Boss timers -------------------------------------------------------
+
+    public async Task<Dictionary<string, DateTime>> LoadBossTimersAsync()
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        return await db.BossTimers.ToDictionaryAsync(t => t.ZoneId, t => t.RespawnAtUtc);
+    }
+
+    public async Task SaveBossTimerAsync(string zoneId, DateTime respawnAtUtc)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var rec = await db.BossTimers.FirstOrDefaultAsync(t => t.ZoneId == zoneId);
+        if (rec is null)
+            db.BossTimers.Add(new BossTimerRecord { ZoneId = zoneId, RespawnAtUtc = respawnAtUtc });
+        else
+            rec.RespawnAtUtc = respawnAtUtc;
+        await db.SaveChangesAsync();
+    }
+
+    public async Task ClearBossTimerAsync(string zoneId)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var rec = await db.BossTimers.FirstOrDefaultAsync(t => t.ZoneId == zoneId);
+        if (rec is not null)
+        {
+            db.BossTimers.Remove(rec);
+            await db.SaveChangesAsync();
+        }
+    }
+
     // ----- Admin -------------------------------------------------------------
 
     public async Task<bool> SetBannedByCharacterNameAsync(string characterName, bool banned)

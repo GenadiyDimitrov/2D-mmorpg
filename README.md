@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 5.2 (visible world: border, roads, spawn zones)
+# L2-like MMORPG — Phase 5.3 (day/night, respawn timers, elites & bosses)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,46 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 5.3 (this build)
+
+### In-game day/night clock
+- Time of day now cycles. The **one speed knob** is `GameClock.TimeScale` in
+  `Game.Shared/GameClock.cs` — in-game seconds per real second. Default **6**
+  (a full game day = 4 real hours; day and night ~2h each). For testing, set it
+  to **60** (full day in 24 real minutes) or **600** (~2.4 min) to watch night
+  fall fast. An in-game **clock + Day/Night indicator** shows at the top of the
+  screen.
+
+### Population cap + respawn delay (no more instant respawns)
+- Each spawn zone now keeps **up to `MaxCount` mobs alive and never exceeds it**.
+  When a mob dies, the zone waits a delay rolled from **`RespawnSeconds ±
+  RespawnVariance`** (real seconds), then respawns — only if under the cap.
+- The mob is removed on death and the **zone schedules** the replacement (the
+  performant approach). A cosmetic corpse-fade can be layered on later.
+
+### Elites & bosses
+- A zone has a **`Rank`** (Normal / Elite / Boss). Elites are tougher (×4 HP,
+  ×1.5 attack) with ~minutes respawn; bosses much tougher (×20 HP, ×2.5 attack)
+  with hours-long respawn. Authoring example (already in `WorldMap.cs`):
+  - **Elite**: `RespawnSeconds: 120, RespawnVariance: 30` → "2m 0s ±30s".
+  - **Boss**: `RespawnSeconds: 21*3600, RespawnVariance: 3*3600` → "21h ±3h".
+- **Boss/elite respawn timers are persisted** (real-world time) to the database,
+  so a long timer **survives a server restart** — kill the boss, restart the
+  server, and it's still on cooldown.
+- On the map, elite zones are **amber** and boss zones **purple**, each labelled
+  with rank, level, and the **[X ±Y] respawn** range.
+
+### Day-only / night-only zones
+- A zone's **`Active`** is `Always` (24h, default), `Day`, or `Night`. To swap
+  mobs at dusk/dawn, overlap two zones at the same spot — one `Day`, one
+  `Night` (there's a worked example in `WorldMap.cs` at 7500,9500). When the
+  phase flips, inactive zones despawn and newly-active ones fill in.
+
+### Where to edit
+- **Speed of time:** `GameClock.TimeScale`.
+- **Everything spawn-related:** `WorldMap.SpawnZones` — `MaxCount`,
+  `RespawnSeconds`/`RespawnVariance`, `Rank`, `Active`, level band, mob types.
 
 ## New in Phase 5.2 (this build)
 

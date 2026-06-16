@@ -70,3 +70,15 @@ public class ItemRecord
     /// reroll), so persisting them verbatim is exactly right.</summary>
     public List<ItemAttribute> Attributes { get; set; } = new();
 }
+
+
+/// <summary>Persisted respawn time for a boss/elite zone, so a long timer
+/// survives a server restart. Keyed by the zone's stable Id.</summary>
+public class BossTimerRecord
+{
+    public int Id { get; set; }
+    public required string ZoneId { get; set; }
+
+    /// <summary>UTC time at which the boss should next be alive.</summary>
+    public DateTime RespawnAtUtc { get; set; }
+}

@@ -14,7 +14,8 @@ public record LoginResult(
     string? Error,
     Guid EntityId,
     float X,
-    float Y);
+    float Y,
+    DateTime ServerEpochUtc = default);
 
 /// <summary>One visible entity's state inside a snapshot.</summary>
 public record EntityDto(

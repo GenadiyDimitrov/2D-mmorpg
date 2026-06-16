@@ -12,6 +12,14 @@
                 ClipToBounds="True"
                 MouseLeftButtonDown="WorldCanvas_MouseLeftButtonDown"/>
 
+        <Border x:Name="ClockPanel" HorizontalAlignment="Center" VerticalAlignment="Top"
+                Margin="0,8,0,0" Padding="12,4" CornerRadius="6"
+                Background="#60000000" Visibility="Collapsed">
+            <TextBlock x:Name="ClockText" Foreground="#FFE8E2C8"
+                       FontFamily="Consolas" FontSize="13" FontWeight="SemiBold"
+                       Text="06:00 Day"/>
+        </Border>
+
         <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12,8,0,0" Width="240">
             <TextBlock x:Name="StatusText" Foreground="#FFD8E0E6"
                        FontFamily="Consolas" FontSize="12" Text="Not connected" Margin="0,0,0,4"/>
