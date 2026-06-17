@@ -73,6 +73,17 @@ public static class WorldMap
     /// thick, semi-transparent grey lines. Each path is a sequence of points
     /// with a half-width; the strip is the area within Width of any segment.
     /// </summary>
+    /// <summary>NPCs placed in the world (quest givers, class-change masters).
+    /// Stationary, non-combat. Add NPCs here; quests/class-changes reference
+    /// them by Id.</summary>
+    public static readonly NpcDef[] Npcs =
+    {
+        // Near town center (map middle). Tune coords as the town grows.
+        new("priest_oren",   "High Priest Oren",   7200, 7300, NpcRole.QuestGiver),
+        new("elder_marius",  "Elder Marius",       7800, 7300, NpcRole.QuestGiver),
+        new("master_class",  "Class Master Vael",  7500, 6900, NpcRole.ClassChange),
+    };
+
     public static readonly RoadPath[] Roads =
     {
         // From town center outward to each spawn cluster.
@@ -184,4 +195,11 @@ public record RoadPath(float Width, MapPoint[] Points)
         float dx = px - cx, dy = py - cy;
         return MathF.Sqrt(dx * dx + dy * dy);
     }
+
 }
+
+public enum NpcRole { QuestGiver = 0, ClassChange = 1 }
+
+/// <summary>A placed NPC. Id is referenced by quests + class-change requirements.</summary>
+public record NpcDef(string Id, string Name, float X, float Y, NpcRole Role);
+

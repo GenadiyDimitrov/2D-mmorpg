@@ -84,6 +84,16 @@ public class Entity
     /// <summary>Skill ids the character has learned (and can therefore use).</summary>
     public HashSet<string> LearnedSkills { get; } = new();
 
+    /// <summary>Active quests -> progress (step index + counter).</summary>
+    public Dictionary<string, CharacterQuestState> ActiveQuests { get; } = new();
+
+    /// <summary>Completed quest ids.</summary>
+    public HashSet<string> CompletedQuests { get; } = new();
+
+    /// <summary>NPC id this entity represents (NPCs only).</summary>
+    public string? NpcId { get; set; }
+    public NpcRole NpcRole { get; set; }
+
     /// <summary>Account-level admin flag (elevated commands, god mode).</summary>
     public bool IsAdmin { get; set; }
 

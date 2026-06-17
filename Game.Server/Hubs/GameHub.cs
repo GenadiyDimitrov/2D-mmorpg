@@ -122,6 +122,18 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task TalkToNpc(Guid npcEntityId)
+    {
+        _world.Commands.Enqueue(new TalkCmd(Context.ConnectionId, npcEntityId));
+        return Task.CompletedTask;
+    }
+
+    public Task QuestAction(string action, string id, Guid npcEntityId)
+    {
+        _world.Commands.Enqueue(new QuestActionCmd(Context.ConnectionId, action, id, npcEntityId));
+        return Task.CompletedTask;
+    }
+
     public Task Respawn()
     {
         _world.Commands.Enqueue(new RespawnCmd(Context.ConnectionId));

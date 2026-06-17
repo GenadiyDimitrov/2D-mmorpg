@@ -44,17 +44,61 @@ public partial class MainWindow
             RefreshInventoryPanel();
     }
 
+    private bool _invShowQuest;
+
+    private static bool IsGearItem(InventoryItemDto item)
+    {
+        var d = ItemCatalog.Get(item.DefId);
+        return d is not null && !ItemCatalog.IsQuestItem(d);
+    }
+
+
+    private void InvTabGear_Click(object sender, RoutedEventArgs e)
+    {
+        _invShowQuest = false;
+        RefreshInventoryPanel();
+    }
+
+    private void InvTabQuest_Click(object sender, RoutedEventArgs e)
+    {
+        _invShowQuest = true;
+        RefreshInventoryPanel();
+    }
+
     private void RefreshInventoryPanel()
     {
         InventoryList.Items.Clear();
-        InventoryHint.Text = $"{_inventory.Count}/{GameConstants.InventorySize} slots. " +
-                             "Click an item to equip/unequip.";
+        InvTabGear.FontWeight = _invShowQuest ? FontWeights.Normal : FontWeights.Bold;
+        InvTabQuest.FontWeight = _invShowQuest ? FontWeights.Bold : FontWeights.Normal;
+
+        InventoryHint.Text = _invShowQuest
+            ? "Quest items — cannot be dropped or traded."
+            : $"{_inventory.Count(IsGearItem)}/{GameConstants.InventorySize} slots. " +
+              "Click an item to equip/unequip.";
 
         foreach (var item in _inventory)
         {
             var def = ItemCatalog.Get(item.DefId);
             if (def is null)
                 continue;
+
+            // Tab filter: Quest tab shows quest items only; Gear tab shows the rest.
+            bool isQuest = ItemCatalog.IsQuestItem(def);
+            if (isQuest != _invShowQuest)
+                continue;
+
+            // Quest items: simple labelled row, no equip/enchant/remove.
+            if (isQuest)
+            {
+                InventoryList.Items.Add(new TextBlock
+                {
+                    Text = $"\u2756 {def.Name}",
+                    Foreground = RarityBrush(def.Rarity),
+                    FontSize = 13, Margin = new Thickness(2, 0, 0, 6),
+                    ToolTip = def.Name
+                });
+                continue;
+            }
 
             var row = new DockPanel { Margin = new Thickness(0, 0, 0, 4) };
             var dto = item;
@@ -1273,5 +1317,133 @@ public partial class MainWindow
         button.Click += async (_, _) => await action();
         return button;
     }
+
+    // =======================================================================
+    // NPC dialog + quest log
+    // =======================================================================
+
+    private Guid _dialogNpcId;
+
+    private void OnDialog(NpcDialog dialog)
+    {
+        // The NPC entity id is whatever we last clicked to talk; capture from
+        // the currently-hovered talk target via _lastTalkNpcId.
+        DialogNpcName.Text = dialog.NpcName;
+        DialogNpcRole.Text = dialog.NpcRole == "ClassChange" ? "Class Master" : "Quest Giver";
+        DialogContent.Children.Clear();
+
+        // Offered quests.
+        foreach (var q in dialog.Offered)
+        {
+            AddDialogHeader($"Available: {q.Name}");
+            AddDialogText(q.Description);
+            var accept = new Button { Content = "Accept", Width = 90, Height = 26,
+                HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0,2,0,8) };
+            string id = q.Id;
+            accept.Click += async (_, _) => { await _net.QuestActionAsync("accept", id, _dialogNpcId); };
+            DialogContent.Children.Add(accept);
+        }
+
+        // Turn-in (complete here).
+        foreach (var q in dialog.Turnable)
+        {
+            AddDialogHeader($"Ready to complete: {q.Name}");
+            AddDialogText(q.CurrentStepText);
+            var complete = new Button { Content = "Complete", Width = 100, Height = 26,
+                HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0,2,0,8) };
+            string id = q.Id;
+            complete.Click += async (_, _) => { await _net.QuestActionAsync("complete", id, _dialogNpcId); };
+            DialogContent.Children.Add(complete);
+        }
+
+        // In progress (status only).
+        foreach (var q in dialog.InProgress)
+        {
+            AddDialogHeader($"In progress: {q.Name}");
+            string prog = q.StepCount > 0 ? $"Step {q.StepIndex + 1}/{q.StepCount}: {q.CurrentStepText}" : q.CurrentStepText;
+            if (q.CounterNeeded > 1)
+                prog += $"  ({q.Counter}/{q.CounterNeeded})";
+            AddDialogText(prog);
+        }
+
+        // Class-change options.
+        foreach (var c in dialog.ClassChanges)
+        {
+            AddDialogHeader($"Class Change: {c.ClassName}");
+            var sb = new System.Text.StringBuilder("Requires: ");
+            for (int i = 0; i < c.RequiredItemNames.Length; i++)
+                sb.Append($"{c.RequiredItemNames[i]} {(c.HasItem[i] ? "\u2713" : "\u2717")}  ");
+            AddDialogText(sb.ToString());
+
+            var change = new Button { Content = $"Become {c.ClassName}", Width = 160, Height = 28,
+                HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0,2,0,8),
+                IsEnabled = c.Meets };
+            int classId = c.SecondClassId;
+            change.Click += async (_, _) => { await _net.QuestActionAsync("changeclass", classId.ToString(), _dialogNpcId); };
+            DialogContent.Children.Add(change);
+        }
+
+        if (DialogContent.Children.Count == 0)
+            AddDialogText("They have nothing for you right now.");
+
+        DialogPanel.Visibility = Visibility.Visible;
+    }
+
+    private void AddDialogHeader(string text) =>
+        DialogContent.Children.Add(new TextBlock
+        {
+            Text = text, Foreground = Brushes.White, FontWeight = FontWeights.SemiBold,
+            FontSize = 13, Margin = new Thickness(0, 8, 0, 2), TextWrapping = TextWrapping.Wrap
+        });
+
+    private void AddDialogText(string text) =>
+        DialogContent.Children.Add(new TextBlock
+        {
+            Text = text, Foreground = new SolidColorBrush(Color.FromRgb(0xB9, 0xC4, 0xCC)),
+            FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 2)
+        });
+
+    private void DialogClose_Click(object sender, RoutedEventArgs e) =>
+        DialogPanel.Visibility = Visibility.Collapsed;
+
+    private void OnQuestLog(QuestLog log)
+    {
+        QuestLogContent.Children.Clear();
+        if (log.Active.Length == 0)
+            QuestLogContent.Children.Add(new TextBlock
+            {
+                Text = "No active quests.", Foreground = Brushes.Gray
+            });
+
+        foreach (var q in log.Active)
+        {
+            QuestLogContent.Children.Add(new TextBlock
+            {
+                Text = q.Name, Foreground = Brushes.White, FontWeight = FontWeights.SemiBold,
+                FontSize = 13, Margin = new Thickness(0, 6, 0, 0), TextWrapping = TextWrapping.Wrap
+            });
+            string prog = $"Step {q.StepIndex + 1}/{q.StepCount}: {q.CurrentStepText}";
+            if (q.CounterNeeded > 1) prog += $"  ({q.Counter}/{q.CounterNeeded})";
+            QuestLogContent.Children.Add(new TextBlock
+            {
+                Text = prog, Foreground = new SolidColorBrush(Color.FromRgb(0x9F, 0xB0, 0xBE)),
+                FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 4)
+            });
+        }
+
+        if (log.Completed.Length > 0)
+            QuestLogContent.Children.Add(new TextBlock
+            {
+                Text = $"Completed: {log.Completed.Length}", Foreground = Brushes.Gray,
+                FontSize = 11, Margin = new Thickness(0, 8, 0, 0)
+            });
+    }
+
+    private void ToggleQuestLog() =>
+        QuestLogPanel.Visibility = QuestLogPanel.Visibility == Visibility.Visible
+            ? Visibility.Collapsed : Visibility.Visible;
+
+    private void QuestLogClose_Click(object sender, RoutedEventArgs e) =>
+        QuestLogPanel.Visibility = Visibility.Collapsed;
 
 }

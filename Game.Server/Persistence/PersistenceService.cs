@@ -1,6 +1,7 @@
 using Game.Server.Simulation;
 using Game.Shared;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace Game.Server.Persistence;
 
@@ -181,6 +182,21 @@ public class PersistenceService
         foreach (var id in rec.LearnedSkillsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
             entity.LearnedSkills.Add(id);
 
+        foreach (var qid in rec.CompletedQuestsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            entity.CompletedQuests.Add(qid);
+
+        if (!string.IsNullOrEmpty(rec.ActiveQuestsJson))
+        {
+            try
+            {
+                var states = JsonSerializer.Deserialize<List<CharacterQuestState>>(rec.ActiveQuestsJson);
+                if (states is not null)
+                    foreach (var st in states)
+                        entity.ActiveQuests[st.QuestId] = st;
+            }
+            catch { /* ignore malformed quest json */ }
+        }
+
         foreach (var item in rec.Items)
         {
             entity.Inventory.Add(new InventoryItem
@@ -222,6 +238,8 @@ public class PersistenceService
         rec.SecondClass = entity.SecondClass;
         rec.SkillPoints = entity.SkillPoints;
         rec.LearnedSkillsCsv = string.Join(',', entity.LearnedSkills);
+        rec.CompletedQuestsCsv = string.Join(',', entity.CompletedQuests);
+        rec.ActiveQuestsJson = JsonSerializer.Serialize(entity.ActiveQuests.Values.ToList());
         rec.Con = entity.Con;
         rec.Atk = entity.AtkStat;
         rec.Wit = entity.Wit;

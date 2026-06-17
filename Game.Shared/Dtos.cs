@@ -138,3 +138,32 @@ public record CreateCharacterRequest(string Name, Race Race, BaseClass BaseClass
 
 /// <summary>Client -> Server: enter the world with one of the account's characters.</summary>
 public record EnterWorldRequest(int CharacterId);
+
+
+// ----- Quests (Phase 7) ----------------------------------------------------
+
+/// <summary>Client -> server: talk to an NPC (open dialog).</summary>
+public record TalkToNpcRequest(Guid NpcEntityId);
+
+/// <summary>Client -> server: accept / complete / change-class actions.</summary>
+public record QuestActionRequest(string Action, string Id, Guid NpcEntityId);
+
+/// <summary>One quest line in an NPC dialog or the quest log.</summary>
+public record QuestSummary(string Id, string Name, string Description, string CurrentStepText,
+    int StepIndex, int StepCount, int Counter, int CounterNeeded, bool Completed, bool CanComplete);
+
+/// <summary>A class-change option shown by a class-change NPC.</summary>
+public record ClassChangeOption(int SecondClassId, string ClassName, bool Meets,
+    string[] RequiredItemNames, bool[] HasItem);
+
+/// <summary>Server -> client: the dialog when talking to an NPC.</summary>
+public record NpcDialog(
+    string NpcName,
+    string NpcRole,
+    QuestSummary[] Offered,      // quests this NPC can give now
+    QuestSummary[] Turnable,     // active quests ready to complete here
+    QuestSummary[] InProgress,   // active quests not yet complete
+    ClassChangeOption[] ClassChanges);
+
+/// <summary>Server -> client: the full quest log.</summary>
+public record QuestLog(QuestSummary[] Active, string[] Completed);

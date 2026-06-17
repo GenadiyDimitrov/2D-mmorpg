@@ -43,6 +43,12 @@ public class CharacterRecord
     /// <summary>Learned skill ids, comma-separated (simple + migration-free).</summary>
     public string LearnedSkillsCsv { get; set; } = "";
 
+    /// <summary>Completed quest ids, comma-separated.</summary>
+    public string CompletedQuestsCsv { get; set; } = "";
+
+    /// <summary>Active quests as JSON list of CharacterQuestState.</summary>
+    public string ActiveQuestsJson { get; set; } = "";
+
     // Core stats are derived from race/class/level, but second-class and item
     // bonuses are permanent additions, so we persist the raw core stats.
     public int Con { get; set; }

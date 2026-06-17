@@ -72,6 +72,12 @@ public record SkillCmd(string ConnectionId, string SkillId, Guid? TargetId) : IG
 /// <summary>Learn a skill by spending skill points.</summary>
 public record LearnSkillCmd(string ConnectionId, string SkillId) : IGameCommand;
 
+/// <summary>Open dialog with an NPC.</summary>
+public record TalkCmd(string ConnectionId, Guid NpcEntityId) : IGameCommand;
+
+/// <summary>Quest action: accept / complete / changeclass.</summary>
+public record QuestActionCmd(string ConnectionId, string Action, string Id, Guid NpcEntityId) : IGameCommand;
+
 public record RespawnCmd(string ConnectionId) : IGameCommand;
 
 /// <summary>Advance to a second class (level 20+, once).</summary>

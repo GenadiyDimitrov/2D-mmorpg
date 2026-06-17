@@ -175,6 +175,12 @@
                            Foreground="#FF9FB0BE" FontSize="11" TextWrapping="Wrap"
                            Text="Click an item to equip/unequip. Equipped items are highlighted."
                            Margin="0,0,0,8"/>
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                    <Button x:Name="InvTabGear" Content="Gear" Width="100" Height="26"
+                            Click="InvTabGear_Click"/>
+                    <Button x:Name="InvTabQuest" Content="Quest Items" Width="120" Height="26"
+                            Margin="6,0,0,0" Click="InvTabQuest_Click"/>
+                </StackPanel>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <ItemsControl x:Name="InventoryList"/>
                 </ScrollViewer>
@@ -523,6 +529,42 @@
                         Margin="0,8,0,0" Click="DebugClose_Click"/>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel x:Name="DebugList"/>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- NPC dialog window -->
+        <Border x:Name="DialogPanel"
+                Width="440" MaxHeight="560"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="#F0162232" CornerRadius="10" Padding="16"
+                Visibility="Collapsed">
+            <DockPanel>
+                <TextBlock x:Name="DialogNpcName" DockPanel.Dock="Top" Foreground="Gold"
+                           FontSize="17" FontWeight="Bold" Margin="0,0,0,2"/>
+                <TextBlock x:Name="DialogNpcRole" DockPanel.Dock="Top" Foreground="#FF9FB0BE"
+                           FontSize="11" Margin="0,0,0,10"/>
+                <Button DockPanel.Dock="Bottom" Content="Close" Height="26"
+                        Margin="0,10,0,0" Click="DialogClose_Click"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="DialogContent"/>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- Quest log panel -->
+        <Border x:Name="QuestLogPanel"
+                Width="360" MaxHeight="520"
+                HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,16,0"
+                Background="#E0182838" CornerRadius="8" Padding="14"
+                Visibility="Collapsed">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="Quest Log" Foreground="White"
+                           FontSize="15" FontWeight="Bold" Margin="0,0,0,8"/>
+                <Button DockPanel.Dock="Bottom" Content="Close" Height="24"
+                        Margin="0,8,0,0" Click="QuestLogClose_Click"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="QuestLogContent"/>
                 </ScrollViewer>
             </DockPanel>
         </Border>

@@ -102,4 +102,7 @@ public static class GameConstants
 
     /// <summary>Skill points earned per exp point (≈ 1/4 of exp).</summary>
     public const float SkillPointRatio = 0.25f;
+
+    /// <summary>How close you must be to an NPC to talk.</summary>
+    public const float TalkRange = 250f;
 }

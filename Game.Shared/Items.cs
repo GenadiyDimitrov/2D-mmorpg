@@ -4,7 +4,7 @@ public enum ItemGrade { F = 0, E = 1, B = 2, A = 3, S = 4 }
 
 public enum ItemRarity { Common = 0, Uncommon = 1, Rare = 2, Epic = 3, Legendary = 4, God = 99 }
 
-public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2, Scroll = 3 }
+public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2, Scroll = 3, QuestItem = 4 }
 
 public enum ArmorWeight { None = 0, Heavy = 1, Light = 2, Robe = 3 }
 
@@ -58,6 +58,8 @@ public static class ItemCatalog
     public const string ScrollCommon = "scroll_common";
     public const string ScrollUncommon = "scroll_uncommon";
     public const string ScrollRare = "scroll_rare";
+    public const string MarkOfFaith = "quest_mark_of_faith";
+    public const string ClericsProof = "quest_clerics_proof";
     public const string GodWeapon = "god_judgment";
     public const string GodArmor = "god_robes";
 
@@ -188,6 +190,14 @@ public static class ItemCatalog
             ItemGrade.F, ItemRarity.Rare, ScrollKind: ScrollKind.Rare));
 
         // ===================================================================
+        //  QUEST ITEMS — non-droppable, non-tradeable proofs for class changes.
+        // ===================================================================
+        list.Add(new ItemDef(MarkOfFaith, "Mark of Faith", EquipSlot.QuestItem,
+            ItemGrade.F, ItemRarity.Rare));
+        list.Add(new ItemDef(ClericsProof, "Cleric's Proof", EquipSlot.QuestItem,
+            ItemGrade.F, ItemRarity.Epic));
+
+        // ===================================================================
         //  GOD-TIER one-offs (debug). Every attribute maxed at 100%.
         // ===================================================================
         list.Add(new ItemDef(GodWeapon, "God's Judgment", EquipSlot.Weapon,
@@ -235,6 +245,7 @@ public static class ItemCatalog
 
     public static bool IsPotion(ItemDef def) => def.Slot == EquipSlot.Consumable;
     public static bool IsScroll(ItemDef def) => def.Slot == EquipSlot.Scroll;
+    public static bool IsQuestItem(ItemDef def) => def.Slot == EquipSlot.QuestItem;
     public static bool IsEquippable(ItemDef def) => def.Slot is EquipSlot.Weapon or EquipSlot.Armor;
 
     /// <summary>Grade gates per design doc: F 0+, E 20+, B 40+, A 60+, S 80+.</summary>

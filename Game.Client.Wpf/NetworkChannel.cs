@@ -45,6 +45,8 @@ public class NetworkChannel : IAsyncDisposable
         _connection.On<TradeStateUpdate>("Trade", t => TradeStateReceived?.Invoke(t));
         _connection.On<StatsUpdate>("Stats", st => StatsReceived?.Invoke(st));
         _connection.On<LearnedSkills>("Learned", l => LearnedReceived?.Invoke(l));
+        _connection.On<NpcDialog>("Dialog", d => DialogReceived?.Invoke(d));
+        _connection.On<QuestLog>("QuestLog", q => QuestLogReceived?.Invoke(q));
         _connection.On<PotionStatus>("Potion", pt => PotionReceived?.Invoke(pt));
         _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));
         _connection.On<EnchantResultDto>("Enchant", en => EnchantReceived?.Invoke(en));
@@ -84,12 +86,20 @@ public class NetworkChannel : IAsyncDisposable
         _connection!.SendAsync("Attack", targetId);
 
     public event Action<LearnedSkills>? LearnedReceived;
+    public event Action<NpcDialog>? DialogReceived;
+    public event Action<QuestLog>? QuestLogReceived;
 
     public Task UseSkillAsync(string skillId, Guid? targetId) =>
         _connection!.SendAsync("UseSkill", skillId, targetId);
 
     public Task LearnSkillAsync(string skillId) =>
         _connection!.SendAsync("LearnSkill", skillId);
+
+    public Task TalkToNpcAsync(Guid npcEntityId) =>
+        _connection!.SendAsync("TalkToNpc", npcEntityId);
+
+    public Task QuestActionAsync(string action, string id, Guid npcEntityId) =>
+        _connection!.SendAsync("QuestAction", action, id, npcEntityId);
 
     public Task RespawnAsync() =>
         _connection!.SendAsync("Respawn");

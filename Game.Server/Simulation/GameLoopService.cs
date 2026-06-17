@@ -44,6 +44,7 @@ public class GameLoopService : BackgroundService
     {
         GameClock.Epoch = DateTime.UtcNow;
         await InitZonesAsync();
+        SpawnNpcs();
         _log.LogInformation("Game loop started at {Rate} ticks/sec", GameConstants.TickRate);
 
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(GameConstants.TickSeconds));
@@ -79,6 +80,8 @@ public class GameLoopService : BackgroundService
                 case AttackCmd c: HandleAttack(c); break;
                 case SkillCmd c: HandleSkill(c); break;
                 case LearnSkillCmd c: HandleLearnSkill(c); break;
+                case TalkCmd c: HandleTalk(c); break;
+                case QuestActionCmd c: HandleQuestAction(c); break;
                 case RespawnCmd c: HandleRespawn(c); break;
                 case ClassChangeCmd c: HandleClassChange(c); break;
                 case EquipCmd c: HandleEquip(c); break;
@@ -116,6 +119,7 @@ public class GameLoopService : BackgroundService
         SendInventory(entity);
         SendStats(entity);
         SendLearned(entity);
+        SendQuestLog(entity);
         if (entity.IsAdmin)
             SendSystemToEntity(entity, "Admin privileges active. Type /help for commands.");
         BroadcastSystem($"{entity.Name} entered the world.");
@@ -496,6 +500,13 @@ public class GameLoopService : BackgroundService
         if (item is null)
             return;
 
+        // Quest items can't be destroyed.
+        if (ItemCatalog.Get(item.DefId) is ItemDef qd && ItemCatalog.IsQuestItem(qd))
+        {
+            SendSystemToEntity(player, "Quest items cannot be discarded.");
+            return;
+        }
+
         // Block destroying items that are currently in a trade offer.
         if (_world.ActiveTrades.TryGetValue(player.Id, out var trade) &&
             trade.OfferOf(player).Contains(item.InstanceId))
@@ -691,8 +702,10 @@ public class GameLoopService : BackgroundService
                      .Take(GameConstants.TradeMaxOfferSlots))
         {
             var item = player.Inventory.FirstOrDefault(i => i.InstanceId == instanceId);
-            if (item is not null && !item.Equipped)
-                offer.Add(instanceId);
+            if (item is null || item.Equipped) continue;
+            if (ItemCatalog.Get(item.DefId) is ItemDef d && ItemCatalog.IsQuestItem(d))
+                continue;   // quest items are untradeable
+            offer.Add(instanceId);
         }
 
         // Changing an offer resets both ready flags (no bait-and-switch).
@@ -1543,6 +1556,7 @@ var effect = def.Effect;
             {
                 AwardExp(killer, StatCalculator.MobExpReward(victim.Level));
                 RollDrop(killer, victim);
+                AdvanceKillQuests(killer, victim);
             }
 
             OnMobKilled(victim);
@@ -1966,7 +1980,291 @@ var effect = def.Effect;
 
     /// <summary>Place a single mob in a zone, avoiding the safe zone and roads.
     /// Increments the zone's alive count and tags the mob with its zone id.</summary>
-    private void SpawnOneInZone(ZoneRuntime zr)
+    // =======================================================================
+    //  NPCs + Quests
+    // =======================================================================
+
+    private void SpawnNpcs()
+    {
+        foreach (var npc in WorldMap.Npcs)
+        {
+            var entity = new Entity
+            {
+                Name = npc.Name,
+                Kind = EntityKind.Npc,
+                X = npc.X,
+                Y = npc.Y,
+                Speed = 0,
+                Level = 1,
+                NpcId = npc.Id,
+                NpcRole = npc.Role
+            };
+            entity.RecomputeDerived();
+            _world.Entities[entity.Id] = entity;
+            _world.Grid.Add(entity);
+        }
+        _log.LogInformation("Spawned {Count} NPCs", WorldMap.Npcs.Length);
+    }
+
+    private void HandleTalk(TalkCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        if (!_world.Entities.TryGetValue(cmd.NpcEntityId, out var npc) || npc.Kind != EntityKind.Npc)
+            return;
+
+        // Must be near the NPC.
+        float dx = npc.X - player.X, dy = npc.Y - player.Y;
+        if (dx * dx + dy * dy > GameConstants.TalkRange * GameConstants.TalkRange)
+        {
+            SendSystemToEntity(player, $"{npc.Name} is too far away.");
+            return;
+        }
+
+        SendDialog(player, npc);
+    }
+
+    private void SendDialog(Entity player, Entity npc)
+    {
+        string npcId = npc.NpcId ?? "";
+
+        bool Completed(string qid) => player.CompletedQuests.Contains(qid);
+        bool Active(string qid) => player.ActiveQuests.ContainsKey(qid);
+
+        var offered = QuestCatalog.OfferedBy(npcId, player.Level, Completed, Active)
+            .Select(q => Summarize(player, q, null)).ToArray();
+
+        // Active quests whose CURRENT step is "talk to THIS npc" and it's the
+        // final step (turn-in) OR a mid-chain talk.
+        var turnable = new List<QuestSummary>();
+        var inProgress = new List<QuestSummary>();
+        foreach (var (qid, state) in player.ActiveQuests)
+        {
+            var def = QuestCatalog.Get(qid);
+            if (def is null) continue;
+            var summary = Summarize(player, def, state);
+
+            // If current step is a TalkTo this npc, advancing happens on talk.
+            var step = def.Steps[state.StepIndex];
+            if (step.Type == QuestStepType.TalkTo && step.TargetId == npcId)
+                turnable.Add(summary);
+            else
+                inProgress.Add(summary);
+        }
+
+        // Class-change options (only for class-change NPCs).
+        var changes = new List<ClassChangeOption>();
+        if (npc.NpcRole == NpcRole.ClassChange)
+        {
+            foreach (var req in ClassChangeRequirements.AtNpc(npcId))
+            {
+                var names = req.RequiredItemIds
+                    .Select(id => ItemCatalog.Get(id)?.Name ?? id).ToArray();
+                var has = req.RequiredItemIds
+                    .Select(id => player.Inventory.Any(i => i.DefId == id)).ToArray();
+                bool meets = player.SecondClass == 0 && player.Level >= req.MinLevel
+                    && has.All(h => h)
+                    && ClassCatalog.Get(req.SecondClassId) is SecondClassDef scd
+                    && scd.Base == player.BaseClass && scd.Race == player.Race;
+                changes.Add(new ClassChangeOption(req.SecondClassId, req.ClassName, meets, names, has));
+            }
+        }
+
+        SendTo(player, "Dialog", new NpcDialog(
+            npc.Name, npc.NpcRole.ToString(),
+            offered, turnable.ToArray(), inProgress.ToArray(), changes.ToArray()));
+
+        // Talking can itself advance a TalkTo step.
+        AdvanceTalkStep(player, npcId);
+    }
+
+    private QuestSummary Summarize(Entity player, QuestDef def, CharacterQuestState? state)
+    {
+        int stepIndex = state?.StepIndex ?? 0;
+        int counter = state?.Counter ?? 0;
+        var step = def.Steps[Math.Min(stepIndex, def.Steps.Length - 1)];
+        int needed = step.Type == QuestStepType.KillMobs ? step.Count : 1;
+        // Ready to turn in = on the final step and that step is a TalkTo.
+        bool canComplete = state is not null
+            && stepIndex == def.Steps.Length - 1
+            && def.Steps[^1].Type == QuestStepType.TalkTo;
+        return new QuestSummary(def.Id, def.Name, def.Description, step.Text,
+            stepIndex, def.Steps.Length, counter, needed,
+            state?.Completed ?? false, canComplete);
+    }
+
+    private void HandleQuestAction(QuestActionCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+
+        switch (cmd.Action)
+        {
+            case "accept": AcceptQuest(player, cmd.Id); break;
+            case "complete": CompleteQuestAtNpc(player, cmd.Id, cmd.NpcEntityId); break;
+            case "changeclass": DoQuestClassChange(player, cmd.Id, cmd.NpcEntityId); break;
+        }
+    }
+
+    private void AcceptQuest(Entity player, string questId)
+    {
+        var def = QuestCatalog.Get(questId);
+        if (def is null) return;
+        if (player.ActiveQuests.ContainsKey(questId) || player.CompletedQuests.Contains(questId)) return;
+        if (player.Level < def.MinLevel) return;
+        if (def.RequiresQuestId is not null && !player.CompletedQuests.Contains(def.RequiresQuestId)) return;
+
+        player.ActiveQuests[questId] = new CharacterQuestState(questId, 0, 0, false);
+        SendSystemToEntity(player, $"Quest accepted: {def.Name}");
+        SendQuestLog(player);
+        SaveEntity(player);
+    }
+
+    /// <summary>Advance a TalkTo step if the current step targets this npc.</summary>
+    private void AdvanceTalkStep(Entity player, string npcId)
+    {
+        bool changed = false;
+        foreach (var qid in player.ActiveQuests.Keys.ToList())
+        {
+            var def = QuestCatalog.Get(qid);
+            var state = player.ActiveQuests[qid];
+            if (def is null || state.Completed) continue;
+
+            var step = def.Steps[state.StepIndex];
+            if (step.Type == QuestStepType.TalkTo && step.TargetId == npcId)
+            {
+                // Final step talk = ready to complete (handled by Complete button);
+                // mid-chain talk = advance to next step now.
+                if (state.StepIndex < def.Steps.Length - 1)
+                {
+                    player.ActiveQuests[qid] = state with { StepIndex = state.StepIndex + 1, Counter = 0 };
+                    SendSystemToEntity(player, $"{def.Name}: {def.Steps[state.StepIndex + 1].Text}");
+                    changed = true;
+                }
+            }
+        }
+        if (changed) { SendQuestLog(player); SaveEntity(player); }
+    }
+
+    private void CompleteQuestAtNpc(Entity player, string questId, Guid npcEntityId)
+    {
+        var def = QuestCatalog.Get(questId);
+        if (def is null || !player.ActiveQuests.TryGetValue(questId, out var state)) return;
+
+        // Must be on the final TalkTo step at the right NPC.
+        if (state.StepIndex != def.Steps.Length - 1) return;
+        var finalStep = def.Steps[^1];
+        if (finalStep.Type != QuestStepType.TalkTo) return;
+        if (!_world.Entities.TryGetValue(npcEntityId, out var npc) || npc.NpcId != finalStep.TargetId) return;
+
+        // Grant rewards.
+        if (def.Reward.Exp > 0) AwardExp(player, def.Reward.Exp);
+        if (def.Reward.SkillPoints > 0)
+        {
+            player.SkillPoints += def.Reward.SkillPoints;
+            SendLearned(player);
+        }
+        if (def.Reward.ItemIds is { Length: > 0 })
+            foreach (var itemId in def.Reward.ItemIds)
+                AddItem(player, itemId);
+
+        player.ActiveQuests.Remove(questId);
+        player.CompletedQuests.Add(questId);
+        SendSystemToEntity(player, $"Quest complete: {def.Name}!");
+        SendInventory(player);
+        SendQuestLog(player);
+        SendDialog(player, npc);
+        SaveEntity(player);
+    }
+
+    private void DoQuestClassChange(Entity player, string secondClassIdStr, Guid npcEntityId)
+    {
+        if (!int.TryParse(secondClassIdStr, out int classId)) return;
+        var req = ClassChangeRequirements.ForClass(classId);
+        if (req is null) return;
+        if (!_world.Entities.TryGetValue(npcEntityId, out var npc) || npc.NpcId != req.NpcId) return;
+
+        if (player.SecondClass != 0) { SendSystemToEntity(player, "You already have a second class."); return; }
+        if (player.Level < req.MinLevel) { SendSystemToEntity(player, $"Requires level {req.MinLevel}."); return; }
+
+        if (ClassCatalog.Get(classId) is not SecondClassDef scd ||
+            scd.Base != player.BaseClass || scd.Race != player.Race)
+        {
+            SendSystemToEntity(player, "That class isn't available to you.");
+            return;
+        }
+
+        // Must hold all required quest items.
+        foreach (var itemId in req.RequiredItemIds)
+            if (!player.Inventory.Any(i => i.DefId == itemId))
+            {
+                SendSystemToEntity(player, "You don't have the required items.");
+                return;
+            }
+
+        // Consume the quest items.
+        foreach (var itemId in req.RequiredItemIds)
+        {
+            var item = player.Inventory.FirstOrDefault(i => i.DefId == itemId);
+            if (item is not null) player.Inventory.Remove(item);
+        }
+
+        player.SecondClass = classId;
+        AutoLearnCoreSkills(player);
+        player.RecomputeDerived();
+        player.Hp = player.MaxHp;
+        player.Mp = player.MaxMp;
+
+        SendInventory(player);
+        SendStats(player);
+        SendLearned(player);
+        SendDialog(player, npc);
+        BroadcastSystem($"{player.Name} has become a {req.ClassName}!");
+        SaveEntity(player);
+    }
+
+    /// <summary>Hook from mob death: advance KillMobs steps on active quests.</summary>
+    private void AdvanceKillQuests(Entity player, Entity mob)
+    {
+        bool changed = false;
+        foreach (var qid in player.ActiveQuests.Keys.ToList())
+        {
+            var def = QuestCatalog.Get(qid);
+            var state = player.ActiveQuests[qid];
+            if (def is null || state.Completed) continue;
+
+            var step = def.Steps[state.StepIndex];
+            if (step.Type != QuestStepType.KillMobs) continue;
+
+            // Match mob type (name contains the target; handles "Elite Spider").
+            bool typeMatch = mob.Name.Contains(step.TargetId, StringComparison.OrdinalIgnoreCase);
+            bool levelMatch = (step.MinLevel == 0 || mob.Level >= step.MinLevel)
+                && (step.MaxLevel == 0 || mob.Level <= step.MaxLevel);
+            if (!typeMatch || !levelMatch) continue;
+
+            int counter = state.Counter + 1;
+            if (counter >= step.Count && state.StepIndex < def.Steps.Length - 1)
+            {
+                player.ActiveQuests[qid] = state with { StepIndex = state.StepIndex + 1, Counter = 0 };
+                SendSystemToEntity(player, $"{def.Name}: {def.Steps[state.StepIndex + 1].Text}");
+            }
+            else
+            {
+                player.ActiveQuests[qid] = state with { Counter = counter };
+                SendSystemToEntity(player, $"{def.Name}: {step.TargetId} {counter}/{step.Count}");
+            }
+            changed = true;
+        }
+        if (changed) { SendQuestLog(player); }
+    }
+
+    private void SendQuestLog(Entity player)
+    {
+        var active = player.ActiveQuests.Values
+            .Select(st => { var d = QuestCatalog.Get(st.QuestId); return d is null ? null : Summarize(player, d, st); })
+            .Where(x => x is not null).Select(x => x!).ToArray();
+        SendTo(player, "QuestLog", new QuestLog(active, player.CompletedQuests.ToArray()));
+    }
+
+        private void SpawnOneInZone(ZoneRuntime zr)
     {
         var zone = zr.Zone;
         float x = zone.X, y = zone.Y;

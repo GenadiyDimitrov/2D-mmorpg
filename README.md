@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 6.1 (per-class skill names, party buffs)
+# L2-like MMORPG — Phase 7 (quests, NPCs, item-gated class change)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,47 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 7 (this build)
+
+> **Delete `game.db` before running** — characters now store quests (new columns).
+
+### NPCs you can talk to
+- Stationary **NPCs** (gold dots, labelled `[Talk]`) are placed from
+  `WorldMap.Npcs`. Click one (within range) to open a **dialog window** showing
+  the quests they offer, quests ready to turn in, in-progress status, and (for
+  class-change NPCs) class-change options.
+- Three NPCs near town: **Elder Marius** and **High Priest Oren** (quest givers)
+  and **Class Master Vael** (class change).
+
+### Quests + the quest log
+- Quests have ordered **steps** (talk / kill N mobs / collect / reach level),
+  **rewards** (exp, SP, items), a **MinLevel**, and an optional
+  **`RequiresQuestId`** so quests form **chains**. Kill steps advance as you kill
+  matching mobs; talk steps advance when you visit the NPC.
+- **Quest log** (press **J**) shows active quests and per-step progress. Quests
+  persist across logout.
+
+### Item-gated class change (the Cleric chain)
+- The first worked chain, **Human Mage → Cleric**:
+  1. **A Test of Devotion** (Elder Marius, lvl 18): talk → kill 5 Spiders →
+     return → rewards the **Mark of Faith** (quest item).
+  2. **The Cleric's Path** (High Priest Oren, lvl 20, needs chain 1): talk →
+     kill 8 Wolves → return → rewards the **Cleric's Proof**.
+  3. Bring both proofs to **Class Master Vael** → **become a Cleric** (items
+     consumed). Different target class = different chain/items.
+- The debug-menu class-change button still works (bypasses items, for testing).
+
+### Quest items + a Quest inventory tab
+- **Quest items** are non-droppable and non-tradeable, shown in a **separate
+  "Quest Items" tab** in the inventory (toggle Gear / Quest Items).
+
+### Where to author quests (the designated place)
+- All quest content lives in **`Game.Shared/Quests/`**: `Quests.Root.cs`
+  registers the chains, and per-chain files like `Quests.HumanMageCleric.cs`
+  declare the quests, rewards, and the class-change requirement in one place.
+  Class-change item requirements are in the `ClassChangeRequirements` table.
+  Replicate the Cleric file for Sorcerer, Orc lines, etc.
 
 ## New in Phase 6.1 (this build)
 

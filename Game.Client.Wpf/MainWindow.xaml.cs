@@ -75,6 +75,8 @@ public partial class MainWindow : Window
         _net.TradeStateReceived += t => Dispatcher.BeginInvoke(() => OnTradeState(t));
         _net.StatsReceived += st => Dispatcher.BeginInvoke(() => OnStats(st));
         _net.LearnedReceived += l => Dispatcher.BeginInvoke(() => OnLearned(l));
+        _net.DialogReceived += d => Dispatcher.BeginInvoke(() => OnDialog(d));
+        _net.QuestLogReceived += q => Dispatcher.BeginInvoke(() => OnQuestLog(q));
         _net.PotionReceived += pt => Dispatcher.BeginInvoke(() => OnPotion(pt));
         _net.BuffsReceived += b => Dispatcher.BeginInvoke(() => OnBuffs(b));
         _net.EnchantReceived += en => Dispatcher.BeginInvoke(() => OnEnchant(en));
@@ -470,6 +472,13 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (e.Key is Key.J)
+        {
+            ToggleQuestLog();
+            e.Handled = true;
+            return;
+        }
+
         // Potion hotkeys: Q (first), E (second potion stack).
         if (e.Key is Key.Q or Key.E)
         {
@@ -595,21 +604,31 @@ public partial class MainWindow : Window
         visual.HpFill.Width = 40 * ratio;
         visual.Root.Opacity = dto.Dead ? 0.45 : 1.0;
 
-        string classTag = dto.Kind == EntityKind.Player && dto.SecondClass > 0
-            ? $" {ClassCatalog.Get(dto.SecondClass)?.Name}" : "";
-        visual.Label.Text = dto.Dead
-            ? $"{dto.Name} Lv{dto.Level} (dead)"
-            : $"{dto.Name}{classTag} Lv{dto.Level}";
-
-        if (dto.Kind == EntityKind.Mob)
-            visual.Label.Foreground = MobNameBrush(dto.Level);
+        if (dto.Kind == EntityKind.Npc)
+        {
+            visual.Label.Text = $"{dto.Name}  [Talk]";
+            visual.Label.Foreground = Brushes.Gold;
+        }
+        else
+        {
+            string classTag = dto.Kind == EntityKind.Player && dto.SecondClass > 0
+                ? $" {ClassCatalog.Get(dto.SecondClass)?.Name}" : "";
+            visual.Label.Text = dto.Dead
+                ? $"{dto.Name} Lv{dto.Level} (dead)"
+                : $"{dto.Name}{classTag} Lv{dto.Level}";
+            if (dto.Kind == EntityKind.Mob)
+                visual.Label.Foreground = MobNameBrush(dto.Level);
+        }
     }
 
     private EntityVisual CreateVisual(EntityDto dto)
     {
-        Color color = dto.Kind == EntityKind.Mob
-            ? Colors.IndianRed
-            : dto.BaseClass == BaseClass.Mage ? Colors.CornflowerBlue : Colors.Orange;
+        Color color = dto.Kind switch
+        {
+            EntityKind.Mob => Colors.IndianRed,
+            EntityKind.Npc => Colors.Gold,
+            _ => dto.BaseClass == BaseClass.Mage ? Colors.CornflowerBlue : Colors.Orange
+        };
 
         var dot = new Ellipse
         {
@@ -625,7 +644,8 @@ public partial class MainWindow : Window
 
         var label = new TextBlock
         {
-            Foreground = dto.Kind == EntityKind.Mob ? MobNameBrush(dto.Level) : Brushes.White,
+            Foreground = dto.Kind == EntityKind.Mob ? MobNameBrush(dto.Level)
+                : dto.Kind == EntityKind.Npc ? Brushes.Gold : Brushes.White,
             FontSize = 11, TextAlignment = TextAlignment.Center
         };
 
@@ -1096,11 +1116,21 @@ public partial class MainWindow : Window
 
         if (hit is Guid targetId)
         {
+            var latest = _visuals[targetId].Latest;
+
+            // Clicking an NPC opens dialog (talk).
+            if (latest is { Kind: EntityKind.Npc })
+            {
+                _dialogNpcId = targetId;
+                await _net.TalkToNpcAsync(targetId);
+                return;
+            }
+
             _targetId = targetId;
             UpdateTargetFrame();
 
             // Clicking another player just targets; clicking a mob attacks.
-            if (_visuals[targetId].Latest is { Kind: EntityKind.Mob })
+            if (latest is { Kind: EntityKind.Mob })
                 await _net.AttackAsync(targetId);
             return;
         }
