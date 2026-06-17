@@ -15,9 +15,14 @@
         <Border x:Name="ClockPanel" HorizontalAlignment="Center" VerticalAlignment="Top"
                 Margin="0,8,0,0" Padding="12,4" CornerRadius="6"
                 Background="#60000000" Visibility="Collapsed">
-            <TextBlock x:Name="ClockText" Foreground="#FFE8E2C8"
-                       FontFamily="Consolas" FontSize="13" FontWeight="SemiBold"
-                       Text="06:00 Day"/>
+            <StackPanel>
+                <TextBlock x:Name="ClockText" Foreground="#FFE8E2C8"
+                           FontFamily="Consolas" FontSize="13" FontWeight="SemiBold"
+                           Text="06:00 Day" HorizontalAlignment="Center"/>
+                <TextBlock x:Name="MoveStateText" Foreground="#FFBFD0DA"
+                           FontFamily="Consolas" FontSize="11"
+                           Text="Running  (Z sit / X walk)" HorizontalAlignment="Center"/>
+            </StackPanel>
         </Border>
 
         <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12,8,0,0" Width="240">

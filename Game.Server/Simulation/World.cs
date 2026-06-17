@@ -78,6 +78,9 @@ public record TalkCmd(string ConnectionId, Guid NpcEntityId) : IGameCommand;
 /// <summary>Quest action: accept / complete / changeclass.</summary>
 public record QuestActionCmd(string ConnectionId, string Action, string Id, Guid NpcEntityId) : IGameCommand;
 
+/// <summary>Change movement state (run / walk / sit).</summary>
+public record SetMoveStateCmd(string ConnectionId, MoveState State) : IGameCommand;
+
 public record RespawnCmd(string ConnectionId) : IGameCommand;
 
 /// <summary>Advance to a second class (level 20+, once).</summary>

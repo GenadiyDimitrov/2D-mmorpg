@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 7 (quests, NPCs, item-gated class change)
+# L2-like MMORPG — Phase 8 (movement states, speeds, mob AI fixes)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,46 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 8 (this build)
+
+### Movement states (Run / Walk / Sit)
+- Players have three movement states: **Running** (full speed), **Walking**
+  (half speed, **+20% HP/MP regen**), and **Sitting** (can't move, **+80%
+  regen** — sit to recover MP fast).
+- **Z** toggles sit/stand, **X** toggles walk/run; the state shows under the
+  clock. Walk↔run is instant; **getting hit while sitting** breaks the sit and
+  triggers a short **stand-up delay** before you can move/cast again.
+- Regen is a multiplier stack, so future passives/toggle skills can add to it
+  (e.g. "+20% HP regen while sitting").
+
+### Per-race+class speeds, with a cap
+- Base **run speed** now depends on **race + class** (Elf fastest, Human slowest;
+  within a race, fighters/rogues beat mages). Gear (`SpeedPercent`) and buffs
+  raise it toward the **move cap of 250** (a normal player's buffed ceiling).
+- The cap is **per-entity and raisable** (`MoveSpeedCap`), so a future rogue
+  ultimate can briefly exceed 250 and outrun even a buffed mage.
+- Central **`StatCaps`** holds all ceilings (move 250; attack-speed 1500 and
+  cast-speed 1999 reserved for the casting round; crit 50%).
+
+### Mob movement fixed
+- New **`MobCatalog`**: each mob type has **walk** and **run** speeds (e.g. Wolf
+  80/150, Bandit 60/108) and an aggressive flag. Mobs **walk while wandering,
+  run when aggroed** — so players can kite, and a fighter outruns a bandit while
+  a fast wolf still threatens a slow mage.
+- **Wander is clamped to the mob's zone** — they no longer drift into
+  neighbouring zones. Overlap same-level zones deliberately to mix mobs.
+
+### Class change adds flat stats (identity)
+- A class change can now grant **flat secondary bonuses** (e.g. a tank gets flat
+  +Def/+HP), not just primary stats — primary stats stay reserved for the future
+  dye/tattoo/set layer. Structure is wired; **Cleric** seeded as the example
+  (+MP/+HP/+Def). Fill in other classes in `Classes.cs`.
+
+### Where to tune
+- **Speeds:** `SpeedTable` (players) and `MobCatalog` (mobs).
+- **States/regen:** `MovementTuning`. **Caps:** `StatCaps`.
+- **Class flat bonuses:** `ClassFlatBonus` on each `SecondClassDef` in `Classes.cs`.
 
 ## New in Phase 7 (this build)
 

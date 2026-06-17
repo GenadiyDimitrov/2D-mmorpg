@@ -11,14 +11,7 @@ namespace Game.Server.Simulation;
 public class GameLoopService : BackgroundService
 {
     // Which mob types are aggressive (chase on sight). Names match WorldMap zones.
-    private static readonly Dictionary<string, bool> MobAggression = new()
-    {
-        ["Wolf"] = false, ["Boar"] = false, ["Slime"] = false,
-        ["Spider"] = true, ["Bandit"] = true,
-    };
-
-    private static bool IsAggressive(string mobName) =>
-        MobAggression.GetValueOrDefault(mobName, false);
+    private static bool IsAggressive(string mobName) => MobCatalog.IsAggressive(mobName);
 
     private readonly World _world;
     private readonly IHubContext<GameHub> _hub;
@@ -82,6 +75,7 @@ public class GameLoopService : BackgroundService
                 case LearnSkillCmd c: HandleLearnSkill(c); break;
                 case TalkCmd c: HandleTalk(c); break;
                 case QuestActionCmd c: HandleQuestAction(c); break;
+                case SetMoveStateCmd c: HandleSetMoveState(c); break;
                 case RespawnCmd c: HandleRespawn(c); break;
                 case ClassChangeCmd c: HandleClassChange(c); break;
                 case EquipCmd c: HandleEquip(c); break;
@@ -168,6 +162,14 @@ public class GameLoopService : BackgroundService
         if (!TryGetPlayer(move.ConnectionId, out var entity) || entity.Dead)
             return;
 
+        // Can't move while standing up from a sit (recovery window).
+        if (entity.StandUpTicks > 0)
+            return;
+
+        // Moving stands you up instantly (no delay when you choose to move).
+        if (entity.MoveState == MoveState.Sitting)
+            entity.MoveState = MoveState.Running;
+
         entity.Engaged = false;
         entity.CombatTargetId = null;
         entity.QueuedSkillId = null;
@@ -175,6 +177,25 @@ public class GameLoopService : BackgroundService
 
         entity.TargetX = Math.Clamp(move.Move.TargetX, 0, GameConstants.ZoneWidth);
         entity.TargetY = Math.Clamp(move.Move.TargetY, 0, GameConstants.ZoneHeight);
+    }
+
+    private void HandleSetMoveState(SetMoveStateCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (player.StandUpTicks > 0) return;   // mid stand-up, ignore
+
+        // Sitting requires being idle (not engaged / not casting).
+        if (cmd.State == MoveState.Sitting && (player.Engaged || player.CastingSkillId is not null))
+            return;
+
+        // Walk<->Run is instant; entering Sit stops movement.
+        player.MoveState = cmd.State;
+        if (cmd.State == MoveState.Sitting)
+        {
+            player.TargetX = null;
+            player.TargetY = null;
+        }
+        SendStats(player);
     }
 
     private void HandleAttack(AttackCmd attack)
@@ -1129,9 +1150,27 @@ public class GameLoopService : BackgroundService
 
         if (_rng.NextDouble() < 0.7)
         {
-            float tx = Math.Clamp(mob.HomeX + _rng.Next(-1000, 1001), 0, GameConstants.ZoneWidth);
-            float ty = Math.Clamp(mob.HomeY + _rng.Next(-1000, 1001), 0, GameConstants.ZoneHeight);
+            float tx = mob.HomeX + _rng.Next(-1000, 1001);
+            float ty = mob.HomeY + _rng.Next(-1000, 1001);
 
+            // Keep wander inside the mob's own zone so they don't drift into
+            // neighbours. Pull the target back toward the zone centre if outside.
+            var zone = _zones.FirstOrDefault(z => z.Zone.Id == mob.ZoneId)?.Zone;
+            if (zone is not null)
+            {
+                float dx = tx - zone.X, dy = ty - zone.Y;
+                float distSq = dx * dx + dy * dy;
+                if (distSq > zone.Radius * zone.Radius)
+                {
+                    float dist = MathF.Sqrt(distSq);
+                    float scale = zone.Radius / dist;
+                    tx = zone.X + dx * scale;
+                    ty = zone.Y + dy * scale;
+                }
+            }
+
+            tx = Math.Clamp(tx, 0, GameConstants.ZoneWidth);
+            ty = Math.Clamp(ty, 0, GameConstants.ZoneHeight);
             if (!GameConstants.InSafeZone(tx, ty))
             {
                 mob.TargetX = tx;
@@ -1176,6 +1215,12 @@ public class GameLoopService : BackgroundService
 
     private void UpdateAction(Entity entity)
     {
+        if (entity.StandUpTicks > 0)
+        {
+            entity.StandUpTicks--;
+            return;   // still recovering: no move/cast/attack this tick
+        }
+
         if (entity.CastingSkillId is string castingId)
         {
             if (--entity.CastTicksRemaining <= 0)
@@ -1533,6 +1578,14 @@ var effect = def.Effect;
         if (target.GodMode)
             return 0;
         target.Hp -= damage;
+
+        // Being hit while sitting breaks the sit and starts the stand-up window:
+        // you can't move/cast until it elapses.
+        if (target.Kind == EntityKind.Player && target.MoveState == MoveState.Sitting)
+        {
+            target.MoveState = MoveState.Running;
+            target.StandUpTicks = MovementTuning.StandUpTicks;
+        }
         return damage;
     }
 
@@ -1635,22 +1688,26 @@ var effect = def.Effect;
         if (entity.Engaged || entity.CastingSkillId is not null)
             return;
 
-        int multiplier = entity.Kind == EntityKind.Player &&
-                         GameConstants.InSafeZone(entity.X, entity.Y)
+        float multiplier = entity.Kind == EntityKind.Player &&
+                           GameConstants.InSafeZone(entity.X, entity.Y)
             ? GameConstants.SafeZoneRegenMultiplier
-            : 1;
+            : 1f;
+
+        // Movement-state bonus (Walking +20%, Sitting +80%) for players.
+        if (entity.Kind == EntityKind.Player)
+            multiplier *= MovementTuning.RegenMultiplier(entity.MoveState);
 
         if (entity.Hp < entity.MaxHp)
         {
             int regen = Math.Max(1,
-                (int)StatCalculator.HpRegenPerSecond(entity.Con, entity.Level)) * multiplier;
+                (int)(StatCalculator.HpRegenPerSecond(entity.Con, entity.Level) * multiplier));
             entity.Hp = Math.Min(entity.MaxHp, entity.Hp + regen);
         }
 
         if (entity.Mp < entity.MaxMp)
         {
             int regen = Math.Max(1,
-                (int)StatCalculator.MpRegenPerSecond(entity.Wit, entity.Level)) * multiplier;
+                (int)(StatCalculator.MpRegenPerSecond(entity.Wit, entity.Level) * multiplier));
             entity.Mp = Math.Min(entity.MaxMp, entity.Mp + regen);
         }
     }
@@ -1863,7 +1920,7 @@ var effect = def.Effect;
             p.Con, p.AtkStat, p.Wit, p.Dex,
             p.MaxHp, p.MaxMp, p.AttackPower, p.Defence,
             p.Accuracy, p.Evasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
-            p.Speed, SkillMath.CastModifier(p.Wit), p.CastSpeedMultiplier, p.AttackSpeedMultiplier, p.SkillPoints));
+            p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.CastSpeedMultiplier, p.AttackSpeedMultiplier, p.SkillPoints, p.MoveState));
 
     private void CancelCast(Entity entity)
     {
@@ -2298,13 +2355,16 @@ var effect = def.Effect;
             _ => name
         };
 
+        var mobType = MobCatalog.Get(name);
         var mob = new Entity
         {
             Name = displayName,
             Kind = EntityKind.Mob,
             X = x,
             Y = y,
-            Speed = 160,
+            WalkSpeed = mobType.WalkSpeed,
+            RunSpeed = mobType.RunSpeed,
+            Speed = mobType.RunSpeed,
             Level = level,
             Con = stats.Con,
             AtkStat = (int)(stats.Atk * atkMul),
@@ -2315,6 +2375,8 @@ var effect = def.Effect;
             Rank = zone.Rank
         };
         mob.RecomputeDerived();
+        // RecomputeDerived leaves mob RunSpeed/WalkSpeed as set above (player-only
+        // override), so Speed stays the catalog run speed.
         mob.MaxHp = (int)(mob.MaxHp * hpMul);
         mob.Hp = mob.MaxHp;
         mob.Mp = mob.MaxMp;

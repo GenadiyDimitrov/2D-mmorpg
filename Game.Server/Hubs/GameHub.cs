@@ -134,6 +134,12 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task SetMoveState(int state)
+    {
+        _world.Commands.Enqueue(new SetMoveStateCmd(Context.ConnectionId, (MoveState)state));
+        return Task.CompletedTask;
+    }
+
     public Task Respawn()
     {
         _world.Commands.Enqueue(new RespawnCmd(Context.ConnectionId));

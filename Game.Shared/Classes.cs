@@ -16,8 +16,17 @@ public enum Archetype
 /// <summary>A second class. RequiredQuestId is groundwork for class-change
 /// quests — null means level-gated only (current behaviour); when the quest
 /// system lands, a non-null id will require that quest be completed first.</summary>
+/// <summary>Flat stat bonuses granted on becoming a class — applied additively
+/// in RecomputeDerived, on top of gear. Lets a class have IDENTITY (a tank gets
+/// flat +Def/+HP) without inflating primary stats, which are reserved for the
+/// dye/tattoo/set gear layer. Both primary and secondary deltas are supported.</summary>
+public record ClassFlatBonus(
+    int Con = 0, int Atk = 0, int Wit = 0, int Dex = 0,        // primary
+    int MaxHp = 0, int MaxMp = 0, int Defence = 0, int Attack = 0, // secondary
+    int Evasion = 0, int Accuracy = 0);
+
 public record SecondClassDef(int Id, string Name, Race Race, BaseClass Base, Archetype Archetype,
-    string? RequiredQuestId = null);
+    string? RequiredQuestId = null, ClassFlatBonus? Bonus = null);
 
 public static class ClassCatalog
 {
@@ -42,7 +51,8 @@ public static class ClassCatalog
         new(14, "Champion",    Race.Human, BaseClass.Fighter, Archetype.Warrior),
         new(15, "Assassin",    Race.Human, BaseClass.Fighter, Archetype.Rogue),
         new(16, "Marksman",    Race.Human, BaseClass.Fighter, Archetype.Archer),
-        new(17, "Cleric",      Race.Human, BaseClass.Mage,    Archetype.Healer),
+        new(17, "Cleric",      Race.Human, BaseClass.Mage,    Archetype.Healer,
+            Bonus: new ClassFlatBonus(MaxMp: 60, MaxHp: 30, Defence: 10)),
         new(18, "Sorcerer",    Race.Human, BaseClass.Mage,    Archetype.Nuker),
         // God race (debug-only): one fighter path + one mage path.
         new(98, "Demigod",     Race.God,   BaseClass.Fighter, Archetype.Warrior),

@@ -101,6 +101,9 @@ public class NetworkChannel : IAsyncDisposable
     public Task QuestActionAsync(string action, string id, Guid npcEntityId) =>
         _connection!.SendAsync("QuestAction", action, id, npcEntityId);
 
+    public Task SetMoveStateAsync(MoveState state) =>
+        _connection!.SendAsync("SetMoveState", (int)state);
+
     public Task RespawnAsync() =>
         _connection!.SendAsync("Respawn");
 

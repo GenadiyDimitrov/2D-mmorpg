@@ -328,6 +328,7 @@ public partial class MainWindow : Window
     /// <summary>Learned skill ids + current SP (from the server).</summary>
     private readonly HashSet<string> _learnedSkills = new();
     private int _skillPoints;
+    private MoveState _moveState = MoveState.Running;
 
     private void EnsureSkillBarSlots()
     {
@@ -475,6 +476,22 @@ public partial class MainWindow : Window
         if (e.Key is Key.J)
         {
             ToggleQuestLog();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key is Key.Z)   // sit / stand toggle
+        {
+            var next = _moveState == MoveState.Sitting ? MoveState.Running : MoveState.Sitting;
+            _ = _net.SetMoveStateAsync(next);
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key is Key.X)   // walk / run toggle
+        {
+            var next = _moveState == MoveState.Walking ? MoveState.Running : MoveState.Walking;
+            _ = _net.SetMoveStateAsync(next);
             e.Handled = true;
             return;
         }

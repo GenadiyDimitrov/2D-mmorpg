@@ -97,7 +97,7 @@ public record StatsUpdate(
     int MaxHp, int MaxMp, int AttackPower, int Defence,
     int Accuracy, int Evasion, float CritChance, float BasicAttackRange,
     int SecondClass, float MoveSpeed, float CastModifier,
-    float CastSpeedMult, float AttackSpeedMult, int SkillPoints);
+    float CastSpeedMult, float AttackSpeedMult, int SkillPoints, MoveState MoveState);
 
 /// <summary>Server -> owning client: a potion cooldown started (seconds),
 /// or an active potion effect changed. Cooldown 0 = ready.</summary>

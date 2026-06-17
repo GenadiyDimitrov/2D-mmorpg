@@ -376,10 +376,23 @@ public partial class MainWindow
     {
         _stats = stats;
         _skillPoints = stats.SkillPoints;
+        _moveState = stats.MoveState;
         if (StatsPanel.Visibility == Visibility.Visible)
             RefreshStatsPanel();
         if (SkillsPanel.Visibility == Visibility.Visible)
             SkillPointsText.Text = $"SP: {_skillPoints}";
+        UpdateMoveStateIndicator();
+    }
+
+    private void UpdateMoveStateIndicator()
+    {
+        string label = _moveState switch
+        {
+            MoveState.Walking => "Walking",
+            MoveState.Sitting => "Sitting",
+            _ => "Running"
+        };
+        MoveStateText.Text = $"{label}  (Z sit / X walk)";
     }
 
     private void StatsButton_Click(object sender, RoutedEventArgs e) => ToggleStats();

@@ -115,7 +115,24 @@ public class Entity
     public float? TargetX { get; set; }
     public float? TargetY { get; set; }
 
+    /// <summary>Computed RUN speed (race+class base + gear/buffs), clamped to
+    /// the move cap. This is the value movement uses when running.</summary>
     public float Speed { get; set; } = GameConstants.BasePlayerSpeed;
+
+    /// <summary>Movement/regen state (players). Mobs use Engaged to pick walk/run.</summary>
+    public MoveState MoveState { get; set; } = MoveState.Running;
+
+    /// <summary>Ticks remaining in the stand-up recovery after sitting was broken.
+    /// While &gt; 0 the player can't move/cast/act.</summary>
+    public int StandUpTicks { get; set; }
+
+    /// <summary>Per-entity move-speed ceiling (default 250; a future rogue
+    /// ultimate raises it to outrun even a buffed mage).</summary>
+    public float MoveSpeedCap { get; set; } = StatCaps.MoveSpeed;
+
+    /// <summary>Mob walk/run speeds (from MobCatalog). Players derive walk from run.</summary>
+    public float WalkSpeed { get; set; }
+    public float RunSpeed { get; set; }
 
     // ----- Core stats (CON/ATK/WIT/DEX) --------------------------------------
 
@@ -182,7 +199,28 @@ public class Entity
     public float EffectiveBasicAttack => ModifiedStat(BasicAttackPower, SkillEffect.BuffAtk);
 
     /// <summary>Move speed including move-speed buffs (flat + percent).</summary>
-    public float EffectiveSpeed => ModifiedStat(Speed, SkillEffect.BuffMoveSpeed);
+    /// <summary>Current move speed: 0 if sitting or standing up, walk or run base
+    /// by state, plus move-speed buffs, clamped to the (raisable) move cap.</summary>
+    public float EffectiveSpeed
+    {
+        get
+        {
+            if (Kind == EntityKind.Mob)
+            {
+                // Mobs walk while wandering, run while aggroed/engaged.
+                float mobBase = Engaged ? RunSpeed : WalkSpeed;
+                if (mobBase <= 0) mobBase = Speed;
+                return ModifiedStat(mobBase, SkillEffect.BuffMoveSpeed);
+            }
+
+            if (StandUpTicks > 0 || MoveState == MoveState.Sitting)
+                return 0f;
+            float baseSpeed = MoveState == MoveState.Walking ? WalkSpeed : RunSpeed;
+            if (baseSpeed <= 0) baseSpeed = Speed;   // fallback
+            float withBuffs = ModifiedStat(baseSpeed, SkillEffect.BuffMoveSpeed);
+            return Math.Min(withBuffs, MoveSpeedCap);
+        }
+    }
 
     /// <summary>Defence including BuffDef (adds) and DebuffDef (subtracts).</summary>
     public float EffectiveDefence =>
@@ -278,7 +316,14 @@ public class Entity
         Evasion = StatCalculator.Evasion(Dex, Level);
         CritChance = StatCalculator.CritChance(Dex);
         BasicAttackRange = GameConstants.MeleeRange;
-        Speed = GameConstants.BasePlayerSpeed;
+        // Base run speed: players from race+class table, mobs from their spawn-set
+        // RunSpeed. Gear/buffs raise it below; EffectiveSpeed clamps to the cap.
+        if (Kind == EntityKind.Player)
+        {
+            RunSpeed = SpeedTable.BaseRunSpeed(Race, BaseClass);
+            WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor;
+        }
+        Speed = Kind == EntityKind.Player ? RunSpeed : (RunSpeed > 0 ? RunSpeed : Speed);
         CastSpeedMultiplier = 1f;
         AttackSpeedMultiplier = 1f;
 
@@ -330,9 +375,28 @@ public class Entity
         AttackPower += (int)(AttackPower * atkPct / 100f);
         Evasion += (int)(Evasion * evaPct / 100f);
         Defence += (int)(Defence * defPct / 100f);
-        Speed = GameConstants.BasePlayerSpeed * (1f + speedPct / 100f);
+        if (Kind == EntityKind.Player)
+        {
+            RunSpeed = SpeedTable.BaseRunSpeed(Race, BaseClass) * (1f + speedPct / 100f);
+            WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor;
+            Speed = RunSpeed;   // running by default; EffectiveSpeed picks state + clamps
+        }
         CastSpeedMultiplier = Math.Max(0.4f, 1f - castPct / 100f);
         AttackSpeedMultiplier = Math.Max(0.4f, 1f - atkSpeedPct / 100f);
+
+        // ----- Flat class bonuses (class identity; additive over gear) -----
+        if (Kind == EntityKind.Player && SecondClass > 0
+            && ClassCatalog.Get(SecondClass)?.Bonus is ClassFlatBonus b)
+        {
+            MaxHp += b.MaxHp;
+            MaxMp += b.MaxMp;
+            Defence += b.Defence;
+            AttackPower += b.Attack;
+            Evasion += b.Evasion;
+            Accuracy += b.Accuracy;
+            // Primary deltas feed nothing further here (derived already computed),
+            // but are exposed for future systems; applied as flat secondary above.
+        }
 
         // Archetype identity: scale basic-attack power, add crit/eva for
         // archers & rogues. Skills keep using full AttackPower.
