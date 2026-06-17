@@ -37,5 +37,6 @@ public static partial class ClassSkillTables
 
         // Per-line extras / overrides (authored in their own files).
         RegisterHumanMage();
+        RegisterGod();
     }
 }

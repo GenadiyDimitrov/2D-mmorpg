@@ -1163,7 +1163,7 @@ public class GameLoopService : BackgroundService
 
     private void UpdateAction(Entity entity)
     {
-        if (entity.CastingSkillId is int castingId)
+        if (entity.CastingSkillId is string castingId)
         {
             if (--entity.CastTicksRemaining <= 0)
             {
@@ -1174,7 +1174,7 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        if (entity.QueuedSkillId is int queuedId)
+        if (entity.QueuedSkillId is string queuedId)
         {
             UpdateQueuedSkill(entity, queuedId);
             return;
@@ -1184,7 +1184,7 @@ public class GameLoopService : BackgroundService
             UpdateAutoAttack(entity);
     }
 
-    private void UpdateQueuedSkill(Entity caster, int skillId)
+    private void UpdateQueuedSkill(Entity caster, string skillId)
     {
         var def = SkillCatalog.Get(skillId);
         if (def is null || caster.QueuedTargetId is not Guid targetId)
@@ -1265,7 +1265,7 @@ var effect = def.Effect;
         {
             offensive = true;
             float miss = StatCalculator.MissChance(
-                caster.Accuracy + SkillMath.PhysicalSkillAccuracyBonus, target.EffectiveEvasion);
+                caster.Accuracy + SkillMath.PhysicalSkillAccuracyBonus, (int)target.EffectiveEvasion);
 
             if (_rng.NextDouble() < miss)
             {
@@ -1484,7 +1484,7 @@ var effect = def.Effect;
 
     private void ResolveBasicAttack(Entity attacker, Entity target)
     {
-        float missChance = StatCalculator.MissChance(attacker.Accuracy, target.EffectiveEvasion);
+        float missChance = StatCalculator.MissChance(attacker.Accuracy, (int)target.EffectiveEvasion);
 
         if (_rng.NextDouble() < missChance)
         {

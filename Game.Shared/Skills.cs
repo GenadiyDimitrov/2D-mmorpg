@@ -187,13 +187,13 @@ public static class SkillCatalog
                 MpCost: 35, CastTicks: 10, CooldownTicks: 5, Range: 0, Power: 0,
                 DurationTicks: 6000, BuffKey: "hp_boost", Rank: 2,
                 Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffHp, 0.15f) },
-                Category: SkillCategory.Buff, SpCost: 3,
+                Category: SkillCategory.Buff, SpCost: 3, Replaces: [HpBoost1],
                 Description: "Raises Max HP by 15%."),
             new(HpBoost3, "HP Boost", BaseClass.Mage, SkillEffect.BuffHp,
                 MpCost: 45, CastTicks: 10, CooldownTicks: 5, Range: 0, Power: 0,
                 DurationTicks: 6000, BuffKey: "hp_boost", Rank: 3,
                 Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffHp, 0.35f) },
-                Category: SkillCategory.Buff, SpCost: 4,
+                Category: SkillCategory.Buff, SpCost: 4, Replaces: [HpBoost2, HpBoost1], 
                 Description: "Raises Max HP by 35%."),
 
             // ---- Wind Walk (move-speed self buff, learnable) ----

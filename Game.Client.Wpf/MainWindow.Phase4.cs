@@ -1089,7 +1089,7 @@ public partial class MainWindow
             if (count == 0)
                 button.Opacity = 0.4;
 
-            int id = defId;
+            string id = defId;
             button.Click += async (_, _) =>
             {
                 var firstStack = _inventory.FirstOrDefault(i => i.DefId == id);
