@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 8 (movement states, speeds, mob AI fixes)
+# L2-like MMORPG — Phase 9 (L2-style ratio damage, magic channel)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,40 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 9 (this build)
+
+### Damage is now a ratio, not a subtraction
+- Old model was `max(atk - def, 0)` — a wall once defence ≥ attack. **New model
+  is L2-style ratio damage**: `K · (atk · lvlMod + power) / def`. Defence gives
+  **diminishing returns** (never fully blocks), attack always does something, and
+  damage **scales smoothly with level** via `lvlMod = (level+89)/100`.
+- **Weapon variance**: each hit rolls a ± band by weapon type (bow/dagger spiky,
+  blunt steady), so hits aren't identical.
+- Tuning lives in `StatCalculator` (`PhysicalK`, `MagicK`, the formulas).
+
+### Two damage channels (physical vs magic)
+- **One power stat (ATK)** feeds **both** `pAtk` (physical) and `mAtk` (magic) —
+  no separate INT. **Weapons decide the split** via a new **`MAtkBonus`**: a staff
+  is mostly mAtk, a sword mostly pAtk, and **hybrid weapons are possible**
+  (a weapon can give both).
+- **Physical** can be **evaded** and crits up to **×10**. **Magic** can **fail**
+  (reduced damage, not zero) and crits up to **×3** — the spiky mage feel. Magic
+  currently mitigates against physical defence; magic-resist passives/jewels come
+  later.
+
+### Split, capped crits
+- **Physical crit rate ← DEX** (cap **50%**); **magic crit rate ← WIT** (cap
+  **20%**). So a high-WIT mage is a **fast, crit-prone caster, not a bigger
+  nuker** — WIT buys crit frequency and cast speed, not raw power.
+- Crit-damage caps: physical **×10**, magic **×3**. All caps in `StatCaps`.
+- The Stats window now shows **P.Atk / M.Atk** and **Crit (Phys / Magic)**.
+
+### Tuning notes
+- Mob **defence growth was slowed** so attack outpaces it as you level (otherwise
+  the ratio stays flat). Players stay tankier than mobs.
+- Adjust feel via `StatCalculator.PhysicalK` / `MagicK`, weapon `mAtkFraction`
+  (in `ItemCatalog`), and the crit caps in `StatCaps`.
 
 ## New in Phase 8 (this build)
 

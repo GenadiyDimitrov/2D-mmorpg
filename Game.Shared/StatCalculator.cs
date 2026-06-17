@@ -55,17 +55,92 @@ public static class StatCalculator
     /// in the items phase: weapon + stat + buffs/passives.</summary>
     public static int AttackPower(int atkStat, int level) => atkStat + level * 2;
 
-    public static int Defence(int con, int level) => con / 2 + level;
+    public static int Defence(int con, int level) => con / 3 + level / 2;
 
     /// <summary>Crit chance from DEX. Race/class/equipment modifiers come
     /// later. 25 DEX = 10%; capped at 50%.</summary>
     public static float CritChance(int dex) => Math.Clamp(0.05f + dex * 0.002f, 0f, 0.50f);
 
-    /// <summary>Raw damage of one basic attack before the crit multiplier.</summary>
+    /// <summary>Raw damage of one basic attack before the crit multiplier.
+    /// Kept for compatibility; the new ratio model is PhysicalDamage below.</summary>
     public static int BasicAttackDamage(int attackPower, int defence) =>
         Math.Max(1, attackPower * 2 - defence);
 
     public const float CritMultiplier = 2.0f;
+
+    // ===== L2-style ratio damage ===========================================
+    //
+    // Damage is a RATIO of attack to defence (not a subtraction), so defence
+    // gives diminishing returns and never fully blocks. lvlMod scales the whole
+    // curve by level. Physical and magic share the shape but differ: physical
+    // can be EVADED and crits up to x10; magic can FAIL (resist roll) and crits
+    // up to x3. Magic currently divides by physical defence too (magic-resist
+    // passives/jewels add a separate multiplier later).
+
+    /// <summary>Level modifier: (level+89)/100. L1=0.90, L11=1.00, L80=1.69.</summary>
+    public static float LevelMod(int level) => (level + 89) / 100f;
+
+    /// <summary>Scalar constants to place damage numbers in a good range.</summary>
+    public const float PhysicalK = 25f;
+    public const float MagicK = 18f;
+
+    /// <summary>Physical ratio damage: K·(pAtk·lvlMod + power)/pDef. Never zero
+    /// (defence is a divisor). 'power' is 0 for basic attacks, the skill power
+    /// for skills. Defence floored at 1 to avoid divide-by-zero.</summary>
+    public static int PhysicalDamage(int pAtk, int power, int pDef, int attackerLevel)
+    {
+        float def = Math.Max(1, pDef);
+        float dmg = PhysicalK * (pAtk * LevelMod(attackerLevel) + power) / def;
+        return Math.Max(1, (int)dmg);
+    }
+
+    /// <summary>Magic ratio damage: squared-ish for the spiky mage feel —
+    /// K·(mAtk·lvlMod + power)·mAtk / pDef. Diminishing on defence, scales hard
+    /// with mAtk so nukers spike.</summary>
+    public static int MagicDamage(int mAtk, int power, int pDef, int casterLevel)
+    {
+        float def = Math.Max(1, pDef);
+        float dmg = MagicK * (mAtk * LevelMod(casterLevel) + power) / def;
+        return Math.Max(1, (int)dmg);
+    }
+
+    /// <summary>Weapon damage variance — a ± random band. Spikier weapons (bow,
+    /// dagger) get a wider band; steady weapons (blunt) narrower. Returns a
+    /// multiplier around 1.0.</summary>
+    public static float WeaponVariance(WeaponType weapon, System.Random rng)
+    {
+        float band = weapon switch
+        {
+            WeaponType.Bow => 0.30f,
+            WeaponType.Dagger => 0.20f,
+            WeaponType.Staff => 0.15f,
+            _ => 0.10f
+        };
+        return 1f + ((float)rng.NextDouble() * 2f - 1f) * band;
+    }
+
+    // ----- Crit (split: physical vs magic, each capped) --------------------
+
+    /// <summary>Physical crit RATE from DEX. Cap 50% (DEX 500 ≈ cap).</summary>
+    public static float PhysicalCritChance(int dex) =>
+        Math.Clamp(0.05f + dex * 0.0009f, 0f, StatCaps.PhysicalCritRate);
+
+    /// <summary>Magic crit RATE from WIT. Cap 20% (WIT 200 ≈ cap).</summary>
+    public static float MagicCritChance(int wit) =>
+        Math.Clamp(wit * 0.001f, 0f, StatCaps.MagicCritRate);
+
+    /// <summary>Physical crit DAMAGE multiplier, capped x10.</summary>
+    public static float PhysicalCritMult(float bonus = 0f) =>
+        Math.Min(2.0f + bonus, StatCaps.PhysicalCritDamage);
+
+    /// <summary>Magic crit DAMAGE multiplier, capped x3.</summary>
+    public static float MagicCritMult(float bonus = 0f) =>
+        Math.Min(2.0f + bonus, StatCaps.MagicCritDamage);
+
+    /// <summary>Magic fail chance — a spell does reduced damage when it "fails",
+    /// scaled by target-vs-caster level. Mirrors physical miss but for magic.</summary>
+    public static float MagicFailChance(int casterLevel, int targetLevel) =>
+        Math.Clamp(0.03f + (targetLevel - casterLevel) * 0.02f, 0.01f, 0.80f);
 
     // ----- Progression -------------------------------------------------------
 

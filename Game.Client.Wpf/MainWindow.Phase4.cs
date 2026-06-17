@@ -425,10 +425,11 @@ public partial class MainWindow
         StatsList.Items.Add(MakeStatRow("CON / ATK / WIT / DEX",
             $"{st.Con} / {st.Atk} / {st.Wit} / {st.Dex}"));
         StatsList.Items.Add(MakeStatRow("Max HP / MP", $"{st.MaxHp} / {st.MaxMp}"));
-        StatsList.Items.Add(MakeStatRow("Attack Power", st.AttackPower.ToString()));
+        StatsList.Items.Add(MakeStatRow("P.Atk / M.Atk", $"{st.AttackPower} / {st.MagicAttack}"));
         StatsList.Items.Add(MakeStatRow("Defence", st.Defence.ToString()));
         StatsList.Items.Add(MakeStatRow("Accuracy / Evasion", $"{st.Accuracy} / {st.Evasion}"));
-        StatsList.Items.Add(MakeStatRow("Crit Chance", $"{st.CritChance * 100:0.#}%"));
+        StatsList.Items.Add(MakeStatRow("Crit (Phys / Magic)",
+            $"{st.CritChance * 100:0.#}% / {st.MagicCritChance * 100:0.#}%"));
         StatsList.Items.Add(MakeStatRow("Attack Range", $"{st.BasicAttackRange:0}"));
         StatsList.Items.Add(MakeStatRow("Move Speed", $"{st.MoveSpeed:0}"));
 

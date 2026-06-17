@@ -32,6 +32,7 @@ public record ItemDef(
     ArmorWeight Weight = ArmorWeight.None,
     WeaponType WeaponType = WeaponType.None,
     int AtkBonus = 0,
+    int MAtkBonus = 0,
     int DefBonus = 0,
     int HpBonus = 0,
     int MpBonus = 0,
@@ -103,6 +104,18 @@ public static class ItemCatalog
                     int atk = (int)(gradeAtk * (1f + 0.40f * (int)rarity));
                     int mp = (int)(gradeMp * (1f + 0.20f * (int)rarity));
 
+                    // Magic attack per weapon type: caster weapons (staff) carry
+                    // most of their power as mAtk, melee weapons a small splash,
+                    // so hybrid weapons are possible. Tune the fractions here.
+                    float mAtkFraction = w.Type switch
+                    {
+                        WeaponType.Staff => 1.20f,   // caster weapon: high mAtk
+                        WeaponType.Bow => 0.25f,
+                        WeaponType.Dagger => 0.30f,
+                        _ => 0.35f                    // sword/dual/blunt: small splash
+                    };
+                    int mAtk = (int)(atk * mAtkFraction);
+
                     string gradeName = grade == ItemGrade.F ? "Worn" : "Steel";
                     string rarityName = rarity switch
                     {
@@ -117,6 +130,7 @@ public static class ItemCatalog
                         EquipSlot.Weapon, grade, rarity,
                         WeaponType: w.Type,
                         AtkBonus: atk,
+                        MAtkBonus: mAtk,
                         MpBonus: mp,
                         WeaponRange: w.Range));
                 }

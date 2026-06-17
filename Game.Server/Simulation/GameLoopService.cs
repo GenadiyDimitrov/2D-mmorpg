@@ -1331,12 +1331,14 @@ var effect = def.Effect;
             }
             else
             {
-                int damage = SkillMath.PhysicalSkillDamage(
-                    def.Power, caster.EffectiveAttack, target.EffectiveDefence);
+                int damage = StatCalculator.PhysicalDamage(
+                    (int)caster.EffectiveAttack, def.Power,
+                    (int)target.EffectiveDefence, caster.Level);
+                damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
 
                 if (_rng.NextDouble() < caster.CritChance)
                 {
-                    damage = (int)(damage * StatCalculator.CritMultiplier);
+                    damage = (int)(damage * StatCalculator.PhysicalCritMult());
                     BroadcastCombat(caster, target, damage, CombatOutcome.Crit, def.Name);
                 }
                 else
@@ -1351,17 +1353,31 @@ var effect = def.Effect;
         if (effect.HasFlag(SkillEffect.MagicDamage))
         {
             offensive = true;
-            float fail = SkillMath.SpellFailChance(caster.Level, target.Level);
+            int damage = StatCalculator.MagicDamage(
+                (int)caster.EffectiveMagicAttack, def.Power,
+                (int)target.EffectiveDefence, caster.Level);
+            damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
+
+            // Magic "fail" = reduced damage (not zero) when the spell is resisted.
+            float fail = StatCalculator.MagicFailChance(caster.Level, target.Level);
             if (_rng.NextDouble() < fail)
             {
-                BroadcastCombat(caster, target, 0, CombatOutcome.Fail, def.Name);
+                damage = Math.Max(1, damage / 3);
+                ApplyDamage(target, damage);
+                BroadcastCombat(caster, target, damage, CombatOutcome.Fail, def.Name);
             }
             else
             {
-                int damage = SkillMath.MagicSkillDamage(
-                    def.Power, caster.EffectiveAttack, caster.Wit, target.EffectiveDefence);
+                if (_rng.NextDouble() < caster.MagicCritChance)
+                {
+                    damage = (int)(damage * StatCalculator.MagicCritMult());
+                    BroadcastCombat(caster, target, damage, CombatOutcome.Crit, def.Name);
+                }
+                else
+                {
+                    BroadcastCombat(caster, target, damage, CombatOutcome.Hit, def.Name);
+                }
                 ApplyDamage(target, damage);
-                BroadcastCombat(caster, target, damage, CombatOutcome.Hit, def.Name);
             }
         }
 
@@ -1550,12 +1566,14 @@ var effect = def.Effect;
         }
         else
         {
-            int damage = StatCalculator.BasicAttackDamage(
-                (int)attacker.EffectiveBasicAttack, (int)target.EffectiveDefence);
+            int damage = StatCalculator.PhysicalDamage(
+                (int)attacker.EffectiveBasicAttack, 0,
+                (int)target.EffectiveDefence, attacker.Level);
+            damage = (int)(damage * StatCalculator.WeaponVariance(attacker.WeaponType, _rng));
 
             if (_rng.NextDouble() < attacker.CritChance)
             {
-                damage = (int)(damage * StatCalculator.CritMultiplier);
+                damage = (int)(damage * StatCalculator.PhysicalCritMult());
                 BroadcastCombat(attacker, target, damage, CombatOutcome.Crit);
             }
             else
@@ -1920,7 +1938,7 @@ var effect = def.Effect;
             p.Con, p.AtkStat, p.Wit, p.Dex,
             p.MaxHp, p.MaxMp, p.AttackPower, p.Defence,
             p.Accuracy, p.Evasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
-            p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.CastSpeedMultiplier, p.AttackSpeedMultiplier, p.SkillPoints, p.MoveState));
+            p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.CastSpeedMultiplier, p.AttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttack, p.MagicCritChance));
 
     private void CancelCast(Entity entity)
     {

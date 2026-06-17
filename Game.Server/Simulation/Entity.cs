@@ -148,12 +148,15 @@ public class Entity
     public int MaxHp { get; set; }
     public int Mp { get; set; }
     public int MaxMp { get; set; }
-    public int AttackPower { get; set; }      // feeds SKILLS
+    public int AttackPower { get; set; }      // physical attack (pAtk); feeds SKILLS
     public int BasicAttackPower { get; set; } // feeds auto-attacks (archetype-scaled)
+    public int MagicAttack { get; set; }      // magic attack (mAtk); feeds spells
     public int Defence { get; set; }
     public int Accuracy { get; set; }
     public int Evasion { get; set; }
-    public float CritChance { get; set; }
+    public WeaponType WeaponType { get; set; } = WeaponType.None;
+    public float CritChance { get; set; }       // physical crit rate
+    public float MagicCritChance { get; set; }  // magic crit rate (from WIT)
     public float BasicAttackRange { get; set; } = GameConstants.MeleeRange;
 
     /// <summary>Cast-time multiplier from item Cast Speed attributes (0.8 = 20% faster).</summary>
@@ -194,6 +197,9 @@ public class Entity
     }
 
     public float EffectiveAttack => ModifiedStat(AttackPower, SkillEffect.BuffAtk);
+
+    /// <summary>Buffed magic attack (mAtk). Shares the BuffAtk flag for now.</summary>
+    public float EffectiveMagicAttack => ModifiedStat(MagicAttack, SkillEffect.BuffAtk);
 
     /// <summary>Buffed attack power for BASIC attacks (archetype-scaled).</summary>
     public float EffectiveBasicAttack => ModifiedStat(BasicAttackPower, SkillEffect.BuffAtk);
@@ -311,11 +317,14 @@ public class Entity
         MaxHp = StatCalculator.MaxHp(Con, Level);
         MaxMp = StatCalculator.MaxMp(Wit, Level);
         AttackPower = StatCalculator.AttackPower(AtkStat, Level);
+        MagicAttack = StatCalculator.AttackPower(AtkStat, Level); // mAtk also from ATK
         Defence = StatCalculator.Defence(Con, Level);
         Accuracy = StatCalculator.Accuracy(Dex, Level);
         Evasion = StatCalculator.Evasion(Dex, Level);
-        CritChance = StatCalculator.CritChance(Dex);
+        CritChance = StatCalculator.PhysicalCritChance(Dex);
+        MagicCritChance = StatCalculator.MagicCritChance(Wit);
         BasicAttackRange = GameConstants.MeleeRange;
+        WeaponType = WeaponType.None;
         // Base run speed: players from race+class table, mobs from their spawn-set
         // RunSpeed. Gear/buffs raise it below; EffectiveSpeed clamps to the cap.
         if (Kind == EntityKind.Player)
@@ -333,10 +342,14 @@ public class Entity
                 continue;
 
             AttackPower += EnchantRules.BonusAt(def.AtkBonus, item.Enchant);
+            MagicAttack += EnchantRules.BonusAt(def.MAtkBonus, item.Enchant);
             Defence += EnchantRules.BonusAt(def.DefBonus, item.Enchant);
             MaxHp += EnchantRules.BonusAt(def.HpBonus, item.Enchant);
             MaxMp += EnchantRules.BonusAt(def.MpBonus, item.Enchant);
             Evasion += EnchantRules.BonusAt(def.EvaBonus, item.Enchant);
+
+            if (def.Slot == EquipSlot.Weapon)
+                WeaponType = def.WeaponType;
 
             if (def.WeaponRange > 0)
             {
@@ -373,6 +386,7 @@ public class Entity
         MaxHp += (int)(MaxHp * hpPct / 100f);
         MaxMp += (int)(MaxMp * mpPct / 100f);
         AttackPower += (int)(AttackPower * atkPct / 100f);
+        MagicAttack += (int)(MagicAttack * atkPct / 100f);
         Evasion += (int)(Evasion * evaPct / 100f);
         Defence += (int)(Defence * defPct / 100f);
         if (Kind == EntityKind.Player)

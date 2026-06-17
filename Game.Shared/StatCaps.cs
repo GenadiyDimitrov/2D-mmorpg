@@ -22,7 +22,19 @@ public static class StatCaps
     /// WIT→cast-speed formula lands (casting round).</summary>
     public const int CastSpeed = 1999;
 
-    /// <summary>Crit chance ceiling.</summary>
+    /// <summary>Physical crit RATE ceiling (50%, from DEX).</summary>
+    public const float PhysicalCritRate = 0.50f;
+
+    /// <summary>Magic crit RATE ceiling (20%, from WIT).</summary>
+    public const float MagicCritRate = 0.20f;
+
+    /// <summary>Physical crit DAMAGE ceiling (x10).</summary>
+    public const float PhysicalCritDamage = 10.0f;
+
+    /// <summary>Magic crit DAMAGE ceiling (x3).</summary>
+    public const float MagicCritDamage = 3.0f;
+
+    /// <summary>Legacy single crit-chance cap (kept for old references).</summary>
     public const float CritChance = 0.50f;
 }
 
