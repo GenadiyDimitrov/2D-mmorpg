@@ -2,3 +2,6 @@ bin/
 obj/
 .vs/
 *.user
+/Game.Server/game.db
+/Game.Server/game.db-shm
+/Game.Server/game.db-wal
