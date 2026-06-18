@@ -26,44 +26,44 @@ public static class WorldMap
         // --- Starter ring near town (town center is the map middle) ---
         // MaxCount = population cap; RespawnSeconds/Variance = delay after a kill.
         new(X: 6000,  Y: 4000,  Radius: 1400, MinLevel: 1,  MaxLevel: 3,
-            MobTypes: new[] { "Wolf", "Boar" }, MaxCount: 10,
+            MobTypes: new[] { "grey_wolf", "brown_boar" }, MaxCount: 10,
             RespawnSeconds: 8, RespawnVariance: 3),
         new(X: 9000,  Y: 4000,  Radius: 1400, MinLevel: 1,  MaxLevel: 3,
-            MobTypes: new[] { "Slime", "Boar" }, MaxCount: 10,
+            MobTypes: new[] { "green_slime", "brown_boar" }, MaxCount: 10,
             RespawnSeconds: 8, RespawnVariance: 3),
 
         // --- Mid-level fields ---
         new(X: 3000,  Y: 7000,  Radius: 1600, MinLevel: 4,  MaxLevel: 7,
-            MobTypes: new[] { "Boar", "Spider" }, MaxCount: 12,
+            MobTypes: new[] { "brown_boar", "cave_spider" }, MaxCount: 12,
             RespawnSeconds: 12, RespawnVariance: 4),
         new(X: 12000, Y: 7000,  Radius: 1600, MinLevel: 4,  MaxLevel: 7,
-            MobTypes: new[] { "Wolf", "Spider" }, MaxCount: 12,
+            MobTypes: new[] { "grey_wolf", "cave_spider" }, MaxCount: 12,
             RespawnSeconds: 12, RespawnVariance: 4),
 
         // --- Higher-level, further out ---
         new(X: 2500,  Y: 11000, Radius: 1800, MinLevel: 8,  MaxLevel: 12,
-            MobTypes: new[] { "Spider", "Bandit" }, MaxCount: 12,
+            MobTypes: new[] { "cave_spider", "road_bandit" }, MaxCount: 12,
             RespawnSeconds: 15, RespawnVariance: 5),
         new(X: 12500, Y: 11000, Radius: 1800, MinLevel: 13, MaxLevel: 18,
-            MobTypes: new[] { "Bandit" }, MaxCount: 10,
+            MobTypes: new[] { "road_bandit" }, MaxCount: 10,
             RespawnSeconds: 18, RespawnVariance: 6),
 
         // --- Day/night example: same spot, different mobs by time of day. ---
         new(X: 7500,  Y: 9500,  Radius: 1500, MinLevel: 5,  MaxLevel: 9,
-            MobTypes: new[] { "Boar", "Wolf" }, MaxCount: 10,
+            MobTypes: new[] { "brown_boar", "grey_wolf" }, MaxCount: 10,
             RespawnSeconds: 12, RespawnVariance: 4, Active: ActiveTime.Day),
         new(X: 7500,  Y: 9500,  Radius: 1500, MinLevel: 7,  MaxLevel: 11,
-            MobTypes: new[] { "Spider", "Bandit" }, MaxCount: 10,
+            MobTypes: new[] { "cave_spider", "road_bandit" }, MaxCount: 10,
             RespawnSeconds: 12, RespawnVariance: 4, Active: ActiveTime.Night),
 
         // --- Elite: single tough mob, ~2min ±30s respawn. ---
         new(X: 4000,  Y: 9000,  Radius: 300,  MinLevel: 12, MaxLevel: 12,
-            MobTypes: new[] { "Bandit" }, MaxCount: 1,
+            MobTypes: new[] { "road_bandit" }, MaxCount: 1,
             RespawnSeconds: 120, RespawnVariance: 30, Rank: MobRank.Elite),
 
         // --- Boss: ~21h ±3h respawn, persisted across restarts. ---
         new(X: 11000, Y: 13000, Radius: 250,  MinLevel: 20, MaxLevel: 20,
-            MobTypes: new[] { "Bandit" }, MaxCount: 1,
+            MobTypes: new[] { "road_bandit" }, MaxCount: 1,
             RespawnSeconds: 21 * 3600, RespawnVariance: 3 * 3600, Rank: MobRank.Boss),
     };
 
@@ -73,6 +73,40 @@ public static class WorldMap
     /// thick, semi-transparent grey lines. Each path is a sequence of points
     /// with a half-width; the strip is the area within Width of any segment.
     /// </summary>
+    /// <summary>Safe zones (cities/castles): no mobs spawn or enter, aggro
+    /// clears inside, regen is boosted. Each has a stable id so teleports can
+    /// target them later. The first is the starter town at map centre.</summary>
+    public static readonly SafeZone[] SafeZones =
+    {
+        new("town_giran",   "Town of Giran",   7500, 7500, 1200),
+        new("town_dion",    "Town of Dion",    3000, 3000, 900),
+        new("castle_aden",  "Aden Castle",     12000, 4000, 1000),
+    };
+
+    /// <summary>True if the point is inside ANY safe zone.</summary>
+    public static bool InAnySafeZone(float x, float y)
+    {
+        foreach (var z in SafeZones)
+        {
+            float dx = x - z.X, dy = y - z.Y;
+            if (dx * dx + dy * dy <= z.Radius * z.Radius)
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>The safe zone containing a point, or null.</summary>
+    public static SafeZone? SafeZoneAt(float x, float y)
+    {
+        foreach (var z in SafeZones)
+        {
+            float dx = x - z.X, dy = y - z.Y;
+            if (dx * dx + dy * dy <= z.Radius * z.Radius)
+                return z;
+        }
+        return null;
+    }
+
     /// <summary>NPCs placed in the world (quest givers, class-change masters).
     /// Stationary, non-combat. Add NPCs here; quests/class-changes reference
     /// them by Id.</summary>
@@ -202,4 +236,7 @@ public enum NpcRole { QuestGiver = 0, ClassChange = 1 }
 
 /// <summary>A placed NPC. Id is referenced by quests + class-change requirements.</summary>
 public record NpcDef(string Id, string Name, float X, float Y, NpcRole Role);
+
+/// <summary>A safe zone (city/castle). Id is referenced by teleports later.</summary>
+public record SafeZone(string Id, string Name, float X, float Y, float Radius);
 

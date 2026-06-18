@@ -24,7 +24,7 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<string> _whisperNames = new();
     private readonly Stopwatch _clock = Stopwatch.StartNew();
 
-    private Ellipse? _safeZoneVisual;
+    private readonly List<(Ellipse Visual, TextBlock Label, float X, float Y, float Radius)> _safeZoneVisuals = new();
     // World-map decor (positioned each frame like the safe zone).
     private readonly List<(Ellipse Visual, TextBlock Label, float X, float Y, float Radius)> _spawnZoneVisuals = new();
     private readonly List<(Polyline Visual, MapPoint[] Points)> _roadVisuals = new();
@@ -912,15 +912,28 @@ public partial class MainWindow : Window
 
     private void BuildWorldDecor()
     {
-        _safeZoneVisual = new Ellipse
+        foreach (var sz in WorldMap.SafeZones)
         {
-            Width = GameConstants.SafeZoneRadius * 2 * Scale,
-            Height = GameConstants.SafeZoneRadius * 2 * Scale,
-            Fill = new SolidColorBrush(Color.FromArgb(55, 70, 200, 90)),
-            Stroke = new SolidColorBrush(Color.FromArgb(120, 90, 220, 110)),
-            StrokeThickness = 2
-        };
-        WorldCanvas.Children.Insert(0, _safeZoneVisual);
+            var disc = new Ellipse
+            {
+                Width = sz.Radius * 2 * Scale,
+                Height = sz.Radius * 2 * Scale,
+                Fill = new SolidColorBrush(Color.FromArgb(55, 70, 200, 90)),
+                Stroke = new SolidColorBrush(Color.FromArgb(120, 90, 220, 110)),
+                StrokeThickness = 2,
+                IsHitTestVisible = false
+            };
+            var label = new TextBlock
+            {
+                Text = sz.Name,
+                Foreground = new SolidColorBrush(Color.FromArgb(220, 200, 255, 210)),
+                FontSize = 13, FontWeight = FontWeights.SemiBold,
+                TextAlignment = TextAlignment.Center, IsHitTestVisible = false
+            };
+            _safeZoneVisuals.Add((disc, label, sz.X, sz.Y, sz.Radius));
+            WorldCanvas.Children.Insert(0, disc);
+            WorldCanvas.Children.Add(label);
+        }
 
         // Spawn zones: very light, semi-transparent red discs (placeholder until
         // real environment art). Drawn beneath entities.
@@ -1015,11 +1028,17 @@ public partial class MainWindow : Window
 
     private void UpdateSafeZoneVisual(double cw, double ch)
     {
-        if (_safeZoneVisual is null)
-            return;
-        double r = GameConstants.SafeZoneRadius * Scale;
-        Canvas.SetLeft(_safeZoneVisual, (GameConstants.ZoneWidth / 2 - _camX) * Scale + cw / 2 - r);
-        Canvas.SetTop(_safeZoneVisual, (GameConstants.ZoneHeight / 2 - _camY) * Scale + ch / 2 - r);
+        foreach (var (visual, label, zx, zy, radius) in _safeZoneVisuals)
+        {
+            double r = radius * Scale;
+            double cx = (zx - _camX) * Scale + cw / 2;
+            double cy = (zy - _camY) * Scale + ch / 2;
+            Canvas.SetLeft(visual, cx - r);
+            Canvas.SetTop(visual, cy - r);
+            label.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(label, cx - label.DesiredSize.Width / 2);
+            Canvas.SetTop(label, cy - label.DesiredSize.Height / 2);
+        }
     }
 
     private void UpdateClock()

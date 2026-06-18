@@ -37,12 +37,8 @@ public static class GameConstants
 
     public const int SafeZoneRegenMultiplier = 5;
 
-    public static bool InSafeZone(float x, float y)
-    {
-        float dx = x - ZoneWidth / 2;
-        float dy = y - ZoneHeight / 2;
-        return dx * dx + dy * dy <= SafeZoneRadius * SafeZoneRadius;
-    }
+    /// <summary>True inside ANY placed safe zone (see WorldMap.SafeZones).</summary>
+    public static bool InSafeZone(float x, float y) => WorldMap.InAnySafeZone(x, y);
 
     // ----- Combat ----------------------------------------------------------------
 

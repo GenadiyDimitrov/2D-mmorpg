@@ -301,6 +301,9 @@ public class Entity
 
     /// <summary>Spawn zone this mob belongs to (for zone-managed respawn).</summary>
     public string? ZoneId { get; set; }
+
+    /// <summary>Mob template id (MobCatalog) — for drops + quest kill matching.</summary>
+    public string? MobTypeId { get; set; }
     public MobRank Rank { get; set; }
     public bool Aggressive { get; set; }
     public int WanderTicks { get; set; }

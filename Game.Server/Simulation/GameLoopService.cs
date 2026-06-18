@@ -1641,23 +1641,35 @@ var effect = def.Effect;
 
     private void RollDrop(Entity killer, Entity mob)
     {
-        var drops = LootTables.Roll(mob.Name, mob.Level, _rng);
-        if (drops.Count == 0)
+        if (mob.MobTypeId is null)
+            return;
+        var mobType = MobCatalog.Get(mob.MobTypeId);
+        if (mobType.Drops is null || mobType.Drops.Length == 0)
             return;
 
         bool looted = false;
-        foreach (var itemId in drops)
+        foreach (var entry in mobType.Drops)
         {
-            if (ItemCatalog.Get(itemId) is not ItemDef def)
+            // Per-entry chance, scaled by the server drop-chance rate (clamped 100%).
+            float chance = Math.Min(1f, entry.Chance * RateConfig.DropChanceRate);
+            if (_rng.NextDouble() > chance)
                 continue;
 
-            if (!AddItem(killer, def.Id))
+            if (ItemCatalog.Get(entry.ItemId) is not ItemDef def)
+                continue;
+
+            // Quantity range, scaled by the drop-amount rate.
+            int qty = _rng.Next(entry.MinQty, entry.MaxQty + 1);
+            qty = Math.Max(1, (int)(qty * RateConfig.DropAmountRate));
+
+            if (!AddItem(killer, def.Id, qty))
             {
                 SendSystemToEntity(killer, $"{mob.Name} dropped {def.Name} — inventory full!");
                 continue;
             }
 
-            SendSystemToEntity(killer, $"You looted: {def.Name} [{def.Grade}/{def.Rarity}]");
+            string qtyLabel = qty > 1 ? $" x{qty}" : "";
+            SendSystemToEntity(killer, $"You looted: {def.Name}{qtyLabel} [{def.Grade}/{def.Rarity}]");
             looted = true;
         }
 
@@ -1667,9 +1679,12 @@ var effect = def.Effect;
 
     private void AwardExp(Entity player, int amount)
     {
-        player.Exp += amount;
-        // Skill points accrue at a fraction of exp (tune SkillPointRatio).
-        player.SkillPoints += Math.Max(1, (int)(amount * GameConstants.SkillPointRatio));
+        // Server rates scale progression (x10 exp for testing, etc.).
+        int expGain = (int)(amount * RateConfig.ExpRate);
+        player.Exp += expGain;
+        // Skill points accrue at a fraction of exp, with their own rate.
+        player.SkillPoints += Math.Max(1,
+            (int)(amount * GameConstants.SkillPointRatio * RateConfig.SpRate));
 
         bool leveled = false;
         while (player.Exp >= StatCalculator.ExpToNext(player.Level))
@@ -2309,8 +2324,9 @@ var effect = def.Effect;
             var step = def.Steps[state.StepIndex];
             if (step.Type != QuestStepType.KillMobs) continue;
 
-            // Match mob type (name contains the target; handles "Elite Spider").
-            bool typeMatch = mob.Name.Contains(step.TargetId, StringComparison.OrdinalIgnoreCase);
+            // Match by mob type id (exact), so "Elite Cave Spider" still counts
+            // for a "cave_spider" objective regardless of rank prefix.
+            bool typeMatch = string.Equals(mob.MobTypeId, step.TargetId, StringComparison.OrdinalIgnoreCase);
             bool levelMatch = (step.MinLevel == 0 || mob.Level >= step.MinLevel)
                 && (step.MaxLevel == 0 || mob.Level <= step.MaxLevel);
             if (!typeMatch || !levelMatch) continue;
@@ -2324,7 +2340,8 @@ var effect = def.Effect;
             else
             {
                 player.ActiveQuests[qid] = state with { Counter = counter };
-                SendSystemToEntity(player, $"{def.Name}: {step.TargetId} {counter}/{step.Count}");
+                string mobLabel = MobCatalog.Get(step.TargetId).Name;
+                SendSystemToEntity(player, $"{def.Name}: {mobLabel} {counter}/{step.Count}");
             }
             changed = true;
         }
@@ -2358,7 +2375,8 @@ var effect = def.Effect;
             }
         }
 
-        string name = zone.MobTypes[_rng.Next(zone.MobTypes.Length)];
+        string mobId = zone.MobTypes[_rng.Next(zone.MobTypes.Length)];
+        var mobType = MobCatalog.Get(mobId);
         int level = _rng.Next(zone.MinLevel, zone.MaxLevel + 1);
         var stats = StatCalculator.MobStats(level);
 
@@ -2368,12 +2386,11 @@ var effect = def.Effect;
 
         string displayName = zone.Rank switch
         {
-            MobRank.Elite => $"Elite {name}",
-            MobRank.Boss => $"{name} Lord",
-            _ => name
+            MobRank.Elite => $"Elite {mobType.Name}",
+            MobRank.Boss => $"{mobType.Name} Lord",
+            _ => mobType.Name
         };
 
-        var mobType = MobCatalog.Get(name);
         var mob = new Entity
         {
             Name = displayName,
@@ -2388,9 +2405,10 @@ var effect = def.Effect;
             AtkStat = (int)(stats.Atk * atkMul),
             Wit = stats.Wit,
             Dex = stats.Dex,
-            Aggressive = IsAggressive(name) || zone.Rank != MobRank.Normal,
+            Aggressive = mobType.Aggressive || zone.Rank != MobRank.Normal,
             ZoneId = zone.Id,
-            Rank = zone.Rank
+            Rank = zone.Rank,
+            MobTypeId = mobId
         };
         mob.RecomputeDerived();
         // RecomputeDerived leaves mob RunSpeed/WalkSpeed as set above (player-only

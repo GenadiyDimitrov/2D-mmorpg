@@ -181,19 +181,19 @@ public static class SkillCatalog
                 MpCost: 25, CastTicks: 10, CooldownTicks: 5, Range: 0, Power: 0,
                 DurationTicks: 6000, BuffKey: "hp_boost", Rank: 1,
                 Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffHp, 0.05f) },
-                Category: SkillCategory.Buff, SpCost: 2,
+                Category: SkillCategory.Buff, SpCost: 1000,
                 Description: "Raises Max HP by 5%."),
             new(HpBoost2, "HP Boost", BaseClass.Mage, SkillEffect.BuffHp,
                 MpCost: 35, CastTicks: 10, CooldownTicks: 5, Range: 0, Power: 0,
                 DurationTicks: 6000, BuffKey: "hp_boost", Rank: 2,
                 Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffHp, 0.15f) },
-                Category: SkillCategory.Buff, SpCost: 3,
+                Category: SkillCategory.Buff, SpCost: 3000,
                 Description: "Raises Max HP by 15%."),
             new(HpBoost3, "HP Boost", BaseClass.Mage, SkillEffect.BuffHp,
                 MpCost: 45, CastTicks: 10, CooldownTicks: 5, Range: 0, Power: 0,
                 DurationTicks: 6000, BuffKey: "hp_boost", Rank: 3,
                 Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffHp, 0.35f) },
-                Category: SkillCategory.Buff, SpCost: 4,
+                Category: SkillCategory.Buff, SpCost: 8000,
                 Description: "Raises Max HP by 35%."),
 
             // ---- Wind Walk (move-speed self buff, learnable) ----
@@ -206,7 +206,7 @@ public static class SkillCatalog
                     new(SkillEffect.BuffMoveSpeed, 33, ModifierMode.Flat),
                     new(SkillEffect.BuffEvasion, 5, ModifierMode.Flat),
                 },
-                Category: SkillCategory.Buff, SpCost: 2, TargetMode: TargetMode.SelfOnly,
+                Category: SkillCategory.Buff, SpCost: 1500, TargetMode: TargetMode.SelfOnly,
                 Description: "Move +33 and Evasion +5 for 20 minutes (self)."),
 
             // Party version: same effect + same BuffKey, but buffs nearby allies.
@@ -219,7 +219,7 @@ public static class SkillCatalog
                     new(SkillEffect.BuffMoveSpeed, 33, ModifierMode.Flat),
                     new(SkillEffect.BuffEvasion, 5, ModifierMode.Flat),
                 },
-                Category: SkillCategory.Buff, SpCost: 4,
+                Category: SkillCategory.Buff, SpCost: 5000,
                 TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
                 Description: "Move +33 and Evasion +5 to nearby allies for 20 minutes."),
         };

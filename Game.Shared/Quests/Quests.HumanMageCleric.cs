@@ -29,7 +29,7 @@ public static partial class QuestCatalog
             Steps: new[]
             {
                 new QuestStep(TalkTo, "Speak with Elder Marius", TargetId: "elder_marius"),
-                new QuestStep(KillMobs, "Slay 5 Spiders", TargetId: "Spider",
+                new QuestStep(KillMobs, "Slay 5 Cave Spiders", TargetId: "cave_spider",
                     Count: 5, MinLevel: 1, MaxLevel: 40),
                 new QuestStep(TalkTo, "Return to Elder Marius", TargetId: "elder_marius"),
             },
@@ -47,7 +47,7 @@ public static partial class QuestCatalog
             Steps: new[]
             {
                 new QuestStep(TalkTo, "Speak with High Priest Oren", TargetId: "priest_oren"),
-                new QuestStep(KillMobs, "Slay 8 Wolves", TargetId: "Wolf",
+                new QuestStep(KillMobs, "Slay 8 Grey Wolves", TargetId: "grey_wolf",
                     Count: 8, MinLevel: 1, MaxLevel: 40),
                 new QuestStep(TalkTo, "Return to High Priest Oren", TargetId: "priest_oren"),
             },

@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 9 (L2-style ratio damage, magic channel)
+# L2-like MMORPG — Phase 10 (cities, rates, per-mob drop tables)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,42 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 10 (this build)
+
+### Placed safe zones (cities/castles)
+- The single center safe zone is now a **list of placed zones with ids** in
+  `WorldMap.SafeZones` (Town of Giran, Town of Dion, Aden Castle seeded). Each has
+  a stable id so **teleports-for-a-fee** can target them later. `InSafeZone` now
+  checks the whole list; all are drawn and labelled on the map.
+
+### Server rate multipliers (`RateConfig`)
+- One place to tune progression speed: **ExpRate, SpRate, DropChanceRate,
+  DropAmountRate** (adena rate reserved for the currency phase). Defaults are set
+  for fast testing (**x10 exp, x3 drop chance**) — set them to 1 for live.
+
+### Mobs are now templates with per-mob drop tables
+- Mobs are **distinct creatures by id** (`grey_wolf`, `brown_boar`, `dire_boar`,
+  `green_slime`, `cave_spider`, `road_bandit`) in `MobCatalog`, each with its own
+  **drop table**: `DropEntry(itemId, chance (float), minQty, maxQty)`. The same
+  item can drop at different chances/amounts from different mobs.
+- **Level lives on the ZONE, not the mob.** A mob template has no fixed level —
+  the spawning zone assigns it (stats derive from that level), so the same
+  creature appears at any level with the same drops. Want different loot? Make a
+  new mob id. Want it tougher elsewhere? Spawn it in a higher-level zone.
+- Zones now list **mob ids** instead of generic names. Drop chance/amount are
+  scaled by the server rates on top of each entry's own values.
+
+### Skill SP costs rescaled (L2 scarcity)
+- Learnable skills now cost **hundreds–thousands of SP** (HP Boost 1000/3000/8000,
+  Wind Walk 1500, Mass Wind Walk 5000) so the SP economy forces **prioritization**
+  — you can't learn everything at once; you farm and choose. The SpRate multiplier
+  makes testing fast without changing that balance.
+
+### Where to tune
+- **Cities:** `WorldMap.SafeZones`. **Rates:** `RateConfig`.
+- **Mobs + drops:** `MobCatalog` (templates + drop tables). **Zones:** `WorldMap.SpawnZones` (mob ids + level band).
+- **SP costs:** each skill's `SpCost` in `Skills.cs`.
 
 ## New in Phase 9 (this build)
 
