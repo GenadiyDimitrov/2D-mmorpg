@@ -111,7 +111,7 @@ public static class ItemCatalog
                     {
                         WeaponType.Staff => 1.20f,   // caster weapon: high mAtk
                         WeaponType.Bow => 0.25f,
-                        WeaponType.Dagger => 0.30f,
+                        WeaponType.Dual => 0.30f,
                         _ => 0.35f                    // sword/dual/blunt: small splash
                     };
                     int mAtk = (int)(atk * mAtkFraction);

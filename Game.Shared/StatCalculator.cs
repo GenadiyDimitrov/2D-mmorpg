@@ -112,7 +112,7 @@ public static class StatCalculator
         float band = weapon switch
         {
             WeaponType.Bow => 0.30f,
-            WeaponType.Dagger => 0.20f,
+            WeaponType.Dual => 0.20f,
             WeaponType.Staff => 0.15f,
             _ => 0.10f
         };
