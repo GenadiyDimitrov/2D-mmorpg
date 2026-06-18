@@ -1,8 +1,18 @@
 namespace Game.Shared;
 
-/// <summary>One possible drop from a mob: an item, a float chance [0..1], and a
-/// quantity range. Chance and amount are scaled by the server RateConfig.</summary>
-public record DropEntry(string ItemId, float Chance, int MinQty = 1, int MaxQty = 1);
+/// <summary>One possible drop from a mob: an item, a float chance [0..1], a
+/// quantity range, and an OPTIONAL level band. The drop only rolls when the
+/// mob's spawned level is within [MinLevel, MaxLevel] (0/0 = any level). This is
+/// what lets ONE creature drop different loot at different levels — e.g. a
+/// grey_wolf drops common hide at any level but wolf fangs only at level 25+.
+/// Chance and amount are scaled by the server RateConfig.</summary>
+public record DropEntry(string ItemId, float Chance, int MinQty = 1, int MaxQty = 1,
+    int MinLevel = 0, int MaxLevel = 0)
+{
+    /// <summary>Does this drop apply to a mob spawned at the given level?</summary>
+    public bool AppliesAtLevel(int level) =>
+        (MinLevel == 0 || level >= MinLevel) && (MaxLevel == 0 || level <= MaxLevel);
+}
 
 /// <summary>
 /// A mob TEMPLATE: identity (id + display name), movement speeds, behavior, and
@@ -39,8 +49,13 @@ public static class MobCatalog
             new MobType("grey_wolf", "Grey Wolf", 80f, 150f, Aggressive: true,
                 Drops: new[]
                 {
-                    new DropEntry(ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.F, ItemRarity.Common), 0.05f),
+                    // Any level: common potion + a chance at a basic sword.
                     new DropEntry(ItemCatalog.MinorPotion, 0.30f, 1, 2),
+                    new DropEntry(ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.F, ItemRarity.Common), 0.05f),
+                    // Only when this wolf spawns at level 15+ (tougher zones): a
+                    // better armour drop. Same creature id, level-varying loot.
+                    new DropEntry(ItemCatalog.ArmorKey(ArmorWeight.Light, ItemGrade.E, ItemRarity.Uncommon),
+                        0.06f, 1, 1, MinLevel: 15),
                 }),
 
             new MobType("brown_boar", "Brown Boar", 55f, 100f,

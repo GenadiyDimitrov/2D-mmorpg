@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 10 (cities, rates, per-mob drop tables)
+# L2-like MMORPG — Phase 10.1 (level-banded drops)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,19 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 10.1 (this build)
+
+### Level-banded drops
+- `DropEntry` gained an optional **level band** (`MinLevel`/`MaxLevel`, 0/0 = any
+  level). A drop only rolls when the mob's spawned level is in range — so **one
+  creature can drop different loot at different levels** (e.g. `grey_wolf` drops
+  common potions at any level but a better armour only at level 15+).
+- This is a **superset** of the L2 approach: you can still author the pure-L2 way
+  (distinct creature per level tier, no bands) AND the flexible way (one creature,
+  level-varying loot), and mix them freely. The level check costs a couple of
+  integer comparisons per drop entry — negligible next to the network send on a
+  kill, so choose between styles on design clarity, not performance.
 
 ## New in Phase 10 (this build)
 

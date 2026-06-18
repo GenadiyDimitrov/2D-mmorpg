@@ -1650,6 +1650,10 @@ var effect = def.Effect;
         bool looted = false;
         foreach (var entry in mobType.Drops)
         {
+            // Level band: a drop can be restricted to a level range (0/0 = any).
+            if (!entry.AppliesAtLevel(mob.Level))
+                continue;
+
             // Per-entry chance, scaled by the server drop-chance rate (clamped 100%).
             float chance = Math.Min(1f, entry.Chance * RateConfig.DropChanceRate);
             if (_rng.NextDouble() > chance)
