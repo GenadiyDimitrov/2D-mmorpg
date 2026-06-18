@@ -430,6 +430,9 @@ public partial class MainWindow
         StatsList.Items.Add(MakeStatRow("Accuracy / Evasion", $"{st.Accuracy} / {st.Evasion}"));
         StatsList.Items.Add(MakeStatRow("Crit (Phys / Magic)",
             $"{st.CritChance * 100:0.#}% / {st.MagicCritChance * 100:0.#}%"));
+        if (st.HasShield)
+            StatsList.Items.Add(MakeStatRow("Block (chance / reduce / def)",
+                $"{st.BlockChance * 100:0.#}% / {st.BlockReduction * 100:0.#}% / +{st.ShieldDefense}"));
         StatsList.Items.Add(MakeStatRow("Attack Range", $"{st.BasicAttackRange:0}"));
         StatsList.Items.Add(MakeStatRow("Move Speed", $"{st.MoveSpeed:0}"));
 

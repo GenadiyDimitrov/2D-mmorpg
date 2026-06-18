@@ -18,7 +18,8 @@ public static partial class ClassSkillTables
         {
             // Fighter archetypes
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Tank,
-                new ClassSkill(PowerStrike, 20), new ClassSkill(Fortify, 20));
+                new ClassSkill(PowerStrike, 20), new ClassSkill(Fortify, 20),
+                new ClassSkill(ShieldMastery, 20));
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Warrior,
                 new ClassSkill(GreaterWarCry, 20), new ClassSkill(MightyBlow, 20));
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Rogue,

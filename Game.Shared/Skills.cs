@@ -28,7 +28,8 @@ public record SkillDef(
     float AreaRadius = 0f,
     int InterruptDefense = 0,
     int InterruptPower = 0,
-    int InitialMpCost = -1)
+    int InitialMpCost = -1,
+    float BlockAccuracy = 0f)
 {
     public float MagnitudeOf(SkillEffect effect, ModifierMode mode)
     {
@@ -75,6 +76,7 @@ public static class SkillCatalog
     public const string Heal = "heal";
     public const string Weakness = "weakness";
     public const string Fortify = "fortify";
+    public const string ShieldMastery = "shield_mastery";
     public const string MightyBlow = "mighty_blow";
     public const string TwinSlash = "twin_slash";
     public const string PowerShot = "power_shot";
@@ -127,21 +129,21 @@ public static class SkillCatalog
                 Description: "+20% Attack and +15% Move Speed for 30s."),
 
             new(MagicBolt, "Magic Bolt", BaseClass.Mage, SkillEffect.MagicDamage,
-                MpCost: 12, CastTicks: 40, CooldownTicks: 10, Range: 600, Power: 45,
+                MpCost: 12, CastTicks: 20, CooldownTicks: 10, Range: 500, Power: 45,
                 Category: SkillCategory.Magic,
                 Description: "Hurls a bolt of force. Spells fail rather than miss."),
 
             new(Heal, "Heal", BaseClass.Mage, SkillEffect.Heal,
-                MpCost: 20, CastTicks: 40, CooldownTicks: 10, Range: 0, Power: 60,
+                MpCost: 20, CastTicks: 25, CooldownTicks: 10, Range: 0, Power: 60,
                 Category: SkillCategory.Heal,
                 Description: "Restores your own HP. Scales with WIT."),
 
             new(Weakness, "Weakness", BaseClass.Mage, SkillEffect.DebuffDef,
-                MpCost: 15, CastTicks: 40, CooldownTicks: 30, Range: 600, Power: 0,
+                MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 500, Power: 0,
                 DurationTicks: 150, BuffKey: "curse_def", Rank: 1,
                 Magnitudes: new EffectMagnitude[] { new(SkillEffect.DebuffDef, 0.30f) },
                 Category: SkillCategory.Debuff,
-                Description: "Curses the target: -30% Defence for 15s."),
+                Description: "Curses the target: -30% Defence for 15s (instant cast)."),
 
             new(Fortify, "Fortify", BaseClass.Fighter, SkillEffect.BuffDef,
                 MpCost: 20, CastTicks: 5, CooldownTicks: 250, Range: 0, Power: 0,
@@ -149,6 +151,20 @@ public static class SkillCatalog
                 Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffDef, 0.50f) },
                 Category: SkillCategory.Buff,
                 Description: "Tank stance: +50% Defence for 25s."),
+
+            new(ShieldMastery, "Shield Mastery", BaseClass.Fighter,
+                SkillEffect.BuffBlockChance | SkillEffect.BuffShieldDef,
+                MpCost: 25, CastTicks: 10, CooldownTicks: 10, Range: 0, Power: 0,
+                DurationTicks: 6000, BuffKey: "shield_mastery", Rank: 1,
+                Magnitudes: new EffectMagnitude[]
+                {
+                    // +30% block chance, +50% shield defence (only with a shield).
+                    new(SkillEffect.BuffBlockChance, 0.30f, ModifierMode.Percent),
+                    new(SkillEffect.BuffShieldDef, 0.50f, ModifierMode.Percent),
+                },
+                Category: SkillCategory.Buff, SpCost: 2000, TargetMode: TargetMode.SelfOnly,
+                Description: "Tank passive: greatly improves your shield's block " +
+                             "chance and defence (only while a shield is equipped)."),
 
             new(MightyBlow, "Mighty Blow", BaseClass.Fighter, SkillEffect.PhysicalDamage,
                 MpCost: 18, CastTicks: 7, CooldownTicks: 60, Range: 0, Power: 85,
@@ -166,22 +182,22 @@ public static class SkillCatalog
                 Description: "A long-range aimed shot dealing heavy damage."),
 
             new(GreaterHeal, "Greater Heal", BaseClass.Mage, SkillEffect.Heal,
-                MpCost: 35, CastTicks: 45, CooldownTicks: 15, Range: 600, Power: 150,
+                MpCost: 35, CastTicks: 35, CooldownTicks: 15, Range: 500, Power: 150,
                 Category: SkillCategory.Heal,
                 Description: "A powerful heal that can target an ally at range."),
 
             new(FlameBolt, "Flamebolt", BaseClass.Mage, SkillEffect.MagicDamage,
-                MpCost: 24, CastTicks: 45, CooldownTicks: 10, Range: 600, Power: 95,
+                MpCost: 24, CastTicks: 40, CooldownTicks: 10, Range: 500, Power: 95,
                 Category: SkillCategory.Magic,
                 Description: "A searing bolt — the nuker's stronger basic attack."),
 
             new(HolyStrike, "Holy Strike", BaseClass.Mage, SkillEffect.MagicDamage,
-                MpCost: 20, CastTicks: 45, CooldownTicks: 10, Range: 600, Power: 70,
+                MpCost: 20, CastTicks: 30, CooldownTicks: 10, Range: 500, Power: 70,
                 Category: SkillCategory.Magic,
                 Description: "A bolt of light — the healer's offensive spell."),
 
             new(GreaterWeakness, "Greater Weakness", BaseClass.Mage, SkillEffect.DebuffDef,
-                MpCost: 22, CastTicks: 40, CooldownTicks: 30, Range: 600, Power: 0,
+                MpCost: 22, CastTicks: 5, CooldownTicks: 300, Range: 500, Power: 0,
                 DurationTicks: 200, BuffKey: "curse_def", Rank: 2,
                 Magnitudes: new EffectMagnitude[] { new(SkillEffect.DebuffDef, 0.45f) },
                 Category: SkillCategory.Debuff,
@@ -197,12 +213,14 @@ public static class SkillCatalog
             new(HpBoost2, "HP Boost", BaseClass.Mage, SkillEffect.BuffHp,
                 MpCost: 35, CastTicks: 10, CooldownTicks: 5, Range: 0, Power: 0,
                 DurationTicks: 6000, BuffKey: "hp_boost", Rank: 2,
+                Replaces: new[] { HpBoost1 },
                 Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffHp, 0.15f) },
                 Category: SkillCategory.Buff, SpCost: 3000,
                 Description: "Raises Max HP by 15%."),
             new(HpBoost3, "HP Boost", BaseClass.Mage, SkillEffect.BuffHp,
                 MpCost: 45, CastTicks: 10, CooldownTicks: 5, Range: 0, Power: 0,
                 DurationTicks: 6000, BuffKey: "hp_boost", Rank: 3,
+                Replaces: new[] { HpBoost1, HpBoost2 },
                 Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffHp, 0.35f) },
                 Category: SkillCategory.Buff, SpCost: 8000,
                 Description: "Raises Max HP by 35%."),
@@ -250,20 +268,41 @@ public static class SkillCatalog
 /// <summary>Combat math + range/cast helpers.</summary>
 public static class SkillMath
 {
-    public static float EffectiveRange(SkillDef def, Archetype? archetype, float basicAttackRange)
+    /// <summary>Class-change tier from level: 1 (1-20), 2 (21-40), 3 (40+).
+    /// Skill ranges scale with tier so reach grows as you advance.</summary>
+    public static int RangeTier(int level) =>
+        level >= 41 ? 3 : level >= 21 ? 2 : 1;
+
+    /// <summary>Effective range of a skill for a given caster. The skill's Range
+    /// field is the tier-1 base; magic and bow skills step up by tier:
+    ///   magic: 500 / 750 / 900   bow: 350 / 600 / 900
+    /// Non-tiered skills (melee, range 0) just use their own value / basic range.</summary>
+    public static float EffectiveRange(SkillDef def, Archetype? archetype, float basicAttackRange, int level)
     {
         if (def.Range <= 0)
             return basicAttackRange;
+
+        int tier = RangeTier(level);
 
         bool isSpell = def.Effect.HasFlag(SkillEffect.MagicDamage)
             || def.Effect.HasFlag(SkillEffect.DebuffDef)
             || def.Effect.HasFlag(SkillEffect.Heal);
 
-        if (isSpell && archetype is Archetype.Healer or Archetype.Nuker)
-            return Math.Min(900f, def.Range + 500f);
+        // Bow skills: archer ranged physical attacks scale 350/600/900.
+        bool isBowSkill = def.Effect.HasFlag(SkillEffect.PhysicalDamage)
+            && archetype is Archetype.Archer && def.Range >= 300;
+
+        if (isSpell)
+            return tier switch { 3 => 900f, 2 => 750f, _ => 500f };
+        if (isBowSkill)
+            return tier switch { 3 => 900f, 2 => 600f, _ => 350f };
 
         return def.Range;
     }
+
+    // Backwards-compatible overload (assumes tier 1) for any caller without level.
+    public static float EffectiveRange(SkillDef def, Archetype? archetype, float basicAttackRange) =>
+        EffectiveRange(def, archetype, basicAttackRange, 1);
 
     public const int CastBaselineWit = 25;
     public const float CastPercentPerWit = 0.012f;

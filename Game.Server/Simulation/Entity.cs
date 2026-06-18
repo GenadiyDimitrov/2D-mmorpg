@@ -158,6 +158,13 @@ public class Entity
     public float CritChance { get; set; }       // physical crit rate
     public float MagicCritChance { get; set; }  // magic crit rate (from WIT)
     public int InterruptResist { get; set; }    // resist casting interruption (from WIT)
+
+    // ----- Shield / block (0 if no shield equipped) -----
+    public bool HasShield { get; set; }
+    public float BlockChance { get; set; }       // chance to block a physical hit
+    public float BlockReduction { get; set; }    // damage fraction removed on block
+    public int ShieldDefense { get; set; }       // flat defence from the shield
+    public float ShieldCritDefense { get; set; } // reduces attacker crit chance
     public float BasicAttackRange { get; set; } = GameConstants.MeleeRange;
 
     /// <summary>Cast-time multiplier from item Cast Speed attributes (0.8 = 20% faster).</summary>
@@ -231,7 +238,7 @@ public class Entity
 
     /// <summary>Defence including BuffDef (adds) and DebuffDef (subtracts).</summary>
     public float EffectiveDefence =>
-        ModifiedStat(Defence, SkillEffect.BuffDef, SkillEffect.DebuffDef);
+        ModifiedStat(Defence + ShieldDefense, SkillEffect.BuffDef, SkillEffect.DebuffDef);
 
     /// <summary>Evasion including evasion buffs (flat + percent).</summary>
     public float EffectiveEvasion => ModifiedStat(Evasion, SkillEffect.BuffEvasion);
@@ -350,6 +357,12 @@ public class Entity
         CastSpeedMultiplier = 1f;
         AttackSpeedMultiplier = 1f;
 
+        HasShield = false;
+        BlockChance = 0f;
+        BlockReduction = 0f;
+        ShieldDefense = 0;
+        ShieldCritDefense = 0f;
+
         foreach (var item in Inventory)
         {
             if (!item.Equipped || ItemCatalog.Get(item.DefId) is not ItemDef def)
@@ -365,13 +378,27 @@ public class Entity
             if (def.Slot == EquipSlot.Weapon)
                 WeaponType = def.WeaponType;
 
+            if (def.Slot == EquipSlot.Shield)
+            {
+                HasShield = true;
+                BlockChance = def.BlockChance;
+                BlockReduction = def.BlockReduction;
+                ShieldDefense += def.ShieldDefense;
+                ShieldCritDefense = def.ShieldCritDefense;
+                Evasion -= def.ShieldEvasionPenalty;   // shield lowers evasion
+            }
+
             if (def.WeaponRange > 0)
             {
                 float range = def.WeaponRange;
-                // Archer second classes shoot further (cap per design doc).
+                // Archer bow range grows by class-change tier (passives):
+                //   tier 1 (1-20): base 400; tier 2 (21-40): +200; tier 3 (40+): +500.
                 if (Archetype == Game.Shared.Archetype.Archer)
-                    range = Math.Min(GameConstants.MaxBasicAttackRange,
-                        range + GameConstants.ArcherRangeBonus);
+                {
+                    int tier = SkillMath.RangeTier(Level);
+                    float bonus = tier >= 3 ? 500f : tier >= 2 ? 200f : 0f;
+                    range = Math.Min(GameConstants.MaxBasicAttackRange, range + bonus);
+                }
                 BasicAttackRange = range;
             }
         }
@@ -447,6 +474,29 @@ public class Entity
 
         WeaponAttackBase = StatCalculator.WeaponAttackBaseSpeed(WeaponType);
         WeaponCastBase = StatCalculator.WeaponCastBaseSpeed(WeaponType);
+
+        // ----- Shield Mastery buffs (tank passives) scale the shield values.
+        //  Percent magnitudes add fractionally; flat add directly. Only matter
+        //  when a shield is equipped, so a mage's buffed shield is still weak. ---
+        if (HasShield)
+        {
+            foreach (var buff in Buffs)
+            {
+                if (buff.Has(SkillEffect.BuffBlockChance))
+                {
+                    BlockChance += buff.Flat(SkillEffect.BuffBlockChance);
+                    BlockChance *= 1f + buff.Percent(SkillEffect.BuffBlockChance);
+                }
+                if (buff.Has(SkillEffect.BuffShieldDef))
+                {
+                    ShieldDefense += (int)buff.Flat(SkillEffect.BuffShieldDef);
+                    ShieldDefense = (int)(ShieldDefense * (1f + buff.Percent(SkillEffect.BuffShieldDef)));
+                    BlockReduction += buff.Percent(SkillEffect.BuffShieldDef) * 0.2f;
+                }
+            }
+            BlockChance = Math.Clamp(BlockChance, 0f, StatCaps.BlockChance);
+            BlockReduction = Math.Clamp(BlockReduction, 0f, StatCaps.BlockReduction);
+        }
 
         Hp = Math.Min(Hp, MaxHp);
         Mp = Math.Min(Mp, MaxMp);

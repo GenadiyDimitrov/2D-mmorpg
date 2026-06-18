@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 11 (casting: root, interrupt, two-stage MP, speeds)
+# L2-like MMORPG — Phase 12 (shields/block + combat-feel fixes)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,49 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 12 (this build)
+
+> **Delete `game.db` before running** — characters now store shield-related
+> equipment state correctly only on a fresh DB if you hit schema issues; safe to
+> reset.
+
+### Shields & block
+- New **Shield** equip slot + item type with several values: **BlockChance**,
+  **BlockReduction%**, **ShieldDefense**, **ShieldCritDefense**, **EvasionPenalty**.
+  Two shields seeded (Wooden F, Iron E). Any class can equip a shield.
+- **Block resolution** (physical only): the shield first lowers the attacker's
+  **crit chance**; if it still crits, the **crit ignores the shield**; if it
+  doesn't crit, **roll block** → on a block, damage is cut by the shield's flat
+  **% reduction**. Shown as a "Block" hit on the client. **DEX does NOT affect
+  block** — it's flat + passives.
+- **Shield Mastery** (tank skill) scales the shield's block chance and defence —
+  but only while a shield is equipped, so a buffed shield on a mage is still weak
+  while a passive-stacked tank becomes a wall.
+- Skills can carry **BlockAccuracy** to bypass blocks (most physical skills should).
+- **Magic is not blocked** — it's mitigated by defence only, so mages aren't
+  buried under fail + interrupt + block.
+
+### Combat-feel fixes
+- **Damaged mobs now aggro and chase** their attacker even when hit from range
+  (the "cast from range, mob ignores you and regens" bug).
+- **Magic weapons have no weapon range** and tiny basic-attack damage — a staff is
+  useless as a melee poker, so you actually cast. Only **bows** have basic range.
+- **Skill ranges scale by class tier**: magic **500 / 750 / 900** (lvl 1-20 /
+  21-40 / 40+), bow skills **350 / 600 / 900**. Archer **basic-attack** range grows
+  by tier too (400 → +200 → +500).
+- **Faster casts**: Magic Bolt **2s**, Flame/Holy/Heal quicker; **instant debuffs**
+  (Weakness 0.5s cast, 15s duration, 30s cooldown).
+- **HP Boost ranks replace lower ranks** — learning rank 3 removes ranks 1 & 2 from
+  your learned skills, and the active buff supersedes by rank.
+- **Daggers are treated as Duals** (`WeaponType.Dual`) consistently.
+
+### For Claude Code
+- Added **`CLAUDE.md`** at the project root — full architecture, conventions, and
+  design decisions so Claude Code starts with context. Install Claude Code with the
+  native installer (`curl -fsSL https://claude.ai/install.sh | bash`, or the
+  PowerShell one-liner on Windows), `cd` to the project, run `claude`. It can run
+  `dotnet build` and fix real compile errors directly.
 
 ## New in Phase 11 (this build)
 

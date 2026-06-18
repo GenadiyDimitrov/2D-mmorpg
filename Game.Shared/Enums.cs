@@ -37,7 +37,8 @@ public enum CombatOutcome
     Death = 3,
     Heal = 4,
     Fail = 5,    // spells don't miss — they fail (level difference)
-    Buff = 6     // a buff/debuff was applied (Skill carries the name)
+    Buff = 6,    // a buff/debuff was applied (Skill carries the name)
+    Block = 7    // physical hit was blocked by a shield (reduced damage)
 }
 
 /// <summary>
@@ -63,12 +64,14 @@ public enum SkillEffect
     BuffHp         = 1 << 9,
     BuffMp         = 1 << 10,
     DebuffDef      = 1 << 11,
-    // Room to grow: DebuffSpeed = 1 << 12, Stun = 1 << 13, ...
+    BuffBlockChance = 1 << 12,  // Shield Mastery: +block chance
+    BuffShieldDef   = 1 << 13,  // Shield Mastery: +shield defence / +block reduction
+    // Room to grow: DebuffSpeed = 1 << 14, Stun = 1 << 15, ...
 
     // Convenience masks.
     AnyDamage = PhysicalDamage | MagicDamage,
     AnyBuff   = BuffAtk | BuffDef | BuffMoveSpeed | BuffAtkSpeed | BuffCastSpeed
-              | BuffEvasion | BuffHp | BuffMp,
+              | BuffEvasion | BuffHp | BuffMp | BuffBlockChance | BuffShieldDef,
 }
 
 /// <summary>Whether a magnitude is a flat add or a percentage of the base stat.

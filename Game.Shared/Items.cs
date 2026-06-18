@@ -4,7 +4,7 @@ public enum ItemGrade { F = 0, E = 1, B = 2, A = 3, S = 4 }
 
 public enum ItemRarity { Common = 0, Uncommon = 1, Rare = 2, Epic = 3, Legendary = 4, God = 99 }
 
-public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2, Scroll = 3, QuestItem = 4 }
+public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2, Scroll = 3, QuestItem = 4, Shield = 5 }
 
 public enum ArmorWeight { None = 0, Heavy = 1, Light = 2, Robe = 3 }
 
@@ -38,6 +38,12 @@ public record ItemDef(
     int MpBonus = 0,
     int EvaBonus = 0,
     float WeaponRange = 0,
+    // ----- Shield stats (only when Slot == Shield) -----
+    float BlockChance = 0f,        // flat chance to block (0..1); buffs/passives add
+    float BlockReduction = 0f,     // fraction of damage removed on a block (0..1)
+    int ShieldDefense = 0,         // flat defence while shield equipped
+    float ShieldCritDefense = 0f,  // reduces attacker crit CHANCE (0..1)
+    int ShieldEvasionPenalty = 0,  // lowers your evasion (the L2 tradeoff)
     // ----- Consumables (potions) -----
     float HealPercentPerSecond = 0f,
     float InstantHealPercent = 0f,
@@ -63,6 +69,8 @@ public static class ItemCatalog
     public const string ClericsProof = "quest_clerics_proof";
     public const string GodWeapon = "god_judgment";
     public const string GodArmor = "god_robes";
+    public const string WoodenShield = "shield_wooden";
+    public const string IronShield = "shield_iron";
 
     public static string WeaponKey(WeaponType type, ItemGrade grade, ItemRarity rarity) =>
         $"{type.ToString().ToLowerInvariant()}_{grade.ToString().ToLowerInvariant()}_{rarity.ToString().ToLowerInvariant()}";
@@ -87,7 +95,7 @@ public static class ItemCatalog
             (WeaponType.Sword, "Sword", 6,  0,   0),
             (WeaponType.Dual,  "Daggers", 5, 0,  0),   // dual: lower per-hit, faster (handled by class)
             (WeaponType.Bow,   "Bow",   7,  400, 0),
-            (WeaponType.Staff, "Staff", 4,  300, 20),  // staff: lower atk, gives MP, ranged spell
+            (WeaponType.Staff, "Staff", 2,  0,   20),  // staff: tiny basic atk, gives MP; power is in SPELLS (no weapon range)
         };
 
         foreach (var w in weaponInfo)
@@ -111,8 +119,8 @@ public static class ItemCatalog
                     {
                         WeaponType.Staff => 1.20f,   // caster weapon: high mAtk
                         WeaponType.Bow => 0.25f,
-                        WeaponType.Dagger => 0.30f,
-                        _ => 0.35f                    // sword/dual/blunt: small splash
+                        WeaponType.Dual => 0.30f,
+                        _ => 0.35f                    // sword/blunt: small splash
                     };
                     int mAtk = (int)(atk * mAtkFraction);
 
@@ -192,6 +200,20 @@ public static class ItemCatalog
         list.Add(new ItemDef(GreaterPotion, "Greater Healing Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare,
             InstantHealPercent: 0.50f, PotionCooldownTicks: 300));
+
+        // ===================================================================
+        //  SHIELDS — equippable by any class (with a one-hand weapon), but only
+        //  tanks make them matter via Shield Mastery passives. Base values are
+        //  modest; passives/buffs scale them. Block = flat % damage reduction.
+        // ===================================================================
+        list.Add(new ItemDef(WoodenShield, "Wooden Shield", EquipSlot.Shield,
+            ItemGrade.F, ItemRarity.Common,
+            BlockChance: 0.15f, BlockReduction: 0.30f, ShieldDefense: 40,
+            ShieldCritDefense: 0.05f, ShieldEvasionPenalty: 4));
+        list.Add(new ItemDef(IronShield, "Iron Shield", EquipSlot.Shield,
+            ItemGrade.E, ItemRarity.Uncommon,
+            BlockChance: 0.20f, BlockReduction: 0.35f, ShieldDefense: 90,
+            ShieldCritDefense: 0.08f, ShieldEvasionPenalty: 6));
 
         // ===================================================================
         //  ENCHANT SCROLLS

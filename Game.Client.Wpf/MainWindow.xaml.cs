@@ -724,6 +724,7 @@ public partial class MainWindow : Window
             CombatOutcome.Crit => ($"{evt.Damage}!", Brushes.Orange),
             CombatOutcome.Heal => ($"+{evt.Damage}", Brushes.LightGreen),
             CombatOutcome.Buff => (evt.Skill ?? "buff", Brushes.LightSkyBlue),
+            CombatOutcome.Block => ($"{evt.Damage} (block)", Brushes.LightSteelBlue),
             _ => (evt.Damage.ToString(),
                   evt.TargetId == _myId ? Brushes.OrangeRed : Brushes.White)
         };

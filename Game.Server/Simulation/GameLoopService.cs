@@ -276,6 +276,13 @@ public class GameLoopService : BackgroundService
 
         player.SkillPoints -= def.SpCost;
         player.LearnedSkills.Add(def.Id);
+
+        // Learning a higher rank removes the superseded lower ranks from the
+        // learned set (HP Boost 3 replaces 1 & 2), so the skill bar stays clean.
+        if (def.Replaces is { Length: > 0 })
+            foreach (var replacedId in def.Replaces)
+                player.LearnedSkills.Remove(replacedId);
+
         SendSystemToEntity(player, $"Learned {def.Name}!");
         SendStats(player);
         SendLearned(player);
@@ -1268,7 +1275,7 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        float range = SkillMath.EffectiveRange(def, caster.Archetype, caster.BasicAttackRange);
+        float range = SkillMath.EffectiveRange(def, caster.Archetype, caster.BasicAttackRange, caster.Level);
 
         if (!selfTargeted && DistanceSq(caster, target) > range * range)
         {
@@ -1348,15 +1355,10 @@ var effect = def.Effect;
                     (int)target.EffectiveDefence, caster.Level);
                 damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
 
-                if (_rng.NextDouble() < caster.CritChance)
-                {
-                    damage = (int)(damage * StatCalculator.PhysicalCritMult());
-                    BroadcastCombat(caster, target, damage, CombatOutcome.Crit, def.Name);
-                }
-                else
-                {
-                    BroadcastCombat(caster, target, damage, CombatOutcome.Hit, def.Name);
-                }
+                var (finalDmg, outcome) = ResolvePhysicalCritAndBlock(
+                    caster, target, damage, caster.CritChance, def.BlockAccuracy);
+                damage = finalDmg;
+                BroadcastCombat(caster, target, damage, outcome, def.Name);
                 ApplyDamage(target, damage);
                 TryInterruptCast(target, def.InterruptPower);
             }
@@ -1508,10 +1510,14 @@ var effect = def.Effect;
 
     private static void Retaliate(Entity victim, Entity attacker)
     {
-        if (victim.Kind == EntityKind.Mob && !victim.Engaged && !victim.Dead)
+        // A damaged mob aggroes its attacker (even if hit from beyond its normal
+        // aggro range — being attacked always provokes) and starts chasing now.
+        if (victim.Kind == EntityKind.Mob && !victim.Dead)
         {
             victim.CombatTargetId = attacker.Id;
             victim.Engaged = true;
+            victim.TargetX = attacker.X;   // start moving toward the attacker
+            victim.TargetY = attacker.Y;
         }
     }
 
@@ -1586,16 +1592,10 @@ var effect = def.Effect;
                 (int)target.EffectiveDefence, attacker.Level);
             damage = (int)(damage * StatCalculator.WeaponVariance(attacker.WeaponType, _rng));
 
-            if (_rng.NextDouble() < attacker.CritChance)
-            {
-                damage = (int)(damage * StatCalculator.PhysicalCritMult());
-                BroadcastCombat(attacker, target, damage, CombatOutcome.Crit);
-            }
-            else
-            {
-                BroadcastCombat(attacker, target, damage, CombatOutcome.Hit);
-            }
-
+            var (finalDmg, outcome) = ResolvePhysicalCritAndBlock(
+                attacker, target, damage, attacker.CritChance, 0f);
+            damage = finalDmg;
+            BroadcastCombat(attacker, target, damage, outcome);
             ApplyDamage(target, damage);
             TryInterruptCast(target, 0);   // basic attacks have no interrupt power
         }
@@ -1973,7 +1973,8 @@ var effect = def.Effect;
             p.Con, p.AtkStat, p.Wit, p.Dex,
             p.MaxHp, p.MaxMp, p.AttackPower, p.Defence,
             p.Accuracy, p.Evasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
-            p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.CastSpeedMultiplier, p.AttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttack, p.MagicCritChance));
+            p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.CastSpeedMultiplier, p.AttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttack, p.MagicCritChance,
+            p.HasShield, p.BlockChance, p.BlockReduction, p.ShieldDefense));
 
     /// <summary>Stop an in-progress cast. startCooldown=true (player ESC) puts
     /// the skill on cooldown; false (enemy interrupt / forced) does not, so the
@@ -2004,6 +2005,39 @@ var effect = def.Effect;
     /// stat + the casting skill's InterruptDefense; power = attacker's skill
     /// InterruptPower (0 for normal hits). Interrupt = cast stops, NO cooldown,
     /// caster keeps the MP loss and can retry.</summary>
+    /// <summary>Resolve crit and block for a physical hit. The shield first
+    /// reduces the attacker's crit CHANCE; if it still crits, the crit lands in
+    /// full (crits ignore the shield). If it doesn't crit, roll block — on a
+    /// block, apply the shield's flat % damage reduction. blockAccuracy (from a
+    /// skill) lowers the effective block chance (most phys skills bypass blocks).
+    /// Returns the final damage and the outcome (Crit / Block / Hit).</summary>
+    private (int damage, CombatOutcome outcome) ResolvePhysicalCritAndBlock(
+        Entity attacker, Entity target, int baseDamage, float critChance, float blockAccuracy)
+    {
+        // Shield lowers crit chance.
+        float effCrit = critChance - (target.HasShield ? target.ShieldCritDefense : 0f);
+        effCrit = Math.Clamp(effCrit, 0f, 1f);
+
+        if (_rng.NextDouble() < effCrit)
+        {
+            int crit = (int)(baseDamage * StatCalculator.PhysicalCritMult());
+            return (crit, CombatOutcome.Crit);   // crit ignores the shield
+        }
+
+        // Not a crit — try to block (if target has a shield and skill doesn't bypass).
+        if (target.HasShield)
+        {
+            float effBlock = Math.Clamp(target.BlockChance - blockAccuracy, 0f, StatCaps.BlockChance);
+            if (_rng.NextDouble() < effBlock)
+            {
+                int blocked = Math.Max(1, (int)(baseDamage * (1f - target.BlockReduction)));
+                return (blocked, CombatOutcome.Block);
+            }
+        }
+
+        return (baseDamage, CombatOutcome.Hit);
+    }
+
     private void TryInterruptCast(Entity target, int attackerInterruptPower)
     {
         if (target.CastingSkillId is null)
