@@ -140,6 +140,12 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task CancelCast()
+    {
+        _world.Commands.Enqueue(new CancelCastCmd(Context.ConnectionId));
+        return Task.CompletedTask;
+    }
+
     public Task Respawn()
     {
         _world.Commands.Enqueue(new RespawnCmd(Context.ConnectionId));

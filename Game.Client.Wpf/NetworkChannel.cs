@@ -104,6 +104,9 @@ public class NetworkChannel : IAsyncDisposable
     public Task SetMoveStateAsync(MoveState state) =>
         _connection!.SendAsync("SetMoveState", (int)state);
 
+    public Task CancelCastAsync() =>
+        _connection!.SendAsync("CancelCast");
+
     public Task RespawnAsync() =>
         _connection!.SendAsync("Respawn");
 

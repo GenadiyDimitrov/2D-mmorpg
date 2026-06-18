@@ -480,6 +480,13 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (e.Key is Key.Escape)   // cancel current cast
+        {
+            _ = _net.CancelCastAsync();
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key is Key.Z)   // sit / stand toggle
         {
             var next = _moveState == MoveState.Sitting ? MoveState.Running : MoveState.Sitting;

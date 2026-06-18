@@ -76,6 +76,7 @@ public class GameLoopService : BackgroundService
                 case TalkCmd c: HandleTalk(c); break;
                 case QuestActionCmd c: HandleQuestAction(c); break;
                 case SetMoveStateCmd c: HandleSetMoveState(c); break;
+                case CancelCastCmd c: HandleCancelCast(c); break;
                 case RespawnCmd c: HandleRespawn(c); break;
                 case ClassChangeCmd c: HandleClassChange(c); break;
                 case EquipCmd c: HandleEquip(c); break;
@@ -166,6 +167,11 @@ public class GameLoopService : BackgroundService
         if (entity.StandUpTicks > 0)
             return;
 
+        // Casting roots you — movement is rejected until the cast finishes or you
+        // cancel it explicitly (ESC). Moving does NOT cancel the cast.
+        if (entity.CastingSkillId is not null)
+            return;
+
         // Moving stands you up instantly (no delay when you choose to move).
         if (entity.MoveState == MoveState.Sitting)
             entity.MoveState = MoveState.Running;
@@ -173,7 +179,6 @@ public class GameLoopService : BackgroundService
         entity.Engaged = false;
         entity.CombatTargetId = null;
         entity.QueuedSkillId = null;
-        CancelCast(entity);
 
         entity.TargetX = Math.Clamp(move.Move.TargetX, 0, GameConstants.ZoneWidth);
         entity.TargetY = Math.Clamp(move.Move.TargetY, 0, GameConstants.ZoneHeight);
@@ -1272,13 +1277,23 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // Casting commits: you're rooted until it finishes or you cancel. Range
+        // is checked HERE (at start); once casting begins, the spell lands even
+        // if the target moves.
         caster.TargetX = null;
         caster.TargetY = null;
         caster.QueuedSkillId = null;
         caster.CastingSkillId = def.Id;
         caster.CastTargetId = targetId;
+        // Cast time = base ticks scaled by the cast-speed model (WIT + weapon +
+        // buffs, the single source of truth). Lower multiplier = faster cast.
         caster.CastTicksRemaining = Math.Max(2,
-            (int)(SkillMath.AdjustedCastTicks(def.CastTicks, caster.Wit) * caster.EffectiveCastSpeedMultiplier));
+            (int)(def.CastTicks * caster.EffectiveCastSpeedMultiplier));
+
+        // Charge the initial MP portion up front (default 0; split skills charge
+        // some now, the rest on completion).
+        caster.CastInitialMpPaid = Math.Min(def.InitialMp, caster.Mp);
+        caster.Mp -= caster.CastInitialMpPaid;
 
         if (_world.EntityToConnection.TryGetValue(caster.Id, out var conn))
         {
@@ -1289,9 +1304,10 @@ public class GameLoopService : BackgroundService
 
     private void ExecuteSkill(Entity caster, SkillDef def)
     {
-        if (caster.Mp < def.MpCost)
+        if (caster.Mp < def.FinishMp)
         {
             SendSystemToEntity(caster, "Not enough MP.");
+            CancelCast(caster);
             return;
         }
 
@@ -1305,14 +1321,10 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        float range = SkillMath.EffectiveRange(def, caster.Archetype, caster.BasicAttackRange);
-        if (!selfTargeted && DistanceSq(caster, target) > range * range * 1.7f)
-        {
-            SendSystemToEntity(caster, "Target out of range.");
-            return;
-        }
-
-        caster.Mp -= def.MpCost;
+        // Cast already committed at start — no range re-check here; the spell
+        // lands even if the target moved. Charge the remaining MP and start CD.
+        caster.Mp -= def.FinishMp;
+        caster.CastInitialMpPaid = 0;
         caster.SkillCooldowns[def.Id] = def.CooldownTicks;
 
 var effect = def.Effect;
@@ -1346,6 +1358,7 @@ var effect = def.Effect;
                     BroadcastCombat(caster, target, damage, CombatOutcome.Hit, def.Name);
                 }
                 ApplyDamage(target, damage);
+                TryInterruptCast(target, def.InterruptPower);
             }
         }
 
@@ -1364,6 +1377,7 @@ var effect = def.Effect;
             {
                 damage = Math.Max(1, damage / 3);
                 ApplyDamage(target, damage);
+                TryInterruptCast(target, def.InterruptPower);
                 BroadcastCombat(caster, target, damage, CombatOutcome.Fail, def.Name);
             }
             else
@@ -1378,6 +1392,7 @@ var effect = def.Effect;
                     BroadcastCombat(caster, target, damage, CombatOutcome.Hit, def.Name);
                 }
                 ApplyDamage(target, damage);
+                TryInterruptCast(target, def.InterruptPower);
             }
         }
 
@@ -1582,6 +1597,7 @@ var effect = def.Effect;
             }
 
             ApplyDamage(target, damage);
+            TryInterruptCast(target, 0);   // basic attacks have no interrupt power
         }
 
         Retaliate(target, attacker);
@@ -1959,14 +1975,50 @@ var effect = def.Effect;
             p.Accuracy, p.Evasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
             p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.CastSpeedMultiplier, p.AttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttack, p.MagicCritChance));
 
-    private void CancelCast(Entity entity)
+    /// <summary>Stop an in-progress cast. startCooldown=true (player ESC) puts
+    /// the skill on cooldown; false (enemy interrupt / forced) does not, so the
+    /// caster can retry. The initial MP already paid is NOT refunded.</summary>
+    private void CancelCast(Entity entity, bool startCooldown = false)
     {
         if (entity.CastingSkillId is null)
             return;
 
+        if (startCooldown && SkillCatalog.Get(entity.CastingSkillId) is SkillDef def)
+            entity.SkillCooldowns[def.Id] = def.CooldownTicks;
+
         entity.CastingSkillId = null;
         entity.CastTargetId = null;
+        entity.CastTicksRemaining = 0;
+        entity.CastInitialMpPaid = 0;
         SendTo(entity, "Cast", new CastInfo("", 0f));
+    }
+
+    /// <summary>Player pressed ESC to cancel their own cast — starts cooldown.</summary>
+    private void HandleCancelCast(CancelCastCmd cmd)
+    {
+        if (TryGetPlayer(cmd.ConnectionId, out var player))
+            CancelCast(player, startCooldown: true);
+    }
+
+    /// <summary>Roll to interrupt a cast when the caster is hit. Resist = caster
+    /// stat + the casting skill's InterruptDefense; power = attacker's skill
+    /// InterruptPower (0 for normal hits). Interrupt = cast stops, NO cooldown,
+    /// caster keeps the MP loss and can retry.</summary>
+    private void TryInterruptCast(Entity target, int attackerInterruptPower)
+    {
+        if (target.CastingSkillId is null)
+            return;
+        var def = SkillCatalog.Get(target.CastingSkillId);
+        if (def is null)
+            return;
+
+        float chance = StatCalculator.InterruptChance(
+            target.InterruptResist, def.InterruptDefense, attackerInterruptPower);
+        if (_rng.NextDouble() < chance)
+        {
+            CancelCast(target, startCooldown: false);
+            SendSystemToEntity(target, $"{def.Name} was interrupted!");
+        }
     }
 
     // =========================================================================

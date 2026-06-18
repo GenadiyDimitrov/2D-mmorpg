@@ -81,6 +81,9 @@ public record QuestActionCmd(string ConnectionId, string Action, string Id, Guid
 /// <summary>Change movement state (run / walk / sit).</summary>
 public record SetMoveStateCmd(string ConnectionId, MoveState State) : IGameCommand;
 
+/// <summary>Player cancelled their own cast (ESC) — stops it and starts cooldown.</summary>
+public record CancelCastCmd(string ConnectionId) : IGameCommand;
+
 public record RespawnCmd(string ConnectionId) : IGameCommand;
 
 /// <summary>Advance to a second class (level 20+, once).</summary>

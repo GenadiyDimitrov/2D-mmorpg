@@ -25,7 +25,10 @@ public record SkillDef(
     int SpCost = 1,
     SkillCategory Category = SkillCategory.Physical,
     TargetMode TargetMode = TargetMode.SelfOrTarget,
-    float AreaRadius = 0f)
+    float AreaRadius = 0f,
+    int InterruptDefense = 0,
+    int InterruptPower = 0,
+    int InitialMpCost = -1)
 {
     public float MagnitudeOf(SkillEffect effect, ModifierMode mode)
     {
@@ -35,6 +38,14 @@ public record SkillDef(
             if (m.Effect == effect && m.Mode == mode) sum += m.Value;
         return sum;
     }
+
+    /// <summary>MP charged when the cast STARTS. Default (-1) = 0 up front,
+    /// full cost on completion (so existing skills are unchanged). Set
+    /// InitialMpCost to split (e.g. 34 of 50 up front, 16 on finish).</summary>
+    public int InitialMp => InitialMpCost < 0 ? 0 : Math.Min(InitialMpCost, MpCost);
+
+    /// <summary>MP charged when the cast COMPLETES (the remainder).</summary>
+    public int FinishMp => MpCost - InitialMp;
 }
 
 /// <summary>Skill window grouping.</summary>

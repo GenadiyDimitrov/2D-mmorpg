@@ -112,7 +112,7 @@ public static class StatCalculator
         float band = weapon switch
         {
             WeaponType.Bow => 0.30f,
-            WeaponType.Dual => 0.20f,
+            WeaponType.Dagger => 0.20f,
             WeaponType.Staff => 0.15f,
             _ => 0.10f
         };
@@ -141,6 +141,81 @@ public static class StatCalculator
     /// scaled by target-vs-caster level. Mirrors physical miss but for magic.</summary>
     public static float MagicFailChance(int casterLevel, int targetLevel) =>
         Math.Clamp(0.03f + (targetLevel - casterLevel) * 0.02f, 0.01f, 0.80f);
+
+    // ----- Interruption (caster resist) -----------------------------------
+
+    /// <summary>Base interrupt resistance from WIT + level. Higher = harder to
+    /// interrupt. A skill's InterruptDefense adds to this; an attacker's
+    /// InterruptPower subtracts. Tune the coefficients here.</summary>
+    public static int InterruptResist(int wit, int level) => wit * 2 + level;
+
+    /// <summary>Per-hit chance to interrupt a cast. base + attacker power − caster
+    /// resist, clamped. With power=0 and a normal caster, interrupts are
+    /// occasional; high InterruptPower (an interrupt skill) makes it reliable;
+    /// high InterruptDefense (an ultimate) makes it ~never.</summary>
+    public static float InterruptChance(int casterResist, int skillDefense, int attackerPower)
+    {
+        // Scale the stat difference into a probability. 0 diff ≈ 25% baseline.
+        float baseChance = 0.25f;
+        float diff = (attackerPower) - (casterResist + skillDefense);
+        float chance = baseChance + diff * 0.01f;
+        return Math.Clamp(chance, 0f, 1f);
+    }
+
+    // ----- Cast & attack speed (L2-style 333 = 100%) -----------------------
+    //
+    // L2 model: a "speed" stat where 333 ≈ 100% (normal). Higher stat = faster.
+    // WIT drives cast speed, DEX drives attack speed, with per-class weights
+    // (a mage's WIT matters more than a fighter's). These are APPROXIMATIONS of
+    // the L2 tables — tune the per-class coefficients in CastSpeedStat /
+    // AttackSpeedStat. Weapon base speed sets the starting point.
+
+    public const int SpeedBaseline = 333;  // stat value that equals 1.0x speed
+
+    /// <summary>Weapon base attack speed (L2 table: Very Fast 433 … Very Slow 227).
+    /// Higher = faster. Daggers/bows fast, blunt/staff slow.</summary>
+    public static int WeaponAttackBaseSpeed(WeaponType w) => w switch
+    {
+        WeaponType.Dagger => 433,   // very fast
+        WeaponType.Dual => 379,     // fast
+        WeaponType.Bow => 293,      // slow (but long range)
+        WeaponType.Sword => 325,    // normal
+        WeaponType.Staff => 325,    // normal
+        _ => 300                    // weaponless
+    };
+
+    /// <summary>Weapon base cast speed. Caster weapons (staff) cast at normal;
+    /// melee weapons are a bit slower casters.</summary>
+    public static int WeaponCastBaseSpeed(WeaponType w) => w switch
+    {
+        WeaponType.Staff => 333,
+        _ => 300
+    };
+
+    /// <summary>Cast-speed stat from WIT, weighted by class. Approximates the L2
+    /// tables: mages gain ~5%/WIT, fighters ~3%/WIT. Returned as a stat where
+    /// 333 = 1.0x; capped by StatCaps.CastSpeed.</summary>
+    public static int CastSpeedStat(int wit, BaseClass cls, int weaponBase)
+    {
+        float perWit = cls == BaseClass.Mage ? 0.05f : 0.03f;
+        // weaponBase is the weapon's base cast speed (~333 for normal). WIT adds %.
+        float stat = weaponBase * (1f + perWit * wit);
+        return Math.Min((int)stat, StatCaps.CastSpeed);
+    }
+
+    /// <summary>Attack-speed stat from DEX, weighted by class. ~1%/DEX baseline.
+    /// 333 = 1.0x; capped by StatCaps.AttackSpeed.</summary>
+    public static int AttackSpeedStat(int dex, BaseClass cls, int weaponBase)
+    {
+        float perDex = 0.01f;
+        float stat = weaponBase * (1f + perDex * dex);
+        return Math.Min((int)stat, StatCaps.AttackSpeed);
+    }
+
+    /// <summary>Convert a speed stat to a time MULTIPLIER (lower = faster).
+    /// 333 → 1.0; 666 → 0.5 (twice as fast); 167 → 2.0 (half speed).</summary>
+    public static float SpeedMultiplier(int speedStat) =>
+        SpeedBaseline / (float)Math.Max(1, speedStat);
 
     // ----- Progression -------------------------------------------------------
 

@@ -83,7 +83,7 @@ public static class MobCatalog
                 Drops: new[]
                 {
                     new DropEntry(ItemCatalog.MinorPotion, 0.25f),
-                    new DropEntry(ItemCatalog.WeaponKey(WeaponType.Dual, ItemGrade.F, ItemRarity.Uncommon), 0.05f),
+                    new DropEntry(ItemCatalog.WeaponKey(WeaponType.Dagger, ItemGrade.F, ItemRarity.Uncommon), 0.05f),
                 }),
 
             new MobType("road_bandit", "Road Bandit", 60f, 108f, Aggressive: true,

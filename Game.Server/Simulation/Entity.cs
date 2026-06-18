@@ -157,6 +157,7 @@ public class Entity
     public WeaponType WeaponType { get; set; } = WeaponType.None;
     public float CritChance { get; set; }       // physical crit rate
     public float MagicCritChance { get; set; }  // magic crit rate (from WIT)
+    public int InterruptResist { get; set; }    // resist casting interruption (from WIT)
     public float BasicAttackRange { get; set; } = GameConstants.MeleeRange;
 
     /// <summary>Cast-time multiplier from item Cast Speed attributes (0.8 = 20% faster).</summary>
@@ -235,36 +236,40 @@ public class Entity
     /// <summary>Evasion including evasion buffs (flat + percent).</summary>
     public float EffectiveEvasion => ModifiedStat(Evasion, SkillEffect.BuffEvasion);
 
-    /// <summary>Cast-speed buff multiplier (1 = none; 0.8 = 20% faster).
-    /// Combines item cast-speed (CastSpeedMultiplier) with skill buffs.</summary>
+    /// <summary>Weapon's base cast/attack speed stat (333 = normal). Set from
+    /// the equipped weapon type in RecomputeDerived.</summary>
+    public int WeaponCastBase { get; set; } = StatCalculator.SpeedBaseline;
+    public int WeaponAttackBase { get; set; } = StatCalculator.SpeedBaseline;
+
+    /// <summary>Cast-time multiplier (lower = faster). WIT-driven stat (L2-style
+    /// 333 = 1.0x), then skill cast-speed buffs shorten it further.</summary>
     public float EffectiveCastSpeedMultiplier
     {
         get
         {
-            float pct = 0f, flat = 0f;
+            int stat = StatCalculator.CastSpeedStat(Wit, BaseClass, WeaponCastBase);
+            float mult = StatCalculator.SpeedMultiplier(stat);
+            float pct = 0f;
             foreach (var buff in Buffs)
                 if (buff.Has(SkillEffect.BuffCastSpeed))
-                {
                     pct += buff.Percent(SkillEffect.BuffCastSpeed);
-                    flat += buff.Flat(SkillEffect.BuffCastSpeed);
-                }
-            // Buff reduces cast time; combine with item multiplier.
-            float buffMul = Math.Max(0.3f, 1f - pct) ;
-            return CastSpeedMultiplier * buffMul;
+            return mult * Math.Max(0.2f, 1f - pct);
         }
     }
 
-    /// <summary>Attack-speed buff multiplier from skills, combined with items.</summary>
+    /// <summary>Attack-interval multiplier (lower = faster). DEX-driven stat,
+    /// then attack-speed buffs shorten it further.</summary>
     public float EffectiveAttackSpeedMultiplier
     {
         get
         {
+            int stat = StatCalculator.AttackSpeedStat(Dex, BaseClass, WeaponAttackBase);
+            float mult = StatCalculator.SpeedMultiplier(stat);
             float pct = 0f;
             foreach (var buff in Buffs)
                 if (buff.Has(SkillEffect.BuffAtkSpeed))
                     pct += buff.Percent(SkillEffect.BuffAtkSpeed);
-            float buffMul = Math.Max(0.3f, 1f - pct);
-            return AttackSpeedMultiplier * buffMul;
+            return mult * Math.Max(0.2f, 1f - pct);
         }
     }
 
@@ -280,6 +285,11 @@ public class Entity
     public string? CastingSkillId { get; set; }
     public Guid? CastTargetId { get; set; }
     public int CastTicksRemaining { get; set; }
+
+    /// <summary>MP already charged for the in-progress cast (the initial portion),
+    /// so we know what was spent if it's interrupted/cancelled and what remains
+    /// to charge on completion.</summary>
+    public int CastInitialMpPaid { get; set; }
 
     public Dictionary<string, int> SkillCooldowns { get; } = new();
 
@@ -326,6 +336,7 @@ public class Entity
         Evasion = StatCalculator.Evasion(Dex, Level);
         CritChance = StatCalculator.PhysicalCritChance(Dex);
         MagicCritChance = StatCalculator.MagicCritChance(Wit);
+        InterruptResist = StatCalculator.InterruptResist(Wit, Level);
         BasicAttackRange = GameConstants.MeleeRange;
         WeaponType = WeaponType.None;
         // Base run speed: players from race+class table, mobs from their spawn-set
@@ -433,6 +444,9 @@ public class Entity
         }
         if (buffHpPct != 0) MaxHp += (int)(MaxHp * buffHpPct);
         if (buffMpPct != 0) MaxMp += (int)(MaxMp * buffMpPct);
+
+        WeaponAttackBase = StatCalculator.WeaponAttackBaseSpeed(WeaponType);
+        WeaponCastBase = StatCalculator.WeaponCastBaseSpeed(WeaponType);
 
         Hp = Math.Min(Hp, MaxHp);
         Mp = Math.Min(Mp, MaxMp);

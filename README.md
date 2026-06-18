@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 10.1 (level-banded drops)
+# L2-like MMORPG — Phase 11 (casting: root, interrupt, two-stage MP, speeds)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,41 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 11 (this build)
+
+### Casting commits you (root)
+- Starting a cast **roots you** — you can't move until it finishes or you cancel.
+  Range is checked at cast **start** only; once it begins, the spell **lands even
+  if the target moves**. This removes the old move-cancel/recast loop.
+- **ESC** cancels your own cast and starts its cooldown (you chose to bail).
+
+### Interruption is a stat contest (not automatic)
+- Being hit mid-cast **rolls** an interrupt, like accuracy vs evasion:
+  **caster InterruptResist** (WIT-based stat + the skill's `InterruptDefense`)
+  vs **attacker InterruptPower** (0 for normal hits + the attacking skill's
+  `InterruptPower`).
+- **Enemy interrupt = cast stops, NO cooldown** — you keep the MP loss and can
+  retry immediately (so a 60s-cooldown ultimate isn't wasted by one unlucky hit).
+- Per-skill tuning: `InterruptDefense: 99999` = effectively **uninterruptible**
+  (ultimates); `InterruptPower: 99999` on an instant skill = a reliable
+  **interrupt skill**. Both default 0 (use the character stat). Hooks reserved
+  for gear/buff interrupt-resist later.
+
+### Two-stage MP cost (toggle-skill groundwork)
+- A skill can charge `InitialMpCost` at cast **start** and the remainder on
+  **completion** (default: all on finish, so existing skills are unchanged). On
+  cancel/interrupt you've paid the initial but not the finish — groundwork for
+  toggle skills (initial cost + per-second upkeep) later.
+
+### Cast & attack speed (L2-style 333 = 100%)
+- New speed model: a stat where **333 = 1.0×**, higher = faster. **WIT drives
+  cast speed**, **DEX drives attack speed**, with **per-class weights** (mage WIT
+  ~5%/pt, fighter ~3%/pt) and **weapon base speeds** (dagger fast, bow slow,
+  staff caster-normal). Approximated from the L2 tables — tune in
+  `StatCalculator` (`CastSpeedStat`, `AttackSpeedStat`, weapon base speeds).
+- Capped via `StatCaps` (cast 1999 ≈ 6×, attack 1500 ≈ 4.5×). WIT now makes a
+  mage a **faster caster** (and magic-crit-prone), not a bigger nuker.
 
 ## New in Phase 10.1 (this build)
 
