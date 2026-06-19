@@ -453,8 +453,11 @@ public class GameLoopService : BackgroundService
                 if (!other.Equipped || ItemCatalog.Get(other.DefId) is not ItemDef otherDef)
                     continue;
 
-                if (otherDef.Slot == def.Slot)
-                    other.Equipped = false;                                   // same slot
+                // Same slot — for armor, the body-part slot must also match (so a
+                // helmet and a chest piece coexist, but two helmets don't).
+                if (otherDef.Slot == def.Slot &&
+                    (def.Slot != EquipSlot.Armor || otherDef.ArmorSlot == def.ArmorSlot))
+                    other.Equipped = false;
                 else if (equippingTwoHandWeapon && otherDef.Slot == EquipSlot.Shield)
                     other.Equipped = false;                                   // 2H weapon drops shield
                 else if (equippingShield && otherDef.Slot == EquipSlot.Weapon

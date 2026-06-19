@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 15 (attribute reroll scrolls)
+# L2-like MMORPG — Phase 16 (five armor slots)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,27 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 16 (this build)
+
+> **Delete `game.db` before running** — armor keys changed
+> (`<weight>_<grade>_<rarity>` → `<weight>_<slot>_<grade>_<rarity>`), so old armor
+> won't resolve. A fresh DB hands new characters a full starter set.
+
+### Armor is now five body slots
+- Armor splits into **Head / Chest / Legs / Gloves / Boots** via a new **`ArmorSlot`**,
+  **orthogonal to weight** (a Heavy Helmet, a Robe Gloves, etc.). Every weight is
+  generated in all five slots × grade × rarity.
+- Each slot takes a **fraction** of its weight's stat profile (chest biggest, then legs,
+  head, gloves, boots), so a **full 5-piece set ≈ 1.5× one old single piece** — wearing
+  a complete set matters.
+- **Equip rules:** one piece per body slot (a helmet and a chest piece coexist; two
+  helmets don't). The 2H-weapon ⇄ shield rule is unchanged.
+- New characters start with a **full 5-piece set**; the debug menu grants full **Rare
+  sets** per weight for testing.
+- Rolled attributes are still pooled **by weight** for now — **per-slot attribute pools
+  and set bonuses** arrive with the armor-set phase (this split is the groundwork for it
+  and for the armor-weight masteries).
 
 ## New in Phase 15 (this build)
 

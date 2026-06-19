@@ -121,12 +121,12 @@ public class PersistenceService
         string starterWeapon = baseClass == BaseClass.Mage
             ? ItemCatalog.WeaponKey(WeaponType.Blunt, ItemGrade.F, ItemRarity.Common)   // 2H staff
             : ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.F, ItemRarity.Common);
-        string starterArmor = baseClass == BaseClass.Mage
-            ? ItemCatalog.ArmorKey(ArmorWeight.Robe, ItemGrade.F, ItemRarity.Common)
-            : ItemCatalog.ArmorKey(ArmorWeight.Light, ItemGrade.F, ItemRarity.Common);
+        var starterWeight = baseClass == BaseClass.Mage ? ArmorWeight.Robe : ArmorWeight.Light;
 
         record.Items.Add(NewItem(starterWeapon));
-        record.Items.Add(NewItem(starterArmor));
+        // A full 5-piece starter set so a new character isn't mostly naked.
+        foreach (var slot in new[] { ArmorSlot.Head, ArmorSlot.Chest, ArmorSlot.Legs, ArmorSlot.Gloves, ArmorSlot.Boots })
+            record.Items.Add(NewItem(ItemCatalog.ArmorKey(starterWeight, slot, ItemGrade.F, ItemRarity.Common)));
         record.Items.Add(NewItem(ItemCatalog.MinorPotion, 5));
         record.Items.Add(NewItem(ItemCatalog.GreaterPotion, 2));
 

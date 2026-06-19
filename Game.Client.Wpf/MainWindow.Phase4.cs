@@ -536,11 +536,13 @@ public partial class MainWindow
             $"{def.Grade}/{def.Rarity}" +
             (ItemCatalog.RequiredLevel(def.Grade) > 0 ? $"  •  requires Lv{ItemCatalog.RequiredLevel(def.Grade)}" : "");
 
-        // Find the currently equipped item in the same slot to diff against.
+        // Find the currently equipped item in the same slot to diff against. For
+        // armor the body-part slot must match too (compare a helmet vs a helmet).
         var current = _inventory
             .Select(i => (Item: i, Def: ItemCatalog.Get(i.DefId)))
             .FirstOrDefault(t => t.Item.Equipped && t.Def is not null &&
-                                 t.Def!.Slot == def.Slot && t.Item.InstanceId != item.InstanceId);
+                                 t.Def!.Slot == def.Slot && t.Item.InstanceId != item.InstanceId &&
+                                 (def.Slot != EquipSlot.Armor || t.Def!.ArmorSlot == def.ArmorSlot));
 
         // The clicked item is the SUBJECT — always show ITS real stats. The
         // delta column compares against whatever is equipped in that slot
@@ -1408,13 +1410,16 @@ public partial class MainWindow
         DebugList.Children.Add(DebugGiveButton(
             ItemCatalog.WeaponKey(WeaponType.Blunt, ItemGrade.E, ItemRarity.Rare), "Rare Staff"));
 
-        AddDebugHeader("Rare Armor (E)");
-        DebugList.Children.Add(DebugGiveButton(
-            ItemCatalog.ArmorKey(ArmorWeight.Heavy, ItemGrade.E, ItemRarity.Rare), "Rare Heavy"));
-        DebugList.Children.Add(DebugGiveButton(
-            ItemCatalog.ArmorKey(ArmorWeight.Light, ItemGrade.E, ItemRarity.Rare), "Rare Light"));
-        DebugList.Children.Add(DebugGiveButton(
-            ItemCatalog.ArmorKey(ArmorWeight.Robe, ItemGrade.E, ItemRarity.Rare), "Rare Robe"));
+        AddDebugHeader("Rare Armor Sets (E, all 5 slots)");
+        foreach (var (w, label) in new[] { (ArmorWeight.Heavy, "Heavy"), (ArmorWeight.Light, "Light"), (ArmorWeight.Robe, "Robe") })
+        {
+            var weight = w;
+            DebugList.Children.Add(DebugAction($"Rare {label} Set", async () =>
+            {
+                foreach (var slot in new[] { ArmorSlot.Head, ArmorSlot.Chest, ArmorSlot.Legs, ArmorSlot.Gloves, ArmorSlot.Boots })
+                    await _net.DebugGiveAsync(ItemCatalog.ArmorKey(weight, slot, ItemGrade.E, ItemRarity.Rare));
+            }));
+        }
 
         AddDebugHeader("Scrolls (x10)");
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.ScrollCommon, "Common Scroll x10", 10));
