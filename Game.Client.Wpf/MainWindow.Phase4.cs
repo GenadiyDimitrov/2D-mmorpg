@@ -458,6 +458,8 @@ public partial class MainWindow
         StatsList.Items.Add(MakeStatRow("Defence (Phys / Magic)", $"{st.Defence} / {st.MagicDefence}"));
         if (!string.IsNullOrEmpty(st.ActiveSet))
             StatsList.Items.Add(MakeStatRow("Set Bonus", $"{st.ActiveSet} (complete)"));
+        if (!string.IsNullOrEmpty(st.ArmorMastery))
+            StatsList.Items.Add(MakeStatRow("Armor", st.ArmorMastery));
         StatsList.Items.Add(MakeStatRow("Accuracy / Evasion", $"{st.Accuracy} / {st.Evasion}"));
         StatsList.Items.Add(MakeStatRow("Crit (Phys / Magic)",
             $"{st.CritChance * 100:0.#}% / {st.MagicCritChance * 100:0.#}%"));

@@ -164,8 +164,11 @@ public class Entity
     public float MagicFailFloor { get; set; }   // minimum magic-fail chance attackers have vs this entity
     public float HpRegenBonus { get; set; }     // flat HP/s from gear attributes
     public float MpRegenBonus { get; set; }     // flat MP/s from gear attributes
+    public float HpRegenMult { get; set; } = 1f; // HP-regen multiplier (armor mastery)
+    public float MpRegenMult { get; set; } = 1f; // MP-regen multiplier (armor mastery)
     public float CritDamageBonus { get; set; }  // crit-multiplier bonus from gear (e.g. +0.20x)
     public string ActiveArmorSet { get; set; } = ""; // name of the completed armor set bonus, "" if none
+    public string ArmorMasteryLabel { get; set; } = ""; // armor-weight mastery status for the UI
 
     // ----- Shield / block (0 if no shield equipped) -----
     public bool HasShield { get; set; }
@@ -381,11 +384,19 @@ public class Entity
         BlockReduction = 0f;
         ShieldDefense = 0;
         ShieldCritDefense = 0f;
+        HpRegenMult = 1f;
+        MpRegenMult = 1f;
+        ArmorMasteryLabel = "";
+
+        var bodyWeight = ArmorWeight.None;   // equipped BODY-slot armor weight (for masteries)
 
         foreach (var item in Inventory)
         {
             if (!item.Equipped || ItemCatalog.Get(item.DefId) is not ItemDef def)
                 continue;
+
+            if (def.Slot == EquipSlot.Armor && def.ArmorSlot == ArmorSlot.Body)
+                bodyWeight = def.Weight;
 
             AttackPower += EnchantRules.BonusAt(def.AtkBonus, item.Enchant);
             MagicAttack += EnchantRules.BonusAt(def.MAtkBonus, item.Enchant);
@@ -566,6 +577,32 @@ public class Entity
             }
             BlockChance = Math.Clamp(BlockChance, 0f, StatCaps.BlockChance);
             BlockReduction = Math.Clamp(BlockReduction, 0f, StatCaps.BlockReduction);
+        }
+
+        // ----- Armor-weight MASTERY (final layer): bonus for the trained weight,
+        // penalty for an untrained heavy/light body. Robe never penalises; tanks &
+        // warriors are immune. Speed factors (>1 faster) divide the TIME multipliers. ---
+        if (Kind == EntityKind.Player)
+        {
+            var (mEff, mLabel) = ArmorMastery.Resolve(BaseClass, Archetype, bodyWeight, Level);
+            ArmorMasteryLabel = mLabel;
+
+            AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier / mEff.AtkSpeed, 0.4f, 2.5f);
+            CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier / mEff.CastSpeed, 0.4f, 2.5f);
+            RunSpeed *= mEff.MoveSpeed;
+            WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor;
+            Speed = RunSpeed;
+            HpRegenMult = mEff.HpRegen;
+            MpRegenMult = mEff.MpRegen;
+            MaxHp = (int)(MaxHp * mEff.MaxHp);
+            MaxMp = (int)(MaxMp * mEff.MaxMp);
+            Evasion += mEff.Evasion;
+            Accuracy += mEff.Accuracy;
+            Defence += mEff.Defence;
+            MagicDefence += mEff.MagicDefence;
+            InterruptResist += mEff.InterruptResist;
+            if (mEff.CritRate != 0f) CritChance = Math.Clamp(CritChance + mEff.CritRate, 0f, 0.75f);
+            CritDamageBonus += mEff.CritDamage;
         }
 
         Hp = Math.Min(Hp, MaxHp);

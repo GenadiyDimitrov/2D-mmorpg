@@ -1824,14 +1824,16 @@ var effect = def.Effect;
         if (entity.Hp < entity.MaxHp)
         {
             int regen = Math.Max(1,
-                (int)((StatCalculator.HpRegenPerSecond(entity.Con, entity.Level) + entity.HpRegenBonus) * multiplier));
+                (int)((StatCalculator.HpRegenPerSecond(entity.Con, entity.Level) + entity.HpRegenBonus)
+                      * multiplier * entity.HpRegenMult));
             entity.Hp = Math.Min(entity.MaxHp, entity.Hp + regen);
         }
 
         if (entity.Mp < entity.MaxMp)
         {
             int regen = Math.Max(1,
-                (int)((StatCalculator.MpRegenPerSecond(entity.Wit, entity.Level) + entity.MpRegenBonus) * multiplier));
+                (int)((StatCalculator.MpRegenPerSecond(entity.Wit, entity.Level) + entity.MpRegenBonus)
+                      * multiplier * entity.MpRegenMult));
             entity.Mp = Math.Min(entity.MaxMp, entity.Mp + regen);
         }
     }
@@ -2046,7 +2048,7 @@ var effect = def.Effect;
             p.Accuracy, p.Evasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
             p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.CastSpeedMultiplier, p.AttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttack, p.MagicCritChance,
             p.HasShield, p.BlockChance, p.BlockReduction, p.ShieldDefense, (int)p.EffectiveMagicDefence,
-            p.ActiveArmorSet));
+            p.ActiveArmorSet, p.ArmorMasteryLabel));
 
     /// <summary>Stop an in-progress cast. startCooldown=true (player ESC) puts
     /// the skill on cooldown; false (enemy interrupt / forced) does not, so the

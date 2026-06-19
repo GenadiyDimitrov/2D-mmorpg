@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 17 (armor sets + set bonus)
+# L2-like MMORPG — Phase 18 (armor-weight masteries)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,28 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 18 (this build)
+
+### Armor-weight masteries (wear what your class trains in)
+- Your class is **trained in an armor weight**. Wearing the **body** piece of that weight
+  grants a **bonus** (your class identity); wearing an **untrained** heavy/light body
+  applies a **penalty**. **Robe never penalises**, and **Tanks/Warriors take no penalties**.
+- The trained weight follows the class tree (base → second class):
+  - **Mage → Robe** (cast speed, MP regen, max MP); **Nuker** keeps robe (stronger, +interrupt
+    resist + magic def); **Healer → Light** (cast + atk speed, regen, a little acc/eva — so it
+    can melee).
+  - **Fighter → Light** (attack speed, HP regen, acc/eva); **Rogue → Light** (more atk/move
+    speed, eva/acc); **Archer → Light** (atk speed + crit); **Tank → Heavy** (max HP, regen,
+    big Def + magic resist, no penalties); **Warrior** trains **both heavy and light**.
+- **Penalties** for the wrong weight: a mage in **heavy** is crushed (≈½ attack/cast/move
+  speed and regen, −10 acc/eva); a fighter in heavy is milder (×0.8 speeds, −3). Wearing
+  **light untrained** is a lighter ×0.8 / −3.
+- The **Stats window** shows your current status (e.g. **“Robe Mastery”** or
+  **“Heavy — untrained”**) so the effect is visible.
+- Driven by class + archetype for now (encodes the class-change evolution); a **learnable,
+  leveled mastery-skill layer** (spend SP, ranks) comes later, like the other passives. No
+  DB reset needed.
 
 ## New in Phase 17 (this build)
 
