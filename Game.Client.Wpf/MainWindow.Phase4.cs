@@ -1410,14 +1410,15 @@ public partial class MainWindow
         DebugList.Children.Add(DebugGiveButton(
             ItemCatalog.WeaponKey(WeaponType.Blunt, ItemGrade.E, ItemRarity.Rare), "Rare Staff"));
 
-        AddDebugHeader("Rare Armor Sets (E, all 5 slots)");
+        AddDebugHeader("Rare Armor Sets (E: body + accessories)");
         foreach (var (w, label) in new[] { (ArmorWeight.Heavy, "Heavy"), (ArmorWeight.Light, "Light"), (ArmorWeight.Robe, "Robe") })
         {
             var weight = w;
             DebugList.Children.Add(DebugAction($"Rare {label} Set", async () =>
             {
-                foreach (var slot in new[] { ArmorSlot.Head, ArmorSlot.Chest, ArmorSlot.Legs, ArmorSlot.Gloves, ArmorSlot.Boots })
-                    await _net.DebugGiveAsync(ItemCatalog.ArmorKey(weight, slot, ItemGrade.E, ItemRarity.Rare));
+                await _net.DebugGiveAsync(ItemCatalog.ArmorKey(weight, ArmorSlot.Body, ItemGrade.E, ItemRarity.Rare));
+                foreach (var slot in new[] { ArmorSlot.Head, ArmorSlot.Gloves, ArmorSlot.Boots })
+                    await _net.DebugGiveAsync(ItemCatalog.ArmorKey(ArmorWeight.None, slot, ItemGrade.E, ItemRarity.Rare));
             }));
         }
 

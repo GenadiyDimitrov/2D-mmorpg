@@ -67,6 +67,26 @@ public static class AttributeSystem
         _ => Array.Empty<AttributeType>()
     };
 
+    /// <summary>Per-slot pool for the WEIGHTLESS accessory pieces (Head/Gloves/Boots).
+    /// Each carries a single attribute chosen from its slot's pair.</summary>
+    public static AttributeType[] ArmorSlotPool(ArmorSlot slot) => slot switch
+    {
+        ArmorSlot.Head   => new[] { AttributeType.HpRegen, AttributeType.MpRegen },
+        ArmorSlot.Gloves => new[] { AttributeType.AttackSpeedPercent, AttributeType.CastSpeedPercent },
+        ArmorSlot.Boots  => new[] { AttributeType.SpeedPercent, AttributeType.EvasionPercent },
+        _ => Array.Empty<AttributeType>()
+    };
+
+    /// <summary>The attribute pool an item rolls from: weapons by type, BODY armor by
+    /// weight, accessory armor by slot.</summary>
+    public static AttributeType[] PoolFor(ItemDef def)
+    {
+        if (def.Slot == EquipSlot.Weapon) return WeaponPool(def.WeaponType);
+        if (def.Slot == EquipSlot.Armor)
+            return def.ArmorSlot == ArmorSlot.Body ? ArmorPool(def.Weight) : ArmorSlotPool(def.ArmorSlot);
+        return Array.Empty<AttributeType>();
+    }
+
     public static AttributeType[] ArmorPool(ArmorWeight a) => a switch
     {
         // Heavy: hp, attack-speed, hp-regen, accuracy.
@@ -122,15 +142,15 @@ public static class AttributeSystem
     {
         var result = new List<ItemAttribute>();
 
-        AttributeType[] pool = def.Slot switch
-        {
-            EquipSlot.Weapon => WeaponPool(def.WeaponType),
-            EquipSlot.Armor => ArmorPool(def.Weight),
-            _ => Array.Empty<AttributeType>()
-        };
+        AttributeType[] pool = PoolFor(def);
         if (pool.Length == 0) return result;
 
-        int count = Math.Min(AttributeCount(def.Grade, def.Rarity), pool.Length);
+        // Armor uses FIXED per-slot counts (body 2, accessories 1) so grade/rarity only
+        // changes the VALUE, not the count; weapons keep the grade+rarity count.
+        int desired = def.Slot == EquipSlot.Armor
+            ? (def.ArmorSlot == ArmorSlot.Body ? 2 : 1)
+            : AttributeCount(def.Grade, def.Rarity);
+        int count = Math.Min(desired, pool.Length);
         if (count <= 0) return result;
 
         var available = pool.ToList();
@@ -165,12 +185,7 @@ public static class AttributeSystem
     public static List<ItemAttribute> Reroll(ItemDef def, IReadOnlyList<ItemAttribute> current,
         bool[] locked, bool forceMax, Random rng)
     {
-        AttributeType[] pool = def.Slot switch
-        {
-            EquipSlot.Weapon => WeaponPool(def.WeaponType),
-            EquipSlot.Armor => ArmorPool(def.Weight),
-            _ => Array.Empty<AttributeType>()
-        };
+        AttributeType[] pool = PoolFor(def);
 
         var result = new List<ItemAttribute>(current.Count);
         var taken = new HashSet<AttributeType>();

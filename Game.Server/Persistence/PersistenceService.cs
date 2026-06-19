@@ -124,9 +124,10 @@ public class PersistenceService
         var starterWeight = baseClass == BaseClass.Mage ? ArmorWeight.Robe : ArmorWeight.Light;
 
         record.Items.Add(NewItem(starterWeapon));
-        // A full 5-piece starter set so a new character isn't mostly naked.
-        foreach (var slot in new[] { ArmorSlot.Head, ArmorSlot.Chest, ArmorSlot.Legs, ArmorSlot.Gloves, ArmorSlot.Boots })
-            record.Items.Add(NewItem(ItemCatalog.ArmorKey(starterWeight, slot, ItemGrade.F, ItemRarity.Common)));
+        // Full starter set: a weighted Body piece + the three weightless accessories.
+        record.Items.Add(NewItem(ItemCatalog.ArmorKey(starterWeight, ArmorSlot.Body, ItemGrade.F, ItemRarity.Common)));
+        foreach (var slot in new[] { ArmorSlot.Head, ArmorSlot.Gloves, ArmorSlot.Boots })
+            record.Items.Add(NewItem(ItemCatalog.ArmorKey(ArmorWeight.None, slot, ItemGrade.F, ItemRarity.Common)));
         record.Items.Add(NewItem(ItemCatalog.MinorPotion, 5));
         record.Items.Add(NewItem(ItemCatalog.GreaterPotion, 2));
 

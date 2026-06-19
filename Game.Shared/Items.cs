@@ -11,10 +11,12 @@ public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2, Scroll = 3, Quest
 
 public enum ArmorWeight { None = 0, Heavy = 1, Light = 2, Robe = 3 }
 
-/// <summary>Body-part slot for armor. A full set is one of each (Head/Chest/Legs/
-/// Gloves/Boots). Orthogonal to ArmorWeight: a Heavy Helmet, a Robe Gloves, etc.
-/// None = not a body-armor piece. Per-slot attribute pools + set bonuses come later.</summary>
-public enum ArmorSlot { None = 0, Head = 1, Chest = 2, Legs = 3, Gloves = 4, Boots = 5 }
+/// <summary>Body-part slot for armor. A full set is one of each (Head/Body/Gloves/
+/// Boots). Only BODY carries an ArmorWeight (Heavy/Light/Robe) and the bulk of the
+/// defence + 2 rolled attributes; Head/Gloves/Boots are WEIGHTLESS accessories shared
+/// across builds, each carrying a single slot-specific attribute (Head HP/MP regen,
+/// Gloves atk/cast speed, Boots move speed/eva). None = not a body-armor piece.</summary>
+public enum ArmorSlot { None = 0, Head = 1, Body = 2, Gloves = 3, Boots = 4 }
 
 /// <summary>Broad weapon category. Drives which skills work and the base
 /// attack range. All classes CAN equip any weapon; skills gate usefulness.</summary>
@@ -112,10 +114,10 @@ public static class ItemCatalog
     public static string WeaponKey(WeaponType type, ItemGrade grade, ItemRarity rarity) =>
         $"{type.ToString().ToLowerInvariant()}_{grade.ToString().ToLowerInvariant()}_{rarity.ToString().ToLowerInvariant()}";
 
-    // 3-arg overload defaults to the Chest piece (keeps existing drop/debug/starter
-    // callers giving the main piece; pass a slot for the others).
+    // 3-arg overload defaults to the Body piece (keeps existing drop/debug callers
+    // giving the main weighted piece; pass a slot for accessories).
     public static string ArmorKey(ArmorWeight weight, ItemGrade grade, ItemRarity rarity) =>
-        ArmorKey(weight, ArmorSlot.Chest, grade, rarity);
+        ArmorKey(weight, ArmorSlot.Body, grade, rarity);
 
     public static string ArmorKey(ArmorWeight weight, ArmorSlot slot, ItemGrade grade, ItemRarity rarity) =>
         $"{weight.ToString().ToLowerInvariant()}_{slot.ToString().ToLowerInvariant()}_" +
@@ -192,61 +194,72 @@ public static class ItemCatalog
         }
 
         // ===================================================================
-        //  ARMOR — robe / light / heavy, split into FIVE body slots, x grade x
-        //  rarity. The weight's profile is the "whole-set" reference; each slot
-        //  takes a fraction of it (chest biggest), so a full 5-piece set is worth
-        //  ~1.5x one old single piece. Attribute pools are still by WEIGHT for now;
-        //  per-slot pools + set bonuses arrive with the armor-set phase.
+        //  ARMOR — only the BODY piece carries weight (Heavy/Light/Robe) and the
+        //  bulk of the defence; Head/Gloves/Boots are WEIGHTLESS accessories shared
+        //  across builds, valued by their single slot-specific rolled attribute. This
+        //  keeps the item count low (3 body weights + 3 accessories, x grade x rarity).
         // ===================================================================
-        var armorInfo = new (ArmorWeight Weight, string Noun, int BaseDef, int Hp, int Mp, int Eva)[]
+        string GradeName(ItemGrade g) => g == ItemGrade.F ? "Worn" : "Tempered";
+        string RarityName(ItemRarity r) => r switch
+        {
+            ItemRarity.Uncommon => "Fine ",
+            ItemRarity.Rare => "Masterwork ",
+            _ => ""
+        };
+
+        // ----- Weighted BODY armor (full profile + 2 rolled attributes by weight) -----
+        var bodyInfo = new (ArmorWeight Weight, string Noun, int BaseDef, int Hp, int Mp, int Eva)[]
         {
             (ArmorWeight.Heavy, "Plate",   6, 30, 0,  0),
             (ArmorWeight.Light, "Leather", 4, 10, 0,  6),
             (ArmorWeight.Robe,  "Robe",    2, 0,  30, 0),
         };
-
-        var armorSlots = new (ArmorSlot Slot, string Noun, float Factor)[]
+        foreach (var a in bodyInfo)
         {
-            (ArmorSlot.Chest,  "Armor",     0.50f),
-            (ArmorSlot.Legs,   "Greaves",   0.35f),
-            (ArmorSlot.Head,   "Helmet",    0.25f),
-            (ArmorSlot.Gloves, "Gauntlets", 0.20f),
-            (ArmorSlot.Boots,  "Boots",     0.20f),
-        };
-
-        foreach (var a in armorInfo)
-        {
-            foreach (var s in armorSlots)
+            foreach (var grade in new[] { ItemGrade.F, ItemGrade.E })
             {
-                foreach (var grade in new[] { ItemGrade.F, ItemGrade.E })
+                int gd = grade == ItemGrade.F ? a.BaseDef : a.BaseDef * 2 + 3;
+                int ghp = grade == ItemGrade.F ? a.Hp : a.Hp * 2;
+                int gmp = grade == ItemGrade.F ? a.Mp : a.Mp * 2;
+                int gev = grade == ItemGrade.F ? a.Eva : a.Eva * 2;
+
+                foreach (var rarity in new[] { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare })
                 {
-                    int gd = grade == ItemGrade.F ? a.BaseDef : a.BaseDef * 2 + 3;
-                    int ghp = grade == ItemGrade.F ? a.Hp : a.Hp * 2;
-                    int gmp = grade == ItemGrade.F ? a.Mp : a.Mp * 2;
-                    int gev = grade == ItemGrade.F ? a.Eva : a.Eva * 2;
+                    float rmul = 1f + 0.35f * (int)rarity;
+                    list.Add(new ItemDef(
+                        ArmorKey(a.Weight, ArmorSlot.Body, grade, rarity),
+                        $"{RarityName(rarity)}{GradeName(grade)} {a.Noun} Armor",
+                        EquipSlot.Armor, grade, rarity,
+                        Weight: a.Weight,
+                        ArmorSlot: ArmorSlot.Body,
+                        DefBonus: (int)(gd * rmul),
+                        HpBonus: (int)(ghp * rmul),
+                        MpBonus: (int)(gmp * rmul),
+                        EvaBonus: (int)(gev * rmul)));
+                }
+            }
+        }
 
-                    foreach (var rarity in new[] { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare })
-                    {
-                        float rmul = (1f + 0.35f * (int)rarity) * s.Factor;
-                        string gradeName = grade == ItemGrade.F ? "Worn" : "Tempered";
-                        string rarityName = rarity switch
-                        {
-                            ItemRarity.Uncommon => "Fine ",
-                            ItemRarity.Rare => "Masterwork ",
-                            _ => ""
-                        };
-
-                        list.Add(new ItemDef(
-                            ArmorKey(a.Weight, s.Slot, grade, rarity),
-                            $"{rarityName}{gradeName} {a.Noun} {s.Noun}",
-                            EquipSlot.Armor, grade, rarity,
-                            Weight: a.Weight,
-                            ArmorSlot: s.Slot,
-                            DefBonus: (int)(gd * rmul),
-                            HpBonus: (int)(ghp * rmul),
-                            MpBonus: (int)(gmp * rmul),
-                            EvaBonus: (int)(gev * rmul)));
-                    }
+        // ----- Weightless ACCESSORIES (Head/Gloves/Boots): no base stats; their value
+        //       is the single slot-specific attribute rolled on them (value by grade). -----
+        var accessoryInfo = new (ArmorSlot Slot, string Noun)[]
+        {
+            (ArmorSlot.Head,   "Helmet"),
+            (ArmorSlot.Gloves, "Gauntlets"),
+            (ArmorSlot.Boots,  "Boots"),
+        };
+        foreach (var acc in accessoryInfo)
+        {
+            foreach (var grade in new[] { ItemGrade.F, ItemGrade.E })
+            {
+                foreach (var rarity in new[] { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare })
+                {
+                    list.Add(new ItemDef(
+                        ArmorKey(ArmorWeight.None, acc.Slot, grade, rarity),
+                        $"{RarityName(rarity)}{GradeName(grade)} {acc.Noun}",
+                        EquipSlot.Armor, grade, rarity,
+                        Weight: ArmorWeight.None,
+                        ArmorSlot: acc.Slot));
                 }
             }
         }
@@ -347,7 +360,7 @@ public static class ItemCatalog
             }));
 
         list.Add(new ItemDef(GodArmor, "God's Robes", EquipSlot.Armor,
-            ItemGrade.S, ItemRarity.God, Weight: ArmorWeight.Robe, ArmorSlot: ArmorSlot.Chest,
+            ItemGrade.S, ItemRarity.God, Weight: ArmorWeight.Robe, ArmorSlot: ArmorSlot.Body,
             DefBonus: 1000, HpBonus: 1000, MpBonus: 1000, EvaBonus: 1000,
             FixedAttributes: new ItemAttribute[]
             {

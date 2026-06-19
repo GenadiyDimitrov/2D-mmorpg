@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 16 (five armor slots)
+# L2-like MMORPG — Phase 16.1 (armor slots trimmed: body + accessories)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -31,26 +31,28 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
 
-## New in Phase 16 (this build)
+## New in Phase 16.1 (this build)
 
-> **Delete `game.db` before running** — armor keys changed
-> (`<weight>_<grade>_<rarity>` → `<weight>_<slot>_<grade>_<rarity>`), so old armor
-> won't resolve. A fresh DB hands new characters a full starter set.
+> **Delete `game.db` before running** — armor keys changed again
+> (`<weight>_<slot>_<grade>_<rarity>`, Legs slot removed). A fresh DB hands new
+> characters the new starter set.
 
-### Armor is now five body slots
-- Armor splits into **Head / Chest / Legs / Gloves / Boots** via a new **`ArmorSlot`**,
-  **orthogonal to weight** (a Heavy Helmet, a Robe Gloves, etc.). Every weight is
-  generated in all five slots × grade × rarity.
-- Each slot takes a **fraction** of its weight's stat profile (chest biggest, then legs,
-  head, gloves, boots), so a **full 5-piece set ≈ 1.5× one old single piece** — wearing
-  a complete set matters.
-- **Equip rules:** one piece per body slot (a helmet and a chest piece coexist; two
-  helmets don't). The 2H-weapon ⇄ shield rule is unchanged.
-- New characters start with a **full 5-piece set**; the debug menu grants full **Rare
-  sets** per weight for testing.
-- Rolled attributes are still pooled **by weight** for now — **per-slot attribute pools
-  and set bonuses** arrive with the armor-set phase (this split is the groundwork for it
-  and for the armor-weight masteries).
+### Fewer armor slots: one weighted body + weightless accessories
+- Trimmed from five slots to **four** — **Head / Body / Gloves / Boots** (legs merged
+  into one **full-body** piece) to cut the number of generated items (~90 → ~36).
+- **Only the Body piece carries weight** (Heavy/Light/Robe) and the bulk of the defence.
+  **Head / Gloves / Boots are weightless accessories**, generated once and **shared across
+  all builds** (so a "set" can reuse the same accessories and differ only in its body
+  armor by weight).
+- **Per-slot attributes** (grade/rarity sets the *value*, not the count):
+  - **Body** rolls **2** attributes from its weight pool — so it wants **Uncommon+**
+    attribute scrolls (lock 1, reroll 1), not just Common.
+  - **Head** rolls HP/MP regen · **Gloves** atk-speed/cast · **Boots** move-speed/eva —
+    **1 each**.
+- New characters start with **body + the three accessories**; the debug menu grants Rare
+  body+accessory sets per weight.
+- Still to come (the set phase): **named sets** with a **set bonus** (+CON/ATK, +max
+  HP/MP) for wearing a matched body+accessories, and **armor-weight masteries**.
 
 ## New in Phase 15 (this build)
 
