@@ -1401,7 +1401,7 @@ var effect = def.Effect;
             {
                 if (_rng.NextDouble() < caster.MagicCritChance)
                 {
-                    damage = (int)(damage * StatCalculator.MagicCritMult());
+                    damage = (int)(damage * StatCalculator.MagicCritMult(caster.CritDamageBonus));
                     BroadcastCombat(caster, target, damage, CombatOutcome.Crit, def.Name);
                 }
                 else
@@ -1769,14 +1769,14 @@ var effect = def.Effect;
         if (entity.Hp < entity.MaxHp)
         {
             int regen = Math.Max(1,
-                (int)(StatCalculator.HpRegenPerSecond(entity.Con, entity.Level) * multiplier));
+                (int)((StatCalculator.HpRegenPerSecond(entity.Con, entity.Level) + entity.HpRegenBonus) * multiplier));
             entity.Hp = Math.Min(entity.MaxHp, entity.Hp + regen);
         }
 
         if (entity.Mp < entity.MaxMp)
         {
             int regen = Math.Max(1,
-                (int)(StatCalculator.MpRegenPerSecond(entity.Wit, entity.Level) * multiplier));
+                (int)((StatCalculator.MpRegenPerSecond(entity.Wit, entity.Level) + entity.MpRegenBonus) * multiplier));
             entity.Mp = Math.Min(entity.MaxMp, entity.Mp + regen);
         }
     }
@@ -2036,7 +2036,7 @@ var effect = def.Effect;
 
         if (_rng.NextDouble() < effCrit)
         {
-            int crit = (int)(baseDamage * StatCalculator.PhysicalCritMult());
+            int crit = (int)(baseDamage * StatCalculator.PhysicalCritMult(attacker.CritDamageBonus));
             return (crit, CombatOutcome.Crit);   // crit ignores the shield
         }
 

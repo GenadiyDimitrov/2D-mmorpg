@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 13 (magic defence + weapon system)
+# L2-like MMORPG — Phase 14 (item attribute pools)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,24 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 14 (this build)
+
+### Rolled attributes now depend on the item, not just its grade
+- **Which** attributes can roll is decided by the **weapon type / armor weight**, not a
+  flat grade pool. **How big** a roll is still scales with **grade**; **how many** still
+  comes from grade + rarity.
+- **Pools** (`AttributeSystem.WeaponPool` / `ArmorPool`):
+  - **Sword** as/atk/crit-rate · **Blunt** hp/atk/cast/crit-dmg · **Bow**
+    crit-rate/crit-dmg/as/atk · **Dual** crit-rate/crit-dmg/move-speed/eva.
+  - **Heavy** hp/as/hp-reg/acc · **Light** the versatile set (eva/acc, hp+mp regen,
+    hp/mp, as/cast) · **Robe** cast/mp-reg/max-mp.
+- **Five new attribute types**, all feeding real stats: **Accuracy**, **HP Regen**,
+  **MP Regen** (flat), **Crit Rate** and **Crit Damage** (percent). Crit-rate from gear
+  adds **on top of** the weapon crit factor; crit-damage raises your crit multiplier.
+- Flat attributes (accuracy, regen) display **without** a `%`; percent ones keep it.
+- Groundwork for **Phase 15 — attribute reroll scrolls** (lock-and-reroll toward each
+  stat's max), so a good grade/rarity item is worth keeping and grinding, not tossing.
 
 ## New in Phase 13 (this build)
 

@@ -162,6 +162,9 @@ public class Entity
     public int MagicInterruptBonus { get; set; } // OFFENSIVE magic interrupt power (from WIT)
     public int BasicAttackInterruptPower { get; set; } // interrupt power carried by basic attacks (rogues)
     public float MagicFailFloor { get; set; }   // minimum magic-fail chance attackers have vs this entity
+    public float HpRegenBonus { get; set; }     // flat HP/s from gear attributes
+    public float MpRegenBonus { get; set; }     // flat MP/s from gear attributes
+    public float CritDamageBonus { get; set; }  // crit-multiplier bonus from gear (e.g. +0.20x)
 
     // ----- Shield / block (0 if no shield equipped) -----
     public bool HasShield { get; set; }
@@ -421,6 +424,7 @@ public class Entity
 
         // ----- Item attributes (rolled per drop) -----
         float hpPct = 0, mpPct = 0, speedPct = 0, castPct = 0, atkSpeedPct = 0, atkPct = 0, evaPct = 0, defPct = 0;
+        float accFlat = 0, hpRegFlat = 0, mpRegFlat = 0, critRatePct = 0, critDmgPct = 0;
         foreach (var item in Inventory)
         {
             if (!item.Equipped) continue;
@@ -436,6 +440,11 @@ public class Entity
                     case AttributeType.AttackPercent: atkPct += attr.Value; break;
                     case AttributeType.EvasionPercent: evaPct += attr.Value; break;
                     case AttributeType.DefencePercent: defPct += attr.Value; break;
+                    case AttributeType.Accuracy: accFlat += attr.Value; break;
+                    case AttributeType.HpRegen: hpRegFlat += attr.Value; break;
+                    case AttributeType.MpRegen: mpRegFlat += attr.Value; break;
+                    case AttributeType.CritRate: critRatePct += attr.Value; break;
+                    case AttributeType.CritDamage: critDmgPct += attr.Value; break;
                 }
             }
         }
@@ -454,6 +463,10 @@ public class Entity
         }
         CastSpeedMultiplier = Math.Max(0.4f, 1f - castPct / 100f);
         AttackSpeedMultiplier = Math.Max(0.4f, 1f - atkSpeedPct / 100f);
+        Accuracy += (int)accFlat;
+        HpRegenBonus = hpRegFlat;
+        MpRegenBonus = mpRegFlat;
+        CritDamageBonus = critDmgPct / 100f;   // e.g. 20 -> +0.20x crit multiplier
 
         // ----- Flat class bonuses (class identity; additive over gear) -----
         if (Kind == EntityKind.Player && SecondClass > 0
@@ -475,11 +488,13 @@ public class Entity
         BasicAttackPower = Math.Max(1,
             (int)(AttackPower * StatCalculator.BasicAttackMultiplier(arch)));
         // Weapon shapes crit: blunt low, dual/bow high (WeaponType known post-equip).
-        // Factor scales the DEX crit; archetype bonus adds on top. Blunt's low crit
-        // is offset by its accuracy bonus.
+        // Factor scales the DEX crit; archetype bonus and GEAR crit-rate add on top
+        // (gear crit isn't scaled by the weapon factor). Blunt's low crit is offset
+        // by its accuracy bonus.
         CritChance = Math.Clamp(
             CritChance * StatCalculator.WeaponCritFactor(WeaponType)
-            + StatCalculator.ArchetypeCritBonus(arch), 0f, 0.75f);
+            + StatCalculator.ArchetypeCritBonus(arch)
+            + critRatePct / 100f, 0f, 0.75f);
         Evasion += StatCalculator.ArchetypeEvasionBonus(arch, Level);
         Accuracy += StatCalculator.WeaponAccuracyBonus(WeaponType);
 

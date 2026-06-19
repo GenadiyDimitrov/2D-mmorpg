@@ -174,7 +174,7 @@ public partial class MainWindow
         {
             lines.Add("— Attributes —");
             foreach (var a in item.Attributes)
-                lines.Add($"{AttributeSystem.DisplayName(a.Type)} +{a.Value}%");
+                lines.Add($"{AttributeSystem.DisplayName(a.Type)} +{a.Value}{(AttributeSystem.IsPercent(a.Type) ? "%" : "")}");
         }
         return string.Join("\n", lines);
     }
@@ -559,7 +559,8 @@ public partial class MainWindow
                 FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 6, 0, 2)
             });
             foreach (var attr in item.Attributes)
-                AddStatRow2($"  {AttributeSystem.DisplayName(attr.Type)}", attr.Value, null, suffix: "%");
+                AddStatRow2($"  {AttributeSystem.DisplayName(attr.Type)}", attr.Value, null,
+                    suffix: AttributeSystem.IsPercent(attr.Type) ? "%" : "");
         }
 
         EquipConfirmButton.Content = item.Equipped ? "Unequip" : "Equip";
