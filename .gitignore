@@ -2,3 +2,14 @@ bin/
 obj/
 .vs/
 *.user
+
+# SQLite database (runtime-only; recreated via EnsureCreated)
+*.db
+*.db-shm
+*.db-wal
+
+# Claude Code local settings (machine-specific)
+.claude/settings.local.json
+
+# Windows shortcuts
+*.lnk
