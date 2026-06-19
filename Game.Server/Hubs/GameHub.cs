@@ -176,6 +176,13 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task RerollAttributes(Guid scrollInstanceId, Guid targetInstanceId, int[] lockedIndices)
+    {
+        _world.Commands.Enqueue(new RerollAttributesCmd(Context.ConnectionId,
+            scrollInstanceId, targetInstanceId, lockedIndices ?? System.Array.Empty<int>()));
+        return Task.CompletedTask;
+    }
+
     public Task RemoveItem(Guid instanceId)
     {
         _world.Commands.Enqueue(new RemoveItemCmd(Context.ConnectionId, instanceId));

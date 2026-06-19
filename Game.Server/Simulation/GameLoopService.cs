@@ -82,6 +82,7 @@ public class GameLoopService : BackgroundService
                 case EquipCmd c: HandleEquip(c); break;
                 case UsePotionCmd c: HandleUsePotion(c); break;
                 case EnchantCmd c: HandleEnchant(c); break;
+                case RerollAttributesCmd c: HandleRerollAttributes(c); break;
                 case RemoveItemCmd c: HandleRemoveItem(c); break;
                 case DebugGiveCmd c: HandleDebugGive(c); break;
                 case DebugLevelCmd c: HandleDebugLevel(c); break;
@@ -480,7 +481,7 @@ public class GameLoopService : BackgroundService
         if (scroll is null || target is null ||
             ItemCatalog.Get(scroll.DefId) is not ItemDef scrollDef ||
             ItemCatalog.Get(target.DefId) is not ItemDef targetDef ||
-            !ItemCatalog.IsScroll(scrollDef) || !ItemCatalog.IsEquippable(targetDef))
+            !ItemCatalog.IsEnchantScroll(scrollDef) || !ItemCatalog.IsEquippable(targetDef))
         {
             SendSystemToEntity(player, "Invalid enchant.");
             return;
@@ -531,6 +532,57 @@ public class GameLoopService : BackgroundService
         SendSystemToEntity(player, outcome);
         SendInventory(player);
         if (target.Equipped || destroyed)
+            SendStats(player);
+    }
+
+    private void HandleRerollAttributes(RerollAttributesCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
+            return;
+
+        var scroll = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.ScrollInstanceId);
+        var target = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.TargetInstanceId);
+
+        if (scroll is null || target is null ||
+            ItemCatalog.Get(scroll.DefId) is not ItemDef scrollDef ||
+            ItemCatalog.Get(target.DefId) is not ItemDef targetDef ||
+            !ItemCatalog.IsAttributeScroll(scrollDef) || !ItemCatalog.IsEquippable(targetDef))
+        {
+            SendSystemToEntity(player, "Invalid reroll.");
+            return;
+        }
+
+        if (target.Attributes.Count == 0)
+        {
+            SendSystemToEntity(player, $"{targetDef.Name} has no attributes to reroll.");
+            return;
+        }
+
+        // Build the lock mask from the requested indices, clamped to the scroll's capacity.
+        int capacity = AttributeSystem.RerollLockCapacity(scrollDef.AttrScroll);
+        var locked = new bool[target.Attributes.Count];
+        int lockedCount = 0;
+        foreach (var idx in cmd.LockedIndices.Distinct())
+        {
+            if (idx < 0 || idx >= locked.Length || lockedCount >= capacity) continue;
+            locked[idx] = true;
+            lockedCount++;
+        }
+
+        bool forceMax = scrollDef.AttrScroll == AttrScrollKind.Legendary;
+        target.Attributes = AttributeSystem.Reroll(targetDef, target.Attributes, locked, forceMax, _rng);
+
+        ConsumeOne(player, scroll);
+        if (target.Equipped)
+            player.RecomputeDerived();
+
+        string outcome = forceMax
+            ? $"{targetDef.Name} attributes rerolled to MAX."
+            : $"{targetDef.Name} attributes rerolled.";
+        SendTo(player, "Reroll", new RerollResultDto(targetDef.Name, outcome));
+        SendSystemToEntity(player, outcome);
+        SendInventory(player);
+        if (target.Equipped)
             SendStats(player);
     }
 

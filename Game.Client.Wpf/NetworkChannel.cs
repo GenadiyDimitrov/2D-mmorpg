@@ -23,6 +23,7 @@ public class NetworkChannel : IAsyncDisposable
     public event Action<PotionStatus>? PotionReceived;
     public event Action<BuffUpdate>? BuffsReceived;
     public event Action<EnchantResultDto>? EnchantReceived;
+    public event Action<RerollResultDto>? RerollReceived;
     public event Action<string>? Disconnected;
     public event Action<string>? ForceDisconnected;
 
@@ -50,6 +51,7 @@ public class NetworkChannel : IAsyncDisposable
         _connection.On<PotionStatus>("Potion", pt => PotionReceived?.Invoke(pt));
         _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));
         _connection.On<EnchantResultDto>("Enchant", en => EnchantReceived?.Invoke(en));
+        _connection.On<RerollResultDto>("Reroll", r => RerollReceived?.Invoke(r));
         _connection.On<string>("ForceDisconnect", reason => ForceDisconnected?.Invoke(reason));
         _connection.Closed += ex =>
         {
@@ -121,6 +123,9 @@ public class NetworkChannel : IAsyncDisposable
 
     public Task EnchantAsync(Guid scrollId, Guid targetId) =>
         _connection!.SendAsync("Enchant", scrollId, targetId);
+
+    public Task RerollAttributesAsync(Guid scrollId, Guid targetId, int[] lockedIndices) =>
+        _connection!.SendAsync("RerollAttributes", scrollId, targetId, lockedIndices);
 
     public Task RemoveItemAsync(Guid instanceId) =>
         _connection!.SendAsync("RemoveItem", instanceId);

@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 14 (item attribute pools)
+# L2-like MMORPG — Phase 15 (attribute reroll scrolls)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,27 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 15 (this build)
+
+### Attribute reroll scrolls (keep the item, fix the rolls)
+- A new scroll family lets you **reroll an item's rolled attributes** instead of
+  tossing a good grade/rarity piece because its stats are weak. Each reroll
+  re-randomises the **unlocked** slots (both stat type and value, from the item's
+  Phase-14 pool).
+- **Lock-by-tier** — the scroll's rarity decides how many slots you can **keep**:
+  - **Common** — lock 0 (reroll all)
+  - **Uncommon** — lock 1
+  - **Rare** — lock 2
+  - **Legendary** — rerolls **all** slots and forces each to its **MAX** value (for a
+    legendary item whose every stat should be maxed).
+- **How to use it:** click the **⟳** button on any gear with attributes → the reroll
+  popup lists each attribute with a **lock checkbox** → tick the ones to keep → pick a
+  scroll. The server clamps your locks to the scroll's capacity, consumes one scroll,
+  and re-applies stats live if the item is equipped.
+- Enchant and attribute scrolls are now **distinct families** (an attribute scroll can't
+  be used to enchant and vice-versa). Debug menu grants all four attribute scrolls.
+- Drop chances aren't tuned yet — for now the scrolls come from the **debug menu**.
 
 ## New in Phase 14 (this build)
 

@@ -147,6 +147,51 @@ public static class AttributeSystem
         return result;
     }
 
+    /// <summary>How many attribute slots a scroll tier lets you LOCK (keep) while the
+    /// rest reroll. Legendary "locks all" conceptually — it rerolls every slot at MAX.</summary>
+    public static int RerollLockCapacity(AttrScrollKind kind) => kind switch
+    {
+        AttrScrollKind.Common => 0,
+        AttrScrollKind.Uncommon => 1,
+        AttrScrollKind.Rare => 2,
+        AttrScrollKind.Legendary => int.MaxValue,
+        _ => 0
+    };
+
+    /// <summary>Reroll the UNLOCKED attribute slots of an item. Locked slots keep their
+    /// exact type+value; unlocked slots get a fresh DISTINCT type from the item's pool
+    /// and a value rolled in range — or the MAX of the range when <paramref name="forceMax"/>
+    /// (legendary scroll). Slot count and order are preserved.</summary>
+    public static List<ItemAttribute> Reroll(ItemDef def, IReadOnlyList<ItemAttribute> current,
+        bool[] locked, bool forceMax, Random rng)
+    {
+        AttributeType[] pool = def.Slot switch
+        {
+            EquipSlot.Weapon => WeaponPool(def.WeaponType),
+            EquipSlot.Armor => ArmorPool(def.Weight),
+            _ => Array.Empty<AttributeType>()
+        };
+
+        var result = new List<ItemAttribute>(current.Count);
+        var taken = new HashSet<AttributeType>();
+        for (int i = 0; i < current.Count; i++)
+            if (i < locked.Length && locked[i]) taken.Add(current[i].Type);
+
+        for (int i = 0; i < current.Count; i++)
+        {
+            if (i < locked.Length && locked[i]) { result.Add(current[i]); continue; }
+
+            var choices = pool.Where(t => !taken.Contains(t)).ToList();
+            if (choices.Count == 0) { result.Add(current[i]); continue; } // pool exhausted: keep
+
+            var type = choices[rng.Next(choices.Count)];
+            taken.Add(type);
+            var (min, max) = Range(type, def.Grade);
+            result.Add(new ItemAttribute(type, forceMax ? max : rng.Next(min, max + 1)));
+        }
+        return result;
+    }
+
     public static string DisplayName(AttributeType type) => type switch
     {
         AttributeType.HealthPercent => "Max HP",

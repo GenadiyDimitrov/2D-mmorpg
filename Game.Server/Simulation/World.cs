@@ -98,6 +98,11 @@ public record UsePotionCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
 /// <summary>Apply an enchant scroll to a target item.</summary>
 public record EnchantCmd(string ConnectionId, Guid ScrollInstanceId, Guid TargetInstanceId) : IGameCommand;
 
+/// <summary>Reroll a target item's rolled attributes with an attribute scroll,
+/// locking the slots at LockedIndices (clamped to the scroll's lock capacity).</summary>
+public record RerollAttributesCmd(string ConnectionId, Guid ScrollInstanceId,
+    Guid TargetInstanceId, int[] LockedIndices) : IGameCommand;
+
 /// <summary>Destroy an inventory item (later: sell/dismantle).</summary>
 public record RemoveItemCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
 

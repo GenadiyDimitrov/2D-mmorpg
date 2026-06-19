@@ -28,6 +28,12 @@ public enum WeaponHands { OneHand = 0, TwoHand = 1 }
 /// Rare -> enchant drops by 1 (never breaks).</summary>
 public enum ScrollKind { None = 0, Common = 1, Uncommon = 2, Rare = 3 }
 
+/// <summary>Attribute (re-roll) scroll tier. Rarity decides how many of the item's
+/// rolled attributes you can LOCK while the rest re-roll: Common locks 0 (reroll all),
+/// Uncommon 1, Rare 2; Legendary rerolls ALL and forces each to its MAX value (for a
+/// legendary item whose every stat must be maxed).</summary>
+public enum AttrScrollKind { None = 0, Common = 1, Uncommon = 2, Rare = 3, Legendary = 4 }
+
 /// <summary>
 /// An item template. The Id is a STABLE STRING KEY (e.g. "sword_e_rare") — it
 /// is the item's permanent identity, stored in saves and referenced by loot
@@ -66,7 +72,9 @@ public record ItemDef(
     ItemAttribute[]? FixedAttributes = null,
     // ----- Jewel stat: magic defence. Jewels are the ONLY source of magic
     // defence beyond the level-based base (see StatCalculator.MagicDefence). -----
-    int MDefBonus = 0);
+    int MDefBonus = 0,
+    // ----- Attribute (re-roll) scroll tier (None = not an attribute scroll). -----
+    AttrScrollKind AttrScroll = AttrScrollKind.None);
 
 public static class ItemCatalog
 {
@@ -80,6 +88,10 @@ public static class ItemCatalog
     public const string ScrollCommon = "scroll_common";
     public const string ScrollUncommon = "scroll_uncommon";
     public const string ScrollRare = "scroll_rare";
+    public const string AttrScrollCommon = "attrscroll_common";
+    public const string AttrScrollUncommon = "attrscroll_uncommon";
+    public const string AttrScrollRare = "attrscroll_rare";
+    public const string AttrScrollLegendary = "attrscroll_legendary";
     public const string MarkOfFaith = "quest_mark_of_faith";
     public const string ClericsProof = "quest_clerics_proof";
     public const string GodWeapon = "god_judgment";
@@ -268,6 +280,17 @@ public static class ItemCatalog
         list.Add(new ItemDef(ScrollRare, "Enchant Scroll (Rare)", EquipSlot.Scroll,
             ItemGrade.F, ItemRarity.Rare, ScrollKind: ScrollKind.Rare));
 
+        // ----- Attribute (re-roll) scrolls: reroll an item's rolled attributes,
+        //       locking some by scroll tier. Legendary rerolls all at MAX value. -----
+        list.Add(new ItemDef(AttrScrollCommon, "Attribute Scroll (Common)", EquipSlot.Scroll,
+            ItemGrade.F, ItemRarity.Common, AttrScroll: AttrScrollKind.Common));
+        list.Add(new ItemDef(AttrScrollUncommon, "Attribute Scroll (Uncommon)", EquipSlot.Scroll,
+            ItemGrade.F, ItemRarity.Uncommon, AttrScroll: AttrScrollKind.Uncommon));
+        list.Add(new ItemDef(AttrScrollRare, "Attribute Scroll (Rare)", EquipSlot.Scroll,
+            ItemGrade.F, ItemRarity.Rare, AttrScroll: AttrScrollKind.Rare));
+        list.Add(new ItemDef(AttrScrollLegendary, "Attribute Scroll (Legendary)", EquipSlot.Scroll,
+            ItemGrade.F, ItemRarity.Legendary, AttrScroll: AttrScrollKind.Legendary));
+
         // ===================================================================
         //  QUEST ITEMS — non-droppable, non-tradeable proofs for class changes.
         // ===================================================================
@@ -324,6 +347,8 @@ public static class ItemCatalog
 
     public static bool IsPotion(ItemDef def) => def.Slot == EquipSlot.Consumable;
     public static bool IsScroll(ItemDef def) => def.Slot == EquipSlot.Scroll;
+    public static bool IsEnchantScroll(ItemDef def) => def.Slot == EquipSlot.Scroll && def.ScrollKind != ScrollKind.None;
+    public static bool IsAttributeScroll(ItemDef def) => def.AttrScroll != AttrScrollKind.None;
     public static bool IsQuestItem(ItemDef def) => def.Slot == EquipSlot.QuestItem;
     public static bool IsEquippable(ItemDef def) => def.Slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Jewel;
 

@@ -520,6 +520,26 @@
             </StackPanel>
         </Border>
 
+        <!-- Attribute reroll popup -->
+        <Border x:Name="RerollPopup"
+                Width="380"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="#F01C2636" CornerRadius="10" Padding="18"
+                Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock x:Name="RerollTitle" Foreground="White" FontSize="16"
+                           FontWeight="Bold" Margin="0,0,0,4"/>
+                <TextBlock x:Name="RerollInfo" Foreground="#FFB9C4CC" FontSize="12"
+                           TextWrapping="Wrap" Margin="0,0,0,8"/>
+                <TextBlock Text="Lock the attributes you want to keep:" Foreground="#FF9FB0BE"
+                           FontSize="12" Margin="0,0,0,4"/>
+                <ItemsControl x:Name="RerollAttrList" Margin="0,0,0,8"/>
+                <TextBlock Text="Reroll with:" Foreground="#FF9FB0BE" FontSize="12" Margin="0,0,0,4"/>
+                <ItemsControl x:Name="RerollScrollList"/>
+                <Button Content="Close" Height="28" Margin="0,12,0,0" Click="RerollClose_Click"/>
+            </StackPanel>
+        </Border>
+
         <!-- Debug menu -->
         <Border x:Name="DebugPanel"
                 Width="280" MaxHeight="520"

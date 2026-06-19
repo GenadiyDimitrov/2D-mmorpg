@@ -17,6 +17,8 @@ public partial class MainWindow
     private readonly List<PotionSlot> _potionSlots = new();
     private Guid? _equipPopupInstanceId;
     private Guid? _enchantTargetId;
+    private Guid? _rerollTargetId;
+    private readonly HashSet<int> _rerollLocks = new();
     private bool _creationReady;
 
     // =======================================================================
@@ -128,6 +130,21 @@ public partial class MainWindow
                 enchant.Click += (_, _) => OpenEnchantPopup(dto);
                 DockPanel.SetDock(enchant, Dock.Right);
                 row.Children.Add(enchant);
+
+                // Reroll (⟳) button — only for gear that actually has rolled attributes.
+                if (dto.Attributes.Length > 0)
+                {
+                    var reroll = new Button
+                    {
+                        Content = "⟳", Width = 24, Height = 28, FontSize = 13, FontWeight = FontWeights.Bold,
+                        Foreground = Brushes.White, Margin = new Thickness(0, 0, 3, 0),
+                        Background = new SolidColorBrush(Color.FromArgb(120, 150, 110, 70)),
+                        ToolTip = "Reroll this item's attributes"
+                    };
+                    reroll.Click += (_, _) => OpenRerollPopup(dto);
+                    DockPanel.SetDock(reroll, Dock.Right);
+                    row.Children.Add(reroll);
+                }
             }
 
             // Main item button — opens equip/compare popup (potions drink).
@@ -1261,6 +1278,103 @@ public partial class MainWindow
     }
 
     // =======================================================================
+    // Attribute reroll popup
+    // =======================================================================
+
+    private void OpenRerollPopup(InventoryItemDto item)
+    {
+        if (ItemCatalog.Get(item.DefId) is not ItemDef def || item.Attributes.Length == 0)
+            return;
+
+        _rerollTargetId = item.InstanceId;
+        _rerollLocks.Clear();
+        RerollTitle.Text = $"Reroll {def.Name}";
+        RerollInfo.Text =
+            "Lock the attributes you want to keep, then pick a scroll. Each reroll " +
+            "re-randomises the unlocked slots (type + value). Common locks 0, Uncommon 1, " +
+            "Rare 2. Legendary rerolls ALL to their MAX value.";
+
+        // One lock checkbox per current attribute.
+        RerollAttrList.Items.Clear();
+        for (int i = 0; i < item.Attributes.Length; i++)
+        {
+            int index = i;
+            var a = item.Attributes[i];
+            var cb = new CheckBox
+            {
+                Content = $"{AttributeSystem.DisplayName(a.Type)} +{a.Value}" +
+                          (AttributeSystem.IsPercent(a.Type) ? "%" : ""),
+                Foreground = Brushes.White,
+                Margin = new Thickness(0, 1, 0, 1)
+            };
+            cb.Checked += (_, _) => _rerollLocks.Add(index);
+            cb.Unchecked += (_, _) => _rerollLocks.Remove(index);
+            RerollAttrList.Items.Add(cb);
+        }
+
+        // Scroll buttons, labelled with their lock capacity + how many you own.
+        RerollScrollList.Items.Clear();
+        var scrolls = new (string DefId, int Locks)[]
+        {
+            (ItemCatalog.AttrScrollCommon, 0),
+            (ItemCatalog.AttrScrollUncommon, 1),
+            (ItemCatalog.AttrScrollRare, 2),
+            (ItemCatalog.AttrScrollLegendary, -1),   // -1 = maxes all
+        };
+        foreach (var (scrollDefId, locks) in scrolls)
+        {
+            var scrollDef = ItemCatalog.Get(scrollDefId)!;
+            int count = _inventory.FirstOrDefault(i => i.DefId == scrollDefId)?.Quantity ?? 0;
+            string lockLabel = locks < 0 ? "max all" : $"lock {locks}";
+            var button = new Button
+            {
+                Content = $"{scrollDef.Name}  ({lockLabel})  x{count}",
+                Height = 30, Margin = new Thickness(0, 0, 0, 4),
+                Foreground = RarityBrush(scrollDef.Rarity),
+                IsEnabled = count > 0,
+                HorizontalContentAlignment = HorizontalAlignment.Left,
+                Padding = new Thickness(8, 0, 0, 0)
+            };
+            button.Click += async (_, _) =>
+            {
+                var scroll = _inventory.FirstOrDefault(i => i.DefId == scrollDefId);
+                if (scroll is not null && _rerollTargetId is Guid tid)
+                    await _net.RerollAttributesAsync(scroll.InstanceId, tid, _rerollLocks.ToArray());
+            };
+            RerollScrollList.Items.Add(button);
+        }
+
+        EquipPopup.Visibility = Visibility.Collapsed;
+        EnchantPopup.Visibility = Visibility.Collapsed;
+        RerollPopup.Visibility = Visibility.Visible;
+    }
+
+    private void OnReroll(RerollResultDto result)
+    {
+        // Refresh the popup (inventory update carries the new attributes).
+        if (RerollPopup.Visibility == Visibility.Visible && _rerollTargetId is Guid tid)
+        {
+            var item = _inventory.FirstOrDefault(i => i.InstanceId == tid);
+            if (item is null)
+            {
+                RerollPopup.Visibility = Visibility.Collapsed;
+                _rerollTargetId = null;
+            }
+            else
+            {
+                OpenRerollPopup(item);
+            }
+        }
+    }
+
+    private void RerollClose_Click(object sender, RoutedEventArgs e)
+    {
+        RerollPopup.Visibility = Visibility.Collapsed;
+        _rerollTargetId = null;
+        _rerollLocks.Clear();
+    }
+
+    // =======================================================================
     // Debug menu
     // =======================================================================
 
@@ -1306,6 +1420,12 @@ public partial class MainWindow
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.ScrollCommon, "Common Scroll x10", 10));
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.ScrollUncommon, "Uncommon Scroll x10", 10));
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.ScrollRare, "Rare Scroll x10", 10));
+
+        AddDebugHeader("Attribute Scrolls (x10)");
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.AttrScrollCommon, "Attr Scroll (Common) x10", 10));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.AttrScrollUncommon, "Attr Scroll (Uncommon) x10", 10));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.AttrScrollRare, "Attr Scroll (Rare) x10", 10));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.AttrScrollLegendary, "Attr Scroll (Legendary) x10", 10));
 
         AddDebugHeader("Potions (x10)");
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.MinorPotion, "Minor Potion x10", 10));

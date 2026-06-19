@@ -120,6 +120,10 @@ public record BuffUpdate(BuffDto[] Buffs);
 /// <summary>Server -> owning client: the result of an enchant attempt.</summary>
 public record EnchantResultDto(string ItemName, int NewEnchant, string Outcome, bool Destroyed);
 
+/// <summary>Server -> owning client: an attribute reroll finished (inventory update
+/// carries the new attributes; this drives the reroll popup refresh + a message).</summary>
+public record RerollResultDto(string ItemName, string Outcome);
+
 
 // ----- Accounts & character selection (Phase 5) ----------------------------
 

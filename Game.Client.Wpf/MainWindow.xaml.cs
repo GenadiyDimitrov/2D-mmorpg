@@ -80,6 +80,7 @@ public partial class MainWindow : Window
         _net.PotionReceived += pt => Dispatcher.BeginInvoke(() => OnPotion(pt));
         _net.BuffsReceived += b => Dispatcher.BeginInvoke(() => OnBuffs(b));
         _net.EnchantReceived += en => Dispatcher.BeginInvoke(() => OnEnchant(en));
+        _net.RerollReceived += r => Dispatcher.BeginInvoke(() => OnReroll(r));
         _net.ForceDisconnected += reason => Dispatcher.BeginInvoke(() =>
         {
             _inGame = false;
