@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 12 (shields/block + combat-feel fixes)
+# L2-like MMORPG — Phase 13 (magic defence + weapon system)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,52 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 13 (this build)
+
+> **Delete `game.db` before running** — a staff's item key changed
+> (`staff_*` → `blunt_*`), so existing mage starter staves won't resolve; a fresh
+> DB regenerates correct starter gear.
+
+### Magic defence is its own channel
+- **New magic-defence stat**, fully separate from physical defence: magic damage now
+  divides by **`MagicDefence`**, not physical `pDef`. Base = **`level / 2`** (the
+  physical formula minus the CON term — magic defence does **not** scale with any base
+  stat).
+- **Only JEWELS raise magic defence.** New **`EquipSlot.Jewel`** + an item `MDefBonus`;
+  two starter jewels seeded (Brass Amulet, Silver Talisman). One jewel equips for now,
+  built to expand to the L2 five-slot layout later. M.Def shows in the Stats window and
+  the equip-comparison popup.
+- **Tank "Anti Magic"** (archetype passive) adds extra magic defence on top of the base.
+
+### WIT is purely a combat-utility stat
+- WIT still drives **magic crit**, **cast speed**, and **interrupt resist** — and now
+  also **offensive magic-interrupt power** (`wit·2`), so a **WIT mage out-interrupts an
+  equal-level ATK mage** while the ATK mage hits harder. WIT adds **no** magic damage.
+
+### Magic fail — floor and ceiling
+- A spell can always fizzle (**≥1%**), scaling up by level gap to **90%** (was 80%).
+- The **target** can raise the fail **floor** against itself: **Tank ~10%, mages ~5%**
+  — so casters always have a real chance to fail against the prepared.
+
+### Interrupts
+- **Rogue basic attacks** now carry magic-interrupt power (`50 + level`) — daggers
+  disrupt casters. Other archetypes' basics still don't interrupt.
+- New **Disrupt** skill (Tank kit): **instant cast**, overwhelming interrupt power, so
+  it **always breaks** an enemy cast.
+
+### Weapon system — Blunt, one/two-handed, shields
+- **`Staff` is gone — a staff is just a 2H Blunt** (`WeaponType.Blunt`). Blunt =
+  **higher accuracy, lower crit** than bladed weapons.
+- **One- vs two-handed** (`WeaponHands`) is now a real property. **A 2H weapon occupies
+  the offhand**, so equipping a 2H weapon and a shield are **mutually exclusive** (one
+  drops the other).
+- **Per-weapon crit factor** (Sword ×0.80, Dual/Bow ×1.20, Blunt ×0.40) shapes crit by
+  weapon; **Blunt also gets +accuracy** — the high-acc/low-crit identity.
+- **1H magic blunts** let a mage trade a staff for **mace + shield**: hand-added
+  **Iron Mace** (physical, shield-ok) and **Ash Wand** (1H magic blunt, mAtk > pAtk).
+- **Daggers are consistently `Dual`** (no phantom `Dagger` type); fixed a mob drop that
+  referenced a non-existent dagger key.
 
 ## New in Phase 12 (this build)
 
