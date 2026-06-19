@@ -193,6 +193,18 @@ public partial class MainWindow
             foreach (var a in item.Attributes)
                 lines.Add($"{AttributeSystem.DisplayName(a.Type)} +{a.Value}{(AttributeSystem.IsPercent(a.Type) ? "%" : "")}");
         }
+        if (!string.IsNullOrEmpty(def.SetId) && ArmorSetCatalog.Get(def.SetId) is ArmorSetDef set)
+        {
+            var b = set.Bonus;
+            var parts = new List<string>();
+            if (b.MaxHp != 0) parts.Add($"+{b.MaxHp} HP");
+            if (b.MaxMp != 0) parts.Add($"+{b.MaxMp} MP");
+            if (b.Defence != 0) parts.Add($"+{b.Defence} Def");
+            if (b.Attack != 0) parts.Add($"+{b.Attack} Atk");
+            if (b.Accuracy != 0) parts.Add($"+{b.Accuracy} Acc");
+            if (b.Evasion != 0) parts.Add($"+{b.Evasion} Eva");
+            lines.Add($"— {set.Name} set (full: {string.Join(", ", parts)}) —");
+        }
         return string.Join("\n", lines);
     }
 
@@ -444,6 +456,8 @@ public partial class MainWindow
         StatsList.Items.Add(MakeStatRow("Max HP / MP", $"{st.MaxHp} / {st.MaxMp}"));
         StatsList.Items.Add(MakeStatRow("P.Atk / M.Atk", $"{st.AttackPower} / {st.MagicAttack}"));
         StatsList.Items.Add(MakeStatRow("Defence (Phys / Magic)", $"{st.Defence} / {st.MagicDefence}"));
+        if (!string.IsNullOrEmpty(st.ActiveSet))
+            StatsList.Items.Add(MakeStatRow("Set Bonus", $"{st.ActiveSet} (complete)"));
         StatsList.Items.Add(MakeStatRow("Accuracy / Evasion", $"{st.Accuracy} / {st.Evasion}"));
         StatsList.Items.Add(MakeStatRow("Crit (Phys / Magic)",
             $"{st.CritChance * 100:0.#}% / {st.MagicCritChance * 100:0.#}%"));
@@ -1421,6 +1435,22 @@ public partial class MainWindow
                     await _net.DebugGiveAsync(ItemCatalog.ArmorKey(ArmorWeight.None, slot, ItemGrade.E, ItemRarity.Rare));
             }));
         }
+
+        AddDebugHeader("Named Sets");
+        DebugList.Children.Add(DebugAction("Dark Dominion (heavy body)", async () =>
+        {
+            await _net.DebugGiveAsync(ItemCatalog.DarkDominionHeavyBody);
+            await _net.DebugGiveAsync(ItemCatalog.DarkDominionHead);
+            await _net.DebugGiveAsync(ItemCatalog.DarkDominionGloves);
+            await _net.DebugGiveAsync(ItemCatalog.DarkDominionBoots);
+        }));
+        DebugList.Children.Add(DebugAction("Dark Dominion (robe body)", async () =>
+        {
+            await _net.DebugGiveAsync(ItemCatalog.DarkDominionRobeBody);
+            await _net.DebugGiveAsync(ItemCatalog.DarkDominionHead);
+            await _net.DebugGiveAsync(ItemCatalog.DarkDominionGloves);
+            await _net.DebugGiveAsync(ItemCatalog.DarkDominionBoots);
+        }));
 
         AddDebugHeader("Scrolls (x10)");
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.ScrollCommon, "Common Scroll x10", 10));

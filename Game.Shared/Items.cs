@@ -82,7 +82,10 @@ public record ItemDef(
     // defence beyond the level-based base (see StatCalculator.MagicDefence). -----
     int MDefBonus = 0,
     // ----- Attribute (re-roll) scroll tier (None = not an attribute scroll). -----
-    AttrScrollKind AttrScroll = AttrScrollKind.None);
+    AttrScrollKind AttrScroll = AttrScrollKind.None,
+    // ----- Armor SET id ("" = not a set piece). Wearing all 4 slots of one set
+    // grants its set bonus (see ArmorSetCatalog). -----
+    string SetId = "");
 
 public static class ItemCatalog
 {
@@ -110,6 +113,13 @@ public static class ItemCatalog
     public const string SilverTalisman = "jewel_silver_talisman";
     public const string IronMace = "blunt_1h_iron_mace";        // 1H physical blunt (shield-ok)
     public const string AshWand = "blunt_1h_ash_wand";          // 1H magic blunt (mAtk > pAtk)
+    // Dark Dominion armor set: two BODY weight variants (heavy/robe) sharing the
+    // same three accessories. Wearing a body + all 3 accessories grants the set bonus.
+    public const string DarkDominionHeavyBody = "set_dark_dominion_body_heavy";
+    public const string DarkDominionRobeBody = "set_dark_dominion_body_robe";
+    public const string DarkDominionHead = "set_dark_dominion_head";
+    public const string DarkDominionGloves = "set_dark_dominion_gloves";
+    public const string DarkDominionBoots = "set_dark_dominion_boots";
 
     public static string WeaponKey(WeaponType type, ItemGrade grade, ItemRarity rarity) =>
         $"{type.ToString().ToLowerInvariant()}_{grade.ToString().ToLowerInvariant()}_{rarity.ToString().ToLowerInvariant()}";
@@ -263,6 +273,24 @@ public static class ItemCatalog
                 }
             }
         }
+
+        // ===================================================================
+        //  NAMED ARMOR SETS — hand-authored. A set tags its pieces with a SetId;
+        //  wearing all 4 slots of one set grants its bonus (ArmorSetCatalog).
+        //  Dark Dominion: heavy OR robe body, sharing the same 3 accessories.
+        // ===================================================================
+        list.Add(new ItemDef(DarkDominionHeavyBody, "Dark Dominion Plate", EquipSlot.Armor,
+            ItemGrade.E, ItemRarity.Rare, Weight: ArmorWeight.Heavy, ArmorSlot: ArmorSlot.Body,
+            DefBonus: 28, HpBonus: 130, SetId: ArmorSetCatalog.DarkDominion));
+        list.Add(new ItemDef(DarkDominionRobeBody, "Dark Dominion Robe", EquipSlot.Armor,
+            ItemGrade.E, ItemRarity.Rare, Weight: ArmorWeight.Robe, ArmorSlot: ArmorSlot.Body,
+            DefBonus: 10, HpBonus: 20, MpBonus: 130, SetId: ArmorSetCatalog.DarkDominion));
+        list.Add(new ItemDef(DarkDominionHead, "Dark Dominion Helm", EquipSlot.Armor,
+            ItemGrade.E, ItemRarity.Rare, ArmorSlot: ArmorSlot.Head, SetId: ArmorSetCatalog.DarkDominion));
+        list.Add(new ItemDef(DarkDominionGloves, "Dark Dominion Gauntlets", EquipSlot.Armor,
+            ItemGrade.E, ItemRarity.Rare, ArmorSlot: ArmorSlot.Gloves, SetId: ArmorSetCatalog.DarkDominion));
+        list.Add(new ItemDef(DarkDominionBoots, "Dark Dominion Sabatons", EquipSlot.Armor,
+            ItemGrade.E, ItemRarity.Rare, ArmorSlot: ArmorSlot.Boots, SetId: ArmorSetCatalog.DarkDominion));
 
         // ===================================================================
         //  POTIONS

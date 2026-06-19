@@ -165,6 +165,7 @@ public class Entity
     public float HpRegenBonus { get; set; }     // flat HP/s from gear attributes
     public float MpRegenBonus { get; set; }     // flat MP/s from gear attributes
     public float CritDamageBonus { get; set; }  // crit-multiplier bonus from gear (e.g. +0.20x)
+    public string ActiveArmorSet { get; set; } = ""; // name of the completed armor set bonus, "" if none
 
     // ----- Shield / block (0 if no shield equipped) -----
     public bool HasShield { get; set; }
@@ -480,6 +481,39 @@ public class Entity
             Accuracy += b.Accuracy;
             // Primary deltas feed nothing further here (derived already computed),
             // but are exposed for future systems; applied as flat secondary above.
+        }
+
+        // ----- Armor set bonus: all 4 armor slots (Head/Body/Gloves/Boots) of one
+        // set equipped grants its flat bonus (on top of each piece + attributes). -----
+        ActiveArmorSet = "";
+        if (Kind == EntityKind.Player)
+        {
+            var setSlots = new Dictionary<string, HashSet<ArmorSlot>>();
+            foreach (var item in Inventory)
+            {
+                if (!item.Equipped || ItemCatalog.Get(item.DefId) is not ItemDef sd
+                    || string.IsNullOrEmpty(sd.SetId))
+                    continue;
+                if (!setSlots.TryGetValue(sd.SetId, out var slots))
+                    setSlots[sd.SetId] = slots = new HashSet<ArmorSlot>();
+                slots.Add(sd.ArmorSlot);
+            }
+            foreach (var (setId, slots) in setSlots)
+            {
+                if (slots.Contains(ArmorSlot.Head) && slots.Contains(ArmorSlot.Body)
+                    && slots.Contains(ArmorSlot.Gloves) && slots.Contains(ArmorSlot.Boots)
+                    && ArmorSetCatalog.Get(setId) is ArmorSetDef set)
+                {
+                    MaxHp += set.Bonus.MaxHp;
+                    MaxMp += set.Bonus.MaxMp;
+                    Defence += set.Bonus.Defence;
+                    AttackPower += set.Bonus.Attack;
+                    MagicAttack += set.Bonus.Attack;   // set Attack feeds both channels
+                    Evasion += set.Bonus.Evasion;
+                    Accuracy += set.Bonus.Accuracy;
+                    ActiveArmorSet = set.Name;
+                }
+            }
         }
 
         // Archetype identity: scale basic-attack power, add crit/eva for

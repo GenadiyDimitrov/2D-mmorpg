@@ -100,7 +100,7 @@ public record StatsUpdate(
     float CastSpeedMult, float AttackSpeedMult, int SkillPoints, MoveState MoveState,
     int MagicAttack, float MagicCritChance,
     bool HasShield, float BlockChance, float BlockReduction, int ShieldDefense,
-    int MagicDefence);
+    int MagicDefence, string ActiveSet);
 
 /// <summary>Server -> owning client: a potion cooldown started (seconds),
 /// or an active potion effect changed. Cooldown 0 = ready.</summary>

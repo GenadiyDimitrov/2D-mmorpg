@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 16.1 (armor slots trimmed: body + accessories)
+# L2-like MMORPG — Phase 17 (armor sets + set bonus)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,23 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 17 (this build)
+
+### Named armor sets with a set bonus
+- Armor pieces can belong to a **named set** (`ItemDef.SetId`). Wearing **all four armor
+  slots** (Head / Body / Gloves / Boots) of the same set grants that set's **bonus** on
+  top of each piece's own stats and rolled attributes.
+- A set can offer **several body weight variants** that share the same accessories — so a
+  set has a *heavy* and a *robe* body, both completed by the same helm/gauntlets/boots.
+- **Dark Dominion** ships as the first set: a **Plate** (heavy) or **Robe** body + shared
+  Helm / Gauntlets / Sabatons. Full set → **+150 HP, +80 MP, +25 Def, +18 Atk** (feeds
+  both physical and magic), **+6 Acc, +6 Eva** (tune in `ArmorSetCatalog`).
+- The **Stats window** shows **“Set Bonus: <name> (complete)”** when active, and an item's
+  **tooltip** lists the full-set bonus so you know what you're collecting toward.
+- Sets are defined in `Game.Shared/ArmorSets.cs`; the debug menu grants both Dark Dominion
+  variants. Set pieces are obtainable via debug for now (boss drops later). No DB reset
+  needed this build.
 
 ## New in Phase 16.1 (this build)
 

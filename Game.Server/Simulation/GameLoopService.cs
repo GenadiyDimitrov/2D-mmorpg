@@ -2045,7 +2045,8 @@ var effect = def.Effect;
             p.MaxHp, p.MaxMp, p.AttackPower, p.Defence,
             p.Accuracy, p.Evasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
             p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.CastSpeedMultiplier, p.AttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttack, p.MagicCritChance,
-            p.HasShield, p.BlockChance, p.BlockReduction, p.ShieldDefense, (int)p.EffectiveMagicDefence));
+            p.HasShield, p.BlockChance, p.BlockReduction, p.ShieldDefense, (int)p.EffectiveMagicDefence,
+            p.ActiveArmorSet));
 
     /// <summary>Stop an in-progress cast. startCooldown=true (player ESC) puts
     /// the skill on cooldown; false (enemy interrupt / forced) does not, so the
