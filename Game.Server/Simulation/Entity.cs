@@ -152,12 +152,16 @@ public class Entity
     public int BasicAttackPower { get; set; } // feeds auto-attacks (archetype-scaled)
     public int MagicAttack { get; set; }      // magic attack (mAtk); feeds spells
     public int Defence { get; set; }
+    public int MagicDefence { get; set; }     // magic-only defence (level base + jewels + Anti-Magic)
     public int Accuracy { get; set; }
     public int Evasion { get; set; }
     public WeaponType WeaponType { get; set; } = WeaponType.None;
     public float CritChance { get; set; }       // physical crit rate
     public float MagicCritChance { get; set; }  // magic crit rate (from WIT)
     public int InterruptResist { get; set; }    // resist casting interruption (from WIT)
+    public int MagicInterruptBonus { get; set; } // OFFENSIVE magic interrupt power (from WIT)
+    public int BasicAttackInterruptPower { get; set; } // interrupt power carried by basic attacks (rogues)
+    public float MagicFailFloor { get; set; }   // minimum magic-fail chance attackers have vs this entity
 
     // ----- Shield / block (0 if no shield equipped) -----
     public bool HasShield { get; set; }
@@ -239,6 +243,11 @@ public class Entity
     /// <summary>Defence including BuffDef (adds) and DebuffDef (subtracts).</summary>
     public float EffectiveDefence =>
         ModifiedStat(Defence + ShieldDefense, SkillEffect.BuffDef, SkillEffect.DebuffDef);
+
+    /// <summary>Magic defence — the divisor for incoming magic damage. Separate
+    /// channel from physical defence; sourced from level base + jewels + the Tank
+    /// "Anti Magic" passive. No buff flag yet (magic-def buffs can hook in here).</summary>
+    public float EffectiveMagicDefence => MagicDefence;
 
     /// <summary>Evasion including evasion buffs (flat + percent).</summary>
     public float EffectiveEvasion => ModifiedStat(Evasion, SkillEffect.BuffEvasion);
@@ -339,11 +348,17 @@ public class Entity
         AttackPower = StatCalculator.AttackPower(AtkStat, Level);
         MagicAttack = StatCalculator.AttackPower(AtkStat, Level); // mAtk also from ATK
         Defence = StatCalculator.Defence(Con, Level);
+        // Magic defence: level base + Tank "Anti Magic" passive. Jewels add below.
+        MagicDefence = StatCalculator.MagicDefence(Level)
+            + StatCalculator.ArchetypeMagicDefenceBonus(Archetype, Level);
+        MagicFailFloor = StatCalculator.ArchetypeMagicFailFloor(Archetype);
         Accuracy = StatCalculator.Accuracy(Dex, Level);
         Evasion = StatCalculator.Evasion(Dex, Level);
         CritChance = StatCalculator.PhysicalCritChance(Dex);
         MagicCritChance = StatCalculator.MagicCritChance(Wit);
         InterruptResist = StatCalculator.InterruptResist(Wit, Level);
+        MagicInterruptBonus = StatCalculator.MagicInterruptPower(Wit);
+        BasicAttackInterruptPower = StatCalculator.ArchetypeBasicInterruptPower(Archetype, Level);
         BasicAttackRange = GameConstants.MeleeRange;
         WeaponType = WeaponType.None;
         // Base run speed: players from race+class table, mobs from their spawn-set
@@ -371,6 +386,7 @@ public class Entity
             AttackPower += EnchantRules.BonusAt(def.AtkBonus, item.Enchant);
             MagicAttack += EnchantRules.BonusAt(def.MAtkBonus, item.Enchant);
             Defence += EnchantRules.BonusAt(def.DefBonus, item.Enchant);
+            MagicDefence += EnchantRules.BonusAt(def.MDefBonus, item.Enchant);  // jewels
             MaxHp += EnchantRules.BonusAt(def.HpBonus, item.Enchant);
             MaxMp += EnchantRules.BonusAt(def.MpBonus, item.Enchant);
             Evasion += EnchantRules.BonusAt(def.EvaBonus, item.Enchant);
@@ -458,9 +474,14 @@ public class Entity
         var arch = Archetype;
         BasicAttackPower = Math.Max(1,
             (int)(AttackPower * StatCalculator.BasicAttackMultiplier(arch)));
+        // Weapon shapes crit: blunt low, dual/bow high (WeaponType known post-equip).
+        // Factor scales the DEX crit; archetype bonus adds on top. Blunt's low crit
+        // is offset by its accuracy bonus.
         CritChance = Math.Clamp(
-            CritChance + StatCalculator.ArchetypeCritBonus(arch), 0f, 0.75f);
+            CritChance * StatCalculator.WeaponCritFactor(WeaponType)
+            + StatCalculator.ArchetypeCritBonus(arch), 0f, 0.75f);
         Evasion += StatCalculator.ArchetypeEvasionBonus(arch, Level);
+        Accuracy += StatCalculator.WeaponAccuracyBonus(WeaponType);
 
         // Skill-buff Max HP/MP (e.g. HP Boost line).
         float buffHpPct = 0f, buffMpPct = 0f;

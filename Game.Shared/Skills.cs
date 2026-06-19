@@ -84,6 +84,7 @@ public static class SkillCatalog
     public const string FlameBolt = "flame_bolt";
     public const string HolyStrike = "holy_strike";
     public const string GreaterWeakness = "greater_weakness";
+    public const string Disrupt = "disrupt";
     // Example learnable buff line (HP boost) used by healers/clerics+.
     public const string HpBoost1 = "hp_boost_1";
     public const string HpBoost2 = "hp_boost_2";
@@ -175,6 +176,13 @@ public static class SkillCatalog
                 MpCost: 12, CastTicks: 3, CooldownTicks: 25, Range: 0, Power: 55,
                 Category: SkillCategory.Physical,
                 Description: "Two rapid dagger slashes. Short cast and cooldown."),
+
+            // The dedicated interrupt: INSTANT (CastTicks 0), tiny damage, but
+            // overwhelming InterruptPower so it ALWAYS breaks an enemy cast.
+            new(Disrupt, "Disrupt", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+                MpCost: 10, CastTicks: 0, CooldownTicks: 80, Range: 0, Power: 5,
+                Category: SkillCategory.Physical, InterruptPower: 99999,
+                Description: "Instant strike that always interrupts an enemy's cast."),
 
             new(PowerShot, "Power Shot", BaseClass.Fighter, SkillEffect.PhysicalDamage,
                 MpCost: 16, CastTicks: 8, CooldownTicks: 40, Range: 900, Power: 70,

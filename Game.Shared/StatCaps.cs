@@ -34,6 +34,12 @@ public static class StatCaps
     /// <summary>Magic crit DAMAGE ceiling (x3).</summary>
     public const float MagicCritDamage = 3.0f;
 
+    /// <summary>Magic-fail absolute floor (a spell can always fizzle ≥1%).</summary>
+    public const float MagicFailFloor = 0.01f;
+
+    /// <summary>Magic-fail ceiling (level gap can push fail up to 90%).</summary>
+    public const float MagicFailMax = 0.90f;
+
     /// <summary>Legacy single crit-chance cap (kept for old references).</summary>
     public const float CritChance = 0.50f;
 

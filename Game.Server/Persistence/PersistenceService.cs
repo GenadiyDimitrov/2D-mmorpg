@@ -119,7 +119,7 @@ public class PersistenceService
         // Starter gear keyed by stable string ids. Give a weapon matching the
         // base class's playstyle and the appropriate armor.
         string starterWeapon = baseClass == BaseClass.Mage
-            ? ItemCatalog.WeaponKey(WeaponType.Staff, ItemGrade.F, ItemRarity.Common)
+            ? ItemCatalog.WeaponKey(WeaponType.Blunt, ItemGrade.F, ItemRarity.Common)   // 2H staff
             : ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.F, ItemRarity.Common);
         string starterArmor = baseClass == BaseClass.Mage
             ? ItemCatalog.ArmorKey(ArmorWeight.Robe, ItemGrade.F, ItemRarity.Common)

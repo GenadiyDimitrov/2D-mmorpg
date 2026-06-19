@@ -442,13 +442,23 @@ public class GameLoopService : BackgroundService
                 trade.OfferOf(player).Contains(item.InstanceId))
                 return;
 
-            // One item per slot: unequip the current one.
+            // One item per slot: unequip the current one. Also enforce the
+            // two-handed rule: a 2H weapon and a shield cannot coexist (a 2H
+            // weapon occupies the offhand), so equipping one drops the other.
+            bool equippingTwoHandWeapon = def.Slot == EquipSlot.Weapon && def.Hands == WeaponHands.TwoHand;
+            bool equippingShield = def.Slot == EquipSlot.Shield;
             foreach (var other in player.Inventory)
             {
-                if (other.Equipped &&
-                    ItemCatalog.Get(other.DefId) is ItemDef otherDef &&
-                    otherDef.Slot == def.Slot)
-                    other.Equipped = false;
+                if (!other.Equipped || ItemCatalog.Get(other.DefId) is not ItemDef otherDef)
+                    continue;
+
+                if (otherDef.Slot == def.Slot)
+                    other.Equipped = false;                                   // same slot
+                else if (equippingTwoHandWeapon && otherDef.Slot == EquipSlot.Shield)
+                    other.Equipped = false;                                   // 2H weapon drops shield
+                else if (equippingShield && otherDef.Slot == EquipSlot.Weapon
+                         && otherDef.Hands == WeaponHands.TwoHand)
+                    other.Equipped = false;                                   // shield drops 2H weapon
             }
 
             item.Equipped = true;
@@ -1370,16 +1380,21 @@ var effect = def.Effect;
             offensive = true;
             int damage = StatCalculator.MagicDamage(
                 (int)caster.EffectiveMagicAttack, def.Power,
-                (int)target.EffectiveDefence, caster.Level);
+                (int)target.EffectiveMagicDefence, caster.Level);   // magic channel: divides by mDef
             damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
 
-            // Magic "fail" = reduced damage (not zero) when the spell is resisted.
-            float fail = StatCalculator.MagicFailChance(caster.Level, target.Level);
+            // WIT drives the caster's offensive magic interrupt power on top of the
+            // skill's flat InterruptPower (Disrupt's 99999 still dominates).
+            int magicInterrupt = def.InterruptPower + caster.MagicInterruptBonus;
+
+            // Magic "fail" = reduced damage (not zero). The TARGET can raise the
+            // floor (Tank "Anti Magic" / mages), and level gap pushes it higher.
+            float fail = StatCalculator.MagicFailChance(caster.Level, target.Level, target.MagicFailFloor);
             if (_rng.NextDouble() < fail)
             {
                 damage = Math.Max(1, damage / 3);
                 ApplyDamage(target, damage);
-                TryInterruptCast(target, def.InterruptPower);
+                TryInterruptCast(target, magicInterrupt);
                 BroadcastCombat(caster, target, damage, CombatOutcome.Fail, def.Name);
             }
             else
@@ -1394,7 +1409,7 @@ var effect = def.Effect;
                     BroadcastCombat(caster, target, damage, CombatOutcome.Hit, def.Name);
                 }
                 ApplyDamage(target, damage);
-                TryInterruptCast(target, def.InterruptPower);
+                TryInterruptCast(target, magicInterrupt);
             }
         }
 
@@ -1597,7 +1612,8 @@ var effect = def.Effect;
             damage = finalDmg;
             BroadcastCombat(attacker, target, damage, outcome);
             ApplyDamage(target, damage);
-            TryInterruptCast(target, 0);   // basic attacks have no interrupt power
+            // Rogues carry magic-interrupt power on basic attacks; others = 0.
+            TryInterruptCast(target, attacker.BasicAttackInterruptPower);
         }
 
         Retaliate(target, attacker);
@@ -1974,7 +1990,7 @@ var effect = def.Effect;
             p.MaxHp, p.MaxMp, p.AttackPower, p.Defence,
             p.Accuracy, p.Evasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
             p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.CastSpeedMultiplier, p.AttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttack, p.MagicCritChance,
-            p.HasShield, p.BlockChance, p.BlockReduction, p.ShieldDefense));
+            p.HasShield, p.BlockChance, p.BlockReduction, p.ShieldDefense, (int)p.EffectiveMagicDefence));
 
     /// <summary>Stop an in-progress cast. startCooldown=true (player ESC) puts
     /// the skill on cooldown; false (enemy interrupt / forced) does not, so the

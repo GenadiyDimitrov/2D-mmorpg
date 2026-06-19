@@ -426,7 +426,7 @@ public partial class MainWindow
             $"{st.Con} / {st.Atk} / {st.Wit} / {st.Dex}"));
         StatsList.Items.Add(MakeStatRow("Max HP / MP", $"{st.MaxHp} / {st.MaxMp}"));
         StatsList.Items.Add(MakeStatRow("P.Atk / M.Atk", $"{st.AttackPower} / {st.MagicAttack}"));
-        StatsList.Items.Add(MakeStatRow("Defence", st.Defence.ToString()));
+        StatsList.Items.Add(MakeStatRow("Defence (Phys / Magic)", $"{st.Defence} / {st.MagicDefence}"));
         StatsList.Items.Add(MakeStatRow("Accuracy / Evasion", $"{st.Accuracy} / {st.Evasion}"));
         StatsList.Items.Add(MakeStatRow("Crit (Phys / Magic)",
             $"{st.CritChance * 100:0.#}% / {st.MagicCritChance * 100:0.#}%"));
@@ -542,6 +542,7 @@ public partial class MainWindow
         EquipCompareList.Items.Clear();
         AddStatRow2("Attack", Subj(def.AtkBonus), showDelta ? Subj(def.AtkBonus) - Other(current.Def!.AtkBonus) : (int?)null);
         AddStatRow2("Defence", Subj(def.DefBonus), showDelta ? Subj(def.DefBonus) - Other(current.Def!.DefBonus) : (int?)null);
+        AddStatRow2("M.Def", Subj(def.MDefBonus), showDelta ? Subj(def.MDefBonus) - Other(current.Def!.MDefBonus) : (int?)null);
         AddStatRow2("Max HP", Subj(def.HpBonus), showDelta ? Subj(def.HpBonus) - Other(current.Def!.HpBonus) : (int?)null);
         AddStatRow2("Max MP", Subj(def.MpBonus), showDelta ? Subj(def.MpBonus) - Other(current.Def!.MpBonus) : (int?)null);
         AddStatRow2("Evasion", Subj(def.EvaBonus), showDelta ? Subj(def.EvaBonus) - Other(current.Def!.EvaBonus) : (int?)null);
@@ -1290,7 +1291,7 @@ public partial class MainWindow
         DebugList.Children.Add(DebugGiveButton(
             ItemCatalog.WeaponKey(WeaponType.Bow, ItemGrade.E, ItemRarity.Rare), "Rare Bow"));
         DebugList.Children.Add(DebugGiveButton(
-            ItemCatalog.WeaponKey(WeaponType.Staff, ItemGrade.E, ItemRarity.Rare), "Rare Staff"));
+            ItemCatalog.WeaponKey(WeaponType.Blunt, ItemGrade.E, ItemRarity.Rare), "Rare Staff"));
 
         AddDebugHeader("Rare Armor (E)");
         DebugList.Children.Add(DebugGiveButton(

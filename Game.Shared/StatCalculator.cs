@@ -57,6 +57,12 @@ public static class StatCalculator
 
     public static int Defence(int con, int level) => con / 3 + level / 2;
 
+    /// <summary>Base MAGIC defence. Same shape as physical Defence but WITHOUT the
+    /// CON term — magic defence does NOT scale with any base stat. Everyone gets a
+    /// small level-based floor; JEWELS (and the Tank "Anti Magic" passive) add on
+    /// top. Used as the divisor in MagicDamage.</summary>
+    public static int MagicDefence(int level) => level / 2;
+
     /// <summary>Crit chance from DEX. Race/class/equipment modifiers come
     /// later. 25 DEX = 10%; capped at 50%.</summary>
     public static float CritChance(int dex) => Math.Clamp(0.05f + dex * 0.002f, 0f, 0.50f);
@@ -94,12 +100,12 @@ public static class StatCalculator
         return Math.Max(1, (int)dmg);
     }
 
-    /// <summary>Magic ratio damage: squared-ish for the spiky mage feel —
-    /// K·(mAtk·lvlMod + power)·mAtk / pDef. Diminishing on defence, scales hard
-    /// with mAtk so nukers spike.</summary>
-    public static int MagicDamage(int mAtk, int power, int pDef, int casterLevel)
+    /// <summary>Magic ratio damage. Now divides by the target's MAGIC defence
+    /// (level base + jewels + Anti-Magic), NOT physical pDef — a fully separate
+    /// channel. K·(mAtk·lvlMod + power)/mDef, diminishing on mDef.</summary>
+    public static int MagicDamage(int mAtk, int power, int mDef, int casterLevel)
     {
-        float def = Math.Max(1, pDef);
+        float def = Math.Max(1, mDef);
         float dmg = MagicK * (mAtk * LevelMod(casterLevel) + power) / def;
         return Math.Max(1, (int)dmg);
     }
@@ -112,8 +118,8 @@ public static class StatCalculator
         float band = weapon switch
         {
             WeaponType.Bow => 0.30f,
-            WeaponType.Dagger => 0.20f,
-            WeaponType.Staff => 0.15f,
+            WeaponType.Dual => 0.20f,    // daggers/dual: spiky
+            WeaponType.Blunt => 0.15f,   // blunt/staff: steadier
             _ => 0.10f
         };
         return 1f + ((float)rng.NextDouble() * 2f - 1f) * band;
@@ -137,10 +143,21 @@ public static class StatCalculator
     public static float MagicCritMult(float bonus = 0f) =>
         Math.Min(2.0f + bonus, StatCaps.MagicCritDamage);
 
-    /// <summary>Magic fail chance — a spell does reduced damage when it "fails",
-    /// scaled by target-vs-caster level. Mirrors physical miss but for magic.</summary>
-    public static float MagicFailChance(int casterLevel, int targetLevel) =>
-        Math.Clamp(0.03f + (targetLevel - casterLevel) * 0.02f, 0.01f, 0.80f);
+    /// <summary>Magic fail chance — a spell does reduced damage when it "fails".
+    /// Always at least 1%, climbs with the target's level advantage up to 90%.
+    /// <paramref name="targetMinFail"/> lets the TARGET raise the FLOOR against
+    /// itself (Tank "Anti Magic" ~10%, mages ~5%) so casters always have a real
+    /// fail chance against the prepared.</summary>
+    public static float MagicFailChance(int casterLevel, int targetLevel, float targetMinFail = 0f)
+    {
+        float floor = Math.Max(StatCaps.MagicFailFloor, targetMinFail);
+        return Math.Clamp(0.03f + (targetLevel - casterLevel) * 0.02f, floor, StatCaps.MagicFailMax);
+    }
+
+    /// <summary>Offensive MAGIC interrupt power from WIT. Mirrors the WIT scale in
+    /// InterruptResist (wit*2) so a WIT-mage out-interrupts an equal-level ATK-mage
+    /// while the ATK-mage hits harder. Added to a magic skill's flat InterruptPower.</summary>
+    public static int MagicInterruptPower(int wit) => wit * 2;
 
     // ----- Interruption (caster resist) -----------------------------------
 
@@ -176,19 +193,18 @@ public static class StatCalculator
     /// Higher = faster. Daggers/bows fast, blunt/staff slow.</summary>
     public static int WeaponAttackBaseSpeed(WeaponType w) => w switch
     {
-        WeaponType.Dagger => 433,   // very fast
-        WeaponType.Dual => 379,     // fast
+        WeaponType.Dual => 379,     // daggers/dual: fast
         WeaponType.Bow => 293,      // slow (but long range)
         WeaponType.Sword => 325,    // normal
-        WeaponType.Staff => 325,    // normal
+        WeaponType.Blunt => 325,    // mace/staff: normal
         _ => 300                    // weaponless
     };
 
-    /// <summary>Weapon base cast speed. Caster weapons (staff) cast at normal;
-    /// melee weapons are a bit slower casters.</summary>
+    /// <summary>Weapon base cast speed. Caster weapons (blunt: maces/staves) cast at
+    /// normal; bladed/bow weapons are a bit slower casters.</summary>
     public static int WeaponCastBaseSpeed(WeaponType w) => w switch
     {
-        WeaponType.Staff => 333,
+        WeaponType.Blunt => 333,
         _ => 300
     };
 
@@ -252,11 +268,61 @@ public static class StatCalculator
         _ => 0f
     };
 
+    /// <summary>Per-weapon crit-rate FACTOR (multiplies the base/DEX crit chance).
+    /// From the weapon table's crit_modifier: Sword 0.80, Dual/Bow 1.20, Blunt 0.40.
+    /// Blunt trades crit away for accuracy.</summary>
+    public static float WeaponCritFactor(WeaponType w) => w switch
+    {
+        WeaponType.Dual => 1.20f,
+        WeaponType.Bow => 1.20f,
+        WeaponType.Sword => 0.80f,
+        WeaponType.Blunt => 0.40f,
+        _ => 1.0f                    // weaponless: unchanged
+    };
+
+    /// <summary>Per-weapon ACCURACY bonus. Blunt weapons are easier to land (high
+    /// base accuracy) — the counterpart to their low crit. Tune later.</summary>
+    public static int WeaponAccuracyBonus(WeaponType w) => w switch
+    {
+        WeaponType.Blunt => 10,
+        _ => 0
+    };
+
     /// <summary>Extra evasion from archetype (rogues are slippery).</summary>
     public static int ArchetypeEvasionBonus(Archetype? archetype, int level) => archetype switch
     {
         Archetype.Rogue => 10 + level,
         Archetype.Archer => 5 + level / 2,
+        _ => 0
+    };
+
+    /// <summary>Tank "Anti Magic" passive: extra MAGIC defence on top of the level
+    /// base, roughly doubling a tank's innate magic resistance. (Modeled as an
+    /// archetype identity bonus like the others; can become a learnable passive
+    /// later.)</summary>
+    public static int ArchetypeMagicDefenceBonus(Archetype? archetype, int level) => archetype switch
+    {
+        Archetype.Tank => level / 2,   // doubles the level-based base
+        _ => 0
+    };
+
+    /// <summary>The MINIMUM magic-fail chance an attacker has against this target.
+    /// Tanks ("Anti Magic") and mages harden themselves so spells always have a
+    /// real chance to fizzle on them.</summary>
+    public static float ArchetypeMagicFailFloor(Archetype? archetype) => archetype switch
+    {
+        Archetype.Tank => 0.10f,
+        Archetype.Nuker => 0.05f,
+        Archetype.Healer => 0.05f,
+        _ => 0f
+    };
+
+    /// <summary>Rogue passive: their BASIC attacks carry magic-interrupt power
+    /// (daggers/duals are interrupt machines). Other archetypes' basics don't
+    /// interrupt. Tunable; can move to a weapon attribute / learnable passive.</summary>
+    public static int ArchetypeBasicInterruptPower(Archetype? archetype, int level) => archetype switch
+    {
+        Archetype.Rogue => 50 + level,
         _ => 0
     };
 }

@@ -4,13 +4,24 @@ public enum ItemGrade { F = 0, E = 1, B = 2, A = 3, S = 4 }
 
 public enum ItemRarity { Common = 0, Uncommon = 1, Rare = 2, Epic = 3, Legendary = 4, God = 99 }
 
-public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2, Scroll = 3, QuestItem = 4, Shield = 5 }
+// Jewel = the magic-defence slot. ONE jewel equips for now; the equip code is
+// written to expand to the L2 layout (2 rings / 2 earrings / 1 necklace) later
+// by allowing several Jewel-slot items at once.
+public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2, Scroll = 3, QuestItem = 4, Shield = 5, Jewel = 6 }
 
 public enum ArmorWeight { None = 0, Heavy = 1, Light = 2, Robe = 3 }
 
 /// <summary>Broad weapon category. Drives which skills work and the base
 /// attack range. All classes CAN equip any weapon; skills gate usefulness.</summary>
-public enum WeaponType { None = 0, Sword = 1, Dual = 2, Bow = 3, Staff = 4 }
+// Daggers ARE the Dual type (treated as dual-wield): lower per-hit, very fast,
+// high crit, no shield. There is deliberately no separate Dagger value.
+// A STAFF is just a 2H Blunt (magic) — there is no separate Staff value; the
+// "Staff" name is an item noun. Blunt = higher accuracy, lower crit than bladed.
+public enum WeaponType { None = 0, Sword = 1, Dual = 2, Bow = 3, Blunt = 4 }
+
+/// <summary>One- vs two-handed. A 2H weapon occupies the offhand, so it cannot be
+/// paired with a shield (the equip code mutually excludes them).</summary>
+public enum WeaponHands { OneHand = 0, TwoHand = 1 }
 
 /// <summary>Enchant scroll failure behaviour (design doc):
 /// Common -> item breaks on fail; Uncommon -> enchant resets to +0;
@@ -31,6 +42,7 @@ public record ItemDef(
     ItemRarity Rarity,
     ArmorWeight Weight = ArmorWeight.None,
     WeaponType WeaponType = WeaponType.None,
+    WeaponHands Hands = WeaponHands.OneHand,
     int AtkBonus = 0,
     int MAtkBonus = 0,
     int DefBonus = 0,
@@ -51,7 +63,10 @@ public record ItemDef(
     int PotionCooldownTicks = 0,
     ScrollKind ScrollKind = ScrollKind.None,
     // ----- Fixed (non-rolled) attributes, e.g. for the legendary one-off -----
-    ItemAttribute[]? FixedAttributes = null);
+    ItemAttribute[]? FixedAttributes = null,
+    // ----- Jewel stat: magic defence. Jewels are the ONLY source of magic
+    // defence beyond the level-based base (see StatCalculator.MagicDefence). -----
+    int MDefBonus = 0);
 
 public static class ItemCatalog
 {
@@ -71,6 +86,10 @@ public static class ItemCatalog
     public const string GodArmor = "god_robes";
     public const string WoodenShield = "shield_wooden";
     public const string IronShield = "shield_iron";
+    public const string BrassAmulet = "jewel_brass_amulet";
+    public const string SilverTalisman = "jewel_silver_talisman";
+    public const string IronMace = "blunt_1h_iron_mace";        // 1H physical blunt (shield-ok)
+    public const string AshWand = "blunt_1h_ash_wand";          // 1H magic blunt (mAtk > pAtk)
 
     public static string WeaponKey(WeaponType type, ItemGrade grade, ItemRarity rarity) =>
         $"{type.ToString().ToLowerInvariant()}_{grade.ToString().ToLowerInvariant()}_{rarity.ToString().ToLowerInvariant()}";
@@ -90,12 +109,14 @@ public static class ItemCatalog
         // ===================================================================
         // Per-type display names and the base attack at F-common; higher grade
         // and rarity scale up from there.
-        var weaponInfo = new (WeaponType Type, string Noun, int BaseAtk, float Range, int MpBonus)[]
+        var weaponInfo = new (WeaponType Type, WeaponHands Hands, string Noun, int BaseAtk, float Range, int MpBonus)[]
         {
-            (WeaponType.Sword, "Sword", 6,  0,   0),
-            (WeaponType.Dual,  "Daggers", 5, 0,  0),   // dual: lower per-hit, faster (handled by class)
-            (WeaponType.Bow,   "Bow",   7,  400, 0),
-            (WeaponType.Staff, "Staff", 2,  0,   20),  // staff: tiny basic atk, gives MP; power is in SPELLS (no weapon range)
+            (WeaponType.Sword, WeaponHands.OneHand, "Sword", 6,  0,   0),
+            (WeaponType.Dual,  WeaponHands.TwoHand, "Daggers", 5, 0,  0),   // dual: lower per-hit, faster
+            (WeaponType.Bow,   WeaponHands.TwoHand, "Bow",   7,  400, 0),
+            // Generated Blunt line = the 2H caster STAFF (tiny basic atk, high mAtk,
+            // gives MP; power is in SPELLS, no weapon range). 1H blunts are hand-added below.
+            (WeaponType.Blunt, WeaponHands.TwoHand, "Staff", 2,  0,   20),
         };
 
         foreach (var w in weaponInfo)
@@ -117,10 +138,10 @@ public static class ItemCatalog
                     // so hybrid weapons are possible. Tune the fractions here.
                     float mAtkFraction = w.Type switch
                     {
-                        WeaponType.Staff => 1.20f,   // caster weapon: high mAtk
+                        WeaponType.Blunt => 1.20f,   // 2H staff: caster weapon, high mAtk
                         WeaponType.Bow => 0.25f,
                         WeaponType.Dual => 0.30f,
-                        _ => 0.35f                    // sword/blunt: small splash
+                        _ => 0.35f                    // sword: small splash
                     };
                     int mAtk = (int)(atk * mAtkFraction);
 
@@ -137,6 +158,7 @@ public static class ItemCatalog
                         $"{rarityName}{gradeName} {w.Noun}",
                         EquipSlot.Weapon, grade, rarity,
                         WeaponType: w.Type,
+                        Hands: w.Hands,
                         AtkBonus: atk,
                         MAtkBonus: mAtk,
                         MpBonus: mp,
@@ -216,6 +238,27 @@ public static class ItemCatalog
             ShieldCritDefense: 0.08f, ShieldEvasionPenalty: 6));
 
         // ===================================================================
+        //  1H BLUNTS — maces/wands. Blunt = higher accuracy, lower crit. One hand,
+        //  so they CAN pair with a shield. A "magic" blunt simply carries more
+        //  mAtk than pAtk (mages who want a shield use these instead of a staff).
+        // ===================================================================
+        list.Add(new ItemDef(IronMace, "Iron Mace", EquipSlot.Weapon,
+            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Blunt,
+            Hands: WeaponHands.OneHand, AtkBonus: 7, MAtkBonus: 3));   // physical mace
+        list.Add(new ItemDef(AshWand, "Ash Wand", EquipSlot.Weapon,
+            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Blunt,
+            Hands: WeaponHands.OneHand, AtkBonus: 2, MAtkBonus: 5, MpBonus: 10));  // 1H magic blunt: mAtk>pAtk, < staff
+
+        // ===================================================================
+        //  JEWELS — the ONLY source of magic defence (beyond the level base).
+        //  One jewel equips for now; the slot is built to expand to 5 later.
+        // ===================================================================
+        list.Add(new ItemDef(BrassAmulet, "Brass Amulet", EquipSlot.Jewel,
+            ItemGrade.F, ItemRarity.Common, MDefBonus: 30));
+        list.Add(new ItemDef(SilverTalisman, "Silver Talisman", EquipSlot.Jewel,
+            ItemGrade.E, ItemRarity.Uncommon, MDefBonus: 70, MpBonus: 40));
+
+        // ===================================================================
         //  ENCHANT SCROLLS
         // ===================================================================
         list.Add(new ItemDef(ScrollCommon, "Enchant Scroll (Common)", EquipSlot.Scroll,
@@ -282,7 +325,7 @@ public static class ItemCatalog
     public static bool IsPotion(ItemDef def) => def.Slot == EquipSlot.Consumable;
     public static bool IsScroll(ItemDef def) => def.Slot == EquipSlot.Scroll;
     public static bool IsQuestItem(ItemDef def) => def.Slot == EquipSlot.QuestItem;
-    public static bool IsEquippable(ItemDef def) => def.Slot is EquipSlot.Weapon or EquipSlot.Armor;
+    public static bool IsEquippable(ItemDef def) => def.Slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Jewel;
 
     /// <summary>Grade gates per design doc: F 0+, E 20+, B 40+, A 60+, S 80+.</summary>
     public static int RequiredLevel(ItemGrade grade) => grade switch
@@ -339,10 +382,10 @@ public static class LootTables
         {
             ["Boar"] = new[]
             {
-                F(WeaponType.Staff, ItemRarity.Common, 0.16f),
+                F(WeaponType.Blunt, ItemRarity.Common, 0.16f),
                 F(WeaponType.Sword, ItemRarity.Common, 0.16f),
-                F(WeaponType.Staff, ItemRarity.Uncommon, 0.06f),
-                E(WeaponType.Staff, ItemRarity.Common, 0.12f),
+                F(WeaponType.Blunt, ItemRarity.Uncommon, 0.06f),
+                E(WeaponType.Blunt, ItemRarity.Common, 0.12f),
                 E(WeaponType.Sword, ItemRarity.Common, 0.12f),
             },
             ["Wolf"] = new[]
@@ -356,7 +399,7 @@ public static class LootTables
             ["Slime"] = new[]
             {
                 FA(ArmorWeight.Robe, ItemRarity.Common, 0.16f),
-                F(WeaponType.Staff, ItemRarity.Common, 0.12f),
+                F(WeaponType.Blunt, ItemRarity.Common, 0.12f),
                 FA(ArmorWeight.Robe, ItemRarity.Rare, 0.05f),
                 EA(ArmorWeight.Robe, ItemRarity.Common, 0.12f),
             },
