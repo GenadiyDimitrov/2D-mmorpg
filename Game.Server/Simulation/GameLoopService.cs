@@ -116,6 +116,7 @@ public class GameLoopService : BackgroundService
         SendStats(entity);
         SendLearned(entity);
         SendQuestLog(entity);
+        SendGold(entity);
         if (entity.IsAdmin)
             SendSystemToEntity(entity, "Admin privileges active. Type /help for commands.");
         BroadcastSystem($"{entity.Name} entered the world.");
@@ -1730,6 +1731,17 @@ var effect = def.Effect;
     {
         if (mob.MobTypeId is null)
             return;
+
+        // Gold always drops (independent of the item table), by mob level x rate
+        // with a small +/-20% variance.
+        int gold = (int)(StatCalculator.MobGoldReward(mob.Level) * RateConfig.GoldAmountRate
+            * (0.8f + (float)_rng.NextDouble() * 0.4f));
+        if (gold > 0)
+        {
+            killer.Gold += gold;
+            SendGold(killer);
+        }
+
         var mobType = MobCatalog.Get(mob.MobTypeId);
         if (mobType.Drops is null || mobType.Drops.Length == 0)
             return;
@@ -2002,6 +2014,9 @@ var effect = def.Effect;
     private void SendInventory(Entity player) =>
         SendTo(player, "Inventory", new InventoryUpdate(
             player.Inventory.Select(i => i.ToDto()).ToArray()));
+
+    private void SendGold(Entity player) =>
+        SendTo(player, "Gold", new GoldUpdate(player.Gold));
 
     private readonly HashSet<Guid> _hadBuffs = new();
 

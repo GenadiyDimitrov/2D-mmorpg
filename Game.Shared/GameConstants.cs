@@ -6,6 +6,10 @@ namespace Game.Shared;
 /// </summary>
 public static class GameConstants
 {
+    /// <summary>Display name of the in-game currency. Generic on purpose (no IP);
+    /// change here to rebrand everywhere it's shown.</summary>
+    public const string CurrencyName = "Gold";
+
     /// <summary>Simulation ticks per second on the server.</summary>
     public const int TickRate = 10;
 

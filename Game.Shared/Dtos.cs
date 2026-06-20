@@ -124,6 +124,10 @@ public record EnchantResultDto(string ItemName, int NewEnchant, string Outcome, 
 /// carries the new attributes; this drives the reroll popup refresh + a message).</summary>
 public record RerollResultDto(string ItemName, string Outcome);
 
+/// <summary>Server -> owning client: the player's gold wallet balance (sent on entry
+/// and whenever it changes — kills, quest rewards, vendor buy/sell, teleport fees).</summary>
+public record GoldUpdate(long Gold);
+
 
 // ----- Accounts & character selection (Phase 5) ----------------------------
 

@@ -24,6 +24,7 @@ public class NetworkChannel : IAsyncDisposable
     public event Action<BuffUpdate>? BuffsReceived;
     public event Action<EnchantResultDto>? EnchantReceived;
     public event Action<RerollResultDto>? RerollReceived;
+    public event Action<GoldUpdate>? GoldReceived;
     public event Action<string>? Disconnected;
     public event Action<string>? ForceDisconnected;
 
@@ -52,6 +53,7 @@ public class NetworkChannel : IAsyncDisposable
         _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));
         _connection.On<EnchantResultDto>("Enchant", en => EnchantReceived?.Invoke(en));
         _connection.On<RerollResultDto>("Reroll", r => RerollReceived?.Invoke(r));
+        _connection.On<GoldUpdate>("Gold", g => GoldReceived?.Invoke(g));
         _connection.On<string>("ForceDisconnect", reason => ForceDisconnected?.Invoke(reason));
         _connection.Closed += ex =>
         {

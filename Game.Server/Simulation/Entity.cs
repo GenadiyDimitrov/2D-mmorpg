@@ -185,6 +185,9 @@ public class Entity
 
     public long Exp { get; set; }
 
+    /// <summary>Gold wallet (currency). Drops from mobs; spent at vendors / teleports.</summary>
+    public long Gold { get; set; }
+
     // ----- Inventory (players only) ----------------------------------------------
 
     public List<InventoryItem> Inventory { get; } = new();

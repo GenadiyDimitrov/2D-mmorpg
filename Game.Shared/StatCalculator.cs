@@ -240,6 +240,10 @@ public static class StatCalculator
 
     public static int MobExpReward(int mobLevel) => 40 + mobLevel * 35;
 
+    /// <summary>Base gold a mob drops, by level (scaled by RateConfig.GoldAmountRate
+    /// and a small variance at the drop site).</summary>
+    public static int MobGoldReward(int mobLevel) => 25 + mobLevel * 8;
+
     /// <summary>Mob stat block by level. Per design: higher-level mobs must
     /// out-stat lower-level characters.</summary>
     public static BaseStats MobStats(int level) =>

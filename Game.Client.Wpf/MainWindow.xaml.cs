@@ -47,6 +47,7 @@ public partial class MainWindow : Window
     private int _level = 1;
     private long _exp;
     private long _expToNext = StatCalculator.ExpToNext(1);
+    private long _gold;
 
     private double _castStart;
     private double _castDuration;
@@ -69,6 +70,7 @@ public partial class MainWindow : Window
         _net.ChatReceived += m => Dispatcher.BeginInvoke(() => AppendChat(m));
         _net.CombatReceived += c => Dispatcher.BeginInvoke(() => OnCombatEvent(c));
         _net.ProgressReceived += p => Dispatcher.BeginInvoke(() => OnProgress(p));
+        _net.GoldReceived += g => Dispatcher.BeginInvoke(() => OnGold(g));
         _net.CastReceived += c => Dispatcher.BeginInvoke(() => OnCast(c));
         _net.InventoryReceived += i => Dispatcher.BeginInvoke(() => OnInventory(i));
         _net.TradeRequestReceived += t => Dispatcher.BeginInvoke(() => OnTradeRequest(t));
@@ -745,6 +747,11 @@ public partial class MainWindow : Window
         });
     }
 
+    private void OnGold(GoldUpdate update)
+    {
+        _gold = update.Gold;   // shown in the status line on the next HUD refresh
+    }
+
     private void OnProgress(ProgressUpdate progress)
     {
         bool leveled = progress.Level != _level;
@@ -821,7 +828,7 @@ public partial class MainWindow : Window
 
             var cls = _mySecondClass > 0 ? $" {ClassCatalog.Get(_mySecondClass)?.Name}" : "";
             var zone = _myDto is not null && GameConstants.InSafeZone(_myDto.X, _myDto.Y) ? "  [SAFE]" : "";
-            StatusText.Text = $"{_myName}{cls}  Lv{_level}{zone}";
+            StatusText.Text = $"{_myName}{cls}  Lv{_level}  •  {_gold:N0} {GameConstants.CurrencyName}{zone}";
             UpdateVitalBars();
         }
 

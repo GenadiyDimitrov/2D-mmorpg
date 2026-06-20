@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 18 (armor-weight masteries)
+# L2-like MMORPG — Phase 19 (gold currency)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,22 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 19 (this build)
+
+> **Delete `game.db` before running** — characters gained a **Gold** column;
+> `EnsureCreated` won't add it to an existing DB, so reset it (saves recreate fresh).
+
+### Gold — a currency wallet
+- Characters now have a **gold wallet** (persisted). Mobs **drop gold on every kill**,
+  scaled by mob level × `RateConfig.GoldAmountRate` with a small ±20% variance
+  (independent of the item drop table).
+- The balance shows in the **status line** (e.g. *“Lv5 • 1,234 Gold”*) and syncs on
+  login and whenever it changes.
+- The currency name is **generic on purpose** (no IP) and centralised in
+  `GameConstants.CurrencyName`, so it can be rebranded in one place.
+- This is the foundation for the roadmap's **vendors** (buy/sell) and **teleport-for-a-fee**
+  — the wallet gives the reroll scrolls and potions a real source/sink next.
 
 ## New in Phase 18 (this build)
 

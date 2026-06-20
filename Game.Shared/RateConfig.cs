@@ -24,8 +24,8 @@ public static class RateConfig
     /// <summary>Multiplier on each drop's QUANTITY (stack size).</summary>
     public static float DropAmountRate = 1f;
 
-    // ----- Reserved for the currency phase (gold not implemented yet) -------
+    // ----- Currency -------
 
-    /// <summary>Multiplier on adena (gold) drop AMOUNT once currency exists.</summary>
-    public static float AdenaAmountRate = 1f;
+    /// <summary>Multiplier on gold drop AMOUNT.</summary>
+    public static float GoldAmountRate = 1f;
 }
