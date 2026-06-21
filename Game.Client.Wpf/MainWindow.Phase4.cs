@@ -193,6 +193,8 @@ public partial class MainWindow
             foreach (var a in item.Attributes)
                 lines.Add($"{AttributeSystem.DisplayName(a.Type)} +{a.Value}{(AttributeSystem.IsPercent(a.Type) ? "%" : "")}");
         }
+        if (ItemCatalog.IsBuffPotion(def) && SkillCatalog.Get(def.BuffSkillId) is SkillDef buffDef)
+            lines.Add($"Use: {buffDef.Description}");
         if (!string.IsNullOrEmpty(def.SetId) && ArmorSetCatalog.Get(def.SetId) is ArmorSetDef set)
         {
             var b = set.Bonus;
@@ -539,10 +541,14 @@ public partial class MainWindow
         if (ItemCatalog.Get(item.DefId) is not ItemDef def)
             return;
 
-        // Potions don't compare — drink directly from inventory click.
+        // Potions don't compare — drink directly from inventory click. Buff potions
+        // ignore the heal-potion cooldown (they apply a timed buff instead).
         if (ItemCatalog.IsPotion(def))
         {
-            _ = DrinkPotion(item.InstanceId);
+            if (ItemCatalog.IsBuffPotion(def))
+                _ = _net.UsePotionAsync(item.InstanceId);
+            else
+                _ = DrinkPotion(item.InstanceId);
             return;
         }
 
@@ -1464,6 +1470,12 @@ public partial class MainWindow
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.AttrScrollUncommon, "Attr Scroll (Uncommon) x10", 10));
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.AttrScrollRare, "Attr Scroll (Rare) x10", 10));
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.AttrScrollLegendary, "Attr Scroll (Legendary) x10", 10));
+
+        AddDebugHeader("Buff Potions (x5)");
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.SpeedPotionC, "Swiftness (Lesser) x5", 5));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.SpeedPotionR, "Swiftness (Greater) x5", 5));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.CastPotionR, "Focus (Greater) x5", 5));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.AtkPotionR, "Haste (Greater) x5", 5));
 
         AddDebugHeader("Potions (x10)");
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.MinorPotion, "Minor Potion x10", 10));

@@ -85,6 +85,17 @@ public static class SkillCatalog
     public const string HolyStrike = "holy_strike";
     public const string GreaterWeakness = "greater_weakness";
     public const string Disrupt = "disrupt";
+    // Buff-potion buffs (not learnable; applied by consuming a buff potion). Rarity =
+    // rank within a line, so a rarer potion supersedes a weaker one of the same line.
+    public const string PBuffSpeedC = "pbuff_speed_c";
+    public const string PBuffSpeedU = "pbuff_speed_u";
+    public const string PBuffSpeedR = "pbuff_speed_r";
+    public const string PBuffCastC = "pbuff_cast_c";
+    public const string PBuffCastU = "pbuff_cast_u";
+    public const string PBuffCastR = "pbuff_cast_r";
+    public const string PBuffAtkC = "pbuff_atk_c";
+    public const string PBuffAtkU = "pbuff_atk_u";
+    public const string PBuffAtkR = "pbuff_atk_r";
     // Example learnable buff line (HP boost) used by healers/clerics+.
     public const string HpBoost1 = "hp_boost_1";
     public const string HpBoost2 = "hp_boost_2";
@@ -183,6 +194,56 @@ public static class SkillCatalog
                 MpCost: 10, CastTicks: 0, CooldownTicks: 80, Range: 0, Power: 5,
                 Category: SkillCategory.Physical, InterruptPower: 99999,
                 Description: "Instant strike that always interrupts an enemy's cast."),
+
+            // ----- Buff-potion buffs (consumed, not cast). Same BuffKey per line so a
+            //       rarer potion supersedes a weaker one; rare = bigger + longer. -----
+            new(PBuffSpeedC, "Swiftness (Lesser)", BaseClass.Fighter, SkillEffect.BuffMoveSpeed,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+                DurationTicks: 600, BuffKey: "pbuff_speed", Rank: 1,
+                Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffMoveSpeed, 15, ModifierMode.Flat) },
+                Category: SkillCategory.Buff, Description: "+15 Move Speed for 60s."),
+            new(PBuffSpeedU, "Swiftness", BaseClass.Fighter, SkillEffect.BuffMoveSpeed,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+                DurationTicks: 900, BuffKey: "pbuff_speed", Rank: 2,
+                Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffMoveSpeed, 20, ModifierMode.Flat) },
+                Category: SkillCategory.Buff, Description: "+20 Move Speed for 90s."),
+            new(PBuffSpeedR, "Swiftness (Greater)", BaseClass.Fighter, SkillEffect.BuffMoveSpeed,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+                DurationTicks: 1800, BuffKey: "pbuff_speed", Rank: 3,
+                Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffMoveSpeed, 30, ModifierMode.Flat) },
+                Category: SkillCategory.Buff, Description: "+30 Move Speed for 180s."),
+
+            new(PBuffCastC, "Focus (Lesser)", BaseClass.Mage, SkillEffect.BuffCastSpeed,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+                DurationTicks: 600, BuffKey: "pbuff_cast", Rank: 1,
+                Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffCastSpeed, 0.08f) },
+                Category: SkillCategory.Buff, Description: "+8% Cast Speed for 60s."),
+            new(PBuffCastU, "Focus", BaseClass.Mage, SkillEffect.BuffCastSpeed,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+                DurationTicks: 900, BuffKey: "pbuff_cast", Rank: 2,
+                Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffCastSpeed, 0.12f) },
+                Category: SkillCategory.Buff, Description: "+12% Cast Speed for 90s."),
+            new(PBuffCastR, "Focus (Greater)", BaseClass.Mage, SkillEffect.BuffCastSpeed,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+                DurationTicks: 1800, BuffKey: "pbuff_cast", Rank: 3,
+                Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffCastSpeed, 0.20f) },
+                Category: SkillCategory.Buff, Description: "+20% Cast Speed for 180s."),
+
+            new(PBuffAtkC, "Haste (Lesser)", BaseClass.Fighter, SkillEffect.BuffAtkSpeed,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+                DurationTicks: 600, BuffKey: "pbuff_atkspeed", Rank: 1,
+                Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtkSpeed, 0.08f) },
+                Category: SkillCategory.Buff, Description: "+8% Attack Speed for 60s."),
+            new(PBuffAtkU, "Haste", BaseClass.Fighter, SkillEffect.BuffAtkSpeed,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+                DurationTicks: 900, BuffKey: "pbuff_atkspeed", Rank: 2,
+                Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtkSpeed, 0.12f) },
+                Category: SkillCategory.Buff, Description: "+12% Attack Speed for 90s."),
+            new(PBuffAtkR, "Haste (Greater)", BaseClass.Fighter, SkillEffect.BuffAtkSpeed,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+                DurationTicks: 1800, BuffKey: "pbuff_atkspeed", Rank: 3,
+                Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtkSpeed, 0.20f) },
+                Category: SkillCategory.Buff, Description: "+20% Attack Speed for 180s."),
 
             new(PowerShot, "Power Shot", BaseClass.Fighter, SkillEffect.PhysicalDamage,
                 MpCost: 16, CastTicks: 8, CooldownTicks: 40, Range: 900, Power: 70,

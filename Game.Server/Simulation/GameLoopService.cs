@@ -660,6 +660,17 @@ public class GameLoopService : BackgroundService
         if (item is null || ItemCatalog.Get(item.DefId) is not ItemDef def || !ItemCatalog.IsPotion(def))
             return;
 
+        // Buff potion: apply its timed buff (independent of the heal cooldown), consume.
+        if (ItemCatalog.IsBuffPotion(def) && SkillCatalog.Get(def.BuffSkillId) is SkillDef buffDef)
+        {
+            ApplyBuff(player, buffDef);
+            PushBuffs(player);
+            ConsumeOne(player, item);
+            SendInventory(player);
+            SendSystemToEntity(player, $"{buffDef.Name} active.");
+            return;
+        }
+
         if (player.PotionCooldown > 0)
         {
             SendSystemToEntity(player,

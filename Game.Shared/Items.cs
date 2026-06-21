@@ -85,7 +85,9 @@ public record ItemDef(
     AttrScrollKind AttrScroll = AttrScrollKind.None,
     // ----- Armor SET id ("" = not a set piece). Wearing all 4 slots of one set
     // grants its set bonus (see ArmorSetCatalog). -----
-    string SetId = "");
+    string SetId = "",
+    // ----- Buff potion: the buff SkillDef id applied when consumed ("" = not one). -----
+    string BuffSkillId = "");
 
 public static class ItemCatalog
 {
@@ -96,6 +98,16 @@ public static class ItemCatalog
     public const string MinorPotion = "potion_minor";
     public const string HealingPotion = "potion_healing";
     public const string GreaterPotion = "potion_greater";
+    // Buff potions (rarity = tier). Common sold by vendors; Uncommon/Rare drop.
+    public const string SpeedPotionC = "potion_speed_c";
+    public const string SpeedPotionU = "potion_speed_u";
+    public const string SpeedPotionR = "potion_speed_r";
+    public const string CastPotionC = "potion_cast_c";
+    public const string CastPotionU = "potion_cast_u";
+    public const string CastPotionR = "potion_cast_r";
+    public const string AtkPotionC = "potion_atk_c";
+    public const string AtkPotionU = "potion_atk_u";
+    public const string AtkPotionR = "potion_atk_r";
     public const string ScrollCommon = "scroll_common";
     public const string ScrollUncommon = "scroll_uncommon";
     public const string ScrollRare = "scroll_rare";
@@ -305,6 +317,27 @@ public static class ItemCatalog
             ItemGrade.F, ItemRarity.Rare,
             InstantHealPercent: 0.50f, PotionCooldownTicks: 300));
 
+        // ----- Buff potions: consume to gain a timed (weaker-than-class) buff. Rarity
+        //       is the tier; same line supersedes by rank. No heal cooldown. -----
+        list.Add(new ItemDef(SpeedPotionC, "Swiftness Potion (Lesser)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Common, BuffSkillId: SkillCatalog.PBuffSpeedC));
+        list.Add(new ItemDef(SpeedPotionU, "Swiftness Potion", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Uncommon, BuffSkillId: SkillCatalog.PBuffSpeedU));
+        list.Add(new ItemDef(SpeedPotionR, "Swiftness Potion (Greater)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Rare, BuffSkillId: SkillCatalog.PBuffSpeedR));
+        list.Add(new ItemDef(CastPotionC, "Focus Potion (Lesser)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Common, BuffSkillId: SkillCatalog.PBuffCastC));
+        list.Add(new ItemDef(CastPotionU, "Focus Potion", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Uncommon, BuffSkillId: SkillCatalog.PBuffCastU));
+        list.Add(new ItemDef(CastPotionR, "Focus Potion (Greater)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Rare, BuffSkillId: SkillCatalog.PBuffCastR));
+        list.Add(new ItemDef(AtkPotionC, "Haste Potion (Lesser)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Common, BuffSkillId: SkillCatalog.PBuffAtkC));
+        list.Add(new ItemDef(AtkPotionU, "Haste Potion", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Uncommon, BuffSkillId: SkillCatalog.PBuffAtkU));
+        list.Add(new ItemDef(AtkPotionR, "Haste Potion (Greater)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Rare, BuffSkillId: SkillCatalog.PBuffAtkR));
+
         // ===================================================================
         //  SHIELDS — equippable by any class (with a one-hand weapon), but only
         //  tanks make them matter via Shield Mastery passives. Base values are
@@ -416,6 +449,7 @@ public static class ItemCatalog
     public static IEnumerable<ItemDef> AllItems => All.Values;
 
     public static bool IsPotion(ItemDef def) => def.Slot == EquipSlot.Consumable;
+    public static bool IsBuffPotion(ItemDef def) => !string.IsNullOrEmpty(def.BuffSkillId);
     public static bool IsScroll(ItemDef def) => def.Slot == EquipSlot.Scroll;
     public static bool IsEnchantScroll(ItemDef def) => def.Slot == EquipSlot.Scroll && def.ScrollKind != ScrollKind.None;
     public static bool IsAttributeScroll(ItemDef def) => def.AttrScroll != AttrScrollKind.None;

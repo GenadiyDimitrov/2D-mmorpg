@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 19 (gold currency)
+# L2-like MMORPG — Phase 20 (buff potions + scroll/buff drops)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,27 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 20 (this build)
+
+### Buff potions (a few buffs without a buffer)
+- A new **buff-potion** type: drinking one applies a **timed buff** (weaker than a real
+  class buff), so a solo / non-buffer character can still grab a couple. They **ignore the
+  healing-potion cooldown** and don't heal.
+- Three lines, each in **three rarity tiers** (rarity = strength + duration; a rarer one
+  supersedes a weaker of the same line):
+  - **Swiftness** — +15 / +20 / +30 Move Speed
+  - **Focus** — +8% / +12% / +20% Cast Speed
+  - **Haste** — +8% / +12% / +20% Attack Speed
+  - Durations 60s / 90s / 180s (the rare lasts longest).
+- Tooltips show the effect; the debug menu grants them.
+
+### Scrolls & buff potions now drop
+- **Attribute (reroll) scrolls** now drop from monsters — rare to find, like enchant
+  scrolls — editable per mob in `MobCatalog`. Higher tiers are weighted to higher-level
+  spawns (e.g. rare reroll scroll only at level 20+).
+- **Uncommon/Rare buff potions** drop too; the **common** tiers are reserved for vendors
+  (next phase). So drops give the strong buffs, vendors the basic ones.
 
 ## New in Phase 19 (this build)
 

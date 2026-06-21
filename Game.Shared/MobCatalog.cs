@@ -71,6 +71,8 @@ public static class MobCatalog
                     new DropEntry(ItemCatalog.MinorPotion, 0.40f, 2, 4),
                     new DropEntry(ItemCatalog.ArmorKey(ArmorWeight.Heavy, ItemGrade.E, ItemRarity.Uncommon), 0.06f),
                     new DropEntry(ItemCatalog.ScrollCommon, 0.10f),
+                    new DropEntry(ItemCatalog.AttrScrollCommon, 0.06f),
+                    new DropEntry(ItemCatalog.SpeedPotionU, 0.05f),
                 }),
 
             new MobType("green_slime", "Green Slime", 35f, 60f,
@@ -84,6 +86,8 @@ public static class MobCatalog
                 {
                     new DropEntry(ItemCatalog.MinorPotion, 0.25f),
                     new DropEntry(ItemCatalog.WeaponKey(WeaponType.Dual, ItemGrade.F, ItemRarity.Uncommon), 0.05f),
+                    new DropEntry(ItemCatalog.AttrScrollCommon, 0.05f),
+                    new DropEntry(ItemCatalog.CastPotionU, 0.05f),
                 }),
 
             new MobType("road_bandit", "Road Bandit", 60f, 108f, Aggressive: true,
@@ -92,6 +96,11 @@ public static class MobCatalog
                     new DropEntry(ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.E, ItemRarity.Uncommon), 0.06f),
                     new DropEntry(ItemCatalog.ScrollUncommon, 0.08f),
                     new DropEntry(ItemCatalog.MinorPotion, 0.30f, 1, 3),
+                    // Reroll scrolls + rarer buff potions, weighted to higher-level spawns.
+                    new DropEntry(ItemCatalog.AttrScrollUncommon, 0.05f),
+                    new DropEntry(ItemCatalog.AttrScrollRare, 0.02f, 1, 1, MinLevel: 20),
+                    new DropEntry(ItemCatalog.AtkPotionU, 0.05f),
+                    new DropEntry(ItemCatalog.SpeedPotionR, 0.02f, 1, 1, MinLevel: 20),
                 }),
         };
         var dict = new Dictionary<string, MobType>(StringComparer.OrdinalIgnoreCase);
