@@ -105,4 +105,15 @@ public static class GameConstants
 
     /// <summary>How close you must be to an NPC to talk.</summary>
     public const float TalkRange = 250f;
+
+    // ----- Vendors (Phase 21) -------------------------------------------------
+
+    /// <summary>Fraction of an item's Value a vendor pays when you SELL to it.</summary>
+    public const float VendorSellFraction = 0.30f;
+
+    /// <summary>Extra fraction added to an item's Value when you BUY from a vendor.
+    /// Reserved for the future castle system: a vendor in a castle-owned village
+    /// charges this surcharge and the surcharge flows to the castle vault. 0 until
+    /// castles exist (no current vendor is castle-owned).</summary>
+    public const float VendorBuyTaxRate = 0.0f;
 }

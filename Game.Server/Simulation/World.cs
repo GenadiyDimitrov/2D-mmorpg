@@ -78,6 +78,12 @@ public record TalkCmd(string ConnectionId, Guid NpcEntityId) : IGameCommand;
 /// <summary>Quest action: accept / complete / changeclass.</summary>
 public record QuestActionCmd(string ConnectionId, string Action, string Id, Guid NpcEntityId) : IGameCommand;
 
+/// <summary>Buy an item from a vendor NPC.</summary>
+public record BuyItemCmd(string ConnectionId, Guid NpcEntityId, string ItemDefId, int Quantity) : IGameCommand;
+
+/// <summary>Sell an inventory item to a vendor NPC.</summary>
+public record SellItemCmd(string ConnectionId, Guid NpcEntityId, Guid InstanceId, int Quantity) : IGameCommand;
+
 /// <summary>Change movement state (run / walk / sit).</summary>
 public record SetMoveStateCmd(string ConnectionId, MoveState State) : IGameCommand;
 

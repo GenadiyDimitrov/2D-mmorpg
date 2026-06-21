@@ -141,6 +141,18 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task BuyItem(Guid npcEntityId, string itemDefId, int quantity)
+    {
+        _world.Commands.Enqueue(new BuyItemCmd(Context.ConnectionId, npcEntityId, itemDefId, quantity));
+        return Task.CompletedTask;
+    }
+
+    public Task SellItem(Guid npcEntityId, Guid instanceId, int quantity)
+    {
+        _world.Commands.Enqueue(new SellItemCmd(Context.ConnectionId, npcEntityId, instanceId, quantity));
+        return Task.CompletedTask;
+    }
+
     public Task SetMoveState(int state)
     {
         _world.Commands.Enqueue(new SetMoveStateCmd(Context.ConnectionId, (MoveState)state));

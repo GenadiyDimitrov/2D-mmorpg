@@ -75,6 +75,8 @@ public class GameLoopService : BackgroundService
                 case LearnSkillCmd c: HandleLearnSkill(c); break;
                 case TalkCmd c: HandleTalk(c); break;
                 case QuestActionCmd c: HandleQuestAction(c); break;
+                case BuyItemCmd c: HandleBuy(c); break;
+                case SellItemCmd c: HandleSell(c); break;
                 case SetMoveStateCmd c: HandleSetMoveState(c); break;
                 case CancelCastCmd c: HandleCancelCast(c); break;
                 case RespawnCmd c: HandleRespawn(c); break;
@@ -1966,7 +1968,7 @@ var effect = def.Effect;
 
     /// <summary>Add an item to inventory, stacking consumables/scrolls.
     /// Returns false if there was no room for a new stack.</summary>
-    private bool AddItem(Entity player, string defId, int quantity = 1)
+    private bool AddItem(Entity player, string defId, int quantity = 1, bool rollAttributes = true)
     {
         if (ItemCatalog.Get(defId) is not ItemDef def)
             return false;
@@ -1986,7 +1988,7 @@ var effect = def.Effect;
             return false;
 
         var newItem = new InventoryItem { DefId = defId, Quantity = stackable ? quantity : 1 };
-        if (def.Slot is EquipSlot.Weapon or EquipSlot.Armor)
+        if (rollAttributes && def.Slot is EquipSlot.Weapon or EquipSlot.Armor)
             newItem.Attributes = def.FixedAttributes is { Length: > 0 } fixedAttrs
                 ? fixedAttrs.ToList()                    // legendary one-off
                 : AttributeSystem.Roll(def, _rng);       // normal random roll
@@ -2286,6 +2288,117 @@ var effect = def.Effect;
         _log.LogInformation("Spawned {Count} NPCs", WorldMap.Npcs.Length);
     }
 
+    /// <summary>Resolve a vendor NPC the player is standing next to.</summary>
+    private bool TryGetVendorNpc(Entity player, Guid npcEntityId, out Entity npc)
+    {
+        npc = null!;
+        if (!_world.Entities.TryGetValue(npcEntityId, out var e)
+            || e.Kind != EntityKind.Npc || e.NpcRole != NpcRole.Vendor)
+            return false;
+
+        float dx = e.X - player.X, dy = e.Y - player.Y;
+        if (dx * dx + dy * dy > GameConstants.TalkRange * GameConstants.TalkRange)
+        {
+            SendSystemToEntity(player, $"{e.Name} is too far away.");
+            return false;
+        }
+        npc = e;
+        return true;
+    }
+
+    private void HandleBuy(BuyItemCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        if (!TryGetVendorNpc(player, cmd.NpcEntityId, out var npc)) return;
+
+        string npcId = npc.NpcId ?? "";
+        if (!ShopCatalog.Sells(npcId, cmd.ItemDefId)
+            || ItemCatalog.Get(cmd.ItemDefId) is not ItemDef def)
+        {
+            SendSystemToEntity(player, "That vendor doesn't sell that.");
+            return;
+        }
+
+        long unit = ItemCatalog.BuyPrice(def);
+        if (unit <= 0)
+        {
+            SendSystemToEntity(player, "That item is not for sale.");
+            return;
+        }
+
+        bool stackable = def.Slot is EquipSlot.Consumable or EquipSlot.Scroll;
+        int qty = stackable ? Math.Clamp(cmd.Quantity, 1, 999) : 1;
+        long total = unit * qty;
+
+        if (player.Gold < total)
+        {
+            SendSystemToEntity(player,
+                $"Not enough {GameConstants.CurrencyName} (need {total:N0}).");
+            return;
+        }
+
+        // Gear (non-stackable) needs a free slot; stackables merge.
+        if (!stackable && player.Inventory.Count >= GameConstants.InventorySize)
+        {
+            SendSystemToEntity(player, "Your inventory is full.");
+            return;
+        }
+
+        // Vendor gear is created PLAIN (no rolled attributes).
+        if (!AddItem(player, def.Id, qty, rollAttributes: false))
+        {
+            SendSystemToEntity(player, "Your inventory is full.");
+            return;
+        }
+
+        player.Gold -= total;
+        SendGold(player);
+        SendInventory(player);
+        SendSystemToEntity(player,
+            $"Bought {def.Name}{(qty > 1 ? $" x{qty}" : "")} for {total:N0} {GameConstants.CurrencyName}.");
+    }
+
+    private void HandleSell(SellItemCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        if (!TryGetVendorNpc(player, cmd.NpcEntityId, out _)) return;
+
+        var item = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
+        if (item is null || ItemCatalog.Get(item.DefId) is not ItemDef def)
+            return;
+
+        if (item.Equipped)
+        {
+            SendSystemToEntity(player, "Unequip it before selling.");
+            return;
+        }
+        if (!ItemCatalog.IsSellable(def))
+        {
+            SendSystemToEntity(player, "That can't be sold.");
+            return;
+        }
+
+        bool stackable = def.Slot is EquipSlot.Consumable or EquipSlot.Scroll;
+        int qty = stackable ? Math.Clamp(cmd.Quantity, 1, item.Quantity) : 1;
+        long total = (long)ItemCatalog.SellPrice(def) * qty;
+
+        if (stackable)
+        {
+            item.Quantity -= qty;
+            if (item.Quantity <= 0) player.Inventory.Remove(item);
+        }
+        else
+        {
+            player.Inventory.Remove(item);
+        }
+
+        player.Gold += total;
+        SendGold(player);
+        SendInventory(player);
+        SendSystemToEntity(player,
+            $"Sold {def.Name}{(qty > 1 ? $" x{qty}" : "")} for {total:N0} {GameConstants.CurrencyName}.");
+    }
+
     private void HandleTalk(TalkCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
@@ -2349,9 +2462,21 @@ var effect = def.Effect;
             }
         }
 
+        // Vendor wares (only for vendor NPCs).
+        ShopInfo? shop = null;
+        if (npc.NpcRole == NpcRole.Vendor && ShopCatalog.Get(npcId) is ShopDef shopDef)
+        {
+            var items = shopDef.ItemIds
+                .Select(id => ItemCatalog.Get(id))
+                .Where(d => d is not null)
+                .Select(d => new ShopItemDto(d!.Id, d.Name, ItemCatalog.BuyPrice(d)))
+                .ToArray();
+            shop = new ShopInfo(shopDef.Title, items);
+        }
+
         SendTo(player, "Dialog", new NpcDialog(
             npc.Name, npc.NpcRole.ToString(),
-            offered, turnable.ToArray(), inProgress.ToArray(), changes.ToArray()));
+            offered, turnable.ToArray(), inProgress.ToArray(), changes.ToArray(), shop));
 
         // Talking can itself advance a TalkTo step.
         AdvanceTalkStep(player, npcId);

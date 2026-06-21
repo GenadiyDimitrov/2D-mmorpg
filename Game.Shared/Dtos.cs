@@ -167,6 +167,12 @@ public record QuestSummary(string Id, string Name, string Description, string Cu
 public record ClassChangeOption(int SecondClassId, string ClassName, bool Meets,
     string[] RequiredItemNames, bool[] HasItem);
 
+/// <summary>One buyable line in a vendor shop.</summary>
+public record ShopItemDto(string DefId, string Name, int BuyPrice);
+
+/// <summary>A vendor's wares, attached to the dialog when talking to a vendor.</summary>
+public record ShopInfo(string Title, ShopItemDto[] Items);
+
 /// <summary>Server -> client: the dialog when talking to an NPC.</summary>
 public record NpcDialog(
     string NpcName,
@@ -174,7 +180,8 @@ public record NpcDialog(
     QuestSummary[] Offered,      // quests this NPC can give now
     QuestSummary[] Turnable,     // active quests ready to complete here
     QuestSummary[] InProgress,   // active quests not yet complete
-    ClassChangeOption[] ClassChanges);
+    ClassChangeOption[] ClassChanges,
+    ShopInfo? Shop = null);      // vendor wares (null for non-vendors)
 
 /// <summary>Server -> client: the full quest log.</summary>
 public record QuestLog(QuestSummary[] Active, string[] Completed);

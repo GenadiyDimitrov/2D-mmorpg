@@ -34,6 +34,8 @@ public partial class MainWindow
         RebuildPotionBar();
         if (_tradeActive)
             RefreshTradeBag();
+        if (ShopPanel.Visibility == Visibility.Visible)
+            RenderShop();
     }
 
     private void InventoryButton_Click(object sender, RoutedEventArgs e) => ToggleInventory();
@@ -1573,8 +1575,24 @@ public partial class MainWindow
         // The NPC entity id is whatever we last clicked to talk; capture from
         // the currently-hovered talk target via _lastTalkNpcId.
         DialogNpcName.Text = dialog.NpcName;
-        DialogNpcRole.Text = dialog.NpcRole == "ClassChange" ? "Class Master" : "Quest Giver";
+        DialogNpcRole.Text = dialog.NpcRole switch
+        {
+            "ClassChange" => "Class Master",
+            "Vendor" => "Merchant",
+            _ => "Quest Giver"
+        };
         DialogContent.Children.Clear();
+
+        // Vendor: offer a button to open the shop window.
+        if (dialog.Shop is ShopInfo shop)
+        {
+            _shop = shop;
+            AddDialogHeader(shop.Title);
+            var browse = new Button { Content = "Browse Wares", Width = 140, Height = 28,
+                HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 2, 0, 8) };
+            browse.Click += (_, _) => OpenShop();
+            DialogContent.Children.Add(browse);
+        }
 
         // Offered quests.
         foreach (var q in dialog.Offered)
@@ -1649,6 +1667,107 @@ public partial class MainWindow
 
     private void DialogClose_Click(object sender, RoutedEventArgs e) =>
         DialogPanel.Visibility = Visibility.Collapsed;
+
+    // =======================================================================
+    // Vendor shop
+    // =======================================================================
+
+    private ShopInfo? _shop;
+    private bool _shopSellTab;
+
+    private void OpenShop()
+    {
+        if (_shop is null) return;
+        DialogPanel.Visibility = Visibility.Collapsed;
+        ShopTitle.Text = _shop.Title;
+        _shopSellTab = false;
+        RenderShop();
+        ShopPanel.Visibility = Visibility.Visible;
+    }
+
+    private void ShopTabBuy_Click(object sender, RoutedEventArgs e) { _shopSellTab = false; RenderShop(); }
+    private void ShopTabSell_Click(object sender, RoutedEventArgs e) { _shopSellTab = true; RenderShop(); }
+    private void ShopClose_Click(object sender, RoutedEventArgs e) => ShopPanel.Visibility = Visibility.Collapsed;
+
+    private void UpdateShopGold() =>
+        ShopGoldText.Text = $"Your {GameConstants.CurrencyName}: {_gold:N0}";
+
+    private void RenderShop()
+    {
+        ShopList.Children.Clear();
+        UpdateShopGold();
+
+        if (!_shopSellTab)
+        {
+            // BUY: the vendor's fixed wares.
+            if (_shop is null || _shop.Items.Length == 0)
+            {
+                ShopList.Children.Add(MakeShopHint("Nothing for sale."));
+                return;
+            }
+            foreach (var entry in _shop.Items)
+            {
+                string defId = entry.DefId;
+                int price = entry.BuyPrice;
+                ShopList.Children.Add(ShopRow(entry.Name, $"{price:N0} {GameConstants.CurrencyName}",
+                    "Buy", _gold >= price,
+                    async () => await _net.BuyItemAsync(_dialogNpcId, defId, 1)));
+            }
+            return;
+        }
+
+        // SELL: the player's sellable inventory.
+        bool any = false;
+        foreach (var item in _inventory)
+        {
+            if (item.Equipped) continue;
+            if (ItemCatalog.Get(item.DefId) is not ItemDef def || !ItemCatalog.IsSellable(def)) continue;
+            any = true;
+            int unit = ItemCatalog.SellPrice(def);
+            string label = item.Quantity > 1 ? $"{def.Name}  x{item.Quantity}" : def.Name;
+            Guid instanceId = item.InstanceId;
+            ShopList.Children.Add(ShopRow(label, $"{unit:N0} {GameConstants.CurrencyName} ea", "Sell", true,
+                async () => await _net.SellItemAsync(_dialogNpcId, instanceId, 1)));
+        }
+        if (!any)
+            ShopList.Children.Add(MakeShopHint("Nothing here you can sell."));
+    }
+
+    private TextBlock MakeShopHint(string text) => new()
+    {
+        Text = text, Foreground = Brushes.Gray, FontSize = 12, Margin = new Thickness(0, 6, 0, 0)
+    };
+
+    private FrameworkElement ShopRow(string label, string priceLabel, string action, bool enabled, Func<Task> onClick)
+    {
+        var dock = new DockPanel { Margin = new Thickness(0, 0, 0, 4) };
+
+        var button = new Button
+        {
+            Content = action, Width = 64, Height = 26, IsEnabled = enabled,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        button.Click += async (_, _) => await onClick();
+        DockPanel.SetDock(button, Dock.Right);
+        dock.Children.Add(button);
+
+        var price = new TextBlock
+        {
+            Text = priceLabel, Foreground = new SolidColorBrush(Color.FromRgb(0xE8, 0xE2, 0xC8)),
+            FontSize = 11, Width = 130, TextAlignment = TextAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0)
+        };
+        DockPanel.SetDock(price, Dock.Right);
+        dock.Children.Add(price);
+
+        var name = new TextBlock
+        {
+            Text = label, Foreground = Brushes.White, FontSize = 12,
+            VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap
+        };
+        dock.Children.Add(name);   // fills remaining space
+        return dock;
+    }
 
     private void OnQuestLog(QuestLog log)
     {

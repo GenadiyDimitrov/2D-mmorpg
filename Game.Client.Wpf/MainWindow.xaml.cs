@@ -358,6 +358,8 @@ public partial class MainWindow : Window
         DebugPanel.Visibility = Visibility.Collapsed;
         SettingsPanel.Visibility = Visibility.Collapsed;
         ClassPanel.Visibility = Visibility.Collapsed;
+        DialogPanel.Visibility = Visibility.Collapsed;
+        ShopPanel.Visibility = Visibility.Collapsed;
 
         await ShowCharacterSelectAsync();
     }
@@ -795,6 +797,8 @@ public partial class MainWindow : Window
     private void OnGold(GoldUpdate update)
     {
         _gold = update.Gold;   // shown in the status line on the next HUD refresh
+        if (ShopPanel.Visibility == Visibility.Visible)
+            RenderShop();      // keep buy affordability + gold line current
     }
 
     private void OnProgress(ProgressUpdate progress)

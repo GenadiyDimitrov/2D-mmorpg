@@ -116,6 +116,9 @@ public static class WorldMap
         new("priest_oren",   "High Priest Oren",   7200, 7300, NpcRole.QuestGiver),
         new("elder_marius",  "Elder Marius",       7800, 7300, NpcRole.QuestGiver),
         new("master_class",  "Class Master Vael",  7500, 6900, NpcRole.ClassChange),
+        // Vendors (their wares are defined by ShopCatalog, keyed on these ids).
+        new("merchant_potions", "Apothecary Miren", 7100, 6900, NpcRole.Vendor),
+        new("merchant_gear",    "Armsmaster Dolan",  7900, 6900, NpcRole.Vendor),
     };
 
     public static readonly RoadPath[] Roads =
@@ -232,7 +235,7 @@ public record RoadPath(float Width, MapPoint[] Points)
 
 }
 
-public enum NpcRole { QuestGiver = 0, ClassChange = 1 }
+public enum NpcRole { QuestGiver = 0, ClassChange = 1, Vendor = 2 }
 
 /// <summary>A placed NPC. Id is referenced by quests + class-change requirements.</summary>
 public record NpcDef(string Id, string Name, float X, float Y, NpcRole Role);

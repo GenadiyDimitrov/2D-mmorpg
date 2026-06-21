@@ -87,7 +87,11 @@ public record ItemDef(
     // grants its set bonus (see ArmorSetCatalog). -----
     string SetId = "",
     // ----- Buff potion: the buff SkillDef id applied when consumed ("" = not one). -----
-    string BuffSkillId = "");
+    string BuffSkillId = "",
+    // ----- Gold value (vendor pricing). 0 = filled from DefaultValue at build time;
+    //       quest items and god-tier one-offs stay 0 = not buyable/sellable. Pass an
+    //       explicit Value to override the formula for a specific item. -----
+    int Value = 0);
 
 public static class ItemCatalog
 {
@@ -433,16 +437,70 @@ public static class ItemCatalog
                 new(AttributeType.CastSpeedPercent, 100),
             }));
 
-        // ----- Duplicate-key guard: clear startup error instead of a crash ---
+        // ----- Duplicate-key guard + value fill: any item left at Value 0 gets the
+        //       formula price (quest items / god one-offs stay 0 = not for trade). -----
         var dict = new Dictionary<string, ItemDef>();
-        foreach (var item in list)
+        foreach (var raw in list)
         {
+            var item = raw.Value > 0 ? raw : raw with { Value = DefaultValue(raw) };
             if (!dict.TryAdd(item.Id, item))
                 throw new InvalidOperationException(
                     $"Duplicate item id '{item.Id}' ({item.Name} collides with {dict[item.Id].Name}).");
         }
         return dict;
     }
+
+    /// <summary>Formula gold value by slot/grade/rarity, used when an item def does
+    /// not set an explicit Value. Quest items and god-tier one-offs return 0 so they
+    /// can be neither bought nor sold.</summary>
+    public static int DefaultValue(ItemDef def)
+    {
+        if (def.Slot == EquipSlot.QuestItem || def.Rarity == ItemRarity.God)
+            return 0;
+
+        int gradeBase = def.Grade switch
+        {
+            ItemGrade.F => 10,
+            ItemGrade.E => 35,
+            ItemGrade.B => 120,
+            ItemGrade.A => 400,
+            ItemGrade.S => 1200,
+            _ => 10,
+        };
+        float rarityMul = def.Rarity switch
+        {
+            ItemRarity.Common => 1f,
+            ItemRarity.Uncommon => 2f,
+            ItemRarity.Rare => 4f,
+            ItemRarity.Epic => 8f,
+            ItemRarity.Legendary => 16f,
+            _ => 1f,
+        };
+        float slotMul = def.Slot switch
+        {
+            EquipSlot.Weapon => 2.0f,
+            EquipSlot.Armor => def.ArmorSlot == ArmorSlot.Body ? 1.6f : 0.8f,
+            EquipSlot.Shield => 1.2f,
+            EquipSlot.Jewel => 1.4f,
+            EquipSlot.Consumable => 0.8f,
+            EquipSlot.Scroll => 3.0f,
+            _ => 1f,
+        };
+        return Math.Max(1, (int)(gradeBase * rarityMul * slotMul));
+    }
+
+    /// <summary>Gold paid to a player who SELLS this item (0 = not sellable).</summary>
+    public static int SellPrice(ItemDef def) =>
+        def.Value <= 0 ? 0 : Math.Max(1, (int)(def.Value * GameConstants.VendorSellFraction));
+
+    /// <summary>Gold charged when BUYING this item from a vendor, including the
+    /// (future, currently 0) castle surcharge. 0 = not buyable.</summary>
+    public static int BuyPrice(ItemDef def) =>
+        def.Value <= 0 ? 0 : Math.Max(1, (int)(def.Value * (1f + GameConstants.VendorBuyTaxRate)));
+
+    /// <summary>An item the player can sell to a vendor (has a value, not a quest item).</summary>
+    public static bool IsSellable(ItemDef def) =>
+        def.Value > 0 && def.Slot != EquipSlot.QuestItem;
 
     public static ItemDef? Get(string id) => id is null ? null : All.GetValueOrDefault(id);
 

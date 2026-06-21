@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 20 (buff potions + scroll/buff drops)
+# L2-like MMORPG — Phase 21 (vendors: NPC shops)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,23 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 21 (this build)
+
+### Vendors — NPC shops (buy & sell)
+- Two town merchants: **Apothecary Miren** (potions, common buff potions, basic scrolls)
+  and **Armsmaster Dolan** (plain F-grade weapons/armor/accessories, starter shield + jewel).
+  Talk to one → **Browse Wares** → a shop window with **Buy** and **Sell** tabs.
+- Every item now has a gold **Value** (`ItemDef.Value`; filled by an explicit per-item value
+  or `ItemCatalog.DefaultValue` formula by grade/rarity/slot). **Buy price** = Value;
+  **sell price** = Value × `VendorSellFraction` (30%). Quest items and god-tier one-offs
+  have no value → can't be bought or sold.
+- Vendor-sold gear is created **plain** (no rolled attributes) — rolled gear still comes
+  from drops. The server validates gold, inventory space, range, and that the vendor
+  actually stocks the item; it's all single-writer on the game loop.
+- **Castle hook (not yet active):** `VendorBuyTaxRate` is wired into the buy price so a
+  future castle-owned village can add a surcharge that flows to the castle vault. It's 0
+  for now (no castle system yet).
 
 ## New in Phase 20 (this build)
 

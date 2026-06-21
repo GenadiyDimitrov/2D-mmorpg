@@ -1,0 +1,72 @@
+namespace Game.Shared;
+
+/// <summary>
+/// A vendor's wares: the item ids it sells. Buy prices come from each item's
+/// Value (ItemCatalog.BuyPrice); the shop only decides WHAT is for sale. Selling
+/// is independent — any vendor buys back any sellable item the player owns.
+/// </summary>
+public record ShopDef(string NpcId, string Title, string[] ItemIds);
+
+/// <summary>
+/// Per-NPC shop definitions, keyed by the vendor's NpcDef id (WorldMap.Npcs).
+/// Vendor-sold gear is created PLAIN (no rolled attributes) at buy time.
+/// </summary>
+public static class ShopCatalog
+{
+    public const string PotionMerchant = "merchant_potions";
+    public const string GearMerchant = "merchant_gear";
+
+    private static readonly Dictionary<string, ShopDef> Shops = Build();
+
+    private static Dictionary<string, ShopDef> Build()
+    {
+        var shops = new[]
+        {
+            new ShopDef(PotionMerchant, "Apothecary", new[]
+            {
+                // Healing potions.
+                ItemCatalog.MinorPotion,
+                ItemCatalog.HealingPotion,
+                ItemCatalog.GreaterPotion,
+                // Common buff potions (the weak tier is vendor-only; stronger ones drop).
+                ItemCatalog.SpeedPotionC,
+                ItemCatalog.CastPotionC,
+                ItemCatalog.AtkPotionC,
+                // Basic scrolls.
+                ItemCatalog.ScrollCommon,
+                ItemCatalog.AttrScrollCommon,
+            }),
+            new ShopDef(GearMerchant, "Armsmaster", new[]
+            {
+                // Basic plain weapons (F, common).
+                ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.F, ItemRarity.Common),
+                ItemCatalog.WeaponKey(WeaponType.Dual,  ItemGrade.F, ItemRarity.Common),
+                ItemCatalog.WeaponKey(WeaponType.Bow,   ItemGrade.F, ItemRarity.Common),
+                ItemCatalog.WeaponKey(WeaponType.Blunt, ItemGrade.F, ItemRarity.Common),
+                ItemCatalog.IronMace,
+                ItemCatalog.AshWand,
+                // Basic plain body armor (F, common) + accessories.
+                ItemCatalog.ArmorKey(ArmorWeight.Heavy, ArmorSlot.Body, ItemGrade.F, ItemRarity.Common),
+                ItemCatalog.ArmorKey(ArmorWeight.Light, ArmorSlot.Body, ItemGrade.F, ItemRarity.Common),
+                ItemCatalog.ArmorKey(ArmorWeight.Robe,  ArmorSlot.Body, ItemGrade.F, ItemRarity.Common),
+                ItemCatalog.ArmorKey(ArmorWeight.None, ArmorSlot.Head,   ItemGrade.F, ItemRarity.Common),
+                ItemCatalog.ArmorKey(ArmorWeight.None, ArmorSlot.Gloves, ItemGrade.F, ItemRarity.Common),
+                ItemCatalog.ArmorKey(ArmorWeight.None, ArmorSlot.Boots,  ItemGrade.F, ItemRarity.Common),
+                // Starter shield + jewel.
+                ItemCatalog.WoodenShield,
+                ItemCatalog.BrassAmulet,
+            }),
+        };
+
+        var dict = new Dictionary<string, ShopDef>(StringComparer.OrdinalIgnoreCase);
+        foreach (var s in shops)
+            dict[s.NpcId] = s;
+        return dict;
+    }
+
+    public static ShopDef? Get(string? npcId) =>
+        npcId is null ? null : Shops.GetValueOrDefault(npcId);
+
+    public static bool Sells(string npcId, string itemId) =>
+        Get(npcId) is ShopDef shop && Array.IndexOf(shop.ItemIds, itemId) >= 0;
+}

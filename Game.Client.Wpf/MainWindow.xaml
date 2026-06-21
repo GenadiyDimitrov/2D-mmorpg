@@ -603,6 +603,31 @@
             </DockPanel>
         </Border>
 
+        <!-- Vendor shop window -->
+        <Border x:Name="ShopPanel"
+                Width="460" MaxHeight="560"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="#F0162232" CornerRadius="10" Padding="16"
+                Visibility="Collapsed">
+            <DockPanel>
+                <TextBlock x:Name="ShopTitle" DockPanel.Dock="Top" Foreground="Gold"
+                           FontSize="17" FontWeight="Bold" Margin="0,0,0,2"/>
+                <TextBlock x:Name="ShopGoldText" DockPanel.Dock="Top" Foreground="#FFE8E2C8"
+                           FontSize="12" Margin="0,0,0,10"/>
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                    <Button x:Name="ShopTabBuy" Content="Buy" Width="110" Height="26"
+                            Click="ShopTabBuy_Click"/>
+                    <Button x:Name="ShopTabSell" Content="Sell" Width="110" Height="26"
+                            Margin="6,0,0,0" Click="ShopTabSell_Click"/>
+                </StackPanel>
+                <Button DockPanel.Dock="Bottom" Content="Close" Height="26"
+                        Margin="0,10,0,0" Click="ShopClose_Click"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="ShopList"/>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
         <!-- Quest log panel -->
         <Border x:Name="QuestLogPanel"
                 Width="360" MaxHeight="520"

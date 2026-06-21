@@ -108,6 +108,12 @@ public class NetworkChannel : IAsyncDisposable
     public Task QuestActionAsync(string action, string id, Guid npcEntityId) =>
         _connection!.SendAsync("QuestAction", action, id, npcEntityId);
 
+    public Task BuyItemAsync(Guid npcEntityId, string itemDefId, int quantity) =>
+        _connection!.SendAsync("BuyItem", npcEntityId, itemDefId, quantity);
+
+    public Task SellItemAsync(Guid npcEntityId, Guid instanceId, int quantity) =>
+        _connection!.SendAsync("SellItem", npcEntityId, instanceId, quantity);
+
     public Task SetMoveStateAsync(MoveState state) =>
         _connection!.SendAsync("SetMoveState", (int)state);
 
