@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 22.1 (expanded world to level 80)
+# L2-like MMORPG — Phase 22.2 (original town names)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -31,12 +31,23 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
 
+## New in Phase 22.2 (this build)
+
+### Original town names (IP safety)
+- Renamed every town away from Lineage-2 names to **original, generic** ones:
+  **Brackenford** (starter), **Stonewatch**, **Emberfall**, **Greymarsh**, **Ironreach
+  Keep**, **Duskvale**, **Frostmere**. Safe-zone ids and gatekeeper ids were renamed to
+  match; nothing persisted referenced the old ids, so **no DB reset**.
+- Also scrubbed the L2 currency term ("adena") from the docs — the currency is **Gold**.
+- Policy going forward: never reuse names trademarked by other games (towns, NPCs, items,
+  skills, currency). Stat *formulas* aren't copyrightable; *names* are.
+
 ## New in Phase 22.1 (this build)
 
 ### Expanded world — zones up to level 80
-- The world grew to **24000 × 24000**. The starter **Town of Giran** sits at the centre,
-  with **six more towns ringing it** (Gludin, Dion, Gludio, Aden, Oren, Rune) — difficulty
-  rises as you tour the ring clockwise from the north.
+- The world grew to **24000 × 24000**. The starter town **Brackenford** sits at the centre,
+  with **six more towns ringing it** (Stonewatch, Emberfall, Greymarsh, Ironreach Keep,
+  Duskvale, Frostmere) — difficulty rises as you tour the ring clockwise from the north.
 - **~16 spawn zones cover levels 1-80** (1-2 per band), plus an elite and a boss
   placeholder. Four new higher-tier creatures (**Orc Raider, Stone Golem, Wraith, Young
   Drake**) fill the 20-80 range with their own drop tables; existing mobs cover the low end.

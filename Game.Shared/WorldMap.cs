@@ -21,13 +21,13 @@ public static class WorldMap
     /// spiders" — just add a SpawnZone line. Order doesn't matter; the server
     /// spawns each independently and the client tints each one.
     /// </summary>
-    // The world is a 24000x24000 square. The starter town (Giran) sits at the
+    // The world is a 24000x24000 square. The starter town (Brackenford) sits at the
     // centre (12000,12000); six more towns ring it, and difficulty rises as you
-    // tour the ring clockwise from the north (Gludin → Dion → Gludio → Aden →
-    // Oren → Rune). Each band has 1-2 spawn zones beside its town.
+    // tour the ring clockwise from the north (Stonewatch → Emberfall → Greymarsh →
+    // Ironreach → Duskvale → Frostmere). Each band has 1-2 spawn zones beside its town.
     public static readonly SpawnZone[] SpawnZones =
     {
-        // ===== Giran (centre) — levels 1-10 =====
+        // ===== Brackenford (centre) — levels 1-10 =====
         new(X: 9700,  Y: 12000, Radius: 1400, MinLevel: 1,  MaxLevel: 4,
             MobTypes: new[] { "grey_wolf", "brown_boar" }, MaxCount: 10,
             RespawnSeconds: 8, RespawnVariance: 3),
@@ -38,7 +38,7 @@ public static class WorldMap
             MobTypes: new[] { "cave_spider", "grey_wolf" }, MaxCount: 10,
             RespawnSeconds: 10, RespawnVariance: 4),
 
-        // ===== Gludin (north) — levels 10-22 =====
+        // ===== Stonewatch (north) — levels 10-22 =====
         new(X: 10200, Y: 4200,  Radius: 1500, MinLevel: 10, MaxLevel: 15,
             MobTypes: new[] { "dire_boar", "cave_spider" }, MaxCount: 12,
             RespawnSeconds: 12, RespawnVariance: 4),
@@ -46,7 +46,7 @@ public static class WorldMap
             MobTypes: new[] { "road_bandit", "dire_boar" }, MaxCount: 12,
             RespawnSeconds: 14, RespawnVariance: 5),
 
-        // ===== Dion (north-east) — levels 22-34 =====
+        // ===== Emberfall (north-east) — levels 22-34 =====
         new(X: 16500, Y: 6200,  Radius: 1500, MinLevel: 22, MaxLevel: 28,
             MobTypes: new[] { "road_bandit", "orc_raider" }, MaxCount: 12,
             RespawnSeconds: 15, RespawnVariance: 5),
@@ -54,7 +54,7 @@ public static class WorldMap
             MobTypes: new[] { "orc_raider", "cave_spider" }, MaxCount: 12,
             RespawnSeconds: 16, RespawnVariance: 5),
 
-        // ===== Gludio (south-east) — levels 34-46 =====
+        // ===== Greymarsh (south-east) — levels 34-46 =====
         new(X: 16500, Y: 15200, Radius: 1500, MinLevel: 34, MaxLevel: 40,
             MobTypes: new[] { "orc_raider", "stone_golem" }, MaxCount: 11,
             RespawnSeconds: 18, RespawnVariance: 6),
@@ -62,7 +62,7 @@ public static class WorldMap
             MobTypes: new[] { "stone_golem", "wraith" }, MaxCount: 11,
             RespawnSeconds: 20, RespawnVariance: 6),
 
-        // ===== Aden (south) — levels 46-58 =====
+        // ===== Ironreach (south) — levels 46-58 =====
         new(X: 10200, Y: 20000, Radius: 1500, MinLevel: 46, MaxLevel: 52,
             MobTypes: new[] { "wraith", "stone_golem" }, MaxCount: 11,
             RespawnSeconds: 20, RespawnVariance: 6),
@@ -70,7 +70,7 @@ public static class WorldMap
             MobTypes: new[] { "wraith", "young_drake" }, MaxCount: 10,
             RespawnSeconds: 22, RespawnVariance: 7),
 
-        // ===== Oren (south-west) — levels 58-70 =====
+        // ===== Duskvale (south-west) — levels 58-70 =====
         new(X: 7200,  Y: 17800, Radius: 1500, MinLevel: 58, MaxLevel: 64,
             MobTypes: new[] { "young_drake", "wraith" }, MaxCount: 10,
             RespawnSeconds: 24, RespawnVariance: 7),
@@ -78,7 +78,7 @@ public static class WorldMap
             MobTypes: new[] { "young_drake", "stone_golem" }, MaxCount: 10,
             RespawnSeconds: 26, RespawnVariance: 8),
 
-        // ===== Rune (north-west) — levels 70-80 =====
+        // ===== Frostmere (north-west) — levels 70-80 =====
         new(X: 7200,  Y: 6200,  Radius: 1500, MinLevel: 70, MaxLevel: 76,
             MobTypes: new[] { "young_drake", "orc_raider" }, MaxCount: 10,
             RespawnSeconds: 28, RespawnVariance: 8),
@@ -104,16 +104,18 @@ public static class WorldMap
     /// <summary>Safe zones (cities/castles): no mobs spawn or enter, aggro
     /// clears inside, regen is boosted. Each has a stable id so teleports can
     /// target them later. The first is the starter town at map centre.</summary>
+    // NOTE: all place names here are original/generic on purpose — NEVER use town,
+    // region, or NPC names trademarked by other games (no Lineage/L2 names, etc.).
     public static readonly SafeZone[] SafeZones =
     {
         // Starter town at the map centre; six more ring it (clockwise from north).
-        new("town_giran",   "Town of Giran",    12000, 12000, 1300),
-        new("town_gludin",  "Town of Gludin",   12000,  5000, 1000),
-        new("town_dion",    "Town of Dion",     18000,  7500, 1000),
-        new("town_gludio",  "Town of Gludio",   18000, 16500, 1000),
-        new("castle_aden",  "Aden Castle",      12000, 19000, 1100),
-        new("town_oren",    "Town of Oren",      6000, 16500, 1000),
-        new("town_rune",    "Town of Rune",      6000,  7500, 1000),
+        new("town_brackenford", "Brackenford",     12000, 12000, 1300),
+        new("town_stonewatch",  "Stonewatch",      12000,  5000, 1000),
+        new("town_emberfall",   "Emberfall",       18000,  7500, 1000),
+        new("town_greymarsh",   "Greymarsh",       18000, 16500, 1000),
+        new("castle_ironreach",  "Ironreach Keep", 12000, 19000, 1100),
+        new("town_duskvale",    "Duskvale",         6000, 16500, 1000),
+        new("town_frostmere",   "Frostmere",        6000,  7500, 1000),
     };
 
     /// <summary>The safe zone nearest to a point (always returns one). Used to
@@ -160,7 +162,7 @@ public static class WorldMap
     /// them by Id.</summary>
     public static readonly NpcDef[] Npcs =
     {
-        // --- Starter town: Giran (map centre, 12000,12000) ---
+        // --- Starter town: Brackenford (map centre, 12000,12000) ---
         new("priest_oren",   "High Priest Oren",   11700, 11800, NpcRole.QuestGiver),
         new("elder_marius",  "Elder Marius",       12300, 11800, NpcRole.QuestGiver),
         new("master_class",  "Class Master Vael",  12000, 11400, NpcRole.ClassChange),
@@ -169,24 +171,24 @@ public static class WorldMap
         new("merchant_gear",    "Armsmaster Dolan",  12400, 11400, NpcRole.Vendor),
         // --- Gatekeepers: one in every town (stands at its centre) so the whole
         //     travel network is reachable in both directions. ---
-        new("gatekeeper_giran",  "Gatekeeper Pell",   12000, 12300, NpcRole.Teleporter),
-        new("gatekeeper_gludin", "Gatekeeper Soren",  12000,  5000, NpcRole.Teleporter),
-        new("gatekeeper_dion",   "Gatekeeper Ryn",    18000,  7500, NpcRole.Teleporter),
-        new("gatekeeper_gludio", "Gatekeeper Maela",  18000, 16500, NpcRole.Teleporter),
-        new("gatekeeper_aden",   "Gatekeeper Vurst",  12000, 19000, NpcRole.Teleporter),
-        new("gatekeeper_oren",   "Gatekeeper Talia",   6000, 16500, NpcRole.Teleporter),
-        new("gatekeeper_rune",   "Gatekeeper Khaz",    6000,  7500, NpcRole.Teleporter),
+        new("gatekeeper_brackenford", "Gatekeeper Pell",   12000, 12300, NpcRole.Teleporter),
+        new("gatekeeper_stonewatch",  "Gatekeeper Soren",  12000,  5000, NpcRole.Teleporter),
+        new("gatekeeper_emberfall",   "Gatekeeper Ryn",    18000,  7500, NpcRole.Teleporter),
+        new("gatekeeper_greymarsh",   "Gatekeeper Maela",  18000, 16500, NpcRole.Teleporter),
+        new("gatekeeper_ironreach",   "Gatekeeper Vurst",  12000, 19000, NpcRole.Teleporter),
+        new("gatekeeper_duskvale",    "Gatekeeper Talia",   6000, 16500, NpcRole.Teleporter),
+        new("gatekeeper_frostmere",   "Gatekeeper Khaz",    6000,  7500, NpcRole.Teleporter),
     };
 
     public static readonly RoadPath[] Roads =
     {
-        // Spokes from Giran (centre) out to each ring town.
-        new(Width: 300, Points: new[] { new MapPoint(12000, 12000), new MapPoint(12000,  5000) }), // Gludin (N)
-        new(Width: 300, Points: new[] { new MapPoint(12000, 12000), new MapPoint(18000,  7500) }), // Dion (NE)
-        new(Width: 300, Points: new[] { new MapPoint(12000, 12000), new MapPoint(18000, 16500) }), // Gludio (SE)
-        new(Width: 300, Points: new[] { new MapPoint(12000, 12000), new MapPoint(12000, 19000) }), // Aden (S)
-        new(Width: 300, Points: new[] { new MapPoint(12000, 12000), new MapPoint( 6000, 16500) }), // Oren (SW)
-        new(Width: 300, Points: new[] { new MapPoint(12000, 12000), new MapPoint( 6000,  7500) }), // Rune (NW)
+        // Spokes from Brackenford (centre) out to each ring town.
+        new(Width: 300, Points: new[] { new MapPoint(12000, 12000), new MapPoint(12000,  5000) }), // Stonewatch (N)
+        new(Width: 300, Points: new[] { new MapPoint(12000, 12000), new MapPoint(18000,  7500) }), // Emberfall (NE)
+        new(Width: 300, Points: new[] { new MapPoint(12000, 12000), new MapPoint(18000, 16500) }), // Greymarsh (SE)
+        new(Width: 300, Points: new[] { new MapPoint(12000, 12000), new MapPoint(12000, 19000) }), // Ironreach (S)
+        new(Width: 300, Points: new[] { new MapPoint(12000, 12000), new MapPoint( 6000, 16500) }), // Duskvale (SW)
+        new(Width: 300, Points: new[] { new MapPoint(12000, 12000), new MapPoint( 6000,  7500) }), // Frostmere (NW)
     };
 
     /// <summary>True if (x,y) lies on a road strip (used to keep mobs off roads).</summary>

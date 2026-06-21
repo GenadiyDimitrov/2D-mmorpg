@@ -100,7 +100,7 @@ and are adapted from L2 references.
   MinLevel, MaxLevel)`; the level band lets one mob drop different loot at different
   levels.
 - **Rates are GLOBAL** (`RateConfig`: ExpRate, SpRate, DropChanceRate,
-  DropAmountRate; adena reserved), not per-item.
+  DropAmountRate; gold rate reserved), not per-item.
 - **Buffs**: flat skill id = ability identity; `BuffKey` = buff identity for
   stacking. Stacking rules in `ApplyBuff`: (1) same `BuffKey` compares `Rank`
   (incoming ≥ existing → replace; weaker → ignore); (2) explicit `Replaces[]`
@@ -121,13 +121,20 @@ brace/paren counting, plus XAML parse and StatsUpdate field-count alignment. Kno
 false-positive sources when brace-counting raw text: `http://` in `Program.cs`,
 `[0,24)` in `GameClock`. Claude Code should prefer `dotnet build`.
 
+## Naming (IP safety — important)
+Names are deliberately generic to avoid IP issues. **Never use names trademarked by
+other games** — no Lineage/L2 town, NPC, item, skill, or currency names (e.g. the old
+"Giran/Aden/Gludio" towns and "adena" currency were slips, since renamed). Invent original
+generic fantasy names (current towns: Brackenford, Stonewatch, Emberfall, Greymarsh,
+Ironreach, Duskvale, Frostmere). Stat *formulas* are not copyrightable; *names* are.
+
 ## Roadmap (not yet built)
-Currency + vendors (adena drop → wallet → NPC shops → teleport-for-fee using
-safe-zone ids); buff potions (timed consumable buffs: speed/cast/atk-speed);
-3rd/4th class tower (Cleric→Bishop→Cardinal quest chains); party/grouping (replace
-"allies in radius" stand-in); boss mechanics (±10-level rule, boss skills, enrage);
-perfect/excellent block; magic-resist passives; soulshots; position bonuses;
-PvP/PvE multipliers (hooks default 1.0); the real 2D client.
+Built since this list was first written: gold wallet, NPC shop vendors, teleport-for-fee,
+buff potions, the level 1-80 world. Still to do: 3rd/4th class tower (cleric→bishop quest
+chains); party/grouping (replace "allies in radius" stand-in); boss mechanics (±10-level
+rule, boss skills, enrage); instances/dungeons; castles + vault (consumes the
+`VendorBuyTaxRate` hook); perfect/excellent block; magic-resist passives; soulshots;
+position bonuses; PvP/PvE multipliers (hooks default 1.0); the real 2D client.
 
 ## Style
 Keep changes consistent with the above. Prefer C# .NET idioms. For web/UI work the
