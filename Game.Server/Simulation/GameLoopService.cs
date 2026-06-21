@@ -371,8 +371,10 @@ public class GameLoopService : BackgroundService
         entity.Hp = entity.MaxHp;
         entity.Mp = entity.MaxMp;
         entity.Buffs.Clear();
-        entity.X = GameConstants.ZoneWidth / 2 + _rng.Next(-300, 300);
-        entity.Y = GameConstants.ZoneHeight / 2 + _rng.Next(-300, 300);
+        // Respawn at the nearest town (the world is large now).
+        var town = WorldMap.NearestSafeZone(entity.X, entity.Y);
+        entity.X = town.X + _rng.Next(-250, 250);
+        entity.Y = town.Y + _rng.Next(-250, 250);
         entity.TargetX = null;
         entity.TargetY = null;
         _world.Grid.UpdatePosition(entity);
@@ -1823,7 +1825,7 @@ var effect = def.Effect;
 
             if (player.Level >= GameConstants.ClassChangeLevel && player.SecondClass == 0)
                 SendSystemToEntity(player,
-                    "You may now choose a second class! (Class button, top right)");
+                    "You are ready for a second class — seek a class-change quest.");
         }
 
         if (_world.EntityToConnection.TryGetValue(player.Id, out var conn))

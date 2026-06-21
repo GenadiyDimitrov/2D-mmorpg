@@ -102,6 +102,48 @@ public static class MobCatalog
                     new DropEntry(ItemCatalog.AtkPotionU, 0.05f),
                     new DropEntry(ItemCatalog.SpeedPotionR, 0.02f, 1, 1, MinLevel: 20),
                 }),
+
+            // ----- Higher-tier creatures for the level 20-80 bands. Same templates
+            //       are reused across bands; the zone sets the level (= stats). -----
+            new MobType("orc_raider", "Orc Raider", 65f, 118f, Aggressive: true,
+                Drops: new[]
+                {
+                    new DropEntry(ItemCatalog.MinorPotion, 0.35f, 1, 3),
+                    new DropEntry(ItemCatalog.WeaponKey(WeaponType.Blunt, ItemGrade.E, ItemRarity.Uncommon), 0.06f),
+                    new DropEntry(ItemCatalog.ScrollUncommon, 0.10f),
+                    new DropEntry(ItemCatalog.AttrScrollUncommon, 0.05f),
+                }),
+
+            new MobType("stone_golem", "Stone Golem", 40f, 70f,
+                Drops: new[]
+                {
+                    new DropEntry(ItemCatalog.HealingPotion, 0.30f, 1, 2),
+                    new DropEntry(ItemCatalog.ArmorKey(ArmorWeight.Heavy, ItemGrade.E, ItemRarity.Uncommon), 0.07f),
+                    new DropEntry(ItemCatalog.ScrollRare, 0.05f),
+                    new DropEntry(ItemCatalog.AttrScrollRare, 0.03f, 1, 1, MinLevel: 40),
+                }),
+
+            new MobType("wraith", "Wraith", 80f, 132f, Aggressive: true,
+                Drops: new[]
+                {
+                    new DropEntry(ItemCatalog.HealingPotion, 0.30f),
+                    new DropEntry(ItemCatalog.ArmorKey(ArmorWeight.Robe, ItemGrade.E, ItemRarity.Uncommon), 0.07f),
+                    new DropEntry(ItemCatalog.SilverTalisman, 0.04f),
+                    new DropEntry(ItemCatalog.CastPotionU, 0.06f),
+                    new DropEntry(ItemCatalog.AttrScrollRare, 0.03f, 1, 1, MinLevel: 40),
+                }),
+
+            new MobType("young_drake", "Young Drake", 75f, 145f, Aggressive: true,
+                Drops: new[]
+                {
+                    new DropEntry(ItemCatalog.GreaterPotion, 0.35f, 1, 2),
+                    new DropEntry(ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.E, ItemRarity.Rare), 0.05f),
+                    new DropEntry(ItemCatalog.ScrollRare, 0.08f),
+                    new DropEntry(ItemCatalog.AttrScrollRare, 0.05f),
+                    new DropEntry(ItemCatalog.SpeedPotionR, 0.05f),
+                    new DropEntry(ItemCatalog.AtkPotionR, 0.05f),
+                    new DropEntry(ItemCatalog.AttrScrollLegendary, 0.01f, 1, 1, MinLevel: 70),
+                }),
         };
         var dict = new Dictionary<string, MobType>(StringComparer.OrdinalIgnoreCase);
         foreach (var m in list)

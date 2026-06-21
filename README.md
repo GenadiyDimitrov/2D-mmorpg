@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 22 (teleport-for-fee)
+# L2-like MMORPG — Phase 22.1 (expanded world to level 80)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,25 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 22.1 (this build)
+
+### Expanded world — zones up to level 80
+- The world grew to **24000 × 24000**. The starter **Town of Giran** sits at the centre,
+  with **six more towns ringing it** (Gludin, Dion, Gludio, Aden, Oren, Rune) — difficulty
+  rises as you tour the ring clockwise from the north.
+- **~16 spawn zones cover levels 1-80** (1-2 per band), plus an elite and a boss
+  placeholder. Four new higher-tier creatures (**Orc Raider, Stone Golem, Wraith, Young
+  Drake**) fill the 20-80 range with their own drop tables; existing mobs cover the low end.
+  There's no level cap, so you can climb toward 80 to be ready for class-change quest chains.
+- **Every town has a gatekeeper**, so the whole travel network is reachable in both
+  directions; teleport fees scale with the (now larger) distances.
+- **You respawn at the nearest town** instead of the map centre — important now that the
+  world is big.
+- Bigger map = room for the next content: bosses, instances, and dungeons.
+
+> No DB reset needed. Existing characters keep their saved position (clamped into bounds);
+> walk or use a gatekeeper to reach the new towns.
 
 ## New in Phase 22 (this build)
 

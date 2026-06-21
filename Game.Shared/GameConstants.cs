@@ -23,10 +23,11 @@ public static class GameConstants
     /// cell neighborhood always covers the full view circle.</summary>
     public const float CellSize = 3000f;
 
-    /// <summary>Demo zone size. Design target is 75000x75000; we use a
-    /// smaller zone while there is only one of them.</summary>
-    public const float ZoneWidth = 15000f;
-    public const float ZoneHeight = 15000f;
+    /// <summary>World size. Design target is 75000x75000; enlarged to 24000 to
+    /// hold the level 1-80 zone ring (see WorldMap) with room for future
+    /// dungeons/bosses. The starter town sits at the centre.</summary>
+    public const float ZoneWidth = 24000f;
+    public const float ZoneHeight = 24000f;
 
     /// <summary>Base/maximum player movement speed in units per second.</summary>
     public const float BasePlayerSpeed = 250f;
