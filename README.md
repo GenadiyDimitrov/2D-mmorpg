@@ -52,6 +52,18 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 - **Uncommon/Rare buff potions** drop too; the **common** tiers are reserved for vendors
   (next phase). So drops give the strong buffs, vendors the basic ones.
 
+### UI: tabbed debug menu + settings + class-change via quest
+- The **debug menu** is now split into three tabs — **Equip** (weapons / armor / sets),
+  **Consumables** (scrolls / potions), and **Functions** (Level +1, Class Change test) —
+  instead of one long scroll.
+- The old top-bar **Class** button is replaced by a **Settings** button (menu: *Character
+  Selection* — leave the world, save, and pick another character without re-logging in;
+  *Exit Game*).
+- **Class change now belongs to a quest.** The direct class-change picker moved into the
+  debug *Functions* tab (test bypass). Normal players hitting level 20+ without a second
+  class get a one-time popup pointing them at the (not-yet-built) class-change quest — a
+  temporary stub to be removed once those quests exist.
+
 ## New in Phase 19 (this build)
 
 > **Delete `game.db` before running** — characters gained a **Gold** column;

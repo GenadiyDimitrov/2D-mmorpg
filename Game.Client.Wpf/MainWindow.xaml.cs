@@ -43,6 +43,7 @@ public partial class MainWindow : Window
     private double _camY = GameConstants.ZoneHeight / 2;
     private double _lastFrameTime;
     private bool _inGame;
+    private bool _classQuestNoticeShown;
 
     private int _level = 1;
     private long _exp;
@@ -234,7 +235,7 @@ public partial class MainWindow : Window
             SkillsButton.Visibility = Visibility.Visible;
             StatsButton.Visibility = Visibility.Visible;
             InventoryButton.Visibility = Visibility.Visible;
-            ClassButton.Visibility = Visibility.Visible;
+            SettingsButton.Visibility = Visibility.Visible;
 #if DEBUG
             DebugButton.Visibility = Visibility.Visible;
 #endif
@@ -306,7 +307,7 @@ public partial class MainWindow : Window
         SkillsButton.Visibility = Visibility.Collapsed;
         StatsButton.Visibility = Visibility.Collapsed;
         InventoryButton.Visibility = Visibility.Collapsed;
-        ClassButton.Visibility = Visibility.Collapsed;
+        SettingsButton.Visibility = Visibility.Collapsed;
         DebugButton.Visibility = Visibility.Collapsed;
         SkillBar.Visibility = Visibility.Collapsed;
         PotionBar.Visibility = Visibility.Collapsed;
@@ -316,6 +317,49 @@ public partial class MainWindow : Window
     {
         AccountError.Text = text;
         AccountError.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>Leave the world (saving the character) and return to character
+    /// selection, keeping the connection alive so another character can be entered.</summary>
+    private async Task ReturnToCharacterSelectAsync()
+    {
+        _inGame = false;
+
+        try { await _net.LeaveWorldAsync(); }
+        catch { /* connection may be down; we still fall back to selection */ }
+
+        // Tear down the in-world view.
+        foreach (var visual in _visuals.Values)
+            WorldCanvas.Children.Remove(visual.Root);
+        _visuals.Clear();
+        _myId = Guid.Empty;
+        _myDto = null;
+        _targetId = null;
+        _mySecondClass = 0;
+        _level = 1;
+        _classQuestNoticeShown = false;
+
+        // Hide every in-game button / panel / overlay.
+        ChatPanel.Visibility = Visibility.Collapsed;
+        SkillsButton.Visibility = Visibility.Collapsed;
+        StatsButton.Visibility = Visibility.Collapsed;
+        InventoryButton.Visibility = Visibility.Collapsed;
+        SettingsButton.Visibility = Visibility.Collapsed;
+        DebugButton.Visibility = Visibility.Collapsed;
+        SkillBar.Visibility = Visibility.Collapsed;
+        PotionBar.Visibility = Visibility.Collapsed;
+        ClockPanel.Visibility = Visibility.Collapsed;
+        TargetFrame.Visibility = Visibility.Collapsed;
+        CastBar.Visibility = Visibility.Collapsed;
+        DeathOverlay.Visibility = Visibility.Collapsed;
+        InventoryPanel.Visibility = Visibility.Collapsed;
+        StatsPanel.Visibility = Visibility.Collapsed;
+        SkillsPanel.Visibility = Visibility.Collapsed;
+        DebugPanel.Visibility = Visibility.Collapsed;
+        SettingsPanel.Visibility = Visibility.Collapsed;
+        ClassPanel.Visibility = Visibility.Collapsed;
+
+        await ShowCharacterSelectAsync();
     }
 
 
@@ -597,6 +641,7 @@ public partial class MainWindow : Window
                     _mySecondClass = dto.SecondClass;
                     EnsureSkillBarSlots();
                 }
+                MaybeShowClassChangeNotice(dto.Level, dto.SecondClass);
                 DeathOverlay.Visibility = dto.Dead ? Visibility.Visible : Visibility.Collapsed;
             }
         }

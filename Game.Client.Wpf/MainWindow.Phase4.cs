@@ -221,20 +221,14 @@ public partial class MainWindow
     // Class change
     // =======================================================================
 
-    private void ClassButton_Click(object sender, RoutedEventArgs e)
+    // Class change is meant to happen through a quest (not yet built). For testing,
+    // the debug Functions tab opens this panel directly to pick a second class.
+    private void OpenClassChangePanel()
     {
         if (_mySecondClass > 0)
         {
             AppendChat(new ChatMessage("SYSTEM",
                 $"You are already a {ClassCatalog.Get(_mySecondClass)?.Name}.", ChatChannel.System));
-            return;
-        }
-
-        if (_level < GameConstants.ClassChangeLevel)
-        {
-            AppendChat(new ChatMessage("SYSTEM",
-                $"Class change unlocks at level {GameConstants.ClassChangeLevel} (you are {_level}).",
-                ChatChannel.System));
             return;
         }
 
@@ -265,6 +259,39 @@ public partial class MainWindow
 
     private void ClassClose_Click(object sender, RoutedEventArgs e) =>
         ClassPanel.Visibility = Visibility.Collapsed;
+
+    // One-time reminder that the second class is earned via a (not-yet-built) quest.
+    // Temporary stub — remove once class-change quests exist.
+    private void MaybeShowClassChangeNotice(int level, int secondClass)
+    {
+        if (_classQuestNoticeShown || secondClass > 0 || level < GameConstants.ClassChangeLevel)
+            return;
+        _classQuestNoticeShown = true;
+        MessageBox.Show(
+            $"You have reached level {level}. Your second class awaits — seek out a class-change " +
+            "quest to claim it. (Class-change quests are coming soon.)",
+            "Class Change");
+    }
+
+    // =======================================================================
+    // Settings menu
+    // =======================================================================
+
+    private void SettingsButton_Click(object sender, RoutedEventArgs e) =>
+        SettingsPanel.Visibility = SettingsPanel.Visibility == Visibility.Visible
+            ? Visibility.Collapsed : Visibility.Visible;
+
+    private void SettingsClose_Click(object sender, RoutedEventArgs e) =>
+        SettingsPanel.Visibility = Visibility.Collapsed;
+
+    private async void SettingsCharSelect_Click(object sender, RoutedEventArgs e)
+    {
+        SettingsPanel.Visibility = Visibility.Collapsed;
+        await ReturnToCharacterSelectAsync();
+    }
+
+    private void SettingsExit_Click(object sender, RoutedEventArgs e) =>
+        Application.Current.Shutdown();
 
     // =======================================================================
     // Trade
@@ -1402,6 +1429,9 @@ public partial class MainWindow
     // Debug menu
     // =======================================================================
 
+    // Debug menu is split into three tabs: 0 = Equip, 1 = Consumables, 2 = Functions.
+    private int _debugTab;
+
     private void DebugButton_Click(object sender, RoutedEventArgs e)
     {
         BuildDebugMenu();
@@ -1412,12 +1442,23 @@ public partial class MainWindow
     private void DebugClose_Click(object sender, RoutedEventArgs e) =>
         DebugPanel.Visibility = Visibility.Collapsed;
 
+    private void DebugTabEquip_Click(object sender, RoutedEventArgs e) { _debugTab = 0; BuildDebugMenu(); }
+    private void DebugTabConsum_Click(object sender, RoutedEventArgs e) { _debugTab = 1; BuildDebugMenu(); }
+    private void DebugTabFunc_Click(object sender, RoutedEventArgs e) { _debugTab = 2; BuildDebugMenu(); }
+
     private void BuildDebugMenu()
     {
         DebugList.Children.Clear();
+        switch (_debugTab)
+        {
+            case 1: BuildDebugConsumables(); break;
+            case 2: BuildDebugFunctions(); break;
+            default: BuildDebugEquip(); break;
+        }
+    }
 
-        DebugList.Children.Add(DebugAction("Level +1", async () => await _net.DebugLevelAsync()));
-
+    private void BuildDebugEquip()
+    {
         AddDebugHeader("Legendary");
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.GodWeapon, "God's Judgment"));
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.GodArmor, "God's Robes"));
@@ -1459,7 +1500,10 @@ public partial class MainWindow
             await _net.DebugGiveAsync(ItemCatalog.DarkDominionGloves);
             await _net.DebugGiveAsync(ItemCatalog.DarkDominionBoots);
         }));
+    }
 
+    private void BuildDebugConsumables()
+    {
         AddDebugHeader("Scrolls (x10)");
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.ScrollCommon, "Common Scroll x10", 10));
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.ScrollUncommon, "Uncommon Scroll x10", 10));
@@ -1481,6 +1525,17 @@ public partial class MainWindow
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.MinorPotion, "Minor Potion x10", 10));
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.HealingPotion, "Healing Potion x10", 10));
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.GreaterPotion, "Greater Potion x10", 10));
+    }
+
+    private void BuildDebugFunctions()
+    {
+        AddDebugHeader("Character");
+        DebugList.Children.Add(DebugAction("Level +1", async () => await _net.DebugLevelAsync()));
+        DebugList.Children.Add(DebugAction("Class Change (test)", () =>
+        {
+            OpenClassChangePanel();
+            return Task.CompletedTask;
+        }));
     }
 
     private void AddDebugHeader(string text) =>

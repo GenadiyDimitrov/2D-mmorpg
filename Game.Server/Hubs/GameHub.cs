@@ -96,6 +96,13 @@ public class GameHub : Hub
             : new LoginResult(false, "Server busy, try again.", Guid.Empty, 0, 0);
     }
 
+    /// <summary>Leave the world but keep the connection (return to char select).</summary>
+    public Task LeaveWorld()
+    {
+        _world.Commands.Enqueue(new LeaveCommand(Context.ConnectionId));
+        return Task.CompletedTask;
+    }
+
     // ----- Gameplay (unchanged: enqueue commands) ----------------------------
 
     public Task Move(MoveCommand command)

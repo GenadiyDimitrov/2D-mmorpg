@@ -73,8 +73,8 @@
                     Background="#FF553333" Foreground="White"/>
             <Button x:Name="InventoryButton" Content="Inventory (I)" Width="110" Height="28"
                     Margin="0,0,6,0" Click="InventoryButton_Click" Visibility="Collapsed"/>
-            <Button x:Name="ClassButton" Content="Class" Width="70" Height="28"
-                    Click="ClassButton_Click" Visibility="Collapsed"/>
+            <Button x:Name="SettingsButton" Content="Settings" Width="80" Height="28"
+                    Click="SettingsButton_Click" Visibility="Collapsed"/>
         </StackPanel>
 
         <!-- Target frame -->
@@ -206,6 +206,24 @@
                            TextWrapping="Wrap" HorizontalAlignment="Center" Margin="0,0,0,12"/>
                 <StackPanel x:Name="ClassOptions"/>
                 <Button Content="Close" Height="28" Margin="0,12,0,0" Click="ClassClose_Click"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Settings menu -->
+        <Border x:Name="SettingsPanel"
+                Width="300"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="#E0182838" CornerRadius="10" Padding="20"
+                Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock Text="Settings"
+                           Foreground="White" FontSize="18" FontWeight="Bold"
+                           HorizontalAlignment="Center" Margin="0,0,0,14"/>
+                <Button Content="Character Selection" Height="34" Margin="0,0,0,8"
+                        Click="SettingsCharSelect_Click"/>
+                <Button Content="Exit Game" Height="34" Margin="0,0,0,8"
+                        Click="SettingsExit_Click"/>
+                <Button Content="Close" Height="28" Margin="0,8,0,0" Click="SettingsClose_Click"/>
             </StackPanel>
         </Border>
 
@@ -550,6 +568,14 @@
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="DEBUG (test only)" Foreground="#FFFF9999"
                            FontWeight="Bold" Margin="0,0,0,8"/>
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,6">
+                    <Button x:Name="DebugTabEquip" Content="Equip" Width="78" Height="24"
+                            Margin="0,0,4,0" Click="DebugTabEquip_Click"/>
+                    <Button x:Name="DebugTabConsum" Content="Consumables" Width="92" Height="24"
+                            Margin="0,0,4,0" Click="DebugTabConsum_Click"/>
+                    <Button x:Name="DebugTabFunc" Content="Functions" Width="78" Height="24"
+                            Click="DebugTabFunc_Click"/>
+                </StackPanel>
                 <Button DockPanel.Dock="Bottom" Content="Close" Height="24"
                         Margin="0,8,0,0" Click="DebugClose_Click"/>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
