@@ -116,4 +116,20 @@ public static class GameConstants
     /// charges this surcharge and the surcharge flows to the castle vault. 0 until
     /// castles exist (no current vendor is castle-owned).</summary>
     public const float VendorBuyTaxRate = 0.0f;
+
+    // ----- Teleport-for-fee (Phase 22) ----------------------------------------
+
+    /// <summary>Gold charged per world unit of teleport distance.</summary>
+    public const float TeleportGoldPerUnit = 0.04f;
+
+    /// <summary>Minimum teleport fee regardless of distance.</summary>
+    public const int TeleportMinFee = 50;
+
+    /// <summary>Gold fee to warp between two safe zones (distance-based).</summary>
+    public static int TeleportFee(SafeZone from, SafeZone to)
+    {
+        float dx = to.X - from.X, dy = to.Y - from.Y;
+        float dist = MathF.Sqrt(dx * dx + dy * dy);
+        return Math.Max(TeleportMinFee, (int)(dist * TeleportGoldPerUnit));
+    }
 }

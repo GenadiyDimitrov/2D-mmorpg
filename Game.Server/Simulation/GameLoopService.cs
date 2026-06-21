@@ -77,6 +77,7 @@ public class GameLoopService : BackgroundService
                 case QuestActionCmd c: HandleQuestAction(c); break;
                 case BuyItemCmd c: HandleBuy(c); break;
                 case SellItemCmd c: HandleSell(c); break;
+                case TeleportCmd c: HandleTeleport(c); break;
                 case SetMoveStateCmd c: HandleSetMoveState(c); break;
                 case CancelCastCmd c: HandleCancelCast(c); break;
                 case RespawnCmd c: HandleRespawn(c); break;
@@ -2399,6 +2400,49 @@ var effect = def.Effect;
             $"Sold {def.Name}{(qty > 1 ? $" x{qty}" : "")} for {total:N0} {GameConstants.CurrencyName}.");
     }
 
+    private void HandleTeleport(TeleportCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (!_world.Entities.TryGetValue(cmd.NpcEntityId, out var npc)
+            || npc.Kind != EntityKind.Npc || npc.NpcRole != NpcRole.Teleporter)
+            return;
+
+        float ndx = npc.X - player.X, ndy = npc.Y - player.Y;
+        if (ndx * ndx + ndy * ndy > GameConstants.TalkRange * GameConstants.TalkRange)
+        {
+            SendSystemToEntity(player, $"{npc.Name} is too far away.");
+            return;
+        }
+
+        var home = WorldMap.SafeZoneAt(npc.X, npc.Y);
+        var dest = WorldMap.SafeZones.FirstOrDefault(z => z.Id == cmd.ZoneId);
+        if (home is null || dest is null || dest.Id == home.Id)
+        {
+            SendSystemToEntity(player, "You can't travel there.");
+            return;
+        }
+
+        int fee = GameConstants.TeleportFee(home, dest);
+        if (player.Gold < fee)
+        {
+            SendSystemToEntity(player,
+                $"Not enough {GameConstants.CurrencyName} (need {fee:N0}).");
+            return;
+        }
+
+        player.Gold -= fee;
+        // Reposition to the destination centre (small scatter so players don't stack).
+        player.X = Math.Clamp(dest.X + _rng.Next(-150, 150), 0, GameConstants.ZoneWidth);
+        player.Y = Math.Clamp(dest.Y + _rng.Next(-150, 150), 0, GameConstants.ZoneHeight);
+        player.TargetX = null;
+        player.TargetY = null;
+        _world.Grid.UpdatePosition(player);
+
+        SendGold(player);
+        SendSystemToEntity(player,
+            $"Teleported to {dest.Name} for {fee:N0} {GameConstants.CurrencyName}.");
+    }
+
     private void HandleTalk(TalkCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
@@ -2474,9 +2518,21 @@ var effect = def.Effect;
             shop = new ShopInfo(shopDef.Title, items);
         }
 
+        // Gatekeeper destinations (every safe zone except this one).
+        TeleportInfo? teleport = null;
+        if (npc.NpcRole == NpcRole.Teleporter
+            && WorldMap.SafeZoneAt(npc.X, npc.Y) is SafeZone home)
+        {
+            var dests = WorldMap.SafeZones
+                .Where(z => z.Id != home.Id)
+                .Select(z => new TeleportDest(z.Id, z.Name, GameConstants.TeleportFee(home, z)))
+                .ToArray();
+            teleport = new TeleportInfo(dests);
+        }
+
         SendTo(player, "Dialog", new NpcDialog(
             npc.Name, npc.NpcRole.ToString(),
-            offered, turnable.ToArray(), inProgress.ToArray(), changes.ToArray(), shop));
+            offered, turnable.ToArray(), inProgress.ToArray(), changes.ToArray(), shop, teleport));
 
         // Talking can itself advance a TalkTo step.
         AdvanceTalkStep(player, npcId);

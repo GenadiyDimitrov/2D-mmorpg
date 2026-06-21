@@ -114,6 +114,9 @@ public class NetworkChannel : IAsyncDisposable
     public Task SellItemAsync(Guid npcEntityId, Guid instanceId, int quantity) =>
         _connection!.SendAsync("SellItem", npcEntityId, instanceId, quantity);
 
+    public Task TeleportAsync(Guid npcEntityId, string zoneId) =>
+        _connection!.SendAsync("Teleport", npcEntityId, zoneId);
+
     public Task SetMoveStateAsync(MoveState state) =>
         _connection!.SendAsync("SetMoveState", (int)state);
 

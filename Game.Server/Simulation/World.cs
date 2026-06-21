@@ -84,6 +84,9 @@ public record BuyItemCmd(string ConnectionId, Guid NpcEntityId, string ItemDefId
 /// <summary>Sell an inventory item to a vendor NPC.</summary>
 public record SellItemCmd(string ConnectionId, Guid NpcEntityId, Guid InstanceId, int Quantity) : IGameCommand;
 
+/// <summary>Pay a gatekeeper to warp to a safe zone.</summary>
+public record TeleportCmd(string ConnectionId, Guid NpcEntityId, string ZoneId) : IGameCommand;
+
 /// <summary>Change movement state (run / walk / sit).</summary>
 public record SetMoveStateCmd(string ConnectionId, MoveState State) : IGameCommand;
 

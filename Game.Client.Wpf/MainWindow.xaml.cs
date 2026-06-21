@@ -630,6 +630,15 @@ public partial class MainWindow : Window
                 WorldCanvas.Children.Add(visual.Root);
             }
 
+            // Snap (don't slide) on a large jump — teleport/respawn covers more
+            // ground than a normal tick of movement ever could.
+            double jumpDx = dto.X - visual.CurX, jumpDy = dto.Y - visual.CurY;
+            if (jumpDx * jumpDx + jumpDy * jumpDy > 600 * 600)
+            {
+                visual.CurX = dto.X;
+                visual.CurY = dto.Y;
+            }
+
             visual.TargetX = dto.X;
             visual.TargetY = dto.Y;
             visual.Latest = dto;

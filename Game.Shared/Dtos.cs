@@ -173,6 +173,12 @@ public record ShopItemDto(string DefId, string Name, int BuyPrice);
 /// <summary>A vendor's wares, attached to the dialog when talking to a vendor.</summary>
 public record ShopInfo(string Title, ShopItemDto[] Items);
 
+/// <summary>One teleport destination offered by a gatekeeper.</summary>
+public record TeleportDest(string ZoneId, string Name, int Fee);
+
+/// <summary>A gatekeeper's destinations, attached to the dialog.</summary>
+public record TeleportInfo(TeleportDest[] Destinations);
+
 /// <summary>Server -> client: the dialog when talking to an NPC.</summary>
 public record NpcDialog(
     string NpcName,
@@ -181,7 +187,8 @@ public record NpcDialog(
     QuestSummary[] Turnable,     // active quests ready to complete here
     QuestSummary[] InProgress,   // active quests not yet complete
     ClassChangeOption[] ClassChanges,
-    ShopInfo? Shop = null);      // vendor wares (null for non-vendors)
+    ShopInfo? Shop = null,       // vendor wares (null for non-vendors)
+    TeleportInfo? Teleport = null); // gatekeeper destinations (null for non-gatekeepers)
 
 /// <summary>Server -> client: the full quest log.</summary>
 public record QuestLog(QuestSummary[] Active, string[] Completed);

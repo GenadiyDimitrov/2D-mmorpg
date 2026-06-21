@@ -1579,6 +1579,7 @@ public partial class MainWindow
         {
             "ClassChange" => "Class Master",
             "Vendor" => "Merchant",
+            "Teleporter" => "Gatekeeper",
             _ => "Quest Giver"
         };
         DialogContent.Children.Clear();
@@ -1592,6 +1593,29 @@ public partial class MainWindow
                 HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 2, 0, 8) };
             browse.Click += (_, _) => OpenShop();
             DialogContent.Children.Add(browse);
+        }
+
+        // Gatekeeper: a button per destination ("Travel to X — N gold").
+        if (dialog.Teleport is TeleportInfo teleport)
+        {
+            AddDialogHeader("Travel");
+            foreach (var dest in teleport.Destinations)
+            {
+                var btn = new Button
+                {
+                    Content = $"Travel to {dest.Name}  —  {dest.Fee:N0} {GameConstants.CurrencyName}",
+                    Height = 28, HorizontalAlignment = HorizontalAlignment.Left,
+                    Margin = new Thickness(0, 2, 0, 4), Padding = new Thickness(8, 0, 8, 0),
+                    IsEnabled = _gold >= dest.Fee
+                };
+                string zoneId = dest.ZoneId;
+                btn.Click += async (_, _) =>
+                {
+                    await _net.TeleportAsync(_dialogNpcId, zoneId);
+                    DialogPanel.Visibility = Visibility.Collapsed;
+                };
+                DialogContent.Children.Add(btn);
+            }
         }
 
         // Offered quests.

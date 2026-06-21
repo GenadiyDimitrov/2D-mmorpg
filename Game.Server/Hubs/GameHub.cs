@@ -153,6 +153,12 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task Teleport(Guid npcEntityId, string zoneId)
+    {
+        _world.Commands.Enqueue(new TeleportCmd(Context.ConnectionId, npcEntityId, zoneId));
+        return Task.CompletedTask;
+    }
+
     public Task SetMoveState(int state)
     {
         _world.Commands.Enqueue(new SetMoveStateCmd(Context.ConnectionId, (MoveState)state));

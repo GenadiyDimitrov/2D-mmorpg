@@ -119,6 +119,10 @@ public static class WorldMap
         // Vendors (their wares are defined by ShopCatalog, keyed on these ids).
         new("merchant_potions", "Apothecary Miren", 7100, 6900, NpcRole.Vendor),
         new("merchant_gear",    "Armsmaster Dolan",  7900, 6900, NpcRole.Vendor),
+        // Gatekeepers — one per safe zone; each teleports to the OTHER zones for a fee.
+        new("gatekeeper_giran", "Gatekeeper Pell",   7500, 7800, NpcRole.Teleporter),
+        new("gatekeeper_dion",  "Gatekeeper Ryn",    3000, 3000, NpcRole.Teleporter),
+        new("gatekeeper_aden",  "Gatekeeper Vurst",  12000, 4000, NpcRole.Teleporter),
     };
 
     public static readonly RoadPath[] Roads =
@@ -235,7 +239,7 @@ public record RoadPath(float Width, MapPoint[] Points)
 
 }
 
-public enum NpcRole { QuestGiver = 0, ClassChange = 1, Vendor = 2 }
+public enum NpcRole { QuestGiver = 0, ClassChange = 1, Vendor = 2, Teleporter = 3 }
 
 /// <summary>A placed NPC. Id is referenced by quests + class-change requirements.</summary>
 public record NpcDef(string Id, string Name, float X, float Y, NpcRole Role);

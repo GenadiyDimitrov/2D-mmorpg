@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 21 (vendors: NPC shops)
+# L2-like MMORPG — Phase 22 (teleport-for-fee)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,17 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 22 (this build)
+
+### Teleport-for-fee (gatekeepers)
+- A **Gatekeeper** NPC stands in each safe zone (Giran / Dion / Aden). Talk to one to
+  **pay gold and warp** to any other safe zone.
+- The **fee is distance-based** (`GameConstants.TeleportFee` = distance × per-unit rate,
+  with a floor), shown on each travel button; you can't afford → button disabled.
+- The server validates range, gold, and that the destination isn't your current zone,
+  then repositions you (like respawn: set position, clear path, update the grid). The
+  client **snaps** the camera/sprite on a large jump instead of sliding across the map.
 
 ## New in Phase 21 (this build)
 
