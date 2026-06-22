@@ -36,7 +36,14 @@ public readonly record struct MasteryResult(MasteryEffect Effect, string Label);
 /// </summary>
 public static class ArmorMastery
 {
-    private static readonly MasteryEffect Neutral = new();
+    // NOTE: `new()` on a record STRUCT runs the implicit parameterless ctor and
+    // ZEROES every field — it does NOT apply the `= 1f` primary-ctor defaults. A
+    // zeroed effect multiplies MaxHp/MoveSpeed/regen to 0 and divides cast speed by
+    // 0, which is exactly the "0 HP/MP, 0 move, 150% slower cast" bug for an
+    // unarmored character. Construct the 1.0 factors explicitly.
+    private static readonly MasteryEffect Neutral = new(
+        AtkSpeed: 1f, CastSpeed: 1f, MoveSpeed: 1f,
+        HpRegen: 1f, MpRegen: 1f, MaxHp: 1f, MaxMp: 1f);
 
     /// <summary>Resolve the mastery effect + a UI label for a player of
     /// (cls, arch) wearing BODY armor of <paramref name="worn"/> weight.</summary>
@@ -66,15 +73,26 @@ public static class ArmorMastery
                 _ => new MasteryResult(Neutral, "Robe (no penalty)")
             };
 
+        // ----- Healer: trained in BOTH light and robe (no penalty in heavy either).
+        //  Robe = the pure-caster lean (cast speed, MP, regen); Light = the solo-farm
+        //  lean (attack speed, accuracy, a little survivability) so a healer can melee
+        //  trash with a weapon. The player picks their playstyle via armor weight. -----
+        if (arch == Archetype.Healer)
+            return worn switch
+            {
+                ArmorWeight.Robe => new MasteryResult(new MasteryEffect(CastSpeed: 1.3f,
+                    MpRegen: 1.3f, MaxMp: 1.15f, Defence: defL / 2), "Robe Mastery (caster)"),
+                ArmorWeight.Light => new MasteryResult(new MasteryEffect(AtkSpeed: 1.3f,
+                    MoveSpeed: 1.05f, HpRegen: 1.1f, Evasion: 4, Accuracy: 4, Defence: defL), "Light Mastery (melee)"),
+                _ => new MasteryResult(Neutral, "Heavy (no penalty)")
+            };
+
         // ----- Determine trained weight + matched bonus for the rest. -----
         ArmorWeight trained;
         MasteryEffect matched;
         if (cls == BaseClass.Mage)
         {
-            if (arch == Archetype.Healer)
-            { trained = ArmorWeight.Light; matched = new MasteryEffect(AtkSpeed: 1.3f, CastSpeed: 1.3f,
-                MpRegen: 1.2f, MaxMp: 1.1f, Evasion: 3, Accuracy: 3, Defence: defL / 2); }
-            else if (arch == Archetype.Nuker)
+            if (arch == Archetype.Nuker)
             { trained = ArmorWeight.Robe; matched = new MasteryEffect(CastSpeed: 1.4f, MpRegen: 1.3f,
                 MaxMp: 1.15f, InterruptResist: level, MagicDefence: 10 + level / 2, Defence: defL / 2); }
             else

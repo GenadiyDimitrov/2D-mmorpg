@@ -132,6 +132,7 @@ public static class ItemCatalog
     // Dark Dominion armor set: two BODY weight variants (heavy/robe) sharing the
     // same three accessories. Wearing a body + all 3 accessories grants the set bonus.
     public const string DarkDominionHeavyBody = "set_dark_dominion_body_heavy";
+    public const string DarkDominionLightBody = "set_dark_dominion_body_light";
     public const string DarkDominionRobeBody = "set_dark_dominion_body_robe";
     public const string DarkDominionHead = "set_dark_dominion_head";
     public const string DarkDominionGloves = "set_dark_dominion_gloves";
@@ -298,6 +299,9 @@ public static class ItemCatalog
         list.Add(new ItemDef(DarkDominionHeavyBody, "Dark Dominion Plate", EquipSlot.Armor,
             ItemGrade.E, ItemRarity.Rare, Weight: ArmorWeight.Heavy, ArmorSlot: ArmorSlot.Body,
             DefBonus: 28, HpBonus: 130, SetId: ArmorSetCatalog.DarkDominion));
+        list.Add(new ItemDef(DarkDominionLightBody, "Dark Dominion Leathers", EquipSlot.Armor,
+            ItemGrade.E, ItemRarity.Rare, Weight: ArmorWeight.Light, ArmorSlot: ArmorSlot.Body,
+            DefBonus: 18, HpBonus: 70, EvaBonus: 6, SetId: ArmorSetCatalog.DarkDominion));
         list.Add(new ItemDef(DarkDominionRobeBody, "Dark Dominion Robe", EquipSlot.Armor,
             ItemGrade.E, ItemRarity.Rare, Weight: ArmorWeight.Robe, ArmorSlot: ArmorSlot.Body,
             DefBonus: 10, HpBonus: 20, MpBonus: 130, SetId: ArmorSetCatalog.DarkDominion));
@@ -311,36 +315,39 @@ public static class ItemCatalog
         // ===================================================================
         //  POTIONS
         // ===================================================================
+        // Healing potions: priced so heals are a real gold sink (~500 for the staple).
         list.Add(new ItemDef(MinorPotion, "Minor Healing Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Common,
-            HealPercentPerSecond: 0.01f, PotionDurationTicks: 150, PotionCooldownTicks: 300));
+            HealPercentPerSecond: 0.01f, PotionDurationTicks: 150, PotionCooldownTicks: 300, Value: 200));
         list.Add(new ItemDef(HealingPotion, "Healing Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Uncommon,
-            HealPercentPerSecond: 0.02f, PotionDurationTicks: 150, PotionCooldownTicks: 300));
+            HealPercentPerSecond: 0.02f, PotionDurationTicks: 150, PotionCooldownTicks: 300, Value: 500));
         list.Add(new ItemDef(GreaterPotion, "Greater Healing Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare,
-            InstantHealPercent: 0.50f, PotionCooldownTicks: 300));
+            InstantHealPercent: 0.50f, PotionCooldownTicks: 300, Value: 1500));
 
         // ----- Buff potions: consume to gain a timed (weaker-than-class) buff. Rarity
         //       is the tier; same line supersedes by rank. No heal cooldown. -----
+        // Common (Lesser) buff potions are vendor-sold staples: ~1.5k each. The
+        // Uncommon/Greater tiers are drop-only; priced higher for sell value.
         list.Add(new ItemDef(SpeedPotionC, "Swiftness Potion (Lesser)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Common, BuffSkillId: SkillCatalog.PBuffSpeedC));
+            ItemGrade.F, ItemRarity.Common, BuffSkillId: SkillCatalog.PBuffSpeedC, Value: 1500));
         list.Add(new ItemDef(SpeedPotionU, "Swiftness Potion", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, BuffSkillId: SkillCatalog.PBuffSpeedU));
+            ItemGrade.F, ItemRarity.Uncommon, BuffSkillId: SkillCatalog.PBuffSpeedU, Value: 5000));
         list.Add(new ItemDef(SpeedPotionR, "Swiftness Potion (Greater)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Rare, BuffSkillId: SkillCatalog.PBuffSpeedR));
+            ItemGrade.F, ItemRarity.Rare, BuffSkillId: SkillCatalog.PBuffSpeedR, Value: 12000));
         list.Add(new ItemDef(CastPotionC, "Focus Potion (Lesser)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Common, BuffSkillId: SkillCatalog.PBuffCastC));
+            ItemGrade.F, ItemRarity.Common, BuffSkillId: SkillCatalog.PBuffCastC, Value: 1500));
         list.Add(new ItemDef(CastPotionU, "Focus Potion", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, BuffSkillId: SkillCatalog.PBuffCastU));
+            ItemGrade.F, ItemRarity.Uncommon, BuffSkillId: SkillCatalog.PBuffCastU, Value: 5000));
         list.Add(new ItemDef(CastPotionR, "Focus Potion (Greater)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Rare, BuffSkillId: SkillCatalog.PBuffCastR));
+            ItemGrade.F, ItemRarity.Rare, BuffSkillId: SkillCatalog.PBuffCastR, Value: 12000));
         list.Add(new ItemDef(AtkPotionC, "Haste Potion (Lesser)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Common, BuffSkillId: SkillCatalog.PBuffAtkC));
+            ItemGrade.F, ItemRarity.Common, BuffSkillId: SkillCatalog.PBuffAtkC, Value: 1500));
         list.Add(new ItemDef(AtkPotionU, "Haste Potion", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, BuffSkillId: SkillCatalog.PBuffAtkU));
+            ItemGrade.F, ItemRarity.Uncommon, BuffSkillId: SkillCatalog.PBuffAtkU, Value: 5000));
         list.Add(new ItemDef(AtkPotionR, "Haste Potion (Greater)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Rare, BuffSkillId: SkillCatalog.PBuffAtkR));
+            ItemGrade.F, ItemRarity.Rare, BuffSkillId: SkillCatalog.PBuffAtkR, Value: 12000));
 
         // ===================================================================
         //  SHIELDS — equippable by any class (with a one-hand weapon), but only

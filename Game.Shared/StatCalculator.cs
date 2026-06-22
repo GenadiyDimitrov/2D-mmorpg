@@ -57,11 +57,14 @@ public static class StatCalculator
 
     public static int Defence(int con, int level) => con / 3 + level / 2;
 
-    /// <summary>Base MAGIC defence. Same shape as physical Defence but WITHOUT the
-    /// CON term — magic defence does NOT scale with any base stat. Everyone gets a
-    /// small level-based floor; JEWELS (and the Tank "Anti Magic" passive) add on
-    /// top. Used as the divisor in MagicDamage.</summary>
-    public static int MagicDefence(int level) => level / 2;
+    /// <summary>Base MAGIC defence. Magic defence does NOT scale with any base stat
+    /// (no CON term); everyone gets a level-based floor, then JEWELS (and the Tank
+    /// "Anti Magic" passive) add on top. Used as the divisor in MagicDamage. The
+    /// flat <c>18 +</c> term matters most at low level: without it a lvl-1 character
+    /// has ~0 mDef and takes ~800 from a single mage bolt; with it that drops to the
+    /// intended ~30-50. (Mobs override this with <see cref="MobMagicDefence"/> so
+    /// mages can still farm.)</summary>
+    public static int MagicDefence(int level) => 18 + level;
 
     /// <summary>Crit chance from DEX. Race/class/equipment modifiers come
     /// later. 25 DEX = 10%; capped at 50%.</summary>
@@ -248,6 +251,13 @@ public static class StatCalculator
     /// out-stat lower-level characters.</summary>
     public static BaseStats MobStats(int level) =>
         new(Con: 15 + level * 2, Atk: 8 + level * 3, Wit: 5, Dex: 10 + level);
+
+    /// <summary>Mob MAGIC defence by level. The universal <see cref="MagicDefence"/>
+    /// base (level/2) leaves low-level mobs at ~0 mDef, so spells divide by ~1 and
+    /// one-shot them. Mobs get a dedicated mDef on roughly the same curve as their
+    /// physical defence, so magic and physical land in a comparable range. (Players
+    /// keep the level base + jewels; this is mob-only.)</summary>
+    public static int MobMagicDefence(int level) => Math.Max(5, (int)(level * 1.2f));
 
     /// <summary>Per-archetype basic-attack damage multiplier — the core of
     /// class identity. Mages barely autoattack (rely on skills/MP); fighters &

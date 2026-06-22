@@ -121,6 +121,9 @@ public record DebugGiveCmd(string ConnectionId, string DefId) : IGameCommand;
 /// <summary>DEBUG-only: grant one level.</summary>
 public record DebugLevelCmd(string ConnectionId) : IGameCommand;
 
+/// <summary>DEBUG-only: grant gold.</summary>
+public record DebugGoldCmd(string ConnectionId, long Amount) : IGameCommand;
+
 /// <summary>Admin command (kick/ban/jail/unjail/god). Validated in the hub.</summary>
 public record AdminCmd(string ConnectionId, string Command, string Argument) : IGameCommand;
 

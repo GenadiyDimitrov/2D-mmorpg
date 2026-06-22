@@ -281,6 +281,14 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task DebugGold(long amount)
+    {
+#if DEBUG
+        _world.Commands.Enqueue(new DebugGoldCmd(Context.ConnectionId, amount));
+#endif
+        return Task.CompletedTask;
+    }
+
     public override Task OnDisconnectedAsync(Exception? exception)
     {
         Sessions.TryRemove(Context.ConnectionId, out _);

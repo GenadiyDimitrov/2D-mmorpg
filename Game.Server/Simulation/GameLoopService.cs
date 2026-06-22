@@ -89,6 +89,7 @@ public class GameLoopService : BackgroundService
                 case RemoveItemCmd c: HandleRemoveItem(c); break;
                 case DebugGiveCmd c: HandleDebugGive(c); break;
                 case DebugLevelCmd c: HandleDebugLevel(c); break;
+                case DebugGoldCmd c: HandleDebugGold(c); break;
                 case TradeRequestCmd c: HandleTradeRequest(c); break;
                 case TradeRespondCmd c: HandleTradeRespond(c); break;
                 case TradeOfferCmd c: HandleTradeOffer(c); break;
@@ -251,6 +252,24 @@ public class GameLoopService : BackgroundService
         {
             SendSystemToEntity(player, $"{def.Name} is already learned.");
             return;
+        }
+
+        // Ranked lines (same BuffKey): learning a higher rank REMOVES the lower
+        // ranks from the learned set (so the skill bar stays clean). Without this
+        // guard those removed lower ranks become re-learnable, letting the player
+        // loop SP between ranks. Block learning any rank you've already surpassed.
+        if (!string.IsNullOrEmpty(def.BuffKey))
+        {
+            foreach (var learnedId in player.LearnedSkills)
+            {
+                var known = SkillCatalog.Get(learnedId);
+                if (known is not null && known.BuffKey == def.BuffKey && known.Rank >= def.Rank)
+                {
+                    SendSystemToEntity(player,
+                        $"You already know {def.Name} at an equal or higher rank.");
+                    return;
+                }
+            }
         }
 
         // Must be on this class's list and the level gate met.
@@ -653,6 +672,15 @@ public class GameLoopService : BackgroundService
             return;
         AwardExp(player, (int)StatCalculator.ExpToNext(player.Level));
         SendSystemToEntity(player, $"[DEBUG] Level up -> {player.Level}.");
+    }
+
+    private void HandleDebugGold(DebugGoldCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+        player.Gold += Math.Max(0, cmd.Amount);
+        SendGold(player);
+        SendSystemToEntity(player, $"[DEBUG] +{cmd.Amount:N0} {GameConstants.CurrencyName} (now {player.Gold:N0}).");
     }
 #pragma warning restore CS1998
 
@@ -2874,6 +2902,9 @@ var effect = def.Effect;
         // RecomputeDerived leaves mob RunSpeed/WalkSpeed as set above (player-only
         // override), so Speed stays the catalog run speed.
         mob.MaxHp = (int)(mob.MaxHp * hpMul);
+        // Dedicated mob magic defence (the level base alone leaves low-level mobs at
+        // ~0 mDef, which lets spells one-shot them). Keeps magic ~on par with physical.
+        mob.MagicDefence = StatCalculator.MobMagicDefence(level);
         mob.Hp = mob.MaxHp;
         mob.Mp = mob.MaxMp;
         mob.HomeX = mob.X;

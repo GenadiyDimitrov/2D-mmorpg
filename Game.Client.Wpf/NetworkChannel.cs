@@ -150,6 +150,9 @@ public class NetworkChannel : IAsyncDisposable
     public Task DebugLevelAsync() =>
         _connection!.SendAsync("DebugLevel");
 
+    public Task DebugGoldAsync(long amount) =>
+        _connection!.SendAsync("DebugGold", amount);
+
     public Task TradeRequestAsync(Guid targetId) =>
         _connection!.SendAsync("TradeRequest", targetId);
 

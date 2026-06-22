@@ -32,9 +32,7 @@ public static class ShopCatalog
                 ItemCatalog.SpeedPotionC,
                 ItemCatalog.CastPotionC,
                 ItemCatalog.AtkPotionC,
-                // Basic scrolls.
-                ItemCatalog.ScrollCommon,
-                ItemCatalog.AttrScrollCommon,
+                // NOTE: enchant + attribute scrolls are intentionally DROP-ONLY (not sold).
             }),
             new ShopDef(GearMerchant, "Armsmaster", new[]
             {

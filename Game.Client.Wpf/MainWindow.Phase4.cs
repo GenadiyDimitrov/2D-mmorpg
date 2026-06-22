@@ -1514,6 +1514,13 @@ public partial class MainWindow
             await _net.DebugGiveAsync(ItemCatalog.DarkDominionGloves);
             await _net.DebugGiveAsync(ItemCatalog.DarkDominionBoots);
         }));
+        DebugList.Children.Add(DebugAction("Dark Dominion (light body)", async () =>
+        {
+            await _net.DebugGiveAsync(ItemCatalog.DarkDominionLightBody);
+            await _net.DebugGiveAsync(ItemCatalog.DarkDominionHead);
+            await _net.DebugGiveAsync(ItemCatalog.DarkDominionGloves);
+            await _net.DebugGiveAsync(ItemCatalog.DarkDominionBoots);
+        }));
         DebugList.Children.Add(DebugAction("Dark Dominion (robe body)", async () =>
         {
             await _net.DebugGiveAsync(ItemCatalog.DarkDominionRobeBody);
@@ -1552,6 +1559,7 @@ public partial class MainWindow
     {
         AddDebugHeader("Character");
         DebugList.Children.Add(DebugAction("Level +1", async () => await _net.DebugLevelAsync()));
+        DebugList.Children.Add(DebugAction("+100,000 Gold", async () => await _net.DebugGoldAsync(100_000)));
         DebugList.Children.Add(DebugAction("Class Change (test)", () =>
         {
             OpenClassChangePanel();
