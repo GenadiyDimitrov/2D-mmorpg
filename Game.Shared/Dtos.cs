@@ -33,6 +33,7 @@ public record EntityDto(
     int Mp,
     int MaxMp,
     int SecondClass,
+    int ThirdClass,
     bool Dead);
 
 /// <summary>Client -> Server: "move me toward this point" (click-to-move).

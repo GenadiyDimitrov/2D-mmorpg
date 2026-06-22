@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 23 (class-change quest chains)
+# L2-like MMORPG — Phase 24.0 (3rd-class framework)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,32 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 24.0 (this build)
+
+### 3rd-class framework (disciplines)
+
+The plumbing for the whole 3rd tier — content (real per-discipline skills) lands in
+later slices; this build proves the pipeline end-to-end with placeholder skills.
+
+- **Each 2nd class splits into two disciplines at level 40.** A *discipline* is the
+  shared identity; *discipline + race* is how it's expressed. 12 disciplines, 36 third
+  classes (× 3 races): Tank→**Bulwark/Vanguard**, Warrior→**Ravager/Warlord**,
+  Rogue→**Phantom/Venomweaver**, Archer→**Sharpshooter/Trapper**,
+  Healer→**Lightbringer/Warchanter**, Nuker→**Magus/Tempest**.
+- **Earned by a longer, harder quest chain** than the 2nd class: at level 40,
+  **Grandmaster Thorne** sets the *Ordeal* then the *Ascension* — multi-target hunts
+  through the high-level zones, capped by **Young Drake** kills (a stepping stone to
+  real bosses later). Only offered for the 2nd class you hold, and only one discipline
+  per character.
+- Each discipline carries a **flat stat lean** (e.g. Bulwark = big +HP/+Def; Magus =
+  +MP/+Atk) so the paths already feel different before their skills exist.
+- Plumbed through the engine: `Entity.ThirdClass`, a `Discipline` dimension on the skill
+  registry, the tiered class-change handler/dialog (gated to the right parent class), a
+  level-40 reminder, and a new `ThirdClass` save column.
+
+> **Schema change:** delete `Game.Server/bin/Debug/net8.0/game.db` (+ `-shm`/`-wal`) so
+> the new `ThirdClass` column is created. The 4th tier (gold-gated + boss kills) comes later.
 
 ## New in Phase 23 (this build)
 

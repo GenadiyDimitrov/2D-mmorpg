@@ -230,7 +230,7 @@ public class GameLoopService : BackgroundService
     /// extras (HP Boost, Wind Walk) must be learned with SP from the window.</summary>
     private void AutoLearnCoreSkills(Entity player)
     {
-        foreach (var cs in ClassSkills.LearnableAt(player.Race, player.BaseClass, player.Archetype, player.Level))
+        foreach (var cs in ClassSkills.LearnableAt(player.Race, player.BaseClass, player.Archetype, player.Level, player.Discipline))
         {
             var def = SkillCatalog.Get(cs.SkillId);
             if (def is not null && def.SpCost <= 1)
@@ -254,7 +254,7 @@ public class GameLoopService : BackgroundService
         }
 
         // Must be on this class's list and the level gate met.
-        int learnLevel = ClassSkills.LearnLevelOf(def.Id, player.Race, player.BaseClass, player.Archetype);
+        int learnLevel = ClassSkills.LearnLevelOf(def.Id, player.Race, player.BaseClass, player.Archetype, player.Discipline);
         if (learnLevel == 0)
         {
             SendSystemToEntity(player, $"Your class cannot learn {def.Name}.");
@@ -1516,7 +1516,7 @@ var effect = def.Effect;
             // The display name is the CASTER's class label for this skill, so a
             // cleric's Wind Walk shows as "Holy Speed" wherever it lands.
             string buffName = ClassSkills.DisplayName(
-                def.Id, caster.Race, caster.BaseClass, caster.Archetype);
+                def.Id, caster.Race, caster.BaseClass, caster.Archetype, caster.Discipline);
 
             if (def.TargetMode == TargetMode.AlliesInRadius)
             {
@@ -2470,7 +2470,7 @@ var effect = def.Effect;
         bool Active(string qid) => player.ActiveQuests.ContainsKey(qid);
 
         var offered = QuestCatalog
-            .OfferedBy(npcId, player.Level, player.Race, player.BaseClass, player.SecondClass, Completed, Active)
+            .OfferedBy(npcId, player.Level, player.Race, player.BaseClass, player.SecondClass, player.ThirdClass, Completed, Active)
             .Select(q => Summarize(player, q, null)).ToArray();
 
         // Active quests whose CURRENT step is "talk to THIS npc" and it's the
@@ -2494,13 +2494,11 @@ var effect = def.Effect;
         // Class-change options (only for class-change NPCs, and only the classes
         // THIS character could become — their race + base class, before changing).
         var changes = new List<ClassChangeOption>();
-        if (npc.NpcRole == NpcRole.ClassChange && player.SecondClass == 0)
+        if (npc.NpcRole == NpcRole.ClassChange)
         {
             foreach (var req in ClassChangeRequirements.AtNpc(npcId))
             {
-                if (ClassCatalog.Get(req.SecondClassId) is not SecondClassDef scd
-                    || scd.Base != player.BaseClass || scd.Race != player.Race)
-                    continue;
+                if (!ClassChangeAvailable(player, req)) continue;
 
                 var names = req.RequiredItemIds
                     .Select(id => ItemCatalog.Get(id)?.Name ?? id).ToArray();
@@ -2641,22 +2639,40 @@ var effect = def.Effect;
         SaveEntity(player);
     }
 
-    private void DoQuestClassChange(Entity player, string secondClassIdStr, Guid npcEntityId)
+    /// <summary>Is this class change offered to this player right now? Encodes the
+    /// tier gating: Tier 2 needs no second class yet + matching race/base; Tier 3
+    /// needs the right parent 2nd class + no third class yet.</summary>
+    private static bool ClassChangeAvailable(Entity player, ClassChangeRequirements.Requirement req)
     {
-        if (!int.TryParse(secondClassIdStr, out int classId)) return;
+        if (req.Tier == 2)
+        {
+            if (player.SecondClass != 0) return false;
+            return ClassCatalog.Get(req.SecondClassId) is SecondClassDef scd
+                && scd.Base == player.BaseClass && scd.Race == player.Race;
+        }
+        if (req.Tier == 3)
+        {
+            if (player.SecondClass == 0 || player.ThirdClass != 0) return false;
+            if (req.RequiredCurrentClass != player.SecondClass) return false;
+            return ThirdClassCatalog.Get(req.SecondClassId) is ThirdClassDef tcd
+                && tcd.Race == player.Race;
+        }
+        return false;
+    }
+
+    private void DoQuestClassChange(Entity player, string targetClassIdStr, Guid npcEntityId)
+    {
+        if (!int.TryParse(targetClassIdStr, out int classId)) return;
         var req = ClassChangeRequirements.ForClass(classId);
         if (req is null) return;
         if (!_world.Entities.TryGetValue(npcEntityId, out var npc) || npc.NpcId != req.NpcId) return;
 
-        if (player.SecondClass != 0) { SendSystemToEntity(player, "You already have a second class."); return; }
-        if (player.Level < req.MinLevel) { SendSystemToEntity(player, $"Requires level {req.MinLevel}."); return; }
-
-        if (ClassCatalog.Get(classId) is not SecondClassDef scd ||
-            scd.Base != player.BaseClass || scd.Race != player.Race)
+        if (!ClassChangeAvailable(player, req))
         {
             SendSystemToEntity(player, "That class isn't available to you.");
             return;
         }
+        if (player.Level < req.MinLevel) { SendSystemToEntity(player, $"Requires level {req.MinLevel}."); return; }
 
         // Must hold all required quest items.
         foreach (var itemId in req.RequiredItemIds)
@@ -2673,7 +2689,9 @@ var effect = def.Effect;
             if (item is not null) player.Inventory.Remove(item);
         }
 
-        player.SecondClass = classId;
+        if (req.Tier == 3) player.ThirdClass = classId;
+        else player.SecondClass = classId;
+
         AutoLearnCoreSkills(player);
         player.RecomputeDerived();
         player.Hp = player.MaxHp;

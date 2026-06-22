@@ -35,6 +35,7 @@ public partial class MainWindow : Window
     private Race _myRace;
     private BaseClass _myBaseClass;
     private int _mySecondClass;
+    private int _myThirdClass;
     private bool _isAdmin;
     private DateTime _serverEpoch = DateTime.UtcNow;
     private EntityDto? _myDto;
@@ -44,6 +45,7 @@ public partial class MainWindow : Window
     private double _lastFrameTime;
     private bool _inGame;
     private bool _classQuestNoticeShown;
+    private bool _thirdClassNoticeShown;
 
     private int _level = 1;
     private long _exp;
@@ -336,8 +338,10 @@ public partial class MainWindow : Window
         _myDto = null;
         _targetId = null;
         _mySecondClass = 0;
+        _myThirdClass = 0;
         _level = 1;
         _classQuestNoticeShown = false;
+        _thirdClassNoticeShown = false;
 
         // Hide every in-game button / panel / overlay.
         ChatPanel.Visibility = Visibility.Collapsed;
@@ -443,7 +447,8 @@ public partial class MainWindow : Window
     private string SkillDisplayName(string skillId, string fallback)
     {
         Archetype? arch = _mySecondClass > 0 ? ClassCatalog.Get(_mySecondClass)?.Archetype : null;
-        return ClassSkills.DisplayName(skillId, _myRace, _myBaseClass, arch);
+        Discipline? disc = _myThirdClass > 0 ? ThirdClassCatalog.Get(_myThirdClass)?.Discipline : null;
+        return ClassSkills.DisplayName(skillId, _myRace, _myBaseClass, arch, disc);
     }
 
     private void RenderSkillBar()
@@ -647,12 +652,14 @@ public partial class MainWindow : Window
             if (dto.Id == _myId)
             {
                 _myDto = dto;
-                if (dto.SecondClass != _mySecondClass)
+                if (dto.SecondClass != _mySecondClass || dto.ThirdClass != _myThirdClass)
                 {
                     _mySecondClass = dto.SecondClass;
+                    _myThirdClass = dto.ThirdClass;
                     EnsureSkillBarSlots();
                 }
                 MaybeShowClassChangeNotice(dto.Level, dto.SecondClass);
+                MaybeShowThirdClassNotice(dto.Level, dto.SecondClass, dto.ThirdClass);
                 DeathOverlay.Visibility = dto.Dead ? Visibility.Visible : Visibility.Collapsed;
             }
         }
@@ -884,7 +891,8 @@ public partial class MainWindow : Window
             _camX = me.CurX;
             _camY = me.CurY;
 
-            var cls = _mySecondClass > 0 ? $" {ClassCatalog.Get(_mySecondClass)?.Name}" : "";
+            var cls = _myThirdClass > 0 ? $" {ThirdClassCatalog.Get(_myThirdClass)?.Name}"
+                    : _mySecondClass > 0 ? $" {ClassCatalog.Get(_mySecondClass)?.Name}" : "";
             var zone = _myDto is not null && GameConstants.InSafeZone(_myDto.X, _myDto.Y) ? "  [SAFE]" : "";
             StatusText.Text = $"{_myName}{cls}  Lv{_level}  •  {_gold:N0} {GameConstants.CurrencyName}{zone}";
             UpdateVitalBars();

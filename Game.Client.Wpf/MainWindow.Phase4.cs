@@ -275,6 +275,20 @@ public partial class MainWindow
             "Class Change");
     }
 
+    // One-time reminder, on reaching the 3rd-class level, pointing a 2nd-class
+    // character at Grandmaster Thorne's discipline chain.
+    private void MaybeShowThirdClassNotice(int level, int secondClass, int thirdClass)
+    {
+        if (_thirdClassNoticeShown || secondClass == 0 || thirdClass > 0
+            || level < ThirdClassCatalog.ChangeLevel)
+            return;
+        _thirdClassNoticeShown = true;
+        MessageBox.Show(
+            $"You have reached level {level}. Your discipline awaits! Seek Grandmaster Thorne " +
+            "to undertake the ordeal and choose your 3rd class.",
+            "Discipline");
+    }
+
     // =======================================================================
     // Settings menu
     // =======================================================================
@@ -477,9 +491,11 @@ public partial class MainWindow
             return;
         }
 
-        string cls = st.SecondClass > 0
-            ? ClassCatalog.Get(st.SecondClass)?.Name ?? "-"
-            : $"{_myBaseClass} (base)";
+        string cls = _myThirdClass > 0
+            ? ThirdClassCatalog.Get(_myThirdClass)?.Name ?? "-"
+            : st.SecondClass > 0
+                ? ClassCatalog.Get(st.SecondClass)?.Name ?? "-"
+                : $"{_myBaseClass} (base)";
 
         StatsList.Items.Add(MakeStatRow("Class", cls));
         StatsList.Items.Add(MakeStatRow("CON / ATK / WIT / DEX",
@@ -932,6 +948,9 @@ public partial class MainWindow
     private Archetype? CurrentArchetype =>
         _mySecondClass > 0 ? ClassCatalog.Get(_mySecondClass)?.Archetype : null;
 
+    private Discipline? CurrentDiscipline =>
+        _myThirdClass > 0 ? ThirdClassCatalog.Get(_myThirdClass)?.Discipline : null;
+
     private void RefreshSkillsWindow()
     {
         SkillsList.Items.Clear();
@@ -1001,7 +1020,7 @@ public partial class MainWindow
     /// buttons enabled when level + SP (+ previous rank) allow.</summary>
     private void BuildLearnTab()
     {
-        var all = ClassSkills.ForClass(_myRace, _myBaseClass, CurrentArchetype);
+        var all = ClassSkills.LearnableAt(_myRace, _myBaseClass, CurrentArchetype, int.MaxValue, CurrentDiscipline);
 
         // Unlearned only, grouped by learn level.
         var groups = all

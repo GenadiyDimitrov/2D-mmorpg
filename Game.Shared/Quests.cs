@@ -38,7 +38,10 @@ public record QuestDef(
     // (when PreClassChange) only while the character has no second class yet.
     Race? ForRace = null,
     BaseClass? ForBaseClass = null,
-    bool PreClassChange = false);
+    bool PreClassChange = false,
+    // 3rd-class gating: only offer to a character holding this 2nd class, and only
+    // before they take a 3rd class (these chains stop the moment a discipline is chosen).
+    int? ForSecondClass = null);
 
 /// <summary>Per-character progress on a quest (persisted). StepIndex = current
 /// step; Counter = kills/collected for that step; Completed when fully done.</summary>
@@ -84,7 +87,7 @@ public static partial class QuestCatalog
     /// base class, not yet taken/completed, prerequisite already completed, and
     /// (for pre-class-change quests) no second class yet.</summary>
     public static IEnumerable<QuestDef> OfferedBy(string npcId, int level,
-        Race race, BaseClass baseClass, int secondClass,
+        Race race, BaseClass baseClass, int secondClass, int thirdClass,
         Func<string, bool> isCompleted, Func<string, bool> isActive)
     {
         foreach (var q in AllQuests)
@@ -94,6 +97,9 @@ public static partial class QuestCatalog
             if (q.ForRace is Race r && r != race) continue;
             if (q.ForBaseClass is BaseClass b && b != baseClass) continue;
             if (q.PreClassChange && secondClass != 0) continue;
+            // 3rd-class chains: only for the matching 2nd class, and never once a
+            // 3rd class is taken (so the other discipline's chain stops being offered).
+            if (q.ForSecondClass is int sc && (sc != secondClass || thirdClass != 0)) continue;
             if (isCompleted(q.Id) || isActive(q.Id)) continue;
             if (q.RequiresQuestId is not null && !isCompleted(q.RequiresQuestId)) continue;
             yield return q;
@@ -109,8 +115,12 @@ public static partial class QuestCatalog
 /// </summary>
 public static partial class ClassChangeRequirements
 {
+    // TargetClassId is the class you BECOME (a 2nd-class id for Tier 2, a 3rd-class
+    // id for Tier 3). RequiredCurrentClass gates Tier 3: you must already hold that
+    // 2nd class. (Field kept named SecondClassId for back-compat with the DTO.)
     public record Requirement(int SecondClassId, string ClassName, int MinLevel,
-        string[] RequiredItemIds, string NpcId);
+        string[] RequiredItemIds, string NpcId,
+        int Tier = 2, int RequiredCurrentClass = 0);
 
     private static readonly List<Requirement> All = new();
 

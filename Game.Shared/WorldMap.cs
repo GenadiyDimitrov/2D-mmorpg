@@ -166,6 +166,9 @@ public static class WorldMap
         new("priest_oren",   "High Priest Oren",   11700, 11800, NpcRole.QuestGiver),
         new("elder_marius",  "Elder Marius",       12300, 11800, NpcRole.QuestGiver),
         new("master_class",  "Class Master Vael",  12000, 11400, NpcRole.ClassChange),
+        // 3rd-class master: gives the harder lvl-40 discipline chains AND performs
+        // the change (an NpcRole.ClassChange NPC can also be a quest giver).
+        new("master_class3", "Grandmaster Thorne", 12000, 11000, NpcRole.ClassChange),
         // Vendors (their wares are defined by ShopCatalog, keyed on these ids).
         new("merchant_potions", "Apothecary Miren", 11600, 11400, NpcRole.Vendor),
         new("merchant_gear",    "Armsmaster Dolan",  12400, 11400, NpcRole.Vendor),

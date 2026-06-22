@@ -106,8 +106,16 @@ public class Entity
     /// <summary>0 = none; otherwise a ClassCatalog id.</summary>
     public int SecondClass { get; set; }
 
+    /// <summary>0 = none; otherwise a ThirdClassCatalog id (101-136).</summary>
+    public int ThirdClass { get; set; }
+
     public Archetype? Archetype =>
         SecondClass > 0 ? ClassCatalog.Get(SecondClass)?.Archetype : null;
+
+    /// <summary>The 3rd-class discipline once chosen (null before lvl-40 change).
+    /// Discipline + Race selects the skill list; the parent archetype is unchanged.</summary>
+    public Discipline? Discipline =>
+        ThirdClass > 0 ? ThirdClassCatalog.Get(ThirdClass)?.Discipline : null;
 
     public float X { get; set; }
     public float Y { get; set; }
@@ -497,6 +505,18 @@ public class Entity
             // but are exposed for future systems; applied as flat secondary above.
         }
 
+        // 3rd-class discipline lean (stacks on top of the 2nd-class bonus).
+        if (Kind == EntityKind.Player && ThirdClass > 0
+            && ThirdClassCatalog.Get(ThirdClass)?.Bonus is ClassFlatBonus tb)
+        {
+            MaxHp += tb.MaxHp;
+            MaxMp += tb.MaxMp;
+            Defence += tb.Defence;
+            AttackPower += tb.Attack;
+            Evasion += tb.Evasion;
+            Accuracy += tb.Accuracy;
+        }
+
         // ----- Armor set bonus: all 4 armor slots (Head/Body/Gloves/Boots) of one
         // set equipped grants its flat bonus (on top of each piece + attributes). -----
         ActiveArmorSet = "";
@@ -614,5 +634,5 @@ public class Entity
 
     public EntityDto ToDto() =>
         new(Id, Name, Kind, Race, BaseClass, X, Y, Speed, Level,
-            Hp, MaxHp, Mp, MaxMp, SecondClass, Dead);
+            Hp, MaxHp, Mp, MaxMp, SecondClass, ThirdClass, Dead);
 }

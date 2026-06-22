@@ -9,12 +9,14 @@ public static partial class QuestCatalog
 {
     static partial void RegisterAll()
     {
-        RegisterClassChangeChains();
+        RegisterClassChangeChains();      // 2nd class (lvl 18/20)
+        RegisterThirdClassChains();       // 3rd class (lvl 40, longer + harder)
         // Add more (non-class-change) chains here.
     }
 
     // Implemented in Quests.ClassChangeChains.cs.
     static partial void RegisterClassChangeChains();
+    static partial void RegisterThirdClassChains();
 }
 
 public static partial class ClassChangeRequirements
@@ -22,7 +24,9 @@ public static partial class ClassChangeRequirements
     static partial void RegisterAll()
     {
         RegisterClassChangeRequirements();
+        RegisterThirdClassRequirements();
     }
 
     static partial void RegisterClassChangeRequirements();
+    static partial void RegisterThirdClassRequirements();
 }

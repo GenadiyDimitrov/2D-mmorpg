@@ -448,6 +448,14 @@ public static class ItemCatalog
             list.Add(new ItemDef(ClassProofId(cls.Id), $"{cls.Name}'s Proof",
                 EquipSlot.QuestItem, ItemGrade.F, ItemRarity.Epic));
         }
+        // 3rd-class (discipline) proofs — same helpers, 3rd-class ids (101-136).
+        foreach (var cls in ThirdClassCatalog.Playable)
+        {
+            list.Add(new ItemDef(ClassTokenId(cls.Id), $"{cls.Name} Ordeal Mark",
+                EquipSlot.QuestItem, ItemGrade.F, ItemRarity.Epic));
+            list.Add(new ItemDef(ClassProofId(cls.Id), $"Seal of the {cls.Name}",
+                EquipSlot.QuestItem, ItemGrade.F, ItemRarity.Legendary));
+        }
 
         // ----- Duplicate-key guard + value fill: any item left at Value 0 gets the
         //       formula price (quest items / god one-offs stay 0 = not for trade). -----

@@ -34,6 +34,7 @@ public class CharacterRecord
     public Race Race { get; set; }
     public BaseClass BaseClass { get; set; }
     public int SecondClass { get; set; }
+    public int ThirdClass { get; set; }
 
     public int Level { get; set; } = 1;
     public long Exp { get; set; }

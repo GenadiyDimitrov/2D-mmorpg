@@ -42,8 +42,12 @@ public static partial class ClassSkillTables
 
         // Second-class kits live in the per-line partial files (RegisterXxx()).
         RegisterSecondClasses();
+        // 3rd-class (discipline) kits — placeholder lists in 24.0; fleshed out per
+        // archetype in the content slices.
+        RegisterThirdClasses();
     }
 
     // Implemented across the partial files; each appends its lines.
     static partial void RegisterSecondClasses();
+    static partial void RegisterThirdClasses();
 }

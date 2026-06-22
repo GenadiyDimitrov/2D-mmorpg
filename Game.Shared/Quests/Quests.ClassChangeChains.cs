@@ -85,6 +85,79 @@ public static partial class QuestCatalog
                     ItemIds: new[] { ItemCatalog.ClassProofId(cls.Id) })));
         }
     }
+
+    private const string GrandGiver = "master_class3";
+
+    // Three higher-tier targets per archetype (level band 40-80). The final target
+    // is the Young Drake — a stepping stone to real boss kills once bosses exist.
+    private static (string A, string B, string C) HuntTargets3(Archetype a) => a switch
+    {
+        Archetype.Tank    => ("stone_golem", "orc_raider", "young_drake"),
+        Archetype.Warrior => ("orc_raider", "stone_golem", "young_drake"),
+        Archetype.Rogue   => ("wraith", "orc_raider", "young_drake"),
+        Archetype.Archer  => ("orc_raider", "wraith", "young_drake"),
+        Archetype.Healer  => ("wraith", "stone_golem", "young_drake"),
+        Archetype.Nuker   => ("wraith", "orc_raider", "young_drake"),
+        _ => ("orc_raider", "wraith", "young_drake"),
+    };
+
+    static partial void RegisterThirdClassChains()
+    {
+        const int lvl = ThirdClassCatalog.ChangeLevel;   // 40
+        foreach (var tc in ThirdClassCatalog.Playable)
+        {
+            var parent = Disciplines.Parent(tc.Discipline);
+            var (mobA, mobB, mobC) = HuntTargets3(parent);
+            string aName = MobCatalog.Get(mobA).Name;
+            string bName = MobCatalog.Get(mobB).Name;
+            string cName = MobCatalog.Get(mobC).Name;
+            string q1 = $"tc_{tc.Id}_1";
+            string q2 = $"tc_{tc.Id}_2";
+
+            // Q1 — the Ordeal: two stiff hunts, longer than the 2nd-class trial.
+            Register(new QuestDef(
+                Id: q1,
+                Name: $"Ordeal of the {tc.Name}",
+                Description: $"Grandmaster Thorne sets the ordeal that opens the {tc.Name} " +
+                             $"discipline. Only the proven may walk it.",
+                OfferNpcId: GrandGiver,
+                MinLevel: lvl,
+                ForSecondClass: tc.ParentSecondClassId,
+                Steps: new[]
+                {
+                    new QuestStep(TalkTo, "Speak with Grandmaster Thorne", TargetId: GrandGiver),
+                    new QuestStep(KillMobs, $"Slay 12 {aName}", TargetId: mobA,
+                        Count: 12, MinLevel: lvl, MaxLevel: 80),
+                    new QuestStep(KillMobs, $"Slay 10 {bName}", TargetId: mobB,
+                        Count: 10, MinLevel: lvl, MaxLevel: 80),
+                    new QuestStep(TalkTo, "Return to Grandmaster Thorne", TargetId: GrandGiver),
+                },
+                Reward: new QuestReward(Exp: 6000, SkillPoints: 3,
+                    ItemIds: new[] { ItemCatalog.ClassTokenId(tc.Id) })));
+
+            // Q2 — the Ascension: a harder hunt capped by a Young Drake kill.
+            Register(new QuestDef(
+                Id: q2,
+                Name: $"Ascension of the {tc.Name}",
+                Description: $"Bearing the {tc.Name} Ordeal Mark, complete the ascension — " +
+                             $"the final trial of the {tc.Name} discipline.",
+                OfferNpcId: GrandGiver,
+                MinLevel: lvl,
+                RequiresQuestId: q1,
+                ForSecondClass: tc.ParentSecondClassId,
+                Steps: new[]
+                {
+                    new QuestStep(TalkTo, "Speak with Grandmaster Thorne", TargetId: GrandGiver),
+                    new QuestStep(KillMobs, $"Slay 15 {bName}", TargetId: mobB,
+                        Count: 15, MinLevel: lvl, MaxLevel: 80),
+                    new QuestStep(KillMobs, $"Slay 3 {cName}", TargetId: mobC,
+                        Count: 3, MinLevel: lvl, MaxLevel: 80),
+                    new QuestStep(TalkTo, "Return to Grandmaster Thorne", TargetId: GrandGiver),
+                },
+                Reward: new QuestReward(Exp: 12000, SkillPoints: 4,
+                    ItemIds: new[] { ItemCatalog.ClassProofId(tc.Id) })));
+        }
+    }
 }
 
 public static partial class ClassChangeRequirements
@@ -103,6 +176,25 @@ public static partial class ClassChangeRequirements
                     ItemCatalog.ClassProofId(cls.Id),
                 },
                 NpcId: "master_class"));
+        }
+    }
+
+    static partial void RegisterThirdClassRequirements()
+    {
+        foreach (var tc in ThirdClassCatalog.Playable)
+        {
+            Register(new Requirement(
+                SecondClassId: tc.Id,                 // target = the 3rd class id (101-136)
+                ClassName: tc.Name,
+                MinLevel: ThirdClassCatalog.ChangeLevel,
+                RequiredItemIds: new[]
+                {
+                    ItemCatalog.ClassTokenId(tc.Id),
+                    ItemCatalog.ClassProofId(tc.Id),
+                },
+                NpcId: "master_class3",
+                Tier: 3,
+                RequiredCurrentClass: tc.ParentSecondClassId));
         }
     }
 }

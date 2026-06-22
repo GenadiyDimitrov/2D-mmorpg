@@ -177,6 +177,7 @@ public class PersistenceService
             Exp = rec.Exp,
             Gold = rec.Gold,
             SecondClass = rec.SecondClass,
+            ThirdClass = rec.ThirdClass,
             PersistentId = rec.Id,
             SkillPoints = rec.SkillPoints
         };
@@ -239,6 +240,7 @@ public class PersistenceService
         rec.Exp = entity.Exp;
         rec.Gold = entity.Gold;
         rec.SecondClass = entity.SecondClass;
+        rec.ThirdClass = entity.ThirdClass;
         rec.SkillPoints = entity.SkillPoints;
         rec.LearnedSkillsCsv = string.Join(',', entity.LearnedSkills);
         rec.CompletedQuestsCsv = string.Join(',', entity.CompletedQuests);

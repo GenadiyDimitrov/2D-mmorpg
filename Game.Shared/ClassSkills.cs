@@ -22,20 +22,36 @@ public readonly record struct ClassSkill(
 /// </summary>
 public static class ClassSkills
 {
-    public readonly record struct ClassKey(Race Race, BaseClass Base, Archetype? Archetype);
+    /// <summary>Discipline = null identifies the base class (archetype null) or the
+    /// 2nd class (archetype set). A non-null Discipline identifies a 3rd class — its
+    /// Archetype is the parent archetype, so the key stays unambiguous.</summary>
+    public readonly record struct ClassKey(Race Race, BaseClass Base, Archetype? Archetype, Discipline? Discipline);
 
     private static readonly Dictionary<ClassKey, List<ClassSkill>> Map = new();
 
-    /// <summary>Called by per-class files to register a class's skill list.
-    /// Safe to call multiple times for the same key (appends).</summary>
+    /// <summary>Called by per-class files to register a 2nd-class (or base-class)
+    /// skill list. Safe to call multiple times for the same key (appends).</summary>
     public static void Register(Race race, BaseClass baseClass, Archetype? archetype,
-        params ClassSkill[] skills)
+        params ClassSkill[] skills) =>
+        RegisterKey(new ClassKey(race, baseClass, archetype, null), skills);
+
+    /// <summary>Register a 3rd-class (discipline) skill list. Base + parent archetype
+    /// are derived from the discipline, so callers only name (race, discipline).</summary>
+    public static void RegisterThird(Race race, Discipline discipline, params ClassSkill[] skills)
     {
-        var key = new ClassKey(race, baseClass, archetype);
+        var archetype = Disciplines.Parent(discipline);
+        RegisterKey(new ClassKey(race, BaseOf(archetype), archetype, discipline), skills);
+    }
+
+    private static void RegisterKey(ClassKey key, ClassSkill[] skills)
+    {
         if (!Map.TryGetValue(key, out var list))
             Map[key] = list = new List<ClassSkill>();
         list.AddRange(skills);
     }
+
+    private static BaseClass BaseOf(Archetype a) =>
+        a is Archetype.Healer or Archetype.Nuker ? BaseClass.Mage : BaseClass.Fighter;
 
     /// <summary>Ensure every per-class file's static constructor has run. The
     /// partial files live in a separate type (ClassSkillTables) whose static
@@ -48,38 +64,55 @@ public static class ClassSkills
         ClassSkillTables.Touch();
     }
 
-    /// <summary>All skills a class can EVER learn (any level), with learn-levels.</summary>
-    public static IReadOnlyList<ClassSkill> ForClass(Race race, BaseClass baseClass, Archetype? archetype)
+    /// <summary>The skills registered for exactly one tier of a class (the 2nd-class
+    /// list when discipline is null, the 3rd-class list when it is set).</summary>
+    public static IReadOnlyList<ClassSkill> ForClass(Race race, BaseClass baseClass,
+        Archetype? archetype, Discipline? discipline = null)
     {
         EnsureInit();
-        var key = new ClassKey(race, baseClass, archetype);
+        var key = new ClassKey(race, baseClass, archetype, discipline);
         return Map.TryGetValue(key, out var list) ? list : Array.Empty<ClassSkill>();
+    }
+
+    /// <summary>Every skill a character can learn at its current tier: the 2nd-class
+    /// list always, PLUS the 3rd-class discipline list once a discipline is chosen.
+    /// This is what all the learn/display helpers below search.</summary>
+    public static IEnumerable<ClassSkill> Cumulative(Race race, BaseClass baseClass,
+        Archetype? archetype, Discipline? discipline)
+    {
+        foreach (var cs in ForClass(race, baseClass, archetype, null))
+            yield return cs;
+        if (discipline is Discipline d)
+            foreach (var cs in ForClass(race, baseClass, archetype, d))
+                yield return cs;
     }
 
     /// <summary>Skills whose LearnLevel &lt;= the character's level — i.e. the
     /// ones currently offered in the "Skills to Learn" tab (before SP/learned
-    /// filtering).</summary>
+    /// filtering). Includes 3rd-class skills once a discipline is set.</summary>
     public static IEnumerable<ClassSkill> LearnableAt(Race race, BaseClass baseClass,
-        Archetype? archetype, int level)
+        Archetype? archetype, int level, Discipline? discipline = null)
     {
-        foreach (var cs in ForClass(race, baseClass, archetype))
+        foreach (var cs in Cumulative(race, baseClass, archetype, discipline))
             if (level >= cs.LearnLevel)
                 yield return cs;
     }
 
     /// <summary>The learn-level for a specific skill on a class (0 if not in list).</summary>
-    public static int LearnLevelOf(string skillId, Race race, BaseClass baseClass, Archetype? archetype)
+    public static int LearnLevelOf(string skillId, Race race, BaseClass baseClass,
+        Archetype? archetype, Discipline? discipline = null)
     {
-        foreach (var cs in ForClass(race, baseClass, archetype))
+        foreach (var cs in Cumulative(race, baseClass, archetype, discipline))
             if (cs.SkillId == skillId)
                 return cs.LearnLevel;
         return 0;
     }
 
     /// <summary>Can this class ever learn this skill at all?</summary>
-    public static bool CanClassLearn(string skillId, Race race, BaseClass baseClass, Archetype? archetype)
+    public static bool CanClassLearn(string skillId, Race race, BaseClass baseClass,
+        Archetype? archetype, Discipline? discipline = null)
     {
-        foreach (var cs in ForClass(race, baseClass, archetype))
+        foreach (var cs in Cumulative(race, baseClass, archetype, discipline))
             if (cs.SkillId == skillId)
                 return true;
         return false;
@@ -87,18 +120,20 @@ public static class ClassSkills
 
     /// <summary>The class-specific display name for a skill (falls back to the
     /// SkillDef's canonical name). Same shared id, different label per class.</summary>
-    public static string DisplayName(string skillId, Race race, BaseClass baseClass, Archetype? archetype)
+    public static string DisplayName(string skillId, Race race, BaseClass baseClass,
+        Archetype? archetype, Discipline? discipline = null)
     {
-        foreach (var cs in ForClass(race, baseClass, archetype))
+        foreach (var cs in Cumulative(race, baseClass, archetype, discipline))
             if (cs.SkillId == skillId && !string.IsNullOrEmpty(cs.DisplayName))
                 return cs.DisplayName!;
         return SkillCatalog.Get(skillId)?.Name ?? skillId;
     }
 
     /// <summary>The class-specific icon key for a skill (null if none set).</summary>
-    public static string? Icon(string skillId, Race race, BaseClass baseClass, Archetype? archetype)
+    public static string? Icon(string skillId, Race race, BaseClass baseClass,
+        Archetype? archetype, Discipline? discipline = null)
     {
-        foreach (var cs in ForClass(race, baseClass, archetype))
+        foreach (var cs in Cumulative(race, baseClass, archetype, discipline))
             if (cs.SkillId == skillId && !string.IsNullOrEmpty(cs.Icon))
                 return cs.Icon;
         return null;
