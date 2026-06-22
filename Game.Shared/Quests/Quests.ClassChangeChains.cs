@@ -21,16 +21,19 @@ public static partial class QuestCatalog
     private const string TrialGiver = "elder_marius";
     private const string PathGiver = "priest_oren";
 
-    // (firstMob, secondMob) the two quests send you to hunt, by archetype.
+    // (firstMob, secondMob) the two quests send you to hunt, by archetype. Both must
+    // be mobs that actually spawn at the quest's level band (16-21) — only dire_boar
+    // and road_bandit do (the Stonewatch grounds), so the variety is which you hunt
+    // first. (The old flavour mobs cap at lvl 7-15 and made an 18-20 quest trivial.)
     private static (string A, string B) HuntTargets(Archetype a) => a switch
     {
         Archetype.Tank => ("dire_boar", "road_bandit"),
         Archetype.Warrior => ("road_bandit", "dire_boar"),
-        Archetype.Rogue => ("cave_spider", "grey_wolf"),
-        Archetype.Archer => ("grey_wolf", "brown_boar"),
-        Archetype.Healer => ("green_slime", "cave_spider"),
-        Archetype.Nuker => ("cave_spider", "green_slime"),
-        _ => ("grey_wolf", "brown_boar"),
+        Archetype.Rogue => ("road_bandit", "dire_boar"),
+        Archetype.Archer => ("road_bandit", "dire_boar"),
+        Archetype.Healer => ("dire_boar", "road_bandit"),
+        Archetype.Nuker => ("dire_boar", "road_bandit"),
+        _ => ("dire_boar", "road_bandit"),
     };
 
     static partial void RegisterClassChangeChains()
@@ -58,8 +61,8 @@ public static partial class QuestCatalog
                 Steps: new[]
                 {
                     new QuestStep(TalkTo, "Speak with Elder Marius", TargetId: TrialGiver),
-                    new QuestStep(KillMobs, $"Slay 5 {mobAName}", TargetId: mobA,
-                        Count: 5, MinLevel: 1, MaxLevel: 40),
+                    new QuestStep(KillMobs, $"Slay 5 {mobAName} (Lv 16-20)", TargetId: mobA,
+                        Count: 5, MinLevel: 16, MaxLevel: 20),
                     new QuestStep(TalkTo, "Return to Elder Marius", TargetId: TrialGiver),
                 },
                 Reward: new QuestReward(Exp: 400, SkillPoints: 1,
@@ -71,7 +74,7 @@ public static partial class QuestCatalog
                 Description: $"Bearing the {cls.Name} Trial Token, seek High Priest Oren " +
                              $"and complete the trial that opens the path of the {cls.Name}.",
                 OfferNpcId: PathGiver,
-                MinLevel: 20,
+                MinLevel: 19,
                 RequiresQuestId: q1,
                 ForRace: cls.Race,
                 ForBaseClass: cls.Base,
@@ -79,8 +82,8 @@ public static partial class QuestCatalog
                 Steps: new[]
                 {
                     new QuestStep(TalkTo, "Speak with High Priest Oren", TargetId: PathGiver),
-                    new QuestStep(KillMobs, $"Slay 8 {mobBName}", TargetId: mobB,
-                        Count: 8, MinLevel: 1, MaxLevel: 40),
+                    new QuestStep(KillMobs, $"Slay 8 {mobBName} (Lv 17-21)", TargetId: mobB,
+                        Count: 8, MinLevel: 17, MaxLevel: 21),
                     new QuestStep(TalkTo, "Return to High Priest Oren", TargetId: PathGiver),
                 },
                 Reward: new QuestReward(Exp: 800, SkillPoints: 2,
@@ -90,33 +93,27 @@ public static partial class QuestCatalog
 
     private const string GrandGiver = "master_class3";
 
-    // Three higher-tier targets per archetype (level band 40-80). The final target
-    // is the Young Drake — a stepping stone to real boss kills once bosses exist.
-    private static (string A, string B, string C) HuntTargets3(Archetype a) => a switch
-    {
-        Archetype.Tank    => ("stone_golem", "orc_raider", "young_drake"),
-        Archetype.Warrior => ("orc_raider", "stone_golem", "young_drake"),
-        Archetype.Rogue   => ("wraith", "orc_raider", "young_drake"),
-        Archetype.Archer  => ("orc_raider", "wraith", "young_drake"),
-        Archetype.Healer  => ("wraith", "stone_golem", "young_drake"),
-        Archetype.Nuker   => ("wraith", "orc_raider", "young_drake"),
-        _ => ("orc_raider", "wraith", "young_drake"),
-    };
+    // The 3rd-class chain hunts mobs in the 30-45 band (around the 35/37/39 quest
+    // levels): orc_raider spawns 28-40, stone_golem 34-46 — both reachable. (wraith
+    // starts at 40 and young_drake at 52, so they'd force you above your level; they
+    // move to later boss/high-level content instead.)
+    private const string Mob3A = "orc_raider";    // Ordeal I — band 30-40
+    private const string Mob3B = "stone_golem";   // Ordeal II — band 32-42
+    private const string Mob3C = "stone_golem";   // Ascension — band 35-45
 
     static partial void RegisterThirdClassChains()
     {
-        const int lvl = ThirdClassCatalog.ChangeLevel;   // 40
         foreach (var tc in ThirdClassCatalog.Playable)
         {
             var parent = Disciplines.Parent(tc.Discipline);
-            var (mobA, mobB, mobC) = HuntTargets3(parent);
-            string aName = MobCatalog.Get(mobA).Name;
-            string bName = MobCatalog.Get(mobB).Name;
-            string cName = MobCatalog.Get(mobC).Name;
+            string aName = MobCatalog.Get(Mob3A).Name;
+            string bName = MobCatalog.Get(Mob3B).Name;
+            string cName = MobCatalog.Get(Mob3C).Name;
             string q1 = $"tc_{tc.Id}_1";
             string q2 = $"tc_{tc.Id}_2";
+            string q3 = $"tc_{tc.Id}_3";
 
-            // Q1 — the Ordeal: two stiff hunts, longer than the 2nd-class trial.
+            // Q1 (lvl 35) — Ordeal I: orc_raider, level band 30-40.
             Register(new QuestDef(
                 Id: q1,
                 Name: $"Ordeal of the {tc.Name}",
@@ -125,37 +122,54 @@ public static partial class QuestCatalog
                              ClassCatalog.ArchetypeBlurb(parent) +
                              "\n(Choosing a discipline is final — the other path will close.)",
                 OfferNpcId: GrandGiver,
-                MinLevel: lvl,
+                MinLevel: 35,
                 ForSecondClass: tc.ParentSecondClassId,
                 Steps: new[]
                 {
                     new QuestStep(TalkTo, "Speak with Grandmaster Thorne", TargetId: GrandGiver),
-                    new QuestStep(KillMobs, $"Slay 12 {aName}", TargetId: mobA,
-                        Count: 12, MinLevel: lvl, MaxLevel: 80),
-                    new QuestStep(KillMobs, $"Slay 10 {bName}", TargetId: mobB,
-                        Count: 10, MinLevel: lvl, MaxLevel: 80),
+                    new QuestStep(KillMobs, $"Slay 12 {aName} (Lv 30-40)", TargetId: Mob3A,
+                        Count: 12, MinLevel: 30, MaxLevel: 40),
                     new QuestStep(TalkTo, "Return to Grandmaster Thorne", TargetId: GrandGiver),
                 },
-                Reward: new QuestReward(Exp: 6000, SkillPoints: 3,
+                Reward: new QuestReward(Exp: 6000, SkillPoints: 2,
                     ItemIds: new[] { ItemCatalog.ClassTokenId(tc.Id) })));
 
-            // Q2 — the Ascension: a harder hunt capped by a Young Drake kill.
+            // Q2 (lvl 37) — Ordeal II: stone_golem, level band 32-42. Gate only (no
+            // item); the chain order forces it before the Ascension.
             Register(new QuestDef(
                 Id: q2,
-                Name: $"Ascension of the {tc.Name}",
-                Description: $"Bearing the {tc.Name} Ordeal Mark, complete the ascension — " +
-                             $"the final trial of the {tc.Name} discipline.",
+                Name: $"Trial of the {tc.Name}",
+                Description: $"The {tc.Name} ordeal continues — harder quarry, deeper into " +
+                             $"the highlands.",
                 OfferNpcId: GrandGiver,
-                MinLevel: lvl,
+                MinLevel: 37,
                 RequiresQuestId: q1,
                 ForSecondClass: tc.ParentSecondClassId,
                 Steps: new[]
                 {
                     new QuestStep(TalkTo, "Speak with Grandmaster Thorne", TargetId: GrandGiver),
-                    new QuestStep(KillMobs, $"Slay 15 {bName}", TargetId: mobB,
-                        Count: 15, MinLevel: lvl, MaxLevel: 80),
-                    new QuestStep(KillMobs, $"Slay 3 {cName}", TargetId: mobC,
-                        Count: 3, MinLevel: lvl, MaxLevel: 80),
+                    new QuestStep(KillMobs, $"Slay 12 {bName} (Lv 32-42)", TargetId: Mob3B,
+                        Count: 12, MinLevel: 32, MaxLevel: 42),
+                    new QuestStep(TalkTo, "Return to Grandmaster Thorne", TargetId: GrandGiver),
+                },
+                Reward: new QuestReward(Exp: 9000, SkillPoints: 3)));
+
+            // Q3 (lvl 39) — Ascension: stone_golem, level band 35-45. Awards the proof
+            // that (with the token from Q1) lets Grandmaster Thorne perform the change.
+            Register(new QuestDef(
+                Id: q3,
+                Name: $"Ascension of the {tc.Name}",
+                Description: $"Bearing the {tc.Name} marks, complete the ascension — the " +
+                             $"final trial of the {tc.Name} discipline.",
+                OfferNpcId: GrandGiver,
+                MinLevel: 39,
+                RequiresQuestId: q2,
+                ForSecondClass: tc.ParentSecondClassId,
+                Steps: new[]
+                {
+                    new QuestStep(TalkTo, "Speak with Grandmaster Thorne", TargetId: GrandGiver),
+                    new QuestStep(KillMobs, $"Slay 15 {cName} (Lv 35-45)", TargetId: Mob3C,
+                        Count: 15, MinLevel: 35, MaxLevel: 45),
                     new QuestStep(TalkTo, "Return to Grandmaster Thorne", TargetId: GrandGiver),
                 },
                 Reward: new QuestReward(Exp: 12000, SkillPoints: 4,
