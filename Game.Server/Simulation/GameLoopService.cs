@@ -329,7 +329,7 @@ public class GameLoopService : BackgroundService
         }
 
         bool offensive = (def.Effect & (SkillEffect.PhysicalDamage
-            | SkillEffect.MagicDamage | SkillEffect.DebuffDef)) != 0;
+            | SkillEffect.MagicDamage | SkillEffect.AnyDebuff)) != 0;
 
         Guid targetId;
         if (offensive)
@@ -345,12 +345,12 @@ public class GameLoopService : BackgroundService
             }
             targetId = tid;
         }
-        else if (def.Effect.HasFlag(SkillEffect.Heal) && def.Range > 0 &&
+        else if ((def.Effect & (SkillEffect.Heal | SkillEffect.Cleanse)) != 0 && def.Range > 0 &&
                  cmd.TargetId is Guid allyId &&
                  _world.Entities.TryGetValue(allyId, out var ally) &&
                  ally.Kind == EntityKind.Player && !ally.Dead)
         {
-            targetId = allyId; // ranged heal on a targeted player
+            targetId = allyId; // ranged heal/cleanse on a targeted player
         }
         else
         {
@@ -1210,6 +1210,8 @@ public class GameLoopService : BackgroundService
 
     private void MobAi(Entity mob)
     {
+        if (mob.DetauntTicks > 0) mob.DetauntTicks--;
+
         if (mob.Engaged)
         {
             float dx = mob.X - mob.HomeX;
@@ -1230,6 +1232,10 @@ public class GameLoopService : BackgroundService
             {
                 if (candidate.Kind != EntityKind.Player || candidate.Dead ||
                     GameConstants.InSafeZone(candidate.X, candidate.Y))
+                    continue;
+
+                // De-taunt: ignore the entity that just shed us, briefly.
+                if (mob.DetauntTicks > 0 && mob.DetauntFromId == candidate.Id)
                     continue;
 
                 if (DistanceSq(mob, candidate) <=
@@ -1485,16 +1491,29 @@ var effect = def.Effect;
             }
         }
 
-        // ---- Heal ----
+        // ---- Heal (single ally/self, or AoE to allies in radius) ----
         if (effect.HasFlag(SkillEffect.Heal))
         {
             int amount = SkillMath.HealAmount(def.Power, caster.Wit);
-            target.Hp = Math.Min(target.MaxHp, target.Hp + amount);
-            BroadcastCombat(caster, target, amount, CombatOutcome.Heal, def.Name);
+            if (def.TargetMode == TargetMode.AlliesInRadius)
+                foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
+                    HealOne(caster, ally, amount, def.Name);
+            else
+                HealOne(caster, target, amount, def.Name);
         }
 
-        // ---- Debuff (defence) — can miss like a spell ----
-        if (effect.HasFlag(SkillEffect.DebuffDef))
+        // ---- Cleanse — remove harmful effects from an ally (or allies in radius) ----
+        if (effect.HasFlag(SkillEffect.Cleanse))
+        {
+            if (def.TargetMode == TargetMode.AlliesInRadius)
+                foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
+                    CleanseDebuffs(caster, ally, def.Name);
+            else
+                CleanseDebuffs(caster, target, def.Name);
+        }
+
+        // ---- Debuffs (defence curse / anti-heal / root) — can miss like a spell ----
+        if ((effect & SkillEffect.AnyDebuff) != 0)
         {
             offensive = true;
             float fail = SkillMath.SpellFailChance(caster.Level, target.Level);
@@ -1509,6 +1528,10 @@ var effect = def.Effect;
                 if (target.Kind == EntityKind.Player) PushBuffs(target);
             }
         }
+
+        // ---- De-taunt — shed the caster's aggro from nearby foes (stub) ----
+        if (effect.HasFlag(SkillEffect.Detaunt))
+            Detaunt(caster);
 
         // ---- Beneficial buffs (any of the buff flags) ----
         if ((effect & SkillEffect.AnyBuff) != 0)
@@ -1582,6 +1605,49 @@ var effect = def.Effect;
         // Max HP/MP buffs change derived stats — recompute so they take effect.
         if (def.Effect.HasFlag(SkillEffect.BuffHp) || def.Effect.HasFlag(SkillEffect.BuffMp))
             target.RecomputeDerived();
+    }
+
+    /// <summary>Heal one target, scaled by its anti-heal multiplier, and broadcast.</summary>
+    private void HealOne(Entity caster, Entity target, int baseAmount, string skillName)
+    {
+        if (target.Dead) return;
+        int amount = (int)Math.Round(baseAmount * target.HealReceivedMultiplier);
+        if (amount > 0)
+            target.Hp = Math.Min(target.MaxHp, target.Hp + amount);
+        BroadcastCombat(caster, target, amount, CombatOutcome.Heal, skillName);
+    }
+
+    /// <summary>Strip all harmful effects (curses, anti-heal, roots) from an ally.</summary>
+    private void CleanseDebuffs(Entity caster, Entity target, string skillName)
+    {
+        if (target.Dead) return;
+        int removed = target.Buffs.RemoveAll(b => (b.Effect & SkillEffect.AnyDebuff) != 0);
+        if (removed > 0)
+        {
+            target.RecomputeDerived();   // DebuffDef etc. affected derived stats
+            if (target.Kind == EntityKind.Player) PushBuffs(target);
+        }
+        BroadcastCombat(caster, target, 0, CombatOutcome.Buff, skillName);
+    }
+
+    /// <summary>De-taunt stub: nearby mobs targeting the caster drop it and won't
+    /// re-aggro the caster for a short window (no real threat system yet).</summary>
+    private void Detaunt(Entity caster)
+    {
+        const int window = 50;   // 5s at 10 ticks/s
+        float rangeSq = GameConstants.MobAggroRange * GameConstants.MobAggroRange * 4f;
+        foreach (var e in _world.Entities.Values)
+        {
+            if (e.Kind != EntityKind.Mob || e.Dead) continue;
+            if (e.CombatTargetId != caster.Id) continue;
+            if (DistanceSq(caster, e) > rangeSq) continue;
+            e.Engaged = false;
+            e.CombatTargetId = null;
+            e.DetauntTicks = window;
+            e.DetauntFromId = caster.Id;
+            e.TargetX = e.HomeX;
+            e.TargetY = e.HomeY;
+        }
     }
 
     private void AfterOffensiveSkill(Entity caster, Entity target)

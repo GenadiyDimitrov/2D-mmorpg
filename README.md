@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 24.0 (3rd-class framework)
+# L2-like MMORPG — Phase 24.1 (Lightbringer discipline)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,38 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 24.1 (this build)
+
+### Lightbringer — the first fully-authored 3rd-class discipline
+
+The pure-heal Healer discipline, built across all three races. One shared idea (keep
+the party alive), three race expressions — proving the *discipline + race* model from
+24.0 with real, distinct skills:
+
+- **Human Lightbringer** — single-target powerhouse: **Mending Light** (strong, fast
+  heal) + **Purify** (cleanse harmful effects from an ally).
+- **Elf Lightbringer** — area coverage + control: **Dawn Bloom** (heals *and* cleanses
+  all nearby allies) + **Warding Step** (roots an enemy for 8s and sheds the caster's
+  aggro from nearby foes).
+- **Ork Lightbringer** — area + suppression: **Spirit Font** (AoE heal — a stand-in
+  until placed totems arrive) + **Soul Sap** (anti-heal: the target recovers only half
+  the HP from any healing for 15s).
+
+### New combat mechanics (engine)
+
+Added cleanly to the `[Flags]` effect system, reusable by future disciplines:
+
+- **AoE heal** — heals scale to all allies in radius (the healer included).
+- **Cleanse** — strips curses, anti-heal and roots off an ally.
+- **Anti-heal** — a debuff that reduces healing received (`HealReceivedMultiplier`).
+- **Root** — holds a target in place (movement → 0) for the duration.
+- **De-taunt (stub)** — nearby mobs drop the caster and won't re-aggro it for ~5s.
+  A real threat system replaces this later.
+
+> The Ork's **placed healing totem** (and pets/summons generally) is deferred to a
+> dedicated subsystem; it ships here as a normal AoE heal. **Warchanter** (the buffer/HoT
+> Healer discipline) is the next slice. No DB reset needed for this build.
 
 ## New in Phase 24.0 (this build)
 

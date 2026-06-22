@@ -20,7 +20,7 @@ public class BuffInstance
 
     public bool Has(SkillEffect flag) => (Effect & flag) != 0;
 
-    public bool IsDebuff => Has(SkillEffect.DebuffDef);
+    public bool IsDebuff => (Effect & SkillEffect.AnyDebuff) != 0;
 
     /// <summary>Sum of this buff's flat entries for an effect.</summary>
     public float Flat(SkillEffect flag)
@@ -204,6 +204,33 @@ public class Entity
 
     public List<BuffInstance> Buffs { get; } = new();
 
+    /// <summary>Held in place by a Root effect — cannot move until it expires.</summary>
+    public bool IsRooted
+    {
+        get
+        {
+            foreach (var b in Buffs) if (b.Has(SkillEffect.Root)) return true;
+            return false;
+        }
+    }
+
+    /// <summary>Multiplier on healing RECEIVED (anti-heal debuffs lower it). 1 = normal.</summary>
+    public float HealReceivedMultiplier
+    {
+        get
+        {
+            float reduce = 0f;
+            foreach (var b in Buffs) if (b.Has(SkillEffect.DebuffHealRecv))
+                reduce += b.Percent(SkillEffect.DebuffHealRecv);
+            return Math.Clamp(1f - reduce, 0f, 1f);
+        }
+    }
+
+    /// <summary>De-taunt stub (no threat system yet): on a mob, while &gt;0 it will
+    /// not re-aggro <see cref="DetauntFromId"/> (the entity that shed it).</summary>
+    public int DetauntTicks { get; set; }
+    public Guid? DetauntFromId { get; set; }
+
     /// <summary>Apply all buffs for one effect to a base value using the
     /// standard formula: (base + sum flats) * (1 + sum percents). Optionally a
     /// second (debuff) flag subtracts its percents/flats (used for defence).</summary>
@@ -241,6 +268,8 @@ public class Entity
     {
         get
         {
+            if (IsRooted) return 0f;   // held in place by a Root effect
+
             if (Kind == EntityKind.Mob)
             {
                 // Mobs walk while wandering, run while aggroed/engaged.

@@ -102,6 +102,13 @@ public static class SkillCatalog
     public const string HpBoost3 = "hp_boost_3";
     public const string WindWalk = "wind_walk";
     public const string MassWindWalk = "mass_wind_walk";
+    // ---- Lightbringer (3rd-class Healer discipline), Phase 24.1 ----
+    public const string LbHumanMend = "lb_human_mend";     // strong fast single heal
+    public const string LbHumanPurify = "lb_human_purify"; // cleanse an ally
+    public const string LbElfDawn = "lb_elf_dawn";         // AoE heal + cleanse
+    public const string LbElfWarden = "lb_elf_warden";     // root enemy + self de-taunt
+    public const string LbOrkFont = "lb_ork_font";         // AoE heal (totem stand-in)
+    public const string LbOrkSap = "lb_ork_sap";           // anti-heal debuff
 
     private static readonly Dictionary<string, SkillDef> All = BuildCatalog();
 
@@ -320,6 +327,51 @@ public static class SkillCatalog
                 Category: SkillCategory.Buff, SpCost: 5000,
                 TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
                 Description: "Move +33 and Evasion +5 to nearby allies for 20 minutes."),
+
+            // ================================================================
+            //  LIGHTBRINGER — 3rd-class Healer discipline (lvl 40). Same idea
+            //  (keep the party alive), expressed three ways by race.
+            // ================================================================
+
+            // --- Human: strong, fast single-target heal + cleanse ---
+            new(LbHumanMend, "Mending Light", BaseClass.Mage, SkillEffect.Heal,
+                MpCost: 42, CastTicks: 22, CooldownTicks: 12, Range: 500, Power: 230,
+                Category: SkillCategory.Heal, SpCost: 6000,
+                Description: "A swift, powerful heal on a single ally. The Human " +
+                             "Lightbringer's hallmark: more single-target throughput, less AoE."),
+            new(LbHumanPurify, "Purify", BaseClass.Mage, SkillEffect.Cleanse,
+                MpCost: 24, CastTicks: 8, CooldownTicks: 50, Range: 500, Power: 0,
+                Category: SkillCategory.Heal, SpCost: 6000,
+                Description: "Removes harmful effects (curses, anti-heal, roots) from an ally."),
+
+            // --- Elf: AoE heal + cleanse, and a control/utility tool ---
+            new(LbElfDawn, "Dawn Bloom", BaseClass.Mage, SkillEffect.Heal | SkillEffect.Cleanse,
+                MpCost: 60, CastTicks: 30, CooldownTicks: 40, Range: 0, Power: 120,
+                Category: SkillCategory.Heal, SpCost: 6000,
+                TargetMode: TargetMode.AlliesInRadius, AreaRadius: 600f,
+                Description: "Heals AND cleanses all nearby allies. The Elf Lightbringer " +
+                             "trades single-target power for area coverage."),
+            new(LbElfWarden, "Warding Step", BaseClass.Mage, SkillEffect.Root | SkillEffect.Detaunt,
+                MpCost: 30, CastTicks: 6, CooldownTicks: 120, Range: 500, Power: 0,
+                DurationTicks: 80, BuffKey: "root", Rank: 1,
+                Category: SkillCategory.Debuff, SpCost: 6000,
+                Description: "Holds an enemy in place for 8s and sheds the caster's aggro " +
+                             "from nearby foes (they look elsewhere)."),
+
+            // --- Ork: AoE heal (totem stand-in for now) + anti-heal debuff ---
+            new(LbOrkFont, "Spirit Font", BaseClass.Mage, SkillEffect.Heal,
+                MpCost: 55, CastTicks: 28, CooldownTicks: 40, Range: 0, Power: 110,
+                Category: SkillCategory.Heal, SpCost: 6000,
+                TargetMode: TargetMode.AlliesInRadius, AreaRadius: 600f,
+                Description: "Calls a font of spirit energy that heals nearby allies. " +
+                             "(A placed totem will replace this when summons arrive.)"),
+            new(LbOrkSap, "Soul Sap", BaseClass.Mage, SkillEffect.DebuffHealRecv,
+                MpCost: 28, CastTicks: 8, CooldownTicks: 150, Range: 500, Power: 0,
+                DurationTicks: 150, BuffKey: "antiheal", Rank: 1,
+                Magnitudes: new EffectMagnitude[] { new(SkillEffect.DebuffHealRecv, 0.50f) },
+                Category: SkillCategory.Debuff, SpCost: 6000,
+                Description: "Curses an enemy so it recovers only half the HP from any " +
+                             "healing for 15s."),
         };
 
         var dict = new Dictionary<string, SkillDef>();

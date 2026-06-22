@@ -66,12 +66,19 @@ public enum SkillEffect
     DebuffDef      = 1 << 11,
     BuffBlockChance = 1 << 12,  // Shield Mastery: +block chance
     BuffShieldDef   = 1 << 13,  // Shield Mastery: +shield defence / +block reduction
-    // Room to grow: DebuffSpeed = 1 << 14, Stun = 1 << 15, ...
+    // ----- Healer (Lightbringer) additions, Phase 24.1 -----
+    Cleanse        = 1 << 14,   // remove harmful effects from an ally
+    DebuffHealRecv = 1 << 15,   // anti-heal: reduces healing the target receives
+    Root           = 1 << 16,   // hold: target cannot move for the duration
+    Detaunt        = 1 << 17,   // drop the caster's aggro from nearby mobs (stub until threat)
+    // Room to grow: Stun = 1 << 18, ...
 
     // Convenience masks.
     AnyDamage = PhysicalDamage | MagicDamage,
     AnyBuff   = BuffAtk | BuffDef | BuffMoveSpeed | BuffAtkSpeed | BuffCastSpeed
               | BuffEvasion | BuffHp | BuffMp | BuffBlockChance | BuffShieldDef,
+    // Harmful effects applied to an enemy (offensive; can fail; cleansable).
+    AnyDebuff = DebuffDef | DebuffHealRecv | Root,
 }
 
 /// <summary>Whether a magnitude is a flat add or a percentage of the base stat.
