@@ -437,6 +437,18 @@ public static class ItemCatalog
                 new(AttributeType.CastSpeedPercent, 100),
             }));
 
+        // ===================================================================
+        //  CLASS-CHANGE PROOFS — two non-tradeable quest items per playable second
+        //  class, awarded by its quest chain and consumed at the class change.
+        // ===================================================================
+        foreach (var cls in ClassCatalog.Playable)
+        {
+            list.Add(new ItemDef(ClassTokenId(cls.Id), $"{cls.Name} Trial Token",
+                EquipSlot.QuestItem, ItemGrade.F, ItemRarity.Rare));
+            list.Add(new ItemDef(ClassProofId(cls.Id), $"{cls.Name}'s Proof",
+                EquipSlot.QuestItem, ItemGrade.F, ItemRarity.Epic));
+        }
+
         // ----- Duplicate-key guard + value fill: any item left at Value 0 gets the
         //       formula price (quest items / god one-offs stay 0 = not for trade). -----
         var dict = new Dictionary<string, ItemDef>();
@@ -503,6 +515,11 @@ public static class ItemCatalog
         def.Value > 0 && def.Slot != EquipSlot.QuestItem;
 
     public static ItemDef? Get(string id) => id is null ? null : All.GetValueOrDefault(id);
+
+    // Per-class quest-item ids (the two proofs a class-change chain awards). Generated
+    // in BuildCatalog from ClassCatalog; the quest chains reference them by these ids.
+    public static string ClassTokenId(int classId) => $"qi_{classId}_token";
+    public static string ClassProofId(int classId) => $"qi_{classId}_proof";
 
     public static IEnumerable<ItemDef> AllItems => All.Values;
 

@@ -262,16 +262,16 @@ public partial class MainWindow
     private void ClassClose_Click(object sender, RoutedEventArgs e) =>
         ClassPanel.Visibility = Visibility.Collapsed;
 
-    // One-time reminder that the second class is earned via a (not-yet-built) quest.
-    // Temporary stub — remove once class-change quests exist.
+    // One-time reminder, on reaching the class-change level, pointing the player at
+    // the class-change quest chain (Elder Marius → High Priest Oren → Class Master Vael).
     private void MaybeShowClassChangeNotice(int level, int secondClass)
     {
         if (_classQuestNoticeShown || secondClass > 0 || level < GameConstants.ClassChangeLevel)
             return;
         _classQuestNoticeShown = true;
         MessageBox.Show(
-            $"You have reached level {level}. Your second class awaits — seek out a class-change " +
-            "quest to claim it. (Class-change quests are coming soon.)",
+            $"You have reached level {level}. Your second class awaits! Begin the trial with " +
+            "Elder Marius, then seek High Priest Oren, and change class at Class Master Vael.",
             "Class Change");
     }
 

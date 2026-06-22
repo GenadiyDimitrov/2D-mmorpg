@@ -33,7 +33,12 @@ public record QuestDef(
     QuestStep[] Steps,
     QuestReward Reward,
     int MinLevel = 1,
-    string? RequiresQuestId = null);
+    string? RequiresQuestId = null,
+    // Class-quest gating: only offer to this race / base class (null = any), and
+    // (when PreClassChange) only while the character has no second class yet.
+    Race? ForRace = null,
+    BaseClass? ForBaseClass = null,
+    bool PreClassChange = false);
 
 /// <summary>Per-character progress on a quest (persisted). StepIndex = current
 /// step; Counter = kills/collected for that step; Completed when fully done.</summary>
@@ -75,15 +80,20 @@ public static partial class QuestCatalog
         get { EnsureInit(); return All.Values; }
     }
 
-    /// <summary>Quests a given NPC offers to a character: right level, not yet
-    /// taken/completed, and any prerequisite quest already completed.</summary>
+    /// <summary>Quests a given NPC offers to a character: right level + race +
+    /// base class, not yet taken/completed, prerequisite already completed, and
+    /// (for pre-class-change quests) no second class yet.</summary>
     public static IEnumerable<QuestDef> OfferedBy(string npcId, int level,
+        Race race, BaseClass baseClass, int secondClass,
         Func<string, bool> isCompleted, Func<string, bool> isActive)
     {
         foreach (var q in AllQuests)
         {
             if (q.OfferNpcId != npcId) continue;
             if (level < q.MinLevel) continue;
+            if (q.ForRace is Race r && r != race) continue;
+            if (q.ForBaseClass is BaseClass b && b != baseClass) continue;
+            if (q.PreClassChange && secondClass != 0) continue;
             if (isCompleted(q.Id) || isActive(q.Id)) continue;
             if (q.RequiresQuestId is not null && !isCompleted(q.RequiresQuestId)) continue;
             yield return q;

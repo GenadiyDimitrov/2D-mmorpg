@@ -1,4 +1,4 @@
-# L2-like MMORPG — Phase 22.2 (original town names)
+# L2-like MMORPG — Phase 23 (class-change quest chains)
 
 Server-authoritative multiplayer prototype. Phases 1-3 built movement,
 interest management, combat, skills, buffs, the safe-zone town and banded
@@ -30,6 +30,28 @@ Projects…* → *Multiple startup projects* → **Game.Server** and
 | Second class (lvl 20) | Class button (top right) |
 | Trade | Target a player → *Request Trade* in the target frame |
 | Local / World / Whisper | plain / `!text` / `/w Name text` |
+
+## New in Phase 23 (this build)
+
+### Class change is now earned through quests
+- Every one of the **18 second classes** is unlocked by a **two-quest chain**, generated
+  uniformly for all of them (no more level-only popup):
+  - **Trial of the &lt;Class&gt;** (lvl 18, **Elder Marius**) — hunt a target, earn the
+    **Trial Token**.
+  - **Path of the &lt;Class&gt;** (lvl 20, requires the trial, **High Priest Oren**) — a
+    second hunt, earn the **&lt;Class&gt;'s Proof**.
+  - Bring both to **Class Master Vael** to change class (the proofs are consumed).
+- **Offers are gated to what you can actually become**: a quest (and the class-change
+  dialog itself) only appears for your **race + base class**, and only before you've
+  already taken a second class. No seeing 18 irrelevant options.
+- The lvl-20 reminder now **points you at the right NPCs** instead of saying "coming soon".
+- Built as a **data-driven generator** (`Quests.ClassChangeChains.cs`) over
+  `ClassCatalog.Playable`, so it produces all chains, the 36 quest items, and the 18
+  class-change requirements from one loop — the same generator will drive future 3rd/4th
+  tiers.
+
+> Quest progress persists (existing columns), but **delete `game.db`** if you want the new
+> quest items to seed cleanly on a fresh character.
 
 ## New in Phase 22.2 (this build)
 

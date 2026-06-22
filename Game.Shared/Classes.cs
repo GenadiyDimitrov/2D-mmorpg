@@ -61,6 +61,10 @@ public static class ClassCatalog
 
     public static SecondClassDef? Get(int id) => All.GetValueOrDefault(id);
 
+    /// <summary>All real (non-debug) second classes — the ones with quest chains.</summary>
+    public static IEnumerable<SecondClassDef> Playable =>
+        All.Values.Where(c => c.Race != Race.God).OrderBy(c => c.Id);
+
     public static IEnumerable<SecondClassDef> OptionsFor(Race race, BaseClass baseClass) =>
         All.Values.Where(c => c.Race == race && c.Base == baseClass).OrderBy(c => c.Id);
 

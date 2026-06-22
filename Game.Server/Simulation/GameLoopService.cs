@@ -2469,7 +2469,8 @@ var effect = def.Effect;
         bool Completed(string qid) => player.CompletedQuests.Contains(qid);
         bool Active(string qid) => player.ActiveQuests.ContainsKey(qid);
 
-        var offered = QuestCatalog.OfferedBy(npcId, player.Level, Completed, Active)
+        var offered = QuestCatalog
+            .OfferedBy(npcId, player.Level, player.Race, player.BaseClass, player.SecondClass, Completed, Active)
             .Select(q => Summarize(player, q, null)).ToArray();
 
         // Active quests whose CURRENT step is "talk to THIS npc" and it's the
@@ -2490,20 +2491,22 @@ var effect = def.Effect;
                 inProgress.Add(summary);
         }
 
-        // Class-change options (only for class-change NPCs).
+        // Class-change options (only for class-change NPCs, and only the classes
+        // THIS character could become — their race + base class, before changing).
         var changes = new List<ClassChangeOption>();
-        if (npc.NpcRole == NpcRole.ClassChange)
+        if (npc.NpcRole == NpcRole.ClassChange && player.SecondClass == 0)
         {
             foreach (var req in ClassChangeRequirements.AtNpc(npcId))
             {
+                if (ClassCatalog.Get(req.SecondClassId) is not SecondClassDef scd
+                    || scd.Base != player.BaseClass || scd.Race != player.Race)
+                    continue;
+
                 var names = req.RequiredItemIds
                     .Select(id => ItemCatalog.Get(id)?.Name ?? id).ToArray();
                 var has = req.RequiredItemIds
                     .Select(id => player.Inventory.Any(i => i.DefId == id)).ToArray();
-                bool meets = player.SecondClass == 0 && player.Level >= req.MinLevel
-                    && has.All(h => h)
-                    && ClassCatalog.Get(req.SecondClassId) is SecondClassDef scd
-                    && scd.Base == player.BaseClass && scd.Race == player.Race;
+                bool meets = player.Level >= req.MinLevel && has.All(h => h);
                 changes.Add(new ClassChangeOption(req.SecondClassId, req.ClassName, meets, names, has));
             }
         }

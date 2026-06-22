@@ -1,29 +1,28 @@
 namespace Game.Shared;
 
 /// <summary>
-/// Quest registration root. Each per-chain file under Quests/ implements a
-/// Register method; this calls them all. To add a quest chain, create a new
-/// file and add its Register call here.
+/// Quest registration root. The class-change chains for every playable second
+/// class are generated in Quests.ClassChangeChains.cs; add other (hand-authored)
+/// chains by creating a file with a Register method and calling it here.
 /// </summary>
 public static partial class QuestCatalog
 {
     static partial void RegisterAll()
     {
-        RegisterHumanMageClericChain();
-        // Add more chains here, e.g. RegisterHumanMageSorcererChain();
+        RegisterClassChangeChains();
+        // Add more (non-class-change) chains here.
     }
 
-    // Implemented in the per-chain files.
-    static partial void RegisterHumanMageClericChain();
+    // Implemented in Quests.ClassChangeChains.cs.
+    static partial void RegisterClassChangeChains();
 }
 
 public static partial class ClassChangeRequirements
 {
     static partial void RegisterAll()
     {
-        RegisterClericChange();
-        // Add more class changes here.
+        RegisterClassChangeRequirements();
     }
 
-    static partial void RegisterClericChange();
+    static partial void RegisterClassChangeRequirements();
 }
