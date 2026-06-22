@@ -78,6 +78,22 @@ public static partial class QuestCatalog
         return id is null ? null : All.GetValueOrDefault(id);
     }
 
+    /// <summary>If <paramref name="questId"/> is a class-change chain quest
+    /// ("cc_{classId}_{n}" = tier 2, "tc_{classId}_{n}" = tier 3), returns the
+    /// target class id and tier; otherwise (0, 0). Used to enforce that picking a
+    /// class commits you to it (other classes' chains stop being offered).</summary>
+    public static (int ClassId, int Tier) ClassChainOf(string questId)
+    {
+        if (string.IsNullOrEmpty(questId)) return (0, 0);
+        var parts = questId.Split('_');
+        if (parts.Length >= 3 && int.TryParse(parts[1], out int id))
+        {
+            if (parts[0] == "cc") return (id, 2);
+            if (parts[0] == "tc") return (id, 3);
+        }
+        return (0, 0);
+    }
+
     public static IEnumerable<QuestDef> AllQuests
     {
         get { EnsureInit(); return All.Values; }

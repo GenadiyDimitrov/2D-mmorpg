@@ -68,6 +68,19 @@ public static class ClassCatalog
     public static IEnumerable<SecondClassDef> OptionsFor(Race race, BaseClass baseClass) =>
         All.Values.Where(c => c.Race == race && c.Base == baseClass).OrderBy(c => c.Id);
 
+    /// <summary>A one-line "what this class does" blurb by archetype, shown to the
+    /// player by the quest giver before they commit to a class.</summary>
+    public static string ArchetypeBlurb(Archetype a) => a switch
+    {
+        Archetype.Tank    => "Tank — heavy armor + shield. Soaks hits and holds enemies; the hardest to kill and the party's wall.",
+        Archetype.Warrior => "Warrior — heavy armor + two-handed weapons. Raw melee damage with strong staying power.",
+        Archetype.Rogue   => "Rogue — light armor + dual daggers. Fast, evasive, crit-heavy melee that interrupts casters.",
+        Archetype.Archer  => "Archer — light armor + bow. Ranged physical attacks with extended range and high crit rate.",
+        Archetype.Healer  => "Healer — robe or light armor. Heals, buffs and cleanses allies; in light armor can melee to farm solo.",
+        Archetype.Nuker   => "Nuker — robe + staff. Devastating offensive spells at long range, but fragile up close.",
+        _ => ""
+    };
+
     /// <summary>Permanent core-stat bonus applied once at class change.</summary>
     public static (int Con, int Atk, int Wit, int Dex) StatBonus(Archetype archetype) =>
         archetype switch

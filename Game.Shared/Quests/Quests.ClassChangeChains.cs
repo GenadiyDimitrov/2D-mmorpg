@@ -47,7 +47,9 @@ public static partial class QuestCatalog
                 Id: q1,
                 Name: $"Trial of the {cls.Name}",
                 Description: $"Elder Marius will judge whether you are fit to walk the " +
-                             $"path of the {cls.Name}. Prove yourself in the field.",
+                             $"path of the {cls.Name}. Prove yourself in the field.\n\n" +
+                             ClassCatalog.ArchetypeBlurb(cls.Archetype) +
+                             "\n(Once you begin a class path, the others close to you — choose well.)",
                 OfferNpcId: TrialGiver,
                 MinLevel: 18,
                 ForRace: cls.Race,
@@ -119,7 +121,9 @@ public static partial class QuestCatalog
                 Id: q1,
                 Name: $"Ordeal of the {tc.Name}",
                 Description: $"Grandmaster Thorne sets the ordeal that opens the {tc.Name} " +
-                             $"discipline. Only the proven may walk it.",
+                             $"discipline. Only the proven may walk it.\n\n" +
+                             ClassCatalog.ArchetypeBlurb(parent) +
+                             "\n(Choosing a discipline is final — the other path will close.)",
                 OfferNpcId: GrandGiver,
                 MinLevel: lvl,
                 ForSecondClass: tc.ParentSecondClassId,

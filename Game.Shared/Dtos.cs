@@ -160,9 +160,12 @@ public record TalkToNpcRequest(Guid NpcEntityId);
 /// <summary>Client -> server: accept / complete / change-class actions.</summary>
 public record QuestActionRequest(string Action, string Id, Guid NpcEntityId);
 
-/// <summary>One quest line in an NPC dialog or the quest log.</summary>
+/// <summary>One quest line in an NPC dialog or the quest log. <see cref="Location"/>
+/// is a short "who/where" hint for the current step (e.g. "Elder Marius — Brackenford"
+/// or "Grey Wolf — near Brackenford (Lv 1-10)"); "" when there's nothing useful to say.</summary>
 public record QuestSummary(string Id, string Name, string Description, string CurrentStepText,
-    int StepIndex, int StepCount, int Counter, int CounterNeeded, bool Completed, bool CanComplete);
+    int StepIndex, int StepCount, int Counter, int CounterNeeded, bool Completed, bool CanComplete,
+    string Location = "");
 
 /// <summary>A class-change option shown by a class-change NPC.</summary>
 public record ClassChangeOption(int SecondClassId, string ClassName, bool Meets,
@@ -174,8 +177,10 @@ public record ShopItemDto(string DefId, string Name, int BuyPrice);
 /// <summary>A vendor's wares, attached to the dialog when talking to a vendor.</summary>
 public record ShopInfo(string Title, ShopItemDto[] Items);
 
-/// <summary>One teleport destination offered by a gatekeeper.</summary>
-public record TeleportDest(string ZoneId, string Name, int Fee);
+/// <summary>One teleport destination offered by a gatekeeper. MinLevel/MaxLevel are
+/// the level band of the hunting grounds around that town (0/0 = unknown), shown so
+/// players know where they're going.</summary>
+public record TeleportDest(string ZoneId, string Name, int Fee, int MinLevel = 0, int MaxLevel = 0);
 
 /// <summary>A gatekeeper's destinations, attached to the dialog.</summary>
 public record TeleportInfo(TeleportDest[] Destinations);

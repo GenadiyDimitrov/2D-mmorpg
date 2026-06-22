@@ -203,6 +203,50 @@ public static class WorldMap
         return false;
     }
 
+    /// <summary>The level band of the normal hunting grounds around a town: the
+    /// min/max level across spawn zones whose nearest town is this one. Returns null
+    /// if the town has no normal zones beside it (elite/boss spots are ignored).</summary>
+    public static (int Min, int Max)? LevelRangeNear(SafeZone town)
+    {
+        int min = int.MaxValue, max = 0;
+        foreach (var z in SpawnZones)
+        {
+            if (z.Rank != MobRank.Normal) continue;
+            if (NearestSafeZone(z.X, z.Y).Id != town.Id) continue;
+            min = Math.Min(min, z.MinLevel);
+            max = Math.Max(max, z.MaxLevel);
+        }
+        return max == 0 ? null : (min, max);
+    }
+
+    /// <summary>Find a placed NPC by id (null if none).</summary>
+    public static NpcDef? NpcById(string id) =>
+        Array.Find(Npcs, n => n.Id == id);
+
+    /// <summary>A "where to find this mob" hint: the nearest town to the spawn zones
+    /// that contain <paramref name="mobTypeId"/> within [minLevel,maxLevel], plus that
+    /// band's levels. Returns ("", 0, 0) if the mob isn't placed in any matching zone.</summary>
+    public static (string Town, int Min, int Max) MobHuntingGround(string mobTypeId, int minLevel, int maxLevel)
+    {
+        int min = int.MaxValue, max = 0;
+        SafeZone? best = null;
+        float bestSq = float.MaxValue;
+        foreach (var z in SpawnZones)
+        {
+            if (Array.IndexOf(z.MobTypes, mobTypeId) < 0) continue;
+            // Honour the quest's level band when one is set (0 = unbounded).
+            if (maxLevel > 0 && z.MinLevel > maxLevel) continue;
+            if (minLevel > 0 && z.MaxLevel < minLevel) continue;
+            min = Math.Min(min, z.MinLevel);
+            max = Math.Max(max, z.MaxLevel);
+            var town = NearestSafeZone(z.X, z.Y);
+            float dx = z.X - town.X, dy = z.Y - town.Y;
+            float sq = dx * dx + dy * dy;
+            if (sq < bestSq) { bestSq = sq; best = town; }
+        }
+        return best is null ? ("", 0, 0) : (best.Name, min, max);
+    }
+
     /// <summary>Clamp a position to stay inside the world border.</summary>
     public static (float X, float Y) ClampToBorder(float x, float y) =>
         (Math.Clamp(x, Border.MinX, Border.MaxX),

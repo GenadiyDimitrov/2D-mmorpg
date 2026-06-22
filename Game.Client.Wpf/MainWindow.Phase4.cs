@@ -1628,9 +1628,10 @@ public partial class MainWindow
             AddDialogHeader("Travel");
             foreach (var dest in teleport.Destinations)
             {
+                string band = dest.MaxLevel > 0 ? $"  (Lv {dest.MinLevel}-{dest.MaxLevel})" : "";
                 var btn = new Button
                 {
-                    Content = $"Travel to {dest.Name}  —  {dest.Fee:N0} {GameConstants.CurrencyName}",
+                    Content = $"Travel to {dest.Name}{band}  —  {dest.Fee:N0} {GameConstants.CurrencyName}",
                     Height = 28, HorizontalAlignment = HorizontalAlignment.Left,
                     Margin = new Thickness(0, 2, 0, 4), Padding = new Thickness(8, 0, 8, 0),
                     IsEnabled = _gold >= dest.Fee
@@ -1677,6 +1678,8 @@ public partial class MainWindow
             if (q.CounterNeeded > 1)
                 prog += $"  ({q.Counter}/{q.CounterNeeded})";
             AddDialogText(prog);
+            if (!string.IsNullOrEmpty(q.Location))
+                AddDialogText($"➜ {q.Location}");
         }
 
         // Class-change options.
@@ -1841,8 +1844,14 @@ public partial class MainWindow
             QuestLogContent.Children.Add(new TextBlock
             {
                 Text = prog, Foreground = new SolidColorBrush(Color.FromRgb(0x9F, 0xB0, 0xBE)),
-                FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 4)
+                FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 1)
             });
+            if (!string.IsNullOrEmpty(q.Location))
+                QuestLogContent.Children.Add(new TextBlock
+                {
+                    Text = $"➜ {q.Location}", Foreground = new SolidColorBrush(Color.FromRgb(0x7C, 0xB3, 0x42)),
+                    FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 4)
+                });
         }
 
         if (log.Completed.Length > 0)

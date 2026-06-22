@@ -2563,8 +2563,20 @@ var effect = def.Effect;
         bool Completed(string qid) => player.CompletedQuests.Contains(qid);
         bool Active(string qid) => player.ActiveQuests.ContainsKey(qid);
 
+        // Class choice is irreversible: once you've taken (active OR completed) any
+        // class-change chain quest, only that class's chain stays on offer.
+        int committed2 = CommittedClassChain(player, 2);
+        int committed3 = CommittedClassChain(player, 3);
+
         var offered = QuestCatalog
             .OfferedBy(npcId, player.Level, player.Race, player.BaseClass, player.SecondClass, player.ThirdClass, Completed, Active)
+            .Where(q =>
+            {
+                var (cid, tier) = QuestCatalog.ClassChainOf(q.Id);
+                if (tier == 2 && committed2 != 0 && cid != committed2) return false;
+                if (tier == 3 && committed3 != 0 && cid != committed3) return false;
+                return true;
+            })
             .Select(q => Summarize(player, q, null)).ToArray();
 
         // Active quests whose CURRENT step is "talk to THIS npc" and it's the
@@ -2622,7 +2634,12 @@ var effect = def.Effect;
         {
             var dests = WorldMap.SafeZones
                 .Where(z => z.Id != home.Id)
-                .Select(z => new TeleportDest(z.Id, z.Name, GameConstants.TeleportFee(home, z)))
+                .Select(z =>
+                {
+                    var band = WorldMap.LevelRangeNear(z);
+                    return new TeleportDest(z.Id, z.Name, GameConstants.TeleportFee(home, z),
+                        band?.Min ?? 0, band?.Max ?? 0);
+                })
                 .ToArray();
             teleport = new TeleportInfo(dests);
         }
@@ -2633,6 +2650,18 @@ var effect = def.Effect;
 
         // Talking can itself advance a TalkTo step.
         AdvanceTalkStep(player, npcId);
+    }
+
+    /// <summary>The class id this player has committed to in a tier (2 or 3), from
+    /// any active or completed class-change chain quest; 0 if none yet.</summary>
+    private static int CommittedClassChain(Entity player, int tier)
+    {
+        foreach (var qid in player.ActiveQuests.Keys.Concat(player.CompletedQuests))
+        {
+            var (cid, t) = QuestCatalog.ClassChainOf(qid);
+            if (t == tier && cid != 0) return cid;
+        }
+        return 0;
     }
 
     private QuestSummary Summarize(Entity player, QuestDef def, CharacterQuestState? state)
@@ -2647,7 +2676,25 @@ var effect = def.Effect;
             && def.Steps[^1].Type == QuestStepType.TalkTo;
         return new QuestSummary(def.Id, def.Name, def.Description, step.Text,
             stepIndex, def.Steps.Length, counter, needed,
-            state?.Completed ?? false, canComplete);
+            state?.Completed ?? false, canComplete, StepLocation(step));
+    }
+
+    /// <summary>A "who/where" hint for a quest step: the NPC + town to talk to, or
+    /// the mob + nearest hunting ground (with its level band). "" when not useful.</summary>
+    private static string StepLocation(QuestStep step) => step.Type switch
+    {
+        QuestStepType.TalkTo when WorldMap.NpcById(step.TargetId) is NpcDef npc =>
+            $"{npc.Name} — {WorldMap.NearestSafeZone(npc.X, npc.Y).Name}",
+        QuestStepType.KillMobs => MobLocationHint(step),
+        _ => ""
+    };
+
+    private static string MobLocationHint(QuestStep step)
+    {
+        var (town, min, max) = WorldMap.MobHuntingGround(step.TargetId, step.MinLevel, step.MaxLevel);
+        if (town.Length == 0) return "";
+        string mobName = MobCatalog.Get(step.TargetId).Name;
+        return max > 0 ? $"{mobName} — near {town} (Lv {min}-{max})" : $"{mobName} — near {town}";
     }
 
     private void HandleQuestAction(QuestActionCmd cmd)
