@@ -2632,14 +2632,16 @@ var effect = def.Effect;
         if (npc.NpcRole == NpcRole.Teleporter
             && WorldMap.SafeZoneAt(npc.X, npc.Y) is SafeZone home)
         {
-            var dests = WorldMap.SafeZones
-                .Where(z => z.Id != home.Id)
+            var dests = WorldMap.TeleportDestinationsFrom(npcId, home)
                 .Select(z =>
                 {
                     var band = WorldMap.LevelRangeNear(z);
                     return new TeleportDest(z.Id, z.Name, GameConstants.TeleportFee(home, z),
                         band?.Min ?? 0, band?.Max ?? 0);
                 })
+                // Order by hunting-ground level so the "next" town is at the top.
+                .OrderBy(d => d.MinLevel == 0 ? int.MaxValue : d.MinLevel)
+                .ThenBy(d => d.Name)
                 .ToArray();
             teleport = new TeleportInfo(dests);
         }

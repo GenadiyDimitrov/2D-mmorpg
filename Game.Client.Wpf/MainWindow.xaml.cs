@@ -40,6 +40,9 @@ public partial class MainWindow : Window
     private DateTime _serverEpoch = DateTime.UtcNow;
     private EntityDto? _myDto;
     private Guid? _targetId;
+    // When you click a far NPC we walk you to it and talk on arrival; this holds the
+    // NPC we're heading to (cleared when we talk, or when you click somewhere else).
+    private Guid? _pendingTalkNpcId;
     private double _camX = GameConstants.ZoneWidth / 2;
     private double _camY = GameConstants.ZoneHeight / 2;
     private double _lastFrameTime;
@@ -866,6 +869,31 @@ public partial class MainWindow : Window
         return Math.Sqrt(dx * dx + dy * dy);
     }
 
+    /// <summary>World-space distance from the player to a point (∞ if we don't have
+    /// the player's position yet).</summary>
+    private double PlayerDistanceTo(double wx, double wy) =>
+        _myDto is null ? double.MaxValue : Dist(_myDto.X, _myDto.Y, wx, wy);
+
+    /// <summary>If we're walking to an NPC to talk, open the dialog once in range.
+    /// Cleared if the NPC disappears; clicking elsewhere cancels it (see click).</summary>
+    private void PollPendingTalk()
+    {
+        if (_pendingTalkNpcId is not Guid pid)
+            return;
+        if (!_visuals.TryGetValue(pid, out var v) || v.Latest is not { } npc)
+        {
+            _pendingTalkNpcId = null;
+            return;
+        }
+        // Trigger a touch inside TalkRange so the server (which re-checks) agrees.
+        if (PlayerDistanceTo(npc.X, npc.Y) <= GameConstants.TalkRange * 0.85)
+        {
+            _pendingTalkNpcId = null;
+            _dialogNpcId = pid;
+            _ = _net.TalkToNpcAsync(pid);
+        }
+    }
+
     // -----------------------------------------------------------------------
     // Render loop
     // -----------------------------------------------------------------------
@@ -897,6 +925,8 @@ public partial class MainWindow : Window
             StatusText.Text = $"{_myName}{cls}  Lv{_level}  •  {_gold:N0} {GameConstants.CurrencyName}{zone}";
             UpdateVitalBars();
         }
+
+        PollPendingTalk();
 
         double cw = WorldCanvas.ActualWidth;
         double ch = WorldCanvas.ActualHeight;
@@ -1236,14 +1266,25 @@ public partial class MainWindow : Window
         {
             var latest = _visuals[targetId].Latest;
 
-            // Clicking an NPC opens dialog (talk).
-            if (latest is { Kind: EntityKind.Npc })
+            // Clicking an NPC: talk if in range, else walk to it and talk on arrival.
+            // (NPCs aren't put in the target frame — they have no real HP bar.)
+            if (latest is { Kind: EntityKind.Npc } npc)
             {
-                _dialogNpcId = targetId;
-                await _net.TalkToNpcAsync(targetId);
+                if (PlayerDistanceTo(npc.X, npc.Y) <= GameConstants.TalkRange)
+                {
+                    _pendingTalkNpcId = null;
+                    _dialogNpcId = targetId;
+                    await _net.TalkToNpcAsync(targetId);
+                }
+                else
+                {
+                    _pendingTalkNpcId = targetId;          // arrive, then OnRenderFrame talks
+                    await _net.MoveAsync(npc.X, npc.Y);
+                }
                 return;
             }
 
+            _pendingTalkNpcId = null;
             _targetId = targetId;
             UpdateTargetFrame();
 
@@ -1253,6 +1294,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        _pendingTalkNpcId = null;   // clicking the ground cancels a pending talk-walk
         double worldX = _camX + (click.X - cw / 2) / Scale;
         double worldY = _camY + (click.Y - ch / 2) / Scale;
         await _net.MoveAsync((float)worldX, (float)worldY);

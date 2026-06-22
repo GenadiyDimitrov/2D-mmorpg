@@ -21,76 +21,78 @@ public static class WorldMap
     /// spiders" — just add a SpawnZone line. Order doesn't matter; the server
     /// spawns each independently and the client tints each one.
     /// </summary>
-    // The world is a 24000x24000 square. The starter town (Brackenford) sits at the
-    // centre (12000,12000); six more towns ring it, and difficulty rises as you
+    // The world is a 48000x48000 square. The starter town (Brackenford) sits at the
+    // centre (24000,24000); six more towns ring it, and difficulty rises as you
     // tour the ring clockwise from the north (Stonewatch → Emberfall → Greymarsh →
     // Ironreach → Duskvale → Frostmere). Each band has 1-2 spawn zones beside its town.
+    // Coordinates were scaled ×2 from the old 24000 world so towns are far apart and
+    // zones aren't clustered; zone radii kept so the gaps between them grew.
     public static readonly SpawnZone[] SpawnZones =
     {
         // ===== Brackenford (centre) — levels 1-10 =====
-        new(X: 9700,  Y: 12000, Radius: 1400, MinLevel: 1,  MaxLevel: 4,
+        new(X: 19400, Y: 24000, Radius: 1400, MinLevel: 1,  MaxLevel: 4,
             MobTypes: new[] { "grey_wolf", "brown_boar" }, MaxCount: 10,
             RespawnSeconds: 8, RespawnVariance: 3),
-        new(X: 14300, Y: 12000, Radius: 1400, MinLevel: 4,  MaxLevel: 7,
+        new(X: 28600, Y: 24000, Radius: 1400, MinLevel: 4,  MaxLevel: 7,
             MobTypes: new[] { "green_slime", "brown_boar" }, MaxCount: 10,
             RespawnSeconds: 8, RespawnVariance: 3),
-        new(X: 12000, Y: 9700,  Radius: 1300, MinLevel: 7,  MaxLevel: 10,
+        new(X: 24000, Y: 19400, Radius: 1300, MinLevel: 7,  MaxLevel: 10,
             MobTypes: new[] { "cave_spider", "grey_wolf" }, MaxCount: 10,
             RespawnSeconds: 10, RespawnVariance: 4),
 
         // ===== Stonewatch (north) — levels 10-22 =====
-        new(X: 10200, Y: 4200,  Radius: 1500, MinLevel: 10, MaxLevel: 15,
+        new(X: 20400, Y: 8400,  Radius: 1500, MinLevel: 10, MaxLevel: 15,
             MobTypes: new[] { "dire_boar", "cave_spider" }, MaxCount: 12,
             RespawnSeconds: 12, RespawnVariance: 4),
-        new(X: 13800, Y: 5200,  Radius: 1500, MinLevel: 16, MaxLevel: 22,
+        new(X: 27600, Y: 10400, Radius: 1500, MinLevel: 16, MaxLevel: 22,
             MobTypes: new[] { "road_bandit", "dire_boar" }, MaxCount: 12,
             RespawnSeconds: 14, RespawnVariance: 5),
 
         // ===== Emberfall (north-east) — levels 22-34 =====
-        new(X: 16500, Y: 6200,  Radius: 1500, MinLevel: 22, MaxLevel: 28,
+        new(X: 33000, Y: 12400, Radius: 1500, MinLevel: 22, MaxLevel: 28,
             MobTypes: new[] { "road_bandit", "orc_raider" }, MaxCount: 12,
             RespawnSeconds: 15, RespawnVariance: 5),
-        new(X: 19500, Y: 8200,  Radius: 1500, MinLevel: 28, MaxLevel: 34,
+        new(X: 39000, Y: 16400, Radius: 1500, MinLevel: 28, MaxLevel: 34,
             MobTypes: new[] { "orc_raider", "cave_spider" }, MaxCount: 12,
             RespawnSeconds: 16, RespawnVariance: 5),
 
         // ===== Greymarsh (south-east) — levels 34-46 =====
-        new(X: 16500, Y: 15200, Radius: 1500, MinLevel: 34, MaxLevel: 40,
+        new(X: 33000, Y: 30400, Radius: 1500, MinLevel: 34, MaxLevel: 40,
             MobTypes: new[] { "orc_raider", "stone_golem" }, MaxCount: 11,
             RespawnSeconds: 18, RespawnVariance: 6),
-        new(X: 19500, Y: 17500, Radius: 1500, MinLevel: 40, MaxLevel: 46,
+        new(X: 39000, Y: 35000, Radius: 1500, MinLevel: 40, MaxLevel: 46,
             MobTypes: new[] { "stone_golem", "wraith" }, MaxCount: 11,
             RespawnSeconds: 20, RespawnVariance: 6),
 
         // ===== Ironreach (south) — levels 46-58 =====
-        new(X: 10200, Y: 20000, Radius: 1500, MinLevel: 46, MaxLevel: 52,
+        new(X: 20400, Y: 40000, Radius: 1500, MinLevel: 46, MaxLevel: 52,
             MobTypes: new[] { "wraith", "stone_golem" }, MaxCount: 11,
             RespawnSeconds: 20, RespawnVariance: 6),
-        new(X: 13800, Y: 20000, Radius: 1500, MinLevel: 52, MaxLevel: 58,
+        new(X: 27600, Y: 40000, Radius: 1500, MinLevel: 52, MaxLevel: 58,
             MobTypes: new[] { "wraith", "young_drake" }, MaxCount: 10,
             RespawnSeconds: 22, RespawnVariance: 7),
 
         // ===== Duskvale (south-west) — levels 58-70 =====
-        new(X: 7200,  Y: 17800, Radius: 1500, MinLevel: 58, MaxLevel: 64,
+        new(X: 14400, Y: 35600, Radius: 1500, MinLevel: 58, MaxLevel: 64,
             MobTypes: new[] { "young_drake", "wraith" }, MaxCount: 10,
             RespawnSeconds: 24, RespawnVariance: 7),
-        new(X: 4500,  Y: 15200, Radius: 1500, MinLevel: 64, MaxLevel: 70,
+        new(X: 9000,  Y: 30400, Radius: 1500, MinLevel: 64, MaxLevel: 70,
             MobTypes: new[] { "young_drake", "stone_golem" }, MaxCount: 10,
             RespawnSeconds: 26, RespawnVariance: 8),
 
         // ===== Frostmere (north-west) — levels 70-80 =====
-        new(X: 7200,  Y: 6200,  Radius: 1500, MinLevel: 70, MaxLevel: 76,
+        new(X: 14400, Y: 12400, Radius: 1500, MinLevel: 70, MaxLevel: 76,
             MobTypes: new[] { "young_drake", "orc_raider" }, MaxCount: 10,
             RespawnSeconds: 28, RespawnVariance: 8),
-        new(X: 4500,  Y: 8800,  Radius: 1500, MinLevel: 76, MaxLevel: 80,
+        new(X: 9000,  Y: 17600, Radius: 1500, MinLevel: 76, MaxLevel: 80,
             MobTypes: new[] { "young_drake", "wraith" }, MaxCount: 10,
             RespawnSeconds: 30, RespawnVariance: 9),
 
         // ===== Elite + Boss placeholders (more bosses/instances later) =====
-        new(X: 5800,  Y: 5000,  Radius: 300,  MinLevel: 78, MaxLevel: 78,
+        new(X: 11600, Y: 10000, Radius: 300,  MinLevel: 78, MaxLevel: 78,
             MobTypes: new[] { "young_drake" }, MaxCount: 1,
             RespawnSeconds: 180, RespawnVariance: 40, Rank: MobRank.Elite),
-        new(X: 12000, Y: 22500, Radius: 250,  MinLevel: 60, MaxLevel: 60,
+        new(X: 24000, Y: 45000, Radius: 250,  MinLevel: 60, MaxLevel: 60,
             MobTypes: new[] { "stone_golem" }, MaxCount: 1,
             RespawnSeconds: 21 * 3600, RespawnVariance: 3 * 3600, Rank: MobRank.Boss),
     };
@@ -109,13 +111,15 @@ public static class WorldMap
     public static readonly SafeZone[] SafeZones =
     {
         // Starter town at the map centre; six more ring it (clockwise from north).
-        new("town_brackenford", "Brackenford",     12000, 12000, 1300),
-        new("town_stonewatch",  "Stonewatch",      12000,  5000, 1000),
-        new("town_emberfall",   "Emberfall",       18000,  7500, 1000),
-        new("town_greymarsh",   "Greymarsh",       18000, 16500, 1000),
-        new("castle_ironreach",  "Ironreach Keep", 12000, 19000, 1100),
-        new("town_duskvale",    "Duskvale",         6000, 16500, 1000),
-        new("town_frostmere",   "Frostmere",        6000,  7500, 1000),
+        // Brackenford is the biggest (it holds all the quest/class/vendor NPCs, which
+        // are spread out so their labels don't overlap); ring towns are roomy too.
+        new("town_brackenford", "Brackenford",     24000, 24000, 3500),
+        new("town_stonewatch",  "Stonewatch",      24000, 10000, 2000),
+        new("town_emberfall",   "Emberfall",       36000, 15000, 2000),
+        new("town_greymarsh",   "Greymarsh",       36000, 33000, 2000),
+        new("castle_ironreach",  "Ironreach Keep", 24000, 38000, 2200),
+        new("town_duskvale",    "Duskvale",        12000, 33000, 2000),
+        new("town_frostmere",   "Frostmere",       12000, 15000, 2000),
     };
 
     /// <summary>The safe zone nearest to a point (always returns one). Used to
@@ -157,41 +161,61 @@ public static class WorldMap
         return null;
     }
 
+    /// <summary>Per-gatekeeper teleport menus: gatekeeper NPC id -> the ORDERED town
+    /// ids it offers. A gatekeeper not listed here falls back to "all other towns".
+    /// This is the seam for curating each gatekeeper's own collection (and, on a large
+    /// map, its nearby zones) — edit a gatekeeper's list here to change its menu.</summary>
+    public static readonly Dictionary<string, string[]> GatekeeperDestinations = new();
+
+    /// <summary>The towns a gatekeeper offers travel to: its curated list if present
+    /// in <see cref="GatekeeperDestinations"/>, otherwise every other town. Always
+    /// excludes the gatekeeper's own town.</summary>
+    public static IEnumerable<SafeZone> TeleportDestinationsFrom(string gatekeeperNpcId, SafeZone home)
+    {
+        if (GatekeeperDestinations.TryGetValue(gatekeeperNpcId, out var ids))
+            return ids.Select(id => Array.Find(SafeZones, z => z.Id == id))
+                      .Where(z => z is not null && z.Id != home.Id)
+                      .Select(z => z!);
+        return SafeZones.Where(z => z.Id != home.Id);
+    }
+
     /// <summary>NPCs placed in the world (quest givers, class-change masters).
     /// Stationary, non-combat. Add NPCs here; quests/class-changes reference
     /// them by Id.</summary>
     public static readonly NpcDef[] Npcs =
     {
-        // --- Starter town: Brackenford (map centre, 12000,12000) ---
-        new("priest_oren",   "High Priest Oren",   11700, 11800, NpcRole.QuestGiver),
-        new("elder_marius",  "Elder Marius",       12300, 11800, NpcRole.QuestGiver),
-        new("master_class",  "Class Master Vael",  12000, 11400, NpcRole.ClassChange),
+        // --- Starter town: Brackenford (map centre, 24000,24000, radius 3500). NPCs
+        //     are spread ~2000 units apart (≈360px on screen) so labels don't overlap;
+        //     the centre is left clear (where new characters spawn). ---
+        new("priest_oren",   "High Priest Oren",   22000, 22500, NpcRole.QuestGiver),
+        new("elder_marius",  "Elder Marius",       26000, 22500, NpcRole.QuestGiver),
+        new("master_class",  "Class Master Vael",  21500, 24500, NpcRole.ClassChange),
         // 3rd-class master: gives the harder lvl-40 discipline chains AND performs
         // the change (an NpcRole.ClassChange NPC can also be a quest giver).
-        new("master_class3", "Grandmaster Thorne", 12000, 11000, NpcRole.ClassChange),
+        new("master_class3", "Grandmaster Thorne", 26500, 24500, NpcRole.ClassChange),
         // Vendors (their wares are defined by ShopCatalog, keyed on these ids).
-        new("merchant_potions", "Apothecary Miren", 11600, 11400, NpcRole.Vendor),
-        new("merchant_gear",    "Armsmaster Dolan",  12400, 11400, NpcRole.Vendor),
+        new("merchant_potions", "Apothecary Miren", 22000, 26000, NpcRole.Vendor),
+        new("merchant_gear",    "Armsmaster Dolan",  26000, 26000, NpcRole.Vendor),
         // --- Gatekeepers: one in every town (stands at its centre) so the whole
         //     travel network is reachable in both directions. ---
-        new("gatekeeper_brackenford", "Gatekeeper Pell",   12000, 12300, NpcRole.Teleporter),
-        new("gatekeeper_stonewatch",  "Gatekeeper Soren",  12000,  5000, NpcRole.Teleporter),
-        new("gatekeeper_emberfall",   "Gatekeeper Ryn",    18000,  7500, NpcRole.Teleporter),
-        new("gatekeeper_greymarsh",   "Gatekeeper Maela",  18000, 16500, NpcRole.Teleporter),
-        new("gatekeeper_ironreach",   "Gatekeeper Vurst",  12000, 19000, NpcRole.Teleporter),
-        new("gatekeeper_duskvale",    "Gatekeeper Talia",   6000, 16500, NpcRole.Teleporter),
-        new("gatekeeper_frostmere",   "Gatekeeper Khaz",    6000,  7500, NpcRole.Teleporter),
+        new("gatekeeper_brackenford", "Gatekeeper Pell",   24000, 21500, NpcRole.Teleporter),
+        new("gatekeeper_stonewatch",  "Gatekeeper Soren",  24000, 10000, NpcRole.Teleporter),
+        new("gatekeeper_emberfall",   "Gatekeeper Ryn",    36000, 15000, NpcRole.Teleporter),
+        new("gatekeeper_greymarsh",   "Gatekeeper Maela",  36000, 33000, NpcRole.Teleporter),
+        new("gatekeeper_ironreach",   "Gatekeeper Vurst",  24000, 38000, NpcRole.Teleporter),
+        new("gatekeeper_duskvale",    "Gatekeeper Talia",  12000, 33000, NpcRole.Teleporter),
+        new("gatekeeper_frostmere",   "Gatekeeper Khaz",   12000, 15000, NpcRole.Teleporter),
     };
 
     public static readonly RoadPath[] Roads =
     {
-        // Spokes from Brackenford (centre) out to each ring town.
-        new(Width: 300, Points: new[] { new MapPoint(12000, 12000), new MapPoint(12000,  5000) }), // Stonewatch (N)
-        new(Width: 300, Points: new[] { new MapPoint(12000, 12000), new MapPoint(18000,  7500) }), // Emberfall (NE)
-        new(Width: 300, Points: new[] { new MapPoint(12000, 12000), new MapPoint(18000, 16500) }), // Greymarsh (SE)
-        new(Width: 300, Points: new[] { new MapPoint(12000, 12000), new MapPoint(12000, 19000) }), // Ironreach (S)
-        new(Width: 300, Points: new[] { new MapPoint(12000, 12000), new MapPoint( 6000, 16500) }), // Duskvale (SW)
-        new(Width: 300, Points: new[] { new MapPoint(12000, 12000), new MapPoint( 6000,  7500) }), // Frostmere (NW)
+        // Spokes from Brackenford (centre) out to each ring town (coords ×2; wider too).
+        new(Width: 600, Points: new[] { new MapPoint(24000, 24000), new MapPoint(24000, 10000) }), // Stonewatch (N)
+        new(Width: 600, Points: new[] { new MapPoint(24000, 24000), new MapPoint(36000, 15000) }), // Emberfall (NE)
+        new(Width: 600, Points: new[] { new MapPoint(24000, 24000), new MapPoint(36000, 33000) }), // Greymarsh (SE)
+        new(Width: 600, Points: new[] { new MapPoint(24000, 24000), new MapPoint(24000, 38000) }), // Ironreach (S)
+        new(Width: 600, Points: new[] { new MapPoint(24000, 24000), new MapPoint(12000, 33000) }), // Duskvale (SW)
+        new(Width: 600, Points: new[] { new MapPoint(24000, 24000), new MapPoint(12000, 15000) }), // Frostmere (NW)
     };
 
     /// <summary>True if (x,y) lies on a road strip (used to keep mobs off roads).</summary>
