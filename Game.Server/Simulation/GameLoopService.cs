@@ -307,6 +307,10 @@ public class GameLoopService : BackgroundService
             foreach (var replacedId in def.Replaces)
                 player.LearnedSkills.Remove(replacedId);
 
+        // Recompute so passives (armor masteries) take effect immediately, not just
+        // on the next equip/level-up.
+        player.RecomputeDerived();
+
         SendSystemToEntity(player, $"Learned {def.Name}!");
         SendStats(player);
         SendLearned(player);
@@ -333,6 +337,10 @@ public class GameLoopService : BackgroundService
 
         var def = SkillCatalog.Get(cmd.SkillId);
         if (def is null || !caster.LearnedSkills.Contains(def.Id))
+            return;
+
+        // Passives (armor masteries) are always-on; they can't be cast.
+        if (def.Category == SkillCategory.Passive)
             return;
 
         if (caster.SkillCooldowns.TryGetValue(def.Id, out int cd) && cd > 0)

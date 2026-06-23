@@ -993,15 +993,31 @@ public partial class MainWindow
                 bool onBar = _skillBar.Any(x => x == def.Id);
                 var row = new DockPanel { Margin = new Thickness(0, 0, 0, 6) };
 
-                var assign = new Button
+                if (IsPassive(def))
                 {
-                    Content = onBar ? "On Bar" : "To Bar",
-                    Height = 24, Width = 70, FontSize = 10, IsEnabled = !onBar
-                };
-                string id = def.Id;
-                assign.Click += (_, _) => AssignSkillToBar(id);
-                DockPanel.SetDock(assign, Dock.Right);
-                row.Children.Add(assign);
+                    // Passives are always-on; no action-bar slot.
+                    var tag = new TextBlock
+                    {
+                        Text = "Passive", Width = 70, FontSize = 10,
+                        Foreground = Brushes.MediumAquamarine,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        TextAlignment = TextAlignment.Center
+                    };
+                    DockPanel.SetDock(tag, Dock.Right);
+                    row.Children.Add(tag);
+                }
+                else
+                {
+                    var assign = new Button
+                    {
+                        Content = onBar ? "On Bar" : "To Bar",
+                        Height = 24, Width = 70, FontSize = 10, IsEnabled = !onBar
+                    };
+                    string id = def.Id;
+                    assign.Click += (_, _) => AssignSkillToBar(id);
+                    DockPanel.SetDock(assign, Dock.Right);
+                    row.Children.Add(assign);
+                }
 
                 var name = new TextBlock
                 {
@@ -1121,6 +1137,8 @@ public partial class MainWindow
             FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 4)
         });
 
+    private static bool IsPassive(SkillDef def) => def.Category == SkillCategory.Passive;
+
     private static string CategoryName(SkillCategory c) => c switch
     {
         SkillCategory.Physical => "Physical Skills",
@@ -1128,11 +1146,16 @@ public partial class MainWindow
         SkillCategory.Buff => "Buffs",
         SkillCategory.Debuff => "Debuffs",
         SkillCategory.Heal => "Heals",
+        SkillCategory.Passive => "Passives",
         _ => "Other"
     };
 
     private static string SkillTooltip(SkillDef def)
     {
+        // Passives have no MP/cast/cooldown — show what they do, not combat timings.
+        if (IsPassive(def))
+            return $"{def.Description}\nPassive — always active once learned (no MP, not cast).";
+
         string duration = def.DurationTicks > 0
             ? $"  Duration {def.DurationTicks * GameConstants.TickSeconds:0}s" : "";
         return $"{def.Description}\n" +

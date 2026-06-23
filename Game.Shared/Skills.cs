@@ -49,8 +49,9 @@ public record SkillDef(
     public int FinishMp => MpCost - InitialMp;
 }
 
-/// <summary>Skill window grouping.</summary>
-public enum SkillCategory { Physical = 0, Magic = 1, Buff = 2, Debuff = 3, Heal = 4 }
+/// <summary>Skill window grouping. Passive = a learned, always-on effect (armor
+/// masteries) — never cast and never placed on the action bar.</summary>
+public enum SkillCategory { Physical = 0, Magic = 1, Buff = 2, Debuff = 3, Heal = 4, Passive = 5 }
 
 /// <summary>Who a (beneficial) skill affects. SelfOnly = caster only;
 /// AlliesInRadius = caster + nearby player characters (a "party" buff until real
@@ -109,6 +110,12 @@ public static class SkillCatalog
     public const string LbElfWarden = "lb_elf_warden";     // root enemy + self de-taunt
     public const string LbOrkFont = "lb_ork_font";         // AoE heal (totem stand-in)
     public const string LbOrkSap = "lb_ork_sap";           // anti-heal debuff
+    // ---- Armor-weight masteries (learnable PASSIVES). Effect is applied by
+    //      ArmorMastery in RecomputeDerived when the matching weight is worn AND
+    //      the passive is learned; the SkillDef just makes it visible/learnable. ----
+    public const string MasteryHeavy = "mastery_heavy";
+    public const string MasteryLight = "mastery_light";
+    public const string MasteryRobe  = "mastery_robe";
 
     private static readonly Dictionary<string, SkillDef> All = BuildCatalog();
 
@@ -300,6 +307,25 @@ public static class SkillCatalog
                 Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffHp, 0.35f) },
                 Category: SkillCategory.Buff, SpCost: 8000,
                 Description: "Raises Max HP by 35%."),
+
+            // ---- Armor-weight masteries (PASSIVE; not cast, not bar-able). The
+            //      bonus is class/archetype-specific and applied in RecomputeDerived
+            //      only while the matching armor is worn (see ArmorMastery). ----
+            new(MasteryHeavy, "Heavy Armor Mastery", BaseClass.Fighter, SkillEffect.None,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+                Category: SkillCategory.Passive, SpCost: 500,
+                Description: "Passive. While wearing HEAVY body armor, gain your class's "
+                           + "heavy-armor bonus (more HP/defence). Untrained heavy still penalises."),
+            new(MasteryLight, "Light Armor Mastery", BaseClass.Fighter, SkillEffect.None,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+                Category: SkillCategory.Passive, SpCost: 500,
+                Description: "Passive. While wearing LIGHT body armor, gain your class's "
+                           + "light-armor bonus (attack speed, evasion/accuracy, etc.)."),
+            new(MasteryRobe, "Robe Mastery", BaseClass.Mage, SkillEffect.None,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+                Category: SkillCategory.Passive, SpCost: 500,
+                Description: "Passive. While wearing a ROBE, gain your class's robe bonus "
+                           + "(cast speed, MP and MP regen)."),
 
             // ---- Wind Walk (move-speed self buff, learnable) ----
             new(WindWalk, "Wind Walk", BaseClass.Mage,

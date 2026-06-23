@@ -405,11 +405,12 @@ public partial class MainWindow : Window
             if (_skillBar[i] is string id && !available.Contains(id))
                 _skillBar[i] = null;
 
-        // Auto-place any learned skill not already on the bar.
+        // Auto-place any learned skill not already on the bar (passives never go on it).
         var onBar = _skillBar.Where(x => x is not null).Select(x => x!).ToHashSet();
         foreach (var id in available)
         {
             if (onBar.Contains(id)) continue;
+            if (SkillCatalog.Get(id) is { Category: SkillCategory.Passive }) continue;
             int free = Array.IndexOf(_skillBar, null);
             if (free < 0) break;
             _skillBar[free] = id;
@@ -420,6 +421,8 @@ public partial class MainWindow : Window
     /// <summary>Assign a skill to the first free slot (from the Skills window).</summary>
     private void AssignSkillToBar(string skillId)
     {
+        if (SkillCatalog.Get(skillId) is { Category: SkillCategory.Passive })
+            return; // passives are always-on; never on the action bar
         if (_skillBar.Any(x => x == skillId))
             return; // already on the bar
         int free = Array.IndexOf(_skillBar, null);

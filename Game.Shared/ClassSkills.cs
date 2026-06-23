@@ -85,6 +85,45 @@ public static class ClassSkills
         if (discipline is Discipline d)
             foreach (var cs in ForClass(race, baseClass, archetype, d))
                 yield return cs;
+        // Armor-weight mastery passives, injected centrally by archetype (so we don't
+        // edit all 18 per-class files). Same across races; the effect is class-driven.
+        foreach (var cs in MasterySkills(baseClass, archetype))
+            yield return cs;
+    }
+
+    /// <summary>The armor-mastery passives a class can learn, with learn levels.
+    /// Base classes train their natural weight from level 1; second classes gain
+    /// their archetype's weight(s) at the class-change level. The mastery only does
+    /// something while that weight is worn (see <see cref="ArmorMastery"/>).</summary>
+    private static IEnumerable<ClassSkill> MasterySkills(BaseClass baseClass, Archetype? archetype)
+    {
+        const int second = GameConstants.ClassChangeLevel;   // 20
+        switch (archetype)
+        {
+            case null:   // base class, before the level-20 change
+                yield return baseClass == BaseClass.Mage
+                    ? new ClassSkill(SkillCatalog.MasteryRobe, 1)
+                    : new ClassSkill(SkillCatalog.MasteryLight, 1);
+                break;
+            case Archetype.Tank:
+                yield return new ClassSkill(SkillCatalog.MasteryHeavy, second);
+                break;
+            case Archetype.Warrior:
+                yield return new ClassSkill(SkillCatalog.MasteryHeavy, second);
+                yield return new ClassSkill(SkillCatalog.MasteryLight, second);
+                break;
+            case Archetype.Rogue:
+            case Archetype.Archer:
+                yield return new ClassSkill(SkillCatalog.MasteryLight, second);
+                break;
+            case Archetype.Healer:
+                yield return new ClassSkill(SkillCatalog.MasteryLight, second);
+                yield return new ClassSkill(SkillCatalog.MasteryRobe, second);
+                break;
+            case Archetype.Nuker:
+                yield return new ClassSkill(SkillCatalog.MasteryRobe, second);
+                break;
+        }
     }
 
     /// <summary>Skills whose LearnLevel &lt;= the character's level — i.e. the

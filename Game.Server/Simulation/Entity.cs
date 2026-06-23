@@ -636,7 +636,8 @@ public class Entity
         // warriors are immune. Speed factors (>1 faster) divide the TIME multipliers. ---
         if (Kind == EntityKind.Player)
         {
-            var (mEff, mLabel) = ArmorMastery.Resolve(BaseClass, Archetype, bodyWeight, Level);
+            var (mEff, mLabel) = ArmorMastery.Resolve(BaseClass, Archetype, bodyWeight, Level,
+                w => LearnedSkills.Contains(ArmorMastery.SkillIdFor(w)));
             ArmorMasteryLabel = mLabel;
 
             AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier / mEff.AtkSpeed, 0.4f, 2.5f);
