@@ -2099,7 +2099,11 @@ var effect = def.Effect;
         if (pct <= 0f)
             return;
         int heal = Math.Max(1, (int)(entity.MaxHp * pct));
+        int before = entity.Hp;
         entity.Hp = Math.Min(entity.MaxHp, entity.Hp + heal);
+        int healed = entity.Hp - before;
+        if (healed > 0)
+            BroadcastCombat(entity, entity, healed, CombatOutcome.Heal, "Regen");
     }
 
     // ----- Movement --------------------------------------------------------------
@@ -2313,7 +2317,7 @@ var effect = def.Effect;
             p.Con, p.AtkStat, p.Wit, p.Dex,
             p.MaxHp, p.MaxMp, p.AttackPower, p.Defence,
             p.Accuracy, p.Evasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
-            p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.CastSpeedMultiplier, p.AttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttack, p.MagicCritChance,
+            p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.EffectiveCastSpeedMultiplier, p.EffectiveAttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttack, p.MagicCritChance,
             p.HasShield, p.BlockChance, p.BlockReduction, p.ShieldDefense, (int)p.EffectiveMagicDefence,
             p.ActiveArmorSet, p.ArmorMasteryLabel));
 

@@ -184,9 +184,11 @@ public static class SkillCatalog
 
     private static SkillDef WcBolt(string id, string name) => new(
         id, name, BaseClass.Mage, SkillEffect.MagicDamage,
-        MpCost: 45, CastTicks: 15, CooldownTicks: 20, Range: 750, Power: 70,
+        // A proper single-target nuke: ~4s base cast (WIT/gear/buffs shorten it), real power.
+        MpCost: 50, CastTicks: 40, CooldownTicks: 20, Range: 750, Power: 120,
+        Replaces: new[] { MagicBolt, HolyStrike },   // 3rd-class nuke replaces the lower ones
         Category: SkillCategory.Magic, SpCost: 500,
-        Description: "A single-target magic bolt.");
+        Description: "A heavy single-target nuke (replaces Magic Bolt / Holy Strike).");
 
     private static Dictionary<string, SkillDef> BuildCatalog()
     {
@@ -347,8 +349,9 @@ public static class SkillCatalog
 
             new(HolyStrike, "Holy Strike", BaseClass.Mage, SkillEffect.MagicDamage,
                 MpCost: 20, CastTicks: 30, CooldownTicks: 10, Range: 500, Power: 70,
+                Replaces: new[] { MagicBolt },   // the healer's nuke replaces the basic
                 Category: SkillCategory.Magic,
-                Description: "A bolt of light — the healer's offensive spell."),
+                Description: "A bolt of light — the healer's offensive spell (replaces Magic Bolt)."),
 
             new(GreaterWeakness, "Greater Weakness", BaseClass.Mage, SkillEffect.DebuffDef,
                 MpCost: 22, CastTicks: 5, CooldownTicks: 300, Range: 500, Power: 0,

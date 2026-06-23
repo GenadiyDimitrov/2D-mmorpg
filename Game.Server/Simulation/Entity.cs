@@ -318,7 +318,8 @@ public class Entity
             foreach (var buff in Buffs)
                 if (buff.Has(SkillEffect.BuffCastSpeed))
                     pct += buff.Percent(SkillEffect.BuffCastSpeed);
-            return mult * Math.Max(0.2f, 1f - pct);
+            // Combine WIT stat × gear/mastery/passive field × buffs (lower = faster).
+            return Math.Max(0.15f, mult * CastSpeedMultiplier * Math.Max(0.2f, 1f - pct));
         }
     }
 
@@ -334,7 +335,8 @@ public class Entity
             foreach (var buff in Buffs)
                 if (buff.Has(SkillEffect.BuffAtkSpeed))
                     pct += buff.Percent(SkillEffect.BuffAtkSpeed);
-            return mult * Math.Max(0.2f, 1f - pct);
+            // Combine DEX stat × gear/mastery/passive field × buffs (lower = faster).
+            return Math.Max(0.15f, mult * AttackSpeedMultiplier * Math.Max(0.2f, 1f - pct));
         }
     }
 

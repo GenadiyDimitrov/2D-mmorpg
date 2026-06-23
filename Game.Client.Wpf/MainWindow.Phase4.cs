@@ -542,22 +542,14 @@ public partial class MainWindow
         StatsList.Items.Add(MakeStatRow("Attack Range", $"{st.BasicAttackRange:0}"));
         StatsList.Items.Add(MakeStatRow("Move Speed", $"{st.MoveSpeed:0}"));
 
-        // Cast reduction: WIT vs baseline 25 (negative modifier = faster),
-        // combined with item Cast Speed attributes.
-        float witPct = -st.CastModifier * 100f;            // +12 = 12% faster from WIT
-        float itemPct = (1f - st.CastSpeedMult) * 100f;    // item cast-speed attribute
-        float totalFaster = witPct + itemPct;
-        string castLabel = totalFaster >= 0
-            ? $"{totalFaster:0.#}% faster"
-            : $"{-totalFaster:0.#}% slower";
-        StatsList.Items.Add(MakeStatRow("Cast Speed", castLabel));
-        StatsList.Items.Add(MakeStatRow("  from WIT", $"{(witPct>=0?"+":"")}{witPct:0.#}% (base 25 WIT)"));
-        if (itemPct > 0)
-            StatsList.Items.Add(MakeStatRow("  from items", $"+{itemPct:0.#}%"));
-
-        float atkSpeedPct = (1f - st.AttackSpeedMult) * 100f;
-        if (atkSpeedPct > 0)
-            StatsList.Items.Add(MakeStatRow("Attack Speed", $"+{atkSpeedPct:0.#}%"));
+        // CastSpeedMult / AttackSpeedMult are the EFFECTIVE multipliers (WIT/DEX +
+        // gear + masteries + buffs/potions all folded in; lower = faster).
+        float castFaster = (1f - st.CastSpeedMult) * 100f;
+        StatsList.Items.Add(MakeStatRow("Cast Speed",
+            castFaster >= 0 ? $"{castFaster:0.#}% faster" : $"{-castFaster:0.#}% slower"));
+        float atkFaster = (1f - st.AttackSpeedMult) * 100f;
+        StatsList.Items.Add(MakeStatRow("Attack Speed",
+            atkFaster >= 0 ? $"{atkFaster:0.#}% faster" : $"{-atkFaster:0.#}% slower"));
     }
 
     private static Grid MakeStatRow(string label, string value)
