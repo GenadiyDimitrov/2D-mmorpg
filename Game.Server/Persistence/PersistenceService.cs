@@ -236,6 +236,8 @@ public class PersistenceService
         if (rec is null)
             return;
 
+        rec.Race = entity.Race;             // can change via DEBUG character reset
+        rec.BaseClass = entity.BaseClass;
         rec.Level = entity.Level;
         rec.Exp = entity.Exp;
         rec.Gold = entity.Gold;

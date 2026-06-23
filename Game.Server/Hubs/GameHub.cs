@@ -289,6 +289,14 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task DebugReset(int race, int baseClass)
+    {
+#if DEBUG
+        _world.Commands.Enqueue(new DebugResetCmd(Context.ConnectionId, (Race)race, (BaseClass)baseClass));
+#endif
+        return Task.CompletedTask;
+    }
+
     public override Task OnDisconnectedAsync(Exception? exception)
     {
         Sessions.TryRemove(Context.ConnectionId, out _);

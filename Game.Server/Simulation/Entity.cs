@@ -72,8 +72,10 @@ public class Entity
     public required string Name { get; init; }
     public required EntityKind Kind { get; init; }
 
-    public Race Race { get; init; }
-    public BaseClass BaseClass { get; init; }
+    // Settable (not init) so a DEBUG character-reset can re-roll race/base class
+    // in place. Normal play never changes these after creation.
+    public Race Race { get; set; }
+    public BaseClass BaseClass { get; set; }
 
     /// <summary>DB character id (null for mobs / unsaved).</summary>
     public int? PersistentId { get; set; }
@@ -293,8 +295,8 @@ public class Entity
 
     /// <summary>Magic defence — the divisor for incoming magic damage. Separate
     /// channel from physical defence; sourced from level base + jewels + the Tank
-    /// "Anti Magic" passive. No buff flag yet (magic-def buffs can hook in here).</summary>
-    public float EffectiveMagicDefence => MagicDefence;
+    /// "Anti Magic" passive, plus any BuffMagicDef (e.g. Warchanter's chant).</summary>
+    public float EffectiveMagicDefence => ModifiedStat(MagicDefence, SkillEffect.BuffMagicDef);
 
     /// <summary>Evasion including evasion buffs (flat + percent).</summary>
     public float EffectiveEvasion => ModifiedStat(Evasion, SkillEffect.BuffEvasion);
@@ -656,6 +658,29 @@ public class Entity
             InterruptResist += mEff.InterruptResist;
             if (mEff.CritRate != 0f) CritChance = Math.Clamp(CritChance + mEff.CritRate, 0f, 0.75f);
             CritDamageBonus += mEff.CritDamage;
+
+            // ----- Learnable PASSIVES (discipline passives etc.): each learned skill
+            // whose SkillDef carries a PassiveEffect applies it, on top of everything. -----
+            foreach (var skillId in LearnedSkills)
+            {
+                if (SkillCatalog.Get(skillId)?.Passive is not PassiveEffect pe) continue;
+                MaxHp += (int)(MaxHp * pe.MaxHpPct);
+                MaxMp += (int)(MaxMp * pe.MaxMpPct);
+                Defence += pe.Defence;
+                MagicDefence += pe.MagicDefence;
+                AttackPower += pe.Attack + (int)(AttackPower * pe.AttackPct);
+                MagicAttack += pe.Attack + (int)(MagicAttack * pe.AttackPct);
+                Evasion += pe.Evasion;
+                Accuracy += pe.Accuracy;
+                if (pe.CritRate != 0f) CritChance = Math.Clamp(CritChance + pe.CritRate, 0f, 0.75f);
+                CritDamageBonus += pe.CritDamage;
+                if (pe.MagicCritRate != 0f) MagicCritChance = Math.Clamp(MagicCritChance + pe.MagicCritRate, 0f, 0.5f);
+                HpRegenBonus += pe.HpRegen;
+                MpRegenBonus += pe.MpRegen;
+                if (pe.AtkSpeedPct != 0f) AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier * (1f - pe.AtkSpeedPct), 0.4f, 2.5f);
+                if (pe.CastSpeedPct != 0f) CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier * (1f - pe.CastSpeedPct), 0.4f, 2.5f);
+                if (pe.MoveSpeedPct != 0f) { RunSpeed *= 1f + pe.MoveSpeedPct; WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor; Speed = RunSpeed; }
+            }
         }
 
         Hp = Math.Min(Hp, MaxHp);

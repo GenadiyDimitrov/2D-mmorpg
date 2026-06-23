@@ -90,6 +90,7 @@ public class GameLoopService : BackgroundService
                 case DebugGiveCmd c: HandleDebugGive(c); break;
                 case DebugLevelCmd c: HandleDebugLevel(c); break;
                 case DebugGoldCmd c: HandleDebugGold(c); break;
+                case DebugResetCmd c: HandleDebugReset(c); break;
                 case TradeRequestCmd c: HandleTradeRequest(c); break;
                 case TradeRespondCmd c: HandleTradeRespond(c); break;
                 case TradeOfferCmd c: HandleTradeOffer(c); break;
@@ -690,6 +691,61 @@ public class GameLoopService : BackgroundService
         SendGold(player);
         SendSystemToEntity(player, $"[DEBUG] +{cmd.Amount:N0} {GameConstants.CurrencyName} (now {player.Gold:N0}).");
     }
+
+    /// <summary>DEBUG: re-roll the SAME character in place — new race/base class,
+    /// back to level 1 with the starter kit, classes/skills/quests/inventory cleared.
+    /// Keeps the character row, name, gold and position.</summary>
+    private void HandleDebugReset(DebugResetCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+
+        player.Race = cmd.Race;
+        player.BaseClass = cmd.BaseClass;
+        var s = StatCalculator.GetBaseStats(cmd.Race, cmd.BaseClass);
+        player.Con = s.Con; player.AtkStat = s.Atk; player.Wit = s.Wit; player.Dex = s.Dex;
+
+        player.Level = 1;
+        player.Exp = 0;
+        player.SecondClass = 0;
+        player.ThirdClass = 0;
+        player.SkillPoints = 0;
+        player.LearnedSkills.Clear();
+        player.ActiveQuests.Clear();
+        player.CompletedQuests.Clear();
+        player.Buffs.Clear();
+        player.Inventory.Clear();
+        GiveStarterKit(player);
+
+        AutoLearnCoreSkills(player);
+        player.RecomputeDerived();
+        player.Hp = player.MaxHp;
+        player.Mp = player.MaxMp;
+
+        SendInventory(player);
+        SendStats(player);
+        SendLearned(player);
+        SendQuestLog(player);
+        SaveEntity(player);
+        SendSystemToEntity(player, $"[DEBUG] Character reset to level 1 {cmd.Race} {cmd.BaseClass}.");
+    }
+
+    /// <summary>Grant the new-character starter kit to a live entity (mirrors
+    /// PersistenceService.CreateCharacterAsync). Items arrive unequipped.</summary>
+    private void GiveStarterKit(Entity player)
+    {
+        string weapon = player.BaseClass == BaseClass.Mage
+            ? ItemCatalog.WeaponKey(WeaponType.Blunt, ItemGrade.F, ItemRarity.Common)
+            : ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.F, ItemRarity.Common);
+        var bodyWeight = player.BaseClass == BaseClass.Mage ? ArmorWeight.Robe : ArmorWeight.Light;
+
+        AddItem(player, weapon);
+        AddItem(player, ItemCatalog.ArmorKey(bodyWeight, ArmorSlot.Body, ItemGrade.F, ItemRarity.Common));
+        foreach (var slot in new[] { ArmorSlot.Head, ArmorSlot.Gloves, ArmorSlot.Boots })
+            AddItem(player, ItemCatalog.ArmorKey(ArmorWeight.None, slot, ItemGrade.F, ItemRarity.Common));
+        AddItem(player, ItemCatalog.MinorPotion, 5);
+        AddItem(player, ItemCatalog.GreaterPotion, 2);
+    }
 #pragma warning restore CS1998
 
     private void HandleUsePotion(UsePotionCmd cmd)
@@ -1177,6 +1233,7 @@ public class GameLoopService : BackgroundService
 
             if (regenTick)
             {
+                TickHealOverTime(entity);   // HoT heals even in combat (unlike natural regen)
                 Regenerate(entity);
                 if (entity.Kind == EntityKind.Player)
                     PushBuffs(entity);
@@ -1951,11 +2008,19 @@ var effect = def.Effect;
         if (entity.Kind == EntityKind.Player)
             multiplier *= MovementTuning.RegenMultiplier(entity.MoveState);
 
+        // Regen buffs (e.g. Warchanter's chant): +% to HP/MP regen.
+        float hpRegenPct = 0f, mpRegenPct = 0f;
+        foreach (var b in entity.Buffs)
+        {
+            if (b.Has(SkillEffect.BuffHpRegen)) hpRegenPct += b.Percent(SkillEffect.BuffHpRegen);
+            if (b.Has(SkillEffect.BuffMpRegen)) mpRegenPct += b.Percent(SkillEffect.BuffMpRegen);
+        }
+
         if (entity.Hp < entity.MaxHp)
         {
             int regen = Math.Max(1,
                 (int)((StatCalculator.HpRegenPerSecond(entity.Con, entity.Level) + entity.HpRegenBonus)
-                      * multiplier * entity.HpRegenMult));
+                      * multiplier * entity.HpRegenMult * (1f + hpRegenPct)));
             entity.Hp = Math.Min(entity.MaxHp, entity.Hp + regen);
         }
 
@@ -1963,9 +2028,24 @@ var effect = def.Effect;
         {
             int regen = Math.Max(1,
                 (int)((StatCalculator.MpRegenPerSecond(entity.Wit, entity.Level) + entity.MpRegenBonus)
-                      * multiplier * entity.MpRegenMult));
+                      * multiplier * entity.MpRegenMult * (1f + mpRegenPct)));
             entity.Mp = Math.Min(entity.MaxMp, entity.Mp + regen);
         }
+    }
+
+    /// <summary>Heal-over-time buffs (e.g. Warchanter's Renew): heal a % of max HP
+    /// each second, in or out of combat, until the buff expires.</summary>
+    private void TickHealOverTime(Entity entity)
+    {
+        if (entity.Dead || entity.Hp >= entity.MaxHp)
+            return;
+        float pct = 0f;
+        foreach (var b in entity.Buffs)
+            if (b.Has(SkillEffect.HealOverTime)) pct += b.Percent(SkillEffect.HealOverTime);
+        if (pct <= 0f)
+            return;
+        int heal = Math.Max(1, (int)(entity.MaxHp * pct));
+        entity.Hp = Math.Min(entity.MaxHp, entity.Hp + heal);
     }
 
     // ----- Movement --------------------------------------------------------------

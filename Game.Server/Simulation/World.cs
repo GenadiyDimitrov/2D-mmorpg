@@ -124,6 +124,10 @@ public record DebugLevelCmd(string ConnectionId) : IGameCommand;
 /// <summary>DEBUG-only: grant gold.</summary>
 public record DebugGoldCmd(string ConnectionId, long Amount) : IGameCommand;
 
+/// <summary>DEBUG-only: re-roll the current character (new race/base class, reset to
+/// level 1 with the starter kit; keeps the same character row + gold).</summary>
+public record DebugResetCmd(string ConnectionId, Race Race, BaseClass BaseClass) : IGameCommand;
+
 /// <summary>Admin command (kick/ban/jail/unjail/god). Validated in the hub.</summary>
 public record AdminCmd(string ConnectionId, string Command, string Argument) : IGameCommand;
 

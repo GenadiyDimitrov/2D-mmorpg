@@ -658,6 +658,14 @@ public partial class MainWindow : Window
             if (dto.Id == _myId)
             {
                 _myDto = dto;
+                // Race/base class can change via a DEBUG character reset — keep ours in sync.
+                if (dto.Race != _myRace || dto.BaseClass != _myBaseClass)
+                {
+                    _myRace = dto.Race;
+                    _myBaseClass = dto.BaseClass;
+                    if (SkillsPanel.Visibility == Visibility.Visible)
+                        RefreshSkillsWindow();
+                }
                 if (dto.SecondClass != _mySecondClass || dto.ThirdClass != _myThirdClass)
                 {
                     _mySecondClass = dto.SecondClass;

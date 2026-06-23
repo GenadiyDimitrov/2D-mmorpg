@@ -1583,6 +1583,17 @@ public partial class MainWindow
         AddDebugHeader("Character");
         DebugList.Children.Add(DebugAction("Level +1", async () => await _net.DebugLevelAsync()));
         DebugList.Children.Add(DebugAction("+100,000 Gold", async () => await _net.DebugGoldAsync(100_000)));
+
+        // Re-roll the SAME character: pick race + base class; resets to level 1 with
+        // the starter kit (classes/skills/quests/inventory cleared). No relog needed.
+        AddDebugHeader("Reset Character (re-roll, same char)");
+        foreach (var race in SelectableRaces())
+            foreach (var bc in Enum.GetValues<BaseClass>())
+            {
+                var r = race; var b = bc;
+                DebugList.Children.Add(DebugAction($"Reset → {r} {b}",
+                    async () => await _net.DebugResetAsync(r, b)));
+            }
         DebugList.Children.Add(DebugAction("Class Change (test)", () =>
         {
             OpenClassChangePanel();

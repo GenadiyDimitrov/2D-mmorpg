@@ -71,12 +71,18 @@ public enum SkillEffect
     DebuffHealRecv = 1 << 15,   // anti-heal: reduces healing the target receives
     Root           = 1 << 16,   // hold: target cannot move for the duration
     Detaunt        = 1 << 17,   // drop the caster's aggro from nearby mobs (stub until threat)
-    // Room to grow: Stun = 1 << 18, ...
+    // ----- Buffer (Warchanter) additions -----
+    BuffMagicDef   = 1 << 18,   // +magic defence (applied live in EffectiveMagicDefence)
+    BuffHpRegen    = 1 << 19,   // +HP regen (percent, applied in Regenerate)
+    BuffMpRegen    = 1 << 20,   // +MP regen (percent, applied in Regenerate)
+    HealOverTime   = 1 << 21,   // heals a % of max HP each second for the duration
+    // Room to grow: Stun = 1 << 22, ...
 
     // Convenience masks.
     AnyDamage = PhysicalDamage | MagicDamage,
     AnyBuff   = BuffAtk | BuffDef | BuffMoveSpeed | BuffAtkSpeed | BuffCastSpeed
-              | BuffEvasion | BuffHp | BuffMp | BuffBlockChance | BuffShieldDef,
+              | BuffEvasion | BuffHp | BuffMp | BuffBlockChance | BuffShieldDef
+              | BuffMagicDef | BuffHpRegen | BuffMpRegen | HealOverTime,
     // Harmful effects applied to an enemy (offensive; can fail; cleansable).
     AnyDebuff = DebuffDef | DebuffHealRecv | Root,
 }

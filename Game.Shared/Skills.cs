@@ -29,7 +29,8 @@ public record SkillDef(
     int InterruptDefense = 0,
     int InterruptPower = 0,
     int InitialMpCost = -1,
-    float BlockAccuracy = 0f)
+    float BlockAccuracy = 0f,
+    PassiveEffect? Passive = null)
 {
     public float MagnitudeOf(SkillEffect effect, ModifierMode mode)
     {
@@ -50,8 +51,24 @@ public record SkillDef(
 }
 
 /// <summary>Skill window grouping. Passive = a learned, always-on effect (armor
-/// masteries) — never cast and never placed on the action bar.</summary>
+/// masteries, discipline passives) — never cast and never placed on the action bar.</summary>
 public enum SkillCategory { Physical = 0, Magic = 1, Buff = 2, Debuff = 3, Heal = 4, Passive = 5 }
+
+/// <summary>
+/// An always-on bonus carried by a learnable PASSIVE skill (discipline passives).
+/// Applied in Entity.RecomputeDerived for every learned skill whose SkillDef sets
+/// one. ALL fields default to 0 = no effect (so `default`/`new()` is safely inert —
+/// unlike MasteryEffect's speed factors). Pct fields are fractions (0.10 = +10%);
+/// speed Pct fields make you FASTER (0.10 = 10% faster). Flat ints add directly.
+/// </summary>
+public readonly record struct PassiveEffect(
+    float MaxHpPct = 0f, float MaxMpPct = 0f,
+    int Defence = 0, int MagicDefence = 0,
+    int Attack = 0, float AttackPct = 0f,
+    int Evasion = 0, int Accuracy = 0,
+    float CritRate = 0f, float CritDamage = 0f, float MagicCritRate = 0f,
+    float HpRegen = 0f, float MpRegen = 0f,
+    float AtkSpeedPct = 0f, float CastSpeedPct = 0f, float MoveSpeedPct = 0f);
 
 /// <summary>Who a (beneficial) skill affects. SelfOnly = caster only;
 /// AlliesInRadius = caster + nearby player characters (a "party" buff until real
@@ -116,8 +133,60 @@ public static class SkillCatalog
     public const string MasteryHeavy = "mastery_heavy";
     public const string MasteryLight = "mastery_light";
     public const string MasteryRobe  = "mastery_robe";
+    // ---- Lightbringer (Healer A) — buff + passive to fill the 4-skill template ----
+    public const string LbBlessing = "lb_blessing";
+    public const string LbDevotion = "lb_devotion";   // passive
+    // ---- Warchanter (Healer B) — buffer: per-race kits (DMG + mega-buff + HoT + passive) ----
+    public const string WcHumanBolt = "wc_human_bolt";
+    public const string WcHumanChant = "wc_human_chant";
+    public const string WcHumanRenew = "wc_human_renew";
+    public const string WcHumanPass = "wc_human_pass";
+    public const string WcElfBolt = "wc_elf_bolt";
+    public const string WcElfChant = "wc_elf_chant";
+    public const string WcElfRenew = "wc_elf_renew";
+    public const string WcElfPass = "wc_elf_pass";
+    public const string WcOrkBolt = "wc_ork_bolt";
+    public const string WcOrkChant = "wc_ork_chant";
+    public const string WcOrkRenew = "wc_ork_renew";
+    public const string WcOrkPass = "wc_ork_pass";
 
     private static readonly Dictionary<string, SkillDef> All = BuildCatalog();
+
+    // ---- Warchanter kit factories (same numbers per race; names differ) ----
+    private static SkillDef WcChant(string id, string name) => new(
+        id, name, BaseClass.Mage,
+        SkillEffect.BuffAtk | SkillEffect.BuffDef | SkillEffect.BuffMagicDef
+        | SkillEffect.BuffCastSpeed | SkillEffect.BuffAtkSpeed | SkillEffect.BuffMoveSpeed
+        | SkillEffect.BuffHp | SkillEffect.BuffMp | SkillEffect.BuffHpRegen | SkillEffect.BuffMpRegen,
+        MpCost: 60, CastTicks: 20, CooldownTicks: 50, Range: 0, Power: 0,
+        DurationTicks: 12000, BuffKey: "wc_chant", Rank: 1,
+        Magnitudes: new EffectMagnitude[]
+        {
+            new(SkillEffect.BuffAtk, 0.15f), new(SkillEffect.BuffDef, 0.15f),
+            new(SkillEffect.BuffMagicDef, 0.30f),
+            new(SkillEffect.BuffCastSpeed, 0.30f), new(SkillEffect.BuffAtkSpeed, 0.30f),
+            new(SkillEffect.BuffMoveSpeed, 45f, ModifierMode.Flat),
+            new(SkillEffect.BuffHp, 0.35f), new(SkillEffect.BuffMp, 0.35f),
+            new(SkillEffect.BuffHpRegen, 0.20f), new(SkillEffect.BuffMpRegen, 0.20f),
+        },
+        Category: SkillCategory.Buff, TargetMode: TargetMode.AlliesInRadius, AreaRadius: 600,
+        SpCost: 500,
+        Description: "Party: +35% max HP/MP, +30% magic def & cast/attack speed, +15% atk/def, +move & regen.");
+
+    private static SkillDef WcRenew(string id, string name) => new(
+        id, name, BaseClass.Mage, SkillEffect.Heal | SkillEffect.HealOverTime,
+        MpCost: 70, CastTicks: 20, CooldownTicks: 300, Range: 0, Power: 150,
+        DurationTicks: 100, BuffKey: "wc_renew", Rank: 1,
+        Magnitudes: new EffectMagnitude[] { new(SkillEffect.HealOverTime, 0.02f) },
+        Category: SkillCategory.Heal, TargetMode: TargetMode.AlliesInRadius, AreaRadius: 600,
+        SpCost: 500,
+        Description: "Party: an instant heal plus 2% max HP per second for 10s.");
+
+    private static SkillDef WcBolt(string id, string name) => new(
+        id, name, BaseClass.Mage, SkillEffect.MagicDamage,
+        MpCost: 45, CastTicks: 15, CooldownTicks: 20, Range: 750, Power: 70,
+        Category: SkillCategory.Magic, SpCost: 500,
+        Description: "A single-target magic bolt.");
 
     private static Dictionary<string, SkillDef> BuildCatalog()
     {
@@ -326,6 +395,53 @@ public static class SkillCatalog
                 Category: SkillCategory.Passive, SpCost: 500,
                 Description: "Passive. While wearing a ROBE, gain your class's robe bonus "
                            + "(cast speed, MP and MP regen)."),
+
+            // ===== Lightbringer (Healer A) — buff + passive to complete its 4-skill kit =====
+            new(LbBlessing, "Blessing of Light", BaseClass.Mage,
+                SkillEffect.BuffHp | SkillEffect.BuffDef,
+                MpCost: 50, CastTicks: 20, CooldownTicks: 30, Range: 0, Power: 0,
+                DurationTicks: 12000, BuffKey: "lb_blessing", Rank: 1,
+                Magnitudes: new EffectMagnitude[]
+                {
+                    new(SkillEffect.BuffHp, 0.15f), new(SkillEffect.BuffDef, 0.15f),
+                },
+                Category: SkillCategory.Buff, TargetMode: TargetMode.AlliesInRadius, AreaRadius: 600,
+                SpCost: 500, Description: "Party: +15% max HP and +15% defence."),
+            new(LbDevotion, "Devotion", BaseClass.Mage, SkillEffect.None,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+                Category: SkillCategory.Passive, SpCost: 500,
+                Passive: new PassiveEffect(MaxMpPct: 0.10f, MpRegen: 2f, MagicDefence: 10),
+                Description: "Passive. +10% max MP, +MP regen, +10 magic defence."),
+
+            // ===== Warchanter (Healer B) — buffer: per-race kits =====
+            // Mega party buff (same magnitudes all races; names differ per race).
+            WcChant(WcHumanChant, "Grand Anthem"),
+            WcChant(WcElfChant, "Sylvan Anthem"),
+            WcChant(WcOrkChant, "War Anthem"),
+            // Party heal + heal-over-time.
+            WcRenew(WcHumanRenew, "Renewing Verse"),
+            WcRenew(WcElfRenew, "Dawn Verse"),
+            WcRenew(WcOrkRenew, "Spirit Verse"),
+            // Single-target magic nuke (the buffer's only direct damage).
+            WcBolt(WcHumanBolt, "Arcane Lance"),
+            WcBolt(WcElfBolt, "Starlight Lance"),
+            WcBolt(WcOrkBolt, "Spirit Lance"),
+            // Passives (per-race lean; v1 is a flat caster set — robe/light conditional comes in P1).
+            new(WcHumanPass, "Resonance", BaseClass.Mage, SkillEffect.None,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+                Category: SkillCategory.Passive, SpCost: 500,
+                Passive: new PassiveEffect(MaxMpPct: 0.10f, MpRegen: 2f, MagicCritRate: 0.05f),
+                Description: "Passive. +10% max MP, +MP regen, +5% magic crit."),
+            new(WcElfPass, "Harmony", BaseClass.Mage, SkillEffect.None,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+                Category: SkillCategory.Passive, SpCost: 500,
+                Passive: new PassiveEffect(MaxMpPct: 0.10f, MpRegen: 2f, CastSpeedPct: 0.08f),
+                Description: "Passive. +10% max MP, +MP regen, +8% cast speed."),
+            new(WcOrkPass, "Totemic Bond", BaseClass.Mage, SkillEffect.None,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+                Category: SkillCategory.Passive, SpCost: 500,
+                Passive: new PassiveEffect(MaxMpPct: 0.10f, MpRegen: 2f, AttackPct: 0.08f),
+                Description: "Passive. +10% max MP, +MP regen, +8% attack (feeds spells)."),
 
             // ---- Wind Walk (move-speed self buff, learnable) ----
             new(WindWalk, "Wind Walk", BaseClass.Mage,
