@@ -128,6 +128,10 @@ public record DebugGoldCmd(string ConnectionId, long Amount) : IGameCommand;
 /// level 1 with the starter kit; keeps the same character row + gold).</summary>
 public record DebugResetCmd(string ConnectionId, Race Race, BaseClass BaseClass) : IGameCommand;
 
+/// <summary>DEBUG-only: take a 3rd class (discipline) directly, bypassing the quest
+/// chain + items. Parent 2nd class must already match the discipline.</summary>
+public record DebugThirdClassCmd(string ConnectionId, int ThirdClassId) : IGameCommand;
+
 /// <summary>Admin command (kick/ban/jail/unjail/god). Validated in the hub.</summary>
 public record AdminCmd(string ConnectionId, string Command, string Argument) : IGameCommand;
 

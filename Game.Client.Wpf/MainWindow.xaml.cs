@@ -671,6 +671,10 @@ public partial class MainWindow : Window
                     _mySecondClass = dto.SecondClass;
                     _myThirdClass = dto.ThirdClass;
                     EnsureSkillBarSlots();
+                    // The class just changed: refresh the learn list so newly-available
+                    // skills (e.g. lvl-20 masteries) enable immediately, not after +1 level.
+                    if (SkillsPanel.Visibility == Visibility.Visible)
+                        RefreshSkillsWindow();
                 }
                 MaybeShowClassChangeNotice(dto.Level, dto.SecondClass);
                 MaybeShowThirdClassNotice(dto.Level, dto.SecondClass, dto.ThirdClass);

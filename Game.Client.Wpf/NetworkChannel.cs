@@ -156,6 +156,9 @@ public class NetworkChannel : IAsyncDisposable
     public Task DebugResetAsync(Race race, BaseClass baseClass) =>
         _connection!.SendAsync("DebugReset", (int)race, (int)baseClass);
 
+    public Task DebugThirdClassAsync(int thirdClassId) =>
+        _connection!.SendAsync("DebugThirdClass", thirdClassId);
+
     public Task TradeRequestAsync(Guid targetId) =>
         _connection!.SendAsync("TradeRequest", targetId);
 

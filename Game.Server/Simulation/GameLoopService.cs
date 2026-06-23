@@ -91,6 +91,7 @@ public class GameLoopService : BackgroundService
                 case DebugLevelCmd c: HandleDebugLevel(c); break;
                 case DebugGoldCmd c: HandleDebugGold(c); break;
                 case DebugResetCmd c: HandleDebugReset(c); break;
+                case DebugThirdClassCmd c: HandleDebugThirdClass(c); break;
                 case TradeRequestCmd c: HandleTradeRequest(c); break;
                 case TradeRespondCmd c: HandleTradeRespond(c); break;
                 case TradeOfferCmd c: HandleTradeOffer(c); break;
@@ -228,16 +229,24 @@ public class GameLoopService : BackgroundService
     }
 
     /// <summary>Grant (for free) the class's core skills whose level is met.
-    /// Core skills are those with SpCost &lt;= 1 (the mandatory kit); the pricier
-    /// extras (HP Boost, Wind Walk) must be learned with SP from the window.</summary>
+    /// Nothing is auto-learned anymore EXCEPT a mage's starter nuke (Magic Bolt), so
+    /// mages can deal damage from level 1. Every other skill (incl. 2nd/3rd-class
+    /// skills) must be learned with SP from the skills window.</summary>
     private void AutoLearnCoreSkills(Entity player)
     {
-        foreach (var cs in ClassSkills.LearnableAt(player.Race, player.BaseClass, player.Archetype, player.Level, player.Discipline))
-        {
-            var def = SkillCatalog.Get(cs.SkillId);
-            if (def is not null && def.SpCost <= 1)
-                player.LearnedSkills.Add(def.Id);
-        }
+        // Don't re-add Magic Bolt once a superior skill (Flame Bolt, etc.) replaced it.
+        if (player.BaseClass == BaseClass.Mage && !IsSuperseded(player, SkillCatalog.MagicBolt))
+            player.LearnedSkills.Add(SkillCatalog.MagicBolt);
+    }
+
+    /// <summary>True if the player has learned a skill that REPLACES the given id
+    /// (e.g. Flame Bolt replaces Magic Bolt; HP Boost 3 replaces 1 &amp; 2).</summary>
+    private static bool IsSuperseded(Entity player, string skillId)
+    {
+        foreach (var learnedId in player.LearnedSkills)
+            if (SkillCatalog.Get(learnedId)?.Replaces is { } rep && Array.IndexOf(rep, skillId) >= 0)
+                return true;
+        return false;
     }
 
     private void HandleLearnSkill(LearnSkillCmd cmd)
@@ -252,6 +261,15 @@ public class GameLoopService : BackgroundService
         if (player.LearnedSkills.Contains(def.Id))
         {
             SendSystemToEntity(player, $"{def.Name} is already learned.");
+            return;
+        }
+
+        // Superseded: a learned skill already REPLACES this one (e.g. you have Flame
+        // Bolt, so Magic Bolt — which it removed from the learned set — can't be
+        // re-learned). Covers ranked lines too (HP Boost 3 replaces 1 & 2).
+        if (IsSuperseded(player, def.Id))
+        {
+            SendSystemToEntity(player, $"You already know a superior version of {def.Name}.");
             return;
         }
 
@@ -728,6 +746,42 @@ public class GameLoopService : BackgroundService
         SendQuestLog(player);
         SaveEntity(player);
         SendSystemToEntity(player, $"[DEBUG] Character reset to level 1 {cmd.Race} {cmd.BaseClass}.");
+    }
+
+    /// <summary>DEBUG: take a 3rd-class discipline directly (no quest/items). Forces
+    /// the matching parent 2nd class if needed so the archetype stays consistent.</summary>
+    private void HandleDebugThirdClass(DebugThirdClassCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
+            return;
+        if (ThirdClassCatalog.Get(cmd.ThirdClassId) is not ThirdClassDef tcd
+            || tcd.Race != player.Race)
+        {
+            SendSystemToEntity(player, "[DEBUG] Invalid 3rd class.");
+            return;
+        }
+
+        // Ensure the parent 2nd class (apply its core-stat bonus only if changing from none).
+        if (player.SecondClass != tcd.ParentSecondClassId)
+        {
+            if (player.SecondClass == 0 && ClassCatalog.Get(tcd.ParentSecondClassId) is SecondClassDef p)
+            {
+                var (con, atk, wit, dex) = ClassCatalog.StatBonus(p.Archetype);
+                player.Con += con; player.AtkStat += atk; player.Wit += wit; player.Dex += dex;
+            }
+            player.SecondClass = tcd.ParentSecondClassId;
+        }
+        player.ThirdClass = cmd.ThirdClassId;
+
+        AutoLearnCoreSkills(player);
+        player.RecomputeDerived();
+        player.Hp = player.MaxHp;
+        player.Mp = player.MaxMp;
+
+        SendStats(player);
+        SendLearned(player);
+        SaveEntity(player);
+        BroadcastSystem($"{player.Name} has become a {tcd.Name}!");
     }
 
     /// <summary>Grant the new-character starter kit to a live entity (mirrors

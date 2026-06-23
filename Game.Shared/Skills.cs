@@ -335,13 +335,15 @@ public static class SkillCatalog
 
             new(GreaterHeal, "Greater Heal", BaseClass.Mage, SkillEffect.Heal,
                 MpCost: 35, CastTicks: 35, CooldownTicks: 15, Range: 500, Power: 150,
+                Replaces: new[] { Heal },   // upgrades (replaces) the basic heal
                 Category: SkillCategory.Heal,
-                Description: "A powerful heal that can target an ally at range."),
+                Description: "A powerful heal that can target an ally at range (replaces Heal)."),
 
             new(FlameBolt, "Flamebolt", BaseClass.Mage, SkillEffect.MagicDamage,
                 MpCost: 24, CastTicks: 40, CooldownTicks: 10, Range: 500, Power: 95,
+                Replaces: new[] { MagicBolt },   // upgrades (replaces) the basic nuke
                 Category: SkillCategory.Magic,
-                Description: "A searing bolt — the nuker's stronger basic attack."),
+                Description: "A searing bolt — the nuker's stronger basic attack (replaces Magic Bolt)."),
 
             new(HolyStrike, "Holy Strike", BaseClass.Mage, SkillEffect.MagicDamage,
                 MpCost: 20, CastTicks: 30, CooldownTicks: 10, Range: 500, Power: 70,

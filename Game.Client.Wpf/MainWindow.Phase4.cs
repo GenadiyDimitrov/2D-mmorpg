@@ -227,16 +227,42 @@ public partial class MainWindow
     // the debug Functions tab opens this panel directly to pick a second class.
     private void OpenClassChangePanel()
     {
-        if (_mySecondClass > 0)
+        ClassOptions.Children.Clear();
+
+        // Already have a 3rd class — nothing further (4th class isn't built yet).
+        if (_myThirdClass > 0)
         {
             AppendChat(new ChatMessage("SYSTEM",
-                $"You are already a {ClassCatalog.Get(_mySecondClass)?.Name}.", ChatChannel.System));
+                $"You are already a {ThirdClassCatalog.Get(_myThirdClass)?.Name} (no 4th class yet).",
+                ChatChannel.System));
             return;
         }
 
-        ClassHint.Text = $"As a {_myRace} {_myBaseClass}, choose your path. This is permanent.";
-        ClassOptions.Children.Clear();
+        // Have a 2nd class → offer the (debug) 3rd-class disciplines for it.
+        if (_mySecondClass > 0)
+        {
+            ClassHint.Text = $"[DEBUG] Choose a 3rd-class discipline (skills unlock at level 40).";
+            foreach (var tc in ThirdClassCatalog.ForParent(_mySecondClass))
+            {
+                var button = new Button
+                {
+                    Content = $"{tc.Name}  ({tc.Discipline})",
+                    Height = 32, Margin = new Thickness(0, 0, 0, 6), FontSize = 12
+                };
+                int id = tc.Id;
+                button.Click += async (_, _) =>
+                {
+                    await _net.DebugThirdClassAsync(id);
+                    ClassPanel.Visibility = Visibility.Collapsed;
+                };
+                ClassOptions.Children.Add(button);
+            }
+            ClassPanel.Visibility = Visibility.Visible;
+            return;
+        }
 
+        // No class yet → 2nd-class options (the real change; requires level 20).
+        ClassHint.Text = $"As a {_myRace} {_myBaseClass}, choose your path. This is permanent.";
         foreach (var def in ClassCatalog.OptionsFor(_myRace, _myBaseClass))
         {
             var (con, atk, wit, dex) = ClassCatalog.StatBonus(def.Archetype);
@@ -1038,9 +1064,10 @@ public partial class MainWindow
     {
         var all = ClassSkills.LearnableAt(_myRace, _myBaseClass, CurrentArchetype, int.MaxValue, CurrentDiscipline);
 
-        // Unlearned only, grouped by learn level.
+        // Unlearned only, grouped by learn level. Also hide a ranked skill once you
+        // know an equal-or-higher rank of its line (HP Boost 1/2 vanish after 3).
         var groups = all
-            .Where(cs => !_learnedSkills.Contains(cs.SkillId))
+            .Where(cs => !_learnedSkills.Contains(cs.SkillId) && !SupersededRank(cs.SkillId))
             .GroupBy(cs => cs.LearnLevel)
             .OrderBy(g => g.Key);
 
@@ -1096,6 +1123,26 @@ public partial class MainWindow
         {
             var l = SkillCatalog.Get(id);
             if (l is not null && l.BuffKey == def.BuffKey && l.Rank == def.Rank - 1)
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>True if this skill shouldn't appear as learnable because you already
+    /// know something better: a learned skill that REPLACES it (Flame Bolt → Magic
+    /// Bolt, Greater Heal → Heal, HP Boost 3 → 1/2), or an equal-or-higher rank of
+    /// the same ranked line.</summary>
+    private bool SupersededRank(string skillId)
+    {
+        if (SkillCatalog.Get(skillId) is not { } def)
+            return false;
+        foreach (var id in _learnedSkills)
+        {
+            var l = SkillCatalog.Get(id);
+            if (l is null) continue;
+            if (l.Replaces is { } rep && Array.IndexOf(rep, skillId) >= 0)
+                return true;
+            if (!string.IsNullOrEmpty(def.BuffKey) && l.BuffKey == def.BuffKey && l.Rank >= def.Rank)
                 return true;
         }
         return false;

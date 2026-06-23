@@ -297,6 +297,14 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task DebugThirdClass(int thirdClassId)
+    {
+#if DEBUG
+        _world.Commands.Enqueue(new DebugThirdClassCmd(Context.ConnectionId, thirdClassId));
+#endif
+        return Task.CompletedTask;
+    }
+
     public override Task OnDisconnectedAsync(Exception? exception)
     {
         Sessions.TryRemove(Context.ConnectionId, out _);
