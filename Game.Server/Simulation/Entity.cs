@@ -430,9 +430,15 @@ public class Entity
         MaxMp = StatCalculator.MaxMp(EffectiveWit, Level);
         AttackPower = StatCalculator.AttackPower(AtkStat, Level);
         MagicAttack = StatCalculator.AttackPower(AtkStat, Level); // mAtk also from ATK
-        Defence = StatCalculator.Defence(Con, Level);
-        // Magic defence: level base + Tank "Anti Magic" passive. Jewels add below.
-        MagicDefence = StatCalculator.MagicDefence(Level)
+        // Defence (authentic L2): players use armor/jewel-driven base + level²/100,
+        // no CON term (armor/jewels/masteries/buffs stack below). Mobs keep the simple
+        // curve. Magic def gets the MEN multiplier applied at the very end.
+        Defence = Kind == EntityKind.Player
+            ? StatCalculator.PhysicalDefenceBase(Level)
+            : StatCalculator.MobDefence(Con, Level);
+        MagicDefence = (Kind == EntityKind.Player
+                ? StatCalculator.MagicDefenceBase(Level)
+                : StatCalculator.MobDefence(Con, Level))
             + StatCalculator.ArchetypeMagicDefenceBonus(Archetype, Level);
         MagicFailFloor = StatCalculator.ArchetypeMagicFailFloor(Archetype);
         Accuracy = StatCalculator.Accuracy(EffectiveDex, Level);
@@ -715,6 +721,14 @@ public class Entity
                 if (pe.MoveSpeedPct != 0f) { RunSpeed *= 1f + pe.MoveSpeedPct; WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor; Speed = RunSpeed; }
             }
         }
+
+        // MEN multiplies the whole flat magic-defence pool (base + jewels + passives),
+        // per the L2 M.Def formula. We have no MEN stat, so use the per-race/class base.
+        // (Buffs apply on top in EffectiveMagicDefence.) Players only; mob mDef is
+        // overwritten at spawn.
+        if (Kind == EntityKind.Player)
+            MagicDefence = (int)(MagicDefence *
+                StatCalculator.MenModifier(StatCalculator.BaseMen(Race, BaseClass)));
 
         Hp = Math.Min(Hp, MaxHp);
         Mp = Math.Min(Mp, MaxMp);

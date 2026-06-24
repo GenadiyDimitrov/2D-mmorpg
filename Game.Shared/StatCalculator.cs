@@ -66,6 +66,24 @@ public static class StatCalculator
     public static float ConHpModifier(int con) =>
         Math.Clamp(MathF.Pow(1.0305f, con - 30), 0.4f, 8f);
 
+    /// <summary>Per-race+class MEN (we have no MEN stat; this is the L2 base table).
+    /// Mages have high MEN (better magic mitigation), fighters low.</summary>
+    public static int BaseMen(Race race, BaseClass cls) => (race, cls) switch
+    {
+        (Race.Human, BaseClass.Fighter) => 25,
+        (Race.Human, BaseClass.Mage)    => 39,
+        (Race.Elf,   BaseClass.Fighter) => 26,
+        (Race.Elf,   BaseClass.Mage)    => 40,
+        (Race.Ork,   BaseClass.Fighter) => 27,
+        (Race.Ork,   BaseClass.Mage)    => 42,
+        _ => 30
+    };
+
+    /// <summary>MEN → Magic-Defence multiplier — EXPONENTIAL, same curve as the HP CON
+    /// modifier (baseline 30 = 1.00, 40 → 1.35): ~3.05% per MEN.</summary>
+    public static float MenModifier(int men) =>
+        Math.Clamp(MathF.Pow(1.0305f, men - 30), 0.4f, 8f);
+
     public static int MaxHp(int con, int level, float classLevelMod, int level1Base)
     {
         float rawBase = classLevelMod * (level * level + 3f * level) / 2f + level1Base;
@@ -102,16 +120,22 @@ public static class StatCalculator
     /// in the items phase: weapon + stat + buffs/passives.</summary>
     public static int AttackPower(int atkStat, int level) => atkStat + level * 2;
 
-    public static int Defence(int con, int level) => con / 3 + level / 2;
+    // ----- Defence (authentic L2: armor/jewels + level² /100, no CON) ------
+    //  P.Def = (naked 68 + level²/100 + Σ armor pDef + flat passives) × masteries/buffs
+    //  M.Def = (naked 20 + level²/100 + Σ jewel mDef + flat passives) × MEN × buffs
+    //  (armor/jewel/passive/mastery/MEN/buff stacking happens in Entity.RecomputeDerived;
+    //   these provide the naked baseline + level modifier. Mobs use MobDefence.)
 
-    /// <summary>Base MAGIC defence. Magic defence does NOT scale with any base stat
-    /// (no CON term); everyone gets a level-based floor, then JEWELS (and the Tank
-    /// "Anti Magic" passive) add on top. Used as the divisor in MagicDamage. The
-    /// flat <c>18 +</c> term matters most at low level: without it a lvl-1 character
-    /// has ~0 mDef and takes ~800 from a single mage bolt; with it that drops to the
-    /// intended ~30-50. (Mobs override this with <see cref="MobMagicDefence"/> so
-    /// mages can still farm.)</summary>
-    public static int MagicDefence(int level) => 18 + level;
+    /// <summary>Player base physical defence: naked baseline + level²/100. No CON.</summary>
+    public static int PhysicalDefenceBase(int level) => 68 + level * level / 100;
+
+    /// <summary>Player base magic defence: naked baseline + level²/100. Jewels and the
+    /// MEN modifier apply on top in RecomputeDerived. (No base-stat term here.)</summary>
+    public static int MagicDefenceBase(int level) => 20 + level * level / 100;
+
+    /// <summary>Mob defence — kept on the old simple curve (mobs have no armor/jewels;
+    /// the player naked baseline would make low-level mobs too tanky).</summary>
+    public static int MobDefence(int con, int level) => con / 3 + level / 2;
 
     /// <summary>Crit chance from DEX. Race/class/equipment modifiers come
     /// later. 25 DEX = 10%; capped at 50%.</summary>
