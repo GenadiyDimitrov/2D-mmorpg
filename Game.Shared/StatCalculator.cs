@@ -79,10 +79,35 @@ public static class StatCalculator
         _ => 30
     };
 
-    /// <summary>MEN → Magic-Defence multiplier — EXPONENTIAL, same curve as the HP CON
-    /// modifier (baseline 30 = 1.00, 40 → 1.35): ~3.05% per MEN.</summary>
-    public static float MenModifier(int men) =>
-        Math.Clamp(MathF.Pow(1.0305f, men - 30), 0.4f, 8f);
+    /// <summary>MEN → Magic-Defence and Max-MP multiplier. The L2 MEN curve is a gentle
+    /// 1.16→1.65 band (NOT the CON curve): every class is &gt;1, fighters just have less.
+    /// Interpolated from the reference table.</summary>
+    public static float MenModifier(int men) => InterpolateCurve(MenCurve, men);
+
+    // Reference modifier tables (stat → multiplier). Linearly interpolated; clamped
+    // to the endpoints outside the listed range.
+    private static readonly (int stat, float mod)[] MenCurve =
+    {
+        (20, 1.16f), (26, 1.28f), (30, 1.35f), (31, 1.36f),
+        (37, 1.44f), (40, 1.49f), (45, 1.57f), (50, 1.65f),
+    };
+
+    /// <summary>Linear interpolation of a (stat → multiplier) reference table.</summary>
+    private static float InterpolateCurve((int stat, float mod)[] table, int value)
+    {
+        if (value <= table[0].stat) return table[0].mod;
+        if (value >= table[^1].stat) return table[^1].mod;
+        for (int i = 1; i < table.Length; i++)
+        {
+            if (value <= table[i].stat)
+            {
+                var (s0, m0) = table[i - 1];
+                var (s1, m1) = table[i];
+                return m0 + (m1 - m0) * (value - s0) / (s1 - s0);
+            }
+        }
+        return table[^1].mod;
+    }
 
     public static int MaxHp(int con, int level, float classLevelMod, int level1Base)
     {
@@ -94,7 +119,30 @@ public static class StatCalculator
     /// exponential CON modifier would explode on mob-scale CON, so mobs use this.</summary>
     public static int MobMaxHp(int con, int level) => 50 + con * 4 + level * 10;
 
-    public static int MaxMp(int wit, int level) => 30 + wit * 4 + level * 8;
+    // ----- Max MP (authentic L2: Base_MP tier curve × MEN, like HP) --------
+    //  MaxMP = (MpClassLevelMod·(L²+3L)/2 + Level1BaseMp) × MenModifier
+    //  MP scales with MEN (not WIT). Tiers tuned to the L75 raw tracks:
+    //  Healer 2000 · Wizard/Nuker 1550 · Buffer 1100 · Fighter/Tank 500.
+
+    public static float MpClassLevelModifier(BaseClass cls, Archetype? arch) => arch switch
+    {
+        Archetype.Healer => 0.68f,   // ~2000 @L75 raw
+        Archetype.Nuker  => 0.53f,   // ~1550
+        Archetype.Tank or Archetype.Warrior or Archetype.Rogue or Archetype.Archer => 0.17f,  // ~500
+        _ => cls == BaseClass.Mage ? 0.50f : 0.17f   // base class, pre-2nd
+    };
+
+    public static int Level1BaseMp(BaseClass cls) => cls == BaseClass.Mage ? 40 : 15;
+
+    public static int MaxMp(int men, int level, float mpClassLevelMod, int level1BaseMp)
+    {
+        float rawBase = mpClassLevelMod * (level * level + 3f * level) / 2f + level1BaseMp;
+        return (int)(rawBase * MenModifier(men));
+    }
+
+    /// <summary>Mob MP — simple level curve (mobs aren't MP-limited; avoids the
+    /// MEN/tier machinery).</summary>
+    public static int MobMaxMp(int level) => 40 + level * 6;
 
     public static float HpRegenPerSecond(int con, int level) => 1f + con * 0.05f + level * 0.1f;
 

@@ -427,7 +427,13 @@ public class Entity
                 StatCalculator.HpClassLevelModifier(BaseClass, Archetype),
                 StatCalculator.Level1BaseHp(Race, BaseClass))
             : StatCalculator.MobMaxHp(Con, Level);
-        MaxMp = StatCalculator.MaxMp(EffectiveWit, Level);
+        // MP now scales with MEN (per-race/class) on a tier curve, like HP. Mobs use
+        // a simple level curve.
+        MaxMp = Kind == EntityKind.Player
+            ? StatCalculator.MaxMp(StatCalculator.BaseMen(Race, BaseClass), Level,
+                StatCalculator.MpClassLevelModifier(BaseClass, Archetype),
+                StatCalculator.Level1BaseMp(BaseClass))
+            : StatCalculator.MobMaxMp(Level);
         AttackPower = StatCalculator.AttackPower(AtkStat, Level);
         MagicAttack = StatCalculator.AttackPower(AtkStat, Level); // mAtk also from ATK
         // Defence (authentic L2): players use armor/jewel-driven base + level²/100,

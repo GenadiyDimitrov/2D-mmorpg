@@ -45,50 +45,49 @@ Base dmg lvl-mult = (Level + 89) / 100   [listed, but NOT used in the dmg formul
 | **Magic damage** | ✅ structure, ⚠ constant | `K·power·√mAtk/mDef`. **K=8, not 91** — deliberate: our mAtk (~120, √≈11) is ~10× smaller than L2's, so 91 would over-damage. Scale choice, not a bug. |
 | **HP** | ✅ mostly | tiers hit Melee/Rogue/Wizard/Healer (~2554/2057/1404/1199 vs 2600/2100/1400/1200). **Tank ~2934 vs target 3100 — bump.** |
 | **P.Def** | ✅ structure | naked 68 + level²/100 + armor. ⚠ mastery is added FLAT, ref wants it as a `×Mastery` multiplier (minor). |
-| **M.Def** | ⚠ **BUG** | structure right (20 + level²/100 + jewels, ×MEN, ×buffs) BUT the **MEN modifier curve is wrong** (see below). |
-| **CON modifier** | ⚠ off mid-range | `1.0305^(CON−30)` matches ref at 40–50, but **CON 36 → 1.20 vs ref 1.12** (+7%), and 20 → 0.74 vs 0.79. Affects elf-fighter & mage HP. |
-| **MEN modifier** | ❌ **wrong** | we reused the CON curve → **MEN 30 gives 1.00, but ref says 1.35**; fighters get ×0.86 (penalised) when ref says everyone is **1.16–1.65** (fighters ×1.28, mages ×1.49). Must replace with the real MEN curve. |
-| **MP** | ❌ **not reworked** | still old `30 + WIT·4 + level·8`. Ref wants **Base_MP tier curve × MEN modifier** — and MP scales with **MEN, not WIT**. No tier base, wrong stat. |
+| **M.Def** | ✅ fixed | 20 + level²/100 + jewels, ×MEN (now the real curve), ×buffs. |
+| **CON modifier** | ⚠ off mid-range | `1.0305^(CON−30)` matches ref at 40–50, but **CON 36 → 1.20 vs ref 1.12** (+7%), and 20 → 0.74 vs 0.79. Affects elf-fighter & mage HP. (Not yet table-interpolated.) |
+| **MEN modifier** | ✅ **fixed** | now interpolates the real MEN table (1.16→1.65). Fighters ×1.26–1.30, mages ×1.47–1.52 — everyone ≥1, small gap. |
+| **MP** | ✅ **reworked** | `(MpClassLevelMod·(L²+3L)/2 + Level1BaseMp) × MEN modifier`; scales with **MEN** (Healer 0.68/Nuker 0.53/fighter 0.17 tiers; base mage 0.50). Mobs use a simple level curve. |
 | **Soulshot / Spiritshot** | ❌ not built | no shot system yet (roadmap). Hooks noted in damage callers. |
 | **(Level+89)/100 dmg mult** | ➖ removed | listed in ref data but the explicit dmg formulas omit it; we removed it from physical. Ambiguous — leaving out for now. |
 
-### Key fixes identified
-1. **MEN modifier (M.Def):** replace the CON-curve reuse with the real MEN table (1.16→1.65). This *raises fighter magic def* (×0.86 → ×1.28) and *shrinks the mage/fighter gap* (mage 1.49 / fighter 1.28 = ×1.16, not ×1.57). Changes the matrix.
-2. **MP rework:** Base_MP tier curve (Healer 2000 … Fighter 500 @L75) × MEN modifier; stop using WIT for MP.
-3. **CON modifier accuracy:** switch CON (and the others) to **table interpolation** to match the reference exactly instead of a single exponent (fixes CON 36).
-4. **Tank HP tier:** bump class-level-mod so L75 tank ≈ 3100.
-5. *Later:* mastery as a `×` multiplier on def (not flat); soulshots; buffed matrix; archetype-level matrix.
-
-> Recommended: do all four modifiers as **interpolated reference tables** (single source of truth, exact match, kills the "tangle"). MEN-for-MP and MEN-for-mDef then share one correct curve.
+### Fixes
+1. ✅ **MEN modifier (M.Def) DONE** — real MEN table (interpolated). Raised fighter magic def (×0.86 → ×1.26) and shrank the mage/fighter gap (mage ×1.49 / fighter ×1.28 ≈ ×1.16). Matrix updated below.
+2. ✅ **MP rework DONE** — Base_MP tier curve × MEN modifier; no longer uses WIT.
+3. ⬜ **CON modifier accuracy:** switch CON to table interpolation (fixes CON 36). *Pending.*
+4. ⬜ **Tank HP tier:** bump class-level-mod so L75 tank ≈ 3100. *Pending.*
+5. ⬜ *Later:* mastery as a `×` multiplier on def (not flat); soulshots; buffed matrix; archetype-level matrix.
 
 ---
 
-## C. Matchup matrix — L40, no buffs, starter gear (FIRST-PASS)
-> ⚠ Will shift once the MEN modifier + MP fixes land (fighters become more magic-resistant).
+## C. Matchup matrix — L40, no buffs, starter gear (post MEN+MP fix)
 
 ### Per-class baseline (L40)
-| Class | HP | pDef | mDef | Main hit (crit-folded) |
-|---|---|---|---|---|
-| Human Fighter | 1205 | 134 | 31 | phys ~82–100 |
-| Elf Fighter | 969 | 134 | 32 | phys ~80–98 |
-| Ork Fighter | 1378 | 134 | 33 | phys ~82–100 |
-| Human Mage | 410 | 109 | 47 | magic ~84–129 |
-| Elf Mage | 378 | 109 | 49 | magic ~82–126 |
-| Ork Mage | 507 | 109 | 51 | magic ~78–120 |
+| Class | HP | MP | pDef | mDef | Main hit (crit-folded) |
+|---|---|---|---|---|---|
+| Human Fighter | 1205 | 203 | 134 | 45 | phys ~82–100 |
+| Elf Fighter | 969 | 206 | 134 | 46 | phys ~80–98 |
+| Ork Fighter | 1378 | 209 | 134 | 47 | phys ~82–100 |
+| Human Mage | 410 | 692 | 109 | 53 | magic ~77–90 |
+| Elf Mage | 378 | 700 | 109 | 54 | magic ~76–88 |
+| Ork Mage | 507 | 715 | 109 | 55 | magic ~74–85 |
+
+(mDef now via the real MEN curve — fighters jumped ~32 → ~46, so magic hits them softer.)
 
 ### Damage matrix (crit-folded avg per hit/cast)
 | Attacker ↓ \ Defender → | Fighter | Mage |
 |---|---|---|
 | **Fighter** (basic physical) | ~82 | ~100 |
-| **Mage** (Magic Bolt, power 45) | ~129 | ~84 |
+| **Mage** (Magic Bolt, power 45) | ~90 | ~77 |
 
 ### Time-to-kill (attack ~1.4/s, cast ~1.5s)
 | Matchup | TTK |
 |---|---|
 | Fighter → Mage | ~3 s |
-| Mage → Fighter | ~14 s |
+| Mage → Fighter | ~20 s |
 
-**Read:** stand-still fight → fighter wins; mage's edge = range 500 + CC/kite/burst (skill layer). Ork tankiest, elf frailest, human mid. Scale is sane (no L1 one-shots, no mush).
+**Read:** the correct MEN curve makes fighters notably **magic-resistant** (mDef ~46), so a mage's plain nuke now does ~90 to a fighter (was ~129) and the stand-still mage→fighter fight stretched to ~20s. This *widens* the melee dominance, which is intended to be offset by the mage's **CC / kite / burst / mDef-debuff** kit (skill layer) — a plain-nuke mage SHOULD lose a stand-up fight. Ork tankiest, elf frailest, human mid. Mages now have ~3.4× the MP of fighters.
 
 ---
 
