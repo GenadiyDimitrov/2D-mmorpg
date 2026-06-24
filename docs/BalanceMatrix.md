@@ -93,3 +93,24 @@ Base dmg lvl-mult = (Level + 89) / 100   [listed, but NOT used in the dmg formul
 
 ## D. Constants / knobs
 `PhysicalK=77` · `MagicK=8` (first-pass) · HP tiers Tank 0.96/Warrior 0.83/Rogue·Archer 0.66/Nuker 0.45/Healer 0.38 (base Fighter 0.80/Mage 0.42) · naked pDef 68 / mDef 20 · caps: move 250, cast 1999, attack 1500, phys crit 50%/×10, magic crit 20%/×3.
+
+---
+
+## E. Skill-power spec — for the future skill-levels (rank) system
+> NOT implemented yet (no skill ranks). Today each nuke is a single flat power
+> (Magic Bolt 45 · Holy Strike 70 · Flame Bolt 95 · 3rd-class 120). When skill
+> levels land, span each nuke's power across character levels per the chain below,
+> and use these when (re)generating the damage matrix.
+
+**Mage single-target nuke chain (L2 reference, pmfun — "okish" per owner):**
+| Tier | L2 name | Char levels | Power span (L2 scale) |
+|---|---|---|---|
+| Base mage | **Wind Strike** | 1–~20 | ~11 → ~45 |
+| 2nd class | **Twister** | 20–35 | ~20 → ~37 |
+| 3rd class (nuker) | **Hurricane** | 40–74 | **49 → 108** (~+1.7/level) |
+| 3rd class (buffer/healer) | Hurricane-equiv | 40–74 | **~43 → ~96** (10–15 below nuker; scales slower) |
+
+**Notes for use:**
+- These are L2-scale powers (their formula uses K=91). **Our `MagicK` stays 8** — keep these as the *relative shape* (Wind < Twister < Hurricane; healer ≈ 12% below nuker, slower ramp), feeding our `8·power·√mAtk/mDef`.
+- Sanity at our scale (L40 trained mage, mAtk 246, vs fighter mDef 46): power 49 → ~134, power 108 → ~295 per hit (before crit/variance/mDef-debuff).
+- Source: pmfun Spellhowler (Hurricane 49→78 @L40–56, extrapolated to ~108 @L74). base.l2j.ru preferred but unreachable (self-signed cert).
