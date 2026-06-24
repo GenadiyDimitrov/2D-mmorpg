@@ -697,7 +697,14 @@ public class GameLoopService : BackgroundService
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player))
             return;
-        AwardExp(player, (int)StatCalculator.ExpToNext(player.Level));
+        // Grant EXACTLY one level. Going through AwardExp would scale by
+        // ExpRate (x10), overshooting into several levels at once.
+        player.Level++;
+        player.Exp = 0;
+        OnLevelUp(player);
+        if (_world.EntityToConnection.TryGetValue(player.Id, out var conn))
+            _ = _hub.Clients.Client(conn).SendAsync("Progress", new ProgressUpdate(
+                player.Level, player.Exp, StatCalculator.ExpToNext(player.Level), true));
         SendSystemToEntity(player, $"[DEBUG] Level up -> {player.Level}.");
     }
 
@@ -2027,25 +2034,30 @@ var effect = def.Effect;
         }
 
         if (leveled)
-        {
-            AutoLearnCoreSkills(player);
-            player.RecomputeDerived();
-            player.Hp = player.MaxHp;
-            player.Mp = player.MaxMp;
-            SendStats(player);
-            SendLearned(player);
-            BroadcastSystem($"{player.Name} reached level {player.Level}!");
-
-            if (player.Level >= GameConstants.ClassChangeLevel && player.SecondClass == 0)
-                SendSystemToEntity(player,
-                    "You are ready for a second class — seek a class-change quest.");
-        }
+            OnLevelUp(player);
 
         if (_world.EntityToConnection.TryGetValue(player.Id, out var conn))
         {
             _ = _hub.Clients.Client(conn).SendAsync("Progress", new ProgressUpdate(
                 player.Level, player.Exp, StatCalculator.ExpToNext(player.Level), leveled));
         }
+    }
+
+    /// <summary>Side-effects shared by every level-up path (real exp or debug):
+    /// recompute stats, full heal, push stats/skills, announce.</summary>
+    private void OnLevelUp(Entity player)
+    {
+        AutoLearnCoreSkills(player);
+        player.RecomputeDerived();
+        player.Hp = player.MaxHp;
+        player.Mp = player.MaxMp;
+        SendStats(player);
+        SendLearned(player);
+        BroadcastSystem($"{player.Name} reached level {player.Level}!");
+
+        if (player.Level >= GameConstants.ClassChangeLevel && player.SecondClass == 0)
+            SendSystemToEntity(player,
+                "You are ready for a second class — seek a class-change quest.");
     }
 
     private void Regenerate(Entity entity)
