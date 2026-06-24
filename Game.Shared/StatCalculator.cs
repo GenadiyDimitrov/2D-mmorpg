@@ -160,27 +160,35 @@ public static class StatCalculator
     /// <summary>Level modifier: (level+89)/100. L1=0.90, L11=1.00, L80=1.69.</summary>
     public static float LevelMod(int level) => (level + 89) / 100f;
 
-    /// <summary>Scalar constants to place damage numbers in a good range.</summary>
-    public const float PhysicalK = 25f;
-    public const float MagicK = 18f;
+    // Damage balance constants (authentic L2 STRUCTURE; constants tuned to OUR scale).
+    //  Physical: 77·pAtk/pDef  — L2's 77 transfers (our pAtk/pDef ratio ≈ 1.2).
+    //  Magic:    K·power·√mAtk/mDef — L2 uses 91, but that assumes mAtk in the
+    //    hundreds/thousands; ours is ~120 (√≈11), so the magic K is recalibrated
+    //    DOWN. The √ gives diminishing returns on stacked M.Atk (spell power/cast
+    //    speed become the meta), exactly as in L2. FIRST-PASS values — tune via the
+    //    class-vs-class matchup matrix.
+    public const float PhysicalK = 77f;
+    public const float MagicK = 8f;
 
-    /// <summary>Physical ratio damage: K·(pAtk·lvlMod + power)/pDef. Never zero
-    /// (defence is a divisor). 'power' is 0 for basic attacks, the skill power
-    /// for skills. Defence floored at 1 to avoid divide-by-zero.</summary>
+    /// <summary>Physical ratio damage (L2 model): 77·(pAtk + skillPower)/pDef. No level
+    /// term (level is already baked into pAtk/pDef growth). 'power' is 0 for a basic
+    /// attack, the skill's power for a skill. Crit / variance / soulshot are applied by
+    /// the caller. Defence floored at 1.</summary>
     public static int PhysicalDamage(int pAtk, int power, int pDef, int attackerLevel)
     {
         float def = Math.Max(1, pDef);
-        float dmg = PhysicalK * (pAtk * LevelMod(attackerLevel) + power) / def;
+        float dmg = PhysicalK * (pAtk + power) / def;
         return Math.Max(1, (int)dmg);
     }
 
-    /// <summary>Magic ratio damage. Now divides by the target's MAGIC defence
-    /// (level base + jewels + Anti-Magic), NOT physical pDef — a fully separate
-    /// channel. K·(mAtk·lvlMod + power)/mDef, diminishing on mDef.</summary>
+    /// <summary>Magic ratio damage (L2 model): K·skillPower·√mAtk/mDef. The SQUARE ROOT
+    /// of M.Atk means stacking raw M.Atk gives diminishing returns. 'power' is the
+    /// spell's base power. Divides by MAGIC defence (separate channel). Crit / fail /
+    /// blessed-spiritshot are applied by the caller. Defence floored at 1.</summary>
     public static int MagicDamage(int mAtk, int power, int mDef, int casterLevel)
     {
         float def = Math.Max(1, mDef);
-        float dmg = MagicK * (mAtk * LevelMod(casterLevel) + power) / def;
+        float dmg = MagicK * power * MathF.Sqrt(Math.Max(0, mAtk)) / def;
         return Math.Max(1, (int)dmg);
     }
 
