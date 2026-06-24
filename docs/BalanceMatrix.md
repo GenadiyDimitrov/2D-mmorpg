@@ -75,11 +75,17 @@ Base dmg lvl-mult = (Level + 89) / 100   [listed, but NOT used in the dmg formul
 
 (mDef now via the real MEN curve — fighters jumped ~32 → ~46, so magic hits them softer.)
 
-### Damage matrix (crit-folded avg per hit/cast)
+### Damage matrix (crit-folded avg per hit/cast) — vs **same-level** target
+> Human representative. Both attackers have their level-40 **training passive** (fighter ×2 P.Atk, mage ×2 M.Atk). Gear held at **starter** to isolate level + skill-power scaling — real L75 gear would push attacker numbers higher. Mage uses the **3rd-class nuke** (Hurricane-equiv): power 49 @40, 108 @75.
+
 | Attacker ↓ \ Defender → | Fighter | Mage |
 |---|---|---|
-| **Fighter** (basic physical) | ~82 | ~100 |
-| **Mage** (Magic Bolt, power 45) | ~90 | ~77 |
+| **Fighter @40** (basic physical) | ~162 | ~199 |
+| **Fighter @75** (basic physical) | ~192 | ~224 |
+| **Mage @40** (3rd nuke, power 49) | ~140 | ~119 |
+| **Mage @75** (3rd nuke, power 108) | ~182 | ~156 |
+
+> Note the **ratio model**: against a *same-level* target, per-hit numbers barely grow 40→75, because attack and defense scale together (the nuke's power 49→108 ≈ ×2.2 is nearly cancelled by the target's mDef growth 45→96). Level-appropriate fights stay similar in feel; real power gaps come from **gear + skill tier**, not raw level.
 
 ### Time-to-kill (attack ~1.4/s, cast ~1.5s)
 | Matchup | TTK |
