@@ -139,8 +139,10 @@ public record AuthRequest(string Username, string Password);
 /// subsequent character calls within this connection.</summary>
 public record AuthResponse(bool Success, string? Error, bool IsAdmin);
 
-/// <summary>One character on the account, for the selection screen.</summary>
-public record CharacterSlot(int Id, string Name, Race Race, BaseClass BaseClass, int SecondClass, int Level);
+/// <summary>One character on the account, for the selection screen. PendingDeleteAt
+/// (UTC) is set when the character is scheduled for deletion; null = active.</summary>
+public record CharacterSlot(int Id, string Name, Race Race, BaseClass BaseClass, int SecondClass,
+    int Level, DateTime? PendingDeleteAt = null);
 
 /// <summary>Server -> Client: the account's characters.</summary>
 public record CharacterList(CharacterSlot[] Characters);

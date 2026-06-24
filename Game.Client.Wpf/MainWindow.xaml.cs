@@ -183,14 +183,13 @@ public partial class MainWindow : Window
         var list = await _net.ListCharactersAsync();
         CharacterSlots.Children.Clear();
 
-        if (list.Characters.Length == 0)
+        CharacterSlots.Children.Add(new TextBlock
         {
-            CharacterSlots.Children.Add(new TextBlock
-            {
-                Text = "No characters yet. Create one below.",
-                Foreground = Brushes.Gray, Margin = new Thickness(0, 0, 0, 8)
-            });
-        }
+            Text = list.Characters.Length == 0
+                ? "No characters yet. Create one below."
+                : $"Characters: {list.Characters.Length} / {GameConstants.MaxCharactersPerAccount}",
+            Foreground = Brushes.Gray, Margin = new Thickness(0, 0, 0, 8)
+        });
 
         foreach (var c in list.Characters)
         {
@@ -198,17 +197,91 @@ public partial class MainWindow : Window
                 ? ClassCatalog.Get(c.SecondClass)?.Name ?? c.BaseClass.ToString()
                 : c.BaseClass.ToString();
 
-            var button = new Button
-            {
-                Content = $"{c.Name}   Lv{c.Level}  {c.Race} {cls}",
-                Height = 40, Margin = new Thickness(0, 0, 0, 6), FontSize = 13,
-                HorizontalContentAlignment = HorizontalAlignment.Left,
-                Padding = new Thickness(10, 0, 0, 0)
-            };
             int id = c.Id;
-            button.Click += async (_, _) => await EnterWorldAsync(id);
-            CharacterSlots.Children.Add(button);
+            string name = c.Name;
+            int level = c.Level;
+            var row = new DockPanel { Margin = new Thickness(0, 0, 0, 6) };
+
+            if (c.PendingDeleteAt is DateTime when)
+            {
+                // Scheduled for deletion: can't play; offer a Cancel (restore).
+                var cancel = new Button
+                {
+                    Content = "Cancel", Width = 96, Height = 40, FontSize = 12,
+                    Background = new SolidColorBrush(Color.FromRgb(70, 100, 60)), Foreground = Brushes.White
+                };
+                cancel.Click += async (_, _) =>
+                {
+                    await _net.CancelDeleteCharacterAsync(id);
+                    await ShowCharacterSelectAsync();
+                };
+                DockPanel.SetDock(cancel, Dock.Right);
+                row.Children.Add(cancel);
+
+                row.Children.Add(new Button
+                {
+                    Content = $"{name}   Lv{level}   — deleting in {FormatRemaining(when)}",
+                    Height = 40, FontSize = 13, IsEnabled = false,
+                    HorizontalContentAlignment = HorizontalAlignment.Left,
+                    Padding = new Thickness(10, 0, 0, 0)
+                });
+            }
+            else
+            {
+                var del = new Button
+                {
+                    Content = "Delete", Width = 96, Height = 40, FontSize = 12,
+                    Background = new SolidColorBrush(Color.FromRgb(120, 60, 60)), Foreground = Brushes.White
+                };
+                del.Click += async (_, _) => await ConfirmDeleteAsync(id, name, level);
+                DockPanel.SetDock(del, Dock.Right);
+                row.Children.Add(del);
+
+                var play = new Button
+                {
+                    Content = $"{name}   Lv{level}  {c.Race} {cls}",
+                    Height = 40, FontSize = 13,
+                    HorizontalContentAlignment = HorizontalAlignment.Left,
+                    Padding = new Thickness(10, 0, 0, 0)
+                };
+                play.Click += async (_, _) => await EnterWorldAsync(id);
+                row.Children.Add(play);
+            }
+
+            CharacterSlots.Children.Add(row);
         }
+    }
+
+    /// <summary>Confirm + request a character deletion, surfacing the level-based delay.</summary>
+    private async Task ConfirmDeleteAsync(int id, string name, int level)
+    {
+        var delay = GameConstants.CharacterDeleteDelay(level);
+        string detail = delay <= TimeSpan.Zero
+            ? "It will be deleted immediately."
+            : $"As a level {level} character, deletion takes {FormatDelay(delay)} to complete. "
+              + "You can cancel any time before then.";
+        var res = MessageBox.Show(
+            $"Delete \"{name}\"?\n\n{detail}", "Confirm Delete",
+            MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (res != MessageBoxResult.Yes)
+            return;
+
+        var err = await _net.DeleteCharacterAsync(id);
+        if (err is not null)
+            MessageBox.Show(err, "Error");
+        await ShowCharacterSelectAsync();
+    }
+
+    private static string FormatDelay(TimeSpan t) =>
+        t.TotalDays >= 1 ? $"{t.TotalDays:0} day(s)" : $"{t.TotalHours:0} hour(s)";
+
+    private static string FormatRemaining(DateTime utcWhen)
+    {
+        var r = utcWhen - DateTime.UtcNow;
+        if (r <= TimeSpan.Zero) return "moments";
+        if (r.TotalDays >= 1) return $"{(int)r.TotalDays}d {r.Hours}h";
+        if (r.TotalHours >= 1) return $"{(int)r.TotalHours}h {r.Minutes}m";
+        return $"{(int)r.TotalMinutes}m";
     }
 
     private async Task EnterWorldAsync(int characterId)

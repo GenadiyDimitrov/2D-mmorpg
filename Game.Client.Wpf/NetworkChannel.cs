@@ -80,6 +80,12 @@ public class NetworkChannel : IAsyncDisposable
     public Task<LoginResult> EnterWorldAsync(int characterId) =>
         _connection!.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(characterId));
 
+    public Task<string?> DeleteCharacterAsync(int characterId) =>
+        _connection!.InvokeAsync<string?>("DeleteCharacter", characterId);
+
+    public Task<string?> CancelDeleteCharacterAsync(int characterId) =>
+        _connection!.InvokeAsync<string?>("CancelDeleteCharacter", characterId);
+
     public Task LeaveWorldAsync() =>
         _connection!.SendAsync("LeaveWorld");
 

@@ -27,10 +27,54 @@ public static class StatCalculator
     };
 
     // Per design: levels increase hp/mp (max/regen), evasion, accuracy,
-    // defence, attack — nothing else. Tanks get more HP, mages more MP
-    // (class scaling multipliers come with the class-tree phase).
+    // defence, attack — nothing else. Tanks get more HP, mages more MP.
 
-    public static int MaxHp(int con, int level) => 50 + con * 4 + level * 10;
+    // ----- Max HP (authentic L2 model) -------------------------------------
+    //  MaxHP = [ ClassLevelMod × (level² + 3·level)/2 + Level1Base ] × ConModifier
+    //  (gear/buff/passive % and flat bonuses stack afterwards in RecomputeDerived).
+
+    /// <summary>Per-race+class level-1 base HP (the quadratic's fixed constant).</summary>
+    public static int Level1BaseHp(Race race, BaseClass cls) => (race, cls) switch
+    {
+        (Race.Human, BaseClass.Fighter) => 126,
+        (Race.Human, BaseClass.Mage)    => 88,
+        (Race.Elf,   BaseClass.Fighter) => 113,
+        (Race.Elf,   BaseClass.Mage)    => 79,
+        (Race.Ork,   BaseClass.Fighter) => 137,
+        (Race.Ork,   BaseClass.Mage)    => 131,
+        _ => 100
+    };
+
+    /// <summary>Class HP growth multiplier on the quadratic level term (the L2 "tier").
+    /// Tuned so level-75 raw base HP lands on the L2 tracks: tank ~2.9k, warrior ~2.5k,
+    /// rogue/archer ~2.0k, nuker ~1.4k, healer ~1.2k. Before 2nd class (no archetype),
+    /// a fighter/mage uses a sensible default.</summary>
+    public static float HpClassLevelModifier(BaseClass cls, Archetype? arch) => arch switch
+    {
+        Archetype.Tank    => 0.96f,
+        Archetype.Warrior => 0.83f,
+        Archetype.Rogue   => 0.66f,
+        Archetype.Archer  => 0.66f,
+        Archetype.Nuker   => 0.45f,
+        Archetype.Healer  => 0.38f,
+        _ => cls == BaseClass.Mage ? 0.42f : 0.80f   // base class, pre-2nd
+    };
+
+    /// <summary>CON → Max-HP multiplier — EXPONENTIAL, matching the L2 table
+    /// (baseline 30 = 1.00: 20→0.79, 40→1.35, 43→1.48, 50→1.83, 55→2.14): ~3.05%
+    /// per CON compounded.</summary>
+    public static float ConHpModifier(int con) =>
+        Math.Clamp(MathF.Pow(1.0305f, con - 30), 0.4f, 8f);
+
+    public static int MaxHp(int con, int level, float classLevelMod, int level1Base)
+    {
+        float rawBase = classLevelMod * (level * level + 3f * level) / 2f + level1Base;
+        return (int)(rawBase * ConHpModifier(con));
+    }
+
+    /// <summary>Mob HP — kept on the simple linear curve. The player formula's
+    /// exponential CON modifier would explode on mob-scale CON, so mobs use this.</summary>
+    public static int MobMaxHp(int con, int level) => 50 + con * 4 + level * 10;
 
     public static int MaxMp(int wit, int level) => 30 + wit * 4 + level * 8;
 

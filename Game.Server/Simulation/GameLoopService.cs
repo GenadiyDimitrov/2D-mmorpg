@@ -238,6 +238,13 @@ public class GameLoopService : BackgroundService
         // Don't re-add Magic Bolt once a superior skill (Flame Bolt, etc.) replaced it.
         if (player.BaseClass == BaseClass.Mage && !IsSuperseded(player, SkillCatalog.MagicBolt))
             player.LearnedSkills.Add(SkillCatalog.MagicBolt);
+
+        // Auto-grant the class's natural armor-weight mastery for FREE at level 1.
+        // Otherwise a fresh wizard sits at the no-mastery cast penalty (~190 cast)
+        // until he can afford the 500 SP — too punishing for the early game.
+        player.LearnedSkills.Add(player.BaseClass == BaseClass.Mage
+            ? SkillCatalog.MasteryRobe
+            : SkillCatalog.MasteryLight);
     }
 
     /// <summary>True if the player has learned a skill that REPLACES the given id

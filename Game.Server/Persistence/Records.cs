@@ -39,6 +39,10 @@ public class CharacterRecord
     public int Level { get; set; } = 1;
     public long Exp { get; set; }
 
+    /// <summary>When set, the character is scheduled for permanent deletion at this
+    /// UTC time (a cancellable "pending delete"). null = active. Purged on listing.</summary>
+    public DateTime? PendingDeleteAt { get; set; }
+
     public long Gold { get; set; }
 
     public int SkillPoints { get; set; }

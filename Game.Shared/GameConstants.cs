@@ -35,6 +35,19 @@ public static class GameConstants
 
     public const int MaxCharacterNameLength = 16;
 
+    /// <summary>Character slots per account — enough for every race/class/discipline
+    /// combination so a player needn't make extra accounts.</summary>
+    public const int MaxCharactersPerAccount = 36;
+
+    /// <summary>How long a character deletion is held (a cancellable "pending delete")
+    /// before it becomes permanent. Higher-level characters get a longer grace period.
+    /// Below the class-change level it's instant.</summary>
+    public static TimeSpan CharacterDeleteDelay(int level) =>
+        level >= 76 ? TimeSpan.FromDays(30)
+        : level >= 40 ? TimeSpan.FromDays(7)
+        : level >= 20 ? TimeSpan.FromHours(24)
+        : TimeSpan.Zero;
+
     // ----- Safe zone (town) ---------------------------------------------------
 
     /// <summary>No mobs spawn or enter; aggro clears on players inside;

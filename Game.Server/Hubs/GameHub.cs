@@ -54,8 +54,27 @@ public class GameHub : Hub
 
         var chars = await _db.ListCharactersAsync(auth.AccountId);
         return new CharacterList(chars
-            .Select(c => new CharacterSlot(c.Id, c.Name, c.Race, c.BaseClass, c.SecondClass, c.Level))
+            .Select(c => new CharacterSlot(c.Id, c.Name, c.Race, c.BaseClass, c.SecondClass, c.Level, c.PendingDeleteAt))
             .ToArray());
+    }
+
+    /// <summary>Schedule (or immediately perform, for low levels) a character deletion.
+    /// Returns null on success, or an error string.</summary>
+    public async Task<string?> DeleteCharacter(int characterId)
+    {
+        if (!Sessions.TryGetValue(Context.ConnectionId, out var auth))
+            return "Not logged in.";
+        var (ok, _, error) = await _db.RequestDeleteCharacterAsync(auth.AccountId, characterId);
+        return ok ? null : error;
+    }
+
+    /// <summary>Cancel a pending deletion (restore the character).</summary>
+    public async Task<string?> CancelDeleteCharacter(int characterId)
+    {
+        if (!Sessions.TryGetValue(Context.ConnectionId, out var auth))
+            return "Not logged in.";
+        return await _db.CancelDeleteCharacterAsync(auth.AccountId, characterId)
+            ? null : "Nothing to cancel.";
     }
 
     public async Task<string?> CreateCharacter(CreateCharacterRequest request)

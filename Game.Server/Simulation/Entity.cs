@@ -422,7 +422,11 @@ public class Entity
     /// change.</summary>
     public void RecomputeDerived()
     {
-        MaxHp = StatCalculator.MaxHp(Con, Level);
+        MaxHp = Kind == EntityKind.Player
+            ? StatCalculator.MaxHp(Con, Level,
+                StatCalculator.HpClassLevelModifier(BaseClass, Archetype),
+                StatCalculator.Level1BaseHp(Race, BaseClass))
+            : StatCalculator.MobMaxHp(Con, Level);
         MaxMp = StatCalculator.MaxMp(EffectiveWit, Level);
         AttackPower = StatCalculator.AttackPower(AtkStat, Level);
         MagicAttack = StatCalculator.AttackPower(AtkStat, Level); // mAtk also from ATK

@@ -76,17 +76,70 @@ public class PersistenceService
 
     // ----- Characters --------------------------------------------------------
 
-    /// <summary>Character names on an account, for the selection screen.</summary>
+    /// <summary>Character names on an account, for the selection screen. Permanently
+    /// removes any characters whose pending-delete timer has elapsed first.</summary>
     public async Task<List<CharacterSummary>> ListCharactersAsync(int accountId)
     {
         await using var db = await _factory.CreateDbContextAsync();
+
+        var now = DateTime.UtcNow;
+        var expired = await db.Characters
+            .Where(c => c.AccountId == accountId && c.PendingDeleteAt != null && c.PendingDeleteAt <= now)
+            .ToListAsync();
+        if (expired.Count > 0)
+        {
+            db.Characters.RemoveRange(expired);
+            await db.SaveChangesAsync();
+        }
+
         return await db.Characters
             .Where(c => c.AccountId == accountId)
-            .Select(c => new CharacterSummary(c.Id, c.Name, c.Race, c.BaseClass, c.SecondClass, c.Level))
+            .Select(c => new CharacterSummary(
+                c.Id, c.Name, c.Race, c.BaseClass, c.SecondClass, c.Level, c.PendingDeleteAt))
             .ToListAsync();
     }
 
-    public record CharacterSummary(int Id, string Name, Race Race, BaseClass BaseClass, int SecondClass, int Level);
+    public record CharacterSummary(
+        int Id, string Name, Race Race, BaseClass BaseClass, int SecondClass, int Level,
+        DateTime? PendingDeleteAt);
+
+    /// <summary>Schedule (or immediately perform) a character deletion. Returns the
+    /// UTC time it will be permanently removed, or null if it was deleted right away
+    /// (low level / zero delay). Throws nothing; bad ids are a no-op returning null.</summary>
+    public async Task<(bool Ok, DateTime? DeleteAt, string? Error)> RequestDeleteCharacterAsync(
+        int accountId, int characterId)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var rec = await db.Characters
+            .FirstOrDefaultAsync(c => c.Id == characterId && c.AccountId == accountId);
+        if (rec is null)
+            return (false, null, "Character not found.");
+
+        var delay = GameConstants.CharacterDeleteDelay(rec.Level);
+        if (delay <= TimeSpan.Zero)
+        {
+            db.Characters.Remove(rec);
+            await db.SaveChangesAsync();
+            return (true, null, null);          // gone immediately
+        }
+
+        rec.PendingDeleteAt = DateTime.UtcNow + delay;
+        await db.SaveChangesAsync();
+        return (true, rec.PendingDeleteAt, null);
+    }
+
+    /// <summary>Cancel a pending deletion (restore the character).</summary>
+    public async Task<bool> CancelDeleteCharacterAsync(int accountId, int characterId)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var rec = await db.Characters
+            .FirstOrDefaultAsync(c => c.Id == characterId && c.AccountId == accountId);
+        if (rec is null || rec.PendingDeleteAt is null)
+            return false;
+        rec.PendingDeleteAt = null;
+        await db.SaveChangesAsync();
+        return true;
+    }
 
     public async Task<(bool Success, string? Error)> CreateCharacterAsync(
         int accountId, string name, Race race, BaseClass baseClass)
@@ -96,6 +149,9 @@ public class PersistenceService
             return (false, $"Name must be 1-{GameConstants.MaxCharacterNameLength} characters.");
 
         await using var db = await _factory.CreateDbContextAsync();
+
+        if (await db.Characters.CountAsync(c => c.AccountId == accountId) >= GameConstants.MaxCharactersPerAccount)
+            return (false, $"Account is full ({GameConstants.MaxCharactersPerAccount} characters max).");
 
         if (await db.Characters.AnyAsync(c => c.Name == name))
             return (false, "That character name is taken.");
@@ -157,8 +213,8 @@ public class PersistenceService
             .ThenInclude(i => i.Attributes)
             .FirstOrDefaultAsync(c => c.Id == characterId && c.AccountId == accountId);
 
-        if (rec is null)
-            return null;
+        if (rec is null || rec.PendingDeleteAt is not null)
+            return null;   // can't play a character scheduled for deletion
 
         var entity = new Entity
         {
