@@ -14,12 +14,15 @@ public static class StatCalculator
 
     public static BaseStats GetBaseStats(Race race, BaseClass cls) => (race, cls) switch
     {
-        (Race.Ork, BaseClass.Fighter) => new BaseStats(40, 30, 10, 20),
-        (Race.Ork, BaseClass.Mage)    => new BaseStats(30, 30, 20, 20),
-        (Race.Elf, BaseClass.Fighter) => new BaseStats(30, 20, 20, 30),
-        (Race.Elf, BaseClass.Mage)    => new BaseStats(20, 20, 30, 30),
-        (Race.Human, BaseClass.Fighter) => new BaseStats(35, 25, 15, 25),
-        (Race.Human, BaseClass.Mage)    => new BaseStats(25, 25, 25, 25),
+        // BaseStats(Con, Atk, Wit, Dex). Atk = the single power stat: STR for fighters,
+        // INT for mages. Fighter WIT kept low (casts little); mage WIT per the dye-
+        // stand-in design (elf 23 / human 20 / ork 19). Authentic-L2-style bases.
+        (Race.Ork, BaseClass.Fighter) => new BaseStats(47, 40, 10, 26),
+        (Race.Ork, BaseClass.Mage)    => new BaseStats(31, 31, 19, 20),
+        (Race.Elf, BaseClass.Fighter) => new BaseStats(36, 36, 20, 35),
+        (Race.Elf, BaseClass.Mage)    => new BaseStats(25, 37, 23, 24),
+        (Race.Human, BaseClass.Fighter) => new BaseStats(43, 40, 15, 30),
+        (Race.Human, BaseClass.Mage)    => new BaseStats(27, 41, 20, 21),
         _ => new BaseStats(25, 25, 25, 25)
     };
 
@@ -182,59 +185,70 @@ public static class StatCalculator
         return Math.Clamp(chance, 0f, 1f);
     }
 
-    // ----- Cast & attack speed (L2-style 333 = 100%) -----------------------
+    // ----- Cast & attack speed (authentic L2 model) ------------------------
     //
-    // L2 model: a "speed" stat where 333 ≈ 100% (normal). Higher stat = faster.
-    // WIT drives cast speed, DEX drives attack speed, with per-class weights
-    // (a mage's WIT matters more than a fighter's). These are APPROXIMATIONS of
-    // the L2 tables — tune the per-class coefficients in CastSpeedStat /
-    // AttackSpeedStat. Weapon base speed sets the starting point.
+    // L2: actual cast/attack time = baseTime × 333 / speedStat, where the speed stat
+    // is built MULTIPLICATIVELY:
+    //   castSpd = ClassBaseCast × WitModifier × weaponFactor × gearFactor × ∏(1+buff%)
+    // and capped (cast 1999 = 6× faster than the 333 reference, attack 1500). The full
+    // assembly lives in Entity.EffectiveCast/AttackSpeedMultiplier; this file provides
+    // the class bases, the exponential WIT curve, weapon factors and the 333 reference.
 
     public const int SpeedBaseline = 333;  // stat value that equals 1.0x speed
 
-    /// <summary>Weapon base attack speed (L2 table: Very Fast 433 … Very Slow 227).
-    /// Higher = faster. Daggers/bows fast, blunt/staff slow.</summary>
+
+    /// <summary>Class base casting speed (L2 engine constant, before WIT/gear/buffs):
+    /// mages 166, fighters 150.</summary>
+    public static int ClassBaseCastSpeed(BaseClass cls) =>
+        cls == BaseClass.Mage ? 166 : 150;
+
+    /// <summary>Signature-stat bonus a character accrues by level — stands in for the
+    /// (not-yet-built) +stat dyes and stat-set bonuses. Mages apply it to WIT, fighters
+    /// to DEX. Cumulative milestones: +1@20, +1@30, +2@40, +1@50, +1@60, +1@70, +5@80
+    /// (= +12 total). E.g. an elf wizard (base WIT 23) climbs to 30 by level 70, 35 @80.</summary>
+    public static int LevelStatBonus(int level)
+    {
+        int b = 0;
+        if (level >= 20) b += 1;
+        if (level >= 30) b += 1;
+        if (level >= 40) b += 2;
+        if (level >= 50) b += 1;
+        if (level >= 60) b += 1;
+        if (level >= 70) b += 1;
+        if (level >= 80) b += 5;
+        return b;
+    }
+
+    /// <summary>DEX physical-attack-speed modifier — EXPONENTIAL, matching the L2 table
+    /// (baseline 30 = 1.00: 20→0.90, 35→1.05, 40→1.11, 50→1.23): ~1.05% per DEX
+    /// compounded. Clamped so very low DEX can't stall attacks entirely.</summary>
+    public static float AttackDexModifier(int dex) =>
+        Math.Clamp(MathF.Pow(1.0105f, dex - 30), 0.4f, 8f);
+
+    /// <summary>WIT casting-speed modifier — EXPONENTIAL, matching the L2 table
+    /// (20→1.00, 30→1.63, 40→2.65, 50→4.32): ×1.63 per +10 WIT. Clamped so very low
+    /// WIT can't stall casting entirely.</summary>
+    public static float CastWitModifier(int wit) =>
+        Math.Clamp(MathF.Pow(1.63f, (wit - 20) / 10f), 0.4f, 8f);
+
+    /// <summary>Weapon cast factor: staves/maces are full casters; bladed/bow weapons
+    /// cast clumsily. Multiplicative on the cast stat.</summary>
+    public static float WeaponCastFactor(WeaponType w) => w switch
+    {
+        WeaponType.Blunt => 1.0f,   // staff/mace: caster weapon
+        _ => 0.8f                   // bladed/bow: clumsy caster
+    };
+
+    /// <summary>Weapon base attack speed (authentic L2 bases; baseline 333 = 1.0×).
+    /// Daggers/fists fastest, 2H/bow slowest.</summary>
     public static int WeaponAttackBaseSpeed(WeaponType w) => w switch
     {
-        WeaponType.Dual => 379,     // daggers/dual: fast
-        WeaponType.Bow => 293,      // slow (but long range)
-        WeaponType.Sword => 325,    // normal
-        WeaponType.Blunt => 325,    // mace/staff: normal
-        _ => 300                    // weaponless
+        WeaponType.Dual => 433,     // daggers/dual: fastest
+        WeaponType.Sword => 379,    // 1H sword/blunt
+        WeaponType.Bow => 293,      // bow: slow (but long range)
+        WeaponType.Blunt => 325,    // staff/2H: slow
+        _ => 433                    // fists (weaponless): fast
     };
-
-    /// <summary>Weapon base cast speed. Caster weapons (blunt: maces/staves) cast at
-    /// normal; bladed/bow weapons are a bit slower casters.</summary>
-    public static int WeaponCastBaseSpeed(WeaponType w) => w switch
-    {
-        WeaponType.Blunt => 333,
-        _ => 300
-    };
-
-    /// <summary>Cast-speed stat from WIT, weighted by class. Approximates the L2
-    /// tables: mages gain ~5%/WIT, fighters ~3%/WIT. Returned as a stat where
-    /// 333 = 1.0x; capped by StatCaps.CastSpeed.</summary>
-    public static int CastSpeedStat(int wit, BaseClass cls, int weaponBase)
-    {
-        float perWit = cls == BaseClass.Mage ? 0.05f : 0.03f;
-        // weaponBase is the weapon's base cast speed (~333 for normal). WIT adds %.
-        float stat = weaponBase * (1f + perWit * wit);
-        return Math.Min((int)stat, StatCaps.CastSpeed);
-    }
-
-    /// <summary>Attack-speed stat from DEX, weighted by class. ~1%/DEX baseline.
-    /// 333 = 1.0x; capped by StatCaps.AttackSpeed.</summary>
-    public static int AttackSpeedStat(int dex, BaseClass cls, int weaponBase)
-    {
-        float perDex = 0.01f;
-        float stat = weaponBase * (1f + perDex * dex);
-        return Math.Min((int)stat, StatCaps.AttackSpeed);
-    }
-
-    /// <summary>Convert a speed stat to a time MULTIPLIER (lower = faster).
-    /// 333 → 1.0; 666 → 0.5 (twice as fast); 167 → 2.0 (half speed).</summary>
-    public static float SpeedMultiplier(int speedStat) =>
-        SpeedBaseline / (float)Math.Max(1, speedStat);
 
     // ----- Progression -------------------------------------------------------
 

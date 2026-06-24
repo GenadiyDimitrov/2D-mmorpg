@@ -30,7 +30,8 @@ public record SkillDef(
     int InterruptPower = 0,
     int InitialMpCost = -1,
     float BlockAccuracy = 0f,
-    PassiveEffect? Passive = null)
+    PassiveEffect? Passive = null,
+    string Abbrev = "")
 {
     public float MagnitudeOf(SkillEffect effect, ModifierMode mode)
     {

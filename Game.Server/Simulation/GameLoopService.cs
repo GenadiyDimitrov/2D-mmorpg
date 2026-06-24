@@ -90,6 +90,7 @@ public class GameLoopService : BackgroundService
                 case DebugGiveCmd c: HandleDebugGive(c); break;
                 case DebugLevelCmd c: HandleDebugLevel(c); break;
                 case DebugGoldCmd c: HandleDebugGold(c); break;
+                case DebugSpCmd c: HandleDebugSp(c); break;
                 case DebugResetCmd c: HandleDebugReset(c); break;
                 case DebugThirdClassCmd c: HandleDebugThirdClass(c); break;
                 case TradeRequestCmd c: HandleTradeRequest(c); break;
@@ -715,6 +716,16 @@ public class GameLoopService : BackgroundService
         player.Gold += Math.Max(0, cmd.Amount);
         SendGold(player);
         SendSystemToEntity(player, $"[DEBUG] +{cmd.Amount:N0} {GameConstants.CurrencyName} (now {player.Gold:N0}).");
+    }
+
+    private void HandleDebugSp(DebugSpCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+        player.SkillPoints += (int)Math.Max(0, cmd.Amount);
+        SendStats(player);
+        SendLearned(player);
+        SendSystemToEntity(player, $"[DEBUG] +{cmd.Amount:N0} SP (now {player.SkillPoints:N0}).");
     }
 
     /// <summary>DEBUG: re-roll the SAME character in place — new race/base class,
@@ -1343,21 +1354,27 @@ public class GameLoopService : BackgroundService
             SendPotionStatus(entity);
     }
 
-    private static void TickBuffs(Entity entity)
+    private void TickBuffs(Entity entity)
     {
-        bool maxStatBuffExpired = false;
+        bool expiredAny = false;
         for (int i = entity.Buffs.Count - 1; i >= 0; i--)
         {
             if (--entity.Buffs[i].TicksRemaining <= 0)
             {
-                var expired = entity.Buffs[i];
-                if (expired.Has(SkillEffect.BuffHp) || expired.Has(SkillEffect.BuffMp))
-                    maxStatBuffExpired = true;
                 entity.Buffs.RemoveAt(i);
+                expiredAny = true;
             }
         }
-        if (maxStatBuffExpired)
-            entity.RecomputeDerived();
+        if (!expiredAny) return;
+
+        // A buff fell off — re-bake derived stats and refresh the owner's HUD
+        // (icons + stats window) so the lost speed/HP/etc. shows immediately.
+        entity.RecomputeDerived();
+        if (entity.Kind == EntityKind.Player)
+        {
+            PushBuffs(entity);
+            SendStats(entity);
+        }
     }
 
     // ----- Mob AI --------------------------------------------------------------
@@ -1648,7 +1665,7 @@ var effect = def.Effect;
         // ---- Heal (single ally/self, or AoE to allies in radius) ----
         if (effect.HasFlag(SkillEffect.Heal))
         {
-            int amount = SkillMath.HealAmount(def.Power, caster.Wit);
+            int amount = SkillMath.HealAmount(def.Power, caster.EffectiveWit);
             if (def.TargetMode == TargetMode.AlliesInRadius)
                 foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
                     HealOne(caster, ally, amount, def.Name);
@@ -1679,7 +1696,6 @@ var effect = def.Effect;
             {
                 ApplyBuff(target, def);
                 BroadcastCombat(caster, target, 0, CombatOutcome.Buff, def.Name);
-                if (target.Kind == EntityKind.Player) PushBuffs(target);
             }
         }
 
@@ -1702,7 +1718,6 @@ var effect = def.Effect;
                 {
                     ApplyBuff(ally, def, buffName);
                     BroadcastCombat(caster, ally, 0, CombatOutcome.Buff, buffName);
-                    if (ally.Kind == EntityKind.Player) PushBuffs(ally);
                 }
             }
             else
@@ -1710,7 +1725,6 @@ var effect = def.Effect;
                 var buffTarget = def.TargetMode == TargetMode.SelfOnly ? caster : target;
                 ApplyBuff(buffTarget, def, buffName);
                 BroadcastCombat(caster, buffTarget, 0, CombatOutcome.Buff, buffName);
-                if (buffTarget.Kind == EntityKind.Player) PushBuffs(buffTarget);
             }
         }
 
@@ -1726,7 +1740,7 @@ var effect = def.Effect;
     ///     (weaker self-recast is ignored entirely); on apply, replace it.
     /// (2) Replaces: unconditionally remove any active buff whose key is listed,
     ///     regardless of rank or magnitude.</summary>
-    private static void ApplyBuff(Entity target, SkillDef def, string? displayName = null)
+    private void ApplyBuff(Entity target, SkillDef def, string? displayName = null)
     {
         string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
         string shownName = string.IsNullOrEmpty(displayName) ? def.Name : displayName!;
@@ -1756,9 +1770,15 @@ var effect = def.Effect;
             Description = SkillCatalog.DescriptionOf(def.Id)
         });
 
-        // Max HP/MP buffs change derived stats — recompute so they take effect.
-        if (def.Effect.HasFlag(SkillEffect.BuffHp) || def.Effect.HasFlag(SkillEffect.BuffMp))
-            target.RecomputeDerived();
+        // Re-bake derived stats (Max HP/MP, shield, atk/def) and refresh the owner's
+        // HUD: buff icons AND the stats window (cast/attack/move speed are live and
+        // read the buff list, so they need a fresh push to show the new numbers).
+        target.RecomputeDerived();
+        if (target.Kind == EntityKind.Player)
+        {
+            PushBuffs(target);
+            SendStats(target);
+        }
     }
 
     /// <summary>Heal one target, scaled by its anti-heal multiplier, and broadcast.</summary>
@@ -1779,7 +1799,7 @@ var effect = def.Effect;
         if (removed > 0)
         {
             target.RecomputeDerived();   // DebuffDef etc. affected derived stats
-            if (target.Kind == EntityKind.Player) PushBuffs(target);
+            if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
         }
         BroadcastCombat(caster, target, 0, CombatOutcome.Buff, skillName);
     }
@@ -2093,7 +2113,7 @@ var effect = def.Effect;
         if (entity.Mp < entity.MaxMp)
         {
             int regen = Math.Max(1,
-                (int)((StatCalculator.MpRegenPerSecond(entity.Wit, entity.Level) + entity.MpRegenBonus)
+                (int)((StatCalculator.MpRegenPerSecond(entity.EffectiveWit, entity.Level) + entity.MpRegenBonus)
                       * multiplier * entity.MpRegenMult * (1f + mpRegenPct)));
             entity.Mp = Math.Min(entity.MaxMp, entity.Mp + regen);
         }
@@ -2326,7 +2346,7 @@ var effect = def.Effect;
 
     private void SendStats(Entity p) =>
         SendTo(p, "Stats", new StatsUpdate(
-            p.Con, p.AtkStat, p.Wit, p.Dex,
+            p.Con, p.AtkStat, p.EffectiveWit, p.EffectiveDex,
             p.MaxHp, p.MaxMp, p.AttackPower, p.Defence,
             p.Accuracy, p.Evasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
             p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.EffectiveCastSpeedMultiplier, p.EffectiveAttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttack, p.MagicCritChance,

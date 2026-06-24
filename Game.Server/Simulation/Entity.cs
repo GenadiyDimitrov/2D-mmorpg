@@ -151,6 +151,19 @@ public class Entity
     public int Wit { get; set; }
     public int Dex { get; set; }
 
+    /// <summary>WIT used for ALL gameplay math (cast speed, MP, magic crit, interrupt,
+    /// heals). MAGES gain WIT at level milestones to stand in for the not-yet-built dye
+    /// + WIT-set bonuses; non-mages use flat WIT. Stored <see cref="Wit"/> stays the
+    /// persisted base. See StatCalculator.LevelStatBonus.</summary>
+    public int EffectiveWit =>
+        Wit + (BaseClass == BaseClass.Mage ? StatCalculator.LevelStatBonus(Level) : 0);
+
+    /// <summary>DEX used for ALL gameplay math (attack speed, crit, evasion, accuracy).
+    /// FIGHTERS gain DEX at level milestones (the same dye stand-in); mages use flat
+    /// DEX. Stored <see cref="Dex"/> stays the persisted base.</summary>
+    public int EffectiveDex =>
+        Dex + (BaseClass == BaseClass.Fighter ? StatCalculator.LevelStatBonus(Level) : 0);
+
     // ----- Derived stats (recomputed on level-up / equip / class change) -------
 
     public int Level { get; set; } = 1;
@@ -301,9 +314,9 @@ public class Entity
     /// <summary>Evasion including evasion buffs (flat + percent).</summary>
     public float EffectiveEvasion => ModifiedStat(Evasion, SkillEffect.BuffEvasion);
 
-    /// <summary>Weapon's base cast/attack speed stat (333 = normal). Set from
-    /// the equipped weapon type in RecomputeDerived.</summary>
-    public int WeaponCastBase { get; set; } = StatCalculator.SpeedBaseline;
+    /// <summary>Weapon's base attack speed stat (333 = normal). Set from the equipped
+    /// weapon type in RecomputeDerived. (Cast speed uses class base × weapon factor
+    /// directly in EffectiveCastSpeedMultiplier, so it needs no stored field.)</summary>
     public int WeaponAttackBase { get; set; } = StatCalculator.SpeedBaseline;
 
     /// <summary>Cast-time multiplier (lower = faster). WIT-driven stat (L2-style
@@ -312,14 +325,24 @@ public class Entity
     {
         get
         {
-            int stat = StatCalculator.CastSpeedStat(Wit, BaseClass, WeaponCastBase);
-            float mult = StatCalculator.SpeedMultiplier(stat);
-            float pct = 0f;
+            // Authentic L2: castSpd = classBase × witModifier × weaponFactor
+            //   × gearFactor × ∏(1 + buff%), then time = 333 / castSpd (cap 1999 = 6×).
+            // witModifier is EXPONENTIAL (×1.63 per +10 WIT). gearFactor = robe mastery /
+            // attributes / passives (CastSpeedMultiplier is their combined TIME multiplier,
+            // <1 = faster, so 1/it = speed factor: robe ≈ ×1.4, non-robe ≈ ×0.5). Buffs
+            // STACK MULTIPLICATIVELY, matching L2.
+            float baseCast = StatCalculator.ClassBaseCastSpeed(BaseClass)
+                             * StatCalculator.WeaponCastFactor(WeaponType);
+            float witMod = StatCalculator.CastWitModifier(EffectiveWit);
+            float gearFactor = 1f / Math.Max(0.05f, CastSpeedMultiplier);
+            float buffMult = 1f;
             foreach (var buff in Buffs)
                 if (buff.Has(SkillEffect.BuffCastSpeed))
-                    pct += buff.Percent(SkillEffect.BuffCastSpeed);
-            // Combine WIT stat × gear/mastery/passive field × buffs (lower = faster).
-            return Math.Max(0.15f, mult * CastSpeedMultiplier * Math.Max(0.2f, 1f - pct));
+                    buffMult *= 1f + buff.Percent(SkillEffect.BuffCastSpeed);
+
+            float castSpd = baseCast * witMod * gearFactor * buffMult;
+            castSpd = Math.Clamp(castSpd, 30f, StatCaps.CastSpeed);
+            return StatCalculator.SpeedBaseline / castSpd;   // time multiplier (lower = faster)
         }
     }
 
@@ -329,14 +352,19 @@ public class Entity
     {
         get
         {
-            int stat = StatCalculator.AttackSpeedStat(Dex, BaseClass, WeaponAttackBase);
-            float mult = StatCalculator.SpeedMultiplier(stat);
-            float pct = 0f;
+            // Authentic L2: atkSpd = weaponBase × dexModifier × gearFactor × ∏(1+buff%),
+            // cap 1500. dexModifier is EXPONENTIAL (baseline 30 DEX = 1.0). Buffs stack
+            // multiplicatively (matching cast speed).
+            float dexFactor = StatCalculator.AttackDexModifier(EffectiveDex);
+            float gearFactor = 1f / Math.Max(0.05f, AttackSpeedMultiplier);
+            float buffMult = 1f;
             foreach (var buff in Buffs)
                 if (buff.Has(SkillEffect.BuffAtkSpeed))
-                    pct += buff.Percent(SkillEffect.BuffAtkSpeed);
-            // Combine DEX stat × gear/mastery/passive field × buffs (lower = faster).
-            return Math.Max(0.15f, mult * AttackSpeedMultiplier * Math.Max(0.2f, 1f - pct));
+                    buffMult *= 1f + buff.Percent(SkillEffect.BuffAtkSpeed);
+
+            float atkSpd = WeaponAttackBase * dexFactor * gearFactor * buffMult;
+            atkSpd = Math.Clamp(atkSpd, 30f, StatCaps.AttackSpeed);
+            return StatCalculator.SpeedBaseline / atkSpd;    // time multiplier (lower = faster)
         }
     }
 
@@ -395,7 +423,7 @@ public class Entity
     public void RecomputeDerived()
     {
         MaxHp = StatCalculator.MaxHp(Con, Level);
-        MaxMp = StatCalculator.MaxMp(Wit, Level);
+        MaxMp = StatCalculator.MaxMp(EffectiveWit, Level);
         AttackPower = StatCalculator.AttackPower(AtkStat, Level);
         MagicAttack = StatCalculator.AttackPower(AtkStat, Level); // mAtk also from ATK
         Defence = StatCalculator.Defence(Con, Level);
@@ -403,12 +431,12 @@ public class Entity
         MagicDefence = StatCalculator.MagicDefence(Level)
             + StatCalculator.ArchetypeMagicDefenceBonus(Archetype, Level);
         MagicFailFloor = StatCalculator.ArchetypeMagicFailFloor(Archetype);
-        Accuracy = StatCalculator.Accuracy(Dex, Level);
-        Evasion = StatCalculator.Evasion(Dex, Level);
-        CritChance = StatCalculator.PhysicalCritChance(Dex);
-        MagicCritChance = StatCalculator.MagicCritChance(Wit);
-        InterruptResist = StatCalculator.InterruptResist(Wit, Level);
-        MagicInterruptBonus = StatCalculator.MagicInterruptPower(Wit);
+        Accuracy = StatCalculator.Accuracy(EffectiveDex, Level);
+        Evasion = StatCalculator.Evasion(EffectiveDex, Level);
+        CritChance = StatCalculator.PhysicalCritChance(EffectiveDex);
+        MagicCritChance = StatCalculator.MagicCritChance(EffectiveWit);
+        InterruptResist = StatCalculator.InterruptResist(EffectiveWit, Level);
+        MagicInterruptBonus = StatCalculator.MagicInterruptPower(EffectiveWit);
         BasicAttackInterruptPower = StatCalculator.ArchetypeBasicInterruptPower(Archetype, Level);
         BasicAttackRange = GameConstants.MeleeRange;
         WeaponType = WeaponType.None;
@@ -610,7 +638,6 @@ public class Entity
         if (buffMpPct != 0) MaxMp += (int)(MaxMp * buffMpPct);
 
         WeaponAttackBase = StatCalculator.WeaponAttackBaseSpeed(WeaponType);
-        WeaponCastBase = StatCalculator.WeaponCastBaseSpeed(WeaponType);
 
         // ----- Shield Mastery buffs (tank passives) scale the shield values.
         //  Percent magnitudes add fractionally; flat add directly. Only matter

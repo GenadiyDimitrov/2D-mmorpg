@@ -289,6 +289,14 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task DebugSp(long amount)
+    {
+#if DEBUG
+        _world.Commands.Enqueue(new DebugSpCmd(Context.ConnectionId, amount));
+#endif
+        return Task.CompletedTask;
+    }
+
     public Task DebugReset(int race, int baseClass)
     {
 #if DEBUG

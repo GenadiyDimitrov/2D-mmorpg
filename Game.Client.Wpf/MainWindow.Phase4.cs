@@ -543,13 +543,23 @@ public partial class MainWindow
         StatsList.Items.Add(MakeStatRow("Move Speed", $"{st.MoveSpeed:0}"));
 
         // CastSpeedMult / AttackSpeedMult are the EFFECTIVE multipliers (WIT/DEX +
-        // gear + masteries + buffs/potions all folded in; lower = faster).
-        float castFaster = (1f - st.CastSpeedMult) * 100f;
+        // gear + masteries + buffs/potions all folded in; lower = faster). Show as
+        // the L2-style "speed stat / cap" (333 = 1.0x), with % faster for context.
         StatsList.Items.Add(MakeStatRow("Cast Speed",
-            castFaster >= 0 ? $"{castFaster:0.#}% faster" : $"{-castFaster:0.#}% slower"));
-        float atkFaster = (1f - st.AttackSpeedMult) * 100f;
+            SpeedStatLabel(st.CastSpeedMult, StatCaps.CastSpeed)));
         StatsList.Items.Add(MakeStatRow("Attack Speed",
-            atkFaster >= 0 ? $"{atkFaster:0.#}% faster" : $"{-atkFaster:0.#}% slower"));
+            SpeedStatLabel(st.AttackSpeedMult, StatCaps.AttackSpeed)));
+    }
+
+    /// <summary>Format an effective time-multiplier (lower = faster) as the L2-style
+    /// "speed stat / cap" pair (333 = 1.0x), e.g. "1206 / 1999  (+72% )".</summary>
+    private static string SpeedStatLabel(float mult, int cap)
+    {
+        mult = Math.Max(0.0001f, mult);
+        int stat = (int)Math.Round(StatCalculator.SpeedBaseline / mult);
+        float faster = (1f - mult) * 100f;
+        string pct = faster >= 0 ? $"+{faster:0.#}% faster" : $"{faster:0.#}% slower";
+        return $"{stat} / {cap}   ({pct})";
     }
 
     private static Grid MakeStatRow(string label, string value)
@@ -1042,8 +1052,11 @@ public partial class MainWindow
                     Text = SkillDisplayName(def.Id, def.Name),
                     Foreground = Brushes.White, FontSize = 13,
                     VerticalAlignment = VerticalAlignment.Center,
-                    ToolTip = SkillTooltip(def)
+                    Cursor = System.Windows.Input.Cursors.Hand,
+                    ToolTip = "Click for details"
                 };
+                string detailId = def.Id;
+                name.MouseLeftButtonUp += (_, _) => OpenSkillDetail(detailId);
                 row.Children.Add(name);
                 SkillsList.Items.Add(row);
             }
@@ -1094,8 +1107,11 @@ public partial class MainWindow
                     Text = $"{SkillDisplayName(def.Id, def.Name)}  (SP {def.SpCost})",
                     Foreground = canLearn ? Brushes.White : Brushes.Gray,
                     FontSize = 13, VerticalAlignment = VerticalAlignment.Center,
-                    ToolTip = SkillTooltip(def)
+                    Cursor = System.Windows.Input.Cursors.Hand,
+                    ToolTip = "Click for details"
                 };
+                string detailId = def.Id;
+                name.MouseLeftButtonUp += (_, _) => OpenSkillDetail(detailId);
                 row.Children.Add(name);
                 SkillsList.Items.Add(row);
             }
@@ -1147,7 +1163,7 @@ public partial class MainWindow
 
         _pendingLearnId = skillId;
         LearnTitle.Text = def.Name;
-        LearnBody.Text = SkillTooltip(def);
+        LearnBody.Text = SkillDetail(def);
         bool enough = _skillPoints >= def.SpCost;
         LearnCost.Text = $"Cost: {def.SpCost} SP   (you have {_skillPoints})";
         LearnCost.Foreground = enough ? Brushes.LightGreen : Brushes.IndianRed;
@@ -1189,18 +1205,111 @@ public partial class MainWindow
         _ => "Other"
     };
 
-    private static string SkillTooltip(SkillDef def)
+    /// <summary>Full skill detail for the click-popup: description, real cast time
+    /// (base folds in the current cast-speed multiplier), cooldown, MP, range,
+    /// duration, plus a human-readable buff/passive bonus summary.</summary>
+    private string SkillDetail(SkillDef def)
     {
-        // Passives have no MP/cast/cooldown — show what they do, not combat timings.
-        if (IsPassive(def))
-            return $"{def.Description}\nPassive — always active once learned (no MP, not cast).";
+        var lines = new List<string>();
+        if (!string.IsNullOrWhiteSpace(def.Description))
+            lines.Add(def.Description);
 
-        string duration = def.DurationTicks > 0
-            ? $"  Duration {def.DurationTicks * GameConstants.TickSeconds:0}s" : "";
-        return $"{def.Description}\n" +
-               $"MP {def.MpCost}   Cast {def.CastTicks * GameConstants.TickSeconds:0.0}s   " +
-               $"Cooldown {def.CooldownTicks * GameConstants.TickSeconds:0}s{duration}";
+        if (IsPassive(def))
+        {
+            lines.Add("Passive — always active once learned (no MP, not cast).");
+            var ps = PassiveSummary(def);
+            if (ps.Count > 0) lines.Add(string.Join(",  ", ps));
+            return string.Join("\n", lines);
+        }
+
+        // Cast: base (real). "real" folds in WIT/gear/masteries/buffs from the
+        // latest stats update; a moving multiplier so it tracks your current speed.
+        if (def.CastTicks > 0)
+        {
+            float baseCast = def.CastTicks * GameConstants.TickSeconds;
+            float mult = _stats?.CastSpeedMult ?? 1f;
+            lines.Add($"Cast: {baseCast:0.0}s  ({baseCast * mult:0.0}s now)");
+        }
+        else
+        {
+            lines.Add("Cast: instant");
+        }
+
+        lines.Add($"Cooldown: {def.CooldownTicks * GameConstants.TickSeconds:0}s    MP: {def.MpCost}");
+        if (def.Range > 0) lines.Add($"Range: {def.Range:0}");
+        if (def.DurationTicks > 0)
+            lines.Add($"Duration: {def.DurationTicks * GameConstants.TickSeconds:0}s");
+
+        var bs = BuffSummary(def);
+        if (bs.Count > 0) lines.Add(string.Join(",  ", bs));
+        return string.Join("\n", lines);
     }
+
+    /// <summary>Always-on bonuses carried by a passive skill (PassiveEffect).</summary>
+    private static List<string> PassiveSummary(SkillDef def)
+    {
+        var outp = new List<string>();
+        if (def.Passive is not PassiveEffect p) return outp;
+        void Pct(string label, float v) { if (Math.Abs(v) > 0.0001f) outp.Add($"{label} {(v >= 0 ? "+" : "")}{v * 100:0.#}%"); }
+        void Flat(string label, int v) { if (v != 0) outp.Add($"{label} {(v >= 0 ? "+" : "")}{v}"); }
+        Pct("Max HP", p.MaxHpPct); Pct("Max MP", p.MaxMpPct);
+        Flat("Defence", p.Defence); Flat("Magic Def", p.MagicDefence);
+        Flat("Attack", p.Attack); Pct("Attack", p.AttackPct);
+        Flat("Evasion", p.Evasion); Flat("Accuracy", p.Accuracy);
+        Pct("Crit Rate", p.CritRate); Pct("Crit Dmg", p.CritDamage); Pct("Magic Crit", p.MagicCritRate);
+        Pct("HP Regen", p.HpRegen); Pct("MP Regen", p.MpRegen);
+        Pct("Atk Speed", p.AtkSpeedPct); Pct("Cast Speed", p.CastSpeedPct); Pct("Move Speed", p.MoveSpeedPct);
+        return outp;
+    }
+
+    /// <summary>Per-effect magnitudes of a buff/debuff/HoT, e.g. "Attack +20%".</summary>
+    private static List<string> BuffSummary(SkillDef def)
+    {
+        var outp = new List<string>();
+        if (def.Magnitudes is null) return outp;
+        foreach (var m in def.Magnitudes)
+        {
+            string label = EffectLabel(m.Effect);
+            if (label.Length == 0) continue;
+            outp.Add(m.Mode == ModifierMode.Flat
+                ? $"{label} {(m.Value >= 0 ? "+" : "")}{m.Value:0.#}"
+                : $"{label} {(m.Value >= 0 ? "+" : "")}{m.Value * 100:0.#}%");
+        }
+        return outp;
+    }
+
+    private static string EffectLabel(SkillEffect e) => e switch
+    {
+        SkillEffect.BuffAtk => "Attack",
+        SkillEffect.BuffDef => "Defence",
+        SkillEffect.BuffMagicDef => "Magic Def",
+        SkillEffect.BuffCastSpeed => "Cast Speed",
+        SkillEffect.BuffAtkSpeed => "Atk Speed",
+        SkillEffect.BuffMoveSpeed => "Move Speed",
+        SkillEffect.BuffEvasion => "Evasion",
+        SkillEffect.BuffHp => "Max HP",
+        SkillEffect.BuffMp => "Max MP",
+        SkillEffect.BuffHpRegen => "HP Regen",
+        SkillEffect.BuffMpRegen => "MP Regen",
+        SkillEffect.BuffBlockChance => "Block Chance",
+        SkillEffect.BuffShieldDef => "Shield Def",
+        SkillEffect.DebuffDef => "Def Down",
+        SkillEffect.DebuffHealRecv => "Healing Down",
+        SkillEffect.HealOverTime => "Heal/sec",
+        _ => ""
+    };
+
+    private void OpenSkillDetail(string skillId)
+    {
+        var def = SkillCatalog.Get(skillId);
+        if (def is null) return;
+        SkillDetailTitle.Text = SkillDisplayName(def.Id, def.Name);
+        SkillDetailBody.Text = SkillDetail(def);
+        SkillDetailPopup.Visibility = Visibility.Visible;
+    }
+
+    private void SkillDetailClose_Click(object sender, RoutedEventArgs e) =>
+        SkillDetailPopup.Visibility = Visibility.Collapsed;
 
     /// <summary>Server -> client: learned skill ids + SP. Refresh bar + window.</summary>
     private void OnLearned(LearnedSkills learned)
@@ -1621,6 +1730,7 @@ public partial class MainWindow
     {
         AddDebugHeader("Character");
         DebugList.Children.Add(DebugAction("Level +1", async () => await _net.DebugLevelAsync()));
+        DebugList.Children.Add(DebugAction("+1kk SP", async () => await _net.DebugSpAsync(1_000_000)));
         DebugList.Children.Add(DebugAction("+100,000 Gold", async () => await _net.DebugGoldAsync(100_000)));
 
         // Re-roll the SAME character: pick race + base class; resets to level 1 with

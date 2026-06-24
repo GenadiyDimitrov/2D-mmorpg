@@ -237,6 +237,7 @@ public partial class MainWindow : Window
             AccountPanel.Visibility = Visibility.Collapsed;
 
             ChatPanel.Visibility = Visibility.Visible;
+            ChatToggle.Visibility = Visibility.Visible;
             SkillsButton.Visibility = Visibility.Visible;
             StatsButton.Visibility = Visibility.Visible;
             InventoryButton.Visibility = Visibility.Visible;
@@ -376,7 +377,7 @@ public partial class MainWindow : Window
     // Skill bar (rebuilt on class change to include the signature skill)
     // -----------------------------------------------------------------------
 
-    private const int SkillBarSlots = 8;
+    private const int SkillBarSlots = 24;   // 2 rows of 12 square slots
 
     /// <summary>The skill (string id) assigned to each bar slot (null = empty).</summary>
     private readonly string?[] _skillBar = new string?[SkillBarSlots];
@@ -457,6 +458,29 @@ public partial class MainWindow : Window
         return ClassSkills.DisplayName(skillId, _myRace, _myBaseClass, arch, disc);
     }
 
+    /// <summary>Hotkey label for a 1-based bar slot: 1-9, then 0 for slot 10,
+    /// blank for 11/12 (mouse/drag only).</summary>
+    private static string HotkeyLabel(int slot1Based) => slot1Based switch
+    {
+        >= 1 and <= 9 => slot1Based.ToString(),
+        10 => "0",
+        _ => ""
+    };
+
+    /// <summary>Short label for a skill square. Uses the skill's authored Abbrev
+    /// when set, else auto-derives from the (per-class) display name: initials of
+    /// multi-word names (Magic Bolt → MB), first 3 letters of a single word.</summary>
+    private string SkillAbbrev(SkillDef def)
+    {
+        if (!string.IsNullOrWhiteSpace(def.Abbrev)) return def.Abbrev;
+        string name = SkillDisplayName(def.Id, def.Name);
+        var words = name.Split(new[] { ' ', '-', '\'' }, StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length >= 2)
+            return string.Concat(words.Take(3).Select(w => char.ToUpperInvariant(w[0])));
+        string w = words.Length == 1 ? words[0] : name;
+        return w.Length <= 3 ? w : w.Substring(0, 3);
+    }
+
     private void RenderSkillBar()
     {
         SkillBar.Children.Clear();
@@ -464,34 +488,110 @@ public partial class MainWindow : Window
 
         for (int i = 0; i < _skillBar.Length; i++)
         {
+            int slotIndex = i;
             int hotkey = i + 1;
+
             var button = new Button
             {
-                Width = 104, Height = 38, Margin = new Thickness(3, 0, 3, 0), FontSize = 11
+                Width = 46, Height = 46, Margin = new Thickness(3),
+                Padding = new Thickness(0), AllowDrop = true
+            };
+
+            // Each square is a drag SOURCE and a drop TARGET so skills can be
+            // rearranged between slots (including onto empty slots).
+            button.PreviewMouseLeftButtonDown += (_, e) => _dragStart = e.GetPosition(this);
+            button.MouseMove += (s, e) => SkillSlot_MouseMove(slotIndex, s, e);
+            button.DragOver += SkillSlot_DragOver;
+            button.Drop += (_, e) => SkillSlot_Drop(slotIndex, e);
+
+            var hk = new TextBlock
+            {
+                Text = HotkeyLabel(hotkey),
+                Foreground = Brushes.LightGray, FontSize = 9,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(3, 1, 0, 0), IsHitTestVisible = false
             };
 
             if (_skillBar[i] is string id && SkillCatalog.Get(id) is SkillDef def)
             {
-                button.Content = $"{hotkey}. {SkillDisplayName(def.Id, def.Name)}";
-                var slot = new SkillSlot { Def = def, Button = button, Key = hotkey };
-                int slotIndex = i;
+                var abbrev = new TextBlock
+                {
+                    Text = SkillAbbrev(def),
+                    Foreground = Brushes.White, FontSize = 15, FontWeight = FontWeights.Bold,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false
+                };
+                var cd = new TextBlock
+                {
+                    Foreground = Brushes.Gold, FontSize = 16, FontWeight = FontWeights.Bold,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Visibility = Visibility.Collapsed, IsHitTestVisible = false
+                };
+
+                var grid = new Grid();
+                grid.Children.Add(abbrev);
+                grid.Children.Add(cd);
+                grid.Children.Add(hk);
+                button.Content = grid;
+
+                var slot = new SkillSlot { Def = def, Button = button, Key = hotkey, CooldownText = cd };
                 // Left-click = cast; right-click = remove from bar.
                 button.Click += (_, _) => UseSkill(slot);
                 button.MouseRightButtonUp += (_, _) => RemoveSkillFromBar(slotIndex);
-                button.ToolTip = "Right-click to remove from bar";
+                // Bar tooltip = name + description only (full timings in the Skills window).
+                button.ToolTip = $"{SkillDisplayName(def.Id, def.Name)}\n{def.Description}".TrimEnd();
                 _skillSlots.Add(slot);
             }
             else
             {
-                button.Content = $"{hotkey}.";
+                var grid = new Grid { Background = Brushes.Transparent }; // keep hit-testable for drop
+                grid.Children.Add(hk);
+                button.Content = grid;
                 button.Opacity = 0.4;
-                button.IsHitTestVisible = false;
             }
 
             SkillBar.Children.Add(button);
         }
 
         SkillBar.Visibility = Visibility.Visible;
+    }
+
+    private void ChatToggle_Click(object sender, RoutedEventArgs e)
+    {
+        ChatPanel.Visibility = ChatPanel.Visibility == Visibility.Visible
+            ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    // ---- Skill-bar drag & drop (rearrange slots) --------------------------
+    private Point _dragStart;
+
+    private void SkillSlot_MouseMove(int fromIndex, object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed) return;
+        if (_skillBar[fromIndex] is null) return;
+        var pos = e.GetPosition(this);
+        if (Math.Abs(pos.X - _dragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(pos.Y - _dragStart.Y) < SystemParameters.MinimumVerticalDragDistance)
+            return;
+        DragDrop.DoDragDrop((DependencyObject)sender, fromIndex, DragDropEffects.Move);
+    }
+
+    private void SkillSlot_DragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = e.Data.GetDataPresent(typeof(int)) ? DragDropEffects.Move : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void SkillSlot_Drop(int toIndex, DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(typeof(int))) return;
+        int fromIndex = (int)e.Data.GetData(typeof(int));
+        if (fromIndex == toIndex) return;
+        // Swap the two slots (move into an empty slot leaves the source empty).
+        (_skillBar[toIndex], _skillBar[fromIndex]) = (_skillBar[fromIndex], _skillBar[toIndex]);
+        RenderSkillBar();
     }
 
     private async void UseSkill(SkillSlot slot)
@@ -581,6 +681,8 @@ public partial class MainWindow : Window
             Key.D6 or Key.NumPad6 => 6,
             Key.D7 or Key.NumPad7 => 7,
             Key.D8 or Key.NumPad8 => 8,
+            Key.D9 or Key.NumPad9 => 9,
+            Key.D0 or Key.NumPad0 => 10,
             _ => -1
         };
 
@@ -611,7 +713,9 @@ public partial class MainWindow : Window
         string castMod = "";
         if (_stats is StatsUpdate st)
         {
-            float faster = (-st.CastModifier + (1f - st.CastSpeedMult)) * 100f;
+            // CastSpeedMult already folds in WIT, gear, masteries and buffs.
+            // (Do NOT add CastModifier again here — that double-counts WIT.)
+            float faster = (1f - st.CastSpeedMult) * 100f;
             if (Math.Abs(faster) >= 0.5f)
                 castMod = faster > 0 ? $"  (-{faster:0}% cast)" : $"  (+{-faster:0}% cast)";
         }
@@ -988,12 +1092,19 @@ public partial class MainWindow : Window
             if (remaining > 0)
             {
                 slot.Button.IsEnabled = false;
-                slot.Button.Content = $"{slot.Key}. {slot.Def.Name} ({remaining:0}s)";
+                slot.Button.Opacity = 0.5;
+                if (slot.CooldownText is { } cd)
+                {
+                    cd.Text = $"{remaining:0}";
+                    cd.Visibility = Visibility.Visible;
+                }
             }
             else
             {
                 slot.Button.IsEnabled = _myDto is not { Dead: true };
-                slot.Button.Content = $"{slot.Key}. {slot.Def.Name}";
+                slot.Button.Opacity = 1.0;
+                if (slot.CooldownText is { } cd)
+                    cd.Visibility = Visibility.Collapsed;
             }
         }
     }
@@ -1462,6 +1573,7 @@ public partial class MainWindow : Window
         public required SkillDef Def { get; init; }
         public required Button Button { get; init; }
         public required int Key { get; init; }
+        public TextBlock? CooldownText { get; init; }
         public double ReadyAt { get; set; }
     }
 }
