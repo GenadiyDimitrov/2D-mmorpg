@@ -245,6 +245,14 @@ public class GameLoopService : BackgroundService
         player.LearnedSkills.Add(player.BaseClass == BaseClass.Mage
             ? SkillCatalog.MasteryRobe
             : SkillCatalog.MasteryLight);
+
+        // Combat "training" passive auto-granted at level 40 (soulshot/spiritshot
+        // stand-in): fighters +100% P.Atk (×2 physical), mages +100% M.Atk (×1.414
+        // magic via √) + 40% cast speed. Split into ranks across levels later.
+        if (player.Level >= 40)
+            player.LearnedSkills.Add(player.BaseClass == BaseClass.Mage
+                ? SkillCatalog.SpiritTraining
+                : SkillCatalog.PhysicalTraining);
     }
 
     /// <summary>True if the player has learned a skill that REPLACES the given id

@@ -134,6 +134,12 @@ public static class SkillCatalog
     public const string MasteryHeavy = "mastery_heavy";
     public const string MasteryLight = "mastery_light";
     public const string MasteryRobe  = "mastery_robe";
+    // ---- Combat "training" passives, auto-granted at level 40 (the standing-in for
+    //      soulshot/spiritshot until a real shot system exists). Doubling the atk STAT
+    //      gives ×2 physical (linear) but ×1.414 magic (√mAtk) — the soulshot/spiritshot
+    //      ratio. Later these can be split into ranks across levels. ----
+    public const string PhysicalTraining = "physical_training";
+    public const string SpiritTraining   = "spirit_training";
     // ---- Lightbringer (Healer A) — buff + passive to fill the 4-skill template ----
     public const string LbBlessing = "lb_blessing";
     public const string LbDevotion = "lb_devotion";   // passive
@@ -401,6 +407,19 @@ public static class SkillCatalog
                 Category: SkillCategory.Passive, SpCost: 500,
                 Description: "Passive. While wearing a ROBE, gain your class's robe bonus "
                            + "(cast speed, MP and MP regen)."),
+
+            // ===== Combat training passives (auto-granted at level 40) =====
+            new(PhysicalTraining, "Physical Training", BaseClass.Fighter, SkillEffect.None,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+                Category: SkillCategory.Passive, SpCost: 0,
+                Passive: new PassiveEffect(AttackPct: 1.0f),
+                Description: "Passive. Relentless conditioning: +100% physical attack."),
+            new(SpiritTraining, "Spirit Training", BaseClass.Mage, SkillEffect.None,
+                MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+                Category: SkillCategory.Passive, SpCost: 0,
+                Passive: new PassiveEffect(AttackPct: 1.0f, CastSpeedPct: 0.40f),
+                Description: "Passive. Honed focus: +100% magic attack (≈×1.414 spell "
+                           + "damage via the √M.Atk curve) and +40% casting speed."),
 
             // ===== Lightbringer (Healer A) — buff + passive to complete its 4-skill kit =====
             new(LbBlessing, "Blessing of Light", BaseClass.Mage,
