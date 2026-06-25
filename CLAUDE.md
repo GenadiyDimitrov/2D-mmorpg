@@ -21,8 +21,11 @@ and are adapted from L2 references.
 ## Solution layout (3 projects)
 - **Game.Shared** (`net8.0` lib) — DTOs, enums, formulas, catalogs. No server/
   client deps. Key files: `Dtos.cs`, `Enums.cs`, `GameConstants.cs`,
-  `StatCalculator.cs` (damage/speed/crit/interrupt math), `Skills.cs` (skill
-  defs + `SkillMath`), `Items.cs` (`ItemCatalog`), `Classes.cs` (`ClassCatalog`),
+  `StatCalculator.cs` (damage/speed/crit/interrupt math), `Skills/` (skill defs
+  split per class/discipline — `Skills.cs` = `SkillDef`/`PassiveEffect`/`SkillMath`
+  + the one `BuildCatalog` assembly; `Skills.Fighter.cs`, `Skills.Lightbringer.cs`,
+  etc. each contribute their `SkillDef`s; `SkillCatalog` is a partial class),
+  `Items.cs` (`ItemCatalog`), `Classes.cs` (`ClassCatalog`),
   `MobCatalog.cs` (mob templates + drop tables), `WorldMap.cs` (zones, NPCs,
   safe zones), `StatCaps.cs`, `RateConfig.cs`, `GameClock.cs`, `Quests.cs`,
   `RaceAndClasses/*` (per-class skill tables), `Quests/*` (quest chains).
