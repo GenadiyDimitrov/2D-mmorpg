@@ -43,21 +43,27 @@ Base dmg lvl-mult = (Level + 89) / 100   [listed, but NOT used in the dmg formul
 | **DEX modifier** | ✅ matches | exponential ≈ reference at all points. |
 | **Physical damage** | ✅ structure | `77·(pAtk+power)/pDef`, no lvl term. Matches `77·pAtk/pDef`. |
 | **Magic damage** | ✅ structure, ⚠ constant | `K·power·√mAtk/mDef`. **K=8, not 91** — deliberate: our mAtk (~120, √≈11) is ~10× smaller than L2's, so 91 would over-damage. Scale choice, not a bug. |
-| **HP** | ✅ mostly | tiers hit Melee/Rogue/Wizard/Healer (~2554/2057/1404/1199 vs 2600/2100/1400/1200). **Tank ~2934 vs target 3100 — bump.** |
+| **HP** | ✅ **fixed** | tiers hit Melee/Rogue/Wizard/Healer; **Tank class-mod bumped 0.96→1.02 → L75 raw ≈ 3100** (the L2 tank track). |
 | **P.Def** | ✅ structure | naked 68 + level²/100 + armor. ⚠ mastery is added FLAT, ref wants it as a `×Mastery` multiplier (minor). |
 | **M.Def** | ✅ fixed | 20 + level²/100 + jewels, ×MEN (now the real curve), ×buffs. |
-| **CON modifier** | ⚠ off mid-range | `1.0305^(CON−30)` matches ref at 40–50, but **CON 36 → 1.20 vs ref 1.12** (+7%), and 20 → 0.74 vs 0.79. Affects elf-fighter & mage HP. (Not yet table-interpolated.) |
+| **CON modifier** | ✅ **fixed** | now interpolates the real CON table (`ConCurve`, 20→0.79 … 36→1.12 … 50→1.83) — accurate at every reference point (was +7% high at CON 36). |
+| **Attack training** | ✅ **leveled** | soulshot/spiritshot stand-in is now a LEVELED passive: `TrainingAttackPct` +10% @40 → +80% @75 → +100% @76+ (was a flat +100% @40). Applied to both atk channels. |
 | **MEN modifier** | ✅ **fixed** | now interpolates the real MEN table (1.16→1.65). Fighters ×1.26–1.30, mages ×1.47–1.52 — everyone ≥1, small gap. |
 | **MP** | ✅ **reworked** | `(MpClassLevelMod·(L²+3L)/2 + Level1BaseMp) × MEN modifier`; scales with **MEN** (Healer 0.68/Nuker 0.53/fighter 0.17 tiers; base mage 0.50). Mobs use a simple level curve. |
-| **Soulshot / Spiritshot** | ❌ not built | no shot system yet (roadmap). Hooks noted in damage callers. |
+| **Soulshot / Spiritshot** | ➖ **cut** | DESIGN DECISION: no damage consumables. The leveled **Attack training** passive (above) is the permanent replacement — there is no shot system to build. |
 | **(Level+89)/100 dmg mult** | ➖ removed | listed in ref data but the explicit dmg formulas omit it; we removed it from physical. Ambiguous — leaving out for now. |
 
+> **Hit / evade / magic-fail** moved to a unified resolver + level-gap curve + class
+> floors (now learnable passives). That layer has its own spec — see
+> **`docs/CombatResolution.md`** (this table no longer tracks the old MissChance / MagicFailChance).
+
 ### Fixes
-1. ✅ **MEN modifier (M.Def) DONE** — real MEN table (interpolated). Raised fighter magic def (×0.86 → ×1.26) and shrank the mage/fighter gap (mage ×1.49 / fighter ×1.28 ≈ ×1.16). Matrix updated below.
+1. ✅ **MEN modifier (M.Def) DONE** — real MEN table (interpolated). Raised fighter magic def and shrank the mage/fighter gap.
 2. ✅ **MP rework DONE** — Base_MP tier curve × MEN modifier; no longer uses WIT.
-3. ⬜ **CON modifier accuracy:** switch CON to table interpolation (fixes CON 36). *Pending.*
-4. ⬜ **Tank HP tier:** bump class-level-mod so L75 tank ≈ 3100. *Pending.*
-5. ⬜ *Later:* mastery as a `×` multiplier on def (not flat); soulshots; buffed matrix; archetype-level matrix.
+3. ✅ **CON modifier DONE** — table-interpolated (`ConCurve`); CON 36 now 1.12 (was 1.20).
+4. ✅ **Tank HP tier DONE** — class-mod 0.96→1.02; L75 tank raw ≈ 3100.
+5. ✅ **Soulshots CUT** — replaced by the leveled Attack-training passive (no consumable damage).
+6. ⬜ *Later:* mastery as a `×` multiplier on def (not flat); buffed matrix; archetype-level matrix.
 
 ---
 
@@ -76,7 +82,8 @@ Base dmg lvl-mult = (Level + 89) / 100   [listed, but NOT used in the dmg formul
 (mDef now via the real MEN curve — fighters jumped ~32 → ~46, so magic hits them softer.)
 
 ### Damage matrix (crit-folded avg per hit/cast) — vs **same-level** target
-> Human representative. Both attackers have their level-40 **training passive** (fighter ×2 P.Atk, mage ×2 M.Atk). Gear held at **starter** to isolate level + skill-power scaling — real L75 gear would push attacker numbers higher. Mage uses the **3rd-class nuke** (Hurricane-equiv): power 49 @40, 108 @75.
+> ⚠ **STALE @40 numbers:** this matrix was computed when the training passive was a flat ×2 at level 40. Training is now **leveled** (`TrainingAttackPct`: +10% @40 → +80% @75 → +100% @76+), so the **@40** attacker numbers below are far too high (they assumed ×2; it's now ×1.1). The **@75** numbers (~×1.8) are roughly right. Regenerate when convenient.
+> Human representative. Gear held at **starter** to isolate level + skill-power scaling — real L75 gear would push attacker numbers higher. Mage uses the **3rd-class nuke** (Hurricane-equiv): power 49 @40, 108 @75.
 
 | Attacker ↓ \ Defender → | Fighter | Mage |
 |---|---|---|

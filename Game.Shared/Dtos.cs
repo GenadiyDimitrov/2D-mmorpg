@@ -111,8 +111,11 @@ public record PotionStatus(float CooldownSeconds, string ActiveEffect);
 /// <summary>One active buff/debuff on the player, for the buff bar + tooltip.</summary>
 public record BuffDto(string Name, string Description, float SecondsLeft, bool IsDebuff);
 
-/// <summary>Server -> client: the character's learned skill ids + SP balance.</summary>
-public record LearnedSkills(string[] SkillIds, int SkillPoints);
+/// <summary>Server -> client: the character's learned skills (id + current level) + SP.</summary>
+public record LearnedSkills(SkillRef[] Skills, int SkillPoints);
+
+/// <summary>A learned skill reference: its id and the level the character has it at.</summary>
+public record SkillRef(string Id, int Level);
 
 /// <summary>Server -> owning client: the player's current buffs (sent each
 /// second while any are active, and once when the last one drops).</summary>

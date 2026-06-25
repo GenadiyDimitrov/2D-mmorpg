@@ -14,24 +14,16 @@ public static partial class SkillCatalog
     // ---- Combat "training" passives, auto-granted at level 40 (soulshot/spiritshot
     //      stand-in). Doubling the atk STAT gives ×2 physical (linear) but ×1.414
     //      magic (√mAtk) — the soulshot/spiritshot ratio. ----
-    public const string PhysicalTraining = "physical_training";
-    public const string SpiritTraining   = "spirit_training";
-    // ---- Class identity "sure" floor passives (auto-granted at class-change
-    //      milestones 20/40/76). The floor VALUES live here in the SkillDefs, not
-    //      hardcoded in StatCalculator. See FloorPassiveFor + docs/CombatResolution.md. ----
-    public const string EvadeMastery1 = "evade_mastery_1";   // Rogue 10%
-    public const string EvadeMastery2 = "evade_mastery_2";   // Rogue 20%
-    public const string EvadeMastery3 = "evade_mastery_3";   // Rogue 30%
-    public const string EvadeMasteryA1 = "evade_mastery_a1"; // Archer 5%
-    public const string EvadeMasteryA2 = "evade_mastery_a2"; // Archer 10%
-    public const string EvadeMasteryA3 = "evade_mastery_a3"; // Archer 15%
-    public const string PrecisionMastery1 = "precision_mastery_1"; // Warrior hit 10%
-    public const string PrecisionMastery2 = "precision_mastery_2"; // Warrior hit 20%
-    public const string PrecisionMastery3 = "precision_mastery_3"; // Warrior hit 30%
-    public const string AntiMagic1 = "anti_magic_1";   // Tank 10%
-    public const string AntiMagic2 = "anti_magic_2";   // Tank 15%
-    public const string AntiMagic3 = "anti_magic_3";   // Tank 20%
-    public const string SpellWard  = "spell_ward";     // Mage (Nuker/Healer) 10% from 40
+    public const string PhysicalTraining = "physical_training";  // multi-level (9): +10%…+100% atk
+    public const string SpiritTraining   = "spirit_training";    // multi-level (9): +atk + cast speed
+    // ---- Class identity "sure" floor passives — now ONE multi-level skill each
+    //      (auto-granted at the class-change milestone, level = tier 1/2/3). The floor
+    //      VALUES live in the SkillDef Levels, not in code. See FloorPassiveFor. ----
+    public const string EvadeMastery = "evade_mastery"; // Rogue   10/20/30%
+    public const string Reflexes     = "reflexes";      // Archer    5/10/15%
+    public const string Precision    = "precision";     // Warrior 10/20/30% hit floor
+    public const string AntiMagic    = "anti_magic";    // Tank    10/15/20% magic fizzle
+    public const string SpellWard    = "spell_ward";    // Mage      10% (single level, from 40)
     // ---- Buff-potion buffs (consumed, not cast). ----
     public const string PBuffSpeedC = "pbuff_speed_c";
     public const string PBuffSpeedU = "pbuff_speed_u";
@@ -42,40 +34,46 @@ public static partial class SkillCatalog
     public const string PBuffAtkC = "pbuff_atk_c";
     public const string PBuffAtkU = "pbuff_atk_u";
     public const string PBuffAtkR = "pbuff_atk_r";
-    // ---- Learnable HP Boost line (3 ranks, same BuffKey). ----
-    public const string HpBoost1 = "hp_boost_1";
-    public const string HpBoost2 = "hp_boost_2";
-    public const string HpBoost3 = "hp_boost_3";
+    // ---- Learnable HP Boost — ONE multi-level skill (3 levels: +5/+15/+35%). ----
+    public const string HpBoost = "hp_boost";
     public const string WindWalk = "wind_walk";
     public const string MassWindWalk = "mass_wind_walk";
 
-    // ---- "Sure" floor passive factory: a pure passive carrying one resolution
-    //      floor. Auto-granted (SpCost 0); ranked via BuffKey/Replaces so a higher
-    //      tier supersedes the lower one. ----
-    private static SkillDef FloorPassive(
-        string id, string name, BaseClass cls, string buffKey, int rank, string[]? replaces,
-        string desc, float eva = 0f, float hit = 0f, float mag = 0f) => new(
+    // ---- Multi-level PASSIVE factory: a pure passive whose levels each carry a
+    //      PassiveEffect (the floor/lean value for that level). ----
+    private static SkillDef LeveledPassive(string id, string name, BaseClass cls, string desc,
+        params PassiveEffect[] perLevel) => new(
         id, name, cls, SkillEffect.None,
         MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-        BuffKey: buffKey, Rank: rank, Replaces: replaces,
-        Category: SkillCategory.Passive, SpCost: 0,
-        Passive: new PassiveEffect(EvadeFloor: eva, HitFloor: hit, MagicFailFloor: mag),
-        Description: desc);
+        Category: SkillCategory.Passive, SpCost: 0, Description: desc,
+        Levels: perLevel.Select(p => new SkillLevel(Passive: p)).ToArray());
 
-    /// <summary>The identity floor passive an archetype receives at its current
-    /// class tier (milestones 20/40/76), or null. Granted in EnsureBaseSkills — the
-    /// floor VALUES live in the SkillDefs, not in code.</summary>
-    public static string? FloorPassiveFor(Archetype? archetype, int level)
+    // Combat-training passive: 9 levels, +10%…+80% then +100% attack (the soulshot/
+    // spiritshot stand-in). castSpeed is folded into every level (mages get +40%).
+    private static SkillDef TrainingPassive(string id, string name, BaseClass cls, float castSpeed, string desc)
+    {
+        float[] atk = { 0.10f, 0.20f, 0.30f, 0.40f, 0.50f, 0.60f, 0.70f, 0.80f, 1.00f };
+        return new(id, name, cls, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive, SpCost: 0, Description: desc,
+            Levels: atk.Select(p => new SkillLevel(
+                Passive: new PassiveEffect(AttackPct: p, CastSpeedPct: castSpeed))).ToArray());
+    }
+
+    /// <summary>The identity floor passive an archetype receives at its current class
+    /// tier (milestones 20/40/76) — as (skill id, skill LEVEL), or null. Granted in
+    /// AutoLearnCoreSkills. The floor VALUES live in the SkillDef Levels, not in code.</summary>
+    public static (string Id, int Level)? FloorPassiveFor(Archetype? archetype, int level)
     {
         int tier = level >= 76 ? 3 : level >= 40 ? 2 : level >= 20 ? 1 : 0;
         if (tier == 0) return null;
         return archetype switch
         {
-            Archetype.Rogue   => tier == 1 ? EvadeMastery1 : tier == 2 ? EvadeMastery2 : EvadeMastery3,
-            Archetype.Archer  => tier == 1 ? EvadeMasteryA1 : tier == 2 ? EvadeMasteryA2 : EvadeMasteryA3,
-            Archetype.Warrior => tier == 1 ? PrecisionMastery1 : tier == 2 ? PrecisionMastery2 : PrecisionMastery3,
-            Archetype.Tank    => tier == 1 ? AntiMagic1 : tier == 2 ? AntiMagic2 : AntiMagic3,
-            Archetype.Nuker or Archetype.Healer => tier >= 2 ? SpellWard : null,  // mages from 40
+            Archetype.Rogue   => (EvadeMastery, tier),
+            Archetype.Archer  => (Reflexes, tier),
+            Archetype.Warrior => (Precision, tier),
+            Archetype.Tank    => (AntiMagic, tier),
+            Archetype.Nuker or Archetype.Healer => tier >= 2 ? (SpellWard, 1) : null,  // mages from 40
             _ => null
         };
     }
@@ -132,27 +130,24 @@ public static partial class SkillCatalog
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtkSpeed, 0.20f) },
             Category: SkillCategory.Buff, Description: "+20% Attack Speed for 180s."),
 
-        // ---- Learnable HP Boost line (3 ranks, same BuffKey) ----
-        new(HpBoost1, "HP Boost", BaseClass.Mage, SkillEffect.BuffHp,
+        // ---- Learnable HP Boost — ONE skill, 3 levels (+5 / +15 / +35% Max HP) ----
+        new(HpBoost, "HP Boost", BaseClass.Mage, SkillEffect.BuffHp,
             MpCost: 25, CastTicks: 10, CooldownTicks: 5, Range: 0, Power: 0,
             DurationTicks: 6000, BuffKey: "hp_boost", Rank: 1,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffHp, 0.05f) },
-            Category: SkillCategory.Buff, SpCost: 1000,
-            Description: "Raises Max HP by 5%."),
-        new(HpBoost2, "HP Boost", BaseClass.Mage, SkillEffect.BuffHp,
-            MpCost: 35, CastTicks: 10, CooldownTicks: 5, Range: 0, Power: 0,
-            DurationTicks: 6000, BuffKey: "hp_boost", Rank: 2,
-            Replaces: new[] { HpBoost1 },
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffHp, 0.15f) },
-            Category: SkillCategory.Buff, SpCost: 3000,
-            Description: "Raises Max HP by 15%."),
-        new(HpBoost3, "HP Boost", BaseClass.Mage, SkillEffect.BuffHp,
-            MpCost: 45, CastTicks: 10, CooldownTicks: 5, Range: 0, Power: 0,
-            DurationTicks: 6000, BuffKey: "hp_boost", Rank: 3,
-            Replaces: new[] { HpBoost1, HpBoost2 },
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffHp, 0.35f) },
-            Category: SkillCategory.Buff, SpCost: 8000,
-            Description: "Raises Max HP by 35%."),
+            Category: SkillCategory.Buff,
+            Description: "Raises your Max HP for a time.",
+            Levels: new[]
+            {
+                new SkillLevel(MpCost: 25, SpCost: 1000,
+                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffHp, 0.05f) },
+                    Description: "Raises Max HP by 5%."),
+                new SkillLevel(MpCost: 35, SpCost: 3000,
+                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffHp, 0.15f) },
+                    Description: "Raises Max HP by 15%."),
+                new SkillLevel(MpCost: 45, SpCost: 8000,
+                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffHp, 0.35f) },
+                    Description: "Raises Max HP by 35%."),
+            }),
 
         // ---- Armor-weight masteries (PASSIVE; not cast, not bar-able). The
         //      bonus is class/archetype-specific and applied in RecomputeDerived
@@ -171,53 +166,38 @@ public static partial class SkillCatalog
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: 500,
             Description: "Passive. While wearing a ROBE, gain your class's robe bonus "
-                       + "(cast speed, MP and MP regen)."),
+                       + "(cast speed, MP and MP regen). Higher levels add physical defence.",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 0),                                                   // Lv.1 — the robe bonus (auto)
+                new SkillLevel(SpCost: 480,  Passive: new PassiveEffect(Defence: 7),  Description: "+7 P.Def."),
+                new SkillLevel(SpCost: 2200, Passive: new PassiveEffect(Defence: 10), Description: "+10 P.Def."),
+            }),
 
-        // ===== Combat training passives (auto-granted at level 40) =====
-        new(PhysicalTraining, "Physical Training", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive, SpCost: 0,
-            Passive: new PassiveEffect(AttackPct: 1.0f),
-            Description: "Passive. Relentless conditioning: +100% physical attack."),
-        new(SpiritTraining, "Spirit Training", BaseClass.Mage, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive, SpCost: 0,
-            Passive: new PassiveEffect(AttackPct: 1.0f, CastSpeedPct: 0.40f),
-            Description: "Passive. Honed focus: +100% magic attack (≈×1.414 spell "
-                       + "damage via the √M.Atk curve) and +40% casting speed."),
+        // ===== Combat training passives (auto-granted; level by character level) =====
+        // 9 levels: +10%…+80% attack (40→75) then +100% (76+). The auto-grant level
+        // comes from StatCalculator.TrainingLevelFor.
+        TrainingPassive(PhysicalTraining, "Physical Training", BaseClass.Fighter, 0f,
+            "Passive. Relentless conditioning — physical attack grows with level (+10% to +100%)."),
+        TrainingPassive(SpiritTraining, "Spirit Training", BaseClass.Mage, 0.40f,
+            "Passive. Honed focus — +40% cast speed and magic attack growing with level (+10% to +100%)."),
 
-        // ===== Class identity "sure" floor passives (auto-granted at 20/40/76) =====
-        // Rogue — guaranteed physical evasion.
-        FloorPassive(EvadeMastery1, "Evasion Mastery", BaseClass.Fighter, "evade_floor", 1, null,
-            "Passive. Always at least a 10% chance to dodge physical attacks.", eva: 0.10f),
-        FloorPassive(EvadeMastery2, "Evasion Mastery", BaseClass.Fighter, "evade_floor", 2, new[] { EvadeMastery1 },
-            "Passive. Always at least a 20% chance to dodge physical attacks.", eva: 0.20f),
-        FloorPassive(EvadeMastery3, "Evasion Mastery", BaseClass.Fighter, "evade_floor", 3, new[] { EvadeMastery1, EvadeMastery2 },
-            "Passive. Always at least a 30% chance to dodge physical attacks.", eva: 0.30f),
-        // Archer — half the rogue's evasion floor.
-        FloorPassive(EvadeMasteryA1, "Reflexes", BaseClass.Fighter, "evade_floor", 1, null,
-            "Passive. Always at least a 5% chance to dodge physical attacks.", eva: 0.05f),
-        FloorPassive(EvadeMasteryA2, "Reflexes", BaseClass.Fighter, "evade_floor", 2, new[] { EvadeMasteryA1 },
-            "Passive. Always at least a 10% chance to dodge physical attacks.", eva: 0.10f),
-        FloorPassive(EvadeMasteryA3, "Reflexes", BaseClass.Fighter, "evade_floor", 3, new[] { EvadeMasteryA1, EvadeMasteryA2 },
-            "Passive. Always at least a 15% chance to dodge physical attacks.", eva: 0.15f),
-        // Warrior — guaranteed to land a share of physical hits (caps a target's evasion).
-        FloorPassive(PrecisionMastery1, "Precision", BaseClass.Fighter, "hit_floor", 1, null,
-            "Passive. Your physical attacks always land at least 10% of the time.", hit: 0.10f),
-        FloorPassive(PrecisionMastery2, "Precision", BaseClass.Fighter, "hit_floor", 2, new[] { PrecisionMastery1 },
-            "Passive. Your physical attacks always land at least 20% of the time.", hit: 0.20f),
-        FloorPassive(PrecisionMastery3, "Precision", BaseClass.Fighter, "hit_floor", 3, new[] { PrecisionMastery1, PrecisionMastery2 },
-            "Passive. Your physical attacks always land at least 30% of the time.", hit: 0.30f),
-        // Tank — Anti-Magic: spells always have a real chance to fizzle on you.
-        FloorPassive(AntiMagic1, "Anti-Magic", BaseClass.Fighter, "anti_magic", 1, null,
-            "Passive. Spells fizzle on you at least 10% of the time.", mag: 0.10f),
-        FloorPassive(AntiMagic2, "Anti-Magic", BaseClass.Fighter, "anti_magic", 2, new[] { AntiMagic1 },
-            "Passive. Spells fizzle on you at least 15% of the time.", mag: 0.15f),
-        FloorPassive(AntiMagic3, "Anti-Magic", BaseClass.Fighter, "anti_magic", 3, new[] { AntiMagic1, AntiMagic2 },
-            "Passive. Spells fizzle on you at least 20% of the time.", mag: 0.20f),
-        // Mage — self-hardening against hostile magic (from 40).
-        FloorPassive(SpellWard, "Spell Ward", BaseClass.Mage, "anti_magic", 1, null,
-            "Passive. Spells fizzle on you at least 10% of the time.", mag: 0.10f),
+        // ===== Class identity "sure" floor passives (auto-granted at 20/40/76 = lvl 1/2/3) =====
+        LeveledPassive(EvadeMastery, "Evasion Mastery", BaseClass.Fighter,
+            "Passive. Guaranteed minimum chance to dodge physical attacks (10/20/30%).",
+            new PassiveEffect(EvadeFloor: 0.10f), new PassiveEffect(EvadeFloor: 0.20f), new PassiveEffect(EvadeFloor: 0.30f)),
+        LeveledPassive(Reflexes, "Reflexes", BaseClass.Fighter,
+            "Passive. Guaranteed minimum chance to dodge physical attacks (5/10/15%).",
+            new PassiveEffect(EvadeFloor: 0.05f), new PassiveEffect(EvadeFloor: 0.10f), new PassiveEffect(EvadeFloor: 0.15f)),
+        LeveledPassive(Precision, "Precision", BaseClass.Fighter,
+            "Passive. Your physical attacks always land at least 10/20/30% of the time.",
+            new PassiveEffect(HitFloor: 0.10f), new PassiveEffect(HitFloor: 0.20f), new PassiveEffect(HitFloor: 0.30f)),
+        LeveledPassive(AntiMagic, "Anti-Magic", BaseClass.Fighter,
+            "Passive. Spells fizzle on you at least 10/15/20% of the time.",
+            new PassiveEffect(MagicFailFloor: 0.10f), new PassiveEffect(MagicFailFloor: 0.15f), new PassiveEffect(MagicFailFloor: 0.20f)),
+        LeveledPassive(SpellWard, "Spell Ward", BaseClass.Mage,
+            "Passive. Spells fizzle on you at least 10% of the time.",
+            new PassiveEffect(MagicFailFloor: 0.10f)),
 
         // ---- Wind Walk (move-speed self buff, learnable) ----
         new(WindWalk, "Wind Walk", BaseClass.Mage,

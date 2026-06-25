@@ -51,7 +51,7 @@ public static class StatCalculator
     /// a fighter/mage uses a sensible default.</summary>
     public static float HpClassLevelModifier(BaseClass cls, Archetype? arch) => arch switch
     {
-        Archetype.Tank    => 0.96f,
+        Archetype.Tank    => 1.02f,   // L75 raw ≈ 3100 (the L2 tank track)
         Archetype.Warrior => 0.83f,
         Archetype.Rogue   => 0.66f,
         Archetype.Archer  => 0.66f,
@@ -60,11 +60,16 @@ public static class StatCalculator
         _ => cls == BaseClass.Mage ? 0.42f : 0.80f   // base class, pre-2nd
     };
 
-    /// <summary>CON → Max-HP multiplier — EXPONENTIAL, matching the L2 table
-    /// (baseline 30 = 1.00: 20→0.79, 40→1.35, 43→1.48, 50→1.83, 55→2.14): ~3.05%
-    /// per CON compounded.</summary>
-    public static float ConHpModifier(int con) =>
-        Math.Clamp(MathF.Pow(1.0305f, con - 30), 0.4f, 8f);
+    /// <summary>CON → Max-HP multiplier — interpolated from the real L2 table (baseline
+    /// 30 = 1.00). The old exponential was ~7% high mid-range (CON 36 → 1.20 vs 1.12);
+    /// the table is accurate at every reference point.</summary>
+    public static float ConHpModifier(int con) => InterpolateCurve(ConCurve, con);
+
+    private static readonly (int stat, float mod)[] ConCurve =
+    {
+        (20, 0.79f), (30, 1.00f), (36, 1.12f), (40, 1.35f),
+        (43, 1.48f), (45, 1.57f), (47, 1.67f), (50, 1.83f), (55, 2.14f),
+    };
 
     /// <summary>Per-race+class MEN (we have no MEN stat; this is the L2 base table).
     /// Mages have high MEN (better magic mitigation), fighters low.</summary>
@@ -216,6 +221,17 @@ public static class StatCalculator
     /// <summary>Effective attack power. Weapon damage joins this formula
     /// in the items phase: weapon + stat + buffs/passives.</summary>
     public static int AttackPower(int atkStat, int level) => atkStat + level * 2;
+
+    /// <summary>Which LEVEL of the combat-training passive a character should hold at a
+    /// given character level (auto-granted; our soulshot/spiritshot stand-in). 0 below
+    /// 40; levels 1–8 step every 5 levels (40→1 … 75→8 = +10%…+80%); 9 from the
+    /// 4th-class change (76+ = +100%). The per-level AttackPct lives in the SkillDef.</summary>
+    public static int TrainingLevelFor(int level)
+    {
+        if (level >= 76) return 9;
+        if (level < 40) return 0;
+        return Math.Min(8, (level - 40) / 5 + 1);
+    }
 
     // ----- Defence (authentic L2: armor/jewels + level² /100, no CON) ------
     //  P.Def = (naked 68 + level²/100 + Σ armor pDef + flat passives) × masteries/buffs

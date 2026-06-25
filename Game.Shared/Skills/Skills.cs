@@ -54,25 +54,66 @@ public record SkillDef(
     float BlockAccuracy = 0f,
     bool SureHit = false,
     PassiveEffect? Passive = null,
-    string Abbrev = "")
+    string Abbrev = "",
+    // Optional per-LEVEL data. A skill with no Levels is single-level (level 1) and
+    // uses the inline fields above. A multi-level skill puts its per-level Power /
+    // Magnitudes / Passive / MpCost / SpCost in Levels[level-1]; see *At(level).
+    SkillLevel[]? Levels = null,
+    // Fraction of magic damage dealt that heals the caster (Vampiric Bolt etc.).
+    float Lifesteal = 0f)
 {
-    public float MagnitudeOf(SkillEffect effect, ModifierMode mode)
+    /// <summary>Highest level this skill can reach (1 for a single-level skill).</summary>
+    public int MaxLevel => Levels is { Length: > 0 } ? Levels.Length : 1;
+
+    private SkillLevel? Lvl(int level) =>
+        Levels is { Length: > 0 } && level >= 1 && level <= Levels.Length ? Levels[level - 1] : null;
+
+    public int PowerAt(int level) => Lvl(level)?.Power ?? Power;
+    public EffectMagnitude[]? MagnitudesAt(int level) => Lvl(level)?.Magnitudes ?? Magnitudes;
+    public int MpCostAt(int level) => Lvl(level)?.MpCost ?? MpCost;
+    public int SpCostAt(int level) => Lvl(level)?.SpCost ?? SpCost;
+    public PassiveEffect? PassiveAt(int level) => Lvl(level)?.Passive ?? Passive;
+    public string DescriptionAt(int level) => Lvl(level)?.Description ?? Description;
+
+    public float MagnitudeOf(SkillEffect effect, ModifierMode mode, int level = 1)
     {
-        if (Magnitudes is null) return 0f;
+        var mags = Lvl(level)?.Magnitudes ?? Magnitudes;
+        if (mags is null) return 0f;
         float sum = 0f;
-        foreach (var m in Magnitudes)
+        foreach (var m in mags)
             if (m.Effect == effect && m.Mode == mode) sum += m.Value;
         return sum;
     }
 
-    /// <summary>MP charged when the cast STARTS. Default (-1) = 0 up front,
-    /// full cost on completion (so existing skills are unchanged). Set
-    /// InitialMpCost to split (e.g. 34 of 50 up front, 16 on finish).</summary>
-    public int InitialMp => InitialMpCost < 0 ? 0 : Math.Min(InitialMpCost, MpCost);
+    /// <summary>MP charged when the cast STARTS (level-aware). Default (-1) = 0 up
+    /// front, full cost on completion. A level's own InitialMpCost overrides the
+    /// SkillDef's; both -1 = nothing up front.</summary>
+    public int InitialMpAt(int level)
+    {
+        int init = Lvl(level) is { } sl ? sl.InitialMpCost : InitialMpCost;
+        if (init < 0) init = InitialMpCost;   // level didn't specify → fall back to the def
+        return init < 0 ? 0 : Math.Min(init, MpCostAt(level));
+    }
 
-    /// <summary>MP charged when the cast COMPLETES (the remainder).</summary>
-    public int FinishMp => MpCost - InitialMp;
+    /// <summary>MP charged when the cast COMPLETES (the remainder), level-aware.</summary>
+    public int FinishMpAt(int level) => MpCostAt(level) - InitialMpAt(level);
+
+    // Level-1 convenience (single-level skills / display fallback).
+    public int InitialMp => InitialMpAt(1);
+    public int FinishMp => FinishMpAt(1);
 }
+
+/// <summary>Per-level tunables for a multi-level skill (see SkillDef.Levels). Only the
+/// fields that change between levels live here; identity (id/name/effect/range/flags)
+/// stays on the SkillDef. Level 1 = Levels[0].</summary>
+public record SkillLevel(
+    int Power = 0,
+    EffectMagnitude[]? Magnitudes = null,
+    PassiveEffect? Passive = null,
+    int MpCost = 0,
+    int SpCost = 1,
+    string? Description = null,
+    int InitialMpCost = -1);   // -1 = inherit the SkillDef's split (0 up front)
 
 /// <summary>Skill window grouping. Passive = a learned, always-on effect (armor
 /// masteries, discipline passives) — never cast and never placed on the action bar.</summary>
@@ -89,6 +130,7 @@ public readonly record struct PassiveEffect(
     float MaxHpPct = 0f, float MaxMpPct = 0f,
     int Defence = 0, int MagicDefence = 0,
     int Attack = 0, float AttackPct = 0f,
+    int PhysAtk = 0, int MagAtk = 0,   // flat, channel-specific (Weapon Mastery etc.)
     int Evasion = 0, int Accuracy = 0,
     float CritRate = 0f, float CritDamage = 0f, float MagicCritRate = 0f,
     float HpRegen = 0f, float MpRegen = 0f,

@@ -30,13 +30,20 @@ public static partial class ClassSkillTables
             [Discipline.Tempest]      = new[] { (FlameBolt, "Chain Lightning"), (GreaterWeakness, "Maelstrom") },
         };
 
+        // 3rd-class learn cadence starts at 40: fighter disciplines step every 3
+        // (40,43,46,…), mage disciplines every 4 (40,44,48,…).
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
             foreach (var (discipline, skills) in kit)
+            {
+                int step = discipline is Discipline.Magus or Discipline.Tempest ? 4 : 3;
                 ClassSkills.RegisterThird(race, discipline,
-                    skills.Select(s => new ClassSkill(s.Skill, 40, s.Name)).ToArray());
+                    skills.Select((s, i) => new ClassSkill(s.Skill, 40 + i * step, s.Name)).ToArray());
+            }
 
-        RegisterLightbringer();
-        RegisterWarchanter();
+        // Healer disciplines (Lightbringer = healer, Warchanter = buffer) are dropped
+        // pending the new lvl-40 CSVs. Their skill DEFS remain in the catalog; only the
+        // learn assignments are gone, so nothing references them until re-authored.
+        // RegisterLightbringer();  RegisterWarchanter();
     }
 
     // The first fully-authored discipline (Phase 24.1): one shared idea (keep the
@@ -45,28 +52,30 @@ public static partial class ClassSkillTables
     // gets the shared Blessing (party buff) + Devotion (passive) to fill the kit.
     private static void RegisterLightbringer()
     {
+        // Mage 3rd-class learn cadence: 40, 44, 48, 52.
         ClassSkills.RegisterThird(Race.Human, Discipline.Lightbringer,
-            new ClassSkill(LbHumanMend, 40), new ClassSkill(LbHumanPurify, 40),
-            new ClassSkill(LbBlessing, 40), new ClassSkill(LbDevotion, 40));
+            new ClassSkill(LbHumanMend, 40), new ClassSkill(LbHumanPurify, 44),
+            new ClassSkill(LbBlessing, 48), new ClassSkill(LbDevotion, 52));
         ClassSkills.RegisterThird(Race.Elf, Discipline.Lightbringer,
-            new ClassSkill(LbElfDawn, 40), new ClassSkill(LbElfWarden, 40),
-            new ClassSkill(LbBlessing, 40), new ClassSkill(LbDevotion, 40));
+            new ClassSkill(LbElfDawn, 40), new ClassSkill(LbElfWarden, 44),
+            new ClassSkill(LbBlessing, 48), new ClassSkill(LbDevotion, 52));
         ClassSkills.RegisterThird(Race.Ork, Discipline.Lightbringer,
-            new ClassSkill(LbOrkFont, 40), new ClassSkill(LbOrkSap, 40),
-            new ClassSkill(LbBlessing, 40), new ClassSkill(LbDevotion, 40));
+            new ClassSkill(LbOrkFont, 40), new ClassSkill(LbOrkSap, 44),
+            new ClassSkill(LbBlessing, 48), new ClassSkill(LbDevotion, 52));
     }
 
     // Warchanter (Healer B) — buffer: per-race DMG + party mega-buff + party HoT + passive.
     private static void RegisterWarchanter()
     {
+        // Mage 3rd-class learn cadence: 40, 44, 48, 52.
         ClassSkills.RegisterThird(Race.Human, Discipline.Warchanter,
-            new ClassSkill(WcHumanBolt, 40), new ClassSkill(WcHumanChant, 40),
-            new ClassSkill(WcHumanRenew, 40), new ClassSkill(WcHumanPass, 40));
+            new ClassSkill(WcHumanBolt, 40), new ClassSkill(WcHumanChant, 44),
+            new ClassSkill(WcHumanRenew, 48), new ClassSkill(WcHumanPass, 52));
         ClassSkills.RegisterThird(Race.Elf, Discipline.Warchanter,
-            new ClassSkill(WcElfBolt, 40), new ClassSkill(WcElfChant, 40),
-            new ClassSkill(WcElfRenew, 40), new ClassSkill(WcElfPass, 40));
+            new ClassSkill(WcElfBolt, 40), new ClassSkill(WcElfChant, 44),
+            new ClassSkill(WcElfRenew, 48), new ClassSkill(WcElfPass, 52));
         ClassSkills.RegisterThird(Race.Ork, Discipline.Warchanter,
-            new ClassSkill(WcOrkBolt, 40), new ClassSkill(WcOrkChant, 40),
-            new ClassSkill(WcOrkRenew, 40), new ClassSkill(WcOrkPass, 40));
+            new ClassSkill(WcOrkBolt, 40), new ClassSkill(WcOrkChant, 44),
+            new ClassSkill(WcOrkRenew, 48), new ClassSkill(WcOrkPass, 52));
     }
 }

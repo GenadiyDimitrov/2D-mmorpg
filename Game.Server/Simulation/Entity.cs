@@ -83,8 +83,16 @@ public class Entity
     /// <summary>Unspent skill points (earned with exp, spent to learn skills).</summary>
     public int SkillPoints { get; set; }
 
-    /// <summary>Skill ids the character has learned (and can therefore use).</summary>
-    public HashSet<string> LearnedSkills { get; } = new();
+    /// <summary>Learned skills → the current LEVEL of each (1 for single-level skills).
+    /// A skill is "known" iff it's a key here; its level selects the SkillDef.*At(level)
+    /// values (Power/Magnitudes/Passive/MpCost).</summary>
+    public Dictionary<string, int> LearnedSkills { get; } = new();
+
+    /// <summary>The learned level of a skill, or 0 if not known.</summary>
+    public int SkillLevelOf(string id) => LearnedSkills.GetValueOrDefault(id);
+
+    /// <summary>True if the character knows the skill at any level.</summary>
+    public bool HasSkill(string id) => LearnedSkills.ContainsKey(id);
 
     /// <summary>Active quests -> progress (step index + counter).</summary>
     public Dictionary<string, CharacterQuestState> ActiveQuests { get; } = new();
@@ -693,7 +701,7 @@ public class Entity
         if (Kind == EntityKind.Player)
         {
             var (mEff, mLabel) = ArmorMastery.Resolve(BaseClass, Archetype, bodyWeight, Level,
-                w => LearnedSkills.Contains(ArmorMastery.SkillIdFor(w)));
+                w => LearnedSkills.ContainsKey(ArmorMastery.SkillIdFor(w)));
             ArmorMasteryLabel = mLabel;
 
             AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier / mEff.AtkSpeed, 0.4f, 2.5f);
@@ -715,15 +723,15 @@ public class Entity
 
             // ----- Learnable PASSIVES (discipline passives etc.): each learned skill
             // whose SkillDef carries a PassiveEffect applies it, on top of everything. -----
-            foreach (var skillId in LearnedSkills)
+            foreach (var (skillId, skillLevel) in LearnedSkills)
             {
-                if (SkillCatalog.Get(skillId)?.Passive is not PassiveEffect pe) continue;
+                if (SkillCatalog.Get(skillId)?.PassiveAt(skillLevel) is not PassiveEffect pe) continue;
                 MaxHp += (int)(MaxHp * pe.MaxHpPct);
                 MaxMp += (int)(MaxMp * pe.MaxMpPct);
                 Defence += pe.Defence;
                 MagicDefence += pe.MagicDefence;
-                AttackPower += pe.Attack + (int)(AttackPower * pe.AttackPct);
-                MagicAttack += pe.Attack + (int)(MagicAttack * pe.AttackPct);
+                AttackPower += pe.Attack + (int)(AttackPower * pe.AttackPct) + pe.PhysAtk;
+                MagicAttack += pe.Attack + (int)(MagicAttack * pe.AttackPct) + pe.MagAtk;
                 Evasion += pe.Evasion;
                 Accuracy += pe.Accuracy;
                 if (pe.CritRate != 0f) CritChance = Math.Clamp(CritChance + pe.CritRate, 0f, 0.75f);
@@ -739,6 +747,8 @@ public class Entity
                 HitFloor = Math.Max(HitFloor, pe.HitFloor);
                 MagicFailFloor = Math.Max(MagicFailFloor, pe.MagicFailFloor);
             }
+            // (The combat-training attack bonus is now a normal LEVELED passive — its
+            // per-level AttackPct flows through the loop above, no special-casing.)
         }
 
         // MEN multiplies the whole flat magic-defence pool (base + jewels + passives),

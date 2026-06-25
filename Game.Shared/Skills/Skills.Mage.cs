@@ -7,6 +7,11 @@ public static partial class SkillCatalog
 {
     public const string MagicBolt = "magic_bolt";
     public const string Heal = "heal";
+    public const string SelfHeal = "self_heal";
+    public const string Might = "might";
+    public const string MageAntiMagic = "anti_magic_mage";
+    public const string VampiricBolt = "vampiric_bolt";
+    public const string WeaponMastery = "weapon_mastery";
     public const string Weakness = "weakness";
     public const string GreaterWeakness = "greater_weakness";
     public const string GreaterHeal = "greater_heal";
@@ -15,15 +20,72 @@ public static partial class SkillCatalog
 
     private static SkillDef[] MageSkills() => new SkillDef[]
     {
+        // Magic Bolt — the starter nuke, 3 levels (auto-learn Lv.1; Lv.2/3 learned).
         new(MagicBolt, "Magic Bolt", BaseClass.Mage, SkillEffect.MagicDamage,
-            MpCost: 12, CastTicks: 20, CooldownTicks: 10, Range: 500, Power: 45,
-            Category: SkillCategory.Magic,
-            Description: "Hurls a bolt of force. Spells fail rather than miss."),
+            MpCost: 9, CastTicks: 40, CooldownTicks: 10, Range: 600, Power: 12,
+            Category: SkillCategory.Magic, InitialMpCost: 2,
+            Description: "Hurls a bolt of force. Spells fail rather than miss.",
+            Levels: new[]
+            {
+                new SkillLevel(Power: 12, MpCost: 9,  InitialMpCost: 2, SpCost: 0,    Description: "Magic damage, power 12."),
+                new SkillLevel(Power: 15, MpCost: 10, InitialMpCost: 2, SpCost: 480,  Description: "Magic damage, power 15."),
+                new SkillLevel(Power: 21, MpCost: 15, InitialMpCost: 3, SpCost: 2200, Description: "Magic damage, power 21."),
+            }),
 
+        // Self Heal — early self-only heal, replaced by the targeted Heal at 7.
+        new(SelfHeal, "Self Heal", BaseClass.Mage, SkillEffect.Heal,
+            MpCost: 7, CastTicks: 50, CooldownTicks: 20, Range: 0, Power: 42,
+            Category: SkillCategory.Heal, InitialMpCost: 2, SpCost: 160,
+            TargetMode: TargetMode.SelfOnly,
+            Description: "Restores your own HP (power 42). Scales with WIT."),
+
+        // Heal — targeted heal (ally or self), 2 levels; replaces Self Heal.
         new(Heal, "Heal", BaseClass.Mage, SkillEffect.Heal,
-            MpCost: 20, CastTicks: 25, CooldownTicks: 10, Range: 0, Power: 60,
-            Category: SkillCategory.Heal,
-            Description: "Restores your own HP. Scales with WIT."),
+            MpCost: 14, CastTicks: 50, CooldownTicks: 20, Range: 600, Power: 67,
+            Category: SkillCategory.Heal, InitialMpCost: 3,
+            Replaces: new[] { SelfHeal },
+            Description: "Restores a friendly target's HP (or your own). Scales with WIT.",
+            Levels: new[]
+            {
+                new SkillLevel(Power: 67,  MpCost: 14, InitialMpCost: 3, SpCost: 480,  Description: "Heal power 67."),
+                new SkillLevel(Power: 107, MpCost: 22, InitialMpCost: 5, SpCost: 2200, Description: "Heal power 107."),
+            }),
+
+        // Might — party-castable +8% Attack & Defence buff (20 min).
+        new(Might, "Might", BaseClass.Mage, SkillEffect.BuffAtk | SkillEffect.BuffDef,
+            MpCost: 20, CastTicks: 20, CooldownTicks: 10, Range: 600, Power: 0,
+            DurationTicks: 12000, BuffKey: "mage_might", Rank: 1, InitialMpCost: 4,
+            Magnitudes: new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffAtk, 0.08f), new(SkillEffect.BuffDef, 0.08f),
+            },
+            Category: SkillCategory.Buff, SpCost: 960,
+            Description: "Blesses an ally (or self) with +8% Attack and Defence for 20 minutes."),
+
+        // Anti-Magic — learnable mage passive: +M.Def, then a fizzle floor at Lv.2.
+        new(MageAntiMagic, "Anti-Magic", BaseClass.Mage, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive,
+            Description: "Passive. Hardens you against hostile magic.",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 480,  Passive: new PassiveEffect(MagicDefence: 12), Description: "+12 magic defence."),
+                new SkillLevel(SpCost: 2200, Passive: new PassiveEffect(MagicDefence: 16, MagicFailFloor: 0.05f),
+                    Description: "+16 magic defence and a 5% chance for spells to fizzle on you."),
+            }),
+
+        // Vampiric Bolt — magic nuke that heals the caster for 40% of damage dealt.
+        new(VampiricBolt, "Vampiric Bolt", BaseClass.Mage, SkillEffect.MagicDamage,
+            MpCost: 28, CastTicks: 40, CooldownTicks: 10, Range: 600, Power: 21,
+            Category: SkillCategory.Magic, InitialMpCost: 6, SpCost: 2200, Lifesteal: 0.40f,
+            Description: "A draining bolt (power 21) that heals you for 40% of the damage dealt."),
+
+        // Weapon Mastery — flat attack passive (asymmetric: more M.Atk than P.Atk).
+        new(WeaponMastery, "Weapon Mastery", BaseClass.Mage, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive, SpCost: 2200,
+            Passive: new PassiveEffect(MagAtk: 4, PhysAtk: 2),
+            Description: "Passive. +4 M.Atk and +2 P.Atk."),
 
         new(Weakness, "Weakness", BaseClass.Mage, SkillEffect.DebuffDef,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 500, Power: 0,

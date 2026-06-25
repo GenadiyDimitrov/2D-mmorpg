@@ -455,8 +455,11 @@ public partial class MainWindow : Window
     /// <summary>The skill (string id) assigned to each bar slot (null = empty).</summary>
     private readonly string?[] _skillBar = new string?[SkillBarSlots];
 
-    /// <summary>Learned skill ids + current SP (from the server).</summary>
+    /// <summary>Learned skill ids + current SP (from the server). _learnedLevels holds
+    /// the per-skill level (for the learn window's "next level" logic); _learnedSkills
+    /// is the id set the skill bar / availability checks use.</summary>
     private readonly HashSet<string> _learnedSkills = new();
+    private readonly Dictionary<string, int> _learnedLevels = new();
     private int _skillPoints;
     private MoveState _moveState = MoveState.Running;
 

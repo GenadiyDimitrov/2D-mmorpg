@@ -1069,10 +1069,12 @@ public partial class MainWindow
     {
         var all = ClassSkills.LearnableAt(_myRace, _myBaseClass, CurrentArchetype, int.MaxValue, CurrentDiscipline);
 
-        // Unlearned only, grouped by learn level. Also hide a ranked skill once you
-        // know an equal-or-higher rank of its line (HP Boost 1/2 vanish after 3).
+        // Show only each skill's NEXT learnable level (the entry whose SkillLevel ==
+        // current+1), and hide skills replaced by something you already know (Flame
+        // Bolt → Magic Bolt). Grouped by the character level that unlocks it.
         var groups = all
-            .Where(cs => !_learnedSkills.Contains(cs.SkillId) && !SupersededRank(cs.SkillId))
+            .Where(cs => cs.SkillLevel == _learnedLevels.GetValueOrDefault(cs.SkillId) + 1
+                         && !SupersededByLearned(cs.SkillId))
             .GroupBy(cs => cs.LearnLevel)
             .OrderBy(g => g.Key);
 
@@ -1088,8 +1090,9 @@ public partial class MainWindow
                 var def = SkillCatalog.Get(cs.SkillId);
                 if (def is null) continue;
 
-                bool prevRankOk = def.Rank <= 1 || HasPreviousRankLearned(def);
-                bool canLearn = levelMet && _skillPoints >= def.SpCost && prevRankOk;
+                int cost = def.SpCostAt(cs.SkillLevel);
+                bool canLearn = levelMet && _skillPoints >= cost;
+                string levelTag = def.MaxLevel > 1 ? $" Lv.{cs.SkillLevel}" : "";
 
                 var row = new DockPanel { Margin = new Thickness(0, 0, 0, 6) };
                 var learn = new Button
@@ -1104,7 +1107,7 @@ public partial class MainWindow
 
                 var name = new TextBlock
                 {
-                    Text = $"{SkillDisplayName(def.Id, def.Name)}  (SP {def.SpCost})",
+                    Text = $"{SkillDisplayName(def.Id, def.Name)}{levelTag}  (SP {cost})",
                     Foreground = canLearn ? Brushes.White : Brushes.Gray,
                     FontSize = 13, VerticalAlignment = VerticalAlignment.Center,
                     Cursor = System.Windows.Input.Cursors.Hand,
@@ -1125,34 +1128,13 @@ public partial class MainWindow
             });
     }
 
-    private bool HasPreviousRankLearned(SkillDef def)
+    /// <summary>True if a learned skill REPLACES this one (cross-skill upgrade, e.g.
+    /// Flame Bolt → Magic Bolt) — so it shouldn't appear as learnable.</summary>
+    private bool SupersededByLearned(string skillId)
     {
         foreach (var id in _learnedSkills)
-        {
-            var l = SkillCatalog.Get(id);
-            if (l is not null && l.BuffKey == def.BuffKey && l.Rank == def.Rank - 1)
+            if (SkillCatalog.Get(id)?.Replaces is { } rep && Array.IndexOf(rep, skillId) >= 0)
                 return true;
-        }
-        return false;
-    }
-
-    /// <summary>True if this skill shouldn't appear as learnable because you already
-    /// know something better: a learned skill that REPLACES it (Flame Bolt → Magic
-    /// Bolt, Greater Heal → Heal, HP Boost 3 → 1/2), or an equal-or-higher rank of
-    /// the same ranked line.</summary>
-    private bool SupersededRank(string skillId)
-    {
-        if (SkillCatalog.Get(skillId) is not { } def)
-            return false;
-        foreach (var id in _learnedSkills)
-        {
-            var l = SkillCatalog.Get(id);
-            if (l is null) continue;
-            if (l.Replaces is { } rep && Array.IndexOf(rep, skillId) >= 0)
-                return true;
-            if (!string.IsNullOrEmpty(def.BuffKey) && l.BuffKey == def.BuffKey && l.Rank >= def.Rank)
-                return true;
-        }
         return false;
     }
 
@@ -1161,11 +1143,13 @@ public partial class MainWindow
         var def = SkillCatalog.Get(skillId);
         if (def is null) return;
 
+        int target = _learnedLevels.GetValueOrDefault(skillId) + 1;
+        int cost = def.SpCostAt(target);
         _pendingLearnId = skillId;
-        LearnTitle.Text = def.Name;
+        LearnTitle.Text = def.MaxLevel > 1 ? $"{def.Name} (Lv.{target})" : def.Name;
         LearnBody.Text = SkillDetail(def);
-        bool enough = _skillPoints >= def.SpCost;
-        LearnCost.Text = $"Cost: {def.SpCost} SP   (you have {_skillPoints})";
+        bool enough = _skillPoints >= cost;
+        LearnCost.Text = $"Cost: {cost} SP   (you have {_skillPoints})";
         LearnCost.Foreground = enough ? Brushes.LightGreen : Brushes.IndianRed;
         LearnConfirm.IsEnabled = enough;
         LearnPopup.Visibility = Visibility.Visible;
@@ -1315,8 +1299,12 @@ public partial class MainWindow
     private void OnLearned(LearnedSkills learned)
     {
         _learnedSkills.Clear();
-        foreach (var id in learned.SkillIds)
-            _learnedSkills.Add(id);
+        _learnedLevels.Clear();
+        foreach (var s in learned.Skills)
+        {
+            _learnedSkills.Add(s.Id);
+            _learnedLevels[s.Id] = s.Level;
+        }
         _skillPoints = learned.SkillPoints;
 
         AutoPlaceNewSkills();

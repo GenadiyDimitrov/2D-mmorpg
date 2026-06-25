@@ -20,7 +20,7 @@ public static partial class ClassSkillTables
     // Base-class kits (shared by everyone before the level-20 change).
     static ClassSkillTables()
     {
-        // --- Base Fighter ---
+        // --- Base Fighter --- (1st-class fighter learn cadence: 1, 5, 10, 15)
         ClassSkills.Register(Race.Human, BaseClass.Fighter, null,
             new ClassSkill(PowerStrike, 1), new ClassSkill(WarCry, 5));
         ClassSkills.Register(Race.Elf, BaseClass.Fighter, null,
@@ -30,13 +30,22 @@ public static partial class ClassSkillTables
         ClassSkills.Register(Race.God, BaseClass.Fighter, null,
             new ClassSkill(PowerStrike, 1), new ClassSkill(WarCry, 1));
 
-        // --- Base Mage ---
-        ClassSkills.Register(Race.Human, BaseClass.Mage, null,
-            new ClassSkill(MagicBolt, 1), new ClassSkill(Weakness, 3), new ClassSkill(Heal, 5));
-        ClassSkills.Register(Race.Elf, BaseClass.Mage, null,
-            new ClassSkill(MagicBolt, 1), new ClassSkill(Weakness, 3), new ClassSkill(Heal, 5));
-        ClassSkills.Register(Race.Ork, BaseClass.Mage, null,
-            new ClassSkill(MagicBolt, 1), new ClassSkill(Weakness, 3), new ClassSkill(Heal, 5));
+        // --- Base Mage --- (1st-class path, levels 1/7/14). Magic Bolt Lv.1 and Robe
+        // Mastery Lv.1 are auto-granted; everything below is learned with SP.
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+            ClassSkills.Register(race, BaseClass.Mage, null,
+                new ClassSkill(SelfHeal, 1),                         // Lv1 self heal
+                new ClassSkill(MagicBolt, 7, SkillLevel: 2),
+                new ClassSkill(MasteryRobe, 7, SkillLevel: 2),       // +7 P.Def
+                new ClassSkill(Heal, 7, SkillLevel: 1),              // targeted heal (replaces Self Heal)
+                new ClassSkill(Might, 7),                            // +8% atk/def buff
+                new ClassSkill(MageAntiMagic, 7, SkillLevel: 1),     // +12 M.Def
+                new ClassSkill(MagicBolt, 14, SkillLevel: 3),
+                new ClassSkill(VampiricBolt, 14),
+                new ClassSkill(MageAntiMagic, 14, SkillLevel: 2),    // +16 M.Def + 5% fizzle
+                new ClassSkill(Heal, 14, SkillLevel: 2),
+                new ClassSkill(MasteryRobe, 14, SkillLevel: 3),      // +10 P.Def
+                new ClassSkill(WeaponMastery, 14));                  // +4 M.Atk / +2 P.Atk
         ClassSkills.Register(Race.God, BaseClass.Mage, null,
             new ClassSkill(MagicBolt, 1), new ClassSkill(Weakness, 1), new ClassSkill(Heal, 1));
 

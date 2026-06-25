@@ -9,7 +9,8 @@ namespace Game.Shared;
 /// bar, buff bar and skills window. Leave them null to use the SkillDef's
 /// canonical name.</summary>
 public readonly record struct ClassSkill(
-    string SkillId, int LearnLevel, string? DisplayName = null, string? Icon = null);
+    string SkillId, int LearnLevel, string? DisplayName = null, string? Icon = null,
+    int SkillLevel = 1);
 
 /// <summary>
 /// THE place to manage which class learns which skill, and when. The actual
@@ -137,14 +138,26 @@ public static class ClassSkills
                 yield return cs;
     }
 
-    /// <summary>The learn-level for a specific skill on a class (0 if not in list).</summary>
-    public static int LearnLevelOf(string skillId, Race race, BaseClass baseClass,
+    /// <summary>The character-level at which a class can learn a specific SKILL LEVEL
+    /// (0 if that (skill, level) isn't on the class list).</summary>
+    public static int LearnLevelOf(string skillId, int skillLevel, Race race, BaseClass baseClass,
         Archetype? archetype, Discipline? discipline = null)
     {
         foreach (var cs in Cumulative(race, baseClass, archetype, discipline))
-            if (cs.SkillId == skillId)
+            if (cs.SkillId == skillId && cs.SkillLevel == skillLevel)
                 return cs.LearnLevel;
         return 0;
+    }
+
+    /// <summary>The highest skill-level of a skill this class can ever learn (0 = none).</summary>
+    public static int MaxClassLevelOf(string skillId, Race race, BaseClass baseClass,
+        Archetype? archetype, Discipline? discipline = null)
+    {
+        int max = 0;
+        foreach (var cs in Cumulative(race, baseClass, archetype, discipline))
+            if (cs.SkillId == skillId && cs.SkillLevel > max)
+                max = cs.SkillLevel;
+        return max;
     }
 
     /// <summary>Can this class ever learn this skill at all?</summary>

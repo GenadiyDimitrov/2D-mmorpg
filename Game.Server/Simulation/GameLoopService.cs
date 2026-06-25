@@ -252,37 +252,36 @@ public class GameLoopService : BackgroundService
     /// skills) must be learned with SP from the skills window.</summary>
     private void AutoLearnCoreSkills(Entity player)
     {
+        // Auto-grant LEVEL 1 of skills the player should start with — but never
+        // DOWNGRADE a skill the player has since leveled up (e.g. learned Magic Bolt 3).
         // Don't re-add Magic Bolt once a superior skill (Flame Bolt, etc.) replaced it.
-        if (player.BaseClass == BaseClass.Mage && !IsSuperseded(player, SkillCatalog.MagicBolt))
-            player.LearnedSkills.Add(SkillCatalog.MagicBolt);
+        if (player.BaseClass == BaseClass.Mage && !player.HasSkill(SkillCatalog.MagicBolt)
+            && !IsSuperseded(player, SkillCatalog.MagicBolt))
+            player.LearnedSkills[SkillCatalog.MagicBolt] = 1;
 
-        // Auto-grant the class's natural armor-weight mastery for FREE at level 1.
-        // Otherwise a fresh wizard sits at the no-mastery cast penalty (~190 cast)
-        // until he can afford the 500 SP — too punishing for the early game.
-        player.LearnedSkills.Add(player.BaseClass == BaseClass.Mage
-            ? SkillCatalog.MasteryRobe
-            : SkillCatalog.MasteryLight);
+        // The class's natural armor-weight mastery, free at level 1 (level 1 only).
+        string mastery = player.BaseClass == BaseClass.Mage ? SkillCatalog.MasteryRobe : SkillCatalog.MasteryLight;
+        if (!player.HasSkill(mastery))
+            player.LearnedSkills[mastery] = 1;
 
-        // Combat "training" passive auto-granted at level 40 (soulshot/spiritshot
-        // stand-in): fighters +100% P.Atk (×2 physical), mages +100% M.Atk (×1.414
-        // magic via √) + 40% cast speed. Split into ranks across levels later.
-        if (player.Level >= 40)
-            player.LearnedSkills.Add(player.BaseClass == BaseClass.Mage
+        // Combat "training" passive (soulshot/spiritshot stand-in): auto-granted, with
+        // the LEVEL chosen by character level (+10%…+100% atk; see TrainingLevelFor).
+        int trainLvl = StatCalculator.TrainingLevelFor(player.Level);
+        if (trainLvl > 0)
+            player.LearnedSkills[player.BaseClass == BaseClass.Mage
                 ? SkillCatalog.SpiritTraining
-                : SkillCatalog.PhysicalTraining);
+                : SkillCatalog.PhysicalTraining] = trainLvl;
 
-        // Class identity "sure" floor passive for the current class tier (Evasion /
-        // Precision / Anti-Magic / Spell Ward). The floor VALUES live in the SkillDefs,
-        // not in code; this just grants the right one at the class-change milestone.
-        if (SkillCatalog.FloorPassiveFor(player.Archetype, player.Level) is { } floorSkill)
-            player.LearnedSkills.Add(floorSkill);
+        // Class identity "sure" floor passive for the current class tier (level = tier).
+        if (SkillCatalog.FloorPassiveFor(player.Archetype, player.Level) is { } floor)
+            player.LearnedSkills[floor.Id] = floor.Level;
     }
 
     /// <summary>True if the player has learned a skill that REPLACES the given id
-    /// (e.g. Flame Bolt replaces Magic Bolt; HP Boost 3 replaces 1 &amp; 2).</summary>
+    /// (e.g. Flame Bolt replaces Magic Bolt) — a cross-skill upgrade, not a level.</summary>
     private static bool IsSuperseded(Entity player, string skillId)
     {
-        foreach (var learnedId in player.LearnedSkills)
+        foreach (var learnedId in player.LearnedSkills.Keys)
             if (SkillCatalog.Get(learnedId)?.Replaces is { } rep && Array.IndexOf(rep, skillId) >= 0)
                 return true;
         return false;
@@ -297,95 +296,61 @@ public class GameLoopService : BackgroundService
         if (def is null)
             return;
 
-        if (player.LearnedSkills.Contains(def.Id))
+        // Learning advances to the NEXT level of the skill (level 1 if not yet known).
+        int cur = player.SkillLevelOf(def.Id);
+        int target = cur + 1;
+        if (target > def.MaxLevel)
         {
-            SendSystemToEntity(player, $"{def.Name} is already learned.");
+            SendSystemToEntity(player, $"{def.Name} is already at its highest level.");
             return;
         }
 
-        // Superseded: a learned skill already REPLACES this one (e.g. you have Flame
-        // Bolt, so Magic Bolt — which it removed from the learned set — can't be
-        // re-learned). Covers ranked lines too (HP Boost 3 replaces 1 & 2).
-        if (IsSuperseded(player, def.Id))
+        // Cross-skill upgrade already replaces this one (e.g. Flame Bolt replaced Magic Bolt).
+        if (cur == 0 && IsSuperseded(player, def.Id))
         {
             SendSystemToEntity(player, $"You already know a superior version of {def.Name}.");
             return;
         }
 
-        // Ranked lines (same BuffKey): learning a higher rank REMOVES the lower
-        // ranks from the learned set (so the skill bar stays clean). Without this
-        // guard those removed lower ranks become re-learnable, letting the player
-        // loop SP between ranks. Block learning any rank you've already surpassed.
-        if (!string.IsNullOrEmpty(def.BuffKey))
+        // This (skill, level) must be on the class list and the level gate met.
+        int gate = ClassSkills.LearnLevelOf(def.Id, target, player.Race, player.BaseClass, player.Archetype, player.Discipline);
+        if (gate == 0)
         {
-            foreach (var learnedId in player.LearnedSkills)
-            {
-                var known = SkillCatalog.Get(learnedId);
-                if (known is not null && known.BuffKey == def.BuffKey && known.Rank >= def.Rank)
-                {
-                    SendSystemToEntity(player,
-                        $"You already know {def.Name} at an equal or higher rank.");
-                    return;
-                }
-            }
-        }
-
-        // Must be on this class's list and the level gate met.
-        int learnLevel = ClassSkills.LearnLevelOf(def.Id, player.Race, player.BaseClass, player.Archetype, player.Discipline);
-        if (learnLevel == 0)
-        {
-            SendSystemToEntity(player, $"Your class cannot learn {def.Name}.");
+            SendSystemToEntity(player, cur == 0
+                ? $"Your class cannot learn {def.Name}."
+                : $"{def.Name} cannot be raised further by your class.");
             return;
         }
-        if (player.Level < learnLevel)
+        if (player.Level < gate)
         {
-            SendSystemToEntity(player, $"{def.Name} requires level {learnLevel}.");
+            SendSystemToEntity(player, def.MaxLevel > 1
+                ? $"{def.Name} (Lv.{target}) requires level {gate}."
+                : $"{def.Name} requires level {gate}.");
             return;
         }
 
-        // For ranked lines (e.g. HP Boost 1/2/3), require the previous rank first.
-        if (def.Rank > 1 && !HasPreviousRank(player, def))
+        int cost = def.SpCostAt(target);
+        if (player.SkillPoints < cost)
         {
-            SendSystemToEntity(player, $"Learn the previous rank of {def.Name} first.");
+            SendSystemToEntity(player, $"Not enough skill points ({cost} needed).");
             return;
         }
 
-        if (player.SkillPoints < def.SpCost)
-        {
-            SendSystemToEntity(player, $"Not enough skill points ({def.SpCost} needed).");
-            return;
-        }
+        player.SkillPoints -= cost;
+        player.LearnedSkills[def.Id] = target;
 
-        player.SkillPoints -= def.SpCost;
-        player.LearnedSkills.Add(def.Id);
-
-        // Learning a higher rank removes the superseded lower ranks from the
-        // learned set (HP Boost 3 replaces 1 & 2), so the skill bar stays clean.
-        if (def.Replaces is { Length: > 0 })
+        // Cross-skill replacement (FlameBolt replaces MagicBolt) — only on first learn.
+        if (cur == 0 && def.Replaces is { Length: > 0 })
             foreach (var replacedId in def.Replaces)
                 player.LearnedSkills.Remove(replacedId);
 
-        // Recompute so passives (armor masteries) take effect immediately, not just
-        // on the next equip/level-up.
+        // Recompute so passives take effect immediately, not just on the next equip/level.
         player.RecomputeDerived();
 
-        SendSystemToEntity(player, $"Learned {def.Name}!");
+        SendSystemToEntity(player, def.MaxLevel > 1 ? $"Learned {def.Name} (Lv.{target})!" : $"Learned {def.Name}!");
         SendStats(player);
         SendLearned(player);
         SaveEntity(player);
-    }
-
-    /// <summary>True if the character has the rank-1..(rank-1) of a skill's
-    /// BuffKey line learned (so ranks must be learned in order).</summary>
-    private static bool HasPreviousRank(Entity player, SkillDef def)
-    {
-        foreach (var learnedId in player.LearnedSkills)
-        {
-            var l = SkillCatalog.Get(learnedId);
-            if (l is not null && l.BuffKey == def.BuffKey && l.Rank == def.Rank - 1)
-                return true;
-        }
-        return false;
     }
 
     private void HandleSkill(SkillCmd cmd)
@@ -394,7 +359,7 @@ public class GameLoopService : BackgroundService
             return;
 
         var def = SkillCatalog.Get(cmd.SkillId);
-        if (def is null || !caster.LearnedSkills.Contains(def.Id))
+        if (def is null || !caster.HasSkill(def.Id))
             return;
 
         // Passives (armor masteries) are always-on; they can't be cast.
@@ -407,7 +372,7 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        if (caster.Mp < def.MpCost)
+        if (caster.Mp < def.MpCostAt(caster.SkillLevelOf(def.Id)))
         {
             SendSystemToEntity(caster, "Not enough MP.");
             return;
@@ -430,12 +395,13 @@ public class GameLoopService : BackgroundService
             }
             targetId = tid;
         }
-        else if ((def.Effect & (SkillEffect.Heal | SkillEffect.Cleanse)) != 0 && def.Range > 0 &&
+        else if ((def.Effect & (SkillEffect.Heal | SkillEffect.Cleanse | SkillEffect.AnyBuff)) != 0 &&
+                 def.TargetMode != TargetMode.SelfOnly && def.Range > 0 &&
                  cmd.TargetId is Guid allyId &&
                  _world.Entities.TryGetValue(allyId, out var ally) &&
                  ally.Kind == EntityKind.Player && !ally.Dead)
         {
-            targetId = allyId; // ranged heal/cleanse on a targeted player
+            targetId = allyId; // ranged heal / cleanse / buff on a targeted ally
         }
         else
         {
@@ -1607,8 +1573,8 @@ public class GameLoopService : BackgroundService
             (int)(def.CastTicks * caster.EffectiveCastSpeedMultiplier));
 
         // Charge the initial MP portion up front (default 0; split skills charge
-        // some now, the rest on completion).
-        caster.CastInitialMpPaid = Math.Min(def.InitialMp, caster.Mp);
+        // some now, the rest on completion). Level-aware MP cost.
+        caster.CastInitialMpPaid = Math.Min(def.InitialMpAt(Math.Max(1, caster.SkillLevelOf(def.Id))), caster.Mp);
         caster.Mp -= caster.CastInitialMpPaid;
 
         if (_world.EntityToConnection.TryGetValue(caster.Id, out var conn))
@@ -1620,7 +1586,11 @@ public class GameLoopService : BackgroundService
 
     private void ExecuteSkill(Entity caster, SkillDef def)
     {
-        if (caster.Mp < def.FinishMp)
+        // The caster's learned LEVEL of this skill selects its per-level values
+        // (Power / Magnitudes / MP). Default 1 for anything not in the learned set.
+        int lvl = Math.Max(1, caster.SkillLevelOf(def.Id));
+
+        if (caster.Mp < def.FinishMpAt(lvl))
         {
             SendSystemToEntity(caster, "Not enough MP.");
             CancelCast(caster);
@@ -1639,7 +1609,7 @@ public class GameLoopService : BackgroundService
 
         // Cast already committed at start — no range re-check here; the spell
         // lands even if the target moved. Charge the remaining MP and start CD.
-        caster.Mp -= def.FinishMp;
+        caster.Mp -= def.FinishMpAt(lvl);
         caster.CastInitialMpPaid = 0;
         caster.SkillCooldowns[def.Id] = def.CooldownTicks;
 
@@ -1663,7 +1633,7 @@ var effect = def.Effect;
             else
             {
                 int damage = StatCalculator.PhysicalDamage(
-                    (int)caster.EffectiveAttack, def.Power,
+                    (int)caster.EffectiveAttack, def.PowerAt(lvl),
                     (int)target.EffectiveDefence, caster.Level);
                 damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
 
@@ -1681,7 +1651,7 @@ var effect = def.Effect;
         {
             offensive = true;
             int damage = StatCalculator.MagicDamage(
-                (int)caster.EffectiveMagicAttack, def.Power,
+                (int)caster.EffectiveMagicAttack, def.PowerAt(lvl),
                 (int)target.EffectiveMagicDefence, caster.Level);   // magic channel: divides by mDef
             damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
 
@@ -1717,12 +1687,19 @@ var effect = def.Effect;
                 ApplyDamage(target, damage);
                 TryInterruptCast(target, magicInterrupt);
             }
+
+            // Vampiric: heal the caster for a fraction of the magic damage dealt.
+            if (def.Lifesteal > 0f && damage > 0)
+            {
+                int leech = (int)(damage * def.Lifesteal);
+                if (leech > 0) HealOne(caster, caster, leech, def.Name);
+            }
         }
 
         // ---- Heal (single ally/self, or AoE to allies in radius) ----
         if (effect.HasFlag(SkillEffect.Heal))
         {
-            int amount = SkillMath.HealAmount(def.Power, caster.EffectiveWit);
+            int amount = SkillMath.HealAmount(def.PowerAt(lvl), caster.EffectiveWit);
             if (def.TargetMode == TargetMode.AlliesInRadius)
                 foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
                     HealOne(caster, ally, amount, def.Name);
@@ -1754,7 +1731,7 @@ var effect = def.Effect;
             }
             else
             {
-                ApplyBuff(target, def);
+                ApplyBuff(target, def, lvl);
                 BroadcastCombat(caster, target, 0, CombatOutcome.Buff, def.Name);
             }
         }
@@ -1776,14 +1753,14 @@ var effect = def.Effect;
                 // Buff the caster + every nearby player character in range.
                 foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
                 {
-                    ApplyBuff(ally, def, buffName);
+                    ApplyBuff(ally, def, lvl, buffName);
                     BroadcastCombat(caster, ally, 0, CombatOutcome.Buff, buffName);
                 }
             }
             else
             {
                 var buffTarget = def.TargetMode == TargetMode.SelfOnly ? caster : target;
-                ApplyBuff(buffTarget, def, buffName);
+                ApplyBuff(buffTarget, def, lvl, buffName);
                 BroadcastCombat(caster, buffTarget, 0, CombatOutcome.Buff, buffName);
             }
         }
@@ -1800,7 +1777,7 @@ var effect = def.Effect;
     ///     (weaker self-recast is ignored entirely); on apply, replace it.
     /// (2) Replaces: unconditionally remove any active buff whose key is listed,
     ///     regardless of rank or magnitude.</summary>
-    private void ApplyBuff(Entity target, SkillDef def, string? displayName = null)
+    private void ApplyBuff(Entity target, SkillDef def, int level = 1, string? displayName = null)
     {
         string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
         string shownName = string.IsNullOrEmpty(displayName) ? def.Name : displayName!;
@@ -1821,7 +1798,7 @@ var effect = def.Effect;
         target.Buffs.Add(new BuffInstance
         {
             Effect = def.Effect,
-            Magnitudes = def.Magnitudes ?? Array.Empty<EffectMagnitude>(),
+            Magnitudes = def.MagnitudesAt(level) ?? Array.Empty<EffectMagnitude>(),
             TicksRemaining = def.DurationTicks,
             Name = shownName,
             Key = key,
@@ -2406,7 +2383,8 @@ var effect = def.Effect;
     }
 
     private void SendLearned(Entity p) =>
-        SendTo(p, "Learned", new LearnedSkills(p.LearnedSkills.ToArray(), p.SkillPoints));
+        SendTo(p, "Learned", new LearnedSkills(
+            p.LearnedSkills.Select(kv => new SkillRef(kv.Key, kv.Value)).ToArray(), p.SkillPoints));
 
     private void SendStats(Entity p) =>
         SendTo(p, "Stats", new StatsUpdate(

@@ -238,8 +238,16 @@ public class PersistenceService
             SkillPoints = rec.SkillPoints
         };
 
-        foreach (var id in rec.LearnedSkillsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
-            entity.LearnedSkills.Add(id);
+        // Learned skills are stored "id:level" (legacy bare "id" = level 1).
+        foreach (var token in rec.LearnedSkillsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        {
+            int colon = token.IndexOf(':');
+            if (colon < 0)
+                entity.LearnedSkills[token] = 1;
+            else
+                entity.LearnedSkills[token[..colon]] =
+                    int.TryParse(token[(colon + 1)..], out int lvl) ? Math.Max(1, lvl) : 1;
+        }
 
         foreach (var qid in rec.CompletedQuestsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
             entity.CompletedQuests.Add(qid);
@@ -300,7 +308,7 @@ public class PersistenceService
                 id, e.Race, e.BaseClass, e.Level, e.Exp, e.Gold,
                 e.SecondClass, e.ThirdClass, e.SkillPoints,
                 e.Con, e.AtkStat, e.Wit, e.Dex, e.X, e.Y,
-                string.Join(',', e.LearnedSkills),
+                string.Join(',', e.LearnedSkills.Select(kv => $"{kv.Key}:{kv.Value}")),
                 string.Join(',', e.CompletedQuests),
                 JsonSerializer.Serialize(e.ActiveQuests.Values.ToList()),
                 items);
