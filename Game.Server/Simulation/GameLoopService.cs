@@ -1,4 +1,5 @@
 using Game.Server.Hubs;
+using Game.Server.Persistence;
 using Game.Shared;
 using Microsoft.AspNetCore.SignalR;
 
@@ -151,21 +152,37 @@ public class GameLoopService : BackgroundService
         }
     }
 
-    /// <summary>Snapshot a character to the DB without blocking the tick loop.</summary>
+    /// <summary>Save a character without blocking the tick loop. The snapshot is taken
+    /// HERE (on the single-writer thread) so the async DB write never reads the live,
+    /// mutating entity; the DB I/O runs off-thread.</summary>
     private void SaveEntity(Entity entity)
     {
-        if (entity.PersistentId is null)
-            return;
-        _ = Task.Run(() => _db.SaveCharacterAsync(entity));
+        if (PersistenceService.CharacterSnapshot.From(entity) is { } snap)
+            RunSave(() => _db.SaveCharacterAsync(snap));
     }
 
-    /// <summary>Periodic snapshot of every online player (crash safety).</summary>
+    /// <summary>Periodic crash-safety save of every online player. Snapshots all of
+    /// them on-thread, then hands the batch to ONE background write (one DbContext,
+    /// one SaveChanges) — no thundering herd of connections off the tick.</summary>
     private void AutoSaveAll()
     {
+        List<PersistenceService.CharacterSnapshot>? snaps = null;
         foreach (var entity in _world.Entities.Values)
-            if (entity.Kind == EntityKind.Player && entity.PersistentId is not null)
-                SaveEntity(entity);
+            if (entity.Kind == EntityKind.Player &&
+                PersistenceService.CharacterSnapshot.From(entity) is { } snap)
+                (snaps ??= new()).Add(snap);
+
+        if (snaps is { Count: > 0 })
+            RunSave(() => _db.SaveCharactersAsync(snaps));
     }
+
+    /// <summary>Fire-and-forget a DB write off the tick thread, logging any failure
+    /// (so an exception in a background save can't go unobserved).</summary>
+    private void RunSave(Func<Task> save) => _ = Task.Run(async () =>
+    {
+        try { await save(); }
+        catch (Exception ex) { _log.LogError(ex, "Background character save failed"); }
+    });
 
     private void HandleMove(MoveCmd move)
     {
@@ -1334,16 +1351,28 @@ public class GameLoopService : BackgroundService
         }
     }
 
-    private static void TickSkillCooldowns(Entity entity)
+    // Reusable scratch buffer for cooldown expiry so the per-tick decrement doesn't
+    // allocate a Keys.ToList() for every entity in combat. Single-threaded loop, so
+    // one shared buffer is safe (cleared and fully drained within each call).
+    private readonly List<string> _expiredCooldowns = new();
+
+    private void TickSkillCooldowns(Entity entity)
     {
         if (entity.SkillCooldowns.Count == 0)
             return;
 
-        foreach (var key in entity.SkillCooldowns.Keys.ToList())
+        // Decrementing an existing key's VALUE doesn't structurally modify the
+        // dictionary, so iterating Keys while updating is safe; only the removals
+        // (collected here) are deferred until after the loop.
+        _expiredCooldowns.Clear();
+        foreach (var key in entity.SkillCooldowns.Keys)
         {
             if (--entity.SkillCooldowns[key] <= 0)
-                entity.SkillCooldowns.Remove(key);
+                _expiredCooldowns.Add(key);
         }
+
+        foreach (var key in _expiredCooldowns)
+            entity.SkillCooldowns.Remove(key);
     }
 
     private void TickPotion(Entity entity)

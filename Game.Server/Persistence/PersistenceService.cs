@@ -275,54 +275,108 @@ public class PersistenceService
         return entity;
     }
 
-    /// <summary>Persist a live Entity back to its character row (logout / snapshot).
-    /// Replaces the item set wholesale — simplest correct approach for now.</summary>
-    public async Task SaveCharacterAsync(Entity entity)
+    /// <summary>An immutable copy of a character's persistent state, taken on the
+    /// game-loop (single-writer) thread. The async DB write reads only this — never a
+    /// live, concurrently-mutating <see cref="Entity"/> — so saving can't race the tick
+    /// (no torn reads / "collection modified" from X/Y, inventory or skills changing).</summary>
+    public sealed record CharacterSnapshot(
+        int CharacterId, Race Race, BaseClass BaseClass, int Level, long Exp, long Gold,
+        int SecondClass, int ThirdClass, int SkillPoints,
+        int Con, int Atk, int Wit, int Dex, float X, float Y,
+        string LearnedSkillsCsv, string CompletedQuestsCsv, string ActiveQuestsJson,
+        IReadOnlyList<ItemSnapshot> Items)
     {
-        if (entity.PersistentId is not int characterId)
-            return;
+        /// <summary>Capture a character. MUST be called on the tick thread. Returns
+        /// null for entities with no persistent row (not yet saved).</summary>
+        public static CharacterSnapshot? From(Entity e)
+        {
+            if (e.PersistentId is not int id) return null;
+            var items = new List<ItemSnapshot>(e.Inventory.Count);
+            foreach (var i in e.Inventory)
+                items.Add(new ItemSnapshot(
+                    i.PersistentInstanceId ?? Guid.NewGuid(), i.DefId, i.Equipped,
+                    i.Enchant, i.Quantity, new List<ItemAttribute>(i.Attributes)));
+            return new CharacterSnapshot(
+                id, e.Race, e.BaseClass, e.Level, e.Exp, e.Gold,
+                e.SecondClass, e.ThirdClass, e.SkillPoints,
+                e.Con, e.AtkStat, e.Wit, e.Dex, e.X, e.Y,
+                string.Join(',', e.LearnedSkills),
+                string.Join(',', e.CompletedQuests),
+                JsonSerializer.Serialize(e.ActiveQuests.Values.ToList()),
+                items);
+        }
+    }
 
+    public sealed record ItemSnapshot(
+        Guid InstanceId, string DefId, bool Equipped, int Enchant, int Quantity,
+        List<ItemAttribute> Attributes);
+
+    /// <summary>Persist one snapshot back to its character row (logout / event save).
+    /// Replaces the item set wholesale — simplest correct approach for now.</summary>
+    public async Task SaveCharacterAsync(CharacterSnapshot snap)
+    {
         await using var db = await _factory.CreateDbContextAsync();
-
         var rec = await db.Characters
-            .Include(c => c.Items)
-            .ThenInclude(i => i.Attributes)
-            .FirstOrDefaultAsync(c => c.Id == characterId);
-
+            .Include(c => c.Items).ThenInclude(i => i.Attributes)
+            .FirstOrDefaultAsync(c => c.Id == snap.CharacterId);
         if (rec is null)
             return;
 
-        rec.Race = entity.Race;             // can change via DEBUG character reset
-        rec.BaseClass = entity.BaseClass;
-        rec.Level = entity.Level;
-        rec.Exp = entity.Exp;
-        rec.Gold = entity.Gold;
-        rec.SecondClass = entity.SecondClass;
-        rec.ThirdClass = entity.ThirdClass;
-        rec.SkillPoints = entity.SkillPoints;
-        rec.LearnedSkillsCsv = string.Join(',', entity.LearnedSkills);
-        rec.CompletedQuestsCsv = string.Join(',', entity.CompletedQuests);
-        rec.ActiveQuestsJson = JsonSerializer.Serialize(entity.ActiveQuests.Values.ToList());
-        rec.Con = entity.Con;
-        rec.Atk = entity.AtkStat;
-        rec.Wit = entity.Wit;
-        rec.Dex = entity.Dex;
-        rec.X = entity.X;
-        rec.Y = entity.Y;
+        ApplySnapshot(db, rec, snap);
+        await db.SaveChangesAsync();
+    }
 
-        // Rebuild the item set from the live inventory.
-        db.Items.RemoveRange(rec.Items);
-        rec.Items = entity.Inventory.Select(i => new ItemRecord
+    /// <summary>Batched periodic save: one DbContext, one SaveChanges for the whole
+    /// set (avoids a thundering herd of concurrent connections / SQLite write locks).</summary>
+    public async Task SaveCharactersAsync(IReadOnlyList<CharacterSnapshot> snaps)
+    {
+        if (snaps.Count == 0)
+            return;
+
+        await using var db = await _factory.CreateDbContextAsync();
+        foreach (var snap in snaps)
         {
-            InstanceId = i.PersistentInstanceId ?? Guid.NewGuid(),
+            var rec = await db.Characters
+                .Include(c => c.Items).ThenInclude(i => i.Attributes)
+                .FirstOrDefaultAsync(c => c.Id == snap.CharacterId);
+            if (rec is not null)
+                ApplySnapshot(db, rec, snap);
+        }
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>Copy a snapshot onto a tracked record (no SaveChanges — caller batches).</summary>
+    private static void ApplySnapshot(GameDbContext db, CharacterRecord rec, CharacterSnapshot snap)
+    {
+        rec.Race = snap.Race;               // can change via DEBUG character reset
+        rec.BaseClass = snap.BaseClass;
+        rec.Level = snap.Level;
+        rec.Exp = snap.Exp;
+        rec.Gold = snap.Gold;
+        rec.SecondClass = snap.SecondClass;
+        rec.ThirdClass = snap.ThirdClass;
+        rec.SkillPoints = snap.SkillPoints;
+        rec.LearnedSkillsCsv = snap.LearnedSkillsCsv;
+        rec.CompletedQuestsCsv = snap.CompletedQuestsCsv;
+        rec.ActiveQuestsJson = snap.ActiveQuestsJson;
+        rec.Con = snap.Con;
+        rec.Atk = snap.Atk;
+        rec.Wit = snap.Wit;
+        rec.Dex = snap.Dex;
+        rec.X = snap.X;
+        rec.Y = snap.Y;
+
+        // Rebuild the item set from the snapshot.
+        db.Items.RemoveRange(rec.Items);
+        rec.Items = snap.Items.Select(i => new ItemRecord
+        {
+            InstanceId = i.InstanceId,
             DefId = i.DefId,
             Equipped = i.Equipped,
             Enchant = i.Enchant,
             Quantity = i.Quantity,
             Attributes = i.Attributes.ToList()
         }).ToList();
-
-        await db.SaveChangesAsync();
     }
 
     // ----- Boss timers -------------------------------------------------------
