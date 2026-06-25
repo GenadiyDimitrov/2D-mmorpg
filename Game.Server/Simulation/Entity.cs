@@ -449,9 +449,12 @@ public class Entity
                 ? StatCalculator.MagicDefenceBase(Level)
                 : StatCalculator.MobDefence(Con, Level))
             + StatCalculator.ArchetypeMagicDefenceBonus(Archetype, Level);
-        MagicFailFloor = StatCalculator.ArchetypeMagicFailFloor(Archetype, Level);
-        EvadeFloor = StatCalculator.ArchetypeEvadeFloor(Archetype, Level);
-        HitFloor = StatCalculator.ArchetypeHitFloor(Archetype, Level);
+        // Resolution "sure" floors come from learned passives (Evasion Mastery / Precision /
+        // Anti-Magic / Spell Ward), applied in the passive loop below. Base 0 — the
+        // universal 5% land/avoid floor lives in the resolver, not here.
+        MagicFailFloor = 0f;
+        EvadeFloor = 0f;
+        HitFloor = 0f;
         Immune = false;
         Accuracy = StatCalculator.Accuracy(EffectiveDex);
         Evasion = StatCalculator.Evasion(EffectiveDex);
@@ -731,6 +734,10 @@ public class Entity
                 if (pe.AtkSpeedPct != 0f) AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier * (1f - pe.AtkSpeedPct), 0.4f, 2.5f);
                 if (pe.CastSpeedPct != 0f) CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier * (1f - pe.CastSpeedPct), 0.4f, 2.5f);
                 if (pe.MoveSpeedPct != 0f) { RunSpeed *= 1f + pe.MoveSpeedPct; WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor; Speed = RunSpeed; }
+                // Resolution floors are GUARANTEES — take the strongest (max), never sum.
+                EvadeFloor = Math.Max(EvadeFloor, pe.EvadeFloor);
+                HitFloor = Math.Max(HitFloor, pe.HitFloor);
+                MagicFailFloor = Math.Max(MagicFailFloor, pe.MagicFailFloor);
             }
         }
 

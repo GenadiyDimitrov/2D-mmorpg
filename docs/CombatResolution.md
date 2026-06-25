@@ -49,17 +49,28 @@ Symmetric: the higher-level character gets +G to **both** hit and evade vs the l
 
 ## Class floors (milestones 20 / 40 / 76 = 4th class)
 
-| Floor | Class | @20 | @40 | @76 | meaning |
-|---|---|---|---|---|---|
-| **Evade** (min phys miss vs them) | Rogue | 10% | 20% | 30% | sure to dodge |
-| **Hit** (min phys hit; caps incoming miss at 1−floor) | Warrior | 10% | 20% | 30% | sure to land |
-| **Anti-magic** (min magic-fail vs them) | Tank | 10% | 15% | 20% | sure to resist |
-| | anti-magic Rogue (3rd-class spec) | — | 10% | 15% | less than tank |
-| | Mage (Nuker + Healer) | — | 10% | 10% | self-hardened |
-| | Warrior / everyone else | 5% | 5% | 5% | universal base only |
+These are **learned passive skills**, NOT hardcoded — the values live in `SkillDef`
+`PassiveEffect`s and are auto-granted at the class-change milestone by
+`SkillCatalog.FloorPassiveFor`. The resolver takes the **max** floor across passives.
+
+| Floor | Class | Passive | @20 | @40 | @76 | meaning |
+|---|---|---|---|---|---|---|
+| **Evade** (min phys miss vs them) | Rogue | Evasion Mastery | 10% | 20% | 30% | sure to dodge |
+| | Archer | Reflexes | 5% | 10% | 15% | half a rogue's |
+| **Hit** (min phys hit; caps incoming miss at 1−floor) | Warrior | Precision | 10% | 20% | 30% | sure to land |
+| **Anti-magic** (min magic-fail vs them) | Tank | Anti-Magic | 10% | 15% | 20% | sure to resist |
+| | Mage (Nuker + Healer) | Spell Ward | — | 10% | 10% | self-hardened |
+| | anti-magic Rogue (3rd-class spec) | *(TODO)* | — | 10% | 15% | less than tank |
+| | Warrior / everyone else | — | 5% | 5% | 5% | universal base only |
 
 Floor erosion by level gap: a Tank's 15% is subsumed once `G ≥ 15` (Δ ≈ 11);
 a Rogue's 30% evade is clipped once `G > 70` (Δ ≈ 19) and gone at Δ ≥ 20.
+
+## Sure-Hit skills (bypass evasion / anti-magic, lose only to defender Immunity)
+- **Mighty Blow** (warrior heavy strike) — never misses; the answer to dodgy targets.
+- **Disrupt** (instant interrupt) — never misses, always breaks a cast.
+- **Weakness / Greater Weakness** (mage def curse) — never fizzles.
+Damage nukes are deliberately NOT Sure-Hit, so the fail/anti-magic/level interplay stays.
 
 ## Intended matchups (same level, same gear — what the model produces)
 
@@ -78,6 +89,10 @@ Magic ignoring evasion is the counter to evasion; Sure-Hit + hit-floor are the m
 counter to evasion; anti-magic floor is the counter to mages.
 
 ## Not yet wired
-- **anti-magic Rogue** floor waits on that 3rd-class spec (plug into the per-entity floor when built).
-- **Immune** flag has no ultimate buff yet (defaults false).
+- **anti-magic Rogue** floor waits on that 3rd-class spec — add an `anti_magic` rank-2
+  passive (—/10/15) and grant it in `FloorPassiveFor` once the spec exists.
+- **Immune** flag has no ultimate buff yet (defaults false) — a future "Total Evasion /
+  Magic Immunity" active should set `Entity.Immune` for its duration.
 - **slope** = 1%/pt — first-pass tuning knob.
+- Floors are now data (passives); only the base 5%, the level-gap curve, and the slope
+  remain as code constants — per the "stats via skills, not hardcoded" rule.

@@ -70,7 +70,12 @@ public readonly record struct PassiveEffect(
     int Evasion = 0, int Accuracy = 0,
     float CritRate = 0f, float CritDamage = 0f, float MagicCritRate = 0f,
     float HpRegen = 0f, float MpRegen = 0f,
-    float AtkSpeedPct = 0f, float CastSpeedPct = 0f, float MoveSpeedPct = 0f);
+    float AtkSpeedPct = 0f, float CastSpeedPct = 0f, float MoveSpeedPct = 0f,
+    // Combat-resolution "sure" floors (see docs/CombatResolution.md). These are
+    // GUARANTEES (the resolver takes the MAX across passives, not a sum):
+    float EvadeFloor = 0f,        // min chance to dodge physical (rogue/archer)
+    float HitFloor = 0f,          // min chance THIS entity lands a physical hit (warrior)
+    float MagicFailFloor = 0f);   // min chance a spell fizzles vs this entity (tank/mage anti-magic)
 
 /// <summary>Who a (beneficial) skill affects. SelfOnly = caster only;
 /// AlliesInRadius = caster + nearby player characters (a "party" buff until real
@@ -141,6 +146,22 @@ public static class SkillCatalog
     //      ratio. Later these can be split into ranks across levels. ----
     public const string PhysicalTraining = "physical_training";
     public const string SpiritTraining   = "spirit_training";
+    // ---- Class identity "sure" floor passives (auto-granted at class-change
+    //      milestones 20/40/76). The floor VALUES live here in the SkillDefs, not
+    //      hardcoded in StatCalculator. See FloorPassiveFor + docs/CombatResolution.md. ----
+    public const string EvadeMastery1 = "evade_mastery_1";   // Rogue 10%
+    public const string EvadeMastery2 = "evade_mastery_2";   // Rogue 20%
+    public const string EvadeMastery3 = "evade_mastery_3";   // Rogue 30%
+    public const string EvadeMasteryA1 = "evade_mastery_a1"; // Archer 5%
+    public const string EvadeMasteryA2 = "evade_mastery_a2"; // Archer 10%
+    public const string EvadeMasteryA3 = "evade_mastery_a3"; // Archer 15%
+    public const string PrecisionMastery1 = "precision_mastery_1"; // Warrior hit 10%
+    public const string PrecisionMastery2 = "precision_mastery_2"; // Warrior hit 20%
+    public const string PrecisionMastery3 = "precision_mastery_3"; // Warrior hit 30%
+    public const string AntiMagic1 = "anti_magic_1";   // Tank 10%
+    public const string AntiMagic2 = "anti_magic_2";   // Tank 15%
+    public const string AntiMagic3 = "anti_magic_3";   // Tank 20%
+    public const string SpellWard  = "spell_ward";     // Mage (Nuker/Healer) 10% from 40
     // ---- Lightbringer (Healer A) — buff + passive to fill the 4-skill template ----
     public const string LbBlessing = "lb_blessing";
     public const string LbDevotion = "lb_devotion";   // passive
@@ -198,6 +219,37 @@ public static class SkillCatalog
         Category: SkillCategory.Magic, SpCost: 500,
         Description: "A heavy single-target nuke (replaces Magic Bolt / Holy Strike).");
 
+    // ---- "Sure" floor passive factory: a pure passive carrying one resolution
+    //      floor. Auto-granted (SpCost 0); ranked via BuffKey/Replaces so a higher
+    //      tier supersedes the lower one. ----
+    private static SkillDef FloorPassive(
+        string id, string name, BaseClass cls, string buffKey, int rank, string[]? replaces,
+        string desc, float eva = 0f, float hit = 0f, float mag = 0f) => new(
+        id, name, cls, SkillEffect.None,
+        MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+        BuffKey: buffKey, Rank: rank, Replaces: replaces,
+        Category: SkillCategory.Passive, SpCost: 0,
+        Passive: new PassiveEffect(EvadeFloor: eva, HitFloor: hit, MagicFailFloor: mag),
+        Description: desc);
+
+    /// <summary>The identity floor passive an archetype receives at its current
+    /// class tier (milestones 20/40/76), or null. Granted in EnsureBaseSkills — the
+    /// floor VALUES live in the SkillDefs, not in code.</summary>
+    public static string? FloorPassiveFor(Archetype? archetype, int level)
+    {
+        int tier = level >= 76 ? 3 : level >= 40 ? 2 : level >= 20 ? 1 : 0;
+        if (tier == 0) return null;
+        return archetype switch
+        {
+            Archetype.Rogue   => tier == 1 ? EvadeMastery1 : tier == 2 ? EvadeMastery2 : EvadeMastery3,
+            Archetype.Archer  => tier == 1 ? EvadeMasteryA1 : tier == 2 ? EvadeMasteryA2 : EvadeMasteryA3,
+            Archetype.Warrior => tier == 1 ? PrecisionMastery1 : tier == 2 ? PrecisionMastery2 : PrecisionMastery3,
+            Archetype.Tank    => tier == 1 ? AntiMagic1 : tier == 2 ? AntiMagic2 : AntiMagic3,
+            Archetype.Nuker or Archetype.Healer => tier >= 2 ? SpellWard : null,  // mages from 40
+            _ => null
+        };
+    }
+
     private static Dictionary<string, SkillDef> BuildCatalog()
     {
         var list = new List<SkillDef>
@@ -247,8 +299,8 @@ public static class SkillCatalog
                 MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 500, Power: 0,
                 DurationTicks: 150, BuffKey: "curse_def", Rank: 1,
                 Magnitudes: new EffectMagnitude[] { new(SkillEffect.DebuffDef, 0.30f) },
-                Category: SkillCategory.Debuff,
-                Description: "Curses the target: -30% Defence for 15s (instant cast)."),
+                Category: SkillCategory.Debuff, SureHit: true,
+                Description: "Curses the target: -30% Defence for 15s (instant cast, never fizzles)."),
 
             new(Fortify, "Fortify", BaseClass.Fighter, SkillEffect.BuffDef,
                 MpCost: 20, CastTicks: 5, CooldownTicks: 250, Range: 0, Power: 0,
@@ -273,8 +325,9 @@ public static class SkillCatalog
 
             new(MightyBlow, "Mighty Blow", BaseClass.Fighter, SkillEffect.PhysicalDamage,
                 MpCost: 18, CastTicks: 7, CooldownTicks: 60, Range: 0, Power: 85,
-                Category: SkillCategory.Physical,
-                Description: "A devastating two-hand strike for heavy damage."),
+                Category: SkillCategory.Physical, SureHit: true,
+                Description: "A devastating two-hand strike for heavy damage — never misses "
+                           + "(ignores evasion). The warrior's answer to dodgy targets."),
 
             new(TwinSlash, "Twin Slash", BaseClass.Fighter, SkillEffect.PhysicalDamage,
                 MpCost: 12, CastTicks: 3, CooldownTicks: 25, Range: 0, Power: 55,
@@ -285,8 +338,8 @@ public static class SkillCatalog
             // overwhelming InterruptPower so it ALWAYS breaks an enemy cast.
             new(Disrupt, "Disrupt", BaseClass.Fighter, SkillEffect.PhysicalDamage,
                 MpCost: 10, CastTicks: 0, CooldownTicks: 80, Range: 0, Power: 5,
-                Category: SkillCategory.Physical, InterruptPower: 99999,
-                Description: "Instant strike that always interrupts an enemy's cast."),
+                Category: SkillCategory.Physical, InterruptPower: 99999, SureHit: true,
+                Description: "Instant strike that never misses and always interrupts an enemy's cast."),
 
             // ----- Buff-potion buffs (consumed, not cast). Same BuffKey per line so a
             //       rarer potion supersedes a weaker one; rare = bigger + longer. -----
@@ -365,8 +418,8 @@ public static class SkillCatalog
                 MpCost: 22, CastTicks: 5, CooldownTicks: 300, Range: 500, Power: 0,
                 DurationTicks: 200, BuffKey: "curse_def", Rank: 2,
                 Magnitudes: new EffectMagnitude[] { new(SkillEffect.DebuffDef, 0.45f) },
-                Category: SkillCategory.Debuff,
-                Description: "A deeper curse: -45% Defence for 20s."),
+                Category: SkillCategory.Debuff, SureHit: true,
+                Description: "A deeper curse: -45% Defence for 20s (never fizzles)."),
 
             // ---- Learnable HP Boost line (3 ranks, same BuffKey) ----
             new(HpBoost1, "HP Boost", BaseClass.Mage, SkillEffect.BuffHp,
@@ -421,6 +474,39 @@ public static class SkillCatalog
                 Passive: new PassiveEffect(AttackPct: 1.0f, CastSpeedPct: 0.40f),
                 Description: "Passive. Honed focus: +100% magic attack (≈×1.414 spell "
                            + "damage via the √M.Atk curve) and +40% casting speed."),
+
+            // ===== Class identity "sure" floor passives (auto-granted at 20/40/76) =====
+            // Rogue — guaranteed physical evasion.
+            FloorPassive(EvadeMastery1, "Evasion Mastery", BaseClass.Fighter, "evade_floor", 1, null,
+                "Passive. Always at least a 10% chance to dodge physical attacks.", eva: 0.10f),
+            FloorPassive(EvadeMastery2, "Evasion Mastery", BaseClass.Fighter, "evade_floor", 2, new[] { EvadeMastery1 },
+                "Passive. Always at least a 20% chance to dodge physical attacks.", eva: 0.20f),
+            FloorPassive(EvadeMastery3, "Evasion Mastery", BaseClass.Fighter, "evade_floor", 3, new[] { EvadeMastery1, EvadeMastery2 },
+                "Passive. Always at least a 30% chance to dodge physical attacks.", eva: 0.30f),
+            // Archer — half the rogue's evasion floor.
+            FloorPassive(EvadeMasteryA1, "Reflexes", BaseClass.Fighter, "evade_floor", 1, null,
+                "Passive. Always at least a 5% chance to dodge physical attacks.", eva: 0.05f),
+            FloorPassive(EvadeMasteryA2, "Reflexes", BaseClass.Fighter, "evade_floor", 2, new[] { EvadeMasteryA1 },
+                "Passive. Always at least a 10% chance to dodge physical attacks.", eva: 0.10f),
+            FloorPassive(EvadeMasteryA3, "Reflexes", BaseClass.Fighter, "evade_floor", 3, new[] { EvadeMasteryA1, EvadeMasteryA2 },
+                "Passive. Always at least a 15% chance to dodge physical attacks.", eva: 0.15f),
+            // Warrior — guaranteed to land a share of physical hits (caps a target's evasion).
+            FloorPassive(PrecisionMastery1, "Precision", BaseClass.Fighter, "hit_floor", 1, null,
+                "Passive. Your physical attacks always land at least 10% of the time.", hit: 0.10f),
+            FloorPassive(PrecisionMastery2, "Precision", BaseClass.Fighter, "hit_floor", 2, new[] { PrecisionMastery1 },
+                "Passive. Your physical attacks always land at least 20% of the time.", hit: 0.20f),
+            FloorPassive(PrecisionMastery3, "Precision", BaseClass.Fighter, "hit_floor", 3, new[] { PrecisionMastery1, PrecisionMastery2 },
+                "Passive. Your physical attacks always land at least 30% of the time.", hit: 0.30f),
+            // Tank — Anti-Magic: spells always have a real chance to fizzle on you.
+            FloorPassive(AntiMagic1, "Anti-Magic", BaseClass.Fighter, "anti_magic", 1, null,
+                "Passive. Spells fizzle on you at least 10% of the time.", mag: 0.10f),
+            FloorPassive(AntiMagic2, "Anti-Magic", BaseClass.Fighter, "anti_magic", 2, new[] { AntiMagic1 },
+                "Passive. Spells fizzle on you at least 15% of the time.", mag: 0.15f),
+            FloorPassive(AntiMagic3, "Anti-Magic", BaseClass.Fighter, "anti_magic", 3, new[] { AntiMagic1, AntiMagic2 },
+                "Passive. Spells fizzle on you at least 20% of the time.", mag: 0.20f),
+            // Mage — self-hardening against hostile magic (from 40).
+            FloorPassive(SpellWard, "Spell Ward", BaseClass.Mage, "anti_magic", 1, null,
+                "Passive. Spells fizzle on you at least 10% of the time.", mag: 0.10f),
 
             // ===== Lightbringer (Healer A) — buff + passive to complete its 4-skill kit =====
             new(LbBlessing, "Blessing of Light", BaseClass.Mage,

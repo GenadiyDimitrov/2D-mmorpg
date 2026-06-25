@@ -253,6 +253,12 @@ public class GameLoopService : BackgroundService
             player.LearnedSkills.Add(player.BaseClass == BaseClass.Mage
                 ? SkillCatalog.SpiritTraining
                 : SkillCatalog.PhysicalTraining);
+
+        // Class identity "sure" floor passive for the current class tier (Evasion /
+        // Precision / Anti-Magic / Spell Ward). The floor VALUES live in the SkillDefs,
+        // not in code; this just grants the right one at the class-change milestone.
+        if (SkillCatalog.FloorPassiveFor(player.Archetype, player.Level) is { } floorSkill)
+            player.LearnedSkills.Add(floorSkill);
     }
 
     /// <summary>True if the player has learned a skill that REPLACES the given id

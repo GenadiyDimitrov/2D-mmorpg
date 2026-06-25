@@ -484,8 +484,8 @@ public static class StatCalculator
 
     /// <summary>Extra evasion from archetype (rogues are slippery), added to the
     /// DEX-based evasion stat. FLAT now (no level scaling) — the rogue's guaranteed
-    /// floor lives in <see cref="ArchetypeEvadeFloor"/>; this is the extra stat-roll
-    /// evasion they carry ABOVE that floor.</summary>
+    /// floor lives in the learned "Evasion Mastery" passive; this is the extra
+    /// stat-roll evasion they carry ABOVE that floor.</summary>
     public static int ArchetypeEvasionBonus(Archetype? archetype, int level) => archetype switch
     {
         Archetype.Rogue => 20,
@@ -493,41 +493,10 @@ public static class StatCalculator
         _ => 0
     };
 
-    // ----- Class "sure" floors (clamp bounds in ResolveAvoidChance) --------
-    // Milestones 20 / 40 / 76 (= 4th class). See docs/CombatResolution.md.
-
-    /// <summary>Rogue EVADE floor — guaranteed minimum chance to dodge physical
-    /// attacks/skills (bypassed only by Sure-Hit / level lockout). 10/20/30%.</summary>
-    public static float ArchetypeEvadeFloor(Archetype? archetype, int level) =>
-        archetype == Archetype.Rogue ? FloorByMilestone(level, 0.10f, 0.20f, 0.30f) : 0f;
-
-    /// <summary>Warrior HIT floor — guaranteed minimum chance to LAND a physical
-    /// attack (caps the target's avoid at 1−floor, even vs a high-evasion rogue).
-    /// 10/20/30%.</summary>
-    public static float ArchetypeHitFloor(Archetype? archetype, int level) =>
-        archetype == Archetype.Warrior ? FloorByMilestone(level, 0.10f, 0.20f, 0.30f) : 0f;
-
-    /// <summary>ANTI-MAGIC floor — guaranteed minimum chance for a spell to fizzle
-    /// against this entity. Tank 10/15/20%; Mage (Nuker+Healer) —/10/10%. The
-    /// anti-magic Rogue (a 3rd-class spec, —/10/15%) plugs in here once it exists.
-    /// Warrior/everyone else = 0 (the universal 5% base still applies).</summary>
-    public static float ArchetypeMagicFailFloor(Archetype? archetype, int level) => archetype switch
-    {
-        Archetype.Tank => FloorByMilestone(level, 0.10f, 0.15f, 0.20f),
-        Archetype.Nuker => FloorByMilestone(level, 0f, 0.10f, 0.10f),
-        Archetype.Healer => FloorByMilestone(level, 0f, 0.10f, 0.10f),
-        _ => 0f
-    };
-
-    /// <summary>Step floor by class-tier milestone: &lt;20 → 0, 20–39 → t20,
-    /// 40–75 → t40, 76+ → t76.</summary>
-    private static float FloorByMilestone(int level, float t20, float t40, float t76)
-    {
-        if (level >= 76) return t76;
-        if (level >= 40) return t40;
-        if (level >= 20) return t20;
-        return 0f;
-    }
+    // NOTE: the resolution "sure" floors (rogue evade / warrior hit / tank+mage
+    // anti-magic) are no longer hardcoded here — they live in learned passive
+    // SkillDefs (see SkillCatalog.FloorPassiveFor) and are summed onto the entity
+    // in RecomputeDerived. Keep stat VALUES in skills, not in this switch table.
 
     /// <summary>Tank "Anti Magic" passive: extra MAGIC defence on top of the level
     /// base, roughly doubling a tank's innate magic resistance. (Modeled as an
