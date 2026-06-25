@@ -148,19 +148,68 @@ public static class StatCalculator
 
     public static float MpRegenPerSecond(int wit, int level) => 1f + wit * 0.05f + level * 0.08f;
 
-    /// <summary>Base chance for a normal attack to miss is 2%; each point of
-    /// evasion advantage adds 1%, clamped so a higher-level character almost
-    /// never misses a lower one (design: floor ~1%, never above 90%).</summary>
-    public static float MissChance(int attackerAccuracy, int targetEvasion)
+    // ----- Unified hit resolution (see docs/CombatResolution.md) -----------
+    // Both channels (physical miss, magic fail) call ResolveAvoidChance. It returns
+    // the probability the attack is AVOIDED (missed/fizzled). Order of operations:
+    //   1. stat roll  → 2. class floors → 3. level gap (favors higher level) → 4. flags
+    // Precedence top-down: Immunity > SureHit > level gap > class floors > stat roll.
+
+    /// <summary>Level-gap penalty G(|Δ|): the avoid magnitude conferred on the
+    /// HIGHER-level combatant (added to their hit AND their evade vs the lower).
+    /// Piecewise-linear: white ≤5; +2.5%/lvl to 10%@9; +3%/lvl to 25%@14;
+    /// +10%/lvl to 75%@19; 100% lockout at ≥20 (only Sure-Hit lands).</summary>
+    public static float LevelGap(int levelDiff)
     {
-        const float baseMiss = 0.02f;
-        float diff = (targetEvasion - attackerAccuracy) * 0.01f;
-        return Math.Clamp(baseMiss + diff, 0.01f, 0.90f);
+        int d = Math.Abs(levelDiff);
+        if (d <= 5) return 0f;
+        if (d <= 9) return 0.025f * (d - 5);            // 6–9   → 2.5,5,7.5,10
+        if (d <= 14) return 0.10f + 0.03f * (d - 9);    // 10–14 → 13,16,19,22,25
+        if (d <= 19) return 0.25f + 0.10f * (d - 14);   // 15–19 → 35,45,55,65,75
+        return 1.0f;                                    // 20+   → lockout
     }
 
-    public static int Accuracy(int dex, int level) => dex + level;
+    /// <summary>The one resolver. Returns avoid (miss/fail) probability for A→D.
+    /// <paramref name="defenderFloor"/> = min avoid vs the defender (rogue evade /
+    /// anti-magic). <paramref name="attackerHitFloor"/> = the attacker's min hit
+    /// (warrior); caps avoid at 1−floor. Level favors the higher combatant and
+    /// overrides class floors. Flags override everything.</summary>
+    public static float ResolveAvoidChance(
+        int attackerHitStat, int defenderAvoidStat,
+        float defenderFloor, float attackerHitFloor,
+        int attackerLevel, int defenderLevel,
+        bool sureHit = false, bool defenderImmune = false)
+    {
+        // 4 (checked first = highest precedence): hard overrides.
+        if (defenderImmune) return 1f;
+        if (sureHit) return 0f;
 
-    public static int Evasion(int dex, int level) => dex + level;
+        // 1: stat roll, inside the soft band.
+        float m = StatCaps.AvoidBase + (defenderAvoidStat - attackerHitStat) * StatCaps.AvoidStatSlope;
+        m = Math.Clamp(m, StatCaps.AvoidBase, StatCaps.AvoidSoftCeil);
+
+        // 2: class floors form an interior window [defenderFloor, 1 − attackerHitFloor].
+        float lo = Math.Max(StatCaps.AvoidBase, defenderFloor);
+        float hi = Math.Min(StatCaps.AvoidSoftCeil, 1f - attackerHitFloor);
+        if (lo > hi) lo = hi = (lo + hi) * 0.5f;   // safety if floors ever sum >100%
+        m = Math.Clamp(m, lo, hi);
+
+        // 3: level gap overrides the class floors in favour of the higher level.
+        int diff = attackerLevel - defenderLevel;
+        float g = LevelGap(diff);
+        if (diff > 0) m = Math.Min(m, 1f - g);     // attacker higher → cap defender avoid
+        else if (diff < 0) m = Math.Max(m, g);     // defender higher → force attacker to avoid
+
+        return Math.Clamp(m, 0f, 1f);
+    }
+
+    /// <summary>Physical accuracy from DEX (+ weapon/buffs added by the caller).
+    /// Level is NO LONGER baked in — cross-level effects come from the level-gap
+    /// curve in ResolveAvoidChance.</summary>
+    public static int Accuracy(int dex) => dex;
+
+    /// <summary>Physical evasion from DEX (+ archetype/gear/buffs added by caller).
+    /// Level handled by the level-gap curve, not here.</summary>
+    public static int Evasion(int dex) => dex;
 
     // ----- Combat (Phase 2) -------------------------------------------------
 
@@ -273,16 +322,9 @@ public static class StatCalculator
     public static float MagicCritMult(float bonus = 0f) =>
         Math.Min(2.0f + bonus, StatCaps.MagicCritDamage);
 
-    /// <summary>Magic fail chance — a spell does reduced damage when it "fails".
-    /// Always at least 1%, climbs with the target's level advantage up to 90%.
-    /// <paramref name="targetMinFail"/> lets the TARGET raise the FLOOR against
-    /// itself (Tank "Anti Magic" ~10%, mages ~5%) so casters always have a real
-    /// fail chance against the prepared.</summary>
-    public static float MagicFailChance(int casterLevel, int targetLevel, float targetMinFail = 0f)
-    {
-        float floor = Math.Max(StatCaps.MagicFailFloor, targetMinFail);
-        return Math.Clamp(0.03f + (targetLevel - casterLevel) * 0.02f, floor, StatCaps.MagicFailMax);
-    }
+    // Magic fail now flows through the unified ResolveAvoidChance (magic channel):
+    // same-level magic sits at the 5% base, the anti-magic floor (ArchetypeMagicFailFloor)
+    // raises it, and the level-gap curve provides the "can't farm far above you" lockout.
 
     /// <summary>Offensive MAGIC interrupt power from WIT. Mirrors the WIT scale in
     /// InterruptResist (wit*2) so a WIT-mage out-interrupts an equal-level ATK-mage
@@ -440,13 +482,52 @@ public static class StatCalculator
         _ => 0
     };
 
-    /// <summary>Extra evasion from archetype (rogues are slippery).</summary>
+    /// <summary>Extra evasion from archetype (rogues are slippery), added to the
+    /// DEX-based evasion stat. FLAT now (no level scaling) — the rogue's guaranteed
+    /// floor lives in <see cref="ArchetypeEvadeFloor"/>; this is the extra stat-roll
+    /// evasion they carry ABOVE that floor.</summary>
     public static int ArchetypeEvasionBonus(Archetype? archetype, int level) => archetype switch
     {
-        Archetype.Rogue => 10 + level,
-        Archetype.Archer => 5 + level / 2,
+        Archetype.Rogue => 20,
+        Archetype.Archer => 10,
         _ => 0
     };
+
+    // ----- Class "sure" floors (clamp bounds in ResolveAvoidChance) --------
+    // Milestones 20 / 40 / 76 (= 4th class). See docs/CombatResolution.md.
+
+    /// <summary>Rogue EVADE floor — guaranteed minimum chance to dodge physical
+    /// attacks/skills (bypassed only by Sure-Hit / level lockout). 10/20/30%.</summary>
+    public static float ArchetypeEvadeFloor(Archetype? archetype, int level) =>
+        archetype == Archetype.Rogue ? FloorByMilestone(level, 0.10f, 0.20f, 0.30f) : 0f;
+
+    /// <summary>Warrior HIT floor — guaranteed minimum chance to LAND a physical
+    /// attack (caps the target's avoid at 1−floor, even vs a high-evasion rogue).
+    /// 10/20/30%.</summary>
+    public static float ArchetypeHitFloor(Archetype? archetype, int level) =>
+        archetype == Archetype.Warrior ? FloorByMilestone(level, 0.10f, 0.20f, 0.30f) : 0f;
+
+    /// <summary>ANTI-MAGIC floor — guaranteed minimum chance for a spell to fizzle
+    /// against this entity. Tank 10/15/20%; Mage (Nuker+Healer) —/10/10%. The
+    /// anti-magic Rogue (a 3rd-class spec, —/10/15%) plugs in here once it exists.
+    /// Warrior/everyone else = 0 (the universal 5% base still applies).</summary>
+    public static float ArchetypeMagicFailFloor(Archetype? archetype, int level) => archetype switch
+    {
+        Archetype.Tank => FloorByMilestone(level, 0.10f, 0.15f, 0.20f),
+        Archetype.Nuker => FloorByMilestone(level, 0f, 0.10f, 0.10f),
+        Archetype.Healer => FloorByMilestone(level, 0f, 0.10f, 0.10f),
+        _ => 0f
+    };
+
+    /// <summary>Step floor by class-tier milestone: &lt;20 → 0, 20–39 → t20,
+    /// 40–75 → t40, 76+ → t76.</summary>
+    private static float FloorByMilestone(int level, float t20, float t40, float t76)
+    {
+        if (level >= 76) return t76;
+        if (level >= 40) return t40;
+        if (level >= 20) return t20;
+        return 0f;
+    }
 
     /// <summary>Tank "Anti Magic" passive: extra MAGIC defence on top of the level
     /// base, roughly doubling a tank's innate magic resistance. (Modeled as an
@@ -456,17 +537,6 @@ public static class StatCalculator
     {
         Archetype.Tank => level / 2,   // doubles the level-based base
         _ => 0
-    };
-
-    /// <summary>The MINIMUM magic-fail chance an attacker has against this target.
-    /// Tanks ("Anti Magic") and mages harden themselves so spells always have a
-    /// real chance to fizzle on them.</summary>
-    public static float ArchetypeMagicFailFloor(Archetype? archetype) => archetype switch
-    {
-        Archetype.Tank => 0.10f,
-        Archetype.Nuker => 0.05f,
-        Archetype.Healer => 0.05f,
-        _ => 0f
     };
 
     /// <summary>Rogue passive: their BASIC attacks carry magic-interrupt power

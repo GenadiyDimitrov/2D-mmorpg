@@ -1615,8 +1615,11 @@ var effect = def.Effect;
         if (effect.HasFlag(SkillEffect.PhysicalDamage))
         {
             offensive = true;
-            float miss = StatCalculator.MissChance(
-                caster.Accuracy + SkillMath.PhysicalSkillAccuracyBonus, (int)target.EffectiveEvasion);
+            float miss = StatCalculator.ResolveAvoidChance(
+                caster.Accuracy + SkillMath.PhysicalSkillAccuracyBonus, (int)target.EffectiveEvasion,
+                target.EvadeFloor, caster.HitFloor,
+                caster.Level, target.Level,
+                sureHit: def.SureHit, defenderImmune: target.Immune);
 
             if (_rng.NextDouble() < miss)
             {
@@ -1651,9 +1654,13 @@ var effect = def.Effect;
             // skill's flat InterruptPower (Disrupt's 99999 still dominates).
             int magicInterrupt = def.InterruptPower + caster.MagicInterruptBonus;
 
-            // Magic "fail" = reduced damage (not zero). The TARGET can raise the
-            // floor (Tank "Anti Magic" / mages), and level gap pushes it higher.
-            float fail = StatCalculator.MagicFailChance(caster.Level, target.Level, target.MagicFailFloor);
+            // Magic "fail" = reduced damage (not zero). Unified resolver: stat term is
+            // 0 (no magic pen/resist race yet) so same-level magic sits at the 5% base;
+            // the anti-magic floor raises it and the level-gap curve locks out farming up.
+            float fail = StatCalculator.ResolveAvoidChance(
+                0, 0, target.MagicFailFloor, 0f,
+                caster.Level, target.Level,
+                sureHit: def.SureHit, defenderImmune: target.Immune);
             if (_rng.NextDouble() < fail)
             {
                 damage = Math.Max(1, damage / 3);
@@ -1698,11 +1705,14 @@ var effect = def.Effect;
                 CleanseDebuffs(caster, target, def.Name);
         }
 
-        // ---- Debuffs (defence curse / anti-heal / root) — can miss like a spell ----
+        // ---- Debuffs (defence curse / anti-heal / root) — can fizzle like a spell ----
         if ((effect & SkillEffect.AnyDebuff) != 0)
         {
             offensive = true;
-            float fail = SkillMath.SpellFailChance(caster.Level, target.Level);
+            float fail = StatCalculator.ResolveAvoidChance(
+                0, 0, target.MagicFailFloor, 0f,
+                caster.Level, target.Level,
+                sureHit: def.SureHit, defenderImmune: target.Immune);
             if (_rng.NextDouble() < fail)
             {
                 BroadcastCombat(caster, target, 0, CombatOutcome.Fail, def.Name);
@@ -1921,7 +1931,11 @@ var effect = def.Effect;
 
     private void ResolveBasicAttack(Entity attacker, Entity target)
     {
-        float missChance = StatCalculator.MissChance(attacker.Accuracy, (int)target.EffectiveEvasion);
+        float missChance = StatCalculator.ResolveAvoidChance(
+            attacker.Accuracy, (int)target.EffectiveEvasion,
+            target.EvadeFloor, attacker.HitFloor,
+            attacker.Level, target.Level,
+            sureHit: false, defenderImmune: target.Immune);
 
         if (_rng.NextDouble() < missChance)
         {

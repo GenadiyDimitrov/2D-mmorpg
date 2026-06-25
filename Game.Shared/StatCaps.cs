@@ -40,6 +40,23 @@ public static class StatCaps
     /// <summary>Magic-fail ceiling (level gap can push fail up to 90%).</summary>
     public const float MagicFailMax = 0.90f;
 
+    // ----- Unified hit resolution (see docs/CombatResolution.md) -----
+    // One resolver decides land-vs-avoid for BOTH channels (physical miss, magic fail).
+    // The stat roll lives inside a soft [AvoidBase, AvoidSoftCeil] band; true 0/100% are
+    // reached only by the level-gap lockout and by Sure-Hit / Immunity flags.
+
+    /// <summary>Avoid (miss/fail) chance at equal stats — the universal base.
+    /// Symmetric guarantee: never below 5% to land, never above 95% from stats alone.</summary>
+    public const float AvoidBase = 0.05f;
+
+    /// <summary>Soft ceiling on the stat-roll portion (95% land floor lives at 1−this).
+    /// The level-gap term and Immunity can still push the final avoid to 100%.</summary>
+    public const float AvoidSoftCeil = 0.95f;
+
+    /// <summary>Avoid chance moved per point of (defenderAvoidStat − attackerHitStat).
+    /// First-pass tuning knob (1%/pt); the class floors carry most of the identity.</summary>
+    public const float AvoidStatSlope = 0.01f;
+
     /// <summary>Legacy single crit-chance cap (kept for old references).</summary>
     public const float CritChance = 0.50f;
 

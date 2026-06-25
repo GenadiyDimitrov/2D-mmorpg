@@ -30,6 +30,7 @@ public record SkillDef(
     int InterruptPower = 0,
     int InitialMpCost = -1,
     float BlockAccuracy = 0f,
+    bool SureHit = false,
     PassiveEffect? Passive = null,
     string Abbrev = "")
 {

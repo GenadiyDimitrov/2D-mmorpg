@@ -184,7 +184,10 @@ public class Entity
     public int InterruptResist { get; set; }    // resist casting interruption (from WIT)
     public int MagicInterruptBonus { get; set; } // OFFENSIVE magic interrupt power (from WIT)
     public int BasicAttackInterruptPower { get; set; } // interrupt power carried by basic attacks (rogues)
-    public float MagicFailFloor { get; set; }   // minimum magic-fail chance attackers have vs this entity
+    public float MagicFailFloor { get; set; }   // anti-magic floor: min magic-fail chance attackers have vs this entity
+    public float EvadeFloor { get; set; }        // rogue: guaranteed min chance to dodge physical attacks
+    public float HitFloor { get; set; }          // warrior: guaranteed min chance THIS entity lands a physical attack
+    public bool Immune { get; set; }             // ultimate total-avoid (future buff); attacks always miss/fail
     public float HpRegenBonus { get; set; }     // flat HP/s from gear attributes
     public float MpRegenBonus { get; set; }     // flat MP/s from gear attributes
     public float HpRegenMult { get; set; } = 1f; // HP-regen multiplier (armor mastery)
@@ -446,9 +449,12 @@ public class Entity
                 ? StatCalculator.MagicDefenceBase(Level)
                 : StatCalculator.MobDefence(Con, Level))
             + StatCalculator.ArchetypeMagicDefenceBonus(Archetype, Level);
-        MagicFailFloor = StatCalculator.ArchetypeMagicFailFloor(Archetype);
-        Accuracy = StatCalculator.Accuracy(EffectiveDex, Level);
-        Evasion = StatCalculator.Evasion(EffectiveDex, Level);
+        MagicFailFloor = StatCalculator.ArchetypeMagicFailFloor(Archetype, Level);
+        EvadeFloor = StatCalculator.ArchetypeEvadeFloor(Archetype, Level);
+        HitFloor = StatCalculator.ArchetypeHitFloor(Archetype, Level);
+        Immune = false;
+        Accuracy = StatCalculator.Accuracy(EffectiveDex);
+        Evasion = StatCalculator.Evasion(EffectiveDex);
         CritChance = StatCalculator.PhysicalCritChance(EffectiveDex);
         MagicCritChance = StatCalculator.MagicCritChance(EffectiveWit);
         InterruptResist = StatCalculator.InterruptResist(EffectiveWit, Level);
