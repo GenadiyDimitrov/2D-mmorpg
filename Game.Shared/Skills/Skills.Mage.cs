@@ -57,8 +57,8 @@ public static partial class SkillCatalog
             }),
 
         // Might — party-castable Attack & Defence buff (20 min). Lvl 1 = base-mage
-        // (+8%/+8%); the Healer CONTINUES it at lvls 2-3 (20/25). Lvl 4 (with basic-
-        // attack vampirism) lands in Increment 2.
+        // (+8%/+8%); the Healer CONTINUES it at lvls 2-4 (20/25/30); lvl 4 adds basic-
+        // (melee) attack vampirism.
         new(Might, "Might", BaseClass.Mage, SkillEffect.BuffAtk | SkillEffect.BuffDef,
             MpCost: 20, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
             DurationTicks: 12000, BuffKey: "mage_might", Rank: 1, InitialMpCost: 4,
@@ -79,6 +79,13 @@ public static partial class SkillCatalog
                 new SkillLevel(MpCost: 50, InitialMpCost: 10, SpCost: 6400,
                     Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtk, 0.12f), new(SkillEffect.BuffDef, 0.12f) },
                     Description: "+12% Attack and +12% Defence for 20 minutes."),
+                new SkillLevel(MpCost: 50, InitialMpCost: 10, SpCost: 12800,
+                    Magnitudes: new EffectMagnitude[]
+                    {
+                        new(SkillEffect.BuffAtk, 0.12f), new(SkillEffect.BuffDef, 0.12f),
+                        new(SkillEffect.BuffMeleeVamp, 0.08f),
+                    },
+                    Description: "+12% Attack, +12% Defence, and 8% melee-attack vampirism for 20 minutes."),
             }),
 
         // Anti-Magic — learnable mage passive: +M.Def and a magic-fail (fizzle) floor.

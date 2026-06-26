@@ -82,9 +82,18 @@ public static partial class ClassSkillTables
                 new ClassSkill(PartyHeal, 30, SkillLevel: 3),
                 new ClassSkill(PartyHeal, 35, SkillLevel: 4),
 
-                // Might — continues the base-mage buff (lvls 2-3; lvl 4 w/ vampirism = Inc 2).
+                // Might — continues the base-mage buff (lvls 2-4; lvl 4 adds melee vampirism).
                 new ClassSkill(Might, 20, SkillLevel: 2),
                 new ClassSkill(Might, 25, SkillLevel: 3),
+                new ClassSkill(Might, 30, SkillLevel: 4),
+
+                // Force — interrupt resist (+M.Atk @rank 2).
+                new ClassSkill(HolyForce, 20, SkillLevel: 1),
+                new ClassSkill(HolyForce, 25, SkillLevel: 2),
+
+                // Focus — physical crit-rate buff (25). Frenzy — berserk buff (35).
+                new ClassSkill(HolyFocus, 25, SkillLevel: 1),
+                new ClassSkill(HolyFrenzy, 35, SkillLevel: 1),
 
                 // Speed — cast/move/evasion buff.
                 new ClassSkill(HolySpeed, 20, SkillLevel: 1),

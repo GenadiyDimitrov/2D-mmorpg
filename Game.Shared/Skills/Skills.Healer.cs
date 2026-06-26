@@ -14,6 +14,9 @@ public static partial class SkillCatalog
     public const string SpellMastery = "spell_mastery";
     public const string RestoreMana = "restore_mana";
     public const string ArmorMasterySkill = "armor_mastery";   // data-driven, replaces Robe Mastery
+    public const string HolyForce = "holy_force";    // "Force" — interrupt resist (+M.Atk @rank 2)
+    public const string HolyFocus = "holy_focus";    // "Focus" — physical crit-rate buff
+    public const string HolyFrenzy = "holy_frenzy";  // "Frenzy" — berserk trade-off buff
 
     /// <summary>Healer Armor Mastery per-weight data (lvls 20/25/30/35). Robe = caster lean
     /// (+MP regen / def / max MP); Light = stay-casting + sturdier (+def, slight cast cost,
@@ -142,23 +145,70 @@ public static partial class SkillCatalog
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffHpRegen, 0.10f) },
             Description: "Blesses an ally (or self) with +10% HP regeneration for 20 minutes."),
 
-        // Spell Mastery — caster passive (replaces Weapon Mastery). Increment 1 wires the
-        // flat M/P.Atk + cast-speed parts; the reuse-delay reduction and the mp/hp-regen
-        // MULTIPLIERS land in Increment 2 (they need new PassiveEffect primitives).
+        // Spell Mastery — caster passive (replaces Weapon Mastery). Flat M/P.Atk, a 10%
+        // reuse-delay reduction, +5% cast speed and (from lvl 2) MP/HP-regen multipliers.
         new(SpellMastery, "Spell Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, Replaces: new[] { WeaponMastery },
-            Description: "Passive. Sharpens your spellcasting — more M.Atk/P.Atk and faster casts.",
+            Description: "Passive. Sharpens your spellcasting — more M.Atk/P.Atk, faster casts, shorter reuse.",
             Levels: new[]
             {
-                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(MagAtk: 6,  PhysAtk: 4),
-                    Description: "+6 M.Atk, +4 P.Atk."),
-                new SkillLevel(SpCost: 6400,  Passive: new PassiveEffect(MagAtk: 8,  PhysAtk: 6,  CastSpeedPct: 0.05f),
-                    Description: "+8 M.Atk, +6 P.Atk, +5% cast speed."),
-                new SkillLevel(SpCost: 12800, Passive: new PassiveEffect(MagAtk: 10, PhysAtk: 8,  CastSpeedPct: 0.05f),
-                    Description: "+10 M.Atk, +8 P.Atk, +5% cast speed."),
-                new SkillLevel(SpCost: 25000, Passive: new PassiveEffect(MagAtk: 12, PhysAtk: 10, CastSpeedPct: 0.05f),
-                    Description: "+12 M.Atk, +10 P.Atk, +5% cast speed."),
+                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(MagAtk: 6,  PhysAtk: 4,  CooldownPct: 0.10f),
+                    Description: "+6 M.Atk, +4 P.Atk, -10% skill reuse."),
+                new SkillLevel(SpCost: 6400,  Passive: new PassiveEffect(MagAtk: 8,  PhysAtk: 6,  CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegenPct: 0.10f),
+                    Description: "+8 M.Atk, +6 P.Atk, +5% cast, -10% reuse, +10% MP regen."),
+                new SkillLevel(SpCost: 12800, Passive: new PassiveEffect(MagAtk: 10, PhysAtk: 8,  CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegenPct: 0.10f),
+                    Description: "+10 M.Atk, +8 P.Atk, +5% cast, -10% reuse, +10% MP regen."),
+                new SkillLevel(SpCost: 25000, Passive: new PassiveEffect(MagAtk: 12, PhysAtk: 10, CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegenPct: 0.50f, HpRegenPct: 0.10f),
+                    Description: "+12 M.Atk, +10 P.Atk, +5% cast, -10% reuse, +50% MP regen, +10% HP regen."),
             }),
+
+        // Force — steadies casting (interrupt resist = "magic-cancel resist"); rank 2 adds
+        // a big Magic Attack buff. 2 levels (20/25), castable on an ally or self.
+        new(HolyForce, "Force", BaseClass.Mage,
+            SkillEffect.BuffInterruptResist | SkillEffect.BuffMagAtk,
+            MpCost: 25, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
+            DurationTicks: 12000, BuffKey: "holy_force", Rank: 1, InitialMpCost: 5,
+            Category: SkillCategory.Buff,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffInterruptResist, 18, ModifierMode.Flat) },
+            Description: "Steadies an ally's casting (harder to interrupt/cancel); higher ranks add Magic Attack.",
+            Levels: new[]
+            {
+                new SkillLevel(MpCost: 25, InitialMpCost: 5,  SpCost: 3200,
+                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffInterruptResist, 18, ModifierMode.Flat) },
+                    Description: "+18 interrupt resistance (harder to cancel your casts)."),
+                new SkillLevel(MpCost: 50, InitialMpCost: 10, SpCost: 6400,
+                    Magnitudes: new EffectMagnitude[]
+                    {
+                        new(SkillEffect.BuffInterruptResist, 25, ModifierMode.Flat),
+                        new(SkillEffect.BuffMagAtk, 0.55f),
+                    },
+                    Description: "+25 interrupt resistance and +55% Magic Attack."),
+            }),
+
+        // Focus — +20% physical crit rate (for melee allies). Single level (25).
+        new(HolyFocus, "Focus", BaseClass.Mage, SkillEffect.BuffCritRate,
+            MpCost: 25, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
+            DurationTicks: 12000, BuffKey: "holy_focus", Rank: 1, InitialMpCost: 5,
+            Category: SkillCategory.Buff, SpCost: 6400,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffCritRate, 0.20f) },
+            Description: "Sharpens an ally's aim: +20% physical critical rate for 20 minutes."),
+
+        // Frenzy — reckless surge: lower Max HP/MP for more offence + speed. Single level (35).
+        new(HolyFrenzy, "Frenzy", BaseClass.Mage,
+            SkillEffect.BuffHp | SkillEffect.BuffMp | SkillEffect.BuffPhysAtk | SkillEffect.BuffMagAtk
+            | SkillEffect.BuffCastSpeed | SkillEffect.BuffAtkSpeed | SkillEffect.BuffMoveSpeed,
+            MpCost: 125, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
+            DurationTicks: 12000, BuffKey: "holy_frenzy", Rank: 1, InitialMpCost: 25,
+            Category: SkillCategory.Buff, SpCost: 25000,
+            Magnitudes: new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffHp, -0.30f), new(SkillEffect.BuffMp, -0.30f),
+                new(SkillEffect.BuffPhysAtk, 0.05f), new(SkillEffect.BuffMagAtk, 0.10f),
+                new(SkillEffect.BuffCastSpeed, 0.05f), new(SkillEffect.BuffAtkSpeed, 0.05f),
+                new(SkillEffect.BuffMoveSpeed, 5, ModifierMode.Flat),
+            },
+            Description: "A reckless surge: -30% Max HP/MP, but +5% Attack, +10% Magic Attack, "
+                       + "+5% cast & attack speed and +5 move speed for 20 minutes."),
     };
 }
