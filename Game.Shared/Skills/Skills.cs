@@ -194,6 +194,7 @@ public static partial class SkillCatalog
         list.AddRange(FighterSkills());       // Skills.Fighter.cs
         list.AddRange(MageSkills());          // Skills.Mage.cs
         list.AddRange(HealerSkills());        // Skills.Healer.cs (2nd-class Healer kit)
+        list.AddRange(ArmorMasterySkills());  // Skills.Masteries.cs (data-driven per-archetype)
         list.AddRange(LightbringerSkills());  // Skills.Lightbringer.cs
         list.AddRange(WarchanterSkills());    // Skills.Warchanter.cs
 

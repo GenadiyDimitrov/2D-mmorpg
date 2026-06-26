@@ -767,9 +767,9 @@ public class Entity
             MaxMp = (int)((MaxMp + mEff.MaxMpFlat) * mEff.MaxMp);
             Evasion += mEff.Evasion;
             Accuracy += mEff.Accuracy;
-            Defence += mEff.Defence;
-            MagicDefence += mEff.MagicDefence;
-            InterruptResist += mEff.InterruptResist;
+            Defence += mEff.Defence + (int)(Level * mEff.DefPerLevel);
+            MagicDefence += mEff.MagicDefence + (int)(Level * mEff.MagicDefPerLevel);
+            InterruptResist += mEff.InterruptResist + (int)(Level * mEff.InterruptResistPerLevel);
             if (mEff.CritRate != 0f) CritChance = Math.Clamp(CritChance + mEff.CritRate, 0f, 0.75f);
             CritDamageBonus += mEff.CritDamage;
 

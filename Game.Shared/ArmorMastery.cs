@@ -21,6 +21,11 @@ public readonly record struct MasteryEffect(
     int Defence = 0,
     int MagicDefence = 0,
     int InterruptResist = 0,
+    // Per-CHARACTER-LEVEL coefficients (the old hardcoded "defL"/"level/2" terms, now
+    // data): each adds (int)(level * coefficient) on top of the flat value above.
+    float DefPerLevel = 0f,
+    float MagicDefPerLevel = 0f,
+    float InterruptResistPerLevel = 0f,
     float CritRate = 0f,     // flat crit-rate points (0..1)
     float CritDamage = 0f);  // flat crit-multiplier bonus
 
@@ -81,55 +86,21 @@ public static class ArmorMastery
         return Penalty(cls, arch, worn);
     }
 
-    /// <summary>The trained bonus for a class wearing an APPROPRIATE weight, or null
-    /// if that weight isn't one this class trains. (Magnitudes unchanged from before;
-    /// learning now gates whether they apply.)</summary>
+    /// <summary>The trained bonus for a class wearing an APPROPRIATE weight, or null if
+    /// that weight isn't one this class trains. 2nd-class archetypes now carry their
+    /// mastery numbers in DATA (Skills.Masteries.cs / Skills.Healer.cs) and take the
+    /// data-driven path in Entity.RecomputeDerived; only the BASE-class default remains
+    /// here as the pre-class-change fallback (Mage trains robe, Fighter trains light).</summary>
     private static MasteryEffect? MatchedEffect(BaseClass cls, Archetype? arch, ArmorWeight worn, int level)
     {
         int defL = level;
-        switch (arch)
-        {
-            case Archetype.Tank:
-                return worn == ArmorWeight.Heavy
-                    ? new MasteryEffect(MaxHp: 1.2f, HpRegen: 1.3f, Defence: defL + 20, MagicDefence: 20 + level / 2)
-                    : null;
-            case Archetype.Warrior:
-                return worn switch
-                {
-                    ArmorWeight.Heavy => new MasteryEffect(MaxHp: 1.1f, HpRegen: 1.2f, Defence: defL),
-                    ArmorWeight.Light => new MasteryEffect(MaxHp: 1.05f, AtkSpeed: 1.15f, Evasion: 3, Accuracy: 3, Defence: defL / 2),
-                    _ => null
-                };
-            case Archetype.Healer:
-                // Robe = caster lean; Light = solo-farm/melee lean. Both trainable.
-                return worn switch
-                {
-                    ArmorWeight.Robe => new MasteryEffect(CastSpeed: 1.3f, MpRegen: 1.3f, MaxMp: 1.15f, Defence: defL / 2),
-                    ArmorWeight.Light => new MasteryEffect(AtkSpeed: 1.3f, MoveSpeed: 1.05f, HpRegen: 1.1f, Evasion: 4, Accuracy: 4, Defence: defL),
-                    _ => null
-                };
-            case Archetype.Nuker:
-                return worn == ArmorWeight.Robe
-                    ? new MasteryEffect(CastSpeed: 1.4f, MpRegen: 1.3f, MaxMp: 1.15f, InterruptResist: level, MagicDefence: 10 + level / 2, Defence: defL / 2)
-                    : null;
-            case Archetype.Rogue:
-                return worn == ArmorWeight.Light
-                    ? new MasteryEffect(AtkSpeed: 1.35f, MoveSpeed: 1.1f, Evasion: 5, Accuracy: 5, Defence: defL / 2)
-                    : null;
-            case Archetype.Archer:
-                return worn == ArmorWeight.Light
-                    ? new MasteryEffect(AtkSpeed: 1.3f, CritRate: 0.05f, CritDamage: 0.2f, Evasion: 4, Accuracy: 4, Defence: defL / 2)
-                    : null;
-            default:
-                // Base class (no archetype yet): Mage trains robe, Fighter trains light.
-                if (cls == BaseClass.Mage)
-                    return worn == ArmorWeight.Robe
-                        ? new MasteryEffect(CastSpeed: 1.3f, MpRegen: 1.2f, MaxMp: 1.1f, Defence: defL / 2)
-                        : null;
-                return worn == ArmorWeight.Light
-                    ? new MasteryEffect(AtkSpeed: 1.3f, HpRegen: 1.2f, Evasion: 3, Accuracy: 3, Defence: defL / 2)
-                    : null;
-        }
+        if (cls == BaseClass.Mage)
+            return worn == ArmorWeight.Robe
+                ? new MasteryEffect(CastSpeed: 1.3f, MpRegen: 1.2f, MaxMp: 1.1f, Defence: defL / 2)
+                : null;
+        return worn == ArmorWeight.Light
+            ? new MasteryEffect(AtkSpeed: 1.3f, HpRegen: 1.2f, Evasion: 3, Accuracy: 3, Defence: defL / 2)
+            : null;
     }
 
     /// <summary>Penalty for wearing a weight this class does NOT train. Robe never
