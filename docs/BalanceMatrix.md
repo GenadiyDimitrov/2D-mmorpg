@@ -4,6 +4,16 @@
 > whenever a combat formula or constant changes. Reference point for the matrix:
 > **level 40, no buffs, same starter (F-grade) gear.**
 
+> **Update 2026-06-26 (healer effect layer):** added a broad buff/effect primitive
+> layer (channel-split P/M.Atk buffs, p/m crit rate, crit-dmg/rate resist, bow resist,
+> magic-fail floor/resist, interrupt power/resist, melee/spell vamp, cooldown reduction,
+> flat+% Max HP/MP & regen, MP restore, % heal). **The base damage/crit/HP/def formulas
+> and stats are UNCHANGED**, so the **no-buff matrix in §C still holds.** What changed for
+> a FUTURE *buffed* matrix: those effects now exist and the 2nd-class **Healer** has a full
+> buff kit (see §F). Spell **range is now per-spell** (not class-tier) — affects kiting,
+> not the per-hit numbers. Armor mastery is now data-driven (same numbers). A complete
+> buffed matrix still waits on the other classes' buff kits.
+
 ---
 
 ## A. Reference formulas (owner's canonical L2-Legacy spec)
@@ -52,6 +62,10 @@ Base dmg lvl-mult = (Level + 89) / 100   [listed, but NOT used in the dmg formul
 | **MP** | ✅ **reworked** | `(MpClassLevelMod·(L²+3L)/2 + Level1BaseMp) × MEN modifier`; scales with **MEN** (Healer 0.68/Nuker 0.53/fighter 0.17 tiers; base mage 0.50). Mobs use a simple level curve. |
 | **Soulshot / Spiritshot** | ➖ **cut** | DESIGN DECISION: no damage consumables. The leveled **Attack training** passive (above) is the permanent replacement — there is no shot system to build. |
 | **(Level+89)/100 dmg mult** | ➖ removed | listed in ref data but the explicit dmg formulas omit it; we removed it from physical. Ambiguous — leaving out for now. |
+
+| **Buff/effect layer** | ✅ **built (2026-06-26)** | `SkillEffect` widened to `long`; flat+% Max HP/MP & regen, channel-split P/M.Atk buffs, p/m crit rate, crit-dmg/rate resist, bow resist, magic-fail floor/resist, interrupt power/resist, melee/spell vamp, cooldown reduction, % heal, MP restore. Folded in `RecomputeDerived` + combat hooks. Inert unless a buff/passive carries them. |
+| **Armor mastery** | ✅ **data-driven (2026-06-26)** | Per-archetype `ArmorMasteryProfile` skills (Skills.Masteries.cs / Skills.Healer.cs) replace the hardcoded table; numbers translated 1:1, level-scaling via `*PerLevel` coefficients. |
+| **Spell range** | ✅ **per-spell (2026-06-26)** | `EffectiveRange` returns `def.Range`; no class-tier scaling (bow skills excepted). Heals 600 < attack spells; Holy Bolt 750, Flamebolt 900. |
 
 > **Hit / evade / magic-fail** moved to a unified resolver + level-gap curve + class
 > floors (now learnable passives). That layer has its own spec — see
@@ -109,11 +123,12 @@ Base dmg lvl-mult = (Level + 89) / 100   [listed, but NOT used in the dmg formul
 
 ---
 
-## E. Skill-power spec — for the future skill-levels (rank) system
-> NOT implemented yet (no skill ranks). Today each nuke is a single flat power
-> (Magic Bolt 45 · Holy Strike 70 · Flame Bolt 95 · 3rd-class 120). When skill
-> levels land, span each nuke's power across character levels per the chain below,
-> and use these when (re)generating the damage matrix.
+## E. Skill-power spec — skill levels (ranks)
+> **Skill levels are now IMPLEMENTED** (`SkillDef.Levels[]`; one skill, per-level power).
+> Live powers: base **Magic Bolt** 12/15/21 (L1/7/14) → **Holy Bolt** (healer) 21/25/30/36
+> (L20/25/30/35) / **Flame Bolt** (nuker) 95. Healer **Heal** 67/107/151/195/245/301;
+> Quick Heal 151/195/245/301; Party Heal 121/156/196/241. The chain below is the design
+> shape to keep extending (3rd/4th-class spans); use it when regenerating the matrix.
 
 **Mage single-target nuke chain (L2 reference, pmfun — "okish" per owner):**
 | Tier | L2 name | Char levels | Power span (L2 scale) |
@@ -127,3 +142,26 @@ Base dmg lvl-mult = (Level + 89) / 100   [listed, but NOT used in the dmg formul
 - These are L2-scale powers (their formula uses K=91). **Our `MagicK` stays 8** — keep these as the *relative shape* (Wind < Twister < Hurricane; healer ≈ 12% below nuker, slower ramp), feeding our `8·power·√mAtk/mDef`.
 - Sanity at our scale (L40 trained mage, mAtk 246, vs fighter mDef 46): power 49 → ~134, power 108 → ~295 per hit (before crit/variance/mDef-debuff).
 - Source: pmfun Spellhowler (Hurricane 49→78 @L40–56, extrapolated to ~108 @L74). base.l2j.ru preferred but unreachable (self-signed cert).
+
+---
+
+## F. 2nd-class Healer buff kit (for the future BUFFED matrix)
+> The first full buff kit. When a buffed matrix is generated, fold these (cast on the
+> relevant ally) on top of the §C baseline. Buffs castable on allies / self.
+
+| Buff (lvl) | Effect (combat-relevant) |
+|---|---|
+| **Might** 2/3/4 | +12% Attack (both channels) · +8/12/12% Defence · lvl4 also 8% melee vampirism |
+| **Force** 1/2 | +18/25 interrupt resist ("magic-cancel resist") · lvl2 also **+55% M.Atk** |
+| **Focus** | +20% physical crit rate |
+| **Speed** 1–4 | +15→23% cast speed · +20/33 move · +2 evasion |
+| **Body** | +10% HP regen |
+| **Frenzy** | **−30% Max HP & MP** · +5% P.Atk · +10% M.Atk · +5% cast & atk speed · +5 move |
+| **Restore Mana** | +60 MP (instant, on an ally) |
+
+**Passives (always on):** Spell Mastery (+M/P.Atk, +5% cast, **−10% reuse**, MP/HP-regen mult),
+Anti-Magic (+M.Def + magic-fail floor 5→10%), Armor Mastery (per worn weight: robe = +MP/regen/def).
+
+> Note for the buffed mage matrix: Force's **+55% M.Atk** → only **√1.55 ≈ +24%** magic damage
+> (√mAtk model), and Frenzy's +10% M.Atk → ~+5% damage. Crit/vamp/interrupt buffs shift the
+> *feel* (burst, sustain, cast-protection) more than the per-hit average.
