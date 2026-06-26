@@ -117,20 +117,20 @@ public static partial class SkillCatalog
             Description: "Passive. +4 M.Atk and +2 P.Atk."),
 
         new(Weakness, "Weakness", BaseClass.Mage, SkillEffect.DebuffDef,
-            MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 500, Power: 0,
+            MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 600, Power: 0,
             DurationTicks: 150, BuffKey: "curse_def", Rank: 1,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.DebuffDef, 0.30f) },
             Category: SkillCategory.Debuff, SureHit: true,
             Description: "Curses the target: -30% Defence for 15s (instant cast, never fizzles)."),
 
         new(GreaterHeal, "Greater Heal", BaseClass.Mage, SkillEffect.Heal,
-            MpCost: 35, CastTicks: 35, CooldownTicks: 15, Range: 500, Power: 150,
+            MpCost: 35, CastTicks: 35, CooldownTicks: 15, Range: 600, Power: 150,
             Replaces: new[] { Heal },   // upgrades (replaces) the basic heal
             Category: SkillCategory.Heal,
             Description: "A powerful heal that can target an ally at range (replaces Heal)."),
 
         new(FlameBolt, "Flamebolt", BaseClass.Mage, SkillEffect.MagicDamage,
-            MpCost: 24, CastTicks: 40, CooldownTicks: 10, Range: 500, Power: 95,
+            MpCost: 24, CastTicks: 40, CooldownTicks: 10, Range: 900, Power: 95,
             Replaces: new[] { MagicBolt },   // upgrades (replaces) the basic nuke
             Category: SkillCategory.Magic,
             Description: "A searing bolt — the nuker's stronger basic attack (replaces Magic Bolt)."),
@@ -152,7 +152,7 @@ public static partial class SkillCatalog
             }),
 
         new(GreaterWeakness, "Greater Weakness", BaseClass.Mage, SkillEffect.DebuffDef,
-            MpCost: 22, CastTicks: 5, CooldownTicks: 300, Range: 500, Power: 0,
+            MpCost: 22, CastTicks: 5, CooldownTicks: 300, Range: 900, Power: 0,
             DurationTicks: 200, BuffKey: "curse_def", Rank: 2,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.DebuffDef, 0.45f) },
             Category: SkillCategory.Debuff, SureHit: true,

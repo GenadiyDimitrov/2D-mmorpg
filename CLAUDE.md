@@ -108,10 +108,13 @@ and are adapted from L2 references.
   stacking. Stacking rules in `ApplyBuff`: (1) same `BuffKey` compares `Rank`
   (incoming ≥ existing → replace; weaker → ignore); (2) explicit `Replaces[]`
   removes listed buffs. Per-class flavor = `DisplayName` override on `ClassSkill`.
-- **Skill ranges scale by class tier** (`SkillMath.RangeTier`: 1=lvl1-20, 2=21-40,
-  3=40+). Magic skills 500/750/900; bow skills 350/600/900. Archer basic-attack
-  range grows by tier too. Magic weapons have NO weapon range (melee basic, tiny
-  basic damage — power is in spells). Only bows have basic range (400 base).
+- **Spell range is PER-SPELL** (the skill's own `Range`), NOT class-tier-based:
+  `SkillMath.EffectiveRange` returns `def.Range` for spells (heals shorter than attack
+  spells; healer attack ~750, nuker ~900, base nuke 600 — authored per skill). The ONE
+  exception kept is **bow skills**, which still scale with the archer's bow tier
+  (350/600/900, `SkillMath.RangeTier`), matching the bow basic-attack range growth.
+  Magic weapons have NO weapon range (melee basic, tiny basic damage — power is in
+  spells). Only bows have basic range (400 base).
 - **Daggers are treated as DUALs** (`WeaponType.Dual`) — fast, lower per-hit.
 - **Class change** grants flat secondary bonuses (`ClassFlatBonus` on
   `SecondClassDef`) for class identity (e.g. tank flat +Def/+HP) — primary stats are

@@ -201,31 +201,24 @@ public static class SkillMath
     public static int RangeTier(int level) =>
         level >= 41 ? 3 : level >= 21 ? 2 : 1;
 
-    /// <summary>Effective range of a skill for a given caster. The skill's Range
-    /// field is the tier-1 base; magic and bow skills step up by tier:
-    ///   magic: 500 / 750 / 900   bow: 350 / 600 / 900
-    /// Non-tiered skills (melee, range 0) just use their own value / basic range.</summary>
+    /// <summary>Effective range of a skill for a given caster. SPELLS (and everything
+    /// else) use their OWN <see cref="SkillDef.Range"/> — range is a property of the spell,
+    /// not the class tier (heals are shorter than attack spells; a healer's bolt reaches
+    /// 750, a nuker's 900, by how each spell is authored). The ONE exception kept is BOW
+    /// skills, whose reach still grows with the archer's bow tier (350/600/900), matching
+    /// the bow basic-attack range scaling.</summary>
     public static float EffectiveRange(SkillDef def, Archetype? archetype, float basicAttackRange, int level)
     {
         if (def.Range <= 0)
             return basicAttackRange;
 
-        int tier = RangeTier(level);
-
-        bool isSpell = def.Effect.HasFlag(SkillEffect.MagicDamage)
-            || def.Effect.HasFlag(SkillEffect.DebuffDef)
-            || def.Effect.HasFlag(SkillEffect.Heal);
-
-        // Bow skills: archer ranged physical attacks scale 350/600/900.
+        // Bow skills: archer ranged physical attacks still scale by bow tier.
         bool isBowSkill = def.Effect.HasFlag(SkillEffect.PhysicalDamage)
             && archetype is Archetype.Archer && def.Range >= 300;
-
-        if (isSpell)
-            return tier switch { 3 => 900f, 2 => 750f, _ => 500f };
         if (isBowSkill)
-            return tier switch { 3 => 900f, 2 => 600f, _ => 350f };
+            return RangeTier(level) switch { 3 => 900f, 2 => 600f, _ => 350f };
 
-        return def.Range;
+        return def.Range;   // the spell's authored range
     }
 
     // Backwards-compatible overload (assumes tier 1) for any caller without level.
