@@ -167,9 +167,10 @@ public static class ItemCatalog
             (WeaponType.Sword, WeaponHands.OneHand, "Sword", 6,  0,   0),
             (WeaponType.Dual,  WeaponHands.TwoHand, "Daggers", 5, 0,  0),   // dual: lower per-hit, faster
             (WeaponType.Bow,   WeaponHands.TwoHand, "Bow",   7,  400, 0),
-            // Generated Blunt line = the 2H caster STAFF (tiny basic atk, high mAtk,
-            // gives MP; power is in SPELLS, no weapon range). 1H blunts are hand-added below.
-            (WeaponType.Blunt, WeaponHands.TwoHand, "Staff", 2,  0,   20),
+            // Generated Blunt line = the 2H caster STAFF (real caster weapon: meaningful
+            // P/M.Atk, gives MP, no weapon range; the mage's tiny BASIC hit comes from the
+            // 0.15 basic-attack multiplier, not the weapon). 1H blunts are hand-added below.
+            (WeaponType.Blunt, WeaponHands.TwoHand, "Staff", 23, 0,   20),
         };
 
         foreach (var w in weaponInfo)
@@ -191,7 +192,7 @@ public static class ItemCatalog
                     // so hybrid weapons are possible. Tune the fractions here.
                     float mAtkFraction = w.Type switch
                     {
-                        WeaponType.Blunt => 1.20f,   // 2H staff: caster weapon, high mAtk
+                        WeaponType.Blunt => 1.05f,   // 2H staff: caster weapon (F-Common = 23 pAtk / 24 mAtk)
                         WeaponType.Bow => 0.25f,
                         WeaponType.Dual => 0.30f,
                         _ => 0.35f                    // sword: small splash
