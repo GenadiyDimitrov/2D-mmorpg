@@ -987,6 +987,7 @@ public partial class MainWindow : Window
             CombatOutcome.Fail => ("fail", Brushes.MediumPurple),
             CombatOutcome.Crit => ($"{evt.Damage}!", Brushes.Orange),
             CombatOutcome.Heal => ($"+{evt.Damage}", Brushes.LightGreen),
+            CombatOutcome.ManaHeal => ($"+{evt.Damage} MP", Brushes.DeepSkyBlue),
             CombatOutcome.Buff => (evt.Skill ?? "buff", Brushes.LightSkyBlue),
             CombatOutcome.Block => ($"{evt.Damage} (block)", Brushes.LightSteelBlue),
             _ => (evt.Damage.ToString(),

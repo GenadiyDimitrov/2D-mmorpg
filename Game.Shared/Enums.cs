@@ -38,7 +38,8 @@ public enum CombatOutcome
     Heal = 4,
     Fail = 5,    // spells don't miss — they fail (level difference)
     Buff = 6,    // a buff/debuff was applied (Skill carries the name)
-    Block = 7    // physical hit was blocked by a shield (reduced damage)
+    Block = 7,   // physical hit was blocked by a shield (reduced damage)
+    ManaHeal = 8 // MP was restored (shown as +N MP, distinct from HP heal)
 }
 
 /// <summary>

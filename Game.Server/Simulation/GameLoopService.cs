@@ -1619,6 +1619,10 @@ public class GameLoopService : BackgroundService
 
 var effect = def.Effect;
         bool offensive = false;
+        // The name shown in combat text is the CASTER's class label for this skill, so a
+        // race's renamed spell (e.g. Elf "Moonlight Bolt") reads correctly in floating text.
+        string castName = ClassSkills.DisplayName(
+            def.Id, caster.Race, caster.BaseClass, caster.Archetype, caster.Discipline);
 
         // ---- Damage (physical) ----
         if (effect.HasFlag(SkillEffect.PhysicalDamage))
@@ -1632,7 +1636,7 @@ var effect = def.Effect;
 
             if (_rng.NextDouble() < miss)
             {
-                BroadcastCombat(caster, target, 0, CombatOutcome.Miss, def.Name);
+                BroadcastCombat(caster, target, 0, CombatOutcome.Miss, castName);
             }
             else
             {
@@ -1644,7 +1648,7 @@ var effect = def.Effect;
                 var (finalDmg, outcome) = ResolvePhysicalCritAndBlock(
                     caster, target, damage, caster.CritChance, def.BlockAccuracy);
                 damage = finalDmg;
-                BroadcastCombat(caster, target, damage, outcome, def.Name);
+                BroadcastCombat(caster, target, damage, outcome, castName);
                 ApplyDamage(target, damage);
                 TryInterruptCast(target, def.InterruptPower);
             }
@@ -1676,18 +1680,18 @@ var effect = def.Effect;
                 damage = Math.Max(1, damage / 3);
                 ApplyDamage(target, damage);
                 TryInterruptCast(target, magicInterrupt);
-                BroadcastCombat(caster, target, damage, CombatOutcome.Fail, def.Name);
+                BroadcastCombat(caster, target, damage, CombatOutcome.Fail, castName);
             }
             else
             {
                 if (_rng.NextDouble() < caster.MagicCritChance)
                 {
                     damage = (int)(damage * StatCalculator.MagicCritMult(caster.CritDamageBonus));
-                    BroadcastCombat(caster, target, damage, CombatOutcome.Crit, def.Name);
+                    BroadcastCombat(caster, target, damage, CombatOutcome.Crit, castName);
                 }
                 else
                 {
-                    BroadcastCombat(caster, target, damage, CombatOutcome.Hit, def.Name);
+                    BroadcastCombat(caster, target, damage, CombatOutcome.Hit, castName);
                 }
                 ApplyDamage(target, damage);
                 TryInterruptCast(target, magicInterrupt);
@@ -1699,7 +1703,7 @@ var effect = def.Effect;
             if (spellVamp > 0f && damage > 0)
             {
                 int leech = (int)(damage * spellVamp);
-                if (leech > 0) HealOne(caster, caster, leech, def.Name);
+                if (leech > 0) HealOne(caster, caster, leech, castName);
             }
         }
 
@@ -1712,9 +1716,9 @@ var effect = def.Effect;
             float pct = def.MagnitudeOf(SkillEffect.Heal, ModifierMode.Percent, lvl);
             if (def.TargetMode == TargetMode.AlliesInRadius)
                 foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
-                    HealOne(caster, ally, flat + (int)(ally.MaxHp * pct), def.Name);
+                    HealOne(caster, ally, flat + (int)(ally.MaxHp * pct), castName);
             else
-                HealOne(caster, target, flat + (int)(target.MaxHp * pct), def.Name);
+                HealOne(caster, target, flat + (int)(target.MaxHp * pct), castName);
         }
 
         // ---- MP Restore (single ally/self, or AoE) — flat power (+optional % of max MP) ----
@@ -1724,9 +1728,9 @@ var effect = def.Effect;
             float pct = def.MagnitudeOf(SkillEffect.RestoreMp, ModifierMode.Percent, lvl);
             if (def.TargetMode == TargetMode.AlliesInRadius)
                 foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
-                    RestoreMpOne(caster, ally, flat + (int)(ally.MaxMp * pct), def.Name);
+                    RestoreMpOne(caster, ally, flat + (int)(ally.MaxMp * pct), castName);
             else
-                RestoreMpOne(caster, target, flat + (int)(target.MaxMp * pct), def.Name);
+                RestoreMpOne(caster, target, flat + (int)(target.MaxMp * pct), castName);
         }
 
         // ---- Cleanse — remove harmful effects from an ally (or allies in radius) ----
@@ -1734,9 +1738,9 @@ var effect = def.Effect;
         {
             if (def.TargetMode == TargetMode.AlliesInRadius)
                 foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
-                    CleanseDebuffs(caster, ally, def.Name);
+                    CleanseDebuffs(caster, ally, castName);
             else
-                CleanseDebuffs(caster, target, def.Name);
+                CleanseDebuffs(caster, target, castName);
         }
 
         // ---- Debuffs (defence curse / anti-heal / root) — can fizzle like a spell ----
@@ -1750,12 +1754,12 @@ var effect = def.Effect;
             if (caster.MagicFailResist > 0f) fail = Math.Max(0f, fail - caster.MagicFailResist);
             if (_rng.NextDouble() < fail)
             {
-                BroadcastCombat(caster, target, 0, CombatOutcome.Fail, def.Name);
+                BroadcastCombat(caster, target, 0, CombatOutcome.Fail, castName);
             }
             else
             {
                 ApplyBuff(target, def, lvl);
-                BroadcastCombat(caster, target, 0, CombatOutcome.Buff, def.Name);
+                BroadcastCombat(caster, target, 0, CombatOutcome.Buff, castName);
             }
         }
 
@@ -1858,7 +1862,7 @@ var effect = def.Effect;
         if (target.Dead) return;
         if (amount > 0)
             target.Mp = Math.Min(target.MaxMp, target.Mp + amount);
-        BroadcastCombat(caster, target, amount, CombatOutcome.Heal, skillName);
+        BroadcastCombat(caster, target, amount, CombatOutcome.ManaHeal, skillName);
         if (target.Kind == EntityKind.Player)
             SendStats(target);   // MP isn't surfaced via damage broadcasts — refresh the bar
     }
