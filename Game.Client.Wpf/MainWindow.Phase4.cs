@@ -641,6 +641,13 @@ public partial class MainWindow
             return;
         }
 
+        // Boxes/chests open on click (roll their loot table server-side).
+        if (ItemCatalog.IsBox(def))
+        {
+            _ = _net.OpenBoxAsync(item.InstanceId);
+            return;
+        }
+
         _equipPopupInstanceId = item.InstanceId;
         EquipPopupTitle.Text = item.Equipped ? $"Unequip {def.Name}" : def.Name;
         EquipPopupSubtitle.Text =
@@ -1687,6 +1694,10 @@ public partial class MainWindow
         AddDebugHeader("Legendary");
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.GodWeapon, "God's Judgment"));
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.GodArmor, "God's Robes"));
+
+        AddDebugHeader("Boxes");
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxNewbie, "Newbie Box"));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxTreasure, "Treasure Chest"));
 
         AddDebugHeader("Rare Weapons (E)");
         DebugList.Children.Add(DebugGiveButton(

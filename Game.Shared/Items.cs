@@ -7,7 +7,7 @@ public enum ItemRarity { Common = 0, Uncommon = 1, Rare = 2, Epic = 3, Legendary
 // Jewel = the magic-defence slot. ONE jewel equips for now; the equip code is
 // written to expand to the L2 layout (2 rings / 2 earrings / 1 necklace) later
 // by allowing several Jewel-slot items at once.
-public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2, Scroll = 3, QuestItem = 4, Shield = 5, Jewel = 6 }
+public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2, Scroll = 3, QuestItem = 4, Shield = 5, Jewel = 6, Box = 7 }
 
 public enum ArmorWeight { None = 0, Heavy = 1, Light = 2, Robe = 3 }
 
@@ -143,6 +143,9 @@ public static class ItemCatalog
     public const string NewbieSword2H = "newbie_sword_2h";
     public const string NewbieBow     = "newbie_bow";
     public const string NewbieStaff   = "newbie_staff";
+    // Boxes/chests — opened from the inventory; roll their BoxCatalog loot table.
+    public const string BoxNewbie   = "box_newbie";
+    public const string BoxTreasure = "box_treasure";
     // Dark Dominion armor set: two BODY weight variants (heavy/robe) sharing the
     // same three accessories. Wearing a body + all 3 accessories grants the set bonus.
     public const string DarkDominionHeavyBody = "set_dark_dominion_body_heavy";
@@ -412,6 +415,13 @@ public static class ItemCatalog
             AtkBonus: 23, MAtkBonus: 24, MpBonus: 20, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1));
 
         // ===================================================================
+        //  BOXES / CHESTS — opened from inventory; contents roll the BoxCatalog table.
+        // ===================================================================
+        list.Add(new ItemDef(BoxNewbie, "Newbie Box", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1));
+        list.Add(new ItemDef(BoxTreasure, "Treasure Chest", EquipSlot.Box, ItemGrade.F, ItemRarity.Uncommon));
+
+        // ===================================================================
         //  JEWELS — the ONLY source of magic defence (beyond the level base).
         //  One jewel equips for now; the slot is built to expand to 5 later.
         // ===================================================================
@@ -569,6 +579,9 @@ public static class ItemCatalog
     /// and worth something. Untradeable items can only be deleted.</summary>
     public static bool IsSellable(ItemDef def) =>
         def.Tradable && def.Slot != EquipSlot.QuestItem && SellPrice(def) > 0;
+
+    /// <summary>An openable box/chest (rolls its BoxCatalog loot table).</summary>
+    public static bool IsBox(ItemDef def) => def.Slot == EquipSlot.Box;
 
     public static ItemDef? Get(string id) => id is null ? null : All.GetValueOrDefault(id);
 

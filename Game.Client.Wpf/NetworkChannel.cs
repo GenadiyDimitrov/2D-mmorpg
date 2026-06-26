@@ -132,6 +132,9 @@ public class NetworkChannel : IAsyncDisposable
     public Task RemoveBuffAsync(string buffKey) =>
         _connection!.SendAsync("RemoveBuff", buffKey);
 
+    public Task OpenBoxAsync(Guid instanceId) =>
+        _connection!.SendAsync("OpenBox", instanceId);
+
     public Task RespawnAsync() =>
         _connection!.SendAsync("Respawn");
 

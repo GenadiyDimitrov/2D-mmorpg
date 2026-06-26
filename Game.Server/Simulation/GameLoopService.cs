@@ -82,6 +82,7 @@ public class GameLoopService : BackgroundService
                 case SetMoveStateCmd c: HandleSetMoveState(c); break;
                 case CancelCastCmd c: HandleCancelCast(c); break;
                 case RemoveBuffCmd c: HandleRemoveBuff(c); break;
+                case OpenBoxCmd c: HandleOpenBox(c); break;
                 case RespawnCmd c: HandleRespawn(c); break;
                 case ClassChangeCmd c: HandleClassChange(c); break;
                 case EquipCmd c: HandleEquip(c); break;
@@ -2491,6 +2492,47 @@ var effect = def.Effect;
     {
         if (TryGetPlayer(cmd.ConnectionId, out var player))
             CancelCast(player, startCooldown: true);
+    }
+
+    /// <summary>Open a box/chest: consume one and roll each loot entry independently
+    /// (chance 0..1). Gear arrives with rolled attributes. The box is consumed first so
+    /// at least one slot is free for the loot.</summary>
+    private void HandleOpenBox(OpenBoxCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        var item = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
+        if (item is null || item.Equipped) return;
+        if (ItemCatalog.Get(item.DefId) is not ItemDef def || def.Slot != EquipSlot.Box) return;
+        if (BoxCatalog.Get(item.DefId) is not BoxDef box)
+        {
+            SendSystemToEntity(player, "This box can't be opened.");
+            return;
+        }
+
+        // Consume one box (frees a slot for the loot).
+        if (item.Quantity > 1) item.Quantity--; else player.Inventory.Remove(item);
+
+        var got = new List<string>();
+        foreach (var entry in box.Entries)
+        {
+            if (_rng.NextDouble() >= entry.Chance) continue;
+            int qty = entry.MaxQty > entry.MinQty
+                ? _rng.Next(entry.MinQty, entry.MaxQty + 1)
+                : entry.MinQty;
+            if (qty <= 0) continue;
+            if (AddItem(player, entry.ItemId, qty, rollAttributes: true))
+                got.Add($"{ItemCatalog.Get(entry.ItemId)?.Name ?? entry.ItemId}{(qty > 1 ? $" x{qty}" : "")}");
+            else
+            {
+                SendSystemToEntity(player, "Your inventory is full — some loot was lost.");
+                break;
+            }
+        }
+
+        SendInventory(player);
+        SendSystemToEntity(player, got.Count > 0
+            ? $"{def.Name}: {string.Join(", ", got)}."
+            : $"{def.Name}: nothing this time.");
     }
 
     /// <summary>Player manually dropped a buff (double-click). Debuffs can't be removed

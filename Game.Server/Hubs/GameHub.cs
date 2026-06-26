@@ -196,6 +196,12 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task OpenBox(Guid instanceId)
+    {
+        _world.Commands.Enqueue(new OpenBoxCmd(Context.ConnectionId, instanceId));
+        return Task.CompletedTask;
+    }
+
     public Task Respawn()
     {
         _world.Commands.Enqueue(new RespawnCmd(Context.ConnectionId));
