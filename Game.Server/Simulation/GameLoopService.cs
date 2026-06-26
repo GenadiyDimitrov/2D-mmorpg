@@ -2832,9 +2832,35 @@ var effect = def.Effect;
         SendDialog(player, npc);
     }
 
+    /// <summary>Apply the newbie buffer's full buff set (1h) to a lvl 6-75 player. Each
+    /// buff shares its player counterpart's BuffKey at a high rank, so it overrides any
+    /// weaker self-cast version.</summary>
+    private void ApplyNewbieBuffs(Entity player)
+    {
+        const int minLvl = 6, maxLvl = 75;
+        if (player.Level < minLvl)
+        {
+            SendSystemToEntity(player, $"Come back at level {minLvl} and I'll bless you.");
+            return;
+        }
+        if (player.Level > maxLvl)
+        {
+            SendSystemToEntity(player, "You are well beyond a newbie buffer's help.");
+            return;
+        }
+        foreach (var id in SkillCatalog.NewbieBuffSet)
+            if (SkillCatalog.Get(id) is SkillDef def)
+                ApplyBuff(player, def);
+        SendSystemToEntity(player, "You are blessed with a buffer's full might!");
+    }
+
     private void SendDialog(Entity player, Entity npc)
     {
         string npcId = npc.NpcId ?? "";
+
+        // Newbie buffer: blesses the player with a buffer's full buff set on talk.
+        if (npc.NpcRole == NpcRole.Buffer)
+            ApplyNewbieBuffs(player);
 
         bool Completed(string qid) => player.CompletedQuests.Contains(qid);
         bool Active(string qid) => player.ActiveQuests.ContainsKey(qid);

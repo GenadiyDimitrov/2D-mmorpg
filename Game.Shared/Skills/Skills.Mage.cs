@@ -83,9 +83,9 @@ public static partial class SkillCatalog
                     Magnitudes: new EffectMagnitude[]
                     {
                         new(SkillEffect.BuffAtk, 0.12f), new(SkillEffect.BuffDef, 0.12f),
-                        new(SkillEffect.BuffMeleeVamp, 0.08f),
+                        new(SkillEffect.BuffMeleeVamp, 0.06f),
                     },
-                    Description: "+12% Attack, +12% Defence, and 8% melee-attack vampirism for 20 minutes."),
+                    Description: "+12% Attack, +12% Defence, and 6% melee-attack vampirism for 20 minutes."),
             }),
 
         // Anti-Magic — learnable mage passive: +M.Def and a magic-fail (fizzle) floor.
