@@ -127,6 +127,11 @@ public record SkillRef(string Id, int Level);
 /// second while any are active, and once when the last one drops).</summary>
 public record BuffUpdate(BuffDto[] Buffs);
 
+/// <summary>Server -> owning client: a SELECTION box was opened — show a chooser. The
+/// player picks PickCount of Options, then calls SelectBoxItems with the chosen ids.</summary>
+public record SelectionOffer(Guid BoxInstanceId, string BoxName, SelectionOption[] Options, int PickCount);
+public record SelectionOption(string ItemId, string Name);
+
 /// <summary>Server -> owning client: the result of an enchant attempt.</summary>
 public record EnchantResultDto(string ItemName, int NewEnchant, string Outcome, bool Destroyed);
 

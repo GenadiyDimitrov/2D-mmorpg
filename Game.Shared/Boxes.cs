@@ -5,8 +5,10 @@ namespace Game.Shared;
 /// Each entry rolls on its own, so a box can yield several items, one, or none.</summary>
 public record BoxEntry(string ItemId, float Chance, int MinQty = 1, int MaxQty = 1);
 
-/// <summary>A box/chest loot table, keyed by the box's item id.</summary>
-public record BoxDef(string Id, BoxEntry[] Entries);
+/// <summary>A box/chest loot table, keyed by the box's item id. PickCount = 0 means a
+/// RANDOM box (each entry rolls its Chance). PickCount &gt; 0 makes it a SELECTION box:
+/// the entries are OPTIONS and the player chooses exactly that many (Chance ignored).</summary>
+public record BoxDef(string Id, BoxEntry[] Entries, int PickCount = 0);
 
 /// <summary>The openable boxes/chests and what they can drop. Keyed by item id, so the
 /// open handler just looks up Get(boxItemId). Chances span 1/1 (100%) to 1/1000000.</summary>
@@ -41,6 +43,15 @@ public static class BoxCatalog
                 new BoxEntry(ItemCatalog.NewbieGloves, 1.0f),
                 new BoxEntry(ItemCatalog.NewbieBoots, 1.0f),
             }),
+
+            // Newbie WEAPONS SELECTION box — pick 2 of the fighter weapons.
+            new BoxDef(ItemCatalog.BoxNewbieWeapons, new[]
+            {
+                new BoxEntry(ItemCatalog.NewbieSword1H, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieDaggers, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieSword2H, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieBow, 1.0f),
+            }, PickCount: 2),
 
             // Newbie jewels box — 2 earrings, 2 rings, 1 necklace (100% each).
             new BoxDef(ItemCatalog.BoxNewbieJewels, new[]

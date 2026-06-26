@@ -163,6 +163,7 @@ public static class ItemCatalog
     public const string BoxNewbieArmorLight = "box_newbie_armor_light";
     public const string BoxNewbieArmorRobe  = "box_newbie_armor_robe";
     public const string BoxNewbieJewels     = "box_newbie_jewels";
+    public const string BoxNewbieWeapons    = "box_newbie_weapons";   // SELECTION box
     // Dark Dominion armor set: two BODY weight variants (heavy/robe) sharing the
     // same three accessories. Wearing a body + all 3 accessories grants the set bonus.
     public const string DarkDominionHeavyBody = "set_dark_dominion_body_heavy";
@@ -442,6 +443,8 @@ public static class ItemCatalog
         list.Add(new ItemDef(BoxNewbieArmorRobe, "Newbie Robe Armor Box", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
             Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
         list.Add(new ItemDef(BoxNewbieJewels, "Newbie Jewels Box", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+        list.Add(new ItemDef(BoxNewbieWeapons, "Newbie Weapons Box", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
             Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
 
         // ===================================================================

@@ -182,9 +182,7 @@ public class PersistenceService
         }
         else
         {
-            foreach (var w in new[] { ItemCatalog.NewbieSword1H, ItemCatalog.NewbieDaggers,
-                                      ItemCatalog.NewbieSword2H, ItemCatalog.NewbieBow })
-                record.Items.Add(NewItem(w));
+            record.Items.Add(NewItem(ItemCatalog.BoxNewbieWeapons));   // selection box: pick 2
             record.Items.Add(NewItem(ItemCatalog.BoxNewbieArmorLight));
         }
         record.Items.Add(NewItem(ItemCatalog.BoxNewbieJewels));

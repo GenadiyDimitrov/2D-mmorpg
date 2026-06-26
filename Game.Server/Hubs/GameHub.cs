@@ -202,6 +202,13 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task SelectBoxItems(Guid instanceId, string[] itemIds)
+    {
+        _world.Commands.Enqueue(new SelectBoxItemsCmd(Context.ConnectionId, instanceId,
+            itemIds ?? System.Array.Empty<string>()));
+        return Task.CompletedTask;
+    }
+
     public Task Respawn()
     {
         _world.Commands.Enqueue(new RespawnCmd(Context.ConnectionId));

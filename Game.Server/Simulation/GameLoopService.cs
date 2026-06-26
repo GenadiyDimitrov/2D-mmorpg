@@ -83,6 +83,7 @@ public class GameLoopService : BackgroundService
                 case CancelCastCmd c: HandleCancelCast(c); break;
                 case RemoveBuffCmd c: HandleRemoveBuff(c); break;
                 case OpenBoxCmd c: HandleOpenBox(c); break;
+                case SelectBoxItemsCmd c: HandleSelectBoxItems(c); break;
                 case RespawnCmd c: HandleRespawn(c); break;
                 case ClassChangeCmd c: HandleClassChange(c); break;
                 case EquipCmd c: HandleEquip(c); break;
@@ -819,9 +820,7 @@ public class GameLoopService : BackgroundService
         }
         else
         {
-            foreach (var w in new[] { ItemCatalog.NewbieSword1H, ItemCatalog.NewbieDaggers,
-                                      ItemCatalog.NewbieSword2H, ItemCatalog.NewbieBow })
-                AddItem(player, w);
+            AddItem(player, ItemCatalog.BoxNewbieWeapons);   // selection box: pick 2
             AddItem(player, ItemCatalog.BoxNewbieArmorLight);
         }
         AddItem(player, ItemCatalog.BoxNewbieJewels);
@@ -2511,6 +2510,16 @@ var effect = def.Effect;
             return;
         }
 
+        // SELECTION box: don't consume yet — send the chooser; the player confirms picks.
+        if (box.PickCount > 0)
+        {
+            var options = box.Entries
+                .Select(e => new SelectionOption(e.ItemId, ItemCatalog.Get(e.ItemId)?.Name ?? e.ItemId))
+                .ToArray();
+            SendTo(player, "Selection", new SelectionOffer(item.InstanceId, def.Name, options, box.PickCount));
+            return;
+        }
+
         // Consume one box (frees a slot for the loot).
         if (item.Quantity > 1) item.Quantity--; else player.Inventory.Remove(item);
 
@@ -2548,6 +2557,40 @@ var effect = def.Effect;
         SendSystemToEntity(player, got.Count > 0
             ? $"{def.Name}: {string.Join(", ", got)}."
             : $"{def.Name}: nothing this time.");
+    }
+
+    /// <summary>Player confirmed their picks from a SELECTION box: validate the chosen
+    /// ids against the box's options (up to PickCount), consume the box, grant them.</summary>
+    private void HandleSelectBoxItems(SelectBoxItemsCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        var item = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
+        if (item is null || item.Equipped) return;
+        if (ItemCatalog.Get(item.DefId) is not ItemDef def || def.Slot != EquipSlot.Box) return;
+        if (BoxCatalog.Get(item.DefId) is not BoxDef box || box.PickCount <= 0) return;
+
+        var optionIds = box.Entries.Select(e => e.ItemId).ToHashSet();
+        var chosen = cmd.ItemIds.Distinct().Where(optionIds.Contains).Take(box.PickCount).ToList();
+        if (chosen.Count == 0)
+        {
+            SendSystemToEntity(player, "Select at least one item.");
+            return;
+        }
+
+        // Consume one box, then grant the chosen items.
+        if (item.Quantity > 1) item.Quantity--; else player.Inventory.Remove(item);
+
+        var got = new List<string>();
+        foreach (var id in chosen)
+        {
+            if (AddItem(player, id, 1, rollAttributes: true))
+                got.Add(ItemCatalog.Get(id)?.Name ?? id);
+            else { SendSystemToEntity(player, "Your inventory is full — some picks were lost."); break; }
+        }
+        SendInventory(player);
+        SendSystemToEntity(player, got.Count > 0
+            ? $"{def.Name}: {string.Join(", ", got)}."
+            : $"{def.Name}: nothing chosen.");
     }
 
     /// <summary>Player manually dropped a buff (double-click). Debuffs can't be removed

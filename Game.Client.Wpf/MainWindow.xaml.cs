@@ -87,6 +87,7 @@ public partial class MainWindow : Window
         _net.QuestLogReceived += q => Dispatcher.BeginInvoke(() => OnQuestLog(q));
         _net.PotionReceived += pt => Dispatcher.BeginInvoke(() => OnPotion(pt));
         _net.BuffsReceived += b => Dispatcher.BeginInvoke(() => OnBuffs(b));
+        _net.SelectionReceived += o => Dispatcher.BeginInvoke(() => OnSelection(o));
         _net.EnchantReceived += en => Dispatcher.BeginInvoke(() => OnEnchant(en));
         _net.RerollReceived += r => Dispatcher.BeginInvoke(() => OnReroll(r));
         _net.ForceDisconnected += reason => Dispatcher.BeginInvoke(() =>

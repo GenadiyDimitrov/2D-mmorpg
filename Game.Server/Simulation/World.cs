@@ -99,6 +99,9 @@ public record RemoveBuffCmd(string ConnectionId, string BuffKey) : IGameCommand;
 /// <summary>Player opened a box/chest from their inventory — rolls its loot table.</summary>
 public record OpenBoxCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
 
+/// <summary>Player confirmed their picks from a SELECTION box.</summary>
+public record SelectBoxItemsCmd(string ConnectionId, Guid InstanceId, string[] ItemIds) : IGameCommand;
+
 public record RespawnCmd(string ConnectionId) : IGameCommand;
 
 /// <summary>Advance to a second class (level 20+, once).</summary>

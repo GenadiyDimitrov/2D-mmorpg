@@ -1356,6 +1356,70 @@ public partial class MainWindow
     // Buff bar
     // =======================================================================
 
+    // ----- Selection box chooser -----
+    private Guid _selectionBoxId;
+    private int _selectionPick;
+    private readonly List<CheckBox> _selectionChecks = new();
+
+    private void OnSelection(SelectionOffer offer)
+    {
+        _selectionBoxId = offer.BoxInstanceId;
+        _selectionPick = offer.PickCount;
+        _selectionChecks.Clear();
+        SelectionList.Children.Clear();
+        SelectionTitle.Text = offer.BoxName;
+
+        foreach (var opt in offer.Options)
+        {
+            var cb = new CheckBox
+            {
+                Content = opt.Name,
+                Tag = opt.ItemId,
+                Foreground = Brushes.White,
+                Margin = new Thickness(0, 3, 0, 3)
+            };
+            cb.Checked += SelectionCheckChanged;
+            cb.Unchecked += SelectionCheckChanged;
+            _selectionChecks.Add(cb);
+            SelectionList.Children.Add(cb);
+        }
+        UpdateSelectionSubtitle();
+        SelectionPopup.Visibility = Visibility.Visible;
+    }
+
+    private void SelectionCheckChanged(object sender, RoutedEventArgs e)
+    {
+        // Enforce the pick limit: bounce a check that would exceed it.
+        int checkedCount = _selectionChecks.Count(c => c.IsChecked == true);
+        if (sender is CheckBox box && box.IsChecked == true && checkedCount > _selectionPick)
+        {
+            box.IsChecked = false;
+            return;
+        }
+        UpdateSelectionSubtitle();
+    }
+
+    private void UpdateSelectionSubtitle()
+    {
+        int n = _selectionChecks.Count(c => c.IsChecked == true);
+        SelectionSubtitle.Text = $"Pick {_selectionPick} — selected {n}/{_selectionPick}";
+        SelectionConfirm.IsEnabled = n >= 1 && n <= _selectionPick;
+    }
+
+    private void SelectionConfirm_Click(object sender, RoutedEventArgs e)
+    {
+        var chosen = _selectionChecks
+            .Where(c => c.IsChecked == true)
+            .Select(c => (string)c.Tag)
+            .ToArray();
+        if (chosen.Length == 0) return;
+        _ = _net.SelectBoxItemsAsync(_selectionBoxId, chosen);
+        SelectionPopup.Visibility = Visibility.Collapsed;
+    }
+
+    private void SelectionCancel_Click(object sender, RoutedEventArgs e) =>
+        SelectionPopup.Visibility = Visibility.Collapsed;
+
     private void OnBuffs(BuffUpdate update)
     {
         BuffBar.Items.Clear();
@@ -1701,6 +1765,7 @@ public partial class MainWindow
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxNewbieArmorLight, "Newbie Light Armor Box"));
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxNewbieArmorRobe, "Newbie Robe Armor Box"));
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxNewbieJewels, "Newbie Jewels Box"));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxNewbieWeapons, "Newbie Weapons Box (select)"));
 
         AddDebugHeader("Rare Weapons (E)");
         DebugList.Children.Add(DebugGiveButton(

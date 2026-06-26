@@ -343,6 +343,32 @@
             </DockPanel>
         </Border>
 
+        <!-- Selection box chooser (pick N of the offered items) -->
+        <Border x:Name="SelectionPopup"
+                Width="340" MaxHeight="460"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="#F01C2636" CornerRadius="10" Padding="16"
+                Visibility="Collapsed">
+            <DockPanel>
+                <TextBlock x:Name="SelectionTitle" DockPanel.Dock="Top" Foreground="White"
+                           FontSize="15" FontWeight="Bold" Margin="0,0,0,2"/>
+                <TextBlock x:Name="SelectionSubtitle" DockPanel.Dock="Top" Foreground="#FF9FB0BE"
+                           FontSize="11" Margin="0,0,0,8"/>
+                <Grid DockPanel.Dock="Bottom" Margin="0,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/><ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="SelectionConfirm" Grid.Column="0" Content="Confirm" Height="28"
+                            Margin="0,0,4,0" Click="SelectionConfirm_Click"/>
+                    <Button Grid.Column="1" Content="Cancel" Height="28"
+                            Margin="4,0,0,0" Click="SelectionCancel_Click"/>
+                </Grid>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="SelectionList"/>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
         <!-- Equip comparison popup -->
         <Border x:Name="EquipPopup"
                 Width="320"
