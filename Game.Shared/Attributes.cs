@@ -141,6 +141,7 @@ public static class AttributeSystem
     public static List<ItemAttribute> Roll(ItemDef def, Random rng)
     {
         var result = new List<ItemAttribute>();
+        if (def.NoAttributes) return result;   // newbie/starter gear never rolls attributes
 
         AttributeType[] pool = PoolFor(def);
         if (pool.Length == 0) return result;

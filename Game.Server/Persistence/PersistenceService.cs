@@ -171,21 +171,23 @@ public class PersistenceService
             Y = GameConstants.ZoneHeight / 2,
         };
 
-        // Starter gear so a brand-new character isn't empty. NEWBIE weapons are
-        // untradeable, sell for 0, can't be bought. A mage gets the staff; a fighter
-        // gets all four options (1H sword, daggers, 2H greatsword, bow) to try.
-        var starterWeight = baseClass == BaseClass.Mage ? ArmorWeight.Robe : ArmorWeight.Light;
-
+        // Starter gear so a brand-new character isn't empty. All NEWBIE (untradeable,
+        // no attributes). Armor + jewels arrive in BOXES the player opens; weapons are
+        // direct for now (a weapons selection-box lands next). A mage gets the staff +
+        // robe armor box; a fighter gets the four weapons + light armor box.
         if (baseClass == BaseClass.Mage)
+        {
             record.Items.Add(NewItem(ItemCatalog.NewbieStaff));
+            record.Items.Add(NewItem(ItemCatalog.BoxNewbieArmorRobe));
+        }
         else
+        {
             foreach (var w in new[] { ItemCatalog.NewbieSword1H, ItemCatalog.NewbieDaggers,
                                       ItemCatalog.NewbieSword2H, ItemCatalog.NewbieBow })
                 record.Items.Add(NewItem(w));
-        // Full starter set: a weighted Body piece + the three weightless accessories.
-        record.Items.Add(NewItem(ItemCatalog.ArmorKey(starterWeight, ArmorSlot.Body, ItemGrade.F, ItemRarity.Common)));
-        foreach (var slot in new[] { ArmorSlot.Head, ArmorSlot.Gloves, ArmorSlot.Boots })
-            record.Items.Add(NewItem(ItemCatalog.ArmorKey(ArmorWeight.None, slot, ItemGrade.F, ItemRarity.Common)));
+            record.Items.Add(NewItem(ItemCatalog.BoxNewbieArmorLight));
+        }
+        record.Items.Add(NewItem(ItemCatalog.BoxNewbieJewels));
         record.Items.Add(NewItem(ItemCatalog.MinorPotion, 5));
         record.Items.Add(NewItem(ItemCatalog.GreaterPotion, 2));
 

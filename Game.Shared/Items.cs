@@ -98,7 +98,10 @@ public record ItemDef(
     //  SellPriceOverride: null = use the Value formula; 0 = sells for nothing.
     bool Tradable = true,
     int? BuyPriceOverride = null,
-    int? SellPriceOverride = null);
+    int? SellPriceOverride = null,
+    // NoAttributes=true: never rolls a random attribute and can't be given one
+    // (newbie/starter gear). Enforced in AttributeSystem.Roll.
+    bool NoAttributes = false);
 
 public static class ItemCatalog
 {
@@ -143,9 +146,23 @@ public static class ItemCatalog
     public const string NewbieSword2H = "newbie_sword_2h";
     public const string NewbieBow     = "newbie_bow";
     public const string NewbieStaff   = "newbie_staff";
+    // Newbie armor (two sets: Light for fighters, Robe for mages) + jewels. No random
+    // attributes, untradeable, sell 0, buy -1. Full set = body + helm + gloves + boots.
+    public const string NewbieLightBody   = "newbie_light_body";
+    public const string NewbieRobeBody    = "newbie_robe_body";
+    // SHARED accessories — used by BOTH the light and robe newbie sets.
+    public const string NewbieHelm        = "newbie_helm";
+    public const string NewbieGloves      = "newbie_gloves";
+    public const string NewbieBoots       = "newbie_boots";
+    public const string NewbieEarring     = "newbie_earring";
+    public const string NewbieRing        = "newbie_ring";
+    public const string NewbieNecklace    = "newbie_necklace";
     // Boxes/chests — opened from the inventory; roll their BoxCatalog loot table.
-    public const string BoxNewbie   = "box_newbie";
-    public const string BoxTreasure = "box_treasure";
+    public const string BoxNewbie         = "box_newbie";
+    public const string BoxTreasure       = "box_treasure";
+    public const string BoxNewbieArmorLight = "box_newbie_armor_light";
+    public const string BoxNewbieArmorRobe  = "box_newbie_armor_robe";
+    public const string BoxNewbieJewels     = "box_newbie_jewels";
     // Dark Dominion armor set: two BODY weight variants (heavy/robe) sharing the
     // same three accessories. Wearing a body + all 3 accessories grants the set bonus.
     public const string DarkDominionHeavyBody = "set_dark_dominion_body_heavy";
@@ -400,26 +417,65 @@ public static class ItemCatalog
         // ===================================================================
         list.Add(new ItemDef(NewbieSword1H, "Newbie Sword", EquipSlot.Weapon,
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Sword, Hands: WeaponHands.OneHand,
-            AtkBonus: 24, MAtkBonus: 17, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1));
+            AtkBonus: 24, MAtkBonus: 17, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
         list.Add(new ItemDef(NewbieDaggers, "Newbie Daggers", EquipSlot.Weapon,
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Dual, Hands: WeaponHands.TwoHand,
-            AtkBonus: 21, MAtkBonus: 17, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1));
+            AtkBonus: 21, MAtkBonus: 17, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
         list.Add(new ItemDef(NewbieSword2H, "Newbie Greatsword", EquipSlot.Weapon,
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Sword, Hands: WeaponHands.TwoHand,
-            AtkBonus: 29, MAtkBonus: 17, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1));
+            AtkBonus: 29, MAtkBonus: 17, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
         list.Add(new ItemDef(NewbieBow, "Newbie Bow", EquipSlot.Weapon,
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Bow, Hands: WeaponHands.TwoHand,
-            AtkBonus: 49, MAtkBonus: 17, WeaponRange: 400, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1));
+            AtkBonus: 49, MAtkBonus: 17, WeaponRange: 400, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
         list.Add(new ItemDef(NewbieStaff, "Newbie Staff", EquipSlot.Weapon,
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Blunt, Hands: WeaponHands.TwoHand,
-            AtkBonus: 23, MAtkBonus: 24, MpBonus: 20, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1));
+            AtkBonus: 23, MAtkBonus: 24, MpBonus: 20, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
 
         // ===================================================================
         //  BOXES / CHESTS — opened from inventory; contents roll the BoxCatalog table.
         // ===================================================================
         list.Add(new ItemDef(BoxNewbie, "Newbie Box", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
-            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1));
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
         list.Add(new ItemDef(BoxTreasure, "Treasure Chest", EquipSlot.Box, ItemGrade.F, ItemRarity.Uncommon));
+        list.Add(new ItemDef(BoxNewbieArmorLight, "Newbie Light Armor Box", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+        list.Add(new ItemDef(BoxNewbieArmorRobe, "Newbie Robe Armor Box", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+        list.Add(new ItemDef(BoxNewbieJewels, "Newbie Jewels Box", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+
+        // ===================================================================
+        //  NEWBIE ARMOR (two sets) + JEWELS — no attributes, untradeable, sell 0, buy -1.
+        //  Light set (fighter): +42 HP, +2% P.Def. Robe set (mage): +15% cast speed.
+        //  Full set = body + helm + gloves + boots (set bonus from ArmorSetCatalog).
+        // ===================================================================
+        // Bodies — each grants its set's bonus (light/robe). They SHARE the accessories below.
+        list.Add(new ItemDef(NewbieLightBody, "Newbie Light Armor", EquipSlot.Armor, ItemGrade.F, ItemRarity.Common,
+            Weight: ArmorWeight.Light, ArmorSlot: ArmorSlot.Body, DefBonus: 86, SetId: ArmorSetCatalog.NewbieLight,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+        list.Add(new ItemDef(NewbieRobeBody, "Newbie Robe Armor", EquipSlot.Armor, ItemGrade.F, ItemRarity.Common,
+            Weight: ArmorWeight.Robe, ArmorSlot: ArmorSlot.Body, DefBonus: 49, MpBonus: 109, SetId: ArmorSetCatalog.NewbieRobe,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+
+        // SHARED accessories — complete EITHER newbie set (SetId = NewbieAccessories).
+        list.Add(new ItemDef(NewbieHelm, "Newbie Helmet", EquipSlot.Armor, ItemGrade.F, ItemRarity.Common,
+            ArmorSlot: ArmorSlot.Head, DefBonus: 21, SetId: ArmorSetCatalog.NewbieAccessories,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+        list.Add(new ItemDef(NewbieGloves, "Newbie Gloves", EquipSlot.Armor, ItemGrade.F, ItemRarity.Common,
+            ArmorSlot: ArmorSlot.Gloves, DefBonus: 15, SetId: ArmorSetCatalog.NewbieAccessories,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+        list.Add(new ItemDef(NewbieBoots, "Newbie Boots", EquipSlot.Armor, ItemGrade.F, ItemRarity.Common,
+            ArmorSlot: ArmorSlot.Boots, DefBonus: 15, SetId: ArmorSetCatalog.NewbieAccessories,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+
+        // Jewels (earring/ring give M.Def; necklace gives P.Def). Earrings/rings handed
+        // out in pairs (see the jewels box). One jewel slot equips for now (expandable).
+        list.Add(new ItemDef(NewbieEarring, "Newbie Earring", EquipSlot.Jewel, ItemGrade.F, ItemRarity.Common,
+            MDefBonus: 13, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+        list.Add(new ItemDef(NewbieRing, "Newbie Ring", EquipSlot.Jewel, ItemGrade.F, ItemRarity.Common,
+            MDefBonus: 9, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+        list.Add(new ItemDef(NewbieNecklace, "Newbie Necklace", EquipSlot.Jewel, ItemGrade.F, ItemRarity.Common,
+            DefBonus: 18, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
 
         // ===================================================================
         //  JEWELS — the ONLY source of magic defence (beyond the level base).

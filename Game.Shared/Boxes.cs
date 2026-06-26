@@ -26,6 +26,30 @@ public static class BoxCatalog
                 new BoxEntry(ItemCatalog.ScrollCommon, 0.50f),         // 50%
             }),
 
+            // Newbie armor boxes — the class body + the SHARED accessories (100% each).
+            new BoxDef(ItemCatalog.BoxNewbieArmorLight, new[]
+            {
+                new BoxEntry(ItemCatalog.NewbieLightBody, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieHelm, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieGloves, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieBoots, 1.0f),
+            }),
+            new BoxDef(ItemCatalog.BoxNewbieArmorRobe, new[]
+            {
+                new BoxEntry(ItemCatalog.NewbieRobeBody, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieHelm, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieGloves, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieBoots, 1.0f),
+            }),
+
+            // Newbie jewels box — 2 earrings, 2 rings, 1 necklace (100% each).
+            new BoxDef(ItemCatalog.BoxNewbieJewels, new[]
+            {
+                new BoxEntry(ItemCatalog.NewbieEarring, 1.0f, 2, 2),
+                new BoxEntry(ItemCatalog.NewbieRing, 1.0f, 2, 2),
+                new BoxEntry(ItemCatalog.NewbieNecklace, 1.0f),
+            }),
+
             // Treasure Chest — staples always, rarer rewards scaling down to a
             // 1-in-a-million jackpot (demonstrates the full chance range).
             new BoxDef(ItemCatalog.BoxTreasure, new[]

@@ -640,26 +640,46 @@ public class Entity
             Accuracy += tb.Accuracy;
         }
 
-        // ----- Armor set bonus: all 4 armor slots (Head/Body/Gloves/Boots) of one
-        // set equipped grants its flat bonus (on top of each piece + attributes). -----
+        // ----- Armor set bonus (BODY-DRIVEN): the worn BODY's set grants the bonus when
+        // Head/Gloves/Boots are filled with that set's accessory line. This lets the
+        // light & robe newbie bodies SHARE one accessory line (each body its own bonus).
+        // A classic single-id set (AccessorySetId = "") just matches its own id. -----
         ActiveArmorSet = "";
         if (Kind == EntityKind.Player)
         {
-            var setSlots = new Dictionary<string, HashSet<ArmorSlot>>();
+            string bodySet = "", headSet = "", glovesSet = "", bootsSet = "";
             foreach (var item in Inventory)
             {
                 if (!item.Equipped || ItemCatalog.Get(item.DefId) is not ItemDef sd
-                    || string.IsNullOrEmpty(sd.SetId))
+                    || sd.Slot != EquipSlot.Armor || string.IsNullOrEmpty(sd.SetId))
                     continue;
-                if (!setSlots.TryGetValue(sd.SetId, out var slots))
-                    setSlots[sd.SetId] = slots = new HashSet<ArmorSlot>();
-                slots.Add(sd.ArmorSlot);
+                switch (sd.ArmorSlot)
+                {
+                    case ArmorSlot.Body: bodySet = sd.SetId; break;
+                    case ArmorSlot.Head: headSet = sd.SetId; break;
+                    case ArmorSlot.Gloves: glovesSet = sd.SetId; break;
+                    case ArmorSlot.Boots: bootsSet = sd.SetId; break;
+                }
             }
-            foreach (var (setId, slots) in setSlots)
+            foreach (var set in ArmorSetCatalog.All)
             {
-                if (slots.Contains(ArmorSlot.Head) && slots.Contains(ArmorSlot.Body)
-                    && slots.Contains(ArmorSlot.Gloves) && slots.Contains(ArmorSlot.Boots)
-                    && ArmorSetCatalog.Get(setId) is ArmorSetDef set)
+                string accId = string.IsNullOrEmpty(set.AccessorySetId) ? set.Id : set.AccessorySetId;
+                var required = set.RequiredSlots ?? ArmorSetCatalog.DefaultSlots;
+                bool complete = true;
+                foreach (var slot in required)
+                {
+                    string worn = slot switch
+                    {
+                        ArmorSlot.Body => bodySet,
+                        ArmorSlot.Head => headSet,
+                        ArmorSlot.Gloves => glovesSet,
+                        ArmorSlot.Boots => bootsSet,
+                        _ => ""
+                    };
+                    string need = slot == ArmorSlot.Body ? set.Id : accId;
+                    if (worn != need) { complete = false; break; }
+                }
+                if (complete)
                 {
                     MaxHp += set.Bonus.MaxHp;
                     MaxMp += set.Bonus.MaxMp;
@@ -668,7 +688,12 @@ public class Entity
                     MagicAttack += set.Bonus.Attack;   // set Attack feeds both channels
                     Evasion += set.Bonus.Evasion;
                     Accuracy += set.Bonus.Accuracy;
+                    // Optional PERCENT set bonuses (e.g. newbie light +2% P.Def, robe +15% cast).
+                    if (set.DefencePct != 0f) Defence += (int)(Defence * set.DefencePct);
+                    if (set.CastSpeedPct != 0f)
+                        CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier * (1f - set.CastSpeedPct), 0.4f, 2.5f);
                     ActiveArmorSet = set.Name;
+                    break;
                 }
             }
         }

@@ -1698,6 +1698,9 @@ public partial class MainWindow
         AddDebugHeader("Boxes");
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxNewbie, "Newbie Box"));
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxTreasure, "Treasure Chest"));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxNewbieArmorLight, "Newbie Light Armor Box"));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxNewbieArmorRobe, "Newbie Robe Armor Box"));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxNewbieJewels, "Newbie Jewels Box"));
 
         AddDebugHeader("Rare Weapons (E)");
         DebugList.Children.Add(DebugGiveButton(

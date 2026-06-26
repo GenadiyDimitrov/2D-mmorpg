@@ -812,17 +812,19 @@ public class GameLoopService : BackgroundService
     /// PersistenceService.CreateCharacterAsync). Items arrive unequipped.</summary>
     private void GiveStarterKit(Entity player)
     {
-        var bodyWeight = player.BaseClass == BaseClass.Mage ? ArmorWeight.Robe : ArmorWeight.Light;
-
         if (player.BaseClass == BaseClass.Mage)
+        {
             AddItem(player, ItemCatalog.NewbieStaff);
+            AddItem(player, ItemCatalog.BoxNewbieArmorRobe);
+        }
         else
+        {
             foreach (var w in new[] { ItemCatalog.NewbieSword1H, ItemCatalog.NewbieDaggers,
                                       ItemCatalog.NewbieSword2H, ItemCatalog.NewbieBow })
                 AddItem(player, w);
-        AddItem(player, ItemCatalog.ArmorKey(bodyWeight, ArmorSlot.Body, ItemGrade.F, ItemRarity.Common));
-        foreach (var slot in new[] { ArmorSlot.Head, ArmorSlot.Gloves, ArmorSlot.Boots })
-            AddItem(player, ItemCatalog.ArmorKey(ArmorWeight.None, slot, ItemGrade.F, ItemRarity.Common));
+            AddItem(player, ItemCatalog.BoxNewbieArmorLight);
+        }
+        AddItem(player, ItemCatalog.BoxNewbieJewels);
         AddItem(player, ItemCatalog.MinorPotion, 5);
         AddItem(player, ItemCatalog.GreaterPotion, 2);
     }
@@ -2513,6 +2515,7 @@ var effect = def.Effect;
         if (item.Quantity > 1) item.Quantity--; else player.Inventory.Remove(item);
 
         var got = new List<string>();
+        bool full = false;
         foreach (var entry in box.Entries)
         {
             if (_rng.NextDouble() >= entry.Chance) continue;
@@ -2520,13 +2523,25 @@ var effect = def.Effect;
                 ? _rng.Next(entry.MinQty, entry.MaxQty + 1)
                 : entry.MinQty;
             if (qty <= 0) continue;
-            if (AddItem(player, entry.ItemId, qty, rollAttributes: true))
-                got.Add($"{ItemCatalog.Get(entry.ItemId)?.Name ?? entry.ItemId}{(qty > 1 ? $" x{qty}" : "")}");
+
+            // Stackables merge in one AddItem; non-stackable gear needs one call each.
+            bool stackable = ItemCatalog.Get(entry.ItemId)?.Slot is EquipSlot.Consumable or EquipSlot.Scroll;
+            int added = 0;
+            if (stackable)
+            {
+                if (AddItem(player, entry.ItemId, qty, rollAttributes: true)) added = qty;
+            }
             else
             {
-                SendSystemToEntity(player, "Your inventory is full — some loot was lost.");
-                break;
+                for (int k = 0; k < qty; k++)
+                {
+                    if (!AddItem(player, entry.ItemId, 1, rollAttributes: true)) { full = true; break; }
+                    added++;
+                }
             }
+            if (added > 0)
+                got.Add($"{ItemCatalog.Get(entry.ItemId)?.Name ?? entry.ItemId}{(added > 1 ? $" x{added}" : "")}");
+            if (full) { SendSystemToEntity(player, "Your inventory is full — some loot was lost."); break; }
         }
 
         SendInventory(player);
