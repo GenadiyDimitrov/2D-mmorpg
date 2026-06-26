@@ -171,15 +171,17 @@ public class PersistenceService
             Y = GameConstants.ZoneHeight / 2,
         };
 
-        // Starter gear so a brand-new character isn't empty.
-        // Starter gear keyed by stable string ids. Give a weapon matching the
-        // base class's playstyle and the appropriate armor.
-        string starterWeapon = baseClass == BaseClass.Mage
-            ? ItemCatalog.WeaponKey(WeaponType.Blunt, ItemGrade.F, ItemRarity.Common)   // 2H staff
-            : ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.F, ItemRarity.Common);
+        // Starter gear so a brand-new character isn't empty. NEWBIE weapons are
+        // untradeable, sell for 0, can't be bought. A mage gets the staff; a fighter
+        // gets all four options (1H sword, daggers, 2H greatsword, bow) to try.
         var starterWeight = baseClass == BaseClass.Mage ? ArmorWeight.Robe : ArmorWeight.Light;
 
-        record.Items.Add(NewItem(starterWeapon));
+        if (baseClass == BaseClass.Mage)
+            record.Items.Add(NewItem(ItemCatalog.NewbieStaff));
+        else
+            foreach (var w in new[] { ItemCatalog.NewbieSword1H, ItemCatalog.NewbieDaggers,
+                                      ItemCatalog.NewbieSword2H, ItemCatalog.NewbieBow })
+                record.Items.Add(NewItem(w));
         // Full starter set: a weighted Body piece + the three weightless accessories.
         record.Items.Add(NewItem(ItemCatalog.ArmorKey(starterWeight, ArmorSlot.Body, ItemGrade.F, ItemRarity.Common)));
         foreach (var slot in new[] { ArmorSlot.Head, ArmorSlot.Gloves, ArmorSlot.Boots })

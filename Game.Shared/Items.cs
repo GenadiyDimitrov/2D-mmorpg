@@ -91,7 +91,14 @@ public record ItemDef(
     // ----- Gold value (vendor pricing). 0 = filled from DefaultValue at build time;
     //       quest items and god-tier one-offs stay 0 = not buyable/sellable. Pass an
     //       explicit Value to override the formula for a specific item. -----
-    int Value = 0);
+    int Value = 0,
+    // ----- Trade/price control (every item carries these three) -----
+    //  Tradable=false: can't be sold to a vendor or traded to players (only DELETED).
+    //  BuyPriceOverride:  null = use the Value formula; -1 = cannot be purchased; 0 = free.
+    //  SellPriceOverride: null = use the Value formula; 0 = sells for nothing.
+    bool Tradable = true,
+    int? BuyPriceOverride = null,
+    int? SellPriceOverride = null);
 
 public static class ItemCatalog
 {
@@ -129,6 +136,13 @@ public static class ItemCatalog
     public const string SilverTalisman = "jewel_silver_talisman";
     public const string IronMace = "blunt_1h_iron_mace";        // 1H physical blunt (shield-ok)
     public const string AshWand = "blunt_1h_ash_wand";          // 1H magic blunt (mAtk > pAtk)
+    // Newbie STARTER weapons — given on character creation. Untradeable, sold for 0,
+    // can't be purchased (see the "newbie" item flags below).
+    public const string NewbieSword1H = "newbie_sword_1h";
+    public const string NewbieDaggers = "newbie_daggers";
+    public const string NewbieSword2H = "newbie_sword_2h";
+    public const string NewbieBow     = "newbie_bow";
+    public const string NewbieStaff   = "newbie_staff";
     // Dark Dominion armor set: two BODY weight variants (heavy/robe) sharing the
     // same three accessories. Wearing a body + all 3 accessories grants the set bonus.
     public const string DarkDominionHeavyBody = "set_dark_dominion_body_heavy";
@@ -377,6 +391,27 @@ public static class ItemCatalog
             Hands: WeaponHands.OneHand, AtkBonus: 2, MAtkBonus: 5, MpBonus: 10));  // 1H magic blunt: mAtk>pAtk, < staff
 
         // ===================================================================
+        //  NEWBIE STARTER WEAPONS — handed out on character creation. They are
+        //  UNTRADEABLE, sell for 0, and cannot be purchased (buy -1). A fighter gets
+        //  all four melee/ranged options; a mage gets the staff. P.Atk / M.Atk per owner.
+        // ===================================================================
+        list.Add(new ItemDef(NewbieSword1H, "Newbie Sword", EquipSlot.Weapon,
+            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Sword, Hands: WeaponHands.OneHand,
+            AtkBonus: 24, MAtkBonus: 17, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1));
+        list.Add(new ItemDef(NewbieDaggers, "Newbie Daggers", EquipSlot.Weapon,
+            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Dual, Hands: WeaponHands.TwoHand,
+            AtkBonus: 21, MAtkBonus: 17, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1));
+        list.Add(new ItemDef(NewbieSword2H, "Newbie Greatsword", EquipSlot.Weapon,
+            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Sword, Hands: WeaponHands.TwoHand,
+            AtkBonus: 29, MAtkBonus: 17, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1));
+        list.Add(new ItemDef(NewbieBow, "Newbie Bow", EquipSlot.Weapon,
+            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Bow, Hands: WeaponHands.TwoHand,
+            AtkBonus: 49, MAtkBonus: 17, WeaponRange: 400, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1));
+        list.Add(new ItemDef(NewbieStaff, "Newbie Staff", EquipSlot.Weapon,
+            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Blunt, Hands: WeaponHands.TwoHand,
+            AtkBonus: 23, MAtkBonus: 24, MpBonus: 20, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1));
+
+        // ===================================================================
         //  JEWELS — the ONLY source of magic defence (beyond the level base).
         //  One jewel equips for now; the slot is built to expand to 5 later.
         // ===================================================================
@@ -517,18 +552,23 @@ public static class ItemCatalog
         return Math.Max(1, (int)(gradeBase * rarityMul * slotMul));
     }
 
-    /// <summary>Gold paid to a player who SELLS this item (0 = not sellable).</summary>
+    /// <summary>Gold paid to a player who SELLS this item. SellPriceOverride wins
+    /// (0 = sells for nothing); otherwise the Value formula (0 = not sellable).</summary>
     public static int SellPrice(ItemDef def) =>
-        def.Value <= 0 ? 0 : Math.Max(1, (int)(def.Value * GameConstants.VendorSellFraction));
+        def.SellPriceOverride is int s ? Math.Max(0, s)
+        : def.Value <= 0 ? 0 : Math.Max(1, (int)(def.Value * GameConstants.VendorSellFraction));
 
-    /// <summary>Gold charged when BUYING this item from a vendor, including the
-    /// (future, currently 0) castle surcharge. 0 = not buyable.</summary>
+    /// <summary>Gold charged when BUYING this item from a vendor (incl. the future
+    /// castle surcharge). BuyPriceOverride wins (-1 = unbuyable, 0 = free); otherwise
+    /// the Value formula (-1 = not buyable).</summary>
     public static int BuyPrice(ItemDef def) =>
-        def.Value <= 0 ? 0 : Math.Max(1, (int)(def.Value * (1f + GameConstants.VendorBuyTaxRate)));
+        def.BuyPriceOverride is int b ? b
+        : def.Value <= 0 ? -1 : Math.Max(1, (int)(def.Value * (1f + GameConstants.VendorBuyTaxRate)));
 
-    /// <summary>An item the player can sell to a vendor (has a value, not a quest item).</summary>
+    /// <summary>An item the player can sell to a vendor: TRADABLE, not a quest item,
+    /// and worth something. Untradeable items can only be deleted.</summary>
     public static bool IsSellable(ItemDef def) =>
-        def.Value > 0 && def.Slot != EquipSlot.QuestItem;
+        def.Tradable && def.Slot != EquipSlot.QuestItem && SellPrice(def) > 0;
 
     public static ItemDef? Get(string id) => id is null ? null : All.GetValueOrDefault(id);
 

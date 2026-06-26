@@ -811,12 +811,14 @@ public class GameLoopService : BackgroundService
     /// PersistenceService.CreateCharacterAsync). Items arrive unequipped.</summary>
     private void GiveStarterKit(Entity player)
     {
-        string weapon = player.BaseClass == BaseClass.Mage
-            ? ItemCatalog.WeaponKey(WeaponType.Blunt, ItemGrade.F, ItemRarity.Common)
-            : ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.F, ItemRarity.Common);
         var bodyWeight = player.BaseClass == BaseClass.Mage ? ArmorWeight.Robe : ArmorWeight.Light;
 
-        AddItem(player, weapon);
+        if (player.BaseClass == BaseClass.Mage)
+            AddItem(player, ItemCatalog.NewbieStaff);
+        else
+            foreach (var w in new[] { ItemCatalog.NewbieSword1H, ItemCatalog.NewbieDaggers,
+                                      ItemCatalog.NewbieSword2H, ItemCatalog.NewbieBow })
+                AddItem(player, w);
         AddItem(player, ItemCatalog.ArmorKey(bodyWeight, ArmorSlot.Body, ItemGrade.F, ItemRarity.Common));
         foreach (var slot in new[] { ArmorSlot.Head, ArmorSlot.Gloves, ArmorSlot.Boots })
             AddItem(player, ItemCatalog.ArmorKey(ArmorWeight.None, slot, ItemGrade.F, ItemRarity.Common));
@@ -987,8 +989,8 @@ public class GameLoopService : BackgroundService
         {
             var item = player.Inventory.FirstOrDefault(i => i.InstanceId == instanceId);
             if (item is null || item.Equipped) continue;
-            if (ItemCatalog.Get(item.DefId) is ItemDef d && ItemCatalog.IsQuestItem(d))
-                continue;   // quest items are untradeable
+            if (ItemCatalog.Get(item.DefId) is ItemDef d && (!d.Tradable || ItemCatalog.IsQuestItem(d)))
+                continue;   // untradeable / quest items can't be traded
             offer.Add(instanceId);
         }
 
