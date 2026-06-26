@@ -182,18 +182,23 @@ public static class StatCalculator
         int attackerHitStat, int defenderAvoidStat,
         float defenderFloor, float attackerHitFloor,
         int attackerLevel, int defenderLevel,
-        bool sureHit = false, bool defenderImmune = false)
+        bool sureHit = false, bool defenderImmune = false, float baseAvoid = -1f)
     {
+        // The universal "always at least" avoid floor. Defaults to StatCaps.AvoidBase (5%),
+        // but callers can lower it — e.g. ~1% for spells vs MOBS so players' magic doesn't
+        // fizzle on mob targets (mobs have no anti-magic identity).
+        if (baseAvoid < 0f) baseAvoid = StatCaps.AvoidBase;
+
         // 4 (checked first = highest precedence): hard overrides.
         if (defenderImmune) return 1f;
         if (sureHit) return 0f;
 
         // 1: stat roll, inside the soft band.
-        float m = StatCaps.AvoidBase + (defenderAvoidStat - attackerHitStat) * StatCaps.AvoidStatSlope;
-        m = Math.Clamp(m, StatCaps.AvoidBase, StatCaps.AvoidSoftCeil);
+        float m = baseAvoid + (defenderAvoidStat - attackerHitStat) * StatCaps.AvoidStatSlope;
+        m = Math.Clamp(m, baseAvoid, StatCaps.AvoidSoftCeil);
 
         // 2: class floors form an interior window [defenderFloor, 1 − attackerHitFloor].
-        float lo = Math.Max(StatCaps.AvoidBase, defenderFloor);
+        float lo = Math.Max(baseAvoid, defenderFloor);
         float hi = Math.Min(StatCaps.AvoidSoftCeil, 1f - attackerHitFloor);
         if (lo > hi) lo = hi = (lo + hi) * 0.5f;   // safety if floors ever sum >100%
         m = Math.Clamp(m, lo, hi);
@@ -445,8 +450,11 @@ public static class StatCalculator
 
     /// <summary>Mob stat block by level. Per design: higher-level mobs must
     /// out-stat lower-level characters.</summary>
+    // Atk grows level*2 (was level*3, which out-scaled players and 2-shot squishy
+    // classes). Tuning knob — raise/lower the level coefficient to make mobs hit
+    // harder/softer globally. (Con/Dex unchanged.)
     public static BaseStats MobStats(int level) =>
-        new(Con: 15 + level * 2, Atk: 8 + level * 3, Wit: 5, Dex: 10 + level);
+        new(Con: 15 + level * 2, Atk: 8 + level * 2, Wit: 5, Dex: 10 + level);
 
     /// <summary>Mob MAGIC defence by level. The universal <see cref="MagicDefence"/>
     /// base (level/2) leaves low-level mobs at ~0 mDef, so spells divide by ~1 and

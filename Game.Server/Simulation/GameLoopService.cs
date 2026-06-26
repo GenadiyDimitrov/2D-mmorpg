@@ -1673,7 +1673,8 @@ var effect = def.Effect;
             float fail = StatCalculator.ResolveAvoidChance(
                 0, 0, target.MagicFailFloor, 0f,
                 caster.Level, target.Level,
-                sureHit: def.SureHit, defenderImmune: target.Immune);
+                sureHit: def.SureHit, defenderImmune: target.Immune,
+                baseAvoid: target.Kind == EntityKind.Mob ? 0.01f : -1f);
             if (caster.MagicFailResist > 0f) fail = Math.Max(0f, fail - caster.MagicFailResist);
             if (_rng.NextDouble() < fail)
             {
@@ -1750,7 +1751,8 @@ var effect = def.Effect;
             float fail = StatCalculator.ResolveAvoidChance(
                 0, 0, target.MagicFailFloor, 0f,
                 caster.Level, target.Level,
-                sureHit: def.SureHit, defenderImmune: target.Immune);
+                sureHit: def.SureHit, defenderImmune: target.Immune,
+                baseAvoid: target.Kind == EntityKind.Mob ? 0.01f : -1f);
             if (caster.MagicFailResist > 0f) fail = Math.Max(0f, fail - caster.MagicFailResist);
             if (_rng.NextDouble() < fail)
             {
@@ -2434,8 +2436,8 @@ var effect = def.Effect;
     private void SendStats(Entity p) =>
         SendTo(p, "Stats", new StatsUpdate(
             p.Con, p.AtkStat, p.EffectiveWit, p.EffectiveDex,
-            p.MaxHp, p.MaxMp, p.AttackPower, p.Defence,
-            p.Accuracy, p.Evasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
+            p.MaxHp, p.MaxMp, (int)p.EffectiveAttack, (int)p.EffectiveDefence,
+            p.Accuracy, (int)p.EffectiveEvasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
             p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.EffectiveCastSpeedMultiplier, p.EffectiveAttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttack, p.MagicCritChance,
             p.HasShield, p.BlockChance, p.BlockReduction, p.ShieldDefense, (int)p.EffectiveMagicDefence,
             p.ActiveArmorSet, p.ArmorMasteryLabel));
