@@ -201,6 +201,14 @@ public class Entity
     public float HpRegenMult { get; set; } = 1f; // HP-regen multiplier (armor mastery)
     public float MpRegenMult { get; set; } = 1f; // MP-regen multiplier (armor mastery)
     public float CritDamageBonus { get; set; }  // crit-multiplier bonus from gear (e.g. +0.20x)
+    // ----- Healer buff/effect layer (folded from buffs + passives in RecomputeDerived) -----
+    public float CooldownReduction { get; set; } // spell reuse-delay reduction (0..cap)
+    public float CritRateResist { get; set; }    // reduces an attacker's physical crit CHANCE vs you
+    public float CritDmgResist { get; set; }     // reduces incoming physical crit EXTRA damage
+    public float BowResist { get; set; }         // reduces damage taken from BOW attacks
+    public float MagicFailResist { get; set; }   // reduces YOUR spells' own fail chance
+    public float MeleeVamp { get; set; }         // basic (melee) attack lifesteal fraction
+    public float SpellVamp { get; set; }         // damage-spell lifesteal fraction
     public string ActiveArmorSet { get; set; } = ""; // name of the completed armor set bonus, "" if none
     public string ArmorMasteryLabel { get; set; } = ""; // armor-weight mastery status for the UI
 
@@ -279,13 +287,27 @@ public class Entity
         return Math.Max(0f, (baseValue + flat) * (1f + percent));
     }
 
-    public float EffectiveAttack => ModifiedStat(AttackPower, SkillEffect.BuffAtk);
+    /// <summary>Folds TWO additive buff flags (a shared one + a channel-specific one),
+    /// e.g. BuffAtk (both channels) plus BuffPhysAtk / BuffMagAtk (one channel only).</summary>
+    private float ModifiedStatDual(float baseValue, SkillEffect plusA, SkillEffect plusB)
+    {
+        float flat = 0f, percent = 0f;
+        foreach (var buff in Buffs)
+        {
+            if (buff.Has(plusA)) { flat += buff.Flat(plusA); percent += buff.Percent(plusA); }
+            if (buff.Has(plusB)) { flat += buff.Flat(plusB); percent += buff.Percent(plusB); }
+        }
+        return Math.Max(0f, (baseValue + flat) * (1f + percent));
+    }
 
-    /// <summary>Buffed magic attack (mAtk). Shares the BuffAtk flag for now.</summary>
-    public float EffectiveMagicAttack => ModifiedStat(MagicAttack, SkillEffect.BuffAtk);
+    public float EffectiveAttack => ModifiedStatDual(AttackPower, SkillEffect.BuffAtk, SkillEffect.BuffPhysAtk);
 
-    /// <summary>Buffed attack power for BASIC attacks (archetype-scaled).</summary>
-    public float EffectiveBasicAttack => ModifiedStat(BasicAttackPower, SkillEffect.BuffAtk);
+    /// <summary>Buffed magic attack (mAtk): the shared BuffAtk plus magic-only BuffMagAtk.</summary>
+    public float EffectiveMagicAttack => ModifiedStatDual(MagicAttack, SkillEffect.BuffAtk, SkillEffect.BuffMagAtk);
+
+    /// <summary>Buffed attack power for BASIC attacks (archetype-scaled). Basic attacks
+    /// are physical, so they take the shared BuffAtk plus physical-only BuffPhysAtk.</summary>
+    public float EffectiveBasicAttack => ModifiedStatDual(BasicAttackPower, SkillEffect.BuffAtk, SkillEffect.BuffPhysAtk);
 
     /// <summary>Move speed including move-speed buffs (flat + percent).</summary>
     /// <summary>Current move speed: 0 if sitting or standing up, walk or run base
@@ -464,6 +486,13 @@ public class Entity
         EvadeFloor = 0f;
         HitFloor = 0f;
         Immune = false;
+        CooldownReduction = 0f;
+        CritRateResist = 0f;
+        CritDmgResist = 0f;
+        BowResist = 0f;
+        MagicFailResist = 0f;
+        MeleeVamp = 0f;
+        SpellVamp = 0f;
         Accuracy = StatCalculator.Accuracy(EffectiveDex);
         Evasion = StatCalculator.Evasion(EffectiveDex);
         CritChance = StatCalculator.PhysicalCritChance(EffectiveDex);
@@ -660,15 +689,15 @@ public class Entity
         Evasion += StatCalculator.ArchetypeEvasionBonus(arch, Level);
         Accuracy += StatCalculator.WeaponAccuracyBonus(WeaponType);
 
-        // Skill-buff Max HP/MP (e.g. HP Boost line).
-        float buffHpPct = 0f, buffMpPct = 0f;
+        // Skill-buff Max HP/MP (e.g. HP Boost line, Frenzy): flat add and/or % of max.
+        float buffHpPct = 0f, buffMpPct = 0f, buffHpFlat = 0f, buffMpFlat = 0f;
         foreach (var buff in Buffs)
         {
-            if (buff.Has(SkillEffect.BuffHp)) buffHpPct += buff.Percent(SkillEffect.BuffHp);
-            if (buff.Has(SkillEffect.BuffMp)) buffMpPct += buff.Percent(SkillEffect.BuffMp);
+            if (buff.Has(SkillEffect.BuffHp)) { buffHpPct += buff.Percent(SkillEffect.BuffHp); buffHpFlat += buff.Flat(SkillEffect.BuffHp); }
+            if (buff.Has(SkillEffect.BuffMp)) { buffMpPct += buff.Percent(SkillEffect.BuffMp); buffMpFlat += buff.Flat(SkillEffect.BuffMp); }
         }
-        if (buffHpPct != 0) MaxHp += (int)(MaxHp * buffHpPct);
-        if (buffMpPct != 0) MaxMp += (int)(MaxMp * buffMpPct);
+        MaxHp = (int)((MaxHp + buffHpFlat) * (1f + buffHpPct));
+        MaxMp = (int)((MaxMp + buffMpFlat) * (1f + buffMpPct));
 
         WeaponAttackBase = StatCalculator.WeaponAttackBaseSpeed(WeaponType);
 
@@ -721,17 +750,26 @@ public class Entity
             if (mEff.CritRate != 0f) CritChance = Math.Clamp(CritChance + mEff.CritRate, 0f, 0.75f);
             CritDamageBonus += mEff.CritDamage;
 
+            // A learned skill can SUPERSEDE another's passive via Replaces[] (e.g. Spell
+            // Mastery replaces Weapon Mastery): collect those ids so the base passive
+            // doesn't double-apply. (Non-passive replaced skills are harmless no-ops here.)
+            var replacedPassives = new HashSet<string>();
+            foreach (var (skillId, _) in LearnedSkills)
+                if (SkillCatalog.Get(skillId)?.Replaces is { } rep)
+                    foreach (var r in rep) replacedPassives.Add(r);
+
             // ----- Learnable PASSIVES (discipline passives etc.): each learned skill
             // whose SkillDef carries a PassiveEffect applies it, on top of everything. -----
             foreach (var (skillId, skillLevel) in LearnedSkills)
             {
+                if (replacedPassives.Contains(skillId)) continue;
                 if (SkillCatalog.Get(skillId)?.PassiveAt(skillLevel) is not PassiveEffect pe) continue;
-                MaxHp += (int)(MaxHp * pe.MaxHpPct);
-                MaxMp += (int)(MaxMp * pe.MaxMpPct);
+                MaxHp += pe.MaxHp + (int)(MaxHp * pe.MaxHpPct);
+                MaxMp += pe.MaxMp + (int)(MaxMp * pe.MaxMpPct);
                 Defence += pe.Defence;
                 MagicDefence += pe.MagicDefence;
-                AttackPower += pe.Attack + (int)(AttackPower * pe.AttackPct) + pe.PhysAtk;
-                MagicAttack += pe.Attack + (int)(MagicAttack * pe.AttackPct) + pe.MagAtk;
+                AttackPower += pe.Attack + (int)(AttackPower * (pe.AttackPct + pe.PhysAtkPct)) + pe.PhysAtk;
+                MagicAttack += pe.Attack + (int)(MagicAttack * (pe.AttackPct + pe.MagAtkPct)) + pe.MagAtk;
                 Evasion += pe.Evasion;
                 Accuracy += pe.Accuracy;
                 if (pe.CritRate != 0f) CritChance = Math.Clamp(CritChance + pe.CritRate, 0f, 0.75f);
@@ -739,9 +777,20 @@ public class Entity
                 if (pe.MagicCritRate != 0f) MagicCritChance = Math.Clamp(MagicCritChance + pe.MagicCritRate, 0f, 0.5f);
                 HpRegenBonus += pe.HpRegen;
                 MpRegenBonus += pe.MpRegen;
+                if (pe.HpRegenPct != 0f) HpRegenMult *= 1f + pe.HpRegenPct;
+                if (pe.MpRegenPct != 0f) MpRegenMult *= 1f + pe.MpRegenPct;
                 if (pe.AtkSpeedPct != 0f) AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier * (1f - pe.AtkSpeedPct), 0.4f, 2.5f);
                 if (pe.CastSpeedPct != 0f) CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier * (1f - pe.CastSpeedPct), 0.4f, 2.5f);
                 if (pe.MoveSpeedPct != 0f) { RunSpeed *= 1f + pe.MoveSpeedPct; WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor; Speed = RunSpeed; }
+                CooldownReduction += pe.CooldownPct;
+                CritRateResist += pe.CritRateResist;
+                CritDmgResist += pe.CritDmgResist;
+                BowResist += pe.BowResist;
+                MagicFailResist += pe.MagicFailResist;
+                MagicInterruptBonus += pe.InterruptPower;
+                InterruptResist += pe.InterruptResist;
+                MeleeVamp += pe.MeleeVamp;
+                SpellVamp += pe.SpellVamp;
                 // Resolution floors are GUARANTEES — take the strongest (max), never sum.
                 EvadeFloor = Math.Max(EvadeFloor, pe.EvadeFloor);
                 HitFloor = Math.Max(HitFloor, pe.HitFloor);
@@ -758,6 +807,42 @@ public class Entity
         if (Kind == EntityKind.Player)
             MagicDefence = (int)(MagicDefence *
                 StatCalculator.MenModifier(StatCalculator.BaseMen(Race, BaseClass)));
+
+        // ----- Timed-buff contributions to BAKED stats (the stats computed once here;
+        // atk/def/speed read buffs live in their Effective* getters instead). Re-folded on
+        // every buff apply/expire because both ApplyBuff and TickBuffs call this. Fraction
+        // effects accept either Flat or Percent magnitudes (summed as a fraction). -----
+        foreach (var buff in Buffs)
+        {
+            if (buff.Has(SkillEffect.BuffAccuracy)) Accuracy += (int)buff.Flat(SkillEffect.BuffAccuracy);
+            if (buff.Has(SkillEffect.BuffCritRate))
+                CritChance = (CritChance + buff.Flat(SkillEffect.BuffCritRate)) * (1f + buff.Percent(SkillEffect.BuffCritRate));
+            if (buff.Has(SkillEffect.BuffMagicCritRate))
+                MagicCritChance = (MagicCritChance + buff.Flat(SkillEffect.BuffMagicCritRate)) * (1f + buff.Percent(SkillEffect.BuffMagicCritRate));
+            if (buff.Has(SkillEffect.BuffCritDamage))
+                CritDamageBonus += buff.Flat(SkillEffect.BuffCritDamage) + buff.Percent(SkillEffect.BuffCritDamage);
+            if (buff.Has(SkillEffect.BuffCritRateResist)) CritRateResist += buff.Flat(SkillEffect.BuffCritRateResist) + buff.Percent(SkillEffect.BuffCritRateResist);
+            if (buff.Has(SkillEffect.BuffCritDmgResist)) CritDmgResist += buff.Flat(SkillEffect.BuffCritDmgResist) + buff.Percent(SkillEffect.BuffCritDmgResist);
+            if (buff.Has(SkillEffect.BuffBowResist)) BowResist += buff.Flat(SkillEffect.BuffBowResist) + buff.Percent(SkillEffect.BuffBowResist);
+            if (buff.Has(SkillEffect.BuffMagicFailResist)) MagicFailResist += buff.Flat(SkillEffect.BuffMagicFailResist) + buff.Percent(SkillEffect.BuffMagicFailResist);
+            if (buff.Has(SkillEffect.BuffMeleeVamp)) MeleeVamp += buff.Flat(SkillEffect.BuffMeleeVamp) + buff.Percent(SkillEffect.BuffMeleeVamp);
+            if (buff.Has(SkillEffect.BuffSpellVamp)) SpellVamp += buff.Flat(SkillEffect.BuffSpellVamp) + buff.Percent(SkillEffect.BuffSpellVamp);
+            if (buff.Has(SkillEffect.BuffCooldown)) CooldownReduction += buff.Flat(SkillEffect.BuffCooldown) + buff.Percent(SkillEffect.BuffCooldown);
+            if (buff.Has(SkillEffect.BuffInterruptPower)) MagicInterruptBonus += (int)buff.Flat(SkillEffect.BuffInterruptPower);
+            if (buff.Has(SkillEffect.BuffInterruptResist)) InterruptResist += (int)buff.Flat(SkillEffect.BuffInterruptResist);
+            if (buff.Has(SkillEffect.BuffMagicFailFloor))
+                MagicFailFloor = Math.Max(MagicFailFloor, buff.Flat(SkillEffect.BuffMagicFailFloor) + buff.Percent(SkillEffect.BuffMagicFailFloor));
+        }
+        // Clamp the buff-touched fractions to sane ranges.
+        CritChance = Math.Clamp(CritChance, 0f, 0.75f);
+        MagicCritChance = Math.Clamp(MagicCritChance, 0f, 0.5f);
+        CritRateResist = Math.Clamp(CritRateResist, 0f, 1f);
+        CritDmgResist = Math.Clamp(CritDmgResist, 0f, 0.9f);
+        BowResist = Math.Clamp(BowResist, 0f, 0.9f);
+        MagicFailResist = Math.Clamp(MagicFailResist, 0f, 0.9f);
+        CooldownReduction = Math.Clamp(CooldownReduction, 0f, 0.8f);
+        MeleeVamp = Math.Clamp(MeleeVamp, 0f, 1f);
+        SpellVamp = Math.Clamp(SpellVamp, 0f, 1f);
 
         Hp = Math.Min(Hp, MaxHp);
         Mp = Math.Min(Mp, MaxMp);

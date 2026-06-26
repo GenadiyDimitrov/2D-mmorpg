@@ -395,7 +395,7 @@ public class GameLoopService : BackgroundService
             }
             targetId = tid;
         }
-        else if ((def.Effect & (SkillEffect.Heal | SkillEffect.Cleanse | SkillEffect.AnyBuff)) != 0 &&
+        else if ((def.Effect & (SkillEffect.Heal | SkillEffect.RestoreMp | SkillEffect.Cleanse | SkillEffect.AnyBuff)) != 0 &&
                  def.TargetMode != TargetMode.SelfOnly && def.Range > 0 &&
                  cmd.TargetId is Guid allyId &&
                  _world.Entities.TryGetValue(allyId, out var ally) &&
@@ -1611,7 +1611,11 @@ public class GameLoopService : BackgroundService
         // lands even if the target moved. Charge the remaining MP and start CD.
         caster.Mp -= def.FinishMpAt(lvl);
         caster.CastInitialMpPaid = 0;
-        caster.SkillCooldowns[def.Id] = def.CooldownTicks;
+        // Reuse-delay reduction (Spell Mastery / buffs) shortens the cooldown.
+        int cooldown = def.CooldownTicks;
+        if (cooldown > 0 && caster.CooldownReduction > 0f)
+            cooldown = Math.Max(1, (int)(cooldown * (1f - caster.CooldownReduction)));
+        caster.SkillCooldowns[def.Id] = cooldown;
 
 var effect = def.Effect;
         bool offensive = false;
@@ -1666,6 +1670,7 @@ var effect = def.Effect;
                 0, 0, target.MagicFailFloor, 0f,
                 caster.Level, target.Level,
                 sureHit: def.SureHit, defenderImmune: target.Immune);
+            if (caster.MagicFailResist > 0f) fail = Math.Max(0f, fail - caster.MagicFailResist);
             if (_rng.NextDouble() < fail)
             {
                 damage = Math.Max(1, damage / 3);
@@ -1688,23 +1693,40 @@ var effect = def.Effect;
                 TryInterruptCast(target, magicInterrupt);
             }
 
-            // Vampiric: heal the caster for a fraction of the magic damage dealt.
-            if (def.Lifesteal > 0f && damage > 0)
+            // Vampiric: heal the caster for a fraction of the magic damage dealt
+            // (the skill's own Lifesteal plus any Spell Vamp buff).
+            float spellVamp = def.Lifesteal + caster.SpellVamp;
+            if (spellVamp > 0f && damage > 0)
             {
-                int leech = (int)(damage * def.Lifesteal);
+                int leech = (int)(damage * spellVamp);
                 if (leech > 0) HealOne(caster, caster, leech, def.Name);
             }
         }
 
         // ---- Heal (single ally/self, or AoE to allies in radius) ----
+        // Flat power (scales with WIT) plus an optional % of the TARGET's max HP
+        // (a Percent magnitude on the Heal effect).
         if (effect.HasFlag(SkillEffect.Heal))
         {
-            int amount = SkillMath.HealAmount(def.PowerAt(lvl), caster.EffectiveWit);
+            int flat = SkillMath.HealAmount(def.PowerAt(lvl), caster.EffectiveWit);
+            float pct = def.MagnitudeOf(SkillEffect.Heal, ModifierMode.Percent, lvl);
             if (def.TargetMode == TargetMode.AlliesInRadius)
                 foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
-                    HealOne(caster, ally, amount, def.Name);
+                    HealOne(caster, ally, flat + (int)(ally.MaxHp * pct), def.Name);
             else
-                HealOne(caster, target, amount, def.Name);
+                HealOne(caster, target, flat + (int)(target.MaxHp * pct), def.Name);
+        }
+
+        // ---- MP Restore (single ally/self, or AoE) — flat power (+optional % of max MP) ----
+        if (effect.HasFlag(SkillEffect.RestoreMp))
+        {
+            int flat = def.PowerAt(lvl);
+            float pct = def.MagnitudeOf(SkillEffect.RestoreMp, ModifierMode.Percent, lvl);
+            if (def.TargetMode == TargetMode.AlliesInRadius)
+                foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
+                    RestoreMpOne(caster, ally, flat + (int)(ally.MaxMp * pct), def.Name);
+            else
+                RestoreMpOne(caster, target, flat + (int)(target.MaxMp * pct), def.Name);
         }
 
         // ---- Cleanse — remove harmful effects from an ally (or allies in radius) ----
@@ -1725,6 +1747,7 @@ var effect = def.Effect;
                 0, 0, target.MagicFailFloor, 0f,
                 caster.Level, target.Level,
                 sureHit: def.SureHit, defenderImmune: target.Immune);
+            if (caster.MagicFailResist > 0f) fail = Math.Max(0f, fail - caster.MagicFailResist);
             if (_rng.NextDouble() < fail)
             {
                 BroadcastCombat(caster, target, 0, CombatOutcome.Fail, def.Name);
@@ -1826,6 +1849,18 @@ var effect = def.Effect;
         if (amount > 0)
             target.Hp = Math.Min(target.MaxHp, target.Hp + amount);
         BroadcastCombat(caster, target, amount, CombatOutcome.Heal, skillName);
+    }
+
+    /// <summary>Restore one target's MP and broadcast it (mirrors HealOne for the MP
+    /// channel; used by MP Restore skills).</summary>
+    private void RestoreMpOne(Entity caster, Entity target, int amount, string skillName)
+    {
+        if (target.Dead) return;
+        if (amount > 0)
+            target.Mp = Math.Min(target.MaxMp, target.Mp + amount);
+        BroadcastCombat(caster, target, amount, CombatOutcome.Heal, skillName);
+        if (target.Kind == EntityKind.Player)
+            SendStats(target);   // MP isn't surfaced via damage broadcasts — refresh the bar
     }
 
     /// <summary>Strip all harmful effects (curses, anti-heal, roots) from an ally.</summary>
@@ -1965,6 +2000,12 @@ var effect = def.Effect;
             damage = finalDmg;
             BroadcastCombat(attacker, target, damage, outcome);
             ApplyDamage(target, damage);
+            // Melee basic-attack vampirism (Might lvl 4 etc.) — bow attacks don't leech.
+            if (attacker.MeleeVamp > 0f && damage > 0 && attacker.WeaponType != WeaponType.Bow)
+            {
+                int leech = (int)(damage * attacker.MeleeVamp);
+                if (leech > 0) HealOne(attacker, attacker, leech, "Vampiric");
+            }
             // Rogues carry magic-interrupt power on basic attacks; others = 0.
             TryInterruptCast(target, attacker.BasicAttackInterruptPower);
         }
@@ -2433,13 +2474,22 @@ var effect = def.Effect;
     private (int damage, CombatOutcome outcome) ResolvePhysicalCritAndBlock(
         Entity attacker, Entity target, int baseDamage, float critChance, float blockAccuracy)
     {
-        // Shield lowers crit chance.
-        float effCrit = critChance - (target.HasShield ? target.ShieldCritDefense : 0f);
+        // Bow/arrow resistance lowers all damage from a bow attacker (hit/crit/block alike).
+        if (attacker.WeaponType == WeaponType.Bow && target.BowResist > 0f)
+            baseDamage = Math.Max(1, (int)(baseDamage * (1f - target.BowResist)));
+
+        // Shield AND the target's crit-rate resist lower the attacker's crit CHANCE.
+        float effCrit = critChance
+            - (target.HasShield ? target.ShieldCritDefense : 0f)
+            - target.CritRateResist;
         effCrit = Math.Clamp(effCrit, 0f, 1f);
 
         if (_rng.NextDouble() < effCrit)
         {
-            int crit = (int)(baseDamage * StatCalculator.PhysicalCritMult(attacker.CritDamageBonus));
+            // Crit-damage resist trims the EXTRA (above-normal) crit damage.
+            float mult = StatCalculator.PhysicalCritMult(attacker.CritDamageBonus);
+            float extra = (mult - 1f) * (1f - target.CritDmgResist);
+            int crit = Math.Max(1, (int)(baseDamage * (1f + extra)));
             return (crit, CombatOutcome.Crit);   // crit ignores the shield
         }
 

@@ -128,13 +128,22 @@ public enum SkillCategory { Physical = 0, Magic = 1, Buff = 2, Debuff = 3, Heal 
 /// </summary>
 public readonly record struct PassiveEffect(
     float MaxHpPct = 0f, float MaxMpPct = 0f,
+    int MaxHp = 0, int MaxMp = 0,      // flat max HP / MP
     int Defence = 0, int MagicDefence = 0,
     int Attack = 0, float AttackPct = 0f,
     int PhysAtk = 0, int MagAtk = 0,   // flat, channel-specific (Weapon Mastery etc.)
+    float PhysAtkPct = 0f, float MagAtkPct = 0f,  // percent, channel-specific
     int Evasion = 0, int Accuracy = 0,
     float CritRate = 0f, float CritDamage = 0f, float MagicCritRate = 0f,
-    float HpRegen = 0f, float MpRegen = 0f,
+    float HpRegen = 0f, float MpRegen = 0f,            // FLAT regen per tick
+    float HpRegenPct = 0f, float MpRegenPct = 0f,      // regen MULTIPLIER (additive: 0.20 = +20%)
     float AtkSpeedPct = 0f, float CastSpeedPct = 0f, float MoveSpeedPct = 0f,
+    float CooldownPct = 0f,       // spell reuse-delay reduction (0.10 = -10%)
+    // Defensive resists (fractions). MeleeVamp/SpellVamp = lifesteal fractions.
+    float CritRateResist = 0f, float CritDmgResist = 0f, float BowResist = 0f,
+    float MagicFailResist = 0f,
+    int InterruptPower = 0, int InterruptResist = 0,
+    float MeleeVamp = 0f, float SpellVamp = 0f,
     // Combat-resolution "sure" floors (see docs/CombatResolution.md). These are
     // GUARANTEES (the resolver takes the MAX across passives, not a sum):
     float EvadeFloor = 0f,        // min chance to dodge physical (rogue/archer)
@@ -168,6 +177,7 @@ public static partial class SkillCatalog
         list.AddRange(CommonSkills());        // Skills.Common.cs
         list.AddRange(FighterSkills());       // Skills.Fighter.cs
         list.AddRange(MageSkills());          // Skills.Mage.cs
+        list.AddRange(HealerSkills());        // Skills.Healer.cs (2nd-class Healer kit)
         list.AddRange(LightbringerSkills());  // Skills.Lightbringer.cs
         list.AddRange(WarchanterSkills());    // Skills.Warchanter.cs
 

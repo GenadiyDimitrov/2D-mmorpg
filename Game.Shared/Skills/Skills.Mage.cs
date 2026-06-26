@@ -39,7 +39,8 @@ public static partial class SkillCatalog
             TargetMode: TargetMode.SelfOnly,
             Description: "Restores your own HP (power 42). Scales with WIT."),
 
-        // Heal — targeted heal (ally or self), 2 levels; replaces Self Heal.
+        // Heal — targeted heal (ally or self); replaces Self Heal. Lvls 1-2 are the
+        // base-mage line; the 2nd-class Healer CONTINUES it at lvls 3-6 (20/25/30/35).
         new(Heal, "Heal", BaseClass.Mage, SkillEffect.Heal,
             MpCost: 14, CastTicks: 50, CooldownTicks: 20, Range: 600, Power: 67,
             Category: SkillCategory.Heal, InitialMpCost: 3,
@@ -47,31 +48,59 @@ public static partial class SkillCatalog
             Description: "Restores a friendly target's HP (or your own). Scales with WIT.",
             Levels: new[]
             {
-                new SkillLevel(Power: 67,  MpCost: 14, InitialMpCost: 3, SpCost: 480,  Description: "Heal power 67."),
-                new SkillLevel(Power: 107, MpCost: 22, InitialMpCost: 5, SpCost: 2200, Description: "Heal power 107."),
+                new SkillLevel(Power: 67,  MpCost: 14, InitialMpCost: 3,  SpCost: 480,   Description: "Heal power 67."),
+                new SkillLevel(Power: 107, MpCost: 22, InitialMpCost: 5,  SpCost: 2200,  Description: "Heal power 107."),
+                new SkillLevel(Power: 151, MpCost: 30, InitialMpCost: 6,  SpCost: 3200,  Description: "Heal power 151."),
+                new SkillLevel(Power: 195, MpCost: 38, InitialMpCost: 8,  SpCost: 6400,  Description: "Heal power 195."),
+                new SkillLevel(Power: 245, MpCost: 44, InitialMpCost: 9,  SpCost: 12800, Description: "Heal power 245."),
+                new SkillLevel(Power: 301, MpCost: 52, InitialMpCost: 11, SpCost: 25000, Description: "Heal power 301."),
             }),
 
-        // Might — party-castable +8% Attack & Defence buff (20 min).
+        // Might — party-castable Attack & Defence buff (20 min). Lvl 1 = base-mage
+        // (+8%/+8%); the Healer CONTINUES it at lvls 2-3 (20/25). Lvl 4 (with basic-
+        // attack vampirism) lands in Increment 2.
         new(Might, "Might", BaseClass.Mage, SkillEffect.BuffAtk | SkillEffect.BuffDef,
-            MpCost: 20, CastTicks: 20, CooldownTicks: 10, Range: 600, Power: 0,
+            MpCost: 20, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
             DurationTicks: 12000, BuffKey: "mage_might", Rank: 1, InitialMpCost: 4,
             Magnitudes: new EffectMagnitude[]
             {
                 new(SkillEffect.BuffAtk, 0.08f), new(SkillEffect.BuffDef, 0.08f),
             },
             Category: SkillCategory.Buff, SpCost: 960,
-            Description: "Blesses an ally (or self) with +8% Attack and Defence for 20 minutes."),
+            Description: "Blesses an ally (or self) with +Attack and +Defence for 20 minutes.",
+            Levels: new[]
+            {
+                new SkillLevel(MpCost: 20, InitialMpCost: 4,  SpCost: 960,
+                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtk, 0.08f), new(SkillEffect.BuffDef, 0.08f) },
+                    Description: "+8% Attack and +8% Defence for 20 minutes."),
+                new SkillLevel(MpCost: 50, InitialMpCost: 10, SpCost: 3200,
+                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtk, 0.12f), new(SkillEffect.BuffDef, 0.08f) },
+                    Description: "+12% Attack and +8% Defence for 20 minutes."),
+                new SkillLevel(MpCost: 50, InitialMpCost: 10, SpCost: 6400,
+                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtk, 0.12f), new(SkillEffect.BuffDef, 0.12f) },
+                    Description: "+12% Attack and +12% Defence for 20 minutes."),
+            }),
 
-        // Anti-Magic — learnable mage passive: +M.Def, then a fizzle floor at Lv.2.
+        // Anti-Magic — learnable mage passive: +M.Def and a magic-fail (fizzle) floor.
+        // Lvls 1-2 = base mage; the Healer CONTINUES it at lvls 3-6 (20/25/30/35). The
+        // CSV "mRes %" is modelled as the fizzle floor (the resolver takes the max floor).
         new(MageAntiMagic, "Anti-Magic", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
             Description: "Passive. Hardens you against hostile magic.",
             Levels: new[]
             {
-                new SkillLevel(SpCost: 480,  Passive: new PassiveEffect(MagicDefence: 12), Description: "+12 magic defence."),
-                new SkillLevel(SpCost: 2200, Passive: new PassiveEffect(MagicDefence: 16, MagicFailFloor: 0.05f),
+                new SkillLevel(SpCost: 480,   Passive: new PassiveEffect(MagicDefence: 12), Description: "+12 magic defence."),
+                new SkillLevel(SpCost: 2200,  Passive: new PassiveEffect(MagicDefence: 16, MagicFailFloor: 0.05f),
                     Description: "+16 magic defence and a 5% chance for spells to fizzle on you."),
+                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(MagicDefence: 20, MagicFailFloor: 0.05f),
+                    Description: "+20 magic defence; spells fizzle on you at least 5% of the time."),
+                new SkillLevel(SpCost: 6400,  Passive: new PassiveEffect(MagicDefence: 25, MagicFailFloor: 0.05f),
+                    Description: "+25 magic defence; spells fizzle on you at least 5% of the time."),
+                new SkillLevel(SpCost: 12800, Passive: new PassiveEffect(MagicDefence: 30, MagicFailFloor: 0.10f),
+                    Description: "+30 magic defence; spells fizzle on you at least 10% of the time."),
+                new SkillLevel(SpCost: 25000, Passive: new PassiveEffect(MagicDefence: 36, MagicFailFloor: 0.10f),
+                    Description: "+36 magic defence; spells fizzle on you at least 10% of the time."),
             }),
 
         // Vampiric Bolt — magic nuke that heals the caster for 40% of damage dealt.
@@ -106,11 +135,21 @@ public static partial class SkillCatalog
             Category: SkillCategory.Magic,
             Description: "A searing bolt — the nuker's stronger basic attack (replaces Magic Bolt)."),
 
-        new(HolyStrike, "Holy Strike", BaseClass.Mage, SkillEffect.MagicDamage,
-            MpCost: 20, CastTicks: 30, CooldownTicks: 10, Range: 500, Power: 70,
+        // Holy Bolt — the Healer's offensive spell (replaces Magic Bolt). ONE skill;
+        // per-race NAME only (Holy/Moonlight/Spirit Bolt) via ClassSkill.DisplayName.
+        // 4 levels learned at 20/25/30/35.
+        new(HolyStrike, "Holy Bolt", BaseClass.Mage, SkillEffect.MagicDamage,
+            MpCost: 20, CastTicks: 40, CooldownTicks: 10, Range: 750, Power: 21,
             Replaces: new[] { MagicBolt },   // the healer's nuke replaces the basic
-            Category: SkillCategory.Magic,
-            Description: "A bolt of light — the healer's offensive spell (replaces Magic Bolt)."),
+            Category: SkillCategory.Magic, InitialMpCost: 4,
+            Description: "A bolt of holy power — the Healer's offensive spell (replaces Magic Bolt). Spells fail rather than miss.",
+            Levels: new[]
+            {
+                new SkillLevel(Power: 21, MpCost: 20, InitialMpCost: 4, SpCost: 3200,  Description: "Magic damage, power 21."),
+                new SkillLevel(Power: 25, MpCost: 23, InitialMpCost: 5, SpCost: 3200,  Description: "Magic damage, power 25."),
+                new SkillLevel(Power: 30, MpCost: 26, InitialMpCost: 6, SpCost: 12800, Description: "Magic damage, power 30."),
+                new SkillLevel(Power: 36, MpCost: 31, InitialMpCost: 7, SpCost: 25000, Description: "Magic damage, power 36."),
+            }),
 
         new(GreaterWeakness, "Greater Weakness", BaseClass.Mage, SkillEffect.DebuffDef,
             MpCost: 22, CastTicks: 5, CooldownTicks: 300, Range: 500, Power: 0,

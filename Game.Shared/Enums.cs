@@ -49,40 +49,62 @@ public enum CombatOutcome
 /// enum member per combination.
 /// </summary>
 [Flags]
-public enum SkillEffect
+public enum SkillEffect : long
 {
     None           = 0,
-    PhysicalDamage = 1 << 0,
-    MagicDamage    = 1 << 1,
-    Heal           = 1 << 2,
-    BuffAtk        = 1 << 3,
-    BuffDef        = 1 << 4,
-    BuffMoveSpeed  = 1 << 5,
-    BuffAtkSpeed   = 1 << 6,   // shortens basic-attack interval
-    BuffCastSpeed  = 1 << 7,   // shortens cast time
-    BuffEvasion    = 1 << 8,
-    BuffHp         = 1 << 9,
-    BuffMp         = 1 << 10,
-    DebuffDef      = 1 << 11,
-    BuffBlockChance = 1 << 12,  // Shield Mastery: +block chance
-    BuffShieldDef   = 1 << 13,  // Shield Mastery: +shield defence / +block reduction
+    PhysicalDamage = 1L << 0,
+    MagicDamage    = 1L << 1,
+    Heal           = 1L << 2,   // restores HP (flat power, +% of max HP via a Percent magnitude)
+    BuffAtk        = 1L << 3,   // +attack to BOTH channels (pAtk & mAtk)
+    BuffDef        = 1L << 4,
+    BuffMoveSpeed  = 1L << 5,
+    BuffAtkSpeed   = 1L << 6,   // shortens basic-attack interval
+    BuffCastSpeed  = 1L << 7,   // shortens cast time
+    BuffEvasion    = 1L << 8,
+    BuffHp         = 1L << 9,   // Max HP: Percent of max, and/or Flat
+    BuffMp         = 1L << 10,  // Max MP: Percent of max, and/or Flat
+    DebuffDef      = 1L << 11,
+    BuffBlockChance = 1L << 12,  // Shield Mastery: +block chance
+    BuffShieldDef   = 1L << 13,  // Shield Mastery: +shield defence / +block reduction
     // ----- Healer (Lightbringer) additions, Phase 24.1 -----
-    Cleanse        = 1 << 14,   // remove harmful effects from an ally
-    DebuffHealRecv = 1 << 15,   // anti-heal: reduces healing the target receives
-    Root           = 1 << 16,   // hold: target cannot move for the duration
-    Detaunt        = 1 << 17,   // drop the caster's aggro from nearby mobs (stub until threat)
+    Cleanse        = 1L << 14,   // remove harmful effects from an ally
+    DebuffHealRecv = 1L << 15,   // anti-heal: reduces healing the target receives
+    Root           = 1L << 16,   // hold: target cannot move for the duration
+    Detaunt        = 1L << 17,   // drop the caster's aggro from nearby mobs (stub until threat)
     // ----- Buffer (Warchanter) additions -----
-    BuffMagicDef   = 1 << 18,   // +magic defence (applied live in EffectiveMagicDefence)
-    BuffHpRegen    = 1 << 19,   // +HP regen (percent, applied in Regenerate)
-    BuffMpRegen    = 1 << 20,   // +MP regen (percent, applied in Regenerate)
-    HealOverTime   = 1 << 21,   // heals a % of max HP each second for the duration
-    // Room to grow: Stun = 1 << 22, ...
+    BuffMagicDef   = 1L << 18,   // +magic defence (applied live in EffectiveMagicDefence)
+    BuffHpRegen    = 1L << 19,   // +HP regen (Percent and/or Flat, applied in Regenerate)
+    BuffMpRegen    = 1L << 20,   // +MP regen (Percent and/or Flat, applied in Regenerate)
+    HealOverTime   = 1L << 21,   // heals a % of max HP each second for the duration
+    // ----- Healer buff/effect layer (Increment 2 primitives) -----
+    BuffPhysAtk        = 1L << 22,  // +physical attack ONLY (flat and/or %)
+    BuffMagAtk         = 1L << 23,  // +magic attack ONLY (flat and/or %)
+    BuffAccuracy       = 1L << 24,  // +accuracy (flat)
+    BuffCritRate       = 1L << 25,  // +physical crit rate (flat and/or % of current)
+    BuffMagicCritRate  = 1L << 26,  // +magic crit rate
+    BuffCritDamage     = 1L << 27,  // +physical crit damage multiplier
+    BuffCritDmgResist  = 1L << 28,  // reduce incoming physical crit EXTRA damage (%)
+    BuffCritRateResist = 1L << 29,  // reduce attacker physical crit CHANCE vs you (flat)
+    BuffBowResist      = 1L << 30,  // reduce damage taken from BOW attacks (%)
+    BuffMagicFailFloor = 1L << 31,  // raise the chance enemy spells fail vs you (floor)
+    BuffMagicFailResist= 1L << 32,  // your own spells fail LESS (flat reduction to your fail chance)
+    BuffInterruptPower = 1L << 33,  // "magic cancel": +your offensive interrupt power
+    BuffInterruptResist= 1L << 34,  // "magic cancel resist": +your interrupt resistance
+    BuffMeleeVamp      = 1L << 35,  // basic (melee) attacks heal you for % of damage
+    BuffSpellVamp      = 1L << 36,  // damage spells heal you for % of damage
+    BuffCooldown       = 1L << 37,  // spell reuse-delay reduction (%)
+    RestoreMp          = 1L << 38,  // restores MP (flat power, +% of max MP via a Percent magnitude)
+    // Room to grow up to 1L << 62.
 
     // Convenience masks.
     AnyDamage = PhysicalDamage | MagicDamage,
     AnyBuff   = BuffAtk | BuffDef | BuffMoveSpeed | BuffAtkSpeed | BuffCastSpeed
               | BuffEvasion | BuffHp | BuffMp | BuffBlockChance | BuffShieldDef
-              | BuffMagicDef | BuffHpRegen | BuffMpRegen | HealOverTime,
+              | BuffMagicDef | BuffHpRegen | BuffMpRegen | HealOverTime
+              | BuffPhysAtk | BuffMagAtk | BuffAccuracy | BuffCritRate | BuffMagicCritRate
+              | BuffCritDamage | BuffCritDmgResist | BuffCritRateResist | BuffBowResist
+              | BuffMagicFailFloor | BuffMagicFailResist | BuffInterruptPower
+              | BuffInterruptResist | BuffMeleeVamp | BuffSpellVamp | BuffCooldown,
     // Harmful effects applied to an enemy (offensive; can fail; cleansable).
     AnyDebuff = DebuffDef | DebuffHealRecv | Root,
 }

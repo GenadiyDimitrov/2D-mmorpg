@@ -1280,6 +1280,22 @@ public partial class MainWindow
         SkillEffect.DebuffDef => "Def Down",
         SkillEffect.DebuffHealRecv => "Healing Down",
         SkillEffect.HealOverTime => "Heal/sec",
+        SkillEffect.BuffPhysAtk => "P.Atk",
+        SkillEffect.BuffMagAtk => "M.Atk",
+        SkillEffect.BuffAccuracy => "Accuracy",
+        SkillEffect.BuffCritRate => "Crit Rate",
+        SkillEffect.BuffMagicCritRate => "M.Crit Rate",
+        SkillEffect.BuffCritDamage => "Crit Dmg",
+        SkillEffect.BuffCritDmgResist => "Crit Dmg Resist",
+        SkillEffect.BuffCritRateResist => "Crit Rate Resist",
+        SkillEffect.BuffBowResist => "Bow Resist",
+        SkillEffect.BuffMagicFailFloor => "Anti-Magic",
+        SkillEffect.BuffMagicFailResist => "Spell Focus",
+        SkillEffect.BuffInterruptPower => "Cancel Power",
+        SkillEffect.BuffInterruptResist => "Cancel Resist",
+        SkillEffect.BuffMeleeVamp => "Vampiric",
+        SkillEffect.BuffSpellVamp => "Spell Vamp",
+        SkillEffect.BuffCooldown => "Reuse",
         _ => ""
     };
 
