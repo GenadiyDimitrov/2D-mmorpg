@@ -729,8 +729,31 @@ public class Entity
         // warriors are immune. Speed factors (>1 faster) divide the TIME multipliers. ---
         if (Kind == EntityKind.Player)
         {
-            var (mEff, mLabel) = ArmorMastery.Resolve(BaseClass, Archetype, bodyWeight, Level,
-                w => LearnedSkills.ContainsKey(ArmorMastery.SkillIdFor(w)));
+            // A learned DATA-DRIVEN armor mastery (a skill carrying per-weight MasteryEffects)
+            // REPLACES the hardcoded ArmorMastery table for this entity. Same pattern future
+            // classes reuse for weapon-type-conditional passives.
+            MasteryEffect mEff = ArmorMastery.Neutral;
+            string mLabel;
+            bool dataMastery = false;
+            foreach (var (skillId, skillLevel) in LearnedSkills)
+            {
+                if (SkillCatalog.Get(skillId)?.ArmorMasteryAt(skillLevel) is not ArmorMasteryProfile prof)
+                    continue;
+                mEff = bodyWeight switch
+                {
+                    ArmorWeight.Robe  => prof.Robe,
+                    ArmorWeight.Light => prof.Light,
+                    ArmorWeight.Heavy => prof.Heavy,
+                    _ => ArmorMastery.Neutral,
+                };
+                dataMastery = true;
+                break;
+            }
+            if (dataMastery)
+                mLabel = bodyWeight == ArmorWeight.None ? "Armor Mastery" : $"Armor Mastery ({bodyWeight})";
+            else
+                (mEff, mLabel) = ArmorMastery.Resolve(BaseClass, Archetype, bodyWeight, Level,
+                    w => LearnedSkills.ContainsKey(ArmorMastery.SkillIdFor(w)));
             ArmorMasteryLabel = mLabel;
 
             AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier / mEff.AtkSpeed, 0.4f, 2.5f);
@@ -740,8 +763,8 @@ public class Entity
             Speed = RunSpeed;
             HpRegenMult = mEff.HpRegen;
             MpRegenMult = mEff.MpRegen;
-            MaxHp = (int)(MaxHp * mEff.MaxHp);
-            MaxMp = (int)(MaxMp * mEff.MaxMp);
+            MaxHp = (int)((MaxHp + mEff.MaxHpFlat) * mEff.MaxHp);
+            MaxMp = (int)((MaxMp + mEff.MaxMpFlat) * mEff.MaxMp);
             Evasion += mEff.Evasion;
             Accuracy += mEff.Accuracy;
             Defence += mEff.Defence;

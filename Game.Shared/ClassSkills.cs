@@ -118,8 +118,8 @@ public static class ClassSkills
                 yield return new ClassSkill(SkillCatalog.MasteryLight, second);
                 break;
             case Archetype.Healer:
-                yield return new ClassSkill(SkillCatalog.MasteryLight, second);
-                yield return new ClassSkill(SkillCatalog.MasteryRobe, second);
+                // Healer uses the DATA-DRIVEN Armor Mastery skill (registered in its class
+                // table), which replaces the separate light/robe mastery passives.
                 break;
             case Archetype.Nuker:
                 yield return new ClassSkill(SkillCatalog.MasteryRobe, second);

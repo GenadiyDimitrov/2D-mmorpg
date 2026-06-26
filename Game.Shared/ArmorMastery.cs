@@ -12,8 +12,10 @@ public readonly record struct MasteryEffect(
     float MoveSpeed = 1f,    // >1 faster movement
     float HpRegen = 1f,      // >1 more HP regen
     float MpRegen = 1f,      // >1 more MP regen
-    float MaxHp = 1f,        // >1 more max HP
-    float MaxMp = 1f,        // >1 more max MP
+    float MaxHp = 1f,        // >1 more max HP (FACTOR)
+    float MaxMp = 1f,        // >1 more max MP (FACTOR)
+    int MaxHpFlat = 0,       // flat max HP added before the factor
+    int MaxMpFlat = 0,       // flat max MP added before the factor
     int Evasion = 0,
     int Accuracy = 0,
     int Defence = 0,
@@ -41,7 +43,7 @@ public static class ArmorMastery
     // zeroed effect multiplies MaxHp/MoveSpeed/regen to 0 and divides cast speed by
     // 0, which is exactly the "0 HP/MP, 0 move, 150% slower cast" bug for an
     // unarmored character. Construct the 1.0 factors explicitly.
-    private static readonly MasteryEffect Neutral = new(
+    public static readonly MasteryEffect Neutral = new(
         AtkSpeed: 1f, CastSpeed: 1f, MoveSpeed: 1f,
         HpRegen: 1f, MpRegen: 1f, MaxHp: 1f, MaxMp: 1f);
 

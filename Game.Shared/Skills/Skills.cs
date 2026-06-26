@@ -60,8 +60,17 @@ public record SkillDef(
     // Magnitudes / Passive / MpCost / SpCost in Levels[level-1]; see *At(level).
     SkillLevel[]? Levels = null,
     // Fraction of magic damage dealt that heals the caster (Vampiric Bolt etc.).
-    float Lifesteal = 0f)
+    float Lifesteal = 0f,
+    // Armor-mastery passive: per-level, per-worn-weight stat profiles (see
+    // ArmorMasteryProfile). When set, this skill behaves as a data-driven armor mastery.
+    ArmorMasteryProfile[]? ArmorMasteryLevels = null)
 {
+    /// <summary>The armor-mastery per-weight profile for a learned skill LEVEL, or null
+    /// if this skill isn't an armor mastery.</summary>
+    public ArmorMasteryProfile? ArmorMasteryAt(int level) =>
+        ArmorMasteryLevels is { Length: > 0 } && level >= 1 && level <= ArmorMasteryLevels.Length
+            ? ArmorMasteryLevels[level - 1] : null;
+
     /// <summary>Highest level this skill can reach (1 for a single-level skill).</summary>
     public int MaxLevel => Levels is { Length: > 0 } ? Levels.Length : 1;
 
@@ -102,6 +111,13 @@ public record SkillDef(
     public int InitialMp => InitialMpAt(1);
     public int FinishMp => FinishMpAt(1);
 }
+
+/// <summary>Per-armor-weight stat profile for an armor-mastery PASSIVE (one entry per
+/// skill level). The worn BODY weight selects which MasteryEffect applies in
+/// Entity.RecomputeDerived — turning the old hardcoded ArmorMastery table into skill DATA
+/// (the same pattern future classes reuse for weapon-type-conditional passives).</summary>
+public readonly record struct ArmorMasteryProfile(
+    MasteryEffect Robe, MasteryEffect Light, MasteryEffect Heavy);
 
 /// <summary>Per-level tunables for a multi-level skill (see SkillDef.Levels). Only the
 /// fields that change between levels live here; identity (id/name/effect/range/flags)

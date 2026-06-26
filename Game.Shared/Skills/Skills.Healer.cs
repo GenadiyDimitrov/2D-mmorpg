@@ -13,6 +13,26 @@ public static partial class SkillCatalog
     public const string HolyBody  = "holy_body";    // "Body" buff (+HP regen)
     public const string SpellMastery = "spell_mastery";
     public const string RestoreMana = "restore_mana";
+    public const string ArmorMasterySkill = "armor_mastery";   // data-driven, replaces Robe Mastery
+
+    /// <summary>Healer Armor Mastery per-weight data (lvls 20/25/30/35). Robe = caster lean
+    /// (+MP regen / def / max MP); Light = stay-casting + sturdier (+def, slight cast cost,
+    /// +eva at L4); Heavy = penalty (slower casts/attacks). Factors: &gt;1 faster/more.</summary>
+    private static readonly ArmorMasteryProfile[] HealerArmorMastery =
+    {
+        new(Robe:  new MasteryEffect(MpRegen: 1.2f, Defence: 20, MaxMpFlat: 20),
+            Light: new MasteryEffect(MpRegen: 1.2f, Defence: 20, CastSpeed: 0.95f),
+            Heavy: new MasteryEffect(MpRegen: 1.0f, AtkSpeed: 0.8f, CastSpeed: 0.5f)),
+        new(Robe:  new MasteryEffect(MpRegen: 1.2f, Defence: 25, MaxMpFlat: 20),
+            Light: new MasteryEffect(MpRegen: 1.2f, Defence: 25, CastSpeed: 0.95f),
+            Heavy: new MasteryEffect(MpRegen: 1.0f, AtkSpeed: 0.8f, CastSpeed: 0.5f)),
+        new(Robe:  new MasteryEffect(MpRegen: 1.2f, Defence: 30, MaxMpFlat: 30),
+            Light: new MasteryEffect(MpRegen: 1.2f, Defence: 30, CastSpeed: 0.95f),
+            Heavy: new MasteryEffect(MpRegen: 1.0f, AtkSpeed: 0.8f, CastSpeed: 0.5f)),
+        new(Robe:  new MasteryEffect(MpRegen: 1.2f, Defence: 35, MaxMpFlat: 30),
+            Light: new MasteryEffect(MpRegen: 1.2f, Defence: 35, CastSpeed: 0.95f, Evasion: 2),
+            Heavy: new MasteryEffect(MpRegen: 1.0f, AtkSpeed: 0.8f, CastSpeed: 0.5f)),
+    };
 
     private static SkillDef[] HealerSkills() => new SkillDef[]
     {
@@ -89,6 +109,23 @@ public static partial class SkillCatalog
                     },
                     Description: "Cast +23%, Move +33, Evasion +2."),
             }),
+
+        // Armor Mastery — DATA-DRIVEN passive that replaces Robe Mastery: its effect
+        // depends on the BODY armor weight worn (see HealerArmorMastery). Levels carry
+        // only the SP cost + max-level; the per-weight stats live in ArmorMasteryLevels.
+        new(ArmorMasterySkill, "Armor Mastery", BaseClass.Mage, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive, Replaces: new[] { MasteryRobe, MasteryLight },
+            Description: "Passive. Adapts to your armor: ROBE boosts MP, MP-regen and defence; "
+                       + "LIGHT keeps you casting while sturdier; HEAVY weighs your casting and attacks down.",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 9600),
+                new SkillLevel(SpCost: 12800),
+                new SkillLevel(SpCost: 12800),
+                new SkillLevel(SpCost: 25000),
+            },
+            ArmorMasteryLevels: HealerArmorMastery),
 
         // Restore Mana — replenishes an ally's MP (flat power). Later "ultimate" restores
         // will add a % of max MP via a Percent magnitude on the RestoreMp effect.

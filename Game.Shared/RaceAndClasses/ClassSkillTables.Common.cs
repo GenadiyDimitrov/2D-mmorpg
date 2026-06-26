@@ -108,7 +108,13 @@ public static partial class ClassSkillTables
                 new ClassSkill(SpellMastery, 20, SkillLevel: 1),
                 new ClassSkill(SpellMastery, 25, SkillLevel: 2),
                 new ClassSkill(SpellMastery, 30, SkillLevel: 3),
-                new ClassSkill(SpellMastery, 35, SkillLevel: 4));
+                new ClassSkill(SpellMastery, 35, SkillLevel: 4),
+
+                // Armor Mastery — data-driven passive (replaces Robe/Light mastery).
+                new ClassSkill(ArmorMasterySkill, 20, SkillLevel: 1),
+                new ClassSkill(ArmorMasterySkill, 25, SkillLevel: 2),
+                new ClassSkill(ArmorMasterySkill, 30, SkillLevel: 3),
+                new ClassSkill(ArmorMasterySkill, 35, SkillLevel: 4));
         }
     }
 }
