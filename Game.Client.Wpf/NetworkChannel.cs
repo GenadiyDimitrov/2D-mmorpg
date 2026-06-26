@@ -129,6 +129,9 @@ public class NetworkChannel : IAsyncDisposable
     public Task CancelCastAsync() =>
         _connection!.SendAsync("CancelCast");
 
+    public Task RemoveBuffAsync(string buffKey) =>
+        _connection!.SendAsync("RemoveBuff", buffKey);
+
     public Task RespawnAsync() =>
         _connection!.SendAsync("Respawn");
 

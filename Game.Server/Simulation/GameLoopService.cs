@@ -81,6 +81,7 @@ public class GameLoopService : BackgroundService
                 case TeleportCmd c: HandleTeleport(c); break;
                 case SetMoveStateCmd c: HandleSetMoveState(c); break;
                 case CancelCastCmd c: HandleCancelCast(c); break;
+                case RemoveBuffCmd c: HandleRemoveBuff(c); break;
                 case RespawnCmd c: HandleRespawn(c); break;
                 case ClassChangeCmd c: HandleClassChange(c); break;
                 case EquipCmd c: HandleEquip(c); break;
@@ -2425,7 +2426,7 @@ var effect = def.Effect;
         _hadBuffs.Add(player.Id);
         var dtos = player.Buffs.Select(b => new BuffDto(
             b.Name, b.Description,
-            b.TicksRemaining * GameConstants.TickSeconds, b.IsDebuff)).ToArray();
+            b.TicksRemaining * GameConstants.TickSeconds, b.IsDebuff, b.Key)).ToArray();
         SendTo(player, "Buffs", new BuffUpdate(dtos));
     }
 
@@ -2433,14 +2434,37 @@ var effect = def.Effect;
         SendTo(p, "Learned", new LearnedSkills(
             p.LearnedSkills.Select(kv => new SkillRef(kv.Key, kv.Value)).ToArray(), p.SkillPoints));
 
-    private void SendStats(Entity p) =>
+    private void SendStats(Entity p)
+    {
+        var (hpReg, mpReg) = StandingRegen(p);
         SendTo(p, "Stats", new StatsUpdate(
             p.Con, p.AtkStat, p.EffectiveWit, p.EffectiveDex,
             p.MaxHp, p.MaxMp, (int)p.EffectiveAttack, (int)p.EffectiveDefence,
             p.Accuracy, (int)p.EffectiveEvasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
             p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.EffectiveCastSpeedMultiplier, p.EffectiveAttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttack, p.MagicCritChance,
             p.HasShield, p.BlockChance, p.BlockReduction, p.ShieldDefense, (int)p.EffectiveMagicDefence,
-            p.ActiveArmorSet, p.ArmorMasteryLabel));
+            p.ActiveArmorSet, p.ArmorMasteryLabel,
+            hpReg, mpReg, p.CritDamageBonus,
+            p.MeleeVamp, p.SpellVamp, p.CooldownReduction,
+            p.MagicFailResist, p.MagicFailFloor,
+            p.CritRateResist, p.CritDmgResist, p.BowResist,
+            p.InterruptResist));
+    }
+
+    /// <summary>The player's STANDING (out-of-combat, running) HP/MP regen per second —
+    /// base + flat bonus, ×mastery mult, ×buff regen% — for the stats window.</summary>
+    private static (float Hp, float Mp) StandingRegen(Entity p)
+    {
+        float hpPct = 0f, mpPct = 0f;
+        foreach (var b in p.Buffs)
+        {
+            if (b.Has(SkillEffect.BuffHpRegen)) hpPct += b.Percent(SkillEffect.BuffHpRegen);
+            if (b.Has(SkillEffect.BuffMpRegen)) mpPct += b.Percent(SkillEffect.BuffMpRegen);
+        }
+        float hp = (StatCalculator.HpRegenPerSecond(p.Con, p.Level) + p.HpRegenBonus) * p.HpRegenMult * (1f + hpPct);
+        float mp = (StatCalculator.MpRegenPerSecond(p.EffectiveWit, p.Level) + p.MpRegenBonus) * p.MpRegenMult * (1f + mpPct);
+        return (hp, mp);
+    }
 
     /// <summary>Stop an in-progress cast. startCooldown=true (player ESC) puts
     /// the skill on cooldown; false (enemy interrupt / forced) does not, so the
@@ -2465,6 +2489,18 @@ var effect = def.Effect;
     {
         if (TryGetPlayer(cmd.ConnectionId, out var player))
             CancelCast(player, startCooldown: true);
+    }
+
+    /// <summary>Player manually dropped a buff (double-click). Debuffs can't be removed
+    /// this way. Re-bakes stats + refreshes the buff bar so the loss shows immediately.</summary>
+    private void HandleRemoveBuff(RemoveBuffCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        int removed = player.Buffs.RemoveAll(b => b.Key == cmd.BuffKey && !b.IsDebuff);
+        if (removed == 0) return;
+        player.RecomputeDerived();
+        PushBuffs(player);
+        SendStats(player);
     }
 
     /// <summary>Roll to interrupt a cast when the caster is hit. Resist = caster

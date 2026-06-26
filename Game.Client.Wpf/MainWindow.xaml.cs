@@ -716,9 +716,14 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (e.Key is Key.Escape)   // cancel current cast
+        if (e.Key is Key.Escape)   // cancel current cast AND clear the current target
         {
             _ = _net.CancelCastAsync();
+            if (_targetId is not null)
+            {
+                _targetId = null;
+                UpdateTargetFrame();
+            }
             e.Handled = true;
             return;
         }
@@ -1057,6 +1062,12 @@ public partial class MainWindow : Window
             TargetFrame.Visibility = Visibility.Collapsed;
             TradeButton.Visibility = Visibility.Collapsed;
         }
+    }
+
+    private void TargetClear_Click(object sender, RoutedEventArgs e)
+    {
+        _targetId = null;
+        UpdateTargetFrame();
     }
 
     private static double Dist(double ax, double ay, double bx, double by)

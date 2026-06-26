@@ -549,6 +549,22 @@ public partial class MainWindow
             SpeedStatLabel(st.CastSpeedMult, StatCaps.CastSpeed)));
         StatsList.Items.Add(MakeStatRow("Attack Speed",
             SpeedStatLabel(st.AttackSpeedMult, StatCaps.AttackSpeed)));
+
+        // ----- Extended / debug stats (regens + the buff-effect layer) -----
+        StatsList.Items.Add(MakeStatRow("HP / MP Regen", $"{st.HpRegen:0.#} / {st.MpRegen:0.#} per s"));
+        StatsList.Items.Add(MakeStatRow("Crit Damage", $"x{2f + st.CritDamage:0.##}"));
+        if (st.MeleeVamp > 0 || st.SpellVamp > 0)
+            StatsList.Items.Add(MakeStatRow("Vampiric (melee / spell)",
+                $"{st.MeleeVamp * 100:0.#}% / {st.SpellVamp * 100:0.#}%"));
+        if (st.CooldownReduction > 0)
+            StatsList.Items.Add(MakeStatRow("Reuse Reduction", $"{st.CooldownReduction * 100:0.#}%"));
+        StatsList.Items.Add(MakeStatRow("Interrupt Resist", $"{st.InterruptResist}"));
+        if (st.MagicFailResist > 0 || st.MagicFailFloor > 0)
+            StatsList.Items.Add(MakeStatRow("Spell Fail (resist / vs you)",
+                $"{st.MagicFailResist * 100:0.#}% / {st.MagicFailFloor * 100:0.#}%"));
+        if (st.CritRateResist > 0 || st.CritDmgResist > 0 || st.BowResist > 0)
+            StatsList.Items.Add(MakeStatRow("Resists (critRate/critDmg/bow)",
+                $"{st.CritRateResist * 100:0.#}% / {st.CritDmgResist * 100:0.#}% / {st.BowResist * 100:0.#}%"));
     }
 
     /// <summary>Format an effective time-multiplier (lower = faster) as the L2-style
@@ -1338,6 +1354,9 @@ public partial class MainWindow
         BuffBar.Items.Clear();
         foreach (var buff in update.Buffs)
         {
+            string tip = buff.IsDebuff
+                ? $"{buff.Name}\n{buff.Description}\n{buff.SecondsLeft:0}s remaining"
+                : $"{buff.Name}\n{buff.Description}\n{buff.SecondsLeft:0}s remaining\n(double-click to remove)";
             var pill = new Border
             {
                 Background = buff.IsDebuff
@@ -1346,13 +1365,23 @@ public partial class MainWindow
                 CornerRadius = new CornerRadius(4),
                 Padding = new Thickness(6, 2, 6, 2),
                 Margin = new Thickness(0, 0, 4, 4),
+                Cursor = buff.IsDebuff ? null : System.Windows.Input.Cursors.Hand,
                 Child = new TextBlock
                 {
                     Text = $"{buff.Name}  {buff.SecondsLeft:0}s",
                     Foreground = Brushes.White, FontSize = 11
                 },
-                ToolTip = $"{buff.Name}\n{buff.Description}\n{buff.SecondsLeft:0}s remaining"
+                ToolTip = tip
             };
+            // Double-click a (beneficial) buff to drop it early, like a timeout.
+            if (!buff.IsDebuff && !string.IsNullOrEmpty(buff.Key))
+            {
+                string key = buff.Key;
+                pill.MouseLeftButtonDown += (_, e) =>
+                {
+                    if (e.ClickCount == 2) { _ = _net.RemoveBuffAsync(key); e.Handled = true; }
+                };
+            }
             BuffBar.Items.Add(pill);
         }
     }

@@ -93,6 +93,9 @@ public record SetMoveStateCmd(string ConnectionId, MoveState State) : IGameComma
 /// <summary>Player cancelled their own cast (ESC) — stops it and starts cooldown.</summary>
 public record CancelCastCmd(string ConnectionId) : IGameCommand;
 
+/// <summary>Player manually removed one of their buffs (double-click on the buff bar).</summary>
+public record RemoveBuffCmd(string ConnectionId, string BuffKey) : IGameCommand;
+
 public record RespawnCmd(string ConnectionId) : IGameCommand;
 
 /// <summary>Advance to a second class (level 20+, once).</summary>

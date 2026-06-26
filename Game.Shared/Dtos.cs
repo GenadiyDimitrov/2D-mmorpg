@@ -101,7 +101,13 @@ public record StatsUpdate(
     float CastSpeedMult, float AttackSpeedMult, int SkillPoints, MoveState MoveState,
     int MagicAttack, float MagicCritChance,
     bool HasShield, float BlockChance, float BlockReduction, int ShieldDefense,
-    int MagicDefence, string ActiveSet, string ArmorMastery);
+    int MagicDefence, string ActiveSet, string ArmorMastery,
+    // Extended debug stats (regens per second + the buff/effect layer).
+    float HpRegen = 0f, float MpRegen = 0f, float CritDamage = 0f,
+    float MeleeVamp = 0f, float SpellVamp = 0f, float CooldownReduction = 0f,
+    float MagicFailResist = 0f, float MagicFailFloor = 0f,
+    float CritRateResist = 0f, float CritDmgResist = 0f, float BowResist = 0f,
+    int InterruptResist = 0);
 
 /// <summary>Server -> owning client: a potion cooldown started (seconds),
 /// or an active potion effect changed. Cooldown 0 = ready.</summary>
@@ -109,7 +115,7 @@ public record PotionStatus(float CooldownSeconds, string ActiveEffect);
 
 
 /// <summary>One active buff/debuff on the player, for the buff bar + tooltip.</summary>
-public record BuffDto(string Name, string Description, float SecondsLeft, bool IsDebuff);
+public record BuffDto(string Name, string Description, float SecondsLeft, bool IsDebuff, string Key = "");
 
 /// <summary>Server -> client: the character's learned skills (id + current level) + SP.</summary>
 public record LearnedSkills(SkillRef[] Skills, int SkillPoints);

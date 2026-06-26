@@ -190,6 +190,12 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task RemoveBuff(string buffKey)
+    {
+        _world.Commands.Enqueue(new RemoveBuffCmd(Context.ConnectionId, buffKey));
+        return Task.CompletedTask;
+    }
+
     public Task Respawn()
     {
         _world.Commands.Enqueue(new RespawnCmd(Context.ConnectionId));
