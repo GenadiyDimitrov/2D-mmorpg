@@ -372,6 +372,18 @@ public static class StatCalculator
         return Math.Clamp(chance, 0f, 1f);
     }
 
+    /// <summary>Chance a contested debuff (slow/stun/root/fear/…) LANDS: the attacker's
+    /// ATK (core power stat) vs the defender's resisting stat (CON for physical, WIT for
+    /// magical). 50% when equal, scaling by the ratio, clamped to [10%, 90%]
+    /// (per docs/Disciplines.md). Bosses are made immune by the caller.</summary>
+    public static float DebuffLandChance(int attackerAtk, int defenderStat)
+    {
+        int sum = attackerAtk + defenderStat;
+        if (sum <= 0) return 0.5f;
+        float chance = 0.5f + 0.5f * (attackerAtk - defenderStat) / sum;
+        return Math.Clamp(chance, 0.10f, 0.90f);
+    }
+
     // ----- Cast & attack speed (authentic L2 model) ------------------------
     //
     // L2: actual cast/attack time = baseTime × 333 / speedStat, where the speed stat

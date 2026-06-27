@@ -95,6 +95,9 @@ public enum SkillEffect : long
     BuffSpellVamp      = 1L << 36,  // damage spells heal you for % of damage
     BuffCooldown       = 1L << 37,  // spell reuse-delay reduction (%)
     RestoreMp          = 1L << 38,  // restores MP (flat power, +% of max MP via a Percent magnitude)
+    // ----- Combat primitives (P1): crowd control. These LAND via the ATK-vs-CON/WIT
+    // debuff contest (StatCalculator.DebuffLandChance), NOT the spell-fizzle model. -----
+    Slow               = 1L << 39,  // reduces target move speed by a % (magnitude on Slow)
     // Room to grow up to 1L << 62.
 
     // Convenience masks.
@@ -107,8 +110,16 @@ public enum SkillEffect : long
               | BuffMagicFailFloor | BuffMagicFailResist | BuffInterruptPower
               | BuffInterruptResist | BuffMeleeVamp | BuffSpellVamp | BuffCooldown,
     // Harmful effects applied to an enemy (offensive; can fail; cleansable).
-    AnyDebuff = DebuffDef | DebuffHealRecv | Root,
+    AnyDebuff = DebuffDef | DebuffHealRecv | Root | Slow,
+    // Crowd-control that lands via the ATK-vs-CON/WIT contest (not the fizzle model).
+    // Resolved in their own ExecuteSkill branch; excluded from the legacy debuff branch.
+    ContestCc = Slow,
 }
+
+/// <summary>Which stat a debuff contests against when landing: physical debuffs are
+/// ATK vs the target's CON, magical debuffs ATK vs the target's WIT (per docs/Disciplines.md).
+/// None = not a contested debuff (uses the older fizzle/sure-hit path).</summary>
+public enum DebuffSchool { None = 0, Physical = 1, Magical = 2 }
 
 /// <summary>Whether a magnitude is a flat add or a percentage of the base stat.
 /// Combined per stat as: final = (base + Sum(flat)) * (1 + Sum(percent)).</summary>

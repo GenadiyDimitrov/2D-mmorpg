@@ -18,6 +18,7 @@ public static partial class SkillCatalog
     public const string FlameBolt = "flame_bolt";
     public const string HolyStrike = "holy_strike";
     public const string ElementalBurst = "elemental_burst";   // nuker 3rd-class ultimate (consumes Elemental Stones)
+    public const string FrostBind = "frost_bind";             // nuker CC — magical Slow (first contested-CC skill)
 
     private static SkillDef[] MageSkills() => new SkillDef[]
     {
@@ -167,6 +168,17 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 238, MpCost: 100, InitialMpCost: 20, SpCost: 12000, Description: "Magic damage, power 238. Consumes 10 Elemental Stones."),
                 new SkillLevel(Power: 250, MpCost: 105, InitialMpCost: 21, SpCost: 13000, Description: "Magic damage, power 250. Consumes 10 Elemental Stones."),
             }),
+
+        // Frost Bind — first CONTESTED crowd-control skill (P1 primitive demo). A magical
+        // Slow: lands via ATK-vs-WIT (DebuffLandChance), reduces move speed 50% for 10s.
+        // Numbers are placeholders; this is the nuker's control tool until disciplines author theirs.
+        new(FrostBind, "Frost Bind", BaseClass.Mage, SkillEffect.Slow,
+            MpCost: 25, CastTicks: 20, CooldownTicks: 60, Range: 900, Power: 0,
+            DurationTicks: 100, BuffKey: "slow_frost", Rank: 1, InitialMpCost: 5,
+            Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Magical,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, 0.50f) },
+            Description: "Magic slow — cuts the target's move speed by 50% for 10s. Lands on an "
+                       + "ATK-vs-WIT contest (bosses are immune)."),
 
         // Holy Bolt — the Healer's offensive spell (replaces Magic Bolt). ONE skill;
         // per-race NAME only (Holy/Moonlight/Spirit Bolt) via ClassSkill.DisplayName.

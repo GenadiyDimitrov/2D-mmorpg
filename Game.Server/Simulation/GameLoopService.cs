@@ -1848,8 +1848,28 @@ var effect = def.Effect;
                 CleanseDebuffs(caster, target, castName);
         }
 
+        // ---- Crowd control (Slow, later Stun/Root/Fear) — lands via the ATK-vs-CON/WIT
+        //      contest (docs/Disciplines.md), NOT the fizzle model. Bosses are immune. ----
+        if ((effect & SkillEffect.ContestCc) != 0)
+        {
+            offensive = true;
+            int defStat = def.DebuffSchool == DebuffSchool.Magical ? (int)target.EffectiveWit : target.Con;
+            float land = target.Immune ? 0f
+                : StatCalculator.DebuffLandChance(caster.AtkStat, defStat);
+            if (_rng.NextDouble() < land)
+            {
+                ApplyBuff(target, def, lvl);   // applies the Slow buff; refreshes a player's HUD
+                BroadcastCombat(caster, target, 0, CombatOutcome.Buff, castName);
+            }
+            else
+            {
+                BroadcastCombat(caster, target, 0, CombatOutcome.Fail, castName);  // resisted
+            }
+        }
+
         // ---- Debuffs (defence curse / anti-heal / root) — can fizzle like a spell ----
-        if ((effect & SkillEffect.AnyDebuff) != 0)
+        //      (Contested CC above is excluded so it doesn't double-resolve.)
+        if ((effect & SkillEffect.AnyDebuff & ~SkillEffect.ContestCc) != 0)
         {
             offensive = true;
             float fail = StatCalculator.ResolveAvoidChance(

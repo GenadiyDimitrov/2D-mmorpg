@@ -53,6 +53,9 @@ public record SkillDef(
     int InitialMpCost = -1,
     float BlockAccuracy = 0f,
     bool SureHit = false,
+    // For contested crowd-control (Slow, later Stun/Root/Fear): which stat the LAND
+    // chance contests against — Physical = ATK vs CON, Magical = ATK vs WIT.
+    DebuffSchool DebuffSchool = DebuffSchool.None,
     // A TOGGLE skill (stance/aura): clicking it applies its self-buff indefinitely;
     // clicking again removes it. Instant, no cast bar; MP charged on activation only.
     bool Toggle = false,

@@ -330,15 +330,27 @@ public class Entity
                 // Mobs walk while wandering, run while aggroed/engaged.
                 float mobBase = Engaged ? RunSpeed : WalkSpeed;
                 if (mobBase <= 0) mobBase = Speed;
-                return ModifiedStat(mobBase, SkillEffect.BuffMoveSpeed);
+                return ModifiedStat(mobBase, SkillEffect.BuffMoveSpeed) * (1f - SlowFraction);
             }
 
             if (StandUpTicks > 0 || MoveState == MoveState.Sitting)
                 return 0f;
             float baseSpeed = MoveState == MoveState.Walking ? WalkSpeed : RunSpeed;
             if (baseSpeed <= 0) baseSpeed = Speed;   // fallback
-            float withBuffs = ModifiedStat(baseSpeed, SkillEffect.BuffMoveSpeed);
+            float withBuffs = ModifiedStat(baseSpeed, SkillEffect.BuffMoveSpeed) * (1f - SlowFraction);
             return Math.Min(withBuffs, MoveSpeedCap);
+        }
+    }
+
+    /// <summary>Total move-speed reduction from Slow debuffs (summed Percent of the Slow
+    /// effect), clamped to 90% so a slow never fully stops you (that's Root's job).</summary>
+    private float SlowFraction
+    {
+        get
+        {
+            float pct = 0f;
+            foreach (var b in Buffs) if (b.Has(SkillEffect.Slow)) pct += b.Percent(SkillEffect.Slow);
+            return Math.Clamp(pct, 0f, 0.9f);
         }
     }
 

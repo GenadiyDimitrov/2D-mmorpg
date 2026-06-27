@@ -17,10 +17,14 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 
 ## NEXT (clear, mostly self-contained — can do without owner input)
 
-- [ ] **Combat primitives layer** (prerequisite for disciplines, bosses, PvP). Build the
-  reusable effects: crowd control (stun / root / silence / sleep / fear), damage-over-time
-  & heal-over-time, damage-absorb shields, taunt / aggro control, blink / short teleport,
-  stealth / detection. Data-driven on the existing buff/effect layer.
+- [~] **Combat primitives layer** (prerequisite for disciplines, bosses, PvP). Build to
+  `docs/Disciplines.md` rules. **Started:** the ATK-vs-CON/WIT **debuff hit-contest**
+  (`StatCalculator.DebuffLandChance`, 10–90%, 50% at equal, bosses immune) + **Slow**
+  (move-speed %, first contested CC; demo skill "Frost Bind" for nukers). Existing debuffs
+  left on the fizzle model (owner: new-only). **Still to do:** physical `[Double]` crit,
+  stun / root / fear, DoT+stacks (bleed/poison/venom), absorb shields, taunt/real threat,
+  blink/charge, knockback, stealth, mana shield, lethal-save, traps, conditional damage,
+  "skill damage %" stat.
 - [ ] **Base-class armor mastery + universal penalty → data** (only 2nd classes are data so
   far). Finishes the [[stats-via-skills-not-hardcoded]] migration. (Note: changes the
   unlearned-penalty semantics slightly — confirm intent.)

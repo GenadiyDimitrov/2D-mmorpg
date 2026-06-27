@@ -37,6 +37,12 @@ this file.
 - [ ] 2nd-class NPC shows the archetype blurb under each class option.
 - [ ] 3rd-class (grandmaster) NPC shows the discipline blurb per option.
 
+### Combat primitives P1: debuff contest + Slow ("Frost Bind") — NUMBERS UNTUNED
+- [ ] Nuker (Magus/Tempest) learns "Frost Bind" @40; casting it on a mob visibly halves its move speed for 10s.
+- [ ] Landing varies with the ATK-vs-WIT contest: high-WIT targets resist more (shows "Fail"/resisted), 10–90% bounds.
+- [ ] Slowed target still moves (never fully stopped — that's Root); slow is cleansable / expires after 10s.
+- [ ] Existing debuffs (Weakness, anti-heal, Root) behave exactly as before (not switched to the contest).
+
 ### Skill reagents / consumables + Nuker "Elemental Burst" (NEW) — NUMBERS UNTUNED
 - [ ] Debug → Consumables → "Elemental Stone +10" grants 10 stones per click (stacks).
 - [ ] Nuker 3rd class (Magus/Tempest) learns "Elemental Burst" @40, then 44/48/…/72/75 (10 levels, power 150→250).
