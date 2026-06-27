@@ -503,6 +503,20 @@ public class GameLoopService : BackgroundService
                 trade.OfferOf(player).Contains(item.InstanceId))
                 return;
 
+            // JEWELS stack up to MaxJewels (2 rings + 2 earrings + 1 necklace); other
+            // slots are one-per-slot. If all jewel slots are full, refuse.
+            if (def.Slot == EquipSlot.Jewel)
+            {
+                int equippedJewels = player.Inventory.Count(i => i.Equipped && i != item
+                    && ItemCatalog.Get(i.DefId)?.Slot == EquipSlot.Jewel);
+                if (equippedJewels >= GameConstants.MaxJewels)
+                {
+                    SendSystemToEntity(player,
+                        $"All {GameConstants.MaxJewels} jewel slots are full — unequip one first.");
+                    return;
+                }
+            }
+
             // One item per slot: unequip the current one. Also enforce the
             // two-handed rule: a 2H weapon and a shield cannot coexist (a 2H
             // weapon occupies the offhand), so equipping one drops the other.
@@ -514,8 +528,9 @@ public class GameLoopService : BackgroundService
                     continue;
 
                 // Same slot — for armor, the body-part slot must also match (so a
-                // helmet and a chest piece coexist, but two helmets don't).
-                if (otherDef.Slot == def.Slot &&
+                // helmet and a chest piece coexist, but two helmets don't). JEWELS are
+                // exempt (multiple allowed up to the cap, checked above).
+                if (otherDef.Slot == def.Slot && def.Slot != EquipSlot.Jewel &&
                     (def.Slot != EquipSlot.Armor || otherDef.ArmorSlot == def.ArmorSlot))
                     other.Equipped = false;
                 else if (equippingTwoHandWeapon && otherDef.Slot == EquipSlot.Shield)
@@ -2356,7 +2371,7 @@ var effect = def.Effect;
             return false;
 
         var newItem = new InventoryItem { DefId = defId, Quantity = stackable ? quantity : 1 };
-        if (rollAttributes && def.Slot is EquipSlot.Weapon or EquipSlot.Armor)
+        if (rollAttributes && def.Slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Jewel)
             newItem.Attributes = def.FixedAttributes is { Length: > 0 } fixedAttrs
                 ? fixedAttrs.ToList()                    // legendary one-off
                 : AttributeSystem.Roll(def, _rng);       // normal random roll

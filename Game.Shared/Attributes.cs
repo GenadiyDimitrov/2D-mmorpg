@@ -84,8 +84,18 @@ public static class AttributeSystem
         if (def.Slot == EquipSlot.Weapon) return WeaponPool(def.WeaponType);
         if (def.Slot == EquipSlot.Armor)
             return def.ArmorSlot == ArmorSlot.Body ? ArmorPool(def.Weight) : ArmorSlotPool(def.ArmorSlot);
+        if (def.Slot == EquipSlot.Jewel) return JewelPool;
         return Array.Empty<AttributeType>();
     }
+
+    /// <summary>Jewel attribute pool — jewels carry flat max HP/MP, regen and crit
+    /// rolls (their base stat is magic defence; these are the "extra" rolls).</summary>
+    public static readonly AttributeType[] JewelPool =
+    {
+        AttributeType.HealthPercent, AttributeType.ManaPercent,
+        AttributeType.HpRegen, AttributeType.MpRegen,
+        AttributeType.CritRate, AttributeType.CritDamage,
+    };
 
     public static AttributeType[] ArmorPool(ArmorWeight a) => a switch
     {
@@ -147,9 +157,10 @@ public static class AttributeSystem
         if (pool.Length == 0) return result;
 
         // Armor uses FIXED per-slot counts (body 2, accessories 1) so grade/rarity only
-        // changes the VALUE, not the count; weapons keep the grade+rarity count.
+        // changes the VALUE, not the count; jewels carry 1; weapons keep grade+rarity.
         int desired = def.Slot == EquipSlot.Armor
             ? (def.ArmorSlot == ArmorSlot.Body ? 2 : 1)
+            : def.Slot == EquipSlot.Jewel ? 1
             : AttributeCount(def.Grade, def.Rarity);
         int count = Math.Min(desired, pool.Length);
         if (count <= 0) return result;

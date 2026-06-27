@@ -197,7 +197,7 @@ public class PersistenceService
     private static ItemRecord NewItem(string defId, int qty = 1)
     {
         var rec = new ItemRecord { InstanceId = Guid.NewGuid(), DefId = defId, Quantity = qty };
-        if (ItemCatalog.Get(defId) is ItemDef def && def.Slot is EquipSlot.Weapon or EquipSlot.Armor)
+        if (ItemCatalog.Get(defId) is ItemDef def && def.Slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Jewel)
             rec.Attributes = def.FixedAttributes is { Length: > 0 } fixedAttrs
                 ? fixedAttrs.ToList()
                 : AttributeSystem.Roll(def, Random.Shared);
