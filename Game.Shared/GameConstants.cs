@@ -94,10 +94,6 @@ public static class GameConstants
 
     public const int InventorySize = 30;
 
-    /// <summary>How many JEWELS can be equipped at once (L2: 2 rings + 2 earrings +
-    /// 1 necklace). Other slots are one-per-slot.</summary>
-    public const int MaxJewels = 5;
-
     public const int ClassChangeLevel = 20;
 
     /// <summary>Archer second classes: +500 basic-attack range with a ranged

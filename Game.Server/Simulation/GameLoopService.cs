@@ -1828,7 +1828,7 @@ var effect = def.Effect;
     ///     (weaker self-recast is ignored entirely); on apply, replace it.
     /// (2) Replaces: unconditionally remove any active buff whose key is listed,
     ///     regardless of rank or magnitude.</summary>
-    private void ApplyBuff(Entity target, SkillDef def, int level = 1, string? displayName = null)
+    private void ApplyBuff(Entity target, SkillDef def, int level = 1, string? displayName = null, bool refresh = true)
     {
         string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
         string shownName = string.IsNullOrEmpty(displayName) ? def.Name : displayName!;
@@ -1861,11 +1861,15 @@ var effect = def.Effect;
         // Re-bake derived stats (Max HP/MP, shield, atk/def) and refresh the owner's
         // HUD: buff icons AND the stats window (cast/attack/move speed are live and
         // read the buff list, so they need a fresh push to show the new numbers).
-        target.RecomputeDerived();
-        if (target.Kind == EntityKind.Player)
+        // refresh=false lets a caller apply several buffs then refresh once (NPC buffer).
+        if (refresh)
         {
-            PushBuffs(target);
-            SendStats(target);
+            target.RecomputeDerived();
+            if (target.Kind == EntityKind.Player)
+            {
+                PushBuffs(target);
+                SendStats(target);
+            }
         }
     }
 
@@ -3005,7 +3009,11 @@ var effect = def.Effect;
         }
         foreach (var id in SkillCatalog.NewbieBuffSet)
             if (SkillCatalog.Get(id) is SkillDef def)
-                ApplyBuff(player, def);
+                ApplyBuff(player, def, refresh: false);
+        // One refresh after all buffs (instead of per-buff recompute/push).
+        player.RecomputeDerived();
+        PushBuffs(player);
+        SendStats(player);
         SendSystemToEntity(player, "You are blessed with a buffer's full might!");
     }
 
@@ -3013,9 +3021,12 @@ var effect = def.Effect;
     {
         string npcId = npc.NpcId ?? "";
 
-        // Newbie buffer: blesses the player with a buffer's full buff set on talk.
+        // Newbie buffer: blesses the player on talk — buffs only, no dialog window.
         if (npc.NpcRole == NpcRole.Buffer)
+        {
             ApplyNewbieBuffs(player);
+            return;
+        }
 
         bool Completed(string qid) => player.CompletedQuests.Contains(qid);
         bool Active(string qid) => player.ActiveQuests.ContainsKey(qid);
