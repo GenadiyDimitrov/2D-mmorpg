@@ -132,6 +132,16 @@ public record BuffUpdate(BuffDto[] Buffs);
 public record SelectionOffer(Guid BoxInstanceId, string BoxName, SelectionOption[] Options, int PickCount);
 public record SelectionOption(string ItemId, string Name);
 
+/// <summary>Server -> owning client: the expanded target window (L2-style inspect) —
+/// the target's detailed stats and, for a mob, its passive modifier lines.</summary>
+public record TargetDetails(
+    Guid Id, string Name, int Level, bool IsMob,
+    int Hp, int MaxHp, int Mp, int MaxMp,
+    int PAtk, int MAtk, int PDef, int MDef,
+    int Accuracy, int Evasion, float CritChance,
+    float BowResist, float CritResist,
+    string[] Passives);
+
 /// <summary>Server -> owning client: the result of an enchant attempt.</summary>
 public record EnchantResultDto(string ItemName, int NewEnchant, string Outcome, bool Destroyed);
 

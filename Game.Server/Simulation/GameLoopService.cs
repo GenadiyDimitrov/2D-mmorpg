@@ -84,6 +84,7 @@ public class GameLoopService : BackgroundService
                 case RemoveBuffCmd c: HandleRemoveBuff(c); break;
                 case OpenBoxCmd c: HandleOpenBox(c); break;
                 case SelectBoxItemsCmd c: HandleSelectBoxItems(c); break;
+                case InspectTargetCmd c: HandleInspectTarget(c); break;
                 case RespawnCmd c: HandleRespawn(c); break;
                 case ClassChangeCmd c: HandleClassChange(c); break;
                 case EquipCmd c: HandleEquip(c); break;
@@ -2646,6 +2647,30 @@ var effect = def.Effect;
         player.RecomputeDerived();
         PushBuffs(player);
         SendStats(player);
+    }
+
+    /// <summary>Build the expanded target window: the target's detailed stats and,
+    /// for a mob, its passive modifier lines (from the MobCatalog template).</summary>
+    private void HandleInspectTarget(InspectTargetCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        if (!_world.Entities.TryGetValue(cmd.TargetId, out var t)) return;
+        if (t.Kind == EntityKind.Npc) return;   // plain NPCs have nothing to inspect
+
+        bool isMob = t.Kind == EntityKind.Mob;
+        string[] passives = isMob && t.MobTypeId is not null
+            && MobCatalog.Get(t.MobTypeId).Mod is MobMod mod
+                ? mod.Describe().ToArray()
+                : Array.Empty<string>();
+
+        SendTo(player, "TargetDetails", new TargetDetails(
+            t.Id, t.Name, t.Level, isMob,
+            t.Hp, t.MaxHp, t.Mp, t.MaxMp,
+            t.AttackPower, t.MagicAttack,
+            (int)t.EffectiveDefence, (int)t.EffectiveMagicDefence,
+            t.Accuracy, t.Evasion, t.CritChance,
+            t.BowResist, t.CritRateResist,
+            passives));
     }
 
     /// <summary>Roll to interrupt a cast when the caster is hit. Resist = caster

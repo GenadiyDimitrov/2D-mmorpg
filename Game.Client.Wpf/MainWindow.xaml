@@ -89,6 +89,10 @@
                     <TextBlock x:Name="TargetNameText"
                                Foreground="White" FontSize="13" FontWeight="SemiBold"
                                HorizontalAlignment="Center"/>
+                    <Button x:Name="TargetExpandButton" Content="▼"
+                            Width="18" Height="18" Padding="0" FontSize="10"
+                            HorizontalAlignment="Left" VerticalAlignment="Top"
+                            ToolTip="Inspect target (stats &amp; passives)" Click="TargetExpand_Click"/>
                     <Button x:Name="TargetClearButton" Content="✕"
                             Width="18" Height="18" Padding="0" FontSize="10"
                             HorizontalAlignment="Right" VerticalAlignment="Top"
@@ -98,6 +102,19 @@
                     <Rectangle x:Name="TargetHpFill" Fill="#FFCC3333"
                                HorizontalAlignment="Left" Width="218"/>
                 </Border>
+                <!-- Expanded inspect panel (L2-style): detailed stats + mob passives -->
+                <StackPanel x:Name="TargetDetailsPanel" Visibility="Collapsed" Margin="0,2,0,2">
+                    <TextBlock x:Name="TargetDetailsText" Foreground="#FFDDDDDD"
+                               FontSize="11" TextWrapping="Wrap"/>
+                    <ItemsControl x:Name="TargetPassivesList" Margin="0,3,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" Foreground="#FF8FD1FF"
+                                           FontSize="11" Margin="0,1,0,0"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
                 <Button x:Name="TradeButton" Content="Request Trade" Height="24"
                         Click="TradeButton_Click" Visibility="Collapsed"/>
             </StackPanel>

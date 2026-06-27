@@ -26,6 +26,7 @@ public class NetworkChannel : IAsyncDisposable
     public event Action<RerollResultDto>? RerollReceived;
     public event Action<GoldUpdate>? GoldReceived;
     public event Action<SelectionOffer>? SelectionReceived;
+    public event Action<TargetDetails>? TargetDetailsReceived;
     public event Action<string>? Disconnected;
     public event Action<string>? ForceDisconnected;
 
@@ -56,6 +57,7 @@ public class NetworkChannel : IAsyncDisposable
         _connection.On<RerollResultDto>("Reroll", r => RerollReceived?.Invoke(r));
         _connection.On<GoldUpdate>("Gold", g => GoldReceived?.Invoke(g));
         _connection.On<SelectionOffer>("Selection", o => SelectionReceived?.Invoke(o));
+        _connection.On<TargetDetails>("TargetDetails", d => TargetDetailsReceived?.Invoke(d));
         _connection.On<string>("ForceDisconnect", reason => ForceDisconnected?.Invoke(reason));
         _connection.Closed += ex =>
         {
@@ -139,6 +141,9 @@ public class NetworkChannel : IAsyncDisposable
 
     public Task SelectBoxItemsAsync(Guid instanceId, string[] itemIds) =>
         _connection!.SendAsync("SelectBoxItems", instanceId, itemIds);
+
+    public Task InspectTargetAsync(Guid targetId) =>
+        _connection!.SendAsync("InspectTarget", targetId);
 
     public Task RespawnAsync() =>
         _connection!.SendAsync("Respawn");

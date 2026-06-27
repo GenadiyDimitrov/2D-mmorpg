@@ -33,7 +33,28 @@ public readonly record struct MobMod(
     float Evasion = 1f, float Accuracy = 1f,
     float BowResist = 0f,    // fraction of BOW damage taken removed (0..1)
     float CritResist = 0f,   // reduces an attacker's physical crit CHANCE vs this mob
-    bool Boss = false);      // raid-boss passive (adds crit/bow resistance on spawn)
+    bool Boss = false,       // raid-boss passive (adds crit/bow resistance on spawn)
+    string Name = "")        // display label for the inspect/target window
+{
+    /// <summary>Human-readable passive lines for the target-inspect window.</summary>
+    public IEnumerable<string> Describe()
+    {
+        if (!string.IsNullOrEmpty(Name)) yield return Name;
+        if (Hp != 1f)       yield return $"Max HP {Sign(Hp)}";
+        if (PDef != 1f)     yield return $"P.Def {Sign(PDef)}";
+        if (MDef != 1f)     yield return $"M.Def {Sign(MDef)}";
+        if (PAtk != 1f)     yield return $"P.Atk {Sign(PAtk)}";
+        if (MAtk != 1f)     yield return $"M.Atk {Sign(MAtk)}";
+        if (Evasion != 1f)  yield return $"Evasion {Sign(Evasion)}";
+        if (Accuracy != 1f) yield return $"Accuracy {Sign(Accuracy)}";
+        // Bow/Crit resist are rendered from the numeric DTO fields (uniform for mobs
+        // and players), so they're not repeated here.
+        if (Boss) yield return "Raid Boss";
+    }
+
+    private static string Sign(float mult) =>
+        mult >= 1f ? $"+{(mult - 1f) * 100:0}%" : $"-{(1f - mult) * 100:0}%";
+}
 
 public record MobType(
     string Id,
@@ -103,7 +124,7 @@ public static class MobCatalog
                 {
                     new DropEntry(ItemCatalog.MinorPotion, 0.30f, 1, 2),
                 },
-                Mod: new MobMod(MDef: 2f, PDef: 0.5f)),
+                Mod: new MobMod(MDef: 2f, PDef: 0.5f, Name: "Magic Monster")),
 
             new MobType("cave_spider", "Cave Spider", 70f, 120f, Aggressive: true,
                 Drops: new[]
@@ -148,7 +169,7 @@ public static class MobCatalog
                     new DropEntry(ItemCatalog.ScrollRare, 0.05f),
                     new DropEntry(ItemCatalog.AttrScrollRare, 0.03f, 1, 1, MinLevel: 40),
                 },
-                Mod: new MobMod(Hp: MobTier(4), PDef: 2f, MDef: 0.5f, Evasion: 0.5f)),
+                Mod: new MobMod(Hp: MobTier(4), PDef: 2f, MDef: 0.5f, Evasion: 0.5f, Name: "Armored Brute")),
 
             new MobType("wraith", "Wraith", 80f, 132f, Aggressive: true,
                 Drops: new[]

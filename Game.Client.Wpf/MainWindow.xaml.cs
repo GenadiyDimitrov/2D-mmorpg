@@ -40,6 +40,12 @@ public partial class MainWindow : Window
     private DateTime _serverEpoch = DateTime.UtcNow;
     private EntityDto? _myDto;
     private Guid? _targetId;
+    // Whether the expanded inspect panel on the target frame is open (persists across
+    // targets; we re-request inspect data each time the panel is open and target changes).
+    private bool _targetExpanded;
+    // Throttle/track the live inspect refresh while the expand panel is open.
+    private DateTime _lastInspectSent = DateTime.MinValue;
+    private Guid? _inspectedTarget;
     // When you click a far NPC we walk you to it and talk on arrival; this holds the
     // NPC we're heading to (cleared when we talk, or when you click somewhere else).
     private Guid? _pendingTalkNpcId;
@@ -88,6 +94,7 @@ public partial class MainWindow : Window
         _net.PotionReceived += pt => Dispatcher.BeginInvoke(() => OnPotion(pt));
         _net.BuffsReceived += b => Dispatcher.BeginInvoke(() => OnBuffs(b));
         _net.SelectionReceived += o => Dispatcher.BeginInvoke(() => OnSelection(o));
+        _net.TargetDetailsReceived += d => Dispatcher.BeginInvoke(() => OnTargetDetails(d));
         _net.EnchantReceived += en => Dispatcher.BeginInvoke(() => OnEnchant(en));
         _net.RerollReceived += r => Dispatcher.BeginInvoke(() => OnReroll(r));
         _net.ForceDisconnected += reason => Dispatcher.BeginInvoke(() =>
@@ -1060,11 +1067,28 @@ public partial class MainWindow : Window
                 _myDto is not null &&
                 Dist(dto.X, dto.Y, _myDto.X, _myDto.Y) <= GameConstants.TradeRange;
             TradeButton.Visibility = canTrade ? Visibility.Visible : Visibility.Collapsed;
+
+            // Plain NPCs (vendors/gatekeepers) have nothing to inspect — hide the toggle.
+            TargetExpandButton.Visibility =
+                dto.Kind == EntityKind.Npc ? Visibility.Collapsed : Visibility.Visible;
+
+            // While the inspect panel is open, refresh it (target changed, or ~1s tick).
+            if (_targetExpanded && dto.Kind != EntityKind.Npc)
+            {
+                if (_inspectedTarget != id ||
+                    (DateTime.UtcNow - _lastInspectSent).TotalSeconds >= 1.0)
+                {
+                    _inspectedTarget = id;
+                    _lastInspectSent = DateTime.UtcNow;
+                    _ = _net.InspectTargetAsync(id);
+                }
+            }
         }
         else
         {
             TargetFrame.Visibility = Visibility.Collapsed;
             TradeButton.Visibility = Visibility.Collapsed;
+            TargetDetailsPanel.Visibility = Visibility.Collapsed;
         }
     }
 
@@ -1072,6 +1096,45 @@ public partial class MainWindow : Window
     {
         _targetId = null;
         UpdateTargetFrame();
+    }
+
+    private void TargetExpand_Click(object sender, RoutedEventArgs e)
+    {
+        _targetExpanded = !_targetExpanded;
+        TargetExpandButton.Content = _targetExpanded ? "▲" : "▼";
+        if (_targetExpanded && _targetId is Guid id)
+        {
+            _inspectedTarget = id;
+            _lastInspectSent = DateTime.UtcNow;
+            TargetDetailsText.Text = "…";
+            TargetPassivesList.ItemsSource = null;
+            TargetDetailsPanel.Visibility = Visibility.Visible;
+            _ = _net.InspectTargetAsync(id);
+        }
+        else
+        {
+            TargetDetailsPanel.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    /// <summary>Server replied to an inspect request — fill the expanded target panel.
+    /// Ignored if it's stale (target changed) or the panel was closed.</summary>
+    private void OnTargetDetails(TargetDetails d)
+    {
+        if (!_targetExpanded || _targetId != d.Id)
+            return;
+
+        TargetDetailsText.Text =
+            $"HP {d.Hp}/{d.MaxHp}   MP {d.Mp}/{d.MaxMp}\n" +
+            $"P.Atk {d.PAtk}   M.Atk {d.MAtk}\n" +
+            $"P.Def {d.PDef}   M.Def {d.MDef}\n" +
+            $"Acc {d.Accuracy}   Eva {d.Evasion}   Crit {d.CritChance * 100:0.#}%";
+
+        var lines = new List<string>(d.Passives);
+        if (d.BowResist > 0f) lines.Add($"Bow Resist +{d.BowResist * 100:0}%");
+        if (d.CritResist > 0f) lines.Add($"Crit Resist +{d.CritResist * 100:0}%");
+        TargetPassivesList.ItemsSource = lines.Count > 0 ? lines : null;
+        TargetDetailsPanel.Visibility = Visibility.Visible;
     }
 
     private static double Dist(double ax, double ay, double bx, double by)

@@ -102,6 +102,10 @@ public record OpenBoxCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
 /// <summary>Player confirmed their picks from a SELECTION box.</summary>
 public record SelectBoxItemsCmd(string ConnectionId, Guid InstanceId, string[] ItemIds) : IGameCommand;
 
+/// <summary>Player expanded the target window — request the target's detailed
+/// stats (and, for a mob, its passive modifier lines).</summary>
+public record InspectTargetCmd(string ConnectionId, Guid TargetId) : IGameCommand;
+
 public record RespawnCmd(string ConnectionId) : IGameCommand;
 
 /// <summary>Advance to a second class (level 20+, once).</summary>
