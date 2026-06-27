@@ -9,6 +9,9 @@ public enum ItemRarity { Common = 0, Uncommon = 1, Rare = 2, Epic = 3, Legendary
 // by allowing several Jewel-slot items at once.
 public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2, Scroll = 3, QuestItem = 4, Shield = 5, Jewel = 6, Box = 7 }
 
+/// <summary>Jewel sub-type — limits how many can be worn: 2 Rings, 2 Earrings, 1 Necklace.</summary>
+public enum JewelType { None = 0, Ring = 1, Earring = 2, Necklace = 3 }
+
 public enum ArmorWeight { None = 0, Heavy = 1, Light = 2, Robe = 3 }
 
 /// <summary>Body-part slot for armor. A full set is one of each (Head/Body/Gloves/
@@ -101,7 +104,9 @@ public record ItemDef(
     int? SellPriceOverride = null,
     // NoAttributes=true: never rolls a random attribute and can't be given one
     // (newbie/starter gear). Enforced in AttributeSystem.Roll.
-    bool NoAttributes = false);
+    bool NoAttributes = false,
+    // Jewel sub-type (only when Slot == Jewel) — gates how many can be worn.
+    JewelType JewelType = JewelType.None);
 
 public static class ItemCatalog
 {
@@ -474,20 +479,20 @@ public static class ItemCatalog
         // Jewels (earring/ring give M.Def; necklace gives P.Def). Earrings/rings handed
         // out in pairs (see the jewels box). One jewel slot equips for now (expandable).
         list.Add(new ItemDef(NewbieEarring, "Newbie Earring", EquipSlot.Jewel, ItemGrade.F, ItemRarity.Common,
-            MDefBonus: 13, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+            MDefBonus: 13, JewelType: JewelType.Earring, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
         list.Add(new ItemDef(NewbieRing, "Newbie Ring", EquipSlot.Jewel, ItemGrade.F, ItemRarity.Common,
-            MDefBonus: 9, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+            MDefBonus: 9, JewelType: JewelType.Ring, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
         list.Add(new ItemDef(NewbieNecklace, "Newbie Necklace", EquipSlot.Jewel, ItemGrade.F, ItemRarity.Common,
-            DefBonus: 18, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+            DefBonus: 18, JewelType: JewelType.Necklace, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
 
         // ===================================================================
         //  JEWELS — the ONLY source of magic defence (beyond the level base).
         //  One jewel equips for now; the slot is built to expand to 5 later.
         // ===================================================================
         list.Add(new ItemDef(BrassAmulet, "Brass Amulet", EquipSlot.Jewel,
-            ItemGrade.F, ItemRarity.Common, MDefBonus: 30));
+            ItemGrade.F, ItemRarity.Common, MDefBonus: 30, JewelType: JewelType.Necklace));
         list.Add(new ItemDef(SilverTalisman, "Silver Talisman", EquipSlot.Jewel,
-            ItemGrade.E, ItemRarity.Uncommon, MDefBonus: 70, MpBonus: 40));
+            ItemGrade.E, ItemRarity.Uncommon, MDefBonus: 70, MpBonus: 40, JewelType: JewelType.Ring));
 
         // ===================================================================
         //  ENCHANT SCROLLS
@@ -641,6 +646,15 @@ public static class ItemCatalog
 
     /// <summary>An openable box/chest (rolls its BoxCatalog loot table).</summary>
     public static bool IsBox(ItemDef def) => def.Slot == EquipSlot.Box;
+
+    /// <summary>How many jewels of a given sub-type can be worn at once.</summary>
+    public static int MaxOfJewelType(JewelType t) => t switch
+    {
+        JewelType.Ring => 2,
+        JewelType.Earring => 2,
+        JewelType.Necklace => 1,
+        _ => 1   // untyped jewel: single
+    };
 
     public static ItemDef? Get(string id) => id is null ? null : All.GetValueOrDefault(id);
 

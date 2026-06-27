@@ -503,16 +503,18 @@ public class GameLoopService : BackgroundService
                 trade.OfferOf(player).Contains(item.InstanceId))
                 return;
 
-            // JEWELS stack up to MaxJewels (2 rings + 2 earrings + 1 necklace); other
-            // slots are one-per-slot. If all jewel slots are full, refuse.
+            // JEWELS stack PER SUB-TYPE: 2 rings, 2 earrings, 1 necklace. Refuse when
+            // that sub-type's slots are full (other slots are one-per-slot).
             if (def.Slot == EquipSlot.Jewel)
             {
-                int equippedJewels = player.Inventory.Count(i => i.Equipped && i != item
-                    && ItemCatalog.Get(i.DefId)?.Slot == EquipSlot.Jewel);
-                if (equippedJewels >= GameConstants.MaxJewels)
+                int sameType = player.Inventory.Count(i => i.Equipped && i != item
+                    && ItemCatalog.Get(i.DefId) is ItemDef j
+                    && j.Slot == EquipSlot.Jewel && j.JewelType == def.JewelType);
+                if (sameType >= ItemCatalog.MaxOfJewelType(def.JewelType))
                 {
+                    string label = def.JewelType.ToString().ToLowerInvariant();
                     SendSystemToEntity(player,
-                        $"All {GameConstants.MaxJewels} jewel slots are full — unequip one first.");
+                        $"You can't wear another {label} ({ItemCatalog.MaxOfJewelType(def.JewelType)} max).");
                     return;
                 }
             }
