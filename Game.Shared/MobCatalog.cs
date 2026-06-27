@@ -21,13 +21,28 @@ public record DropEntry(string ItemId, float Chance, int MinQty = 1, int MaxQty 
 /// level with the same drops; a genuinely different creature (different loot)
 /// gets its own id.
 /// </summary>
+/// <summary>A mob's "passive skills": stat MODIFIERS applied on top of its level-derived
+/// stats, so a template can be a glass-cannon, a MAGIC monster (high M.Def / low P.Def →
+/// hard for mages, easy for fighters), an armored brute (high P.Def / low M.Def → the
+/// reverse), a bruiser, or a boss. Multipliers default to 1 (no change); resists are
+/// fractions (0 = none). Use <see cref="MobCatalog.MobTier"/> for L2-style leveled
+/// magnitudes (tier 3 = ×1) if you prefer. Null on a template = no modifiers.</summary>
+public readonly record struct MobMod(
+    float Hp = 1f, float PDef = 1f, float MDef = 1f,
+    float PAtk = 1f, float MAtk = 1f,
+    float Evasion = 1f, float Accuracy = 1f,
+    float BowResist = 0f,    // fraction of BOW damage taken removed (0..1)
+    float CritResist = 0f,   // reduces an attacker's physical crit CHANCE vs this mob
+    bool Boss = false);      // raid-boss passive (adds crit/bow resistance on spawn)
+
 public record MobType(
     string Id,
     string Name,
     float WalkSpeed,
     float RunSpeed,
     bool Aggressive = false,
-    DropEntry[]? Drops = null);
+    DropEntry[]? Drops = null,
+    MobMod? Mod = null);     // per-template stat modifiers ("passive skills")
 
 /// <summary>
 /// THE place to manage mobs. Each entry is a creature template with its own drop
@@ -41,6 +56,13 @@ public record MobType(
 public static class MobCatalog
 {
     private static readonly Dictionary<string, MobType> All = Build();
+
+    /// <summary>L2-style monster stat TIER → multiplier (tier 3 = normal ×1; lower = weaker,
+    /// higher = stronger). e.g. an "HP Lv4" mob = MobTier(4) = ×2 HP. Tunable.</summary>
+    public static float MobTier(int tier) => tier switch
+    {
+        1 => 0.33f, 2 => 0.5f, 3 => 1f, 4 => 2f, 5 => 3f, 6 => 4f, 7 => 5f, _ => 1f
+    };
 
     private static Dictionary<string, MobType> Build()
     {
@@ -75,11 +97,13 @@ public static class MobCatalog
                     new DropEntry(ItemCatalog.SpeedPotionU, 0.05f),
                 }),
 
+            // MAGIC monster: high M.Def, low P.Def — hard for mages, easy for fighters.
             new MobType("green_slime", "Green Slime", 35f, 60f,
                 Drops: new[]
                 {
                     new DropEntry(ItemCatalog.MinorPotion, 0.30f, 1, 2),
-                }),
+                },
+                Mod: new MobMod(MDef: 2f, PDef: 0.5f)),
 
             new MobType("cave_spider", "Cave Spider", 70f, 120f, Aggressive: true,
                 Drops: new[]
@@ -114,6 +138,8 @@ public static class MobCatalog
                     new DropEntry(ItemCatalog.AttrScrollUncommon, 0.05f),
                 }),
 
+            // ARMORED brute: high HP & P.Def, low M.Def, low evasion — easy for mages,
+            // hard for fighters (the opposite of the magic slime).
             new MobType("stone_golem", "Stone Golem", 40f, 70f,
                 Drops: new[]
                 {
@@ -121,7 +147,8 @@ public static class MobCatalog
                     new DropEntry(ItemCatalog.ArmorKey(ArmorWeight.Heavy, ItemGrade.E, ItemRarity.Uncommon), 0.07f),
                     new DropEntry(ItemCatalog.ScrollRare, 0.05f),
                     new DropEntry(ItemCatalog.AttrScrollRare, 0.03f, 1, 1, MinLevel: 40),
-                }),
+                },
+                Mod: new MobMod(Hp: MobTier(4), PDef: 2f, MDef: 0.5f, Evasion: 0.5f)),
 
             new MobType("wraith", "Wraith", 80f, 132f, Aggressive: true,
                 Drops: new[]

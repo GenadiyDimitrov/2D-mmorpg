@@ -3444,6 +3444,28 @@ var effect = def.Effect;
         // Dedicated mob magic defence (the level base alone leaves low-level mobs at
         // ~0 mDef, which lets spells one-shot them). Keeps magic ~on par with physical.
         mob.MagicDefence = StatCalculator.MobMagicDefence(level);
+
+        // Template "passive skills": per-mob stat modifiers (magic monster, armored
+        // brute, boss, …) applied on top of the level-derived + rank stats.
+        if (mobType.Mod is MobMod mod)
+        {
+            mob.MaxHp = Math.Max(1, (int)(mob.MaxHp * mod.Hp));
+            mob.Defence = Math.Max(1, (int)(mob.Defence * mod.PDef));
+            mob.MagicDefence = Math.Max(1, (int)(mob.MagicDefence * mod.MDef));
+            mob.AttackPower = Math.Max(1, (int)(mob.AttackPower * mod.PAtk));
+            mob.MagicAttack = Math.Max(1, (int)(mob.MagicAttack * mod.MAtk));
+            mob.BasicAttackPower = Math.Max(1, (int)(mob.BasicAttackPower * mod.PAtk));
+            mob.Evasion = (int)(mob.Evasion * mod.Evasion);
+            mob.Accuracy = (int)(mob.Accuracy * mod.Accuracy);
+            mob.BowResist = Math.Clamp(mod.BowResist, 0f, 0.9f);
+            mob.CritRateResist = Math.Clamp(mod.CritResist, 0f, 1f);
+            if (mod.Boss)   // raid-boss passive: resists crits + arrows
+            {
+                mob.CritRateResist = Math.Max(mob.CritRateResist, 0.3f);
+                mob.BowResist = Math.Max(mob.BowResist, 0.3f);
+            }
+        }
+
         mob.Hp = mob.MaxHp;
         mob.Mp = mob.MaxMp;
         mob.HomeX = mob.X;
