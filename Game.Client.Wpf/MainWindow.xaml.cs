@@ -844,6 +844,9 @@ public partial class MainWindow : Window
             if (dto.Id == _myId)
             {
                 _myDto = dto;
+                // Keep our level synced from the snapshot so mob con-colors + level-gated
+                // UI are right ON ENTER (Progress events only fire on level-up afterward).
+                _level = dto.Level;
                 // Race/base class can change via a DEBUG character reset — keep ours in sync.
                 if (dto.Race != _myRace || dto.BaseClass != _myBaseClass)
                 {
