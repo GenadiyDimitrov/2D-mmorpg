@@ -165,3 +165,60 @@ Anti-Magic (+M.Def + magic-fail floor 5→10%), Armor Mastery (per worn weight: 
 > Note for the buffed mage matrix: Force's **+55% M.Atk** → only **√1.55 ≈ +24%** magic damage
 > (√mAtk model), and Frenzy's +10% M.Atk → ~+5% damage. Crit/vamp/interrupt buffs shift the
 > *feel* (burst, sustain, cast-protection) more than the per-hit average.
+
+---
+
+## G. Newbie-set matrices — Fighter vs Mage @40 & @75 (2026-06-27)
+> **Assumptions:** Human, generic BASE class (no 2nd-class spec), Newbie sets equipped +
+> armor mastery learned, 1 jewel (fighter = necklace 18 pDef, mage = earring 13 mDef).
+> Buffed = the 5 NPC newbie buffs (Might/Force/Focus/Speed/Body). Fighter = basic melee
+> (1H Newbie Sword 24 pAtk); Mage = **Flamebolt** nuke (power **95 @40**, **108 @75**).
+> Damage is **crit-folded**, variance averaged to 1.0. ESTIMATE.
+
+**Stats @40:**
+
+| | HP | MP | pAtk | mAtk | pDef | mDef | Crit |
+|---|---|---|---|---|---|---|---|
+| Fighter no-buff | 1246 | 203 | 158 | – | 263 | 45 | 6.4% ×2.0 |
+| Fighter buffed | 1682 | 274 | 182 | – | 302 | 58 | 8.3% ×2.35 |
+| Mage no-buff | 421 | 881 | – | 160 | 204 | 72 | 2.4% ×2.0 |
+| Mage buffed | 568 | 1189 | – | 280 | 235 | 94 | 4.8% ×2.35 |
+
+**Stats @75:**
+
+| | HP | MP | pAtk | mAtk | pDef | mDef | Crit |
+|---|---|---|---|---|---|---|---|
+| Fighter no-buff | 3691 | 645 | 385 | – | 321 | 95 | 6.7% ×2.0 |
+| Fighter buffed | 4983 | 871 | 443 | – | 369 | 123 | 8.7% ×2.35 |
+| Mage no-buff | 1233 | 2554 | – | 390 | 261 | 131 | 2.7% ×2.0 |
+| Mage buffed | 1664 | 3448 | – | 682 | 300 | 170 | 5.4% ×2.35 |
+
+**Damage / hit (crit-folded), vs same-level UNBUFFED target:**
+
+| L40 attacker | vs Fighter | vs Mage | | L75 attacker | vs Fighter | vs Mage |
+|---|---|---|---|---|---|---|
+| Fighter no-buff | 49 | 63 | | Fighter no-buff | 98 | 121 |
+| Fighter buffed | 59 | 76 | | Fighter buffed | 119 | 146 |
+| Mage no-buff | 219 | 137 | | Mage no-buff | 184 | 134 |
+| Mage buffed | 301 | 188 | | Mage buffed | 255 | 185 |
+
+**Hits-to-kill (HP ÷ dmg/hit). Buffed = BOTH buffed (attacker dmg recomputed vs the
+buffed defender's higher HP + defence):**
+
+| Matchup | @40 no-buff | @40 buffed | @75 no-buff | @75 buffed |
+|---|---|---|---|---|
+| Fighter → Fighter | 25 | 32 | 38 | 48 |
+| Fighter → Mage   | 7  | 9  | 10 | 13 |
+| Mage → Fighter   | 6  | 7  | 20 | 25 |
+| Mage → Mage      | 3  | 4  | 9  | 12 |
+
+**Reading it:**
+- **Buffs make fights LONGER** (more hits): defensive buffs (Body +35% HP, Might/Force
+  +def) outweigh the offensive gain, so HTK rises ~25–30% when both sides buff.
+- **Mage out-damages per hit** (nuke ≫ basic), but the fighter swings ~2–3× as often
+  (no cast bar) and has ~3× HP → in real time the fighter still wins a stand-up fight;
+  the mage's edge is range + burst + the mDef wall vs other mages.
+- **MEN wall:** Mage→Mage takes far more hits than Mage→Fighter (mages are magic-tanky).
+- **40→75:** the mage's Mage→Fighter HTK jumps (6→20) because the fighter's HP triples
+  while the mage's nuke power only goes 95→108 — high-tier spells (not raw level) are how
+  mages keep up. NOT a real TTK in seconds (fighter attacks faster than the mage casts).
