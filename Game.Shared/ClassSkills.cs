@@ -126,12 +126,13 @@ public static class ClassSkills
                 yield return new ClassSkill(SkillCatalog.ArcherWeaponMastery, second);
                 break;
             case Archetype.Nuker:
+                // Mages get NO weapon-type mastery — armor mastery + the flat atk passive
+                // carry their identity; weapon type is irrelevant for casters.
                 yield return new ClassSkill(SkillCatalog.NukerArmorMastery, second);
-                yield return new ClassSkill(SkillCatalog.NukerWeaponMastery, second);
                 break;
             case Archetype.Healer:
-                // Healer's data-driven Armor Mastery is registered in its own class table;
-                // a healer weapon mastery can be added there later (uses mace = blunt).
+                // Healer's data-driven Armor Mastery is registered in its own class table.
+                // No weapon-type mastery (mage) — same reasoning as the nuker above.
                 break;
         }
     }

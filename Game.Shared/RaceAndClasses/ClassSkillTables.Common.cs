@@ -35,7 +35,13 @@ public static partial class ClassSkillTables
                 new ClassSkill(MageAntiMagic, 20, SkillLevel: 3),
                 new ClassSkill(MageAntiMagic, 25, SkillLevel: 4),
                 new ClassSkill(MageAntiMagic, 30, SkillLevel: 5),
-                new ClassSkill(MageAntiMagic, 35, SkillLevel: 6));
+                new ClassSkill(MageAntiMagic, 35, SkillLevel: 6),
+                // Spell Mastery — same caster passive as the healer (replaces Weapon Mastery;
+                // carries the bow cast-speed penalty). Mages have no weapon-TYPE mastery.
+                new ClassSkill(SpellMastery, 20, SkillLevel: 1),
+                new ClassSkill(SpellMastery, 25, SkillLevel: 2),
+                new ClassSkill(SpellMastery, 30, SkillLevel: 3),
+                new ClassSkill(SpellMastery, 35, SkillLevel: 4));
         }
 
         // Healer (cleric) 2nd-class kit — authored separately because Holy Bolt takes a

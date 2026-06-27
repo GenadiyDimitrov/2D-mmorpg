@@ -117,11 +117,13 @@ public static partial class SkillCatalog
             Description: "A draining bolt (power 21) that heals you for 40% of the damage dealt."),
 
         // Weapon Mastery — flat attack passive (asymmetric: more M.Atk than P.Atk).
+        // Also carries the caster bow penalty (half cast speed while wielding a bow).
         new(WeaponMastery, "Weapon Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: 2200,
             Passive: new PassiveEffect(MagAtk: 4, PhysAtk: 2),
-            Description: "Passive. +4 M.Atk and +2 P.Atk."),
+            WeaponMasteryLevels: new[] { CasterBowPenalty },
+            Description: "Passive. +4 M.Atk and +2 P.Atk. Casting with a bow is half speed."),
 
         new(Weakness, "Weakness", BaseClass.Mage, SkillEffect.DebuffDef,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 600, Power: 0,

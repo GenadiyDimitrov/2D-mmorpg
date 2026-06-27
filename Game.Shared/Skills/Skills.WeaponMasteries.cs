@@ -1,25 +1,31 @@
 namespace Game.Shared;
 
-/// <summary>DATA-DRIVEN weapon-mastery skills per 2nd-class archetype. Each carries a
-/// per-equipped-weapon <see cref="WeaponMasteryProfile"/>: holding the class's intended
-/// weapon grants a bonus (its identity); any other weapon simply grants nothing (no
-/// penalty — unlike armor weight). The effect reuses <see cref="PassiveEffect"/> and flows
-/// through the SAME passive-application path in Entity.RecomputeDerived, just gated on the
-/// equipped WeaponType. This is the weapon sibling of the armor masteries
-/// (Skills.Masteries.cs) and realises Increment 2 of [[weapon-armor-mastery-design]].
+/// <summary>DATA-DRIVEN weapon-mastery skills for the FIGHTER 2nd-class archetypes
+/// (Tank/Warrior/Rogue/Archer). Each carries a per-equipped-weapon
+/// <see cref="WeaponMasteryProfile"/>: holding the class's intended weapon grants a bonus
+/// (its identity); any other weapon simply grants nothing (no penalty — unlike armor
+/// weight). The effect reuses <see cref="PassiveEffect"/> and flows through the SAME
+/// passive-application path in Entity.RecomputeDerived, just gated on the equipped
+/// WeaponType. The weapon sibling of the armor masteries (Skills.Masteries.cs);
+/// Increment 2 of [[weapon-armor-mastery-design]].
 ///
-/// Distinct from the base-mage flat "Weapon Mastery" (weapon_mastery, unconditional
-/// +atk) — these are weapon-CONDITIONAL and named per weapon to avoid confusion.
+/// MAGES (Nuker/Healer) intentionally have NO weapon-type mastery: their identity comes
+/// from armor mastery (robe, +light for healers / +heavy for buffers) plus the flat
+/// pAtk/mAtk passive (Weapon/Spell Mastery). Weapon TYPE doesn't matter for casters.
 ///
-/// NUMBERS ARE PLACEHOLDERS — tune during testing. The nuker profile is deliberately
-/// NON-damage (cast/MP utility) so it does not buff mage damage (owner constraint).</summary>
+/// NUMBERS ARE PLACEHOLDERS — tune during testing.</summary>
 public static partial class SkillCatalog
 {
     public const string TankWeaponMastery    = "tank_weapon_mastery";
     public const string WarriorWeaponMastery = "warrior_weapon_mastery";
     public const string RogueWeaponMastery   = "rogue_weapon_mastery";
     public const string ArcherWeaponMastery  = "archer_weapon_mastery";
-    public const string NukerWeaponMastery   = "nuker_weapon_mastery";
+
+    /// <summary>Caster penalty woven into the mage atk passives (Weapon/Spell Mastery):
+    /// holding a BOW halves your cast speed (CastSpeedPct -1 ⇒ ×2 cast time). Bows are an
+    /// archer weapon; a mage who picks one up pays for it. Inert for any other weapon.</summary>
+    internal static readonly WeaponMasteryProfile CasterBowPenalty =
+        new(Bow: new PassiveEffect(CastSpeedPct: -1.0f));
 
     private static SkillDef WeaponMasteryPassive(string id, string name, BaseClass cls,
         string desc, WeaponMasteryProfile profile) =>
@@ -58,11 +64,5 @@ public static partial class SkillCatalog
             new WeaponMasteryProfile(
                 Sword: new PassiveEffect(PhysAtkPct: 0.06f, Accuracy: 5),
                 Blunt: new PassiveEffect(PhysAtkPct: 0.06f, Accuracy: 10))),
-
-        // Nuker — staff (magic blunt). NON-damage on purpose: cast speed + MP regen only.
-        WeaponMasteryPassive(NukerWeaponMastery, "Staff Mastery", BaseClass.Mage,
-            "Casting with a staff is faster and your mana recovers more quickly.",
-            new WeaponMasteryProfile(
-                Blunt: new PassiveEffect(CastSpeedPct: 0.05f, MpRegenPct: 0.10f))),
     };
 }
