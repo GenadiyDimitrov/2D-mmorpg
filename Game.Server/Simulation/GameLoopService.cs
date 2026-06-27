@@ -549,6 +549,7 @@ public class GameLoopService : BackgroundService
         player.RecomputeDerived();
         SendInventory(player);
         SendStats(player);
+        SaveEntity(player);   // persist equip changes immediately (survive restarts)
     }
 
     private void HandleEnchant(EnchantCmd cmd)
@@ -743,6 +744,7 @@ public class GameLoopService : BackgroundService
             _ = _hub.Clients.Client(conn).SendAsync("Progress", new ProgressUpdate(
                 player.Level, player.Exp, StatCalculator.ExpToNext(player.Level), true));
         SendSystemToEntity(player, $"[DEBUG] Level up -> {player.Level}.");
+        SaveEntity(player);   // persist so debug levels survive a server restart
     }
 
     private void HandleDebugGold(DebugGoldCmd cmd)
@@ -752,6 +754,7 @@ public class GameLoopService : BackgroundService
         player.Gold += Math.Max(0, cmd.Amount);
         SendGold(player);
         SendSystemToEntity(player, $"[DEBUG] +{cmd.Amount:N0} {GameConstants.CurrencyName} (now {player.Gold:N0}).");
+        SaveEntity(player);
     }
 
     private void HandleDebugSp(DebugSpCmd cmd)
@@ -762,6 +765,7 @@ public class GameLoopService : BackgroundService
         SendStats(player);
         SendLearned(player);
         SendSystemToEntity(player, $"[DEBUG] +{cmd.Amount:N0} SP (now {player.SkillPoints:N0}).");
+        SaveEntity(player);
     }
 
     /// <summary>DEBUG: re-roll the SAME character in place — new race/base class,
@@ -2587,6 +2591,7 @@ var effect = def.Effect;
         }
 
         SendInventory(player);
+        SaveEntity(player);
         SendSystemToEntity(player, got.Count > 0
             ? $"{def.Name}: {string.Join(", ", got)}."
             : $"{def.Name}: nothing this time.");
@@ -2621,6 +2626,7 @@ var effect = def.Effect;
             else { SendSystemToEntity(player, "Your inventory is full — some picks were lost."); break; }
         }
         SendInventory(player);
+        SaveEntity(player);
         SendSystemToEntity(player, got.Count > 0
             ? $"{def.Name}: {string.Join(", ", got)}."
             : $"{def.Name}: nothing chosen.");
