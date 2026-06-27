@@ -170,37 +170,39 @@ Anti-Magic (+M.Def + magic-fail floor 5→10%), Armor Mastery (per worn weight: 
 
 ## G. Newbie-set matrices — Fighter vs Mage @40 & @75 (2026-06-27)
 > **Assumptions:** Human, generic BASE class (no 2nd-class spec), Newbie sets equipped +
-> armor mastery learned, 1 jewel (fighter = necklace 18 pDef, mage = earring 13 mDef).
-> Buffed = the 5 NPC newbie buffs (Might/Force/Focus/Speed/Body). Fighter = basic melee
-> (1H Newbie Sword 24 pAtk); Mage = **Flamebolt** nuke (power **95 @40**, **108 @75**).
-> Damage is **crit-folded**, variance averaged to 1.0. ESTIMATE.
+> armor mastery learned, **all 5 newbie jewels equipped** (2 earrings + 2 rings = 44 mDef;
+> necklace = 18 pDef). Buffed = the 5 NPC newbie buffs (Might/Force/Focus/Speed/Body).
+> Fighter = basic melee (1H Newbie Sword 24 pAtk); Mage = **Flamebolt** nuke (power
+> **95 @40**, **108 @75**). Damage is **crit-folded**, variance averaged to 1.0. ESTIMATE.
+> *(Updated 2026-06-27 for the 1→5 jewel slots — mDef roughly doubled vs the old 1-jewel
+> baseline, which roughly HALVED magic damage.)*
 
 **Stats @40:**
 
 | | HP | MP | pAtk | mAtk | pDef | mDef | Crit |
 |---|---|---|---|---|---|---|---|
-| Fighter no-buff | 1246 | 203 | 158 | – | 263 | 45 | 6.4% ×2.0 |
-| Fighter buffed | 1682 | 274 | 182 | – | 302 | 58 | 8.3% ×2.35 |
-| Mage no-buff | 421 | 881 | – | 160 | 204 | 72 | 2.4% ×2.0 |
-| Mage buffed | 568 | 1189 | – | 280 | 235 | 94 | 4.8% ×2.35 |
+| Fighter no-buff | 1246 | 203 | 158 | – | 263 | 101 | 6.4% ×2.0 |
+| Fighter buffed | 1682 | 274 | 182 | – | 302 | 131 | 8.3% ×2.35 |
+| Mage no-buff | 421 | 881 | – | 160 | 222 | 118 | 2.4% ×2.0 |
+| Mage buffed | 568 | 1189 | – | 280 | 255 | 153 | 4.8% ×2.35 |
 
 **Stats @75:**
 
 | | HP | MP | pAtk | mAtk | pDef | mDef | Crit |
 |---|---|---|---|---|---|---|---|
-| Fighter no-buff | 3691 | 645 | 385 | – | 321 | 95 | 6.7% ×2.0 |
-| Fighter buffed | 4983 | 871 | 443 | – | 369 | 123 | 8.7% ×2.35 |
-| Mage no-buff | 1233 | 2554 | – | 390 | 261 | 131 | 2.7% ×2.0 |
-| Mage buffed | 1664 | 3448 | – | 682 | 300 | 170 | 5.4% ×2.35 |
+| Fighter no-buff | 3691 | 645 | 385 | – | 321 | 151 | 6.7% ×2.0 |
+| Fighter buffed | 4983 | 871 | 443 | – | 369 | 196 | 8.7% ×2.35 |
+| Mage no-buff | 1233 | 2554 | – | 390 | 279 | 177 | 2.7% ×2.0 |
+| Mage buffed | 1664 | 3448 | – | 682 | 321 | 230 | 5.4% ×2.35 |
 
 **Damage / hit (crit-folded), vs same-level UNBUFFED target:**
 
 | L40 attacker | vs Fighter | vs Mage | | L75 attacker | vs Fighter | vs Mage |
 |---|---|---|---|---|---|---|
-| Fighter no-buff | 49 | 63 | | Fighter no-buff | 98 | 121 |
-| Fighter buffed | 59 | 76 | | Fighter buffed | 119 | 146 |
-| Mage no-buff | 219 | 137 | | Mage no-buff | 184 | 134 |
-| Mage buffed | 301 | 188 | | Mage buffed | 255 | 185 |
+| Fighter no-buff | 49 | 58 | | Fighter no-buff | 98 | 113 |
+| Fighter buffed | 59 | 70 | | Fighter buffed | 119 | 137 |
+| Mage no-buff | 97 | 83 | | Mage no-buff | 116 | 99 |
+| Mage buffed | 134 | 115 | | Mage buffed | 160 | 137 |
 
 **Hits-to-kill (HP ÷ dmg/hit). Buffed = BOTH buffed (attacker dmg recomputed vs the
 buffed defender's higher HP + defence):**
@@ -208,9 +210,9 @@ buffed defender's higher HP + defence):**
 | Matchup | @40 no-buff | @40 buffed | @75 no-buff | @75 buffed |
 |---|---|---|---|---|
 | Fighter → Fighter | 25 | 32 | 38 | 48 |
-| Fighter → Mage   | 7  | 9  | 10 | 13 |
-| Mage → Fighter   | 6  | 7  | 20 | 25 |
-| Mage → Mage      | 3  | 4  | 9  | 12 |
+| Fighter → Mage   | 7  | 9  | 11 | 14 |
+| Mage → Fighter   | 13 | 16 | 32 | 40 |
+| Mage → Mage      | 5  | 6  | 12 | 16 |
 
 **Action speed** (seconds per action, from the L2 speed model — base attack 15 ticks,
 Flamebolt cast 40 ticks + 1 s reuse): Fighter sword ≈ **0.95 s/hit** (no-buff) → **0.71 s**
@@ -222,23 +224,23 @@ buffed (robe mastery + Spirit Training + Speed buff). Fighter ≈ 1 hit/s; mage 
 | Matchup | @40 | @75 |
 |---|---|---|
 | Fighter → Fighter | 24 / 23 | 36 / 34 |
-| Fighter → Mage   | **7 / 7**  | **9 / 9** |
-| Mage → Fighter   | **22 / 21** | **66 / 69** |
-| Mage → Mage      | 11 / 12 | 30 / 33 |
+| Fighter → Mage   | **7 / 6**  | **10 / 10** |
+| Mage → Fighter   | **47 / 48** | **106 / 110** |
+| Mage → Mage      | 18 / 18 | 40 / 44 |
 
 **Reading it:**
-- **Buffs make fights LONGER** (more hits/sec): defensive buffs (Body +35% HP, Might/Force
-  +def) outweigh the offensive gain, so HTK/TTK rises ~25–30% when both buff — buffs change
-  survivability/feel more than fight length.
-- **Per-hit the mage dominates; per-second the FIGHTER does.** Mage→Fighter is 6 hits but
-  ~22 s @40; Fighter→Mage is ~7 s. Slow casts + reuse erase the mage's per-hit edge.
-- **@75 is a blowout in seconds:** Fighter→Mage ~9 s vs Mage→Fighter ~66 s — the flat-power
-  nuke can't dent the fighter's tripled HP. Mages MUST kite/burst/CC, not trade.
-- **MEN wall:** Mage→Mage takes far longer than Mage→Fighter (mages are magic-tanky).
-- **Caveat (current state):** this is a STATIONARY stand-up model with **no mage CC/control
-  implemented yet** — so the 60 s mage TTK is acceptable FOR NOW. Once the mage gets its
-  control kit, the fighter is meant to "feel those 60 s as agony" (kited/locked). Balance
-  the raw numbers AFTER the control layer lands; don't over-buff mage damage to compensate.
+- **5 jewels = a magic wall.** Doubling mDef ~halved magic damage, so the mage's per-hit
+  numbers fell to fighter-ish levels and the magic matchups stretched a lot (Mage→Fighter
+  ~47 s @40, ~106 s @75). Physical fights are unchanged (jewels add mDef, not pDef — except
+  the necklace's +18 pDef, which only nudged Fighter→Mage).
+- **Per-hit roughly even now; per-second the FIGHTER dominates hard.** ~1 s swings vs ~3.3 s
+  casts means Fighter→Mage ~7 s vs Mage→Fighter ~47 s @40.
+- **Buffs make fights LONGER** (defensive ≈ offensive): HTK/TTK rises ~25 % when both buff.
+- **Caveat (current state):** STATIONARY stand-up model with **no mage CC/control yet** — so
+  the long mage TTK is acceptable FOR NOW. Once the mage gets its control kit, the fighter is
+  meant to "feel those seconds as agony" (kited/locked). Balance raw numbers AFTER control
+  lands; don't over-buff mage damage to compensate. *Mob/item balance is a separate next-week
+  pass — target: a cleric can solo a same-level mob, slower but not impossible.*
 
 > **KEEP IN SYNC:** the three tables above (damage / hits-to-kill / seconds) are one set —
 > regenerate ALL of them whenever a combat formula, constant, stat, weapon/armor/set, or buff
