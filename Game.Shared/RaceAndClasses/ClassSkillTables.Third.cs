@@ -40,6 +40,17 @@ public static partial class ClassSkillTables
                     skills.Select((s, i) => new ClassSkill(s.Skill, 40 + i * step, s.Name)).ToArray());
             }
 
+        // Nuker ULTIMATE — Elemental Burst (consumes 10 Elemental Stones). 10 levels at
+        // char 40/44/48/…/72/75 (step 4, last capped at 75), power 150 → 250. Shared by
+        // both nuker disciplines (Magus + Tempest), all races.
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+            foreach (var disc in new[] { Discipline.Magus, Discipline.Tempest })
+                ClassSkills.RegisterThird(race, disc,
+                    Enumerable.Range(1, 10)
+                        .Select(lvl => new ClassSkill(ElementalBurst,
+                            lvl <= 9 ? 36 + lvl * 4 : 75, SkillLevel: lvl))
+                        .ToArray());
+
         // Healer disciplines (Lightbringer = healer, Warchanter = buffer) are dropped
         // pending the new lvl-40 CSVs. Their skill DEFS remain in the catalog; only the
         // learn assignments are gone, so nothing references them until re-authored.

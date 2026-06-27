@@ -225,6 +225,7 @@ public static class ItemCatalog
     public const string SilverTalisman = "jewel_silver_talisman";
     public const string IronMace = "blunt_1h_iron_mace";        // 1H physical blunt (shield-ok)
     public const string AshWand = "blunt_1h_ash_wand";          // 1H magic blunt (mAtk > pAtk)
+    public const string ElementalStone = "elemental_stone";     // reagent for Elemental Burst
     // Newbie STARTER weapons — given on character creation. Untradeable, sold for 0,
     // can't be purchased (see the "newbie" item flags below).
     public const string NewbieSword1H = "newbie_sword_1h";
@@ -447,6 +448,11 @@ public static class ItemCatalog
         list.Add(new ItemDef(GreaterPotion, "Greater Healing Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare,
             InstantHealPercent: 0.50f, PotionCooldownTicks: 300, Value: 1500));
+
+        // Elemental Stone — a crafting/reagent material (not drinkable). Stacks; consumed
+        // by skills that list it as a ConsumableId (e.g. the nuker's Elemental Burst).
+        list.Add(new ItemDef(ElementalStone, "Elemental Stone", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Rare, Value: 100));
 
         // ----- Buff potions: consume to gain a timed (weaker-than-class) buff. Rarity
         //       is the tier; same line supersedes by rank. No heal cooldown. -----

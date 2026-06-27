@@ -17,6 +17,7 @@ public static partial class SkillCatalog
     public const string GreaterHeal = "greater_heal";
     public const string FlameBolt = "flame_bolt";
     public const string HolyStrike = "holy_strike";
+    public const string ElementalBurst = "elemental_burst";   // nuker 3rd-class ultimate (consumes Elemental Stones)
 
     private static SkillDef[] MageSkills() => new SkillDef[]
     {
@@ -143,6 +144,29 @@ public static partial class SkillCatalog
             Replaces: new[] { MagicBolt },   // upgrades (replaces) the basic nuke
             Category: SkillCategory.Magic,
             Description: "A searing bolt — the nuker's stronger basic attack (replaces Magic Bolt)."),
+
+        // Elemental Burst — NUKER 3rd-class ULTIMATE. Consumes 10 Elemental Stones per
+        // cast (the reagent system) and ramps power 150 → 250 across 10 learn levels
+        // (char 40/44/48/…/72/75). Numbers are placeholders — tune freely.
+        new(ElementalBurst, "Elemental Burst", BaseClass.Mage, SkillEffect.MagicDamage,
+            MpCost: 60, CastTicks: 50, CooldownTicks: 30, Range: 900, Power: 150,
+            Category: SkillCategory.Magic, InitialMpCost: 12,
+            ConsumableId: ItemCatalog.ElementalStone, ConsumableAmount: 10,
+            Description: "An overwhelming elemental detonation. Consumes 10 Elemental Stones; "
+                       + "its power grows each level (150 → 250).",
+            Levels: new[]
+            {
+                new SkillLevel(Power: 150, MpCost: 60,  InitialMpCost: 12, SpCost: 4000,  Description: "Magic damage, power 150. Consumes 10 Elemental Stones."),
+                new SkillLevel(Power: 161, MpCost: 65,  InitialMpCost: 13, SpCost: 5000,  Description: "Magic damage, power 161. Consumes 10 Elemental Stones."),
+                new SkillLevel(Power: 172, MpCost: 70,  InitialMpCost: 14, SpCost: 6000,  Description: "Magic damage, power 172. Consumes 10 Elemental Stones."),
+                new SkillLevel(Power: 183, MpCost: 75,  InitialMpCost: 15, SpCost: 7000,  Description: "Magic damage, power 183. Consumes 10 Elemental Stones."),
+                new SkillLevel(Power: 194, MpCost: 80,  InitialMpCost: 16, SpCost: 8000,  Description: "Magic damage, power 194. Consumes 10 Elemental Stones."),
+                new SkillLevel(Power: 205, MpCost: 85,  InitialMpCost: 17, SpCost: 9000,  Description: "Magic damage, power 205. Consumes 10 Elemental Stones."),
+                new SkillLevel(Power: 216, MpCost: 90,  InitialMpCost: 18, SpCost: 10000, Description: "Magic damage, power 216. Consumes 10 Elemental Stones."),
+                new SkillLevel(Power: 227, MpCost: 95,  InitialMpCost: 19, SpCost: 11000, Description: "Magic damage, power 227. Consumes 10 Elemental Stones."),
+                new SkillLevel(Power: 238, MpCost: 100, InitialMpCost: 20, SpCost: 12000, Description: "Magic damage, power 238. Consumes 10 Elemental Stones."),
+                new SkillLevel(Power: 250, MpCost: 105, InitialMpCost: 21, SpCost: 13000, Description: "Magic damage, power 250. Consumes 10 Elemental Stones."),
+            }),
 
         // Holy Bolt — the Healer's offensive spell (replaces Magic Bolt). ONE skill;
         // per-race NAME only (Holy/Moonlight/Spirit Bolt) via ClassSkill.DisplayName.
