@@ -1742,6 +1742,9 @@ public partial class MainWindow
     private void DebugTabConsum_Click(object sender, RoutedEventArgs e) { _debugTab = 1; BuildDebugMenu(); }
     private void DebugTabFunc_Click(object sender, RoutedEventArgs e) { _debugTab = 2; BuildDebugMenu(); }
 
+    private int _debugTpView;   // 0 = categories, 1 = NPCs, 2 = Zones, 3 = Cities
+    private void DebugTabTp_Click(object sender, RoutedEventArgs e) { _debugTab = 3; _debugTpView = 0; BuildDebugMenu(); }
+
     private void BuildDebugMenu()
     {
         DebugList.Children.Clear();
@@ -1749,7 +1752,54 @@ public partial class MainWindow
         {
             case 1: BuildDebugConsumables(); break;
             case 2: BuildDebugFunctions(); break;
+            case 3: BuildDebugTeleport(); break;
             default: BuildDebugEquip(); break;
+        }
+    }
+
+    private void BuildDebugTeleport()
+    {
+        if (_debugTpView == 0)
+        {
+            AddDebugHeader("Teleport to…");
+            DebugList.Children.Add(DebugAction("NPCs ▸", () => { _debugTpView = 1; BuildDebugMenu(); return Task.CompletedTask; }));
+            DebugList.Children.Add(DebugAction("Zones (spawn) ▸", () => { _debugTpView = 2; BuildDebugMenu(); return Task.CompletedTask; }));
+            DebugList.Children.Add(DebugAction("Cities ▸", () => { _debugTpView = 3; BuildDebugMenu(); return Task.CompletedTask; }));
+            return;
+        }
+
+        DebugList.Children.Add(DebugAction("◂ Back", () => { _debugTpView = 0; BuildDebugMenu(); return Task.CompletedTask; }));
+
+        if (_debugTpView == 1)
+        {
+            AddDebugHeader("NPCs");
+            foreach (var npc in WorldMap.Npcs.OrderBy(n => n.Name))
+            {
+                float x = npc.X, y = npc.Y;
+                DebugList.Children.Add(DebugAction(npc.Name, async () => await _net.DebugTeleportAsync(x, y)));
+            }
+        }
+        else if (_debugTpView == 2)
+        {
+            // Land ~400 units OUTSIDE the spawn ring (centre + radius + 400) so you arrive
+            // next to the mobs, not on top of them.
+            AddDebugHeader("Spawn zones (Lv range)");
+            foreach (var z in WorldMap.SpawnZones.OrderBy(z => z.MinLevel))
+            {
+                string mob = z.MobTypes.Length > 0 ? (MobCatalog.Get(z.MobTypes[0])?.Name ?? z.MobTypes[0]) : "";
+                float tx = z.X + z.Radius + 400f, ty = z.Y;
+                DebugList.Children.Add(DebugAction($"Lv {z.MinLevel}-{z.MaxLevel}  {mob}",
+                    async () => await _net.DebugTeleportAsync(tx, ty)));
+            }
+        }
+        else
+        {
+            AddDebugHeader("Cities");
+            foreach (var c in WorldMap.SafeZones.OrderBy(c => c.Name))
+            {
+                float x = c.X, y = c.Y;
+                DebugList.Children.Add(DebugAction(c.Name, async () => await _net.DebugTeleportAsync(x, y)));
+            }
         }
     }
 

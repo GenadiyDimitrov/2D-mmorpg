@@ -97,6 +97,7 @@ public class GameLoopService : BackgroundService
                 case DebugSpCmd c: HandleDebugSp(c); break;
                 case DebugResetCmd c: HandleDebugReset(c); break;
                 case DebugThirdClassCmd c: HandleDebugThirdClass(c); break;
+                case DebugTeleportCmd c: HandleDebugTeleport(c); break;
                 case TradeRequestCmd c: HandleTradeRequest(c); break;
                 case TradeRespondCmd c: HandleTradeRespond(c); break;
                 case TradeOfferCmd c: HandleTradeOffer(c); break;
@@ -703,6 +704,17 @@ public class GameLoopService : BackgroundService
     }
 
 #pragma warning disable CS1998
+    private void HandleDebugTeleport(DebugTeleportCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        player.X = Math.Clamp(cmd.X, 0, GameConstants.ZoneWidth);
+        player.Y = Math.Clamp(cmd.Y, 0, GameConstants.ZoneHeight);
+        player.TargetX = null;
+        player.TargetY = null;
+        _world.Grid.UpdatePosition(player);
+        SendSystemToEntity(player, $"Teleported to ({(int)player.X}, {(int)player.Y}).");
+    }
+
     private void HandleDebugGive(DebugGiveCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player))

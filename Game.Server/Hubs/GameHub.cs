@@ -351,6 +351,14 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task DebugTeleport(float x, float y)
+    {
+#if DEBUG
+        _world.Commands.Enqueue(new DebugTeleportCmd(Context.ConnectionId, x, y));
+#endif
+        return Task.CompletedTask;
+    }
+
     public override Task OnDisconnectedAsync(Exception? exception)
     {
         Sessions.TryRemove(Context.ConnectionId, out _);

@@ -179,6 +179,9 @@ public class NetworkChannel : IAsyncDisposable
     public Task DebugThirdClassAsync(int thirdClassId) =>
         _connection!.SendAsync("DebugThirdClass", thirdClassId);
 
+    public Task DebugTeleportAsync(float x, float y) =>
+        _connection!.SendAsync("DebugTeleport", x, y);
+
     public Task TradeRequestAsync(Guid targetId) =>
         _connection!.SendAsync("TradeRequest", targetId);
 

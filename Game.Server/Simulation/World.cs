@@ -144,6 +144,9 @@ public record DebugResetCmd(string ConnectionId, Race Race, BaseClass BaseClass)
 /// chain + items. Parent 2nd class must already match the discipline.</summary>
 public record DebugThirdClassCmd(string ConnectionId, int ThirdClassId) : IGameCommand;
 
+/// <summary>Debug-menu teleport to arbitrary world coordinates.</summary>
+public record DebugTeleportCmd(string ConnectionId, float X, float Y) : IGameCommand;
+
 /// <summary>Admin command (kick/ban/jail/unjail/god). Validated in the hub.</summary>
 public record AdminCmd(string ConnectionId, string Command, string Argument) : IGameCommand;
 
