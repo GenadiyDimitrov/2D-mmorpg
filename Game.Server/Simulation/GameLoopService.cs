@@ -609,10 +609,13 @@ public class GameLoopService : BackgroundService
         if (target.Equipped && !destroyed)
             player.RecomputeDerived();
 
+        // Send the fresh inventory FIRST, so the client's _inventory is up to date before
+        // the Enchant result re-renders the enchant popup — otherwise the popup and the
+        // inventory list desync by one enchant step (the ±1 mismatch).
+        SendInventory(player);
         SendTo(player, "Enchant", new EnchantResultDto(
             targetDef.Name, destroyed ? 0 : target.Enchant, outcome, destroyed));
         SendSystemToEntity(player, outcome);
-        SendInventory(player);
         if (target.Equipped || destroyed)
             SendStats(player);
     }
@@ -661,9 +664,10 @@ public class GameLoopService : BackgroundService
         string outcome = forceMax
             ? $"{targetDef.Name} attributes rerolled to MAX."
             : $"{targetDef.Name} attributes rerolled.";
+        // Inventory first (see HandleEnchant) so the reroll popup re-renders from fresh data.
+        SendInventory(player);
         SendTo(player, "Reroll", new RerollResultDto(targetDef.Name, outcome));
         SendSystemToEntity(player, outcome);
-        SendInventory(player);
         if (target.Equipped)
             SendStats(player);
     }
