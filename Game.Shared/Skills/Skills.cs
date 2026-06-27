@@ -63,13 +63,23 @@ public record SkillDef(
     float Lifesteal = 0f,
     // Armor-mastery passive: per-level, per-worn-weight stat profiles (see
     // ArmorMasteryProfile). When set, this skill behaves as a data-driven armor mastery.
-    ArmorMasteryProfile[]? ArmorMasteryLevels = null)
+    ArmorMasteryProfile[]? ArmorMasteryLevels = null,
+    // Weapon-mastery passive: per-level, per-equipped-WEAPON-TYPE PassiveEffects (see
+    // WeaponMasteryProfile). The bonus applies only while the matching weapon is held —
+    // the same data-driven pattern as armor mastery, keyed on weapon type instead of weight.
+    WeaponMasteryProfile[]? WeaponMasteryLevels = null)
 {
     /// <summary>The armor-mastery per-weight profile for a learned skill LEVEL, or null
     /// if this skill isn't an armor mastery.</summary>
     public ArmorMasteryProfile? ArmorMasteryAt(int level) =>
         ArmorMasteryLevels is { Length: > 0 } && level >= 1 && level <= ArmorMasteryLevels.Length
             ? ArmorMasteryLevels[level - 1] : null;
+
+    /// <summary>The weapon-mastery per-weapon profile for a learned skill LEVEL, or null
+    /// if this skill isn't a weapon mastery.</summary>
+    public WeaponMasteryProfile? WeaponMasteryAt(int level) =>
+        WeaponMasteryLevels is { Length: > 0 } && level >= 1 && level <= WeaponMasteryLevels.Length
+            ? WeaponMasteryLevels[level - 1] : null;
 
     /// <summary>Highest level this skill can reach (1 for a single-level skill).</summary>
     public int MaxLevel => Levels is { Length: > 0 } ? Levels.Length : 1;
@@ -118,6 +128,28 @@ public record SkillDef(
 /// (the same pattern future classes reuse for weapon-type-conditional passives).</summary>
 public readonly record struct ArmorMasteryProfile(
     MasteryEffect Robe, MasteryEffect Light, MasteryEffect Heavy);
+
+/// <summary>Per-equipped-WEAPON-TYPE stat profile for a weapon-mastery PASSIVE (one entry
+/// per skill level). The held weapon's type selects which <see cref="PassiveEffect"/>
+/// applies in Entity.RecomputeDerived — rewarding the "right" weapon for the class. Unlike
+/// armor mastery there is NO penalty for the wrong weapon (you just get no bonus); each
+/// unset weapon defaults to an all-zero (inert) PassiveEffect. Keyed on WeaponType only
+/// (1H vs 2H is not distinguished here yet).</summary>
+public readonly record struct WeaponMasteryProfile(
+    PassiveEffect Sword = default, PassiveEffect Dual = default,
+    PassiveEffect Bow = default, PassiveEffect Blunt = default)
+{
+    /// <summary>The bonus for the given equipped weapon type (inert default for None /
+    /// an unset slot).</summary>
+    public PassiveEffect For(WeaponType wt) => wt switch
+    {
+        WeaponType.Sword => Sword,
+        WeaponType.Dual  => Dual,
+        WeaponType.Bow   => Bow,
+        WeaponType.Blunt => Blunt,
+        _ => default
+    };
+}
 
 /// <summary>Per-level tunables for a multi-level skill (see SkillDef.Levels). Only the
 /// fields that change between levels live here; identity (id/name/effect/range/flags)
@@ -195,6 +227,7 @@ public static partial class SkillCatalog
         list.AddRange(MageSkills());          // Skills.Mage.cs
         list.AddRange(HealerSkills());        // Skills.Healer.cs (2nd-class Healer kit)
         list.AddRange(ArmorMasterySkills());  // Skills.Masteries.cs (data-driven per-archetype)
+        list.AddRange(WeaponMasterySkills()); // Skills.WeaponMasteries.cs (weapon-type-conditional)
         list.AddRange(BufferSkills());        // Skills.Buffer.cs (NPC newbie-buffer buffs)
         list.AddRange(LightbringerSkills());  // Skills.Lightbringer.cs
         list.AddRange(WarchanterSkills());    // Skills.Warchanter.cs

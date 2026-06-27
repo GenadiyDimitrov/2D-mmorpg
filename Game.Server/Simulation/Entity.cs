@@ -806,12 +806,11 @@ public class Entity
                 if (SkillCatalog.Get(skillId)?.Replaces is { } rep)
                     foreach (var r in rep) replacedPassives.Add(r);
 
-            // ----- Learnable PASSIVES (discipline passives etc.): each learned skill
-            // whose SkillDef carries a PassiveEffect applies it, on top of everything. -----
-            foreach (var (skillId, skillLevel) in LearnedSkills)
+            // Fold one PassiveEffect into the derived stats. Shared by the always-on
+            // discipline passives AND the weapon-conditional masteries below (which pass
+            // the profile entry for the currently-held weapon). An all-zero pe is inert.
+            void ApplyPassive(PassiveEffect pe)
             {
-                if (replacedPassives.Contains(skillId)) continue;
-                if (SkillCatalog.Get(skillId)?.PassiveAt(skillLevel) is not PassiveEffect pe) continue;
                 MaxHp += pe.MaxHp + (int)(MaxHp * pe.MaxHpPct);
                 MaxMp += pe.MaxMp + (int)(MaxMp * pe.MaxMpPct);
                 Defence += pe.Defence;
@@ -843,6 +842,19 @@ public class Entity
                 EvadeFloor = Math.Max(EvadeFloor, pe.EvadeFloor);
                 HitFloor = Math.Max(HitFloor, pe.HitFloor);
                 MagicFailFloor = Math.Max(MagicFailFloor, pe.MagicFailFloor);
+            }
+
+            // ----- Learnable PASSIVES (discipline passives, weapon masteries): each learned
+            // skill whose SkillDef carries a PassiveEffect applies it, on top of everything.
+            // A weapon mastery applies the entry for the currently-equipped weapon type. -----
+            foreach (var (skillId, skillLevel) in LearnedSkills)
+            {
+                if (replacedPassives.Contains(skillId)) continue;
+                var sd = SkillCatalog.Get(skillId);
+                if (sd is null) continue;
+                if (sd.PassiveAt(skillLevel) is PassiveEffect pe) ApplyPassive(pe);
+                if (sd.WeaponMasteryAt(skillLevel) is WeaponMasteryProfile wm)
+                    ApplyPassive(wm.For(WeaponType));
             }
             // (The combat-training attack bonus is now a normal LEVELED passive — its
             // per-level AttackPct flows through the loop above, no special-casing.)

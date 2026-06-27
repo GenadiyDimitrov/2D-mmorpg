@@ -107,24 +107,31 @@ public static class ClassSkills
                     : new ClassSkill(SkillCatalog.MasteryLight, 1);
                 break;
             // 2nd classes use DATA-DRIVEN per-archetype Armor Mastery skills (one skill,
-            // its effect depends on the worn weight; replaces the old split masteries).
+            // its effect depends on the worn weight; replaces the old split masteries) PLUS
+            // a weapon-conditional Weapon Mastery (its effect depends on the held weapon).
             case Archetype.Tank:
                 yield return new ClassSkill(SkillCatalog.TankArmorMastery, second);
+                yield return new ClassSkill(SkillCatalog.TankWeaponMastery, second);
                 break;
             case Archetype.Warrior:
                 yield return new ClassSkill(SkillCatalog.WarriorArmorMastery, second);
+                yield return new ClassSkill(SkillCatalog.WarriorWeaponMastery, second);
                 break;
             case Archetype.Rogue:
                 yield return new ClassSkill(SkillCatalog.RogueArmorMastery, second);
+                yield return new ClassSkill(SkillCatalog.RogueWeaponMastery, second);
                 break;
             case Archetype.Archer:
                 yield return new ClassSkill(SkillCatalog.ArcherArmorMastery, second);
+                yield return new ClassSkill(SkillCatalog.ArcherWeaponMastery, second);
                 break;
             case Archetype.Nuker:
                 yield return new ClassSkill(SkillCatalog.NukerArmorMastery, second);
+                yield return new ClassSkill(SkillCatalog.NukerWeaponMastery, second);
                 break;
             case Archetype.Healer:
-                // Healer's data-driven Armor Mastery is registered in its own class table.
+                // Healer's data-driven Armor Mastery is registered in its own class table;
+                // a healer weapon mastery can be added there later (uses mace = blunt).
                 break;
         }
     }

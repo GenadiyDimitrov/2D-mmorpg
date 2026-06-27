@@ -1,0 +1,68 @@
+namespace Game.Shared;
+
+/// <summary>DATA-DRIVEN weapon-mastery skills per 2nd-class archetype. Each carries a
+/// per-equipped-weapon <see cref="WeaponMasteryProfile"/>: holding the class's intended
+/// weapon grants a bonus (its identity); any other weapon simply grants nothing (no
+/// penalty — unlike armor weight). The effect reuses <see cref="PassiveEffect"/> and flows
+/// through the SAME passive-application path in Entity.RecomputeDerived, just gated on the
+/// equipped WeaponType. This is the weapon sibling of the armor masteries
+/// (Skills.Masteries.cs) and realises Increment 2 of [[weapon-armor-mastery-design]].
+///
+/// Distinct from the base-mage flat "Weapon Mastery" (weapon_mastery, unconditional
+/// +atk) — these are weapon-CONDITIONAL and named per weapon to avoid confusion.
+///
+/// NUMBERS ARE PLACEHOLDERS — tune during testing. The nuker profile is deliberately
+/// NON-damage (cast/MP utility) so it does not buff mage damage (owner constraint).</summary>
+public static partial class SkillCatalog
+{
+    public const string TankWeaponMastery    = "tank_weapon_mastery";
+    public const string WarriorWeaponMastery = "warrior_weapon_mastery";
+    public const string RogueWeaponMastery   = "rogue_weapon_mastery";
+    public const string ArcherWeaponMastery  = "archer_weapon_mastery";
+    public const string NukerWeaponMastery   = "nuker_weapon_mastery";
+
+    private static SkillDef WeaponMasteryPassive(string id, string name, BaseClass cls,
+        string desc, WeaponMasteryProfile profile) =>
+        new(id, name, cls, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive,
+            Description: "Passive. " + desc,
+            Levels: new[] { new SkillLevel(SpCost: 500) },
+            WeaponMasteryLevels: new[] { profile });
+
+    private static SkillDef[] WeaponMasterySkills() => new SkillDef[]
+    {
+        // Warrior — two-handed melee. Sword leans crit, blunt leans accuracy.
+        WeaponMasteryPassive(WarriorWeaponMastery, "Two-Hand Mastery", BaseClass.Fighter,
+            "Increases attack power with two-handed weapons — swords also crit more, "
+          + "blunts strike more accurately.",
+            new WeaponMasteryProfile(
+                Sword: new PassiveEffect(PhysAtkPct: 0.15f, CritRate: 0.03f),
+                Blunt: new PassiveEffect(PhysAtkPct: 0.12f, Accuracy: 10))),
+
+        // Rogue — dual-wield: crit identity.
+        WeaponMasteryPassive(RogueWeaponMastery, "Dual Mastery", BaseClass.Fighter,
+            "Increases attack power, critical rate and critical damage while dual-wielding.",
+            new WeaponMasteryProfile(
+                Dual: new PassiveEffect(PhysAtkPct: 0.10f, CritRate: 0.05f, CritDamage: 0.15f))),
+
+        // Archer — bow: crit-damage + accuracy lean.
+        WeaponMasteryPassive(ArcherWeaponMastery, "Bow Mastery", BaseClass.Fighter,
+            "Increases attack power, critical damage and accuracy while wielding a bow.",
+            new WeaponMasteryProfile(
+                Bow: new PassiveEffect(PhysAtkPct: 0.12f, CritDamage: 0.20f, Accuracy: 5))),
+
+        // Tank — modest melee bump with sword/blunt (the shield is the real mastery).
+        WeaponMasteryPassive(TankWeaponMastery, "Weapon Expertise", BaseClass.Fighter,
+            "A modest increase to attack power and accuracy with one-handed swords and blunts.",
+            new WeaponMasteryProfile(
+                Sword: new PassiveEffect(PhysAtkPct: 0.06f, Accuracy: 5),
+                Blunt: new PassiveEffect(PhysAtkPct: 0.06f, Accuracy: 10))),
+
+        // Nuker — staff (magic blunt). NON-damage on purpose: cast speed + MP regen only.
+        WeaponMasteryPassive(NukerWeaponMastery, "Staff Mastery", BaseClass.Mage,
+            "Casting with a staff is faster and your mana recovers more quickly.",
+            new WeaponMasteryProfile(
+                Blunt: new PassiveEffect(CastSpeedPct: 0.05f, MpRegenPct: 0.10f))),
+    };
+}
