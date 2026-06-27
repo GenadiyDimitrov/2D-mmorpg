@@ -212,13 +212,34 @@ buffed defender's higher HP + defence):**
 | Mage → Fighter   | 6  | 7  | 20 | 25 |
 | Mage → Mage      | 3  | 4  | 9  | 12 |
 
+**Action speed** (seconds per action, from the L2 speed model — base attack 15 ticks,
+Flamebolt cast 40 ticks + 1 s reuse): Fighter sword ≈ **0.95 s/hit** (no-buff) → **0.71 s**
+(Speed +33%). Mage Flamebolt cycle ≈ **3.6 s** @40 / **3.3 s** @75 (no-buff) → **3.0 / 2.75 s**
+buffed (robe mastery + Spirit Training + Speed buff). Fighter ≈ 1 hit/s; mage ≈ hits ×3.3.
+
+**TIME-TO-KILL (seconds = hits × action-time). no-buff / buffed:**
+
+| Matchup | @40 | @75 |
+|---|---|---|
+| Fighter → Fighter | 24 / 23 | 36 / 34 |
+| Fighter → Mage   | **7 / 7**  | **9 / 9** |
+| Mage → Fighter   | **22 / 21** | **66 / 69** |
+| Mage → Mage      | 11 / 12 | 30 / 33 |
+
 **Reading it:**
-- **Buffs make fights LONGER** (more hits): defensive buffs (Body +35% HP, Might/Force
-  +def) outweigh the offensive gain, so HTK rises ~25–30% when both sides buff.
-- **Mage out-damages per hit** (nuke ≫ basic), but the fighter swings ~2–3× as often
-  (no cast bar) and has ~3× HP → in real time the fighter still wins a stand-up fight;
-  the mage's edge is range + burst + the mDef wall vs other mages.
-- **MEN wall:** Mage→Mage takes far more hits than Mage→Fighter (mages are magic-tanky).
-- **40→75:** the mage's Mage→Fighter HTK jumps (6→20) because the fighter's HP triples
-  while the mage's nuke power only goes 95→108 — high-tier spells (not raw level) are how
-  mages keep up. NOT a real TTK in seconds (fighter attacks faster than the mage casts).
+- **Buffs make fights LONGER** (more hits/sec): defensive buffs (Body +35% HP, Might/Force
+  +def) outweigh the offensive gain, so HTK/TTK rises ~25–30% when both buff — buffs change
+  survivability/feel more than fight length.
+- **Per-hit the mage dominates; per-second the FIGHTER does.** Mage→Fighter is 6 hits but
+  ~22 s @40; Fighter→Mage is ~7 s. Slow casts + reuse erase the mage's per-hit edge.
+- **@75 is a blowout in seconds:** Fighter→Mage ~9 s vs Mage→Fighter ~66 s — the flat-power
+  nuke can't dent the fighter's tripled HP. Mages MUST kite/burst/CC, not trade.
+- **MEN wall:** Mage→Mage takes far longer than Mage→Fighter (mages are magic-tanky).
+- **Caveat (current state):** this is a STATIONARY stand-up model with **no mage CC/control
+  implemented yet** — so the 60 s mage TTK is acceptable FOR NOW. Once the mage gets its
+  control kit, the fighter is meant to "feel those 60 s as agony" (kited/locked). Balance
+  the raw numbers AFTER the control layer lands; don't over-buff mage damage to compensate.
+
+> **KEEP IN SYNC:** the three tables above (damage / hits-to-kill / seconds) are one set —
+> regenerate ALL of them whenever a combat formula, constant, stat, weapon/armor/set, or buff
+> changes. They share the same assumptions block.
