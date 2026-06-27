@@ -2031,6 +2031,8 @@ public partial class MainWindow
         foreach (var c in dialog.ClassChanges)
         {
             AddDialogHeader($"Class Change: {c.ClassName}");
+            if (!string.IsNullOrEmpty(c.Description))
+                AddDialogText(c.Description);
             var sb = new System.Text.StringBuilder("Requires: ");
             for (int i = 0; i < c.RequiredItemNames.Length; i++)
                 sb.Append($"{c.RequiredItemNames[i]} {(c.HasItem[i] ? "\u2713" : "\u2717")}  ");

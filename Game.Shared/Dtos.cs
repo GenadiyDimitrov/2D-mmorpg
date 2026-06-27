@@ -193,9 +193,10 @@ public record QuestSummary(string Id, string Name, string Description, string Cu
     int StepIndex, int StepCount, int Counter, int CounterNeeded, bool Completed, bool CanComplete,
     string Location = "");
 
-/// <summary>A class-change option shown by a class-change NPC.</summary>
+/// <summary>A class-change option shown by a class-change NPC. Description is a
+/// "what this class does" blurb so the player can choose before committing.</summary>
 public record ClassChangeOption(int SecondClassId, string ClassName, bool Meets,
-    string[] RequiredItemNames, bool[] HasItem);
+    string[] RequiredItemNames, bool[] HasItem, string Description = "");
 
 /// <summary>One buyable line in a vendor shop.</summary>
 public record ShopItemDto(string DefId, string Name, int BuyPrice);
