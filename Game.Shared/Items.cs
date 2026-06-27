@@ -12,6 +12,33 @@ public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2, Scroll = 3, Quest
 /// <summary>Jewel sub-type — limits how many can be worn: 2 Rings, 2 Earrings, 1 Necklace.</summary>
 public enum JewelType { None = 0, Ring = 1, Earring = 2, Necklace = 3 }
 
+/// <summary>Unified TOP-LEVEL item category, derived from EquipSlot (see ItemDef.Type).
+/// One clean axis for grouping/filtering. A 2H weapon is MainHand AND occupies the
+/// OffHand (no separate type — see ItemDef.OccupiesOffHand).</summary>
+public enum ItemType { Other = 0, MainHand, OffHand, Armor, Jewel, Consumable, Scroll, Box, Quest }
+
+/// <summary>Unified SUB-TYPE across all items (see ItemDef.Subtype), derived from the
+/// per-domain enums (WeaponType / ArmorSlot / JewelType / ScrollKind …). Lets you ask
+/// "all Boots" or "all Sword main-hands" uniformly.</summary>
+public enum ItemSubtype
+{
+    None = 0,
+    // MainHand
+    Sword, Blunt, Bow, Dual,
+    // OffHand
+    Shield,
+    // Armor
+    Helmet, Body, Gloves, Boots,
+    // Jewel
+    Ring, Earring, Necklace,
+    // Consumable
+    Potion, BuffPotion,
+    // Scroll
+    EnchantScroll, AttributeScroll,
+    // misc
+    Box, QuestToken,
+}
+
 public enum ArmorWeight { None = 0, Heavy = 1, Light = 2, Robe = 3 }
 
 /// <summary>Body-part slot for armor. A full set is one of each (Head/Body/Gloves/
@@ -106,7 +133,61 @@ public record ItemDef(
     // (newbie/starter gear). Enforced in AttributeSystem.Roll.
     bool NoAttributes = false,
     // Jewel sub-type (only when Slot == Jewel) — gates how many can be worn.
-    JewelType JewelType = JewelType.None);
+    JewelType JewelType = JewelType.None)
+{
+    /// <summary>Unified top-level category (derived from EquipSlot). Weapons are MainHand,
+    /// shields OffHand; everything else maps 1:1.</summary>
+    public ItemType Type => Slot switch
+    {
+        EquipSlot.Weapon => ItemType.MainHand,
+        EquipSlot.Shield => ItemType.OffHand,
+        EquipSlot.Armor => ItemType.Armor,
+        EquipSlot.Jewel => ItemType.Jewel,
+        EquipSlot.Consumable => ItemType.Consumable,
+        EquipSlot.Scroll => ItemType.Scroll,
+        EquipSlot.Box => ItemType.Box,
+        EquipSlot.QuestItem => ItemType.Quest,
+        _ => ItemType.Other
+    };
+
+    /// <summary>Unified sub-type (derived from the per-domain enums).</summary>
+    public ItemSubtype Subtype => Slot switch
+    {
+        EquipSlot.Weapon => WeaponType switch
+        {
+            WeaponType.Sword => ItemSubtype.Sword,
+            WeaponType.Blunt => ItemSubtype.Blunt,
+            WeaponType.Bow => ItemSubtype.Bow,
+            WeaponType.Dual => ItemSubtype.Dual,
+            _ => ItemSubtype.None
+        },
+        EquipSlot.Shield => ItemSubtype.Shield,
+        EquipSlot.Armor => ArmorSlot switch
+        {
+            ArmorSlot.Head => ItemSubtype.Helmet,
+            ArmorSlot.Body => ItemSubtype.Body,
+            ArmorSlot.Gloves => ItemSubtype.Gloves,
+            ArmorSlot.Boots => ItemSubtype.Boots,
+            _ => ItemSubtype.None
+        },
+        EquipSlot.Jewel => JewelType switch
+        {
+            JewelType.Ring => ItemSubtype.Ring,
+            JewelType.Earring => ItemSubtype.Earring,
+            JewelType.Necklace => ItemSubtype.Necklace,
+            _ => ItemSubtype.None
+        },
+        EquipSlot.Consumable => string.IsNullOrEmpty(BuffSkillId) ? ItemSubtype.Potion : ItemSubtype.BuffPotion,
+        EquipSlot.Scroll => AttrScroll != AttrScrollKind.None ? ItemSubtype.AttributeScroll : ItemSubtype.EnchantScroll,
+        EquipSlot.Box => ItemSubtype.Box,
+        EquipSlot.QuestItem => ItemSubtype.QuestToken,
+        _ => ItemSubtype.None
+    };
+
+    /// <summary>True if this is a two-handed MAIN-HAND weapon — it also claims the
+    /// OffHand slot (so a shield can't be worn with it; enforced in HandleEquip).</summary>
+    public bool OccupiesOffHand => Slot == EquipSlot.Weapon && Hands == WeaponHands.TwoHand;
+}
 
 public static class ItemCatalog
 {
@@ -657,6 +738,12 @@ public static class ItemCatalog
     };
 
     public static ItemDef? Get(string id) => id is null ? null : All.GetValueOrDefault(id);
+
+    /// <summary>All catalog items of a top-level category (e.g. every OffHand).</summary>
+    public static IEnumerable<ItemDef> OfType(ItemType type) => All.Values.Where(d => d.Type == type);
+
+    /// <summary>All catalog items of a sub-type (e.g. every Boots, or every Sword).</summary>
+    public static IEnumerable<ItemDef> OfSubtype(ItemSubtype subtype) => All.Values.Where(d => d.Subtype == subtype);
 
     // Per-class quest-item ids (the two proofs a class-change chain awards). Generated
     // in BuildCatalog from ClassCatalog; the quest chains reference them by these ids.
