@@ -30,7 +30,12 @@ public static partial class ClassSkillTables
             // Mage archetypes — 2nd-class learn cadence: 20, 25, 30, 35.
             ClassSkills.Register(race, BaseClass.Mage, Archetype.Nuker,
                 new ClassSkill(FlameBolt, 20), new ClassSkill(Heal, 25),
-                new ClassSkill(GreaterWeakness, 30));
+                new ClassSkill(GreaterWeakness, 30),
+                // Anti-Magic on ALL mage classes (continues the base-mage line, lvls 3-6).
+                new ClassSkill(MageAntiMagic, 20, SkillLevel: 3),
+                new ClassSkill(MageAntiMagic, 25, SkillLevel: 4),
+                new ClassSkill(MageAntiMagic, 30, SkillLevel: 5),
+                new ClassSkill(MageAntiMagic, 35, SkillLevel: 6));
         }
 
         // Healer (cleric) 2nd-class kit — authored separately because Holy Bolt takes a

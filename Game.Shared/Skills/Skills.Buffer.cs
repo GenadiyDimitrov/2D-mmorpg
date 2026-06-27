@@ -17,10 +17,10 @@ public static partial class SkillCatalog
     public const int NpcBuffTicks = 36000;   // 1 hour @ 10 ticks/s
     public const int NpcBuffRank  = 100;     // overrides player self-buffs (rank 1-4)
 
-    /// <summary>The buffs the newbie buffer NPC grants — the positive "full buff" set.
-    /// Frenzy is a TRADE-OFF buff (lowers Max HP/MP), available but NOT auto-applied.</summary>
+    /// <summary>The buffs the newbie buffer NPC grants — the full max-level set,
+    /// including Frenzy (its −10% Max HP/MP trade-off nets out against Body's +35%).</summary>
     public static readonly string[] NewbieBuffSet =
-        { NpcMight, NpcForce, NpcFocus, NpcSpeed, NpcBody };
+        { NpcMight, NpcForce, NpcFocus, NpcSpeed, NpcBody, NpcFrenzy };
 
     private static SkillDef NpcBuff(string id, string name, string buffKey,
         SkillEffect effect, EffectMagnitude[] mags, string desc) =>

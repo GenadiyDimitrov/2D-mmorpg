@@ -23,7 +23,6 @@ public static partial class SkillCatalog
     public const string Reflexes     = "reflexes";      // Archer    5/10/15%
     public const string Precision    = "precision";     // Warrior 10/20/30% hit floor
     public const string AntiMagic    = "anti_magic";    // Tank    10/15/20% magic fizzle
-    public const string SpellWard    = "spell_ward";    // Mage      10% (single level, from 40)
     // ---- Buff-potion buffs (consumed, not cast). ----
     public const string PBuffSpeedC = "pbuff_speed_c";
     public const string PBuffSpeedU = "pbuff_speed_u";
@@ -73,7 +72,8 @@ public static partial class SkillCatalog
             Archetype.Archer  => (Reflexes, tier),
             Archetype.Warrior => (Precision, tier),
             Archetype.Tank    => (AntiMagic, tier),
-            Archetype.Nuker or Archetype.Healer => tier >= 2 ? (SpellWard, 1) : null,  // mages from 40
+            // Mages get NO auto magic-fail floor — it comes from their LEARNED Anti-Magic
+            // (anti_magic_mage), available to every mage class.
             _ => null
         };
     }
@@ -195,9 +195,6 @@ public static partial class SkillCatalog
         LeveledPassive(AntiMagic, "Anti-Magic", BaseClass.Fighter,
             "Passive. Spells fizzle on you at least 10/15/20% of the time.",
             new PassiveEffect(MagicFailFloor: 0.10f), new PassiveEffect(MagicFailFloor: 0.15f), new PassiveEffect(MagicFailFloor: 0.20f)),
-        LeveledPassive(SpellWard, "Spell Ward", BaseClass.Mage,
-            "Passive. Spells fizzle on you at least 10% of the time.",
-            new PassiveEffect(MagicFailFloor: 0.10f)),
 
         // ---- Wind Walk (move-speed self buff, learnable) ----
         new(WindWalk, "Wind Walk", BaseClass.Mage,
