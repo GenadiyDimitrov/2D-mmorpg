@@ -3126,9 +3126,13 @@ var effect = def.Effect;
                 var has = req.RequiredItemIds
                     .Select(id => player.Inventory.Any(i => i.DefId == id)).ToArray();
                 bool meets = player.Level >= req.MinLevel && has.All(h => h);
-                // "What this class does" blurb (by archetype) so the choice is informed.
-                string blurb = ClassCatalog.Get(req.SecondClassId) is SecondClassDef scd
-                    ? ClassCatalog.ArchetypeBlurb(scd.Archetype) : "";
+                // "What this class does" blurb so the (irreversible) choice is informed:
+                // 2nd class = its archetype blurb; 3rd class = its discipline blurb.
+                string blurb = req.Tier >= 3
+                    ? (ThirdClassCatalog.Get(req.SecondClassId) is ThirdClassDef tcd
+                        ? Disciplines.Blurb(tcd.Discipline) : "")
+                    : (ClassCatalog.Get(req.SecondClassId) is SecondClassDef scd
+                        ? ClassCatalog.ArchetypeBlurb(scd.Archetype) : "");
                 changes.Add(new ClassChangeOption(req.SecondClassId, req.ClassName, meets, names, has, blurb));
             }
         }

@@ -43,6 +43,26 @@ public static class Disciplines
         _ => (Discipline.Bulwark, Discipline.Vanguard),
     };
 
+    /// <summary>A one-line "what this discipline does" blurb, shown by the grandmaster
+    /// before the (irreversible) 3rd-class choice — the discipline sibling of
+    /// <see cref="ClassCatalog.ArchetypeBlurb"/>.</summary>
+    public static string Blurb(Discipline d) => d switch
+    {
+        Discipline.Bulwark      => "Bulwark — the immovable wall. Near-immortal defence, but deals little damage; built to outlast anything.",
+        Discipline.Vanguard     => "Vanguard — the offensive tank. Heavy defence plus real damage, though careless play is punished.",
+        Discipline.Ravager      => "Ravager — pure single-target burst. Tears one foe down fast, but fragile when focused.",
+        Discipline.Warlord      => "Warlord — a balanced bruiser with area attacks. Sustained melee that also hits groups.",
+        Discipline.Phantom      => "Phantom — stealth and evasion. Vanishes, then opens with a devastating ambush.",
+        Discipline.Venomweaver  => "Venomweaver — stacks damage-over-time, then bursts. Blinks in, restacks, escapes.",
+        Discipline.Sharpshooter => "Sharpshooter — extreme range and high single-target damage; the premier ranged striker.",
+        Discipline.Trapper      => "Trapper — utility and control: traps, snares and crowd control over raw damage.",
+        Discipline.Lightbringer => "Lightbringer — the pure healer. Area heals and single-target shields keep the party alive.",
+        Discipline.Warchanter   => "Warchanter — the buffer. Stat buffs and heal-over-time; built to empower allies and farm.",
+        Discipline.Magus        => "Magus — single-target glass cannon. The highest burst spells, but very fragile.",
+        Discipline.Tempest      => "Tempest — area spells and control. Devastates groups and locks them down.",
+        _ => ""
+    };
+
     /// <summary>The parent archetype a discipline evolves from.</summary>
     public static Archetype Parent(Discipline d) => d switch
     {
