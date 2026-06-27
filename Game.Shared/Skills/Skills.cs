@@ -145,18 +145,25 @@ public readonly record struct ArmorMasteryProfile(
 /// (1H vs 2H is not distinguished here yet).</summary>
 public readonly record struct WeaponMasteryProfile(
     PassiveEffect Sword = default, PassiveEffect Dual = default,
-    PassiveEffect Bow = default, PassiveEffect Blunt = default)
+    PassiveEffect Bow = default, PassiveEffect Blunt = default,
+    // When set, the bonus applies ONLY if the equipped weapon matches these hands
+    // (e.g. Warrior trains TwoHand, Tank OneHand). null = either. Dual/Bow are always 2H.
+    WeaponHands? RequiredHands = null)
 {
-    /// <summary>The bonus for the given equipped weapon type (inert default for None /
-    /// an unset slot).</summary>
-    public PassiveEffect For(WeaponType wt) => wt switch
+    /// <summary>The bonus for the equipped weapon (type + hands). Inert default for None,
+    /// an unset slot, or a hands mismatch.</summary>
+    public PassiveEffect For(WeaponType wt, WeaponHands hands)
     {
-        WeaponType.Sword => Sword,
-        WeaponType.Dual  => Dual,
-        WeaponType.Bow   => Bow,
-        WeaponType.Blunt => Blunt,
-        _ => default
-    };
+        if (RequiredHands is WeaponHands req && req != hands) return default;
+        return wt switch
+        {
+            WeaponType.Sword => Sword,
+            WeaponType.Dual  => Dual,
+            WeaponType.Bow   => Bow,
+            WeaponType.Blunt => Blunt,
+            _ => default
+        };
+    }
 }
 
 /// <summary>Per-level tunables for a multi-level skill (see SkillDef.Levels). Only the

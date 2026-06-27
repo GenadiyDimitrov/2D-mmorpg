@@ -38,13 +38,14 @@ public static partial class SkillCatalog
 
     private static SkillDef[] WeaponMasterySkills() => new SkillDef[]
     {
-        // Warrior — two-handed melee. Sword leans crit, blunt leans accuracy.
+        // Warrior — TWO-HANDED melee only. Sword leans crit, blunt leans accuracy.
         WeaponMasteryPassive(WarriorWeaponMastery, "Two-Hand Mastery", BaseClass.Fighter,
-            "Increases attack power with two-handed weapons — swords also crit more, "
-          + "blunts strike more accurately.",
+            "Increases attack power with TWO-HANDED weapons — swords also crit more, "
+          + "blunts strike more accurately. No effect with one-handed weapons.",
             new WeaponMasteryProfile(
                 Sword: new PassiveEffect(PhysAtkPct: 0.15f, CritRate: 0.03f),
-                Blunt: new PassiveEffect(PhysAtkPct: 0.12f, Accuracy: 10))),
+                Blunt: new PassiveEffect(PhysAtkPct: 0.12f, Accuracy: 10),
+                RequiredHands: WeaponHands.TwoHand)),
 
         // Rogue — dual-wield: crit identity.
         WeaponMasteryPassive(RogueWeaponMastery, "Dual Mastery", BaseClass.Fighter,
@@ -58,11 +59,13 @@ public static partial class SkillCatalog
             new WeaponMasteryProfile(
                 Bow: new PassiveEffect(PhysAtkPct: 0.12f, CritDamage: 0.20f, Accuracy: 5))),
 
-        // Tank — modest melee bump with sword/blunt (the shield is the real mastery).
+        // Tank — modest melee bump with ONE-HANDED sword/blunt (so a shield stays viable;
+        // the shield is the real mastery).
         WeaponMasteryPassive(TankWeaponMastery, "Weapon Expertise", BaseClass.Fighter,
-            "A modest increase to attack power and accuracy with one-handed swords and blunts.",
+            "A modest increase to attack power and accuracy with ONE-HANDED swords and blunts.",
             new WeaponMasteryProfile(
                 Sword: new PassiveEffect(PhysAtkPct: 0.06f, Accuracy: 5),
-                Blunt: new PassiveEffect(PhysAtkPct: 0.06f, Accuracy: 10))),
+                Blunt: new PassiveEffect(PhysAtkPct: 0.06f, Accuracy: 10),
+                RequiredHands: WeaponHands.OneHand)),
     };
 }

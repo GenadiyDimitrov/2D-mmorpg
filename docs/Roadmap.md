@@ -24,8 +24,8 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 - [ ] **Base-class armor mastery + universal penalty → data** (only 2nd classes are data so
   far). Finishes the [[stats-via-skills-not-hardcoded]] migration. (Note: changes the
   unlearned-penalty semantics slightly — confirm intent.)
-- [ ] **1H vs 2H weapon-mastery gating** — track WeaponHands on the entity so "Two-Hand
-  Mastery" only rewards true 2H weapons (today it keys on WeaponType only).
+- [x] **1H vs 2H weapon-mastery gating** — done: `Entity.WeaponHands` tracks equipped hands;
+  `WeaponMasteryProfile.RequiredHands` gates the bonus (Warrior = 2H only, Tank = 1H only).
 - [x] **Toggle-skill mechanic** + **Healer "Combat Stance"** — done: a toggle skill applies
   its self-buff indefinitely (click again / double-click buff to end); the stance trades
   +50% P.Atk for −50% M.Atk. (Numbers untuned. Future: per-tick MP drain for toggles.)

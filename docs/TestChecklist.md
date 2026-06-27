@@ -25,6 +25,7 @@ this file.
 - [ ] Archer "Bow Mastery": bow +12% pAtk/+20% crit dmg/+5 acc.
 - [ ] Tank "Weapon Expertise": sword/blunt +6% pAtk/+5–10 acc.
 - [ ] Stat window reflects the change when you swap weapons.
+- [ ] **1H/2H gating**: Warrior bonus applies ONLY with a 2H sword/blunt (not the 1H sword); Tank ONLY with a 1H sword/blunt (not the 2H greatsword). Dual/bow unaffected (always 2H).
 - [~] Tune the percentages once the feel is clear.
 
 ### Mage masteries (commit 361127f)

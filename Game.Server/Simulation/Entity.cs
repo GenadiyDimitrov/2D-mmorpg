@@ -191,6 +191,9 @@ public class Entity
     public int Accuracy { get; set; }
     public int Evasion { get; set; }
     public WeaponType WeaponType { get; set; } = WeaponType.None;
+    /// <summary>Hands of the equipped weapon (1H/2H) — lets weapon masteries gate on it
+    /// (e.g. Warrior trains only 2H, Tank only 1H). Defaults to 1H / unarmed.</summary>
+    public WeaponHands WeaponHands { get; set; } = WeaponHands.OneHand;
     public float CritChance { get; set; }       // physical crit rate
     public float MagicCritChance { get; set; }  // magic crit rate (from WIT)
     public int InterruptResist { get; set; }    // resist casting interruption (from WIT)
@@ -506,6 +509,7 @@ public class Entity
         BasicAttackInterruptPower = StatCalculator.ArchetypeBasicInterruptPower(Archetype, Level);
         BasicAttackRange = GameConstants.MeleeRange;
         WeaponType = WeaponType.None;
+        WeaponHands = WeaponHands.OneHand;
         // Base run speed: players from race+class table, mobs from their spawn-set
         // RunSpeed. Gear/buffs raise it below; EffectiveSpeed clamps to the cap.
         if (Kind == EntityKind.Player)
@@ -545,7 +549,10 @@ public class Entity
             Evasion += EnchantRules.BonusAt(def.EvaBonus, item.Enchant);
 
             if (def.Slot == EquipSlot.Weapon)
+            {
                 WeaponType = def.WeaponType;
+                WeaponHands = def.Hands;
+            }
 
             if (def.Slot == EquipSlot.Shield)
             {
@@ -858,7 +865,7 @@ public class Entity
                 if (sd is null) continue;
                 if (sd.PassiveAt(skillLevel) is PassiveEffect pe) ApplyPassive(pe);
                 if (sd.WeaponMasteryAt(skillLevel) is WeaponMasteryProfile wm)
-                    ApplyPassive(wm.For(WeaponType));
+                    ApplyPassive(wm.For(WeaponType, WeaponHands));
             }
             // (The combat-training attack bonus is now a normal LEVELED passive — its
             // per-level AttackPct flows through the loop above, no special-casing.)
