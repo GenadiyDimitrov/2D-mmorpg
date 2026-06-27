@@ -18,6 +18,10 @@ public class BuffInstance
     public int Rank { get; init; }
     public string[] Replaces { get; init; } = Array.Empty<string>();
 
+    /// <summary>A TOGGLE/stance buff: never expires on its own (the player clicks the
+    /// skill again, or double-clicks the buff, to end it). TickBuffs skips it.</summary>
+    public bool Toggle { get; init; }
+
     public bool Has(SkillEffect flag) => (Effect & flag) != 0;
 
     public bool IsDebuff => (Effect & SkillEffect.AnyDebuff) != 0;

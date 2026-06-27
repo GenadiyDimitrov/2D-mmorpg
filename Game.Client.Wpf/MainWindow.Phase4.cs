@@ -1425,9 +1425,12 @@ public partial class MainWindow
         BuffBar.Items.Clear();
         foreach (var buff in update.Buffs)
         {
+            // SecondsLeft < 0 = an indefinite TOGGLE/stance (no countdown).
+            bool toggle = buff.SecondsLeft < 0f;
+            string time = toggle ? "active (toggle)" : $"{buff.SecondsLeft:0}s remaining";
             string tip = buff.IsDebuff
-                ? $"{buff.Name}\n{buff.Description}\n{buff.SecondsLeft:0}s remaining"
-                : $"{buff.Name}\n{buff.Description}\n{buff.SecondsLeft:0}s remaining\n(double-click to remove)";
+                ? $"{buff.Name}\n{buff.Description}\n{time}"
+                : $"{buff.Name}\n{buff.Description}\n{time}\n(double-click to remove)";
             var pill = new Border
             {
                 Background = buff.IsDebuff
@@ -1439,7 +1442,7 @@ public partial class MainWindow
                 Cursor = buff.IsDebuff ? null : System.Windows.Input.Cursors.Hand,
                 Child = new TextBlock
                 {
-                    Text = $"{buff.Name}  {buff.SecondsLeft:0}s",
+                    Text = toggle ? $"{buff.Name}  ⟳" : $"{buff.Name}  {buff.SecondsLeft:0}s",
                     Foreground = Brushes.White, FontSize = 11
                 },
                 ToolTip = tip
@@ -1886,6 +1889,9 @@ public partial class MainWindow
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.MinorPotion, "Minor Potion x10", 10));
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.HealingPotion, "Healing Potion x10", 10));
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.GreaterPotion, "Greater Potion x10", 10));
+
+        AddDebugHeader("Reagents");
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.ElementalStone, "Elemental Stone +10", 10));
     }
 
     private void BuildDebugFunctions()

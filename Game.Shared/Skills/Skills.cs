@@ -53,6 +53,14 @@ public record SkillDef(
     int InitialMpCost = -1,
     float BlockAccuracy = 0f,
     bool SureHit = false,
+    // A TOGGLE skill (stance/aura): clicking it applies its self-buff indefinitely;
+    // clicking again removes it. Instant, no cast bar; MP charged on activation only.
+    bool Toggle = false,
+    // Optional REAGENT: an item this skill consumes to cast (e.g. an ultimate that needs
+    // a rare catalyst). "" = no requirement (casts freely). The amount is consumed when the
+    // cast COMPLETES; availability is checked up front so the cast isn't started in vain.
+    string ConsumableId = "",
+    int ConsumableAmount = 1,
     PassiveEffect? Passive = null,
     string Abbrev = "",
     // Optional per-LEVEL data. A skill with no Levels is single-level (level 1) and

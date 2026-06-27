@@ -17,6 +17,7 @@ public static partial class SkillCatalog
     public const string HolyForce = "holy_force";    // "Force" — interrupt resist (+M.Atk @rank 2)
     public const string HolyFocus = "holy_focus";    // "Focus" — physical crit-rate buff
     public const string HolyFrenzy = "holy_frenzy";  // "Frenzy" — berserk trade-off buff
+    public const string CombatStance = "healer_combat_stance";  // TOGGLE: trade M.Atk for P.Atk
 
     /// <summary>Healer Armor Mastery per-weight data (lvls 20/25/30/35). Robe = caster lean
     /// (+MP regen / def / max MP); Light = stay-casting + sturdier (+def, slight cast cost,
@@ -213,5 +214,22 @@ public static partial class SkillCatalog
             },
             Description: "A reckless surge: -30% Max HP/MP, but +5% Attack, +10% Magic Attack, "
                        + "+5% cast & attack speed and +5 move speed for 20 minutes."),
+
+        // Combat Stance — TOGGLE. Pours magic into melee: +P.Atk, -M.Atk (weaker heals/
+        // spells) while wielding a mace, so a cleric can solo-farm. Click again to end.
+        // (First user of the toggle-skill mechanic.) Numbers are placeholders.
+        new(CombatStance, "Combat Stance", BaseClass.Mage,
+            SkillEffect.BuffPhysAtk | SkillEffect.BuffMagAtk,
+            MpCost: 20, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            BuffKey: "healer_combat_stance", Rank: 1,
+            Category: SkillCategory.Buff, Toggle: true, TargetMode: TargetMode.SelfOnly,
+            SpCost: 2000,
+            Magnitudes: new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffPhysAtk, 0.50f),    // +50% P.Atk
+                new(SkillEffect.BuffMagAtk, -0.50f),    // -50% M.Atk (weaker heals/spells)
+            },
+            Description: "Toggle. Channel your magic into melee: +50% P.Atk but -50% M.Atk "
+                       + "(weaker heals and spells). Click again to end."),
     };
 }

@@ -371,6 +371,13 @@ public class GameLoopService : BackgroundService
         if (def.Category == SkillCategory.Passive)
             return;
 
+        // Toggle skills (stances) flip instantly: on -> apply self-buff, off -> remove it.
+        if (def.Toggle)
+        {
+            HandleToggle(caster, def);
+            return;
+        }
+
         if (caster.SkillCooldowns.TryGetValue(def.Id, out int cd) && cd > 0)
         {
             SendSystemToEntity(caster, $"{def.Name} is not ready.");
@@ -380,6 +387,16 @@ public class GameLoopService : BackgroundService
         if (caster.Mp < def.MpCostAt(caster.SkillLevelOf(def.Id)))
         {
             SendSystemToEntity(caster, "Not enough MP.");
+            return;
+        }
+
+        // Reagent gate: skills with a ConsumableId need that item to cast. Checked up
+        // front for feedback; actually consumed when the cast completes (in ExecuteSkill).
+        if (!string.IsNullOrEmpty(def.ConsumableId) &&
+            CountItem(caster, def.ConsumableId) < def.ConsumableAmount)
+        {
+            string itemName = ItemCatalog.Get(def.ConsumableId)?.Name ?? def.ConsumableId;
+            SendSystemToEntity(caster, $"{def.Name} requires {def.ConsumableAmount}x {itemName}.");
             return;
         }
 
@@ -416,6 +433,35 @@ public class GameLoopService : BackgroundService
         CancelCast(caster);
         caster.QueuedSkillId = def.Id;
         caster.QueuedTargetId = targetId;
+    }
+
+    /// <summary>Flip a toggle (stance) skill. If its self-buff is active, remove it
+    /// (free); otherwise charge the activation MP and apply it indefinitely. The buff bar
+    /// double-click (HandleRemoveBuff) also turns it off.</summary>
+    private void HandleToggle(Entity caster, SkillDef def)
+    {
+        string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
+        var existing = caster.Buffs.FirstOrDefault(b => b.Key == key);
+        if (existing is not null)
+        {
+            caster.Buffs.Remove(existing);
+            caster.RecomputeDerived();
+            PushBuffs(caster);
+            SendStats(caster);
+            SendSystemToEntity(caster, $"{def.Name} deactivated.");
+            return;
+        }
+
+        int level = caster.SkillLevelOf(def.Id);
+        int mp = def.MpCostAt(level);
+        if (caster.Mp < mp)
+        {
+            SendSystemToEntity(caster, "Not enough MP.");
+            return;
+        }
+        caster.Mp -= mp;
+        ApplyBuff(caster, def, level, toggle: true);   // refreshes stats + buff bar
+        SendSystemToEntity(caster, $"{def.Name} activated.");
     }
 
     private void HandleRespawn(RespawnCmd respawn)
@@ -1418,6 +1464,7 @@ public class GameLoopService : BackgroundService
         bool expiredAny = false;
         for (int i = entity.Buffs.Count - 1; i >= 0; i--)
         {
+            if (entity.Buffs[i].Toggle) continue;   // stances never expire on their own
             if (--entity.Buffs[i].TicksRemaining <= 0)
             {
                 entity.Buffs.RemoveAt(i);
@@ -1650,6 +1697,20 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // Reagent: consume the required item now that the cast lands (re-check in case it
+        // was traded/dropped mid-cast). Missing = cancel without charging the finish MP.
+        if (!string.IsNullOrEmpty(def.ConsumableId))
+        {
+            if (!ConsumeItem(caster, def.ConsumableId, def.ConsumableAmount))
+            {
+                string itemName = ItemCatalog.Get(def.ConsumableId)?.Name ?? def.ConsumableId;
+                SendSystemToEntity(caster, $"You no longer have {def.ConsumableAmount}x {itemName}.");
+                CancelCast(caster);
+                return;
+            }
+            SendInventory(caster);
+        }
+
         // Cast already committed at start — no range re-check here; the spell
         // lands even if the target moved. Charge the remaining MP and start CD.
         caster.Mp -= def.FinishMpAt(lvl);
@@ -1849,7 +1910,8 @@ var effect = def.Effect;
     ///     (weaker self-recast is ignored entirely); on apply, replace it.
     /// (2) Replaces: unconditionally remove any active buff whose key is listed,
     ///     regardless of rank or magnitude.</summary>
-    private void ApplyBuff(Entity target, SkillDef def, int level = 1, string? displayName = null, bool refresh = true)
+    private void ApplyBuff(Entity target, SkillDef def, int level = 1, string? displayName = null,
+        bool refresh = true, bool toggle = false)
     {
         string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
         string shownName = string.IsNullOrEmpty(displayName) ? def.Name : displayName!;
@@ -1871,7 +1933,8 @@ var effect = def.Effect;
         {
             Effect = def.Effect,
             Magnitudes = def.MagnitudesAt(level) ?? Array.Empty<EffectMagnitude>(),
-            TicksRemaining = def.DurationTicks,
+            TicksRemaining = toggle ? int.MaxValue : def.DurationTicks,
+            Toggle = toggle,
             Name = shownName,
             Key = key,
             Rank = def.Rank,
@@ -2406,6 +2469,34 @@ var effect = def.Effect;
         return true;
     }
 
+    /// <summary>Total quantity of an item the player holds (sums across stacks).</summary>
+    private static int CountItem(Entity player, string defId)
+    {
+        int n = 0;
+        foreach (var it in player.Inventory)
+            if (it.DefId == defId) n += it.Quantity;
+        return n;
+    }
+
+    /// <summary>Remove <paramref name="amount"/> of an item across stacks. Returns false
+    /// (removing nothing) if the player doesn't have enough.</summary>
+    private static bool ConsumeItem(Entity player, string defId, int amount)
+    {
+        if (amount <= 0) return true;
+        if (CountItem(player, defId) < amount) return false;
+        int remaining = amount;
+        for (int i = player.Inventory.Count - 1; i >= 0 && remaining > 0; i--)
+        {
+            var it = player.Inventory[i];
+            if (it.DefId != defId) continue;
+            int take = Math.Min(it.Quantity, remaining);
+            it.Quantity -= take;
+            remaining -= take;
+            if (it.Quantity <= 0) player.Inventory.RemoveAt(i);
+        }
+        return true;
+    }
+
     /// <summary>Move an item from one player to another, merging stacks of
     /// consumables/scrolls on the receiving side.</summary>
     private static void TransferItem(Entity from, Entity to, InventoryItem item)
@@ -2472,7 +2563,7 @@ var effect = def.Effect;
         _hadBuffs.Add(player.Id);
         var dtos = player.Buffs.Select(b => new BuffDto(
             b.Name, b.Description,
-            b.TicksRemaining * GameConstants.TickSeconds, b.IsDebuff, b.Key)).ToArray();
+            b.Toggle ? -1f : b.TicksRemaining * GameConstants.TickSeconds, b.IsDebuff, b.Key)).ToArray();
         SendTo(player, "Buffs", new BuffUpdate(dtos));
     }
 

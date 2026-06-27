@@ -134,7 +134,10 @@ public static partial class ClassSkillTables
                 new ClassSkill(ArmorMasterySkill, 20, SkillLevel: 1),
                 new ClassSkill(ArmorMasterySkill, 25, SkillLevel: 2),
                 new ClassSkill(ArmorMasterySkill, 30, SkillLevel: 3),
-                new ClassSkill(ArmorMasterySkill, 35, SkillLevel: 4));
+                new ClassSkill(ArmorMasterySkill, 35, SkillLevel: 4),
+
+                // Combat Stance — TOGGLE: trade M.Atk for P.Atk to melee-farm (mace).
+                new ClassSkill(CombatStance, 20, SkillLevel: 1));
         }
     }
 }
