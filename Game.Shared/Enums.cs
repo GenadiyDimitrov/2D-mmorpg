@@ -123,6 +123,11 @@ public enum SkillEffect : long
     Taunt              = 1L << 56,  // force a mob's aggro onto the caster (spikes threat + locks briefly)
     Blink              = 1L << 57,  // teleport the CASTER: behind the target (gap-closer) or away (BlinkRange)
     Knockback          = 1L << 58,  // shove the TARGET away from the caster by KnockbackRange
+    // Stat DEBUFFS (NOT in AnyBuff, so they ride safely on an offensive debuff). Percent
+    // magnitudes reduce the stat. Used by poison (−AS/cast) and venom (−atk, + DebuffDef).
+    DebuffAtk          = 1L << 59,  // reduce the target's attack power (both channels)
+    DebuffAtkSpeed     = 1L << 60,  // reduce the target's attack speed
+    DebuffCastSpeed    = 1L << 61,  // reduce the target's cast speed
     // Room to grow up to 1L << 62.
 
     // Convenience masks.
@@ -138,7 +143,8 @@ public enum SkillEffect : long
               | BuffPvpSkillDamage | BuffPvpMagicDamage | BuffPvpBasicDamage
               | Shield | ManaShield | LethalSave | BuffCancelResist,
     // Harmful effects applied to an enemy (offensive; can fail; cleansable).
-    AnyDebuff = DebuffDef | DebuffHealRecv | Root | Slow | Stun | Fear | Bleed | Poison | Venom,
+    AnyDebuff = DebuffDef | DebuffHealRecv | Root | Slow | Stun | Fear | Bleed | Poison | Venom
+              | DebuffAtk | DebuffAtkSpeed | DebuffCastSpeed,
     // Stacking damage-over-time effects (consumed by burst skills).
     AnyDot = Bleed | Poison | Venom,
     // Crowd-control / DoT that lands via the ATK-vs-CON/WIT contest (not the fizzle model).

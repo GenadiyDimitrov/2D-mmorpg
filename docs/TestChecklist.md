@@ -53,6 +53,12 @@ weapon masteries; mage damage feels OK for now.
 - [ ] Detaunt (e.g. rogue Shadowstep/BattleFury detaunt) sheds ~90% of your threat → the mob retargets to the next-highest, or leashes home if no one else.
 - [ ] Mob still leashes/resets correctly (threat clears on reset).
 
+### Combat primitives P2: poison & venom (Venomweaver per-race trio) — NUMBERS UNTUNED
+- [ ] Venomweaver DoT is now per race: Human = bleed (−MS), **Elf = poison** (Toxic Sting/Burst), **Ork = venom** (Envenom/Venom Burst).
+- [ ] Poison (Toxic Sting): magic DoT (ATK-vs-WIT) + slows the target's attack & cast speed ~15% (stat window of a player target; mobs just attack/cast slower). Toxic Burst spends stacks.
+- [ ] Venom (Envenom): physical DoT (DEX-vs-CON) + lowers target attack ~15% and defence ~15% (a venomed mob hits softer and takes more). Venom Burst spends stacks.
+- [ ] These secondary debuffs are cleansable and expire with the DoT; new DebuffAtk/DebuffAtkSpeed/DebuffCastSpeed channels don't affect buffs.
+
 ### Combat primitives P2: DoT (separated effect + stack counter) — NUMBERS UNTUNED
 - [ ] Venomweaver "Rupture" @40 applies a bleed: a FLAT "DoT" tick each second + 15% slow; reapplying refreshes 30s and builds a stack (counter is hidden — not on the buff bar).
 - [ ] Bleed tick damage does NOT grow with stacks (it's the damage effect); stacks only fuel the burst.

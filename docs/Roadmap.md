@@ -43,8 +43,10 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   each stack is an effect level (its own Effect + Magnitudes), so a stack can change the effect
   qualitatively (Tempest "Creeping Frost" = slow 10/20/30% on 1-3, FREEZE on 4). Stacks only on
   a successful land. A bare counter = stacking with no table (rogue burst fuel).
-  Poison/venom secondaries (−AS/cast, −atk/def) deferred (need debuff channels outside AnyBuff).
-  **Stack/effect visibility DONE**: buff bar "Name xN"; inspect window "Effects:" line w/ stacks.
+  **Poison/venom secondaries DONE**: new `DebuffAtk` / `DebuffAtkSpeed` / `DebuffCastSpeed`
+  stat-debuff channels (outside AnyBuff, folded in the Effective getters); Venomweaver is now
+  per-race — Human bleed (−MS), Elf poison (Toxic Sting/Burst, −AS/cast), Ork venom
+  (Envenom/Venom Burst, −atk/def). **Stack/effect visibility DONE**: buff bar "Name xN"; inspect window "Effects:" line w/ stacks.
   **Cure/cancel DONE**: one `Dispel` helper + `SkillEffect.Cancel`; `SkillDef.DispelMask`
   (effect filter, e.g. cure-poison = Poison|Venom), `DispelCount` (random N), `DispelMaxLevel`
   (Rank ≤), `Cancellable` flag (internal counters immune). Demo: healer "Antidote" (cure

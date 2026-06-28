@@ -370,14 +370,22 @@ public class Entity
         return Math.Max(0f, (baseValue + flat) * (1f + percent));
     }
 
-    public float EffectiveAttack => ModifiedStatDual(AttackPower, SkillEffect.BuffAtk, SkillEffect.BuffPhysAtk);
+    public float EffectiveAttack => AtkDebuffed(ModifiedStatDual(AttackPower, SkillEffect.BuffAtk, SkillEffect.BuffPhysAtk));
 
     /// <summary>Buffed magic attack (mAtk): the shared BuffAtk plus magic-only BuffMagAtk.</summary>
-    public float EffectiveMagicAttack => ModifiedStatDual(MagicAttack, SkillEffect.BuffAtk, SkillEffect.BuffMagAtk);
+    public float EffectiveMagicAttack => AtkDebuffed(ModifiedStatDual(MagicAttack, SkillEffect.BuffAtk, SkillEffect.BuffMagAtk));
 
     /// <summary>Buffed attack power for BASIC attacks (archetype-scaled). Basic attacks
     /// are physical, so they take the shared BuffAtk plus physical-only BuffPhysAtk.</summary>
-    public float EffectiveBasicAttack => ModifiedStatDual(BasicAttackPower, SkillEffect.BuffAtk, SkillEffect.BuffPhysAtk);
+    public float EffectiveBasicAttack => AtkDebuffed(ModifiedStatDual(BasicAttackPower, SkillEffect.BuffAtk, SkillEffect.BuffPhysAtk));
+
+    /// <summary>Apply DebuffAtk (e.g. venom) as a multiplicative reduction to an attack value.</summary>
+    private float AtkDebuffed(float v)
+    {
+        float pct = 0f;
+        foreach (var b in Buffs) if (b.Has(SkillEffect.DebuffAtk)) pct += b.Percent(SkillEffect.DebuffAtk);
+        return Math.Max(0f, v * (1f - pct));
+    }
 
     /// <summary>Move speed including move-speed buffs (flat + percent).</summary>
     /// <summary>Current move speed: 0 if sitting or standing up, walk or run base
@@ -452,8 +460,10 @@ public class Entity
             float gearFactor = 1f / Math.Max(0.05f, CastSpeedMultiplier);
             float buffMult = 1f;
             foreach (var buff in Buffs)
-                if (buff.Has(SkillEffect.BuffCastSpeed))
-                    buffMult *= 1f + buff.Percent(SkillEffect.BuffCastSpeed);
+            {
+                if (buff.Has(SkillEffect.BuffCastSpeed)) buffMult *= 1f + buff.Percent(SkillEffect.BuffCastSpeed);
+                if (buff.Has(SkillEffect.DebuffCastSpeed)) buffMult *= 1f - buff.Percent(SkillEffect.DebuffCastSpeed);
+            }
 
             float castSpd = baseCast * witMod * gearFactor * buffMult;
             castSpd = Math.Clamp(castSpd, 30f, StatCaps.CastSpeed);
@@ -474,8 +484,10 @@ public class Entity
             float gearFactor = 1f / Math.Max(0.05f, AttackSpeedMultiplier);
             float buffMult = 1f;
             foreach (var buff in Buffs)
-                if (buff.Has(SkillEffect.BuffAtkSpeed))
-                    buffMult *= 1f + buff.Percent(SkillEffect.BuffAtkSpeed);
+            {
+                if (buff.Has(SkillEffect.BuffAtkSpeed)) buffMult *= 1f + buff.Percent(SkillEffect.BuffAtkSpeed);
+                if (buff.Has(SkillEffect.DebuffAtkSpeed)) buffMult *= 1f - buff.Percent(SkillEffect.DebuffAtkSpeed);
+            }
 
             float atkSpd = WeaponAttackBase * dexFactor * gearFactor * buffMult;
             atkSpd = Math.Clamp(atkSpd, 30f, StatCaps.AttackSpeed);

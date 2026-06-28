@@ -22,6 +22,10 @@ public static partial class SkillCatalog
     public const string WarFocus = "war_focus";               // self-buff: +skill damage
     public const string Rupture = "rupture";                  // applies Bleed (DoT stacks)
     public const string DetonateWounds = "detonate_wounds";   // burst: consumes Bleed stacks
+    public const string ToxicSting = "toxic_sting";           // applies Poison (DoT + -AS/cast)
+    public const string ToxicBurst = "toxic_burst";           // burst: consumes Poison stacks
+    public const string Envenom = "envenom";                  // applies Venom (DoT + -atk/-def)
+    public const string VenomBurst = "venom_burst";           // burst: consumes Venom stacks
     public const string Aegis = "aegis";                      // self absorb-shield (% max HP)
     public const string LastStand = "last_stand";             // survive one fatal blow (lethal save)
     public const string Indomitable = "indomitable";          // tank ult: +cancel resist
@@ -102,6 +106,44 @@ public static partial class SkillCatalog
             Category: SkillCategory.Physical, CanDouble: true, ConsumeStackKey: "venom_bleed",
             Description: "Detonates the target's bleed stacks for damage ×(stacks) [Double], "
                        + "consuming the stacks (the bleed itself remains)."),
+
+        // Toxic Sting — POISON (magical DoT, ATK-vs-WIT): per-tick damage + slows the target's
+        // attack & cast speed 15% (poison's secondary). Stacks; Toxic Burst spends them.
+        new(ToxicSting, "Toxic Sting", BaseClass.Fighter,
+            SkillEffect.Poison | SkillEffect.DebuffAtkSpeed | SkillEffect.DebuffCastSpeed,
+            MpCost: 12, CastTicks: 5, CooldownTicks: 30, Range: 0, Power: 5,
+            DurationTicks: 300, BuffKey: "poison", Rank: 1, DebuffSchool: DebuffSchool.Magical,
+            StackKey: "venom_poison", MaxStacks: 10,
+            Magnitudes: new EffectMagnitude[]
+            {
+                new(SkillEffect.DebuffAtkSpeed, 0.15f), new(SkillEffect.DebuffCastSpeed, 0.15f),
+            },
+            Description: "Poisons the target — a magic DoT that also slows its attack & cast speed "
+                       + "15%. Lands on ATK-vs-WIT; builds stacks for Toxic Burst."),
+
+        new(ToxicBurst, "Toxic Burst", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+            MpCost: 25, CastTicks: 5, CooldownTicks: 60, Range: 0, Power: 12,
+            Category: SkillCategory.Physical, CanDouble: true, ConsumeStackKey: "venom_poison",
+            Description: "Detonates the target's poison stacks for damage ×(stacks) [Double]."),
+
+        // Envenom — VENOM (physical DoT, DEX-vs-CON): per-tick damage + lowers the target's
+        // attack 15% and defence 15% (venom's secondary). Stacks; Venom Burst spends them.
+        new(Envenom, "Envenom", BaseClass.Fighter,
+            SkillEffect.Venom | SkillEffect.DebuffAtk | SkillEffect.DebuffDef,
+            MpCost: 12, CastTicks: 5, CooldownTicks: 30, Range: 0, Power: 5,
+            DurationTicks: 300, BuffKey: "venom", Rank: 1, DebuffSchool: DebuffSchool.Physical,
+            StackKey: "venom_venom", MaxStacks: 10,
+            Magnitudes: new EffectMagnitude[]
+            {
+                new(SkillEffect.DebuffAtk, 0.15f), new(SkillEffect.DebuffDef, 0.15f),
+            },
+            Description: "Envenoms the target — a physical DoT that also lowers its attack & "
+                       + "defence 15%. Lands on DEX-vs-CON; builds stacks for Venom Burst."),
+
+        new(VenomBurst, "Venom Burst", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+            MpCost: 25, CastTicks: 5, CooldownTicks: 60, Range: 0, Power: 12,
+            Category: SkillCategory.Physical, CanDouble: true, ConsumeStackKey: "venom_venom",
+            Description: "Detonates the target's venom stacks for damage ×(stacks) [Double]."),
 
         // Aegis — self ABSORB SHIELD: soaks 8% of max HP for 15s (the damage-absorb primitive).
         new(Aegis, "Aegis", BaseClass.Fighter, SkillEffect.Shield,

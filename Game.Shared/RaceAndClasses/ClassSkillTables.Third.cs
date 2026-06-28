@@ -86,10 +86,23 @@ public static partial class ClassSkillTables
             ClassSkills.RegisterThird(race, Discipline.Magus, new ClassSkill(ManaBarrier, 44));
             foreach (var disc in new[] { Discipline.Ravager, Discipline.Warlord })
                 ClassSkills.RegisterThird(race, disc, new ClassSkill(TerrifyingRoar, 40));
-            // Venomweaver — DoT stacks (Rupture) + burst (Detonate Wounds). Bleed demo for all
-            // races for now; poison/venom per-race variants come with their secondary debuffs.
-            ClassSkills.RegisterThird(race, Discipline.Venomweaver,
-                new ClassSkill(Rupture, 40), new ClassSkill(DetonateWounds, 44));
+            // Venomweaver — per-race DoT trio: Human bleed (−MS), Elf poison (−AS/cast),
+            // Ork venom (−atk/def). Each: a stacking DoT applier @40 + a burst @44.
+            switch (race)
+            {
+                case Race.Elf:
+                    ClassSkills.RegisterThird(race, Discipline.Venomweaver,
+                        new ClassSkill(ToxicSting, 40), new ClassSkill(ToxicBurst, 44));
+                    break;
+                case Race.Ork:
+                    ClassSkills.RegisterThird(race, Discipline.Venomweaver,
+                        new ClassSkill(Envenom, 40), new ClassSkill(VenomBurst, 44));
+                    break;
+                default:   // Human (+ God): bleed
+                    ClassSkills.RegisterThird(race, Discipline.Venomweaver,
+                        new ClassSkill(Rupture, 40), new ClassSkill(DetonateWounds, 44));
+                    break;
+            }
             // Movement: Phantom blink (Shadowstep), Trapper knockback (Repelling Shot).
             ClassSkills.RegisterThird(race, Discipline.Phantom, new ClassSkill(Shadowstep, 40));
             ClassSkills.RegisterThird(race, Discipline.Trapper, new ClassSkill(RepellingShot, 40));
