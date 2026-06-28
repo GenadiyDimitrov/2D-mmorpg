@@ -69,10 +69,15 @@ public record SkillDef(
     TargetCondition ConditionalOn = TargetCondition.None,
     float ConditionalDamagePct = 0f,
     // Stacking: how high this skill's stacking effect builds (1 = doesn't stack). Reapplying
-    // (on a SUCCESSFUL land) adds a stack up to MaxStacks and refreshes; an effect's
-    // MAGNITUDES scale with the stack count (so a slow can grow 10→20→30% over 3 stacks).
-    // A "counter" is just a stacking effect with no magnitudes (the rogue's burst fuel).
+    // (on a SUCCESSFUL land) adds a stack up to MaxStacks and refreshes. A bare counter (no
+    // StackLevels) just counts — the rogue's burst fuel. See also StackLevels.
     int MaxStacks = 1,
+    // Per-STACK effect table: each stack is an effect LEVEL, and the applied status takes that
+    // level's Effect + Magnitudes (so a stacking slow can read 10/20/30% and the 4th stack can
+    // be a different effect entirely, e.g. freeze). When set, MaxStacks = StackLevels.Length.
+    // SkillDef.Effect should be the UNION of the levels' flags so the skill is recognised as
+    // a (contested) debuff. null = not a leveled-stack effect.
+    StackLevel[]? StackLevels = null,
     // DoT model (separated): a DoT applier writes a per-skill STACK COUNTER under StackKey
     // (independent of the shared damage effect, which overrides by Rank). Skills can SHARE a
     // StackKey to pool stacks (e.g. two races' Venomweavers). A burst names ConsumeStackKey:
@@ -115,6 +120,14 @@ public record SkillDef(
     public WeaponMasteryProfile? WeaponMasteryAt(int level) =>
         WeaponMasteryLevels is { Length: > 0 } && level >= 1 && level <= WeaponMasteryLevels.Length
             ? WeaponMasteryLevels[level - 1] : null;
+
+    /// <summary>Highest stack count: the StackLevels length if set, else MaxStacks.</summary>
+    public int EffectiveMaxStacks => StackLevels is { Length: > 0 } ? StackLevels.Length : MaxStacks;
+
+    /// <summary>The (Effect, Magnitudes) a stacking effect uses at the given stack count
+    /// (1-based, clamped). Null if this skill has no per-stack table.</summary>
+    public StackLevel? StackLevelAt(int stacks) =>
+        StackLevels is { Length: > 0 } sl ? sl[Math.Clamp(stacks, 1, sl.Length) - 1] : null;
 
     /// <summary>Highest level this skill can reach (1 for a single-level skill).</summary>
     public int MaxLevel => Levels is { Length: > 0 } ? Levels.Length : 1;
@@ -170,6 +183,11 @@ public readonly record struct ArmorMasteryProfile(
 /// armor mastery there is NO penalty for the wrong weapon (you just get no bonus); each
 /// unset weapon defaults to an all-zero (inert) PassiveEffect. Keyed on WeaponType only
 /// (1H vs 2H is not distinguished here yet).</summary>
+/// <summary>One stack LEVEL of a stacking effect: the Effect flags + Magnitudes the status
+/// takes at that stack count. Lets a stacking debuff change qualitatively per stack (e.g.
+/// slow 10/20/30% on stacks 1-3, then a freeze/stun on stack 4).</summary>
+public readonly record struct StackLevel(SkillEffect Effect, EffectMagnitude[] Magnitudes);
+
 public readonly record struct WeaponMasteryProfile(
     PassiveEffect Sword = default, PassiveEffect Dual = default,
     PassiveEffect Bow = default, PassiveEffect Blunt = default,

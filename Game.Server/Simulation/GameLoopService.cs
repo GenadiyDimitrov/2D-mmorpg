@@ -1977,15 +1977,21 @@ var effect = def.Effect;
     {
         string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
         string shownName = string.IsNullOrEmpty(displayName) ? def.Name : displayName!;
-        int eff = maxStacks >= 0 ? maxStacks : def.MaxStacks;
+        int eff = maxStacks >= 0 ? maxStacks : def.EffectiveMaxStacks;
 
         // Stacking effect (MaxStacks > 1): reapplying ADDS a stack (capped) and refreshes,
-        // rather than replacing. Magnitudes scale with Stacks (e.g. slow 10→20→30%).
+        // rather than replacing. If the skill has a per-stack table, the status re-snapshots
+        // that level's Effect + Magnitudes (so a slow can grow, or become a freeze at stack N).
         if (eff > 1 && target.Buffs.FirstOrDefault(b => b.Key == key) is BuffInstance stack)
         {
             stack.Stacks = Math.Min(eff, stack.Stacks + 1);
             stack.MaxStacks = eff;
             stack.TicksRemaining = toggle ? int.MaxValue : def.DurationTicks;   // refresh
+            if (def.StackLevelAt(stack.Stacks) is StackLevel slv)
+            {
+                stack.Effect = slv.Effect;
+                stack.Magnitudes = slv.Magnitudes;
+            }
             if (refresh)
             {
                 target.RecomputeDerived();
@@ -2007,10 +2013,12 @@ var effect = def.Effect;
         if (def.Replaces is { Length: > 0 })
             target.Buffs.RemoveAll(b => def.Replaces.Contains(b.Key));
 
+        // A leveled-stack effect starts at stack 1's entry; otherwise the skill's own effect.
+        var first = def.StackLevelAt(1);
         target.Buffs.Add(new BuffInstance
         {
-            Effect = def.Effect,
-            Magnitudes = def.MagnitudesAt(level) ?? Array.Empty<EffectMagnitude>(),
+            Effect = first?.Effect ?? def.Effect,
+            Magnitudes = first?.Magnitudes ?? def.MagnitudesAt(level) ?? Array.Empty<EffectMagnitude>(),
             TicksRemaining = toggle ? int.MaxValue : def.DurationTicks,
             Toggle = toggle,
             // DoT damage effect (bleed/poison/venom): carries its per-tick damage so TickDots

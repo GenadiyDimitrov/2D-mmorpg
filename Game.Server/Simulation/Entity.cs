@@ -8,8 +8,9 @@ namespace Game.Server.Simulation;
 /// Rank; a buff also unconditionally removes any active buff in Replaces.</summary>
 public class BuffInstance
 {
-    public required SkillEffect Effect { get; init; }
-    public required EffectMagnitude[] Magnitudes { get; init; }
+    // Settable: a stacking effect re-snapshots these to the current stack LEVEL each stack.
+    public required SkillEffect Effect { get; set; }
+    public required EffectMagnitude[] Magnitudes { get; set; }
     public int TicksRemaining { get; set; }
     public required string Name { get; init; }
     public string Description { get; init; } = "";
@@ -39,23 +40,24 @@ public class BuffInstance
 
     public bool IsDebuff => (Effect & SkillEffect.AnyDebuff) != 0;
 
-    /// <summary>Sum of this buff's flat entries for an effect, SCALED by the stack count
-    /// (1 stack = base; a 3-stack effect is ×3). Non-stacking effects have Stacks=1.</summary>
+    /// <summary>Sum of this buff's flat entries for an effect. For a stacking effect the
+    /// Magnitudes are re-snapshotted to the current stack LEVEL on each stack (see
+    /// ApplyBuff + SkillDef.StackLevels), so no per-read scaling is needed here.</summary>
     public float Flat(SkillEffect flag)
     {
         float sum = 0f;
         foreach (var m in Magnitudes)
             if (m.Effect == flag && m.Mode == ModifierMode.Flat) sum += m.Value;
-        return sum * Stacks;
+        return sum;
     }
 
-    /// <summary>Sum of this buff's percent entries for an effect, SCALED by the stack count.</summary>
+    /// <summary>Sum of this buff's percent entries for an effect.</summary>
     public float Percent(SkillEffect flag)
     {
         float sum = 0f;
         foreach (var m in Magnitudes)
             if (m.Effect == flag && m.Mode == ModifierMode.Percent) sum += m.Value;
-        return sum * Stacks;
+        return sum;
     }
 }
 

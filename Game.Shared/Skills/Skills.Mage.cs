@@ -201,15 +201,22 @@ public static partial class SkillCatalog
             Description: "A shard of ice (power 90) that strikes for +50% damage if the target "
                        + "is slowed or rooted."),
 
-        // Creeping Frost — a STACKING slow that grows with each application (magnitude scales
-        // with stacks): 10% → 20% → 30% over 3 stacks. Stacks only on a successful land.
-        new(CreepingFrost, "Creeping Frost", BaseClass.Mage, SkillEffect.Slow,
+        // Creeping Frost — a STACKING chill with a per-stack effect table: 10% / 20% / 30%
+        // slow on stacks 1-3, then a FREEZE (stun, no slow) on stack 4. Effect = Slow|Stun
+        // (union) so it's recognised as contested CC; each landing cast adds a stack.
+        new(CreepingFrost, "Creeping Frost", BaseClass.Mage, SkillEffect.Slow | SkillEffect.Stun,
             MpCost: 18, CastTicks: 15, CooldownTicks: 20, Range: 900, Power: 0,
             DurationTicks: 100, BuffKey: "creeping_frost", Rank: 1, InitialMpCost: 4,
-            MaxStacks: 3, DebuffSchool: DebuffSchool.Magical,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, 0.10f) },
-            Description: "A deepening chill — slows by 10% per stack (up to 30% at 3). Each cast "
-                       + "that lands adds a stack; ATK-vs-WIT contest."),
+            DebuffSchool: DebuffSchool.Magical,
+            StackLevels: new[]
+            {
+                new StackLevel(SkillEffect.Slow, new EffectMagnitude[] { new(SkillEffect.Slow, 0.10f) }),
+                new StackLevel(SkillEffect.Slow, new EffectMagnitude[] { new(SkillEffect.Slow, 0.20f) }),
+                new StackLevel(SkillEffect.Slow, new EffectMagnitude[] { new(SkillEffect.Slow, 0.30f) }),
+                new StackLevel(SkillEffect.Stun, System.Array.Empty<EffectMagnitude>()),   // freeze
+            },
+            Description: "A deepening chill — slows 10%/20%/30% on stacks 1-3, then FREEZES "
+                       + "(stuns) on the 4th. Each landing cast adds a stack; ATK-vs-WIT contest."),
 
         // Holy Bolt — the Healer's offensive spell (replaces Magic Bolt). ONE skill;
         // per-race NAME only (Holy/Moonlight/Spirit Bolt) via ClassSkill.DisplayName.
