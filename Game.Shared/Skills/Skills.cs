@@ -85,6 +85,15 @@ public record SkillDef(
     // damage effect itself stays). "" = none.
     string StackKey = "",
     string ConsumeStackKey = "",
+    // Cure (Cleanse) / Cancel targeting. DispelMask = which effect flags to remove (None =
+    // all of the relevant polarity: Cleanse→any debuff, Cancel→any positive buff). DispelCount
+    // = how many (0 = all matching; N = up to N at random). DispelMaxLevel = only effects with
+    // Rank ≤ this (0 = any) — e.g. "cure bleeds ≤ 3". Cancellable = can THIS skill's effect be
+    // cured/cancelled (false = immune; internal counters are always immune).
+    SkillEffect DispelMask = SkillEffect.None,
+    int DispelCount = 0,
+    int DispelMaxLevel = 0,
+    bool Cancellable = true,
     // A TOGGLE skill (stance/aura): clicking it applies its self-buff indefinitely;
     // clicking again removes it. Instant, no cast bar; MP charged on activation only.
     bool Toggle = false,

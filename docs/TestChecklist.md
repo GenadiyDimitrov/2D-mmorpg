@@ -18,6 +18,12 @@ this file.
 - [ ] A DoT can finish the kill (credit + drops go to the applier).
 - [~] Poison/venom + their −AS/cast, −atk/def secondaries not authored (need debuff channels outside AnyBuff). Cure/cancel skills not built yet.
 
+### Cure / cancel (dispel) — NUMBERS UNTUNED
+- [ ] Healer "Antidote" @25 removes poison/venom from an ally (or self); does NOT remove other debuffs (slow/bleed/stun).
+- [ ] Nuker "Dispel Magic" @35 on an enemy strips up to 2 random beneficial buffs (test vs a buffed player, or self-cast a buff then have someone dispel).
+- [ ] Internal DoT stack counters are NOT removed by cure/cancel; a non-Cancellable effect is immune.
+- [ ] Existing Lightbringer full Cleanse still removes all debuffs (empty DispelMask = all).
+
 ### Stack / effect visibility
 - [ ] A stacking buff on YOU shows "Name xN" on the buff bar (count updates as it stacks).
 - [ ] Expand the target window on a bled/slowed mob → "Effects:" line lists its active effects with stacks (e.g. "Rupture (stacks) x5", "Slow") — so you can time Detonate Wounds.

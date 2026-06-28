@@ -39,11 +39,13 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   each stack is an effect level (its own Effect + Magnitudes), so a stack can change the effect
   qualitatively (Tempest "Creeping Frost" = slow 10/20/30% on 1-3, FREEZE on 4). Stacks only on
   a successful land. A bare counter = stacking with no table (rogue burst fuel).
-  Poison/venom secondaries (−AS/cast, −atk/def) deferred (need debuff channels outside AnyBuff);
-  cure/cancel skills feasible but not built. **Stack/effect visibility DONE**: buff bar shows
-  "Name xN"; the target inspect window lists the target's active effects + stacks ("Effects:"
-  line) so a Venomweaver can time a burst. **Still to do:** cure/cancel primitive, absorb
-  shields, taunt/real threat, blink/charge, knockback, stealth, mana shield, lethal-save, traps.
+  Poison/venom secondaries (−AS/cast, −atk/def) deferred (need debuff channels outside AnyBuff).
+  **Stack/effect visibility DONE**: buff bar "Name xN"; inspect window "Effects:" line w/ stacks.
+  **Cure/cancel DONE**: one `Dispel` helper + `SkillEffect.Cancel`; `SkillDef.DispelMask`
+  (effect filter, e.g. cure-poison = Poison|Venom), `DispelCount` (random N), `DispelMaxLevel`
+  (Rank ≤), `Cancellable` flag (internal counters immune). Demo: healer "Antidote" (cure
+  poison/venom), nuker "Dispel Magic" (strip 2 random buffs). **Still to do:** absorb shields,
+  taunt/real threat, blink/charge, knockback, stealth, mana shield, lethal-save, traps.
 - [ ] **Base-class armor mastery + universal penalty → data** (only 2nd classes are data so
   far). Finishes the [[stats-via-skills-not-hardcoded]] migration. (Note: changes the
   unlearned-penalty semantics slightly — confirm intent.)

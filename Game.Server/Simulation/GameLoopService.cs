@@ -408,7 +408,7 @@ public class GameLoopService : BackgroundService
         }
 
         bool offensive = (def.Effect & (SkillEffect.PhysicalDamage
-            | SkillEffect.MagicDamage | SkillEffect.AnyDebuff)) != 0;
+            | SkillEffect.MagicDamage | SkillEffect.AnyDebuff | SkillEffect.Cancel)) != 0;
 
         Guid targetId;
         if (offensive)
@@ -1875,14 +1875,22 @@ var effect = def.Effect;
                 RestoreMpOne(caster, target, flat + (int)(target.MaxMp * pct), castName);
         }
 
-        // ---- Cleanse — remove harmful effects from an ally (or allies in radius) ----
+        // ---- Cleanse / Cure — remove debuffs from an ally (or allies in radius). DispelMask
+        //      narrows it (e.g. cure-poison = Poison|Venom); empty = all debuffs. ----
         if (effect.HasFlag(SkillEffect.Cleanse))
         {
             if (def.TargetMode == TargetMode.AlliesInRadius)
                 foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
-                    CleanseDebuffs(caster, ally, castName);
+                    Dispel(caster, ally, def, positive: false, castName);
             else
-                CleanseDebuffs(caster, target, castName);
+                Dispel(caster, target, def, positive: false, castName);
+        }
+
+        // ---- Cancel / Dispel — strip POSITIVE buffs from an enemy (DispelCount = random N). ----
+        if (effect.HasFlag(SkillEffect.Cancel))
+        {
+            offensive = true;
+            Dispel(caster, target, def, positive: true, castName);
         }
 
         // ---- Crowd control + DoT (Slow/Stun/Fear/Root, Bleed/Poison/Venom) — lands via the
@@ -2026,6 +2034,7 @@ var effect = def.Effect;
             // counter (see ApplyDotStack); the burst reads the counter, not this.
             DotPower = (def.Effect & SkillEffect.AnyDot) != 0 ? def.PowerAt(level) : 0,
             MaxStacks = eff,
+            Cancellable = def.Cancellable,
             Name = shownName,
             Key = key,
             Rank = def.Rank,
@@ -2137,14 +2146,35 @@ var effect = def.Effect;
             SendStats(target);   // MP isn't surfaced via damage broadcasts — refresh the bar
     }
 
-    /// <summary>Strip all harmful effects (curses, anti-heal, roots) from an ally.</summary>
-    private void CleanseDebuffs(Entity caster, Entity target, string skillName)
+    /// <summary>Remove effects from a target — CURE (positive=false: strip the target's
+    /// debuffs, e.g. cure-poison) or CANCEL (positive=true: strip an enemy's buffs). Honours
+    /// the skill's DispelMask (effect filter), DispelMaxLevel (Rank ≤) and DispelCount
+    /// (0 = all matching; N = up to N at random). Skips Internal and non-Cancellable effects.</summary>
+    private void Dispel(Entity caster, Entity target, SkillDef def, bool positive, string skillName)
     {
         if (target.Dead) return;
-        int removed = target.Buffs.RemoveAll(b => (b.Effect & SkillEffect.AnyDebuff) != 0);
-        if (removed > 0)
+        SkillEffect mask = def.DispelMask;
+        var cands = target.Buffs.Where(b =>
+            !b.Internal && b.Cancellable &&
+            (positive ? !b.IsDebuff : b.IsDebuff) &&
+            (mask == SkillEffect.None || (b.Effect & mask) != 0) &&
+            (def.DispelMaxLevel <= 0 || b.Rank <= def.DispelMaxLevel)).ToList();
+
+        // Random subset if a count is set and there are more candidates than that.
+        if (def.DispelCount > 0 && cands.Count > def.DispelCount)
         {
-            target.RecomputeDerived();   // DebuffDef etc. affected derived stats
+            for (int i = 0; i < def.DispelCount; i++)
+            {
+                int j = _rng.Next(i, cands.Count);
+                (cands[i], cands[j]) = (cands[j], cands[i]);
+            }
+            cands = cands.Take(def.DispelCount).ToList();
+        }
+
+        if (cands.Count > 0)
+        {
+            foreach (var b in cands) target.Buffs.Remove(b);
+            target.RecomputeDerived();
             if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
         }
         BroadcastCombat(caster, target, 0, CombatOutcome.Buff, skillName);

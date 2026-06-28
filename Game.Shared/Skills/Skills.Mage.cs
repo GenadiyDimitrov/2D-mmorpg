@@ -22,6 +22,7 @@ public static partial class SkillCatalog
     public const string EntanglingRoots = "entangling_roots"; // nuker CC — magical Root (contested)
     public const string GlacialSpike = "glacial_spike";       // nuke with +dmg vs slowed/rooted
     public const string CreepingFrost = "creeping_frost";     // stacking slow (10/20/30% over 3)
+    public const string DispelMagic = "dispel_magic";         // cancel: strips enemy buffs
 
     private static SkillDef[] MageSkills() => new SkillDef[]
     {
@@ -129,6 +130,12 @@ public static partial class SkillCatalog
             Passive: new PassiveEffect(MagAtk: 4, PhysAtk: 2),
             WeaponMasteryLevels: new[] { CasterBowPenalty },
             Description: "Passive. +4 M.Atk and +2 P.Atk. Casting with a bow is half speed."),
+
+        // Dispel Magic — CANCEL: strips up to 2 random beneficial effects from an enemy.
+        new(DispelMagic, "Dispel Magic", BaseClass.Mage, SkillEffect.Cancel,
+            MpCost: 24, CastTicks: 15, CooldownTicks: 60, Range: 600, Power: 0,
+            Category: SkillCategory.Debuff, InitialMpCost: 5, DispelCount: 2,
+            Description: "Strips up to 2 random beneficial effects from an enemy."),
 
         new(Weakness, "Weakness", BaseClass.Mage, SkillEffect.DebuffDef,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 600, Power: 0,

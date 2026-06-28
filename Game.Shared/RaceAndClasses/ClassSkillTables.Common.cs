@@ -30,7 +30,7 @@ public static partial class ClassSkillTables
             // Mage archetypes — 2nd-class learn cadence: 20, 25, 30, 35.
             ClassSkills.Register(race, BaseClass.Mage, Archetype.Nuker,
                 new ClassSkill(FlameBolt, 20), new ClassSkill(Heal, 25),
-                new ClassSkill(GreaterWeakness, 30),
+                new ClassSkill(GreaterWeakness, 30), new ClassSkill(DispelMagic, 35),
                 // Anti-Magic on ALL mage classes (continues the base-mage line, lvls 3-6).
                 new ClassSkill(MageAntiMagic, 20, SkillLevel: 3),
                 new ClassSkill(MageAntiMagic, 25, SkillLevel: 4),
@@ -137,7 +137,10 @@ public static partial class ClassSkillTables
                 new ClassSkill(ArmorMasterySkill, 35, SkillLevel: 4),
 
                 // Combat Stance — TOGGLE: trade M.Atk for P.Atk to melee-farm (mace).
-                new ClassSkill(CombatStance, 20, SkillLevel: 1));
+                new ClassSkill(CombatStance, 20, SkillLevel: 1),
+
+                // Antidote — targeted cure (poison/venom).
+                new ClassSkill(Antidote, 25, SkillLevel: 1));
         }
     }
 }

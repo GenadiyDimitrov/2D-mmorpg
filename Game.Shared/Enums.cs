@@ -115,6 +115,7 @@ public enum SkillEffect : long
     Bleed              = 1L << 48,  // physical DoT (DEX-vs-CON); secondary: slows move speed
     Poison             = 1L << 49,  // magical DoT (ATK-vs-WIT); secondary: slows attack/cast
     Venom              = 1L << 50,  // physical DoT (DEX-vs-CON); secondary: lowers atk/def
+    Cancel             = 1L << 51,  // offensive: strip POSITIVE buffs from an enemy (dispel)
     // Room to grow up to 1L << 62.
 
     // Convenience masks.

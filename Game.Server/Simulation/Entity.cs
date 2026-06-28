@@ -35,6 +35,8 @@ public class BuffInstance
     /// <summary>An internal mechanic effect (e.g. a DoT stack counter): not shown on the buff
     /// bar and not touched by cure/cancel — only its own burst skill consumes it.</summary>
     public bool Internal { get; set; }
+    /// <summary>Can this effect be removed by cure/cancel? (false = immune.)</summary>
+    public bool Cancellable { get; set; } = true;
 
     public bool Has(SkillEffect flag) => (Effect & flag) != 0;
 

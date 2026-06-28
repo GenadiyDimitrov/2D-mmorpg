@@ -18,6 +18,7 @@ public static partial class SkillCatalog
     public const string HolyFocus = "holy_focus";    // "Focus" — physical crit-rate buff
     public const string HolyFrenzy = "holy_frenzy";  // "Frenzy" — berserk trade-off buff
     public const string CombatStance = "healer_combat_stance";  // TOGGLE: trade M.Atk for P.Atk
+    public const string Antidote = "antidote";                  // cure: removes poison/venom
 
     /// <summary>Healer Armor Mastery per-weight data (lvls 20/25/30/35). Robe = caster lean
     /// (+MP regen / def / max MP); Light = stay-casting + sturdier (+def, slight cast cost,
@@ -231,5 +232,13 @@ public static partial class SkillCatalog
             },
             Description: "Toggle. Channel your magic into melee: +50% P.Atk but -50% M.Atk "
                        + "(weaker heals and spells). Click again to end."),
+
+        // Antidote — targeted CURE: removes poison and venom from an ally (DispelMask). A
+        // cheaper, focused alternative to a full Cleanse. (Cure-bleed would add Bleed here.)
+        new(Antidote, "Antidote", BaseClass.Mage, SkillEffect.Cleanse,
+            MpCost: 16, CastTicks: 8, CooldownTicks: 30, Range: 600, Power: 0,
+            Category: SkillCategory.Heal, InitialMpCost: 4,
+            DispelMask: SkillEffect.Poison | SkillEffect.Venom,
+            Description: "Cures poison and venom from an ally (or self)."),
     };
 }
