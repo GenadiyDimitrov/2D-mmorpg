@@ -23,6 +23,7 @@ public static partial class SkillCatalog
     public const string Rupture = "rupture";                  // applies Bleed (DoT stacks)
     public const string DetonateWounds = "detonate_wounds";   // burst: consumes Bleed stacks
     public const string Aegis = "aegis";                      // self absorb-shield (% max HP)
+    public const string LastStand = "last_stand";             // survive one fatal blow (lethal save)
 
     private static SkillDef[] FighterSkills() => new SkillDef[]
     {
@@ -105,6 +106,15 @@ public static partial class SkillCatalog
             Category: SkillCategory.Buff,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.Shield, 0.08f) },
             Description: "Raises a shield that absorbs 8% of your max HP for 15s before HP is hit."),
+
+        // Last Stand — LETHAL SAVE: the next fatal blow within 10s is survived, reviving you to
+        // 50% of max HP (consumes the buff). Long cooldown.
+        new(LastStand, "Last Stand", BaseClass.Fighter, SkillEffect.LethalSave,
+            MpCost: 30, CastTicks: 0, CooldownTicks: 3000, Range: 0, Power: 0,
+            DurationTicks: 100, BuffKey: "last_stand", Rank: 1, TargetMode: TargetMode.SelfOnly,
+            Category: SkillCategory.Buff,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.LethalSave, 0.50f) },
+            Description: "For 10s, the next blow that would kill you instead leaves you at 50% HP."),
 
         new(WarCry, "War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,

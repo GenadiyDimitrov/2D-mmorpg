@@ -117,6 +117,8 @@ public enum SkillEffect : long
     Venom              = 1L << 50,  // physical DoT (DEX-vs-CON); secondary: lowers atk/def
     Cancel             = 1L << 51,  // offensive: strip POSITIVE buffs from an enemy (dispel)
     Shield             = 1L << 52,  // damage-absorb pool (flat Power + % of max HP) soaked before HP
+    ManaShield         = 1L << 53,  // divert a % of damage to MP (Flat = MP per 1 damage)
+    LethalSave         = 1L << 54,  // survive one fatal blow, reviving to a % of max HP (consumed)
     // Room to grow up to 1L << 62.
 
     // Convenience masks.
@@ -129,7 +131,8 @@ public enum SkillEffect : long
               | BuffMagicFailFloor | BuffMagicFailResist | BuffInterruptPower
               | BuffInterruptResist | BuffMeleeVamp | BuffSpellVamp | BuffCooldown
               | BuffPveSkillDamage | BuffPveMagicDamage | BuffPveBasicDamage
-              | BuffPvpSkillDamage | BuffPvpMagicDamage | BuffPvpBasicDamage | Shield,
+              | BuffPvpSkillDamage | BuffPvpMagicDamage | BuffPvpBasicDamage
+              | Shield | ManaShield | LethalSave,
     // Harmful effects applied to an enemy (offensive; can fail; cleansable).
     AnyDebuff = DebuffDef | DebuffHealRecv | Root | Slow | Stun | Fear | Bleed | Poison | Venom,
     // Stacking damage-over-time effects (consumed by burst skills).

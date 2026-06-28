@@ -2347,6 +2347,34 @@ var effect = def.Effect;
             if (changed && target.Kind == EntityKind.Player) PushBuffs(target);
         }
 
+        // Mana shield: divert a fraction of the remaining damage to MP (rate = MP per 1 dmg),
+        // limited by available MP.
+        if (damage > 0 && target.Mp > 0 &&
+            target.Buffs.FirstOrDefault(b => b.Has(SkillEffect.ManaShield)) is BuffInstance ms)
+        {
+            float frac = ms.Percent(SkillEffect.ManaShield);
+            float rate = ms.Flat(SkillEffect.ManaShield);
+            if (frac > 0f && rate > 0f)
+            {
+                int divert = Math.Min((int)(damage * frac), (int)(target.Mp / rate));
+                if (divert > 0)
+                {
+                    target.Mp -= (int)(divert * rate);
+                    damage -= divert;
+                }
+            }
+        }
+
+        // Lethal save: a fatal blow is survived once, reviving to a % of max HP (buff consumed).
+        if (damage > 0 && target.Hp - damage <= 0 &&
+            target.Buffs.FirstOrDefault(b => b.Has(SkillEffect.LethalSave)) is BuffInstance save)
+        {
+            target.Buffs.Remove(save);
+            target.Hp = Math.Max(1, (int)(target.MaxHp * save.Percent(SkillEffect.LethalSave)));
+            if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
+            return 0;
+        }
+
         target.Hp -= damage;
 
         // Being hit while sitting breaks the sit and starts the stand-up window:

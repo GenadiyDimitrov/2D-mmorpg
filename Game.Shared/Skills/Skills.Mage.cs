@@ -23,6 +23,7 @@ public static partial class SkillCatalog
     public const string GlacialSpike = "glacial_spike";       // nuke with +dmg vs slowed/rooted
     public const string CreepingFrost = "creeping_frost";     // stacking slow (10/20/30% over 3)
     public const string DispelMagic = "dispel_magic";         // cancel: strips enemy buffs
+    public const string ManaBarrier = "mana_barrier";         // mana shield (damage→MP)
 
     private static SkillDef[] MageSkills() => new SkillDef[]
     {
@@ -136,6 +137,19 @@ public static partial class SkillCatalog
             MpCost: 24, CastTicks: 15, CooldownTicks: 60, Range: 600, Power: 0,
             Category: SkillCategory.Debuff, InitialMpCost: 5, DispelCount: 2,
             Description: "Strips up to 2 random beneficial effects from an enemy."),
+
+        // Mana Barrier — MANA SHIELD: while up, 70% of incoming damage is paid from MP instead
+        // of HP, at 0.5 MP per 1 damage (until MP runs out). Self, 30s.
+        new(ManaBarrier, "Mana Barrier", BaseClass.Mage, SkillEffect.ManaShield,
+            MpCost: 30, CastTicks: 0, CooldownTicks: 300, Range: 0, Power: 0,
+            DurationTicks: 300, BuffKey: "mana_barrier", Rank: 1, TargetMode: TargetMode.SelfOnly,
+            Category: SkillCategory.Buff,
+            Magnitudes: new EffectMagnitude[]
+            {
+                new(SkillEffect.ManaShield, 0.70f, ModifierMode.Percent),  // 70% of damage diverted
+                new(SkillEffect.ManaShield, 0.5f,  ModifierMode.Flat),     // 0.5 MP per 1 damage
+            },
+            Description: "Diverts 70% of incoming damage to MP (0.5 MP per damage) for 30s, while MP lasts."),
 
         new(Weakness, "Weakness", BaseClass.Mage, SkillEffect.DebuffDef,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 600, Power: 0,

@@ -18,6 +18,11 @@ this file.
 - [ ] A DoT can finish the kill (credit + drops go to the applier).
 - [~] Poison/venom + their −AS/cast, −atk/def secondaries not authored (need debuff channels outside AnyBuff). Cure/cancel skills not built yet.
 
+### Mana shield + lethal save ("Mana Barrier" / "Last Stand") — NUMBERS UNTUNED
+- [ ] Magus "Mana Barrier" @44: while up, taking damage drains MP (0.5 per damage) for 70% of the hit; HP loss is reduced; stops diverting when MP runs out.
+- [ ] Bulwark "Last Stand" @44: a blow that would kill you within 10s instead leaves you at 50% HP, and the buff is consumed (one save).
+- [ ] Both interact correctly with absorb shields (shield soaks first, then mana shield, then lethal save).
+
 ### Absorb shields ("Aegis") — NUMBERS UNTUNED
 - [ ] Tank (Bulwark/Vanguard) "Aegis" @40: a self-shield absorbing 8% of max HP for 15s shows on the buff bar.
 - [ ] While shielded, incoming damage drains the shield first; HP only drops once it's depleted; the shield buff vanishes when empty.
