@@ -2473,6 +2473,9 @@ var effect = def.Effect;
 
         target.Hp -= damage;
 
+        // Training dummy never dies: it takes (and displays) the hit but floors at 1 HP.
+        if (target.TrainingDummy && target.Hp < 1) target.Hp = 1;
+
         // Being hit while sitting breaks the sit and starts the stand-up window:
         // you can't move/cast until it elapses.
         if (target.Kind == EntityKind.Player && target.MoveState == MoveState.Sitting)
@@ -4001,13 +4004,16 @@ var effect = def.Effect;
         mob.HomeX = mob.X;
         mob.HomeY = mob.Y;
 
-        // Training dummy: immortal (GodMode absorbs all damage), stationary, never attacks.
+        // Training dummy: TAKES damage (so you see the numbers) but never dies — a huge HP
+        // pool + big regen, plus a death-floor in ApplyDamage. Stationary, never attacks.
         if (mobType.Dummy)
         {
             mob.TrainingDummy = true;
-            mob.GodMode = true;
             mob.Aggressive = false;
             mob.WalkSpeed = 0; mob.RunSpeed = 0; mob.Speed = 0;
+            mob.MaxHp = 1_000_000;
+            mob.Hp = mob.MaxHp;
+            mob.HpRegenBonus = 10_000;   // ~10k HP/sec (it's never "engaged", so regen runs)
         }
 
         _world.Entities[mob.Id] = mob;

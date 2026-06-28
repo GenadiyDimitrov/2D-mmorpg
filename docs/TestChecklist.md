@@ -11,7 +11,7 @@ this file.
 
 ### Training Grounds (test dummies)
 - [ ] A cluster of immortal **Training Dummy (Lv 20/40/60/80)** spawns at ~(22500–25500, 4000) — reach via debug Teleport → Zones.
-- [ ] Dummies never move, never attack, and can't die — hit them with any skill to read damage numbers at each level.
+- [ ] Dummies never move, never attack, and never die — but they DO take (and display) damage; HP drops then regens (~1M HP, ~10k/s regen, floored at 1).
 - [ ] Use them to verify [Double] crits, DoT ticks/stacks (Effects line in the target window), slow/stun/etc. land, and damage scaling.
 
 ### Movement: blink + knockback — NUMBERS UNTUNED
