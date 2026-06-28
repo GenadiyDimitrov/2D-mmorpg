@@ -35,6 +35,9 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   and (2) a separate **stack counter** (`SkillDef.StackKey`, hidden/`Internal`) that the burst
   consumes (`ConsumeStackKey`) for ×stacks — leaving the DoT. Counters are per-skill and
   shareable, independent of override/cure. Demo: Rupture → Detonate Wounds (Venomweaver).
+  **Generalized stacking**: editable `SkillDef.MaxStacks`; reapplying (successful land only)
+  adds a stack and the effect's MAGNITUDES scale with stacks (Tempest "Creeping Frost" slow
+  10→20→30%). A counter = a stacking effect with no magnitudes.
   Poison/venom secondaries (−AS/cast, −atk/def) deferred (need debuff channels outside AnyBuff);
   cure/cancel skills feasible but not built. **Still to do:** cure/cancel primitive, absorb
   shields, taunt/real threat, blink/charge, knockback, stealth, mana shield, lethal-save, traps.

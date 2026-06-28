@@ -1973,10 +1973,26 @@ var effect = def.Effect;
     /// (2) Replaces: unconditionally remove any active buff whose key is listed,
     ///     regardless of rank or magnitude.</summary>
     private void ApplyBuff(Entity target, SkillDef def, int level = 1, string? displayName = null,
-        bool refresh = true, bool toggle = false)
+        bool refresh = true, bool toggle = false, int maxStacks = -1)
     {
         string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
         string shownName = string.IsNullOrEmpty(displayName) ? def.Name : displayName!;
+        int eff = maxStacks >= 0 ? maxStacks : def.MaxStacks;
+
+        // Stacking effect (MaxStacks > 1): reapplying ADDS a stack (capped) and refreshes,
+        // rather than replacing. Magnitudes scale with Stacks (e.g. slow 10→20→30%).
+        if (eff > 1 && target.Buffs.FirstOrDefault(b => b.Key == key) is BuffInstance stack)
+        {
+            stack.Stacks = Math.Min(eff, stack.Stacks + 1);
+            stack.MaxStacks = eff;
+            stack.TicksRemaining = toggle ? int.MaxValue : def.DurationTicks;   // refresh
+            if (refresh)
+            {
+                target.RecomputeDerived();
+                if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
+            }
+            return;
+        }
 
         // Rule 1 — same-key rank comparison.
         var same = target.Buffs.FirstOrDefault(b => b.Key == key);
@@ -2001,6 +2017,7 @@ var effect = def.Effect;
             // hits for DotPower each second. Damage does NOT stack — stacks live on a separate
             // counter (see ApplyDotStack); the burst reads the counter, not this.
             DotPower = (def.Effect & SkillEffect.AnyDot) != 0 ? def.PowerAt(level) : 0,
+            MaxStacks = eff,
             Name = shownName,
             Key = key,
             Rank = def.Rank,
@@ -2030,19 +2047,22 @@ var effect = def.Effect;
     /// stronger overriding bleed or a cure never touches another applier's stacks.</summary>
     private void ApplyDotStack(Entity caster, Entity target, SkillDef def, int level)
     {
-        // (1) The damage effect — ApplyBuff handles same-key Rank override + sets DotPower.
-        ApplyBuff(target, def, level, refresh: false);
+        // (1) The damage effect — flat per-tick, overrides by Rank (force non-stacking so the
+        // skill's MaxStacks, which governs the counter, doesn't stack the damage effect).
+        ApplyBuff(target, def, level, refresh: false, maxStacks: 1);
         string dmgKey = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
         if (target.Buffs.FirstOrDefault(b => b.Key == dmgKey) is BuffInstance dmg)
             dmg.SourceId = caster.Id;   // credit DoT kills to the applier
 
-        // (2) The stack counter — separate, internal, per StackKey (shareable across skills).
+        // (2) The stack counter — separate, internal, per StackKey; max = the skill's MaxStacks.
+        int cap = Math.Max(1, def.MaxStacks);
         if (!string.IsNullOrEmpty(def.StackKey))
         {
             var ctr = target.Buffs.FirstOrDefault(b => b.Key == def.StackKey);
             if (ctr is not null)
             {
-                ctr.Stacks = Math.Min(GameConstants.MaxDotStacks, ctr.Stacks + 1);
+                ctr.Stacks = Math.Min(cap, ctr.Stacks + 1);
+                ctr.MaxStacks = cap;
                 ctr.TicksRemaining = def.DurationTicks;   // refresh
                 ctr.SourceId = caster.Id;
             }
@@ -2054,6 +2074,7 @@ var effect = def.Effect;
                     Magnitudes = Array.Empty<EffectMagnitude>(),
                     TicksRemaining = def.DurationTicks,
                     Stacks = 1,
+                    MaxStacks = cap,
                     Internal = true,
                     SourceId = caster.Id,
                     Name = def.Name + " (stacks)",

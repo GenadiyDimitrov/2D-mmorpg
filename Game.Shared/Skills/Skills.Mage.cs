@@ -21,6 +21,7 @@ public static partial class SkillCatalog
     public const string FrostBind = "frost_bind";             // nuker CC — magical Slow (first contested-CC skill)
     public const string EntanglingRoots = "entangling_roots"; // nuker CC — magical Root (contested)
     public const string GlacialSpike = "glacial_spike";       // nuke with +dmg vs slowed/rooted
+    public const string CreepingFrost = "creeping_frost";     // stacking slow (10/20/30% over 3)
 
     private static SkillDef[] MageSkills() => new SkillDef[]
     {
@@ -199,6 +200,16 @@ public static partial class SkillCatalog
             ConditionalOn: TargetCondition.Slowed | TargetCondition.Rooted, ConditionalDamagePct: 0.50f,
             Description: "A shard of ice (power 90) that strikes for +50% damage if the target "
                        + "is slowed or rooted."),
+
+        // Creeping Frost — a STACKING slow that grows with each application (magnitude scales
+        // with stacks): 10% → 20% → 30% over 3 stacks. Stacks only on a successful land.
+        new(CreepingFrost, "Creeping Frost", BaseClass.Mage, SkillEffect.Slow,
+            MpCost: 18, CastTicks: 15, CooldownTicks: 20, Range: 900, Power: 0,
+            DurationTicks: 100, BuffKey: "creeping_frost", Rank: 1, InitialMpCost: 4,
+            MaxStacks: 3, DebuffSchool: DebuffSchool.Magical,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, 0.10f) },
+            Description: "A deepening chill — slows by 10% per stack (up to 30% at 3). Each cast "
+                       + "that lands adds a stack; ATK-vs-WIT contest."),
 
         // Holy Bolt — the Healer's offensive spell (replaces Magic Bolt). ONE skill;
         // per-race NAME only (Holy/Moonlight/Spirit Bolt) via ClassSkill.DisplayName.

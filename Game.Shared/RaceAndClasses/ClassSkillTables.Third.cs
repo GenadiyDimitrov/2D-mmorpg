@@ -58,6 +58,9 @@ public static partial class ClassSkillTables
                 ClassSkills.RegisterThird(race, disc,
                     new ClassSkill(FrostBind, 40), new ClassSkill(EntanglingRoots, 40),
                     new ClassSkill(GlacialSpike, 44));
+        // Creeping Frost — stacking slow (10/20/30%) — Tempest's signature control.
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+            ClassSkills.RegisterThird(race, Discipline.Tempest, new ClassSkill(CreepingFrost, 44));
 
         // Warrior 3rd-class kit demos: [Double] burst, physical Slow, +skill-damage buff.
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })

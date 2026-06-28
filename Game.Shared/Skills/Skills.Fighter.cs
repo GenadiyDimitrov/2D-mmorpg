@@ -84,7 +84,7 @@ public static partial class SkillCatalog
         new(Rupture, "Rupture", BaseClass.Fighter, SkillEffect.Bleed | SkillEffect.Slow,
             MpCost: 12, CastTicks: 5, CooldownTicks: 30, Range: 0, Power: 5,
             DurationTicks: 300, BuffKey: "bleed", Rank: 1, DebuffSchool: DebuffSchool.Physical,
-            StackKey: "venom_bleed",   // per-skill counter (share this id to pool stacks)
+            StackKey: "venom_bleed", MaxStacks: 10,   // per-skill counter (share id to pool stacks)
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, 0.15f) },
             Description: "Opens a bleeding wound — a flat physical DoT (+15% slow) plus a stack "
                        + "that builds toward a burst. Lands on a DEX-vs-CON contest."),

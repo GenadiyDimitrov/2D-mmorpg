@@ -23,8 +23,10 @@ public class BuffInstance
     public bool Toggle { get; init; }
 
     // ----- Damage-over-time (DoT) stacks -----
-    /// <summary>Stack count for a DoT (1..MaxDotStacks); 1 for everything else.</summary>
+    /// <summary>Current stack count (1..MaxStacks). Magnitudes scale with this.</summary>
     public int Stacks { get; set; } = 1;
+    /// <summary>Maximum stacks this effect can build (1 = non-stacking).</summary>
+    public int MaxStacks { get; set; } = 1;
     /// <summary>DoT damage per stack per second (0 = not a DoT).</summary>
     public int DotPower { get; set; }
     /// <summary>Entity that applied this effect (for DoT damage attribution / kill credit).</summary>
@@ -37,22 +39,23 @@ public class BuffInstance
 
     public bool IsDebuff => (Effect & SkillEffect.AnyDebuff) != 0;
 
-    /// <summary>Sum of this buff's flat entries for an effect.</summary>
+    /// <summary>Sum of this buff's flat entries for an effect, SCALED by the stack count
+    /// (1 stack = base; a 3-stack effect is ×3). Non-stacking effects have Stacks=1.</summary>
     public float Flat(SkillEffect flag)
     {
         float sum = 0f;
         foreach (var m in Magnitudes)
             if (m.Effect == flag && m.Mode == ModifierMode.Flat) sum += m.Value;
-        return sum;
+        return sum * Stacks;
     }
 
-    /// <summary>Sum of this buff's percent entries for an effect.</summary>
+    /// <summary>Sum of this buff's percent entries for an effect, SCALED by the stack count.</summary>
     public float Percent(SkillEffect flag)
     {
         float sum = 0f;
         foreach (var m in Magnitudes)
             if (m.Effect == flag && m.Mode == ModifierMode.Percent) sum += m.Value;
-        return sum;
+        return sum * Stacks;
     }
 }
 

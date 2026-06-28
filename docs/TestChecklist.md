@@ -18,6 +18,12 @@ this file.
 - [ ] A DoT can finish the kill (credit + drops go to the applier).
 - [~] Poison/venom + their −AS/cast, −atk/def secondaries not authored (need debuff channels outside AnyBuff). Cure/cancel skills not built yet.
 
+### Combat primitives: generalized stacking (editable max + magnitude scaling) — NUMBERS UNTUNED
+- [ ] Tempest "Creeping Frost" @44: a STACKING slow — each landing cast adds a stack and the slow grows 10% → 20% → 30% (caps at 3 stacks). Magnitude scales with stacks.
+- [ ] A resisted cast does NOT add a stack (stack only on success). Re-landing refreshes the timer.
+- [ ] Rogue bleed counter still caps at its skill's MaxStacks (10) — editable per skill, not a global constant.
+- [ ] A non-stacking buff/debuff (MaxStacks 1) behaves exactly as before (no scaling).
+
 ### Expandable target window (commit ccb5805)
 - [ ] Targeting a mob shows a `▼` expand button on the target frame; plain NPCs (vendor/gatekeeper) show no button.
 - [ ] Clicking `▼` opens the panel and shows HP/MP, P/M.Atk, P/M.Def, Acc/Eva/Crit.

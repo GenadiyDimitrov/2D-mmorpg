@@ -68,6 +68,11 @@ public record SkillDef(
     // state (e.g. +50% vs slowed/rooted). None/0 = no conditional bonus.
     TargetCondition ConditionalOn = TargetCondition.None,
     float ConditionalDamagePct = 0f,
+    // Stacking: how high this skill's stacking effect builds (1 = doesn't stack). Reapplying
+    // (on a SUCCESSFUL land) adds a stack up to MaxStacks and refreshes; an effect's
+    // MAGNITUDES scale with the stack count (so a slow can grow 10→20→30% over 3 stacks).
+    // A "counter" is just a stacking effect with no magnitudes (the rogue's burst fuel).
+    int MaxStacks = 1,
     // DoT model (separated): a DoT applier writes a per-skill STACK COUNTER under StackKey
     // (independent of the shared damage effect, which overrides by Rank). Skills can SHARE a
     // StackKey to pool stacks (e.g. two races' Venomweavers). A burst names ConsumeStackKey:
