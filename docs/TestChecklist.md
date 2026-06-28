@@ -9,13 +9,14 @@ this file.
 
 ## To test now (this session — 2026-06-27)
 
-### Combat primitives P2: DoT stacks + burst ("Rupture" / "Detonate Wounds") — NUMBERS UNTUNED
-- [ ] Venomweaver learns "Rupture" @40; casting it repeatedly stacks Bleed (up to 10), refreshing the 30s timer.
-- [ ] A bled mob takes "DoT" damage each second (scales with stacks) and is slowed ~15%.
-- [ ] "Detonate Wounds" @44 hits for ~damage × current stacks (×10 at full), then the bleed is gone.
-- [ ] Detonate can [Double]; Rupture lands on a DEX-vs-CON contest (bosses immune).
+### Combat primitives P2: DoT (separated effect + stack counter) — NUMBERS UNTUNED
+- [ ] Venomweaver "Rupture" @40 applies a bleed: a FLAT "DoT" tick each second + 15% slow; reapplying refreshes 30s and builds a stack (counter is hidden — not on the buff bar).
+- [ ] Bleed tick damage does NOT grow with stacks (it's the damage effect); stacks only fuel the burst.
+- [ ] "Detonate Wounds" @44 hits for ~damage × stacks (×10 at full), removes the COUNTER, and leaves the bleed DoT ticking.
+- [ ] Detonate consumes only ITS line's stacks (ConsumeStackKey) — another applier's stacks are untouched.
+- [ ] Bleed damage effect overrides by Rank (a stronger bleed replaces a weaker); counters stay independent.
 - [ ] A DoT can finish the kill (credit + drops go to the applier).
-- [~] Poison/venom (and their −AS/cast, −atk/def secondaries) not authored yet — engine supports the DoT flags.
+- [~] Poison/venom + their −AS/cast, −atk/def secondaries not authored (need debuff channels outside AnyBuff). Cure/cancel skills not built yet.
 
 ### Expandable target window (commit ccb5805)
 - [ ] Targeting a mob shows a `▼` expand button on the target frame; plain NPCs (vendor/gatekeeper) show no button.

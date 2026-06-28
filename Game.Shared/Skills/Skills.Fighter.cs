@@ -84,17 +84,18 @@ public static partial class SkillCatalog
         new(Rupture, "Rupture", BaseClass.Fighter, SkillEffect.Bleed | SkillEffect.Slow,
             MpCost: 12, CastTicks: 5, CooldownTicks: 30, Range: 0, Power: 5,
             DurationTicks: 300, BuffKey: "bleed", Rank: 1, DebuffSchool: DebuffSchool.Physical,
+            StackKey: "venom_bleed",   // per-skill counter (share this id to pool stacks)
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, 0.15f) },
-            Description: "Opens a bleeding wound — a stacking physical DoT (up to 10) that also "
-                       + "slows by 15%. Lands on a DEX-vs-CON contest."),
+            Description: "Opens a bleeding wound — a flat physical DoT (+15% slow) plus a stack "
+                       + "that builds toward a burst. Lands on a DEX-vs-CON contest."),
 
-        // Detonate Wounds — BURST: consumes the target's Bleed stacks, multiplying damage by
-        // the stack count (×10 at full), and can [Double]. The Venomweaver's payoff.
+        // Detonate Wounds — BURST: consumes THIS line's bleed stacks (venom_bleed), multiplying
+        // damage by the stack count (×10 at full), and can [Double]. Leaves the bleed DoT.
         new(DetonateWounds, "Detonate Wounds", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: 25, CastTicks: 5, CooldownTicks: 60, Range: 0, Power: 12,
-            Category: SkillCategory.Physical, CanDouble: true, DotConsume: SkillEffect.Bleed,
+            Category: SkillCategory.Physical, CanDouble: true, ConsumeStackKey: "venom_bleed",
             Description: "Detonates the target's bleed stacks for damage ×(stacks) [Double], "
-                       + "consuming the bleed."),
+                       + "consuming the stacks (the bleed itself remains)."),
 
         new(WarCry, "War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,

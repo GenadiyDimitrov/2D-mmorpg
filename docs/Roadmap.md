@@ -30,13 +30,14 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   + **conditional damage** (+% vs slowed/rooted/stunned/feared; `SkillDef.ConditionalOn`/
   `ConditionalDamagePct`; demo "Glacial Spike"). Existing non-contest debuffs left on the
   fizzle model (owner: new-only). **P1 light items DONE.**
-- [~] **P2 heavy systems — STARTED.** **DoT-with-stacks DONE**: stacking debuffs (max 10,
-  30s refresh) that tick `DotPower×stacks`/sec via the contest, + a burst skill that consumes
-  stacks for ×stacks damage (`SkillDef.DotConsume`); `BuffInstance.Stacks/DotPower/SourceId`,
-  `Bleed/Poison/Venom` flags. Demo: Rupture (bleed+slow) → Detonate Wounds (burst) for
-  Venomweaver. Poison/venom secondary debuffs (−AS/cast, −atk/def) deferred (need debuff
-  channels outside AnyBuff). **Still to do:** absorb shields, taunt/real threat, blink/charge,
-  knockback, stealth, mana shield, lethal-save, traps.
+- [~] **P2 heavy systems — STARTED.** **DoT-with-stacks DONE (L2 separated model)**: a DoT
+  applies (1) a **damage effect** (flat per-tick, overrides by Rank, cure/cancel by flag+level)
+  and (2) a separate **stack counter** (`SkillDef.StackKey`, hidden/`Internal`) that the burst
+  consumes (`ConsumeStackKey`) for ×stacks — leaving the DoT. Counters are per-skill and
+  shareable, independent of override/cure. Demo: Rupture → Detonate Wounds (Venomweaver).
+  Poison/venom secondaries (−AS/cast, −atk/def) deferred (need debuff channels outside AnyBuff);
+  cure/cancel skills feasible but not built. **Still to do:** cure/cancel primitive, absorb
+  shields, taunt/real threat, blink/charge, knockback, stealth, mana shield, lethal-save, traps.
 - [ ] **Base-class armor mastery + universal penalty → data** (only 2nd classes are data so
   far). Finishes the [[stats-via-skills-not-hardcoded]] migration. (Note: changes the
   unlearned-penalty semantics slightly — confirm intent.)

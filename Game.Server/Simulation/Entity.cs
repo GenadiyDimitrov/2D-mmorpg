@@ -29,6 +29,9 @@ public class BuffInstance
     public int DotPower { get; set; }
     /// <summary>Entity that applied this effect (for DoT damage attribution / kill credit).</summary>
     public Guid SourceId { get; set; }
+    /// <summary>An internal mechanic effect (e.g. a DoT stack counter): not shown on the buff
+    /// bar and not touched by cure/cancel — only its own burst skill consumes it.</summary>
+    public bool Internal { get; set; }
 
     public bool Has(SkillEffect flag) => (Effect & flag) != 0;
 

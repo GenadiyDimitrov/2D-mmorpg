@@ -1767,13 +1767,14 @@ var effect = def.Effect;
                 damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
                 damage = FinalizeDamage(caster, target, damage, DamageKind.SkillPhysical, def);
 
-                // DoT BURST: consume the target's stacks of the named DoT, multiplying damage
-                // by the stack count (×10 at full stacks), then remove the DoT.
-                if (def.DotConsume != SkillEffect.None &&
-                    target.Buffs.FirstOrDefault(b => (b.Effect & def.DotConsume) != 0) is BuffInstance dot)
+                // DoT BURST: consume THIS skill's stack counter (by key — so only its own
+                // applier line can detonate), multiplying damage by the stacks (×10 at full),
+                // then remove the counter. The bleed DAMAGE effect itself is left in place.
+                if (!string.IsNullOrEmpty(def.ConsumeStackKey) &&
+                    target.Buffs.FirstOrDefault(b => b.Key == def.ConsumeStackKey) is BuffInstance ctr)
                 {
-                    damage = Math.Max(1, damage * dot.Stacks);
-                    target.Buffs.Remove(dot);
+                    damage = Math.Max(1, damage * ctr.Stacks);
+                    target.Buffs.Remove(ctr);
                     target.RecomputeDerived();
                     if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
                 }
@@ -1996,6 +1997,10 @@ var effect = def.Effect;
             Magnitudes = def.MagnitudesAt(level) ?? Array.Empty<EffectMagnitude>(),
             TicksRemaining = toggle ? int.MaxValue : def.DurationTicks,
             Toggle = toggle,
+            // DoT damage effect (bleed/poison/venom): carries its per-tick damage so TickDots
+            // hits for DotPower each second. Damage does NOT stack — stacks live on a separate
+            // counter (see ApplyDotStack); the burst reads the counter, not this.
+            DotPower = (def.Effect & SkillEffect.AnyDot) != 0 ? def.PowerAt(level) : 0,
             Name = shownName,
             Key = key,
             Rank = def.Rank,
@@ -2018,37 +2023,46 @@ var effect = def.Effect;
         }
     }
 
-    /// <summary>Apply (or stack) a damage-over-time effect. Reapplying the same DoT adds a
-    /// stack (capped at MaxDotStacks) and refreshes the duration; the secondary debuff rides
-    /// along as the buff's magnitudes (e.g. bleed's Slow). Ticks in TickDots.</summary>
+    /// <summary>Apply a damage-over-time. Two SEPARATE statuses (the L2 split): (1) the bleed
+    /// DAMAGE effect — shared key, overrides by Rank (stronger wins), flat per-tick damage, does
+    /// NOT stack, cure/cancel target it by flag+level; (2) a per-skill STACK COUNTER (StackKey,
+    /// Internal) that just counts 1..Max and is what a burst consumes — independent of (1), so a
+    /// stronger overriding bleed or a cure never touches another applier's stacks.</summary>
     private void ApplyDotStack(Entity caster, Entity target, SkillDef def, int level)
     {
-        string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
-        var existing = target.Buffs.FirstOrDefault(b => b.Key == key);
-        if (existing is not null)
+        // (1) The damage effect — ApplyBuff handles same-key Rank override + sets DotPower.
+        ApplyBuff(target, def, level, refresh: false);
+        string dmgKey = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
+        if (target.Buffs.FirstOrDefault(b => b.Key == dmgKey) is BuffInstance dmg)
+            dmg.SourceId = caster.Id;   // credit DoT kills to the applier
+
+        // (2) The stack counter — separate, internal, per StackKey (shareable across skills).
+        if (!string.IsNullOrEmpty(def.StackKey))
         {
-            existing.Stacks = Math.Min(GameConstants.MaxDotStacks, existing.Stacks + 1);
-            existing.TicksRemaining = def.DurationTicks;   // refresh
-            existing.SourceId = caster.Id;
-        }
-        else
-        {
-            target.Buffs.Add(new BuffInstance
+            var ctr = target.Buffs.FirstOrDefault(b => b.Key == def.StackKey);
+            if (ctr is not null)
             {
-                Effect = def.Effect,
-                Magnitudes = def.MagnitudesAt(level) ?? Array.Empty<EffectMagnitude>(),
-                TicksRemaining = def.DurationTicks,
-                Stacks = 1,
-                DotPower = def.PowerAt(level),
-                SourceId = caster.Id,
-                Name = def.Name,
-                Key = key,
-                Rank = def.Rank,
-                Replaces = def.Replaces ?? Array.Empty<string>(),
-                Description = SkillCatalog.DescriptionOf(def.Id)
-            });
+                ctr.Stacks = Math.Min(GameConstants.MaxDotStacks, ctr.Stacks + 1);
+                ctr.TicksRemaining = def.DurationTicks;   // refresh
+                ctr.SourceId = caster.Id;
+            }
+            else
+            {
+                target.Buffs.Add(new BuffInstance
+                {
+                    Effect = SkillEffect.None,           // no stats: a pure counter
+                    Magnitudes = Array.Empty<EffectMagnitude>(),
+                    TicksRemaining = def.DurationTicks,
+                    Stacks = 1,
+                    Internal = true,
+                    SourceId = caster.Id,
+                    Name = def.Name + " (stacks)",
+                    Key = def.StackKey,
+                });
+            }
         }
-        target.RecomputeDerived();   // secondary debuff magnitudes (slow / -atk etc.) take effect
+
+        target.RecomputeDerived();   // secondary debuff magnitudes (slow etc.) take effect
         if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
     }
 
@@ -2677,7 +2691,7 @@ var effect = def.Effect;
         }
 
         _hadBuffs.Add(player.Id);
-        var dtos = player.Buffs.Select(b => new BuffDto(
+        var dtos = player.Buffs.Where(b => !b.Internal).Select(b => new BuffDto(
             b.Name, b.Description,
             b.Toggle ? -1f : b.TicksRemaining * GameConstants.TickSeconds, b.IsDebuff, b.Key)).ToArray();
         SendTo(player, "Buffs", new BuffUpdate(dtos));

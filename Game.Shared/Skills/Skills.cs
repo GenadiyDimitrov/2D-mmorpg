@@ -68,9 +68,13 @@ public record SkillDef(
     // state (e.g. +50% vs slowed/rooted). None/0 = no conditional bonus.
     TargetCondition ConditionalOn = TargetCondition.None,
     float ConditionalDamagePct = 0f,
-    // DoT BURST: a damage skill with a DoT flag here multiplies its damage by the target's
-    // stacks of that DoT, then removes it (e.g. consume Bleed for ×stacks). None = normal.
-    SkillEffect DotConsume = SkillEffect.None,
+    // DoT model (separated): a DoT applier writes a per-skill STACK COUNTER under StackKey
+    // (independent of the shared damage effect, which overrides by Rank). Skills can SHARE a
+    // StackKey to pool stacks (e.g. two races' Venomweavers). A burst names ConsumeStackKey:
+    // it multiplies its damage by that counter's stacks, then removes the counter (the bleed
+    // damage effect itself stays). "" = none.
+    string StackKey = "",
+    string ConsumeStackKey = "",
     // A TOGGLE skill (stance/aura): clicking it applies its self-buff indefinitely;
     // clicking again removes it. Instant, no cast bar; MP charged on activation only.
     bool Toggle = false,
