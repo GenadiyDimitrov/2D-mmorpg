@@ -255,6 +255,29 @@ public class Entity
         }
     }
 
+    /// <summary>Stunned: cannot move, cast or attack while any Stun effect is active.</summary>
+    public bool IsStunned
+    {
+        get
+        {
+            foreach (var b in Buffs) if (b.Has(SkillEffect.Stun)) return true;
+            return false;
+        }
+    }
+
+    /// <summary>Feared: cannot cast or attack (but may still move) while any Fear is active.</summary>
+    public bool IsFeared
+    {
+        get
+        {
+            foreach (var b in Buffs) if (b.Has(SkillEffect.Fear)) return true;
+            return false;
+        }
+    }
+
+    /// <summary>Cannot take an action (cast/attack/skill) this tick due to a stun or fear.</summary>
+    public bool IsActionLocked => IsStunned || IsFeared;
+
     /// <summary>Multiplier on healing RECEIVED (anti-heal debuffs lower it). 1 = normal.</summary>
     public float HealReceivedMultiplier
     {
@@ -323,7 +346,7 @@ public class Entity
     {
         get
         {
-            if (IsRooted) return 0f;   // held in place by a Root effect
+            if (IsRooted || IsStunned) return 0f;   // held in place by Root or Stun
 
             if (Kind == EntityKind.Mob)
             {

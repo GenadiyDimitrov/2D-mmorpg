@@ -98,6 +98,8 @@ public enum SkillEffect : long
     // ----- Combat primitives (P1): crowd control. These LAND via the ATK-vs-CON/WIT
     // debuff contest (StatCalculator.DebuffLandChance), NOT the spell-fizzle model. -----
     Slow               = 1L << 39,  // reduces target move speed by a % (magnitude on Slow)
+    Stun               = 1L << 40,  // cannot move, cast or attack for the duration
+    Fear               = 1L << 41,  // cannot cast or attack (can still move) for the duration
     // Room to grow up to 1L << 62.
 
     // Convenience masks.
@@ -110,10 +112,10 @@ public enum SkillEffect : long
               | BuffMagicFailFloor | BuffMagicFailResist | BuffInterruptPower
               | BuffInterruptResist | BuffMeleeVamp | BuffSpellVamp | BuffCooldown,
     // Harmful effects applied to an enemy (offensive; can fail; cleansable).
-    AnyDebuff = DebuffDef | DebuffHealRecv | Root | Slow,
+    AnyDebuff = DebuffDef | DebuffHealRecv | Root | Slow | Stun | Fear,
     // Crowd-control that lands via the ATK-vs-CON/WIT contest (not the fizzle model).
     // Resolved in their own ExecuteSkill branch; excluded from the legacy debuff branch.
-    ContestCc = Slow,
+    ContestCc = Slow | Stun | Fear,
 }
 
 /// <summary>Which stat a debuff contests against when landing: physical debuffs are

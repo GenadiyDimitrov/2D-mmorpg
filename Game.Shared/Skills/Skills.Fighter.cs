@@ -16,6 +16,8 @@ public static partial class SkillCatalog
     public const string PowerShot = "power_shot";
     public const string Disrupt = "disrupt";
     public const string CleavingStrike = "cleaving_strike";   // first "[Double]" skill (warrior)
+    public const string ShieldBash = "shield_bash";           // physical Stun (contested CC)
+    public const string TerrifyingRoar = "terrifying_roar";   // physical Fear (contested CC)
 
     private static SkillDef[] FighterSkills() => new SkillDef[]
     {
@@ -30,6 +32,22 @@ public static partial class SkillCatalog
             MpCost: 20, CastTicks: 5, CooldownTicks: 60, Range: 0, Power: 70,
             Category: SkillCategory.Physical, CanDouble: true,
             Description: "A heavy slash (power 70) that can strike for DOUBLE damage [Double]."),
+
+        // Shield Bash — contested STUN (P1 primitive demo): cannot move/cast/attack for 3s.
+        // Lands on ATK-vs-CON (stun is always physical); bosses immune. Numbers placeholder.
+        new(ShieldBash, "Shield Bash", BaseClass.Fighter, SkillEffect.Stun,
+            MpCost: 20, CastTicks: 5, CooldownTicks: 150, Range: 0, Power: 0,
+            DurationTicks: 30, BuffKey: "stun", Rank: 1,
+            Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical,
+            Description: "Bash the target, stunning it for 3s (cannot move or act). ATK-vs-CON; bosses immune."),
+
+        // Terrifying Roar — contested FEAR (P1 primitive demo): cannot cast/attack for 5s
+        // (can still move). Warriors apply physical fear; lands on ATK-vs-CON; bosses immune.
+        new(TerrifyingRoar, "Terrifying Roar", BaseClass.Fighter, SkillEffect.Fear,
+            MpCost: 25, CastTicks: 5, CooldownTicks: 200, Range: 0, Power: 0,
+            DurationTicks: 50, BuffKey: "fear", Rank: 1,
+            Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical,
+            Description: "A fearsome roar — the target cannot cast or attack for 5s (can still move). ATK-vs-CON; bosses immune."),
 
         new(WarCry, "War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,

@@ -22,8 +22,9 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   (`StatCalculator.DebuffLandChance`, 10–90%, 50% at equal, bosses immune) + **Slow**
   (move-speed %, first contested CC; demo skill "Frost Bind" for nukers) + physical
   **`[Double]` crit** (`SkillDef.CanDouble`, ×2 from higher of DEX/ATK cap 30%; demo skill
-  "Cleaving Strike" for warriors; existing skills unchanged). Existing debuffs left on the
-  fizzle model (owner: new-only). **Still to do:** stun / root / fear, DoT+stacks
+  "Cleaving Strike" for warriors; existing skills unchanged) + **Stun & Fear** (contested,
+  action-locking; demo skills "Shield Bash"/"Terrifying Roar"). Existing debuffs left on the
+  fizzle model (owner: new-only). **Still to do:** root-via-contest, DoT+stacks
   (bleed/poison/venom), absorb shields, taunt/real threat, blink/charge, knockback,
   stealth, mana shield, lethal-save, traps, conditional damage, "skill damage %" stat.
 - [ ] **Base-class armor mastery + universal penalty → data** (only 2nd classes are data so

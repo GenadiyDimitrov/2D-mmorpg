@@ -61,6 +61,14 @@ public static partial class ClassSkillTables
             foreach (var disc in new[] { Discipline.Ravager, Discipline.Warlord })
                 ClassSkills.RegisterThird(race, disc, new ClassSkill(CleavingStrike, 40));
 
+        // Contested CC demos: Vanguard (tank) gets the Stun; warriors get the Fear.
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+        {
+            ClassSkills.RegisterThird(race, Discipline.Vanguard, new ClassSkill(ShieldBash, 40));
+            foreach (var disc in new[] { Discipline.Ravager, Discipline.Warlord })
+                ClassSkills.RegisterThird(race, disc, new ClassSkill(TerrifyingRoar, 40));
+        }
+
         // Healer disciplines (Lightbringer = healer, Warchanter = buffer) are dropped
         // pending the new lvl-40 CSVs. Their skill DEFS remain in the catalog; only the
         // learn assignments are gone, so nothing references them until re-authored.

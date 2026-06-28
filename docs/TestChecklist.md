@@ -37,6 +37,13 @@ this file.
 - [ ] 2nd-class NPC shows the archetype blurb under each class option.
 - [ ] 3rd-class (grandmaster) NPC shows the discipline blurb per option.
 
+### Combat primitives P1: Stun + Fear ("Shield Bash" / "Terrifying Roar") — NUMBERS UNTUNED
+- [ ] Vanguard learns "Shield Bash" @40 (stun 3s); warriors learn "Terrifying Roar" @40 (fear 5s).
+- [ ] Stun: target can't move, cast or attack for the duration (a mob freezes; a casting target's cast breaks).
+- [ ] Fear: target can't cast or attack but CAN still move.
+- [ ] Both land via ATK-vs-CON contest (10–90%); bosses immune; cleansable; show on the target/expire normally.
+- [ ] While YOU are stunned/feared, your skills are refused ("You are stunned." / "...too afraid to act.").
+
 ### Combat primitives P1: physical [Double] crit ("Cleaving Strike") — NUMBERS UNTUNED
 - [ ] Warrior (Ravager/Warlord) learns "Cleaving Strike" @40; it sometimes hits for ~2× (shown as Crit).
 - [ ] Double chance scales with the higher of DEX/ATK, capped 30%; ordinary skills never double.

@@ -371,6 +371,13 @@ public class GameLoopService : BackgroundService
         if (def.Category == SkillCategory.Passive)
             return;
 
+        // Stunned/feared casters can't act.
+        if (caster.IsActionLocked)
+        {
+            SendSystemToEntity(caster, caster.IsStunned ? "You are stunned." : "You are too afraid to act.");
+            return;
+        }
+
         // Toggle skills (stances) flip instantly: on -> apply self-buff, off -> remove it.
         if (def.Toggle)
         {
@@ -1596,6 +1603,15 @@ public class GameLoopService : BackgroundService
         {
             entity.StandUpTicks--;
             return;   // still recovering: no move/cast/attack this tick
+        }
+
+        // Stun/Fear lock out actions: break any cast, drop the queued skill, do nothing.
+        // (Stun also zeroes EffectiveSpeed so movement stops; Fear lets you still move.)
+        if (entity.IsActionLocked)
+        {
+            if (entity.CastingSkillId is not null) CancelCast(entity, startCooldown: false);
+            entity.QueuedSkillId = null;
+            return;
         }
 
         if (entity.CastingSkillId is string castingId)
