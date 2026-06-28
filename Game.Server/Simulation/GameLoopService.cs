@@ -1749,8 +1749,14 @@ var effect = def.Effect;
                     (int)target.EffectiveDefence, caster.Level);
                 damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
 
-                var (finalDmg, outcome) = ResolvePhysicalCritAndBlock(
-                    caster, target, damage, caster.CritChance, def.BlockAccuracy);
+                // "[Double]" skills roll a ×2 from the higher of DEX/ATK (cap 30%); ordinary
+                // skills keep the basic crit path (unchanged).
+                var (finalDmg, outcome) = def.CanDouble
+                    ? ResolvePhysicalDouble(caster, target, damage,
+                        StatCalculator.PhysicalDoubleChance(Math.Max((int)caster.EffectiveDex, caster.AtkStat)),
+                        def.BlockAccuracy)
+                    : ResolvePhysicalCritAndBlock(
+                        caster, target, damage, caster.CritChance, def.BlockAccuracy);
                 damage = finalDmg;
                 BroadcastCombat(caster, target, damage, outcome, castName);
                 ApplyDamage(target, damage);
@@ -2825,6 +2831,36 @@ var effect = def.Effect;
                 int blocked = Math.Max(1, (int)(baseDamage * (1f - target.BlockReduction)));
                 return (blocked, CombatOutcome.Block);
             }
+        }
+
+        return (baseDamage, CombatOutcome.Hit);
+    }
+
+    /// <summary>Resolution for a "[Double]" physical SKILL: a ×2 chance from the higher of
+    /// the caster's DEX/ATK (cap 30%), lowered by shield/crit-rate resist and ignoring the
+    /// block on a double (like a crit); otherwise a normal block roll. Skills without the
+    /// [Double] flag never reach here (they use the basic crit path, unchanged).</summary>
+    private (int damage, CombatOutcome outcome) ResolvePhysicalDouble(
+        Entity attacker, Entity target, int baseDamage, float doubleChance, float blockAccuracy)
+    {
+        if (attacker.WeaponType == WeaponType.Bow && target.BowResist > 0f)
+            baseDamage = Math.Max(1, (int)(baseDamage * (1f - target.BowResist)));
+
+        float eff = Math.Clamp(doubleChance
+            - (target.HasShield ? target.ShieldCritDefense : 0f)
+            - target.CritRateResist, 0f, 1f);
+        if (doubleChance > 0f && _rng.NextDouble() < eff)
+        {
+            // ×2 = +100% over normal, trimmed by the target's crit-damage resist.
+            float extra = 1f * (1f - target.CritDmgResist);
+            return (Math.Max(1, (int)(baseDamage * (1f + extra))), CombatOutcome.Crit);
+        }
+
+        if (target.HasShield)
+        {
+            float effBlock = Math.Clamp(target.BlockChance - blockAccuracy, 0f, StatCaps.BlockChance);
+            if (_rng.NextDouble() < effBlock)
+                return (Math.Max(1, (int)(baseDamage * (1f - target.BlockReduction))), CombatOutcome.Block);
         }
 
         return (baseDamage, CombatOutcome.Hit);

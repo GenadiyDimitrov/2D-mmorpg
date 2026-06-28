@@ -37,6 +37,12 @@ this file.
 - [ ] 2nd-class NPC shows the archetype blurb under each class option.
 - [ ] 3rd-class (grandmaster) NPC shows the discipline blurb per option.
 
+### Combat primitives P1: physical [Double] crit ("Cleaving Strike") — NUMBERS UNTUNED
+- [ ] Warrior (Ravager/Warlord) learns "Cleaving Strike" @40; it sometimes hits for ~2× (shown as Crit).
+- [ ] Double chance scales with the higher of DEX/ATK, capped 30%; ordinary skills never double.
+- [ ] Existing physical skills (Power Strike, Mighty Blow, etc.) crit exactly as before (basic crit path unchanged).
+- [ ] A shield can still block a non-doubled Cleaving Strike; a double ignores block (like a crit).
+
 ### Combat primitives P1: debuff contest + Slow ("Frost Bind") — NUMBERS UNTUNED
 - [ ] Nuker (Magus/Tempest) learns "Frost Bind" @40; casting it on a mob visibly halves its move speed for 10s.
 - [ ] Landing varies with the ATK-vs-WIT contest: high-WIT targets resist more (shows "Fail"/resisted), 10–90% bounds.

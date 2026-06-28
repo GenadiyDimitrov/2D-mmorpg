@@ -335,6 +335,12 @@ public static class StatCalculator
     public static float MagicCritChance(int wit) =>
         Math.Clamp(wit * 0.001f, 0f, StatCaps.MagicCritRate);
 
+    /// <summary>Physical SKILL "[Double]" chance (×2 damage): same scaling as magic crit
+    /// but driven by the HIGHER of DEX/ATK, capped at 30% (per docs/Disciplines.md). Only
+    /// skills flagged [Double] roll this; ordinary skills don't double.</summary>
+    public static float PhysicalDoubleChance(int dexOrAtk) =>
+        Math.Clamp(dexOrAtk * 0.001f, 0f, 0.30f);
+
     /// <summary>Physical crit DAMAGE multiplier, capped x10.</summary>
     public static float PhysicalCritMult(float bonus = 0f) =>
         Math.Min(2.0f + bonus, StatCaps.PhysicalCritDamage);

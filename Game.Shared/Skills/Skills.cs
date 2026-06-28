@@ -56,6 +56,9 @@ public record SkillDef(
     // For contested crowd-control (Slow, later Stun/Root/Fear): which stat the LAND
     // chance contests against — Physical = ATK vs CON, Magical = ATK vs WIT.
     DebuffSchool DebuffSchool = DebuffSchool.None,
+    // "[Double]" physical skills: can deal ×2 damage on a chance from the higher of
+    // DEX/ATK (cap 30%). Ordinary physical skills never double. Magic skills use magic crit.
+    bool CanDouble = false,
     // A TOGGLE skill (stance/aura): clicking it applies its self-buff indefinitely;
     // clicking again removes it. Instant, no cast bar; MP charged on activation only.
     bool Toggle = false,

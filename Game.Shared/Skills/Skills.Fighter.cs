@@ -15,6 +15,7 @@ public static partial class SkillCatalog
     public const string TwinSlash = "twin_slash";
     public const string PowerShot = "power_shot";
     public const string Disrupt = "disrupt";
+    public const string CleavingStrike = "cleaving_strike";   // first "[Double]" skill (warrior)
 
     private static SkillDef[] FighterSkills() => new SkillDef[]
     {
@@ -22,6 +23,13 @@ public static partial class SkillCatalog
             MpCost: 10, CastTicks: 5, CooldownTicks: 30, Range: 0, Power: 30,
             Category: SkillCategory.Physical,
             Description: "A forceful melee blow. Bonus accuracy, but can still miss."),
+
+        // Cleaving Strike — first "[Double]" skill (P1 primitive demo). A big single-target
+        // slash that can deal ×2 damage on a chance from the higher of DEX/ATK (cap 30%).
+        new(CleavingStrike, "Cleaving Strike", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+            MpCost: 20, CastTicks: 5, CooldownTicks: 60, Range: 0, Power: 70,
+            Category: SkillCategory.Physical, CanDouble: true,
+            Description: "A heavy slash (power 70) that can strike for DOUBLE damage [Double]."),
 
         new(WarCry, "War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,

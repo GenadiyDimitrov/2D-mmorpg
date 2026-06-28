@@ -56,6 +56,11 @@ public static partial class ClassSkillTables
             foreach (var disc in new[] { Discipline.Magus, Discipline.Tempest })
                 ClassSkills.RegisterThird(race, disc, new ClassSkill(FrostBind, 40));
 
+        // Cleaving Strike — the warriors' "[Double]" burst, @40 for both disciplines.
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+            foreach (var disc in new[] { Discipline.Ravager, Discipline.Warlord })
+                ClassSkills.RegisterThird(race, disc, new ClassSkill(CleavingStrike, 40));
+
         // Healer disciplines (Lightbringer = healer, Warchanter = buffer) are dropped
         // pending the new lvl-40 CSVs. Their skill DEFS remain in the catalog; only the
         // learn assignments are gone, so nothing references them until re-authored.
