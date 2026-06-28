@@ -489,6 +489,12 @@ public class Entity
     public bool Engaged { get; set; }
     public int AttackCooldown { get; set; }
 
+    /// <summary>Threat/aggro table (mobs): attacker entity id → accumulated threat. The mob
+    /// targets the highest-threat entity. Taunt spikes it; detaunt drops it.</summary>
+    public Dictionary<Guid, float> Threat { get; } = new();
+    /// <summary>While &gt; 0 a taunt locks the mob onto its taunter (ignores threat retargeting).</summary>
+    public int TauntLockTicks { get; set; }
+
     public string? QueuedSkillId { get; set; }
     public Guid? QueuedTargetId { get; set; }
 

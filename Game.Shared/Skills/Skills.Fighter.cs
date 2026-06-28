@@ -25,6 +25,7 @@ public static partial class SkillCatalog
     public const string Aegis = "aegis";                      // self absorb-shield (% max HP)
     public const string LastStand = "last_stand";             // survive one fatal blow (lethal save)
     public const string Indomitable = "indomitable";          // tank ult: +cancel resist
+    public const string Provoke = "provoke";                  // taunt: force a mob onto the tank
 
     private static SkillDef[] FighterSkills() => new SkillDef[]
     {
@@ -125,6 +126,13 @@ public static partial class SkillCatalog
             Category: SkillCategory.Buff,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffCancelResist, 0.80f) },
             Description: "For 30s your buffs have an 80% chance to resist being cancelled/dispelled."),
+
+        // Provoke — TAUNT: forces a monster's aggro onto you (spikes its threat above the
+        // current top and locks it onto you for ~3s).
+        new(Provoke, "Provoke", BaseClass.Fighter, SkillEffect.Taunt,
+            MpCost: 15, CastTicks: 0, CooldownTicks: 60, Range: 600, Power: 0,
+            Category: SkillCategory.Debuff,
+            Description: "Forces a monster to attack you — spikes its aggro and locks onto you briefly."),
 
         new(WarCry, "War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,

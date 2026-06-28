@@ -73,6 +73,9 @@ public static partial class ClassSkillTables
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
         {
             ClassSkills.RegisterThird(race, Discipline.Vanguard, new ClassSkill(ShieldBash, 40));
+            // Provoke — taunt — both tank disciplines.
+            ClassSkills.RegisterThird(race, Discipline.Bulwark, new ClassSkill(Provoke, 40));
+            ClassSkills.RegisterThird(race, Discipline.Vanguard, new ClassSkill(Provoke, 40));
             // Aegis — self absorb-shield — both tank disciplines.
             ClassSkills.RegisterThird(race, Discipline.Bulwark, new ClassSkill(Aegis, 40));
             ClassSkills.RegisterThird(race, Discipline.Vanguard, new ClassSkill(Aegis, 40));

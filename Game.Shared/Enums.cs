@@ -120,6 +120,7 @@ public enum SkillEffect : long
     ManaShield         = 1L << 53,  // divert a % of damage to MP (Flat = MP per 1 damage)
     LethalSave         = 1L << 54,  // survive one fatal blow, reviving to a % of max HP (consumed)
     BuffCancelResist   = 1L << 55,  // chance each of your buffs RESISTS an enemy cancel/dispel
+    Taunt              = 1L << 56,  // force a mob's aggro onto the caster (spikes threat + locks briefly)
     // Room to grow up to 1L << 62.
 
     // Convenience masks.

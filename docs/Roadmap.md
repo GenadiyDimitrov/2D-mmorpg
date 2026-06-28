@@ -51,9 +51,12 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   the pool before HP for all damage types, removes the buff when empty. Demo: tank "Aegis"
   (8% max HP, 15s). **Mana shield + lethal save DONE**: `SkillEffect.ManaShield` (divert % of
   damage to MP at a per-dmg rate) + `LethalSave` (survive one fatal blow → revive %), both in
-  `ApplyDamage` after shields. Demos: Magus "Mana Barrier", Bulwark "Last Stand". **Still to
-  do:** taunt/real threat, blink/charge, knockback, stealth, traps. (Shield floating-text
-  shows pre-absorb damage — cosmetic.)
+  `ApplyDamage` after shields. Demos: Magus "Mana Barrier", Bulwark "Last Stand".
+  **Taunt + real threat DONE**: mobs keep a threat table (`Entity.Threat`, threat = damage)
+  and target the top-threat foe; `SkillEffect.Taunt` spikes threat + locks the mob briefly
+  (`TauntLockTicks`); detaunt sheds 90% threat and retargets. Demo: tank "Provoke". **Still to
+  do:** blink/charge, knockback, stealth, traps; poison/venom DoT secondaries. (Shield
+  floating-text shows pre-absorb damage — cosmetic.)
 - [ ] **Base-class armor mastery + universal penalty → data** (only 2nd classes are data so
   far). Finishes the [[stats-via-skills-not-hardcoded]] migration. (Note: changes the
   unlearned-penalty semantics slightly — confirm intent.)

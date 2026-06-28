@@ -9,6 +9,12 @@ this file.
 
 ## To test now (this session — 2026-06-27)
 
+### Taunt + real threat/aggro — NUMBERS UNTUNED
+- [ ] A mob now targets the highest-THREAT attacker (threat = damage dealt), not just the last hitter — e.g. a high-damage player pulls aggro off a low-damage one.
+- [ ] Tank "Provoke" @40 forces the mob onto the tank (its target switches to you) and holds ~3s even if others out-damage you.
+- [ ] Detaunt (e.g. rogue Shadowstep/BattleFury detaunt) sheds ~90% of your threat → the mob retargets to the next-highest, or leashes home if no one else.
+- [ ] Mob still leashes/resets correctly (threat clears on reset).
+
 ### Combat primitives P2: DoT (separated effect + stack counter) — NUMBERS UNTUNED
 - [ ] Venomweaver "Rupture" @40 applies a bleed: a FLAT "DoT" tick each second + 15% slow; reapplying refreshes 30s and builds a stack (counter is hidden — not on the buff bar).
 - [ ] Bleed tick damage does NOT grow with stacks (it's the damage effect); stacks only fuel the burst.

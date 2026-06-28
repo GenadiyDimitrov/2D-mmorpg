@@ -408,7 +408,7 @@ public class GameLoopService : BackgroundService
         }
 
         bool offensive = (def.Effect & (SkillEffect.PhysicalDamage
-            | SkillEffect.MagicDamage | SkillEffect.AnyDebuff | SkillEffect.Cancel)) != 0;
+            | SkillEffect.MagicDamage | SkillEffect.AnyDebuff | SkillEffect.Cancel | SkillEffect.Taunt)) != 0;
 
         Guid targetId;
         if (offensive)
@@ -1496,6 +1496,7 @@ public class GameLoopService : BackgroundService
     private void MobAi(Entity mob)
     {
         if (mob.DetauntTicks > 0) mob.DetauntTicks--;
+        if (mob.TauntLockTicks > 0) mob.TauntLockTicks--;
 
         if (mob.Engaged)
         {
@@ -1570,6 +1571,8 @@ public class GameLoopService : BackgroundService
         mob.CombatTargetId = null;
         mob.Hp = mob.MaxHp;
         mob.Buffs.Clear();
+        mob.Threat.Clear();
+        mob.TauntLockTicks = 0;
         mob.TargetX = mob.HomeX;
         mob.TargetY = mob.HomeY;
     }
@@ -1789,7 +1792,7 @@ var effect = def.Effect;
                         caster, target, damage, caster.CritChance, def.BlockAccuracy);
                 damage = finalDmg;
                 BroadcastCombat(caster, target, damage, outcome, castName);
-                ApplyDamage(target, damage);
+                ApplyDamage(target, damage, caster);
                 TryInterruptCast(target, def.InterruptPower);
             }
         }
@@ -1820,7 +1823,7 @@ var effect = def.Effect;
             if (_rng.NextDouble() < fail)
             {
                 damage = Math.Max(1, damage / 3);
-                ApplyDamage(target, damage);
+                ApplyDamage(target, damage, caster);
                 TryInterruptCast(target, magicInterrupt);
                 BroadcastCombat(caster, target, damage, CombatOutcome.Fail, castName);
             }
@@ -1835,7 +1838,7 @@ var effect = def.Effect;
                 {
                     BroadcastCombat(caster, target, damage, CombatOutcome.Hit, castName);
                 }
-                ApplyDamage(target, damage);
+                ApplyDamage(target, damage, caster);
                 TryInterruptCast(target, magicInterrupt);
             }
 
@@ -1939,9 +1942,22 @@ var effect = def.Effect;
             }
         }
 
-        // ---- De-taunt — shed the caster's aggro from nearby foes (stub) ----
+        // ---- De-taunt — shed the caster's aggro from nearby foes ----
         if (effect.HasFlag(SkillEffect.Detaunt))
             Detaunt(caster);
+
+        // ---- Taunt — force a mob's aggro onto the caster: spike threat above the current
+        //      top and lock it briefly so it commits to the tank. ----
+        if (effect.HasFlag(SkillEffect.Taunt) && target.Kind == EntityKind.Mob)
+        {
+            offensive = true;
+            float top = target.Threat.Count > 0 ? target.Threat.Values.Max() : 0f;
+            target.Threat[caster.Id] = top * 1.2f + 100f;
+            target.CombatTargetId = caster.Id;
+            target.Engaged = true;
+            target.TauntLockTicks = 30;   // ~3s committed to the taunter
+            BroadcastCombat(caster, target, 0, CombatOutcome.Buff, castName);
+        }
 
         // ---- Beneficial buffs (any of the buff flags) ----
         if ((effect & SkillEffect.AnyBuff) != 0)
@@ -2123,7 +2139,7 @@ var effect = def.Effect;
         }
         if (total <= 0) return;
         var attacker = source ?? entity;
-        ApplyDamage(entity, total);
+        ApplyDamage(entity, total, source);
         BroadcastCombat(attacker, entity, total, CombatOutcome.Hit, "DoT");
         if (entity.Hp <= 0 && !entity.Dead) Kill(entity, attacker);
     }
@@ -2193,8 +2209,8 @@ var effect = def.Effect;
         BroadcastCombat(caster, target, 0, CombatOutcome.Buff, skillName);
     }
 
-    /// <summary>De-taunt stub: nearby mobs targeting the caster drop it and won't
-    /// re-aggro the caster for a short window (no real threat system yet).</summary>
+    /// <summary>De-taunt: nearby mobs targeting the caster drop most of their threat on the
+    /// caster (so they retarget to someone else) and briefly won't re-aggro the caster.</summary>
     private void Detaunt(Entity caster)
     {
         const int window = 50;   // 5s at 10 ticks/s
@@ -2204,12 +2220,18 @@ var effect = def.Effect;
             if (e.Kind != EntityKind.Mob || e.Dead) continue;
             if (e.CombatTargetId != caster.Id) continue;
             if (DistanceSq(caster, e) > rangeSq) continue;
-            e.Engaged = false;
-            e.CombatTargetId = null;
+            e.Threat[caster.Id] = e.Threat.GetValueOrDefault(caster.Id) * 0.1f;   // shed 90% threat
             e.DetauntTicks = window;
             e.DetauntFromId = caster.Id;
-            e.TargetX = e.HomeX;
-            e.TargetY = e.HomeY;
+            e.TauntLockTicks = 0;
+            RetargetByThreat(e);   // hand aggro to the next-highest, if any
+            if (e.CombatTargetId == caster.Id)   // no one else: drop combat, leash home
+            {
+                e.Engaged = false;
+                e.CombatTargetId = null;
+                e.TargetX = e.HomeX;
+                e.TargetY = e.HomeY;
+            }
         }
     }
 
@@ -2224,17 +2246,35 @@ var effect = def.Effect;
         Retaliate(target, caster);
     }
 
-    private static void Retaliate(Entity victim, Entity attacker)
+    private void Retaliate(Entity victim, Entity attacker)
     {
-        // A damaged mob aggroes its attacker (even if hit from beyond its normal
-        // aggro range — being attacked always provokes) and starts chasing now.
+        // Being targeted by an offensive action always provokes a mob — even a non-damaging
+        // one (debuff/CC) — so add a little threat (damage adds the rest in ApplyDamage).
         if (victim.Kind == EntityKind.Mob && !victim.Dead)
+            AddThreat(victim, attacker, 1f);
+    }
+
+    /// <summary>Add aggro to a mob's threat table and (re)target the highest-threat foe,
+    /// unless a taunt is currently locking it. Only player actions build threat.</summary>
+    private void AddThreat(Entity mob, Entity attacker, float amount)
+    {
+        if (attacker.Kind != EntityKind.Player) return;
+        mob.Threat[attacker.Id] = mob.Threat.GetValueOrDefault(attacker.Id) + amount;
+        mob.Engaged = true;
+        if (mob.TauntLockTicks <= 0 || mob.CombatTargetId is null)
+            RetargetByThreat(mob);
+    }
+
+    /// <summary>Point the mob at its highest-threat living target (stale/dead entries skipped).</summary>
+    private void RetargetByThreat(Entity mob)
+    {
+        Guid? best = null; float bestV = -1f;
+        foreach (var (id, v) in mob.Threat)
         {
-            victim.CombatTargetId = attacker.Id;
-            victim.Engaged = true;
-            victim.TargetX = attacker.X;   // start moving toward the attacker
-            victim.TargetY = attacker.Y;
+            if (v <= bestV) continue;
+            if (_world.Entities.TryGetValue(id, out var e) && !e.Dead) { bestV = v; best = id; }
         }
+        if (best is Guid g) mob.CombatTargetId = g;
     }
 
     // ----- Auto-attack ---------------------------------------------------------------
@@ -2317,7 +2357,7 @@ var effect = def.Effect;
                 attacker, target, damage, attacker.CritChance, 0f);
             damage = finalDmg;
             BroadcastCombat(attacker, target, damage, outcome);
-            ApplyDamage(target, damage);
+            ApplyDamage(target, damage, attacker);
             // Melee basic-attack vampirism (Might lvl 4 etc.) — bow attacks don't leech.
             if (attacker.MeleeVamp > 0f && damage > 0 && attacker.WeaponType != WeaponType.Bow)
             {
@@ -2335,10 +2375,14 @@ var effect = def.Effect;
     }
 
     /// <summary>Apply damage unless the target is in god mode.</summary>
-    private int ApplyDamage(Entity target, int damage)
+    private int ApplyDamage(Entity target, int damage, Entity? attacker = null)
     {
         if (target.GodMode)
             return 0;
+
+        // Threat: damage to a mob from a known attacker builds aggro (retargets to top threat).
+        if (attacker is not null && target.Kind == EntityKind.Mob && damage > 0)
+            AddThreat(target, attacker, damage);
 
         // Absorb shields soak damage before HP; a depleted shield is removed.
         if (damage > 0 && target.Buffs.Any(b => b.Has(SkillEffect.Shield) && b.ShieldPool > 0))
