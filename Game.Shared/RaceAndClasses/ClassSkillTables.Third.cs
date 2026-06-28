@@ -72,6 +72,10 @@ public static partial class ClassSkillTables
             ClassSkills.RegisterThird(race, Discipline.Vanguard, new ClassSkill(ShieldBash, 40));
             foreach (var disc in new[] { Discipline.Ravager, Discipline.Warlord })
                 ClassSkills.RegisterThird(race, disc, new ClassSkill(TerrifyingRoar, 40));
+            // Venomweaver — DoT stacks (Rupture) + burst (Detonate Wounds). Bleed demo for all
+            // races for now; poison/venom per-race variants come with their secondary debuffs.
+            ClassSkills.RegisterThird(race, Discipline.Venomweaver,
+                new ClassSkill(Rupture, 40), new ClassSkill(DetonateWounds, 44));
         }
 
         // Healer disciplines (Lightbringer = healer, Warchanter = buffer) are dropped

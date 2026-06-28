@@ -22,6 +22,14 @@ public class BuffInstance
     /// skill again, or double-clicks the buff, to end it). TickBuffs skips it.</summary>
     public bool Toggle { get; init; }
 
+    // ----- Damage-over-time (DoT) stacks -----
+    /// <summary>Stack count for a DoT (1..MaxDotStacks); 1 for everything else.</summary>
+    public int Stacks { get; set; } = 1;
+    /// <summary>DoT damage per stack per second (0 = not a DoT).</summary>
+    public int DotPower { get; set; }
+    /// <summary>Entity that applied this effect (for DoT damage attribution / kill credit).</summary>
+    public Guid SourceId { get; set; }
+
     public bool Has(SkillEffect flag) => (Effect & flag) != 0;
 
     public bool IsDebuff => (Effect & SkillEffect.AnyDebuff) != 0;

@@ -29,8 +29,13 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   (all neutral until PvP exists). Demo "War Focus" (+15% AS, +25% PvP skill/basic).
   + **conditional damage** (+% vs slowed/rooted/stunned/feared; `SkillDef.ConditionalOn`/
   `ConditionalDamagePct`; demo "Glacial Spike"). Existing non-contest debuffs left on the
-  fizzle model (owner: new-only). **P1 light items DONE.** **Still to do (P2 heavy):**
-  DoT+stacks (bleed/poison/venom), absorb shields, taunt/real threat, blink/charge,
+  fizzle model (owner: new-only). **P1 light items DONE.**
+- [~] **P2 heavy systems — STARTED.** **DoT-with-stacks DONE**: stacking debuffs (max 10,
+  30s refresh) that tick `DotPower×stacks`/sec via the contest, + a burst skill that consumes
+  stacks for ×stacks damage (`SkillDef.DotConsume`); `BuffInstance.Stacks/DotPower/SourceId`,
+  `Bleed/Poison/Venom` flags. Demo: Rupture (bleed+slow) → Detonate Wounds (burst) for
+  Venomweaver. Poison/venom secondary debuffs (−AS/cast, −atk/def) deferred (need debuff
+  channels outside AnyBuff). **Still to do:** absorb shields, taunt/real threat, blink/charge,
   knockback, stealth, mana shield, lethal-save, traps.
 - [ ] **Base-class armor mastery + universal penalty → data** (only 2nd classes are data so
   far). Finishes the [[stats-via-skills-not-hardcoded]] migration. (Note: changes the

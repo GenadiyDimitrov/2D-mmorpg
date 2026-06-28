@@ -85,6 +85,9 @@ public static class GameConstants
     /// <summary>Out-of-combat regen is applied once per this many ticks (1s).</summary>
     public const int RegenIntervalTicks = 10;
 
+    /// <summary>Maximum stacks a damage-over-time effect can build (bleed/poison/venom).</summary>
+    public const int MaxDotStacks = 10;
+
     // ----- Chat ---------------------------------------------------------------------
 
     /// <summary>Client keeps at most this many lines per chat tab.</summary>

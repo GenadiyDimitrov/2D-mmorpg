@@ -20,6 +20,8 @@ public static partial class SkillCatalog
     public const string TerrifyingRoar = "terrifying_roar";   // physical Fear (contested CC)
     public const string Hamstring = "hamstring";              // physical Slow (contested CC)
     public const string WarFocus = "war_focus";               // self-buff: +skill damage
+    public const string Rupture = "rupture";                  // applies Bleed (DoT stacks)
+    public const string DetonateWounds = "detonate_wounds";   // burst: consumes Bleed stacks
 
     private static SkillDef[] FighterSkills() => new SkillDef[]
     {
@@ -75,6 +77,24 @@ public static partial class SkillCatalog
                 new(SkillEffect.BuffPvpBasicDamage, 0.25f),
             },
             Description: "A 20-min focus: +15% attack speed and +25% PvP physical-skill & basic damage."),
+
+        // Rupture — applies BLEED (physical DoT): stacks up to 10 (reapply refreshes 30s),
+        // ticks DotPower×stacks/sec, and slows the target 15% (bleed's secondary). Lands on
+        // DEX-vs-CON. The Venomweaver's stack builder; pair with Detonate Wounds.
+        new(Rupture, "Rupture", BaseClass.Fighter, SkillEffect.Bleed | SkillEffect.Slow,
+            MpCost: 12, CastTicks: 5, CooldownTicks: 30, Range: 0, Power: 5,
+            DurationTicks: 300, BuffKey: "bleed", Rank: 1, DebuffSchool: DebuffSchool.Physical,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, 0.15f) },
+            Description: "Opens a bleeding wound — a stacking physical DoT (up to 10) that also "
+                       + "slows by 15%. Lands on a DEX-vs-CON contest."),
+
+        // Detonate Wounds — BURST: consumes the target's Bleed stacks, multiplying damage by
+        // the stack count (×10 at full), and can [Double]. The Venomweaver's payoff.
+        new(DetonateWounds, "Detonate Wounds", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+            MpCost: 25, CastTicks: 5, CooldownTicks: 60, Range: 0, Power: 12,
+            Category: SkillCategory.Physical, CanDouble: true, DotConsume: SkillEffect.Bleed,
+            Description: "Detonates the target's bleed stacks for damage ×(stacks) [Double], "
+                       + "consuming the bleed."),
 
         new(WarCry, "War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,

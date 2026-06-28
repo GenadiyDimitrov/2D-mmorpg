@@ -9,6 +9,14 @@ this file.
 
 ## To test now (this session — 2026-06-27)
 
+### Combat primitives P2: DoT stacks + burst ("Rupture" / "Detonate Wounds") — NUMBERS UNTUNED
+- [ ] Venomweaver learns "Rupture" @40; casting it repeatedly stacks Bleed (up to 10), refreshing the 30s timer.
+- [ ] A bled mob takes "DoT" damage each second (scales with stacks) and is slowed ~15%.
+- [ ] "Detonate Wounds" @44 hits for ~damage × current stacks (×10 at full), then the bleed is gone.
+- [ ] Detonate can [Double]; Rupture lands on a DEX-vs-CON contest (bosses immune).
+- [ ] A DoT can finish the kill (credit + drops go to the applier).
+- [~] Poison/venom (and their −AS/cast, −atk/def secondaries) not authored yet — engine supports the DoT flags.
+
 ### Expandable target window (commit ccb5805)
 - [ ] Targeting a mob shows a `▼` expand button on the target frame; plain NPCs (vendor/gatekeeper) show no button.
 - [ ] Clicking `▼` opens the panel and shows HP/MP, P/M.Atk, P/M.Def, Acc/Eva/Crit.

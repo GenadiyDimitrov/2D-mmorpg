@@ -1405,6 +1405,7 @@ public class GameLoopService : BackgroundService
 
             if (regenTick)
             {
+                TickDots(entity);           // damage-over-time (bleed/poison/venom) ticks per second
                 TickHealOverTime(entity);   // HoT heals even in combat (unlike natural regen)
                 Regenerate(entity);
                 if (entity.Kind == EntityKind.Player)
@@ -1766,6 +1767,17 @@ var effect = def.Effect;
                 damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
                 damage = FinalizeDamage(caster, target, damage, DamageKind.SkillPhysical, def);
 
+                // DoT BURST: consume the target's stacks of the named DoT, multiplying damage
+                // by the stack count (×10 at full stacks), then remove the DoT.
+                if (def.DotConsume != SkillEffect.None &&
+                    target.Buffs.FirstOrDefault(b => (b.Effect & def.DotConsume) != 0) is BuffInstance dot)
+                {
+                    damage = Math.Max(1, damage * dot.Stacks);
+                    target.Buffs.Remove(dot);
+                    target.RecomputeDerived();
+                    if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
+                }
+
                 // "[Double]" skills roll a ×2 from the higher of DEX/ATK (cap 30%); ordinary
                 // skills keep the basic crit path (unchanged).
                 var (finalDmg, outcome) = def.CanDouble
@@ -1872,17 +1884,22 @@ var effect = def.Effect;
                 CleanseDebuffs(caster, target, castName);
         }
 
-        // ---- Crowd control (Slow, later Stun/Root/Fear) — lands via the ATK-vs-CON/WIT
-        //      contest (docs/Disciplines.md), NOT the fizzle model. Bosses are immune. ----
+        // ---- Crowd control + DoT (Slow/Stun/Fear/Root, Bleed/Poison/Venom) — lands via the
+        //      contest (docs/Disciplines.md), NOT the fizzle model. Bosses are immune. The
+        //      attacker stat is DEX for bleed/venom, ATK otherwise; defender CON (phys) / WIT (magic). ----
         if ((effect & SkillEffect.ContestCc) != 0)
         {
             offensive = true;
+            bool dexBased = (effect & (SkillEffect.Bleed | SkillEffect.Venom)) != 0;
+            int atkStat = dexBased ? (int)caster.EffectiveDex : caster.AtkStat;
             int defStat = def.DebuffSchool == DebuffSchool.Magical ? (int)target.EffectiveWit : target.Con;
-            float land = target.Immune ? 0f
-                : StatCalculator.DebuffLandChance(caster.AtkStat, defStat);
+            float land = target.Immune ? 0f : StatCalculator.DebuffLandChance(atkStat, defStat);
             if (_rng.NextDouble() < land)
             {
-                ApplyBuff(target, def, lvl);   // applies the Slow buff; refreshes a player's HUD
+                if ((effect & SkillEffect.AnyDot) != 0)
+                    ApplyDotStack(caster, target, def, lvl);   // stacking DoT (refresh on reapply)
+                else
+                    ApplyBuff(target, def, lvl);               // single CC buff
                 BroadcastCombat(caster, target, 0, CombatOutcome.Buff, castName);
             }
             else
@@ -1999,6 +2016,60 @@ var effect = def.Effect;
                 SendStats(target);
             }
         }
+    }
+
+    /// <summary>Apply (or stack) a damage-over-time effect. Reapplying the same DoT adds a
+    /// stack (capped at MaxDotStacks) and refreshes the duration; the secondary debuff rides
+    /// along as the buff's magnitudes (e.g. bleed's Slow). Ticks in TickDots.</summary>
+    private void ApplyDotStack(Entity caster, Entity target, SkillDef def, int level)
+    {
+        string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
+        var existing = target.Buffs.FirstOrDefault(b => b.Key == key);
+        if (existing is not null)
+        {
+            existing.Stacks = Math.Min(GameConstants.MaxDotStacks, existing.Stacks + 1);
+            existing.TicksRemaining = def.DurationTicks;   // refresh
+            existing.SourceId = caster.Id;
+        }
+        else
+        {
+            target.Buffs.Add(new BuffInstance
+            {
+                Effect = def.Effect,
+                Magnitudes = def.MagnitudesAt(level) ?? Array.Empty<EffectMagnitude>(),
+                TicksRemaining = def.DurationTicks,
+                Stacks = 1,
+                DotPower = def.PowerAt(level),
+                SourceId = caster.Id,
+                Name = def.Name,
+                Key = key,
+                Rank = def.Rank,
+                Replaces = def.Replaces ?? Array.Empty<string>(),
+                Description = SkillCatalog.DescriptionOf(def.Id)
+            });
+        }
+        target.RecomputeDerived();   // secondary debuff magnitudes (slow / -atk etc.) take effect
+        if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
+    }
+
+    /// <summary>Tick all damage-over-time effects on an entity once (per second): each DoT
+    /// deals DotPower×Stacks; damage is credited to the applier (kill credit + drops).</summary>
+    private void TickDots(Entity entity)
+    {
+        if (entity.Dead) return;
+        int total = 0;
+        Entity? source = null;
+        foreach (var b in entity.Buffs)
+        {
+            if ((b.Effect & SkillEffect.AnyDot) == 0) continue;
+            total += Math.Max(1, b.DotPower * b.Stacks);
+            source ??= _world.Entities.GetValueOrDefault(b.SourceId);
+        }
+        if (total <= 0) return;
+        var attacker = source ?? entity;
+        ApplyDamage(entity, total);
+        BroadcastCombat(attacker, entity, total, CombatOutcome.Hit, "DoT");
+        if (entity.Hp <= 0 && !entity.Dead) Kill(entity, attacker);
     }
 
     /// <summary>Heal one target, scaled by its anti-heal multiplier, and broadcast.</summary>

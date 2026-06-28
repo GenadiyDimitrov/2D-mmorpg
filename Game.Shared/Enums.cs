@@ -109,6 +109,12 @@ public enum SkillEffect : long
     BuffPvpSkillDamage  = 1L << 45,  // +% physical-skill damage vs PLAYERS
     BuffPvpMagicDamage  = 1L << 46,  // +% magic-skill damage vs PLAYERS
     BuffPvpBasicDamage  = 1L << 47,  // +% basic-attack damage vs PLAYERS
+    // ----- Damage-over-time with stacks (Venomweaver). Land via the contest; tick each
+    // second for DotPower×Stacks; a burst skill consumes the stacks. Each carries its own
+    // secondary debuff as ordinary magnitudes (bleed→Slow, poison→−AS/cast, venom→−atk/def). -----
+    Bleed              = 1L << 48,  // physical DoT (DEX-vs-CON); secondary: slows move speed
+    Poison             = 1L << 49,  // magical DoT (ATK-vs-WIT); secondary: slows attack/cast
+    Venom              = 1L << 50,  // physical DoT (DEX-vs-CON); secondary: lowers atk/def
     // Room to grow up to 1L << 62.
 
     // Convenience masks.
@@ -123,10 +129,12 @@ public enum SkillEffect : long
               | BuffPveSkillDamage | BuffPveMagicDamage | BuffPveBasicDamage
               | BuffPvpSkillDamage | BuffPvpMagicDamage | BuffPvpBasicDamage,
     // Harmful effects applied to an enemy (offensive; can fail; cleansable).
-    AnyDebuff = DebuffDef | DebuffHealRecv | Root | Slow | Stun | Fear,
-    // Crowd-control that lands via the ATK-vs-CON/WIT contest (not the fizzle model).
+    AnyDebuff = DebuffDef | DebuffHealRecv | Root | Slow | Stun | Fear | Bleed | Poison | Venom,
+    // Stacking damage-over-time effects (consumed by burst skills).
+    AnyDot = Bleed | Poison | Venom,
+    // Crowd-control / DoT that lands via the ATK-vs-CON/WIT contest (not the fizzle model).
     // Resolved in their own ExecuteSkill branch; excluded from the legacy debuff branch.
-    ContestCc = Slow | Stun | Fear | Root,
+    ContestCc = Slow | Stun | Fear | Root | Bleed | Poison | Venom,
 }
 
 /// <summary>Which stat a debuff contests against when landing: physical debuffs are
