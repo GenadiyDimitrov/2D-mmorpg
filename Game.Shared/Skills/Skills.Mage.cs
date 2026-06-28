@@ -152,11 +152,12 @@ public static partial class SkillCatalog
             },
             Description: "Diverts 70% of incoming damage to MP (0.5 MP per damage) for 30s, while MP lasts."),
 
-        // Phase Shift — BLINK back 400 from the target (escape). Tempest kite tool.
+        // Phase Shift — BLINK back 400 (escape). No target needed: jumps away from the nearest
+        // enemy. Tempest kite tool.
         new(PhaseShift, "Phase Shift", BaseClass.Mage, SkillEffect.Blink,
-            MpCost: 20, CastTicks: 0, CooldownTicks: 80, Range: 900, Power: 0,
-            Category: SkillCategory.Buff, BlinkRange: 400f,
-            Description: "Blink 400 away from the target to create distance."),
+            MpCost: 20, CastTicks: 0, CooldownTicks: 80, Range: 0, Power: 0,
+            Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, BlinkRange: 400f,
+            Description: "Blink 400 away from the nearest enemy to create distance (no target needed)."),
 
         new(Weakness, "Weakness", BaseClass.Mage, SkillEffect.DebuffDef,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 600, Power: 0,

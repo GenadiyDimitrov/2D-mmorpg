@@ -94,6 +94,7 @@ public class GameLoopService : BackgroundService
                 case RemoveItemCmd c: HandleRemoveItem(c); break;
                 case DebugGiveCmd c: HandleDebugGive(c); break;
                 case DebugLevelCmd c: HandleDebugLevel(c); break;
+                case DebugLearnAllCmd c: HandleDebugLearnAll(c); break;
                 case DebugGoldCmd c: HandleDebugGold(c); break;
                 case DebugSpCmd c: HandleDebugSp(c); break;
                 case DebugResetCmd c: HandleDebugReset(c); break;
@@ -408,8 +409,7 @@ public class GameLoopService : BackgroundService
         }
 
         bool offensive = (def.Effect & (SkillEffect.PhysicalDamage
-            | SkillEffect.MagicDamage | SkillEffect.AnyDebuff | SkillEffect.Cancel | SkillEffect.Taunt
-            | SkillEffect.Blink | SkillEffect.Knockback)) != 0;
+            | SkillEffect.MagicDamage | SkillEffect.AnyDebuff | SkillEffect.Cancel | SkillEffect.Taunt)) != 0;
 
         Guid targetId;
         if (offensive)
@@ -436,6 +436,15 @@ public class GameLoopService : BackgroundService
         else
         {
             targetId = caster.Id; // self-targeted
+        }
+
+        // Restore Mana can't target yourself or another mana-restorer (no self/healer refunds).
+        if ((def.Effect & SkillEffect.RestoreMp) != 0 &&
+            _world.Entities.TryGetValue(targetId, out var mpTarget) &&
+            mpTarget.HasSkill(SkillCatalog.RestoreMana))
+        {
+            SendSystemToEntity(caster, "Restore Mana can't be used on a mana-restorer.");
+            return;
         }
 
         CancelCast(caster);
@@ -804,6 +813,33 @@ public class GameLoopService : BackgroundService
                 player.Level, player.Exp, StatCalculator.ExpToNext(player.Level), true));
         SendSystemToEntity(player, $"[DEBUG] Level up -> {player.Level}.");
         SaveEntity(player);   // persist so debug levels survive a server restart
+    }
+
+    private void HandleDebugLearnAll(DebugLearnAllCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+
+        // Highest learnable level per skill whose learn-gate is met at the current level.
+        var byId = new Dictionary<string, int>();
+        foreach (var cs in ClassSkills.Cumulative(player.Race, player.BaseClass, player.Archetype, player.Discipline))
+        {
+            if (cs.LearnLevel > player.Level) continue;
+            if (!byId.TryGetValue(cs.SkillId, out var lvl) || cs.SkillLevel > lvl)
+                byId[cs.SkillId] = cs.SkillLevel;
+        }
+        foreach (var (id, lvl) in byId)
+            player.LearnedSkills[id] = lvl;
+        // Cross-skill replacements (e.g. Flame Bolt replaces Magic Bolt).
+        foreach (var id in byId.Keys.ToList())
+            if (SkillCatalog.Get(id)?.Replaces is { } rep)
+                foreach (var r in rep) player.LearnedSkills.Remove(r);
+
+        player.RecomputeDerived();
+        SendSystemToEntity(player, $"[DEBUG] Learned all class skills for level {player.Level}.");
+        SendStats(player);
+        SendLearned(player);
+        SaveEntity(player);
     }
 
     private void HandleDebugGold(DebugGoldCmd cmd)
@@ -1691,8 +1727,11 @@ public class GameLoopService : BackgroundService
 
         if (_world.EntityToConnection.TryGetValue(caster.Id, out var conn))
         {
+            // Show the caster's CLASS-specific name for the skill (e.g. "Moonlight Bolt").
+            string shown = ClassSkills.DisplayName(def.Id, caster.Race, caster.BaseClass,
+                caster.Archetype, caster.Discipline);
             _ = _hub.Clients.Client(conn).SendAsync("Cast", new CastInfo(
-                def.Name, caster.CastTicksRemaining * GameConstants.TickSeconds));
+                shown, caster.CastTicksRemaining * GameConstants.TickSeconds));
         }
     }
 
@@ -1961,8 +2000,13 @@ var effect = def.Effect;
             BroadcastCombat(caster, target, 0, CombatOutcome.Buff, castName);
         }
 
-        // ---- Movement: blink (move the caster) / knockback (shove the target). ----
-        if (effect.HasFlag(SkillEffect.Blink)) { offensive = true; DoBlink(caster, target, def.BlinkRange); }
+        // ---- Movement: blink (move the caster) / knockback (shove the target). A blink with
+        //      no target (self-cast escape) jumps away from the nearest hostile instead. ----
+        if (effect.HasFlag(SkillEffect.Blink))
+        {
+            if (target != caster) { offensive = true; DoBlink(caster, target, def.BlinkRange); }
+            else BlinkAwayFromNearest(caster, Math.Max(1f, def.BlinkRange));
+        }
         if (effect.HasFlag(SkillEffect.Knockback)) { offensive = true; DoKnockback(caster, target, def.KnockbackRange); }
 
         // ---- Beneficial buffs (any of the buff flags) ----
@@ -2265,6 +2309,21 @@ var effect = def.Effect;
         else              // blink to just behind the target
             PlaceEntity(caster, target.X + nx * (GameConstants.MeleeRange * 0.5f),
                                 target.Y + ny * (GameConstants.MeleeRange * 0.5f));
+    }
+
+    /// <summary>Self-cast escape blink: jump <paramref name="range"/> away from the nearest
+    /// hostile (the mob most likely chasing). No-op if nothing is near.</summary>
+    private void BlinkAwayFromNearest(Entity caster, float range)
+    {
+        Entity? nearest = null; float bestSq = float.MaxValue;
+        foreach (var e in _world.Grid.Nearby(caster))
+        {
+            if (e.Kind != EntityKind.Mob || e.Dead) continue;
+            float d = DistanceSq(caster, e);
+            if (d < bestSq) { bestSq = d; nearest = e; }
+        }
+        if (nearest is null) return;
+        DoBlink(caster, nearest, range);   // range > 0 → blink away from it
     }
 
     /// <summary>Shove the target away from the caster by range.</summary>

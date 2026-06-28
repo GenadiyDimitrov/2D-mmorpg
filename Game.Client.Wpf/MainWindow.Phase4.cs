@@ -1899,6 +1899,8 @@ public partial class MainWindow
     {
         AddDebugHeader("Character");
         DebugList.Children.Add(DebugAction("Level +1", async () => await _net.DebugLevelAsync()));
+        DebugList.Children.Add(DebugAction("Level +10", async () => { for (int i = 0; i < 10; i++) await _net.DebugLevelAsync(); }));
+        DebugList.Children.Add(DebugAction("Learn all skills (to my level)", async () => await _net.DebugLearnAllAsync()));
         DebugList.Children.Add(DebugAction("+1kk SP", async () => await _net.DebugSpAsync(1_000_000)));
         DebugList.Children.Add(DebugAction("+100,000 Gold", async () => await _net.DebugGoldAsync(100_000)));
 

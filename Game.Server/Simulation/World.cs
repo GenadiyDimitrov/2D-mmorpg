@@ -134,6 +134,9 @@ public record DebugGiveCmd(string ConnectionId, string DefId) : IGameCommand;
 /// <summary>DEBUG-only: grant one level.</summary>
 public record DebugLevelCmd(string ConnectionId) : IGameCommand;
 
+/// <summary>DEBUG-only: learn every skill the class can learn at the current level (free).</summary>
+public record DebugLearnAllCmd(string ConnectionId) : IGameCommand;
+
 /// <summary>DEBUG-only: grant gold.</summary>
 public record DebugGoldCmd(string ConnectionId, long Amount) : IGameCommand;
 

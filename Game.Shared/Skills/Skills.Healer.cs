@@ -134,10 +134,14 @@ public static partial class SkillCatalog
 
         // Restore Mana — replenishes an ally's MP (flat power). Later "ultimate" restores
         // will add a % of max MP via a Percent magnitude on the RestoreMp effect.
+        // Costs MORE MP than it restores (~1.2×), so it's a net MP TRANSFER to a non-caster.
+        // Cannot target yourself or another mana-restorer (see HandleSkill), so a healer can't
+        // refund their own/another healer's mana — it's for empowering non-MP-restoring allies.
         new(RestoreMana, "Restore Mana", BaseClass.Mage, SkillEffect.RestoreMp,
-            MpCost: 30, CastTicks: 20, CooldownTicks: 20, Range: 600, Power: 60,
-            Category: SkillCategory.Heal, InitialMpCost: 8, SpCost: 25000,
-            Description: "Restores 60 MP to an ally (or yourself)."),
+            MpCost: 72, CastTicks: 20, CooldownTicks: 20, Range: 600, Power: 60,
+            Category: SkillCategory.Heal, InitialMpCost: 18, SpCost: 25000,
+            Description: "Transfers 60 MP to an ally (costs 72 — a net loss). Can't be used on "
+                       + "yourself or another mana-restorer."),
 
         // Body — party-castable HP-regen buff (20 min). Learned at 35 (single level).
         new(HolyBody, "Body", BaseClass.Mage, SkillEffect.BuffHpRegen,
