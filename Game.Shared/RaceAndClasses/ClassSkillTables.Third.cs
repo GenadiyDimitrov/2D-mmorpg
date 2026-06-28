@@ -76,8 +76,9 @@ public static partial class ClassSkillTables
             // Aegis — self absorb-shield — both tank disciplines.
             ClassSkills.RegisterThird(race, Discipline.Bulwark, new ClassSkill(Aegis, 40));
             ClassSkills.RegisterThird(race, Discipline.Vanguard, new ClassSkill(Aegis, 40));
-            // Last Stand (lethal save) — Bulwark; Mana Barrier (mana shield) — Magus.
+            // Last Stand (lethal save) + Indomitable (cancel resist) — Bulwark; Mana Barrier — Magus.
             ClassSkills.RegisterThird(race, Discipline.Bulwark, new ClassSkill(LastStand, 44));
+            ClassSkills.RegisterThird(race, Discipline.Bulwark, new ClassSkill(Indomitable, 48));
             ClassSkills.RegisterThird(race, Discipline.Magus, new ClassSkill(ManaBarrier, 44));
             foreach (var disc in new[] { Discipline.Ravager, Discipline.Warlord })
                 ClassSkills.RegisterThird(race, disc, new ClassSkill(TerrifyingRoar, 40));

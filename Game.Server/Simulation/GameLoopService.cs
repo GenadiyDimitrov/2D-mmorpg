@@ -2175,9 +2175,18 @@ var effect = def.Effect;
             cands = cands.Take(def.DispelCount).ToList();
         }
 
-        if (cands.Count > 0)
+        // CANCEL: each targeted buff rolls a SAVE against the victim's cancel resist — a saved
+        // buff survives (so a high-resist tank keeps most of its buffs). Cure has no save.
+        bool removedAny = false;
+        foreach (var b in cands)
         {
-            foreach (var b in cands) target.Buffs.Remove(b);
+            if (positive && target.CancelResist > 0f && _rng.NextDouble() < target.CancelResist)
+                continue;   // resisted the cancel
+            target.Buffs.Remove(b);
+            removedAny = true;
+        }
+        if (removedAny)
+        {
             target.RecomputeDerived();
             if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
         }

@@ -119,6 +119,7 @@ public enum SkillEffect : long
     Shield             = 1L << 52,  // damage-absorb pool (flat Power + % of max HP) soaked before HP
     ManaShield         = 1L << 53,  // divert a % of damage to MP (Flat = MP per 1 damage)
     LethalSave         = 1L << 54,  // survive one fatal blow, reviving to a % of max HP (consumed)
+    BuffCancelResist   = 1L << 55,  // chance each of your buffs RESISTS an enemy cancel/dispel
     // Room to grow up to 1L << 62.
 
     // Convenience masks.
@@ -132,7 +133,7 @@ public enum SkillEffect : long
               | BuffInterruptResist | BuffMeleeVamp | BuffSpellVamp | BuffCooldown
               | BuffPveSkillDamage | BuffPveMagicDamage | BuffPveBasicDamage
               | BuffPvpSkillDamage | BuffPvpMagicDamage | BuffPvpBasicDamage
-              | Shield | ManaShield | LethalSave,
+              | Shield | ManaShield | LethalSave | BuffCancelResist,
     // Harmful effects applied to an enemy (offensive; can fail; cleansable).
     AnyDebuff = DebuffDef | DebuffHealRecv | Root | Slow | Stun | Fear | Bleed | Poison | Venom,
     // Stacking damage-over-time effects (consumed by burst skills).

@@ -29,11 +29,12 @@ this file.
 - [ ] Works vs all damage types (basic, skills, DoT ticks) — they all route through ApplyDamage.
 - [~] Known cosmetic: floating combat text shows pre-absorb damage (HP loss is correct). To refine later.
 
-### Cure / cancel (dispel) — NUMBERS UNTUNED
+### Cure / cancel (dispel) + cancel resist — NUMBERS UNTUNED
 - [ ] Healer "Antidote" @25 removes poison/venom from an ally (or self); does NOT remove other debuffs (slow/bleed/stun).
 - [ ] Nuker "Dispel Magic" @35 on an enemy strips up to 2 random beneficial buffs (test vs a buffed player, or self-cast a buff then have someone dispel).
 - [ ] Internal DoT stack counters are NOT removed by cure/cancel; a non-Cancellable effect is immune.
 - [ ] Existing Lightbringer full Cleanse still removes all debuffs (empty DispelMask = all).
+- [ ] Tank "Indomitable" @48 (+80% cancel resist 30s): while up, most of the tank's buffs survive a Dispel Magic (each rolls an 80% save). Cure on debuffs is unaffected by resist.
 
 ### Stack / effect visibility
 - [ ] A stacking buff on YOU shows "Name xN" on the buff bar (count updates as it stacks).

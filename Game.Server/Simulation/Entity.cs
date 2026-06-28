@@ -245,6 +245,7 @@ public class Entity
     public float PvpSkillDamageBonus { get; set; }   // +% physical-skill damage vs players
     public float PvpMagicDamageBonus { get; set; }   // +% magic-skill damage vs players
     public float PvpBasicDamageBonus { get; set; }   // +% basic-attack damage vs players
+    public float CancelResist { get; set; }          // chance each buff resists an enemy cancel
     public string ActiveArmorSet { get; set; } = ""; // name of the completed armor set bonus, "" if none
     public string ArmorMasteryLabel { get; set; } = ""; // armor-weight mastery status for the UI
 
@@ -580,6 +581,7 @@ public class Entity
         PvpSkillDamageBonus = 0f;
         PvpMagicDamageBonus = 0f;
         PvpBasicDamageBonus = 0f;
+        CancelResist = 0f;
         Accuracy = StatCalculator.Accuracy(EffectiveDex);
         Evasion = StatCalculator.Evasion(EffectiveDex);
         CritChance = StatCalculator.PhysicalCritChance(EffectiveDex);
@@ -935,6 +937,7 @@ public class Entity
                 PvpSkillDamageBonus += pe.PvpSkillDamagePct;
                 PvpMagicDamageBonus += pe.PvpMagicDamagePct;
                 PvpBasicDamageBonus += pe.PvpBasicDamagePct;
+                CancelResist += pe.CancelResistPct;
                 // Resolution floors are GUARANTEES — take the strongest (max), never sum.
                 EvadeFloor = Math.Max(EvadeFloor, pe.EvadeFloor);
                 HitFloor = Math.Max(HitFloor, pe.HitFloor);
@@ -991,6 +994,7 @@ public class Entity
             if (buff.Has(SkillEffect.BuffPvpSkillDamage)) PvpSkillDamageBonus += buff.Flat(SkillEffect.BuffPvpSkillDamage) + buff.Percent(SkillEffect.BuffPvpSkillDamage);
             if (buff.Has(SkillEffect.BuffPvpMagicDamage)) PvpMagicDamageBonus += buff.Flat(SkillEffect.BuffPvpMagicDamage) + buff.Percent(SkillEffect.BuffPvpMagicDamage);
             if (buff.Has(SkillEffect.BuffPvpBasicDamage)) PvpBasicDamageBonus += buff.Flat(SkillEffect.BuffPvpBasicDamage) + buff.Percent(SkillEffect.BuffPvpBasicDamage);
+            if (buff.Has(SkillEffect.BuffCancelResist)) CancelResist += buff.Flat(SkillEffect.BuffCancelResist) + buff.Percent(SkillEffect.BuffCancelResist);
             if (buff.Has(SkillEffect.BuffInterruptPower)) MagicInterruptBonus += (int)buff.Flat(SkillEffect.BuffInterruptPower);
             if (buff.Has(SkillEffect.BuffInterruptResist)) InterruptResist += (int)buff.Flat(SkillEffect.BuffInterruptResist);
             if (buff.Has(SkillEffect.BuffMagicFailFloor))

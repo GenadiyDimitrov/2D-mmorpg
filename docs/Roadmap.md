@@ -44,7 +44,9 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   **Cure/cancel DONE**: one `Dispel` helper + `SkillEffect.Cancel`; `SkillDef.DispelMask`
   (effect filter, e.g. cure-poison = Poison|Venom), `DispelCount` (random N), `DispelMaxLevel`
   (Rank ≤), `Cancellable` flag (internal counters immune). Demo: healer "Antidote" (cure
-  poison/venom), nuker "Dispel Magic" (strip 2 random buffs). **Absorb shields DONE**:
+  poison/venom), nuker "Dispel Magic" (strip 2 random buffs). **Cancel resist**: each cancelled
+  buff rolls a save vs the victim's `CancelResist` (`SkillEffect.BuffCancelResist` /
+  `PassiveEffect.CancelResistPct`); tank ult "Indomitable" = +80%. **Absorb shields DONE**:
   `SkillEffect.Shield` + `BuffInstance.ShieldPool` (flat Power + % max HP); `ApplyDamage` soaks
   the pool before HP for all damage types, removes the buff when empty. Demo: tank "Aegis"
   (8% max HP, 15s). **Mana shield + lethal save DONE**: `SkillEffect.ManaShield` (divert % of

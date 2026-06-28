@@ -24,6 +24,7 @@ public static partial class SkillCatalog
     public const string DetonateWounds = "detonate_wounds";   // burst: consumes Bleed stacks
     public const string Aegis = "aegis";                      // self absorb-shield (% max HP)
     public const string LastStand = "last_stand";             // survive one fatal blow (lethal save)
+    public const string Indomitable = "indomitable";          // tank ult: +cancel resist
 
     private static SkillDef[] FighterSkills() => new SkillDef[]
     {
@@ -115,6 +116,15 @@ public static partial class SkillCatalog
             Category: SkillCategory.Buff,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.LethalSave, 0.50f) },
             Description: "For 10s, the next blow that would kill you instead leaves you at 50% HP."),
+
+        // Indomitable — tank ULTIMATE: +80% cancel resist for 30s, so the tank's buffs shrug
+        // off enemy dispels. (Cancel resist is rolled per-buff in Dispel.)
+        new(Indomitable, "Indomitable", BaseClass.Fighter, SkillEffect.BuffCancelResist,
+            MpCost: 40, CastTicks: 0, CooldownTicks: 1200, Range: 0, Power: 0,
+            DurationTicks: 300, BuffKey: "indomitable", Rank: 1, TargetMode: TargetMode.SelfOnly,
+            Category: SkillCategory.Buff,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffCancelResist, 0.80f) },
+            Description: "For 30s your buffs have an 80% chance to resist being cancelled/dispelled."),
 
         new(WarCry, "War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,
