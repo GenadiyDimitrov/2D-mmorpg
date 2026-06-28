@@ -43,6 +43,11 @@ this file.
 - [ ] Warrior learns "War Focus" @40 (20-min self-buff): +15% attack speed shows in the stats window; the +25% PvP skill/basic damage is latent (no PvP yet). Confirms the damage matrix wiring (PvE damage unchanged by it).
 - [ ] Root lands via the contest (not fizzle); existing non-contest debuffs (Weakness/anti-heal) still behave as before.
 
+### Combat primitives P1: conditional damage ("Glacial Spike") — NUMBERS UNTUNED
+- [ ] Nuker learns "Glacial Spike" @44; on a normal target it does power-90 damage.
+- [ ] After Frost Bind (slow) or Entangling Roots (root) on the same target, Glacial Spike hits ~50% harder.
+- [ ] The bonus only applies while the target is slowed/rooted (wears off when the CC ends).
+
 ### Combat primitives P1: Stun + Fear ("Shield Bash" / "Terrifying Roar") — NUMBERS UNTUNED
 - [ ] Vanguard learns "Shield Bash" @40 (stun 3s); warriors learn "Terrifying Roar" @40 (fear 5s).
 - [ ] Stun: target can't move, cast or attack for the duration (a mob freezes; a casting target's cast breaks).

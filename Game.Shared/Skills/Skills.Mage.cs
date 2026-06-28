@@ -20,6 +20,7 @@ public static partial class SkillCatalog
     public const string ElementalBurst = "elemental_burst";   // nuker 3rd-class ultimate (consumes Elemental Stones)
     public const string FrostBind = "frost_bind";             // nuker CC — magical Slow (first contested-CC skill)
     public const string EntanglingRoots = "entangling_roots"; // nuker CC — magical Root (contested)
+    public const string GlacialSpike = "glacial_spike";       // nuke with +dmg vs slowed/rooted
 
     private static SkillDef[] MageSkills() => new SkillDef[]
     {
@@ -189,6 +190,15 @@ public static partial class SkillCatalog
             Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Magical,
             Description: "Snares the target in place for 8s (cannot move, can still act). "
                        + "ATK-vs-WIT contest; bosses immune."),
+
+        // Glacial Spike — nuke that deals +50% damage to a SLOWED or ROOTED target (combos
+        // with Frost Bind / Entangling Roots). Demonstrates conditional damage.
+        new(GlacialSpike, "Glacial Spike", BaseClass.Mage, SkillEffect.MagicDamage,
+            MpCost: 30, CastTicks: 40, CooldownTicks: 15, Range: 900, Power: 90,
+            Category: SkillCategory.Magic, InitialMpCost: 6,
+            ConditionalOn: TargetCondition.Slowed | TargetCondition.Rooted, ConditionalDamagePct: 0.50f,
+            Description: "A shard of ice (power 90) that strikes for +50% damage if the target "
+                       + "is slowed or rooted."),
 
         // Holy Bolt — the Healer's offensive spell (replaces Magic Bolt). ONE skill;
         // per-race NAME only (Holy/Moonlight/Spirit Bolt) via ClassSkill.DisplayName.

@@ -27,9 +27,11 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   physical **Slow** (demo "Hamstring") + a **damage-OUT pipeline** (`FinalizeDamage`):
   a 2×3 matrix of PvE/PvP × skill/magic/basic damage bonuses + per-skill `Pvp/PveDamageMult`
   (all neutral until PvP exists). Demo "War Focus" (+15% AS, +25% PvP skill/basic).
-  Existing non-contest debuffs left on the fizzle model (owner: new-only). **Still to do (P2 heavy):**
+  + **conditional damage** (+% vs slowed/rooted/stunned/feared; `SkillDef.ConditionalOn`/
+  `ConditionalDamagePct`; demo "Glacial Spike"). Existing non-contest debuffs left on the
+  fizzle model (owner: new-only). **P1 light items DONE.** **Still to do (P2 heavy):**
   DoT+stacks (bleed/poison/venom), absorb shields, taunt/real threat, blink/charge,
-  knockback, stealth, mana shield, lethal-save, traps, conditional damage (+% vs slowed/rooted).
+  knockback, stealth, mana shield, lethal-save, traps.
 - [ ] **Base-class armor mastery + universal penalty → data** (only 2nd classes are data so
   far). Finishes the [[stats-via-skills-not-hardcoded]] migration. (Note: changes the
   unlearned-penalty semantics slightly — confirm intent.)

@@ -286,6 +286,16 @@ public class Entity
     /// <summary>Cannot take an action (cast/attack/skill) this tick due to a stun or fear.</summary>
     public bool IsActionLocked => IsStunned || IsFeared;
 
+    /// <summary>Slowed: any Slow debuff is active (for conditional-damage skills).</summary>
+    public bool IsSlowed
+    {
+        get
+        {
+            foreach (var b in Buffs) if (b.Has(SkillEffect.Slow)) return true;
+            return false;
+        }
+    }
+
     /// <summary>Multiplier on healing RECEIVED (anti-heal debuffs lower it). 1 = normal.</summary>
     public float HealReceivedMultiplier
     {

@@ -134,6 +134,14 @@ public enum SkillEffect : long
 /// None = not a contested debuff (uses the older fizzle/sure-hit path).</summary>
 public enum DebuffSchool { None = 0, Physical = 1, Magical = 2 }
 
+/// <summary>A control state on a target, for conditional-damage skills ("+X% vs slowed/
+/// rooted"). Flags so a skill can reward any of several states.</summary>
+[Flags]
+public enum TargetCondition
+{
+    None = 0, Slowed = 1, Rooted = 2, Stunned = 4, Feared = 8
+}
+
 /// <summary>Whether a magnitude is a flat add or a percentage of the base stat.
 /// Combined per stat as: final = (base + Sum(flat)) * (1 + Sum(percent)).</summary>
 public enum ModifierMode { Percent = 0, Flat = 1 }

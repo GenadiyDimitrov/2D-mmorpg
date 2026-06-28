@@ -51,11 +51,13 @@ public static partial class ClassSkillTables
                             lvl <= 9 ? 36 + lvl * 4 : 75, SkillLevel: lvl))
                         .ToArray());
 
-        // Frost Bind (Slow) + Entangling Roots (Root) — nuker contested CC, @40 both disciplines.
+        // Frost Bind (Slow) + Entangling Roots (Root) + Glacial Spike (+dmg vs slowed/rooted)
+        // — nuker contested CC + conditional-damage payoff, @40/44 both disciplines.
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
             foreach (var disc in new[] { Discipline.Magus, Discipline.Tempest })
                 ClassSkills.RegisterThird(race, disc,
-                    new ClassSkill(FrostBind, 40), new ClassSkill(EntanglingRoots, 40));
+                    new ClassSkill(FrostBind, 40), new ClassSkill(EntanglingRoots, 40),
+                    new ClassSkill(GlacialSpike, 44));
 
         // Warrior 3rd-class kit demos: [Double] burst, physical Slow, +skill-damage buff.
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })

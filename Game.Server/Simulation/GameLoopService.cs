@@ -2906,11 +2906,21 @@ var effect = def.Effect;
             _                                 => attacker.PvpBasicDamageBonus,
         };
         float skillMult = skill is null ? 1f : (pvp ? skill.PvpDamageMult : skill.PveDamageMult);
-        float result = dmg * (1f + bonus) * skillMult;
+        // Conditional damage: +% when the target is in one of the skill's rewarded states.
+        float condBonus = (skill is not null && skill.ConditionalOn != TargetCondition.None
+            && TargetMatches(target, skill.ConditionalOn)) ? skill.ConditionalDamagePct : 0f;
+        float result = dmg * (1f + bonus) * (1f + condBonus) * skillMult;
         // A skill explicitly multiplied to 0 in this context deals 0 (e.g. a mob-only nuke
         // vs a player); otherwise a real hit is at least 1.
         return skillMult <= 0f ? 0 : Math.Max(1, (int)result);
     }
+
+    /// <summary>Does the target satisfy any of the rewarded control states?</summary>
+    private static bool TargetMatches(Entity t, TargetCondition c) =>
+        (c.HasFlag(TargetCondition.Slowed)  && t.IsSlowed)  ||
+        (c.HasFlag(TargetCondition.Rooted)  && t.IsRooted)  ||
+        (c.HasFlag(TargetCondition.Stunned) && t.IsStunned) ||
+        (c.HasFlag(TargetCondition.Feared)  && t.IsFeared);
 
     private void TryInterruptCast(Entity target, int attackerInterruptPower)
     {

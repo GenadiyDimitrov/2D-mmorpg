@@ -64,6 +64,10 @@ public record SkillDef(
     // Applied in the central damage pipeline once PvP exists; neutral today.
     float PveDamageMult = 1f,
     float PvpDamageMult = 1f,
+    // Conditional damage: +ConditionalDamagePct when the TARGET is in any ConditionalOn
+    // state (e.g. +50% vs slowed/rooted). None/0 = no conditional bonus.
+    TargetCondition ConditionalOn = TargetCondition.None,
+    float ConditionalDamagePct = 0f,
     // A TOGGLE skill (stance/aura): clicking it applies its self-buff indefinitely;
     // clicking again removes it. Instant, no cast bar; MP charged on activation only.
     bool Toggle = false,
