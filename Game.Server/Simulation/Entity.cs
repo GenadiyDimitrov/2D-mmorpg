@@ -216,7 +216,12 @@ public class Entity
     public float MagicFailResist { get; set; }   // reduces YOUR spells' own fail chance
     public float MeleeVamp { get; set; }         // basic (melee) attack lifesteal fraction
     public float SpellVamp { get; set; }         // damage-spell lifesteal fraction
-    public float SkillDamageBonus { get; set; }  // +% damage dealt BY SKILLS (not basic attacks)
+    // ----- Damage-OUT bonuses (fractions; the damage pipeline reads these) -----
+    public float PhysSkillDamageBonus { get; set; }   // +% physical skill damage
+    public float MagicSkillDamageBonus { get; set; }  // +% magic skill damage
+    public float BasicDamageBonus { get; set; }       // +% basic-attack damage
+    public float PvpDamageBonus { get; set; }         // +% ALL damage vs players (PvP)
+    public float PveDamageBonus { get; set; }         // +% ALL damage vs mobs (PvE)
     public string ActiveArmorSet { get; set; } = ""; // name of the completed armor set bonus, "" if none
     public string ArmorMasteryLabel { get; set; } = ""; // armor-weight mastery status for the UI
 
@@ -536,7 +541,11 @@ public class Entity
         MagicFailResist = 0f;
         MeleeVamp = 0f;
         SpellVamp = 0f;
-        SkillDamageBonus = 0f;
+        PhysSkillDamageBonus = 0f;
+        MagicSkillDamageBonus = 0f;
+        BasicDamageBonus = 0f;
+        PvpDamageBonus = 0f;
+        PveDamageBonus = 0f;
         Accuracy = StatCalculator.Accuracy(EffectiveDex);
         Evasion = StatCalculator.Evasion(EffectiveDex);
         CritChance = StatCalculator.PhysicalCritChance(EffectiveDex);
@@ -886,7 +895,11 @@ public class Entity
                 InterruptResist += pe.InterruptResist;
                 MeleeVamp += pe.MeleeVamp;
                 SpellVamp += pe.SpellVamp;
-                SkillDamageBonus += pe.SkillDamagePct;
+                PhysSkillDamageBonus += pe.PhysSkillDamagePct;
+                MagicSkillDamageBonus += pe.MagicSkillDamagePct;
+                BasicDamageBonus += pe.BasicDamagePct;
+                PvpDamageBonus += pe.PvpDamagePct;
+                PveDamageBonus += pe.PveDamagePct;
                 // Resolution floors are GUARANTEES — take the strongest (max), never sum.
                 EvadeFloor = Math.Max(EvadeFloor, pe.EvadeFloor);
                 HitFloor = Math.Max(HitFloor, pe.HitFloor);
@@ -937,7 +950,11 @@ public class Entity
             if (buff.Has(SkillEffect.BuffMeleeVamp)) MeleeVamp += buff.Flat(SkillEffect.BuffMeleeVamp) + buff.Percent(SkillEffect.BuffMeleeVamp);
             if (buff.Has(SkillEffect.BuffSpellVamp)) SpellVamp += buff.Flat(SkillEffect.BuffSpellVamp) + buff.Percent(SkillEffect.BuffSpellVamp);
             if (buff.Has(SkillEffect.BuffCooldown)) CooldownReduction += buff.Flat(SkillEffect.BuffCooldown) + buff.Percent(SkillEffect.BuffCooldown);
-            if (buff.Has(SkillEffect.BuffSkillDamage)) SkillDamageBonus += buff.Flat(SkillEffect.BuffSkillDamage) + buff.Percent(SkillEffect.BuffSkillDamage);
+            if (buff.Has(SkillEffect.BuffPhysSkillDamage)) PhysSkillDamageBonus += buff.Flat(SkillEffect.BuffPhysSkillDamage) + buff.Percent(SkillEffect.BuffPhysSkillDamage);
+            if (buff.Has(SkillEffect.BuffMagicSkillDamage)) MagicSkillDamageBonus += buff.Flat(SkillEffect.BuffMagicSkillDamage) + buff.Percent(SkillEffect.BuffMagicSkillDamage);
+            if (buff.Has(SkillEffect.BuffBasicDamage)) BasicDamageBonus += buff.Flat(SkillEffect.BuffBasicDamage) + buff.Percent(SkillEffect.BuffBasicDamage);
+            if (buff.Has(SkillEffect.BuffPvpDamage)) PvpDamageBonus += buff.Flat(SkillEffect.BuffPvpDamage) + buff.Percent(SkillEffect.BuffPvpDamage);
+            if (buff.Has(SkillEffect.BuffPveDamage)) PveDamageBonus += buff.Flat(SkillEffect.BuffPveDamage) + buff.Percent(SkillEffect.BuffPveDamage);
             if (buff.Has(SkillEffect.BuffInterruptPower)) MagicInterruptBonus += (int)buff.Flat(SkillEffect.BuffInterruptPower);
             if (buff.Has(SkillEffect.BuffInterruptResist)) InterruptResist += (int)buff.Flat(SkillEffect.BuffInterruptResist);
             if (buff.Has(SkillEffect.BuffMagicFailFloor))

@@ -59,6 +59,11 @@ public record SkillDef(
     // "[Double]" physical skills: can deal ×2 damage on a chance from the higher of
     // DEX/ATK (cap 30%). Ordinary physical skills never double. Magic skills use magic crit.
     bool CanDouble = false,
+    // Per-skill context damage MULTIPLIERS (1.0 = unchanged). Let one skill hit differently
+    // in PvE vs PvP — e.g. PvP 1.25 (a PvP-tuned warrior strike) or PvP 0 (a mob-only nuke).
+    // Applied in the central damage pipeline once PvP exists; neutral today.
+    float PveDamageMult = 1f,
+    float PvpDamageMult = 1f,
     // A TOGGLE skill (stance/aura): clicking it applies its self-buff indefinitely;
     // clicking again removes it. Instant, no cast bar; MP charged on activation only.
     bool Toggle = false,
@@ -213,7 +218,10 @@ public readonly record struct PassiveEffect(
     float MagicFailResist = 0f,
     int InterruptPower = 0, int InterruptResist = 0,
     float MeleeVamp = 0f, float SpellVamp = 0f,
-    float SkillDamagePct = 0f,   // +% damage dealt by SKILLS (not basic attacks)
+    // Damage-OUT bonuses (fractions). Split by source channel (phys-skill / magic-skill /
+    // basic) and by context (vs players / vs mobs) so effects can target exactly one.
+    float PhysSkillDamagePct = 0f, float MagicSkillDamagePct = 0f, float BasicDamagePct = 0f,
+    float PvpDamagePct = 0f, float PveDamagePct = 0f,
     // Combat-resolution "sure" floors (see docs/CombatResolution.md). These are
     // GUARANTEES (the resolver takes the MAX across passives, not a sum):
     float EvadeFloor = 0f,        // min chance to dodge physical (rogue/archer)

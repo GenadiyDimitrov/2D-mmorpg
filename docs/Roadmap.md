@@ -24,9 +24,10 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   **`[Double]` crit** (`SkillDef.CanDouble`, ×2 from higher of DEX/ATK cap 30%; demo skill
   "Cleaving Strike" for warriors; existing skills unchanged) + **Stun & Fear** (contested,
   action-locking; demo skills "Shield Bash"/"Terrifying Roar") + **Root-via-contest** +
-  physical **Slow** (demo "Hamstring") + **skill-damage % stat** (`SkillDamageBonus`,
-  passive `SkillDamagePct` / buff `BuffSkillDamage`; demo "War Focus"). Existing
-  non-contest debuffs left on the fizzle model (owner: new-only). **Still to do (P2 heavy):**
+  physical **Slow** (demo "Hamstring") + a **damage-OUT pipeline** (`FinalizeDamage`):
+  split phys-skill / magic-skill / basic channels + PvP/PvE context bonuses + per-skill
+  `Pvp/PveDamageMult` (all neutral until PvP exists). Demo "War Focus" (+20% PHYS skill dmg).
+  Existing non-contest debuffs left on the fizzle model (owner: new-only). **Still to do (P2 heavy):**
   DoT+stacks (bleed/poison/venom), absorb shields, taunt/real threat, blink/charge,
   knockback, stealth, mana shield, lethal-save, traps, conditional damage (+% vs slowed/rooted).
 - [ ] **Base-class armor mastery + universal penalty → data** (only 2nd classes are data so

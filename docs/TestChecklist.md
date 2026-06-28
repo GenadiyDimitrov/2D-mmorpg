@@ -40,7 +40,7 @@ this file.
 ### Combat primitives P1: Root + physical Slow + skill-damage% — NUMBERS UNTUNED
 - [ ] Nuker learns "Entangling Roots" @40 (magical root, ATK-vs-WIT): target can't move for 8s but can still act.
 - [ ] Warrior learns "Hamstring" @40 (PHYSICAL slow, ATK-vs-CON, −60% MS) — confirms slow exists in both schools (vs the magical Frost Bind).
-- [ ] Warrior learns "War Focus" @40 (self-buff +20% skill damage 30s): damage SKILLS hit ~20% harder while active; basic attacks unaffected.
+- [ ] Warrior learns "War Focus" @40 (self-buff +20% PHYSICAL skill damage 30s): physical SKILLS hit ~20% harder; basic attacks AND magic skills unaffected (channels are split).
 - [ ] Root lands via the contest (not fizzle); existing non-contest debuffs (Weakness/anti-heal) still behave as before.
 
 ### Combat primitives P1: Stun + Fear ("Shield Bash" / "Terrifying Roar") — NUMBERS UNTUNED

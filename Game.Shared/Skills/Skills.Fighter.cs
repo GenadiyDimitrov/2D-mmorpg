@@ -60,14 +60,14 @@ public static partial class SkillCatalog
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, 0.60f) },
             Description: "A crippling cut — −60% move speed for 8s. Lands on an ATK-vs-CON contest."),
 
-        // War Focus — self-buff granting +20% SKILL damage for 30s. Demonstrates the
-        // skill-damage% stat (the dmg increase applies to damage skills, not basic attacks).
-        new(WarFocus, "War Focus", BaseClass.Fighter, SkillEffect.BuffSkillDamage,
+        // War Focus — self-buff granting +20% PHYSICAL skill damage for 30s. Demonstrates the
+        // split skill-damage stat (physical channel only, so it never boosts spells/heals).
+        new(WarFocus, "War Focus", BaseClass.Fighter, SkillEffect.BuffPhysSkillDamage,
             MpCost: 20, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,
             DurationTicks: 300, BuffKey: "war_focus", Rank: 1,
             Category: SkillCategory.Buff,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffSkillDamage, 0.20f) },
-            Description: "Sharpens your technique: +20% skill damage for 30s."),
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffPhysSkillDamage, 0.20f) },
+            Description: "Sharpens your technique: +20% physical skill damage for 30s."),
 
         new(WarCry, "War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,

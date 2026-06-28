@@ -1764,7 +1764,7 @@ var effect = def.Effect;
                     (int)caster.EffectiveAttack, def.PowerAt(lvl),
                     (int)target.EffectiveDefence, caster.Level);
                 damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
-                if (caster.SkillDamageBonus != 0f) damage = Math.Max(1, (int)(damage * (1f + caster.SkillDamageBonus)));
+                damage = FinalizeDamage(caster, target, damage, DamageKind.SkillPhysical, def);
 
                 // "[Double]" skills roll a ×2 from the higher of DEX/ATK (cap 30%); ordinary
                 // skills keep the basic crit path (unchanged).
@@ -1789,7 +1789,7 @@ var effect = def.Effect;
                 (int)caster.EffectiveMagicAttack, def.PowerAt(lvl),
                 (int)target.EffectiveMagicDefence, caster.Level);   // magic channel: divides by mDef
             damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
-            if (caster.SkillDamageBonus != 0f) damage = Math.Max(1, (int)(damage * (1f + caster.SkillDamageBonus)));
+            damage = FinalizeDamage(caster, target, damage, DamageKind.SkillMagic, def);
 
             // WIT drives the caster's offensive magic interrupt power on top of the
             // skill's flat InterruptPower (Disrupt's 99999 still dominates).
@@ -2154,6 +2154,7 @@ var effect = def.Effect;
                 (int)attacker.EffectiveBasicAttack, 0,
                 (int)target.EffectiveDefence, attacker.Level);
             damage = (int)(damage * StatCalculator.WeaponVariance(attacker.WeaponType, _rng));
+            damage = FinalizeDamage(attacker, target, damage, DamageKind.Basic, null);
 
             var (finalDmg, outcome) = ResolvePhysicalCritAndBlock(
                 attacker, target, damage, attacker.CritChance, 0f);
@@ -2882,6 +2883,30 @@ var effect = def.Effect;
         }
 
         return (baseDamage, CombatOutcome.Hit);
+    }
+
+    /// <summary>Which damage channel a hit belongs to, for the damage-out pipeline.</summary>
+    private enum DamageKind { Basic, SkillPhysical, SkillMagic }
+
+    /// <summary>Central damage-OUT pipeline: applies the attacker's channel bonus (phys-skill
+    /// / magic-skill / basic), the PvP/PvE context bonus (target a player vs a mob), and a
+    /// skill's per-context multiplier. All factors default neutral, so this is a no-op until
+    /// effects/skills set them — the base layout for the future PvP/PvE damage system.</summary>
+    private int FinalizeDamage(Entity attacker, Entity target, int dmg, DamageKind kind, SkillDef? skill)
+    {
+        bool pvp = attacker.Kind == EntityKind.Player && target.Kind == EntityKind.Player;
+        float typeBonus = kind switch
+        {
+            DamageKind.SkillPhysical => attacker.PhysSkillDamageBonus,
+            DamageKind.SkillMagic    => attacker.MagicSkillDamageBonus,
+            _                        => attacker.BasicDamageBonus,
+        };
+        float ctxBonus = pvp ? attacker.PvpDamageBonus : attacker.PveDamageBonus;
+        float skillMult = skill is null ? 1f : (pvp ? skill.PvpDamageMult : skill.PveDamageMult);
+        float result = dmg * (1f + typeBonus) * (1f + ctxBonus) * skillMult;
+        // A skill explicitly multiplied to 0 in this context deals 0 (e.g. a mob-only nuke
+        // vs a player); otherwise a real hit is at least 1.
+        return skillMult <= 0f ? 0 : Math.Max(1, (int)result);
     }
 
     private void TryInterruptCast(Entity target, int attackerInterruptPower)
