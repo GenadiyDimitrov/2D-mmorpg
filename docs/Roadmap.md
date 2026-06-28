@@ -10,6 +10,16 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 
 ## NOW (active / immediate)
 
+- [>] **Mob stat tuning** — owner to send stats for several different-level mobs; tune our
+  curves (`StatCalculator.MobStats`/`MobMaxHp`/`MobDefence`/`MobMagicDefence` + MobMod tiers)
+  to match, then re-test damage feel.
+- [>] **Base class kits** — owner to provide several passives/buffs/skills per class; wire them
+  as real per-class content (beyond the placeholder discipline kits), then tune.
+- [>] **Fighter balance pass** — awaiting owner targets (Venomweaver burst cap, tank durability
+  vs +N-level mobs, etc.). Mechanics are fine; numbers need it.
+- [>] **Skill-detail TITLE shows base name** — owner to give exact skill + race/2nd/3rd class
+  next test; suspect client `_myThirdClass` not synced after a DEBUG 3rd-class change.
+
 - [x] **Training Grounds** — immortal/stationary/0-damage **Training Dummy** mobs at Lv
   20/40/60/80 (MobType.Dummy + Entity.TrainingDummy; spawn zones ~(22500–25500, 4000)) for
   damage/skill testing. Reach via debug Teleport → Zones.
