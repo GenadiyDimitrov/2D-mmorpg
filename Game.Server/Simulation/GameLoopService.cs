@@ -1764,6 +1764,7 @@ var effect = def.Effect;
                     (int)caster.EffectiveAttack, def.PowerAt(lvl),
                     (int)target.EffectiveDefence, caster.Level);
                 damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
+                if (caster.SkillDamageBonus != 0f) damage = Math.Max(1, (int)(damage * (1f + caster.SkillDamageBonus)));
 
                 // "[Double]" skills roll a ×2 from the higher of DEX/ATK (cap 30%); ordinary
                 // skills keep the basic crit path (unchanged).
@@ -1788,6 +1789,7 @@ var effect = def.Effect;
                 (int)caster.EffectiveMagicAttack, def.PowerAt(lvl),
                 (int)target.EffectiveMagicDefence, caster.Level);   // magic channel: divides by mDef
             damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
+            if (caster.SkillDamageBonus != 0f) damage = Math.Max(1, (int)(damage * (1f + caster.SkillDamageBonus)));
 
             // WIT drives the caster's offensive magic interrupt power on top of the
             // skill's flat InterruptPower (Disrupt's 99999 still dominates).

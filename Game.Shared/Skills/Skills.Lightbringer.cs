@@ -57,7 +57,7 @@ public static partial class SkillCatalog
                          "trades single-target power for area coverage."),
         new(LbElfWarden, "Warding Step", BaseClass.Mage, SkillEffect.Root | SkillEffect.Detaunt,
             MpCost: 30, CastTicks: 6, CooldownTicks: 120, Range: 500, Power: 0,
-            DurationTicks: 80, BuffKey: "root", Rank: 1,
+            DurationTicks: 80, BuffKey: "root", Rank: 1, DebuffSchool: DebuffSchool.Magical,
             Category: SkillCategory.Debuff, SpCost: 6000,
             Description: "Holds an enemy in place for 8s and sheds the caster's aggro " +
                          "from nearby foes (they look elsewhere)."),

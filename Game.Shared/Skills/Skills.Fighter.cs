@@ -18,6 +18,8 @@ public static partial class SkillCatalog
     public const string CleavingStrike = "cleaving_strike";   // first "[Double]" skill (warrior)
     public const string ShieldBash = "shield_bash";           // physical Stun (contested CC)
     public const string TerrifyingRoar = "terrifying_roar";   // physical Fear (contested CC)
+    public const string Hamstring = "hamstring";              // physical Slow (contested CC)
+    public const string WarFocus = "war_focus";               // self-buff: +skill damage
 
     private static SkillDef[] FighterSkills() => new SkillDef[]
     {
@@ -48,6 +50,24 @@ public static partial class SkillCatalog
             DurationTicks: 50, BuffKey: "fear", Rank: 1,
             Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical,
             Description: "A fearsome roar — the target cannot cast or attack for 5s (can still move). ATK-vs-CON; bosses immune."),
+
+        // Hamstring — contested PHYSICAL Slow (the physical counterpart to the mage's Frost
+        // Bind): ATK-vs-CON, −60% move speed for 8s. Shows slow can be physical OR magical.
+        new(Hamstring, "Hamstring", BaseClass.Fighter, SkillEffect.Slow,
+            MpCost: 18, CastTicks: 5, CooldownTicks: 80, Range: 0, Power: 0,
+            DurationTicks: 80, BuffKey: "slow", Rank: 1,
+            Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, 0.60f) },
+            Description: "A crippling cut — −60% move speed for 8s. Lands on an ATK-vs-CON contest."),
+
+        // War Focus — self-buff granting +20% SKILL damage for 30s. Demonstrates the
+        // skill-damage% stat (the dmg increase applies to damage skills, not basic attacks).
+        new(WarFocus, "War Focus", BaseClass.Fighter, SkillEffect.BuffSkillDamage,
+            MpCost: 20, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,
+            DurationTicks: 300, BuffKey: "war_focus", Rank: 1,
+            Category: SkillCategory.Buff,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffSkillDamage, 0.20f) },
+            Description: "Sharpens your technique: +20% skill damage for 30s."),
 
         new(WarCry, "War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,

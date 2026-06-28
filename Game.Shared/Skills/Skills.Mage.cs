@@ -19,6 +19,7 @@ public static partial class SkillCatalog
     public const string HolyStrike = "holy_strike";
     public const string ElementalBurst = "elemental_burst";   // nuker 3rd-class ultimate (consumes Elemental Stones)
     public const string FrostBind = "frost_bind";             // nuker CC — magical Slow (first contested-CC skill)
+    public const string EntanglingRoots = "entangling_roots"; // nuker CC — magical Root (contested)
 
     private static SkillDef[] MageSkills() => new SkillDef[]
     {
@@ -179,6 +180,15 @@ public static partial class SkillCatalog
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, 0.50f) },
             Description: "Magic slow — cuts the target's move speed by 50% for 10s. Lands on an "
                        + "ATK-vs-WIT contest (bosses are immune)."),
+
+        // Entangling Roots — contested ROOT (magical): target cannot move for 8s (can still
+        // act). Lands on ATK-vs-WIT; bosses immune. Demonstrates root-via-contest.
+        new(EntanglingRoots, "Entangling Roots", BaseClass.Mage, SkillEffect.Root,
+            MpCost: 28, CastTicks: 15, CooldownTicks: 80, Range: 900, Power: 0,
+            DurationTicks: 80, BuffKey: "root", Rank: 1, InitialMpCost: 6,
+            Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Magical,
+            Description: "Snares the target in place for 8s (cannot move, can still act). "
+                       + "ATK-vs-WIT contest; bosses immune."),
 
         // Holy Bolt — the Healer's offensive spell (replaces Magic Bolt). ONE skill;
         // per-race NAME only (Holy/Moonlight/Spirit Bolt) via ClassSkill.DisplayName.

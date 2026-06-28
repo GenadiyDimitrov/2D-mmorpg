@@ -51,15 +51,18 @@ public static partial class ClassSkillTables
                             lvl <= 9 ? 36 + lvl * 4 : 75, SkillLevel: lvl))
                         .ToArray());
 
-        // Frost Bind — the nuker's contested-CC (Slow) tool, @40 for both disciplines.
+        // Frost Bind (Slow) + Entangling Roots (Root) — nuker contested CC, @40 both disciplines.
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
             foreach (var disc in new[] { Discipline.Magus, Discipline.Tempest })
-                ClassSkills.RegisterThird(race, disc, new ClassSkill(FrostBind, 40));
+                ClassSkills.RegisterThird(race, disc,
+                    new ClassSkill(FrostBind, 40), new ClassSkill(EntanglingRoots, 40));
 
-        // Cleaving Strike — the warriors' "[Double]" burst, @40 for both disciplines.
+        // Warrior 3rd-class kit demos: [Double] burst, physical Slow, +skill-damage buff.
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
             foreach (var disc in new[] { Discipline.Ravager, Discipline.Warlord })
-                ClassSkills.RegisterThird(race, disc, new ClassSkill(CleavingStrike, 40));
+                ClassSkills.RegisterThird(race, disc,
+                    new ClassSkill(CleavingStrike, 40), new ClassSkill(Hamstring, 40),
+                    new ClassSkill(WarFocus, 40));
 
         // Contested CC demos: Vanguard (tank) gets the Stun; warriors get the Fear.
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })

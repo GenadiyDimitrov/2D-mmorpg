@@ -213,6 +213,7 @@ public readonly record struct PassiveEffect(
     float MagicFailResist = 0f,
     int InterruptPower = 0, int InterruptResist = 0,
     float MeleeVamp = 0f, float SpellVamp = 0f,
+    float SkillDamagePct = 0f,   // +% damage dealt by SKILLS (not basic attacks)
     // Combat-resolution "sure" floors (see docs/CombatResolution.md). These are
     // GUARANTEES (the resolver takes the MAX across passives, not a sum):
     float EvadeFloor = 0f,        // min chance to dodge physical (rogue/archer)
