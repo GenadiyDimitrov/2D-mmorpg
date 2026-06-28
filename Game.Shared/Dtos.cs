@@ -114,8 +114,10 @@ public record StatsUpdate(
 public record PotionStatus(float CooldownSeconds, string ActiveEffect);
 
 
-/// <summary>One active buff/debuff on the player, for the buff bar + tooltip.</summary>
-public record BuffDto(string Name, string Description, float SecondsLeft, bool IsDebuff, string Key = "");
+/// <summary>One active buff/debuff on the player, for the buff bar + tooltip. Stacks &gt; 1
+/// for a stacking effect (shown as "Name xN").</summary>
+public record BuffDto(string Name, string Description, float SecondsLeft, bool IsDebuff,
+    string Key = "", int Stacks = 1);
 
 /// <summary>Server -> client: the character's learned skills (id + current level) + SP.</summary>
 public record LearnedSkills(SkillRef[] Skills, int SkillPoints);
@@ -140,7 +142,10 @@ public record TargetDetails(
     int PAtk, int MAtk, int PDef, int MDef,
     int Accuracy, int Evasion, float CritChance,
     float BowResist, float CritResist,
-    string[] Passives);
+    string[] Passives,
+    // Active temporary effects on the target (incl. DoT stack counts), e.g. "Bleed x5",
+    // "Slow" — so a Venomweaver/Tempest can read stacks on the enemy.
+    string[] Effects);
 
 /// <summary>Server -> owning client: the result of an enchant attempt.</summary>
 public record EnchantResultDto(string ItemName, int NewEnchant, string Outcome, bool Destroyed);

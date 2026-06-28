@@ -2722,7 +2722,7 @@ var effect = def.Effect;
         _hadBuffs.Add(player.Id);
         var dtos = player.Buffs.Where(b => !b.Internal).Select(b => new BuffDto(
             b.Name, b.Description,
-            b.Toggle ? -1f : b.TicksRemaining * GameConstants.TickSeconds, b.IsDebuff, b.Key)).ToArray();
+            b.Toggle ? -1f : b.TicksRemaining * GameConstants.TickSeconds, b.IsDebuff, b.Key, b.Stacks)).ToArray();
         SendTo(player, "Buffs", new BuffUpdate(dtos));
     }
 
@@ -2913,6 +2913,12 @@ var effect = def.Effect;
                 ? mod.Describe().ToArray()
                 : Array.Empty<string>();
 
+        // Active temporary effects on the target — including DoT stack counters (so the
+        // attacker can read "Bleed x5" on the enemy and time a burst).
+        var effects = t.Buffs
+            .Select(b => b.Stacks > 1 ? $"{b.Name} x{b.Stacks}" : b.Name)
+            .ToArray();
+
         SendTo(player, "TargetDetails", new TargetDetails(
             t.Id, t.Name, t.Level, isMob,
             t.Hp, t.MaxHp, t.Mp, t.MaxMp,
@@ -2920,7 +2926,7 @@ var effect = def.Effect;
             (int)t.EffectiveDefence, (int)t.EffectiveMagicDefence,
             t.Accuracy, t.Evasion, t.CritChance,
             t.BowResist, t.CritRateResist,
-            passives));
+            passives, effects));
     }
 
     /// <summary>Roll to interrupt a cast when the caster is hit. Resist = caster

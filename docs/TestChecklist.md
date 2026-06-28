@@ -18,6 +18,11 @@ this file.
 - [ ] A DoT can finish the kill (credit + drops go to the applier).
 - [~] Poison/venom + their −AS/cast, −atk/def secondaries not authored (need debuff channels outside AnyBuff). Cure/cancel skills not built yet.
 
+### Stack / effect visibility
+- [ ] A stacking buff on YOU shows "Name xN" on the buff bar (count updates as it stacks).
+- [ ] Expand the target window on a bled/slowed mob → "Effects:" line lists its active effects with stacks (e.g. "Rupture (stacks) x5", "Slow") — so you can time Detonate Wounds.
+- [ ] Effects line refreshes ~1/s while the panel is open.
+
 ### Combat primitives: generalized stacking (per-stack effect table) — NUMBERS UNTUNED
 - [ ] Tempest "Creeping Frost" @44: each landing cast adds a stack — slow 10% → 20% → 30% on stacks 1-3, then the **4th stack FREEZES** the target (stun, no slow). Same skill, different effect per stack level.
 - [ ] A resisted cast does NOT add a stack (stack only on success); re-landing refreshes the timer.

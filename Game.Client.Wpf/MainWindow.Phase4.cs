@@ -1427,6 +1427,7 @@ public partial class MainWindow
         {
             // SecondsLeft < 0 = an indefinite TOGGLE/stance (no countdown).
             bool toggle = buff.SecondsLeft < 0f;
+            string stacks = buff.Stacks > 1 ? $" x{buff.Stacks}" : "";
             string time = toggle ? "active (toggle)" : $"{buff.SecondsLeft:0}s remaining";
             string tip = buff.IsDebuff
                 ? $"{buff.Name}\n{buff.Description}\n{time}"
@@ -1442,7 +1443,7 @@ public partial class MainWindow
                 Cursor = buff.IsDebuff ? null : System.Windows.Input.Cursors.Hand,
                 Child = new TextBlock
                 {
-                    Text = toggle ? $"{buff.Name}  ⟳" : $"{buff.Name}  {buff.SecondsLeft:0}s",
+                    Text = toggle ? $"{buff.Name}{stacks}  ⟳" : $"{buff.Name}{stacks}  {buff.SecondsLeft:0}s",
                     Foreground = Brushes.White, FontSize = 11
                 },
                 ToolTip = tip

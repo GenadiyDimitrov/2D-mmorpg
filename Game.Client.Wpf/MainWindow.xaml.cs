@@ -1124,11 +1124,15 @@ public partial class MainWindow : Window
         if (!_targetExpanded || _targetId != d.Id)
             return;
 
-        TargetDetailsText.Text =
+        string text =
             $"HP {d.Hp}/{d.MaxHp}   MP {d.Mp}/{d.MaxMp}\n" +
             $"P.Atk {d.PAtk}   M.Atk {d.MAtk}\n" +
             $"P.Def {d.PDef}   M.Def {d.MDef}\n" +
             $"Acc {d.Accuracy}   Eva {d.Evasion}   Crit {d.CritChance * 100:0.#}%";
+        // Active effects (incl. DoT stacks) so you can time a burst, e.g. "Bleed (stacks) x5".
+        if (d.Effects.Length > 0)
+            text += "\nEffects: " + string.Join(", ", d.Effects);
+        TargetDetailsText.Text = text;
 
         var lines = new List<string>(d.Passives);
         if (d.BowResist > 0f) lines.Add($"Bow Resist +{d.BowResist * 100:0}%");
