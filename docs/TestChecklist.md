@@ -7,6 +7,30 @@ this file.
 
 ---
 
+## Playtest 1 results (2026-06-28)
+
+**Verified working:** damage & crits (incl. [Double]) at all levels; control lands (slow/
+root/stun/fear); DoT + burst; defensive skills + Provoke/threat; movement (blink/knockback);
+weapon masteries; mage damage feels OK for now.
+
+**Fixed this round (RE-TEST next launch):**
+- [ ] **Restore Mana** now costs ~1.2× what it restores (72 MP → 60) and CANNOT target self
+  or another mana-restorer (healer→non-healer only).
+- [ ] **Phase Shift** no longer needs a target — blinks ~400 away from the nearest enemy.
+- [ ] **Cast bar** shows the class skill name (e.g. "Moonlight Bolt"), not the base form.
+- [ ] **Debug** menu: "Level +10" and "Learn all skills (to my level)" buttons.
+
+**Open items:**
+- [ ] **FIGHTER BALANCE (big)** — Venomweaver burst ~1500; a Lv-49 tank solos hordes of Lv-64
+  mobs. Skills work as intended; numbers need a tuning pass (damage-out / mastery / skill power).
+- [ ] **Stacks not visible as a LEVEL on the mob** — expand the target window (▼) to see
+  "Effects: Creeping Frost x3"; consider a stack readout on the always-visible target frame.
+- [ ] **Friendly target dummy** to test heals/cure/buffs on an ally — needs ally-targeting
+  (likely after PvP, so you can also damage/debuff friendly dummies).
+- Dummies don't regen — owner: don't care (they never die via the 1-HP floor).
+
+---
+
 ## To test now (this session — 2026-06-27)
 
 ### Training Grounds (test dummies)
