@@ -37,6 +37,9 @@ public class BuffInstance
     public bool Internal { get; set; }
     /// <summary>Can this effect be removed by cure/cancel? (false = immune.)</summary>
     public bool Cancellable { get; set; } = true;
+    /// <summary>Remaining absorb pool for a Shield effect (damage soaked before HP). The buff
+    /// is removed when it hits 0.</summary>
+    public int ShieldPool { get; set; }
 
     public bool Has(SkillEffect flag) => (Effect & flag) != 0;
 

@@ -22,6 +22,7 @@ public static partial class SkillCatalog
     public const string WarFocus = "war_focus";               // self-buff: +skill damage
     public const string Rupture = "rupture";                  // applies Bleed (DoT stacks)
     public const string DetonateWounds = "detonate_wounds";   // burst: consumes Bleed stacks
+    public const string Aegis = "aegis";                      // self absorb-shield (% max HP)
 
     private static SkillDef[] FighterSkills() => new SkillDef[]
     {
@@ -96,6 +97,14 @@ public static partial class SkillCatalog
             Category: SkillCategory.Physical, CanDouble: true, ConsumeStackKey: "venom_bleed",
             Description: "Detonates the target's bleed stacks for damage ×(stacks) [Double], "
                        + "consuming the stacks (the bleed itself remains)."),
+
+        // Aegis — self ABSORB SHIELD: soaks 8% of max HP for 15s (the damage-absorb primitive).
+        new(Aegis, "Aegis", BaseClass.Fighter, SkillEffect.Shield,
+            MpCost: 20, CastTicks: 0, CooldownTicks: 150, Range: 0, Power: 0,
+            DurationTicks: 150, BuffKey: "aegis", Rank: 1, TargetMode: TargetMode.SelfOnly,
+            Category: SkillCategory.Buff,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.Shield, 0.08f) },
+            Description: "Raises a shield that absorbs 8% of your max HP for 15s before HP is hit."),
 
         new(WarCry, "War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,

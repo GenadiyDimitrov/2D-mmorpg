@@ -73,6 +73,9 @@ public static partial class ClassSkillTables
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
         {
             ClassSkills.RegisterThird(race, Discipline.Vanguard, new ClassSkill(ShieldBash, 40));
+            // Aegis — self absorb-shield — both tank disciplines.
+            ClassSkills.RegisterThird(race, Discipline.Bulwark, new ClassSkill(Aegis, 40));
+            ClassSkills.RegisterThird(race, Discipline.Vanguard, new ClassSkill(Aegis, 40));
             foreach (var disc in new[] { Discipline.Ravager, Discipline.Warlord })
                 ClassSkills.RegisterThird(race, disc, new ClassSkill(TerrifyingRoar, 40));
             // Venomweaver — DoT stacks (Rupture) + burst (Detonate Wounds). Bleed demo for all

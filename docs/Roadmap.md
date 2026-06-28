@@ -44,8 +44,11 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   **Cure/cancel DONE**: one `Dispel` helper + `SkillEffect.Cancel`; `SkillDef.DispelMask`
   (effect filter, e.g. cure-poison = Poison|Venom), `DispelCount` (random N), `DispelMaxLevel`
   (Rank ≤), `Cancellable` flag (internal counters immune). Demo: healer "Antidote" (cure
-  poison/venom), nuker "Dispel Magic" (strip 2 random buffs). **Still to do:** absorb shields,
-  taunt/real threat, blink/charge, knockback, stealth, mana shield, lethal-save, traps.
+  poison/venom), nuker "Dispel Magic" (strip 2 random buffs). **Absorb shields DONE**:
+  `SkillEffect.Shield` + `BuffInstance.ShieldPool` (flat Power + % max HP); `ApplyDamage` soaks
+  the pool before HP for all damage types, removes the buff when empty. Demo: tank "Aegis"
+  (8% max HP, 15s). **Still to do:** taunt/real threat, blink/charge, knockback, stealth,
+  mana shield, lethal-save, traps. (Shield floating-text shows pre-absorb damage — cosmetic.)
 - [ ] **Base-class armor mastery + universal penalty → data** (only 2nd classes are data so
   far). Finishes the [[stats-via-skills-not-hardcoded]] migration. (Note: changes the
   unlearned-penalty semantics slightly — confirm intent.)

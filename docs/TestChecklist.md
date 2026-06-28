@@ -18,6 +18,12 @@ this file.
 - [ ] A DoT can finish the kill (credit + drops go to the applier).
 - [~] Poison/venom + their −AS/cast, −atk/def secondaries not authored (need debuff channels outside AnyBuff). Cure/cancel skills not built yet.
 
+### Absorb shields ("Aegis") — NUMBERS UNTUNED
+- [ ] Tank (Bulwark/Vanguard) "Aegis" @40: a self-shield absorbing 8% of max HP for 15s shows on the buff bar.
+- [ ] While shielded, incoming damage drains the shield first; HP only drops once it's depleted; the shield buff vanishes when empty.
+- [ ] Works vs all damage types (basic, skills, DoT ticks) — they all route through ApplyDamage.
+- [~] Known cosmetic: floating combat text shows pre-absorb damage (HP loss is correct). To refine later.
+
 ### Cure / cancel (dispel) — NUMBERS UNTUNED
 - [ ] Healer "Antidote" @25 removes poison/venom from an ally (or self); does NOT remove other debuffs (slow/bleed/stun).
 - [ ] Nuker "Dispel Magic" @35 on an enemy strips up to 2 random beneficial buffs (test vs a buffed player, or self-cast a buff then have someone dispel).

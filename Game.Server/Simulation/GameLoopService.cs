@@ -2033,6 +2033,10 @@ var effect = def.Effect;
             // hits for DotPower each second. Damage does NOT stack — stacks live on a separate
             // counter (see ApplyDotStack); the burst reads the counter, not this.
             DotPower = (def.Effect & SkillEffect.AnyDot) != 0 ? def.PowerAt(level) : 0,
+            // Absorb shield: flat Power + a % of the target's max HP (a Percent Shield magnitude).
+            ShieldPool = (def.Effect & SkillEffect.Shield) != 0
+                ? def.PowerAt(level) + (int)(target.MaxHp * def.MagnitudeOf(SkillEffect.Shield, ModifierMode.Percent, level))
+                : 0,
             MaxStacks = eff,
             Cancellable = def.Cancellable,
             Name = shownName,
@@ -2322,10 +2326,27 @@ var effect = def.Effect;
     }
 
     /// <summary>Apply damage unless the target is in god mode.</summary>
-    private static int ApplyDamage(Entity target, int damage)
+    private int ApplyDamage(Entity target, int damage)
     {
         if (target.GodMode)
             return 0;
+
+        // Absorb shields soak damage before HP; a depleted shield is removed.
+        if (damage > 0 && target.Buffs.Any(b => b.Has(SkillEffect.Shield) && b.ShieldPool > 0))
+        {
+            bool changed = false;
+            for (int i = target.Buffs.Count - 1; i >= 0 && damage > 0; i--)
+            {
+                var b = target.Buffs[i];
+                if (!b.Has(SkillEffect.Shield) || b.ShieldPool <= 0) continue;
+                int absorbed = Math.Min(b.ShieldPool, damage);
+                b.ShieldPool -= absorbed;
+                damage -= absorbed;
+                if (b.ShieldPool <= 0) { target.Buffs.RemoveAt(i); changed = true; }
+            }
+            if (changed && target.Kind == EntityKind.Player) PushBuffs(target);
+        }
+
         target.Hp -= damage;
 
         // Being hit while sitting breaks the sit and starts the stand-up window:
