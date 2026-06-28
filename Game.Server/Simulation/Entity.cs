@@ -530,6 +530,8 @@ public class Entity
 
     /// <summary>Mob template id (MobCatalog) — for drops + quest kill matching.</summary>
     public string? MobTypeId { get; set; }
+    /// <summary>Training dummy: immortal (GodMode), stationary, never attacks/aggroes.</summary>
+    public bool TrainingDummy { get; set; }
     public MobRank Rank { get; set; }
     public bool Aggressive { get; set; }
     public int WanderTicks { get; set; }

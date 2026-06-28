@@ -63,7 +63,8 @@ public record MobType(
     float RunSpeed,
     bool Aggressive = false,
     DropEntry[]? Drops = null,
-    MobMod? Mod = null);     // per-template stat modifiers ("passive skills")
+    MobMod? Mod = null,      // per-template stat modifiers ("passive skills")
+    bool Dummy = false);     // training dummy: immortal, immobile, never attacks
 
 /// <summary>
 /// THE place to manage mobs. Each entry is a creature template with its own drop
@@ -180,6 +181,10 @@ public static class MobCatalog
                     new DropEntry(ItemCatalog.CastPotionU, 0.06f),
                     new DropEntry(ItemCatalog.AttrScrollRare, 0.03f, 1, 1, MinLevel: 40),
                 }),
+
+            // Training dummy: immortal, stationary, deals no damage. The ZONE sets its level
+            // (20/40/60/80 training grounds). No drops. For testing damage/skills.
+            new MobType("training_dummy", "Training Dummy", 0f, 0f, Dummy: true),
 
             new MobType("young_drake", "Young Drake", 75f, 145f, Aggressive: true,
                 Drops: new[]

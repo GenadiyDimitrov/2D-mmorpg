@@ -9,6 +9,11 @@ this file.
 
 ## To test now (this session — 2026-06-27)
 
+### Training Grounds (test dummies)
+- [ ] A cluster of immortal **Training Dummy (Lv 20/40/60/80)** spawns at ~(22500–25500, 4000) — reach via debug Teleport → Zones.
+- [ ] Dummies never move, never attack, and can't die — hit them with any skill to read damage numbers at each level.
+- [ ] Use them to verify [Double] crits, DoT ticks/stacks (Effects line in the target window), slow/stun/etc. land, and damage scaling.
+
 ### Movement: blink + knockback — NUMBERS UNTUNED
 - [ ] Phantom "Shadowstep" @40: teleports you behind the target, then hits ([Double]).
 - [ ] Trapper "Repelling Shot" @40: damages and shoves the target ~200 away.

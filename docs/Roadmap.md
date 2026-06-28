@@ -10,6 +10,10 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 
 ## NOW (active / immediate)
 
+- [x] **Training Grounds** — immortal/stationary/0-damage **Training Dummy** mobs at Lv
+  20/40/60/80 (MobType.Dummy + Entity.TrainingDummy; spawn zones ~(22500–25500, 4000)) for
+  damage/skill testing. Reach via debug Teleport → Zones.
+
 - [~] **Tune placeholder numbers** after the next playtest: fighter weapon masteries, armor
   masteries, healer powers, mob modifiers, caster bow penalty. (See `docs/TestChecklist.md`.)
 - [ ] **Cleric-solos-a-30-mob** balance pass (owner target): mob HP/atk vs cleric melee+heal.

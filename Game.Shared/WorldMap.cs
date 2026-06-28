@@ -88,6 +88,17 @@ public static class WorldMap
             MobTypes: new[] { "young_drake", "wraith" }, MaxCount: 10,
             RespawnSeconds: 30, RespawnVariance: 9),
 
+        // ===== Training Grounds: immortal, stationary, 0-damage dummies at fixed levels
+        //       (20/40/60/80) for testing damage/skills. Clustered, one per level. =====
+        new(X: 22500, Y: 4000, Radius: 200, MinLevel: 20, MaxLevel: 20,
+            MobTypes: new[] { "training_dummy" }, MaxCount: 1, RespawnSeconds: 5),
+        new(X: 23500, Y: 4000, Radius: 200, MinLevel: 40, MaxLevel: 40,
+            MobTypes: new[] { "training_dummy" }, MaxCount: 1, RespawnSeconds: 5),
+        new(X: 24500, Y: 4000, Radius: 200, MinLevel: 60, MaxLevel: 60,
+            MobTypes: new[] { "training_dummy" }, MaxCount: 1, RespawnSeconds: 5),
+        new(X: 25500, Y: 4000, Radius: 200, MinLevel: 80, MaxLevel: 80,
+            MobTypes: new[] { "training_dummy" }, MaxCount: 1, RespawnSeconds: 5),
+
         // ===== Elite + Boss placeholders (more bosses/instances later) =====
         new(X: 11600, Y: 10000, Radius: 300,  MinLevel: 78, MaxLevel: 78,
             MobTypes: new[] { "young_drake" }, MaxCount: 1,

@@ -1496,6 +1496,7 @@ public class GameLoopService : BackgroundService
 
     private void MobAi(Entity mob)
     {
+        if (mob.TrainingDummy) return;   // stationary, never wanders or aggroes
         if (mob.DetauntTicks > 0) mob.DetauntTicks--;
         if (mob.TauntLockTicks > 0) mob.TauntLockTicks--;
 
@@ -2291,7 +2292,8 @@ var effect = def.Effect;
     {
         // Being targeted by an offensive action always provokes a mob — even a non-damaging
         // one (debuff/CC) — so add a little threat (damage adds the rest in ApplyDamage).
-        if (victim.Kind == EntityKind.Mob && !victim.Dead)
+        // Training dummies never aggro.
+        if (victim.Kind == EntityKind.Mob && !victim.Dead && !victim.TrainingDummy)
             AddThreat(victim, attacker, 1f);
     }
 
@@ -3939,7 +3941,7 @@ var effect = def.Effect;
         float hpMul = zone.Rank switch { MobRank.Elite => 4f, MobRank.Boss => 20f, _ => 1f };
         float atkMul = zone.Rank switch { MobRank.Elite => 1.5f, MobRank.Boss => 2.5f, _ => 1f };
 
-        string displayName = zone.Rank switch
+        string displayName = mobType.Dummy ? $"Training Dummy (Lv {level})" : zone.Rank switch
         {
             MobRank.Elite => $"Elite {mobType.Name}",
             MobRank.Boss => $"{mobType.Name} Lord",
@@ -3998,6 +4000,15 @@ var effect = def.Effect;
         mob.Mp = mob.MaxMp;
         mob.HomeX = mob.X;
         mob.HomeY = mob.Y;
+
+        // Training dummy: immortal (GodMode absorbs all damage), stationary, never attacks.
+        if (mobType.Dummy)
+        {
+            mob.TrainingDummy = true;
+            mob.GodMode = true;
+            mob.Aggressive = false;
+            mob.WalkSpeed = 0; mob.RunSpeed = 0; mob.Speed = 0;
+        }
 
         _world.Entities[mob.Id] = mob;
         _world.Grid.Add(mob);
