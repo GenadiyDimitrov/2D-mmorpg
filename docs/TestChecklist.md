@@ -27,6 +27,9 @@ weapon masteries; mage damage feels OK for now.
   "Effects: Creeping Frost x3"; consider a stack readout on the always-visible target frame.
 - [ ] **Friendly target dummy** to test heals/cure/buffs on an ally — needs ally-targeting
   (likely after PvP, so you can also damage/debuff friendly dummies).
+- [ ] **Skill-detail TITLE shows base name** (not the class name) — owner will give the exact
+  skill + race/2nd/3rd class next test. Suspect: client `_myThirdClass` not synced after a
+  DEBUG 3rd-class change, so discipline-renamed skills fall back to the base name.
 - Dummies don't regen — owner: don't care (they never die via the 1-HP floor).
 
 ---
