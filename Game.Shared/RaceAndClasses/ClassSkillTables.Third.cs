@@ -58,9 +58,10 @@ public static partial class ClassSkillTables
                 ClassSkills.RegisterThird(race, disc,
                     new ClassSkill(FrostBind, 40), new ClassSkill(EntanglingRoots, 40),
                     new ClassSkill(GlacialSpike, 44));
-        // Creeping Frost — stacking slow (10/20/30%) — Tempest's signature control.
+        // Creeping Frost — stacking slow (10/20/30%) + Phase Shift (blink-back) — Tempest.
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
-            ClassSkills.RegisterThird(race, Discipline.Tempest, new ClassSkill(CreepingFrost, 44));
+            ClassSkills.RegisterThird(race, Discipline.Tempest,
+                new ClassSkill(CreepingFrost, 44), new ClassSkill(PhaseShift, 48));
 
         // Warrior 3rd-class kit demos: [Double] burst, physical Slow, +skill-damage buff.
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
@@ -89,6 +90,9 @@ public static partial class ClassSkillTables
             // races for now; poison/venom per-race variants come with their secondary debuffs.
             ClassSkills.RegisterThird(race, Discipline.Venomweaver,
                 new ClassSkill(Rupture, 40), new ClassSkill(DetonateWounds, 44));
+            // Movement: Phantom blink (Shadowstep), Trapper knockback (Repelling Shot).
+            ClassSkills.RegisterThird(race, Discipline.Phantom, new ClassSkill(Shadowstep, 40));
+            ClassSkills.RegisterThird(race, Discipline.Trapper, new ClassSkill(RepellingShot, 40));
         }
 
         // Healer disciplines (Lightbringer = healer, Warchanter = buffer) are dropped

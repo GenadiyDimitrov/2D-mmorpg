@@ -9,6 +9,12 @@ this file.
 
 ## To test now (this session — 2026-06-27)
 
+### Movement: blink + knockback — NUMBERS UNTUNED
+- [ ] Phantom "Shadowstep" @40: teleports you behind the target, then hits ([Double]).
+- [ ] Trapper "Repelling Shot" @40: damages and shoves the target ~200 away.
+- [ ] Tempest "Phase Shift" @48: blinks you ~400 away from the target (escape).
+- [ ] Blink/knockback respect world bounds; the moved entity stops its current path (doesn't slide).
+
 ### Taunt + real threat/aggro — NUMBERS UNTUNED
 - [ ] A mob now targets the highest-THREAT attacker (threat = damage dealt), not just the last hitter — e.g. a high-damage player pulls aggro off a low-damage one.
 - [ ] Tank "Provoke" @40 forces the mob onto the tank (its target switches to you) and holds ~3s even if others out-damage you.

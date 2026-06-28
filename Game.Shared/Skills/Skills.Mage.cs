@@ -24,6 +24,7 @@ public static partial class SkillCatalog
     public const string CreepingFrost = "creeping_frost";     // stacking slow (10/20/30% over 3)
     public const string DispelMagic = "dispel_magic";         // cancel: strips enemy buffs
     public const string ManaBarrier = "mana_barrier";         // mana shield (damage→MP)
+    public const string PhaseShift = "phase_shift";           // blink away from target (escape)
 
     private static SkillDef[] MageSkills() => new SkillDef[]
     {
@@ -150,6 +151,12 @@ public static partial class SkillCatalog
                 new(SkillEffect.ManaShield, 0.5f,  ModifierMode.Flat),     // 0.5 MP per 1 damage
             },
             Description: "Diverts 70% of incoming damage to MP (0.5 MP per damage) for 30s, while MP lasts."),
+
+        // Phase Shift — BLINK back 400 from the target (escape). Tempest kite tool.
+        new(PhaseShift, "Phase Shift", BaseClass.Mage, SkillEffect.Blink,
+            MpCost: 20, CastTicks: 0, CooldownTicks: 80, Range: 900, Power: 0,
+            Category: SkillCategory.Buff, BlinkRange: 400f,
+            Description: "Blink 400 away from the target to create distance."),
 
         new(Weakness, "Weakness", BaseClass.Mage, SkillEffect.DebuffDef,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 600, Power: 0,

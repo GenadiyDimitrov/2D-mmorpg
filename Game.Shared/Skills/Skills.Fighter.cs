@@ -26,6 +26,8 @@ public static partial class SkillCatalog
     public const string LastStand = "last_stand";             // survive one fatal blow (lethal save)
     public const string Indomitable = "indomitable";          // tank ult: +cancel resist
     public const string Provoke = "provoke";                  // taunt: force a mob onto the tank
+    public const string Shadowstep = "shadowstep";            // blink behind target + hit
+    public const string RepellingShot = "repelling_shot";     // ranged hit + knockback
 
     private static SkillDef[] FighterSkills() => new SkillDef[]
     {
@@ -133,6 +135,19 @@ public static partial class SkillCatalog
             MpCost: 15, CastTicks: 0, CooldownTicks: 60, Range: 600, Power: 0,
             Category: SkillCategory.Debuff,
             Description: "Forces a monster to attack you — spikes its aggro and locks onto you briefly."),
+
+        // Shadowstep — BLINK behind the target, then strike ([Double]). Rogue gap-closer.
+        new(Shadowstep, "Shadowstep", BaseClass.Fighter, SkillEffect.PhysicalDamage | SkillEffect.Blink,
+            MpCost: 22, CastTicks: 0, CooldownTicks: 80, Range: 700, Power: 50,
+            Category: SkillCategory.Physical, CanDouble: true,
+            Description: "Teleport behind the target and strike for heavy damage [Double]."),
+
+        // Repelling Shot — ranged hit + KNOCKBACK (shoves the target back ~200). Trapper tool.
+        new(RepellingShot, "Repelling Shot", BaseClass.Fighter,
+            SkillEffect.PhysicalDamage | SkillEffect.Knockback,
+            MpCost: 18, CastTicks: 5, CooldownTicks: 60, Range: 600, Power: 40,
+            Category: SkillCategory.Physical, KnockbackRange: 200f,
+            Description: "A forceful shot that damages and knocks the target back."),
 
         new(WarCry, "War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,

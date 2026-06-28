@@ -54,9 +54,12 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   `ApplyDamage` after shields. Demos: Magus "Mana Barrier", Bulwark "Last Stand".
   **Taunt + real threat DONE**: mobs keep a threat table (`Entity.Threat`, threat = damage)
   and target the top-threat foe; `SkillEffect.Taunt` spikes threat + locks the mob briefly
-  (`TauntLockTicks`); detaunt sheds 90% threat and retargets. Demo: tank "Provoke". **Still to
-  do:** blink/charge, knockback, stealth, traps; poison/venom DoT secondaries. (Shield
-  floating-text shows pre-absorb damage — cosmetic.)
+  (`TauntLockTicks`); detaunt sheds 90% threat and retargets. Demo: tank "Provoke".
+  **Blink + knockback DONE**: `SkillEffect.Blink` (caster → behind target, or away by
+  `BlinkRange`) + `SkillEffect.Knockback` (shove target by `KnockbackRange`); `PlaceEntity`
+  clamps + regrids. Demos: Phantom "Shadowstep", Trapper "Repelling Shot", Tempest "Phase
+  Shift". **Still to do:** stealth, traps; poison/venom DoT secondaries. (Shield floating-text
+  shows pre-absorb damage — cosmetic.)
 - [ ] **Base-class armor mastery + universal penalty → data** (only 2nd classes are data so
   far). Finishes the [[stats-via-skills-not-hardcoded]] migration. (Note: changes the
   unlearned-penalty semantics slightly — confirm intent.)

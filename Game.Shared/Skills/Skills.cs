@@ -94,6 +94,11 @@ public record SkillDef(
     int DispelCount = 0,
     int DispelMaxLevel = 0,
     bool Cancellable = true,
+    // Movement effects. BlinkRange: 0 = teleport the caster just BEHIND the target (gap-closer);
+    // > 0 = teleport the caster that far AWAY from the target (escape). KnockbackRange: shove
+    // the target that far away from the caster.
+    float BlinkRange = 0f,
+    float KnockbackRange = 0f,
     // A TOGGLE skill (stance/aura): clicking it applies its self-buff indefinitely;
     // clicking again removes it. Instant, no cast bar; MP charged on activation only.
     bool Toggle = false,

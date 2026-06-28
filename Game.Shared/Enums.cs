@@ -121,6 +121,8 @@ public enum SkillEffect : long
     LethalSave         = 1L << 54,  // survive one fatal blow, reviving to a % of max HP (consumed)
     BuffCancelResist   = 1L << 55,  // chance each of your buffs RESISTS an enemy cancel/dispel
     Taunt              = 1L << 56,  // force a mob's aggro onto the caster (spikes threat + locks briefly)
+    Blink              = 1L << 57,  // teleport the CASTER: behind the target (gap-closer) or away (BlinkRange)
+    Knockback          = 1L << 58,  // shove the TARGET away from the caster by KnockbackRange
     // Room to grow up to 1L << 62.
 
     // Convenience masks.

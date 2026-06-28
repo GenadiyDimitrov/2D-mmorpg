@@ -408,7 +408,8 @@ public class GameLoopService : BackgroundService
         }
 
         bool offensive = (def.Effect & (SkillEffect.PhysicalDamage
-            | SkillEffect.MagicDamage | SkillEffect.AnyDebuff | SkillEffect.Cancel | SkillEffect.Taunt)) != 0;
+            | SkillEffect.MagicDamage | SkillEffect.AnyDebuff | SkillEffect.Cancel | SkillEffect.Taunt
+            | SkillEffect.Blink | SkillEffect.Knockback)) != 0;
 
         Guid targetId;
         if (offensive)
@@ -1959,6 +1960,10 @@ var effect = def.Effect;
             BroadcastCombat(caster, target, 0, CombatOutcome.Buff, castName);
         }
 
+        // ---- Movement: blink (move the caster) / knockback (shove the target). ----
+        if (effect.HasFlag(SkillEffect.Blink)) { offensive = true; DoBlink(caster, target, def.BlinkRange); }
+        if (effect.HasFlag(SkillEffect.Knockback)) { offensive = true; DoKnockback(caster, target, def.KnockbackRange); }
+
         // ---- Beneficial buffs (any of the buff flags) ----
         if ((effect & SkillEffect.AnyBuff) != 0)
         {
@@ -2233,6 +2238,42 @@ var effect = def.Effect;
                 e.TargetY = e.HomeY;
             }
         }
+    }
+
+    /// <summary>Move an entity to a point: clamp to the world, stop its current move, update
+    /// the interest grid. Used by blink (caster) and knockback (target).</summary>
+    private void PlaceEntity(Entity e, float x, float y)
+    {
+        e.X = Math.Clamp(x, 0f, GameConstants.ZoneWidth);
+        e.Y = Math.Clamp(y, 0f, GameConstants.ZoneHeight);
+        e.TargetX = null;
+        e.TargetY = null;
+        _world.Grid.UpdatePosition(e);
+    }
+
+    /// <summary>Blink the caster: range 0 = just behind the target (gap-closer); range &gt; 0
+    /// = that far away from the target (escape).</summary>
+    private void DoBlink(Entity caster, Entity target, float range)
+    {
+        float dx = target.X - caster.X, dy = target.Y - caster.Y;
+        float dist = MathF.Sqrt(dx * dx + dy * dy);
+        if (dist < 0.01f) return;
+        float nx = dx / dist, ny = dy / dist;
+        if (range > 0f)   // blink AWAY from the target
+            PlaceEntity(caster, caster.X - nx * range, caster.Y - ny * range);
+        else              // blink to just behind the target
+            PlaceEntity(caster, target.X + nx * (GameConstants.MeleeRange * 0.5f),
+                                target.Y + ny * (GameConstants.MeleeRange * 0.5f));
+    }
+
+    /// <summary>Shove the target away from the caster by range.</summary>
+    private void DoKnockback(Entity caster, Entity target, float range)
+    {
+        float dx = target.X - caster.X, dy = target.Y - caster.Y;
+        float dist = MathF.Sqrt(dx * dx + dy * dy);
+        float nx = dist < 0.01f ? 1f : dx / dist;
+        float ny = dist < 0.01f ? 0f : dy / dist;
+        PlaceEntity(target, target.X + nx * range, target.Y + ny * range);
     }
 
     private void AfterOffensiveSkill(Entity caster, Entity target)
