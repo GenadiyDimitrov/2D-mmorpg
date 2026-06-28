@@ -60,14 +60,21 @@ public static partial class SkillCatalog
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, 0.60f) },
             Description: "A crippling cut — −60% move speed for 8s. Lands on an ATK-vs-CON contest."),
 
-        // War Focus — self-buff granting +20% PHYSICAL skill damage for 30s. Demonstrates the
-        // split skill-damage stat (physical channel only, so it never boosts spells/heals).
-        new(WarFocus, "War Focus", BaseClass.Fighter, SkillEffect.BuffPhysSkillDamage,
+        // War Focus — standard 20-min self-buff (per the owner's example): +15% attack speed
+        // and +25% PvP physical-skill / basic damage. Demonstrates the split context×source
+        // damage matrix (the PvP-damage parts are latent until PvP exists; AS is live).
+        new(WarFocus, "War Focus", BaseClass.Fighter,
+            SkillEffect.BuffAtkSpeed | SkillEffect.BuffPvpSkillDamage | SkillEffect.BuffPvpBasicDamage,
             MpCost: 20, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,
-            DurationTicks: 300, BuffKey: "war_focus", Rank: 1,
+            DurationTicks: 12000, BuffKey: "war_focus", Rank: 1,
             Category: SkillCategory.Buff,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffPhysSkillDamage, 0.20f) },
-            Description: "Sharpens your technique: +20% physical skill damage for 30s."),
+            Magnitudes: new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffAtkSpeed, 0.15f),
+                new(SkillEffect.BuffPvpSkillDamage, 0.25f),
+                new(SkillEffect.BuffPvpBasicDamage, 0.25f),
+            },
+            Description: "A 20-min focus: +15% attack speed and +25% PvP physical-skill & basic damage."),
 
         new(WarCry, "War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,

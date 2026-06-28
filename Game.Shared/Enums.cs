@@ -100,12 +100,15 @@ public enum SkillEffect : long
     Slow               = 1L << 39,  // reduces target move speed by a % (magnitude on Slow)
     Stun               = 1L << 40,  // cannot move, cast or attack for the duration
     Fear               = 1L << 41,  // cannot cast or attack (can still move) for the duration
-    // Damage-OUT channels (all default off; the damage pipeline reads attacker bonuses).
-    BuffPhysSkillDamage  = 1L << 42,  // +% damage dealt by PHYSICAL skills
-    BuffMagicSkillDamage = 1L << 43,  // +% damage dealt by MAGIC skills
-    BuffBasicDamage      = 1L << 44,  // +% damage dealt by BASIC attacks
-    BuffPvpDamage        = 1L << 45,  // +% ALL damage vs PLAYERS (PvP context)
-    BuffPveDamage        = 1L << 46,  // +% ALL damage vs MOBS (PvE context)
+    // Damage-OUT channels: a 2×3 matrix of context (PvE/PvP) × source (skill=physical
+    // skill / magic skill / basic attack). All default off. An "all damage" effect sets
+    // all six; a "PvE only" effect sets the three PvE ones; a "PvE skill" effect sets one.
+    BuffPveSkillDamage  = 1L << 42,  // +% physical-skill damage vs MOBS
+    BuffPveMagicDamage  = 1L << 43,  // +% magic-skill damage vs MOBS
+    BuffPveBasicDamage  = 1L << 44,  // +% basic-attack damage vs MOBS
+    BuffPvpSkillDamage  = 1L << 45,  // +% physical-skill damage vs PLAYERS
+    BuffPvpMagicDamage  = 1L << 46,  // +% magic-skill damage vs PLAYERS
+    BuffPvpBasicDamage  = 1L << 47,  // +% basic-attack damage vs PLAYERS
     // Room to grow up to 1L << 62.
 
     // Convenience masks.
@@ -117,8 +120,8 @@ public enum SkillEffect : long
               | BuffCritDamage | BuffCritDmgResist | BuffCritRateResist | BuffBowResist
               | BuffMagicFailFloor | BuffMagicFailResist | BuffInterruptPower
               | BuffInterruptResist | BuffMeleeVamp | BuffSpellVamp | BuffCooldown
-              | BuffPhysSkillDamage | BuffMagicSkillDamage | BuffBasicDamage
-              | BuffPvpDamage | BuffPveDamage,
+              | BuffPveSkillDamage | BuffPveMagicDamage | BuffPveBasicDamage
+              | BuffPvpSkillDamage | BuffPvpMagicDamage | BuffPvpBasicDamage,
     // Harmful effects applied to an enemy (offensive; can fail; cleansable).
     AnyDebuff = DebuffDef | DebuffHealRecv | Root | Slow | Stun | Fear,
     // Crowd-control that lands via the ATK-vs-CON/WIT contest (not the fizzle model).

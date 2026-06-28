@@ -218,10 +218,10 @@ public readonly record struct PassiveEffect(
     float MagicFailResist = 0f,
     int InterruptPower = 0, int InterruptResist = 0,
     float MeleeVamp = 0f, float SpellVamp = 0f,
-    // Damage-OUT bonuses (fractions). Split by source channel (phys-skill / magic-skill /
-    // basic) and by context (vs players / vs mobs) so effects can target exactly one.
-    float PhysSkillDamagePct = 0f, float MagicSkillDamagePct = 0f, float BasicDamagePct = 0f,
-    float PvpDamagePct = 0f, float PveDamagePct = 0f,
+    // Damage-OUT bonuses (fractions): the 2×3 matrix of context (PvE/PvP) × source
+    // (skill=physical skill / magic / basic). Set as many as the effect should touch.
+    float PveSkillDamagePct = 0f, float PveMagicDamagePct = 0f, float PveBasicDamagePct = 0f,
+    float PvpSkillDamagePct = 0f, float PvpMagicDamagePct = 0f, float PvpBasicDamagePct = 0f,
     // Combat-resolution "sure" floors (see docs/CombatResolution.md). These are
     // GUARANTEES (the resolver takes the MAX across passives, not a sum):
     float EvadeFloor = 0f,        // min chance to dodge physical (rogue/archer)

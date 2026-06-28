@@ -2895,15 +2895,18 @@ var effect = def.Effect;
     private int FinalizeDamage(Entity attacker, Entity target, int dmg, DamageKind kind, SkillDef? skill)
     {
         bool pvp = attacker.Kind == EntityKind.Player && target.Kind == EntityKind.Player;
-        float typeBonus = kind switch
+        // Pick the single matrix cell for this context × source.
+        float bonus = (pvp, kind) switch
         {
-            DamageKind.SkillPhysical => attacker.PhysSkillDamageBonus,
-            DamageKind.SkillMagic    => attacker.MagicSkillDamageBonus,
-            _                        => attacker.BasicDamageBonus,
+            (false, DamageKind.SkillPhysical) => attacker.PveSkillDamageBonus,
+            (false, DamageKind.SkillMagic)    => attacker.PveMagicDamageBonus,
+            (false, DamageKind.Basic)         => attacker.PveBasicDamageBonus,
+            (true,  DamageKind.SkillPhysical) => attacker.PvpSkillDamageBonus,
+            (true,  DamageKind.SkillMagic)    => attacker.PvpMagicDamageBonus,
+            _                                 => attacker.PvpBasicDamageBonus,
         };
-        float ctxBonus = pvp ? attacker.PvpDamageBonus : attacker.PveDamageBonus;
         float skillMult = skill is null ? 1f : (pvp ? skill.PvpDamageMult : skill.PveDamageMult);
-        float result = dmg * (1f + typeBonus) * (1f + ctxBonus) * skillMult;
+        float result = dmg * (1f + bonus) * skillMult;
         // A skill explicitly multiplied to 0 in this context deals 0 (e.g. a mob-only nuke
         // vs a player); otherwise a real hit is at least 1.
         return skillMult <= 0f ? 0 : Math.Max(1, (int)result);

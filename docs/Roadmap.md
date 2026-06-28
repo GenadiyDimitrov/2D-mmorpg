@@ -25,8 +25,8 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   "Cleaving Strike" for warriors; existing skills unchanged) + **Stun & Fear** (contested,
   action-locking; demo skills "Shield Bash"/"Terrifying Roar") + **Root-via-contest** +
   physical **Slow** (demo "Hamstring") + a **damage-OUT pipeline** (`FinalizeDamage`):
-  split phys-skill / magic-skill / basic channels + PvP/PvE context bonuses + per-skill
-  `Pvp/PveDamageMult` (all neutral until PvP exists). Demo "War Focus" (+20% PHYS skill dmg).
+  a 2×3 matrix of PvE/PvP × skill/magic/basic damage bonuses + per-skill `Pvp/PveDamageMult`
+  (all neutral until PvP exists). Demo "War Focus" (+15% AS, +25% PvP skill/basic).
   Existing non-contest debuffs left on the fizzle model (owner: new-only). **Still to do (P2 heavy):**
   DoT+stacks (bleed/poison/venom), absorb shields, taunt/real threat, blink/charge,
   knockback, stealth, mana shield, lethal-save, traps, conditional damage (+% vs slowed/rooted).

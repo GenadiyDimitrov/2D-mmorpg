@@ -216,12 +216,14 @@ public class Entity
     public float MagicFailResist { get; set; }   // reduces YOUR spells' own fail chance
     public float MeleeVamp { get; set; }         // basic (melee) attack lifesteal fraction
     public float SpellVamp { get; set; }         // damage-spell lifesteal fraction
-    // ----- Damage-OUT bonuses (fractions; the damage pipeline reads these) -----
-    public float PhysSkillDamageBonus { get; set; }   // +% physical skill damage
-    public float MagicSkillDamageBonus { get; set; }  // +% magic skill damage
-    public float BasicDamageBonus { get; set; }       // +% basic-attack damage
-    public float PvpDamageBonus { get; set; }         // +% ALL damage vs players (PvP)
-    public float PveDamageBonus { get; set; }         // +% ALL damage vs mobs (PvE)
+    // ----- Damage-OUT bonuses (fractions): 2×3 matrix context (PvE/PvP) × source
+    //       (skill=physical skill / magic / basic). The damage pipeline reads ONE. -----
+    public float PveSkillDamageBonus { get; set; }   // +% physical-skill damage vs mobs
+    public float PveMagicDamageBonus { get; set; }   // +% magic-skill damage vs mobs
+    public float PveBasicDamageBonus { get; set; }   // +% basic-attack damage vs mobs
+    public float PvpSkillDamageBonus { get; set; }   // +% physical-skill damage vs players
+    public float PvpMagicDamageBonus { get; set; }   // +% magic-skill damage vs players
+    public float PvpBasicDamageBonus { get; set; }   // +% basic-attack damage vs players
     public string ActiveArmorSet { get; set; } = ""; // name of the completed armor set bonus, "" if none
     public string ArmorMasteryLabel { get; set; } = ""; // armor-weight mastery status for the UI
 
@@ -541,11 +543,12 @@ public class Entity
         MagicFailResist = 0f;
         MeleeVamp = 0f;
         SpellVamp = 0f;
-        PhysSkillDamageBonus = 0f;
-        MagicSkillDamageBonus = 0f;
-        BasicDamageBonus = 0f;
-        PvpDamageBonus = 0f;
-        PveDamageBonus = 0f;
+        PveSkillDamageBonus = 0f;
+        PveMagicDamageBonus = 0f;
+        PveBasicDamageBonus = 0f;
+        PvpSkillDamageBonus = 0f;
+        PvpMagicDamageBonus = 0f;
+        PvpBasicDamageBonus = 0f;
         Accuracy = StatCalculator.Accuracy(EffectiveDex);
         Evasion = StatCalculator.Evasion(EffectiveDex);
         CritChance = StatCalculator.PhysicalCritChance(EffectiveDex);
@@ -895,11 +898,12 @@ public class Entity
                 InterruptResist += pe.InterruptResist;
                 MeleeVamp += pe.MeleeVamp;
                 SpellVamp += pe.SpellVamp;
-                PhysSkillDamageBonus += pe.PhysSkillDamagePct;
-                MagicSkillDamageBonus += pe.MagicSkillDamagePct;
-                BasicDamageBonus += pe.BasicDamagePct;
-                PvpDamageBonus += pe.PvpDamagePct;
-                PveDamageBonus += pe.PveDamagePct;
+                PveSkillDamageBonus += pe.PveSkillDamagePct;
+                PveMagicDamageBonus += pe.PveMagicDamagePct;
+                PveBasicDamageBonus += pe.PveBasicDamagePct;
+                PvpSkillDamageBonus += pe.PvpSkillDamagePct;
+                PvpMagicDamageBonus += pe.PvpMagicDamagePct;
+                PvpBasicDamageBonus += pe.PvpBasicDamagePct;
                 // Resolution floors are GUARANTEES — take the strongest (max), never sum.
                 EvadeFloor = Math.Max(EvadeFloor, pe.EvadeFloor);
                 HitFloor = Math.Max(HitFloor, pe.HitFloor);
@@ -950,11 +954,12 @@ public class Entity
             if (buff.Has(SkillEffect.BuffMeleeVamp)) MeleeVamp += buff.Flat(SkillEffect.BuffMeleeVamp) + buff.Percent(SkillEffect.BuffMeleeVamp);
             if (buff.Has(SkillEffect.BuffSpellVamp)) SpellVamp += buff.Flat(SkillEffect.BuffSpellVamp) + buff.Percent(SkillEffect.BuffSpellVamp);
             if (buff.Has(SkillEffect.BuffCooldown)) CooldownReduction += buff.Flat(SkillEffect.BuffCooldown) + buff.Percent(SkillEffect.BuffCooldown);
-            if (buff.Has(SkillEffect.BuffPhysSkillDamage)) PhysSkillDamageBonus += buff.Flat(SkillEffect.BuffPhysSkillDamage) + buff.Percent(SkillEffect.BuffPhysSkillDamage);
-            if (buff.Has(SkillEffect.BuffMagicSkillDamage)) MagicSkillDamageBonus += buff.Flat(SkillEffect.BuffMagicSkillDamage) + buff.Percent(SkillEffect.BuffMagicSkillDamage);
-            if (buff.Has(SkillEffect.BuffBasicDamage)) BasicDamageBonus += buff.Flat(SkillEffect.BuffBasicDamage) + buff.Percent(SkillEffect.BuffBasicDamage);
-            if (buff.Has(SkillEffect.BuffPvpDamage)) PvpDamageBonus += buff.Flat(SkillEffect.BuffPvpDamage) + buff.Percent(SkillEffect.BuffPvpDamage);
-            if (buff.Has(SkillEffect.BuffPveDamage)) PveDamageBonus += buff.Flat(SkillEffect.BuffPveDamage) + buff.Percent(SkillEffect.BuffPveDamage);
+            if (buff.Has(SkillEffect.BuffPveSkillDamage)) PveSkillDamageBonus += buff.Flat(SkillEffect.BuffPveSkillDamage) + buff.Percent(SkillEffect.BuffPveSkillDamage);
+            if (buff.Has(SkillEffect.BuffPveMagicDamage)) PveMagicDamageBonus += buff.Flat(SkillEffect.BuffPveMagicDamage) + buff.Percent(SkillEffect.BuffPveMagicDamage);
+            if (buff.Has(SkillEffect.BuffPveBasicDamage)) PveBasicDamageBonus += buff.Flat(SkillEffect.BuffPveBasicDamage) + buff.Percent(SkillEffect.BuffPveBasicDamage);
+            if (buff.Has(SkillEffect.BuffPvpSkillDamage)) PvpSkillDamageBonus += buff.Flat(SkillEffect.BuffPvpSkillDamage) + buff.Percent(SkillEffect.BuffPvpSkillDamage);
+            if (buff.Has(SkillEffect.BuffPvpMagicDamage)) PvpMagicDamageBonus += buff.Flat(SkillEffect.BuffPvpMagicDamage) + buff.Percent(SkillEffect.BuffPvpMagicDamage);
+            if (buff.Has(SkillEffect.BuffPvpBasicDamage)) PvpBasicDamageBonus += buff.Flat(SkillEffect.BuffPvpBasicDamage) + buff.Percent(SkillEffect.BuffPvpBasicDamage);
             if (buff.Has(SkillEffect.BuffInterruptPower)) MagicInterruptBonus += (int)buff.Flat(SkillEffect.BuffInterruptPower);
             if (buff.Has(SkillEffect.BuffInterruptResist)) InterruptResist += (int)buff.Flat(SkillEffect.BuffInterruptResist);
             if (buff.Has(SkillEffect.BuffMagicFailFloor))
