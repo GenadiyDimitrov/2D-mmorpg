@@ -1715,10 +1715,15 @@ public class GameLoopService : BackgroundService
         caster.QueuedSkillId = null;
         caster.CastingSkillId = def.Id;
         caster.CastTargetId = targetId;
-        // Cast time = base ticks scaled by the cast-speed model (WIT + weapon +
-        // buffs, the single source of truth). Lower multiplier = faster cast.
+        // Cast time = base ticks scaled by the speed model (lower multiplier = faster).
+        // PHYSICAL skills scale by ATTACK speed (DEX + weapon), not cast speed — a fighter
+        // has poor WIT-driven cast speed, so making a melee strike depend on it made
+        // physical skills feel sluggish. Magic/buff/heal skills still use cast speed.
+        float speedMult = def.Category == SkillCategory.Physical
+            ? caster.EffectiveAttackSpeedMultiplier
+            : caster.EffectiveCastSpeedMultiplier;
         caster.CastTicksRemaining = Math.Max(2,
-            (int)(def.CastTicks * caster.EffectiveCastSpeedMultiplier));
+            (int)(def.CastTicks * speedMult));
 
         // Charge the initial MP portion up front (default 0; split skills charge
         // some now, the rest on completion). Level-aware MP cost.
@@ -2338,7 +2343,10 @@ var effect = def.Effect;
 
     private void AfterOffensiveSkill(Entity caster, Entity target)
     {
-        if (!target.Dead)
+        // Mages don't fall back to melee auto-attack after a spell: chasing the mob
+        // to swing a staff is never what a nuker/healer wants. Fighters still engage
+        // so a melee skill flows into auto-attacks.
+        if (!target.Dead && caster.BaseClass != BaseClass.Mage)
         {
             caster.CombatTargetId = target.Id;
             caster.Engaged = true;

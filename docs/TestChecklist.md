@@ -7,6 +7,22 @@ this file.
 
 ---
 
+## To test now (this session — 2026-06-29)
+
+### Mage no auto-attack after a spell
+- [ ] After casting an OFFENSIVE spell on a mob, a mage (Nuker/Healer) no longer runs at
+  the target to melee — it stays put. Fighters still flow skill → auto-attack as before.
+
+### Physical skills scale by ATTACK speed (not cast speed) — NUMBERS UNTUNED
+- [ ] A fighter's physical skill cast time now follows ATTACK speed (DEX + weapon), not the
+  WIT-driven cast speed — so a fighter no longer casts melee skills sluggishly.
+- [ ] Faster attack speed (buffs / fast weapon) shortens physical-skill cast; a slow heavy
+  2H weapon lengthens it slightly. Magic / buff / heal skills still use cast speed.
+- [ ] NEXT CSV: owner gives fighters a real `CastTicks` per physical skill so this can be
+  felt against the actual attack speed (heavy strikes ~1s, lighter ~0.1–0.2s).
+
+---
+
 ## Playtest 1 results (2026-06-28)
 
 **Verified working:** damage & crits (incl. [Double]) at all levels; control lands (slow/
