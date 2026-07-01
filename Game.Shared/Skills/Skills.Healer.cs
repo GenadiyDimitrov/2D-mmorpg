@@ -27,16 +27,20 @@ public static partial class SkillCatalog
     {
         new(Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 20, MaxMp: 20),
             Light: new StatMods(MpRegenPct: 0.2f, PDef: 20, CastSpeedPct: -0.05f),
-            Heavy: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f)),
+            Heavy: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
+            None:  new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f)),
         new(Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 25, MaxMp: 20),
             Light: new StatMods(MpRegenPct: 0.2f, PDef: 25, CastSpeedPct: -0.05f),
-            Heavy: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f)),
+            Heavy: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
+            None:  new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f)),
         new(Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 30, MaxMp: 30),
             Light: new StatMods(MpRegenPct: 0.2f, PDef: 30, CastSpeedPct: -0.05f),
-            Heavy: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f)),
+            Heavy: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
+            None:  new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f)),
         new(Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 35, MaxMp: 30),
             Light: new StatMods(MpRegenPct: 0.2f, PDef: 35, CastSpeedPct: -0.05f, Evasion: 2),
-            Heavy: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f)),
+            Heavy: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
+            None:  new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f)),
     };
 
     private static SkillDef[] HealerSkills() => new SkillDef[]
@@ -158,18 +162,20 @@ public static partial class SkillCatalog
             Category: SkillCategory.Passive, Replaces: new[] { WeaponMastery },
             Description: "Passive. Sharpens your spellcasting — more M.Atk/P.Atk, faster casts, "
                        + "shorter reuse. Casting with anything but a sword or blunt is half speed.",
-            // Same caster weapon penalty as Weapon Mastery, at every level (one entry per level).
-            WeaponMasteryLevels: new[] { CasterBowPenalty, CasterBowPenalty, CasterBowPenalty, CasterBowPenalty },
+            // The per-level bonus applies ONLY with a sword/blunt; other/empty = cast x0.5 (no bonus).
+            WeaponMasteryLevels: new[]
+            {
+                CasterMastery(new PassiveEffect(MagAtk: 6,  PhysAtk: 4,  CooldownPct: 0.10f)),
+                CasterMastery(new PassiveEffect(MagAtk: 8,  PhysAtk: 6,  CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegenPct: 0.10f)),
+                CasterMastery(new PassiveEffect(MagAtk: 10, PhysAtk: 8,  CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegenPct: 0.10f)),
+                CasterMastery(new PassiveEffect(MagAtk: 12, PhysAtk: 10, CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegenPct: 0.50f, HpRegenPct: 0.10f)),
+            },
             Levels: new[]
             {
-                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(MagAtk: 6,  PhysAtk: 4,  CooldownPct: 0.10f),
-                    Description: "+6 M.Atk, +4 P.Atk, -10% skill reuse."),
-                new SkillLevel(SpCost: 6400,  Passive: new PassiveEffect(MagAtk: 8,  PhysAtk: 6,  CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegenPct: 0.10f),
-                    Description: "+8 M.Atk, +6 P.Atk, +5% cast, -10% reuse, +10% MP regen."),
-                new SkillLevel(SpCost: 12800, Passive: new PassiveEffect(MagAtk: 10, PhysAtk: 8,  CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegenPct: 0.10f),
-                    Description: "+10 M.Atk, +8 P.Atk, +5% cast, -10% reuse, +10% MP regen."),
-                new SkillLevel(SpCost: 25000, Passive: new PassiveEffect(MagAtk: 12, PhysAtk: 10, CastSpeedPct: 0.05f, CooldownPct: 0.10f, MpRegenPct: 0.50f, HpRegenPct: 0.10f),
-                    Description: "+12 M.Atk, +10 P.Atk, +5% cast, -10% reuse, +50% MP regen, +10% HP regen."),
+                new SkillLevel(SpCost: 3200,  Description: "With sword/blunt: +6 M.Atk, +4 P.Atk, -10% skill reuse."),
+                new SkillLevel(SpCost: 6400,  Description: "With sword/blunt: +8 M.Atk, +6 P.Atk, +5% cast, -10% reuse, +10% MP regen."),
+                new SkillLevel(SpCost: 12800, Description: "With sword/blunt: +10 M.Atk, +8 P.Atk, +5% cast, -10% reuse, +10% MP regen."),
+                new SkillLevel(SpCost: 25000, Description: "With sword/blunt: +12 M.Atk, +10 P.Atk, +5% cast, -10% reuse, +50% MP regen, +10% HP regen."),
             }),
 
         // Force — steadies casting (interrupt resist = "magic-cancel resist"); rank 2 adds

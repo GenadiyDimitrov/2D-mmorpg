@@ -21,14 +21,16 @@ public static partial class SkillCatalog
     public const string RogueWeaponMastery   = "rogue_weapon_mastery";
     public const string ArcherWeaponMastery  = "archer_weapon_mastery";
 
-    /// <summary>Caster penalty woven into the mage atk passives (Weapon/Spell Mastery): the
-    /// wizard casts properly only with a SWORD or BLUNT (1H/2H). ANYTHING ELSE — bow, dual, or
-    /// an EMPTY HAND — halves cast speed (CastSpeedPct -1 ⇒ ×2 cast time). Stacked with the
-    /// robe mastery's non-robe cast ×0.5, a bare-handed unarmoured mage casts at ×0.25.</summary>
-    internal static readonly WeaponMasteryProfile CasterBowPenalty =
-        new(Dual:  new PassiveEffect(CastSpeedPct: -1.0f),
-            Bow:   new PassiveEffect(CastSpeedPct: -1.0f),
-            Other: new PassiveEffect(CastSpeedPct: -1.0f));
+    /// <summary>A caster weapon-mastery level: the given <paramref name="bonus"/> (M/P.Atk,
+    /// reuse, cast/regen) applies ONLY with the wizard's weapon — a SWORD or BLUNT (1H/2H).
+    /// ANYTHING ELSE — bow, dual, or an EMPTY HAND — gets NO bonus and halves cast speed
+    /// (CastSpeedPct -1 ⇒ ×2 cast time). Stacked with the robe mastery's non-robe cast ×0.5,
+    /// a bare-handed unarmoured mage casts at ×0.25. "Not using your optimal gear = penalty."</summary>
+    internal static WeaponMasteryProfile CasterMastery(PassiveEffect bonus)
+    {
+        var penalty = new PassiveEffect(CastSpeedPct: -1.0f);
+        return new(Sword: bonus, Blunt: bonus, Dual: penalty, Bow: penalty, Other: penalty);
+    }
 
     /// <summary>A two-handed sword/blunt profile carrying the same PassiveEffect for both
     /// (the warrior 2H mastery doesn't distinguish sword vs blunt), gated to TwoHand.</summary>

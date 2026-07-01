@@ -183,10 +183,9 @@ public static partial class SkillCatalog
         new(WeaponMastery, "Weapon Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: 2200,
-            Passive: new PassiveEffect(MagAtk: 4, PhysAtk: 2),
-            WeaponMasteryLevels: new[] { CasterBowPenalty },
-            Description: "Passive. +4 M.Atk and +2 P.Atk. Casting with anything but a sword or blunt "
-                       + "(bow, dagger, or bare-handed) is half speed."),
+            WeaponMasteryLevels: new[] { CasterMastery(new PassiveEffect(MagAtk: 4, PhysAtk: 2)) },
+            Description: "Passive. With a sword or blunt: +4 M.Atk and +2 P.Atk. Casting with "
+                       + "anything else (bow, dagger, or bare-handed) is half speed."),
 
         // Dispel Magic — CANCEL: strips up to 2 random beneficial effects from an enemy.
         new(DispelMagic, "Dispel Magic", BaseClass.Mage, SkillEffect.Cancel,
