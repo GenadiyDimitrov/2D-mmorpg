@@ -907,9 +907,14 @@ public class Entity
             Accuracy += mEff.Accuracy;
             Defence += mEff.Defence + (int)(Level * mEff.DefPerLevel);
             MagicDefence += mEff.MagicDefence + (int)(Level * mEff.MagicDefPerLevel);
+            if (mEff.DefenceMult != 1f) Defence = (int)(Defence * mEff.DefenceMult);
+            if (mEff.MagicDefenceMult != 1f) MagicDefence = (int)(MagicDefence * mEff.MagicDefenceMult);
             InterruptResist += mEff.InterruptResist + (int)(Level * mEff.InterruptResistPerLevel);
             if (mEff.CritRate != 0f) CritChance = Math.Clamp(CritChance + mEff.CritRate, 0f, 0.75f);
             CritDamageBonus += mEff.CritDamage;
+            CritDmgResist += mEff.CritDmgResist;
+            CritRateResist += mEff.CritRateResist;
+            BowResist += mEff.BowResist;
 
             // A learned skill can SUPERSEDE another's passive via Replaces[] (e.g. Spell
             // Mastery replaces Weapon Mastery): collect those ids so the base passive
@@ -948,6 +953,16 @@ public class Entity
                 CritRateResist += pe.CritRateResist;
                 CritDmgResist += pe.CritDmgResist;
                 BowResist += pe.BowResist;
+                // Shield passive (only with a shield equipped): scale block chance / shield def.
+                if (HasShield)
+                {
+                    if (pe.BlockChancePct != 0f) BlockChance *= 1f + pe.BlockChancePct;
+                    if (pe.ShieldDefPct != 0f)
+                    {
+                        ShieldDefense = (int)(ShieldDefense * (1f + pe.ShieldDefPct));
+                        BlockReduction += pe.ShieldDefPct * 0.2f;
+                    }
+                }
                 MagicFailResist += pe.MagicFailResist;
                 MagicInterruptBonus += pe.InterruptPower;
                 InterruptResist += pe.InterruptResist;
@@ -980,6 +995,13 @@ public class Entity
             }
             // (The combat-training attack bonus is now a normal LEVELED passive — its
             // per-level AttackPct flows through the loop above, no special-casing.)
+
+            // Shield-passive scaling above can push block over caps — re-clamp.
+            if (HasShield)
+            {
+                BlockChance = Math.Clamp(BlockChance, 0f, StatCaps.BlockChance);
+                BlockReduction = Math.Clamp(BlockReduction, 0f, StatCaps.BlockReduction);
+            }
         }
 
         // MEN multiplies the whole flat magic-defence pool (base + jewels + passives),

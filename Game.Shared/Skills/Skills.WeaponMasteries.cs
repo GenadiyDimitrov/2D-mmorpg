@@ -79,13 +79,19 @@ public static partial class SkillCatalog
             new WeaponMasteryProfile(
                 Bow: new PassiveEffect(PhysAtkPct: 0.12f, CritDamage: 0.20f, Accuracy: 5))),
 
-        // Tank — modest melee bump with ONE-HANDED sword/blunt (so a shield stays viable;
-        // the shield is the real mastery).
-        WeaponMasteryPassive(TankWeaponMastery, "Weapon Expertise", BaseClass.Fighter,
-            "A modest increase to attack power and accuracy with ONE-HANDED swords and blunts.",
-            new WeaponMasteryProfile(
-                Sword: new PassiveEffect(PhysAtkPct: 0.06f, Accuracy: 5),
-                Blunt: new PassiveEffect(PhysAtkPct: 0.06f, Accuracy: 10),
-                RequiredHands: WeaponHands.OneHand)),
+        // Tank — Weapon Mastery (CSV tank 20-35): flat + 8.5% attack power with ANY weapon.
+        // 5 levels (@20/24/28/32/36). Replaces the base fighter weapon mastery.
+        new(TankWeaponMastery, "Weapon Mastery", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive, Replaces: new[] { FighterWeaponMastery },
+            Description: "Passive. Increases physical attack power with any weapon equipped.",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 3400,  Passive: new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 6)),
+                new SkillLevel(SpCost: 6400,  Passive: new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 8)),
+                new SkillLevel(SpCost: 12000, Passive: new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 10)),
+                new SkillLevel(SpCost: 22000, Passive: new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 12)),
+                new SkillLevel(SpCost: 40000, Passive: new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 15)),
+            }),
     };
 }

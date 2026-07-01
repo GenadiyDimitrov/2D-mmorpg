@@ -27,7 +27,15 @@ public readonly record struct MasteryEffect(
     float MagicDefPerLevel = 0f,
     float InterruptResistPerLevel = 0f,
     float CritRate = 0f,     // flat crit-rate points (0..1)
-    float CritDamage = 0f);  // flat crit-multiplier bonus
+    float CritDamage = 0f,   // flat crit-multiplier bonus
+    // Multiplier FACTORS on the defence pools (1.0 = no change; tank heavy p.def ×1.07).
+    float DefenceMult = 1f,
+    float MagicDefenceMult = 1f,
+    // Defensive resist fractions (heavy = crit-dmg reduction / bow resist; rogue light =
+    // crit-rate resist). Added to the entity's running resist totals.
+    float CritDmgResist = 0f,
+    float CritRateResist = 0f,
+    float BowResist = 0f);
 
 /// <summary>One armor-weight mastery resolved for a specific worn weight.</summary>
 public readonly record struct MasteryResult(MasteryEffect Effect, string Label);

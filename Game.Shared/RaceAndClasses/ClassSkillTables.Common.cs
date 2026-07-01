@@ -17,9 +17,32 @@ public static partial class ClassSkillTables
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork, Race.God })
         {
             // Fighter archetypes — 2nd-class learn cadence: 20, 24, 28, 32, 36.
+            // Tank (CSV tank 20-35): Heavy Armor + Shield Mastery, Tank Anti-Magic, any-weapon
+            // Weapon Mastery, Defensive Wall, Taunt (Provoke), Shield Stun, Stay!.
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Tank,
-                new ClassSkill(Fortify, 20),
-                new ClassSkill(ShieldMastery, 24), new ClassSkill(Disrupt, 28));
+                new ClassSkill(TankArmorMastery, 20, SkillLevel: 1),
+                new ClassSkill(TankShieldMastery, 20, SkillLevel: 1),
+                new ClassSkill(TankAntiMagic, 20, SkillLevel: 1),
+                new ClassSkill(TankWeaponMastery, 20, SkillLevel: 1),
+                new ClassSkill(DefensiveWall, 20, SkillLevel: 1),
+                new ClassSkill(Provoke, 20),
+                new ClassSkill(TankArmorMastery, 24, SkillLevel: 2),
+                new ClassSkill(TankShieldMastery, 24, SkillLevel: 2),
+                new ClassSkill(TankAntiMagic, 24, SkillLevel: 2),
+                new ClassSkill(TankWeaponMastery, 24, SkillLevel: 2),
+                new ClassSkill(TankArmorMastery, 28, SkillLevel: 3),
+                new ClassSkill(TankShieldMastery, 28, SkillLevel: 3),
+                new ClassSkill(TankAntiMagic, 28, SkillLevel: 3),
+                new ClassSkill(TankWeaponMastery, 28, SkillLevel: 3),
+                new ClassSkill(TankShieldStun, 28, SkillLevel: 1),
+                new ClassSkill(TankArmorMastery, 32, SkillLevel: 4),
+                new ClassSkill(TankShieldMastery, 32, SkillLevel: 4),
+                new ClassSkill(TankAntiMagic, 32, SkillLevel: 4),
+                new ClassSkill(TankWeaponMastery, 32, SkillLevel: 4),
+                new ClassSkill(TankArmorMastery, 36, SkillLevel: 5),
+                new ClassSkill(TankAntiMagic, 36, SkillLevel: 5),
+                new ClassSkill(TankWeaponMastery, 36, SkillLevel: 5),
+                new ClassSkill(TankStay, 36, SkillLevel: 1));
             // Warrior (CSV warrior 20-35): Two-Hand Mastery + Body Mastery (5 levels each),
             // Strike continues (levels 4-8), and the low-HP Battle stances.
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Warrior,

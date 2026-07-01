@@ -46,6 +46,13 @@ public static partial class SkillCatalog
     public const string BattlePresence = "battle_presence";        // HP<60% stance: +p.Atk
     public const string BattleDefence = "battle_defence";          // HP<60% stance: +p.Def
 
+    // --- Tank 2nd-class (CSV tank 20-35) ---
+    public const string TankShieldMastery = "tank_shield_mastery"; // passive: +shield def/rate + bow resist
+    public const string TankAntiMagic = "tank_anti_magic";         // passive: +magic def
+    public const string DefensiveWall = "defensive_wall";          // huge def buff (self, -move)
+    public const string TankShieldStun = "tank_shield_stun";       // stun 9s
+    public const string TankStay = "tank_stay";                    // root/hold 15s
+
     // Base-fighter armor mastery per level (@5/10/15): flat P.Def + MP-regen for ALL weights;
     // at level 3 light armor also aids evasion. No off-weight penalty (fighters adapt).
     private static readonly ArmorMasteryProfile[] FighterArmorLevels = new[]
@@ -200,6 +207,71 @@ public static partial class SkillCatalog
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffDef, 1.0f, ModifierMode.Percent) },
             Description: "A desperate defence: DOUBLES your P.Def for 90s. Usable only at ≤60% HP. "
                        + "Cannot be combined with Battle Presence."),
+
+        // ===== Tank 2nd-class (CSV tank 20-35) =====
+
+        // Shield Mastery — PASSIVE (4 levels @20/24/28/32): scales the equipped shield's
+        // block chance and defence, and adds bow resistance. Inert without a shield.
+        new(TankShieldMastery, "Shield Mastery", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive,
+            Description: "Passive. Greatly improves your shield's block chance and defence, and "
+                       + "reduces damage from bows (only while a shield is equipped).",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 1700, Passive: new PassiveEffect(ShieldDefPct: 0.30f, BlockChancePct: 0.50f)),
+                new SkillLevel(SpCost: 3200, Passive: new PassiveEffect(ShieldDefPct: 0.30f, BlockChancePct: 0.50f, BowResist: 0.16f)),
+                new SkillLevel(SpCost: 6000, Passive: new PassiveEffect(ShieldDefPct: 0.40f, BlockChancePct: 0.70f, BowResist: 0.16f)),
+                new SkillLevel(SpCost: 11000, Passive: new PassiveEffect(ShieldDefPct: 0.40f, BlockChancePct: 0.70f, BowResist: 0.24f)),
+            }),
+
+        // Tank Anti-Magic — passive flat magic defence (5 levels @20/24/28/32/36).
+        new(TankAntiMagic, "Tank Anti-Magic", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive,
+            Description: "Passive. Increases your magic defence.",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 1700,  Passive: new PassiveEffect(MagicDefence: 25)),
+                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(MagicDefence: 30)),
+                new SkillLevel(SpCost: 6000,  Passive: new PassiveEffect(MagicDefence: 35)),
+                new SkillLevel(SpCost: 11000, Passive: new PassiveEffect(MagicDefence: 40)),
+                new SkillLevel(SpCost: 20000, Passive: new PassiveEffect(MagicDefence: 45)),
+            }),
+
+        // Defensive Wall — the tank's panic button: enormous P.Def & M.Def (flat + ×2), high
+        // cancel resistance, but move speed halved, for 60s (long reuse). All channels are
+        // ordinary buff magnitudes (BuffDef/BuffMagicDef accept flat AND percent).
+        new(DefensiveWall, "Defensive Wall", BaseClass.Fighter,
+            SkillEffect.BuffDef | SkillEffect.BuffMagicDef | SkillEffect.BuffCancelResist | SkillEffect.BuffMoveSpeed,
+            MpCost: 20, CastTicks: 5, CooldownTicks: 9000, Range: 0, Power: 0,
+            DurationTicks: 600, BuffKey: "defensive_wall", Rank: 1,
+            Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 3400,
+            Magnitudes: new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffDef, 1800, ModifierMode.Flat),
+                new(SkillEffect.BuffDef, 1.0f, ModifierMode.Percent),
+                new(SkillEffect.BuffMagicDef, 1600, ModifierMode.Flat),
+                new(SkillEffect.BuffMagicDef, 1.0f, ModifierMode.Percent),
+                new(SkillEffect.BuffCancelResist, 0.80f, ModifierMode.Percent),
+                new(SkillEffect.BuffMoveSpeed, -0.50f, ModifierMode.Percent),
+            },
+            Description: "Raise an impregnable guard for 60s: massively higher physical & magic "
+                       + "defence and cancel resistance, but your movement is halved."),
+
+        // Shield Stun — contested STUN for 9s (physical, ATK-vs-CON; bosses immune).
+        new(TankShieldStun, "Shield Stun", BaseClass.Fighter, SkillEffect.Stun,
+            MpCost: 30, CastTicks: 10, CooldownTicks: 100, Range: 40, Power: 0,
+            DurationTicks: 90, BuffKey: "stun", Rank: 1,
+            Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical, SpCost: 12000,
+            Description: "Slams the target with your shield, stunning it for 9s. ATK-vs-CON; bosses immune."),
+
+        // Stay! — contested ROOT for 15s (physical hold; target can still act).
+        new(TankStay, "Stay!", BaseClass.Fighter, SkillEffect.Root,
+            MpCost: 30, CastTicks: 5, CooldownTicks: 150, Range: 400, Power: 0,
+            DurationTicks: 150, BuffKey: "root", Rank: 1,
+            Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical, SpCost: 40000,
+            Description: "Roots the target in place for 15s (it can still act). ATK-vs-CON; bosses immune."),
 
         new(PowerStrike, "Power Strike", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: 10, CastTicks: 5, CooldownTicks: 30, Range: 0, Power: 30,
