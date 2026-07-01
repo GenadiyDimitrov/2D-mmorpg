@@ -200,12 +200,12 @@ public record SkillDef(
     public int FinishMp => FinishMpAt(1);
 }
 
-/// <summary>Per-armor-weight stat profile for an armor-mastery PASSIVE (one entry per
-/// skill level). The worn BODY weight selects which MasteryEffect applies in
-/// Entity.RecomputeDerived — turning the old hardcoded ArmorMastery table into skill DATA
-/// (the same pattern future classes reuse for weapon-type-conditional passives).</summary>
+/// <summary>Per-armor-weight <see cref="StatMods"/> profile for an armor-mastery PASSIVE
+/// (one entry per skill level). The worn BODY weight selects which StatMods applies in
+/// Entity.RecomputeDerived — pure per-level DATA, no character-level/class formula (the same
+/// pattern future classes reuse for weapon-type-conditional passives).</summary>
 public readonly record struct ArmorMasteryProfile(
-    MasteryEffect Robe, MasteryEffect Light, MasteryEffect Heavy);
+    StatMods Robe, StatMods Light, StatMods Heavy);
 
 /// <summary>Per-equipped-WEAPON-TYPE stat profile for a weapon-mastery PASSIVE (one entry
 /// per skill level). The held weapon's type selects which <see cref="PassiveEffect"/>

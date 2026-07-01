@@ -68,17 +68,17 @@ public static partial class SkillCatalog
     private static readonly ArmorMasteryProfile[] FighterArmorLevels = new[]
     {
         new ArmorMasteryProfile(
-            new MasteryEffect(Defence: 9,  MpRegen: 1.1f),
-            new MasteryEffect(Defence: 9,  MpRegen: 1.1f),
-            new MasteryEffect(Defence: 9,  MpRegen: 1.1f)),
+            new StatMods(PDef: 9,  MpRegenPct: 0.1f),
+            new StatMods(PDef: 9,  MpRegenPct: 0.1f),
+            new StatMods(PDef: 9,  MpRegenPct: 0.1f)),
         new ArmorMasteryProfile(
-            new MasteryEffect(Defence: 12, MpRegen: 1.1f),
-            new MasteryEffect(Defence: 12, MpRegen: 1.1f),
-            new MasteryEffect(Defence: 12, MpRegen: 1.1f)),
+            new StatMods(PDef: 12, MpRegenPct: 0.1f),
+            new StatMods(PDef: 12, MpRegenPct: 0.1f),
+            new StatMods(PDef: 12, MpRegenPct: 0.1f)),
         new ArmorMasteryProfile(
-            new MasteryEffect(Defence: 14, MpRegen: 1.1f),
-            new MasteryEffect(Defence: 14, MpRegen: 1.1f, Evasion: 3),
-            new MasteryEffect(Defence: 14, MpRegen: 1.1f)),
+            new StatMods(PDef: 14, MpRegenPct: 0.1f),
+            new StatMods(PDef: 14, MpRegenPct: 0.1f, Evasion: 3),
+            new StatMods(PDef: 14, MpRegenPct: 0.1f)),
     };
 
     private static SkillDef[] FighterSkills() => new SkillDef[]
@@ -129,7 +129,6 @@ public static partial class SkillCatalog
         new(FighterArmorMastery, "Armor Mastery", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
-            Replaces: new[] { MasteryHeavy, MasteryLight, MasteryRobe },
             Description: "Passive. Improves defence and MP regen with any armor weight "
                        + "(light armor also aids evasion at higher levels).",
             Levels: new[]

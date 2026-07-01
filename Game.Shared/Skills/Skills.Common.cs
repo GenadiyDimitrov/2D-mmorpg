@@ -6,10 +6,9 @@ namespace Game.Shared;
 /// line, and Wind Walk. Class-defining combat skills live in their own files.</summary>
 public static partial class SkillCatalog
 {
-    // ---- Armor-weight masteries (learnable PASSIVES; applied by ArmorMastery in
-    //      RecomputeDerived when the matching weight is worn AND learned). ----
-    public const string MasteryHeavy = "mastery_heavy";
-    public const string MasteryLight = "mastery_light";
+    // ---- Base MAGE armor mastery (learnable PASSIVE, per-level StatMods data; applied
+    //      in RecomputeDerived by the worn body weight). Fighters get FighterArmorMastery
+    //      instead; 2nd classes REPLACE these with their archetype mastery. ----
     public const string MasteryRobe  = "mastery_robe";
     // ---- Combat "training" passives, auto-granted at level 40 (soulshot/spiritshot
     //      stand-in). Doubling the atk STAT gives ×2 physical (linear) but ×1.414
@@ -77,6 +76,26 @@ public static partial class SkillCatalog
             _ => null
         };
     }
+
+    // Base MAGE robe mastery per level (char 1/7/14). Robe = caster lean (cast/MP/def);
+    // light/heavy hinder casting. Penalty literals are inlined (not shared fields) to avoid
+    // static-init ordering issues across the partials. Placeholder numbers — retune with the
+    // real mage table; the nuker/healer masteries REPLACE this from level 20.
+    private static readonly ArmorMasteryProfile[] MageRobeLevels = new[]
+    {
+        new ArmorMasteryProfile(
+            Robe:  new StatMods(CastSpeedPct: 0.3f, MpRegenPct: 0.2f, MaxMpPct: 0.1f, PDef: 3),
+            Light: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.2f, MoveSpeedPct: -0.2f, Evasion: -3, Accuracy: -3),
+            Heavy: new StatMods(AtkSpeedPct: -0.5f, CastSpeedPct: -0.5f, MoveSpeedPct: -0.5f, HpRegenPct: -0.5f, MpRegenPct: -0.5f, Evasion: -10, Accuracy: -10)),
+        new ArmorMasteryProfile(
+            Robe:  new StatMods(CastSpeedPct: 0.3f, MpRegenPct: 0.2f, MaxMpPct: 0.1f, PDef: 10),
+            Light: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.2f, MoveSpeedPct: -0.2f, Evasion: -3, Accuracy: -3),
+            Heavy: new StatMods(AtkSpeedPct: -0.5f, CastSpeedPct: -0.5f, MoveSpeedPct: -0.5f, HpRegenPct: -0.5f, MpRegenPct: -0.5f, Evasion: -10, Accuracy: -10)),
+        new ArmorMasteryProfile(
+            Robe:  new StatMods(CastSpeedPct: 0.3f, MpRegenPct: 0.2f, MaxMpPct: 0.1f, PDef: 17),
+            Light: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.2f, MoveSpeedPct: -0.2f, Evasion: -3, Accuracy: -3),
+            Heavy: new StatMods(AtkSpeedPct: -0.5f, CastSpeedPct: -0.5f, MoveSpeedPct: -0.5f, HpRegenPct: -0.5f, MpRegenPct: -0.5f, Evasion: -10, Accuracy: -10)),
+    };
 
     private static SkillDef[] CommonSkills() => new SkillDef[]
     {
@@ -149,30 +168,23 @@ public static partial class SkillCatalog
                     Description: "Raises Max HP by 35%."),
             }),
 
-        // ---- Armor-weight masteries (PASSIVE; not cast, not bar-able). The
-        //      bonus is class/archetype-specific and applied in RecomputeDerived
-        //      only while the matching armor is worn (see ArmorMastery). ----
-        new(MasteryHeavy, "Heavy Armor Mastery", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive, SpCost: 500,
-            Description: "Passive. While wearing HEAVY body armor, gain your class's "
-                       + "heavy-armor bonus (more HP/defence). Untrained heavy still penalises."),
-        new(MasteryLight, "Light Armor Mastery", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive, SpCost: 500,
-            Description: "Passive. While wearing LIGHT body armor, gain your class's "
-                       + "light-armor bonus (attack speed, evasion/accuracy, etc.)."),
+        // ---- Robe Mastery — base MAGE armor mastery (PASSIVE, per-level StatMods data).
+        //      Levels 1/2/3 at char 1/7/14; the nuker/healer 2nd-class masteries REPLACE it.
+        //      Robe = caster lean; light/heavy hinder casting. Applied in RecomputeDerived
+        //      by the worn body weight. Numbers are placeholders (carried over from the old
+        //      formula) pending the real mage table. ----
         new(MasteryRobe, "Robe Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            Category: SkillCategory.Passive, SpCost: 500,
-            Description: "Passive. While wearing a ROBE, gain your class's robe bonus "
-                       + "(cast speed, MP and MP regen). Higher levels add physical defence.",
+            Category: SkillCategory.Passive,
+            Description: "Passive. While wearing a ROBE: faster casting, more MP and MP regen, "
+                       + "and defence (rising with level). Light/heavy armor slows your casting.",
             Levels: new[]
             {
-                new SkillLevel(SpCost: 0),                                                   // Lv.1 — the robe bonus (auto)
-                new SkillLevel(SpCost: 480,  Passive: new PassiveEffect(Defence: 7),  Description: "+7 P.Def."),
-                new SkillLevel(SpCost: 2200, Passive: new PassiveEffect(Defence: 10), Description: "+10 P.Def."),
-            }),
+                new SkillLevel(SpCost: 0),
+                new SkillLevel(SpCost: 480,  Description: "Robe Mastery Lv.2 (+P.Def)."),
+                new SkillLevel(SpCost: 2200, Description: "Robe Mastery Lv.3 (+P.Def)."),
+            },
+            ArmorMasteryLevels: MageRobeLevels),
 
         // ===== Combat training passives (auto-granted; level by character level) =====
         // 9 levels: +10%…+80% attack (40→75) then +100% (76+). The auto-grant level

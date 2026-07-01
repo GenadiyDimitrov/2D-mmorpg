@@ -265,10 +265,10 @@ public class GameLoopService : BackgroundService
             && !IsSuperseded(player, SkillCatalog.MagicBolt))
             player.LearnedSkills[SkillCatalog.MagicBolt] = 1;
 
-        // The class's natural armor-weight mastery, free at level 1 (level 1 only).
-        string mastery = player.BaseClass == BaseClass.Mage ? SkillCatalog.MasteryRobe : SkillCatalog.MasteryLight;
-        if (!player.HasSkill(mastery))
-            player.LearnedSkills[mastery] = 1;
+        // Base MAGE gets Robe Mastery free at level 1; fighters learn their Armor Mastery
+        // from the class table at level 5 (no level-1 armor mastery).
+        if (player.BaseClass == BaseClass.Mage && !player.HasSkill(SkillCatalog.MasteryRobe))
+            player.LearnedSkills[SkillCatalog.MasteryRobe] = 1;
 
         // Combat "training" passive (soulshot/spiritshot stand-in): auto-granted, with
         // the LEVEL chosen by character level (+10%…+100% atk; see TrainingLevelFor).

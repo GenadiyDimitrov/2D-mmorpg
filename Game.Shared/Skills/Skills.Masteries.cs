@@ -3,10 +3,9 @@ namespace Game.Shared;
 /// <summary>DATA-DRIVEN armor-mastery skills per 2nd-class archetype (the healer's lives
 /// in Skills.Healer.cs). Each carries a per-worn-weight <see cref="ArmorMasteryProfile"/>:
 /// a BONUS for the trained weight(s), a PENALTY for off-weights (robe never penalises;
-/// tank/warrior are immune so their off-weights are Neutral). These REPLACE the shared
-/// mastery_heavy/light/robe skills and move the per-class numbers out of the hardcoded
-/// ArmorMastery table into data (per [[stats-via-skills-not-hardcoded]]). Level-scaled
-/// defence is preserved via MasteryEffect.*PerLevel coefficients.</summary>
+/// tank/warrior are immune so their off-weights are inert = default). These REPLACE the base
+/// fighter/mage masteries; every stat is explicit per skill level — no character-level or
+/// class formula (per [[stats-via-skills-not-hardcoded]]).</summary>
 public static partial class SkillCatalog
 {
     public const string TankArmorMastery    = "tank_armor_mastery";
@@ -15,41 +14,42 @@ public static partial class SkillCatalog
     public const string ArcherArmorMastery  = "archer_armor_mastery";
     public const string NukerArmorMastery   = "nuker_armor_mastery";
 
-    private static readonly MasteryEffect FighterHeavyPenalty =
-        new(AtkSpeed: 0.8f, CastSpeed: 0.8f, MoveSpeed: 0.8f, Evasion: -3, Accuracy: -3);
-    private static readonly MasteryEffect MageLightPenalty =
-        new(AtkSpeed: 0.8f, CastSpeed: 0.8f, MoveSpeed: 0.8f, Evasion: -3, Accuracy: -3);
-    private static readonly MasteryEffect MageHeavyPenalty =
-        new(AtkSpeed: 0.5f, CastSpeed: 0.5f, MoveSpeed: 0.5f, HpRegen: 0.5f, MpRegen: 0.5f,
+    // Off-weight penalties as StatMods (factor→pct: ×0.8 → −0.2, ×0.5 → −0.5).
+    private static readonly StatMods FighterHeavyPenalty =
+        new(AtkSpeedPct: -0.2f, CastSpeedPct: -0.2f, MoveSpeedPct: -0.2f, Evasion: -3, Accuracy: -3);
+    private static readonly StatMods MageLightPenalty =
+        new(AtkSpeedPct: -0.2f, CastSpeedPct: -0.2f, MoveSpeedPct: -0.2f, Evasion: -3, Accuracy: -3);
+    private static readonly StatMods MageHeavyPenalty =
+        new(AtkSpeedPct: -0.5f, CastSpeedPct: -0.5f, MoveSpeedPct: -0.5f, HpRegenPct: -0.5f, MpRegenPct: -0.5f,
             Evasion: -10, Accuracy: -10);
 
     /// <summary>Rogue armor level: LIGHT armor gets the given bonus, heavy penalises, robe is
     /// inert. (CSV rogue "with light: …; heavy hinders".)</summary>
-    private static ArmorMasteryProfile RogueLight(MasteryEffect light) =>
-        new(Robe: ArmorMastery.Neutral, Light: light, Heavy: FighterHeavyPenalty);
+    private static ArmorMasteryProfile RogueLight(StatMods light) =>
+        new(Robe: default, Light: light, Heavy: FighterHeavyPenalty);
 
     /// <summary>Tank Heavy Armor Mastery level: HEAVY armor grants flat P.Def, ×1.07 P.Def,
     /// 15% crit-damage reduction, ×mpReg MP regen and −2 evasion. Off-weights are inert (tank is
     /// immune to armor penalties). (CSV tank "heavy: mpReg x1.1, p.def +N, p.def x1.07, crit dmg
     /// reduction 15%, eva -2"; the @36 level is mpReg ×3.4.)</summary>
     private static ArmorMasteryProfile TankHeavy(int def, float mpReg = 1.1f) => new(
-        Robe:  ArmorMastery.Neutral,
-        Light: ArmorMastery.Neutral,
-        Heavy: new MasteryEffect(MpRegen: mpReg, Defence: def, DefenceMult: 1.07f,
+        Robe:  default,
+        Light: default,
+        Heavy: new StatMods(MpRegenPct: mpReg - 1f, PDef: def, PDefPct: 0.07f,
             CritDmgResist: 0.15f, Evasion: -2));
 
     /// <summary>Warrior armor-mastery level: flat P.Def + ×1.1 MP regen on all weights; light
     /// armor also adds the given evasion. (CSV warrior "with all mp[Reg] x1.1, p.def +N; light eva +E".)</summary>
     private static ArmorMasteryProfile WarriorArmor(int def, int lightEva) => new(
-        Robe:  new MasteryEffect(Defence: def, MpRegen: 1.1f),
-        Light: new MasteryEffect(Defence: def, MpRegen: 1.1f, Evasion: lightEva),
-        Heavy: new MasteryEffect(Defence: def, MpRegen: 1.1f));
+        Robe:  new StatMods(PDef: def, MpRegenPct: 0.1f),
+        Light: new StatMods(PDef: def, MpRegenPct: 0.1f, Evasion: lightEva),
+        Heavy: new StatMods(PDef: def, MpRegenPct: 0.1f));
 
     private static SkillDef ArmorMasteryPassive(string id, BaseClass cls, ArmorMasteryProfile profile) =>
         new(id, "Armor Mastery", cls, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
-            Replaces: new[] { MasteryHeavy, MasteryLight, MasteryRobe },
+            Replaces: new[] { FighterArmorMastery },
             Description: "Passive. Adapts your defences to the armor weight you wear — your "
                        + "trained weight grants a bonus; wearing the wrong weight hinders you.",
             Levels: new[] { new SkillLevel(SpCost: 500) },
@@ -63,7 +63,7 @@ public static partial class SkillCatalog
         new(TankArmorMastery, "Heavy Armor Mastery", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
-            Replaces: new[] { MasteryHeavy, MasteryLight, MasteryRobe, FighterArmorMastery },
+            Replaces: new[] { FighterArmorMastery },
             Description: "Passive. In HEAVY armor: greatly increased physical defence, reduced "
                        + "critical damage taken and more max MP (slightly lower evasion).",
             Levels: new[]
@@ -85,7 +85,7 @@ public static partial class SkillCatalog
         new(WarriorArmorMastery, "Armor Mastery", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
-            Replaces: new[] { MasteryHeavy, MasteryLight, MasteryRobe, FighterArmorMastery },
+            Replaces: new[] { FighterArmorMastery },
             Description: "Passive. Improves defence and maximum MP with any armor weight; "
                        + "light armor also boosts evasion.",
             Levels: new[]
@@ -108,7 +108,7 @@ public static partial class SkillCatalog
         new(RogueArmorMastery, "Armor Mastery", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
-            Replaces: new[] { MasteryHeavy, MasteryLight, MasteryRobe, FighterArmorMastery },
+            Replaces: new[] { FighterArmorMastery },
             Description: "Passive. In LIGHT armor: greatly increased evasion, resistance to "
                        + "critical hits, faster MP regen and (at higher levels) speed. Heavy armor hinders you.",
             Levels: new[]
@@ -121,17 +121,20 @@ public static partial class SkillCatalog
             },
             ArmorMasteryLevels: new[]
             {
-                RogueLight(new MasteryEffect(Evasion: 7,  CritRateResist: 0.15f, MpRegen: 1.1f, Defence: 16)),
-                RogueLight(new MasteryEffect(Evasion: 11, CritRateResist: 0.15f, MpRegen: 1.1f, Defence: 18)),
-                RogueLight(new MasteryEffect(Evasion: 13, CritRateResist: 0.15f, MpRegen: 1.1f, MoveSpeed: 1.06f, Defence: 20)),
-                RogueLight(new MasteryEffect(Evasion: 13, CritRateResist: 0.15f, MpRegen: 1.1f, MoveSpeed: 1.06f, Defence: 22)),
-                RogueLight(new MasteryEffect(Evasion: 13, CritRateResist: 0.15f, MpRegen: 1.8f, HpRegen: 1.2f, MoveSpeed: 1.06f, Defence: 25)),
+                RogueLight(new StatMods(Evasion: 7,  CritRateResist: 0.15f, MpRegenPct: 0.1f, PDef: 16)),
+                RogueLight(new StatMods(Evasion: 11, CritRateResist: 0.15f, MpRegenPct: 0.1f, PDef: 18)),
+                RogueLight(new StatMods(Evasion: 13, CritRateResist: 0.15f, MpRegenPct: 0.1f, MoveSpeedPct: 0.06f, PDef: 20)),
+                RogueLight(new StatMods(Evasion: 13, CritRateResist: 0.15f, MpRegenPct: 0.1f, MoveSpeedPct: 0.06f, PDef: 22)),
+                RogueLight(new StatMods(Evasion: 13, CritRateResist: 0.15f, MpRegenPct: 0.8f, HpRegenPct: 0.2f, MoveSpeedPct: 0.06f, PDef: 25)),
             }),
 
         // Archer — light bonus (crit lean); heavy penalises.
         ArmorMasteryPassive(ArcherArmorMastery, BaseClass.Fighter, new ArmorMasteryProfile(
-            Robe:  ArmorMastery.Neutral,
-            Light: new MasteryEffect(AtkSpeed: 1.3f, CritRate: 0.05f, CritDamage: 0.2f, Evasion: 4, Accuracy: 4, DefPerLevel: 0.5f),
+            Robe:  default,
+            // NOTE: the old profile used DefPerLevel: 0.5f (per-CHARACTER-level def); StatMods has
+            // no per-level field, so it's baked to a flat PDef here (~mid of the archer band). Archer
+            // mastery numbers are placeholders — retune with the rest. See docs/StatMods.md.
+            Light: new StatMods(AtkSpeedPct: 0.3f, CritRate: 0.05f, CritDamage: 0.2f, Evasion: 4, Accuracy: 4, PDef: 15),
             Heavy: FighterHeavyPenalty)),
 
         // Nuker — Mage Armor Mastery (CSV nuker 20-35): in ROBE, +MP regen, +P.Def, +max MP
@@ -140,7 +143,7 @@ public static partial class SkillCatalog
         new(NukerArmorMastery, "Mage Armor Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
-            Replaces: new[] { MasteryRobe, MasteryLight, MasteryHeavy },
+            Replaces: new[] { MasteryRobe },
             Description: "Passive. In ROBE: faster MP regen, more defence and max MP, and extra "
                        + "MP from your own MP-restoration. Light/heavy armor slows your casting.",
             Levels: new[]
@@ -159,14 +162,15 @@ public static partial class SkillCatalog
             }),
     };
 
-    private static readonly MasteryEffect NukerArmorPenalty =
-        new(MpRegen: 1.0f, AtkSpeed: 0.8f, CastSpeed: 0.5f);
+    // Off-weight caster penalty (factor→pct: ×0.8 → −0.2 attack, ×0.5 → −0.5 cast).
+    private static readonly StatMods NukerArmorPenalty =
+        new(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f);
 
     /// <summary>Nuker robe-mastery level: ROBE gets +MP regen, flat P.Def, flat max MP and the
     /// mpWhenRestored bonus; light/heavy penalise casting. (CSV nuker "Robe: mpReg x1.2, pDef +N,
     /// maxMP +M, mpWhenRestored +R; Light/Heavy: as x0.8, cast x0.5".)</summary>
     private static ArmorMasteryProfile NukerRobe(int pDef, int maxMp, int restore) => new(
-        Robe:  new MasteryEffect(MpRegen: 1.2f, Defence: pDef, MaxMpFlat: maxMp, RestoreMpBonus: restore),
+        Robe:  new StatMods(MpRegenPct: 0.2f, PDef: pDef, MaxMp: maxMp, RestoreMpBonus: restore),
         Light: NukerArmorPenalty,
         Heavy: NukerArmorPenalty);
 }

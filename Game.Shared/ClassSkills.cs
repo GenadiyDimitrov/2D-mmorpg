@@ -102,9 +102,10 @@ public static class ClassSkills
         switch (archetype)
         {
             case null:   // base class, before the level-20 change
-                yield return baseClass == BaseClass.Mage
-                    ? new ClassSkill(SkillCatalog.MasteryRobe, 1)
-                    : new ClassSkill(SkillCatalog.MasteryLight, 1);
+                // Base MAGE gets Robe Mastery free at level 1; base FIGHTER learns its
+                // Armor Mastery via the class table from level 5 (no level-1 mastery).
+                if (baseClass == BaseClass.Mage)
+                    yield return new ClassSkill(SkillCatalog.MasteryRobe, 1);
                 break;
             // 2nd classes use DATA-DRIVEN per-archetype Armor Mastery skills (one skill,
             // its effect depends on the worn weight; replaces the old split masteries) PLUS

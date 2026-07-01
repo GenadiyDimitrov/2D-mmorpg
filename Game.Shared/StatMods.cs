@@ -39,12 +39,16 @@ public readonly record struct StatMods(
     float MoveSpeed = 0f, float MoveSpeedPct = 0f,
     // Regen (flat per tick + percent multiplier)
     float HpRegen = 0f, float HpRegenPct = 0f,
-    float MpRegen = 0f, float MpRegenPct = 0f)
+    float MpRegen = 0f, float MpRegenPct = 0f,
+    // Flat additive extras (masteries): interrupt resist, defensive resist fractions,
+    // and the nuker "mpWhenRestored" bonus. All summed.
+    float InterruptResist = 0f,
+    float CritDmgResist = 0f, float CritRateResist = 0f, float BowResist = 0f,
+    float RestoreMpBonus = 0f)
 {
-    // NOTE: resists, vamp, cooldown, interrupt, the PvE/PvP×skill/magic/basic matrix,
-    // shield block/def, bow range, restore-mp bonus and the combat FLOORS are added as the
-    // matching sources are migrated (docs/StatMods.md phases 2-5). Kept out of Phase 1 so the
-    // shape can be reviewed on the core combat stats first.
+    // NOTE: vamp, cooldown, interrupt POWER, the PvE/PvP×skill/magic/basic matrix, shield
+    // block/def, bow range and the combat FLOORS are added as the passive/buff sources migrate
+    // (docs/StatMods.md phases 3-5).
 
     /// <summary>Fold a set of source mods into running totals (flats SUM, percents COMPOUND
     /// — see docs/StatMods.md: final = (base + Σflat) × ∏(1+pct%)).</summary>
@@ -75,7 +79,10 @@ public readonly record struct StatTotals(
     float AtkSpeedPct = 0f, float CastSpeedPct = 0f,
     float MoveSpeed = 0f, float MoveSpeedPct = 0f,
     float HpRegen = 0f, float HpRegenPct = 0f,
-    float MpRegen = 0f, float MpRegenPct = 0f)
+    float MpRegen = 0f, float MpRegenPct = 0f,
+    float InterruptResist = 0f,
+    float CritDmgResist = 0f, float CritRateResist = 0f, float BowResist = 0f,
+    float RestoreMpBonus = 0f)
 {
     /// <summary>Compound two percents: ∏(1+p)−1, so combining is multiplicative and 0 = inert.</summary>
     private static float Mul(float a, float b) => (1f + a) * (1f + b) - 1f;
@@ -95,7 +102,10 @@ public readonly record struct StatTotals(
         Mul(AtkSpeedPct, s.AtkSpeedPct), Mul(CastSpeedPct, s.CastSpeedPct),
         MoveSpeed + s.MoveSpeed, Mul(MoveSpeedPct, s.MoveSpeedPct),
         HpRegen + s.HpRegen, Mul(HpRegenPct, s.HpRegenPct),
-        MpRegen + s.MpRegen, Mul(MpRegenPct, s.MpRegenPct));
+        MpRegen + s.MpRegen, Mul(MpRegenPct, s.MpRegenPct),
+        InterruptResist + s.InterruptResist,
+        CritDmgResist + s.CritDmgResist, CritRateResist + s.CritRateResist, BowResist + s.BowResist,
+        RestoreMpBonus + s.RestoreMpBonus);
 
     /// <summary>Apply a (flat, pct) pair to a base value: `(base + flat) × (1 + pct)`,
     /// floored at 0. The single place the combine convention is defined.</summary>

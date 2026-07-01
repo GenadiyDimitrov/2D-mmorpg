@@ -857,60 +857,57 @@ public class Entity
             BlockReduction = Math.Clamp(BlockReduction, 0f, StatCaps.BlockReduction);
         }
 
-        // ----- Armor-weight MASTERY (final layer): bonus for the trained weight,
-        // penalty for an untrained heavy/light body. Robe never penalises; tanks &
-        // warriors are immune. Speed factors (>1 faster) divide the TIME multipliers. ---
+        // ----- Armor-weight MASTERY (final layer): each armor-mastery SKILL carries a
+        // per-weight StatMods table (bonus for the trained weight, penalty for an untrained
+        // one); the worn body weight selects the row. Pure per-level DATA — no character-level
+        // / class formula. A class with no mastery skill learned gets nothing (no bonus, no
+        // penalty). See docs/StatMods.md. ---
         if (Kind == EntityKind.Player)
         {
-            // A learned DATA-DRIVEN armor mastery (a skill carrying per-weight MasteryEffects)
-            // REPLACES the hardcoded ArmorMastery table for this entity. Same pattern future
-            // classes reuse for weapon-type-conditional passives.
-            MasteryEffect mEff = ArmorMastery.Neutral;
-            string mLabel;
+            StatMods sm = default;
             bool dataMastery = false;
             foreach (var (skillId, skillLevel) in LearnedSkills)
             {
                 if (SkillCatalog.Get(skillId)?.ArmorMasteryAt(skillLevel) is not ArmorMasteryProfile prof)
                     continue;
-                mEff = bodyWeight switch
+                sm = bodyWeight switch
                 {
                     ArmorWeight.Robe  => prof.Robe,
                     ArmorWeight.Light => prof.Light,
                     ArmorWeight.Heavy => prof.Heavy,
-                    _ => ArmorMastery.Neutral,
+                    _ => default,
                 };
                 dataMastery = true;
                 break;
             }
-            if (dataMastery)
-                mLabel = bodyWeight == ArmorWeight.None ? "Armor Mastery" : $"Armor Mastery ({bodyWeight})";
-            else
-                (mEff, mLabel) = ArmorMastery.Resolve(BaseClass, Archetype, bodyWeight, Level,
-                    w => LearnedSkills.ContainsKey(ArmorMastery.SkillIdFor(w)));
-            ArmorMasteryLabel = mLabel;
+            ArmorMasteryLabel = dataMastery
+                ? (bodyWeight == ArmorWeight.None ? "Armor Mastery" : $"Armor Mastery ({bodyWeight})")
+                : "";
 
-            AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier / mEff.AtkSpeed, 0.4f, 2.5f);
-            CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier / mEff.CastSpeed, 0.4f, 2.5f);
-            RunSpeed *= mEff.MoveSpeed;
+            // Apply the resolved armor-mastery StatMods: speed pcts DIVIDE the time multiplier
+            // so >0 = faster; regen pct ASSIGNS the mult; flat def/eva add before the def % factor.
+            AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier / (1f + sm.AtkSpeedPct), 0.4f, 2.5f);
+            CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier / (1f + sm.CastSpeedPct), 0.4f, 2.5f);
+            RunSpeed *= 1f + sm.MoveSpeedPct;
             WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor;
             Speed = RunSpeed;
-            HpRegenMult = mEff.HpRegen;
-            MpRegenMult = mEff.MpRegen;
-            MaxHp = (int)((MaxHp + mEff.MaxHpFlat) * mEff.MaxHp);
-            MaxMp = (int)((MaxMp + mEff.MaxMpFlat) * mEff.MaxMp);
-            Evasion += mEff.Evasion;
-            Accuracy += mEff.Accuracy;
-            Defence += mEff.Defence + (int)(Level * mEff.DefPerLevel);
-            MagicDefence += mEff.MagicDefence + (int)(Level * mEff.MagicDefPerLevel);
-            if (mEff.DefenceMult != 1f) Defence = (int)(Defence * mEff.DefenceMult);
-            if (mEff.MagicDefenceMult != 1f) MagicDefence = (int)(MagicDefence * mEff.MagicDefenceMult);
-            InterruptResist += mEff.InterruptResist + (int)(Level * mEff.InterruptResistPerLevel);
-            if (mEff.CritRate != 0f) CritChance = Math.Clamp(CritChance + mEff.CritRate, 0f, 0.75f);
-            CritDamageBonus += mEff.CritDamage;
-            CritDmgResist += mEff.CritDmgResist;
-            CritRateResist += mEff.CritRateResist;
-            BowResist += mEff.BowResist;
-            RestoreMpBonus += mEff.RestoreMpBonus;
+            HpRegenMult = 1f + sm.HpRegenPct;
+            MpRegenMult = 1f + sm.MpRegenPct;
+            MaxHp = (int)((MaxHp + sm.MaxHp) * (1f + sm.MaxHpPct));
+            MaxMp = (int)((MaxMp + sm.MaxMp) * (1f + sm.MaxMpPct));
+            Evasion += (int)sm.Evasion;
+            Accuracy += (int)sm.Accuracy;
+            Defence += (int)sm.PDef;
+            MagicDefence += (int)sm.MDef;
+            if (sm.PDefPct != 0f) Defence = (int)(Defence * (1f + sm.PDefPct));
+            if (sm.MDefPct != 0f) MagicDefence = (int)(MagicDefence * (1f + sm.MDefPct));
+            InterruptResist += (int)sm.InterruptResist;
+            if (sm.CritRate != 0f) CritChance = Math.Clamp(CritChance + sm.CritRate, 0f, 0.75f);
+            CritDamageBonus += sm.CritDamage;
+            CritDmgResist += sm.CritDmgResist;
+            CritRateResist += sm.CritRateResist;
+            BowResist += sm.BowResist;
+            RestoreMpBonus += (int)sm.RestoreMpBonus;
 
             // A learned skill can SUPERSEDE another's passive via Replaces[] (e.g. Spell
             // Mastery replaces Weapon Mastery): collect those ids so the base passive

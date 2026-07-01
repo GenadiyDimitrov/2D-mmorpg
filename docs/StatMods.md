@@ -54,9 +54,14 @@ same combine.
 
 ## Migration phases (each builds + is behavior-checked)
 1. **Foundation** — add `StatMods` + `Combine`/`Apply` (this commit). Nothing uses it
-   yet; no behavior change.
-2. **Masteries** — `MasteryEffect` → `StatMods` (fold the `TankHeavy`/`WarriorArmor`/…
-   helpers into `StatMods` literals). Armor/weapon-mastery profiles resolve to StatMods.
+   yet; no behavior change. ✅ DONE.
+2. **Masteries** — ✅ DONE. `MasteryEffect` and the whole `ArmorMastery` FORMULA class
+   (`Resolve`/`MatchedEffect`/`Penalty`, the `defL/2` and `*PerLevel` character-level
+   coefficients) are DELETED. Every armor mastery — including the base fighter/mage
+   masteries — is now a plain leveled skill whose `ArmorMasteryProfile` carries an explicit
+   `StatMods` per (weight, skill-level). No approximation: level 13 reads row 13 of its
+   table. Base masteries chain into 2nd-class masteries via `Replaces`. (Weapon-mastery
+   profiles still use `PassiveEffect` — they migrate in phase 3.)
 3. **Passives** — `PassiveEffect` → `StatMods`; `RecomputeDerived`'s `ApplyPassive`
    becomes `Combine(all learned-passive StatMods)`.
 4. **Buffs/debuffs** — buff `EffectMagnitude`s → each buff carries a `StatMods`; the
