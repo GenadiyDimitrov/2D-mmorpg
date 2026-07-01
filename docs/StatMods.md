@@ -14,21 +14,20 @@ calculator**, so:
   same language;
 - the player's stat window can show the per-source **breakdown** (base → why → final).
 
-## The model
+## The model (DO NOT change the formula)
 Each stat carries a **flat** add and a **percent** fraction (both default 0 = no change,
-so `default(StatMods)` is inert). Sources are folded (`StatTotals.Add`) and applied
-(`StatTotals.Apply`) as:
+so `default(StatMods)` is inert). The formula is the existing engine's, e.g. for P.Def:
 
 ```
-final = (base + Σflat) × (1 + Σpct)
+final = (base + Σflat) × ∏(1 + pct%)
+      = (armor P.Def + level modifier + flat passive skills) × ∏(1 + percent buffs%)
 ```
 
-This **additive-percent** convention is what the current engine already does, so phases
-2–5 migrate with **behavior parity** (same numbers out). It lives in ONE place
-(`StatTotals.Apply` / `Add`), so switching to the owner's described **compound** model —
-`base × ∏(1+pct) + Σflat` (percents multiply, flat applied after) — is a localized change
-once we're ready. (Owner: the formula itself is "nothing to worry about for now"; the
-visible payoff is the stat-window breakdown.)
+**Flat is applied INSIDE the parentheses** — summed onto the base, THEN multiplied by the
+percents (a flat bonus IS scaled by % buffs). This is `StatTotals.Apply` and it is not to
+be changed. (The current engine SUMS the percents — `(1 + Σpct)`; the ∏ notation above is
+the same idea written per-buff. Sum vs product is the only latent nuance, and it stays as
+the engine already does it: additive.)
 
 Exceptions that are NOT flat+pct (added in later phases):
 - **Floors** (`EvadeFloor`, `HitFloor`, `MagicFailFloor`): GUARANTEES — take the
