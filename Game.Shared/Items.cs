@@ -52,16 +52,39 @@ public enum ArmorSlot { None = 0, Head = 1, Body = 2, Gloves = 3, Boots = 4 }
 /// attack range. All classes CAN equip any weapon; skills gate usefulness.</summary>
 // Daggers ARE the Dual type (treated as dual-wield): lower per-hit, very fast,
 // high crit, no shield. There is deliberately no separate Dagger value.
-// A STAFF is just a 2H Blunt (magic) — there is no separate Staff value; the
-// "Staff" name is an item noun. Blunt = higher accuracy, lower crit than bladed.
-// [Flags]: an ITEM always has exactly one type, but a skill's weapon REQUIREMENT is a
-// mask (e.g. Strike = Sword|Blunt), tested with a single bitwise-AND (no allocation).
+// A "Staff" is a TwoHandedBlunt; the "Staff" name is just an item noun. Blunt = higher
+// accuracy, lower crit than bladed. HANDS + TYPE are encoded in this ONE [Flags] enum: an
+// ITEM has exactly one value, while a skill's weapon REQUIREMENT is a mask (e.g. Strike =
+// AnySword | AnyBlunt, Battle Presence = TwoHandedSword | TwoHandedBlunt), tested with a
+// single bitwise-AND. Bow and Dual are inherently two-handed (no 1H variants).
 [Flags]
-public enum WeaponType { None = 0, Sword = 1, Dual = 2, Bow = 4, Blunt = 8 }
+public enum WeaponType
+{
+    None = 0,
+    Sword = 1, Blunt = 2, Dual = 4, Bow = 8,
+    TwoHandedSword = 16, TwoHandedBlunt = 32,
+    // Convenience masks (for skill requirements + hands tests):
+    AnySword  = Sword | TwoHandedSword,
+    AnyBlunt  = Blunt | TwoHandedBlunt,
+    OneHanded = Sword | Blunt,
+    TwoHanded = TwoHandedSword | TwoHandedBlunt | Bow | Dual,
+}
 
-/// <summary>One- vs two-handed. A 2H weapon occupies the offhand, so it cannot be
-/// paired with a shield (the equip code mutually excludes them).</summary>
-public enum WeaponHands { OneHand = 0, TwoHand = 1 }
+/// <summary>Helpers over the merged WeaponType (hands + type in one enum).</summary>
+public static class WeaponTypes
+{
+    /// <summary>True for a two-handed weapon (occupies the offhand → no shield).</summary>
+    public static bool IsTwoHanded(this WeaponType w) => (w & WeaponType.TwoHanded) != 0;
+
+    /// <summary>Fold a hands-specific type down to its BASE type (TwoHandedSword→Sword,
+    /// TwoHandedBlunt→Blunt) so hands-agnostic stat tables (variance/speed/crit) still match.</summary>
+    public static WeaponType Base(this WeaponType w) => w switch
+    {
+        WeaponType.TwoHandedSword => WeaponType.Sword,
+        WeaponType.TwoHandedBlunt => WeaponType.Blunt,
+        _ => w
+    };
+}
 
 /// <summary>Enchant scroll failure behaviour (design doc):
 /// Common -> item breaks on fail; Uncommon -> enchant resets to +0;
@@ -89,7 +112,6 @@ public record ItemDef(
     ArmorWeight Weight = ArmorWeight.None,
     ArmorSlot ArmorSlot = ArmorSlot.None,
     WeaponType WeaponType = WeaponType.None,
-    WeaponHands Hands = WeaponHands.OneHand,
     int AtkBonus = 0,
     int MAtkBonus = 0,
     int DefBonus = 0,
@@ -156,7 +178,7 @@ public record ItemDef(
     /// <summary>Unified sub-type (derived from the per-domain enums).</summary>
     public ItemSubtype Subtype => Slot switch
     {
-        EquipSlot.Weapon => WeaponType switch
+        EquipSlot.Weapon => WeaponType.Base() switch
         {
             WeaponType.Sword => ItemSubtype.Sword,
             WeaponType.Blunt => ItemSubtype.Blunt,
@@ -189,7 +211,7 @@ public record ItemDef(
 
     /// <summary>True if this is a two-handed MAIN-HAND weapon — it also claims the
     /// OffHand slot (so a shield can't be worn with it; enforced in HandleEquip).</summary>
-    public bool OccupiesOffHand => Slot == EquipSlot.Weapon && Hands == WeaponHands.TwoHand;
+    public bool OccupiesOffHand => Slot == EquipSlot.Weapon && WeaponType.IsTwoHanded();
 }
 
 public static class ItemCatalog
@@ -287,15 +309,15 @@ public static class ItemCatalog
         // ===================================================================
         // Per-type display names and the base attack at F-common; higher grade
         // and rarity scale up from there.
-        var weaponInfo = new (WeaponType Type, WeaponHands Hands, string Noun, int BaseAtk, float Range, int MpBonus)[]
+        var weaponInfo = new (WeaponType Type, string Noun, int BaseAtk, float Range, int MpBonus)[]
         {
-            (WeaponType.Sword, WeaponHands.OneHand, "Sword", 6,  0,   0),
-            (WeaponType.Dual,  WeaponHands.TwoHand, "Daggers", 5, 0,  0),   // dual: lower per-hit, faster
-            (WeaponType.Bow,   WeaponHands.TwoHand, "Bow",   7,  400, 0),
+            (WeaponType.Sword, "Sword", 6,  0,   0),
+            (WeaponType.Dual,  "Daggers", 5, 0,  0),   // dual: lower per-hit, faster
+            (WeaponType.Bow,   "Bow",   7,  400, 0),
             // Generated Blunt line = the 2H caster STAFF (real caster weapon: meaningful
             // P/M.Atk, gives MP, no weapon range; the mage's tiny BASIC hit comes from the
             // 0.15 basic-attack multiplier, not the weapon). 1H blunts are hand-added below.
-            (WeaponType.Blunt, WeaponHands.TwoHand, "Staff", 23, 0,   20),
+            (WeaponType.TwoHandedBlunt, "Staff", 23, 0,   20),
         };
 
         foreach (var w in weaponInfo)
@@ -315,7 +337,7 @@ public static class ItemCatalog
                     // Magic attack per weapon type: caster weapons (staff) carry
                     // most of their power as mAtk, melee weapons a small splash,
                     // so hybrid weapons are possible. Tune the fractions here.
-                    float mAtkFraction = w.Type switch
+                    float mAtkFraction = w.Type.Base() switch
                     {
                         WeaponType.Blunt => 1.05f,   // 2H staff: caster weapon (F-Common = 23 pAtk / 24 mAtk)
                         WeaponType.Bow => 0.25f,
@@ -337,7 +359,6 @@ public static class ItemCatalog
                         $"{rarityName}{gradeName} {w.Noun}",
                         EquipSlot.Weapon, grade, rarity,
                         WeaponType: w.Type,
-                        Hands: w.Hands,
                         AtkBonus: atk,
                         MAtkBonus: mAtk,
                         MpBonus: mp,
@@ -501,10 +522,10 @@ public static class ItemCatalog
         // ===================================================================
         list.Add(new ItemDef(IronMace, "Iron Mace", EquipSlot.Weapon,
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Blunt,
-            Hands: WeaponHands.OneHand, AtkBonus: 7, MAtkBonus: 3));   // physical mace
+            AtkBonus: 7, MAtkBonus: 3));   // 1H physical mace
         list.Add(new ItemDef(AshWand, "Ash Wand", EquipSlot.Weapon,
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Blunt,
-            Hands: WeaponHands.OneHand, AtkBonus: 2, MAtkBonus: 5, MpBonus: 10));  // 1H magic blunt: mAtk>pAtk, < staff
+            AtkBonus: 2, MAtkBonus: 5, MpBonus: 10));  // 1H magic blunt: mAtk>pAtk, < staff
 
         // ===================================================================
         //  NEWBIE STARTER WEAPONS — handed out on character creation. They are
@@ -512,19 +533,19 @@ public static class ItemCatalog
         //  all four melee/ranged options; a mage gets the staff. P.Atk / M.Atk per owner.
         // ===================================================================
         list.Add(new ItemDef(NewbieSword1H, "Newbie Sword", EquipSlot.Weapon,
-            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Sword, Hands: WeaponHands.OneHand,
+            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Sword,
             AtkBonus: 24, MAtkBonus: 17, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
         list.Add(new ItemDef(NewbieDaggers, "Newbie Daggers", EquipSlot.Weapon,
-            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Dual, Hands: WeaponHands.TwoHand,
+            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Dual,
             AtkBonus: 21, MAtkBonus: 17, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
         list.Add(new ItemDef(NewbieSword2H, "Newbie Greatsword", EquipSlot.Weapon,
-            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Sword, Hands: WeaponHands.TwoHand,
+            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.TwoHandedSword,
             AtkBonus: 29, MAtkBonus: 17, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
         list.Add(new ItemDef(NewbieBow, "Newbie Bow", EquipSlot.Weapon,
-            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Bow, Hands: WeaponHands.TwoHand,
+            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Bow,
             AtkBonus: 49, MAtkBonus: 17, WeaponRange: 400, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
         list.Add(new ItemDef(NewbieStaff, "Newbie Staff", EquipSlot.Weapon,
-            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Blunt, Hands: WeaponHands.TwoHand,
+            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.TwoHandedBlunt,
             AtkBonus: 23, MAtkBonus: 24, MpBonus: 20, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
 
         // ===================================================================
@@ -824,10 +845,10 @@ public static class LootTables
         {
             ["Boar"] = new[]
             {
-                F(WeaponType.Blunt, ItemRarity.Common, 0.16f),
+                F(WeaponType.TwoHandedBlunt, ItemRarity.Common, 0.16f),
                 F(WeaponType.Sword, ItemRarity.Common, 0.16f),
-                F(WeaponType.Blunt, ItemRarity.Uncommon, 0.06f),
-                E(WeaponType.Blunt, ItemRarity.Common, 0.12f),
+                F(WeaponType.TwoHandedBlunt, ItemRarity.Uncommon, 0.06f),
+                E(WeaponType.TwoHandedBlunt, ItemRarity.Common, 0.12f),
                 E(WeaponType.Sword, ItemRarity.Common, 0.12f),
             },
             ["Wolf"] = new[]
@@ -841,7 +862,7 @@ public static class LootTables
             ["Slime"] = new[]
             {
                 FA(ArmorWeight.Robe, ItemRarity.Common, 0.16f),
-                F(WeaponType.Blunt, ItemRarity.Common, 0.12f),
+                F(WeaponType.TwoHandedBlunt, ItemRarity.Common, 0.12f),
                 FA(ArmorWeight.Robe, ItemRarity.Rare, 0.05f),
                 EA(ArmorWeight.Robe, ItemRarity.Common, 0.12f),
             },

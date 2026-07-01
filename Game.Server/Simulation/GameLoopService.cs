@@ -603,7 +603,7 @@ public class GameLoopService : BackgroundService
             // One item per slot: unequip the current one. Also enforce the
             // two-handed rule: a 2H weapon and a shield cannot coexist (a 2H
             // weapon occupies the offhand), so equipping one drops the other.
-            bool equippingTwoHandWeapon = def.Slot == EquipSlot.Weapon && def.Hands == WeaponHands.TwoHand;
+            bool equippingTwoHandWeapon = def.Slot == EquipSlot.Weapon && def.WeaponType.IsTwoHanded();
             bool equippingShield = def.Slot == EquipSlot.Shield;
             foreach (var other in player.Inventory)
             {
@@ -619,7 +619,7 @@ public class GameLoopService : BackgroundService
                 else if (equippingTwoHandWeapon && otherDef.Slot == EquipSlot.Shield)
                     other.Equipped = false;                                   // 2H weapon drops shield
                 else if (equippingShield && otherDef.Slot == EquipSlot.Weapon
-                         && otherDef.Hands == WeaponHands.TwoHand)
+                         && otherDef.WeaponType.IsTwoHanded())
                     other.Equipped = false;                                   // shield drops 2H weapon
             }
 

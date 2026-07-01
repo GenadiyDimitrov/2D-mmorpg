@@ -155,7 +155,7 @@ public static class MobCatalog
                 Drops: new[]
                 {
                     new DropEntry(ItemCatalog.MinorPotion, 0.35f, 1, 3),
-                    new DropEntry(ItemCatalog.WeaponKey(WeaponType.Blunt, ItemGrade.E, ItemRarity.Uncommon), 0.06f),
+                    new DropEntry(ItemCatalog.WeaponKey(WeaponType.TwoHandedBlunt, ItemGrade.E, ItemRarity.Uncommon), 0.06f),
                     new DropEntry(ItemCatalog.ScrollUncommon, 0.10f),
                     new DropEntry(ItemCatalog.AttrScrollUncommon, 0.05f),
                 }),

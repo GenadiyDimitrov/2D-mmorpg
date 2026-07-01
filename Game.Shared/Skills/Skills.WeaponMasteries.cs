@@ -30,7 +30,7 @@ public static partial class SkillCatalog
     /// <summary>A two-handed sword/blunt profile carrying the same PassiveEffect for both
     /// (the warrior 2H mastery doesn't distinguish sword vs blunt), gated to TwoHand.</summary>
     private static WeaponMasteryProfile TwoHand(PassiveEffect pe) =>
-        new(Sword: pe, Blunt: pe, RequiredHands: WeaponHands.TwoHand);
+        new(Sword: pe, Blunt: pe, RequiredWeapon: WeaponType.TwoHanded);
 
     /// <summary>A rogue Weapon Mastery level: shared crit/acc/atk-speed on both dual and bow,
     /// plus each weapon's own flat P.Atk, and +200 range for the bow. (crit-rate ×1.2 is

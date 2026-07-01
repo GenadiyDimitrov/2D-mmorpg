@@ -40,7 +40,7 @@ public static class ShopCatalog
                 ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.F, ItemRarity.Common),
                 ItemCatalog.WeaponKey(WeaponType.Dual,  ItemGrade.F, ItemRarity.Common),
                 ItemCatalog.WeaponKey(WeaponType.Bow,   ItemGrade.F, ItemRarity.Common),
-                ItemCatalog.WeaponKey(WeaponType.Blunt, ItemGrade.F, ItemRarity.Common),
+                ItemCatalog.WeaponKey(WeaponType.TwoHandedBlunt, ItemGrade.F, ItemRarity.Common),
                 ItemCatalog.IronMace,
                 ItemCatalog.AshWand,
                 // Basic plain body armor (F, common) + accessories.

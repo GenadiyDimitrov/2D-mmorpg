@@ -221,16 +221,17 @@ public readonly record struct StackLevel(SkillEffect Effect, EffectMagnitude[] M
 public readonly record struct WeaponMasteryProfile(
     PassiveEffect Sword = default, PassiveEffect Dual = default,
     PassiveEffect Bow = default, PassiveEffect Blunt = default,
-    // When set, the bonus applies ONLY if the equipped weapon matches these hands
-    // (e.g. Warrior trains TwoHand, Tank OneHand). null = either. Dual/Bow are always 2H.
-    WeaponHands? RequiredHands = null)
+    // When set, the bonus applies ONLY if the equipped weapon's type is in this [Flags] MASK
+    // (e.g. Warrior trains WeaponType.TwoHanded). None = any. The Sword/Blunt slots serve both
+    // 1H and 2H via WeaponType.Base(); Dual/Bow are inherently 2H.
+    WeaponType RequiredWeapon = WeaponType.None)
 {
-    /// <summary>The bonus for the equipped weapon (type + hands). Inert default for None,
-    /// an unset slot, or a hands mismatch.</summary>
-    public PassiveEffect For(WeaponType wt, WeaponHands hands)
+    /// <summary>The bonus for the equipped weapon. Inert default for None, an unset slot,
+    /// or a weapon outside RequiredWeapon.</summary>
+    public PassiveEffect For(WeaponType wt)
     {
-        if (RequiredHands is WeaponHands req && req != hands) return default;
-        return wt switch
+        if (RequiredWeapon != WeaponType.None && (RequiredWeapon & wt) == 0) return default;
+        return wt.Base() switch
         {
             WeaponType.Sword => Sword,
             WeaponType.Dual  => Dual,

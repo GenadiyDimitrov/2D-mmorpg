@@ -58,7 +58,7 @@ public static class AttributeSystem
     // ----- WHICH attributes can roll (the pool), by weapon type / armor weight -----
     // Phase 14 design. Anything else (jewels, etc.) rolls nothing.
 
-    public static AttributeType[] WeaponPool(WeaponType w) => w switch
+    public static AttributeType[] WeaponPool(WeaponType w) => w.Base() switch
     {
         WeaponType.Sword => new[] { AttributeType.AttackSpeedPercent, AttributeType.AttackPercent, AttributeType.CritRate },
         WeaponType.Blunt => new[] { AttributeType.HealthPercent, AttributeType.AttackPercent, AttributeType.CastSpeedPercent, AttributeType.CritDamage },

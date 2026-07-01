@@ -1829,7 +1829,7 @@ public partial class MainWindow
         DebugList.Children.Add(DebugGiveButton(
             ItemCatalog.WeaponKey(WeaponType.Bow, ItemGrade.E, ItemRarity.Rare), "Rare Bow"));
         DebugList.Children.Add(DebugGiveButton(
-            ItemCatalog.WeaponKey(WeaponType.Blunt, ItemGrade.E, ItemRarity.Rare), "Rare Staff"));
+            ItemCatalog.WeaponKey(WeaponType.TwoHandedBlunt, ItemGrade.E, ItemRarity.Rare), "Rare Staff"));
 
         AddDebugHeader("Rare Armor Sets (E: body + accessories)");
         foreach (var (w, label) in new[] { (ArmorWeight.Heavy, "Heavy"), (ArmorWeight.Light, "Light"), (ArmorWeight.Robe, "Robe") })

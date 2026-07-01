@@ -315,7 +315,7 @@ public static class StatCalculator
     /// multiplier around 1.0.</summary>
     public static float WeaponVariance(WeaponType weapon, System.Random rng)
     {
-        float band = weapon switch
+        float band = weapon.Base() switch
         {
             WeaponType.Bow => 0.30f,
             WeaponType.Dual => 0.20f,    // daggers/dual: spiky
@@ -438,7 +438,7 @@ public static class StatCalculator
 
     /// <summary>Weapon cast factor: staves/maces are full casters; bladed/bow weapons
     /// cast clumsily. Multiplicative on the cast stat.</summary>
-    public static float WeaponCastFactor(WeaponType w) => w switch
+    public static float WeaponCastFactor(WeaponType w) => w.Base() switch
     {
         WeaponType.Blunt => 1.0f,   // staff/mace: caster weapon
         _ => 0.8f                   // bladed/bow: clumsy caster
@@ -446,12 +446,12 @@ public static class StatCalculator
 
     /// <summary>Weapon base attack speed (authentic L2 bases; baseline 333 = 1.0×).
     /// Daggers/fists fastest, 2H/bow slowest.</summary>
-    public static int WeaponAttackBaseSpeed(WeaponType w) => w switch
+    public static int WeaponAttackBaseSpeed(WeaponType w) => w.Base() switch
     {
         WeaponType.Dual => 433,     // daggers/dual: fastest
-        WeaponType.Sword => 379,    // 1H sword/blunt
+        WeaponType.Sword => 379,    // sword (1H or 2H)
         WeaponType.Bow => 293,      // bow: slow (but long range)
-        WeaponType.Blunt => 325,    // staff/2H: slow
+        WeaponType.Blunt => 325,    // staff/mace: slow
         _ => 433                    // fists (weaponless): fast
     };
 
@@ -507,7 +507,7 @@ public static class StatCalculator
     /// <summary>Per-weapon crit-rate FACTOR (multiplies the base/DEX crit chance).
     /// From the weapon table's crit_modifier: Sword 0.80, Dual/Bow 1.20, Blunt 0.40.
     /// Blunt trades crit away for accuracy.</summary>
-    public static float WeaponCritFactor(WeaponType w) => w switch
+    public static float WeaponCritFactor(WeaponType w) => w.Base() switch
     {
         WeaponType.Dual => 1.20f,
         WeaponType.Bow => 1.20f,
@@ -518,7 +518,7 @@ public static class StatCalculator
 
     /// <summary>Per-weapon ACCURACY bonus. Blunt weapons are easier to land (high
     /// base accuracy) — the counterpart to their low crit. Tune later.</summary>
-    public static int WeaponAccuracyBonus(WeaponType w) => w switch
+    public static int WeaponAccuracyBonus(WeaponType w) => w.Base() switch
     {
         WeaponType.Blunt => 10,
         _ => 0
