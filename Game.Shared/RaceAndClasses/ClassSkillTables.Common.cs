@@ -97,20 +97,34 @@ public static partial class ClassSkillTables
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Archer,
                 new ClassSkill(BattleFury, 20), new ClassSkill(PowerShot, 24));
 
-            // Mage archetypes — 2nd-class learn cadence: 20, 25, 30, 35.
+            // Nuker (CSV nuker 20-35): Elemental Bolt (replaces Magic Bolt), Quick Bolt,
+            // Vampiric Bolt (continues, lvls 2-5), Restore Spirit, Mage Armor Mastery,
+            // Anti-Magic (lvls 3-6) and Spell Mastery. Cadence 20/25/30/35.
             ClassSkills.Register(race, BaseClass.Mage, Archetype.Nuker,
-                new ClassSkill(FlameBolt, 20), new ClassSkill(Heal, 25),
-                new ClassSkill(GreaterWeakness, 30), new ClassSkill(DispelMagic, 35),
-                // Anti-Magic on ALL mage classes (continues the base-mage line, lvls 3-6).
+                new ClassSkill(NukerArmorMastery, 20, SkillLevel: 1),
+                new ClassSkill(ElementalBolt, 20, SkillLevel: 1),
+                new ClassSkill(QuickBolt, 20, SkillLevel: 1),
+                new ClassSkill(VampiricBolt, 20, SkillLevel: 2),
                 new ClassSkill(MageAntiMagic, 20, SkillLevel: 3),
-                new ClassSkill(MageAntiMagic, 25, SkillLevel: 4),
-                new ClassSkill(MageAntiMagic, 30, SkillLevel: 5),
-                new ClassSkill(MageAntiMagic, 35, SkillLevel: 6),
-                // Spell Mastery — same caster passive as the healer (replaces Weapon Mastery;
-                // carries the bow cast-speed penalty). Mages have no weapon-TYPE mastery.
                 new ClassSkill(SpellMastery, 20, SkillLevel: 1),
+                new ClassSkill(NukerArmorMastery, 25, SkillLevel: 2),
+                new ClassSkill(ElementalBolt, 25, SkillLevel: 2),
+                new ClassSkill(QuickBolt, 25, SkillLevel: 2),
+                new ClassSkill(VampiricBolt, 25, SkillLevel: 3),
+                new ClassSkill(RestoreSpirit, 25, SkillLevel: 1),
+                new ClassSkill(MageAntiMagic, 25, SkillLevel: 4),
                 new ClassSkill(SpellMastery, 25, SkillLevel: 2),
+                new ClassSkill(NukerArmorMastery, 30, SkillLevel: 3),
+                new ClassSkill(ElementalBolt, 30, SkillLevel: 3),
+                new ClassSkill(QuickBolt, 30, SkillLevel: 3),
+                new ClassSkill(VampiricBolt, 30, SkillLevel: 4),
+                new ClassSkill(MageAntiMagic, 30, SkillLevel: 5),
                 new ClassSkill(SpellMastery, 30, SkillLevel: 3),
+                new ClassSkill(NukerArmorMastery, 35, SkillLevel: 4),
+                new ClassSkill(ElementalBolt, 35, SkillLevel: 4),
+                new ClassSkill(QuickBolt, 35, SkillLevel: 4),
+                new ClassSkill(VampiricBolt, 35, SkillLevel: 5),
+                new ClassSkill(MageAntiMagic, 35, SkillLevel: 6),
                 new ClassSkill(SpellMastery, 35, SkillLevel: 4));
         }
 

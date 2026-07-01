@@ -25,6 +25,10 @@ public static partial class SkillCatalog
     public const string DispelMagic = "dispel_magic";         // cancel: strips enemy buffs
     public const string ManaBarrier = "mana_barrier";         // mana shield (damage→MP)
     public const string PhaseShift = "phase_shift";           // blink away from target (escape)
+    // --- Nuker 2nd-class (CSV nuker 20-35) ---
+    public const string ElementalBolt = "elemental_bolt";     // nuker basic nuke (replaces Magic Bolt)
+    public const string QuickBolt = "quick_bolt";             // short-range fast nuke
+    public const string RestoreSpirit = "restore_spirit";     // trades HP for MP (self)
 
     private static SkillDef[] MageSkills() => new SkillDef[]
     {
@@ -118,11 +122,55 @@ public static partial class SkillCatalog
                     Description: "+36 magic defence; spells fizzle on you at least 10% of the time."),
             }),
 
-        // Vampiric Bolt — magic nuke that heals the caster for 40% of damage dealt.
+        // Vampiric Bolt — magic nuke that heals the caster for 40% of damage dealt. Level 1 is
+        // the base-mage skill (@14); the Nuker CONTINUES it at levels 2-5 (@20/25/30/35).
         new(VampiricBolt, "Vampiric Bolt", BaseClass.Mage, SkillEffect.MagicDamage,
-            MpCost: 28, CastTicks: 40, CooldownTicks: 10, Range: 600, Power: 21,
+            MpCost: 28, CastTicks: 40, CooldownTicks: 10, Range: 750, Power: 21,
             Category: SkillCategory.Magic, InitialMpCost: 6, SpCost: 2200, Lifesteal: 0.40f,
-            Description: "A draining bolt (power 21) that heals you for 40% of the damage dealt."),
+            Description: "A draining bolt that heals you for 40% of the damage dealt.",
+            Levels: new[]
+            {
+                new SkillLevel(Power: 21, MpCost: 28, InitialMpCost: 6,  SpCost: 2200,  Description: "Drain power 21; heals 40% of damage."),
+                new SkillLevel(Power: 26, MpCost: 40, InitialMpCost: 8,  SpCost: 3200,  Description: "Drain power 26; heals 40% of damage."),
+                new SkillLevel(Power: 32, MpCost: 46, InitialMpCost: 10, SpCost: 6400,  Description: "Drain power 32; heals 40% of damage."),
+                new SkillLevel(Power: 38, MpCost: 52, InitialMpCost: 12, SpCost: 12800, Description: "Drain power 38; heals 40% of damage."),
+                new SkillLevel(Power: 44, MpCost: 62, InitialMpCost: 14, SpCost: 25000, Description: "Drain power 44; heals 40% of damage."),
+            }),
+
+        // Elemental Bolt — the Nuker's basic nuke (replaces Magic Bolt). 4 levels @20/25/30/35.
+        new(ElementalBolt, "Elemental Bolt", BaseClass.Mage, SkillEffect.MagicDamage,
+            MpCost: 20, CastTicks: 40, CooldownTicks: 10, Range: 750, Power: 26,
+            Replaces: new[] { MagicBolt },
+            Category: SkillCategory.Magic, InitialMpCost: 4,
+            Description: "A bolt of raw elemental force — the Nuker's basic attack (replaces Magic Bolt).",
+            Levels: new[]
+            {
+                new SkillLevel(Power: 26, MpCost: 20, InitialMpCost: 4, SpCost: 3200,  Description: "Magic damage, power 26."),
+                new SkillLevel(Power: 32, MpCost: 23, InitialMpCost: 5, SpCost: 6400,  Description: "Magic damage, power 32."),
+                new SkillLevel(Power: 38, MpCost: 26, InitialMpCost: 6, SpCost: 12800, Description: "Magic damage, power 38."),
+                new SkillLevel(Power: 44, MpCost: 31, InitialMpCost: 7, SpCost: 25000, Description: "Magic damage, power 44."),
+            }),
+
+        // Quick Bolt — a short-range (150), fast (1.5s) nuke for weaving between casts.
+        new(QuickBolt, "Quick Bolt", BaseClass.Mage, SkillEffect.MagicDamage,
+            MpCost: 20, CastTicks: 15, CooldownTicks: 10, Range: 150, Power: 21,
+            Category: SkillCategory.Magic, InitialMpCost: 4,
+            Description: "A fast, close-range bolt (1.5s cast).",
+            Levels: new[]
+            {
+                new SkillLevel(Power: 21, MpCost: 20, InitialMpCost: 4, SpCost: 3200,  Description: "Magic damage, power 21."),
+                new SkillLevel(Power: 26, MpCost: 23, InitialMpCost: 5, SpCost: 6400,  Description: "Magic damage, power 26."),
+                new SkillLevel(Power: 30, MpCost: 26, InitialMpCost: 6, SpCost: 12800, Description: "Magic damage, power 30."),
+                new SkillLevel(Power: 36, MpCost: 31, InitialMpCost: 7, SpCost: 25000, Description: "Magic damage, power 36."),
+            }),
+
+        // Restore Spirit — trades 130 HP for 20 MP (self; boosted by "mpWhenRestored"). Costs
+        // HP, not MP. Single level @25.
+        new(RestoreSpirit, "Restore Spirit", BaseClass.Mage, SkillEffect.RestoreMp,
+            MpCost: 0, CastTicks: 40, CooldownTicks: 50, Range: 0, Power: 20,
+            Category: SkillCategory.Heal, TargetMode: TargetMode.SelfOnly, SpCost: 6400,
+            HpCost: 130,
+            Description: "Burns 130 HP to restore 20 MP to yourself (more with robe mastery)."),
 
         // Weapon Mastery — flat attack passive (asymmetric: more M.Atk than P.Atk).
         // Also carries the caster bow penalty (half cast speed while wielding a bow).

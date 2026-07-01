@@ -2235,7 +2235,10 @@ var effect = def.Effect;
     {
         if (target.Dead) return;
         if (amount > 0)
+        {
+            amount += target.RestoreMpBonus;   // nuker robe mastery "mpWhenRestored"
             target.Mp = Math.Min(target.MaxMp, target.Mp + amount);
+        }
         BroadcastCombat(caster, target, amount, CombatOutcome.ManaHeal, skillName);
         if (target.Kind == EntityKind.Player)
             SendStats(target);   // MP isn't surfaced via damage broadcasts — refresh the bar

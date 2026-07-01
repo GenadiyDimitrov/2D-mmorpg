@@ -29,21 +29,21 @@ public static partial class SkillCatalog
         new(Robe: ArmorMastery.Neutral, Light: light, Heavy: FighterHeavyPenalty);
 
     /// <summary>Tank Heavy Armor Mastery level: HEAVY armor grants flat P.Def, ×1.07 P.Def,
-    /// 15% crit-damage reduction, ×1.1 max MP and −2 evasion. Off-weights are inert (tank is
-    /// immune to armor penalties). (CSV tank "heavy: mp x1.1, p.def +N, p.def x1.07, crit dmg
-    /// reduction 15%, eva -2". The @36 "mp x3.4" is treated as x1.1 — a likely CSV typo.)</summary>
+    /// 15% crit-damage reduction, ×1.1 MP regen and −2 evasion. Off-weights are inert (tank is
+    /// immune to armor penalties). (CSV tank "heavy: mp[Reg] x1.1, p.def +N, p.def x1.07, crit
+    /// dmg reduction 15%, eva -2". The @36 "mp x3.4" is treated as x1.1 — a likely CSV typo.)</summary>
     private static ArmorMasteryProfile TankHeavy(int def) => new(
         Robe:  ArmorMastery.Neutral,
         Light: ArmorMastery.Neutral,
-        Heavy: new MasteryEffect(MaxMp: 1.1f, Defence: def, DefenceMult: 1.07f,
+        Heavy: new MasteryEffect(MpRegen: 1.1f, Defence: def, DefenceMult: 1.07f,
             CritDmgResist: 0.15f, Evasion: -2));
 
-    /// <summary>Warrior armor-mastery level: flat P.Def + ×1.1 max MP on all weights; light
-    /// armor also adds the given evasion. (CSV warrior "with all mp x1.1, p.def +N; light eva +E".)</summary>
+    /// <summary>Warrior armor-mastery level: flat P.Def + ×1.1 MP regen on all weights; light
+    /// armor also adds the given evasion. (CSV warrior "with all mp[Reg] x1.1, p.def +N; light eva +E".)</summary>
     private static ArmorMasteryProfile WarriorArmor(int def, int lightEva) => new(
-        Robe:  new MasteryEffect(Defence: def, MaxMp: 1.1f),
-        Light: new MasteryEffect(Defence: def, MaxMp: 1.1f, Evasion: lightEva),
-        Heavy: new MasteryEffect(Defence: def, MaxMp: 1.1f));
+        Robe:  new MasteryEffect(Defence: def, MpRegen: 1.1f),
+        Light: new MasteryEffect(Defence: def, MpRegen: 1.1f, Evasion: lightEva),
+        Heavy: new MasteryEffect(Defence: def, MpRegen: 1.1f));
 
     private static SkillDef ArmorMasteryPassive(string id, BaseClass cls, ArmorMasteryProfile profile) =>
         new(id, "Armor Mastery", cls, SkillEffect.None,
@@ -134,11 +134,39 @@ public static partial class SkillCatalog
             Light: new MasteryEffect(AtkSpeed: 1.3f, CritRate: 0.05f, CritDamage: 0.2f, Evasion: 4, Accuracy: 4, DefPerLevel: 0.5f),
             Heavy: FighterHeavyPenalty)),
 
-        // Nuker — robe caster bonus; light/heavy penalise (mage).
-        ArmorMasteryPassive(NukerArmorMastery, BaseClass.Mage, new ArmorMasteryProfile(
-            Robe:  new MasteryEffect(CastSpeed: 1.4f, MpRegen: 1.3f, MaxMp: 1.15f,
-                InterruptResistPerLevel: 1f, MagicDefence: 10, MagicDefPerLevel: 0.5f, DefPerLevel: 0.5f),
-            Light: MageLightPenalty,
-            Heavy: MageHeavyPenalty)),
+        // Nuker — Mage Armor Mastery (CSV nuker 20-35): in ROBE, +MP regen, +P.Def, +max MP
+        // and a "mpWhenRestored" bonus (extra MP each time Restore Spirit lands). Light/Heavy
+        // penalise casting (mage). 4 levels (@20/25/30/35). Replaces the base Robe/Light mastery.
+        new(NukerArmorMastery, "Mage Armor Mastery", BaseClass.Mage, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive,
+            Replaces: new[] { MasteryRobe, MasteryLight, MasteryHeavy },
+            Description: "Passive. In ROBE: faster MP regen, more defence and max MP, and extra "
+                       + "MP from your own MP-restoration. Light/heavy armor slows your casting.",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 9600),
+                new SkillLevel(SpCost: 12800),
+                new SkillLevel(SpCost: 12800),
+                new SkillLevel(SpCost: 25000),
+            },
+            ArmorMasteryLevels: new[]
+            {
+                NukerRobe(pDef: 20, maxMp: 20, restore: 25),
+                NukerRobe(pDef: 25, maxMp: 20, restore: 30),
+                NukerRobe(pDef: 30, maxMp: 30, restore: 35),
+                NukerRobe(pDef: 35, maxMp: 30, restore: 40),
+            }),
     };
+
+    private static readonly MasteryEffect NukerArmorPenalty =
+        new(MpRegen: 1.0f, AtkSpeed: 0.8f, CastSpeed: 0.5f);
+
+    /// <summary>Nuker robe-mastery level: ROBE gets +MP regen, flat P.Def, flat max MP and the
+    /// mpWhenRestored bonus; light/heavy penalise casting. (CSV nuker "Robe: mpReg x1.2, pDef +N,
+    /// maxMP +M, mpWhenRestored +R; Light/Heavy: as x0.8, cast x0.5".)</summary>
+    private static ArmorMasteryProfile NukerRobe(int pDef, int maxMp, int restore) => new(
+        Robe:  new MasteryEffect(MpRegen: 1.2f, Defence: pDef, MaxMpFlat: maxMp, RestoreMpBonus: restore),
+        Light: NukerArmorPenalty,
+        Heavy: NukerArmorPenalty);
 }

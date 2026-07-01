@@ -35,7 +35,10 @@ public readonly record struct MasteryEffect(
     // crit-rate resist). Added to the entity's running resist totals.
     float CritDmgResist = 0f,
     float CritRateResist = 0f,
-    float BowResist = 0f);
+    float BowResist = 0f,
+    // Bonus MP added whenever an MP-restore effect (Restore Spirit/Mana) lands on the wearer
+    // (nuker robe mastery "mpWhenRestored +N").
+    int RestoreMpBonus = 0);
 
 /// <summary>One armor-weight mastery resolved for a specific worn weight.</summary>
 public readonly record struct MasteryResult(MasteryEffect Effect, string Label);

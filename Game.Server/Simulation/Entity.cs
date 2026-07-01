@@ -234,6 +234,7 @@ public class Entity
     public float CritRateResist { get; set; }    // reduces an attacker's physical crit CHANCE vs you
     public float CritDmgResist { get; set; }     // reduces incoming physical crit EXTRA damage
     public float BowResist { get; set; }         // reduces damage taken from BOW attacks
+    public int RestoreMpBonus { get; set; }      // bonus MP when an MP-restore lands on you (nuker mastery)
     public float MagicFailResist { get; set; }   // reduces YOUR spells' own fail chance
     public float MeleeVamp { get; set; }         // basic (melee) attack lifesteal fraction
     public float SpellVamp { get; set; }         // damage-spell lifesteal fraction
@@ -592,6 +593,7 @@ public class Entity
         CritRateResist = 0f;
         CritDmgResist = 0f;
         BowResist = 0f;
+        RestoreMpBonus = 0;
         MagicFailResist = 0f;
         MeleeVamp = 0f;
         SpellVamp = 0f;
@@ -915,6 +917,7 @@ public class Entity
             CritDmgResist += mEff.CritDmgResist;
             CritRateResist += mEff.CritRateResist;
             BowResist += mEff.BowResist;
+            RestoreMpBonus += mEff.RestoreMpBonus;
 
             // A learned skill can SUPERSEDE another's passive via Replaces[] (e.g. Spell
             // Mastery replaces Weapon Mastery): collect those ids so the base passive
