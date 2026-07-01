@@ -47,17 +47,17 @@ public static partial class ClassSkillTables
         // Mastery Lv.1 are auto-granted; everything below is learned with SP.
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
             ClassSkills.Register(race, BaseClass.Mage, null,
-                new ClassSkill(SelfHeal, 1),                         // Lv1 self heal
+                new ClassSkill(SelfHeal, 1),                         // Lv1 self heal (power 42)
                 new ClassSkill(MagicBolt, 7, SkillLevel: 2),
                 new ClassSkill(MasteryRobe, 7, SkillLevel: 2),       // +7 P.Def
-                new ClassSkill(Heal, 7, SkillLevel: 1),              // targeted heal (replaces Self Heal)
+                new ClassSkill(SelfHeal, 7, SkillLevel: 2),          // self heal power 67
                 new ClassSkill(Might, 7),                            // +8% atk/def buff
                 new ClassSkill(MageAntiMagic, 7, SkillLevel: 1),     // +12 M.Def
                 new ClassSkill(MagicBolt, 14, SkillLevel: 3),
                 new ClassSkill(VampiricBolt, 14),
                 new ClassSkill(MageAntiMagic, 14, SkillLevel: 2),    // +16 M.Def + 5% fizzle
-                new ClassSkill(Heal, 14, SkillLevel: 2),
-                new ClassSkill(MasteryRobe, 14, SkillLevel: 3),      // +10 P.Def
+                new ClassSkill(SelfHeal, 14, SkillLevel: 3),         // self heal power 107
+                new ClassSkill(MasteryRobe, 14, SkillLevel: 3),      // +9 P.Def
                 new ClassSkill(WeaponMastery, 14));                  // +4 M.Atk / +2 P.Atk
         ClassSkills.Register(Race.God, BaseClass.Mage, null,
             new ClassSkill(MagicBolt, 1), new ClassSkill(Weakness, 1), new ClassSkill(Heal, 1));

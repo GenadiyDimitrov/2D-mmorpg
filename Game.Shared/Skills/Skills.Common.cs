@@ -77,24 +77,27 @@ public static partial class SkillCatalog
         };
     }
 
-    // Base MAGE robe mastery per level (char 1/7/14). Robe = caster lean (cast/MP/def);
-    // light/heavy hinder casting. Penalty literals are inlined (not shared fields) to avoid
-    // static-init ordering issues across the partials. Placeholder numbers — retune with the
-    // real mage table; the nuker/healer masteries REPLACE this from level 20.
+    // Base MAGE robe mastery per level (char 1/7/14, mage CSV). ROBE: +20% MP regen and P.Def
+    // (no cast change). Any non-robe body — light/heavy AND no armor at all — penalises: attack
+    // speed ×0.8 and cast speed ×0.5. Penalty literals are inlined (not shared fields) to avoid
+    // static-init ordering across partials. The nuker/healer masteries REPLACE this from level 20.
     private static readonly ArmorMasteryProfile[] MageRobeLevels = new[]
     {
         new ArmorMasteryProfile(
-            Robe:  new StatMods(CastSpeedPct: 0.3f, MpRegenPct: 0.2f, MaxMpPct: 0.1f, PDef: 3),
-            Light: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.2f, MoveSpeedPct: -0.2f, Evasion: -3, Accuracy: -3),
-            Heavy: new StatMods(AtkSpeedPct: -0.5f, CastSpeedPct: -0.5f, MoveSpeedPct: -0.5f, HpRegenPct: -0.5f, MpRegenPct: -0.5f, Evasion: -10, Accuracy: -10)),
+            Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 0),
+            Light: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
+            Heavy: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
+            None:  new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f)),
         new ArmorMasteryProfile(
-            Robe:  new StatMods(CastSpeedPct: 0.3f, MpRegenPct: 0.2f, MaxMpPct: 0.1f, PDef: 10),
-            Light: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.2f, MoveSpeedPct: -0.2f, Evasion: -3, Accuracy: -3),
-            Heavy: new StatMods(AtkSpeedPct: -0.5f, CastSpeedPct: -0.5f, MoveSpeedPct: -0.5f, HpRegenPct: -0.5f, MpRegenPct: -0.5f, Evasion: -10, Accuracy: -10)),
+            Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 7),
+            Light: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
+            Heavy: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
+            None:  new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f)),
         new ArmorMasteryProfile(
-            Robe:  new StatMods(CastSpeedPct: 0.3f, MpRegenPct: 0.2f, MaxMpPct: 0.1f, PDef: 17),
-            Light: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.2f, MoveSpeedPct: -0.2f, Evasion: -3, Accuracy: -3),
-            Heavy: new StatMods(AtkSpeedPct: -0.5f, CastSpeedPct: -0.5f, MoveSpeedPct: -0.5f, HpRegenPct: -0.5f, MpRegenPct: -0.5f, Evasion: -10, Accuracy: -10)),
+            Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 9),
+            Light: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
+            Heavy: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
+            None:  new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f)),
     };
 
     private static SkillDef[] CommonSkills() => new SkillDef[]

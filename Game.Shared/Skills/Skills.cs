@@ -205,7 +205,10 @@ public record SkillDef(
 /// Entity.RecomputeDerived — pure per-level DATA, no character-level/class formula (the same
 /// pattern future classes reuse for weapon-type-conditional passives).</summary>
 public readonly record struct ArmorMasteryProfile(
-    StatMods Robe, StatMods Light, StatMods Heavy);
+    StatMods Robe, StatMods Light, StatMods Heavy,
+    // No BODY armor equipped. Defaults inert; a caster mastery sets it so wearing NOTHING
+    // is penalised like the wrong weight (can't dodge the robe requirement by going naked).
+    StatMods None = default);
 
 /// <summary>Per-equipped-WEAPON-TYPE stat profile for a weapon-mastery PASSIVE (one entry
 /// per skill level). The held weapon's type selects which <see cref="PassiveEffect"/>
@@ -221,13 +224,16 @@ public readonly record struct StackLevel(SkillEffect Effect, EffectMagnitude[] M
 public readonly record struct WeaponMasteryProfile(
     PassiveEffect Sword = default, PassiveEffect Dual = default,
     PassiveEffect Bow = default, PassiveEffect Blunt = default,
+    // Fallback for ANY other equipped state — EMPTY HAND, or a base type without its own slot.
+    // Lets a caster mastery penalise "anything but sword/blunt", empty hand included.
+    PassiveEffect Other = default,
     // When set, the bonus applies ONLY if the equipped weapon's type is in this [Flags] MASK
     // (e.g. Warrior trains WeaponType.TwoHanded). None = any. The Sword/Blunt slots serve both
     // 1H and 2H via WeaponType.Base(); Dual/Bow are inherently 2H.
     WeaponType RequiredWeapon = WeaponType.None)
 {
-    /// <summary>The bonus for the equipped weapon. Inert default for None, an unset slot,
-    /// or a weapon outside RequiredWeapon.</summary>
+    /// <summary>The effect for the equipped weapon. Named slots for the four base types;
+    /// <see cref="Other"/> for empty hand / anything else. Inert outside RequiredWeapon.</summary>
     public PassiveEffect For(WeaponType wt)
     {
         if (RequiredWeapon != WeaponType.None && (RequiredWeapon & wt) == 0) return default;
@@ -237,7 +243,7 @@ public readonly record struct WeaponMasteryProfile(
             WeaponType.Dual  => Dual,
             WeaponType.Bow   => Bow,
             WeaponType.Blunt => Blunt,
-            _ => default
+            _ => Other
         };
     }
 }

@@ -157,8 +157,8 @@ public static partial class SkillCatalog
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, Replaces: new[] { WeaponMastery },
             Description: "Passive. Sharpens your spellcasting — more M.Atk/P.Atk, faster casts, "
-                       + "shorter reuse. Casting with a bow is half speed.",
-            // Same caster bow penalty as Weapon Mastery, at every level (one entry per level).
+                       + "shorter reuse. Casting with anything but a sword or blunt is half speed.",
+            // Same caster weapon penalty as Weapon Mastery, at every level (one entry per level).
             WeaponMasteryLevels: new[] { CasterBowPenalty, CasterBowPenalty, CasterBowPenalty, CasterBowPenalty },
             Levels: new[]
             {

@@ -159,11 +159,11 @@ public static partial class ClassSkillTables
                 new ClassSkill(HolyStrike, 30, DisplayName: holyBolt, SkillLevel: 3),
                 new ClassSkill(HolyStrike, 35, DisplayName: holyBolt, SkillLevel: 4),
 
-                // Heal — continues the base-mage line (lvls 3-6).
-                new ClassSkill(Heal, 20, SkillLevel: 3),
-                new ClassSkill(Heal, 25, SkillLevel: 4),
-                new ClassSkill(Heal, 30, SkillLevel: 5),
-                new ClassSkill(Heal, 35, SkillLevel: 6),
+                // Heal — the healer's targeted heal; REPLACES the base-mage Self Heal at 20.
+                new ClassSkill(Heal, 20, SkillLevel: 1),   // power 151
+                new ClassSkill(Heal, 25, SkillLevel: 2),   // power 195
+                new ClassSkill(Heal, 30, SkillLevel: 3),   // power 245
+                new ClassSkill(Heal, 35, SkillLevel: 4),   // power 301
 
                 // Quick Heal — fast single-target heal.
                 new ClassSkill(QuickHeal, 20, SkillLevel: 1),

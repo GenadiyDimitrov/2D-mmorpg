@@ -875,7 +875,7 @@ public class Entity
                     ArmorWeight.Robe  => prof.Robe,
                     ArmorWeight.Light => prof.Light,
                     ArmorWeight.Heavy => prof.Heavy,
-                    _ => default,
+                    _ => prof.None,   // no body armor equipped
                 };
                 dataMastery = true;
                 break;

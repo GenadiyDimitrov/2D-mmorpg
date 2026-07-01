@@ -172,5 +172,6 @@ public static partial class SkillCatalog
     private static ArmorMasteryProfile NukerRobe(int pDef, int maxMp, int restore) => new(
         Robe:  new StatMods(MpRegenPct: 0.2f, PDef: pDef, MaxMp: maxMp, RestoreMpBonus: restore),
         Light: NukerArmorPenalty,
-        Heavy: NukerArmorPenalty);
+        Heavy: NukerArmorPenalty,
+        None:  NukerArmorPenalty);
 }

@@ -44,24 +44,30 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 21, MpCost: 15, InitialMpCost: 3, SpCost: 2200, Description: "Magic damage, power 21."),
             }),
 
-        // Self Heal — early self-only heal, replaced by the targeted Heal at 7.
+        // Self Heal — the base MAGE heal: SELF ONLY, 3 levels (1/7/14). The nuker keeps this
+        // (self-only) so a high-M.Atk nuker can't spam-heal the party; the HEALER replaces it
+        // with the targeted Heal at level 20.
         new(SelfHeal, "Self Heal", BaseClass.Mage, SkillEffect.Heal,
             MpCost: 7, CastTicks: 50, CooldownTicks: 20, Range: 0, Power: 42,
-            Category: SkillCategory.Heal, InitialMpCost: 2, SpCost: 160,
+            Category: SkillCategory.Heal, InitialMpCost: 2,
             TargetMode: TargetMode.SelfOnly,
-            Description: "Restores your own HP (power 42). Scales with WIT."),
+            Description: "Restores your own HP. Scales with WIT.",
+            Levels: new[]
+            {
+                new SkillLevel(Power: 42,  MpCost: 7,  InitialMpCost: 2, SpCost: 160,  Description: "Self heal power 42."),
+                new SkillLevel(Power: 67,  MpCost: 14, InitialMpCost: 3, SpCost: 480,  Description: "Self heal power 67."),
+                new SkillLevel(Power: 107, MpCost: 22, InitialMpCost: 5, SpCost: 2200, Description: "Self heal power 107."),
+            }),
 
-        // Heal — targeted heal (ally or self); replaces Self Heal. Lvls 1-2 are the
-        // base-mage line; the 2nd-class Healer CONTINUES it at lvls 3-6 (20/25/30/35).
+        // Heal — the HEALER's targeted heal (ally or self); REPLACES Self Heal at level 20.
+        // 4 levels @20/25/30/35 (base-mage no longer learns this).
         new(Heal, "Heal", BaseClass.Mage, SkillEffect.Heal,
-            MpCost: 14, CastTicks: 50, CooldownTicks: 20, Range: 600, Power: 67,
-            Category: SkillCategory.Heal, InitialMpCost: 3,
+            MpCost: 30, CastTicks: 50, CooldownTicks: 20, Range: 600, Power: 151,
+            Category: SkillCategory.Heal, InitialMpCost: 6,
             Replaces: new[] { SelfHeal },
             Description: "Restores a friendly target's HP (or your own). Scales with WIT.",
             Levels: new[]
             {
-                new SkillLevel(Power: 67,  MpCost: 14, InitialMpCost: 3,  SpCost: 480,   Description: "Heal power 67."),
-                new SkillLevel(Power: 107, MpCost: 22, InitialMpCost: 5,  SpCost: 2200,  Description: "Heal power 107."),
                 new SkillLevel(Power: 151, MpCost: 30, InitialMpCost: 6,  SpCost: 3200,  Description: "Heal power 151."),
                 new SkillLevel(Power: 195, MpCost: 38, InitialMpCost: 8,  SpCost: 6400,  Description: "Heal power 195."),
                 new SkillLevel(Power: 245, MpCost: 44, InitialMpCost: 9,  SpCost: 12800, Description: "Heal power 245."),
@@ -179,7 +185,8 @@ public static partial class SkillCatalog
             Category: SkillCategory.Passive, SpCost: 2200,
             Passive: new PassiveEffect(MagAtk: 4, PhysAtk: 2),
             WeaponMasteryLevels: new[] { CasterBowPenalty },
-            Description: "Passive. +4 M.Atk and +2 P.Atk. Casting with a bow is half speed."),
+            Description: "Passive. +4 M.Atk and +2 P.Atk. Casting with anything but a sword or blunt "
+                       + "(bow, dagger, or bare-handed) is half speed."),
 
         // Dispel Magic — CANCEL: strips up to 2 random beneficial effects from an enemy.
         new(DispelMagic, "Dispel Magic", BaseClass.Mage, SkillEffect.Cancel,
