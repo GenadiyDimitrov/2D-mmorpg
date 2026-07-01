@@ -46,9 +46,8 @@ public readonly record struct StatMods(
     // matching sources are migrated (docs/StatMods.md phases 2-5). Kept out of Phase 1 so the
     // shape can be reviewed on the core combat stats first.
 
-    /// <summary>Fold a set of source mods into running totals: percents SUM, flats SUM
-    /// (the current-engine convention, kept for migration parity — see docs/StatMods.md;
-    /// switching to compound percents is a one-line change here).</summary>
+    /// <summary>Fold a set of source mods into running totals (flats SUM, percents COMPOUND
+    /// — see docs/StatMods.md: final = (base + Σflat) × ∏(1+pct%)).</summary>
     public static StatTotals Combine(IEnumerable<StatMods> sources)
     {
         var t = new StatTotals();
@@ -57,9 +56,10 @@ public readonly record struct StatMods(
     }
 }
 
-/// <summary>Running totals accumulated from many <see cref="StatMods"/> — flats summed,
-/// percents summed. Turned into a final stat via <see cref="Apply"/>: `(base + flat) ×
-/// (1 + pct)`. A mutable-by-copy value type (each Add returns a new total).</summary>
+/// <summary>Running totals accumulated from many <see cref="StatMods"/> — flats SUMMED,
+/// percents COMPOUNDED (each stored pct = ∏(1+p)−1, so 0 stays inert). Turned into a final
+/// stat via <see cref="Apply"/>: `(base + flat) × (1 + pct)`. A value type (each Add returns
+/// a new total).</summary>
 public readonly record struct StatTotals(
     float MaxHp = 0f, float MaxHpPct = 0f,
     float MaxMp = 0f, float MaxMpPct = 0f,
@@ -77,22 +77,25 @@ public readonly record struct StatTotals(
     float HpRegen = 0f, float HpRegenPct = 0f,
     float MpRegen = 0f, float MpRegenPct = 0f)
 {
+    /// <summary>Compound two percents: ∏(1+p)−1, so combining is multiplicative and 0 = inert.</summary>
+    private static float Mul(float a, float b) => (1f + a) * (1f + b) - 1f;
+
     public StatTotals Add(in StatMods s) => new(
-        MaxHp + s.MaxHp, MaxHpPct + s.MaxHpPct,
-        MaxMp + s.MaxMp, MaxMpPct + s.MaxMpPct,
-        PDef + s.PDef, PDefPct + s.PDefPct,
-        MDef + s.MDef, MDefPct + s.MDefPct,
-        PAtk + s.PAtk, PAtkPct + s.PAtkPct,
-        MAtk + s.MAtk, MAtkPct + s.MAtkPct,
+        MaxHp + s.MaxHp, Mul(MaxHpPct, s.MaxHpPct),
+        MaxMp + s.MaxMp, Mul(MaxMpPct, s.MaxMpPct),
+        PDef + s.PDef, Mul(PDefPct, s.PDefPct),
+        MDef + s.MDef, Mul(MDefPct, s.MDefPct),
+        PAtk + s.PAtk, Mul(PAtkPct, s.PAtkPct),
+        MAtk + s.MAtk, Mul(MAtkPct, s.MAtkPct),
         Accuracy + s.Accuracy,
-        Evasion + s.Evasion, EvasionPct + s.EvasionPct,
-        CritRate + s.CritRate, CritRatePct + s.CritRatePct,
-        CritDamage + s.CritDamage, CritDamagePct + s.CritDamagePct,
+        Evasion + s.Evasion, Mul(EvasionPct, s.EvasionPct),
+        CritRate + s.CritRate, Mul(CritRatePct, s.CritRatePct),
+        CritDamage + s.CritDamage, Mul(CritDamagePct, s.CritDamagePct),
         MagicCritRate + s.MagicCritRate,
-        AtkSpeedPct + s.AtkSpeedPct, CastSpeedPct + s.CastSpeedPct,
-        MoveSpeed + s.MoveSpeed, MoveSpeedPct + s.MoveSpeedPct,
-        HpRegen + s.HpRegen, HpRegenPct + s.HpRegenPct,
-        MpRegen + s.MpRegen, MpRegenPct + s.MpRegenPct);
+        Mul(AtkSpeedPct, s.AtkSpeedPct), Mul(CastSpeedPct, s.CastSpeedPct),
+        MoveSpeed + s.MoveSpeed, Mul(MoveSpeedPct, s.MoveSpeedPct),
+        HpRegen + s.HpRegen, Mul(HpRegenPct, s.HpRegenPct),
+        MpRegen + s.MpRegen, Mul(MpRegenPct, s.MpRegenPct));
 
     /// <summary>Apply a (flat, pct) pair to a base value: `(base + flat) × (1 + pct)`,
     /// floored at 0. The single place the combine convention is defined.</summary>

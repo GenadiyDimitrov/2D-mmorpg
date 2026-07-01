@@ -24,10 +24,13 @@ final = (base + Σflat) × ∏(1 + pct%)
 ```
 
 **Flat is applied INSIDE the parentheses** — summed onto the base, THEN multiplied by the
-percents (a flat bonus IS scaled by % buffs). This is `StatTotals.Apply` and it is not to
-be changed. (The current engine SUMS the percents — `(1 + Σpct)`; the ∏ notation above is
-the same idea written per-buff. Sum vs product is the only latent nuance, and it stays as
-the engine already does it: additive.)
+percents (a flat bonus IS scaled by % buffs). This is `StatTotals.Apply`.
+
+Percents **compound** (`∏(1+pct)`, per the formula above): `StatTotals.Add` stores each
+running pct as `∏(1+p)−1`. Max-HP / regen already stack multiplicatively in the current
+engine, so those keep parity; defence / attack % buffs (which the current `ModifiedStat`
+stacks *additively*) become multiplicative once migrated — endorsed by the `∏` in the
+formula. Flat placement (inside) is unchanged.
 
 Exceptions that are NOT flat+pct (added in later phases):
 - **Floors** (`EvadeFloor`, `HitFloor`, `MagicFailFloor`): GUARANTEES — take the
