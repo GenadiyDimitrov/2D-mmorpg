@@ -14,19 +14,10 @@ public static partial class SkillCatalog
     public const string ArcherArmorMastery  = "archer_armor_mastery";
     public const string NukerArmorMastery   = "nuker_armor_mastery";
 
-    // Off-weight penalties as StatMods (factor→pct: ×0.8 → −0.2, ×0.5 → −0.5).
-    private static readonly StatMods FighterHeavyPenalty =
-        new(AtkSpeedPct: -0.2f, CastSpeedPct: -0.2f, MoveSpeedPct: -0.2f, Evasion: -3, Accuracy: -3);
-    private static readonly StatMods MageLightPenalty =
-        new(AtkSpeedPct: -0.2f, CastSpeedPct: -0.2f, MoveSpeedPct: -0.2f, Evasion: -3, Accuracy: -3);
-    private static readonly StatMods MageHeavyPenalty =
-        new(AtkSpeedPct: -0.5f, CastSpeedPct: -0.5f, MoveSpeedPct: -0.5f, HpRegenPct: -0.5f, MpRegenPct: -0.5f,
-            Evasion: -10, Accuracy: -10);
-
-    /// <summary>Rogue armor level: LIGHT armor gets the given bonus, heavy penalises, robe is
-    /// inert. (CSV rogue "with light: …; heavy hinders".)</summary>
+    /// <summary>Rogue armor level: ALL bonuses apply ONLY in LIGHT armor. Heavy/robe/none are
+    /// inert — a fighter gets NO active penalty, just no bonus (owner ruling 2026-07-01).</summary>
     private static ArmorMasteryProfile RogueLight(StatMods light) =>
-        new(Robe: default, Light: light, Heavy: FighterHeavyPenalty);
+        new(Robe: default, Light: light, Heavy: default);
 
     /// <summary>Tank Heavy Armor Mastery level: HEAVY armor grants flat P.Def, ×1.07 P.Def,
     /// 15% crit-damage reduction, ×mpReg MP regen and −2 evasion. Off-weights are inert (tank is
@@ -128,14 +119,14 @@ public static partial class SkillCatalog
                 RogueLight(new StatMods(Evasion: 13, CritRateResist: 0.15f, MpRegenPct: 0.8f, HpRegenPct: 0.2f, MoveSpeedPct: 0.06f, PDef: 25)),
             }),
 
-        // Archer — light bonus (crit lean); heavy penalises.
+        // Archer — light bonus (crit lean). Heavy/robe/none inert: no fighter penalty, just no bonus.
         ArmorMasteryPassive(ArcherArmorMastery, BaseClass.Fighter, new ArmorMasteryProfile(
             Robe:  default,
             // NOTE: the old profile used DefPerLevel: 0.5f (per-CHARACTER-level def); StatMods has
             // no per-level field, so it's baked to a flat PDef here (~mid of the archer band). Archer
             // mastery numbers are placeholders — retune with the rest. See docs/StatMods.md.
             Light: new StatMods(AtkSpeedPct: 0.3f, CritRate: 0.05f, CritDamage: 0.2f, Evasion: 4, Accuracy: 4, PDef: 15),
-            Heavy: FighterHeavyPenalty)),
+            Heavy: default)),
 
         // Nuker — Mage Armor Mastery (CSV nuker 20-35): in ROBE, +MP regen, +P.Def, +max MP
         // and a "mpWhenRestored" bonus (extra MP each time Restore Spirit lands). Light/Heavy
