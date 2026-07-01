@@ -53,6 +53,10 @@ public static partial class SkillCatalog
     public const string TankShieldStun = "tank_shield_stun";       // stun 9s
     public const string TankStay = "tank_stay";                    // root/hold 15s
 
+    // --- Rogue 2nd-class (CSV rogue 20-35) ---
+    public const string Sprint = "sprint";                         // burst move-speed buff
+    public const string BowExpertise = "bow_expertise";            // bow attack-speed buff
+
     // Base-fighter armor mastery per level (@5/10/15): flat P.Def + MP-regen for ALL weights;
     // at level 3 light armor also aids evasion. No off-weight penalty (fighters adapt).
     private static readonly ArmorMasteryProfile[] FighterArmorLevels = new[]
@@ -272,6 +276,25 @@ public static partial class SkillCatalog
             DurationTicks: 150, BuffKey: "root", Rank: 1,
             Category: SkillCategory.Debuff, DebuffSchool: DebuffSchool.Physical, SpCost: 40000,
             Description: "Roots the target in place for 15s (it can still act). ATK-vs-CON; bosses immune."),
+
+        // ===== Rogue 2nd-class (CSV rogue 20-35) =====
+
+        // Sprint — short, sharp burst of move speed (+40 flat) for 15s.
+        new(Sprint, "Sprint", BaseClass.Fighter, SkillEffect.BuffMoveSpeed,
+            MpCost: 10, CastTicks: 2, CooldownTicks: 300, Range: 0, Power: 0,
+            DurationTicks: 150, BuffKey: "sprint", Rank: 1,
+            Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 3400,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffMoveSpeed, 40, ModifierMode.Flat) },
+            Description: "A burst of speed: +40 move speed for 15s."),
+
+        // Bow Expertise — long self-buff: +8% bow attack speed (requires a bow) for 20 min.
+        new(BowExpertise, "Bow Expertise", BaseClass.Fighter, SkillEffect.BuffAtkSpeed,
+            MpCost: 25, CastTicks: 30, CooldownTicks: 20, Range: 0, Power: 0,
+            DurationTicks: 12000, BuffKey: "bow_expertise", Rank: 1, InitialMpCost: 5,
+            Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 22000,
+            RequiredWeapon: WeaponType.Bow,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtkSpeed, 0.08f) },
+            Description: "Steadies your aim: +8% attack speed while wielding a bow, for 20 minutes."),
 
         new(PowerStrike, "Power Strike", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: 10, CastTicks: 5, CooldownTicks: 30, Range: 0, Power: 30,

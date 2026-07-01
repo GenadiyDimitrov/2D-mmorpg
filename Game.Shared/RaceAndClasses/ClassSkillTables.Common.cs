@@ -69,8 +69,31 @@ public static partial class ClassSkillTables
                 new ClassSkill(BodyMastery, 36, SkillLevel: 5),
                 new ClassSkill(Strike, 36, SkillLevel: 8),
                 new ClassSkill(BattleDefence, 36, SkillLevel: 1));
+            // Rogue (CSV rogue 20-35): Rogue Armor/Weapon Mastery, Stab + Shot continue (levels
+            // 4-8), Sprint, Bow Expertise.
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Rogue,
-                new ClassSkill(BattleFury, 20), new ClassSkill(TwinSlash, 24));
+                new ClassSkill(RogueArmorMastery, 20, SkillLevel: 1),
+                new ClassSkill(RogueWeaponMastery, 20, SkillLevel: 1),
+                new ClassSkill(Stab, 20, SkillLevel: 4),
+                new ClassSkill(Shot, 20, SkillLevel: 4),
+                new ClassSkill(Sprint, 20, SkillLevel: 1),
+                new ClassSkill(RogueArmorMastery, 24, SkillLevel: 2),
+                new ClassSkill(RogueWeaponMastery, 24, SkillLevel: 2),
+                new ClassSkill(Stab, 24, SkillLevel: 5),
+                new ClassSkill(Shot, 24, SkillLevel: 5),
+                new ClassSkill(RogueArmorMastery, 28, SkillLevel: 3),
+                new ClassSkill(RogueWeaponMastery, 28, SkillLevel: 3),
+                new ClassSkill(Stab, 28, SkillLevel: 6),
+                new ClassSkill(Shot, 28, SkillLevel: 6),
+                new ClassSkill(BowExpertise, 28, SkillLevel: 1),
+                new ClassSkill(RogueArmorMastery, 32, SkillLevel: 4),
+                new ClassSkill(RogueWeaponMastery, 32, SkillLevel: 4),
+                new ClassSkill(Stab, 32, SkillLevel: 7),
+                new ClassSkill(Shot, 32, SkillLevel: 7),
+                new ClassSkill(RogueArmorMastery, 36, SkillLevel: 5),
+                new ClassSkill(RogueWeaponMastery, 36, SkillLevel: 5),
+                new ClassSkill(Stab, 36, SkillLevel: 8),
+                new ClassSkill(Shot, 36, SkillLevel: 8));
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Archer,
                 new ClassSkill(BattleFury, 20), new ClassSkill(PowerShot, 24));
 

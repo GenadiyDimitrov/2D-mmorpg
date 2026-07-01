@@ -23,6 +23,11 @@ public static partial class SkillCatalog
         new(AtkSpeed: 0.5f, CastSpeed: 0.5f, MoveSpeed: 0.5f, HpRegen: 0.5f, MpRegen: 0.5f,
             Evasion: -10, Accuracy: -10);
 
+    /// <summary>Rogue armor level: LIGHT armor gets the given bonus, heavy penalises, robe is
+    /// inert. (CSV rogue "with light: …; heavy hinders".)</summary>
+    private static ArmorMasteryProfile RogueLight(MasteryEffect light) =>
+        new(Robe: ArmorMastery.Neutral, Light: light, Heavy: FighterHeavyPenalty);
+
     /// <summary>Tank Heavy Armor Mastery level: HEAVY armor grants flat P.Def, ×1.07 P.Def,
     /// 15% crit-damage reduction, ×1.1 max MP and −2 evasion. Off-weights are inert (tank is
     /// immune to armor penalties). (CSV tank "heavy: mp x1.1, p.def +N, p.def x1.07, crit dmg
@@ -97,11 +102,31 @@ public static partial class SkillCatalog
                 WarriorArmor(28, 9), WarriorArmor(32, 9),
             }),
 
-        // Rogue — light bonus; heavy penalises; robe never penalises.
-        ArmorMasteryPassive(RogueArmorMastery, BaseClass.Fighter, new ArmorMasteryProfile(
-            Robe:  ArmorMastery.Neutral,
-            Light: new MasteryEffect(AtkSpeed: 1.35f, MoveSpeed: 1.1f, Evasion: 5, Accuracy: 5, DefPerLevel: 0.5f),
-            Heavy: FighterHeavyPenalty)),
+        // Rogue — Armor Mastery (CSV rogue 20-35): in LIGHT armor, big evasion, +15% crit-rate
+        // resist, +MP regen and (from L3) move speed; at L5 also +HP regen. Heavy penalises,
+        // robe is inert. 5 levels (@20/24/28/32/36). Replaces the base fighter mastery.
+        new(RogueArmorMastery, "Armor Mastery", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive,
+            Replaces: new[] { MasteryHeavy, MasteryLight, MasteryRobe, FighterArmorMastery },
+            Description: "Passive. In LIGHT armor: greatly increased evasion, resistance to "
+                       + "critical hits, faster MP regen and (at higher levels) speed. Heavy armor hinders you.",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 1700),
+                new SkillLevel(SpCost: 3200),
+                new SkillLevel(SpCost: 6000),
+                new SkillLevel(SpCost: 11000),
+                new SkillLevel(SpCost: 20000),
+            },
+            ArmorMasteryLevels: new[]
+            {
+                RogueLight(new MasteryEffect(Evasion: 7,  CritRateResist: 0.15f, MpRegen: 1.1f, Defence: 16)),
+                RogueLight(new MasteryEffect(Evasion: 11, CritRateResist: 0.15f, MpRegen: 1.1f, Defence: 18)),
+                RogueLight(new MasteryEffect(Evasion: 13, CritRateResist: 0.15f, MpRegen: 1.1f, MoveSpeed: 1.06f, Defence: 20)),
+                RogueLight(new MasteryEffect(Evasion: 13, CritRateResist: 0.15f, MpRegen: 1.1f, MoveSpeed: 1.06f, Defence: 22)),
+                RogueLight(new MasteryEffect(Evasion: 13, CritRateResist: 0.15f, MpRegen: 1.8f, HpRegen: 1.2f, MoveSpeed: 1.06f, Defence: 25)),
+            }),
 
         // Archer — light bonus (crit lean); heavy penalises.
         ArmorMasteryPassive(ArcherArmorMastery, BaseClass.Fighter, new ArmorMasteryProfile(

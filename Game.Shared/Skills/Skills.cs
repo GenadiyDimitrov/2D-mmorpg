@@ -284,6 +284,9 @@ public readonly record struct PassiveEffect(
     // Shield passive (Tank Shield Mastery): scale the equipped shield's block chance and
     // shield defence (fractions; only matter with a shield equipped). Re-clamped after passives.
     float BlockChancePct = 0f, float ShieldDefPct = 0f,
+    // Bow range bonus (Rogue/Archer Weapon Mastery "range +200"): added to basic-attack range
+    // while a BOW is equipped. Inert with any other weapon.
+    float BowRange = 0f,
     int InterruptPower = 0, int InterruptResist = 0,
     float MeleeVamp = 0f, float SpellVamp = 0f,
     // Damage-OUT bonuses (fractions): the 2×3 matrix of context (PvE/PvP) × source

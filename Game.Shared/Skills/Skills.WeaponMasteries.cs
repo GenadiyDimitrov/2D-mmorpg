@@ -32,6 +32,13 @@ public static partial class SkillCatalog
     private static WeaponMasteryProfile TwoHand(PassiveEffect pe) =>
         new(Sword: pe, Blunt: pe, RequiredHands: WeaponHands.TwoHand);
 
+    /// <summary>A rogue Weapon Mastery level: shared crit/acc/atk-speed on both dual and bow,
+    /// plus each weapon's own flat P.Atk, and +200 range for the bow. (crit-rate ×1.2 is
+    /// approximated as +critRate flat.)</summary>
+    private static WeaponMasteryProfile RogueWM(float critDmg, int acc, float critRate, float atkSpd, int dualAtk, int bowAtk) =>
+        new(Dual: new PassiveEffect(PhysAtkPct: 0.085f, CritDamage: critDmg, Accuracy: acc, CritRate: critRate, AtkSpeedPct: atkSpd, PhysAtk: dualAtk),
+            Bow:  new PassiveEffect(PhysAtkPct: 0.085f, CritDamage: critDmg, Accuracy: acc, CritRate: critRate, AtkSpeedPct: atkSpd, PhysAtk: bowAtk, BowRange: 200f));
+
     private static SkillDef WeaponMasteryPassive(string id, string name, BaseClass cls,
         string desc, WeaponMasteryProfile profile) =>
         new(id, name, cls, SkillEffect.None,
@@ -67,11 +74,30 @@ public static partial class SkillCatalog
                 TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 20, CritDamage: 1.06f, Accuracy: 6, Evasion: -3, DefencePct: -0.20f)),
             }),
 
-        // Rogue — dual-wield: crit identity.
-        WeaponMasteryPassive(RogueWeaponMastery, "Dual Mastery", BaseClass.Fighter,
-            "Increases attack power, critical rate and critical damage while dual-wielding.",
-            new WeaponMasteryProfile(
-                Dual: new PassiveEffect(PhysAtkPct: 0.10f, CritRate: 0.05f, CritDamage: 0.15f))),
+        // Rogue — Weapon Mastery (CSV rogue 20-35): DUAL and BOW both gain +8.5% P.Atk plus
+        // shared crit-damage / accuracy / crit-rate / attack-speed; each also gets its own flat
+        // P.Atk, and BOW gains +200 range. 5 levels. Replaces the base fighter weapon mastery.
+        new(RogueWeaponMastery, "Weapon Mastery", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive, Replaces: new[] { FighterWeaponMastery },
+            Description: "Passive. Sharpens dual-wield and bow attacks: more attack power, "
+                       + "critical damage, accuracy and (with a bow) greater range.",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 3400),
+                new SkillLevel(SpCost: 6400),
+                new SkillLevel(SpCost: 12000),
+                new SkillLevel(SpCost: 22000),
+                new SkillLevel(SpCost: 40000),
+            },
+            WeaponMasteryLevels: new[]
+            {
+                RogueWM(critDmg: 0.35f, acc: 0, critRate: 0f,    atkSpd: 0f,    dualAtk: 8,  bowAtk: 30),
+                RogueWM(critDmg: 0.80f, acc: 3, critRate: 0f,    atkSpd: 0f,    dualAtk: 11, bowAtk: 42),
+                RogueWM(critDmg: 0.64f, acc: 3, critRate: 0f,    atkSpd: 0f,    dualAtk: 14, bowAtk: 56),
+                RogueWM(critDmg: 1.40f, acc: 3, critRate: 0.10f, atkSpd: 0f,    dualAtk: 17, bowAtk: 74),
+                RogueWM(critDmg: 1.65f, acc: 3, critRate: 0.10f, atkSpd: 0.05f, dualAtk: 21, bowAtk: 96),
+            }),
 
         // Archer — bow: crit-damage + accuracy lean.
         WeaponMasteryPassive(ArcherWeaponMastery, "Bow Mastery", BaseClass.Fighter,

@@ -953,6 +953,9 @@ public class Entity
                 CritRateResist += pe.CritRateResist;
                 CritDmgResist += pe.CritDmgResist;
                 BowResist += pe.BowResist;
+                // Bow range bonus applies only while a bow is equipped (rogue/archer mastery).
+                if (pe.BowRange != 0f && WeaponType == WeaponType.Bow)
+                    BasicAttackRange = Math.Min(GameConstants.MaxBasicAttackRange, BasicAttackRange + pe.BowRange);
                 // Shield passive (only with a shield equipped): scale block chance / shield def.
                 if (HasShield)
                 {
