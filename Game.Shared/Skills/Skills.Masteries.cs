@@ -29,13 +29,13 @@ public static partial class SkillCatalog
         new(Robe: ArmorMastery.Neutral, Light: light, Heavy: FighterHeavyPenalty);
 
     /// <summary>Tank Heavy Armor Mastery level: HEAVY armor grants flat P.Def, ×1.07 P.Def,
-    /// 15% crit-damage reduction, ×1.1 MP regen and −2 evasion. Off-weights are inert (tank is
-    /// immune to armor penalties). (CSV tank "heavy: mp[Reg] x1.1, p.def +N, p.def x1.07, crit
-    /// dmg reduction 15%, eva -2". The @36 "mp x3.4" is treated as x1.1 — a likely CSV typo.)</summary>
-    private static ArmorMasteryProfile TankHeavy(int def) => new(
+    /// 15% crit-damage reduction, ×mpReg MP regen and −2 evasion. Off-weights are inert (tank is
+    /// immune to armor penalties). (CSV tank "heavy: mpReg x1.1, p.def +N, p.def x1.07, crit dmg
+    /// reduction 15%, eva -2"; the @36 level is mpReg ×3.4.)</summary>
+    private static ArmorMasteryProfile TankHeavy(int def, float mpReg = 1.1f) => new(
         Robe:  ArmorMastery.Neutral,
         Light: ArmorMastery.Neutral,
-        Heavy: new MasteryEffect(MpRegen: 1.1f, Defence: def, DefenceMult: 1.07f,
+        Heavy: new MasteryEffect(MpRegen: mpReg, Defence: def, DefenceMult: 1.07f,
             CritDmgResist: 0.15f, Evasion: -2));
 
     /// <summary>Warrior armor-mastery level: flat P.Def + ×1.1 MP regen on all weights; light
@@ -76,7 +76,7 @@ public static partial class SkillCatalog
             },
             ArmorMasteryLevels: new[]
             {
-                TankHeavy(40), TankHeavy(47), TankHeavy(54), TankHeavy(61), TankHeavy(70),
+                TankHeavy(40), TankHeavy(47), TankHeavy(54), TankHeavy(61), TankHeavy(70, mpReg: 3.4f),
             }),
 
         // Warrior — Armor Mastery (CSV warrior 20-35): +P.Def and +max MP with any weight;

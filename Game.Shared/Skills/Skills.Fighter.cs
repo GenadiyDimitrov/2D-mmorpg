@@ -40,6 +40,12 @@ public static partial class SkillCatalog
     public const string FighterArmorMastery = "fighter_armor_mastery";   // all-weight def + mpReg
     public const string FighterWeaponMastery = "fighter_weapon_mastery"; // any-weapon +p.Atk
 
+    // 2nd-class continuations of the base attack chain (each REPLACES the base skill(s) —
+    // same pattern as the mage bolt chain). Warriors keep only melee; rogues keep stab+bow.
+    public const string Smash = "smash";                           // warrior: continues Strike; replaces Strike/Stab/Shot
+    public const string PiercingStab = "piercing_stab";            // rogue: continues Stab; replaces Stab/Strike
+    public const string PreciseShot = "precise_shot";              // rogue: continues Shot (range 700); replaces Shot/Strike
+
     // --- Warrior 2nd-class (CSV warrior 20-35) ---
     public const string BodyMastery = "body_mastery";              // +max HP + HP regen
     public const string BattleRegeneration = "battle_regeneration";// self-heal 10% max HP
@@ -91,11 +97,6 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 35,  MpCost: 10, InitialMpCost: 10, SpCost: 160,   Description: "Strike — power 35."),
                 new SkillLevel(Power: 65,  MpCost: 13, InitialMpCost: 13, SpCost: 910,   Description: "Strike — power 65."),
                 new SkillLevel(Power: 84,  MpCost: 17, InitialMpCost: 17, SpCost: 910,   Description: "Strike — power 84."),
-                new SkillLevel(Power: 105, MpCost: 20, InitialMpCost: 20, SpCost: 3400,  Description: "Strike — power 105."),
-                new SkillLevel(Power: 143, MpCost: 23, InitialMpCost: 23, SpCost: 6400,  Description: "Strike — power 143."),
-                new SkillLevel(Power: 191, MpCost: 25, InitialMpCost: 25, SpCost: 12000, Description: "Strike — power 191."),
-                new SkillLevel(Power: 251, MpCost: 30, InitialMpCost: 30, SpCost: 22000, Description: "Strike — power 251."),
-                new SkillLevel(Power: 326, MpCost: 35, InitialMpCost: 35, SpCost: 40000, Description: "Strike — power 326."),
             }),
 
         // Stab — dagger (dual) BLOW: full power only on a critical/double, else a soft 10%.
@@ -109,11 +110,6 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 88,  MpCost: 10, InitialMpCost: 10, SpCost: 160,   Description: "Stab — blow power 88 (10% without a crit)."),
                 new SkillLevel(Power: 137, MpCost: 11, InitialMpCost: 11, SpCost: 910,   Description: "Stab — blow power 137."),
                 new SkillLevel(Power: 210, MpCost: 15, InitialMpCost: 15, SpCost: 910,   Description: "Stab — blow power 210."),
-                new SkillLevel(Power: 314, MpCost: 18, InitialMpCost: 18, SpCost: 1700,  Description: "Stab — blow power 314."),
-                new SkillLevel(Power: 427, MpCost: 21, InitialMpCost: 21, SpCost: 3200,  Description: "Stab — blow power 427."),
-                new SkillLevel(Power: 571, MpCost: 24, InitialMpCost: 24, SpCost: 6000,  Description: "Stab — blow power 571."),
-                new SkillLevel(Power: 752, MpCost: 58, InitialMpCost: 58, SpCost: 11000, Description: "Stab — blow power 752."),
-                new SkillLevel(Power: 977, MpCost: 30, InitialMpCost: 30, SpCost: 20000, Description: "Stab — blow power 977."),
             }),
 
         // Shot — bow ranged attack; can [Double]. Base reach 350 (rogue extends it later).
@@ -121,17 +117,12 @@ public static partial class SkillCatalog
             MpCost: 20, CastTicks: 30, CooldownTicks: 60, Range: 350, Power: 78,
             Category: SkillCategory.Physical, CanDouble: true,
             RequiredWeapon: WeaponType.Bow,
-            Description: "A bow shot dealing heavy ranged damage. Can strike for DOUBLE.",
+            Description: "A bow shot dealing heavy ranged damage (fighter reach 350). Can strike for DOUBLE.",
             Levels: new[]
             {
                 new SkillLevel(Power: 78,  MpCost: 20, InitialMpCost: 20, SpCost: 160,   Description: "Shot — power 78."),
                 new SkillLevel(Power: 122, MpCost: 25, InitialMpCost: 25, SpCost: 910,   Description: "Shot — power 122."),
                 new SkillLevel(Power: 187, MpCost: 34, InitialMpCost: 34, SpCost: 910,   Description: "Shot — power 187."),
-                new SkillLevel(Power: 279, MpCost: 40, InitialMpCost: 40, SpCost: 1700,  Description: "Shot — power 279."),
-                new SkillLevel(Power: 379, MpCost: 45, InitialMpCost: 45, SpCost: 3200,  Description: "Shot — power 379."),
-                new SkillLevel(Power: 507, MpCost: 53, InitialMpCost: 53, SpCost: 6000,  Description: "Shot — power 507."),
-                new SkillLevel(Power: 669, MpCost: 34, InitialMpCost: 34, SpCost: 11000, Description: "Shot — power 669."),
-                new SkillLevel(Power: 868, MpCost: 67, InitialMpCost: 67, SpCost: 20000, Description: "Shot — power 868."),
             }),
 
         // Armor Mastery — base fighter, all-weight defence + MP regen (data-driven).
@@ -159,6 +150,60 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 160, Passive: new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 2)),
                 new SkillLevel(SpCost: 910, Passive: new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 3)),
                 new SkillLevel(SpCost: 910, Passive: new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 4)),
+            }),
+
+        // ===== 2nd-class attack-chain continuations (each REPLACES the base skill(s)) =====
+
+        // Smash — WARRIOR: continues the Strike chain and REPLACES Strike/Stab/Shot (a warrior
+        // keeps only the melee line). Sword/blunt, can [Double]. 5 levels @20/24/28/32/36.
+        new(Smash, "Smash", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+            MpCost: 20, CastTicks: 10, CooldownTicks: 30, Range: 40, Power: 105,
+            Category: SkillCategory.Physical, CanDouble: true,
+            RequiredWeapon: WeaponType.Sword | WeaponType.Blunt,
+            Replaces: new[] { Strike, Stab, Shot },
+            Description: "A crushing sword/blunt blow — the warrior's Strike upgrade. Can strike for DOUBLE.",
+            Levels: new[]
+            {
+                new SkillLevel(Power: 105, MpCost: 20, InitialMpCost: 20, SpCost: 3400,  Description: "Smash — power 105."),
+                new SkillLevel(Power: 143, MpCost: 23, InitialMpCost: 23, SpCost: 6400,  Description: "Smash — power 143."),
+                new SkillLevel(Power: 191, MpCost: 25, InitialMpCost: 25, SpCost: 12000, Description: "Smash — power 191."),
+                new SkillLevel(Power: 251, MpCost: 30, InitialMpCost: 30, SpCost: 22000, Description: "Smash — power 251."),
+                new SkillLevel(Power: 326, MpCost: 35, InitialMpCost: 35, SpCost: 40000, Description: "Smash — power 326."),
+            }),
+
+        // Piercing Stab — ROGUE: continues the Stab BLOW chain, REPLACES Stab + Strike. Dual.
+        // 5 levels @20/24/28/32/36.
+        new(PiercingStab, "Piercing Stab", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+            MpCost: 18, CastTicks: 10, CooldownTicks: 30, Range: 40, Power: 314,
+            Category: SkillCategory.Physical, CanDouble: true, BlowOnCrit: true,
+            RequiredWeapon: WeaponType.Dual,
+            Replaces: new[] { Stab, Strike },
+            Description: "A precise dagger blow — the rogue's Stab upgrade. Full power only on a "
+                       + "critical/double (a soft 10% otherwise).",
+            Levels: new[]
+            {
+                new SkillLevel(Power: 314, MpCost: 18, InitialMpCost: 18, SpCost: 1700,  Description: "Piercing Stab — blow power 314."),
+                new SkillLevel(Power: 427, MpCost: 21, InitialMpCost: 21, SpCost: 3200,  Description: "Piercing Stab — blow power 427."),
+                new SkillLevel(Power: 571, MpCost: 24, InitialMpCost: 24, SpCost: 6000,  Description: "Piercing Stab — blow power 571."),
+                new SkillLevel(Power: 752, MpCost: 58, InitialMpCost: 58, SpCost: 11000, Description: "Piercing Stab — blow power 752."),
+                new SkillLevel(Power: 977, MpCost: 30, InitialMpCost: 30, SpCost: 20000, Description: "Piercing Stab — blow power 977."),
+            }),
+
+        // Precise Shot — ROGUE: continues the Shot chain at RANGE 700, REPLACES Shot + Strike.
+        // Bow, can [Double]. 5 levels @20/24/28/32/36. (3rd-class Double Shot @900 comes later.)
+        new(PreciseShot, "Precise Shot", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+            MpCost: 40, CastTicks: 30, CooldownTicks: 60, Range: 700, Power: 279,
+            Category: SkillCategory.Physical, CanDouble: true,
+            RequiredWeapon: WeaponType.Bow,
+            Replaces: new[] { Shot, Strike },
+            Description: "A long-range aimed shot (reach 700) — the rogue's Shot upgrade. Can strike for DOUBLE.",
+            Levels: new[]
+            {
+                new SkillLevel(Power: 279, MpCost: 40, InitialMpCost: 40, SpCost: 1700,  Description: "Precise Shot — power 279."),
+                new SkillLevel(Power: 379, MpCost: 45, InitialMpCost: 45, SpCost: 3200,  Description: "Precise Shot — power 379."),
+                new SkillLevel(Power: 507, MpCost: 53, InitialMpCost: 53, SpCost: 6000,  Description: "Precise Shot — power 507."),
+                new SkillLevel(Power: 669, MpCost: 34, InitialMpCost: 34, SpCost: 11000, Description: "Precise Shot — power 669."),
+                new SkillLevel(Power: 868, MpCost: 67, InitialMpCost: 67, SpCost: 20000, Description: "Precise Shot — power 868."),
             }),
 
         // ===== Warrior 2nd-class (CSV warrior 20-35) =====
