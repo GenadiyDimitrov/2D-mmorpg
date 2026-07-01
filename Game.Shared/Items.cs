@@ -54,7 +54,10 @@ public enum ArmorSlot { None = 0, Head = 1, Body = 2, Gloves = 3, Boots = 4 }
 // high crit, no shield. There is deliberately no separate Dagger value.
 // A STAFF is just a 2H Blunt (magic) — there is no separate Staff value; the
 // "Staff" name is an item noun. Blunt = higher accuracy, lower crit than bladed.
-public enum WeaponType { None = 0, Sword = 1, Dual = 2, Bow = 3, Blunt = 4 }
+// [Flags]: an ITEM always has exactly one type, but a skill's weapon REQUIREMENT is a
+// mask (e.g. Strike = Sword|Blunt), tested with a single bitwise-AND (no allocation).
+[Flags]
+public enum WeaponType { None = 0, Sword = 1, Dual = 2, Bow = 4, Blunt = 8 }
 
 /// <summary>One- vs two-handed. A 2H weapon occupies the offhand, so it cannot be
 /// paired with a shield (the equip code mutually excludes them).</summary>

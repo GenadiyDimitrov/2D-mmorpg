@@ -23,6 +23,13 @@ public static partial class SkillCatalog
         new(AtkSpeed: 0.5f, CastSpeed: 0.5f, MoveSpeed: 0.5f, HpRegen: 0.5f, MpRegen: 0.5f,
             Evasion: -10, Accuracy: -10);
 
+    /// <summary>Warrior armor-mastery level: flat P.Def + ×1.1 max MP on all weights; light
+    /// armor also adds the given evasion. (CSV warrior "with all mp x1.1, p.def +N; light eva +E".)</summary>
+    private static ArmorMasteryProfile WarriorArmor(int def, int lightEva) => new(
+        Robe:  new MasteryEffect(Defence: def, MaxMp: 1.1f),
+        Light: new MasteryEffect(Defence: def, MaxMp: 1.1f, Evasion: lightEva),
+        Heavy: new MasteryEffect(Defence: def, MaxMp: 1.1f));
+
     private static SkillDef ArmorMasteryPassive(string id, BaseClass cls, ArmorMasteryProfile profile) =>
         new(id, "Armor Mastery", cls, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
@@ -42,11 +49,28 @@ public static partial class SkillCatalog
             Heavy: new MasteryEffect(MaxHp: 1.2f, HpRegen: 1.3f,
                 Defence: 20, DefPerLevel: 1f, MagicDefence: 20, MagicDefPerLevel: 0.5f))),
 
-        // Warrior — heavy OR light; immune to off-weight penalties.
-        ArmorMasteryPassive(WarriorArmorMastery, BaseClass.Fighter, new ArmorMasteryProfile(
-            Robe:  ArmorMastery.Neutral,
-            Light: new MasteryEffect(MaxHp: 1.05f, AtkSpeed: 1.15f, Evasion: 3, Accuracy: 3, DefPerLevel: 0.5f),
-            Heavy: new MasteryEffect(MaxHp: 1.1f, HpRegen: 1.2f, DefPerLevel: 1f))),
+        // Warrior — Armor Mastery (CSV warrior 20-35): +P.Def and +max MP with any weight;
+        // LIGHT armor additionally boosts evasion. Continues the base fighter mastery (which it
+        // replaces) with 5 levels (@20/24/28/32/36).
+        new(WarriorArmorMastery, "Armor Mastery", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive,
+            Replaces: new[] { MasteryHeavy, MasteryLight, MasteryRobe, FighterArmorMastery },
+            Description: "Passive. Improves defence and maximum MP with any armor weight; "
+                       + "light armor also boosts evasion.",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 1700),
+                new SkillLevel(SpCost: 3200),
+                new SkillLevel(SpCost: 6000),
+                new SkillLevel(SpCost: 11000),
+                new SkillLevel(SpCost: 20000),
+            },
+            ArmorMasteryLevels: new[]
+            {
+                WarriorArmor(19, 6), WarriorArmor(21, 8), WarriorArmor(23, 9),
+                WarriorArmor(28, 9), WarriorArmor(32, 9),
+            }),
 
         // Rogue — light bonus; heavy penalises; robe never penalises.
         ArmorMasteryPassive(RogueArmorMastery, BaseClass.Fighter, new ArmorMasteryProfile(

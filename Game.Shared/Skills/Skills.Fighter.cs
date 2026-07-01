@@ -33,8 +33,174 @@ public static partial class SkillCatalog
     public const string Shadowstep = "shadowstep";            // blink behind target + hit
     public const string RepellingShot = "repelling_shot";     // ranged hit + knockback
 
+    // --- Base fighter CORE actives (CSV fighter 01-15, continuing into 2nd-class) ---
+    public const string Strike = "strike";                    // sword/blunt attack (can double)
+    public const string Stab = "stab";                        // dual BLOW (full on crit, else 10%)
+    public const string Shot = "shot";                        // bow ranged attack
+    public const string FighterArmorMastery = "fighter_armor_mastery";   // all-weight def + mpReg
+    public const string FighterWeaponMastery = "fighter_weapon_mastery"; // any-weapon +p.Atk
+
+    // --- Warrior 2nd-class (CSV warrior 20-35) ---
+    public const string BodyMastery = "body_mastery";              // +max HP + HP regen
+    public const string BattleRegeneration = "battle_regeneration";// self-heal 10% max HP
+    public const string BattlePresence = "battle_presence";        // HP<60% stance: +p.Atk
+    public const string BattleDefence = "battle_defence";          // HP<60% stance: +p.Def
+
+    // Base-fighter armor mastery per level (@5/10/15): flat P.Def + MP-regen for ALL weights;
+    // at level 3 light armor also aids evasion. No off-weight penalty (fighters adapt).
+    private static readonly ArmorMasteryProfile[] FighterArmorLevels = new[]
+    {
+        new ArmorMasteryProfile(
+            new MasteryEffect(Defence: 9,  MpRegen: 1.1f),
+            new MasteryEffect(Defence: 9,  MpRegen: 1.1f),
+            new MasteryEffect(Defence: 9,  MpRegen: 1.1f)),
+        new ArmorMasteryProfile(
+            new MasteryEffect(Defence: 12, MpRegen: 1.1f),
+            new MasteryEffect(Defence: 12, MpRegen: 1.1f),
+            new MasteryEffect(Defence: 12, MpRegen: 1.1f)),
+        new ArmorMasteryProfile(
+            new MasteryEffect(Defence: 14, MpRegen: 1.1f),
+            new MasteryEffect(Defence: 14, MpRegen: 1.1f, Evasion: 3),
+            new MasteryEffect(Defence: 14, MpRegen: 1.1f)),
+    };
+
     private static SkillDef[] FighterSkills() => new SkillDef[]
     {
+        // ===== Base fighter CORE kit (learned @5/10/15; Strike/Stab/Shot continue into
+        //       the 2nd-class warrior/rogue tables via higher levels of the SAME skill) =====
+
+        // Strike — sword/blunt melee skill; adds power to the hit, can [Double].
+        new(Strike, "Strike", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+            MpCost: 10, CastTicks: 10, CooldownTicks: 30, Range: 40, Power: 35,
+            Category: SkillCategory.Physical, CanDouble: true,
+            RequiredWeapon: WeaponType.Sword | WeaponType.Blunt,
+            Description: "A weapon strike (sword or blunt) that adds power to your attack. Can strike for DOUBLE.",
+            Levels: new[]
+            {
+                new SkillLevel(Power: 35,  MpCost: 10, InitialMpCost: 10, SpCost: 160,   Description: "Strike — power 35."),
+                new SkillLevel(Power: 65,  MpCost: 13, InitialMpCost: 13, SpCost: 910,   Description: "Strike — power 65."),
+                new SkillLevel(Power: 84,  MpCost: 17, InitialMpCost: 17, SpCost: 910,   Description: "Strike — power 84."),
+                new SkillLevel(Power: 105, MpCost: 20, InitialMpCost: 20, SpCost: 3400,  Description: "Strike — power 105."),
+                new SkillLevel(Power: 143, MpCost: 23, InitialMpCost: 23, SpCost: 6400,  Description: "Strike — power 143."),
+                new SkillLevel(Power: 191, MpCost: 25, InitialMpCost: 25, SpCost: 12000, Description: "Strike — power 191."),
+                new SkillLevel(Power: 251, MpCost: 30, InitialMpCost: 30, SpCost: 22000, Description: "Strike — power 251."),
+                new SkillLevel(Power: 326, MpCost: 35, InitialMpCost: 35, SpCost: 40000, Description: "Strike — power 326."),
+            }),
+
+        // Stab — dagger (dual) BLOW: full power only on a critical/double, else a soft 10%.
+        new(Stab, "Stab", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+            MpCost: 10, CastTicks: 10, CooldownTicks: 30, Range: 40, Power: 88,
+            Category: SkillCategory.Physical, CanDouble: true, BlowOnCrit: true,
+            RequiredWeapon: WeaponType.Dual,
+            Description: "A dagger blow (duals). Lands for FULL power only on a critical or double — a soft 10% otherwise.",
+            Levels: new[]
+            {
+                new SkillLevel(Power: 88,  MpCost: 10, InitialMpCost: 10, SpCost: 160,   Description: "Stab — blow power 88 (10% without a crit)."),
+                new SkillLevel(Power: 137, MpCost: 11, InitialMpCost: 11, SpCost: 910,   Description: "Stab — blow power 137."),
+                new SkillLevel(Power: 210, MpCost: 15, InitialMpCost: 15, SpCost: 910,   Description: "Stab — blow power 210."),
+                new SkillLevel(Power: 314, MpCost: 18, InitialMpCost: 18, SpCost: 1700,  Description: "Stab — blow power 314."),
+                new SkillLevel(Power: 427, MpCost: 21, InitialMpCost: 21, SpCost: 3200,  Description: "Stab — blow power 427."),
+                new SkillLevel(Power: 571, MpCost: 24, InitialMpCost: 24, SpCost: 6000,  Description: "Stab — blow power 571."),
+                new SkillLevel(Power: 752, MpCost: 58, InitialMpCost: 58, SpCost: 11000, Description: "Stab — blow power 752."),
+                new SkillLevel(Power: 977, MpCost: 30, InitialMpCost: 30, SpCost: 20000, Description: "Stab — blow power 977."),
+            }),
+
+        // Shot — bow ranged attack; can [Double]. Base reach 350 (rogue extends it later).
+        new(Shot, "Shot", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+            MpCost: 20, CastTicks: 30, CooldownTicks: 60, Range: 350, Power: 78,
+            Category: SkillCategory.Physical, CanDouble: true,
+            RequiredWeapon: WeaponType.Bow,
+            Description: "A bow shot dealing heavy ranged damage. Can strike for DOUBLE.",
+            Levels: new[]
+            {
+                new SkillLevel(Power: 78,  MpCost: 20, InitialMpCost: 20, SpCost: 160,   Description: "Shot — power 78."),
+                new SkillLevel(Power: 122, MpCost: 25, InitialMpCost: 25, SpCost: 910,   Description: "Shot — power 122."),
+                new SkillLevel(Power: 187, MpCost: 34, InitialMpCost: 34, SpCost: 910,   Description: "Shot — power 187."),
+                new SkillLevel(Power: 279, MpCost: 40, InitialMpCost: 40, SpCost: 1700,  Description: "Shot — power 279."),
+                new SkillLevel(Power: 379, MpCost: 45, InitialMpCost: 45, SpCost: 3200,  Description: "Shot — power 379."),
+                new SkillLevel(Power: 507, MpCost: 53, InitialMpCost: 53, SpCost: 6000,  Description: "Shot — power 507."),
+                new SkillLevel(Power: 669, MpCost: 34, InitialMpCost: 34, SpCost: 11000, Description: "Shot — power 669."),
+                new SkillLevel(Power: 868, MpCost: 67, InitialMpCost: 67, SpCost: 20000, Description: "Shot — power 868."),
+            }),
+
+        // Armor Mastery — base fighter, all-weight defence + MP regen (data-driven).
+        new(FighterArmorMastery, "Armor Mastery", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive,
+            Replaces: new[] { MasteryHeavy, MasteryLight, MasteryRobe },
+            Description: "Passive. Improves defence and MP regen with any armor weight "
+                       + "(light armor also aids evasion at higher levels).",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 160),
+                new SkillLevel(SpCost: 910),
+                new SkillLevel(SpCost: 910),
+            },
+            ArmorMasteryLevels: FighterArmorLevels),
+
+        // Weapon Mastery — base fighter, flat + % attack power with ANY weapon.
+        new(FighterWeaponMastery, "Weapon Mastery", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive,
+            Description: "Passive. Increases physical attack power with any weapon equipped.",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 160, Passive: new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 2)),
+                new SkillLevel(SpCost: 910, Passive: new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 3)),
+                new SkillLevel(SpCost: 910, Passive: new PassiveEffect(PhysAtkPct: 0.085f, PhysAtk: 4)),
+            }),
+
+        // ===== Warrior 2nd-class (CSV warrior 20-35) =====
+
+        // Body Mastery — flat max HP + HP-regen multiplier (passive, 5 levels @20/24/28/32/36).
+        new(BodyMastery, "Body Mastery", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive,
+            Description: "Passive. Hardens your body — more maximum HP and faster HP regeneration.",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 1700,  Passive: new PassiveEffect(MaxHp: 60)),
+                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(MaxHp: 60,  HpRegenPct: 0.10f)),
+                new SkillLevel(SpCost: 6000,  Passive: new PassiveEffect(MaxHp: 100, HpRegenPct: 0.10f)),
+                new SkillLevel(SpCost: 11000, Passive: new PassiveEffect(MaxHp: 100, HpRegenPct: 0.60f)),
+                new SkillLevel(SpCost: 20000, Passive: new PassiveEffect(MaxHp: 150, HpRegenPct: 0.60f)),
+            }),
+
+        // Battle Regeneration — instant self-heal for 10% of max HP (short cast, 90s cooldown).
+        new(BattleRegeneration, "Battle Regeneration", BaseClass.Fighter, SkillEffect.Heal,
+            MpCost: 25, CastTicks: 5, CooldownTicks: 900, Range: 0, Power: 0,
+            Category: SkillCategory.Heal, TargetMode: TargetMode.SelfOnly, SpCost: 6000,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.Heal, 0.10f, ModifierMode.Percent) },
+            Description: "Restores 10% of your maximum HP instantly (90s reuse)."),
+
+        // Battle Presence — LOW-HP offensive stance (usable only at ≤60% HP): +35% P.Atk and
+        // +2 accuracy for 90s. Requires a sword/blunt; shares the "battle_stance" key with
+        // Battle Defence, so activating one ends the other (mutually exclusive).
+        new(BattlePresence, "Battle Presence", BaseClass.Fighter,
+            SkillEffect.BuffPhysAtk | SkillEffect.BuffAccuracy,
+            MpCost: 20, CastTicks: 5, CooldownTicks: 3000, Range: 0, Power: 0,
+            DurationTicks: 900, BuffKey: "battle_stance", Rank: 1,
+            Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 11000,
+            RequireHpBelowFraction: 0.60f, RequiredWeapon: WeaponType.Sword | WeaponType.Blunt,
+            Magnitudes: new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffPhysAtk, 0.35f),
+                new(SkillEffect.BuffAccuracy, 2, ModifierMode.Flat),
+            },
+            Description: "A desperate offensive: +35% P.Atk and +2 accuracy for 90s. Usable only at "
+                       + "≤60% HP with a sword/blunt. Cannot be combined with Battle Defence."),
+
+        // Battle Defence — LOW-HP defensive stance (usable only at ≤60% HP): DOUBLE P.Def for
+        // 90s. Shares "battle_stance" with Battle Presence (mutually exclusive).
+        new(BattleDefence, "Battle Defence", BaseClass.Fighter, SkillEffect.BuffDef,
+            MpCost: 20, CastTicks: 5, CooldownTicks: 3000, Range: 0, Power: 0,
+            DurationTicks: 900, BuffKey: "battle_stance", Rank: 1,
+            Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 20000,
+            RequireHpBelowFraction: 0.60f,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffDef, 1.0f, ModifierMode.Percent) },
+            Description: "A desperate defence: DOUBLES your P.Def for 90s. Usable only at ≤60% HP. "
+                       + "Cannot be combined with Battle Presence."),
+
         new(PowerStrike, "Power Strike", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: 10, CastTicks: 5, CooldownTicks: 30, Range: 0, Power: 30,
             Category: SkillCategory.Physical,

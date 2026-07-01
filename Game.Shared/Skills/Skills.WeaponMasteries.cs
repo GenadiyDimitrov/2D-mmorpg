@@ -27,6 +27,11 @@ public static partial class SkillCatalog
     internal static readonly WeaponMasteryProfile CasterBowPenalty =
         new(Bow: new PassiveEffect(CastSpeedPct: -1.0f));
 
+    /// <summary>A two-handed sword/blunt profile carrying the same PassiveEffect for both
+    /// (the warrior 2H mastery doesn't distinguish sword vs blunt), gated to TwoHand.</summary>
+    private static WeaponMasteryProfile TwoHand(PassiveEffect pe) =>
+        new(Sword: pe, Blunt: pe, RequiredHands: WeaponHands.TwoHand);
+
     private static SkillDef WeaponMasteryPassive(string id, string name, BaseClass cls,
         string desc, WeaponMasteryProfile profile) =>
         new(id, name, cls, SkillEffect.None,
@@ -38,14 +43,29 @@ public static partial class SkillCatalog
 
     private static SkillDef[] WeaponMasterySkills() => new SkillDef[]
     {
-        // Warrior — TWO-HANDED melee only. Sword leans crit, blunt leans accuracy.
-        WeaponMasteryPassive(WarriorWeaponMastery, "Two-Hand Mastery", BaseClass.Fighter,
-            "Increases attack power with TWO-HANDED weapons — swords also crit more, "
-          + "blunts strike more accurately. No effect with one-handed weapons.",
-            new WeaponMasteryProfile(
-                Sword: new PassiveEffect(PhysAtkPct: 0.15f, CritRate: 0.03f),
-                Blunt: new PassiveEffect(PhysAtkPct: 0.12f, Accuracy: 10),
-                RequiredHands: WeaponHands.TwoHand)),
+        // Warrior — Two-Handed Mastery (CSV warrior 20-35): big P.Atk + crit damage with a
+        // 2H sword/blunt, at the cost of some defence (p.def ×0.8) and evasion. 5 levels.
+        new(WarriorWeaponMastery, "Two-Hand Mastery", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive, Replaces: new[] { FighterWeaponMastery },
+            Description: "Passive. Mastery of TWO-HANDED swords and blunts: much greater attack "
+                       + "power and critical damage, but lower defence and evasion. No effect one-handed.",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 3400),
+                new SkillLevel(SpCost: 6400),
+                new SkillLevel(SpCost: 12000),
+                new SkillLevel(SpCost: 22000),
+                new SkillLevel(SpCost: 40000),
+            },
+            WeaponMasteryLevels: new[]
+            {
+                TwoHand(new PassiveEffect(PhysAtkPct: 0.30f, PhysAtk: 13, CritDamage: 0.35f, Accuracy: 3, Evasion: -3, DefencePct: -0.20f)),
+                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 15, CritDamage: 0.48f, Accuracy: 6, Evasion: -3, DefencePct: -0.20f)),
+                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 17, CritDamage: 0.64f, Accuracy: 6, Evasion: -3, DefencePct: -0.20f)),
+                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 20, CritDamage: 0.84f, Accuracy: 6, Evasion: -3, DefencePct: -0.20f)),
+                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 20, CritDamage: 1.06f, Accuracy: 6, Evasion: -3, DefencePct: -0.20f)),
+            }),
 
         // Rogue — dual-wield: crit identity.
         WeaponMasteryPassive(RogueWeaponMastery, "Dual Mastery", BaseClass.Fighter,

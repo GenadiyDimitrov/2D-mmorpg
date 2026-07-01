@@ -20,13 +20,26 @@ public static partial class ClassSkillTables
     // Base-class kits (shared by everyone before the level-20 change).
     static ClassSkillTables()
     {
-        // --- Base Fighter --- (1st-class fighter learn cadence: 1, 5, 10, 15)
-        ClassSkills.Register(Race.Human, BaseClass.Fighter, null,
-            new ClassSkill(PowerStrike, 1), new ClassSkill(WarCry, 5));
-        ClassSkills.Register(Race.Elf, BaseClass.Fighter, null,
-            new ClassSkill(PowerStrike, 1), new ClassSkill(WarCry, 5));
-        ClassSkills.Register(Race.Ork, BaseClass.Fighter, null,
-            new ClassSkill(PowerStrike, 1), new ClassSkill(WarCry, 5));
+        // --- Base Fighter --- (CSV fighter 01-15, learn cadence 5/10/15). Strike (sword/blunt),
+        // Stab (dual BLOW) and Shot (bow) are weapon-gated core actives that keep leveling into
+        // the 2nd-class warrior/rogue tables. Everything is SP-learned (no auto-grant).
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+            ClassSkills.Register(race, BaseClass.Fighter, null,
+                new ClassSkill(FighterArmorMastery, 5,  SkillLevel: 1),
+                new ClassSkill(FighterWeaponMastery, 5, SkillLevel: 1),
+                new ClassSkill(Strike, 5, SkillLevel: 1),
+                new ClassSkill(Stab,   5, SkillLevel: 1),
+                new ClassSkill(Shot,   5, SkillLevel: 1),
+                new ClassSkill(FighterArmorMastery, 10,  SkillLevel: 2),
+                new ClassSkill(FighterWeaponMastery, 10, SkillLevel: 2),
+                new ClassSkill(Strike, 10, SkillLevel: 2),
+                new ClassSkill(Stab,   10, SkillLevel: 2),
+                new ClassSkill(Shot,   10, SkillLevel: 2),
+                new ClassSkill(FighterArmorMastery, 15,  SkillLevel: 3),
+                new ClassSkill(FighterWeaponMastery, 15, SkillLevel: 3),
+                new ClassSkill(Strike, 15, SkillLevel: 3),
+                new ClassSkill(Stab,   15, SkillLevel: 3),
+                new ClassSkill(Shot,   15, SkillLevel: 3));
         ClassSkills.Register(Race.God, BaseClass.Fighter, null,
             new ClassSkill(PowerStrike, 1), new ClassSkill(WarCry, 1));
 

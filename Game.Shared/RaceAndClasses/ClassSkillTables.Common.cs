@@ -20,8 +20,32 @@ public static partial class ClassSkillTables
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Tank,
                 new ClassSkill(Fortify, 20),
                 new ClassSkill(ShieldMastery, 24), new ClassSkill(Disrupt, 28));
+            // Warrior (CSV warrior 20-35): Two-Hand Mastery + Body Mastery (5 levels each),
+            // Strike continues (levels 4-8), and the low-HP Battle stances.
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Warrior,
-                new ClassSkill(GreaterWarCry, 20), new ClassSkill(MightyBlow, 24));
+                new ClassSkill(WarriorArmorMastery, 20, SkillLevel: 1),
+                new ClassSkill(WarriorWeaponMastery, 20, SkillLevel: 1),
+                new ClassSkill(BodyMastery, 20, SkillLevel: 1),
+                new ClassSkill(Strike, 20, SkillLevel: 4),
+                new ClassSkill(WarriorArmorMastery, 24, SkillLevel: 2),
+                new ClassSkill(WarriorWeaponMastery, 24, SkillLevel: 2),
+                new ClassSkill(BodyMastery, 24, SkillLevel: 2),
+                new ClassSkill(Strike, 24, SkillLevel: 5),
+                new ClassSkill(WarriorArmorMastery, 28, SkillLevel: 3),
+                new ClassSkill(WarriorWeaponMastery, 28, SkillLevel: 3),
+                new ClassSkill(BodyMastery, 28, SkillLevel: 3),
+                new ClassSkill(Strike, 28, SkillLevel: 6),
+                new ClassSkill(BattleRegeneration, 28, SkillLevel: 1),
+                new ClassSkill(WarriorArmorMastery, 32, SkillLevel: 4),
+                new ClassSkill(WarriorWeaponMastery, 32, SkillLevel: 4),
+                new ClassSkill(BodyMastery, 32, SkillLevel: 4),
+                new ClassSkill(Strike, 32, SkillLevel: 7),
+                new ClassSkill(BattlePresence, 32, SkillLevel: 1),
+                new ClassSkill(WarriorArmorMastery, 36, SkillLevel: 5),
+                new ClassSkill(WarriorWeaponMastery, 36, SkillLevel: 5),
+                new ClassSkill(BodyMastery, 36, SkillLevel: 5),
+                new ClassSkill(Strike, 36, SkillLevel: 8),
+                new ClassSkill(BattleDefence, 36, SkillLevel: 1));
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Rogue,
                 new ClassSkill(BattleFury, 20), new ClassSkill(TwinSlash, 24));
             ClassSkills.Register(race, BaseClass.Fighter, Archetype.Archer,

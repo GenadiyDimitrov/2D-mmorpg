@@ -59,6 +59,22 @@ public record SkillDef(
     // "[Double]" physical skills: can deal ×2 damage on a chance from the higher of
     // DEX/ATK (cap 30%). Ordinary physical skills never double. Magic skills use magic crit.
     bool CanDouble = false,
+    // Weapon requirement: an ACTIVE skill only casts while the equipped weapon's type is in
+    // this [Flags] MASK (e.g. Strike = Sword|Blunt, Stab = Dual, Shot = Bow). Checked at
+    // cast-start with one bitwise-AND. None = usable with any weapon. Passives ignore this.
+    WeaponType RequiredWeapon = WeaponType.None,
+    // BLOW skill (dagger Stab): lands for FULL Power only if it CRITS (or, with CanDouble,
+    // doubles). A blow that fails to crit deals only BlowFailFraction of its damage — a soft
+    // floor, not L2's 0-damage whiff. Only meaningful with a physical-damage effect.
+    bool BlowOnCrit = false,
+    float BlowFailFraction = 0.10f,
+    // HP-gated activation (warrior Battle Presence/Defence): the skill can only be USED while
+    // the caster's HP is at or below this fraction of max (0.6 = ≤60%). Once active the buff
+    // persists its full duration even if HP recovers (checked only at cast-start). 0 = no gate.
+    float RequireHpBelowFraction = 0f,
+    // HP paid on cast (Restore Spirit trades HP for MP). Deducted when the cast completes;
+    // never reduces the caster below 1 HP. 0 = free.
+    int HpCost = 0,
     // Per-skill context damage MULTIPLIERS (1.0 = unchanged). Let one skill hit differently
     // in PvE vs PvP — e.g. PvP 1.25 (a PvP-tuned warrior strike) or PvP 0 (a mob-only nuke).
     // Applied in the central damage pipeline once PvP exists; neutral today.
@@ -252,6 +268,7 @@ public readonly record struct PassiveEffect(
     float MaxHpPct = 0f, float MaxMpPct = 0f,
     int MaxHp = 0, int MaxMp = 0,      // flat max HP / MP
     int Defence = 0, int MagicDefence = 0,
+    float DefencePct = 0f, float MagicDefencePct = 0f,  // percent def (−0.20 = ×0.8, e.g. 2H mastery)
     int Attack = 0, float AttackPct = 0f,
     int PhysAtk = 0, int MagAtk = 0,   // flat, channel-specific (Weapon Mastery etc.)
     float PhysAtkPct = 0f, float MagAtkPct = 0f,  // percent, channel-specific

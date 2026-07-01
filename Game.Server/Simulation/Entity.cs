@@ -928,6 +928,8 @@ public class Entity
                 MaxMp += pe.MaxMp + (int)(MaxMp * pe.MaxMpPct);
                 Defence += pe.Defence;
                 MagicDefence += pe.MagicDefence;
+                if (pe.DefencePct != 0f) Defence = (int)(Defence * (1f + pe.DefencePct));
+                if (pe.MagicDefencePct != 0f) MagicDefence = (int)(MagicDefence * (1f + pe.MagicDefencePct));
                 AttackPower += pe.Attack + (int)(AttackPower * (pe.AttackPct + pe.PhysAtkPct)) + pe.PhysAtk;
                 MagicAttack += pe.Attack + (int)(MagicAttack * (pe.AttackPct + pe.MagAtkPct)) + pe.MagAtk;
                 Evasion += pe.Evasion;

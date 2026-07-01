@@ -408,6 +408,22 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // Weapon requirement: a skill gated to certain weapon types (Strike = sword/blunt,
+        // Stab = dual, Shot = bow) can only be used while a matching weapon is equipped.
+        if (def.RequiredWeapon != WeaponType.None && (def.RequiredWeapon & caster.WeaponType) == 0)
+        {
+            string need = def.RequiredWeapon.ToString().ToLowerInvariant().Replace(",", " or");
+            SendSystemToEntity(caster, $"{def.Name} requires a {need} weapon.");
+            return;
+        }
+
+        // HP-gated activation (warrior Battle Presence/Defence): only usable at low HP.
+        if (def.RequireHpBelowFraction > 0f && caster.Hp > caster.MaxHp * def.RequireHpBelowFraction)
+        {
+            SendSystemToEntity(caster, $"{def.Name} can only be used at or below {(int)(def.RequireHpBelowFraction * 100)}% HP.");
+            return;
+        }
+
         bool offensive = (def.Effect & (SkillEffect.PhysicalDamage
             | SkillEffect.MagicDamage | SkillEffect.AnyDebuff | SkillEffect.Cancel | SkillEffect.Taunt)) != 0;
 
@@ -1780,6 +1796,7 @@ public class GameLoopService : BackgroundService
         // Cast already committed at start — no range re-check here; the spell
         // lands even if the target moved. Charge the remaining MP and start CD.
         caster.Mp -= def.FinishMpAt(lvl);
+        if (def.HpCost > 0) caster.Hp = Math.Max(1, caster.Hp - def.HpCost);   // Restore Spirit: HP→MP
         caster.CastInitialMpPaid = 0;
         // Reuse-delay reduction (Spell Mastery / buffs) shortens the cooldown.
         int cooldown = def.CooldownTicks;
@@ -1828,14 +1845,17 @@ var effect = def.Effect;
                     if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
                 }
 
-                // "[Double]" skills roll a ×2 from the higher of DEX/ATK (cap 30%); ordinary
-                // skills keep the basic crit path (unchanged).
-                var (finalDmg, outcome) = def.CanDouble
-                    ? ResolvePhysicalDouble(caster, target, damage,
-                        StatCalculator.PhysicalDoubleChance(Math.Max((int)caster.EffectiveDex, caster.AtkStat)),
-                        def.BlockAccuracy)
-                    : ResolvePhysicalCritAndBlock(
-                        caster, target, damage, caster.CritChance, def.BlockAccuracy);
+                // BLOW skills (dagger Stab) land full damage only on a crit/double, else a soft
+                // 10% floor. "[Double]" skills roll a ×2 from the higher of DEX/ATK (cap 30%);
+                // ordinary skills keep the basic crit path (unchanged).
+                var (finalDmg, outcome) = def.BlowOnCrit
+                    ? ResolveBlow(caster, target, damage, def)
+                    : def.CanDouble
+                        ? ResolvePhysicalDouble(caster, target, damage,
+                            StatCalculator.PhysicalDoubleChance(Math.Max((int)caster.EffectiveDex, caster.AtkStat)),
+                            def.BlockAccuracy)
+                        : ResolvePhysicalCritAndBlock(
+                            caster, target, damage, caster.CritChance, def.BlockAccuracy);
                 damage = finalDmg;
                 BroadcastCombat(caster, target, damage, outcome, castName);
                 ApplyDamage(target, damage, caster);
@@ -3248,6 +3268,37 @@ var effect = def.Effect;
         }
 
         return (baseDamage, CombatOutcome.Hit);
+    }
+
+    /// <summary>Resolution for a BLOW skill (dagger Stab). CRIT is the gate: the blow deals
+    /// its FULL "actual" damage only if it crits (dagger crit chance, lowered by shield/crit
+    /// resist). ONLY after a landed crit does it roll a DOUBLE (chance from the higher of
+    /// DEX/ATK) that multiplies the actual damage ×2. A blow that FAILS to crit deals a flat
+    /// BlowFailFraction of its damage — that floor can neither crit nor double (a soft floor,
+    /// not L2's 0-damage whiff). Blows bypass shields, so the floor isn't blocked.</summary>
+    private (int damage, CombatOutcome outcome) ResolveBlow(
+        Entity attacker, Entity target, int baseDamage, SkillDef def)
+    {
+        float effCrit = Math.Clamp(attacker.CritChance
+            - (target.HasShield ? target.ShieldCritDefense : 0f)
+            - target.CritRateResist, 0f, 1f);
+
+        if (_rng.NextDouble() >= effCrit)
+            // Missed the crit: soft floor only — cannot crit or double.
+            return (Math.Max(1, (int)(baseDamage * def.BlowFailFraction)), CombatOutcome.Hit);
+
+        // Crit landed → deal the full actual damage, THEN roll a separate double on top.
+        int damage = baseDamage;
+        if (def.CanDouble)
+        {
+            float dbl = Math.Clamp(
+                StatCalculator.PhysicalDoubleChance(Math.Max((int)attacker.EffectiveDex, attacker.AtkStat))
+                - (target.HasShield ? target.ShieldCritDefense : 0f)
+                - target.CritRateResist, 0f, 1f);
+            if (_rng.NextDouble() < dbl)
+                damage = Math.Max(1, (int)(damage * (1f + (1f - target.CritDmgResist))));  // ×2, trimmed by crit-dmg resist
+        }
+        return (damage, CombatOutcome.Crit);
     }
 
     /// <summary>Which damage channel a hit belongs to, for the damage-out pipeline.</summary>
