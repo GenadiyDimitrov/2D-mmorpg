@@ -10,9 +10,19 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 
 ## NOW (active / immediate)
 
-- [>] **Mob stat tuning** — owner to send stats for several different-level mobs; tune our
-  curves (`StatCalculator.MobStats`/`MobMaxHp`/`MobDefence`/`MobMagicDefence` + MobMod tiers)
-  to match, then re-test damage feel.
+- [x] **Mob base-stat curve** — owner sent a L1-85 mob CSV (`docs/mobs/mob_base_stats.csv`).
+  Wired as `MobBaseStats` (per-level HP/MP/P.Def/M.Def/P.Atk/M.Atk curve, interpolated);
+  `Entity.RecomputeDerived` mob branch now reads it (`MobMaxHp/MobMaxMp/MobDefence`/the
+  `MobMagicDefence` override are retired for mobs). Structure = `curve(level) × conMod × passives`
+  (conMod hook = ×1 for now). Outliers (Rift Portling) = curve × HP/P.Def MobMod passive.
+- [x] **Mob roster + zone/drops rollout** — the old placeholder mobs replaced by the 80-mob
+  renamed roster (Level + `MobCategory`); the ~15 field zones + boss/elite + 3rd-class & class-
+  change quest targets rewired by band; drop tables ported by level via `MobCatalog.StandardDrops`.
+- [x] **Weapon-type resistance (P.Def route)** — `StatCalculator.WeaponDefenceCoef` folds a
+  per-weapon (Pierce/Blunt/Bow) coefficient INTO pDef at the hit (so an ignore-def skill bypasses
+  it); `Entity.{Pierce,Blunt,Bow}DefCoef`; demo `obsidian_knight` (resist sword/arrow, weak to blunt).
+- [ ] **RE-CHECK balance after the mob curve** — mobs are now ~2-3× prior HP/def/atk. Regenerate
+  `docs/BalanceMatrix.md`; re-verify "cleric solos L30 mob" and "mobs don't one-shot players".
 - [>] **Base class kits** — owner to provide several passives/buffs/skills per class; wire them
   as real per-class content (beyond the placeholder discipline kits), then tune.
 - [>] **Fighter balance pass** — awaiting owner targets (Venomweaver burst cap, tank durability

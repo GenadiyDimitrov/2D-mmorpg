@@ -291,13 +291,28 @@ public static class StatCalculator
     /// <summary>Physical ratio damage (L2 model): 77·(pAtk + skillPower)/pDef. No level
     /// term (level is already baked into pAtk/pDef growth). 'power' is 0 for a basic
     /// attack, the skill's power for a skill. Crit / variance / soulshot are applied by
-    /// the caller. Defence floored at 1.</summary>
-    public static int PhysicalDamage(int pAtk, int power, int pDef, int attackerLevel)
+    /// the caller. Defence floored at 1.
+    /// <paramref name="defenceCoef"/> is the defender's WEAPON-TYPE resistance (see
+    /// <see cref="WeaponDefenceCoef"/>): the resist rides INSIDE pDef (so a def-ignoring
+    /// skill bypasses it too). >1 = resistant (less damage), &lt;1 = weak (more damage),
+    /// ≤0 = no defence at all → def floors at 1 (a "one-shot" of that weapon type).</summary>
+    public static int PhysicalDamage(int pAtk, int power, int pDef, int attackerLevel, float defenceCoef = 1f)
     {
-        float def = Math.Max(1, pDef);
+        float def = Math.Max(1, pDef * defenceCoef);
         float dmg = PhysicalK * (pAtk + power) / def;
         return Math.Max(1, (int)dmg);
     }
+
+    /// <summary>Maps an ATTACKER's weapon type to the DEFENDER's matching weapon-type
+    /// resistance coefficient (a multiplier on the defender's P.Def, applied only for this
+    /// hit). Sword/dual → Pierce, blunt → Blunt, bow → Bow; anything else = neutral (1).
+    /// L2 convention: swords are neutral vs armored mobs — here Sword+Dual share the Pierce
+    /// track (splittable later without touching callers).</summary>
+    public static float WeaponDefenceCoef(WeaponType attacker, float pierce, float blunt, float bow) =>
+        (attacker & WeaponType.AnyBlunt) != 0 ? blunt
+        : attacker == WeaponType.Bow ? bow
+        : (attacker & (WeaponType.AnySword | WeaponType.Dual)) != 0 ? pierce
+        : 1f;
 
     /// <summary>Magic ratio damage (L2 model): K·skillPower·√mAtk/mDef. The SQUARE ROOT
     /// of M.Atk means stacking raw M.Atk gives diminishing returns. 'power' is the

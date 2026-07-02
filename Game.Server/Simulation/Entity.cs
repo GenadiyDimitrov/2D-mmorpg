@@ -231,6 +231,12 @@ public class Entity
     public float CritRateResist { get; set; }    // reduces an attacker's physical crit CHANCE vs you
     public float CritDmgResist { get; set; }     // reduces incoming physical crit EXTRA damage
     public float BowResist { get; set; }         // reduces damage taken from BOW attacks
+    // Weapon-TYPE resistance: a multiplier on MY P.Def applied only when the attacker uses
+    // that weapon type (the resist rides inside pDef so a def-ignore skill bypasses it).
+    // 1 = neutral, >1 = resistant, <1 = weak, ≤0 = no defence (one-shot of that type).
+    public float PierceDefCoef { get; set; } = 1f; // vs sword / dual
+    public float BluntDefCoef { get; set; } = 1f;  // vs blunt
+    public float BowDefCoef { get; set; } = 1f;    // vs bow
     public int RestoreMpBonus { get; set; }      // bonus MP when an MP-restore lands on you (nuker mastery)
     public float MagicFailResist { get; set; }   // reduces YOUR spells' own fail chance
     public float MeleeVamp { get; set; }         // basic (melee) attack lifesteal fraction
@@ -555,30 +561,34 @@ public class Entity
     /// change.</summary>
     public void RecomputeDerived()
     {
+        // Players derive from core stats + class curves; MOBS read the authored per-level
+        // BASE curve (docs/mobs/mob_base_stats.csv) — the "level modifier" term of the mob
+        // formula. CON/passives (MobMod, later masteries) and rank multipliers layer on top
+        // in SpawnOneInZone. See MobBaseStats.
         MaxHp = Kind == EntityKind.Player
             ? StatCalculator.MaxHp(Con, Level,
                 StatCalculator.HpClassLevelModifier(BaseClass, Archetype),
                 StatCalculator.Level1BaseHp(Race, BaseClass))
-            : StatCalculator.MobMaxHp(Con, Level);
-        // MP now scales with MEN (per-race/class) on a tier curve, like HP. Mobs use
-        // a simple level curve.
+            : MobBaseStats.Hp(Level);
         MaxMp = Kind == EntityKind.Player
             ? StatCalculator.MaxMp(StatCalculator.BaseMen(Race, BaseClass), Level,
                 StatCalculator.MpClassLevelModifier(BaseClass, Archetype),
                 StatCalculator.Level1BaseMp(BaseClass))
-            : StatCalculator.MobMaxMp(Level);
-        AttackPower = StatCalculator.AttackPower(AtkStat, Level);
-        MagicAttack = StatCalculator.AttackPower(AtkStat, Level); // mAtk also from ATK
-        // Defence (authentic L2): players use armor/jewel-driven base + level²/100,
-        // no CON term (armor/jewels/masteries/buffs stack below). Mobs keep the simple
-        // curve. Magic def gets the MEN multiplier applied at the very end.
+            : MobBaseStats.Mp(Level);
+        AttackPower = Kind == EntityKind.Player
+            ? StatCalculator.AttackPower(AtkStat, Level)
+            : MobBaseStats.PAtk(Level);
+        MagicAttack = Kind == EntityKind.Player
+            ? StatCalculator.AttackPower(AtkStat, Level) // mAtk also from ATK
+            : MobBaseStats.MAtk(Level);                  // mobs: separate authored M.Atk track
+        // Defence (authentic L2): players use armor/jewel-driven base + level²/100, no CON
+        // term. Mobs use their authored base curve (P.Def and M.Def separately).
         Defence = Kind == EntityKind.Player
             ? StatCalculator.PhysicalDefenceBase(Level)
-            : StatCalculator.MobDefence(Con, Level);
-        MagicDefence = (Kind == EntityKind.Player
-                ? StatCalculator.MagicDefenceBase(Level)
-                : StatCalculator.MobDefence(Con, Level))
-            + StatCalculator.ArchetypeMagicDefenceBonus(Archetype, Level);
+            : MobBaseStats.PDef(Level);
+        MagicDefence = Kind == EntityKind.Player
+            ? StatCalculator.MagicDefenceBase(Level) + StatCalculator.ArchetypeMagicDefenceBonus(Archetype, Level)
+            : MobBaseStats.MDef(Level);
         // Resolution "sure" floors come from learned passives (Evasion Mastery / Precision /
         // Anti-Magic / Spell Ward), applied in the passive loop below. Base 0 — the
         // universal 5% land/avoid floor lives in the resolver, not here.
@@ -590,6 +600,9 @@ public class Entity
         CritRateResist = 0f;
         CritDmgResist = 0f;
         BowResist = 0f;
+        PierceDefCoef = 1f;
+        BluntDefCoef = 1f;
+        BowDefCoef = 1f;
         RestoreMpBonus = 0;
         MagicFailResist = 0f;
         MeleeVamp = 0f;

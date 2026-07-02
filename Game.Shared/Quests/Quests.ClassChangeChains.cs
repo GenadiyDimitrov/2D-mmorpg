@@ -21,19 +21,19 @@ public static partial class QuestCatalog
     private const string TrialGiver = "elder_marius";
     private const string PathGiver = "priest_oren";
 
-    // (firstMob, secondMob) the two quests send you to hunt, by archetype. Both must
-    // be mobs that actually spawn at the quest's level band (16-21) — only dire_boar
-    // and road_bandit do (the Stonewatch grounds), so the variety is which you hunt
-    // first. (The old flavour mobs cap at lvl 7-15 and made an 18-20 quest trivial.)
+    // (firstMob, secondMob) the two quests send you to hunt, by archetype. mobA is killed
+    // at Lv 16-20, mobB at Lv 17-21 — both must spawn in-band at the Stonewatch grounds:
+    // orc_archer(16), skeleton_grunt(18), shield_skeleton(20). (mobB must be ≥17, so never
+    // the level-16 orc_archer.) The archetype variety is just which you hunt first.
     private static (string A, string B) HuntTargets(Archetype a) => a switch
     {
-        Archetype.Tank => ("dire_boar", "road_bandit"),
-        Archetype.Warrior => ("road_bandit", "dire_boar"),
-        Archetype.Rogue => ("road_bandit", "dire_boar"),
-        Archetype.Archer => ("road_bandit", "dire_boar"),
-        Archetype.Healer => ("dire_boar", "road_bandit"),
-        Archetype.Nuker => ("dire_boar", "road_bandit"),
-        _ => ("dire_boar", "road_bandit"),
+        Archetype.Tank => ("skeleton_grunt", "shield_skeleton"),
+        Archetype.Warrior => ("orc_archer", "skeleton_grunt"),
+        Archetype.Rogue => ("orc_archer", "skeleton_grunt"),
+        Archetype.Archer => ("orc_archer", "skeleton_grunt"),
+        Archetype.Healer => ("skeleton_grunt", "shield_skeleton"),
+        Archetype.Nuker => ("skeleton_grunt", "shield_skeleton"),
+        _ => ("skeleton_grunt", "shield_skeleton"),
     };
 
     static partial void RegisterClassChangeChains()
@@ -93,13 +93,11 @@ public static partial class QuestCatalog
 
     private const string GrandGiver = "master_class3";
 
-    // The 3rd-class chain hunts mobs in the 30-45 band (around the 35/37/39 quest
-    // levels): orc_raider spawns 28-40, stone_golem 34-46 — both reachable. (wraith
-    // starts at 40 and young_drake at 52, so they'd force you above your level; they
-    // move to later boss/high-level content instead.)
-    private const string Mob3A = "orc_raider";    // Ordeal I — band 30-40
-    private const string Mob3B = "stone_golem";   // Ordeal II — band 32-42
-    private const string Mob3C = "stone_golem";   // Ascension — band 35-45
+    // The 3rd-class chain hunts mobs around the 35/37/39 quest levels; each target's natural
+    // level sits inside its kill-step band, and all spawn in the Emberfall/Greymarsh grounds.
+    private const string Mob3A = "medusa";                 // Ordeal I  — Lv 34, band 30-40
+    private const string Mob3B = "marsh_mantis_soldier";   // Ordeal II — Lv 37, band 32-42
+    private const string Mob3C = "fen_lizardman_archer";   // Ascension — Lv 39, band 35-45
 
     static partial void RegisterThirdClassChains()
     {
@@ -113,7 +111,7 @@ public static partial class QuestCatalog
             string q2 = $"tc_{tc.Id}_2";
             string q3 = $"tc_{tc.Id}_3";
 
-            // Q1 (lvl 35) — Ordeal I: orc_raider, level band 30-40.
+            // Q1 (lvl 35) — Ordeal I: Mob3A (medusa), level band 30-40.
             Register(new QuestDef(
                 Id: q1,
                 Name: $"Ordeal of the {tc.Name}",
@@ -134,7 +132,7 @@ public static partial class QuestCatalog
                 Reward: new QuestReward(Exp: 6000, SkillPoints: 2,
                     ItemIds: new[] { ItemCatalog.ClassTokenId(tc.Id) })));
 
-            // Q2 (lvl 37) — Ordeal II: stone_golem, level band 32-42. Gate only (no
+            // Q2 (lvl 37) — Ordeal II: Mob3B (marsh_mantis_soldier), band 32-42. Gate only (no
             // item); the chain order forces it before the Ascension.
             Register(new QuestDef(
                 Id: q2,
@@ -154,7 +152,7 @@ public static partial class QuestCatalog
                 },
                 Reward: new QuestReward(Exp: 9000, SkillPoints: 3)));
 
-            // Q3 (lvl 39) — Ascension: stone_golem, level band 35-45. Awards the proof
+            // Q3 (lvl 39) — Ascension: Mob3C (fen_lizardman_archer), band 35-45. Awards the proof
             // that (with the token from Q1) lets Grandmaster Thorne perform the change.
             Register(new QuestDef(
                 Id: q3,

@@ -1829,7 +1829,8 @@ var effect = def.Effect;
             {
                 int damage = StatCalculator.PhysicalDamage(
                     (int)caster.EffectiveAttack, def.PowerAt(lvl),
-                    (int)target.EffectiveDefence, caster.Level);
+                    (int)target.EffectiveDefence, caster.Level,
+                    StatCalculator.WeaponDefenceCoef(caster.WeaponType, target.PierceDefCoef, target.BluntDefCoef, target.BowDefCoef));
                 damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
                 damage = FinalizeDamage(caster, target, damage, DamageKind.SkillPhysical, def);
 
@@ -2482,7 +2483,8 @@ var effect = def.Effect;
         {
             int damage = StatCalculator.PhysicalDamage(
                 (int)attacker.EffectiveBasicAttack, 0,
-                (int)target.EffectiveDefence, attacker.Level);
+                (int)target.EffectiveDefence, attacker.Level,
+                StatCalculator.WeaponDefenceCoef(attacker.WeaponType, target.PierceDefCoef, target.BluntDefCoef, target.BowDefCoef));
             damage = (int)(damage * StatCalculator.WeaponVariance(attacker.WeaponType, _rng));
             damage = FinalizeDamage(attacker, target, damage, DamageKind.Basic, null);
 
@@ -4058,7 +4060,9 @@ var effect = def.Effect;
 
         string mobId = zone.MobTypes[_rng.Next(zone.MobTypes.Length)];
         var mobType = MobCatalog.Get(mobId);
-        int level = _rng.Next(zone.MinLevel, zone.MaxLevel + 1);
+        // A mob with a natural level brings its own (its authored base curve is tuned for it);
+        // otherwise the zone assigns the level.
+        int level = mobType.Level > 0 ? mobType.Level : _rng.Next(zone.MinLevel, zone.MaxLevel + 1);
         var stats = StatCalculator.MobStats(level);
 
         // Elites/bosses are tougher versions of the base mob.
@@ -4083,7 +4087,7 @@ var effect = def.Effect;
             Speed = mobType.RunSpeed,
             Level = level,
             Con = stats.Con,
-            AtkStat = (int)(stats.Atk * atkMul),
+            AtkStat = stats.Atk,   // eva/acc/crit only; mob P/M.Atk comes from the base curve
             Wit = stats.Wit,
             Dex = stats.Dex,
             Aggressive = mobType.Aggressive || zone.Rank != MobRank.Normal,
@@ -4093,11 +4097,15 @@ var effect = def.Effect;
         };
         mob.RecomputeDerived();
         // RecomputeDerived leaves mob RunSpeed/WalkSpeed as set above (player-only
-        // override), so Speed stays the catalog run speed.
+        // override), so Speed stays the catalog run speed. HP/atk get the zone-rank
+        // multipliers here; the base curve (incl. M.Def) already came from RecomputeDerived.
         mob.MaxHp = (int)(mob.MaxHp * hpMul);
-        // Dedicated mob magic defence (the level base alone leaves low-level mobs at
-        // ~0 mDef, which lets spells one-shot them). Keeps magic ~on par with physical.
-        mob.MagicDefence = StatCalculator.MobMagicDefence(level);
+        if (atkMul != 1f)
+        {
+            mob.AttackPower = (int)(mob.AttackPower * atkMul);
+            mob.MagicAttack = (int)(mob.MagicAttack * atkMul);
+            mob.BasicAttackPower = (int)(mob.BasicAttackPower * atkMul);
+        }
 
         // Template "passive skills": per-mob stat modifiers (magic monster, armored
         // brute, boss, …) applied on top of the level-derived + rank stats.
@@ -4113,6 +4121,10 @@ var effect = def.Effect;
             mob.Accuracy = (int)(mob.Accuracy * mod.Accuracy);
             mob.BowResist = Math.Clamp(mod.BowResist, 0f, 0.9f);
             mob.CritRateResist = Math.Clamp(mod.CritResist, 0f, 1f);
+            // Weapon-type resistance coefficients (P.Def route; applied per-hit by attacker weapon).
+            mob.PierceDefCoef = mod.PierceResist;
+            mob.BluntDefCoef = mod.BluntResist;
+            mob.BowDefCoef = mod.BowDefResist;
             if (mod.Boss)   // raid-boss passive: resists crits + arrows
             {
                 mob.CritRateResist = Math.Max(mob.CritRateResist, 0.3f);

@@ -29,63 +29,65 @@ public static class WorldMap
     // zones aren't clustered; zone radii kept so the gaps between them grew.
     public static readonly SpawnZone[] SpawnZones =
     {
+        // Named mobs bring their OWN level (MobType.Level); the band on each zone is
+        // descriptive — the roster below places each creature in its natural band.
         // ===== Brackenford (centre) — levels 1-10 =====
         new(X: 19400, Y: 24000, Radius: 1400, MinLevel: 1,  MaxLevel: 4,
-            MobTypes: new[] { "grey_wolf", "brown_boar" }, MaxCount: 10,
+            MobTypes: new[] { "ridgeback_pup", "fox" }, MaxCount: 10,
             RespawnSeconds: 8, RespawnVariance: 3),
-        new(X: 28600, Y: 24000, Radius: 1400, MinLevel: 4,  MaxLevel: 7,
-            MobTypes: new[] { "green_slime", "brown_boar" }, MaxCount: 10,
+        new(X: 28600, Y: 24000, Radius: 1400, MinLevel: 4,  MaxLevel: 8,
+            MobTypes: new[] { "fox", "goblin_scout" }, MaxCount: 10,
             RespawnSeconds: 8, RespawnVariance: 3),
-        new(X: 24000, Y: 19400, Radius: 1300, MinLevel: 7,  MaxLevel: 10,
-            MobTypes: new[] { "cave_spider", "grey_wolf" }, MaxCount: 10,
+        new(X: 24000, Y: 19400, Radius: 1300, MinLevel: 8,  MaxLevel: 10,
+            MobTypes: new[] { "goblin_scout", "ashen_wolf" }, MaxCount: 10,
             RespawnSeconds: 10, RespawnVariance: 4),
 
         // ===== Stonewatch (north) — levels 10-22 =====
         new(X: 20400, Y: 8400,  Radius: 1500, MinLevel: 10, MaxLevel: 15,
-            MobTypes: new[] { "dire_boar", "cave_spider" }, MaxCount: 12,
+            MobTypes: new[] { "ashen_wolf", "werewolf", "hook_spider" }, MaxCount: 12,
             RespawnSeconds: 12, RespawnVariance: 4),
         new(X: 27600, Y: 10400, Radius: 1500, MinLevel: 16, MaxLevel: 22,
-            MobTypes: new[] { "road_bandit", "dire_boar" }, MaxCount: 12,
+            MobTypes: new[] { "orc_archer", "skeleton_grunt", "shield_skeleton", "grizzly_bear" }, MaxCount: 12,
             RespawnSeconds: 14, RespawnVariance: 5),
 
         // ===== Emberfall (north-east) — levels 22-34 =====
         new(X: 33000, Y: 12400, Radius: 1500, MinLevel: 22, MaxLevel: 28,
-            MobTypes: new[] { "road_bandit", "orc_raider" }, MaxCount: 12,
+            MobTypes: new[] { "grizzly_bear", "cinder_imp", "watcher_eye", "lizardman_warrior" }, MaxCount: 12,
             RespawnSeconds: 15, RespawnVariance: 5),
         new(X: 39000, Y: 16400, Radius: 1500, MinLevel: 28, MaxLevel: 34,
-            MobTypes: new[] { "orc_raider", "cave_spider" }, MaxCount: 12,
+            MobTypes: new[] { "lizardman_warrior", "marauder_recruit", "mantis_worker", "grave_robber_fighter", "medusa", "plunder_beetle" }, MaxCount: 12,
             RespawnSeconds: 16, RespawnVariance: 5),
 
         // ===== Greymarsh (south-east) — levels 34-46 =====
         new(X: 33000, Y: 30400, Radius: 1500, MinLevel: 34, MaxLevel: 40,
-            MobTypes: new[] { "orc_raider", "stone_golem" }, MaxCount: 11,
+            MobTypes: new[] { "medusa", "wyrm", "marsh_mantis_soldier", "fen_lizardman_archer", "dune_orc_archer" }, MaxCount: 11,
             RespawnSeconds: 18, RespawnVariance: 6),
         new(X: 39000, Y: 35000, Radius: 1500, MinLevel: 40, MaxLevel: 46,
-            MobTypes: new[] { "stone_golem", "wraith" }, MaxCount: 11,
+            MobTypes: new[] { "rift_portling", "ridge_orc_overlord", "harpy", "grave_lich", "fomor_brute", "marsh_marauder" }, MaxCount: 11,
             RespawnSeconds: 20, RespawnVariance: 6),
 
         // ===== Ironreach (south) — levels 46-58 =====
         new(X: 20400, Y: 40000, Radius: 1500, MinLevel: 46, MaxLevel: 52,
-            MobTypes: new[] { "wraith", "stone_golem" }, MaxCount: 11,
+            MobTypes: new[] { "marsh_marauder", "warped_drake", "wildhorn_grunt", "amber_basilisk", "ravener", "mantis_follower", "marauder_warrior", "fallen_angel" }, MaxCount: 11,
             RespawnSeconds: 20, RespawnVariance: 6),
         new(X: 27600, Y: 40000, Radius: 1500, MinLevel: 52, MaxLevel: 58,
-            MobTypes: new[] { "wraith", "young_drake" }, MaxCount: 10,
+            MobTypes: new[] { "fallen_angel", "thornback", "gaze_hound", "ash_orc_soldier", "mirror_wraith", "mirror_ghost", "dune_orc_porter", "aether_wisp", "hollow_one" }, MaxCount: 10,
             RespawnSeconds: 22, RespawnVariance: 7),
 
         // ===== Duskvale (south-west) — levels 58-70 =====
         new(X: 14400, Y: 35600, Radius: 1500, MinLevel: 58, MaxLevel: 64,
-            MobTypes: new[] { "young_drake", "wraith" }, MaxCount: 10,
+            MobTypes: new[] { "aether_wisp", "valley_treant", "sand_ratman", "cursed_blade", "bogwood", "fen_lizardman", "obsidian_knight", "crimson_drake", "wildhorn_scout" }, MaxCount: 10,
             RespawnSeconds: 24, RespawnVariance: 7),
         new(X: 9000,  Y: 30400, Radius: 1500, MinLevel: 64, MaxLevel: 70,
-            MobTypes: new[] { "young_drake", "stone_golem" }, MaxCount: 10,
+            MobTypes: new[] { "crimson_drake", "dread_knight", "wildhorn_elder", "spiteful_ghost", "highland_kookaburra", "highland_buffalo", "highland_buffalo_tamed", "dread_archer", "dire_beast" }, MaxCount: 10,
             RespawnSeconds: 26, RespawnVariance: 8),
 
-        // ===== Frostmere (north-west) — levels 70-80 =====
+        // ===== Frostmere (north-west) — levels 70-85 =====
         new(X: 14400, Y: 12400, Radius: 1500, MinLevel: 70, MaxLevel: 76,
-            MobTypes: new[] { "young_drake", "orc_raider" }, MaxCount: 10,
+            MobTypes: new[] { "dire_beast", "revenant_minion", "redhorn_footman", "sunland_orc_scout", "redhorn_elite", "redhorn_recruit", "sunland_orc_warrior", "redhorn_soldier", "sunland_orc_commander" }, MaxCount: 10,
             RespawnSeconds: 28, RespawnVariance: 8),
-        new(X: 9000,  Y: 17600, Radius: 1500, MinLevel: 76, MaxLevel: 80,
-            MobTypes: new[] { "young_drake", "wraith" }, MaxCount: 10,
+        new(X: 9000,  Y: 17600, Radius: 1500, MinLevel: 76, MaxLevel: 85,
+            MobTypes: new[] { "redhorn_soldier", "sunland_orc_captain", "redhorn_general", "emberwyrm_drake", "wrathborn_demon", "scarlet_mantis", "radiant_scout", "radiant_berserker", "radiant_mage", "splinter_mantis_drone", "needle_mantis_overseer", "splinter_mantis_walker", "drake_leader", "disciple_of_the_dawn" }, MaxCount: 10,
             RespawnSeconds: 30, RespawnVariance: 9),
 
         // ===== Training Grounds: immortal, stationary, 0-damage dummies at fixed levels
@@ -101,10 +103,10 @@ public static class WorldMap
 
         // ===== Elite + Boss placeholders (more bosses/instances later) =====
         new(X: 11600, Y: 10000, Radius: 300,  MinLevel: 78, MaxLevel: 78,
-            MobTypes: new[] { "young_drake" }, MaxCount: 1,
+            MobTypes: new[] { "emberwyrm_drake" }, MaxCount: 1,
             RespawnSeconds: 180, RespawnVariance: 40, Rank: MobRank.Elite),
         new(X: 24000, Y: 45000, Radius: 250,  MinLevel: 60, MaxLevel: 60,
-            MobTypes: new[] { "stone_golem" }, MaxCount: 1,
+            MobTypes: new[] { "valley_treant" }, MaxCount: 1,
             RespawnSeconds: 21 * 3600, RespawnVariance: 3 * 3600, Rank: MobRank.Boss),
     };
 

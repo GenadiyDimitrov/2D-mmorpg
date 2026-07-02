@@ -33,6 +33,12 @@ public readonly record struct MobMod(
     float Evasion = 1f, float Accuracy = 1f,
     float BowResist = 0f,    // fraction of BOW damage taken removed (0..1)
     float CritResist = 0f,   // reduces an attacker's physical crit CHANCE vs this mob
+    // Weapon-TYPE resistance: a multiplier on this mob's P.Def applied only when the
+    // attacker uses that weapon type (1 = neutral, >1 = resistant, <1 = weak, ≤0 = one-shot).
+    // e.g. a stone golem resists arrows/daggers (Pierce/Bow >1) but is weak to blunt (<1).
+    float PierceResist = 1f, // vs sword / dual
+    float BluntResist = 1f,  // vs blunt
+    float BowDefResist = 1f, // vs bow (P.Def route; distinct from BowResist damage fraction)
     bool Boss = false,       // raid-boss passive (adds crit/bow resistance on spawn)
     string Name = "")        // display label for the inspect/target window
 {
@@ -47,6 +53,9 @@ public readonly record struct MobMod(
         if (MAtk != 1f)     yield return $"M.Atk {Sign(MAtk)}";
         if (Evasion != 1f)  yield return $"Evasion {Sign(Evasion)}";
         if (Accuracy != 1f) yield return $"Accuracy {Sign(Accuracy)}";
+        if (PierceResist != 1f) yield return $"Sword/Dual {ResistWord(PierceResist)}";
+        if (BluntResist != 1f)  yield return $"Blunt {ResistWord(BluntResist)}";
+        if (BowDefResist != 1f) yield return $"Bow {ResistWord(BowDefResist)}";
         // Bow/Crit resist are rendered from the numeric DTO fields (uniform for mobs
         // and players), so they're not repeated here.
         if (Boss) yield return "Raid Boss";
@@ -54,6 +63,17 @@ public readonly record struct MobMod(
 
     private static string Sign(float mult) =>
         mult >= 1f ? $"+{(mult - 1f) * 100:0}%" : $"-{(1f - mult) * 100:0}%";
+
+    // A P.Def coefficient >1 means the mob RESISTS that weapon type (takes less), <1 = WEAK.
+    private static string ResistWord(float coef) =>
+        coef <= 0f ? "Vulnerable" : coef > 1f ? $"Resist {(coef - 1f) * 100:0}%" : $"Weak {(1f - coef) * 100:0}%";
+}
+
+/// <summary>Creature family — flavor today, a hook for faction/damage-type rules later
+/// (e.g. holy vs Undead, bane potions vs Insect). Maps the CSV "Type" column.</summary>
+public enum MobCategory
+{
+    Animal, Humanoid, Undead, Insect, Demon, Dragon, Plant, MagicCreature, Angel
 }
 
 public record MobType(
@@ -64,7 +84,9 @@ public record MobType(
     bool Aggressive = false,
     DropEntry[]? Drops = null,
     MobMod? Mod = null,      // per-template stat modifiers ("passive skills")
-    bool Dummy = false);     // training dummy: immortal, immobile, never attacks
+    bool Dummy = false,      // training dummy: immortal, immobile, never attacks
+    int Level = 0,           // natural level (0 = let the zone assign it)
+    MobCategory Category = MobCategory.Humanoid);
 
 /// <summary>
 /// THE place to manage mobs. Each entry is a creature template with its own drop
@@ -86,117 +108,154 @@ public static class MobCatalog
         1 => 0.33f, 2 => 0.5f, 3 => 1f, 4 => 2f, 5 => 3f, 6 => 4f, 7 => 5f, _ => 1f
     };
 
+    /// <summary>Compact template factory: walk = 0.55×run, a level-banded drop table, plus
+    /// the mob's natural level + family. Base stats come from the level curve (MobBaseStats)
+    /// at spawn — the template only carries identity, movement, level, family and passives.</summary>
+    private static MobType Mob(string id, string name, int level, MobCategory cat,
+        float run, bool aggressive, MobMod? mod = null) =>
+        new(id, name, run * 0.55f, run, Aggressive: aggressive,
+            Drops: StandardDrops(level, cat), Mod: mod, Level: level, Category: cat);
+
+    /// <summary>Level-banded + family-flavored drop table, ported from the original placeholder
+    /// mobs' economy: potions/scrolls scale with level, the gear TYPE follows the creature
+    /// family (undead/casters → robe, animals → light, insects → daggers, demons/dragons →
+    /// heavy, humanoids → sword). First pass — retune freely.</summary>
+    private static DropEntry[] StandardDrops(int level, MobCategory cat)
+    {
+        string potion = level >= 60 ? ItemCatalog.GreaterPotion
+                      : level >= 30 ? ItemCatalog.HealingPotion
+                      : ItemCatalog.MinorPotion;
+        string scroll = level >= 45 ? ItemCatalog.ScrollRare
+                      : level >= 20 ? ItemCatalog.ScrollUncommon
+                      : ItemCatalog.ScrollCommon;
+        string attr = level >= 60 ? ItemCatalog.AttrScrollRare
+                    : level >= 30 ? ItemCatalog.AttrScrollUncommon
+                    : ItemCatalog.AttrScrollCommon;
+        ItemGrade grade = level < 10 ? ItemGrade.F : ItemGrade.E;
+        ItemRarity gearRarity = level >= 50 ? ItemRarity.Rare
+                              : level >= 20 ? ItemRarity.Uncommon
+                              : ItemRarity.Common;
+        string gear = cat switch
+        {
+            MobCategory.Undead or MobCategory.Angel or MobCategory.MagicCreature
+                => ItemCatalog.ArmorKey(ArmorWeight.Robe, grade, gearRarity),
+            MobCategory.Animal or MobCategory.Plant
+                => ItemCatalog.ArmorKey(ArmorWeight.Light, grade, gearRarity),
+            MobCategory.Insect
+                => ItemCatalog.WeaponKey(WeaponType.Dual, grade, gearRarity),
+            MobCategory.Demon or MobCategory.Dragon
+                => ItemCatalog.ArmorKey(ArmorWeight.Heavy, grade, gearRarity),
+            _ => ItemCatalog.WeaponKey(WeaponType.Sword, grade, gearRarity),   // Humanoid
+        };
+        var drops = new List<DropEntry>
+        {
+            new(potion, 0.30f, 1, level >= 30 ? 2 : 1),
+            new(gear, 0.05f),
+            new(scroll, 0.08f),
+            new(attr, 0.04f),
+        };
+        if (level >= 70) drops.Add(new(ItemCatalog.AttrScrollLegendary, 0.01f));
+        return drops.ToArray();
+    }
+
     private static Dictionary<string, MobType> Build()
     {
         var list = new[]
         {
-            new MobType("grey_wolf", "Grey Wolf", 80f, 150f, Aggressive: true,
-                Drops: new[]
-                {
-                    // Any level: common potion + a chance at a basic sword.
-                    new DropEntry(ItemCatalog.MinorPotion, 0.30f, 1, 2),
-                    new DropEntry(ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.F, ItemRarity.Common), 0.05f),
-                    // Only when this wolf spawns at level 15+ (tougher zones): a
-                    // better armour drop. Same creature id, level-varying loot.
-                    new DropEntry(ItemCatalog.ArmorKey(ArmorWeight.Light, ItemGrade.E, ItemRarity.Uncommon),
-                        0.06f, 1, 1, MinLevel: 15),
-                }),
-
-            new MobType("brown_boar", "Brown Boar", 55f, 100f,
-                Drops: new[]
-                {
-                    new DropEntry(ItemCatalog.MinorPotion, 0.25f, 1, 2),
-                    new DropEntry(ItemCatalog.ArmorKey(ArmorWeight.Light, ItemGrade.F, ItemRarity.Common), 0.04f),
-                }),
-
-            new MobType("dire_boar", "Dire Boar", 60f, 110f, Aggressive: true,
-                Drops: new[]
-                {
-                    new DropEntry(ItemCatalog.MinorPotion, 0.40f, 2, 4),
-                    new DropEntry(ItemCatalog.ArmorKey(ArmorWeight.Heavy, ItemGrade.E, ItemRarity.Uncommon), 0.06f),
-                    new DropEntry(ItemCatalog.ScrollCommon, 0.10f),
-                    new DropEntry(ItemCatalog.AttrScrollCommon, 0.06f),
-                    new DropEntry(ItemCatalog.SpeedPotionU, 0.05f),
-                }),
-
-            // MAGIC monster: high M.Def, low P.Def — hard for mages, easy for fighters.
-            new MobType("green_slime", "Green Slime", 35f, 60f,
-                Drops: new[]
-                {
-                    new DropEntry(ItemCatalog.MinorPotion, 0.30f, 1, 2),
-                },
-                Mod: new MobMod(MDef: 2f, PDef: 0.5f, Name: "Magic Monster")),
-
-            new MobType("cave_spider", "Cave Spider", 70f, 120f, Aggressive: true,
-                Drops: new[]
-                {
-                    new DropEntry(ItemCatalog.MinorPotion, 0.25f),
-                    new DropEntry(ItemCatalog.WeaponKey(WeaponType.Dual, ItemGrade.F, ItemRarity.Uncommon), 0.05f),
-                    new DropEntry(ItemCatalog.AttrScrollCommon, 0.05f),
-                    new DropEntry(ItemCatalog.CastPotionU, 0.05f),
-                }),
-
-            new MobType("road_bandit", "Road Bandit", 60f, 108f, Aggressive: true,
-                Drops: new[]
-                {
-                    new DropEntry(ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.E, ItemRarity.Uncommon), 0.06f),
-                    new DropEntry(ItemCatalog.ScrollUncommon, 0.08f),
-                    new DropEntry(ItemCatalog.MinorPotion, 0.30f, 1, 3),
-                    // Reroll scrolls + rarer buff potions, weighted to higher-level spawns.
-                    new DropEntry(ItemCatalog.AttrScrollUncommon, 0.05f),
-                    new DropEntry(ItemCatalog.AttrScrollRare, 0.02f, 1, 1, MinLevel: 20),
-                    new DropEntry(ItemCatalog.AtkPotionU, 0.05f),
-                    new DropEntry(ItemCatalog.SpeedPotionR, 0.02f, 1, 1, MinLevel: 20),
-                }),
-
-            // ----- Higher-tier creatures for the level 20-80 bands. Same templates
-            //       are reused across bands; the zone sets the level (= stats). -----
-            new MobType("orc_raider", "Orc Raider", 65f, 118f, Aggressive: true,
-                Drops: new[]
-                {
-                    new DropEntry(ItemCatalog.MinorPotion, 0.35f, 1, 3),
-                    new DropEntry(ItemCatalog.WeaponKey(WeaponType.TwoHandedBlunt, ItemGrade.E, ItemRarity.Uncommon), 0.06f),
-                    new DropEntry(ItemCatalog.ScrollUncommon, 0.10f),
-                    new DropEntry(ItemCatalog.AttrScrollUncommon, 0.05f),
-                }),
-
-            // ARMORED brute: high HP & P.Def, low M.Def, low evasion — easy for mages,
-            // hard for fighters (the opposite of the magic slime).
-            new MobType("stone_golem", "Stone Golem", 40f, 70f,
-                Drops: new[]
-                {
-                    new DropEntry(ItemCatalog.HealingPotion, 0.30f, 1, 2),
-                    new DropEntry(ItemCatalog.ArmorKey(ArmorWeight.Heavy, ItemGrade.E, ItemRarity.Uncommon), 0.07f),
-                    new DropEntry(ItemCatalog.ScrollRare, 0.05f),
-                    new DropEntry(ItemCatalog.AttrScrollRare, 0.03f, 1, 1, MinLevel: 40),
-                },
-                Mod: new MobMod(Hp: MobTier(4), PDef: 2f, MDef: 0.5f, Evasion: 0.5f, Name: "Armored Brute")),
-
-            new MobType("wraith", "Wraith", 80f, 132f, Aggressive: true,
-                Drops: new[]
-                {
-                    new DropEntry(ItemCatalog.HealingPotion, 0.30f),
-                    new DropEntry(ItemCatalog.ArmorKey(ArmorWeight.Robe, ItemGrade.E, ItemRarity.Uncommon), 0.07f),
-                    new DropEntry(ItemCatalog.SilverTalisman, 0.04f),
-                    new DropEntry(ItemCatalog.CastPotionU, 0.06f),
-                    new DropEntry(ItemCatalog.AttrScrollRare, 0.03f, 1, 1, MinLevel: 40),
-                }),
+            // ===== The level 1-85 roster (docs/mobs/mob_base_stats.csv). Base stats are the
+            //       shared level curve; a few carry a passive (MobMod) for family/champion
+            //       identity. Levels are natural — the mob brings its level, the zone picks
+            //       which mobs by band. =====
+            Mob("ridgeback_pup", "Ridgeback Pup", 1, MobCategory.Animal, 120f, false),
+            Mob("fox", "Fox", 4, MobCategory.Animal, 125f, false),
+            Mob("goblin_scout", "Goblin Scout", 8, MobCategory.Humanoid, 132f, false),
+            Mob("ashen_wolf", "Ashen Wolf", 10, MobCategory.Animal, 140f, true),
+            Mob("werewolf", "Werewolf", 12, MobCategory.Humanoid, 132f, true),
+            Mob("hook_spider", "Hook Spider", 14, MobCategory.Insect, 130f, true),
+            Mob("orc_archer", "Orc Archer", 16, MobCategory.Humanoid, 132f, true),
+            Mob("skeleton_grunt", "Skeleton Grunt", 18, MobCategory.Undead, 120f, true),
+            Mob("shield_skeleton", "Shield Skeleton", 20, MobCategory.Undead, 115f, true),
+            Mob("grizzly_bear", "Grizzly Bear", 22, MobCategory.Animal, 135f, true),
+            Mob("cinder_imp", "Cinder Imp", 24, MobCategory.Demon, 142f, true),
+            // MAGIC monster: high M.Def / low P.Def — hard for mages, easy for fighters.
+            Mob("watcher_eye", "Watcher Eye", 26, MobCategory.MagicCreature, 130f, false,
+                new MobMod(MDef: 2f, PDef: 0.5f, Name: "Magic Monster")),
+            Mob("lizardman_warrior", "Lizardman Warrior", 28, MobCategory.Humanoid, 132f, true),
+            Mob("marauder_recruit", "Marauder Recruit", 30, MobCategory.Humanoid, 132f, true),
+            Mob("mantis_worker", "Mantis Worker", 32, MobCategory.Insect, 140f, true),
+            Mob("grave_robber_fighter", "Grave Robber Fighter", 32, MobCategory.Humanoid, 132f, true),
+            Mob("medusa", "Medusa", 34, MobCategory.Humanoid, 132f, true),
+            Mob("plunder_beetle", "Plunder Beetle", 34, MobCategory.Insect, 140f, true),
+            Mob("wyrm", "Wyrm", 35, MobCategory.Dragon, 150f, true),
+            Mob("marsh_mantis_soldier", "Marsh Mantis Soldier", 37, MobCategory.Insect, 140f, true),
+            Mob("fen_lizardman_archer", "Fen Lizardman Archer", 39, MobCategory.Humanoid, 132f, true),
+            // CHAMPION outlier: the same L40 curve × a big HP/P.Def passive (≈3.5×/2.2×).
+            Mob("rift_portling", "Rift Portling", 40, MobCategory.MagicCreature, 110f, true,
+                new MobMod(Hp: 3.56f, PDef: 2.2f, MDef: 1.27f, Name: "Rift Champion")),
+            Mob("dune_orc_archer", "Dune Orc Archer", 40, MobCategory.Humanoid, 132f, true),
+            Mob("ridge_orc_overlord", "Ridge Orc Overlord", 42, MobCategory.Humanoid, 132f, true),
+            Mob("harpy", "Harpy", 42, MobCategory.Humanoid, 138f, true),
+            Mob("grave_lich", "Grave Lich", 44, MobCategory.Undead, 120f, true),
+            Mob("fomor_brute", "Fomor Brute", 45, MobCategory.Humanoid, 132f, true),
+            Mob("marsh_marauder", "Marsh Marauder", 46, MobCategory.Humanoid, 132f, true),
+            Mob("warped_drake", "Warped Drake", 47, MobCategory.Dragon, 150f, true),
+            Mob("wildhorn_grunt", "Wildhorn Grunt", 48, MobCategory.Humanoid, 132f, true),
+            Mob("amber_basilisk", "Amber Basilisk", 48, MobCategory.Animal, 120f, true),
+            Mob("ravener", "Ravener", 50, MobCategory.Demon, 145f, true),
+            Mob("mantis_follower", "Mantis Follower", 50, MobCategory.Insect, 140f, true),
+            Mob("marauder_warrior", "Marauder Warrior", 51, MobCategory.Humanoid, 132f, true),
+            Mob("fallen_angel", "Fallen Angel", 52, MobCategory.Demon, 135f, true),
+            Mob("thornback", "Thornback", 53, MobCategory.Animal, 135f, true),
+            Mob("gaze_hound", "Gaze Hound", 54, MobCategory.Animal, 140f, true),
+            Mob("ash_orc_soldier", "Ash Orc Soldier", 55, MobCategory.Humanoid, 132f, true),
+            Mob("mirror_wraith", "Hall of Mirrors Wraith", 56, MobCategory.Undead, 125f, true),
+            Mob("mirror_ghost", "Mirror Ghost", 56, MobCategory.Undead, 125f, true),
+            Mob("dune_orc_porter", "Dune Orc Porter", 57, MobCategory.Humanoid, 132f, false),
+            Mob("aether_wisp", "Aether Wisp", 58, MobCategory.MagicCreature, 115f, false),
+            Mob("hollow_one", "Hollow One", 58, MobCategory.Humanoid, 132f, true),
+            Mob("valley_treant", "Valley Treant", 60, MobCategory.Plant, 90f, false),
+            Mob("sand_ratman", "Sand Ratman", 60, MobCategory.Humanoid, 132f, true),
+            Mob("cursed_blade", "Cursed Blade", 61, MobCategory.Undead, 130f, true),
+            Mob("bogwood", "Bogwood", 62, MobCategory.Plant, 90f, false),
+            Mob("fen_lizardman", "Fen Lizardman", 62, MobCategory.Humanoid, 132f, true),
+            // Stone/obsidian body: resists sword & arrow (Pierce/Bow ×2 P.Def), weak to blunt (×0.5).
+            Mob("obsidian_knight", "Obsidian Knight", 63, MobCategory.Humanoid, 132f, true,
+                new MobMod(PierceResist: 2f, BowDefResist: 2f, BluntResist: 0.5f, Name: "Stoneplate")),
+            Mob("crimson_drake", "Crimson Drake", 64, MobCategory.Dragon, 150f, true),
+            Mob("wildhorn_scout", "Wildhorn Scout", 64, MobCategory.Humanoid, 138f, true),
+            Mob("dread_knight", "Dread Knight", 65, MobCategory.Undead, 135f, true),
+            Mob("wildhorn_elder", "Wildhorn Elder", 66, MobCategory.Humanoid, 132f, true),
+            Mob("spiteful_ghost", "Spiteful Ghost", 66, MobCategory.Undead, 125f, true),
+            Mob("highland_kookaburra", "Highland Kookaburra", 67, MobCategory.Animal, 135f, false),
+            Mob("highland_buffalo", "Highland Buffalo", 68, MobCategory.Animal, 130f, false),
+            Mob("highland_buffalo_tamed", "Highland Buffalo (Tamed)", 68, MobCategory.Animal, 130f, false),
+            Mob("dread_archer", "Dread Archer", 69, MobCategory.Undead, 132f, true),
+            Mob("dire_beast", "Dire Beast", 70, MobCategory.Animal, 140f, true),
+            Mob("revenant_minion", "Revenant Minion", 71, MobCategory.Demon, 145f, true),
+            Mob("redhorn_footman", "Redhorn Footman", 72, MobCategory.Humanoid, 132f, true),
+            Mob("sunland_orc_scout", "Sunland Orc Scout", 73, MobCategory.Humanoid, 138f, true),
+            Mob("redhorn_elite", "Redhorn Elite", 73, MobCategory.Humanoid, 132f, true),
+            Mob("redhorn_recruit", "Redhorn Recruit", 74, MobCategory.Humanoid, 132f, true),
+            Mob("sunland_orc_warrior", "Sunland Orc Warrior", 75, MobCategory.Humanoid, 132f, true),
+            Mob("redhorn_soldier", "Redhorn Soldier", 76, MobCategory.Humanoid, 132f, true),
+            Mob("sunland_orc_commander", "Sunland Orc Commander", 76, MobCategory.Humanoid, 132f, true),
+            Mob("sunland_orc_captain", "Sunland Orc Captain", 77, MobCategory.Humanoid, 132f, true),
+            Mob("redhorn_general", "Redhorn General", 78, MobCategory.Humanoid, 132f, true),
+            Mob("emberwyrm_drake", "Emberwyrm Drake", 79, MobCategory.Dragon, 155f, true),
+            Mob("wrathborn_demon", "Wrathborn Demon", 80, MobCategory.Demon, 145f, true),
+            Mob("scarlet_mantis", "Scarlet Mantis", 80, MobCategory.Insect, 142f, true),
+            Mob("radiant_scout", "Radiant Scout", 81, MobCategory.Angel, 140f, true),
+            Mob("radiant_berserker", "Radiant Berserker", 82, MobCategory.Angel, 135f, true),
+            Mob("radiant_mage", "Radiant Mage", 82, MobCategory.Angel, 132f, false),
+            Mob("splinter_mantis_drone", "Splinter Mantis Drone", 83, MobCategory.Insect, 142f, true),
+            Mob("needle_mantis_overseer", "Needle Mantis Overseer", 84, MobCategory.Insect, 140f, true),
+            Mob("splinter_mantis_walker", "Splinter Mantis Walker", 84, MobCategory.Insect, 142f, true),
+            Mob("drake_leader", "Drake Leader", 85, MobCategory.Dragon, 150f, true),
+            Mob("disciple_of_the_dawn", "Disciple of the Dawn", 85, MobCategory.Humanoid, 132f, true),
 
             // Training dummy: immortal, stationary, deals no damage. The ZONE sets its level
             // (20/40/60/80 training grounds). No drops. For testing damage/skills.
             new MobType("training_dummy", "Training Dummy", 0f, 0f, Dummy: true),
-
-            new MobType("young_drake", "Young Drake", 75f, 145f, Aggressive: true,
-                Drops: new[]
-                {
-                    new DropEntry(ItemCatalog.GreaterPotion, 0.35f, 1, 2),
-                    new DropEntry(ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.E, ItemRarity.Rare), 0.05f),
-                    new DropEntry(ItemCatalog.ScrollRare, 0.08f),
-                    new DropEntry(ItemCatalog.AttrScrollRare, 0.05f),
-                    new DropEntry(ItemCatalog.SpeedPotionR, 0.05f),
-                    new DropEntry(ItemCatalog.AtkPotionR, 0.05f),
-                    new DropEntry(ItemCatalog.AttrScrollLegendary, 0.01f, 1, 1, MinLevel: 70),
-                }),
         };
         var dict = new Dictionary<string, MobType>(StringComparer.OrdinalIgnoreCase);
         foreach (var m in list)

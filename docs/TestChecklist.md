@@ -7,6 +7,33 @@ this file.
 
 ---
 
+## To test now (mob overhaul — 2026-07-02)
+
+### Mob base-stat curve (docs/mobs/mob_base_stats.csv) — BIG BALANCE SHIFT
+- [ ] Mobs now use the CSV level curve → ~2-3× their old HP/def/atk. Fights should feel
+  meaningfully longer/harder. Inspect a mob (▼ on the target frame) and sanity-check its
+  HP/P.Def/M.Def/P.Atk vs the CSV row for its level (should match at authored levels).
+- [ ] **Cleric can still SOLO a same-level mob** (target: ~L30) — slower but possible.
+- [ ] Low-level mobs don't ~one-shot players (physical mob damage sane at 2-3× atk).
+
+### Weapon-type resistance (P.Def route)
+- [ ] `obsidian_knight` (Lv 63, Duskvale): sword & bow hits land for noticeably LESS, a
+  blunt weapon for MORE (vs its normal P.Def). Inspect shows "Sword/Dual Resist / Bow Resist
+  / Blunt Weak" lines.
+- [ ] `watcher_eye` (Lv 26) is hard for mages (high M.Def) / easy for fighters; `rift_portling`
+  (Lv 40 champion) has ~3.5× the normal L40 HP.
+
+### New 80-mob roster + zones + drops
+- [ ] Every field zone spawns the new named mobs at their natural level (levels roughly match
+  each zone's band). L80-85 mobs appear in Frostmere (9000,17600).
+- [ ] Drops still flow (potions/gear/scrolls by level; gear TYPE by family — undead/caster→robe,
+  animal→light, insect→daggers, demon/dragon→heavy, humanoid→sword).
+- [ ] Class-change hunt quests (orc_archer/skeleton_grunt/shield_skeleton, Lv 16-21) and the
+  3rd-class chain (medusa/marsh_mantis_soldier/fen_lizardman_archer, Lv 34-39) count kills.
+- [ ] Boss = Valley Treant (Lv 60, south), Elite = Emberwyrm Drake (Lv ~78, NW) spawn & fight.
+
+---
+
 ## To test now (this session — 2026-06-29)
 
 ### Mage no auto-attack after a spell

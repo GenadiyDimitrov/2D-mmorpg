@@ -1,0 +1,17 @@
+name,description,stat,modifier,levels,comment
+Weapon Weight,Increase P.Atk for the cost of Atk.Spd,"(P.Atk,Atk.Spd)","(prc,prc)","[(0.8,1.2),(0.85,1.15),(0.9,1.1),(0.95,1.05),(1,1),(1.05,0.95),(1.1,0.9),(1.15,0.85),(1.2,0.82),(1.25,0.8),(1.3,0.77),(1.4,0.75),(1.5,0.73),(1.8,0.7),(2,0.65),(2.2,0.6),(2.5,0.5)]"
+Armor Weight,Increase P.Def for the cost of Evasion,"(P.Dev,Eva)","(prc,flat)","[(0.85,+10),(1,0),(1.15,-10)]"
+M.Atk Mod,Increase/Decrease M.Atk with a value,M.Atk,prc,"[0,0.15,0.18,0.22,0.27,0.32,0.39,0.47,0.57,0.69,0.83,1,1.21,1.46,1.77,2.14,2.59,3.13,3.79,4.59,5.55,6.72,100]",0 doesnt do Dmg
+P.Atk Mod,Increase/Decrease P.Atk with a value,P.Atk,prc,"[0,0.39,0.43,0.47,0.52,0.57,0.63,0.69,0.76,0.83,0.91,1,1.1,1.21,1.33,1.46,1.61,1.77,1.94,2.14,2.35,2.59,10]"
+Max HP Mod,Increase/Decrease Max HP with a value,Max HP,prc,"[0,1,1.1,1.21,1.33,1.46,1.61,1.77,0.25,0.5,2,3,4,5,6,7,8,9,10,11,12,999999]",0 is 1hp/mp; 9999999 is infinity (or atleast very very high)
+Max MP Mod,Increase/Decrease Max MP with a value,Max MP,prc,"[0,1,1.1,1.21,1.33,1.46,1.61,1.77,0.25,0.5,2,3,4,5,6,7,8,9,10,11,12,999999]"
+Regen HP Mod,Increase/Decrease Regen HP with a value,Regen HP,prc,"[0,1,1.1,1.21,1.33,1.46,1.61,1.77,0.25,0.5,2,3,4,5,6,7,8,9,10,11,12,999999]",0 is 0 regen; 9999999 is infinity (each tick to max Hp/MP)
+Regen MP Mod,Increase/Decrease Regen MP with a value,Regen MP,prc,"[0,1,1.1,1.21,1.33,1.46,1.61,1.77,0.25,0.5,2,3,4,5,6,7,8,9,10,11,12,999999]"
+M.Def Mod,Increase/Decrease M.Def with a value,M.Def,prc,"[0,0.39,0.43,0.47,0.52,0.57,0.63,0.69,0.76,0.83,0.91,1,1.1,1.21,1.33,1.46,1.61,1.77,1.94,2.14,2.35,2.59,10,999999]",0 is one shot; 999999 is total immunity
+P.Def Mod,Increase/Decrease P.Def with a value,P.Def,prc,"[0,0.39,0.43,0.47,0.52,0.57,0.63,0.69,0.76,0.83,0.91,1,1.1,1.21,1.33,1.46,1.61,1.77,1.94,2.14,2.35,2.59,10,999999]"
+Piercing Resistance,Weak/Strong agains sword/dual type weapons,P.Def,prc,"[0,0.5,0.6,0.7,0.8,0.9,1,1.11,1.25,1.43,1.67,2,999999]",0 always land; 999999 is total immunity
+Blunt Resistance,Weak/Strong agains blunt type weapons,P.Def,prc,"[0,0.5,0.6,0.7,0.8,0.9,1,1.11,1.25,1.43,1.67,2,999999]"
+Bow Resistance,Weak/Strong agains bow type weapons,P.Def,prc,"[0,0.5,0.6,0.7,0.8,0.9,1,1.11,1.25,1.43,1.67,2,999999]"
+Stun Resistance,Weak/Strong agains stun atacks,Stun Resist,prc,"[0,0.5,0.6,0.7,0.8,0.9,1,1.11,1.25,1.43,1.67,2,999999]"
+Fear Resistance,Weak/Strong agains fear atacks,Fear Resist,prc,"[0,0.5,0.6,0.7,0.8,0.9,1,1.11,1.25,1.43,1.67,2,999999]"
+???? Resistance,Weak/Strong agains ???? atacks,???? Resist,prc,"[0,0.5,0.6,0.7,0.8,0.9,1,1.11,1.25,1.43,1.67,2,999999]",the same logic for all other resistances we will have
