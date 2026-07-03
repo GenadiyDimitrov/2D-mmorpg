@@ -1,0 +1,16 @@
+# Unity-generated — only Assets/ (scripts) + README are source here.
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+Assets/Plugins/Game.Shared.dll
+Assets/Packages/
+*.csproj
+*.sln
+*.user
+.vs/
+.vsconfig

@@ -134,8 +134,14 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 
 ## EVENTUALLY (long-term / large)
 
-- [ ] **The real client** — 2.5D Unity (no Z axis; server stays 2D), reusing `Game.Shared`
+- [~] **The real client** — 2.5D Unity (no Z axis; server stays 2D), reusing `Game.Shared`
   + `NetworkChannel`. The WPF app is only a test harness. ([[client-3d-and-los-design]])
+  **STARTED (2026-07-03):** `Game.Shared` now multi-targets `net8.0;netstandard2.1` (+ IsExternalInit
+  polyfill) so Unity can consume it. A vertical slice lives in `Game.Client.Unity/` (scripts + README):
+  ported `NetworkChannel`, `GameBoot` (auto-login→enter world), `EntityManager`/`EntityView`
+  (billboard quads + interpolation), `CameraRig` (steep pitch now → lower to ~50 for 2.5D), touch
+  move/attack, main-thread dispatcher. Owner builds the Unity project + Android per the README. NEXT:
+  UI (target frame/skill bar/cast bars), then swap billboards for animated 3D models (visual-only).
 - [ ] **Line of sight** — server-side LoS using STATIC occluder data (not entities), for
   the new client. ([[client-3d-and-los-design]])
 - [ ] **Instances / dungeons**.

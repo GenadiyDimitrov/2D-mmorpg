@@ -1,9 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- Multi-targeted: net8.0 for the server/WPF, netstandard2.1 so the Unity client
+       (Mono/IL2CPP) can consume the same DTOs/formulas/catalogs. Referencing projects
+       auto-pick net8.0; Unity loads the netstandard2.1 build. -->
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFrameworks>net8.0;netstandard2.1</TargetFrameworks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
 </Project>
