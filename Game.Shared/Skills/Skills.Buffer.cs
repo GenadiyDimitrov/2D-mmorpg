@@ -77,7 +77,8 @@ public static partial class SkillCatalog
             },
             "+35% Max HP & MP, +20% HP & MP regen"),
 
-        // Frenzy — a reckless trade-off buff (NOT in the newbie auto-set).
+        // Frenzy — a reckless trade-off buff. INCLUDED in the full NPC buffer set (it's a FULL
+        // buffer); a player who doesn't want the -10% Max HP/MP can just cancel this one buff.
         NpcBuff(NpcFrenzy, "Frenzy", "holy_frenzy",
             SkillEffect.BuffHp | SkillEffect.BuffMp | SkillEffect.BuffAtkSpeed | SkillEffect.BuffCastSpeed
             | SkillEffect.BuffPhysAtk | SkillEffect.BuffMagAtk | SkillEffect.BuffMoveSpeed | SkillEffect.BuffEvasion,
