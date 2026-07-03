@@ -1,4 +1,4 @@
-GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon),SetBonus,Comment,+MaxMP(robes),attributes []
+GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon); MDef(Jewels),SetBonus,Comment,+MaxMP(robes),attributes []
 # Set bonus active only with all 4 of group (as now) and shield for additional bonus if available
 # armors can not have attributes at the moment - after balance/check ill think of adding to them
 20,Armor,Fighter,20,Heavy,167,p.def x1.05; HP + 135 Shield: shield.p.def x1.1;,
@@ -67,6 +67,7 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon),
 61,Armor,,61,Helmet,73,,
 611,Armor,,61,Helmet,73,,
 76,Armor,,76,Helmet,83,,
+
 # Weapons
 ,Weapon,Fighter,20,Sword,92/54,,no attri - we need to rework a bit the attri system .. not grade increases the count ... but one attribute each time and only increases max .. but thats later for testing
 ,Weapon,Fighter,40,Sword,156/83,,,,crit rate: max 5%; as: max 5%; hp: max 10%
@@ -116,3 +117,22 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon),
 ,Weapon,Mage,52,Staff (2h blunt),189/145,,,,cast: max 15%; matk: max 7%; mcrit rate: max 6%
 ,Weapon,Mage,61,Staff (2h blunt),226/167,,,,cast: max 15%; matk: max 10%; mcrit rate: max 8%
 ,Weapon,Mage,76,Staff (2h blunt),274/193,,,,cast: max 15%; matk: max 15%; mcrit rate: max 10%
+
+# Jewels
+,Jewel,-,20,Necklace,45,,,0,
+,Jewel,-,40,Necklace,64,,,0,
+,Jewel,-,52,Necklace,72,,,0,
+,Jewel,-,61,Necklace,85,,,33,
+,Jewel,-,76,Necklace,95,,,42,
+
+,Jewel,-,20,Ring,22,,,0,
+,Jewel,-,40,Ring,32,,,0,
+,Jewel,-,52,Ring,36,,,0,
+,Jewel,-,61,Ring,42,,,17,
+,Jewel,-,76,Ring,48,,,21,
+
+,Jewel,-,20,Earring,34,,,0,
+,Jewel,-,40,Earring,45,,,0,
+,Jewel,-,52,Earring,54,,,0,
+,Jewel,-,61,Earring,63,,,25,
+,Jewel,-,76,Earring,71,,,31,

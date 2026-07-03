@@ -28,11 +28,16 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   helpless (watcher_eye/aether_wisp/rift_portling/radiant_mage). Reuses the player cast pipeline
   (LearnedSkills + QueuedSkillId); mobs cast at authored time (WIT multiplier bypassed).
 - [x] **Golem-type resist** — obsidian_knight: Pierce ×1.43 P.Def, Bow ×2, Blunt ×0.5 (weak).
-- [~] **RE-CHECK balance after the mob curve** — mobs are now ~2-3× prior HP/def/atk. **Matrix
-  regenerated** (`docs/BalanceMatrix.md` §H, Mob↔Player @40/@75 melee/archer/mage): NO one-shots
-  (min 2 hits), player→mob fights ~2-3× longer as intended. **Open for playtest/decision:** cleric-
-  solo-L30 loop (not modeled), low-level (<40) feel, and whether archer ×2 P.Atk is too lethal to
-  squishies (mage dies in 2-4 arrows) → maybe dial to ~1.7-1.8 (owner's call).
+- [~] **RE-CHECK balance after the mob curve** — mobs are now ~2-3× prior HP/def/atk. **Matrices
+  regenerated** (`docs/BalanceMatrix.md` §H Mob↔Player @40/@75; §I per-gear-tier 40/52/61/76 vs the mob
+  curve from `gear_sets.csv`). NO one-shots; gear DEFENSE keeps pace, but **player OFFENSE falls behind at
+  high tiers** (solo grind balloons — fighter 13→131 hits, mage 19→210 casts L40→76). **Owner decision:**
+  raise high-tier weapon atk / ease mob HP+def at 61-85 / lean on crit+attributes+party; add a jewel tier.
+  Also open: cleric-solo-L30, <40 feel, archer ×2 lethality to squishies.
+- [ ] **Gear/item overhaul** — build `docs/gear/gear_sets.csv`: weapons (+ level-based attributes via
+  StatMods, `IsMagicWeapon` bool, attribute-cancel debug), armor sets (bonuses via StatMods incl.
+  main-stats), remove old armor drops + add new as rare, debug-give single body + accessory box. FOUNDATION
+  DONE (StatMods carries item/set stats; MAtk%/MagicCrit attr types; ToStatMods bridge). See [[gear-item-overhaul]].
 - [>] **Base class kits** — owner to provide several passives/buffs/skills per class; wire them
   as real per-class content (beyond the placeholder discipline kits), then tune.
 - [>] **Fighter balance pass** — awaiting owner targets (Venomweaver burst cap, tank durability

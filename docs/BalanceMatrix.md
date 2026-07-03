@@ -309,3 +309,73 @@ L75 → HP 12420 · pDef 490 · mDef 390 · P.Atk 1065 · M.Atk 748.
   helpless. Fair. Their per-hit is between melee and archer.
 
 > Regenerate H when the mob curve, a combat constant, the role multipliers, or the mob spells change.
+
+---
+
+## I. Per-gear-tier vs the mob curve (from `docs/gear/gear_sets.csv`, 2026-07-03)
+
+> **ESTIMATE.** Fighter = Heavy body + Gloves/Boots/Helm + **1H Sword** (no shield); Mage = Robe set
+> + **Staff**. **BASE variant** set only. Derived stats built from the level formulas + the CSV gear,
+> **calibrated to §G's L40 values**. Non-weapon P.Atk/M.Atk carry §G's masteries/attack-training
+> (interpolated 40→76). **NOT folded:** weapon ATTRIBUTES (crit-rate to +20%, crit-dmg, +HP, atk-spd —
+> these lift offense a lot, esp. crit), armor set % bonuses, and **JEWELS** (so mDef is low — jewels are
+> a separate progression to add). Precise numbers need the gear wired in-game; this is the shape/keep-pace check.
+
+### I1. Player derived stats per tier
+| Fighter | HP | P.Def | M.Def | P.Atk(sword) | | Mage | HP | P.Def | M.Def | M.Atk(staff) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| L40 | 1516 | 460 | 45 | 290 | | L40 | 421 | 330 | 53 | 247 |
+| L52 | 2020 | 519 | 59 | 406 | | L52 | 645 | 384 | 69 | 360 |
+| L61 | 2619 | 569 | 72 | 502 | | L61 | 850 | 423 | 84 | 441 |
+| L76 | 4317 | 651 | 98 | 649 | | L76 | 1263 | 485 | 115 | 565 |
+
+### I2. Same-level MELEE mob → player (dmg/hit · hits-to-kill)
+| Tier | → Fighter | → Mage |
+|---|---|---|
+| L40 | 29 · 53 | 40 · 11 |
+| L52 | 52 · 39 | 70 · 9 |
+| L61 | 75 · 35 | 101 · 8 |
+| L76 | 132 · 33 | 177 · 7 |
+
+### I3. Player → same-level mob (dmg · hits/casts-to-kill; mob HP 1980/4070/6520/12980)
+| Tier | Fighter (sword) | Mage (staff nuke) |
+|---|---|---|
+| L40 | 156 · 13 | 106 · 19 |
+| L52 | 129 · 32 | 87 · 47 |
+| L61 | 118 · 55 | 77 · 85 |
+| L76 | 99 · 131 | 62 · 210 |
+
+### I4. Reading it (findings)
+- **DEFENSE keeps pace.** Gear pDef/HP scale with mob P.Atk: a fighter stays ~33–53 hits-to-die at every
+  tier (survivable), a mage ~7–11 (squishy but STABLE across tiers — it doesn't get worse). So the gear
+  curve tracks the mob attack curve well.
+- **OFFENSE falls behind at high tiers.** Mob HP + P.Def/M.Def grow faster than weapon atk, so a SOLO grind
+  balloons: fighter 13 → **131 hits**, mage 19 → **210 casts** from L40 → L76. That's the real signal.
+  - Softeners not modeled that would help: **weapon attributes** (esp. crit-rate/crit-dmg → big DPS), armor
+    set % bonuses, and the L2 assumption of **party play**. But even so the top-tier gap is steep.
+  - **Levers (owner's call):** raise high-tier weapon P/M.Atk, ease the mob HP/def curve at ~61–85, and/or
+    lean the design on crit + attributes + party. Also: **add a jewel tier** (mage mDef is unmodeled/low here).
+
+### I5. Offense WITH weapon attributes + set bonuses (I3 was raw weapon only — NO buffs, NO attrs, NO set)
+> I1–I4 = **no buffs, no weapon attributes, no set % bonuses** (raw weapon vs mob). But max-rolled weapon
+> attributes (count by level: 40→1/52→1/61→2/76→3) + the dmg-oriented set % bonuses lift DPS a lot — crit
+> rate/dmg, atk/cast speed, M.Atk. Estimated DPS multipliers (best attrs picked, dmg set variant):
+
+| Tier | Fighter DPS × | → hits (was I3) | Mage DPS × | → casts (was I3) |
+|---|---|---|---|---|
+| L40 | ×1.05 | 12 (13) | ×1.32 | 14 (19) |
+| L52 | ×1.05 | 30 (32) | ×1.32 | 36 (47) |
+| L61 | ×1.44 | 38 (55) | ×1.39 | 61 (85) |
+| L76 | ×1.51 | **87 (131)** | ×1.84 | **114 (210)** |
+
+- Sword attrs = crit-rate + atk-speed (crit folded ×~2); staff attrs = cast-speed + M.Atk(√) + magic-crit
+  (×3), plus the L76 robe set's **M.Atk ×1.17** — that's why the mage gains more.
+- **+ BUFFS** (the 5 NPC buffs: Might +12% atk, Focus +20% crit, Force +55% M.Atk≈+24% dmg, Speed atk/cast):
+  another ~×1.3, so **buffed** high-tier ≈ fighter **~67 hits**, mage **~88 casts** at L76.
+
+**Revised reading:** with attributes + set + buffs the high-tier solo grind roughly **halves** vs raw I3, so
+it's long-but-not-absurd. The offense-lags-at-high-tier trend is real but softer. Best fixes: **add a jewel
+tier** (mage mDef) and a modest high-tier weapon-atk bump or mob HP/def easing at ~70–85.
+
+> Regenerate I when the gear CSV, the mob curve, or a combat constant changes. Exact version = read the
+> derived stats in-game once the gear is equipped (this estimate carries §G's mastery/training baseline).
