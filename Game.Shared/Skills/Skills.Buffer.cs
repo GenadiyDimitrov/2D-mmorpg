@@ -13,14 +13,22 @@ public static partial class SkillCatalog
     public const string NpcSpeed  = "npc_speed";
     public const string NpcBody   = "npc_body";
     public const string NpcFrenzy = "npc_frenzy";
+    // "Harmony" GREATER buffs (max-level; owner 2026-07-03). They STACK on top of the six above
+    // (distinct BuffKeys). Later the NPC buffer will hand out ONE level below each max so a real
+    // buffer stays valuable, and 76+/ultimate buffs come after.
+    public const string NpcHarmonyProtection = "npc_harmony_protection";
+    public const string NpcHarmonyWarrior    = "npc_harmony_warrior";
+    public const string NpcHarmonyWizard     = "npc_harmony_wizard";
 
     public const int NpcBuffTicks = 36000;   // 1 hour @ 10 ticks/s
     public const int NpcBuffRank  = 100;     // overrides player self-buffs (rank 1-4)
 
-    /// <summary>The buffs the newbie buffer NPC grants — the full max-level set,
-    /// including Frenzy (its −10% Max HP/MP trade-off nets out against Body's +35%).</summary>
+    /// <summary>The buffs the newbie buffer NPC grants — the full max-level set (the six basics +
+    /// the three greater Harmony buffs). Frenzy stays in (it's a FULL buffer; cancel that one buff
+    /// if you don't want its −10% Max HP/MP).</summary>
     public static readonly string[] NewbieBuffSet =
-        { NpcMight, NpcForce, NpcFocus, NpcSpeed, NpcBody, NpcFrenzy };
+        { NpcMight, NpcForce, NpcFocus, NpcSpeed, NpcBody, NpcFrenzy,
+          NpcHarmonyProtection, NpcHarmonyWarrior, NpcHarmonyWizard };
 
     private static SkillDef NpcBuff(string id, string name, string buffKey,
         SkillEffect effect, EffectMagnitude[] mags, string desc) =>
@@ -90,5 +98,39 @@ public static partial class SkillCatalog
                 new(SkillEffect.BuffMoveSpeed, 8, ModifierMode.Flat), new(SkillEffect.BuffEvasion, -8, ModifierMode.Flat),
             },
             "-10% Max HP/MP but +8% P.Atk / +16% M.Atk / +8% atk & cast speed / +8 move / -8 evasion"),
+
+        // ----- Greater "Harmony" buffs (max-level). NOTE: "reflect melee 20%" (Protection) and the
+        // "-physical/magic MP consumption" (Warrior/Wizard) are OMITTED — no engine yet (reflect +
+        // skill-MP-cost-reduction mechanics unbuilt). Add those lines when those systems land. -----
+        NpcBuff(NpcHarmonyProtection, "Harmony of Protection", "harmony_protection",
+            SkillEffect.BuffDef | SkillEffect.BuffMagicDef | SkillEffect.BuffHp
+            | SkillEffect.BuffHpRegen | SkillEffect.BuffEvasion,
+            new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffDef, 0.25f), new(SkillEffect.BuffMagicDef, 0.25f),
+                new(SkillEffect.BuffHp, 0.30f), new(SkillEffect.BuffHpRegen, 0.20f),
+                new(SkillEffect.BuffEvasion, 3, ModifierMode.Flat),
+            },
+            "+25% P.Def & M.Def, +30% Max HP, +20% HP regen, +3 evasion (reflect pending)"),
+
+        NpcBuff(NpcHarmonyWarrior, "Harmony of the Warrior", "harmony_warrior",
+            SkillEffect.BuffPhysAtk | SkillEffect.BuffAtkSpeed | SkillEffect.BuffCritDamage
+            | SkillEffect.BuffCritRate | SkillEffect.BuffAccuracy | SkillEffect.BuffMeleeVamp,
+            new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffPhysAtk, 0.12f), new(SkillEffect.BuffAtkSpeed, 0.15f),
+                new(SkillEffect.BuffCritDamage, 0.35f), new(SkillEffect.BuffCritRate, 0.75f),
+                new(SkillEffect.BuffAccuracy, 4, ModifierMode.Flat), new(SkillEffect.BuffMeleeVamp, 0.08f),
+            },
+            "+12% P.Atk, +15% atk speed, +35% crit damage, +75% crit rate, +4 acc, 8% vamp (−MP cost pending)"),
+
+        NpcBuff(NpcHarmonyWizard, "Harmony of the Wizard", "harmony_wizard",
+            SkillEffect.BuffCastSpeed | SkillEffect.BuffMagAtk | SkillEffect.BuffMpRegen,
+            new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffCastSpeed, 0.30f), new(SkillEffect.BuffMagAtk, 0.20f),
+                new(SkillEffect.BuffMpRegen, 0.20f),
+            },
+            "+30% cast speed, +20% M.Atk, +20% MP regen (−MP cost pending)"),
     };
 }

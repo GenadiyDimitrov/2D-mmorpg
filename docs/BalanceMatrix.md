@@ -370,8 +370,12 @@ L75 → HP 12420 · pDef 490 · mDef 390 · P.Atk 1065 · M.Atk 748.
 
 - Sword attrs = crit-rate + atk-speed (crit folded ×~2); staff attrs = cast-speed + M.Atk(√) + magic-crit
   (×3), plus the L76 robe set's **M.Atk ×1.17** — that's why the mage gains more.
-- **+ BUFFS** (the 5 NPC buffs: Might +12% atk, Focus +20% crit, Force +55% M.Atk≈+24% dmg, Speed atk/cast):
-  another ~×1.3, so **buffed** high-tier ≈ fighter **~67 hits**, mage **~88 casts** at L76.
+- **+ FULL NPC BUFFER (9 buffs, 2026-07-03):** the six basics (Might/Force/Focus/Speed/Body/Frenzy) + the
+  three greater **Harmony** buffs (Protection: +25% P/M.Def, +30% HP; Warrior: +12% P.Atk, +15% atk-spd,
+  +75% crit rate, +35% crit-dmg, 8% vamp; Wizard: +30% cast, +20% M.Atk). Offense ~×1.9 over no-buff → the
+  fully-buffed high-tier solo grind ≈ fighter **~47 hits**, mage **~62 casts** at L76 (from raw 131/210),
+  and DEFENSE jumps (~+25% def, +30% HP). This is the intended **fully-buffed solo baseline** (a full-buff
+  NPC buffer to 75 covers it). Reflect (Protection) + −MP-cost (Warrior/Wizard) not yet folded (unbuilt).
 
 **Revised reading:** with attributes + set + buffs the high-tier solo grind roughly **halves** vs raw I3.
 
