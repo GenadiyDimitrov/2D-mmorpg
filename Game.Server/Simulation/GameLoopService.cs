@@ -1690,7 +1690,72 @@ public class GameLoopService : BackgroundService
         }
 
         if (entity.Engaged)
-            UpdateAutoAttack(entity);
+        {
+            if (entity.CasterMob) MobCasterAi(entity);
+            else UpdateAutoAttack(entity);
+        }
+    }
+
+    /// <summary>Caster-mob combat: no basic attack — nuke from range, jab up close, both gated on
+    /// MP + reuse (via the normal cast pipeline). Out of MP for BOTH spells → stand helpless.</summary>
+    private void MobCasterAi(Entity mob)
+    {
+        if (mob.CombatTargetId is not Guid targetId ||
+            !_world.Entities.TryGetValue(targetId, out var target) || target.Dead ||
+            DistanceSq(mob, target) > GameConstants.ViewRange * GameConstants.ViewRange)
+        {
+            Disengage(mob);
+            return;
+        }
+        if (GameConstants.InSafeZone(target.X, target.Y))
+        {
+            ResetMob(mob);
+            return;
+        }
+
+        var nuke = SkillCatalog.Get(SkillCatalog.MobNukeSkill)!;
+        var bolt = SkillCatalog.Get(SkillCatalog.MobBoltSkill)!;
+        int nukeCost = nuke.MpCostAt(mob.SkillLevelOf(nuke.Id));
+        int boltCost = bolt.MpCostAt(mob.SkillLevelOf(bolt.Id));
+
+        // No MP for EITHER spell → the mob is spent: stop and take it (players finish it off).
+        if (mob.Mp < Math.Min(nukeCost, boltCost))
+        {
+            mob.TargetX = null;
+            mob.TargetY = null;
+            return;
+        }
+
+        bool nukeReady = !mob.SkillCooldowns.ContainsKey(nuke.Id) && mob.Mp >= nukeCost;
+        bool boltReady = !mob.SkillCooldowns.ContainsKey(bolt.Id) && mob.Mp >= boltCost;
+        float distSq = DistanceSq(mob, target);
+
+        if (nukeReady && distSq <= nuke.Range * nuke.Range)
+        {
+            QueueMobSpell(mob, nuke.Id, targetId);
+            return;
+        }
+        if (boltReady && distSq <= bolt.Range * bolt.Range)
+        {
+            QueueMobSpell(mob, bolt.Id, targetId);
+            return;
+        }
+        // In nuke range but it's on cooldown → hold position and wait for the reuse.
+        if (distSq <= nuke.Range * nuke.Range)
+        {
+            mob.TargetX = null;
+            mob.TargetY = null;
+            return;
+        }
+        // Too far for any spell → close to nuke range.
+        mob.TargetX = target.X;
+        mob.TargetY = target.Y;
+    }
+
+    private void QueueMobSpell(Entity mob, string skillId, Guid targetId)
+    {
+        mob.QueuedSkillId = skillId;
+        mob.QueuedTargetId = targetId;
     }
 
     private void UpdateQueuedSkill(Entity caster, string skillId)
@@ -1735,9 +1800,12 @@ public class GameLoopService : BackgroundService
         // PHYSICAL skills scale by ATTACK speed (DEX + weapon), not cast speed — a fighter
         // has poor WIT-driven cast speed, so making a melee strike depend on it made
         // physical skills feel sluggish. Magic/buff/heal skills still use cast speed.
-        float speedMult = def.Category == SkillCategory.Physical
-            ? caster.EffectiveAttackSpeedMultiplier
-            : caster.EffectiveCastSpeedMultiplier;
+        // Mobs cast at the skill's AUTHORED time (their low-WIT cast multiplier would otherwise
+        // distort the tuned 1.5s/4s mob-spell timings); players use the speed model.
+        float speedMult = caster.Kind == EntityKind.Mob ? 1f
+            : def.Category == SkillCategory.Physical
+                ? caster.EffectiveAttackSpeedMultiplier
+                : caster.EffectiveCastSpeedMultiplier;
         caster.CastTicksRemaining = Math.Max(2,
             (int)(def.CastTicks * speedMult));
 
@@ -4130,6 +4198,34 @@ var effect = def.Effect;
                 mob.CritRateResist = Math.Max(mob.CritRateResist, 0.3f);
                 mob.BowResist = Math.Max(mob.BowResist, 0.3f);
             }
+        }
+
+        // Mob ROLE: ranged/caster archetypes on top of the base+passive stats.
+        switch (mobType.Role)
+        {
+            case MobRole.Archer:
+                // Fires from ~450 range with a bow; higher P.Atk but light armor (less P.Def,
+                // a little more evasion). Uses the normal auto-attack — just at longer range.
+                mob.WeaponType = WeaponType.Bow;
+                mob.BasicAttackRange = 450f;
+                mob.AttackPower = Math.Max(1, (int)(mob.AttackPower * 2f));
+                mob.BasicAttackPower = Math.Max(1, (int)(mob.BasicAttackPower * 2f));
+                mob.Defence = Math.Max(1, (int)(mob.Defence * 0.85f));
+                mob.Evasion += 8;
+                break;
+            case MobRole.Mage:
+                // No basic attack — casts the mob spells (learned at the level its own maps to).
+                // Higher M.Atk, lower P.Atk / P.Def; MP-gated (out of MP → helpless).
+                mob.CasterMob = true;
+                mob.MagicAttack = Math.Max(1, (int)(mob.MagicAttack * 1.5f));
+                mob.AttackPower = Math.Max(1, (int)(mob.AttackPower * 0.5f));
+                mob.BasicAttackPower = 1;
+                mob.Defence = Math.Max(1, (int)(mob.Defence * 0.7f));
+                mob.BasicAttackRange = 0f;
+                int spellLevel = SkillCatalog.MobSpellLevel(level);
+                mob.LearnedSkills[SkillCatalog.MobNukeSkill] = spellLevel;
+                mob.LearnedSkills[SkillCatalog.MobBoltSkill] = spellLevel;
+                break;
         }
 
         mob.Hp = mob.MaxHp;

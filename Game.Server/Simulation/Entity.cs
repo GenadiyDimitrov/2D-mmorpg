@@ -548,6 +548,9 @@ public class Entity
     public string? MobTypeId { get; set; }
     /// <summary>Training dummy: immortal (GodMode), stationary, never attacks/aggroes.</summary>
     public bool TrainingDummy { get; set; }
+    /// <summary>Caster mob (Mage role): no basic attack — casts the mob spells gated on MP;
+    /// out of MP it stands helpless. Set at spawn from MobType.Role.</summary>
+    public bool CasterMob { get; set; }
     public MobRank Rank { get; set; }
     public bool Aggressive { get; set; }
     public int WanderTicks { get; set; }

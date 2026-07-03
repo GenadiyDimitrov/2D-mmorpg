@@ -21,8 +21,16 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 - [x] **Weapon-type resistance (P.Def route)** — `StatCalculator.WeaponDefenceCoef` folds a
   per-weapon (Pierce/Blunt/Bow) coefficient INTO pDef at the hit (so an ignore-def skill bypasses
   it); `Entity.{Pierce,Blunt,Bow}DefCoef`; demo `obsidian_knight` (resist sword/arrow, weak to blunt).
+- [x] **Ranged + caster mobs (mob roles)** — `MobRole` {Melee, Archer, Mage}. Archer = bow basic
+  from ~450 range, ×2 P.Atk, light armor (orc/dune/fen/dread archers). Mage = NO basic attack,
+  casts two leveled mob spells (`mob_nuke` 600/4s/1s pow 18-129, `mob_bolt` 150/1.5s/0.5s pow 7-33;
+  13 levels by mob level), higher M.Atk / lower P.Atk+P.Def, MP-gated → out of MP it stands
+  helpless (watcher_eye/aether_wisp/rift_portling/radiant_mage). Reuses the player cast pipeline
+  (LearnedSkills + QueuedSkillId); mobs cast at authored time (WIT multiplier bypassed).
+- [x] **Golem-type resist** — obsidian_knight: Pierce ×1.43 P.Def, Bow ×2, Blunt ×0.5 (weak).
 - [ ] **RE-CHECK balance after the mob curve** — mobs are now ~2-3× prior HP/def/atk. Regenerate
   `docs/BalanceMatrix.md`; re-verify "cleric solos L30 mob" and "mobs don't one-shot players".
+  Now also: archer/mage-mob damage (dmg feel of ranged pokes + nukes).
 - [>] **Base class kits** — owner to provide several passives/buffs/skills per class; wire them
   as real per-class content (beyond the placeholder discipline kits), then tune.
 - [>] **Fighter balance pass** — awaiting owner targets (Venomweaver burst cap, tank durability
@@ -107,8 +115,12 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   ([[discipline-skills-plan]], [[class-tier-design]], [[mage-path-wip]])
 - [ ] **Party / grouping system** — replaces the current "allies in radius" stand-in for
   party heals/buffs; shared XP, party UI.
-- [ ] **Active mob skills** — mobs casting spells / using specials (today mobs only have
-  PASSIVE stat modifiers). ([[mob-modifiers]])
+- [~] **Active mob skills** — STARTED: caster (Mage-role) mobs cast two generic leveled spells
+  (nuke + jab, MP-gated). Still to do: per-mob UNIQUE skills, mob buffs/heals/CC, boss skills, and
+  a client cast-bar for mobs (today the player only sees the damage land, no visible mob cast).
+- [ ] **Leveled MobMastery layer (mobs_passives.csv)** — the full per-level mastery TABLES
+  (Weapon/Armor Weight, M.Atk/P.Atk/HP/MP/Regen/Def Mods, resistances) mobs pick a level in.
+  Today's mob passives are the flat `MobMod` + the `MobRole` archetypes, not the leveled tables.
 - [ ] **Boss mechanics** — ±10-level rule, boss skills, enrage; raid-boss timers already exist.
 - [ ] **Pets & summons** — immovable healing totem, class pets (Trapper/tank), mage
   summoner. ([[pets-summons-design]])

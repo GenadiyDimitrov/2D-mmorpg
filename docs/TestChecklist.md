@@ -7,6 +7,26 @@ this file.
 
 ---
 
+## To test now (ranged + caster mobs — 2026-07-03)
+
+### Archer mobs (orc_archer L16, dune_orc_archer L40, fen_lizardman_archer L39, dread_archer L69)
+- [ ] They shoot from ~450 range (don't run into melee), hit noticeably harder (×2 P.Atk), and
+  are squishier (light armor: lower P.Def, a bit more evasion). Bow attacks apply bow variance.
+
+### Mage mobs (watcher_eye L26, aether_wisp L58, rift_portling L40, radiant_mage L82)
+- [ ] NO basic attacks — they only cast. Long nuke from ~600 (4s cast), short jab up close (~150,
+  1.5s). Damage scales with mob level (nuke pow 18→129, jab 7→33).
+- [ ] Higher M.Atk, lower P.Atk/P.Def than a same-level melee mob.
+- [ ] They burn MP per cast; when MP runs out they stand HELPLESS (no attacks) — a free kill if you
+  outlast their mana. (Note: no mob cast-bar on the client yet — you just see the damage land.)
+- [ ] rift_portling = a beefy caster (champion HP) that nukes; watcher_eye also has high M.Def.
+
+### Golem-type resist (obsidian_knight L63, Duskvale)
+- [ ] Sword/dual hits land for less (Pierce ×1.43 P.Def), arrows much less (Bow ×2), blunt MORE
+  (×0.5). Inspect shows the resist lines.
+
+---
+
 ## To test now (mob overhaul — 2026-07-02)
 
 ### Mob base-stat curve (docs/mobs/mob_base_stats.csv) — BIG BALANCE SHIFT

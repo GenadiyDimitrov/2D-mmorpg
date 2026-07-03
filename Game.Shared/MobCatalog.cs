@@ -76,6 +76,11 @@ public enum MobCategory
     Animal, Humanoid, Undead, Insect, Demon, Dragon, Plant, MagicCreature, Angel
 }
 
+/// <summary>How a mob FIGHTS. Melee = the default basic-attack chaser. Archer = ranged basic
+/// attacks (bow, ~450 range, boosted P.Atk, light armor). Mage = NO basic attack, casts the two
+/// mob spells gated on MP (out of MP → helpless). Applied at spawn in GameLoopService.</summary>
+public enum MobRole { Melee, Archer, Mage }
+
 public record MobType(
     string Id,
     string Name,
@@ -86,7 +91,8 @@ public record MobType(
     MobMod? Mod = null,      // per-template stat modifiers ("passive skills")
     bool Dummy = false,      // training dummy: immortal, immobile, never attacks
     int Level = 0,           // natural level (0 = let the zone assign it)
-    MobCategory Category = MobCategory.Humanoid);
+    MobCategory Category = MobCategory.Humanoid,
+    MobRole Role = MobRole.Melee);   // how it fights (melee chaser / ranged archer / caster mage)
 
 /// <summary>
 /// THE place to manage mobs. Each entry is a creature template with its own drop
@@ -112,9 +118,9 @@ public static class MobCatalog
     /// the mob's natural level + family. Base stats come from the level curve (MobBaseStats)
     /// at spawn — the template only carries identity, movement, level, family and passives.</summary>
     private static MobType Mob(string id, string name, int level, MobCategory cat,
-        float run, bool aggressive, MobMod? mod = null) =>
+        float run, bool aggressive, MobMod? mod = null, MobRole role = MobRole.Melee) =>
         new(id, name, run * 0.55f, run, Aggressive: aggressive,
-            Drops: StandardDrops(level, cat), Mod: mod, Level: level, Category: cat);
+            Drops: StandardDrops(level, cat), Mod: mod, Level: level, Category: cat, Role: role);
 
     /// <summary>Level-banded + family-flavored drop table, ported from the original placeholder
     /// mobs' economy: potions/scrolls scale with level, the gear TYPE follows the creature
@@ -172,14 +178,15 @@ public static class MobCatalog
             Mob("ashen_wolf", "Ashen Wolf", 10, MobCategory.Animal, 140f, true),
             Mob("werewolf", "Werewolf", 12, MobCategory.Humanoid, 132f, true),
             Mob("hook_spider", "Hook Spider", 14, MobCategory.Insect, 130f, true),
-            Mob("orc_archer", "Orc Archer", 16, MobCategory.Humanoid, 132f, true),
+            Mob("orc_archer", "Orc Archer", 16, MobCategory.Humanoid, 132f, true, role: MobRole.Archer),
             Mob("skeleton_grunt", "Skeleton Grunt", 18, MobCategory.Undead, 120f, true),
             Mob("shield_skeleton", "Shield Skeleton", 20, MobCategory.Undead, 115f, true),
             Mob("grizzly_bear", "Grizzly Bear", 22, MobCategory.Animal, 135f, true),
             Mob("cinder_imp", "Cinder Imp", 24, MobCategory.Demon, 142f, true),
             // MAGIC monster: high M.Def / low P.Def — hard for mages, easy for fighters.
-            Mob("watcher_eye", "Watcher Eye", 26, MobCategory.MagicCreature, 130f, false,
-                new MobMod(MDef: 2f, PDef: 0.5f, Name: "Magic Monster")),
+            // Also a CASTER (Mage role): no basic attack, nukes from range, sits helpless at 0 MP.
+            Mob("watcher_eye", "Watcher Eye", 26, MobCategory.MagicCreature, 130f, true,
+                new MobMod(MDef: 2f, PDef: 0.5f, Name: "Magic Monster"), MobRole.Mage),
             Mob("lizardman_warrior", "Lizardman Warrior", 28, MobCategory.Humanoid, 132f, true),
             Mob("marauder_recruit", "Marauder Recruit", 30, MobCategory.Humanoid, 132f, true),
             Mob("mantis_worker", "Mantis Worker", 32, MobCategory.Insect, 140f, true),
@@ -188,11 +195,11 @@ public static class MobCatalog
             Mob("plunder_beetle", "Plunder Beetle", 34, MobCategory.Insect, 140f, true),
             Mob("wyrm", "Wyrm", 35, MobCategory.Dragon, 150f, true),
             Mob("marsh_mantis_soldier", "Marsh Mantis Soldier", 37, MobCategory.Insect, 140f, true),
-            Mob("fen_lizardman_archer", "Fen Lizardman Archer", 39, MobCategory.Humanoid, 132f, true),
-            // CHAMPION outlier: the same L40 curve × a big HP/P.Def passive (≈3.5×/2.2×).
+            Mob("fen_lizardman_archer", "Fen Lizardman Archer", 39, MobCategory.Humanoid, 132f, true, role: MobRole.Archer),
+            // CHAMPION outlier: the same L40 curve × a big HP/P.Def passive (≈3.5×/2.2×). Caster.
             Mob("rift_portling", "Rift Portling", 40, MobCategory.MagicCreature, 110f, true,
-                new MobMod(Hp: 3.56f, PDef: 2.2f, MDef: 1.27f, Name: "Rift Champion")),
-            Mob("dune_orc_archer", "Dune Orc Archer", 40, MobCategory.Humanoid, 132f, true),
+                new MobMod(Hp: 3.56f, PDef: 2.2f, MDef: 1.27f, Name: "Rift Champion"), MobRole.Mage),
+            Mob("dune_orc_archer", "Dune Orc Archer", 40, MobCategory.Humanoid, 132f, true, role: MobRole.Archer),
             Mob("ridge_orc_overlord", "Ridge Orc Overlord", 42, MobCategory.Humanoid, 132f, true),
             Mob("harpy", "Harpy", 42, MobCategory.Humanoid, 138f, true),
             Mob("grave_lich", "Grave Lich", 44, MobCategory.Undead, 120f, true),
@@ -211,16 +218,17 @@ public static class MobCatalog
             Mob("mirror_wraith", "Hall of Mirrors Wraith", 56, MobCategory.Undead, 125f, true),
             Mob("mirror_ghost", "Mirror Ghost", 56, MobCategory.Undead, 125f, true),
             Mob("dune_orc_porter", "Dune Orc Porter", 57, MobCategory.Humanoid, 132f, false),
-            Mob("aether_wisp", "Aether Wisp", 58, MobCategory.MagicCreature, 115f, false),
+            Mob("aether_wisp", "Aether Wisp", 58, MobCategory.MagicCreature, 115f, true, role: MobRole.Mage),
             Mob("hollow_one", "Hollow One", 58, MobCategory.Humanoid, 132f, true),
             Mob("valley_treant", "Valley Treant", 60, MobCategory.Plant, 90f, false),
             Mob("sand_ratman", "Sand Ratman", 60, MobCategory.Humanoid, 132f, true),
             Mob("cursed_blade", "Cursed Blade", 61, MobCategory.Undead, 130f, true),
             Mob("bogwood", "Bogwood", 62, MobCategory.Plant, 90f, false),
             Mob("fen_lizardman", "Fen Lizardman", 62, MobCategory.Humanoid, 132f, true),
-            // Stone/obsidian body: resists sword & arrow (Pierce/Bow ×2 P.Def), weak to blunt (×0.5).
+            // Golem-type stone/obsidian body: sword/dual glance off (Pierce ×1.43 P.Def), arrows
+            // barely scratch (Bow ×2), but a heavy blunt smashes it (Blunt ×0.5).
             Mob("obsidian_knight", "Obsidian Knight", 63, MobCategory.Humanoid, 132f, true,
-                new MobMod(PierceResist: 2f, BowDefResist: 2f, BluntResist: 0.5f, Name: "Stoneplate")),
+                new MobMod(PierceResist: 1.43f, BowDefResist: 2f, BluntResist: 0.5f, Name: "Stoneplate")),
             Mob("crimson_drake", "Crimson Drake", 64, MobCategory.Dragon, 150f, true),
             Mob("wildhorn_scout", "Wildhorn Scout", 64, MobCategory.Humanoid, 138f, true),
             Mob("dread_knight", "Dread Knight", 65, MobCategory.Undead, 135f, true),
@@ -229,7 +237,7 @@ public static class MobCatalog
             Mob("highland_kookaburra", "Highland Kookaburra", 67, MobCategory.Animal, 135f, false),
             Mob("highland_buffalo", "Highland Buffalo", 68, MobCategory.Animal, 130f, false),
             Mob("highland_buffalo_tamed", "Highland Buffalo (Tamed)", 68, MobCategory.Animal, 130f, false),
-            Mob("dread_archer", "Dread Archer", 69, MobCategory.Undead, 132f, true),
+            Mob("dread_archer", "Dread Archer", 69, MobCategory.Undead, 132f, true, role: MobRole.Archer),
             Mob("dire_beast", "Dire Beast", 70, MobCategory.Animal, 140f, true),
             Mob("revenant_minion", "Revenant Minion", 71, MobCategory.Demon, 145f, true),
             Mob("redhorn_footman", "Redhorn Footman", 72, MobCategory.Humanoid, 132f, true),
@@ -246,7 +254,7 @@ public static class MobCatalog
             Mob("scarlet_mantis", "Scarlet Mantis", 80, MobCategory.Insect, 142f, true),
             Mob("radiant_scout", "Radiant Scout", 81, MobCategory.Angel, 140f, true),
             Mob("radiant_berserker", "Radiant Berserker", 82, MobCategory.Angel, 135f, true),
-            Mob("radiant_mage", "Radiant Mage", 82, MobCategory.Angel, 132f, false),
+            Mob("radiant_mage", "Radiant Mage", 82, MobCategory.Angel, 132f, true, role: MobRole.Mage),
             Mob("splinter_mantis_drone", "Splinter Mantis Drone", 83, MobCategory.Insect, 142f, true),
             Mob("needle_mantis_overseer", "Needle Mantis Overseer", 84, MobCategory.Insect, 140f, true),
             Mob("splinter_mantis_walker", "Splinter Mantis Walker", 84, MobCategory.Insect, 142f, true),
