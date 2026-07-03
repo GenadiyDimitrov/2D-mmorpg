@@ -1,0 +1,118 @@
+GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon),SetBonus,Comment,+MaxMP(robes),attributes []
+# Set bonus active only with all 4 of group (as now) and shield for additional bonus if available
+# armors can not have attributes at the moment - after balance/check ill think of adding to them
+20,Armor,Fighter,20,Heavy,167,p.def x1.05; HP + 135 Shield: shield.p.def x1.1;,
+40,Armor,Fighter,40,Heavy,240,HP + 270; Shield: p.def x1.05;, if shield is equiped(same set) => Shield: <bonus>;
+52,Armor,Fighter,52,Heavy,270,CON +3; STR +3; Shield: shield.p.def x1.25;,def oriented
+521,Armor,Fighter,52,Heavy,270,Speed +7; HpReg x1.05; STR +3; CON -2; DEX -1;,dmg oriented
+61,Armor,Fighter,61,Heavy,293,p.Atk x1.04; CON +2; DEX -2; Sleep/Hold/Poison/Bleed Resist x1.7; Shield: Reflect 5% of mele basic atack dmg (like caunter to vamp);,def oriented
+611,Armor,Fighter,61,Heavy,293,p.Atk x1.04; STR +2; CON -2; Acc +4; Stun/Fear Resist x1.7;,dmg oriented
+76,Armor,Fighter,76,Heavy,332,STR +2; CON +2; DEX -2;HP +455; Sleep/Hold/Poison/Bleed/Fear/Stun Resist x1.7; Shield: (p.def x1.05; m.def x1.05; shield.p.def x1.25; reflect 5%);,
+
+20,Armor,Fighter,20,Shield,143,
+40,Armor,Fighter,40,Shield,203,,
+52,Armor,Fighter,52,Shield,230,,
+61,Armor,Fighter,61,Shield,256,,
+76,Armor,Fighter,76,Shield,299,,
+
+20,Armor,Fighter,20,Light,125,eva +2; MP + 92,
+40,Armor,Fighter,40,Light,218,eva +4,
+401,Armor,Fighter,40,Light,218,p.def x1.05,
+402,Armor,Fighter,40,Light,218,m.def x1.05,
+403,Armor,Fighter,40,Light,218,STR +4; CON -1,
+52,Armor,Fighter,52,Light,202,P.atk x1.02; DEX +3; CON -2; STR-1;,dmg oriented
+521,Armor,Fighter,52,Light,202,Cast x1.15; WIT -1; INT -1; MaxMP +120; MpReg 1.05; m.def x1.05;,supports oriented
+61,Armor,Fighter,61,Light,220,Vamp 5%; DEX +1; CON -1; Sleep/Hold/Poison/Bleed Resist x1.7;,for mele fighters/rogues oriented
+611,Armor,Fighter,61,Light,220,p.Atk x1.08; DEX +1; CON -1; Stun/Fear Resist x1.7;,dmg oriented
+76,Armor,Fighter,76,Light,249,p.atk x1.04; as x1.04; DEX +1; STR +1; CON -2; MaxMP +220; MpReg 1.05; m.def x1.05; Sleep/Hold/Poison/Bleed/Fear/Stun Resist x1.7;,
+
+20,Armor,Mage,20,Robe,84,WIT +1; Speed +7,,274
+40,Armor,Mage,40,Robe,110,Cast x1.15,cast oriented,508
+41,Armor,Mage,40,Robe,110,p.def x1.05; WIT +1,support oriented,508
+42,Armor,Mage,40,Robe,110,INT +4; WIT -1,nuke oriented,508
+52,Armor,Mage,52,Robe,135,Cast x1.15; p.def 1.05; m.def x1.05,,613
+61,Armor,Mage,61,Robe,147,WIT +2; Speed +7; Cast x1.15; p.Def x1.08; m.def/mpReg x0.95; Sleep/Hold/Poison/Bleed Resist x1.7;,,718
+611,Armor,Mage,61,Robe,147,WIT +2; INT -1; Speed +7; m.def x1.05; mpReg x1.13; Stun/Fear Resist x1.7;,,718
+76,Armor,Mage,76,Robe,166,WIT +2; INT +1; M.Atk x1.17; Speed +7; Cast x1.15; Sleep/Hold/Poison/Bleed/Fear/Stun Resist x1.7;,,866
+
+20,Armor,,20,Gloves,29,,
+40,Armor,,40,Gloves,39,,
+401,Armor,,40,Gloves,39,,
+402,Armor,,40,Gloves,39,,
+403,Armor,,40,Gloves,39,,
+52,Armor,,52,Gloves,44,,
+521,Armor,,52,Gloves,44,,
+61,Armor,,61,Gloves,49,,
+611,Armor,,61,Gloves,49,,
+76,Armor,,76,Gloves,55,,
+
+20,Armor,,20,Boots,29,,
+40,Armor,,40,Boots,39,,
+401,Armor,,40,Boots,39,,
+402,Armor,,40,Boots,39,,
+403,Armor,,40,Boots,39,,
+52,Armor,,52,Boots,44,,
+521,Armor,,52,Boots,44,,
+61,Armor,,61,Boots,49,,
+611,Armor,,61,Boots,49,,
+76,Armor,,76,Boots,55,,
+
+20,Armor,,20,Helmet,41,,
+40,Armor,,40,Helmet,58,,
+401,Armor,,40,Helmet,58,,
+402,Armor,,40,Helmet,58,,
+403,Armor,,40,Helmet,58,,
+52,Armor,,52,Helmet,66,,
+521,Armor,,52,Helmet,66,,
+61,Armor,,61,Helmet,73,,
+611,Armor,,61,Helmet,73,,
+76,Armor,,76,Helmet,83,,
+# Weapons
+,Weapon,Fighter,20,Sword,92/54,,no attri - we need to rework a bit the attri system .. not grade increases the count ... but one attribute each time and only increases max .. but thats later for testing
+,Weapon,Fighter,40,Sword,156/83,,,,crit rate: max 5%; as: max 5%; hp: max 10%
+,Weapon,Fighter,52,Sword,194/99,,,,crit rate: max 10%; as: max 7%; hp: max 15%
+,Weapon,Fighter,61,Sword,232/114,,,,crit rate: max 15%; as: max 10%; hp: max 20%
+,Weapon,Fighter,76,Sword,281/132,,,,crit rate: max 20%; as: max 15%; hp: max 25%
+
+,Weapon,Fighter,20,Sword2h,112/54,,,,
+,Weapon,Fighter,40,Sword2h,190/83,,,,crit rate: max 5%; as: max 5%; hp: max 10%
+,Weapon,Fighter,52,Sword2h,236/99,,,,crit rate: max 10%; as: max 7%; hp: max 15%
+,Weapon,Fighter,61,Sword2h,282/114,,,,crit rate: max 15%; as: max 10%; hp: max 20%
+,Weapon,Fighter,76,Sword2h,342/132,,,,crit rate: max 20%; as: max 15%; hp: max 25%
+
+,Weapon,Fighter,20,Blunt,92/54,,no attri
+,Weapon,Fighter,40,Blunt,156/83,,,,crit dmg: max 15%; hp: max 20%
+,Weapon,Fighter,52,Blunt,194/99,,,,crit dmg: max 20%; hp: max 25%
+,Weapon,Fighter,61,Blunt,232/114,,,,crit dmg: max 25%; hp: max 30%
+,Weapon,Fighter,76,Blunt,281/132,,,,crit dmg: max 30%; hp: max 35%
+
+,Weapon,Fighter,20,Blunt2h,112/54,,no attri
+,Weapon,Fighter,40,Blunt2h,190/83,,,,crit dmg: max 15%; hp: max 20%
+,Weapon,Fighter,52,Blunt2h,236/99,,,,crit dmg: max 20%; hp: max 25%
+,Weapon,Fighter,61,Blunt2h,282/114,,,,crit dmg: max 25%; hp: max 30%
+,Weapon,Fighter,76,Blunt2h,342/132,,,,crit dmg: max 30%; hp: max 35%
+
+,Weapon,Fighter,20,Duals,80/54,,no attri
+,Weapon,Fighter,40,Duals,136/83,,,,crit dmg: max 20%; crit rate: max 10%; as: 5%;
+,Weapon,Fighter,52,Duals,170/99,,,,crit dmg: max 25%; crit rate: max 15%; as: 10%;
+,Weapon,Fighter,61,Duals,203/114,,,,crit dmg: max 30%; crit rate: max 20%; as: 15%;
+,Weapon,Fighter,76,Duals,271/132,,,,crit dmg: max 35%; crit rate: max 25%; as: 20%;
+
+,Weapon,Fighter,20,Bow,191/55,,slow => as:293; no attri
+,Weapon,Fighter,40,Bow,316/84,,slow => as:293;,,crit dmg: max 20%; crit rate: max 10%; patk: 5%;
+,Weapon,Fighter,40,Bow,323/84,,very slow => as:227;,,crit dmg: max 20%; crit rate: max 10%; patk: 5%;
+,Weapon,Fighter,52,Bow,400/99,,slow => as:293;,,crit dmg: max 25%; crit rate: max 15%; patk: 6%;
+,Weapon,Fighter,61,Bow,528/114,,very slow => as:227;,,crit dmg: max 30%; crit rate: max 20%; patk: 8%;
+,Weapon,Fighter,76,Bow,581/132,,slow => as:293;,,crit dmg: max 35%; crit rate: max 25%; patk: 10%;
+
+,Weapon,Mage,20,Wand (1h sword/blunt),74/72,,no attri - they are one handed and have less mAtk than the two handed .. on 76+ all mages get an offhand support passive skill (nukes get +mAtk to compansate; healer +heal power; supports +mp/mpregen) and the offhand gives +p.def(as arnor not like shield)/+hp/-eva - but we will get to there
+,Weapon,Mage,40,Wand (1h sword/blunt),111/101,,,,cast: max 15%; matk: max 5%; mcrit rate: max 5%
+,Weapon,Mage,52,Wand (1h sword/blunt),140/122,,,,cast: max 15%; matk: max 7%; mcrit rate: max 6%
+,Weapon,Mage,61,Wand (1h sword/blunt),186/152,,,,cast: max 15%; matk: max 10%; mcrit rate: max 8%
+,Weapon,Mage,76,Wand (1h sword/blunt),225/175,,,,cast: max 15%; matk: max 15%; mcrit rate: max 10%
+
+,Weapon,Mage,20,Staff (2h blunt),90/79,, no attri
+,Weapon,Mage,40,Staff (2h blunt),135/111,,,,cast: max 15%; matk: max 5%; mcrit rate: max 5%
+,Weapon,Mage,52,Staff (2h blunt),189/145,,,,cast: max 15%; matk: max 7%; mcrit rate: max 6%
+,Weapon,Mage,61,Staff (2h blunt),226/167,,,,cast: max 15%; matk: max 10%; mcrit rate: max 8%
+,Weapon,Mage,76,Staff (2h blunt),274/193,,,,cast: max 15%; matk: max 15%; mcrit rate: max 10%

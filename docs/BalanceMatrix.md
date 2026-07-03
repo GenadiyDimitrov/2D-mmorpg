@@ -4,6 +4,12 @@
 > whenever a combat formula or constant changes. Reference point for the matrix:
 > **level 40, no buffs, same starter (F-grade) gear.**
 
+> **⚠ GEAR CAVEAT (owner, 2026-07-03):** every table here assumes **newbie (lvl 1–19) gear** —
+> so it's only accurate for a low-level player. As the player equips stronger sets the numbers
+> change (esp. player→mob, where pAtk/pDef scale hard). Owner is providing **lvl 40 / 52 / 61 / 76
+> armor SETS (mage + fighter) + weapons** for those bands → template at `docs/gear/gear_sets.csv`.
+> **TODO:** once filled, regenerate §G/§H per gear tier (each band uses its own set + weapon).
+
 > **Update 2026-06-26 (healer effect layer):** added a broad buff/effect primitive
 > layer (channel-split P/M.Atk buffs, p/m crit rate, crit-dmg/rate resist, bow resist,
 > magic-fail floor/resist, interrupt power/resist, melee/spell vamp, cooldown reduction,
@@ -246,3 +252,60 @@ buffed (robe mastery + Spirit Training + Speed buff). Fighter ≈ 1 hit/s; mage 
 > **KEEP IN SYNC:** the three tables above (damage / hits-to-kill / seconds) are one set —
 > regenerate ALL of them whenever a combat formula, constant, stat, weapon/armor/set, or buff
 > changes. They share the same assumptions block.
+
+---
+
+## H. Mob ↔ Player — after the mob base-stat CURVE + ranged/caster mobs (2026-07-03)
+
+> **Why:** mob stats now come from the authored per-level curve (`MobBaseStats`, from
+> `docs/mobs/mob_base_stats.csv`) instead of the old crude formula — **~2–3× the old HP/def/atk** —
+> and mobs gained ARCHER (bow, ×2 P.Atk, light armor) and MAGE (no basic; nuke + jab, ×1.5 M.Atk,
+> ×0.5 P.Atk, ×0.7 P.Def) roles. Player stats = §G no-buff (Human, newbie set + 5 jewels). Mob swing
+> ≈ **2.0 s** (`MobAttackIntervalTicks` 20). Mage-mob nuke ≈ 4 s cast + 1 s reuse. Same-level. ESTIMATE,
+> crit not folded (adds ~5–10%). Variance averaged to 1.0.
+
+**Same-level mob base stats (curve):** L40 → HP 1980 · pDef 143 · mDef 112 · P.Atk 171 · M.Atk 118.
+L75 → HP 12420 · pDef 490 · mDef 390 · P.Atk 1065 · M.Atk 748.
+(Archer P.Atk = ×2; Mage M.Atk = ×1.5, mob-nuke power = 62 @L40 / 107 @L75, jab 17 / 28.)
+
+### H1. MOB → PLAYER — damage per hit / cast (and hits-to-kill · seconds)
+| L40 mob ↓ \ target → | vs Fighter (HP 1246) | vs Mage (HP 421) |
+|---|---|---|
+| **Melee** (P.Atk 171) | 50 · 25 hits · ~50 s | 59 · 7 hits · ~14 s |
+| **Archer** (P.Atk 342, ranged) | 100 · 12 hits · ~25 s | 119 · **4 hits · ~8 s** |
+| **Mage** (nuke 62) | 65 · 19 casts · long | 56 · 8 casts · ~32 s |
+
+| L75 mob ↓ \ target → | vs Fighter (HP 3691) | vs Mage (HP 1233) |
+|---|---|---|
+| **Melee** (P.Atk 1065) | 256 · 14 hits · ~28 s | 294 · 4 hits · ~8 s |
+| **Archer** (P.Atk 2130, ranged) | 511 · 7 hits · ~14 s | 588 · **2 hits · ~4 s** |
+| **Mage** (nuke 107) | 190 · 19 casts · long | 162 · 8 casts · long |
+
+### H2. PLAYER → MOB @40 (level-appropriate newbie gear) — the ~2–3× longer fights
+| Attacker | dmg/hit | vs L40 mob (HP 1980) |
+|---|---|---|
+| **Fighter** basic (pAtk 158, pDef 143) | 85 | 23 hits · ~23 s |
+| **Mage** nuke (Flamebolt 95, mDef 112) | 86 | 23 casts · ~83 s |
+> Old L40 mob ≈ 830 HP → the fighter's ~23 s was ~10 s before: the curve ~**2.3×'d** fight length, as intended.
+>
+> **@75 player→mob omitted on purpose:** §G's L75 player still wears *newbie* gear, so its pAtk (385)
+> is far below what the new mob pDef (490) assumes — you'd get ~60/hit (≈200 hits), a gear artifact,
+> not a mob problem. A real L75 player has A-grade gear (pAtk many× higher). Regenerate this row only
+> against level-appropriate gear.
+
+### H3. Reading it (findings)
+- **No one-shots anywhere.** The lowest hits-to-kill is **2** (L75 archer mob → mage, from range); a
+  same-level melee mob needs 4 (mage) to 25 (fighter). So the 2–3× jump did **not** create a "mob
+  deletes you" case at 40/75. (Low levels <40 and the cleric-solo loop still want a real playtest —
+  not modeled here; but with no one-shot at 40/75 and HP/def scaling together, low levels should be OK.)
+- **Fights got ~2–3× longer for players** (H2) — exactly the point of the curve. A nuker/cleric now
+  grinds a same-level mob HP pool 2–3× bigger, so DPS/heal sustain matters more. **Cleric-solo-a-L30
+  target now needs a playtest** — it's "slower" as intended; watch it's not "impossible."
+- **Archer mobs are the sharp edge.** ×2 P.Atk from ~450 range = a same-level MAGE dies in **4 (@40) /
+  2 (@75)** arrows before closing. Fighters are fine (7–12). Intended flavor (a robe caster shouldn't
+  eat arrows), but **the ×2 is my session pick from your 1.5–2.5 range** — if it feels too lethal to
+  squishy targets, dial the archer multiplier to ~1.7–1.8 (`MobRole.Archer` in `SpawnOneInZone`). Your call.
+- **Mage mobs are slow but steady + FINITE.** ~4 s nukes and MP-gated — outlast their mana and they're
+  helpless. Fair. Their per-hit is between melee and archer.
+
+> Regenerate H when the mob curve, a combat constant, the role multipliers, or the mob spells change.

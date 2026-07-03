@@ -39,6 +39,10 @@ public readonly record struct MobMod(
     float PierceResist = 1f, // vs sword / dual
     float BluntResist = 1f,  // vs blunt
     float BowDefResist = 1f, // vs bow (P.Def route; distinct from BowResist damage fraction)
+    // Extra leveled-mastery multipliers (see MobMasteries): max MP, attack speed (>1 = faster),
+    // HP/MP regen, and a FLAT evasion add (from the Armor Weight mastery). Defaults inert.
+    float MaxMp = 1f, float AtkSpeed = 1f, float HpRegen = 1f, float MpRegen = 1f,
+    int EvaFlat = 0,
     bool Boss = false,       // raid-boss passive (adds crit/bow resistance on spawn)
     string Name = "")        // display label for the inspect/target window
 {
@@ -56,6 +60,11 @@ public readonly record struct MobMod(
         if (PierceResist != 1f) yield return $"Sword/Dual {ResistWord(PierceResist)}";
         if (BluntResist != 1f)  yield return $"Blunt {ResistWord(BluntResist)}";
         if (BowDefResist != 1f) yield return $"Bow {ResistWord(BowDefResist)}";
+        if (MaxMp != 1f)   yield return $"Max MP {Sign(MaxMp)}";
+        if (AtkSpeed != 1f) yield return $"Atk.Spd {Sign(AtkSpeed)}";
+        if (HpRegen != 1f) yield return $"HP Regen {Sign(HpRegen)}";
+        if (MpRegen != 1f) yield return $"MP Regen {Sign(MpRegen)}";
+        if (EvaFlat != 0)  yield return $"Evasion {(EvaFlat > 0 ? "+" : "")}{EvaFlat}";
         // Bow/Crit resist are rendered from the numeric DTO fields (uniform for mobs
         // and players), so they're not repeated here.
         if (Boss) yield return "Raid Boss";
@@ -225,10 +234,11 @@ public static class MobCatalog
             Mob("cursed_blade", "Cursed Blade", 61, MobCategory.Undead, 130f, true),
             Mob("bogwood", "Bogwood", 62, MobCategory.Plant, 90f, false),
             Mob("fen_lizardman", "Fen Lizardman", 62, MobCategory.Humanoid, 132f, true),
-            // Golem-type stone/obsidian body: sword/dual glance off (Pierce ×1.43 P.Def), arrows
-            // barely scratch (Bow ×2), but a heavy blunt smashes it (Blunt ×0.5).
+            // Golem-type stone/obsidian body, authored via the leveled MASTERY table: Piercing
+            // Resistance L10 (×1.43 P.Def vs sword/dual), Bow Resistance L12 (×2), Blunt Resistance
+            // L2 (×0.5 = weak). Same effect as a hand MobMod, but "picks a level" like a class.
             Mob("obsidian_knight", "Obsidian Knight", 63, MobCategory.Humanoid, 132f, true,
-                new MobMod(PierceResist: 1.43f, BowDefResist: 2f, BluntResist: 0.5f, Name: "Stoneplate")),
+                MobMasteries.Build(pierce: 10, bow: 12, blunt: 2, name: "Stoneplate")),
             Mob("crimson_drake", "Crimson Drake", 64, MobCategory.Dragon, 150f, true),
             Mob("wildhorn_scout", "Wildhorn Scout", 64, MobCategory.Humanoid, 138f, true),
             Mob("dread_knight", "Dread Knight", 65, MobCategory.Undead, 135f, true),

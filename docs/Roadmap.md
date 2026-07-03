@@ -28,9 +28,11 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   helpless (watcher_eye/aether_wisp/rift_portling/radiant_mage). Reuses the player cast pipeline
   (LearnedSkills + QueuedSkillId); mobs cast at authored time (WIT multiplier bypassed).
 - [x] **Golem-type resist** — obsidian_knight: Pierce ×1.43 P.Def, Bow ×2, Blunt ×0.5 (weak).
-- [ ] **RE-CHECK balance after the mob curve** — mobs are now ~2-3× prior HP/def/atk. Regenerate
-  `docs/BalanceMatrix.md`; re-verify "cleric solos L30 mob" and "mobs don't one-shot players".
-  Now also: archer/mage-mob damage (dmg feel of ranged pokes + nukes).
+- [~] **RE-CHECK balance after the mob curve** — mobs are now ~2-3× prior HP/def/atk. **Matrix
+  regenerated** (`docs/BalanceMatrix.md` §H, Mob↔Player @40/@75 melee/archer/mage): NO one-shots
+  (min 2 hits), player→mob fights ~2-3× longer as intended. **Open for playtest/decision:** cleric-
+  solo-L30 loop (not modeled), low-level (<40) feel, and whether archer ×2 P.Atk is too lethal to
+  squishies (mage dies in 2-4 arrows) → maybe dial to ~1.7-1.8 (owner's call).
 - [>] **Base class kits** — owner to provide several passives/buffs/skills per class; wire them
   as real per-class content (beyond the placeholder discipline kits), then tune.
 - [>] **Fighter balance pass** — awaiting owner targets (Venomweaver burst cap, tank durability
@@ -118,9 +120,12 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 - [~] **Active mob skills** — STARTED: caster (Mage-role) mobs cast two generic leveled spells
   (nuke + jab, MP-gated). Still to do: per-mob UNIQUE skills, mob buffs/heals/CC, boss skills, and
   a client cast-bar for mobs (today the player only sees the damage land, no visible mob cast).
-- [ ] **Leveled MobMastery layer (mobs_passives.csv)** — the full per-level mastery TABLES
-  (Weapon/Armor Weight, M.Atk/P.Atk/HP/MP/Regen/Def Mods, resistances) mobs pick a level in.
-  Today's mob passives are the flat `MobMod` + the `MobRole` archetypes, not the leveled tables.
+- [~] **Leveled MobMastery layer (mobs_passives.csv)** — BUILT (`Game.Shared/MobMasteries.cs`): the
+  per-level tables (Weapon/Armor Weight, M.Atk/P.Atk/Max HP/MP/Regen HP/MP/M.Def/P.Def Mods, Pierce/
+  Blunt/Bow Resistance) + `MobMasteries.Build(...)` that resolves per-mastery LEVEL picks into a
+  `MobMod` (extended with MaxMp/AtkSpeed/HpRegen/MpRegen mults + flat Eva; applied at spawn). Demo:
+  obsidian_knight authored via `Build(pierce:10, bow:12, blunt:2)`. STILL TODO: Stun/Fear/status
+  resists (with the CC layer), and moving mob picks off `MobMod` onto a mob StatMods fold if desired.
 - [ ] **Boss mechanics** — ±10-level rule, boss skills, enrage; raid-boss timers already exist.
 - [ ] **Pets & summons** — immovable healing totem, class pets (Trapper/tank), mage
   summoner. ([[pets-summons-design]])

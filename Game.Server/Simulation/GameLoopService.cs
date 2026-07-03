@@ -4180,13 +4180,18 @@ var effect = def.Effect;
         if (mobType.Mod is MobMod mod)
         {
             mob.MaxHp = Math.Max(1, (int)(mob.MaxHp * mod.Hp));
+            mob.MaxMp = Math.Max(1, (int)(mob.MaxMp * mod.MaxMp));
             mob.Defence = Math.Max(1, (int)(mob.Defence * mod.PDef));
             mob.MagicDefence = Math.Max(1, (int)(mob.MagicDefence * mod.MDef));
             mob.AttackPower = Math.Max(1, (int)(mob.AttackPower * mod.PAtk));
             mob.MagicAttack = Math.Max(1, (int)(mob.MagicAttack * mod.MAtk));
             mob.BasicAttackPower = Math.Max(1, (int)(mob.BasicAttackPower * mod.PAtk));
-            mob.Evasion = (int)(mob.Evasion * mod.Evasion);
+            mob.Evasion = (int)(mob.Evasion * mod.Evasion) + mod.EvaFlat;
             mob.Accuracy = (int)(mob.Accuracy * mod.Accuracy);
+            // Leveled-mastery extras: attack speed (>1 = faster → shorter interval), HP/MP regen.
+            if (mod.AtkSpeed != 1f) mob.AttackSpeedMultiplier /= mod.AtkSpeed;
+            if (mod.HpRegen != 1f) mob.HpRegenMult *= mod.HpRegen;
+            if (mod.MpRegen != 1f) mob.MpRegenMult *= mod.MpRegen;
             mob.BowResist = Math.Clamp(mod.BowResist, 0f, 0.9f);
             mob.CritRateResist = Math.Clamp(mod.CritResist, 0f, 1f);
             // Weapon-type resistance coefficients (P.Def route; applied per-hit by attacker weapon).

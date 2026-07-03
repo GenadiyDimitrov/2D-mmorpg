@@ -44,11 +44,18 @@ public readonly record struct StatMods(
     // and the nuker "mpWhenRestored" bonus. All summed.
     float InterruptResist = 0f,
     float CritDmgResist = 0f, float CritRateResist = 0f, float BowResist = 0f,
-    float RestoreMpBonus = 0f)
+    float RestoreMpBonus = 0f,
+    // Primary-stat deltas (flat, SUMMED). Applied to the entity's core stats BEFORE the derived
+    // stats are computed, so a set's "CON +3" actually raises HP, "DEX +1" raises eva/acc/crit, etc.
+    // (item/set sources — the "formula counts for them" per owner).
+    float Str = 0f, float Dex = 0f, float Con = 0f, float Int = 0f, float Wit = 0f, float Men = 0f,
+    // Lifesteal + reflect fractions (from gear/sets). MeleeVamp/SpellVamp already exist on Entity;
+    // Reflect (return a fraction of melee damage to the attacker) has NO logic yet — carried so
+    // set data can declare it now; wired when the reflect mechanic lands.
+    float MeleeVamp = 0f, float SpellVamp = 0f, float Reflect = 0f)
 {
-    // NOTE: vamp, cooldown, interrupt POWER, the PvE/PvP×skill/magic/basic matrix, shield
-    // block/def, bow range and the combat FLOORS are added as the passive/buff sources migrate
-    // (docs/StatMods.md phases 3-5).
+    // NOTE: cooldown, interrupt POWER, the PvE/PvP×skill/magic/basic matrix, shield block/def, bow
+    // range and the combat FLOORS are added as the passive/buff sources migrate (docs/StatMods.md).
 
     /// <summary>Fold a set of source mods into running totals (flats SUM, percents COMPOUND
     /// — see docs/StatMods.md: final = (base + Σflat) × ∏(1+pct%)).</summary>
@@ -82,7 +89,9 @@ public readonly record struct StatTotals(
     float MpRegen = 0f, float MpRegenPct = 0f,
     float InterruptResist = 0f,
     float CritDmgResist = 0f, float CritRateResist = 0f, float BowResist = 0f,
-    float RestoreMpBonus = 0f)
+    float RestoreMpBonus = 0f,
+    float Str = 0f, float Dex = 0f, float Con = 0f, float Int = 0f, float Wit = 0f, float Men = 0f,
+    float MeleeVamp = 0f, float SpellVamp = 0f, float Reflect = 0f)
 {
     /// <summary>Compound two percents: ∏(1+p)−1, so combining is multiplicative and 0 = inert.</summary>
     private static float Mul(float a, float b) => (1f + a) * (1f + b) - 1f;
@@ -105,7 +114,9 @@ public readonly record struct StatTotals(
         MpRegen + s.MpRegen, Mul(MpRegenPct, s.MpRegenPct),
         InterruptResist + s.InterruptResist,
         CritDmgResist + s.CritDmgResist, CritRateResist + s.CritRateResist, BowResist + s.BowResist,
-        RestoreMpBonus + s.RestoreMpBonus);
+        RestoreMpBonus + s.RestoreMpBonus,
+        Str + s.Str, Dex + s.Dex, Con + s.Con, Int + s.Int, Wit + s.Wit, Men + s.Men,
+        MeleeVamp + s.MeleeVamp, SpellVamp + s.SpellVamp, Reflect + s.Reflect);
 
     /// <summary>Apply a (flat, pct) pair to a base value: `(base + flat) × (1 + pct)`,
     /// floored at 0. The single place the combine convention is defined.</summary>

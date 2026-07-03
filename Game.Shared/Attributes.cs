@@ -22,6 +22,9 @@ public enum AttributeType
     MpRegen = 10,    // flat MP per second
     CritRate = 11,   // physical crit-rate points (percent)
     CritDamage = 12, // crit-damage bonus points (percent of the crit multiplier)
+    // Caster-weapon (wand/staff) rolls — APPEND-ONLY.
+    MagicAttackPercent = 13, // +% M.Atk
+    MagicCritRate = 14,      // magic crit-rate points (percent)
 }
 
 /// <summary>One rolled attribute on an item instance.</summary>
@@ -145,6 +148,34 @@ public static class AttributeSystem
         _ => true
     };
 
+    /// <summary>An item attribute as a <see cref="StatMods"/> bundle — the single mapping the
+    /// StatMods-based item/set application reads (percent points → fractions, flats pass through).
+    /// AttackPercent hits BOTH channels (as today); MagicAttackPercent is caster-only.</summary>
+    public static StatMods ToStatMods(ItemAttribute a)
+    {
+        float v = a.Value;
+        float f = v / 100f;   // percent points → fraction
+        return a.Type switch
+        {
+            AttributeType.HealthPercent      => new StatMods(MaxHpPct: f),
+            AttributeType.ManaPercent        => new StatMods(MaxMpPct: f),
+            AttributeType.SpeedPercent       => new StatMods(MoveSpeedPct: f),
+            AttributeType.CastSpeedPercent   => new StatMods(CastSpeedPct: f),
+            AttributeType.AttackSpeedPercent => new StatMods(AtkSpeedPct: f),
+            AttributeType.AttackPercent      => new StatMods(PAtkPct: f, MAtkPct: f),
+            AttributeType.EvasionPercent     => new StatMods(EvasionPct: f),
+            AttributeType.DefencePercent     => new StatMods(PDefPct: f),
+            AttributeType.Accuracy           => new StatMods(Accuracy: v),
+            AttributeType.HpRegen            => new StatMods(HpRegen: v),
+            AttributeType.MpRegen            => new StatMods(MpRegen: v),
+            AttributeType.CritRate           => new StatMods(CritRate: f),
+            AttributeType.CritDamage         => new StatMods(CritDamage: f),
+            AttributeType.MagicAttackPercent => new StatMods(MAtkPct: f),
+            AttributeType.MagicCritRate      => new StatMods(MagicCritRate: f),
+            _                                => default,
+        };
+    }
+
     /// <summary>Roll a fresh set of attributes for a dropped item instance: pick
     /// distinct types from the item's pool (by weapon type / armor weight), each
     /// rolled within its grade range.</summary>
@@ -234,6 +265,8 @@ public static class AttributeSystem
         AttributeType.MpRegen => "MP Regen",
         AttributeType.CritRate => "Crit Rate",
         AttributeType.CritDamage => "Crit Damage",
+        AttributeType.MagicAttackPercent => "M.Atk",
+        AttributeType.MagicCritRate => "Magic Crit Rate",
         _ => type.ToString()
     };
 }
