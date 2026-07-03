@@ -93,6 +93,7 @@ public class GameLoopService : BackgroundService
                 case RerollAttributesCmd c: HandleRerollAttributes(c); break;
                 case RemoveItemCmd c: HandleRemoveItem(c); break;
                 case DebugGiveCmd c: HandleDebugGive(c); break;
+                case DebugCancelAttrCmd c: HandleDebugCancelAttr(c); break;
                 case DebugLevelCmd c: HandleDebugLevel(c); break;
                 case DebugLearnAllCmd c: HandleDebugLearnAll(c); break;
                 case DebugGoldCmd c: HandleDebugGold(c); break;
@@ -813,6 +814,40 @@ public class GameLoopService : BackgroundService
         }
         SendSystemToEntity(player, $"[DEBUG] Added {def.Name}.");
         SendInventory(player);
+    }
+
+    /// <summary>DEBUG: strip an attribute (or all) off the equipped weapon, so you can test with
+    /// the base weapon or a single chosen attribute instead of the full rolled set.</summary>
+    private void HandleDebugCancelAttr(DebugCancelAttrCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+        var weapon = player.Inventory.FirstOrDefault(it => it.Equipped
+            && ItemCatalog.Get(it.DefId)?.Slot == EquipSlot.Weapon);
+        if (weapon is null || weapon.Attributes.Count == 0)
+        {
+            SendSystemToEntity(player, "[DEBUG] No equipped weapon with attributes.");
+            return;
+        }
+        if (cmd.Index < 0)
+        {
+            weapon.Attributes.Clear();
+            SendSystemToEntity(player, "[DEBUG] Cleared all weapon attributes.");
+        }
+        else if (cmd.Index < weapon.Attributes.Count)
+        {
+            var removed = weapon.Attributes[cmd.Index];
+            weapon.Attributes.RemoveAt(cmd.Index);
+            SendSystemToEntity(player, $"[DEBUG] Cancelled {AttributeSystem.DisplayName(removed.Type)}.");
+        }
+        else
+        {
+            SendSystemToEntity(player, $"[DEBUG] No attribute at index {cmd.Index} (have {weapon.Attributes.Count}).");
+            return;
+        }
+        player.RecomputeDerived();
+        SendInventory(player);
+        SendStats(player);
     }
 
     private void HandleDebugLevel(DebugLevelCmd cmd)

@@ -131,6 +131,10 @@ public record RemoveItemCmd(string ConnectionId, Guid InstanceId) : IGameCommand
 /// <summary>DEBUG-only: grant an item by def id.</summary>
 public record DebugGiveCmd(string ConnectionId, string DefId) : IGameCommand;
 
+/// <summary>DEBUG-only: strip an attribute off the EQUIPPED weapon (Index = which; -1 = all).
+/// Lets you test with only the base weapon / a chosen attribute, not the full rolled set.</summary>
+public record DebugCancelAttrCmd(string ConnectionId, int Index) : IGameCommand;
+
 /// <summary>DEBUG-only: grant one level.</summary>
 public record DebugLevelCmd(string ConnectionId) : IGameCommand;
 

@@ -373,9 +373,16 @@ L75 → HP 12420 · pDef 490 · mDef 390 · P.Atk 1065 · M.Atk 748.
 - **+ BUFFS** (the 5 NPC buffs: Might +12% atk, Focus +20% crit, Force +55% M.Atk≈+24% dmg, Speed atk/cast):
   another ~×1.3, so **buffed** high-tier ≈ fighter **~67 hits**, mage **~88 casts** at L76.
 
-**Revised reading:** with attributes + set + buffs the high-tier solo grind roughly **halves** vs raw I3, so
-it's long-but-not-absurd. The offense-lags-at-high-tier trend is real but softer. Best fixes: **add a jewel
-tier** (mage mDef) and a modest high-tier weapon-atk bump or mob HP/def easing at ~70–85.
+**Revised reading:** with attributes + set + buffs the high-tier solo grind roughly **halves** vs raw I3.
+
+**OWNER INTENT (2026-07-03) — this is BY DESIGN, not a bug to "fix":**
+- **Undergeared for a zone SHOULD be much harder** — that's the intended gate.
+- **L76+ solo is MEANT to be harder** (not impossible) — L2's clan/party design. Once the **40+ class
+  passives**, more **buffs**, and (later) **dances/songs** land, and with a **party**, it balances out.
+  Do NOT over-buff weapons or nerf the high-tier mob curve to make solo easy — leave the gap.
+- The stopgap for solo players = a **full-buff NPC buffer up to lvl 75** (see roadmap), until they make an
+  alt buffer / one-man-party or find a real one. So model the "buffed" columns as the expected solo baseline.
+- Only concrete follow-up from §I: **add the jewel tier** (mage M.Def) — already in `gear_sets.csv`.
 
 > Regenerate I when the gear CSV, the mob curve, or a combat constant changes. Exact version = read the
 > derived stats in-game once the gear is equipped (this estimate carries §G's mastery/training baseline).

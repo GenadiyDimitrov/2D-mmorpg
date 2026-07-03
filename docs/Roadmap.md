@@ -34,10 +34,13 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   high tiers** (solo grind balloons — fighter 13→131 hits, mage 19→210 casts L40→76). **Owner decision:**
   raise high-tier weapon atk / ease mob HP+def at 61-85 / lean on crit+attributes+party; add a jewel tier.
   Also open: cleric-solo-L30, <40 feel, archer ×2 lethality to squishies.
-- [ ] **Gear/item overhaul** — build `docs/gear/gear_sets.csv`: weapons (+ level-based attributes via
-  StatMods, `IsMagicWeapon` bool, attribute-cancel debug), armor sets (bonuses via StatMods incl.
-  main-stats), remove old armor drops + add new as rare, debug-give single body + accessory box. FOUNDATION
-  DONE (StatMods carries item/set stats; MAtk%/MagicCrit attr types; ToStatMods bridge). See [[gear-item-overhaul]].
+- [~] **Gear/item overhaul** (`docs/gear/gear_sets.csv`). **DONE:** foundation (StatMods carries item/set
+  stats; MAtk%/MagicCrit attr types + ToStatMods bridge) + **40 tiered WEAPONS** (8 types × 20/40/52/61/76,
+  ids `<key>_t<level>`, D/C/B/A display) with level-driven attributes (count 40→1/52→1/61→2/76→3, per-level
+  maxes, caster pool via `IsMagicWeapon`, bow slow/very-slow via `AttackSpeedBase`) + **attribute-cancel
+  debug** (`DebugCancelAttr(index)`; -1 = all). **NEXT:** armor sets (bonuses via StatMods incl. main-stats,
+  main-stat pre-pass in RecomputeDerived) + debug-give single body + accessory box; remove old armor drops +
+  add new as rare; regen matrix. See [[gear-item-overhaul]].
 - [>] **Base class kits** — owner to provide several passives/buffs/skills per class; wire them
   as real per-class content (beyond the placeholder discipline kits), then tune.
 - [>] **Fighter balance pass** — awaiting owner targets (Venomweaver burst cap, tank durability
@@ -134,8 +137,10 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 - [ ] **Boss mechanics** — ±10-level rule, boss skills, enrage; raid-boss timers already exist.
 - [ ] **Pets & summons** — immovable healing totem, class pets (Trapper/tank), mage
   summoner. ([[pets-summons-design]])
-- [ ] **Stronger buff versions** — the NPC newbie buffer is a 3rd-class-max stand-in; real
-  Buffer/4th-class buff tiers.
+- [ ] **Buffer = "Enchanter" + full-buff NPC to 75** — owner direction ([[buffer-enchanter-design]]):
+  ONE buffer class holds ALL buffs (race-flavored); add **dances/songs** (extra atk/cast mults) to the NPC
+  buffer later; a **full-buff NPC buffer up to lvl 75** is the SOLO stopgap. High-tier solo being hard is
+  INTENDED — buffs/party close the gap, don't nerf the mob curve.
 - [ ] **Position bonuses** — backstab / flanking damage (hook reserved).
 - [ ] **PvP / PvE multipliers** — wire the multiplier hooks (currently default 1.0).
 - [ ] **Perfect / excellent block** — shield block tiers above the current flat block.

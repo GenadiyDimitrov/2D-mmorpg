@@ -176,6 +176,54 @@ public static class AttributeSystem
         };
     }
 
+    // ===================================================================================
+    //  LEVEL-TIER weapon attributes (docs/gear/gear_sets.csv). Count comes from the item's
+    //  LEVEL (not grade+rarity): 40→1, 52→1, 61→2, 76→3 (20 = none). The MAX of each attribute
+    //  is per (weapon family, attribute, tier). Caster weapons (IsMagicWeapon) roll the caster pool.
+    // ===================================================================================
+    public static int TieredWeaponAttributeCount(int itemLevel) =>
+        itemLevel >= 76 ? 3 : itemLevel >= 61 ? 2 : itemLevel >= 40 ? 1 : 0;
+
+    public static AttributeType[] TieredWeaponPool(WeaponType type, bool isMagic)
+    {
+        if (isMagic)
+            return new[] { AttributeType.CastSpeedPercent, AttributeType.MagicAttackPercent, AttributeType.MagicCritRate };
+        return type.Base() switch
+        {
+            WeaponType.Sword => new[] { AttributeType.CritRate, AttributeType.AttackSpeedPercent, AttributeType.HealthPercent },
+            WeaponType.Blunt => new[] { AttributeType.CritDamage, AttributeType.HealthPercent },
+            WeaponType.Dual  => new[] { AttributeType.CritDamage, AttributeType.CritRate, AttributeType.AttackSpeedPercent },
+            WeaponType.Bow   => new[] { AttributeType.CritDamage, AttributeType.CritRate, AttributeType.AttackPercent },
+            _ => Array.Empty<AttributeType>()
+        };
+    }
+
+    private static int TierIdx(int level) => level >= 76 ? 3 : level >= 61 ? 2 : level >= 52 ? 1 : 0;
+
+    /// <summary>Max value of a tiered weapon attribute at its level (from the CSV pools).</summary>
+    public static int TieredWeaponMax(WeaponType type, bool isMagic, AttributeType attr, int level)
+    {
+        int i = TierIdx(level);
+        return (isMagic, type.Base(), attr) switch
+        {
+            (true, _, AttributeType.CastSpeedPercent)   => new[] { 15, 15, 15, 15 }[i],
+            (true, _, AttributeType.MagicAttackPercent) => new[] { 5, 7, 10, 15 }[i],
+            (true, _, AttributeType.MagicCritRate)      => new[] { 5, 6, 8, 10 }[i],
+            (false, WeaponType.Sword, AttributeType.CritRate)           => new[] { 5, 10, 15, 20 }[i],
+            (false, WeaponType.Sword, AttributeType.AttackSpeedPercent) => new[] { 5, 7, 10, 15 }[i],
+            (false, WeaponType.Sword, AttributeType.HealthPercent)      => new[] { 10, 15, 20, 25 }[i],
+            (false, WeaponType.Blunt, AttributeType.CritDamage)         => new[] { 15, 20, 25, 30 }[i],
+            (false, WeaponType.Blunt, AttributeType.HealthPercent)      => new[] { 20, 25, 30, 35 }[i],
+            (false, WeaponType.Dual, AttributeType.CritDamage)          => new[] { 20, 25, 30, 35 }[i],
+            (false, WeaponType.Dual, AttributeType.CritRate)            => new[] { 10, 15, 20, 25 }[i],
+            (false, WeaponType.Dual, AttributeType.AttackSpeedPercent)  => new[] { 5, 10, 15, 20 }[i],
+            (false, WeaponType.Bow, AttributeType.CritDamage)           => new[] { 20, 25, 30, 35 }[i],
+            (false, WeaponType.Bow, AttributeType.CritRate)             => new[] { 10, 15, 20, 25 }[i],
+            (false, WeaponType.Bow, AttributeType.AttackPercent)        => new[] { 5, 6, 8, 10 }[i],
+            _ => 0
+        };
+    }
+
     /// <summary>Roll a fresh set of attributes for a dropped item instance: pick
     /// distinct types from the item's pool (by weapon type / armor weight), each
     /// rolled within its grade range.</summary>
@@ -183,6 +231,22 @@ public static class AttributeSystem
     {
         var result = new List<ItemAttribute>();
         if (def.NoAttributes) return result;   // newbie/starter gear never rolls attributes
+
+        // Level-tier WEAPONS: count + max by level (armor tiers carry no attributes for now).
+        if (def.Slot == EquipSlot.Weapon && def.ItemLevel > 0)
+        {
+            var wpool = TieredWeaponPool(def.WeaponType, def.IsMagicWeapon).ToList();
+            int wc = Math.Min(TieredWeaponAttributeCount(def.ItemLevel), wpool.Count);
+            for (int i = 0; i < wc; i++)
+            {
+                int idx = rng.Next(wpool.Count);
+                var t = wpool[idx];
+                wpool.RemoveAt(idx);
+                int max = TieredWeaponMax(def.WeaponType, def.IsMagicWeapon, t, def.ItemLevel);
+                if (max > 0) result.Add(new ItemAttribute(t, rng.Next(1, max + 1)));
+            }
+            return result;
+        }
 
         AttributeType[] pool = PoolFor(def);
         if (pool.Length == 0) return result;

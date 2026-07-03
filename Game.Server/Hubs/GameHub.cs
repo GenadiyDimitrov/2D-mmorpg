@@ -325,6 +325,15 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>DEBUG: cancel an attribute on the equipped weapon (index; -1 = all).</summary>
+    public Task DebugCancelAttr(int index)
+    {
+#if DEBUG
+        _world.Commands.Enqueue(new DebugCancelAttrCmd(Context.ConnectionId, index));
+#endif
+        return Task.CompletedTask;
+    }
+
     public Task DebugLearnAll()
     {
 #if DEBUG

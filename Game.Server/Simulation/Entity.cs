@@ -647,6 +647,7 @@ public class Entity
         ArmorMasteryLabel = "";
 
         var bodyWeight = ArmorWeight.None;   // equipped BODY-slot armor weight (for masteries)
+        int weaponAsBase = 0;                // equipped weapon's attack-speed base override (0 = type default)
 
         foreach (var item in Inventory)
         {
@@ -665,7 +666,10 @@ public class Entity
             Evasion += EnchantRules.BonusAt(def.EvaBonus, item.Enchant);
 
             if (def.Slot == EquipSlot.Weapon)
+            {
                 WeaponType = def.WeaponType;
+                weaponAsBase = def.AttackSpeedBase;   // per-item speed (bow slow/very-slow), 0 = default
+            }
 
             if (def.Slot == EquipSlot.Shield)
             {
@@ -695,6 +699,7 @@ public class Entity
         // ----- Item attributes (rolled per drop) -----
         float hpPct = 0, mpPct = 0, speedPct = 0, castPct = 0, atkSpeedPct = 0, atkPct = 0, evaPct = 0, defPct = 0;
         float accFlat = 0, hpRegFlat = 0, mpRegFlat = 0, critRatePct = 0, critDmgPct = 0;
+        float mAtkPct = 0, magicCritPct = 0;
         foreach (var item in Inventory)
         {
             if (!item.Equipped) continue;
@@ -715,6 +720,8 @@ public class Entity
                     case AttributeType.MpRegen: mpRegFlat += attr.Value; break;
                     case AttributeType.CritRate: critRatePct += attr.Value; break;
                     case AttributeType.CritDamage: critDmgPct += attr.Value; break;
+                    case AttributeType.MagicAttackPercent: mAtkPct += attr.Value; break;   // caster wands/staves
+                    case AttributeType.MagicCritRate: magicCritPct += attr.Value; break;
                 }
             }
         }
@@ -722,7 +729,8 @@ public class Entity
         MaxHp += (int)(MaxHp * hpPct / 100f);
         MaxMp += (int)(MaxMp * mpPct / 100f);
         AttackPower += (int)(AttackPower * atkPct / 100f);
-        MagicAttack += (int)(MagicAttack * atkPct / 100f);
+        MagicAttack += (int)(MagicAttack * (atkPct + mAtkPct) / 100f);
+        if (magicCritPct != 0f) MagicCritChance = Math.Clamp(MagicCritChance + magicCritPct / 100f, 0f, StatCaps.MagicCritRate);
         Evasion += (int)(Evasion * evaPct / 100f);
         Defence += (int)(Defence * defPct / 100f);
         if (Kind == EntityKind.Player)
@@ -848,7 +856,9 @@ public class Entity
         MaxHp = (int)((MaxHp + buffHpFlat) * (1f + buffHpPct));
         MaxMp = (int)((MaxMp + buffMpFlat) * (1f + buffMpPct));
 
-        WeaponAttackBase = StatCalculator.WeaponAttackBaseSpeed(WeaponType);
+        WeaponAttackBase = weaponAsBase > 0
+            ? weaponAsBase
+            : StatCalculator.WeaponAttackBaseSpeed(WeaponType);
 
         // ----- Shield Mastery buffs (tank passives) scale the shield values.
         //  Percent magnitudes add fractionally; flat add directly. Only matter

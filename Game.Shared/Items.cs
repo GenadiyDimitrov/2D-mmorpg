@@ -158,7 +158,17 @@ public record ItemDef(
     // (newbie/starter gear). Enforced in AttributeSystem.Roll.
     bool NoAttributes = false,
     // Jewel sub-type (only when Slot == Jewel) — gates how many can be worn.
-    JewelType JewelType = JewelType.None)
+    JewelType JewelType = JewelType.None,
+    // Gear TIER by character level (0 = legacy grade/rarity gear). The level tiers
+    // (20/40/52/61/76 ≈ E/D/C/B/A) drive the number + max of rolled weapon attributes.
+    int ItemLevel = 0,
+    // Caster weapon flag: a wand/staff is a Blunt/TwoHandedBlunt type but rolls the CASTER
+    // attribute pool (cast/M.Atk/magic-crit) instead of the fighter blunt pool. Owner's pick —
+    // a simple flag that doesn't touch the WeaponType logic.
+    bool IsMagicWeapon = false,
+    // Per-item basic-attack speed base (333 = normal; higher = faster). 0 = use the weapon
+    // type default (StatCalculator.WeaponAttackBaseSpeed). Lets two bows differ (slow vs very slow).
+    int AttackSpeedBase = 0)
 {
     /// <summary>Unified top-level category (derived from EquipSlot). Weapons are MainHand,
     /// shields OffHand; everything else maps 1:1.</summary>
@@ -685,6 +695,9 @@ public static class ItemCatalog
                 EquipSlot.QuestItem, ItemGrade.F, ItemRarity.Legendary));
         }
 
+        // ----- Level-tier gear (docs/gear/gear_sets.csv). Weapons here; armor sets next. -----
+        list.AddRange(TieredWeapons());
+
         // ----- Duplicate-key guard + value fill: any item left at Value 0 gets the
         //       formula price (quest items / god one-offs stay 0 = not for trade). -----
         var dict = new Dictionary<string, ItemDef>();
@@ -696,6 +709,49 @@ public static class ItemCatalog
                     $"Duplicate item id '{item.Id}' ({item.Name} collides with {dict[item.Id].Name}).");
         }
         return dict;
+    }
+
+    /// <summary>Display letter for a gear LEVEL tier (20/40/52/61/76 → E/D/C/B/A). Cosmetic —
+    /// the item's <see cref="ItemDef.ItemLevel"/> drives the mechanics, not the letter.</summary>
+    public static string TierLetter(int level) =>
+        level >= 76 ? "A" : level >= 61 ? "B" : level >= 52 ? "C" : level >= 40 ? "D" : "E";
+
+    // Enum grade for pricing/sorting only (the enum has no C/D). ItemLevel is the real tier.
+    private static ItemGrade TierGrade(int level) =>
+        level >= 61 ? ItemGrade.A : level >= 40 ? ItemGrade.B : ItemGrade.E;
+
+    /// <summary>The level-tier weapons from docs/gear/gear_sets.csv — id "<key>_t<level>", base
+    /// P.Atk/M.Atk straight from the CSV (the two numbers), bow attack-speed variants, and the
+    /// IsMagicWeapon flag on wands/staves (their attributes roll the caster pool). Attribute COUNT
+    /// + MAX come from the level (AttributeSystem tiered methods), not grade/rarity.</summary>
+    private static IEnumerable<ItemDef> TieredWeapons()
+    {
+        var weapons = new (string Key, string Noun, WeaponType Type, bool Magic, float Range,
+            (int L, int P, int M, int As)[] Rows)[]
+        {
+            ("sword1h", "Sword",      WeaponType.Sword,          false, 0,
+                new[] { (20,92,54,0),(40,156,83,0),(52,194,99,0),(61,232,114,0),(76,281,132,0) }),
+            ("sword2h", "Greatsword", WeaponType.TwoHandedSword, false, 0,
+                new[] { (20,112,54,0),(40,190,83,0),(52,236,99,0),(61,282,114,0),(76,342,132,0) }),
+            ("blunt1h", "Mace",       WeaponType.Blunt,          false, 0,
+                new[] { (20,92,54,0),(40,156,83,0),(52,194,99,0),(61,232,114,0),(76,281,132,0) }),
+            ("blunt2h", "Warhammer",  WeaponType.TwoHandedBlunt, false, 0,
+                new[] { (20,112,54,0),(40,190,83,0),(52,236,99,0),(61,282,114,0),(76,342,132,0) }),
+            ("duals",   "Daggers",    WeaponType.Dual,           false, 0,
+                new[] { (20,80,54,0),(40,136,83,0),(52,170,99,0),(61,203,114,0),(76,271,132,0) }),
+            ("bow",     "Bow",        WeaponType.Bow,            false, 400,
+                new[] { (20,191,55,293),(40,316,84,293),(52,400,99,293),(61,528,114,227),(76,581,132,293) }),
+            ("wand",    "Wand",       WeaponType.Blunt,          true,  0,
+                new[] { (20,74,72,0),(40,111,101,0),(52,140,122,0),(61,186,152,0),(76,225,175,0) }),
+            ("staff",   "Staff",      WeaponType.TwoHandedBlunt, true,  0,
+                new[] { (20,90,79,0),(40,135,111,0),(52,189,145,0),(61,226,167,0),(76,274,193,0) }),
+        };
+        foreach (var w in weapons)
+            foreach (var (L, P, M, As) in w.Rows)
+                yield return new ItemDef($"{w.Key}_t{L}", $"{TierLetter(L)}-Grade {w.Noun}",
+                    EquipSlot.Weapon, TierGrade(L), ItemRarity.Rare,
+                    WeaponType: w.Type, AtkBonus: P, MAtkBonus: M, WeaponRange: w.Range,
+                    ItemLevel: L, IsMagicWeapon: w.Magic, AttackSpeedBase: As);
     }
 
     /// <summary>Formula gold value by slot/grade/rarity, used when an item def does
