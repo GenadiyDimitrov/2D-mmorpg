@@ -695,8 +695,11 @@ public static class ItemCatalog
                 EquipSlot.QuestItem, ItemGrade.F, ItemRarity.Legendary));
         }
 
-        // ----- Level-tier gear (docs/gear/gear_sets.csv). Weapons here; armor sets next. -----
+        // ----- Level-tier gear (docs/gear/gear_sets.csv): weapons + base armor/shield/accessory/
+        //       jewel pieces. SET BONUSES (and the dmg/support VARIANTS) come later; these carry only
+        //       their own base stats via the existing equip rails, so no new mechanic to test. -----
         list.AddRange(TieredWeapons());
+        list.AddRange(TieredArmor());
 
         // ----- Duplicate-key guard + value fill: any item left at Value 0 gets the
         //       formula price (quest items / god one-offs stay 0 = not for trade). -----
@@ -752,6 +755,70 @@ public static class ItemCatalog
                     EquipSlot.Weapon, TierGrade(L), ItemRarity.Rare,
                     WeaponType: w.Type, AtkBonus: P, MAtkBonus: M, WeaponRange: w.Range,
                     ItemLevel: L, IsMagicWeapon: w.Magic, AttackSpeedBase: As);
+    }
+
+    /// <summary>The level-tier ARMOR from docs/gear/gear_sets.csv — base bodies (Heavy/Light/Robe),
+    /// shields, weightless accessories (Gloves/Boots/Helm) and jewels (Necklace/Ring/Earring). Each
+    /// carries only its own base stat (P.Def / M.Def / +MP), via the existing equip path — SET BONUSES
+    /// and the dmg/support VARIANTS are deferred (they need the StatMods main-stat pass + a playtest).
+    /// Armors roll NO attributes for now (owner). Ids: "<key>_t<level>".</summary>
+    private static IEnumerable<ItemDef> TieredArmor()
+    {
+        int[] lv = { 20, 40, 52, 61, 76 };
+
+        // ---- Bodies: (key, noun, weight, pDef[5], mp[5]) — robe carries inherent +MaxMP. ----
+        var bodies = new (string Key, string Noun, ArmorWeight W, int[] Def, int[] Mp)[]
+        {
+            ("heavy", "Plate Armor",   ArmorWeight.Heavy, new[]{167,240,270,293,332}, new[]{0,0,0,0,0}),
+            ("light", "Leather Armor", ArmorWeight.Light, new[]{125,218,202,220,249}, new[]{0,0,0,0,0}),
+            ("robe",  "Robe",          ArmorWeight.Robe,  new[]{84,110,135,147,166},  new[]{274,508,613,718,866}),
+        };
+        foreach (var b in bodies)
+            for (int i = 0; i < lv.Length; i++)
+                yield return new ItemDef($"{b.Key}_t{lv[i]}", $"{TierLetter(lv[i])}-Grade {b.Noun}",
+                    EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Rare,
+                    Weight: b.W, ArmorSlot: ArmorSlot.Body, DefBonus: b.Def[i], MpBonus: b.Mp[i],
+                    ItemLevel: lv[i], NoAttributes: true);
+
+        // ---- Weightless accessories (shared across weights). ----
+        var acc = new (string Key, string Noun, ArmorSlot Slot, int[] Def)[]
+        {
+            ("gloves", "Gauntlets", ArmorSlot.Gloves, new[]{29,39,44,49,55}),
+            ("boots",  "Boots",     ArmorSlot.Boots,  new[]{29,39,44,49,55}),
+            ("helm",   "Helmet",    ArmorSlot.Head,   new[]{41,58,66,73,83}),
+        };
+        foreach (var a in acc)
+            for (int i = 0; i < lv.Length; i++)
+                yield return new ItemDef($"{a.Key}_t{lv[i]}", $"{TierLetter(lv[i])}-Grade {a.Noun}",
+                    EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Rare,
+                    ArmorSlot: a.Slot, DefBonus: a.Def[i], ItemLevel: lv[i], NoAttributes: true);
+
+        // ---- Shields (ShieldDefense from the CSV P.Def; block stats extrapolate Wooden→Iron, tunable). ----
+        int[] shDef = { 143, 203, 230, 256, 299 };
+        float[] shBlock = { 0.22f, 0.24f, 0.26f, 0.28f, 0.30f };
+        float[] shReduce = { 0.37f, 0.39f, 0.41f, 0.43f, 0.45f };
+        float[] shCrit = { 0.10f, 0.11f, 0.12f, 0.13f, 0.15f };
+        int[] shEvaPen = { 7, 7, 8, 8, 9 };
+        for (int i = 0; i < lv.Length; i++)
+            yield return new ItemDef($"shield_t{lv[i]}", $"{TierLetter(lv[i])}-Grade Kite Shield",
+                EquipSlot.Shield, TierGrade(lv[i]), ItemRarity.Rare,
+                BlockChance: shBlock[i], BlockReduction: shReduce[i], ShieldDefense: shDef[i],
+                ShieldCritDefense: shCrit[i], ShieldEvasionPenalty: shEvaPen[i],
+                ItemLevel: lv[i], NoAttributes: true);
+
+        // ---- Jewels (M.Def + inherent +MP at 61/76). L2 layout = 1 necklace / 2 rings / 2 earrings. ----
+        var jewels = new (string Key, string Noun, JewelType T, int[] MDef, int[] Mp)[]
+        {
+            ("necklace", "Necklace", JewelType.Necklace, new[]{45,64,72,85,95}, new[]{0,0,0,33,42}),
+            ("ring",     "Ring",     JewelType.Ring,     new[]{22,32,36,42,48}, new[]{0,0,0,17,21}),
+            ("earring",  "Earring",  JewelType.Earring,  new[]{34,45,54,63,71}, new[]{0,0,0,25,31}),
+        };
+        foreach (var j in jewels)
+            for (int i = 0; i < lv.Length; i++)
+                yield return new ItemDef($"{j.Key}_t{lv[i]}", $"{TierLetter(lv[i])}-Grade {j.Noun}",
+                    EquipSlot.Jewel, TierGrade(lv[i]), ItemRarity.Rare,
+                    MDefBonus: j.MDef[i], MpBonus: j.Mp[i], JewelType: j.T,
+                    ItemLevel: lv[i], NoAttributes: true);
     }
 
     /// <summary>Formula gold value by slot/grade/rarity, used when an item def does

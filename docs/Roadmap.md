@@ -38,9 +38,10 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   stats; MAtk%/MagicCrit attr types + ToStatMods bridge) + **40 tiered WEAPONS** (8 types × 20/40/52/61/76,
   ids `<key>_t<level>`, D/C/B/A display) with level-driven attributes (count 40→1/52→1/61→2/76→3, per-level
   maxes, caster pool via `IsMagicWeapon`, bow slow/very-slow via `AttackSpeedBase`) + **attribute-cancel
-  debug** (`DebugCancelAttr(index)`; -1 = all). **NEXT:** armor sets (bonuses via StatMods incl. main-stats,
-  main-stat pre-pass in RecomputeDerived) + debug-give single body + accessory box; remove old armor drops +
-  add new as rare; regen matrix. See [[gear-item-overhaul]].
+  debug** (`DebugCancelAttr(index)`; -1 = all). + **50 base ARMOR/shield/accessory/JEWEL pieces**
+  (`TieredArmor()`, base stats on existing rails, no attributes). **NEXT:** set BONUSES via StatMods incl.
+  main-stats (main-stat pre-pass in RecomputeDerived) + dmg/support variants + cohesive names; debug-give
+  single body + accessory box; remove old armor drops + add new as rare; regen matrix. See [[gear-item-overhaul]].
 - [>] **Base class kits** — owner to provide several passives/buffs/skills per class; wire them
   as real per-class content (beyond the placeholder discipline kits), then tune.
 - [>] **Fighter balance pass** — awaiting owner targets (Venomweaver burst cap, tank durability
