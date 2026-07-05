@@ -131,10 +131,14 @@ public static class MobCatalog
         new(id, name, run * 0.55f, run, Aggressive: aggressive,
             Drops: StandardDrops(level, cat), Mod: mod, Level: level, Category: cat, Role: role);
 
-    /// <summary>Level-banded + family-flavored drop table, ported from the original placeholder
-    /// mobs' economy: potions/scrolls scale with level, the gear TYPE follows the creature
-    /// family (undead/casters → robe, animals → light, insects → daggers, demons/dragons →
-    /// heavy, humanoids → sword). First pass — retune freely.</summary>
+    /// <summary>Nearest gear TIER (20/40/52/61/76) a mob's level drops — the level-appropriate set.</summary>
+    private static int GearTier(int level) =>
+        level >= 76 ? 76 : level >= 61 ? 61 : level >= 52 ? 52 : level >= 40 ? 40 : 20;
+
+    /// <summary>Level-banded drop table on the NEW tiered gear (docs/gear/gear_sets.csv). Potions/
+    /// scrolls scale with level; every armor/shield/accessory/jewel piece + a family-flavored weapon
+    /// of the mob's tier drops at RARE chances (owner). Old generated armor/weapons no longer drop.
+    /// Body weight + weapon type follow the creature family. Retune via chances or the global RateConfig.</summary>
     private static DropEntry[] StandardDrops(int level, MobCategory cat)
     {
         string potion = level >= 60 ? ItemCatalog.GreaterPotion
@@ -146,28 +150,37 @@ public static class MobCatalog
         string attr = level >= 60 ? ItemCatalog.AttrScrollRare
                     : level >= 30 ? ItemCatalog.AttrScrollUncommon
                     : ItemCatalog.AttrScrollCommon;
-        ItemGrade grade = level < 10 ? ItemGrade.F : ItemGrade.E;
-        ItemRarity gearRarity = level >= 50 ? ItemRarity.Rare
-                              : level >= 20 ? ItemRarity.Uncommon
-                              : ItemRarity.Common;
-        string gear = cat switch
+        int t = GearTier(level);
+        string weight = cat switch
         {
-            MobCategory.Undead or MobCategory.Angel or MobCategory.MagicCreature
-                => ItemCatalog.ArmorKey(ArmorWeight.Robe, grade, gearRarity),
-            MobCategory.Animal or MobCategory.Plant
-                => ItemCatalog.ArmorKey(ArmorWeight.Light, grade, gearRarity),
-            MobCategory.Insect
-                => ItemCatalog.WeaponKey(WeaponType.Dual, grade, gearRarity),
-            MobCategory.Demon or MobCategory.Dragon
-                => ItemCatalog.ArmorKey(ArmorWeight.Heavy, grade, gearRarity),
-            _ => ItemCatalog.WeaponKey(WeaponType.Sword, grade, gearRarity),   // Humanoid
+            MobCategory.Undead or MobCategory.Angel or MobCategory.MagicCreature => "robe",
+            MobCategory.Animal or MobCategory.Plant or MobCategory.Insect => "light",
+            _ => "heavy",
+        };
+        string weaponKey = cat switch
+        {
+            MobCategory.Insect => "duals",
+            MobCategory.Undead => "blunt1h",
+            MobCategory.MagicCreature or MobCategory.Angel => "staff",
+            MobCategory.Demon or MobCategory.Dragon => "sword2h",
+            MobCategory.Animal => "bow",
+            _ => "sword1h",   // Humanoid + Plant
         };
         var drops = new List<DropEntry>
         {
             new(potion, 0.30f, 1, level >= 30 ? 2 : 1),
-            new(gear, 0.05f),
             new(scroll, 0.08f),
             new(attr, 0.04f),
+            // Tiered gear — all pieces droppable at RARE chances. Armors carry no attributes for now.
+            new($"{weight}_t{t}", 0.03f),
+            new($"{weaponKey}_t{t}", 0.03f),
+            new($"shield_t{t}", 0.02f),
+            new($"gloves_t{t}", 0.02f),
+            new($"boots_t{t}", 0.02f),
+            new($"helm_t{t}", 0.02f),
+            new($"necklace_t{t}", 0.015f),
+            new($"ring_t{t}", 0.02f),
+            new($"earring_t{t}", 0.02f),
         };
         if (level >= 70) drops.Add(new(ItemCatalog.AttrScrollLegendary, 0.01f));
         return drops.ToArray();
