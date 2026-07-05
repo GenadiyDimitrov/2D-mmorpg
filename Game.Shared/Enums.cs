@@ -128,7 +128,8 @@ public enum SkillEffect : long
     DebuffAtk          = 1L << 59,  // reduce the target's attack power (both channels)
     DebuffAtkSpeed     = 1L << 60,  // reduce the target's attack speed
     DebuffCastSpeed    = 1L << 61,  // reduce the target's cast speed
-    // Room to grow up to 1L << 62.
+    BuffReflect        = 1L << 62,  // return a fraction of taken MELEE-basic damage to the attacker
+    // 1L << 62 is the LAST free bit (63 = sign). Add further buff EFFECTS via StatMods, not new flags.
 
     // Convenience masks.
     AnyDamage = PhysicalDamage | MagicDamage,
@@ -141,7 +142,7 @@ public enum SkillEffect : long
               | BuffInterruptResist | BuffMeleeVamp | BuffSpellVamp | BuffCooldown
               | BuffPveSkillDamage | BuffPveMagicDamage | BuffPveBasicDamage
               | BuffPvpSkillDamage | BuffPvpMagicDamage | BuffPvpBasicDamage
-              | Shield | ManaShield | LethalSave | BuffCancelResist,
+              | Shield | ManaShield | LethalSave | BuffCancelResist | BuffReflect,
     // Harmful effects applied to an enemy (offensive; can fail; cleansable).
     AnyDebuff = DebuffDef | DebuffHealRecv | Root | Slow | Stun | Fear | Bleed | Poison | Venom
               | DebuffAtk | DebuffAtkSpeed | DebuffCastSpeed,

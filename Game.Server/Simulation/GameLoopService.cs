@@ -2602,6 +2602,18 @@ var effect = def.Effect;
                 int leech = (int)(damage * attacker.MeleeVamp);
                 if (leech > 0) HealOne(attacker, attacker, leech, "Vampiric");
             }
+            // Melee reflect (counter to vamp): return a fraction of the taken damage to the
+            // attacker. MELEE only (bows excluded); applied directly, so it never re-reflects.
+            if (target.MeleeReflect > 0f && damage > 0 && attacker.WeaponType != WeaponType.Bow)
+            {
+                int reflected = (int)(damage * target.MeleeReflect);
+                if (reflected > 0)
+                {
+                    reflected = ApplyDamage(attacker, reflected, target);
+                    BroadcastCombat(target, attacker, reflected, CombatOutcome.Hit, "Reflect");
+                    if (attacker.Hp <= 0) Kill(attacker, target);
+                }
+            }
             // Rogues carry magic-interrupt power on basic attacks; others = 0.
             TryInterruptCast(target, attacker.BasicAttackInterruptPower);
         }

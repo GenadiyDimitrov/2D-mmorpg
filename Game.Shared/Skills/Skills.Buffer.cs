@@ -99,19 +99,19 @@ public static partial class SkillCatalog
             },
             "-10% Max HP/MP but +8% P.Atk / +16% M.Atk / +8% atk & cast speed / +8 move / -8 evasion"),
 
-        // ----- Greater "Harmony" buffs (max-level). NOTE: "reflect melee 20%" (Protection) and the
-        // "-physical/magic MP consumption" (Warrior/Wizard) are OMITTED — no engine yet (reflect +
-        // skill-MP-cost-reduction mechanics unbuilt). Add those lines when those systems land. -----
+        // ----- Greater "Harmony" buffs (max-level). Reflect (Protection) is now WIRED; the
+        // "-physical/magic MP consumption" (Warrior/Wizard) is still OMITTED (skill-MP-cost-reduction
+        // mechanic unbuilt) — add those lines when that system lands. -----
         NpcBuff(NpcHarmonyProtection, "Harmony of Protection", "harmony_protection",
             SkillEffect.BuffDef | SkillEffect.BuffMagicDef | SkillEffect.BuffHp
-            | SkillEffect.BuffHpRegen | SkillEffect.BuffEvasion,
+            | SkillEffect.BuffHpRegen | SkillEffect.BuffEvasion | SkillEffect.BuffReflect,
             new EffectMagnitude[]
             {
                 new(SkillEffect.BuffDef, 0.25f), new(SkillEffect.BuffMagicDef, 0.25f),
                 new(SkillEffect.BuffHp, 0.30f), new(SkillEffect.BuffHpRegen, 0.20f),
-                new(SkillEffect.BuffEvasion, 3, ModifierMode.Flat),
+                new(SkillEffect.BuffEvasion, 3, ModifierMode.Flat), new(SkillEffect.BuffReflect, 0.20f),
             },
-            "+25% P.Def & M.Def, +30% Max HP, +20% HP regen, +3 evasion (reflect pending)"),
+            "+25% P.Def & M.Def, +30% Max HP, +20% HP regen, +3 evasion, reflects 20% of melee damage"),
 
         NpcBuff(NpcHarmonyWarrior, "Harmony of the Warrior", "harmony_warrior",
             SkillEffect.BuffPhysAtk | SkillEffect.BuffAtkSpeed | SkillEffect.BuffCritDamage
