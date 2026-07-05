@@ -1793,6 +1793,13 @@ public class GameLoopService : BackgroundService
         mob.QueuedTargetId = targetId;
     }
 
+    /// <summary>MP-cost multiplier from the caster's MP-cost-reduction buffs — PHYSICAL-category
+    /// skills use the physical reduction, everything else (magic/buff/heal) the magic one.</summary>
+    private static float MpCostFactor(Entity caster, SkillDef def) =>
+        1f - (def.Category == SkillCategory.Physical
+            ? caster.PhysMpCostReduction
+            : caster.MagicMpCostReduction);
+
     private void UpdateQueuedSkill(Entity caster, string skillId)
     {
         var def = SkillCatalog.Get(skillId);
@@ -1845,8 +1852,9 @@ public class GameLoopService : BackgroundService
             (int)(def.CastTicks * speedMult));
 
         // Charge the initial MP portion up front (default 0; split skills charge
-        // some now, the rest on completion). Level-aware MP cost.
-        caster.CastInitialMpPaid = Math.Min(def.InitialMpAt(Math.Max(1, caster.SkillLevelOf(def.Id))), caster.Mp);
+        // some now, the rest on completion). Level-aware MP cost, reduced by MP-cost buffs.
+        int initialMp = (int)(def.InitialMpAt(Math.Max(1, caster.SkillLevelOf(def.Id))) * MpCostFactor(caster, def));
+        caster.CastInitialMpPaid = Math.Min(initialMp, caster.Mp);
         caster.Mp -= caster.CastInitialMpPaid;
 
         if (_world.EntityToConnection.TryGetValue(caster.Id, out var conn))
@@ -1864,8 +1872,9 @@ public class GameLoopService : BackgroundService
         // The caster's learned LEVEL of this skill selects its per-level values
         // (Power / Magnitudes / MP). Default 1 for anything not in the learned set.
         int lvl = Math.Max(1, caster.SkillLevelOf(def.Id));
+        int finishMp = (int)(def.FinishMpAt(lvl) * MpCostFactor(caster, def));
 
-        if (caster.Mp < def.FinishMpAt(lvl))
+        if (caster.Mp < finishMp)
         {
             SendSystemToEntity(caster, "Not enough MP.");
             CancelCast(caster);
@@ -1898,7 +1907,7 @@ public class GameLoopService : BackgroundService
 
         // Cast already committed at start — no range re-check here; the spell
         // lands even if the target moved. Charge the remaining MP and start CD.
-        caster.Mp -= def.FinishMpAt(lvl);
+        caster.Mp -= finishMp;
         if (def.HpCost > 0) caster.Hp = Math.Max(1, caster.Hp - def.HpCost);   // Restore Spirit: HP→MP
         caster.CastInitialMpPaid = 0;
         // Reuse-delay reduction (Spell Mastery / buffs) shortens the cooldown.
@@ -2238,6 +2247,8 @@ var effect = def.Effect;
             Key = key,
             Rank = def.Rank,
             Replaces = def.Replaces ?? Array.Empty<string>(),
+            PhysMpCostPct = def.PhysMpCostPct,
+            MagicMpCostPct = def.MagicMpCostPct,
             Description = SkillCatalog.DescriptionOf(def.Id)
         });
 

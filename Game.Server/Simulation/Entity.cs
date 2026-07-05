@@ -40,6 +40,9 @@ public class BuffInstance
     /// <summary>Remaining absorb pool for a Shield effect (damage soaked before HP). The buff
     /// is removed when it hits 0.</summary>
     public int ShieldPool { get; set; }
+    /// <summary>MP-cost reduction this buff grants for PHYSICAL / magic-side skills (fractions).</summary>
+    public float PhysMpCostPct { get; init; }
+    public float MagicMpCostPct { get; init; }
 
     public bool Has(SkillEffect flag) => (Effect & flag) != 0;
 
@@ -242,6 +245,8 @@ public class Entity
     public float MeleeVamp { get; set; }         // basic (melee) attack lifesteal fraction
     public float SpellVamp { get; set; }         // damage-spell lifesteal fraction
     public float MeleeReflect { get; set; }      // fraction of taken MELEE-basic damage returned to the attacker
+    public float PhysMpCostReduction { get; set; }  // reduce PHYSICAL-skill MP cost (fraction)
+    public float MagicMpCostReduction { get; set; } // reduce magic/buff/heal-skill MP cost (fraction)
     // ----- Damage-OUT bonuses (fractions): 2×3 matrix context (PvE/PvP) × source
     //       (skill=physical skill / magic / basic). The damage pipeline reads ONE. -----
     public float PveSkillDamageBonus { get; set; }   // +% physical-skill damage vs mobs
@@ -612,6 +617,8 @@ public class Entity
         MeleeVamp = 0f;
         SpellVamp = 0f;
         MeleeReflect = 0f;
+        PhysMpCostReduction = 0f;
+        MagicMpCostReduction = 0f;
         PveSkillDamageBonus = 0f;
         PveMagicDamageBonus = 0f;
         PveBasicDamageBonus = 0f;
@@ -1056,6 +1063,8 @@ public class Entity
             if (buff.Has(SkillEffect.BuffMeleeVamp)) MeleeVamp += buff.Flat(SkillEffect.BuffMeleeVamp) + buff.Percent(SkillEffect.BuffMeleeVamp);
             if (buff.Has(SkillEffect.BuffSpellVamp)) SpellVamp += buff.Flat(SkillEffect.BuffSpellVamp) + buff.Percent(SkillEffect.BuffSpellVamp);
             if (buff.Has(SkillEffect.BuffReflect)) MeleeReflect += buff.Flat(SkillEffect.BuffReflect) + buff.Percent(SkillEffect.BuffReflect);
+            PhysMpCostReduction += buff.PhysMpCostPct;   // MP-cost reduction (rides as buff fields, not a flag)
+            MagicMpCostReduction += buff.MagicMpCostPct;
             if (buff.Has(SkillEffect.BuffCooldown)) CooldownReduction += buff.Flat(SkillEffect.BuffCooldown) + buff.Percent(SkillEffect.BuffCooldown);
             if (buff.Has(SkillEffect.BuffPveSkillDamage)) PveSkillDamageBonus += buff.Flat(SkillEffect.BuffPveSkillDamage) + buff.Percent(SkillEffect.BuffPveSkillDamage);
             if (buff.Has(SkillEffect.BuffPveMagicDamage)) PveMagicDamageBonus += buff.Flat(SkillEffect.BuffPveMagicDamage) + buff.Percent(SkillEffect.BuffPveMagicDamage);
@@ -1078,6 +1087,8 @@ public class Entity
         MagicFailResist = Math.Clamp(MagicFailResist, 0f, 0.9f);
         CooldownReduction = Math.Clamp(CooldownReduction, 0f, 0.8f);
         MeleeReflect = Math.Clamp(MeleeReflect, 0f, 0.5f);   // never reflect more than half
+        PhysMpCostReduction = Math.Clamp(PhysMpCostReduction, 0f, 0.8f);
+        MagicMpCostReduction = Math.Clamp(MagicMpCostReduction, 0f, 0.8f);
         MeleeVamp = Math.Clamp(MeleeVamp, 0f, 1f);
         SpellVamp = Math.Clamp(SpellVamp, 0f, 1f);
 

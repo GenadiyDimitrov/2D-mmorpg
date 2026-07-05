@@ -137,7 +137,13 @@ public record SkillDef(
     // Weapon-mastery passive: per-level, per-equipped-WEAPON-TYPE PassiveEffects (see
     // WeaponMasteryProfile). The bonus applies only while the matching weapon is held —
     // the same data-driven pattern as armor mastery, keyed on weapon type instead of weight.
-    WeaponMasteryProfile[]? WeaponMasteryLevels = null)
+    WeaponMasteryProfile[]? WeaponMasteryLevels = null,
+    // Skill MP-cost reduction granted by this (buff) skill: PHYSICAL-category skills cost
+    // less MP by PhysMpCostPct, magic/buff/heal skills by MagicMpCostPct (fractions, 0 = none).
+    // Carried on the BuffInstance and applied when a skill charges its MP. (The SkillEffect enum
+    // is full, so this rides as explicit fields, not a flag.)
+    float PhysMpCostPct = 0f,
+    float MagicMpCostPct = 0f)
 {
     /// <summary>The armor-mastery per-weight profile for a learned skill LEVEL, or null
     /// if this skill isn't an armor mastery.</summary>

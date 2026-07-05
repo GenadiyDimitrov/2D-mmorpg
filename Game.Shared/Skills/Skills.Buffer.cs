@@ -31,11 +31,13 @@ public static partial class SkillCatalog
           NpcHarmonyProtection, NpcHarmonyWarrior, NpcHarmonyWizard };
 
     private static SkillDef NpcBuff(string id, string name, string buffKey,
-        SkillEffect effect, EffectMagnitude[] mags, string desc) =>
+        SkillEffect effect, EffectMagnitude[] mags, string desc,
+        float physMpCost = 0f, float magicMpCost = 0f) =>
         new(id, name, BaseClass.Mage, effect,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             DurationTicks: NpcBuffTicks, BuffKey: buffKey, Rank: NpcBuffRank,
             Category: SkillCategory.Buff, Magnitudes: mags,
+            PhysMpCostPct: physMpCost, MagicMpCostPct: magicMpCost,
             Description: desc + " (buffer's blessing, 1 hour).");
 
     private static SkillDef[] BufferSkills() => new SkillDef[]
@@ -99,9 +101,8 @@ public static partial class SkillCatalog
             },
             "-10% Max HP/MP but +8% P.Atk / +16% M.Atk / +8% atk & cast speed / +8 move / -8 evasion"),
 
-        // ----- Greater "Harmony" buffs (max-level). Reflect (Protection) is now WIRED; the
-        // "-physical/magic MP consumption" (Warrior/Wizard) is still OMITTED (skill-MP-cost-reduction
-        // mechanic unbuilt) — add those lines when that system lands. -----
+        // ----- Greater "Harmony" buffs (max-level). Reflect (Protection) and the −physical/−magic
+        // MP-consumption (Warrior/Wizard) are now WIRED. -----
         NpcBuff(NpcHarmonyProtection, "Harmony of Protection", "harmony_protection",
             SkillEffect.BuffDef | SkillEffect.BuffMagicDef | SkillEffect.BuffHp
             | SkillEffect.BuffHpRegen | SkillEffect.BuffEvasion | SkillEffect.BuffReflect,
@@ -122,7 +123,8 @@ public static partial class SkillCatalog
                 new(SkillEffect.BuffCritDamage, 0.35f), new(SkillEffect.BuffCritRate, 0.75f),
                 new(SkillEffect.BuffAccuracy, 4, ModifierMode.Flat), new(SkillEffect.BuffMeleeVamp, 0.08f),
             },
-            "+12% P.Atk, +15% atk speed, +35% crit damage, +75% crit rate, +4 acc, 8% vamp (−MP cost pending)"),
+            "+12% P.Atk, +15% atk speed, +35% crit damage, +75% crit rate, +4 acc, 8% vamp, −20% physical-skill MP cost",
+            physMpCost: 0.20f),
 
         NpcBuff(NpcHarmonyWizard, "Harmony of the Wizard", "harmony_wizard",
             SkillEffect.BuffCastSpeed | SkillEffect.BuffMagAtk | SkillEffect.BuffMpRegen,
@@ -131,6 +133,7 @@ public static partial class SkillCatalog
                 new(SkillEffect.BuffCastSpeed, 0.30f), new(SkillEffect.BuffMagAtk, 0.20f),
                 new(SkillEffect.BuffMpRegen, 0.20f),
             },
-            "+30% cast speed, +20% M.Atk, +20% MP regen (−MP cost pending)"),
+            "+30% cast speed, +20% M.Atk, +20% MP regen, −30% magic-skill MP cost",
+            magicMpCost: 0.30f),
     };
 }
