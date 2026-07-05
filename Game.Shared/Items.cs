@@ -778,7 +778,7 @@ public static class ItemCatalog
                 yield return new ItemDef($"{b.Key}_t{lv[i]}", $"{TierLetter(lv[i])}-Grade {b.Noun}",
                     EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Rare,
                     Weight: b.W, ArmorSlot: ArmorSlot.Body, DefBonus: b.Def[i], MpBonus: b.Mp[i],
-                    ItemLevel: lv[i], NoAttributes: true);
+                    ItemLevel: lv[i], NoAttributes: true, SetId: $"set_{b.Key}_t{lv[i]}");
 
         // ---- Weightless accessories (shared across weights). ----
         var acc = new (string Key, string Noun, ArmorSlot Slot, int[] Def)[]
@@ -791,7 +791,8 @@ public static class ItemCatalog
             for (int i = 0; i < lv.Length; i++)
                 yield return new ItemDef($"{a.Key}_t{lv[i]}", $"{TierLetter(lv[i])}-Grade {a.Noun}",
                     EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Rare,
-                    ArmorSlot: a.Slot, DefBonus: a.Def[i], ItemLevel: lv[i], NoAttributes: true);
+                    ArmorSlot: a.Slot, DefBonus: a.Def[i], ItemLevel: lv[i], NoAttributes: true,
+                    SetId: $"set_acc_t{lv[i]}");   // shared accessory line per tier (all weights)
 
         // ---- Shields (ShieldDefense from the CSV P.Def; block stats extrapolate Wooden→Iron, tunable). ----
         int[] shDef = { 143, 203, 230, 256, 299 };

@@ -833,6 +833,33 @@ public class Entity
                     if (set.DefencePct != 0f) Defence += (int)(Defence * set.DefencePct);
                     if (set.CastSpeedPct != 0f)
                         CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier * (1f - set.CastSpeedPct), 0.4f, 2.5f);
+
+                    // Full StatMods set bonus (tiered gear) — SECONDARY stats only. PRIMARY-stat
+                    // deltas (m.Str/Dex/Con/…) are stored on the set but NOT applied here: they must
+                    // land before HP/def are derived (a pre-pass), which is a separate tested change.
+                    var m = set.Mods;
+                    MaxHp = (int)((MaxHp + m.MaxHp) * (1f + m.MaxHpPct));
+                    MaxMp = (int)((MaxMp + m.MaxMp) * (1f + m.MaxMpPct));
+                    Defence = (int)((Defence + (int)m.PDef) * (1f + m.PDefPct));
+                    MagicDefence = (int)((MagicDefence + (int)m.MDef) * (1f + m.MDefPct));
+                    AttackPower = (int)((AttackPower + (int)m.PAtk) * (1f + m.PAtkPct));
+                    MagicAttack = (int)((MagicAttack + (int)m.MAtk) * (1f + m.MAtkPct));
+                    Evasion = (int)((Evasion + (int)m.Evasion) * (1f + m.EvasionPct));
+                    Accuracy += (int)m.Accuracy;
+                    if (m.CastSpeedPct != 0f)
+                        CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier / (1f + m.CastSpeedPct), 0.4f, 2.5f);
+                    if (m.AtkSpeedPct != 0f)
+                        AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier / (1f + m.AtkSpeedPct), 0.4f, 2.5f);
+                    if (m.MoveSpeed != 0f)
+                    {
+                        RunSpeed += m.MoveSpeed;
+                        WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor;
+                        Speed = RunSpeed;
+                    }
+                    if (m.HpRegenPct != 0f) HpRegenMult *= 1f + m.HpRegenPct;
+                    if (m.MpRegenPct != 0f) MpRegenMult *= 1f + m.MpRegenPct;
+                    MeleeVamp += m.MeleeVamp;
+                    MeleeReflect += m.Reflect;
                     ActiveArmorSet = set.Name;
                     break;
                 }
