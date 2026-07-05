@@ -60,6 +60,9 @@ public static class ArmorSetCatalog
         new($"set_{weightKey}_t{level}", $"{family} {ItemCatalog.TierLetter(level)}",
             new ClassFlatBonus(), Mods: mods, AccessorySetId: $"set_acc_t{level}");
 
+    private static ArmorSetDef GearVariant(string id, int level, string name, StatMods mods) =>
+        new(id, name, new ClassFlatBonus(), Mods: mods, AccessorySetId: $"set_acc_t{level}");
+
     private static IEnumerable<ArmorSetDef> TieredSets() => new[]
     {
         // Heavy — "Ironforge"
@@ -83,6 +86,22 @@ public static class ArmorSetCatalog
             PDefPct: 0.08f, MDefPct: -0.05f, MpRegenPct: -0.05f)),
         GearSet("robe", 76, "Arcanum", new StatMods(Wit: 2, Int: 1, MAtkPct: 0.17f, MoveSpeed: 7,
             CastSpeedPct: 0.15f)),
+
+        // Body VARIANTS (dmg/support/nuke lines). Same accessory line as the tier's base set.
+        // Stun/Fear-resist lines on the *_dmg variants are deferred (need the CC-resist mechanic).
+        GearVariant("set_heavy_t52_dmg", 52, "Ironforge C (Assault)",
+            new StatMods(MoveSpeed: 7, HpRegenPct: 0.05f, Str: 3, Con: -2, Dex: -1)),
+        GearVariant("set_heavy_t61_dmg", 61, "Ironforge B (Assault)",
+            new StatMods(PAtkPct: 0.04f, Accuracy: 4, Str: 2, Con: -2)),
+        GearVariant("set_light_t40_pdef", 40, "Nightleaf D (Bulwark)", new StatMods(PDefPct: 0.05f)),
+        GearVariant("set_light_t40_mdef", 40, "Nightleaf D (Warded)", new StatMods(MDefPct: 0.05f)),
+        GearVariant("set_light_t40_str", 40, "Nightleaf D (Brawler)", new StatMods(Str: 4, Con: -1)),
+        GearVariant("set_light_t52_sup", 52, "Nightleaf C (Sage)",
+            new StatMods(CastSpeedPct: 0.15f, MaxMp: 120, MpRegenPct: 0.05f, MDefPct: 0.05f, Wit: -1, Int: -1)),
+        GearVariant("set_light_t61_dmg", 61, "Nightleaf B (Assault)",
+            new StatMods(PAtkPct: 0.08f, Dex: 1, Con: -1)),
+        GearVariant("set_robe_t40_sup", 40, "Arcanum D (Warden)", new StatMods(PDefPct: 0.05f, Wit: 1)),
+        GearVariant("set_robe_t40_nuke", 40, "Arcanum D (Destroyer)", new StatMods(Int: 4, Wit: -1)),
     };
 
     /// <summary>The classic four-slot requirement used when a set doesn't override it.</summary>

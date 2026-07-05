@@ -780,6 +780,26 @@ public static class ItemCatalog
                     Weight: b.W, ArmorSlot: ArmorSlot.Body, DefBonus: b.Def[i], MpBonus: b.Mp[i],
                     ItemLevel: lv[i], NoAttributes: true, SetId: $"set_{b.Key}_t{lv[i]}");
 
+        // ---- Body VARIANTS: same base P.Def as the tier's body, alternate SET bonus (dmg/support/
+        //      nuke lines from the CSV). They share the tier's accessory line. (Bonuses in ArmorSets.) ----
+        var variants = new (string Key, ArmorWeight W, string Noun, int L, int Def, int Mp, string Role)[]
+        {
+            ("heavy_t52_dmg",  ArmorWeight.Heavy, "Plate Armor",   52, 270, 0,   "Assault"),
+            ("heavy_t61_dmg",  ArmorWeight.Heavy, "Plate Armor",   61, 293, 0,   "Assault"),
+            ("light_t40_pdef", ArmorWeight.Light, "Leather Armor", 40, 218, 0,   "Bulwark"),
+            ("light_t40_mdef", ArmorWeight.Light, "Leather Armor", 40, 218, 0,   "Warded"),
+            ("light_t40_str",  ArmorWeight.Light, "Leather Armor", 40, 218, 0,   "Brawler"),
+            ("light_t52_sup",  ArmorWeight.Light, "Leather Armor", 52, 202, 0,   "Sage"),
+            ("light_t61_dmg",  ArmorWeight.Light, "Leather Armor", 61, 220, 0,   "Assault"),
+            ("robe_t40_sup",   ArmorWeight.Robe,  "Robe",          40, 110, 508, "Warden"),
+            ("robe_t40_nuke",  ArmorWeight.Robe,  "Robe",          40, 110, 508, "Destroyer"),
+        };
+        foreach (var v in variants)
+            yield return new ItemDef(v.Key, $"{TierLetter(v.L)}-Grade {v.Noun} ({v.Role})",
+                EquipSlot.Armor, TierGrade(v.L), ItemRarity.Rare,
+                Weight: v.W, ArmorSlot: ArmorSlot.Body, DefBonus: v.Def, MpBonus: v.Mp,
+                ItemLevel: v.L, NoAttributes: true, SetId: $"set_{v.Key}");
+
         // ---- Weightless accessories (shared across weights). ----
         var acc = new (string Key, string Noun, ArmorSlot Slot, int[] Def)[]
         {
@@ -820,6 +840,12 @@ public static class ItemCatalog
                     EquipSlot.Jewel, TierGrade(lv[i]), ItemRarity.Rare,
                     MDefBonus: j.MDef[i], MpBonus: j.Mp[i], JewelType: j.T,
                     ItemLevel: lv[i], NoAttributes: true);
+
+        // ---- Accessory BOX per tier (debug convenience): opens into the 3 accessories, so you
+        //      grab a full accessory line at once instead of three items (see BoxCatalog). ----
+        foreach (int L in lv)
+            yield return new ItemDef($"box_acc_t{L}", $"{TierLetter(L)}-Grade Accessory Box",
+                EquipSlot.Box, TierGrade(L), ItemRarity.Rare);
     }
 
     /// <summary>Formula gold value by slot/grade/rarity, used when an item def does

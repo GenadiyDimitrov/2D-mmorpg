@@ -75,10 +75,22 @@ public static class BoxCatalog
         };
 
         var dict = new Dictionary<string, BoxDef>();
-        foreach (var b in list)
+        foreach (var b in list.Concat(TieredAccessoryBoxes()))
             if (!dict.TryAdd(b.Id, b))
                 throw new InvalidOperationException($"Duplicate box id '{b.Id}'.");
         return dict;
+    }
+
+    /// <summary>One accessory box per gear tier → the 3 accessories of that tier (100% each).</summary>
+    private static IEnumerable<BoxDef> TieredAccessoryBoxes()
+    {
+        foreach (int L in new[] { 20, 40, 52, 61, 76 })
+            yield return new BoxDef($"box_acc_t{L}", new[]
+            {
+                new BoxEntry($"gloves_t{L}", 1f),
+                new BoxEntry($"boots_t{L}", 1f),
+                new BoxEntry($"helm_t{L}", 1f),
+            });
     }
 
     public static BoxDef? Get(string boxItemId) =>
