@@ -27,6 +27,8 @@ public class NetworkChannel : IAsyncDisposable
     public event Action<GoldUpdate>? GoldReceived;
     public event Action<SelectionOffer>? SelectionReceived;
     public event Action<TargetDetails>? TargetDetailsReceived;
+    public event Action<PartyInviteDto>? PartyInviteReceived;
+    public event Action<PartyUpdate>? PartyReceived;
     public event Action<string>? Disconnected;
     public event Action<string>? ForceDisconnected;
 
@@ -58,6 +60,8 @@ public class NetworkChannel : IAsyncDisposable
         _connection.On<GoldUpdate>("Gold", g => GoldReceived?.Invoke(g));
         _connection.On<SelectionOffer>("Selection", o => SelectionReceived?.Invoke(o));
         _connection.On<TargetDetails>("TargetDetails", d => TargetDetailsReceived?.Invoke(d));
+        _connection.On<PartyInviteDto>("PartyInvite", p => PartyInviteReceived?.Invoke(p));
+        _connection.On<PartyUpdate>("Party", p => PartyReceived?.Invoke(p));
         _connection.On<string>("ForceDisconnect", reason => ForceDisconnected?.Invoke(reason));
         _connection.Closed += ex =>
         {
@@ -189,6 +193,18 @@ public class NetworkChannel : IAsyncDisposable
 
     public Task DebugTeleportAsync(float x, float y) =>
         _connection!.SendAsync("DebugTeleport", x, y);
+
+    public Task PartyInviteAsync(Guid targetId) =>
+        _connection!.SendAsync("PartyInvite", targetId);
+
+    public Task PartyRespondAsync(bool accept) =>
+        _connection!.SendAsync("PartyRespond", accept);
+
+    public Task PartyLeaveAsync() =>
+        _connection!.SendAsync("PartyLeave");
+
+    public Task PartyKickAsync(Guid targetId) =>
+        _connection!.SendAsync("PartyKick", targetId);
 
     public Task TradeRequestAsync(Guid targetId) =>
         _connection!.SendAsync("TradeRequest", targetId);

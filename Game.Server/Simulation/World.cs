@@ -19,6 +19,16 @@ public class TradeSession
     public void SetReady(Entity e, bool value) { if (e == A) ReadyA = value; else ReadyB = value; }
 }
 
+/// <summary>A live adventuring party. Owned by the loop thread. The leader can invite/kick;
+/// members share XP (split among those in range) and are the targets of AoE ally heals/buffs.</summary>
+public class Party
+{
+    public Guid LeaderId { get; set; }
+    public List<Guid> Members { get; } = new();   // includes the leader; order = join order
+
+    public bool Contains(Guid id) => Members.Contains(id);
+}
+
 /// <summary>
 /// All live game state. The SignalR hub never touches the dictionaries
 /// directly — it only enqueues commands. The game loop drains the queue,
@@ -39,6 +49,12 @@ public class World
 
     /// <summary>targetEntityId -> requesterEntityId (one pending request each).</summary>
     public Dictionary<Guid, Guid> PendingTradeRequests { get; } = new();
+
+    /// <summary>Every party MEMBER id maps to the shared <see cref="Party"/> object.</summary>
+    public Dictionary<Guid, Party> Parties { get; } = new();
+
+    /// <summary>invitedEntityId -> inviterEntityId (one pending party invite each).</summary>
+    public Dictionary<Guid, Guid> PendingPartyInvites { get; } = new();
 
     public CellGrid Grid { get; } = new(
         GameConstants.ZoneWidth, GameConstants.ZoneHeight, GameConstants.CellSize);
@@ -169,6 +185,12 @@ public record DebugTeleportCmd(string ConnectionId, float X, float Y) : IGameCom
 
 /// <summary>Admin command (kick/ban/jail/unjail/god). Validated in the hub.</summary>
 public record AdminCmd(string ConnectionId, string Command, string Argument) : IGameCommand;
+
+// ----- Party / grouping -----
+public record PartyInviteCmd(string ConnectionId, Guid TargetId) : IGameCommand;
+public record PartyRespondCmd(string ConnectionId, bool Accept) : IGameCommand;
+public record PartyLeaveCmd(string ConnectionId) : IGameCommand;
+public record PartyKickCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 
 public record TradeRequestCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 public record TradeRespondCmd(string ConnectionId, bool Accept) : IGameCommand;

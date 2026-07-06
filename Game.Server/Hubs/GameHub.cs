@@ -258,6 +258,30 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task PartyInvite(Guid targetId)
+    {
+        _world.Commands.Enqueue(new PartyInviteCmd(Context.ConnectionId, targetId));
+        return Task.CompletedTask;
+    }
+
+    public Task PartyRespond(bool accept)
+    {
+        _world.Commands.Enqueue(new PartyRespondCmd(Context.ConnectionId, accept));
+        return Task.CompletedTask;
+    }
+
+    public Task PartyLeave()
+    {
+        _world.Commands.Enqueue(new PartyLeaveCmd(Context.ConnectionId));
+        return Task.CompletedTask;
+    }
+
+    public Task PartyKick(Guid targetId)
+    {
+        _world.Commands.Enqueue(new PartyKickCmd(Context.ConnectionId, targetId));
+        return Task.CompletedTask;
+    }
+
     public Task TradeRequest(Guid targetId)
     {
         _world.Commands.Enqueue(new TradeRequestCmd(Context.ConnectionId, targetId));

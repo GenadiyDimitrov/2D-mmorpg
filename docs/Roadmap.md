@@ -130,8 +130,13 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   **Polish DONE:** `KnownRecipes` (persisted) unlocks DropOnly A-grade recipes via a dropped recipe BOOK
   (EquipSlot.Box → open to learn; A-grade bosses drop them); L2 mutually-exclusive drop GROUPS (`DropEntry.GroupId`
   — one weighted pick per group; body/weapon copies grouped in StandardDrops). Numbers retune-later.
-- [ ] **Party / grouping system** — replaces the current "allies in radius" stand-in for
-  party heals/buffs; shared XP, party UI.
+- [~] **Party / grouping system** — SERVER + transport DONE: `Party` (leader + members) in World;
+  invite/accept-decline/leave/kick commands+hub+handlers; leader reassigns + auto-disband under 2;
+  XP SPLIT among in-range members (level-weighted + size bonus) + kill-quest credit to all in range;
+  AoE ally heals/buffs (`PlayersInRadius`) now target PARTY members only (solo = self); `PartyUpdate`
+  roster DTO pushed on change + refreshed each regen tick for live HP/MP; NetworkChannel methods+events
+  added. **NEXT (owner):** the WPF party WINDOW + right-click "invite" + invite prompt. Loot rules still
+  killer-only (deferred).
 - [~] **Active mob skills** — STARTED: caster (Mage-role) mobs cast two generic leveled spells
   (nuke + jab, MP-gated). Still to do: per-mob UNIQUE skills, mob buffs/heals/CC, boss skills, and
   a client cast-bar for mobs (today the player only sees the damage land, no visible mob cast).

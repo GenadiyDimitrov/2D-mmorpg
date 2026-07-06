@@ -109,6 +109,10 @@ public class GameLoopService : BackgroundService
                 case TradeOfferCmd c: HandleTradeOffer(c); break;
                 case TradeReadyCmd c: HandleTradeReady(c); break;
                 case TradeCancelCmd c: HandleTradeCancel(c); break;
+                case PartyInviteCmd c: HandlePartyInvite(c); break;
+                case PartyRespondCmd c: HandlePartyRespond(c); break;
+                case PartyLeaveCmd c: HandlePartyLeave(c); break;
+                case PartyKickCmd c: HandlePartyKick(c); break;
                 case ChatCmd c: HandleChat(c); break;
             }
         }
@@ -152,6 +156,7 @@ public class GameLoopService : BackgroundService
         {
             CancelTradeFor(entity, notifyPartnerOnly: true);
             _world.PendingTradeRequests.Remove(entity.Id);
+            RemoveFromParty(entity, "left the world");
 
             if (!entity.Dead)
                 _world.Grid.Remove(entity);
@@ -1288,6 +1293,168 @@ public class GameLoopService : BackgroundService
         CancelTradeFor(player, notifyPartnerOnly: false);
     }
 
+    // ----- Party / grouping ------------------------------------------------------------------
+    private const int PartyMaxSize = 9;
+
+    private void HandlePartyInvite(PartyInviteCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var inviter) || inviter.Dead)
+            return;
+        if (!_world.Entities.TryGetValue(cmd.TargetId, out var target) ||
+            target.Kind != EntityKind.Player || target.Dead || target.Id == inviter.Id)
+        {
+            SendSystemToEntity(inviter, "You can't invite that player.");
+            return;
+        }
+        // If the inviter is already in a party, only the leader can invite, and it must have room.
+        if (_world.Parties.TryGetValue(inviter.Id, out var party))
+        {
+            if (party.LeaderId != inviter.Id)
+            {
+                SendSystemToEntity(inviter, "Only the party leader can invite.");
+                return;
+            }
+            if (party.Members.Count >= PartyMaxSize)
+            {
+                SendSystemToEntity(inviter, "The party is full.");
+                return;
+            }
+        }
+        if (_world.Parties.ContainsKey(target.Id))
+        {
+            SendSystemToEntity(inviter, $"{target.Name} is already in a party.");
+            return;
+        }
+        if (_world.PendingPartyInvites.ContainsKey(target.Id))
+        {
+            SendSystemToEntity(inviter, $"{target.Name} is considering another invite.");
+            return;
+        }
+
+        _world.PendingPartyInvites[target.Id] = inviter.Id;
+        SendTo(target, "PartyInvite", new PartyInviteDto(inviter.Id, inviter.Name));
+        SendSystemToEntity(inviter, $"Party invite sent to {target.Name}.");
+    }
+
+    private void HandlePartyRespond(PartyRespondCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var responder))
+            return;
+        if (!_world.PendingPartyInvites.Remove(responder.Id, out var inviterId))
+            return;
+        if (!_world.Entities.TryGetValue(inviterId, out var inviter) || inviter.Dead)
+            return;
+
+        if (!cmd.Accept)
+        {
+            SendSystemToEntity(inviter, $"{responder.Name} declined your party invite.");
+            return;
+        }
+        if (_world.Parties.ContainsKey(responder.Id))   // joined something else meanwhile
+            return;
+
+        // Get the inviter's party, creating it (inviter = leader) on the first invite.
+        if (!_world.Parties.TryGetValue(inviter.Id, out var party))
+        {
+            party = new Party { LeaderId = inviter.Id };
+            party.Members.Add(inviter.Id);
+            _world.Parties[inviter.Id] = party;
+        }
+        if (party.Members.Count >= PartyMaxSize)
+        {
+            SendSystemToEntity(responder, "That party is full.");
+            SendSystemToEntity(inviter, "Your party is full.");
+            if (party.Members.Count == 1) _world.Parties.Remove(inviter.Id);   // undo a just-created empty party
+            return;
+        }
+
+        party.Members.Add(responder.Id);
+        _world.Parties[responder.Id] = party;
+        SendPartyUpdate(party);
+        BroadcastToParty(party, $"{responder.Name} joined the party.");
+    }
+
+    private void HandlePartyLeave(PartyLeaveCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+        RemoveFromParty(player, "left the party");
+    }
+
+    private void HandlePartyKick(PartyKickCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var leader))
+            return;
+        if (!_world.Parties.TryGetValue(leader.Id, out var party) || party.LeaderId != leader.Id)
+        {
+            SendSystemToEntity(leader, "Only the party leader can remove members.");
+            return;
+        }
+        if (cmd.TargetId == leader.Id || !party.Contains(cmd.TargetId))
+            return;
+        if (_world.Entities.TryGetValue(cmd.TargetId, out var target))
+            RemoveFromParty(target, "was removed from the party");
+    }
+
+    /// <summary>Remove an entity from its party (leave/kick/disconnect). Reassigns the leader if
+    /// needed, disbands a party that drops below 2, and refreshes everyone's roster.</summary>
+    private void RemoveFromParty(Entity entity, string reason)
+    {
+        if (!_world.Parties.Remove(entity.Id, out var party))
+            return;
+        party.Members.Remove(entity.Id);
+        SendTo(entity, "Party", new PartyUpdate(Array.Empty<PartyMemberDto>()));   // client hides window
+
+        // Disband when only one member would remain.
+        if (party.Members.Count <= 1)
+        {
+            foreach (var mid in party.Members.ToList())
+            {
+                _world.Parties.Remove(mid);
+                if (_world.Entities.TryGetValue(mid, out var last))
+                {
+                    SendTo(last, "Party", new PartyUpdate(Array.Empty<PartyMemberDto>()));
+                    SendSystemToEntity(last, $"{entity.Name} {reason}. The party has disbanded.");
+                }
+            }
+            party.Members.Clear();
+            return;
+        }
+
+        if (party.LeaderId == entity.Id)
+            party.LeaderId = party.Members[0];   // oldest remaining member becomes leader
+        BroadcastToParty(party, $"{entity.Name} {reason}.");
+        SendPartyUpdate(party);
+    }
+
+    /// <summary>Class label for the party window: 3rd class name, else 2nd, else the base class.</summary>
+    private static string PartyClassLabel(Entity e)
+    {
+        if (e.ThirdClass != 0 && ThirdClassCatalog.Get(e.ThirdClass) is ThirdClassDef tcd) return tcd.Name;
+        if (e.SecondClass != 0 && ClassCatalog.Get(e.SecondClass) is SecondClassDef scd) return scd.Name;
+        return e.BaseClass.ToString();
+    }
+
+    private void SendPartyUpdate(Party party)
+    {
+        var members = new List<PartyMemberDto>(party.Members.Count);
+        foreach (var mid in party.Members)
+            if (_world.Entities.TryGetValue(mid, out var m))
+                members.Add(new PartyMemberDto(m.Id, m.Name, m.Level, PartyClassLabel(m),
+                    (int)m.Hp, m.MaxHp, (int)m.Mp, m.MaxMp, mid == party.LeaderId));
+        var dto = new PartyUpdate(members.ToArray());
+        foreach (var mid in party.Members)
+            if (_world.Entities.TryGetValue(mid, out var m))
+                SendTo(m, "Party", dto);
+    }
+
+    private void BroadcastToParty(Party party, string text)
+    {
+        foreach (var mid in party.Members)
+            if (_world.Entities.TryGetValue(mid, out var m))
+                SendSystemToEntity(m, text);
+    }
+
     private void CompleteTrade(TradeSession session)
     {
         var itemsA = ResolveOffer(session.A, session.OfferA);
@@ -1584,6 +1751,23 @@ public class GameLoopService : BackgroundService
                     PushBuffs(entity);
             }
         }
+
+        if (regenTick)
+            RefreshPartyRosters();   // live HP/MP for the party window
+    }
+
+    // Scratch set so the per-second roster refresh only sends each party once (the Parties
+    // dict maps every member -> the shared Party object).
+    private readonly HashSet<Party> _rosterSeen = new();
+
+    private void RefreshPartyRosters()
+    {
+        if (_world.Parties.Count == 0)
+            return;
+        _rosterSeen.Clear();
+        foreach (var party in _world.Parties.Values)
+            if (_rosterSeen.Add(party))
+                SendPartyUpdate(party);
     }
 
     // Reusable scratch buffer for cooldown expiry so the per-tick decrement doesn't
@@ -2807,9 +2991,11 @@ var effect = def.Effect;
         {
             if (killer.Kind == EntityKind.Player)
             {
-                AwardExp(killer, StatCalculator.MobExpReward(victim.Level));
-                RollDrop(killer, victim);
-                AdvanceKillQuests(killer, victim);
+                AwardKillExp(killer, victim);
+                RollDrop(killer, victim);   // loot still goes to the killer (loot rules deferred)
+                // Kill-quest credit for the killer + every party member in range.
+                foreach (var m in KillCreditMembers(killer))
+                    AdvanceKillQuests(m, victim);
             }
 
             OnMobKilled(victim);
@@ -2940,6 +3126,42 @@ var effect = def.Effect;
 
         SendSystemToEntity(killer, $"{mob.Name} dropped crafting materials!");
         return true;
+    }
+
+    /// <summary>The killer + any alive party members within share range (ViewRange). Solo = just
+    /// the killer. Used for both XP split and kill-quest credit.</summary>
+    private List<Entity> KillCreditMembers(Entity killer)
+    {
+        var list = new List<Entity> { killer };
+        if (_world.Parties.TryGetValue(killer.Id, out var party))
+        {
+            float r2 = GameConstants.ViewRange * GameConstants.ViewRange;
+            foreach (var mid in party.Members)
+                if (mid != killer.Id && _world.Entities.TryGetValue(mid, out var m) &&
+                    !m.Dead && DistanceSq(killer, m) <= r2)
+                    list.Add(m);
+        }
+        return list;
+    }
+
+    /// <summary>Award a mob kill's EXP: solo → all to the killer; party → split among members in
+    /// range, weighted by level (anti-leech), with a small size bonus to reward grouping.</summary>
+    private void AwardKillExp(Entity killer, Entity victim)
+    {
+        int total = StatCalculator.MobExpReward(victim.Level);
+        var share = KillCreditMembers(killer);
+        if (share.Count <= 1)
+        {
+            AwardExp(killer, total);
+            return;
+        }
+        float bonus = 1f + 0.10f * (share.Count - 1);   // grouping incentive (retune later)
+        long levelSum = share.Sum(m => (long)m.Level);
+        foreach (var m in share)
+        {
+            int amt = (int)(total * bonus * ((float)m.Level / levelSum));
+            if (amt > 0) AwardExp(m, amt);
+        }
     }
 
     private void AwardExp(Entity player, int amount)
@@ -3242,16 +3464,21 @@ var effect = def.Effect;
 
     private readonly HashSet<Guid> _hadBuffs = new();
 
-    /// <summary>Caster + nearby player characters within radius (party stand-in
-    /// until real groups exist). Uses the grid's neighbourhood for efficiency.</summary>
+    /// <summary>Caster + PARTY members within radius (the AoE ally target set). If the caster is
+    /// not in a party, only the caster is affected — your heals/buffs no longer splash onto random
+    /// strangers. Uses the grid's neighbourhood for efficiency.</summary>
     private IEnumerable<Entity> PlayersInRadius(Entity caster, float radius)
     {
         float r2 = radius * radius;
         yield return caster;
+        if (!_world.Parties.TryGetValue(caster.Id, out var party))
+            yield break;   // solo: self only
         foreach (var e in _world.Grid.Nearby(caster))
         {
             if (e.Kind != EntityKind.Player || e.Dead || e.Id == caster.Id)
                 continue;
+            if (!party.Contains(e.Id))
+                continue;   // party members only
             float dx = e.X - caster.X, dy = e.Y - caster.Y;
             if (dx * dx + dy * dy <= r2)
                 yield return e;
