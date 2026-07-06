@@ -341,6 +341,13 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>Choose the character's permanent crafting profession (1..5).</summary>
+    public Task ChooseProfession(int profession)
+    {
+        _world.Commands.Enqueue(new ChooseProfessionCmd(Context.ConnectionId, profession));
+        return Task.CompletedTask;
+    }
+
     /// <summary>DEBUG: set the crafting profession (0=None..5).</summary>
     public Task DebugSetProfession(int profession)
     {

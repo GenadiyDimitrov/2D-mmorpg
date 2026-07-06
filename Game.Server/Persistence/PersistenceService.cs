@@ -237,7 +237,8 @@ public class PersistenceService
             SecondClass = rec.SecondClass,
             ThirdClass = rec.ThirdClass,
             PersistentId = rec.Id,
-            SkillPoints = rec.SkillPoints
+            SkillPoints = rec.SkillPoints,
+            Profession = (Profession)rec.Profession
         };
 
         // Learned skills are stored "id:level" (legacy bare "id" = level 1).
@@ -291,7 +292,7 @@ public class PersistenceService
     /// (no torn reads / "collection modified" from X/Y, inventory or skills changing).</summary>
     public sealed record CharacterSnapshot(
         int CharacterId, Race Race, BaseClass BaseClass, int Level, long Exp, long Gold,
-        int SecondClass, int ThirdClass, int SkillPoints,
+        int SecondClass, int ThirdClass, int SkillPoints, int Profession,
         int Con, int Atk, int Wit, int Dex, float X, float Y,
         string LearnedSkillsCsv, string CompletedQuestsCsv, string ActiveQuestsJson,
         IReadOnlyList<ItemSnapshot> Items)
@@ -308,7 +309,7 @@ public class PersistenceService
                     i.Enchant, i.Quantity, new List<ItemAttribute>(i.Attributes)));
             return new CharacterSnapshot(
                 id, e.Race, e.BaseClass, e.Level, e.Exp, e.Gold,
-                e.SecondClass, e.ThirdClass, e.SkillPoints,
+                e.SecondClass, e.ThirdClass, e.SkillPoints, (int)e.Profession,
                 e.Con, e.AtkStat, e.Wit, e.Dex, e.X, e.Y,
                 string.Join(',', e.LearnedSkills.Select(kv => $"{kv.Key}:{kv.Value}")),
                 string.Join(',', e.CompletedQuests),
@@ -365,6 +366,7 @@ public class PersistenceService
         rec.Gold = snap.Gold;
         rec.SecondClass = snap.SecondClass;
         rec.ThirdClass = snap.ThirdClass;
+        rec.Profession = snap.Profession;
         rec.SkillPoints = snap.SkillPoints;
         rec.LearnedSkillsCsv = snap.LearnedSkillsCsv;
         rec.CompletedQuestsCsv = snap.CompletedQuestsCsv;

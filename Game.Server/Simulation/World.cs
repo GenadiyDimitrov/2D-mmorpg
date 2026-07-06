@@ -138,6 +138,9 @@ public record DebugCancelAttrCmd(string ConnectionId, int Index) : IGameCommand;
 /// <summary>Craft a recipe (consume its inputs, roll success, produce the output).</summary>
 public record CraftCmd(string ConnectionId, string RecipeId) : IGameCommand;
 
+/// <summary>Choose the character's ONE crafting profession (permanent — can't be changed).</summary>
+public record ChooseProfessionCmd(string ConnectionId, int Profession) : IGameCommand;
+
 /// <summary>DEBUG-only: set the player's crafting profession (until level-based assignment lands).</summary>
 public record DebugSetProfessionCmd(string ConnectionId, int Profession) : IGameCommand;
 

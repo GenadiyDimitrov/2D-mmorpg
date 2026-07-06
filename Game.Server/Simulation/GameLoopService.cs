@@ -95,6 +95,7 @@ public class GameLoopService : BackgroundService
                 case DebugGiveCmd c: HandleDebugGive(c); break;
                 case DebugCancelAttrCmd c: HandleDebugCancelAttr(c); break;
                 case CraftCmd c: HandleCraft(c); break;
+                case ChooseProfessionCmd c: HandleChooseProfession(c); break;
                 case DebugSetProfessionCmd c: HandleDebugSetProfession(c); break;
                 case DebugLevelCmd c: HandleDebugLevel(c); break;
                 case DebugLearnAllCmd c: HandleDebugLearnAll(c); break;
@@ -898,6 +899,26 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, $"Craft failed — the materials were lost.");
         }
         SendInventory(player);
+    }
+
+    /// <summary>Choose the character's one permanent profession (rejected if already chosen).
+    /// Persists with the character via the snapshot; recipes then auto-unlock by level.</summary>
+    private void HandleChooseProfession(ChooseProfessionCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+        if (player.Profession != Profession.None)
+        {
+            SendSystemToEntity(player, $"You are already a {player.Profession} — professions can't be changed.");
+            return;
+        }
+        if (cmd.Profession < 1 || cmd.Profession > (int)Profession.ScrollScribe)
+        {
+            SendSystemToEntity(player, "Invalid profession.");
+            return;
+        }
+        player.Profession = (Profession)cmd.Profession;
+        SendSystemToEntity(player, $"You are now a {player.Profession}. (Recipes unlock as you level.)");
     }
 
     private void HandleDebugSetProfession(DebugSetProfessionCmd cmd)
