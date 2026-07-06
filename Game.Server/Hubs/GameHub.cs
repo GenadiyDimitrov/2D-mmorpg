@@ -334,6 +334,22 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>Craft a recipe by id (consume inputs → roll success → produce output).</summary>
+    public Task Craft(string recipeId)
+    {
+        _world.Commands.Enqueue(new CraftCmd(Context.ConnectionId, recipeId));
+        return Task.CompletedTask;
+    }
+
+    /// <summary>DEBUG: set the crafting profession (0=None..5).</summary>
+    public Task DebugSetProfession(int profession)
+    {
+#if DEBUG
+        _world.Commands.Enqueue(new DebugSetProfessionCmd(Context.ConnectionId, profession));
+#endif
+        return Task.CompletedTask;
+    }
+
     public Task DebugLearnAll()
     {
 #if DEBUG

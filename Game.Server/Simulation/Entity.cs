@@ -197,6 +197,9 @@ public class Entity
     public int BonusWit { get; set; }
     public int BonusMen { get; set; }
 
+    /// <summary>Crafting profession (one per character). Set by level later; debug-set for now.</summary>
+    public Profession Profession { get; set; }
+
     /// <summary>WIT used for ALL gameplay math (cast speed, MP, magic crit, interrupt,
     /// heals). MAGES gain WIT at level milestones to stand in for the not-yet-built dye
     /// + WIT-set bonuses; non-mages use flat WIT. Stored <see cref="Wit"/> stays the

@@ -135,6 +135,12 @@ public record DebugGiveCmd(string ConnectionId, string DefId) : IGameCommand;
 /// Lets you test with only the base weapon / a chosen attribute, not the full rolled set.</summary>
 public record DebugCancelAttrCmd(string ConnectionId, int Index) : IGameCommand;
 
+/// <summary>Craft a recipe (consume its inputs, roll success, produce the output).</summary>
+public record CraftCmd(string ConnectionId, string RecipeId) : IGameCommand;
+
+/// <summary>DEBUG-only: set the player's crafting profession (until level-based assignment lands).</summary>
+public record DebugSetProfessionCmd(string ConnectionId, int Profession) : IGameCommand;
+
 /// <summary>DEBUG-only: grant one level.</summary>
 public record DebugLevelCmd(string ConnectionId) : IGameCommand;
 

@@ -94,6 +94,8 @@ public class GameLoopService : BackgroundService
                 case RemoveItemCmd c: HandleRemoveItem(c); break;
                 case DebugGiveCmd c: HandleDebugGive(c); break;
                 case DebugCancelAttrCmd c: HandleDebugCancelAttr(c); break;
+                case CraftCmd c: HandleCraft(c); break;
+                case DebugSetProfessionCmd c: HandleDebugSetProfession(c); break;
                 case DebugLevelCmd c: HandleDebugLevel(c); break;
                 case DebugLearnAllCmd c: HandleDebugLearnAll(c); break;
                 case DebugGoldCmd c: HandleDebugGold(c); break;
@@ -848,6 +850,62 @@ public class GameLoopService : BackgroundService
         player.RecomputeDerived();
         SendInventory(player);
         SendStats(player);
+    }
+
+    /// <summary>Craft a recipe: check profession + learned + inputs, consume inputs, roll the
+    /// success chance, and produce the output on success (a failed craft still consumes the mats).</summary>
+    private void HandleCraft(CraftCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+        if (RecipeCatalog.Get(cmd.RecipeId) is not Recipe recipe)
+        {
+            SendSystemToEntity(player, "Unknown recipe.");
+            return;
+        }
+        if (recipe.Profession != Profession.None && player.Profession != recipe.Profession)
+        {
+            SendSystemToEntity(player, $"Requires the {recipe.Profession} profession.");
+            return;
+        }
+        if (recipe.DropOnly)
+        {
+            SendSystemToEntity(player, "That recipe must be learned from a drop (not yet supported).");
+            return;
+        }
+        if (player.Level < recipe.LearnLevel)
+        {
+            SendSystemToEntity(player, $"You must be level {recipe.LearnLevel} to craft this.");
+            return;
+        }
+        foreach (var inp in recipe.Inputs)
+            if (CountItem(player, inp.ItemId) < inp.Qty)
+            {
+                SendSystemToEntity(player, "You don't have the required materials.");
+                return;
+            }
+        foreach (var inp in recipe.Inputs)
+            ConsumeItem(player, inp.ItemId, inp.Qty);
+
+        string outName = ItemCatalog.Get(recipe.OutputId)?.Name ?? recipe.OutputId;
+        if (_rng.NextDouble() < recipe.SuccessChance)
+        {
+            AddItem(player, recipe.OutputId, recipe.OutputQty);
+            SendSystemToEntity(player, $"Crafted {outName}" + (recipe.OutputQty > 1 ? $" x{recipe.OutputQty}." : "."));
+        }
+        else
+        {
+            SendSystemToEntity(player, $"Craft failed — the materials were lost.");
+        }
+        SendInventory(player);
+    }
+
+    private void HandleDebugSetProfession(DebugSetProfessionCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+        player.Profession = (Profession)Math.Clamp(cmd.Profession, 0, (int)Profession.ScrollScribe);
+        SendSystemToEntity(player, $"[DEBUG] Profession set to {player.Profession}.");
     }
 
     private void HandleDebugLevel(DebugLevelCmd cmd)
@@ -3002,7 +3060,7 @@ var effect = def.Effect;
         if (ItemCatalog.Get(defId) is not ItemDef def)
             return false;
 
-        bool stackable = def.Slot is EquipSlot.Consumable or EquipSlot.Scroll;
+        bool stackable = def.Slot is EquipSlot.Consumable or EquipSlot.Scroll or EquipSlot.Material;
         if (stackable)
         {
             var existing = player.Inventory.FirstOrDefault(i => i.DefId == defId);
@@ -3060,7 +3118,7 @@ var effect = def.Effect;
         from.Inventory.Remove(item);
 
         if (ItemCatalog.Get(item.DefId) is ItemDef def &&
-            def.Slot is EquipSlot.Consumable or EquipSlot.Scroll)
+            def.Slot is EquipSlot.Consumable or EquipSlot.Scroll or EquipSlot.Material)
         {
             var existing = to.Inventory.FirstOrDefault(i => i.DefId == item.DefId);
             if (existing is not null)
