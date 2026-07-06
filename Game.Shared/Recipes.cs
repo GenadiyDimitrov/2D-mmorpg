@@ -29,6 +29,7 @@ public static class RecipeCatalog
         var list = new List<Recipe>();
         list.AddRange(RefinementRecipes());
         list.AddRange(FinishedItemRecipes());
+        list.AddRange(ConsumableRecipes());
 
         var dict = new Dictionary<string, Recipe>();
         foreach (var r in list)
@@ -167,6 +168,41 @@ public static class RecipeCatalog
                 LearnLevel: d.ItemLevel,
                 DropOnly: d.ItemLevel >= 76);      // A-grade recipes come from bosses/trade
         }
+    }
+
+    // ----- Consumable recipes: Potion Master (Wood+Thread+Gem) + Scroll Scribe (Thread+Wood+Gem).
+    //  Cheaper than gear, produce a small stack. Rounds out all 5 professions crafting something. -----
+    private static IEnumerable<Recipe> ConsumableRecipes()
+    {
+        Recipe Potion(string output, ItemRarity r, int lvl, int qty) => new(
+            $"craft_{output}", Profession.PotionMaster, output,
+            new[]
+            {
+                new RecipeInput(Crafting.MaterialId(MaterialType.Wood, r), 3),
+                new RecipeInput(Crafting.MaterialId(MaterialType.Thread, r), 1),
+                new RecipeInput(Crafting.MaterialId(MaterialType.Gem, r), 1),
+            },
+            OutputQty: qty, SuccessChance: 0.9f, LearnLevel: lvl);
+
+        Recipe Scroll(string output, ItemRarity r, int lvl, int qty) => new(
+            $"craft_{output}", Profession.ScrollScribe, output,
+            new[]
+            {
+                new RecipeInput(Crafting.MaterialId(MaterialType.Thread, r), 3),
+                new RecipeInput(Crafting.MaterialId(MaterialType.Wood, r), 1),
+                new RecipeInput(Crafting.MaterialId(MaterialType.Gem, r), 1),
+            },
+            OutputQty: qty, SuccessChance: 0.8f, LearnLevel: lvl);
+
+        yield return Potion(ItemCatalog.HealingPotion, ItemRarity.Common, 20, 5);
+        yield return Potion(ItemCatalog.GreaterPotion, ItemRarity.Uncommon, 40, 5);
+        yield return Potion(ItemCatalog.SpeedPotionU, ItemRarity.Uncommon, 30, 3);
+        yield return Potion(ItemCatalog.CastPotionU, ItemRarity.Uncommon, 30, 3);
+        yield return Potion(ItemCatalog.AtkPotionU, ItemRarity.Uncommon, 30, 3);
+        yield return Scroll(ItemCatalog.ScrollUncommon, ItemRarity.Common, 20, 5);
+        yield return Scroll(ItemCatalog.ScrollRare, ItemRarity.Uncommon, 40, 5);
+        yield return Scroll(ItemCatalog.AttrScrollUncommon, ItemRarity.Common, 20, 3);
+        yield return Scroll(ItemCatalog.AttrScrollRare, ItemRarity.Uncommon, 40, 3);
     }
 
     public static Recipe? Get(string id) => id is null ? null : _byId.GetValueOrDefault(id);
