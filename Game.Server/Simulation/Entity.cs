@@ -244,6 +244,7 @@ public class Entity
     public float CritRateResist { get; set; }    // reduces an attacker's physical crit CHANCE vs you
     public float CritDmgResist { get; set; }     // reduces incoming physical crit EXTRA damage
     public float BowResist { get; set; }         // reduces damage taken from BOW attacks
+    public float CcResist { get; set; }          // reduces the LAND chance of contested CC vs you
     // Weapon-TYPE resistance: a multiplier on MY P.Def applied only when the attacker uses
     // that weapon type (the resist rides inside pDef so a def-ignore skill bypasses it).
     // 1 = neutral, >1 = resistant, <1 = weak, ≤0 = no defence (one-shot of that type).
@@ -675,6 +676,7 @@ public class Entity
         CritRateResist = 0f;
         CritDmgResist = 0f;
         BowResist = 0f;
+        CcResist = 0f;
         PierceDefCoef = 1f;
         BluntDefCoef = 1f;
         BowDefCoef = 1f;
@@ -893,6 +895,7 @@ public class Entity
             if (m.MpRegenPct != 0f) MpRegenMult *= 1f + m.MpRegenPct;
             MeleeVamp += m.MeleeVamp;
             MeleeReflect += m.Reflect;
+            CcResist += m.CcResist;
             ActiveArmorSet = set.Name;
         }
 
@@ -1144,6 +1147,7 @@ public class Entity
         MagicFailResist = Math.Clamp(MagicFailResist, 0f, 0.9f);
         CooldownReduction = Math.Clamp(CooldownReduction, 0f, 0.8f);
         MeleeReflect = Math.Clamp(MeleeReflect, 0f, 0.5f);   // never reflect more than half
+        CcResist = Math.Clamp(CcResist, 0f, 0.8f);           // never fully CC-immune from gear
         PhysMpCostReduction = Math.Clamp(PhysMpCostReduction, 0f, 0.8f);
         MagicMpCostReduction = Math.Clamp(MagicMpCostReduction, 0f, 0.8f);
         MeleeVamp = Math.Clamp(MeleeVamp, 0f, 1f);

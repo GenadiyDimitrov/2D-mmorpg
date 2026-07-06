@@ -44,6 +44,7 @@ public readonly record struct StatMods(
     // and the nuker "mpWhenRestored" bonus. All summed.
     float InterruptResist = 0f,
     float CritDmgResist = 0f, float CritRateResist = 0f, float BowResist = 0f,
+    float CcResist = 0f,   // reduces the LAND chance of contested CC (stun/fear/root/slow/DoT) vs you
     float RestoreMpBonus = 0f,
     // Primary-stat deltas (flat, SUMMED). Applied to the entity's core stats BEFORE the derived
     // stats are computed, so a set's "CON +3" actually raises HP, "DEX +1" raises eva/acc/crit, etc.
@@ -89,6 +90,7 @@ public readonly record struct StatTotals(
     float MpRegen = 0f, float MpRegenPct = 0f,
     float InterruptResist = 0f,
     float CritDmgResist = 0f, float CritRateResist = 0f, float BowResist = 0f,
+    float CcResist = 0f,
     float RestoreMpBonus = 0f,
     float Str = 0f, float Dex = 0f, float Con = 0f, float Int = 0f, float Wit = 0f, float Men = 0f,
     float MeleeVamp = 0f, float SpellVamp = 0f, float Reflect = 0f)
@@ -114,6 +116,7 @@ public readonly record struct StatTotals(
         MpRegen + s.MpRegen, Mul(MpRegenPct, s.MpRegenPct),
         InterruptResist + s.InterruptResist,
         CritDmgResist + s.CritDmgResist, CritRateResist + s.CritRateResist, BowResist + s.BowResist,
+        CcResist + s.CcResist,
         RestoreMpBonus + s.RestoreMpBonus,
         Str + s.Str, Dex + s.Dex, Con + s.Con, Int + s.Int, Wit + s.Wit, Men + s.Men,
         MeleeVamp + s.MeleeVamp, SpellVamp + s.SpellVamp, Reflect + s.Reflect);

@@ -2085,6 +2085,7 @@ var effect = def.Effect;
             int atkStat = dexBased ? (int)caster.EffectiveDex : caster.AtkStat;
             int defStat = def.DebuffSchool == DebuffSchool.Magical ? (int)target.EffectiveWit : target.Con;
             float land = target.Immune ? 0f : StatCalculator.DebuffLandChance(atkStat, defStat);
+            land *= 1f - target.CcResist;   // gear/buff CC resistance lowers the land chance
             if (_rng.NextDouble() < land)
             {
                 if ((effect & SkillEffect.AnyDot) != 0)
