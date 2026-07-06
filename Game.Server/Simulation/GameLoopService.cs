@@ -2865,8 +2865,50 @@ var effect = def.Effect;
             looted = true;
         }
 
+        looted |= RollBossBonus(killer, mob, mobType);
         if (looted)
             SendInventory(killer);
+    }
+
+    /// <summary>Elite/boss EXTRA loot: a pile of crafting mats (rarity + amount by rank) and a chance
+    /// at the finished tiered set piece — bosses are the reliable gear/mat source (docs/Crafting.md).</summary>
+    private bool RollBossBonus(Entity killer, Entity mob, MobType mobType)
+    {
+        if (mob.Rank is not (MobRank.Boss or MobRank.Elite))
+            return false;
+        bool boss = mob.Rank == MobRank.Boss;
+        int tier = mob.Level >= 76 ? 76 : mob.Level >= 61 ? 61 : mob.Level >= 52 ? 52 : mob.Level >= 40 ? 40 : 20;
+        MaterialType primary = mobType.Category switch
+        {
+            MobCategory.Animal or MobCategory.Plant => MaterialType.Leather,
+            MobCategory.Undead or MobCategory.Insect => MaterialType.Thread,
+            MobCategory.MagicCreature or MobCategory.Angel => MaterialType.Gem,
+            _ => MaterialType.Ingot,
+        };
+
+        void GiveMat(MaterialType t, ItemRarity r, int qty)
+        {
+            if (qty > 0) AddItem(killer, Crafting.MaterialId(t, r), qty);
+        }
+
+        GiveMat(primary, ItemRarity.Common, boss ? _rng.Next(6, 11) : _rng.Next(2, 4));
+        GiveMat(MaterialType.Gem, ItemRarity.Common, boss ? _rng.Next(4, 8) : _rng.Next(1, 3));
+        GiveMat(primary, ItemRarity.Uncommon, boss ? _rng.Next(2, 5) : 1);
+        if (boss && mob.Level >= 30 && _rng.NextDouble() < 0.5) GiveMat(primary, ItemRarity.Rare, 1);
+        if (boss && mob.Level >= 76 && _rng.NextDouble() < 0.2) GiveMat(primary, ItemRarity.Epic, 1);
+
+        // A chance at the finished tiered set piece (armor body by family).
+        string weight = mobType.Category switch
+        {
+            MobCategory.Undead or MobCategory.Angel or MobCategory.MagicCreature => "robe",
+            MobCategory.Animal or MobCategory.Plant or MobCategory.Insect => "light",
+            _ => "heavy",
+        };
+        if (_rng.NextDouble() < (boss ? 0.5f : 0.15f))
+            AddItem(killer, $"{weight}_t{tier}");
+
+        SendSystemToEntity(killer, $"{mob.Name} dropped crafting materials!");
+        return true;
     }
 
     private void AwardExp(Entity player, int amount)
