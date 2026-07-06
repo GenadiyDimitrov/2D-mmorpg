@@ -124,6 +124,10 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   flat stat leans exist; needs the combat primitives layer first, then per-race kits.
   Lightbringer (healer) + Warchanter (buffer, gets a "Prophecy" party buff) are first up.
   ([[discipline-skills-plan]], [[class-tier-design]], [[mage-path-wip]])
+- [ ] **Crafting & material economy** (DESIGN DONE — `docs/Crafting.md` / [[crafting-economy-design]]):
+  gear via CRAFTING, materials DROP from mobs (not gathering); professions (jewel/weapon/armor/potion/scroll)
+  with a CIRCULAR cross-profession dependency (gem→ingot→vial→fuel→gem) forcing coordination; finished-item
+  drops become a rare boss bonus. Reshapes `StandardDrops`. Open numbers/rules noted in the doc.
 - [ ] **Party / grouping system** — replaces the current "allies in radius" stand-in for
   party heals/buffs; shared XP, party UI.
 - [~] **Active mob skills** — STARTED: caster (Mage-role) mobs cast two generic leveled spells
