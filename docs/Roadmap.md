@@ -124,10 +124,12 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   flat stat leans exist; needs the combat primitives layer first, then per-race kits.
   Lightbringer (healer) + Warchanter (buffer, gets a "Prophecy" party buff) are first up.
   ([[discipline-skills-plan]], [[class-tier-design]], [[mage-path-wip]])
-- [ ] **Crafting & material economy** (DESIGN DONE — `docs/Crafting.md` / [[crafting-economy-design]]):
-  gear via CRAFTING, materials DROP from mobs (not gathering); professions (jewel/weapon/armor/potion/scroll)
-  with a CIRCULAR cross-profession dependency (gem→ingot→vial→fuel→gem) forcing coordination; finished-item
-  drops become a rare boss bonus. Reshapes `StandardDrops`. Open numbers/rules noted in the doc.
+- [x] **Crafting & material economy** — BUILT (`docs/Crafting.md` / [[crafting-economy-design]]): mats drop
+  from mobs (5 types ↔ 5 professions), refine 5-same+2-cross, finished-item recipes, all 5 professions craft,
+  profession persist+choose, boss/elite mat piles. Scaled Common/Unc/Rare DROP gear (Epic set = craft/boss).
+  **Polish DONE:** `KnownRecipes` (persisted) unlocks DropOnly A-grade recipes via a dropped recipe BOOK
+  (EquipSlot.Box → open to learn; A-grade bosses drop them); L2 mutually-exclusive drop GROUPS (`DropEntry.GroupId`
+  — one weighted pick per group; body/weapon copies grouped in StandardDrops). Numbers retune-later.
 - [ ] **Party / grouping system** — replaces the current "allies in radius" stand-in for
   party heals/buffs; shared XP, party UI.
 - [~] **Active mob skills** — STARTED: caster (Mage-role) mobs cast two generic leveled spells

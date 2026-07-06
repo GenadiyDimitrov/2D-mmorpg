@@ -54,6 +54,9 @@ public class CharacterRecord
     /// <summary>Completed quest ids, comma-separated.</summary>
     public string CompletedQuestsCsv { get; set; } = "";
 
+    /// <summary>Recipe ids learned from drops (DropOnly recipes), comma-separated.</summary>
+    public string KnownRecipesCsv { get; set; } = "";
+
     /// <summary>Active quests as JSON list of CharacterQuestState.</summary>
     public string ActiveQuestsJson { get; set; } = "";
 

@@ -869,12 +869,17 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, $"Requires the {recipe.Profession} profession.");
             return;
         }
+        // DropOnly recipes (A-grade sets) must be learned from a dropped recipe BOOK; auto-known
+        // recipes just need the level gate.
         if (recipe.DropOnly)
         {
-            SendSystemToEntity(player, "That recipe must be learned from a drop (not yet supported).");
-            return;
+            if (!player.KnownRecipes.Contains(recipe.Id))
+            {
+                SendSystemToEntity(player, "You haven't learned that recipe (find its recipe book).");
+                return;
+            }
         }
-        if (player.Level < recipe.LearnLevel)
+        else if (player.Level < recipe.LearnLevel)
         {
             SendSystemToEntity(player, $"You must be level {recipe.LearnLevel} to craft this.");
             return;
@@ -2835,34 +2840,50 @@ var effect = def.Effect;
         if (mobType.Drops is null || mobType.Drops.Length == 0)
             return;
 
+        // Only entries valid at this mob's level. Independent entries roll on their own; entries
+        // sharing a GroupId > 0 form a mutually-exclusive group (roll once, pick one weighted).
+        var applicable = mobType.Drops.Where(e => e.AppliesAtLevel(mob.Level)).ToList();
+
         bool looted = false;
-        foreach (var entry in mobType.Drops)
+        void Award(DropEntry entry)
         {
-            // Level band: a drop can be restricted to a level range (0/0 = any).
-            if (!entry.AppliesAtLevel(mob.Level))
-                continue;
-
-            // Per-entry chance, scaled by the server drop-chance rate (clamped 100%).
-            float chance = Math.Min(1f, entry.Chance * RateConfig.DropChanceRate);
-            if (_rng.NextDouble() > chance)
-                continue;
-
             if (ItemCatalog.Get(entry.ItemId) is not ItemDef def)
-                continue;
-
-            // Quantity range, scaled by the drop-amount rate.
+                return;
             int qty = _rng.Next(entry.MinQty, entry.MaxQty + 1);
             qty = Math.Max(1, (int)(qty * RateConfig.DropAmountRate));
-
             if (!AddItem(killer, def.Id, qty))
             {
                 SendSystemToEntity(killer, $"{mob.Name} dropped {def.Name} — inventory full!");
-                continue;
+                return;
             }
-
             string qtyLabel = qty > 1 ? $" x{qty}" : "";
             SendSystemToEntity(killer, $"You looted: {def.Name}{qtyLabel} [{def.Grade}/{def.Rarity}]");
             looted = true;
+        }
+
+        // Independent entries (GroupId == 0): each its own rate-scaled roll.
+        foreach (var entry in applicable.Where(e => e.GroupId == 0))
+        {
+            float chance = Math.Min(1f, entry.Chance * RateConfig.DropChanceRate);
+            if (_rng.NextDouble() <= chance)
+                Award(entry);
+        }
+
+        // Drop groups (GroupId > 0): roll once at the summed chance, then pick one weighted member.
+        foreach (var group in applicable.Where(e => e.GroupId != 0).GroupBy(e => e.GroupId))
+        {
+            var members = group.ToList();
+            float total = Math.Min(1f, members.Sum(e => e.Chance) * RateConfig.DropChanceRate);
+            if (_rng.NextDouble() > total)
+                continue;
+            // Weighted pick within the group (weights = the raw member chances).
+            double weightSum = members.Sum(e => (double)e.Chance);
+            double pick = _rng.NextDouble() * weightSum;
+            foreach (var e in members)
+            {
+                pick -= e.Chance;
+                if (pick <= 0) { Award(e); break; }
+            }
         }
 
         looted |= RollBossBonus(killer, mob, mobType);
@@ -2908,6 +2929,9 @@ var effect = def.Effect;
         if (boss)
         {
             if (_rng.NextDouble() < 0.5) AddItem(killer, $"{weight}_t{tier}");
+            // A-grade (76) bosses can drop a DropOnly recipe BOOK for the tier's set body.
+            if (tier >= 76 && _rng.NextDouble() < 0.10)
+                AddItem(killer, ItemCatalog.RecipeBookId($"craft_{weight}_t{tier}"));
         }
         else if (_rng.NextDouble() < 0.20)
         {
@@ -3315,12 +3339,44 @@ var effect = def.Effect;
     /// <summary>Open a box/chest: consume one and roll each loot entry independently
     /// (chance 0..1). Gear arrives with rolled attributes. The box is consumed first so
     /// at least one slot is free for the loot.</summary>
+    /// <summary>Learn the recipe a recipe-book item teaches (adds it to the char's KnownRecipes,
+    /// which unlocks the DropOnly recipes). Consumes the book; a duplicate is refused (kept).</summary>
+    private void HandleLearnRecipe(Entity player, InventoryItem item, ItemDef def)
+    {
+        string recipeId = def.TeachesRecipeId;
+        if (RecipeCatalog.Get(recipeId) is not Recipe recipe)
+        {
+            SendSystemToEntity(player, "This recipe is no longer valid.");
+            return;
+        }
+        if (player.KnownRecipes.Contains(recipeId))
+        {
+            SendSystemToEntity(player, "You already know that recipe.");
+            return;
+        }
+        player.KnownRecipes.Add(recipeId);
+        if (item.Quantity > 1) item.Quantity--; else player.Inventory.Remove(item);
+
+        string outName = ItemCatalog.Get(recipe.OutputId)?.Name ?? recipe.OutputId;
+        SendSystemToEntity(player, $"Learned recipe: {outName}. (Requires the {recipe.Profession} profession to craft.)");
+        SendInventory(player);
+        SaveEntity(player);
+    }
+
     private void HandleOpenBox(OpenBoxCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
         var item = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
         if (item is null || item.Equipped) return;
         if (ItemCatalog.Get(item.DefId) is not ItemDef def || def.Slot != EquipSlot.Box) return;
+
+        // Recipe book: teaches its recipe instead of rolling a loot table.
+        if (ItemCatalog.IsRecipeBook(def))
+        {
+            HandleLearnRecipe(player, item, def);
+            return;
+        }
+
         if (BoxCatalog.Get(item.DefId) is not BoxDef box)
         {
             SendSystemToEntity(player, "This box can't be opened.");

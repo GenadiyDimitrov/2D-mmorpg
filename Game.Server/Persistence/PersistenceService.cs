@@ -255,6 +255,9 @@ public class PersistenceService
         foreach (var qid in rec.CompletedQuestsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
             entity.CompletedQuests.Add(qid);
 
+        foreach (var rid in rec.KnownRecipesCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            entity.KnownRecipes.Add(rid);
+
         if (!string.IsNullOrEmpty(rec.ActiveQuestsJson))
         {
             try
@@ -295,6 +298,7 @@ public class PersistenceService
         int SecondClass, int ThirdClass, int SkillPoints, int Profession,
         int Con, int Atk, int Wit, int Dex, float X, float Y,
         string LearnedSkillsCsv, string CompletedQuestsCsv, string ActiveQuestsJson,
+        string KnownRecipesCsv,
         IReadOnlyList<ItemSnapshot> Items)
     {
         /// <summary>Capture a character. MUST be called on the tick thread. Returns
@@ -314,6 +318,7 @@ public class PersistenceService
                 string.Join(',', e.LearnedSkills.Select(kv => $"{kv.Key}:{kv.Value}")),
                 string.Join(',', e.CompletedQuests),
                 JsonSerializer.Serialize(e.ActiveQuests.Values.ToList()),
+                string.Join(',', e.KnownRecipes),
                 items);
         }
     }
@@ -371,6 +376,7 @@ public class PersistenceService
         rec.LearnedSkillsCsv = snap.LearnedSkillsCsv;
         rec.CompletedQuestsCsv = snap.CompletedQuestsCsv;
         rec.ActiveQuestsJson = snap.ActiveQuestsJson;
+        rec.KnownRecipesCsv = snap.KnownRecipesCsv;
         rec.Con = snap.Con;
         rec.Atk = snap.Atk;
         rec.Wit = snap.Wit;

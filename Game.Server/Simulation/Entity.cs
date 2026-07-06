@@ -128,6 +128,10 @@ public class Entity
     /// <summary>Completed quest ids.</summary>
     public HashSet<string> CompletedQuests { get; } = new();
 
+    /// <summary>Recipe ids the character has learned from a DROP (the DropOnly recipes,
+    /// e.g. the A-grade set recipes). Auto-known recipes are gated by level, not this set.</summary>
+    public HashSet<string> KnownRecipes { get; } = new();
+
     /// <summary>NPC id this entity represents (NPCs only).</summary>
     public string? NpcId { get; set; }
     public NpcRole NpcRole { get; set; }

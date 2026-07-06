@@ -168,7 +168,10 @@ public record ItemDef(
     bool IsMagicWeapon = false,
     // Per-item basic-attack speed base (333 = normal; higher = faster). 0 = use the weapon
     // type default (StatCalculator.WeaponAttackBaseSpeed). Lets two bows differ (slow vs very slow).
-    int AttackSpeedBase = 0)
+    int AttackSpeedBase = 0,
+    // Recipe BOOK: the recipe id this item teaches when "opened" ("" = not a book). A book is an
+    // EquipSlot.Box so the client's open flow reuses; opening adds the id to the char's KnownRecipes.
+    string TeachesRecipeId = "")
 {
     /// <summary>Unified top-level category (derived from EquipSlot). Weapons are MainHand,
     /// shields OffHand; everything else maps 1:1.</summary>
@@ -707,6 +710,7 @@ public static class ItemCatalog
         list.AddRange(tieredGear);
         list.AddRange(ScaledDropItems(tieredGear));
         list.AddRange(Materials());
+        list.AddRange(RecipeBooks(tieredGear));
 
         // ----- Duplicate-key guard + value fill: any item left at Value 0 gets the
         //       formula price (quest items / god one-offs stay 0 = not for trade). -----
@@ -763,6 +767,24 @@ public static class ItemCatalog
         if (i < 0) return false;
         string tail = id.Substring(i + 2);
         return tail.Length > 0 && tail.All(char.IsDigit);
+    }
+
+    /// <summary>Recipe BOOKS for the DropOnly recipes — the A-grade (level-76) SET pieces, whose
+    /// craft recipe (`craft_&lt;id&gt;`) is DropOnly (see RecipeCatalog.FinishedItemRecipes). Each book
+    /// is an EquipSlot.Box (reuses the client open flow) that teaches its recipe. Derived from the
+    /// tiered gear here (NOT from RecipeCatalog) to avoid a circular static-init with the recipe
+    /// catalog, which itself reads ItemCatalog.AllItems.</summary>
+    private static IEnumerable<ItemDef> RecipeBooks(IEnumerable<ItemDef> tiered)
+    {
+        foreach (var d in tiered)
+        {
+            if (d.ItemLevel < 76 || d.Rarity != ItemRarity.Epic) continue;   // A-grade set pieces only
+            if (d.Slot is not (EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel)) continue;
+            string recipeId = $"craft_{d.Id}";
+            yield return new ItemDef(RecipeBookId(recipeId), $"Recipe: {d.Name}",
+                EquipSlot.Box, ItemGrade.A, ItemRarity.Epic,
+                TeachesRecipeId: recipeId);
+        }
     }
 
     private static IEnumerable<ItemDef> ScaledDropItems(IEnumerable<ItemDef> tiered)
@@ -990,6 +1012,12 @@ public static class ItemCatalog
 
     /// <summary>An openable box/chest (rolls its BoxCatalog loot table).</summary>
     public static bool IsBox(ItemDef def) => def.Slot == EquipSlot.Box;
+
+    /// <summary>A recipe BOOK — opening it teaches its recipe (see TeachesRecipeId).</summary>
+    public static bool IsRecipeBook(ItemDef def) => def.TeachesRecipeId.Length > 0;
+
+    /// <summary>The item id of the recipe book that teaches a given recipe.</summary>
+    public static string RecipeBookId(string recipeId) => $"recipe_{recipeId}";
 
     /// <summary>How many jewels of a given sub-type can be worn at once.</summary>
     public static int MaxOfJewelType(JewelType t) => t switch

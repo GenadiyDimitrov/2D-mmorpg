@@ -7,12 +7,17 @@ namespace Game.Shared;
 /// grey_wolf drops common hide at any level but wolf fangs only at level 25+.
 /// Chance and amount are scaled by the server RateConfig.</summary>
 public record DropEntry(string ItemId, float Chance, int MinQty = 1, int MaxQty = 1,
-    int MinLevel = 0, int MaxLevel = 0)
+    int MinLevel = 0, int MaxLevel = 0, int GroupId = 0)
 {
     /// <summary>Does this drop apply to a mob spawned at the given level?</summary>
     public bool AppliesAtLevel(int level) =>
         (MinLevel == 0 || level >= MinLevel) && (MaxLevel == 0 || level <= MaxLevel);
 }
+
+// GroupId semantics (L2 drop groups): entries with GroupId == 0 roll INDEPENDENTLY (each its own
+// chance). Entries sharing a GroupId > 0 form a MUTUALLY-EXCLUSIVE group — the group rolls once at
+// the SUM of its members' chances; on a hit, exactly ONE member is picked, weighted by its chance
+// (so a group yields at most one item). Use it for "one of these equips" style loot.
 
 /// <summary>
 /// A mob TEMPLATE: identity (id + display name), movement speeds, behavior, and
@@ -183,13 +188,15 @@ public static class MobCatalog
             MobCategory.Animal or MobCategory.Plant or MobCategory.Insect => ("light", "bow"),
             _ => ("heavy", "sword1h"),
         };
-        // Body armor (best usable-now odds) + a matching weapon, at each drop rarity.
-        drops.Add(new($"{fam.Body}_t{tier}_common", 0.040f));
-        drops.Add(new($"{fam.Body}_t{tier}_uncommon", 0.015f));
-        drops.Add(new($"{fam.Body}_t{tier}_rare", 0.004f));
-        drops.Add(new($"{fam.Weapon}_t{tier}_common", 0.025f));
-        drops.Add(new($"{fam.Weapon}_t{tier}_uncommon", 0.010f));
-        // A scaled accessory (helm) rounds out the set slots.
+        // Body armor + weapon, at each drop rarity. Each is a mutually-exclusive drop GROUP
+        // (GroupId 1 = body, 2 = weapon), so a kill yields at most one body and one weapon — the
+        // rarer copy is a weighted chance within the group, not a stack of three bodies.
+        drops.Add(new($"{fam.Body}_t{tier}_common", 0.040f, GroupId: 1));
+        drops.Add(new($"{fam.Body}_t{tier}_uncommon", 0.015f, GroupId: 1));
+        drops.Add(new($"{fam.Body}_t{tier}_rare", 0.004f, GroupId: 1));
+        drops.Add(new($"{fam.Weapon}_t{tier}_common", 0.025f, GroupId: 2));
+        drops.Add(new($"{fam.Weapon}_t{tier}_uncommon", 0.010f, GroupId: 2));
+        // A scaled accessory (helm) rounds out the set slots (independent roll).
         drops.Add(new($"helm_t{tier}_common", 0.030f));
         if (level >= 70) drops.Add(new(ItemCatalog.AttrScrollLegendary, 0.01f));
         return drops.ToArray();
