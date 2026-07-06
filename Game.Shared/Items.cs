@@ -7,7 +7,7 @@ public enum ItemRarity { Common = 0, Uncommon = 1, Rare = 2, Epic = 3, Legendary
 // Jewel = the magic-defence slot. ONE jewel equips for now; the equip code is
 // written to expand to the L2 layout (2 rings / 2 earrings / 1 necklace) later
 // by allowing several Jewel-slot items at once.
-public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2, Scroll = 3, QuestItem = 4, Shield = 5, Jewel = 6, Box = 7 }
+public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2, Scroll = 3, QuestItem = 4, Shield = 5, Jewel = 6, Box = 7, Material = 8 }
 
 /// <summary>Jewel sub-type — limits how many can be worn: 2 Rings, 2 Earrings, 1 Necklace.</summary>
 public enum JewelType { None = 0, Ring = 1, Earring = 2, Necklace = 3 }
@@ -15,7 +15,7 @@ public enum JewelType { None = 0, Ring = 1, Earring = 2, Necklace = 3 }
 /// <summary>Unified TOP-LEVEL item category, derived from EquipSlot (see ItemDef.Type).
 /// One clean axis for grouping/filtering. A 2H weapon is MainHand AND occupies the
 /// OffHand (no separate type — see ItemDef.OccupiesOffHand).</summary>
-public enum ItemType { Other = 0, MainHand, OffHand, Armor, Jewel, Consumable, Scroll, Box, Quest }
+public enum ItemType { Other = 0, MainHand, OffHand, Armor, Jewel, Consumable, Scroll, Box, Quest, Material }
 
 /// <summary>Unified SUB-TYPE across all items (see ItemDef.Subtype), derived from the
 /// per-domain enums (WeaponType / ArmorSlot / JewelType / ScrollKind …). Lets you ask
@@ -36,7 +36,7 @@ public enum ItemSubtype
     // Scroll
     EnchantScroll, AttributeScroll,
     // misc
-    Box, QuestToken,
+    Box, QuestToken, Material,
 }
 
 public enum ArmorWeight { None = 0, Heavy = 1, Light = 2, Robe = 3 }
@@ -182,6 +182,7 @@ public record ItemDef(
         EquipSlot.Scroll => ItemType.Scroll,
         EquipSlot.Box => ItemType.Box,
         EquipSlot.QuestItem => ItemType.Quest,
+        EquipSlot.Material => ItemType.Material,
         _ => ItemType.Other
     };
 
@@ -216,6 +217,7 @@ public record ItemDef(
         EquipSlot.Scroll => AttrScroll != AttrScrollKind.None ? ItemSubtype.AttributeScroll : ItemSubtype.EnchantScroll,
         EquipSlot.Box => ItemSubtype.Box,
         EquipSlot.QuestItem => ItemSubtype.QuestToken,
+        EquipSlot.Material => ItemSubtype.Material,
         _ => ItemSubtype.None
     };
 
@@ -700,6 +702,7 @@ public static class ItemCatalog
         //       their own base stats via the existing equip rails, so no new mechanic to test. -----
         list.AddRange(TieredWeapons());
         list.AddRange(TieredArmor());
+        list.AddRange(Materials());
 
         // ----- Duplicate-key guard + value fill: any item left at Value 0 gets the
         //       formula price (quest items / god one-offs stay 0 = not for trade). -----
@@ -713,6 +716,29 @@ public static class ItemCatalog
         }
         return dict;
     }
+
+    /// <summary>Crafting MATERIALS: 5 types × 5 rarities (docs/Crafting.md). Tradable + stackable,
+    /// no attributes; rarity drives the value. Each type is refined by its owning profession
+    /// (Crafting.RefinerOf) but every rarity also drops from mobs.</summary>
+    private static IEnumerable<ItemDef> Materials()
+    {
+        foreach (var type in Crafting.MaterialTypes)
+            foreach (var rarity in Crafting.MaterialRarities)
+                yield return new ItemDef(Crafting.MaterialId(type, rarity),
+                    Crafting.MaterialName(type, rarity),
+                    EquipSlot.Material, ItemGrade.F, rarity,
+                    Value: MaterialValue(rarity), NoAttributes: true);
+    }
+
+    private static int MaterialValue(ItemRarity rarity) => rarity switch
+    {
+        ItemRarity.Common => 5,
+        ItemRarity.Uncommon => 25,
+        ItemRarity.Rare => 120,
+        ItemRarity.Epic => 600,
+        ItemRarity.Legendary => 3000,
+        _ => 5
+    };
 
     /// <summary>Display letter for a gear LEVEL tier (20/40/52/61/76 → E/D/C/B/A). Cosmetic —
     /// the item's <see cref="ItemDef.ItemLevel"/> drives the mechanics, not the letter.</summary>
