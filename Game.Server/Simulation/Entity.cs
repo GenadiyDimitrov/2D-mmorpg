@@ -187,18 +187,28 @@ public class Entity
     public int Wit { get; set; }
     public int Dex { get; set; }
 
+    // Primary-stat DELTAS from armor sets (and later dyes/tattoos). Set in RecomputeDerived's
+    // pre-pass BEFORE the derived stats are computed, so a set's "CON +3" raises HP, "DEX +1"
+    // raises eva/acc/crit, etc. Included in the Effective* getters so live speed getters see them too.
+    public int BonusStr { get; set; }
+    public int BonusDex { get; set; }
+    public int BonusCon { get; set; }
+    public int BonusInt { get; set; }
+    public int BonusWit { get; set; }
+    public int BonusMen { get; set; }
+
     /// <summary>WIT used for ALL gameplay math (cast speed, MP, magic crit, interrupt,
     /// heals). MAGES gain WIT at level milestones to stand in for the not-yet-built dye
     /// + WIT-set bonuses; non-mages use flat WIT. Stored <see cref="Wit"/> stays the
     /// persisted base. See StatCalculator.LevelStatBonus.</summary>
     public int EffectiveWit =>
-        Wit + (BaseClass == BaseClass.Mage ? StatCalculator.LevelStatBonus(Level) : 0);
+        Wit + BonusWit + (BaseClass == BaseClass.Mage ? StatCalculator.LevelStatBonus(Level) : 0);
 
     /// <summary>DEX used for ALL gameplay math (attack speed, crit, evasion, accuracy).
     /// FIGHTERS gain DEX at level milestones (the same dye stand-in); mages use flat
     /// DEX. Stored <see cref="Dex"/> stays the persisted base.</summary>
     public int EffectiveDex =>
-        Dex + (BaseClass == BaseClass.Fighter ? StatCalculator.LevelStatBonus(Level) : 0);
+        Dex + BonusDex + (BaseClass == BaseClass.Fighter ? StatCalculator.LevelStatBonus(Level) : 0);
 
     // ----- Derived stats (recomputed on level-up / equip / class change) -------
 
@@ -565,31 +575,87 @@ public class Entity
     /// <summary>Interest-management cell. Maintained by CellGrid.</summary>
     public (int Cx, int Cy) Cell { get; set; }
 
+    /// <summary>The COMPLETED armor set the player is wearing (a worn BODY whose SetId matches a set,
+    /// plus that set's required accessory slots), or null. A body variant + the tier's shared accessory
+    /// line completes the set. Used by RecomputeDerived's pre-pass (primary stats) + set-bonus block.</summary>
+    private ArmorSetDef? DetectActiveSet()
+    {
+        if (Kind != EntityKind.Player) return null;
+        string bodySet = "", headSet = "", glovesSet = "", bootsSet = "";
+        foreach (var item in Inventory)
+        {
+            if (!item.Equipped || ItemCatalog.Get(item.DefId) is not ItemDef sd
+                || sd.Slot != EquipSlot.Armor || string.IsNullOrEmpty(sd.SetId))
+                continue;
+            switch (sd.ArmorSlot)
+            {
+                case ArmorSlot.Body: bodySet = sd.SetId; break;
+                case ArmorSlot.Head: headSet = sd.SetId; break;
+                case ArmorSlot.Gloves: glovesSet = sd.SetId; break;
+                case ArmorSlot.Boots: bootsSet = sd.SetId; break;
+            }
+        }
+        foreach (var set in ArmorSetCatalog.All)
+        {
+            string accId = string.IsNullOrEmpty(set.AccessorySetId) ? set.Id : set.AccessorySetId;
+            var required = set.RequiredSlots ?? ArmorSetCatalog.DefaultSlots;
+            bool complete = true;
+            foreach (var slot in required)
+            {
+                string worn = slot switch
+                {
+                    ArmorSlot.Body => bodySet,
+                    ArmorSlot.Head => headSet,
+                    ArmorSlot.Gloves => glovesSet,
+                    ArmorSlot.Boots => bootsSet,
+                    _ => ""
+                };
+                string need = slot == ArmorSlot.Body ? set.Id : accId;
+                if (worn != need) { complete = false; break; }
+            }
+            if (complete) return set;
+        }
+        return null;
+    }
+
     /// <summary>Recomputes everything derived from core stats, level and
     /// equipped items. Call on creation, level-up, equip changes and class
     /// change.</summary>
     public void RecomputeDerived()
     {
+        // ----- Primary-stat PRE-PASS: fold the active armor set's main-stat deltas into the
+        // Bonus* stats BEFORE deriving HP/MP/atk/eva/acc/crit, so a set's "CON +3" actually raises
+        // HP, "DEX +1" raises eva/acc/crit, "MEN" raises MP/M.Def, "STR/INT" raise P/M.Atk. Detected
+        // ONCE here and reused by the set's SECONDARY block below. (EffectiveDex/Wit include Bonus*.)
+        BonusStr = BonusDex = BonusCon = BonusInt = BonusWit = BonusMen = 0;
+        var activeSet = Kind == EntityKind.Player ? DetectActiveSet() : null;
+        if (activeSet is not null)
+        {
+            var pm = activeSet.Mods;
+            BonusStr = (int)pm.Str; BonusDex = (int)pm.Dex; BonusCon = (int)pm.Con;
+            BonusInt = (int)pm.Int; BonusWit = (int)pm.Wit; BonusMen = (int)pm.Men;
+        }
+
         // Players derive from core stats + class curves; MOBS read the authored per-level
         // BASE curve (docs/mobs/mob_base_stats.csv) — the "level modifier" term of the mob
         // formula. CON/passives (MobMod, later masteries) and rank multipliers layer on top
         // in SpawnOneInZone. See MobBaseStats.
         MaxHp = Kind == EntityKind.Player
-            ? StatCalculator.MaxHp(Con, Level,
+            ? StatCalculator.MaxHp(Con + BonusCon, Level,
                 StatCalculator.HpClassLevelModifier(BaseClass, Archetype),
                 StatCalculator.Level1BaseHp(Race, BaseClass))
             : MobBaseStats.Hp(Level);
         MaxMp = Kind == EntityKind.Player
-            ? StatCalculator.MaxMp(StatCalculator.BaseMen(Race, BaseClass), Level,
+            ? StatCalculator.MaxMp(StatCalculator.BaseMen(Race, BaseClass) + BonusMen, Level,
                 StatCalculator.MpClassLevelModifier(BaseClass, Archetype),
                 StatCalculator.Level1BaseMp(BaseClass))
             : MobBaseStats.Mp(Level);
         AttackPower = Kind == EntityKind.Player
-            ? StatCalculator.AttackPower(AtkStat, Level)
+            ? StatCalculator.AttackPower(AtkStat, Level) + BonusStr * 3   // STR → P.Atk (first-pass coeff)
             : MobBaseStats.PAtk(Level);
         MagicAttack = Kind == EntityKind.Player
-            ? StatCalculator.AttackPower(AtkStat, Level) // mAtk also from ATK
-            : MobBaseStats.MAtk(Level);                  // mobs: separate authored M.Atk track
+            ? StatCalculator.AttackPower(AtkStat, Level) + BonusInt * 3   // INT → M.Atk
+            : MobBaseStats.MAtk(Level);
         // Defence (authentic L2): players use armor/jewel-driven base + level²/100, no CON
         // term. Mobs use their authored base curve (P.Def and M.Def separately).
         Defence = Kind == EntityKind.Player
@@ -785,85 +851,49 @@ public class Entity
         // Head/Gloves/Boots are filled with that set's accessory line. This lets the
         // light & robe newbie bodies SHARE one accessory line (each body its own bonus).
         // A classic single-id set (AccessorySetId = "") just matches its own id. -----
+        // The active set was DETECTED in the pre-pass (its PRIMARY-stat deltas are already folded);
+        // here we apply its SECONDARY stats + the legacy flat/percent bonuses.
         ActiveArmorSet = "";
-        if (Kind == EntityKind.Player)
+        if (activeSet is ArmorSetDef set)
         {
-            string bodySet = "", headSet = "", glovesSet = "", bootsSet = "";
-            foreach (var item in Inventory)
-            {
-                if (!item.Equipped || ItemCatalog.Get(item.DefId) is not ItemDef sd
-                    || sd.Slot != EquipSlot.Armor || string.IsNullOrEmpty(sd.SetId))
-                    continue;
-                switch (sd.ArmorSlot)
-                {
-                    case ArmorSlot.Body: bodySet = sd.SetId; break;
-                    case ArmorSlot.Head: headSet = sd.SetId; break;
-                    case ArmorSlot.Gloves: glovesSet = sd.SetId; break;
-                    case ArmorSlot.Boots: bootsSet = sd.SetId; break;
-                }
-            }
-            foreach (var set in ArmorSetCatalog.All)
-            {
-                string accId = string.IsNullOrEmpty(set.AccessorySetId) ? set.Id : set.AccessorySetId;
-                var required = set.RequiredSlots ?? ArmorSetCatalog.DefaultSlots;
-                bool complete = true;
-                foreach (var slot in required)
-                {
-                    string worn = slot switch
-                    {
-                        ArmorSlot.Body => bodySet,
-                        ArmorSlot.Head => headSet,
-                        ArmorSlot.Gloves => glovesSet,
-                        ArmorSlot.Boots => bootsSet,
-                        _ => ""
-                    };
-                    string need = slot == ArmorSlot.Body ? set.Id : accId;
-                    if (worn != need) { complete = false; break; }
-                }
-                if (complete)
-                {
-                    MaxHp += set.Bonus.MaxHp;
-                    MaxMp += set.Bonus.MaxMp;
-                    Defence += set.Bonus.Defence;
-                    AttackPower += set.Bonus.Attack;
-                    MagicAttack += set.Bonus.Attack;   // set Attack feeds both channels
-                    Evasion += set.Bonus.Evasion;
-                    Accuracy += set.Bonus.Accuracy;
-                    // Optional PERCENT set bonuses (e.g. newbie light +2% P.Def, robe +15% cast).
-                    if (set.DefencePct != 0f) Defence += (int)(Defence * set.DefencePct);
-                    if (set.CastSpeedPct != 0f)
-                        CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier * (1f - set.CastSpeedPct), 0.4f, 2.5f);
+            MaxHp += set.Bonus.MaxHp;
+            MaxMp += set.Bonus.MaxMp;
+            Defence += set.Bonus.Defence;
+            AttackPower += set.Bonus.Attack;
+            MagicAttack += set.Bonus.Attack;   // set Attack feeds both channels
+            Evasion += set.Bonus.Evasion;
+            Accuracy += set.Bonus.Accuracy;
+            // Optional PERCENT set bonuses (e.g. newbie light +2% P.Def, robe +15% cast).
+            if (set.DefencePct != 0f) Defence += (int)(Defence * set.DefencePct);
+            if (set.CastSpeedPct != 0f)
+                CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier * (1f - set.CastSpeedPct), 0.4f, 2.5f);
 
-                    // Full StatMods set bonus (tiered gear) — SECONDARY stats only. PRIMARY-stat
-                    // deltas (m.Str/Dex/Con/…) are stored on the set but NOT applied here: they must
-                    // land before HP/def are derived (a pre-pass), which is a separate tested change.
-                    var m = set.Mods;
-                    MaxHp = (int)((MaxHp + m.MaxHp) * (1f + m.MaxHpPct));
-                    MaxMp = (int)((MaxMp + m.MaxMp) * (1f + m.MaxMpPct));
-                    Defence = (int)((Defence + (int)m.PDef) * (1f + m.PDefPct));
-                    MagicDefence = (int)((MagicDefence + (int)m.MDef) * (1f + m.MDefPct));
-                    AttackPower = (int)((AttackPower + (int)m.PAtk) * (1f + m.PAtkPct));
-                    MagicAttack = (int)((MagicAttack + (int)m.MAtk) * (1f + m.MAtkPct));
-                    Evasion = (int)((Evasion + (int)m.Evasion) * (1f + m.EvasionPct));
-                    Accuracy += (int)m.Accuracy;
-                    if (m.CastSpeedPct != 0f)
-                        CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier / (1f + m.CastSpeedPct), 0.4f, 2.5f);
-                    if (m.AtkSpeedPct != 0f)
-                        AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier / (1f + m.AtkSpeedPct), 0.4f, 2.5f);
-                    if (m.MoveSpeed != 0f)
-                    {
-                        RunSpeed += m.MoveSpeed;
-                        WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor;
-                        Speed = RunSpeed;
-                    }
-                    if (m.HpRegenPct != 0f) HpRegenMult *= 1f + m.HpRegenPct;
-                    if (m.MpRegenPct != 0f) MpRegenMult *= 1f + m.MpRegenPct;
-                    MeleeVamp += m.MeleeVamp;
-                    MeleeReflect += m.Reflect;
-                    ActiveArmorSet = set.Name;
-                    break;
-                }
+            // Full StatMods set bonus (tiered gear) — SECONDARY stats (primary-stat deltas were
+            // folded in the pre-pass at the top of this method).
+            var m = set.Mods;
+            MaxHp = (int)((MaxHp + m.MaxHp) * (1f + m.MaxHpPct));
+            MaxMp = (int)((MaxMp + m.MaxMp) * (1f + m.MaxMpPct));
+            Defence = (int)((Defence + (int)m.PDef) * (1f + m.PDefPct));
+            MagicDefence = (int)((MagicDefence + (int)m.MDef) * (1f + m.MDefPct));
+            AttackPower = (int)((AttackPower + (int)m.PAtk) * (1f + m.PAtkPct));
+            MagicAttack = (int)((MagicAttack + (int)m.MAtk) * (1f + m.MAtkPct));
+            Evasion = (int)((Evasion + (int)m.Evasion) * (1f + m.EvasionPct));
+            Accuracy += (int)m.Accuracy;
+            if (m.CastSpeedPct != 0f)
+                CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier / (1f + m.CastSpeedPct), 0.4f, 2.5f);
+            if (m.AtkSpeedPct != 0f)
+                AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier / (1f + m.AtkSpeedPct), 0.4f, 2.5f);
+            if (m.MoveSpeed != 0f)
+            {
+                RunSpeed += m.MoveSpeed;
+                WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor;
+                Speed = RunSpeed;
             }
+            if (m.HpRegenPct != 0f) HpRegenMult *= 1f + m.HpRegenPct;
+            if (m.MpRegenPct != 0f) MpRegenMult *= 1f + m.MpRegenPct;
+            MeleeVamp += m.MeleeVamp;
+            MeleeReflect += m.Reflect;
+            ActiveArmorSet = set.Name;
         }
 
         // Archetype identity: scale basic-attack power, add crit/eva for
@@ -1068,7 +1098,7 @@ public class Entity
         // overwritten at spawn.
         if (Kind == EntityKind.Player)
             MagicDefence = (int)(MagicDefence *
-                StatCalculator.MenModifier(StatCalculator.BaseMen(Race, BaseClass)));
+                StatCalculator.MenModifier(StatCalculator.BaseMen(Race, BaseClass) + BonusMen));
 
         // ----- Timed-buff contributions to BAKED stats (the stats computed once here;
         // atk/def/speed read buffs live in their Effective* getters instead). Re-folded on
