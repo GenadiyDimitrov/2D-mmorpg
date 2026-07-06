@@ -135,10 +135,10 @@ public static class MobCatalog
     private static int GearTier(int level) =>
         level >= 76 ? 76 : level >= 61 ? 61 : level >= 52 ? 52 : level >= 40 ? 40 : 20;
 
-    /// <summary>Level-banded drop table on the NEW tiered gear (docs/gear/gear_sets.csv). Potions/
-    /// scrolls scale with level; every armor/shield/accessory/jewel piece + a family-flavored weapon
-    /// of the mob's tier drops at RARE chances (owner). Old generated armor/weapons no longer drop.
-    /// Body weight + weapon type follow the creature family. Retune via chances or the global RateConfig.</summary>
+    /// <summary>MATS-PRIMARY drop table (docs/Crafting.md): every mob drops crafting materials
+    /// (amount rises with level; rarity gates at 30/60/76 = uncommon/rare/epic), family-flavored mat
+    /// types, plus potions/scrolls and a LOW chance at a finished tiered piece (the "usable now" drop).
+    /// Bosses layer more via zone rank. Retune via chances or the global RateConfig.</summary>
     private static DropEntry[] StandardDrops(int level, MobCategory cat)
     {
         string potion = level >= 60 ? ItemCatalog.GreaterPotion
@@ -147,41 +147,41 @@ public static class MobCatalog
         string scroll = level >= 45 ? ItemCatalog.ScrollRare
                       : level >= 20 ? ItemCatalog.ScrollUncommon
                       : ItemCatalog.ScrollCommon;
-        string attr = level >= 60 ? ItemCatalog.AttrScrollRare
-                    : level >= 30 ? ItemCatalog.AttrScrollUncommon
-                    : ItemCatalog.AttrScrollCommon;
-        int t = GearTier(level);
+        // Family-flavored primary mat types (+ Gem is universal).
+        (MaterialType A, MaterialType B) mats = cat switch
+        {
+            MobCategory.Animal or MobCategory.Plant => (MaterialType.Leather, MaterialType.Wood),
+            MobCategory.Humanoid => (MaterialType.Ingot, MaterialType.Thread),
+            MobCategory.Undead => (MaterialType.Thread, MaterialType.Gem),
+            MobCategory.Insect => (MaterialType.Thread, MaterialType.Leather),
+            MobCategory.Demon or MobCategory.Dragon => (MaterialType.Ingot, MaterialType.Gem),
+            _ => (MaterialType.Gem, MaterialType.Wood),   // MagicCreature / Angel
+        };
+        string Mat(MaterialType type, ItemRarity r) => Crafting.MaterialId(type, r);
+        int matMax = 1 + level / 15;   // amount rises with mob level (L15→2 … L75→6)
+
+        var drops = new List<DropEntry>
+        {
+            new(potion, 0.30f, 1, level >= 30 ? 2 : 1),
+            new(scroll, 0.06f),
+            // Common materials — the MAIN loot.
+            new(Mat(mats.A, ItemRarity.Common), 0.55f, 1, matMax),
+            new(Mat(mats.B, ItemRarity.Common), 0.40f, 1, matMax),
+            new(Mat(MaterialType.Gem, ItemRarity.Common), 0.20f, 1, Math.Max(1, matMax / 2)),
+        };
+        // Higher-rarity mats gated by mob level (low → very low chances).
+        if (level >= 30) { drops.Add(new(Mat(mats.A, ItemRarity.Uncommon), 0.08f)); drops.Add(new(Mat(mats.B, ItemRarity.Uncommon), 0.05f)); }
+        if (level >= 60) drops.Add(new(Mat(mats.A, ItemRarity.Rare), 0.03f));
+        if (level >= 76) drops.Add(new(Mat(mats.A, ItemRarity.Epic), 0.005f));
+
+        // A LOW chance at a finished tiered piece of the mob's tier (usable-now drop; family weight).
         string weight = cat switch
         {
             MobCategory.Undead or MobCategory.Angel or MobCategory.MagicCreature => "robe",
             MobCategory.Animal or MobCategory.Plant or MobCategory.Insect => "light",
             _ => "heavy",
         };
-        string weaponKey = cat switch
-        {
-            MobCategory.Insect => "duals",
-            MobCategory.Undead => "blunt1h",
-            MobCategory.MagicCreature or MobCategory.Angel => "staff",
-            MobCategory.Demon or MobCategory.Dragon => "sword2h",
-            MobCategory.Animal => "bow",
-            _ => "sword1h",   // Humanoid + Plant
-        };
-        var drops = new List<DropEntry>
-        {
-            new(potion, 0.30f, 1, level >= 30 ? 2 : 1),
-            new(scroll, 0.08f),
-            new(attr, 0.04f),
-            // Tiered gear — all pieces droppable at RARE chances. Armors carry no attributes for now.
-            new($"{weight}_t{t}", 0.03f),
-            new($"{weaponKey}_t{t}", 0.03f),
-            new($"shield_t{t}", 0.02f),
-            new($"gloves_t{t}", 0.02f),
-            new($"boots_t{t}", 0.02f),
-            new($"helm_t{t}", 0.02f),
-            new($"necklace_t{t}", 0.015f),
-            new($"ring_t{t}", 0.02f),
-            new($"earring_t{t}", 0.02f),
-        };
+        drops.Add(new($"{weight}_t{GearTier(level)}", 0.01f));
         if (level >= 70) drops.Add(new(ItemCatalog.AttrScrollLegendary, 0.01f));
         return drops.ToArray();
     }

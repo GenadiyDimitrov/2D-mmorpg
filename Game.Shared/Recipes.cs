@@ -28,8 +28,7 @@ public static class RecipeCatalog
     {
         var list = new List<Recipe>();
         list.AddRange(RefinementRecipes());
-        // Finished-item recipes (gear/potions/scrolls) are added in a later slice, once the
-        // per-grade material-cost formula + scaled drop items land.
+        list.AddRange(FinishedItemRecipes());
 
         var dict = new Dictionary<string, Recipe>();
         foreach (var r in list)
@@ -86,6 +85,87 @@ public static class RecipeCatalog
                     },
                     SuccessChance: 1f,
                     LearnLevel: RefineLearnLevel(high));
+        }
+    }
+
+    // ----- Finished-item (Epic SET) recipes: each tiered gear piece is craftable from mats. Cost =
+    //  a BULK rarity (×2) + an ACCENT rarity (one higher), scaled by grade × slot, split by the item's
+    //  material composition. Reproduces the owner's E-body anchor (100 common 50/20/20/10 + 50 unc
+    //  25/10/10/5 ingot/leather/thread/gem). Sets = 100% success; A-grade (76) recipe is DropOnly. -----
+    private static ItemRarity BulkRarity(int lvl) =>
+        lvl >= 76 ? ItemRarity.Epic : lvl >= 52 ? ItemRarity.Rare : lvl >= 40 ? ItemRarity.Uncommon : ItemRarity.Common;
+    private static ItemRarity AccentRarity(int lvl) =>
+        lvl >= 76 ? ItemRarity.Legendary : lvl >= 52 ? ItemRarity.Epic : lvl >= 40 ? ItemRarity.Rare : ItemRarity.Uncommon;
+    private static float GradeMult(int lvl) =>
+        lvl >= 76 ? 2.8f : lvl >= 61 ? 2.2f : lvl >= 52 ? 1.7f : lvl >= 40 ? 1.3f : 1.0f;
+
+    private static float SlotWeight(ItemDef d) => d.Slot switch
+    {
+        EquipSlot.Weapon => 1.0f,
+        EquipSlot.Shield => 0.5f,
+        EquipSlot.Jewel  => d.JewelType == JewelType.Necklace ? 0.5f : 0.3f,
+        EquipSlot.Armor  => d.ArmorSlot switch { ArmorSlot.Body => 1.0f, ArmorSlot.Head => 0.5f, _ => 0.35f },
+        _ => 0.5f
+    };
+
+    private static Profession ProfOf(ItemDef d) => d.Slot switch
+    {
+        EquipSlot.Weapon => Profession.WeaponSmith,
+        EquipSlot.Armor or EquipSlot.Shield => Profession.ArmorSmith,
+        EquipSlot.Jewel => Profession.Jeweler,
+        _ => Profession.None
+    };
+
+    private static (MaterialType Type, float Frac)[] Composition(ItemDef d)
+    {
+        switch (d.Slot)
+        {
+            case EquipSlot.Weapon:
+                return new[] { (MaterialType.Ingot, 0.6f), (MaterialType.Gem, 0.2f), (MaterialType.Wood, 0.2f) };
+            case EquipSlot.Jewel:
+                return new[] { (MaterialType.Gem, 0.6f), (MaterialType.Ingot, 0.2f), (MaterialType.Leather, 0.2f) };
+            case EquipSlot.Shield:
+                return new[] { (MaterialType.Ingot, 0.6f), (MaterialType.Leather, 0.2f), (MaterialType.Gem, 0.2f) };
+            case EquipSlot.Armor when d.ArmorSlot == ArmorSlot.Body:
+                return d.Weight switch
+                {
+                    ArmorWeight.Heavy => new[] { (MaterialType.Ingot, 0.5f), (MaterialType.Leather, 0.2f), (MaterialType.Thread, 0.2f), (MaterialType.Gem, 0.1f) },
+                    ArmorWeight.Robe  => new[] { (MaterialType.Thread, 0.5f), (MaterialType.Ingot, 0.2f), (MaterialType.Leather, 0.2f), (MaterialType.Gem, 0.1f) },
+                    _                 => new[] { (MaterialType.Leather, 0.5f), (MaterialType.Ingot, 0.2f), (MaterialType.Thread, 0.2f), (MaterialType.Gem, 0.1f) },
+                };
+            case EquipSlot.Armor:   // weightless accessories (helm/gloves/boots)
+                return new[] { (MaterialType.Leather, 0.4f), (MaterialType.Ingot, 0.3f), (MaterialType.Thread, 0.2f), (MaterialType.Gem, 0.1f) };
+            default:
+                return System.Array.Empty<(MaterialType, float)>();
+        }
+    }
+
+    private static IEnumerable<Recipe> FinishedItemRecipes()
+    {
+        foreach (var d in ItemCatalog.AllItems)
+        {
+            if (d.ItemLevel <= 0) continue;   // only the tiered gear
+            if (d.Slot is not (EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel)) continue;
+            var prof = ProfOf(d);
+            if (prof == Profession.None) continue;
+
+            int bulk = System.Math.Max(1, (int)(100 * SlotWeight(d) * GradeMult(d.ItemLevel)));
+            int accent = System.Math.Max(1, bulk / 2);
+            var bulkR = BulkRarity(d.ItemLevel);
+            var accentR = AccentRarity(d.ItemLevel);
+
+            var inputs = new List<RecipeInput>();
+            foreach (var (type, frac) in Composition(d))
+            {
+                inputs.Add(new RecipeInput(Crafting.MaterialId(type, bulkR), System.Math.Max(1, (int)(bulk * frac))));
+                inputs.Add(new RecipeInput(Crafting.MaterialId(type, accentR), System.Math.Max(1, (int)(accent * frac))));
+            }
+
+            yield return new Recipe(
+                $"craft_{d.Id}", prof, d.Id, inputs.ToArray(),
+                SuccessChance: 1f,                 // Epic set = guaranteed; the mats are the gate
+                LearnLevel: d.ItemLevel,
+                DropOnly: d.ItemLevel >= 76);      // A-grade recipes come from bosses/trade
         }
     }
 
