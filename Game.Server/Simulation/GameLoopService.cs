@@ -2897,15 +2897,22 @@ var effect = def.Effect;
         if (boss && mob.Level >= 30 && _rng.NextDouble() < 0.5) GiveMat(primary, ItemRarity.Rare, 1);
         if (boss && mob.Level >= 76 && _rng.NextDouble() < 0.2) GiveMat(primary, ItemRarity.Epic, 1);
 
-        // A chance at the finished tiered set piece (armor body by family).
+        // A chance at a gear body by family: a BOSS drops the finished Epic SET piece; an ELITE
+        // drops the weaker scaled Rare copy (the full set stays a boss/craft goal).
         string weight = mobType.Category switch
         {
             MobCategory.Undead or MobCategory.Angel or MobCategory.MagicCreature => "robe",
             MobCategory.Animal or MobCategory.Plant or MobCategory.Insect => "light",
             _ => "heavy",
         };
-        if (_rng.NextDouble() < (boss ? 0.5f : 0.15f))
-            AddItem(killer, $"{weight}_t{tier}");
+        if (boss)
+        {
+            if (_rng.NextDouble() < 0.5) AddItem(killer, $"{weight}_t{tier}");
+        }
+        else if (_rng.NextDouble() < 0.20)
+        {
+            AddItem(killer, $"{weight}_t{tier}_rare");
+        }
 
         SendSystemToEntity(killer, $"{mob.Name} dropped crafting materials!");
         return true;

@@ -174,14 +174,23 @@ public static class MobCatalog
         if (level >= 60) drops.Add(new(Mat(mats.A, ItemRarity.Rare), 0.03f));
         if (level >= 76) drops.Add(new(Mat(mats.A, ItemRarity.Epic), 0.005f));
 
-        // A LOW chance at a finished tiered piece of the mob's tier (usable-now drop; family weight).
-        string weight = cat switch
+        // Usable-now GEAR drops: the SCALED Common/Uncommon/Rare copies of the mob's tier gear
+        // (the full Epic set stays craft/boss-only). Family weight picks the body + weapon flavor.
+        int tier = GearTier(level);
+        (string Body, string Weapon) fam = cat switch
         {
-            MobCategory.Undead or MobCategory.Angel or MobCategory.MagicCreature => "robe",
-            MobCategory.Animal or MobCategory.Plant or MobCategory.Insect => "light",
-            _ => "heavy",
+            MobCategory.Undead or MobCategory.Angel or MobCategory.MagicCreature => ("robe", "wand"),
+            MobCategory.Animal or MobCategory.Plant or MobCategory.Insect => ("light", "bow"),
+            _ => ("heavy", "sword1h"),
         };
-        drops.Add(new($"{weight}_t{GearTier(level)}", 0.01f));
+        // Body armor (best usable-now odds) + a matching weapon, at each drop rarity.
+        drops.Add(new($"{fam.Body}_t{tier}_common", 0.040f));
+        drops.Add(new($"{fam.Body}_t{tier}_uncommon", 0.015f));
+        drops.Add(new($"{fam.Body}_t{tier}_rare", 0.004f));
+        drops.Add(new($"{fam.Weapon}_t{tier}_common", 0.025f));
+        drops.Add(new($"{fam.Weapon}_t{tier}_uncommon", 0.010f));
+        // A scaled accessory (helm) rounds out the set slots.
+        drops.Add(new($"helm_t{tier}_common", 0.030f));
         if (level >= 70) drops.Add(new(ItemCatalog.AttrScrollLegendary, 0.01f));
         return drops.ToArray();
     }

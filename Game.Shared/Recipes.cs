@@ -145,7 +145,9 @@ public static class RecipeCatalog
     {
         foreach (var d in ItemCatalog.AllItems)
         {
-            if (d.ItemLevel <= 0) continue;   // only the tiered gear
+            if (d.ItemLevel <= 0) continue;              // only the tiered gear
+            if (d.Rarity != ItemRarity.Epic) continue;   // only the Epic SET pieces are craftable
+                                                         // (the scaled Common/Unc/Rare copies are drop-only)
             if (d.Slot is not (EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel)) continue;
             var prof = ProfOf(d);
             if (prof == Profession.None) continue;

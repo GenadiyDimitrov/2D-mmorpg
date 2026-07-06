@@ -700,8 +700,12 @@ public static class ItemCatalog
         // ----- Level-tier gear (docs/gear/gear_sets.csv): weapons + base armor/shield/accessory/
         //       jewel pieces. SET BONUSES (and the dmg/support VARIANTS) come later; these carry only
         //       their own base stats via the existing equip rails, so no new mechanic to test. -----
-        list.AddRange(TieredWeapons());
-        list.AddRange(TieredArmor());
+        // The tiered gear pieces (Epic rarity) = the craft/boss SET tier. From each base piece we
+        // also generate weaker Common/Uncommon/Rare DROP versions (scaled stats, no set), so mobs
+        // can drop usable-now gear while the full set stays a crafting/boss goal.
+        var tieredGear = TieredWeapons().Concat(TieredArmor()).ToList();
+        list.AddRange(tieredGear);
+        list.AddRange(ScaledDropItems(tieredGear));
         list.AddRange(Materials());
 
         // ----- Duplicate-key guard + value fill: any item left at Value 0 gets the
@@ -739,6 +743,59 @@ public static class ItemCatalog
         ItemRarity.Legendary => 3000,
         _ => 5
     };
+
+    /// <summary>The scaled Common/Uncommon/Rare DROP versions of the tiered gear. Each base tier
+    /// piece (the Epic set item) spawns three weaker copies at ~65/78/90% of its stats, standalone
+    /// (no SetId, so no set bonus). Only the plain base-tier pieces get copies — the alternate body
+    /// VARIANTS (e.g. "heavy_t52_dmg") stay set-only. Ids: "<baseid>_common" etc.</summary>
+    private static readonly (ItemRarity Rarity, float Scale)[] DropTiers =
+    {
+        (ItemRarity.Common,   0.65f),
+        (ItemRarity.Uncommon, 0.78f),
+        (ItemRarity.Rare,     0.90f),
+    };
+
+    /// <summary>True for a plain base-tier id like "heavy_t52" (the part after the last "_t" is all
+    /// digits) — excludes alternate variants like "heavy_t52_dmg".</summary>
+    private static bool IsBaseTier(string id)
+    {
+        int i = id.LastIndexOf("_t", StringComparison.Ordinal);
+        if (i < 0) return false;
+        string tail = id.Substring(i + 2);
+        return tail.Length > 0 && tail.All(char.IsDigit);
+    }
+
+    private static IEnumerable<ItemDef> ScaledDropItems(IEnumerable<ItemDef> tiered)
+    {
+        foreach (var d in tiered)
+        {
+            if (d.Slot is not (EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel)) continue;
+            if (!IsBaseTier(d.Id)) continue;   // only plain base-tier pieces spawn drop copies
+
+            foreach (var (rarity, scale) in DropTiers)
+            {
+                int S(int v) => v == 0 ? 0 : Math.Max(1, (int)(v * scale));
+                string name = $"{rarity} {d.Name}";
+                yield return d with
+                {
+                    Id = $"{d.Id}_{rarity.ToString().ToLowerInvariant()}",
+                    Name = name,
+                    Rarity = rarity,
+                    AtkBonus = S(d.AtkBonus),
+                    MAtkBonus = S(d.MAtkBonus),
+                    DefBonus = S(d.DefBonus),
+                    MDefBonus = S(d.MDefBonus),
+                    HpBonus = S(d.HpBonus),
+                    MpBonus = S(d.MpBonus),
+                    EvaBonus = S(d.EvaBonus),
+                    ShieldDefense = S(d.ShieldDefense),
+                    SetId = "",            // drop copies are standalone (no set bonus)
+                    NoAttributes = true,   // armors carry no attributes for now (owner)
+                    Value = 0,             // filled from DefaultValue (rarity-scaled)
+                };
+            }
+        }
+    }
 
     /// <summary>Display letter for a gear LEVEL tier (20/40/52/61/76 → E/D/C/B/A). Cosmetic —
     /// the item's <see cref="ItemDef.ItemLevel"/> drives the mechanics, not the letter.</summary>
@@ -778,7 +835,7 @@ public static class ItemCatalog
         foreach (var w in weapons)
             foreach (var (L, P, M, As) in w.Rows)
                 yield return new ItemDef($"{w.Key}_t{L}", $"{TierLetter(L)}-Grade {w.Noun}",
-                    EquipSlot.Weapon, TierGrade(L), ItemRarity.Rare,
+                    EquipSlot.Weapon, TierGrade(L), ItemRarity.Epic,
                     WeaponType: w.Type, AtkBonus: P, MAtkBonus: M, WeaponRange: w.Range,
                     ItemLevel: L, IsMagicWeapon: w.Magic, AttackSpeedBase: As);
     }
@@ -802,7 +859,7 @@ public static class ItemCatalog
         foreach (var b in bodies)
             for (int i = 0; i < lv.Length; i++)
                 yield return new ItemDef($"{b.Key}_t{lv[i]}", $"{TierLetter(lv[i])}-Grade {b.Noun}",
-                    EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Rare,
+                    EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Epic,
                     Weight: b.W, ArmorSlot: ArmorSlot.Body, DefBonus: b.Def[i], MpBonus: b.Mp[i],
                     ItemLevel: lv[i], NoAttributes: true, SetId: $"set_{b.Key}_t{lv[i]}");
 
@@ -822,7 +879,7 @@ public static class ItemCatalog
         };
         foreach (var v in variants)
             yield return new ItemDef(v.Key, $"{TierLetter(v.L)}-Grade {v.Noun} ({v.Role})",
-                EquipSlot.Armor, TierGrade(v.L), ItemRarity.Rare,
+                EquipSlot.Armor, TierGrade(v.L), ItemRarity.Epic,
                 Weight: v.W, ArmorSlot: ArmorSlot.Body, DefBonus: v.Def, MpBonus: v.Mp,
                 ItemLevel: v.L, NoAttributes: true, SetId: $"set_{v.Key}");
 
@@ -836,7 +893,7 @@ public static class ItemCatalog
         foreach (var a in acc)
             for (int i = 0; i < lv.Length; i++)
                 yield return new ItemDef($"{a.Key}_t{lv[i]}", $"{TierLetter(lv[i])}-Grade {a.Noun}",
-                    EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Rare,
+                    EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Epic,
                     ArmorSlot: a.Slot, DefBonus: a.Def[i], ItemLevel: lv[i], NoAttributes: true,
                     SetId: $"set_acc_t{lv[i]}");   // shared accessory line per tier (all weights)
 
@@ -848,7 +905,7 @@ public static class ItemCatalog
         int[] shEvaPen = { 7, 7, 8, 8, 9 };
         for (int i = 0; i < lv.Length; i++)
             yield return new ItemDef($"shield_t{lv[i]}", $"{TierLetter(lv[i])}-Grade Kite Shield",
-                EquipSlot.Shield, TierGrade(lv[i]), ItemRarity.Rare,
+                EquipSlot.Shield, TierGrade(lv[i]), ItemRarity.Epic,
                 BlockChance: shBlock[i], BlockReduction: shReduce[i], ShieldDefense: shDef[i],
                 ShieldCritDefense: shCrit[i], ShieldEvasionPenalty: shEvaPen[i],
                 ItemLevel: lv[i], NoAttributes: true);
@@ -863,7 +920,7 @@ public static class ItemCatalog
         foreach (var j in jewels)
             for (int i = 0; i < lv.Length; i++)
                 yield return new ItemDef($"{j.Key}_t{lv[i]}", $"{TierLetter(lv[i])}-Grade {j.Noun}",
-                    EquipSlot.Jewel, TierGrade(lv[i]), ItemRarity.Rare,
+                    EquipSlot.Jewel, TierGrade(lv[i]), ItemRarity.Epic,
                     MDefBonus: j.MDef[i], MpBonus: j.Mp[i], JewelType: j.T,
                     ItemLevel: lv[i], NoAttributes: true);
 
