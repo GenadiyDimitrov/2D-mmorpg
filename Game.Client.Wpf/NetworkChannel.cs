@@ -208,6 +208,9 @@ public class NetworkChannel : IAsyncDisposable
     public Task PartyKickAsync(Guid targetId) =>
         _connection!.SendAsync("PartyKick", targetId);
 
+    public Task PartySetLootModeAsync(LootMode mode) =>
+        _connection!.SendAsync("PartySetLootMode", mode);
+
     public Task TradeRequestAsync(Guid targetId) =>
         _connection!.SendAsync("TradeRequest", targetId);
 

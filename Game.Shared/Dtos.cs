@@ -172,7 +172,7 @@ public record PartyMemberDto(Guid Id, string Name, int Level, string ClassName,
 /// <summary>Server -> party members: the current roster (empty array = you left/were the last
 /// member, so the client hides the party window). Sent on membership change and refreshed
 /// periodically for live HP/MP bars.</summary>
-public record PartyUpdate(PartyMemberDto[] Members);
+public record PartyUpdate(PartyMemberDto[] Members, LootMode LootMode = LootMode.FindersKeepers);
 
 
 // ----- Accounts & character selection (Phase 5) ----------------------------

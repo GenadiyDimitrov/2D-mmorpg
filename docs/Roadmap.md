@@ -135,13 +135,16 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   **Polish DONE:** `KnownRecipes` (persisted) unlocks DropOnly A-grade recipes via a dropped recipe BOOK
   (EquipSlot.Box → open to learn; A-grade bosses drop them); L2 mutually-exclusive drop GROUPS (`DropEntry.GroupId`
   — one weighted pick per group; body/weapon copies grouped in StandardDrops). Numbers retune-later.
-- [~] **Party / grouping system** — SERVER + transport DONE: `Party` (leader + members) in World;
+- [x] **Party / grouping system** — COMPLETE. Server + transport: `Party` (leader + members) in World;
   invite/accept-decline/leave/kick commands+hub+handlers; leader reassigns + auto-disband under 2;
   XP SPLIT among in-range members (level-weighted + size bonus) + kill-quest credit to all in range;
-  AoE ally heals/buffs (`PlayersInRadius`) now target PARTY members only (solo = self); `PartyUpdate`
-  roster DTO pushed on change + refreshed each regen tick for live HP/MP; NetworkChannel methods+events
-  added. **NEXT (owner):** the WPF party WINDOW + right-click "invite" + invite prompt. Loot rules still
-  killer-only (deferred).
+  AoE ally heals/buffs (`PlayersInRadius`) target PARTY members only (solo = self). WPF party WINDOW +
+  invite button + invite prompt done last session. **LOOT RULES DONE (2026-07-07):** `LootMode`
+  {FindersKeepers, Random, RoundRobin, LeaderOnly} on `Party`; `LootRecipient` routes each item drop
+  (RoundRobin cursor / random / leader-if-in-range / killer); boss-mat pile → one recipient; **GOLD
+  ALWAYS splits** evenly among in-range members (`AwardGold`, killer keeps remainder) regardless of
+  mode; leader-only `PartySetLootMode` cmd+hub+channel; `PartyUpdate` carries `LootMode`; client party
+  panel loot dropdown (leader-editable). See [[party-loot-modes]].
 - [~] **Active mob skills** — STARTED: caster (Mage-role) mobs cast two generic leveled spells
   (nuke + jab, MP-gated). Still to do: per-mob UNIQUE skills, mob buffs/heals/CC, boss skills, and
   a client cast-bar for mobs (today the player only sees the damage land, no visible mob cast).

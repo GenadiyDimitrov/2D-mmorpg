@@ -282,6 +282,12 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task PartySetLootMode(LootMode mode)
+    {
+        _world.Commands.Enqueue(new PartySetLootModeCmd(Context.ConnectionId, mode));
+        return Task.CompletedTask;
+    }
+
     public Task TradeRequest(Guid targetId)
     {
         _world.Commands.Enqueue(new TradeRequestCmd(Context.ConnectionId, targetId));

@@ -74,6 +74,7 @@ public partial class MainWindow : Window
     private readonly HashSet<Guid> _partyMemberIds = new();
     private bool _partyIsLeader;
     private Guid? _pendingPartyFrom;
+    private bool _suppressLootCombo;   // guard: programmatic combo updates must not re-send to server
 
     public MainWindow()
     {

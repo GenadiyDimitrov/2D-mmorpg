@@ -158,6 +158,20 @@ public enum SkillEffect : long
 /// None = not a contested debuff (uses the older fizzle/sure-hit path).</summary>
 public enum DebuffSchool { None = 0, Physical = 1, Magical = 2 }
 
+/// <summary>How a party distributes ITEM loot from a kill. Gold is ALWAYS split among in-range
+/// members regardless of this setting. Solo players always behave as FindersKeepers.</summary>
+public enum LootMode
+{
+    /// <summary>Loot goes to whoever landed the kill (the default, and the solo behavior).</summary>
+    FindersKeepers = 0,
+    /// <summary>Each dropped item goes to a random in-range member.</summary>
+    Random = 1,
+    /// <summary>Each dropped item goes to the next member in rotation (round-robin).</summary>
+    RoundRobin = 2,
+    /// <summary>All loot goes to the party leader (if in range; else the killer).</summary>
+    LeaderOnly = 3,
+}
+
 /// <summary>A control state on a target, for conditional-damage skills ("+X% vs slowed/
 /// rooted"). Flags so a skill can reward any of several states.</summary>
 [Flags]

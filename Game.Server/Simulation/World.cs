@@ -40,6 +40,12 @@ public class Party
     public Guid LeaderId { get; set; }
     public List<Guid> Members { get; } = new();   // includes the leader; order = join order
 
+    /// <summary>How item loot is distributed. Gold is always split regardless.</summary>
+    public LootMode LootMode { get; set; } = LootMode.FindersKeepers;
+
+    /// <summary>Ever-increasing cursor for RoundRobin loot (mod eligible-count at use).</summary>
+    public int RoundRobinCursor { get; set; } = -1;
+
     public bool Contains(Guid id) => Members.Contains(id);
 }
 
@@ -208,6 +214,7 @@ public record PartyInviteCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 public record PartyRespondCmd(string ConnectionId, bool Accept) : IGameCommand;
 public record PartyLeaveCmd(string ConnectionId) : IGameCommand;
 public record PartyKickCmd(string ConnectionId, Guid TargetId) : IGameCommand;
+public record PartySetLootModeCmd(string ConnectionId, LootMode Mode) : IGameCommand;
 
 public record TradeRequestCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 public record TradeRespondCmd(string ConnectionId, bool Accept) : IGameCommand;

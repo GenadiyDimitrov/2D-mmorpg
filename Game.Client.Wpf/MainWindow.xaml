@@ -284,6 +284,19 @@
                             Padding="0" FontSize="10" HorizontalAlignment="Right"
                             Click="PartyLeaveButton_Click"/>
                 </Grid>
+                <Grid Margin="0,0,0,5">
+                    <TextBlock Text="Loot" Foreground="#FFBFB89A" FontSize="10"
+                               VerticalAlignment="Center"/>
+                    <ComboBox x:Name="PartyLootCombo" Width="132" Height="20" FontSize="10"
+                              HorizontalAlignment="Right"
+                              ToolTip="Item loot rule (leader only). Gold is always split."
+                              SelectionChanged="PartyLootCombo_SelectionChanged">
+                        <ComboBoxItem Content="Finders Keepers"/>
+                        <ComboBoxItem Content="Random"/>
+                        <ComboBoxItem Content="Round Robin"/>
+                        <ComboBoxItem Content="Leader Only"/>
+                    </ComboBox>
+                </Grid>
                 <StackPanel x:Name="PartyMembers"/>
             </StackPanel>
         </Border>

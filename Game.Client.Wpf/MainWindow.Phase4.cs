@@ -427,6 +427,12 @@ public partial class MainWindow
         foreach (var m in update.Members)
             PartyMembers.Children.Add(BuildPartyRow(m, _partyIsLeader && m.Id != _myId));
 
+        // Reflect the server's loot rule; only the leader may change it.
+        _suppressLootCombo = true;
+        PartyLootCombo.SelectedIndex = (int)update.LootMode;
+        PartyLootCombo.IsEnabled = _partyIsLeader;
+        _suppressLootCombo = false;
+
         PartyPanel.Visibility = Visibility.Visible;
         UpdateTargetFrame();       // hide the invite button for people already grouped
     }
@@ -492,6 +498,13 @@ public partial class MainWindow
     {
         if (sender is Button { Tag: Guid id })
             await _net.PartyKickAsync(id);
+    }
+
+    private async void PartyLootCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressLootCombo || !_partyIsLeader)
+            return;
+        await _net.PartySetLootModeAsync((LootMode)PartyLootCombo.SelectedIndex);
     }
 
     private void OnTradeState(TradeStateUpdate state)

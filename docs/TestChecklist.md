@@ -20,6 +20,19 @@ this file.
   hides). The invite button is hidden for players already in your party, and for non-leaders.
 - [ ] Roster HP/MP bars update as members take damage / heal (server refresh).
 
+### Party loot rules (2026-07-07)
+- [ ] The party panel shows a **Loot** dropdown. Only the **leader** can change it (disabled for
+  members); changing it posts a "Loot rule set to …" chat line to everyone.
+- [ ] **Finders Keepers** (default): item drops go to whoever landed the kill (as before).
+- [ ] **Random**: each item drop goes to a random in-range member; others see "X looted Y."
+- [ ] **Round Robin**: consecutive drops rotate through in-range members in join order.
+- [ ] **Leader Only**: all item drops go to the leader (if in range; else the killer).
+- [ ] **Gold is ALWAYS split** evenly among in-range members regardless of the loot rule (killer
+  keeps the odd remainder); solo = the killer gets it all.
+- [ ] Boss/elite crafting-mat pile goes to a single recipient per the loot rule.
+- [ ] Only members **in share range** (ViewRange) and alive are eligible; out-of-range members are
+  skipped (loot falls back toward the killer where applicable).
+
 ### Mob / boss cast-bar
 - [ ] When a mob/boss begins a visible cast (e.g. the boss **"Devastating Slam"**), an orange
   **cast-bar appears under its nameplate** and fills over the cast time, then disappears.

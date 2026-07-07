@@ -113,6 +113,7 @@ public class GameLoopService : BackgroundService
                 case PartyRespondCmd c: HandlePartyRespond(c); break;
                 case PartyLeaveCmd c: HandlePartyLeave(c); break;
                 case PartyKickCmd c: HandlePartyKick(c); break;
+                case PartySetLootModeCmd c: HandlePartySetLootMode(c); break;
                 case ChatCmd c: HandleChat(c); break;
             }
         }
@@ -1402,6 +1403,32 @@ public class GameLoopService : BackgroundService
             RemoveFromParty(target, "was removed from the party");
     }
 
+    private void HandlePartySetLootMode(PartySetLootModeCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var leader))
+            return;
+        if (!_world.Parties.TryGetValue(leader.Id, out var party) || party.LeaderId != leader.Id)
+        {
+            SendSystemToEntity(leader, "Only the party leader can change the loot rule.");
+            return;
+        }
+        if (party.LootMode == cmd.Mode)
+            return;
+        party.LootMode = cmd.Mode;
+        party.RoundRobinCursor = -1;   // restart rotation on a rule change
+        SendPartyUpdate(party);
+        BroadcastToParty(party, $"Loot rule set to {LootModeLabel(cmd.Mode)}.");
+    }
+
+    private static string LootModeLabel(LootMode mode) => mode switch
+    {
+        LootMode.FindersKeepers => "Finders Keepers",
+        LootMode.Random         => "Random",
+        LootMode.RoundRobin     => "Round Robin",
+        LootMode.LeaderOnly     => "Leader Only",
+        _                       => mode.ToString(),
+    };
+
     /// <summary>Remove an entity from its party (leave/kick/disconnect). Reassigns the leader if
     /// needed, disbands a party that drops below 2, and refreshes everyone's roster.</summary>
     private void RemoveFromParty(Entity entity, string reason)
@@ -1448,7 +1475,7 @@ public class GameLoopService : BackgroundService
             if (_world.Entities.TryGetValue(mid, out var m))
                 members.Add(new PartyMemberDto(m.Id, m.Name, m.Level, PartyClassLabel(m),
                     (int)m.Hp, m.MaxHp, (int)m.Mp, m.MaxMp, mid == party.LeaderId));
-        var dto = new PartyUpdate(members.ToArray());
+        var dto = new PartyUpdate(members.ToArray(), party.LootMode);
         foreach (var mid in party.Members)
             if (_world.Entities.TryGetValue(mid, out var m))
                 SendTo(m, "Party", dto);
@@ -3260,15 +3287,16 @@ var effect = def.Effect;
         if (mob.MobTypeId is null)
             return;
 
-        // Gold always drops (independent of the item table), by mob level x rate
-        // with a small +/-20% variance.
+        // In-range kill-credit members (killer + party members within share range). Solo = [killer].
+        var eligible = KillCreditMembers(killer);
+        _world.Parties.TryGetValue(killer.Id, out var party);
+
+        // Gold ALWAYS splits evenly among in-range members regardless of loot mode; the killer takes
+        // the remainder. Solo = it all goes to the killer. (Level x rate, +/-20% variance.)
         int gold = (int)(StatCalculator.MobGoldReward(mob.Level) * RateConfig.GoldAmountRate
             * (0.8f + (float)_rng.NextDouble() * 0.4f));
         if (gold > 0)
-        {
-            killer.Gold += gold;
-            SendGold(killer);
-        }
+            AwardGold(killer, eligible, gold);
 
         var mobType = MobCatalog.Get(mob.MobTypeId);
         if (mobType.Drops is null || mobType.Drops.Length == 0)
@@ -3278,21 +3306,29 @@ var effect = def.Effect;
         // sharing a GroupId > 0 form a mutually-exclusive group (roll once, pick one weighted).
         var applicable = mobType.Drops.Where(e => e.AppliesAtLevel(mob.Level)).ToList();
 
-        bool looted = false;
+        // Everyone who received something this kill (refresh their inventory once at the end).
+        var touched = new HashSet<Entity>();
         void Award(DropEntry entry)
         {
             if (ItemCatalog.Get(entry.ItemId) is not ItemDef def)
                 return;
             int qty = _rng.Next(entry.MinQty, entry.MaxQty + 1);
             qty = Math.Max(1, (int)(qty * RateConfig.DropAmountRate));
-            if (!AddItem(killer, def.Id, qty))
+            // The recipient is chosen PER ITEM so RoundRobin/Random spread across the party.
+            var to = LootRecipient(killer, eligible, party);
+            if (!AddItem(to, def.Id, qty))
             {
-                SendSystemToEntity(killer, $"{mob.Name} dropped {def.Name} — inventory full!");
+                SendSystemToEntity(to, $"{mob.Name} dropped {def.Name} — inventory full!");
                 return;
             }
             string qtyLabel = qty > 1 ? $" x{qty}" : "";
-            SendSystemToEntity(killer, $"You looted: {def.Name}{qtyLabel} [{def.Grade}/{def.Rarity}]");
-            looted = true;
+            SendSystemToEntity(to, $"You looted: {def.Name}{qtyLabel} [{def.Grade}/{def.Rarity}]");
+            // Let the rest of the in-range party see where it went.
+            if (eligible.Count > 1)
+                foreach (var m in eligible)
+                    if (m.Id != to.Id)
+                        SendSystemToEntity(m, $"{to.Name} looted {def.Name}{qtyLabel}.");
+            touched.Add(to);
         }
 
         // Independent entries (GroupId == 0): each its own rate-scaled roll.
@@ -3320,14 +3356,65 @@ var effect = def.Effect;
             }
         }
 
-        looted |= RollBossBonus(killer, mob, mobType);
-        if (looted)
-            SendInventory(killer);
+        // Boss/elite pile goes to ONE recipient per the loot rule (mats stay together).
+        var bossTo = LootRecipient(killer, eligible, party);
+        if (RollBossBonus(bossTo, mob, mobType))
+            touched.Add(bossTo);
+
+        foreach (var t in touched)
+            SendInventory(t);
+    }
+
+    /// <summary>Split gold evenly among in-range members; the killer keeps the remainder. Solo (or a
+    /// single eligible member) = the killer takes it all. Gold ignores the party's item loot mode.</summary>
+    private void AwardGold(Entity killer, List<Entity> eligible, int gold)
+    {
+        if (eligible.Count <= 1)
+        {
+            killer.Gold += gold;
+            SendGold(killer);
+            return;
+        }
+        int each = gold / eligible.Count;
+        int remainder = gold - each * eligible.Count;
+        foreach (var m in eligible)
+        {
+            m.Gold += each + (m.Id == killer.Id ? remainder : 0);
+            SendGold(m);
+        }
+    }
+
+    /// <summary>Pick who receives one loot item, per the party's <see cref="LootMode"/>. Solo, no
+    /// party, or a single eligible member always returns the killer.</summary>
+    private Entity LootRecipient(Entity killer, List<Entity> eligible, Party? party)
+    {
+        if (party is null || eligible.Count <= 1)
+            return killer;
+        switch (party.LootMode)
+        {
+            case LootMode.Random:
+                return eligible[_rng.Next(eligible.Count)];
+            case LootMode.LeaderOnly:
+                return eligible.FirstOrDefault(m => m.Id == party.LeaderId) ?? killer;
+            case LootMode.RoundRobin:
+                // Rotate over in-range members in stable join order.
+                var ordered = party.Members
+                    .Where(id => eligible.Any(e => e.Id == id))
+                    .Select(id => eligible.First(e => e.Id == id))
+                    .ToList();
+                if (ordered.Count == 0)
+                    return killer;
+                party.RoundRobinCursor++;
+                return ordered[party.RoundRobinCursor % ordered.Count];
+            case LootMode.FindersKeepers:
+            default:
+                return killer;
+        }
     }
 
     /// <summary>Elite/boss EXTRA loot: a pile of crafting mats (rarity + amount by rank) and a chance
     /// at the finished tiered set piece — bosses are the reliable gear/mat source (docs/Crafting.md).</summary>
-    private bool RollBossBonus(Entity killer, Entity mob, MobType mobType)
+    private bool RollBossBonus(Entity recipient, Entity mob, MobType mobType)
     {
         if (mob.Rank is not (MobRank.Boss or MobRank.Elite))
             return false;
@@ -3343,7 +3430,7 @@ var effect = def.Effect;
 
         void GiveMat(MaterialType t, ItemRarity r, int qty)
         {
-            if (qty > 0) AddItem(killer, Crafting.MaterialId(t, r), qty);
+            if (qty > 0) AddItem(recipient, Crafting.MaterialId(t, r), qty);
         }
 
         GiveMat(primary, ItemRarity.Common, boss ? _rng.Next(6, 11) : _rng.Next(2, 4));
@@ -3362,17 +3449,17 @@ var effect = def.Effect;
         };
         if (boss)
         {
-            if (_rng.NextDouble() < 0.5) AddItem(killer, $"{weight}_t{tier}");
+            if (_rng.NextDouble() < 0.5) AddItem(recipient, $"{weight}_t{tier}");
             // A-grade (76) bosses can drop a DropOnly recipe BOOK for the tier's set body.
             if (tier >= 76 && _rng.NextDouble() < 0.10)
-                AddItem(killer, ItemCatalog.RecipeBookId($"craft_{weight}_t{tier}"));
+                AddItem(recipient, ItemCatalog.RecipeBookId($"craft_{weight}_t{tier}"));
         }
         else if (_rng.NextDouble() < 0.20)
         {
-            AddItem(killer, $"{weight}_t{tier}_rare");
+            AddItem(recipient, $"{weight}_t{tier}_rare");
         }
 
-        SendSystemToEntity(killer, $"{mob.Name} dropped crafting materials!");
+        SendSystemToEntity(recipient, $"{mob.Name} dropped crafting materials!");
         return true;
     }
 
