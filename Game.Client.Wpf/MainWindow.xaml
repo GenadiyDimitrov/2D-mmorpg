@@ -318,6 +318,23 @@
             </StackPanel>
         </Border>
 
+        <!-- Party loot-rule vote prompt (leader proposed a change; all must agree) -->
+        <Border x:Name="LootVotePrompt"
+                HorizontalAlignment="Center" VerticalAlignment="Top"
+                Margin="0,150,0,0" Padding="18,12"
+                Background="#F0303826" CornerRadius="8"
+                Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock x:Name="LootVoteText" Foreground="White" FontSize="13"
+                           HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Content="Agree" Width="80" Height="26" Margin="0,0,8,0"
+                            Click="LootVoteAccept_Click"/>
+                    <Button Content="Decline" Width="80" Height="26" Click="LootVoteDecline_Click"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
         <!-- Trade request prompt -->
         <Border x:Name="TradePrompt"
                 HorizontalAlignment="Center" VerticalAlignment="Top"

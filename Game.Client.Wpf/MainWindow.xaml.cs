@@ -104,6 +104,7 @@ public partial class MainWindow : Window
         _net.MobCastReceived += c => Dispatcher.BeginInvoke(() => OnMobCast(c));
         _net.PartyInviteReceived += p => Dispatcher.BeginInvoke(() => OnPartyInvite(p));
         _net.PartyReceived += p => Dispatcher.BeginInvoke(() => OnParty(p));
+        _net.PartyLootVoteReceived += v => Dispatcher.BeginInvoke(() => OnPartyLootVote(v));
         _net.EnchantReceived += en => Dispatcher.BeginInvoke(() => OnEnchant(en));
         _net.RerollReceived += r => Dispatcher.BeginInvoke(() => OnReroll(r));
         _net.ForceDisconnected += reason => Dispatcher.BeginInvoke(() =>

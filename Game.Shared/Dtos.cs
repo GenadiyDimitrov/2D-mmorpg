@@ -162,8 +162,14 @@ public record RerollResultDto(string ItemName, string Outcome);
 /// and whenever it changes — kills, quest rewards, vendor buy/sell, teleport fees).</summary>
 public record GoldUpdate(long Gold);
 
-/// <summary>Server -> owning client: an incoming party invite from Inviter (accept/decline).</summary>
-public record PartyInviteDto(Guid InviterId, string InviterName);
+/// <summary>Server -> owning client: an incoming party invite from Inviter (accept/decline). Carries
+/// the loot rule the invitee would be joining under so they can decide before accepting.</summary>
+public record PartyInviteDto(Guid InviterId, string InviterName,
+    LootMode LootMode = LootMode.Random);
+
+/// <summary>Server -> a party member: the leader proposes a loot-rule change and needs everyone to
+/// agree. Open=true shows the accept/decline prompt; Open=false dismisses it (vote resolved).</summary>
+public record PartyLootVoteDto(LootMode Mode, string RequestedBy, bool Open = true);
 
 /// <summary>One member row in the party window.</summary>
 public record PartyMemberDto(Guid Id, string Name, int Level, string ClassName,
@@ -172,7 +178,7 @@ public record PartyMemberDto(Guid Id, string Name, int Level, string ClassName,
 /// <summary>Server -> party members: the current roster (empty array = you left/were the last
 /// member, so the client hides the party window). Sent on membership change and refreshed
 /// periodically for live HP/MP bars.</summary>
-public record PartyUpdate(PartyMemberDto[] Members, LootMode LootMode = LootMode.FindersKeepers);
+public record PartyUpdate(PartyMemberDto[] Members, LootMode LootMode = LootMode.Random);
 
 
 // ----- Accounts & character selection (Phase 5) ----------------------------

@@ -114,6 +114,7 @@ public class GameLoopService : BackgroundService
                 case PartyLeaveCmd c: HandlePartyLeave(c); break;
                 case PartyKickCmd c: HandlePartyKick(c); break;
                 case PartySetLootModeCmd c: HandlePartySetLootMode(c); break;
+                case PartyLootVoteCmd c: HandlePartyLootVote(c); break;
                 case ChatCmd c: HandleChat(c); break;
             }
         }
@@ -1338,8 +1339,12 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // Show the invitee the loot rule they'd be joining under: the inviter's party mode if they
+        // already have one, else the default a new party will be created with.
+        LootMode joinMode = _world.Parties.TryGetValue(inviter.Id, out var invParty)
+            ? invParty.LootMode : Party.DefaultLootMode;
         _world.PendingPartyInvites[target.Id] = inviter.Id;
-        SendTo(target, "PartyInvite", new PartyInviteDto(inviter.Id, inviter.Name));
+        SendTo(target, "PartyInvite", new PartyInviteDto(inviter.Id, inviter.Name, joinMode));
         SendSystemToEntity(inviter, $"Party invite sent to {target.Name}.");
     }
 
@@ -1403,6 +1408,11 @@ public class GameLoopService : BackgroundService
             RemoveFromParty(target, "was removed from the party");
     }
 
+    // A loot-rule vote auto-cancels if the party hasn't all agreed within this window (~30s).
+    private const int LootVoteTimeoutTicks = 300;
+
+    /// <summary>Leader PROPOSES a loot-rule change: it doesn't apply until every other member
+    /// accepts (unanimous). Opens a vote and prompts the members.</summary>
     private void HandlePartySetLootMode(PartySetLootModeCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var leader))
@@ -1412,12 +1422,88 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(leader, "Only the party leader can change the loot rule.");
             return;
         }
+        if (party.PendingLootMode is not null)
+        {
+            SendSystemToEntity(leader, "A loot-rule vote is already in progress.");
+            return;
+        }
         if (party.LootMode == cmd.Mode)
             return;
-        party.LootMode = cmd.Mode;
+
+        party.PendingLootMode = cmd.Mode;
+        party.LootVotePending.Clear();
+        foreach (var mid in party.Members)
+            if (mid != leader.Id) party.LootVotePending.Add(mid);
+        party.LootVoteExpireTick = _tick + LootVoteTimeoutTicks;
+
+        // No other members to ask (shouldn't happen — parties are >= 2) → apply straight away.
+        if (party.LootVotePending.Count == 0)
+        {
+            ApplyLootMode(party);
+            return;
+        }
+
+        var prompt = new PartyLootVoteDto(cmd.Mode, leader.Name);
+        foreach (var mid in party.LootVotePending)
+            if (_world.Entities.TryGetValue(mid, out var m))
+                SendTo(m, "PartyLootVote", prompt);
+        SendSystemToEntity(leader,
+            $"Proposed loot rule {LootModeLabel(cmd.Mode)} — waiting for the party to agree.");
+        BroadcastToParty(party, $"{leader.Name} proposes the loot rule become {LootModeLabel(cmd.Mode)}.");
+    }
+
+    /// <summary>A member accepts/declines the pending loot-rule vote. Unanimous accept applies it;
+    /// any decline cancels it.</summary>
+    private void HandlePartyLootVote(PartyLootVoteCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var voter))
+            return;
+        if (!_world.Parties.TryGetValue(voter.Id, out var party) ||
+            party.PendingLootMode is not LootMode mode ||
+            !party.LootVotePending.Contains(voter.Id))
+            return;
+
+        if (!cmd.Accept)
+        {
+            ClearLootVote(party);
+            BroadcastToParty(party,
+                $"{voter.Name} declined the loot-rule change to {LootModeLabel(mode)}. Cancelled.");
+            return;
+        }
+        party.LootVotePending.Remove(voter.Id);
+        if (party.LootVotePending.Count == 0)
+            ApplyLootMode(party);
+        else
+            BroadcastToParty(party,
+                $"{voter.Name} agreed ({party.LootVotePending.Count} still to vote).");
+    }
+
+    /// <summary>Commit the agreed pending loot mode and clear the vote.</summary>
+    private void ApplyLootMode(Party party)
+    {
+        if (party.PendingLootMode is not LootMode mode)
+            return;
+        party.LootMode = mode;
         party.RoundRobinCursor = -1;   // restart rotation on a rule change
+        ClearLootVote(party);          // dismisses prompts + resyncs the roster with the new mode
+        BroadcastToParty(party, $"Loot rule set to {LootModeLabel(mode)} (agreed by all).");
+    }
+
+    /// <summary>End any pending loot vote: drop the state, dismiss the members' prompts, and resync
+    /// the roster (so a leader's combo snaps back to the authoritative mode on a cancel).</summary>
+    private void ClearLootVote(Party party)
+    {
+        bool wasPending = party.PendingLootMode is not null;
+        party.PendingLootMode = null;
+        party.LootVotePending.Clear();
+        party.LootVoteExpireTick = 0;
+        if (!wasPending)
+            return;
+        var close = new PartyLootVoteDto(default, "", Open: false);
+        foreach (var mid in party.Members)
+            if (_world.Entities.TryGetValue(mid, out var m))
+                SendTo(m, "PartyLootVote", close);
         SendPartyUpdate(party);
-        BroadcastToParty(party, $"Loot rule set to {LootModeLabel(cmd.Mode)}.");
     }
 
     private static string LootModeLabel(LootMode mode) => mode switch
@@ -1436,6 +1522,12 @@ public class GameLoopService : BackgroundService
         if (!_world.Parties.Remove(entity.Id, out var party))
             return;
         party.Members.Remove(entity.Id);
+        // A membership change invalidates any in-flight loot vote.
+        if (party.PendingLootMode is not null)
+        {
+            ClearLootVote(party);
+            BroadcastToParty(party, "The loot-rule vote was cancelled (party changed).");
+        }
         SendTo(entity, "Party", new PartyUpdate(Array.Empty<PartyMemberDto>()));   // client hides window
 
         // Disband when only one member would remain.
@@ -1921,7 +2013,16 @@ public class GameLoopService : BackgroundService
         _rosterSeen.Clear();
         foreach (var party in _world.Parties.Values)
             if (_rosterSeen.Add(party))
+            {
+                // Auto-cancel a loot vote nobody finished in time.
+                if (party.PendingLootMode is LootMode pm && _tick >= party.LootVoteExpireTick)
+                {
+                    ClearLootVote(party);   // dismisses prompts + resyncs
+                    BroadcastToParty(party,
+                        $"The loot-rule vote for {LootModeLabel(pm)} timed out. Cancelled.");
+                }
                 SendPartyUpdate(party);
+            }
     }
 
     // Reusable scratch buffer for cooldown expiry so the per-tick decrement doesn't

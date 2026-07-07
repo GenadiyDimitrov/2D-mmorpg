@@ -377,11 +377,47 @@ public partial class MainWindow
             await _net.PartyInviteAsync(id);
     }
 
+    private static string LootModeLabel(LootMode mode) => mode switch
+    {
+        LootMode.FindersKeepers => "Finders Keepers",
+        LootMode.Random         => "Random",
+        LootMode.RoundRobin     => "Round Robin",
+        LootMode.LeaderOnly     => "Leader Only",
+        _                       => mode.ToString(),
+    };
+
     private void OnPartyInvite(PartyInviteDto invite)
     {
         _pendingPartyFrom = invite.InviterId;
-        PartyInviteText.Text = $"{invite.InviterName} invites you to a party.";
+        PartyInviteText.Text =
+            $"{invite.InviterName} invites you to a party.\nLoot rule: {LootModeLabel(invite.LootMode)}";
         PartyInvitePrompt.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>Leader proposed a loot-rule change and needs my agreement (Open), or the vote just
+    /// resolved and the prompt should close.</summary>
+    private void OnPartyLootVote(PartyLootVoteDto vote)
+    {
+        if (!vote.Open)
+        {
+            LootVotePrompt.Visibility = Visibility.Collapsed;
+            return;
+        }
+        LootVoteText.Text =
+            $"{vote.RequestedBy} wants to change the loot rule to {LootModeLabel(vote.Mode)}.";
+        LootVotePrompt.Visibility = Visibility.Visible;
+    }
+
+    private async void LootVoteAccept_Click(object sender, RoutedEventArgs e)
+    {
+        LootVotePrompt.Visibility = Visibility.Collapsed;
+        await _net.PartyLootVoteAsync(true);
+    }
+
+    private async void LootVoteDecline_Click(object sender, RoutedEventArgs e)
+    {
+        LootVotePrompt.Visibility = Visibility.Collapsed;
+        await _net.PartyLootVoteAsync(false);
     }
 
     private async void PartyAccept_Click(object sender, RoutedEventArgs e)
@@ -412,6 +448,7 @@ public partial class MainWindow
         if (update.Members.Length == 0)
         {
             PartyPanel.Visibility = Visibility.Collapsed;
+            LootVotePrompt.Visibility = Visibility.Collapsed;   // any open vote is moot
             UpdateTargetFrame();   // invite button may become available again
             return;
         }

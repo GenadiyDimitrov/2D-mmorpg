@@ -122,6 +122,8 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   skill with a reagent checks it up front and consumes it on cast completion (refunded on
   interrupt). Empty = casts freely. No skill uses it yet — assign to "ultimate" skills.
 - [ ] **Premium class-reset item** — lets a player undo the irreversible class-chain commitment.
+- [ ] **Client settings panel** — a first home for player preferences; will host the per-player
+  **default party loot mode** (parties currently hard-default to Random via `Party.DefaultLootMode`).
 
 ## LATER (bigger systems)
 
@@ -143,8 +145,11 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   {FindersKeepers, Random, RoundRobin, LeaderOnly} on `Party`; `LootRecipient` routes each item drop
   (RoundRobin cursor / random / leader-if-in-range / killer); boss-mat pile → one recipient; **GOLD
   ALWAYS splits** evenly among in-range members (`AwardGold`, killer keeps remainder) regardless of
-  mode; leader-only `PartySetLootMode` cmd+hub+channel; `PartyUpdate` carries `LootMode`; client party
-  panel loot dropdown (leader-editable). See [[party-loot-modes]].
+  mode; `PartyUpdate` carries `LootMode`; client party panel loot dropdown (leader-editable). New parties
+  **default to Random**. A leader's change is a **unanimous VOTE** (`PartyLootVoteCmd`/`PartyLootVoteDto`:
+  every other member Agree/Declines; applies only if all agree; decline/timeout/membership-change cancels)
+  with an Agree/Decline prompt. The **invite prompt shows the loot rule** the invitee would join under.
+  See [[party-loot-modes]].
 - [~] **Active mob skills** — caster (Mage-role) mobs cast two generic leveled spells (nuke + jab,
   MP-gated); BOSSES now have data-driven unique kits + phases + adds (see Boss mechanics, `BossCatalog`);
   client cast-bar for mobs done. Still to do: mob buffs/heals/CC for NON-boss mobs (shaman heals, etc.).

@@ -40,11 +40,23 @@ public class Party
     public Guid LeaderId { get; set; }
     public List<Guid> Members { get; } = new();   // includes the leader; order = join order
 
+    /// <summary>The loot rule a new party starts on (a per-player configurable default will come
+    /// with the settings panel).</summary>
+    public const LootMode DefaultLootMode = LootMode.Random;
+
     /// <summary>How item loot is distributed. Gold is always split regardless.</summary>
-    public LootMode LootMode { get; set; } = LootMode.FindersKeepers;
+    public LootMode LootMode { get; set; } = DefaultLootMode;
 
     /// <summary>Ever-increasing cursor for RoundRobin loot (mod eligible-count at use).</summary>
     public int RoundRobinCursor { get; set; } = -1;
+
+    // ----- Pending loot-rule vote (leader proposes; every OTHER member must accept) -----
+    /// <summary>The mode being voted on, or null when no vote is in progress.</summary>
+    public LootMode? PendingLootMode { get; set; }
+    /// <summary>Members who still have to accept the pending change (leader excluded).</summary>
+    public HashSet<Guid> LootVotePending { get; } = new();
+    /// <summary>Absolute tick the pending vote auto-cancels at.</summary>
+    public long LootVoteExpireTick { get; set; }
 
     public bool Contains(Guid id) => Members.Contains(id);
 }
@@ -215,6 +227,7 @@ public record PartyRespondCmd(string ConnectionId, bool Accept) : IGameCommand;
 public record PartyLeaveCmd(string ConnectionId) : IGameCommand;
 public record PartyKickCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 public record PartySetLootModeCmd(string ConnectionId, LootMode Mode) : IGameCommand;
+public record PartyLootVoteCmd(string ConnectionId, bool Accept) : IGameCommand;
 
 public record TradeRequestCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 public record TradeRespondCmd(string ConnectionId, bool Accept) : IGameCommand;

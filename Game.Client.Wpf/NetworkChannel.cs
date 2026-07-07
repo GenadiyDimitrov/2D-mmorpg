@@ -30,6 +30,7 @@ public class NetworkChannel : IAsyncDisposable
     public event Action<TargetDetails>? TargetDetailsReceived;
     public event Action<PartyInviteDto>? PartyInviteReceived;
     public event Action<PartyUpdate>? PartyReceived;
+    public event Action<PartyLootVoteDto>? PartyLootVoteReceived;
     public event Action<string>? Disconnected;
     public event Action<string>? ForceDisconnected;
 
@@ -64,6 +65,7 @@ public class NetworkChannel : IAsyncDisposable
         _connection.On<TargetDetails>("TargetDetails", d => TargetDetailsReceived?.Invoke(d));
         _connection.On<PartyInviteDto>("PartyInvite", p => PartyInviteReceived?.Invoke(p));
         _connection.On<PartyUpdate>("Party", p => PartyReceived?.Invoke(p));
+        _connection.On<PartyLootVoteDto>("PartyLootVote", p => PartyLootVoteReceived?.Invoke(p));
         _connection.On<string>("ForceDisconnect", reason => ForceDisconnected?.Invoke(reason));
         _connection.Closed += ex =>
         {
@@ -210,6 +212,9 @@ public class NetworkChannel : IAsyncDisposable
 
     public Task PartySetLootModeAsync(LootMode mode) =>
         _connection!.SendAsync("PartySetLootMode", mode);
+
+    public Task PartyLootVoteAsync(bool accept) =>
+        _connection!.SendAsync("PartyLootVote", accept);
 
     public Task TradeRequestAsync(Guid targetId) =>
         _connection!.SendAsync("TradeRequest", targetId);

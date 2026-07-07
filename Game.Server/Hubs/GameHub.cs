@@ -288,6 +288,12 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task PartyLootVote(bool accept)
+    {
+        _world.Commands.Enqueue(new PartyLootVoteCmd(Context.ConnectionId, accept));
+        return Task.CompletedTask;
+    }
+
     public Task TradeRequest(Guid targetId)
     {
         _world.Commands.Enqueue(new TradeRequestCmd(Context.ConnectionId, targetId));

@@ -21,9 +21,15 @@ this file.
 - [ ] Roster HP/MP bars update as members take damage / heal (server refresh).
 
 ### Party loot rules (2026-07-07)
+- [ ] A new party **defaults to Random** loot (settings-panel-configurable later).
 - [ ] The party panel shows a **Loot** dropdown. Only the **leader** can change it (disabled for
-  members); changing it posts a "Loot rule set to …" chat line to everyone.
-- [ ] **Finders Keepers** (default): item drops go to whoever landed the kill (as before).
+  members).
+- [ ] Leader changing the dropdown **starts a vote**: every other member gets an **Agree/Decline**
+  prompt; the leader sees "waiting for the party to agree." It applies **only if ALL agree**
+  ("Loot rule set to … (agreed by all)"); any **Decline cancels** it, and it **times out** (~30s).
+  On cancel the leader's dropdown snaps back to the current rule.
+- [ ] A party invite **prompt shows the inviter's name AND the loot rule** you'd join under.
+- [ ] **Finders Keepers**: item drops go to whoever landed the kill (as before).
 - [ ] **Random**: each item drop goes to a random in-range member; others see "X looted Y."
 - [ ] **Round Robin**: consecutive drops rotate through in-range members in join order.
 - [ ] **Leader Only**: all item drops go to the leader (if in range; else the killer).
