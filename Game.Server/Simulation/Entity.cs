@@ -590,6 +590,8 @@ public class Entity
     public int CombatTicks { get; set; }
     public bool Enraged { get; set; }
     public int BossSkillCooldown { get; set; }
+    /// <summary>How many BossProfile phases have already fired (HP-threshold script cursor).</summary>
+    public int BossPhaseIndex { get; set; }
     public int WanderTicks { get; set; }
     public int RespawnTicks { get; set; }
 

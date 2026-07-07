@@ -13,6 +13,7 @@ public static partial class SkillCatalog
     public const string MobNukeSkill = "mob_nuke";   // 600 range · 4.0s cast · 1.0s reuse
     public const string MobBoltSkill = "mob_bolt";   // 150 range · 1.5s cast · 0.5s reuse
     public const string BossSlamSkill = "boss_slam"; // boss AoE: telegraphed slam (dmg + stun) around it
+    public const string BossThornNovaSkill = "boss_thorn_nova"; // boss AoE: magic burst + slow (phase skill)
 
     // The 13 spell levels are tied to these mob levels (interpolation anchors from the CSV
     // ask: nuke power 18→129 / MP 7→40, bolt power 7→33 / MP 5→10 across mob levels 10..85).
@@ -71,6 +72,18 @@ public static partial class SkillCatalog
                 TargetMode: TargetMode.EnemiesInRadius, AreaRadius: 250f,
                 DebuffSchool: DebuffSchool.Physical, DurationTicks: 20,
                 Description: "A boss's ground slam — heavy damage and a brief stun to all nearby foes."),
+
+            // Boss THORN NOVA — a wider (300) MAGIC burst + a contested Slow, on a longer cast
+            // (2.5s) and reuse. Authored as a PHASE skill (BossCatalog gates it to sub-50% HP), so
+            // a boss picks up a second, distinct attack once wounded. Rides the boss's M.Atk.
+            new SkillDef(BossThornNovaSkill, "Thorn Nova", BaseClass.Mage,
+                SkillEffect.MagicDamage | SkillEffect.Slow,
+                MpCost: 0, CastTicks: 25, CooldownTicks: 200, Range: 0, Power: 90,
+                Category: SkillCategory.Magic, SpCost: 0,
+                TargetMode: TargetMode.EnemiesInRadius, AreaRadius: 300f,
+                DebuffSchool: DebuffSchool.Magical, DurationTicks: 60,
+                Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, 0.40f) },
+                Description: "A boss's storm of thorns — magic damage and a slow to all nearby foes."),
         };
     }
 }

@@ -38,6 +38,19 @@ this file.
   **cast-bar appears under its nameplate** and fills over the cast time, then disappears.
 - [ ] Interrupting / killing the caster (or the cast finishing) clears the bar cleanly.
 
+### Boss unique skills + phases + adds (2026-07-07)
+- Fight the **Valley Treant Lord** (Boss zone ~(24000, 45000), L60). Bring a party/high level — it
+  has 20× HP. (Long real respawn; use debug teleport to reach the zone.)
+- [ ] From full HP it casts **Devastating Slam** (telegraphed slam, dmg + stun) on its reuse timer.
+- [ ] At **50% HP** it announces + **enrages** (rage buff, faster/harder hits) and **summons 2 adds**
+  (bogwood, ~L52) that immediately attack whoever it's fighting.
+- [ ] Below 50% it also starts casting **Thorn Nova** (wider magic burst + a slow) — a second,
+  distinct boss skill it did NOT use above 50%. Its name shows in the cast-bar.
+- [ ] At **25% HP** it announces the thorn storm (flavor line).
+- [ ] Leash/reset (walk it home) **re-arms** the phases and clears its skill reuse; a fresh pull
+  starts at Slam-only again. Adds do NOT respawn when killed.
+- [ ] Other bosses with no profile still use the plain slam (unchanged).
+
 ---
 
 ## To test now (ranged + caster mobs — 2026-07-03)

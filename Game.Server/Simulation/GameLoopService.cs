@@ -2100,6 +2100,8 @@ public class GameLoopService : BackgroundService
         }
         mob.CombatTicks = 0;
         mob.BossSkillCooldown = 0;
+        mob.BossPhaseIndex = 0;       // re-arm the phase script for the next pull
+        mob.SkillCooldowns.Clear();   // fresh boss-skill reuse on a leash reset
     }
 
     /// <summary>A mob died: remove it from the world and let its zone schedule
@@ -2172,43 +2174,105 @@ public class GameLoopService : BackgroundService
         }
     }
 
-    // Boss combat tuning: enrage after ~90s of a dragged-out fight; slam roughly every 12s.
+    // Boss combat tuning: enrage after ~90s of a dragged-out fight (independent of phase enrages).
     private const int BossEnrageTicks = 900;
-    private const int BossSkillReuseTicks = 120;
 
-    /// <summary>Per-tick boss logic while engaged: advance the enrage timer (a one-time rage buff
-    /// if the fight drags) and, on its reuse timer, queue the AoE slam when foes are in range.
-    /// Returns true if it queued the slam this tick (so the caller skips the auto-attack).</summary>
+    // The kit a boss with no BossCatalog profile uses: just the generic slam.
+    private static readonly BossSkillEntry[] DefaultBossKit = { new(SkillCatalog.BossSlamSkill) };
+
+    /// <summary>Per-tick boss logic while engaged: the enrage timer, the HP-threshold phase script
+    /// (announce / enrage / adds), and the skill rotation (cast the first ready boss skill with a
+    /// foe in range). Returns true if it queued a skill this tick (so the caller skips the
+    /// auto-attack). Reuse is the per-skill <see cref="SkillDef.CooldownTicks"/> via SkillCooldowns.</summary>
     private bool BossTick(Entity boss)
     {
         boss.CombatTicks++;
-        if (boss.BossSkillCooldown > 0) boss.BossSkillCooldown--;
+        var profile = BossCatalog.Get(boss.MobTypeId ?? "");
 
-        // Enrage: once, when the fight has dragged on — punishes slow kills.
+        // Enrage timer: a one-time rage if the fight drags on.
         if (!boss.Enraged && boss.CombatTicks >= BossEnrageTicks)
-        {
-            boss.Enraged = true;
-            boss.AttackPower = (int)(boss.AttackPower * 1.5f);
-            boss.MagicAttack = (int)(boss.MagicAttack * 1.5f);
-            boss.BasicAttackPower = (int)(boss.BasicAttackPower * 1.5f);
-            boss.AttackSpeedMultiplier *= 0.7f;   // lower multiplier = faster swings
-            BroadcastCombat(boss, boss, 0, CombatOutcome.Buff, "Enrage");
-            BroadcastSystem($"{boss.Name} flies into a rage!");
-        }
+            EnrageBoss(boss, "flies into a rage!");
 
-        // Slam: on reuse and only if a hostile is within the slam radius (else save it).
-        if (boss.BossSkillCooldown <= 0 && boss.CastingSkillId is null && boss.QueuedSkillId is null &&
-            boss.CombatTargetId is Guid tid && _world.Entities.TryGetValue(tid, out var tgt))
+        // Phase script: fire every phase whose HP threshold we've now crossed.
+        if (profile is not null)
+            AdvanceBossPhases(boss, profile);
+
+        // Skill rotation: cast the first ready boss skill that has a foe in its radius.
+        if (boss.CastingSkillId is null && boss.QueuedSkillId is null &&
+            boss.CombatTargetId is Guid tid && _world.Entities.TryGetValue(tid, out var tgt) && !tgt.Dead &&
+            SelectBossSkill(boss, profile, tgt) is string skillId)
         {
-            var slam = SkillCatalog.Get(SkillCatalog.BossSlamSkill)!;
-            if (DistanceSq(boss, tgt) <= slam.AreaRadius * slam.AreaRadius)
-            {
-                boss.BossSkillCooldown = BossSkillReuseTicks;
-                QueueMobSpell(boss, slam.Id, boss.Id);   // AoE self-centered → target self
-                return true;
-            }
+            QueueMobSpell(boss, skillId, boss.Id);   // AoE self-centered → target self
+            return true;
         }
         return false;
+    }
+
+    /// <summary>Latch the one-time rage buff: +50% P/M/basic atk, faster swings. Idempotent (a
+    /// phase-enrage and the timer-enrage can't double up). Undone by ResetMob on a leash.</summary>
+    private void EnrageBoss(Entity boss, string shout)
+    {
+        if (boss.Enraged) return;
+        boss.Enraged = true;
+        boss.AttackPower = (int)(boss.AttackPower * 1.5f);
+        boss.MagicAttack = (int)(boss.MagicAttack * 1.5f);
+        boss.BasicAttackPower = (int)(boss.BasicAttackPower * 1.5f);
+        boss.AttackSpeedMultiplier *= 0.7f;   // lower multiplier = faster swings
+        BroadcastCombat(boss, boss, 0, CombatOutcome.Buff, "Enrage");
+        BroadcastSystem($"{boss.Name} {shout}");
+    }
+
+    /// <summary>Fire each not-yet-triggered phase whose HP threshold the boss has dropped to/below
+    /// (announce + optional enrage + optional add wave). Uses a while-loop so a big single hit that
+    /// skips past several thresholds fires them all in one tick.</summary>
+    private void AdvanceBossPhases(Entity boss, BossProfile profile)
+    {
+        float hpFrac = boss.MaxHp > 0 ? (float)boss.Hp / boss.MaxHp : 0f;
+        while (boss.BossPhaseIndex < profile.Phases.Length &&
+               hpFrac <= profile.Phases[boss.BossPhaseIndex].HpFraction)
+        {
+            var phase = profile.Phases[boss.BossPhaseIndex];
+            boss.BossPhaseIndex++;
+            BroadcastSystem(phase.Announce);
+            if (phase.Enrage) EnrageBoss(boss, "roars with fury!");
+            if (phase.AddTemplateId is string addId && phase.AddCount > 0)
+                SummonAdds(boss, addId, phase.AddCount, boss.Level + phase.AddLevelOffset);
+        }
+    }
+
+    /// <summary>Pick the first ready boss skill: HP fraction inside the entry's window, off cooldown,
+    /// and a foe within the skill's AoE radius. Null = nothing to cast this tick (auto-attack).</summary>
+    private string? SelectBossSkill(Entity boss, BossProfile? profile, Entity target)
+    {
+        float hpFrac = boss.MaxHp > 0 ? (float)boss.Hp / boss.MaxHp : 0f;
+        foreach (var e in profile?.Skills ?? DefaultBossKit)
+        {
+            if (hpFrac < e.MinHpFraction || hpFrac > e.MaxHpFraction) continue;
+            if (boss.SkillCooldowns.ContainsKey(e.SkillId)) continue;
+            if (SkillCatalog.Get(e.SkillId) is not SkillDef sk) continue;
+            if (DistanceSq(boss, target) <= sk.AreaRadius * sk.AreaRadius)
+                return e.SkillId;
+        }
+        return null;
+    }
+
+    /// <summary>Spawn a wave of adds near the boss (Normal rank, no zone → no respawn), already
+    /// engaged on the boss's current target.</summary>
+    private void SummonAdds(Entity boss, string templateId, int count, int level)
+    {
+        level = Math.Clamp(level, 1, 85);
+        _world.Entities.TryGetValue(boss.CombatTargetId ?? Guid.Empty, out var target);
+        for (int i = 0; i < count; i++)
+        {
+            double angle = _rng.NextDouble() * Math.PI * 2;
+            float dist = 80f + (float)_rng.NextDouble() * 80f;
+            float ax = boss.X + (float)(Math.Cos(angle) * dist);
+            float ay = boss.Y + (float)(Math.Sin(angle) * dist);
+            (ax, ay) = WorldMap.ClampToBorder(ax, ay);
+            var add = BuildMob(templateId, level, MobRank.Normal, ax, ay, "");
+            if (target is not null && !target.Dead)
+                AddThreat(add, target, 500f);   // engage + point at the boss's target
+        }
     }
 
     /// <summary>Caster-mob combat: no basic attack — nuke from range, jab up close, both gated on
@@ -4950,13 +5014,24 @@ var effect = def.Effect;
         // A mob with a natural level brings its own (its authored base curve is tuned for it);
         // otherwise the zone assigns the level.
         int level = mobType.Level > 0 ? mobType.Level : _rng.Next(zone.MinLevel, zone.MaxLevel + 1);
+        BuildMob(mobId, level, zone.Rank, x, y, zone.Id);
+        zr.OnSpawned();
+    }
+
+    /// <summary>Create, configure and register one live mob: base stats from the level curve, the
+    /// rank multipliers (elite/boss), the template's MobMod passives, the role archetype, and — for a
+    /// Boss — its unique skill kit (BossCatalog) or the generic slam. Zone spawns pass the zone rank/id;
+    /// boss ADDS pass Normal rank + an empty zone id so they don't schedule a zone respawn.</summary>
+    private Entity BuildMob(string mobId, int level, MobRank rank, float x, float y, string zoneId)
+    {
+        var mobType = MobCatalog.Get(mobId);
         var stats = StatCalculator.MobStats(level);
 
         // Elites/bosses are tougher versions of the base mob.
-        float hpMul = zone.Rank switch { MobRank.Elite => 4f, MobRank.Boss => 20f, _ => 1f };
-        float atkMul = zone.Rank switch { MobRank.Elite => 1.5f, MobRank.Boss => 2.5f, _ => 1f };
+        float hpMul = rank switch { MobRank.Elite => 4f, MobRank.Boss => 20f, _ => 1f };
+        float atkMul = rank switch { MobRank.Elite => 1.5f, MobRank.Boss => 2.5f, _ => 1f };
 
-        string displayName = mobType.Dummy ? $"Training Dummy (Lv {level})" : zone.Rank switch
+        string displayName = mobType.Dummy ? $"Training Dummy (Lv {level})" : rank switch
         {
             MobRank.Elite => $"Elite {mobType.Name}",
             MobRank.Boss => $"{mobType.Name} Lord",
@@ -4977,9 +5052,9 @@ var effect = def.Effect;
             AtkStat = stats.Atk,   // eva/acc/crit only; mob P/M.Atk comes from the base curve
             Wit = stats.Wit,
             Dex = stats.Dex,
-            Aggressive = mobType.Aggressive || zone.Rank != MobRank.Normal,
-            ZoneId = zone.Id,
-            Rank = zone.Rank,
+            Aggressive = mobType.Aggressive || rank != MobRank.Normal,
+            ZoneId = zoneId,
+            Rank = rank,
             MobTypeId = mobId
         };
         mob.RecomputeDerived();
@@ -5052,10 +5127,17 @@ var effect = def.Effect;
                 break;
         }
 
-        // Boss rank: learn the telegraphed AoE slam (cast on a reuse timer by BossAi). Elites/
-        // normals don't get it. Caster (Mage-role) bosses keep their spells too.
+        // Boss rank: learn its unique skill kit (BossCatalog) if it has one, else the generic
+        // telegraphed AoE slam. Both cast on reuse timers by BossTick. Caster (Mage-role) bosses
+        // keep their spells too.
         if (mob.Rank == MobRank.Boss)
-            mob.LearnedSkills[SkillCatalog.BossSlamSkill] = 1;
+        {
+            if (BossCatalog.Get(mobId) is BossProfile profile)
+                foreach (var s in profile.Skills)
+                    mob.LearnedSkills[s.SkillId] = 1;
+            else
+                mob.LearnedSkills[SkillCatalog.BossSlamSkill] = 1;
+        }
 
         mob.Hp = mob.MaxHp;
         mob.Mp = mob.MaxMp;
@@ -5076,6 +5158,6 @@ var effect = def.Effect;
 
         _world.Entities[mob.Id] = mob;
         _world.Grid.Add(mob);
-        zr.OnSpawned();
+        return mob;
     }
 }

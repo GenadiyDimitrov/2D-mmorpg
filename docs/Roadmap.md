@@ -145,23 +145,28 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   ALWAYS splits** evenly among in-range members (`AwardGold`, killer keeps remainder) regardless of
   mode; leader-only `PartySetLootMode` cmd+hub+channel; `PartyUpdate` carries `LootMode`; client party
   panel loot dropdown (leader-editable). See [[party-loot-modes]].
-- [~] **Active mob skills** — STARTED: caster (Mage-role) mobs cast two generic leveled spells
-  (nuke + jab, MP-gated). Still to do: per-mob UNIQUE skills, mob buffs/heals/CC, boss skills, and
-  a client cast-bar for mobs (today the player only sees the damage land, no visible mob cast).
+- [~] **Active mob skills** — caster (Mage-role) mobs cast two generic leveled spells (nuke + jab,
+  MP-gated); BOSSES now have data-driven unique kits + phases + adds (see Boss mechanics, `BossCatalog`);
+  client cast-bar for mobs done. Still to do: mob buffs/heals/CC for NON-boss mobs (shaman heals, etc.).
 - [~] **Leveled MobMastery layer (mobs_passives.csv)** — BUILT (`Game.Shared/MobMasteries.cs`): the
   per-level tables (Weapon/Armor Weight, M.Atk/P.Atk/Max HP/MP/Regen HP/MP/M.Def/P.Def Mods, Pierce/
   Blunt/Bow Resistance) + `MobMasteries.Build(...)` that resolves per-mastery LEVEL picks into a
   `MobMod` (extended with MaxMp/AtkSpeed/HpRegen/MpRegen mults + flat Eva; applied at spawn). Demo:
   obsidian_knight authored via `Build(pierce:10, bow:12, blunt:2)`. STILL TODO: Stun/Fear/status
   resists (with the CC layer), and moving mob picks off `MobMod` onto a mob StatMods fold if desired.
-- [~] **Boss mechanics** — CORE DONE (2026-07-07): **±10-level rule** (`StatCalculator.RaidLevelGapMult`
-  in `FinalizeDamage` — a player's damage to a Boss tapers by level gap, both directions, 0.1 floor);
-  **enrage** (`BossTick`: after ~90s engaged a boss latches a one-time +50% atk / +30% faster-swing rage,
-  undone on leash-reset); **boss skill** = a telegraphed AoE **"Devastating Slam"** (`boss_slam`,
-  `TargetMode.EnemiesInRadius` — new mode + `DeliverSimpleHit`/`EnemiesInRadius` helpers; 3s cast, dmg +
-  contested Stun in 250, ~12s reuse); **visible mob cast-bar** (`MobCastInfo` DTO broadcast to nearby
-  players on any mob cast start + cleared on interrupt; NetworkChannel `MobCastReceived`). Raid-boss respawn
-  timers already existed. **NEXT:** per-mob UNIQUE boss skills, adds/phases, client cast-bar rendering (owner).
+- [x] **Boss mechanics** — DONE. **±10-level rule** (`StatCalculator.RaidLevelGapMult` in `FinalizeDamage`);
+  **enrage** timer (`BossTick`: one-time +50% atk / faster-swing rage after ~90s, undone on leash-reset);
+  **telegraphed AoE** "Devastating Slam" (`boss_slam`, `TargetMode.EnemiesInRadius`); **visible mob cast-bar**
+  (`MobCastInfo` DTO + client rendering). **PER-MOB UNIQUE SKILLS + PHASES + ADDS DONE (2026-07-07):**
+  data-driven `BossCatalog` (`BossProfile` keyed by mob-template id = a `BossSkillEntry[]` kit with HP-gated
+  entries + a `BossPhase[]` HP-threshold script). `BossTick` now runs the enrage timer, the phase script
+  (`AdvanceBossPhases` → announce / `EnrageBoss` / `SummonAdds`) and a skill rotation (`SelectBossSkill` picks
+  the first ready HP-gated skill with a foe in radius; reuse via per-skill `CooldownTicks`/`SkillCooldowns`).
+  `SummonAdds` spawns Normal-rank, no-zone (no respawn) minions engaged on the boss's target via a refactored
+  `BuildMob` (extracted from `SpawnOneInZone`; also used by zone spawns). New phase skill **"Thorn Nova"**
+  (`boss_thorn_nova`, magic AoE + slow). Demo boss: Valley Treant Lord (slam → 50% enrage+2 bogwood
+  adds+Thorn Nova → 25% shout). `ResetMob` re-arms phases + clears reuse. See [[boss-mechanics]].
+  **Deferred:** boss buffs/heals, multi-stage HP-bar phases, unique skills for the other bosses.
 - [ ] **Pets & summons** — immovable healing totem, class pets (Trapper/tank), mage
   summoner. ([[pets-summons-design]])
 - [ ] **Buffer = "Enchanter" + full-buff NPC to 75** — owner direction ([[buffer-enchanter-design]]):
