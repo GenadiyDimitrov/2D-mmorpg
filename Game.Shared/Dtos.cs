@@ -70,6 +70,10 @@ public record ProgressUpdate(
 /// Seconds &lt;= 0 means the cast was cancelled — hide the bar.</summary>
 public record CastInfo(string SkillName, float Seconds);
 
+/// <summary>Server -> nearby clients: a MOB started casting (drives a cast bar over the mob's head,
+/// so a boss's telegraphed slam is visible/dodgeable). Seconds 0 = the cast ended/was cancelled.</summary>
+public record MobCastInfo(Guid CasterId, string SkillName, float Seconds);
+
 
 /// <summary>One item instance in a player's inventory.</summary>
 public record InventoryItemDto(Guid InstanceId, string DefId, bool Equipped, int Enchant, int Quantity, ItemAttribute[] Attributes);

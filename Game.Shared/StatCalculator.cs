@@ -477,6 +477,18 @@ public static class StatCalculator
 
     public static int MobExpReward(int mobLevel) => 40 + mobLevel * 35;
 
+    /// <summary>Raid ±10-level rule: damage a player deals TO a boss is scaled by how far the
+    /// player's level is from the boss's — full within ±5, tapering to a 0.1 floor beyond ~±16.
+    /// Both directions (so an over-leveled player can't trivialize a lowbie raid, nor a far
+    /// under-leveled one tank it). Retune the bands as needed.</summary>
+    public static float RaidLevelGapMult(int attackerLevel, int bossLevel)
+    {
+        int gap = System.Math.Abs(attackerLevel - bossLevel);
+        if (gap <= 5) return 1f;
+        if (gap <= 10) return 1f - (gap - 5) * 0.06f;              // 5→1.0 .. 10→0.70
+        return System.Math.Max(0.1f, 0.7f - (gap - 10) * 0.1f);   // 11→0.60 .. 16+→0.10
+    }
+
     /// <summary>Base gold a mob drops, by level (scaled by RateConfig.GoldAmountRate
     /// and a small variance at the drop site).</summary>
     public static int MobGoldReward(int mobLevel) => 25 + mobLevel * 8;

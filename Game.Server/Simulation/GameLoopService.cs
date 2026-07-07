@@ -1818,43 +1818,69 @@ public class GameLoopService : BackgroundService
     {
         if (SkillCatalog.Get(trap.SkillId) is not SkillDef def)
             return;
-        int lvl = trap.Level;
         string name = ClassSkills.DisplayName(
             def.Id, owner.Race, owner.BaseClass, owner.Archetype, owner.Discipline);
+        DeliverSimpleHit(owner, victim, def, trap.Level, name);
+    }
+
+    /// <summary>Apply a skill's damage (physical/magic) + any contested CC to one victim, attributed
+    /// to attacker — a compact version of the cast path with no crit/block nuance. Shared by TRAP
+    /// triggers and boss AoE slams. Kills the victim if it drops to 0.</summary>
+    private void DeliverSimpleHit(Entity attacker, Entity victim, SkillDef def, int lvl, string name)
+    {
+        if (victim.Dead) return;
         var effect = def.Effect;
 
         if (effect.HasFlag(SkillEffect.PhysicalDamage))
         {
             int dmg = StatCalculator.PhysicalDamage(
-                (int)owner.EffectiveAttack, def.PowerAt(lvl), (int)victim.EffectiveDefence, owner.Level,
-                StatCalculator.WeaponDefenceCoef(owner.WeaponType, victim.PierceDefCoef, victim.BluntDefCoef, victim.BowDefCoef));
-            dmg = FinalizeDamage(owner, victim, dmg, DamageKind.SkillPhysical, def);
-            BroadcastCombat(owner, victim, dmg, CombatOutcome.Hit, name);
-            ApplyDamage(victim, dmg, owner);
+                (int)attacker.EffectiveAttack, def.PowerAt(lvl), (int)victim.EffectiveDefence, attacker.Level,
+                StatCalculator.WeaponDefenceCoef(attacker.WeaponType, victim.PierceDefCoef, victim.BluntDefCoef, victim.BowDefCoef));
+            dmg = FinalizeDamage(attacker, victim, dmg, DamageKind.SkillPhysical, def);
+            BroadcastCombat(attacker, victim, dmg, CombatOutcome.Hit, name);
+            ApplyDamage(victim, dmg, attacker);
         }
         if (effect.HasFlag(SkillEffect.MagicDamage) && !victim.Dead)
         {
             int dmg = StatCalculator.MagicDamage(
-                (int)owner.EffectiveMagicAttack, def.PowerAt(lvl), (int)victim.EffectiveMagicDefence, owner.Level);
-            dmg = FinalizeDamage(owner, victim, dmg, DamageKind.SkillMagic, def);
-            BroadcastCombat(owner, victim, dmg, CombatOutcome.Hit, name);
-            ApplyDamage(victim, dmg, owner);
+                (int)attacker.EffectiveMagicAttack, def.PowerAt(lvl), (int)victim.EffectiveMagicDefence, attacker.Level);
+            dmg = FinalizeDamage(attacker, victim, dmg, DamageKind.SkillMagic, def);
+            BroadcastCombat(attacker, victim, dmg, CombatOutcome.Hit, name);
+            ApplyDamage(victim, dmg, attacker);
         }
-        // Contested CC (Root/Stun/Slow): the trap's control payload.
+        // Contested CC (Root/Stun/Slow): the control payload.
         if ((effect & SkillEffect.ContestCc) != 0 && !victim.Dead)
         {
-            int atkStat = owner.AtkStat;
+            int atkStat = attacker.AtkStat;
             int defStat = def.DebuffSchool == DebuffSchool.Magical ? (int)victim.EffectiveWit : victim.Con;
             float land = victim.Immune ? 0f : StatCalculator.DebuffLandChance(atkStat, defStat);
             land *= 1f - victim.CcResist;
             if (_rng.NextDouble() < land)
             {
                 ApplyBuff(victim, def, lvl);
-                BroadcastCombat(owner, victim, 0, CombatOutcome.Buff, name);
+                BroadcastCombat(attacker, victim, 0, CombatOutcome.Buff, name);
             }
         }
         if (victim.Hp <= 0 && !victim.Dead)
-            Kill(victim, owner);
+            Kill(victim, attacker);
+    }
+
+    /// <summary>Hostiles of the caster within a radius: for a MOB caster that's nearby players;
+    /// for a PLAYER caster it's nearby mobs. Used by enemy-AoE skills (boss slams).</summary>
+    private IEnumerable<Entity> EnemiesInRadius(Entity caster, float radius)
+    {
+        float r2 = radius * radius;
+        var wantKind = caster.Kind == EntityKind.Mob ? EntityKind.Player : EntityKind.Mob;
+        foreach (var e in _world.Grid.Nearby(caster))
+        {
+            if (e.Kind != wantKind || e.Dead || e.TrainingDummy)
+                continue;
+            if (wantKind == EntityKind.Player && GameConstants.InSafeZone(e.X, e.Y))
+                continue;
+            float dx = e.X - caster.X, dy = e.Y - caster.Y;
+            if (dx * dx + dy * dy <= r2)
+                yield return e;
+        }
     }
 
     // Scratch set so the per-second roster refresh only sends each party once (the Parties
@@ -2034,6 +2060,19 @@ public class GameLoopService : BackgroundService
         mob.TauntLockTicks = 0;
         mob.TargetX = mob.HomeX;
         mob.TargetY = mob.HomeY;
+
+        // Boss: drop enrage (undo its stat spike) and reset the combat/skill timers so the next
+        // pull starts fresh.
+        if (mob.Enraged)
+        {
+            mob.AttackPower = (int)(mob.AttackPower / 1.5f);
+            mob.MagicAttack = (int)(mob.MagicAttack / 1.5f);
+            mob.BasicAttackPower = (int)(mob.BasicAttackPower / 1.5f);
+            mob.AttackSpeedMultiplier /= 0.7f;
+            mob.Enraged = false;
+        }
+        mob.CombatTicks = 0;
+        mob.BossSkillCooldown = 0;
     }
 
     /// <summary>A mob died: remove it from the world and let its zone schedule
@@ -2096,9 +2135,53 @@ public class GameLoopService : BackgroundService
 
         if (entity.Engaged)
         {
+            // Boss: enrage timer + special-skill scheduling. If it queued a skill this tick,
+            // let the queued-skill path pick it up next tick instead of also auto-attacking.
+            if (entity.Rank == MobRank.Boss && BossTick(entity))
+                return;
+
             if (entity.CasterMob) MobCasterAi(entity);
             else UpdateAutoAttack(entity);
         }
+    }
+
+    // Boss combat tuning: enrage after ~90s of a dragged-out fight; slam roughly every 12s.
+    private const int BossEnrageTicks = 900;
+    private const int BossSkillReuseTicks = 120;
+
+    /// <summary>Per-tick boss logic while engaged: advance the enrage timer (a one-time rage buff
+    /// if the fight drags) and, on its reuse timer, queue the AoE slam when foes are in range.
+    /// Returns true if it queued the slam this tick (so the caller skips the auto-attack).</summary>
+    private bool BossTick(Entity boss)
+    {
+        boss.CombatTicks++;
+        if (boss.BossSkillCooldown > 0) boss.BossSkillCooldown--;
+
+        // Enrage: once, when the fight has dragged on — punishes slow kills.
+        if (!boss.Enraged && boss.CombatTicks >= BossEnrageTicks)
+        {
+            boss.Enraged = true;
+            boss.AttackPower = (int)(boss.AttackPower * 1.5f);
+            boss.MagicAttack = (int)(boss.MagicAttack * 1.5f);
+            boss.BasicAttackPower = (int)(boss.BasicAttackPower * 1.5f);
+            boss.AttackSpeedMultiplier *= 0.7f;   // lower multiplier = faster swings
+            BroadcastCombat(boss, boss, 0, CombatOutcome.Buff, "Enrage");
+            BroadcastSystem($"{boss.Name} flies into a rage!");
+        }
+
+        // Slam: on reuse and only if a hostile is within the slam radius (else save it).
+        if (boss.BossSkillCooldown <= 0 && boss.CastingSkillId is null && boss.QueuedSkillId is null &&
+            boss.CombatTargetId is Guid tid && _world.Entities.TryGetValue(tid, out var tgt))
+        {
+            var slam = SkillCatalog.Get(SkillCatalog.BossSlamSkill)!;
+            if (DistanceSq(boss, tgt) <= slam.AreaRadius * slam.AreaRadius)
+            {
+                boss.BossSkillCooldown = BossSkillReuseTicks;
+                QueueMobSpell(boss, slam.Id, boss.Id);   // AoE self-centered → target self
+                return true;
+            }
+        }
+        return false;
     }
 
     /// <summary>Caster-mob combat: no basic attack — nuke from range, jab up close, both gated on
@@ -2227,13 +2310,22 @@ public class GameLoopService : BackgroundService
         caster.CastInitialMpPaid = Math.Min(initialMp, caster.Mp);
         caster.Mp -= caster.CastInitialMpPaid;
 
+        // Show the caster's CLASS-specific name for the skill (e.g. "Moonlight Bolt").
+        string shown = ClassSkills.DisplayName(def.Id, caster.Race, caster.BaseClass,
+            caster.Archetype, caster.Discipline);
+        float castSeconds = caster.CastTicksRemaining * GameConstants.TickSeconds;
         if (_world.EntityToConnection.TryGetValue(caster.Id, out var conn))
         {
-            // Show the caster's CLASS-specific name for the skill (e.g. "Moonlight Bolt").
-            string shown = ClassSkills.DisplayName(def.Id, caster.Race, caster.BaseClass,
-                caster.Archetype, caster.Discipline);
-            _ = _hub.Clients.Client(conn).SendAsync("Cast", new CastInfo(
-                shown, caster.CastTicksRemaining * GameConstants.TickSeconds));
+            _ = _hub.Clients.Client(conn).SendAsync("Cast", new CastInfo(shown, castSeconds));
+        }
+        else if (caster.Kind == EntityKind.Mob)
+        {
+            // A MOB has no connection — broadcast a cast bar over its head to nearby players so a
+            // boss's telegraphed slam is visible (and dodgeable/interruptible).
+            var info = new MobCastInfo(caster.Id, shown, castSeconds);
+            foreach (var nearby in _world.Grid.Nearby(caster))
+                if (_world.EntityToConnection.TryGetValue(nearby.Id, out var pc))
+                    _ = _hub.Clients.Client(pc).SendAsync("MobCast", info);
         }
     }
 
@@ -2316,6 +2408,15 @@ var effect = def.Effect;
             DropAggroOn(caster);   // vanishing sheds mobs already locked on
             BroadcastCombat(caster, caster, 0, CombatOutcome.Buff, castName);
             SendSystemToEntity(caster, "You slip into the shadows.");
+        }
+
+        // ---- Offensive AoE (boss slam): hit every hostile in radius, then finish. Uses the
+        //      compact hit path (shared with traps). ----
+        if (def.TargetMode == TargetMode.EnemiesInRadius)
+        {
+            foreach (var foe in EnemiesInRadius(caster, def.AreaRadius).ToList())
+                DeliverSimpleHit(caster, foe, def, lvl, castName);
+            return;
         }
 
         // ---- Damage (physical) ----
@@ -3700,7 +3801,18 @@ var effect = def.Effect;
         entity.CastTargetId = null;
         entity.CastTicksRemaining = 0;
         entity.CastInitialMpPaid = 0;
-        SendTo(entity, "Cast", new CastInfo("", 0f));
+        if (entity.Kind == EntityKind.Mob)
+        {
+            // Clear the mob's cast bar on nearby clients (interrupt/cancel).
+            var info = new MobCastInfo(entity.Id, "", 0f);
+            foreach (var nearby in _world.Grid.Nearby(entity))
+                if (_world.EntityToConnection.TryGetValue(nearby.Id, out var pc))
+                    _ = _hub.Clients.Client(pc).SendAsync("MobCast", info);
+        }
+        else
+        {
+            SendTo(entity, "Cast", new CastInfo("", 0f));
+        }
     }
 
     /// <summary>Player pressed ESC to cancel their own cast — starts cooldown.</summary>
@@ -4015,7 +4127,10 @@ var effect = def.Effect;
         // Conditional damage: +% when the target is in one of the skill's rewarded states.
         float condBonus = (skill is not null && skill.ConditionalOn != TargetCondition.None
             && TargetMatches(target, skill.ConditionalOn)) ? skill.ConditionalDamagePct : 0f;
-        float result = dmg * (1f + bonus) * (1f + condBonus) * skillMult;
+        // Raid ±10 rule: a player's damage to a BOSS is scaled by the level gap (anti-cheese).
+        float raidMult = (target.Rank == MobRank.Boss && attacker.Kind == EntityKind.Player)
+            ? StatCalculator.RaidLevelGapMult(attacker.Level, target.Level) : 1f;
+        float result = dmg * (1f + bonus) * (1f + condBonus) * skillMult * raidMult;
         // A skill explicitly multiplied to 0 in this context deals 0 (e.g. a mob-only nuke
         // vs a player); otherwise a real hit is at least 1.
         return skillMult <= 0f ? 0 : Math.Max(1, (int)result);
@@ -4849,6 +4964,11 @@ var effect = def.Effect;
                 mob.LearnedSkills[SkillCatalog.MobBoltSkill] = spellLevel;
                 break;
         }
+
+        // Boss rank: learn the telegraphed AoE slam (cast on a reuse timer by BossAi). Elites/
+        // normals don't get it. Caster (Mage-role) bosses keep their spells too.
+        if (mob.Rank == MobRank.Boss)
+            mob.LearnedSkills[SkillCatalog.BossSlamSkill] = 1;
 
         mob.Hp = mob.MaxHp;
         mob.Mp = mob.MaxMp;

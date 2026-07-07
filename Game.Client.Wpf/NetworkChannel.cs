@@ -16,6 +16,7 @@ public class NetworkChannel : IAsyncDisposable
     public event Action<CombatEvent>? CombatReceived;
     public event Action<ProgressUpdate>? ProgressReceived;
     public event Action<CastInfo>? CastReceived;
+    public event Action<MobCastInfo>? MobCastReceived;
     public event Action<InventoryUpdate>? InventoryReceived;
     public event Action<TradeRequestNotice>? TradeRequestReceived;
     public event Action<TradeStateUpdate>? TradeStateReceived;
@@ -46,6 +47,7 @@ public class NetworkChannel : IAsyncDisposable
         _connection.On<CombatEvent>("Combat", c => CombatReceived?.Invoke(c));
         _connection.On<ProgressUpdate>("Progress", p => ProgressReceived?.Invoke(p));
         _connection.On<CastInfo>("Cast", c => CastReceived?.Invoke(c));
+        _connection.On<MobCastInfo>("MobCast", c => MobCastReceived?.Invoke(c));
         _connection.On<InventoryUpdate>("Inventory", i => InventoryReceived?.Invoke(i));
         _connection.On<TradeRequestNotice>("TradeRequest", t => TradeRequestReceived?.Invoke(t));
         _connection.On<TradeStateUpdate>("Trade", t => TradeStateReceived?.Invoke(t));

@@ -324,10 +324,10 @@ public readonly record struct PassiveEffect(
     float HitFloor = 0f,          // min chance THIS entity lands a physical hit (warrior)
     float MagicFailFloor = 0f);   // min chance a spell fizzles vs this entity (tank/mage anti-magic)
 
-/// <summary>Who a (beneficial) skill affects. SelfOnly = caster only;
-/// AlliesInRadius = caster + nearby player characters (a "party" buff until real
-/// party groups exist).</summary>
-public enum TargetMode { SelfOrTarget = 0, SelfOnly = 1, AlliesInRadius = 2 }
+/// <summary>Who a skill affects. SelfOnly = caster only; AlliesInRadius = caster + party members
+/// in radius (heals/buffs); EnemiesInRadius = every HOSTILE in radius (an offensive AoE, e.g. a
+/// boss slam — mobs hit players, players hit mobs).</summary>
+public enum TargetMode { SelfOrTarget = 0, SelfOnly = 1, AlliesInRadius = 2, EnemiesInRadius = 3 }
 
 // ===========================================================================
 //  SKILL CATALOG — partial across this folder. This file owns the assembly.

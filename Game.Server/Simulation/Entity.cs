@@ -583,6 +583,13 @@ public class Entity
     public bool CasterMob { get; set; }
     public MobRank Rank { get; set; }
     public bool Aggressive { get; set; }
+
+    /// <summary>Boss combat mechanics. CombatTicks counts how long the boss has been engaged
+    /// (drives the enrage timer); Enraged latches once it enrages (so the buff applies once);
+    /// BossSkillTicks is the reuse counter for its special skill. Reset when the boss resets.</summary>
+    public int CombatTicks { get; set; }
+    public bool Enraged { get; set; }
+    public int BossSkillCooldown { get; set; }
     public int WanderTicks { get; set; }
     public int RespawnTicks { get; set; }
 

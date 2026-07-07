@@ -12,6 +12,7 @@ public static partial class SkillCatalog
 {
     public const string MobNukeSkill = "mob_nuke";   // 600 range · 4.0s cast · 1.0s reuse
     public const string MobBoltSkill = "mob_bolt";   // 150 range · 1.5s cast · 0.5s reuse
+    public const string BossSlamSkill = "boss_slam"; // boss AoE: telegraphed slam (dmg + stun) around it
 
     // The 13 spell levels are tied to these mob levels (interpolation anchors from the CSV
     // ask: nuke power 18→129 / MP 7→40, bolt power 7→33 / MP 5→10 across mob levels 10..85).
@@ -58,6 +59,18 @@ public static partial class SkillCatalog
                 Category: SkillCategory.Magic, SpCost: 0,
                 Description: "A caster mob's short-range magic jab.",
                 Levels: Rows(boltPow, boltMp)),
+
+            // Boss SLAM — a telegraphed (3s cast) AoE around the boss: physical damage + a
+            // contested Stun to everyone in ~250. The long cast is the "boss skill" tell —
+            // players can move out / interrupt. Damage rides the boss's (high) P.Atk; the flat
+            // Power is a modest add. MP-free (bosses aren't MP-gated).
+            new SkillDef(BossSlamSkill, "Devastating Slam", BaseClass.Fighter,
+                SkillEffect.PhysicalDamage | SkillEffect.Stun,
+                MpCost: 0, CastTicks: 30, CooldownTicks: 120, Range: 0, Power: 60,
+                Category: SkillCategory.Physical, SpCost: 0,
+                TargetMode: TargetMode.EnemiesInRadius, AreaRadius: 250f,
+                DebuffSchool: DebuffSchool.Physical, DurationTicks: 20,
+                Description: "A boss's ground slam — heavy damage and a brief stun to all nearby foes."),
         };
     }
 }

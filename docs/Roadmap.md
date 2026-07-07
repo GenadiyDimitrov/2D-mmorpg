@@ -151,7 +151,14 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   `MobMod` (extended with MaxMp/AtkSpeed/HpRegen/MpRegen mults + flat Eva; applied at spawn). Demo:
   obsidian_knight authored via `Build(pierce:10, bow:12, blunt:2)`. STILL TODO: Stun/Fear/status
   resists (with the CC layer), and moving mob picks off `MobMod` onto a mob StatMods fold if desired.
-- [ ] **Boss mechanics** — ±10-level rule, boss skills, enrage; raid-boss timers already exist.
+- [~] **Boss mechanics** — CORE DONE (2026-07-07): **±10-level rule** (`StatCalculator.RaidLevelGapMult`
+  in `FinalizeDamage` — a player's damage to a Boss tapers by level gap, both directions, 0.1 floor);
+  **enrage** (`BossTick`: after ~90s engaged a boss latches a one-time +50% atk / +30% faster-swing rage,
+  undone on leash-reset); **boss skill** = a telegraphed AoE **"Devastating Slam"** (`boss_slam`,
+  `TargetMode.EnemiesInRadius` — new mode + `DeliverSimpleHit`/`EnemiesInRadius` helpers; 3s cast, dmg +
+  contested Stun in 250, ~12s reuse); **visible mob cast-bar** (`MobCastInfo` DTO broadcast to nearby
+  players on any mob cast start + cleared on interrupt; NetworkChannel `MobCastReceived`). Raid-boss respawn
+  timers already existed. **NEXT:** per-mob UNIQUE boss skills, adds/phases, client cast-bar rendering (owner).
 - [ ] **Pets & summons** — immovable healing totem, class pets (Trapper/tank), mage
   summoner. ([[pets-summons-design]])
 - [ ] **Buffer = "Enchanter" + full-buff NPC to 75** — owner direction ([[buffer-enchanter-design]]):
