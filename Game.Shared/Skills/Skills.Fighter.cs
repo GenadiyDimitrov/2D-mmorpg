@@ -32,6 +32,8 @@ public static partial class SkillCatalog
     public const string Provoke = "provoke";                  // taunt: force a mob onto the tank
     public const string Shadowstep = "shadowstep";            // blink behind target + hit
     public const string RepellingShot = "repelling_shot";     // ranged hit + knockback
+    public const string Vanish = "vanish";                    // Phantom: stealth (invisible to mobs)
+    public const string SnareTrap = "snare_trap";             // Trapper: place a rooting damage trap
 
     // --- Base fighter CORE actives (CSV fighter 01-15, continuing into 2nd-class) ---
     public const string Strike = "strike";                    // sword/blunt attack (can double)
@@ -495,6 +497,24 @@ public static partial class SkillCatalog
             MpCost: 18, CastTicks: 5, CooldownTicks: 60, Range: 600, Power: 40,
             Category: SkillCategory.Physical, KnockbackRange: 200f,
             Description: "A forceful shot that damages and knocks the target back."),
+
+        // Vanish — STEALTH: become invisible to monsters for the duration (broken by any offensive
+        //          action). Sheds mobs already locked on. The Phantom's opener setup.
+        new(Vanish, "Vanish", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 30, CastTicks: 0, CooldownTicks: 300, Range: 0, Power: 0,
+            DurationTicks: 200, Category: SkillCategory.Physical,
+            TargetMode: TargetMode.SelfOnly, GrantsStealth: true,
+            Description: "Slip into the shadows — monsters can't see you until you act."),
+
+        // Snare Trap — TRAP: drop a hidden trap; the next monster to step on it takes damage and is
+        //          ROOTED (contested). The Trapper's control tool. Uses the skill's own Power + Root.
+        new(SnareTrap, "Snare Trap", BaseClass.Fighter,
+            SkillEffect.PhysicalDamage | SkillEffect.Root,
+            MpCost: 24, CastTicks: 10, CooldownTicks: 100, Range: 0, Power: 55,
+            DurationTicks: 50, Category: SkillCategory.Physical,
+            TargetMode: TargetMode.SelfOnly, DebuffSchool: DebuffSchool.Physical,
+            PlacesTrap: true, TrapRadius: 150f, TrapLifeTicks: 300,
+            Description: "Set a trap; the first monster to trip it is damaged and rooted in place."),
 
         new(WarCry, "War Cry", BaseClass.Fighter, SkillEffect.BuffAtk,
             MpCost: 15, CastTicks: 5, CooldownTicks: 300, Range: 0, Power: 0,

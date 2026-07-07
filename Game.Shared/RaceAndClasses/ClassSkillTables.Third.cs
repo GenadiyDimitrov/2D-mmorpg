@@ -103,9 +103,12 @@ public static partial class ClassSkillTables
                         new ClassSkill(Rupture, 40), new ClassSkill(DetonateWounds, 44));
                     break;
             }
-            // Movement: Phantom blink (Shadowstep), Trapper knockback (Repelling Shot).
-            ClassSkills.RegisterThird(race, Discipline.Phantom, new ClassSkill(Shadowstep, 40));
-            ClassSkills.RegisterThird(race, Discipline.Trapper, new ClassSkill(RepellingShot, 40));
+            // Movement + primitives: Phantom blink (Shadowstep) + stealth (Vanish); Trapper
+            // knockback (Repelling Shot) + a rooting damage trap (Snare Trap).
+            ClassSkills.RegisterThird(race, Discipline.Phantom,
+                new ClassSkill(Shadowstep, 40), new ClassSkill(Vanish, 44));
+            ClassSkills.RegisterThird(race, Discipline.Trapper,
+                new ClassSkill(RepellingShot, 40), new ClassSkill(SnareTrap, 44));
         }
 
         // Healer disciplines (Lightbringer = healer, Warchanter = buffer) are dropped

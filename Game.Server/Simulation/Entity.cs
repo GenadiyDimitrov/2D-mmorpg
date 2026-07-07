@@ -535,6 +535,12 @@ public class Entity
     /// <summary>While &gt; 0 a taunt locks the mob onto its taunter (ignores threat retargeting).</summary>
     public int TauntLockTicks { get; set; }
 
+    /// <summary>While &gt; 0 the entity is STEALTHED — invisible to mob AI targeting. Set by a
+    /// GrantsStealth skill; decremented each tick; cleared early when the entity takes an
+    /// offensive action (attack / offensive skill).</summary>
+    public int StealthTicks { get; set; }
+    public bool Stealthed => StealthTicks > 0;
+
     public string? QueuedSkillId { get; set; }
     public Guid? QueuedTargetId { get; set; }
 

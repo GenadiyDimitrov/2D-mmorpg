@@ -19,6 +19,20 @@ public class TradeSession
     public void SetReady(Entity e, bool value) { if (e == A) ReadyA = value; else ReadyB = value; }
 }
 
+/// <summary>A placed TRAP (Trapper skill). Server-only (not an Entity, so it's invisible to the
+/// snapshot — a dedicated visual is client work). When a hostile steps within Radius the trap
+/// delivers its skill's damage + CC to that intruder, attributed to the owner, then is removed.</summary>
+public class TrapInstance
+{
+    public required Guid OwnerId { get; init; }
+    public required string SkillId { get; init; }
+    public int Level { get; init; } = 1;
+    public float X { get; init; }
+    public float Y { get; init; }
+    public float Radius { get; init; }
+    public int LifeTicks { get; set; }
+}
+
 /// <summary>A live adventuring party. Owned by the loop thread. The leader can invite/kick;
 /// members share XP (split among those in range) and are the targets of AoE ally heals/buffs.</summary>
 public class Party
@@ -52,6 +66,9 @@ public class World
 
     /// <summary>Every party MEMBER id maps to the shared <see cref="Party"/> object.</summary>
     public Dictionary<Guid, Party> Parties { get; } = new();
+
+    /// <summary>Live placed traps (Trapper). Scanned each tick for intruders.</summary>
+    public List<TrapInstance> Traps { get; } = new();
 
     /// <summary>invitedEntityId -> inviterEntityId (one pending party invite each).</summary>
     public Dictionary<Guid, Guid> PendingPartyInvites { get; } = new();

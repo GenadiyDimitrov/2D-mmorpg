@@ -437,7 +437,13 @@ public class GameLoopService : BackgroundService
             | SkillEffect.MagicDamage | SkillEffect.AnyDebuff | SkillEffect.Cancel | SkillEffect.Taunt)) != 0;
 
         Guid targetId;
-        if (offensive)
+        if (def.PlacesTrap || def.GrantsStealth)
+        {
+            // Self-delivered: a trap drops at the caster's feet; stealth cloaks the caster. Even
+            // though a trap carries damage/CC flags (its deferred payload), it needs no live target.
+            targetId = caster.Id;
+        }
+        else if (offensive)
         {
             if (cmd.TargetId is not Guid tid ||
                 tid == caster.Id ||
@@ -1713,6 +1719,8 @@ public class GameLoopService : BackgroundService
         {
             if (entity.AttackCooldown > 0)
                 entity.AttackCooldown--;
+            if (entity.StealthTicks > 0)
+                entity.StealthTicks--;
 
             if (entity.Kind == EntityKind.Player)
                 TickPotion(entity);
@@ -1752,8 +1760,101 @@ public class GameLoopService : BackgroundService
             }
         }
 
+        TickTraps();
+
         if (regenTick)
             RefreshPartyRosters();   // live HP/MP for the party window
+    }
+
+    /// <summary>Advance placed traps: expire the timed-out ones, and fire any whose radius a
+    /// hostile has entered (delivering the trap skill's payload to that intruder, then removing it).</summary>
+    private void TickTraps()
+    {
+        if (_world.Traps.Count == 0)
+            return;
+        for (int i = _world.Traps.Count - 1; i >= 0; i--)
+        {
+            var trap = _world.Traps[i];
+            if (--trap.LifeTicks <= 0)
+            {
+                _world.Traps.RemoveAt(i);
+                continue;
+            }
+            if (!_world.Entities.TryGetValue(trap.OwnerId, out var owner) || owner.Dead)
+            {
+                _world.Traps.RemoveAt(i);   // owner gone — drop the trap
+                continue;
+            }
+            var victim = FindTrapVictim(trap, owner);
+            if (victim is null)
+                continue;
+            FireTrap(owner, victim, trap);
+            _world.Traps.RemoveAt(i);
+        }
+    }
+
+    /// <summary>The nearest hostile within a trap's radius, or null. A trap triggers on mobs (and,
+    /// once PvP exists, enemy players); never on the owner or allies.</summary>
+    private Entity? FindTrapVictim(TrapInstance trap, Entity owner)
+    {
+        float r2 = trap.Radius * trap.Radius;
+        Entity? best = null;
+        float bestD = float.MaxValue;
+        foreach (var e in _world.Entities.Values)
+        {
+            if (e.Dead || e.Kind != EntityKind.Mob || e.TrainingDummy)
+                continue;
+            float dx = e.X - trap.X, dy = e.Y - trap.Y;
+            float d = dx * dx + dy * dy;
+            if (d <= r2 && d < bestD) { bestD = d; best = e; }
+        }
+        return best;
+    }
+
+    /// <summary>Deliver a sprung trap's payload: the trap skill's damage (physical/magic) + any
+    /// contested CC (Root/Stun/Slow), attributed to the owner. A compact reuse of the cast path
+    /// (no crit/block nuance — traps are control tools; retune later).</summary>
+    private void FireTrap(Entity owner, Entity victim, TrapInstance trap)
+    {
+        if (SkillCatalog.Get(trap.SkillId) is not SkillDef def)
+            return;
+        int lvl = trap.Level;
+        string name = ClassSkills.DisplayName(
+            def.Id, owner.Race, owner.BaseClass, owner.Archetype, owner.Discipline);
+        var effect = def.Effect;
+
+        if (effect.HasFlag(SkillEffect.PhysicalDamage))
+        {
+            int dmg = StatCalculator.PhysicalDamage(
+                (int)owner.EffectiveAttack, def.PowerAt(lvl), (int)victim.EffectiveDefence, owner.Level,
+                StatCalculator.WeaponDefenceCoef(owner.WeaponType, victim.PierceDefCoef, victim.BluntDefCoef, victim.BowDefCoef));
+            dmg = FinalizeDamage(owner, victim, dmg, DamageKind.SkillPhysical, def);
+            BroadcastCombat(owner, victim, dmg, CombatOutcome.Hit, name);
+            ApplyDamage(victim, dmg, owner);
+        }
+        if (effect.HasFlag(SkillEffect.MagicDamage) && !victim.Dead)
+        {
+            int dmg = StatCalculator.MagicDamage(
+                (int)owner.EffectiveMagicAttack, def.PowerAt(lvl), (int)victim.EffectiveMagicDefence, owner.Level);
+            dmg = FinalizeDamage(owner, victim, dmg, DamageKind.SkillMagic, def);
+            BroadcastCombat(owner, victim, dmg, CombatOutcome.Hit, name);
+            ApplyDamage(victim, dmg, owner);
+        }
+        // Contested CC (Root/Stun/Slow): the trap's control payload.
+        if ((effect & SkillEffect.ContestCc) != 0 && !victim.Dead)
+        {
+            int atkStat = owner.AtkStat;
+            int defStat = def.DebuffSchool == DebuffSchool.Magical ? (int)victim.EffectiveWit : victim.Con;
+            float land = victim.Immune ? 0f : StatCalculator.DebuffLandChance(atkStat, defStat);
+            land *= 1f - victim.CcResist;
+            if (_rng.NextDouble() < land)
+            {
+                ApplyBuff(victim, def, lvl);
+                BroadcastCombat(owner, victim, 0, CombatOutcome.Buff, name);
+            }
+        }
+        if (victim.Hp <= 0 && !victim.Dead)
+            Kill(victim, owner);
     }
 
     // Scratch set so the per-second roster refresh only sends each party once (the Parties
@@ -1874,6 +1975,7 @@ public class GameLoopService : BackgroundService
             foreach (var candidate in _world.Grid.Nearby(mob))
             {
                 if (candidate.Kind != EntityKind.Player || candidate.Dead ||
+                    candidate.Stealthed ||
                     GameConstants.InSafeZone(candidate.X, candidate.Y))
                     continue;
 
@@ -2190,6 +2292,31 @@ var effect = def.Effect;
         // race's renamed spell (e.g. Elf "Moonlight Bolt") reads correctly in floating text.
         string castName = ClassSkills.DisplayName(
             def.Id, caster.Race, caster.BaseClass, caster.Archetype, caster.Discipline);
+
+        // ---- Trap placement: drop the trap at the caster's feet and finish. Its damage/CC
+        //      payload (this skill's Effect/Power) fires later, when a hostile trips it. ----
+        if (def.PlacesTrap)
+        {
+            _world.Traps.Add(new TrapInstance
+            {
+                OwnerId = caster.Id, SkillId = def.Id, Level = lvl,
+                X = caster.X, Y = caster.Y,
+                Radius = def.TrapRadius, LifeTicks = Math.Max(1, def.TrapLifeTicks)
+            });
+            BroadcastCombat(caster, caster, 0, CombatOutcome.Buff, castName);
+            SendSystemToEntity(caster, $"{castName} armed.");
+            return;
+        }
+
+        // ---- Stealth: go invisible to mob AI. Coexists with any self-buff on the same skill;
+        //      broken early by taking an offensive action (see AfterOffensiveSkill / basic attack). ----
+        if (def.GrantsStealth)
+        {
+            caster.StealthTicks = Math.Max(1, def.DurationTicks);
+            DropAggroOn(caster);   // vanishing sheds mobs already locked on
+            BroadcastCombat(caster, caster, 0, CombatOutcome.Buff, castName);
+            SendSystemToEntity(caster, "You slip into the shadows.");
+        }
 
         // ---- Damage (physical) ----
         if (effect.HasFlag(SkillEffect.PhysicalDamage))
@@ -2748,8 +2875,26 @@ var effect = def.Effect;
         PlaceEntity(target, target.X + nx * range, target.Y + ny * range);
     }
 
+    /// <summary>Shed every mob currently aggro'd on an entity (used when it stealths): forget its
+    /// threat and, if it's the current target, return the mob to wandering.</summary>
+    private void DropAggroOn(Entity entity)
+    {
+        foreach (var mob in _world.Entities.Values)
+        {
+            if (mob.Kind != EntityKind.Mob) continue;
+            mob.Threat.Remove(entity.Id);
+            if (mob.CombatTargetId == entity.Id)
+            {
+                mob.CombatTargetId = null;
+                mob.Engaged = false;
+            }
+        }
+    }
+
     private void AfterOffensiveSkill(Entity caster, Entity target)
     {
+        caster.StealthTicks = 0;   // any offensive action breaks stealth
+
         // Mages don't fall back to melee auto-attack after a spell: chasing the mob
         // to swing a staff is never what a nuker/healer wants. Fighters still engage
         // so a melee skill flows into auto-attacks.
@@ -2852,6 +2997,8 @@ var effect = def.Effect;
 
     private void ResolveBasicAttack(Entity attacker, Entity target)
     {
+        attacker.StealthTicks = 0;   // attacking breaks stealth
+
         float missChance = StatCalculator.ResolveAvoidChance(
             attacker.Accuracy, (int)target.EffectiveEvasion,
             target.EvadeFloor, attacker.HitFloor,

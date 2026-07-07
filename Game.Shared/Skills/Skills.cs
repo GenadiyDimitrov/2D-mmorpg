@@ -143,7 +143,18 @@ public record SkillDef(
     // Carried on the BuffInstance and applied when a skill charges its MP. (The SkillEffect enum
     // is full, so this rides as explicit fields, not a flag.)
     float PhysMpCostPct = 0f,
-    float MagicMpCostPct = 0f)
+    float MagicMpCostPct = 0f,
+    // STEALTH (rogue "Hide"): a self-cast that makes the caster invisible to mob AI for
+    // DurationTicks. Broken early by taking any OFFENSIVE action (attack / offensive skill).
+    // Movement is allowed. (SkillEffect enum is full, so this rides as a flag field.)
+    bool GrantsStealth = false,
+    // TRAP (Trapper): instead of hitting now, the cast DROPS a trap at the caster's feet that
+    // arms and, when a hostile steps within TrapRadius, delivers THIS skill's damage + any
+    // contested CC (Root/Stun/etc.) to that intruder, then vanishes. TrapLifeTicks = how long
+    // it waits before expiring unused. Uses the skill's own Effect/Power/Magnitudes.
+    bool PlacesTrap = false,
+    float TrapRadius = 150f,
+    int TrapLifeTicks = 300)
 {
     /// <summary>The armor-mastery per-weight profile for a learned skill LEVEL, or null
     /// if this skill isn't an armor mastery.</summary>

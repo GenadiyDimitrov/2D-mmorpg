@@ -103,8 +103,13 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   **Blink + knockback DONE**: `SkillEffect.Blink` (caster → behind target, or away by
   `BlinkRange`) + `SkillEffect.Knockback` (shove target by `KnockbackRange`); `PlaceEntity`
   clamps + regrids. Demos: Phantom "Shadowstep", Trapper "Repelling Shot", Tempest "Phase
-  Shift". **Still to do:** stealth, traps; poison/venom DoT secondaries. (Shield floating-text
-  shows pre-absorb damage — cosmetic.)
+  Shift". **STEALTH + TRAPS DONE (2026-07-07):** `SkillDef.GrantsStealth` → `Entity.StealthTicks`
+  (invisible to mob AI, sheds current aggro via `DropAggroOn`, broken by any offensive action; demo
+  Phantom "Vanish"); `SkillDef.PlacesTrap`/`TrapRadius`/`TrapLifeTicks` → server-only `World.Traps`
+  scanned each tick (`TickTraps`/`FireTrap` delivers the skill's damage + contested CC to the first
+  intruder; demo Trapper "Snare Trap" = damage + Root). Both ride flag FIELDS, not new SkillEffect bits
+  (enum full). **P2 combat primitives COMPLETE** (poison/venom secondaries were already done). (Shield
+  floating-text shows pre-absorb damage — cosmetic.)
 - [ ] **Base-class armor mastery + universal penalty → data** (only 2nd classes are data so
   far). Finishes the [[stats-via-skills-not-hardcoded]] migration. (Note: changes the
   unlearned-penalty semantics slightly — confirm intent.)
