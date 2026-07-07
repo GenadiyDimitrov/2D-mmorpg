@@ -70,6 +70,11 @@ public partial class MainWindow : Window
     private bool _tradeActive;
     private Guid? _pendingTradeFrom;
 
+    // Party (roster is server-authoritative; refreshed by PartyUpdate).
+    private readonly HashSet<Guid> _partyMemberIds = new();
+    private bool _partyIsLeader;
+    private Guid? _pendingPartyFrom;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -95,6 +100,9 @@ public partial class MainWindow : Window
         _net.BuffsReceived += b => Dispatcher.BeginInvoke(() => OnBuffs(b));
         _net.SelectionReceived += o => Dispatcher.BeginInvoke(() => OnSelection(o));
         _net.TargetDetailsReceived += d => Dispatcher.BeginInvoke(() => OnTargetDetails(d));
+        _net.MobCastReceived += c => Dispatcher.BeginInvoke(() => OnMobCast(c));
+        _net.PartyInviteReceived += p => Dispatcher.BeginInvoke(() => OnPartyInvite(p));
+        _net.PartyReceived += p => Dispatcher.BeginInvoke(() => OnParty(p));
         _net.EnchantReceived += en => Dispatcher.BeginInvoke(() => OnEnchant(en));
         _net.RerollReceived += r => Dispatcher.BeginInvoke(() => OnReroll(r));
         _net.ForceDisconnected += reason => Dispatcher.BeginInvoke(() =>
@@ -449,6 +457,12 @@ public partial class MainWindow : Window
         ClassPanel.Visibility = Visibility.Collapsed;
         DialogPanel.Visibility = Visibility.Collapsed;
         ShopPanel.Visibility = Visibility.Collapsed;
+        PartyPanel.Visibility = Visibility.Collapsed;
+        PartyInvitePrompt.Visibility = Visibility.Collapsed;
+        PartyMembers.Children.Clear();
+        _partyMemberIds.Clear();
+        _partyIsLeader = false;
+        _pendingPartyFrom = null;
 
         await ShowCharacterSelectAsync();
     }
@@ -813,6 +827,27 @@ public partial class MainWindow : Window
         CastBar.Visibility = Visibility.Visible;
     }
 
+    /// <summary>A mob/boss started (or cleared) a visible cast. Anchors a cast bar under the
+    /// caster's nameplate; the render loop fills it and hides it when the cast completes.</summary>
+    private void OnMobCast(MobCastInfo cast)
+    {
+        if (!_visuals.TryGetValue(cast.CasterId, out var visual))
+            return;
+
+        if (cast.Seconds <= 0)
+        {
+            visual.CastDuration = 0;
+            visual.CastBar.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        visual.CastStart = _clock.Elapsed.TotalSeconds;
+        visual.CastDuration = cast.Seconds;
+        visual.CastText.Text = cast.SkillName;
+        visual.CastFill.Width = 0;
+        visual.CastBar.Visibility = Visibility.Visible;
+    }
+
     // -----------------------------------------------------------------------
     // Snapshots
     // -----------------------------------------------------------------------
@@ -964,12 +999,40 @@ public partial class MainWindow : Window
             HorizontalAlignment = HorizontalAlignment.Center, Child = hpFill
         };
 
+        // Mob/boss cast bar — hidden until a MobCast event arrives for this entity.
+        var castFill = new Rectangle
+        {
+            Fill = new SolidColorBrush(Color.FromRgb(0xDD, 0x88, 0x44)),
+            HorizontalAlignment = HorizontalAlignment.Left, Width = 0,
+            RadiusX = 2, RadiusY = 2
+        };
+        var castText = new TextBlock
+        {
+            Foreground = Brushes.White, FontSize = 9,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var castBar = new Border
+        {
+            Width = 90, Height = 11, Margin = new Thickness(0, 2, 0, 0),
+            Background = new SolidColorBrush(Color.FromArgb(150, 0, 0, 0)),
+            CornerRadius = new CornerRadius(2),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Visibility = Visibility.Collapsed,
+            Child = new Grid { Children = { castFill, castText } }
+        };
+
         var stack = new StackPanel { Width = 110 };
         stack.Children.Add(label);
         stack.Children.Add(dot);
         stack.Children.Add(hpBar);
+        stack.Children.Add(castBar);
 
-        return new EntityVisual { Root = stack, Dot = dot, Label = label, HpFill = hpFill };
+        return new EntityVisual
+        {
+            Root = stack, Dot = dot, Label = label, HpFill = hpFill,
+            CastBar = castBar, CastFill = castFill, CastText = castText
+        };
     }
 
     // -----------------------------------------------------------------------
@@ -1068,6 +1131,13 @@ public partial class MainWindow : Window
                 Dist(dto.X, dto.Y, _myDto.X, _myDto.Y) <= GameConstants.TradeRange;
             TradeButton.Visibility = canTrade ? Visibility.Visible : Visibility.Collapsed;
 
+            // Party invite: any other living player not already in my party. If I'm in a
+            // party, only the leader can invite (mirrors the server rule).
+            bool canInvite = dto.Kind == EntityKind.Player && id != _myId &&
+                !_partyMemberIds.Contains(id) &&
+                (_partyMemberIds.Count == 0 || _partyIsLeader);
+            PartyInviteButton.Visibility = canInvite ? Visibility.Visible : Visibility.Collapsed;
+
             // Plain NPCs (vendors/gatekeepers) have nothing to inspect — hide the toggle.
             TargetExpandButton.Visibility =
                 dto.Kind == EntityKind.Npc ? Visibility.Collapsed : Visibility.Visible;
@@ -1088,6 +1158,7 @@ public partial class MainWindow : Window
         {
             TargetFrame.Visibility = Visibility.Collapsed;
             TradeButton.Visibility = Visibility.Collapsed;
+            PartyInviteButton.Visibility = Visibility.Collapsed;
             TargetDetailsPanel.Visibility = Visibility.Collapsed;
         }
     }
@@ -1215,6 +1286,7 @@ public partial class MainWindow : Window
         {
             Canvas.SetLeft(visual.Root, (visual.CurX - _camX) * Scale + cw / 2 - 55);
             Canvas.SetTop(visual.Root, (visual.CurY - _camY) * Scale + ch / 2 - 18);
+            UpdateMobCastBar(visual, now);
         }
 
         UpdateClock();
@@ -1281,6 +1353,21 @@ public partial class MainWindow : Window
             return;
         }
         CastFill.Width = 226 * Math.Clamp(progress, 0, 1);
+    }
+
+    private static void UpdateMobCastBar(EntityVisual visual, double now)
+    {
+        if (visual.CastDuration <= 0 || visual.CastBar.Visibility != Visibility.Visible)
+            return;
+
+        double progress = (now - visual.CastStart) / visual.CastDuration;
+        if (progress >= 1)
+        {
+            visual.CastBar.Visibility = Visibility.Collapsed;
+            visual.CastDuration = 0;
+            return;
+        }
+        visual.CastFill.Width = 86 * Math.Clamp(progress, 0, 1);
     }
 
     private const double BarWidth = 240;
@@ -1712,6 +1799,11 @@ public partial class MainWindow : Window
         public required Ellipse Dot { get; init; }
         public required TextBlock Label { get; init; }
         public required Rectangle HpFill { get; init; }
+        public required Border CastBar { get; init; }
+        public required Rectangle CastFill { get; init; }
+        public required TextBlock CastText { get; init; }
+        public double CastStart { get; set; }
+        public double CastDuration { get; set; }
         public EntityDto? Latest { get; set; }
         public double CurX { get; set; }
         public double CurY { get; set; }

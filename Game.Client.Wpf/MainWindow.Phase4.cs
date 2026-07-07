@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Shapes;
 using Game.Shared;
 
 namespace Game.Client.Wpf;
@@ -364,6 +365,133 @@ public partial class MainWindow
         TradePrompt.Visibility = Visibility.Collapsed;
         _pendingTradeFrom = null;
         await _net.TradeRespondAsync(false);
+    }
+
+    // =======================================================================
+    // Party
+    // =======================================================================
+
+    private async void PartyInviteButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_targetId is Guid id)
+            await _net.PartyInviteAsync(id);
+    }
+
+    private void OnPartyInvite(PartyInviteDto invite)
+    {
+        _pendingPartyFrom = invite.InviterId;
+        PartyInviteText.Text = $"{invite.InviterName} invites you to a party.";
+        PartyInvitePrompt.Visibility = Visibility.Visible;
+    }
+
+    private async void PartyAccept_Click(object sender, RoutedEventArgs e)
+    {
+        PartyInvitePrompt.Visibility = Visibility.Collapsed;
+        _pendingPartyFrom = null;
+        await _net.PartyRespondAsync(true);
+    }
+
+    private async void PartyDecline_Click(object sender, RoutedEventArgs e)
+    {
+        PartyInvitePrompt.Visibility = Visibility.Collapsed;
+        _pendingPartyFrom = null;
+        await _net.PartyRespondAsync(false);
+    }
+
+    private async void PartyLeaveButton_Click(object sender, RoutedEventArgs e) =>
+        await _net.PartyLeaveAsync();
+
+    /// <summary>Rebuild the party roster from the server's authoritative snapshot. An empty
+    /// roster means I left / the party disbanded, so the window hides.</summary>
+    private void OnParty(PartyUpdate update)
+    {
+        _partyMemberIds.Clear();
+        _partyIsLeader = false;
+        PartyMembers.Children.Clear();
+
+        if (update.Members.Length == 0)
+        {
+            PartyPanel.Visibility = Visibility.Collapsed;
+            UpdateTargetFrame();   // invite button may become available again
+            return;
+        }
+
+        foreach (var m in update.Members)
+        {
+            _partyMemberIds.Add(m.Id);
+            if (m.Id == _myId && m.IsLeader)
+                _partyIsLeader = true;
+        }
+
+        // I can only kick if I'm the leader; never show a kick button on myself.
+        foreach (var m in update.Members)
+            PartyMembers.Children.Add(BuildPartyRow(m, _partyIsLeader && m.Id != _myId));
+
+        PartyPanel.Visibility = Visibility.Visible;
+        UpdateTargetFrame();       // hide the invite button for people already grouped
+    }
+
+    private FrameworkElement BuildPartyRow(PartyMemberDto m, bool showKick)
+    {
+        double hp = m.MaxHp > 0 ? Math.Clamp((double)m.Hp / m.MaxHp, 0, 1) : 0;
+        double mp = m.MaxMp > 0 ? Math.Clamp((double)m.Mp / m.MaxMp, 0, 1) : 0;
+        const double barWidth = 204;
+
+        var header = new TextBlock
+        {
+            Text = $"{(m.IsLeader ? "★ " : "")}{m.Name}  Lv{m.Level} {m.ClassName}",
+            Foreground = m.Id == _myId ? Brushes.Gold : Brushes.White,
+            FontSize = 11, VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var kick = new Button
+        {
+            Content = "✕", Width = 16, Height = 16, Padding = new Thickness(0),
+            FontSize = 9, HorizontalAlignment = HorizontalAlignment.Right,
+            ToolTip = $"Remove {m.Name} from the party",
+            Visibility = showKick ? Visibility.Visible : Visibility.Collapsed,
+            Tag = m.Id
+        };
+        kick.Click += PartyKick_Click;
+
+        var titleRow = new Grid();
+        titleRow.Children.Add(header);
+        titleRow.Children.Add(kick);
+
+        var hpFill = new Rectangle
+        {
+            Fill = new SolidColorBrush(Color.FromRgb(0xC9, 0x3C, 0x3C)),
+            Height = 6, Width = barWidth * hp,
+            HorizontalAlignment = HorizontalAlignment.Left, RadiusX = 2, RadiusY = 2
+        };
+        var mpFill = new Rectangle
+        {
+            Fill = new SolidColorBrush(Color.FromRgb(0x3F, 0x7F, 0xD8)),
+            Height = 5, Width = barWidth * mp,
+            HorizontalAlignment = HorizontalAlignment.Left, RadiusX = 2, RadiusY = 2
+        };
+        var hpBar = new Border
+        {
+            Height = 6, Margin = new Thickness(0, 2, 0, 1), CornerRadius = new CornerRadius(2),
+            Background = new SolidColorBrush(Color.FromArgb(80, 0, 0, 0)), Child = hpFill
+        };
+        var mpBar = new Border
+        {
+            Height = 5, CornerRadius = new CornerRadius(2),
+            Background = new SolidColorBrush(Color.FromArgb(80, 0, 0, 0)), Child = mpFill
+        };
+
+        var row = new StackPanel { Margin = new Thickness(0, 3, 0, 3) };
+        row.Children.Add(titleRow);
+        row.Children.Add(hpBar);
+        row.Children.Add(mpBar);
+        return row;
+    }
+
+    private async void PartyKick_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: Guid id })
+            await _net.PartyKickAsync(id);
     }
 
     private void OnTradeState(TradeStateUpdate state)

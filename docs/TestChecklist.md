@@ -7,6 +7,26 @@ this file.
 
 ---
 
+## To test now (party window + mob cast-bar UI — 2026-07-07)
+
+### Party window (WPF client)
+- [ ] Target another player → the target frame shows an **"Invite to Party"** button. Click it →
+  they get a centered **accept/decline prompt**; you see a "Party invite sent" chat line.
+- [ ] On accept, both of you show a **Party panel** (top-left, under the vitals/buff bar) listing
+  every member with name/Lv/class + **live HP and MP bars**. Leader has a ★.
+- [ ] Leader sees a small **✕ kick** button on other rows (not on self); a non-leader sees none.
+  Kicking removes that member (their panel hides); the kicked player gets a chat notice.
+- [ ] **Leave** button removes you; when a party drops below 2 it **disbands** (everyone's panel
+  hides). The invite button is hidden for players already in your party, and for non-leaders.
+- [ ] Roster HP/MP bars update as members take damage / heal (server refresh).
+
+### Mob / boss cast-bar
+- [ ] When a mob/boss begins a visible cast (e.g. the boss **"Devastating Slam"**), an orange
+  **cast-bar appears under its nameplate** and fills over the cast time, then disappears.
+- [ ] Interrupting / killing the caster (or the cast finishing) clears the bar cleanly.
+
+---
+
 ## To test now (ranged + caster mobs — 2026-07-03)
 
 ### Archer mobs (orc_archer L16, dune_orc_archer L40, fen_lizardman_archer L39, dread_archer L69)
@@ -18,7 +38,7 @@ this file.
   1.5s). Damage scales with mob level (nuke pow 18→129, jab 7→33).
 - [ ] Higher M.Atk, lower P.Atk/P.Def than a same-level melee mob.
 - [ ] They burn MP per cast; when MP runs out they stand HELPLESS (no attacks) — a free kill if you
-  outlast their mana. (Note: no mob cast-bar on the client yet — you just see the damage land.)
+  outlast their mana. (Mob cast-bar now renders under the nameplate — see the 2026-07-07 section.)
 - [ ] rift_portling = a beefy caster (champion HP) that nukes; watcher_eye also has high M.Def.
 
 ### Golem-type resist (obsidian_knight L63, Duskvale)

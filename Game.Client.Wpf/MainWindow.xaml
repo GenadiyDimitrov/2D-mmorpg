@@ -117,6 +117,8 @@
                 </StackPanel>
                 <Button x:Name="TradeButton" Content="Request Trade" Height="24"
                         Click="TradeButton_Click" Visibility="Collapsed"/>
+                <Button x:Name="PartyInviteButton" Content="Invite to Party" Height="24"
+                        Margin="0,3,0,0" Click="PartyInviteButton_Click" Visibility="Collapsed"/>
             </StackPanel>
         </Border>
 
@@ -265,6 +267,41 @@
                 <Button Content="Exit Game" Height="34" Margin="0,0,0,8"
                         Click="SettingsExit_Click"/>
                 <Button Content="Close" Height="28" Margin="0,8,0,0" Click="SettingsClose_Click"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Party window (top-left, below the player vitals / buff bar) -->
+        <Border x:Name="PartyPanel"
+                HorizontalAlignment="Left" VerticalAlignment="Top"
+                Margin="12,158,0,0" Width="220" Padding="8,6"
+                Background="#A0000000" CornerRadius="6"
+                Visibility="Collapsed">
+            <StackPanel>
+                <Grid Margin="0,0,0,5">
+                    <TextBlock Text="Party" Foreground="#FFE8E2C8"
+                               FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <Button x:Name="PartyLeaveButton" Content="Leave" Width="54" Height="20"
+                            Padding="0" FontSize="10" HorizontalAlignment="Right"
+                            Click="PartyLeaveButton_Click"/>
+                </Grid>
+                <StackPanel x:Name="PartyMembers"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Party invite prompt -->
+        <Border x:Name="PartyInvitePrompt"
+                HorizontalAlignment="Center" VerticalAlignment="Top"
+                Margin="0,80,0,0" Padding="18,12"
+                Background="#F02A3830" CornerRadius="8"
+                Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock x:Name="PartyInviteText" Foreground="White" FontSize="13"
+                           HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Content="Accept" Width="80" Height="26" Margin="0,0,8,0"
+                            Click="PartyAccept_Click"/>
+                    <Button Content="Decline" Width="80" Height="26" Click="PartyDecline_Click"/>
+                </StackPanel>
             </StackPanel>
         </Border>
 
