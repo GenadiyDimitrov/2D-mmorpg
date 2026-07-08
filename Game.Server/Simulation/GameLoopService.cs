@@ -115,6 +115,8 @@ public class GameLoopService : BackgroundService
                 case PartyKickCmd c: HandlePartyKick(c); break;
                 case PartySetLootModeCmd c: HandlePartySetLootMode(c); break;
                 case PartyLootVoteCmd c: HandlePartyLootVote(c); break;
+                case SetAutoHuntConfigCmd c: HandleSetAutoHuntConfig(c); break;
+                case ToggleAutoHuntCmd c: HandleToggleAutoHunt(c); break;
                 case ChatCmd c: HandleChat(c); break;
             }
         }
@@ -141,6 +143,8 @@ public class GameLoopService : BackgroundService
         SendLearned(entity);
         SendQuestLog(entity);
         SendGold(entity);
+        SendAutoHuntConfig(entity);   // restore the saved auto-hunt settings in the client UI
+        SendAutoHuntStatus(entity);
         if (entity.IsAdmin)
             SendSystemToEntity(entity, "Admin privileges active. Type /help for commands.");
         BroadcastSystem($"{entity.Name} entered the world.");
@@ -1109,10 +1113,18 @@ public class GameLoopService : BackgroundService
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
             return;
-
         var item = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
-        if (item is null || ItemCatalog.Get(item.DefId) is not ItemDef def || !ItemCatalog.IsPotion(def))
-            return;
+        if (item is not null)
+            UsePotion(player, item);
+    }
+
+    /// <summary>Consume one potion (HP HoT/instant, or a buff potion). Shared by the manual
+    /// UsePotion command and the auto-hunt auto-potion path. Returns true if something was drunk
+    /// (false = not a potion, or on cooldown). Buff potions ignore the shared heal cooldown.</summary>
+    private bool UsePotion(Entity player, InventoryItem item)
+    {
+        if (player.Dead || ItemCatalog.Get(item.DefId) is not ItemDef def || !ItemCatalog.IsPotion(def))
+            return false;
 
         // Buff potion: apply its timed buff (independent of the heal cooldown), consume.
         if (ItemCatalog.IsBuffPotion(def) && SkillCatalog.Get(def.BuffSkillId) is SkillDef buffDef)
@@ -1122,15 +1134,11 @@ public class GameLoopService : BackgroundService
             ConsumeOne(player, item);
             SendInventory(player);
             SendSystemToEntity(player, $"{buffDef.Name} active.");
-            return;
+            return true;
         }
 
         if (player.PotionCooldown > 0)
-        {
-            SendSystemToEntity(player,
-                $"Potions on cooldown ({player.PotionCooldown / GameConstants.TickRate}s).");
-            return;
-        }
+            return false;
 
         int rarity = (int)def.Rarity;
 
@@ -1162,6 +1170,7 @@ public class GameLoopService : BackgroundService
 
         SendInventory(player);
         SendPotionStatus(player);
+        return true;
     }
 
     private static void ClearPotionEffect(Entity player)
@@ -1515,6 +1524,241 @@ public class GameLoopService : BackgroundService
         _                       => mode.ToString(),
     };
 
+    // ----- Auto-hunt / idle farming (docs/AutoHunt.md) -------------------------
+
+    // How far the auto-hunt scans for a mob to engage.
+    private const float AutoHuntScanRange = 900f;
+
+    private void HandleSetAutoHuntConfig(SetAutoHuntConfigCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var p))
+            return;
+        var c = cmd.Config;
+        p.AutoHuntEnabled   = c.Enabled;
+        p.AutoHpPotionPct   = Math.Clamp(c.HpPotionPct, 0, 100);
+        p.AutoMpPotionPct   = Math.Clamp(c.MpPotionPct, 0, 100);
+        p.AutoBuffPotions   = c.AutoBuffPotions;
+        p.AutoSkills.Clear();
+        foreach (var s in c.Skills ?? Array.Empty<AutoSkillDto>())
+            p.AutoSkills.Add(new AutoSkillDto(s.SkillId, s.Enabled, Math.Max(0, s.ExtraDelayTicks)));
+        p.AutoBuffPotionIds.Clear();
+        foreach (var id in c.BuffPotionIds ?? Array.Empty<string>())
+            p.AutoBuffPotionIds.Add(id);
+        p.AutoReadyTick.Clear();
+        SendAutoHuntStatus(p);   // persisted by the normal autosave/logout snapshot
+    }
+
+    private void HandleToggleAutoHunt(ToggleAutoHuntCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var p))
+            return;
+        p.AutoHuntEnabled = cmd.Enabled;
+        SendAutoHuntConfig(p);
+        SendAutoHuntStatus(p);
+        SendSystemToEntity(p, p.AutoHuntEnabled ? "Auto-hunt ON." : "Auto-hunt OFF.");
+    }
+
+    /// <summary>Per-tick automation for a player (called before UpdateAction). Auto-potions always
+    /// run; the hunt loop (target/engage/auto-skill) runs only when AutoHuntEnabled.</summary>
+    private void AutoPilot(Entity p)
+    {
+        AutoPotions(p);
+
+        if (!p.AutoHuntEnabled)
+            return;
+        if (p.CastingSkillId is not null || p.QueuedSkillId is not null)
+            return;   // let an in-progress cast/queue resolve
+
+        var target = ValidAutoTarget(p) ?? AcquireAutoTarget(p);
+        if (target is not null)
+        {
+            p.CombatTargetId = target.Id;
+            p.Engaged = true;
+        }
+
+        // Buffs/heals need no target; attack/debuff do. A queued skill is cast by UpdateAction;
+        // otherwise the basic auto-attack (driven by Engaged) carries the fight.
+        if (TryAutoSkill(p, target))
+            return;
+        if (target is null)
+        {
+            p.Engaged = false;
+            p.CombatTargetId = null;
+        }
+    }
+
+    private void AutoPotions(Entity p)
+    {
+        if (p.AutoHpPotionPct > 0 && p.PotionCooldown <= 0 && p.MaxHp > 0 &&
+            p.Hp * 100 < p.MaxHp * p.AutoHpPotionPct &&
+            BestHealPotion(p) is InventoryItem hpPot)
+            UsePotion(p, hpPot);
+
+        // MP potions don't exist as items yet — reserved plumbing (BestManaPotion returns null).
+        if (p.AutoMpPotionPct > 0 && p.PotionCooldown <= 0 && p.MaxMp > 0 &&
+            p.Mp * 100 < p.MaxMp * p.AutoMpPotionPct &&
+            BestManaPotion(p) is InventoryItem mpPot)
+            UsePotion(p, mpPot);
+
+        // Buff potions: keep the configured ones up — or, if none are listed, every buff potion in
+        // the bag (a "keep all buffs up" convenience). Iterate a snapshot since UsePotion mutates.
+        if (p.AutoBuffPotions)
+        {
+            bool all = p.AutoBuffPotionIds.Count == 0;
+            foreach (var item in p.Inventory.ToList())
+            {
+                if (ItemCatalog.Get(item.DefId) is not ItemDef d || !ItemCatalog.IsBuffPotion(d) ||
+                    SkillCatalog.Get(d.BuffSkillId) is not SkillDef bd)
+                    continue;
+                if (!all && !p.AutoBuffPotionIds.Contains(item.DefId))
+                    continue;
+                string key = string.IsNullOrEmpty(bd.BuffKey) ? bd.Name : bd.BuffKey;
+                if (p.Buffs.Any(b => b.Key == key))
+                    continue;   // buff already up
+                UsePotion(p, item);
+            }
+        }
+    }
+
+    /// <summary>Highest-rarity HP potion in the bag (heal-over-time or instant), or null.</summary>
+    private static InventoryItem? BestHealPotion(Entity p)
+    {
+        InventoryItem? best = null; int bestScore = -1;
+        foreach (var it in p.Inventory)
+        {
+            if (ItemCatalog.Get(it.DefId) is not ItemDef d) continue;
+            if (!ItemCatalog.IsPotion(d) || ItemCatalog.IsBuffPotion(d)) continue;
+            if (d.HealPercentPerSecond <= 0 && d.InstantHealPercent <= 0) continue;
+            int score = (int)d.Rarity;
+            if (score > bestScore) { bestScore = score; best = it; }
+        }
+        return best;
+    }
+
+    /// <summary>Mana potions aren't in the catalog yet — reserved for when they are.</summary>
+    private static InventoryItem? BestManaPotion(Entity p) => null;
+
+    /// <summary>The current combat target if it's still a valid auto-hunt victim, else null.</summary>
+    private Entity? ValidAutoTarget(Entity p)
+    {
+        if (p.CombatTargetId is Guid tid && _world.Entities.TryGetValue(tid, out var t) &&
+            t.Kind == EntityKind.Mob && !t.Dead && !t.TrainingDummy &&
+            !GameConstants.InSafeZone(t.X, t.Y) &&
+            DistanceSq(p, t) <= AutoHuntScanRange * AutoHuntScanRange)
+            return t;
+        return null;
+    }
+
+    /// <summary>Nearest attackable mob within scan range (skips dummies, dead, safe-zone).</summary>
+    private Entity? AcquireAutoTarget(Entity p)
+    {
+        Entity? best = null;
+        float bestSq = AutoHuntScanRange * AutoHuntScanRange;
+        foreach (var e in _world.Grid.Nearby(p))
+        {
+            if (e.Kind != EntityKind.Mob || e.Dead || e.TrainingDummy) continue;
+            if (GameConstants.InSafeZone(e.X, e.Y)) continue;
+            float d = DistanceSq(p, e);
+            if (d < bestSq) { bestSq = d; best = e; }
+        }
+        return best;
+    }
+
+    private enum AutoSkillKind { Attack, Debuff, Buff, Heal, Other }
+
+    private static AutoSkillKind ClassifyAuto(SkillDef def)
+    {
+        var e = def.Effect;
+        if ((e & (SkillEffect.PhysicalDamage | SkillEffect.MagicDamage)) != 0) return AutoSkillKind.Attack;
+        if ((e & SkillEffect.Heal) != 0) return AutoSkillKind.Heal;
+        if (def.Category == SkillCategory.Buff || (e & SkillEffect.AnyBuff) != 0) return AutoSkillKind.Buff;
+        if ((e & SkillEffect.ContestCc) != 0 || def.DebuffSchool != DebuffSchool.None) return AutoSkillKind.Debuff;
+        return AutoSkillKind.Other;
+    }
+
+    /// <summary>Queue the first eligible auto-skill (known, enabled, off base-cd AND past its extra
+    /// delay, MP affordable, condition met). Returns true if one was queued.</summary>
+    private bool TryAutoSkill(Entity p, Entity? target)
+    {
+        foreach (var entry in p.AutoSkills)
+        {
+            if (!entry.Enabled) continue;
+            if (SkillCatalog.Get(entry.SkillId) is not SkillDef def || !p.HasSkill(def.Id)) continue;
+            if (p.SkillCooldowns.ContainsKey(def.Id)) continue;
+            if (_tick < p.AutoReadyTick.GetValueOrDefault(def.Id)) continue;
+
+            int lvl = Math.Max(1, p.SkillLevelOf(def.Id));
+            int mpNeed = (int)((def.InitialMpAt(lvl) + def.FinishMpAt(lvl)) * MpCostFactor(p, def));
+            if (p.Mp < mpNeed) continue;
+
+            string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
+            Guid tgtId;
+            switch (ClassifyAuto(def))
+            {
+                case AutoSkillKind.Buff:
+                    if (p.Buffs.Any(b => b.Key == key)) continue;   // already up
+                    tgtId = p.Id; break;
+                case AutoSkillKind.Heal:
+                    if (p.MaxHp <= 0 || (float)p.Hp / p.MaxHp >= 0.70f) continue;
+                    tgtId = p.Id; break;
+                case AutoSkillKind.Debuff:
+                    if (target is null || target.Buffs.Any(b => b.Key == key)) continue;
+                    tgtId = target.Id; break;
+                case AutoSkillKind.Attack:
+                    if (target is null) continue;
+                    tgtId = target.Id; break;
+                default:
+                    continue;   // Other → never auto-cast
+            }
+
+            p.QueuedSkillId = def.Id;
+            p.QueuedTargetId = tgtId;
+            p.AutoReadyTick[def.Id] = _tick + AutoCycleTicks(p, def, entry.ExtraDelayTicks);
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>Estimated full recast cycle in ticks: cast time + (cooldown-reduced) reuse + the
+    /// user's extra delay. Used both to gate the auto-recast and to price MP/s.</summary>
+    private int AutoCycleTicks(Entity p, SkillDef def, int extraDelay)
+    {
+        float castMult = def.Category == SkillCategory.Physical
+            ? p.EffectiveAttackSpeedMultiplier : p.EffectiveCastSpeedMultiplier;
+        int castTicks = Math.Max(2, (int)(def.CastTicks * castMult));
+        int reducedCd = def.CooldownTicks;
+        if (reducedCd > 0 && p.CooldownReduction > 0f)
+            reducedCd = Math.Max(1, (int)(reducedCd * (1f - p.CooldownReduction)));
+        return castTicks + reducedCd + Math.Max(0, extraDelay);
+    }
+
+    /// <summary>Push the auto-hunt HUD: total MP/s of enabled auto-skills (after cost/CD-reduction
+    /// buffs) + each skill's reuse and MP/s. Sent on config change and each regen tick.</summary>
+    private void SendAutoHuntStatus(Entity p)
+    {
+        var rows = new List<AutoSkillReuse>();
+        float totalMps = 0f;
+        foreach (var entry in p.AutoSkills)
+        {
+            if (!entry.Enabled) continue;
+            if (SkillCatalog.Get(entry.SkillId) is not SkillDef def || !p.HasSkill(def.Id)) continue;
+            int lvl = Math.Max(1, p.SkillLevelOf(def.Id));
+            float mp = (def.InitialMpAt(lvl) + def.FinishMpAt(lvl)) * MpCostFactor(p, def);
+            float reuseSec = Math.Max(0.1f, AutoCycleTicks(p, def, entry.ExtraDelayTicks) * GameConstants.TickSeconds);
+            float mps = mp / reuseSec;
+            totalMps += mps;
+            string name = ClassSkills.DisplayName(def.Id, p.Race, p.BaseClass, p.Archetype, p.Discipline);
+            rows.Add(new AutoSkillReuse(def.Id, name, reuseSec, mps));
+        }
+        SendTo(p, "AutoHunt", new AutoHuntStatus(p.AutoHuntEnabled, totalMps, rows.ToArray()));
+    }
+
+    /// <summary>Echo the full stored config so the client UI reflects the persisted settings.</summary>
+    private void SendAutoHuntConfig(Entity p) =>
+        SendTo(p, "AutoConfig", new AutoHuntConfigDto(
+            p.AutoHuntEnabled, p.AutoHpPotionPct, p.AutoMpPotionPct, p.AutoBuffPotions,
+            p.AutoSkills.ToArray(), p.AutoBuffPotionIds.ToArray()));
+
     /// <summary>Remove an entity from its party (leave/kick/disconnect). Reassigns the leader if
     /// needed, disbands a party that drops below 2, and refreshes everyone's roster.</summary>
     private void RemoveFromParty(Entity entity, string reason)
@@ -1865,6 +2109,9 @@ public class GameLoopService : BackgroundService
                 continue;
             }
 
+            if (entity.Kind == EntityKind.Player)
+                AutoPilot(entity);   // auto-potions always; hunt loop if enabled (may queue a skill)
+
             UpdateAction(entity);
             MoveTowardTarget(entity);
             _world.Grid.UpdatePosition(entity);
@@ -1875,7 +2122,11 @@ public class GameLoopService : BackgroundService
                 TickHealOverTime(entity);   // HoT heals even in combat (unlike natural regen)
                 Regenerate(entity);
                 if (entity.Kind == EntityKind.Player)
+                {
                     PushBuffs(entity);
+                    if (entity.AutoSkills.Count > 0)
+                        SendAutoHuntStatus(entity);   // keep MP/s live as buffs change
+                }
             }
         }
 

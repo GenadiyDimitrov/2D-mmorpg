@@ -105,6 +105,8 @@ public partial class MainWindow : Window
         _net.PartyInviteReceived += p => Dispatcher.BeginInvoke(() => OnPartyInvite(p));
         _net.PartyReceived += p => Dispatcher.BeginInvoke(() => OnParty(p));
         _net.PartyLootVoteReceived += v => Dispatcher.BeginInvoke(() => OnPartyLootVote(v));
+        _net.AutoHuntReceived += s => Dispatcher.BeginInvoke(() => OnAutoHuntStatus(s));
+        _net.AutoConfigReceived += c => Dispatcher.BeginInvoke(() => OnAutoConfig(c));
         _net.EnchantReceived += en => Dispatcher.BeginInvoke(() => OnEnchant(en));
         _net.RerollReceived += r => Dispatcher.BeginInvoke(() => OnReroll(r));
         _net.ForceDisconnected += reason => Dispatcher.BeginInvoke(() =>
@@ -332,6 +334,7 @@ public partial class MainWindow : Window
             SkillsButton.Visibility = Visibility.Visible;
             StatsButton.Visibility = Visibility.Visible;
             InventoryButton.Visibility = Visibility.Visible;
+            AutoHuntButton.Visibility = Visibility.Visible;
             SettingsButton.Visibility = Visibility.Visible;
 #if DEBUG
             DebugButton.Visibility = Visibility.Visible;

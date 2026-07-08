@@ -73,6 +73,8 @@
                     Background="#FF553333" Foreground="White"/>
             <Button x:Name="InventoryButton" Content="Inventory (I)" Width="110" Height="28"
                     Margin="0,0,6,0" Click="InventoryButton_Click" Visibility="Collapsed"/>
+            <Button x:Name="AutoHuntButton" Content="Auto-Hunt" Width="86" Height="28"
+                    Margin="0,0,6,0" Click="AutoHuntButton_Click" Visibility="Collapsed"/>
             <Button x:Name="SettingsButton" Content="Settings" Width="80" Height="28"
                     Click="SettingsButton_Click" Visibility="Collapsed"/>
         </StackPanel>
@@ -628,6 +630,62 @@
                         Margin="0,10,0,0" Click="SkillsClose_Click"/>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <ItemsControl x:Name="SkillsList"/>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- Auto-Hunt config window -->
+        <Border x:Name="AutoHuntPanel"
+                Width="440" MaxHeight="520"
+                HorizontalAlignment="Center" VerticalAlignment="Top"
+                Margin="0,70,0,0"
+                Background="#E0142218" CornerRadius="8" Padding="14"
+                Visibility="Collapsed">
+            <DockPanel>
+                <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+                    <TextBlock Text="Auto-Hunt" Foreground="White"
+                               FontSize="16" FontWeight="Bold" HorizontalAlignment="Left"/>
+                    <CheckBox x:Name="AutoHuntEnabledCheck" Content="Enabled" Foreground="#FFDDE8CC"
+                              FontSize="13" HorizontalAlignment="Right" VerticalAlignment="Center"
+                              Click="AutoHuntEnabled_Click"/>
+                </Grid>
+
+                <!-- Potion thresholds -->
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,6">
+                    <TextBlock Text="HP potion &lt;" Foreground="#FFCFC8B0" FontSize="12"
+                               VerticalAlignment="Center"/>
+                    <TextBox x:Name="AutoHpPctBox" Width="40" Height="22" Margin="4,0,2,0"
+                             Text="0" TextAlignment="Center"/>
+                    <TextBlock Text="%" Foreground="#FFCFC8B0" FontSize="12"
+                               VerticalAlignment="Center" Margin="0,0,16,0"/>
+                    <TextBlock Text="MP potion &lt;" Foreground="#FFCFC8B0" FontSize="12"
+                               VerticalAlignment="Center"/>
+                    <TextBox x:Name="AutoMpPctBox" Width="40" Height="22" Margin="4,0,2,0"
+                             Text="0" TextAlignment="Center"/>
+                    <TextBlock Text="%" Foreground="#FFCFC8B0" FontSize="12"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+                <CheckBox x:Name="AutoBuffPotionsCheck" DockPanel.Dock="Top"
+                          Content="Keep buff potions active" Foreground="#FFCFC8B0" FontSize="12"
+                          Margin="0,0,0,8"/>
+
+                <TextBlock DockPanel.Dock="Top" Text="Skills (top = highest priority)"
+                           Foreground="#FFAEB89A" FontSize="11" Margin="0,0,0,4"/>
+
+                <!-- Footer: MP/s + buttons -->
+                <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
+                    <TextBlock x:Name="AutoMpsText" Foreground="#FF8FD0FF" FontSize="12"
+                               Text="Mana: 0.0 /s" Margin="0,0,0,6"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Apply" Width="90" Height="26" Margin="0,0,8,0"
+                                Click="AutoHuntApply_Click"/>
+                        <Button Content="Close" Width="90" Height="26"
+                                Click="AutoHuntClose_Click"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl x:Name="AutoSkillsList"/>
                 </ScrollViewer>
             </DockPanel>
         </Border>

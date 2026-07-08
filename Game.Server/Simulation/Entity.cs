@@ -555,6 +555,16 @@ public class Entity
 
     public Dictionary<string, int> SkillCooldowns { get; } = new();
 
+    // ----- Auto-hunt / idle farming config (docs/AutoHunt.md) -------------------
+    public bool AutoHuntEnabled { get; set; }
+    public int AutoHpPotionPct { get; set; }
+    public int AutoMpPotionPct { get; set; }
+    public bool AutoBuffPotions { get; set; }
+    public List<AutoSkillDto> AutoSkills { get; } = new();
+    public List<string> AutoBuffPotionIds { get; } = new();
+    /// <summary>Per-skill earliest auto-recast tick (base reuse + the user's extra delay).</summary>
+    public Dictionary<string, long> AutoReadyTick { get; } = new();
+
     // ----- Potion channel (separate from natural regen; ticks in combat too) ----
     /// <summary>Shared cooldown across ALL potions, in ticks.</summary>
     public int PotionCooldown { get; set; }

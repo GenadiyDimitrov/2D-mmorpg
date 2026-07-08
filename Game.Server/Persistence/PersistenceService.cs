@@ -270,6 +270,26 @@ public class PersistenceService
             catch { /* ignore malformed quest json */ }
         }
 
+        if (!string.IsNullOrEmpty(rec.AutoHuntJson))
+        {
+            try
+            {
+                var cfg = JsonSerializer.Deserialize<AutoHuntConfigDto>(rec.AutoHuntJson);
+                if (cfg is not null)
+                {
+                    entity.AutoHuntEnabled = cfg.Enabled;
+                    entity.AutoHpPotionPct = cfg.HpPotionPct;
+                    entity.AutoMpPotionPct = cfg.MpPotionPct;
+                    entity.AutoBuffPotions = cfg.AutoBuffPotions;
+                    foreach (var s in cfg.Skills ?? Array.Empty<AutoSkillDto>())
+                        entity.AutoSkills.Add(s);
+                    foreach (var id in cfg.BuffPotionIds ?? Array.Empty<string>())
+                        entity.AutoBuffPotionIds.Add(id);
+                }
+            }
+            catch { /* ignore malformed auto-hunt json */ }
+        }
+
         foreach (var item in rec.Items)
         {
             entity.Inventory.Add(new InventoryItem
@@ -298,7 +318,7 @@ public class PersistenceService
         int SecondClass, int ThirdClass, int SkillPoints, int Profession,
         int Con, int Atk, int Wit, int Dex, float X, float Y,
         string LearnedSkillsCsv, string CompletedQuestsCsv, string ActiveQuestsJson,
-        string KnownRecipesCsv,
+        string KnownRecipesCsv, string AutoHuntJson,
         IReadOnlyList<ItemSnapshot> Items)
     {
         /// <summary>Capture a character. MUST be called on the tick thread. Returns
@@ -319,6 +339,9 @@ public class PersistenceService
                 string.Join(',', e.CompletedQuests),
                 JsonSerializer.Serialize(e.ActiveQuests.Values.ToList()),
                 string.Join(',', e.KnownRecipes),
+                JsonSerializer.Serialize(new AutoHuntConfigDto(
+                    e.AutoHuntEnabled, e.AutoHpPotionPct, e.AutoMpPotionPct, e.AutoBuffPotions,
+                    e.AutoSkills.ToArray(), e.AutoBuffPotionIds.ToArray())),
                 items);
         }
     }
@@ -377,6 +400,7 @@ public class PersistenceService
         rec.CompletedQuestsCsv = snap.CompletedQuestsCsv;
         rec.ActiveQuestsJson = snap.ActiveQuestsJson;
         rec.KnownRecipesCsv = snap.KnownRecipesCsv;
+        rec.AutoHuntJson = snap.AutoHuntJson;
         rec.Con = snap.Con;
         rec.Atk = snap.Atk;
         rec.Wit = snap.Wit;

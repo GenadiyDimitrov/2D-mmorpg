@@ -176,13 +176,16 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   boss: dealing extra damage, HEALING the boss, or buffing it. A separate system from the current
   `SummonAdds` (which spawns plain minions) — needs mob heal/buff casting (the non-boss "mob buffs/heals/CC"
   line under Active mob skills). Pull it in when that mob-support layer is built.
-- [~] **Auto-hunt / idle farming** (owner request, 2026-07-08) — server-driven automation: a
-  per-character config of auto-use skills (custom post-cast extra delay ≥ 0; buffs cast only when the
-  buff key is missing on self; debuffs only when the target lacks them; attacks on cooldown), auto-target
-  nearest hostile, and auto-potions at HP/MP thresholds (works outside auto-hunt too). Buff potions treated
-  like a buff (recast only if missing). Client HUD shows total **MP/sec** (after cost/CD-reduction buffs)
-  + each auto-skill's reuse. **Phase 1 = online idle** (must stay logged in). **Phase 2 = true offline**
-  (entity kept in the world after disconnect, with stop conditions). Design: `docs/AutoHunt.md`. ([[auto-hunt-design]])
+- [~] **Auto-hunt / idle farming** (owner request, 2026-07-08). **PHASE 1 (online idle) BUILT:**
+  server-driven `AutoPilot` (per-tick, before UpdateAction): auto-target nearest hostile
+  (`AcquireAutoTarget`) → engage (reuses `UpdateAutoAttack` chase/basic) → `TryAutoSkill` queues the
+  first eligible auto-skill (known/enabled/off base-cd+extra-delay/MP-ok; condition inferred —
+  `ClassifyAuto`: attack→on cd, buff→if key missing on self, debuff→if target lacks it, heal→self<70%).
+  Auto-potions at HP/MP % (always active; `BestHealPotion`; MP pots reserved — no items yet) + keep buff
+  potions up (empty list = all in bag). Per-char config persisted (`AutoHuntJson`), edited in a WPF
+  **Auto-Hunt window** (enable, HP/MP %, keep-buff-potions, per-skill enable + reuse-seconds). MP/s HUD
+  (`AutoHuntStatus`, after cost/CD buffs) pushed each regen tick. Loot/XP = manual (owner). Design:
+  `docs/AutoHunt.md`, [[auto-hunt-design]]. **Phase 2 (true offline)** + roaming/reorder-priority deferred.
 - [ ] **Buffer = "Enchanter" + full-buff NPC to 75** — owner direction ([[buffer-enchanter-design]]):
   ONE buffer class holds ALL buffs (race-flavored); add **dances/songs** (extra atk/cast mults) to the NPC
   buffer later; a **full-buff NPC buffer up to lvl 75** is the SOLO stopgap. High-tier solo being hard is

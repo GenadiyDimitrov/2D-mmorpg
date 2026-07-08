@@ -60,6 +60,9 @@ public class CharacterRecord
     /// <summary>Active quests as JSON list of CharacterQuestState.</summary>
     public string ActiveQuestsJson { get; set; } = "";
 
+    /// <summary>Auto-hunt config as JSON (AutoHuntConfigDto). Empty = defaults/off.</summary>
+    public string AutoHuntJson { get; set; } = "";
+
     // Core stats are derived from race/class/level, but second-class and item
     // bonuses are permanent additions, so we persist the raw core stats.
     public int Con { get; set; }

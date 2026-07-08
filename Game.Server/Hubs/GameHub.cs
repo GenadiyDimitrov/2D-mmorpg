@@ -294,6 +294,18 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task SetAutoHuntConfig(AutoHuntConfigDto config)
+    {
+        _world.Commands.Enqueue(new SetAutoHuntConfigCmd(Context.ConnectionId, config));
+        return Task.CompletedTask;
+    }
+
+    public Task ToggleAutoHunt(bool enabled)
+    {
+        _world.Commands.Enqueue(new ToggleAutoHuntCmd(Context.ConnectionId, enabled));
+        return Task.CompletedTask;
+    }
+
     public Task TradeRequest(Guid targetId)
     {
         _world.Commands.Enqueue(new TradeRequestCmd(Context.ConnectionId, targetId));

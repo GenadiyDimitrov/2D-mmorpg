@@ -7,6 +7,33 @@ this file.
 
 ---
 
+## To test now (auto-hunt / idle farming — Phase 1, 2026-07-08)
+
+**⚠️ Schema change:** added the `AutoHuntJson` column → **delete `Game.Server/bin/Debug/net8.0/game.db`
+(+ `-shm`/`-wal`)** so it recreates before running.
+
+### Auto-Hunt window (WPF client)
+- [ ] Enter world → an **"Auto-Hunt"** button appears top-right; it opens the config window.
+- [ ] The window lists your **active skills** (passives hidden) with an enable checkbox, a type tag
+  (attack/buff/debuff/heal) and a **reuse (s)** box prefilled with each skill's own cooldown.
+- [ ] HP%/MP% potion boxes + "Keep buff potions active" checkbox. **Apply** saves; settings **survive
+  relog** (persisted).
+
+### Behavior
+- [ ] Toggle **Enabled** (checkbox) → you auto-walk to the nearest mob, basic-attack, and cast your
+  enabled auto-skills; killing one retargets the next. Turn it off → you stop acquiring new targets.
+- [ ] **Attack** skills fire on cooldown; a **buff** skill only casts when its buff is missing on you;
+  a **debuff** only when the target doesn't already have it; a self-**heal** only below 70% HP.
+- [ ] Raising a skill's **reuse (s)** above its default makes it fire slower (never faster than default).
+- [ ] **Auto-potions** work even with auto-hunt OFF: drop below the HP% and the best HP potion is drunk
+  (shared potion cooldown respected). (No MP potions exist yet — MP% is a no-op.)
+- [ ] "Keep buff potions active" re-drinks any buff potion in your bag whose buff has expired.
+- [ ] The window footer shows **Mana: X /s** (sum of enabled auto-skills, after any MP-cost/CD buffs)
+  and updates as buffs go up/down.
+- [ ] Loot/XP/gold behave exactly like manual play (incl. party loot rules) — no idle penalty.
+
+---
+
 ## To test now (party window + mob cast-bar UI — 2026-07-07)
 
 ### Party window (WPF client)

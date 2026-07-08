@@ -171,6 +171,30 @@ public record PartyInviteDto(Guid InviterId, string InviterName,
 /// agree. Open=true shows the accept/decline prompt; Open=false dismisses it (vote resolved).</summary>
 public record PartyLootVoteDto(LootMode Mode, string RequestedBy, bool Open = true);
 
+
+// ----- Auto-hunt / idle farming (docs/AutoHunt.md) -------------------------
+
+/// <summary>One auto-use skill: the skill id, whether it's on, and an ADDITIONAL post-cast delay
+/// (ticks, ≥0) on top of the skill's own reuse (so auto-reuse is never below the default).</summary>
+public record AutoSkillDto(string SkillId, bool Enabled, int ExtraDelayTicks);
+
+/// <summary>Client -> server: the character's full auto-hunt configuration. The use CONDITION for
+/// each skill is inferred server-side (buff→if missing, debuff→if target lacks, attack→on cd).</summary>
+public record AutoHuntConfigDto(
+    bool Enabled,
+    int HpPotionPct,
+    int MpPotionPct,
+    bool AutoBuffPotions,
+    AutoSkillDto[] Skills,
+    string[] BuffPotionIds);
+
+/// <summary>Server -> client HUD: an enabled auto-skill's effective reuse and its MP/s draw.</summary>
+public record AutoSkillReuse(string SkillId, string Name, float ReuseSeconds, float MpPerSec);
+
+/// <summary>Server -> client HUD: total MP/s of all enabled auto-skills (after cost/CD-reduction
+/// buffs) + the per-skill breakdown, refreshed as buffs change.</summary>
+public record AutoHuntStatus(bool Enabled, float MpPerSec, AutoSkillReuse[] Skills);
+
 /// <summary>One member row in the party window.</summary>
 public record PartyMemberDto(Guid Id, string Name, int Level, string ClassName,
     int Hp, int MaxHp, int Mp, int MaxMp, bool IsLeader);
