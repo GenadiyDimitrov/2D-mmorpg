@@ -564,6 +564,14 @@ public class Entity
     public List<string> AutoBuffPotionIds { get; } = new();
     /// <summary>Per-skill earliest auto-recast tick (base reuse + the user's extra delay).</summary>
     public Dictionary<string, long> AutoReadyTick { get; } = new();
+    /// <summary>Disconnected but still auto-hunting in the world (no connection = no UI pushes).</summary>
+    public bool IsOfflineFarming { get; set; }
+    /// <summary>A cap (idle/offline time) was reached: auto-hunt can't be re-enabled until re-log.</summary>
+    public bool AutoHuntLocked { get; set; }
+    /// <summary>Ticks auto-hunt has run this session while ONLINE (idle cap).</summary>
+    public long AutoIdleElapsedTicks { get; set; }
+    /// <summary>Ticks auto-hunt has run this session while OFFLINE (offline cap).</summary>
+    public long AutoOfflineElapsedTicks { get; set; }
 
     // ----- Potion channel (separate from natural regen; ticks in combat too) ----
     /// <summary>Shared cooldown across ALL potions, in ticks.</summary>

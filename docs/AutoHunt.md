@@ -56,6 +56,31 @@ a total **MP/s** and lists each skill's reuse. Pushed on config change + each re
 - Server → client: `AutoHuntStatus(bool Enabled, float MpPerSec, AutoSkillReuse[] Skills)`.
 - Hub: `SetAutoHuntConfig` / `ToggleAutoHunt`; NetworkChannel mirrors + `AutoHuntReceived`.
 
-## Not in Phase 1 (deferred)
-Offline continuation (survive disconnect), roaming/pathing to find mobs, auto-heal of
-party members, per-skill target-type overrides, a reduced idle rate.
+## Phase 2 — offline farming (BUILT 2026-07-08)
+Offline is just the online `AutoPilot` running **without a connection** (SendTo already no-ops when
+an entity has no connection, so every UI push is skipped automatically) — no new brain.
+
+- **Disconnect** (`HandleLeave`): if auto-hunt is on, alive, unlocked and out of a safe zone, the
+  character is KEPT in the world (`Entity.IsOfflineFarming = true`) instead of removed; only the
+  connection maps are dropped. It stays in the grid, so `BroadcastSnapshotsAsync`/`BroadcastCombat`
+  still show it to nearby players and mobs still aggro it (attackable like a normal player; PvP
+  retaliation / "no counter-attack vs players" is a future hook — PvP isn't built). It leaves its
+  party (`RemoveFromParty`).
+- **Reconnect** (`HandleEnterWorld`): re-attaches to the live offline entity (keeps offline gains)
+  instead of loading a fresh copy; refills the budgets and clears the lock.
+- **Runtime caps** (`TickAutoHuntBudget`, per tick while enabled): **online idle 8h**
+  (`AutoIdleCapTicks`), **offline 2h** (`AutoOfflineCapTicks`). Hitting the idle cap →
+  `StopAutoHunt(locked)` (can't re-enable until re-log). Hitting the offline cap → end the session.
+  Caps are constants now; **purchasable extensions (12h / 4h)** are the obvious hook (swap the
+  constant read for a per-character premium value when a shop item exists).
+- **Death** stops auto-hunt: an offline farmer's session ends (deferred logout); an online idle
+  hunter just stops (re-enable after respawn).
+- **Ending a session** (`EndOfflineSession`, deferred out of the entity loop via `_endOfflineQueue`
+  so we never mutate the entity dict mid-iteration): turn auto off (so it doesn't auto-re-arm next
+  login), remove + save the character (a normal logout).
+- **Lock** blocks `ToggleAutoHunt`/`SetAutoHuntConfig` from enabling; cleared on the next login.
+
+## Still deferred
+Roaming/pathing to find mobs when none are near, auto-heal of party members, per-skill target-type
+overrides, a reduced idle/offline loot rate, drag-reorder skill priority, purchasable cap extensions,
+and a client "offline status / gains" summary.

@@ -126,14 +126,31 @@ public class GameLoopService : BackgroundService
     {
         var entity = cmd.Entity;
 
-        // Spawn position: where they logged off, nudged into the world bounds.
-        entity.X = Math.Clamp(entity.X, 0, GameConstants.ZoneWidth);
-        entity.Y = Math.Clamp(entity.Y, 0, GameConstants.ZoneHeight);
+        // RECONNECT: if this character is still in the world as an offline farmer, re-attach to that
+        // LIVE entity (it holds the latest offline gains) and discard the freshly-loaded copy.
+        var offline = _world.Entities.Values.FirstOrDefault(e =>
+            e.IsOfflineFarming && e.PersistentId is int pid && pid == entity.PersistentId);
+        if (offline is not null)
+        {
+            entity = offline;
+            entity.IsOfflineFarming = false;
+        }
+        else
+        {
+            // Spawn position: where they logged off, nudged into the world bounds.
+            entity.X = Math.Clamp(entity.X, 0, GameConstants.ZoneWidth);
+            entity.Y = Math.Clamp(entity.Y, 0, GameConstants.ZoneHeight);
+            _world.Entities[entity.Id] = entity;
+            _world.Grid.Add(entity);
+        }
 
-        _world.Entities[entity.Id] = entity;
         _world.EntityToConnection[entity.Id] = cmd.ConnectionId;
         _world.ConnectionToEntity[cmd.ConnectionId] = entity.Id;
-        _world.Grid.Add(entity);
+
+        // Fresh session: refill the runtime budgets and clear any cap lock.
+        entity.AutoIdleElapsedTicks = 0;
+        entity.AutoOfflineElapsedTicks = 0;
+        entity.AutoHuntLocked = false;
 
         cmd.Result.TrySetResult(new LoginResult(true, null, entity.Id, entity.X, entity.Y, GameClock.Epoch));
 
@@ -158,7 +175,28 @@ public class GameLoopService : BackgroundService
 
         _world.EntityToConnection.Remove(entityId);
 
-        if (_world.Entities.Remove(entityId, out var entity))
+        if (!_world.Entities.TryGetValue(entityId, out var entity))
+            return;
+
+        // OFFLINE FARMING: if auto-hunt is on (alive, unlocked, out of a safe zone), keep the
+        // character IN the world driven by AutoPilot — with the connection dropped so all UI pushes
+        // no-op. It stays visible/attackable like a normal player until the offline cap, death, or
+        // re-login. (docs/AutoHunt.md, Phase 2.)
+        if (entity.AutoHuntEnabled && !entity.AutoHuntLocked && !entity.Dead &&
+            !GameConstants.InSafeZone(entity.X, entity.Y))
+        {
+            entity.IsOfflineFarming = true;
+            entity.AutoOfflineElapsedTicks = 0;
+            CancelTradeFor(entity, notifyPartnerOnly: true);
+            _world.PendingTradeRequests.Remove(entity.Id);
+            RemoveFromParty(entity, "went offline");   // can't stay grouped while offline
+            SaveEntity(entity);                          // checkpoint
+            BroadcastSystem($"{entity.Name} keeps hunting while away.");
+            return;
+        }
+
+        // Normal logout: remove + save.
+        _world.Entities.Remove(entityId, out _);
         {
             CancelTradeFor(entity, notifyPartnerOnly: true);
             _world.PendingTradeRequests.Remove(entity.Id);
@@ -1529,12 +1567,25 @@ public class GameLoopService : BackgroundService
     // How far the auto-hunt scans for a mob to engage.
     private const float AutoHuntScanRange = 900f;
 
+    // Runtime caps (docs/AutoHunt.md): online idle 8h, offline 2h. Hitting a cap stops + locks
+    // auto-hunt (until re-log). Purchasable extensions (12h / 4h) are a future hook — swap these
+    // constant reads for a per-character premium value when the shop item exists.
+    private static long AutoIdleCapTicks(Entity p) => 8L * 3600 * GameConstants.TickRate;
+    private static long AutoOfflineCapTicks(Entity p) => 2L * 3600 * GameConstants.TickRate;
+
+    // Offline sessions that hit their cap / died this tick — removed after the entity loop so we
+    // never mutate _world.Entities while iterating it.
+    private readonly List<Guid> _endOfflineQueue = new();
+
     private void HandleSetAutoHuntConfig(SetAutoHuntConfigCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var p))
             return;
         var c = cmd.Config;
-        p.AutoHuntEnabled   = c.Enabled;
+        // A cap lock blocks re-enabling until re-log; other settings still save.
+        p.AutoHuntEnabled   = c.Enabled && !p.AutoHuntLocked;
+        if (c.Enabled && p.AutoHuntLocked)
+            SendSystemToEntity(p, "Auto-hunt is locked until you re-log.");
         p.AutoHpPotionPct   = Math.Clamp(c.HpPotionPct, 0, 100);
         p.AutoMpPotionPct   = Math.Clamp(c.MpPotionPct, 0, 100);
         p.AutoBuffPotions   = c.AutoBuffPotions;
@@ -1552,6 +1603,12 @@ public class GameLoopService : BackgroundService
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var p))
             return;
+        if (cmd.Enabled && p.AutoHuntLocked)
+        {
+            SendSystemToEntity(p, "Auto-hunt is locked until you re-log.");
+            SendAutoHuntConfig(p);
+            return;
+        }
         p.AutoHuntEnabled = cmd.Enabled;
         SendAutoHuntConfig(p);
         SendAutoHuntStatus(p);
@@ -1758,6 +1815,51 @@ public class GameLoopService : BackgroundService
         SendTo(p, "AutoConfig", new AutoHuntConfigDto(
             p.AutoHuntEnabled, p.AutoHpPotionPct, p.AutoMpPotionPct, p.AutoBuffPotions,
             p.AutoSkills.ToArray(), p.AutoBuffPotionIds.ToArray()));
+
+    /// <summary>Advance the auto-hunt runtime cap for a player. Online = the idle cap (stop + lock);
+    /// offline = the offline cap (queue a logout). Called each tick while auto-hunt is enabled.</summary>
+    private void TickAutoHuntBudget(Entity p)
+    {
+        if (p.IsOfflineFarming)
+        {
+            if (++p.AutoOfflineElapsedTicks >= AutoOfflineCapTicks(p))
+                _endOfflineQueue.Add(p.Id);
+        }
+        else if (++p.AutoIdleElapsedTicks >= AutoIdleCapTicks(p))
+        {
+            StopAutoHunt(p, "the idle time limit was reached — re-log to hunt again.", locked: true);
+        }
+    }
+
+    /// <summary>Turn auto-hunt off (and disengage). locked=true also blocks re-enabling until the
+    /// next login (cap reached). No-ops the UI pushes automatically for an offline (connectionless)
+    /// entity.</summary>
+    private void StopAutoHunt(Entity p, string reason, bool locked)
+    {
+        p.AutoHuntEnabled = false;
+        if (locked) p.AutoHuntLocked = true;
+        p.Engaged = false;
+        p.CombatTargetId = null;
+        p.QueuedSkillId = null;
+        SendAutoHuntConfig(p);
+        SendAutoHuntStatus(p);
+        SendSystemToEntity(p, $"Auto-hunt stopped: {reason}");
+    }
+
+    /// <summary>End an offline-farming session: turn auto off (so it doesn't immediately re-arm on
+    /// the next login), then remove + save the character (a normal logout). Deferred out of the
+    /// entity loop.</summary>
+    private void EndOfflineSession(Guid id)
+    {
+        if (!_world.Entities.TryGetValue(id, out var e) || !e.IsOfflineFarming)
+            return;
+        e.IsOfflineFarming = false;
+        e.AutoHuntEnabled = false;   // require a manual re-enable next login
+        _world.Entities.Remove(id, out _);
+        _world.Grid.Remove(e);
+        SaveEntity(e);
+        BroadcastSystem($"{e.Name} stopped hunting.");
+    }
 
     /// <summary>Remove an entity from its party (leave/kick/disconnect). Reassigns the leader if
     /// needed, disbands a party that drops below 2, and refreshes everyone's roster.</summary>
@@ -2110,7 +2212,11 @@ public class GameLoopService : BackgroundService
             }
 
             if (entity.Kind == EntityKind.Player)
+            {
                 AutoPilot(entity);   // auto-potions always; hunt loop if enabled (may queue a skill)
+                if (entity.AutoHuntEnabled)
+                    TickAutoHuntBudget(entity);   // idle/offline runtime caps
+            }
 
             UpdateAction(entity);
             MoveTowardTarget(entity);
@@ -2131,6 +2237,15 @@ public class GameLoopService : BackgroundService
         }
 
         TickTraps();
+
+        // End offline sessions that hit their cap or died (deferred so we don't mutate the entity
+        // dict mid-iteration).
+        if (_endOfflineQueue.Count > 0)
+        {
+            foreach (var id in _endOfflineQueue)
+                EndOfflineSession(id);
+            _endOfflineQueue.Clear();
+        }
 
         if (regenTick)
             RefreshPartyRosters();   // live HP/MP for the party window
@@ -3695,6 +3810,12 @@ var effect = def.Effect;
         {
             CancelTradeFor(victim, notifyPartnerOnly: false);
             BroadcastSystem($"{victim.Name} was slain by {killer.Name}.");
+            // Death stops auto-hunt. An offline farmer's session ends (deferred logout); an online
+            // idle hunter just stops (can re-enable after respawn).
+            if (victim.IsOfflineFarming)
+                _endOfflineQueue.Add(victim.Id);
+            else if (victim.AutoHuntEnabled)
+                StopAutoHunt(victim, "you were defeated.", locked: false);
         }
     }
 

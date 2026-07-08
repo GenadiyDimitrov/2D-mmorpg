@@ -32,6 +32,21 @@ this file.
   and updates as buffs go up/down.
 - [ ] Loot/XP/gold behave exactly like manual play (incl. party loot rules) — no idle penalty.
 
+### Offline farming (Phase 2, 2026-07-08)
+- [ ] With auto-hunt **ON** and standing in a mob field (not a town), **close the client / disconnect**.
+  A second logged-in character nearby should still **see your character** and watch it fight mobs
+  (it keeps hunting; a "keeps hunting while away" line appears).
+- [ ] **Log back in** → you re-attach to that same character with the loot/XP it gained while away
+  (not a stale copy).
+- [ ] Disconnecting **in a town** (safe zone), while **dead**, or with auto **off** does a normal
+  logout (no offline farming).
+- [ ] An offline farmer that **dies** (mobs out-damage its potions) stops and logs out ("stopped
+  hunting"); on next login it's alive with auto **off** (must re-enable).
+- [ ] Caps: idle **8h** online / offline **2h** (constants — verify via a temporary lower value if
+  needed). Hitting the idle cap stops auto and **blocks re-enabling until you re-log**.
+- [ ] Auto-hunt while offline still obeys the shared potion cooldown, buff-potion top-up, and skill
+  conditions (same brain as online).
+
 ---
 
 ## To test now (party window + mob cast-bar UI — 2026-07-07)

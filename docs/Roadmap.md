@@ -184,8 +184,13 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   Auto-potions at HP/MP % (always active; `BestHealPotion`; MP pots reserved — no items yet) + keep buff
   potions up (empty list = all in bag). Per-char config persisted (`AutoHuntJson`), edited in a WPF
   **Auto-Hunt window** (enable, HP/MP %, keep-buff-potions, per-skill enable + reuse-seconds). MP/s HUD
-  (`AutoHuntStatus`, after cost/CD buffs) pushed each regen tick. Loot/XP = manual (owner). Design:
-  `docs/AutoHunt.md`, [[auto-hunt-design]]. **Phase 2 (true offline)** + roaming/reorder-priority deferred.
+  (`AutoHuntStatus`, after cost/CD buffs) pushed each regen tick. Loot/XP = manual (owner).
+  **PHASE 2 (true offline) BUILT:** offline = the same AutoPilot with the connection dropped (SendTo
+  no-ops → all UI skipped). Disconnect with auto on keeps the char in the world (`IsOfflineFarming`,
+  visible/attackable, mobs aggro it); reconnect re-attaches. Runtime caps: **idle 8h / offline 2h**
+  (constants; purchasable 12h/4h a hook); cap or **death** stops it (offline = deferred logout via
+  `_endOfflineQueue`); idle cap locks re-enable until re-log. Design: `docs/AutoHunt.md`,
+  [[auto-hunt-design]]. Deferred: roaming, reorder-priority, purchasable extensions, PvP no-counter.
 - [ ] **Buffer = "Enchanter" + full-buff NPC to 75** — owner direction ([[buffer-enchanter-design]]):
   ONE buffer class holds ALL buffs (race-flavored); add **dances/songs** (extra atk/cast mults) to the NPC
   buffer later; a **full-buff NPC buffer up to lvl 75** is the SOLO stopgap. High-tier solo being hard is
