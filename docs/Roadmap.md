@@ -172,8 +172,17 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   (`boss_thorn_nova`, magic AoE + slow). Demo boss: Valley Treant Lord (slam → 50% enrage+2 bogwood
   adds+Thorn Nova → 25% shout). `ResetMob` re-arms phases + clears reuse. See [[boss-mechanics]].
   **Deferred:** boss buffs/heals, multi-stage HP-bar phases, unique skills for the other bosses.
-- [ ] **Pets & summons** — immovable healing totem, class pets (Trapper/tank), mage
-  summoner. ([[pets-summons-design]])
+- [ ] **Boss helper mobs** (owner idea, 2026-07-08, deferred) — dedicated support monsters that assist a
+  boss: dealing extra damage, HEALING the boss, or buffing it. A separate system from the current
+  `SummonAdds` (which spawns plain minions) — needs mob heal/buff casting (the non-boss "mob buffs/heals/CC"
+  line under Active mob skills). Pull it in when that mob-support layer is built.
+- [~] **Auto-hunt / idle farming** (owner request, 2026-07-08) — server-driven automation: a
+  per-character config of auto-use skills (custom post-cast extra delay ≥ 0; buffs cast only when the
+  buff key is missing on self; debuffs only when the target lacks them; attacks on cooldown), auto-target
+  nearest hostile, and auto-potions at HP/MP thresholds (works outside auto-hunt too). Buff potions treated
+  like a buff (recast only if missing). Client HUD shows total **MP/sec** (after cost/CD-reduction buffs)
+  + each auto-skill's reuse. **Phase 1 = online idle** (must stay logged in). **Phase 2 = true offline**
+  (entity kept in the world after disconnect, with stop conditions). Design: `docs/AutoHunt.md`. ([[auto-hunt-design]])
 - [ ] **Buffer = "Enchanter" + full-buff NPC to 75** — owner direction ([[buffer-enchanter-design]]):
   ONE buffer class holds ALL buffs (race-flavored); add **dances/songs** (extra atk/cast mults) to the NPC
   buffer later; a **full-buff NPC buffer up to lvl 75** is the SOLO stopgap. High-tier solo being hard is
