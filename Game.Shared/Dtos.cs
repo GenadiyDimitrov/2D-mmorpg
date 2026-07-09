@@ -197,7 +197,8 @@ public record AutoHuntStatus(bool Enabled, float MpPerSec, AutoSkillReuse[] Skil
 
 /// <summary>One member row in the party window.</summary>
 public record PartyMemberDto(Guid Id, string Name, int Level, string ClassName,
-    int Hp, int MaxHp, int Mp, int MaxMp, bool IsLeader);
+    int Hp, int MaxHp, int Mp, int MaxMp, bool IsLeader,
+    PartyMemberStatus Status = PartyMemberStatus.Online);
 
 /// <summary>Server -> party members: the current roster (empty array = you left/were the last
 /// member, so the client hides the party window). Sent on membership change and refreshed

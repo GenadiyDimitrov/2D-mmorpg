@@ -80,6 +80,17 @@ an entity has no connection, so every UI push is skipped automatically) — no n
   login), remove + save the character (a normal logout).
 - **Lock** blocks `ToggleAutoHunt`/`SetAutoHuntConfig` from enabling; cleared on the next login.
 
+## Party integration (2026-07-08)
+- **No inviting AFK players:** `HandlePartyInvite` rejects a target that is auto-hunting
+  (`AutoHuntEnabled`) or offline-farming — they won't answer, so no stuck invite.
+- **Invite timeout (~30s):** `PendingPartyInviteExpiry` + `SweepPartyInvites` (regen tick) drops
+  unanswered invites and tells the inviter; the client prompt auto-dismisses on the same timer.
+- **Offline members stay in the party** with a status flag so the roster shows an AFK/OFFLINE tag
+  (the party can kick if it's not a network blip). `PartyMemberDto.Status`
+  (`PartyMemberStatus` Online/Auto/Offline). If the leader goes offline, `ReassignLeaderIfNeeded`
+  hands off to an online member. Ending an offline session (`EndOfflineSession`) removes the member
+  from the party; reconnecting keeps them in it.
+
 ## Still deferred
 Roaming/pathing to find mobs when none are near, auto-heal of party members, per-skill target-type
 overrides, a reduced idle/offline loot rate, drag-reorder skill priority, purchasable cap extensions,

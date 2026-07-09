@@ -158,6 +158,10 @@ public enum SkillEffect : long
 /// None = not a contested debuff (uses the older fizzle/sure-hit path).</summary>
 public enum DebuffSchool { None = 0, Physical = 1, Magical = 2 }
 
+/// <summary>A party member's presence, for the roster's AFK indicator. Auto = online but
+/// auto-hunting (AFK-ish); Offline = disconnected but still offline-farming in the world.</summary>
+public enum PartyMemberStatus { Online = 0, Auto = 1, Offline = 2 }
+
 /// <summary>How a party distributes ITEM loot from a kill. Gold is ALWAYS split among in-range
 /// members regardless of this setting. Solo players always behave as FindersKeepers.</summary>
 public enum LootMode

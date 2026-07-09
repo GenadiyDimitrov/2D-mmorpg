@@ -162,6 +162,8 @@ public class GameLoopService : BackgroundService
         SendGold(entity);
         SendAutoHuntConfig(entity);   // restore the saved auto-hunt settings in the client UI
         SendAutoHuntStatus(entity);
+        if (_world.Parties.TryGetValue(entity.Id, out var rejoinParty))
+            SendPartyUpdate(rejoinParty);   // clear the offline icon for the rest of the party
         if (entity.IsAdmin)
             SendSystemToEntity(entity, "Admin privileges active. Type /help for commands.");
         BroadcastSystem($"{entity.Name} entered the world.");
@@ -189,7 +191,13 @@ public class GameLoopService : BackgroundService
             entity.AutoOfflineElapsedTicks = 0;
             CancelTradeFor(entity, notifyPartnerOnly: true);
             _world.PendingTradeRequests.Remove(entity.Id);
-            RemoveFromParty(entity, "went offline");   // can't stay grouped while offline
+            // Stay in the party as an OFFLINE member (roster shows the icon so the party can kick
+            // if it's not just a network blip). Hand off leadership if the leader went offline.
+            if (_world.Parties.TryGetValue(entity.Id, out var offlineParty))
+            {
+                ReassignLeaderIfNeeded(offlineParty);
+                SendPartyUpdate(offlineParty);
+            }
             SaveEntity(entity);                          // checkpoint
             BroadcastSystem($"{entity.Name} keeps hunting while away.");
             return;
@@ -1350,6 +1358,30 @@ public class GameLoopService : BackgroundService
 
     // ----- Party / grouping ------------------------------------------------------------------
     private const int PartyMaxSize = 9;
+    private const int PartyInviteTimeoutTicks = 300;   // ~30s: stale invites auto-expire
+
+    // Scratch list so the invite sweep doesn't allocate/modify the dict while enumerating it.
+    private readonly List<Guid> _expiredInvites = new();
+
+    /// <summary>Drop party invites nobody answered in time so they stop blocking re-invites; tell
+    /// the inviter it lapsed. (The invitee's prompt auto-dismisses client-side on the same timer.)</summary>
+    private void SweepPartyInvites()
+    {
+        if (_world.PendingPartyInviteExpiry.Count == 0)
+            return;
+        _expiredInvites.Clear();
+        foreach (var (targetId, expireTick) in _world.PendingPartyInviteExpiry)
+            if (_tick >= expireTick)
+                _expiredInvites.Add(targetId);
+        foreach (var targetId in _expiredInvites)
+        {
+            _world.PendingPartyInviteExpiry.Remove(targetId);
+            if (_world.PendingPartyInvites.Remove(targetId, out var inviterId) &&
+                _world.Entities.TryGetValue(inviterId, out var inviter) &&
+                _world.Entities.TryGetValue(targetId, out var target))
+                SendSystemToEntity(inviter, $"{target.Name} didn't respond to your party invite.");
+        }
+    }
 
     private void HandlePartyInvite(PartyInviteCmd cmd)
     {
@@ -1359,6 +1391,12 @@ public class GameLoopService : BackgroundService
             target.Kind != EntityKind.Player || target.Dead || target.Id == inviter.Id)
         {
             SendSystemToEntity(inviter, "You can't invite that player.");
+            return;
+        }
+        // AFK players (auto-hunting or offline-farming) won't respond — don't leave a stuck invite.
+        if (target.AutoHuntEnabled || target.IsOfflineFarming)
+        {
+            SendSystemToEntity(inviter, $"{target.Name} is auto-hunting and can't be invited right now.");
             return;
         }
         // If the inviter is already in a party, only the leader can invite, and it must have room.
@@ -1391,6 +1429,7 @@ public class GameLoopService : BackgroundService
         LootMode joinMode = _world.Parties.TryGetValue(inviter.Id, out var invParty)
             ? invParty.LootMode : Party.DefaultLootMode;
         _world.PendingPartyInvites[target.Id] = inviter.Id;
+        _world.PendingPartyInviteExpiry[target.Id] = _tick + PartyInviteTimeoutTicks;
         SendTo(target, "PartyInvite", new PartyInviteDto(inviter.Id, inviter.Name, joinMode));
         SendSystemToEntity(inviter, $"Party invite sent to {target.Name}.");
     }
@@ -1401,6 +1440,7 @@ public class GameLoopService : BackgroundService
             return;
         if (!_world.PendingPartyInvites.Remove(responder.Id, out var inviterId))
             return;
+        _world.PendingPartyInviteExpiry.Remove(responder.Id);
         if (!_world.Entities.TryGetValue(inviterId, out var inviter) || inviter.Dead)
             return;
 
@@ -1612,6 +1652,8 @@ public class GameLoopService : BackgroundService
         p.AutoHuntEnabled = cmd.Enabled;
         SendAutoHuntConfig(p);
         SendAutoHuntStatus(p);
+        if (_world.Parties.TryGetValue(p.Id, out var pty))
+            SendPartyUpdate(pty);   // toggle the party AFK/Auto icon promptly
         SendSystemToEntity(p, p.AutoHuntEnabled ? "Auto-hunt ON." : "Auto-hunt OFF.");
     }
 
@@ -1855,6 +1897,7 @@ public class GameLoopService : BackgroundService
             return;
         e.IsOfflineFarming = false;
         e.AutoHuntEnabled = false;   // require a manual re-enable next login
+        RemoveFromParty(e, "logged out");   // truly gone now — leave the party
         _world.Entities.Remove(id, out _);
         _world.Grid.Remove(e);
         SaveEntity(e);
@@ -1912,11 +1955,28 @@ public class GameLoopService : BackgroundService
         foreach (var mid in party.Members)
             if (_world.Entities.TryGetValue(mid, out var m))
                 members.Add(new PartyMemberDto(m.Id, m.Name, m.Level, PartyClassLabel(m),
-                    (int)m.Hp, m.MaxHp, (int)m.Mp, m.MaxMp, mid == party.LeaderId));
+                    (int)m.Hp, m.MaxHp, (int)m.Mp, m.MaxMp, mid == party.LeaderId,
+                    m.IsOfflineFarming ? PartyMemberStatus.Offline
+                        : m.AutoHuntEnabled ? PartyMemberStatus.Auto
+                        : PartyMemberStatus.Online));
         var dto = new PartyUpdate(members.ToArray(), party.LootMode);
         foreach (var mid in party.Members)
             if (_world.Entities.TryGetValue(mid, out var m))
                 SendTo(m, "Party", dto);
+    }
+
+    /// <summary>If the party leader is offline-farming, hand leadership to the first non-offline
+    /// member so the party isn't stuck with a leader who can't invite/kick/set loot.</summary>
+    private void ReassignLeaderIfNeeded(Party party)
+    {
+        if (_world.Entities.TryGetValue(party.LeaderId, out var leader) && !leader.IsOfflineFarming)
+            return;
+        foreach (var mid in party.Members)
+            if (_world.Entities.TryGetValue(mid, out var m) && !m.IsOfflineFarming)
+            {
+                party.LeaderId = mid;
+                return;
+            }
     }
 
     private void BroadcastToParty(Party party, string text)
@@ -2248,7 +2308,10 @@ public class GameLoopService : BackgroundService
         }
 
         if (regenTick)
-            RefreshPartyRosters();   // live HP/MP for the party window
+        {
+            RefreshPartyRosters();   // live HP/MP + AFK status for the party window
+            SweepPartyInvites();     // drop invites nobody answered
+        }
     }
 
     /// <summary>Advance placed traps: expire the timed-out ones, and fire any whose radius a

@@ -91,6 +91,9 @@ public class World
     /// <summary>invitedEntityId -> inviterEntityId (one pending party invite each).</summary>
     public Dictionary<Guid, Guid> PendingPartyInvites { get; } = new();
 
+    /// <summary>invitedEntityId -> absolute tick the pending invite auto-expires at.</summary>
+    public Dictionary<Guid, long> PendingPartyInviteExpiry { get; } = new();
+
     public CellGrid Grid { get; } = new(
         GameConstants.ZoneWidth, GameConstants.ZoneHeight, GameConstants.CellSize);
 }

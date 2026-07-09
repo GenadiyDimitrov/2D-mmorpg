@@ -1,7 +1,9 @@
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using Game.Shared;
 
 namespace Game.Client.Wpf;
@@ -386,12 +388,28 @@ public partial class MainWindow
         _                       => mode.ToString(),
     };
 
+    private DispatcherTimer? _partyInviteTimer;
+
     private void OnPartyInvite(PartyInviteDto invite)
     {
         _pendingPartyFrom = invite.InviterId;
         PartyInviteText.Text =
             $"{invite.InviterName} invites you to a party.\nLoot rule: {LootModeLabel(invite.LootMode)}";
         PartyInvitePrompt.Visibility = Visibility.Visible;
+
+        // Auto-dismiss after the server-side invite timeout (~30s) so a stale prompt doesn't linger.
+        _partyInviteTimer ??= new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
+        _partyInviteTimer.Stop();
+        _partyInviteTimer.Tick -= PartyInviteTimedOut;
+        _partyInviteTimer.Tick += PartyInviteTimedOut;
+        _partyInviteTimer.Start();
+    }
+
+    private void PartyInviteTimedOut(object? sender, EventArgs e)
+    {
+        _partyInviteTimer?.Stop();
+        PartyInvitePrompt.Visibility = Visibility.Collapsed;
+        _pendingPartyFrom = null;
     }
 
     /// <summary>Leader proposed a loot-rule change and needs my agreement (Open), or the vote just
@@ -422,6 +440,7 @@ public partial class MainWindow
 
     private async void PartyAccept_Click(object sender, RoutedEventArgs e)
     {
+        _partyInviteTimer?.Stop();
         PartyInvitePrompt.Visibility = Visibility.Collapsed;
         _pendingPartyFrom = null;
         await _net.PartyRespondAsync(true);
@@ -429,6 +448,7 @@ public partial class MainWindow
 
     private async void PartyDecline_Click(object sender, RoutedEventArgs e)
     {
+        _partyInviteTimer?.Stop();
         PartyInvitePrompt.Visibility = Visibility.Collapsed;
         _pendingPartyFrom = null;
         await _net.PartyRespondAsync(false);
@@ -480,11 +500,31 @@ public partial class MainWindow
         double mp = m.MaxMp > 0 ? Math.Clamp((double)m.Mp / m.MaxMp, 0, 1) : 0;
         const double barWidth = 204;
 
+        // AFK indicator: a small tag + tint for auto-hunting (idle) or offline-farming members, so
+        // the party can tell an AFK player from a network drop and decide whether to kick.
+        string statusTag = m.Status switch
+        {
+            PartyMemberStatus.Auto    => "  • AFK",
+            PartyMemberStatus.Offline => "  • OFFLINE",
+            _                         => ""
+        };
+        var statusBrush = m.Status switch
+        {
+            PartyMemberStatus.Auto    => new SolidColorBrush(Color.FromRgb(0xE0, 0xD0, 0x60)),
+            PartyMemberStatus.Offline => new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99)),
+            _                         => (m.Id == _myId ? Brushes.Gold : Brushes.White)
+        };
         var header = new TextBlock
         {
-            Text = $"{(m.IsLeader ? "★ " : "")}{m.Name}  Lv{m.Level} {m.ClassName}",
-            Foreground = m.Id == _myId ? Brushes.Gold : Brushes.White,
-            FontSize = 11, VerticalAlignment = VerticalAlignment.Center
+            Text = $"{(m.IsLeader ? "★ " : "")}{m.Name}  Lv{m.Level} {m.ClassName}{statusTag}",
+            Foreground = statusBrush,
+            FontSize = 11, VerticalAlignment = VerticalAlignment.Center,
+            ToolTip = m.Status switch
+            {
+                PartyMemberStatus.Auto    => "Auto-hunting (AFK)",
+                PartyMemberStatus.Offline => "Offline — auto-farming while disconnected",
+                _                         => null
+            }
         };
 
         var kick = new Button

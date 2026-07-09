@@ -47,6 +47,20 @@ this file.
 - [ ] Auto-hunt while offline still obeys the shared potion cooldown, buff-potion top-up, and skill
   conditions (same brain as online).
 
+### Party + AFK interaction (2026-07-08)
+- [ ] You **can't invite** a player who is auto-hunting (idle) or offline-farming — you get "X is
+  auto-hunting and can't be invited right now."
+- [ ] A party member who turns auto-hunt **on** shows a yellow **• AFK** tag on their roster row;
+  a member who goes **offline-farming** shows a grey **• OFFLINE** tag (hover for a tooltip). The
+  tag clears when they turn auto off / reconnect.
+- [ ] The party can **kick** an AFK/offline member normally.
+- [ ] If the **party leader** goes offline-farming, leadership passes to an online member (★ moves).
+- [ ] A party **invite** left unanswered **auto-expires after ~30s**: the invitee's prompt disappears
+  and the inviter is told "X didn't respond," so they can re-invite (no permanent "considering
+  another invite" block).
+- [ ] An offline member that logs out (cap/death) **leaves the party**; one that reconnects **stays**
+  in it (tag clears).
+
 ---
 
 ## To test now (party window + mob cast-bar UI — 2026-07-07)
