@@ -36,6 +36,11 @@ public static partial class SkillCatalog
     public const string HpBoost = "hp_boost";
     public const string WindWalk = "wind_walk";
     public const string MassWindWalk = "mass_wind_walk";
+    // ---- Universal "Return" line: teleport to the nearest town. All auto-granted; the scroll
+    //      variants require (and consume) their scroll item. Fixed cast + fixed cooldown. ----
+    public const string ReturnSkill          = "return_town";        // 30s cast, 5min cd, fragile
+    public const string ScrollReturnSkill    = "use_scroll_return";  // 10s cast, needs a scroll
+    public const string ScrollReturnUltSkill = "use_scroll_return_ult"; // ~0.4s, needs an ult scroll
 
     // ---- Multi-level PASSIVE factory: a pure passive whose levels each carry a
     //      PassiveEffect (the floor/lean value for that level). ----
@@ -237,5 +242,30 @@ public static partial class SkillCatalog
             Category: SkillCategory.Buff, SpCost: 5000,
             TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
             Description: "Move +33 and Evasion +5 to nearby allies for 20 minutes."),
+
+        // ---- Return line (universal escape / recall to the nearest town) ----
+        // The FREE fallback: a long 30s channel that ANY damage cancels (FragileCast), 5-min reuse.
+        // Fixed cast + fixed cooldown = no haste/CD buffs speed it up. For when you forgot scrolls.
+        new(ReturnSkill, "Return", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 300, CooldownTicks: 3000, Range: 0, Power: 0,
+            Category: SkillCategory.Magic, SpCost: 0, TargetMode: TargetMode.SelfOnly,
+            FixedCast: true, FixedCooldown: true, FragileCast: true, TeleportsToTown: true,
+            Description: "Channel 30s to return to the nearest town. ANY damage cancels it. 5 min reuse."),
+
+        // Bought scroll: 10s fixed cast, 10s reuse. Consumes one Scroll of Return.
+        new(ScrollReturnSkill, "Scroll of Return", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 100, CooldownTicks: 100, Range: 0, Power: 0,
+            Category: SkillCategory.Magic, SpCost: 0, TargetMode: TargetMode.SelfOnly,
+            FixedCast: true, FixedCooldown: true, TeleportsToTown: true,
+            ConsumableId: ItemCatalog.ScrollReturn, ConsumableAmount: 1,
+            Description: "Use a Scroll of Return: 10s cast, teleport to the nearest town."),
+
+        // Ultimate scroll: ~0.4s (near-instant) fixed cast, 1s reuse. Consumes one Ultimate scroll.
+        new(ScrollReturnUltSkill, "Ultimate Scroll of Return", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 4, CooldownTicks: 10, Range: 0, Power: 0,
+            Category: SkillCategory.Magic, SpCost: 0, TargetMode: TargetMode.SelfOnly,
+            FixedCast: true, FixedCooldown: true, TeleportsToTown: true,
+            ConsumableId: ItemCatalog.ScrollReturnUltimate, ConsumableAmount: 1,
+            Description: "Use an Ultimate Scroll of Return: near-instant return to the nearest town."),
     };
 }

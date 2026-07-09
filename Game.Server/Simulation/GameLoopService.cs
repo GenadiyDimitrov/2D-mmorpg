@@ -342,6 +342,12 @@ public class GameLoopService : BackgroundService
         // Class identity "sure" floor passive for the current class tier (level = tier).
         if (SkillCatalog.FloorPassiveFor(player.Archetype, player.Level) is { } floor)
             player.LearnedSkills[floor.Id] = floor.Level;
+
+        // Universal Return line (teleport to nearest town): everyone has all three; the scroll
+        // variants only work while you hold the matching scroll (their ConsumableId reagent).
+        player.LearnedSkills.TryAdd(SkillCatalog.ReturnSkill, 1);
+        player.LearnedSkills.TryAdd(SkillCatalog.ScrollReturnSkill, 1);
+        player.LearnedSkills.TryAdd(SkillCatalog.ScrollReturnUltSkill, 1);
     }
 
     /// <summary>True if the player has learned a skill that REPLACES the given id
@@ -1171,6 +1177,23 @@ public class GameLoopService : BackgroundService
     {
         if (player.Dead || ItemCatalog.Get(item.DefId) is not ItemDef def || !ItemCatalog.IsPotion(def))
             return false;
+
+        // Cast-on-use consumable (Scroll of Return): start the skill; it consumes this item when the
+        // fixed cast completes (refunded on interrupt). No potion logic.
+        if (!string.IsNullOrEmpty(def.UseCastSkillId))
+        {
+            if (SkillCatalog.Get(def.UseCastSkillId) is not SkillDef castDef ||
+                player.CastingSkillId is not null || player.QueuedSkillId is not null)
+                return false;
+            if (player.SkillCooldowns.TryGetValue(castDef.Id, out int cd) && cd > 0)
+            {
+                SendSystemToEntity(player, $"{castDef.Name} is on cooldown.");
+                return false;
+            }
+            player.QueuedSkillId = castDef.Id;
+            player.QueuedTargetId = player.Id;
+            return true;
+        }
 
         // Buff potion: apply its timed buff (independent of the heal cooldown), consume.
         if (ItemCatalog.IsBuffPotion(def) && SkillCatalog.Get(def.BuffSkillId) is SkillDef buffDef)
@@ -2918,7 +2941,7 @@ public class GameLoopService : BackgroundService
         // physical skills feel sluggish. Magic/buff/heal skills still use cast speed.
         // Mobs cast at the skill's AUTHORED time (their low-WIT cast multiplier would otherwise
         // distort the tuned 1.5s/4s mob-spell timings); players use the speed model.
-        float speedMult = caster.Kind == EntityKind.Mob ? 1f
+        float speedMult = def.FixedCast || caster.Kind == EntityKind.Mob ? 1f
             : def.Category == SkillCategory.Physical
                 ? caster.EffectiveAttackSpeedMultiplier
                 : caster.EffectiveCastSpeedMultiplier;
@@ -2993,11 +3016,24 @@ public class GameLoopService : BackgroundService
         caster.Mp -= finishMp;
         if (def.HpCost > 0) caster.Hp = Math.Max(1, caster.Hp - def.HpCost);   // Restore Spirit: HP→MP
         caster.CastInitialMpPaid = 0;
-        // Reuse-delay reduction (Spell Mastery / buffs) shortens the cooldown.
+        // Reuse-delay reduction (Spell Mastery / buffs) shortens the cooldown — unless the skill
+        // has a FIXED cooldown (Return, ultimates).
         int cooldown = def.CooldownTicks;
-        if (cooldown > 0 && caster.CooldownReduction > 0f)
+        if (cooldown > 0 && !def.FixedCooldown && caster.CooldownReduction > 0f)
             cooldown = Math.Max(1, (int)(cooldown * (1f - caster.CooldownReduction)));
         caster.SkillCooldowns[def.Id] = cooldown;
+
+        // ---- Return: teleport the caster to the nearest safe town, then finish (the whole effect).
+        if (def.TeleportsToTown)
+        {
+            var town = WorldMap.NearestSafeZone(caster.X, caster.Y);
+            PlaceEntity(caster, town.X + _rng.Next(-150, 150), town.Y + _rng.Next(-150, 150));
+            caster.Engaged = false;
+            caster.CombatTargetId = null;
+            caster.QueuedSkillId = null;
+            SendSystemToEntity(caster, $"You return to {town.Name}.");
+            return;
+        }
 
 var effect = def.Effect;
         bool offensive = false;
@@ -4838,8 +4874,10 @@ var effect = def.Effect;
         if (def is null)
             return;
 
-        float chance = StatCalculator.InterruptChance(
-            target.InterruptResist, def.InterruptDefense, attackerInterruptPower);
+        // Fragile casts (Return) are cancelled by ANY damage — no interrupt contest.
+        float chance = def.FragileCast ? 1f
+            : StatCalculator.InterruptChance(
+                target.InterruptResist, def.InterruptDefense, attackerInterruptPower);
         if (_rng.NextDouble() < chance)
         {
             CancelCast(target, startCooldown: false);

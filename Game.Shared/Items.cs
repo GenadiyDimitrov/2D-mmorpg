@@ -171,7 +171,11 @@ public record ItemDef(
     int AttackSpeedBase = 0,
     // Recipe BOOK: the recipe id this item teaches when "opened" ("" = not a book). A book is an
     // EquipSlot.Box so the client's open flow reuses; opening adds the id to the char's KnownRecipes.
-    string TeachesRecipeId = "")
+    string TeachesRecipeId = "",
+    // Consumable that CASTS a skill when used (double-click) instead of a potion effect — e.g. a
+    // Scroll of Return. The named skill (which lists this item as its ConsumableId reagent) runs the
+    // fixed cast and consumes the item on completion. "" = normal consumable.
+    string UseCastSkillId = "")
 {
     /// <summary>Unified top-level category (derived from EquipSlot). Weapons are MainHand,
     /// shields OffHand; everything else maps 1:1.</summary>
@@ -251,6 +255,8 @@ public static class ItemCatalog
     public const string ScrollCommon = "scroll_common";
     public const string ScrollUncommon = "scroll_uncommon";
     public const string ScrollRare = "scroll_rare";
+    public const string ScrollReturn = "scroll_return";
+    public const string ScrollReturnUltimate = "scroll_return_ultimate";
     public const string AttrScrollCommon = "attrscroll_common";
     public const string AttrScrollUncommon = "attrscroll_uncommon";
     public const string AttrScrollRare = "attrscroll_rare";
@@ -487,6 +493,17 @@ public static class ItemCatalog
         list.Add(new ItemDef(GreaterPotion, "Greater Healing Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare,
             InstantHealPercent: 0.50f, PotionCooldownTicks: 300, Value: 1500));
+
+        // Return scrolls: double-click to cast the fixed-time teleport-to-town skill (which consumes
+        // one). Basic = vendor 500g / sells for nothing. Ultimate = not sold/dropped (debug/special
+        // vendor later), near-instant.
+        list.Add(new ItemDef(ScrollReturn, "Scroll of Return", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Common,
+            UseCastSkillId: SkillCatalog.ScrollReturnSkill, Value: 500, SellPriceOverride: 0));
+        list.Add(new ItemDef(ScrollReturnUltimate, "Ultimate Scroll of Return", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Rare,
+            UseCastSkillId: SkillCatalog.ScrollReturnUltSkill,
+            Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0));
 
         // Elemental Stone — a crafting/reagent material (not drinkable). Stacks; consumed
         // by skills that list it as a ConsumableId (e.g. the nuker's Elemental Burst).

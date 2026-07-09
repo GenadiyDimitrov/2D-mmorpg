@@ -154,7 +154,16 @@ public record SkillDef(
     // it waits before expiring unused. Uses the skill's own Effect/Power/Magnitudes.
     bool PlacesTrap = false,
     float TrapRadius = 150f,
-    int TrapLifeTicks = 300)
+    int TrapLifeTicks = 300,
+    // Fixed-timing flags (Return skill + future ultimate/event skills). FixedCast = cast time
+    // ignores cast-speed (always the authored CastTicks). FixedCooldown = reuse ignores
+    // cooldown-reduction buffs. FragileCast = ANY damage taken cancels the cast (bypasses the
+    // interrupt contest). TeleportsToTown = on completion, teleport the caster to the nearest safe
+    // town (the SkillEffect enum is full, so these ride as flag fields).
+    bool FixedCast = false,
+    bool FixedCooldown = false,
+    bool FragileCast = false,
+    bool TeleportsToTown = false)
 {
     /// <summary>The armor-mastery per-weight profile for a learned skill LEVEL, or null
     /// if this skill isn't an armor mastery.</summary>

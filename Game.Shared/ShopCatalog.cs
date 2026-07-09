@@ -32,6 +32,9 @@ public static class ShopCatalog
                 ItemCatalog.SpeedPotionC,
                 ItemCatalog.CastPotionC,
                 ItemCatalog.AtkPotionC,
+                // Scroll of Return (500g) — a faster escape than the free 30s Return skill. The
+                // Ultimate scroll is NOT sold here (special vendor later).
+                ItemCatalog.ScrollReturn,
                 // NOTE: enchant + attribute scrolls are intentionally DROP-ONLY (not sold).
             }),
             new ShopDef(GearMerchant, "Armsmaster", new[]
