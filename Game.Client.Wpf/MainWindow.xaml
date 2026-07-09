@@ -266,7 +266,11 @@
                            HorizontalAlignment="Center" Margin="0,0,0,14"/>
                 <Button Content="Character Selection" Height="34" Margin="0,0,0,8"
                         Click="SettingsCharSelect_Click"/>
+                <Button Content="Go Offline (Auto-Farm)" Height="34" Margin="0,0,0,8"
+                        ToolTip="Keep hunting while disconnected (up to the offline time cap)."
+                        Click="SettingsOffline_Click"/>
                 <Button Content="Exit Game" Height="34" Margin="0,0,0,8"
+                        ToolTip="Log out. Blocked while in combat."
                         Click="SettingsExit_Click"/>
                 <Button Content="Close" Height="28" Margin="0,8,0,0" Click="SettingsClose_Click"/>
             </StackPanel>

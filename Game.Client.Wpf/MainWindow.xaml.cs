@@ -107,6 +107,7 @@ public partial class MainWindow : Window
         _net.PartyLootVoteReceived += v => Dispatcher.BeginInvoke(() => OnPartyLootVote(v));
         _net.AutoHuntReceived += s => Dispatcher.BeginInvoke(() => OnAutoHuntStatus(s));
         _net.AutoConfigReceived += c => Dispatcher.BeginInvoke(() => OnAutoConfig(c));
+        _net.LogoutResultReceived += r => Dispatcher.BeginInvoke(() => OnLogoutResult(r));
         _net.EnchantReceived += en => Dispatcher.BeginInvoke(() => OnEnchant(en));
         _net.RerollReceived += r => Dispatcher.BeginInvoke(() => OnReroll(r));
         _net.ForceDisconnected += reason => Dispatcher.BeginInvoke(() =>
@@ -953,6 +954,13 @@ public partial class MainWindow : Window
             visual.Label.Text = $"{dto.Name}  [Talk]";
             visual.Label.Foreground = Brushes.Gold;
         }
+        else if (dto.Kind == EntityKind.Player && dto.Disconnected)
+        {
+            // Link-dead: a clear title above the head so nearby players know it's a network drop
+            // (not an active player). Offline-FARMING players are NOT flagged (look normal).
+            visual.Label.Text = $"{dto.Name} Lv{dto.Level}  ⚠ Disconnected";
+            visual.Label.Foreground = Brushes.OrangeRed;
+        }
         else
         {
             string classTag = dto.Kind == EntityKind.Player && dto.SecondClass > 0
@@ -960,8 +968,8 @@ public partial class MainWindow : Window
             visual.Label.Text = dto.Dead
                 ? $"{dto.Name} Lv{dto.Level} (dead)"
                 : $"{dto.Name}{classTag} Lv{dto.Level}";
-            if (dto.Kind == EntityKind.Mob)
-                visual.Label.Foreground = MobNameBrush(dto.Level);
+            visual.Label.Foreground = dto.Kind == EntityKind.Mob ? MobNameBrush(dto.Level)
+                : Brushes.White;
         }
     }
 

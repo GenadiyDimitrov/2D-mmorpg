@@ -335,8 +335,20 @@ public partial class MainWindow
         await ReturnToCharacterSelectAsync();
     }
 
-    private void SettingsExit_Click(object sender, RoutedEventArgs e) =>
-        Application.Current.Shutdown();
+    // Exit goes through the server (blocked in combat); the app closes only on an OK result.
+    private async void SettingsExit_Click(object sender, RoutedEventArgs e) =>
+        await _net.LogoutAsync();
+
+    private async void SettingsOffline_Click(object sender, RoutedEventArgs e) =>
+        await _net.StartOfflineFarmAsync();
+
+    private void OnLogoutResult(LogoutResult r)
+    {
+        if (r.Ok)
+            Application.Current.Shutdown();
+        else
+            MessageBox.Show(r.Reason, "Can't exit");
+    }
 
     // =======================================================================
     // Trade

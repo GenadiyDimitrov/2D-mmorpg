@@ -306,6 +306,18 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task Logout()
+    {
+        _world.Commands.Enqueue(new LogoutCmd(Context.ConnectionId));
+        return Task.CompletedTask;
+    }
+
+    public Task StartOfflineFarm()
+    {
+        _world.Commands.Enqueue(new StartOfflineFarmCmd(Context.ConnectionId));
+        return Task.CompletedTask;
+    }
+
     public Task TradeRequest(Guid targetId)
     {
         _world.Commands.Enqueue(new TradeRequestCmd(Context.ConnectionId, targetId));

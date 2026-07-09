@@ -33,6 +33,7 @@ public class NetworkChannel : IAsyncDisposable
     public event Action<PartyLootVoteDto>? PartyLootVoteReceived;
     public event Action<AutoHuntStatus>? AutoHuntReceived;
     public event Action<AutoHuntConfigDto>? AutoConfigReceived;
+    public event Action<LogoutResult>? LogoutResultReceived;
     public event Action<string>? Disconnected;
     public event Action<string>? ForceDisconnected;
 
@@ -70,6 +71,7 @@ public class NetworkChannel : IAsyncDisposable
         _connection.On<PartyLootVoteDto>("PartyLootVote", p => PartyLootVoteReceived?.Invoke(p));
         _connection.On<AutoHuntStatus>("AutoHunt", s => AutoHuntReceived?.Invoke(s));
         _connection.On<AutoHuntConfigDto>("AutoConfig", c => AutoConfigReceived?.Invoke(c));
+        _connection.On<LogoutResult>("LogoutResult", r => LogoutResultReceived?.Invoke(r));
         _connection.On<string>("ForceDisconnect", reason => ForceDisconnected?.Invoke(reason));
         _connection.Closed += ex =>
         {
@@ -225,6 +227,10 @@ public class NetworkChannel : IAsyncDisposable
 
     public Task ToggleAutoHuntAsync(bool enabled) =>
         _connection!.SendAsync("ToggleAutoHunt", enabled);
+
+    public Task LogoutAsync() => _connection!.SendAsync("Logout");
+
+    public Task StartOfflineFarmAsync() => _connection!.SendAsync("StartOfflineFarm");
 
     public Task TradeRequestAsync(Guid targetId) =>
         _connection!.SendAsync("TradeRequest", targetId);

@@ -191,6 +191,14 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   (constants; purchasable 12h/4h a hook); cap or **death** stops it (offline = deferred logout via
   `_endOfflineQueue`); idle cap locks re-enable until re-log. Design: `docs/AutoHunt.md`,
   [[auto-hunt-design]]. Deferred: roaming, reorder-priority, purchasable extensions, PvP no-counter.
+- [x] **Disconnect / exit / combat + Return** (owner spec, 2026-07-09; [[disconnect-exit-system]]).
+  Combat state (30s decay off the last damage). Disconnect FATE (`HandleLeave`): offline-farm (auto or
+  mid-combat), else a 180s **link-dead grace** (frozen, "⚠ Disconnected" head title, stays in party, no
+  offline-cap drain, reconnect resumes), else normal removal. **Combat-gated Exit** (`LogoutCmd`) +
+  a **Go Offline** button. New `SkillDef` flags FixedCast / FixedCooldown / FragileCast / TeleportsToTown;
+  universal auto-granted **Return** skill (30s/5min, fragile) + **Scroll of Return** (Apothecary 500g,
+  10s) + **Ultimate** scroll (near-instant, not sold). `ItemDef.UseCastSkillId` (double-click a
+  consumable → cast). Deferred: purchasable cap extensions, PvP no-counter, ultimate-scroll vendor.
 - [ ] **Buffer = "Enchanter" + full-buff NPC to 75** — owner direction ([[buffer-enchanter-design]]):
   ONE buffer class holds ALL buffs (race-flavored); add **dances/songs** (extra atk/cast mults) to the NPC
   buffer later; a **full-buff NPC buffer up to lvl 75** is the SOLO stopgap. High-tier solo being hard is

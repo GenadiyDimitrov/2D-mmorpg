@@ -233,6 +233,8 @@ public record PartySetLootModeCmd(string ConnectionId, LootMode Mode) : IGameCom
 public record PartyLootVoteCmd(string ConnectionId, bool Accept) : IGameCommand;
 public record SetAutoHuntConfigCmd(string ConnectionId, AutoHuntConfigDto Config) : IGameCommand;
 public record ToggleAutoHuntCmd(string ConnectionId, bool Enabled) : IGameCommand;
+public record LogoutCmd(string ConnectionId) : IGameCommand;
+public record StartOfflineFarmCmd(string ConnectionId) : IGameCommand;
 
 public record TradeRequestCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 public record TradeRespondCmd(string ConnectionId, bool Accept) : IGameCommand;

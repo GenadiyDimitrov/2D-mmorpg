@@ -34,7 +34,10 @@ public record EntityDto(
     int MaxMp,
     int SecondClass,
     int ThirdClass,
-    bool Dead);
+    bool Dead,
+    // A link-dead player in the reconnect grace window: clients draw a "Disconnected" title
+    // above the head. Offline-FARMING players are NOT flagged (they look like normal players).
+    bool Disconnected = false);
 
 /// <summary>Client -> Server: "move me toward this point" (click-to-move).
 /// Moving cancels engagement, queued skills, and casting (classic MMO).</summary>
@@ -194,6 +197,10 @@ public record AutoSkillReuse(string SkillId, string Name, float ReuseSeconds, fl
 /// <summary>Server -> client HUD: total MP/s of all enabled auto-skills (after cost/CD-reduction
 /// buffs) + the per-skill breakdown, refreshed as buffs change.</summary>
 public record AutoHuntStatus(bool Enabled, float MpPerSec, AutoSkillReuse[] Skills);
+
+/// <summary>Server -> client: the result of an exit/logout request. Ok=false when blocked (e.g.
+/// in combat); the client keeps playing and shows Reason. Ok=true → the client may close.</summary>
+public record LogoutResult(bool Ok, string Reason);
 
 /// <summary>One member row in the party window.</summary>
 public record PartyMemberDto(Guid Id, string Name, int Level, string ClassName,

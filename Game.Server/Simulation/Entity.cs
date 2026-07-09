@@ -566,6 +566,13 @@ public class Entity
     public Dictionary<string, long> AutoReadyTick { get; } = new();
     /// <summary>Disconnected but still auto-hunting in the world (no connection = no UI pushes).</summary>
     public bool IsOfflineFarming { get; set; }
+    /// <summary>Link-dead grace: connection lost while out of combat + not auto-farming. Frozen in
+    /// the world (with a "Disconnected" title) for a short window so a reconnect resumes seamlessly.</summary>
+    public bool IsDisconnected { get; set; }
+    /// <summary>Remaining ticks of the disconnect grace before the normal removal chain runs.</summary>
+    public int DisconnectGraceTicks { get; set; }
+    /// <summary>Tick of the last damage dealt or taken — drives the 30s combat-state decay.</summary>
+    public long LastCombatTick { get; set; }
     /// <summary>A cap (idle/offline time) was reached: auto-hunt can't be re-enabled until re-log.</summary>
     public bool AutoHuntLocked { get; set; }
     /// <summary>Ticks auto-hunt has run this session while ONLINE (idle cap).</summary>
@@ -1199,5 +1206,5 @@ public class Entity
 
     public EntityDto ToDto() =>
         new(Id, Name, Kind, Race, BaseClass, X, Y, Speed, Level,
-            Hp, MaxHp, Mp, MaxMp, SecondClass, ThirdClass, Dead);
+            Hp, MaxHp, Mp, MaxMp, SecondClass, ThirdClass, Dead, IsDisconnected);
 }

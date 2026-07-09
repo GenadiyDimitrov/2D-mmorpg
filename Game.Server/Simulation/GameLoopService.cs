@@ -117,6 +117,8 @@ public class GameLoopService : BackgroundService
                 case PartyLootVoteCmd c: HandlePartyLootVote(c); break;
                 case SetAutoHuntConfigCmd c: HandleSetAutoHuntConfig(c); break;
                 case ToggleAutoHuntCmd c: HandleToggleAutoHunt(c); break;
+                case LogoutCmd c: HandleLogout(c); break;
+                case StartOfflineFarmCmd c: HandleStartOfflineFarm(c); break;
                 case ChatCmd c: HandleChat(c); break;
             }
         }
@@ -126,14 +128,17 @@ public class GameLoopService : BackgroundService
     {
         var entity = cmd.Entity;
 
-        // RECONNECT: if this character is still in the world as an offline farmer, re-attach to that
-        // LIVE entity (it holds the latest offline gains) and discard the freshly-loaded copy.
-        var offline = _world.Entities.Values.FirstOrDefault(e =>
-            e.IsOfflineFarming && e.PersistentId is int pid && pid == entity.PersistentId);
-        if (offline is not null)
+        // RECONNECT: if this character is still in the world (offline-farming OR in the link-dead
+        // grace), re-attach to that LIVE entity (it holds the latest state) and discard the loaded copy.
+        var existing = _world.Entities.Values.FirstOrDefault(e =>
+            (e.IsOfflineFarming || e.IsDisconnected) &&
+            e.PersistentId is int pid && pid == entity.PersistentId);
+        if (existing is not null)
         {
-            entity = offline;
+            entity = existing;
             entity.IsOfflineFarming = false;
+            entity.IsDisconnected = false;
+            entity.DisconnectGraceTicks = 0;
         }
         else
         {
@@ -170,53 +175,135 @@ public class GameLoopService : BackgroundService
         _log.LogInformation("Player {Name} entered (char {Id})", entity.Name, entity.PersistentId);
     }
 
+    // Combat state decays 30s after the last damage; the disconnect grace runs 180s.
+    private const int CombatDecayTicks = 300;
+    private const int DisconnectGraceLimit = 1800;
+
+    /// <summary>A player is "in combat" for 30s after the last damage dealt/taken.</summary>
+    private bool IsInCombat(Entity e) =>
+        e.LastCombatTick > 0 && _tick - e.LastCombatTick < CombatDecayTicks;
+
+    /// <summary>A connection dropped (network or client close). Decide the character's fate:
+    /// auto-hunting or mid-combat → keep offline-farming; otherwise a short link-dead grace so a
+    /// reconnect resumes seamlessly; dead / already transitioned → normal removal.</summary>
     private void HandleLeave(LeaveCommand leave)
     {
         if (!_world.ConnectionToEntity.Remove(leave.ConnectionId, out var entityId))
             return;
-
         _world.EntityToConnection.Remove(entityId);
-
         if (!_world.Entities.TryGetValue(entityId, out var entity))
             return;
 
-        // OFFLINE FARMING: if auto-hunt is on (alive, unlocked, out of a safe zone), keep the
-        // character IN the world driven by AutoPilot — with the connection dropped so all UI pushes
-        // no-op. It stays visible/attackable like a normal player until the offline cap, death, or
-        // re-login. (docs/AutoHunt.md, Phase 2.)
-        if (entity.AutoHuntEnabled && !entity.AutoHuntLocked && !entity.Dead &&
-            !GameConstants.InSafeZone(entity.X, entity.Y))
+        // Offline farm: auto-hunting (and not cap-locked) OR dropped mid-combat (anti-combat-log:
+        // you stay in the world, killable), while alive and out of town.
+        if (!entity.Dead && !GameConstants.InSafeZone(entity.X, entity.Y) &&
+            ((entity.AutoHuntEnabled && !entity.AutoHuntLocked) || IsInCombat(entity)))
         {
-            entity.IsOfflineFarming = true;
-            entity.AutoOfflineElapsedTicks = 0;
-            CancelTradeFor(entity, notifyPartnerOnly: true);
-            _world.PendingTradeRequests.Remove(entity.Id);
-            // Stay in the party as an OFFLINE member (roster shows the icon so the party can kick
-            // if it's not just a network blip). Hand off leadership if the leader went offline.
-            if (_world.Parties.TryGetValue(entity.Id, out var offlineParty))
-            {
-                ReassignLeaderIfNeeded(offlineParty);
-                SendPartyUpdate(offlineParty);
-            }
-            SaveEntity(entity);                          // checkpoint
+            BeginOfflineFarm(entity);
             BroadcastSystem($"{entity.Name} keeps hunting while away.");
             return;
         }
 
-        // Normal logout: remove + save.
-        _world.Entities.Remove(entityId, out _);
+        // Out of combat, not auto: a link-dead GRACE window (stays in the party, frozen, no offline
+        // cap). Reconnect resumes; otherwise the normal removal runs when the grace expires.
+        if (!entity.Dead && !entity.IsOfflineFarming && !entity.IsDisconnected)
         {
-            CancelTradeFor(entity, notifyPartnerOnly: true);
-            _world.PendingTradeRequests.Remove(entity.Id);
-            RemoveFromParty(entity, "left the world");
-
-            if (!entity.Dead)
-                _world.Grid.Remove(entity);
-
-            // Persist on logout (fire-and-forget off the loop thread).
-            SaveEntity(entity);
-            BroadcastSystem($"{entity.Name} left the world.");
+            BeginDisconnectGrace(entity);
+            return;
         }
+
+        // Dead / already offline: straight to the normal removal chain.
+        NormalLeave(entity);
+    }
+
+    /// <summary>Keep the character in the world as an offline farmer (driven by AutoPilot, no
+    /// connection). Stays in its party with the OFFLINE roster tag.</summary>
+    private void BeginOfflineFarm(Entity entity)
+    {
+        entity.IsOfflineFarming = true;
+        entity.AutoOfflineElapsedTicks = 0;
+        CancelTradeFor(entity, notifyPartnerOnly: true);
+        _world.PendingTradeRequests.Remove(entity.Id);
+        if (_world.Parties.TryGetValue(entity.Id, out var party))
+        {
+            ReassignLeaderIfNeeded(party);
+            SendPartyUpdate(party);
+        }
+        SaveEntity(entity);
+    }
+
+    /// <summary>Freeze the character in the world for a short reconnect grace (link-dead). It shows
+    /// a "Disconnected" title to all + the OFFLINE tag to its party; it does not act or farm.</summary>
+    private void BeginDisconnectGrace(Entity entity)
+    {
+        entity.IsDisconnected = true;
+        entity.DisconnectGraceTicks = DisconnectGraceLimit;
+        entity.Engaged = false;
+        entity.CombatTargetId = null;
+        entity.QueuedSkillId = null;
+        entity.TargetX = null;
+        entity.TargetY = null;
+        if (entity.CastingSkillId is not null) CancelCast(entity, startCooldown: false);
+        CancelTradeFor(entity, notifyPartnerOnly: true);
+        _world.PendingTradeRequests.Remove(entity.Id);
+        if (_world.Parties.TryGetValue(entity.Id, out var party))
+        {
+            ReassignLeaderIfNeeded(party);
+            SendPartyUpdate(party);
+        }
+        SaveEntity(entity);
+    }
+
+    /// <summary>The normal exit chain: leave the party, remove the entity, save.</summary>
+    private void NormalLeave(Entity entity)
+    {
+        _world.Entities.Remove(entity.Id, out _);
+        CancelTradeFor(entity, notifyPartnerOnly: true);
+        _world.PendingTradeRequests.Remove(entity.Id);
+        RemoveFromParty(entity, "left the world");
+        if (!entity.Dead)
+            _world.Grid.Remove(entity);
+        SaveEntity(entity);
+        BroadcastSystem($"{entity.Name} left the world.");
+    }
+
+    /// <summary>End a link-dead grace that expired (or whose owner died): the normal removal chain.
+    /// Deferred out of the entity loop.</summary>
+    private void EndDisconnectGrace(Guid id)
+    {
+        if (!_world.Entities.TryGetValue(id, out var e) || !e.IsDisconnected)
+            return;
+        e.IsDisconnected = false;
+        NormalLeave(e);
+    }
+
+    private void HandleLogout(LogoutCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+        if (IsInCombat(player))
+        {
+            SendTo(player, "LogoutResult", new LogoutResult(false, "You can't exit while in combat."));
+            return;
+        }
+        SendTo(player, "LogoutResult", new LogoutResult(true, ""));
+        _world.ConnectionToEntity.Remove(cmd.ConnectionId);
+        _world.EntityToConnection.Remove(player.Id);
+        NormalLeave(player);
+    }
+
+    private void HandleStartOfflineFarm(StartOfflineFarmCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+        player.AutoHuntEnabled = true;
+        player.AutoHuntLocked = false;
+        // Tell the client (it returns to the account screen), then drop the connection + go offline.
+        _ = _hub.Clients.Client(cmd.ConnectionId).SendAsync("ForceDisconnect", "You are now farming offline.");
+        _world.ConnectionToEntity.Remove(cmd.ConnectionId);
+        _world.EntityToConnection.Remove(player.Id);
+        BeginOfflineFarm(player);
+        BroadcastSystem($"{player.Name} keeps hunting while away.");
     }
 
     /// <summary>Save a character without blocking the tick loop. The snapshot is taken
@@ -1640,6 +1727,9 @@ public class GameLoopService : BackgroundService
     // never mutate _world.Entities while iterating it.
     private readonly List<Guid> _endOfflineQueue = new();
 
+    // Link-dead grace windows that expired / died this tick — removed after the entity loop.
+    private readonly List<Guid> _endGraceQueue = new();
+
     private void HandleSetAutoHuntConfig(SetAutoHuntConfigCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var p))
@@ -1979,7 +2069,7 @@ public class GameLoopService : BackgroundService
             if (_world.Entities.TryGetValue(mid, out var m))
                 members.Add(new PartyMemberDto(m.Id, m.Name, m.Level, PartyClassLabel(m),
                     (int)m.Hp, m.MaxHp, (int)m.Mp, m.MaxMp, mid == party.LeaderId,
-                    m.IsOfflineFarming ? PartyMemberStatus.Offline
+                    m.IsOfflineFarming || m.IsDisconnected ? PartyMemberStatus.Offline
                         : m.AutoHuntEnabled ? PartyMemberStatus.Auto
                         : PartyMemberStatus.Online));
         var dto = new PartyUpdate(members.ToArray(), party.LootMode);
@@ -2294,10 +2384,19 @@ public class GameLoopService : BackgroundService
                 continue;
             }
 
+            // Link-dead grace: frozen in place, counting down to the normal removal. No AutoPilot,
+            // action, or movement.
+            if (entity.IsDisconnected)
+            {
+                if (--entity.DisconnectGraceTicks <= 0)
+                    _endGraceQueue.Add(entity.Id);
+                continue;
+            }
+
             if (entity.Kind == EntityKind.Player)
             {
                 AutoPilot(entity);   // auto-potions always; hunt loop if enabled (may queue a skill)
-                if (entity.AutoHuntEnabled)
+                if (entity.AutoHuntEnabled || entity.IsOfflineFarming)
                     TickAutoHuntBudget(entity);   // idle/offline runtime caps
             }
 
@@ -2328,6 +2427,12 @@ public class GameLoopService : BackgroundService
             foreach (var id in _endOfflineQueue)
                 EndOfflineSession(id);
             _endOfflineQueue.Clear();
+        }
+        if (_endGraceQueue.Count > 0)
+        {
+            foreach (var id in _endGraceQueue)
+                EndDisconnectGrace(id);
+            _endGraceQueue.Clear();
         }
 
         if (regenTick)
@@ -3815,6 +3920,14 @@ var effect = def.Effect;
         if (target.GodMode)
             return 0;
 
+        // Combat state: any damage dealt/taken (re)starts the 30s combat timer on the players
+        // involved (gates exit/teleport; drives the disconnect fate).
+        if (damage > 0)
+        {
+            if (target.Kind == EntityKind.Player) target.LastCombatTick = _tick;
+            if (attacker is { Kind: EntityKind.Player }) attacker.LastCombatTick = _tick;
+        }
+
         // Threat: damage to a mob from a known attacker builds aggro (retargets to top threat).
         if (attacker is not null && target.Kind == EntityKind.Mob && damage > 0)
             AddThreat(target, attacker, damage);
@@ -3909,10 +4022,12 @@ var effect = def.Effect;
         {
             CancelTradeFor(victim, notifyPartnerOnly: false);
             BroadcastSystem($"{victim.Name} was slain by {killer.Name}.");
-            // Death stops auto-hunt. An offline farmer's session ends (deferred logout); an online
-            // idle hunter just stops (can re-enable after respawn).
+            // Death stops auto-hunt. An offline farmer's session ends (deferred logout); a link-dead
+            // grace ends; an online idle hunter just stops (can re-enable after respawn).
             if (victim.IsOfflineFarming)
                 _endOfflineQueue.Add(victim.Id);
+            else if (victim.IsDisconnected)
+                _endGraceQueue.Add(victim.Id);
             else if (victim.AutoHuntEnabled)
                 StopAutoHunt(victim, "you were defeated.", locked: false);
         }

@@ -7,6 +7,32 @@ this file.
 
 ---
 
+## To test now (disconnect / exit / combat + Return — 2026-07-09)
+
+### Return skill + scrolls
+- [ ] Everyone has a **Return** skill (30s cast, 5min cd): channel it → teleport to the nearest town.
+  Taking **any** damage cancels it. Cast speed / cooldown buffs do NOT change its 30s/5min.
+- [ ] Buy a **Scroll of Return** from the Apothecary (500g); double-click it → 10s cast → teleport.
+  It's consumed on success, refunded if interrupted. Sells for 0.
+- [ ] (Debug-give) **Ultimate Scroll of Return** → ~instant cast return. Not sold/dropped.
+
+### Combat state + exit
+- [ ] **Exit Game** (Settings) works out of combat (app closes). During combat (dealt/took damage in
+  the last 30s) it's **blocked** with a message; 30s after the last hit you can exit.
+
+### Disconnect fates (use 2+ clients)
+- [ ] **Go Offline (Auto-Farm)** button → you return to account select and your char keeps farming
+  (offline), visible to others, until the 2h cap / death / relogin.
+- [ ] Drop while **auto-farming or in combat** (out of town) → offline farm (as above).
+- [ ] Drop while **out of combat, not auto-farming** → your char shows a **"⚠ Disconnected"** title
+  above its head to nearby players, stays frozen (not fighting) and **in your party** (OFFLINE tag)
+  for **180s**. Reconnect within 180s → resume seamlessly. After 180s → normal removal (leaves party).
+- [ ] A disconnected (grace) char that a mob kills is removed immediately.
+- [ ] Offline-FARMING chars still look like normal players to non-party (no Disconnected title);
+  only the grace state shows the title.
+
+---
+
 ## To test now (auto-hunt / idle farming — Phase 1, 2026-07-08)
 
 **⚠️ Schema change:** added the `AutoHuntJson` column → **delete `Game.Server/bin/Debug/net8.0/game.db`
