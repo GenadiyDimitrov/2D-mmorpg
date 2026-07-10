@@ -278,8 +278,36 @@
                 <Button Content="Exit Game" Height="34" Margin="0,0,0,8"
                         ToolTip="Log out. Blocked while in combat."
                         Click="SettingsExit_Click"/>
+                <Button Content="Debug Tuning (admin)" Height="34" Margin="0,0,0,8"
+                        ToolTip="Live-tune rates / karma / caps while playing (admin only)."
+                        Click="TuneOpen_Click"/>
                 <Button Content="Close" Height="28" Margin="0,8,0,0" Click="SettingsClose_Click"/>
             </StackPanel>
+        </Border>
+
+        <!-- Debug live-tuning panel (admin) -->
+        <Border x:Name="TunePanel"
+                Width="320" MaxHeight="520"
+                HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,70,0,0"
+                Background="#F0201818" CornerRadius="8" Padding="14"
+                Visibility="Collapsed">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="Debug Tuning (runtime only)"
+                           Foreground="White" FontSize="15" FontWeight="Bold" Margin="0,0,0,4"/>
+                <TextBlock DockPanel.Dock="Top" Text="Bake final values back into code defaults."
+                           Foreground="#FFB0A890" FontSize="10" Margin="0,0,0,8"/>
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                            HorizontalAlignment="Right" Margin="0,8,0,0">
+                    <Button Content="Refresh" Width="80" Height="26" Margin="0,0,8,0"
+                            Click="TuneRefresh_Click"/>
+                    <Button Content="Apply" Width="80" Height="26" Margin="0,0,8,0"
+                            Click="TuneApply_Click"/>
+                    <Button Content="Close" Width="70" Height="26" Click="TuneClose_Click"/>
+                </StackPanel>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="TuneFields"/>
+                </ScrollViewer>
+            </DockPanel>
         </Border>
 
         <!-- Party window (top-left, below the player vitals / buff bar) -->

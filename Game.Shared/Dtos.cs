@@ -221,6 +221,13 @@ public record LogoutResult(bool Ok, string Reason);
 /// <summary>Server -> client: the player's PvP toggles + reputation (karma / kill counts) for the HUD.</summary>
 public record PvpState(bool Pvp, bool CounterAttack, int Karma = 0, int PkCount = 0, int PvpCount = 0);
 
+/// <summary>Admin-only live-tuning knobs (Debug settings panel). Runtime only — the final values get
+/// moved back into the code defaults. Round-trips both ways (server sends current, client applies).</summary>
+public record DebugConfigDto(
+    float ExpRate, float SpRate, float DropChanceRate, float DropAmountRate, float GoldRate,
+    int KarmaBase, float KarmaConsecGrowth, float KarmaLevelGrowth, int KarmaLossPerDeath, int KarmaLossPerMob,
+    int IdleCapSeconds, int OfflineCapSeconds, int GraceSeconds);
+
 /// <summary>One member row in the party window.</summary>
 public record PartyMemberDto(Guid Id, string Name, int Level, string ClassName,
     int Hp, int MaxHp, int Mp, int MaxMp, bool IsLeader,

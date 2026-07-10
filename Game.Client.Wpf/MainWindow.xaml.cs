@@ -109,6 +109,7 @@ public partial class MainWindow : Window
         _net.AutoConfigReceived += c => Dispatcher.BeginInvoke(() => OnAutoConfig(c));
         _net.LogoutResultReceived += r => Dispatcher.BeginInvoke(() => OnLogoutResult(r));
         _net.PvpStateReceived += s => Dispatcher.BeginInvoke(() => OnPvpState(s));
+        _net.DebugConfigReceived += c => Dispatcher.BeginInvoke(() => OnDebugConfig(c));
         _net.EnchantReceived += en => Dispatcher.BeginInvoke(() => OnEnchant(en));
         _net.RerollReceived += r => Dispatcher.BeginInvoke(() => OnReroll(r));
         _net.ForceDisconnected += reason => Dispatcher.BeginInvoke(() =>

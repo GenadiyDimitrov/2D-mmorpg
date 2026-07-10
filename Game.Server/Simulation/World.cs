@@ -237,6 +237,8 @@ public record LogoutCmd(string ConnectionId) : IGameCommand;
 public record StartOfflineFarmCmd(string ConnectionId) : IGameCommand;
 public record TogglePvpCmd(string ConnectionId, bool Enabled) : IGameCommand;
 public record ToggleCounterAttackCmd(string ConnectionId, bool Enabled) : IGameCommand;
+public record RequestDebugConfigCmd(string ConnectionId) : IGameCommand;
+public record SetDebugConfigCmd(string ConnectionId, DebugConfigDto Config) : IGameCommand;
 
 public record TradeRequestCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 public record TradeRespondCmd(string ConnectionId, bool Accept) : IGameCommand;

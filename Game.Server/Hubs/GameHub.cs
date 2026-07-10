@@ -330,6 +330,18 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task RequestDebugConfig()
+    {
+        _world.Commands.Enqueue(new RequestDebugConfigCmd(Context.ConnectionId));
+        return Task.CompletedTask;
+    }
+
+    public Task SetDebugConfig(DebugConfigDto config)
+    {
+        _world.Commands.Enqueue(new SetDebugConfigCmd(Context.ConnectionId, config));
+        return Task.CompletedTask;
+    }
+
     public Task TradeRequest(Guid targetId)
     {
         _world.Commands.Enqueue(new TradeRequestCmd(Context.ConnectionId, targetId));

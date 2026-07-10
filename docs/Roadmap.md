@@ -127,8 +127,12 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   skill with a reagent checks it up front and consumes it on cast completion (refunded on
   interrupt). Empty = casts freely. No skill uses it yet — assign to "ultimate" skills.
 - [ ] **Premium class-reset item** — lets a player undo the irreversible class-chain commitment.
-- [ ] **Client settings panel** — a first home for player preferences; will host the per-player
-  **default party loot mode** (parties currently hard-default to Random via `Party.DefaultLootMode`).
+- [~] **Client settings panel** — the Settings window gained a **Debug Tuning (admin)** page
+  (2026-07-10): live-edit `RateConfig` (exp/sp/drop-chance/drop-amount/gold) + karma
+  (base/×consec/×level/−death/−mob) + auto-hunt caps (idle/offline/grace in sec), server-authoritative
+  + admin-gated (`DebugConfigDto`, `Request/SetDebugConfig`). Runtime only — bake final values back into
+  the code defaults. Those karma/cap consts are now runtime fields. STILL TODO: real player-preference
+  settings (e.g. the per-player default party loot mode).
 
 ## LATER (bigger systems)
 

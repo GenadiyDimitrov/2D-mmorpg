@@ -35,6 +35,7 @@ public class NetworkChannel : IAsyncDisposable
     public event Action<AutoHuntConfigDto>? AutoConfigReceived;
     public event Action<LogoutResult>? LogoutResultReceived;
     public event Action<PvpState>? PvpStateReceived;
+    public event Action<DebugConfigDto>? DebugConfigReceived;
     public event Action<string>? Disconnected;
     public event Action<string>? ForceDisconnected;
 
@@ -74,6 +75,7 @@ public class NetworkChannel : IAsyncDisposable
         _connection.On<AutoHuntConfigDto>("AutoConfig", c => AutoConfigReceived?.Invoke(c));
         _connection.On<LogoutResult>("LogoutResult", r => LogoutResultReceived?.Invoke(r));
         _connection.On<PvpState>("PvpState", s => PvpStateReceived?.Invoke(s));
+        _connection.On<DebugConfigDto>("DebugConfig", c => DebugConfigReceived?.Invoke(c));
         _connection.On<string>("ForceDisconnect", reason => ForceDisconnected?.Invoke(reason));
         _connection.Closed += ex =>
         {
@@ -237,6 +239,10 @@ public class NetworkChannel : IAsyncDisposable
     public Task TogglePvpAsync(bool enabled) => _connection!.SendAsync("TogglePvp", enabled);
 
     public Task ToggleCounterAttackAsync(bool enabled) => _connection!.SendAsync("ToggleCounterAttack", enabled);
+
+    public Task RequestDebugConfigAsync() => _connection!.SendAsync("RequestDebugConfig");
+
+    public Task SetDebugConfigAsync(DebugConfigDto config) => _connection!.SendAsync("SetDebugConfig", config);
 
     public Task TradeRequestAsync(Guid targetId) =>
         _connection!.SendAsync("TradeRequest", targetId);

@@ -77,6 +77,14 @@ this file.
 - [ ] Auto-hunt while offline still obeys the shared potion cooldown, buff-potion top-up, and skill
   conditions (same brain as online).
 
+### Debug Tuning panel (2026-07-10) — live tuning while you play
+- [ ] Settings → **Debug Tuning (admin)** opens a panel of live values (rates, karma, caps).
+- [ ] Change **Exp/Drop rates** + Apply → next kills/drops use the new rate immediately.
+- [ ] Change **karma** values (base / ×consec / ×level / −death / −mob) + Apply → next PK/death/mob-kill
+  uses them. Change **idle/offline/grace** caps (seconds) + Apply → observe a cap/grace fire quickly.
+- [ ] Values are runtime-only (reset on server restart) — bake the finals into the code defaults.
+- [ ] Non-admins: the panel does nothing (server refuses).
+
 ### PvP + flag/karma/PK (2026-07-10) — ⚠ delete game.db first (new karma columns)
 - [ ] Top-right **PvP** and **Counter** toggle buttons (tint when on).
 - [ ] With **PvP: On**, attack another player **outside a town** → you turn **purple** (name), the

@@ -121,6 +121,8 @@ public class GameLoopService : BackgroundService
                 case StartOfflineFarmCmd c: HandleStartOfflineFarm(c); break;
                 case TogglePvpCmd c: HandleTogglePvp(c); break;
                 case ToggleCounterAttackCmd c: HandleToggleCounterAttack(c); break;
+                case RequestDebugConfigCmd c: HandleRequestDebugConfig(c); break;
+                case SetDebugConfigCmd c: HandleSetDebugConfig(c); break;
                 case ChatCmd c: HandleChat(c); break;
             }
         }
@@ -181,10 +183,9 @@ public class GameLoopService : BackgroundService
         _log.LogInformation("Player {Name} entered (char {Id})", entity.Name, entity.PersistentId);
     }
 
-    // Combat state decays 30s after the last damage; the disconnect grace runs 180s (or ~15s under
-    // /testcaps).
+    // Combat state decays 30s after the last damage; the disconnect grace = _graceSeconds.
     private const int CombatDecayTicks = 300;
-    private int DisconnectGraceLimit => _debugShortCaps ? 15 * GameConstants.TickRate : 1800;
+    private int DisconnectGraceLimit => _graceSeconds * GameConstants.TickRate;
 
     /// <summary>A player is "in combat" for 30s after the last damage dealt/taken.</summary>
     private bool IsInCombat(Entity e) =>
@@ -313,13 +314,14 @@ public class GameLoopService : BackgroundService
         BroadcastSystem($"{player.Name} keeps hunting while away.");
     }
 
-    // ----- PvP / flag / karma (L2-style). ALL TUNABLE — one place. -----
+    // ----- PvP / flag / karma (L2-style). Runtime-tunable via the Debug settings panel; the values
+    // here are the code DEFAULTS (move final picks back into these initializers). -----
     private const int PvpFlagTicks = 600;   // 60s purple flag after a pvp action
-    private const int KarmaBase = 200;              // karma for a 1st, same-level innocent kill
-    private const double KarmaConsecGrowth = 1.1;   // ×per consecutive PK  (+10% each)
-    private const double KarmaLevelGrowth = 1.2;    // ×per level the victim is BELOW the killer (+20%)
-    private const int KarmaLossPerDeath = 200;      // karma shed on each death
-    private const int KarmaLossPerMob = 20;         // karma shed per mob kill (grind it off while farming)
+    private int _karmaBase = 200;              // karma for a 1st, same-level innocent kill
+    private double _karmaConsecGrowth = 1.1;   // ×per consecutive PK  (+10% each)
+    private double _karmaLevelGrowth = 1.2;    // ×per level the victim is BELOW the killer (+20%)
+    private int _karmaLossPerDeath = 200;      // karma shed on each death
+    private int _karmaLossPerMob = 20;         // karma shed per mob kill (grind it off while farming)
 
     /// <summary>A player's name state: red (karma), else purple (recent pvp), else white.</summary>
     private PvpFlag FlagOf(Entity p) =>
@@ -350,6 +352,41 @@ public class GameLoopService : BackgroundService
     private void SendPvpState(Entity p) =>
         SendTo(p, "PvpState", new PvpState(p.PvpEnabled, p.CounterAttack, p.Karma, p.PkCount, p.PvpCount));
 
+    // ----- Debug live-tuning (admin only) -----
+    private DebugConfigDto CurrentDebugConfig() => new(
+        RateConfig.ExpRate, RateConfig.SpRate, RateConfig.DropChanceRate, RateConfig.DropAmountRate,
+        RateConfig.GoldAmountRate,
+        _karmaBase, (float)_karmaConsecGrowth, (float)_karmaLevelGrowth, _karmaLossPerDeath, _karmaLossPerMob,
+        _idleCapSeconds, _offlineCapSeconds, _graceSeconds);
+
+    private void HandleRequestDebugConfig(RequestDebugConfigCmd cmd)
+    {
+        if (TryGetPlayer(cmd.ConnectionId, out var p) && p.IsAdmin)
+            SendTo(p, "DebugConfig", CurrentDebugConfig());
+    }
+
+    private void HandleSetDebugConfig(SetDebugConfigCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var p) || !p.IsAdmin)
+            return;
+        var c = cmd.Config;
+        RateConfig.ExpRate        = Math.Max(0f, c.ExpRate);
+        RateConfig.SpRate         = Math.Max(0f, c.SpRate);
+        RateConfig.DropChanceRate = Math.Max(0f, c.DropChanceRate);
+        RateConfig.DropAmountRate = Math.Max(0f, c.DropAmountRate);
+        RateConfig.GoldAmountRate = Math.Max(0f, c.GoldRate);
+        _karmaBase          = Math.Max(0, c.KarmaBase);
+        _karmaConsecGrowth  = Math.Max(1.0, c.KarmaConsecGrowth);
+        _karmaLevelGrowth   = Math.Max(1.0, c.KarmaLevelGrowth);
+        _karmaLossPerDeath  = Math.Max(0, c.KarmaLossPerDeath);
+        _karmaLossPerMob    = Math.Max(0, c.KarmaLossPerMob);
+        _idleCapSeconds     = Math.Clamp(c.IdleCapSeconds, 5, 24 * 3600);
+        _offlineCapSeconds  = Math.Clamp(c.OfflineCapSeconds, 5, 24 * 3600);
+        _graceSeconds       = Math.Clamp(c.GraceSeconds, 5, 3600);
+        SendSystemToEntity(p, "[DEBUG] Tuning applied (runtime only — bake final values into code).");
+        SendTo(p, "DebugConfig", CurrentDebugConfig());   // echo back the clamped values
+    }
+
     /// <summary>May 'attacker' damage 'target'? A mob on either side = always (normal PvE). Player→
     /// player requires out of safe zones, and: a RED/PURPLE target is freely attackable (retaliation
     /// / executing an outlaw), while attacking an INNOCENT (white) needs the PvP opt-in.</summary>
@@ -371,9 +408,9 @@ public class GameLoopService : BackgroundService
         if (FlagOf(victim) == PvpFlag.Innocent)
         {
             int diff = Math.Max(0, killer.Level - victim.Level);
-            int gain = (int)(KarmaBase
-                * Math.Pow(KarmaConsecGrowth, killer.ConsecutivePk)
-                * Math.Pow(KarmaLevelGrowth, diff));
+            int gain = (int)(_karmaBase
+                * Math.Pow(_karmaConsecGrowth, killer.ConsecutivePk)
+                * Math.Pow(_karmaLevelGrowth, diff));
             killer.Karma += gain;
             killer.ConsecutivePk++;
             killer.PkCount++;
@@ -1829,15 +1866,13 @@ public class GameLoopService : BackgroundService
     private const float AutoChaseMargin = 400f;
     private const float AutoReturnEpsilon = 150f;
 
-    // Debug: /testcaps shrinks the idle/offline caps + the disconnect grace to seconds so they can
-    // be observed in a short test session (see HandleAdminCommand).
-    private bool _debugShortCaps;
-
-    // Runtime caps (docs/AutoHunt.md): online idle 8h, offline 2h. Hitting a cap stops + locks
-    // auto-hunt (until re-log). Purchasable extensions (12h / 4h) are a future hook — swap these
-    // constant reads for a per-character premium value when the shop item exists.
-    private long AutoIdleCapTicks(Entity p) => _debugShortCaps ? 30 * GameConstants.TickRate : 8L * 3600 * GameConstants.TickRate;
-    private long AutoOfflineCapTicks(Entity p) => _debugShortCaps ? 20 * GameConstants.TickRate : 2L * 3600 * GameConstants.TickRate;
+    // Runtime caps (docs/AutoHunt.md): online idle 8h, offline 2h; disconnect grace 180s. Tunable in
+    // seconds via the Debug panel / /testcaps. Purchasable extensions (12h/4h) are a future hook.
+    private int _idleCapSeconds = 8 * 3600;
+    private int _offlineCapSeconds = 2 * 3600;
+    private int _graceSeconds = 180;
+    private long AutoIdleCapTicks(Entity p) => (long)_idleCapSeconds * GameConstants.TickRate;
+    private long AutoOfflineCapTicks(Entity p) => (long)_offlineCapSeconds * GameConstants.TickRate;
 
     // Offline sessions that hit their cap / died this tick — removed after the entity loop so we
     // never mutate _world.Entities while iterating it.
@@ -2499,8 +2534,10 @@ public class GameLoopService : BackgroundService
                 break;
 
             case "testcaps":
-                _debugShortCaps = arg is not ("off" or "0" or "false");
-                SendSystemToEntity(admin, _debugShortCaps
+                bool shortCaps = arg is not ("off" or "0" or "false");
+                (_idleCapSeconds, _offlineCapSeconds, _graceSeconds) = shortCaps
+                    ? (30, 20, 15) : (8 * 3600, 2 * 3600, 180);
+                SendSystemToEntity(admin, shortCaps
                     ? "[DEBUG] Short caps ON: idle 30s / offline 20s / disconnect grace 15s."
                     : "[DEBUG] Short caps OFF: idle 8h / offline 2h / grace 180s.");
                 break;
@@ -4283,7 +4320,7 @@ var effect = def.Effect;
                 foreach (var m in KillCreditMembers(killer))
                     AdvanceKillQuests(m, victim);
                 // A PK works off karma by grinding — each mob kill sheds a little.
-                ReduceKarma(killer, KarmaLossPerMob);
+                ReduceKarma(killer, _karmaLossPerMob);
             }
 
             OnMobKilled(victim);
@@ -4298,7 +4335,7 @@ var effect = def.Effect;
                 ApplyPvpKill(killer, victim);
 
             // Any death sheds a big chunk of a PK's karma (the red flag clears at 0).
-            ReduceKarma(victim, KarmaLossPerDeath);
+            ReduceKarma(victim, _karmaLossPerDeath);
 
             // Death stops auto-hunt. An offline farmer's session ends (deferred logout); a link-dead
             // grace ends; an online idle hunter just stops (can re-enable after respawn).
