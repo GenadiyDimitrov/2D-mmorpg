@@ -147,6 +147,9 @@ public class GameLoopService : BackgroundService
             entity.Y = Math.Clamp(entity.Y, 0, GameConstants.ZoneHeight);
             _world.Entities[entity.Id] = entity;
             _world.Grid.Add(entity);
+            // Anchor the static-spot centre at the login position (persisted auto-hunt has no saved centre).
+            entity.FarmCenterX = entity.X;
+            entity.FarmCenterY = entity.Y;
         }
 
         _world.EntityToConnection[entity.Id] = cmd.ConnectionId;
@@ -298,6 +301,7 @@ public class GameLoopService : BackgroundService
             return;
         player.AutoHuntEnabled = true;
         player.AutoHuntLocked = false;
+        player.FarmCenterX = player.X; player.FarmCenterY = player.Y;   // anchor the static circle here
         // Tell the client (it returns to the account screen), then drop the connection + go offline.
         _ = _hub.Clients.Client(cmd.ConnectionId).SendAsync("ForceDisconnect", "You are now farming offline.");
         _world.ConnectionToEntity.Remove(cmd.ConnectionId);
@@ -1714,8 +1718,10 @@ public class GameLoopService : BackgroundService
 
     // ----- Auto-hunt / idle farming (docs/AutoHunt.md) -------------------------
 
-    // How far the auto-hunt scans for a mob to engage.
-    private const float AutoHuntScanRange = 900f;
+    // Roaming: how far past the farm circle a current target may be chased (soft static spot), and
+    // how close to the static centre counts as "back home".
+    private const float AutoChaseMargin = 400f;
+    private const float AutoReturnEpsilon = 150f;
 
     // Debug: /testcaps shrinks the idle/offline caps + the disconnect grace to seconds so they can
     // be observed in a short test session (see HandleAdminCommand).
@@ -1752,7 +1758,13 @@ public class GameLoopService : BackgroundService
         p.AutoBuffPotionIds.Clear();
         foreach (var id in c.BuffPotionIds ?? Array.Empty<string>())
             p.AutoBuffPotionIds.Add(id);
+        p.AutoFarmRange   = Math.Clamp(c.FarmRange, 200, 2000);
+        p.AutoFarmStatic  = c.StaticSpot;
+        p.AutoAttackNormal = c.AttackNormal;
+        p.AutoAttackElite = c.AttackElite;
+        p.AutoAttackBoss  = c.AttackBoss;
         p.AutoReadyTick.Clear();
+        if (p.AutoHuntEnabled) { p.FarmCenterX = p.X; p.FarmCenterY = p.Y; }   // (re)anchor the static circle
         SendAutoHuntStatus(p);   // persisted by the normal autosave/logout snapshot
     }
 
@@ -1767,6 +1779,7 @@ public class GameLoopService : BackgroundService
             return;
         }
         p.AutoHuntEnabled = cmd.Enabled;
+        if (p.AutoHuntEnabled) { p.FarmCenterX = p.X; p.FarmCenterY = p.Y; }   // anchor the static circle here
         SendAutoHuntConfig(p);
         SendAutoHuntStatus(p);
         if (_world.Parties.TryGetValue(p.Id, out var pty))
@@ -1786,20 +1799,73 @@ public class GameLoopService : BackgroundService
             return;   // let an in-progress cast/queue resolve
 
         var target = ValidAutoTarget(p) ?? AcquireAutoTarget(p);
+        bool basic = AutoBasicAttackEnabled(p);
         if (target is not null)
         {
             p.CombatTargetId = target.Id;
-            p.Engaged = true;
+            p.Engaged = basic;   // only auto BASIC-attack if the Basic Attack row is enabled
         }
-
-        // Buffs/heals need no target; attack/debuff do. A queued skill is cast by UpdateAction;
-        // otherwise the basic auto-attack (driven by Engaged) carries the fight.
-        if (TryAutoSkill(p, target))
-            return;
-        if (target is null)
+        else
         {
             p.Engaged = false;
             p.CombatTargetId = null;
+        }
+
+        // A queued skill (buffs/heals need no target; attack/debuff do) is cast+chased by UpdateAction.
+        if (TryAutoSkill(p, target))
+            return;
+
+        if (target is not null)
+        {
+            // Have a target but nothing to cast this tick. Basic on → UpdateAutoAttack (via Engaged)
+            // handles it. Basic off (mage) → walk toward the target so a skill can land when ready.
+            if (!basic)
+            {
+                p.TargetX = target.X;
+                p.TargetY = target.Y;
+            }
+            return;
+        }
+
+        // No target in the farm circle → roam (or return to the static centre).
+        AutoRoam(p);
+    }
+
+    /// <summary>"Basic Attack" opted into the auto-skill list — the auto-hunt may melee.</summary>
+    private static bool AutoBasicAttackEnabled(Entity p) =>
+        p.AutoSkills.Any(s => s.Enabled && s.SkillId == AutoHuntIds.BasicAttack);
+
+    /// <summary>Whether the config permits engaging this mob's rank (mobs / elites / bosses).</summary>
+    private static bool CanAttackRank(Entity p, Entity mob) => mob.Rank switch
+    {
+        MobRank.Boss  => p.AutoAttackBoss,
+        MobRank.Elite => p.AutoAttackElite,
+        _             => p.AutoAttackNormal,
+    };
+
+    /// <summary>Move when there's nothing to fight: static spot → walk back to the centre; roam →
+    /// wander to a fresh random point within the farm range (re-scanning as it goes).</summary>
+    private void AutoRoam(Entity p)
+    {
+        if (p.AutoFarmStatic)
+        {
+            float dx = p.FarmCenterX - p.X, dy = p.FarmCenterY - p.Y;
+            if (dx * dx + dy * dy > AutoReturnEpsilon * AutoReturnEpsilon)
+            {
+                p.TargetX = p.FarmCenterX;
+                p.TargetY = p.FarmCenterY;
+            }
+            else { p.TargetX = null; p.TargetY = null; }
+            return;
+        }
+        if (p.TargetX is null)   // reached the last roam point (or idle) → pick a new one
+        {
+            double ang = _rng.NextDouble() * Math.PI * 2;
+            float dist = p.AutoFarmRange * (0.4f + 0.6f * (float)_rng.NextDouble());
+            var (rx, ry) = WorldMap.ClampToBorder(
+                p.X + (float)(Math.Cos(ang) * dist), p.Y + (float)(Math.Sin(ang) * dist));
+            p.TargetX = rx;
+            p.TargetY = ry;
         }
     }
 
@@ -1854,27 +1920,42 @@ public class GameLoopService : BackgroundService
     /// <summary>Mana potions aren't in the catalog yet — reserved for when they are.</summary>
     private static InventoryItem? BestManaPotion(Entity p) => null;
 
-    /// <summary>The current combat target if it's still a valid auto-hunt victim, else null.</summary>
+    /// <summary>The farm-circle centre: the character in roam mode, the fixed start point in static.</summary>
+    private static (float X, float Y) FarmCenter(Entity p) =>
+        p.AutoFarmStatic ? (p.FarmCenterX, p.FarmCenterY) : (p.X, p.Y);
+
+    /// <summary>The current combat target if it's still a valid auto-hunt victim. Kept within the
+    /// farm circle PLUS a soft chase margin (so a kited mob can be chased a bit outside).</summary>
     private Entity? ValidAutoTarget(Entity p)
     {
         if (p.CombatTargetId is Guid tid && _world.Entities.TryGetValue(tid, out var t) &&
             t.Kind == EntityKind.Mob && !t.Dead && !t.TrainingDummy &&
-            !GameConstants.InSafeZone(t.X, t.Y) &&
-            DistanceSq(p, t) <= AutoHuntScanRange * AutoHuntScanRange)
-            return t;
+            !GameConstants.InSafeZone(t.X, t.Y) && CanAttackRank(p, t))
+        {
+            var (cx, cy) = FarmCenter(p);
+            float margin = p.AutoFarmRange + AutoChaseMargin;
+            float dx = t.X - cx, dy = t.Y - cy;
+            if (dx * dx + dy * dy <= margin * margin)
+                return t;
+        }
         return null;
     }
 
-    /// <summary>Nearest attackable mob within scan range (skips dummies, dead, safe-zone).</summary>
+    /// <summary>Nearest attackable mob INSIDE the farm circle (centre = char in roam / start in
+    /// static), matching the rank filter; skips dummies, dead, safe-zone.</summary>
     private Entity? AcquireAutoTarget(Entity p)
     {
+        var (cx, cy) = FarmCenter(p);
+        float rangeSq = (float)p.AutoFarmRange * p.AutoFarmRange;
         Entity? best = null;
-        float bestSq = AutoHuntScanRange * AutoHuntScanRange;
+        float bestSq = float.MaxValue;
         foreach (var e in _world.Grid.Nearby(p))
         {
             if (e.Kind != EntityKind.Mob || e.Dead || e.TrainingDummy) continue;
-            if (GameConstants.InSafeZone(e.X, e.Y)) continue;
-            float d = DistanceSq(p, e);
+            if (GameConstants.InSafeZone(e.X, e.Y) || !CanAttackRank(p, e)) continue;
+            float ecx = e.X - cx, ecy = e.Y - cy;
+            if (ecx * ecx + ecy * ecy > rangeSq) continue;   // inside the farm circle only
+            float d = DistanceSq(p, e);                       // pick the closest to the character
             if (d < bestSq) { bestSq = d; best = e; }
         }
         return best;
@@ -1973,7 +2054,8 @@ public class GameLoopService : BackgroundService
     private void SendAutoHuntConfig(Entity p) =>
         SendTo(p, "AutoConfig", new AutoHuntConfigDto(
             p.AutoHuntEnabled, p.AutoHpPotionPct, p.AutoMpPotionPct, p.AutoBuffPotions,
-            p.AutoSkills.ToArray(), p.AutoBuffPotionIds.ToArray()));
+            p.AutoSkills.ToArray(), p.AutoBuffPotionIds.ToArray(),
+            p.AutoFarmRange, p.AutoFarmStatic, p.AutoAttackNormal, p.AutoAttackElite, p.AutoAttackBoss));
 
     /// <summary>Advance the auto-hunt runtime cap for a player. Online = the idle cap (stop + lock);
     /// offline = the offline cap (queue a logout). Called each tick while auto-hunt is enabled.</summary>

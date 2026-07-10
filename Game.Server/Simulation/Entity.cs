@@ -562,6 +562,15 @@ public class Entity
     public bool AutoBuffPotions { get; set; }
     public List<AutoSkillDto> AutoSkills { get; } = new();
     public List<string> AutoBuffPotionIds { get; } = new();
+    // Roaming config (docs/AutoHunt.md roaming spec).
+    public int AutoFarmRange { get; set; } = 1000;
+    public bool AutoFarmStatic { get; set; }             // false = roam, true = fixed circle at start
+    public bool AutoAttackNormal { get; set; } = true;
+    public bool AutoAttackElite { get; set; }
+    public bool AutoAttackBoss { get; set; }
+    /// <summary>Static-spot centre (the position auto-hunt was last enabled at).</summary>
+    public float FarmCenterX { get; set; }
+    public float FarmCenterY { get; set; }
     /// <summary>Per-skill earliest auto-recast tick (base reuse + the user's extra delay).</summary>
     public Dictionary<string, long> AutoReadyTick { get; } = new();
     /// <summary>Disconnected but still auto-hunting in the world (no connection = no UI pushes).</summary>

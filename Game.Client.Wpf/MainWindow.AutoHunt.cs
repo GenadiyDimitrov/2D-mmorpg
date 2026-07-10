@@ -55,6 +55,8 @@ public partial class MainWindow
     private async void AutoHuntEnabled_Click(object sender, RoutedEventArgs e) =>
         await _net.ToggleAutoHuntAsync(AutoHuntEnabledCheck.IsChecked == true);
 
+    private CheckBox? _autoBasicCheck;   // "Basic Attack" opt-in (a pseudo auto-skill)
+
     private void BuildAutoHuntWindow()
     {
         AutoHpPctBox.Text = (_autoConfig?.HpPotionPct ?? 0).ToString(CultureInfo.InvariantCulture);
@@ -62,12 +64,28 @@ public partial class MainWindow
         AutoBuffPotionsCheck.IsChecked = _autoConfig?.AutoBuffPotions ?? false;
         AutoHuntEnabledCheck.IsChecked = _autoConfig?.Enabled ?? false;
 
+        AutoFarmRangeBox.Text = (_autoConfig?.FarmRange ?? 1000).ToString(CultureInfo.InvariantCulture);
+        AutoStaticCheck.IsChecked = _autoConfig?.StaticSpot ?? false;
+        AutoRankNormal.IsChecked = _autoConfig?.AttackNormal ?? true;
+        AutoRankElite.IsChecked = _autoConfig?.AttackElite ?? false;
+        AutoRankBoss.IsChecked = _autoConfig?.AttackBoss ?? false;
+
         _autoRows.Clear();
         AutoSkillsList.Items.Clear();
 
-        // Ordered: configured skills first (priority preserved), then any other learned skills.
         var cfg = _autoConfig?.Skills ?? Array.Empty<AutoSkillDto>();
         var cfgById = cfg.ToDictionary(s => s.SkillId, s => s);
+
+        // "Basic Attack" pseudo-row first: melee when no skill is ready (fighters on, mages off).
+        _autoBasicCheck = new CheckBox
+        {
+            Content = "Basic Attack (melee when no skill is ready)",
+            Foreground = Brushes.White, FontSize = 12, Margin = new Thickness(0, 2, 0, 4),
+            IsChecked = cfgById.TryGetValue(AutoHuntIds.BasicAttack, out var ba) && ba.Enabled
+        };
+        AutoSkillsList.Items.Add(_autoBasicCheck);
+
+        // Then real skills: configured order first (priority preserved), then any other learned.
         var ordered = new List<string>();
         foreach (var s in cfg)
             if (_learnedSkills.Contains(s.SkillId) && !ordered.Contains(s.SkillId))
@@ -138,6 +156,9 @@ public partial class MainWindow
     private async void AutoHuntApply_Click(object sender, RoutedEventArgs e)
     {
         var skills = new List<AutoSkillDto>();
+        // Basic Attack pseudo-skill (opt-in melee).
+        if (_autoBasicCheck is not null)
+            skills.Add(new AutoSkillDto(AutoHuntIds.BasicAttack, _autoBasicCheck.IsChecked == true, 0));
         foreach (var (skillId, enabledBox, reuseBox) in _autoRows)
         {
             // Convert the desired total reuse (s) back to an EXTRA delay over the skill's default.
@@ -153,7 +174,12 @@ public partial class MainWindow
             ParsePct(AutoMpPctBox.Text),
             AutoBuffPotionsCheck.IsChecked == true,
             skills.ToArray(),
-            Array.Empty<string>());   // empty = keep ALL buff potions up (server convenience)
+            Array.Empty<string>(),   // empty = keep ALL buff potions up (server convenience)
+            FarmRange: ParseRange(AutoFarmRangeBox.Text),
+            StaticSpot: AutoStaticCheck.IsChecked == true,
+            AttackNormal: AutoRankNormal.IsChecked == true,
+            AttackElite: AutoRankElite.IsChecked == true,
+            AttackBoss: AutoRankBoss.IsChecked == true);
 
         _autoConfig = cfg;
         await _net.SetAutoHuntConfigAsync(cfg);
@@ -174,6 +200,10 @@ public partial class MainWindow
     private static int ParsePct(string text) =>
         int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out int v)
             ? Math.Clamp(v, 0, 100) : 0;
+
+    private static int ParseRange(string text) =>
+        int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out int v)
+            ? Math.Clamp(v, 200, 2000) : 1000;
 
     private static int SecondsToTicks(string text) =>
         float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float s)

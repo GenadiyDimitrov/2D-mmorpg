@@ -182,14 +182,28 @@ public record PartyLootVoteDto(LootMode Mode, string RequestedBy, bool Open = tr
 public record AutoSkillDto(string SkillId, bool Enabled, int ExtraDelayTicks);
 
 /// <summary>Client -> server: the character's full auto-hunt configuration. The use CONDITION for
-/// each skill is inferred server-side (buff→if missing, debuff→if target lacks, attack→on cd).</summary>
+/// each skill is inferred server-side (buff→if missing, debuff→if target lacks, attack→on cd). The
+/// new roaming fields default to sensible values until a settings window exposes them.</summary>
 public record AutoHuntConfigDto(
     bool Enabled,
     int HpPotionPct,
     int MpPotionPct,
     bool AutoBuffPotions,
     AutoSkillDto[] Skills,
-    string[] BuffPotionIds);
+    string[] BuffPotionIds,
+    int FarmRange = 1000,          // radius the auto-hunt searches (clamped [200, 2000])
+    bool StaticSpot = false,       // false = roam (scan follows the char); true = fixed circle at the start
+    bool AttackNormal = true,      // engage normal-rank mobs
+    bool AttackElite = false,      // engage elites
+    bool AttackBoss = false);      // engage bosses
+
+/// <summary>The pseudo skill-id for "basic attack" as an opt-in auto action: put it in
+/// <see cref="AutoHuntConfigDto.Skills"/> (enabled) and the auto-hunt will melee when no real skill
+/// is ready; leave it out/disabled and the character only casts skills (mage style).</summary>
+public static class AutoHuntIds
+{
+    public const string BasicAttack = "basic_attack";
+}
 
 /// <summary>Server -> client HUD: an enabled auto-skill's effective reuse and its MP/s draw.</summary>
 public record AutoSkillReuse(string SkillId, string Name, float ReuseSeconds, float MpPerSec);

@@ -285,6 +285,11 @@ public class PersistenceService
                         entity.AutoSkills.Add(s);
                     foreach (var id in cfg.BuffPotionIds ?? Array.Empty<string>())
                         entity.AutoBuffPotionIds.Add(id);
+                    entity.AutoFarmRange = cfg.FarmRange <= 0 ? 1000 : Math.Clamp(cfg.FarmRange, 200, 2000);
+                    entity.AutoFarmStatic = cfg.StaticSpot;
+                    entity.AutoAttackNormal = cfg.AttackNormal;
+                    entity.AutoAttackElite = cfg.AttackElite;
+                    entity.AutoAttackBoss = cfg.AttackBoss;
                 }
             }
             catch { /* ignore malformed auto-hunt json */ }
@@ -341,7 +346,8 @@ public class PersistenceService
                 string.Join(',', e.KnownRecipes),
                 JsonSerializer.Serialize(new AutoHuntConfigDto(
                     e.AutoHuntEnabled, e.AutoHpPotionPct, e.AutoMpPotionPct, e.AutoBuffPotions,
-                    e.AutoSkills.ToArray(), e.AutoBuffPotionIds.ToArray())),
+                    e.AutoSkills.ToArray(), e.AutoBuffPotionIds.ToArray(),
+                    e.AutoFarmRange, e.AutoFarmStatic, e.AutoAttackNormal, e.AutoAttackElite, e.AutoAttackBoss)),
                 items);
         }
     }

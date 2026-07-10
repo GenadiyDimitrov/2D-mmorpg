@@ -673,6 +673,27 @@
                           Content="Keep buff potions active" Foreground="#FFCFC8B0" FontSize="12"
                           Margin="0,0,0,8"/>
 
+                <!-- Roaming: range + mode + which mob ranks -->
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,6">
+                    <TextBlock Text="Farm range" Foreground="#FFCFC8B0" FontSize="12"
+                               VerticalAlignment="Center"/>
+                    <TextBox x:Name="AutoFarmRangeBox" Width="52" Height="22" Margin="4,0,10,0"
+                             Text="1000" TextAlignment="Center"
+                             ToolTip="Search radius (200–2000)."/>
+                    <CheckBox x:Name="AutoStaticCheck" Content="Static spot" Foreground="#FFCFC8B0"
+                              FontSize="12" VerticalAlignment="Center"
+                              ToolTip="On = fixed circle at where you start; off = roam around you."/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="Attack:" Foreground="#FFCFC8B0" FontSize="12"
+                               VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <CheckBox x:Name="AutoRankNormal" Content="Mobs" Foreground="#FFCFC8B0" FontSize="12"
+                              IsChecked="True" Margin="0,0,10,0"/>
+                    <CheckBox x:Name="AutoRankElite" Content="Elites" Foreground="#FFCFC8B0" FontSize="12"
+                              Margin="0,0,10,0"/>
+                    <CheckBox x:Name="AutoRankBoss" Content="Bosses" Foreground="#FFCFC8B0" FontSize="12"/>
+                </StackPanel>
+
                 <TextBlock DockPanel.Dock="Top" Text="Skills (top = highest priority)"
                            Foreground="#FFAEB89A" FontSize="11" Margin="0,0,0,4"/>
 

@@ -77,6 +77,18 @@ this file.
 - [ ] Auto-hunt while offline still obeys the shared potion cooldown, buff-potion top-up, and skill
   conditions (same brain as online).
 
+### Roaming + target filters (2026-07-10)
+- [ ] Auto-Hunt window now has a **Farm range** box, a **Static spot** checkbox, **Mobs/Elites/Bosses**
+  checkboxes, and a **Basic Attack** row atop the skill list.
+- [ ] **Roaming** (Static off): with auto on and no mob nearby, the character **wanders** within the
+  farm range and engages mobs it finds; the search circle follows you.
+- [ ] **Static spot** (on): it only engages mobs within the circle centered where you turned auto on;
+  when none are left it **walks back to the center**. It may chase a fleeing mob slightly outside.
+- [ ] **Rank filter**: with only **Mobs** checked it ignores elites/bosses; tick Elites/Bosses to include them.
+- [ ] **Basic Attack** row: fighters tick it → they melee when no skill is ready. A **mage unticks it**
+  → it only casts skills and never melees (walks into skill range instead).
+- [ ] Settings survive relog (persisted).
+
 ### Party + AFK interaction (2026-07-08)
 - [ ] You **can't invite** a player who is auto-hunting (idle) or offline-farming — you get "X is
   auto-hunting and can't be invited right now."

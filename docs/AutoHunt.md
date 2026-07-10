@@ -91,7 +91,15 @@ an entity has no connection, so every UI push is skipped automatically) — no n
   hands off to an online member. Ending an offline session (`EndOfflineSession`) removes the member
   from the party; reconnecting keeps them in it.
 
+## Roaming + target filters (BUILT 2026-07-10)
+Config (defaults until a settings window): `FarmRange` (200–2000, default 1000), `StaticSpot`
+(false = roam / true = fixed circle at the start point), `AttackNormal/Elite/Boss`. Roam = the scan
+circle follows the character and it wanders when idle; static = only engage mobs inside the fixed
+circle and walk back to the centre when empty (with a soft chase margin). **Basic attack** is an opt-in
+pseudo-skill (`AutoHuntIds.BasicAttack`) in the skill list: on = melee when no skill is ready (fighters),
+off = skills-only (mages). Debug `/testcaps` shrinks the caps/grace to seconds for testing.
+
 ## Still deferred
-Roaming/pathing to find mobs when none are near, auto-heal of party members, per-skill target-type
+Full common-skills bar (sit/walk/dance placeable), auto-heal of party members, per-skill target-type
 overrides, a reduced idle/offline loot rate, drag-reorder skill priority, purchasable cap extensions,
 and a client "offline status / gains" summary.
