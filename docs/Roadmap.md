@@ -190,7 +190,10 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   visible/attackable, mobs aggro it); reconnect re-attaches. Runtime caps: **idle 8h / offline 2h**
   (constants; purchasable 12h/4h a hook); cap or **death** stops it (offline = deferred logout via
   `_endOfflineQueue`); idle cap locks re-enable until re-log. Design: `docs/AutoHunt.md`,
-  [[auto-hunt-design]]. Deferred: roaming, reorder-priority, purchasable extensions, PvP no-counter.
+  [[auto-hunt-design]]. Debug `/testcaps` shrinks caps+grace to seconds (2026-07-10). **NEXT: roaming**
+  (owner spec 2026-07-10 in [[auto-hunt-design]]): farm-range radius + roaming vs static-spot mode +
+  target-rank filter (mobs/elites/bosses) + basic-attack-as-an-auto-skill (mages skills-only, fighters
+  melee). Also deferred: reorder-priority, purchasable extensions, PvP no-counter, full common-skills bar.
 - [x] **Disconnect / exit / combat + Return** (owner spec, 2026-07-09; [[disconnect-exit-system]]).
   Combat state (30s decay off the last damage). Disconnect FATE (`HandleLeave`): offline-farm ONLY when
   genuinely offline-farming (auto on, not locked — the 2h cap's domain); everyone else alive → a 180s

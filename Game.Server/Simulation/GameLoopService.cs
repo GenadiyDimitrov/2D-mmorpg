@@ -175,9 +175,10 @@ public class GameLoopService : BackgroundService
         _log.LogInformation("Player {Name} entered (char {Id})", entity.Name, entity.PersistentId);
     }
 
-    // Combat state decays 30s after the last damage; the disconnect grace runs 180s.
+    // Combat state decays 30s after the last damage; the disconnect grace runs 180s (or ~15s under
+    // /testcaps).
     private const int CombatDecayTicks = 300;
-    private const int DisconnectGraceLimit = 1800;
+    private int DisconnectGraceLimit => _debugShortCaps ? 15 * GameConstants.TickRate : 1800;
 
     /// <summary>A player is "in combat" for 30s after the last damage dealt/taken.</summary>
     private bool IsInCombat(Entity e) =>
@@ -1716,11 +1717,15 @@ public class GameLoopService : BackgroundService
     // How far the auto-hunt scans for a mob to engage.
     private const float AutoHuntScanRange = 900f;
 
+    // Debug: /testcaps shrinks the idle/offline caps + the disconnect grace to seconds so they can
+    // be observed in a short test session (see HandleAdminCommand).
+    private bool _debugShortCaps;
+
     // Runtime caps (docs/AutoHunt.md): online idle 8h, offline 2h. Hitting a cap stops + locks
     // auto-hunt (until re-log). Purchasable extensions (12h / 4h) are a future hook — swap these
     // constant reads for a per-character premium value when the shop item exists.
-    private static long AutoIdleCapTicks(Entity p) => 8L * 3600 * GameConstants.TickRate;
-    private static long AutoOfflineCapTicks(Entity p) => 2L * 3600 * GameConstants.TickRate;
+    private long AutoIdleCapTicks(Entity p) => _debugShortCaps ? 30 * GameConstants.TickRate : 8L * 3600 * GameConstants.TickRate;
+    private long AutoOfflineCapTicks(Entity p) => _debugShortCaps ? 20 * GameConstants.TickRate : 2L * 3600 * GameConstants.TickRate;
 
     // Offline sessions that hit their cap / died this tick — removed after the entity loop so we
     // never mutate _world.Entities while iterating it.
@@ -2261,6 +2266,13 @@ public class GameLoopService : BackgroundService
                 if (FindOnlinePlayer(arg) is Entity who)
                     SendSystemToEntity(admin, $"{who.Name} is at ({(int)who.X}, {(int)who.Y}).");
                 else SendSystemToEntity(admin, $"{arg} is not online.");
+                break;
+
+            case "testcaps":
+                _debugShortCaps = arg is not ("off" or "0" or "false");
+                SendSystemToEntity(admin, _debugShortCaps
+                    ? "[DEBUG] Short caps ON: idle 30s / offline 20s / disconnect grace 15s."
+                    : "[DEBUG] Short caps OFF: idle 8h / offline 2h / grace 180s.");
                 break;
 
             default:
