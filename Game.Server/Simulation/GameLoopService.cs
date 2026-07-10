@@ -194,18 +194,19 @@ public class GameLoopService : BackgroundService
         if (!_world.Entities.TryGetValue(entityId, out var entity))
             return;
 
-        // Offline farm: auto-hunting (and not cap-locked) OR dropped mid-combat (anti-combat-log:
-        // you stay in the world, killable), while alive and out of town.
+        // Offline farm: ONLY genuine offline farming (auto-hunt on & not cap-locked), alive, out of
+        // town. This is the state the 2h offline cap governs.
         if (!entity.Dead && !GameConstants.InSafeZone(entity.X, entity.Y) &&
-            ((entity.AutoHuntEnabled && !entity.AutoHuntLocked) || IsInCombat(entity)))
+            entity.AutoHuntEnabled && !entity.AutoHuntLocked)
         {
             BeginOfflineFarm(entity);
             BroadcastSystem($"{entity.Name} keeps hunting while away.");
             return;
         }
 
-        // Out of combat, not auto: a link-dead GRACE window (stays in the party, frozen, no offline
-        // cap). Reconnect resumes; otherwise the normal removal runs when the grace expires.
+        // Everyone else who's alive → a link-dead GRACE (stays in the party, reconnect resumes). A
+        // mid-combat drop keeps defending its current fight (anti-combat-log) and the 180s grace
+        // timer is PAUSED until combat ends — NO 2h offline cap, NO forced re-enable.
         if (!entity.Dead && !entity.IsOfflineFarming && !entity.IsDisconnected)
         {
             BeginDisconnectGrace(entity);
@@ -238,12 +239,10 @@ public class GameLoopService : BackgroundService
     {
         entity.IsDisconnected = true;
         entity.DisconnectGraceTicks = DisconnectGraceLimit;
-        entity.Engaged = false;
-        entity.CombatTargetId = null;
         entity.QueuedSkillId = null;
-        entity.TargetX = null;
-        entity.TargetY = null;
         if (entity.CastingSkillId is not null) CancelCast(entity, startCooldown: false);
+        // Engaged/CombatTargetId are KEPT: a mid-combat drop keeps defending its current target
+        // until the fight ends (the grace timer stays paused while in combat — see Simulate).
         CancelTradeFor(entity, notifyPartnerOnly: true);
         _world.PendingTradeRequests.Remove(entity.Id);
         if (_world.Parties.TryGetValue(entity.Id, out var party))
@@ -2384,10 +2383,18 @@ public class GameLoopService : BackgroundService
                 continue;
             }
 
-            // Link-dead grace: frozen in place, counting down to the normal removal. No AutoPilot,
-            // action, or movement.
+            // Link-dead grace. While still IN COMBAT (mid-fight drop), keep defending the current
+            // target — no AutoPilot — with the grace timer PAUSED (anti-combat-log). Once out of
+            // combat, freeze and count down to the normal removal.
             if (entity.IsDisconnected)
             {
+                if (IsInCombat(entity))
+                {
+                    UpdateAction(entity);
+                    MoveTowardTarget(entity);
+                    _world.Grid.UpdatePosition(entity);
+                    continue;
+                }
                 if (--entity.DisconnectGraceTicks <= 0)
                     _endGraceQueue.Add(entity.Id);
                 continue;

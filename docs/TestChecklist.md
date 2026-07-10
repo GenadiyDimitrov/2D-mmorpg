@@ -23,10 +23,14 @@ this file.
 ### Disconnect fates (use 2+ clients)
 - [ ] **Go Offline (Auto-Farm)** button → you return to account select and your char keeps farming
   (offline), visible to others, until the 2h cap / death / relogin.
-- [ ] Drop while **auto-farming or in combat** (out of town) → offline farm (as above).
+- [ ] Drop while **auto-farming** (out of town) → offline farm (2h cap). The 2h cap is ONLY for
+  offline farming — NOT for a network blip.
+- [ ] Drop **mid-combat but not auto-farming** → your char **keeps defending** its current target
+  (anti-combat-log) and the 180s grace timer is **paused** until combat ends (30s after the last
+  hit); then the grace counts down. It is NOT put into the 2h offline farm.
 - [ ] Drop while **out of combat, not auto-farming** → your char shows a **"⚠ Disconnected"** title
-  above its head to nearby players, stays frozen (not fighting) and **in your party** (OFFLINE tag)
-  for **180s**. Reconnect within 180s → resume seamlessly. After 180s → normal removal (leaves party).
+  above its head to nearby players, stays frozen and **in your party** (OFFLINE tag) for **180s**.
+  Reconnect within 180s → resume seamlessly. After 180s → normal removal (leaves party).
 - [ ] A disconnected (grace) char that a mob kills is removed immediately.
 - [ ] Offline-FARMING chars still look like normal players to non-party (no Disconnected title);
   only the grace state shows the title.
