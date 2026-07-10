@@ -203,12 +203,19 @@ public static partial class SkillCatalog
             "Passive. Honed focus — +40% cast speed and magic attack growing with level (+10% to +100%)."),
 
         // ===== Class identity "sure" floor passives (auto-granted at 20/40/76 = lvl 1/2/3) =====
+        // Rogue identity now DATA: the evade floor + the archetype crit/evasion LEANS (+20% crit,
+        // +20 eva) migrated here from StatCalculator's hardcoded Archetype switches (stats-via-skills).
         LeveledPassive(EvadeMastery, "Evasion Mastery", BaseClass.Fighter,
-            "Passive. Guaranteed minimum chance to dodge physical attacks (10/20/30%).",
-            new PassiveEffect(EvadeFloor: 0.10f), new PassiveEffect(EvadeFloor: 0.20f), new PassiveEffect(EvadeFloor: 0.30f)),
+            "Passive. Dodge floor 10/20/30%, +20% crit chance, +20 evasion.",
+            new PassiveEffect(EvadeFloor: 0.10f, CritRate: 0.20f, Evasion: 20),
+            new PassiveEffect(EvadeFloor: 0.20f, CritRate: 0.20f, Evasion: 20),
+            new PassiveEffect(EvadeFloor: 0.30f, CritRate: 0.20f, Evasion: 20)),
+        // Archer identity now DATA: evade floor + +15% crit / +10 eva leans.
         LeveledPassive(Reflexes, "Reflexes", BaseClass.Fighter,
-            "Passive. Guaranteed minimum chance to dodge physical attacks (5/10/15%).",
-            new PassiveEffect(EvadeFloor: 0.05f), new PassiveEffect(EvadeFloor: 0.10f), new PassiveEffect(EvadeFloor: 0.15f)),
+            "Passive. Dodge floor 5/10/15%, +15% crit chance, +10 evasion.",
+            new PassiveEffect(EvadeFloor: 0.05f, CritRate: 0.15f, Evasion: 10),
+            new PassiveEffect(EvadeFloor: 0.10f, CritRate: 0.15f, Evasion: 10),
+            new PassiveEffect(EvadeFloor: 0.15f, CritRate: 0.15f, Evasion: 10)),
         LeveledPassive(Precision, "Precision", BaseClass.Fighter,
             "Passive. Your physical attacks always land at least 10/20/30% of the time.",
             new PassiveEffect(HitFloor: 0.10f), new PassiveEffect(HitFloor: 0.20f), new PassiveEffect(HitFloor: 0.30f)),

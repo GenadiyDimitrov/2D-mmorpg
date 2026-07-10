@@ -77,6 +77,14 @@ this file.
 - [ ] Auto-hunt while offline still obeys the shared potion cooldown, buff-potion top-up, and skill
   conditions (same brain as online).
 
+### Stats-via-skills identity migration (2026-07-10) — verify no regressions
+- [ ] Rogue still has its crit/evasion identity (now from the **Evasion Mastery** passive: +20% crit,
+  +20 eva); archer from **Reflexes** (+15% crit, +10 eva). Numbers should feel unchanged (parity).
+- [ ] **Intentional change:** the **tank** no longer gets the old +level/2 magic defence (his Anti-Magic
+  passive is his magic identity now) — confirm tank magic survivability still feels right.
+- [ ] **Intentional change:** a base **rogue's basic attacks no longer interrupt casts** (that "cancel"
+  becomes a 3rd-class discipline passive later) — confirm that's the intended feel.
+
 ### Roaming + target filters (2026-07-10)
 - [ ] Auto-Hunt window now has a **Farm range** box, a **Static spot** checkbox, **Mobs/Elites/Bosses**
   checkboxes, and a **Basic Attack** row atop the skill list.

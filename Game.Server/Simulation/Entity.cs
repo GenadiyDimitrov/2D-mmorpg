@@ -719,7 +719,7 @@ public class Entity
             ? StatCalculator.PhysicalDefenceBase(Level)
             : MobBaseStats.PDef(Level);
         MagicDefence = Kind == EntityKind.Player
-            ? StatCalculator.MagicDefenceBase(Level) + StatCalculator.ArchetypeMagicDefenceBonus(Archetype, Level)
+            ? StatCalculator.MagicDefenceBase(Level)   // tank magic identity = his Anti-Magic passive, not a level/2 mDef bonus
             : MobBaseStats.MDef(Level);
         // Resolution "sure" floors come from learned passives (Evasion Mastery / Precision /
         // Anti-Magic / Spell Ward), applied in the passive loop below. Base 0 — the
@@ -756,7 +756,7 @@ public class Entity
         MagicCritChance = StatCalculator.MagicCritChance(EffectiveWit);
         InterruptResist = StatCalculator.InterruptResist(EffectiveWit, Level);
         MagicInterruptBonus = StatCalculator.MagicInterruptPower(EffectiveWit);
-        BasicAttackInterruptPower = StatCalculator.ArchetypeBasicInterruptPower(Archetype, Level);
+        BasicAttackInterruptPower = 0;   // rogue "cancel on basic" is now a 3rd-class discipline passive (anti-magic rogue), not a base-rogue trait
         BasicAttackRange = GameConstants.MeleeRange;
         WeaponType = WeaponType.None;
         // Base run speed: players from race+class table, mobs from their spawn-set
@@ -955,20 +955,17 @@ public class Entity
             ActiveArmorSet = set.Name;
         }
 
-        // Archetype identity: scale basic-attack power, add crit/eva for
-        // archers & rogues. Skills keep using full AttackPower.
+        // Archetype identity: scale basic-attack power (a structural per-archetype coefficient).
+        // The crit/evasion LEANS are no longer hardcoded here — they ride the rogue/archer floor
+        // passives (Evasion Mastery / Reflexes), folded in ApplyPassive below (stats-via-skills).
         var arch = Archetype;
         BasicAttackPower = Math.Max(1,
             (int)(AttackPower * StatCalculator.BasicAttackMultiplier(arch)));
-        // Weapon shapes crit: blunt low, dual/bow high (WeaponType known post-equip).
-        // Factor scales the DEX crit; archetype bonus and GEAR crit-rate add on top
-        // (gear crit isn't scaled by the weapon factor). Blunt's low crit is offset
-        // by its accuracy bonus.
+        // Weapon shapes crit: blunt low, dual/bow high (WeaponType known post-equip). The factor
+        // scales the DEX crit; GEAR crit-rate adds on top (unscaled). Passive crit leans add + re-clamp.
         CritChance = Math.Clamp(
             CritChance * StatCalculator.WeaponCritFactor(WeaponType)
-            + StatCalculator.ArchetypeCritBonus(arch)
             + critRatePct / 100f, 0f, 0.75f);
-        Evasion += StatCalculator.ArchetypeEvasionBonus(arch, Level);
         Accuracy += StatCalculator.WeaponAccuracyBonus(WeaponType);
 
         // Skill-buff Max HP/MP (e.g. HP Boost line, Frenzy): flat add and/or % of max.

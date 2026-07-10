@@ -523,13 +523,8 @@ public static class StatCalculator
         _ => 1.0f                    // base Fighter/Mage before class change
     };
 
-    /// <summary>Extra crit chance from archetype (archers & rogues spike here).</summary>
-    public static float ArchetypeCritBonus(Archetype? archetype) => archetype switch
-    {
-        Archetype.Archer => 0.15f,
-        Archetype.Rogue => 0.20f,
-        _ => 0f
-    };
+    // Archetype crit/evasion LEANS moved to the rogue/archer floor passives (Evasion Mastery /
+    // Reflexes) per the stats-via-skills rule — no longer hardcoded here.
 
     /// <summary>Per-weapon crit-rate FACTOR (multiplies the base/DEX crit chance).
     /// From the weapon table's crit_modifier: Sword 0.80, Dual/Bow 1.20, Blunt 0.40.
@@ -551,38 +546,10 @@ public static class StatCalculator
         _ => 0
     };
 
-    /// <summary>Extra evasion from archetype (rogues are slippery), added to the
-    /// DEX-based evasion stat. FLAT now (no level scaling) — the rogue's guaranteed
-    /// floor lives in the learned "Evasion Mastery" passive; this is the extra
-    /// stat-roll evasion they carry ABOVE that floor.</summary>
-    public static int ArchetypeEvasionBonus(Archetype? archetype, int level) => archetype switch
-    {
-        Archetype.Rogue => 20,
-        Archetype.Archer => 10,
-        _ => 0
-    };
-
-    // NOTE: the resolution "sure" floors (rogue evade / warrior hit / tank+mage
-    // anti-magic) are no longer hardcoded here — they live in learned passive
-    // SkillDefs (see SkillCatalog.FloorPassiveFor) and are summed onto the entity
-    // in RecomputeDerived. Keep stat VALUES in skills, not in this switch table.
-
-    /// <summary>Tank "Anti Magic" passive: extra MAGIC defence on top of the level
-    /// base, roughly doubling a tank's innate magic resistance. (Modeled as an
-    /// archetype identity bonus like the others; can become a learnable passive
-    /// later.)</summary>
-    public static int ArchetypeMagicDefenceBonus(Archetype? archetype, int level) => archetype switch
-    {
-        Archetype.Tank => level / 2,   // doubles the level-based base
-        _ => 0
-    };
-
-    /// <summary>Rogue passive: their BASIC attacks carry magic-interrupt power
-    /// (daggers/duals are interrupt machines). Other archetypes' basics don't
-    /// interrupt. Tunable; can move to a weapon attribute / learnable passive.</summary>
-    public static int ArchetypeBasicInterruptPower(Archetype? archetype, int level) => archetype switch
-    {
-        Archetype.Rogue => 50 + level,
-        _ => 0
-    };
+    // NOTE: every per-archetype IDENTITY stat modifier is now data (learned passives), not a switch
+    // table here. Evade/hit/anti-magic FLOORS + the rogue/archer crit & evasion leans → the floor
+    // passives (SkillCatalog.FloorPassiveFor / Evasion Mastery / Reflexes). The tank's old level/2
+    // magic-def bonus was REMOVED (his Anti-Magic passive is his magic identity). The rogue's
+    // basic-attack interrupt was REMOVED from the base archetype — it becomes a 3rd-class discipline
+    // passive (the anti-magic rogue). Only base stats + level-growth CURVES stay hardcoded (allowed).
 }

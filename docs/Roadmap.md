@@ -110,9 +110,14 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   intruder; demo Trapper "Snare Trap" = damage + Root). Both ride flag FIELDS, not new SkillEffect bits
   (enum full). **P2 combat primitives COMPLETE** (poison/venom secondaries were already done). (Shield
   floating-text shows pre-absorb damage — cosmetic.)
-- [ ] **Base-class armor mastery + universal penalty → data** (only 2nd classes are data so
-  far). Finishes the [[stats-via-skills-not-hardcoded]] migration. (Note: changes the
-  unlearned-penalty semantics slightly — confirm intent.)
+- [x] **Stats-via-skills: archetype identity leans → data** (2026-07-10, [[stats-via-skills-not-hardcoded]]).
+  Base + 2nd-class armor masteries were already data (Phase 2). This pass removed the last hardcoded
+  per-archetype IDENTITY switches in `StatCalculator`: rogue/archer **crit + evasion leans** moved into
+  the floor passives (Evasion Mastery +20%/+20, Reflexes +15%/+10 — parity). **Removed** (owner call):
+  the tank's `level/2` magic-def bonus (his Anti-Magic passive is his magic identity) and the base rogue's
+  `50+level` basic-attack interrupt (→ a future 3rd-class discipline passive on the anti-magic rogue).
+  Left as an allowed COEFFICIENT: the per-archetype basic-attack multiplier (structural, order-sensitive)
+  + the base HP/MP/def level-growth curves. ⚠ Two intentional balance changes to verify in the playtest.
 - [x] **1H vs 2H weapon-mastery gating** — done: `Entity.WeaponHands` tracks equipped hands;
   `WeaponMasteryProfile.RequiredHands` gates the bonus (Warrior = 2H only, Tank = 1H only).
 - [x] **Toggle-skill mechanic** + **Healer "Combat Stance"** — done: a toggle skill applies
