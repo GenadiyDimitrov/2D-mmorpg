@@ -350,9 +350,10 @@ public partial class MainWindow
             MessageBox.Show(r.Reason, "Can't exit");
     }
 
-    // ----- PvP toggles -----
+    // ----- PvP toggles + reputation -----
     private bool _pvpEnabled;
     private bool _counterEnabled;
+    private int _myKarma;
 
     private async void PvpButton_Click(object sender, RoutedEventArgs e) =>
         await _net.TogglePvpAsync(!_pvpEnabled);
@@ -364,6 +365,7 @@ public partial class MainWindow
     {
         _pvpEnabled = s.Pvp;
         _counterEnabled = s.CounterAttack;
+        _myKarma = s.Karma;
         PvpButton.Content = _pvpEnabled ? "PvP: On" : "PvP: Off";
         PvpButton.Background = _pvpEnabled
             ? new SolidColorBrush(Color.FromRgb(0xA0, 0x40, 0x40)) : null;

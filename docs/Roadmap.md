@@ -217,11 +217,13 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   buffer later; a **full-buff NPC buffer up to lvl 75** is the SOLO stopgap. High-tier solo being hard is
   INTENDED — buffs/party close the gap, don't nerf the mob curve.
 - [ ] **Position bonuses** — backstab / flanking damage (hook reserved).
-- [~] **PvP** — BUILT 2026-07-10 ([[pvp-system]], for testing skill/passive damage vs players): a
-  **PvP-enable** toggle (attack players outside towns) + a **counter-attack** toggle (auto-retaliate
-  while auto-hunting/offline) + a 30s self-defense flag + safe-zone gating (`CanPvpHit`). Damage rides
-  the existing `FinalizeDamage` pvp path. **Still open:** PvP/PvE damage MULTIPLIERS are still 1.0 (tune
-  when balancing), plus karma/flag colours + a PvP death penalty (deferred).
+- [~] **PvP + flag/karma/PK** — BUILT 2026-07-10 ([[pvp-system]]): PvP-enable + counter-attack toggles;
+  **L2 flag system** — attacking flags you purple, killing an innocent → PK (red name + persisted karma,
+  `200·1.1^consec·1.2^lvlDiff`), killing a flagged/red → PvP count; each death decays karma (−200) and
+  clears the red at 0; red/purple freely attackable, innocent needs the opt-in; safe-zone gated. Client
+  colours names (red/purple/white) + shows karma. Damage rides the existing `FinalizeDamage` pvp path.
+  ⚠ Persisted karma columns → delete game.db. **Deferred (owner):** PK death item-drop, PK town-respawn
+  ban + town guards, PvP/PvE damage MULTIPLIERS still 1.0, duel/consent mode.
 - [ ] **Perfect / excellent block** — shield block tiers above the current flat block.
 - [ ] **Class-vs-class balance matrix** (buffed) + damage-K tuning once all kits exist.
   ([[class-race-identity]])

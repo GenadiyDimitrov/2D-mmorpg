@@ -77,16 +77,20 @@ this file.
 - [ ] Auto-hunt while offline still obeys the shared potion cooldown, buff-potion top-up, and skill
   conditions (same brain as online).
 
-### PvP (2026-07-10) — needed to read skill/passive damage vs players
+### PvP + flag/karma/PK (2026-07-10) — ⚠ delete game.db first (new karma columns)
 - [ ] Top-right **PvP** and **Counter** toggle buttons (tint when on).
-- [ ] With **PvP: On**, click another player **outside a town** → you basic-attack them; target them +
-  cast a skill → damage lands and the number shows. With PvP off, clicking a player only targets.
-- [ ] **No PvP in towns** — attacks/skills on a player in a safe zone are refused (or do 0 if one runs
-  into town mid-fight).
-- [ ] **Self-defense**: a player you attack can hit you back even with their PvP off (30s window).
-- [ ] **Counter-attack**: an auto-hunting/offline character with **Counter: On** that a player attacks
-  starts fighting back (finishes a near-dead mob first, else switches to the attacker).
-- [ ] Use PvP to sanity-check the migrated **rogue/archer crit+eva** and **skill** damage on a live target.
+- [ ] With **PvP: On**, attack another player **outside a town** → you turn **purple** (name), the
+  target can hit back; skills/basics land and show damage. (Damage-check the migrated crit/eva + skills.)
+- [ ] Attacking an **innocent (white)** needs PvP On; a **purple/red** player is attackable without it
+  (retaliation / hunting a PK) and attacking a **red** player does NOT flag you.
+- [ ] **Kill an innocent** → you go **red (PK)**, gain **karma** (200 base; more per consecutive kill and
+  the more levels above the victim); status line shows KARMA.
+- [ ] **Kill a flagged/red** player → **PvP count** up, no karma.
+- [ ] **Dying** as a PK lowers your karma by 200; at 0 the **red name clears**.
+- [ ] **No PvP in towns** (safe zones block it; 0 damage if someone runs to town mid-fight).
+- [ ] **Counter-attack**: an auto-hunting/offline char with **Counter: On** retaliates against a player
+  attacker (finishes a near-dead mob first, else switches).
+- [ ] Karma persists across relog (a PK is still red after logging back in).
 
 ### Stats-via-skills identity migration (2026-07-10) — verify no regressions
 - [ ] Rogue still has its crit/evasion identity (now from the **Evasion Mastery** passive: +20% crit,

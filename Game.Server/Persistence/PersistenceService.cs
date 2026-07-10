@@ -295,6 +295,11 @@ public class PersistenceService
             catch { /* ignore malformed auto-hunt json */ }
         }
 
+        entity.Karma = rec.Karma;
+        entity.PkCount = rec.PkCount;
+        entity.PvpCount = rec.PvpCount;
+        entity.ConsecutivePk = rec.ConsecutivePk;
+
         foreach (var item in rec.Items)
         {
             entity.Inventory.Add(new InventoryItem
@@ -324,6 +329,7 @@ public class PersistenceService
         int Con, int Atk, int Wit, int Dex, float X, float Y,
         string LearnedSkillsCsv, string CompletedQuestsCsv, string ActiveQuestsJson,
         string KnownRecipesCsv, string AutoHuntJson,
+        int Karma, int PkCount, int PvpCount, int ConsecutivePk,
         IReadOnlyList<ItemSnapshot> Items)
     {
         /// <summary>Capture a character. MUST be called on the tick thread. Returns
@@ -348,6 +354,7 @@ public class PersistenceService
                     e.AutoHuntEnabled, e.AutoHpPotionPct, e.AutoMpPotionPct, e.AutoBuffPotions,
                     e.AutoSkills.ToArray(), e.AutoBuffPotionIds.ToArray(),
                     e.AutoFarmRange, e.AutoFarmStatic, e.AutoAttackNormal, e.AutoAttackElite, e.AutoAttackBoss)),
+                e.Karma, e.PkCount, e.PvpCount, e.ConsecutivePk,
                 items);
         }
     }
@@ -407,6 +414,10 @@ public class PersistenceService
         rec.ActiveQuestsJson = snap.ActiveQuestsJson;
         rec.KnownRecipesCsv = snap.KnownRecipesCsv;
         rec.AutoHuntJson = snap.AutoHuntJson;
+        rec.Karma = snap.Karma;
+        rec.PkCount = snap.PkCount;
+        rec.PvpCount = snap.PvpCount;
+        rec.ConsecutivePk = snap.ConsecutivePk;
         rec.Con = snap.Con;
         rec.Atk = snap.Atk;
         rec.Wit = snap.Wit;

@@ -313,8 +313,18 @@ public class GameLoopService : BackgroundService
         BroadcastSystem($"{player.Name} keeps hunting while away.");
     }
 
-    // ----- PvP -----
-    private const int PvpFlagTicks = 300;   // 30s self-defense window after a player hits you
+    // ----- PvP / flag / karma (L2-style) -----
+    private const int PvpFlagTicks = 600;   // 60s purple flag after a pvp action
+    private const int KarmaBase = 200;
+    private const double KarmaConsecGrowth = 1.1;   // +10% per consecutive PK
+    private const double KarmaLevelGrowth = 1.2;    // +20% per level the victim is BELOW the killer
+    private const int KarmaLossPerDeath = 200;      // each death redeems ~one base kill of karma
+
+    /// <summary>A player's name state: red (karma), else purple (recent pvp), else white.</summary>
+    private PvpFlag FlagOf(Entity p) =>
+        p.Karma > 0 ? PvpFlag.Pk
+        : _tick < p.PvpFlagUntilTick ? PvpFlag.Flagged
+        : PvpFlag.Innocent;
 
     private void HandleTogglePvp(TogglePvpCmd cmd)
     {
@@ -336,11 +346,12 @@ public class GameLoopService : BackgroundService
             : "Counter-attack OFF.");
     }
 
-    private void SendPvpState(Entity p) => SendTo(p, "PvpState", new PvpState(p.PvpEnabled, p.CounterAttack));
+    private void SendPvpState(Entity p) =>
+        SendTo(p, "PvpState", new PvpState(p.PvpEnabled, p.CounterAttack, p.Karma, p.PkCount, p.PvpCount));
 
     /// <summary>May 'attacker' damage 'target'? A mob on either side = always (normal PvE). Player→
-    /// player requires: out of safe zones, and the attacker either has PvP ON (initiate) or is within
-    /// its self-defense window against the player who just hit it.</summary>
+    /// player requires out of safe zones, and: a RED/PURPLE target is freely attackable (retaliation
+    /// / executing an outlaw), while attacking an INNOCENT (white) needs the PvP opt-in.</summary>
     private bool CanPvpHit(Entity attacker, Entity target)
     {
         if (attacker.Kind != EntityKind.Player || target.Kind != EntityKind.Player)
@@ -349,8 +360,31 @@ public class GameLoopService : BackgroundService
             return false;
         if (GameConstants.InSafeZone(attacker.X, attacker.Y) || GameConstants.InSafeZone(target.X, target.Y))
             return false;
-        return attacker.PvpEnabled ||
-            (attacker.LastPvpAttackerId == target.Id && _tick < attacker.PvpFlagUntilTick);
+        return FlagOf(target) != PvpFlag.Innocent || attacker.PvpEnabled;
+    }
+
+    /// <summary>Award kill consequences for a player killing a player: an INNOCENT victim → PK
+    /// (karma + red name, consecutive/level-scaled); a FLAGGED/RED victim → a justified PvP kill.</summary>
+    private void ApplyPvpKill(Entity killer, Entity victim)
+    {
+        if (FlagOf(victim) == PvpFlag.Innocent)
+        {
+            int diff = Math.Max(0, killer.Level - victim.Level);
+            int gain = (int)(KarmaBase
+                * Math.Pow(KarmaConsecGrowth, killer.ConsecutivePk)
+                * Math.Pow(KarmaLevelGrowth, diff));
+            killer.Karma += gain;
+            killer.ConsecutivePk++;
+            killer.PkCount++;
+            SendSystemToEntity(killer, $"You killed an innocent — Karma +{gain} (now {killer.Karma:N0}). You are now a PK.");
+        }
+        else
+        {
+            killer.PvpCount++;
+            SendSystemToEntity(killer, $"PvP kill. (Total {killer.PvpCount})");
+        }
+        SendPvpState(killer);
+        SaveEntity(killer);
     }
 
     /// <summary>Save a character without blocking the tick loop. The snapshot is taken
@@ -2555,6 +2589,9 @@ public class GameLoopService : BackgroundService
             TickSkillCooldowns(entity);
             TickBuffs(entity);
 
+            if (entity.Kind == EntityKind.Player)
+                entity.FlagState = FlagOf(entity);   // name colour for the snapshot
+
             if (entity.Dead)
                 continue;
 
@@ -4131,12 +4168,14 @@ var effect = def.Effect;
             if (attacker is { Kind: EntityKind.Player }) attacker.LastCombatTick = _tick;
         }
 
-        // PvP self-defense flag: the victim may hit its attacker back (and counter-attack) even
-        // with PvP toggled off, for a short window.
+        // PvP flagging: the victim records its attacker (for counter-attack), and the ATTACKER goes
+        // PURPLE (freely attackable) — unless the target is a PK (attacking a red player is justified,
+        // no flag). An already-red attacker stays red (FlagOf prioritises karma).
         if (pvp)
         {
             target.LastPvpAttackerId = attacker!.Id;
-            target.PvpFlagUntilTick = _tick + PvpFlagTicks;
+            if (FlagOf(target) != PvpFlag.Pk)
+                attacker.PvpFlagUntilTick = _tick + PvpFlagTicks;
         }
 
         // Threat: damage to a mob from a known attacker builds aggro (retargets to top threat).
@@ -4233,6 +4272,25 @@ var effect = def.Effect;
         {
             CancelTradeFor(victim, notifyPartnerOnly: false);
             BroadcastSystem($"{victim.Name} was slain by {killer.Name}.");
+
+            // PvP kill consequences (a player killed a player): pvp/pk counts + karma.
+            if (killer.Kind == EntityKind.Player && killer.Id != victim.Id)
+                ApplyPvpKill(killer, victim);
+
+            // Karma decay: ANY death lowers a PK's karma; the red flag clears (and consecutive PK
+            // resets) at 0.
+            if (victim.Karma > 0)
+            {
+                victim.Karma = Math.Max(0, victim.Karma - KarmaLossPerDeath);
+                if (victim.Karma == 0)
+                {
+                    victim.ConsecutivePk = 0;
+                    BroadcastSystem($"{victim.Name}'s karma has cleared.");
+                }
+                SendPvpState(victim);
+                SaveEntity(victim);
+            }
+
             // Death stops auto-hunt. An offline farmer's session ends (deferred logout); a link-dead
             // grace ends; an online idle hunter just stops (can re-enable after respawn).
             if (victim.IsOfflineFarming)

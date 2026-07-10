@@ -37,7 +37,9 @@ public record EntityDto(
     bool Dead,
     // A link-dead player in the reconnect grace window: clients draw a "Disconnected" title
     // above the head. Offline-FARMING players are NOT flagged (they look like normal players).
-    bool Disconnected = false);
+    bool Disconnected = false,
+    // PvP name colour: Innocent = white, Flagged = purple, Pk = red.
+    PvpFlag Flag = PvpFlag.Innocent);
 
 /// <summary>Client -> Server: "move me toward this point" (click-to-move).
 /// Moving cancels engagement, queued skills, and casting (classic MMO).</summary>
@@ -216,8 +218,8 @@ public record AutoHuntStatus(bool Enabled, float MpPerSec, AutoSkillReuse[] Skil
 /// in combat); the client keeps playing and shows Reason. Ok=true → the client may close.</summary>
 public record LogoutResult(bool Ok, string Reason);
 
-/// <summary>Server -> client: the player's PvP toggles, so the UI reflects the authoritative state.</summary>
-public record PvpState(bool Pvp, bool CounterAttack);
+/// <summary>Server -> client: the player's PvP toggles + reputation (karma / kill counts) for the HUD.</summary>
+public record PvpState(bool Pvp, bool CounterAttack, int Karma = 0, int PkCount = 0, int PvpCount = 0);
 
 /// <summary>One member row in the party window.</summary>
 public record PartyMemberDto(Guid Id, string Name, int Level, string ClassName,

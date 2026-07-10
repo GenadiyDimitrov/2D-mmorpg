@@ -588,10 +588,21 @@ public class Entity
     public bool PvpEnabled { get; set; }
     /// <summary>Auto-retaliate against a player who attacks me while I'm auto-hunting / offline.</summary>
     public bool CounterAttack { get; set; }
-    /// <summary>The last player who damaged me — I may hit THEM back (self-defense) even with PvP off.</summary>
+    /// <summary>The last player who damaged me — the counter-attack retaliation target.</summary>
     public Guid? LastPvpAttackerId { get; set; }
-    /// <summary>Self-defense window: I can retaliate against LastPvpAttackerId until this tick.</summary>
+    /// <summary>Purple flag: I recently attacked another player and am freely attackable until this
+    /// tick (killing me = a PvP kill, not a PK). Refreshed on each PvP action.</summary>
     public long PvpFlagUntilTick { get; set; }
+    /// <summary>PK karma. &gt;0 = red name; others attack me without flagging; each of my deaths
+    /// lowers it, and at 0 the red flag clears (persisted).</summary>
+    public int Karma { get; set; }
+    /// <summary>Total innocent kills (PK count) + justified/flagged kills (PvP count). Persisted.</summary>
+    public int PkCount { get; set; }
+    public int PvpCount { get; set; }
+    /// <summary>Consecutive PKs (drives the karma growth); resets when karma redeems to 0.</summary>
+    public int ConsecutivePk { get; set; }
+    /// <summary>Cached name-flag for the snapshot DTO (recomputed each tick from Karma + flag window).</summary>
+    public PvpFlag FlagState { get; set; }
     /// <summary>A cap (idle/offline time) was reached: auto-hunt can't be re-enabled until re-log.</summary>
     public bool AutoHuntLocked { get; set; }
     /// <summary>Ticks auto-hunt has run this session while ONLINE (idle cap).</summary>
@@ -1222,5 +1233,5 @@ public class Entity
 
     public EntityDto ToDto() =>
         new(Id, Name, Kind, Race, BaseClass, X, Y, Speed, Level,
-            Hp, MaxHp, Mp, MaxMp, SecondClass, ThirdClass, Dead, IsDisconnected);
+            Hp, MaxHp, Mp, MaxMp, SecondClass, ThirdClass, Dead, IsDisconnected, FlagState);
 }

@@ -971,8 +971,14 @@ public partial class MainWindow : Window
             visual.Label.Text = dto.Dead
                 ? $"{dto.Name} Lv{dto.Level} (dead)"
                 : $"{dto.Name}{classTag} Lv{dto.Level}";
+            // Player name colour follows the PvP flag: red = PK, purple = flagged, white = innocent.
             visual.Label.Foreground = dto.Kind == EntityKind.Mob ? MobNameBrush(dto.Level)
-                : Brushes.White;
+                : dto.Flag switch
+                {
+                    PvpFlag.Pk      => Brushes.Red,
+                    PvpFlag.Flagged => new SolidColorBrush(Color.FromRgb(0xC8, 0x6C, 0xE8)),
+                    _               => Brushes.White
+                };
         }
     }
 
@@ -1287,7 +1293,8 @@ public partial class MainWindow : Window
             var cls = _myThirdClass > 0 ? $" {ThirdClassCatalog.Get(_myThirdClass)?.Name}"
                     : _mySecondClass > 0 ? $" {ClassCatalog.Get(_mySecondClass)?.Name}" : "";
             var zone = _myDto is not null && GameConstants.InSafeZone(_myDto.X, _myDto.Y) ? "  [SAFE]" : "";
-            StatusText.Text = $"{_myName}{cls}  Lv{_level}  •  {_gold:N0} {GameConstants.CurrencyName}{zone}";
+            var karma = _myKarma > 0 ? $"  •  KARMA {_myKarma:N0}" : "";
+            StatusText.Text = $"{_myName}{cls}  Lv{_level}  •  {_gold:N0} {GameConstants.CurrencyName}{zone}{karma}";
             UpdateVitalBars();
         }
 
@@ -1676,10 +1683,12 @@ public partial class MainWindow : Window
             _targetId = targetId;
             UpdateTargetFrame();
 
-            // Clicking a mob attacks; clicking another player attacks only when PvP is on (else it
-            // just targets — for trade/party). Skills also fire on the current target.
+            // Clicking a mob attacks. Clicking another player attacks when PvP is on OR the target is
+            // already flagged/red (justice / self-defense) — otherwise it just targets (trade/party).
+            // Skills also fire on the current target (server enforces the same rules).
             if (latest is { Kind: EntityKind.Mob } ||
-                (_pvpEnabled && latest is { Kind: EntityKind.Player } && latest.Id != _myId))
+                (latest is { Kind: EntityKind.Player } && latest.Id != _myId &&
+                 (_pvpEnabled || latest.Flag != PvpFlag.Innocent)))
                 await _net.AttackAsync(targetId);
             return;
         }

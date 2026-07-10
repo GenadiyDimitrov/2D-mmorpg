@@ -158,6 +158,10 @@ public enum SkillEffect : long
 /// None = not a contested debuff (uses the older fizzle/sure-hit path).</summary>
 public enum DebuffSchool { None = 0, Physical = 1, Magical = 2 }
 
+/// <summary>A player's PvP name state (L2-style): Innocent = white, Flagged = purple (recently
+/// attacked another player), Pk = red (has karma from killing innocents).</summary>
+public enum PvpFlag : byte { Innocent = 0, Flagged = 1, Pk = 2 }
+
 /// <summary>A party member's presence, for the roster's AFK indicator. Auto = online but
 /// auto-hunting (AFK-ish); Offline = disconnected but still offline-farming in the world.</summary>
 public enum PartyMemberStatus { Online = 0, Auto = 1, Offline = 2 }

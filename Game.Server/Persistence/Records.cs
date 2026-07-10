@@ -63,6 +63,12 @@ public class CharacterRecord
     /// <summary>Auto-hunt config as JSON (AutoHuntConfigDto). Empty = defaults/off.</summary>
     public string AutoHuntJson { get; set; } = "";
 
+    /// <summary>PvP reputation: PK karma (>0 = red), and lifetime PK / PvP kill counts.</summary>
+    public int Karma { get; set; }
+    public int PkCount { get; set; }
+    public int PvpCount { get; set; }
+    public int ConsecutivePk { get; set; }
+
     // Core stats are derived from race/class/level, but second-class and item
     // bonuses are permanent additions, so we persist the raw core stats.
     public int Con { get; set; }
