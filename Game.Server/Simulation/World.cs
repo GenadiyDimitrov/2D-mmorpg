@@ -235,6 +235,8 @@ public record SetAutoHuntConfigCmd(string ConnectionId, AutoHuntConfigDto Config
 public record ToggleAutoHuntCmd(string ConnectionId, bool Enabled) : IGameCommand;
 public record LogoutCmd(string ConnectionId) : IGameCommand;
 public record StartOfflineFarmCmd(string ConnectionId) : IGameCommand;
+public record TogglePvpCmd(string ConnectionId, bool Enabled) : IGameCommand;
+public record ToggleCounterAttackCmd(string ConnectionId, bool Enabled) : IGameCommand;
 
 public record TradeRequestCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 public record TradeRespondCmd(string ConnectionId, bool Accept) : IGameCommand;

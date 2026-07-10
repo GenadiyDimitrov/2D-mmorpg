@@ -318,6 +318,18 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task TogglePvp(bool enabled)
+    {
+        _world.Commands.Enqueue(new TogglePvpCmd(Context.ConnectionId, enabled));
+        return Task.CompletedTask;
+    }
+
+    public Task ToggleCounterAttack(bool enabled)
+    {
+        _world.Commands.Enqueue(new ToggleCounterAttackCmd(Context.ConnectionId, enabled));
+        return Task.CompletedTask;
+    }
+
     public Task TradeRequest(Guid targetId)
     {
         _world.Commands.Enqueue(new TradeRequestCmd(Context.ConnectionId, targetId));

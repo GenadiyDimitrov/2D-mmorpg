@@ -119,6 +119,8 @@ public class GameLoopService : BackgroundService
                 case ToggleAutoHuntCmd c: HandleToggleAutoHunt(c); break;
                 case LogoutCmd c: HandleLogout(c); break;
                 case StartOfflineFarmCmd c: HandleStartOfflineFarm(c); break;
+                case TogglePvpCmd c: HandleTogglePvp(c); break;
+                case ToggleCounterAttackCmd c: HandleToggleCounterAttack(c); break;
                 case ChatCmd c: HandleChat(c); break;
             }
         }
@@ -170,6 +172,7 @@ public class GameLoopService : BackgroundService
         SendGold(entity);
         SendAutoHuntConfig(entity);   // restore the saved auto-hunt settings in the client UI
         SendAutoHuntStatus(entity);
+        SendPvpState(entity);
         if (_world.Parties.TryGetValue(entity.Id, out var rejoinParty))
             SendPartyUpdate(rejoinParty);   // clear the offline icon for the rest of the party
         if (entity.IsAdmin)
@@ -310,6 +313,46 @@ public class GameLoopService : BackgroundService
         BroadcastSystem($"{player.Name} keeps hunting while away.");
     }
 
+    // ----- PvP -----
+    private const int PvpFlagTicks = 300;   // 30s self-defense window after a player hits you
+
+    private void HandleTogglePvp(TogglePvpCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var p)) return;
+        p.PvpEnabled = cmd.Enabled;
+        SendPvpState(p);
+        SendSystemToEntity(p, p.PvpEnabled
+            ? "PvP ON — your attacks/skills can hit other players (not in towns)."
+            : "PvP OFF.");
+    }
+
+    private void HandleToggleCounterAttack(ToggleCounterAttackCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var p)) return;
+        p.CounterAttack = cmd.Enabled;
+        SendPvpState(p);
+        SendSystemToEntity(p, p.CounterAttack
+            ? "Counter-attack ON — you retaliate against players who attack you while auto-hunting."
+            : "Counter-attack OFF.");
+    }
+
+    private void SendPvpState(Entity p) => SendTo(p, "PvpState", new PvpState(p.PvpEnabled, p.CounterAttack));
+
+    /// <summary>May 'attacker' damage 'target'? A mob on either side = always (normal PvE). Player→
+    /// player requires: out of safe zones, and the attacker either has PvP ON (initiate) or is within
+    /// its self-defense window against the player who just hit it.</summary>
+    private bool CanPvpHit(Entity attacker, Entity target)
+    {
+        if (attacker.Kind != EntityKind.Player || target.Kind != EntityKind.Player)
+            return true;
+        if (attacker.Id == target.Id || target.Dead)
+            return false;
+        if (GameConstants.InSafeZone(attacker.X, attacker.Y) || GameConstants.InSafeZone(target.X, target.Y))
+            return false;
+        return attacker.PvpEnabled ||
+            (attacker.LastPvpAttackerId == target.Id && _tick < attacker.PvpFlagUntilTick);
+    }
+
     /// <summary>Save a character without blocking the tick loop. The snapshot is taken
     /// HERE (on the single-writer thread) so the async DB write never reads the live,
     /// mutating entity; the DB I/O runs off-thread.</summary>
@@ -397,6 +440,12 @@ public class GameLoopService : BackgroundService
             target.Dead ||
             DistanceSq(attacker, target) > GameConstants.ViewRange * GameConstants.ViewRange)
             return;
+
+        if (target.Kind == EntityKind.Player && !CanPvpHit(attacker, target))
+        {
+            SendSystemToEntity(attacker, "You can't attack that player here. (Enable PvP; not in towns.)");
+            return;
+        }
 
         attacker.QueuedSkillId = null;
         CancelCast(attacker);
@@ -601,6 +650,11 @@ public class GameLoopService : BackgroundService
                 DistanceSq(caster, target) > GameConstants.ViewRange * GameConstants.ViewRange)
             {
                 SendSystemToEntity(caster, $"{def.Name} needs a target.");
+                return;
+            }
+            if (target.Kind == EntityKind.Player && !CanPvpHit(caster, target))
+            {
+                SendSystemToEntity(caster, "You can't attack that player here. (Enable PvP; not in towns.)");
                 return;
             }
             targetId = tid;
@@ -1798,6 +1852,24 @@ public class GameLoopService : BackgroundService
         if (p.CastingSkillId is not null || p.QueuedSkillId is not null)
             return;   // let an in-progress cast/queue resolve
 
+        // Counter-attack: if a player just hit us and counter-attack is on, retaliate — unless we're
+        // about to finish a nearly-dead mob (owner-delegated heuristic: <25% HP = finish it first).
+        if (p.CounterAttack && CounterTarget(p) is Entity foe)
+        {
+            bool finishMob = p.CombatTargetId is Guid ct &&
+                _world.Entities.TryGetValue(ct, out var cm) && cm.Kind == EntityKind.Mob &&
+                !cm.Dead && cm.MaxHp > 0 && (float)cm.Hp / cm.MaxHp < 0.25f;
+            if (!finishMob)
+            {
+                p.CombatTargetId = foe.Id;
+                p.Engaged = AutoBasicAttackEnabled(p);
+                if (TryAutoSkill(p, foe))
+                    return;
+                if (!p.Engaged) { p.TargetX = foe.X; p.TargetY = foe.Y; }   // mage: close in for skills
+                return;
+            }
+        }
+
         var target = ValidAutoTarget(p) ?? AcquireAutoTarget(p);
         bool basic = AutoBasicAttackEnabled(p);
         if (target is not null)
@@ -1829,6 +1901,19 @@ public class GameLoopService : BackgroundService
 
         // No target in the farm circle → roam (or return to the static centre).
         AutoRoam(p);
+    }
+
+    /// <summary>The player who recently attacked us and is a valid PvP retaliation target (alive,
+    /// in range, out of town, self-defense window active), or null.</summary>
+    private Entity? CounterTarget(Entity p)
+    {
+        if (p.LastPvpAttackerId is not Guid aid || _tick >= p.PvpFlagUntilTick)
+            return null;
+        if (!_world.Entities.TryGetValue(aid, out var a) || a.Kind != EntityKind.Player)
+            return null;
+        if (!CanPvpHit(p, a))
+            return null;
+        return DistanceSq(p, a) <= GameConstants.ViewRange * GameConstants.ViewRange ? a : null;
     }
 
     /// <summary>"Basic Attack" opted into the auto-skill list — the auto-hunt may melee.</summary>
@@ -4032,12 +4117,26 @@ var effect = def.Effect;
         if (target.GodMode)
             return 0;
 
+        bool pvp = damage > 0 && attacker is { Kind: EntityKind.Player } && target.Kind == EntityKind.Player;
+
+        // PvP safety: a player can't damage another player inside a safe zone (someone ran to town).
+        if (pvp && (GameConstants.InSafeZone(target.X, target.Y) || GameConstants.InSafeZone(attacker!.X, attacker.Y)))
+            return 0;
+
         // Combat state: any damage dealt/taken (re)starts the 30s combat timer on the players
         // involved (gates exit/teleport; drives the disconnect fate).
         if (damage > 0)
         {
             if (target.Kind == EntityKind.Player) target.LastCombatTick = _tick;
             if (attacker is { Kind: EntityKind.Player }) attacker.LastCombatTick = _tick;
+        }
+
+        // PvP self-defense flag: the victim may hit its attacker back (and counter-attack) even
+        // with PvP toggled off, for a short window.
+        if (pvp)
+        {
+            target.LastPvpAttackerId = attacker!.Id;
+            target.PvpFlagUntilTick = _tick + PvpFlagTicks;
         }
 
         // Threat: damage to a mob from a known attacker builds aggro (retargets to top threat).

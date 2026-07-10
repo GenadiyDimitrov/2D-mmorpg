@@ -582,6 +582,16 @@ public class Entity
     public int DisconnectGraceTicks { get; set; }
     /// <summary>Tick of the last damage dealt or taken — drives the 30s combat-state decay.</summary>
     public long LastCombatTick { get; set; }
+
+    // ----- PvP -----
+    /// <summary>Opt-in: my attacks/skills can target and damage other players (outside safe zones).</summary>
+    public bool PvpEnabled { get; set; }
+    /// <summary>Auto-retaliate against a player who attacks me while I'm auto-hunting / offline.</summary>
+    public bool CounterAttack { get; set; }
+    /// <summary>The last player who damaged me — I may hit THEM back (self-defense) even with PvP off.</summary>
+    public Guid? LastPvpAttackerId { get; set; }
+    /// <summary>Self-defense window: I can retaliate against LastPvpAttackerId until this tick.</summary>
+    public long PvpFlagUntilTick { get; set; }
     /// <summary>A cap (idle/offline time) was reached: auto-hunt can't be re-enabled until re-log.</summary>
     public bool AutoHuntLocked { get; set; }
     /// <summary>Ticks auto-hunt has run this session while ONLINE (idle cap).</summary>

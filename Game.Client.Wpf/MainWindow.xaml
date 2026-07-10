@@ -75,6 +75,12 @@
                     Margin="0,0,6,0" Click="InventoryButton_Click" Visibility="Collapsed"/>
             <Button x:Name="AutoHuntButton" Content="Auto-Hunt" Width="86" Height="28"
                     Margin="0,0,6,0" Click="AutoHuntButton_Click" Visibility="Collapsed"/>
+            <Button x:Name="PvpButton" Content="PvP: Off" Width="72" Height="28"
+                    Margin="0,0,6,0" Click="PvpButton_Click" Visibility="Collapsed"
+                    ToolTip="Enable attacking other players (not in towns)."/>
+            <Button x:Name="CounterButton" Content="Counter: Off" Width="86" Height="28"
+                    Margin="0,0,6,0" Click="CounterButton_Click" Visibility="Collapsed"
+                    ToolTip="While auto-hunting/offline, retaliate against players who attack you."/>
             <Button x:Name="SettingsButton" Content="Settings" Width="80" Height="28"
                     Click="SettingsButton_Click" Visibility="Collapsed"/>
         </StackPanel>

@@ -77,6 +77,17 @@ this file.
 - [ ] Auto-hunt while offline still obeys the shared potion cooldown, buff-potion top-up, and skill
   conditions (same brain as online).
 
+### PvP (2026-07-10) — needed to read skill/passive damage vs players
+- [ ] Top-right **PvP** and **Counter** toggle buttons (tint when on).
+- [ ] With **PvP: On**, click another player **outside a town** → you basic-attack them; target them +
+  cast a skill → damage lands and the number shows. With PvP off, clicking a player only targets.
+- [ ] **No PvP in towns** — attacks/skills on a player in a safe zone are refused (or do 0 if one runs
+  into town mid-fight).
+- [ ] **Self-defense**: a player you attack can hit you back even with their PvP off (30s window).
+- [ ] **Counter-attack**: an auto-hunting/offline character with **Counter: On** that a player attacks
+  starts fighting back (finishes a near-dead mob first, else switches to the attacker).
+- [ ] Use PvP to sanity-check the migrated **rogue/archer crit+eva** and **skill** damage on a live target.
+
 ### Stats-via-skills identity migration (2026-07-10) — verify no regressions
 - [ ] Rogue still has its crit/evasion identity (now from the **Evasion Mastery** passive: +20% crit,
   +20 eva); archer from **Reflexes** (+15% crit, +10 eva). Numbers should feel unchanged (parity).

@@ -216,6 +216,9 @@ public record AutoHuntStatus(bool Enabled, float MpPerSec, AutoSkillReuse[] Skil
 /// in combat); the client keeps playing and shows Reason. Ok=true → the client may close.</summary>
 public record LogoutResult(bool Ok, string Reason);
 
+/// <summary>Server -> client: the player's PvP toggles, so the UI reflects the authoritative state.</summary>
+public record PvpState(bool Pvp, bool CounterAttack);
+
 /// <summary>One member row in the party window.</summary>
 public record PartyMemberDto(Guid Id, string Name, int Level, string ClassName,
     int Hp, int MaxHp, int Mp, int MaxMp, bool IsLeader,

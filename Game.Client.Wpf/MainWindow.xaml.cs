@@ -108,6 +108,7 @@ public partial class MainWindow : Window
         _net.AutoHuntReceived += s => Dispatcher.BeginInvoke(() => OnAutoHuntStatus(s));
         _net.AutoConfigReceived += c => Dispatcher.BeginInvoke(() => OnAutoConfig(c));
         _net.LogoutResultReceived += r => Dispatcher.BeginInvoke(() => OnLogoutResult(r));
+        _net.PvpStateReceived += s => Dispatcher.BeginInvoke(() => OnPvpState(s));
         _net.EnchantReceived += en => Dispatcher.BeginInvoke(() => OnEnchant(en));
         _net.RerollReceived += r => Dispatcher.BeginInvoke(() => OnReroll(r));
         _net.ForceDisconnected += reason => Dispatcher.BeginInvoke(() =>
@@ -336,6 +337,8 @@ public partial class MainWindow : Window
             StatsButton.Visibility = Visibility.Visible;
             InventoryButton.Visibility = Visibility.Visible;
             AutoHuntButton.Visibility = Visibility.Visible;
+            PvpButton.Visibility = Visibility.Visible;
+            CounterButton.Visibility = Visibility.Visible;
             SettingsButton.Visibility = Visibility.Visible;
 #if DEBUG
             DebugButton.Visibility = Visibility.Visible;
@@ -1673,8 +1676,10 @@ public partial class MainWindow : Window
             _targetId = targetId;
             UpdateTargetFrame();
 
-            // Clicking another player just targets; clicking a mob attacks.
-            if (latest is { Kind: EntityKind.Mob })
+            // Clicking a mob attacks; clicking another player attacks only when PvP is on (else it
+            // just targets — for trade/party). Skills also fire on the current target.
+            if (latest is { Kind: EntityKind.Mob } ||
+                (_pvpEnabled && latest is { Kind: EntityKind.Player } && latest.Id != _myId))
                 await _net.AttackAsync(targetId);
             return;
         }

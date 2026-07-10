@@ -217,7 +217,11 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   buffer later; a **full-buff NPC buffer up to lvl 75** is the SOLO stopgap. High-tier solo being hard is
   INTENDED — buffs/party close the gap, don't nerf the mob curve.
 - [ ] **Position bonuses** — backstab / flanking damage (hook reserved).
-- [ ] **PvP / PvE multipliers** — wire the multiplier hooks (currently default 1.0).
+- [~] **PvP** — BUILT 2026-07-10 ([[pvp-system]], for testing skill/passive damage vs players): a
+  **PvP-enable** toggle (attack players outside towns) + a **counter-attack** toggle (auto-retaliate
+  while auto-hunting/offline) + a 30s self-defense flag + safe-zone gating (`CanPvpHit`). Damage rides
+  the existing `FinalizeDamage` pvp path. **Still open:** PvP/PvE damage MULTIPLIERS are still 1.0 (tune
+  when balancing), plus karma/flag colours + a PvP death penalty (deferred).
 - [ ] **Perfect / excellent block** — shield block tiers above the current flat block.
 - [ ] **Class-vs-class balance matrix** (buffed) + damage-K tuning once all kits exist.
   ([[class-race-identity]])

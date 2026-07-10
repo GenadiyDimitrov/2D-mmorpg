@@ -350,6 +350,28 @@ public partial class MainWindow
             MessageBox.Show(r.Reason, "Can't exit");
     }
 
+    // ----- PvP toggles -----
+    private bool _pvpEnabled;
+    private bool _counterEnabled;
+
+    private async void PvpButton_Click(object sender, RoutedEventArgs e) =>
+        await _net.TogglePvpAsync(!_pvpEnabled);
+
+    private async void CounterButton_Click(object sender, RoutedEventArgs e) =>
+        await _net.ToggleCounterAttackAsync(!_counterEnabled);
+
+    private void OnPvpState(PvpState s)
+    {
+        _pvpEnabled = s.Pvp;
+        _counterEnabled = s.CounterAttack;
+        PvpButton.Content = _pvpEnabled ? "PvP: On" : "PvP: Off";
+        PvpButton.Background = _pvpEnabled
+            ? new SolidColorBrush(Color.FromRgb(0xA0, 0x40, 0x40)) : null;
+        CounterButton.Content = _counterEnabled ? "Counter: On" : "Counter: Off";
+        CounterButton.Background = _counterEnabled
+            ? new SolidColorBrush(Color.FromRgb(0x40, 0x70, 0xA0)) : null;
+    }
+
     // =======================================================================
     // Trade
     // =======================================================================
