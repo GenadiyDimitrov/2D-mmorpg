@@ -1858,14 +1858,25 @@ public class GameLoopService : BackgroundService
             else { p.TargetX = null; p.TargetY = null; }
             return;
         }
-        if (p.TargetX is null)   // reached the last roam point (or idle) → pick a new one
+        // Roam: wander to a fresh point WITHIN the farm circle around home (the scan itself follows
+        // the character via FarmCenter). Bounded so a roamer doesn't drift across the map, and skips
+        // safe zones / roads so it doesn't idle in a town.
+        if (p.TargetX is null)
         {
-            double ang = _rng.NextDouble() * Math.PI * 2;
-            float dist = p.AutoFarmRange * (0.4f + 0.6f * (float)_rng.NextDouble());
-            var (rx, ry) = WorldMap.ClampToBorder(
-                p.X + (float)(Math.Cos(ang) * dist), p.Y + (float)(Math.Sin(ang) * dist));
-            p.TargetX = rx;
-            p.TargetY = ry;
+            for (int i = 0; i < 8; i++)
+            {
+                double ang = _rng.NextDouble() * Math.PI * 2;
+                float dist = p.AutoFarmRange * (float)Math.Sqrt(_rng.NextDouble());   // uniform in the disc
+                var (rx, ry) = WorldMap.ClampToBorder(
+                    p.FarmCenterX + (float)(Math.Cos(ang) * dist),
+                    p.FarmCenterY + (float)(Math.Sin(ang) * dist));
+                if (!GameConstants.InSafeZone(rx, ry) && !WorldMap.OnRoad(rx, ry))
+                {
+                    p.TargetX = rx;
+                    p.TargetY = ry;
+                    break;
+                }
+            }
         }
     }
 

@@ -55,7 +55,8 @@ public partial class MainWindow
     private async void AutoHuntEnabled_Click(object sender, RoutedEventArgs e) =>
         await _net.ToggleAutoHuntAsync(AutoHuntEnabledCheck.IsChecked == true);
 
-    private CheckBox? _autoBasicCheck;   // "Basic Attack" opt-in (a pseudo auto-skill)
+    private CheckBox? _autoBasicCheck;          // "Basic Attack" opt-in (a pseudo auto-skill)
+    private readonly List<string> _autoOrder = new();   // real-skill display order = priority
 
     private void BuildAutoHuntWindow()
     {
@@ -70,84 +71,131 @@ public partial class MainWindow
         AutoRankElite.IsChecked = _autoConfig?.AttackElite ?? false;
         AutoRankBoss.IsChecked = _autoConfig?.AttackBoss ?? false;
 
+        // Priority order: configured real skills first (preserved), then any other learned actives.
+        var cfg = _autoConfig?.Skills ?? Array.Empty<AutoSkillDto>();
+        _autoOrder.Clear();
+        foreach (var s in cfg)
+            if (s.SkillId != AutoHuntIds.BasicAttack && !_autoOrder.Contains(s.SkillId) &&
+                _learnedSkills.Contains(s.SkillId) && IsAutoUsable(s.SkillId))
+                _autoOrder.Add(s.SkillId);
+        foreach (var id in _learnedSkills)
+            if (!_autoOrder.Contains(id) && IsAutoUsable(id))
+                _autoOrder.Add(id);
+
+        var (state, basic) = StateFromConfig();
+        RenderAutoSkills(state, basic);
+    }
+
+    private static bool IsAutoUsable(string id) =>
+        SkillCatalog.Get(id) is SkillDef d && AutoTypeLabel(d) is not null;
+
+    /// <summary>Snapshot the current row edits (enabled + reuse) so a reorder doesn't lose them.</summary>
+    private (Dictionary<string, (bool Enabled, int Extra)> State, bool Basic) CaptureAuto()
+    {
+        var d = new Dictionary<string, (bool, int)>();
+        foreach (var (id, en, reuse) in _autoRows)
+        {
+            int baseCd = SkillCatalog.Get(id)?.CooldownTicks ?? 0;
+            d[id] = (en.IsChecked == true, Math.Max(0, SecondsToTicks(reuse.Text) - baseCd));
+        }
+        return (d, _autoBasicCheck?.IsChecked == true);
+    }
+
+    private (Dictionary<string, (bool Enabled, int Extra)> State, bool Basic) StateFromConfig()
+    {
+        var d = new Dictionary<string, (bool, int)>();
+        bool basic = false;
+        foreach (var s in _autoConfig?.Skills ?? Array.Empty<AutoSkillDto>())
+        {
+            if (s.SkillId == AutoHuntIds.BasicAttack) { basic = s.Enabled; continue; }
+            d[s.SkillId] = (s.Enabled, s.ExtraDelayTicks);
+        }
+        return (d, basic);
+    }
+
+    private void RenderAutoSkills(Dictionary<string, (bool Enabled, int Extra)> state, bool basic)
+    {
         _autoRows.Clear();
         AutoSkillsList.Items.Clear();
 
-        var cfg = _autoConfig?.Skills ?? Array.Empty<AutoSkillDto>();
-        var cfgById = cfg.ToDictionary(s => s.SkillId, s => s);
-
-        // "Basic Attack" pseudo-row first: melee when no skill is ready (fighters on, mages off).
         _autoBasicCheck = new CheckBox
         {
             Content = "Basic Attack (melee when no skill is ready)",
             Foreground = Brushes.White, FontSize = 12, Margin = new Thickness(0, 2, 0, 4),
-            IsChecked = cfgById.TryGetValue(AutoHuntIds.BasicAttack, out var ba) && ba.Enabled
+            IsChecked = basic
         };
         AutoSkillsList.Items.Add(_autoBasicCheck);
 
-        // Then real skills: configured order first (priority preserved), then any other learned.
-        var ordered = new List<string>();
-        foreach (var s in cfg)
-            if (_learnedSkills.Contains(s.SkillId) && !ordered.Contains(s.SkillId))
-                ordered.Add(s.SkillId);
-        foreach (var id in _learnedSkills)
-            if (!ordered.Contains(id))
-                ordered.Add(id);
-
-        foreach (var id in ordered)
+        foreach (var id in _autoOrder)
         {
             if (SkillCatalog.Get(id) is not SkillDef def) continue;
-            if (AutoTypeLabel(def) is not string type) continue;   // passive / not auto-usable
-
-            cfgById.TryGetValue(id, out var entry);
-            AutoSkillsList.Items.Add(BuildAutoRow(def, type, entry));
+            if (AutoTypeLabel(def) is not string type) continue;
+            state.TryGetValue(id, out var st);
+            AutoSkillsList.Items.Add(BuildAutoRow(def, type, st.Enabled, st.Extra));
         }
     }
 
-    private FrameworkElement BuildAutoRow(SkillDef def, string type, AutoSkillDto? entry)
+    /// <summary>Move a skill up (-1) / down (+1) in the priority order, preserving row edits.</summary>
+    private void AutoMove(string id, int dir)
+    {
+        int i = _autoOrder.IndexOf(id), j = i + dir;
+        if (i < 0 || j < 0 || j >= _autoOrder.Count) return;
+        var (state, basic) = CaptureAuto();
+        (_autoOrder[i], _autoOrder[j]) = (_autoOrder[j], _autoOrder[i]);
+        RenderAutoSkills(state, basic);
+    }
+
+    private FrameworkElement BuildAutoRow(SkillDef def, string type, bool enabledInit, int extraTicks)
     {
         var enabled = new CheckBox
         {
-            IsChecked = entry?.Enabled ?? false,
+            IsChecked = enabledInit,
             VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0)
         };
         var name = new TextBlock
         {
             Text = SkillDisplayName(def.Id, def.Name), Foreground = Brushes.White,
-            FontSize = 12, Width = 180, VerticalAlignment = VerticalAlignment.Center,
+            FontSize = 12, Width = 150, VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis
         };
         var tag = new TextBlock
         {
             Text = type, Foreground = new SolidColorBrush(Color.FromRgb(0x9A, 0xA8, 0x88)),
-            FontSize = 11, Width = 54, VerticalAlignment = VerticalAlignment.Center
+            FontSize = 11, Width = 50, VerticalAlignment = VerticalAlignment.Center
         };
         // Reuse (seconds) = base cooldown + the user's extra delay; can only be raised (min = default).
         float baseSec = def.CooldownTicks / (float)GameConstants.TickRate;
-        float shownSec = (def.CooldownTicks + (entry?.ExtraDelayTicks ?? 0)) / (float)GameConstants.TickRate;
+        float shownSec = (def.CooldownTicks + extraTicks) / (float)GameConstants.TickRate;
         var reuse = new TextBox
         {
             Text = shownSec.ToString("0.#", CultureInfo.InvariantCulture),
-            Width = 44, Height = 22, TextAlignment = TextAlignment.Center,
+            Width = 40, Height = 22, TextAlignment = TextAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 2, 0),
             ToolTip = $"Reuse in seconds (min {baseSec:0.#}s = the skill's own cooldown)."
         };
+        var up = new Button
+        {
+            Content = "▲", Width = 20, Height = 20, Padding = new Thickness(0), FontSize = 9,
+            Margin = new Thickness(6, 0, 0, 0), Tag = def.Id, ToolTip = "Higher priority"
+        };
+        up.Click += (_, _) => AutoMove((string)up.Tag, -1);
+        var down = new Button
+        {
+            Content = "▼", Width = 20, Height = 20, Padding = new Thickness(0), FontSize = 9,
+            Margin = new Thickness(2, 0, 0, 0), Tag = def.Id, ToolTip = "Lower priority"
+        };
+        down.Click += (_, _) => AutoMove((string)down.Tag, +1);
 
+        var mut = new SolidColorBrush(Color.FromRgb(0xCF, 0xC8, 0xB0));
         var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 2) };
         row.Children.Add(enabled);
         row.Children.Add(name);
         row.Children.Add(tag);
-        row.Children.Add(new TextBlock
-        {
-            Text = "reuse", Foreground = new SolidColorBrush(Color.FromRgb(0xCF, 0xC8, 0xB0)),
-            FontSize = 11, VerticalAlignment = VerticalAlignment.Center
-        });
+        row.Children.Add(new TextBlock { Text = "reuse", Foreground = mut, FontSize = 11, VerticalAlignment = VerticalAlignment.Center });
         row.Children.Add(reuse);
-        row.Children.Add(new TextBlock
-        {
-            Text = "s", Foreground = new SolidColorBrush(Color.FromRgb(0xCF, 0xC8, 0xB0)),
-            FontSize = 11, VerticalAlignment = VerticalAlignment.Center
-        });
+        row.Children.Add(new TextBlock { Text = "s", Foreground = mut, FontSize = 11, VerticalAlignment = VerticalAlignment.Center });
+        row.Children.Add(up);
+        row.Children.Add(down);
 
         _autoRows.Add((def.Id, enabled, reuse));
         return row;

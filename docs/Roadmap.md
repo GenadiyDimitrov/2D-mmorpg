@@ -193,8 +193,10 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   [[auto-hunt-design]]. Debug `/testcaps` shrinks caps+grace to seconds (2026-07-10). **ROAMING BUILT
   (2026-07-10):** farm-range radius (200–2000) + roaming vs static-spot (soft chase, return-to-centre) +
   target-rank filter (mobs/elites/bosses) + basic-attack-as-an-auto-skill (`AutoHuntIds.BasicAttack`;
-  mages skills-only, fighters melee). Deferred: reorder-priority, purchasable extensions, PvP no-counter,
-  full common-skills bar (sit/walk/dance).
+  mages skills-only, fighters melee). **Thread FINISHED (2026-07-10):** roam now BOUNDED (wanders within
+  the farm circle around home, skips safe zones/roads) + auto-skill **priority reorder** (▲/▼ in the
+  window). Deferred (need other systems): purchasable cap extensions, PvP no-counter, full common-skills
+  bar (sit/walk/dance), auto-heal party, offline-gains summary.
 - [x] **Disconnect / exit / combat + Return** (owner spec, 2026-07-09; [[disconnect-exit-system]]).
   Combat state (30s decay off the last damage). Disconnect FATE (`HandleLeave`): offline-farm ONLY when
   genuinely offline-farming (auto on, not locked — the 2h cap's domain); everyone else alive → a 180s
