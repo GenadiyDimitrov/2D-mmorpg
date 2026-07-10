@@ -87,6 +87,8 @@ this file.
   the more levels above the victim); status line shows KARMA.
 - [ ] **Kill a flagged/red** player → **PvP count** up, no karma.
 - [ ] **Dying** as a PK lowers your karma by 200; at 0 the **red name clears**.
+- [ ] **Farming as a PK** sheds karma: each mob kill is −20 (take a camper's spot, grind it clean).
+  (All karma values are tunable consts: base/consec/level growth, per-death, per-mob.)
 - [ ] **No PvP in towns** (safe zones block it; 0 damage if someone runs to town mid-fight).
 - [ ] **Counter-attack**: an auto-hunting/offline char with **Counter: On** retaliates against a player
   attacker (finishes a near-dead mob first, else switches).

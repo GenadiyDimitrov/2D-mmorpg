@@ -222,8 +222,10 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   `200·1.1^consec·1.2^lvlDiff`), killing a flagged/red → PvP count; each death decays karma (−200) and
   clears the red at 0; red/purple freely attackable, innocent needs the opt-in; safe-zone gated. Client
   colours names (red/purple/white) + shows karma. Damage rides the existing `FinalizeDamage` pvp path.
-  ⚠ Persisted karma columns → delete game.db. **Deferred (owner):** PK death item-drop, PK town-respawn
-  ban + town guards, PvP/PvE damage MULTIPLIERS still 1.0, duel/consent mode.
+  each death −200 karma and **each mob kill −20** (a PK grinds karma off — take a camper's spot + farm);
+  all karma values are tunable consts. ⚠ Persisted karma columns → delete game.db. **Deferred (owner):**
+  PK death item-drop, PK town-respawn ban + **town guards / prevention for future PvP/PK-FREE ZONES**,
+  PvP/PvE damage MULTIPLIERS still 1.0, duel/consent mode.
 - [ ] **Perfect / excellent block** — shield block tiers above the current flat block.
 - [ ] **Class-vs-class balance matrix** (buffed) + damage-K tuning once all kits exist.
   ([[class-race-identity]])

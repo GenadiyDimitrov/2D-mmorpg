@@ -313,12 +313,13 @@ public class GameLoopService : BackgroundService
         BroadcastSystem($"{player.Name} keeps hunting while away.");
     }
 
-    // ----- PvP / flag / karma (L2-style) -----
+    // ----- PvP / flag / karma (L2-style). ALL TUNABLE — one place. -----
     private const int PvpFlagTicks = 600;   // 60s purple flag after a pvp action
-    private const int KarmaBase = 200;
-    private const double KarmaConsecGrowth = 1.1;   // +10% per consecutive PK
-    private const double KarmaLevelGrowth = 1.2;    // +20% per level the victim is BELOW the killer
-    private const int KarmaLossPerDeath = 200;      // each death redeems ~one base kill of karma
+    private const int KarmaBase = 200;              // karma for a 1st, same-level innocent kill
+    private const double KarmaConsecGrowth = 1.1;   // ×per consecutive PK  (+10% each)
+    private const double KarmaLevelGrowth = 1.2;    // ×per level the victim is BELOW the killer (+20%)
+    private const int KarmaLossPerDeath = 200;      // karma shed on each death
+    private const int KarmaLossPerMob = 20;         // karma shed per mob kill (grind it off while farming)
 
     /// <summary>A player's name state: red (karma), else purple (recent pvp), else white.</summary>
     private PvpFlag FlagOf(Entity p) =>
@@ -385,6 +386,23 @@ public class GameLoopService : BackgroundService
         }
         SendPvpState(killer);
         SaveEntity(killer);
+    }
+
+    /// <summary>Shed karma (death or a mob kill). Clears the red flag + resets the consecutive-PK
+    /// counter at 0. Refreshes the HUD; only persists on the meaningful transition to 0 (the interim
+    /// decreasing value rides the 60s autosave, so a grinding PK doesn't hammer the DB).</summary>
+    private void ReduceKarma(Entity p, int amount)
+    {
+        if (p.Karma <= 0)
+            return;
+        p.Karma = Math.Max(0, p.Karma - amount);
+        SendPvpState(p);
+        if (p.Karma == 0)
+        {
+            p.ConsecutivePk = 0;
+            BroadcastSystem($"{p.Name}'s karma has cleared.");
+            SaveEntity(p);
+        }
     }
 
     /// <summary>Save a character without blocking the tick loop. The snapshot is taken
@@ -4264,6 +4282,8 @@ var effect = def.Effect;
                 // Kill-quest credit for the killer + every party member in range.
                 foreach (var m in KillCreditMembers(killer))
                     AdvanceKillQuests(m, victim);
+                // A PK works off karma by grinding — each mob kill sheds a little.
+                ReduceKarma(killer, KarmaLossPerMob);
             }
 
             OnMobKilled(victim);
@@ -4277,19 +4297,8 @@ var effect = def.Effect;
             if (killer.Kind == EntityKind.Player && killer.Id != victim.Id)
                 ApplyPvpKill(killer, victim);
 
-            // Karma decay: ANY death lowers a PK's karma; the red flag clears (and consecutive PK
-            // resets) at 0.
-            if (victim.Karma > 0)
-            {
-                victim.Karma = Math.Max(0, victim.Karma - KarmaLossPerDeath);
-                if (victim.Karma == 0)
-                {
-                    victim.ConsecutivePk = 0;
-                    BroadcastSystem($"{victim.Name}'s karma has cleared.");
-                }
-                SendPvpState(victim);
-                SaveEntity(victim);
-            }
+            // Any death sheds a big chunk of a PK's karma (the red flag clears at 0).
+            ReduceKarma(victim, KarmaLossPerDeath);
 
             // Death stops auto-hunt. An offline farmer's session ends (deferred logout); a link-dead
             // grace ends; an online idle hunter just stops (can re-enable after respawn).
