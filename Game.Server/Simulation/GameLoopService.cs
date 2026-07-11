@@ -393,18 +393,27 @@ public class GameLoopService : BackgroundService
         _graceSeconds       = Math.Clamp(c.GraceSeconds, 5, 3600);
     }
 
-    private const string DebugConfigFile = "debug-config.json";
+    // Lives NEXT TO THE EXE (Debug/publish output), like an options.ini — NOT a build item, so an
+    // update/rebuild never overwrites it; created with defaults on first run.
+    private static readonly string DebugConfigFile =
+        System.IO.Path.Combine(System.AppContext.BaseDirectory, "debug-config.json");
 
     private void LoadDebugConfig()
     {
         try
         {
-            if (System.IO.File.Exists(DebugConfigFile) &&
-                System.Text.Json.JsonSerializer.Deserialize<DebugConfigDto>(
-                    System.IO.File.ReadAllText(DebugConfigFile)) is DebugConfigDto c)
-                ApplyDebugConfig(c);
+            if (System.IO.File.Exists(DebugConfigFile))
+            {
+                if (System.Text.Json.JsonSerializer.Deserialize<DebugConfigDto>(
+                        System.IO.File.ReadAllText(DebugConfigFile)) is DebugConfigDto c)
+                    ApplyDebugConfig(c);
+            }
+            else
+            {
+                SaveDebugConfig();   // create the default file so it's there to edit
+            }
         }
-        catch { /* ignore a malformed/absent debug config */ }
+        catch { /* ignore a malformed debug config */ }
     }
 
     private void SaveDebugConfig()

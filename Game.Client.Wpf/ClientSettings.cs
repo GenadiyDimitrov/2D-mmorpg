@@ -4,18 +4,16 @@ using System.Text.Json;
 
 namespace Game.Client.Wpf;
 
-/// <summary>Persistent client preferences (window size, …). Stored in %LocalAppData%\L2Clone so it's
-/// NOT in the repo and NOT copied to the build/Debug folder. Best-effort — a bad/missing file just
-/// yields defaults.</summary>
+/// <summary>Persistent client preferences (window size, …). Lives NEXT TO THE EXE (the Debug/publish
+/// output folder), like an options.ini. It is NOT a build item, so an update/rebuild never overwrites
+/// it; if it's missing the app writes a default. Best-effort — a bad file just yields defaults.</summary>
 public class ClientSettings
 {
     public double WindowWidth { get; set; } = 1280;
     public double WindowHeight { get; set; } = 800;
 
     private static string FilePath =>
-        Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "L2Clone", "client-settings.json");
+        Path.Combine(AppContext.BaseDirectory, "client-settings.json");
 
     public static ClientSettings Load()
     {
@@ -23,18 +21,16 @@ public class ClientSettings
         {
             if (File.Exists(FilePath))
                 return JsonSerializer.Deserialize<ClientSettings>(File.ReadAllText(FilePath)) ?? new ClientSettings();
+            var fresh = new ClientSettings();
+            fresh.Save();   // create the default so it's there to edit
+            return fresh;
         }
-        catch { /* ignore */ }
-        return new ClientSettings();
+        catch { return new ClientSettings(); }
     }
 
     public void Save()
     {
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
-            File.WriteAllText(FilePath, JsonSerializer.Serialize(this));
-        }
+        try { File.WriteAllText(FilePath, JsonSerializer.Serialize(this)); }
         catch { /* best-effort */ }
     }
 }
