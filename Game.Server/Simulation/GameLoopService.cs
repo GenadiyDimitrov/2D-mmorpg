@@ -32,6 +32,7 @@ public class GameLoopService : BackgroundService
         _hub = hub;
         _log = log;
         _db = db;
+        LoadDebugConfig();   // restore persisted debug tuning (rates/karma/caps) between runs
     }
 
     protected override async Task ExecuteAsync(CancellationToken ct)
@@ -369,7 +370,14 @@ public class GameLoopService : BackgroundService
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var p) || !p.IsAdmin)
             return;
-        var c = cmd.Config;
+        ApplyDebugConfig(cmd.Config);
+        SaveDebugConfig();   // persist between runs
+        SendSystemToEntity(p, "[DEBUG] Tuning applied + saved (debug-config.json).");
+        SendTo(p, "DebugConfig", CurrentDebugConfig());   // echo back the clamped values
+    }
+
+    private void ApplyDebugConfig(DebugConfigDto c)
+    {
         RateConfig.ExpRate        = Math.Max(0f, c.ExpRate);
         RateConfig.SpRate         = Math.Max(0f, c.SpRate);
         RateConfig.DropChanceRate = Math.Max(0f, c.DropChanceRate);
@@ -380,11 +388,29 @@ public class GameLoopService : BackgroundService
         _karmaLevelGrowth   = Math.Max(1.0, c.KarmaLevelGrowth);
         _karmaLossPerDeath  = Math.Max(0, c.KarmaLossPerDeath);
         _karmaLossPerMob    = Math.Max(0, c.KarmaLossPerMob);
-        _idleCapSeconds     = Math.Clamp(c.IdleCapSeconds, 5, 24 * 3600);
-        _offlineCapSeconds  = Math.Clamp(c.OfflineCapSeconds, 5, 24 * 3600);
+        _idleCapSeconds     = Math.Clamp(c.IdleCapSeconds, 0, 24 * 3600);   // 0 = unlimited
+        _offlineCapSeconds  = Math.Clamp(c.OfflineCapSeconds, 0, 24 * 3600);
         _graceSeconds       = Math.Clamp(c.GraceSeconds, 5, 3600);
-        SendSystemToEntity(p, "[DEBUG] Tuning applied (runtime only — bake final values into code).");
-        SendTo(p, "DebugConfig", CurrentDebugConfig());   // echo back the clamped values
+    }
+
+    private const string DebugConfigFile = "debug-config.json";
+
+    private void LoadDebugConfig()
+    {
+        try
+        {
+            if (System.IO.File.Exists(DebugConfigFile) &&
+                System.Text.Json.JsonSerializer.Deserialize<DebugConfigDto>(
+                    System.IO.File.ReadAllText(DebugConfigFile)) is DebugConfigDto c)
+                ApplyDebugConfig(c);
+        }
+        catch { /* ignore a malformed/absent debug config */ }
+    }
+
+    private void SaveDebugConfig()
+    {
+        try { System.IO.File.WriteAllText(DebugConfigFile, System.Text.Json.JsonSerializer.Serialize(CurrentDebugConfig())); }
+        catch { /* best-effort */ }
     }
 
     /// <summary>May 'attacker' damage 'target'? A mob on either side = always (normal PvE). Player→
@@ -1871,8 +1897,9 @@ public class GameLoopService : BackgroundService
     private int _idleCapSeconds = 8 * 3600;
     private int _offlineCapSeconds = 2 * 3600;
     private int _graceSeconds = 180;
-    private long AutoIdleCapTicks(Entity p) => (long)_idleCapSeconds * GameConstants.TickRate;
-    private long AutoOfflineCapTicks(Entity p) => (long)_offlineCapSeconds * GameConstants.TickRate;
+    // 0 (or less) = UNLIMITED (never caps) — for leaving people farming/levelling to gauge speed.
+    private long AutoIdleCapTicks(Entity p) => _idleCapSeconds <= 0 ? long.MaxValue : (long)_idleCapSeconds * GameConstants.TickRate;
+    private long AutoOfflineCapTicks(Entity p) => _offlineCapSeconds <= 0 ? long.MaxValue : (long)_offlineCapSeconds * GameConstants.TickRate;
 
     // Offline sessions that hit their cap / died this tick — removed after the entity loop so we
     // never mutate _world.Entities while iterating it.

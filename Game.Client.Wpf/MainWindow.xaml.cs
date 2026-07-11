@@ -76,9 +76,24 @@ public partial class MainWindow : Window
     private Guid? _pendingPartyFrom;
     private bool _suppressLootCombo;   // guard: programmatic combo updates must not re-send to server
 
+    private readonly ClientSettings _settings = ClientSettings.Load();
+
     public MainWindow()
     {
         InitializeComponent();
+
+        // Restore the saved window size; persist it (and any resize) on close.
+        Width = _settings.WindowWidth;
+        Height = _settings.WindowHeight;
+        Closing += (_, _) =>
+        {
+            if (WindowState == System.Windows.WindowState.Normal)
+            {
+                _settings.WindowWidth = Width;
+                _settings.WindowHeight = Height;
+            }
+            _settings.Save();
+        };
 
         WhisperNames.ItemsSource = _whisperNames;
         BuildCreationTree();

@@ -27,8 +27,8 @@ public partial class MainWindow
         ("karmaLevel", "Karma ×/level diff", true),
         ("karmaDeath", "Karma −/death", false),
         ("karmaMob", "Karma −/mob kill", false),
-        ("idleCap", "Idle cap (sec)", false),
-        ("offlineCap", "Offline cap (sec)", false),
+        ("idleCap", "Idle cap sec (0=∞)", false),
+        ("offlineCap", "Offline cap sec (0=∞)", false),
         ("grace", "Disconnect grace (sec)", false),
     };
 

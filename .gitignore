@@ -8,6 +8,10 @@ obj/
 *.db-shm
 *.db-wal
 
+# Runtime-only settings files (machine-specific; not build content, not committed)
+debug-config.json
+client-settings.json
+
 # Claude Code local settings (machine-specific)
 .claude/settings.local.json
 

@@ -82,7 +82,10 @@ this file.
 - [ ] Change **Exp/Drop rates** + Apply → next kills/drops use the new rate immediately.
 - [ ] Change **karma** values (base / ×consec / ×level / −death / −mob) + Apply → next PK/death/mob-kill
   uses them. Change **idle/offline/grace** caps (seconds) + Apply → observe a cap/grace fire quickly.
-- [ ] Values are runtime-only (reset on server restart) — bake the finals into the code defaults.
+- [ ] **Idle/offline cap = 0 → unlimited** (leave someone farming/levelling to gauge speed).
+- [ ] Debug values **persist across server restarts** (`debug-config.json` in the server folder).
+- [ ] **Window size persists** — resize the client, close, reopen → same size (`%LocalAppData%\L2Clone`).
+- [ ] Config files are gitignored + not in the build/Debug output.
 - [ ] Non-admins: the panel does nothing (server refuses).
 
 ### PvP + flag/karma/PK (2026-07-10) — ⚠ delete game.db first (new karma columns)
