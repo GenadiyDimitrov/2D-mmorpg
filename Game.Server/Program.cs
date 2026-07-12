@@ -25,6 +25,10 @@ using (var scope = app.Services.CreateScope())
 {
     var persistence = scope.ServiceProvider.GetRequiredService<PersistenceService>();
     await persistence.EnsureCreatedAsync();
+#if DEBUG
+    // Dev only: seed admin/admin + test1..test9/test (one char each) on an empty db.
+    await persistence.SeedDebugAccountsAsync();
+#endif
 }
 
 app.MapHub<GameHub>("/game");

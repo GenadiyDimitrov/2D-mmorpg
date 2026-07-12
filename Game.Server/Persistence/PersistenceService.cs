@@ -59,6 +59,30 @@ public class PersistenceService
         return new AuthResult(true, null, account.Id, account.IsAdmin);
     }
 
+    /// <summary>DEBUG convenience: on an EMPTY db, create ready-to-play accounts so you can skip the
+    /// (already-tested) register/create flow — just log in, pick the char, enter. admin/admin (admin)
+    /// + test1..test9/test, each with one Human Fighter (change class via debug in-game). No-op if any
+    /// account already exists.</summary>
+    public async Task SeedDebugAccountsAsync()
+    {
+        await using (var db = await _factory.CreateDbContextAsync())
+        {
+            if (await db.Accounts.AnyAsync())
+                return;   // only seed a fresh, empty database
+        }
+
+        async Task SeedAsync(string user, string pass, string charName)
+        {
+            var acc = await RegisterAsync(user, pass);   // the FIRST account (admin) auto-gets IsAdmin
+            if (acc.Success)
+                await CreateCharacterAsync(acc.AccountId, charName, Race.Human, BaseClass.Fighter);
+        }
+
+        await SeedAsync("admin", "admin", "Admin");
+        for (int i = 1; i <= 9; i++)
+            await SeedAsync($"test{i}", "test", $"Test{i}");
+    }
+
     public async Task<AuthResult> LoginAsync(string username, string password)
     {
         username = username.Trim();
