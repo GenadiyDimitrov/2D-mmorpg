@@ -9,6 +9,10 @@ namespace Game.Client.Wpf;
 /// it; if it's missing the app writes a default. Best-effort — a bad file just yields defaults.</summary>
 public class ClientSettings
 {
+    // Startup position (virtual-screen coords — negative Left/Top puts it on a monitor left/above
+    // the primary, e.g. to send clients to your 1st monitor). Edit here or just drag+close a window.
+    public double WindowLeft { get; set; } = 100;
+    public double WindowTop { get; set; } = 100;
     public double WindowWidth { get; set; } = 1280;
     public double WindowHeight { get; set; } = 800;
 

@@ -82,13 +82,18 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        // Restore the saved window size; persist it (and any resize) on close.
+        // Restore the saved window position + size; persist them (and any move/resize) on close.
+        // Edit client-settings.json (next to the exe) to set the offset, e.g. to reach your 1st monitor.
+        Left = _settings.WindowLeft;
+        Top = _settings.WindowTop;
         Width = _settings.WindowWidth;
         Height = _settings.WindowHeight;
         Closing += (_, _) =>
         {
             if (WindowState == System.Windows.WindowState.Normal)
             {
+                _settings.WindowLeft = Left;
+                _settings.WindowTop = Top;
                 _settings.WindowWidth = Width;
                 _settings.WindowHeight = Height;
             }

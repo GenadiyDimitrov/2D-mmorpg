@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="L2-like — Phase 4"
         Width="1280" Height="800"
-        WindowStartupLocation="CenterScreen"
+        WindowStartupLocation="Manual"
         Background="#FF101418">
     <Grid>
 
