@@ -7,6 +7,40 @@ this file.
 
 ---
 
+## To test now (LEVEL-40 STAT-SWAP PASSIVES — 2026-07-13)
+
+The ONLY thing that moves your main stats now. You're born with your CON/ATK/WIT/DEX; the old free
+`LevelStatBonus` and the class-change stat grants are both gone.
+
+- [ ] At **level 40**, the Skills → **Learn** tab shows 10-12 new passives priced in **GOLD, not SP**:
+  **1kk / 2kk / 3kk / 4kk / 5kk** per level (15kk to max one). Each level = **+1 one stat, −1 another**;
+  maxed = **+5 / −5**.
+- [ ] They cost gold you actually have — the Learn popup shows the gold price and your balance, and
+  is disabled if you're short. Learning deducts the gold.
+- [ ] **A group is a PERMANENT commitment.** Take *Fortitude (Agility)* (+CON−DEX) and *Fortitude
+  (Power)* (+CON−ATK) **disappears from the list forever**. The popup warns you before you buy.
+  You can still level the one you picked.
+- [ ] The groups (mutually exclusive within each):
+  - **CON** → +CON−ATK, +CON−DEX
+  - **DEX** → +DEX−ATK, +DEX−CON
+  - **ATK** → +ATK−DEX, +ATK−CON *(fighters)* · +ATK−WIT, +ATK−MEN *(mages)*
+  - **WIT** → +WIT−ATK, +WIT−MEN
+  - **MEN** → +MEN−ATK, +MEN−WIT
+- [ ] **Only the ATK group is class-gated** (ATK is our one power stat — the weapon decides whether
+  it lands as P.Atk or M.Atk). A **fighter** sees only the CON/DEX-cost versions; a **mage** only the
+  WIT/MEN-cost ones. A **BUFFER (Warchanter) sees all four** — deliberately strong, he can pay in a
+  stat he doesn't use. ⚠ If that's too good, switch him to a dual-cost (+ATK −a −b) form.
+- [ ] **The stats REALLY change**, not just the stat window: +CON raises **Max HP**, +DEX raises
+  **evasion / accuracy / crit / attack speed**, +WIT raises **cast speed / MP / magic crit**, +ATK
+  raises **P.Atk and M.Atk** (whichever your weapon feeds). They're folded in the pre-pass, before
+  anything is derived.
+- [ ] **MEN is no longer a stat** — a "±MEN" swap IS its modifiers: **±2% Max MP, ±2% M.Def, ±2% MP
+  regen per point** (so ±10% at level 5). Check the stat window reflects it.
+- [ ] ⚠ **NOT built: the reset NPC.** A bad choice is permanent for now. Owner wants an NPC that
+  un-learns these (free to remove, gold NOT refunded) — on the roadmap.
+
+---
+
 ## To test now (HEALS + PvP HEAL RULES — 2026-07-13)
 
 ### Heals now scale with M.Atk (flat) — % heals don't

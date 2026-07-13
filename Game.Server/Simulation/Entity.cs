@@ -203,6 +203,10 @@ public class Entity
     // pre-pass BEFORE the derived stats are computed, so a set's "CON +3" raises HP, "DEX +1"
     // raises eva/acc/crit, etc. Included in the Effective* getters so live speed getters see them too.
     public int BonusStr { get; set; }
+    /// <summary>Delta on the single power stat (ATK), from the level-40 stat-swap passives. ATK
+    /// feeds BOTH channels — the WEAPON decides whether it lands as P.Atk or M.Atk — which is what
+    /// lets one +ATK skill serve a fighter and a caster alike.</summary>
+    public int BonusAtk { get; set; }
     public int BonusDex { get; set; }
     public int BonusCon { get; set; }
     public int BonusInt { get; set; }
@@ -218,6 +222,11 @@ public class Entity
     /// The old free +1@20…+5@80 "dye stand-in" (LevelStatBonus) is gone — the stat-swap
     /// skills replace it, and stats no longer grow just by levelling.</summary>
     public int EffectiveWit => Wit + BonusWit;
+
+    /// <summary>The power stat (ATK) used for ALL gameplay math: born-with base + the stat-swap
+    /// passives. Feeds P.Atk and M.Atk alike; the weapon's channel factors decide which one it
+    /// actually lands in.</summary>
+    public int EffectiveAtk => AtkStat + BonusAtk;
 
     /// <summary>DEX used for ALL gameplay math (attack speed, crit, evasion, accuracy).
     /// Same rule as <see cref="EffectiveWit"/>: born-with base + the stat-swap passives.</summary>
@@ -711,17 +720,26 @@ public class Entity
     /// change.</summary>
     public void RecomputeDerived()
     {
-        // ----- Primary-stat PRE-PASS: fold the active armor set's main-stat deltas into the
-        // Bonus* stats BEFORE deriving HP/MP/atk/eva/acc/crit, so a set's "CON +3" actually raises
-        // HP, "DEX +1" raises eva/acc/crit, "MEN" raises MP/M.Def, "STR/INT" raise P/M.Atk. Detected
-        // ONCE here and reused by the set's SECONDARY block below. (EffectiveDex/Wit include Bonus*.)
-        BonusStr = BonusDex = BonusCon = BonusInt = BonusWit = BonusMen = 0;
+        // ----- Primary-stat PRE-PASS: fold main-stat deltas into the Bonus* stats BEFORE deriving
+        // HP/MP/atk/eva/acc/crit, so "CON +3" actually raises HP, "DEX +1" actually raises
+        // eva/acc/crit, and "ATK +5" actually raises P.Atk/M.Atk — not just the stat window.
+        // TWO sources: the active armor set, and the level-40 STAT-SWAP passives. This has to run
+        // here, not in the passive loop below, because that loop happens AFTER everything is derived.
+        BonusStr = BonusDex = BonusCon = BonusInt = BonusWit = BonusMen = BonusAtk = 0;
         var activeSet = Kind == EntityKind.Player ? DetectActiveSet() : null;
         if (activeSet is not null)
         {
             var pm = activeSet.Mods;
             BonusStr = (int)pm.Str; BonusDex = (int)pm.Dex; BonusCon = (int)pm.Con;
             BonusInt = (int)pm.Int; BonusWit = (int)pm.Wit; BonusMen = (int)pm.Men;
+        }
+        if (Kind == EntityKind.Player)
+        {
+            foreach (var (skillId, skillLevel) in LearnedSkills)
+            {
+                if (SkillCatalog.Get(skillId)?.PassiveAt(skillLevel) is not PassiveEffect pe) continue;
+                BonusCon += pe.Con; BonusDex += pe.Dex; BonusAtk += pe.Atk; BonusWit += pe.Wit;
+            }
         }
 
         // Players derive from core stats + class curves; MOBS read the authored per-level
@@ -739,10 +757,10 @@ public class Entity
                 StatCalculator.Level1BaseMp(BaseClass))
             : MobBaseStats.Mp(Level);
         AttackPower = Kind == EntityKind.Player
-            ? StatCalculator.AttackPower(AtkStat, Level) + BonusStr * 3   // STR → P.Atk (first-pass coeff)
+            ? StatCalculator.AttackPower(EffectiveAtk, Level) + BonusStr * 3   // STR → P.Atk (first-pass coeff)
             : MobBaseStats.PAtk(Level);
         MagicAttack = Kind == EntityKind.Player
-            ? StatCalculator.AttackPower(AtkStat, Level) + BonusInt * 3   // INT → M.Atk
+            ? StatCalculator.AttackPower(EffectiveAtk, Level) + BonusInt * 3   // INT → M.Atk
             : MobBaseStats.MAtk(Level);
         // Defence (authentic L2): players use armor/jewel-driven base + level²/100, no CON
         // term. Mobs use their authored base curve (P.Def and M.Def separately).

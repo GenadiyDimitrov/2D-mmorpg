@@ -1482,6 +1482,19 @@ public partial class MainWindow
 
     /// <summary>Tab 2: learnable skills grouped by required level, with Learn
     /// buttons enabled when level + SP (+ previous rank) allow.</summary>
+    /// <summary>True if a rival skill in the same mutually-exclusive group is already learned — you
+    /// committed to one trade-off, so the alternatives vanish from the learn list. (The stat-swap
+    /// passives: take +CON−DEX and +CON−ATK is gone for good.) The skill you PICKED still shows, so
+    /// you can keep levelling it.</summary>
+    private bool LockedByExclusiveGroup(string skillId)
+    {
+        if (SkillCatalog.Get(skillId) is not SkillDef def || string.IsNullOrEmpty(def.ExclusiveGroup))
+            return false;
+        if (_learnedSkills.Contains(skillId)) return false;   // it's the one you took
+        return _learnedSkills.Any(id => SkillCatalog.Get(id) is { } other
+                                        && other.ExclusiveGroup == def.ExclusiveGroup);
+    }
+
     private void BuildLearnTab()
     {
         var all = ClassSkills.LearnableAt(_myRace, _myBaseClass, CurrentArchetype, int.MaxValue, CurrentDiscipline);
@@ -1491,7 +1504,8 @@ public partial class MainWindow
         // Bolt → Magic Bolt). Grouped by the character level that unlocks it.
         var groups = all
             .Where(cs => cs.SkillLevel == _learnedLevels.GetValueOrDefault(cs.SkillId) + 1
-                         && !SupersededByLearned(cs.SkillId))
+                         && !SupersededByLearned(cs.SkillId)
+                         && !LockedByExclusiveGroup(cs.SkillId))
             .GroupBy(cs => cs.LearnLevel)
             .OrderBy(g => g.Key);
 
@@ -1508,8 +1522,12 @@ public partial class MainWindow
                 if (def is null) continue;
 
                 int cost = def.SpCostAt(cs.SkillLevel);
-                bool canLearn = levelMet && _skillPoints >= cost;
+                int gold = def.GoldCostAt(cs.SkillLevel);   // the stat-swap passives are bought with GOLD
+                bool canLearn = levelMet && _skillPoints >= cost && (gold == 0 || _gold >= gold);
                 string levelTag = def.MaxLevel > 1 ? $" Lv.{cs.SkillLevel}" : "";
+                string priceTag = gold > 0
+                    ? $"({gold:N0} {GameConstants.CurrencyName})"
+                    : $"(SP {cost})";
 
                 var row = new DockPanel { Margin = new Thickness(0, 0, 0, 6) };
                 var learn = new Button
@@ -1524,7 +1542,7 @@ public partial class MainWindow
 
                 var name = new TextBlock
                 {
-                    Text = $"{SkillDisplayName(def.Id, def.Name)}{levelTag}  (SP {cost})",
+                    Text = $"{SkillDisplayName(def.Id, def.Name)}{levelTag}  {priceTag}",
                     Foreground = canLearn ? Brushes.White : Brushes.Gray,
                     FontSize = 13, VerticalAlignment = VerticalAlignment.Center,
                     Cursor = System.Windows.Input.Cursors.Hand,
@@ -1562,11 +1580,20 @@ public partial class MainWindow
 
         int target = _learnedLevels.GetValueOrDefault(skillId) + 1;
         int cost = def.SpCostAt(target);
+        int gold = def.GoldCostAt(target);   // the stat-swap passives are paid for in GOLD, not SP
         _pendingLearnId = skillId;
         LearnTitle.Text = def.MaxLevel > 1 ? $"{def.Name} (Lv.{target})" : def.Name;
-        LearnBody.Text = SkillDetail(def);
-        bool enough = _skillPoints >= cost;
-        LearnCost.Text = $"Cost: {cost} SP   (you have {_skillPoints})";
+
+        string body = SkillDetail(def);
+        // A permanent, exclusive choice deserves a warning before you spend millions on it.
+        if (!string.IsNullOrEmpty(def.ExclusiveGroup) && !_learnedSkills.Contains(skillId))
+            body += "\n\nThis choice is PERMANENT: taking it locks out the other options in its group.";
+        LearnBody.Text = body;
+
+        bool enough = gold > 0 ? _gold >= gold : _skillPoints >= cost;
+        LearnCost.Text = gold > 0
+            ? $"Cost: {gold:N0} {GameConstants.CurrencyName}   (you have {_gold:N0})"
+            : $"Cost: {cost} SP   (you have {_skillPoints})";
         LearnCost.Foreground = enough ? Brushes.LightGreen : Brushes.IndianRed;
         LearnConfirm.IsEnabled = enough;
         LearnPopup.Visibility = Visibility.Visible;

@@ -50,6 +50,10 @@ public record SkillDef(
     /// a debuff is detected from its effect flags regardless. Set Consumable on potion skills and
     /// Item on always-on gear effects.</summary>
     BuffRow BuffRow = BuffRow.Buff,
+    /// <summary>Mutually-exclusive group ("" = none). Learning ANY skill in a group permanently
+    /// locks out every other skill in it — you commit to one trade-off. Used by the level-40
+    /// stat-swap passives: take +CON−DEX and you can never also take +CON−ATK.</summary>
+    string ExclusiveGroup = "",
     TargetMode TargetMode = TargetMode.SelfOrTarget,
     float AreaRadius = 0f,
     int InterruptDefense = 0,
@@ -199,6 +203,8 @@ public record SkillDef(
     public EffectMagnitude[]? MagnitudesAt(int level) => Lvl(level)?.Magnitudes ?? Magnitudes;
     public int MpCostAt(int level) => Lvl(level)?.MpCost ?? MpCost;
     public int SpCostAt(int level) => Lvl(level)?.SpCost ?? SpCost;
+    /// <summary>GOLD price of a level (0 = not bought with gold).</summary>
+    public int GoldCostAt(int level) => Lvl(level)?.GoldCost ?? 0;
     public PassiveEffect? PassiveAt(int level) => Lvl(level)?.Passive ?? Passive;
     public string DescriptionAt(int level) => Lvl(level)?.Description ?? Description;
 
@@ -288,7 +294,9 @@ public record SkillLevel(
     int MpCost = 0,
     int SpCost = 1,
     string? Description = null,
-    int InitialMpCost = -1);   // -1 = inherit the SkillDef's split (0 up front)
+    int InitialMpCost = -1,   // -1 = inherit the SkillDef's split (0 up front)
+    // GOLD price of this level (0 = free). The stat-swap passives are bought with gold, not SP.
+    int GoldCost = 0);
 
 /// <summary>Skill window grouping. Passive = a learned, always-on effect (armor
 /// masteries, discipline passives) — never cast and never placed on the action bar.</summary>
@@ -352,7 +360,13 @@ public readonly record struct PassiveEffect(
     // FLAT addition to the casting-speed STAT (not a percent). This is how L2's spirit-
     // shots work: +40 flat on top of the multiplicative chain, so it matters a lot at low
     // cast speed and barely at high — unlike a percent, which compounds and runs away.
-    float CastSpeedFlat = 0f);
+    float CastSpeedFlat = 0f,
+    // ----- PRIMARY-stat deltas (the level-40 stat-swap passives). Folded in RecomputeDerived's
+    // PRE-PASS, before anything is derived, so "+CON" genuinely raises Max HP and "+DEX" genuinely
+    // raises evasion/accuracy/crit/attack-speed — not just a number in the stat window.
+    // There is deliberately no MEN here: MEN is no longer a stat. A "±MEN" swap is expressed
+    // directly as its modifiers (MaxMpPct / MagicDefencePct / MpRegenPct above).
+    int Con = 0, int Dex = 0, int Atk = 0, int Wit = 0);
 
 /// <summary>Who a skill affects. SelfOnly = caster only; AlliesInRadius = caster + party members
 /// in radius (heals/buffs); EnemiesInRadius = every HOSTILE in radius (an offensive AoE, e.g. a
@@ -379,6 +393,7 @@ public static partial class SkillCatalog
     {
         var list = new List<SkillDef>();
         list.AddRange(CommonSkills());        // Skills.Common.cs
+        list.AddRange(StatSwapSkillDefs());   // Skills.StatSwap.cs (the level-40 +stat/−stat passives)
         list.AddRange(FighterSkills());       // Skills.Fighter.cs
         list.AddRange(MageSkills());          // Skills.Mage.cs
         list.AddRange(HealerSkills());        // Skills.Healer.cs (2nd-class Healer kit)

@@ -681,6 +681,21 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // Mutually-exclusive group (the stat-swap passives): you may hold ONE skill per group, and
+        // the choice is permanent. Only blocks the FIRST level — levelling the one you picked is fine.
+        if (cur == 0 && !string.IsNullOrEmpty(def.ExclusiveGroup))
+        {
+            foreach (var (learnedId, _) in player.LearnedSkills)
+            {
+                if (learnedId == def.Id) continue;
+                if (SkillCatalog.Get(learnedId) is not SkillDef other
+                    || other.ExclusiveGroup != def.ExclusiveGroup) continue;
+                SendSystemToEntity(player,
+                    $"You have already committed to {other.Name}. It cannot be combined with {def.Name}.");
+                return;
+            }
+        }
+
         int cost = def.SpCostAt(target);
         if (player.SkillPoints < cost)
         {
@@ -688,7 +703,17 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // GOLD price (the stat-swap passives cost gold, not SP: 1kk…5kk per level).
+        int gold = def.GoldCostAt(target);
+        if (gold > 0 && player.Gold < gold)
+        {
+            SendSystemToEntity(player,
+                $"{def.Name} (Lv.{target}) costs {gold:N0} {GameConstants.CurrencyName}.");
+            return;
+        }
+
         player.SkillPoints -= cost;
+        if (gold > 0) player.Gold -= gold;
         player.LearnedSkills[def.Id] = target;
 
         // Cross-skill replacement (FlameBolt replaces MagicBolt) — only on first learn.
@@ -702,6 +727,7 @@ public class GameLoopService : BackgroundService
         SendSystemToEntity(player, def.MaxLevel > 1 ? $"Learned {def.Name} (Lv.{target})!" : $"Learned {def.Name}!");
         SendStats(player);
         SendLearned(player);
+        if (gold > 0) SendGold(player);
         SaveEntity(player);
     }
 
