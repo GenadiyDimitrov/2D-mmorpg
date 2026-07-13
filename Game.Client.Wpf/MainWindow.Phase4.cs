@@ -198,8 +198,9 @@ public partial class MainWindow
             foreach (var a in item.Attributes)
                 lines.Add($"{AttributeSystem.DisplayName(a.Type)} +{a.Value}{(AttributeSystem.IsPercent(a.Type) ? "%" : "")}");
         }
-        if (ItemCatalog.IsBuffPotion(def) && SkillCatalog.Get(def.BuffSkillId) is SkillDef buffDef)
-            lines.Add($"Use: {buffDef.Description}");
+        // Every consumable describes itself through the SKILL it grants.
+        if (SkillCatalog.Get(def.UseSkillId) is SkillDef useDef)
+            lines.Add($"Use: {useDef.Description}");
         if (!string.IsNullOrEmpty(def.SetId) && ArmorSetCatalog.Get(def.SetId) is ArmorSetDef set)
         {
             var b = set.Bonus;
@@ -1799,12 +1800,14 @@ public partial class MainWindow
         _ => "?"
     };
 
+    /// <summary>A consumable's tooltip is just its SKILL's description (+ the shared drink
+    /// cooldown, if it has one). The item no longer carries heal numbers of its own.</summary>
     private static string PotionTooltip(ItemDef def)
     {
-        if (def.InstantHealPercent > 0)
-            return $"Instant heal {def.InstantHealPercent * 100:0}% HP. CD {def.PotionCooldownTicks / GameConstants.TickRate}s.";
-        return $"Heal {def.HealPercentPerSecond * 100:0}%/s for " +
-               $"{def.PotionDurationTicks / GameConstants.TickRate}s. CD {def.PotionCooldownTicks / GameConstants.TickRate}s.";
+        string text = SkillCatalog.Get(def.UseSkillId)?.Description ?? "";
+        if (def.PotionCooldownTicks > 0)
+            text += $" CD {def.PotionCooldownTicks / GameConstants.TickRate}s.";
+        return text.Trim();
     }
 
     // =======================================================================

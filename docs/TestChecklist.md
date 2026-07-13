@@ -7,6 +7,34 @@ this file.
 
 ---
 
+## To test now (EVERYTHING IS A SKILL — potions/scrolls — 2026-07-13)
+
+### Typing in text boxes (the real cause of "can't write in the auto-potion boxes")
+- [ ] You can now **type into every text box**: auto-hunt HP%/MP%, farm range, per-skill reuse,
+  debug tuning. The key handler only excused the CHAT box, so typing anywhere else fired the game
+  hotkeys and ate the keystroke — "5" cast skill 5, "i" opened the inventory, and the digit never
+  landed. That's why it "used skills" instead of writing.
+
+### Consumables now cast skills
+- [ ] **Healing potions are skills.** Minor/Healing are heal-over-time BUFFS (1%/s and 2%/s for 15s)
+  — they now appear on the **buff bar** instead of a bespoke potion channel. Greater is an instant
+  50% heal.
+- [ ] Drinking a **Greater potion over a Minor HoT** replaces it (BuffKey + Rank does the
+  "stronger cancels weaker" that the old hand-rolled potion-rarity state did).
+- [ ] The **shared 30s drink cooldown** across healing potions still works; **buff potions still
+  ignore it**.
+- [ ] **Auto-potion (auto-hunt) still drinks the best HP potion** below your threshold, and the
+  "keep buff potions active" top-up still works.
+- [ ] Potion **tooltips** now read from the skill's description.
+
+### Return scrolls are no longer learned skills
+- [ ] **Scroll of Return / Ultimate Scroll of Return no longer appear in your skill list.** They were
+  auto-granted as learned skills; now the ITEM grants the skill. Double-click the scroll → it still
+  channels and teleports, and is still consumed (refunded if interrupted).
+- [ ] The plain **Return** skill (30s cast, 5min cd) IS still a learned skill everyone has — unchanged.
+
+---
+
 ## To test now (DEBUG GEAR PICKER — 2026-07-13)
 
 - [ ] Debug → **Equip** tab is now a drill-down: **Armor & Shields / Weapons / Jewels** → pick a

@@ -801,7 +801,14 @@ public partial class MainWindow : Window
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (!_inGame || ChatInput.IsKeyboardFocusWithin)
+        if (!_inGame)
+            return;
+
+        // Never steal keys from a text field. This only excused ChatInput, so typing into ANY other
+        // box (auto-hunt HP%/MP%, farm range, skill reuse, debug tuning) fired the game hotkeys
+        // instead and swallowed the keystroke — "5" cast skill 5, "i" opened the inventory, and the
+        // digit never arrived. Hence "I can't write in the auto-potion boxes, it uses skills".
+        if (Keyboard.FocusedElement is TextBox or PasswordBox)
             return;
 
         if (e.Key is Key.I)

@@ -135,10 +135,17 @@ public record ItemDef(
     int ShieldDefense = 0,         // flat defence while shield equipped
     float ShieldCritDefense = 0f,  // reduces attacker crit CHANCE (0..1)
     int ShieldEvasionPenalty = 0,  // lowers your evasion (the L2 tradeoff)
-    // ----- Consumables (potions) -----
-    float HealPercentPerSecond = 0f,
-    float InstantHealPercent = 0f,
-    int PotionDurationTicks = 0,
+    // ----- Consumables -----
+    // A consumable does NOT implement an effect. It names a SKILL, and the skill does the work
+    // (heal, HoT, buff, teleport) — "everything is a skill; only what GRANTS it differs".
+    // The skill's CastTicks decides the feel: 0 = drink it (instant), > 0 = a channelled scroll.
+    // The old bespoke heal fields (HealPercentPerSecond / InstantHealPercent /
+    // PotionDurationTicks) are gone: a HoT potion is now just a buff, so it shows on the buff
+    // bar and gets "stronger cancels weaker" from the skill's BuffKey + Rank.
+    string UseSkillId = "",
+    // The shared "one healing potion per N ticks" rule. This stays an ITEM property because it's
+    // a rule about DRINKING, not about the effect — and it's what separates a heal potion (has
+    // one) from a buff potion (doesn't). 0 = no shared cooldown.
     int PotionCooldownTicks = 0,
     ScrollKind ScrollKind = ScrollKind.None,
     // ----- Fixed (non-rolled) attributes, e.g. for the legendary one-off -----
@@ -151,8 +158,6 @@ public record ItemDef(
     // ----- Armor SET id ("" = not a set piece). Wearing all 4 slots of one set
     // grants its set bonus (see ArmorSetCatalog). -----
     string SetId = "",
-    // ----- Buff potion: the buff SkillDef id applied when consumed ("" = not one). -----
-    string BuffSkillId = "",
     // ----- Gold value (vendor pricing). 0 = filled from DefaultValue at build time;
     //       quest items and god-tier one-offs stay 0 = not buyable/sellable. Pass an
     //       explicit Value to override the formula for a specific item. -----
@@ -181,11 +186,7 @@ public record ItemDef(
     int AttackSpeedBase = 0,
     // Recipe BOOK: the recipe id this item teaches when "opened" ("" = not a book). A book is an
     // EquipSlot.Box so the client's open flow reuses; opening adds the id to the char's KnownRecipes.
-    string TeachesRecipeId = "",
-    // Consumable that CASTS a skill when used (double-click) instead of a potion effect — e.g. a
-    // Scroll of Return. The named skill (which lists this item as its ConsumableId reagent) runs the
-    // fixed cast and consumes the item on completion. "" = normal consumable.
-    string UseCastSkillId = "")
+    string TeachesRecipeId = "")
 {
     /// <summary>Unified top-level category (derived from EquipSlot). Weapons are MainHand,
     /// shields OffHand; everything else maps 1:1.</summary>
@@ -230,7 +231,9 @@ public record ItemDef(
             JewelType.Necklace => ItemSubtype.Necklace,
             _ => ItemSubtype.None
         },
-        EquipSlot.Consumable => string.IsNullOrEmpty(BuffSkillId) ? ItemSubtype.Potion : ItemSubtype.BuffPotion,
+        // A heal potion is the one with the shared drink cooldown; anything else consumable
+        // that grants an effect is a buff potion (scrolls carry a ScrollKind and fall through).
+        EquipSlot.Consumable => PotionCooldownTicks > 0 ? ItemSubtype.Potion : ItemSubtype.BuffPotion,
         EquipSlot.Scroll => AttrScroll != AttrScrollKind.None ? ItemSubtype.AttributeScroll : ItemSubtype.EnchantScroll,
         EquipSlot.Box => ItemSubtype.Box,
         EquipSlot.QuestItem => ItemSubtype.QuestToken,
@@ -499,25 +502,26 @@ public static class ItemCatalog
         //  POTIONS
         // ===================================================================
         // Healing potions: priced so heals are a real gold sink (~500 for the staple).
+        // Healing potions: the potion NAMES a skill and the skill heals. PotionCooldownTicks is
+        // what marks it a HEAL potion (the shared "one per 30s" drink rule).
         list.Add(new ItemDef(MinorPotion, "Minor Healing Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Common,
-            HealPercentPerSecond: 0.01f, PotionDurationTicks: 150, PotionCooldownTicks: 300, Value: 200));
+            UseSkillId: SkillCatalog.PotHealMinor, PotionCooldownTicks: 300, Value: 200));
         list.Add(new ItemDef(HealingPotion, "Healing Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Uncommon,
-            HealPercentPerSecond: 0.02f, PotionDurationTicks: 150, PotionCooldownTicks: 300, Value: 500));
+            UseSkillId: SkillCatalog.PotHeal, PotionCooldownTicks: 300, Value: 500));
         list.Add(new ItemDef(GreaterPotion, "Greater Healing Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare,
-            InstantHealPercent: 0.50f, PotionCooldownTicks: 300, Value: 1500));
+            UseSkillId: SkillCatalog.PotHealGreater, PotionCooldownTicks: 300, Value: 1500));
 
-        // Return scrolls: double-click to cast the fixed-time teleport-to-town skill (which consumes
-        // one). Basic = vendor 500g / sells for nothing. Ultimate = not sold/dropped (debug/special
-        // vendor later), near-instant.
+        // Return scrolls: same mechanism, but their skill has a CAST time, so double-clicking one
+        // channels it. The skills are NOT learned — the ITEM is what grants them.
         list.Add(new ItemDef(ScrollReturn, "Scroll of Return", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Common,
-            UseCastSkillId: SkillCatalog.ScrollReturnSkill, Value: 500, SellPriceOverride: 0));
+            UseSkillId: SkillCatalog.ScrollReturnSkill, Value: 500, SellPriceOverride: 0));
         list.Add(new ItemDef(ScrollReturnUltimate, "Ultimate Scroll of Return", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare,
-            UseCastSkillId: SkillCatalog.ScrollReturnUltSkill,
+            UseSkillId: SkillCatalog.ScrollReturnUltSkill,
             Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0));
 
         // Elemental Stone — a crafting/reagent material (not drinkable). Stacks; consumed
@@ -530,23 +534,23 @@ public static class ItemCatalog
         // Common (Lesser) buff potions are vendor-sold staples: ~1.5k each. The
         // Uncommon/Greater tiers are drop-only; priced higher for sell value.
         list.Add(new ItemDef(SpeedPotionC, "Swiftness Potion (Lesser)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Common, BuffSkillId: SkillCatalog.PBuffSpeedC, Value: 1500));
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PBuffSpeedC, Value: 1500));
         list.Add(new ItemDef(SpeedPotionU, "Swiftness Potion", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, BuffSkillId: SkillCatalog.PBuffSpeedU, Value: 5000));
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PBuffSpeedU, Value: 5000));
         list.Add(new ItemDef(SpeedPotionR, "Swiftness Potion (Greater)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Rare, BuffSkillId: SkillCatalog.PBuffSpeedR, Value: 12000));
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PBuffSpeedR, Value: 12000));
         list.Add(new ItemDef(CastPotionC, "Focus Potion (Lesser)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Common, BuffSkillId: SkillCatalog.PBuffCastC, Value: 1500));
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PBuffCastC, Value: 1500));
         list.Add(new ItemDef(CastPotionU, "Focus Potion", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, BuffSkillId: SkillCatalog.PBuffCastU, Value: 5000));
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PBuffCastU, Value: 5000));
         list.Add(new ItemDef(CastPotionR, "Focus Potion (Greater)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Rare, BuffSkillId: SkillCatalog.PBuffCastR, Value: 12000));
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PBuffCastR, Value: 12000));
         list.Add(new ItemDef(AtkPotionC, "Haste Potion (Lesser)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Common, BuffSkillId: SkillCatalog.PBuffAtkC, Value: 1500));
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PBuffAtkC, Value: 1500));
         list.Add(new ItemDef(AtkPotionU, "Haste Potion", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, BuffSkillId: SkillCatalog.PBuffAtkU, Value: 5000));
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PBuffAtkU, Value: 5000));
         list.Add(new ItemDef(AtkPotionR, "Haste Potion (Greater)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Rare, BuffSkillId: SkillCatalog.PBuffAtkR, Value: 12000));
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PBuffAtkR, Value: 12000));
 
         // ===================================================================
         //  SHIELDS — equippable by any class (with a one-hand weapon), but only
@@ -1085,7 +1089,16 @@ public static class ItemCatalog
     public static IEnumerable<ItemDef> AllItems => All.Values;
 
     public static bool IsPotion(ItemDef def) => def.Slot == EquipSlot.Consumable;
-    public static bool IsBuffPotion(ItemDef def) => !string.IsNullOrEmpty(def.BuffSkillId);
+    /// <summary>A HEALING potion — the one bound by the shared drink cooldown.</summary>
+    public static bool IsHealPotion(ItemDef def) =>
+        def.Slot == EquipSlot.Consumable && def.PotionCooldownTicks > 0 && !string.IsNullOrEmpty(def.UseSkillId);
+
+    /// <summary>A BUFF potion: grants a lasting effect instantly, free of the heal cooldown.
+    /// Excludes the cast-on-use scrolls (their skill has a cast time) and inert reagents.</summary>
+    public static bool IsBuffPotion(ItemDef def) =>
+        def.Slot == EquipSlot.Consumable && def.PotionCooldownTicks == 0
+        && !string.IsNullOrEmpty(def.UseSkillId)
+        && SkillCatalog.Get(def.UseSkillId) is { CastTicks: 0 };
     public static bool IsScroll(ItemDef def) => def.Slot == EquipSlot.Scroll;
     public static bool IsEnchantScroll(ItemDef def) => def.Slot == EquipSlot.Scroll && def.ScrollKind != ScrollKind.None;
     public static bool IsAttributeScroll(ItemDef def) => def.AttrScroll != AttrScrollKind.None;

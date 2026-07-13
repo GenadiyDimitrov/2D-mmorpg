@@ -613,14 +613,13 @@ public class Entity
     /// <summary>Ticks auto-hunt has run this session while OFFLINE (offline cap).</summary>
     public long AutoOfflineElapsedTicks { get; set; }
 
-    // ----- Potion channel (separate from natural regen; ticks in combat too) ----
-    /// <summary>Shared cooldown across ALL potions, in ticks.</summary>
+    // ----- Potion channel -------------------------------------------------------------
+    /// <summary>Shared cooldown across all HEALING potions, in ticks. This is all that's left of
+    /// the old potion channel: a potion's lingering effect is now an ordinary BUFF (its skill's),
+    /// so TickBuffs/TickHealOverTime run it and the buff bar shows it. The bespoke
+    /// PotionRarity / PotionHealPercentPerSecond / PotionEffectTicks / PotionEffectName state is
+    /// gone — BuffKey + Rank already express "a stronger potion cancels a weaker one".</summary>
     public int PotionCooldown { get; set; }
-    /// <summary>Active heal-over-time potion: rarity decides override priority.</summary>
-    public int PotionRarity { get; set; } = -1;       // -1 = none
-    public float PotionHealPercentPerSecond { get; set; }
-    public int PotionEffectTicks { get; set; }
-    public string PotionEffectName { get; set; } = "";
 
     public bool Dead { get; set; }
 

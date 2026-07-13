@@ -611,11 +611,13 @@ public class GameLoopService : BackgroundService
         // class's damage gets nudged later instead of hardcoding a coefficient.
         player.LearnedSkills[SkillCatalog.ClassBalanceFor(player.Archetype, player.BaseClass)] = 1;
 
-        // Universal Return line (teleport to nearest town): everyone has all three; the scroll
-        // variants only work while you hold the matching scroll (their ConsumableId reagent).
+        // The universal Return skill (teleport to nearest town) IS a learned skill — everyone has it.
+        // The SCROLL versions are NOT: the item grants them. You don't learn a scroll, you use it —
+        // double-clicking the scroll invokes its skill directly (see UsePotion), which needs no
+        // learned entry. They used to be auto-learned, which wrongly put them in your skill list.
         player.LearnedSkills.TryAdd(SkillCatalog.ReturnSkill, 1);
-        player.LearnedSkills.TryAdd(SkillCatalog.ScrollReturnSkill, 1);
-        player.LearnedSkills.TryAdd(SkillCatalog.ScrollReturnUltSkill, 1);
+        player.LearnedSkills.Remove(SkillCatalog.ScrollReturnSkill);
+        player.LearnedSkills.Remove(SkillCatalog.ScrollReturnUltSkill);
     }
 
     /// <summary>True if the player has learned a skill that REPLACES the given id
@@ -1441,98 +1443,63 @@ public class GameLoopService : BackgroundService
     {
         if (player.Dead || ItemCatalog.Get(item.DefId) is not ItemDef def || !ItemCatalog.IsPotion(def))
             return false;
+        if (SkillCatalog.Get(def.UseSkillId) is not SkillDef skill)
+            return false;   // an inert consumable (a reagent like the Elemental Stone)
 
-        // Cast-on-use consumable (Scroll of Return): start the skill; it consumes this item when the
-        // fixed cast completes (refunded on interrupt). No potion logic.
-        if (!string.IsNullOrEmpty(def.UseCastSkillId))
+        // A consumable with a CAST TIME (the Return scrolls) is channelled: queue the skill and
+        // let the normal cast pipeline run it. It consumes the item itself (its ConsumableId) when
+        // the cast lands, and refunds it if interrupted. The skill is NOT learned — the ITEM grants it.
+        if (skill.CastTicks > 0)
         {
-            if (SkillCatalog.Get(def.UseCastSkillId) is not SkillDef castDef ||
-                player.CastingSkillId is not null || player.QueuedSkillId is not null)
+            if (player.CastingSkillId is not null || player.QueuedSkillId is not null)
                 return false;
-            if (player.SkillCooldowns.TryGetValue(castDef.Id, out int cd) && cd > 0)
+            if (player.SkillCooldowns.TryGetValue(skill.Id, out int cd) && cd > 0)
             {
-                SendSystemToEntity(player, $"{castDef.Name} is on cooldown.");
+                SendSystemToEntity(player, $"{skill.Name} is on cooldown.");
                 return false;
             }
-            player.QueuedSkillId = castDef.Id;
+            player.QueuedSkillId = skill.Id;
             player.QueuedTargetId = player.Id;
             return true;
         }
 
-        // Buff potion: apply its timed buff (independent of the heal cooldown), consume.
-        if (ItemCatalog.IsBuffPotion(def) && SkillCatalog.Get(def.BuffSkillId) is SkillDef buffDef)
-        {
-            ApplyBuff(player, buffDef);
-            PushBuffs(player);
-            ConsumeOne(player, item);
-            SendInventory(player);
-            SendSystemToEntity(player, $"{buffDef.Name} active.");
-            return true;
-        }
-
-        if (player.PotionCooldown > 0)
+        // Instant consumable (drink it). Healing potions share one drink cooldown; buff potions
+        // are free of it.
+        bool healing = ItemCatalog.IsHealPotion(def);
+        if (healing && player.PotionCooldown > 0)
             return false;
 
-        int rarity = (int)def.Rarity;
-
-        // Instant potions (rare): heal now, no lingering effect.
-        if (def.InstantHealPercent > 0)
+        // The SKILL decides what happens — we only deliver it. An instant Heal restores a % of max
+        // HP; anything with a lasting effect (a HoT potion, a buff potion) becomes an ordinary buff,
+        // so it lands on the buff bar and supersedes weaker ones by BuffKey + Rank.
+        if ((skill.Effect & SkillEffect.Heal) != 0)
         {
-            int amount = Math.Max(1, (int)(player.MaxHp * def.InstantHealPercent));
+            float pct = skill.MagnitudeOf(SkillEffect.Heal, ModifierMode.Percent);
+            int amount = Math.Max(1, skill.Power + (int)(player.MaxHp * pct));
             player.Hp = Math.Min(player.MaxHp, player.Hp + amount);
-            BroadcastCombat(player, player, amount, CombatOutcome.Heal, def.Name);
-            ClearPotionEffect(player); // a stronger instant cancels any HoT
+            BroadcastCombat(player, player, amount, CombatOutcome.Heal, skill.Name);
         }
-        else
+        if ((skill.Effect & SkillEffect.AnyBuff) != 0)
         {
-            // Heal-over-time. Rarity override: higher cancels lower; same restarts.
-            // (Cooldown > effect duration means same-rarity restart shouldn't
-            //  normally happen, but we handle it safely.)
-            if (rarity >= player.PotionRarity)
-            {
-                player.PotionRarity = rarity;
-                player.PotionHealPercentPerSecond = def.HealPercentPerSecond;
-                player.PotionEffectTicks = def.PotionDurationTicks;
-                player.PotionEffectName = def.Name;
-            }
+            ApplyBuff(player, skill);
+            PushBuffs(player);
         }
 
-        // Consume one potion from the stack and start the SHARED cooldown.
         ConsumeOne(player, item);
-        player.PotionCooldown = def.PotionCooldownTicks;
+        if (healing) player.PotionCooldown = def.PotionCooldownTicks;
 
         SendInventory(player);
         SendPotionStatus(player);
+        if (!healing) SendSystemToEntity(player, $"{skill.Name} active.");
         return true;
-    }
-
-    private static void ClearPotionEffect(Entity player)
-    {
-        player.PotionRarity = -1;
-        player.PotionHealPercentPerSecond = 0f;
-        player.PotionEffectTicks = 0;
-        player.PotionEffectName = "";
-    }
-
-    /// <summary>Potion channel: ticks every second regardless of combat,
-    /// independent of natural regen. Called from the regen tick.</summary>
-    private void TickPotionHeal(Entity player)
-    {
-        if (player.PotionEffectTicks <= 0 || player.Dead)
-            return;
-
-        if (player.Hp < player.MaxHp)
-        {
-            int amount = Math.Max(1, (int)(player.MaxHp * player.PotionHealPercentPerSecond));
-            player.Hp = Math.Min(player.MaxHp, player.Hp + amount);
-            BroadcastCombat(player, player, amount, CombatOutcome.Heal, player.PotionEffectName);
-        }
     }
 
     private void SendPotionStatus(Entity player)
     {
+        // The lingering effect is a BUFF now (it shows on the buff bar), so the only thing the
+        // potion channel still owns is the shared drink cooldown.
         float cd = player.PotionCooldown / (float)GameConstants.TickRate;
-        SendTo(player, "Potion", new PotionStatus(cd, player.PotionEffectName));
+        SendTo(player, "Potion", new PotionStatus(cd, ""));
     }
 
     // ----- Trade ---------------------------------------------------------------------------
@@ -2104,7 +2071,7 @@ public class GameLoopService : BackgroundService
             foreach (var item in p.Inventory.ToList())
             {
                 if (ItemCatalog.Get(item.DefId) is not ItemDef d || !ItemCatalog.IsBuffPotion(d) ||
-                    SkillCatalog.Get(d.BuffSkillId) is not SkillDef bd)
+                    SkillCatalog.Get(d.UseSkillId) is not SkillDef bd)
                     continue;
                 if (!all && !p.AutoBuffPotionIds.Contains(item.DefId))
                     continue;
@@ -2123,8 +2090,7 @@ public class GameLoopService : BackgroundService
         foreach (var it in p.Inventory)
         {
             if (ItemCatalog.Get(it.DefId) is not ItemDef d) continue;
-            if (!ItemCatalog.IsPotion(d) || ItemCatalog.IsBuffPotion(d)) continue;
-            if (d.HealPercentPerSecond <= 0 && d.InstantHealPercent <= 0) continue;
+            if (!ItemCatalog.IsHealPotion(d)) continue;
             int score = (int)d.Rarity;
             if (score > bestScore) { bestScore = score; best = it; }
         }
@@ -2937,20 +2903,9 @@ public class GameLoopService : BackgroundService
                 changed = true;
         }
 
-        if (entity.PotionEffectTicks > 0)
-        {
-            // Heal-over-time fires once per second.
-            if (entity.PotionEffectTicks % GameConstants.RegenIntervalTicks == 0)
-                TickPotionHeal(entity);
-
-            entity.PotionEffectTicks--;
-            if (entity.PotionEffectTicks <= 0)
-            {
-                ClearPotionEffect(entity);
-                changed = true;
-            }
-        }
-
+        // The potion heal-over-time is an ordinary buff now, so TickBuffs/TickHealOverTime run it —
+        // there is no separate potion effect channel to tick any more. Only the shared drink
+        // cooldown above is still potion-specific.
         if (changed)
             SendPotionStatus(entity);
     }

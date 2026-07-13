@@ -22,6 +22,14 @@ public static partial class SkillCatalog
     public const string Reflexes     = "reflexes";      // Archer    5/10/15%
     public const string Precision    = "precision";     // Warrior 10/20/30% hit floor
     public const string AntiMagic    = "anti_magic";    // Tank    10/15/20% magic fizzle
+    // ---- HEALING-potion skills. The potion ITEM names one of these; the SKILL does the
+    //      healing and consumes the item (its ConsumableId). Everything is a skill — only
+    //      what GRANTS it differs. The HoT ones are ordinary buffs, so they show on the buff
+    //      bar and get "stronger cancels weaker" free from BuffKey + Rank (which is exactly
+    //      what the old bespoke PotionRarity/PotionEffectTicks state did by hand). ----
+    public const string PotHealMinor   = "pot_heal_minor";
+    public const string PotHeal        = "pot_heal";
+    public const string PotHealGreater = "pot_heal_greater";
     // ---- Buff-potion buffs (consumed, not cast). ----
     public const string PBuffSpeedC = "pbuff_speed_c";
     public const string PBuffSpeedU = "pbuff_speed_u";
@@ -146,6 +154,28 @@ public static partial class SkillCatalog
 
     private static SkillDef[] CommonSkills() => new SkillDef[]
     {
+        // ----- HEALING potions, as skills. Each consumes its own potion (ConsumableId) and
+        //       casts instantly (CastTicks 0). The shared "one potion per 30s" rule stays an
+        //       ITEM property (PotionCooldownTicks) — it's a rule about drinking, not about
+        //       the effect. Same BuffKey/Rank as the buff potions: a Greater cancels a Minor. -----
+        new(PotHealMinor, "Minor Healing", BaseClass.Fighter, SkillEffect.HealOverTime,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            DurationTicks: 150, BuffKey: "potion_heal", Rank: 1,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.HealOverTime, 0.01f) },
+            Category: SkillCategory.Buff,
+            Description: "Restores 1% of max HP per second for 15s."),
+        new(PotHeal, "Healing", BaseClass.Fighter, SkillEffect.HealOverTime,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            DurationTicks: 150, BuffKey: "potion_heal", Rank: 2,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.HealOverTime, 0.02f) },
+            Category: SkillCategory.Buff,
+            Description: "Restores 2% of max HP per second for 15s."),
+        new(PotHealGreater, "Greater Healing", BaseClass.Fighter, SkillEffect.Heal,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.Heal, 0.50f) },
+            Category: SkillCategory.Heal,
+            Description: "Instantly restores 50% of max HP."),
+
         // ----- Buff-potion buffs (consumed, not cast). Same BuffKey per line so a
         //       rarer potion supersedes a weaker one; rare = bigger + longer. -----
         new(PBuffSpeedC, "Swiftness (Lesser)", BaseClass.Fighter, SkillEffect.BuffMoveSpeed,
