@@ -133,6 +133,10 @@ public static class WorldMap
         new("castle_ironreach",  "Ironreach Keep", 24000, 38000, 2200),
         new("town_duskvale",    "Duskvale",        12000, 33000, 2000),
         new("town_frostmere",   "Frostmere",       12000, 15000, 2000),
+        // Small outpost beside the Training Grounds, so you can buff up and teleport out without
+        // leaving the dummies. Sits just SOUTH of the dummy row (they're at y=4000, radius 200),
+        // clear of them — a safe zone keeps mobs out, and the dummies ARE mobs.
+        new("outpost_training", "Training Outpost", 24000, 5000, 400),
     };
 
     /// <summary>The safe zone nearest to a point (always returns one). Used to
@@ -220,6 +224,12 @@ public static class WorldMap
         new("gatekeeper_ironreach",   "Gatekeeper Vurst",  24000, 38000, NpcRole.Teleporter),
         new("gatekeeper_duskvale",    "Gatekeeper Talia",  12000, 33000, NpcRole.Teleporter),
         new("gatekeeper_frostmere",   "Gatekeeper Khaz",   12000, 15000, NpcRole.Teleporter),
+
+        // --- Training Outpost (24000, 5000, r=400), beside the dummies. The two NPCs are OFFSET
+        //     from each other so their labels don't overlap: gatekeeper at the north edge, buffer
+        //     at the south. Buff up, walk 800 north to the dummies, teleport out when done. ---
+        new("gatekeeper_training", "Gatekeeper Vess",    24000, 4800, NpcRole.Teleporter),
+        new("buffer_training",     "Spirit Helper Ilva", 24000, 5200, NpcRole.Buffer),
     };
 
     public static readonly RoadPath[] Roads =

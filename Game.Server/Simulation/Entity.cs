@@ -23,6 +23,14 @@ public class BuffInstance
     /// skill again, or double-clicks the buff, to end it). TickBuffs skips it.</summary>
     public bool Toggle { get; init; }
 
+    /// <summary>Which buff-bar ROW this belongs in (from the granting skill). A debuff overrides
+    /// it — see <see cref="Row"/>.</summary>
+    public BuffRow SourceRow { get; init; } = BuffRow.Buff;
+
+    /// <summary>The row the client should render this in. Harmful effects always go to the debuff
+    /// row no matter what the skill declared, so an offensive skill never has to set it.</summary>
+    public BuffRow Row => IsDebuff ? BuffRow.Debuff : SourceRow;
+
     // ----- Damage-over-time (DoT) stacks -----
     /// <summary>Current stack count (1..MaxStacks). Magnitudes scale with this.</summary>
     public int Stacks { get; set; } = 1;

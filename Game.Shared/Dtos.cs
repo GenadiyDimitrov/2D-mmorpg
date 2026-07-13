@@ -126,7 +126,7 @@ public record PotionStatus(float CooldownSeconds, string ActiveEffect);
 /// <summary>One active buff/debuff on the player, for the buff bar + tooltip. Stacks &gt; 1
 /// for a stacking effect (shown as "Name xN").</summary>
 public record BuffDto(string Name, string Description, float SecondsLeft, bool IsDebuff,
-    string Key = "", int Stacks = 1);
+    string Key = "", int Stacks = 1, BuffRow Row = BuffRow.Buff);
 
 /// <summary>Server -> client: the character's learned skills (id + current level) + SP.</summary>
 public record LearnedSkills(SkillRef[] Skills, int SkillPoints);

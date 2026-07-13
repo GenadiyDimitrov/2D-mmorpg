@@ -3777,6 +3777,7 @@ var effect = def.Effect;
                 : 0,
             MaxStacks = eff,
             Cancellable = def.Cancellable,
+            SourceRow = def.BuffRow,   // which buff-bar row this lands in (debuffs override it)
             Name = shownName,
             Key = key,
             Rank = def.Rank,
@@ -4885,7 +4886,8 @@ var effect = def.Effect;
         _hadBuffs.Add(player.Id);
         var dtos = player.Buffs.Where(b => !b.Internal).Select(b => new BuffDto(
             b.Name, b.Description,
-            b.Toggle ? -1f : b.TicksRemaining * GameConstants.TickSeconds, b.IsDebuff, b.Key, b.Stacks)).ToArray();
+            b.Toggle ? -1f : b.TicksRemaining * GameConstants.TickSeconds, b.IsDebuff, b.Key, b.Stacks,
+            b.Row)).ToArray();
         SendTo(player, "Buffs", new BuffUpdate(dtos));
     }
 

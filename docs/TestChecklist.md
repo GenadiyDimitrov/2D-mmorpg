@@ -7,6 +7,39 @@ this file.
 
 ---
 
+## To test now (BUFF ROWS / SET TOOLTIP / TRAINING OUTPOST — 2026-07-13)
+
+### Buff bar — 4 rows by subtype
+- [ ] The buff bar is now **four rows**, each hiding itself when empty, tinted to read apart:
+  **buffs** (blue), **debuffs** (red), **item effects** (bronze), **consumables** (green).
+- [ ] Drink a **healing or buff potion** → it appears in the **consumables** row (green), not mixed
+  in with your buffer's buffs.
+- [ ] A buffer's buffs stay in row 1; a mob's slow/bleed lands in the **debuff** row.
+- [ ] The **item row is empty for now** — armor sets and weapon specials are still StatMods, not
+  buffs. That row appears the moment they become skills (owner said row 3 can stay invisible).
+- [ ] Double-click still drops a (beneficial) buff early.
+
+### Item tooltip — set bonus
+- [ ] Hovering a **set piece** now shows the set section: the set name, **Bonus:** (what it gives),
+  **Items 3/4**, and a line per piece — **green ✔ = worn**, **grey ✖ = missing**.
+- [ ] The Bonus line + count go **green only when the set is complete**, grey otherwise.
+- [ ] Accessories are shared across a tier's bodies, so hovering a helm shows it against whichever
+  body you're actually wearing.
+- [ ] ⚠ **No shield row yet** — armor sets don't include a shield (no set piece has a shield slot),
+  so the "Shield Bonus" lines you sketched have nothing to show. Say if you want shields added to
+  the sets and I'll wire the row.
+
+### Training Outpost (safe zone by the dummies)
+- [ ] A small **safe zone "Training Outpost"** (24000, 5000, radius 400) sits just SOUTH of the
+  training dummies (they're at y=4000). It's deliberately clear of them — a safe zone keeps mobs
+  out, and the dummies ARE mobs.
+- [ ] Inside it: **Gatekeeper Vess** at the north edge and **Spirit Helper Ilva** (buffer) at the
+  south, offset so their labels don't overlap.
+- [ ] Buff up at Ilva → walk ~800 north to the dummies → test → teleport out with Vess.
+- [ ] The outpost is now also a **teleport destination from every other gatekeeper**.
+
+---
+
 ## To test now (EVERYTHING IS A SKILL — potions/scrolls — 2026-07-13)
 
 ### Typing in text boxes (the real cause of "can't write in the auto-potion boxes")

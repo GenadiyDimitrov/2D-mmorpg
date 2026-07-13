@@ -46,6 +46,10 @@ public record SkillDef(
     string Description = "",
     int SpCost = 1,
     SkillCategory Category = SkillCategory.Physical,
+    /// <summary>Which buff-bar ROW this skill's effect lands in. Defaults to the ordinary buff row;
+    /// a debuff is detected from its effect flags regardless. Set Consumable on potion skills and
+    /// Item on always-on gear effects.</summary>
+    BuffRow BuffRow = BuffRow.Buff,
     TargetMode TargetMode = TargetMode.SelfOrTarget,
     float AreaRadius = 0f,
     int InterruptDefense = 0,
@@ -289,6 +293,19 @@ public record SkillLevel(
 /// <summary>Skill window grouping. Passive = a learned, always-on effect (armor
 /// masteries, discipline passives) — never cast and never placed on the action bar.</summary>
 public enum SkillCategory { Physical = 0, Magic = 1, Buff = 2, Debuff = 3, Heal = 4, Passive = 5 }
+
+/// <summary>Which ROW of the buff bar an effect belongs in. This is the effect's SUBTYPE — what
+/// granted it — not what it does, so the client can group them: a Might buff and a Swiftness
+/// potion both raise stats, but they belong in different rows because one came from a buffer and
+/// the other from your bag.
+///   Buff       — row 1: ordinary buffs (what a buffer gives you).
+///   Debuff     — row 2: harmful effects on you.
+///   Item       — row 3: PERSISTENT item effects (armor sets, weapon special abilities). Always-on
+///                while the gear is worn, so the client may hide/collapse this row.
+///   Consumable — row 4: temporary effects from things you used (potions).
+/// A debuff is still detected from its effect flags (AnyDebuff) and overrides whatever is set here,
+/// so an offensive skill never has to declare a row.</summary>
+public enum BuffRow { Buff = 0, Debuff = 1, Item = 2, Consumable = 3 }
 
 /// <summary>
 /// An always-on bonus carried by a learnable PASSIVE skill (discipline passives).

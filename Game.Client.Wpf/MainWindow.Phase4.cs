@@ -182,7 +182,118 @@ public partial class MainWindow
         return $"{tag}{ench}{def.Name}  {def.Grade}/{def.Rarity}{req}{qty}";
     }
 
-    private static string BuildItemTooltip(ItemDef def, InventoryItemDto item)
+    /// <summary>The item tooltip. Returns a rich element (not a string) so the SET section can
+    /// colour each piece: green = you're wearing it, grey = you're missing it.</summary>
+    private object BuildItemTooltip(ItemDef def, InventoryItemDto item)
+    {
+        var panel = new StackPanel { MaxWidth = 320 };
+        panel.Children.Add(new TextBlock
+        {
+            Text = BuildItemTooltipText(def, item),
+            Foreground = Brushes.White, TextWrapping = TextWrapping.Wrap
+        });
+        if (BuildSetSection(def) is StackPanel setPanel)
+            panel.Children.Add(setPanel);
+        return panel;
+    }
+
+    /// <summary>The SET section: which set this piece belongs to, what the bonus gives, how many of
+    /// the required pieces you're actually wearing, and a green/grey line per piece. Null if the
+    /// item isn't a set piece.</summary>
+    private StackPanel? BuildSetSection(ItemDef def)
+    {
+        if (string.IsNullOrEmpty(def.SetId)) return null;
+
+        // The bonus is BODY-driven, so find the set whose body line this piece belongs to — an
+        // accessory is shared across every body of its tier, so it can complete several sets.
+        var sets = ArmorSetCatalog.All
+            .Where(s => s.Id == def.SetId
+                     || (string.IsNullOrEmpty(s.AccessorySetId) ? s.Id : s.AccessorySetId) == def.SetId)
+            .ToList();
+        if (sets.Count == 0) return null;
+
+        var equippedBody = _inventory.FirstOrDefault(i => i.Equipped
+            && ItemCatalog.Get(i.DefId) is { Slot: EquipSlot.Armor, ArmorSlot: ArmorSlot.Body });
+        string wornBodySet = equippedBody is null ? "" : (ItemCatalog.Get(equippedBody.DefId)?.SetId ?? "");
+        // Show the set matching the body you're actually wearing, else this item's own set.
+        var set = sets.FirstOrDefault(s => s.Id == wornBodySet) ?? sets[0];
+
+        var accId = string.IsNullOrEmpty(set.AccessorySetId) ? set.Id : set.AccessorySetId;
+        var slots = set.RequiredSlots
+            ?? new[] { ArmorSlot.Body, ArmorSlot.Head, ArmorSlot.Gloves, ArmorSlot.Boots };
+
+        // Per slot: the set's piece for it, and whether it's worn.
+        var pieces = new List<(string Name, bool Worn)>();
+        foreach (var slot in slots)
+        {
+            string needSet = slot == ArmorSlot.Body ? set.Id : accId;
+            var piece = ItemCatalog.AllItems.FirstOrDefault(d =>
+                d.Slot == EquipSlot.Armor && d.ArmorSlot == slot && d.SetId == needSet);
+            bool worn = _inventory.Any(i => i.Equipped
+                && ItemCatalog.Get(i.DefId) is { } wd
+                && wd.Slot == EquipSlot.Armor && wd.ArmorSlot == slot && wd.SetId == needSet);
+            pieces.Add((piece?.Name ?? slot.ToString(), worn));
+        }
+
+        int have = pieces.Count(p => p.Worn);
+        bool active = have == pieces.Count;
+        var green = new SolidColorBrush(Color.FromRgb(120, 220, 130));
+        var grey = new SolidColorBrush(Color.FromRgb(150, 150, 150));
+
+        var panel = new StackPanel { Margin = new Thickness(0, 6, 0, 0) };
+        panel.Children.Add(new TextBlock { Text = $"— {set.Name} set —", Foreground = Brushes.Gainsboro });
+        panel.Children.Add(new TextBlock
+        {
+            Text = $"Bonus: {SetBonusText(set)}",
+            Foreground = active ? green : grey,
+            TextWrapping = TextWrapping.Wrap
+        });
+        panel.Children.Add(new TextBlock
+        {
+            Text = $"Items {have}/{pieces.Count}",
+            Foreground = active ? green : grey
+        });
+        foreach (var (name, worn) in pieces)
+            panel.Children.Add(new TextBlock
+            {
+                Text = $"   {(worn ? "✔" : "✖")} {name}",
+                Foreground = worn ? green : grey
+            });
+        return panel;
+    }
+
+    /// <summary>One-line summary of what a set's bonus actually gives.</summary>
+    private static string SetBonusText(ArmorSetDef set)
+    {
+        var parts = new List<string>();
+        var b = set.Bonus;
+        if (b.MaxHp != 0) parts.Add($"+{b.MaxHp} HP");
+        if (b.MaxMp != 0) parts.Add($"+{b.MaxMp} MP");
+        if (b.Defence != 0) parts.Add($"+{b.Defence} Def");
+        if (b.Attack != 0) parts.Add($"+{b.Attack} Atk");
+        if (b.Accuracy != 0) parts.Add($"+{b.Accuracy} Acc");
+        if (b.Evasion != 0) parts.Add($"+{b.Evasion} Eva");
+        if (set.DefencePct != 0f) parts.Add($"+{set.DefencePct * 100:0}% P.Def");
+        if (set.CastSpeedPct != 0f) parts.Add($"+{set.CastSpeedPct * 100:0}% Cast Speed");
+
+        var m = set.Mods;
+        if (m.MaxHp != 0) parts.Add($"+{m.MaxHp} HP");
+        if (m.MaxMp != 0) parts.Add($"+{m.MaxMp} MP");
+        if (m.PDef != 0) parts.Add($"+{m.PDef:0} P.Def");
+        if (m.MDef != 0) parts.Add($"+{m.MDef:0} M.Def");
+        if (m.PAtk != 0) parts.Add($"+{m.PAtk:0} P.Atk");
+        if (m.MAtk != 0) parts.Add($"+{m.MAtk:0} M.Atk");
+        if (m.PDefPct != 0f) parts.Add($"+{m.PDefPct * 100:0}% P.Def");
+        if (m.MDefPct != 0f) parts.Add($"+{m.MDefPct * 100:0}% M.Def");
+        if (m.CastSpeedPct != 0f) parts.Add($"+{m.CastSpeedPct * 100:0}% Cast Speed");
+        if (m.AtkSpeedPct != 0f) parts.Add($"+{m.AtkSpeedPct * 100:0}% Atk Speed");
+        if (m.MoveSpeed != 0) parts.Add($"+{m.MoveSpeed:0} Speed");
+        if (m.CcResist != 0f) parts.Add($"+{m.CcResist * 100:0}% CC Resist");
+
+        return parts.Count > 0 ? string.Join(", ", parts) : "—";
+    }
+
+    private static string BuildItemTooltipText(ItemDef def, InventoryItemDto item)
     {
         var lines = new List<string> { $"{def.Name}  {def.Grade}/{def.Rarity}" };
         if (item.Enchant > 0) lines.Add($"Enchant: +{item.Enchant}");
@@ -201,18 +312,7 @@ public partial class MainWindow
         // Every consumable describes itself through the SKILL it grants.
         if (SkillCatalog.Get(def.UseSkillId) is SkillDef useDef)
             lines.Add($"Use: {useDef.Description}");
-        if (!string.IsNullOrEmpty(def.SetId) && ArmorSetCatalog.Get(def.SetId) is ArmorSetDef set)
-        {
-            var b = set.Bonus;
-            var parts = new List<string>();
-            if (b.MaxHp != 0) parts.Add($"+{b.MaxHp} HP");
-            if (b.MaxMp != 0) parts.Add($"+{b.MaxMp} MP");
-            if (b.Defence != 0) parts.Add($"+{b.Defence} Def");
-            if (b.Attack != 0) parts.Add($"+{b.Attack} Atk");
-            if (b.Accuracy != 0) parts.Add($"+{b.Accuracy} Acc");
-            if (b.Evasion != 0) parts.Add($"+{b.Evasion} Eva");
-            lines.Add($"— {set.Name} set (full: {string.Join(", ", parts)}) —");
-        }
+        // The SET section is rendered separately (BuildSetSection) so each piece can be coloured.
         return string.Join("\n", lines);
     }
 
@@ -1674,9 +1774,21 @@ public partial class MainWindow
     private void SelectionCancel_Click(object sender, RoutedEventArgs e) =>
         SelectionPopup.Visibility = Visibility.Collapsed;
 
+    /// <summary>The buff bar is grouped by SUBTYPE, one row each: buffs a buffer gave you,
+    /// debuffs on you, always-on item effects (sets / weapon abilities), and temporary things you
+    /// consumed. A row hides itself when empty, so the "item" row simply doesn't appear until gear
+    /// effects exist as buffs.</summary>
     private void OnBuffs(BuffUpdate update)
     {
-        BuffBar.Items.Clear();
+        var rows = new Dictionary<BuffRow, ItemsControl>
+        {
+            [BuffRow.Buff] = BuffRowBuffs,
+            [BuffRow.Debuff] = BuffRowDebuffs,
+            [BuffRow.Item] = BuffRowItems,
+            [BuffRow.Consumable] = BuffRowConsumables,
+        };
+        foreach (var ctrl in rows.Values) ctrl.Items.Clear();
+
         foreach (var buff in update.Buffs)
         {
             // SecondsLeft < 0 = an indefinite TOGGLE/stance (no countdown).
@@ -1686,11 +1798,17 @@ public partial class MainWindow
             string tip = buff.IsDebuff
                 ? $"{buff.Name}\n{buff.Description}\n{time}"
                 : $"{buff.Name}\n{buff.Description}\n{time}\n(double-click to remove)";
+            // Tint by row so the groups read apart at a glance.
+            var tint = buff.Row switch
+            {
+                BuffRow.Debuff     => Color.FromArgb(200, 120, 40, 40),    // red
+                BuffRow.Consumable => Color.FromArgb(200, 40, 110, 70),    // green — from your bag
+                BuffRow.Item       => Color.FromArgb(200, 95, 80, 35),     // bronze — from your gear
+                _                  => Color.FromArgb(200, 40, 80, 120),    // blue — an ordinary buff
+            };
             var pill = new Border
             {
-                Background = buff.IsDebuff
-                    ? new SolidColorBrush(Color.FromArgb(200, 120, 40, 40))
-                    : new SolidColorBrush(Color.FromArgb(200, 40, 80, 120)),
+                Background = new SolidColorBrush(tint),
                 CornerRadius = new CornerRadius(4),
                 Padding = new Thickness(6, 2, 6, 2),
                 Margin = new Thickness(0, 0, 4, 4),
@@ -1711,8 +1829,11 @@ public partial class MainWindow
                     if (e.ClickCount == 2) { _ = _net.RemoveBuffAsync(key); e.Handled = true; }
                 };
             }
-            BuffBar.Items.Add(pill);
+            (rows.GetValueOrDefault(buff.Row) ?? BuffRowBuffs).Items.Add(pill);
         }
+
+        foreach (var ctrl in rows.Values)
+            ctrl.Visibility = ctrl.Items.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     // =======================================================================
