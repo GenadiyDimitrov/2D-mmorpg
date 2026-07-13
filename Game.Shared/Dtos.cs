@@ -306,7 +306,14 @@ public record NpcDialog(
     QuestSummary[] InProgress,   // active quests not yet complete
     ClassChangeOption[] ClassChanges,
     ShopInfo? Shop = null,       // vendor wares (null for non-vendors)
-    TeleportInfo? Teleport = null); // gatekeeper destinations (null for non-gatekeepers)
+    TeleportInfo? Teleport = null, // gatekeeper destinations (null for non-gatekeepers)
+    SkillResetInfo? SkillReset = null); // un-learnable skills (null for non-reset NPCs)
+
+/// <summary>Server -> client: the skills a reset NPC can un-learn — the permanent, mutually-
+/// exclusive picks (the level-40 stat swaps). Removing is FREE, but the gold you spent is NOT
+/// refunded; it only frees the group so you can commit again.</summary>
+public record SkillResetInfo(ResettableSkill[] Skills);
+public record ResettableSkill(string SkillId, string Name, int Level, int GoldSpent);
 
 /// <summary>Server -> client: the full quest log.</summary>
 public record QuestLog(QuestSummary[] Active, string[] Completed);

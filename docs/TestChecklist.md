@@ -7,6 +7,53 @@ this file.
 
 ---
 
+## ⚠ TWO NUMBERS TO DECIDE WHILE TESTING (2026-07-13)
+
+### 1. `ItemCatalog.OffChannelFactor` — currently **0.6**, I'd argue for **0.2**
+How much of your ATK power a weapon lets through to the channel it does NOT serve (a sword's magic,
+a staff's melee). **The same one constant is the answer to two separate problems:**
+- [ ] **The buffer swap.** At 0.6, a buffer trading his staff for a 2H sword loses only **~15%** of
+  his magic damage (√mAtk flattens it) while **doubling** his P.Atk — still a free win. At 0.2 he
+  loses ~51%, which is the real trade you wanted.
+- [ ] **Tank healing.** A Lv-76 tank casting a 1000-power heal:
+  | | M.Atk | heals |
+  |---|---|---|
+  | Healer (t76 staff) | ~900 | **2000** |
+  | Tank (t76 2H sword) @ **0.6** | ~320 | **1193** (60% of a healer) |
+  | Tank (t76 2H sword) @ **0.2** | ~107 | **689** (34%) |
+
+  You called an L2 tank healing 1500-2000 OP. At 0.6 he heals **1193** — better, but still a lot for
+  a plate-wearer. At 0.2 he heals a third of a healer.
+- [ ] **Use the TestHeal skill below to read this off the screen directly**, then tell me the number.
+
+### 2. `SkillMath.HealK` — currently **15**
+- [ ] Solved so a **1000-power heal at 76 with a t76 staff = ~2000**. Feel it and say if it should be
+  nearer 1500 (→ K=20) or higher.
+
+### TEST-ONLY skill: **TestHeal** ⚠ REMOVE BEFORE RELEASE
+- [ ] Every character is **auto-granted "TestHeal" at level 76** — a **power-1000** flat heal
+  (0 MP, 2s cast, 2s cooldown, 600 range). It's given to FIGHTERS TOO on purpose, so you can read
+  the tank-vs-healer gap straight off the screen.
+- [ ] Expected: healer ≈ **2000**, tank ≈ **1193** (at OffChannel 0.6) or **689** (at 0.2).
+- [ ] **To remove it**, search `TEST ONLY` — there are 3 spots: the `TestHeal` const + its SkillDef
+  in `Skills.Common.cs`, and the auto-grant in `GameLoopService.AutoLearnCoreSkills`.
+
+---
+
+## To test now (SKILL RESET NPC — 2026-07-13)
+
+- [ ] **Mindwright Sela** (Brackenford, ~21500, 26000) — a new `NpcRole.SkillReset` NPC.
+- [ ] Talk to her → she lists every **permanent, mutually-exclusive** skill you've committed to
+  (the level-40 stat swaps), with **how much gold you sank into each**.
+- [ ] **Forget** one → the skill is removed, its group is **free to commit to again**, and your
+  stats recompute immediately (losing +CON drops your Max HP, and current HP is clamped).
+- [ ] **The gold is NOT refunded** — that's the deal: you may change your mind, you may not undo the
+  price of being wrong. The button says how much you're writing off.
+- [ ] It only offers skills with an `ExclusiveGroup`; ordinary skills can't be reset.
+- [ ] Try it from out of talk range → "too far away".
+
+---
+
 ## To test now (LEVEL-40 STAT-SWAP PASSIVES — 2026-07-13)
 
 The ONLY thing that moves your main stats now. You're born with your CON/ATK/WIT/DEX; the old free

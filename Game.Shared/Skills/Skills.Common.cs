@@ -44,6 +44,14 @@ public static partial class SkillCatalog
     public const string HpBoost = "hp_boost";
     public const string WindWalk = "wind_walk";
     public const string MassWindWalk = "mass_wind_walk";
+    // ============================ TEST ONLY — DELETE ME ============================
+    // A 1000-power heal, auto-granted to EVERY character at level 76, purely to calibrate the heal
+    // formula against the owner's target (a 1000-power heal should land ~2000 for a healer at 76).
+    // It is deliberately given to fighters too, so the tank-vs-healer gap can be read directly.
+    // REMOVE: this const, TestHealSkill() below, its line in CommonSkills(), and the auto-grant in
+    // GameLoopService.AutoLearnCoreSkills. Search "TEST ONLY" to find all four.
+    public const string TestHeal = "test_heal";
+    // ==============================================================================
     // ---- "Class Balance" — one zeroed passive per class, auto-granted. See ClassBalanceFor. ----
     public const string BalanceTank    = "class_balance_tank";
     public const string BalanceWarrior = "class_balance_warrior";
@@ -162,6 +170,20 @@ public static partial class SkillCatalog
 
     private static SkillDef[] CommonSkills() => new SkillDef[]
     {
+        // ======================== TEST ONLY — DELETE ME ========================
+        // Power 1000, so the heal formula can be read straight off the screen:
+        //   heal = power × √M.Atk / HealK(15)
+        // Expected at level 76, fully geared: HEALER (t76 staff, M.Atk ~900) ≈ 2000.
+        //                                     TANK  (t76 2H sword)            ≈ 1193 @ OffChannel 0.6
+        //                                                                     ≈  689 @ OffChannel 0.2
+        // Cast/cooldown kept short so it's quick to spam-test. Costs no MP.
+        new(TestHeal, "TestHeal", BaseClass.Fighter, SkillEffect.Heal,
+            MpCost: 0, CastTicks: 20, CooldownTicks: 20, Range: 600, Power: 1000,
+            Category: SkillCategory.Heal,
+            Description: "TEST ONLY. Flat heal, power 1000. Used to calibrate the heal formula "
+                       + "(heal = power × √M.Atk / 15). Remove before release."),
+        // ======================================================================
+
         // ----- HEALING potions, as skills. Each consumes its own potion (ConsumableId) and
         //       casts instantly (CastTicks 0). The shared "one potion per 30s" rule stays an
         //       ITEM property (PotionCooldownTicks) — it's a rule about drinking, not about

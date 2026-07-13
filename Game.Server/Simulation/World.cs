@@ -141,6 +141,11 @@ public record SellItemCmd(string ConnectionId, Guid NpcEntityId, Guid InstanceId
 /// <summary>Pay a gatekeeper to warp to a safe zone.</summary>
 public record TeleportCmd(string ConnectionId, Guid NpcEntityId, string ZoneId) : IGameCommand;
 
+/// <summary>Ask a skill-reset NPC to UN-LEARN a permanent, mutually-exclusive skill (a level-40
+/// stat swap), freeing its group so a different trade-off can be committed to. Free to do — the
+/// gold already spent is NOT refunded.</summary>
+public record ForgetSkillCmd(string ConnectionId, Guid NpcEntityId, string SkillId) : IGameCommand;
+
 /// <summary>Change movement state (run / walk / sit).</summary>
 public record SetMoveStateCmd(string ConnectionId, MoveState State) : IGameCommand;
 

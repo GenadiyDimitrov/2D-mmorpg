@@ -215,6 +215,9 @@ public static class WorldMap
         new("merchant_gear",    "Armsmaster Dolan",  26000, 26000, NpcRole.Vendor),
         // Newbie buffer: blesses lvl 6-75 characters with a buffer's full buff set.
         new("buffer_newbie",    "Spirit Helper Nyra", 24000, 26500, NpcRole.Buffer),
+        // Skill reset: un-learns the PERMANENT, mutually-exclusive picks (the level-40 stat swaps)
+        // so a bad commitment can be re-chosen. Free to forget — the gold is NOT refunded.
+        new("resetter_main",    "Mindwright Sela",   21500, 26000, NpcRole.SkillReset),
         // --- Gatekeepers: one in every town (stands at its centre) so the whole
         //     travel network is reachable in both directions. ---
         new("gatekeeper_brackenford", "Gatekeeper Pell",   24000, 21500, NpcRole.Teleporter),
@@ -378,7 +381,7 @@ public record RoadPath(float Width, MapPoint[] Points)
 
 }
 
-public enum NpcRole { QuestGiver = 0, ClassChange = 1, Vendor = 2, Teleporter = 3, Buffer = 4 }
+public enum NpcRole { QuestGiver = 0, ClassChange = 1, Vendor = 2, Teleporter = 3, Buffer = 4, SkillReset = 5 }
 
 /// <summary>A placed NPC. Id is referenced by quests + class-change requirements.</summary>
 public record NpcDef(string Id, string Name, float X, float Y, NpcRole Role);

@@ -2446,6 +2446,7 @@ public partial class MainWindow
             "ClassChange" => "Class Master",
             "Vendor" => "Merchant",
             "Teleporter" => "Gatekeeper",
+            "SkillReset" => "Mindwright",
             _ => "Quest Giver"
         };
         DialogContent.Children.Clear();
@@ -2482,6 +2483,36 @@ public partial class MainWindow
                     DialogPanel.Visibility = Visibility.Collapsed;
                 };
                 DialogContent.Children.Add(btn);
+            }
+        }
+
+        // Skill reset: un-learn a PERMANENT, mutually-exclusive pick (a level-40 stat swap) so its
+        // group is open again. Free to forget — the gold is NOT refunded, which is the whole point:
+        // you may change your mind, you may not undo the price of being wrong.
+        if (dialog.SkillReset is SkillResetInfo reset)
+        {
+            AddDialogHeader("Forget a permanent choice");
+            if (reset.Skills.Length == 0)
+            {
+                AddDialogText("You have not committed to any permanent skill yet.");
+            }
+            else
+            {
+                AddDialogText("Forgetting frees its group so you may commit again. "
+                            + "The gold you spent is NOT refunded.");
+                foreach (var s in reset.Skills)
+                {
+                    var btn = new Button
+                    {
+                        Content = $"Forget {s.Name} (Lv.{s.Level})  —  {s.GoldSpent:N0} "
+                                + $"{GameConstants.CurrencyName} written off",
+                        Height = 28, HorizontalAlignment = HorizontalAlignment.Left,
+                        Margin = new Thickness(0, 2, 0, 4), Padding = new Thickness(8, 0, 8, 0)
+                    };
+                    string skillId = s.SkillId;
+                    btn.Click += async (_, _) => await _net.ForgetSkillAsync(_dialogNpcId, skillId);
+                    DialogContent.Children.Add(btn);
+                }
             }
         }
 

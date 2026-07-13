@@ -178,6 +178,12 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task ForgetSkill(Guid npcEntityId, string skillId)
+    {
+        _world.Commands.Enqueue(new ForgetSkillCmd(Context.ConnectionId, npcEntityId, skillId));
+        return Task.CompletedTask;
+    }
+
     public Task SetMoveState(int state)
     {
         _world.Commands.Enqueue(new SetMoveStateCmd(Context.ConnectionId, (MoveState)state));

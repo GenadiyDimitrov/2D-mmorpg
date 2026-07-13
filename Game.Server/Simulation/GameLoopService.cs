@@ -80,6 +80,7 @@ public class GameLoopService : BackgroundService
                 case BuyItemCmd c: HandleBuy(c); break;
                 case SellItemCmd c: HandleSell(c); break;
                 case TeleportCmd c: HandleTeleport(c); break;
+                case ForgetSkillCmd c: HandleForgetSkill(c); break;
                 case SetMoveStateCmd c: HandleSetMoveState(c); break;
                 case CancelCastCmd c: HandleCancelCast(c); break;
                 case RemoveBuffCmd c: HandleRemoveBuff(c); break;
@@ -619,6 +620,12 @@ public class GameLoopService : BackgroundService
         // Class Balance passive — the per-class tuning hook. No effect today; it's where a
         // class's damage gets nudged later instead of hardcoding a coefficient.
         player.LearnedSkills[SkillCatalog.ClassBalanceFor(player.Archetype, player.BaseClass)] = 1;
+
+        // ==================== TEST ONLY — DELETE ME ====================
+        // A power-1000 heal for EVERY class at 76, so the heal formula can be calibrated (and the
+        // tank-vs-healer gap read directly). Remove this block with the rest — search "TEST ONLY".
+        if (player.Level >= 76) player.LearnedSkills.TryAdd(SkillCatalog.TestHeal, 1);
+        // ==============================================================
 
         // The universal Return skill (teleport to nearest town) IS a learned skill — everyone has it.
         // The SCROLL versions are NOT: the item grants them. You don't learn a scroll, you use it —
@@ -5609,6 +5616,59 @@ var effect = def.Effect;
             $"Sold {def.Name}{(qty > 1 ? $" x{qty}" : "")} for {total:N0} {GameConstants.CurrencyName}.");
     }
 
+    /// <summary>The skills a reset NPC can un-learn: the ones you committed to permanently (any
+    /// skill with an ExclusiveGroup — today, the level-40 stat swaps). Includes the gold you sank
+    /// into it, so the player can see exactly what he's writing off.</summary>
+    private static IEnumerable<ResettableSkill> ResettableSkillsOf(Entity player)
+    {
+        foreach (var (id, level) in player.LearnedSkills)
+        {
+            if (SkillCatalog.Get(id) is not SkillDef def || string.IsNullOrEmpty(def.ExclusiveGroup))
+                continue;
+            int spent = 0;
+            for (int l = 1; l <= level; l++) spent += def.GoldCostAt(l);
+            yield return new ResettableSkill(id, def.Name, level, spent);
+        }
+    }
+
+    /// <summary>Un-learn a permanent, mutually-exclusive skill so its group is free to commit to
+    /// again. Removing costs NOTHING — but the gold already spent is NOT refunded. That's the whole
+    /// deal: you may change your mind, you may not undo the price of being wrong.</summary>
+    private void HandleForgetSkill(ForgetSkillCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (!_world.Entities.TryGetValue(cmd.NpcEntityId, out var npc)
+            || npc.Kind != EntityKind.Npc || npc.NpcRole != NpcRole.SkillReset)
+            return;
+
+        float dx = npc.X - player.X, dy = npc.Y - player.Y;
+        if (dx * dx + dy * dy > GameConstants.TalkRange * GameConstants.TalkRange)
+        {
+            SendSystemToEntity(player, $"{npc.Name} is too far away.");
+            return;
+        }
+
+        if (SkillCatalog.Get(cmd.SkillId) is not SkillDef def
+            || string.IsNullOrEmpty(def.ExclusiveGroup)
+            || !player.HasSkill(def.Id))
+        {
+            SendSystemToEntity(player, "That skill cannot be reset.");
+            return;
+        }
+
+        player.LearnedSkills.Remove(def.Id);
+        player.RecomputeDerived();
+        player.Hp = Math.Min(player.Hp, player.MaxHp);   // losing +CON can lower Max HP
+        player.Mp = Math.Min(player.Mp, player.MaxMp);
+
+        SendSystemToEntity(player,
+            $"{def.Name} forgotten. You may commit to a different path — the gold is not refunded.");
+        SendStats(player);
+        SendLearned(player);
+        SendDialog(player, npc);   // refresh the list
+        SaveEntity(player);
+    }
+
     private void HandleTeleport(TeleportCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
@@ -5799,9 +5859,14 @@ var effect = def.Effect;
             teleport = new TeleportInfo(dests);
         }
 
+        // Skill reset (only for reset NPCs): the permanent, mutually-exclusive picks you've made.
+        SkillResetInfo? reset = null;
+        if (npc.NpcRole == NpcRole.SkillReset)
+            reset = new SkillResetInfo(ResettableSkillsOf(player).OrderBy(s => s.Name).ToArray());
+
         SendTo(player, "Dialog", new NpcDialog(
             npc.Name, npc.NpcRole.ToString(),
-            offered, turnable.ToArray(), inProgress.ToArray(), changes.ToArray(), shop, teleport));
+            offered, turnable.ToArray(), inProgress.ToArray(), changes.ToArray(), shop, teleport, reset));
 
         // Talking can itself advance a TalkTo step.
         AdvanceTalkStep(player, npcId);

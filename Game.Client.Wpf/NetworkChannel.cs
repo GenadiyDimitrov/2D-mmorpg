@@ -145,6 +145,9 @@ public class NetworkChannel : IAsyncDisposable
     public Task TeleportAsync(Guid npcEntityId, string zoneId) =>
         _connection!.SendAsync("Teleport", npcEntityId, zoneId);
 
+    public Task ForgetSkillAsync(Guid npcEntityId, string skillId) =>
+        _connection!.SendAsync("ForgetSkill", npcEntityId, skillId);
+
     public Task SetMoveStateAsync(MoveState state) =>
         _connection!.SendAsync("SetMoveState", (int)state);
 

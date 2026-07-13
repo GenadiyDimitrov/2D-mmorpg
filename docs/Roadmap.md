@@ -60,12 +60,10 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 
 ## NEXT (clear, mostly self-contained — can do without owner input)
 
-- [ ] **"Reset skills" NPC (stat-swap re-pick)** — the level-40 stat-swap passives are a PERMANENT,
-  mutually-exclusive commitment (take +CON−DEX and +CON−ATK is locked out forever). Owner wants an
-  NPC that can UN-LEARN them so a bad pick can be re-chosen: **removing is free, but it does NOT
-  refund the gold spent**. Needs: an `NpcRole.SkillReset` (or a dialog on an existing NPC), a
-  `ForgetSkillCmd`, and a filter for which skills are resettable (`SkillDef.ExclusiveGroup != ""`
-  is the natural marker). Until this exists, a mis-click costs the player up to 15kk.
+- [x] **"Reset skills" NPC (stat-swap re-pick)** — BUILT. `NpcRole.SkillReset` + `ForgetSkillCmd`;
+  **Mindwright Sela** in Brackenford un-learns any skill with an `ExclusiveGroup` (today: the
+  level-40 stat swaps), freeing its group to commit again. Removing is FREE; the gold spent is NOT
+  refunded (and the dialog says how much you're writing off).
 
 - [ ] **Per-type CC resist (the gear CSV's `x1.7` lines)** — owner: wanted, but LATER (2026-07-13).
   The armor sets author resists as a **multiplier per CC TYPE**, e.g. `Sleep/Hold/Poison/Bleed
