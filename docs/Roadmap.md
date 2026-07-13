@@ -60,6 +60,16 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 
 ## NEXT (clear, mostly self-contained — can do without owner input)
 
+- [ ] **Per-type CC resist (the gear CSV's `x1.7` lines)** — owner: wanted, but LATER (2026-07-13).
+  The armor sets author resists as a **multiplier per CC TYPE**, e.g. `Sleep/Hold/Poison/Bleed
+  Resist x1.7` on the def-oriented 61/76 lines and `Stun/Fear Resist x1.7` on the `_dmg` variants.
+  We currently collapse all of that into a **single flat `StatMods.CcResist: 0.4f`** — so the two
+  variants are indistinguishable and the authored ×1.7 is not what's applied. To do properly:
+  split `CcResist` into per-type channels (Sleep / Hold / Poison / Bleed / Stun / Fear), express
+  them as the CSV's multiplier on the resisting side of `StatCalculator.DebuffLandChance`, and
+  re-author the set rows from `docs/gear/gear_sets.csv`. Until then the `_dmg` vs `_def` set
+  identity ("tanky vs aggressive") does not actually differ in CC behaviour.
+
 - [~] **Combat primitives layer** (prerequisite for disciplines, bosses, PvP). Build to
   `docs/Disciplines.md` rules. **Started:** the ATK-vs-CON/WIT **debuff hit-contest**
   (`StatCalculator.DebuffLandChance`, 10–90%, 50% at equal, bosses immune) + **Slow**
