@@ -268,10 +268,10 @@ public partial class MainWindow
         ClassHint.Text = $"As a {_myRace} {_myBaseClass}, choose your path. This is permanent.";
         foreach (var def in ClassCatalog.OptionsFor(_myRace, _myBaseClass))
         {
-            var (con, atk, wit, dex) = ClassCatalog.StatBonus(def.Archetype);
+            // No stat bonus to advertise: a class change no longer raises main stats.
             var button = new Button
             {
-                Content = $"{def.Name}  ({def.Archetype})  +{con}CON +{atk}ATK +{wit}WIT +{dex}DEX",
+                Content = $"{def.Name}  ({def.Archetype})",
                 Height = 32,
                 Margin = new Thickness(0, 0, 0, 6),
                 FontSize = 12
@@ -1156,7 +1156,6 @@ public partial class MainWindow
 
     private void PreviewSecondClass(SecondClassDef sc)
     {
-        var (con, atk, wit, dex) = ClassCatalog.StatBonus(sc.Archetype);
         string role = sc.Archetype switch
         {
             Archetype.Tank => "Fortress: heavy armor + shield, soaks damage.",
@@ -1171,8 +1170,8 @@ public partial class MainWindow
             .Select(cs => SkillCatalog.Get(cs.SkillId))
             .Where(d => d is not null).Select(d => d!).ToList();
         ShowCreationInfo($"{sc.Name}  ({sc.Archetype})",
-            role + $"\n\nClass-change bonus: +{con} CON, +{atk} ATK, +{wit} WIT, +{dex} DEX.\n\n" +
-            "Skills (base + signature):", skills);
+            role + "\n\nYour main stats do not change — this class is defined by its skills "
+                 + "and the gear it can use.\n\nSkills (base + signature):", skills);
     }
 
     private void ShowCreationInfo(string title, string body, List<SkillDef>? skills)

@@ -278,15 +278,15 @@ public static class StatCalculator
     /// <summary>Level modifier: (level+89)/100. L1=0.90, L11=1.00, L80=1.69.</summary>
     public static float LevelMod(int level) => (level + 89) / 100f;
 
-    // Damage balance constants (authentic L2 STRUCTURE; constants tuned to OUR scale).
-    //  Physical: 77·pAtk/pDef  — L2's 77 transfers (our pAtk/pDef ratio ≈ 1.2).
-    //  Magic:    K·power·√mAtk/mDef — L2 uses 91, but that assumes mAtk in the
-    //    hundreds/thousands; ours is ~120 (√≈11), so the magic K is recalibrated
-    //    DOWN. The √ gives diminishing returns on stacked M.Atk (spell power/cast
-    //    speed become the meta), exactly as in L2. FIRST-PASS values — tune via the
-    //    class-vs-class matchup matrix.
+    // Damage balance constants — the authentic L2 constants, unmodified.
+    //  Physical: 77·(pAtk + power)/pDef
+    //  Magic:    91·power·√mAtk/mDef
+    // MagicK was previously 8, on the reasoning that our M.Atk is small compared to L2's.
+    // That was backwards: because the formula takes √mAtk, a SMALLER M.Atk needs a LARGER
+    // K, not a smaller one. The result was magic doing ~1/11th of its intended damage
+    // (a L21 healer hit a same-level tank for 15). Both constants are now L2's own.
     public const float PhysicalK = 77f;
-    public const float MagicK = 8f;
+    public const float MagicK = 91f;
 
     /// <summary>Physical ratio damage (L2 model): 77·(pAtk + skillPower)/pDef. No level
     /// term (level is already baked into pAtk/pDef growth). 'power' is 0 for a basic
@@ -417,27 +417,17 @@ public static class StatCalculator
     public const int SpeedBaseline = 333;  // stat value that equals 1.0x speed
 
 
-    /// <summary>Class base casting speed (L2 engine constant, before WIT/gear/buffs):
-    /// mages 166, fighters 150.</summary>
-    public static int ClassBaseCastSpeed(BaseClass cls) =>
-        cls == BaseClass.Mage ? 166 : 150;
-
-    /// <summary>Signature-stat bonus a character accrues by level — stands in for the
-    /// (not-yet-built) +stat dyes and stat-set bonuses. Mages apply it to WIT, fighters
-    /// to DEX. Cumulative milestones: +1@20, +1@30, +2@40, +1@50, +1@60, +1@70, +5@80
-    /// (= +12 total). E.g. an elf wizard (base WIT 23) climbs to 30 by level 70, 35 @80.</summary>
-    public static int LevelStatBonus(int level)
-    {
-        int b = 0;
-        if (level >= 20) b += 1;
-        if (level >= 30) b += 1;
-        if (level >= 40) b += 2;
-        if (level >= 50) b += 1;
-        if (level >= 60) b += 1;
-        if (level >= 70) b += 1;
-        if (level >= 80) b += 5;
-        return b;
-    }
+    /// <summary>Class base casting speed, before WIT/gear/buffs. This is the ROBED (correct)
+    /// value: a mage sits at the 333 baseline = 1.0× cast time. Ork mages are the slow
+    /// casters at 300; fighters cast at 150.
+    /// It used to be 166 for mages, which silently made EVERY mage cast take ~2× its
+    /// nominal time (166 vs the 333 baseline) — a healer's 4s bolt really took ~6.5s.
+    /// The "wrong armor" penalty is NOT applied here: Robe Mastery's light/heavy/none
+    /// profiles already carry CastSpeedPct −0.5, which halves 333 back down to 166.</summary>
+    public static int ClassBaseCastSpeed(Race race, BaseClass cls) =>
+        cls != BaseClass.Mage ? 150
+        : race == Race.Ork ? 300
+        : 333;
 
     /// <summary>DEX physical-attack-speed modifier — EXPONENTIAL, matching the L2 table
     /// (baseline 30 = 1.00: 20→0.90, 35→1.05, 40→1.11, 50→1.23): ~1.05% per DEX
@@ -508,20 +498,13 @@ public static class StatCalculator
     /// keep the level base + jewels; this is mob-only.)</summary>
     public static int MobMagicDefence(int level) => Math.Max(5, (int)(level * 1.2f));
 
-    /// <summary>Per-archetype basic-attack damage multiplier — the core of
-    /// class identity. Mages barely autoattack (rely on skills/MP); fighters &
-    /// archers hit full; rogues & tanks are reduced (they lean on crits/skills
-    /// and defence respectively). Base classes use 1.0 until they specialize.</summary>
-    public static float BasicAttackMultiplier(Archetype? archetype) => archetype switch
-    {
-        Archetype.Warrior => 1.10f,
-        Archetype.Archer => 1.00f,
-        Archetype.Rogue => 0.65f,   // leans on crits + skills
-        Archetype.Tank => 0.55f,    // leans on defence
-        Archetype.Healer => 0.15f,  // mages: near-zero basic attack
-        Archetype.Nuker => 0.15f,
-        _ => 1.0f                    // base Fighter/Mage before class change
-    };
+    // The per-archetype basic-attack multiplier (tank 0.55 / rogue 0.65 / mage 0.15 / …) is
+    // GONE. It was a hardcoded class identity that fought the formula: it crippled the tank's
+    // and dagger's auto-attacks and had to be compensated for elsewhere. Basic-attack damage
+    // is now pure formula, and the WEAPON differentiates — a tank's 1H sword hits for less
+    // than a warrior's 2H, a dagger less per hit but far faster, a bow much harder. Per-class
+    // nudges belong in the "Class Balance" passive (SkillCatalog.ClassBalanceFor), which is
+    // data, not code.
 
     // Archetype crit/evasion LEANS moved to the rogue/archer floor passives (Evasion Mastery /
     // Reflexes) per the stats-via-skills rule — no longer hardcoded here.

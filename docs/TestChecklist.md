@@ -7,6 +7,75 @@ this file.
 
 ---
 
+## To test now (DAMAGE RETUNE — 2026-07-13) ⚠ delete game.db first
+
+**⚠ Delete `Game.Server/game.db` (+ `-shm`/`-wal`) before testing.** Not a schema change —
+but existing characters have the OLD class-change stat bonuses (+10 CON tank, +10 WIT nuker…)
+baked into their persisted stats, and those grants are gone now. A fresh DB avoids ghost stats.
+*(Note: with `dotnet run` the DB is `Game.Server/game.db` — the `bin/Debug/net8.0/` path is
+only used when launching from Visual Studio.)*
+
+### Magic damage — the big one
+- [ ] `MagicK` 8 → **91** (L2's real constant). Magic was doing ~1/11th of intended damage.
+  A Lv-21 healer's Magic Bolt on a same-level tank should now hit for **~170, not 15**.
+- [ ] Check this did NOT break **PvE** — 11× more magic damage means mages/healers may now
+  shred mobs. Owner's standing target: *mage TTK ~60s @75, do not over-buff*. A healer
+  should now kill a same-level mob in a reasonable time (it used to take ~1 minute).
+
+### Archetype damage multipliers REMOVED
+- [ ] The per-archetype basic-attack multiplier (tank ×0.55, rogue ×0.65, mage ×0.15,
+  warrior ×1.10) is **gone**. Basic-attack damage = pure formula; the **weapon** differentiates.
+- [ ] A Lv-21 tank's basic attack on a robe target should now land ~**43** (was ~24).
+- [ ] **Daggers should no longer feel crippled**; bows should hit clearly harder.
+- [ ] ⚠ **Watch mage melee**: with the ×0.15 gone, a mage's staff swing is now full-strength,
+  and the newbie staff's P.Atk (23) is nearly the newbie sword's (24) — so a mage may melee
+  about as hard as a tank. If that feels wrong, the fix is the **weapon table** (lower caster
+  weapon P.Atk), not a class coefficient.
+- [ ] New **"Class Balance"** passive on every class — visible in the skills window, does
+  **nothing** (all-zero). It's the hook for later per-class PvE/PvP damage nudges.
+
+### Cast speed rebased
+- [ ] Mage base cast speed 166 → **333** (the 1.0× baseline); **ork mage 300**; fighters 150.
+  Every mage cast used to silently take ~2× its listed time — a 4s bolt really took ~6.5s.
+- [ ] Wearing **non-robe armor as a mage still halves casting** (Robe Mastery's existing
+  −50% penalty) → the old 166. Confirm a mage in light/heavy armor casts at half speed.
+  (Same numbers as L2's Spellcraft, which *doubles* cast speed while in a robe.)
+- [ ] **Spirit Training** now gives a FLAT **+40** casting speed, not +40% — matching the real
+  spiritshot. (The old percent was applied as a time cut = +67% speed, and compounded with
+  WIT/gear/buffs; it alone inflated a buffed Lv-40 mage to ~2200 vs the 1999 cap.)
+  Its magic-attack half is unchanged and correct: +100% at max = ×2 M.Atk = ×1.414 magic
+  damage — exactly the spiritshot ratio.
+- [ ] Expected casting speed now: Lv-40 elf mage in robe **unbuffed ~493** (L2 reference: ~500
+  for a Lv-60 Spellsinger in robe with passives); **fully buffed ~1097**; with +5 WIT ~1388.
+  The 1999 cap should only be reachable with an Enlightenment-style +50% buff — as in L2.
+
+### Weapon channel split (P.Atk / M.Atk factors)
+- [ ] A weapon now carries **ONE power number + two channel factors**. Fighter weapons: power =
+  their P.Atk, ×1.0 P / ×0.6 M. Mage weapons: power = their **M.Atk**, ×1.0 M / ×0.6 P (their
+  P.Atk is deliberately nerfed). Factors multiply the FINISHED channel, so they suppress the
+  shared base (`AtkStat + level*2`) — which is what a second authored number could never do.
+- [ ] **Mage melee is nerfed**: a Lv-21 healer's staff swing drops ~36 → **~21**. The nuke
+  (~172) and the tank's basic (~43) are unchanged.
+- [ ] A fighter's M.Atk is now ~60% of before — harmless (fighters have no magic skills).
+- [ ] **A cleric who equips a SWORD should melee at full strength** (×1.0 P.Atk) and lose most
+  of his casting. The class no longer decides — the weapon does. Verify this feels right.
+- [ ] ⚠ **KNOWN GAP — the buffer.** At the current ×0.6, a buffer swapping staff → 2H sword
+  loses only **15%** magic damage but **doubles** P.Atk — still a free win. Closing it needs the
+  off-channel factor at ~0.2–0.3 (`const OffChannel` in `Items.cs` / the newbie weapon defs).
+  Owner is feeling out 0.6 first.
+- [ ] ⚠ **Check heals**: if heal power scales off M.Atk, a sword-wielding cleric can barely heal.
+  That may be the intended trade — confirm.
+
+### Stats no longer grow on their own
+- [ ] **Class change no longer raises main stats** (the old +10 CON / +10 WIT grants are gone) —
+  the class-change dialog no longer advertises a stat bonus.
+- [ ] `LevelStatBonus` (the free +1@20 … +5@80 "dye stand-in") is **removed** — CON/ATK/WIT/DEX
+  stay what you were born with. The level-40 stat-swap passives (not built yet) replace it.
+- [ ] Sanity-check that mages don't feel *slower* than before despite losing the free WIT
+  (the 333 rebase should more than cover it).
+
+---
+
 ## To test now (disconnect / exit / combat + Return — 2026-07-09)
 
 ### Return skill + scrolls

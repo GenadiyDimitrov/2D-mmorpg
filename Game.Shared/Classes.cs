@@ -81,16 +81,8 @@ public static class ClassCatalog
         _ => ""
     };
 
-    /// <summary>Permanent core-stat bonus applied once at class change.</summary>
-    public static (int Con, int Atk, int Wit, int Dex) StatBonus(Archetype archetype) =>
-        archetype switch
-        {
-            Archetype.Tank => (10, 2, 0, 2),
-            Archetype.Warrior => (4, 8, 0, 2),
-            Archetype.Rogue => (2, 4, 0, 10),
-            Archetype.Archer => (2, 6, 0, 8),
-            Archetype.Healer => (4, 0, 8, 2),
-            Archetype.Nuker => (0, 4, 10, 2),
-            _ => (0, 0, 0, 0)
-        };
+    // The permanent core-stat bonus that used to be applied at class change (tank +10 CON,
+    // nuker +10 WIT, …) is GONE. Main stats are the ones you were born with; the only thing
+    // that moves them is the level-40 stat-swap passives. Class identity comes from skills,
+    // the weapon, and the Class Balance passive — not from a hidden stat grant.
 }

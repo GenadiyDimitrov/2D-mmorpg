@@ -205,17 +205,15 @@ public class Entity
     public Profession Profession { get; set; }
 
     /// <summary>WIT used for ALL gameplay math (cast speed, MP, magic crit, interrupt,
-    /// heals). MAGES gain WIT at level milestones to stand in for the not-yet-built dye
-    /// + WIT-set bonuses; non-mages use flat WIT. Stored <see cref="Wit"/> stays the
-    /// persisted base. See StatCalculator.LevelStatBonus.</summary>
-    public int EffectiveWit =>
-        Wit + BonusWit + (BaseClass == BaseClass.Mage ? StatCalculator.LevelStatBonus(Level) : 0);
+    /// heals). Stored <see cref="Wit"/> is the persisted base you were BORN with; the only
+    /// thing that moves it is <see cref="BonusWit"/> (the level-40 stat-swap passives).
+    /// The old free +1@20…+5@80 "dye stand-in" (LevelStatBonus) is gone — the stat-swap
+    /// skills replace it, and stats no longer grow just by levelling.</summary>
+    public int EffectiveWit => Wit + BonusWit;
 
     /// <summary>DEX used for ALL gameplay math (attack speed, crit, evasion, accuracy).
-    /// FIGHTERS gain DEX at level milestones (the same dye stand-in); mages use flat
-    /// DEX. Stored <see cref="Dex"/> stays the persisted base.</summary>
-    public int EffectiveDex =>
-        Dex + BonusDex + (BaseClass == BaseClass.Fighter ? StatCalculator.LevelStatBonus(Level) : 0);
+    /// Same rule as <see cref="EffectiveWit"/>: born-with base + the stat-swap passives.</summary>
+    public int EffectiveDex => Dex + BonusDex;
 
     // ----- Derived stats (recomputed on level-up / equip / class change) -------
 
@@ -287,6 +285,9 @@ public class Entity
 
     /// <summary>Cast-time multiplier from item Cast Speed attributes (0.8 = 20% faster).</summary>
     public float CastSpeedMultiplier { get; set; } = 1f;
+    /// <summary>FLAT addition to the casting-speed stat, from passives (the spiritshot +40).
+    /// Added AFTER the multiplicative chain, so it does not compound with WIT/gear/buffs.</summary>
+    public float CastSpeedFlatBonus { get; set; }
     /// <summary>Attack-interval multiplier from Attack Speed attributes.</summary>
     public float AttackSpeedMultiplier { get; set; } = 1f;
 
@@ -482,7 +483,7 @@ public class Entity
             // attributes / passives (CastSpeedMultiplier is their combined TIME multiplier,
             // <1 = faster, so 1/it = speed factor: robe ≈ ×1.4, non-robe ≈ ×0.5). Buffs
             // STACK MULTIPLICATIVELY, matching L2.
-            float baseCast = StatCalculator.ClassBaseCastSpeed(BaseClass)
+            float baseCast = StatCalculator.ClassBaseCastSpeed(Race, BaseClass)
                              * StatCalculator.WeaponCastFactor(WeaponType);
             float witMod = StatCalculator.CastWitModifier(EffectiveWit);
             float gearFactor = 1f / Math.Max(0.05f, CastSpeedMultiplier);
@@ -493,7 +494,9 @@ public class Entity
                 if (buff.Has(SkillEffect.DebuffCastSpeed)) buffMult *= 1f - buff.Percent(SkillEffect.DebuffCastSpeed);
             }
 
-            float castSpd = baseCast * witMod * gearFactor * buffMult;
+            // The spiritshot-style flat bonus is ADDED to the finished stat, not folded into
+            // the chain — that's what keeps it from compounding with WIT/gear/buffs.
+            float castSpd = baseCast * witMod * gearFactor * buffMult + CastSpeedFlatBonus;
             castSpd = Math.Clamp(castSpd, 30f, StatCaps.CastSpeed);
             return StatCalculator.SpeedBaseline / castSpd;   // time multiplier (lower = faster)
         }
@@ -790,6 +793,7 @@ public class Entity
         Speed = Kind == EntityKind.Player ? RunSpeed : (RunSpeed > 0 ? RunSpeed : Speed);
         CastSpeedMultiplier = 1f;
         AttackSpeedMultiplier = 1f;
+        CastSpeedFlatBonus = 0f;
 
         HasShield = false;
         BlockChance = 0f;
@@ -802,6 +806,8 @@ public class Entity
 
         var bodyWeight = ArmorWeight.None;   // equipped BODY-slot armor weight (for masteries)
         int weaponAsBase = 0;                // equipped weapon's attack-speed base override (0 = type default)
+        float weaponPFactor = 1f;            // equipped weapon's P.Atk / M.Atk channel factors
+        float weaponMFactor = 1f;            // (1 = unarmed: no weapon to shape the split)
 
         foreach (var item in Inventory)
         {
@@ -811,8 +817,14 @@ public class Entity
             if (def.Slot == EquipSlot.Armor && def.ArmorSlot == ArmorSlot.Body)
                 bodyWeight = def.Weight;
 
-            AttackPower += EnchantRules.BonusAt(def.AtkBonus, item.Enchant);
-            MagicAttack += EnchantRules.BonusAt(def.MAtkBonus, item.Enchant);
+            int atkBonus = EnchantRules.BonusAt(def.AtkBonus, item.Enchant);
+            AttackPower += atkBonus;
+            // A WEAPON has one power number and contributes it to BOTH channels; the channel
+            // factors below decide the split. Everything else (armor/jewels) keeps its own
+            // separate M.Atk bonus.
+            MagicAttack += def.Slot == EquipSlot.Weapon
+                ? atkBonus
+                : EnchantRules.BonusAt(def.MAtkBonus, item.Enchant);
             Defence += EnchantRules.BonusAt(def.DefBonus, item.Enchant);
             MagicDefence += EnchantRules.BonusAt(def.MDefBonus, item.Enchant);  // jewels
             MaxHp += EnchantRules.BonusAt(def.HpBonus, item.Enchant);
@@ -823,6 +835,8 @@ public class Entity
             {
                 WeaponType = def.WeaponType;
                 weaponAsBase = def.AttackSpeedBase;   // per-item speed (bow slow/very-slow), 0 = default
+                weaponPFactor = def.PAtkFactor;
+                weaponMFactor = def.MAtkFactor;
             }
 
             if (def.Slot == EquipSlot.Shield)
@@ -848,6 +862,18 @@ public class Entity
                 }
                 BasicAttackRange = range;
             }
+        }
+
+        // ----- Weapon channel split -----
+        // The equipped weapon decides how much of your ATK power reaches each channel. This is
+        // applied to the FINISHED total (shared base + level + gear), not just the weapon's own
+        // bonus — the shared base is exactly what has to be suppressed. It's what makes a staff
+        // a caster and a sword not, and it's why we can keep ONE power stat: +ATK on a staff
+        // behaves as +INT, on a sword as +STR. Mobs have no weapon, so both factors stay 1.
+        if (Kind == EntityKind.Player)
+        {
+            AttackPower = Math.Max(1, (int)(AttackPower * weaponPFactor));
+            MagicAttack = Math.Max(0, (int)(MagicAttack * weaponMFactor));
         }
 
         // ----- Item attributes (rolled per drop) -----
@@ -976,12 +1002,12 @@ public class Entity
             ActiveArmorSet = set.Name;
         }
 
-        // Archetype identity: scale basic-attack power (a structural per-archetype coefficient).
-        // The crit/evasion LEANS are no longer hardcoded here — they ride the rogue/archer floor
-        // passives (Evasion Mastery / Reflexes), folded in ApplyPassive below (stats-via-skills).
+        // Basic-attack power is now just P.Atk — no per-archetype coefficient. What separates a
+        // tank's swing from a warrior's is the WEAPON (1H vs 2H P.Atk, speed, crit factor), and
+        // any remaining per-class nudge is data on the Class Balance passive. The crit/evasion
+        // leans likewise ride the rogue/archer floor passives (stats-via-skills).
         var arch = Archetype;
-        BasicAttackPower = Math.Max(1,
-            (int)(AttackPower * StatCalculator.BasicAttackMultiplier(arch)));
+        BasicAttackPower = Math.Max(1, AttackPower);
         // Weapon shapes crit: blunt low, dual/bow high (WeaponType known post-equip). The factor
         // scales the DEX crit; GEAR crit-rate adds on top (unscaled). Passive crit leans add + re-clamp.
         CritChance = Math.Clamp(
@@ -1110,6 +1136,7 @@ public class Entity
                 if (pe.MpRegenPct != 0f) MpRegenMult *= 1f + pe.MpRegenPct;
                 if (pe.AtkSpeedPct != 0f) AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier * (1f - pe.AtkSpeedPct), 0.4f, 2.5f);
                 if (pe.CastSpeedPct != 0f) CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier * (1f - pe.CastSpeedPct), 0.4f, 2.5f);
+                CastSpeedFlatBonus += pe.CastSpeedFlat;   // spiritshot-style flat +cast (added AFTER the multiplicative chain)
                 if (pe.MoveSpeedPct != 0f) { RunSpeed *= 1f + pe.MoveSpeedPct; WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor; Speed = RunSpeed; }
                 CooldownReduction += pe.CooldownPct;
                 CritRateResist += pe.CritRateResist;

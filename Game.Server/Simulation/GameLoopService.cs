@@ -607,6 +607,10 @@ public class GameLoopService : BackgroundService
         if (SkillCatalog.FloorPassiveFor(player.Archetype, player.Level) is { } floor)
             player.LearnedSkills[floor.Id] = floor.Level;
 
+        // Class Balance passive — the per-class tuning hook. No effect today; it's where a
+        // class's damage gets nudged later instead of hardcoding a coefficient.
+        player.LearnedSkills[SkillCatalog.ClassBalanceFor(player.Archetype, player.BaseClass)] = 1;
+
         // Universal Return line (teleport to nearest town): everyone has all three; the scroll
         // variants only work while you hold the matching scroll (their ConsumableId reagent).
         player.LearnedSkills.TryAdd(SkillCatalog.ReturnSkill, 1);
@@ -881,12 +885,9 @@ public class GameLoopService : BackgroundService
         if (def is null || def.Race != player.Race || def.Base != player.BaseClass)
             return;
 
+        // NOTE: the class change no longer raises main stats. You keep the CON/ATK/WIT/DEX you
+        // were born with; the level-40 stat-swap passives are the only way to move them.
         player.SecondClass = def.Id;
-        var (con, atk, wit, dex) = ClassCatalog.StatBonus(def.Archetype);
-        player.Con += con;
-        player.AtkStat += atk;
-        player.Wit += wit;
-        player.Dex += dex;
         AutoLearnCoreSkills(player);
         player.RecomputeDerived();
         player.Hp = player.MaxHp;
@@ -1387,16 +1388,10 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        // Ensure the parent 2nd class (apply its core-stat bonus only if changing from none).
+        // Ensure the parent 2nd class. (No core-stat bonus: class changes no longer touch
+        // main stats — see the 2nd-class path.)
         if (player.SecondClass != tcd.ParentSecondClassId)
-        {
-            if (player.SecondClass == 0 && ClassCatalog.Get(tcd.ParentSecondClassId) is SecondClassDef p)
-            {
-                var (con, atk, wit, dex) = ClassCatalog.StatBonus(p.Archetype);
-                player.Con += con; player.AtkStat += atk; player.Wit += wit; player.Dex += dex;
-            }
             player.SecondClass = tcd.ParentSecondClassId;
-        }
         player.ThirdClass = cmd.ThirdClassId;
 
         AutoLearnCoreSkills(player);

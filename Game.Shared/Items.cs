@@ -112,7 +112,17 @@ public record ItemDef(
     ArmorWeight Weight = ArmorWeight.None,
     ArmorSlot ArmorSlot = ArmorSlot.None,
     WeaponType WeaponType = WeaponType.None,
+    // A weapon carries ONE power number (AtkBonus) plus two CHANNEL FACTORS. The factors
+    // multiply the FINISHED channel (base stat + level + gear), which is the whole point:
+    // P.Atk and M.Atk are both built on the same shared base (AtkStat + level*2), so only a
+    // MULTIPLIER can stop that base leaking into the channel a weapon isn't meant to serve.
+    // A second authored number could never do it — a 2H sword's flat M.Atk is small, but the
+    // shared base handed a sword-wielding buffer ~85% of a staff's magic damage for free.
+    // Fighter weapon: power = its P.Atk, PAtkFactor 1.0, MAtkFactor ~0.6.
+    // Mage weapon:    power = its M.Atk, MAtkFactor 1.0, PAtkFactor ~0.6 (P.Atk nerfed).
     int AtkBonus = 0,
+    float PAtkFactor = 1f,
+    float MAtkFactor = 1f,
     int MAtkBonus = 0,
     int DefBonus = 0,
     int HpBonus = 0,
@@ -564,21 +574,24 @@ public static class ItemCatalog
         //  UNTRADEABLE, sell for 0, and cannot be purchased (buy -1). A fighter gets
         //  all four melee/ranged options; a mage gets the staff. P.Atk / M.Atk per owner.
         // ===================================================================
+        // ONE power number + channel factors (see ItemDef). Fighter weapons: power = P.Atk,
+        // P×1.0 / M×0.6. The staff: power = its M.Atk, M×1.0 / P×0.6 (its P.Atk is nerfed —
+        // a mage should not swing like a fighter now that the archetype multiplier is gone).
         list.Add(new ItemDef(NewbieSword1H, "Newbie Sword", EquipSlot.Weapon,
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Sword,
-            AtkBonus: 24, MAtkBonus: 17, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+            AtkBonus: 24, PAtkFactor: 1.0f, MAtkFactor: 0.6f, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
         list.Add(new ItemDef(NewbieDaggers, "Newbie Daggers", EquipSlot.Weapon,
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Dual,
-            AtkBonus: 21, MAtkBonus: 17, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+            AtkBonus: 21, PAtkFactor: 1.0f, MAtkFactor: 0.6f, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
         list.Add(new ItemDef(NewbieSword2H, "Newbie Greatsword", EquipSlot.Weapon,
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.TwoHandedSword,
-            AtkBonus: 29, MAtkBonus: 17, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+            AtkBonus: 29, PAtkFactor: 1.0f, MAtkFactor: 0.6f, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
         list.Add(new ItemDef(NewbieBow, "Newbie Bow", EquipSlot.Weapon,
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Bow,
-            AtkBonus: 49, MAtkBonus: 17, WeaponRange: 400, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+            AtkBonus: 49, PAtkFactor: 1.0f, MAtkFactor: 0.6f, WeaponRange: 400, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
         list.Add(new ItemDef(NewbieStaff, "Newbie Staff", EquipSlot.Weapon,
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.TwoHandedBlunt,
-            AtkBonus: 23, MAtkBonus: 24, MpBonus: 20, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+            AtkBonus: 24, PAtkFactor: 0.6f, MAtkFactor: 1.0f, MpBonus: 20, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
 
         // ===================================================================
         //  BOXES / CHESTS — opened from inventory; contents roll the BoxCatalog table.
@@ -769,7 +782,9 @@ public static class ItemCatalog
     /// piece (the Epic set item) spawns three weaker copies at ~65/78/90% of its stats, standalone
     /// (no SetId, so no set bonus). Only the plain base-tier pieces get copies — the alternate body
     /// VARIANTS (e.g. "heavy_t52_dmg") stay set-only. Ids: "<baseid>_common" etc.</summary>
-    private static readonly (ItemRarity Rarity, float Scale)[] DropTiers =
+    // A property, not a static field: BuildCatalog() runs from the `All` field initializer above
+    // this declaration, so a field here would still be null when ScaledDropItems reads it.
+    private static (ItemRarity Rarity, float Scale)[] DropTiers => new[]
     {
         (ItemRarity.Common,   0.65f),
         (ItemRarity.Uncommon, 0.78f),
@@ -871,11 +886,21 @@ public static class ItemCatalog
             ("staff",   "Staff",      WeaponType.TwoHandedBlunt, true,  0,
                 new[] { (20,90,79,0),(40,135,111,0),(52,189,145,0),(61,226,167,0),(76,274,193,0) }),
         };
+        // ONE power number + channel factors. A weapon's power is the value of the channel it
+        // EXISTS to serve: a sword's P.Atk, a staff's M.Atk. The off-channel gets ×0.6, which
+        // reproduces the CSV's second column (a sword's 92 × 0.6 ≈ its authored 54 M.Atk) while
+        // also suppressing the shared base — the part a second authored number could never do.
+        // For mage weapons this deliberately NERFS P.Atk (a staff's 90 → 79 × 0.6 ≈ 47).
+        const float OffChannel = 0.6f;
         foreach (var w in weapons)
             foreach (var (L, P, M, As) in w.Rows)
                 yield return new ItemDef($"{w.Key}_t{L}", $"{TierLetter(L)}-Grade {w.Noun}",
                     EquipSlot.Weapon, TierGrade(L), ItemRarity.Epic,
-                    WeaponType: w.Type, AtkBonus: P, MAtkBonus: M, WeaponRange: w.Range,
+                    WeaponType: w.Type,
+                    AtkBonus: w.Magic ? M : P,
+                    PAtkFactor: w.Magic ? OffChannel : 1f,
+                    MAtkFactor: w.Magic ? 1f : OffChannel,
+                    WeaponRange: w.Range,
                     ItemLevel: L, IsMagicWeapon: w.Magic, AttackSpeedBase: As);
     }
 

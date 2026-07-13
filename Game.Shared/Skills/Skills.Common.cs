@@ -36,6 +36,15 @@ public static partial class SkillCatalog
     public const string HpBoost = "hp_boost";
     public const string WindWalk = "wind_walk";
     public const string MassWindWalk = "mass_wind_walk";
+    // ---- "Class Balance" — one zeroed passive per class, auto-granted. See ClassBalanceFor. ----
+    public const string BalanceTank    = "class_balance_tank";
+    public const string BalanceWarrior = "class_balance_warrior";
+    public const string BalanceRogue   = "class_balance_rogue";
+    public const string BalanceArcher  = "class_balance_archer";
+    public const string BalanceNuker   = "class_balance_nuker";
+    public const string BalanceHealer  = "class_balance_healer";
+    public const string BalanceFighter = "class_balance_fighter";   // base class, pre-2nd
+    public const string BalanceMage    = "class_balance_mage";      // base class, pre-2nd
     // ---- Universal "Return" line: teleport to the nearest town. All auto-granted; the scroll
     //      variants require (and consume) their scroll item. Fixed cast + fixed cooldown. ----
     public const string ReturnSkill          = "return_town";        // 30s cast, 5min cd, fragile
@@ -52,16 +61,46 @@ public static partial class SkillCatalog
         Levels: perLevel.Select(p => new SkillLevel(Passive: p)).ToArray());
 
     // Combat-training passive: 9 levels, +10%…+80% then +100% attack (the soulshot/
-    // spiritshot stand-in). castSpeed is folded into every level (mages get +40%).
-    private static SkillDef TrainingPassive(string id, string name, BaseClass cls, float castSpeed, string desc)
+    // spiritshot stand-in). At max level the +100% atk = ×2 P.Atk/M.Atk, which is exactly
+    // what a shot does: ×2 physical damage (linear), ×1.414 magic (√mAtk).
+    // castSpeedFlat mirrors the real spiritshot bonus: a FLAT +40 to the cast stat. It used
+    // to be a 0.40 PERCENT, applied as a time cut (×0.6 time = +67% speed), which compounded
+    // with WIT/gear/buffs and inflated a buffed L40 mage to ~2200 against the 1999 cap.
+    private static SkillDef TrainingPassive(string id, string name, BaseClass cls, float castSpeedFlat, string desc)
     {
         float[] atk = { 0.10f, 0.20f, 0.30f, 0.40f, 0.50f, 0.60f, 0.70f, 0.80f, 1.00f };
         return new(id, name, cls, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: 0, Description: desc,
             Levels: atk.Select(p => new SkillLevel(
-                Passive: new PassiveEffect(AttackPct: p, CastSpeedPct: castSpeed))).ToArray());
+                Passive: new PassiveEffect(AttackPct: p, CastSpeedFlat: castSpeedFlat))).ToArray());
     }
+
+    /// <summary>The "Class Balance" passive for a class — auto-granted, always level 1.
+    /// It does NOTHING today (an all-zero PassiveEffect). It exists as the tuning HOOK that
+    /// replaced the hardcoded per-archetype basic-attack multiplier: if a tank later turns
+    /// out to hit too softly in PvE, raise PveBasicDamagePct on its balance passive rather
+    /// than adding a coefficient back into StatCalculator. Damage stays formula + weapon,
+    /// and per-class deviation stays DATA (see docs — stats-via-skills).</summary>
+    public static string ClassBalanceFor(Archetype? archetype, BaseClass cls) => archetype switch
+    {
+        Archetype.Tank    => BalanceTank,
+        Archetype.Warrior => BalanceWarrior,
+        Archetype.Rogue   => BalanceRogue,
+        Archetype.Archer  => BalanceArcher,
+        Archetype.Nuker   => BalanceNuker,
+        Archetype.Healer  => BalanceHealer,
+        _ => cls == BaseClass.Mage ? BalanceMage : BalanceFighter,   // base class, pre-2nd
+    };
+
+    /// <summary>A Class Balance passive: one level, an all-zero <see cref="PassiveEffect"/>.
+    /// Fill in fields here (PveBasicDamagePct, PvpMagicDamagePct, AttackPct, …) to tune a class.</summary>
+    private static SkillDef BalancePassive(string id, string name, BaseClass cls) => new(
+        id, name, cls, SkillEffect.None,
+        MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+        Category: SkillCategory.Passive, SpCost: 0,
+        Description: "Class balance. Reserved for tuning — currently no effect.",
+        Levels: new[] { new SkillLevel(Passive: new PassiveEffect()) });
 
     /// <summary>The identity floor passive an archetype receives at its current class
     /// tier (milestones 20/40/76) — as (skill id, skill LEVEL), or null. Granted in
@@ -194,13 +233,23 @@ public static partial class SkillCatalog
             },
             ArmorMasteryLevels: MageRobeLevels),
 
+        // ===== Class Balance — the per-class tuning hook (auto-granted, currently no-ops) =====
+        BalancePassive(BalanceTank,    "Class Balance (Tank)",    BaseClass.Fighter),
+        BalancePassive(BalanceWarrior, "Class Balance (Warrior)", BaseClass.Fighter),
+        BalancePassive(BalanceRogue,   "Class Balance (Rogue)",   BaseClass.Fighter),
+        BalancePassive(BalanceArcher,  "Class Balance (Archer)",  BaseClass.Fighter),
+        BalancePassive(BalanceFighter, "Class Balance",           BaseClass.Fighter),
+        BalancePassive(BalanceNuker,   "Class Balance (Nuker)",   BaseClass.Mage),
+        BalancePassive(BalanceHealer,  "Class Balance (Healer)",  BaseClass.Mage),
+        BalancePassive(BalanceMage,    "Class Balance",           BaseClass.Mage),
+
         // ===== Combat training passives (auto-granted; level by character level) =====
         // 9 levels: +10%…+80% attack (40→75) then +100% (76+). The auto-grant level
         // comes from StatCalculator.TrainingLevelFor.
         TrainingPassive(PhysicalTraining, "Physical Training", BaseClass.Fighter, 0f,
             "Passive. Relentless conditioning — physical attack grows with level (+10% to +100%)."),
-        TrainingPassive(SpiritTraining, "Spirit Training", BaseClass.Mage, 0.40f,
-            "Passive. Honed focus — +40% cast speed and magic attack growing with level (+10% to +100%)."),
+        TrainingPassive(SpiritTraining, "Spirit Training", BaseClass.Mage, 40f,
+            "Passive. Honed focus — +40 casting speed and magic attack growing with level (+10% to +100%)."),
 
         // ===== Class identity "sure" floor passives (auto-granted at 20/40/76 = lvl 1/2/3) =====
         // Rogue identity now DATA: the evade floor + the archetype crit/evasion LEANS (+20% crit,
