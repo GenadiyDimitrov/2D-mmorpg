@@ -25,9 +25,21 @@ this file.
 - [ ] The Bonus line + count go **green only when the set is complete**, grey otherwise.
 - [ ] Accessories are shared across a tier's bodies, so hovering a helm shows it against whichever
   body you're actually wearing.
-- [ ] ⚠ **No shield row yet** — armor sets don't include a shield (no set piece has a shield slot),
-  so the "Shield Bonus" lines you sketched have nothing to show. Say if you want shields added to
-  the sets and I'll wire the row.
+### Set SHIELD bonus (2026-07-13 — I had this wrong first time)
+- [ ] Each tier's **shield now belongs to that tier's HEAVY set** (the CSV puts shields in the same
+  GroupId). It is **not** required to complete the set — wearing it adds an **extra** bonus on top.
+- [ ] The tooltip now shows a **Shield Bonus:** line + the shield piece (green ✔ worn / grey ✖ not).
+  It only goes green when the **4-piece set is complete AND its shield is equipped**.
+- [ ] The shield extras, straight from the CSV (def-oriented heavy line only — the `_dmg` variants
+  get none):
+  - **Heavy 20** → +10% Shield Def
+  - **Heavy 40** → +5% P.Def
+  - **Heavy 52** → +25% Shield Def
+  - **Heavy 61** → **reflect 5%** of melee basic-attack damage back at the attacker
+  - **Heavy 76** → +5% P.Def, +5% M.Def, +25% Shield Def, reflect 5%
+- [ ] Wear a full Heavy 61 set + its shield and let something melee you → you should see the
+  attacker take **reflect** damage (bows are excluded; capped at 50%).
+- [ ] Equipping a shield from the WRONG tier gives no extra (its SetId won't match).
 
 ### Training Outpost (safe zone by the dummies)
 - [ ] A small **safe zone "Training Outpost"** (24000, 5000, radius 400) sits just SOUTH of the

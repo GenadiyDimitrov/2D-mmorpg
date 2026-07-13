@@ -970,11 +970,14 @@ public static class ItemCatalog
         float[] shReduce = { 0.37f, 0.39f, 0.41f, 0.43f, 0.45f };
         float[] shCrit = { 0.10f, 0.11f, 0.12f, 0.13f, 0.15f };
         int[] shEvaPen = { 7, 7, 8, 8, 9 };
+        // The shield belongs to its tier's HEAVY set (the CSV puts shields in the same GroupId).
+        // It is NOT required to complete the set — wearing it just adds the set's ShieldBonus.
         for (int i = 0; i < lv.Length; i++)
             yield return new ItemDef($"shield_t{lv[i]}", $"{TierLetter(lv[i])}-Grade Kite Shield",
                 EquipSlot.Shield, TierGrade(lv[i]), ItemRarity.Epic,
                 BlockChance: shBlock[i], BlockReduction: shReduce[i], ShieldDefense: shDef[i],
                 ShieldCritDefense: shCrit[i], ShieldEvasionPenalty: shEvaPen[i],
+                SetId: $"set_heavy_t{lv[i]}",
                 ItemLevel: lv[i], NoAttributes: true);
 
         // ---- Jewels (M.Def + inherent +MP at 61/76). L2 layout = 1 necklace / 2 rings / 2 earrings. ----

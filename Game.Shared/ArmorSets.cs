@@ -26,7 +26,11 @@ public record ArmorSetDef(string Id, string Name, ClassFlatBonus Bonus,
     // Which armor slots must be worn to complete the set. null = the classic four
     // (Head/Body/Gloves/Boots). Set e.g. [Body, Gloves] for a body+gloves-only set.
     // The bonus always comes from the BODY, so Body should be included.
-    ArmorSlot[]? RequiredSlots = null);
+    ArmorSlot[]? RequiredSlots = null,
+    // ADDITIONAL bonus granted only when the set's own SHIELD is also equipped (a shield whose
+    // SetId == this set's Id). Per the gear CSV: "Set bonus active only with all 4 of group, and
+    // shield for additional bonus if available" — so the shield is a BONUS, never a requirement.
+    StatMods ShieldBonus = default);
 
 public static class ArmorSetCatalog
 {
@@ -55,22 +59,31 @@ public static class ArmorSetCatalog
     // ----- Tiered gear sets (docs/gear/gear_sets.csv, BASE variant per weight/tier). Each body of a
     // tier + that tier's shared accessory line (set_acc_t{lv}) completes it. Bonuses are the FULL
     // StatMods; SECONDARY stats apply now, PRIMARY-stat deltas (Con/Str/…) are stored for the pre-pass.
-    // CC-resist / shield-conditional / reflect(heavy) bonus lines are DEFERRED (mechanics pending). -----
-    private static ArmorSetDef GearSet(string weightKey, int level, string family, StatMods mods) =>
+    // The SHIELD-conditional extras (the CSV's "Shield: <bonus>" clause on the def-oriented heavy
+    // sets) are live: see ShieldBonus + Entity.RecomputeDerived. -----
+    private static ArmorSetDef GearSet(string weightKey, int level, string family, StatMods mods,
+        StatMods shieldBonus = default) =>
         new($"set_{weightKey}_t{level}", $"{family} {ItemCatalog.TierLetter(level)}",
-            new ClassFlatBonus(), Mods: mods, AccessorySetId: $"set_acc_t{level}");
+            new ClassFlatBonus(), Mods: mods, AccessorySetId: $"set_acc_t{level}",
+            ShieldBonus: shieldBonus);
 
     private static ArmorSetDef GearVariant(string id, int level, string name, StatMods mods) =>
         new(id, name, new ClassFlatBonus(), Mods: mods, AccessorySetId: $"set_acc_t{level}");
 
     private static IEnumerable<ArmorSetDef> TieredSets() => new[]
     {
-        // Heavy — "Ironforge"
-        GearSet("heavy", 20, "Ironforge", new StatMods(PDefPct: 0.05f, MaxHp: 135)),
-        GearSet("heavy", 40, "Ironforge", new StatMods(MaxHp: 270)),
-        GearSet("heavy", 52, "Ironforge", new StatMods(Con: 3, Str: 3)),
-        GearSet("heavy", 61, "Ironforge", new StatMods(PAtkPct: 0.04f, Con: 2, Dex: -2, CcResist: 0.4f)),
-        GearSet("heavy", 76, "Ironforge", new StatMods(MaxHp: 455, Str: 2, Con: 2, Dex: -2, CcResist: 0.4f)),
+        // Heavy — "Ironforge". These are the sets the CSV gives a SHIELD-conditional extra to
+        // (the def-oriented line: 20/40/52/61/76 — the *_dmg variants get none).
+        GearSet("heavy", 20, "Ironforge", new StatMods(PDefPct: 0.05f, MaxHp: 135),
+            shieldBonus: new StatMods(ShieldDefPct: 0.10f)),                     // shield.p.def x1.1
+        GearSet("heavy", 40, "Ironforge", new StatMods(MaxHp: 270),
+            shieldBonus: new StatMods(PDefPct: 0.05f)),                          // p.def x1.05
+        GearSet("heavy", 52, "Ironforge", new StatMods(Con: 3, Str: 3),
+            shieldBonus: new StatMods(ShieldDefPct: 0.25f)),                     // shield.p.def x1.25
+        GearSet("heavy", 61, "Ironforge", new StatMods(PAtkPct: 0.04f, Con: 2, Dex: -2, CcResist: 0.4f),
+            shieldBonus: new StatMods(Reflect: 0.05f)),                          // reflect 5% of melee basic
+        GearSet("heavy", 76, "Ironforge", new StatMods(MaxHp: 455, Str: 2, Con: 2, Dex: -2, CcResist: 0.4f),
+            shieldBonus: new StatMods(PDefPct: 0.05f, MDefPct: 0.05f, ShieldDefPct: 0.25f, Reflect: 0.05f)),
         // Light — "Nightleaf"
         GearSet("light", 20, "Nightleaf", new StatMods(Evasion: 2, MaxMp: 92)),
         GearSet("light", 40, "Nightleaf", new StatMods(Evasion: 4)),

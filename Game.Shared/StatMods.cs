@@ -50,12 +50,14 @@ public readonly record struct StatMods(
     // stats are computed, so a set's "CON +3" actually raises HP, "DEX +1" raises eva/acc/crit, etc.
     // (item/set sources — the "formula counts for them" per owner).
     float Str = 0f, float Dex = 0f, float Con = 0f, float Int = 0f, float Wit = 0f, float Men = 0f,
-    // Lifesteal + reflect fractions (from gear/sets). MeleeVamp/SpellVamp already exist on Entity;
-    // Reflect (return a fraction of melee damage to the attacker) has NO logic yet — carried so
-    // set data can declare it now; wired when the reflect mechanic lands.
-    float MeleeVamp = 0f, float SpellVamp = 0f, float Reflect = 0f)
+    // Lifesteal + reflect fractions (from gear/sets). Reflect returns a fraction of taken MELEE
+    // damage to the attacker (bows excluded, never re-reflects) — live in ApplyDamage; capped at 50%.
+    float MeleeVamp = 0f, float SpellVamp = 0f, float Reflect = 0f,
+    // Shield defence multiplier (the CSV's "shield.p.def x1.25"). Only bites while a shield is
+    // equipped — used by the heavy sets' SHIELD-conditional bonus.
+    float ShieldDefPct = 0f)
 {
-    // NOTE: cooldown, interrupt POWER, the PvE/PvP×skill/magic/basic matrix, shield block/def, bow
+    // NOTE: cooldown, interrupt POWER, the PvE/PvP×skill/magic/basic matrix, shield BLOCK CHANCE, bow
     // range and the combat FLOORS are added as the passive/buff sources migrate (docs/StatMods.md).
 
     /// <summary>Fold a set of source mods into running totals (flats SUM, percents COMPOUND
@@ -93,7 +95,8 @@ public readonly record struct StatTotals(
     float CcResist = 0f,
     float RestoreMpBonus = 0f,
     float Str = 0f, float Dex = 0f, float Con = 0f, float Int = 0f, float Wit = 0f, float Men = 0f,
-    float MeleeVamp = 0f, float SpellVamp = 0f, float Reflect = 0f)
+    float MeleeVamp = 0f, float SpellVamp = 0f, float Reflect = 0f,
+    float ShieldDefPct = 0f)
 {
     /// <summary>Compound two percents: ∏(1+p)−1, so combining is multiplicative and 0 = inert.</summary>
     private static float Mul(float a, float b) => (1f + a) * (1f + b) - 1f;
@@ -119,7 +122,8 @@ public readonly record struct StatTotals(
         CcResist + s.CcResist,
         RestoreMpBonus + s.RestoreMpBonus,
         Str + s.Str, Dex + s.Dex, Con + s.Con, Int + s.Int, Wit + s.Wit, Men + s.Men,
-        MeleeVamp + s.MeleeVamp, SpellVamp + s.SpellVamp, Reflect + s.Reflect);
+        MeleeVamp + s.MeleeVamp, SpellVamp + s.SpellVamp, Reflect + s.Reflect,
+        Mul(ShieldDefPct, s.ShieldDefPct));
 
     /// <summary>Apply a (flat, pct) pair to a base value: `(base + flat) × (1 + pct)`,
     /// floored at 0. The single place the combine convention is defined.</summary>

@@ -259,7 +259,47 @@ public partial class MainWindow
                 Text = $"   {(worn ? "✔" : "✖")} {name}",
                 Foreground = worn ? green : grey
             });
+
+        // ---- The set's SHIELD, if it has one. It is NOT one of the required pieces — wearing it
+        // just adds an EXTRA bonus on top (and only the def-oriented heavy sets define one). ----
+        var shield = ItemCatalog.AllItems.FirstOrDefault(d => d.Slot == EquipSlot.Shield && d.SetId == set.Id);
+        if (shield is not null)
+        {
+            bool shieldWorn = _inventory.Any(i => i.Equipped
+                && ItemCatalog.Get(i.DefId) is { Slot: EquipSlot.Shield } wd && wd.SetId == set.Id);
+            // The extra only actually applies when the 4-piece set is ALSO complete.
+            bool shieldActive = shieldWorn && active;
+            panel.Children.Add(new TextBlock
+            {
+                Text = $"Shield Bonus: {ShieldBonusText(set)}",
+                Foreground = shieldActive ? green : grey,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 2, 0, 0)
+            });
+            panel.Children.Add(new TextBlock
+            {
+                Text = $"   {(shieldWorn ? "✔" : "✖")} {shield.Name}",
+                Foreground = shieldWorn ? green : grey
+            });
+        }
         return panel;
+    }
+
+    /// <summary>What a set's SHIELD-conditional extra gives (only while its own shield is worn).</summary>
+    private static string ShieldBonusText(ArmorSetDef set)
+    {
+        var s = set.ShieldBonus;
+        var parts = new List<string>();
+        if (s.MaxHp != 0) parts.Add($"+{s.MaxHp} HP");
+        if (s.PDef != 0) parts.Add($"+{s.PDef:0} P.Def");
+        if (s.MDef != 0) parts.Add($"+{s.MDef:0} M.Def");
+        if (s.PDefPct != 0f) parts.Add($"+{s.PDefPct * 100:0}% P.Def");
+        if (s.MDefPct != 0f) parts.Add($"+{s.MDefPct * 100:0}% M.Def");
+        if (s.PAtkPct != 0f) parts.Add($"+{s.PAtkPct * 100:0}% P.Atk");
+        if (s.ShieldDefPct != 0f) parts.Add($"+{s.ShieldDefPct * 100:0}% Shield Def");
+        if (s.Reflect != 0f) parts.Add($"reflect {s.Reflect * 100:0}% of melee damage");
+        if (s.CcResist != 0f) parts.Add($"+{s.CcResist * 100:0}% CC Resist");
+        return parts.Count > 0 ? string.Join(", ", parts) : "—";
     }
 
     /// <summary>One-line summary of what a set's bonus actually gives.</summary>

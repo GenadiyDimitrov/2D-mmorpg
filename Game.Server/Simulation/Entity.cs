@@ -1007,6 +1007,25 @@ public class Entity
             MeleeReflect += m.Reflect;
             CcResist += m.CcResist;
             ActiveArmorSet = set.Name;
+
+            // ---- SHIELD-conditional extra: an ADDITIONAL bonus when the set's own shield is also
+            // equipped. Per the gear CSV the shield is never required to complete the set — it just
+            // adds this on top. Only the def-oriented heavy sets define one. ----
+            bool wearingSetShield = Inventory.Any(it => it.Equipped
+                && ItemCatalog.Get(it.DefId) is { Slot: EquipSlot.Shield } shd
+                && shd.SetId == set.Id);
+            if (wearingSetShield)
+            {
+                var sb = set.ShieldBonus;
+                MaxHp = (int)((MaxHp + sb.MaxHp) * (1f + sb.MaxHpPct));
+                Defence = (int)((Defence + (int)sb.PDef) * (1f + sb.PDefPct));
+                MagicDefence = (int)((MagicDefence + (int)sb.MDef) * (1f + sb.MDefPct));
+                AttackPower = (int)((AttackPower + (int)sb.PAtk) * (1f + sb.PAtkPct));
+                ShieldDefense = (int)(ShieldDefense * (1f + sb.ShieldDefPct));
+                MeleeReflect += sb.Reflect;
+                CcResist += sb.CcResist;
+                ActiveArmorSet = set.Name + " + Shield";
+            }
         }
 
         // Basic-attack power is now just P.Atk — no per-archetype coefficient. What separates a
