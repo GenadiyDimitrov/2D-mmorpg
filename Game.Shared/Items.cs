@@ -282,6 +282,15 @@ public static class ItemCatalog
     public const string IronMace = "blunt_1h_iron_mace";        // 1H physical blunt (shield-ok)
     public const string AshWand = "blunt_1h_ash_wand";          // 1H magic blunt (mAtk > pAtk)
     public const string ElementalStone = "elemental_stone";     // reagent for Elemental Burst
+    /// <summary>How much of your ATK power a weapon lets through to the channel it does NOT
+    /// exist to serve: a sword's magic, a staff's melee. THE tuning knob for weapon identity.
+    /// 0.6 reproduces the gear CSV's second column (a sword's 92 P.Atk × 0.6 ≈ its authored 54
+    /// M.Atk). NOTE: 0.6 does NOT yet close the buffer's staff→2H-sword swap — because magic
+    /// damage goes as √mAtk, he loses only ~15% of it while doubling P.Atk. Dropping this to
+    /// ~0.2-0.3 makes that a real trade. Any single weapon can override via its own
+    /// PAtkFactor/MAtkFactor.</summary>
+    public const float OffChannelFactor = 0.6f;
+
     // Newbie STARTER weapons — given on character creation. Untradeable, sold for 0,
     // can't be purchased (see the "newbie" item flags below).
     public const string NewbieSword1H = "newbie_sword_1h";
@@ -365,17 +374,11 @@ public static class ItemCatalog
                     int atk = (int)(gradeAtk * (1f + 0.40f * (int)rarity));
                     int mp = (int)(gradeMp * (1f + 0.20f * (int)rarity));
 
-                    // Magic attack per weapon type: caster weapons (staff) carry
-                    // most of their power as mAtk, melee weapons a small splash,
-                    // so hybrid weapons are possible. Tune the fractions here.
-                    float mAtkFraction = w.Type.Base() switch
-                    {
-                        WeaponType.Blunt => 1.05f,   // 2H staff: caster weapon (F-Common = 23 pAtk / 24 mAtk)
-                        WeaponType.Bow => 0.25f,
-                        WeaponType.Dual => 0.30f,
-                        _ => 0.35f                    // sword: small splash
-                    };
-                    int mAtk = (int)(atk * mAtkFraction);
+                    // ONE power number + channel factors (see OffChannelFactor). The generated
+                    // Blunt line IS the 2H caster staff: its power is MAGIC power, and its melee
+                    // is what gets suppressed. Everything else is a physical weapon.
+                    bool magic = w.Type.Base() == WeaponType.Blunt;
+                    int power = magic ? (int)(atk * 1.05f) : atk;
 
                     string gradeName = grade == ItemGrade.F ? "Worn" : "Steel";
                     string rarityName = rarity switch
@@ -390,9 +393,11 @@ public static class ItemCatalog
                         $"{rarityName}{gradeName} {w.Noun}",
                         EquipSlot.Weapon, grade, rarity,
                         WeaponType: w.Type,
-                        AtkBonus: atk,
-                        MAtkBonus: mAtk,
+                        AtkBonus: power,
+                        PAtkFactor: magic ? OffChannelFactor : 1f,
+                        MAtkFactor: magic ? 1f : OffChannelFactor,
                         MpBonus: mp,
+                        IsMagicWeapon: magic,
                         WeaponRange: w.Range));
                 }
             }
@@ -562,12 +567,12 @@ public static class ItemCatalog
         //  so they CAN pair with a shield. A "magic" blunt simply carries more
         //  mAtk than pAtk (mages who want a shield use these instead of a staff).
         // ===================================================================
-        list.Add(new ItemDef(IronMace, "Iron Mace", EquipSlot.Weapon,
+        list.Add(new ItemDef(IronMace, "Iron Mace", EquipSlot.Weapon,   // 1H PHYSICAL mace
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Blunt,
-            AtkBonus: 7, MAtkBonus: 3));   // 1H physical mace
-        list.Add(new ItemDef(AshWand, "Ash Wand", EquipSlot.Weapon,
+            AtkBonus: 7, PAtkFactor: 1f, MAtkFactor: OffChannelFactor));
+        list.Add(new ItemDef(AshWand, "Ash Wand", EquipSlot.Weapon,     // 1H CASTER blunt (weaker than a staff)
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Blunt,
-            AtkBonus: 2, MAtkBonus: 5, MpBonus: 10));  // 1H magic blunt: mAtk>pAtk, < staff
+            AtkBonus: 5, PAtkFactor: OffChannelFactor, MAtkFactor: 1f, MpBonus: 10, IsMagicWeapon: true));
 
         // ===================================================================
         //  NEWBIE STARTER WEAPONS — handed out on character creation. They are
@@ -886,20 +891,14 @@ public static class ItemCatalog
             ("staff",   "Staff",      WeaponType.TwoHandedBlunt, true,  0,
                 new[] { (20,90,79,0),(40,135,111,0),(52,189,145,0),(61,226,167,0),(76,274,193,0) }),
         };
-        // ONE power number + channel factors. A weapon's power is the value of the channel it
-        // EXISTS to serve: a sword's P.Atk, a staff's M.Atk. The off-channel gets ×0.6, which
-        // reproduces the CSV's second column (a sword's 92 × 0.6 ≈ its authored 54 M.Atk) while
-        // also suppressing the shared base — the part a second authored number could never do.
-        // For mage weapons this deliberately NERFS P.Atk (a staff's 90 → 79 × 0.6 ≈ 47).
-        const float OffChannel = 0.6f;
         foreach (var w in weapons)
             foreach (var (L, P, M, As) in w.Rows)
                 yield return new ItemDef($"{w.Key}_t{L}", $"{TierLetter(L)}-Grade {w.Noun}",
                     EquipSlot.Weapon, TierGrade(L), ItemRarity.Epic,
                     WeaponType: w.Type,
                     AtkBonus: w.Magic ? M : P,
-                    PAtkFactor: w.Magic ? OffChannel : 1f,
-                    MAtkFactor: w.Magic ? 1f : OffChannel,
+                    PAtkFactor: w.Magic ? OffChannelFactor : 1f,
+                    MAtkFactor: w.Magic ? 1f : OffChannelFactor,
                     WeaponRange: w.Range,
                     ItemLevel: L, IsMagicWeapon: w.Magic, AttackSpeedBase: As);
     }

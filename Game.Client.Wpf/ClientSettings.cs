@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
@@ -15,6 +16,12 @@ public class ClientSettings
     public double WindowTop { get; set; } = 100;
     public double WindowWidth { get; set; } = 1280;
     public double WindowHeight { get; set; } = 800;
+
+    /// <summary>Saved skill-bar layout PER CHARACTER (name → the 24 slots, "" = empty slot).
+    /// The bar is the player's own arrangement, so it must survive relog exactly as left —
+    /// it used to be rebuilt from a HashSet each login, which is unordered, so the bar
+    /// silently reshuffled itself.</summary>
+    public Dictionary<string, string[]> SkillBars { get; set; } = new();
 
     private static string FilePath =>
         Path.Combine(AppContext.BaseDirectory, "client-settings.json");

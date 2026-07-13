@@ -7,6 +7,48 @@ this file.
 
 ---
 
+## To test now (DEBUG GEAR PICKER — 2026-07-13)
+
+- [ ] Debug → **Equip** tab is now a drill-down: **Armor & Shields / Weapons / Jewels** → pick a
+  **level (20 / 40 / 52 / 61 / 76)** → click any individual piece to receive it.
+- [ ] The **level 20-40 sets now exist in the menu** — they were never exposed before (the old tab
+  only had a few hardcoded E-grade "rare" items and the named sets, none of which were the tiered
+  gear). That's why they looked missing.
+- [ ] Armor levels also offer **★ Full Heavy / Light / Robe Set** (body + helm + gloves + boots) in
+  one click, since a set bonus needs all four. Individual pieces are listed underneath.
+- [ ] Weapons list all 8 families per level (sword 1H/2H, blunt 1H/2H, duals, bow, wand, staff) —
+  use these to feel the new **weapon channel factors** (a staff should melee poorly, a sword should
+  cast poorly).
+- [ ] The lists are read from `ItemCatalog` (not hardcoded), so **new gear added to the CSV appears
+  here automatically**.
+- [ ] The old **Rare Weapons (E) / Rare Armor Sets / Named Sets (Dark Dominion)** blocks are gone,
+  as requested. Boxes + Legendary (God's Judgment/Robes) are kept.
+
+---
+
+## To test now (SKILL BAR — 2026-07-13)
+
+- [ ] **The bar is now saved per character** and survives relog exactly as you arranged it
+  (`client-settings.json`, next to the exe, under `SkillBars`). Rearrange it, log out, log back
+  in → identical layout.
+- [ ] **It no longer reshuffles itself.** The old bar was rebuilt each login by enumerating a
+  `HashSet` of learned skills — whose order is unspecified — so it silently reordered. New skills
+  now go into the first FREE slot, in a stable order, and **never move a skill you placed**.
+- [ ] Level up / learn a skill / change class → your existing layout is untouched; only genuinely
+  new skills appear, in free slots.
+- [ ] **Cooldowns survive a re-render.** Previously levelling up, changing class, or even dragging
+  a skill rebuilt every slot object and silently wiped all running cooldowns. Cast something with
+  a long cooldown, then level up / drag another skill → the cooldown keeps ticking.
+- [ ] **Drag & drop** — re-verify. The payload now carries the SKILL ID (not just a slot index),
+  and the drop re-locates the source by identity, so a bar that re-rendered mid-drag can no longer
+  move the wrong skill. ⚠ If it STILL grabs the wrong one, tell me exactly which slot you dragged
+  from, which you dropped on, and what actually moved — I could not reproduce the off-by-one by
+  reading the code, so I hardened the path rather than pinpointing it.
+- [ ] Side-fix: **your character's name now shows in the status line** (`_myName` was declared but
+  never assigned, so it was always blank — which also broke the whisper self-check).
+
+---
+
 ## To test now (DAMAGE RETUNE — 2026-07-13) ⚠ delete game.db first
 
 **⚠ Delete `Game.Server/game.db` (+ `-shm`/`-wal`) before testing.** Not a schema change —

@@ -1995,7 +1995,13 @@ public partial class MainWindow
     private void DebugClose_Click(object sender, RoutedEventArgs e) =>
         DebugPanel.Visibility = Visibility.Collapsed;
 
-    private void DebugTabEquip_Click(object sender, RoutedEventArgs e) { _debugTab = 0; BuildDebugMenu(); }
+    private void DebugTabEquip_Click(object sender, RoutedEventArgs e)
+    {
+        _debugTab = 0;
+        _debugEquipCat = "";   // always land on the category root, not wherever you drilled to last
+        _debugEquipLevel = 0;
+        BuildDebugMenu();
+    }
     private void DebugTabConsum_Click(object sender, RoutedEventArgs e) { _debugTab = 1; BuildDebugMenu(); }
     private void DebugTabFunc_Click(object sender, RoutedEventArgs e) { _debugTab = 2; BuildDebugMenu(); }
 
@@ -2060,64 +2066,99 @@ public partial class MainWindow
         }
     }
 
+    // ---- Equip tab: a LEVEL-driven drill-down over the real tiered gear ------------------
+    // Root → category (Armor / Weapons / Jewels) → level (20/40/52/61/76) → the individual
+    // pieces, one give-button each. The old menu hardcoded a handful of E-grade "rare" items
+    // and the named sets, and never exposed the tiered gear at all — which is why the level
+    // 20-40 sets appeared to be missing. Nothing is hardcoded now: the lists are read straight
+    // out of ItemCatalog, so gear added to the CSV shows up here for free.
+    private string _debugEquipCat = "";   // "" = root, else "armor" / "weapon" / "jewel"
+    private int _debugEquipLevel;         // 0 = still choosing a level
+
+    /// <summary>The gear LEVELS present in the catalog (20/40/52/61/76), discovered, not hardcoded.</summary>
+    private static IEnumerable<int> GearLevels() => ItemCatalog.AllItems
+        .Where(d => d.ItemLevel > 0 && d.Rarity == ItemRarity.Epic)
+        .Select(d => d.ItemLevel).Distinct().OrderBy(l => l);
+
+    /// <summary>The tier pieces of one category at one level. Epic only — that's the SET tier;
+    /// the Common/Uncommon/Rare drop copies are excluded so the list stays short.</summary>
+    private static IEnumerable<ItemDef> GearAt(string cat, int level) => ItemCatalog.AllItems
+        .Where(d => d.ItemLevel == level && d.Rarity == ItemRarity.Epic)
+        .Where(d => cat switch
+        {
+            "armor"  => d.Slot is EquipSlot.Armor or EquipSlot.Shield,
+            "weapon" => d.Slot == EquipSlot.Weapon,
+            "jewel"  => d.Slot == EquipSlot.Jewel,
+            _ => false
+        })
+        .OrderBy(d => d.Slot).ThenBy(d => d.Name, StringComparer.Ordinal);
+
     private void BuildDebugEquip()
     {
-        AddDebugHeader("Legendary");
-        DebugList.Children.Add(DebugGiveButton(ItemCatalog.GodWeapon, "God's Judgment"));
-        DebugList.Children.Add(DebugGiveButton(ItemCatalog.GodArmor, "God's Robes"));
-
-        AddDebugHeader("Boxes");
-        DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxNewbie, "Newbie Box"));
-        DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxTreasure, "Treasure Chest"));
-        DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxNewbieArmorLight, "Newbie Light Armor Box"));
-        DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxNewbieArmorRobe, "Newbie Robe Armor Box"));
-        DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxNewbieJewels, "Newbie Jewels Box"));
-        DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxNewbieWeapons, "Newbie Weapons Box (select)"));
-
-        AddDebugHeader("Rare Weapons (E)");
-        DebugList.Children.Add(DebugGiveButton(
-            ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.E, ItemRarity.Rare), "Rare Sword"));
-        DebugList.Children.Add(DebugGiveButton(
-            ItemCatalog.WeaponKey(WeaponType.Dual, ItemGrade.E, ItemRarity.Rare), "Rare Daggers"));
-        DebugList.Children.Add(DebugGiveButton(
-            ItemCatalog.WeaponKey(WeaponType.Bow, ItemGrade.E, ItemRarity.Rare), "Rare Bow"));
-        DebugList.Children.Add(DebugGiveButton(
-            ItemCatalog.WeaponKey(WeaponType.TwoHandedBlunt, ItemGrade.E, ItemRarity.Rare), "Rare Staff"));
-
-        AddDebugHeader("Rare Armor Sets (E: body + accessories)");
-        foreach (var (w, label) in new[] { (ArmorWeight.Heavy, "Heavy"), (ArmorWeight.Light, "Light"), (ArmorWeight.Robe, "Robe") })
+        // ---- Root ----
+        if (_debugEquipCat == "")
         {
-            var weight = w;
-            DebugList.Children.Add(DebugAction($"Rare {label} Set", async () =>
-            {
-                await _net.DebugGiveAsync(ItemCatalog.ArmorKey(weight, ArmorSlot.Body, ItemGrade.E, ItemRarity.Rare));
-                foreach (var slot in new[] { ArmorSlot.Head, ArmorSlot.Gloves, ArmorSlot.Boots })
-                    await _net.DebugGiveAsync(ItemCatalog.ArmorKey(ArmorWeight.None, slot, ItemGrade.E, ItemRarity.Rare));
-            }));
+            AddDebugHeader("Tiered gear (pick a level, then a piece)");
+            DebugList.Children.Add(DebugAction("Armor & Shields ▸", () => { _debugEquipCat = "armor"; _debugEquipLevel = 0; BuildDebugMenu(); return Task.CompletedTask; }));
+            DebugList.Children.Add(DebugAction("Weapons ▸", () => { _debugEquipCat = "weapon"; _debugEquipLevel = 0; BuildDebugMenu(); return Task.CompletedTask; }));
+            DebugList.Children.Add(DebugAction("Jewels ▸", () => { _debugEquipCat = "jewel"; _debugEquipLevel = 0; BuildDebugMenu(); return Task.CompletedTask; }));
+
+            AddDebugHeader("Boxes");
+            DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxNewbie, "Newbie Box"));
+            DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxTreasure, "Treasure Chest"));
+            DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxNewbieArmorLight, "Newbie Light Armor Box"));
+            DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxNewbieArmorRobe, "Newbie Robe Armor Box"));
+            DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxNewbieJewels, "Newbie Jewels Box"));
+            DebugList.Children.Add(DebugGiveButton(ItemCatalog.BoxNewbieWeapons, "Newbie Weapons Box (select)"));
+
+            AddDebugHeader("Legendary");
+            DebugList.Children.Add(DebugGiveButton(ItemCatalog.GodWeapon, "God's Judgment"));
+            DebugList.Children.Add(DebugGiveButton(ItemCatalog.GodArmor, "God's Robes"));
+            return;
         }
 
-        AddDebugHeader("Named Sets");
-        DebugList.Children.Add(DebugAction("Dark Dominion (heavy body)", async () =>
+        string catLabel = _debugEquipCat switch { "armor" => "Armor & Shields", "weapon" => "Weapons", _ => "Jewels" };
+
+        // ---- Level picker ----
+        if (_debugEquipLevel == 0)
         {
-            await _net.DebugGiveAsync(ItemCatalog.DarkDominionHeavyBody);
-            await _net.DebugGiveAsync(ItemCatalog.DarkDominionHead);
-            await _net.DebugGiveAsync(ItemCatalog.DarkDominionGloves);
-            await _net.DebugGiveAsync(ItemCatalog.DarkDominionBoots);
-        }));
-        DebugList.Children.Add(DebugAction("Dark Dominion (light body)", async () =>
+            DebugList.Children.Add(DebugAction("◂ Back", () => { _debugEquipCat = ""; BuildDebugMenu(); return Task.CompletedTask; }));
+            AddDebugHeader($"{catLabel} — pick a level");
+            foreach (int lv in GearLevels())
+            {
+                int level = lv;
+                string grade = ItemCatalog.TierLetter(level);
+                DebugList.Children.Add(DebugAction($"Level {level}  ({grade}-Grade) ▸",
+                    () => { _debugEquipLevel = level; BuildDebugMenu(); return Task.CompletedTask; }));
+            }
+            return;
+        }
+
+        // ---- The pieces at this level ----
+        DebugList.Children.Add(DebugAction("◂ Back", () => { _debugEquipLevel = 0; BuildDebugMenu(); return Task.CompletedTask; }));
+        AddDebugHeader($"{catLabel} — Level {_debugEquipLevel} ({ItemCatalog.TierLetter(_debugEquipLevel)}-Grade)");
+
+        // Armor: a one-click "full set" per body weight (body + helm + gloves + boots), since a
+        // set bonus needs all four. The individual pieces are still listed below it.
+        if (_debugEquipCat == "armor")
         {
-            await _net.DebugGiveAsync(ItemCatalog.DarkDominionLightBody);
-            await _net.DebugGiveAsync(ItemCatalog.DarkDominionHead);
-            await _net.DebugGiveAsync(ItemCatalog.DarkDominionGloves);
-            await _net.DebugGiveAsync(ItemCatalog.DarkDominionBoots);
-        }));
-        DebugList.Children.Add(DebugAction("Dark Dominion (robe body)", async () =>
-        {
-            await _net.DebugGiveAsync(ItemCatalog.DarkDominionRobeBody);
-            await _net.DebugGiveAsync(ItemCatalog.DarkDominionHead);
-            await _net.DebugGiveAsync(ItemCatalog.DarkDominionGloves);
-            await _net.DebugGiveAsync(ItemCatalog.DarkDominionBoots);
-        }));
+            int lvl = _debugEquipLevel;
+            foreach (var (key, label) in new[] { ("heavy", "Heavy"), ("light", "Light"), ("robe", "Robe") })
+            {
+                string bodyId = $"{key}_t{lvl}";
+                if (ItemCatalog.Get(bodyId) is null) continue;
+                DebugList.Children.Add(DebugAction($"★ Full {label} Set (body + helm + gloves + boots)", async () =>
+                {
+                    foreach (var id in new[] { bodyId, $"helm_t{lvl}", $"gloves_t{lvl}", $"boots_t{lvl}" })
+                        if (ItemCatalog.Get(id) is not null)
+                            await _net.DebugGiveAsync(id);
+                }));
+            }
+            AddDebugHeader("Individual pieces");
+        }
+
+        foreach (var def in GearAt(_debugEquipCat, _debugEquipLevel))
+            DebugList.Children.Add(DebugGiveButton(def.Id, def.Name));
     }
 
     private void BuildDebugConsumables()

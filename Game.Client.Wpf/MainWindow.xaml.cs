@@ -346,6 +346,13 @@ public partial class MainWindow : Window
             GameClock.Epoch = _serverEpoch;
             ClockPanel.Visibility = Visibility.Visible;
 
+            // The bar is saved per character — forget the last one's layout/cooldowns. The real
+            // restore happens on the first snapshot, which is where we learn our name.
+            Array.Clear(_skillBar);
+            _skillReadyAt.Clear();
+            _skillBarLoaded = false;
+            _myName = "";
+
             EnsureSkillBarSlots();
 
             CharacterSelectPanel.Visibility = Visibility.Collapsed;
@@ -507,6 +514,15 @@ public partial class MainWindow : Window
     /// <summary>The skill (string id) assigned to each bar slot (null = empty).</summary>
     private readonly string?[] _skillBar = new string?[SkillBarSlots];
 
+    /// <summary>Guards the one-time restore of the saved bar (EnsureSkillBarSlots is re-entered
+    /// on class change, and must not clobber the player's arrangement with the saved copy again).</summary>
+    private bool _skillBarLoaded;
+
+    /// <summary>Cooldowns survive a re-render. RenderSkillBar() rebuilds every SkillSlot object,
+    /// so ReadyAt (which lives on the slot) used to be lost — levelling up, changing class or
+    /// simply dragging a skill silently cleared every cooldown on the bar.</summary>
+    private readonly Dictionary<string, double> _skillReadyAt = new();
+
     /// <summary>Learned skill ids + current SP (from the server). _learnedLevels holds
     /// the per-skill level (for the learn window's "next level" logic); _learnedSkills
     /// is the id set the skill bar / availability checks use.</summary>
@@ -517,34 +533,57 @@ public partial class MainWindow : Window
 
     private void EnsureSkillBarSlots()
     {
-        // First time: auto-place currently available skills into free slots.
-        AutoPlaceNewSkills();
+        LoadSkillBar();          // restore the player's own arrangement first
+        AutoPlaceNewSkills();    // then park any genuinely NEW skill in a free slot
         RenderSkillBar();
     }
 
-    /// <summary>Drop assignments the character can no longer use, then fill any
-    /// free slots with newly-available skills (auto-place on acquire).</summary>
+    /// <summary>Restore this character's saved bar. Called before any auto-placement so the
+    /// player's arrangement always wins.</summary>
+    private void LoadSkillBar()
+    {
+        if (_skillBarLoaded || string.IsNullOrEmpty(_myName)) return;
+        _skillBarLoaded = true;
+        if (!_settings.SkillBars.TryGetValue(_myName, out var saved)) return;
+        for (int i = 0; i < _skillBar.Length && i < saved.Length; i++)
+            _skillBar[i] = string.IsNullOrEmpty(saved[i]) ? null : saved[i];
+    }
+
+    /// <summary>Persist the bar for this character. Called on every change the player makes.</summary>
+    private void SaveSkillBar()
+    {
+        if (string.IsNullOrEmpty(_myName)) return;
+        _settings.SkillBars[_myName] = _skillBar.Select(x => x ?? "").ToArray();
+        _settings.Save();
+    }
+
+    /// <summary>Drop assignments the character can no longer use, then park any newly-learned
+    /// skill in the first FREE slot. It never moves a skill the player has already placed —
+    /// the bar is their layout, not ours.
+    /// (It used to enumerate the learned-skill HashSet, whose order is unspecified. Since the
+    /// bar wasn't persisted, every login re-filled it from scratch in whatever order the set
+    /// happened to yield — which is the "it reorders itself to some default" you saw. New
+    /// skills are now placed in a stable, deterministic order.)</summary>
     private void AutoPlaceNewSkills()
     {
-        // Availability = learned skills.
         var available = _learnedSkills;
 
-        // Remove assignments no longer learned.
+        // Remove assignments no longer learned (e.g. a skill that got REPLACED by a better one).
         for (int i = 0; i < _skillBar.Length; i++)
             if (_skillBar[i] is string id && !available.Contains(id))
                 _skillBar[i] = null;
 
-        // Auto-place any learned skill not already on the bar (passives never go on it).
         var onBar = _skillBar.Where(x => x is not null).Select(x => x!).ToHashSet();
-        foreach (var id in available)
+        foreach (var id in available.Where(x => SkillCatalog.Get(x) is not { Category: SkillCategory.Passive })
+                                    .OrderBy(x => x, StringComparer.Ordinal))   // stable, not hash order
         {
             if (onBar.Contains(id)) continue;
-            if (SkillCatalog.Get(id) is { Category: SkillCategory.Passive }) continue;
             int free = Array.IndexOf(_skillBar, null);
             if (free < 0) break;
             _skillBar[free] = id;
             onBar.Add(id);
         }
+        SaveSkillBar();
     }
 
     /// <summary>Assign a skill to the first free slot (from the Skills window).</summary>
@@ -561,6 +600,7 @@ public partial class MainWindow : Window
             return;
         }
         _skillBar[free] = skillId;
+        SaveSkillBar();
         RenderSkillBar();
         if (SkillsPanel.Visibility == Visibility.Visible)
             RefreshSkillsWindow();
@@ -571,6 +611,7 @@ public partial class MainWindow : Window
         if (slotIndex >= 0 && slotIndex < _skillBar.Length)
         {
             _skillBar[slotIndex] = null;
+            SaveSkillBar();
             RenderSkillBar();
             if (SkillsPanel.Visibility == Visibility.Visible)
                 RefreshSkillsWindow();
@@ -665,6 +706,8 @@ public partial class MainWindow : Window
                 button.Content = grid;
 
                 var slot = new SkillSlot { Def = def, Button = button, Key = hotkey, CooldownText = cd };
+                // Carry the running cooldown across the rebuild (see _skillReadyAt).
+                if (_skillReadyAt.TryGetValue(def.Id, out double readyAt)) slot.ReadyAt = readyAt;
                 // Left-click = cast; right-click = remove from bar.
                 button.Click += (_, _) => UseSkill(slot);
                 button.MouseRightButtonUp += (_, _) => RemoveSkillFromBar(slotIndex);
@@ -695,30 +738,50 @@ public partial class MainWindow : Window
     // ---- Skill-bar drag & drop (rearrange slots) --------------------------
     private Point _dragStart;
 
+    /// <summary>The slot the current drag started from, and the skill that was in it. We carry
+    /// the SKILL ID, not just the index: a bare int payload only says "some slot", and if the
+    /// bar re-rendered mid-drag (a level-up, a class change, a server stats push — all of which
+    /// call RenderSkillBar) that index could refer to different contents by the time it landed,
+    /// so the wrong skill moved. Now the drop re-locates the source by identity and bails if it
+    /// no longer holds what we picked up.</summary>
+    private const string SkillDragFormat = "L2Clone.SkillBarSlot";
+    private sealed record SkillDrag(int FromIndex, string SkillId);
+
     private void SkillSlot_MouseMove(int fromIndex, object sender, MouseEventArgs e)
     {
         if (e.LeftButton != MouseButtonState.Pressed) return;
-        if (_skillBar[fromIndex] is null) return;
+        if (_skillBar[fromIndex] is not string skillId) return;
         var pos = e.GetPosition(this);
         if (Math.Abs(pos.X - _dragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
             Math.Abs(pos.Y - _dragStart.Y) < SystemParameters.MinimumVerticalDragDistance)
             return;
-        DragDrop.DoDragDrop((DependencyObject)sender, fromIndex, DragDropEffects.Move);
+
+        var data = new DataObject(SkillDragFormat, new SkillDrag(fromIndex, skillId));
+        DragDrop.DoDragDrop((DependencyObject)sender, data, DragDropEffects.Move);
     }
 
     private void SkillSlot_DragOver(object sender, DragEventArgs e)
     {
-        e.Effects = e.Data.GetDataPresent(typeof(int)) ? DragDropEffects.Move : DragDropEffects.None;
+        e.Effects = e.Data.GetDataPresent(SkillDragFormat) ? DragDropEffects.Move : DragDropEffects.None;
         e.Handled = true;
     }
 
     private void SkillSlot_Drop(int toIndex, DragEventArgs e)
     {
-        if (!e.Data.GetDataPresent(typeof(int))) return;
-        int fromIndex = (int)e.Data.GetData(typeof(int));
-        if (fromIndex == toIndex) return;
-        // Swap the two slots (move into an empty slot leaves the source empty).
+        if (e.Data.GetData(SkillDragFormat) is not SkillDrag drag) return;
+        e.Handled = true;
+
+        // Trust the skill ID over the index. If the bar changed under us, find where the dragged
+        // skill actually sits now; if it's gone entirely, drop the drag rather than move a
+        // bystander.
+        int fromIndex = drag.FromIndex;
+        if (fromIndex < 0 || fromIndex >= _skillBar.Length || _skillBar[fromIndex] != drag.SkillId)
+            fromIndex = Array.IndexOf(_skillBar, drag.SkillId);
+        if (fromIndex < 0 || fromIndex == toIndex) return;
+
+        // Swap (moving into an empty slot leaves the source empty).
         (_skillBar[toIndex], _skillBar[fromIndex]) = (_skillBar[fromIndex], _skillBar[toIndex]);
+        SaveSkillBar();
         RenderSkillBar();
     }
 
@@ -732,6 +795,7 @@ public partial class MainWindow : Window
             return;
 
         slot.ReadyAt = now + slot.Def.CooldownTicks * GameConstants.TickSeconds;
+        _skillReadyAt[slot.Def.Id] = slot.ReadyAt;   // keyed by SKILL, so it survives a re-render/move
         await _net.UseSkillAsync(slot.Def.Id, _targetId);
     }
 
@@ -919,6 +983,15 @@ public partial class MainWindow : Window
                 // Keep our level synced from the snapshot so mob con-colors + level-gated
                 // UI are right ON ENTER (Progress events only fire on level-up afterward).
                 _level = dto.Level;
+                // Our own name was never actually assigned (it stayed ""), so the status line
+                // showed no name and the whisper self-check never matched. The first snapshot is
+                // where we learn it — and the skill bar is saved PER CHARACTER, so it can only be
+                // restored once we know who we are.
+                if (_myName != dto.Name)
+                {
+                    _myName = dto.Name;
+                    EnsureSkillBarSlots();
+                }
                 // Race/base class can change via a DEBUG character reset — keep ours in sync.
                 if (dto.Race != _myRace || dto.BaseClass != _myBaseClass)
                 {
