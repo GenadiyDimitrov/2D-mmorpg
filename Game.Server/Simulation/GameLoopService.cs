@@ -422,6 +422,15 @@ public class GameLoopService : BackgroundService
         catch { /* best-effort */ }
     }
 
+    /// <summary>Yourself, or someone in your party. This is the ONLY set a support skill (heal /
+    /// restore / cleanse / buff) may reach. Every member of a party maps to the same Party object,
+    /// so reference equality is the membership test.</summary>
+    private bool SameParty(Entity a, Entity b) =>
+        a.Id == b.Id
+        || (_world.Parties.TryGetValue(a.Id, out var pa)
+            && _world.Parties.TryGetValue(b.Id, out var pb)
+            && ReferenceEquals(pa, pb));
+
     /// <summary>May 'attacker' damage 'target'? A mob on either side = always (normal PvE). Player→
     /// player requires out of safe zones, and: a RED/PURPLE target is freely attackable (retaliation
     /// / executing an outlaw), while attacking an INNOCENT (white) needs the PvP opt-in.</summary>
@@ -793,13 +802,17 @@ public class GameLoopService : BackgroundService
                  def.TargetMode != TargetMode.SelfOnly && def.Range > 0 &&
                  cmd.TargetId is Guid allyId &&
                  _world.Entities.TryGetValue(allyId, out var ally) &&
-                 ally.Kind == EntityKind.Player && !ally.Dead)
+                 ally.Kind == EntityKind.Player && !ally.Dead &&
+                 SameParty(caster, ally))
         {
-            targetId = allyId; // ranged heal / cleanse / buff on a targeted ally
+            targetId = allyId; // ranged heal / cleanse / buff on a PARTY member
         }
         else
         {
-            targetId = caster.Id; // self-targeted
+            // Self-cast. Crucially this is where a support skill lands when you have an ENEMY
+            // targeted: it used to accept ANY player, so healing mid-duel healed the man you were
+            // fighting. A support skill can only ever reach yourself or a party member.
+            targetId = caster.Id;
         }
 
         // Restore Mana can't target yourself or another mana-restorer (no self/healer refunds).
@@ -3560,22 +3573,23 @@ var effect = def.Effect;
             if (spellVamp > 0f && damage > 0)
             {
                 int leech = (int)(damage * spellVamp);
-                if (leech > 0) HealOne(caster, caster, leech, castName);
+                if (leech > 0) HealOne(caster, caster, leech, 0, castName);   // lifesteal = a FLAT heal
             }
         }
 
         // ---- Heal (single ally/self, or AoE to allies in radius) ----
-        // Flat power (scales with WIT) plus an optional % of the TARGET's max HP
-        // (a Percent magnitude on the Heal effect).
+        // TWO halves: a FLAT part driven by the healer's M.Atk (so a caster weapon heals hard and a
+        // damage weapon doesn't), plus an optional % of the TARGET's max HP that ignores M.Atk and
+        // ignores heal-reduction. See HealOne.
         if (effect.HasFlag(SkillEffect.Heal))
         {
-            int flat = SkillMath.HealAmount(def.PowerAt(lvl), caster.EffectiveWit);
+            int flat = SkillMath.HealAmount(def.PowerAt(lvl), (int)caster.EffectiveMagicAttack);
             float pct = def.MagnitudeOf(SkillEffect.Heal, ModifierMode.Percent, lvl);
             if (def.TargetMode == TargetMode.AlliesInRadius)
                 foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
-                    HealOne(caster, ally, flat + (int)(ally.MaxHp * pct), castName);
+                    HealOne(caster, ally, flat, (int)(ally.MaxHp * pct), castName);
             else
-                HealOne(caster, target, flat + (int)(target.MaxHp * pct), castName);
+                HealOne(caster, target, flat, (int)(target.MaxHp * pct), castName);
         }
 
         // ---- MP Restore (single ally/self, or AoE) — flat power (+optional % of max MP) ----
@@ -3870,13 +3884,36 @@ var effect = def.Effect;
     }
 
     /// <summary>Heal one target, scaled by its anti-heal multiplier, and broadcast.</summary>
-    private void HealOne(Entity caster, Entity target, int baseAmount, string skillName)
+    /// <summary>Heal a target. The two halves behave differently ON PURPOSE:
+    ///   <paramref name="flat"/> — skill power × the healer's M.Atk. Heal-REDUCTION (anti-heal
+    ///     debuffs, and the planned anti-heal ultimates) bites this half.
+    ///   <paramref name="pct"/>  — a % of the target's max HP. Ignores M.Atk AND ignores
+    ///     heal-reduction, so when a tank pops his anti-heal ultimate the big flat heals wither
+    ///     and only the % heals still land. That's what % heals are FOR.
+    /// </summary>
+    private void HealOne(Entity caster, Entity target, int flat, int pct, string skillName)
     {
         if (target.Dead) return;
-        int amount = (int)Math.Round(baseAmount * target.HealReceivedMultiplier);
+        int amount = (int)Math.Round(flat * target.HealReceivedMultiplier) + pct;
         if (amount > 0)
             target.Hp = Math.Min(target.MaxHp, target.Hp + amount);
+        FlagForSupporting(caster, target);
         BroadcastCombat(caster, target, amount, CombatOutcome.Heal, skillName);
+    }
+
+    /// <summary>Supporting an OUTLAW makes you one: healing / restoring / cleansing a player who is
+    /// FLAGGED (purple) or a PK (red) flags the supporter too. Otherwise a "clean" healer could prop
+    /// up a PK from behind with no risk at all. Self-support never flags; an already-red supporter
+    /// stays red (karma outranks the purple flag).</summary>
+    private void FlagForSupporting(Entity caster, Entity target)
+    {
+        if (caster.Kind != EntityKind.Player || target.Kind != EntityKind.Player
+            || caster.Id == target.Id)
+            return;
+        if (FlagOf(target) == PvpFlag.Innocent || FlagOf(caster) == PvpFlag.Pk)
+            return;
+        caster.PvpFlagUntilTick = _tick + PvpFlagTicks;
+        SendPvpState(caster);
     }
 
     /// <summary>Restore one target's MP and broadcast it (mirrors HealOne for the MP
@@ -3889,6 +3926,7 @@ var effect = def.Effect;
             amount += target.RestoreMpBonus;   // nuker robe mastery "mpWhenRestored"
             target.Mp = Math.Min(target.MaxMp, target.Mp + amount);
         }
+        FlagForSupporting(caster, target);   // refuelling an outlaw flags you, same as healing one
         BroadcastCombat(caster, target, amount, CombatOutcome.ManaHeal, skillName);
         if (target.Kind == EntityKind.Player)
             SendStats(target);   // MP isn't surfaced via damage broadcasts — refresh the bar
@@ -4166,7 +4204,7 @@ var effect = def.Effect;
             if (attacker.MeleeVamp > 0f && damage > 0 && attacker.WeaponType != WeaponType.Bow)
             {
                 int leech = (int)(damage * attacker.MeleeVamp);
-                if (leech > 0) HealOne(attacker, attacker, leech, "Vampiric");
+                if (leech > 0) HealOne(attacker, attacker, leech, 0, "Vampiric");   // lifesteal = a FLAT heal
             }
             // Melee reflect (counter to vamp): return a fraction of the taken damage to the
             // attacker. MELEE only (bows excluded); applied directly, so it never re-reflects.

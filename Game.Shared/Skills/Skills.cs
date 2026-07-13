@@ -451,7 +451,24 @@ public static class SkillMath
     public static int MagicSkillDamage(int power, float effAttack, int wit, float effDefence) =>
         Math.Max(1, power + (int)(effAttack + wit * 2 - effDefence / 2));
 
-    public static int HealAmount(int power, int wit) => power + wit * 2;
+    /// <summary>Divisor on the FLAT heal. Tuned so a L21 cleric with a staff heals about what he
+    /// used to (~195), which makes the same cleric holding a SWORD heal ~25% less.</summary>
+    public const float HealK = 8f;
+
+    /// <summary>The FLAT part of a heal: skill power scaled by the healer's M.Atk (√ = diminishing
+    /// returns, as in every other magic formula). This is a healer's bread-and-butter heal — cheap,
+    /// fast, and it SUFFERS the moment you trade your caster weapon for a damage one, because the
+    /// weapon channel factors suppress M.Atk. "Want to be a fighter? Then you heal less."
+    ///
+    /// NOTE this deliberately DIVERGES from L2, which is ADDITIVE — `power + √mAtk` — where M.Atk is
+    /// almost irrelevant (16,000 M.Atk buys only +126 HP, and a sword-cleric heals essentially as
+    /// well as a staff-cleric). Multiplying instead is what makes gear and weapon choice matter.
+    ///
+    /// The %-of-max-HP part of a heal does NOT come through here: it ignores M.Atk entirely and
+    /// ignores heal-reduction. That's the point of it — when an anti-heal ultimate lands, the big
+    /// flat heals wither and only the % heals still work.</summary>
+    public static int HealAmount(int power, int mAtk) =>
+        Math.Max(1, (int)(power * MathF.Sqrt(Math.Max(0, mAtk)) / HealK));
 
     public const float CritMultiplierSkills = 2.0f;
     public const int PhysicalSkillAccuracyBonus = 10;

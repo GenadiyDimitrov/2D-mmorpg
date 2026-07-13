@@ -7,6 +7,38 @@ this file.
 
 ---
 
+## To test now (HEALS + PvP HEAL RULES — 2026-07-13)
+
+### Heals now scale with M.Atk (flat) — % heals don't
+- [ ] A heal has **two halves**. The **FLAT** half is now `power × √M.Atk / 8` (was `power + WIT×2`,
+  which ignored M.Atk entirely). The **% -of-max-HP** half ignores M.Atk completely.
+- [ ] **Swap your staff for a sword → you heal noticeably less.** A Lv-21 cleric heals ~195 with a
+  staff (M.Atk 107) and ~151 with a sword (M.Atk 64) — about **25% less**. Better caster gear =
+  better heals. This is the "want to be a fighter? then heal less" rule.
+- [ ] ⚠ **Low-level heals got weaker, high-level heals got stronger** (M.Atk is small early and the
+  old formula's flat `+WIT×2` is gone). Heal POWERS will likely need re-authoring — L2's real heals
+  run to ~1000 power, ours are 151-301. Expect to tune.
+- [ ] **Heal-reduction (anti-heal) bites the FLAT half only.** The % half always lands — that's the
+  point of it, and it's what will make the planned anti-heal ultimates interesting: flat heals
+  wither, % heals still work.
+- [ ] Lifesteal (melee/spell vamp) counts as a FLAT heal, so anti-heal reduces it too.
+- [ ] NOTE: L2's own heal is ADDITIVE (`power + √mAtk`), where M.Atk barely matters — 16,000 M.Atk
+  buys only +126 HP. We deliberately MULTIPLY instead, which is the only way weapon/gear choice can
+  matter to a healer.
+
+### PvP heal rules (the bug from the playtest)
+- [ ] **You can no longer heal the enemy you're fighting.** Targeting a hostile player and casting a
+  heal/buff/cleanse now **self-casts** instead of healing him. (It used to accept ANY player as a
+  support target — which is why healing mid-duel healed your opponent.)
+- [ ] A support skill can only ever reach **yourself or a party member**. Verify: heal a party mate
+  at range ✔; try to heal a non-party player → it heals you instead.
+- [ ] **Supporting an outlaw makes you one.** Heal / restore-MP / cleanse a party member who is
+  **flagged (purple)** or a **PK (red)** → **you go purple too**. A clean healer can no longer prop
+  up a PK from behind with no risk.
+- [ ] Self-healing never flags you. An already-red healer stays red (karma outranks the flag).
+
+---
+
 ## To test now (BUFF ROWS / SET TOOLTIP / TRAINING OUTPOST — 2026-07-13)
 
 ### Buff bar — 4 rows by subtype
