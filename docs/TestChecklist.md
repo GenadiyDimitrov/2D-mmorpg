@@ -43,6 +43,24 @@ The ONLY thing that moves your main stats now. You're born with your CON/ATK/WIT
 
 ## To test now (HEALS + PvP HEAL RULES — 2026-07-13)
 
+### Heal calibration (2026-07-13) — HealK solved against L2
+- [ ] `HealK` = **15** (was 8). Solved from the owner's target: a **1000-power heal at level 76**
+  with a tier-76 staff (M.Atk ≈ 900) should land **~2000**. `1000 × √900 / 15 = 2000`. ✔
+  At level 40 the same skill gives ~1065, so a heal roughly **doubles from 40 → 76**.
+- [ ] Where the target came from: in L2 `heal = power + √mAtk`, so a 1000-power heal lands
+  **~1025-1080 regardless of M.Atk** (it contributes 3-8%). L2's skill ENCHANT roughly doubles it
+  → ~2100. We aim at the enchanted number because we have no enchant system. (K=8 gave **3750** —
+  the "paladin heals 3k" figure the owner rejected as OP.)
+- [ ] ⚠ **Heal POWERS still need re-authoring**: ours are 151-301, the target scale is ~1000.
+
+### Fighter training no longer boosts MAGIC attack (bug)
+- [ ] The combat-training passives used a channel-blind `AttackPct`, which applies to **both**
+  channels — so a fighter's **Physical Training was doubling his M.Atk**. That's what let a Lv-76
+  tank heal nearly as hard as a healer, and it leaked through the whole "a caster weapon makes a
+  healer" rule. Now channel-specific: Physical Training → P.Atk only, Spirit Training → M.Atk only.
+- [ ] Confirm a fighter's **M.Atk dropped roughly by half** at 76+ (it was silently ×2). His P.Atk
+  is unchanged. A mage's M.Atk is unchanged.
+
 ### Heals now scale with M.Atk (flat) — % heals don't
 - [ ] A heal has **two halves**. The **FLAT** half is now `power × √M.Atk / 8` (was `power + WIT×2`,
   which ignored M.Atk entirely). The **% -of-max-HP** half ignores M.Atk completely.

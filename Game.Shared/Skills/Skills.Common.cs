@@ -74,14 +74,22 @@ public static partial class SkillCatalog
     // castSpeedFlat mirrors the real spiritshot bonus: a FLAT +40 to the cast stat. It used
     // to be a 0.40 PERCENT, applied as a time cut (×0.6 time = +67% speed), which compounded
     // with WIT/gear/buffs and inflated a buffed L40 mage to ~2200 against the 1999 cap.
-    private static SkillDef TrainingPassive(string id, string name, BaseClass cls, float castSpeedFlat, string desc)
+    /// <param name="magic">A MAGE's training (spiritshots) — boosts M.Atk. A fighter's (soulshots)
+    /// boosts P.Atk. This used to be one channel-blind <c>AttackPct</c>, which applies to BOTH
+    /// channels — so a fighter's PHYSICAL conditioning was doubling his MAGIC attack. That is what
+    /// let a level-76 tank heal almost as hard as a healer (his M.Atk was silently ×2), and it made
+    /// the whole "a caster weapon makes a healer" rule leak. Now channel-specific.</param>
+    private static SkillDef TrainingPassive(string id, string name, BaseClass cls, bool magic,
+        float castSpeedFlat, string desc)
     {
         float[] atk = { 0.10f, 0.20f, 0.30f, 0.40f, 0.50f, 0.60f, 0.70f, 0.80f, 1.00f };
         return new(id, name, cls, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: 0, Description: desc,
             Levels: atk.Select(p => new SkillLevel(
-                Passive: new PassiveEffect(AttackPct: p, CastSpeedFlat: castSpeedFlat))).ToArray());
+                Passive: magic
+                    ? new PassiveEffect(MagAtkPct: p, CastSpeedFlat: castSpeedFlat)
+                    : new PassiveEffect(PhysAtkPct: p))).ToArray());
     }
 
     /// <summary>The "Class Balance" passive for a class — auto-granted, always level 1.
@@ -276,10 +284,10 @@ public static partial class SkillCatalog
         // ===== Combat training passives (auto-granted; level by character level) =====
         // 9 levels: +10%…+80% attack (40→75) then +100% (76+). The auto-grant level
         // comes from StatCalculator.TrainingLevelFor.
-        TrainingPassive(PhysicalTraining, "Physical Training", BaseClass.Fighter, 0f,
-            "Passive. Relentless conditioning — physical attack grows with level (+10% to +100%)."),
-        TrainingPassive(SpiritTraining, "Spirit Training", BaseClass.Mage, 40f,
-            "Passive. Honed focus — +40 casting speed and magic attack growing with level (+10% to +100%)."),
+        TrainingPassive(PhysicalTraining, "Physical Training", BaseClass.Fighter, magic: false, 0f,
+            "Passive. Relentless conditioning — PHYSICAL attack grows with level (+10% to +100%)."),
+        TrainingPassive(SpiritTraining, "Spirit Training", BaseClass.Mage, magic: true, 40f,
+            "Passive. Honed focus — +40 casting speed and MAGIC attack growing with level (+10% to +100%)."),
 
         // ===== Class identity "sure" floor passives (auto-granted at 20/40/76 = lvl 1/2/3) =====
         // Rogue identity now DATA: the evade floor + the archetype crit/evasion LEANS (+20% crit,

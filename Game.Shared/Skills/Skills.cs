@@ -466,9 +466,14 @@ public static class SkillMath
     public static int MagicSkillDamage(int power, float effAttack, int wit, float effDefence) =>
         Math.Max(1, power + (int)(effAttack + wit * 2 - effDefence / 2));
 
-    /// <summary>Divisor on the FLAT heal. Tuned so a L21 cleric with a staff heals about what he
-    /// used to (~195), which makes the same cleric holding a SWORD heal ~25% less.</summary>
-    public const float HealK = 8f;
+    /// <summary>Divisor on the FLAT heal. Solved against the owner's target: a **1000-power heal at
+    /// level 76** with a tier-76 staff (M.Atk ≈ 900) should land **~2000**.
+    ///   heal = 1000 × √900 / K = 30000 / K  →  K = 15.
+    /// That target came from L2 itself: there `heal = power + √mAtk`, so a 1000-power heal lands
+    /// ~1025-1080 almost regardless of M.Atk (it contributes 3-8%) — and L2's skill ENCHANT roughly
+    /// doubles it, giving ~2100. We aim at the enchanted value because we have no enchant system.
+    /// (K = 8 gave 3750 at L76 — the "paladin heals 3k" number the owner explicitly rejected.)</summary>
+    public const float HealK = 15f;
 
     /// <summary>The FLAT part of a heal: skill power scaled by the healer's M.Atk (√ = diminishing
     /// returns, as in every other magic formula). This is a healer's bread-and-butter heal — cheap,
