@@ -249,9 +249,11 @@
                            Text="Click an item to equip/unequip. Equipped items are highlighted."
                            Margin="0,0,0,8"/>
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
-                    <Button x:Name="InvTabGear" Content="Gear" Width="100" Height="26"
-                            Click="InvTabGear_Click"/>
-                    <Button x:Name="InvTabQuest" Content="Quest Items" Width="120" Height="26"
+                    <Button x:Name="InvTabEquipped" Content="Equipped" Width="90" Height="26"
+                            Click="InvTabEquipped_Click"/>
+                    <Button x:Name="InvTabGear" Content="Bag" Width="80" Height="26"
+                            Margin="6,0,0,0" Click="InvTabGear_Click"/>
+                    <Button x:Name="InvTabQuest" Content="Quest" Width="80" Height="26"
                             Margin="6,0,0,0" Click="InvTabQuest_Click"/>
                 </StackPanel>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">

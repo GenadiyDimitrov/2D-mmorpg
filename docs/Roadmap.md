@@ -92,8 +92,10 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
     doing it silently. Buy swaps deliberately in the skills window (they cost gold, and the
     skill-reset NPC un-picks them).
 
-- [ ] **Equipped items out of the inventory list** into their own tab/pane (inventory is clogged;
-  gear swapping is painful).
+- [x] **Equipped items out of the inventory list — DONE 2026-07-14.** Inventory tabs are now
+  **Equipped / Bag / Quest**, and an item lives in exactly ONE of them: the **Bag hides what you are
+  wearing**, which is what unclogs it. The Equipped pane is ordered by body slot and each row is
+  labelled with its slot, so it reads as a character sheet you can swap gear from.
 - [x] **Skill bar + auto-hunt are CHARACTER data → in the DB — DONE 2026-07-14.**
   **Auto-hunt was ALREADY there** (`AutoHuntJson` on the character row) — only the skill bar had to
   move. New `SkillBarJson` column ⚠ (delete `game.db`), `SkillBarDto` both ways, `SetSkillBarCmd`,
@@ -133,8 +135,15 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   (a re-render mid-drag invalidating the index before the drop lands).
   ⚠ **Not click-tested** — WPF cannot be driven from the agent here. Needs the owner's hands.
 
-- [ ] **BUG: set info missing from the item window** — can't see what a set needs or how many pieces
-  are worn. Reported as built 2026-07-13; it is not working.
+- [x] **BUG: set info missing from the item window — FIXED 2026-07-14.** It was reported built on
+  07-13 because it *was* built — just never reachable. TWO faults:
+  1. `BuildSetSection` was only ever attached to the hover **TOOLTIP**, never to the item WINDOW —
+     which is the window you open when deciding what to wear. It is now in both.
+  2. That tooltip set **white** text on WPF's default **light** tooltip chrome, so even the hover
+     version was white-on-white and invisible. The tooltip is now explicitly dark-backed.
+  The set DATA was fine — `tools/BalanceMatrix` now asserts it (55 items carry a `SetId`, 27 sets,
+  **0 orphaned**), so a future set that forgets its catalog entry gets caught instead of silently
+  rendering nothing.
 - [x] **BUG: "Learn all skills" granted every stat-swap passive — FIXED 2026-07-14** (see the
   direction-rule entry above; it now grants NO swaps and says so).
 - [x] **BUG: "Learn all skills" reshuffles the skill bar — FIXED 2026-07-14** as part of moving the

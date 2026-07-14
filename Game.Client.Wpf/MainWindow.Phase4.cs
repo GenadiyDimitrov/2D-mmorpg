@@ -51,7 +51,12 @@ public partial class MainWindow
             RefreshInventoryPanel();
     }
 
-    private bool _invShowQuest;
+    /// <summary>Inventory tabs. EQUIPPED is its own pane so what you're wearing is not buried in a bag
+    /// of 40 other things — the bag was clogged and swapping gear was painful. The BAG tab therefore
+    /// shows only what is NOT equipped: an item lives in exactly one tab, never both.</summary>
+    private enum InvTab { Equipped, Bag, Quest }
+
+    private InvTab _invTab = InvTab.Bag;
 
     private static bool IsGearItem(InventoryItemDto item)
     {
@@ -59,39 +64,65 @@ public partial class MainWindow
         return d is not null && !ItemCatalog.IsQuestItem(d);
     }
 
+    private void InvTabEquipped_Click(object sender, RoutedEventArgs e)
+    {
+        _invTab = InvTab.Equipped;
+        RefreshInventoryPanel();
+    }
 
     private void InvTabGear_Click(object sender, RoutedEventArgs e)
     {
-        _invShowQuest = false;
+        _invTab = InvTab.Bag;
         RefreshInventoryPanel();
     }
 
     private void InvTabQuest_Click(object sender, RoutedEventArgs e)
     {
-        _invShowQuest = true;
+        _invTab = InvTab.Quest;
         RefreshInventoryPanel();
     }
 
     private void RefreshInventoryPanel()
     {
         InventoryList.Items.Clear();
-        InvTabGear.FontWeight = _invShowQuest ? FontWeights.Normal : FontWeights.Bold;
-        InvTabQuest.FontWeight = _invShowQuest ? FontWeights.Bold : FontWeights.Normal;
+        InvTabEquipped.FontWeight = _invTab == InvTab.Equipped ? FontWeights.Bold : FontWeights.Normal;
+        InvTabGear.FontWeight     = _invTab == InvTab.Bag      ? FontWeights.Bold : FontWeights.Normal;
+        InvTabQuest.FontWeight    = _invTab == InvTab.Quest    ? FontWeights.Bold : FontWeights.Normal;
 
-        InventoryHint.Text = _invShowQuest
-            ? "Quest items — cannot be dropped or traded."
-            : $"{_inventory.Count(IsGearItem)}/{GameConstants.InventorySize} slots. " +
-              "Click an item to equip/unequip.";
+        int worn = _inventory.Count(i => i.Equipped && IsGearItem(i));
+        InventoryHint.Text = _invTab switch
+        {
+            InvTab.Quest    => "Quest items — cannot be dropped or traded.",
+            InvTab.Equipped => $"{worn} equipped. Click a piece to take it off.",
+            _               => $"{_inventory.Count(IsGearItem) - worn} in bag " +
+                               $"({_inventory.Count(IsGearItem)}/{GameConstants.InventorySize} slots used). " +
+                               "Click an item to equip it.",
+        };
 
-        foreach (var item in _inventory)
+        // The EQUIPPED pane reads like a character sheet, so order it by body slot rather than by
+        // whatever order the item happens to sit at in the bag.
+        var items = _invTab == InvTab.Equipped
+            ? _inventory.OrderBy(i => (int)(ItemCatalog.Get(i.DefId)?.Slot ?? 0))
+                        .ThenBy(i => (int)(ItemCatalog.Get(i.DefId)?.ArmorSlot ?? 0))
+                        .ToList()
+            : _inventory;
+
+        foreach (var item in items)
         {
             var def = ItemCatalog.Get(item.DefId);
             if (def is null)
                 continue;
 
-            // Tab filter: Quest tab shows quest items only; Gear tab shows the rest.
+            // Tab filter. An item lives in exactly ONE tab — in particular the BAG hides what you are
+            // wearing, which is the whole point of giving Equipped its own pane.
             bool isQuest = ItemCatalog.IsQuestItem(def);
-            if (isQuest != _invShowQuest)
+            bool show = _invTab switch
+            {
+                InvTab.Quest    => isQuest,
+                InvTab.Equipped => !isQuest && item.Equipped,
+                _               => !isQuest && !item.Equipped,
+            };
+            if (!show)
                 continue;
 
             // Quest items: simple labelled row, no equip/enchant/remove.
@@ -152,10 +183,14 @@ public partial class MainWindow
                 }
             }
 
-            // Main item button — opens equip/compare popup (potions drink).
+            // Main item button — opens equip/compare popup (potions drink). On the EQUIPPED pane the
+            // "[E]" marker is noise (everything there is equipped), so name the body SLOT instead —
+            // that's what makes the pane read as a character sheet you can swap gear from.
             var button = new Button
             {
-                Content = ItemLabel(def, item.Equipped, item.Enchant, item.Quantity),
+                Content = _invTab == InvTab.Equipped
+                    ? $"{EquipSlotLabel(def),-9} {ItemLabel(def, false, item.Enchant, item.Quantity)}"
+                    : ItemLabel(def, item.Equipped, item.Enchant, item.Quantity),
                 Height = 28,
                 HorizontalContentAlignment = HorizontalAlignment.Left,
                 Padding = new Thickness(8, 0, 0, 0),
@@ -172,6 +207,15 @@ public partial class MainWindow
         }
     }
 
+    /// <summary>Which body slot a piece occupies, for the Equipped pane. Armor reports its ArmorSlot
+    /// (Head/Body/Gloves/Boots), everything else its EquipSlot (Weapon/Shield/Jewel).</summary>
+    private static string EquipSlotLabel(ItemDef def) => def.Slot switch
+    {
+        EquipSlot.Armor => def.ArmorSlot.ToString(),
+        EquipSlot.Jewel => def.JewelType.ToString(),
+        _ => def.Slot.ToString(),
+    };
+
     private static string ItemLabel(ItemDef def, bool equipped, int enchant, int quantity)
     {
         string tag = equipped ? "[E] " : "";
@@ -183,7 +227,11 @@ public partial class MainWindow
     }
 
     /// <summary>The item tooltip. Returns a rich element (not a string) so the SET section can
-    /// colour each piece: green = you're wearing it, grey = you're missing it.</summary>
+    /// colour each piece: green = you're wearing it, grey = you're missing it.
+    ///
+    /// It builds an explicit ToolTip with a DARK background. WPF's default tooltip chrome is LIGHT,
+    /// and the content here is white/gainsboro — so all of this was white-on-white and effectively
+    /// invisible, which is a large part of why the set info "wasn't there".</summary>
     private object BuildItemTooltip(ItemDef def, InventoryItemDto item)
     {
         var panel = new StackPanel { MaxWidth = 320 };
@@ -194,7 +242,15 @@ public partial class MainWindow
         });
         if (BuildSetSection(def) is StackPanel setPanel)
             panel.Children.Add(setPanel);
-        return panel;
+
+        return new ToolTip
+        {
+            Content = panel,
+            Background = new SolidColorBrush(Color.FromRgb(0x1A, 0x22, 0x30)),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(0x4A, 0x5A, 0x70)),
+            Foreground = Brushes.White,
+            Padding = new Thickness(8),
+        };
     }
 
     /// <summary>The SET section: which set this piece belongs to, what the bonus gives, how many of
@@ -1094,6 +1150,12 @@ public partial class MainWindow
                 AddStatRow2($"  {AttributeSystem.DisplayName(attr.Type)}", attr.Value, null,
                     suffix: AttributeSystem.IsPercent(attr.Type) ? "%" : "");
         }
+
+        // SET INFO — what the set needs, what it gives, and which pieces you're actually wearing.
+        // This existed but was only ever attached to the hover TOOLTIP, never to this window — which
+        // is the window you open when you're deciding what to wear, so it read as "set info missing".
+        if (BuildSetSection(def) is StackPanel setSection)
+            EquipCompareList.Items.Add(setSection);
 
         EquipConfirmButton.Content = item.Equipped ? "Unequip" : "Equip";
         EquipPopup.Visibility = Visibility.Visible;

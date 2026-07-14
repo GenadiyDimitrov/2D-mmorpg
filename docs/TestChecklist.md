@@ -35,6 +35,23 @@ If it's still hot, the lever is `MobBaseStats.MDef` (the ~3·lvl slope) or the t
 
 ---
 
+## INVENTORY: EQUIPPED PANE + SET INFO (2026-07-14)
+
+- [ ] **Equipped items have their own tab.** Inventory tabs are now **Equipped / Bag / Quest**. An item
+      lives in exactly ONE tab — the **Bag hides what you're wearing**, which is the point (it was
+      clogged and swapping gear was painful). The Equipped pane is ordered by body slot and each row is
+      labelled with its slot (Weapon / Body / Head / Gloves / Boots / Shield / Ring / Earring /
+      Necklace), so it reads like a character sheet. Click a piece to take it off.
+- [ ] **BUG FIXED: set info in the item window.** Click a set piece → the item window now shows the set
+      name, what the bonus gives, `Items 2/4`, and a green ✔ / grey ✖ line per required piece.
+      *(Two separate faults: (1) the set panel existed but was only ever attached to the hover TOOLTIP,
+      never to the item window you actually open to decide what to wear; (2) the tooltip itself set
+      WHITE text on WPF's default LIGHT tooltip chrome, so even the hover version was invisible. Both
+      fixed — the tooltip is now dark-backed. The set DATA was fine: verified 55 items carry a SetId
+      and 0 are orphaned.)*
+
+---
+
 ## SKILL BAR → DB (2026-07-14) — ⚠ DELETE `game.db` BEFORE TESTING
 
 Schema change (`SkillBarJson` column). Delete `Game.Server/bin/Debug/net8.0/game.db` (+ `-shm`/`-wal`)

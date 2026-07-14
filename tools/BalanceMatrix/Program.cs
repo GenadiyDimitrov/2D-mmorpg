@@ -73,6 +73,22 @@ foreach (int L in levels)
 Console.WriteLine("  (a mob that buys bulk with an HP-multiplier passive now pays that multiple in EXP)");
 Console.WriteLine();
 
+// Every item that claims a SetId must resolve to a real set, or the client's set panel silently
+// renders nothing (BuildSetSection returns null) — which is exactly how "set info missing from the
+// item window" can look like a UI bug when it is really a DATA gap.
+Console.WriteLine("=== ITEM ↔ ARMOR-SET WIRING ===");
+var orphans = ItemCatalog.AllItems
+    .Where(d => !string.IsNullOrEmpty(d.SetId))
+    .Where(d => !ArmorSetCatalog.All.Any(s =>
+        s.Id == d.SetId || (string.IsNullOrEmpty(s.AccessorySetId) ? s.Id : s.AccessorySetId) == d.SetId))
+    .ToList();
+int withSet = ItemCatalog.AllItems.Count(d => !string.IsNullOrEmpty(d.SetId));
+Console.WriteLine($"  {withSet} items carry a SetId; {ArmorSetCatalog.All.Count()} sets defined; " +
+                  $"{orphans.Count} orphaned.");
+foreach (var o in orphans.Take(15))
+    Console.WriteLine($"    ORPHAN  {o.Id,-22} -> SetId '{o.SetId}' matches no set");
+Console.WriteLine();
+
 Console.WriteLine("=== STAT-SWAP DIRECTION RULE ===");
 
 // The owner's worked example: a fighter takes +ATK-MEN, then +WIT-MEN. Every other swap should
