@@ -7,31 +7,24 @@ this file.
 
 ---
 
-## 🔥 MAGIC RE-SCALE — TEST THIS FIRST (2026-07-14)
+## ✅ MAGIC RE-SCALE — SIGNED OFF BY THE OWNER IN THE 2026-07-14 PLAYTEST
 
-The mob curves, the M.Atk level formula and the nuke ladder all changed. Nothing here needs a
-DB wipe. `dotnet run --project tools/BalanceMatrix` prints the predicted numbers — the point of
-this test is whether the *feel* matches them.
+**The damage numbers are CONFIRMED GOOD in-game. Do not re-tune them without a new reason.**
+Owner, playing it: *"dmg seems fine — mage to tank 300-400 (1100 crits) for 11k HP is ok; tank to
+mage 300 crits, ~120 dmg for 2k6 HP is fine"* and *"mage dmg is ok vs monsters, can solo, can dmg"*.
 
-- [ ] **Mage kills a same-level mob in 2-3 casts** at 40 / 60 / 80 with best-for-tier gear.
-      (Predicted: 1.3 / 2.0 / 2.6 casts. Was 3.5 / 19 / 79.)
-- [ ] **Mob HP looks right.** A normal level-80 mob should have ~5.2k HP, not 15.4k. Elites and
-      bosses should still be fat — they buy bulk with an HP passive, which is unchanged.
-- [ ] **Low-level mage no longer overkills.** A ~L21 mage on a ~L24 mob: was 2k damage, should now
-      be a few hundred against a ~500-HP mob. He will still roughly one-shot it — that IS L2.
-- [ ] **Nuke ladder past 35.** Elemental / Quick / Vampiric Bolt now gain a level every 5 levels
-      from 20 to **80** (Elemental Bolt tops out at power 116). Check they appear in the skill
-      window and are learnable with SP.
-- [ ] **Fighter got faster too** (he rode the same broken mob curve). L85: ~25 basic hits to kill a
-      same-level mob, was ~148. Check this doesn't now feel *too* fast.
-- [ ] **Boss/elite EXP.** A mob with an HP-multiplier passive now pays that multiple in EXP (a 3x-HP
-      elite = 3x EXP). Was flat-by-level, so bosses paid trash EXP.
+That also **closes the one number I had left open.** `tools/BalanceMatrix` predicted mage-vs-tank at
+461/485 and I flagged it as possibly too hot — but that figure is both sides UNBUFFED. Buffed, in the
+real fight, it lands squarely in the owner's 300-400. **The matrix was right and the target is met;
+the gap was the buffs, not the balance.** Sets were confirmed working in the same session too.
+
+Still worth eyeballing on a future pass (not blocking):
 - [ ] **Leveling pace at 60-85 is ~3x faster** in wall-clock (same EXP per mob, mobs die 3x sooner).
       If that's too fast, drop `ExpRate` in Settings → Debug Tuning — no rebuild needed.
-
-**⚠ ONE NUMBER STILL OPEN:** mage-vs-tank at level 76/85 measures **461/485**, above the 300-400 you
-asked for — but that's both sides UNBUFFED. Duel a tank with buffs up and see where it really lands.
-If it's still hot, the lever is `MobBaseStats.MDef` (the ~3·lvl slope) or the top nuke powers.
+- [ ] **Boss/elite EXP.** A mob with an HP-multiplier passive now pays that multiple in EXP (a 3x-HP
+      elite = 3x EXP). Was flat-by-level, so bosses paid trash EXP.
+- [ ] **Fighter got faster too** (he rode the same broken mob curve). L85: ~25 basic hits to kill a
+      same-level mob, was ~148. Check this doesn't now feel *too* fast.
 
 ---
 

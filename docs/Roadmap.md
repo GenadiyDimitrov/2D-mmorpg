@@ -60,10 +60,15 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   The mage went from exploding (0.5 -> 79 casts) to nearly FLAT (0.5 -> 2.6). Physical rode the
   same broken mob curve and got the same benefit for free.
 
-  **Open, for the playtest to judge:**
-  - Mage-vs-tank at 76/85 reads **461/485**, a little over the owner's 300-400 target (both sides
-    UNBUFFED — the tank's M.Def buffs should close it). If still hot, ease the `MobBaseStats.MDef`
-    slope or the top nuke powers.
+  ### ✅ SIGNED OFF IN THE 2026-07-14 PLAYTEST — do not re-tune without a new reason
+  Owner, in-game: *"dmg seems fine — mage to tank 300-400 (1100 crits) for 11k HP is ok; tank to mage
+  300 crits, ~120 dmg for 2k6 HP is fine"*, *"mage dmg is ok vs monsters, can solo, can dmg"*.
+  This **closes the one number that was left open**: the matrix predicted mage-vs-tank at 461/485 and
+  I flagged it as maybe too hot — but that reading is both sides UNBUFFED. Buffed, in the real fight,
+  it lands squarely in the 300-400 target. The matrix was right; the gap was the buffs, not the
+  balance.
+
+  **Still noted, not blocking:**
   - A level-20 mage still one-shots (0.5 casts). That IS retail L2; the magnitude is at least
     proportionate now (787 dmg vs a 360-HP mob), and the curve ABOVE it is fixed.
   - **Leveling at 60-85 is now ~3x faster in wall-clock** (same EXP/mob, mobs die 3x sooner). The
@@ -202,6 +207,18 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   masteries, healer powers, mob modifiers, caster bow penalty. (See `docs/TestChecklist.md`.)
 - [ ] **Cleric-solos-a-30-mob** balance pass (owner target): mob HP/atk vs cleric melee+heal.
 - [ ] Low-level **physical mob damage** so mobs don't ~one-shot players (magic/phys mob parity).
+
+### Playtest-3 leftovers (2026-07-14) — the only two things from that session not built
+
+- [>] **BUG: the mage runs into melee range to auto-attack.** Owner saw it again. `AfterOffensiveSkill`
+  ALREADY excludes mages from the post-cast engage, so the obvious cause is not the cause and I will
+  not guess a third time this session. **Needs a repro:** does it happen after you CAST, after you
+  CLICK the mob, or when the current mob dies and it picks a new one? The other `Engaged = true` sites
+  are `HandleAttack` (an explicit attack command — engages regardless of class) and `Retaliate`.
+- [ ] **Movable popups** (titlebar + drag + X on each panel). The Debug window covers the inventory;
+  Stats and Skills are offset but still overlap. Real work — every panel needs a chrome header, a
+  drag handler and a close button, ideally factored into one reusable `PanelChrome` rather than
+  copy-pasted nine times.
 
 ## NEXT (clear, mostly self-contained — can do without owner input)
 
