@@ -444,10 +444,14 @@ public partial class MainWindow
             ClassHint.Text = $"[DEBUG] Choose a 3rd-class discipline (skills unlock at level 40).";
             foreach (var tc in ThirdClassCatalog.ForParent(_mySecondClass))
             {
+                bool taken = DisciplineTakenElsewhere(tc.Discipline);
                 var button = new Button
                 {
-                    Content = $"{tc.Name}  ({tc.Discipline})",
-                    Height = 32, Margin = new Thickness(0, 0, 0, 6), FontSize = 12
+                    Content = taken
+                        ? $"{tc.Name}  ({tc.Discipline}) — another class already walks this"
+                        : $"{tc.Name}  ({tc.Discipline})",
+                    Height = 32, Margin = new Thickness(0, 0, 0, 6), FontSize = 12,
+                    IsEnabled = !taken,
                 };
                 int id = tc.Id;
                 button.Click += async (_, _) =>
@@ -466,12 +470,16 @@ public partial class MainWindow
         foreach (var def in ClassCatalog.OptionsFor(_myRace, _myBaseClass))
         {
             // No stat bonus to advertise: a class change no longer raises main stats.
+            bool archTaken = ArchetypeTakenElsewhere(def.Archetype);
             var button = new Button
             {
-                Content = $"{def.Name}  ({def.Archetype})",
+                Content = archTaken
+                    ? $"{def.Name}  ({def.Archetype}) — another class already walks this"
+                    : $"{def.Name}  ({def.Archetype})",
                 Height = 32,
                 Margin = new Thickness(0, 0, 0, 6),
-                FontSize = 12
+                FontSize = 12,
+                IsEnabled = !archTaken,
             };
             int classId = def.Id;
             button.Click += async (_, _) =>
@@ -2492,6 +2500,21 @@ public partial class MainWindow
 
     /// <summary>Every class this character owns (server-pushed). Drives the subclass section below.</summary>
     private SubclassDto[] _subclasses = Array.Empty<SubclassDto>();
+
+    // ---- CLASS UNIQUENESS (mirrors the server; see Entity) --------------------------------------
+    //
+    // You may not walk the same ARCHETYPE twice, nor the same DISCIPLINE twice, across the classes one
+    // character owns. These only grey the barred options OUT — the server enforces the rule for real.
+    // Matched on the archetype/discipline, NOT the class id: a human Sorcerer and an elf Inquisitor are
+    // different ids but the same Nuker path, and taking both is exactly what the rule forbids.
+
+    private bool ArchetypeTakenElsewhere(Archetype a) =>
+        _subclasses.Any(s => !s.Active && s.SecondClass > 0
+                             && ClassCatalog.Get(s.SecondClass)?.Archetype == a);
+
+    private bool DisciplineTakenElsewhere(Discipline d) =>
+        _subclasses.Any(s => !s.Active && s.ThirdClass > 0
+                             && ThirdClassCatalog.Get(s.ThirdClass)?.Discipline == d);
 
     private void OnSubclasses(SubclassListDto dto)
     {

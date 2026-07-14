@@ -46,6 +46,17 @@ Debug → Functions → **"Classes (subclass)"**.
       character-level, so another class would be left with stats rolled for a body it no longer has.
       Use the subclass buttons to keep a class and add another.
 
+### Class uniqueness — you can't walk the same path twice
+
+- [ ] **No repeated ARCHETYPE.** A Sorcerer (Nuker) subclass → your other mage class can become a
+      Cleric (Healer) but **not** another Nuker. Matched on the ARCHETYPE, not the class id — so a
+      Sorcerer and an Inquisitor count as the same Nuker path even though they're different classes.
+- [ ] **No repeated DISCIPLINE.** A Magus subclass → your other class can become a Tempest but **not**
+      another Magus. Same for Vanguard, etc.
+- [ ] **Barred options are greyed out** in the class picker with the reason on the button — and the
+      **server refuses them anyway** (all three paths: the level-20 change, the debug 3rd class, and
+      the quest-driven NPC change, which also stops listing them).
+
 Not built (they're player-facing rules, not the mechanism): cap of 3-4, safe-zone-only, 5-min delay.
 
 ---

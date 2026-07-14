@@ -968,6 +968,14 @@ public class GameLoopService : BackgroundService
         if (def is null || def.Race != player.Race || def.Base != player.BaseClass)
             return;
 
+        // You may not walk the same ARCHETYPE twice across your classes (see Entity).
+        if (!player.CanTakeSecondClass(def.Id))
+        {
+            SendSystemToEntity(player,
+                $"Another of your classes already walks the {def.Archetype} path.");
+            return;
+        }
+
         // NOTE: the class change no longer raises main stats. You keep the CON/ATK/WIT/DEX you
         // were born with; the level-40 stat-swap passives are the only way to move them.
         player.SecondClass = def.Id;
@@ -1635,6 +1643,21 @@ public class GameLoopService : BackgroundService
             || tcd.Race != player.Race)
         {
             SendSystemToEntity(player, "[DEBUG] Invalid 3rd class.");
+            return;
+        }
+
+        // You may not walk the same DISCIPLINE twice across your classes — and this path also FORCES
+        // the parent 2nd class below, so it has to respect the archetype rule too, or debug would be
+        // a back door around it.
+        if (!player.CanTakeThirdClass(cmd.ThirdClassId))
+        {
+            SendSystemToEntity(player, $"Another of your classes is already a {tcd.Discipline}.");
+            return;
+        }
+        if (!player.CanTakeSecondClass(tcd.ParentSecondClassId))
+        {
+            SendSystemToEntity(player,
+                $"Another of your classes already walks the {ClassCatalog.Get(tcd.ParentSecondClassId)?.Archetype} path.");
             return;
         }
 
@@ -6271,21 +6294,28 @@ var effect = def.Effect;
 
     /// <summary>Is this class change offered to this player right now? Encodes the
     /// tier gating: Tier 2 needs no second class yet + matching race/base; Tier 3
-    /// needs the right parent 2nd class + no third class yet.</summary>
+    /// needs the right parent 2nd class + no third class yet.
+    ///
+    /// It ALSO enforces class uniqueness across your subclasses — you may not walk the same ARCHETYPE
+    /// or the same DISCIPLINE twice (see Entity). This one method both LISTS the offered classes at the
+    /// NPC and GATES the change itself, so a barred class is never even shown, and can't be taken if it
+    /// somehow is.</summary>
     private static bool ClassChangeAvailable(Entity player, ClassChangeRequirements.Requirement req)
     {
         if (req.Tier == 2)
         {
             if (player.SecondClass != 0) return false;
             return ClassCatalog.Get(req.SecondClassId) is SecondClassDef scd
-                && scd.Base == player.BaseClass && scd.Race == player.Race;
+                && scd.Base == player.BaseClass && scd.Race == player.Race
+                && player.CanTakeSecondClass(scd.Id);
         }
         if (req.Tier == 3)
         {
             if (player.SecondClass == 0 || player.ThirdClass != 0) return false;
             if (req.RequiredCurrentClass != player.SecondClass) return false;
             return ThirdClassCatalog.Get(req.SecondClassId) is ThirdClassDef tcd
-                && tcd.Race == player.Race;
+                && tcd.Race == player.Race
+                && player.CanTakeThirdClass(tcd.Id);
         }
         return false;
     }

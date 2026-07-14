@@ -187,6 +187,17 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   it changes RACE, which is character-level, so any other class would be left with stats rolled for a
   body it no longer has.
 
+  **CLASS UNIQUENESS (owner, 2026-07-14):** a character may not walk the same **ARCHETYPE** twice, nor
+  the same **DISCIPLINE** twice, across the classes it owns. Matched on the archetype/discipline, **not
+  the class id** — a human Sorcerer and an elf Inquisitor are different classes but the same NUKER path,
+  and holding both is exactly what the rule forbids; checking ids would let the same path in through a
+  differently-named door. `Entity.CanTakeSecondClass` / `CanTakeThirdClass` are the rule; enforced on
+  **all three** paths that set a class (the level-20 change, the debug 3rd class — which also forces a
+  parent 2nd class, so it checks the archetype too or it'd be a back door — and the quest-driven NPC
+  change, where the same predicate both LISTS and GATES, so a barred class is never even offered). The
+  client greys the barred options out with the reason on the button. Verified in `tools/BalanceMatrix`:
+  a Sorcerer/Magus class bars Nuker + Magus for the second class, and leaves Cleric + Tempest open.
+
   **Deliberately NOT built** (they belong to the player-facing system, and are rules on the COMMAND, not
   on the mechanism): a cap of 3-4 classes, safe-zone-only swapping, the 5-minute swap delay, and a
   player-facing UI. `HandleSwitchSubclass` does the state work; those rules will gate the entry point.

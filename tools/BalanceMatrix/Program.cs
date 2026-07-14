@@ -89,6 +89,38 @@ foreach (var o in orphans.Take(15))
     Console.WriteLine($"    ORPHAN  {o.Id,-22} -> SetId '{o.SetId}' matches no set");
 Console.WriteLine();
 
+// You may not walk the same ARCHETYPE twice, nor the same DISCIPLINE twice, across the classes ONE
+// character owns. Matched on the archetype/discipline, NOT the class id — a human Sorcerer and an elf
+// Inquisitor are different ids but the same NUKER path, and holding both is exactly what is forbidden.
+Console.WriteLine("=== CLASS UNIQUENESS ACROSS SUBCLASSES ===");
+{
+    var c = new Entity { Name = "dual", Kind = EntityKind.Player, Race = Race.Human };
+    c.Subclasses.Clear();
+    // Class #0: a Human Mage who became a Sorcerer (Nuker) and then a Tempest.
+    var nuker = new Subclass { Slot = 0, BaseClass = BaseClass.Mage, SecondClass = 18 };
+    nuker.ThirdClass = ThirdClassCatalog.ForParent(18).First().Id;
+    c.Subclasses.Add(nuker);
+    // Class #1: a second Human Mage, currently classless — what may he become?
+    c.Subclasses.Add(new Subclass { Slot = 1, BaseClass = BaseClass.Mage });
+    c.SwitchSubclass(1);
+
+    string owned = $"{ClassCatalog.Get(18)?.Name} ({ClassCatalog.Get(18)?.Archetype})" +
+                   $" / {ThirdClassCatalog.Get(nuker.ThirdClass)?.Name} ({ThirdClassCatalog.Get(nuker.ThirdClass)?.Discipline})";
+    Console.WriteLine($"  Class #0 is: {owned}");
+    Console.WriteLine("  Class #1 may become:");
+    foreach (var def in ClassCatalog.OptionsFor(Race.Human, BaseClass.Mage))
+        Console.WriteLine(c.CanTakeSecondClass(def.Id)
+            ? $"    OK      {def.Name,-14} ({def.Archetype})"
+            : $"    BARRED  {def.Name,-14} ({def.Archetype}) — that archetype is already taken");
+
+    Console.WriteLine("  …and its 3rd-class disciplines (if it took the Nuker path anyway):");
+    foreach (var tc in ThirdClassCatalog.ForParent(18))
+        Console.WriteLine(c.CanTakeThirdClass(tc.Id)
+            ? $"    OK      {tc.Name,-14} ({tc.Discipline})"
+            : $"    BARRED  {tc.Name,-14} ({tc.Discipline}) — that discipline is already taken");
+}
+Console.WriteLine();
+
 Console.WriteLine("=== STAT-SWAP DIRECTION RULE ===");
 
 // The owner's worked example: a fighter takes +ATK-MEN, then +WIT-MEN. Every other swap should
