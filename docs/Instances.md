@@ -92,6 +92,27 @@ or a reserved band inside the 48000² world. Reserve a band; it's simpler.
 (UTC or a configured server timezone), not `GameClock`.** Using GameClock here would reset the daily
 attempt every 4 real hours. This is an easy and expensive mistake to make.
 
+### ⚠ INSTANCE STATE IS SERVER-WRITE-ONLY (owner, 2026-07-14)
+
+The player's instance record — what they've **done / finished / started / are currently in**, and when
+their attempt was spent — is a **server-owned property**. The client may be **SENT** it (so the UI can
+show "you've used today's attempt", which door is open, what's on cooldown), but the client may **NEVER
+send it back**. There is no client→server command that writes any part of it.
+
+This matters because we already have a **counterexample in the codebase**: the skill bar is
+*client-authored* (`SetSkillBarCmd` — the client sends the layout and the server stores it). That is fine
+for a skill bar; the worst a cheater achieves is rearranging their own icons. Applying the same pattern to
+instance state would be a **"I have used zero attempts today" packet** — a free daily reset, and the whole
+system's scarcity gone.
+
+So: attempts, completion history and current-instance membership are written **only** by the server, as a
+consequence of things the server itself observed (a start it authorised, a boss it saw die, a party it saw
+collapse). The client's role is display. Never add a `SetInstanceState`-shaped command, however convenient
+it looks.
+
+(This is just the project's normal rule — the hub only enqueues commands and the game loop is the single
+writer — but it is worth stating out loud here, because the skill bar shows how easy it is to drift.)
+
 ### What has to be built
 1. **`InstanceDef`** (shared, data): id, category, level band, open window + day mask, room layout, mob
    roster per room, boss, boss drop table, time limit, min party size.
