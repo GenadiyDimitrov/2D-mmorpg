@@ -385,7 +385,13 @@ public enum TargetMode { SelfOrTarget = 0, SelfOnly = 1, AlliesInRadius = 2, Ene
 // ===========================================================================
 public static partial class SkillCatalog
 {
-    private static readonly Dictionary<string, SkillDef> All = BuildCatalog();
+    private static readonly Dictionary<string, SkillDef> All;
+
+    // Built in an explicit static ctor, NOT a field initializer: BuildCatalog() reads static arrays
+    // declared in the other partial files (StatSwapGold, FighterArmorLevels, ...), and field
+    // initializers across partial files run in compiler file order — so a field initializer here
+    // could (and did) run while those are still null. A static ctor body runs after all of them.
+    static SkillCatalog() => All = BuildCatalog();
 
     /// <summary>THE single place the catalog is assembled — one AddRange per
     /// definition file. Duplicate ids throw at startup (collision guard).</summary>

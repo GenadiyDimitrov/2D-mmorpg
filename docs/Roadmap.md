@@ -10,6 +10,60 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 
 ## NOW (active / immediate)
 
+### Playtest-2 queue (2026-07-14) — agreed, NOT yet built
+
+- [x] **Server would not start** — `SkillCatalog`'s static field initializer `All = BuildCatalog()`
+  (Skills.cs) ran BEFORE `StatSwapGold`, a static array in the other partial file
+  (Skills.StatSwap.cs), was assigned → NRE → the whole type failed to initialize. Static field
+  initializers across partial files run in compiler FILE order. Fixed with an **explicit static
+  ctor** (its body is guaranteed to run after every field initializer). Also de-risks
+  `FighterArmorLevels` / `MageRobeLevels` / `NewbieBuffSet`, which survived on file-ordering luck.
+
+- [ ] **MAGIC RE-SCALE (the big one).** Magic is ~22× under L2 against players and ~3× OVER against
+  mobs — the same bug from both ends. The formula is already L2's exact `91·power·√M.Atk / M.Def`;
+  the INPUTS are wrong. Physical is a pure ratio (scale-invariant); magic has a √, so it silently
+  falls behind as numbers grow — which is why low-level PvP feels fine and high-level doesn't.
+  1. **M.Atk** is additive/flat in level (`AtkStat + level*2 + weapon` → ~486 raw at 86). Make it
+     **multiplicative** as L2 does. *(owner: approved)*
+  2. **Nuke powers**: top nuke is **44**; re-author to the L2 curve, anchored **108 @ level 74**
+     (Hurricane / Hydro Blast / Death Spike / Prominence). *(owner: approved)*
+  3. **M.Def**: the divisor swings 18× (mob @24 = 50 → player tank @91 = ~900) while mob HP swings
+     30×. Only ~102 of the tank's 900 is his own base — **~800 is A-grade JEWELS**, the single most
+     out-of-line number in the game. Put mobs+players on one curve and cut the jewel dominance.
+     *(owner: NOT yet approved — ask first, it changes every mage-mob and every jewel.)*
+  - **Do NOT touch HP** (physical feels right → HP is proportionally correct; scale magic UP to it).
+  - Re-check mage TTK at BOTH ends afterwards: power+M.Atk alone would make a L21 mage hit a mob
+    for 5k. See [[session-status-2026-07-14]].
+
+- [ ] **Stat-swap "direction" rule.** The level-40 swaps currently allow a circular net-zero loop
+  (+A−B, +B−C, +C−A = 45kk for +0). Fix: **each stat commits to a direction** — taking `+X −Y` bans
+  every other skill that RAISES X, every skill that LOWERS X, and every skill that RAISES Y; a
+  second `−Y` from elsewhere is still allowed (they stack). Verified: a fighter taking `+ATK−MEN`
+  then `+WIT−MEN` is left with exactly `+CON−DEX`/`+DEX−CON`. Extends the current single
+  `ExclusiveGroup` (keep it — the skill-reset NPC keys off it).
+
+- [ ] **Equipped items out of the inventory list** into their own tab/pane (inventory is clogged;
+  gear swapping is painful).
+- [ ] **Skill bar + auto-farm/auto-potion settings are CHARACTER data → move to the DB.**
+  `client-settings.json` keeps window position/size ONLY. (Skill bar is per-CLASS, auto-hunt is
+  per-CHARACTER — lay it out per [[subclass-system-design]] so subclasses don't force a rewrite.)
+- [ ] Debug: **100k gold button → 10kk**; debug **race/class change must NOT wipe inventory**
+  (owner reversed his earlier request).
+
+- [ ] **BUG: skill-bar drag & drop.** Still broken — a drag is very hard to even start, and when it
+  does start it moves a DIFFERENT skill than the one grabbed. Hardening it blind last session did
+  not work; needs a real repro or a rewrite of the drag source/drop target.
+- [ ] **BUG: set info missing from the item window** — can't see what a set needs or how many pieces
+  are worn. Reported as built 2026-07-13; it is not working.
+- [ ] **BUG: "Learn all skills"** learns every stat-swap passive (they cancel out — must respect the
+  exclusivity rule: take the first, skip whatever it bans) and still **reshuffles the skill bar**.
+
+- [ ] **Sub-class groundwork** (deferred, don't restructure later) — one character, several classes,
+  each with its own level/XP/skills/skill-bar; inventory + auto-hunt stay character-wide; debug
+  class swap must NOT wipe the class you swap away from. See [[subclass-system-design]].
+
+### Earlier
+
 - [x] **Mob base-stat curve** — owner sent a L1-85 mob CSV (`docs/mobs/mob_base_stats.csv`).
   Wired as `MobBaseStats` (per-level HP/MP/P.Def/M.Def/P.Atk/M.Atk curve, interpolated);
   `Entity.RecomputeDerived` mob branch now reads it (`MobMaxHp/MobMaxMp/MobDefence`/the
