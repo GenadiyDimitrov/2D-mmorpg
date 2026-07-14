@@ -28,6 +28,19 @@ Still worth eyeballing on a future pass (not blocking):
 
 ---
 
+## MOVABLE POPUPS + MAGE-CLICK (2026-07-14)
+
+- [ ] **Every popup can be dragged** by the "⠿ drag" strip at its top, **closed** with the ✕, and
+      **raised above the others by clicking it**. Check the Debug window no longer traps the Inventory,
+      and that Stats/Skills can be pulled apart.
+- [ ] **BUG FIXED: a mage no longer charges into melee when you click a mob.** He just TARGETS. Fighters
+      still click-to-attack as before. *(Root cause: the client's "clicking a mob attacks" sent an Attack
+      command → the server engaged you → `UpdateAutoAttack` chased into basic-attack range, i.e. a caster
+      sprinting in to poke with a staff.)* Auto-hunt is untouched: it still walks a caster in for SPELL
+      range, and still melees if you tick its Basic Attack row.
+
+---
+
 ## LEVEL CAP + DELEVEL + DEBUG BUFFS (2026-07-14)
 
 - [ ] **Debug → "Full Buffs (1h)"** lays the whole NPC buff set on you at ANY level, no walk to the NPC.

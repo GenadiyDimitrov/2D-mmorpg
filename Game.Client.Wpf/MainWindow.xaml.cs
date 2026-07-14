@@ -106,6 +106,7 @@ public partial class MainWindow : Window
         };
 
         WhisperNames.ItemsSource = _whisperNames;
+        EnableMovablePanels();   // drag strip + ✕ + click-to-raise on every popup
         BuildCreationTree();
         _ = ConnectToServerAsync();
 
@@ -1999,9 +2000,19 @@ public partial class MainWindow : Window
             // Clicking a mob attacks. Clicking another player attacks when PvP is on OR the target is
             // already flagged/red (justice / self-defense) — otherwise it just targets (trade/party).
             // Skills also fire on the current target (server enforces the same rules).
-            if (latest is { Kind: EntityKind.Mob } ||
-                (latest is { Kind: EntityKind.Player } && latest.Id != _myId &&
-                 (_pvpEnabled || latest.Flag != PvpFlag.Innocent)))
+            //
+            // A MAGE ONLY TARGETS — he never charges. An attack command engages you, and the server
+            // then CHASES into basic-attack range; for a caster that means sprinting into melee to
+            // poke with a staff (magic weapons have no weapon range and near-zero basic damage), which
+            // is never what a nuker or healer wants and drags him out of casting position. This is the
+            // click path; the server already refuses to engage a mage after a CAST for the same reason
+            // (AfterOffensiveSkill). Auto-hunt is unaffected — AutoPilot walks a caster in for SPELL
+            // range on its own, and still melees if you tick its Basic Attack row.
+            bool iAmCaster = _myBaseClass == BaseClass.Mage;
+            if (!iAmCaster &&
+                (latest is { Kind: EntityKind.Mob } ||
+                 (latest is { Kind: EntityKind.Player } && latest.Id != _myId &&
+                  (_pvpEnabled || latest.Flag != PvpFlag.Innocent))))
                 await _net.AttackAsync(targetId);
             return;
         }

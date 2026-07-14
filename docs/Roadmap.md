@@ -205,8 +205,11 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 
 - [~] **Tune placeholder numbers** after the next playtest: fighter weapon masteries, armor
   masteries, healer powers, mob modifiers, caster bow penalty. (See `docs/TestChecklist.md`.)
-- [ ] **Cleric-solos-a-30-mob** balance pass (owner target): mob HP/atk vs cleric melee+heal.
-- [ ] Low-level **physical mob damage** so mobs don't ~one-shot players (magic/phys mob parity).
+- ~~Low-level **physical mob damage** so mobs don't ~one-shot players~~ — **NOT A REAL ISSUE
+  (owner, 2026-07-14): "mobs don't one hit players".** This entry was stale; the mob-curve rework
+  already moved these numbers. Don't act on it.
+- ~~**Cleric-solos-a-30-mob** balance pass~~ — folded into the above; owner says the balance pass as
+  written "isn't right". Re-open only from a fresh in-game observation, not from this list.
 
 - [x] **Level cap 90 + delevel buttons — DONE 2026-07-14.** `GameConstants.MaxPlayerLevel = 90`, applied
   in the XP path (EXP parks at 0 at the cap instead of piling up invisibly, which would otherwise dump
@@ -249,15 +252,22 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 
 ### Playtest-3 leftovers (2026-07-14) — the only two things from that session not built
 
-- [>] **BUG: the mage runs into melee range to auto-attack.** Owner saw it again. `AfterOffensiveSkill`
-  ALREADY excludes mages from the post-cast engage, so the obvious cause is not the cause and I will
-  not guess a third time this session. **Needs a repro:** does it happen after you CAST, after you
-  CLICK the mob, or when the current mob dies and it picks a new one? The other `Engaged = true` sites
-  are `HandleAttack` (an explicit attack command — engages regardless of class) and `Retaliate`.
-- [ ] **Movable popups** (titlebar + drag + X on each panel). The Debug window covers the inventory;
-  Stats and Skills are offset but still overlap. Real work — every panel needs a chrome header, a
-  drag handler and a close button, ideally factored into one reusable `PanelChrome` rather than
-  copy-pasted nine times.
+- [x] **BUG: the mage runs into melee to auto-attack — FIXED 2026-07-14.** Traced rather than guessed:
+  `AfterOffensiveSkill` already excludes mages (post-CAST), and `Retaliate` only engages mobs — so the
+  culprit was the **click**. The client's "clicking a mob attacks" sends an Attack command, the server
+  engages you, and `UpdateAutoAttack` then CHASES into basic-attack range — i.e. a caster sprinting into
+  melee to poke with a staff (magic weapons have no weapon range and near-zero basic damage), dragged out
+  of casting position. **A mage now only TARGETS on click; fighters keep click-to-attack.** Fixed at the
+  click rather than in `UpdateAutoAttack`, because auto-hunt deliberately DOES walk a caster in (for SPELL
+  range) and still melees if you tick its Basic Attack row — gating the chase server-side would have
+  broken that.
+
+- [x] **Movable popups — DONE 2026-07-14.** Every popup gets a drag strip, a ✕, and **click-to-raise**
+  (the other half of "the Debug window is covering my inventory" — you can now bring one to the front).
+  Built as ONE reusable chrome applied at runtime (`MainWindow.PanelChrome.cs`) rather than authored into
+  thirteen Borders in XAML: one copy of the drag code, a new panel opts in with a single line, and each
+  panel keeps its authored home position (it is nudged from there by a `RenderTransform`, so no layout
+  churn). `EquipPopup` gets its real close action, since its ✕ must also clear the item it is acting on.
 
 ## NEXT (clear, mostly self-contained — can do without owner input)
 
