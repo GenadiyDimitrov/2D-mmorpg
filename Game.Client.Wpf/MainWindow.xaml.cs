@@ -650,8 +650,20 @@ public partial class MainWindow : Window
         return w.Length <= 3 ? w : w.Substring(0, 3);
     }
 
+    private bool _skillBarDragWired;
+
     private void RenderSkillBar()
     {
+        // Wire the PANEL once (RenderSkillBar runs on every stats push — subscribing per-render would
+        // stack handlers). The panel catches the 3px gaps between slots, so a drag that crosses one
+        // still gets its move events instead of stalling.
+        if (!_skillBarDragWired)
+        {
+            _skillBarDragWired = true;
+            SkillBar.PreviewMouseMove += (_, e) => SkillSlot_MouseMove(e);
+            SkillBar.PreviewMouseLeftButtonUp += (_, _) => _dragFromIndex = -1;
+        }
+
         SkillBar.Children.Clear();
         _skillSlots.Clear();
 
@@ -666,17 +678,20 @@ public partial class MainWindow : Window
                 Padding = new Thickness(0), AllowDrop = true
             };
 
-            // Each square is a drag SOURCE and a drop TARGET so skills can be
-            // rearranged between slots (including onto empty slots).
-            button.PreviewMouseLeftButtonDown += (_, e) => _dragStart = e.GetPosition(this);
-            button.MouseMove += (s, e) => SkillSlot_MouseMove(slotIndex, s, e);
+            // Each square is a drag SOURCE and a drop TARGET so skills can be rearranged between
+            // slots (including onto empty slots). The MOVE handler deliberately does not pass
+            // slotIndex — the drag origin comes from mouse-DOWN only. See SkillSlot_MouseMove.
+            button.PreviewMouseLeftButtonDown += (_, e) => SkillSlot_MouseDown(slotIndex, e);
+            button.PreviewMouseMove += (_, e) => SkillSlot_MouseMove(e);
             button.DragOver += SkillSlot_DragOver;
             button.Drop += (_, e) => SkillSlot_Drop(slotIndex, e);
 
+            // Slot buttons keep the default (light) WPF chrome, so the text on them must be DARK.
+            // Both of these used to be near-white — unreadable on a light-grey button.
             var hk = new TextBlock
             {
                 Text = HotkeyLabel(hotkey),
-                Foreground = Brushes.LightGray, FontSize = 9,
+                Foreground = Brushes.DimGray, FontSize = 9,   // subordinate to the abbreviation, but legible
                 HorizontalAlignment = HorizontalAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Top,
                 Margin = new Thickness(3, 1, 0, 0), IsHitTestVisible = false
@@ -687,7 +702,7 @@ public partial class MainWindow : Window
                 var abbrev = new TextBlock
                 {
                     Text = SkillAbbrev(def),
-                    Foreground = Brushes.White, FontSize = 15, FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.Black, FontSize = 15, FontWeight = FontWeights.Bold,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false
                 };
@@ -736,28 +751,63 @@ public partial class MainWindow : Window
     }
 
     // ---- Skill-bar drag & drop (rearrange slots) --------------------------
+    //
+    // WHY THIS LOOKS PARANOID (it is fixing a real, reproduced bug):
+    //
+    // A WPF Button CAPTURES the mouse on press. Two things follow, and together they were the
+    // whole drag-and-drop bug:
+    //
+    //   1. Calling DragDrop.DoDragDrop from a control that currently holds capture is unreliable —
+    //      the drag often just doesn't start. That was the "it's very hard to even begin a drag".
+    //   2. When that capture IS lost, MouseMove stops being routed to the button you pressed and
+    //      starts going to whatever button is now UNDER THE CURSOR. That button's handler then fires
+    //      with ITS OWN slot index — so the drag picks up the skill you dragged ONTO, not the one you
+    //      grabbed. That was "it moves a different skill", and why the next attempt grabbed yet
+    //      another one.
+    //
+    // So we must NOT trust the slot index of whichever button happens to raise MouseMove. The origin
+    // is recorded once, at mouse-DOWN (_dragFromIndex), and every later step reads that. We also drop
+    // capture before starting the drag so it begins on the first move. Carrying the skill id in the
+    // payload (the previous attempt at a fix) could never work: the WRONG id was being picked up in
+    // the first place. We still carry it, because it also guards the other hazard — a re-render
+    // mid-drag (level-up / class change / server stats push all call RenderSkillBar) invalidating the
+    // index before the drop lands.
     private Point _dragStart;
+    private int _dragFromIndex = -1;
 
-    /// <summary>The slot the current drag started from, and the skill that was in it. We carry
-    /// the SKILL ID, not just the index: a bare int payload only says "some slot", and if the
-    /// bar re-rendered mid-drag (a level-up, a class change, a server stats push — all of which
-    /// call RenderSkillBar) that index could refer to different contents by the time it landed,
-    /// so the wrong skill moved. Now the drop re-locates the source by identity and bails if it
-    /// no longer holds what we picked up.</summary>
     private const string SkillDragFormat = "L2Clone.SkillBarSlot";
     private sealed record SkillDrag(int FromIndex, string SkillId);
 
-    private void SkillSlot_MouseMove(int fromIndex, object sender, MouseEventArgs e)
+    /// <summary>Mouse-down on a slot: remember WHERE and WHICH SLOT the gesture started on. This is
+    /// the only place the drag origin is ever established.</summary>
+    private void SkillSlot_MouseDown(int slotIndex, MouseButtonEventArgs e)
     {
-        if (e.LeftButton != MouseButtonState.Pressed) return;
-        if (_skillBar[fromIndex] is not string skillId) return;
+        _dragStart = e.GetPosition(this);
+        _dragFromIndex = slotIndex;
+    }
+
+    /// <summary>Deliberately ignores the slot index of the button that raised this event — see the
+    /// note above. The origin is <see cref="_dragFromIndex"/>, captured at mouse-down.</summary>
+    private void SkillSlot_MouseMove(MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed) { _dragFromIndex = -1; return; }
+        if (_dragFromIndex < 0 || _dragFromIndex >= _skillBar.Length) return;
+        if (_skillBar[_dragFromIndex] is not string skillId) return;
+
         var pos = e.GetPosition(this);
         if (Math.Abs(pos.X - _dragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
             Math.Abs(pos.Y - _dragStart.Y) < SystemParameters.MinimumVerticalDragDistance)
             return;
 
+        int fromIndex = _dragFromIndex;
+        _dragFromIndex = -1;              // one drag per press; don't re-enter while DoDragDrop pumps
+
+        // The pressed Button still holds capture, and DoDragDrop is unreliable from a captured
+        // element. Hand it back before starting the drag.
+        if (Mouse.Captured is not null) Mouse.Capture(null);
+
         var data = new DataObject(SkillDragFormat, new SkillDrag(fromIndex, skillId));
-        DragDrop.DoDragDrop((DependencyObject)sender, data, DragDropEffects.Move);
+        DragDrop.DoDragDrop(SkillBar, data, DragDropEffects.Move);
     }
 
     private void SkillSlot_DragOver(object sender, DragEventArgs e)

@@ -2397,7 +2397,9 @@ public partial class MainWindow
         DebugList.Children.Add(DebugAction("Level +10", async () => { for (int i = 0; i < 10; i++) await _net.DebugLevelAsync(); }));
         DebugList.Children.Add(DebugAction("Learn all skills (to my level)", async () => await _net.DebugLearnAllAsync()));
         DebugList.Children.Add(DebugAction("+1kk SP", async () => await _net.DebugSpAsync(1_000_000)));
-        DebugList.Children.Add(DebugAction("+100,000 Gold", async () => await _net.DebugGoldAsync(100_000)));
+        // 10kk, not 100k: the level-40 stat swaps cost 1kk-5kk per level (15kk to max one), so the
+        // old button could not fund a single meaningful purchase to test with.
+        DebugList.Children.Add(DebugAction("+10,000,000 Gold", async () => await _net.DebugGoldAsync(10_000_000)));
 
         // Re-roll the SAME character: pick race + base class; resets to level 1 with
         // the starter kit (classes/skills/quests/inventory cleared). No relog needed.

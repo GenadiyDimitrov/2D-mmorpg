@@ -97,16 +97,35 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 - [ ] **Skill bar + auto-farm/auto-potion settings are CHARACTER data → move to the DB.**
   `client-settings.json` keeps window position/size ONLY. (Skill bar is per-CLASS, auto-hunt is
   per-CHARACTER — lay it out per [[subclass-system-design]] so subclasses don't force a rewrite.)
-- [ ] Debug: **100k gold button → 10kk**; debug **race/class change must NOT wipe inventory**
-  (owner reversed his earlier request).
+- [x] **Debug: 100k gold button -> 10kk — DONE 2026-07-14.** (100k could not fund a single stat swap,
+  which costs 1kk-5kk per level.) **Debug race/class change now KEEPS the inventory** (owner reversed
+  his earlier request): everything is UNEQUIPPED instead, and the starter kit only tops up pieces you
+  do not already own, so repeated re-rolls do not silt the bag up with duplicate newbie boxes.
 
-- [ ] **BUG: skill-bar drag & drop.** Still broken — a drag is very hard to even start, and when it
-  does start it moves a DIFFERENT skill than the one grabbed. Hardening it blind last session did
-  not work; needs a real repro or a rewrite of the drag source/drop target.
+- [x] **BUG: skill-bar drag & drop — ROOT-CAUSED AND FIXED 2026-07-14.** A WPF `Button` CAPTURES the
+  mouse on press, and that single fact produced BOTH symptoms:
+  1. `DragDrop.DoDragDrop` is unreliable when called from a control that holds capture -> "a drag is
+     very hard to even start".
+  2. Once that capture IS lost, `MouseMove` stops being routed to the button you pressed and goes to
+     whatever button is now UNDER THE CURSOR — whose handler fired with ITS OWN slot index and so
+     dragged **its own** skill -> "it moves a DIFFERENT skill than the one grabbed", and why the next
+     attempt grabbed yet another one.
+  Last session's fix (carry the skill id in the drag payload) could never have worked: the WRONG id
+  was being picked up in the first place. Now the drag origin is recorded ONCE at mouse-DOWN
+  (`_dragFromIndex`) and never re-read from whichever button raises the move event, and capture is
+  released before `DoDragDrop`. The payload still carries the skill id — that guards the OTHER hazard
+  (a re-render mid-drag invalidating the index before the drop lands).
+  ⚠ **Not click-tested** — WPF cannot be driven from the agent here. Needs the owner's hands.
+
 - [ ] **BUG: set info missing from the item window** — can't see what a set needs or how many pieces
   are worn. Reported as built 2026-07-13; it is not working.
-- [ ] **BUG: "Learn all skills"** learns every stat-swap passive (they cancel out — must respect the
-  exclusivity rule: take the first, skip whatever it bans) and still **reshuffles the skill bar**.
+- [x] **BUG: "Learn all skills" granted every stat-swap passive — FIXED 2026-07-14** (see the
+  direction-rule entry above; it now grants NO swaps and says so).
+- [ ] **BUG: "Learn all skills" still reshuffles the skill bar.** NOT fixed. `AutoPlaceNewSkills`
+  re-fills the bar from the learned set on every `SendLearned`, and the saved layout lives in
+  `client-settings.json` keyed by character NAME, loaded behind a `_skillBarLoaded` latch that can
+  lose a race with the first `SendLearned`. **Fix this as part of moving the skill bar into the DB**
+  (the item below) rather than patching the settings-file path that is about to be deleted.
 
 - [ ] **Sub-class groundwork** (deferred, don't restructure later) — one character, several classes,
   each with its own level/XP/skills/skill-bar; inventory + auto-hunt stay character-wide; debug

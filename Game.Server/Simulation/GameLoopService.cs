@@ -1409,9 +1409,14 @@ public class GameLoopService : BackgroundService
         SaveEntity(player);
     }
 
-    /// <summary>DEBUG: re-roll the SAME character in place — new race/base class,
-    /// back to level 1 with the starter kit, classes/skills/quests/inventory cleared.
-    /// Keeps the character row, name, gold and position.</summary>
+    /// <summary>DEBUG: re-roll the SAME character in place — new race/base class, back to level 1,
+    /// classes/skills/quests cleared. Keeps the character row, name, gold and position.
+    ///
+    /// The INVENTORY is deliberately KEPT (owner reversed the earlier "wipe it" call): you re-roll to
+    /// test another class, and losing the gear you built up each time made that painful. Everything is
+    /// UNEQUIPPED instead — the old class's kit is usually wrong for the new one — and the starter kit
+    /// is topped up only with the pieces you don't already own, so repeated re-rolls don't silt the
+    /// bag up with duplicate newbie boxes.</summary>
     private void HandleDebugReset(DebugResetCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player))
@@ -1431,8 +1436,8 @@ public class GameLoopService : BackgroundService
         player.ActiveQuests.Clear();
         player.CompletedQuests.Clear();
         player.Buffs.Clear();
-        player.Inventory.Clear();
-        GiveStarterKit(player);
+        foreach (var item in player.Inventory) item.Equipped = false;
+        GiveStarterKit(player, skipOwned: true);
 
         AutoLearnCoreSkills(player);
         player.RecomputeDerived();
@@ -1479,21 +1484,30 @@ public class GameLoopService : BackgroundService
 
     /// <summary>Grant the new-character starter kit to a live entity (mirrors
     /// PersistenceService.CreateCharacterAsync). Items arrive unequipped.</summary>
-    private void GiveStarterKit(Entity player)
+    /// <summary><paramref name="skipOwned"/> = only hand over pieces the player does not already have.
+    /// Used by the debug re-roll, which now KEEPS the inventory: a fighter re-rolled into a mage should
+    /// gain the staff he lacks without collecting a second copy of every newbie box he already holds.</summary>
+    private void GiveStarterKit(Entity player, bool skipOwned = false)
     {
+        void Give(string defId, int qty = 1)
+        {
+            if (skipOwned && player.Inventory.Any(i => i.DefId == defId)) return;
+            AddItem(player, defId, qty);
+        }
+
         if (player.BaseClass == BaseClass.Mage)
         {
-            AddItem(player, ItemCatalog.NewbieStaff);
-            AddItem(player, ItemCatalog.BoxNewbieArmorRobe);
+            Give(ItemCatalog.NewbieStaff);
+            Give(ItemCatalog.BoxNewbieArmorRobe);
         }
         else
         {
-            AddItem(player, ItemCatalog.BoxNewbieWeapons);   // selection box: pick 2
-            AddItem(player, ItemCatalog.BoxNewbieArmorLight);
+            Give(ItemCatalog.BoxNewbieWeapons);   // selection box: pick 2
+            Give(ItemCatalog.BoxNewbieArmorLight);
         }
-        AddItem(player, ItemCatalog.BoxNewbieJewels);
-        AddItem(player, ItemCatalog.MinorPotion, 5);
-        AddItem(player, ItemCatalog.GreaterPotion, 2);
+        Give(ItemCatalog.BoxNewbieJewels);
+        Give(ItemCatalog.MinorPotion, 5);
+        Give(ItemCatalog.GreaterPotion, 2);
     }
 #pragma warning restore CS1998
 

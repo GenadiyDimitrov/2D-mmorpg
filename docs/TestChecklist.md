@@ -35,6 +35,30 @@ If it's still hot, the lever is `MobBaseStats.MDef` (the ~3·lvl slope) or the t
 
 ---
 
+## SKILL BAR + DEBUG (2026-07-14)
+
+- [ ] **Skill-bar text is readable.** Abbreviations were white-on-light-grey (invisible); now black.
+      The little hotkey numbers were light-grey on light-grey — also fixed (now dim grey).
+      *(The cooldown countdown is still gold — say if that one is hard to read too.)*
+- [ ] **DRAG & DROP — the real fix.** Root cause found: a WPF `Button` CAPTURES the mouse on press,
+      and (a) `DoDragDrop` is unreliable from a captured element → "hard to even start a drag", and
+      (b) once capture is lost, `MouseMove` goes to the button UNDER THE CURSOR, whose handler dragged
+      **its own** skill → "it moves a different skill than the one I grabbed". The drag origin is now
+      recorded once at mouse-DOWN and never re-read from whichever button raises the move event, and
+      capture is released before the drag starts. **⚠ I cannot click-test WPF from here — this needs
+      your hands.** Check: drag starts on the first small movement; the skill that moves is the one
+      you grabbed; a second drag behaves the same; a plain click still CASTS (doesn't drag); a drag
+      does NOT also cast the skill on release.
+- [ ] **Debug gold button is now +10,000,000** (was 100k — couldn't fund even one stat swap, which
+      cost 1kk-5kk per level).
+- [ ] **Debug race/class change KEEPS your inventory** (you reversed the earlier "wipe it" call).
+      Everything is UNEQUIPPED (the old class's kit is usually wrong for the new one) and the starter
+      kit only tops up pieces you don't already own — so re-rolling repeatedly doesn't fill the bag
+      with duplicate newbie boxes. Check: re-roll fighter → mage, gear survives, you gain the newbie
+      staff but not a second jewel box.
+
+---
+
 ## STAT-SWAP DIRECTION RULE (2026-07-14)
 
 Each stat now commits to ONE direction: you cannot raise a stat you have sold, nor sell a stat you
