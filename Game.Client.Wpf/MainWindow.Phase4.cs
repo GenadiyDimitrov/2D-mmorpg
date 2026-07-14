@@ -1544,16 +1544,25 @@ public partial class MainWindow
                     _skillWindowCooldowns.Add((id, cd));
                 }
 
+                // An explicit DETAILS button rather than "the name is secretly clickable" — an
+                // invisible hit-target is not discoverable, and it sat on top of the row swallowing
+                // mouse events.
+                string detailId = def.Id;
+                var details = new Button
+                {
+                    Content = "Details", Height = 24, Width = 60, FontSize = 10,
+                    Margin = new Thickness(0, 0, 4, 0)
+                };
+                details.Click += (_, _) => OpenSkillDetail(detailId);
+                DockPanel.SetDock(details, Dock.Right);
+                row.Children.Add(details);
+
                 var name = new TextBlock
                 {
                     Text = SkillDisplayName(def.Id, def.Name),
                     Foreground = Brushes.White, FontSize = 13,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Cursor = System.Windows.Input.Cursors.Hand,
-                    ToolTip = "Click for details"
+                    VerticalAlignment = VerticalAlignment.Center
                 };
-                string detailId = def.Id;
-                name.MouseLeftButtonUp += (_, _) => OpenSkillDetail(detailId);
                 row.Children.Add(name);
                 SkillsList.Items.Add(row);
             }
@@ -1728,9 +1737,15 @@ public partial class MainWindow
     /// duration, plus a human-readable buff/passive bonus summary.</summary>
     private string SkillDetail(SkillDef def)
     {
+        // Report the LEVEL YOU ACTUALLY KNOW, not the SkillDef's level-1 defaults. Elemental Bolt now
+        // runs to 13 levels (power 37 → 116), so showing the base row told you almost nothing.
+        int lvl = Math.Max(1, _learnedLevels.GetValueOrDefault(def.Id));
+
         var lines = new List<string>();
         if (!string.IsNullOrWhiteSpace(def.Description))
             lines.Add(def.Description);
+        if (def.MaxLevel > 1)
+            lines.Add($"Level {lvl} of {def.MaxLevel}");
 
         if (IsPassive(def))
         {
@@ -1739,6 +1754,11 @@ public partial class MainWindow
             if (ps.Count > 0) lines.Add(string.Join(",  ", ps));
             return string.Join("\n", lines);
         }
+
+        // POWER — the number that decides the damage/heal, and it was simply never shown.
+        int power = def.PowerAt(lvl);
+        if (power > 0)
+            lines.Add($"Power: {power}");
 
         // Cast: base (real). "real" folds in WIT/gear/masteries/buffs from the
         // latest stats update; a moving multiplier so it tracks your current speed.
@@ -1753,7 +1773,7 @@ public partial class MainWindow
             lines.Add("Cast: instant");
         }
 
-        lines.Add($"Cooldown: {def.CooldownTicks * GameConstants.TickSeconds:0}s    MP: {def.MpCost}");
+        lines.Add($"Cooldown: {def.CooldownTicks * GameConstants.TickSeconds:0}s    MP: {def.MpCostAt(lvl)}");
         if (def.Range > 0) lines.Add($"Range: {def.Range:0}");
         if (def.DurationTicks > 0)
             lines.Add($"Duration: {def.DurationTicks * GameConstants.TickSeconds:0}s");

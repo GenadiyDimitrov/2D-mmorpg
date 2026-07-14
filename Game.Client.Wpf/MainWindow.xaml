@@ -12,6 +12,19 @@
                 ClipToBounds="True"
                 MouseLeftButtonDown="WorldCanvas_MouseLeftButtonDown"/>
 
+        <!-- Opaque backdrop for the login / character-select screens. Without it you could see the
+             live world (and the mobs still moving in it) behind the panels. It sits above the world
+             canvas but below every panel declared after it. -->
+        <Rectangle x:Name="MenuBackdrop">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0.6,1">
+                    <GradientStop Color="#FF0C1119" Offset="0"/>
+                    <GradientStop Color="#FF16202C" Offset="0.55"/>
+                    <GradientStop Color="#FF0A0E14" Offset="1"/>
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
         <Border x:Name="ClockPanel" HorizontalAlignment="Center" VerticalAlignment="Top"
                 Margin="0,8,0,0" Padding="12,4" CornerRadius="6"
                 Background="#60000000" Visibility="Collapsed">
@@ -25,7 +38,9 @@
             </StackPanel>
         </Border>
 
-        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12,8,0,0" Width="240">
+        <!-- Player HUD (HP/MP/EXP + buff rows). Named so it can be hidden wholesale when we drop
+             back to character select — it used to stay on screen over the char-select panel. -->
+        <StackPanel x:Name="HudPanel" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12,8,0,0" Width="240">
             <TextBlock x:Name="StatusText" Foreground="#FFD8E0E6"
                        FontFamily="Consolas" FontSize="12" Text="Not connected" Margin="0,0,0,4"/>
 
@@ -591,6 +606,11 @@
                 <TextBlock DockPanel.Dock="Top" Text="Select Character"
                            Foreground="White" FontSize="20" FontWeight="Bold"
                            HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                <!-- Log out of the ACCOUNT (back to the login screen). Char select previously had no
+                     way out except closing the window. -->
+                <Button DockPanel.Dock="Bottom" x:Name="CharSelectLogoutButton"
+                        Content="Log Out" Height="30" Margin="0,6,0,0"
+                        Click="CharSelectLogout_Click"/>
                 <Button DockPanel.Dock="Bottom" x:Name="NewCharacterButton"
                         Content="Create New Character" Height="34" Margin="0,12,0,0"
                         FontWeight="SemiBold" Click="NewCharacter_Click"/>

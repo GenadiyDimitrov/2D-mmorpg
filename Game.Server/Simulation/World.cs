@@ -240,6 +240,11 @@ public record SetAutoHuntConfigCmd(string ConnectionId, AutoHuntConfigDto Config
 
 /// <summary>Client -> server: the player rearranged their skill bar; persist the new layout.</summary>
 public record SetSkillBarCmd(string ConnectionId, string[] Slots) : IGameCommand;
+
+/// <summary>Client -> server: DELIBERATELY leave the world and go back to character select, keeping
+/// the connection. Distinct from <see cref="LeaveCommand"/>, which is the DISCONNECT path (link-dead
+/// grace / offline farming) — a deliberate exit must actually remove the character from the world.</summary>
+public record LeaveWorldCmd(string ConnectionId) : IGameCommand;
 public record ToggleAutoHuntCmd(string ConnectionId, bool Enabled) : IGameCommand;
 public record LogoutCmd(string ConnectionId) : IGameCommand;
 public record StartOfflineFarmCmd(string ConnectionId) : IGameCommand;

@@ -16,6 +16,19 @@ public class PersistenceService
 {
     private readonly IDbContextFactory<GameDbContext> _factory;
 
+    /// <summary>Character saves run SERIALLY, never concurrently.
+    ///
+    /// <see cref="ApplySnapshot"/> rebuilds a character's item set wholesale
+    /// (<c>db.Items.RemoveRange(rec.Items)</c> then re-add). Saves are fired off the tick thread onto
+    /// the thread pool, so two of them could overlap for the SAME character: both load items
+    /// [i1, i2], both queue DELETE i1/i2, the first commits, and the second's DELETE then affects 0
+    /// rows → <c>DbUpdateConcurrencyException</c> and the whole save is LOST. That is silent data
+    /// loss, and it fired constantly once the skill bar started saving on every rearrangement.
+    ///
+    /// SQLite is a single-writer store anyway, so there is nothing to gain from parallel writes.
+    /// One gate for every save path keeps it correct no matter how many call sites appear later.</summary>
+    private readonly SemaphoreSlim _saveGate = new(1, 1);
+
     public PersistenceService(IDbContextFactory<GameDbContext> factory) => _factory = factory;
 
     public async Task EnsureCreatedAsync()
@@ -404,15 +417,20 @@ public class PersistenceService
     /// Replaces the item set wholesale — simplest correct approach for now.</summary>
     public async Task SaveCharacterAsync(CharacterSnapshot snap)
     {
-        await using var db = await _factory.CreateDbContextAsync();
-        var rec = await db.Characters
-            .Include(c => c.Items).ThenInclude(i => i.Attributes)
-            .FirstOrDefaultAsync(c => c.Id == snap.CharacterId);
-        if (rec is null)
-            return;
+        await _saveGate.WaitAsync();          // see _saveGate: overlapping saves lose data
+        try
+        {
+            await using var db = await _factory.CreateDbContextAsync();
+            var rec = await db.Characters
+                .Include(c => c.Items).ThenInclude(i => i.Attributes)
+                .FirstOrDefaultAsync(c => c.Id == snap.CharacterId);
+            if (rec is null)
+                return;
 
-        ApplySnapshot(db, rec, snap);
-        await db.SaveChangesAsync();
+            ApplySnapshot(db, rec, snap);
+            await db.SaveChangesAsync();
+        }
+        finally { _saveGate.Release(); }
     }
 
     /// <summary>Batched periodic save: one DbContext, one SaveChanges for the whole
@@ -422,16 +440,21 @@ public class PersistenceService
         if (snaps.Count == 0)
             return;
 
-        await using var db = await _factory.CreateDbContextAsync();
-        foreach (var snap in snaps)
+        await _saveGate.WaitAsync();          // see _saveGate: overlapping saves lose data
+        try
         {
-            var rec = await db.Characters
-                .Include(c => c.Items).ThenInclude(i => i.Attributes)
-                .FirstOrDefaultAsync(c => c.Id == snap.CharacterId);
-            if (rec is not null)
-                ApplySnapshot(db, rec, snap);
+            await using var db = await _factory.CreateDbContextAsync();
+            foreach (var snap in snaps)
+            {
+                var rec = await db.Characters
+                    .Include(c => c.Items).ThenInclude(i => i.Attributes)
+                    .FirstOrDefaultAsync(c => c.Id == snap.CharacterId);
+                if (rec is not null)
+                    ApplySnapshot(db, rec, snap);
+            }
+            await db.SaveChangesAsync();
         }
-        await db.SaveChangesAsync();
+        finally { _saveGate.Release(); }
     }
 
     /// <summary>Copy a snapshot onto a tracked record (no SaveChanges — caller batches).</summary>

@@ -119,6 +119,7 @@ public class GameLoopService : BackgroundService
                 case PartyLootVoteCmd c: HandlePartyLootVote(c); break;
                 case SetAutoHuntConfigCmd c: HandleSetAutoHuntConfig(c); break;
                 case SetSkillBarCmd c: HandleSetSkillBar(c); break;
+                case LeaveWorldCmd c: HandleLeaveWorld(c); break;
                 case ToggleAutoHuntCmd c: HandleToggleAutoHunt(c); break;
                 case LogoutCmd c: HandleLogout(c); break;
                 case StartOfflineFarmCmd c: HandleStartOfflineFarm(c); break;
@@ -291,6 +292,19 @@ public class GameLoopService : BackgroundService
             return;
         e.IsDisconnected = false;
         NormalLeave(e);
+    }
+
+    /// <summary>Back to character select. A DELIBERATE exit: the character really leaves the world, so
+    /// you can walk straight back in as the same character. (The DISCONNECT path — LeaveCommand — is
+    /// the one that keeps you in the world offline-farming or link-dead; routing char-select through
+    /// it left a ghost behind that then refused your own re-entry for 180 seconds.)</summary>
+    private void HandleLeaveWorld(LeaveWorldCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+        _world.ConnectionToEntity.Remove(cmd.ConnectionId);
+        _world.EntityToConnection.Remove(player.Id);
+        NormalLeave(player);
     }
 
     private void HandleLogout(LogoutCmd cmd)

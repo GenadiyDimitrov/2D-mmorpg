@@ -93,9 +93,14 @@ public class GameHub : Hub
         if (!Sessions.TryGetValue(Context.ConnectionId, out var auth))
             return new LoginResult(false, "Not logged in.", Guid.Empty, 0, 0);
 
-        // Reject if this character is already in the world.
+        // Reject only if the character is GENUINELY online on another connection. An entity that is
+        // offline-farming or sitting in the link-dead grace is still in the world, but re-entering it
+        // is a RECONNECT — HandleEnterWorld already re-attaches to that live entity. This guard used
+        // to reject those too, which (a) made that reconnect path dead code and (b) locked you out of
+        // your own character for the 180s grace after returning to character select.
         if (_world.Entities.Values.Any(e =>
-                e.Kind == EntityKind.Player && e.PersistentId == request.CharacterId))
+                e.Kind == EntityKind.Player && e.PersistentId == request.CharacterId
+                && !e.IsOfflineFarming && !e.IsDisconnected))
             return new LoginResult(false, "That character is already online.", Guid.Empty, 0, 0);
 
         var entity = await _db.LoadCharacterAsync(auth.AccountId, request.CharacterId);
@@ -115,10 +120,13 @@ public class GameHub : Hub
             : new LoginResult(false, "Server busy, try again.", Guid.Empty, 0, 0);
     }
 
-    /// <summary>Leave the world but keep the connection (return to char select).</summary>
+    /// <summary>Leave the world but keep the connection (return to char select). This is a DELIBERATE
+    /// exit, so it must NOT go through LeaveCommand — that is the DISCONNECT path, which parks the
+    /// character in a 180s link-dead grace (or offline-farming). Doing that on a char-select left the
+    /// entity in the world and then refused to let you back into your own character.</summary>
     public Task LeaveWorld()
     {
-        _world.Commands.Enqueue(new LeaveCommand(Context.ConnectionId));
+        _world.Commands.Enqueue(new LeaveWorldCmd(Context.ConnectionId));
         return Task.CompletedTask;
     }
 

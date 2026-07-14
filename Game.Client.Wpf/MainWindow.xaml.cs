@@ -365,6 +365,8 @@ public partial class MainWindow : Window
             CreatePanel.Visibility = Visibility.Collapsed;
             AccountPanel.Visibility = Visibility.Collapsed;
 
+            MenuBackdrop.Visibility = Visibility.Collapsed;   // reveal the world again
+            HudPanel.Visibility = Visibility.Visible;
             ChatPanel.Visibility = Visibility.Visible;
             ChatToggle.Visibility = Visibility.Visible;
             SkillsButton.Visibility = Visibility.Visible;
@@ -436,8 +438,23 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>Log out of the ACCOUNT from character select, back to the login screen. Char select
+    /// previously had no way out at all — you had to close the window.</summary>
+    private void CharSelectLogout_Click(object sender, RoutedEventArgs e)
+    {
+        _myName = "";
+        CharacterSlots.Children.Clear();
+        LoginError.Visibility = Visibility.Collapsed;
+        ShowAccountPanel();
+    }
+
     private void ShowAccountPanel()
     {
+        MenuBackdrop.Visibility = Visibility.Visible;   // never show the live world behind a menu
+        HudPanel.Visibility = Visibility.Collapsed;
+        AutoHuntButton.Visibility = Visibility.Collapsed;
+        PvpButton.Visibility = Visibility.Collapsed;
+        CounterButton.Visibility = Visibility.Collapsed;
         AccountPanel.Visibility = Visibility.Visible;
         CharacterSelectPanel.Visibility = Visibility.Collapsed;
         CreatePanel.Visibility = Visibility.Collapsed;
@@ -479,7 +496,13 @@ public partial class MainWindow : Window
         _classQuestNoticeShown = false;
         _thirdClassNoticeShown = false;
 
-        // Hide every in-game button / panel / overlay.
+        // Hide every in-game button / panel / overlay, and put an opaque backdrop over the world —
+        // the char-select screen used to sit on top of the LIVE world with the HUD still showing.
+        MenuBackdrop.Visibility = Visibility.Visible;
+        HudPanel.Visibility = Visibility.Collapsed;      // HP / MP / EXP bars + buff rows
+        AutoHuntButton.Visibility = Visibility.Collapsed;
+        PvpButton.Visibility = Visibility.Collapsed;
+        CounterButton.Visibility = Visibility.Collapsed;
         ChatPanel.Visibility = Visibility.Collapsed;
         SkillsButton.Visibility = Visibility.Collapsed;
         StatsButton.Visibility = Visibility.Collapsed;
@@ -695,10 +718,25 @@ public partial class MainWindow : Window
             int slotIndex = i;
             int hotkey = i + 1;
 
-            var button = new Button
+            // A BORDER, NOT A BUTTON.
+            //
+            // This is the third attempt at the drag bug, and the previous two failed for the same
+            // reason: WPF's ButtonBase CAPTURES the mouse on press. A captured element makes
+            // DragDrop.DoDragDrop unreliable ("the drag is very hard to even start"), and when that
+            // capture is lost the move events go to whatever slot is under the CURSOR instead of the
+            // one you pressed ("it moves a different skill than the one I grabbed"). You cannot fight
+            // ButtonBase's capture from the outside — so the slot is no longer a Button at all.
+            //
+            // A Border has no click semantics and takes no capture. Cast (left) and remove-from-bar
+            // (right) are wired by hand below, which is all the Button was giving us anyway.
+            var button = new Border
             {
                 Width = 46, Height = 46, Margin = new Thickness(3),
-                Padding = new Thickness(0), AllowDrop = true
+                CornerRadius = new CornerRadius(4),
+                BorderThickness = new Thickness(1),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0x5A, 0x6A, 0x80)),
+                Background = new SolidColorBrush(Color.FromRgb(0xC8, 0xCF, 0xD6)),
+                AllowDrop = true,
             };
 
             // Each square is a drag SOURCE and a drop TARGET so skills can be rearranged between
@@ -709,8 +747,7 @@ public partial class MainWindow : Window
             button.DragOver += SkillSlot_DragOver;
             button.Drop += (_, e) => SkillSlot_Drop(slotIndex, e);
 
-            // Slot buttons keep the default (light) WPF chrome, so the text on them must be DARK.
-            // Both of these used to be near-white — unreadable on a light-grey button.
+            // The slot face is LIGHT, so the text on it must be DARK.
             var hk = new TextBlock
             {
                 Text = HotkeyLabel(hotkey),
@@ -743,13 +780,21 @@ public partial class MainWindow : Window
                 grid.Children.Add(abbrev);
                 grid.Children.Add(cd);
                 grid.Children.Add(hk);
-                button.Content = grid;
+                button.Child = grid;
 
                 var slot = new SkillSlot { Def = def, Button = button, Key = hotkey, CooldownText = cd };
                 // Carry the running cooldown across the rebuild (see _skillReadyAt).
                 if (_skillReadyAt.TryGetValue(def.Id, out double readyAt)) slot.ReadyAt = readyAt;
-                // Left-click = cast; right-click = remove from bar.
-                button.Click += (_, _) => UseSkill(slot);
+
+                // Left-click = cast, right-click = take off the bar. Hand-wired because the slot is a
+                // Border now, not a Button. The cast fires on mouse-UP and ONLY if no drag happened —
+                // otherwise finishing a drag would also cast the skill you just moved.
+                button.MouseLeftButtonUp += (_, _) =>
+                {
+                    if (_dragFromIndex < 0) return;   // a drag consumed this gesture
+                    _dragFromIndex = -1;
+                    UseSkill(slot);
+                };
                 button.MouseRightButtonUp += (_, _) => RemoveSkillFromBar(slotIndex);
                 // Bar tooltip = name + description only (full timings in the Skills window).
                 button.ToolTip = $"{SkillDisplayName(def.Id, def.Name)}\n{def.Description}".TrimEnd();
@@ -759,7 +804,7 @@ public partial class MainWindow : Window
             {
                 var grid = new Grid { Background = Brushes.Transparent }; // keep hit-testable for drop
                 grid.Children.Add(hk);
-                button.Content = grid;
+                button.Child = grid;
                 button.Opacity = 0.4;
             }
 
@@ -871,6 +916,7 @@ public partial class MainWindow : Window
 
         slot.ReadyAt = now + slot.Def.CooldownTicks * GameConstants.TickSeconds;
         _skillReadyAt[slot.Def.Id] = slot.ReadyAt;   // keyed by SKILL, so it survives a re-render/move
+        LogSkillUse(SkillDisplayName(slot.Def.Id, slot.Def.Name));
         await _net.UseSkillAsync(slot.Def.Id, _targetId);
     }
 
@@ -1258,32 +1304,116 @@ public partial class MainWindow : Window
         if (anchor is null)
             return;
 
+        LogCombatToSystem(evt);
+
+        bool onMe = evt.TargetId == _myId;
+
+        // NO "!" suffix on crits. "8000!" reads as 80000 — the owner genuinely misread an 8k crit as
+        // 80k. A crit is signalled by SIZE and COLOUR instead, never by a character glued to a number.
         (string text, Brush brush) = evt.Outcome switch
         {
-            CombatOutcome.Miss => ("miss", Brushes.Gray),
-            CombatOutcome.Fail => ("fail", Brushes.MediumPurple),
-            CombatOutcome.Crit => ($"{evt.Damage}!", Brushes.Orange),
-            CombatOutcome.Heal => ($"+{evt.Damage}", Brushes.LightGreen),
+            CombatOutcome.Miss     => ("miss", Brushes.Gray),
+            CombatOutcome.Fail     => ("resist", Brushes.MediumPurple),
+            CombatOutcome.Crit     => (evt.Damage.ToString(),
+                                       onMe ? Brushes.DarkRed : Brushes.Lime),
+            CombatOutcome.Heal     => ($"+{evt.Damage}", Brushes.Orange),
             CombatOutcome.ManaHeal => ($"+{evt.Damage} MP", Brushes.DeepSkyBlue),
-            CombatOutcome.Buff => (evt.Skill ?? "buff", Brushes.LightSkyBlue),
-            CombatOutcome.Block => ($"{evt.Damage} (block)", Brushes.LightSteelBlue),
-            _ => (evt.Damage.ToString(),
-                  evt.TargetId == _myId ? Brushes.OrangeRed : Brushes.White)
+            CombatOutcome.Buff     => (evt.Skill ?? "buff", Brushes.LightSkyBlue),
+            CombatOutcome.Block    => ($"{evt.Damage} (block)", Brushes.LightSteelBlue),
+            _                      => (evt.Damage.ToString(),
+                                       onMe ? Brushes.OrangeRed : Brushes.White)
         };
 
         var tb = new TextBlock
         {
             Text = text, Foreground = brush,
-            FontSize = evt.Outcome == CombatOutcome.Crit ? 17 : 14,
+            FontSize = evt.Outcome == CombatOutcome.Crit ? 19 : 14,
             FontWeight = FontWeights.Bold
         };
         WorldCanvas.Children.Add(tb);
 
+        // FAN THEM OUT. Several numbers can land on one entity in the same instant (a hit, its crit,
+        // the lifesteal it healed you for) and they used to draw exactly on top of each other, so you
+        // could not tell damage from vamp from crit. Stack each new number against the ones already
+        // floating on that same entity.
+        int stacked = _floatingTexts.Count(f => f.AnchorId == evt.TargetId);
         _floatingTexts.Add(new FloatingText
         {
             Visual = tb, WorldX = anchor.CurX, WorldY = anchor.CurY,
+            AnchorId = evt.TargetId,
+            OffsetX = (stacked % 3 - 1) * 26,     // -26 / 0 / +26, cycling
+            OffsetY = -14 * (stacked % 4),        // and step upward
             Born = _clock.Elapsed.TotalSeconds
         });
+    }
+
+    // ---- Combat log (System tab) -------------------------------------------------------------
+    //
+    // A readable transcript of YOUR fight only — every event in the world would drown it. The
+    // floating numbers over the world tell you WHEN something happened; this tells you WHAT, and it
+    // survives long enough to read. Colour carries the meaning, so the eye can scan it:
+    //
+    //   you  -> enemy   green   (lime on a crit)
+    //   enemy -> you    red     (dark red on a crit)
+    //   enemy avoided   purple  (evaded / blocked / resisted a spell or debuff)
+    //   you avoided     light blue
+    //   healing         orange (HP) / blue (MP)
+    private static readonly Brush LogOut     = Brushes.LimeGreen;
+    private static readonly Brush LogOutCrit = Brushes.Lime;
+    private static readonly Brush LogIn      = Brushes.IndianRed;
+    private static readonly Brush LogInCrit  = Brushes.Firebrick;
+    private static readonly Brush LogAvoided = Brushes.MediumPurple;
+    private static readonly Brush LogIAvoid  = Brushes.LightSkyBlue;
+    private static readonly Brush LogHeal    = Brushes.Orange;
+    private static readonly Brush LogMana    = Brushes.DeepSkyBlue;
+
+    /// <summary>Log the start of a cast. Called when YOU begin casting — there is deliberately no
+    /// "finished"/"cancelled" line, per the owner: the result speaks for itself.</summary>
+    private void LogSkillUse(string skillName) =>
+        AddChatLine(SystemList, SystemScroll, $"Use skill {skillName}", Brushes.Gainsboro);
+
+    private void LogCombatToSystem(CombatEvent evt)
+    {
+        bool mine = evt.AttackerId == _myId;
+        bool onMe = evt.TargetId == _myId;
+        if (!mine && !onMe) return;             // someone else's fight — not our business
+
+        string skill = string.IsNullOrEmpty(evt.Skill) ? "" : $" [{evt.Skill}]";
+        string me = "You";
+
+        (string text, Brush brush) = evt.Outcome switch
+        {
+            // Healing / mana. A heal on yourself reads "self", on someone else their name.
+            CombatOutcome.Heal when mine =>
+                ($"{me} healed {(onMe ? "self" : evt.TargetName)} for {evt.Damage}{skill}", LogHeal),
+            CombatOutcome.ManaHeal when mine =>
+                ($"{me} restored {(onMe ? "self" : evt.TargetName)} {evt.Damage} MP{skill}", LogMana),
+            CombatOutcome.Heal     => ($"{evt.AttackerName} healed you for {evt.Damage}{skill}", LogHeal),
+            CombatOutcome.ManaHeal => ($"{evt.AttackerName} restored you {evt.Damage} MP{skill}", LogMana),
+            CombatOutcome.Buff     => ($"{(mine ? me : evt.AttackerName)} → {(onMe ? "you" : evt.TargetName)}: {evt.Skill}",
+                                       mine ? LogOut : LogAvoided),
+
+            // Avoided. Purple when the ENEMY avoids you; light blue when YOU avoid them.
+            CombatOutcome.Miss  => mine
+                ? ($"{evt.TargetName} evaded{skill}", LogAvoided)
+                : ($"{me} evaded {evt.AttackerName}{skill}", LogIAvoid),
+            CombatOutcome.Fail  => mine
+                ? ($"{evt.TargetName} resisted{skill}", LogAvoided)
+                : ($"{me} resisted {evt.AttackerName}{skill}", LogIAvoid),
+            CombatOutcome.Block => mine
+                ? ($"{evt.TargetName} blocked — {evt.Damage}{skill}", LogAvoided)
+                : ($"{me} blocked {evt.AttackerName} — {evt.Damage}{skill}", LogIAvoid),
+
+            // Damage.
+            CombatOutcome.Crit => mine
+                ? ($"{me} → {evt.TargetName}: {evt.Damage} (critical){skill}", LogOutCrit)
+                : ($"{evt.AttackerName} → you: {evt.Damage} (critical){skill}", LogInCrit),
+            _ => mine
+                ? ($"{me} → {evt.TargetName}: {evt.Damage}{skill}", LogOut)
+                : ($"{evt.AttackerName} → you: {evt.Damage}{skill}", LogIn),
+        };
+
+        AddChatLine(SystemList, SystemScroll, text, brush);
     }
 
     private void OnGold(GoldUpdate update)
@@ -1788,8 +1918,8 @@ public partial class MainWindow : Window
                 continue;
             }
             ft.Visual.Opacity = 1.0 - age / 1.2;
-            Canvas.SetLeft(ft.Visual, (ft.WorldX - _camX) * Scale + cw / 2 - 8);
-            Canvas.SetTop(ft.Visual, (ft.WorldY - _camY) * Scale + ch / 2 - 34 - age * 38);
+            Canvas.SetLeft(ft.Visual, (ft.WorldX - _camX) * Scale + cw / 2 - 8 + ft.OffsetX);
+            Canvas.SetTop(ft.Visual, (ft.WorldY - _camY) * Scale + ch / 2 - 34 - age * 38 + ft.OffsetY);
         }
     }
 
@@ -2026,13 +2156,20 @@ public partial class MainWindow : Window
         public required TextBlock Visual { get; init; }
         public double WorldX { get; init; }
         public double WorldY { get; init; }
+        /// <summary>The entity this number belongs to — used to fan out several numbers landing on
+        /// the same target in the same instant, which otherwise draw on top of each other.</summary>
+        public Guid AnchorId { get; init; }
+        public double OffsetX { get; init; }
+        public double OffsetY { get; init; }
         public double Born { get; init; }
     }
 
     private class SkillSlot
     {
         public required SkillDef Def { get; init; }
-        public required Button Button { get; init; }
+        /// <summary>The slot face. A Border, NOT a Button — ButtonBase's mouse capture is what broke
+        /// skill-bar drag & drop (see RenderSkillBar).</summary>
+        public required Border Button { get; init; }
         public required int Key { get; init; }
         public TextBlock? CooldownText { get; init; }
         public double ReadyAt { get; set; }
