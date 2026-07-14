@@ -208,6 +208,22 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 - [ ] **Cleric-solos-a-30-mob** balance pass (owner target): mob HP/atk vs cleric melee+heal.
 - [ ] Low-level **physical mob damage** so mobs don't ~one-shot players (magic/phys mob parity).
 
+- [x] **Level cap 90 + delevel buttons — DONE 2026-07-14.** `GameConstants.MaxPlayerLevel = 90`, applied
+  in the XP path (EXP parks at 0 at the cap instead of piling up invisibly, which would otherwise dump
+  several instant levels the day the cap is raised). **Admins are EXEMPT** (`LevelCapFor`) so the top of
+  the curve stays testable without lifting the cap for everyone. `DebugLevelCmd` now carries a DELTA, so
+  +1 / +10 / **−1 / −10** all share one path and one round-trip (+10 used to fire ten separate commands,
+  each with its own level-up broadcast and character save).
+  **Delevel keeps every learned skill** (owner) — the "Skills to Learn" tab already gates by level, so it
+  simply stops offering what you can't reach; nothing needed changing there. ⚠ The ONE thing re-synced is
+  the auto-granted combat-training passive, whose level is a pure function of character level: it is not a
+  skill you chose, and leaving a level-9 (+100% attack) passive on a character just dropped to 40 would
+  silently inflate the damage numbers you delevelled in order to measure.
+
+- **NOT touched: the NPC buffer's level gate.** Still `lvl 6-75` (`ApplyNewbieBuffs`), as designed
+  ([[buffer-enchanter-design]] — the full-buff NPC is the SOLO stopgap to 75). Note it will refuse to
+  buff a level-85 character.
+
 ### Playtest-3 leftovers (2026-07-14) — the only two things from that session not built
 
 - [>] **BUG: the mage runs into melee range to auto-attack.** Owner saw it again. `AfterOffensiveSkill`

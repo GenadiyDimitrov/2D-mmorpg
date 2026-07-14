@@ -421,10 +421,13 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
-    public Task DebugLevel()
+    /// <summary>DEBUG: shift level by delta (+1 / +10 / -1 / -10). Delevel keeps learned skills.</summary>
+    public Task DebugLevel(int delta)
     {
 #if DEBUG
-        _world.Commands.Enqueue(new DebugLevelCmd(Context.ConnectionId));
+        // Clamp the STEP, not the level — the level cap itself is applied on the game loop, where the
+        // admin exemption lives. This just stops a malformed payload jumping 10,000 levels.
+        _world.Commands.Enqueue(new DebugLevelCmd(Context.ConnectionId, Math.Clamp(delta, -10, 10)));
 #endif
         return Task.CompletedTask;
     }

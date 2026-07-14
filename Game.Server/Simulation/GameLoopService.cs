@@ -1352,20 +1352,78 @@ public class GameLoopService : BackgroundService
         SendSystemToEntity(player, $"[DEBUG] Profession set to {player.Profession}.");
     }
 
+    /// <summary>The level ceiling this character is subject to. ADMINS ARE EXEMPT — an admin needs to
+    /// be able to push past the cap to test the top of the curve without lifting it for everyone.</summary>
+    private static int LevelCapFor(Entity player) =>
+        player.IsAdmin ? int.MaxValue : GameConstants.MaxPlayerLevel;
+
+    /// <summary>DEBUG: move the character's level by a delta (+1 / +10 / −1 / −10).
+    ///
+    /// DELEVELLING DOES NOT TOUCH LearnedSkills (owner). You keep everything you learned, so you can
+    /// drop to 40, check how something feels, and climb back without re-learning your whole kit. The
+    /// "Skills to Learn" tab already gates by level, so it simply stops offering what you can no
+    /// longer reach — nothing had to change there.
+    ///
+    /// The ONE thing that IS re-synced is the auto-granted combat-training passive, whose level is a
+    /// pure function of character level (StatCalculator.TrainingLevelFor). It is not a skill you chose
+    /// — the server re-grants it on every level-up — and leaving a level-9 (+100% attack) passive on a
+    /// character you just dropped to 40 would silently inflate every damage number you were delevelling
+    /// in order to measure.</summary>
     private void HandleDebugLevel(DebugLevelCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player))
             return;
-        // Grant EXACTLY one level. Going through AwardExp would scale by
-        // ExpRate (x10), overshooting into several levels at once.
-        player.Level++;
+
+        // Level EXACTLY by the delta. Going through AwardExp would scale by ExpRate (x10) and
+        // overshoot into several levels at once.
+        int cap = LevelCapFor(player);
+        int target = Math.Clamp(player.Level + cmd.Delta, 1, cap);
+        if (target == player.Level)
+        {
+            SendSystemToEntity(player, cmd.Delta > 0
+                ? $"[DEBUG] Already at the level cap ({cap})."
+                : "[DEBUG] Already at level 1.");
+            return;
+        }
+
+        bool up = target > player.Level;
+        player.Level = target;
         player.Exp = 0;
-        OnLevelUp(player);
+
+        if (up)
+        {
+            OnLevelUp(player);
+        }
+        else
+        {
+            // Delevel: keep the learned skills, but re-sync the level-derived training passive
+            // (see the note above) and rebuild the stats off the new level.
+            SyncTrainingPassive(player);
+            player.RecomputeDerived();
+            player.Hp = Math.Min(player.Hp, player.MaxHp);
+            player.Mp = Math.Min(player.Mp, player.MaxMp);
+            SendStats(player);
+            SendLearned(player);
+        }
+
         if (_world.EntityToConnection.TryGetValue(player.Id, out var conn))
             _ = _hub.Clients.Client(conn).SendAsync("Progress", new ProgressUpdate(
-                player.Level, player.Exp, StatCalculator.ExpToNext(player.Level), true));
-        SendSystemToEntity(player, $"[DEBUG] Level up -> {player.Level}.");
+                player.Level, player.Exp, StatCalculator.ExpToNext(player.Level), up));
+        SendSystemToEntity(player, $"[DEBUG] Level {(up ? "up" : "down")} -> {player.Level}.");
         SaveEntity(player);   // persist so debug levels survive a server restart
+    }
+
+    /// <summary>Re-point the auto-granted combat-training passive at the level the character is NOW.
+    /// Below 40 there is no such passive, so it is removed outright.</summary>
+    private static void SyncTrainingPassive(Entity player)
+    {
+        string id = player.BaseClass == BaseClass.Mage
+            ? SkillCatalog.SpiritTraining
+            : SkillCatalog.PhysicalTraining;
+
+        int lvl = StatCalculator.TrainingLevelFor(player.Level);
+        if (lvl > 0) player.LearnedSkills[id] = lvl;
+        else player.LearnedSkills.Remove(id);
     }
 
     private void HandleDebugLearnAll(DebugLearnAllCmd cmd)
@@ -4720,12 +4778,19 @@ var effect = def.Effect;
             (int)(amount * GameConstants.SkillPointRatio * RateConfig.SpRate));
 
         bool leveled = false;
-        while (player.Exp >= StatCalculator.ExpToNext(player.Level))
+        while (player.Level < LevelCapFor(player)
+               && player.Exp >= StatCalculator.ExpToNext(player.Level))
         {
             player.Exp -= StatCalculator.ExpToNext(player.Level);
             player.Level++;
             leveled = true;
         }
+
+        // At the cap, park EXP at the bar's start rather than letting it pile up invisibly — an
+        // unbounded Exp on a capped character would dump several instant levels the moment the cap
+        // was ever raised.
+        if (player.Level >= LevelCapFor(player))
+            player.Exp = 0;
 
         if (leveled)
             OnLevelUp(player);

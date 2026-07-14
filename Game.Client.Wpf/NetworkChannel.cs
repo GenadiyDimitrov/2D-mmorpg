@@ -192,8 +192,9 @@ public class NetworkChannel : IAsyncDisposable
     public Task DebugGiveAsync(string defId, int quantity = 1) =>
         _connection!.SendAsync("DebugGive", defId, quantity);
 
-    public Task DebugLevelAsync() =>
-        _connection!.SendAsync("DebugLevel");
+    /// <summary>DEBUG: shift level by delta (+1 / +10 / -1 / -10). Delevel keeps learned skills.</summary>
+    public Task DebugLevelAsync(int delta) =>
+        _connection!.SendAsync("DebugLevel", delta);
 
     public Task DebugLearnAllAsync() =>
         _connection!.SendAsync("DebugLearnAll");

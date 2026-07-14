@@ -28,6 +28,24 @@ Still worth eyeballing on a future pass (not blocking):
 
 ---
 
+## LEVEL CAP + DELEVEL (2026-07-14)
+
+- [ ] **Level cap is 90** for a normal character (`GameConstants.MaxPlayerLevel`). XP stops at the cap
+      and parks at 0 rather than piling up invisibly.
+- [ ] **ADMINS ARE EXEMPT** — an admin account can push past 90, so the top of the curve stays testable
+      without lifting the cap for everyone. (Log in as `admin` to check.)
+- [ ] **Debug has Level −1 and −10** alongside +1 / +10. Each is now ONE round-trip (+10 used to fire
+      ten separate commands, each with its own level-up broadcast and character save).
+- [ ] **DELEVEL KEEPS YOUR LEARNED SKILLS.** Drop to 40, feel it, climb back — no re-learning. The
+      "Skills to Learn" tab already gates by level, so it just stops offering what you can't reach.
+      ⚠ **One exception, on purpose:** the auto-granted combat-training passive (Physical/Spirit
+      Training) IS re-synced to the new level. It is not a skill you chose — the server re-grants it on
+      every level-up — and leaving a level-9 (+100% attack) passive on a character you just dropped to
+      40 would silently inflate the very damage numbers you delevelled in order to measure. Say if you
+      want it left alone instead.
+
+---
+
 ## INVENTORY: EQUIPPED PANE + SET INFO (2026-07-14)
 
 - [ ] **Equipped items have their own tab.** Inventory tabs are now **Equipped / Bag / Quest**. An item

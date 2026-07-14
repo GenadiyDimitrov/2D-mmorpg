@@ -99,6 +99,12 @@ public static class GameConstants
 
     public const int ClassChangeLevel = 20;
 
+    /// <summary>Level ceiling for a normal character. ADMINS ARE EXEMPT — an admin can push past it,
+    /// which is the point (testing the 85+ mob band, the top gear tier, etc. without capping the game
+    /// for everyone else). Everything is authored to 85 today (mob curve, gear tiers, the nuke
+    /// ladder), so 90 is deliberate headroom rather than a content boundary.</summary>
+    public const int MaxPlayerLevel = 90;
+
     /// <summary>Archer second classes: +500 basic-attack range with a ranged
     /// weapon, capped at 1100 (design doc).</summary>
     public const float ArcherRangeBonus = 500f;

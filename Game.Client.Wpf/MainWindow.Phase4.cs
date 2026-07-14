@@ -2493,8 +2493,13 @@ public partial class MainWindow
     private void BuildDebugFunctions()
     {
         AddDebugHeader("Character");
-        DebugList.Children.Add(DebugAction("Level +1", async () => await _net.DebugLevelAsync()));
-        DebugList.Children.Add(DebugAction("Level +10", async () => { for (int i = 0; i < 10; i++) await _net.DebugLevelAsync(); }));
+        // One round-trip per click now (+10 used to fire ten separate commands, each with its own
+        // level-up broadcast and character save). DELEVEL KEEPS YOUR LEARNED SKILLS — drop to 40,
+        // feel it, climb back, without re-learning the whole kit.
+        DebugList.Children.Add(DebugAction("Level +1",  async () => await _net.DebugLevelAsync(+1)));
+        DebugList.Children.Add(DebugAction("Level +10", async () => await _net.DebugLevelAsync(+10)));
+        DebugList.Children.Add(DebugAction("Level -1",  async () => await _net.DebugLevelAsync(-1)));
+        DebugList.Children.Add(DebugAction("Level -10", async () => await _net.DebugLevelAsync(-10)));
         DebugList.Children.Add(DebugAction("Learn all skills (to my level)", async () => await _net.DebugLearnAllAsync()));
         DebugList.Children.Add(DebugAction("+1kk SP", async () => await _net.DebugSpAsync(1_000_000)));
         // 10kk, not 100k: the level-40 stat swaps cost 1kk-5kk per level (15kk to max one), so the
