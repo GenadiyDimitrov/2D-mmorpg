@@ -28,6 +28,27 @@ Still worth eyeballing on a future pass (not blocking):
 
 ---
 
+## ✅ ALREADY VERIFIED FOR YOU — headless smoke test (2026-07-14)
+
+`dotnet run --project tools/SmokeTest` (with the server up) drives a REAL client over SignalR and
+asserts the whole subclass + skill-bar + persistence round-trip. **It passes.** So you can SKIP the
+tedious half of the subclass section below — the following are machine-checked every run:
+
+- a fresh character gets a populated skill bar
+- adding a subclass gives it its OWN bar (it does not inherit the main class's)
+- swapping back restores the main class's bar EXACTLY as arranged
+- each class keeps its own level (11 vs 5 — they don't leak into each other)
+- **all of it survives a full log-out / log-in**
+
+It caught two real bugs before you ever saw them: a swap silently overwriting the new class's bar on
+the server (while the client still *displayed* the right one), and — from the fix for that — a brand-new
+character getting a completely EMPTY skill bar. Both would have eaten the first minutes of a playtest.
+
+**What still needs YOUR hands is the WPF UI**, which I cannot click-test: drag & drop, the panel chrome,
+the combat log, the equipped pane. Those are the risky ones now — do them first.
+
+---
+
 ## SUBCLASSES (2026-07-14) — ⚠ DELETE `game.db` BEFORE TESTING (new `Subclasses` table)
 
 Debug → Functions → **"Classes (subclass)"**.

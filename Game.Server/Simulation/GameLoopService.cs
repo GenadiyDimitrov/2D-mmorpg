@@ -5237,6 +5237,11 @@ var effect = def.Effect;
     private static void SyncSkillBar(Entity p)
     {
         var slots = new string[GameConstants.SkillBarSlots];
+        Array.Fill(slots, "");   // "" = an empty slot. new string[n] is full of NULLs, and the
+                                 // free-slot search below looks for "" — leave them null and it finds
+                                 // none, so a character with no saved bar (i.e. every new one) would
+                                 // get NOTHING placed on it. Caught by tools/SmokeTest.
+
         var bar = p.ActiveSkillBar;
         for (int i = 0; i < slots.Length && i < bar.Length; i++)
             slots[i] = bar[i] ?? "";

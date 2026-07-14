@@ -142,6 +142,21 @@ rule, boss skills, enrage); instances/dungeons; castles + vault (consumes the
 `VendorBuyTaxRate` hook); perfect/excellent block; magic-resist passives; soulshots;
 position bonuses; PvP/PvE multipliers (hooks default 1.0); the real 2D client.
 
+## Verify server behaviour with the SMOKE TEST, not by playing
+`tools/SmokeTest` is a headless SignalR client speaking the real protocol (no window). With the
+server running:
+```
+dotnet run --project tools/SmokeTest
+```
+It logs in, creates a fresh character, arranges a skill bar, adds a subclass, swaps, swaps back,
+**relogs**, and asserts the bars/levels/XP survived. **Run it after touching persistence, the skill
+bar, subclasses or the login sequence.**
+
+It exists because this area's bugs are invisible to a human playtest: the client renders the state it
+was *sent*, so a bar can be correct on screen and already destroyed on the server, only surfacing as
+corruption on the next login. It has already caught two such bugs. It creates a NEW character each run
+— a test that is not idempotent lies to you.
+
 ## Balance work: measure, don't derive
 `tools/BalanceMatrix` (a console app, deliberately NOT in `Game.sln`, so it never affects the
 owner's build) constructs REAL `Entity` objects with REAL best-for-tier gear and runs the actual

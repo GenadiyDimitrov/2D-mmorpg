@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Headless end-to-end smoke test. Deliberately NOT in Game.sln, so `dotnet build` on the
+       solution never builds it and Visual Studio's startup config stays untouched.
+
+       It is a REAL SignalR client speaking the REAL protocol - it just has no window. It exists
+       because the things most likely to be broken (skill-bar persistence across a class swap and a
+       relog) LOOK CORRECT in the running client while being wrong on the server, so a human playtest
+       cannot catch them. Run:
+
+           dotnet run  (from this folder, with the server already listening on :5238)
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Game.Tools.SmokeTest</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Game.Shared\Game.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
