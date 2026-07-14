@@ -155,6 +155,16 @@ damage, time-to-kill and levelling pace. Hand-derived balance numbers have been 
 system). Extend the tool rather than hand-computing a new table. `docs/BalanceMatrix.md` is the
 older hand-written audit — its formulas and reasoning are good, its NUMBERS are stale.
 
+## The skill bar belongs to the SERVER
+The server owns the bar and does the auto-placement of newly-learned skills
+(`GameLoopService.SyncSkillBar`), and `SendLearned` always pushes the bar *with* the skills.
+**The client must never write a bar it did not author** — it may only `SaveSkillBar()` when the
+PLAYER edits it (drag / assign / remove). This is not fussiness: while auto-placement lived in the
+client, every server push of `Learned` that arrived while the client held a *different* bar (a fresh
+login, a subclass swap) made it re-park skills against the wrong bar and save the result — destroying
+the real layout on the server while the client went on to receive the correct bar and *look* perfectly
+fine. It bit twice before it was understood.
+
 ## Working style (owner's rules — these matter)
 - **Never launch the server/client unprompted.** The owner tests manually and will say when to run.
   Build (`dotnet build`) freely; don't `dotnet run` the game to "check" something.

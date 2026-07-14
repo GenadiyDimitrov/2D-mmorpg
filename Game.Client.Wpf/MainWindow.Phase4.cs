@@ -1885,7 +1885,9 @@ public partial class MainWindow
         }
         _skillPoints = learned.SkillPoints;
 
-        AutoPlaceNewSkills();
+        // No auto-placement here any more — the SERVER parks newly-learned skills and pushes the
+        // resulting bar just before this message (see GameLoopService.SendLearned). Doing it here meant
+        // the client wrote a bar it didn't author, which corrupted the real one. Just repaint.
         RenderSkillBar();
         if (SkillsPanel.Visibility == Visibility.Visible)
             RefreshSkillsWindow();

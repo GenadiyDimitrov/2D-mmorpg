@@ -540,7 +540,9 @@ public partial class MainWindow : Window
     // Skill bar (rebuilt on class change to include the signature skill)
     // -----------------------------------------------------------------------
 
-    private const int SkillBarSlots = 24;   // 2 rows of 12 square slots
+    // Shared with the server, which now owns the bar and does the auto-placement (SyncSkillBar).
+    // Two independent "24"s would silently disagree the day one of them changed.
+    private const int SkillBarSlots = GameConstants.SkillBarSlots;   // 2 rows of 12 square slots
 
     /// <summary>The skill (string id) assigned to each bar slot (null = empty).</summary>
     private readonly string?[] _skillBar = new string?[SkillBarSlots];
@@ -563,17 +565,17 @@ public partial class MainWindow : Window
     private int _skillPoints;
     private MoveState _moveState = MoveState.Running;
 
-    /// <summary>The bar is restored by the SERVER's SkillBar push (see OnSkillBar), which arrives
-    /// before the first Learned. This just re-parks anything new and repaints; it is a no-op until
-    /// the saved layout has landed.</summary>
-    private void EnsureSkillBarSlots()
-    {
-        AutoPlaceNewSkills();    // park any genuinely NEW skill in a free slot (no-op pre-load)
-        RenderSkillBar();
-    }
+    private void EnsureSkillBarSlots() => RenderSkillBar();
 
-    /// <summary>The server sent this character's saved bar (on login, before the Learned push).
-    /// This is the ONLY thing that populates the bar from storage.</summary>
+    /// <summary>The SERVER sent this class's bar. This is the ONLY thing that populates the bar.
+    ///
+    /// The client no longer auto-places newly-learned skills, and no longer writes the bar back on its
+    /// own. The SERVER owns it (GameLoopService.SyncSkillBar) and pushes it alongside the skills. That
+    /// is deliberate: while auto-placement lived here, ANY server push of Learned that arrived while the
+    /// client still held a different bar — a fresh login, a subclass swap — made the client re-park
+    /// skills against the WRONG bar and SAVE the result, destroying the real layout on the server while
+    /// the client went on to receive the correct bar and look perfectly fine. It bit twice before it was
+    /// understood. The client now only writes the bar when the PLAYER edits it.</summary>
     private void OnSkillBar(SkillBarDto dto)
     {
         Array.Clear(_skillBar);
@@ -581,57 +583,15 @@ public partial class MainWindow : Window
             _skillBar[i] = string.IsNullOrEmpty(dto.Slots[i]) ? null : dto.Slots[i];
 
         _skillBarLoaded = true;
-        AutoPlaceNewSkills();   // park anything learned since the layout was last saved
         RenderSkillBar();
     }
 
-    /// <summary>Persist the bar. It is CHARACTER data, so it goes to the SERVER (and the DB), not to
-    /// the client's settings file — that file did not follow the account to another machine, and its
-    /// load raced the first Learned push, which is what silently reshuffled the bar.</summary>
+    /// <summary>Persist a bar the PLAYER just edited (drag, assign, remove). Nothing else may call this
+    /// — see OnSkillBar for what happens when the client writes a bar it didn't author.</summary>
     private void SaveSkillBar()
     {
         if (!_inGame || !_skillBarLoaded) return;   // never save a bar we haven't loaded yet
         _ = _net.SetSkillBarAsync(_skillBar.Select(x => x ?? "").ToArray());
-    }
-
-    /// <summary>Drop assignments the character can no longer use, then park any newly-learned
-    /// skill in the first FREE slot. It never moves a skill the player has already placed —
-    /// the bar is their layout, not ours.
-    ///
-    /// It does NOTHING until the saved bar has arrived from the server. That guard is the fix for
-    /// "learn all skills reshuffles the bar": this runs on every Learned push, and if it ran while
-    /// the bar was still empty it would re-fill one from scratch (in id order) and then SAVE that
-    /// over the player's real layout.</summary>
-    private void AutoPlaceNewSkills()
-    {
-        if (!_skillBarLoaded) return;
-
-        var available = _learnedSkills;
-        bool changed = false;
-
-        // Remove assignments no longer learned (e.g. a skill that got REPLACED by a better one).
-        for (int i = 0; i < _skillBar.Length; i++)
-            if (_skillBar[i] is string id && !available.Contains(id))
-            {
-                _skillBar[i] = null;
-                changed = true;
-            }
-
-        var onBar = _skillBar.Where(x => x is not null).Select(x => x!).ToHashSet();
-        foreach (var id in available.Where(x => SkillCatalog.Get(x) is not { Category: SkillCategory.Passive })
-                                    .OrderBy(x => x, StringComparer.Ordinal))   // stable, not hash order
-        {
-            if (onBar.Contains(id)) continue;
-            int free = Array.IndexOf(_skillBar, null);
-            if (free < 0) break;
-            _skillBar[free] = id;
-            onBar.Add(id);
-            changed = true;
-        }
-
-        // Only persist when the bar ACTUALLY moved. This runs on every Learned push, and each save is
-        // now a server round-trip plus a DB write — not something to do on every stats tick for free.
-        if (changed) SaveSkillBar();
     }
 
     /// <summary>Assign a skill to the first free slot (from the Skills window).</summary>
@@ -1434,8 +1394,8 @@ public partial class MainWindow : Window
 
         if (leveled)
         {
-            // New level may unlock skills (e.g. level-25 flavour skills later).
-            AutoPlaceNewSkills();
+            // A level-up can unlock skills — but the SERVER parks them and pushes the new bar with its
+            // Learned message (see GameLoopService.SendLearned). Nothing to place here; just repaint.
             RenderSkillBar();
             if (SkillsPanel.Visibility == Visibility.Visible)
                 RefreshSkillsWindow();

@@ -97,6 +97,10 @@ public static class GameConstants
 
     public const int InventorySize = 30;
 
+    /// <summary>Skill-bar slots (2 rows of 12). Shared, because the SERVER owns the bar and does the
+    /// auto-placement of newly-learned skills — see GameLoopService.SyncSkillBar.</summary>
+    public const int SkillBarSlots = 24;
+
     public const int ClassChangeLevel = 20;
 
     /// <summary>Level ceiling for a normal character. ADMINS ARE EXEMPT — an admin can push past it,

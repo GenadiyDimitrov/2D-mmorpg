@@ -176,13 +176,7 @@ public class GameLoopService : BackgroundService
         AutoLearnCoreSkills(entity);
         SendInventory(entity);
         SendStats(entity);
-        // ORDER MATTERS: the bar must reach the client BEFORE the learned skills. The client parks
-        // newly-learned skills in free slots when Learned arrives, so if it were still holding an
-        // empty bar at that moment it would re-fill one from scratch and overwrite the player's
-        // layout. That race (against a settings-file load) is exactly what "the bar reshuffles
-        // itself" was. SignalR preserves message order per connection, so this is sufficient.
-        SendSkillBar(entity);
-        SendLearned(entity);
+        SendLearned(entity);   // sends the skill BAR with it, in the right order — see SendLearned
         SendSubclasses(entity);
         SendQuestLog(entity);
         SendGold(entity);
@@ -1428,8 +1422,7 @@ public class GameLoopService : BackgroundService
         player.Mp = Math.Min(player.Mp, player.MaxMp);
 
         SendStats(player);
-        SendLearned(player);
-        SendSkillBar(player);          // each class keeps its OWN bar
+        SendLearned(player);   // carries this class's OWN bar with it — see SendLearned
         PushBuffs(player);
         SendSubclasses(player);
         if (_world.EntityToConnection.TryGetValue(player.Id, out var conn))
@@ -1625,8 +1618,7 @@ public class GameLoopService : BackgroundService
 
         SendInventory(player);
         SendStats(player);
-        SendLearned(player);
-        SendSkillBar(player);
+        SendLearned(player);   // carries the bar with it — see SendLearned
         SendSubclasses(player);
         SendQuestLog(player);
         SaveEntity(player);
@@ -5231,9 +5223,57 @@ var effect = def.Effect;
         SendTo(player, "Buffs", new BuffUpdate(dtos));
     }
 
-    private void SendLearned(Entity p) =>
+    /// <summary>Reconcile the ACTIVE class's skill bar with what that class actually knows: drop
+    /// assignments for skills it no longer has (one that got REPLACED by a better version, or that
+    /// belongs to a class you swapped away from), then park any newly-learned ACTIVE skill in the first
+    /// free slot. It never MOVES a skill the player placed — the bar is their layout, not ours.
+    ///
+    /// THIS LIVES ON THE SERVER ON PURPOSE. It used to run in the CLIENT on every Learned push, and the
+    /// client SAVED the result. That meant any code path which pushed Learned while the client still
+    /// held a different bar would persist a mangled layout — and the client would then receive the real
+    /// bar and *look* correct while the server's copy was already destroyed. It bit twice (login, then
+    /// the subclass switch) before being understood. The server owns the bar; the client now only writes
+    /// it when the PLAYER edits it (drag, assign, remove).</summary>
+    private static void SyncSkillBar(Entity p)
+    {
+        var slots = new string[GameConstants.SkillBarSlots];
+        var bar = p.ActiveSkillBar;
+        for (int i = 0; i < slots.Length && i < bar.Length; i++)
+            slots[i] = bar[i] ?? "";
+
+        // Forget what this class no longer knows.
+        for (int i = 0; i < slots.Length; i++)
+            if (!string.IsNullOrEmpty(slots[i]) && !p.LearnedSkills.ContainsKey(slots[i]))
+                slots[i] = "";
+
+        // Park anything newly learned. Ordinal order so it is deterministic, not hash order.
+        var placed = slots.Where(s => !string.IsNullOrEmpty(s)).ToHashSet();
+        foreach (var id in p.LearnedSkills.Keys.OrderBy(x => x, StringComparer.Ordinal))
+        {
+            if (placed.Contains(id)) continue;
+            if (SkillCatalog.Get(id) is not { } def || def.Category == SkillCategory.Passive)
+                continue;   // passives are always on; they never take a bar slot
+            int free = Array.IndexOf(slots, "");
+            if (free < 0) break;
+            slots[free] = id;
+            placed.Add(id);
+        }
+
+        p.ActiveSkillBar = slots;
+    }
+
+    /// <summary>Push the character's skills — and, with them, the bar those skills live on.
+    ///
+    /// The bar is ALWAYS sent FIRST and from the SAME method, so the two can never arrive out of order.
+    /// That ordering used to be the caller's problem, and two callers got it wrong. Now there is nothing
+    /// to get wrong.</summary>
+    private void SendLearned(Entity p)
+    {
+        SyncSkillBar(p);
+        SendSkillBar(p);
         SendTo(p, "Learned", new LearnedSkills(
             p.LearnedSkills.Select(kv => new SkillRef(kv.Key, kv.Value)).ToArray(), p.SkillPoints));
+    }
 
     private void SendStats(Entity p)
     {

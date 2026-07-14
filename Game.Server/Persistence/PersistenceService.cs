@@ -208,6 +208,20 @@ public class PersistenceService
             Y = GameConstants.ZoneHeight / 2,
         };
 
+        // The character's FIRST class (slot 0). The load path can also reconstruct this from the mirror
+        // columns above — that fallback exists for rows written before subclasses — but a character
+        // born today should have a real subclass row from the start, not depend on it.
+        record.Subclasses.Add(new SubclassRecord
+        {
+            Slot = 0,
+            BaseClass = baseClass,
+            Level = 1,
+            Con = stats.Con,
+            Atk = stats.Atk,
+            Wit = stats.Wit,
+            Dex = stats.Dex,
+        });
+
         // Starter gear so a brand-new character isn't empty. All NEWBIE (untradeable,
         // no attributes). Armor + jewels arrive in BOXES the player opens; weapons are
         // direct for now (a weapons selection-box lands next). A mage gets the staff +

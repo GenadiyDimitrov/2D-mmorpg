@@ -46,6 +46,12 @@ Debug → Functions → **"Classes (subclass)"**.
       character-level, so another class would be left with stats rolled for a body it no longer has.
       Use the subclass buttons to keep a class and add another.
 
+- [ ] **The bar survives a swap AND a relog.** This is the one to actually check: arrange the fighter's
+      bar, swap to the mage, arrange his, swap back, **log out, log back in** — both bars intact. (A bug
+      here was found by review, not by playing: the client used to auto-place skills against whichever
+      bar it was holding and SAVE that, so a swap silently overwrote the new class's bar on the server
+      while the client still *displayed* the correct one. It would have looked fine and been wrong.)
+
 ### Class uniqueness — you can't walk the same path twice
 
 - [ ] **No repeated ARCHETYPE.** A Sorcerer (Nuker) subclass → your other mage class can become a
