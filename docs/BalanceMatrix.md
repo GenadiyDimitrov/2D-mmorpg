@@ -1,8 +1,29 @@
 # Balance Matrix & Stat-System Audit (living doc)
 
-> Keep this in sync with the `class-race-identity` memory. Regenerate the matrix
-> whenever a combat formula or constant changes. Reference point for the matrix:
-> **level 40, no buffs, same starter (F-grade) gear.**
+> ## ⚠ STALE AS OF 2026-07-14 — THE MAGIC RE-SCALE INVALIDATED THE NUMBERS HERE
+>
+> **The live matrix is now GENERATED, not hand-written:**
+> ```
+> dotnet run --project tools/BalanceMatrix
+> ```
+> That tool constructs REAL `Entity` objects with REAL best-for-tier gear and runs the actual
+> combat formulas, so it cannot drift from the code the way this file did. **Trust it over any
+> table below**, and prefer extending it over hand-computing a new table.
+>
+> What the re-scale changed (see `docs/Roadmap.md` for the full writeup):
+> - **Mob P.Def/M.Def are now LINEAR in level** (~4.2·lvl / ~3·lvl), not quadratic.
+> - **Mob HP is now `40 + 0.8·lvl²`** — a normal L80 mob is ~5.2k, not 15.4k.
+> - **Player M.Atk now scales by `levelMod²`** (L2's rule; the square cancels the `√M.Atk` in
+>   the damage formula, so magic finally grows linearly in level like physical).
+> - **Nuke ladder extended to level 80** (Elemental Bolt tops out at power 116, was 44 @ 35).
+> - Mob EXP now scales with the mob's HP multiplier.
+>
+> Every §  below that quotes a mob HP/P.Def/M.Def, a mage damage number, or a time-to-kill is
+> therefore WRONG. The *formulas* in §A and the *design reasoning* throughout are still good —
+> that's why this file is kept rather than deleted.
+
+> Keep this in sync with the `class-race-identity` memory. Reference point for the tables
+> below: **level 40, no buffs, same starter (F-grade) gear.**
 
 > **⚠ GEAR CAVEAT (owner, 2026-07-03):** every table here assumes **newbie (lvl 1–19) gear** —
 > so it's only accurate for a low-level player. As the player equips stronger sets the numbers

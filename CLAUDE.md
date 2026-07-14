@@ -142,8 +142,26 @@ rule, boss skills, enrage); instances/dungeons; castles + vault (consumes the
 `VendorBuyTaxRate` hook); perfect/excellent block; magic-resist passives; soulshots;
 position bonuses; PvP/PvE multipliers (hooks default 1.0); the real 2D client.
 
+## Balance work: measure, don't derive
+`tools/BalanceMatrix` (a console app, deliberately NOT in `Game.sln`, so it never affects the
+owner's build) constructs REAL `Entity` objects with REAL best-for-tier gear and runs the actual
+combat formulas:
+```
+dotnet run --project tools/BalanceMatrix
+```
+**Use it before and after any combat/stat change** — it prints the mob curve, mage/fighter stats,
+damage, time-to-kill and levelling pace. Hand-derived balance numbers have been wrong here before
+(the whole 2026-07-14 magic re-scale started from a hand-derived diagnosis that blamed the wrong
+system). Extend the tool rather than hand-computing a new table. `docs/BalanceMatrix.md` is the
+older hand-written audit — its formulas and reasoning are good, its NUMBERS are stale.
+
+## Working style (owner's rules — these matter)
+- **Never launch the server/client unprompted.** The owner tests manually and will say when to run.
+  Build (`dotnet build`) freely; don't `dotnet run` the game to "check" something.
+- **"Commit" means commit AND push.** Only "just commit" / "only push" means one of them.
+- Discuss design before large mechanic changes; deliver focused, validated increments.
+- Cyrillic text from the owner is Bulgarian.
+
 ## Style
 Keep changes consistent with the above. Prefer C# .NET idioms. For web/UI work the
-owner prefers ASP.NET + HTML/CSS, JavaScript only as a last resort. Cyrillic text
-from the owner is Bulgarian. Discuss design before large mechanic changes; deliver
-focused, validated increments.
+owner prefers ASP.NET + HTML/CSS, JavaScript only as a last resort.
