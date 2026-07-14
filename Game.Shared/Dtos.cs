@@ -183,6 +183,15 @@ public record PartyLootVoteDto(LootMode Mode, string RequestedBy, bool Open = tr
 /// (ticks, ≥0) on top of the skill's own reuse (so auto-reuse is never below the default).</summary>
 public record AutoSkillDto(string SkillId, bool Enabled, int ExtraDelayTicks);
 
+/// <summary>The character's skill-bar layout: one entry per slot, "" = empty. Travels BOTH ways —
+/// server → client on login (restore), client → server on every rearrangement (persist).
+///
+/// The bar is CHARACTER data, not a client preference. It used to live in the WPF client's
+/// client-settings.json, which meant it did not follow the account to another machine, and its load
+/// raced the first Learned push on login — which is what silently reshuffled the bar. The server now
+/// owns it. (It does not USE it: casting is by skill id, not slot. It just stores it.)</summary>
+public record SkillBarDto(string[] Slots);
+
 /// <summary>Client -> server: the character's full auto-hunt configuration. The use CONDITION for
 /// each skill is inferred server-side (buff→if missing, debuff→if target lacks, attack→on cd). The
 /// new roaming fields default to sensible values until a settings window exposes them.</summary>

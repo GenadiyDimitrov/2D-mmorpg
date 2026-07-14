@@ -63,6 +63,15 @@ public class CharacterRecord
     /// <summary>Auto-hunt config as JSON (AutoHuntConfigDto). Empty = defaults/off.</summary>
     public string AutoHuntJson { get; set; } = "";
 
+    /// <summary>Skill-bar layout as JSON: bar-key → the slot array ("" = empty slot).
+    /// CHARACTER data, not a client preference — it used to live in the client's
+    /// client-settings.json, so it did not follow the account to another machine and it raced the
+    /// first Learned push on login (which is what silently reshuffled the bar).
+    /// It is a MAP, not one array, because a skill bar is per-CLASS: when subclasses land, each
+    /// class gets its own key and its own layout without a schema change. Today there is one key
+    /// (<see cref="Entity.MainSkillBarKey"/>).</summary>
+    public string SkillBarJson { get; set; } = "";
+
     /// <summary>PvP reputation: PK karma (>0 = red), and lifetime PK / PvP kill counts.</summary>
     public int Karma { get; set; }
     public int PkCount { get; set; }

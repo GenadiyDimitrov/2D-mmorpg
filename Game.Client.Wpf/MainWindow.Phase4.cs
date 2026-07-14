@@ -1414,6 +1414,8 @@ public partial class MainWindow
     /// <summary>Tab 1: skills you've learned, grouped by category, usable/bar-able.</summary>
     private void BuildLearnedTab()
     {
+        _skillWindowCooldowns.Clear();   // rows are rebuilt below; drop the old TextBlock refs
+
         var learned = _learnedSkills
             .Select(id => SkillCatalog.Get(id))
             .Where(d => d is not null).Select(d => d!)
@@ -1462,6 +1464,22 @@ public partial class MainWindow
                     assign.Click += (_, _) => AssignSkillToBar(id);
                     DockPanel.SetDock(assign, Dock.Right);
                     row.Children.Add(assign);
+
+                    // Live cooldown, so you can see what's ready without hunting along the bar.
+                    // Ticked by UpdateSkillCooldowns; the row itself is not rebuilt each frame.
+                    var cd = new TextBlock
+                    {
+                        Width = 44, FontSize = 11, FontWeight = FontWeights.Bold,
+                        // Gold here (NOT DarkGoldenrod): this window is dark-backed, so it needs the
+                        // opposite of the skill BAR, whose buttons are light grey.
+                        Foreground = Brushes.Gold,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        TextAlignment = TextAlignment.Right,
+                        Visibility = Visibility.Collapsed
+                    };
+                    DockPanel.SetDock(cd, Dock.Right);
+                    row.Children.Add(cd);
+                    _skillWindowCooldowns.Add((id, cd));
                 }
 
                 var name = new TextBlock

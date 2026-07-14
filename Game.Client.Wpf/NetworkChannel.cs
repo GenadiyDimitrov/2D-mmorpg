@@ -33,6 +33,7 @@ public class NetworkChannel : IAsyncDisposable
     public event Action<PartyLootVoteDto>? PartyLootVoteReceived;
     public event Action<AutoHuntStatus>? AutoHuntReceived;
     public event Action<AutoHuntConfigDto>? AutoConfigReceived;
+    public event Action<SkillBarDto>? SkillBarReceived;
     public event Action<LogoutResult>? LogoutResultReceived;
     public event Action<PvpState>? PvpStateReceived;
     public event Action<DebugConfigDto>? DebugConfigReceived;
@@ -73,6 +74,7 @@ public class NetworkChannel : IAsyncDisposable
         _connection.On<PartyLootVoteDto>("PartyLootVote", p => PartyLootVoteReceived?.Invoke(p));
         _connection.On<AutoHuntStatus>("AutoHunt", s => AutoHuntReceived?.Invoke(s));
         _connection.On<AutoHuntConfigDto>("AutoConfig", c => AutoConfigReceived?.Invoke(c));
+        _connection.On<SkillBarDto>("SkillBar", b => SkillBarReceived?.Invoke(b));
         _connection.On<LogoutResult>("LogoutResult", r => LogoutResultReceived?.Invoke(r));
         _connection.On<PvpState>("PvpState", s => PvpStateReceived?.Invoke(s));
         _connection.On<DebugConfigDto>("DebugConfig", c => DebugConfigReceived?.Invoke(c));
@@ -231,6 +233,9 @@ public class NetworkChannel : IAsyncDisposable
 
     public Task SetAutoHuntConfigAsync(AutoHuntConfigDto config) =>
         _connection!.SendAsync("SetAutoHuntConfig", config);
+
+    public Task SetSkillBarAsync(string[] slots) =>
+        _connection!.SendAsync("SetSkillBar", slots);
 
     public Task ToggleAutoHuntAsync(bool enabled) =>
         _connection!.SendAsync("ToggleAutoHunt", enabled);

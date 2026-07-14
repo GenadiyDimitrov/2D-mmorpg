@@ -118,6 +118,7 @@ public class GameLoopService : BackgroundService
                 case PartySetLootModeCmd c: HandlePartySetLootMode(c); break;
                 case PartyLootVoteCmd c: HandlePartyLootVote(c); break;
                 case SetAutoHuntConfigCmd c: HandleSetAutoHuntConfig(c); break;
+                case SetSkillBarCmd c: HandleSetSkillBar(c); break;
                 case ToggleAutoHuntCmd c: HandleToggleAutoHunt(c); break;
                 case LogoutCmd c: HandleLogout(c); break;
                 case StartOfflineFarmCmd c: HandleStartOfflineFarm(c); break;
@@ -171,6 +172,12 @@ public class GameLoopService : BackgroundService
         AutoLearnCoreSkills(entity);
         SendInventory(entity);
         SendStats(entity);
+        // ORDER MATTERS: the bar must reach the client BEFORE the learned skills. The client parks
+        // newly-learned skills in free slots when Learned arrives, so if it were still holding an
+        // empty bar at that moment it would re-fill one from scratch and overwrite the player's
+        // layout. That race (against a settings-file load) is exactly what "the bar reshuffles
+        // itself" was. SignalR preserves message order per connection, so this is sufficient.
+        SendSkillBar(entity);
         SendLearned(entity);
         SendQuestLog(entity);
         SendGold(entity);
@@ -1963,6 +1970,18 @@ public class GameLoopService : BackgroundService
     // Link-dead grace windows that expired / died this tick — removed after the entity loop.
     private readonly List<Guid> _endGraceQueue = new();
 
+    /// <summary>The player rearranged their bar — store the new layout and persist it. Deliberately
+    /// NOT validated against LearnedSkills: an unknown or since-replaced id simply won't render, and
+    /// rejecting the whole bar because one slot went stale would lose the player's layout. The server
+    /// never casts from the bar (UseSkill carries the skill id), so a junk slot is inert.</summary>
+    private void HandleSetSkillBar(SetSkillBarCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var p))
+            return;
+        p.SkillBars[Entity.MainSkillBarKey] = cmd.Slots ?? Array.Empty<string>();
+        SaveEntity(p);
+    }
+
     private void HandleSetAutoHuntConfig(SetAutoHuntConfigCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var p))
@@ -2315,6 +2334,9 @@ public class GameLoopService : BackgroundService
     }
 
     /// <summary>Echo the full stored config so the client UI reflects the persisted settings.</summary>
+    private void SendSkillBar(Entity p) =>
+        SendTo(p, "SkillBar", new SkillBarDto(p.ActiveSkillBar));
+
     private void SendAutoHuntConfig(Entity p) =>
         SendTo(p, "AutoConfig", new AutoHuntConfigDto(
             p.AutoHuntEnabled, p.AutoHpPotionPct, p.AutoMpPotionPct, p.AutoBuffPotions,

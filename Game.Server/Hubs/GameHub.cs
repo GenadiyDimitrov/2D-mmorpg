@@ -306,6 +306,12 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task SetSkillBar(string[] slots)
+    {
+        _world.Commands.Enqueue(new SetSkillBarCmd(Context.ConnectionId, slots));
+        return Task.CompletedTask;
+    }
+
     public Task ToggleAutoHunt(bool enabled)
     {
         _world.Commands.Enqueue(new ToggleAutoHuntCmd(Context.ConnectionId, enabled));

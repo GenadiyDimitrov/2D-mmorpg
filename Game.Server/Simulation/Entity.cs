@@ -130,6 +130,20 @@ public class Entity
     /// <summary>True if the character knows the skill at any level.</summary>
     public bool HasSkill(string id) => LearnedSkills.ContainsKey(id);
 
+    /// <summary>The bar-key of the character's one and only skill bar today. A skill bar is
+    /// per-CLASS, so <see cref="SkillBars"/> is a MAP: when subclasses arrive, each class stores its
+    /// own layout under its own key and nothing here has to be restructured.</summary>
+    public const string MainSkillBarKey = "main";
+
+    /// <summary>Skill-bar layouts, bar-key → slots ("" = an empty slot). The server does not USE the
+    /// bar (casting is driven by skill id, not slot); it only owns and persists it, because the bar is
+    /// CHARACTER data — it must follow the account to any machine and must not be rebuilt from an
+    /// unordered set on every login.</summary>
+    public Dictionary<string, string[]> SkillBars { get; } = new();
+
+    /// <summary>The layout of the bar the character is currently playing (empty array if unset).</summary>
+    public string[] ActiveSkillBar => SkillBars.GetValueOrDefault(MainSkillBarKey) ?? Array.Empty<string>();
+
     /// <summary>Active quests -> progress (step index + counter).</summary>
     public Dictionary<string, CharacterQuestState> ActiveQuests { get; } = new();
 

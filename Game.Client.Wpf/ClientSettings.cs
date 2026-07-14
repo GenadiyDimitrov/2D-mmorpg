@@ -1,13 +1,18 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
 namespace Game.Client.Wpf;
 
-/// <summary>Persistent client preferences (window size, …). Lives NEXT TO THE EXE (the Debug/publish
-/// output folder), like an options.ini. It is NOT a build item, so an update/rebuild never overwrites
-/// it; if it's missing the app writes a default. Best-effort — a bad file just yields defaults.</summary>
+/// <summary>Persistent CLIENT preferences — window geometry, and nothing else. Lives NEXT TO THE EXE
+/// (the Debug/publish output folder), like an options.ini. It is NOT a build item, so an update or
+/// rebuild never overwrites it; if it's missing the app writes a default. Best-effort — a bad file
+/// just yields defaults.
+///
+/// This file is for things that belong to THIS MACHINE. Anything that belongs to the CHARACTER lives
+/// in the DB and comes down from the server: the skill bar (SkillBarDto) and the auto-hunt config
+/// (AutoHuntConfigDto) both used to be here, which meant they didn't follow the account to another
+/// machine. Don't put character state back in here.</summary>
 public class ClientSettings
 {
     // Startup position (virtual-screen coords — negative Left/Top puts it on a monitor left/above
@@ -16,12 +21,6 @@ public class ClientSettings
     public double WindowTop { get; set; } = 100;
     public double WindowWidth { get; set; } = 1280;
     public double WindowHeight { get; set; } = 800;
-
-    /// <summary>Saved skill-bar layout PER CHARACTER (name → the 24 slots, "" = empty slot).
-    /// The bar is the player's own arrangement, so it must survive relog exactly as left —
-    /// it used to be rebuilt from a HashSet each login, which is unordered, so the bar
-    /// silently reshuffled itself.</summary>
-    public Dictionary<string, string[]> SkillBars { get; set; } = new();
 
     private static string FilePath =>
         Path.Combine(AppContext.BaseDirectory, "client-settings.json");

@@ -319,6 +319,18 @@ public class PersistenceService
             catch { /* ignore malformed auto-hunt json */ }
         }
 
+        if (!string.IsNullOrEmpty(rec.SkillBarJson))
+        {
+            try
+            {
+                var bars = JsonSerializer.Deserialize<Dictionary<string, string[]>>(rec.SkillBarJson);
+                if (bars is not null)
+                    foreach (var (key, slots) in bars)
+                        entity.SkillBars[key] = slots;
+            }
+            catch { /* ignore malformed skill-bar json */ }
+        }
+
         entity.Karma = rec.Karma;
         entity.PkCount = rec.PkCount;
         entity.PvpCount = rec.PvpCount;
@@ -352,7 +364,7 @@ public class PersistenceService
         int SecondClass, int ThirdClass, int SkillPoints, int Profession,
         int Con, int Atk, int Wit, int Dex, float X, float Y,
         string LearnedSkillsCsv, string CompletedQuestsCsv, string ActiveQuestsJson,
-        string KnownRecipesCsv, string AutoHuntJson,
+        string KnownRecipesCsv, string AutoHuntJson, string SkillBarJson,
         int Karma, int PkCount, int PvpCount, int ConsecutivePk,
         IReadOnlyList<ItemSnapshot> Items)
     {
@@ -378,6 +390,7 @@ public class PersistenceService
                     e.AutoHuntEnabled, e.AutoHpPotionPct, e.AutoMpPotionPct, e.AutoBuffPotions,
                     e.AutoSkills.ToArray(), e.AutoBuffPotionIds.ToArray(),
                     e.AutoFarmRange, e.AutoFarmStatic, e.AutoAttackNormal, e.AutoAttackElite, e.AutoAttackBoss)),
+                JsonSerializer.Serialize(e.SkillBars),
                 e.Karma, e.PkCount, e.PvpCount, e.ConsecutivePk,
                 items);
         }
@@ -438,6 +451,7 @@ public class PersistenceService
         rec.ActiveQuestsJson = snap.ActiveQuestsJson;
         rec.KnownRecipesCsv = snap.KnownRecipesCsv;
         rec.AutoHuntJson = snap.AutoHuntJson;
+        rec.SkillBarJson = snap.SkillBarJson;
         rec.Karma = snap.Karma;
         rec.PkCount = snap.PkCount;
         rec.PvpCount = snap.PvpCount;

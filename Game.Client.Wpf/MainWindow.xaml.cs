@@ -21,6 +21,11 @@ public partial class MainWindow : Window
     private readonly List<(Line Visual, bool Vertical, double WorldCoord)> _gridLines = new();
     private readonly List<FloatingText> _floatingTexts = new();
     private readonly List<SkillSlot> _skillSlots = new();
+
+    /// <summary>Live cooldown readouts in the SKILLS WINDOW (skill id → the TextBlock showing its
+    /// remaining seconds). Rebuilt with the window; ticked by UpdateSkillCooldowns off _skillReadyAt,
+    /// which is keyed by SKILL so it survives a bar re-render or a move.</summary>
+    private readonly List<(string Id, TextBlock Text)> _skillWindowCooldowns = new();
     private readonly ObservableCollection<string> _whisperNames = new();
     private readonly Stopwatch _clock = Stopwatch.StartNew();
 
@@ -127,6 +132,7 @@ public partial class MainWindow : Window
         _net.PartyLootVoteReceived += v => Dispatcher.BeginInvoke(() => OnPartyLootVote(v));
         _net.AutoHuntReceived += s => Dispatcher.BeginInvoke(() => OnAutoHuntStatus(s));
         _net.AutoConfigReceived += c => Dispatcher.BeginInvoke(() => OnAutoConfig(c));
+        _net.SkillBarReceived += b => Dispatcher.BeginInvoke(() => OnSkillBar(b));
         _net.LogoutResultReceived += r => Dispatcher.BeginInvoke(() => OnLogoutResult(r));
         _net.PvpStateReceived += s => Dispatcher.BeginInvoke(() => OnPvpState(s));
         _net.DebugConfigReceived += c => Dispatcher.BeginInvoke(() => OnDebugConfig(c));
@@ -514,8 +520,9 @@ public partial class MainWindow : Window
     /// <summary>The skill (string id) assigned to each bar slot (null = empty).</summary>
     private readonly string?[] _skillBar = new string?[SkillBarSlots];
 
-    /// <summary>Guards the one-time restore of the saved bar (EnsureSkillBarSlots is re-entered
-    /// on class change, and must not clobber the player's arrangement with the saved copy again).</summary>
+    /// <summary>False until the SERVER has sent this character's saved bar. Nothing may auto-place
+    /// into the bar, or save it, before then — otherwise a Learned push that arrives first would
+    /// re-fill an empty bar from scratch and persist that over the player's real layout.</summary>
     private bool _skillBarLoaded;
 
     /// <summary>Cooldowns survive a re-render. RenderSkillBar() rebuilds every SkillSlot object,
@@ -531,47 +538,59 @@ public partial class MainWindow : Window
     private int _skillPoints;
     private MoveState _moveState = MoveState.Running;
 
+    /// <summary>The bar is restored by the SERVER's SkillBar push (see OnSkillBar), which arrives
+    /// before the first Learned. This just re-parks anything new and repaints; it is a no-op until
+    /// the saved layout has landed.</summary>
     private void EnsureSkillBarSlots()
     {
-        LoadSkillBar();          // restore the player's own arrangement first
-        AutoPlaceNewSkills();    // then park any genuinely NEW skill in a free slot
+        AutoPlaceNewSkills();    // park any genuinely NEW skill in a free slot (no-op pre-load)
         RenderSkillBar();
     }
 
-    /// <summary>Restore this character's saved bar. Called before any auto-placement so the
-    /// player's arrangement always wins.</summary>
-    private void LoadSkillBar()
+    /// <summary>The server sent this character's saved bar (on login, before the Learned push).
+    /// This is the ONLY thing that populates the bar from storage.</summary>
+    private void OnSkillBar(SkillBarDto dto)
     {
-        if (_skillBarLoaded || string.IsNullOrEmpty(_myName)) return;
+        Array.Clear(_skillBar);
+        for (int i = 0; i < _skillBar.Length && i < dto.Slots.Length; i++)
+            _skillBar[i] = string.IsNullOrEmpty(dto.Slots[i]) ? null : dto.Slots[i];
+
         _skillBarLoaded = true;
-        if (!_settings.SkillBars.TryGetValue(_myName, out var saved)) return;
-        for (int i = 0; i < _skillBar.Length && i < saved.Length; i++)
-            _skillBar[i] = string.IsNullOrEmpty(saved[i]) ? null : saved[i];
+        AutoPlaceNewSkills();   // park anything learned since the layout was last saved
+        RenderSkillBar();
     }
 
-    /// <summary>Persist the bar for this character. Called on every change the player makes.</summary>
+    /// <summary>Persist the bar. It is CHARACTER data, so it goes to the SERVER (and the DB), not to
+    /// the client's settings file — that file did not follow the account to another machine, and its
+    /// load raced the first Learned push, which is what silently reshuffled the bar.</summary>
     private void SaveSkillBar()
     {
-        if (string.IsNullOrEmpty(_myName)) return;
-        _settings.SkillBars[_myName] = _skillBar.Select(x => x ?? "").ToArray();
-        _settings.Save();
+        if (!_inGame || !_skillBarLoaded) return;   // never save a bar we haven't loaded yet
+        _ = _net.SetSkillBarAsync(_skillBar.Select(x => x ?? "").ToArray());
     }
 
     /// <summary>Drop assignments the character can no longer use, then park any newly-learned
     /// skill in the first FREE slot. It never moves a skill the player has already placed —
     /// the bar is their layout, not ours.
-    /// (It used to enumerate the learned-skill HashSet, whose order is unspecified. Since the
-    /// bar wasn't persisted, every login re-filled it from scratch in whatever order the set
-    /// happened to yield — which is the "it reorders itself to some default" you saw. New
-    /// skills are now placed in a stable, deterministic order.)</summary>
+    ///
+    /// It does NOTHING until the saved bar has arrived from the server. That guard is the fix for
+    /// "learn all skills reshuffles the bar": this runs on every Learned push, and if it ran while
+    /// the bar was still empty it would re-fill one from scratch (in id order) and then SAVE that
+    /// over the player's real layout.</summary>
     private void AutoPlaceNewSkills()
     {
+        if (!_skillBarLoaded) return;
+
         var available = _learnedSkills;
+        bool changed = false;
 
         // Remove assignments no longer learned (e.g. a skill that got REPLACED by a better one).
         for (int i = 0; i < _skillBar.Length; i++)
             if (_skillBar[i] is string id && !available.Contains(id))
+            {
                 _skillBar[i] = null;
+                changed = true;
+            }
 
         var onBar = _skillBar.Where(x => x is not null).Select(x => x!).ToHashSet();
         foreach (var id in available.Where(x => SkillCatalog.Get(x) is not { Category: SkillCategory.Passive })
@@ -582,8 +601,12 @@ public partial class MainWindow : Window
             if (free < 0) break;
             _skillBar[free] = id;
             onBar.Add(id);
+            changed = true;
         }
-        SaveSkillBar();
+
+        // Only persist when the bar ACTUALLY moved. This runs on every Learned push, and each save is
+        // now a server round-trip plus a DB write — not something to do on every stats tick for free.
+        if (changed) SaveSkillBar();
     }
 
     /// <summary>Assign a skill to the first free slot (from the Skills window).</summary>
@@ -708,7 +731,9 @@ public partial class MainWindow : Window
                 };
                 var cd = new TextBlock
                 {
-                    Foreground = Brushes.Gold, FontSize = 16, FontWeight = FontWeights.Bold,
+                    // DarkGoldenrod, not Gold: the slot button is light grey, and plain Gold on it was
+                    // unreadable (same bug as the white abbreviations above).
+                    Foreground = Brushes.DarkGoldenrod, FontSize = 16, FontWeight = FontWeights.Bold,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center,
                     Visibility = Visibility.Collapsed, IsHitTestVisible = false
@@ -1489,28 +1514,35 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>Paint the cooldown countdown on the bar, and mirror it into the Skills window.
+    ///
+    /// A cooling-down slot is NEVER disabled. It used to set Button.IsEnabled = false, and a disabled
+    /// WPF button receives no mouse input at all — so while a skill was on cooldown you could not drag
+    /// it, nor right-click it off the bar. Cooldown is a CAST restriction, not a "you may not rearrange
+    /// your UI" restriction; UseSkill already refuses to fire an unready skill, so the button only
+    /// needs to LOOK unavailable (dimmed + a countdown), not be inert.</summary>
     private void UpdateSkillCooldowns(double now)
     {
         foreach (var slot in _skillSlots)
         {
             double remaining = slot.ReadyAt - now;
-            if (remaining > 0)
+            bool cooling = remaining > 0;
+
+            slot.Button.Opacity = cooling ? 0.5 : 1.0;   // dim only — still draggable / removable
+            if (slot.CooldownText is { } cd)
             {
-                slot.Button.IsEnabled = false;
-                slot.Button.Opacity = 0.5;
-                if (slot.CooldownText is { } cd)
-                {
-                    cd.Text = $"{remaining:0}";
-                    cd.Visibility = Visibility.Visible;
-                }
+                cd.Text = cooling ? $"{remaining:0}" : "";
+                cd.Visibility = cooling ? Visibility.Visible : Visibility.Collapsed;
             }
-            else
-            {
-                slot.Button.IsEnabled = _myDto is not { Dead: true };
-                slot.Button.Opacity = 1.0;
-                if (slot.CooldownText is { } cd)
-                    cd.Visibility = Visibility.Collapsed;
-            }
+        }
+
+        // Mirror the same countdown into the Skills window, so you don't have to read it off the bar.
+        foreach (var (id, text) in _skillWindowCooldowns)
+        {
+            double remaining = _skillReadyAt.TryGetValue(id, out double readyAt) ? readyAt - now : 0;
+            bool cooling = remaining > 0;
+            text.Text = cooling ? $"{remaining:0}s" : "";
+            text.Visibility = cooling ? Visibility.Visible : Visibility.Collapsed;
         }
     }
 

@@ -35,6 +35,28 @@ If it's still hot, the lever is `MobBaseStats.MDef` (the ~3·lvl slope) or the t
 
 ---
 
+## SKILL BAR → DB (2026-07-14) — ⚠ DELETE `game.db` BEFORE TESTING
+
+Schema change (`SkillBarJson` column). Delete `Game.Server/bin/Debug/net8.0/game.db` (+ `-shm`/`-wal`)
+and let it recreate. **Auto-hunt was ALREADY in the DB** (`AutoHuntJson`) — only the skill bar moved.
+
+- [ ] **The bar survives a relog, exactly as you left it.** Rearrange it, log out, log back in.
+- [ ] **The bar follows the CHARACTER, not the machine.** It is no longer in `client-settings.json`
+      (that file is now window geometry ONLY). Delete `client-settings.json` — the bar should still
+      come back on login.
+- [ ] **BUG FIXED: "Learn all skills" no longer reshuffles the bar.** Arrange the bar, then hit Learn
+      All. Existing placements must not move; only genuinely NEW skills get parked in free slots.
+      *(Root cause: the client re-filled an empty bar from scratch when the Learned push beat the
+      settings-file load, then saved that over your real layout. The server now sends the bar BEFORE
+      the learned skills, and auto-placement refuses to run until it has arrived.)*
+- [ ] **Cooldown no longer freezes a slot.** While a skill is on cooldown you can still DRAG it to
+      another slot and RIGHT-CLICK it off the bar — it just can't be cast. *(It used to set
+      `IsEnabled = false`, and a disabled WPF button takes no mouse input at all.)*
+- [ ] **Cooldown is readable** — DarkGoldenrod on the light bar (was Gold, unreadable), and it now
+      also shows in the **Skills window** next to each skill (gold there, since that window is dark).
+
+---
+
 ## SKILL BAR + DEBUG (2026-07-14)
 
 - [ ] **Skill-bar text is readable.** Abbreviations were white-on-light-grey (invisible); now black.

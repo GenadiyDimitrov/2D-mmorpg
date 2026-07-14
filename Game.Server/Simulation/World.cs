@@ -237,6 +237,9 @@ public record PartyKickCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 public record PartySetLootModeCmd(string ConnectionId, LootMode Mode) : IGameCommand;
 public record PartyLootVoteCmd(string ConnectionId, bool Accept) : IGameCommand;
 public record SetAutoHuntConfigCmd(string ConnectionId, AutoHuntConfigDto Config) : IGameCommand;
+
+/// <summary>Client -> server: the player rearranged their skill bar; persist the new layout.</summary>
+public record SetSkillBarCmd(string ConnectionId, string[] Slots) : IGameCommand;
 public record ToggleAutoHuntCmd(string ConnectionId, bool Enabled) : IGameCommand;
 public record LogoutCmd(string ConnectionId) : IGameCommand;
 public record StartOfflineFarmCmd(string ConnectionId) : IGameCommand;

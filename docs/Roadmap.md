@@ -94,9 +94,25 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 
 - [ ] **Equipped items out of the inventory list** into their own tab/pane (inventory is clogged;
   gear swapping is painful).
-- [ ] **Skill bar + auto-farm/auto-potion settings are CHARACTER data → move to the DB.**
-  `client-settings.json` keeps window position/size ONLY. (Skill bar is per-CLASS, auto-hunt is
-  per-CHARACTER — lay it out per [[subclass-system-design]] so subclasses don't force a rewrite.)
+- [x] **Skill bar + auto-hunt are CHARACTER data → in the DB — DONE 2026-07-14.**
+  **Auto-hunt was ALREADY there** (`AutoHuntJson` on the character row) — only the skill bar had to
+  move. New `SkillBarJson` column ⚠ (delete `game.db`), `SkillBarDto` both ways, `SetSkillBarCmd`,
+  `Entity.SkillBars`. `client-settings.json` is now **window geometry ONLY**, and says so.
+  - Stored as a **MAP** (bar-key → slots), not one array, because a bar is per-CLASS: when subclasses
+    land, each class gets its own key with no schema change. Today one key, `Entity.MainSkillBarKey`.
+    ([[subclass-system-design]])
+  - **BUG FIXED: "Learn all skills" reshuffled the bar.** Root cause: the client parks newly-learned
+    skills in free slots on every Learned push, and the saved layout was loaded from a *file* behind a
+    latch — so when Learned won that race the client re-filled an EMPTY bar from scratch (in id order)
+    and then **saved that over the player's real layout**. Now the server pushes the bar BEFORE the
+    learned skills (SignalR preserves per-connection order) and auto-placement is a no-op until it has
+    arrived. It also only saves when the bar actually moved — each save is now a round-trip + DB write.
+  - **BUG FIXED: a cooling-down skill could not be moved or removed.** It set `Button.IsEnabled=false`,
+    and a disabled WPF button receives no mouse input at all. Cooldown is a CAST restriction, not a
+    "you may not rearrange your UI" one — the slot is now merely dimmed (`UseSkill` already refuses to
+    fire an unready skill).
+  - Cooldown countdown recoloured (DarkGoldenrod on the light bar; Gold in the dark Skills window) and
+    **mirrored into the Skills window**, so you can see what's ready without reading along the bar.
 - [x] **Debug: 100k gold button -> 10kk — DONE 2026-07-14.** (100k could not fund a single stat swap,
   which costs 1kk-5kk per level.) **Debug race/class change now KEEPS the inventory** (owner reversed
   his earlier request): everything is UNEQUIPPED instead, and the starter kit only tops up pieces you
@@ -121,11 +137,8 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   are worn. Reported as built 2026-07-13; it is not working.
 - [x] **BUG: "Learn all skills" granted every stat-swap passive — FIXED 2026-07-14** (see the
   direction-rule entry above; it now grants NO swaps and says so).
-- [ ] **BUG: "Learn all skills" still reshuffles the skill bar.** NOT fixed. `AutoPlaceNewSkills`
-  re-fills the bar from the learned set on every `SendLearned`, and the saved layout lives in
-  `client-settings.json` keyed by character NAME, loaded behind a `_skillBarLoaded` latch that can
-  lose a race with the first `SendLearned`. **Fix this as part of moving the skill bar into the DB**
-  (the item below) rather than patching the settings-file path that is about to be deleted.
+- [x] **BUG: "Learn all skills" reshuffles the skill bar — FIXED 2026-07-14** as part of moving the
+  bar into the DB (see that entry above for the root cause).
 
 - [ ] **Sub-class groundwork** (deferred, don't restructure later) — one character, several classes,
   each with its own level/XP/skills/skill-bar; inventory + auto-hunt stay character-wide; debug
