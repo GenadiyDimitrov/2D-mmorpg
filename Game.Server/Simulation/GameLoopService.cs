@@ -688,8 +688,8 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        // Mutually-exclusive group (the stat-swap passives): you may hold ONE skill per group, and
-        // the choice is permanent. Only blocks the FIRST level — levelling the one you picked is fine.
+        // Mutually-exclusive group: you may hold ONE skill per group, and the choice is permanent.
+        // Only blocks the FIRST level — levelling the one you already picked is fine.
         if (cur == 0 && !string.IsNullOrEmpty(def.ExclusiveGroup))
         {
             foreach (var (learnedId, _) in player.LearnedSkills)
@@ -701,6 +701,16 @@ public class GameLoopService : BackgroundService
                     $"You have already committed to {other.Name}. It cannot be combined with {def.Name}.");
                 return;
             }
+        }
+
+        // THE DIRECTION RULE (stat swaps): every stat you touch commits to one direction. You may not
+        // raise a stat you have sold, nor sell a stat you have bought. Without this you could buy a
+        // circular +A−B, +B−C, +C−A ring that nets to +0 for 45kk of gold. Stacking a second skill
+        // that also LOWERS the same stat is still allowed. See SkillCatalog.StatSwapConflict.
+        if (cur == 0 && SkillCatalog.StatSwapConflict(def.Id, player.LearnedSkills.Keys) is { } clash)
+        {
+            SendSystemToEntity(player, clash);
+            return;
         }
 
         int cost = def.SpCostAt(target);
@@ -1350,6 +1360,16 @@ public class GameLoopService : BackgroundService
             if (!byId.TryGetValue(cs.SkillId, out var lvl) || cs.SkillLevel > lvl)
                 byId[cs.SkillId] = cs.SkillLevel;
         }
+
+        // NEVER grant the stat swaps here. They used to all be granted, which cancelled them out to
+        // roughly +0 — but the fix is NOT to auto-pick a legal subset: any subset is an arbitrary
+        // BUILD decision, and the obvious greedy one (take each in turn, skip what it bans) lands on
+        // four swaps that all sacrifice ATK — our single power stat — for -20 ATK. That would quietly
+        // wreck the damage numbers this button exists to test. A swap is a permanent gold purchase;
+        // buy it deliberately in the skills window.
+        var swaps = byId.Keys.Where(id => SkillCatalog.StatSwapOf(id) is not null).ToList();
+        foreach (var id in swaps) byId.Remove(id);
+
         foreach (var (id, lvl) in byId)
             player.LearnedSkills[id] = lvl;
         // Cross-skill replacements (e.g. Flame Bolt replaces Magic Bolt).
@@ -1359,6 +1379,10 @@ public class GameLoopService : BackgroundService
 
         player.RecomputeDerived();
         SendSystemToEntity(player, $"[DEBUG] Learned all class skills for level {player.Level}.");
+        if (swaps.Count > 0)
+            SendSystemToEntity(player,
+                $"[DEBUG] Skipped {swaps.Count} stat-swap passives — they are a permanent build choice " +
+                "(and cannot all be held at once). Buy the ones you want in the skills window.");
         SendStats(player);
         SendLearned(player);
         SaveEntity(player);

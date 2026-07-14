@@ -71,12 +71,26 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   - Our absolute magnitudes stay smaller than retail (mage M.Atk reads ~2.9k, not L2's ~16k). The
     RATIOS give the asked-for fight; making the numbers *look* like L2's is a cosmetic rescale.
 
-- [ ] **Stat-swap "direction" rule.** The level-40 swaps currently allow a circular net-zero loop
-  (+A−B, +B−C, +C−A = 45kk for +0). Fix: **each stat commits to a direction** — taking `+X −Y` bans
-  every other skill that RAISES X, every skill that LOWERS X, and every skill that RAISES Y; a
-  second `−Y` from elsewhere is still allowed (they stack). Verified: a fighter taking `+ATK−MEN`
-  then `+WIT−MEN` is left with exactly `+CON−DEX`/`+DEX−CON`. Extends the current single
-  `ExclusiveGroup` (keep it — the skill-reset NPC keys off it).
+- [x] **Stat-swap "direction" rule — DONE 2026-07-14.** Every stat you touch now commits to ONE
+  direction: taking `+X -Y` bans every other skill that RAISES X (the old `ExclusiveGroup`, kept —
+  the skill-reset NPC keys off it), every skill that LOWERS X, and every skill that RAISES Y. A
+  second skill that also LOWERS Y is still allowed and stacks. That makes the circular net-zero ring
+  (+A-B, +B-C, +C-A = 45kk for +0) unreachable — the 2nd skill in any ring always tries to raise a
+  stat the 1st one already sold.
+  - `Skills.StatSwap.cs` restructured around a `SwapTable` of `(id, name, Up, Down)`. The exclusive
+    group, the `PassiveEffect`, the description AND the rule are all derived from it, so a new swap
+    cannot fall out of sync with the rule that polices it.
+    `SkillCatalog.StatSwapConflict(id, learned)` IS the rule; enforced on the server learn path and
+    mirrored in the WPF learn list (a banned pick is never offered). Verified in
+    `tools/BalanceMatrix`: the owner's worked example reproduces exactly (holding `+ATK-MEN` and
+    `+WIT-MEN` leaves only `+CON-DEX` / `+DEX-CON` open), and the ring is blocked at its 2nd skill.
+  - **BUG FIXED: debug "learn all skills"** no longer grants every stat swap.
+    ⚠ **Deviation from the original ask** (which was "take the first, skip what it bans"): it now
+    grants **NO** swaps at all. Any subset is an arbitrary BUILD decision, and that greedy pick lands
+    on four swaps that ALL sacrifice **ATK** — our single power stat — for **-20 ATK**, which would
+    quietly wreck the damage numbers that button exists to test. It now says so in chat rather than
+    doing it silently. Buy swaps deliberately in the skills window (they cost gold, and the
+    skill-reset NPC un-picks them).
 
 - [ ] **Equipped items out of the inventory list** into their own tab/pane (inventory is clogged;
   gear swapping is painful).

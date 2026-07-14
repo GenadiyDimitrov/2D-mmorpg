@@ -8,8 +8,21 @@ namespace Game.Shared;
 /// per group: each level gives <b>+1 to one stat and −1 to another</b>, up to +5/−5 at level 5.
 /// They cost GOLD, not SP — 1kk / 2kk / 3kk / 4kk / 5kk (15kk to max a single skill).
 ///
-/// Skills are grouped by the stat they RAISE, and the group is mutually exclusive: learn +CON−DEX
-/// and you can never also learn +CON−ATK. You commit to a direction.
+/// <b>THE DIRECTION RULE.</b> Every stat you touch commits to ONE DIRECTION, for good. Taking
+/// <c>+X −Y</c> means X is now an "up" stat and Y is now a "down" stat, so from then on:
+/// <list type="bullet">
+///   <item>nothing else may RAISE X (that's the old exclusive-group rule — one +X skill only),</item>
+///   <item>nothing may LOWER X (you cannot give back what you bought), and</item>
+///   <item>nothing may RAISE Y (you cannot buy back what you sold).</item>
+/// </list>
+/// A second skill that ALSO lowers Y is still allowed — those stack. Without this rule you could
+/// buy a circular loop (+A−B, +B−C, +C−A) that nets to +0 for 45kk, which is a pure gold sink with
+/// no decision in it. With it, <c>StatSwapConflict</c> makes such a loop unreachable: the second
+/// skill in the ring always tries to raise a stat the first one already sold.
+///
+/// Worked example (fighter): take <c>+ATK −MEN</c>, then <c>+WIT −MEN</c> (MEN stacks to −10). The
+/// only pair still open is <c>+CON −DEX</c> / <c>+DEX −CON</c> — pick one and you land on
+/// +5 ATK, +5 WIT, +5 CON, −5 DEX, −10 MEN. Every other swap is banned by one of the three clauses.
 ///
 /// The ATK group is gated by class, because ATK is our single power stat (it feeds P.Atk for a
 /// fighter and M.Atk for a caster — the WEAPON decides which):
@@ -85,42 +98,121 @@ public static partial class SkillCatalog
     private static string SwapMenDown(int n, string up) =>
         $"Passive. +{n} {up}; −{n * 2}% Max MP, M.Def and MP regen. (Level {n} of 5.)";
 
-    private static SkillDef[] StatSwapSkillDefs() => new[]
+    /// <summary>A stat a swap can move. MEN is not a real stat any more (it IS its modifiers — see
+    /// <see cref="MenSwap"/>), but for the DIRECTION rule it commits exactly like the others.</summary>
+    public enum SwapStat { Con, Dex, Atk, Wit, Men }
+
+    /// <summary>THE source of truth for the swaps: id, display name, the stat it RAISES and the stat
+    /// it LOWERS. Everything else — the exclusive group, the PassiveEffect, the description and the
+    /// direction rule — is derived from this, so a new swap cannot fall out of sync with the rule
+    /// that polices it. Skill ids follow <c>swap_&lt;raised&gt;_&lt;sacrificed&gt;</c>.</summary>
+    private static readonly (string Id, string Name, SwapStat Up, SwapStat Down)[] SwapTable =
     {
-        // ---- Group CON ----
-        StatSwap(SwapConAtk, "Fortitude (Power)",   GroupSwapCon,
-            l => new PassiveEffect(Con:  l, Atk: -l), l => Swap2(l, "CON", "ATK")),
-        StatSwap(SwapConDex, "Fortitude (Agility)", GroupSwapCon,
-            l => new PassiveEffect(Con:  l, Dex: -l), l => Swap2(l, "CON", "DEX")),
+        (SwapConAtk, "Fortitude (Power)",   SwapStat.Con, SwapStat.Atk),
+        (SwapConDex, "Fortitude (Agility)", SwapStat.Con, SwapStat.Dex),
 
-        // ---- Group DEX ----
-        StatSwap(SwapDexAtk, "Agility (Power)",     GroupSwapDex,
-            l => new PassiveEffect(Dex:  l, Atk: -l), l => Swap2(l, "DEX", "ATK")),
-        StatSwap(SwapDexCon, "Agility (Vigour)",    GroupSwapDex,
-            l => new PassiveEffect(Dex:  l, Con: -l), l => Swap2(l, "DEX", "CON")),
+        (SwapDexAtk, "Agility (Power)",     SwapStat.Dex, SwapStat.Atk),
+        (SwapDexCon, "Agility (Vigour)",    SwapStat.Dex, SwapStat.Con),
 
-        // ---- Group ATK (class-gated; buffers may take all four) ----
-        StatSwap(SwapAtkDex, "Power (Agility)",     GroupSwapAtk,
-            l => new PassiveEffect(Atk:  l, Dex: -l), l => Swap2(l, "ATK", "DEX")),
-        StatSwap(SwapAtkCon, "Power (Vigour)",      GroupSwapAtk,
-            l => new PassiveEffect(Atk:  l, Con: -l), l => Swap2(l, "ATK", "CON")),
-        StatSwap(SwapAtkWit, "Power (Insight)",     GroupSwapAtk,
-            l => new PassiveEffect(Atk:  l, Wit: -l), l => Swap2(l, "ATK", "WIT")),
-        StatSwap(SwapAtkMen, "Power (Spirit)",      GroupSwapAtk,
-            l => MenSwap(-l, atk: l),                 l => SwapMenDown(l, "ATK")),
+        // ATK group is class-gated (buffers may take all four) — see StatSwapsFor.
+        (SwapAtkDex, "Power (Agility)",     SwapStat.Atk, SwapStat.Dex),
+        (SwapAtkCon, "Power (Vigour)",      SwapStat.Atk, SwapStat.Con),
+        (SwapAtkWit, "Power (Insight)",     SwapStat.Atk, SwapStat.Wit),
+        (SwapAtkMen, "Power (Spirit)",      SwapStat.Atk, SwapStat.Men),
 
-        // ---- Group WIT ----
-        StatSwap(SwapWitAtk, "Insight (Power)",     GroupSwapWit,
-            l => new PassiveEffect(Wit:  l, Atk: -l), l => Swap2(l, "WIT", "ATK")),
-        StatSwap(SwapWitMen, "Insight (Spirit)",    GroupSwapWit,
-            l => MenSwap(-l, wit: l),                 l => SwapMenDown(l, "WIT")),
+        (SwapWitAtk, "Insight (Power)",     SwapStat.Wit, SwapStat.Atk),
+        (SwapWitMen, "Insight (Spirit)",    SwapStat.Wit, SwapStat.Men),
 
-        // ---- Group MEN (raises the MEN modifiers) ----
-        StatSwap(SwapMenAtk, "Spirit (Power)",      GroupSwapMen,
-            l => MenSwap(l, atk: -l),                 l => SwapMenUp(l, "ATK")),
-        StatSwap(SwapMenWit, "Spirit (Insight)",    GroupSwapMen,
-            l => MenSwap(l, wit: -l),                 l => SwapMenUp(l, "WIT")),
+        (SwapMenAtk, "Spirit (Power)",      SwapStat.Men, SwapStat.Atk),
+        (SwapMenWit, "Spirit (Insight)",    SwapStat.Men, SwapStat.Wit),
     };
+
+    /// <summary>The exclusive group of a swap = the stat it RAISES ("swap_con", …). Kept because the
+    /// skill-reset NPC un-learns anything carrying an ExclusiveGroup, and because it is still the
+    /// clause that stops you holding two different +X skills.</summary>
+    private static string GroupOf(SwapStat up) => "swap_" + up.ToString().ToLowerInvariant();
+
+    /// <summary>The cumulative effect of a swap at level <paramref name="l"/>: +l to the raised stat,
+    /// −l to the sacrificed one. MEN is expressed as its modifiers rather than as a stat.</summary>
+    private static PassiveEffect SwapEffect(SwapStat up, SwapStat down, int l)
+    {
+        int con = 0, dex = 0, atk = 0, wit = 0, men = 0;
+        void Move(SwapStat s, int d)
+        {
+            switch (s)
+            {
+                case SwapStat.Con: con += d; break;
+                case SwapStat.Dex: dex += d; break;
+                case SwapStat.Atk: atk += d; break;
+                case SwapStat.Wit: wit += d; break;
+                case SwapStat.Men: men += d; break;
+            }
+        }
+        Move(up, l);
+        Move(down, -l);
+        return men == 0
+            ? new PassiveEffect(Con: con, Dex: dex, Atk: atk, Wit: wit)
+            : MenSwap(men, con: con, dex: dex, atk: atk, wit: wit);
+    }
+
+    private static string SwapDescription(SwapStat up, SwapStat down, int l) =>
+        down == SwapStat.Men ? SwapMenDown(l, Label(up))
+        : up == SwapStat.Men ? SwapMenUp(l, Label(down))
+        : Swap2(l, Label(up), Label(down));
+
+    private static string Label(SwapStat s) => s.ToString().ToUpperInvariant();
+
+    private static SkillDef[] StatSwapSkillDefs() => SwapTable
+        .Select(r => StatSwap(r.Id, r.Name, GroupOf(r.Up),
+            l => SwapEffect(r.Up, r.Down, l),
+            l => SwapDescription(r.Up, r.Down, l)))
+        .ToArray();
+
+    // ---- THE DIRECTION RULE ------------------------------------------------------------------
+
+    /// <summary>The (raised, lowered) pair of a stat-swap skill, or null if the id isn't one.</summary>
+    public static (SwapStat Up, SwapStat Down)? StatSwapOf(string skillId)
+    {
+        foreach (var r in SwapTable)
+            if (r.Id == skillId) return (r.Up, r.Down);
+        return null;
+    }
+
+    /// <summary>Why <paramref name="skillId"/> may NOT be learned given what is already known, or
+    /// null if it may. Enforces the direction rule: once a swap sets a stat's direction, no later
+    /// swap may push that stat the other way.
+    ///
+    /// Returns the message to show the player, naming the skill that blocks the pick.
+    ///
+    /// Note the ONE thing this deliberately allows: another skill that also LOWERS the same stat.
+    /// Two swaps can both sell MEN, and they stack (−5 and −5 = −10). It's only reversals that are
+    /// banned, which is exactly what makes the net-zero ring (+A−B, +B−C, +C−A) unreachable.</summary>
+    public static string? StatSwapConflict(string skillId, IEnumerable<string> learnedSkillIds)
+    {
+        if (StatSwapOf(skillId) is not { } candidate) return null;   // not a swap → nothing to police
+        var (up, down) = candidate;
+
+        foreach (var learnedId in learnedSkillIds)
+        {
+            if (learnedId == skillId) continue;
+            if (StatSwapOf(learnedId) is not { } holdPair) continue;
+            var (heldUp, heldDown) = holdPair;
+            string held = Get(learnedId)?.Name ?? learnedId;
+
+            if (heldUp == up)                                  // two skills raising the same stat
+                return $"You have already committed to {held}. Only one skill may raise {Label(up)}.";
+            if (heldDown == up)                                // we sold this stat; can't buy it back
+                return $"{held} already sacrifices {Label(up)}. You cannot raise a stat you have given up.";
+            if (heldUp == down)                                // we bought this stat; can't sell it
+                return $"{held} already raises {Label(down)}. You cannot sacrifice a stat you have bought.";
+        }
+        return null;
+    }
+
+    // NOTE: there is deliberately NO "auto-pick a legal subset" helper. It is tempting (debug
+    // "learn all skills" wants one) but any subset is an arbitrary BUILD decision, and the obvious
+    // greedy pick — take each in turn, skip what it bans — lands on four swaps that all sacrifice
+    // ATK, our single power stat, for −20 ATK. Debug learn-all therefore grants NO swaps at all.
 
     /// <summary>The stat swaps a class may buy. ATK is our single power stat — it feeds P.Atk for a
     /// fighter and M.Atk for a caster (the WEAPON decides which) — so only the ATK group is gated:

@@ -35,6 +35,27 @@ If it's still hot, the lever is `MobBaseStats.MDef` (the ~3·lvl slope) or the t
 
 ---
 
+## STAT-SWAP DIRECTION RULE (2026-07-14)
+
+Each stat now commits to ONE direction: you cannot raise a stat you have sold, nor sell a stat you
+have bought. A second skill that also LOWERS the same stat is still allowed and stacks.
+
+- [ ] **The circular net-zero ring is gone.** Try to buy `+CON−DEX`, then `+DEX−ATK` — the second
+      must be refused ("you cannot raise a stat you have given up"). Same for any 3-skill ring.
+- [ ] **The worked example holds.** Take `+ATK−MEN`, then `+WIT−MEN` (MEN should stack to −10). The
+      only picks left open should be `+CON−DEX` and `+DEX−CON`; every other swap should have
+      disappeared from the learn list.
+- [ ] **The learn list hides banned picks** (client-side) AND the server refuses them if you somehow
+      get one through — both paths are wired.
+- [ ] **The skill-reset NPC (Mindwright Sela, Brackenford) still frees a committed stat.** Un-learn a
+      swap and the direction it locked should open up again.
+- [ ] **Debug "learn all skills" grants NO stat swaps** and tells you so in chat. ⚠ This is a
+      deliberate change from what you asked ("take the first, skip what it bans") — that greedy rule
+      picks four swaps that all sacrifice **ATK** (−20 ATK), which would wreck the damage you use
+      that button to test. Say if you'd rather have the greedy pick back.
+
+---
+
 ## ⚠ TWO NUMBERS TO DECIDE WHILE TESTING (2026-07-13)
 
 ### 1. `ItemCatalog.OffChannelFactor` — currently **0.6**, I'd argue for **0.2**

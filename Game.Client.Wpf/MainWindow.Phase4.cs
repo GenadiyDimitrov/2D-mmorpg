@@ -1482,17 +1482,27 @@ public partial class MainWindow
 
     /// <summary>Tab 2: learnable skills grouped by required level, with Learn
     /// buttons enabled when level + SP (+ previous rank) allow.</summary>
-    /// <summary>True if a rival skill in the same mutually-exclusive group is already learned — you
-    /// committed to one trade-off, so the alternatives vanish from the learn list. (The stat-swap
-    /// passives: take +CON−DEX and +CON−ATK is gone for good.) The skill you PICKED still shows, so
-    /// you can keep levelling it.</summary>
+    /// <summary>True if this skill is no longer a legal pick — it vanishes from the learn list. Two
+    /// things can lock it, and the server enforces both (this is only so the UI doesn't offer a pick
+    /// that would be refused):
+    /// <list type="bullet">
+    ///   <item>a rival in the same mutually-exclusive GROUP is already learned (take +CON−DEX and
+    ///         +CON−ATK is gone for good), or</item>
+    ///   <item>the stat-swap DIRECTION rule — you may not raise a stat you have sold, nor sell a
+    ///         stat you have bought. (See SkillCatalog.StatSwapConflict.)</item>
+    /// </list>
+    /// The skill you PICKED still shows, so you can keep levelling it.</summary>
     private bool LockedByExclusiveGroup(string skillId)
     {
-        if (SkillCatalog.Get(skillId) is not SkillDef def || string.IsNullOrEmpty(def.ExclusiveGroup))
-            return false;
+        if (SkillCatalog.Get(skillId) is not SkillDef def) return false;
         if (_learnedSkills.Contains(skillId)) return false;   // it's the one you took
-        return _learnedSkills.Any(id => SkillCatalog.Get(id) is { } other
-                                        && other.ExclusiveGroup == def.ExclusiveGroup);
+
+        if (!string.IsNullOrEmpty(def.ExclusiveGroup)
+            && _learnedSkills.Any(id => SkillCatalog.Get(id) is { } other
+                                        && other.ExclusiveGroup == def.ExclusiveGroup))
+            return true;
+
+        return SkillCatalog.StatSwapConflict(skillId, _learnedSkills) is not null;
     }
 
     private void BuildLearnTab()

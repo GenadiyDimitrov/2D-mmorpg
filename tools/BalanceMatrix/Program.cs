@@ -73,6 +73,40 @@ foreach (int L in levels)
 Console.WriteLine("  (a mob that buys bulk with an HP-multiplier passive now pays that multiple in EXP)");
 Console.WriteLine();
 
+Console.WriteLine("=== STAT-SWAP DIRECTION RULE ===");
+
+// The owner's worked example: a fighter takes +ATK-MEN, then +WIT-MEN. Every other swap should
+// then be banned except the +CON-DEX / +DEX-CON pair, and MEN should stack to -10.
+var held = new List<string> { SkillCatalog.SwapAtkMen, SkillCatalog.SwapWitMen };
+Console.WriteLine($"  Fighter holds: {string.Join(" + ", held.Select(NameOf))}");
+foreach (var id in SkillCatalog.StatSwapsFor(BaseClass.Fighter, null))
+{
+    if (held.Contains(id)) continue;
+    string? clash = SkillCatalog.StatSwapConflict(id, held);
+    Console.WriteLine(clash is null
+        ? $"    OPEN   {NameOf(id),-22} ({id})"
+        : $"    banned {NameOf(id),-22} — {clash}");
+}
+
+// The net-zero ring the rule exists to kill: +CON-DEX, +DEX-ATK, +ATK-CON nets to +0 for 45kk.
+Console.WriteLine();
+Console.WriteLine("  Net-zero ring (+CON-DEX, +DEX-ATK, +ATK-CON) — must be unreachable:");
+var ring = new[] { SkillCatalog.SwapConDex, SkillCatalog.SwapDexAtk, SkillCatalog.SwapAtkCon };
+var ringHeld = new List<string>();
+foreach (var id in ring)
+{
+    string? clash = SkillCatalog.StatSwapConflict(id, ringHeld);
+    Console.WriteLine(clash is null ? $"    taken  {NameOf(id)}" : $"    BLOCKED {NameOf(id)} — {clash}");
+    if (clash is null) ringHeld.Add(id);
+}
+
+Console.WriteLine();
+Console.WriteLine("  (debug \"learn all skills\" now grants NO swaps — a swap is a permanent build");
+Console.WriteLine("   choice, and the greedy legal pick lands on four -ATK swaps = -20 ATK.)");
+Console.WriteLine();
+
+static string NameOf(string id) => SkillCatalog.Get(id)?.Name ?? id;
+
 // ---------------------------------------------------------------------------
 
 // The gear tier a character of this level would realistically be wearing.
