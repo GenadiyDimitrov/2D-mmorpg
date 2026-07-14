@@ -214,6 +214,9 @@ public record DebugLearnAllCmd(string ConnectionId) : IGameCommand;
 /// <summary>DEBUG-only: grant gold.</summary>
 public record DebugGoldCmd(string ConnectionId, long Amount) : IGameCommand;
 
+/// <summary>DEBUG: apply the full NPC buff set to yourself, at any level, without visiting the NPC.</summary>
+public record DebugBuffCmd(string ConnectionId) : IGameCommand;
+
 /// <summary>DEBUG-only: grant skill points.</summary>
 public record DebugSpCmd(string ConnectionId, long Amount) : IGameCommand;
 

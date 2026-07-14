@@ -196,6 +196,10 @@ public class NetworkChannel : IAsyncDisposable
     public Task DebugLevelAsync(int delta) =>
         _connection!.SendAsync("DebugLevel", delta);
 
+    /// <summary>DEBUG: full NPC buff set on yourself, any level, no walk to the NPC.</summary>
+    public Task DebugBuffAsync() =>
+        _connection!.SendAsync("DebugBuff");
+
     public Task DebugLearnAllAsync() =>
         _connection!.SendAsync("DebugLearnAll");
 

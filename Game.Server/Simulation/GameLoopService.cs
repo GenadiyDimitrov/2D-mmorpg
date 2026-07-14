@@ -102,6 +102,7 @@ public class GameLoopService : BackgroundService
                 case DebugLevelCmd c: HandleDebugLevel(c); break;
                 case DebugLearnAllCmd c: HandleDebugLearnAll(c); break;
                 case DebugGoldCmd c: HandleDebugGold(c); break;
+                case DebugBuffCmd c: HandleDebugBuff(c); break;
                 case DebugSpCmd c: HandleDebugSp(c); break;
                 case DebugResetCmd c: HandleDebugReset(c); break;
                 case DebugThirdClassCmd c: HandleDebugThirdClass(c); break;
@@ -5883,7 +5884,11 @@ var effect = def.Effect;
 
     /// <summary>Apply the newbie buffer's full buff set (1h) to a lvl 6-75 player. Each
     /// buff shares its player counterpart's BuffKey at a high rank, so it overrides any
-    /// weaker self-cast version.</summary>
+    /// weaker self-cast version.
+    ///
+    /// TODO (owner, deferred 2026-07-14): the NPC currently hands out the MAX-LEVEL set to everybody.
+    /// It should scale with the character — an NPC must never grant a buff stronger than a real player
+    /// buffer of that level could cast. That needs the buff skills to be multi-level first.</summary>
     private void ApplyNewbieBuffs(Entity player)
     {
         const int minLvl = 6, maxLvl = 75;
@@ -5897,6 +5902,14 @@ var effect = def.Effect;
             SendSystemToEntity(player, "You are well beyond a newbie buffer's help.");
             return;
         }
+        GrantFullBuffSet(player);
+        SendSystemToEntity(player, "You are blessed with a buffer's full might!");
+    }
+
+    /// <summary>Lay the full NPC buff set on a player. Shared by the buffer NPC and the debug button —
+    /// the ONLY difference between them is the NPC's level gate, which is exactly the point.</summary>
+    private void GrantFullBuffSet(Entity player)
+    {
         foreach (var id in SkillCatalog.NewbieBuffSet)
             if (SkillCatalog.Get(id) is SkillDef def)
                 ApplyBuff(player, def, refresh: false);
@@ -5904,7 +5917,18 @@ var effect = def.Effect;
         player.RecomputeDerived();
         PushBuffs(player);
         SendStats(player);
-        SendSystemToEntity(player, "You are blessed with a buffer's full might!");
+    }
+
+    /// <summary>DEBUG: the full buff set, at any level, without walking to the NPC. Deliberately has
+    /// NO level gate — the NPC's 6-75 window is a game rule, and debug exists to sidestep the walk,
+    /// not to re-enforce it. This is the ONLY way to get buffed above 75 today, which matters because
+    /// the balance numbers the owner signs off on are BUFFED numbers.</summary>
+    private void HandleDebugBuff(DebugBuffCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
+            return;
+        GrantFullBuffSet(player);
+        SendSystemToEntity(player, "[DEBUG] Full buff set applied (1 hour).");
     }
 
     private void SendDialog(Entity player, Entity npc)

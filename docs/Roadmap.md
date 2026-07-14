@@ -220,9 +220,32 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   skill you chose, and leaving a level-9 (+100% attack) passive on a character just dropped to 40 would
   silently inflate the damage numbers you delevelled in order to measure.
 
+- [x] **Debug "Full Buffs (1h)" button — DONE 2026-07-14.** The whole NPC buff set on yourself, at ANY
+  level, without the walk. Deliberately has NO level gate: the NPC's 6-75 window is a GAME RULE, and
+  debug exists to skip the walk, not to re-enforce the rule. It is the only way to get buffed above 75
+  today — which matters, because the balance numbers the owner signs off on are BUFFED numbers.
+  (`GrantFullBuffSet` is now shared by the NPC and the button; the level gate is the only difference.)
+
 - **NOT touched: the NPC buffer's level gate.** Still `lvl 6-75` (`ApplyNewbieBuffs`), as designed
-  ([[buffer-enchanter-design]] — the full-buff NPC is the SOLO stopgap to 75). Note it will refuse to
-  buff a level-85 character.
+  ([[buffer-enchanter-design]] — the full-buff NPC is the SOLO stopgap to 75). Owner: leave it at 6-75.
+
+- [ ] **NPC buffer must give LEVEL-APPROPRIATE buffs** (owner, deferred 2026-07-14). Today it hands the
+  **max-level** set to everybody, so a level-10 character walks away with buffs no real buffer could cast
+  for another 60 levels. Rule: **an NPC may never grant a buff stronger than a real player buffer of that
+  character's level could cast.** So the granted buff LEVEL must scale with the character's level.
+  **Blocked on the buff skills becoming multi-level first** (they are single-level today) — the same
+  `SkillLevel` ladder the nukes now use ([[multi-level-skills]]). Do it with the Enchanter/buffer class
+  work ([[buffer-enchanter-design]]).
+
+- [ ] **Training passives as a purchasable BUFF or ITEM, not an auto-granted passive** (owner idea,
+  2026-07-14 — thinking out loud, not decided). Physical/Spirit Training is currently auto-granted and
+  its level is a pure function of character level (it is our soulshot/spiritshot stand-in: +10%…+100%
+  attack). The idea: make it something you BUY — a day-long buff, or an item effect — rather than
+  something you simply have. That would give the gold sink real teeth and make "am I shotted?" a
+  decision instead of a constant. **Consequences to think through before building:** every damage number
+  in `tools/BalanceMatrix` currently assumes the passive is ON (it is granted automatically), so the
+  baseline would shift; and an unbuffed/unshotted character becomes a genuinely different power level,
+  which is exactly what soulshots do in L2. See [[stats-via-skills-not-hardcoded]].
 
 ### Playtest-3 leftovers (2026-07-14) — the only two things from that session not built
 

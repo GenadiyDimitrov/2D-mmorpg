@@ -2500,6 +2500,11 @@ public partial class MainWindow
         DebugList.Children.Add(DebugAction("Level +10", async () => await _net.DebugLevelAsync(+10)));
         DebugList.Children.Add(DebugAction("Level -1",  async () => await _net.DebugLevelAsync(-1)));
         DebugList.Children.Add(DebugAction("Level -10", async () => await _net.DebugLevelAsync(-10)));
+
+        // Full buff set on yourself, at ANY level, without walking to the NPC. Note the NPC itself
+        // still refuses above 75 (a game rule) — this is the only way to get buffed past that, which
+        // matters because the balance numbers we sign off on are BUFFED numbers.
+        DebugList.Children.Add(DebugAction("Full Buffs (1h)", async () => await _net.DebugBuffAsync()));
         DebugList.Children.Add(DebugAction("Learn all skills (to my level)", async () => await _net.DebugLearnAllAsync()));
         DebugList.Children.Add(DebugAction("+1kk SP", async () => await _net.DebugSpAsync(1_000_000)));
         // 10kk, not 100k: the level-40 stat swaps cost 1kk-5kk per level (15kk to max one), so the

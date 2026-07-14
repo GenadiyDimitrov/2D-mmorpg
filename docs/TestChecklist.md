@@ -28,7 +28,13 @@ Still worth eyeballing on a future pass (not blocking):
 
 ---
 
-## LEVEL CAP + DELEVEL (2026-07-14)
+## LEVEL CAP + DELEVEL + DEBUG BUFFS (2026-07-14)
+
+- [ ] **Debug → "Full Buffs (1h)"** lays the whole NPC buff set on you at ANY level, no walk to the NPC.
+      No level gate on purpose: the NPC's 6-75 window is a game rule, and debug is for skipping the walk,
+      not for re-enforcing rules. It is the only way to be buffed above 75 — which matters, because the
+      balance you sign off on is BUFFED balance.
+
 
 - [ ] **Level cap is 90** for a normal character (`GameConstants.MaxPlayerLevel`). XP stops at the cap
       and parks at 0 rather than piling up invisibly.

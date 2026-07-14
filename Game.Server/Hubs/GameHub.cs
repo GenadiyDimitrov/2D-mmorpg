@@ -480,6 +480,15 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>DEBUG: full NPC buff set on yourself, any level, no walk to the NPC.</summary>
+    public Task DebugBuff()
+    {
+#if DEBUG
+        _world.Commands.Enqueue(new DebugBuffCmd(Context.ConnectionId));
+#endif
+        return Task.CompletedTask;
+    }
+
     public Task DebugSp(long amount)
     {
 #if DEBUG
