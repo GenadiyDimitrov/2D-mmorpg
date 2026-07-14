@@ -516,7 +516,37 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   UI (target frame/skill bar/cast bars), then swap billboards for animated 3D models (visual-only).
 - [ ] **Line of sight** — server-side LoS using STATIC occluder data (not entities), for
   the new client. ([[client-3d-and-los-design]])
-- [ ] **Instances / dungeons**.
+- [ ] **INSTANCES & DUNGEONS** — full owner spec captured 2026-07-14 in **`docs/Instances.md`**.
+  Read that before touching this. Two features, very different sizes — don't conflate them.
+
+  **DUNGEONS = small, mostly DATA.** A dungeon IS a `SpawnZone`: harder mobs, normal respawn, can hold a
+  boss, "just not on the main map". We already have zones/elites/bosses/drops/teleports, and the 48000²
+  world only uses the middle for the 7-town ring — so it's a zone authored outside the ring plus a
+  teleport entrance. ("Map layers / under-over ground" is a CLIENT concern; the server is 2D and doesn't
+  care.) **Do this one first — value now, near-zero risk.**
+
+  **INSTANCES = a real system.** Owner's rules: one attempt per player per DAY (reset 00:00 server time;
+  debug every 10 min), consumed on START whether you finish or not; per-instance open window + day-of-week
+  mask (default 00:00:00-23:59:59); one NPC per CATEGORY; party leader only, party ≥4, every member in the
+  level band and unspent; level bands 20-29 … 76-85; rooms of banded ELITE mobs that never respawn + a
+  mid-band boss; **trash pays NOTHING — only the boss, with a custom table and far more exp than a field
+  boss**; 1h limit; death → respawn at the entrance NPC and you may re-enter; leaving the party loses the
+  attempt; one active instance per player; **no subclass swapping while inside**.
+
+  **The architectural decision** (everything hangs off it): `World` has ONE flat entity dict and ONE grid
+  — there is no "your party's private copy of a room". But visibility is radius-based (`ViewRange` 3000)
+  over a spatial grid, so **two parties 20,000 units apart already cannot see each other**. So an instance
+  = an **off-map COORDINATE SLAB per running instance**, which reuses the whole existing engine free
+  (spawning, grid, combat, threat, loot, death). A real per-instance dict+grid is cleaner on paper and
+  touches World / grid / snapshots / broadcast / teleport / party all at once — **not worth it**.
+
+  ⚠ **`GameClock` IS NOT SERVER TIME** — it is *in-game* time at ×6. Daily resets MUST use real wall-clock
+  time, or the attempt resets every 4 real hours. Store the last-attempt DATE per character and *compare*;
+  then reset needs no scheduled job and survives restarts for free.
+
+  ⚠ **Open questions for the owner are listed at the bottom of `docs/Instances.md`** — the load-bearing one
+  is whether the daily attempt is GLOBAL (one instance of any kind per day) or PER-INSTANCE. The
+  level-29→30 rule implies GLOBAL. It changes the persisted data model, so confirm before building.
 - [ ] **Castles + vault** — consumes the reserved `VendorBuyTaxRate` hook; siege loop.
 - [ ] **4th class tier** — the top of the 4-tier tree. ([[class-tier-design]])
 
