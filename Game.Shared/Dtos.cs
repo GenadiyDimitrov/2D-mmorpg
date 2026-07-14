@@ -183,6 +183,14 @@ public record PartyLootVoteDto(LootMode Mode, string RequestedBy, bool Open = tr
 /// (ticks, ≥0) on top of the skill's own reuse (so auto-reuse is never below the default).</summary>
 public record AutoSkillDto(string SkillId, bool Enabled, int ExtraDelayTicks);
 
+/// <summary>One class a character owns (an L2-style subclass). Server → client, so the UI can list
+/// them and let you swap. <paramref name="Active"/> = the one being played right now.</summary>
+public record SubclassDto(
+    int Slot, BaseClass BaseClass, int SecondClass, int ThirdClass, int Level, bool Active);
+
+/// <summary>Every class this character owns. Pushed on login and after any add/swap.</summary>
+public record SubclassListDto(SubclassDto[] Classes);
+
 /// <summary>The character's skill-bar layout: one entry per slot, "" = empty. Travels BOTH ways —
 /// server → client on login (restore), client → server on every rearrangement (persist).
 ///

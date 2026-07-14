@@ -108,21 +108,61 @@ public class Entity
     public required string Name { get; init; }
     public required EntityKind Kind { get; init; }
 
-    // Settable (not init) so a DEBUG character-reset can re-roll race/base class
-    // in place. Normal play never changes these after creation.
+    // RACE is CHARACTER-level: one body, several trainings. Settable (not init) so a DEBUG
+    // character-reset can re-roll it in place. Normal play never changes it after creation.
     public Race Race { get; set; }
-    public BaseClass BaseClass { get; set; }
+
+    // ---- SUBCLASSES ------------------------------------------------------------------------
+    //
+    // A character owns SEVERAL classes and plays one at a time. Everything CLASS-level (level, XP,
+    // skill points, base/2nd/3rd class, the four core stats, learned skills, skill bar) lives on the
+    // Subclass; everything CHARACTER-level (race, inventory, gold, karma, quests, profession,
+    // auto-hunt, position) stays on the Entity. See Subclass.cs for the full split.
+    //
+    // The properties below PROXY into the active subclass, so every existing line of game logic that
+    // says player.Level / player.BaseClass / player.LearnedSkills keeps working untouched, and a class
+    // swap is just moving ActiveSubclassIndex. Mobs get a single implicit subclass and never notice.
+
+    /// <summary>Every class this character owns. Never empty — slot 0 is the class they were created
+    /// as and cannot be removed.</summary>
+    public List<Subclass> Subclasses { get; } = new() { new Subclass { Slot = 0 } };
+
+    /// <summary>Index into <see cref="Subclasses"/> of the class currently being played.</summary>
+    public int ActiveSubclassIndex { get; private set; }
+
+    /// <summary>The class currently being played. Never null.</summary>
+    public Subclass ActiveSubclass => Subclasses[Math.Clamp(ActiveSubclassIndex, 0, Subclasses.Count - 1)];
+
+    /// <summary>Switch to another owned class. The caller must RecomputeDerived and re-push state —
+    /// every derived stat, and the whole skill list, changes underneath the player.</summary>
+    public bool SwitchSubclass(int slot)
+    {
+        int i = Subclasses.FindIndex(s => s.Slot == slot);
+        if (i < 0 || i == ActiveSubclassIndex) return false;
+        ActiveSubclassIndex = i;
+        return true;
+    }
+
+    public BaseClass BaseClass
+    {
+        get => ActiveSubclass.BaseClass;
+        set => ActiveSubclass.BaseClass = value;
+    }
 
     /// <summary>DB character id (null for mobs / unsaved).</summary>
     public int? PersistentId { get; set; }
 
-    /// <summary>Unspent skill points (earned with exp, spent to learn skills).</summary>
-    public int SkillPoints { get; set; }
+    /// <summary>Unspent skill points (earned with exp, spent to learn skills). PER CLASS.</summary>
+    public int SkillPoints
+    {
+        get => ActiveSubclass.SkillPoints;
+        set => ActiveSubclass.SkillPoints = value;
+    }
 
-    /// <summary>Learned skills → the current LEVEL of each (1 for single-level skills).
+    /// <summary>Learned skills → the current LEVEL of each (1 for single-level skills). PER CLASS.
     /// A skill is "known" iff it's a key here; its level selects the SkillDef.*At(level)
     /// values (Power/Magnitudes/Passive/MpCost).</summary>
-    public Dictionary<string, int> LearnedSkills { get; } = new();
+    public Dictionary<string, int> LearnedSkills => ActiveSubclass.LearnedSkills;
 
     /// <summary>The learned level of a skill, or 0 if not known.</summary>
     public int SkillLevelOf(string id) => LearnedSkills.GetValueOrDefault(id);
@@ -130,19 +170,15 @@ public class Entity
     /// <summary>True if the character knows the skill at any level.</summary>
     public bool HasSkill(string id) => LearnedSkills.ContainsKey(id);
 
-    /// <summary>The bar-key of the character's one and only skill bar today. A skill bar is
-    /// per-CLASS, so <see cref="SkillBars"/> is a MAP: when subclasses arrive, each class stores its
-    /// own layout under its own key and nothing here has to be restructured.</summary>
-    public const string MainSkillBarKey = "main";
-
-    /// <summary>Skill-bar layouts, bar-key → slots ("" = an empty slot). The server does not USE the
-    /// bar (casting is driven by skill id, not slot); it only owns and persists it, because the bar is
-    /// CHARACTER data — it must follow the account to any machine and must not be rebuilt from an
-    /// unordered set on every login.</summary>
-    public Dictionary<string, string[]> SkillBars { get; } = new();
-
-    /// <summary>The layout of the bar the character is currently playing (empty array if unset).</summary>
-    public string[] ActiveSkillBar => SkillBars.GetValueOrDefault(MainSkillBarKey) ?? Array.Empty<string>();
+    /// <summary>The active class's skill-bar layout ("" = an empty slot). PER CLASS — swap away, swap
+    /// back, and the bar is exactly as you left it. The server does not USE the bar (casting is driven
+    /// by skill id, not slot); it only owns and persists it, because the bar is character data and must
+    /// follow the account to any machine.</summary>
+    public string[] ActiveSkillBar
+    {
+        get => ActiveSubclass.SkillBar;
+        set => ActiveSubclass.SkillBar = value ?? Array.Empty<string>();
+    }
 
     /// <summary>Active quests -> progress (step index + counter).</summary>
     public Dictionary<string, CharacterQuestState> ActiveQuests { get; } = new();
@@ -167,11 +203,19 @@ public class Entity
     /// <summary>Jailed players are teleported to jail and cannot move out.</summary>
     public bool Jailed { get; set; }
 
-    /// <summary>0 = none; otherwise a ClassCatalog id.</summary>
-    public int SecondClass { get; set; }
+    /// <summary>0 = none; otherwise a ClassCatalog id. PER CLASS.</summary>
+    public int SecondClass
+    {
+        get => ActiveSubclass.SecondClass;
+        set => ActiveSubclass.SecondClass = value;
+    }
 
-    /// <summary>0 = none; otherwise a ThirdClassCatalog id (101-136).</summary>
-    public int ThirdClass { get; set; }
+    /// <summary>0 = none; otherwise a ThirdClassCatalog id (101-136). PER CLASS.</summary>
+    public int ThirdClass
+    {
+        get => ActiveSubclass.ThirdClass;
+        set => ActiveSubclass.ThirdClass = value;
+    }
 
     public Archetype? Archetype =>
         SecondClass > 0 ? ClassCatalog.Get(SecondClass)?.Archetype : null;
@@ -207,11 +251,29 @@ public class Entity
     public float RunSpeed { get; set; }
 
     // ----- Core stats (CON/ATK/WIT/DEX) --------------------------------------
+    // PER CLASS: they are derived from (Race, BaseClass), so swapping a fighter for a mage must swap
+    // these too. Mobs use the same fields (they have one implicit subclass) — see Subclass.cs.
 
-    public int Con { get; set; }
-    public int AtkStat { get; set; }
-    public int Wit { get; set; }
-    public int Dex { get; set; }
+    public int Con
+    {
+        get => ActiveSubclass.Con;
+        set => ActiveSubclass.Con = value;
+    }
+    public int AtkStat
+    {
+        get => ActiveSubclass.Atk;
+        set => ActiveSubclass.Atk = value;
+    }
+    public int Wit
+    {
+        get => ActiveSubclass.Wit;
+        set => ActiveSubclass.Wit = value;
+    }
+    public int Dex
+    {
+        get => ActiveSubclass.Dex;
+        set => ActiveSubclass.Dex = value;
+    }
 
     // Primary-stat DELTAS from armor sets (and later dyes/tattoos). Set in RecomputeDerived's
     // pre-pass BEFORE the derived stats are computed, so a set's "CON +3" raises HP, "DEX +1"
@@ -248,7 +310,12 @@ public class Entity
 
     // ----- Derived stats (recomputed on level-up / equip / class change) -------
 
-    public int Level { get; set; } = 1;
+    /// <summary>PER CLASS — each subclass levels on its own.</summary>
+    public int Level
+    {
+        get => ActiveSubclass.Level;
+        set => ActiveSubclass.Level = value;
+    }
     public int Hp { get; set; }
     public int MaxHp { get; set; }
     public int Mp { get; set; }
@@ -322,7 +389,12 @@ public class Entity
     /// <summary>Attack-interval multiplier from Attack Speed attributes.</summary>
     public float AttackSpeedMultiplier { get; set; } = 1f;
 
-    public long Exp { get; set; }
+    /// <summary>PER CLASS — XP earned on one class does not advance another.</summary>
+    public long Exp
+    {
+        get => ActiveSubclass.Exp;
+        set => ActiveSubclass.Exp = value;
+    }
 
     /// <summary>Gold wallet (currency). Drops from mobs; spent at vendors / teleports.</summary>
     public long Gold { get; set; }

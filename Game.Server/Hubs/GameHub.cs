@@ -489,6 +489,25 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>DEBUG: add a SUBCLASS (another class this character owns) and switch to it.</summary>
+    public Task DebugAddSubclass(BaseClass baseClass)
+    {
+#if DEBUG
+        _world.Commands.Enqueue(new DebugAddSubclassCmd(Context.ConnectionId, baseClass));
+#endif
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Switch to a class this character already owns. DEBUG for now — the player-facing
+    /// version gates this on a safe zone + a delay, which will wrap this same command.</summary>
+    public Task SwitchSubclass(int slot)
+    {
+#if DEBUG
+        _world.Commands.Enqueue(new SwitchSubclassCmd(Context.ConnectionId, slot));
+#endif
+        return Task.CompletedTask;
+    }
+
     public Task DebugSp(long amount)
     {
 #if DEBUG

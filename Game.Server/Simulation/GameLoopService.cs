@@ -103,6 +103,8 @@ public class GameLoopService : BackgroundService
                 case DebugLearnAllCmd c: HandleDebugLearnAll(c); break;
                 case DebugGoldCmd c: HandleDebugGold(c); break;
                 case DebugBuffCmd c: HandleDebugBuff(c); break;
+                case DebugAddSubclassCmd c: HandleDebugAddSubclass(c); break;
+                case SwitchSubclassCmd c: HandleSwitchSubclass(c); break;
                 case DebugSpCmd c: HandleDebugSp(c); break;
                 case DebugResetCmd c: HandleDebugReset(c); break;
                 case DebugThirdClassCmd c: HandleDebugThirdClass(c); break;
@@ -181,6 +183,7 @@ public class GameLoopService : BackgroundService
         // itself" was. SignalR preserves message order per connection, so this is sufficient.
         SendSkillBar(entity);
         SendLearned(entity);
+        SendSubclasses(entity);
         SendQuestLog(entity);
         SendGold(entity);
         SendAutoHuntConfig(entity);   // restore the saved auto-hunt settings in the client UI
@@ -1353,6 +1356,91 @@ public class GameLoopService : BackgroundService
         SendSystemToEntity(player, $"[DEBUG] Profession set to {player.Profession}.");
     }
 
+    // ===== SUBCLASSES ==========================================================================
+    //
+    // One character owns SEVERAL classes and plays one at a time. Class-level state (level, XP, skill
+    // points, 2nd/3rd class, core stats, learned skills, skill bar) lives on the Subclass; everything
+    // character-level (inventory, gold, karma, quests, auto-hunt, position) is shared. See Subclass.cs.
+    //
+    // Today these are DEBUG-only entry points: no cap on how many, no swap delay, no safe-zone
+    // requirement. Those rules belong to the player-facing system (owner: cap 3-4, safe zone, 5-min
+    // delay) and are deliberately not baked into the swap itself — HandleSwitchSubclass does the state
+    // work, and the rules will gate the COMMAND, not the mechanism.
+
+    /// <summary>DEBUG: add a class this character does not have yet, and switch to it. It starts at
+    /// level 1 with freshly rolled core stats for (race, new base class) and its own empty skill bar.</summary>
+    private void HandleDebugAddSubclass(DebugAddSubclassCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
+            return;
+
+        int slot = player.Subclasses.Max(s => s.Slot) + 1;
+        var sc = new Subclass { Slot = slot, BaseClass = cmd.BaseClass };
+        sc.RollBaseStats(player.Race);
+        player.Subclasses.Add(sc);
+
+        ActivateSubclass(player, slot, $"[DEBUG] Added {cmd.BaseClass} as class #{slot}, and switched to it.");
+    }
+
+    /// <summary>Switch to a class this character already owns.</summary>
+    private void HandleSwitchSubclass(SwitchSubclassCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
+            return;
+        if (player.ActiveSubclass.Slot == cmd.Slot)
+            return;
+        if (player.Subclasses.All(s => s.Slot != cmd.Slot))
+        {
+            SendSystemToEntity(player, "You don't have that class.");
+            return;
+        }
+        ActivateSubclass(player, cmd.Slot, null);
+    }
+
+    /// <summary>Make a class the active one and rebuild everything that hangs off it.
+    ///
+    /// A swap changes the character out from under every derived value — level, core stats, learned
+    /// skills, and therefore every passive, every mastery and every stat in RecomputeDerived. So the
+    /// whole client-visible state is re-pushed, and the things that belong to the class you LEFT are
+    /// dropped: buffs (they were cast on a different class), the cast in progress, and the combat
+    /// target. The INVENTORY is untouched — it is character-level, and keeping your gear across a swap
+    /// is the entire point of the debug flow (compare two classes in the same gear).</summary>
+    private void ActivateSubclass(Entity player, int slot, string? message)
+    {
+        CancelCast(player);
+        player.QueuedSkillId = null;
+        Disengage(player);
+        player.Buffs.Clear();          // buffs belong to the class that was cast on
+
+        player.SwitchSubclass(slot);
+
+        AutoLearnCoreSkills(player);   // the new class's auto-granted skills (starter nuke, training, …)
+        player.RecomputeDerived();
+        player.Hp = Math.Min(player.Hp, player.MaxHp);
+        player.Mp = Math.Min(player.Mp, player.MaxMp);
+
+        SendStats(player);
+        SendLearned(player);
+        SendSkillBar(player);          // each class keeps its OWN bar
+        PushBuffs(player);
+        SendSubclasses(player);
+        if (_world.EntityToConnection.TryGetValue(player.Id, out var conn))
+            _ = _hub.Clients.Client(conn).SendAsync("Progress", new ProgressUpdate(
+                player.Level, player.Exp, StatCalculator.ExpToNext(player.Level), false));
+
+        SendSystemToEntity(player, message
+            ?? $"[DEBUG] Now playing class #{slot}: {player.BaseClass} (level {player.Level}).");
+        SaveEntity(player);
+    }
+
+    private void SendSubclasses(Entity p) =>
+        SendTo(p, "Subclasses", new SubclassListDto(p.Subclasses
+            .OrderBy(s => s.Slot)
+            .Select(s => new SubclassDto(
+                s.Slot, s.BaseClass, s.SecondClass, s.ThirdClass, s.Level,
+                s.Slot == p.ActiveSubclass.Slot))
+            .ToArray()));
+
     /// <summary>The level ceiling this character is subject to. ADMINS ARE EXEMPT — an admin needs to
     /// be able to push past the cap to test the top of the curve without lifting it for everyone.</summary>
     private static int LevelCapFor(Entity player) =>
@@ -1496,23 +1584,26 @@ public class GameLoopService : BackgroundService
     /// test another class, and losing the gear you built up each time made that painful. Everything is
     /// UNEQUIPPED instead — the old class's kit is usually wrong for the new one — and the starter kit
     /// is topped up only with the pieces you don't already own, so repeated re-rolls don't silt the
-    /// bag up with duplicate newbie boxes.</summary>
+    /// bag up with duplicate newbie boxes.
+    ///
+    /// SUBCLASSES ARE DROPPED, on purpose. This is a whole-character re-roll, and RACE is
+    /// character-level: any other class you owned had its core stats rolled for the OLD race, so
+    /// keeping them would leave the character carrying classes whose stats no longer match its body.
+    /// You are left with exactly one class again, the one you just picked. (To keep a class and add
+    /// another, use the SUBCLASS buttons — that is what they are for.)</summary>
     private void HandleDebugReset(DebugResetCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player))
             return;
 
         player.Race = cmd.Race;
-        player.BaseClass = cmd.BaseClass;
-        var s = StatCalculator.GetBaseStats(cmd.Race, cmd.BaseClass);
-        player.Con = s.Con; player.AtkStat = s.Atk; player.Wit = s.Wit; player.Dex = s.Dex;
 
-        player.Level = 1;
-        player.Exp = 0;
-        player.SecondClass = 0;
-        player.ThirdClass = 0;
-        player.SkillPoints = 0;
-        player.LearnedSkills.Clear();
+        player.Subclasses.Clear();
+        var main = new Subclass { Slot = 0, BaseClass = cmd.BaseClass };
+        main.RollBaseStats(cmd.Race);
+        player.Subclasses.Add(main);
+        player.SwitchSubclass(0);
+
         player.ActiveQuests.Clear();
         player.CompletedQuests.Clear();
         player.Buffs.Clear();
@@ -1527,6 +1618,8 @@ public class GameLoopService : BackgroundService
         SendInventory(player);
         SendStats(player);
         SendLearned(player);
+        SendSkillBar(player);
+        SendSubclasses(player);
         SendQuestLog(player);
         SaveEntity(player);
         SendSystemToEntity(player, $"[DEBUG] Character reset to level 1 {cmd.Race} {cmd.BaseClass}.");
@@ -2051,7 +2144,7 @@ public class GameLoopService : BackgroundService
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var p))
             return;
-        p.SkillBars[Entity.MainSkillBarKey] = cmd.Slots ?? Array.Empty<string>();
+        p.ActiveSkillBar = cmd.Slots ?? Array.Empty<string>();   // the bar belongs to the class you're playing
         SaveEntity(p);
     }
 

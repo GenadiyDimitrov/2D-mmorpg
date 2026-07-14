@@ -217,6 +217,13 @@ public record DebugGoldCmd(string ConnectionId, long Amount) : IGameCommand;
 /// <summary>DEBUG: apply the full NPC buff set to yourself, at any level, without visiting the NPC.</summary>
 public record DebugBuffCmd(string ConnectionId) : IGameCommand;
 
+/// <summary>DEBUG: add a new SUBCLASS (a second/third class this character owns) and switch to it.
+/// No cap, no delay, no safe-zone requirement — the real rules come with the player-facing system.</summary>
+public record DebugAddSubclassCmd(string ConnectionId, BaseClass BaseClass) : IGameCommand;
+
+/// <summary>DEBUG: switch to another class this character already owns.</summary>
+public record SwitchSubclassCmd(string ConnectionId, int Slot) : IGameCommand;
+
 /// <summary>DEBUG-only: grant skill points.</summary>
 public record DebugSpCmd(string ConnectionId, long Amount) : IGameCommand;
 

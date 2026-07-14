@@ -154,9 +154,42 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 - [x] **BUG: "Learn all skills" reshuffles the skill bar — FIXED 2026-07-14** as part of moving the
   bar into the DB (see that entry above for the root cause).
 
-- [ ] **Sub-class groundwork** (deferred, don't restructure later) — one character, several classes,
-  each with its own level/XP/skills/skill-bar; inventory + auto-hunt stay character-wide; debug
-  class swap must NOT wipe the class you swap away from. See [[subclass-system-design]].
+- [x] **SUB-CLASSES — BUILT 2026-07-14** ⚠ (new `Subclasses` table → delete `game.db`).
+  One character owns several classes and plays one at a time. See [[subclass-system-design]].
+
+  **THE SPLIT** (`Subclass.cs` documents it — get this wrong and it has to be redone):
+  | | |
+  |---|---|
+  | **CLASS-level** (`Subclass`) | level, XP, skill points, base class, 2nd/3rd class, CON/ATK/WIT/DEX, learned skills, **skill bar** |
+  | **CHARACTER-level** (`Entity`) | race, inventory, gold, karma, quests, profession, auto-hunt, position |
+  | **CLIENT-level** (`client-settings.json`) | window position/size, and nothing else |
+
+  The four core stats are CLASS-level because they derive from (Race, BaseClass) — swap a fighter for
+  a mage and CON/ATK/WIT/DEX must swap with him. Race is character-level: one body, several trainings.
+
+  **Why the refactor was small:** `Entity.Level` / `.BaseClass` / `.LearnedSkills` / `.SkillPoints` /
+  `.Con…Dex` / `.SecondClass` / `.ThirdClass` / `.Exp` are now **PROXIES into the active subclass**. So
+  every existing line of game logic that says `player.Level` still works untouched, and a class swap is
+  just moving an index. Exactly **three** call sites broke; the rest of the server never noticed.
+
+  **Persistence:** a `SubclassRecord` table (one row per owned class) is the source of truth. The
+  matching columns on the character row are kept as a **mirror of the ACTIVE class**, rewritten on every
+  save, purely so character-SELECT can list a character without loading its classes. Never read them for
+  gameplay. A character with no subclass rows (fresh, or created before this) reconstructs slot 0 from
+  that mirror, so nothing needs migrating.
+
+  **Debug flow (the owner's test loop):** Debug → Functions → "Classes (subclass)" lists what you own,
+  with a **Switch** button each, plus **+ Add Fighter / + Add Mage**. Swap on the spot to compare two
+  builds **in the same gear** instead of relogging onto another character. Each class keeps its own
+  level, XP, skills and **skill bar** — swap away, swap back, find it exactly as you left it.
+  A swap clears buffs, the cast in progress and the combat target (they belonged to the class you left)
+  and re-pushes stats/skills/bar/progress. **Debug character-RESET drops the subclasses on purpose** —
+  it changes RACE, which is character-level, so any other class would be left with stats rolled for a
+  body it no longer has.
+
+  **Deliberately NOT built** (they belong to the player-facing system, and are rules on the COMMAND, not
+  on the mechanism): a cap of 3-4 classes, safe-zone-only swapping, the 5-minute swap delay, and a
+  player-facing UI. `HandleSwitchSubclass` does the state work; those rules will gate the entry point.
 
 ### Earlier
 

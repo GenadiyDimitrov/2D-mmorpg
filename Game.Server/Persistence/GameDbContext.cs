@@ -7,6 +7,7 @@ public class GameDbContext : DbContext
     public DbSet<AccountRecord> Accounts => Set<AccountRecord>();
     public DbSet<CharacterRecord> Characters => Set<CharacterRecord>();
     public DbSet<ItemRecord> Items => Set<ItemRecord>();
+    public DbSet<SubclassRecord> Subclasses => Set<SubclassRecord>();
     public DbSet<BossTimerRecord> BossTimers => Set<BossTimerRecord>();
 
     public GameDbContext(DbContextOptions<GameDbContext> options) : base(options) { }
@@ -29,7 +30,14 @@ public class GameDbContext : DbContext
              .WithOne()
              .HasForeignKey(i => i.CharacterId)
              .OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(c => c.Subclasses)
+             .WithOne()
+             .HasForeignKey(s => s.CharacterId)
+             .OnDelete(DeleteBehavior.Cascade);
         });
+
+        // One row per (character, slot) — a character can't own the same slot twice.
+        b.Entity<SubclassRecord>(e => e.HasIndex(s => new { s.CharacterId, s.Slot }).IsUnique());
 
         b.Entity<ItemRecord>(e =>
         {

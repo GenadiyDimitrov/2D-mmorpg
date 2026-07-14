@@ -2490,8 +2490,55 @@ public partial class MainWindow
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.ElementalStone, "Elemental Stone +10", 10));
     }
 
+    /// <summary>Every class this character owns (server-pushed). Drives the subclass section below.</summary>
+    private SubclassDto[] _subclasses = Array.Empty<SubclassDto>();
+
+    private void OnSubclasses(SubclassListDto dto)
+    {
+        _subclasses = dto.Classes;
+        if (DebugPanel.Visibility == Visibility.Visible)
+            BuildDebugMenu();   // refresh the swap buttons
+    }
+
+    /// <summary>The SUBCLASS section: one row per class you own, plus buttons to add another.
+    ///
+    /// This is the owner's test loop — swap class on the spot to compare two builds in the SAME gear,
+    /// instead of relogging onto another character. Each class keeps its own level, XP, skills and
+    /// skill BAR; the inventory, gold and auto-hunt settings are shared and survive the swap.</summary>
+    private void BuildDebugSubclasses()
+    {
+        AddDebugHeader("Classes (subclass)");
+
+        foreach (var sc in _subclasses)
+        {
+            string label = $"#{sc.Slot} {sc.BaseClass} Lv{sc.Level}" + (sc.Active ? "  ← playing" : "");
+            if (sc.Active)
+            {
+                DebugList.Children.Add(new TextBlock
+                {
+                    Text = label,
+                    Foreground = Brushes.LightGreen,
+                    FontSize = 11, Margin = new Thickness(2, 0, 0, 4),
+                });
+            }
+            else
+            {
+                int slot = sc.Slot;
+                DebugList.Children.Add(DebugAction($"Switch to {label}",
+                    async () => await _net.SwitchSubclassAsync(slot)));
+            }
+        }
+
+        DebugList.Children.Add(DebugAction("+ Add Fighter class",
+            async () => await _net.DebugAddSubclassAsync(BaseClass.Fighter)));
+        DebugList.Children.Add(DebugAction("+ Add Mage class",
+            async () => await _net.DebugAddSubclassAsync(BaseClass.Mage)));
+    }
+
     private void BuildDebugFunctions()
     {
+        BuildDebugSubclasses();
+
         AddDebugHeader("Character");
         // One round-trip per click now (+10 used to fire ten separate commands, each with its own
         // level-up broadcast and character save). DELEVEL KEEPS YOUR LEARNED SKILLS — drop to 40,

@@ -241,6 +241,42 @@ public class PersistenceService
         return rec;
     }
 
+    /// <summary>Learned skills are stored "id:level" (legacy bare "id" = level 1).</summary>
+    private static void ParseLearnedSkills(string csv, Dictionary<string, int> into)
+    {
+        foreach (var token in csv.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        {
+            int colon = token.IndexOf(':');
+            if (colon < 0)
+                into[token] = 1;
+            else
+                into[token[..colon]] =
+                    int.TryParse(token[(colon + 1)..], out int lvl) ? Math.Max(1, lvl) : 1;
+        }
+    }
+
+    private static Subclass ToSubclass(SubclassRecord r)
+    {
+        var sc = new Subclass
+        {
+            Slot = r.Slot,
+            BaseClass = r.BaseClass,
+            SecondClass = r.SecondClass,
+            ThirdClass = r.ThirdClass,
+            Level = r.Level,
+            Exp = r.Exp,
+            SkillPoints = r.SkillPoints,
+            Con = r.Con, Atk = r.Atk, Wit = r.Wit, Dex = r.Dex,
+        };
+        ParseLearnedSkills(r.LearnedSkillsCsv, sc.LearnedSkills);
+        if (!string.IsNullOrEmpty(r.SkillBarJson))
+        {
+            try { sc.SkillBar = JsonSerializer.Deserialize<string[]>(r.SkillBarJson) ?? Array.Empty<string>(); }
+            catch { /* ignore malformed skill-bar json */ }
+        }
+        return sc;
+    }
+
     /// <summary>Load a character into a live game Entity (used at world entry).
     /// Verifies the character belongs to the account.</summary>
     public async Task<Entity?> LoadCharacterAsync(int accountId, int characterId)
@@ -250,6 +286,7 @@ public class PersistenceService
         var rec = await db.Characters
             .Include(c => c.Items)
             .ThenInclude(i => i.Attributes)
+            .Include(c => c.Subclasses)
             .FirstOrDefaultAsync(c => c.Id == characterId && c.AccountId == accountId);
 
         if (rec is null || rec.PendingDeleteAt is not null)
@@ -259,35 +296,41 @@ public class PersistenceService
         {
             Name = rec.Name,
             Kind = EntityKind.Player,
-            Race = rec.Race,
-            BaseClass = rec.BaseClass,
+            Race = rec.Race,            // CHARACTER-level: one body, several trainings
             X = rec.X,
             Y = rec.Y,
             Speed = GameConstants.BasePlayerSpeed,
-            Con = rec.Con,
-            AtkStat = rec.Atk,
-            Wit = rec.Wit,
-            Dex = rec.Dex,
-            Level = rec.Level,
-            Exp = rec.Exp,
             Gold = rec.Gold,
-            SecondClass = rec.SecondClass,
-            ThirdClass = rec.ThirdClass,
             PersistentId = rec.Id,
-            SkillPoints = rec.SkillPoints,
             Profession = (Profession)rec.Profession
         };
 
-        // Learned skills are stored "id:level" (legacy bare "id" = level 1).
-        foreach (var token in rec.LearnedSkillsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        // ---- CLASSES. The subclass rows are the source of truth for anything class-level. A
+        // character created before subclasses existed (or a brand-new one) has no rows yet, so slot 0
+        // is reconstructed from the character row's mirror columns.
+        entity.Subclasses.Clear();
+        if (rec.Subclasses.Count > 0)
         {
-            int colon = token.IndexOf(':');
-            if (colon < 0)
-                entity.LearnedSkills[token] = 1;
-            else
-                entity.LearnedSkills[token[..colon]] =
-                    int.TryParse(token[(colon + 1)..], out int lvl) ? Math.Max(1, lvl) : 1;
+            foreach (var sc in rec.Subclasses.OrderBy(s => s.Slot))
+                entity.Subclasses.Add(ToSubclass(sc));
         }
+        else
+        {
+            var main = new Subclass
+            {
+                Slot = 0,
+                BaseClass = rec.BaseClass,
+                SecondClass = rec.SecondClass,
+                ThirdClass = rec.ThirdClass,
+                Level = rec.Level,
+                Exp = rec.Exp,
+                SkillPoints = rec.SkillPoints,
+                Con = rec.Con, Atk = rec.Atk, Wit = rec.Wit, Dex = rec.Dex,
+            };
+            ParseLearnedSkills(rec.LearnedSkillsCsv, main.LearnedSkills);
+            entity.Subclasses.Add(main);
+        }
+        entity.SwitchSubclass(rec.ActiveSubclassSlot);
 
         foreach (var qid in rec.CompletedQuestsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
             entity.CompletedQuests.Add(qid);
@@ -332,18 +375,6 @@ public class PersistenceService
             catch { /* ignore malformed auto-hunt json */ }
         }
 
-        if (!string.IsNullOrEmpty(rec.SkillBarJson))
-        {
-            try
-            {
-                var bars = JsonSerializer.Deserialize<Dictionary<string, string[]>>(rec.SkillBarJson);
-                if (bars is not null)
-                    foreach (var (key, slots) in bars)
-                        entity.SkillBars[key] = slots;
-            }
-            catch { /* ignore malformed skill-bar json */ }
-        }
-
         entity.Karma = rec.Karma;
         entity.PkCount = rec.PkCount;
         entity.PvpCount = rec.PvpCount;
@@ -372,12 +403,32 @@ public class PersistenceService
     /// game-loop (single-writer) thread. The async DB write reads only this — never a
     /// live, concurrently-mutating <see cref="Entity"/> — so saving can't race the tick
     /// (no torn reads / "collection modified" from X/Y, inventory or skills changing).</summary>
+    /// <summary>One owned class, captured for saving.</summary>
+    public sealed record SubclassSnapshot(
+        int Slot, BaseClass BaseClass, int SecondClass, int ThirdClass,
+        int Level, long Exp, int SkillPoints,
+        int Con, int Atk, int Wit, int Dex,
+        string LearnedSkillsCsv, string SkillBarJson)
+    {
+        public static SubclassSnapshot From(Subclass s) => new(
+            s.Slot, s.BaseClass, s.SecondClass, s.ThirdClass,
+            s.Level, s.Exp, s.SkillPoints,
+            s.Con, s.Atk, s.Wit, s.Dex,
+            string.Join(',', s.LearnedSkills.Select(kv => $"{kv.Key}:{kv.Value}")),
+            JsonSerializer.Serialize(s.SkillBar));
+    }
+
+    /// <summary>The BaseClass / Level / Exp / SkillPoints / Con..Dex / LearnedSkillsCsv fields here are
+    /// the ACTIVE subclass's values. They are written back to the character row as a MIRROR so the
+    /// character-select screen can list a character without loading its classes — the real per-class
+    /// state travels in <see cref="Subclasses"/>, which is the source of truth.</summary>
     public sealed record CharacterSnapshot(
         int CharacterId, Race Race, BaseClass BaseClass, int Level, long Exp, long Gold,
         int SecondClass, int ThirdClass, int SkillPoints, int Profession,
         int Con, int Atk, int Wit, int Dex, float X, float Y,
         string LearnedSkillsCsv, string CompletedQuestsCsv, string ActiveQuestsJson,
-        string KnownRecipesCsv, string AutoHuntJson, string SkillBarJson,
+        string KnownRecipesCsv, string AutoHuntJson,
+        int ActiveSubclassSlot, IReadOnlyList<SubclassSnapshot> Subclasses,
         int Karma, int PkCount, int PvpCount, int ConsecutivePk,
         IReadOnlyList<ItemSnapshot> Items)
     {
@@ -391,6 +442,9 @@ public class PersistenceService
                 items.Add(new ItemSnapshot(
                     i.PersistentInstanceId ?? Guid.NewGuid(), i.DefId, i.Equipped,
                     i.Enchant, i.Quantity, new List<ItemAttribute>(i.Attributes)));
+
+            var subs = e.Subclasses.Select(SubclassSnapshot.From).ToList();
+
             return new CharacterSnapshot(
                 id, e.Race, e.BaseClass, e.Level, e.Exp, e.Gold,
                 e.SecondClass, e.ThirdClass, e.SkillPoints, (int)e.Profession,
@@ -403,7 +457,7 @@ public class PersistenceService
                     e.AutoHuntEnabled, e.AutoHpPotionPct, e.AutoMpPotionPct, e.AutoBuffPotions,
                     e.AutoSkills.ToArray(), e.AutoBuffPotionIds.ToArray(),
                     e.AutoFarmRange, e.AutoFarmStatic, e.AutoAttackNormal, e.AutoAttackElite, e.AutoAttackBoss)),
-                JsonSerializer.Serialize(e.SkillBars),
+                e.ActiveSubclass.Slot, subs,
                 e.Karma, e.PkCount, e.PvpCount, e.ConsecutivePk,
                 items);
         }
@@ -423,6 +477,7 @@ public class PersistenceService
             await using var db = await _factory.CreateDbContextAsync();
             var rec = await db.Characters
                 .Include(c => c.Items).ThenInclude(i => i.Attributes)
+                .Include(c => c.Subclasses)
                 .FirstOrDefaultAsync(c => c.Id == snap.CharacterId);
             if (rec is null)
                 return;
@@ -448,6 +503,7 @@ public class PersistenceService
             {
                 var rec = await db.Characters
                     .Include(c => c.Items).ThenInclude(i => i.Attributes)
+                    .Include(c => c.Subclasses)
                     .FirstOrDefaultAsync(c => c.Id == snap.CharacterId);
                 if (rec is not null)
                     ApplySnapshot(db, rec, snap);
@@ -460,31 +516,51 @@ public class PersistenceService
     /// <summary>Copy a snapshot onto a tracked record (no SaveChanges — caller batches).</summary>
     private static void ApplySnapshot(GameDbContext db, CharacterRecord rec, CharacterSnapshot snap)
     {
+        // ---- CHARACTER-level: shared by every class this character owns.
         rec.Race = snap.Race;               // can change via DEBUG character reset
-        rec.BaseClass = snap.BaseClass;
-        rec.Level = snap.Level;
-        rec.Exp = snap.Exp;
         rec.Gold = snap.Gold;
-        rec.SecondClass = snap.SecondClass;
-        rec.ThirdClass = snap.ThirdClass;
         rec.Profession = snap.Profession;
-        rec.SkillPoints = snap.SkillPoints;
-        rec.LearnedSkillsCsv = snap.LearnedSkillsCsv;
         rec.CompletedQuestsCsv = snap.CompletedQuestsCsv;
         rec.ActiveQuestsJson = snap.ActiveQuestsJson;
         rec.KnownRecipesCsv = snap.KnownRecipesCsv;
         rec.AutoHuntJson = snap.AutoHuntJson;
-        rec.SkillBarJson = snap.SkillBarJson;
         rec.Karma = snap.Karma;
         rec.PkCount = snap.PkCount;
         rec.PvpCount = snap.PvpCount;
         rec.ConsecutivePk = snap.ConsecutivePk;
+        rec.X = snap.X;
+        rec.Y = snap.Y;
+
+        // ---- MIRROR of the ACTIVE class. NOT the source of truth — it exists so the
+        // character-SELECT screen can list a character without loading its subclasses.
+        rec.BaseClass = snap.BaseClass;
+        rec.Level = snap.Level;
+        rec.Exp = snap.Exp;
+        rec.SecondClass = snap.SecondClass;
+        rec.ThirdClass = snap.ThirdClass;
+        rec.SkillPoints = snap.SkillPoints;
+        rec.LearnedSkillsCsv = snap.LearnedSkillsCsv;
         rec.Con = snap.Con;
         rec.Atk = snap.Atk;
         rec.Wit = snap.Wit;
         rec.Dex = snap.Dex;
-        rec.X = snap.X;
-        rec.Y = snap.Y;
+
+        // ---- CLASS-level: the real per-class state. Rebuilt wholesale, like the items.
+        rec.ActiveSubclassSlot = snap.ActiveSubclassSlot;
+        db.Subclasses.RemoveRange(rec.Subclasses);
+        rec.Subclasses = snap.Subclasses.Select(s => new SubclassRecord
+        {
+            Slot = s.Slot,
+            BaseClass = s.BaseClass,
+            SecondClass = s.SecondClass,
+            ThirdClass = s.ThirdClass,
+            Level = s.Level,
+            Exp = s.Exp,
+            SkillPoints = s.SkillPoints,
+            Con = s.Con, Atk = s.Atk, Wit = s.Wit, Dex = s.Dex,
+            LearnedSkillsCsv = s.LearnedSkillsCsv,
+            SkillBarJson = s.SkillBarJson,
+        }).ToList();
 
         // Rebuild the item set from the snapshot.
         db.Items.RemoveRange(rec.Items);

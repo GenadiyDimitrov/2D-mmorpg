@@ -63,14 +63,18 @@ public class CharacterRecord
     /// <summary>Auto-hunt config as JSON (AutoHuntConfigDto). Empty = defaults/off.</summary>
     public string AutoHuntJson { get; set; } = "";
 
-    /// <summary>Skill-bar layout as JSON: bar-key → the slot array ("" = empty slot).
-    /// CHARACTER data, not a client preference — it used to live in the client's
-    /// client-settings.json, so it did not follow the account to another machine and it raced the
-    /// first Learned push on login (which is what silently reshuffled the bar).
-    /// It is a MAP, not one array, because a skill bar is per-CLASS: when subclasses land, each
-    /// class gets its own key and its own layout without a schema change. Today there is one key
-    /// (<see cref="Entity.MainSkillBarKey"/>).</summary>
-    public string SkillBarJson { get; set; } = "";
+    /// <summary>Which owned class the character is currently playing (a <see cref="SubclassRecord.Slot"/>).
+    /// Slot 0 is the class they were created as.</summary>
+    public int ActiveSubclassSlot { get; set; }
+
+    /// <summary>Every class this character owns. THE SOURCE OF TRUTH for anything class-level: level,
+    /// XP, skill points, 2nd/3rd class, core stats, learned skills, skill bar.
+    ///
+    /// ⚠ The matching columns ON THIS ROW (BaseClass / SecondClass / ThirdClass / Level / Exp /
+    /// SkillPoints / Con / Atk / Wit / Dex / LearnedSkillsCsv) are a **mirror of the ACTIVE subclass**,
+    /// rewritten from it on every save. They exist so the character-SELECT screen can list a character
+    /// without loading its subclasses. Never read them for gameplay — read the subclass.</summary>
+    public List<SubclassRecord> Subclasses { get; set; } = new();
 
     /// <summary>PvP reputation: PK karma (>0 = red), and lifetime PK / PvP kill counts.</summary>
     public int Karma { get; set; }
@@ -90,6 +94,44 @@ public class CharacterRecord
     public float Y { get; set; }
 
     public List<ItemRecord> Items { get; set; } = new();
+}
+
+/// <summary>
+/// ONE class a character owns (L2-style subclass). A character has several; it plays one at a time
+/// (<see cref="CharacterRecord.ActiveSubclassSlot"/>).
+///
+/// Everything CLASS-level lives here. Everything CHARACTER-level (race, inventory, gold, karma,
+/// quests, profession, auto-hunt, position) stays on <see cref="CharacterRecord"/>. See Subclass.cs
+/// for why the split is drawn exactly there.
+/// </summary>
+public class SubclassRecord
+{
+    public int Id { get; set; }
+    public int CharacterId { get; set; }
+
+    /// <summary>Stable id within the character. 0 = the class they were created as (never removable).</summary>
+    public int Slot { get; set; }
+
+    public BaseClass BaseClass { get; set; }
+    public int SecondClass { get; set; }
+    public int ThirdClass { get; set; }
+
+    public int Level { get; set; } = 1;
+    public long Exp { get; set; }
+    public int SkillPoints { get; set; }
+
+    // Core stats: from (Race, BaseClass), then moved only by the level-40 stat swaps. Per class,
+    // because swapping a fighter for a mage must swap CON/ATK/WIT/DEX with it.
+    public int Con { get; set; }
+    public int Atk { get; set; }
+    public int Wit { get; set; }
+    public int Dex { get; set; }
+
+    /// <summary>Learned skills as "id:level" pairs, comma-separated.</summary>
+    public string LearnedSkillsCsv { get; set; } = "";
+
+    /// <summary>This class's skill-bar layout as a JSON string array ("" = an empty slot).</summary>
+    public string SkillBarJson { get; set; } = "";
 }
 
 public class ItemRecord

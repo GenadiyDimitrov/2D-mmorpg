@@ -34,6 +34,7 @@ public class NetworkChannel : IAsyncDisposable
     public event Action<AutoHuntStatus>? AutoHuntReceived;
     public event Action<AutoHuntConfigDto>? AutoConfigReceived;
     public event Action<SkillBarDto>? SkillBarReceived;
+    public event Action<SubclassListDto>? SubclassesReceived;
     public event Action<LogoutResult>? LogoutResultReceived;
     public event Action<PvpState>? PvpStateReceived;
     public event Action<DebugConfigDto>? DebugConfigReceived;
@@ -75,6 +76,7 @@ public class NetworkChannel : IAsyncDisposable
         _connection.On<AutoHuntStatus>("AutoHunt", s => AutoHuntReceived?.Invoke(s));
         _connection.On<AutoHuntConfigDto>("AutoConfig", c => AutoConfigReceived?.Invoke(c));
         _connection.On<SkillBarDto>("SkillBar", b => SkillBarReceived?.Invoke(b));
+        _connection.On<SubclassListDto>("Subclasses", s => SubclassesReceived?.Invoke(s));
         _connection.On<LogoutResult>("LogoutResult", r => LogoutResultReceived?.Invoke(r));
         _connection.On<PvpState>("PvpState", s => PvpStateReceived?.Invoke(s));
         _connection.On<DebugConfigDto>("DebugConfig", c => DebugConfigReceived?.Invoke(c));
@@ -199,6 +201,14 @@ public class NetworkChannel : IAsyncDisposable
     /// <summary>DEBUG: full NPC buff set on yourself, any level, no walk to the NPC.</summary>
     public Task DebugBuffAsync() =>
         _connection!.SendAsync("DebugBuff");
+
+    /// <summary>DEBUG: add a SUBCLASS (another class this character owns) and switch to it.</summary>
+    public Task DebugAddSubclassAsync(BaseClass baseClass) =>
+        _connection!.SendAsync("DebugAddSubclass", baseClass);
+
+    /// <summary>Switch to a class this character already owns.</summary>
+    public Task SwitchSubclassAsync(int slot) =>
+        _connection!.SendAsync("SwitchSubclass", slot);
 
     public Task DebugLearnAllAsync() =>
         _connection!.SendAsync("DebugLearnAll");

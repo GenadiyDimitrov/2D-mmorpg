@@ -28,6 +28,28 @@ Still worth eyeballing on a future pass (not blocking):
 
 ---
 
+## SUBCLASSES (2026-07-14) — ⚠ DELETE `game.db` BEFORE TESTING (new `Subclasses` table)
+
+Debug → Functions → **"Classes (subclass)"**.
+
+- [ ] **+ Add Mage class** on a fighter → you own two classes and are now playing the new one at level 1.
+- [ ] **Switch back** → your fighter is at the level you left him, with the skills you learned.
+- [ ] **THE POINT: each class keeps its own SKILL BAR.** Arrange the fighter's bar, swap to the mage,
+      arrange his, swap back — the fighter's bar is exactly as you left it.
+- [ ] **Gear survives the swap** (inventory is character-level). This is the test loop: compare two
+      classes in the SAME gear without relogging onto another character. Gold, karma, quests and the
+      auto-hunt config are shared too.
+- [ ] **Level / XP / SP are per class** — level the mage, swap back, the fighter's level is untouched.
+- [ ] **It survives a relog.** Log out, log back in — both classes, their levels, their skill bars.
+- [ ] A swap **clears buffs** and drops the cast/target (they belonged to the class you left).
+- [ ] ⚠ **Debug character-RESET still drops all subclasses** — on purpose: it changes RACE, which is
+      character-level, so another class would be left with stats rolled for a body it no longer has.
+      Use the subclass buttons to keep a class and add another.
+
+Not built (they're player-facing rules, not the mechanism): cap of 3-4, safe-zone-only, 5-min delay.
+
+---
+
 ## MOVABLE POPUPS + MAGE-CLICK (2026-07-14)
 
 - [ ] **Every popup can be dragged** by the "⠿ drag" strip at its top, **closed** with the ✕, and

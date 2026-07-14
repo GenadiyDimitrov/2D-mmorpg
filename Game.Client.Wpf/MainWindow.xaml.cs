@@ -134,6 +134,7 @@ public partial class MainWindow : Window
         _net.AutoHuntReceived += s => Dispatcher.BeginInvoke(() => OnAutoHuntStatus(s));
         _net.AutoConfigReceived += c => Dispatcher.BeginInvoke(() => OnAutoConfig(c));
         _net.SkillBarReceived += b => Dispatcher.BeginInvoke(() => OnSkillBar(b));
+        _net.SubclassesReceived += s => Dispatcher.BeginInvoke(() => OnSubclasses(s));
         _net.LogoutResultReceived += r => Dispatcher.BeginInvoke(() => OnLogoutResult(r));
         _net.PvpStateReceived += s => Dispatcher.BeginInvoke(() => OnPvpState(s));
         _net.DebugConfigReceived += c => Dispatcher.BeginInvoke(() => OnDebugConfig(c));
