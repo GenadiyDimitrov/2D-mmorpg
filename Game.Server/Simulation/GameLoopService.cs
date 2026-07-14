@@ -4603,11 +4603,24 @@ var effect = def.Effect;
         return list;
     }
 
+    /// <summary>EXP for killing one mob: the level curve scaled by how TOUGH this particular
+    /// mob actually is. L2 pays XP by toughness within a level band — a level-85 Drake Warrior
+    /// carries ~8.5x a normal same-level mob's HP and pays ~7.5x the EXP. We paid purely by
+    /// LEVEL, so a boss with 10x the HP gave exactly as much EXP as the trash standing next to
+    /// it. Toughness is read straight off the spawned mob (its rank multiplier and MobMod HP
+    /// passive are already baked into MaxHp) relative to the level's base curve, so a mob that
+    /// buys bulk with an "HP Increase (2x)" passive automatically pays 2x.</summary>
+    private static int MobExpValue(Entity mob)
+    {
+        float toughness = Math.Clamp(mob.MaxHp / (float)Math.Max(1, MobBaseStats.Hp(mob.Level)), 0.25f, 20f);
+        return Math.Max(1, (int)(StatCalculator.MobExpReward(mob.Level) * toughness));
+    }
+
     /// <summary>Award a mob kill's EXP: solo → all to the killer; party → split among members in
     /// range, weighted by level (anti-leech), with a small size bonus to reward grouping.</summary>
     private void AwardKillExp(Entity killer, Entity victim)
     {
-        int total = StatCalculator.MobExpReward(victim.Level);
+        int total = MobExpValue(victim);
         var share = KillCreditMembers(killer);
         if (share.Count <= 1)
         {

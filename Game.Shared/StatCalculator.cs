@@ -278,6 +278,32 @@ public static class StatCalculator
     /// <summary>Level modifier: (level+89)/100. L1=0.90, L11=1.00, L80=1.69.</summary>
     public static float LevelMod(int level) => (level + 89) / 100f;
 
+    // ----- The magic level-scaling terms (authentic L2; verified against L2J's
+    //       FuncMAtkMod / FuncMDefMod, 2026-07-14) --------------------------------
+    //
+    //   M.Atk = base × INTbonus² × levelMod²     (BOTH squared)
+    //   M.Def = base × MENbonus  × levelMod      (neither squared)
+    //
+    // The asymmetry is the whole trick, and we were missing it. Magic damage takes
+    // √M.Atk — so squaring the level term CANCELS the square root:
+    //
+    //   √(levelMod²) = levelMod
+    //
+    // …which leaves magic damage growing LINEARLY in level, exactly like physical
+    // (77·(pAtk+power)/pDef is a pure ratio). Without the square, our M.Atk was flat in
+    // level (AtkStat + level·2 + weapon), so √M.Atk was flat too and magic silently fell
+    // off a cliff as the numbers grew: a level-85 mage needed ~79 casts to kill a
+    // same-level mob while a level-20 mage one-shot his. Same bug at both ends.
+    //
+    // (We have one ATK power stat rather than L2's separate INT, and it already sits in
+    // the base — so only the level term is reproduced here, not INTbonus².)
+
+    /// <summary>M.Atk level scaling: levelMod². Squared on purpose — see the note above.</summary>
+    public static float MagicAttackLevelMod(int level) => LevelMod(level) * LevelMod(level);
+
+    /// <summary>M.Def level scaling: levelMod (NOT squared — the counterpart to the above).</summary>
+    public static float MagicDefenceLevelMod(int level) => LevelMod(level);
+
     // Damage balance constants — the authentic L2 constants, unmodified.
     //  Physical: 77·(pAtk + power)/pDef
     //  Magic:    91·power·√mAtk/mDef

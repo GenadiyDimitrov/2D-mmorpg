@@ -7,6 +7,34 @@ this file.
 
 ---
 
+## 🔥 MAGIC RE-SCALE — TEST THIS FIRST (2026-07-14)
+
+The mob curves, the M.Atk level formula and the nuke ladder all changed. Nothing here needs a
+DB wipe. `dotnet run --project tools/BalanceMatrix` prints the predicted numbers — the point of
+this test is whether the *feel* matches them.
+
+- [ ] **Mage kills a same-level mob in 2-3 casts** at 40 / 60 / 80 with best-for-tier gear.
+      (Predicted: 1.3 / 2.0 / 2.6 casts. Was 3.5 / 19 / 79.)
+- [ ] **Mob HP looks right.** A normal level-80 mob should have ~5.2k HP, not 15.4k. Elites and
+      bosses should still be fat — they buy bulk with an HP passive, which is unchanged.
+- [ ] **Low-level mage no longer overkills.** A ~L21 mage on a ~L24 mob: was 2k damage, should now
+      be a few hundred against a ~500-HP mob. He will still roughly one-shot it — that IS L2.
+- [ ] **Nuke ladder past 35.** Elemental / Quick / Vampiric Bolt now gain a level every 5 levels
+      from 20 to **80** (Elemental Bolt tops out at power 116). Check they appear in the skill
+      window and are learnable with SP.
+- [ ] **Fighter got faster too** (he rode the same broken mob curve). L85: ~25 basic hits to kill a
+      same-level mob, was ~148. Check this doesn't now feel *too* fast.
+- [ ] **Boss/elite EXP.** A mob with an HP-multiplier passive now pays that multiple in EXP (a 3x-HP
+      elite = 3x EXP). Was flat-by-level, so bosses paid trash EXP.
+- [ ] **Leveling pace at 60-85 is ~3x faster** in wall-clock (same EXP per mob, mobs die 3x sooner).
+      If that's too fast, drop `ExpRate` in Settings → Debug Tuning — no rebuild needed.
+
+**⚠ ONE NUMBER STILL OPEN:** mage-vs-tank at level 76/85 measures **461/485**, above the 300-400 you
+asked for — but that's both sides UNBUFFED. Duel a tank with buffs up and see where it really lands.
+If it's still hot, the lever is `MobBaseStats.MDef` (the ~3·lvl slope) or the top nuke powers.
+
+---
+
 ## ⚠ TWO NUMBERS TO DECIDE WHILE TESTING (2026-07-13)
 
 ### 1. `ItemCatalog.OffChannelFactor` — currently **0.6**, I'd argue for **0.2**

@@ -126,6 +126,21 @@ public static partial class ClassSkillTables
                 new ClassSkill(VampiricBolt, 35, SkillLevel: 5),
                 new ClassSkill(MageAntiMagic, 35, SkillLevel: 6),
                 new ClassSkill(SpellMastery, 35, SkillLevel: 4));
+
+            // The nuke ladder does NOT stop at the 2nd class. In L2 your main nuke keeps
+            // gaining levels for life, and that ladder IS the mage's damage scaling — capping
+            // it at 35 (power 44) is what left a level-85 mage fighting with a level-35 spell.
+            // Levels 5-13 of each bolt, learned every 5 levels from 40 to 80 (power 63 -> 116;
+            // 108 @ 74 is L2's anchor). See Skills.Mage.cs for the ladder itself.
+            // Vampiric Bolt is one level ahead of the other two (it starts at 14, not 20).
+            for (int i = 0; i < 9; i++)
+            {
+                int learnLevel = 40 + i * 5;
+                ClassSkills.Register(race, BaseClass.Mage, Archetype.Nuker,
+                    new ClassSkill(ElementalBolt, learnLevel, SkillLevel: 5 + i),
+                    new ClassSkill(QuickBolt,     learnLevel, SkillLevel: 5 + i),
+                    new ClassSkill(VampiricBolt,  learnLevel, SkillLevel: 6 + i));
+            }
         }
 
         // Healer (cleric) 2nd-class kit — authored separately because Holy Bolt takes a

@@ -19,21 +19,57 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
   ctor** (its body is guaranteed to run after every field initializer). Also de-risks
   `FighterArmorLevels` / `MageRobeLevels` / `NewbieBuffSet`, which survived on file-ordering luck.
 
-- [ ] **MAGIC RE-SCALE (the big one).** Magic is ~22× under L2 against players and ~3× OVER against
-  mobs — the same bug from both ends. The formula is already L2's exact `91·power·√M.Atk / M.Def`;
-  the INPUTS are wrong. Physical is a pure ratio (scale-invariant); magic has a √, so it silently
-  falls behind as numbers grow — which is why low-level PvP feels fine and high-level doesn't.
-  1. **M.Atk** is additive/flat in level (`AtkStat + level*2 + weapon` → ~486 raw at 86). Make it
-     **multiplicative** as L2 does. *(owner: approved)*
-  2. **Nuke powers**: top nuke is **44**; re-author to the L2 curve, anchored **108 @ level 74**
-     (Hurricane / Hydro Blast / Death Spike / Prominence). *(owner: approved)*
-  3. **M.Def**: the divisor swings 18× (mob @24 = 50 → player tank @91 = ~900) while mob HP swings
-     30×. Only ~102 of the tank's 900 is his own base — **~800 is A-grade JEWELS**, the single most
-     out-of-line number in the game. Put mobs+players on one curve and cut the jewel dominance.
-     *(owner: NOT yet approved — ask first, it changes every mage-mob and every jewel.)*
-  - **Do NOT touch HP** (physical feels right → HP is proportionally correct; scale magic UP to it).
-  - Re-check mage TTK at BOTH ends afterwards: power+M.Atk alone would make a L21 mage hit a mob
-    for 5k. See [[session-status-2026-07-14]].
+- [x] **MAGIC RE-SCALE (the big one) — DONE 2026-07-14.** The culprit was **the mob curves**, not the
+  jewels. Researched the retail L2 mob table (Keltir L1, Grizzly L17, Ghoul L32, Grandis L40,
+  Invader Shaman L63, Tracker Howl L81, Drake Warrior L85) plus the L2J stat formulas, then built
+  `tools/BalanceMatrix` (a console app that constructs REAL geared Entities and prints the matrix)
+  so every number below is **measured, not derived**.
+
+  **What was actually wrong:**
+  1. **Mob P.Def/M.Def were QUADRATIC; L2's are LINEAR** (~4.2*lvl and ~3*lvl, floored at L1). The
+     two curves cross at ~43 — so our low mobs were paper (M.Def 5 at L1 where L2 has 30: a L21
+     mage nuked a L24 mob for 2k) and our high mobs were walls (448 at L80 vs L2's ~253).
+     **One bug, both ends** — exactly the symptom reported.
+  2. **Mob HP was 2.8-4.5x too high above L45** (15,420 at L80; L2's Tracker Howl is ~5,500). Now
+     `40 + 0.8*lvl^2`. Fat mobs are NOT a fatter curve — L2 makes a specific mob tanky with an
+     "HP Increase (2x/3x)" PASSIVE, which is exactly our `MobMod` layer. Keep the curve lean.
+  3. **Player M.Atk was flat in level.** L2: `M.Atk = base x INTbonus^2 x levelMod^2` and
+     `M.Def = base x MENbonus x levelMod` (verified against L2J `FuncMAtkMod`/`FuncMDefMod`). The
+     **square is the whole trick**: magic damage takes `sqrt(M.Atk)`, so `sqrt(levelMod^2) =
+     levelMod` and magic ends up LINEAR in level, like physical. We had neither term. (MEN was
+     already wired; only the level terms were missing.)
+  4. **The nuke ladder stopped at level 35 / power 44**, so a L85 mage fought with a L35 spell.
+     Extended Elemental / Quick / Vampiric Bolt to **13 levels, learned every 5 from 20 to 80**, on
+     L2's linear power curve anchored **108 @ 74** (top = 116 @ 80).
+  5. **Mob EXP ignored toughness** — a boss with 10x the HP paid the same EXP as the trash beside it.
+     Now `MobExpValue` = level curve x the mob's actual HP multiple (L2 pays by toughness: a Drake
+     carries ~8.5x a normal mob's HP and pays ~7.5x the EXP).
+
+  **Mob P.Atk / M.Atk / MP measured to already track L2 within ~30% — left alone. Jewels untouched,
+  per owner.**
+
+  Measured before -> after (`dotnet run --project tools/BalanceMatrix`):
+
+  | | mage casts to kill a same-level mob | mage dmg to a tank | fighter hits to kill |
+  |---|---|---|---|
+  | lvl 20 | 0.5 -> 0.5 | 117 -> 167 | 1.3 -> 2.0 |
+  | lvl 40 | 3.5 -> 1.3 | 157 -> 225 | 11.1 -> 8.7 |
+  | lvl 61 | 19.0 -> 2.0 | 164 -> 336 | 41.5 -> 15.0 |
+  | lvl 85 | **79.4 -> 2.6** | 184 -> **485** | **147.7 -> 24.9** |
+
+  The mage went from exploding (0.5 -> 79 casts) to nearly FLAT (0.5 -> 2.6). Physical rode the
+  same broken mob curve and got the same benefit for free.
+
+  **Open, for the playtest to judge:**
+  - Mage-vs-tank at 76/85 reads **461/485**, a little over the owner's 300-400 target (both sides
+    UNBUFFED — the tank's M.Def buffs should close it). If still hot, ease the `MobBaseStats.MDef`
+    slope or the top nuke powers.
+  - A level-20 mage still one-shots (0.5 casts). That IS retail L2; the magnitude is at least
+    proportionate now (787 dmg vs a 360-HP mob), and the curve ABOVE it is fixed.
+  - **Leveling at 60-85 is now ~3x faster in wall-clock** (same EXP/mob, mobs die 3x sooner). The
+    EXP curve is deliberately untouched; `ExpRate` is live-editable in the debug tuning panel.
+  - Our absolute magnitudes stay smaller than retail (mage M.Atk reads ~2.9k, not L2's ~16k). The
+    RATIOS give the asked-for fight; making the numbers *look* like L2's is a cosmetic rescale.
 
 - [ ] **Stat-swap "direction" rule.** The level-40 swaps currently allow a circular net-zero loop
   (+A−B, +B−C, +C−A = 45kk for +0). Fix: **each stat commits to a direction** — taking `+X −Y` bans

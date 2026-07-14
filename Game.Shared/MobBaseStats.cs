@@ -8,87 +8,117 @@ namespace Game.Shared;
 /// P.Def PASSIVE (a MobMod / mastery), never a separate curve — so "assume all monsters are
 /// ×1" reproduces the CSV exactly and outliers layer a passive on top.
 ///
-/// Values are linearly interpolated between authored levels and clamped outside [1, 85].
-/// This mirrors the game's existing table-driven modifiers (StatCalculator.ConCurve /
-/// MenCurve): the curve isn't a clean polynomial (the L2 progression is hand-tuned), so the
-/// level term is a tuned table rather than a formula, while CON and passives stay as the
-/// multiplicative terms the owner specified.
+/// HP / P.Def / M.Def are FORMULAS (see the block below them) — measured off the retail L2
+/// mob table in 2026-07-14 and re-derived, because the old authored columns were the wrong
+/// SHAPE. MP / P.Atk / M.Atk stay a hand-authored table, linearly interpolated between the
+/// listed levels and clamped outside [1, 85]; they were measured to already track L2.
+///
+/// The CSV is regenerated to match, so it stays a faithful dump of what the code does.
 /// </summary>
 public static class MobBaseStats
 {
-    // level → (HP, MP, P.Def, M.Def, P.Atk, M.Atk). The normal per-level progression; the
-    // L40 row uses the standard 1980 HP (the Rift Portling outlier is curve × HP/def passive).
-    private static readonly (int Lvl, int Hp, int Mp, int PDef, int MDef, int PAtk, int MAtk)[] Curve =
-    {
-        (1,    42,   12,   8,   5,    4,    2),
-        (4,    68,   22,   12,  9,    7,    4),
-        (8,    110,  35,   18,  14,   14,   9),
-        (10,   145,  40,   22,  16,   18,   12),
-        (12,   180,  52,   26,  20,   23,   15),
-        (14,   210,  60,   31,  24,   28,   19),
-        (16,   250,  75,   36,  28,   34,   23),
-        (18,   310,  90,   42,  32,   41,   27),
-        (20,   394,  112,  49,  38,   48,   32),
-        (22,   480,  130,  56,  43,   56,   38),
-        (24,   590,  155,  64,  50,   65,   44),
-        (26,   680,  180,  72,  56,   75,   51),
-        (28,   810,  210,  81,  64,   86,   59),
-        (30,   940,  240,  90,  71,   98,   67),
-        (32,   1100, 280,  101, 79,   112,  77),
-        (34,   1320, 320,  111, 88,   127,  87),
-        (35,   1420, 340,  118, 92,   135,  93),
-        (37,   1650, 390,  130, 102,  152,  105),
-        (39,   1910, 440,  143, 112,  171,  118),
-        (40,   1980, 440,  143, 112,  171,  118),
-        (42,   2350, 540,  165, 130,  203,  141),
-        (44,   2620, 600,  179, 141,  228,  158),
-        (45,   2780, 630,  187, 147,  241,  167),
-        (47,   3100, 700,  201, 159,  269,  187),
-        (48,   3280, 730,  209, 165,  284,  197),
-        (50,   3650, 810,  226, 179,  316,  220),
-        (51,   3850, 850,  234, 185,  333,  232),
-        (53,   4300, 940,  251, 199,  370,  258),
-        (55,   4800, 1040, 269, 213,  410,  286),
-        (56,   5050, 1090, 278, 221,  431,  301),
-        (57,   5320, 1140, 288, 229,  454,  317),
-        (58,   5600, 1190, 297, 236,  478,  334),
-        (60,   6200, 1310, 317, 252,  529,  370),
-        (61,   6520, 1370, 327, 260,  556,  389),
-        (62,   6850, 1430, 337, 268,  584,  409),
-        (63,   7200, 1500, 347, 276,  613,  429),
-        (64,   7550, 1560, 358, 285,  644,  451),
-        (65,   7920, 1630, 368, 293,  675,  473),
-        (66,   8300, 1700, 379, 302,  708,  496),
-        (67,   8700, 1780, 391, 311,  742,  520),
-        (68,   9100, 1850, 402, 320,  777,  545),
-        (69,   9520, 1930, 414, 329,  814,  571),
-        (70,   10000,2010, 426, 339,  852,  598),
-        (71,   10400,2090, 438, 349,  892,  626),
-        (72,   10900,2180, 451, 359,  933,  655),
-        (73,   11400,2260, 464, 369,  975,  685),
-        (74,   11900,2350, 477, 380,  1020, 716),
-        (75,   12420,2440, 490, 390,  1065, 748),
-        (76,   12980,2540, 504, 401,  1113, 782),
-        (77,   13550,2630, 518, 413,  1162, 817),
-        (78,   14150,2730, 532, 424,  1213, 853),
-        (79,   14780,2830, 547, 436,  1266, 890),
-        (80,   15420,2940, 562, 448,  1321, 929),
-        (81,   16100,3050, 578, 460,  1378, 969),
-        (82,   16800,3160, 594, 473,  1437, 1011),
-        (83,   17520,3280, 610, 486,  1498, 1054),
-        (84,   18280,3400, 627, 499,  1561, 1099),
-        (85,   19050,3520, 644, 513,  1627, 1145),
+    // level → (MP, P.Atk, M.Atk). These three were MEASURED against the retail L2 mob table
+    // and already track it within ~30%, so they stay hand-authored here. HP / P.Def / M.Def
+    // were NOT — they are now formulas below (see the comment block).
+    private static readonly (int Lvl, int Mp, int PAtk, int MAtk)[] Curve =
+    {        (1,   12,    4,     2),
+        (4,   22,    7,     4),
+        (8,   35,    14,    9),
+        (10,  40,    18,    12),
+        (12,  52,    23,    15),
+        (14,  60,    28,    19),
+        (16,  75,    34,    23),
+        (18,  90,    41,    27),
+        (20,  112,   48,    32),
+        (22,  130,   56,    38),
+        (24,  155,   65,    44),
+        (26,  180,   75,    51),
+        (28,  210,   86,    59),
+        (30,  240,   98,    67),
+        (32,  280,   112,   77),
+        (34,  320,   127,   87),
+        (35,  340,   135,   93),
+        (37,  390,   152,   105),
+        (39,  440,   171,   118),
+        (40,  440,   171,   118),
+        (42,  540,   203,   141),
+        (44,  600,   228,   158),
+        (45,  630,   241,   167),
+        (47,  700,   269,   187),
+        (48,  730,   284,   197),
+        (50,  810,   316,   220),
+        (51,  850,   333,   232),
+        (53,  940,   370,   258),
+        (55,  1040,  410,   286),
+        (56,  1090,  431,   301),
+        (57,  1140,  454,   317),
+        (58,  1190,  478,   334),
+        (60,  1310,  529,   370),
+        (61,  1370,  556,   389),
+        (62,  1430,  584,   409),
+        (63,  1500,  613,   429),
+        (64,  1560,  644,   451),
+        (65,  1630,  675,   473),
+        (66,  1700,  708,   496),
+        (67,  1780,  742,   520),
+        (68,  1850,  777,   545),
+        (69,  1930,  814,   571),
+        (70,  2010,  852,   598),
+        (71,  2090,  892,   626),
+        (72,  2180,  933,   655),
+        (73,  2260,  975,   685),
+        (74,  2350,  1020,  716),
+        (75,  2440,  1065,  748),
+        (76,  2540,  1113,  782),
+        (77,  2630,  1162,  817),
+        (78,  2730,  1213,  853),
+        (79,  2830,  1266,  890),
+        (80,  2940,  1321,  929),
+        (81,  3050,  1378,  969),
+        (82,  3160,  1437,  1011),
+        (83,  3280,  1498,  1054),
+        (84,  3400,  1561,  1099),
+        (85,  3520,  1627,  1145),
+
     };
 
-    public static int Hp(int level)   => Interp(level, r => r.Hp);
+    // ---- HP and DEFENCE are FORMULAS, fitted to the retail L2 mob table (2026-07-14) ----
+    //
+    // The old authored HP/P.Def/M.Def columns were all QUADRATIC in level. Measured against
+    // real L2 mobs (Keltir L1, Grizzly L17, Ghoul L32, Grandis L40, Invader Shaman L63,
+    // Tracker Howl L81) that turned out to be wrong in two different directions at once:
+    //
+    //   * DEFENCE in L2 is LINEAR in level (P.Def ≈ 4.2·lvl, M.Def ≈ 3·lvl, floored at L1).
+    //     A quadratic curve crosses the real one around level 43 — so our low-level mobs were
+    //     paper (M.Def 5 at L1 where L2 has 30: a level-21 mage nuked a level-24 mob for 2k)
+    //     and our high-level mobs were walls (M.Def 448 at L80 where L2 has ~253). One bug,
+    //     both ends.
+    //   * HP was 2.8-4.5x too high above level 45 (15,420 at L80 where L2's Tracker Howl has
+    //     ~5,500), which is what made the endgame grind balloon to ~79 casts a kill.
+    //
+    // Mob P.Atk/M.Atk/MP were measured to already track L2 within ~30%, so they stay on the
+    // authored table above.
+    //
+    // Fat mobs are NOT a separate curve: L2 makes a specific mob tanky with an "HP Increase
+    // (2x/3x)" PASSIVE on top of this lean base (a level-85 Drake Warrior = 18.6k base HP x
+    // ~2.5). That is exactly our MobMod / MobMasteries layer — so keep the curve lean and let
+    // elites and bosses buy their bulk with passives.
+
+    /// <summary>Base max HP. Lean quadratic (a normal L80 mob is ~5.2k, an L1 mob ~41);
+    /// elites/bosses multiply this with an HP passive rather than riding a separate curve.</summary>
+    public static int Hp(int level) => 40 + (int)(0.8f * level * level);
+
+    /// <summary>Base physical defence — LINEAR in level, as in retail L2 (≈4.2·lvl).</summary>
+    public static int PDef(int level) => Math.Max(44, (int)(4.2f * level));
+
+    /// <summary>Base magic defence — LINEAR in level, as in retail L2 (≈3·lvl).</summary>
+    public static int MDef(int level) => Math.Max(30, (int)(3.0f * level));
+
     public static int Mp(int level)   => Interp(level, r => r.Mp);
-    public static int PDef(int level) => Interp(level, r => r.PDef);
-    public static int MDef(int level) => Interp(level, r => r.MDef);
     public static int PAtk(int level) => Interp(level, r => r.PAtk);
     public static int MAtk(int level) => Interp(level, r => r.MAtk);
 
-    private static int Interp(int level,
-        Func<(int Lvl, int Hp, int Mp, int PDef, int MDef, int PAtk, int MAtk), int> sel)
+    private static int Interp(int level, Func<(int Lvl, int Mp, int PAtk, int MAtk), int> sel)
     {
         if (level <= Curve[0].Lvl) return sel(Curve[0]);
         if (level >= Curve[^1].Lvl) return sel(Curve[^1]);

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Dev tool, deliberately NOT in Game.sln: `dotnet build` on the solution must not
+       build it, and Visual Studio's startup-project config stays untouched.
+       Run it with:  dotnet run  (from this folder)
+       It constructs REAL Entities with REAL gear and prints the balance matrix, so
+       tuning is measured rather than guessed. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Game.Tools.BalanceMatrix</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Game.Server\Game.Server.csproj" />
+    <ProjectReference Include="..\..\Game.Shared\Game.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

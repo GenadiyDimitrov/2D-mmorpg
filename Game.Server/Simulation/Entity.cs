@@ -1240,13 +1240,20 @@ public class Entity
             }
         }
 
-        // MEN multiplies the whole flat magic-defence pool (base + jewels + passives),
-        // per the L2 M.Def formula. We have no MEN stat, so use the per-race/class base.
-        // (Buffs apply on top in EffectiveMagicDefence.) Players only; mob mDef is
-        // overwritten at spawn.
+        // ----- The two MAGIC level-scaling terms (authentic L2; see StatCalculator) -----
+        //   M.Atk = base × levelMod²   (squared — cancels the √M.Atk in the damage formula,
+        //                               so magic grows linearly in level like physical)
+        //   M.Def = base × MEN × levelMod
+        // Both multiply the finished flat pool (base + gear + jewels + passives). Buffs
+        // layer on afterwards in the Effective* getters. PLAYERS ONLY — a mob's M.Atk/M.Def
+        // come from its own authored curve (MobBaseStats), which is already a final number.
         if (Kind == EntityKind.Player)
-            MagicDefence = (int)(MagicDefence *
-                StatCalculator.MenModifier(StatCalculator.BaseMen(Race, BaseClass) + BonusMen));
+        {
+            MagicAttack = (int)(MagicAttack * StatCalculator.MagicAttackLevelMod(Level));
+            MagicDefence = (int)(MagicDefence
+                * StatCalculator.MenModifier(StatCalculator.BaseMen(Race, BaseClass) + BonusMen)
+                * StatCalculator.MagicDefenceLevelMod(Level));
+        }
 
         // ----- Timed-buff contributions to BAKED stats (the stats computed once here;
         // atk/def/speed read buffs live in their Effective* getters instead). Re-folded on
