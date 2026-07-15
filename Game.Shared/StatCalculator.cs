@@ -227,6 +227,32 @@ public static class StatCalculator
     /// in the items phase: weapon + stat + buffs/passives.</summary>
     public static int AttackPower(int atkStat, int level) => atkStat + level * 2;
 
+    // ----- P.Atk (authentic L2 shape) ---------------------------------------------------------
+    //
+    // L2's P.Atk is MULTIPLICATIVE: `P.Atk = basePAtk(=WEAPON) × STRbonus × levelMod` (L2J FuncPAtkMod).
+    // The WEAPON is the base; the power stat and level only MULTIPLY it. Unarmed, basePAtk is a tiny
+    // FIST value, so you punch for almost nothing — no "if unarmed then penalty" branch is needed, the
+    // formula does it. Our old form was additive (`atkStat + level·2 + weapon`), which let the 40-point
+    // ATK stat leak through with no weapon (a naked L1 fighter had 42 P.Atk and one-shot trash).
+    //
+    // We keep ONE power stat (ATK) rather than L2's separate STR, so the "STR bonus" is a gentle
+    // multiplier off ATK, centred on the fighter base. Only the P channel uses this; M.Atk keeps its
+    // own (base × levelMod²) form — that's the signed-off magic balance and it is NOT touched.
+
+    /// <summary>Fist P.Atk when unarmed — the "weapon" value with no weapon. Small on purpose.</summary>
+    public const int UnarmedFistPAtk = 3;
+
+    /// <summary>ATK value the P.Atk multiplier is centred on (≈ the human-fighter base) → ×1.0 there.</summary>
+    public const int PAtkStatReference = 40;
+
+    /// <summary>The power-stat multiplier for P.Atk. ~1.0 at the fighter base, scaling gently with ATK.</summary>
+    public static float PAtkStatMult(int atkStat) => Math.Max(0.2f, atkStat / (float)PAtkStatReference);
+
+    /// <summary>L2-shape P.Atk: (fist + weapon) × ATKbonus × levelMod. <paramref name="weaponPAtk"/> is
+    /// the weapon's own P.Atk contribution (its power × the P channel factor); 0 = unarmed.</summary>
+    public static int PhysicalAttackPower(int weaponPAtk, int atkStat, int level) =>
+        Math.Max(1, (int)((UnarmedFistPAtk + weaponPAtk) * PAtkStatMult(atkStat) * LevelMod(level)));
+
     /// <summary>Which LEVEL of the combat-training passive a character should hold at a
     /// given character level (auto-granted; our soulshot/spiritshot stand-in). 0 below
     /// 40; levels 1–8 step every 5 levels (40→1 … 75→8 = +10%…+80%); 9 from the

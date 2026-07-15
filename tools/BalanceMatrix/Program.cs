@@ -62,6 +62,27 @@ foreach (int L in levels)
                       $"{hit,7} {mobHp,7} {hits,6:F1}");
 }
 Console.WriteLine();
+Console.WriteLine("=== UNARMED / NAKED (no weapon, no armor) — should be FEEBLE ===");
+Console.WriteLine($"{"Lvl",4} {"class",8} {"P.Atk",7} | {"basic",7} {"mobHP",7} {"hits",6}");
+foreach (int L in new[] { 1, 4, 8, 20 })
+{
+    foreach (var (cls, label) in new[] { (BaseClass.Fighter, "Fighter"), (BaseClass.Mage, "Mage") })
+    {
+        var e = new Entity { Name = "naked", Kind = EntityKind.Player };
+        e.Race = Race.Human; e.BaseClass = cls; e.Level = L;
+        var s = StatCalculator.GetBaseStats(Race.Human, cls);
+        e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Dex = s.Dex;
+        e.RecomputeDerived();   // NO gear equipped
+        int pAtk = (int)e.EffectiveAttack;
+        int mobPDef = MobBaseStats.PDef(L);
+        int mobHp = MobBaseStats.Hp(L);
+        int hit = StatCalculator.PhysicalDamage(pAtk, 0, mobPDef, L);
+        Console.WriteLine($"{L,4} {label,8} {pAtk,7} | {hit,7} {mobHp,7} {(hit > 0 ? mobHp / (float)hit : 0),6:F1}");
+    }
+}
+Console.WriteLine("  (before this change a naked L1 fighter had 42 P.Atk and ONE-SHOT level-4-8 mobs)");
+Console.WriteLine();
+
 Console.WriteLine("=== PROGRESSION (x1 rates; a NORMAL x1-toughness mob) ===");
 Console.WriteLine($"{"Lvl",4} {"exp/kill",9} {"expToNext",10} {"mobs/level",11}");
 foreach (int L in levels)

@@ -865,8 +865,13 @@ public class Entity
                 StatCalculator.MpClassLevelModifier(BaseClass, Archetype),
                 StatCalculator.Level1BaseMp(BaseClass))
             : MobBaseStats.Mp(Level);
+        // P.Atk is L2-MULTIPLICATIVE now: the WEAPON is the base, the ATK stat + level MULTIPLY it
+        // (StatCalculator.PhysicalAttackPower, applied after the equip loop). So we DON'T seed a stat
+        // base here — the weapon's own P.Atk accumulates in the loop, then the multiplier is applied.
+        // Unarmed → fist only → feeble, no penalty branch. M.Atk keeps its additive base × levelMod²
+        // (the signed-off magic balance) and is UNCHANGED.
         AttackPower = Kind == EntityKind.Player
-            ? StatCalculator.AttackPower(EffectiveAtk, Level) + BonusStr * 3   // STR → P.Atk (first-pass coeff)
+            ? 0
             : MobBaseStats.PAtk(Level);
         MagicAttack = Kind == EntityKind.Player
             ? StatCalculator.AttackPower(EffectiveAtk, Level) + BonusInt * 3   // INT → M.Atk
@@ -998,15 +1003,21 @@ public class Entity
             }
         }
 
-        // ----- Weapon channel split -----
-        // The equipped weapon decides how much of your ATK power reaches each channel. This is
-        // applied to the FINISHED total (shared base + level + gear), not just the weapon's own
-        // bonus — the shared base is exactly what has to be suppressed. It's what makes a staff
-        // a caster and a sword not, and it's why we can keep ONE power stat: +ATK on a staff
-        // behaves as +INT, on a sword as +STR. Mobs have no weapon, so both factors stay 1.
+        // ----- Weapon channel split + the P.Atk formula -----
+        // The equipped weapon decides how much of its power reaches each channel (PAtkFactor /
+        // MAtkFactor) — a staff melees poorly (0.6), a sword casts poorly. Mobs have no weapon (factors 1).
+        //
+        // P.Atk (L2 shape): at this point AttackPower holds only the accumulated WEAPON P.Atk bonus (we
+        // didn't seed a stat base). Apply the channel factor to it, then run the multiplicative formula
+        // — (fist + weaponP) × ATKbonus × levelMod — so the weapon is the base and the stat/level
+        // multiply. Unarmed → weaponP 0 → fist only → feeble, with no penalty branch.
+        //
+        // M.Atk is UNCHANGED: base (atkStat + level·2 + weaponM) × MAtkFactor, then × levelMod² later.
+        // That is the signed-off magic balance; only the P channel moved to the multiplicative form.
         if (Kind == EntityKind.Player)
         {
-            AttackPower = Math.Max(1, (int)(AttackPower * weaponPFactor));
+            int weaponPAtk = (int)(AttackPower * weaponPFactor);
+            AttackPower = StatCalculator.PhysicalAttackPower(weaponPAtk, EffectiveAtk, Level);
             MagicAttack = Math.Max(0, (int)(MagicAttack * weaponMFactor));
         }
 
