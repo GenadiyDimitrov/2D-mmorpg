@@ -80,7 +80,9 @@ static string Show(string[]? bar) => bar is null
 // Give the character real skills FIRST. An all-empty bar proves nothing — every assertion below
 // would pass trivially by comparing empty to empty, which is exactly how a broken bar could sneak
 // through. Level up so skills exist, then learn everything the class can.
-await a.Hub.SendAsync("DebugLevel", 10);
+// Adding a subclass now requires level 76. The debug step is clamped to +10 (it mirrors the UI
+// buttons), so climb in +10s: 1 -> 81, comfortably past the gate.
+for (int i = 0; i < 8; i++) await a.Hub.SendAsync("DebugLevel", 10);
 await a.Hub.SendAsync("DebugLearnAll");
 await a.Settle();
 Check("the main class has skills on its bar",
@@ -96,9 +98,11 @@ Console.WriteLine($"        main bar SET to {Show(mainBar)}");
 // -------------------------------------------------------------------------------------------
 // 3. Add a SUBCLASS of the other base class and switch to it.
 // -------------------------------------------------------------------------------------------
-var other = mainClass == BaseClass.Mage ? BaseClass.Fighter : BaseClass.Mage;
+// You pick a specific 3rd-class discipline now (pre-approved). Any is fine — the main class holds no
+// discipline yet, so the no-duplicate rule can't trip. Take the first catalog entry.
+var chosen = ThirdClassCatalog.Playable.First();
 a.Bar = null;
-await a.Hub.SendAsync("DebugAddSubclass", other);
+await a.Hub.SendAsync("DebugAddSubclass", chosen.Id);
 await a.Settle();
 
 Check("subclass added", a.Subclasses!.Classes.Length == 2,
@@ -106,7 +110,8 @@ Check("subclass added", a.Subclasses!.Classes.Length == 2,
 var sub = a.Subclasses.Classes.FirstOrDefault(c => c.Slot != mainSlot);
 Check("now PLAYING the new class", sub is { Active: true });
 Check("new class starts at level 1", sub?.Level == 1, $"level {sub?.Level}");
-Check("new class is the other base class", sub?.BaseClass == other);
+Check("new class has the chosen 3rd class pre-approved", sub?.ThirdClass == chosen.Id);
+Check("new class is the discipline's own race", sub?.Race == chosen.Race);
 Check("switching pushed a fresh skill bar", a.Bar is not null);
 
 int subSlot = sub!.Slot;
@@ -142,8 +147,8 @@ Check("MAIN class's bar came back exactly as left",
       a.Bar is not null && a.Bar.Slots.SequenceEqual(mainBar),
       "the swap used to overwrite it while still LOOKING right");
 Check("main class kept its OWN level (the subclass's levels did not leak into it)",
-      a.Subclasses.Classes.First(c => c.Slot == mainSlot).Level == 11,
-      $"level {a.Subclasses.Classes.First(c => c.Slot == mainSlot).Level}, expected 11");
+      a.Subclasses.Classes.First(c => c.Slot == mainSlot).Level == 81,
+      $"level {a.Subclasses.Classes.First(c => c.Slot == mainSlot).Level}, expected 81");
 Check("subclass kept its own level while parked",
       a.Subclasses.Classes.First(c => c.Slot == subSlot).Level == 5,
       $"level {a.Subclasses.Classes.First(c => c.Slot == subSlot).Level}, expected 5");
@@ -165,8 +170,8 @@ Check("both classes survived the relog", b.Subclasses?.Classes.Length == 2,
       $"got {b.Subclasses?.Classes.Length}");
 Check("MAIN class's bar survived the relog",
       b.Bar is not null && b.Bar.Slots.SequenceEqual(mainBar));
-Check("levels survived the relog (main 11, subclass 5)",
-      b.Subclasses!.Classes.First(c => c.Slot == mainSlot).Level == 11 &&
+Check("levels survived the relog (main 81, subclass 5)",
+      b.Subclasses!.Classes.First(c => c.Slot == mainSlot).Level == 81 &&
       b.Subclasses.Classes.First(c => c.Slot == subSlot).Level == 5,
       $"main {b.Subclasses!.Classes.First(c => c.Slot == mainSlot).Level}, " +
       $"sub {b.Subclasses.Classes.First(c => c.Slot == subSlot).Level}");
@@ -214,6 +219,7 @@ sealed class Session : IAsyncDisposable
         Hub = new HubConnectionBuilder().WithUrl(url).Build();
         Hub.On<SkillBarDto>("SkillBar", b => Bar = b);
         Hub.On<SubclassListDto>("Subclasses", s => Subclasses = s);
+        Hub.On<ChatMessage>("Chat", m => { if (m.Channel == ChatChannel.System) Console.WriteLine($"        [SYSTEM] {m.Text}"); });
         await Hub.StartAsync();
     }
 

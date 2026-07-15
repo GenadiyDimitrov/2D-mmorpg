@@ -112,6 +112,8 @@ public class SubclassRecord
     /// <summary>Stable id within the character. 0 = the class they were created as (never removable).</summary>
     public int Slot { get; set; }
 
+    /// <summary>Per-class race (a subclass can be a different race — cross-race subclasses).</summary>
+    public Race Race { get; set; }
     public BaseClass BaseClass { get; set; }
     public int SecondClass { get; set; }
     public int ThirdClass { get; set; }

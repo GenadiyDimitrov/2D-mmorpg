@@ -230,7 +230,9 @@ public record DebugKarmaCmd(string ConnectionId, int Delta) : IGameCommand;
 
 /// <summary>DEBUG: add a new SUBCLASS (a second/third class this character owns) and switch to it.
 /// No cap, no delay, no safe-zone requirement — the real rules come with the player-facing system.</summary>
-public record DebugAddSubclassCmd(string ConnectionId, BaseClass BaseClass) : IGameCommand;
+/// <summary>Add a SUBCLASS by its 3rd-class discipline id (a ThirdClassCatalog id). The new class
+/// starts at level 1 but with that 3rd class already approved (race/base/2nd derived from it).</summary>
+public record DebugAddSubclassCmd(string ConnectionId, int ThirdClassId) : IGameCommand;
 
 /// <summary>DEBUG: switch to another class this character already owns.</summary>
 public record SwitchSubclassCmd(string ConnectionId, int Slot) : IGameCommand;

@@ -510,10 +510,10 @@ public class GameHub : Hub
     }
 
     /// <summary>DEBUG: add a SUBCLASS (another class this character owns) and switch to it.</summary>
-    public Task DebugAddSubclass(BaseClass baseClass)
+    public Task DebugAddSubclass(int thirdClassId)
     {
 #if DEBUG
-        _world.Commands.Enqueue(new DebugAddSubclassCmd(Context.ConnectionId, baseClass));
+        _world.Commands.Enqueue(new DebugAddSubclassCmd(Context.ConnectionId, thirdClassId));
 #endif
         return Task.CompletedTask;
     }

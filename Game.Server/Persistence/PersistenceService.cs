@@ -214,6 +214,7 @@ public class PersistenceService
         record.Subclasses.Add(new SubclassRecord
         {
             Slot = 0,
+            Race = race,
             BaseClass = baseClass,
             Level = 1,
             Con = stats.Con,
@@ -274,6 +275,7 @@ public class PersistenceService
         var sc = new Subclass
         {
             Slot = r.Slot,
+            Race = r.Race,
             BaseClass = r.BaseClass,
             SecondClass = r.SecondClass,
             ThirdClass = r.ThirdClass,
@@ -333,6 +335,7 @@ public class PersistenceService
             var main = new Subclass
             {
                 Slot = 0,
+                Race = rec.Race,
                 BaseClass = rec.BaseClass,
                 SecondClass = rec.SecondClass,
                 ThirdClass = rec.ThirdClass,
@@ -421,13 +424,13 @@ public class PersistenceService
     /// (no torn reads / "collection modified" from X/Y, inventory or skills changing).</summary>
     /// <summary>One owned class, captured for saving.</summary>
     public sealed record SubclassSnapshot(
-        int Slot, BaseClass BaseClass, int SecondClass, int ThirdClass,
+        int Slot, Race Race, BaseClass BaseClass, int SecondClass, int ThirdClass,
         int Level, long Exp, int SkillPoints,
         int Con, int Atk, int Wit, int Dex,
         string LearnedSkillsCsv, string SkillBarJson)
     {
         public static SubclassSnapshot From(Subclass s) => new(
-            s.Slot, s.BaseClass, s.SecondClass, s.ThirdClass,
+            s.Slot, s.Race, s.BaseClass, s.SecondClass, s.ThirdClass,
             s.Level, s.Exp, s.SkillPoints,
             s.Con, s.Atk, s.Wit, s.Dex,
             string.Join(',', s.LearnedSkills.Select(kv => $"{kv.Key}:{kv.Value}")),
@@ -567,6 +570,7 @@ public class PersistenceService
         rec.Subclasses = snap.Subclasses.Select(s => new SubclassRecord
         {
             Slot = s.Slot,
+            Race = s.Race,
             BaseClass = s.BaseClass,
             SecondClass = s.SecondClass,
             ThirdClass = s.ThirdClass,

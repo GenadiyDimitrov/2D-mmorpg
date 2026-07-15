@@ -108,9 +108,14 @@ public class Entity
     public required string Name { get; init; }
     public required EntityKind Kind { get; init; }
 
-    // RACE is CHARACTER-level: one body, several trainings. Settable (not init) so a DEBUG
-    // character-reset can re-roll it in place. Normal play never changes it after creation.
-    public Race Race { get; set; }
+    // RACE is now PER-CLASS (owner, 2026-07-15): a subclass can be a different race, so Race proxies
+    // into the active subclass like Level/BaseClass/etc. Setting it (character creation, debug reset)
+    // writes the active subclass's race.
+    public Race Race
+    {
+        get => ActiveSubclass.Race;
+        set => ActiveSubclass.Race = value;
+    }
 
     // ---- SUBCLASSES ------------------------------------------------------------------------
     //
@@ -165,6 +170,20 @@ public class Entity
                   .Select(s => ThirdClassCatalog.Get(s.ThirdClass)?.Discipline)
                   .Where(d => d is not null)
                   .Select(d => d!.Value);
+
+    /// <summary>Every discipline this character owns across ALL its classes (the active one included).
+    /// Used when ADDING a new subclass, where the active class must count too.</summary>
+    public IEnumerable<Discipline> DisciplinesOwned =>
+        Subclasses.Where(s => s.ThirdClass > 0)
+                  .Select(s => ThirdClassCatalog.Get(s.ThirdClass)?.Discipline)
+                  .Where(d => d is not null)
+                  .Select(d => d!.Value);
+
+    /// <summary>Can this character ADD a subclass of the given 3rd class? False if ANY of its classes
+    /// (active included) already walks that discipline.</summary>
+    public bool CanAddDiscipline(int thirdClassId) =>
+        ThirdClassCatalog.Get(thirdClassId) is not { } def
+        || !DisciplinesOwned.Contains(def.Discipline);
 
     /// <summary>Can the class currently being played take this 3rd class? False if one of your OTHER
     /// classes already walks that discipline. (There is deliberately no 2nd-class/archetype limit.)</summary>

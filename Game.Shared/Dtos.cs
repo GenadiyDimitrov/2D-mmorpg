@@ -188,7 +188,7 @@ public record AutoSkillDto(string SkillId, bool Enabled, int ExtraDelayTicks);
 /// <summary>One class a character owns (an L2-style subclass). Server → client, so the UI can list
 /// them and let you swap. <paramref name="Active"/> = the one being played right now.</summary>
 public record SubclassDto(
-    int Slot, BaseClass BaseClass, int SecondClass, int ThirdClass, int Level, bool Active);
+    int Slot, Race Race, BaseClass BaseClass, int SecondClass, int ThirdClass, int Level, bool Active);
 
 /// <summary>Every class this character owns. Pushed on login and after any add/swap.</summary>
 public record SubclassListDto(SubclassDto[] Classes);

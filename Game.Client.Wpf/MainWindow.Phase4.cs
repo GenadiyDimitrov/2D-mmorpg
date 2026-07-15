@@ -2394,6 +2394,7 @@ public partial class MainWindow
     }
     private void DebugTabConsum_Click(object sender, RoutedEventArgs e) { _debugTab = 1; BuildDebugMenu(); }
     private void DebugTabFunc_Click(object sender, RoutedEventArgs e) { _debugTab = 2; BuildDebugMenu(); }
+    private void DebugTabClass_Click(object sender, RoutedEventArgs e) { _debugTab = 4; _debugAddDiscView = false; BuildDebugMenu(); }
 
     private int _debugTpView;   // 0 = categories, 1 = NPCs, 2 = Zones, 3 = Cities
     private void DebugTabTp_Click(object sender, RoutedEventArgs e) { _debugTab = 3; _debugTpView = 0; BuildDebugMenu(); }
@@ -2406,6 +2407,7 @@ public partial class MainWindow
             case 1: BuildDebugConsumables(); break;
             case 2: BuildDebugFunctions(); break;
             case 3: BuildDebugTeleport(); break;
+            case 4: BuildDebugClass(); break;
             default: BuildDebugEquip(); break;
         }
     }
@@ -2604,19 +2606,69 @@ public partial class MainWindow
     /// This is the owner's test loop — swap class on the spot to compare two builds in the SAME gear,
     /// instead of relogging onto another character. Each class keeps its own level, XP, skills and
     /// skill BAR; the inventory, gold and auto-hunt settings are shared and survive the swap.</summary>
-    private void BuildDebugSubclasses()
+    // -------------------------------------------------------------------------------------------
+    // FUNCTIONS tab: the frequently-used levers, grouped top-to-bottom as
+    //   full buffer  →  gold + SP  →  level  →  karma.
+    // (Class-management moved to its own "Class" tab.)
+    // -------------------------------------------------------------------------------------------
+    private void BuildDebugFunctions()
     {
-        AddDebugHeader("Classes (subclass)");
+        // Full buff set on yourself, at ANY level, without walking to the NPC. Note the NPC itself
+        // still refuses above 75 (a game rule) — this is the only way to get buffed past that, which
+        // matters because the balance numbers we sign off on are BUFFED numbers.
+        AddDebugHeader("Full buffer");
+        DebugList.Children.Add(DebugAction("Full Buffs (1h)", async () => await _net.DebugBuffAsync()));
 
+        AddDebugHeader("Gold & SP");
+        // 10kk, not 100k: the level-40 stat swaps cost 1kk-5kk per level (15kk to max one), so the
+        // old button could not fund a single meaningful purchase to test with.
+        DebugList.Children.Add(DebugAction("+10,000,000 Gold", async () => await _net.DebugGoldAsync(10_000_000)));
+        DebugList.Children.Add(DebugAction("+1kk SP", async () => await _net.DebugSpAsync(1_000_000)));
+
+        AddDebugHeader("Level");
+        // One round-trip per click now (+10 used to fire ten separate commands, each with its own
+        // level-up broadcast and character save). DELEVEL KEEPS YOUR LEARNED SKILLS — drop to 40,
+        // feel it, climb back, without re-learning the whole kit.
+        DebugList.Children.Add(DebugAction("Level +1",  async () => await _net.DebugLevelAsync(+1)));
+        DebugList.Children.Add(DebugAction("Level +10", async () => await _net.DebugLevelAsync(+10)));
+        DebugList.Children.Add(DebugAction("Level -1",  async () => await _net.DebugLevelAsync(-1)));
+        DebugList.Children.Add(DebugAction("Level -10", async () => await _net.DebugLevelAsync(-10)));
+
+        // Karma nudges. ±1000 to cross the PK line fast; ±20 = one mob kill's worth, to feel the grind.
+        AddDebugHeader("Karma");
+        DebugList.Children.Add(DebugAction("Karma +1000", async () => await _net.DebugKarmaAsync(+1000)));
+        DebugList.Children.Add(DebugAction("Karma -1000", async () => await _net.DebugKarmaAsync(-1000)));
+        DebugList.Children.Add(DebugAction("Karma +1 mob (+20)", async () => await _net.DebugKarmaAsync(+20)));
+        DebugList.Children.Add(DebugAction("Karma -1 mob (-20)", async () => await _net.DebugKarmaAsync(-20)));
+    }
+
+    // -------------------------------------------------------------------------------------------
+    // CLASS tab: everything class-management, grouped
+    //   profession & skills  →  subclasses (swap + add a discipline)  →  reset.
+    // -------------------------------------------------------------------------------------------
+    private bool _debugAddDiscView;   // true = showing the "add a discipline" picker
+
+    private void BuildDebugClass()
+    {
+        if (_debugAddDiscView) { BuildDebugAddDiscipline(); return; }
+
+        AddDebugHeader("Profession & skills");
+        DebugList.Children.Add(DebugAction("Change Profession (class change)", () =>
+        {
+            OpenClassChangePanel();
+            return Task.CompletedTask;
+        }));
+        DebugList.Children.Add(DebugAction("Give all skills (to my level)", async () => await _net.DebugLearnAllAsync()));
+
+        AddDebugHeader("Classes (subclass)");
         foreach (var sc in _subclasses)
         {
-            string label = $"#{sc.Slot} {sc.BaseClass} Lv{sc.Level}" + (sc.Active ? "  ← playing" : "");
+            string label = $"#{sc.Slot} {SubclassName(sc)} Lv{sc.Level}" + (sc.Active ? "  ← playing" : "");
             if (sc.Active)
             {
                 DebugList.Children.Add(new TextBlock
                 {
-                    Text = label,
-                    Foreground = Brushes.LightGreen,
+                    Text = label, Foreground = Brushes.LightGreen,
                     FontSize = 11, Margin = new Thickness(2, 0, 0, 4),
                 });
             }
@@ -2627,38 +2679,9 @@ public partial class MainWindow
                     async () => await _net.SwitchSubclassAsync(slot)));
             }
         }
+        DebugList.Children.Add(DebugAction("＋ Add a class (discipline) ▸",
+            () => { _debugAddDiscView = true; BuildDebugMenu(); return Task.CompletedTask; }));
 
-        DebugList.Children.Add(DebugAction("+ Add Fighter class",
-            async () => await _net.DebugAddSubclassAsync(BaseClass.Fighter)));
-        DebugList.Children.Add(DebugAction("+ Add Mage class",
-            async () => await _net.DebugAddSubclassAsync(BaseClass.Mage)));
-    }
-
-    private void BuildDebugFunctions()
-    {
-        BuildDebugSubclasses();
-
-        AddDebugHeader("Character");
-        // One round-trip per click now (+10 used to fire ten separate commands, each with its own
-        // level-up broadcast and character save). DELEVEL KEEPS YOUR LEARNED SKILLS — drop to 40,
-        // feel it, climb back, without re-learning the whole kit.
-        DebugList.Children.Add(DebugAction("Level +1",  async () => await _net.DebugLevelAsync(+1)));
-        DebugList.Children.Add(DebugAction("Level +10", async () => await _net.DebugLevelAsync(+10)));
-        DebugList.Children.Add(DebugAction("Level -1",  async () => await _net.DebugLevelAsync(-1)));
-        DebugList.Children.Add(DebugAction("Level -10", async () => await _net.DebugLevelAsync(-10)));
-
-        // Full buff set on yourself, at ANY level, without walking to the NPC. Note the NPC itself
-        // still refuses above 75 (a game rule) — this is the only way to get buffed past that, which
-        // matters because the balance numbers we sign off on are BUFFED numbers.
-        DebugList.Children.Add(DebugAction("Full Buffs (1h)", async () => await _net.DebugBuffAsync()));
-        DebugList.Children.Add(DebugAction("Learn all skills (to my level)", async () => await _net.DebugLearnAllAsync()));
-        DebugList.Children.Add(DebugAction("+1kk SP", async () => await _net.DebugSpAsync(1_000_000)));
-        // 10kk, not 100k: the level-40 stat swaps cost 1kk-5kk per level (15kk to max one), so the
-        // old button could not fund a single meaningful purchase to test with.
-        DebugList.Children.Add(DebugAction("+10,000,000 Gold", async () => await _net.DebugGoldAsync(10_000_000)));
-
-        // Re-roll the SAME character: pick race + base class; resets to level 1 with
-        // the starter kit (classes/skills/quests/inventory cleared). No relog needed.
         AddDebugHeader("Reset Character (re-roll, same char)");
         foreach (var race in SelectableRaces())
             foreach (var bc in Enum.GetValues<BaseClass>())
@@ -2667,11 +2690,41 @@ public partial class MainWindow
                 DebugList.Children.Add(DebugAction($"Reset → {r} {b}",
                     async () => await _net.DebugResetAsync(r, b)));
             }
-        DebugList.Children.Add(DebugAction("Class Change (test)", () =>
+    }
+
+    /// <summary>A friendly name for a subclass row: its 3rd-class discipline + race if it has one,
+    /// else just the base class (the slot-0 class you were created as, pre-3rd-class).</summary>
+    private static string SubclassName(SubclassDto sc)
+    {
+        if (sc.ThirdClass > 0 && ThirdClassCatalog.Get(sc.ThirdClass) is { } tcd)
+            return $"{tcd.Race} {tcd.Discipline}";
+        return $"{sc.Race} {sc.BaseClass}";
+    }
+
+    /// <summary>The "add a class" picker: every 3rd-class discipline you don't already own, across all
+    /// races (a discipline is unique across the character — one Tempest bars every Tempest). Level 76+
+    /// only; normal accounts cap at 4 classes, admins are unlimited (the discipline filter still holds).</summary>
+    private void BuildDebugAddDiscipline()
+    {
+        DebugList.Children.Add(DebugAction("◂ Back", () =>
         {
-            OpenClassChangePanel();
-            return Task.CompletedTask;
+            _debugAddDiscView = false; BuildDebugMenu(); return Task.CompletedTask;
         }));
+        AddDebugHeader($"Add a class — need level {ThirdClassCatalog.SubclassLevel}");
+
+        var owned = _subclasses
+            .Where(s => s.ThirdClass > 0 && ThirdClassCatalog.Get(s.ThirdClass) is not null)
+            .Select(s => ThirdClassCatalog.Get(s.ThirdClass)!.Discipline)
+            .ToHashSet();
+
+        foreach (var tcd in ThirdClassCatalog.Playable
+                     .Where(t => !owned.Contains(t.Discipline))
+                     .OrderBy(t => t.Discipline).ThenBy(t => t.Race))
+        {
+            int id = tcd.Id;
+            DebugList.Children.Add(DebugAction($"{tcd.Race} {tcd.Discipline}",
+                async () => await _net.DebugAddSubclassAsync(id)));
+        }
     }
 
     private void AddDebugHeader(string text) =>

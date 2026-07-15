@@ -900,6 +900,8 @@
                             Margin="0,0,0,3" Click="DebugTabConsum_Click"/>
                     <Button x:Name="DebugTabFunc" Content="Functions" Height="24"
                             Margin="0,0,0,3" Click="DebugTabFunc_Click"/>
+                    <Button x:Name="DebugTabClass" Content="Class" Height="24"
+                            Margin="0,0,0,3" Click="DebugTabClass_Click"/>
                     <Button x:Name="DebugTabTp" Content="Teleport" Height="24"
                             Click="DebugTabTp_Click"/>
                 </StackPanel>

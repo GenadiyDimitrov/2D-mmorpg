@@ -1384,28 +1384,64 @@ public class GameLoopService : BackgroundService
     // delay) and are deliberately not baked into the swap itself — HandleSwitchSubclass does the state
     // work, and the rules will gate the COMMAND, not the mechanism.
 
-    /// <summary>DEBUG: add a class this character does not have yet, and switch to it. It starts at
-    /// level 1 with freshly rolled core stats for (race, new base class) and its own empty skill bar.</summary>
+    /// <summary>Add a SUBCLASS chosen by its 3rd-class DISCIPLINE (owner rework, 2026-07-15). You pick
+    /// a discipline from ALL races/disciplines (not a bare base class); the new class starts at level 1
+    /// but with that 3rd class already APPROVED — race, base class and 2nd class all come from it, so
+    /// the 2nd/3rd-class quests are skipped as a bonus. (Once a 4th tier exists this is unchanged: a 3rd
+    /// class still has one 4th path, still quested.)
+    ///
+    /// Rules: character must be level 76+ (stand-in for the future 4th class). Normal accounts cap at
+    /// <see cref="GameConstants.MaxSubclasses"/>; ADMINS are unlimited. NO duplicate DISCIPLINE (a
+    /// Tempest bars every Tempest, across races). Every equipped item is UNEQUIPPED — you don't play a
+    /// level-1 class in level-76 gear.</summary>
     private void HandleDebugAddSubclass(DebugAddSubclassCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
             return;
 
-        // Cap how many classes one character may own (owner) — otherwise you can stack 20 base classes
-        // when only a few can ever reach a unique 3rd-class discipline.
-        if (player.Subclasses.Count >= GameConstants.MaxSubclasses)
+        if (player.Level < ThirdClassCatalog.SubclassLevel)
         {
-            SendSystemToEntity(player,
-                $"[DEBUG] Class limit reached ({GameConstants.MaxSubclasses}). Can't add another.");
+            SendSystemToEntity(player, $"A new class requires level {ThirdClassCatalog.SubclassLevel}.");
             return;
         }
 
+        // Count cap — admins are unlimited (the no-duplicate-discipline filter still applies to them).
+        if (!player.IsAdmin && player.Subclasses.Count >= GameConstants.MaxSubclasses)
+        {
+            SendSystemToEntity(player,
+                $"You can own at most {GameConstants.MaxSubclasses} classes.");
+            return;
+        }
+
+        if (ThirdClassCatalog.Get(cmd.ThirdClassId) is not { } tcd)
+            return;
+
+        // No two of the same discipline (across races) — checked against ALL owned classes, active too.
+        if (!player.CanAddDiscipline(cmd.ThirdClassId))
+        {
+            SendSystemToEntity(player, $"You already have a {tcd.Discipline} class.");
+            return;
+        }
+
+        // Unequip everything — a fresh level-1 class doesn't play in the old class's gear.
+        foreach (var item in player.Inventory) item.Equipped = false;
+
         int slot = player.Subclasses.Max(s => s.Slot) + 1;
-        var sc = new Subclass { Slot = slot, BaseClass = cmd.BaseClass };
-        sc.RollBaseStats(player.Race);
+        var parent = ClassCatalog.Get(tcd.ParentSecondClassId);
+        var sc = new Subclass
+        {
+            Slot = slot,
+            Race = tcd.Race,                       // the discipline's OWN race (cross-race allowed)
+            BaseClass = parent?.Base ?? BaseClass.Fighter,
+            SecondClass = tcd.ParentSecondClassId, // 2nd class pre-approved
+            ThirdClass = tcd.Id,                   // 3rd class pre-approved (skips the quests)
+        };
+        sc.RollBaseStats();
         player.Subclasses.Add(sc);
 
-        ActivateSubclass(player, slot, $"[DEBUG] Added {cmd.BaseClass} as class #{slot}, and switched to it.");
+        ActivateSubclass(player, slot,
+            $"Added {tcd.Race} {tcd.Name} as class #{slot} (level 1). Your gear was unequipped.");
+        SendInventory(player);
     }
 
     /// <summary>Switch to a class this character already owns.</summary>
@@ -1462,7 +1498,7 @@ public class GameLoopService : BackgroundService
         SendTo(p, "Subclasses", new SubclassListDto(p.Subclasses
             .OrderBy(s => s.Slot)
             .Select(s => new SubclassDto(
-                s.Slot, s.BaseClass, s.SecondClass, s.ThirdClass, s.Level,
+                s.Slot, s.Race, s.BaseClass, s.SecondClass, s.ThirdClass, s.Level,
                 s.Slot == p.ActiveSubclass.Slot))
             .ToArray()));
 
@@ -1625,11 +1661,9 @@ public class GameLoopService : BackgroundService
         if (!TryGetPlayer(cmd.ConnectionId, out var player))
             return;
 
-        player.Race = cmd.Race;
-
         player.Subclasses.Clear();
-        var main = new Subclass { Slot = 0, BaseClass = cmd.BaseClass };
-        main.RollBaseStats(cmd.Race);
+        var main = new Subclass { Slot = 0, Race = cmd.Race, BaseClass = cmd.BaseClass };
+        main.RollBaseStats();
         player.Subclasses.Add(main);
         player.SwitchSubclass(0);
 

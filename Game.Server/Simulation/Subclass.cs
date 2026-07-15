@@ -28,6 +28,12 @@ public class Subclass
     /// be deleted. Higher slots are added subclasses.</summary>
     public int Slot { get; init; }
 
+    /// <summary>PER CLASS (owner, 2026-07-15): a subclass can be a DIFFERENT RACE from the others —
+    /// you pick a full 3rd-class discipline across all races, and each discipline is a specific race's
+    /// version (a human Tempest vs an elf Tempest). So race is no longer purely character-level; the
+    /// active subclass's race is what <see cref="Entity.Race"/> reports.</summary>
+    public Race Race { get; set; }
+
     public BaseClass BaseClass { get; set; }
 
     /// <summary>0 = none; otherwise a ClassCatalog id (taken at level 20).</summary>
@@ -53,10 +59,10 @@ public class Subclass
     /// and the bar is exactly as you left it.</summary>
     public string[] SkillBar { get; set; } = Array.Empty<string>();
 
-    /// <summary>Roll the core stats for this class from the character's race.</summary>
-    public void RollBaseStats(Race race)
+    /// <summary>Roll the core stats for this class from its OWN (Race, BaseClass).</summary>
+    public void RollBaseStats()
     {
-        var s = StatCalculator.GetBaseStats(race, BaseClass);
+        var s = StatCalculator.GetBaseStats(Race, BaseClass);
         Con = s.Con; Atk = s.Atk; Wit = s.Wit; Dex = s.Dex;
     }
 }

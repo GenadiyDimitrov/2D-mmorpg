@@ -93,6 +93,10 @@ public static class ThirdClassCatalog
     /// <summary>Character level required to take a 3rd class.</summary>
     public const int ChangeLevel = 40;
 
+    /// <summary>Level to ADD A NEW SUBCLASS (owner: really "4th class + 76", but with no 4th tier yet
+    /// it's just the level gate).</summary>
+    public const int SubclassLevel = 76;
+
     private static readonly Dictionary<int, ThirdClassDef> All = Build();
 
     private static Dictionary<int, ThirdClassDef> Build()
