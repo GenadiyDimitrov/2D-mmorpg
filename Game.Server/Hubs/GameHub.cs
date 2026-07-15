@@ -192,6 +192,12 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task BufferAction(Guid npcEntityId, string action, string skillId)
+    {
+        _world.Commands.Enqueue(new BufferActionCmd(Context.ConnectionId, npcEntityId, action, skillId ?? ""));
+        return Task.CompletedTask;
+    }
+
     public Task SetMoveState(int state)
     {
         _world.Commands.Enqueue(new SetMoveStateCmd(Context.ConnectionId, (MoveState)state));
@@ -377,6 +383,12 @@ public class GameHub : Hub
     public Task TradeOffer(Guid[] instanceIds)
     {
         _world.Commands.Enqueue(new TradeOfferCmd(Context.ConnectionId, instanceIds));
+        return Task.CompletedTask;
+    }
+
+    public Task TradeGold(long gold)
+    {
+        _world.Commands.Enqueue(new TradeGoldCmd(Context.ConnectionId, gold));
         return Task.CompletedTask;
     }
 

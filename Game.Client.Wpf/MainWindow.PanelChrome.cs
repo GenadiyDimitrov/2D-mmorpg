@@ -24,6 +24,22 @@ public partial class MainWindow
     /// other half of "the Debug window is covering my inventory".</summary>
     private int _panelZ = 10;
 
+    /// <summary>Every wrapped panel + its move-transform, so its dragged position can be saved on
+    /// close and restored on the next run (settings file, keyed by the panel's x:Name).</summary>
+    private readonly List<(Border Panel, TranslateTransform Move)> _chromedPanels = new();
+
+    /// <summary>Fold every popup's current drag offset into the settings (called on window close).
+    /// Saved on close only, so dragging a panel around doesn't hit the disk each time.</summary>
+    private void SavePanelPositions()
+    {
+        foreach (var (panel, move) in _chromedPanels)
+        {
+            if (string.IsNullOrEmpty(panel.Name)) continue;
+            if (move.X == 0 && move.Y == 0) _settings.Panels.Remove(panel.Name);   // back to default
+            else _settings.Panels[panel.Name] = new Vec2 { X = move.X, Y = move.Y };
+        }
+    }
+
     /// <summary>Give every popup a drag strip, a close button and click-to-raise. Called once.</summary>
     private void EnableMovablePanels()
     {
@@ -52,6 +68,14 @@ public partial class MainWindow
     {
         var move = new TranslateTransform();
         panel.RenderTransform = move;
+
+        // Restore the position this panel was left at last run (0,0 = its authored home).
+        if (!string.IsNullOrEmpty(panel.Name) && _settings.Panels.TryGetValue(panel.Name, out var saved))
+        {
+            move.X = saved.X;
+            move.Y = saved.Y;
+        }
+        _chromedPanels.Add((panel, move));
 
         // Raise this panel above the others whenever it is touched. PREVIEW, so it fires even when
         // a child control (a button, a list) handles the click itself.

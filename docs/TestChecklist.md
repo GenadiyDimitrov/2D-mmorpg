@@ -7,6 +7,24 @@ this file.
 
 ---
 
+## 🧪 BATCH TO TEST (built 2026-07-15 afternoon) — ⚠ restart client+server; no DB wipe
+
+- [ ] **P.Atk L2 formula (bare-hands).** Naked = feeble now (a naked L1 fighter takes ~13 hits to kill a
+      mob instead of one-shotting it), armed high-level unchanged, low-level armed a bit softer. Feel
+      whether the low-level ARMED pacing is ok or too soft (tunable: `UnarmedFistPAtk`/`PAtkStatReference`).
+- [ ] **NPC buffer — 3 paid options.** Talk to a buffer (e.g. Spirit Helper Ilva at the Training Outpost).
+      A dialog opens with **Full buff set**, **Restore HP/MP**, and a **single-buff list**. FREE ≤40;
+      above 40: full set ≈135k, each buff 15k, restore = `10k·(1−hp/max)+10k·(1−mp/max)`. Buttons grey out
+      if you can't afford them. Costs calibrated to ~1h of farming = one full buff. Still 6-75 only.
+- [ ] **Gold is tradable.** Open a trade, type an amount in **"You pay"**, see the partner's **"They pay"**;
+      on completion gold changes hands (net). Server clamps to what you own and resets Ready on change.
+- [ ] **Gold shows in the inventory, colour-tiered**: white <1kk, yellow <100kk, green <1kkk, purple ≥1kkk.
+- [ ] **Popups remember their position.** Drag panels around, **close the client**, reopen → they come
+      back where you left them. `client-settings.json` is now nested (Window + Panels). Untouched panels
+      stay at default. (Saved on close, not per move.)
+
+---
+
 ## 📋 2026-07-15 PLAYTEST — RESULTS + NEW WORK QUEUE
 
 Owner tested the 07-13 and 07-14 features. **VERIFIED WORKING** (details collapsed below):

@@ -87,21 +87,20 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        // Restore the saved window position + size; persist them (and any move/resize) on close.
-        // Edit client-settings.json (next to the exe) to set the offset, e.g. to reach your 1st monitor.
-        Left = _settings.WindowLeft;
-        Top = _settings.WindowTop;
-        Width = _settings.WindowWidth;
-        Height = _settings.WindowHeight;
+        // Restore the saved window geometry + popup positions; persist them on close (not on every
+        // move — see SavePanelPositions). Edit client-settings.json (next to the exe) to hand-set them.
+        Left = _settings.Window.Position.X;
+        Top = _settings.Window.Position.Y;
+        Width = _settings.Window.Size.X;
+        Height = _settings.Window.Size.Y;
         Closing += (_, _) =>
         {
             if (WindowState == System.Windows.WindowState.Normal)
             {
-                _settings.WindowLeft = Left;
-                _settings.WindowTop = Top;
-                _settings.WindowWidth = Width;
-                _settings.WindowHeight = Height;
+                _settings.Window.Position = new Vec2 { X = Left, Y = Top };
+                _settings.Window.Size = new Vec2 { X = Width, Y = Height };
             }
+            SavePanelPositions();   // fold every popup's current drag offset into the settings
             _settings.Save();
         };
 
@@ -1381,8 +1380,21 @@ public partial class MainWindow : Window
     private void OnGold(GoldUpdate update)
     {
         _gold = update.Gold;   // shown in the status line on the next HUD refresh
+        RefreshInventoryGold();
         if (ShopPanel.Visibility == Visibility.Visible)
             RenderShop();      // keep buy affordability + gold line current
+    }
+
+    /// <summary>Show gold in the inventory, COLOUR-TIERED by amount (owner): white &lt;1kk (1M),
+    /// yellow &lt;100kk (100M), green &lt;1kkk (1B), purple ≥1kkk.</summary>
+    private void RefreshInventoryGold()
+    {
+        InventoryGoldText.Text = $"{_gold:N0} {GameConstants.CurrencyName}";
+        InventoryGoldText.Foreground =
+            _gold >= 1_000_000_000L ? new SolidColorBrush(Color.FromRgb(0xC0, 0x6B, 0xE6))   // purple ≥1kkk
+          : _gold >= 100_000_000L   ? new SolidColorBrush(Color.FromRgb(0x5C, 0xD6, 0x5C))   // green  <1kkk
+          : _gold >= 1_000_000L     ? new SolidColorBrush(Color.FromRgb(0xE6, 0xCC, 0x44))   // yellow <100kk
+          :                           Brushes.White;                                          // white  <1kk
     }
 
     private void OnProgress(ProgressUpdate progress)

@@ -1,26 +1,43 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
 namespace Game.Client.Wpf;
 
-/// <summary>Persistent CLIENT preferences — window geometry, and nothing else. Lives NEXT TO THE EXE
-/// (the Debug/publish output folder), like an options.ini. It is NOT a build item, so an update or
-/// rebuild never overwrites it; if it's missing the app writes a default. Best-effort — a bad file
-/// just yields defaults.
+/// <summary>A 2D point/size for the settings file.</summary>
+public class Vec2
+{
+    public double X { get; set; }
+    public double Y { get; set; }
+}
+
+/// <summary>Main-window geometry.</summary>
+public class WindowGeom
+{
+    public Vec2 Position { get; set; } = new() { X = 100, Y = 100 };
+    public Vec2 Size { get; set; } = new() { X = 1280, Y = 800 };
+}
+
+/// <summary>Persistent CLIENT preferences — window geometry and popup positions, nothing else. Lives
+/// NEXT TO THE EXE (the Debug/publish output), like an options.ini. It is NOT a build item, so an
+/// update never overwrites it; if it's missing the app writes a default. Best-effort — a bad file just
+/// yields defaults.
 ///
-/// This file is for things that belong to THIS MACHINE. Anything that belongs to the CHARACTER lives
-/// in the DB and comes down from the server: the skill bar (SkillBarDto) and the auto-hunt config
-/// (AutoHuntConfigDto) both used to be here, which meant they didn't follow the account to another
-/// machine. Don't put character state back in here.</summary>
+/// This file is for things that belong to THIS MACHINE. Anything that belongs to the CHARACTER lives in
+/// the DB and comes down from the server (skill bar, auto-hunt). Don't put character state back here.
+///
+/// Shape:
+///   { "Window": { "Position": {x,y}, "Size": {x,y} },
+///     "Panels": { "InventoryPanel": {x,y}, "SkillsPanel": {x,y}, ... } }
+/// "Panels" holds each popup's DRAG OFFSET from its authored home position (0,0 = untouched, i.e. the
+/// default layout). Saved on close, not on every move.</summary>
 public class ClientSettings
 {
-    // Startup position (virtual-screen coords — negative Left/Top puts it on a monitor left/above
-    // the primary, e.g. to send clients to your 1st monitor). Edit here or just drag+close a window.
-    public double WindowLeft { get; set; } = 100;
-    public double WindowTop { get; set; } = 100;
-    public double WindowWidth { get; set; } = 1280;
-    public double WindowHeight { get; set; } = 800;
+    public WindowGeom Window { get; set; } = new();
+
+    /// <summary>Popup drag offsets, keyed by the panel's x:Name. Absent / (0,0) = default position.</summary>
+    public Dictionary<string, Vec2> Panels { get; set; } = new();
 
     private static string FilePath =>
         Path.Combine(AppContext.BaseDirectory, "client-settings.json");
@@ -40,7 +57,11 @@ public class ClientSettings
 
     public void Save()
     {
-        try { File.WriteAllText(FilePath, JsonSerializer.Serialize(this)); }
+        try
+        {
+            File.WriteAllText(FilePath,
+                JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
+        }
         catch { /* best-effort */ }
     }
 }

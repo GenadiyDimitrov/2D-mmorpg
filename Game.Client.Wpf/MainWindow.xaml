@@ -259,6 +259,8 @@
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="Inventory"
                            Foreground="White" FontSize="16" FontWeight="Bold" Margin="0,0,0,4"/>
+                <TextBlock DockPanel.Dock="Top" x:Name="InventoryGoldText"
+                           FontSize="13" FontWeight="SemiBold" Margin="0,0,0,4"/>
                 <TextBlock DockPanel.Dock="Top" x:Name="InventoryHint"
                            Foreground="#FF9FB0BE" FontSize="11" TextWrapping="Wrap"
                            Text="Click an item to equip/unequip. Equipped items are highlighted."
@@ -443,6 +445,24 @@
                     <Button x:Name="TradeReadyButton" Content="Ready" Width="120" Height="32"
                             Margin="0,0,10,0" Click="TradeReady_Click"/>
                     <Button Content="Cancel" Width="120" Height="32" Click="TradeWindowCancel_Click"/>
+                </StackPanel>
+
+                <!-- Gold row: type what you PAY; see what they pay. -->
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                            HorizontalAlignment="Center" Margin="0,8,0,0">
+                    <TextBlock Text="You pay:" Foreground="#FF88DDAA" VerticalAlignment="Center"
+                               Margin="0,0,4,0"/>
+                    <TextBox x:Name="TradeGoldBox" Width="120" Height="24" Text="0"
+                             VerticalContentAlignment="Center"
+                             KeyDown="TradeGoldBox_KeyDown" LostFocus="TradeGoldBox_Commit"/>
+                    <TextBlock Text="gold" Foreground="#FF9FB0BE" VerticalAlignment="Center"
+                               Margin="4,0,20,0"/>
+                    <TextBlock Text="They pay:" Foreground="#FFFFCC66" VerticalAlignment="Center"
+                               Margin="0,0,4,0"/>
+                    <TextBlock x:Name="TheirGoldText" Text="0" Foreground="White" FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="gold" Foreground="#FF9FB0BE" VerticalAlignment="Center"
+                               Margin="4,0,0,0"/>
                 </StackPanel>
 
                 <Grid>

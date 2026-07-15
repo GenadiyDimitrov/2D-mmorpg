@@ -13,10 +13,16 @@ public class TradeSession
     public bool ReadyA { get; set; }
     public bool ReadyB { get; set; }
 
+    /// <summary>Gold each side is putting into the trade (so you can PAY for what the other gives).</summary>
+    public long GoldA { get; set; }
+    public long GoldB { get; set; }
+
     public Entity PartnerOf(Entity e) => e == A ? B : A;
     public List<Guid> OfferOf(Entity e) => e == A ? OfferA : OfferB;
     public bool ReadyOf(Entity e) => e == A ? ReadyA : ReadyB;
     public void SetReady(Entity e, bool value) { if (e == A) ReadyA = value; else ReadyB = value; }
+    public long GoldOf(Entity e) => e == A ? GoldA : GoldB;
+    public void SetGold(Entity e, long v) { if (e == A) GoldA = v; else GoldB = v; }
 }
 
 /// <summary>A placed TRAP (Trapper skill). Server-only (not an Entity, so it's invisible to the
@@ -253,6 +259,10 @@ public record SetAutoHuntConfigCmd(string ConnectionId, AutoHuntConfigDto Config
 /// <summary>Client -> server: the player rearranged their skill bar; persist the new layout.</summary>
 public record SetSkillBarCmd(string ConnectionId, string[] Slots) : IGameCommand;
 
+/// <summary>Client -> server: a paid buffer action. Action ∈ "full" | "single" | "restore";
+/// SkillId is set only for "single".</summary>
+public record BufferActionCmd(string ConnectionId, Guid NpcEntityId, string Action, string SkillId) : IGameCommand;
+
 /// <summary>Client -> server: DELIBERATELY leave the world and go back to character select, keeping
 /// the connection. Distinct from <see cref="LeaveCommand"/>, which is the DISCONNECT path (link-dead
 /// grace / offline farming) — a deliberate exit must actually remove the character from the world.</summary>
@@ -269,4 +279,6 @@ public record TradeRequestCmd(string ConnectionId, Guid TargetId) : IGameCommand
 public record TradeRespondCmd(string ConnectionId, bool Accept) : IGameCommand;
 public record TradeOfferCmd(string ConnectionId, Guid[] InstanceIds) : IGameCommand;
 public record TradeReadyCmd(string ConnectionId) : IGameCommand;
+/// <summary>Client -> server: set how much GOLD you're putting into the current trade.</summary>
+public record TradeGoldCmd(string ConnectionId, long Gold) : IGameCommand;
 public record TradeCancelCmd(string ConnectionId) : IGameCommand;

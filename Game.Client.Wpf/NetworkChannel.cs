@@ -152,6 +152,9 @@ public class NetworkChannel : IAsyncDisposable
     public Task ForgetSkillAsync(Guid npcEntityId, string skillId) =>
         _connection!.SendAsync("ForgetSkill", npcEntityId, skillId);
 
+    public Task BufferActionAsync(Guid npcEntityId, string action, string skillId) =>
+        _connection!.SendAsync("BufferAction", npcEntityId, action, skillId);
+
     public Task SetMoveStateAsync(MoveState state) =>
         _connection!.SendAsync("SetMoveState", (int)state);
 
@@ -275,6 +278,9 @@ public class NetworkChannel : IAsyncDisposable
 
     public Task TradeOfferAsync(Guid[] instanceIds) =>
         _connection!.SendAsync("TradeOffer", instanceIds);
+
+    public Task TradeGoldAsync(long gold) =>
+        _connection!.SendAsync("TradeGold", gold);
 
     public Task TradeReadyAsync() =>
         _connection!.SendAsync("TradeReady");

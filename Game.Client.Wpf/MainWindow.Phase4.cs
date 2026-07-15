@@ -90,6 +90,7 @@ public partial class MainWindow
         InvTabQuest.FontWeight    = _invTab == InvTab.Quest    ? FontWeights.Bold : FontWeights.Normal;
 
         int worn = _inventory.Count(i => i.Equipped && IsGearItem(i));
+        RefreshInventoryGold();
         InventoryHint.Text = _invTab switch
         {
             InvTab.Quest    => "Quest items — cannot be dropped or traded.",
@@ -854,10 +855,29 @@ public partial class MainWindow
         FillOfferList(TheirOfferList, state.TheirOffer, removable: false);
         RefreshTradeBag();
 
+        // Gold. Only overwrite MY box when it isn't focused, so it doesn't fight what I'm typing (the
+        // server clamps to what I own and echoes the accepted value back).
+        if (!TradeGoldBox.IsFocused)
+            TradeGoldBox.Text = state.MyGold.ToString();
+        TheirGoldText.Text = state.TheirGold.ToString("N0");
+
         TradeReadyButton.Content = state.MyReady ? "Ready ✓" : "Ready";
         TradeReadyButton.Background = state.MyReady
             ? new SolidColorBrush(Color.FromArgb(80, 80, 220, 120))
             : Brushes.LightGray;
+    }
+
+    private void TradeGoldBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Enter) TradeGoldBox_Commit(sender, e);
+    }
+
+    /// <summary>Send my gold offer to the server (which clamps it to what I actually have and resets
+    /// both ready flags — same anti-bait-and-switch as changing items).</summary>
+    private void TradeGoldBox_Commit(object sender, RoutedEventArgs e)
+    {
+        long gold = long.TryParse(TradeGoldBox.Text.Trim(), out var g) ? Math.Max(0, g) : 0;
+        _ = _net.TradeGoldAsync(gold);
     }
 
     private void FillOfferList(ItemsControl list, InventoryItemDto[] items, bool removable)
@@ -2629,6 +2649,48 @@ public partial class MainWindow
 
     private Guid _dialogNpcId;
 
+    /// <summary>The three buffer options. "cost 0" shows as "free". The server re-checks gold + range
+    /// and re-sends the dialog after each action (so the restore cost drops to 0, gold updates, etc.).</summary>
+    private void BuildBufferSection(BufferInfo buffer)
+    {
+        AddDialogHeader("Blessings");
+        if (!buffer.CanBuff)
+        {
+            AddDialogText(buffer.Message);
+            return;
+        }
+        if (!string.IsNullOrEmpty(buffer.Message))
+            AddDialogText(buffer.Message);
+
+        string Price(long c) => c <= 0 ? "free" : $"{c:N0} {GameConstants.CurrencyName}";
+
+        Button Row(string text, bool enabled, Func<System.Threading.Tasks.Task> act)
+        {
+            var b = new Button
+            {
+                Content = text, Height = 28, HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(0, 2, 0, 4), Padding = new Thickness(8, 0, 8, 0), IsEnabled = enabled,
+            };
+            b.Click += async (_, _) => await act();
+            DialogContent.Children.Add(b);
+            return b;
+        }
+
+        Row($"Full buff set  —  {Price(buffer.FullBuffCost)}", _gold >= buffer.FullBuffCost,
+            () => _net.BufferActionAsync(_dialogNpcId, "full", ""));
+
+        Row($"Restore HP / MP to full  —  {Price(buffer.RestoreCost)}", _gold >= buffer.RestoreCost,
+            () => _net.BufferActionAsync(_dialogNpcId, "restore", ""));
+
+        AddDialogText("— or a single buff —");
+        foreach (var buff in buffer.Buffs)
+        {
+            string id = buff.SkillId;
+            Row($"{buff.Name}  —  {Price(buff.Cost)}", _gold >= buff.Cost,
+                () => _net.BufferActionAsync(_dialogNpcId, "single", id));
+        }
+    }
+
     private void OnDialog(NpcDialog dialog)
     {
         // The NPC entity id is whatever we last clicked to talk; capture from
@@ -2640,6 +2702,7 @@ public partial class MainWindow
             "Vendor" => "Merchant",
             "Teleporter" => "Gatekeeper",
             "SkillReset" => "Mindwright",
+            "Buffer" => "Spirit Helper",
             _ => "Quest Giver"
         };
         DialogContent.Children.Clear();
@@ -2708,6 +2771,10 @@ public partial class MainWindow
                 }
             }
         }
+
+        // Buffer: full-buff / single buff / restore. Free ≤40, priced above (server-authoritative).
+        if (dialog.Buffer is BufferInfo buffer)
+            BuildBufferSection(buffer);
 
         // Offered quests.
         foreach (var q in dialog.Offered)

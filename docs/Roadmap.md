@@ -40,27 +40,29 @@ changes and new features that came out of the play session:
   it existed to read (OffChannelFactor 0.6, HealK 15) are now decided. 3 spots, search `TEST ONLY`.
 
 **New features (bigger — some need a design decision, see docs + questions below):**
-- [ ] **Gold → an inventory ITEM** (L2 adena). Tradable; must exceed int.max (store as `long`, or a
-  stackable item with a long quantity). Remove it from the vitals/HP bar. ⚠ Touches the wallet, vendors,
-  drops, trade, and the future marketplace + premium currency (both should be tradable, inter-convertible,
-  and usable to buy items per the seller's choice). **Needs a design pass before building.**
-- [ ] **NPC buffer — 3 paid options** ([[buffer-enchanter-design]]): (1) full-buff — free ≤40, ≥40 costs
-  `3k · buffLevel` per buff (~150k for all 10 at L5, tune vs mob gold drops at 35-45 so ~1h of farming
-  ≈ one full buff); (2) single-buff list (the 9 buffs, at the right levels — needs multi-level buff skills
-  first, same blocker as level-appropriate buffs); (3) HP/MP restore — free ≤40, ≥40 costs
-  `10k·(1−hp/maxhp) + 10k·(1−mp/maxmp)` (cap tunable).
-- [~] **BARE-HANDS too strong — INVESTIGATED 2026-07-15, `docs/BareHands.md`.** Root cause confirmed vs
-  L2J's `FuncPAtkMod`: L2's P.Atk = `basePAtk(=WEAPON) × STRbonus × levelMod`, so the WEAPON is the base
-  and STR only a multiplier (naked ≈ 3 P.Atk). Ours inverts it — `atkStat + level·2`, so the ATK STAT is
-  the base and the weapon merely adds, giving a naked L1 fighter 42 P.Atk (one-shots trash). **Proposed
-  fix (awaiting owner OK): an UNARMED penalty on `BasicAttackPower` (~×0.15 when WeaponType.None), which
-  touches auto-attacks ONLY — armed damage, skill damage and the formula stay put.** Open: the factor
-  value, whether physical SKILLS should be weak unarmed too, and an optional unarmored-P.Def penalty. Do
-  NOT do the "authentic" weapon-is-base rewrite (touches every number right after the re-scale).
-- [ ] **Persist popup positions** to the settings file. Owner wants nested JSON:
-  `{Window:{position,size}, inventory:{position}, skills:{position}, …}`, saved on CLOSE (not per move),
-  defaulting when the file is untouched (start where you last left them, like L2). Currently
-  `client-settings.json` is flat window-geometry only.
+- [~] **Gold — long + TRADABLE + coloured display — DONE 2026-07-15 (owner: not an item).** Gold was
+  already `long` end-to-end (no int.max cap). Added: (1) **tradable in the trade panel** — each side types
+  what they PAY, net gold changes hands on completion (server clamps to what you own, re-checks at commit,
+  resets ready flags on change); (2) **inventory gold line, colour-tiered** — white <1kk, yellow <100kk,
+  green <1kkk, purple ≥1kkk. NOT made an inventory item (owner call). Still later: marketplace + premium
+  currency (both tradable / inter-convertible).
+- [x] **NPC buffer — 3 paid options — DONE 2026-07-15.** The buffer NPC now opens a dialog (was buff-on-talk)
+  with: **Full buff set**, **Restore HP/MP to full**, and a **single-buff list**. Free ≤40; priced above:
+  each buff = `3k · buffLevel`; the buffs are single-level defs today but are the MAX-STRENGTH set, so
+  priced at a nominal **level 5** → **15k/buff, 135k for the full set** (owner's example: 10×5×3=150k).
+  **Calibrated against mob gold**: `MobGoldReward = 25 + lvl·8 ≈ 345/mob` at L40, dropped on EVERY kill →
+  ~120-170k gold/hour, so a full buff ≈ ~1h of farming (the intent). Restore = `10k·(1−hp/max) +
+  10k·(1−mp/max)`, per-pool cap 10k. Window 6-75 unchanged. Server-authoritative (clamps gold, re-checks
+  range). Tunable consts: `BuffCostPerLevel`, `BufferBuffNominalLevel`, `RestoreCostCap`. When multi-level
+  buffs land, the nominal 5 becomes the real per-buff level and cost tracks it. ([[buffer-enchanter-design]])
+- [x] **BARE-HANDS — FIXED 2026-07-15** via the L2 multiplicative P.Atk formula (owner chose this over the
+  penalty). See commit `ac8108f` / `docs/BareHands.md`. Naked is now feeble by the FORMULA (weapon is the
+  base), armed high-level preserved, magic untouched (proven by A/B). Companion investigation for defence:
+  `docs/Unarmored.md` — conclusion: leave it, no live problem now that naked can't deal damage.
+- [x] **Persist popup positions — DONE 2026-07-15.** `client-settings.json` is now nested
+  (`{Window:{Position,Size}, Panels:{<name>:{X,Y}}}`); each popup's drag offset is saved on window CLOSE
+  (not per move) and restored next run; untouched panels stay at their default (0,0). Window geometry moved
+  under `Window`.
 
 ### Playtest-2 queue (2026-07-14) — agreed, NOT yet built
 

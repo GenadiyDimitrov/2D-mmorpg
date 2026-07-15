@@ -97,7 +97,9 @@ public record TradeStateUpdate(
     InventoryItemDto[] MyOffer,
     InventoryItemDto[] TheirOffer,
     bool MyReady,
-    bool TheirReady);
+    bool TheirReady,
+    long MyGold = 0,
+    long TheirGold = 0);
 
 
 /// <summary>Server -> owning client: full derived stats for the Stats window.
@@ -324,13 +326,24 @@ public record NpcDialog(
     ClassChangeOption[] ClassChanges,
     ShopInfo? Shop = null,       // vendor wares (null for non-vendors)
     TeleportInfo? Teleport = null, // gatekeeper destinations (null for non-gatekeepers)
-    SkillResetInfo? SkillReset = null); // un-learnable skills (null for non-reset NPCs)
+    SkillResetInfo? SkillReset = null, // un-learnable skills (null for non-reset NPCs)
+    BufferInfo? Buffer = null); // buffer options (null for non-buffers)
 
 /// <summary>Server -> client: the skills a reset NPC can un-learn — the permanent, mutually-
 /// exclusive picks (the level-40 stat swaps). Removing is FREE, but the gold you spent is NOT
 /// refunded; it only frees the group so you can commit again.</summary>
 public record SkillResetInfo(ResettableSkill[] Skills);
 public record ResettableSkill(string SkillId, string Name, int Level, int GoldSpent);
+
+/// <summary>Server -> client: what the NPC BUFFER offers. Three options: full-buff (all at once),
+/// a single buff from the list, and HP/MP restore. Free at ≤40, priced above (see the costs).</summary>
+public record BufferInfo(
+    bool CanBuff,           // level within the buffer's 6-75 window
+    string Message,         // shown when CanBuff is false (too low / too high)
+    long FullBuffCost,      // 0 = free
+    long RestoreCost,       // cost to restore HP+MP right now (0 = free / already full)
+    BufferBuff[] Buffs);    // single buffs, each with its own cost
+public record BufferBuff(string SkillId, string Name, long Cost);
 
 /// <summary>Server -> client: the full quest log.</summary>
 public record QuestLog(QuestSummary[] Active, string[] Completed);

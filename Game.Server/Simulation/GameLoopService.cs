@@ -81,6 +81,7 @@ public class GameLoopService : BackgroundService
                 case SellItemCmd c: HandleSell(c); break;
                 case TeleportCmd c: HandleTeleport(c); break;
                 case ForgetSkillCmd c: HandleForgetSkill(c); break;
+                case BufferActionCmd c: HandleBufferAction(c); break;
                 case SetMoveStateCmd c: HandleSetMoveState(c); break;
                 case CancelCastCmd c: HandleCancelCast(c); break;
                 case RemoveBuffCmd c: HandleRemoveBuff(c); break;
@@ -112,6 +113,7 @@ public class GameLoopService : BackgroundService
                 case TradeRequestCmd c: HandleTradeRequest(c); break;
                 case TradeRespondCmd c: HandleTradeRespond(c); break;
                 case TradeOfferCmd c: HandleTradeOffer(c); break;
+                case TradeGoldCmd c: HandleTradeGold(c); break;
                 case TradeReadyCmd c: HandleTradeReady(c); break;
                 case TradeCancelCmd c: HandleTradeCancel(c); break;
                 case PartyInviteCmd c: HandlePartyInvite(c); break;
@@ -1869,6 +1871,22 @@ public class GameLoopService : BackgroundService
         SendTradeState(session);
     }
 
+    private void HandleTradeGold(TradeGoldCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) ||
+            !_world.ActiveTrades.TryGetValue(player.Id, out var session))
+            return;
+
+        // Clamp to what you actually have (and non-negative). Final ownership is re-checked at
+        // completion, so a mid-trade spend can't overdraw.
+        session.SetGold(player, Math.Clamp(cmd.Gold, 0, player.Gold));
+
+        // Changing your offer resets both ready flags (no bait-and-switch), same as changing items.
+        session.ReadyA = false;
+        session.ReadyB = false;
+        SendTradeState(session);
+    }
+
     private void HandleTradeReady(TradeReadyCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) ||
@@ -2667,7 +2685,11 @@ public class GameLoopService : BackgroundService
         var itemsA = ResolveOffer(session.A, session.OfferA);
         var itemsB = ResolveOffer(session.B, session.OfferB);
 
-        bool valid = itemsA is not null && itemsB is not null &&
+        // Re-check gold ownership at completion (someone may have spent since offering).
+        bool goldOk = session.GoldA >= 0 && session.GoldB >= 0
+            && session.A.Gold >= session.GoldA && session.B.Gold >= session.GoldB;
+
+        bool valid = goldOk && itemsA is not null && itemsB is not null &&
             session.A.Inventory.Count - itemsA.Count + itemsB.Count
                 <= GameConstants.InventorySize &&
             session.B.Inventory.Count - itemsB.Count + itemsA.Count
@@ -2675,8 +2697,8 @@ public class GameLoopService : BackgroundService
 
         if (!valid)
         {
-            SendSystemToEntity(session.A, "Trade failed (items changed or bags full).");
-            SendSystemToEntity(session.B, "Trade failed (items changed or bags full).");
+            SendSystemToEntity(session.A, "Trade failed (items/gold changed or bags full).");
+            SendSystemToEntity(session.B, "Trade failed (items/gold changed or bags full).");
             CloseTrade(session);
             return;
         }
@@ -2686,11 +2708,22 @@ public class GameLoopService : BackgroundService
         foreach (var item in itemsB!)
             TransferItem(session.B, session.A, item);
 
+        // Gold changes hands (net, so a swap of equal offers is a no-op).
+        if (session.GoldA != 0 || session.GoldB != 0)
+        {
+            session.A.Gold += session.GoldB - session.GoldA;
+            session.B.Gold += session.GoldA - session.GoldB;
+        }
+
         SendSystemToEntity(session.A, "Trade completed.");
         SendSystemToEntity(session.B, "Trade completed.");
         CloseTrade(session);
         SendInventory(session.A);
         SendInventory(session.B);
+        SendGold(session.A);
+        SendGold(session.B);
+        SaveEntity(session.A);
+        SaveEntity(session.B);
     }
 
     private static List<InventoryItem>? ResolveOffer(Entity owner, List<Guid> offer)
@@ -2744,7 +2777,9 @@ public class GameLoopService : BackgroundService
             OfferDtos(viewer, session.OfferOf(viewer)),
             OfferDtos(partner, session.OfferOf(partner)),
             session.ReadyOf(viewer),
-            session.ReadyOf(partner));
+            session.ReadyOf(partner),
+            session.GoldOf(viewer),
+            session.GoldOf(partner));
     }
 
     private static InventoryItemDto[] OfferDtos(Entity owner, List<Guid> offer) =>
@@ -6053,28 +6088,142 @@ var effect = def.Effect;
         SendDialog(player, npc);
     }
 
-    /// <summary>Apply the newbie buffer's full buff set (1h) to a lvl 6-75 player. Each
-    /// buff shares its player counterpart's BuffKey at a high rank, so it overrides any
-    /// weaker self-cast version.
-    ///
-    /// TODO (owner, deferred 2026-07-14): the NPC currently hands out the MAX-LEVEL set to everybody.
-    /// It should scale with the character — an NPC must never grant a buff stronger than a real player
-    /// buffer of that level could cast. That needs the buff skills to be multi-level first.</summary>
-    private void ApplyNewbieBuffs(Entity player)
+    // ----- NPC buffer: three PAID options (owner, 2026-07-15) --------------------------------------
+    //
+    // Level window 6-75 (unchanged — the full-buff NPC is the solo stopgap to 75). FREE at ≤40; PAID
+    // above 40. Prices are tunable consts, sized against mob gold drops at 35-45 (~1h of farming should
+    // roughly cover a full buff). All three options gate the same way.
+    //
+    // TODO (owner, deferred): the buffs are MAX-LEVEL for everyone; they should scale with character
+    // level once the buff skills become multi-level (same blocker as level-appropriate buffs). The cost
+    // formula already reads a per-buff level, so it scales automatically when that lands.
+
+    private const int BufferMinLvl = 6, BufferMaxLvl = 75, BufferFreeUnderLvl = 40;
+    private const long BuffCostPerLevel = 3_000;   // per buff, per buff-LEVEL, when 41-75
+    private const long RestoreCostCap = 10_000;    // per pool (HP, MP); a full restore of both = 20k
+
+    // The NPC buffs are single-level defs today but they are the MAX-STRENGTH set, so we price each as
+    // "level 5" (the owner's own example: 10 buffs × lvl 5 × 3k = 150k). Calibrated against mob gold:
+    // MobGoldReward = 25 + lvl·8 ≈ 345/mob at lvl 40, dropped on EVERY kill, so ~120-170k gold/hour of
+    // farming — a full set (9 buffs × 5 × 3k = 135k) ≈ ~1h of farming, which is the intent. When buffs
+    // become multi-level, swap this nominal 5 for the real per-buff level and the cost tracks it.
+    private const int BufferBuffNominalLevel = 5;
+
+    /// <summary>Cost to cast one buff for this player (0 if ≤40).</summary>
+    private static long SingleBuffCost(Entity player, string skillId)
     {
-        const int minLvl = 6, maxLvl = 75;
-        if (player.Level < minLvl)
+        if (player.Level <= BufferFreeUnderLvl) return 0;
+        int lvl = player.SkillLevelOf(skillId) is var l && l > 0 ? l : BufferBuffNominalLevel;
+        return BuffCostPerLevel * lvl;
+    }
+
+    /// <summary>Cost to restore missing HP + MP: cap·(1−hp/max) + cap·(1−mp/max). 0 if ≤40 or full.</summary>
+    private static long RestoreCost(Entity player)
+    {
+        if (player.Level <= BufferFreeUnderLvl) return 0;
+        float hpMiss = player.MaxHp > 0 ? 1f - (float)player.Hp / player.MaxHp : 0f;
+        float mpMiss = player.MaxMp > 0 ? 1f - (float)player.Mp / player.MaxMp : 0f;
+        return (long)(RestoreCostCap * hpMiss + RestoreCostCap * mpMiss);
+    }
+
+    private void SendBufferDialog(Entity player, Entity npc)
+    {
+        bool canBuff = player.Level is >= BufferMinLvl and <= BufferMaxLvl;
+        string message = player.Level < BufferMinLvl
+            ? $"Come back at level {BufferMinLvl} and I'll bless you."
+            : player.Level > BufferMaxLvl
+                ? "You are well beyond a newbie buffer's help."
+                : player.Level <= BufferFreeUnderLvl ? "My blessings are free until level 40." : "";
+
+        long fullCost = canBuff
+            ? SkillCatalog.NewbieBuffSet.Sum(id => SingleBuffCost(player, id)) : 0;
+
+        var buffs = canBuff
+            ? SkillCatalog.NewbieBuffSet
+                .Select(id => new BufferBuff(id, SkillCatalog.Get(id)?.Name ?? id, SingleBuffCost(player, id)))
+                .ToArray()
+            : Array.Empty<BufferBuff>();
+
+        var info = new BufferInfo(canBuff, message, fullCost, RestoreCost(player), buffs);
+        SendTo(player, "Dialog", new NpcDialog(
+            npc.Name, npc.NpcRole.ToString(),
+            Array.Empty<QuestSummary>(), Array.Empty<QuestSummary>(), Array.Empty<QuestSummary>(),
+            Array.Empty<ClassChangeOption>(), null, null, null, info));
+    }
+
+    private void HandleBufferAction(BufferActionCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (!_world.Entities.TryGetValue(cmd.NpcEntityId, out var npc)
+            || npc.Kind != EntityKind.Npc || npc.NpcRole != NpcRole.Buffer) return;
+
+        float dx = npc.X - player.X, dy = npc.Y - player.Y;
+        if (dx * dx + dy * dy > GameConstants.TalkRange * GameConstants.TalkRange)
         {
-            SendSystemToEntity(player, $"Come back at level {minLvl} and I'll bless you.");
+            SendSystemToEntity(player, $"{npc.Name} is too far away.");
             return;
         }
-        if (player.Level > maxLvl)
+        if (player.Level is < BufferMinLvl or > BufferMaxLvl)
         {
-            SendSystemToEntity(player, "You are well beyond a newbie buffer's help.");
+            SendSystemToEntity(player, "That buffer can't help you at your level.");
             return;
         }
-        GrantFullBuffSet(player);
-        SendSystemToEntity(player, "You are blessed with a buffer's full might!");
+
+        bool Charge(long cost)
+        {
+            if (cost <= 0) return true;
+            if (player.Gold < cost)
+            {
+                SendSystemToEntity(player, $"You need {cost:N0} {GameConstants.CurrencyName} for that.");
+                return false;
+            }
+            player.Gold -= cost;
+            SendGold(player);
+            SaveEntity(player);
+            return true;
+        }
+
+        switch (cmd.Action)
+        {
+            case "full":
+                if (!Charge(SkillCatalog.NewbieBuffSet.Sum(id => SingleBuffCost(player, id)))) return;
+                GrantFullBuffSet(player);
+                SendSystemToEntity(player, "You are blessed with a buffer's full might!");
+                break;
+
+            case "single":
+                if (SkillCatalog.Get(cmd.SkillId) is not SkillDef def
+                    || !SkillCatalog.NewbieBuffSet.Contains(cmd.SkillId))
+                {
+                    SendSystemToEntity(player, "That buff isn't on offer.");
+                    return;
+                }
+                if (!Charge(SingleBuffCost(player, cmd.SkillId))) return;
+                ApplyBuff(player, def, refresh: false);
+                player.RecomputeDerived();
+                PushBuffs(player);
+                SendStats(player);
+                SendSystemToEntity(player, $"{def.Name} granted.");
+                break;
+
+            case "restore":
+                if (player.Hp >= player.MaxHp && player.Mp >= player.MaxMp)
+                {
+                    SendSystemToEntity(player, "You are already at full health and mana.");
+                    return;
+                }
+                if (!Charge(RestoreCost(player))) return;
+                player.Hp = player.MaxHp;
+                player.Mp = player.MaxMp;
+                SendStats(player);
+                SendSystemToEntity(player, "Restored to full health and mana.");
+                break;
+
+            default:
+                return;
+        }
+
+        SendBufferDialog(player, npc);   // refresh (restore cost drops to 0, gold changed)
     }
 
     /// <summary>Lay the full NPC buff set on a player. Shared by the buffer NPC and the debug button —
@@ -6106,10 +6255,10 @@ var effect = def.Effect;
     {
         string npcId = npc.NpcId ?? "";
 
-        // Newbie buffer: blesses the player on talk — buffs only, no dialog window.
+        // Buffer: open a dialog with the three paid options (full-buff / single buff / restore).
         if (npc.NpcRole == NpcRole.Buffer)
         {
-            ApplyNewbieBuffs(player);
+            SendBufferDialog(player, npc);
             return;
         }
 
