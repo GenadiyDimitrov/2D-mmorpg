@@ -1962,18 +1962,13 @@ public partial class MainWindow : Window
             // already flagged/red (justice / self-defense) — otherwise it just targets (trade/party).
             // Skills also fire on the current target (server enforces the same rules).
             //
-            // A MAGE ONLY TARGETS — he never charges. An attack command engages you, and the server
-            // then CHASES into basic-attack range; for a caster that means sprinting into melee to
-            // poke with a staff (magic weapons have no weapon range and near-zero basic damage), which
-            // is never what a nuker or healer wants and drags him out of casting position. This is the
-            // click path; the server already refuses to engage a mage after a CAST for the same reason
-            // (AfterOffensiveSkill). Auto-hunt is unaffected — AutoPilot walks a caster in for SPELL
-            // range on its own, and still melees if you tick its Basic Attack row.
-            bool iAmCaster = _myBaseClass == BaseClass.Mage;
-            if (!iAmCaster &&
-                (latest is { Kind: EntityKind.Mob } ||
-                 (latest is { Kind: EntityKind.Player } && latest.Id != _myId &&
-                  (_pvpEnabled || latest.Flag != PvpFlag.Innocent))))
+            // ALL classes click-to-attack, mages included (owner): a mage out of MP needs to melee a
+            // mob to finish it. The old "mage sprints into melee and won't stop" annoyance is handled
+            // the RIGHT way now — casting a skill CANCELS the walk-to-target (see the cast path), so a
+            // mage who clicks to melee and then casts stops walking, instead of the click being denied.
+            if (latest is { Kind: EntityKind.Mob } ||
+                (latest is { Kind: EntityKind.Player } && latest.Id != _myId &&
+                 (_pvpEnabled || latest.Flag != PvpFlag.Innocent)))
                 await _net.AttackAsync(targetId);
             return;
         }

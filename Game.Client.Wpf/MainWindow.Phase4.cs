@@ -260,6 +260,12 @@ public partial class MainWindow
     {
         if (string.IsNullOrEmpty(def.SetId)) return null;
 
+        // Show the set section ONLY on the set-defining BODY armor (owner). Accessories (boots / gloves /
+        // helm) carry a SetId too — they're shared across a tier's bodies — but a boot is "just a boot",
+        // not the piece that grants the set bonus, and showing "3/4 heavy set" on it was confusing (it
+        // even lingered after the body was swapped to a robe). The body is the set's identity; ask it.
+        if (!(def.Slot == EquipSlot.Armor && def.ArmorSlot == ArmorSlot.Body)) return null;
+
         // The bonus is BODY-driven, so find the set whose body line this piece belongs to — an
         // accessory is shared across every body of its tier, so it can complete several sets.
         var sets = ArmorSetCatalog.All

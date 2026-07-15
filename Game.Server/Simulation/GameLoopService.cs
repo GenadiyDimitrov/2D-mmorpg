@@ -887,6 +887,18 @@ public class GameLoopService : BackgroundService
         }
 
         CancelCast(caster);
+
+        // Casting a skill CANCELS the auto-attack chase (owner). Double-clicking a mob starts a walk
+        // into melee (Engaged + CombatTargetId); without this, that chase RESUMES the moment the queued
+        // skill finishes, so the character kept walking to the target after the cast — the cast only
+        // paused the walk instead of ending it. The queued skill does its OWN approach (UpdateQueuedSkill
+        // walks into cast range), so dropping the chase here loses nothing. A FIGHTER's offensive skill
+        // re-engages afterwards via AfterOffensiveSkill (skill → melee combo preserved); a mage stays put.
+        caster.Engaged = false;
+        caster.CombatTargetId = null;
+        caster.TargetX = null;
+        caster.TargetY = null;
+
         caster.QueuedSkillId = def.Id;
         caster.QueuedTargetId = targetId;
     }

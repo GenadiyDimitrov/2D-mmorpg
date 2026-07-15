@@ -214,22 +214,33 @@ public static partial class SkillCatalog
     // greedy pick — take each in turn, skip what it bans — lands on four swaps that all sacrifice
     // ATK, our single power stat, for −20 ATK. Debug learn-all therefore grants NO swaps at all.
 
-    /// <summary>The stat swaps a class may buy. ATK is our single power stat — it feeds P.Atk for a
-    /// fighter and M.Atk for a caster (the WEAPON decides which) — so only the ATK group is gated:
-    /// fighters pay in CON/DEX, mages pay in WIT/MEN. The BUFFER (Warchanter) gets all four on
-    /// purpose: he can pay in a stat he barely uses. If that proves too strong, move him to a
-    /// dual-cost (+ATK −a −b) form instead. Every other group is open to everyone.
-    /// (The buffer is a 3rd-class DISCIPLINE, not an archetype — and 3rd class arrives at 40, the
-    /// same level these unlock, so the gate is always decidable.)</summary>
+    /// <summary>The stat swaps a class may buy. EVERY group is class-gated (owner, 2026-07-15), not
+    /// just the ATK group — a class only ever trades among the stats it actually uses:
+    ///   • FIGHTER: only CON / DEX / ATK (the physical stats) — CON↔DEX, ATK↔CON, ATK↔DEX.
+    ///   • MAGE:    CON↔DEX, ATK↔WIT, ATK↔MEN, WIT↔MEN (never the DEX-for-ATK physical trades).
+    /// "X↔Y" = both directions (+X−Y and +Y−X); the DIRECTION rule then stops you owning both.
+    /// The BUFFER (Warchanter) keeps ALL of them on purpose — he can pay in a stat he barely uses;
+    /// if that proves too strong, move him to a dual-cost (+ATK −a −b) form instead.</summary>
     public static IEnumerable<string> StatSwapsFor(BaseClass baseClass, Discipline? discipline)
     {
-        yield return SwapConAtk; yield return SwapConDex;
-        yield return SwapDexAtk; yield return SwapDexCon;
-        yield return SwapWitAtk; yield return SwapWitMen;
-        yield return SwapMenAtk; yield return SwapMenWit;
-
         bool buffer = discipline == Discipline.Warchanter;
-        if (buffer || baseClass == BaseClass.Fighter) { yield return SwapAtkDex; yield return SwapAtkCon; }
-        if (buffer || baseClass == BaseClass.Mage)    { yield return SwapAtkWit; yield return SwapAtkMen; }
+
+        // CON↔DEX is shared by both classes (both care about CON and DEX).
+        yield return SwapConDex; yield return SwapDexCon;
+
+        if (buffer || baseClass == BaseClass.Fighter)
+        {
+            // ATK↔CON, ATK↔DEX — the fighter juggles only physical stats.
+            yield return SwapAtkCon; yield return SwapConAtk;
+            yield return SwapAtkDex; yield return SwapDexAtk;
+        }
+
+        if (buffer || baseClass == BaseClass.Mage)
+        {
+            // ATK↔WIT, ATK↔MEN, WIT↔MEN — the caster juggles power, cast/crit (WIT) and MP/M.Def (MEN).
+            yield return SwapAtkWit; yield return SwapWitAtk;
+            yield return SwapAtkMen; yield return SwapMenAtk;
+            yield return SwapWitMen; yield return SwapMenWit;
+        }
     }
 }
