@@ -389,7 +389,9 @@ public class PersistenceService
             catch { /* ignore malformed auto-hunt json */ }
         }
 
-        entity.Karma = rec.Karma;
+        // Clamp on load: karma is never negative, and this heals any row corrupted by the old
+        // overflow bug (a big-level-gap PK cast a huge double to int → int.MinValue).
+        entity.Karma = Math.Clamp(rec.Karma, 0, 1_000_000);
         entity.PkCount = rec.PkCount;
         entity.PvpCount = rec.PvpCount;
         entity.ConsecutivePk = rec.ConsecutivePk;

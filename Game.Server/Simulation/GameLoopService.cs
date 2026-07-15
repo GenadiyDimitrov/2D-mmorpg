@@ -473,10 +473,15 @@ public class GameLoopService : BackgroundService
     {
         if (FlagOf(victim) == PvpFlag.Innocent)
         {
-            int diff = Math.Max(0, killer.Level - victim.Level);
-            int gain = (int)(_karmaBase
-                * Math.Pow(_karmaConsecGrowth, killer.ConsecutivePk)
-                * Math.Pow(_karmaLevelGrowth, diff));
+            // Both exponents are CAPPED and the result CLAMPED. Without the caps, a big level gap (an
+            // admin killing a low-level test char) made Math.Pow(1.2, diff) astronomically large, and
+            // casting that double to int OVERFLOWED to int.MinValue → karma jumped to ≈ −2.1 billion.
+            int diff = Math.Clamp(killer.Level - victim.Level, 0, 15);
+            int consec = Math.Min(killer.ConsecutivePk, 15);
+            double raw = _karmaBase
+                * Math.Pow(_karmaConsecGrowth, consec)
+                * Math.Pow(_karmaLevelGrowth, diff);
+            int gain = (int)Math.Clamp(raw, 0, 1_000_000);
             killer.Karma += gain;
             killer.ConsecutivePk++;
             killer.PkCount++;
