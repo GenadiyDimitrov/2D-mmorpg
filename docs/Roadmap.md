@@ -49,11 +49,14 @@ changes and new features that came out of the play session:
   ≈ one full buff); (2) single-buff list (the 9 buffs, at the right levels — needs multi-level buff skills
   first, same blocker as level-appropriate buffs); (3) HP/MP restore — free ≤40, ≥40 costs
   `10k·(1−hp/maxhp) + 10k·(1−mp/maxmp)` (cap tunable).
-- [ ] **BARE-HANDS is too strong — investigate.** A naked level-1 fighter (42 P.Atk) solos and one-shots
-  level-4-8 mobs and can reach 20 with no gear; a mage has 43 P.Atk too. Research how L2 handles unarmed +
-  unarmored (fist weapon base, no-armor penalty). Likely the fix is a low unarmed base + an unarmored
-  penalty, NOT touching the damage formula. Owner: *"I don't think our formulas are wrong, just how we
-  manage not being equipped."*
+- [~] **BARE-HANDS too strong — INVESTIGATED 2026-07-15, `docs/BareHands.md`.** Root cause confirmed vs
+  L2J's `FuncPAtkMod`: L2's P.Atk = `basePAtk(=WEAPON) × STRbonus × levelMod`, so the WEAPON is the base
+  and STR only a multiplier (naked ≈ 3 P.Atk). Ours inverts it — `atkStat + level·2`, so the ATK STAT is
+  the base and the weapon merely adds, giving a naked L1 fighter 42 P.Atk (one-shots trash). **Proposed
+  fix (awaiting owner OK): an UNARMED penalty on `BasicAttackPower` (~×0.15 when WeaponType.None), which
+  touches auto-attacks ONLY — armed damage, skill damage and the formula stay put.** Open: the factor
+  value, whether physical SKILLS should be weak unarmed too, and an optional unarmored-P.Def penalty. Do
+  NOT do the "authentic" weapon-is-base rewrite (touches every number right after the re-scale).
 - [ ] **Persist popup positions** to the settings file. Owner wants nested JSON:
   `{Window:{position,size}, inventory:{position}, skills:{position}, …}`, saved on CLOSE (not per move),
   defaulting when the file is untouched (start where you last left them, like L2). Currently
