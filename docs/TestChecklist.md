@@ -2,8 +2,48 @@
 
 Running list of things to verify in-game. Claude keeps this updated as features land;
 the owner tests manually and ticks items off. **`[ ]` = not tested, `[x]` = verified,
-`[~]` = tested, needs tuning.** Newest features first. When asked to test, Claude shows
+`[~]` = tested, needs a change/tuning.** Newest features first. When asked to test, Claude shows
 this file.
+
+---
+
+## 📋 2026-07-15 PLAYTEST — RESULTS + NEW WORK QUEUE
+
+Owner tested the 07-13 and 07-14 features. **VERIFIED WORKING** (details collapsed below):
+subclasses · level cap + delevel + debug buffs · skill bar → DB · skill-bar readability + debug ·
+stat-swap direction rule · skill-reset NPC · movable popups (great) · equipped-items pane ·
+HealK=15 · OffChannelFactor stays 0.6.
+
+**CHANGES NEEDED (found while testing) — not yet built:**
+1. **Class uniqueness is on the wrong axis.** It bars a repeated ARCHETYPE; owner wants only a repeated
+   **DISCIPLINE** barred. You SHOULD be able to own 4 mages (2 clerics = Lightbringer+Warchanter, 2
+   nukers = Tempest + the other) — you just can't own two of the SAME discipline. → remove the archetype
+   bar, keep discipline. **AND:** nothing caps subclass COUNT — you can add 20 mage classes. Needs a cap
+   (or: base classes with no unique discipline left are pointless, so gate adding one).
+2. **Mage-click revert.** ALL classes should click-to-attack (a mage out of MP needs to melee a mob to
+   finish it). My "mage only targets" change was wrong — revert it.
+3. **Skill cast must CANCEL the auto-attack walk, not pause it.** Double-clicking a mob starts a walk to
+   melee; casting a skill only pauses the walk, so after the cast the character keeps walking to the
+   target. Cast should STOP the move.
+4. **Set info: only the BODY armor should show set requirements.** Right now boots (an accessory) show
+   "3/4 heavy set" even after you've swapped your body to robe. A boots piece is not the set-defining
+   piece. Show the set section only for the set-bearing body armor.
+5. **Stat-swap groups: gate ALL groups by class, not just ATK.** Fighter may only do CON↔DEX, ATK↔CON,
+   ATK↔DEX. Mage may only do CON↔DEX, ATK↔MEN, ATK↔WIT, WIT↔MEN.
+6. **Stat-swap + training passives should require 3rd CLASS, not just level 40.** They currently appear
+   at level 40; owner wants them only after the 3rd-class change.
+
+**NEW FEATURES / IDEAS (recorded to roadmap — see docs/Roadmap.md):**
+- **Gold → an inventory ITEM** (L2 adena), tradable, and beyond int.max (long / stackable). Remove it
+  from the vitals bar.
+- **NPC buffer: 3 paid options** — full-buff (free ≤40; 3k·bufflevel each ≥40, ~150k for the full set),
+  single-buff list, HP/MP restore (free ≤40; ≥40 costs `10k·(1−hp/maxhp) + 10k·(1−mp/maxmp)`).
+- **Bare-hands is too strong** — a naked level-1 fighter (42 P.Atk) solos and one-shots level-4-8 mobs
+  and can level to 20 with no gear. Investigate how unarmed/unarmored is handled. Mage has 43 P.Atk too.
+- **Popup positions persisted** in the settings file (nested JSON per window), saved on close, defaulting
+  when untouched.
+
+**Untested older sections (07-09 and earlier) are left as `[ ]` below — not covered this playtest.**
 
 ---
 
@@ -49,285 +89,132 @@ the combat log, the equipped pane. Those are the risky ones now — do them firs
 
 ---
 
-## SUBCLASSES (2026-07-14) — ⚠ DELETE `game.db` BEFORE TESTING (new `Subclasses` table)
+## ✅ SUBCLASSES (2026-07-14) — VERIFIED 2026-07-15
 
-Debug → Functions → **"Classes (subclass)"**.
+All subclass tests confirmed working: add a class, swap, per-class level/XP/skills/**skill bar**, shared
+gear/gold, survives a relog, swap clears buffs, debug-reset drops subclasses. Machine-checked too by
+`tools/SmokeTest`.
 
-- [ ] **+ Add Mage class** on a fighter → you own two classes and are now playing the new one at level 1.
-- [ ] **Switch back** → your fighter is at the level you left him, with the skills you learned.
-- [ ] **THE POINT: each class keeps its own SKILL BAR.** Arrange the fighter's bar, swap to the mage,
-      arrange his, swap back — the fighter's bar is exactly as you left it.
-- [ ] **Gear survives the swap** (inventory is character-level). This is the test loop: compare two
-      classes in the SAME gear without relogging onto another character. Gold, karma, quests and the
-      auto-hunt config are shared too.
-- [ ] **Level / XP / SP are per class** — level the mage, swap back, the fighter's level is untouched.
-- [ ] **It survives a relog.** Log out, log back in — both classes, their levels, their skill bars.
-- [ ] A swap **clears buffs** and drops the cast/target (they belonged to the class you left).
-- [ ] ⚠ **Debug character-RESET still drops all subclasses** — on purpose: it changes RACE, which is
-      character-level, so another class would be left with stats rolled for a body it no longer has.
-      Use the subclass buttons to keep a class and add another.
+### ⚠ Class uniqueness — WRONG AXIS, needs a change
 
-- [ ] **The bar survives a swap AND a relog.** This is the one to actually check: arrange the fighter's
-      bar, swap to the mage, arrange his, swap back, **log out, log back in** — both bars intact. (A bug
-      here was found by review, not by playing: the client used to auto-place skills against whichever
-      bar it was holding and SAVE that, so a swap silently overwrote the new class's bar on the server
-      while the client still *displayed* the correct one. It would have looked fine and been wrong.)
+- [~] **Bar the repeated DISCIPLINE, NOT the archetype.** Owner wants: you may own **4 mages** — two
+      clerics (Lightbringer + Warchanter) and two nukers (Tempest + the other) — you just may not own two
+      of the **same discipline** (no two Tempests). Currently the ARCHETYPE is barred (can't be a Nuker
+      twice), which is too strict. → **remove the archetype bar; keep the discipline bar.**
+- [x] **No repeated DISCIPLINE** — verified.
+- [x] **Barred options greyed out** in the picker + server refuses them — verified.
+- [ ] ⚠ **NEW HOLE: nothing caps subclass COUNT.** You can add 20 mage base classes, of which only two
+      lead to a working (unique-discipline) endgame class. Needs a cap on how many classes a character can
+      own (owner's design had 3-4), or gate "add class" so you can't stack pointless duplicates.
 
-### Class uniqueness — you can't walk the same path twice
-
-- [ ] **No repeated ARCHETYPE.** A Sorcerer (Nuker) subclass → your other mage class can become a
-      Cleric (Healer) but **not** another Nuker. Matched on the ARCHETYPE, not the class id — so a
-      Sorcerer and an Inquisitor count as the same Nuker path even though they're different classes.
-- [ ] **No repeated DISCIPLINE.** A Magus subclass → your other class can become a Tempest but **not**
-      another Magus. Same for Vanguard, etc.
-- [ ] **Barred options are greyed out** in the class picker with the reason on the button — and the
-      **server refuses them anyway** (all three paths: the level-20 change, the debug 3rd class, and
-      the quest-driven NPC change, which also stops listing them).
-
-Not built (they're player-facing rules, not the mechanism): cap of 3-4, safe-zone-only, 5-min delay.
+Still not built (player-facing rules): the 3-4 cap, safe-zone-only swapping, 5-min swap delay.
 
 ---
 
 ## MOVABLE POPUPS + MAGE-CLICK (2026-07-14)
 
-- [ ] **Every popup can be dragged** by the "⠿ drag" strip at its top, **closed** with the ✕, and
-      **raised above the others by clicking it**. Check the Debug window no longer traps the Inventory,
-      and that Stats/Skills can be pulled apart.
-- [ ] **BUG FIXED: a mage no longer charges into melee when you click a mob.** He just TARGETS. Fighters
-      still click-to-attack as before. *(Root cause: the client's "clicking a mob attacks" sent an Attack
-      command → the server engaged you → `UpdateAutoAttack` chased into basic-attack range, i.e. a caster
-      sprinting in to poke with a staff.)* Auto-hunt is untouched: it still walks a caster in for SPELL
-      range, and still melees if you tick its Basic Attack row.
+- [x] **Every popup can be dragged / closed / raised** — VERIFIED, owner: "very good to rearrange so they
+      don't get in the way."
+- [ ] **NEW: persist popup positions** to the settings file (nested JSON per window: Window / inventory /
+      skills…), saved on CLOSE (not on every move), defaulting when the file is untouched — start where
+      you last left them, like L2. (Roadmap.)
+- [~] **REVERT the mage-click change.** Owner wants ALL classes to click-to-attack — a mage out of MP
+      needs to melee a mob to finish it. My "mage only targets" change was wrong.
+- [ ] ⚠ **REAL BUG: skill cast must CANCEL the walk-to-target, not pause it.** Double-clicking a mob
+      starts a melee walk; casting a skill only PAUSES the movement, so after the cast finishes the
+      character keeps walking to the target. The cast should STOP the auto-attack move outright.
 
 ---
 
-## LEVEL CAP + DELEVEL + DEBUG BUFFS (2026-07-14)
+## ✅ LEVEL CAP + DELEVEL + DEBUG BUFFS (2026-07-14) — VERIFIED 2026-07-15
 
-- [ ] **Debug → "Full Buffs (1h)"** lays the whole NPC buff set on you at ANY level, no walk to the NPC.
-      No level gate on purpose: the NPC's 6-75 window is a game rule, and debug is for skipping the walk,
-      not for re-enforcing rules. It is the only way to be buffed above 75 — which matters, because the
-      balance you sign off on is BUFFED balance.
-
-
-- [ ] **Level cap is 90** for a normal character (`GameConstants.MaxPlayerLevel`). XP stops at the cap
-      and parks at 0 rather than piling up invisibly.
-- [ ] **ADMINS ARE EXEMPT** — an admin account can push past 90, so the top of the curve stays testable
-      without lifting the cap for everyone. (Log in as `admin` to check.)
-- [ ] **Debug has Level −1 and −10** alongside +1 / +10. Each is now ONE round-trip (+10 used to fire
-      ten separate commands, each with its own level-up broadcast and character save).
-- [ ] **DELEVEL KEEPS YOUR LEARNED SKILLS.** Drop to 40, feel it, climb back — no re-learning. The
-      "Skills to Learn" tab already gates by level, so it just stops offering what you can't reach.
-      ⚠ **One exception, on purpose:** the auto-granted combat-training passive (Physical/Spirit
-      Training) IS re-synced to the new level. It is not a skill you chose — the server re-grants it on
-      every level-up — and leaving a level-9 (+100% attack) passive on a character you just dropped to
-      40 would silently inflate the very damage numbers you delevelled in order to measure. Say if you
-      want it left alone instead.
+Full-buff debug button, level cap 90 (admins exempt), delevel −1/−10, delevel keeps learned skills
+(training passive re-synced to the new level) — all confirmed working.
 
 ---
 
 ## INVENTORY: EQUIPPED PANE + SET INFO (2026-07-14)
 
-- [ ] **Equipped items have their own tab.** Inventory tabs are now **Equipped / Bag / Quest**. An item
-      lives in exactly ONE tab — the **Bag hides what you're wearing**, which is the point (it was
-      clogged and swapping gear was painful). The Equipped pane is ordered by body slot and each row is
-      labelled with its slot (Weapon / Body / Head / Gloves / Boots / Shield / Ring / Earring /
-      Necklace), so it reads like a character sheet. Click a piece to take it off.
-- [ ] **BUG FIXED: set info in the item window.** Click a set piece → the item window now shows the set
-      name, what the bonus gives, `Items 2/4`, and a green ✔ / grey ✖ line per required piece.
-      *(Two separate faults: (1) the set panel existed but was only ever attached to the hover TOOLTIP,
-      never to the item window you actually open to decide what to wear; (2) the tooltip itself set
-      WHITE text on WPF's default LIGHT tooltip chrome, so even the hover version was invisible. Both
-      fixed — the tooltip is now dark-backed. The set DATA was fine: verified 55 items carry a SetId
-      and 0 are orphaned.)*
+- [x] **Equipped items have their own tab** (Equipped / Bag / Quest) — VERIFIED.
+- [~] **Set info shows on the wrong pieces.** The set section now appears, but on ACCESSORY pieces too —
+      e.g. after swapping your body from heavy to robe, the **boots still show "3/4 heavy set"** until you
+      put the heavy body back. A boots piece is not the set-defining item. Owner wants the set requirement
+      shown **only on the BODY armor** (the piece that actually carries the set), not on boots/gloves/helm.
 
 ---
 
-## SKILL BAR → DB (2026-07-14) — ⚠ DELETE `game.db` BEFORE TESTING
+## ✅ SKILL BAR → DB (2026-07-14) — VERIFIED 2026-07-15
 
-Schema change (`SkillBarJson` column). Delete `Game.Server/bin/Debug/net8.0/game.db` (+ `-shm`/`-wal`)
-and let it recreate. **Auto-hunt was ALREADY in the DB** (`AutoHuntJson`) — only the skill bar moved.
-
-- [ ] **The bar survives a relog, exactly as you left it.** Rearrange it, log out, log back in.
-- [ ] **The bar follows the CHARACTER, not the machine.** It is no longer in `client-settings.json`
-      (that file is now window geometry ONLY). Delete `client-settings.json` — the bar should still
-      come back on login.
-- [ ] **BUG FIXED: "Learn all skills" no longer reshuffles the bar.** Arrange the bar, then hit Learn
-      All. Existing placements must not move; only genuinely NEW skills get parked in free slots.
-      *(Root cause: the client re-filled an empty bar from scratch when the Learned push beat the
-      settings-file load, then saved that over your real layout. The server now sends the bar BEFORE
-      the learned skills, and auto-placement refuses to run until it has arrived.)*
-- [ ] **Cooldown no longer freezes a slot.** While a skill is on cooldown you can still DRAG it to
-      another slot and RIGHT-CLICK it off the bar — it just can't be cast. *(It used to set
-      `IsEnabled = false`, and a disabled WPF button takes no mouse input at all.)*
-- [ ] **Cooldown is readable** — DarkGoldenrod on the light bar (was Gold, unreadable), and it now
-      also shows in the **Skills window** next to each skill (gold there, since that window is dark).
+Bar persists per character, follows the character not the machine, "learn all" no longer reshuffles it,
+cooldown no longer freezes a slot, cooldown countdown readable — all confirmed.
 
 ---
 
-## SKILL BAR + DEBUG (2026-07-14)
+## ✅ SKILL BAR + DEBUG (2026-07-14) — VERIFIED 2026-07-15
 
-- [ ] **Skill-bar text is readable.** Abbreviations were white-on-light-grey (invisible); now black.
-      The little hotkey numbers were light-grey on light-grey — also fixed (now dim grey).
-      *(The cooldown countdown is still gold — say if that one is hard to read too.)*
-- [ ] **DRAG & DROP — the real fix.** Root cause found: a WPF `Button` CAPTURES the mouse on press,
-      and (a) `DoDragDrop` is unreliable from a captured element → "hard to even start a drag", and
-      (b) once capture is lost, `MouseMove` goes to the button UNDER THE CURSOR, whose handler dragged
-      **its own** skill → "it moves a different skill than the one I grabbed". The drag origin is now
-      recorded once at mouse-DOWN and never re-read from whichever button raises the move event, and
-      capture is released before the drag starts. **⚠ I cannot click-test WPF from here — this needs
-      your hands.** Check: drag starts on the first small movement; the skill that moves is the one
-      you grabbed; a second drag behaves the same; a plain click still CASTS (doesn't drag); a drag
-      does NOT also cast the skill on release.
-- [ ] **Debug gold button is now +10,000,000** (was 100k — couldn't fund even one stat swap, which
-      cost 1kk-5kk per level).
-- [ ] **Debug race/class change KEEPS your inventory** (you reversed the earlier "wipe it" call).
-      Everything is UNEQUIPPED (the old class's kit is usually wrong for the new one) and the starter
-      kit only tops up pieces you don't already own — so re-rolling repeatedly doesn't fill the bag
-      with duplicate newbie boxes. Check: re-roll fighter → mage, gear survives, you gain the newbie
-      staff but not a second jewel box.
+Readable bar text, +10,000,000 gold button, debug class change keeps inventory — all confirmed.
+
+- [x] **DRAG & DROP on the bar** — owner: *"I think I tested it wrong the whole time — I was trying to
+      drag from the skills MENU (like the first time), not rearrange the buttons ON the bar."* The rework
+      was about rearranging the slot buttons on the bar, which now works. ✔ (If dragging a skill FROM the
+      skills window onto the bar is also wanted, that's a separate feature — say so.)
 
 ---
 
-## STAT-SWAP DIRECTION RULE (2026-07-14)
+## ✅ STAT-SWAP DIRECTION RULE (2026-07-14) — VERIFIED 2026-07-15
 
-Each stat now commits to ONE direction: you cannot raise a stat you have sold, nor sell a stat you
-have bought. A second skill that also LOWERS the same stat is still allowed and stacks.
-
-- [ ] **The circular net-zero ring is gone.** Try to buy `+CON−DEX`, then `+DEX−ATK` — the second
-      must be refused ("you cannot raise a stat you have given up"). Same for any 3-skill ring.
-- [ ] **The worked example holds.** Take `+ATK−MEN`, then `+WIT−MEN` (MEN should stack to −10). The
-      only picks left open should be `+CON−DEX` and `+DEX−CON`; every other swap should have
-      disappeared from the learn list.
-- [ ] **The learn list hides banned picks** (client-side) AND the server refuses them if you somehow
-      get one through — both paths are wired.
-- [ ] **The skill-reset NPC (Mindwright Sela, Brackenford) still frees a committed stat.** Un-learn a
-      swap and the direction it locked should open up again.
-- [ ] **Debug "learn all skills" grants NO stat swaps** and tells you so in chat. ⚠ This is a
-      deliberate change from what you asked ("take the first, skip what it bans") — that greedy rule
-      picks four swaps that all sacrifice **ATK** (−20 ATK), which would wreck the damage you use
-      that button to test. Say if you'd rather have the greedy pick back.
+Net-zero ring blocked, worked example holds, banned picks hidden + server-refused, learn-all grants no
+swaps — all confirmed. (See the LEVEL-40 STAT-SWAP section below for two follow-up changes the owner wants.)
 
 ---
 
-## ⚠ TWO NUMBERS TO DECIDE WHILE TESTING (2026-07-13)
+## ✅ TWO NUMBERS — DECIDED 2026-07-15
 
-### 1. `ItemCatalog.OffChannelFactor` — currently **0.6**, I'd argue for **0.2**
-How much of your ATK power a weapon lets through to the channel it does NOT serve (a sword's magic,
-a staff's melee). **The same one constant is the answer to two separate problems:**
-- [ ] **The buffer swap.** At 0.6, a buffer trading his staff for a 2H sword loses only **~15%** of
-  his magic damage (√mAtk flattens it) while **doubling** his P.Atk — still a free win. At 0.2 he
-  loses ~51%, which is the real trade you wanted.
-- [ ] **Tank healing.** A Lv-76 tank casting a 1000-power heal:
-  | | M.Atk | heals |
-  |---|---|---|
-  | Healer (t76 staff) | ~900 | **2000** |
-  | Tank (t76 2H sword) @ **0.6** | ~320 | **1193** (60% of a healer) |
-  | Tank (t76 2H sword) @ **0.2** | ~107 | **689** (34%) |
-
-  You called an L2 tank healing 1500-2000 OP. At 0.6 he heals **1193** — better, but still a lot for
-  a plate-wearer. At 0.2 he heals a third of a healer.
-- [ ] **Use the TestHeal skill below to read this off the screen directly**, then tell me the number.
-
-### 2. `SkillMath.HealK` — currently **15**
-- [ ] Solved so a **1000-power heal at 76 with a t76 staff = ~2000**. Feel it and say if it should be
-  nearer 1500 (→ K=20) or higher.
-
-### TEST-ONLY skill: **TestHeal** ⚠ REMOVE BEFORE RELEASE
-- [ ] Every character is **auto-granted "TestHeal" at level 76** — a **power-1000** flat heal
-  (0 MP, 2s cast, 2s cooldown, 600 range). It's given to FIGHTERS TOO on purpose, so you can read
-  the tank-vs-healer gap straight off the screen.
-- [ ] Expected: healer ≈ **2000**, tank ≈ **1193** (at OffChannel 0.6) or **689** (at 0.2).
-- [ ] **To remove it**, search `TEST ONLY` — there are 3 spots: the `TestHeal` const + its SkillDef
-  in `Skills.Common.cs`, and the auto-grant in `GameLoopService.AutoLearnCoreSkills`.
+- **`OffChannelFactor` stays 0.6.** Owner: leave as is — a mage won't auto-attack and a fighter won't cast
+  skills (once the bare-hands problem is fixed), so the off-channel trade doesn't need to bite harder.
+- **`HealK` = 15 stays.** Owner: works ok, uses it to self-heal after a fight.
+- ⚠ **TestHeal (power-1000 test skill on every char @76) can now be REMOVED** — it was only there to read
+  these two numbers off the screen, and both are decided. Search `TEST ONLY` (3 spots in `Skills.Common.cs`
+  + `GameLoopService.AutoLearnCoreSkills`). *(Not yet done — flag for cleanup.)*
 
 ---
 
-## To test now (SKILL RESET NPC — 2026-07-13)
+## ✅ SKILL RESET NPC (Mindwright Sela — 2026-07-13) — VERIFIED 2026-07-15
 
-- [ ] **Mindwright Sela** (Brackenford, ~21500, 26000) — a new `NpcRole.SkillReset` NPC.
-- [ ] Talk to her → she lists every **permanent, mutually-exclusive** skill you've committed to
-  (the level-40 stat swaps), with **how much gold you sank into each**.
-- [ ] **Forget** one → the skill is removed, its group is **free to commit to again**, and your
-  stats recompute immediately (losing +CON drops your Max HP, and current HP is clamped).
-- [ ] **The gold is NOT refunded** — that's the deal: you may change your mind, you may not undo the
-  price of being wrong. The button says how much you're writing off.
-- [ ] It only offers skills with an `ExclusiveGroup`; ordinary skills can't be reset.
-- [ ] Try it from out of talk range → "too far away".
+Lists committed stat-swap skills + gold sunk, forgetting frees the group, gold not refunded, only
+exclusive-group skills, out-of-range guard — all confirmed.
 
 ---
 
-## To test now (LEVEL-40 STAT-SWAP PASSIVES — 2026-07-13)
+## LEVEL-40 STAT-SWAP PASSIVES (2026-07-13) — mostly verified, 2 changes wanted
 
-The ONLY thing that moves your main stats now. You're born with your CON/ATK/WIT/DEX; the old free
-`LevelStatBonus` and the class-change stat grants are both gone.
+The ONLY thing that moves your main stats now. Born with CON/ATK/WIT/DEX; old free grants gone.
 
-- [ ] At **level 40**, the Skills → **Learn** tab shows 10-12 new passives priced in **GOLD, not SP**:
-  **1kk / 2kk / 3kk / 4kk / 5kk** per level (15kk to max one). Each level = **+1 one stat, −1 another**;
-  maxed = **+5 / −5**.
-- [ ] They cost gold you actually have — the Learn popup shows the gold price and your balance, and
-  is disabled if you're short. Learning deducts the gold.
-- [ ] **A group is a PERMANENT commitment.** Take *Fortitude (Agility)* (+CON−DEX) and *Fortitude
-  (Power)* (+CON−ATK) **disappears from the list forever**. The popup warns you before you buy.
-  You can still level the one you picked.
-- [ ] The groups (mutually exclusive within each):
-  - **CON** → +CON−ATK, +CON−DEX
-  - **DEX** → +DEX−ATK, +DEX−CON
-  - **ATK** → +ATK−DEX, +ATK−CON *(fighters)* · +ATK−WIT, +ATK−MEN *(mages)*
-  - **WIT** → +WIT−ATK, +WIT−MEN
-  - **MEN** → +MEN−ATK, +MEN−WIT
-- [ ] **Only the ATK group is class-gated** (ATK is our one power stat — the weapon decides whether
-  it lands as P.Atk or M.Atk). A **fighter** sees only the CON/DEX-cost versions; a **mage** only the
-  WIT/MEN-cost ones. A **BUFFER (Warchanter) sees all four** — deliberately strong, he can pay in a
-  stat he doesn't use. ⚠ If that's too good, switch him to a dual-cost (+ATK −a −b) form.
-- [ ] **The stats REALLY change**, not just the stat window: +CON raises **Max HP**, +DEX raises
-  **evasion / accuracy / crit / attack speed**, +WIT raises **cast speed / MP / magic crit**, +ATK
-  raises **P.Atk and M.Atk** (whichever your weapon feeds). They're folded in the pre-pass, before
-  anything is derived.
-- [ ] **MEN is no longer a stat** — a "±MEN" swap IS its modifiers: **±2% Max MP, ±2% M.Def, ±2% MP
-  regen per point** (so ±10% at level 5). Check the stat window reflects it.
-- [ ] ⚠ **NOT built: the reset NPC.** A bad choice is permanent for now. Owner wants an NPC that
-  un-learns these (free to remove, gold NOT refunded) — on the roadmap.
+- [x] Gold-priced (1kk-5kk/level), affordability-gated, deducted — VERIFIED.
+- [x] A group is a PERMANENT commitment; the alternative disappears — VERIFIED.
+- [x] The stats REALLY change (Max HP / eva-acc-crit-AS / cast-MP-crit / P&M.Atk) — VERIFIED.
+- [x] MEN is no longer a stat (±2% MaxMP/M.Def/MP-regen per point) — VERIFIED.
+- [x] The reset NPC is BUILT (Mindwright Sela) — this old "NOT built" note is stale.
+- [~] **CHANGE: gate ALL groups by class, not just ATK.** Right now only the ATK group is class-locked.
+      Owner wants:
+      - **Fighter** may only do: CON↔DEX, ATK↔CON, ATK↔DEX.
+      - **Mage** may only do: CON↔DEX, ATK↔MEN, ATK↔WIT, WIT↔MEN.
+      (So e.g. a fighter should NOT see WIT/MEN swaps, and a mage should NOT see the DEX-cost ones.)
+- [~] **CHANGE: require the 3rd CLASS, not just level 40.** The swaps AND the training passives
+      (Spirit/Body Training) currently appear at level 40. Owner wants them to appear only after the
+      **3rd-class change** — i.e. 3rd class → then training + swap skills show.
 
 ---
 
-## To test now (HEALS + PvP HEAL RULES — 2026-07-13)
+## HEALS + PvP HEAL RULES (2026-07-13)
 
-### Heal calibration (2026-07-13) — HealK solved against L2
-- [ ] `HealK` = **15** (was 8). Solved from the owner's target: a **1000-power heal at level 76**
-  with a tier-76 staff (M.Atk ≈ 900) should land **~2000**. `1000 × √900 / 15 = 2000`. ✔
-  At level 40 the same skill gives ~1065, so a heal roughly **doubles from 40 → 76**.
-- [ ] Where the target came from: in L2 `heal = power + √mAtk`, so a 1000-power heal lands
-  **~1025-1080 regardless of M.Atk** (it contributes 3-8%). L2's skill ENCHANT roughly doubles it
-  → ~2100. We aim at the enchanted number because we have no enchant system. (K=8 gave **3750** —
-  the "paladin heals 3k" figure the owner rejected as OP.)
-- [ ] ⚠ **Heal POWERS still need re-authoring**: ours are 151-301, the target scale is ~1000.
+### ✅ Heal calibration + mechanics — VERIFIED 2026-07-15
+HealK=15 works (owner uses it to self-heal after fights). Heals scale with M.Atk on the flat half,
+staff-vs-sword changes heal output, fighter training no longer doubles M.Atk — all confirmed by play.
+- [ ] ⚠ Still open (not blocking): **heal POWERS need re-authoring** — ours are 151-301, the target
+  scale is ~1000. A future tuning pass.
 
-### Fighter training no longer boosts MAGIC attack (bug)
-- [ ] The combat-training passives used a channel-blind `AttackPct`, which applies to **both**
-  channels — so a fighter's **Physical Training was doubling his M.Atk**. That's what let a Lv-76
-  tank heal nearly as hard as a healer, and it leaked through the whole "a caster weapon makes a
-  healer" rule. Now channel-specific: Physical Training → P.Atk only, Spirit Training → M.Atk only.
-- [ ] Confirm a fighter's **M.Atk dropped roughly by half** at 76+ (it was silently ×2). His P.Atk
-  is unchanged. A mage's M.Atk is unchanged.
-
-### Heals now scale with M.Atk (flat) — % heals don't
-- [ ] A heal has **two halves**. The **FLAT** half is now `power × √M.Atk / 8` (was `power + WIT×2`,
-  which ignored M.Atk entirely). The **% -of-max-HP** half ignores M.Atk completely.
-- [ ] **Swap your staff for a sword → you heal noticeably less.** A Lv-21 cleric heals ~195 with a
-  staff (M.Atk 107) and ~151 with a sword (M.Atk 64) — about **25% less**. Better caster gear =
-  better heals. This is the "want to be a fighter? then heal less" rule.
-- [ ] ⚠ **Low-level heals got weaker, high-level heals got stronger** (M.Atk is small early and the
-  old formula's flat `+WIT×2` is gone). Heal POWERS will likely need re-authoring — L2's real heals
-  run to ~1000 power, ours are 151-301. Expect to tune.
-- [ ] **Heal-reduction (anti-heal) bites the FLAT half only.** The % half always lands — that's the
-  point of it, and it's what will make the planned anti-heal ultimates interesting: flat heals
-  wither, % heals still work.
-- [ ] Lifesteal (melee/spell vamp) counts as a FLAT heal, so anti-heal reduces it too.
-- [ ] NOTE: L2's own heal is ADDITIVE (`power + √mAtk`), where M.Atk barely matters — 16,000 M.Atk
-  buys only +126 HP. We deliberately MULTIPLY instead, which is the only way weapon/gear choice can
-  matter to a healer.
-
-### PvP heal rules (the bug from the playtest)
+### PvP heal rules (NOT tested this playtest — trade/PvP still to verify)
 - [ ] **You can no longer heal the enemy you're fighting.** Targeting a hostile player and casting a
   heal/buff/cleanse now **self-casts** instead of healing him. (It used to accept ANY player as a
   support target — which is why healing mid-duel healed your opponent.)
@@ -432,95 +319,14 @@ The ONLY thing that moves your main stats now. You're born with your CON/ATK/WIT
 
 ---
 
-## To test now (SKILL BAR — 2026-07-13)
+## ✅ SKILL BAR (2026-07-13) — SUPERSEDED by "SKILL BAR → DB" above (verified 2026-07-15)
 
-- [ ] **The bar is now saved per character** and survives relog exactly as you arranged it
-  (`client-settings.json`, next to the exe, under `SkillBars`). Rearrange it, log out, log back
-  in → identical layout.
-- [ ] **It no longer reshuffles itself.** The old bar was rebuilt each login by enumerating a
-  `HashSet` of learned skills — whose order is unspecified — so it silently reordered. New skills
-  now go into the first FREE slot, in a stable order, and **never move a skill you placed**.
-- [ ] Level up / learn a skill / change class → your existing layout is untouched; only genuinely
-  new skills appear, in free slots.
-- [ ] **Cooldowns survive a re-render.** Previously levelling up, changing class, or even dragging
-  a skill rebuilt every slot object and silently wiped all running cooldowns. Cast something with
-  a long cooldown, then level up / drag another skill → the cooldown keeps ticking.
-- [ ] **Drag & drop** — re-verify. The payload now carries the SKILL ID (not just a slot index),
-  and the drop re-locates the source by identity, so a bar that re-rendered mid-drag can no longer
-  move the wrong skill. ⚠ If it STILL grabs the wrong one, tell me exactly which slot you dragged
-  from, which you dropped on, and what actually moved — I could not reproduce the off-by-one by
-  reading the code, so I hardened the path rather than pinpointing it.
-- [ ] Side-fix: **your character's name now shows in the status line** (`_myName` was declared but
-  never assigned, so it was always blank — which also broke the whisper self-check).
+## ✅ DAMAGE RETUNE (2026-07-13) — SUPERSEDED by the MAGIC RE-SCALE at the top (signed off 2026-07-14)
 
----
-
-## To test now (DAMAGE RETUNE — 2026-07-13) ⚠ delete game.db first
-
-**⚠ Delete `Game.Server/game.db` (+ `-shm`/`-wal`) before testing.** Not a schema change —
-but existing characters have the OLD class-change stat bonuses (+10 CON tank, +10 WIT nuker…)
-baked into their persisted stats, and those grants are gone now. A fresh DB avoids ghost stats.
-*(Note: with `dotnet run` the DB is `Game.Server/game.db` — the `bin/Debug/net8.0/` path is
-only used when launching from Visual Studio.)*
-
-### Magic damage — the big one
-- [ ] `MagicK` 8 → **91** (L2's real constant). Magic was doing ~1/11th of intended damage.
-  A Lv-21 healer's Magic Bolt on a same-level tank should now hit for **~170, not 15**.
-- [ ] Check this did NOT break **PvE** — 11× more magic damage means mages/healers may now
-  shred mobs. Owner's standing target: *mage TTK ~60s @75, do not over-buff*. A healer
-  should now kill a same-level mob in a reasonable time (it used to take ~1 minute).
-
-### Archetype damage multipliers REMOVED
-- [ ] The per-archetype basic-attack multiplier (tank ×0.55, rogue ×0.65, mage ×0.15,
-  warrior ×1.10) is **gone**. Basic-attack damage = pure formula; the **weapon** differentiates.
-- [ ] A Lv-21 tank's basic attack on a robe target should now land ~**43** (was ~24).
-- [ ] **Daggers should no longer feel crippled**; bows should hit clearly harder.
-- [ ] ⚠ **Watch mage melee**: with the ×0.15 gone, a mage's staff swing is now full-strength,
-  and the newbie staff's P.Atk (23) is nearly the newbie sword's (24) — so a mage may melee
-  about as hard as a tank. If that feels wrong, the fix is the **weapon table** (lower caster
-  weapon P.Atk), not a class coefficient.
-- [ ] New **"Class Balance"** passive on every class — visible in the skills window, does
-  **nothing** (all-zero). It's the hook for later per-class PvE/PvP damage nudges.
-
-### Cast speed rebased
-- [ ] Mage base cast speed 166 → **333** (the 1.0× baseline); **ork mage 300**; fighters 150.
-  Every mage cast used to silently take ~2× its listed time — a 4s bolt really took ~6.5s.
-- [ ] Wearing **non-robe armor as a mage still halves casting** (Robe Mastery's existing
-  −50% penalty) → the old 166. Confirm a mage in light/heavy armor casts at half speed.
-  (Same numbers as L2's Spellcraft, which *doubles* cast speed while in a robe.)
-- [ ] **Spirit Training** now gives a FLAT **+40** casting speed, not +40% — matching the real
-  spiritshot. (The old percent was applied as a time cut = +67% speed, and compounded with
-  WIT/gear/buffs; it alone inflated a buffed Lv-40 mage to ~2200 vs the 1999 cap.)
-  Its magic-attack half is unchanged and correct: +100% at max = ×2 M.Atk = ×1.414 magic
-  damage — exactly the spiritshot ratio.
-- [ ] Expected casting speed now: Lv-40 elf mage in robe **unbuffed ~493** (L2 reference: ~500
-  for a Lv-60 Spellsinger in robe with passives); **fully buffed ~1097**; with +5 WIT ~1388.
-  The 1999 cap should only be reachable with an Enlightenment-style +50% buff — as in L2.
-
-### Weapon channel split (P.Atk / M.Atk factors)
-- [ ] A weapon now carries **ONE power number + two channel factors**. Fighter weapons: power =
-  their P.Atk, ×1.0 P / ×0.6 M. Mage weapons: power = their **M.Atk**, ×1.0 M / ×0.6 P (their
-  P.Atk is deliberately nerfed). Factors multiply the FINISHED channel, so they suppress the
-  shared base (`AtkStat + level*2`) — which is what a second authored number could never do.
-- [ ] **Mage melee is nerfed**: a Lv-21 healer's staff swing drops ~36 → **~21**. The nuke
-  (~172) and the tank's basic (~43) are unchanged.
-- [ ] A fighter's M.Atk is now ~60% of before — harmless (fighters have no magic skills).
-- [ ] **A cleric who equips a SWORD should melee at full strength** (×1.0 P.Atk) and lose most
-  of his casting. The class no longer decides — the weapon does. Verify this feels right.
-- [ ] ⚠ **KNOWN GAP — the buffer.** At the current ×0.6, a buffer swapping staff → 2H sword
-  loses only **15%** magic damage but **doubles** P.Atk — still a free win. Closing it needs the
-  off-channel factor at ~0.2–0.3 (`const OffChannel` in `Items.cs` / the newbie weapon defs).
-  Owner is feeling out 0.6 first.
-- [ ] ⚠ **Check heals**: if heal power scales off M.Atk, a sword-wielding cleric can barely heal.
-  That may be the intended trade — confirm.
-
-### Stats no longer grow on their own
-- [ ] **Class change no longer raises main stats** (the old +10 CON / +10 WIT grants are gone) —
-  the class-change dialog no longer advertises a stat bonus.
-- [ ] `LevelStatBonus` (the free +1@20 … +5@80 "dye stand-in") is **removed** — CON/ATK/WIT/DEX
-  stay what you were born with. The level-40 stat-swap passives (not built yet) replace it.
-- [ ] Sanity-check that mages don't feel *slower* than before despite losing the free WIT
-  (the 333 rebase should more than cover it).
+The 07-13 MagicK 8→91 / archetype-multiplier removal / cast-speed rebase / weapon channel split were all
+rolled into and re-tuned by the 2026-07-14 magic re-scale, which the owner signed off in play. Nothing to
+re-test here separately. The `LevelStatBonus` removal and stats-no-longer-grow rules are verified via the
+stat-swap testing above.
 
 ---
 

@@ -10,6 +10,55 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 
 ## NOW (active / immediate)
 
+### Playtest-3 queue (2026-07-15) — from the owner's test pass, NOT yet built
+
+Almost everything from the 07-13/07-14 queues VERIFIED (see docs/TestChecklist.md). These are the
+changes and new features that came out of the play session:
+
+**Corrections (small, well-specified):**
+- [ ] **Class uniqueness → DISCIPLINE only, drop the ARCHETYPE bar.** You should be able to own 4 mages
+  (2 clerics Lightbringer+Warchanter, 2 nukers Tempest+other) — just not two of the SAME discipline.
+  Remove `CanTakeSecondClass`'s archetype check + the client's `ArchetypeTakenElsewhere`; keep the
+  discipline check. ([[subclass-system-design]])
+- [ ] **Cap subclass COUNT.** Nothing stops adding 20 mage classes today. Add a cap (owner's design = 3-4)
+  or gate "add class". Related to the discipline change above — without a discipline left to reach, a new
+  base class is pointless.
+- [ ] **Revert the mage-click change — ALL classes click-to-attack.** A mage out of MP must be able to
+  melee a mob to finish it. Undo the `iAmCaster` guard in `WorldCanvas` click handling.
+- [ ] **Skill cast must CANCEL the auto-attack walk, not pause it.** Double-click a mob → walk to melee;
+  casting a skill only pauses movement, so the char keeps walking after the cast. Clear `TargetX/Y` on
+  cast start.
+- [ ] **Set info only on the set-bearing BODY armor.** Boots/gloves/helm (accessories) currently show
+  "3/4 heavy set" even after the body is swapped to robe. `BuildSetSection` should return null for
+  non-body pieces (or show the set the equipped BODY defines, not the hovered accessory's).
+- [ ] **Stat-swap groups: gate ALL by class, not just ATK.** Fighter: CON↔DEX, ATK↔CON, ATK↔DEX only.
+  Mage: CON↔DEX, ATK↔MEN, ATK↔WIT, WIT↔MEN only. (`StatSwapsFor` in `Skills.StatSwap.cs`.)
+- [ ] **Stat-swap + training passives require the 3rd CLASS, not level 40.** They appear at 40 now; owner
+  wants them only after the 3rd-class change. Gate the learn-list + the training auto-grant on
+  `ThirdClass > 0`.
+- [ ] **Cleanup: remove the TEST-ONLY TestHeal skill** (power-1000 heal on every char @76). Both numbers
+  it existed to read (OffChannelFactor 0.6, HealK 15) are now decided. 3 spots, search `TEST ONLY`.
+
+**New features (bigger — some need a design decision, see docs + questions below):**
+- [ ] **Gold → an inventory ITEM** (L2 adena). Tradable; must exceed int.max (store as `long`, or a
+  stackable item with a long quantity). Remove it from the vitals/HP bar. ⚠ Touches the wallet, vendors,
+  drops, trade, and the future marketplace + premium currency (both should be tradable, inter-convertible,
+  and usable to buy items per the seller's choice). **Needs a design pass before building.**
+- [ ] **NPC buffer — 3 paid options** ([[buffer-enchanter-design]]): (1) full-buff — free ≤40, ≥40 costs
+  `3k · buffLevel` per buff (~150k for all 10 at L5, tune vs mob gold drops at 35-45 so ~1h of farming
+  ≈ one full buff); (2) single-buff list (the 9 buffs, at the right levels — needs multi-level buff skills
+  first, same blocker as level-appropriate buffs); (3) HP/MP restore — free ≤40, ≥40 costs
+  `10k·(1−hp/maxhp) + 10k·(1−mp/maxmp)` (cap tunable).
+- [ ] **BARE-HANDS is too strong — investigate.** A naked level-1 fighter (42 P.Atk) solos and one-shots
+  level-4-8 mobs and can reach 20 with no gear; a mage has 43 P.Atk too. Research how L2 handles unarmed +
+  unarmored (fist weapon base, no-armor penalty). Likely the fix is a low unarmed base + an unarmored
+  penalty, NOT touching the damage formula. Owner: *"I don't think our formulas are wrong, just how we
+  manage not being equipped."*
+- [ ] **Persist popup positions** to the settings file. Owner wants nested JSON:
+  `{Window:{position,size}, inventory:{position}, skills:{position}, …}`, saved on CLOSE (not per move),
+  defaulting when the file is untouched (start where you last left them, like L2). Currently
+  `client-settings.json` is flat window-geometry only.
+
 ### Playtest-2 queue (2026-07-14) — agreed, NOT yet built
 
 - [x] **Server would not start** — `SkillCatalog`'s static field initializer `All = BuildCatalog()`
