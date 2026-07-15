@@ -501,6 +501,14 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task DebugKarma(int delta)
+    {
+#if DEBUG
+        _world.Commands.Enqueue(new DebugKarmaCmd(Context.ConnectionId, delta));
+#endif
+        return Task.CompletedTask;
+    }
+
     /// <summary>DEBUG: add a SUBCLASS (another class this character owns) and switch to it.</summary>
     public Task DebugAddSubclass(BaseClass baseClass)
     {

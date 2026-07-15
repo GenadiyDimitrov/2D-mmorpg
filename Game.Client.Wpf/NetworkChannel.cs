@@ -205,6 +205,9 @@ public class NetworkChannel : IAsyncDisposable
     public Task DebugBuffAsync() =>
         _connection!.SendAsync("DebugBuff");
 
+    public Task DebugKarmaAsync(int delta) =>
+        _connection!.SendAsync("DebugKarma", delta);
+
     /// <summary>DEBUG: add a SUBCLASS (another class this character owns) and switch to it.</summary>
     public Task DebugAddSubclassAsync(BaseClass baseClass) =>
         _connection!.SendAsync("DebugAddSubclass", baseClass);

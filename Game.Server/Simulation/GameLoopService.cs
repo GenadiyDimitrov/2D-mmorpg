@@ -104,6 +104,7 @@ public class GameLoopService : BackgroundService
                 case DebugLearnAllCmd c: HandleDebugLearnAll(c); break;
                 case DebugGoldCmd c: HandleDebugGold(c); break;
                 case DebugBuffCmd c: HandleDebugBuff(c); break;
+                case DebugKarmaCmd c: HandleDebugKarma(c); break;
                 case DebugAddSubclassCmd c: HandleDebugAddSubclass(c); break;
                 case SwitchSubclassCmd c: HandleSwitchSubclass(c); break;
                 case DebugSpCmd c: HandleDebugSp(c); break;
@@ -345,6 +346,7 @@ public class GameLoopService : BackgroundService
     private double _karmaLevelGrowth = 1.2;    // ×per level the victim is BELOW the killer (+20%)
     private int _karmaLossPerDeath = 200;      // karma shed on each death
     private int _karmaLossPerMob = 20;         // karma shed per mob kill (grind it off while farming)
+    private const int KarmaMaxPerKill = 15_000; // owner: cap one PK at 10-20k (~750 mob kills to shed)
 
     /// <summary>A player's name state: red (karma), else purple (recent pvp), else white.</summary>
     private PvpFlag FlagOf(Entity p) =>
@@ -481,7 +483,9 @@ public class GameLoopService : BackgroundService
             double raw = _karmaBase
                 * Math.Pow(_karmaConsecGrowth, consec)
                 * Math.Pow(_karmaLevelGrowth, diff);
-            int gain = (int)Math.Clamp(raw, 0, 1_000_000);
+            // Cap a single kill at 15k (owner): with mob-loss 20 that's ~750 mob kills to shed one
+            // max PK — the "500-1000 kills" target. Total karma can still stack across many kills.
+            int gain = (int)Math.Clamp(raw, 0, KarmaMaxPerKill);
             killer.Karma += gain;
             killer.ConsecutivePk++;
             killer.PkCount++;
@@ -1809,6 +1813,19 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // No trading while a PK (red) or FLAGGED (purple) — on either side (owner). An outlaw can't
+        // launder gear/gold through a trade.
+        if (FlagOf(requester) != PvpFlag.Innocent)
+        {
+            SendSystemToEntity(requester, "You can't trade while flagged or a PK.");
+            return;
+        }
+        if (FlagOf(target) != PvpFlag.Innocent)
+        {
+            SendSystemToEntity(requester, $"{target.Name} can't trade right now (flagged or a PK).");
+            return;
+        }
+
         if (DistanceSq(requester, target) > GameConstants.TradeRange * GameConstants.TradeRange)
         {
             SendSystemToEntity(requester, "Too far away to trade.");
@@ -1844,6 +1861,14 @@ public class GameLoopService : BackgroundService
         if (_world.ActiveTrades.ContainsKey(requester.Id) ||
             _world.ActiveTrades.ContainsKey(responder.Id))
             return;
+
+        // Re-check flags at accept time (they can change after the request).
+        if (FlagOf(requester) != PvpFlag.Innocent || FlagOf(responder) != PvpFlag.Innocent)
+        {
+            SendSystemToEntity(responder, "You can't trade while either of you is flagged or a PK.");
+            SendSystemToEntity(requester, "You can't trade while either of you is flagged or a PK.");
+            return;
+        }
 
         var session = new TradeSession { A = requester, B = responder };
         _world.ActiveTrades[requester.Id] = session;
@@ -5892,6 +5917,14 @@ var effect = def.Effect;
         if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
         if (!TryGetVendorNpc(player, cmd.NpcEntityId, out var npc)) return;
 
+        // A PK (red) is an outlaw — vendors won't deal with them. A merely FLAGGED (purple) player
+        // still can (owner). Selling to a vendor is unaffected either way.
+        if (FlagOf(player) == PvpFlag.Pk)
+        {
+            SendSystemToEntity(player, "Merchants won't trade with a PK. Clear your karma first.");
+            return;
+        }
+
         string npcId = npc.NpcId ?? "";
         if (!ShopCatalog.Sells(npcId, cmd.ItemDefId)
             || ItemCatalog.Get(cmd.ItemDefId) is not ItemDef def)
@@ -6254,6 +6287,24 @@ var effect = def.Effect;
             return;
         GrantFullBuffSet(player);
         SendSystemToEntity(player, "[DEBUG] Full buff set applied (1 hour).");
+    }
+
+    /// <summary>DEBUG: adjust karma by a delta. Clamped to [0, 1M]; clearing to 0 resets the PK streak
+    /// and the red name (same as ReduceKarma's clear path).</summary>
+    private void HandleDebugKarma(DebugKarmaCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+        bool wasRed = player.Karma > 0;
+        player.Karma = (int)Math.Clamp((long)player.Karma + cmd.Delta, 0, 1_000_000);
+        if (player.Karma == 0 && wasRed)
+        {
+            player.ConsecutivePk = 0;
+            BroadcastSystem($"{player.Name}'s karma has cleared.");
+        }
+        SendPvpState(player);
+        SendSystemToEntity(player, $"[DEBUG] Karma {(cmd.Delta >= 0 ? "+" : "")}{cmd.Delta} → {player.Karma:N0}.");
+        SaveEntity(player);
     }
 
     private void SendDialog(Entity player, Entity npc)

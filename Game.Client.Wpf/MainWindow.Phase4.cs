@@ -922,10 +922,12 @@ public partial class MainWindow
                 Padding = new Thickness(6, 0, 0, 0),
                 // Dark background so the (often light) rarity-coloured text reads — the default WPF
                 // button chrome is light grey and washed white/common items out (the skill-bar problem).
+                // Use IsHitTestVisible (not IsEnabled) for the partner's offer: a DISABLED button is
+                // greyed by WPF regardless of our colours, which is why "their offer" stayed unreadable.
                 Background = new SolidColorBrush(Color.FromArgb(0xC0, 0x1A, 0x22, 0x30)),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(0x4A, 0x5A, 0x70)),
                 Foreground = RarityBrush(def.Rarity),
-                IsEnabled = removable
+                IsHitTestVisible = removable,
             };
             if (removable)
             {
@@ -959,6 +961,9 @@ public partial class MainWindow
                 Margin = new Thickness(0, 0, 0, 3),
                 HorizontalContentAlignment = HorizontalAlignment.Left,
                 Padding = new Thickness(6, 0, 0, 0),
+                // Dark background so the rarity-coloured text reads (matches the offer lists).
+                Background = new SolidColorBrush(Color.FromArgb(0xC0, 0x1A, 0x22, 0x30)),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0x4A, 0x5A, 0x70)),
                 Foreground = RarityBrush(def.Rarity)
             };
             var instanceId = item.InstanceId;
