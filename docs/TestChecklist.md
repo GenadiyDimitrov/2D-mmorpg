@@ -14,24 +14,19 @@ subclasses · level cap + delevel + debug buffs · skill bar → DB · skill-bar
 stat-swap direction rule · skill-reset NPC · movable popups (great) · equipped-items pane ·
 HealK=15 · OffChannelFactor stays 0.6.
 
-**CHANGES NEEDED (found while testing) — not yet built:**
+**CHANGES NEEDED (found while testing):**
 1. **Class uniqueness is on the wrong axis.** It bars a repeated ARCHETYPE; owner wants only a repeated
    **DISCIPLINE** barred. You SHOULD be able to own 4 mages (2 clerics = Lightbringer+Warchanter, 2
    nukers = Tempest + the other) — you just can't own two of the SAME discipline. → remove the archetype
    bar, keep discipline. **AND:** nothing caps subclass COUNT — you can add 20 mage classes. Needs a cap
-   (or: base classes with no unique discipline left are pointless, so gate adding one).
-2. **Mage-click revert.** ALL classes should click-to-attack (a mage out of MP needs to melee a mob to
-   finish it). My "mage only targets" change was wrong — revert it.
-3. **Skill cast must CANCEL the auto-attack walk, not pause it.** Double-clicking a mob starts a walk to
-   melee; casting a skill only pauses the walk, so after the cast the character keeps walking to the
-   target. Cast should STOP the move.
-4. **Set info: only the BODY armor should show set requirements.** Right now boots (an accessory) show
-   "3/4 heavy set" even after you've swapped your body to robe. A boots piece is not the set-defining
-   piece. Show the set section only for the set-bearing body armor.
-5. **Stat-swap groups: gate ALL groups by class, not just ATK.** Fighter may only do CON↔DEX, ATK↔CON,
-   ATK↔DEX. Mage may only do CON↔DEX, ATK↔MEN, ATK↔WIT, WIT↔MEN.
-6. **Stat-swap + training passives should require 3rd CLASS, not just level 40.** They currently appear
-   at level 40; owner wants them only after the 3rd-class change.
+   (or: base classes with no unique discipline left are pointless, so gate adding one). *(NOT built.)*
+2. [x] **Mage-click reverted** — all classes click-to-attack. ✅ VERIFIED 2026-07-15.
+3. [x] **Skill cast cancels the auto-attack walk** (no longer keeps walking after the cast). ✅ VERIFIED.
+4. [x] **Set info only on the BODY armor** — accessories no longer claim a set. ✅ VERIFIED.
+5. [x] **Stat-swap groups gated by class** (fighter CON/DEX/ATK only; mage CON↔DEX + ATK/WIT/MEN). ✅ VERIFIED.
+6. [ ] **Stat-swap + training passives should require 3rd CLASS, not just level 40.** They currently
+   appear at level 40; owner wants them only after the 3rd-class change. *(NOT built — filtering is done,
+   the level→3rd-class gate is the remaining piece.)*
 
 **NEW FEATURES / IDEAS (recorded to roadmap — see docs/Roadmap.md):**
 - **Gold → an inventory ITEM** (L2 adena), tradable, and beyond int.max (long / stackable). Remove it
