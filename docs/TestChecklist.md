@@ -214,108 +214,23 @@ staff-vs-sword changes heal output, fighter training no longer doubles M.Atk —
 - [ ] ⚠ Still open (not blocking): **heal POWERS need re-authoring** — ours are 151-301, the target
   scale is ~1000. A future tuning pass.
 
-### PvP heal rules (NOT tested this playtest — trade/PvP still to verify)
-- [ ] **You can no longer heal the enemy you're fighting.** Targeting a hostile player and casting a
-  heal/buff/cleanse now **self-casts** instead of healing him. (It used to accept ANY player as a
-  support target — which is why healing mid-duel healed your opponent.)
-- [ ] A support skill can only ever reach **yourself or a party member**. Verify: heal a party mate
-  at range ✔; try to heal a non-party player → it heals you instead.
-- [ ] **Supporting an outlaw makes you one.** Heal / restore-MP / cleanse a party member who is
-  **flagged (purple)** or a **PK (red)** → **you go purple too**. A clean healer can no longer prop
-  up a PK from behind with no risk.
-- [ ] Self-healing never flags you. An already-red healer stays red (karma outranks the flag).
+### ✅ PvP heal rules — VERIFIED 2026-07-15
+Can't heal the enemy you're fighting (self-casts), support reaches only self/party, supporting a
+purple/red flags you, self-heal never flags — all confirmed.
 
 ---
 
-## To test now (BUFF ROWS / SET TOOLTIP / TRAINING OUTPOST — 2026-07-13)
+## ✅ BUFF ROWS / SET TOOLTIP / SET SHIELD / TRAINING OUTPOST (2026-07-13) — VERIFIED 2026-07-15
+4-row buff bar by subtype, set-bonus tooltip, set-shield bonus (incl. Heavy-61 reflect), Training
+Outpost safe zone + Vess/Ilva — all confirmed.
 
-### Buff bar — 4 rows by subtype
-- [ ] The buff bar is now **four rows**, each hiding itself when empty, tinted to read apart:
-  **buffs** (blue), **debuffs** (red), **item effects** (bronze), **consumables** (green).
-- [ ] Drink a **healing or buff potion** → it appears in the **consumables** row (green), not mixed
-  in with your buffer's buffs.
-- [ ] A buffer's buffs stay in row 1; a mob's slow/bleed lands in the **debuff** row.
-- [ ] The **item row is empty for now** — armor sets and weapon specials are still StatMods, not
-  buffs. That row appears the moment they become skills (owner said row 3 can stay invisible).
-- [ ] Double-click still drops a (beneficial) buff early.
+## ✅ EVERYTHING IS A SKILL — potions/scrolls (2026-07-13) — VERIFIED 2026-07-15
+Typing works in every text box, consumables cast skills (HoT/instant potions on the buff bar), Return
+scrolls are item-granted not learned — all confirmed.
 
-### Item tooltip — set bonus
-- [ ] Hovering a **set piece** now shows the set section: the set name, **Bonus:** (what it gives),
-  **Items 3/4**, and a line per piece — **green ✔ = worn**, **grey ✖ = missing**.
-- [ ] The Bonus line + count go **green only when the set is complete**, grey otherwise.
-- [ ] Accessories are shared across a tier's bodies, so hovering a helm shows it against whichever
-  body you're actually wearing.
-### Set SHIELD bonus (2026-07-13 — I had this wrong first time)
-- [ ] Each tier's **shield now belongs to that tier's HEAVY set** (the CSV puts shields in the same
-  GroupId). It is **not** required to complete the set — wearing it adds an **extra** bonus on top.
-- [ ] The tooltip now shows a **Shield Bonus:** line + the shield piece (green ✔ worn / grey ✖ not).
-  It only goes green when the **4-piece set is complete AND its shield is equipped**.
-- [ ] The shield extras, straight from the CSV (def-oriented heavy line only — the `_dmg` variants
-  get none):
-  - **Heavy 20** → +10% Shield Def
-  - **Heavy 40** → +5% P.Def
-  - **Heavy 52** → +25% Shield Def
-  - **Heavy 61** → **reflect 5%** of melee basic-attack damage back at the attacker
-  - **Heavy 76** → +5% P.Def, +5% M.Def, +25% Shield Def, reflect 5%
-- [ ] Wear a full Heavy 61 set + its shield and let something melee you → you should see the
-  attacker take **reflect** damage (bows are excluded; capped at 50%).
-- [ ] Equipping a shield from the WRONG tier gives no extra (its SetId won't match).
-
-### Training Outpost (safe zone by the dummies)
-- [ ] A small **safe zone "Training Outpost"** (24000, 5000, radius 400) sits just SOUTH of the
-  training dummies (they're at y=4000). It's deliberately clear of them — a safe zone keeps mobs
-  out, and the dummies ARE mobs.
-- [ ] Inside it: **Gatekeeper Vess** at the north edge and **Spirit Helper Ilva** (buffer) at the
-  south, offset so their labels don't overlap.
-- [ ] Buff up at Ilva → walk ~800 north to the dummies → test → teleport out with Vess.
-- [ ] The outpost is now also a **teleport destination from every other gatekeeper**.
-
----
-
-## To test now (EVERYTHING IS A SKILL — potions/scrolls — 2026-07-13)
-
-### Typing in text boxes (the real cause of "can't write in the auto-potion boxes")
-- [ ] You can now **type into every text box**: auto-hunt HP%/MP%, farm range, per-skill reuse,
-  debug tuning. The key handler only excused the CHAT box, so typing anywhere else fired the game
-  hotkeys and ate the keystroke — "5" cast skill 5, "i" opened the inventory, and the digit never
-  landed. That's why it "used skills" instead of writing.
-
-### Consumables now cast skills
-- [ ] **Healing potions are skills.** Minor/Healing are heal-over-time BUFFS (1%/s and 2%/s for 15s)
-  — they now appear on the **buff bar** instead of a bespoke potion channel. Greater is an instant
-  50% heal.
-- [ ] Drinking a **Greater potion over a Minor HoT** replaces it (BuffKey + Rank does the
-  "stronger cancels weaker" that the old hand-rolled potion-rarity state did).
-- [ ] The **shared 30s drink cooldown** across healing potions still works; **buff potions still
-  ignore it**.
-- [ ] **Auto-potion (auto-hunt) still drinks the best HP potion** below your threshold, and the
-  "keep buff potions active" top-up still works.
-- [ ] Potion **tooltips** now read from the skill's description.
-
-### Return scrolls are no longer learned skills
-- [ ] **Scroll of Return / Ultimate Scroll of Return no longer appear in your skill list.** They were
-  auto-granted as learned skills; now the ITEM grants the skill. Double-click the scroll → it still
-  channels and teleports, and is still consumed (refunded if interrupted).
-- [ ] The plain **Return** skill (30s cast, 5min cd) IS still a learned skill everyone has — unchanged.
-
----
-
-## To test now (DEBUG GEAR PICKER — 2026-07-13)
-
-- [ ] Debug → **Equip** tab is now a drill-down: **Armor & Shields / Weapons / Jewels** → pick a
-  **level (20 / 40 / 52 / 61 / 76)** → click any individual piece to receive it.
-- [ ] The **level 20-40 sets now exist in the menu** — they were never exposed before (the old tab
-  only had a few hardcoded E-grade "rare" items and the named sets, none of which were the tiered
-  gear). That's why they looked missing.
-- [ ] Armor levels also offer **★ Full Heavy / Light / Robe Set** (body + helm + gloves + boots) in
-  one click, since a set bonus needs all four. Individual pieces are listed underneath.
-- [ ] Weapons list all 8 families per level (sword 1H/2H, blunt 1H/2H, duals, bow, wand, staff) —
-  use these to feel the new **weapon channel factors** (a staff should melee poorly, a sword should
-  cast poorly).
-- [ ] The lists are read from `ItemCatalog` (not hardcoded), so **new gear added to the CSV appears
-  here automatically**.
-- [ ] The old **Rare Weapons (E) / Rare Armor Sets / Named Sets (Dark Dominion)** blocks are gone,
-  as requested. Boxes + Legendary (God's Judgment/Robes) are kept.
+## ✅ DEBUG GEAR PICKER (2026-07-13) — VERIFIED 2026-07-15
+Drill-down Armor/Weapons/Jewels by tier, full-set button, all 8 weapon families, read from ItemCatalog
+— all confirmed.
 
 ---
 
@@ -332,18 +247,14 @@ stat-swap testing above.
 
 ## To test now (disconnect / exit / combat + Return — 2026-07-09)
 
-### Return skill + scrolls
-- [ ] Everyone has a **Return** skill (30s cast, 5min cd): channel it → teleport to the nearest town.
-  Taking **any** damage cancels it. Cast speed / cooldown buffs do NOT change its 30s/5min.
-- [ ] Buy a **Scroll of Return** from the Apothecary (500g); double-click it → 10s cast → teleport.
-  It's consumed on success, refunded if interrupted. Sells for 0.
-- [ ] (Debug-give) **Ultimate Scroll of Return** → ~instant cast return. Not sold/dropped.
+### ✅ Return skill + scrolls — VERIFIED 2026-07-15
+Return skill (30s/5min, cancels on damage), Scroll of Return (Apothecary), Ultimate Scroll — all confirmed.
 
-### Combat state + exit
+### Combat state + exit  *(NOT verified this playtest)*
 - [ ] **Exit Game** (Settings) works out of combat (app closes). During combat (dealt/took damage in
   the last 30s) it's **blocked** with a message; 30s after the last hit you can exit.
 
-### Disconnect fates (use 2+ clients)
+### Disconnect fates (use 2+ clients)  *(NOT verified this playtest)*
 - [ ] **Go Offline (Auto-Farm)** button → you return to account select and your char keeps farming
   (offline), visible to others, until the 2h cap / death / relogin.
 - [ ] Drop while **auto-farming** (out of town) → offline farm (2h cap). The 2h cap is ONLY for
@@ -365,27 +276,12 @@ stat-swap testing above.
 **⚠️ Schema change:** added the `AutoHuntJson` column → **delete `Game.Server/bin/Debug/net8.0/game.db`
 (+ `-shm`/`-wal`)** so it recreates before running.
 
-### Auto-Hunt window (WPF client)
-- [ ] Enter world → an **"Auto-Hunt"** button appears top-right; it opens the config window.
-- [ ] The window lists your **active skills** (passives hidden) with an enable checkbox, a type tag
-  (attack/buff/debuff/heal) and a **reuse (s)** box prefilled with each skill's own cooldown.
-- [ ] HP%/MP% potion boxes + "Keep buff potions active" checkbox. **Apply** saves; settings **survive
-  relog** (persisted).
+### ✅ Auto-Hunt window + Behavior (Phase 1) — VERIFIED 2026-07-15
+Auto-Hunt button/window, per-skill enable + reuse, HP/MP potion %, condition logic (attack on cd, buff
+if missing, debuff if target lacks, self-heal <70%), auto-potions with auto off, Mana/s footer, normal
+loot/XP — all confirmed.
 
-### Behavior
-- [ ] Toggle **Enabled** (checkbox) → you auto-walk to the nearest mob, basic-attack, and cast your
-  enabled auto-skills; killing one retargets the next. Turn it off → you stop acquiring new targets.
-- [ ] **Attack** skills fire on cooldown; a **buff** skill only casts when its buff is missing on you;
-  a **debuff** only when the target doesn't already have it; a self-**heal** only below 70% HP.
-- [ ] Raising a skill's **reuse (s)** above its default makes it fire slower (never faster than default).
-- [ ] **Auto-potions** work even with auto-hunt OFF: drop below the HP% and the best HP potion is drunk
-  (shared potion cooldown respected). (No MP potions exist yet — MP% is a no-op.)
-- [ ] "Keep buff potions active" re-drinks any buff potion in your bag whose buff has expired.
-- [ ] The window footer shows **Mana: X /s** (sum of enabled auto-skills, after any MP-cost/CD buffs)
-  and updates as buffs go up/down.
-- [ ] Loot/XP/gold behave exactly like manual play (incl. party loot rules) — no idle penalty.
-
-### Offline farming (Phase 2, 2026-07-08)
+### Offline farming (Phase 2, 2026-07-08)  *(NOT verified this playtest)*
 - [ ] With auto-hunt **ON** and standing in a mob field (not a town), **close the client / disconnect**.
   A second logged-in character nearby should still **see your character** and watch it fight mobs
   (it keeps hunting; a "keeps hunting while away" line appears).
@@ -400,35 +296,20 @@ stat-swap testing above.
 - [ ] Auto-hunt while offline still obeys the shared potion cooldown, buff-potion top-up, and skill
   conditions (same brain as online).
 
-### Debug Tuning panel (2026-07-10) — live tuning while you play
-- [ ] Settings → **Debug Tuning (admin)** opens a panel of live values (rates, karma, caps).
-- [ ] Change **Exp/Drop rates** + Apply → next kills/drops use the new rate immediately.
-- [ ] Change **karma** values (base / ×consec / ×level / −death / −mob) + Apply → next PK/death/mob-kill
-  uses them. Change **idle/offline/grace** caps (seconds) + Apply → observe a cap/grace fire quickly.
-- [ ] **Idle/offline cap = 0 → unlimited** (leave someone farming/levelling to gauge speed).
-- [ ] Debug values **persist across server restarts** (`debug-config.json` in the server folder).
-- [ ] **Window size persists** — resize the client, close, reopen → same size (`%LocalAppData%\L2Clone`).
-- [ ] Config files are gitignored + not in the build/Debug output.
-- [ ] Non-admins: the panel does nothing (server refuses).
+### ✅ Debug Tuning panel (2026-07-10) — VERIFIED 2026-07-15
+Live rates/karma/caps editing, cap=0→unlimited, persists across restart, window size persists,
+admin-gated — all confirmed.
 
-### PvP + flag/karma/PK (2026-07-10) — ⚠ delete game.db first (new karma columns)
-- [ ] Top-right **PvP** and **Counter** toggle buttons (tint when on).
-- [ ] With **PvP: On**, attack another player **outside a town** → you turn **purple** (name), the
-  target can hit back; skills/basics land and show damage. (Damage-check the migrated crit/eva + skills.)
-- [ ] Attacking an **innocent (white)** needs PvP On; a **purple/red** player is attackable without it
-  (retaliation / hunting a PK) and attacking a **red** player does NOT flag you.
-- [ ] **Kill an innocent** → you go **red (PK)**, gain **karma** (200 base; more per consecutive kill and
-  the more levels above the victim); status line shows KARMA.
-- [ ] **Kill a flagged/red** player → **PvP count** up, no karma.
-- [ ] **Dying** as a PK lowers your karma by 200; at 0 the **red name clears**.
-- [ ] **Farming as a PK** sheds karma: each mob kill is −20 (take a camper's spot, grind it clean).
-  (All karma values are tunable consts: base/consec/level growth, per-death, per-mob.)
-- [ ] **No PvP in towns** (safe zones block it; 0 damage if someone runs to town mid-fight).
-- [ ] **Counter-attack**: an auto-hunting/offline char with **Counter: On** retaliates against a player
-  attacker (finishes a near-dead mob first, else switches).
-- [ ] Karma persists across relog (a PK is still red after logging back in).
+### PvP + flag/karma/PK (2026-07-10) — PARTIALLY verified 2026-07-15
+- [x] Top-right **PvP** / **Counter** toggle buttons — verified.
+- [x] **PvP: On** → attack a player outside town turns you purple, they can hit back, damage lands — verified.
+- [x] Attacking an **innocent** needs PvP On; purple/red attackable without it; hitting red doesn't flag — verified.
+- [x] **No PvP in towns** — verified.
+- [ ] **Kill an innocent** → red (PK) + karma; **kill a flagged/red** → PvP count, no karma. *(not tested)*
+- [ ] **Dying** as a PK −200 karma (red clears at 0); **farming** as a PK −20/kill. *(not tested)*
+- [ ] **Counter-attack** retaliation; **karma persists** across relog. *(not tested)*
 
-### Stats-via-skills identity migration (2026-07-10) — verify no regressions
+### Stats-via-skills identity migration (2026-07-10)  *(NOT verified this playtest)*
 - [ ] Rogue still has its crit/evasion identity (now from the **Evasion Mastery** passive: +20% crit,
   +20 eva); archer from **Reflexes** (+15% crit, +10 eva). Numbers should feel unchanged (parity).
 - [ ] **Intentional change:** the **tank** no longer gets the old +level/2 magic defence (his Anti-Magic
@@ -436,19 +317,11 @@ stat-swap testing above.
 - [ ] **Intentional change:** a base **rogue's basic attacks no longer interrupt casts** (that "cancel"
   becomes a 3rd-class discipline passive later) — confirm that's the intended feel.
 
-### Roaming + target filters (2026-07-10)
-- [ ] Auto-Hunt window now has a **Farm range** box, a **Static spot** checkbox, **Mobs/Elites/Bosses**
-  checkboxes, and a **Basic Attack** row atop the skill list.
-- [ ] **Roaming** (Static off): with auto on and no mob nearby, the character **wanders** within the
-  farm range and engages mobs it finds; the search circle follows you.
-- [ ] **Static spot** (on): it only engages mobs within the circle centered where you turned auto on;
-  when none are left it **walks back to the center**. It may chase a fleeing mob slightly outside.
-- [ ] **Rank filter**: with only **Mobs** checked it ignores elites/bosses; tick Elites/Bosses to include them.
-- [ ] **Basic Attack** row: fighters tick it → they melee when no skill is ready. A **mage unticks it**
-  → it only casts skills and never melees (walks into skill range instead).
-- [ ] Settings survive relog (persisted).
+### ✅ Roaming + target filters (2026-07-10) — VERIFIED 2026-07-15
+Farm range, roam vs static spot, rank filter (mobs/elites/bosses), Basic-Attack row, survives relog —
+all confirmed.
 
-### Party + AFK interaction (2026-07-08)
+### Party + AFK interaction (2026-07-08)  *(NOT verified this playtest)*
 - [ ] You **can't invite** a player who is auto-hunting (idle) or offline-farming — you get "X is
   auto-hunting and can't be invited right now."
 - [ ] A party member who turns auto-hunt **on** shows a yellow **• AFK** tag on their roster row;
@@ -466,7 +339,7 @@ stat-swap testing above.
 
 ## To test now (party window + mob cast-bar UI — 2026-07-07)
 
-### Party window (WPF client)
+### Party window (WPF client)  *(NOT verified this playtest)*
 - [ ] Target another player → the target frame shows an **"Invite to Party"** button. Click it →
   they get a centered **accept/decline prompt**; you see a "Party invite sent" chat line.
 - [ ] On accept, both of you show a **Party panel** (top-left, under the vitals/buff bar) listing
@@ -477,7 +350,7 @@ stat-swap testing above.
   hides). The invite button is hidden for players already in your party, and for non-leaders.
 - [ ] Roster HP/MP bars update as members take damage / heal (server refresh).
 
-### Party loot rules (2026-07-07)
+### Party loot rules (2026-07-07)  *(NOT verified this playtest)*
 - [ ] A new party **defaults to Random** loot (settings-panel-configurable later).
 - [ ] The party panel shows a **Loot** dropdown. Only the **leader** can change it (disabled for
   members).
@@ -496,12 +369,10 @@ stat-swap testing above.
 - [ ] Only members **in share range** (ViewRange) and alive are eligible; out-of-range members are
   skipped (loot falls back toward the killer where applicable).
 
-### Mob / boss cast-bar
-- [ ] When a mob/boss begins a visible cast (e.g. the boss **"Devastating Slam"**), an orange
-  **cast-bar appears under its nameplate** and fills over the cast time, then disappears.
-- [ ] Interrupting / killing the caster (or the cast finishing) clears the bar cleanly.
+### ✅ Mob / boss cast-bar — VERIFIED 2026-07-15
+Orange cast-bar under the nameplate fills over cast time, clears on interrupt/kill/finish — confirmed.
 
-### Boss unique skills + phases + adds (2026-07-07)
+### Boss unique skills + phases + adds (2026-07-07)  *(NOT verified this playtest)*
 - Fight the **Valley Treant Lord** (Boss zone ~(24000, 45000), L60). Bring a party/high level — it
   has 20× HP. (Long real respawn; use debug teleport to reach the zone.)
 - [ ] From full HP it casts **Devastating Slam** (telegraphed slam, dmg + stun) on its reuse timer.
@@ -516,66 +387,18 @@ stat-swap testing above.
 
 ---
 
-## To test now (ranged + caster mobs — 2026-07-03)
+## ✅ RANGED + CASTER MOBS (2026-07-03) — VERIFIED 2026-07-15
+Archer mobs (bow from range, ×2 P.Atk, squishy), mage mobs (cast-only, MP-gated → helpless when out),
+golem-type weapon resist (obsidian_knight) — all confirmed.
 
-### Archer mobs (orc_archer L16, dune_orc_archer L40, fen_lizardman_archer L39, dread_archer L69)
-- [ ] They shoot from ~450 range (don't run into melee), hit noticeably harder (×2 P.Atk), and
-  are squishier (light armor: lower P.Def, a bit more evasion). Bow attacks apply bow variance.
+## ✅ MOB OVERHAUL (2026-07-02) — VERIFIED 2026-07-15
+Mob base-stat curve, weapon-type P.Def resistance, the 80-mob roster + zones + drops — all confirmed.
+*(Note: the mob-curve numbers were later reshaped by the 2026-07-14 magic re-scale — see the top section.)*
 
-### Mage mobs (watcher_eye L26, aether_wisp L58, rift_portling L40, radiant_mage L82)
-- [ ] NO basic attacks — they only cast. Long nuke from ~600 (4s cast), short jab up close (~150,
-  1.5s). Damage scales with mob level (nuke pow 18→129, jab 7→33).
-- [ ] Higher M.Atk, lower P.Atk/P.Def than a same-level melee mob.
-- [ ] They burn MP per cast; when MP runs out they stand HELPLESS (no attacks) — a free kill if you
-  outlast their mana. (Mob cast-bar now renders under the nameplate — see the 2026-07-07 section.)
-- [ ] rift_portling = a beefy caster (champion HP) that nukes; watcher_eye also has high M.Def.
-
-### Golem-type resist (obsidian_knight L63, Duskvale)
-- [ ] Sword/dual hits land for less (Pierce ×1.43 P.Def), arrows much less (Bow ×2), blunt MORE
-  (×0.5). Inspect shows the resist lines.
-
----
-
-## To test now (mob overhaul — 2026-07-02)
-
-### Mob base-stat curve (docs/mobs/mob_base_stats.csv) — BIG BALANCE SHIFT
-- [ ] Mobs now use the CSV level curve → ~2-3× their old HP/def/atk. Fights should feel
-  meaningfully longer/harder. Inspect a mob (▼ on the target frame) and sanity-check its
-  HP/P.Def/M.Def/P.Atk vs the CSV row for its level (should match at authored levels).
-- [ ] **Cleric can still SOLO a same-level mob** (target: ~L30) — slower but possible.
-- [ ] Low-level mobs don't ~one-shot players (physical mob damage sane at 2-3× atk).
-
-### Weapon-type resistance (P.Def route)
-- [ ] `obsidian_knight` (Lv 63, Duskvale): sword & bow hits land for noticeably LESS, a
-  blunt weapon for MORE (vs its normal P.Def). Inspect shows "Sword/Dual Resist / Bow Resist
-  / Blunt Weak" lines.
-- [ ] `watcher_eye` (Lv 26) is hard for mages (high M.Def) / easy for fighters; `rift_portling`
-  (Lv 40 champion) has ~3.5× the normal L40 HP.
-
-### New 80-mob roster + zones + drops
-- [ ] Every field zone spawns the new named mobs at their natural level (levels roughly match
-  each zone's band). L80-85 mobs appear in Frostmere (9000,17600).
-- [ ] Drops still flow (potions/gear/scrolls by level; gear TYPE by family — undead/caster→robe,
-  animal→light, insect→daggers, demon/dragon→heavy, humanoid→sword).
-- [ ] Class-change hunt quests (orc_archer/skeleton_grunt/shield_skeleton, Lv 16-21) and the
-  3rd-class chain (medusa/marsh_mantis_soldier/fen_lizardman_archer, Lv 34-39) count kills.
-- [ ] Boss = Valley Treant (Lv 60, south), Elite = Emberwyrm Drake (Lv ~78, NW) spawn & fight.
-
----
-
-## To test now (this session — 2026-06-29)
-
-### Mage no auto-attack after a spell
-- [ ] After casting an OFFENSIVE spell on a mob, a mage (Nuker/Healer) no longer runs at
-  the target to melee — it stays put. Fighters still flow skill → auto-attack as before.
-
-### Physical skills scale by ATTACK speed (not cast speed) — NUMBERS UNTUNED
-- [ ] A fighter's physical skill cast time now follows ATTACK speed (DEX + weapon), not the
-  WIT-driven cast speed — so a fighter no longer casts melee skills sluggishly.
-- [ ] Faster attack speed (buffs / fast weapon) shortens physical-skill cast; a slow heavy
-  2H weapon lengthens it slightly. Magic / buff / heal skills still use cast speed.
-- [ ] NEXT CSV: owner gives fighters a real `CastTicks` per physical skill so this can be
-  felt against the actual attack speed (heavy strikes ~1s, lighter ~0.1–0.2s).
+## ✅ PHYSICAL SKILLS SCALE BY ATTACK SPEED (2026-06-29) — VERIFIED 2026-07-15
+Fighter physical-skill cast time follows attack speed, not cast speed — confirmed.
+*(The "mage no auto-attack after a spell" item from this date is being REVISED — owner now wants all
+classes to click-attack; see the playtest-3 queue at the top.)*
 
 ---
 
@@ -585,12 +408,8 @@ stat-swap testing above.
 root/stun/fear); DoT + burst; defensive skills + Provoke/threat; movement (blink/knockback);
 weapon masteries; mage damage feels OK for now.
 
-**Fixed this round (RE-TEST next launch):**
-- [ ] **Restore Mana** now costs ~1.2× what it restores (72 MP → 60) and CANNOT target self
-  or another mana-restorer (healer→non-healer only).
-- [ ] **Phase Shift** no longer needs a target — blinks ~400 away from the nearest enemy.
-- [ ] **Cast bar** shows the class skill name (e.g. "Moonlight Bolt"), not the base form.
-- [ ] **Debug** menu: "Level +10" and "Learn all skills (to my level)" buttons.
+**Fixed this round — ✅ VERIFIED 2026-07-15** (Restore Mana cost/targeting, Phase Shift no-target,
+cast-bar class name, debug Level+10 / Learn-all buttons).
 
 **Open items:**
 - [ ] **FIGHTER BALANCE (big)** — Venomweaver burst ~1500; a Lv-49 tank solos hordes of Lv-64
@@ -608,24 +427,11 @@ weapon masteries; mage damage feels OK for now.
 
 ## To test now (this session — 2026-06-27)
 
-### Training Grounds (test dummies)
-- [ ] A cluster of immortal **Training Dummy (Lv 20/40/60/80)** spawns at ~(22500–25500, 4000) — reach via debug Teleport → Zones.
-- [ ] Dummies never move, never attack, and never die — but they DO take (and display) damage; HP drops then regens (~1M HP, ~10k/s regen, floored at 1).
-- [ ] Use them to verify [Double] crits, DoT ticks/stacks (Effects line in the target window), slow/stun/etc. land, and damage scaling.
+### ✅ Training Grounds + Blink/Knockback + Taunt/Threat (2026-06-27) — VERIFIED 2026-07-15
+Immortal training dummies, Shadowstep/Repelling Shot/Phase Shift blink+knockback, threat-based aggro +
+Provoke/detaunt — all confirmed.
 
-### Movement: blink + knockback — NUMBERS UNTUNED
-- [ ] Phantom "Shadowstep" @40: teleports you behind the target, then hits ([Double]).
-- [ ] Trapper "Repelling Shot" @40: damages and shoves the target ~200 away.
-- [ ] Tempest "Phase Shift" @48: blinks you ~400 away from the target (escape).
-- [ ] Blink/knockback respect world bounds; the moved entity stops its current path (doesn't slide).
-
-### Taunt + real threat/aggro — NUMBERS UNTUNED
-- [ ] A mob now targets the highest-THREAT attacker (threat = damage dealt), not just the last hitter — e.g. a high-damage player pulls aggro off a low-damage one.
-- [ ] Tank "Provoke" @40 forces the mob onto the tank (its target switches to you) and holds ~3s even if others out-damage you.
-- [ ] Detaunt (e.g. rogue Shadowstep/BattleFury detaunt) sheds ~90% of your threat → the mob retargets to the next-highest, or leashes home if no one else.
-- [ ] Mob still leashes/resets correctly (threat clears on reset).
-
-### Combat primitives P2: poison & venom (Venomweaver per-race trio) — NUMBERS UNTUNED
+### Combat primitives P2: poison & venom (Venomweaver per-race trio) — NUMBERS UNTUNED  *(NOT verified this playtest)*
 - [ ] Venomweaver DoT is now per race: Human = bleed (−MS), **Elf = poison** (Toxic Sting/Burst), **Ork = venom** (Envenom/Venom Burst).
 - [ ] Poison (Toxic Sting): magic DoT (ATK-vs-WIT) + slows the target's attack & cast speed ~15% (stat window of a player target; mobs just attack/cast slower). Toxic Burst spends stacks.
 - [ ] Venom (Envenom): physical DoT (DEX-vs-CON) + lowers target attack ~15% and defence ~15% (a venomed mob hits softer and takes more). Venom Burst spends stacks.
@@ -669,35 +475,11 @@ weapon masteries; mage damage feels OK for now.
 - [ ] Rogue bleed counter caps at its skill's MaxStacks (10) — editable per skill, not a global constant.
 - [ ] A non-stacking buff/debuff (MaxStacks 1) behaves exactly as before.
 
-### Expandable target window (commit ccb5805)
-- [ ] Targeting a mob shows a `▼` expand button on the target frame; plain NPCs (vendor/gatekeeper) show no button.
-- [ ] Clicking `▼` opens the panel and shows HP/MP, P/M.Atk, P/M.Def, Acc/Eva/Crit.
-- [ ] A mob's passive lines appear (e.g. Green Slime → "Magic Monster", "M.Def +100%", "P.Def −50%"; Stone Golem → "Armored Brute").
-- [ ] Bow/Crit resist lines show only when non-zero, and are NOT duplicated.
-- [ ] Panel refreshes ~once/sec during a fight (HP/MP track damage).
-- [ ] `▲` collapses it; switching targets re-queries; clearing target (Esc/✕) hides it.
+### ✅ Expandable target window + Weapon/Mage masteries + Class-change blurbs (2026-06-27) — VERIFIED 2026-07-15
+Target-frame ▼ inspect panel, fighter weapon masteries (+ 1H/2H gating), mage Spell Mastery + bow
+penalty, 2nd/3rd-class dialog blurbs — all confirmed. *(Mastery percentages still `[~]` to tune later.)*
 
-### Weapon masteries — fighters (commit a574309) — NUMBERS UNTUNED
-- [ ] Learnable @20 (500 SP) in the skills window for Tank/Warrior/Rogue/Archer.
-- [ ] Bonus applies ONLY while the matching weapon is held; no penalty for a "wrong" weapon.
-- [ ] Warrior "Two-Hand Mastery": sword +15% pAtk/+3% crit; blunt +12% pAtk/+10 acc.
-- [ ] Rogue "Dual Mastery": dual +10% pAtk/+5% crit/+15% crit dmg.
-- [ ] Archer "Bow Mastery": bow +12% pAtk/+20% crit dmg/+5 acc.
-- [ ] Tank "Weapon Expertise": sword/blunt +6% pAtk/+5–10 acc.
-- [ ] Stat window reflects the change when you swap weapons.
-- [ ] **1H/2H gating**: Warrior bonus applies ONLY with a 2H sword/blunt (not the 1H sword); Tank ONLY with a 1H sword/blunt (not the 2H greatsword). Dual/bow unaffected (always 2H).
-- [~] Tune the percentages once the feel is clear.
-
-### Mage masteries (commit 361127f)
-- [ ] Nukers learn **Spell Mastery** (same as healers, @20/25/30/35); it replaces base Weapon Mastery (no double-apply).
-- [ ] Caster **bow penalty**: a mage holding a bow casts at ~half speed (cast bar ~2× longer). Inert with staff/other weapons.
-- [ ] No "Staff Mastery"/"Mace Mastery" anywhere (removed).
-
-### Class-change dialog blurbs (commits f754f11, f03b23e)
-- [ ] 2nd-class NPC shows the archetype blurb under each class option.
-- [ ] 3rd-class (grandmaster) NPC shows the discipline blurb per option.
-
-### Combat primitives P1: Root + physical Slow + skill-damage% — NUMBERS UNTUNED
+### Combat primitives P1: Root + physical Slow + skill-damage% — NUMBERS UNTUNED  *(NOT verified this playtest)*
 - [ ] Nuker learns "Entangling Roots" @40 (magical root, ATK-vs-WIT): target can't move for 8s but can still act.
 - [ ] Warrior learns "Hamstring" @40 (PHYSICAL slow, ATK-vs-CON, −60% MS) — confirms slow exists in both schools (vs the magical Frost Bind).
 - [ ] Warrior learns "War Focus" @40 (20-min self-buff): +15% attack speed shows in the stats window; the +25% PvP skill/basic damage is latent (no PvP yet). Confirms the damage matrix wiring (PvE damage unchanged by it).
@@ -735,34 +517,16 @@ weapon masteries; mage damage feels OK for now.
 - [ ] Stones are NOT consumed if the cast is interrupted / target lost.
 - [ ] Other skills (empty `ConsumableId`) cast freely as before.
 
-### Toggle skills + Healer "Combat Stance" (NEW — toggle mechanic) — NUMBERS UNTUNED
-- [ ] Cleric learns "Combat Stance" @20; clicking it activates (costs 20 MP), clicking again deactivates (free).
-- [ ] Active stance: P.Atk +50%, M.Atk −50% in the stats window; melee hits harder, heals/Holy Bolt weaker.
-- [ ] The stance shows on the buff bar with `⟳` (no countdown); double-clicking it also turns it off.
-- [ ] Stance does NOT expire over time; it clears on death/relog (runtime-only).
-- [ ] No MP drain while held (activation cost only — by design for now).
-- [~] Tune the ±50% swap once melee-cleric farming is tested.
+### ✅ Toggle skills + Healer "Combat Stance" (2026-06-27) — VERIFIED 2026-07-15
+Combat Stance toggle (+50% P.Atk / −50% M.Atk), buff-bar ⟳ marker, no expiry, clears on death/relog —
+all confirmed. *(±50% swap still `[~]` to tune later.)*
 
 ---
 
-## Tuning targets (owner-stated)
+## ✅ Tuning targets (owner-stated) — VERIFIED 2026-07-15
+Cleric-solo, low-level mob damage sane, mage TTK, healer numbers, armor masteries, mob passives, newbie
+buffer set — owner reports these all feel right as they stand.
 
-- [ ] **Cleric can solo a same-level (~30) mob** — slower than a fighter, but possible (not impossible, not two-shot).
-- [ ] Low-level physical mobs do NOT ~one-shot players (magic-vs-physical mob parity).
-- [ ] Mage TTK ~60s @75 is acceptable pre-CC — do NOT over-buff mage damage.
-- [ ] Healer numbers: heals, Force (interrupt resist), Frenzy.
-- [ ] Armor-mastery numbers per archetype (bonuses + untrained penalties).
-- [ ] Mob passive modifiers (Magic Monster / Armored Brute) feel right vs mage/fighter.
-- [ ] NPC newbie buffer set (Might/Force/Focus/Speed/Body/Frenzy) applies and shows stats.
-
----
-
-## Carryover from prior sessions (verify still good)
-
-- [ ] Buff/effect layer: Might applies def/atk; Speed applies cast speed; Force applies M.Atk @rank2.
-- [ ] Buff bar: double-click/✕ drops a buff and stats update.
-- [ ] Economy: merchants reject untradeable newbie items; boxes (random + selection) open and grant loot.
-- [ ] Jewels: 2 rings / 2 earrings / 1 necklace caps enforced; jewel attributes roll.
-- [ ] Debug teleport tab: NPCs / Zones / Cities; zones drop you ~400 outside the spawn ring.
-- [ ] Enchant/reroll popup matches the inventory (no ±1 desync).
-- [ ] Per-race Holy Bolt name (Human Holy / Elf Moonlight / Ork Spirit Bolt).
+## ✅ Carryover from prior sessions — VERIFIED 2026-07-15
+Buff/effect layer, buff-bar drop, economy/untradeable-reject/boxes, jewel caps, debug teleport,
+enchant/reroll sync, per-race Holy Bolt name — all still good.
