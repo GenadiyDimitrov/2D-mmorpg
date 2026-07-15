@@ -16,13 +16,21 @@ Almost everything from the 07-13/07-14 queues VERIFIED (see docs/TestChecklist.m
 changes and new features that came out of the play session:
 
 **Corrections (small, well-specified):**
-- [ ] **Class uniqueness → DISCIPLINE only, drop the ARCHETYPE bar.** You should be able to own 4 mages
-  (2 clerics Lightbringer+Warchanter, 2 nukers Tempest+other) — just not two of the SAME discipline.
-  Remove `CanTakeSecondClass`'s archetype check + the client's `ArchetypeTakenElsewhere`; keep the
-  discipline check. ([[subclass-system-design]])
-- [ ] **Cap subclass COUNT.** Nothing stops adding 20 mage classes today. Add a cap (owner's design = 3-4)
-  or gate "add class". Related to the discipline change above — without a discipline left to reach, a new
-  base class is pointless.
+- [x] **Class uniqueness → DISCIPLINE only + full SUBCLASS REWORK — DONE 2026-07-15.** Adding a class is no
+  longer "pick Fighter/Mage". You pick a specific **3rd-class discipline** from the whole catalog (all 3
+  races), pre-approved so it **skips the 2nd/3rd-class quests**. Rules: **level 76+** only
+  (`ThirdClassCatalog.SubclassLevel`); a **discipline is unique across the character, cross-race included**
+  (owning any Tempest bars every Tempest — `Entity.CanAddDiscipline` checks ALL owned classes, the active
+  one too; the old `CanTakeThirdClass` excluded the active slot and was wrong for the add path); the new
+  class starts at **level 1 with its OWN race**, and every **equipped item is unequipped** (no level-1
+  class in level-76 gear). A subclass now carries its own **Race** (`Entity.Race` became a proxy into
+  `ActiveSubclass.Race` so ~10k lines of logic keep working); persisted on `SubclassRecord`/snapshot;
+  `SubclassDto` gained Race so the client names a class "{Race} {Discipline}". Verified by SmokeTest
+  (Human main + Ork Bulwark subclass, cross-race, pre-approved 3rd class, level isolation, relog).
+  ([[subclass-system-design]])
+- [x] **Cap subclass COUNT — DONE 2026-07-15** (part of the rework above). Normal accounts cap at
+  `GameConstants.MaxSubclasses` (4); **admins are unlimited** (the no-duplicate-discipline filter still
+  applies to them). ⚠ delete game.db (new `Race` column on the Subclasses table).
 - [ ] **Revert the mage-click change — ALL classes click-to-attack.** A mage out of MP must be able to
   melee a mob to finish it. Undo the `iAmCaster` guard in `WorldCanvas` click handling.
 - [ ] **Skill cast must CANCEL the auto-attack walk, not pause it.** Double-click a mob → walk to melee;
@@ -38,6 +46,35 @@ changes and new features that came out of the play session:
   `ThirdClass > 0`.
 - [ ] **Cleanup: remove the TEST-ONLY TestHeal skill** (power-1000 heal on every char @76). Both numbers
   it existed to read (OffChannelFactor 0.6, HealK 15) are now decided. 3 spots, search `TEST ONLY`.
+
+**Karma / PK — corrections DONE 2026-07-15:**
+- [x] **Karma per-kill cap 15k (was effectively 1kk / could overflow).** `KarmaMaxPerKill = 15_000`, and
+  the level/consecutive exponents are clamped to 15 before `Math.Pow` so a huge level gap can't produce a
+  double that overflows the `(int)` cast to `int.MinValue` (the "−2.1 billion karma" bug — a level-380
+  admin killing a level-41 char). Load also clamps karma to `[0, 1_000_000]` to heal any corrupted rows.
+  ~500-1000 mob kills (−20 each) clears a full cap, as intended.
+- [x] **Trading blocked while PK or flagged.** `HandleTradeRequest` and `HandleTradeRespond` refuse if
+  EITHER party is not `Innocent` (re-checked at accept). Selling to vendors is unaffected.
+- [x] **A PK (red) can't BUY from vendors** (`HandleBuy` refuses `PvpFlag.Pk`); a PvP-flagged (purple)
+  player still can. Selling unaffected.
+- [x] **4 debug karma buttons** (Functions tab): +1000 / −1000 (cross the PK line fast) and +20 / −20
+  (one mob-kill's worth). `DebugKarma(delta)` → `HandleDebugKarma`, clamps `[0, 1_000_000]` and clears the
+  PK streak/red name at 0.
+
+**Debug menu reorg — DONE 2026-07-15:**
+- [x] New **"Class" tab** holds all class management, grouped: *profession & skills* (class change + give
+  all skills) · *classes (subclass)* (swap + "Add a class" discipline picker) · *reset character*. The
+  **Functions** tab is regrouped top-to-bottom: **full buffer → gold+SP → level → karma**. The "Add a
+  class" picker lists every discipline you don't already own, across all races, gated at level 76.
+
+**Deferred / needs design:**
+- [ ] **Grade penalty (L2-style low-level-in-high-grade gear).** When a class equips gear above its level
+  (a fresh level-1 subclass in a level-76 char's old gear, if we let it equip at all), apply a stat
+  multiplier to the gear's combat stats: **weapon attack** ×0.2 @ lvl5 grade, ×0.3 @ lvl4, ×0.4 @ lvl2,
+  ×0.5 @ lvl1; **armor defence** similarly. Conditional on "if we allow the equip". Deferred — a separate
+  system; for now the subclass rework simply **unequips everything** on class add, which sidesteps it.
+- [ ] **Marketplace + premium currency.** Player marketplace (list/buy) and a second, premium currency;
+  both tradable and inter-convertible with gold. (Noted from the gold work below.)
 
 **New features (bigger — some need a design decision, see docs + questions below):**
 - [~] **Gold — long + TRADABLE + coloured display — DONE 2026-07-15 (owner: not an item).** Gold was
@@ -219,7 +256,9 @@ changes and new features that came out of the play session:
   | **CLIENT-level** (`client-settings.json`) | window position/size, and nothing else |
 
   The four core stats are CLASS-level because they derive from (Race, BaseClass) — swap a fighter for
-  a mage and CON/ATK/WIT/DEX must swap with him. Race is character-level: one body, several trainings.
+  a mage and CON/ATK/WIT/DEX must swap with him. ⚠ **UPDATE 2026-07-15: Race moved to CLASS-level too** —
+  the subclass rework allows **cross-race subclasses** (a Human main with an Ork Bulwark subclass), so each
+  `Subclass` carries its own `Race`; `Entity.Race` is now a proxy into `ActiveSubclass.Race`.
 
   **Why the refactor was small:** `Entity.Level` / `.BaseClass` / `.LearnedSkills` / `.SkillPoints` /
   `.Con…Dex` / `.SecondClass` / `.ThirdClass` / `.Exp` are now **PROXIES into the active subclass**. So
@@ -232,28 +271,26 @@ changes and new features that came out of the play session:
   gameplay. A character with no subclass rows (fresh, or created before this) reconstructs slot 0 from
   that mirror, so nothing needs migrating.
 
-  **Debug flow (the owner's test loop):** Debug → Functions → "Classes (subclass)" lists what you own,
-  with a **Switch** button each, plus **+ Add Fighter / + Add Mage**. Swap on the spot to compare two
-  builds **in the same gear** instead of relogging onto another character. Each class keeps its own
+  **Debug flow (the owner's test loop) — UPDATED 2026-07-15:** Debug → **Class** tab → "Classes
+  (subclass)" lists what you own, with a **Switch** button each, plus **"Add a class (discipline)"** which
+  opens a picker of every discipline you don't already own, across all races (gated at level 76). Swap on
+  the spot to compare two builds instead of relogging onto another character. Each class keeps its own
   level, XP, skills and **skill bar** — swap away, swap back, find it exactly as you left it.
-  A swap clears buffs, the cast in progress and the combat target (they belonged to the class you left)
-  and re-pushes stats/skills/bar/progress. **Debug character-RESET drops the subclasses on purpose** —
-  it changes RACE, which is character-level, so any other class would be left with stats rolled for a
-  body it no longer has.
+  A swap clears buffs, the cast in progress and the combat target and re-pushes stats/skills/bar/progress.
+  **Debug character-RESET drops the subclasses on purpose** — it re-rolls the whole character (race + base
+  class) at slot 0.
 
-  **CLASS UNIQUENESS (owner, 2026-07-14):** a character may not walk the same **ARCHETYPE** twice, nor
-  the same **DISCIPLINE** twice, across the classes it owns. Matched on the archetype/discipline, **not
-  the class id** — a human Sorcerer and an elf Inquisitor are different classes but the same NUKER path,
-  and holding both is exactly what the rule forbids; checking ids would let the same path in through a
-  differently-named door. `Entity.CanTakeSecondClass` / `CanTakeThirdClass` are the rule; enforced on
-  **all three** paths that set a class (the level-20 change, the debug 3rd class — which also forces a
-  parent 2nd class, so it checks the archetype too or it'd be a back door — and the quest-driven NPC
-  change, where the same predicate both LISTS and GATES, so a barred class is never even offered). The
-  client greys the barred options out with the reason on the button. Verified in `tools/BalanceMatrix`:
-  a Sorcerer/Magus class bars Nuker + Magus for the second class, and leaves Cleric + Tempest open.
+  **CLASS UNIQUENESS — REVISED 2026-07-15 to DISCIPLINE-ONLY, cross-race.** A character may not walk the
+  same **DISCIPLINE** twice, across ALL the classes it owns (active included) — and this spans races,
+  because the same discipline (Tempest) exists as a separate 3rd class for each race. There is **no
+  archetype bar** (owner: you SHOULD be able to own two mages, e.g. a Lightbringer and a Tempest). The
+  add-a-subclass path uses `Entity.CanAddDiscipline` (checks every owned class); the older
+  `CanTakeThirdClass` (used by the level-40 quest change) deliberately excludes the ACTIVE slot, which was
+  wrong for the add path and is why `CanAddDiscipline` exists. Count is capped at `MaxSubclasses` (4) for
+  normal accounts; **admins unlimited** (the discipline filter still holds). Verified by SmokeTest.
 
-  **Deliberately NOT built** (they belong to the player-facing system, and are rules on the COMMAND, not
-  on the mechanism): a cap of 3-4 classes, safe-zone-only swapping, the 5-minute swap delay, and a
+  **Deliberately still NOT built** (player-facing rules on the COMMAND, not the mechanism):
+  safe-zone-only swapping, the 5-minute swap delay, and a
   player-facing UI. `HandleSwitchSubclass` does the state work; those rules will gate the entry point.
 
 ### Earlier

@@ -7,21 +7,53 @@ this file.
 
 ---
 
-## 🧪 BATCH TO TEST (built 2026-07-15 afternoon) — ⚠ restart client+server; no DB wipe
+## 🧪 BATCH TO TEST (built 2026-07-15 evening) — ⚠ restart client+server + **DELETE game.db** (new Race column)
 
-- [ ] **P.Atk L2 formula (bare-hands).** Naked = feeble now (a naked L1 fighter takes ~13 hits to kill a
-      mob instead of one-shotting it), armed high-level unchanged, low-level armed a bit softer. Feel
-      whether the low-level ARMED pacing is ok or too soft (tunable: `UnarmedFistPAtk`/`PAtkStatReference`).
-- [ ] **NPC buffer — 3 paid options.** Talk to a buffer (e.g. Spirit Helper Ilva at the Training Outpost).
-      A dialog opens with **Full buff set**, **Restore HP/MP**, and a **single-buff list**. FREE ≤40;
-      above 40: full set ≈135k, each buff 15k, restore = `10k·(1−hp/max)+10k·(1−mp/max)`. Buttons grey out
-      if you can't afford them. Costs calibrated to ~1h of farming = one full buff. Still 6-75 only.
-- [ ] **Gold is tradable.** Open a trade, type an amount in **"You pay"**, see the partner's **"They pay"**;
-      on completion gold changes hands (net). Server clamps to what you own and resets Ready on change.
-- [ ] **Gold shows in the inventory, colour-tiered**: white <1kk, yellow <100kk, green <1kkk, purple ≥1kkk.
-- [ ] **Popups remember their position.** Drag panels around, **close the client**, reopen → they come
-      back where you left them. `client-settings.json` is now nested (Window + Panels). Untouched panels
-      stay at default. (Saved on close, not per move.)
+**Subclass rework (Debug → Class tab):**
+- [ ] **Add a class = pick a discipline.** Debug → **Class** tab → "Add a class (discipline) ▸" opens a
+      picker of every discipline across all 3 races. Requires **level 76+** (below → refused with a
+      message). The new class starts at **level 1** with the discipline's **own race** and its 3rd class
+      **pre-approved** (skips the 2nd/3rd quests).
+- [ ] **Discipline is unique, cross-race.** Once you own e.g. a Tempest (any race), NO Tempest of any race
+      appears in the picker anymore. You CAN own two different mage disciplines (Lightbringer + Tempest).
+- [ ] **All gear unequips on add** — you don't keep level-76 gear on a level-1 class. Check the Equipped
+      pane empties.
+- [ ] **Count cap**: normal accounts stop at **4** classes; an **admin** can keep adding (filter still
+      hides owned disciplines). Verify with a normal account (e.g. test1) vs admin.
+- [ ] **Swap + relog persistence.** Switch between classes: each keeps its own level/skills/bar. Relog and
+      confirm both classes, their levels and bars survive. (SmokeTest already covers this headlessly.)
+
+**Karma / PK / trade:**
+- [ ] **Karma per-kill cap.** Killing an innocent now grants at most **15,000** karma (no more −2.1B
+      overflow on a big level gap). Roughly **500-1000 mob kills** (−20 each) clears a full cap.
+- [ ] **4 karma debug buttons** (Functions tab, bottom): +1000 / −1000 / +20 / −20. At 0 the red PK name
+      and streak clear.
+- [ ] **Trading blocked while PK or flagged.** As a red (PK) or purple (flagged) player, opening a trade is
+      refused (either party). Innocent-to-innocent still works.
+- [ ] **A PK can't BUY from a vendor** (message); a **purple (flagged)** player still can. **Selling** works
+      for everyone.
+- [ ] **Trade window contrast** — the partner's offer ("<name>'s offer") and "your inventory" panels are
+      now readable (dark background + rarity-coloured text), not grey-on-grey. Partner-offer items are
+      non-interactive but still legible.
+
+**Debug menu reorg:**
+- [ ] **Functions tab** is grouped top-to-bottom: **Full buffer · Gold & SP · Level · Karma**.
+- [ ] **Class tab** is grouped: **Profession & skills** (class change + give all skills) · **Classes
+      (subclass)** (swap + add) · **Reset Character**.
+
+---
+
+## ✅ VERIFIED 2026-07-15 (afternoon batch — owner tested)
+
+- [x] **P.Atk L2 formula (bare-hands).** Naked feeble, armed preserved. ✅
+- [x] **NPC buffer — 3 paid options.** ✅
+- [x] **Gold is tradable** (net gold changes hands in the trade window). ✅
+- [x] **Gold shows in the inventory, colour-tiered.** ✅
+- [x] **Popups remember their position** across a client restart. ✅
+- [x] **Stat-swap + training passives require level 40 + 3rd class.** ✅
+- [x] **Subclass count limit** (4 for a normal account). ✅
+- [x] **PvP / PK / karma shown in the character window.** ✅ (the −int.max overflow it exposed is now fixed
+      — see the evening batch's karma cap.)
 
 ---
 
@@ -33,18 +65,14 @@ stat-swap direction rule · skill-reset NPC · movable popups (great) · equippe
 HealK=15 · OffChannelFactor stays 0.6.
 
 **CHANGES NEEDED (found while testing):**
-1. **Class uniqueness is on the wrong axis.** It bars a repeated ARCHETYPE; owner wants only a repeated
-   **DISCIPLINE** barred. You SHOULD be able to own 4 mages (2 clerics = Lightbringer+Warchanter, 2
-   nukers = Tempest + the other) — you just can't own two of the SAME discipline. → remove the archetype
-   bar, keep discipline. **AND:** nothing caps subclass COUNT — you can add 20 mage classes. Needs a cap
-   (or: base classes with no unique discipline left are pointless, so gate adding one). *(NOT built.)*
+1. [x] **Class uniqueness → discipline-only + count cap — BUILT 2026-07-15 (evening).** Full subclass
+   rework: pick any discipline across all races, level-76 gate, cross-race uniqueness, count cap 4 (admins
+   unlimited), pre-approved 3rd class, unequip-on-add. See the evening batch above. *(awaiting owner test)*
 2. [x] **Mage-click reverted** — all classes click-to-attack. ✅ VERIFIED 2026-07-15.
 3. [x] **Skill cast cancels the auto-attack walk** (no longer keeps walking after the cast). ✅ VERIFIED.
 4. [x] **Set info only on the BODY armor** — accessories no longer claim a set. ✅ VERIFIED.
 5. [x] **Stat-swap groups gated by class** (fighter CON/DEX/ATK only; mage CON↔DEX + ATK/WIT/MEN). ✅ VERIFIED.
-6. [ ] **Stat-swap + training passives should require 3rd CLASS, not just level 40.** They currently
-   appear at level 40; owner wants them only after the 3rd-class change. *(NOT built — filtering is done,
-   the level→3rd-class gate is the remaining piece.)*
+6. [x] **Stat-swap + training passives require level 40 + 3rd class** — BUILT and ✅ VERIFIED 2026-07-15.
 
 **NEW FEATURES / IDEAS (recorded to roadmap — see docs/Roadmap.md):**
 - **Gold → an inventory ITEM** (L2 adena), tradable, and beyond int.max (long / stackable). Remove it
