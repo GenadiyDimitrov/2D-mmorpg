@@ -1574,7 +1574,8 @@ public partial class MainWindow : Window
                     : _mySecondClass > 0 ? $" {ClassCatalog.Get(_mySecondClass)?.Name}" : "";
             var zone = _myDto is not null && GameConstants.InSafeZone(_myDto.X, _myDto.Y) ? "  [SAFE]" : "";
             var karma = _myKarma > 0 ? $"  •  KARMA {_myKarma:N0}" : "";
-            StatusText.Text = $"{_myName}{cls}  Lv{_level}  •  {_gold:N0} {GameConstants.CurrencyName}{zone}{karma}";
+            // Gold is shown (colour-tiered) in the Inventory now, not here on the vitals line.
+            StatusText.Text = $"{_myName}{cls}  Lv{_level}{zone}{karma}";
             UpdateVitalBars();
         }
 

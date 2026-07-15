@@ -150,7 +150,9 @@ public partial class MainWindow
                 Background = new SolidColorBrush(Color.FromArgb(120, 160, 60, 60)),
                 ToolTip = "Destroy this item"
             };
-            remove.Click += async (_, _) => await _net.RemoveItemAsync(dto.InstanceId);
+            // A SINGLE item deletes instantly (a confirm there would only annoy). A STACK asks whether
+            // to drop ALL or just ONE — so you don't nuke 40 potions to shed one.
+            remove.Click += async (_, _) => await RemoveItemPrompt(dto);
             DockPanel.SetDock(remove, Dock.Right);
             row.Children.Add(remove);
 
@@ -564,6 +566,8 @@ public partial class MainWindow
     private bool _pvpEnabled;
     private bool _counterEnabled;
     private int _myKarma;
+    private int _myPkCount;
+    private int _myPvpCount;
 
     private async void PvpButton_Click(object sender, RoutedEventArgs e) =>
         await _net.TogglePvpAsync(!_pvpEnabled);
@@ -576,6 +580,10 @@ public partial class MainWindow
         _pvpEnabled = s.Pvp;
         _counterEnabled = s.CounterAttack;
         _myKarma = s.Karma;
+        _myPkCount = s.PkCount;
+        _myPvpCount = s.PvpCount;
+        if (StatsPanel.Visibility == Visibility.Visible)
+            RefreshStatsPanel();   // karma/PK/PvP live-refresh in the character window
         PvpButton.Content = _pvpEnabled ? "PvP: On" : "PvP: Off";
         PvpButton.Background = _pvpEnabled
             ? new SolidColorBrush(Color.FromRgb(0xA0, 0x40, 0x40)) : null;
@@ -880,6 +888,22 @@ public partial class MainWindow
         _ = _net.TradeGoldAsync(gold);
     }
 
+    /// <summary>Destroy an item. Single → instant. Stack (qty&gt;1) → ask Yes = ALL, No = one, Cancel.</summary>
+    private async System.Threading.Tasks.Task RemoveItemPrompt(InventoryItemDto dto)
+    {
+        if (dto.Quantity <= 1)
+        {
+            await _net.RemoveItemAsync(dto.InstanceId, all: false);
+            return;
+        }
+        string name = ItemCatalog.Get(dto.DefId)?.Name ?? "this item";
+        var r = MessageBox.Show(
+            $"You have {dto.Quantity} {name}.\n\nYes = destroy ALL {dto.Quantity}\nNo = destroy just ONE",
+            "Destroy items", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+        if (r == MessageBoxResult.Yes) await _net.RemoveItemAsync(dto.InstanceId, all: true);
+        else if (r == MessageBoxResult.No) await _net.RemoveItemAsync(dto.InstanceId, all: false);
+    }
+
     private void FillOfferList(ItemsControl list, InventoryItemDto[] items, bool removable)
     {
         list.Items.Clear();
@@ -896,6 +920,10 @@ public partial class MainWindow
                 Margin = new Thickness(0, 0, 0, 3),
                 HorizontalContentAlignment = HorizontalAlignment.Left,
                 Padding = new Thickness(6, 0, 0, 0),
+                // Dark background so the (often light) rarity-coloured text reads — the default WPF
+                // button chrome is light grey and washed white/common items out (the skill-bar problem).
+                Background = new SolidColorBrush(Color.FromArgb(0xC0, 0x1A, 0x22, 0x30)),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0x4A, 0x5A, 0x70)),
                 Foreground = RarityBrush(def.Rarity),
                 IsEnabled = removable
             };
@@ -1025,6 +1053,10 @@ public partial class MainWindow
         StatsList.Items.Add(MakeStatRow("Attack Range", $"{st.BasicAttackRange:0}"));
         StatsList.Items.Add(MakeStatRow("Move Speed", $"{st.MoveSpeed:0}"));
 
+        // ----- Reputation (karma / PK / PvP), from the PvpState push, not the StatsUpdate -----
+        StatsList.Items.Add(MakeStatRowColored("Karma", _myKarma.ToString("N0"), KarmaBrush(_myKarma)));
+        StatsList.Items.Add(MakeStatRow("PK / PvP kills", $"{_myPkCount} / {_myPvpCount}"));
+
         // CastSpeedMult / AttackSpeedMult are the EFFECTIVE multipliers (WIT/DEX +
         // gear + masteries + buffs/potions all folded in; lower = faster). Show as
         // the L2-style "speed stat / cap" (333 = 1.0x), with % faster for context.
@@ -1059,6 +1091,24 @@ public partial class MainWindow
         float faster = (1f - mult) * 100f;
         string pct = faster >= 0 ? $"+{faster:0.#}% faster" : $"{faster:0.#}% slower";
         return $"{stat} / {cap}   ({pct})";
+    }
+
+    /// <summary>Karma colour (owner): karma &gt;1000 is a fixed DARK red ("over the line"); from 1000
+    /// down to 0 the red channel FADES from ~255 to ~50, so you can watch your bad value cool off as you
+    /// grind it down. 0 karma = neutral (not a PK).</summary>
+    private static Brush KarmaBrush(int karma)
+    {
+        if (karma <= 0) return Brushes.Gainsboro;
+        if (karma > 1000) return new SolidColorBrush(Color.FromRgb(0x8B, 0, 0));   // DarkRed
+        int r = 50 + (int)(205 * Math.Clamp(karma, 0, 1000) / 1000f);              // 255 @1000 → 50 @~0
+        return new SolidColorBrush(Color.FromRgb((byte)r, 0, 0));
+    }
+
+    private static Grid MakeStatRowColored(string label, string value, Brush valueBrush)
+    {
+        var grid = MakeStatRow(label, value);
+        if (grid.Children[1] is TextBlock v) v.Foreground = valueBrush;
+        return grid;
     }
 
     private static Grid MakeStatRow(string label, string value)

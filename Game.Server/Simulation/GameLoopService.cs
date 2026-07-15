@@ -1209,10 +1209,10 @@ public class GameLoopService : BackgroundService
 
         bool wasEquipped = item.Equipped;
 
-        if (item.Quantity > 1)
-            item.Quantity--;             // drop one from the stack
+        if (item.Quantity > 1 && !cmd.All)
+            item.Quantity--;             // drop ONE from the stack
         else
-            player.Inventory.Remove(item);
+            player.Inventory.Remove(item);   // whole stack (or a single item)
 
         if (wasEquipped)
             player.RecomputeDerived();

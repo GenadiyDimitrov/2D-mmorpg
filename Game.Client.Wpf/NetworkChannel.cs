@@ -191,8 +191,8 @@ public class NetworkChannel : IAsyncDisposable
     public Task RerollAttributesAsync(Guid scrollId, Guid targetId, int[] lockedIndices) =>
         _connection!.SendAsync("RerollAttributes", scrollId, targetId, lockedIndices);
 
-    public Task RemoveItemAsync(Guid instanceId) =>
-        _connection!.SendAsync("RemoveItem", instanceId);
+    public Task RemoveItemAsync(Guid instanceId, bool all = false) =>
+        _connection!.SendAsync("RemoveItem", instanceId, all);
 
     public Task DebugGiveAsync(string defId, int quantity = 1) =>
         _connection!.SendAsync("DebugGive", defId, quantity);
