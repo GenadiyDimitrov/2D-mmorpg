@@ -475,17 +475,15 @@ public partial class MainWindow
         ClassHint.Text = $"As a {_myRace} {_myBaseClass}, choose your path. This is permanent.";
         foreach (var def in ClassCatalog.OptionsFor(_myRace, _myBaseClass))
         {
-            // No stat bonus to advertise: a class change no longer raises main stats.
-            bool archTaken = ArchetypeTakenElsewhere(def.Archetype);
+            // No stat bonus to advertise: a class change no longer raises main stats. No archetype
+            // restriction either — you may own several classes of the same 2nd class (they just can't
+            // reach the same 3rd-class discipline).
             var button = new Button
             {
-                Content = archTaken
-                    ? $"{def.Name}  ({def.Archetype}) — another class already walks this"
-                    : $"{def.Name}  ({def.Archetype})",
+                Content = $"{def.Name}  ({def.Archetype})",
                 Height = 32,
                 Margin = new Thickness(0, 0, 0, 6),
                 FontSize = 12,
-                IsEnabled = !archTaken,
             };
             int classId = def.Id;
             button.Click += async (_, _) =>
@@ -2511,14 +2509,9 @@ public partial class MainWindow
 
     // ---- CLASS UNIQUENESS (mirrors the server; see Entity) --------------------------------------
     //
-    // You may not walk the same ARCHETYPE twice, nor the same DISCIPLINE twice, across the classes one
-    // character owns. These only grey the barred options OUT — the server enforces the rule for real.
-    // Matched on the archetype/discipline, NOT the class id: a human Sorcerer and an elf Inquisitor are
-    // different ids but the same Nuker path, and taking both is exactly what the rule forbids.
-
-    private bool ArchetypeTakenElsewhere(Archetype a) =>
-        _subclasses.Any(s => !s.Active && s.SecondClass > 0
-                             && ClassCatalog.Get(s.SecondClass)?.Archetype == a);
+    // You may not walk the same DISCIPLINE twice across the classes one character owns (archetypes are
+    // NOT restricted — several Nukers are fine as long as their disciplines differ). This only greys the
+    // barred options OUT; the server enforces it for real. Matched on the discipline, NOT the class id.
 
     private bool DisciplineTakenElsewhere(Discipline d) =>
         _subclasses.Any(s => !s.Active && s.ThirdClass > 0

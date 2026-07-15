@@ -624,13 +624,10 @@ public class GameLoopService : BackgroundService
         if (player.BaseClass == BaseClass.Mage && !player.HasSkill(SkillCatalog.MasteryRobe))
             player.LearnedSkills[SkillCatalog.MasteryRobe] = 1;
 
-        // Combat "training" passive (soulshot/spiritshot stand-in): auto-granted, with
-        // the LEVEL chosen by character level (+10%…+100% atk; see TrainingLevelFor).
-        int trainLvl = StatCalculator.TrainingLevelFor(player.Level);
-        if (trainLvl > 0)
-            player.LearnedSkills[player.BaseClass == BaseClass.Mage
-                ? SkillCatalog.SpiritTraining
-                : SkillCatalog.PhysicalTraining] = trainLvl;
+        // Combat "training" passive (soulshot/spiritshot stand-in): auto-granted, level chosen by
+        // character level (+10%…+100% atk; see TrainingLevelFor). GATED ON THE 3RD CLASS (owner): like
+        // the stat swaps, it only appears once you've taken your 3rd-class discipline, not merely at 40.
+        SyncTrainingPassive(player);
 
         // Class identity "sure" floor passive for the current class tier (level = tier).
         if (SkillCatalog.FloorPassiveFor(player.Archetype, player.Level) is { } floor)
@@ -974,13 +971,8 @@ public class GameLoopService : BackgroundService
         if (def is null || def.Race != player.Race || def.Base != player.BaseClass)
             return;
 
-        // You may not walk the same ARCHETYPE twice across your classes (see Entity).
-        if (!player.CanTakeSecondClass(def.Id))
-        {
-            SendSystemToEntity(player,
-                $"Another of your classes already walks the {def.Archetype} path.");
-            return;
-        }
+        // (No archetype-uniqueness check: you may own several classes of the same 2nd class, as long as
+        // they branch into different 3rd-class DISCIPLINES — that check lives on the 3rd-class change.)
 
         // NOTE: the class change no longer raises main stats. You keep the CON/ATK/WIT/DEX you
         // were born with; the level-40 stat-swap passives are the only way to move them.
@@ -1388,6 +1380,15 @@ public class GameLoopService : BackgroundService
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
             return;
 
+        // Cap how many classes one character may own (owner) — otherwise you can stack 20 base classes
+        // when only a few can ever reach a unique 3rd-class discipline.
+        if (player.Subclasses.Count >= GameConstants.MaxSubclasses)
+        {
+            SendSystemToEntity(player,
+                $"[DEBUG] Class limit reached ({GameConstants.MaxSubclasses}). Can't add another.");
+            return;
+        }
+
         int slot = player.Subclasses.Max(s => s.Slot) + 1;
         var sc = new Subclass { Slot = slot, BaseClass = cmd.BaseClass };
         sc.RollBaseStats(player.Race);
@@ -1516,14 +1517,18 @@ public class GameLoopService : BackgroundService
     }
 
     /// <summary>Re-point the auto-granted combat-training passive at the level the character is NOW.
-    /// Below 40 there is no such passive, so it is removed outright.</summary>
+    /// The single grant point for this passive (called on login, level-up and delevel).
+    ///
+    /// GATED ON THE 3RD CLASS (owner, 2026-07-15): the passive only exists once you've taken your
+    /// 3rd-class discipline — the same rule as the level-40 stat swaps. Without a 3rd class, or below
+    /// its level band, it is removed outright.</summary>
     private static void SyncTrainingPassive(Entity player)
     {
         string id = player.BaseClass == BaseClass.Mage
             ? SkillCatalog.SpiritTraining
             : SkillCatalog.PhysicalTraining;
 
-        int lvl = StatCalculator.TrainingLevelFor(player.Level);
+        int lvl = player.ThirdClass > 0 ? StatCalculator.TrainingLevelFor(player.Level) : 0;
         if (lvl > 0) player.LearnedSkills[id] = lvl;
         else player.LearnedSkills.Remove(id);
     }
@@ -1650,18 +1655,11 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        // You may not walk the same DISCIPLINE twice across your classes — and this path also FORCES
-        // the parent 2nd class below, so it has to respect the archetype rule too, or debug would be
-        // a back door around it.
+        // You may not walk the same DISCIPLINE twice across your classes (see Entity). No archetype
+        // check — several classes may share a 2nd class as long as their disciplines differ.
         if (!player.CanTakeThirdClass(cmd.ThirdClassId))
         {
             SendSystemToEntity(player, $"Another of your classes is already a {tcd.Discipline}.");
-            return;
-        }
-        if (!player.CanTakeSecondClass(tcd.ParentSecondClassId))
-        {
-            SendSystemToEntity(player,
-                $"Another of your classes already walks the {ClassCatalog.Get(tcd.ParentSecondClassId)?.Archetype} path.");
             return;
         }
 
@@ -6353,18 +6351,17 @@ var effect = def.Effect;
     /// tier gating: Tier 2 needs no second class yet + matching race/base; Tier 3
     /// needs the right parent 2nd class + no third class yet.
     ///
-    /// It ALSO enforces class uniqueness across your subclasses — you may not walk the same ARCHETYPE
-    /// or the same DISCIPLINE twice (see Entity). This one method both LISTS the offered classes at the
-    /// NPC and GATES the change itself, so a barred class is never even shown, and can't be taken if it
-    /// somehow is.</summary>
+    /// It ALSO enforces class uniqueness across your subclasses — you may not walk the same DISCIPLINE
+    /// twice (see Entity; archetypes are NOT restricted). This one method both LISTS the offered classes
+    /// at the NPC and GATES the change itself, so a barred class is never even shown, and can't be taken
+    /// if it somehow is.</summary>
     private static bool ClassChangeAvailable(Entity player, ClassChangeRequirements.Requirement req)
     {
         if (req.Tier == 2)
         {
             if (player.SecondClass != 0) return false;
             return ClassCatalog.Get(req.SecondClassId) is SecondClassDef scd
-                && scd.Base == player.BaseClass && scd.Race == player.Race
-                && player.CanTakeSecondClass(scd.Id);
+                && scd.Base == player.BaseClass && scd.Race == player.Race;
         }
         if (req.Tier == 3)
         {

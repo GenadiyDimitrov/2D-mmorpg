@@ -103,6 +103,11 @@ public static class GameConstants
 
     public const int ClassChangeLevel = 20;
 
+    /// <summary>Max classes ONE character may own (L2-style: the main class + up to 3 subclasses).
+    /// Stops a character stacking pointless duplicate base classes when only a few can reach a unique
+    /// 3rd-class discipline. The player-facing swap rules (safe-zone-only, 5-min delay) are separate.</summary>
+    public const int MaxSubclasses = 4;
+
     /// <summary>Level ceiling for a normal character. ADMINS ARE EXEMPT — an admin can push past it,
     /// which is the point (testing the 85+ mob band, the top gear tier, etc. without capping the game
     /// for everyone else). Everything is authored to 85 today (mob curve, gear tiers, the nuke

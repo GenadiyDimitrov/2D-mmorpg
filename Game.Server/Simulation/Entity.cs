@@ -151,21 +151,13 @@ public class Entity
 
     // ---- CLASS UNIQUENESS ------------------------------------------------------------------
     //
-    // A character may not own the same ARCHETYPE twice, nor the same DISCIPLINE twice (owner). You
-    // learn a path once: a Nuker cannot also subclass into another Nuker (a human Sorcerer cannot
-    // take the elf Inquisitor — same archetype, different label), and a Vanguard cannot subclass into
-    // Vanguard again.
+    // A character may not own the same DISCIPLINE twice (owner, 2026-07-15). You learn each 3rd-class
+    // path once — no two Tempests, no two Vanguards. ARCHETYPE (the 2nd class) is NOT restricted: you
+    // may own several Nukers, so long as they branch into DIFFERENT disciplines (Tempest + the other
+    // nuker discipline). That is exactly the "own 4 mages — 2 clerics + 2 nukers" case the owner wants.
     //
-    // Note the rule is about the ARCHETYPE and the DISCIPLINE, not the class ID and not the base
-    // class: two Fighters are fine as long as one becomes a Tank and the other a Warrior. Checking
-    // ids would let the same path in through a differently-named door.
-
-    /// <summary>Archetypes (2nd classes) already held by a class OTHER than the active one.</summary>
-    public IEnumerable<Archetype> ArchetypesTakenElsewhere =>
-        Subclasses.Where(s => s.Slot != ActiveSubclass.Slot && s.SecondClass > 0)
-                  .Select(s => ClassCatalog.Get(s.SecondClass)?.Archetype)
-                  .Where(a => a is not null)
-                  .Select(a => a!.Value);
+    // Matched on the DISCIPLINE, not the class id — checking ids would let the same discipline in
+    // through a differently-named door (a human vs an elf version of the same path).
 
     /// <summary>Disciplines (3rd classes) already held by a class OTHER than the active one.</summary>
     public IEnumerable<Discipline> DisciplinesTakenElsewhere =>
@@ -174,14 +166,8 @@ public class Entity
                   .Where(d => d is not null)
                   .Select(d => d!.Value);
 
-    /// <summary>Can the class currently being played take this 2nd class? False if one of your OTHER
-    /// classes already walks that archetype.</summary>
-    public bool CanTakeSecondClass(int classId) =>
-        ClassCatalog.Get(classId) is not { } def
-        || !ArchetypesTakenElsewhere.Contains(def.Archetype);
-
     /// <summary>Can the class currently being played take this 3rd class? False if one of your OTHER
-    /// classes already walks that discipline.</summary>
+    /// classes already walks that discipline. (There is deliberately no 2nd-class/archetype limit.)</summary>
     public bool CanTakeThirdClass(int thirdClassId) =>
         ThirdClassCatalog.Get(thirdClassId) is not { } def
         || !DisciplinesTakenElsewhere.Contains(def.Discipline);

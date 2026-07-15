@@ -107,13 +107,11 @@ Console.WriteLine("=== CLASS UNIQUENESS ACROSS SUBCLASSES ===");
     string owned = $"{ClassCatalog.Get(18)?.Name} ({ClassCatalog.Get(18)?.Archetype})" +
                    $" / {ThirdClassCatalog.Get(nuker.ThirdClass)?.Name} ({ThirdClassCatalog.Get(nuker.ThirdClass)?.Discipline})";
     Console.WriteLine($"  Class #0 is: {owned}");
-    Console.WriteLine("  Class #1 may become:");
+    Console.WriteLine("  Class #1 may become ANY 2nd class (archetypes are NOT restricted):");
     foreach (var def in ClassCatalog.OptionsFor(Race.Human, BaseClass.Mage))
-        Console.WriteLine(c.CanTakeSecondClass(def.Id)
-            ? $"    OK      {def.Name,-14} ({def.Archetype})"
-            : $"    BARRED  {def.Name,-14} ({def.Archetype}) — that archetype is already taken");
+        Console.WriteLine($"    OK      {def.Name,-14} ({def.Archetype})");
 
-    Console.WriteLine("  …and its 3rd-class disciplines (if it took the Nuker path anyway):");
+    Console.WriteLine("  …but its 3rd-class DISCIPLINES bar the one already owned:");
     foreach (var tc in ThirdClassCatalog.ForParent(18))
         Console.WriteLine(c.CanTakeThirdClass(tc.Id)
             ? $"    OK      {tc.Name,-14} ({tc.Discipline})"

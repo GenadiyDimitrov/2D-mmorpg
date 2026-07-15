@@ -90,12 +90,14 @@ public static class ClassSkills
         // edit all 18 per-class files). Same across races; the effect is class-driven.
         foreach (var cs in MasterySkills(baseClass, archetype))
             yield return cs;
-        // The level-40 STAT-SWAP passives, injected the same way. All 5 levels of each unlock at 40
-        // — the real gate is GOLD (1kk…5kk), not character level. Which swaps a class may take
-        // lives in SkillCatalog.StatSwapsFor (only the ATK group is class-gated).
-        foreach (var id in SkillCatalog.StatSwapsFor(baseClass, discipline))
-            for (int lvl = 1; lvl <= 5; lvl++)
-                yield return new ClassSkill(id, SkillCatalog.StatSwapLearnLevel, SkillLevel: lvl);
+        // The STAT-SWAP passives — GATED ON THE 3RD CLASS (owner, 2026-07-15): they appear only once
+        // you've taken your 3rd-class discipline, not merely at level 40. `discipline` is non-null iff
+        // a 3rd class is held, so injecting them only then is the whole gate. Which swaps a class may
+        // take is per-class (SkillCatalog.StatSwapsFor). The GOLD price (1kk…5kk) is the real cost.
+        if (discipline is not null)
+            foreach (var id in SkillCatalog.StatSwapsFor(baseClass, discipline))
+                for (int lvl = 1; lvl <= 5; lvl++)
+                    yield return new ClassSkill(id, SkillCatalog.StatSwapLearnLevel, SkillLevel: lvl);
     }
 
     /// <summary>The armor-mastery passives a class can learn, with learn levels.
