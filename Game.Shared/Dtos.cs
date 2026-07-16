@@ -247,7 +247,10 @@ public record PvpState(bool Pvp, bool CounterAttack, int Karma = 0, int PkCount 
 public record DebugConfigDto(
     float ExpRate, float SpRate, float DropChanceRate, float DropAmountRate, float GoldRate,
     int KarmaBase, float KarmaConsecGrowth, float KarmaLevelGrowth, int KarmaLossPerDeath, int KarmaLossPerMob,
-    int IdleCapSeconds, int OfflineCapSeconds, int GraceSeconds);
+    int IdleCapSeconds, int OfflineCapSeconds, int GraceSeconds,
+    // Test skills: the two debug damage skills read Flat=TestSkillPower, Mod=TestSkillMod; testheal heals
+    // TestHealPower. Lets the owner read the {Flat, Mod} damage curve live before authoring real skills.
+    int TestHealPower = 1000, int TestSkillPower = 0, float TestSkillMod = 1f);
 
 /// <summary>One member row in the party window.</summary>
 public record PartyMemberDto(Guid Id, string Name, int Level, string ClassName,

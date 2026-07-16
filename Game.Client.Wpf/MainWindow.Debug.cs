@@ -30,6 +30,9 @@ public partial class MainWindow
         ("idleCap", "Idle cap sec (0=∞)", false),
         ("offlineCap", "Offline cap sec (0=∞)", false),
         ("grace", "Disconnect grace (sec)", false),
+        ("testHealPower", "Test heal power", false),
+        ("testSkillPower", "Test skill Flat", false),
+        ("testSkillMod", "Test skill Mod ×", true),
     };
 
     private void TuneOpen_Click(object sender, RoutedEventArgs e)
@@ -82,6 +85,9 @@ public partial class MainWindow
         _debugFields["idleCap"].Text = d.IdleCapSeconds.ToString(CultureInfo.InvariantCulture);
         _debugFields["offlineCap"].Text = d.OfflineCapSeconds.ToString(CultureInfo.InvariantCulture);
         _debugFields["grace"].Text = d.GraceSeconds.ToString(CultureInfo.InvariantCulture);
+        _debugFields["testHealPower"].Text = d.TestHealPower.ToString(CultureInfo.InvariantCulture);
+        _debugFields["testSkillPower"].Text = d.TestSkillPower.ToString(CultureInfo.InvariantCulture);
+        _debugFields["testSkillMod"].Text = Str(d.TestSkillMod);
     }
 
     private async void TuneApply_Click(object sender, RoutedEventArgs e)
@@ -89,7 +95,8 @@ public partial class MainWindow
         var d = new DebugConfigDto(
             F("exp"), F("sp"), F("dropChance"), F("dropAmount"), F("gold"),
             I("karmaBase"), F("karmaConsec"), F("karmaLevel"), I("karmaDeath"), I("karmaMob"),
-            I("idleCap"), I("offlineCap"), I("grace"));
+            I("idleCap"), I("offlineCap"), I("grace"),
+            I("testHealPower"), I("testSkillPower"), F("testSkillMod"));
         await _net.SetDebugConfigAsync(d);
     }
 

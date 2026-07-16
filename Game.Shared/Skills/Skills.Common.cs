@@ -59,6 +59,10 @@ public static partial class SkillCatalog
     // REMOVE: this const, TestHealSkill() below, its line in CommonSkills(), and the auto-grant in
     // GameLoopService.AutoLearnCoreSkills. Search "TEST ONLY" to find all four.
     public const string TestHeal = "test_heal";
+    // Two debug damage skills: they use Flat=TestSkillPower, Mod=TestSkillMod from the Debug panel, so the
+    // owner can read the {Flat, Mod} curve live. Auto-granted with TestHeal. Search "TEST ONLY" to remove.
+    public const string TestPhysSkill  = "test_phys";
+    public const string TestMagicSkill = "test_magic";
     // ==============================================================================
     // ---- "Class Balance" — one zeroed passive per class, auto-granted. See ClassBalanceFor. ----
     public const string BalanceTank    = "class_balance_tank";
@@ -193,6 +197,18 @@ public static partial class SkillCatalog
             Category: SkillCategory.Heal,
             Description: "TEST ONLY. Flat heal, power 1000. Used to calibrate the heal formula "
                        + "(heal = power × √M.Atk / 15). Remove before release."),
+        // TEST ONLY: two debug damage skills. Power 0 in the def — the server overrides Flat/Mod with the
+        // Debug-panel TestSkillPower / TestSkillMod at cast time, so you can read the {Flat, Mod} curve live.
+        new(TestMagicSkill, "TestMagic", BaseClass.Mage, SkillEffect.MagicDamage,
+            MpCost: 0, CastTicks: 10, CooldownTicks: 10, Range: 900, Power: 0,
+            Category: SkillCategory.Magic,
+            Description: "TEST ONLY. Magic hit using the Debug TestSkillPower (Flat) + TestSkillMod (Mod): "
+                       + "91·(Flat + Mod·√M.Atk)/mDef. Cast 1s. Remove before release."),
+        new(TestPhysSkill, "TestPhys", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+            MpCost: 0, CastTicks: 5, CooldownTicks: 10, Range: 600, Power: 0,
+            Category: SkillCategory.Physical,
+            Description: "TEST ONLY. Physical hit using the Debug TestSkillPower (Flat) + TestSkillMod (Mod): "
+                       + "77·(Flat + Mod·P.Atk)/def. Cast 0.5s. Remove before release."),
         // ======================================================================
 
         // ----- HEALING potions, as skills. Each consumes its own potion (ConsumableId) and

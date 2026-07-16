@@ -346,6 +346,12 @@ public class GameLoopService : BackgroundService
     private double _karmaLevelGrowth = 1.2;    // ×per level the victim is BELOW the killer (+20%)
     private int _karmaLossPerDeath = 200;      // karma shed on each death
     private int _karmaLossPerMob = 20;         // karma shed per mob kill (grind it off while farming)
+
+    // Debug test skills (admin live-tuning): the two test damage skills use Flat=_testSkillPower,
+    // Mod=_testSkillMod; the test heal restores _testHealPower. For reading the {Flat, Mod} curve live.
+    private int _testHealPower = 1000;
+    private int _testSkillPower = 0;
+    private float _testSkillMod = 1f;
     private const int KarmaMaxPerKill = 15_000; // owner: cap one PK at 10-20k (~750 mob kills to shed)
     private const int KarmaGapFloor   = 10;     // level gap ≤ this → just the base karma (200)
     private const int KarmaGapCap     = 50;     // level gap ≥ this → the per-kill cap (skyrocket endpoint)
@@ -384,7 +390,8 @@ public class GameLoopService : BackgroundService
         RateConfig.ExpRate, RateConfig.SpRate, RateConfig.DropChanceRate, RateConfig.DropAmountRate,
         RateConfig.GoldAmountRate,
         _karmaBase, (float)_karmaConsecGrowth, (float)_karmaLevelGrowth, _karmaLossPerDeath, _karmaLossPerMob,
-        _idleCapSeconds, _offlineCapSeconds, _graceSeconds);
+        _idleCapSeconds, _offlineCapSeconds, _graceSeconds,
+        _testHealPower, _testSkillPower, _testSkillMod);
 
     private void HandleRequestDebugConfig(RequestDebugConfigCmd cmd)
     {
@@ -417,6 +424,9 @@ public class GameLoopService : BackgroundService
         _idleCapSeconds     = Math.Clamp(c.IdleCapSeconds, 0, 24 * 3600);   // 0 = unlimited
         _offlineCapSeconds  = Math.Clamp(c.OfflineCapSeconds, 0, 24 * 3600);
         _graceSeconds       = Math.Clamp(c.GraceSeconds, 5, 3600);
+        _testHealPower      = Math.Max(0, c.TestHealPower);
+        _testSkillPower     = Math.Max(0, c.TestSkillPower);
+        _testSkillMod       = Math.Max(0f, c.TestSkillMod);
     }
 
     // Lives NEXT TO THE EXE (Debug/publish output), like an options.ini — NOT a build item, so an
@@ -675,6 +685,10 @@ public class GameLoopService : BackgroundService
         // A power-1000 heal for EVERY class at 76, so the heal formula can be calibrated (and the
         // tank-vs-healer gap read directly). Remove this block with the rest — search "TEST ONLY".
         if (player.Level >= 76) player.LearnedSkills.TryAdd(SkillCatalog.TestHeal, 1);
+        // Two debug damage skills at ANY level — Flat/Mod come from the Debug panel (TestSkillPower/
+        // TestSkillMod), for reading the {Flat, Mod} damage curve live.
+        player.LearnedSkills.TryAdd(SkillCatalog.TestPhysSkill, 1);
+        player.LearnedSkills.TryAdd(SkillCatalog.TestMagicSkill, 1);
         // ==============================================================
 
         // The universal Return skill (teleport to nearest town) IS a learned skill — everyone has it.
@@ -3903,7 +3917,8 @@ var effect = def.Effect;
             }
             else
             {
-                var (pFlat, pMod) = def.PhysDamageAt(lvl);
+                var (pFlat, pMod) = def.Id == SkillCatalog.TestPhysSkill
+                    ? (_testSkillPower, _testSkillMod) : def.PhysDamageAt(lvl);   // test skill: live debug Flat/Mod
                 int damage = StatCalculator.PhysicalDamageFM(
                     (int)caster.EffectiveAttack, pFlat, pMod,
                     (int)target.EffectiveDefence,
@@ -3945,7 +3960,8 @@ var effect = def.Effect;
         if (effect.HasFlag(SkillEffect.MagicDamage))
         {
             offensive = true;
-            var (mFlat, mMod) = def.MagicDamageAt(lvl);
+            var (mFlat, mMod) = def.Id == SkillCatalog.TestMagicSkill
+                ? (_testSkillPower, _testSkillMod) : def.MagicDamageAt(lvl);   // test skill: live debug Flat/Mod
             int damage = StatCalculator.MagicDamageFM(
                 (int)caster.EffectiveMagicAttack, mFlat, mMod,
                 (int)target.EffectiveMagicDefence);   // magic channel: divides by mDef
@@ -4004,7 +4020,8 @@ var effect = def.Effect;
         if (effect.HasFlag(SkillEffect.Heal))
         {
             // Divine Focus: healing OUTPUT scaled down when the healer has no magic weapon (×0.5 / ×0.75).
-            int flat = (int)(SkillMath.HealAmount(def.PowerAt(lvl), (int)caster.EffectiveMagicAttack) * caster.HealOutputMult);
+            int healPower = def.Id == SkillCatalog.TestHeal ? _testHealPower : def.PowerAt(lvl);   // test heal: live debug power
+            int flat = (int)(SkillMath.HealAmount(healPower, (int)caster.EffectiveMagicAttack) * caster.HealOutputMult);
             float pct = def.MagnitudeOf(SkillEffect.Heal, ModifierMode.Percent, lvl);
             if (def.TargetMode == TargetMode.AlliesInRadius)
                 foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
