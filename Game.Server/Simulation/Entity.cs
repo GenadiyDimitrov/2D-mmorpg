@@ -428,6 +428,17 @@ public class Entity
     /// <summary>FLAT addition to the casting-speed stat, from passives (the spiritshot +40).
     /// Added AFTER the multiplicative chain, so it does not compound with WIT/gear/buffs.</summary>
     public float CastSpeedFlatBonus { get; set; }
+    /// <summary>Weapon Proficiency: ×0.5 cast speed while wielding an untrained weapon (not sword/blunt).
+    /// 1 = no penalty. Set in RecomputeDerived by WeaponType + the passive.</summary>
+    public float CastSpeedPenaltyMult { get; set; } = 1f;
+    /// <summary>Divine Focus: heal-output multiplier when NO magic weapon is equipped (Lv1 ×0.5, Lv2 ×0.75).
+    /// 1 = no penalty.</summary>
+    public float HealOutputMult { get; set; } = 1f;
+    /// <summary>Weapon Proficiency: M.Atk multiplier while wielding an UNTRAINED weapon (bow/dual/hands) —
+    /// ×0.05, so magic (damage + heals + the shown M.Atk) collapses. 1 = a trained weapon, no penalty.</summary>
+    public float MagicWeaponPenaltyMult { get; set; } = 1f;
+    /// <summary>True while a magic weapon (wand/staff) is equipped — for Divine Focus.</summary>
+    public bool HasMagicWeapon { get; set; }
     /// <summary>Attack-interval multiplier from Attack Speed attributes.</summary>
     public float AttackSpeedMultiplier { get; set; } = 1f;
 
@@ -546,8 +557,39 @@ public class Entity
 
     public float EffectiveAttack => AtkDebuffed(ModifiedStatDual(AttackPower, SkillEffect.BuffAtk, SkillEffect.BuffPhysAtk));
 
-    /// <summary>Buffed magic attack (mAtk): the shared BuffAtk plus magic-only BuffMagAtk.</summary>
-    public float EffectiveMagicAttack => AtkDebuffed(ModifiedStatDual(MagicAttack, SkillEffect.BuffAtk, SkillEffect.BuffMagAtk));
+    /// <summary>Buffed magic attack (mAtk), the INTERNAL value — feeds the √ magic-damage/heal formulas
+    /// (unchanged; mobs share the same formulas). Magic buffs (shared BuffAtk + magic-only BuffMagAtk) are
+    /// applied SQUARED here to cancel that √: a buff authored at its EFFECTIVE % (e.g. +32%) then yields
+    /// exactly +32% damage AND +32% on the shrunk display — description = stat = damage. Physical BuffAtk
+    /// stays linear on its own channel (EffectiveAttack); only this magic read squares. Owner 2026-07-16.</summary>
+    public float EffectiveMagicAttack
+    {
+        get
+        {
+            // Magic reads ONLY magic-only buffs (BuffMagAtk), applied SQUARED so the stored % is the HONEST
+            // effective % (the square cancels the √ in the damage formula). The shared BuffAtk is PHYSICAL-
+            // ONLY now — a buff that should boost magic must carry an explicit BuffMagAtk. Only the base
+            // M.Atk goes through the √; every modifier is honest (stored = description = effect). Owner 2026-07-16.
+            float magFlat = 0f, magPct = 0f;
+            foreach (var buff in Buffs)
+                if (buff.Has(SkillEffect.BuffMagAtk)) { magFlat += buff.Flat(SkillEffect.BuffMagAtk); magPct += buff.Percent(SkillEffect.BuffMagAtk); }
+            // The untrained-weapon penalty (Weapon Proficiency) collapses magic to ×0.05. It lives in the
+            // factor (squared alongside the √) so it hits the shown M.Atk, damage AND heals identically.
+            float magFactor = (1f + magPct) * MagicWeaponPenaltyMult;
+            return AtkDebuffed(Math.Max(0f, (MagicAttack + magFlat) * magFactor * magFactor));
+        }
+    }
+
+    /// <summary>The DISPLAYED M.Atk — the internal value shrunk to P.Atk size (= scale·√internal). Combat
+    /// (damage + heals) uses the INTERNAL EffectiveMagicAttack with a √; this shrinks only what the player
+    /// SEES. A squared buff shows here as its honest % (scale·√(internal·(1+p)²) = shown·(1+p)). Path B.</summary>
+    public float EffectiveMagicAttackShown =>
+        StatCalculator.MagicAttackDisplayScale * MathF.Sqrt(Math.Max(0f, EffectiveMagicAttack));
+
+    /// <summary>Is this a weapon a mage is TRAINED with (sword or blunt — wands/staves are blunt)? An
+    /// untrained weapon (bow/dual/bare hands) triggers the Weapon Proficiency cast-speed penalty.</summary>
+    private static bool IsMageTrainedWeapon(WeaponType w) =>
+        (w & (WeaponType.AnySword | WeaponType.AnyBlunt)) != 0;
 
     /// <summary>Buffed attack power for BASIC attacks (archetype-scaled). Basic attacks
     /// are physical, so they take the shared BuffAtk plus physical-only BuffPhysAtk.</summary>
@@ -641,7 +683,7 @@ public class Entity
 
             // The spiritshot-style flat bonus is ADDED to the finished stat, not folded into
             // the chain — that's what keeps it from compounding with WIT/gear/buffs.
-            float castSpd = baseCast * witMod * gearFactor * buffMult + CastSpeedFlatBonus;
+            float castSpd = baseCast * witMod * gearFactor * buffMult * CastSpeedPenaltyMult + CastSpeedFlatBonus;
             castSpd = Math.Clamp(castSpd, 30f, StatCaps.CastSpeed);
             return StatCalculator.SpeedBaseline / castSpd;   // time multiplier (lower = faster)
         }
@@ -728,6 +770,9 @@ public class Entity
     public bool IsDisconnected { get; set; }
     /// <summary>Remaining ticks of the disconnect grace before the normal removal chain runs.</summary>
     public int DisconnectGraceTicks { get; set; }
+    /// <summary>Set when this character DIED while offline-farming / link-dead. Persisted; makes the next
+    /// login land DEAD (res prompt) instead of healed — anti-exploit. Cleared on respawn.</summary>
+    public bool DiedWhileAway { get; set; }
     /// <summary>Tick of the last damage dealt or taken — drives the 30s combat-state decay.</summary>
     public long LastCombatTick { get; set; }
 
@@ -952,6 +997,10 @@ public class Entity
         CastSpeedMultiplier = 1f;
         AttackSpeedMultiplier = 1f;
         CastSpeedFlatBonus = 0f;
+        CastSpeedPenaltyMult = 1f;
+        HealOutputMult = 1f;
+        MagicWeaponPenaltyMult = 1f;
+        HasMagicWeapon = false;
 
         HasShield = false;
         BlockChance = 0f;
@@ -975,7 +1024,12 @@ public class Entity
             if (def.Slot == EquipSlot.Armor && def.ArmorSlot == ArmorSlot.Body)
                 bodyWeight = def.Weight;
 
+            // GRADE PENALTY: a low-level class in high-grade gear gets that gear's weapon ATK / armor DEF
+            // scaled down (owner 2026-07-16). Applied here, BEFORE masteries and set bonuses. Players only.
+            float gradeFactor = Kind == EntityKind.Player ? GradePenalty.Factor(def.Grade, Level) : 1f;
+
             int atkBonus = EnchantRules.BonusAt(def.AtkBonus, item.Enchant);
+            if (def.Slot == EquipSlot.Weapon) atkBonus = (int)(atkBonus * gradeFactor);   // grade penalty: weapon ATK
             AttackPower += atkBonus;
             // A WEAPON has one power number and contributes it to BOTH channels; the channel
             // factors below decide the split. Everything else (armor/jewels) keeps its own
@@ -983,7 +1037,9 @@ public class Entity
             MagicAttack += def.Slot == EquipSlot.Weapon
                 ? atkBonus
                 : EnchantRules.BonusAt(def.MAtkBonus, item.Enchant);
-            Defence += EnchantRules.BonusAt(def.DefBonus, item.Enchant);
+            int defBonus = EnchantRules.BonusAt(def.DefBonus, item.Enchant);
+            if (def.Slot == EquipSlot.Armor) defBonus = (int)(defBonus * gradeFactor);     // grade penalty: armor DEF
+            Defence += defBonus;
             MagicDefence += EnchantRules.BonusAt(def.MDefBonus, item.Enchant);  // jewels
             MaxHp += EnchantRules.BonusAt(def.HpBonus, item.Enchant);
             MaxMp += EnchantRules.BonusAt(def.MpBonus, item.Enchant);
@@ -995,6 +1051,7 @@ public class Entity
                 weaponAsBase = def.AttackSpeedBase;   // per-item speed (bow slow/very-slow), 0 = default
                 weaponPFactor = def.PAtkFactor;
                 weaponMFactor = def.MAtkFactor;
+                HasMagicWeapon = def.IsMagicWeapon;    // wand/staff → Divine Focus is satisfied
             }
 
             if (def.Slot == EquipSlot.Shield)
@@ -1307,7 +1364,11 @@ public class Entity
                 if (pe.DefencePct != 0f) Defence = (int)(Defence * (1f + pe.DefencePct));
                 if (pe.MagicDefencePct != 0f) MagicDefence = (int)(MagicDefence * (1f + pe.MagicDefencePct));
                 AttackPower += pe.Attack + (int)(AttackPower * (pe.AttackPct + pe.PhysAtkPct)) + pe.PhysAtk;
-                MagicAttack += pe.Attack + (int)(MagicAttack * (pe.AttackPct + pe.MagAtkPct)) + pe.MagAtk;
+                // Magic reads ONLY MagAtkPct (magic-only), applied SQUARED so its stored value is the HONEST
+                // effective % (the square cancels the √). AttackPct is SHARED → it raises P.Atk only; it no
+                // longer touches M.Atk (a magic boost must use MagAtkPct). Only base M.Atk goes through the √.
+                float magPassivePct = (1f + pe.MagAtkPct) * (1f + pe.MagAtkPct) - 1f;
+                MagicAttack += pe.Attack + (int)(MagicAttack * magPassivePct) + pe.MagAtk;
                 Evasion += pe.Evasion;
                 Accuracy += pe.Accuracy;
                 if (pe.CritRate != 0f) CritChance = Math.Clamp(CritChance + pe.CritRate, 0f, 0.75f);
@@ -1368,6 +1429,20 @@ public class Entity
                 if (sd.WeaponMasteryAt(skillLevel) is WeaponMasteryProfile wm)
                     ApplyPassive(wm.For(WeaponType));
             }
+
+            // Conditional weapon passives (keyed on the equipped weapon, so not flat PassiveEffects):
+            //  • Weapon Proficiency (all mages): an untrained weapon (not sword/blunt; wand/staff ARE blunt)
+            //    halves cast speed.  • Divine Focus (clerics): no magic weapon scales healing down (Lv1 ×0.5,
+            //    Lv2 ×0.75 for Warchanters, so buffers stay useful in fighter gear).
+            if (HasSkill(SkillCatalog.WeaponProficiency) && !IsMageTrainedWeapon(WeaponType))
+            {
+                CastSpeedPenaltyMult = 0.5f;
+                MagicWeaponPenaltyMult = 0.05f;   // untrained weapon → magic collapses (damage + heals + shown M.Atk)
+            }
+            int divineFocus = SkillLevelOf(SkillCatalog.DivineFocus);
+            if (divineFocus > 0 && !HasMagicWeapon)
+                HealOutputMult = divineFocus >= 2 ? 0.75f : 0.5f;
+
             // (The combat-training attack bonus is now a normal LEVELED passive — its
             // per-level AttackPct flows through the loop above, no special-casing.)
 
@@ -1389,6 +1464,8 @@ public class Entity
         if (Kind == EntityKind.Player)
         {
             MagicAttack = (int)(MagicAttack * StatCalculator.MagicAttackLevelMod(Level));
+            // M.Atk stays the INTERNAL (base·levelMod²) value — the √ magic formulas depend on it and mobs
+            // share it. Only the DISPLAY is shrunk (EffectiveMagicAttackShown = scale·√internal). Path B.
             MagicDefence = (int)(MagicDefence
                 * StatCalculator.MenModifier(StatCalculator.BaseMen(Race, BaseClass) + BonusMen)
                 * StatCalculator.MagicDefenceLevelMod(Level));

@@ -7,72 +7,119 @@ this file.
 
 ---
 
-## 🧪 BATCH TO TEST (built 2026-07-15 evening) — ⚠ restart client+server + **DELETE game.db** (new Race column)
+## 🧪 BATCH TO TEST (built 2026-07-16) — ⚠ restart client+server + **DELETE game.db** (new `DiedWhileAway` column)
 
-**Subclass rework (Debug → Class tab):**
-- [ ] **Add a class = pick a discipline.** Debug → **Class** tab → "Add a class (discipline) ▸" opens a
-      picker of every discipline across all 3 races. Requires **level 76+** (below → refused with a
-      message). The new class starts at **level 1** with the discipline's **own race** and its 3rd class
-      **pre-approved** (skips the 2nd/3rd quests).
-- [ ] **Discipline is unique, cross-race.** Once you own e.g. a Tempest (any race), NO Tempest of any race
-      appears in the picker anymore. You CAN own two different mage disciplines (Lightbringer + Tempest).
-- [ ] **All gear unequips on add** — you don't keep level-76 gear on a level-1 class. Check the Equipped
-      pane empties.
-- [ ] **Count cap**: normal accounts stop at **4** classes; an **admin** can keep adding (filter still
-      hides owned disciplines). Verify with a normal account (e.g. test1) vs admin.
-- [ ] **Swap + relog persistence.** Switch between classes: each keeps its own level/skills/bar. Relog and
-      confirm both classes, their levels and bars survive. (SmokeTest already covers this headlessly.)
+Built + `dotnet build` 0/0 + **SmokeTest green** (main→3rd class→cross-race subclass add, gate, relog). Not
+yet play-tested. (Note: under `dotnet run` the db is `Game.Server/game.db`; via VS/F5 it's
+`Game.Server/bin/Debug/net8.0/game.db` — delete whichever your run uses.)
 
-**Karma / PK / trade:**
-- [ ] **Karma per-kill cap.** Killing an innocent now grants at most **15,000** karma (no more −2.1B
-      overflow on a big level gap). Roughly **500-1000 mob kills** (−20 each) clears a full cap.
-- [ ] **4 karma debug buttons** (Functions tab, bottom): +1000 / −1000 / +20 / −20. At 0 the red PK name
-      and streak clear.
-- [ ] **Trading blocked while PK or flagged.** As a red (PK) or purple (flagged) player, opening a trade is
-      refused (either party). Innocent-to-innocent still works.
-- [ ] **A PK can't BUY from a vendor** (message); a **purple (flagged)** player still can. **Selling** works
-      for everyone.
-- [ ] **Trade window contrast** — the partner's offer ("<name>'s offer") and "your inventory" panels are
-      now readable (dark background + rarity-coloured text), not grey-on-grey. Partner-offer items are
-      non-interactive but still legible.
+- [ ] **Subclass "Add a class" fixes.** (a) The **main class is now filtered** — a Human Bulwark is no
+      longer offered Bulwark (picker folds in the active class's discipline; the server also re-sends the
+      class list after a debug profession change so it can't go stale). (b) **Gate changed: level 76 → 75,
+      and EVERY class you own must be level 75+ AND hold its 3rd class** before you can add another (admins
+      exempt). Below that → refused with a message. Picker header states the rule.
+- [ ] **Karma per-kill curve (quadratic).** gap = killer−victim: ≤+10 → 200; then skyrockets
+      (+20≈1.1k, +30≈3.9k, +40≈8.5k); **+50 and beyond → 15k cap**. A lvl-82 on a lvl-1 now hits the cap
+      (was ~3k). *(Debug "karmaLevel" tuning field is now inert — the curve is fixed; flag if you want it removed.)*
+- [ ] **Grade penalty + equip unlock.** You can now **equip any grade at any level** (the level gate is
+      gone). Above-grade gear has its **weapon ATK / armor DEF scaled down** until you reach the grade's
+      level: F=1, E=20(×0.5), B=40(×0.4), A=52(×0.3), S=61(×0.2). Equip A-grade at lvl1 → check the stat is
+      reduced; level past 52 → full power. Tooltip now says "full power at Lv X", not "requires".
+- [ ] **Party window: click a member to target them.** Clicking a roster row targets that ally (targets
+      only, never attacks) — a healer can now select + heal a party member from the window.
+- [ ] **Offline-farm death sticks (anti-exploit).** Die while offline-farming (or during the link-dead
+      grace) → you log back in **DEAD** (res prompt), not full HP. Stays dead across relogs until you
+      actually respawn. Normal (alive) logout still logs in healed.
+
+**Subclass rework (Debug → Class tab):** — owner tested 2026-07-16
+- [~] **Add a class = pick a discipline.** ✅ **ALL BUILT 2026-07-16 (test via the top batch).** BUGS + rule changes found:
+      - **Main class isn't filtered.** test1 (Human Bulwark) is still offered Human Bulwark in the picker.
+        ROOT CAUSE: the picker's `owned` set is built from `_subclasses` only, which goes STALE after a
+        debug profession change (that path re-sends Stats+Learned but not the class list, so the main still
+        looks like a base Fighter with ThirdClass=0). `_myThirdClass` updates but the picker ignores it.
+        → **FIX: include the active class's discipline (`_myThirdClass`) in the filter**, and/or re-send the
+        class list from `HandleDebugThirdClass`. (Server `CanAddDiscipline` already counts the main.)
+      - **Adding Vanguard also removed Bulwark** from the list — same stale-`_subclasses` cause: the add
+        finally pushes a fresh class list so the main's Bulwark belatedly drops out. Fixed by the above.
+      - **Requirement change: level 76 → 75, AND require a 3rd class.** No 4th tier exists, so gate on
+        **level 75 + has a 3rd class** (don't force subs toward a 4th class). `SubclassLevel 76 → 75`.
+      - **Adding a new class requires ALL owned classes to be level 75+** (they already carry a 3rd prof).
+      - The new class still starts at **level 1**, own race, 3rd class pre-approved.
+- [x] **Discipline is unique, cross-race.** VERIFIED.
+- [~] **All gear unequips on add** — ✅ **grade penalty BUILT 2026-07-16 (top batch).** Works, BUT it only fires on ADD. On a **class CHANGE/swap** to a
+      level-1 class you keep your A-grade gear equipped (owner: that's fine) — so we now **need the GRADE
+      PENALTY** (low level in high-grade gear → gear combat stats scaled down). Previously deferred; owner
+      wants it now. See the deferred spec in docs/Roadmap.md.
+- [x] **Count cap** (4 normal / admin unlimited). VERIFIED.
+- [x] **Swap + relog persistence.** VERIFIED.
+
+**Karma / PK / trade:** — owner tested 2026-07-16
+- [~] **Karma per-kill cap — ✅ QUADRATIC CURVE BUILT 2026-07-16 (top batch).** A level-82 killing a level-1 (+81
+      gap) got only **~3k** karma; a huge gap should hit the cap, not undershoot. Owner's intent — karma per
+      kill scales with the **level gap (killer − victim)** and CAPS at a **+50** gap:
+      - ≤ +10 gap: ~**200** (baseline).
+      - then it **skyrockets**: +11 → **400**, +12 → **600**, … accelerating up to **+50 → 15,000** (the cap).
+      - beyond +50 stays at the 15k cap.
+      So the 15k cap is reached at a +50 gap (killing far-below-level in a low-level zone), and the current
+      formula that *undershoots* on big gaps must be replaced. Exact curve = design decision (anchors above).
+- [x] **4 karma debug buttons** (+1000 / −1000 / +20 / −20; at 0 the red name + streak clear). VERIFIED.
+- [x] **Trading blocked while PK or flagged** (either party); innocent-to-innocent works. VERIFIED.
+- [x] **A PK can't BUY from a vendor**; purple can; selling works for everyone. VERIFIED.
+- [x] **Trade window contrast** — partner offer + your-inventory panels readable. VERIFIED.
 
 **Debug menu reorg:**
 - [ ] **Functions tab** is grouped top-to-bottom: **Full buffer · Gold & SP · Level · Karma**.
 - [ ] **Class tab** is grouped: **Profession & skills** (class change + give all skills) · **Classes
       (subclass)** (swap + add) · **Reset Character**.
 
+**New findings (2026-07-16 playtest):**
+- [x] ✅ **Archer "244k M.Atk" — RESOLVED 2026-07-16, NOT a bug.** The char was level **821** (debug over-
+      level), not 82. Magic uses `levelMod²`, physical `levelMod¹`; at 821 that's 82.8× vs 9.1×, so the M.Atk
+      *stat* balloons. MEASURED in BalanceMatrix (new extreme-level + damage probes): at 821 a MAGE has
+      **366k** M.Atk (3× the archer's 112k) — so it's the shared level scaling, not archer-specific. And the
+      actual DAMAGE stays balanced at every level (mage nuke 74 / fighter basic 49 / archer basic 104 vs a
+      same-level tank) because magic damage takes `√mAtk / mDef` — the giant stat compresses. If anything,
+      magic *falls off* at extreme levels (mDef outgrows √mAtk), it doesn't skyrocket. **No fix needed** at
+      the real cap (90). If the cap rises to 100-200, re-run the BalanceMatrix damage probe to confirm.
+
+---
+
+## 🧪 M.ATK DISPLAY SHRINK (built 2026-07-16, damage-model work — NOT committed) — see docs/DamageModel.md
+
+Combat is UNCHANGED (internal M.Atk + √ formulas untouched, so damage + heals are byte-identical and mob
+casters unaffected). This is display-only + honest magic buffs.
+- [ ] **M.Atk in the stats window is now P.Atk-size** (~1,087 @L85 instead of 2,954). A new row **"M.Atk
+      (internal / L2-ref)"** shows the old cosmic value for reference. Target-frame M.Atk also shrunk.
+- [ ] **Unbuffed magic damage + heals are identical** to before (verified in BalanceMatrix: mage 533 vs
+      tank / 2249 vs mob unchanged).
+- [ ] **Magic-only M.Atk buffs are now HONEST** — a `BuffMagAtk` authored at +X% gives +X% damage AND +X%
+      on the displayed M.Atk (squared internally to cancel the √). ⚠ **They now grant their FULL authored %**,
+      so existing magic-only buffs OVER-perform until re-authored to their effective (halved-ish) value —
+      **owner's re-authoring TODO.** Shared attack buffs (BuffAtk) are unchanged (√-dampened, ~half on magic).
+
 ---
 
 ## ✅ VERIFIED 2026-07-15 (afternoon batch — owner tested)
 
-- [x] **P.Atk L2 formula (bare-hands).** Naked feeble, armed preserved. ✅
-- [x] **NPC buffer — 3 paid options.** ✅
-- [x] **Gold is tradable** (net gold changes hands in the trade window). ✅
-- [x] **Gold shows in the inventory, colour-tiered.** ✅
-- [x] **Popups remember their position** across a client restart. ✅
-- [x] **Stat-swap + training passives require level 40 + 3rd class.** ✅
-- [x] **Subclass count limit** (4 for a normal account). ✅
-- [x] **PvP / PK / karma shown in the character window.** ✅ (the −int.max overflow it exposed is now fixed
-      — see the evening batch's karma cap.)
+P.Atk L2 formula (bare-hands feeble, armed preserved), NPC buffer 3 paid options, gold tradable +
+colour-tiered in the inventory, popups remember position across a client restart, stat-swap + training
+passives require level 40 + 3rd class, subclass count limit (4 for a normal account), and PvP/PK/karma
+shown in the character window — all confirmed. (The −int.max overflow the karma readout exposed is fixed
+by the evening batch's karma cap.)
 
 ---
 
-## 📋 2026-07-15 PLAYTEST — RESULTS + NEW WORK QUEUE
+## ✅ 2026-07-15 PLAYTEST — RESULTS (verified) + NEW FEATURE QUEUE
 
-Owner tested the 07-13 and 07-14 features. **VERIFIED WORKING** (details collapsed below):
-subclasses · level cap + delevel + debug buffs · skill bar → DB · skill-bar readability + debug ·
-stat-swap direction rule · skill-reset NPC · movable popups (great) · equipped-items pane ·
-HealK=15 · OffChannelFactor stays 0.6.
+Owner tested the 07-13 and 07-14 features — all **VERIFIED WORKING**: subclasses · level cap + delevel +
+debug buffs · skill bar → DB · skill-bar readability + debug · stat-swap direction rule · skill-reset NPC ·
+movable popups (great) · equipped-items pane · HealK=15 · OffChannelFactor stays 0.6.
 
-**CHANGES NEEDED (found while testing):**
-1. [x] **Class uniqueness → discipline-only + count cap — BUILT 2026-07-15 (evening).** Full subclass
-   rework: pick any discipline across all races, level-76 gate, cross-race uniqueness, count cap 4 (admins
-   unlimited), pre-approved 3rd class, unequip-on-add. See the evening batch above. *(awaiting owner test)*
-2. [x] **Mage-click reverted** — all classes click-to-attack. ✅ VERIFIED 2026-07-15.
-3. [x] **Skill cast cancels the auto-attack walk** (no longer keeps walking after the cast). ✅ VERIFIED.
-4. [x] **Set info only on the BODY armor** — accessories no longer claim a set. ✅ VERIFIED.
-5. [x] **Stat-swap groups gated by class** (fighter CON/DEX/ATK only; mage CON↔DEX + ATK/WIT/MEN). ✅ VERIFIED.
-6. [x] **Stat-swap + training passives require level 40 + 3rd class** — BUILT and ✅ VERIFIED 2026-07-15.
+**Changes found while testing:** mage-click reverted (all classes click-to-attack), skill cast cancels the
+auto-attack walk, set info only on the BODY armor, stat-swap groups gated by class (fighter CON/DEX/ATK;
+mage CON↔DEX + ATK/WIT/MEN), and stat-swap + training passives require level 40 + 3rd class — all BUILT +
+VERIFIED. The class-uniqueness → discipline-only + count-cap rework was also built (evening) and is under
+test in the "BATCH TO TEST" section at the top.
 
 **NEW FEATURES / IDEAS (recorded to roadmap — see docs/Roadmap.md):**
 - **Gold → an inventory ITEM** (L2 adena), tradable, and beyond int.max (long / stackable). Remove it
@@ -136,34 +183,20 @@ All subclass tests confirmed working: add a class, swap, per-class level/XP/skil
 gear/gold, survives a relog, swap clears buffs, debug-reset drops subclasses. Machine-checked too by
 `tools/SmokeTest`.
 
-### ⚠ Class uniqueness — WRONG AXIS, needs a change
+### ✅ Class uniqueness — RESOLVED 2026-07-16 (discipline-only + count cap shipped)
 
-- [~] **Bar the repeated DISCIPLINE, NOT the archetype.** Owner wants: you may own **4 mages** — two
-      clerics (Lightbringer + Warchanter) and two nukers (Tempest + the other) — you just may not own two
-      of the **same discipline** (no two Tempests). Currently the ARCHETYPE is barred (can't be a Nuker
-      twice), which is too strict. → **remove the archetype bar; keep the discipline bar.**
-- [x] **No repeated DISCIPLINE** — verified.
-- [x] **Barred options greyed out** in the picker + server refuses them — verified.
-- [ ] ⚠ **NEW HOLE: nothing caps subclass COUNT.** You can add 20 mage base classes, of which only two
-      lead to a working (unique-discipline) endgame class. Needs a cap on how many classes a character can
-      own (owner's design had 3-4), or gate "add class" so you can't stack pointless duplicates.
-
-Still not built (player-facing rules): the 3-4 cap, safe-zone-only swapping, 5-min swap delay.
+The archetype bar was replaced by a discipline-only bar (own 4 mages = 2 clerics + 2 nukers, just no two of
+the same discipline), barred options greyed + server-refused, and subclass COUNT is now capped (4 normal /
+admin unlimited) — all confirmed. Player-facing rules still not built: safe-zone-only swapping, 5-min swap delay.
 
 ---
 
-## MOVABLE POPUPS + MAGE-CLICK (2026-07-14)
+## ✅ MOVABLE POPUPS + MAGE-CLICK (2026-07-14) — VERIFIED 2026-07-16
 
-- [x] **Every popup can be dragged / closed / raised** — VERIFIED, owner: "very good to rearrange so they
-      don't get in the way."
-- [ ] **NEW: persist popup positions** to the settings file (nested JSON per window: Window / inventory /
-      skills…), saved on CLOSE (not on every move), defaulting when the file is untouched — start where
-      you last left them, like L2. (Roadmap.)
-- [~] **REVERT the mage-click change.** Owner wants ALL classes to click-to-attack — a mage out of MP
-      needs to melee a mob to finish it. My "mage only targets" change was wrong.
-- [ ] ⚠ **REAL BUG: skill cast must CANCEL the walk-to-target, not pause it.** Double-clicking a mob
-      starts a melee walk; casting a skill only PAUSES the movement, so after the cast finishes the
-      character keeps walking to the target. The cast should STOP the auto-attack move outright.
+Every popup drags / closes / raises (owner: "very good to rearrange so they don't get in the way"), popup
+positions persist to the settings file (saved on close, defaulting when untouched, like L2), the mage-click
+change is reverted (all classes click-to-attack so a mage out of MP can melee a mob), and casting a skill
+cancels the auto-attack walk outright (no longer keeps walking after the cast) — all confirmed.
 
 ---
 
@@ -174,13 +207,10 @@ Full-buff debug button, level cap 90 (admins exempt), delevel −1/−10, deleve
 
 ---
 
-## INVENTORY: EQUIPPED PANE + SET INFO (2026-07-14)
+## ✅ INVENTORY: EQUIPPED PANE + SET INFO (2026-07-14) — VERIFIED 2026-07-16
 
-- [x] **Equipped items have their own tab** (Equipped / Bag / Quest) — VERIFIED.
-- [~] **Set info shows on the wrong pieces.** The set section now appears, but on ACCESSORY pieces too —
-      e.g. after swapping your body from heavy to robe, the **boots still show "3/4 heavy set"** until you
-      put the heavy body back. A boots piece is not the set-defining item. Owner wants the set requirement
-      shown **only on the BODY armor** (the piece that actually carries the set), not on boots/gloves/helm.
+Equipped items have their own tab (Equipped / Bag / Quest), and the set requirement now shows only on
+the BODY armor (the set-defining piece), not on boots/gloves/helm/accessories — all confirmed.
 
 ---
 
@@ -193,12 +223,9 @@ cooldown no longer freezes a slot, cooldown countdown readable — all confirmed
 
 ## ✅ SKILL BAR + DEBUG (2026-07-14) — VERIFIED 2026-07-15
 
-Readable bar text, +10,000,000 gold button, debug class change keeps inventory — all confirmed.
-
-- [x] **DRAG & DROP on the bar** — owner: *"I think I tested it wrong the whole time — I was trying to
-      drag from the skills MENU (like the first time), not rearrange the buttons ON the bar."* The rework
-      was about rearranging the slot buttons on the bar, which now works. ✔ (If dragging a skill FROM the
-      skills window onto the bar is also wanted, that's a separate feature — say so.)
+Readable bar text, +10,000,000 gold button, debug class change keeps inventory, and drag & drop to
+rearrange the slot buttons on the bar — all confirmed. (Dragging a skill FROM the skills window onto the
+bar would be a separate feature if wanted.)
 
 ---
 
@@ -227,23 +254,13 @@ exclusive-group skills, out-of-range guard — all confirmed.
 
 ---
 
-## LEVEL-40 STAT-SWAP PASSIVES (2026-07-13) — mostly verified, 2 changes wanted
+## ✅ LEVEL-40 STAT-SWAP PASSIVES (2026-07-13) — VERIFIED 2026-07-15
 
-The ONLY thing that moves your main stats now. Born with CON/ATK/WIT/DEX; old free grants gone.
-
-- [x] Gold-priced (1kk-5kk/level), affordability-gated, deducted — VERIFIED.
-- [x] A group is a PERMANENT commitment; the alternative disappears — VERIFIED.
-- [x] The stats REALLY change (Max HP / eva-acc-crit-AS / cast-MP-crit / P&M.Atk) — VERIFIED.
-- [x] MEN is no longer a stat (±2% MaxMP/M.Def/MP-regen per point) — VERIFIED.
-- [x] The reset NPC is BUILT (Mindwright Sela) — this old "NOT built" note is stale.
-- [~] **CHANGE: gate ALL groups by class, not just ATK.** Right now only the ATK group is class-locked.
-      Owner wants:
-      - **Fighter** may only do: CON↔DEX, ATK↔CON, ATK↔DEX.
-      - **Mage** may only do: CON↔DEX, ATK↔MEN, ATK↔WIT, WIT↔MEN.
-      (So e.g. a fighter should NOT see WIT/MEN swaps, and a mage should NOT see the DEX-cost ones.)
-- [~] **CHANGE: require the 3rd CLASS, not just level 40.** The swaps AND the training passives
-      (Spirit/Body Training) currently appear at level 40. Owner wants them to appear only after the
-      **3rd-class change** — i.e. 3rd class → then training + swap skills show.
+The only thing that moves your main stats now (born with CON/ATK/WIT/DEX; old free grants gone).
+Gold-priced (1kk-5kk/level) + affordability-gated, each group a permanent commitment, the stats really
+change (Max HP / eva-acc-crit-AS / cast-MP-crit / P&M.Atk), MEN gone as a stat, and the reset NPC
+(Mindwright Sela) works. Both follow-up changes are in too: all groups gated by class (fighter CON/DEX/ATK;
+mage CON↔DEX + ATK/WIT/MEN) and swaps + training passives require the 3rd class, not just level 40 — all confirmed.
 
 ---
 
@@ -296,8 +313,8 @@ Return skill (30s/5min, cancels on damage), Scroll of Return (Apothecary), Ultim
   the last 30s) it's **blocked** with a message; 30s after the last hit you can exit.
 
 ### Disconnect fates (use 2+ clients)  *(NOT verified this playtest)*
-- [ ] **Go Offline (Auto-Farm)** button → you return to account select and your char keeps farming
-  (offline), visible to others, until the 2h cap / death / relogin.
+- [x] **Go Offline (Auto-Farm)** button → you return to account select and your char keeps farming
+  (offline), visible to others, until the 2h cap / death / relogin. VERIFIED.
 - [ ] Drop while **auto-farming** (out of town) → offline farm (2h cap). The 2h cap is ONLY for
   offline farming — NOT for a network blip.
 - [ ] Drop **mid-combat but not auto-farming** → your char **keeps defending** its current target
@@ -307,8 +324,8 @@ Return skill (30s/5min, cancels on damage), Scroll of Return (Apothecary), Ultim
   above its head to nearby players, stays frozen and **in your party** (OFFLINE tag) for **180s**.
   Reconnect within 180s → resume seamlessly. After 180s → normal removal (leaves party).
 - [ ] A disconnected (grace) char that a mob kills is removed immediately.
-- [ ] Offline-FARMING chars still look like normal players to non-party (no Disconnected title);
-  only the grace state shows the title.
+- [x] Offline-FARMING chars still look like normal players to non-party (no Disconnected title);
+  only the grace state shows the title. VERIFIED.
 
 ---
 
@@ -322,33 +339,28 @@ Auto-Hunt button/window, per-skill enable + reuse, HP/MP potion %, condition log
 if missing, debuff if target lacks, self-heal <70%), auto-potions with auto off, Mana/s footer, normal
 loot/XP — all confirmed.
 
-### Offline farming (Phase 2, 2026-07-08)  *(NOT verified this playtest)*
-- [ ] With auto-hunt **ON** and standing in a mob field (not a town), **close the client / disconnect**.
-  A second logged-in character nearby should still **see your character** and watch it fight mobs
-  (it keeps hunting; a "keeps hunting while away" line appears).
-- [ ] **Log back in** → you re-attach to that same character with the loot/XP it gained while away
-  (not a stale copy).
-- [ ] Disconnecting **in a town** (safe zone), while **dead**, or with auto **off** does a normal
-  logout (no offline farming).
-- [ ] An offline farmer that **dies** (mobs out-damage its potions) stops and logs out ("stopped
-  hunting"); on next login it's alive with auto **off** (must re-enable).
-- [ ] Caps: idle **8h** online / offline **2h** (constants — verify via a temporary lower value if
-  needed). Hitting the idle cap stops auto and **blocks re-enabling until you re-log**.
-- [ ] Auto-hunt while offline still obeys the shared potion cooldown, buff-potion top-up, and skill
-  conditions (same brain as online).
+### Offline farming (Phase 2, 2026-07-08) — partially verified 2026-07-16
+- [x] With auto-hunt **ON** in a mob field, **close the client / disconnect** → a nearby character still
+  **sees your char fight mobs** ("keeps hunting while away"). VERIFIED.
+- [x] **Log back in** → re-attach to that same char with the loot/XP gained while away. VERIFIED.
+- [x] Disconnecting **in a town**, while **dead**, or with auto **off** does a normal logout (no offline farming). VERIFIED.
+- [~] ⚠ **EXPLOIT: an offline farmer that dies comes back ALIVE at full HP.** ✅ **BUILT 2026-07-16 (top batch).** Current: dies → stops → next
+  login alive with auto off. Owner: he must **stay DEAD on re-entry** — otherwise "I'm about to die, can't
+  escape → go offline-farm → re-enter full HP" is a free death-dodge. → on offline-farm death, persist the
+  DEATH so re-login lands dead (at the res prompt / town), not healed.
+- [ ] Caps: idle **8h** online / offline **2h**; hitting the idle cap stops auto and blocks re-enabling until relog.
+- [x] Auto-hunt while offline still obeys the shared potion cooldown, buff-potion top-up, and skill conditions. VERIFIED.
 
 ### ✅ Debug Tuning panel (2026-07-10) — VERIFIED 2026-07-15
 Live rates/karma/caps editing, cap=0→unlimited, persists across restart, window size persists,
 admin-gated — all confirmed.
 
-### PvP + flag/karma/PK (2026-07-10) — PARTIALLY verified 2026-07-15
-- [x] Top-right **PvP** / **Counter** toggle buttons — verified.
-- [x] **PvP: On** → attack a player outside town turns you purple, they can hit back, damage lands — verified.
-- [x] Attacking an **innocent** needs PvP On; purple/red attackable without it; hitting red doesn't flag — verified.
-- [x] **No PvP in towns** — verified.
-- [ ] **Kill an innocent** → red (PK) + karma; **kill a flagged/red** → PvP count, no karma. *(not tested)*
-- [ ] **Dying** as a PK −200 karma (red clears at 0); **farming** as a PK −20/kill. *(not tested)*
-- [ ] **Counter-attack** retaliation; **karma persists** across relog. *(not tested)*
+### ✅ PvP + flag/karma/PK (2026-07-10) — VERIFIED 2026-07-16
+PvP/Counter toggles, PvP-on flags you purple + enemy retaliates + damage lands, attacking an innocent needs
+PvP-on (purple/red free, hitting red doesn't flag), no PvP in towns, kill-innocent → red PK + karma,
+kill flagged/red → PvP count (no karma), dying as PK −200 karma (clears at 0), farming as PK −20/kill,
+counter-attack retaliation, karma persists across relog — all confirmed. (Karma AMOUNT formula is being
+reworked — see the "Karma / PK / trade" batch at the top.)
 
 ### Stats-via-skills identity migration (2026-07-10)  *(NOT verified this playtest)*
 - [ ] Rogue still has its crit/evasion identity (now from the **Evasion Mastery** passive: +20% crit,
@@ -362,53 +374,33 @@ admin-gated — all confirmed.
 Farm range, roam vs static spot, rank filter (mobs/elites/bosses), Basic-Attack row, survives relog —
 all confirmed.
 
-### Party + AFK interaction (2026-07-08)  *(NOT verified this playtest)*
-- [ ] You **can't invite** a player who is auto-hunting (idle) or offline-farming — you get "X is
-  auto-hunting and can't be invited right now."
-- [ ] A party member who turns auto-hunt **on** shows a yellow **• AFK** tag on their roster row;
-  a member who goes **offline-farming** shows a grey **• OFFLINE** tag (hover for a tooltip). The
-  tag clears when they turn auto off / reconnect.
-- [ ] The party can **kick** an AFK/offline member normally.
-- [ ] If the **party leader** goes offline-farming, leadership passes to an online member (★ moves).
-- [ ] A party **invite** left unanswered **auto-expires after ~30s**: the invitee's prompt disappears
-  and the inviter is told "X didn't respond," so they can re-invite (no permanent "considering
-  another invite" block).
-- [ ] An offline member that logs out (cap/death) **leaves the party**; one that reconnects **stays**
-  in it (tag clears).
+### ✅ Party + AFK interaction (2026-07-08) — VERIFIED 2026-07-16
+Can't invite an auto-hunting/offline-farming player, AFK (yellow) / OFFLINE (grey) roster tags that clear on
+reconnect, kick an AFK/offline member, leadership passes (★ moves) when the leader goes offline-farming,
+unanswered invite auto-expires ~30s, an offline member that logs out leaves the party while a reconnecting
+one stays — all confirmed.
 
 ---
 
 ## To test now (party window + mob cast-bar UI — 2026-07-07)
 
-### Party window (WPF client)  *(NOT verified this playtest)*
-- [ ] Target another player → the target frame shows an **"Invite to Party"** button. Click it →
-  they get a centered **accept/decline prompt**; you see a "Party invite sent" chat line.
-- [ ] On accept, both of you show a **Party panel** (top-left, under the vitals/buff bar) listing
-  every member with name/Lv/class + **live HP and MP bars**. Leader has a ★.
-- [ ] Leader sees a small **✕ kick** button on other rows (not on self); a non-leader sees none.
-  Kicking removes that member (their panel hides); the kicked player gets a chat notice.
-- [ ] **Leave** button removes you; when a party drops below 2 it **disbands** (everyone's panel
-  hides). The invite button is hidden for players already in your party, and for non-leaders.
-- [ ] Roster HP/MP bars update as members take damage / heal (server refresh).
+### Party window (WPF client) — partially verified 2026-07-16
+- [~] ⚠ **Can't target party members through the party window.** ✅ **BUILT 2026-07-16 (top batch).** Clicking a roster row does NOT target that
+  member — **a healer must be able to click an ally in the party panel to target + heal them.** Must-fix.
+- [~] **Close (✕) on the party window reopens it immediately** (closes then re-opens). Minor; likely a
+  WPF-harness-only quirk — the panel probably shouldn't offer a manual close while you're in a party (it
+  hides on leave/disband anyway).
+- [x] Invite via target frame → accept/decline prompt; Party panel lists members (name/Lv/class, HP/MP bars,
+  ★ leader); leader ✕ kick works — corroborated by the verified invite/kick/AFK tests. VERIFIED.
+- [x] Invite button on the target frame, **Leave** removes you / disbands below 2, roster HP/MP bars update
+  live as members take damage/heal — VERIFIED.
 
-### Party loot rules (2026-07-07)  *(NOT verified this playtest)*
-- [ ] A new party **defaults to Random** loot (settings-panel-configurable later).
-- [ ] The party panel shows a **Loot** dropdown. Only the **leader** can change it (disabled for
-  members).
-- [ ] Leader changing the dropdown **starts a vote**: every other member gets an **Agree/Decline**
-  prompt; the leader sees "waiting for the party to agree." It applies **only if ALL agree**
-  ("Loot rule set to … (agreed by all)"); any **Decline cancels** it, and it **times out** (~30s).
-  On cancel the leader's dropdown snaps back to the current rule.
-- [ ] A party invite **prompt shows the inviter's name AND the loot rule** you'd join under.
-- [ ] **Finders Keepers**: item drops go to whoever landed the kill (as before).
-- [ ] **Random**: each item drop goes to a random in-range member; others see "X looted Y."
-- [ ] **Round Robin**: consecutive drops rotate through in-range members in join order.
-- [ ] **Leader Only**: all item drops go to the leader (if in range; else the killer).
-- [ ] **Gold is ALWAYS split** evenly among in-range members regardless of the loot rule (killer
-  keeps the odd remainder); solo = the killer gets it all.
-- [ ] Boss/elite crafting-mat pile goes to a single recipient per the loot rule.
-- [ ] Only members **in share range** (ViewRange) and alive are eligible; out-of-range members are
-  skipped (loot falls back toward the killer where applicable).
+### ✅ Party loot rules (2026-07-07) — VERIFIED 2026-07-16
+New party defaults to Random, leader-only Loot dropdown, changing it starts an all-must-agree vote (Decline
+cancels, ~30s timeout, snaps back on cancel), invite prompt shows inviter name + loot rule, Finders Keepers /
+Random / Round Robin / Leader Only all distribute correctly, gold always split among in-range members (killer
+keeps the remainder), only alive in-range members eligible — all confirmed.
+- [ ] Boss/elite crafting-mat pile goes to a single recipient per the loot rule. *(not tested)*
 
 ### ✅ Mob / boss cast-bar — VERIFIED 2026-07-15
 Orange cast-bar under the nameplate fills over cast time, clears on interrupt/kill/finish — confirmed.

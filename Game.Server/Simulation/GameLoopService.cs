@@ -347,6 +347,8 @@ public class GameLoopService : BackgroundService
     private int _karmaLossPerDeath = 200;      // karma shed on each death
     private int _karmaLossPerMob = 20;         // karma shed per mob kill (grind it off while farming)
     private const int KarmaMaxPerKill = 15_000; // owner: cap one PK at 10-20k (~750 mob kills to shed)
+    private const int KarmaGapFloor   = 10;     // level gap ≤ this → just the base karma (200)
+    private const int KarmaGapCap     = 50;     // level gap ≥ this → the per-kill cap (skyrocket endpoint)
 
     /// <summary>A player's name state: red (karma), else purple (recent pvp), else white.</summary>
     private PvpFlag FlagOf(Entity p) =>
@@ -475,16 +477,24 @@ public class GameLoopService : BackgroundService
     {
         if (FlagOf(victim) == PvpFlag.Innocent)
         {
-            // Both exponents are CAPPED and the result CLAMPED. Without the caps, a big level gap (an
-            // admin killing a low-level test char) made Math.Pow(1.2, diff) astronomically large, and
-            // casting that double to int OVERFLOWED to int.MinValue → karma jumped to ≈ −2.1 billion.
-            int diff = Math.Clamp(killer.Level - victim.Level, 0, 15);
+            // Per-kill karma is driven by the LEVEL GAP (killer − victim), owner's quadratic curve
+            // (2026-07-16): a flat baseline up to a +10 gap, then it "skyrockets" to the per-kill cap at
+            // a +50 gap. This replaced an exponential 1.2^gap that was CLAMPED at gap 15 — so a huge gap
+            // (a lvl-82 on a lvl-1) actually UNDER-awarded (~3k) instead of hitting the cap.
+            //   karma(gap) = base                                , gap ≤ 10
+            //              = base + (cap-base)·((gap-10)/40)²     , 10 < gap < 50   (quadratic)
+            //              = cap                                  , gap ≥ 50
+            // (_karmaLevelGrowth is no longer used by this curve; it's kept only for config compat.)
+            int gap = Math.Max(0, killer.Level - victim.Level);
+            double levelKarma =
+                gap <= KarmaGapFloor ? _karmaBase :
+                gap >= KarmaGapCap   ? KarmaMaxPerKill :
+                _karmaBase + (KarmaMaxPerKill - _karmaBase)
+                    * Math.Pow((gap - KarmaGapFloor) / (double)(KarmaGapCap - KarmaGapFloor), 2);
+
+            // Consecutive-PK growth still multiplies on top; the final per-kill amount is capped at 15k.
             int consec = Math.Min(killer.ConsecutivePk, 15);
-            double raw = _karmaBase
-                * Math.Pow(_karmaConsecGrowth, consec)
-                * Math.Pow(_karmaLevelGrowth, diff);
-            // Cap a single kill at 15k (owner): with mob-loss 20 that's ~750 mob kills to shed one
-            // max PK — the "500-1000 kills" target. Total karma can still stack across many kills.
+            double raw = levelKarma * Math.Pow(_karmaConsecGrowth, consec);
             int gain = (int)Math.Clamp(raw, 0, KarmaMaxPerKill);
             killer.Karma += gain;
             killer.ConsecutivePk++;
@@ -634,6 +644,19 @@ public class GameLoopService : BackgroundService
         // from the class table at level 5 (no level-1 armor mastery).
         if (player.BaseClass == BaseClass.Mage && !player.HasSkill(SkillCatalog.MasteryRobe))
             player.LearnedSkills[SkillCatalog.MasteryRobe] = 1;
+
+        // Weapon Proficiency — every mage learns it at level 1 (untrained-weapon cast-speed penalty).
+        if (player.BaseClass == BaseClass.Mage)
+            player.LearnedSkills.TryAdd(SkillCatalog.WeaponProficiency, 1);
+
+        // Divine Focus — the Healer 2nd class learns Lv1 at 20; the Warchanter discipline upgrades to Lv2 at
+        // 40 (softer heal penalty in fighter gear). Never downgrade a Warchanter back to Lv1.
+        if (player.Archetype == Archetype.Healer)
+        {
+            int want = player.Discipline == Discipline.Warchanter ? 2 : 1;
+            if (player.SkillLevelOf(SkillCatalog.DivineFocus) < want)
+                player.LearnedSkills[SkillCatalog.DivineFocus] = want;
+        }
 
         // Combat "training" passive (soulshot/spiritshot stand-in): auto-granted, level chosen by
         // character level (+10%…+100% atk; see TrainingLevelFor). GATED ON THE 3RD CLASS (owner): like
@@ -946,6 +969,7 @@ public class GameLoopService : BackgroundService
             return;
 
         entity.Dead = false;
+        entity.DiedWhileAway = false;   // the death has now been paid — clear the persisted stick-dead flag
         entity.Hp = entity.MaxHp;
         entity.Mp = entity.MaxMp;
         entity.Buffs.Clear();
@@ -1015,12 +1039,9 @@ public class GameLoopService : BackgroundService
         }
         else
         {
-            if (player.Level < ItemCatalog.RequiredLevel(def.Grade))
-            {
-                SendSystemToEntity(player,
-                    $"{def.Name} requires level {ItemCatalog.RequiredLevel(def.Grade)}.");
-                return;
-            }
+            // No level gate on equipping any more: you MAY equip above-grade gear — you just take the
+            // GRADE PENALTY (its weapon ATK / armor DEF is scaled down until you reach the grade's level;
+            // see GradePenalty + Entity.RecomputeDerived). Owner 2026-07-16.
 
             // Items being traded cannot be equipped mid-trade.
             if (_world.ActiveTrades.TryGetValue(player.Id, out var trade) &&
@@ -1399,10 +1420,21 @@ public class GameLoopService : BackgroundService
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
             return;
 
-        if (player.Level < ThirdClassCatalog.SubclassLevel)
+        // Completeness gate (normal accounts): every class you already own must be level 75+ AND hold its
+        // 3rd class before you may add another. No 4th tier exists, so "3rd class + level 75" is the gate —
+        // and requiring ALL owned classes to clear it stops stacking half-levelled subclasses (a freshly
+        // added class starts at level 1, so you level each one to 75 before the next add). Admins bypass
+        // this, same as the count cap below.
+        if (!player.IsAdmin)
         {
-            SendSystemToEntity(player, $"A new class requires level {ThirdClassCatalog.SubclassLevel}.");
-            return;
+            var incomplete = player.Subclasses
+                .FirstOrDefault(s => s.Level < ThirdClassCatalog.SubclassLevel || s.ThirdClass <= 0);
+            if (incomplete is not null)
+            {
+                SendSystemToEntity(player,
+                    $"Every class must reach level {ThirdClassCatalog.SubclassLevel} and its 3rd class before you can add another.");
+                return;
+            }
         }
 
         // Count cap — admins are unlimited (the no-duplicate-discipline filter still applies to them).
@@ -1721,6 +1753,7 @@ public class GameLoopService : BackgroundService
 
         SendStats(player);
         SendLearned(player);
+        SendSubclasses(player);   // keep the client's class list fresh so the add-class picker filters the main
         SaveEntity(player);
         BroadcastSystem($"{player.Name} has become a {tcd.Name}!");
     }
@@ -3966,7 +3999,8 @@ var effect = def.Effect;
         // ignores heal-reduction. See HealOne.
         if (effect.HasFlag(SkillEffect.Heal))
         {
-            int flat = SkillMath.HealAmount(def.PowerAt(lvl), (int)caster.EffectiveMagicAttack);
+            // Divine Focus: healing OUTPUT scaled down when the healer has no magic weapon (×0.5 / ×0.75).
+            int flat = (int)(SkillMath.HealAmount(def.PowerAt(lvl), (int)caster.EffectiveMagicAttack) * caster.HealOutputMult);
             float pct = def.MagnitudeOf(SkillEffect.Heal, ModifierMode.Percent, lvl);
             if (def.TargetMode == TargetMode.AlliesInRadius)
                 foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
@@ -4748,9 +4782,15 @@ var effect = def.Effect;
             // Death stops auto-hunt. An offline farmer's session ends (deferred logout); a link-dead
             // grace ends; an online idle hunter just stops (can re-enable after respawn).
             if (victim.IsOfflineFarming)
+            {
+                victim.DiedWhileAway = true;   // death sticks: no full-HP respawn on relogin (anti-exploit)
                 _endOfflineQueue.Add(victim.Id);
+            }
             else if (victim.IsDisconnected)
+            {
+                victim.DiedWhileAway = true;   // dying during the link-dead grace sticks too
                 _endGraceQueue.Add(victim.Id);
+            }
             else if (victim.AutoHuntEnabled)
                 StopAutoHunt(victim, "you were defeated.", locked: false);
         }
@@ -5396,14 +5436,14 @@ var effect = def.Effect;
             p.Con, p.AtkStat, p.EffectiveWit, p.EffectiveDex,
             p.MaxHp, p.MaxMp, (int)p.EffectiveAttack, (int)p.EffectiveDefence,
             p.Accuracy, (int)p.EffectiveEvasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
-            p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.EffectiveCastSpeedMultiplier, p.EffectiveAttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttack, p.MagicCritChance,
+            p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.EffectiveCastSpeedMultiplier, p.EffectiveAttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttackShown, p.MagicCritChance,
             p.HasShield, p.BlockChance, p.BlockReduction, p.ShieldDefense, (int)p.EffectiveMagicDefence,
             p.ActiveArmorSet, p.ArmorMasteryLabel,
             hpReg, mpReg, p.CritDamageBonus,
             p.MeleeVamp, p.SpellVamp, p.CooldownReduction,
             p.MagicFailResist, p.MagicFailFloor,
             p.CritRateResist, p.CritDmgResist, p.BowResist,
-            p.InterruptResist));
+            p.InterruptResist, (int)p.EffectiveMagicAttack));   // MagicAttackInternal: the cosmic L2-reference value
     }
 
     /// <summary>The player's STANDING (out-of-combat, running) HP/MP regen per second —
@@ -5624,7 +5664,7 @@ var effect = def.Effect;
         SendTo(player, "TargetDetails", new TargetDetails(
             t.Id, t.Name, t.Level, isMob,
             t.Hp, t.MaxHp, t.Mp, t.MaxMp,
-            t.AttackPower, t.MagicAttack,
+            t.AttackPower, (int)t.EffectiveMagicAttackShown,   // shrunk display, matches the stats window
             (int)t.EffectiveDefence, (int)t.EffectiveMagicDefence,
             t.Accuracy, t.Evasion, t.CritChance,
             t.BowResist, t.CritRateResist,

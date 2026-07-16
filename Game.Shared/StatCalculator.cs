@@ -340,6 +340,12 @@ public static class StatCalculator
     public const float PhysicalK = 77f;
     public const float MagicK = 91f;
 
+    /// <summary>PATH B (owner 2026-07-16): M.Atk is STORED as its displayed value = this scale · √(internal),
+    /// so the cosmic `base·levelMod²` number shrinks to P.Atk size while the √ (and its level self-balancing)
+    /// is preserved. <see cref="MagicDamage"/> is then LINEAR on the stored value (K/scale reproduces the old
+    /// `91·power·√internal/mDef` exactly). The internal value = (shown/scale)².</summary>
+    public const float MagicAttackDisplayScale = 20f;
+
     /// <summary>Physical ratio damage (L2 model): 77·(pAtk + skillPower)/pDef. No level
     /// term (level is already baked into pAtk/pDef growth). 'power' is 0 for a basic
     /// attack, the skill's power for a skill. Crit / variance / soulshot are applied by
@@ -373,6 +379,9 @@ public static class StatCalculator
     public static int MagicDamage(int mAtk, int power, int mDef, int casterLevel)
     {
         float def = Math.Max(1, mDef);
+        // mAtk here is the INTERNAL value (base·levelMod²·buffs²). The √ stays — it is what self-balances
+        // magic across levels. The DISPLAY shrinks this to P.Atk size elsewhere (EffectiveMagicAttackShown);
+        // this formula is unchanged so mob casters + heals keep working. See Path B in docs/DamageModel.md.
         float dmg = MagicK * power * MathF.Sqrt(Math.Max(0, mAtk)) / def;
         return Math.Max(1, (int)dmg);
     }

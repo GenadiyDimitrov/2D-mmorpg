@@ -68,13 +68,18 @@ changes and new features that came out of the play session:
   class" picker lists every discipline you don't already own, across all races, gated at level 76.
 
 **Deferred / needs design:**
-- [ ] **Grade penalty (L2-style low-level-in-high-grade gear).** When a class equips gear above its level
-  (a fresh level-1 subclass in a level-76 char's old gear, if we let it equip at all), apply a stat
-  multiplier to the gear's combat stats: **weapon attack** ×0.2 @ lvl5 grade, ×0.3 @ lvl4, ×0.4 @ lvl2,
-  ×0.5 @ lvl1; **armor defence** similarly. Conditional on "if we allow the equip". Deferred — a separate
-  system; for now the subclass rework simply **unequips everything** on class add, which sidesteps it.
+- [x] **Grade penalty (L2-style low-level-in-high-grade gear) — BUILT 2026-07-16.** `GradePenalty`
+  (Game.Shared/Items.cs): min level F=1/E=20/B=40/A=52/S=61; below it the item's **weapon ATK / armor DEF**
+  is multiplied by ×0.5(E)/0.4(B)/0.3(A)/0.2(S). Applied in `Entity.RecomputeDerived` before masteries/sets.
+  The **equip level gate was removed** (owner: you may equip any grade at any level and just eat the
+  penalty), and `ItemCatalog.RequiredLevel` now delegates to `GradePenalty.MinLevel`. Numbers tunable.
 - [ ] **Marketplace + premium currency.** Player marketplace (list/buy) and a second, premium currency;
   both tradable and inter-convertible with gold. (Noted from the gold work below.)
+- [ ] **Damage-model rework (unified `{Flat, Mod}` skills + lowered M.Atk)** — see `docs/DamageModel.md`.
+  Makes physical skills scale with pAtk (Mod), unifies physical/magic skill authoring, and drops M.Atk from
+  cosmic `levelMod²` to P.Atk-size. Design drafted + measured; **awaiting owner's pick of Option A (linear,
+  recommended) vs Option B (keep √)**. Reverses the signed-off magic scaling → calibrate in BalanceMatrix
+  and re-validate the anchors before build.
 
 **New features (bigger — some need a design decision, see docs + questions below):**
 - [~] **Gold — long + TRADABLE + coloured display — DONE 2026-07-15 (owner: not an item).** Gold was

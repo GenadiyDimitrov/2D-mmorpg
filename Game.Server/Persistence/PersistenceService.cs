@@ -413,8 +413,19 @@ public class PersistenceService
         }
 
         entity.RecomputeDerived();
-        entity.Hp = entity.MaxHp;
         entity.Mp = entity.MaxMp;
+        // Died while away (offline-farm / link-dead)? The death STICKS — log in DEAD (res prompt), not
+        // healed. Stays dead across relogs until the character actually respawns (see HandleRespawn).
+        entity.DiedWhileAway = rec.DiedWhileAway;
+        if (entity.DiedWhileAway)
+        {
+            entity.Dead = true;
+            entity.Hp = 0;
+        }
+        else
+        {
+            entity.Hp = entity.MaxHp;
+        }
         return entity;
     }
 
@@ -448,7 +459,7 @@ public class PersistenceService
         string LearnedSkillsCsv, string CompletedQuestsCsv, string ActiveQuestsJson,
         string KnownRecipesCsv, string AutoHuntJson,
         int ActiveSubclassSlot, IReadOnlyList<SubclassSnapshot> Subclasses,
-        int Karma, int PkCount, int PvpCount, int ConsecutivePk,
+        int Karma, int PkCount, int PvpCount, int ConsecutivePk, bool DiedWhileAway,
         IReadOnlyList<ItemSnapshot> Items)
     {
         /// <summary>Capture a character. MUST be called on the tick thread. Returns
@@ -477,7 +488,7 @@ public class PersistenceService
                     e.AutoSkills.ToArray(), e.AutoBuffPotionIds.ToArray(),
                     e.AutoFarmRange, e.AutoFarmStatic, e.AutoAttackNormal, e.AutoAttackElite, e.AutoAttackBoss)),
                 e.ActiveSubclass.Slot, subs,
-                e.Karma, e.PkCount, e.PvpCount, e.ConsecutivePk,
+                e.Karma, e.PkCount, e.PvpCount, e.ConsecutivePk, e.DiedWhileAway,
                 items);
         }
     }
@@ -547,6 +558,7 @@ public class PersistenceService
         rec.PkCount = snap.PkCount;
         rec.PvpCount = snap.PvpCount;
         rec.ConsecutivePk = snap.ConsecutivePk;
+        rec.DiedWhileAway = snap.DiedWhileAway;
         rec.X = snap.X;
         rec.Y = snap.Y;
 

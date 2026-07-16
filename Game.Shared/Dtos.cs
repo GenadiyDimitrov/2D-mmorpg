@@ -118,7 +118,9 @@ public record StatsUpdate(
     float MeleeVamp = 0f, float SpellVamp = 0f, float CooldownReduction = 0f,
     float MagicFailResist = 0f, float MagicFailFloor = 0f,
     float CritRateResist = 0f, float CritDmgResist = 0f, float BowResist = 0f,
-    int InterruptResist = 0);
+    int InterruptResist = 0,
+    // DEBUG / L2-reference: the OLD-style internal M.Atk (base·levelMod²·buffs²) the shrunk display hides.
+    int MagicAttackInternal = 0);
 
 /// <summary>Server -> owning client: a potion cooldown started (seconds),
 /// or an active potion effect changed. Cooldown 0 = ready.</summary>

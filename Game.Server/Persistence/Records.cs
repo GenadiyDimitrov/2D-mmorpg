@@ -82,6 +82,11 @@ public class CharacterRecord
     public int PvpCount { get; set; }
     public int ConsecutivePk { get; set; }
 
+    /// <summary>True if this character DIED while offline-farming / link-dead (away from keyboard). It
+    /// logs back in DEAD (res prompt), not healed — closes the "go offline to dodge a death, come back
+    /// full HP" exploit. Cleared when the character actually respawns.</summary>
+    public bool DiedWhileAway { get; set; }
+
     // Core stats are derived from race/class/level, but second-class and item
     // bonuses are permanent additions, so we persist the raw core stats.
     public int Con { get; set; }

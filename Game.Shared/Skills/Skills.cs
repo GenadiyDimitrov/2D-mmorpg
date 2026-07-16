@@ -494,6 +494,8 @@ public static class SkillMath
     /// ignores heal-reduction. That's the point of it — when an anti-heal ultimate lands, the big
     /// flat heals wither and only the % heals still work.</summary>
     public static int HealAmount(int power, int mAtk) =>
+        // mAtk is the INTERNAL magic-attack value; the √ stays (unchanged) so heal amounts are identical
+        // to today. Only the DISPLAYED M.Atk is shrunk (Path B), not this.
         Math.Max(1, (int)(power * MathF.Sqrt(Math.Max(0, mAtk)) / HealK));
 
     public const float CritMultiplierSkills = 2.0f;

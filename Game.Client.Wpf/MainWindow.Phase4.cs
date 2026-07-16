@@ -818,10 +818,19 @@ public partial class MainWindow
             Background = new SolidColorBrush(Color.FromArgb(80, 0, 0, 0)), Child = mpFill
         };
 
-        var row = new StackPanel { Margin = new Thickness(0, 3, 0, 3) };
+        // Clicking anywhere on the row TARGETS that member (so a healer can select + heal an ally).
+        // Background=Transparent makes the whole row hit-testable; it targets only, never attacks.
+        var row = new StackPanel
+        {
+            Margin = new Thickness(0, 3, 0, 3),
+            Background = Brushes.Transparent,
+            Cursor = System.Windows.Input.Cursors.Hand,
+            Tag = m.Id
+        };
         row.Children.Add(titleRow);
         row.Children.Add(hpBar);
         row.Children.Add(mpBar);
+        row.MouseLeftButtonDown += PartyRow_Target;
         return row;
     }
 
@@ -829,6 +838,17 @@ public partial class MainWindow
     {
         if (sender is Button { Tag: Guid id })
             await _net.PartyKickAsync(id);
+    }
+
+    /// <summary>Click a party member's roster row → target them (targets only, never attacks a party
+    /// member). Lets a healer select an ally in the party window and cast a heal on them.</summary>
+    private void PartyRow_Target(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: Guid id })
+        {
+            _targetId = id;
+            UpdateTargetFrame();
+        }
     }
 
     private async void PartyLootCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1044,6 +1064,7 @@ public partial class MainWindow
             $"{st.Con} / {st.Atk} / {st.Wit} / {st.Dex}"));
         StatsList.Items.Add(MakeStatRow("Max HP / MP", $"{st.MaxHp} / {st.MaxMp}"));
         StatsList.Items.Add(MakeStatRow("P.Atk / M.Atk", $"{st.AttackPower} / {st.MagicAttack}"));
+        StatsList.Items.Add(MakeStatRow("M.Atk (internal / L2-ref)", $"{st.MagicAttackInternal:N0}"));
         StatsList.Items.Add(MakeStatRow("Defence (Phys / Magic)", $"{st.Defence} / {st.MagicDefence}"));
         if (!string.IsNullOrEmpty(st.ActiveSet))
             StatsList.Items.Add(MakeStatRow("Set Bonus", $"{st.ActiveSet} (complete)"));
@@ -1190,7 +1211,7 @@ public partial class MainWindow
         EquipPopupTitle.Text = item.Equipped ? $"Unequip {def.Name}" : def.Name;
         EquipPopupSubtitle.Text =
             $"{def.Grade}/{def.Rarity}" +
-            (ItemCatalog.RequiredLevel(def.Grade) > 0 ? $"  •  requires Lv{ItemCatalog.RequiredLevel(def.Grade)}" : "");
+            (ItemCatalog.RequiredLevel(def.Grade) > 0 ? $"  •  full power at Lv{ItemCatalog.RequiredLevel(def.Grade)}" : "");
 
         // Find the currently equipped item in the same slot to diff against. For
         // armor the body-part slot must match too (compare a helmet vs a helmet).
@@ -2710,12 +2731,19 @@ public partial class MainWindow
         {
             _debugAddDiscView = false; BuildDebugMenu(); return Task.CompletedTask;
         }));
-        AddDebugHeader($"Add a class — need level {ThirdClassCatalog.SubclassLevel}");
+        AddDebugHeader($"Add a class — every class must be lvl {ThirdClassCatalog.SubclassLevel}+ with its 3rd class (admins exempt)");
 
         var owned = _subclasses
             .Where(s => s.ThirdClass > 0 && ThirdClassCatalog.Get(s.ThirdClass) is not null)
             .Select(s => ThirdClassCatalog.Get(s.ThirdClass)!.Discipline)
             .ToHashSet();
+
+        // Belt-and-suspenders: _subclasses can go stale after a debug profession change (that path
+        // re-sends Stats but not the class list), so the ACTIVE class may still look like a base class
+        // with ThirdClass=0. _myThirdClass is always current — fold its discipline in so the main is
+        // never offered back to itself.
+        if (_myThirdClass > 0 && ThirdClassCatalog.Get(_myThirdClass) is { } activeTcd)
+            owned.Add(activeTcd.Discipline);
 
         foreach (var tcd in ThirdClassCatalog.Playable
                      .Where(t => !owned.Contains(t.Discipline))

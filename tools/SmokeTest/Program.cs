@@ -80,9 +80,13 @@ static string Show(string[]? bar) => bar is null
 // Give the character real skills FIRST. An all-empty bar proves nothing — every assertion below
 // would pass trivially by comparing empty to empty, which is exactly how a broken bar could sneak
 // through. Level up so skills exist, then learn everything the class can.
-// Adding a subclass now requires level 76. The debug step is clamped to +10 (it mirrors the UI
-// buttons), so climb in +10s: 1 -> 81, comfortably past the gate.
+// Adding a subclass now requires EVERY owned class to be level 75+ AND hold its 3rd class. The debug
+// level step is clamped to +10 (it mirrors the UI buttons), so climb in +10s: 1 -> 81, past the gate.
 for (int i = 0; i < 8; i++) await a.Hub.SendAsync("DebugLevel", 10);
+// Give the MAIN its 3rd class too (the add-gate now needs it). A Human 3rd class for the Human main; the
+// subclass chosen below must be a DIFFERENT discipline (the no-duplicate rule now counts the main).
+var mainThird = ThirdClassCatalog.Playable.First(t => t.Race == Race.Human);
+await a.Hub.SendAsync("DebugThirdClass", mainThird.Id);
 await a.Hub.SendAsync("DebugLearnAll");
 await a.Settle();
 Check("the main class has skills on its bar",
@@ -98,9 +102,9 @@ Console.WriteLine($"        main bar SET to {Show(mainBar)}");
 // -------------------------------------------------------------------------------------------
 // 3. Add a SUBCLASS of the other base class and switch to it.
 // -------------------------------------------------------------------------------------------
-// You pick a specific 3rd-class discipline now (pre-approved). Any is fine — the main class holds no
-// discipline yet, so the no-duplicate rule can't trip. Take the first catalog entry.
-var chosen = ThirdClassCatalog.Playable.First();
+// You pick a specific 3rd-class discipline now (pre-approved). It must DIFFER from the main's discipline
+// (the no-duplicate rule now counts the main). Take the first catalog entry that differs.
+var chosen = ThirdClassCatalog.Playable.First(t => t.Discipline != mainThird.Discipline);
 a.Bar = null;
 await a.Hub.SendAsync("DebugAddSubclass", chosen.Id);
 await a.Settle();

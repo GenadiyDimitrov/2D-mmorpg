@@ -10,6 +10,14 @@ public static partial class SkillCatalog
     //      in RecomputeDerived by the worn body weight). Fighters get FighterArmorMastery
     //      instead; 2nd classes REPLACE these with their archetype mastery. ----
     public const string MasteryRobe  = "mastery_robe";
+    // ---- Weapon Proficiency: all mages auto-learn this at level 1. While NOT wielding a mage-trained
+    //      weapon (sword or blunt — incl. wand/staff), casting speed is halved. Handled in Entity by
+    //      weapon type, not a StatMod. ----
+    public const string WeaponProficiency = "weapon_proficiency";
+    // ---- Divine Focus: clerics (Healer 2nd class) auto-learn Lv1 at 20; the Warchanter discipline
+    //      upgrades to Lv2 at 40. While NO magic weapon is equipped, healing OUTPUT is scaled: Lv1 ×0.5
+    //      (pure healers must wield a magic weapon), Lv2 ×0.75 (buffers stay relevant in fighter gear). ----
+    public const string DivineFocus = "divine_focus";
     // ---- Combat "training" passives, auto-granted at level 40 (soulshot/spiritshot
     //      stand-in). Doubling the atk STAT gives ×2 physical (linear) but ×1.414
     //      magic (√mAtk) — the soulshot/spiritshot ratio. ----
@@ -96,7 +104,10 @@ public static partial class SkillCatalog
             Category: SkillCategory.Passive, SpCost: 0, Description: desc,
             Levels: atk.Select(p => new SkillLevel(
                 Passive: magic
-                    ? new PassiveEffect(MagAtkPct: p, CastSpeedFlat: castSpeedFlat)
+                    // MagAtkPct is stored as the EFFECTIVE magic % (it gets squared in RecomputeDerived to
+                    // cancel the √), so stored value = description = effect. √(1+p)-1 reproduces the old
+                    // spiritshot dampening exactly: physical +100% → magic +41%, but the number now READS 41%.
+                    ? new PassiveEffect(MagAtkPct: MathF.Sqrt(1f + p) - 1f, CastSpeedFlat: castSpeedFlat)
                     : new PassiveEffect(PhysAtkPct: p))).ToArray());
     }
 
@@ -293,6 +304,30 @@ public static partial class SkillCatalog
             },
             ArmorMasteryLevels: MageRobeLevels),
 
+        // ---- Weapon Proficiency — all mages auto-learn at level 1. Worded like Robe Mastery (the trained
+        //      weapon gives the bonus); the EFFECT is a ×0.5 cast-speed penalty on an untrained weapon.
+        //      Handled in Entity.RecomputeDerived by WeaponType (sword/blunt incl. wand/staff = trained). ----
+        new(WeaponProficiency, "Weapon Proficiency", BaseClass.Mage, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive,
+            Description: "Passive. Equipping a sword or blunt weapon (wands and staves count) lets you cast "
+                       + "spells efficiently. With a bow, dual blades, or bare hands your casting speed is "
+                       + "halved and your magic attack collapses to a fraction."),
+
+        // ---- Divine Focus — clerics (Healer 2nd class) auto-learn Lv1 at 20; the Warchanter discipline
+        //      upgrades to Lv2 at 40. EFFECT: with NO magic weapon equipped, healing OUTPUT is scaled down
+        //      (Lv1 ×0.5, Lv2 ×0.75). Handled in Entity/heal by the magic-weapon flag. ----
+        new(DivineFocus, "Divine Focus", BaseClass.Mage, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive,
+            Description: "Passive. Divine power flows through a magic weapon. With NO magic weapon (wand or "
+                       + "staff) equipped, your healing is halved — pure healers must wield one.",
+            Levels: new[]
+            {
+                new SkillLevel(SpCost: 0),
+                new SkillLevel(SpCost: 0, Description: "Divine Focus Lv.2 — the non-magic-weapon healing penalty eases to ×0.75 (buffers stay useful in fighter gear)."),
+            }),
+
         // ===== Class Balance — the per-class tuning hook (auto-granted, currently no-ops) =====
         BalancePassive(BalanceTank,    "Class Balance (Tank)",    BaseClass.Fighter),
         BalancePassive(BalanceWarrior, "Class Balance (Warrior)", BaseClass.Fighter),
@@ -309,7 +344,7 @@ public static partial class SkillCatalog
         TrainingPassive(PhysicalTraining, "Physical Training", BaseClass.Fighter, magic: false, 0f,
             "Passive. Relentless conditioning — PHYSICAL attack grows with level (+10% to +100%)."),
         TrainingPassive(SpiritTraining, "Spirit Training", BaseClass.Mage, magic: true, 40f,
-            "Passive. Honed focus — +40 casting speed and MAGIC attack growing with level (+10% to +100%)."),
+            "Passive. Honed focus — +40 casting speed and MAGIC attack growing with level (+5% to +41%)."),
 
         // ===== Class identity "sure" floor passives (auto-granted at 20/40/76 = lvl 1/2/3) =====
         // Rogue identity now DATA: the evade floor + the archetype crit/evasion LEANS (+20% crit,

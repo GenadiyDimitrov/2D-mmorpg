@@ -2,6 +2,39 @@ namespace Game.Shared;
 
 public enum ItemGrade { F = 0, E = 1, B = 2, A = 3, S = 4 }
 
+/// <summary>L2-style GRADE PENALTY (owner 2026-07-16): wearing gear above your level scales its combat
+/// stats down. Each grade has an intended minimum character level; below it, the item's weapon ATK /
+/// armor DEF is multiplied by a flat under-level factor. Applied per-item in Entity.RecomputeDerived
+/// BEFORE masteries and set bonuses. Numbers are deliberately simple/tunable.</summary>
+public static class GradePenalty
+{
+    /// <summary>Intended minimum character level for each grade.</summary>
+    public static int MinLevel(ItemGrade g) => g switch
+    {
+        ItemGrade.F => 1,
+        ItemGrade.E => 20,
+        ItemGrade.B => 40,
+        ItemGrade.A => 52,
+        ItemGrade.S => 61,
+        _ => 1,
+    };
+
+    /// <summary>Multiplier applied to a grade's weapon ATK / armor DEF when the wearer is BELOW its min
+    /// level (flat while under-level); 1.0 at or above it. F never penalises.</summary>
+    public static float Factor(ItemGrade grade, int level)
+    {
+        if (level >= MinLevel(grade)) return 1f;
+        return grade switch
+        {
+            ItemGrade.E => 0.5f,
+            ItemGrade.B => 0.4f,
+            ItemGrade.A => 0.3f,
+            ItemGrade.S => 0.2f,
+            _ => 1f,
+        };
+    }
+}
+
 public enum ItemRarity { Common = 0, Uncommon = 1, Rare = 2, Epic = 3, Legendary = 4, God = 99 }
 
 // Jewel = the magic-defence slot. ONE jewel equips for now; the equip code is
@@ -1108,15 +1141,11 @@ public static class ItemCatalog
     public static bool IsQuestItem(ItemDef def) => def.Slot == EquipSlot.QuestItem;
     public static bool IsEquippable(ItemDef def) => def.Slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Jewel;
 
-    /// <summary>Grade gates per design doc: F 0+, E 20+, B 40+, A 60+, S 80+.</summary>
-    public static int RequiredLevel(ItemGrade grade) => grade switch
-    {
-        ItemGrade.F => 0,
-        ItemGrade.E => 20,
-        ItemGrade.B => 40,
-        ItemGrade.A => 60,
-        _ => 80
-    };
+    /// <summary>The level at which a grade reaches FULL power (below it you may still equip, but the
+    /// GRADE PENALTY scales its combat stats down). No longer a hard equip gate — single source of truth
+    /// is <see cref="GradePenalty.MinLevel"/>. F returns 0 so the UI shows no note for it.</summary>
+    public static int RequiredLevel(ItemGrade grade) =>
+        grade == ItemGrade.F ? 0 : GradePenalty.MinLevel(grade);
 }
 
 /// <summary>One possible drop: an item key, its chance, and the mob-level band

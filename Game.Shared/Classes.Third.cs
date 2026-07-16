@@ -93,9 +93,10 @@ public static class ThirdClassCatalog
     /// <summary>Character level required to take a 3rd class.</summary>
     public const int ChangeLevel = 40;
 
-    /// <summary>Level to ADD A NEW SUBCLASS (owner: really "4th class + 76", but with no 4th tier yet
-    /// it's just the level gate).</summary>
-    public const int SubclassLevel = 76;
+    /// <summary>Level to ADD A NEW SUBCLASS. Owner's rule with no 4th tier yet: you must have your 3rd
+    /// class AND be level 75 (a 4th class would be the "real" gate, but we don't force subclasses toward
+    /// one). Adding also requires EVERY class you own to already be at this level (see HandleDebugAddSubclass).</summary>
+    public const int SubclassLevel = 75;
 
     private static readonly Dictionary<int, ThirdClassDef> All = Build();
 
