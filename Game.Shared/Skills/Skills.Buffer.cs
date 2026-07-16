@@ -56,9 +56,9 @@ public static partial class SkillCatalog
             new EffectMagnitude[]
             {
                 new(SkillEffect.BuffInterruptResist, 60, ModifierMode.Flat),
-                new(SkillEffect.BuffMagAtk, 0.75f), new(SkillEffect.BuffMagicDef, 0.30f),
+                new(SkillEffect.BuffMagAtk, 0.32f), new(SkillEffect.BuffMagicDef, 0.30f),
             },
-            "+75% M.Atk, +30% M.Def, strong cast-cancel resist"),
+            "+32% M.Atk, +30% M.Def, strong cast-cancel resist"),
 
         NpcBuff(NpcFocus, "Focus", "holy_focus",
             SkillEffect.BuffCritRate | SkillEffect.BuffCritDamage | SkillEffect.BuffMagicCritRate,
@@ -96,10 +96,10 @@ public static partial class SkillCatalog
             {
                 new(SkillEffect.BuffHp, -0.10f), new(SkillEffect.BuffMp, -0.10f),
                 new(SkillEffect.BuffAtkSpeed, 0.08f), new(SkillEffect.BuffCastSpeed, 0.08f),
-                new(SkillEffect.BuffPhysAtk, 0.08f), new(SkillEffect.BuffMagAtk, 0.16f),
+                new(SkillEffect.BuffPhysAtk, 0.08f), new(SkillEffect.BuffMagAtk, 0.08f),
                 new(SkillEffect.BuffMoveSpeed, 8, ModifierMode.Flat), new(SkillEffect.BuffEvasion, -8, ModifierMode.Flat),
             },
-            "-10% Max HP/MP but +8% P.Atk / +16% M.Atk / +8% atk & cast speed / +8 move / -8 evasion"),
+            "-10% Max HP/MP but +8% P.Atk / +8% M.Atk / +8% atk & cast speed / +8 move / -8 evasion"),
 
         // ----- Greater "Harmony" buffs (max-level). Reflect (Protection) and the −physical/−magic
         // MP-consumption (Warrior/Wizard) are now WIRED. -----
@@ -130,10 +130,10 @@ public static partial class SkillCatalog
             SkillEffect.BuffCastSpeed | SkillEffect.BuffMagAtk | SkillEffect.BuffMpRegen,
             new EffectMagnitude[]
             {
-                new(SkillEffect.BuffCastSpeed, 0.30f), new(SkillEffect.BuffMagAtk, 0.20f),
+                new(SkillEffect.BuffCastSpeed, 0.30f), new(SkillEffect.BuffMagAtk, 0.10f),
                 new(SkillEffect.BuffMpRegen, 0.20f),
             },
-            "+30% cast speed, +20% M.Atk, +20% MP regen, −30% magic-skill MP cost",
+            "+30% cast speed, +10% M.Atk, +20% MP regen, −30% magic-skill MP cost",
             magicMpCost: 0.30f),
     };
 }

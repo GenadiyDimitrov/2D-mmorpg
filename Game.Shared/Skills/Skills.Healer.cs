@@ -196,9 +196,9 @@ public static partial class SkillCatalog
                     Magnitudes: new EffectMagnitude[]
                     {
                         new(SkillEffect.BuffInterruptResist, 25, ModifierMode.Flat),
-                        new(SkillEffect.BuffMagAtk, 0.55f),
+                        new(SkillEffect.BuffMagAtk, 0.25f),
                     },
-                    Description: "+25 interrupt resistance and +55% Magic Attack."),
+                    Description: "+25 interrupt resistance and +25% Magic Attack."),
             }),
 
         // Focus — +20% physical crit rate (for melee allies). Single level (25).
@@ -219,11 +219,11 @@ public static partial class SkillCatalog
             Magnitudes: new EffectMagnitude[]
             {
                 new(SkillEffect.BuffHp, -0.30f), new(SkillEffect.BuffMp, -0.30f),
-                new(SkillEffect.BuffPhysAtk, 0.05f), new(SkillEffect.BuffMagAtk, 0.10f),
+                new(SkillEffect.BuffPhysAtk, 0.05f), new(SkillEffect.BuffMagAtk, 0.05f),
                 new(SkillEffect.BuffCastSpeed, 0.05f), new(SkillEffect.BuffAtkSpeed, 0.05f),
                 new(SkillEffect.BuffMoveSpeed, 5, ModifierMode.Flat),
             },
-            Description: "A reckless surge: -30% Max HP/MP, but +5% Attack, +10% Magic Attack, "
+            Description: "A reckless surge: -30% Max HP/MP, but +5% Attack, +5% Magic Attack, "
                        + "+5% cast & attack speed and +5 move speed for 20 minutes."),
 
         // Combat Stance — TOGGLE. Pours magic into melee: +P.Atk, -M.Atk (weaker heals/

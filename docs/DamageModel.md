@@ -122,6 +122,23 @@ below is kept for the record (it's why we chose B).
 
 ---
 
+## 4b. ⚠ AUTHORING A MAGIC-ATTACK BUFF OR PASSIVE (read before adding one)
+
+The magic channel reads ONLY magic-only modifiers, applied SQUARED (which cancels the √), so **the value you
+author is the effective % — author `BuffMagAtk` / `MagAtkPct` at exactly the magic % you want.** Rules:
+
+1. Use **`BuffMagAtk`** (buffs) / **`MagAtkPct`** (passives) for magic. The shared **`BuffAtk` / `AttackPct`
+   is PHYSICAL-ONLY now** — it does NOT touch M.Atk. A buff that should boost both channels carries BOTH an
+   explicit physical value and an explicit magic value.
+2. The magic % is a **design choice, not a formula conversion** — it may differ from the physical %. Example:
+   a party "attack" buff might be `BuffPhysAtk 0.20` + `BuffMagAtk 0.10` (magic gets less, on purpose).
+3. **No √ math to do.** `BuffMagAtk 0.30` → +30% magic damage AND +30% on the shown M.Atk AND the tooltip
+   says +30%. (The 2026-07-16 re-author of the *existing* buffs — 0.75→0.32, 0.55→0.25, 0.20→0.10, 0.16→0.08,
+   0.10→0.05 — was only to preserve their OLD √-dampened damage under the new honest formula. New buffs skip
+   that; just author the % you want.)
+
+---
+
 ## 4-OLD. (kept for the record) Option A vs B analysis
 
 Lowering the M.Atk number can be done two ways. They differ on balance and cost.
