@@ -3224,8 +3224,9 @@ public class GameLoopService : BackgroundService
 
         if (effect.HasFlag(SkillEffect.PhysicalDamage))
         {
-            int dmg = StatCalculator.PhysicalDamage(
-                (int)attacker.EffectiveAttack, def.PowerAt(lvl), (int)victim.EffectiveDefence, attacker.Level,
+            var (pFlat, pMod) = def.PhysDamageAt(lvl);
+            int dmg = StatCalculator.PhysicalDamageFM(
+                (int)attacker.EffectiveAttack, pFlat, pMod, (int)victim.EffectiveDefence,
                 StatCalculator.WeaponDefenceCoef(attacker.WeaponType, victim.PierceDefCoef, victim.BluntDefCoef, victim.BowDefCoef));
             dmg = FinalizeDamage(attacker, victim, dmg, DamageKind.SkillPhysical, def);
             BroadcastCombat(attacker, victim, dmg, CombatOutcome.Hit, name);
@@ -3233,8 +3234,9 @@ public class GameLoopService : BackgroundService
         }
         if (effect.HasFlag(SkillEffect.MagicDamage) && !victim.Dead)
         {
-            int dmg = StatCalculator.MagicDamage(
-                (int)attacker.EffectiveMagicAttack, def.PowerAt(lvl), (int)victim.EffectiveMagicDefence, attacker.Level);
+            var (mFlat, mMod) = def.MagicDamageAt(lvl);
+            int dmg = StatCalculator.MagicDamageFM(
+                (int)attacker.EffectiveMagicAttack, mFlat, mMod, (int)victim.EffectiveMagicDefence);
             dmg = FinalizeDamage(attacker, victim, dmg, DamageKind.SkillMagic, def);
             BroadcastCombat(attacker, victim, dmg, CombatOutcome.Hit, name);
             ApplyDamage(victim, dmg, attacker);
@@ -3901,9 +3903,10 @@ var effect = def.Effect;
             }
             else
             {
-                int damage = StatCalculator.PhysicalDamage(
-                    (int)caster.EffectiveAttack, def.PowerAt(lvl),
-                    (int)target.EffectiveDefence, caster.Level,
+                var (pFlat, pMod) = def.PhysDamageAt(lvl);
+                int damage = StatCalculator.PhysicalDamageFM(
+                    (int)caster.EffectiveAttack, pFlat, pMod,
+                    (int)target.EffectiveDefence,
                     StatCalculator.WeaponDefenceCoef(caster.WeaponType, target.PierceDefCoef, target.BluntDefCoef, target.BowDefCoef));
                 damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
                 damage = FinalizeDamage(caster, target, damage, DamageKind.SkillPhysical, def);
@@ -3942,9 +3945,10 @@ var effect = def.Effect;
         if (effect.HasFlag(SkillEffect.MagicDamage))
         {
             offensive = true;
-            int damage = StatCalculator.MagicDamage(
-                (int)caster.EffectiveMagicAttack, def.PowerAt(lvl),
-                (int)target.EffectiveMagicDefence, caster.Level);   // magic channel: divides by mDef
+            var (mFlat, mMod) = def.MagicDamageAt(lvl);
+            int damage = StatCalculator.MagicDamageFM(
+                (int)caster.EffectiveMagicAttack, mFlat, mMod,
+                (int)target.EffectiveMagicDefence);   // magic channel: divides by mDef
             damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
             damage = FinalizeDamage(caster, target, damage, DamageKind.SkillMagic, def);
 

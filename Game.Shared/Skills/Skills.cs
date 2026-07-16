@@ -38,6 +38,11 @@ public record SkillDef(
     int CooldownTicks,
     float Range,
     int Power,
+    // {Flat, Mod} damage model (docs/DamageModel.md): physical = 77·(Flat + Mod·pAtk)/def,
+    // magic = 91·(Flat + Mod·√mAtk)/def. Mod == 0 → LEGACY: fall back to Power (physical adds Power
+    // to pAtk; magic multiplies √mAtk by Power) so every existing skill is unchanged.
+    int Flat = 0,
+    float Mod = 0f,
     int DurationTicks = 0,
     EffectMagnitude[]? Magnitudes = null,
     string BuffKey = "",
@@ -200,6 +205,18 @@ public record SkillDef(
         Levels is { Length: > 0 } && level >= 1 && level <= Levels.Length ? Levels[level - 1] : null;
 
     public int PowerAt(int level) => Lvl(level)?.Power ?? Power;
+    public int FlatAt(int level) => Lvl(level)?.Flat ?? Flat;
+    public float ModAt(int level) => Lvl(level)?.Mod ?? Mod;
+
+    /// <summary>Resolve this level's PHYSICAL {Flat, Mod}, with the legacy fallback: Mod 0 → (Flat=Power,
+    /// Mod=1) so an old skill's K·(pAtk+Power)/def is reproduced. Feed to StatCalculator.PhysicalDamageFM.</summary>
+    public (int Flat, float Mod) PhysDamageAt(int level) =>
+        ModAt(level) > 0f ? (FlatAt(level), ModAt(level)) : (PowerAt(level), 1f);
+
+    /// <summary>Resolve this level's MAGIC {Flat, Mod}, with the legacy fallback: Mod 0 → (Flat=0,
+    /// Mod=Power) so an old skill's K·Power·√mAtk/def is reproduced. Feed to StatCalculator.MagicDamageFM.</summary>
+    public (int Flat, float Mod) MagicDamageAt(int level) =>
+        ModAt(level) > 0f ? (FlatAt(level), ModAt(level)) : (0, PowerAt(level));
     public EffectMagnitude[]? MagnitudesAt(int level) => Lvl(level)?.Magnitudes ?? Magnitudes;
     public int MpCostAt(int level) => Lvl(level)?.MpCost ?? MpCost;
     public int SpCostAt(int level) => Lvl(level)?.SpCost ?? SpCost;
@@ -289,6 +306,8 @@ public readonly record struct WeaponMasteryProfile(
 /// stays on the SkillDef. Level 1 = Levels[0].</summary>
 public record SkillLevel(
     int Power = 0,
+    int Flat = 0,
+    float Mod = 0f,
     EffectMagnitude[]? Magnitudes = null,
     PassiveEffect? Passive = null,
     int MpCost = 0,

@@ -361,6 +361,16 @@ public static class StatCalculator
         return Math.Max(1, (int)dmg);
     }
 
+    /// <summary>{Flat, Mod} PHYSICAL skill damage: K·(Flat + Mod·pAtk)/def. Mod scales the skill WITH your
+    /// pAtk (gear/atk pays off through skills); Flat is a low-pAtk floor. Legacy skills reach this via
+    /// (Flat=Power, Mod=1), reproducing K·(pAtk+Power)/def. See docs/DamageModel.md.</summary>
+    public static int PhysicalDamageFM(int pAtk, int flat, float mod, int pDef, float defenceCoef = 1f)
+    {
+        float def = Math.Max(1, pDef * defenceCoef);
+        float dmg = PhysicalK * (flat + mod * pAtk) / def;
+        return Math.Max(1, (int)dmg);
+    }
+
     /// <summary>Maps an ATTACKER's weapon type to the DEFENDER's matching weapon-type
     /// resistance coefficient (a multiplier on the defender's P.Def, applied only for this
     /// hit). Sword/dual → Pierce, blunt → Blunt, bow → Bow; anything else = neutral (1).
@@ -383,6 +393,16 @@ public static class StatCalculator
         // magic across levels. The DISPLAY shrinks this to P.Atk size elsewhere (EffectiveMagicAttackShown);
         // this formula is unchanged so mob casters + heals keep working. See Path B in docs/DamageModel.md.
         float dmg = MagicK * power * MathF.Sqrt(Math.Max(0, mAtk)) / def;
+        return Math.Max(1, (int)dmg);
+    }
+
+    /// <summary>{Flat, Mod} MAGIC skill damage: K·(Flat + Mod·√mAtk)/mDef. Mod replaces the old scalar
+    /// power (Flat is usually 0 for magic). Legacy skills reach this via (Flat=0, Mod=Power), reproducing
+    /// K·Power·√mAtk/mDef exactly. See docs/DamageModel.md.</summary>
+    public static int MagicDamageFM(int mAtk, int flat, float mod, int mDef)
+    {
+        float def = Math.Max(1, mDef);
+        float dmg = MagicK * (flat + mod * MathF.Sqrt(Math.Max(0, mAtk))) / def;
         return Math.Max(1, (int)dmg);
     }
 
