@@ -35,6 +35,10 @@ public partial class MainWindow
 
         RefreshInventoryPanel();
         RebuildPotionBar();
+        // Item bar slots show a live count and grey out at zero, so re-render the bar when the bag
+        // changes if any slot holds an item.
+        if (_skillBarLoaded && _skillBar.Any(GameConstants.IsItemSlot))
+            RenderSkillBar();
         if (_tradeActive)
             RefreshTradeBag();
         if (ShopPanel.Visibility == Visibility.Visible)
@@ -172,6 +176,24 @@ public partial class MainWindow
             }
             DockPanel.SetDock(remove, Dock.Right);
             row.Children.Add(remove);
+
+            // BAG tab: a "Bar" button on a CONSUMABLE puts it on the skill bar, so you can then USE it
+            // from the bar (click to drink/cast) instead of digging through the bag each time.
+            if (_invTab == InvTab.Bag && def.Slot == EquipSlot.Consumable
+                && SkillCatalog.Get(def.UseSkillId) is not null)
+            {
+                string defId = def.Id;
+                var toBar = new Button
+                {
+                    Content = "Bar", Width = 34, Height = 28, FontSize = 10,
+                    Foreground = Brushes.White, Margin = new Thickness(0, 0, 3, 0),
+                    Background = new SolidColorBrush(Color.FromArgb(140, 60, 110, 160)),   // blue: to bar
+                    ToolTip = "Put on the skill bar (use it from there)"
+                };
+                toBar.Click += (_, _) => AssignItemToBar(defId);
+                DockPanel.SetDock(toBar, Dock.Right);
+                row.Children.Add(toBar);
+            }
 
             // BAG tab: an orange [E] to equip straight from the bag, without going through the compare
             // popup — the mirror of the Equipped tab's [U]. Sits BEFORE the red [X] so the everyday

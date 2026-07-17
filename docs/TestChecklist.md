@@ -7,29 +7,36 @@ this file.
 
 ---
 
-## 🧪 PLAYTEST-6 BATCH — NOT yet built (owner's 2026-07-17 3rd pass)
+## 🧪 PLAYTEST-6 BATCH — built 2026-07-17 (no schema change, game.db fine). Restart server+client.
 
-**🔴 Bug — the res prompt survives a relogin but is dead:**
-- [ ] Die → get a res offer → **don't accept** → relog → the Accept/Decline prompt comes back but **Accept
-      does nothing** (just hides), leaving Respawn → town. **FIX = drop the stale prompt on relogin** and
-      leave only Respawn (the rescuer and their cast are long gone; a res revives you where you FELL).
+Build 0/0, SmokeTest green. Commits e8da0f7 · 39dfab8 · 971b128 on Gena.
 
-**Buff bar rework:**
-- [ ] **Buffs are SQUARES** with the skill-bar abbreviations (rows used to wrap and eat the screen).
-- [ ] **Short times: max 2 digits + 1 unit** — 1h · 59m · 3m · 2m (179s) · 1m (119s) · 59s · 1d (25h) · 23h.
-- [ ] **≤60s left → the icon BLINKS** (opacity ~0.5↔1). Debuffs blink too.
-- [ ] Grade-penalty rows read **"Over-Grade Armor"** / **"Over-Grade Weapon"** — no `(x…)` suffix.
+**Death / res:**
+- [ ] **Res prompt no longer survives a relogin as a dead button.** Die → get an offer → don't accept →
+      relog → you get ONLY the Respawn button (no stuck Accept/Decline).
+
+**Buff bar:**
+- [ ] **Buffs/debuffs are SQUARES** (were wide pills wrapping into rows), with the skill emoji or initials.
+- [ ] **Short times: 2 digits + 1 unit** — 1h · 59m · 3m · 1m (119s) · 59s · 1d (25h). Every square same width.
+- [ ] **≤60s left → the square BLINKS** (opacity 1↔0.4); debuffs blink too.
+- [ ] Grade-penalty rows read **"Over-Grade Armor" / "Over-Grade Weapon"** (no `(x…)`), with 🛡/⚔ icons.
+
+**Skill icons:**
+- [ ] **Emoji icons on the skill bar, buff bar, and BOTH skills-window tabs** (buffs + mage/healer covered
+      first). A skill with no icon still shows its letters. No two skills of one class share an icon.
 
 **Target / party windows:**
-- [ ] **Party window shows DEBUFFS** so a healer can spot and cleanse them.
-- [ ] **A PLAYER's expand shows no stat sheet** — title/clan/etc only.
-- [ ] **A MOB's target window shows P.Def/M.Def + P.Atk/M.Atk and a [details] button**; details shows the
-      mob's **drops + full stats**.
-- [ ] **Aggressive mobs show a `*` after their name.**
+- [ ] **Party window shows each member's DEBUFFS** (red "⚠ …" line under their bars) so a healer can cleanse.
+- [ ] **A PLAYER's expand (▼) shows identity only** (name/level/class) — no stat sheet. A MOB still shows the
+      full combat card. *(Mob [details]-with-drops restructure is a later increment.)*
+- [ ] **Aggressive mobs show `*`** after the name (nameplate + target frame).
 
 **Other:**
-- [ ] **Ultimate Scroll of Return is INSTANT** (fixed 0s cast) — the escape button.
+- [ ] **Ultimate Scroll of Return is INSTANT** (0s cast) — the escape button. Debug-give it from Scrolls (x5).
 - [ ] **Bag tab: orange [E] quick-equip** before the red [X], on armor/weapons.
+
+**NOT built (own increments):** mob target [details]+drops · multi-row floating skill bars + move handles +
+consumables-on-bar (owner to re-explain the layout).
 
 ---
 

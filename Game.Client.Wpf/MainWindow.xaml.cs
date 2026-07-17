@@ -696,6 +696,8 @@ public partial class MainWindow : Window
     }
 
     private bool _skillBarDragWired;
+    private TranslateTransform? _skillBarMove;
+    private const int MaxBarRows = 5;
 
     private void RenderSkillBar()
     {
@@ -709,116 +711,282 @@ public partial class MainWindow : Window
             SkillBar.PreviewMouseLeftButtonUp += (_, _) => _dragFromIndex = -1;
         }
 
+        // Whole-stack MOVE: a RenderTransform on the bar container, restored once from settings (like the
+        // popups). The owner moves the WHOLE bar, not individual rows.
+        if (_skillBarMove is null)
+        {
+            _skillBarMove = new TranslateTransform();
+            SkillBar.RenderTransform = _skillBarMove;
+            if (_settings.Panels.TryGetValue("SkillBar", out var saved))
+            {
+                _skillBarMove.X = saved.X;
+                _skillBarMove.Y = saved.Y;
+            }
+        }
+
+        // How many rows to show: the player's saved choice, else auto-fit to the highest occupied slot.
+        int rows = _settings.SkillBarRows > 0
+            ? Math.Clamp(_settings.SkillBarRows, 1, MaxBarRows)
+            : AutoFitBarRows();
+
         SkillBar.Children.Clear();
         _skillSlots.Clear();
 
-        for (int i = 0; i < _skillBar.Length; i++)
+        // Control strip (+/- expander + drag handle) sits ABOVE the rows.
+        SkillBar.Children.Add(BuildSkillBarControlStrip(rows));
+
+        // Rows are drawn TOP-DOWN so row 0 (which carries hotkeys 1-9/0) ends up at the BOTTOM and each
+        // new row the player expands opens ABOVE the previous one.
+        for (int r = rows - 1; r >= 0; r--)
         {
-            int slotIndex = i;
-            int hotkey = i + 1;
-
-            // A BORDER, NOT A BUTTON.
-            //
-            // This is the third attempt at the drag bug, and the previous two failed for the same
-            // reason: WPF's ButtonBase CAPTURES the mouse on press. A captured element makes
-            // DragDrop.DoDragDrop unreliable ("the drag is very hard to even start"), and when that
-            // capture is lost the move events go to whatever slot is under the CURSOR instead of the
-            // one you pressed ("it moves a different skill than the one I grabbed"). You cannot fight
-            // ButtonBase's capture from the outside — so the slot is no longer a Button at all.
-            //
-            // A Border has no click semantics and takes no capture. Cast (left) and remove-from-bar
-            // (right) are wired by hand below, which is all the Button was giving us anyway.
-            var button = new Border
+            var rowPanel = new StackPanel
             {
-                Width = 46, Height = 46, Margin = new Thickness(3),
-                CornerRadius = new CornerRadius(4),
-                BorderThickness = new Thickness(1),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(0x5A, 0x6A, 0x80)),
-                Background = new SolidColorBrush(Color.FromRgb(0xC8, 0xCF, 0xD6)),
-                AllowDrop = true,
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center
             };
-
-            // Each square is a drag SOURCE and a drop TARGET so skills can be rearranged between
-            // slots (including onto empty slots). The MOVE handler deliberately does not pass
-            // slotIndex — the drag origin comes from mouse-DOWN only. See SkillSlot_MouseMove.
-            button.PreviewMouseLeftButtonDown += (_, e) => SkillSlot_MouseDown(slotIndex, e);
-            button.PreviewMouseMove += (_, e) => SkillSlot_MouseMove(e);
-            button.DragOver += SkillSlot_DragOver;
-            button.Drop += (_, e) => SkillSlot_Drop(slotIndex, e);
-
-            // The slot face is LIGHT, so the text on it must be DARK.
-            var hk = new TextBlock
-            {
-                Text = HotkeyLabel(hotkey),
-                Foreground = Brushes.DimGray, FontSize = 9,   // subordinate to the abbreviation, but legible
-                HorizontalAlignment = HorizontalAlignment.Left,
-                VerticalAlignment = VerticalAlignment.Top,
-                Margin = new Thickness(3, 1, 0, 0), IsHitTestVisible = false
-            };
-
-            if (_skillBar[i] is string id && SkillCatalog.Get(id) is SkillDef def)
-            {
-                var (faceText, isIcon) = SkillFace(def);
-                var abbrev = new TextBlock
-                {
-                    Text = faceText,
-                    // An emoji reads best a touch larger and needs no bold/black tint; letters stay bold black.
-                    Foreground = Brushes.Black, FontSize = isIcon ? 22 : 15,
-                    FontWeight = isIcon ? FontWeights.Normal : FontWeights.Bold,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false
-                };
-                var cd = new TextBlock
-                {
-                    // DarkGoldenrod, not Gold: the slot button is light grey, and plain Gold on it was
-                    // unreadable (same bug as the white abbreviations above).
-                    Foreground = Brushes.DarkGoldenrod, FontSize = 16, FontWeight = FontWeights.Bold,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Visibility = Visibility.Collapsed, IsHitTestVisible = false
-                };
-
-                var grid = new Grid();
-                grid.Children.Add(abbrev);
-                grid.Children.Add(cd);
-                grid.Children.Add(hk);
-                button.Child = grid;
-
-                var slot = new SkillSlot { Def = def, Button = button, Key = hotkey, CooldownText = cd };
-                // Carry the running cooldown across the rebuild (see _skillReadyAt).
-                if (_skillReadyAt.TryGetValue(def.Id, out double readyAt)) slot.ReadyAt = readyAt;
-
-                // Left-click = cast, right-click = take off the bar. Hand-wired because the slot is a
-                // Border now, not a Button. The cast fires on mouse-UP and ONLY if no drag happened —
-                // otherwise finishing a drag would also cast the skill you just moved.
-                //
-                // The "did a drag happen" test MUST be its own flag, not `_dragFromIndex < 0`: the panel
-                // clears _dragFromIndex from PreviewMouseLeftButtonUp, which TUNNELS (root→source) and so
-                // always runs BEFORE this bubbling handler. Reading it here therefore saw -1 on every
-                // click and returned — clicking a slot could never cast, keyboard-only. _dragStarted is
-                // armed at mouse-DOWN (per gesture) and only set once a real drag begins.
-                button.MouseLeftButtonUp += (_, _) =>
-                {
-                    if (_dragStarted) return;   // a drag consumed this gesture
-                    UseSkill(slot);
-                };
-                button.MouseRightButtonUp += (_, _) => RemoveSkillFromBar(slotIndex);
-                // Bar tooltip = name + description only (full timings in the Skills window).
-                button.ToolTip = $"{SkillDisplayName(def.Id, def.Name)}\n{def.Description}".TrimEnd();
-                _skillSlots.Add(slot);
-            }
-            else
-            {
-                var grid = new Grid { Background = Brushes.Transparent }; // keep hit-testable for drop
-                grid.Children.Add(hk);
-                button.Child = grid;
-                button.Opacity = 0.4;
-            }
-
-            SkillBar.Children.Add(button);
+            for (int c = 0; c < GameConstants.SkillBarColumns; c++)
+                rowPanel.Children.Add(BuildSkillSlot(r * GameConstants.SkillBarColumns + c));
+            SkillBar.Children.Add(rowPanel);
         }
 
         SkillBar.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>Fewest rows that still show every assigned slot (min 1). Used until the player picks a
+    /// row count with the +/- expander.</summary>
+    private int AutoFitBarRows()
+    {
+        int last = -1;
+        for (int i = 0; i < _skillBar.Length; i++)
+            if (_skillBar[i] is not null) last = i;
+        int rows = last < 0 ? 1 : (last / GameConstants.SkillBarColumns) + 1;
+        return Math.Clamp(rows, 1, MaxBarRows);
+    }
+
+    /// <summary>The +/- row expander and the drag strip that moves the whole bar. `+` opens one more row
+    /// up to 5; at 5 it becomes `−` and collapses back to a single row (owner's rule).</summary>
+    private FrameworkElement BuildSkillBarControlStrip(int rows)
+    {
+        var strip = new Grid { Height = 16, Margin = new Thickness(3, 0, 3, 2) };
+
+        var handle = new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(0x30, 0xFF, 0xFF, 0xFF)),
+            CornerRadius = new CornerRadius(3),
+            Cursor = System.Windows.Input.Cursors.SizeAll,
+            Child = new TextBlock
+            {
+                Text = "⠿ drag bar",
+                Foreground = new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF)),
+                FontSize = 9, HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false
+            }
+        };
+        WireSkillBarDrag(handle);
+        strip.Children.Add(handle);
+
+        var expander = new Button
+        {
+            Content = rows >= MaxBarRows ? "−" : "+",
+            Width = 22, Height = 14, FontSize = 10, Padding = new Thickness(0),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            ToolTip = rows >= MaxBarRows ? "Collapse to one row" : "Show another row"
+        };
+        expander.Click += (_, _) =>
+        {
+            _settings.SkillBarRows = rows >= MaxBarRows ? 1 : rows + 1;
+            _settings.Save();
+            RenderSkillBar();
+        };
+        strip.Children.Add(expander);
+        return strip;
+    }
+
+    /// <summary>Drag the WHOLE bar by its handle (a Grid takes no capture of its own, unlike ButtonBase —
+    /// see the slot-drag saga). Offset persisted to settings on release, like the popups.</summary>
+    private void WireSkillBarDrag(UIElement handle)
+    {
+        Point origin = default;
+        bool dragging = false;
+        handle.MouseLeftButtonDown += (_, e) =>
+        {
+            origin = e.GetPosition(this); dragging = true; handle.CaptureMouse(); e.Handled = true;
+        };
+        handle.MouseMove += (_, e) =>
+        {
+            if (!dragging || _skillBarMove is null) return;
+            var now = e.GetPosition(this);
+            _skillBarMove.X += now.X - origin.X;
+            _skillBarMove.Y += now.Y - origin.Y;
+            origin = now;
+        };
+        handle.MouseLeftButtonUp += (_, _) =>
+        {
+            if (!dragging) return;
+            dragging = false; handle.ReleaseMouseCapture();
+            if (_skillBarMove is not null)
+            {
+                _settings.Panels["SkillBar"] = new Vec2 { X = _skillBarMove.X, Y = _skillBarMove.Y };
+                _settings.Save();
+            }
+        };
+    }
+
+    /// <summary>One bar slot: a skill, an inventory ITEM ("item:&lt;defId&gt;"), or empty. A Border, NOT
+    /// a Button — WPF's ButtonBase captures the mouse on press, which broke slot drag three times (see
+    /// the drag saga below). Left-click uses it, right-click removes it, and it is a drag source + drop
+    /// target so slots rearrange.</summary>
+    private Border BuildSkillSlot(int slotIndex)
+    {
+        int hotkey = slotIndex + 1;
+        var button = new Border
+        {
+            Width = 46, Height = 46, Margin = new Thickness(3),
+            CornerRadius = new CornerRadius(4),
+            BorderThickness = new Thickness(1),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(0x5A, 0x6A, 0x80)),
+            Background = new SolidColorBrush(Color.FromRgb(0xC8, 0xCF, 0xD6)),
+            AllowDrop = true,
+        };
+        button.PreviewMouseLeftButtonDown += (_, e) => SkillSlot_MouseDown(slotIndex, e);
+        button.PreviewMouseMove += (_, e) => SkillSlot_MouseMove(e);
+        button.DragOver += SkillSlot_DragOver;
+        button.Drop += (_, e) => SkillSlot_Drop(slotIndex, e);
+
+        var hk = new TextBlock
+        {
+            Text = HotkeyLabel(hotkey),
+            Foreground = Brushes.DimGray, FontSize = 9,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(3, 1, 0, 0), IsHitTestVisible = false
+        };
+
+        string? entry = _skillBar[slotIndex];
+        if (GameConstants.IsItemSlot(entry))
+            BuildItemSlotFace(button, hk, slotIndex, GameConstants.ItemSlotDefId(entry!));
+        else if (entry is string id && SkillCatalog.Get(id) is SkillDef def)
+        {
+            var (faceText, isIcon) = SkillFace(def);
+            var abbrev = new TextBlock
+            {
+                Text = faceText,
+                Foreground = Brushes.Black, FontSize = isIcon ? 22 : 15,
+                FontWeight = isIcon ? FontWeights.Normal : FontWeights.Bold,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false
+            };
+            var cd = new TextBlock
+            {
+                Foreground = Brushes.DarkGoldenrod, FontSize = 16, FontWeight = FontWeights.Bold,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Visibility = Visibility.Collapsed, IsHitTestVisible = false
+            };
+            var grid = new Grid();
+            grid.Children.Add(abbrev);
+            grid.Children.Add(cd);
+            grid.Children.Add(hk);
+            button.Child = grid;
+
+            var slot = new SkillSlot { Def = def, Button = button, Key = hotkey, CooldownText = cd };
+            if (_skillReadyAt.TryGetValue(def.Id, out double readyAt)) slot.ReadyAt = readyAt;
+
+            // Cast on mouse-UP, and ONLY if no drag happened — otherwise finishing a drag would also cast
+            // the skill you just moved. The "did a drag happen" test MUST be its own flag (_dragStarted),
+            // NOT `_dragFromIndex < 0`: the panel clears _dragFromIndex from a TUNNELING handler that runs
+            // before this bubbling one, so reading it here always saw -1 and clicks never cast.
+            button.MouseLeftButtonUp += (_, _) =>
+            {
+                if (_dragStarted) return;
+                UseSkill(slot);
+            };
+            button.MouseRightButtonUp += (_, _) => RemoveSkillFromBar(slotIndex);
+            button.ToolTip = $"{SkillDisplayName(def.Id, def.Name)}\n{def.Description}".TrimEnd();
+            _skillSlots.Add(slot);
+        }
+        else
+        {
+            var grid = new Grid { Background = Brushes.Transparent };   // hit-testable for drop
+            grid.Children.Add(hk);
+            button.Child = grid;
+            button.Opacity = 0.4;
+        }
+        return button;
+    }
+
+    /// <summary>Face for an ITEM bar slot: the item's initials + a live count, greyed out when you have
+    /// none (like a skill on cooldown). Left-click USES the item — no opening the inventory to find it.</summary>
+    private void BuildItemSlotFace(Border button, TextBlock hk, int slotIndex, string defId)
+    {
+        var def = ItemCatalog.Get(defId);
+        int count = _inventory.Where(i => i.DefId == defId).Sum(i => i.Quantity);
+
+        var face = new TextBlock
+        {
+            Text = ItemBarAbbrev(def),
+            Foreground = Brushes.Black, FontSize = 13, FontWeight = FontWeights.Bold,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false
+        };
+        var countText = new TextBlock
+        {
+            Text = count >= 100 ? "99+" : count.ToString(),
+            Foreground = count > 0 ? Brushes.DarkGreen : Brushes.DarkRed,
+            FontSize = 10, FontWeight = FontWeights.Bold,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Margin = new Thickness(0, 0, 3, 1), IsHitTestVisible = false
+        };
+        var grid = new Grid();
+        grid.Children.Add(face);
+        grid.Children.Add(countText);
+        grid.Children.Add(hk);
+        button.Child = grid;
+        button.Opacity = count > 0 ? 1.0 : 0.4;   // greyed when you have none, like a cooldown
+        button.ToolTip = (def?.Name ?? defId) + (count > 0 ? $"\nx{count}" : "\n(none left)");
+
+        button.MouseLeftButtonUp += (_, _) =>
+        {
+            if (_dragStarted) return;
+            var stack = _inventory.FirstOrDefault(i => i.DefId == defId && i.Quantity > 0);
+            if (stack is null)
+            {
+                AppendChat(new ChatMessage("SYSTEM", $"No {def?.Name ?? defId} left.", ChatChannel.System));
+                return;
+            }
+            _ = _net.UsePotionAsync(stack.InstanceId);
+        };
+        button.MouseRightButtonUp += (_, _) => RemoveSkillFromBar(slotIndex);
+    }
+
+    /// <summary>Initials for an item bar slot (items have no emoji table yet): 2-word → first letters,
+    /// else 3 chars.</summary>
+    private static string ItemBarAbbrev(ItemDef? def)
+    {
+        if (def is null) return "?";
+        var words = def.Name.Split(new[] { ' ', '-', '\'' }, StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length >= 2)
+            return string.Concat(words.Take(2).Select(w => char.ToUpperInvariant(w[0])));
+        return def.Name.Length <= 3 ? def.Name : def.Name.Substring(0, 3);
+    }
+
+    /// <summary>Put an inventory item on the bar's first free slot (from the inventory's "To Bar"
+    /// button). Stored as an "item:&lt;defId&gt;" token; the SERVER keeps it (SyncSkillBar skips item
+    /// slots) and the client uses/greys it by live count.</summary>
+    private void AssignItemToBar(string defId)
+    {
+        string token = GameConstants.ItemSlotToken(defId);
+        if (_skillBar.Any(x => x == token)) return;   // already on the bar
+        int free = Array.IndexOf(_skillBar, null);
+        if (free < 0)
+        {
+            AppendChat(new ChatMessage("SYSTEM", "Skill bar is full.", ChatChannel.System));
+            return;
+        }
+        _skillBar[free] = token;
+        SaveSkillBar();
+        RenderSkillBar();
     }
 
     private void ChatToggle_Click(object sender, RoutedEventArgs e)

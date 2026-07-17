@@ -171,8 +171,11 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <UniformGrid x:Name="SkillBar" Grid.Column="1" Rows="2" Columns="12"
-                         VerticalAlignment="Bottom" Visibility="Collapsed"/>
+            <!-- The skill bar is built in code (RenderSkillBar): a control strip (drag handle + row
+                 expander) plus up to 5 rows of 12 slots, row 1 at the bottom. Moved as a whole via a
+                 RenderTransform on this panel. -->
+            <StackPanel x:Name="SkillBar" Grid.Column="1"
+                        VerticalAlignment="Bottom" Visibility="Collapsed"/>
             <StackPanel x:Name="PotionBar" Grid.Column="2" Orientation="Horizontal"
                         HorizontalAlignment="Right" VerticalAlignment="Bottom"
                         Margin="0,0,12,0" Visibility="Collapsed"/>

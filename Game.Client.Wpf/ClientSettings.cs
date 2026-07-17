@@ -36,8 +36,13 @@ public class ClientSettings
 {
     public WindowGeom Window { get; set; } = new();
 
-    /// <summary>Popup drag offsets, keyed by the panel's x:Name. Absent / (0,0) = default position.</summary>
+    /// <summary>Popup drag offsets, keyed by the panel's x:Name. Absent / (0,0) = default position.
+    /// The skill bar's whole-stack move offset lives here too, under "SkillBar".</summary>
     public Dictionary<string, Vec2> Panels { get; set; } = new();
+
+    /// <summary>How many skill-bar rows the player chose to show (1-5). 0 = auto-fit to the highest
+    /// occupied slot. The bar data itself is always 60 slots; this is display only.</summary>
+    public int SkillBarRows { get; set; }
 
     private static string FilePath =>
         Path.Combine(AppContext.BaseDirectory, "client-settings.json");

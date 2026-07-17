@@ -118,9 +118,23 @@ public static class GameConstants
 
     public const int InventorySize = 30;
 
-    /// <summary>Skill-bar slots (2 rows of 12). Shared, because the SERVER owns the bar and does the
-    /// auto-placement of newly-learned skills — see GameLoopService.SyncSkillBar.</summary>
-    public const int SkillBarSlots = 24;
+    /// <summary>Skill-bar slots — 5 rows of 12. The bar is ONE FLAT collection of ids; "rows" are purely a
+    /// client visualization (it slices this list into chunks of <see cref="SkillBarColumns"/>). Shared,
+    /// because the SERVER owns the bar and auto-places newly-learned skills — see SyncSkillBar. Old saved
+    /// bars are shorter and just pad with empties on load.</summary>
+    public const int SkillBarSlots = 60;
+
+    /// <summary>Slots per visual row (the client draws up to 5 rows of this).</summary>
+    public const int SkillBarColumns = 12;
+
+    /// <summary>A bar slot may hold an INVENTORY ITEM instead of a skill: the entry is
+    /// "item:&lt;defId&gt;". Clicking it USES the item (like a potion), and the slot greys out when you
+    /// have none — exactly like a skill on cooldown. SyncSkillBar must NOT treat these as unknown skills
+    /// and wipe them.</summary>
+    public const string SkillBarItemPrefix = "item:";
+    public static bool IsItemSlot(string? id) => id is not null && id.StartsWith(SkillBarItemPrefix, StringComparison.Ordinal);
+    public static string ItemSlotToken(string defId) => SkillBarItemPrefix + defId;
+    public static string ItemSlotDefId(string token) => token.Substring(SkillBarItemPrefix.Length);
 
     public const int ClassChangeLevel = 20;
 

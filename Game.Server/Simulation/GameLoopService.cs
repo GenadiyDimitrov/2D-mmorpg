@@ -5724,9 +5724,12 @@ var effect = def.Effect;
         for (int i = 0; i < slots.Length && i < bar.Length; i++)
             slots[i] = bar[i] ?? "";
 
-        // Forget what this class no longer knows.
+        // Forget what this class no longer knows — but NEVER an item slot ("item:<defId>"): it isn't a
+        // learned skill, so it would otherwise be wiped here, yet it's a perfectly valid bar entry the
+        // player placed on purpose (a potion / return scroll they want one click away).
         for (int i = 0; i < slots.Length; i++)
-            if (!string.IsNullOrEmpty(slots[i]) && !p.LearnedSkills.ContainsKey(slots[i]))
+            if (!string.IsNullOrEmpty(slots[i]) && !GameConstants.IsItemSlot(slots[i])
+                && !p.LearnedSkills.ContainsKey(slots[i]))
                 slots[i] = "";
 
         // Park anything newly learned. Ordinal order so it is deterministic, not hash order.
