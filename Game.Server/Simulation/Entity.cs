@@ -771,6 +771,9 @@ public class Entity
     /// <summary>Set when this character DIED while offline-farming / link-dead. Persisted; makes the next
     /// login land DEAD (res prompt) instead of healed — anti-exploit. Cleared on respawn.</summary>
     public bool DiedWhileAway { get; set; }
+    /// <summary>Exp lost on the most recent death (the 5% death penalty). A resurrection skill/scroll can
+    /// restore a fraction of it; a normal town respawn discards it. Runtime only. Cleared on respawn/res.</summary>
+    public long LostExp { get; set; }
     /// <summary>Tick of the last damage dealt or taken — drives the 30s combat-state decay.</summary>
     public long LastCombatTick { get; set; }
 

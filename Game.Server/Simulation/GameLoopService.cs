@@ -984,6 +984,7 @@ public class GameLoopService : BackgroundService
 
         entity.Dead = false;
         entity.DiedWhileAway = false;   // the death has now been paid — clear the persisted stick-dead flag
+        entity.LostExp = 0;             // town respawn = no exp restore (a resurrection would have restored it)
         entity.Hp = entity.MaxHp;
         entity.Mp = entity.MaxMp;
         entity.Buffs.Clear();
@@ -4802,6 +4803,11 @@ var effect = def.Effect;
             // Any death sheds a big chunk of a PK's karma (the red flag clears at 0).
             ReduceKarma(victim, _karmaLossPerDeath);
 
+            // Death costs 5% of the level's exp (floored at 0 — no delevel). PvP deaths are exempt (L2
+            // convention; avoids XP-griefing). Tracks the lost exp so a resurrection can restore a fraction.
+            bool pvpDeath = killer.Kind == EntityKind.Player && killer.Id != victim.Id;
+            if (!pvpDeath) ApplyDeathExpPenalty(victim);
+
             // Death stops auto-hunt. An offline farmer's session ends (deferred logout); a link-dead
             // grace ends; an online idle hunter just stops (can re-enable after respawn).
             if (victim.IsOfflineFarming)
@@ -5031,6 +5037,22 @@ var effect = def.Effect;
 
     /// <summary>Award a mob kill's EXP: solo → all to the killer; party → split among members in
     /// range, weighted by level (anti-leech), with a small size bonus to reward grouping.</summary>
+    /// <summary>Death exp penalty: lose 5% of the level's exp, floored at 0 (no delevel). Stores the lost
+    /// amount in LostExp so a resurrection skill/scroll can restore a fraction; a normal town respawn drops it.</summary>
+    private void ApplyDeathExpPenalty(Entity p)
+    {
+        if (p.Kind != EntityKind.Player) return;
+        long penalty = (long)(StatCalculator.ExpToNext(p.Level) * 0.05);
+        long lost = Math.Min(p.Exp, penalty);
+        p.LostExp = lost;
+        if (lost <= 0) return;
+        p.Exp -= lost;
+        SendSystemToEntity(p, $"You lost {lost:N0} experience.");
+        if (_world.EntityToConnection.TryGetValue(p.Id, out var conn))
+            _ = _hub.Clients.Client(conn).SendAsync("Progress", new ProgressUpdate(
+                p.Level, p.Exp, StatCalculator.ExpToNext(p.Level), false));
+    }
+
     private void AwardKillExp(Entity killer, Entity victim)
     {
         int total = MobExpValue(victim);
