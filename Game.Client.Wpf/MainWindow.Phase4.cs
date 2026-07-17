@@ -898,6 +898,19 @@ public partial class MainWindow
         row.Children.Add(titleRow);
         row.Children.Add(hpBar);
         row.Children.Add(mpBar);
+
+        // Debuffs on this member, so a healer spots who to cleanse straight from the roster. Red, small,
+        // wrapping; the full list is also in the tooltip. Hidden when the member is clean.
+        if (m.Debuffs is { Length: > 0 })
+            row.Children.Add(new TextBlock
+            {
+                Text = "⚠ " + string.Join(", ", m.Debuffs),
+                Foreground = new SolidColorBrush(Color.FromRgb(0xE0, 0x6C, 0x6C)),
+                FontSize = 10, TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 1, 0, 0),
+                ToolTip = "Debuffs: " + string.Join(", ", m.Debuffs)
+            });
+
         row.MouseLeftButtonDown += PartyRow_Target;
         return row;
     }

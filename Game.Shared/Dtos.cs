@@ -266,10 +266,12 @@ public record DebugConfigDto(
     // TestHealPower. Lets the owner read the {Flat, Mod} damage curve live before authoring real skills.
     int TestHealPower = 1000, int TestSkillPower = 0, float TestSkillMod = 1f);
 
-/// <summary>One member row in the party window.</summary>
+/// <summary>One member row in the party window. Debuffs = the names of the debuffs currently on this
+/// member, so a healer sees at a glance who to cleanse without selecting each one.</summary>
 public record PartyMemberDto(Guid Id, string Name, int Level, string ClassName,
     int Hp, int MaxHp, int Mp, int MaxMp, bool IsLeader,
-    PartyMemberStatus Status = PartyMemberStatus.Online);
+    PartyMemberStatus Status = PartyMemberStatus.Online,
+    string[]? Debuffs = null);
 
 /// <summary>Server -> party members: the current roster (empty array = you left/were the last
 /// member, so the client hides the party window). Sent on membership change and refreshed

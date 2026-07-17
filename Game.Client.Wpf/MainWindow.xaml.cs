@@ -1567,6 +1567,20 @@ public partial class MainWindow : Window
         if (!_targetExpanded || _targetId != d.Id)
             return;
 
+        // A PLAYER's expand shows IDENTITY only — you don't get to read a rival's full stat sheet (P.Atk,
+        // defences, crit) off a click (owner, 2026-07-17). A MOB shows the full combat card: it's a
+        // target you're fighting and you want its defences to plan a burst. (Clan is a placeholder — no
+        // clan system yet — so a player expand is just name + level + class for now.)
+        if (!d.IsMob)
+        {
+            string classTag = TargetClassLabel();
+            TargetDetailsText.Text = $"{d.Name}   Level {d.Level}" +
+                                     (classTag.Length > 0 ? $"\n{classTag}" : "");
+            TargetPassivesList.ItemsSource = null;
+            TargetDetailsPanel.Visibility = Visibility.Visible;
+            return;
+        }
+
         string text =
             $"HP {d.Hp}/{d.MaxHp}   MP {d.Mp}/{d.MaxMp}\n" +
             $"P.Atk {d.PAtk}   M.Atk {d.MAtk}\n" +
@@ -1582,6 +1596,15 @@ public partial class MainWindow : Window
         if (d.CritResist > 0f) lines.Add($"Crit Resist +{d.CritResist * 100:0}%");
         TargetPassivesList.ItemsSource = lines.Count > 0 ? lines : null;
         TargetDetailsPanel.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>The 2nd/3rd-class label for the current target (from its snapshot), or "" if none.</summary>
+    private string TargetClassLabel()
+    {
+        if (_targetId is Guid id && _visuals.TryGetValue(id, out var v) && v.Latest is { } dto
+            && dto.SecondClass > 0)
+            return ClassCatalog.Get(dto.SecondClass)?.Name ?? "";
+        return "";
     }
 
     private static double Dist(double ax, double ay, double bx, double by)

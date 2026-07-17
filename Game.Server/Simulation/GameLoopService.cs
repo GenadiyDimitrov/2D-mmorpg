@@ -2862,11 +2862,18 @@ public class GameLoopService : BackgroundService
         var members = new List<PartyMemberDto>(party.Members.Count);
         foreach (var mid in party.Members)
             if (_world.Entities.TryGetValue(mid, out var m))
+            {
+                // Debuff NAMES so a healer sees who needs a cleanse from the roster (Internal counters
+                // like DoT stacks aren't shown — they're not something you cure).
+                var debuffs = m.Buffs.Where(b => b.IsDebuff && !b.Internal)
+                    .Select(b => b.Name).Distinct().ToArray();
                 members.Add(new PartyMemberDto(m.Id, m.Name, m.Level, PartyClassLabel(m),
                     (int)m.Hp, m.MaxHp, (int)m.Mp, m.MaxMp, mid == party.LeaderId,
                     m.IsOfflineFarming || m.IsDisconnected ? PartyMemberStatus.Offline
                         : m.AutoHuntEnabled ? PartyMemberStatus.Auto
-                        : PartyMemberStatus.Online));
+                        : PartyMemberStatus.Online,
+                    debuffs.Length > 0 ? debuffs : null));
+            }
         var dto = new PartyUpdate(members.ToArray(), party.LootMode);
         foreach (var mid in party.Members)
             if (_world.Entities.TryGetValue(mid, out var m))
