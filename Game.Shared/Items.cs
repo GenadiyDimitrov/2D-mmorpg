@@ -320,6 +320,7 @@ public static class ItemCatalog
     public const string IronMace = "blunt_1h_iron_mace";        // 1H physical blunt (shield-ok)
     public const string AshWand = "blunt_1h_ash_wand";          // 1H magic blunt (mAtk > pAtk)
     public const string ElementalStone = "elemental_stone";     // reagent for Elemental Burst
+    public const string SkillStone = "skill_stone";             // reagent for skill costs (e.g. Angel's Protection)
     /// <summary>How much of your ATK power a weapon lets through to the channel it does NOT
     /// exist to serve: a sword's magic, a staff's melee. THE tuning knob for weapon identity.
     /// 0.6 reproduces the gear CSV's second column (a sword's 92 P.Atk × 0.6 ≈ its authored 54
@@ -570,9 +571,14 @@ public static class ItemCatalog
             Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0));
 
         // Elemental Stone — a crafting/reagent material (not drinkable). Stacks; consumed
-        // by skills that list it as a ConsumableId (e.g. the nuker's Elemental Burst).
+        // by skills that list it as a ConsumableId (nuker's Elemental Burst = 1/cast). Vendor 20k.
         list.Add(new ItemDef(ElementalStone, "Elemental Stone", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Rare, Value: 100));
+            ItemGrade.F, ItemRarity.Rare, Value: 100, BuyPriceOverride: 20000));
+
+        // Skill Stone — cheap reagent consumed by skills that cost stones (e.g. Angel's Protection = 5/cast).
+        // Not free, not expensive: 400g at the vendor. Stacks; not drinkable.
+        list.Add(new ItemDef(SkillStone, "Skill Stone", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Uncommon, Value: 400));
 
         // ----- Buff potions: consume to gain a timed (weaker-than-class) buff. Rarity
         //       is the tier; same line supersedes by rank. No heal cooldown. -----

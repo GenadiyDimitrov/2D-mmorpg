@@ -4337,6 +4337,7 @@ var effect = def.Effect;
             PhysMpCostPct = def.PhysMpCostPct,
             MagicMpCostPct = def.MagicMpCostPct,
             KeepsBuffsOnDeath = def.KeepsBuffsOnDeath,
+            AutoResurrect = def.AutoResurrect,
             Description = SkillCatalog.DescriptionOf(def.Id)
         });
 
@@ -4874,7 +4875,10 @@ var effect = def.Effect;
         victim.TargetY = null;
         // Angel's Protection (noblesse): if a "keeps buffs on death" buff is up, death removes ONLY the
         // protection buff(s) and every other buff survives; otherwise death clears all buffs as usual.
+        // Preservation buffs share BuffKey "buff_preservation" + Rank, so only the strongest is ever held —
+        // one is consumed here. A consumed buff flagged AutoResurrect also auto-revives (handled below).
         bool keptBuffs = victim.Buffs.Any(b => b.KeepsBuffsOnDeath);
+        bool autoRes = victim.Buffs.Any(b => b.KeepsBuffsOnDeath && b.AutoResurrect);
         if (keptBuffs)
             victim.Buffs.RemoveAll(b => b.KeepsBuffsOnDeath);
         else
@@ -4935,6 +4939,12 @@ var effect = def.Effect;
             }
             else if (victim.AutoHuntEnabled)
                 StopAutoHunt(victim, "you were defeated.", locked: false);
+
+            // Auto-resurrect (future tank self-res / healer target-auto-res): the consumed preservation buff
+            // stands the player back up at 30% HP/MP in place, no prompt. The death penalty above still
+            // applied ("you die, you have the penalty"). Buffs already survived (keptBuffs).
+            if (autoRes)
+                ResurrectTarget(victim, victim, 0f);
         }
     }
 

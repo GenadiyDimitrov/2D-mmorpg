@@ -471,14 +471,17 @@ public static partial class SkillCatalog
 
         // ---- Angel's Protection (noblesse) — a self-buff that makes your OTHER buffs SURVIVE death ----
         // A pure marker buff (no stat effect): while it's up, dying removes ONLY this buff and keeps the
-        // rest. For now every class auto-learns it at 76; LATER it becomes a long noblesse quest reward
-        // (subclass @76 + a 4th class; changing class resets the quest).
+        // rest. Consumes 5 Skill Stones per cast (not free). For now every class auto-learns it at 76;
+        // LATER it becomes a long noblesse quest reward (subclass @76 + a 4th class; changing class resets it).
+        // SHARED BuffKey "buff_preservation" + Rank 1 = the WEAKEST preservation tier: the future tank
+        // self-auto-res (Rank 3) and healer target-auto-res (Rank 2) OVERRIDE it and it can't override them.
         new(AngelsProtection, "Angel's Protection", BaseClass.Fighter, SkillEffect.None,
             MpCost: 30, CastTicks: 10, CooldownTicks: 20, Range: 0, Power: 0,
             Category: SkillCategory.Buff, SpCost: 0, TargetMode: TargetMode.SelfOnly,
-            DurationTicks: 12000, BuffKey: "angels_protection", Rank: 1, InitialMpCost: 6,
+            DurationTicks: 36000, BuffKey: "buff_preservation", Rank: 1, InitialMpCost: 6,
             KeepsBuffsOnDeath: true,
+            ConsumableId: ItemCatalog.SkillStone, ConsumableAmount: 5,
             Description: "Blesses you so your other buffs SURVIVE your next death (only this blessing is "
-                       + "consumed). Lasts 20 minutes or until you die."),
+                       + "consumed). Costs 5 Skill Stones. Lasts 60 minutes or until you die."),
     };
 }

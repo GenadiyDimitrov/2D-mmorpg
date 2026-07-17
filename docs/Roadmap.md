@@ -390,6 +390,14 @@ changes and new features that came out of the play session:
   baseline would shift; and an unbuffed/unshotted character becomes a genuinely different power level,
   which is exactly what soulshots do in L2. See [[stats-via-skills-not-hardcoded]].
 
+- [ ] **Shot-buff items + passive RUNES** (owner, 2026-07-17 — NEXT, after the death/res playtest). Reframe
+  soul/spiritshots as inventory items that grant a TIMED buff (not per-hit): soulshot ≈ +100% pAtk, spiritshot
+  ≈ +41% effective mAtk. Needs a **`SurvivesDeath` buff flag** (persists through death, independent of Angel's
+  Protection). Alongside them, **RUNES that act like a passive**: while held in the INVENTORY they add to your
+  passives / the items buff-bar row — timed, do NOT disappear on death, and are NOT consumed (an inventory-held
+  standing buff, distinct from the used-up shot consumable). Vendor pricing (100-200k, 1-2h) ties into the
+  deferred premium-currency work. See [[death-res-noblesse-shots-design]] §4.
+
 ### Playtest-3 leftovers (2026-07-14) — the only two things from that session not built
 
 - [x] **BUG: the mage runs into melee to auto-attack — FIXED 2026-07-14.** Traced rather than guessed:

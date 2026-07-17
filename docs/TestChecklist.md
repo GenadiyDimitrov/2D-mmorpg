@@ -32,11 +32,16 @@ Built + `dotnet build` 0/0. Death XP penalty was committed 2026-07-16; resurrect
       confirm prompt. Both have a 1-min reuse.
 
 **Angel's Protection (noblesse, 2026-07-17):**
-- [ ] **Every class auto-learns "Angel's Protection" at level 76** (a self-cast buff on the bar). Cast it →
-      you get a 20-min blessing.
+- [ ] **Every class auto-learns "Angel's Protection" at level 76** (a self-cast buff on the bar). It **costs
+      5 Skill Stones** per cast (buy at the Apothecary, 400g each) and lasts **60 min**.
 - [ ] **Buffs survive death while it's up.** Get several buffs + Angel's Protection, then die: ONLY Angel's
       Protection is consumed; every other buff stays (check the buff bar after death/res). Without it up,
       death clears all buffs as before. *(Stopgap: it's a long noblesse QUEST later.)*
+- [ ] **Reagent vendor.** Apothecary now stocks **Skill Stone (400g)** and **Elemental Stone (20k)**.
+      Elemental Burst now consumes **1** Elemental Stone (was 10).
+- [ ] *(Groundwork, not castable yet)* Preservation buffs share one slot by priority (Angel's = weakest;
+      future tank self-auto-res > healer target-auto-res > Angel's). An `AutoResurrect` flag is in place for
+      the future auto-res buffs (nothing uses it yet).
 
 ---
 

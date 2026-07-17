@@ -184,7 +184,11 @@ public record SkillDef(
     // KeepsBuffsOnDeath (Angel's Protection / noblesse): a self-buff that, while up, makes death remove ONLY
     // the protection buff(s) and keep every OTHER buff. Rides as a flag field so a buff with no stat effect
     // can still exist purely as this marker. The SkillEffect enum is full.
-    bool KeepsBuffsOnDeath = false)
+    bool KeepsBuffsOnDeath = false,
+    // AutoResurrect: a preservation buff that ALSO auto-revives you on death (30% HP/MP, no prompt) instead
+    // of leaving you dead — the future tank self-res / healer target-auto-res. Angel's Protection does NOT
+    // set this (it only preserves buffs; you still need a manual res). Groundwork: no shipped skill uses it yet.
+    bool AutoResurrect = false)
 {
     /// <summary>The armor-mastery per-weight profile for a learned skill LEVEL, or null
     /// if this skill isn't an armor mastery.</summary>

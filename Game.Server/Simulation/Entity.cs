@@ -55,6 +55,9 @@ public class BuffInstance
     /// <summary>Angel's Protection / noblesse marker: while a buff with this set is present, DEATH removes
     /// only the protection buff(s) and keeps every other buff (see Kill). No stat effect of its own.</summary>
     public bool KeepsBuffsOnDeath { get; init; }
+    /// <summary>A preservation buff that ALSO auto-revives the owner on death (30% HP/MP, no prompt). Future
+    /// tank self-res / healer target-auto-res. Angel's Protection leaves this false.</summary>
+    public bool AutoResurrect { get; init; }
 
     public bool Has(SkillEffect flag) => (Effect & flag) != 0;
 
