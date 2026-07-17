@@ -12,6 +12,7 @@ public class NetworkChannel : IAsyncDisposable
     private HubConnection? _connection;
 
     public event Action<WorldSnapshot>? SnapshotReceived;
+    public event Action<SnapshotDelta>? SnapshotDeltaReceived;
     public event Action<ChatMessage>? ChatReceived;
     public event Action<CombatEvent>? CombatReceived;
     public event Action<ProgressUpdate>? ProgressReceived;
@@ -53,6 +54,7 @@ public class NetworkChannel : IAsyncDisposable
             .Build();
 
         _connection.On<WorldSnapshot>("Snapshot", s => SnapshotReceived?.Invoke(s));
+        _connection.On<SnapshotDelta>("SnapshotDelta", d => SnapshotDeltaReceived?.Invoke(d));
         _connection.On<ChatMessage>("Chat", m => ChatReceived?.Invoke(m));
         _connection.On<CombatEvent>("Combat", c => CombatReceived?.Invoke(c));
         _connection.On<ProgressUpdate>("Progress", p => ProgressReceived?.Invoke(p));

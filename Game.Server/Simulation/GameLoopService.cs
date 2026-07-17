@@ -5462,10 +5462,18 @@ var effect = def.Effect;
     // 3. Broadcast
     // =========================================================================
 
+    // Per-connection memory of the LAST full DTO we sent for each visible entity, so each tick we can
+    // send only the DELTA: a full DTO when an entity enters view or its static data changes, a lean
+    // update when only dynamic fields moved, a despawn when it leaves. Pruned when a connection drops.
+    private readonly Dictionary<string, Dictionary<Guid, EntityDto>> _lastSentByConn = new();
+
     private async Task BroadcastSnapshotsAsync()
     {
         if (_world.EntityToConnection.Count == 0)
+        {
+            if (_lastSentByConn.Count > 0) _lastSentByConn.Clear();
             return;
+        }
 
         var sends = new List<Task>(_world.EntityToConnection.Count);
 
@@ -5474,15 +5482,56 @@ var effect = def.Effect;
             if (!_world.Entities.TryGetValue(entityId, out var player))
                 continue;
 
-            var visible = _world.Grid.Nearby(player)
-                .Select(e => e.ToDto())
-                .ToList();
+            // Everything this viewer can currently see (self always included).
+            var current = new Dictionary<Guid, EntityDto>();
+            foreach (var e in _world.Grid.Nearby(player))
+                current[e.Id] = e.ToDto();
+            current[player.Id] = player.ToDto();
 
-            if (!visible.Any(d => d.Id == player.Id))
-                visible.Add(player.ToDto());
+            if (!_lastSentByConn.TryGetValue(connectionId, out var last))
+                _lastSentByConn[connectionId] = last = new Dictionary<Guid, EntityDto>();
 
-            sends.Add(_hub.Clients.Client(connectionId)
-                .SendAsync("Snapshot", new WorldSnapshot(visible.ToArray())));
+            List<EntityDto>? spawns = null;
+            List<EntityLean>? updates = null;
+
+            foreach (var (id, dto) in current)
+            {
+                if (!last.TryGetValue(id, out var prev))
+                    (spawns ??= new()).Add(dto);                 // newly in view → full
+                else if (!prev.Equals(dto))
+                {
+                    if (Entity.StaticFieldsEqual(prev, dto) && _world.Entities.TryGetValue(id, out var ent))
+                        (updates ??= new()).Add(ent.ToLean());   // only dynamic changed → lean
+                    else
+                        (spawns ??= new()).Add(dto);             // a static field changed → re-send full
+                }
+                // else: byte-identical to what they already have → send nothing.
+            }
+
+            // Anything they HAD but can no longer see → despawn.
+            List<Guid>? despawns = null;
+            foreach (var id in last.Keys)
+                if (!current.ContainsKey(id))
+                    (despawns ??= new()).Add(id);
+
+            _lastSentByConn[connectionId] = current;   // this is now "what they have"
+
+            if (spawns is null && updates is null && despawns is null)
+                continue;   // nothing changed this tick for this viewer
+
+            sends.Add(_hub.Clients.Client(connectionId).SendAsync("SnapshotDelta",
+                new SnapshotDelta(
+                    spawns?.ToArray() ?? Array.Empty<EntityDto>(),
+                    updates?.ToArray() ?? Array.Empty<EntityLean>(),
+                    despawns?.ToArray() ?? Array.Empty<Guid>())));
+        }
+
+        // Drop diff state for connections that are gone (logout / disconnect), so it doesn't leak.
+        if (_lastSentByConn.Count > _world.EntityToConnection.Count)
+        {
+            var live = _world.EntityToConnection.Values.ToHashSet();
+            foreach (var conn in _lastSentByConn.Keys.Where(c => !live.Contains(c)).ToList())
+                _lastSentByConn.Remove(conn);
         }
 
         try { await Task.WhenAll(sends); }

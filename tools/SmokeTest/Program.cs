@@ -65,6 +65,30 @@ Check("character starts with exactly one class", a.Subclasses?.Classes.Length ==
       $"got {a.Subclasses?.Classes.Length}");
 Check("server pushed a skill bar", a.Bar is not null);
 
+// -------------------------------------------------------------------------------------------
+// 1b. DELTA SNAPSHOTS (the live world push). The full state is no longer re-sent every tick — an
+//     entity is SPAWNED once (full), then only lean UPDATES while it moves, and DESPAWNED on leaving.
+//     These would look fine in-client while being wrong on the wire, so assert the protocol directly.
+// -------------------------------------------------------------------------------------------
+Guid myId = entered.EntityId;
+Check("I was SPAWNED in my own delta (full entity on entry)", a.Spawned.Contains(myId));
+
+// MOVE, then expect a lean UPDATE for myself (position is a dynamic field). Static fields must NOT ride
+// updates — so DebugLevel (Level is static) should come back as a re-SPAWN, not an update.
+a.ResetDeltas();
+await a.Hub.SendAsync("Move", new MoveCommand(entered.X + 400, entered.Y));
+await a.Settle();
+Check("moving produced a lean UPDATE for me (dynamic field on the wire)", a.Updated.Contains(myId));
+Check("a still world doesn't spawn me again (static data isn't re-sent)", !a.Spawned.Contains(myId),
+      "spawned again while only moving");
+
+a.ResetDeltas();
+await a.Hub.SendAsync("DebugLevel", 1);
+await a.Settle();
+Check("a STATIC change (level-up) re-SPAWNS me, not a lean update", a.Spawned.Contains(myId));
+await a.Hub.SendAsync("DebugLevel", -1);   // back to level 1 so the leveling math below still lands on 81
+await a.Settle();
+
 int mainSlot = a.Subclasses!.Classes[0].Slot;
 var mainClass = a.Subclasses.Classes[0].BaseClass;
 
@@ -241,11 +265,26 @@ sealed class Session : IAsyncDisposable
     public SkillBarDto? Bar;
     public SubclassListDto? Subclasses;
 
+    // Delta-snapshot capture — the live world push. Accumulated so a test can assert an entity was
+    // SPAWNED (full), UPDATED (lean), or DESPAWNED, and reset the tallies between phases.
+    public readonly HashSet<Guid> Spawned = new();
+    public readonly HashSet<Guid> Updated = new();
+    public readonly HashSet<Guid> Despawned = new();
+    public int DeltaCount;
+    public void ResetDeltas() { Spawned.Clear(); Updated.Clear(); Despawned.Clear(); DeltaCount = 0; }
+
     public async Task OpenAsync(string url)
     {
         Hub = new HubConnectionBuilder().WithUrl(url).Build();
         Hub.On<SkillBarDto>("SkillBar", b => Bar = b);
         Hub.On<SubclassListDto>("Subclasses", s => Subclasses = s);
+        Hub.On<SnapshotDelta>("SnapshotDelta", d =>
+        {
+            DeltaCount++;
+            foreach (var s in d.Spawns) Spawned.Add(s.Id);
+            foreach (var u in d.Updates) Updated.Add(u.Id);
+            foreach (var id in d.Despawns) Despawned.Add(id);
+        });
         Hub.On<ChatMessage>("Chat", m => { if (m.Channel == ChatChannel.System) Console.WriteLine($"        [SYSTEM] {m.Text}"); });
         await Hub.StartAsync();
     }

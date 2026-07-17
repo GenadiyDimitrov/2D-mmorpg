@@ -1632,4 +1632,17 @@ public class Entity
         new(Id, Name, Kind, Race, BaseClass, X, Y, Speed, Level,
             Hp, MaxHp, Mp, MaxMp, SecondClass, ThirdClass, Dead, IsDisconnected, FlagState,
             Kind == EntityKind.Mob && Aggressive);
+
+    /// <summary>The tick-to-tick DYNAMIC fields only (see EntityLean) — position, vitals, dead/dc/flag.
+    /// Sent while an entity is already in view; the static fields ride the full spawn DTO.</summary>
+    public EntityLean ToLean() =>
+        new(Id, X, Y, Speed, Hp, Mp, Dead, IsDisconnected, FlagState);
+
+    /// <summary>True if the STATIC parts of two DTOs match — i.e. the difference (if any) is purely
+    /// dynamic and can go out as an EntityLean. A static change (level-up, class change, name) instead
+    /// forces a fresh full spawn DTO so the client updates those fields too.</summary>
+    public static bool StaticFieldsEqual(EntityDto a, EntityDto b) =>
+        a.Name == b.Name && a.Kind == b.Kind && a.Race == b.Race && a.BaseClass == b.BaseClass &&
+        a.Level == b.Level && a.MaxHp == b.MaxHp && a.MaxMp == b.MaxMp &&
+        a.SecondClass == b.SecondClass && a.ThirdClass == b.ThirdClass && a.Aggressive == b.Aggressive;
 }

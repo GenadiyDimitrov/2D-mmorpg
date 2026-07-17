@@ -50,8 +50,24 @@ public record EntityDto(
 public record MoveCommand(float TargetX, float TargetY);
 
 /// <summary>Server -> Client, every tick: everything you can currently see
-/// (including yourself). Anything not listed has left your view range.</summary>
+/// (including yourself). Anything not listed has left your view range.
+/// SUPERSEDED for the live path by <see cref="SnapshotDelta"/> (kept for reference/compat).</summary>
 public record WorldSnapshot(EntityDto[] Entities);
+
+/// <summary>The fields of an entity that change tick-to-tick — the LEAN per-tick update. The STATIC
+/// fields (name, class, level, max HP/MP, aggressive, …) are sent ONCE as a full <see cref="EntityDto"/>
+/// spawn and never repeated, so this is all the wire needs while an entity is just moving/fighting.</summary>
+public record EntityLean(
+    Guid Id, float X, float Y, float Speed,
+    int Hp, int Mp, bool Dead, bool Disconnected, PvpFlag Flag);
+
+/// <summary>Server -> Client, every tick: a DELTA of the viewer's world.
+///   Spawns   = entities that just ENTERED view (or whose static data changed) — full DTOs.
+///   Updates  = entities still in view whose dynamic fields changed — lean.
+///   Despawns = entities that LEFT view (or were removed).
+/// An entity absent from all three is UNCHANGED — the client keeps what it has (unlike WorldSnapshot,
+/// where absence meant "removed"). This stops re-sending ~11 static fields per entity 10×/second.</summary>
+public record SnapshotDelta(EntityDto[] Spawns, EntityLean[] Updates, Guid[] Despawns);
 
 /// <summary>Server -> Client: a chat line. To is set for whispers.</summary>
 public record ChatMessage(string From, string Text, ChatChannel Channel, string? To = null);

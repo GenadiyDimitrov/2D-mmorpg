@@ -110,6 +110,7 @@ public partial class MainWindow : Window
         _ = ConnectToServerAsync();
 
         _net.SnapshotReceived += s => Dispatcher.BeginInvoke(() => ApplySnapshot(s));
+        _net.SnapshotDeltaReceived += d => Dispatcher.BeginInvoke(() => ApplyDelta(d));
         _net.ChatReceived += m => Dispatcher.BeginInvoke(() => AppendChat(m));
         _net.CombatReceived += c => Dispatcher.BeginInvoke(() => OnCombatEvent(c));
         _net.ProgressReceived += p => Dispatcher.BeginInvoke(() => OnProgress(p));
@@ -1246,88 +1247,126 @@ public partial class MainWindow : Window
     // Snapshots
     // -----------------------------------------------------------------------
 
+    /// <summary>Legacy FULL-snapshot path (WorldSnapshot): absence means "removed". The live server now
+    /// sends <see cref="ApplyDelta"/> instead; this is kept for compatibility.</summary>
     private void ApplySnapshot(WorldSnapshot snapshot)
     {
         var seen = new HashSet<Guid>();
-
         foreach (var dto in snapshot.Entities)
         {
             seen.Add(dto.Id);
-
-            if (!_visuals.TryGetValue(dto.Id, out var visual))
-            {
-                visual = CreateVisual(dto);
-                visual.CurX = dto.X;
-                visual.CurY = dto.Y;
-                _visuals[dto.Id] = visual;
-                WorldCanvas.Children.Add(visual.Root);
-            }
-
-            // Snap (don't slide) on a large jump — teleport/respawn covers more
-            // ground than a normal tick of movement ever could.
-            double jumpDx = dto.X - visual.CurX, jumpDy = dto.Y - visual.CurY;
-            if (jumpDx * jumpDx + jumpDy * jumpDy > 600 * 600)
-            {
-                visual.CurX = dto.X;
-                visual.CurY = dto.Y;
-            }
-
-            visual.TargetX = dto.X;
-            visual.TargetY = dto.Y;
-            visual.Latest = dto;
-            UpdateVisualState(visual, dto);
-
-            if (dto.Id == _myId)
-            {
-                _myDto = dto;
-                // Keep our level synced from the snapshot so mob con-colors + level-gated
-                // UI are right ON ENTER (Progress events only fire on level-up afterward).
-                _level = dto.Level;
-                // Our own name was never actually assigned (it stayed ""), so the status line
-                // showed no name and the whisper self-check never matched. The first snapshot is
-                // where we learn it — and the skill bar is saved PER CHARACTER, so it can only be
-                // restored once we know who we are.
-                if (_myName != dto.Name)
-                {
-                    _myName = dto.Name;
-                    EnsureSkillBarSlots();
-                }
-                // Race/base class can change via a DEBUG character reset — keep ours in sync.
-                if (dto.Race != _myRace || dto.BaseClass != _myBaseClass)
-                {
-                    _myRace = dto.Race;
-                    _myBaseClass = dto.BaseClass;
-                    if (SkillsPanel.Visibility == Visibility.Visible)
-                        RefreshSkillsWindow();
-                }
-                if (dto.SecondClass != _mySecondClass || dto.ThirdClass != _myThirdClass)
-                {
-                    _mySecondClass = dto.SecondClass;
-                    _myThirdClass = dto.ThirdClass;
-                    EnsureSkillBarSlots();
-                    // The class just changed: refresh the learn list so newly-available
-                    // skills (e.g. lvl-20 masteries) enable immediately, not after +1 level.
-                    if (SkillsPanel.Visibility == Visibility.Visible)
-                        RefreshSkillsWindow();
-                }
-                MaybeShowClassChangeNotice(dto.Level, dto.SecondClass);
-                MaybeShowThirdClassNotice(dto.Level, dto.SecondClass, dto.ThirdClass);
-                DeathOverlay.Visibility = dto.Dead ? Visibility.Visible : Visibility.Collapsed;
-                // Alive again (revived, respawned, or freshly logged in): make sure no stale offer is
-                // parked inside the overlay waiting to reappear on the next death.
-                if (!dto.Dead) HideResurrectPrompt();
-            }
+            ApplyEntityDto(dto);
         }
-
         foreach (var id in _visuals.Keys.Where(id => !seen.Contains(id)).ToList())
+            DespawnVisual(id);
+        UpdateTargetFrame();
+    }
+
+    /// <summary>The live DELTA path. Spawns = full DTOs (new in view / static change); Updates = lean
+    /// dynamic-only changes merged onto the cached DTO; Despawns = left view. An entity in none of the
+    /// three is UNCHANGED and kept as-is — that's the whole saving.</summary>
+    private void ApplyDelta(SnapshotDelta delta)
+    {
+        foreach (var dto in delta.Spawns)
+            ApplyEntityDto(dto);
+
+        foreach (var u in delta.Updates)
         {
-            WorldCanvas.Children.Remove(_visuals[id].Root);
-            _visuals.Remove(id);
-            if (_targetId == id)
-                _targetId = null;
+            // Merge the lean dynamic fields onto the last full DTO we hold, then run the SAME per-entity
+            // logic — so nothing about how an entity is applied differs between spawn and update.
+            if (_visuals.TryGetValue(u.Id, out var v) && v.Latest is { } prev)
+                ApplyEntityDto(prev with
+                {
+                    X = u.X, Y = u.Y, Speed = u.Speed,
+                    Hp = u.Hp, Mp = u.Mp, Dead = u.Dead,
+                    Disconnected = u.Disconnected, Flag = u.Flag
+                });
+            // An update for an entity we never spawned (missed spawn) is ignored; its next static change
+            // or re-entry will spawn it fresh.
         }
+
+        foreach (var id in delta.Despawns)
+            DespawnVisual(id);
 
         UpdateTargetFrame();
+    }
+
+    /// <summary>Create or update one entity's visual from a full DTO. Shared by spawn (delta), the merged
+    /// update path, and the legacy full snapshot — so the behaviour is identical across all three.</summary>
+    private void ApplyEntityDto(EntityDto dto)
+    {
+        if (!_visuals.TryGetValue(dto.Id, out var visual))
+        {
+            visual = CreateVisual(dto);
+            visual.CurX = dto.X;
+            visual.CurY = dto.Y;
+            _visuals[dto.Id] = visual;
+            WorldCanvas.Children.Add(visual.Root);
+        }
+
+        // Snap (don't slide) on a large jump — teleport/respawn covers more
+        // ground than a normal tick of movement ever could.
+        double jumpDx = dto.X - visual.CurX, jumpDy = dto.Y - visual.CurY;
+        if (jumpDx * jumpDx + jumpDy * jumpDy > 600 * 600)
+        {
+            visual.CurX = dto.X;
+            visual.CurY = dto.Y;
+        }
+
+        visual.TargetX = dto.X;
+        visual.TargetY = dto.Y;
+        visual.Latest = dto;
+        UpdateVisualState(visual, dto);
+
+        if (dto.Id == _myId)
+        {
+            _myDto = dto;
+            // Keep our level synced from the snapshot so mob con-colors + level-gated
+            // UI are right ON ENTER (Progress events only fire on level-up afterward).
+            _level = dto.Level;
+            // Our own name was never actually assigned (it stayed ""), so the status line
+            // showed no name and the whisper self-check never matched. The first snapshot is
+            // where we learn it — and the skill bar is saved PER CHARACTER, so it can only be
+            // restored once we know who we are.
+            if (_myName != dto.Name)
+            {
+                _myName = dto.Name;
+                EnsureSkillBarSlots();
+            }
+            // Race/base class can change via a DEBUG character reset — keep ours in sync.
+            if (dto.Race != _myRace || dto.BaseClass != _myBaseClass)
+            {
+                _myRace = dto.Race;
+                _myBaseClass = dto.BaseClass;
+                if (SkillsPanel.Visibility == Visibility.Visible)
+                    RefreshSkillsWindow();
+            }
+            if (dto.SecondClass != _mySecondClass || dto.ThirdClass != _myThirdClass)
+            {
+                _mySecondClass = dto.SecondClass;
+                _myThirdClass = dto.ThirdClass;
+                EnsureSkillBarSlots();
+                // The class just changed: refresh the learn list so newly-available
+                // skills (e.g. lvl-20 masteries) enable immediately, not after +1 level.
+                if (SkillsPanel.Visibility == Visibility.Visible)
+                    RefreshSkillsWindow();
+            }
+            MaybeShowClassChangeNotice(dto.Level, dto.SecondClass);
+            MaybeShowThirdClassNotice(dto.Level, dto.SecondClass, dto.ThirdClass);
+            DeathOverlay.Visibility = dto.Dead ? Visibility.Visible : Visibility.Collapsed;
+            // Alive again (revived, respawned, or freshly logged in): make sure no stale offer is
+            // parked inside the overlay waiting to reappear on the next death.
+            if (!dto.Dead) HideResurrectPrompt();
+        }
+    }
+
+    private void DespawnVisual(Guid id)
+    {
+        if (_visuals.TryGetValue(id, out var v))
+            WorldCanvas.Children.Remove(v.Root);
+        _visuals.Remove(id);
+        if (_targetId == id)
+            _targetId = null;
     }
 
     private Brush MobNameBrush(int mobLevel)
