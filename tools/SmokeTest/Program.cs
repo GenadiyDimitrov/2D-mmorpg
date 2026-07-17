@@ -158,6 +158,27 @@ Check("subclass kept its own level while parked",
       $"level {a.Subclasses.Classes.First(c => c.Slot == subSlot).Level}, expected 5");
 
 // -------------------------------------------------------------------------------------------
+// 4b. Bar CAPACITY + ITEM SLOTS. Both are 2026-07-17 changes that live in persistence and would look
+//     perfect in the running client while being wrong on the next login — exactly this test's remit.
+//       - the bar is now 60 slots (5x12), not 24;
+//       - a slot may hold an ITEM ("item:<defId>"), which SyncSkillBar must NOT wipe as an unknown skill.
+// -------------------------------------------------------------------------------------------
+Check("skill bar is 60 slots (5 rows x 12)",
+      a.Bar!.Slots.Length == GameConstants.SkillBarSlots,
+      $"got {a.Bar!.Slots.Length}, expected {GameConstants.SkillBarSlots}");
+
+string itemToken = GameConstants.ItemSlotToken(ItemCatalog.HealingPotion);
+var withItem = (string[])mainBar.Clone();
+int freeIdx = Array.FindIndex(withItem, string.IsNullOrEmpty);
+Check("the bar has a free slot to place an item token", freeIdx >= 0);
+if (freeIdx >= 0) withItem[freeIdx] = itemToken;
+mainBar = withItem;                       // this is now the canonical main bar the relog must reproduce
+await a.Hub.SendAsync("SetSkillBar", mainBar);
+await a.Settle();
+// SetSkillBar stores without echoing a fresh push, so we don't re-read a.Bar here — the RELOG assertion
+// below (SyncSkillBar kept the item: token) is the real proof it was accepted AND persisted.
+
+// -------------------------------------------------------------------------------------------
 // 5. THE REAL TEST: log out completely and log back in on a NEW connection. Everything above
 //    could still be alive purely in server memory. Only a relog proves it reached the DB.
 // -------------------------------------------------------------------------------------------
@@ -174,6 +195,8 @@ Check("both classes survived the relog", b.Subclasses?.Classes.Length == 2,
       $"got {b.Subclasses?.Classes.Length}");
 Check("MAIN class's bar survived the relog",
       b.Bar is not null && b.Bar.Slots.SequenceEqual(mainBar));
+Check("the ITEM slot survived the relog (SyncSkillBar kept the item: token, not wiped as a skill)",
+      b.Bar is not null && b.Bar.Slots.Contains(itemToken));
 Check("levels survived the relog (main 81, subclass 5)",
       b.Subclasses!.Classes.First(c => c.Slot == mainSlot).Level == 81 &&
       b.Subclasses.Classes.First(c => c.Slot == subSlot).Level == 5,
