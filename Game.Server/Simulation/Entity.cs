@@ -439,6 +439,15 @@ public class Entity
     public float MagicWeaponPenaltyMult { get; set; } = 1f;
     /// <summary>True while a magic weapon (wand/staff) is equipped — for Divine Focus.</summary>
     public bool HasMagicWeapon { get; set; }
+
+    // ----- Heal stats (owner 2026-07-17): heals no longer use M.Atk. A heal's OUTPUT is
+    // (HealPowerFlat + skillPower)·HealPowerMod; the TARGET then receives (HealReceivedFlat +
+    // output)·HealReceivedMod. Defaults 0 flat / ×1, so an untrained healer heals exactly the skill
+    // power (nobody overheals). Set by class/gear/passives (and, later, a healer buff). -----
+    public int HealPowerFlat { get; set; }
+    public float HealPowerMod { get; set; } = 1f;
+    public int HealReceivedFlat { get; set; }
+    public float HealReceivedMod { get; set; } = 1f;   // anti-heal debuffs lower it; buffs/passives raise it
     /// <summary>Attack-interval multiplier from Attack Speed attributes.</summary>
     public float AttackSpeedMultiplier { get; set; } = 1f;
 
@@ -503,17 +512,6 @@ public class Entity
         }
     }
 
-    /// <summary>Multiplier on healing RECEIVED (anti-heal debuffs lower it). 1 = normal.</summary>
-    public float HealReceivedMultiplier
-    {
-        get
-        {
-            float reduce = 0f;
-            foreach (var b in Buffs) if (b.Has(SkillEffect.DebuffHealRecv))
-                reduce += b.Percent(SkillEffect.DebuffHealRecv);
-            return Math.Clamp(1f - reduce, 0f, 1f);
-        }
-    }
 
     /// <summary>De-taunt stub (no threat system yet): on a mob, while &gt;0 it will
     /// not re-aggro <see cref="DetauntFromId"/> (the entity that shed it).</summary>
@@ -1001,6 +999,8 @@ public class Entity
         HealOutputMult = 1f;
         MagicWeaponPenaltyMult = 1f;
         HasMagicWeapon = false;
+        HealPowerFlat = 0; HealPowerMod = 1f;
+        HealReceivedFlat = 0; HealReceivedMod = 1f;
 
         HasShield = false;
         BlockChance = 0f;
@@ -1415,6 +1415,11 @@ public class Entity
                 EvadeFloor = Math.Max(EvadeFloor, pe.EvadeFloor);
                 HitFloor = Math.Max(HitFloor, pe.HitFloor);
                 MagicFailFloor = Math.Max(MagicFailFloor, pe.MagicFailFloor);
+                // Heal power (output) + heal received (target). No M.Atk in the heal formula.
+                HealPowerFlat += pe.HealPowerFlat;
+                if (pe.HealPowerPct != 0f) HealPowerMod *= 1f + pe.HealPowerPct;
+                HealReceivedFlat += pe.HealReceivedFlat;
+                if (pe.HealReceivedPct != 0f) HealReceivedMod *= 1f + pe.HealReceivedPct;
             }
 
             // ----- Learnable PASSIVES (discipline passives, weapon masteries): each learned
@@ -1491,6 +1496,7 @@ public class Entity
             if (buff.Has(SkillEffect.BuffMeleeVamp)) MeleeVamp += buff.Flat(SkillEffect.BuffMeleeVamp) + buff.Percent(SkillEffect.BuffMeleeVamp);
             if (buff.Has(SkillEffect.BuffSpellVamp)) SpellVamp += buff.Flat(SkillEffect.BuffSpellVamp) + buff.Percent(SkillEffect.BuffSpellVamp);
             if (buff.Has(SkillEffect.BuffReflect)) MeleeReflect += buff.Flat(SkillEffect.BuffReflect) + buff.Percent(SkillEffect.BuffReflect);
+            if (buff.Has(SkillEffect.DebuffHealRecv)) HealReceivedMod *= 1f - buff.Percent(SkillEffect.DebuffHealRecv);   // anti-heal
             PhysMpCostReduction += buff.PhysMpCostPct;   // MP-cost reduction (rides as buff fields, not a flag)
             MagicMpCostReduction += buff.MagicMpCostPct;
             if (buff.Has(SkillEffect.BuffCooldown)) CooldownReduction += buff.Flat(SkillEffect.BuffCooldown) + buff.Percent(SkillEffect.BuffCooldown);

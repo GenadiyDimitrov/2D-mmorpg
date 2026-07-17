@@ -120,7 +120,11 @@ public record StatsUpdate(
     float CritRateResist = 0f, float CritDmgResist = 0f, float BowResist = 0f,
     int InterruptResist = 0,
     // DEBUG / L2-reference: the OLD-style internal M.Atk (base·levelMod²·buffs²) the shrunk display hides.
-    int MagicAttackInternal = 0);
+    int MagicAttackInternal = 0,
+    // Heal stats (no M.Atk): output = (HealPowerFlat + skillPower)·HealPowerMod; received = (HealReceivedFlat
+    // + output)·HealReceivedMod. Default 0/×1.
+    int HealPowerFlat = 0, float HealPowerMod = 1f,
+    int HealReceivedFlat = 0, float HealReceivedMod = 1f);
 
 /// <summary>Server -> owning client: a potion cooldown started (seconds),
 /// or an active potion effect changed. Cooldown 0 = ready.</summary>

@@ -4021,7 +4021,7 @@ var effect = def.Effect;
         {
             // Divine Focus: healing OUTPUT scaled down when the healer has no magic weapon (×0.5 / ×0.75).
             int healPower = def.Id == SkillCatalog.TestHeal ? _testHealPower : def.PowerAt(lvl);   // test heal: live debug power
-            int flat = (int)(SkillMath.HealAmount(healPower, (int)caster.EffectiveMagicAttack) * caster.HealOutputMult);
+            int flat = (int)(SkillMath.HealAmount(healPower, caster.HealPowerFlat, caster.HealPowerMod) * caster.HealOutputMult);
             float pct = def.MagnitudeOf(SkillEffect.Heal, ModifierMode.Percent, lvl);
             if (def.TargetMode == TargetMode.AlliesInRadius)
                 foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
@@ -4332,7 +4332,9 @@ var effect = def.Effect;
     private void HealOne(Entity caster, Entity target, int flat, int pct, string skillName)
     {
         if (target.Dead) return;
-        int amount = (int)Math.Round(flat * target.HealReceivedMultiplier) + pct;
+        // Target's HEAL RECEIVED: (flat + HealReceivedFlat)·HealReceivedMod (anti-heal debuffs lower the mod;
+        // buffs/passives raise it). The % half (pct) ignores this, as before.
+        int amount = (int)Math.Round((flat + target.HealReceivedFlat) * Math.Max(0f, target.HealReceivedMod)) + pct;
         if (amount > 0)
             target.Hp = Math.Min(target.MaxHp, target.Hp + amount);
         FlagForSupporting(caster, target);
@@ -5464,7 +5466,8 @@ var effect = def.Effect;
             p.MeleeVamp, p.SpellVamp, p.CooldownReduction,
             p.MagicFailResist, p.MagicFailFloor,
             p.CritRateResist, p.CritDmgResist, p.BowResist,
-            p.InterruptResist, (int)p.EffectiveMagicAttack));   // MagicAttackInternal: the cosmic L2-reference value
+            p.InterruptResist, (int)p.EffectiveMagicAttack,   // MagicAttackInternal: the cosmic L2-reference value
+            p.HealPowerFlat, p.HealPowerMod, p.HealReceivedFlat, p.HealReceivedMod));
     }
 
     /// <summary>The player's STANDING (out-of-combat, running) HP/MP regen per second —

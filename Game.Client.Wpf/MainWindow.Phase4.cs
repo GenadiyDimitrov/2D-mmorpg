@@ -1066,6 +1066,8 @@ public partial class MainWindow
         StatsList.Items.Add(MakeStatRow("P.Atk / M.Atk", $"{st.AttackPower} / {st.MagicAttack}"));
         StatsList.Items.Add(MakeStatRow("M.Atk (internal / L2-ref)", $"{st.MagicAttackInternal:N0}"));
         StatsList.Items.Add(MakeStatRow("Defence (Phys / Magic)", $"{st.Defence} / {st.MagicDefence}"));
+        StatsList.Items.Add(MakeStatRow("Heal power (flat / mod)", $"{st.HealPowerFlat} / ×{st.HealPowerMod:0.##}"));
+        StatsList.Items.Add(MakeStatRow("Heal received (flat / mod)", $"{st.HealReceivedFlat} / ×{st.HealReceivedMod:0.##}"));
         if (!string.IsNullOrEmpty(st.ActiveSet))
             StatsList.Items.Add(MakeStatRow("Set Bonus", $"{st.ActiveSet} (complete)"));
         if (!string.IsNullOrEmpty(st.ArmorMastery))

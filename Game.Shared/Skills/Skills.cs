@@ -387,7 +387,12 @@ public readonly record struct PassiveEffect(
     // raises evasion/accuracy/crit/attack-speed — not just a number in the stat window.
     // There is deliberately no MEN here: MEN is no longer a stat. A "±MEN" swap is expressed
     // directly as its modifiers (MaxMpPct / MagicDefencePct / MpRegenPct above).
-    int Con = 0, int Dex = 0, int Atk = 0, int Wit = 0);
+    int Con = 0, int Dex = 0, int Atk = 0, int Wit = 0,
+    // Heal power (healer OUTPUT) and heal received (target side). Heals no longer use M.Atk:
+    // endHeal = (HealPowerFlat + skillPower)·HealPowerMod, then the target's (HealReceivedFlat +
+    // endHeal)·HealReceivedMod. Default 0 flat / +0% (so an untrained healer heals exactly skillPower).
+    int HealPowerFlat = 0, float HealPowerPct = 0f,
+    int HealReceivedFlat = 0, float HealReceivedPct = 0f);
 
 /// <summary>Who a skill affects. SelfOnly = caster only; AlliesInRadius = caster + party members
 /// in radius (heals/buffs); EnemiesInRadius = every HOSTILE in radius (an offensive AoE, e.g. a
@@ -514,10 +519,11 @@ public static class SkillMath
     /// The %-of-max-HP part of a heal does NOT come through here: it ignores M.Atk entirely and
     /// ignores heal-reduction. That's the point of it — when an anti-heal ultimate lands, the big
     /// flat heals wither and only the % heals still work.</summary>
-    public static int HealAmount(int power, int mAtk) =>
-        // mAtk is the INTERNAL magic-attack value; the √ stays (unchanged) so heal amounts are identical
-        // to today. Only the DISPLAYED M.Atk is shrunk (Path B), not this.
-        Math.Max(1, (int)(power * MathF.Sqrt(Math.Max(0, mAtk)) / HealK));
+    /// <summary>Heal OUTPUT (endHeal) — owner 2026-07-17: NO M.Atk. = (HealPowerFlat + skillPower)·HealPowerMod.
+    /// With the default HealPower (0 flat / ×1) a heal is EXACTLY its skill power, so nobody overheals unless
+    /// a class / gear / buff grants HealPower. The target's HealReceived is applied separately in HealOne.</summary>
+    public static int HealAmount(int skillPower, int healPowerFlat, float healPowerMod) =>
+        Math.Max(1, (int)((healPowerFlat + skillPower) * healPowerMod));
 
     public const float CritMultiplierSkills = 2.0f;
     public const int PhysicalSkillAccuracyBonus = 10;
