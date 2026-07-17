@@ -35,8 +35,17 @@ Build 0/0, SmokeTest green. Commits e8da0f7 · 39dfab8 · 971b128 on Gena.
 - [ ] **Ultimate Scroll of Return is INSTANT** (0s cast) — the escape button. Debug-give it from Scrolls (x5).
 - [ ] **Bag tab: orange [E] quick-equip** before the red [X], on armor/weapons.
 
-**NOT built (own increments):** mob target [details]+drops · multi-row floating skill bars + move handles +
-consumables-on-bar (owner to re-explain the layout).
+**Skill bar rework (commit e1e3902):**
+- [ ] **Bar has up to 5 rows of 12.** A **+/- control strip** above the bar: `+` opens another row (up to
+      5), then it becomes `−` and collapses back to 1. Bottom row keeps hotkeys 1-9/0; new rows open above.
+- [ ] **Move the WHOLE bar** by the "⠿ drag bar" handle; its position (and the row count) persist across a
+      client restart. *(WPF drag — needs your hands; also re-check slot drag-and-drop still rearranges.)*
+- [ ] **Items on the bar.** In the bag, a consumable has a blue **"Bar"** button → puts it on the bar. The
+      slot shows the item's initials + a live count and **greys out at 0** (like a cooldown); **left-click
+      USES it** (no digging through the bag). Right-click removes it. Count updates as you use/gain them.
+- [ ] Old characters' existing bars still load (24→60 slots pad with empties).
+
+**NOT built (own increment):** mob target [details]+drops.
 
 ---
 

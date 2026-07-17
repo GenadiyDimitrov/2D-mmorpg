@@ -1692,6 +1692,7 @@ public partial class MainWindow : Window
             TradeButton.Visibility = Visibility.Collapsed;
             PartyInviteButton.Visibility = Visibility.Collapsed;
             TargetDetailsPanel.Visibility = Visibility.Collapsed;
+            TargetMobDetailsButton.Visibility = Visibility.Collapsed;
         }
     }
 
@@ -1745,7 +1746,44 @@ public partial class MainWindow : Window
             TargetDetailsText.Text = $"{d.Name}   Level {d.Level}" +
                                      (classTag.Length > 0 ? $"\n{classTag}" : "");
             TargetPassivesList.ItemsSource = null;
+            TargetMobDetailsButton.Visibility = Visibility.Collapsed;
             TargetDetailsPanel.Visibility = Visibility.Visible;
+            return;
+        }
+
+        // MOB: the base card is COMPACT — just the four combat stats + a [Details] button (owner). The
+        // full stat line, effects, passives and the DROP list live behind that button. A NEW mob starts
+        // compact; the 1s auto-refresh of the same mob keeps whatever level you'd toggled to.
+        if (_lastMobDetails?.Id != d.Id) _mobDetailsExpanded = false;
+        _lastMobDetails = d;
+        RenderMobDetails();
+        TargetDetailsPanel.Visibility = Visibility.Visible;
+    }
+
+    private TargetDetails? _lastMobDetails;
+    private bool _mobDetailsExpanded;
+
+    private void TargetMobDetails_Click(object sender, RoutedEventArgs e)
+    {
+        _mobDetailsExpanded = !_mobDetailsExpanded;
+        RenderMobDetails();
+    }
+
+    /// <summary>Draw the mob inspect panel from the last details, at the current detail level: compact =
+    /// P.Def/M.Def · P.Atk/M.Atk only; expanded = full stats + effects + passives + the DROP list.</summary>
+    private void RenderMobDetails()
+    {
+        if (_lastMobDetails is not { } d) return;
+
+        TargetMobDetailsButton.Visibility = Visibility.Visible;
+        TargetMobDetailsButton.Content = _mobDetailsExpanded ? "Details ▾" : "Details ▸";
+
+        if (!_mobDetailsExpanded)
+        {
+            TargetDetailsText.Text =
+                $"P.Def {d.PDef}   M.Def {d.MDef}\n" +
+                $"P.Atk {d.PAtk}   M.Atk {d.MAtk}";
+            TargetPassivesList.ItemsSource = null;
             return;
         }
 
@@ -1754,7 +1792,6 @@ public partial class MainWindow : Window
             $"P.Atk {d.PAtk}   M.Atk {d.MAtk}\n" +
             $"P.Def {d.PDef}   M.Def {d.MDef}\n" +
             $"Acc {d.Accuracy}   Eva {d.Evasion}   Crit {d.CritChance * 100:0.#}%";
-        // Active effects (incl. DoT stacks) so you can time a burst, e.g. "Bleed (stacks) x5".
         if (d.Effects.Length > 0)
             text += "\nEffects: " + string.Join(", ", d.Effects);
         TargetDetailsText.Text = text;
@@ -1762,8 +1799,12 @@ public partial class MainWindow : Window
         var lines = new List<string>(d.Passives);
         if (d.BowResist > 0f) lines.Add($"Bow Resist +{d.BowResist * 100:0}%");
         if (d.CritResist > 0f) lines.Add($"Crit Resist +{d.CritResist * 100:0}%");
+        if (d.Drops is { Length: > 0 })
+        {
+            lines.Add("— Drops —");
+            lines.AddRange(d.Drops);
+        }
         TargetPassivesList.ItemsSource = lines.Count > 0 ? lines : null;
-        TargetDetailsPanel.Visibility = Visibility.Visible;
     }
 
     /// <summary>The 2nd/3rd-class label for the current target (from its snapshot), or "" if none.</summary>

@@ -698,6 +698,22 @@ changes and new features that came out of the play session:
   UI (target frame/skill bar/cast bars), then swap billboards for animated 3D models (visual-only).
 - [ ] **Line of sight** — server-side LoS using STATIC occluder data (not entities), for
   the new client. ([[client-3d-and-los-design]])
+- [ ] **Network payload optimization (deferred, owner asked 2026-07-17).** MessagePack + delta snapshots.
+  Order matters — do the biggest lever first:
+  1. **Delta / dirty-flag snapshots** (BIGGEST win). Today `WorldSnapshot` sends EVERY visible entity as a
+     FULL `EntityDto` every tick (10 Hz). Send only entities whose state changed, and only the changed
+     fields → ~80-95% smaller. Interest management (the view-range grid) already limits WHICH entities;
+     this limits how OFTEN + how MUCH per entity.
+  2. **MessagePack SignalR protocol** (`.AddMessagePackProtocol()` both sides, ~1 line each) — binary,
+     drops repeated JSON field names, compact numbers → ~40-60% smaller per full snapshot, compounds with
+     deltas. ⚠ **Two gotchas:** (a) our DTOs are positional records with `init` setters — SignalR's
+     contractless MessagePack resolver usually handles them but may need `[SerializationConstructor]`;
+     (b) **Unity/IL2CPP** — MessagePack's dynamic resolver does NOT work under AOT; needs the `mpc`
+     codegen run at build time. JSON just works there, so this is the moment to solve the Unity AOT story.
+  **Why deferred:** no measured bandwidth/CPU problem (localhost dev), the protocol is still churning
+  (DTO fields added most sessions), and JSON stays readable on the wire (SmokeTest + inspection). It's a
+  one-line swap you can make LATE once the protocol stabilizes and you've measured. Sits behind the
+  `NetworkChannel` seam so the WPF harness + future Unity client share it. ([[client-3d-and-los-design]])
 - [ ] **INSTANCES & DUNGEONS** — full owner spec captured 2026-07-14 in **`docs/Instances.md`**.
   Read that before touching this. Two features, very different sizes — don't conflate them.
 

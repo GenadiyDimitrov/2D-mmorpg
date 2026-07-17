@@ -172,7 +172,10 @@ public record TargetDetails(
     string[] Passives,
     // Active temporary effects on the target (incl. DoT stack counts), e.g. "Bleed x5",
     // "Slow" — so a Venomweaver/Tempest can read stacks on the enemy.
-    string[] Effects);
+    string[] Effects,
+    // For a MOB only: its level-appropriate drop list, "ItemName (chance%)" (effective chance, after the
+    // global drop-rate). Empty for players. Shown behind the [Details] button in the mob target window.
+    string[]? Drops = null);
 
 /// <summary>Server -> owning client: the result of an enchant attempt.</summary>
 public record EnchantResultDto(string ItemName, int NewEnchant, string Outcome, bool Destroyed);

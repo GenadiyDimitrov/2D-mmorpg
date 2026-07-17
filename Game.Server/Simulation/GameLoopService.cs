@@ -5994,6 +5994,21 @@ var effect = def.Effect;
             .Select(b => b.Stacks > 1 ? $"{b.Name} x{b.Stacks}" : b.Name)
             .ToArray();
 
+        // A mob's level-appropriate DROPS (behind the client's [Details] button). Chance shown is the
+        // EFFECTIVE one (after the global drop-rate), so it matches what the player will actually see.
+        string[]? drops = null;
+        if (isMob && t.MobTypeId is not null && MobCatalog.Get(t.MobTypeId).Drops is { } table)
+            drops = table
+                .Where(d => d.AppliesAtLevel(t.Level))
+                .Select(d =>
+                {
+                    float chance = Math.Min(1f, d.Chance * RateConfig.DropChanceRate);
+                    string name = ItemCatalog.Get(d.ItemId)?.Name ?? d.ItemId;
+                    string qty = d.MaxQty > 1 ? $" x{d.MinQty}-{d.MaxQty}" : "";
+                    return $"{name}{qty}  ({chance * 100:0.#}%)";
+                })
+                .ToArray();
+
         SendTo(player, "TargetDetails", new TargetDetails(
             t.Id, t.Name, t.Level, isMob,
             t.Hp, t.MaxHp, t.Mp, t.MaxMp,
@@ -6001,7 +6016,7 @@ var effect = def.Effect;
             (int)t.EffectiveDefence, (int)t.EffectiveMagicDefence,
             t.Accuracy, t.Evasion, t.CritChance,
             t.BowResist, t.CritRateResist,
-            passives, effects));
+            passives, effects, drops));
     }
 
     /// <summary>Roll to interrupt a cast when the caster is hit. Resist = caster

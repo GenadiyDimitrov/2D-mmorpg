@@ -144,6 +144,10 @@
                 <StackPanel x:Name="TargetDetailsPanel" Visibility="Collapsed" Margin="0,2,0,2">
                     <TextBlock x:Name="TargetDetailsText" Foreground="#FFDDDDDD"
                                FontSize="11" TextWrapping="Wrap"/>
+                    <!-- Mob only: toggles the full stats + drop list under the compact P.Def/M.Def · P.Atk/M.Atk card. -->
+                    <Button x:Name="TargetMobDetailsButton" Content="Details ▸" Height="20"
+                            FontSize="10" HorizontalAlignment="Left" Margin="0,3,0,0"
+                            Visibility="Collapsed" Click="TargetMobDetails_Click"/>
                     <ItemsControl x:Name="TargetPassivesList" Margin="0,3,0,0">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
