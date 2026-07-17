@@ -5042,6 +5042,10 @@ var effect = def.Effect;
     private void ApplyDeathExpPenalty(Entity p)
     {
         if (p.Kind != EntityKind.Player) return;
+        p.LostExp = 0;
+        // Low-level "newbie protection": below this level, death costs no exp (nothing for a scroll to
+        // restore). Later a noblesse-style passive will also waive the loss on boss/instance deaths.
+        if (p.Level < GameConstants.DeathExpPenaltyMinLevel) return;
         long penalty = (long)(StatCalculator.ExpToNext(p.Level) * 0.05);
         long lost = Math.Min(p.Exp, penalty);
         p.LostExp = lost;

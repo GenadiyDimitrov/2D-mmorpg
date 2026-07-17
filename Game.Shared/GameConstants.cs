@@ -88,6 +88,11 @@ public static class GameConstants
     /// <summary>Maximum stacks a damage-over-time effect can build (bleed/poison/venom).</summary>
     public const int MaxDotStacks = 10;
 
+    /// <summary>Death exp penalty (5% of the level) applies only AT OR ABOVE this level — low-level
+    /// "newbie protection", so a low-level death costs nothing (and a res scroll has nothing to restore).
+    /// (Later: a noblesse-style passive also waives the loss on boss/instance deaths.)</summary>
+    public const int DeathExpPenaltyMinLevel = 40;
+
     // ----- Chat ---------------------------------------------------------------------
 
     /// <summary>Client keeps at most this many lines per chat tab.</summary>
