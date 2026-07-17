@@ -681,6 +681,12 @@ public class GameLoopService : BackgroundService
         // class's damage gets nudged later instead of hardcoding a coefficient.
         player.LearnedSkills[SkillCatalog.ClassBalanceFor(player.Archetype, player.BaseClass)] = 1;
 
+        // Novice's Grace — display-only newbie protection, shown below the death-penalty level and removed at it.
+        if (player.Level < GameConstants.DeathExpPenaltyMinLevel)
+            player.LearnedSkills.TryAdd(SkillCatalog.NoviceGrace, 1);
+        else
+            player.LearnedSkills.Remove(SkillCatalog.NoviceGrace);
+
         // ==================== TEST ONLY — DELETE ME ====================
         // A power-1000 heal for EVERY class at 76, so the heal formula can be calibrated (and the
         // tank-vs-healer gap read directly). Remove this block with the rest — search "TEST ONLY".
@@ -4803,10 +4809,10 @@ var effect = def.Effect;
             // Any death sheds a big chunk of a PK's karma (the red flag clears at 0).
             ReduceKarma(victim, _karmaLossPerDeath);
 
-            // Death costs 5% of the level's exp (floored at 0 — no delevel). PvP deaths are exempt (L2
-            // convention; avoids XP-griefing). Tracks the lost exp so a resurrection can restore a fraction.
-            bool pvpDeath = killer.Kind == EntityKind.Player && killer.Id != victim.Id;
-            if (!pvpDeath) ApplyDeathExpPenalty(victim);
+            // Death costs 5% of the level's exp (floored at 0 — no delevel), on ANY death incl. PvP.
+            // (Later a noblesse buff will waive it on boss/instance/PvP deaths — only normal-monster deaths
+            // cost exp while noblesse is up.) Tracks the lost exp so a resurrection can restore a fraction.
+            ApplyDeathExpPenalty(victim);
 
             // Death stops auto-hunt. An offline farmer's session ends (deferred logout); a link-dead
             // grace ends; an online idle hunter just stops (can re-enable after respawn).

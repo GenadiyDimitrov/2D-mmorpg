@@ -18,6 +18,10 @@ public static partial class SkillCatalog
     //      upgrades to Lv2 at 40. While NO magic weapon is equipped, healing OUTPUT is scaled: Lv1 ×0.5
     //      (pure healers must wield a magic weapon), Lv2 ×0.75 (buffers stay relevant in fighter gear). ----
     public const string DivineFocus = "divine_focus";
+    // ---- Novice's Grace: DISPLAY-ONLY passive, auto-shown below GameConstants.DeathExpPenaltyMinLevel so a
+    //      newbie can SEE that death costs no exp yet. No mechanical effect (the level check in
+    //      ApplyDeathExpPenalty does the work); auto-removed once they reach the level. ----
+    public const string NoviceGrace = "novice_grace";
     // ---- Combat "training" passives, auto-granted at level 40 (soulshot/spiritshot
     //      stand-in). Doubling the atk STAT gives ×2 physical (linear) but ×1.414
     //      magic (√mAtk) — the soulshot/spiritshot ratio. ----
@@ -343,6 +347,14 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 0),
                 new SkillLevel(SpCost: 0, Description: "Divine Focus Lv.2 — the non-magic-weapon healing penalty eases to ×0.75 (buffers stay useful in fighter gear)."),
             }),
+
+        // Novice's Grace — display-only newbie protection (the level check does the real work; this just
+        // tells the player). The description embeds the threshold constant so it stays in sync.
+        new(NoviceGrace, "Novice's Grace", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive,
+            Description: $"Passive. Below level {GameConstants.DeathExpPenaltyMinLevel} you lose NO experience "
+                       + "when you die. This grace fades once you reach that level."),
 
         // ===== Class Balance — the per-class tuning hook (auto-granted, currently no-ops) =====
         BalancePassive(BalanceTank,    "Class Balance (Tank)",    BaseClass.Fighter),
