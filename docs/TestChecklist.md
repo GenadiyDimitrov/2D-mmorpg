@@ -31,6 +31,13 @@ Built + `dotnet build` 0/0. Death XP penalty was committed 2026-07-16; resurrect
       `scroll_resurrect_ultimate`) = ~0.5s cast, 100% restored. Select the dead ally, use the scroll → same
       confirm prompt. Both have a 1-min reuse.
 
+**Angel's Protection (noblesse, 2026-07-17):**
+- [ ] **Every class auto-learns "Angel's Protection" at level 76** (a self-cast buff on the bar). Cast it →
+      you get a 20-min blessing.
+- [ ] **Buffs survive death while it's up.** Get several buffs + Angel's Protection, then die: ONLY Angel's
+      Protection is consumed; every other buff stays (check the buff bar after death/res). Without it up,
+      death clears all buffs as before. *(Stopgap: it's a long noblesse QUEST later.)*
+
 ---
 
 ## 🧪 BATCH TO TEST (built 2026-07-16) — ⚠ restart client+server + **DELETE game.db** (new `DiedWhileAway` column)

@@ -722,6 +722,13 @@ public class GameLoopService : BackgroundService
         player.LearnedSkills.TryAdd(SkillCatalog.ReturnSkill, 1);
         player.LearnedSkills.Remove(SkillCatalog.ScrollReturnSkill);
         player.LearnedSkills.Remove(SkillCatalog.ScrollReturnUltSkill);
+        player.LearnedSkills.Remove(SkillCatalog.ScrollResurrectSkill);
+        player.LearnedSkills.Remove(SkillCatalog.ScrollResurrectUltSkill);
+
+        // Angel's Protection (noblesse) — every class learns it at 76 for now. LATER it becomes a long
+        // subclass quest reward (see the death/res design note); this auto-grant is the stopgap.
+        if (player.Level >= 76)
+            player.LearnedSkills.TryAdd(SkillCatalog.AngelsProtection, 1);
     }
 
     /// <summary>True if the player has learned a skill that REPLACES the given id
@@ -4226,8 +4233,8 @@ var effect = def.Effect;
         }
         if (effect.HasFlag(SkillEffect.Knockback)) { offensive = true; DoKnockback(caster, target, def.KnockbackRange); }
 
-        // ---- Beneficial buffs (any of the buff flags) ----
-        if ((effect & SkillEffect.AnyBuff) != 0)
+        // ---- Beneficial buffs (any of the buff flags, or a pure marker buff like Angel's Protection) ----
+        if ((effect & SkillEffect.AnyBuff) != 0 || def.KeepsBuffsOnDeath)
         {
             // The display name is the CASTER's class label for this skill, so a
             // cleric's Wind Walk shows as "Holy Speed" wherever it lands.
@@ -4329,6 +4336,7 @@ var effect = def.Effect;
             Replaces = def.Replaces ?? Array.Empty<string>(),
             PhysMpCostPct = def.PhysMpCostPct,
             MagicMpCostPct = def.MagicMpCostPct,
+            KeepsBuffsOnDeath = def.KeepsBuffsOnDeath,
             Description = SkillCatalog.DescriptionOf(def.Id)
         });
 
@@ -4864,7 +4872,20 @@ var effect = def.Effect;
         victim.CastingSkillId = null;
         victim.TargetX = null;
         victim.TargetY = null;
-        victim.Buffs.Clear();
+        // Angel's Protection (noblesse): if a "keeps buffs on death" buff is up, death removes ONLY the
+        // protection buff(s) and every other buff survives; otherwise death clears all buffs as usual.
+        bool keptBuffs = victim.Buffs.Any(b => b.KeepsBuffsOnDeath);
+        if (keptBuffs)
+            victim.Buffs.RemoveAll(b => b.KeepsBuffsOnDeath);
+        else
+            victim.Buffs.Clear();
+        // Refresh the survivor's HUD when buffs were KEPT (their stats/bar must reflect what's still up).
+        if (keptBuffs && victim.Kind == EntityKind.Player)
+        {
+            victim.RecomputeDerived();
+            PushBuffs(victim);
+            SendStats(victim);
+        }
 
         BroadcastCombat(killer, victim, 0, CombatOutcome.Death);
 

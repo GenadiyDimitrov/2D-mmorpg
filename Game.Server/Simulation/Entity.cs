@@ -52,6 +52,10 @@ public class BuffInstance
     public float PhysMpCostPct { get; init; }
     public float MagicMpCostPct { get; init; }
 
+    /// <summary>Angel's Protection / noblesse marker: while a buff with this set is present, DEATH removes
+    /// only the protection buff(s) and keeps every other buff (see Kill). No stat effect of its own.</summary>
+    public bool KeepsBuffsOnDeath { get; init; }
+
     public bool Has(SkillEffect flag) => (Effect & flag) != 0;
 
     public bool IsDebuff => (Effect & SkillEffect.AnyDebuff) != 0;

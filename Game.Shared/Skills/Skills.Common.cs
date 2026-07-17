@@ -82,8 +82,9 @@ public static partial class SkillCatalog
     public const string ReturnSkill          = "return_town";        // 30s cast, 5min cd, fragile
     public const string ScrollReturnSkill    = "use_scroll_return";  // 10s cast, needs a scroll
     public const string ScrollReturnUltSkill = "use_scroll_return_ult"; // ~0.4s, needs an ult scroll
-    public const string ScrollResurrectSkill    = "use_scroll_resurrect";     // 10s self-res, 0% exp back
-    public const string ScrollResurrectUltSkill = "use_scroll_resurrect_ult"; // 0.5s self-res, 100% exp back
+    public const string ScrollResurrectSkill    = "use_scroll_resurrect";     // 10s ally-res, 0% exp back
+    public const string ScrollResurrectUltSkill = "use_scroll_resurrect_ult"; // 0.5s ally-res, 100% exp back
+    public const string AngelsProtection        = "angels_protection";        // noblesse: keep buffs on death
 
     // ---- Multi-level PASSIVE factory: a pure passive whose levels each carry a
     //      PassiveEffect (the floor/lean value for that level). ----
@@ -467,5 +468,17 @@ public static partial class SkillCatalog
             ConsumableId: ItemCatalog.ScrollResurrectUltimate, ConsumableAmount: 1,
             Description: "Revive a fallen ally at 30% HP and MP almost instantly and restore ALL the "
                        + "experience they lost on death. 1 min reuse."),
+
+        // ---- Angel's Protection (noblesse) — a self-buff that makes your OTHER buffs SURVIVE death ----
+        // A pure marker buff (no stat effect): while it's up, dying removes ONLY this buff and keeps the
+        // rest. For now every class auto-learns it at 76; LATER it becomes a long noblesse quest reward
+        // (subclass @76 + a 4th class; changing class resets the quest).
+        new(AngelsProtection, "Angel's Protection", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 30, CastTicks: 10, CooldownTicks: 20, Range: 0, Power: 0,
+            Category: SkillCategory.Buff, SpCost: 0, TargetMode: TargetMode.SelfOnly,
+            DurationTicks: 12000, BuffKey: "angels_protection", Rank: 1, InitialMpCost: 6,
+            KeepsBuffsOnDeath: true,
+            Description: "Blesses you so your other buffs SURVIVE your next death (only this blessing is "
+                       + "consumed). Lasts 20 minutes or until you die."),
     };
 }

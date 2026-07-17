@@ -180,7 +180,11 @@ public record SkillDef(
     // Resurrect: targets a DEAD ally (or self, via a scroll) — revives them to 30% HP/MP and restores
     // ResExpPct (0..1) of the exp they lost to the death penalty. The SkillEffect enum is full, so this
     // rides as a flag field.
-    bool Resurrect = false, float ResExpPct = 0f)
+    bool Resurrect = false, float ResExpPct = 0f,
+    // KeepsBuffsOnDeath (Angel's Protection / noblesse): a self-buff that, while up, makes death remove ONLY
+    // the protection buff(s) and keep every OTHER buff. Rides as a flag field so a buff with no stat effect
+    // can still exist purely as this marker. The SkillEffect enum is full.
+    bool KeepsBuffsOnDeath = false)
 {
     /// <summary>The armor-mastery per-weight profile for a learned skill LEVEL, or null
     /// if this skill isn't an armor mastery.</summary>
