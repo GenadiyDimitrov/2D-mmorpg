@@ -229,9 +229,9 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
-    public Task InspectTarget(Guid targetId)
+    public Task InspectTarget(Guid targetId, bool withDrops = false)
     {
-        _world.Commands.Enqueue(new InspectTargetCmd(Context.ConnectionId, targetId));
+        _world.Commands.Enqueue(new InspectTargetCmd(Context.ConnectionId, targetId, withDrops));
         return Task.CompletedTask;
     }
 

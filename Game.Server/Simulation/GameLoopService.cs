@@ -5995,9 +5995,11 @@ var effect = def.Effect;
             .ToArray();
 
         // A mob's level-appropriate DROPS (behind the client's [Details] button). Chance shown is the
-        // EFFECTIVE one (after the global drop-rate), so it matches what the player will actually see.
+        // EFFECTIVE one (after the global drop-rate). Computed ONLY when the client asks (the [Details]
+        // click sets WithDrops) — the 1s refresh loop leaves it false, so the static drop table isn't
+        // re-resolved and re-serialized every second for every player inspecting a mob.
         string[]? drops = null;
-        if (isMob && t.MobTypeId is not null && MobCatalog.Get(t.MobTypeId).Drops is { } table)
+        if (cmd.WithDrops && isMob && t.MobTypeId is not null && MobCatalog.Get(t.MobTypeId).Drops is { } table)
             drops = table
                 .Where(d => d.AppliesAtLevel(t.Level))
                 .Select(d =>

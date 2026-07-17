@@ -27,8 +27,9 @@ Build 0/0, SmokeTest green. Commits e8da0f7 · 39dfab8 · 971b128 on Gena.
 
 **Target / party windows:**
 - [ ] **Party window shows each member's DEBUFFS** (red "⚠ …" line under their bars) so a healer can cleanse.
-- [ ] **A PLAYER's expand (▼) shows identity only** (name/level/class) — no stat sheet. A MOB still shows the
-      full combat card. *(Mob [details]-with-drops restructure is a later increment.)*
+- [ ] **A PLAYER's expand (▼) shows identity only** (name/level/class) — no stat sheet.
+- [ ] **A MOB's expand (▼) is a compact card** (P.Def/M.Def · P.Atk/M.Atk) with a **[Details ▸]** button;
+      Details reveals full stats, effects, passives and the **drop list** (item, qty, effective chance).
 - [ ] **Aggressive mobs show `*`** after the name (nameplate + target frame).
 
 **Other:**
@@ -44,8 +45,6 @@ Build 0/0, SmokeTest green. Commits e8da0f7 · 39dfab8 · 971b128 on Gena.
       slot shows the item's initials + a live count and **greys out at 0** (like a cooldown); **left-click
       USES it** (no digging through the bag). Right-click removes it. Count updates as you use/gain them.
 - [ ] Old characters' existing bars still load (24→60 slots pad with empties).
-
-**NOT built (own increment):** mob target [details]+drops.
 
 ---
 

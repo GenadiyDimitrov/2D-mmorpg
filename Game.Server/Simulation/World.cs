@@ -168,8 +168,10 @@ public record OpenBoxCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
 public record SelectBoxItemsCmd(string ConnectionId, Guid InstanceId, string[] ItemIds) : IGameCommand;
 
 /// <summary>Player expanded the target window — request the target's detailed
-/// stats (and, for a mob, its passive modifier lines).</summary>
-public record InspectTargetCmd(string ConnectionId, Guid TargetId) : IGameCommand;
+/// stats (and, for a mob, its passive modifier lines). WithDrops = also send the mob's DROP list, which
+/// only the [Details] click asks for (the 1s refresh loop leaves it false so the static table isn't
+/// recomputed each second).</summary>
+public record InspectTargetCmd(string ConnectionId, Guid TargetId, bool WithDrops = false) : IGameCommand;
 
 public record RespawnCmd(string ConnectionId) : IGameCommand;
 

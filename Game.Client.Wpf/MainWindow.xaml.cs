@@ -1753,8 +1753,12 @@ public partial class MainWindow : Window
 
         // MOB: the base card is COMPACT — just the four combat stats + a [Details] button (owner). The
         // full stat line, effects, passives and the DROP list live behind that button. A NEW mob starts
-        // compact; the 1s auto-refresh of the same mob keeps whatever level you'd toggled to.
-        if (_lastMobDetails?.Id != d.Id) _mobDetailsExpanded = false;
+        // compact and drops the cached drop list; the 1s auto-refresh of the same mob keeps whatever
+        // level you'd toggled to.
+        if (_lastMobDetails?.Id != d.Id) { _mobDetailsExpanded = false; _cachedDrops = null; }
+        // Drops arrive only from a WithDrops request (the Details click); cache them so the drop-less
+        // 1s refreshes don't blank the list.
+        if (d.Drops is { Length: > 0 }) _cachedDrops = d.Drops;
         _lastMobDetails = d;
         RenderMobDetails();
         TargetDetailsPanel.Visibility = Visibility.Visible;
@@ -1762,10 +1766,14 @@ public partial class MainWindow : Window
 
     private TargetDetails? _lastMobDetails;
     private bool _mobDetailsExpanded;
+    private string[]? _cachedDrops;   // drops for the current target, fetched once on the Details click
 
     private void TargetMobDetails_Click(object sender, RoutedEventArgs e)
     {
         _mobDetailsExpanded = !_mobDetailsExpanded;
+        // Fetch the drop list ONCE, only when the player opens Details (it's static — no need to poll it).
+        if (_mobDetailsExpanded && _cachedDrops is null && _targetId is Guid id)
+            _ = _net.InspectTargetAsync(id, withDrops: true);
         RenderMobDetails();
     }
 
@@ -1799,10 +1807,10 @@ public partial class MainWindow : Window
         var lines = new List<string>(d.Passives);
         if (d.BowResist > 0f) lines.Add($"Bow Resist +{d.BowResist * 100:0}%");
         if (d.CritResist > 0f) lines.Add($"Crit Resist +{d.CritResist * 100:0}%");
-        if (d.Drops is { Length: > 0 })
+        if (_cachedDrops is { Length: > 0 })
         {
             lines.Add("— Drops —");
-            lines.AddRange(d.Drops);
+            lines.AddRange(_cachedDrops);
         }
         TargetPassivesList.ItemsSource = lines.Count > 0 ? lines : null;
     }

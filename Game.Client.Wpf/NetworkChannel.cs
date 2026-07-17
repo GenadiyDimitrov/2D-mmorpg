@@ -174,8 +174,10 @@ public class NetworkChannel : IAsyncDisposable
     public Task SelectBoxItemsAsync(Guid instanceId, string[] itemIds) =>
         _connection!.SendAsync("SelectBoxItems", instanceId, itemIds);
 
-    public Task InspectTargetAsync(Guid targetId) =>
-        _connection!.SendAsync("InspectTarget", targetId);
+    /// <summary>Inspect the target. withDrops = also compute + send the mob's DROP list — only the
+    /// [Details] click asks for that, so the 1s refresh loop never recomputes the static drop table.</summary>
+    public Task InspectTargetAsync(Guid targetId, bool withDrops = false) =>
+        _connection!.SendAsync("InspectTarget", targetId, withDrops);
 
     public Task RespawnAsync() =>
         _connection!.SendAsync("Respawn");
