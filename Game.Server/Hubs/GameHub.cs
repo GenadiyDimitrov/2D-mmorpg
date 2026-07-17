@@ -442,6 +442,19 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>Follow a player (null = stop). Assist = attack whatever they're attacking.</summary>
+    public Task Follow(Guid? targetId)
+    {
+        _world.Commands.Enqueue(new FollowCmd(Context.ConnectionId, targetId));
+        return Task.CompletedTask;
+    }
+
+    public Task Assist(Guid targetId)
+    {
+        _world.Commands.Enqueue(new AssistCmd(Context.ConnectionId, targetId));
+        return Task.CompletedTask;
+    }
+
     // ----- Admin commands ----------------------------------------------------
 
     public Task AdminCommand(string command, string argument)

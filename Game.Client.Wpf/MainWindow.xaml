@@ -133,6 +133,12 @@
                             Width="18" Height="18" Padding="0" FontSize="10"
                             HorizontalAlignment="Left" VerticalAlignment="Top"
                             ToolTip="Inspect target (stats &amp; passives)" Click="TargetExpand_Click"/>
+                    <!-- Actions menu toggle: reveals follow / assist / invite / trade (owner: keep the
+                         frame clean, tuck the actions behind a [...]). -->
+                    <Button x:Name="TargetActionsButton" Content="⋯"
+                            Width="18" Height="18" Padding="0" FontSize="12"
+                            HorizontalAlignment="Right" VerticalAlignment="Top"
+                            ToolTip="Actions (follow / assist / invite / trade)" Click="TargetActions_Click"/>
                     <!-- The ✕ lives in the drag strip that MainWindow.PanelChrome adds at runtime;
                          it performs a full Escape (cancel cast + clear target). -->
                 </Grid>
@@ -157,10 +163,18 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </StackPanel>
-                <Button x:Name="TradeButton" Content="Request Trade" Height="24"
-                        Click="TradeButton_Click" Visibility="Collapsed"/>
-                <Button x:Name="PartyInviteButton" Content="Invite to Party" Height="24"
-                        Margin="0,3,0,0" Click="PartyInviteButton_Click" Visibility="Collapsed"/>
+                <!-- Actions, revealed by the [...] toggle. Each button hides itself when it doesn't apply
+                     (no trade on a mob, no invite on yourself, etc.); the panel shows while toggled on. -->
+                <StackPanel x:Name="TargetActionsPanel" Visibility="Collapsed" Margin="0,4,0,0">
+                    <Button x:Name="FollowButton" Content="Follow" Height="24"
+                            Margin="0,0,0,3" Click="FollowButton_Click" Visibility="Collapsed"/>
+                    <Button x:Name="AssistButton" Content="Assist (take target)" Height="24"
+                            Margin="0,0,0,3" Click="AssistButton_Click" Visibility="Collapsed"/>
+                    <Button x:Name="PartyInviteButton" Content="Invite to Party" Height="24"
+                            Margin="0,0,0,3" Click="PartyInviteButton_Click" Visibility="Collapsed"/>
+                    <Button x:Name="TradeButton" Content="Request Trade" Height="24"
+                            Click="TradeButton_Click" Visibility="Collapsed"/>
+                </StackPanel>
             </StackPanel>
         </Border>
 

@@ -265,6 +265,12 @@ public record AdminCmd(string ConnectionId, string Command, string Argument) : I
 /// <summary>Friend-list action (add / remove / list). Any player — not admin-gated.</summary>
 public record FriendCmd(string ConnectionId, string Action, string Name) : IGameCommand;
 
+/// <summary>FOLLOW a player: walk toward them each tick until cancelled. TargetId null = stop following.</summary>
+public record FollowCmd(string ConnectionId, Guid? TargetId) : IGameCommand;
+
+/// <summary>ASSIST a player: adopt their current combat target (attack whatever they're attacking).</summary>
+public record AssistCmd(string ConnectionId, Guid TargetId) : IGameCommand;
+
 // ----- Party / grouping -----
 public record PartyInviteCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 public record PartyRespondCmd(string ConnectionId, bool Accept) : IGameCommand;

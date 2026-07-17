@@ -111,6 +111,11 @@ public partial class MainWindow : Window
 
         _net.SnapshotReceived += s => Dispatcher.BeginInvoke(() => ApplySnapshot(s));
         _net.SnapshotDeltaReceived += d => Dispatcher.BeginInvoke(() => ApplyDelta(d));
+        _net.SetTargetReceived += id => Dispatcher.BeginInvoke(() =>
+        {
+            _targetId = id;   // server set our target (e.g. Assist took an ally's foe)
+            UpdateTargetFrame();
+        });
         _net.ChatReceived += m => Dispatcher.BeginInvoke(() => AppendChat(m));
         _net.CombatReceived += c => Dispatcher.BeginInvoke(() => OnCombatEvent(c));
         _net.ProgressReceived += p => Dispatcher.BeginInvoke(() => OnProgress(p));
@@ -1696,18 +1701,25 @@ public partial class MainWindow : Window
             double ratio = dto.MaxHp > 0 ? Math.Clamp((double)dto.Hp / dto.MaxHp, 0, 1) : 0;
             TargetHpFill.Width = 218 * ratio;
 
-            // Trade button only for other LIVING players, nearby, not mid-trade.
-            bool canTrade = dto.Kind == EntityKind.Player && !dto.Dead && !_tradeActive &&
+            // Actions (behind the [...] toggle). Each applies only to another LIVING player.
+            bool otherLivingPlayer = dto.Kind == EntityKind.Player && !dto.Dead && id != _myId;
+            bool canTrade = otherLivingPlayer && !_tradeActive &&
                 _myDto is not null &&
                 Dist(dto.X, dto.Y, _myDto.X, _myDto.Y) <= GameConstants.TradeRange;
-            TradeButton.Visibility = canTrade ? Visibility.Visible : Visibility.Collapsed;
-
-            // Party invite: any other LIVING player not already in my party. If I'm in a
-            // party, only the leader can invite (mirrors the server rule).
-            bool canInvite = dto.Kind == EntityKind.Player && !dto.Dead && id != _myId &&
+            bool canInvite = otherLivingPlayer &&
                 !_partyMemberIds.Contains(id) &&
                 (_partyMemberIds.Count == 0 || _partyIsLeader);
+
+            TradeButton.Visibility = canTrade ? Visibility.Visible : Visibility.Collapsed;
             PartyInviteButton.Visibility = canInvite ? Visibility.Visible : Visibility.Collapsed;
+            FollowButton.Visibility = otherLivingPlayer ? Visibility.Visible : Visibility.Collapsed;
+            AssistButton.Visibility = otherLivingPlayer ? Visibility.Visible : Visibility.Collapsed;
+
+            // The [...] button (and its panel) only appear when there's at least one action to offer.
+            bool anyAction = otherLivingPlayer;   // follow/assist always apply to a living player
+            TargetActionsButton.Visibility = anyAction ? Visibility.Visible : Visibility.Collapsed;
+            TargetActionsPanel.Visibility = anyAction && _targetActionsOpen
+                ? Visibility.Visible : Visibility.Collapsed;
 
             // Plain NPCs (vendors/gatekeepers) have nothing to inspect — hide the toggle.
             TargetExpandButton.Visibility =
@@ -1732,7 +1744,27 @@ public partial class MainWindow : Window
             PartyInviteButton.Visibility = Visibility.Collapsed;
             TargetDetailsPanel.Visibility = Visibility.Collapsed;
             TargetMobDetailsButton.Visibility = Visibility.Collapsed;
+            TargetActionsButton.Visibility = Visibility.Collapsed;
+            TargetActionsPanel.Visibility = Visibility.Collapsed;
         }
+    }
+
+    private bool _targetActionsOpen;
+
+    private void TargetActions_Click(object sender, RoutedEventArgs e)
+    {
+        _targetActionsOpen = !_targetActionsOpen;
+        UpdateTargetFrame();
+    }
+
+    private async void FollowButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_targetId is Guid id) await _net.FollowAsync(id);
+    }
+
+    private async void AssistButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_targetId is Guid id) await _net.AssistAsync(id);
     }
 
     /// <summary>What ESC does: cancel the cast in progress AND drop the target. The target frame's ✕ is

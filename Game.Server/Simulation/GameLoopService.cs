@@ -71,6 +71,8 @@ public class GameLoopService : BackgroundService
                 case EnterWorldCommand c: HandleEnterWorld(c); break;
                 case AdminCmd c: HandleAdmin(c); break;
                 case FriendCmd c: HandleFriend(c); break;
+                case FollowCmd c: HandleFollow(c); break;
+                case AssistCmd c: HandleAssist(c); break;
                 case LeaveCommand c: HandleLeave(c); break;
                 case MoveCmd c: HandleMove(c); break;
                 case AttackCmd c: HandleAttack(c); break;
@@ -602,6 +604,7 @@ public class GameLoopService : BackgroundService
         entity.Engaged = false;
         entity.CombatTargetId = null;
         entity.QueuedSkillId = null;
+        entity.FollowTargetId = null;   // a manual move breaks a follow
 
         entity.TargetX = Math.Clamp(move.Move.TargetX, 0, GameConstants.ZoneWidth);
         entity.TargetY = Math.Clamp(move.Move.TargetY, 0, GameConstants.ZoneHeight);
@@ -645,6 +648,7 @@ public class GameLoopService : BackgroundService
 
         attacker.QueuedSkillId = null;
         CancelCast(attacker);
+        attacker.FollowTargetId = null;   // attacking breaks a follow
         attacker.CombatTargetId = target.Id;
         attacker.Engaged = true;
     }
@@ -3245,6 +3249,76 @@ public class GameLoopService : BackgroundService
         }
     }
 
+    /// <summary>Start/stop FOLLOWING a player. Only players are followable, and never yourself. Follow
+    /// ends the current attack (you're tailing, not fighting) — assist is the "fight with them" verb.</summary>
+    private void HandleFollow(FollowCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var p) || p.Dead) return;
+        if (cmd.TargetId is not Guid tid)
+        {
+            if (p.FollowTargetId is not null)
+            {
+                p.FollowTargetId = null;
+                SendSystemToEntity(p, "You stop following.");
+            }
+            return;
+        }
+        if (tid == p.Id || !_world.Entities.TryGetValue(tid, out var target) ||
+            target.Kind != EntityKind.Player || target.Dead)
+            return;
+        p.FollowTargetId = tid;
+        p.Engaged = false;
+        p.CombatTargetId = null;
+        SendSystemToEntity(p, $"You follow {target.Name}.");
+    }
+
+    /// <summary>ASSIST: adopt the target player's CURRENT combat target — attack whatever they're
+    /// attacking (a mob, or in PvP a foe). One-shot; does nothing if they aren't fighting anything.</summary>
+    private void HandleAssist(AssistCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var p) || p.Dead) return;
+        if (!_world.Entities.TryGetValue(cmd.TargetId, out var ally) || ally.Kind != EntityKind.Player)
+            return;
+        if (ally.CombatTargetId is not Guid foeId || !_world.Entities.TryGetValue(foeId, out var foe) || foe.Dead)
+        {
+            SendSystemToEntity(p, $"{ally.Name} isn't attacking anything.");
+            return;
+        }
+        // Route through the normal attack path so all the PvP/target validation applies, and tell the
+        // client to point its target frame at the foe (so "assist" visibly takes their target).
+        p.FollowTargetId = null;
+        HandleAttack(new AttackCmd(cmd.ConnectionId, foeId));
+        SendTo(p, "SetTarget", foeId);
+    }
+
+    /// <summary>Walk a following player toward their target each tick, stopping a short distance away so
+    /// they don't stack on top. The follow ends if the target logs off, dies, or leaves view.</summary>
+    private const float FollowStopDistance = 90f;
+    private void TickFollow(Entity p)
+    {
+        if (p.FollowTargetId is not Guid tid) return;
+        if (p.Dead || !_world.Entities.TryGetValue(tid, out var target) || target.Dead ||
+            DistanceSq(p, target) > GameConstants.ViewRange * GameConstants.ViewRange)
+        {
+            p.FollowTargetId = null;
+            SendSystemToEntity(p, "You stop following.");
+            return;
+        }
+        // Re-aim at the target's current position each tick (auto-repath). MoveTowardTarget does the walk.
+        float dx = target.X - p.X, dy = target.Y - p.Y;
+        float dist = MathF.Sqrt(dx * dx + dy * dy);
+        if (dist <= FollowStopDistance)
+        {
+            p.TargetX = null;   // close enough — hold position until they move again
+            p.TargetY = null;
+        }
+        else
+        {
+            p.TargetX = target.X;
+            p.TargetY = target.Y;
+        }
+    }
+
     /// <summary>When a player enters the world, tell any ONLINE player who has them as a friend that
     /// they're back. Called from HandleEnterWorld.</summary>
     private void NotifyFriendsOnline(Entity entered)
@@ -3405,6 +3479,7 @@ public class GameLoopService : BackgroundService
                 AutoPilot(entity);   // auto-potions always; hunt loop if enabled (may queue a skill)
                 if (entity.AutoHuntEnabled || entity.IsOfflineFarming)
                     TickAutoHuntBudget(entity);   // idle/offline runtime caps
+                TickFollow(entity);  // walk toward a followed player (auto-repath)
             }
 
             UpdateAction(entity);

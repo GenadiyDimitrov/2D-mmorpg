@@ -13,6 +13,7 @@ public class NetworkChannel : IAsyncDisposable
 
     public event Action<WorldSnapshot>? SnapshotReceived;
     public event Action<SnapshotDelta>? SnapshotDeltaReceived;
+    public event Action<Guid>? SetTargetReceived;
     public event Action<ChatMessage>? ChatReceived;
     public event Action<CombatEvent>? CombatReceived;
     public event Action<ProgressUpdate>? ProgressReceived;
@@ -55,6 +56,7 @@ public class NetworkChannel : IAsyncDisposable
 
         _connection.On<WorldSnapshot>("Snapshot", s => SnapshotReceived?.Invoke(s));
         _connection.On<SnapshotDelta>("SnapshotDelta", d => SnapshotDeltaReceived?.Invoke(d));
+        _connection.On<Guid>("SetTarget", id => SetTargetReceived?.Invoke(id));
         _connection.On<ChatMessage>("Chat", m => ChatReceived?.Invoke(m));
         _connection.On<CombatEvent>("Combat", c => CombatReceived?.Invoke(c));
         _connection.On<ProgressUpdate>("Progress", p => ProgressReceived?.Invoke(p));
@@ -127,6 +129,13 @@ public class NetworkChannel : IAsyncDisposable
     /// <summary>Friend list: action = "add" / "remove" / "list". Any player.</summary>
     public Task FriendCommandAsync(string action, string name) =>
         _connection!.SendAsync("FriendCommand", action, name);
+
+    /// <summary>Follow a player (null = stop). Assist = attack whatever they're attacking.</summary>
+    public Task FollowAsync(Guid? targetId) =>
+        _connection!.SendAsync("Follow", targetId);
+
+    public Task AssistAsync(Guid targetId) =>
+        _connection!.SendAsync("Assist", targetId);
 
     public Task MoveAsync(float targetX, float targetY) =>
         _connection!.SendAsync("Move", new MoveCommand(targetX, targetY));

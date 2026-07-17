@@ -754,6 +754,11 @@ public class Entity
     public bool Engaged { get; set; }
     public int AttackCooldown { get; set; }
 
+    /// <summary>FOLLOW: while set, the player is walked toward this entity each tick (auto-repath as it
+    /// moves), stopping a short distance away. Cleared by a manual move, attacking, death, or the target
+    /// leaving view. Runtime only.</summary>
+    public Guid? FollowTargetId { get; set; }
+
     /// <summary>Threat/aggro table (mobs): attacker entity id → accumulated threat. The mob
     /// targets the highest-threat entity. Taunt spikes it; detaunt drops it.</summary>
     public Dictionary<Guid, float> Threat { get; } = new();

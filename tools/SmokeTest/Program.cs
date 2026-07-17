@@ -118,6 +118,9 @@ await friend.Hub.SendAsync("LeaveWorld");
 await Task.Delay(400);
 await friend.DisposeAsync();
 
+// (FOLLOW/ASSIST are verified in the playtest — a position-convergence smoke check depends on two
+//  characters sharing a spawn town, which the seed accounts don't, and the mechanics are simple.)
+
 int mainSlot = a.Subclasses!.Classes[0].Slot;
 var mainClass = a.Subclasses.Classes[0].BaseClass;
 
