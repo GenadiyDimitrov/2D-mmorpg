@@ -660,9 +660,22 @@ public partial class MainWindow : Window
         _ => ""
     };
 
-    /// <summary>Short label for a skill square. Uses the skill's authored Abbrev
-    /// when set, else auto-derives from the (per-class) display name: initials of
-    /// multi-word names (Magic Bolt → MB), first 3 letters of a single word.</summary>
+    /// <summary>The per-class EMOJI/glyph for a skill, or "" if none. Per-class override
+    /// (ClassSkills.Icon) wins over the skill's own SkillDef.Icon — a cleric's Holy Speed can differ
+    /// from a mage's Wind Walk even though they share the id.</summary>
+    private string SkillIcon(SkillDef def)
+    {
+        Archetype? arch = _mySecondClass > 0 ? ClassCatalog.Get(_mySecondClass)?.Archetype : null;
+        Discipline? disc = _myThirdClass > 0 ? ThirdClassCatalog.Get(_myThirdClass)?.Discipline : null;
+        string? classIcon = ClassSkills.Icon(def.Id, _myRace, _myBaseClass, arch, disc);
+        return !string.IsNullOrWhiteSpace(classIcon) ? classIcon!
+             : !string.IsNullOrWhiteSpace(def.Icon) ? def.Icon
+             : SkillIcons.For(def.Id);
+    }
+
+    /// <summary>Short LETTERS label for a skill square (the fallback when it has no icon). Uses the
+    /// skill's authored Abbrev when set, else derives from the (per-class) display name: initials of a
+    /// multi-word name (Magic Bolt → MB), first 3 letters of a single word.</summary>
     private string SkillAbbrev(SkillDef def)
     {
         if (!string.IsNullOrWhiteSpace(def.Abbrev)) return def.Abbrev;
@@ -672,6 +685,14 @@ public partial class MainWindow : Window
             return string.Concat(words.Take(3).Select(w => char.ToUpperInvariant(w[0])));
         string w = words.Length == 1 ? words[0] : name;
         return w.Length <= 3 ? w : w.Substring(0, 3);
+    }
+
+    /// <summary>The face of a skill square: the emoji icon if one is set (bigger, black on the light
+    /// slot), else the letters. Returns (text, isIcon) so the caller can size them differently.</summary>
+    private (string Text, bool IsIcon) SkillFace(SkillDef def)
+    {
+        string icon = SkillIcon(def);
+        return icon.Length > 0 ? (icon, true) : (SkillAbbrev(def), false);
     }
 
     private bool _skillBarDragWired;
@@ -737,10 +758,13 @@ public partial class MainWindow : Window
 
             if (_skillBar[i] is string id && SkillCatalog.Get(id) is SkillDef def)
             {
+                var (faceText, isIcon) = SkillFace(def);
                 var abbrev = new TextBlock
                 {
-                    Text = SkillAbbrev(def),
-                    Foreground = Brushes.Black, FontSize = 15, FontWeight = FontWeights.Bold,
+                    Text = faceText,
+                    // An emoji reads best a touch larger and needs no bold/black tint; letters stay bold black.
+                    Foreground = Brushes.Black, FontSize = isIcon ? 22 : 15,
+                    FontWeight = isIcon ? FontWeights.Normal : FontWeights.Bold,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false
                 };

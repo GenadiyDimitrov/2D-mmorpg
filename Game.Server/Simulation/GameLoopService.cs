@@ -4348,6 +4348,7 @@ var effect = def.Effect;
             MaxStacks = eff,
             Cancellable = def.Cancellable,
             SourceRow = def.BuffRow,   // which buff-bar row this lands in (debuffs override it)
+            SourceSkillId = def.Id,    // so the buff bar can show the skill's icon
             Name = shownName,
             Key = key,
             Rank = def.Rank,
@@ -5634,7 +5635,7 @@ var effect = def.Effect;
         var dtos = player.Buffs.Where(b => !b.Internal).Select(b => new BuffDto(
             b.Name, b.Description,
             b.Toggle ? -1f : b.TicksRemaining * GameConstants.TickSeconds, b.IsDebuff, b.Key, b.Stacks,
-            b.Row)).ToList();
+            b.Row, BuffIcon(player, b.SourceSkillId))).ToList();
 
         // The GRADE PENALTY rides along as a synthetic, never-expiring DEBUFF row. It is not a real
         // BuffInstance (nothing casts it — it's a property of what you're wearing), but without a row on
@@ -5654,6 +5655,17 @@ var effect = def.Effect;
         SendTo(player, "Buffs", new BuffUpdate(dtos.ToArray()));
     }
 
+    /// <summary>The emoji/glyph for a buff's SOURCE skill, resolved for the owner's class (so a cleric's
+    /// Holy Speed can differ from a mage's Wind Walk). "" = no icon → the client shows the name's initials.</summary>
+    private static string BuffIcon(Entity p, string skillId)
+    {
+        if (string.IsNullOrEmpty(skillId)) return "";
+        string? classIcon = ClassSkills.Icon(skillId, p.Race, p.BaseClass, p.Archetype, p.Discipline);
+        if (!string.IsNullOrWhiteSpace(classIcon)) return classIcon!;
+        string defIcon = SkillCatalog.Get(skillId)?.Icon ?? "";
+        return defIcon.Length > 0 ? defIcon : SkillIcons.For(skillId);
+    }
+
     /// <summary>The grade-penalty debuff row(s) for the buff bar: one for over-grade armour/jewels, one
     /// for an over-grade weapon (they penalise different stats, so they are separate rows).
     /// SecondsLeft -1 = no timer, like a toggle: this lasts exactly as long as you wear the gear.</summary>
@@ -5668,7 +5680,7 @@ var effect = def.Effect;
                 $"Your armor/jewels are {p.GradeArmorGap} grade(s) above you (x{p.GradeArmorPenalty:0.##}): "
                 + $"-{pct}% P.Def, M.Def, evasion, and cast/attack/move speed. "
                 + "Level up, or wear your own grade, to clear it.",
-                -1f, true, "grade_penalty_armor", 1, BuffRow.Debuff);
+                -1f, true, "grade_penalty_armor", 1, BuffRow.Debuff, "🛡");
         }
         if (p.GradeWeaponGap > 0)
         {
@@ -5678,7 +5690,7 @@ var effect = def.Effect;
                 $"Your weapon is {p.GradeWeaponGap} grade(s) above you (x{p.GradeWeaponPenalty:0.##}): "
                 + $"-{pct}% P.Atk, M.Atk, crit rate, crit damage and accuracy. "
                 + "Level up, or wield your own grade, to clear it.",
-                -1f, true, "grade_penalty_weapon", 1, BuffRow.Debuff);
+                -1f, true, "grade_penalty_weapon", 1, BuffRow.Debuff, "⚔");
         }
     }
 

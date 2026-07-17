@@ -138,6 +138,12 @@ public record SkillDef(
     int ConsumableAmount = 1,
     PassiveEffect? Passive = null,
     string Abbrev = "",
+    // Optional EMOJI/glyph for the skill square + buff bar. Deliberately a STRING of characters, not an
+    // image path: the WPF client is a test harness, so a bitmap pipeline here would be thrown away — and
+    // when the real (Unity) client wants art, this same string becomes the SPRITE KEY. Empty = fall back
+    // to Abbrev (the letters). A per-CLASS override lives on ClassSkill.Icon and wins over this.
+    // RULE (owner): no two skills of the SAME class may share an icon; reuse across classes is fine.
+    string Icon = "",
     // Optional per-LEVEL data. A skill with no Levels is single-level (level 1) and
     // uses the inline fields above. A multi-level skill puts its per-level Power /
     // Magnitudes / Passive / MpCost / SpCost in Levels[level-1]; see *At(level).

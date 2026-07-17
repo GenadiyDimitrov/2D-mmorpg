@@ -19,6 +19,11 @@ public class BuffInstance
     public int Rank { get; init; }
     public string[] Replaces { get; init; } = Array.Empty<string>();
 
+    /// <summary>The skill this buff came from — kept so the client can show the SKILL's icon on the buff
+    /// bar (the buff bar has no other handle on the source). "" for non-skill buffs (e.g. the synthetic
+    /// grade-penalty rows, which supply their own icon).</summary>
+    public string SourceSkillId { get; init; } = "";
+
     /// <summary>A TOGGLE/stance buff: never expires on its own (the player clicks the
     /// skill again, or double-clicks the buff, to end it). TickBuffs skips it.</summary>
     public bool Toggle { get; init; }

@@ -1745,9 +1745,10 @@ public partial class MainWindow
                 DockPanel.SetDock(details, Dock.Right);
                 row.Children.Add(details);
 
+                string icon = SkillIcon(def);
                 var name = new TextBlock
                 {
-                    Text = SkillDisplayName(def.Id, def.Name),
+                    Text = (icon.Length > 0 ? icon + "  " : "") + SkillDisplayName(def.Id, def.Name),
                     Foreground = Brushes.White, FontSize = 13,
                     VerticalAlignment = VerticalAlignment.Center
                 };
@@ -1827,9 +1828,10 @@ public partial class MainWindow
                 DockPanel.SetDock(learn, Dock.Right);
                 row.Children.Add(learn);
 
+                string icon = SkillIcon(def);
                 var name = new TextBlock
                 {
-                    Text = $"{SkillDisplayName(def.Id, def.Name)}{levelTag}  {priceTag}",
+                    Text = $"{(icon.Length > 0 ? icon + "  " : "")}{SkillDisplayName(def.Id, def.Name)}{levelTag}  {priceTag}",
                     Foreground = canLearn ? Brushes.White : Brushes.Gray,
                     FontSize = 13, VerticalAlignment = VerticalAlignment.Center,
                     Cursor = System.Windows.Input.Cursors.Hand,
@@ -2157,50 +2159,115 @@ public partial class MainWindow
         foreach (var ctrl in rows.Values) ctrl.Items.Clear();
 
         foreach (var buff in update.Buffs)
-        {
-            // SecondsLeft < 0 = an indefinite TOGGLE/stance (no countdown).
-            bool toggle = buff.SecondsLeft < 0f;
-            string stacks = buff.Stacks > 1 ? $" x{buff.Stacks}" : "";
-            string time = toggle ? "active (toggle)" : $"{buff.SecondsLeft:0}s remaining";
-            string tip = buff.IsDebuff
-                ? $"{buff.Name}\n{buff.Description}\n{time}"
-                : $"{buff.Name}\n{buff.Description}\n{time}\n(double-click to remove)";
-            // Tint by row so the groups read apart at a glance.
-            var tint = buff.Row switch
-            {
-                BuffRow.Debuff     => Color.FromArgb(200, 120, 40, 40),    // red
-                BuffRow.Consumable => Color.FromArgb(200, 40, 110, 70),    // green — from your bag
-                BuffRow.Item       => Color.FromArgb(200, 95, 80, 35),     // bronze — from your gear
-                _                  => Color.FromArgb(200, 40, 80, 120),    // blue — an ordinary buff
-            };
-            var pill = new Border
-            {
-                Background = new SolidColorBrush(tint),
-                CornerRadius = new CornerRadius(4),
-                Padding = new Thickness(6, 2, 6, 2),
-                Margin = new Thickness(0, 0, 4, 4),
-                Cursor = buff.IsDebuff ? null : System.Windows.Input.Cursors.Hand,
-                Child = new TextBlock
-                {
-                    Text = toggle ? $"{buff.Name}{stacks}  ⟳" : $"{buff.Name}{stacks}  {buff.SecondsLeft:0}s",
-                    Foreground = Brushes.White, FontSize = 11
-                },
-                ToolTip = tip
-            };
-            // Double-click a (beneficial) buff to drop it early, like a timeout.
-            if (!buff.IsDebuff && !string.IsNullOrEmpty(buff.Key))
-            {
-                string key = buff.Key;
-                pill.MouseLeftButtonDown += (_, e) =>
-                {
-                    if (e.ClickCount == 2) { _ = _net.RemoveBuffAsync(key); e.Handled = true; }
-                };
-            }
-            (rows.GetValueOrDefault(buff.Row) ?? BuffRowBuffs).Items.Add(pill);
-        }
+            (rows.GetValueOrDefault(buff.Row) ?? BuffRowBuffs).Items.Add(BuildBuffSquare(buff));
 
         foreach (var ctrl in rows.Values)
             ctrl.Visibility = ctrl.Items.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>One buff/debuff as a compact SQUARE (like a skill-bar slot) instead of a wide pill —
+    /// pills wrapped into several rows and ate the screen. The icon/abbrev sits centre, the time reads
+    /// small at the bottom, a stack count top-right; the whole square blinks when it's about to expire.</summary>
+    private Border BuildBuffSquare(BuffDto buff)
+    {
+        bool toggle = buff.SecondsLeft < 0f;   // an indefinite toggle/stance or a gear-driven debuff
+        var tint = buff.Row switch
+        {
+            BuffRow.Debuff     => Color.FromArgb(230, 120, 40, 40),    // red
+            BuffRow.Consumable => Color.FromArgb(230, 40, 110, 70),    // green — from your bag
+            BuffRow.Item       => Color.FromArgb(230, 95, 80, 35),     // bronze — from your gear
+            _                  => Color.FromArgb(230, 40, 80, 120),    // blue — an ordinary buff
+        };
+
+        var grid = new Grid { Width = 38, Height = 38 };
+        // Face: the emoji icon if the server sent one, else the buff name's initials.
+        bool isIcon = !string.IsNullOrWhiteSpace(buff.Icon);
+        grid.Children.Add(new TextBlock
+        {
+            Text = isIcon ? buff.Icon : BuffAbbrev(buff.Name),
+            Foreground = Brushes.White, FontSize = isIcon ? 20 : 13,
+            FontWeight = isIcon ? FontWeights.Normal : FontWeights.Bold,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false
+        });
+        // Time (or the toggle glyph) along the bottom edge.
+        grid.Children.Add(new TextBlock
+        {
+            Text = toggle ? "⟳" : ShortTime(buff.SecondsLeft),
+            Foreground = Brushes.White, FontSize = 9,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Margin = new Thickness(0, 0, 0, 1), IsHitTestVisible = false
+        });
+        if (buff.Stacks > 1)
+            grid.Children.Add(new TextBlock
+            {
+                Text = buff.Stacks.ToString(),
+                Foreground = Brushes.Gold, FontSize = 10, FontWeight = FontWeights.Bold,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(0, 1, 2, 0), IsHitTestVisible = false
+            });
+
+        string time = toggle ? "active (toggle)" : $"{ShortTime(buff.SecondsLeft)} remaining";
+        var square = new Border
+        {
+            Background = new SolidColorBrush(tint),
+            CornerRadius = new CornerRadius(4),
+            Margin = new Thickness(0, 0, 4, 4),
+            Cursor = buff.IsDebuff ? null : System.Windows.Input.Cursors.Hand,
+            Child = grid,
+            ToolTip = buff.IsDebuff
+                ? $"{buff.Name}\n{buff.Description}\n{time}"
+                : $"{buff.Name}\n{buff.Description}\n{time}\n(double-click to remove)"
+        };
+
+        // About to expire (≤60s, not a toggle) → blink the square so it can't be missed. Applies to
+        // debuffs too — they're already red, and a blink makes "you are debuffed" unmissable.
+        if (!toggle && buff.SecondsLeft <= 60f)
+        {
+            var blink = new System.Windows.Media.Animation.DoubleAnimation(1.0, 0.4,
+                new Duration(TimeSpan.FromSeconds(0.6)))
+            {
+                AutoReverse = true,
+                RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever
+            };
+            square.BeginAnimation(OpacityProperty, blink);
+        }
+
+        // Double-click a (beneficial) buff to drop it early, like a timeout.
+        if (!buff.IsDebuff && !string.IsNullOrEmpty(buff.Key))
+        {
+            string key = buff.Key;
+            square.MouseLeftButtonDown += (_, e) =>
+            {
+                if (e.ClickCount == 2) { _ = _net.RemoveBuffAsync(key); e.Handled = true; }
+            };
+        }
+        return square;
+    }
+
+    /// <summary>Initials for a buff square when it has no emoji icon (buffs aren't SkillDefs, so this
+    /// works off the display name): multi-word → first letters (Angel's Protection → AP), else 3 chars.</summary>
+    private static string BuffAbbrev(string name)
+    {
+        var words = name.Split(new[] { ' ', '-', '\'' }, StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length >= 2)
+            return string.Concat(words.Take(3).Select(w => char.ToUpperInvariant(w[0])));
+        string w = words.Length == 1 ? words[0] : name;
+        return w.Length <= 3 ? w : w.Substring(0, 3);
+    }
+
+    /// <summary>A duration as at most TWO digits + ONE unit, floored to the biggest unit that reaches 1
+    /// (owner): ≥1d → Nd, ≥1h → Nh, ≥60s → Nm, else Ns. So 3600→1h, 3540→59m, 180→3m, 119→1m, 59→59s,
+    /// 90000→1d. Keeps every square the same width no matter the timer.</summary>
+    private static string ShortTime(float seconds)
+    {
+        int s = (int)seconds;
+        if (s >= 86400) return $"{s / 86400}d";
+        if (s >= 3600)  return $"{s / 3600}h";
+        if (s >= 60)    return $"{s / 60}m";
+        return $"{Math.Max(0, s)}s";
     }
 
     // =======================================================================
