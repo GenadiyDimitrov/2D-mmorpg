@@ -7,108 +7,97 @@ this file.
 
 ---
 
-## 🧪 DEATH XP PENALTY + RESURRECTION (built 2026-07-17) — no schema change (game.db from the 2026-07-16 batch is fine)
+## 🧪 PLAYTEST-6 BATCH — NOT yet built (owner's 2026-07-17 3rd pass)
 
-Built + `dotnet build` 0/0. Death XP penalty was committed 2026-07-16; resurrection is the new part below.
+**🔴 Bug — the res prompt survives a relogin but is dead:**
+- [ ] Die → get a res offer → **don't accept** → relog → the Accept/Decline prompt comes back but **Accept
+      does nothing** (just hides), leaving Respawn → town. **FIX = drop the stale prompt on relogin** and
+      leave only Respawn (the rescuer and their cast are long gone; a res revives you where you FELL).
 
-**Death XP penalty (2026-07-16):**
-- [ ] **Die at level 40+ → lose 5% of the level's exp** (a system line says how much). You **sit at the
-      start of the level — never delevel**. PvP death loses exp too.
-- [ ] **Below level 40 → no loss** (newbie protection). Character window shows a **"Novice's Grace"** passive
-      (display-only, no stats) up to level 40, then it disappears.
+**Buff bar rework:**
+- [ ] **Buffs are SQUARES** with the skill-bar abbreviations (rows used to wrap and eat the screen).
+- [ ] **Short times: max 2 digits + 1 unit** — 1h · 59m · 3m · 2m (179s) · 1m (119s) · 59s · 1d (25h) · 23h.
+- [ ] **≤60s left → the icon BLINKS** (opacity ~0.5↔1). Debuffs blink too.
+- [ ] Grade-penalty rows read **"Over-Grade Armor"** / **"Over-Grade Weapon"** — no `(x…)` suffix.
 
-**Resurrection (2026-07-17):**
-- [ ] **Cleric resurrection skill.** All clerics (Healer 2nd class) auto-learn **Resurrection** — L1 @20,
-      L2 @40; **Healers (Lightbringer)** continue to L3 @52, L4 @61. Restores **25 / 50 / 75 / 100%** of the
-      target's lost exp and revives at **30% HP/MP**. 10s (fixed) cast.
-- [ ] **Target a fallen ally, then cast** — select the dead party member in the **party window** (click their
-      roster row) and cast Resurrection. (World-corpse Shift-click is a later add; use the party window.)
-- [ ] **Confirmation prompt.** The dead player gets a **"X offers to resurrect you — restores N% exp"** popup
-      with **Resurrect / Decline** — so you don't stand up on top of the mob. Decline → stay dead. Accept →
-      revive at 30% HP/MP + exp restored. Prompt auto-expires after ~30s; a town-respawn cancels it.
-- [ ] **Resurrection scrolls** (used on a dead ally, NOT self). **Scroll of Resurrection** (Apothecary, 1500g)
-      = 10s cast, 0% exp restored. **Ultimate Scroll of Resurrection** (not vendor-stocked; debug-give
-      `scroll_resurrect_ultimate`) = ~0.5s cast, 100% restored. Select the dead ally, use the scroll → same
-      confirm prompt. Both have a 1-min reuse.
+**Target / party windows:**
+- [ ] **Party window shows DEBUFFS** so a healer can spot and cleanse them.
+- [ ] **A PLAYER's expand shows no stat sheet** — title/clan/etc only.
+- [ ] **A MOB's target window shows P.Def/M.Def + P.Atk/M.Atk and a [details] button**; details shows the
+      mob's **drops + full stats**.
+- [ ] **Aggressive mobs show a `*` after their name.**
 
-**Angel's Protection (noblesse, 2026-07-17):**
-- [ ] **Every class auto-learns "Angel's Protection" at level 76** (a self-cast buff on the bar). It **costs
-      5 Skill Stones** per cast (buy at the Apothecary, 400g each) and lasts **60 min**.
-- [ ] **Buffs survive death while it's up.** Get several buffs + Angel's Protection, then die: ONLY Angel's
-      Protection is consumed; every other buff stays (check the buff bar after death/res). Without it up,
-      death clears all buffs as before. *(Stopgap: it's a long noblesse QUEST later.)*
-- [ ] **Reagent vendor.** Apothecary now stocks **Skill Stone (400g)** and **Elemental Stone (20k)**.
-      Elemental Burst now consumes **1** Elemental Stone (was 10).
+**Other:**
+- [ ] **Ultimate Scroll of Return is INSTANT** (fixed 0s cast) — the escape button.
+- [ ] **Bag tab: orange [E] quick-equip** before the red [X], on armor/weapons.
+
+---
+
+## ✅ PLAYTEST-5 FIX BATCH (2026-07-17) — VERIFIED 2026-07-17
+
+**The ghost-corpse bug is FIXED** — die → exit to character select → log back in → you are DEAD, no corpse
+left behind, relogs don't stack bodies. Also confirmed: Angel's Protection castable on a party member ·
+Angel's 1s cast / 10s reuse both fixed · the grade penalty's two never-expiring debuff rows · the gap
+penalty itself · the armor/jewels/shield debuff · **normal play unaffected** · cast bar name-only · res
+scrolls 10s reuse · debug "Scrolls (x5)" group · Equipped-tab orange [U] · debug 10s character delete.
+
+- [~] **A resurrected player who logs out logs back in ALIVE** — the *paid-for* case works, but declining
+      (or ignoring) an offer and relogging leaves a **stale, dead prompt**. → queued at the top.
+- [~] The debuff rows work, but the **`(x…)` in their names should go**. → queued at the top.
+
+---
+
+## ✅ PLAYTEST-4 FIX BATCH (2026-07-17) — VERIFIED 2026-07-17
+
+Owner tested all 11. **Confirmed working:** party EXP ±9 gate · 3rd class gated below 40 · Resurrection
+SP-learned · Resurrection 10s base cast · dead players show a real target window · shift-click targets a
+dead player · target window movable + ✕ = full Escape · res+respawn ONE window · clicking a skill bar slot
+casts it · vendor buy-quantity prompt · Karma CLEAR (all).
+
+Only follow-ups (all BUILT in the playtest-5 batch at the top):
+- [~] **Angel's Protection still could not be cast on anyone but me** (dead/alive/party). ROOT CAUSE: it's a
+      marker buff with `SkillEffect.None`, and the cast path's ally branch tested Effect bits → self-cast.
+      → fixed via `IsAllyTargetable`, + owner wants FixedCast 1s / FixedCooldown 10s.
+- [~] **Resurrection scroll reuse 60s → 10s** (owner).
+
+---
+
+## ✅ DEATH XP PENALTY + RESURRECTION + ANGEL'S (2026-07-17) — VERIFIED 2026-07-17
+
+Death XP penalty (40+ loses 5%, below 40 Novice's Grace), cleric/Lightbringer Resurrection levels
+(L1@20/L2@40/L3@52/L4@61), the prompt's exp-restore %, **Angel's auto-learn @76**, **buffs survive death
+while it's up**, and the **reagent vendor** (Apothecary stocks Skill Stone 400g + Elemental Stone 20k;
+Elemental Burst consumes 1) — all confirmed.
+
+Still open from this thread:
+- [~] **Resurrection scrolls — cast VERIFIED, reuse was wrong.** Owner saw 10s cast + **1 min** reuse: the
+      **10s cast is right and stays**; the 1 min was too long. → reuse dropped to **10s** (BUILT, top batch).
+      Owner explicitly doesn't mind recasting immediately vs waiting another 10s, so 10s settles it.
 - [ ] *(Groundwork, not castable yet)* Preservation buffs share one slot by priority (Angel's = weakest;
       future tank self-auto-res > healer target-auto-res > Angel's). An `AutoResurrect` flag is in place for
       the future auto-res buffs (nothing uses it yet).
 
 ---
 
-## 🧪 BATCH TO TEST (built 2026-07-16) — ⚠ restart client+server + **DELETE game.db** (new `DiedWhileAway` column)
+## ✅ BATCH (2026-07-16) — VERIFIED 2026-07-17
 
-Built + `dotnet build` 0/0 + **SmokeTest green** (main→3rd class→cross-race subclass add, gate, relog). Not
-yet play-tested. (Note: under `dotnet run` the db is `Game.Server/game.db`; via VS/F5 it's
-`Game.Server/bin/Debug/net8.0/game.db` — delete whichever your run uses.)
+Subclass "Add a class" fixes (main filtered; gate = level 75 + every owned class at 75 with its 3rd class,
+admins exempt) · karma per-kill quadratic curve (≤+10 → 200, +50 and beyond → 15k cap) · party-window
+click-to-target · equip unlock (any grade at any level) · discipline unique cross-race · count cap (4 /
+admin unlimited) · swap + relog persistence — all confirmed.
 
-- [ ] **Subclass "Add a class" fixes.** (a) The **main class is now filtered** — a Human Bulwark is no
-      longer offered Bulwark (picker folds in the active class's discipline; the server also re-sends the
-      class list after a debug profession change so it can't go stale). (b) **Gate changed: level 76 → 75,
-      and EVERY class you own must be level 75+ AND hold its 3rd class** before you can add another (admins
-      exempt). Below that → refused with a message. Picker header states the rule.
-- [ ] **Karma per-kill curve (quadratic).** gap = killer−victim: ≤+10 → 200; then skyrockets
-      (+20≈1.1k, +30≈3.9k, +40≈8.5k); **+50 and beyond → 15k cap**. A lvl-82 on a lvl-1 now hits the cap
-      (was ~3k). *(Debug "karmaLevel" tuning field is now inert — the curve is fixed; flag if you want it removed.)*
-- [ ] **Grade penalty + equip unlock.** You can now **equip any grade at any level** (the level gate is
-      gone). Above-grade gear has its **weapon ATK / armor DEF scaled down** until you reach the grade's
-      level: F=1, E=20(×0.5), B=40(×0.4), A=52(×0.3), S=61(×0.2). Equip A-grade at lvl1 → check the stat is
-      reduced; level past 52 → full power. Tooltip now says "full power at Lv X", not "requires".
-- [ ] **Party window: click a member to target them.** Clicking a roster row targets that ally (targets
-      only, never attacks) — a healer can now select + heal a party member from the window.
-- [ ] **Offline-farm death sticks (anti-exploit).** Die while offline-farming (or during the link-dead
-      grace) → you log back in **DEAD** (res prompt), not full HP. Stays dead across relogs until you
-      actually respawn. Normal (alive) logout still logs in healed.
+Two items from this batch turned out to be broken and are REDONE in the playtest-5 batch at the top:
+- [~] **Grade penalty** — the equip unlock worked, but the penalty was SILENT (no display, and it only
+      touched weapon ATK / armor DEF), so the owner could not tell whether it applied. → redesigned to the
+      gap ladder + full stat set + two visible debuff rows. **Re-test at the top, not here.**
+- [~] **Offline-farm death sticks** — same root as the ghost-corpse bug: `DiedWhileAway` was only set for
+      offline-farm / link-dead deaths, so an ordinary death + logout logged you back in at full HP, and the
+      corpse was orphaned in the world. → **both fixed at the top.**
 
-**Subclass rework (Debug → Class tab):** — owner tested 2026-07-16
-- [~] **Add a class = pick a discipline.** ✅ **ALL BUILT 2026-07-16 (test via the top batch).** BUGS + rule changes found:
-      - **Main class isn't filtered.** test1 (Human Bulwark) is still offered Human Bulwark in the picker.
-        ROOT CAUSE: the picker's `owned` set is built from `_subclasses` only, which goes STALE after a
-        debug profession change (that path re-sends Stats+Learned but not the class list, so the main still
-        looks like a base Fighter with ThirdClass=0). `_myThirdClass` updates but the picker ignores it.
-        → **FIX: include the active class's discipline (`_myThirdClass`) in the filter**, and/or re-send the
-        class list from `HandleDebugThirdClass`. (Server `CanAddDiscipline` already counts the main.)
-      - **Adding Vanguard also removed Bulwark** from the list — same stale-`_subclasses` cause: the add
-        finally pushes a fresh class list so the main's Bulwark belatedly drops out. Fixed by the above.
-      - **Requirement change: level 76 → 75, AND require a 3rd class.** No 4th tier exists, so gate on
-        **level 75 + has a 3rd class** (don't force subs toward a 4th class). `SubclassLevel 76 → 75`.
-      - **Adding a new class requires ALL owned classes to be level 75+** (they already carry a 3rd prof).
-      - The new class still starts at **level 1**, own race, 3rd class pre-approved.
-- [x] **Discipline is unique, cross-race.** VERIFIED.
-- [~] **All gear unequips on add** — ✅ **grade penalty BUILT 2026-07-16 (top batch).** Works, BUT it only fires on ADD. On a **class CHANGE/swap** to a
-      level-1 class you keep your A-grade gear equipped (owner: that's fine) — so we now **need the GRADE
-      PENALTY** (low level in high-grade gear → gear combat stats scaled down). Previously deferred; owner
-      wants it now. See the deferred spec in docs/Roadmap.md.
-- [x] **Count cap** (4 normal / admin unlimited). VERIFIED.
-- [x] **Swap + relog persistence.** VERIFIED.
-
-**Karma / PK / trade:** — owner tested 2026-07-16
-- [~] **Karma per-kill cap — ✅ QUADRATIC CURVE BUILT 2026-07-16 (top batch).** A level-82 killing a level-1 (+81
-      gap) got only **~3k** karma; a huge gap should hit the cap, not undershoot. Owner's intent — karma per
-      kill scales with the **level gap (killer − victim)** and CAPS at a **+50** gap:
-      - ≤ +10 gap: ~**200** (baseline).
-      - then it **skyrockets**: +11 → **400**, +12 → **600**, … accelerating up to **+50 → 15,000** (the cap).
-      - beyond +50 stays at the 15k cap.
-      So the 15k cap is reached at a +50 gap (killing far-below-level in a low-level zone), and the current
-      formula that *undershoots* on big gaps must be replaced. Exact curve = design decision (anchors above).
-- [x] **4 karma debug buttons** (+1000 / −1000 / +20 / −20; at 0 the red name + streak clear). VERIFIED.
-- [x] **Trading blocked while PK or flagged** (either party); innocent-to-innocent works. VERIFIED.
-- [x] **A PK can't BUY from a vendor**; purple can; selling works for everyone. VERIFIED.
-- [x] **Trade window contrast** — partner offer + your-inventory panels readable. VERIFIED.
-
-**Debug menu reorg:**
-- [ ] **Functions tab** is grouped top-to-bottom: **Full buffer · Gold & SP · Level · Karma**.
-- [ ] **Class tab** is grouped: **Profession & skills** (class change + give all skills) · **Classes
-      (subclass)** (swap + add) · **Reset Character**.
+**Karma / PK / trade + debug menu reorg:** — ✅ **VERIFIED** (4 karma debug buttons; trading blocked while
+PK or flagged; a PK can't buy from a vendor but can sell; trade-window contrast; Functions tab grouped Full
+buffer · Gold & SP · Level · Karma; Class tab grouped Profession & skills · Classes (subclass) · Reset).
+*(The level-33 3rd-class bug this section exposed is fixed + verified — see the playtest-4 header above.)*
 
 **New findings (2026-07-16 playtest):**
 - [x] ✅ **Archer "244k M.Atk" — RESOLVED 2026-07-16, NOT a bug.** The char was level **821** (debug over-
@@ -122,18 +111,15 @@ yet play-tested. (Note: under `dotnet run` the db is `Game.Server/game.db`; via 
 
 ---
 
-## 🧪 M.ATK DISPLAY SHRINK (built 2026-07-16, damage-model work — NOT committed) — see docs/DamageModel.md
+## ✅ M.ATK DISPLAY SHRINK (2026-07-16, damage-model work) — VERIFIED 2026-07-17
 
-Combat is UNCHANGED (internal M.Atk + √ formulas untouched, so damage + heals are byte-identical and mob
-casters unaffected). This is display-only + honest magic buffs.
-- [ ] **M.Atk in the stats window is now P.Atk-size** (~1,087 @L85 instead of 2,954). A new row **"M.Atk
-      (internal / L2-ref)"** shows the old cosmic value for reference. Target-frame M.Atk also shrunk.
-- [ ] **Unbuffed magic damage + heals are identical** to before (verified in BalanceMatrix: mage 533 vs
-      tank / 2249 vs mob unchanged).
-- [ ] **Magic-only M.Atk buffs are now HONEST** — a `BuffMagAtk` authored at +X% gives +X% damage AND +X%
-      on the displayed M.Atk (squared internally to cancel the √). ⚠ **They now grant their FULL authored %**,
-      so existing magic-only buffs OVER-perform until re-authored to their effective (halved-ish) value —
-      **owner's re-authoring TODO.** Shared attack buffs (BuffAtk) are unchanged (√-dampened, ~half on magic).
+M.Atk in the stats window is now P.Atk-size (with the cosmic value kept as the "M.Atk (internal / L2-ref)"
+debug row), unbuffed magic damage + heals are unchanged, and magic-only M.Atk buffs are HONEST (an authored
++X% gives +X% damage AND +X% on the display) — all confirmed. See docs/DamageModel.md.
+
+⚠ **Owner TODO still open:** re-author `BuffMagAtk` buff VALUES to their effective %s, and give an explicit
+magic % to any buff/passive that should boost magic but used the shared BuffAtk/AttackPct (which is
+physical-only now). Until then those magic-only buffs OVER-perform (they grant their FULL authored %).
 
 ---
 

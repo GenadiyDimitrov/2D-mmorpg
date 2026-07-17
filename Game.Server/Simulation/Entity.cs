@@ -422,6 +422,23 @@ public class Entity
     public string ActiveArmorSet { get; set; } = ""; // name of the completed armor set bonus, "" if none
     public string ArmorMasteryLabel { get; set; } = ""; // armor-weight mastery status for the UI
 
+    // ----- GRADE PENALTY (see GradePenalty in Game.Shared/Items.cs) -----
+    // How many grade STEPS over your own grade the worst piece you're wearing is; 0 = nothing over-grade,
+    // which is the normal case at every level. Armour/jewels/shield feed one gap and the weapon another,
+    // because they penalise DIFFERENT stat sets. Recomputed from scratch each RecomputeDerived.
+    public int GradeArmorGap { get; set; }
+    public int GradeWeaponGap { get; set; }
+
+    /// <summary>Future perk hook (owner): "this character may equip gear N levels early". Lifts the
+    /// effective level used for GRADE comparisons only — never real level. 0 = no perk, today's behaviour.</summary>
+    public int GradeLevelBonus { get; set; }
+
+    /// <summary>What the over-grade ARMOUR/jewels leave of: cast/attack/move speed, P/M defence, evasion.</summary>
+    public float GradeArmorPenalty => GradePenalty.FactorForGap(GradeArmorGap);
+
+    /// <summary>What the over-grade WEAPON leaves of: P/M crit rate + crit damage, P/M accuracy, P/M attack.</summary>
+    public float GradeWeaponPenalty => GradePenalty.FactorForGap(GradeWeaponGap);
+
     // ----- Shield / block (0 if no shield equipped) -----
     public bool HasShield { get; set; }
     public float BlockChance { get; set; }       // chance to block a physical hit
@@ -1026,6 +1043,8 @@ public class Entity
         HpRegenMult = 1f;
         MpRegenMult = 1f;
         ArmorMasteryLabel = "";
+        GradeArmorGap = 0;
+        GradeWeaponGap = 0;
 
         var bodyWeight = ArmorWeight.None;   // equipped BODY-slot armor weight (for masteries)
         int weaponAsBase = 0;                // equipped weapon's attack-speed base override (0 = type default)
@@ -1040,12 +1059,23 @@ public class Entity
             if (def.Slot == EquipSlot.Armor && def.ArmorSlot == ArmorSlot.Body)
                 bodyWeight = def.Weight;
 
-            // GRADE PENALTY: a low-level class in high-grade gear gets that gear's weapon ATK / armor DEF
-            // scaled down (owner 2026-07-16). Applied here, BEFORE masteries and set bonuses. Players only.
-            float gradeFactor = Kind == EntityKind.Player ? GradePenalty.Factor(def.Grade, Level) : 1f;
+            // GRADE PENALTY (owner 2026-07-17): no longer a per-item stat scaler. The gap between your
+            // grade and the WORST over-grade piece you wear becomes a CHARACTER-wide debuff, applied at
+            // the end of this method (see GradeArmorPenalty / GradeWeaponPenalty). Armour and jewels feed
+            // one gap, the weapon another — they debuff different stat sets.
+            if (Kind == EntityKind.Player)
+            {
+                int gap = GradePenalty.Gap(def, Level, GradeLevelBonus);
+                if (gap > 0)
+                {
+                    if (def.Slot == EquipSlot.Weapon)
+                        GradeWeaponGap = Math.Max(GradeWeaponGap, gap);
+                    else if (def.Slot is EquipSlot.Armor or EquipSlot.Jewel or EquipSlot.Shield)
+                        GradeArmorGap = Math.Max(GradeArmorGap, gap);
+                }
+            }
 
             int atkBonus = EnchantRules.BonusAt(def.AtkBonus, item.Enchant);
-            if (def.Slot == EquipSlot.Weapon) atkBonus = (int)(atkBonus * gradeFactor);   // grade penalty: weapon ATK
             AttackPower += atkBonus;
             // A WEAPON has one power number and contributes it to BOTH channels; the channel
             // factors below decide the split. Everything else (armor/jewels) keeps its own
@@ -1053,9 +1083,7 @@ public class Entity
             MagicAttack += def.Slot == EquipSlot.Weapon
                 ? atkBonus
                 : EnchantRules.BonusAt(def.MAtkBonus, item.Enchant);
-            int defBonus = EnchantRules.BonusAt(def.DefBonus, item.Enchant);
-            if (def.Slot == EquipSlot.Armor) defBonus = (int)(defBonus * gradeFactor);     // grade penalty: armor DEF
-            Defence += defBonus;
+            Defence += EnchantRules.BonusAt(def.DefBonus, item.Enchant);
             MagicDefence += EnchantRules.BonusAt(def.MDefBonus, item.Enchant);  // jewels
             MaxHp += EnchantRules.BonusAt(def.HpBonus, item.Enchant);
             MaxMp += EnchantRules.BonusAt(def.MpBonus, item.Enchant);
@@ -1543,11 +1571,60 @@ public class Entity
         MeleeVamp = Math.Clamp(MeleeVamp, 0f, 1f);
         SpellVamp = Math.Clamp(SpellVamp, 0f, 1f);
 
+        ApplyGradePenalty();
+
         Hp = Math.Min(Hp, MaxHp);
         Mp = Math.Min(Mp, MaxMp);
     }
 
+    /// <summary>GRADE PENALTY — the LAST layer of RecomputeDerived (owner, 2026-07-17).
+    ///
+    /// Wearing gear above your grade doesn't shrink that ITEM any more; it debuffs YOU. It runs last, on
+    /// top of every gear/set/mastery/passive/buff bonus, precisely so it cannot be out-stacked: a level-1
+    /// in A-grade keeps a tenth of the affected stats no matter what else he piles on (owner: "his whole
+    /// stats window is multiplied by 0.1 — his 100 stats become 10").
+    ///
+    /// Two independent gaps, because each kind of gear penalises what it grants:
+    ///   ARMOUR + jewels + shield → cast/attack/move speed, P.Def, M.Def, evasion
+    ///   WEAPON                   → P/M attack, P/M crit rate, crit damage, accuracy
+    /// The speed multipliers are TIMES (lower = faster), so a penalty DIVIDES them.
+    ///
+    /// In normal play both gaps are 0 and this whole method is a no-op — a level-40 wears level-40 gear.
+    /// Deliberately NOT applied to mobs: they have no grade.</summary>
+    private void ApplyGradePenalty()
+    {
+        if (Kind != EntityKind.Player) return;
+
+        float armor = GradeArmorPenalty;
+        if (armor < 1f)
+        {
+            Defence = (int)(Defence * armor);
+            MagicDefence = (int)(MagicDefence * armor);
+            Evasion = (int)(Evasion * armor);
+            ShieldDefense = (int)(ShieldDefense * armor);
+            // Speed multipliers are TIME factors: dividing by the penalty makes you slower.
+            CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier / armor, 0.4f, 6f);
+            AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier / armor, 0.4f, 6f);
+            RunSpeed *= armor;
+            WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor;
+            Speed = RunSpeed;
+        }
+
+        float weapon = GradeWeaponPenalty;
+        if (weapon < 1f)
+        {
+            AttackPower = Math.Max(1, (int)(AttackPower * weapon));
+            MagicAttack = Math.Max(1, (int)(MagicAttack * weapon));
+            BasicAttackPower = Math.Max(1, (int)(BasicAttackPower * weapon));
+            CritChance *= weapon;
+            MagicCritChance *= weapon;
+            CritDamageBonus *= weapon;
+            Accuracy = (int)(Accuracy * weapon);
+        }
+    }
+
     public EntityDto ToDto() =>
         new(Id, Name, Kind, Race, BaseClass, X, Y, Speed, Level,
-            Hp, MaxHp, Mp, MaxMp, SecondClass, ThirdClass, Dead, IsDisconnected, FlagState);
+            Hp, MaxHp, Mp, MaxMp, SecondClass, ThirdClass, Dead, IsDisconnected, FlagState,
+            Kind == EntityKind.Mob && Aggressive);
 }

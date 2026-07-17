@@ -10,6 +10,84 @@ Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` don
 
 ## NOW (active / immediate)
 
+### Playtest-5 queue (2026-07-17) — ✅ ALL BUILT (build 0/0, BalanceMatrix anchors held)
+
+Owner re-tested the playtest-4 batch: nearly all VERIFIED. What came back, and what it actually was:
+
+- [x] **🔴 Ghost corpses + alive-on-relog — TWO bugs.** (1) `NormalLeave` only removed a LIVING entity from
+  the grid (`if (!entity.Dead)`), so logging out dead left the corpse in the grid forever — broadcast to
+  everyone, unresurrectable (the res path looks the target up in `Entities`, which it had left), and a
+  relog built a second entity beside it, stacking one corpse per attempt. Now always removes. The repro
+  was the **char-select exit**; `EndOfflineSession` was already correct. (2) `DiedWhileAway` was set only
+  for offline-farm/link-dead deaths → an ordinary death + logout healed you on relog. Now set on EVERY
+  player death and cleared in `ResurrectTarget` as well as `HandleRespawn`.
+- [x] **Angel's Protection was self-only for a reason nobody could see from the def**: it's a marker buff
+  with `SkillEffect.None` (payload = the `KeepsBuffsOnDeath` flag field, the enum being full), and the
+  cast path's ally branch tested Effect bits → it fell through to self-cast. Now `IsAllyTargetable(def)`
+  = support Effect **OR** `Category == Buff`. Plus FixedCast 1s / FixedCooldown 10s.
+- [x] **Grade penalty reworked to the GAP model + made visible** — see the design in the playtest-5 memory.
+  Ladder F1/E20/D40/C52/B61/A76 (the `ItemLevel` tiers; the `ItemGrade` enum is pricing-only and has no
+  C/D). gap 1-5 → x0.5/0.4/0.3/0.2/0.1. It is now a CHARACTER debuff applied LAST in `RecomputeDerived`,
+  not a per-item scaler, so it can't be out-stacked. Two synthetic never-expiring debuff rows show it.
+  `Entity.GradeLevelBonus` is the future "equip N levels early" perk hook. BalanceMatrix: anchors identical.
+- [x] Cast bar shows the NAME only · res-scroll reuse 60s→10s · ultimate scrolls + Skill Stone in debug ·
+  Equipped tab `[U]` unequip vs bag `[X]` destroy · DEBUG-only 10s character-delete window (undo a
+  misclick AND reuse the name; the live 24h/7d/30d ladder is untouched).
+
+### Playtest-4 queue (2026-07-17) — death / resurrection / Angel's pass — ✅ ALL BUILT (build 0/0, SmokeTest green)
+
+Owner tested the death-penalty + resurrection + Angel's Protection batch. ⚠ **The server under test was
+started before `3da3d79`**, so every Angel's observation is against the OLD build (20-min, free, no
+Skill-Stone cost, no preservation BuffKey/Rank).
+
+**Every item below is now built** — see docs/TestChecklist.md "PLAYTEST-4 FIX BATCH" for what to verify.
+Three were not the shallow bugs they looked like:
+- **Clicking a skill bar slot could never cast.** The panel's `PreviewMouseLeftButtonUp` TUNNELS
+  (root→source), so it cleared `_dragFromIndex` before the slot's bubbling click handler read it — that
+  handler's `if (_dragFromIndex < 0) return;` fired on every click. "Did a drag happen" is now its own
+  flag (`_dragStarted`), armed at mouse-down.
+- **The res prompt was unreachable, not merely ugly.** `ResurrectPrompt` and `DeathOverlay` were both
+  centred and the overlay is declared later, so it drew on top and buried the Resurrect button. Merged
+  into one window (the owner's design) rather than nudged apart.
+- **Resurrection's cast was 4s FIXED**, not the documented 10s, and `FixedCast: true` made cast speed
+  irrelevant. Now 10s base, cast-speed-scaled → ~1.67s at the 1999 cap (the owner's 1-2s target).
+
+**Verified working:** death XP penalty level gate (<40 no loss, 40+ loses) · cleric/healer Resurrection
+skill levels · the res prompt shows the correct exp-restore % · karma per-kill quadratic curve · party-window
+click-to-target · debug menu reorg.
+
+**Corrections (well-specified):**
+- [ ] **Party EXP is level-gated to ±9.** The killer distributes exp only to party members within **9
+  levels** of himself; a member **±10 or more** away gets **0**. (Today the split is level-weighted with no
+  cutoff — `AwardExp`/the party split path.)
+- [ ] **BUG: 3rd class granted at level 33** from the debug menu — the level-40 gate is broken on that path.
+  (Suspect `HandleDebugThirdClass` not applying `CanTakeThirdClass`'s level rule.)
+- [ ] **Resurrection must NOT be auto-learned.** It's a normal skill bought with **SP** — remove it from
+  `AutoLearnCoreSkills`. Cast stays **10s**, dropping to **1-2s at max level** (per-level cast time; instant
+  would be OP).
+- [ ] **Angel's Protection is a TARGET buff, not self-cast.**
+- [ ] **Debug karma group: add a `[Clear all]` button.**
+
+**Client / UI (the batch's real friction):**
+- [ ] **Dead target is a GHOST target** — targeting a dead player shows no target window, so you res someone
+  without knowing who. The target frame must render dead targets.
+- [ ] **Target window must be MOVABLE** — it overlaps the skills button in windowed mode. (The `PanelChrome`
+  drag layer exists; the target frame never opted in.) ⚠ Its ✕ behaving like **ESC** (cancel the cast + clear
+  the target) is **INTENDED — leave it alone.**
+- [ ] **GROUP the res + respawn windows into ONE window** (owner's design — they currently overlap so you
+  physically cannot accept a res until after you respawn):
+  - the res offer appears **above the respawn button in the same window**;
+  - **Accept** → resurrect on the spot · **Respawn** → resurrect in town ·
+  - **Decline** → keeps the respawn button, does **NOT** close the window or respawn you — so you can
+    decline a 0% scroll res and wait for a 100% one.
+  - Make them movable as well (or instead, if grouping lands first).
+- [ ] **Skill bar is not clickable** — skills fire only from the keyboard. Clicking a bar slot must cast it.
+- [ ] **Shift-click targets a DEAD player** in the world; plain click keeps targeting live ones (dead
+  requires shift). This retires the "use the party window" workaround shipped with resurrection.
+- [ ] **Vendor consumables: buy-quantity prompt.** Clicking Buy opens a confirm window with
+  **1 / 10 / 100 / 1000 / Cancel**; it closes **only on Cancel** (so you can buy repeatedly). Later: a proper
+  numeric textbox / on-screen numpad for keyboard *and* touch input.
+
 ### Playtest-3 queue (2026-07-15) — from the owner's test pass, NOT yet built
 
 Almost everything from the 07-13/07-14 queues VERIFIED (see docs/TestChecklist.md). These are the

@@ -58,6 +58,12 @@ public partial class MainWindow
         EnableChrome(ClassPanel);
         EnableChrome(SkillDetailPopup);
         EnableChrome(EquipPopup, () => EquipPopupClose_Click(this, new RoutedEventArgs()));
+        // The TARGET frame is draggable because in windowed mode it sits on top of the skills button and
+        // you cannot simply close it to get it out of the way: closing it is an ESCAPE (cancel cast +
+        // clear target) and always must be (owner, 2026-07-17). So it gets the drag strip, and its ✕ is
+        // the Escape rather than the default "just collapse" — the frame's own visibility is driven by
+        // UpdateTargetFrame, so collapsing it here would only desync until the next target change.
+        EnableChrome(TargetFrame, EscapeCancel);
     }
 
     /// <summary>Wrap one panel: a slim drag strip across the top (with a ✕ on the right), a

@@ -414,8 +414,10 @@ public class PersistenceService
 
         entity.RecomputeDerived();
         entity.Mp = entity.MaxMp;
-        // Died while away (offline-farm / link-dead)? The death STICKS — log in DEAD (res prompt), not
-        // healed. Stays dead across relogs until the character actually respawns (see HandleRespawn).
+        // Logged out DEAD? The death STICKS — log in DEAD (res prompt), not healed. True for ANY death
+        // (a normal one, an offline-farm one, or one during the link-dead grace): otherwise "die → exit
+        // to character select → log back in at full HP" is a free death-dodge. Stays dead across relogs
+        // until the death is paid for — a town respawn (HandleRespawn) or a res (ResurrectTarget).
         entity.DiedWhileAway = rec.DiedWhileAway;
         if (entity.DiedWhileAway)
         {

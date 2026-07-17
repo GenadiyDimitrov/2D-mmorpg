@@ -280,8 +280,13 @@ public class GameLoopService : BackgroundService
         CancelTradeFor(entity, notifyPartnerOnly: true);
         _world.PendingTradeRequests.Remove(entity.Id);
         RemoveFromParty(entity, "left the world");
-        if (!entity.Dead)
-            _world.Grid.Remove(entity);
+        // ALWAYS drop out of the grid. This used to be `if (!entity.Dead)`, which leaked a GHOST CORPSE
+        // on every logout-while-dead: the entity left `Entities` but stayed in the `Grid`, so it kept
+        // being broadcast to everyone forever, and nothing could resurrect it (the res path looks the
+        // target up in `Entities`, where it no longer was). Logging in again then built a SECOND entity
+        // beside the orphan, so corpses stacked one per relog. A dead entity is only kept in the grid
+        // while it is still IN the world (so allies can see and revive it) — leaving is leaving.
+        _world.Grid.Remove(entity);
         SaveEntity(entity);
         BroadcastSystem($"{entity.Name} left the world.");
     }
@@ -669,22 +674,9 @@ public class GameLoopService : BackgroundService
                 player.LearnedSkills[SkillCatalog.DivineFocus] = want;
         }
 
-        // Resurrection — ALL clerics (Healer 2nd class) learn L1 @20 and L2 @40; only Healers (the
-        // Lightbringer discipline) continue to L3 @52 and L4 @61. Take the highest level qualified for;
-        // never downgrade (a Lightbringer who dropped below 52 keeps L4, like the other passives).
-        if (player.Archetype == Archetype.Healer)
-        {
-            int resLvl = 0;
-            if (player.Level >= 20) resLvl = 1;
-            if (player.Level >= 40) resLvl = 2;
-            if (player.Discipline == Discipline.Lightbringer)
-            {
-                if (player.Level >= 52) resLvl = 3;
-                if (player.Level >= 61) resLvl = 4;
-            }
-            if (resLvl > 0 && player.SkillLevelOf(SkillCatalog.Resurrection) < resLvl)
-                player.LearnedSkills[SkillCatalog.Resurrection] = resLvl;
-        }
+        // Resurrection is NOT auto-granted (owner, 2026-07-17) — it is bought with SP off the class
+        // tables like any other skill: L1 @20 / L2 @40 on the cleric list (every cleric keeps those
+        // through any 3rd class), L3 @52 / L4 @61 on the Lightbringer list. See ClassSkillTables.
 
         // Combat "training" passive (soulshot/spiritshot stand-in): auto-granted, level chosen by
         // character level (+10%…+100% atk; see TrainingLevelFor). GATED ON THE 3RD CLASS (owner): like
@@ -912,6 +904,8 @@ public class GameLoopService : BackgroundService
             | SkillEffect.MagicDamage | SkillEffect.AnyDebuff | SkillEffect.Cancel | SkillEffect.Taunt)) != 0;
 
         Guid targetId;
+        // A support skill lands on a party member only if IsAllyTargetable says so — see that helper for
+        // why the test cannot be Effect-only.
         if (def.PlacesTrap || def.GrantsStealth)
         {
             // Self-delivered: a trap drops at the caster's feet; stealth cloaks the caster. Even
@@ -951,7 +945,7 @@ public class GameLoopService : BackgroundService
             }
             targetId = tid;
         }
-        else if ((def.Effect & (SkillEffect.Heal | SkillEffect.RestoreMp | SkillEffect.Cleanse | SkillEffect.AnyBuff)) != 0 &&
+        else if (IsAllyTargetable(def) &&
                  def.TargetMode != TargetMode.SelfOnly && def.Range > 0 &&
                  cmd.TargetId is Guid allyId &&
                  _world.Entities.TryGetValue(allyId, out var ally) &&
@@ -1795,6 +1789,19 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // LEVEL GATE (owner, 2026-07-17: a level-33 character could take a 3rd class here). This path
+        // skips the quest and its items on purpose — but level 40 is the RULE, not part of the walk, and
+        // a below-40 3rd class silently drags the auto-granted training passive + stat swaps (both gated
+        // on ThirdClass > 0) below the level they were tuned for. CanTakeThirdClass is only a
+        // discipline-uniqueness test, so it never covered this. Deliberately NOT admin-exempt: debug-level
+        // to 40 first, which is one button away.
+        if (player.Level < ThirdClassCatalog.ChangeLevel)
+        {
+            SendSystemToEntity(player,
+                $"[DEBUG] A 3rd class requires level {ThirdClassCatalog.ChangeLevel} (you are {player.Level}).");
+            return;
+        }
+
         // You may not walk the same DISCIPLINE twice across your classes (see Entity). No archetype
         // check — several classes may share a 2nd class as long as their disciplines differ.
         if (!player.CanTakeThirdClass(cmd.ThirdClassId))
@@ -1923,9 +1930,25 @@ public class GameLoopService : BackgroundService
         if (healing && player.PotionCooldown > 0)
             return false;
 
+        // A ZERO-cast consumable still has its own reuse timer — the channelled path above set that for
+        // it, so without this an instant scroll would have no cooldown at all.
+        if (player.SkillCooldowns.TryGetValue(skill.Id, out int icd) && icd > 0)
+        {
+            SendSystemToEntity(player, $"{skill.Name} is on cooldown.");
+            return false;
+        }
+        if (skill.CooldownTicks > 0)
+            player.SkillCooldowns[skill.Id] = skill.CooldownTicks;   // fixed: never shortened by reuse buffs
+
         // The SKILL decides what happens — we only deliver it. An instant Heal restores a % of max
         // HP; anything with a lasting effect (a HoT potion, a buff potion) becomes an ordinary buff,
         // so it lands on the buff bar and supersedes weaker ones by BuffKey + Rank.
+        //
+        // TeleportsToTown must be handled HERE as well as on the cast-completion path: the Ultimate
+        // Scroll of Return is the escape button, so it has NO cast — and a 0-tick skill never reaches
+        // the cast pipeline. Without this it would be eaten for no effect.
+        if (skill.TeleportsToTown)
+            ReturnToTown(player);
         if ((skill.Effect & SkillEffect.Heal) != 0)
         {
             float pct = skill.MagnitudeOf(SkillEffect.Heal, ModifierMode.Percent);
@@ -3943,12 +3966,7 @@ public class GameLoopService : BackgroundService
         // ---- Return: teleport the caster to the nearest safe town, then finish (the whole effect).
         if (def.TeleportsToTown)
         {
-            var town = WorldMap.NearestSafeZone(caster.X, caster.Y);
-            PlaceEntity(caster, town.X + _rng.Next(-150, 150), town.Y + _rng.Next(-150, 150));
-            caster.Engaged = false;
-            caster.CombatTargetId = null;
-            caster.QueuedSkillId = null;
-            SendSystemToEntity(caster, $"You return to {town.Name}.");
+            ReturnToTown(caster);
             return;
         }
 
@@ -4925,18 +4943,19 @@ var effect = def.Effect;
             // cost exp while noblesse is up.) Tracks the lost exp so a resurrection can restore a fraction.
             ApplyDeathExpPenalty(victim);
 
+            // DEATH STICKS ACROSS A LOGOUT — for EVERY death, not just an offline-farm/link-dead one
+            // (owner, 2026-07-17). It used to be set only on those two paths, so an ordinary death +
+            // "Exit to character select" + log back in stood you up at FULL HP: a free death-dodge, and
+            // the exact opposite of the res flow. Cleared when the death is actually paid for — a town
+            // respawn (HandleRespawn) or a resurrection (ResurrectTarget).
+            victim.DiedWhileAway = true;
+
             // Death stops auto-hunt. An offline farmer's session ends (deferred logout); a link-dead
             // grace ends; an online idle hunter just stops (can re-enable after respawn).
             if (victim.IsOfflineFarming)
-            {
-                victim.DiedWhileAway = true;   // death sticks: no full-HP respawn on relogin (anti-exploit)
                 _endOfflineQueue.Add(victim.Id);
-            }
             else if (victim.IsDisconnected)
-            {
-                victim.DiedWhileAway = true;   // dying during the link-dead grace sticks too
                 _endGraceQueue.Add(victim.Id);
-            }
             else if (victim.AutoHuntEnabled)
                 StopAutoHunt(victim, "you were defeated.", locked: false);
 
@@ -5180,6 +5199,30 @@ var effect = def.Effect;
                 p.Level, p.Exp, StatCalculator.ExpToNext(p.Level), false));
     }
 
+    /// <summary>Can this skill be aimed at a PARTY MEMBER, or only at yourself?
+    ///
+    /// The obvious test — "does it carry a support Effect bit?" — silently broke Angel's Protection: it is
+    /// a pure MARKER buff whose entire payload is a flag FIELD (KeepsBuffsOnDeath), because the SkillEffect
+    /// enum is full. Its Effect is None, so an Effect-only test dropped it into the self-cast branch and it
+    /// could not be placed on anybody — it merely LOOKED like a targeted buff (Range 600, SelfOrTarget).
+    /// Hence the second arm: ANY Buff-category skill is ally-targetable. New marker buffs get this free.</summary>
+    private static bool IsAllyTargetable(SkillDef def) =>
+        (def.Effect & (SkillEffect.Heal | SkillEffect.RestoreMp | SkillEffect.Cleanse | SkillEffect.AnyBuff)) != 0
+        || def.Category == SkillCategory.Buff;
+
+    /// <summary>Teleport a player to the nearest safe town and drop them out of combat. Shared by the
+    /// CHANNELLED Return path (the cast completing) and the INSTANT one (the Ultimate scroll, whose whole
+    /// purpose is to have no cast at all — see UsePotion).</summary>
+    private void ReturnToTown(Entity caster)
+    {
+        var town = WorldMap.NearestSafeZone(caster.X, caster.Y);
+        PlaceEntity(caster, town.X + _rng.Next(-150, 150), town.Y + _rng.Next(-150, 150));
+        caster.Engaged = false;
+        caster.CombatTargetId = null;
+        caster.QueuedSkillId = null;
+        SendSystemToEntity(caster, $"You return to {town.Name}.");
+    }
+
     /// <summary>Ticks a resurrection OFFER lingers before it auto-expires (30s at 10 t/s).</summary>
     private const int ResurrectOfferTicks = 300;
 
@@ -5211,6 +5254,8 @@ var effect = def.Effect;
         target.PendingResFromId = null;
         target.PendingResTicks = 0;
         target.Dead = false;
+        // The death is paid for — stop it sticking, or the next logout would log them back in dead.
+        target.DiedWhileAway = false;
         target.RecomputeDerived();
         target.Hp = Math.Max(1, (int)(target.MaxHp * 0.30f));
         target.Mp = (int)(target.MaxMp * 0.30f);
@@ -5235,7 +5280,13 @@ var effect = def.Effect;
     private void AwardKillExp(Entity killer, Entity victim)
     {
         int total = MobExpValue(victim);
-        var share = KillCreditMembers(killer);
+        // Only members within PartyExpMaxLevelGap levels of the KILLER share the exp; anyone further
+        // out earns a flat zero (owner, 2026-07-17 — anti-powerlevelling). Filtering BEFORE the split
+        // means the in-band members divide the whole reward and the out-of-band member doesn't dilute
+        // the size bonus either. The killer is always in his own band. Kill-QUEST credit is untouched.
+        var share = KillCreditMembers(killer)
+            .Where(m => Math.Abs(m.Level - killer.Level) <= GameConstants.PartyExpMaxLevelGap)
+            .ToList();
         if (share.Count <= 1)
         {
             AwardExp(killer, total);
@@ -5580,20 +5631,55 @@ var effect = def.Effect;
 
     private void PushBuffs(Entity player)
     {
-        if (player.Buffs.Count == 0)
+        var dtos = player.Buffs.Where(b => !b.Internal).Select(b => new BuffDto(
+            b.Name, b.Description,
+            b.Toggle ? -1f : b.TicksRemaining * GameConstants.TickSeconds, b.IsDebuff, b.Key, b.Stacks,
+            b.Row)).ToList();
+
+        // The GRADE PENALTY rides along as a synthetic, never-expiring DEBUFF row. It is not a real
+        // BuffInstance (nothing casts it — it's a property of what you're wearing), but without a row on
+        // the bar there is NO way to tell whether it's applying, which is exactly what the owner hit when
+        // he tried to verify it and had to report "not sure if the penalty is working".
+        dtos.AddRange(GradePenaltyRows(player));
+
+        if (dtos.Count == 0)
         {
-            // Only send the empty update once, when buffs just expired.
+            // Only send the empty update once, when the last row just went away.
             if (_hadBuffs.Remove(player.Id))
                 SendTo(player, "Buffs", new BuffUpdate(Array.Empty<BuffDto>()));
             return;
         }
 
         _hadBuffs.Add(player.Id);
-        var dtos = player.Buffs.Where(b => !b.Internal).Select(b => new BuffDto(
-            b.Name, b.Description,
-            b.Toggle ? -1f : b.TicksRemaining * GameConstants.TickSeconds, b.IsDebuff, b.Key, b.Stacks,
-            b.Row)).ToArray();
-        SendTo(player, "Buffs", new BuffUpdate(dtos));
+        SendTo(player, "Buffs", new BuffUpdate(dtos.ToArray()));
+    }
+
+    /// <summary>The grade-penalty debuff row(s) for the buff bar: one for over-grade armour/jewels, one
+    /// for an over-grade weapon (they penalise different stats, so they are separate rows).
+    /// SecondsLeft -1 = no timer, like a toggle: this lasts exactly as long as you wear the gear.</summary>
+    private static IEnumerable<BuffDto> GradePenaltyRows(Entity p)
+    {
+        // NAME stays clean — the multiplier belongs in the description, not the label (owner).
+        if (p.GradeArmorGap > 0)
+        {
+            int pct = (int)Math.Round((1f - p.GradeArmorPenalty) * 100f);
+            yield return new BuffDto(
+                "Over-Grade Armor",
+                $"Your armor/jewels are {p.GradeArmorGap} grade(s) above you (x{p.GradeArmorPenalty:0.##}): "
+                + $"-{pct}% P.Def, M.Def, evasion, and cast/attack/move speed. "
+                + "Level up, or wear your own grade, to clear it.",
+                -1f, true, "grade_penalty_armor", 1, BuffRow.Debuff);
+        }
+        if (p.GradeWeaponGap > 0)
+        {
+            int pct = (int)Math.Round((1f - p.GradeWeaponPenalty) * 100f);
+            yield return new BuffDto(
+                "Over-Grade Weapon",
+                $"Your weapon is {p.GradeWeaponGap} grade(s) above you (x{p.GradeWeaponPenalty:0.##}): "
+                + $"-{pct}% P.Atk, M.Atk, crit rate, crit damage and accuracy. "
+                + "Level up, or wield your own grade, to clear it.",
+                -1f, true, "grade_penalty_weapon", 1, BuffRow.Debuff);
+        }
     }
 
     /// <summary>Reconcile the ACTIVE class's skill bar with what that class actually knows: drop

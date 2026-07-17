@@ -442,46 +442,56 @@ public static partial class SkillCatalog
             ConsumableId: ItemCatalog.ScrollReturn, ConsumableAmount: 1,
             Description: "Use a Scroll of Return: 10s cast, teleport to the nearest town."),
 
-        // Ultimate scroll: ~0.4s (near-instant) fixed cast, 1s reuse. Consumes one Ultimate scroll.
+        // Ultimate scroll: TRULY INSTANT — CastTicks 0, 1s reuse. Consumes one Ultimate scroll.
+        // This is the ESCAPE button (owner, 2026-07-17): you use it to get out of a fight you're losing,
+        // so it must not be a cast at all. Any cast time > 0 roots you, can be interrupted, and the cast
+        // pipeline floors every cast at 2 ticks anyway — so 0 is the only way to get a real escape.
+        // A 0-tick consumable bypasses the cast pipeline entirely and is delivered by UsePotion, which
+        // handles TeleportsToTown + the reuse timer for exactly this reason.
         new(ScrollReturnUltSkill, "Ultimate Scroll of Return", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 4, CooldownTicks: 10, Range: 0, Power: 0,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 10, Range: 0, Power: 0,
             Category: SkillCategory.Magic, SpCost: 0, TargetMode: TargetMode.SelfOnly,
             FixedCast: true, FixedCooldown: true, TeleportsToTown: true,
             ConsumableId: ItemCatalog.ScrollReturnUltimate, ConsumableAmount: 1,
-            Description: "Use an Ultimate Scroll of Return: near-instant return to the nearest town."),
+            Description: "Use an Ultimate Scroll of Return: INSTANTLY return to the nearest town."),
 
         // ---- Resurrection scrolls (used by a LIVING player on a DEAD ally, like the healer's res) ----
-        // Basic: 10s fixed cast, 1-min reuse, revives at 30% HP/MP with NO exp restored. Consumes one scroll.
+        // Basic: 10s fixed cast, 10s reuse, revives at 30% HP/MP with NO exp restored. Consumes one scroll.
         new(ScrollResurrectSkill, "Scroll of Resurrection", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 100, CooldownTicks: 600, Range: 600, Power: 0,
+            MpCost: 0, CastTicks: 100, CooldownTicks: 100, Range: 600, Power: 0,
             Category: SkillCategory.Magic, SpCost: 0,
             FixedCast: true, FixedCooldown: true, Resurrect: true, ResExpPct: 0f,
             ConsumableId: ItemCatalog.ScrollResurrect, ConsumableAmount: 1,
             Description: "Channel 10s to revive a fallen ally at 30% HP and MP. Restores none of the "
-                       + "experience they lost on death. 1 min reuse."),
+                       + "experience they lost on death. 10s reuse."),
 
-        // Ultimate: 0.5s fixed cast, 1-min reuse, revives at 30% HP/MP and restores ALL lost exp. Consumes one.
+        // Ultimate: 0.5s fixed cast, 10s reuse, revives at 30% HP/MP and restores ALL lost exp. Consumes one.
         new(ScrollResurrectUltSkill, "Ultimate Scroll of Resurrection", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 0, CastTicks: 5, CooldownTicks: 600, Range: 600, Power: 0,
+            MpCost: 0, CastTicks: 5, CooldownTicks: 100, Range: 600, Power: 0,
             Category: SkillCategory.Magic, SpCost: 0,
             FixedCast: true, FixedCooldown: true, Resurrect: true, ResExpPct: 1f,
             ConsumableId: ItemCatalog.ScrollResurrectUltimate, ConsumableAmount: 1,
             Description: "Revive a fallen ally at 30% HP and MP almost instantly and restore ALL the "
-                       + "experience they lost on death. 1 min reuse."),
+                       + "experience they lost on death. 10s reuse."),
 
-        // ---- Angel's Protection (noblesse) — a self-buff that makes your OTHER buffs SURVIVE death ----
+        // ---- Angel's Protection (noblesse) — a buff that makes the TARGET's other buffs SURVIVE death ----
         // A pure marker buff (no stat effect): while it's up, dying removes ONLY this buff and keeps the
         // rest. Consumes 5 Skill Stones per cast (not free). For now every class auto-learns it at 76;
         // LATER it becomes a long noblesse quest reward (subclass @76 + a 4th class; changing class resets it).
+        // Cast on an ALLY or yourself (owner, 2026-07-17 — it used to be SelfOnly): default SelfOrTarget +
+        // a real range, so it reads like every other castable buff (cf. Might).
         // SHARED BuffKey "buff_preservation" + Rank 1 = the WEAKEST preservation tier: the future tank
         // self-auto-res (Rank 3) and healer target-auto-res (Rank 2) OVERRIDE it and it can't override them.
+        // FIXED 1s cast / FIXED 10s reuse (owner, 2026-07-17): a FIGHTER has poor cast speed, and a
+        // protection you can't get up before you die is worthless — so neither number bends to stats.
         new(AngelsProtection, "Angel's Protection", BaseClass.Fighter, SkillEffect.None,
-            MpCost: 30, CastTicks: 10, CooldownTicks: 20, Range: 0, Power: 0,
-            Category: SkillCategory.Buff, SpCost: 0, TargetMode: TargetMode.SelfOnly,
+            MpCost: 30, CastTicks: 10, CooldownTicks: 100, Range: 600, Power: 0,
+            Category: SkillCategory.Buff, SpCost: 0,
+            FixedCast: true, FixedCooldown: true,
             DurationTicks: 36000, BuffKey: "buff_preservation", Rank: 1, InitialMpCost: 6,
             KeepsBuffsOnDeath: true,
             ConsumableId: ItemCatalog.SkillStone, ConsumableAmount: 5,
-            Description: "Blesses you so your other buffs SURVIVE your next death (only this blessing is "
-                       + "consumed). Costs 5 Skill Stones. Lasts 60 minutes or until you die."),
+            Description: "Blesses an ally (or yourself) so their other buffs SURVIVE their next death (only "
+                       + "this blessing is consumed). Costs 5 Skill Stones. Lasts 60 minutes or until they die."),
     };
 }

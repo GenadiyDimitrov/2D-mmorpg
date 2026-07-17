@@ -39,7 +39,11 @@ public record EntityDto(
     // above the head. Offline-FARMING players are NOT flagged (they look like normal players).
     bool Disconnected = false,
     // PvP name colour: Innocent = white, Flagged = purple, Pk = red.
-    PvpFlag Flag = PvpFlag.Innocent);
+    PvpFlag Flag = PvpFlag.Innocent,
+    // Mobs only: this one attacks on sight. Clients mark it with a "*" after the name so you can see
+    // what to tiptoe around BEFORE it decides for you. Cached on the entity at spawn, so this costs a
+    // bool per snapshot and no catalog lookups.
+    bool Aggressive = false);
 
 /// <summary>Client -> Server: "move me toward this point" (click-to-move).
 /// Moving cancels engagement, queued skills, and casting (classic MMO).</summary>

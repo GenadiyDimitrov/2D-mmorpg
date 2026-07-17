@@ -2,16 +2,44 @@ namespace Game.Shared;
 
 public enum ItemGrade { F = 0, E = 1, B = 2, A = 3, S = 4 }
 
-/// <summary>L2-style GRADE PENALTY (owner 2026-07-16): wearing gear above your level scales its combat
-/// stats down. Each grade has an intended minimum character level; below it, the item's weapon ATK /
-/// armor DEF is multiplied by a flat under-level factor. Applied per-item in Entity.RecomputeDerived
-/// BEFORE masteries and set bonuses. Numbers are deliberately simple/tunable.</summary>
+/// <summary>L2-style GRADE PENALTY (owner 2026-07-16, redesigned 2026-07-17).
+///
+/// The penalty is driven by the GAP between YOUR grade and the ITEM's grade — not by the item's grade
+/// alone. Both sides sit on the same ladder of six steps (<see cref="GradeLevels"/>): F=1, E=20, D=40,
+/// C=52, B=61, A=76 — the very tiers <see cref="ItemCatalog.TierLetter"/> already names. So a level-1
+/// character (step 0 = F) in E gear (step 1) is ONE step over and keeps x0.5; the same character in A gear
+/// (step 5) is FIVE steps over and keeps x0.1. Level up and the gap closes on its own.
+///
+/// ⚠ The <see cref="ItemGrade"/> enum is NOT the ladder — it has no C/D and exists for pricing/sorting
+/// only. <see cref="ItemDef.ItemLevel"/> is the real tier; hand-authored items that predate tiers have no
+/// ItemLevel, so they fall back to <see cref="LegacyGradeLevel"/> and behave exactly as they did.
+///
+/// In normal play this NEVER fires: a level-40 character wears level-40 gear (gap 0 → x1). It exists to
+/// stop a level-1 twink swinging A-grade.</summary>
 public static class GradePenalty
 {
-    /// <summary>Intended minimum character level for each grade.</summary>
-    public static int MinLevel(ItemGrade g) => g switch
+    /// <summary>Character level at which each grade STEP becomes "yours" (F, E, D, C, B, A).</summary>
+    public static readonly int[] GradeLevels = { 1, 20, 40, 52, 61, 76 };
+
+    /// <summary>Display letter per step, so UI never re-derives the ladder.</summary>
+    public static readonly string[] GradeNames = { "F", "E", "D", "C", "B", "A" };
+
+    /// <summary>What each GAP (steps over your grade) leaves of the affected stats. Index = gap, so
+    /// index 0 (at or above your grade) is the no-op x1.</summary>
+    private static readonly float[] GapFactors = { 1f, 0.5f, 0.4f, 0.3f, 0.2f, 0.1f };
+
+    /// <summary>The grade STEP (0..5) a character level sits at.</summary>
+    public static int StepForLevel(int level)
     {
-        ItemGrade.F => 1,
+        int step = 0;
+        for (int i = 0; i < GradeLevels.Length; i++)
+            if (level >= GradeLevels[i]) step = i;
+        return step;
+    }
+
+    /// <summary>Fallback grade level for the hand-authored items that carry no ItemLevel.</summary>
+    private static int LegacyGradeLevel(ItemGrade g) => g switch
+    {
         ItemGrade.E => 20,
         ItemGrade.B => 40,
         ItemGrade.A => 52,
@@ -19,20 +47,30 @@ public static class GradePenalty
         _ => 1,
     };
 
-    /// <summary>Multiplier applied to a grade's weapon ATK / armor DEF when the wearer is BELOW its min
-    /// level (flat while under-level); 1.0 at or above it. F never penalises.</summary>
-    public static float Factor(ItemGrade grade, int level)
+    /// <summary>The level an ITEM's grade sits at (its tier, or its legacy grade's level).</summary>
+    public static int ItemGradeLevel(ItemDef def) =>
+        def.ItemLevel > 0 ? def.ItemLevel : LegacyGradeLevel(def.Grade);
+
+    /// <summary>How many grade steps this item is ABOVE the wearer (0 = no penalty).
+    /// <paramref name="gradeLevelBonus"/> is the future "equip N levels early" perk: it lifts the
+    /// character's effective level for grade purposes only, so the thresholds slide down for them.</summary>
+    public static int Gap(ItemDef def, int level, int gradeLevelBonus = 0)
     {
-        if (level >= MinLevel(grade)) return 1f;
-        return grade switch
-        {
-            ItemGrade.E => 0.5f,
-            ItemGrade.B => 0.4f,
-            ItemGrade.A => 0.3f,
-            ItemGrade.S => 0.2f,
-            _ => 1f,
-        };
+        int itemStep = StepForLevel(ItemGradeLevel(def));
+        int charStep = StepForLevel(level + gradeLevelBonus);
+        return Math.Max(0, itemStep - charStep);
     }
+
+    /// <summary>Multiplier this item's gap imposes (1 = none).</summary>
+    public static float Factor(ItemDef def, int level, int gradeLevelBonus = 0) =>
+        GapFactors[Math.Min(Gap(def, level, gradeLevelBonus), GapFactors.Length - 1)];
+
+    /// <summary>The multiplier for an already-computed gap (1 = none).</summary>
+    public static float FactorForGap(int gap) =>
+        GapFactors[Math.Clamp(gap, 0, GapFactors.Length - 1)];
+
+    /// <summary>Grade letter of an item, for UI ("A", "D", …).</summary>
+    public static string GradeNameOf(ItemDef def) => GradeNames[StepForLevel(ItemGradeLevel(def))];
 }
 
 public enum ItemRarity { Common = 0, Uncommon = 1, Rare = 2, Epic = 3, Legendary = 4, God = 99 }
@@ -1148,22 +1186,32 @@ public static class ItemCatalog
         def.Slot == EquipSlot.Consumable && def.PotionCooldownTicks > 0 && !string.IsNullOrEmpty(def.UseSkillId);
 
     /// <summary>A BUFF potion: grants a lasting effect instantly, free of the heal cooldown.
-    /// Excludes the cast-on-use scrolls (their skill has a cast time) and inert reagents.</summary>
+    /// Excludes inert reagents and the cast-on-use scrolls.
+    ///
+    /// It must actually GRANT A BUFF — "instant + no heal cooldown" alone is not enough. The Ultimate
+    /// Scroll of Return is a 0-cast Consumable too, so the moment it became truly instant it started
+    /// matching this test, and auto-hunt's keep-your-buff-potions-up loop would have happily drunk it and
+    /// teleported the farmer to town on repeat.</summary>
     public static bool IsBuffPotion(ItemDef def) =>
         def.Slot == EquipSlot.Consumable && def.PotionCooldownTicks == 0
         && !string.IsNullOrEmpty(def.UseSkillId)
-        && SkillCatalog.Get(def.UseSkillId) is { CastTicks: 0 };
+        && SkillCatalog.Get(def.UseSkillId) is { CastTicks: 0 } s
+        && (s.Effect & SkillEffect.AnyBuff) != 0;
     public static bool IsScroll(ItemDef def) => def.Slot == EquipSlot.Scroll;
     public static bool IsEnchantScroll(ItemDef def) => def.Slot == EquipSlot.Scroll && def.ScrollKind != ScrollKind.None;
     public static bool IsAttributeScroll(ItemDef def) => def.AttrScroll != AttrScrollKind.None;
     public static bool IsQuestItem(ItemDef def) => def.Slot == EquipSlot.QuestItem;
     public static bool IsEquippable(ItemDef def) => def.Slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Jewel;
 
-    /// <summary>The level at which a grade reaches FULL power (below it you may still equip, but the
-    /// GRADE PENALTY scales its combat stats down). No longer a hard equip gate — single source of truth
-    /// is <see cref="GradePenalty.MinLevel"/>. F returns 0 so the UI shows no note for it.</summary>
-    public static int RequiredLevel(ItemGrade grade) =>
-        grade == ItemGrade.F ? 0 : GradePenalty.MinLevel(grade);
+    /// <summary>The level at which an ITEM reaches FULL power (below it you may still equip it, but the
+    /// GRADE PENALTY scales your stats down by the grade GAP). Not a hard equip gate. Takes the DEF, not
+    /// the grade: the real tier is <see cref="ItemDef.ItemLevel"/> — the ItemGrade enum has no C/D and is
+    /// for pricing only. F-level returns 0 so the UI shows no note for starter gear.</summary>
+    public static int RequiredLevel(ItemDef def)
+    {
+        int lvl = GradePenalty.ItemGradeLevel(def);
+        return lvl <= 1 ? 0 : lvl;
+    }
 }
 
 /// <summary>One possible drop: an item key, its chance, and the mob-level band

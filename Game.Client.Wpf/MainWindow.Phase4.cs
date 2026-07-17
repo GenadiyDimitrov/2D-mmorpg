@@ -142,19 +142,53 @@ public partial class MainWindow
             var row = new DockPanel { Margin = new Thickness(0, 0, 0, 4) };
             var dto = item;
 
-            // Remove (X) button — destroy item.
-            var remove = new Button
+            // On the EQUIPPED pane this button UNEQUIPS (orange [U]); on the BAG it DESTROYS (red [X]).
+            // A red delete sitting on the gear you are WEARING is a footgun — the destructive action and
+            // the everyday one looked identical and lived in the same spot (owner, 2026-07-17).
+            Button remove;
+            if (_invTab == InvTab.Equipped)
             {
-                Content = "X", Width = 24, Height = 28, FontSize = 11,
-                Foreground = Brushes.White,
-                Background = new SolidColorBrush(Color.FromArgb(120, 160, 60, 60)),
-                ToolTip = "Destroy this item"
-            };
-            // A SINGLE item deletes instantly (a confirm there would only annoy). A STACK asks whether
-            // to drop ALL or just ONE — so you don't nuke 40 potions to shed one.
-            remove.Click += async (_, _) => await RemoveItemPrompt(dto);
+                remove = new Button
+                {
+                    Content = "U", Width = 24, Height = 28, FontSize = 11,
+                    Foreground = Brushes.White,
+                    Background = new SolidColorBrush(Color.FromArgb(140, 200, 120, 40)),   // orange: take off
+                    ToolTip = "Unequip this item"
+                };
+                remove.Click += async (_, _) => await _net.EquipItemAsync(dto.InstanceId);   // equip toggles
+            }
+            else
+            {
+                remove = new Button
+                {
+                    Content = "X", Width = 24, Height = 28, FontSize = 11,
+                    Foreground = Brushes.White,
+                    Background = new SolidColorBrush(Color.FromArgb(120, 160, 60, 60)),
+                    ToolTip = "Destroy this item"
+                };
+                // A SINGLE item deletes instantly (a confirm there would only annoy). A STACK asks whether
+                // to drop ALL or just ONE — so you don't nuke 40 potions to shed one.
+                remove.Click += async (_, _) => await RemoveItemPrompt(dto);
+            }
             DockPanel.SetDock(remove, Dock.Right);
             row.Children.Add(remove);
+
+            // BAG tab: an orange [E] to equip straight from the bag, without going through the compare
+            // popup — the mirror of the Equipped tab's [U]. Sits BEFORE the red [X] so the everyday
+            // action is never adjacent-and-identical to the destructive one.
+            if (_invTab == InvTab.Bag && ItemCatalog.IsEquippable(def))
+            {
+                var equip = new Button
+                {
+                    Content = "E", Width = 24, Height = 28, FontSize = 11,
+                    Foreground = Brushes.White, Margin = new Thickness(0, 0, 3, 0),
+                    Background = new SolidColorBrush(Color.FromArgb(140, 200, 120, 40)),   // orange: put on
+                    ToolTip = "Equip this item"
+                };
+                equip.Click += async (_, _) => await _net.EquipItemAsync(dto.InstanceId);
+                DockPanel.SetDock(equip, Dock.Right);
+                row.Children.Add(equip);
+            }
 
             // Enchant (+) button — only for equippable gear.
             if (ItemCatalog.IsEquippable(def))
@@ -224,9 +258,10 @@ public partial class MainWindow
         string tag = equipped ? "[E] " : "";
         string ench = enchant > 0 ? $"+{enchant} " : "";
         string qty = quantity > 1 ? $"  x{(quantity >= 100 ? "99+" : quantity.ToString())}" : "";
-        string req = ItemCatalog.RequiredLevel(def.Grade) > 0
-            ? $" (Lv{ItemCatalog.RequiredLevel(def.Grade)})" : "";
-        return $"{tag}{ench}{def.Name}  {def.Grade}/{def.Rarity}{req}{qty}";
+        string req = ItemCatalog.RequiredLevel(def) > 0
+            ? $" (Lv{ItemCatalog.RequiredLevel(def)})" : "";
+        // Grade letter comes from the TIER ladder (F/E/D/C/B/A), not the pricing-only ItemGrade enum.
+        return $"{tag}{ench}{def.Name}  {GradePenalty.GradeNameOf(def)}/{def.Rarity}{req}{qty}";
     }
 
     /// <summary>The item tooltip. Returns a rich element (not a string) so the SET section can
@@ -606,16 +641,22 @@ public partial class MainWindow
     // Resurrection offer (a fallen player accepts/declines being revived)
     // =======================================================================
 
+    /// <summary>An offer arrived: show it INSIDE the death overlay, above the Respawn button. It is not
+    /// a separate window — as one it was drawn underneath the death overlay and could not be clicked
+    /// until you had already respawned, which is exactly when the offer no longer matters.</summary>
     private void OnResurrectOffer(ResurrectOffer offer)
     {
         string exp = offer.ExpRestored > 0
             ? $"\nRestores {offer.ExpPct * 100:0}% of lost experience ({offer.ExpRestored:N0})."
             : "\nRestores none of your lost experience.";
         ResurrectText.Text = $"{offer.FromName} offers to resurrect you.{exp}";
-        ResurrectPrompt.Visibility = Visibility.Visible;
+        ResurrectOfferPanel.Visibility = Visibility.Visible;
     }
 
-    private void HideResurrectPrompt() => ResurrectPrompt.Visibility = Visibility.Collapsed;
+    /// <summary>Take the offer off screen WITHOUT touching the death overlay: declining (or letting the
+    /// offer expire) must leave you dead, looking at the Respawn button, free to wait for a better
+    /// resurrection than the one you just refused.</summary>
+    private void HideResurrectPrompt() => ResurrectOfferPanel.Visibility = Visibility.Collapsed;
 
     private async void ResurrectAccept_Click(object sender, RoutedEventArgs e)
     {
@@ -1249,8 +1290,8 @@ public partial class MainWindow
         _equipPopupInstanceId = item.InstanceId;
         EquipPopupTitle.Text = item.Equipped ? $"Unequip {def.Name}" : def.Name;
         EquipPopupSubtitle.Text =
-            $"{def.Grade}/{def.Rarity}" +
-            (ItemCatalog.RequiredLevel(def.Grade) > 0 ? $"  •  full power at Lv{ItemCatalog.RequiredLevel(def.Grade)}" : "");
+            $"{GradePenalty.GradeNameOf(def)}-grade/{def.Rarity}" +
+            (ItemCatalog.RequiredLevel(def) > 0 ? $"  •  full power at Lv{ItemCatalog.RequiredLevel(def)}" : "");
 
         // Find the currently equipped item in the same slot to diff against. For
         // armor the body-part slot must match too (compare a helmet vs a helmet).
@@ -2639,6 +2680,15 @@ public partial class MainWindow
 
         AddDebugHeader("Reagents");
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.ElementalStone, "Elemental Stone +10", 10));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.SkillStone, "Skill Stone +10", 10));
+
+        // The ULTIMATE scrolls are deliberately not vendor-stocked, so debug is the only way to get
+        // hold of them — and therefore the only way to test them.
+        AddDebugHeader("Scrolls (x5)");
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.ScrollReturn, "Scroll of Return x5", 5));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.ScrollReturnUltimate, "ULT Scroll of Return x5", 5));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.ScrollResurrect, "Scroll of Resurrection x5", 5));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.ScrollResurrectUltimate, "ULT Scroll of Resurrection x5", 5));
     }
 
     /// <summary>Every class this character owns (server-pushed). Drives the subclass section below.</summary>
@@ -2700,6 +2750,9 @@ public partial class MainWindow
         DebugList.Children.Add(DebugAction("Karma -1000", async () => await _net.DebugKarmaAsync(-1000)));
         DebugList.Children.Add(DebugAction("Karma +1 mob (+20)", async () => await _net.DebugKarmaAsync(+20)));
         DebugList.Children.Add(DebugAction("Karma -1 mob (-20)", async () => await _net.DebugKarmaAsync(-20)));
+        // Clear all — the server clamps karma to [0, 1M] and clears the PK streak + red name when it
+        // reaches 0, so a delta past the ceiling IS the clear. No new command needed.
+        DebugList.Children.Add(DebugAction("Karma CLEAR (all)", async () => await _net.DebugKarmaAsync(-1_000_000)));
     }
 
     // -------------------------------------------------------------------------------------------
@@ -3048,7 +3101,54 @@ public partial class MainWindow
 
     private void ShopTabBuy_Click(object sender, RoutedEventArgs e) { _shopSellTab = false; RenderShop(); }
     private void ShopTabSell_Click(object sender, RoutedEventArgs e) { _shopSellTab = true; RenderShop(); }
-    private void ShopClose_Click(object sender, RoutedEventArgs e) => ShopPanel.Visibility = Visibility.Collapsed;
+
+    private void ShopClose_Click(object sender, RoutedEventArgs e)
+    {
+        ShopPanel.Visibility = Visibility.Collapsed;
+        CloseBuyQty();   // never leave the quantity prompt floating over the world with no shop behind it
+    }
+
+    // ----- Buy-quantity prompt (consumables only) -------------------------------------------------
+
+    private string? _buyQtyDefId;
+    private int _buyQtyPrice;
+
+    /// <summary>Ask how many to buy. Deliberately does NOT close on a purchase — only Cancel closes it —
+    /// so stocking up is repeated clicks on one button rather than re-opening the prompt each time.</summary>
+    private void OpenBuyQty(string defId, string name, int price)
+    {
+        _buyQtyDefId = defId;
+        _buyQtyPrice = price;
+        BuyQtyText.Text = $"Buy {name}\n{price:N0} {GameConstants.CurrencyName} each. How many?";
+        RefreshBuyQty();
+        BuyQtyPanel.Visibility = Visibility.Visible;
+        Panel.SetZIndex(BuyQtyPanel, ++_panelZ);
+    }
+
+    private void CloseBuyQty()
+    {
+        BuyQtyPanel.Visibility = Visibility.Collapsed;
+        _buyQtyDefId = null;
+    }
+
+    /// <summary>Grey out the amounts you can't afford. Re-run on every gold change, since the prompt
+    /// stays open across purchases and your gold drops as you buy.</summary>
+    private void RefreshBuyQty()
+    {
+        BuyQty1.IsEnabled = _gold >= (long)_buyQtyPrice;
+        BuyQty10.IsEnabled = _gold >= (long)_buyQtyPrice * 10;
+        BuyQty100.IsEnabled = _gold >= (long)_buyQtyPrice * 100;
+        BuyQty1000.IsEnabled = _gold >= (long)_buyQtyPrice * 1000;
+    }
+
+    private async void BuyQty_Click(object sender, RoutedEventArgs e)
+    {
+        if (_buyQtyDefId is not string defId) return;
+        if (sender is not Button b || b.Tag is not string tag || !int.TryParse(tag, out int qty)) return;
+        await _net.BuyItemAsync(_dialogNpcId, defId, qty);   // server re-checks gold and clamps
+    }
+
+    private void BuyQtyCancel_Click(object sender, RoutedEventArgs e) => CloseBuyQty();
 
     private void UpdateShopGold() =>
         ShopGoldText.Text = $"Your {GameConstants.CurrencyName}: {_gold:N0}";
@@ -3070,9 +3170,16 @@ public partial class MainWindow
             {
                 string defId = entry.DefId;
                 int price = entry.BuyPrice;
-                ShopList.Children.Add(ShopRow(entry.Name, $"{price:N0} {GameConstants.CurrencyName}",
+                string name = entry.Name;
+                // Consumables are bought in BULK (potions, scrolls, reagents — Angel's Protection alone
+                // eats 5 Skill Stones a cast), so Buy opens a quantity prompt instead of trickling one
+                // per click. Gear stays one-click: you buy exactly one sword.
+                bool bulk = ItemCatalog.Get(defId)?.Slot == EquipSlot.Consumable;
+                ShopList.Children.Add(ShopRow(name, $"{price:N0} {GameConstants.CurrencyName}",
                     "Buy", _gold >= price,
-                    async () => await _net.BuyItemAsync(_dialogNpcId, defId, 1)));
+                    bulk
+                        ? () => { OpenBuyQty(defId, name, price); return Task.CompletedTask; }
+                        : async () => await _net.BuyItemAsync(_dialogNpcId, defId, 1)));
             }
             return;
         }

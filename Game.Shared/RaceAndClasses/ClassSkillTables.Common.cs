@@ -239,7 +239,13 @@ public static partial class ClassSkillTables
                 new ClassSkill(CombatStance, 20, SkillLevel: 1),
 
                 // Antidote — targeted cure (poison/venom).
-                new ClassSkill(Antidote, 25, SkillLevel: 1));
+                new ClassSkill(Antidote, 25, SkillLevel: 1),
+
+                // Resurrection — revive a fallen ally. Learned for SP like any other skill (owner,
+                // 2026-07-17: it used to be auto-granted). EVERY cleric gets L1/L2 regardless of the
+                // 3rd class they go on to take; L3/L4 are the Lightbringer's alone (see the third table).
+                new ClassSkill(Resurrection, 20, SkillLevel: 1),
+                new ClassSkill(Resurrection, 40, SkillLevel: 2));
         }
     }
 }

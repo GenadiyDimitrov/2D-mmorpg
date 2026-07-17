@@ -253,12 +253,14 @@ public static partial class SkillCatalog
             Description: "Cures poison and venom from an ally (or self)."),
 
         // Resurrection — revive a fallen ally to 30% HP/MP and restore a fraction of the exp they lost to
-        // the death penalty. 4 levels (25/50/75/100%). All clerics learn L1 @20 & L2 @40; only Healers add
-        // L3 @52 & L4 @61 (grant cadence in AutoLearnCoreSkills). The target must be dead (checked at cast).
-        // Long, FIXED cast (a mid-fight res should be a real commitment, unshortened by cast speed).
+        // the death penalty. 4 levels (25/50/75/100%), learned for SP at 20/40/52/61 like any other skill.
+        // The target must be dead (checked at cast).
+        // 10s base cast at EVERY level, and deliberately NOT FixedCast: cast speed is the only thing that
+        // shortens it, so investing in cast speed is what makes a res usable mid-fight. At the 1999 cast-speed
+        // cap that's 333/1999 ≈ 1.67s — fast, but never instant (which would be OP).
         new(Resurrection, "Resurrection", BaseClass.Mage, SkillEffect.None,
-            MpCost: 120, CastTicks: 40, CooldownTicks: 100, Range: 600, Power: 0,
-            Category: SkillCategory.Heal, InitialMpCost: 24, FixedCast: true,
+            MpCost: 120, CastTicks: 100, CooldownTicks: 100, Range: 600, Power: 0,
+            Category: SkillCategory.Heal, InitialMpCost: 24,
             Resurrect: true, ResExpPct: 0.25f,
             Description: "Revives a fallen ally at 30% HP and MP and restores part of the experience they "
                        + "lost on death (25% to 100% by level).",

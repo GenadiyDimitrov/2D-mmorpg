@@ -324,8 +324,13 @@ public partial class MainWindow : Window
         await ShowCharacterSelectAsync();
     }
 
+    // Both formatters carry a SECONDS case: a DEBUG build collapses the delete delay to ~10s, which the
+    // old hour/minute floors rendered as "0 hour(s)" and "0m".
     private static string FormatDelay(TimeSpan t) =>
-        t.TotalDays >= 1 ? $"{t.TotalDays:0} day(s)" : $"{t.TotalHours:0} hour(s)";
+        t.TotalDays >= 1 ? $"{t.TotalDays:0} day(s)"
+        : t.TotalHours >= 1 ? $"{t.TotalHours:0} hour(s)"
+        : t.TotalMinutes >= 1 ? $"{t.TotalMinutes:0} minute(s)"
+        : $"{t.TotalSeconds:0} second(s)";
 
     private static string FormatRemaining(DateTime utcWhen)
     {
@@ -333,7 +338,8 @@ public partial class MainWindow : Window
         if (r <= TimeSpan.Zero) return "moments";
         if (r.TotalDays >= 1) return $"{(int)r.TotalDays}d {r.Hours}h";
         if (r.TotalHours >= 1) return $"{(int)r.TotalHours}h {r.Minutes}m";
-        return $"{(int)r.TotalMinutes}m";
+        if (r.TotalMinutes >= 1) return $"{(int)r.TotalMinutes}m";
+        return $"{(int)r.TotalSeconds}s";
     }
 
     private async Task EnterWorldAsync(int characterId)
@@ -518,6 +524,14 @@ public partial class MainWindow : Window
         TargetFrame.Visibility = Visibility.Collapsed;
         CastBar.Visibility = Visibility.Collapsed;
         DeathOverlay.Visibility = Visibility.Collapsed;
+        // The res OFFER must die with the session, not just get covered up. It lives INSIDE the death
+        // overlay, so collapsing the overlay hides it on screen while leaving its own Visibility=Visible:
+        // an unanswered offer therefore came back on the next login, riding the overlay that reappears
+        // because you log in dead — but Accept did nothing, since a resurrection offer is runtime-only
+        // state on the entity and the entity was rebuilt from the DB with no offer on it. The rescuer and
+        // their cast are long gone by then anyway, and a res is meant to stand you up where you FELL, so
+        // the right answer is to forget the offer and leave you the Respawn button (owner's option A).
+        HideResurrectPrompt();
         InventoryPanel.Visibility = Visibility.Collapsed;
         StatsPanel.Visibility = Visibility.Collapsed;
         SkillsPanel.Visibility = Visibility.Collapsed;
@@ -526,6 +540,7 @@ public partial class MainWindow : Window
         ClassPanel.Visibility = Visibility.Collapsed;
         DialogPanel.Visibility = Visibility.Collapsed;
         ShopPanel.Visibility = Visibility.Collapsed;
+        BuyQtyPanel.Visibility = Visibility.Collapsed;
         PartyPanel.Visibility = Visibility.Collapsed;
         PartyInvitePrompt.Visibility = Visibility.Collapsed;
         PartyMembers.Children.Clear();
@@ -752,10 +767,15 @@ public partial class MainWindow : Window
                 // Left-click = cast, right-click = take off the bar. Hand-wired because the slot is a
                 // Border now, not a Button. The cast fires on mouse-UP and ONLY if no drag happened —
                 // otherwise finishing a drag would also cast the skill you just moved.
+                //
+                // The "did a drag happen" test MUST be its own flag, not `_dragFromIndex < 0`: the panel
+                // clears _dragFromIndex from PreviewMouseLeftButtonUp, which TUNNELS (root→source) and so
+                // always runs BEFORE this bubbling handler. Reading it here therefore saw -1 on every
+                // click and returned — clicking a slot could never cast, keyboard-only. _dragStarted is
+                // armed at mouse-DOWN (per gesture) and only set once a real drag begins.
                 button.MouseLeftButtonUp += (_, _) =>
                 {
-                    if (_dragFromIndex < 0) return;   // a drag consumed this gesture
-                    _dragFromIndex = -1;
+                    if (_dragStarted) return;   // a drag consumed this gesture
                     UseSkill(slot);
                 };
                 button.MouseRightButtonUp += (_, _) => RemoveSkillFromBar(slotIndex);
@@ -808,6 +828,12 @@ public partial class MainWindow : Window
     private Point _dragStart;
     private int _dragFromIndex = -1;
 
+    /// <summary>Did the CURRENT press turn into a real drag? Armed (false) at mouse-down, set true only
+    /// once the drag threshold is crossed. Separate from <see cref="_dragFromIndex"/> because that gets
+    /// cleared by a tunneling handler before the slot's click handler runs — see the cast wiring in
+    /// RenderSkillBar.</summary>
+    private bool _dragStarted;
+
     private const string SkillDragFormat = "L2Clone.SkillBarSlot";
     private sealed record SkillDrag(int FromIndex, string SkillId);
 
@@ -817,6 +843,7 @@ public partial class MainWindow : Window
     {
         _dragStart = e.GetPosition(this);
         _dragFromIndex = slotIndex;
+        _dragStarted = false;   // a fresh gesture: a click until it crosses the drag threshold
     }
 
     /// <summary>Deliberately ignores the slot index of the button that raised this event — see the
@@ -834,6 +861,7 @@ public partial class MainWindow : Window
 
         int fromIndex = _dragFromIndex;
         _dragFromIndex = -1;              // one drag per press; don't re-enter while DoDragDrop pumps
+        _dragStarted = true;              // suppress the cast that would otherwise fire on the drop's mouse-up
 
         // The pressed Button still holds capture, and DoDragDrop is unreliable from a captured
         // element. Hand it back before starting the drag.
@@ -925,12 +953,7 @@ public partial class MainWindow : Window
 
         if (e.Key is Key.Escape)   // cancel current cast AND clear the current target
         {
-            _ = _net.CancelCastAsync();
-            if (_targetId is not null)
-            {
-                _targetId = null;
-                UpdateTargetFrame();
-            }
+            EscapeCancel();
             e.Handled = true;
             return;
         }
@@ -997,17 +1020,11 @@ public partial class MainWindow : Window
         _castStart = _clock.Elapsed.TotalSeconds;
         _castDuration = cast.Seconds;
 
-        // Show the effective cast-speed bonus next to the skill name.
-        string castMod = "";
-        if (_stats is StatsUpdate st)
-        {
-            // CastSpeedMult already folds in WIT, gear, masteries and buffs.
-            // (Do NOT add CastModifier again here — that double-counts WIT.)
-            float faster = (1f - st.CastSpeedMult) * 100f;
-            if (Math.Abs(faster) >= 0.5f)
-                castMod = faster > 0 ? $"  (-{faster:0}% cast)" : $"  (+{-faster:0}% cast)";
-        }
-        CastText.Text = cast.SkillName + castMod;
+        // The skill NAME only. The cast bar used to append the effective cast-speed offset
+        // ("Heal  (-71% cast)"), which is noise while you're watching a bar fill — and misleading on a
+        // FIXED-cast skill, where the offset does not apply at all. The real, current cast time lives in
+        // the skill details; the Cast Speed stat lives in the stats window (owner, 2026-07-17).
+        CastText.Text = cast.SkillName;
         CastFill.Width = 0;
         CastBar.Visibility = Visibility.Visible;
     }
@@ -1104,6 +1121,9 @@ public partial class MainWindow : Window
                 MaybeShowClassChangeNotice(dto.Level, dto.SecondClass);
                 MaybeShowThirdClassNotice(dto.Level, dto.SecondClass, dto.ThirdClass);
                 DeathOverlay.Visibility = dto.Dead ? Visibility.Visible : Visibility.Collapsed;
+                // Alive again (revived, respawned, or freshly logged in): make sure no stale offer is
+                // parked inside the overlay waiting to reappear on the next death.
+                if (!dto.Dead) HideResurrectPrompt();
             }
         }
 
@@ -1153,9 +1173,12 @@ public partial class MainWindow : Window
         {
             string classTag = dto.Kind == EntityKind.Player && dto.SecondClass > 0
                 ? $" {ClassCatalog.Get(dto.SecondClass)?.Name}" : "";
+            // "*" = this mob attacks on sight. A passive mob is safe to walk past; an aggressive one is
+            // not, and you could only find out the hard way (owner).
+            string aggro = dto.Aggressive ? "*" : "";
             visual.Label.Text = dto.Dead
-                ? $"{dto.Name} Lv{dto.Level} (dead)"
-                : $"{dto.Name}{classTag} Lv{dto.Level}";
+                ? $"{dto.Name}{aggro} Lv{dto.Level} (dead)"
+                : $"{dto.Name}{aggro}{classTag} Lv{dto.Level}";
             // Player name colour follows the PvP flag: red = PK, purple = flagged, white = innocent.
             visual.Label.Foreground = dto.Kind == EntityKind.Mob ? MobNameBrush(dto.Level)
                 : dto.Flag switch
@@ -1258,7 +1281,13 @@ public partial class MainWindow : Window
                 $"{evt.AttackerName} slew {evt.TargetName}.", ChatChannel.System));
             if (_targetId == evt.TargetId)
             {
-                _targetId = null;
+                // A dead PLAYER stays targeted so you can resurrect the ally you were just healing —
+                // dropping the target the instant they fell meant re-selecting a corpse you could no
+                // longer click. The frame renders the dead now (see UpdateTargetFrame). A dead MOB is
+                // still dropped: its corpse is about to despawn and there's nothing left to do with it.
+                bool deadPlayer = _visuals.TryGetValue(evt.TargetId, out var v) &&
+                                  v.Latest is { Kind: EntityKind.Player };
+                if (!deadPlayer) _targetId = null;
                 UpdateTargetFrame();
             }
             return;
@@ -1385,6 +1414,8 @@ public partial class MainWindow : Window
         RefreshInventoryGold();
         if (ShopPanel.Visibility == Visibility.Visible)
             RenderShop();      // keep buy affordability + gold line current
+        if (BuyQtyPanel.Visibility == Visibility.Visible)
+            RefreshBuyQty();   // the prompt stays open across buys, so its amounts must re-check gold
     }
 
     /// <summary>Show gold in the inventory, COLOUR-TIERED by amount (owner): white &lt;1kk (1M),
@@ -1418,26 +1449,31 @@ public partial class MainWindow : Window
 
     private void UpdateTargetFrame()
     {
+        // A DEAD target still shows its frame (owner, 2026-07-17). It used to require `Dead: false`, so
+        // selecting a fallen ally left you with a ghost target — the res landed on someone you couldn't
+        // see or confirm. You must be able to read who you're about to resurrect.
         if (_targetId is Guid id &&
             _visuals.TryGetValue(id, out var visual) &&
-            visual.Latest is { Dead: false } dto)
+            visual.Latest is { } dto)
         {
             TargetFrame.Visibility = Visibility.Visible;
             string classTag = dto.SecondClass > 0
                 ? $" {ClassCatalog.Get(dto.SecondClass)?.Name}" : "";
-            TargetNameText.Text = $"{dto.Name}{classTag} Lv{dto.Level}  {dto.Hp}/{dto.MaxHp}";
+            string deadTag = dto.Dead ? "  [DEAD]" : "";
+            string aggroTag = dto.Aggressive ? "*" : "";   // attacks on sight
+            TargetNameText.Text = $"{dto.Name}{aggroTag}{classTag} Lv{dto.Level}  {dto.Hp}/{dto.MaxHp}{deadTag}";
             double ratio = dto.MaxHp > 0 ? Math.Clamp((double)dto.Hp / dto.MaxHp, 0, 1) : 0;
             TargetHpFill.Width = 218 * ratio;
 
-            // Trade button only for other living players, nearby, not mid-trade.
-            bool canTrade = dto.Kind == EntityKind.Player && !_tradeActive &&
+            // Trade button only for other LIVING players, nearby, not mid-trade.
+            bool canTrade = dto.Kind == EntityKind.Player && !dto.Dead && !_tradeActive &&
                 _myDto is not null &&
                 Dist(dto.X, dto.Y, _myDto.X, _myDto.Y) <= GameConstants.TradeRange;
             TradeButton.Visibility = canTrade ? Visibility.Visible : Visibility.Collapsed;
 
-            // Party invite: any other living player not already in my party. If I'm in a
+            // Party invite: any other LIVING player not already in my party. If I'm in a
             // party, only the leader can invite (mirrors the server rule).
-            bool canInvite = dto.Kind == EntityKind.Player && id != _myId &&
+            bool canInvite = dto.Kind == EntityKind.Player && !dto.Dead && id != _myId &&
                 !_partyMemberIds.Contains(id) &&
                 (_partyMemberIds.Count == 0 || _partyIsLeader);
             PartyInviteButton.Visibility = canInvite ? Visibility.Visible : Visibility.Collapsed;
@@ -1467,10 +1503,18 @@ public partial class MainWindow : Window
         }
     }
 
-    private void TargetClear_Click(object sender, RoutedEventArgs e)
+    /// <summary>What ESC does: cancel the cast in progress AND drop the target. The target frame's ✕ is
+    /// wired to this too — closing that window IS an Escape (owner, 2026-07-17), which is why the frame
+    /// is draggable rather than something you close to get it out of the way. Previously the ✕ only
+    /// cleared the target and left a cast running, despite its "Clear target (Esc)" tooltip.</summary>
+    private void EscapeCancel()
     {
-        _targetId = null;
-        UpdateTargetFrame();
+        _ = _net.CancelCastAsync();
+        if (_targetId is not null)
+        {
+            _targetId = null;
+            UpdateTargetFrame();
+        }
     }
 
     private void TargetExpand_Click(object sender, RoutedEventArgs e)
@@ -1932,12 +1976,20 @@ public partial class MainWindow : Window
         double cw = WorldCanvas.ActualWidth;
         double ch = WorldCanvas.ActualHeight;
 
+        // SHIFT = select, never act (owner, 2026-07-17). It is the only way to pick a DEAD player — a
+        // corpse you mean to resurrect — and on the living it targets WITHOUT attacking. A corpse is
+        // deliberately unreachable by a plain click: it lies among the mobs that killed it, and a stray
+        // click there must never stop being an attack.
+        bool selectOnly = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
+
         Guid? hit = null;
         double best = ClickRadiusPx * ClickRadiusPx;
 
         foreach (var (id, visual) in _visuals)
         {
-            if (id == _myId || visual.Latest is null or { Dead: true })
+            if (id == _myId || visual.Latest is null)
+                continue;
+            if (visual.Latest is { Dead: true } && !selectOnly)
                 continue;
 
             double sx = (visual.CurX - _camX) * Scale + cw / 2;
@@ -1950,6 +2002,17 @@ public partial class MainWindow : Window
         if (hit is Guid targetId)
         {
             var latest = _visuals[targetId].Latest;
+
+            // Shift-click selects and stops there: no attack, no walk, no NPC dialog.
+            if (selectOnly)
+            {
+                if (latest is { Kind: EntityKind.Npc })
+                    return;                            // NPCs have no target frame — nothing to select
+                _pendingTalkNpcId = null;
+                _targetId = targetId;
+                UpdateTargetFrame();
+                return;
+            }
 
             // Clicking an NPC: talk if in range, else walk to it and talk on arrival.
             // (NPCs aren't put in the target frame — they have no real HP bar.)
@@ -1994,8 +2057,13 @@ public partial class MainWindow : Window
         await _net.MoveAsync((float)worldX, (float)worldY);
     }
 
-    private async void RespawnButton_Click(object sender, RoutedEventArgs e) =>
+    private async void RespawnButton_Click(object sender, RoutedEventArgs e)
+    {
+        // Respawning in town abandons any pending offer (the server drops it too) — clear it here so the
+        // block can't linger over the world for a second after you've already stood up in town.
+        HideResurrectPrompt();
         await _net.RespawnAsync();
+    }
 
     // -----------------------------------------------------------------------
     // Chat

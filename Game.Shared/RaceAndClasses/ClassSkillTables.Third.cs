@@ -124,15 +124,20 @@ public static partial class ClassSkillTables
     private static void RegisterLightbringer()
     {
         // Mage 3rd-class learn cadence: 40, 44, 48, 52.
+        // Resurrection L3/L4 are the Lightbringer's alone — every cleric learns L1/L2 from the 2nd-class
+        // table, but only the dedicated healer restores 75%/100% of a death's lost exp.
         ClassSkills.RegisterThird(Race.Human, Discipline.Lightbringer,
             new ClassSkill(LbHumanMend, 40), new ClassSkill(LbHumanPurify, 44),
-            new ClassSkill(LbBlessing, 48), new ClassSkill(LbDevotion, 52));
+            new ClassSkill(LbBlessing, 48), new ClassSkill(LbDevotion, 52),
+            new ClassSkill(Resurrection, 52, SkillLevel: 3), new ClassSkill(Resurrection, 61, SkillLevel: 4));
         ClassSkills.RegisterThird(Race.Elf, Discipline.Lightbringer,
             new ClassSkill(LbElfDawn, 40), new ClassSkill(LbElfWarden, 44),
-            new ClassSkill(LbBlessing, 48), new ClassSkill(LbDevotion, 52));
+            new ClassSkill(LbBlessing, 48), new ClassSkill(LbDevotion, 52),
+            new ClassSkill(Resurrection, 52, SkillLevel: 3), new ClassSkill(Resurrection, 61, SkillLevel: 4));
         ClassSkills.RegisterThird(Race.Ork, Discipline.Lightbringer,
             new ClassSkill(LbOrkFont, 40), new ClassSkill(LbOrkSap, 44),
-            new ClassSkill(LbBlessing, 48), new ClassSkill(LbDevotion, 52));
+            new ClassSkill(LbBlessing, 48), new ClassSkill(LbDevotion, 52),
+            new ClassSkill(Resurrection, 52, SkillLevel: 3), new ClassSkill(Resurrection, 61, SkillLevel: 4));
     }
 
     // Warchanter (Healer B) — buffer: per-race DMG + party mega-buff + party HoT + passive.

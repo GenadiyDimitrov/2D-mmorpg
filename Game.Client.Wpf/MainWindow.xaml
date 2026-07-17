@@ -133,10 +133,8 @@
                             Width="18" Height="18" Padding="0" FontSize="10"
                             HorizontalAlignment="Left" VerticalAlignment="Top"
                             ToolTip="Inspect target (stats &amp; passives)" Click="TargetExpand_Click"/>
-                    <Button x:Name="TargetClearButton" Content="✕"
-                            Width="18" Height="18" Padding="0" FontSize="10"
-                            HorizontalAlignment="Right" VerticalAlignment="Top"
-                            ToolTip="Clear target (Esc)" Click="TargetClear_Click"/>
+                    <!-- The ✕ lives in the drag strip that MainWindow.PanelChrome adds at runtime;
+                         it performs a full Escape (cancel cast + clear target). -->
                 </Grid>
                 <Border Background="#60000000" Height="9" Margin="0,5,0,4" CornerRadius="2">
                     <Rectangle x:Name="TargetHpFill" Fill="#FFCC3333"
@@ -411,22 +409,10 @@
             </StackPanel>
         </Border>
 
-        <!-- Resurrection offer prompt (a fallen player accepts/declines being revived) -->
-        <Border x:Name="ResurrectPrompt"
-                HorizontalAlignment="Center" VerticalAlignment="Center"
-                Padding="18,12"
-                Background="#F0203828" CornerRadius="8"
-                Visibility="Collapsed">
-            <StackPanel>
-                <TextBlock x:Name="ResurrectText" Foreground="White" FontSize="13"
-                           TextAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <Button Content="Resurrect" Width="90" Height="26" Margin="0,0,8,0"
-                            Click="ResurrectAccept_Click"/>
-                    <Button Content="Decline" Width="90" Height="26" Click="ResurrectDecline_Click"/>
-                </StackPanel>
-            </StackPanel>
-        </Border>
+        <!-- The resurrection offer is NOT a window of its own — it lives inside the death overlay
+             below. Both were centred, and the overlay is declared later (= drawn on top), so the
+             offer was buried underneath and its Resurrect button was physically unclickable until
+             you had already respawned. -->
 
         <!-- Trade request prompt -->
         <Border x:Name="TradePrompt"
@@ -584,7 +570,9 @@
             </StackPanel>
         </Border>
 
-        <!-- Death overlay -->
+        <!-- Death overlay — ALSO carries any pending resurrection offer, so a dead player has exactly
+             ONE window with every choice in it: revive here (Resurrect), revive in town (Respawn), or
+             refuse and wait for a better offer (Decline). -->
         <Border x:Name="DeathOverlay"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 Background="#D0300A0A" CornerRadius="10" Padding="36,24"
@@ -592,7 +580,28 @@
             <StackPanel>
                 <TextBlock Text="You died" Foreground="#FFFF8080" FontSize="28" FontWeight="Bold"
                            HorizontalAlignment="Center"/>
-                <Button x:Name="RespawnButton" Content="Respawn" Height="34" Width="140"
+
+                <!-- Shown only while an offer is pending. Declining hides just this block and leaves
+                     the Respawn button below, so refusing a 0%-exp scroll to hold out for a 100%
+                     resurrection costs you nothing. -->
+                <Border x:Name="ResurrectOfferPanel"
+                        Background="#40FFFFFF" CornerRadius="6" Padding="12,10" Margin="0,16,0,0"
+                        Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock x:Name="ResurrectText" Foreground="White" FontSize="13"
+                                   TextAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button Content="Resurrect" Width="90" Height="26" Margin="0,0,8,0"
+                                    Click="ResurrectAccept_Click"
+                                    ToolTip="Revive here, where you fell."/>
+                            <Button Content="Decline" Width="90" Height="26"
+                                    Click="ResurrectDecline_Click"
+                                    ToolTip="Refuse this resurrection and stay down (wait for a better one)."/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Button x:Name="RespawnButton" Content="Respawn in town" Height="34" Width="160"
                         Margin="0,18,0,0" FontSize="14" FontWeight="SemiBold"
                         Click="RespawnButton_Click"/>
             </StackPanel>
@@ -972,6 +981,30 @@
                     <StackPanel x:Name="ShopList"/>
                 </ScrollViewer>
             </DockPanel>
+        </Border>
+
+        <!-- Buy-quantity prompt for CONSUMABLES. Declared after ShopPanel so it draws on top of it.
+             Stays open after each purchase (buy 100, then 100 more) and closes ONLY on Cancel.
+             TODO: a real numeric entry box / on-screen numpad for arbitrary amounts (keyboard + touch). -->
+        <Border x:Name="BuyQtyPanel"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Padding="18,14" Background="#F0182838" CornerRadius="8"
+                Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock x:Name="BuyQtyText" Foreground="White" FontSize="13"
+                           TextAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button x:Name="BuyQty1" Tag="1" Content="1" Width="58" Height="28"
+                            Margin="0,0,6,0" Click="BuyQty_Click"/>
+                    <Button x:Name="BuyQty10" Tag="10" Content="10" Width="58" Height="28"
+                            Margin="0,0,6,0" Click="BuyQty_Click"/>
+                    <Button x:Name="BuyQty100" Tag="100" Content="100" Width="58" Height="28"
+                            Margin="0,0,6,0" Click="BuyQty_Click"/>
+                    <Button x:Name="BuyQty1000" Tag="1000" Content="1000" Width="58" Height="28"
+                            Margin="0,0,12,0" Click="BuyQty_Click"/>
+                    <Button Content="Cancel" Width="70" Height="28" Click="BuyQtyCancel_Click"/>
+                </StackPanel>
+            </StackPanel>
         </Border>
 
         <!-- Quest log panel -->

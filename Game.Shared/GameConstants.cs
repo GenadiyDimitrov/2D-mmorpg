@@ -41,12 +41,28 @@ public static class GameConstants
 
     /// <summary>How long a character deletion is held (a cancellable "pending delete")
     /// before it becomes permanent. Higher-level characters get a longer grace period.
-    /// Below the class-change level it's instant.</summary>
+    /// Below the class-change level it's instant.
+    ///
+    /// DEBUG builds collapse the whole ladder to <see cref="DebugCharacterDeleteSeconds"/>: while testing,
+    /// BOTH ends of the live rule get in the way — under level 20 a delete is INSTANT, so a misclick is
+    /// unrecoverable; at 20+ the character (and its NAME) is locked away for 24h-30d, so you cannot re-make
+    /// the character you just deleted. A few seconds gives an undo window AND frees the name straight after
+    /// (owner, 2026-07-17). The live ladder is unchanged for real builds.</summary>
     public static TimeSpan CharacterDeleteDelay(int level) =>
+#if DEBUG
+        TimeSpan.FromSeconds(DebugCharacterDeleteSeconds);
+#else
         level >= 76 ? TimeSpan.FromDays(30)
         : level >= 40 ? TimeSpan.FromDays(7)
         : level >= 20 ? TimeSpan.FromHours(24)
         : TimeSpan.Zero;
+#endif
+
+    /// <summary>DEBUG-only pending-delete window (see <see cref="CharacterDeleteDelay"/>). Long enough to
+    /// undo a misclick, short enough that the name is reusable moments later. The purge itself runs when
+    /// character-select next lists the account (PersistenceService.ListCharactersAsync), so the character
+    /// is really gone — and its name free — on the next refresh after this elapses.</summary>
+    public const int DebugCharacterDeleteSeconds = 10;
 
     // ----- Safe zone (town) ---------------------------------------------------
 
@@ -112,6 +128,12 @@ public static class GameConstants
     /// Stops a character stacking pointless duplicate base classes when only a few can reach a unique
     /// 3rd-class discipline. The player-facing swap rules (safe-zone-only, 5-min delay) are separate.</summary>
     public const int MaxSubclasses = 4;
+
+    /// <summary>Party EXP share band: a member more than this many levels from the KILLER earns nothing
+    /// from that kill (owner, 2026-07-17). Anti-powerlevelling — the level-weighting alone still let a
+    /// level-1 ride a level-80's kills for a trickle. Outside the band you get a flat zero, and the
+    /// in-band members split the whole reward between them. Kill-QUEST credit ignores this (range only).</summary>
+    public const int PartyExpMaxLevelGap = 9;
 
     /// <summary>Level ceiling for a normal character. ADMINS ARE EXEMPT — an admin can push past it,
     /// which is the point (testing the 85+ mob band, the top gear tier, etc. without capping the game
