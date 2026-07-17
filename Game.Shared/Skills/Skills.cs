@@ -208,10 +208,12 @@ public record SkillDef(
     public int FlatAt(int level) => Lvl(level)?.Flat ?? Flat;
     public float ModAt(int level) => Lvl(level)?.Mod ?? Mod;
 
-    /// <summary>Resolve this level's PHYSICAL {Flat, Mod}, with the legacy fallback: Mod 0 → (Flat=Power,
-    /// Mod=1) so an old skill's K·(pAtk+Power)/def is reproduced. Feed to StatCalculator.PhysicalDamageFM.</summary>
+    /// <summary>Resolve this level's PHYSICAL {Flat, Mod}. The old <c>Power</c> IS the Flat part and Mod
+    /// defaults to 1, so an untuned skill is exactly K·(Power + pAtk)/def (no change). To make a skill scale
+    /// with pAtk later, just set <c>Mod</c> (e.g. 2.0) — the Power stays as the flat FLOOR automatically;
+    /// set <c>Flat</c> only to override that floor. Feed to StatCalculator.PhysicalDamageFM.</summary>
     public (int Flat, float Mod) PhysDamageAt(int level) =>
-        ModAt(level) > 0f ? (FlatAt(level), ModAt(level)) : (PowerAt(level), 1f);
+        (FlatAt(level) > 0 ? FlatAt(level) : PowerAt(level), ModAt(level) > 0f ? ModAt(level) : 1f);
 
     /// <summary>Resolve this level's MAGIC {Flat, Mod}, with the legacy fallback: Mod 0 → (Flat=0,
     /// Mod=Power) so an old skill's K·Power·√mAtk/def is reproduced. Feed to StatCalculator.MagicDamageFM.</summary>
