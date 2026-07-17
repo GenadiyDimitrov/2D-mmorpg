@@ -71,6 +71,7 @@ Check("server pushed a skill bar", a.Bar is not null);
 //     These would look fine in-client while being wrong on the wire, so assert the protocol directly.
 // -------------------------------------------------------------------------------------------
 Guid myId = entered.EntityId;
+a.MyId = myId;
 Check("I was SPAWNED in my own delta (full entity on entry)", a.Spawned.Contains(myId));
 
 // MOVE, then expect a lean UPDATE for myself (position is a dynamic field). Static fields must NOT ride
@@ -233,10 +234,67 @@ await b.Hub.SendAsync("SwitchSubclass", subSlot);
 await b.Settle();
 Check("SUBCLASS's bar survived the relog too",
       b.Bar is not null && b.Bar.Slots.SequenceEqual(subBar));
+b.MyId = entered2.EntityId;
 
+// -------------------------------------------------------------------------------------------
+// 6. ADMIN MODERATION — jail (per-char, live + persists + pins), kick (per-char lockout). These SHIP in
+//    release, so they're authorized server-side by the caller's role; verify the behaviour, not the UI.
+// -------------------------------------------------------------------------------------------
+var gm = await ConnectAsync("admin", "admin");
+var gmChars = await gm.Hub.InvokeAsync<CharacterList>("ListCharacters");
+var gmEnter = await gm.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(gmChars.Characters[0].Id));
+Check("admin account entered the world", gmEnter.Success, gmEnter.Error);
+await gm.Settle();
+
+// JAIL the victim (b) live.
+await b.Settle();   // make sure b's position is current
+b.MyX = 0; b.MyY = 0;
+await gm.Hub.SendAsync("AdminCommand", "jail", $"{name} 60");
+await b.Settle();
+bool atJail = Math.Abs(b.MyX - GameConstants.JailX) < 50 && Math.Abs(b.MyY - GameConstants.JailY) < 50;
+Check("jailing a player teleports them to jail (live)", atJail, $"at ({b.MyX:0},{b.MyY:0})");
+
+// Jailed → can't walk out.
+float jx = b.MyX, jy = b.MyY;
+await b.Hub.SendAsync("Move", new MoveCommand(jx + 3000, jy));
+await b.Settle();
+Check("a jailed player can't move out of jail",
+      Math.Abs(b.MyX - jx) < 50 && Math.Abs(b.MyY - jy) < 50, $"moved to ({b.MyX:0},{b.MyY:0})");
+
+// JAIL PERSISTS across a relog: leave, come back, still in jail.
 await b.Hub.SendAsync("LeaveWorld");
-await Task.Delay(400);
+await Task.Delay(600);
 await b.DisposeAsync();
+var c = await ConnectAsync("test1", "test");
+var enteredC = await c.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(charId));
+c.MyId = enteredC.EntityId;
+await c.Settle();
+Check("jail SURVIVES a relog (spawns back in jail)",
+      Math.Abs(c.MyX - GameConstants.JailX) < 50 && Math.Abs(c.MyY - GameConstants.JailY) < 50,
+      $"spawned at ({c.MyX:0},{c.MyY:0})");
+
+// Release, then KICK: the character can't re-enter until the lockout passes. The kick persists the
+// lockout; the smoke client (a raw connection) doesn't act on ForceDisconnect, so leave the world
+// EXPLICITLY (as the real client would on returning to login) before trying to come back — otherwise the
+// "already online" guard fires and hides whether the kick is actually enforced.
+await gm.Hub.SendAsync("AdminCommand", "unjail", name);
+await Task.Delay(300);
+await gm.Hub.SendAsync("AdminCommand", "kick", $"{name} 60");
+await Task.Delay(400);
+await c.Hub.SendAsync("LeaveWorld");
+await Task.Delay(600);
+await c.DisposeAsync();
+var d = await ConnectAsync("test1", "test");
+var enteredD = await d.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(charId));
+Check("a KICKED character can't re-enter until the lockout passes",
+      !enteredD.Success && (enteredD.Error?.Contains("locked") ?? false), enteredD.Error);
+await d.DisposeAsync();
+
+// (No cleanup needed — every run creates a fresh Smoke<timestamp> character, so the jailed/kicked
+//  throwaway char is never reused.)
+await gm.Hub.SendAsync("LeaveWorld");
+await Task.Delay(300);
+await gm.DisposeAsync();
 
 return Finish();
 
@@ -273,6 +331,11 @@ sealed class Session : IAsyncDisposable
     public int DeltaCount;
     public void ResetDeltas() { Spawned.Clear(); Updated.Clear(); Despawned.Clear(); DeltaCount = 0; }
 
+    // Self position, tracked from delta spawns + lean updates (for jail-teleport checks). MyId is set by
+    // the test after EnterWorld.
+    public Guid MyId;
+    public float MyX, MyY;
+
     public async Task OpenAsync(string url)
     {
         Hub = new HubConnectionBuilder().WithUrl(url).Build();
@@ -281,8 +344,8 @@ sealed class Session : IAsyncDisposable
         Hub.On<SnapshotDelta>("SnapshotDelta", d =>
         {
             DeltaCount++;
-            foreach (var s in d.Spawns) Spawned.Add(s.Id);
-            foreach (var u in d.Updates) Updated.Add(u.Id);
+            foreach (var s in d.Spawns) { Spawned.Add(s.Id); if (s.Id == MyId) { MyX = s.X; MyY = s.Y; } }
+            foreach (var u in d.Updates) { Updated.Add(u.Id); if (u.Id == MyId) { MyX = u.X; MyY = u.Y; } }
             foreach (var id in d.Despawns) Despawned.Add(id);
         });
         Hub.On<ChatMessage>("Chat", m => { if (m.Channel == ChatChannel.System) Console.WriteLine($"        [SYSTEM] {m.Text}"); });

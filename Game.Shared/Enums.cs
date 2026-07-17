@@ -162,6 +162,11 @@ public enum DebuffSchool { None = 0, Physical = 1, Magical = 2 }
 /// attacked another player), Pk = red (has karma from killing innocents).</summary>
 public enum PvpFlag : byte { Innocent = 0, Flagged = 1, Pk = 2 }
 
+/// <summary>Account staff role. Player = normal; Gm/Admin get the moderation commands (jail/kick/ban)
+/// and admin tools. The server AUTHORIZES every non-debug admin action against this — unlike the DEBUG
+/// cheats, which are removed by `#if DEBUG` and never ship.</summary>
+public enum AccountRole { Player = 0, Gm = 1, Admin = 2 }
+
 /// <summary>A party member's presence, for the roster's AFK indicator. Auto = online but
 /// auto-hunting (AFK-ish); Offline = disconnected but still offline-farming in the world.</summary>
 public enum PartyMemberStatus { Online = 0, Auto = 1, Offline = 2 }

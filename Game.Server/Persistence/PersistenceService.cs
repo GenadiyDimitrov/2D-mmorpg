@@ -64,7 +64,8 @@ public class PersistenceService
             Username = username,
             PasswordHash = hash,
             PasswordSalt = salt,
-            IsAdmin = isFirst
+            Role = isFirst ? AccountRole.Admin : AccountRole.Player,
+            IsAdmin = isFirst   // derived from Role; kept in sync so existing IsAdmin plumbing works
         };
         db.Accounts.Add(account);
         await db.SaveChangesAsync();
@@ -107,8 +108,22 @@ public class PersistenceService
 
         if (account.IsBanned)
             return new AuthResult(false, "This account is banned.", 0, false);
+        if (account.BannedUntilUtc is DateTime until && until > DateTime.UtcNow)
+            return new AuthResult(false, $"This account is banned for another {Remaining(until)}.", 0, false);
 
-        return new AuthResult(true, null, account.Id, account.IsAdmin);
+        // Role is the source of truth for staff; IsAdmin (derived) may be stale on old rows.
+        return new AuthResult(true, null, account.Id, account.Role != AccountRole.Player || account.IsAdmin);
+    }
+
+    /// <summary>A short "2d 3h" / "5m" style remaining-time string for a UTC deadline.</summary>
+    private static string Remaining(DateTime utcUntil)
+    {
+        var r = utcUntil - DateTime.UtcNow;
+        if (r <= TimeSpan.Zero) return "moments";
+        if (r.TotalDays >= 1) return $"{(int)r.TotalDays}d {r.Hours}h";
+        if (r.TotalHours >= 1) return $"{(int)r.TotalHours}h {r.Minutes}m";
+        if (r.TotalMinutes >= 1) return $"{(int)r.TotalMinutes}m";
+        return $"{(int)r.TotalSeconds}s";
     }
 
     // ----- Characters --------------------------------------------------------
@@ -428,6 +443,15 @@ public class PersistenceService
         {
             entity.Hp = entity.MaxHp;
         }
+
+        // JAIL survives a relog: load the sentence, and if it's still active, spawn IN jail (so a jailed
+        // player can't escape by logging out). An expired sentence is cleared on save.
+        entity.JailedUntil = rec.JailedUntilUtc;
+        if (entity.Jailed)
+        {
+            entity.X = GameConstants.JailX;
+            entity.Y = GameConstants.JailY;
+        }
         return entity;
     }
 
@@ -462,6 +486,7 @@ public class PersistenceService
         string KnownRecipesCsv, string AutoHuntJson,
         int ActiveSubclassSlot, IReadOnlyList<SubclassSnapshot> Subclasses,
         int Karma, int PkCount, int PvpCount, int ConsecutivePk, bool DiedWhileAway,
+        DateTime? JailedUntilUtc,
         IReadOnlyList<ItemSnapshot> Items)
     {
         /// <summary>Capture a character. MUST be called on the tick thread. Returns
@@ -491,6 +516,7 @@ public class PersistenceService
                     e.AutoFarmRange, e.AutoFarmStatic, e.AutoAttackNormal, e.AutoAttackElite, e.AutoAttackBoss)),
                 e.ActiveSubclass.Slot, subs,
                 e.Karma, e.PkCount, e.PvpCount, e.ConsecutivePk, e.DiedWhileAway,
+                e.JailedUntil,
                 items);
         }
     }
@@ -561,6 +587,7 @@ public class PersistenceService
         rec.PvpCount = snap.PvpCount;
         rec.ConsecutivePk = snap.ConsecutivePk;
         rec.DiedWhileAway = snap.DiedWhileAway;
+        rec.JailedUntilUtc = snap.JailedUntilUtc;   // jail persists across a relog
         rec.X = snap.X;
         rec.Y = snap.Y;
 
@@ -639,21 +666,65 @@ public class PersistenceService
         }
     }
 
-    // ----- Admin -------------------------------------------------------------
+    // ----- Admin moderation (jail / kick / ban) — all target by CHARACTER name so they work even when
+    //        the target is offline. Return false only if the name isn't found. -----------------------
 
-    public async Task<bool> SetBannedByCharacterNameAsync(string characterName, bool banned)
+    /// <summary>Ban the ACCOUNT that owns this character until <paramref name="until"/> (null = lift).</summary>
+    public async Task<bool> BanAccountByCharacterNameAsync(string characterName, DateTime? until)
     {
         await using var db = await _factory.CreateDbContextAsync();
         var character = await db.Characters.FirstOrDefaultAsync(c => c.Name == characterName);
-        if (character is null)
-            return false;
-
+        if (character is null) return false;
         var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == character.AccountId);
-        if (account is null)
-            return false;
-
-        account.IsBanned = banned;
+        if (account is null) return false;
+        account.BannedUntilUtc = until;
+        account.IsBanned = false;   // the timed ban supersedes the legacy permanent flag
         await db.SaveChangesAsync();
         return true;
     }
+
+    /// <summary>The kick deadline for a character (if any) — checked at EnterWorld so a kicked character
+    /// can't come back until it passes, while the account plays its other characters freely.</summary>
+    public async Task<DateTime?> GetKickUntilAsync(int accountId, int characterId)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var rec = await db.Characters
+            .FirstOrDefaultAsync(c => c.Id == characterId && c.AccountId == accountId);
+        return rec?.KickedUntilUtc;
+    }
+
+    /// <summary>JAIL a character until <paramref name="until"/> (null = release).</summary>
+    public async Task<bool> SetJailAsync(string characterName, DateTime? until)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var character = await db.Characters.FirstOrDefaultAsync(c => c.Name == characterName);
+        if (character is null) return false;
+        character.JailedUntilUtc = until;
+        await db.SaveChangesAsync();
+        return true;
+    }
+
+    /// <summary>KICK a character out of the world and lock it out until <paramref name="until"/>.</summary>
+    public async Task<bool> SetKickAsync(string characterName, DateTime? until)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var character = await db.Characters.FirstOrDefaultAsync(c => c.Name == characterName);
+        if (character is null) return false;
+        character.KickedUntilUtc = until;
+        await db.SaveChangesAsync();
+        return true;
+    }
+
+    /// <summary>The characters currently jailed (name + release time), for the admin's un-jail list.</summary>
+    public async Task<List<JailedInfo>> ListJailedAsync()
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var now = DateTime.UtcNow;
+        return await db.Characters
+            .Where(c => c.JailedUntilUtc != null && c.JailedUntilUtc > now)
+            .Select(c => new JailedInfo(c.Name, c.JailedUntilUtc!.Value))
+            .ToListAsync();
+    }
+
+    public record JailedInfo(string Name, DateTime UntilUtc);
 }

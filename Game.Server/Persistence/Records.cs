@@ -17,10 +17,19 @@ public class AccountRecord
     public required string PasswordHash { get; set; }
     public required string PasswordSalt { get; set; }
 
-    /// <summary>Admins get elevated commands (ban/kick/jail, god mode).</summary>
+    /// <summary>Staff role. Admins/GMs get the moderation commands (ban/kick/jail) and admin tools.
+    /// IsAdmin is derived from this (Role != Player) so all the existing IsAdmin plumbing keeps working.</summary>
+    public AccountRole Role { get; set; } = AccountRole.Player;
+
+    /// <summary>Admins get elevated commands (ban/kick/jail, god mode). Derived from Role.</summary>
     public bool IsAdmin { get; set; }
 
+    /// <summary>Legacy permanent-ban flag (kept for compat). The timed ban is BannedUntilUtc.</summary>
     public bool IsBanned { get; set; }
+
+    /// <summary>Account is banned until this UTC time — no login until it passes (owner: ban is
+    /// per-account + timed). null = not time-banned. Checked at Login.</summary>
+    public DateTime? BannedUntilUtc { get; set; }
 
     public List<CharacterRecord> Characters { get; set; } = new();
 }
@@ -43,6 +52,14 @@ public class CharacterRecord
     /// <summary>When set, the character is scheduled for permanent deletion at this
     /// UTC time (a cancellable "pending delete"). null = active. Purged on listing.</summary>
     public DateTime? PendingDeleteAt { get; set; }
+
+    /// <summary>Character is JAILED until this UTC time (owner: jail is per-character + timed). While set,
+    /// it spawns in jail on every login and can't chat/whisper/escape. null = free.</summary>
+    public DateTime? JailedUntilUtc { get; set; }
+
+    /// <summary>Character is KICKED until this UTC time — it can't ENTER the world until it passes, though
+    /// the account can still log in and play OTHER characters (owner: kick is per-character + timed).</summary>
+    public DateTime? KickedUntilUtc { get; set; }
 
     public long Gold { get; set; }
 

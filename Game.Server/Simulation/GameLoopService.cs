@@ -580,6 +580,10 @@ public class GameLoopService : BackgroundService
         if (!TryGetPlayer(move.ConnectionId, out var entity) || entity.Dead)
             return;
 
+        // JAILED players are pinned in jail — no walking out (owner).
+        if (entity.Jailed)
+            return;
+
         // Can't move while standing up from a sit (recovery window).
         if (entity.StandUpTicks > 0)
             return;
@@ -847,6 +851,13 @@ public class GameLoopService : BackgroundService
         // Passives (armor masteries) are always-on; they can't be cast.
         if (def.Category == SkillCategory.Passive)
             return;
+
+        // JAILED players can't ESCAPE — no Return / teleport-to-town skills (owner).
+        if (caster.Jailed && def.TeleportsToTown)
+        {
+            SendSystemToEntity(caster, "You can't escape while jailed.");
+            return;
+        }
 
         // Stunned/feared casters can't act.
         if (caster.IsActionLocked)
@@ -1890,6 +1901,13 @@ public class GameLoopService : BackgroundService
             return false;
         if (SkillCatalog.Get(def.UseSkillId) is not SkillDef skill)
             return false;   // an inert consumable (a reagent like the Elemental Stone)
+
+        // JAILED players can't ESCAPE — Return scrolls (and any teleport-to-town item) are blocked (owner).
+        if (player.Jailed && skill.TeleportsToTown)
+        {
+            SendSystemToEntity(player, "You can't escape while jailed.");
+            return false;
+        }
 
         // A consumable with a CAST TIME (the Return / Resurrection scrolls) is channelled: queue the skill
         // and let the normal cast pipeline run it. It consumes the item itself (its ConsumableId) when the
@@ -3011,8 +3029,21 @@ public class GameLoopService : BackgroundService
 
     // ----- Chat -----------------------------------------------------------------------------
 
+    /// <summary>Parse an admin arg "name [minutes]" — if the LAST token is a number it's the minutes and
+    /// the rest is the (possibly multi-word) name; otherwise the whole thing is the name at the default.</summary>
+    private static (string Name, int Minutes) ParseNameMinutes(string arg, int defaultMinutes)
+    {
+        int sp = arg.LastIndexOf(' ');
+        if (sp > 0 && int.TryParse(arg[(sp + 1)..], out int m) && m > 0)
+            return (arg[..sp].Trim(), m);
+        return (arg, defaultMinutes);
+    }
+
     private void HandleAdmin(AdminCmd cmd)
     {
+        // SERVER-AUTHORIZED (owner): every moderation action re-checks the caller is staff here, in
+        // addition to the hub's session check — these SHIP in release, so authorization can't rely on a
+        // compile flag the way the DEBUG cheats do.
         if (!TryGetPlayer(cmd.ConnectionId, out var admin) || !admin.IsAdmin)
             return;
 
@@ -3023,8 +3054,8 @@ public class GameLoopService : BackgroundService
         {
             case "help":
                 SendSystemToEntity(admin,
-                    "Admin: /kick <name>, /ban <name>, /unban <name>, /jail <name>, " +
-                    "/unjail <name>, /god, /where <name>");
+                    "Admin: /jail <name> [min], /unjail <name>, /kick <name> [min], /ban <name> [min], " +
+                    "/unban <name>, /jailed, /god, /where <name>");
                 break;
 
             case "god":
@@ -3033,48 +3064,97 @@ public class GameLoopService : BackgroundService
                 break;
 
             case "kick":
-                if (FindOnlinePlayer(arg) is Entity kickTarget &&
-                    _world.EntityToConnection.TryGetValue(kickTarget.Id, out var kickConn))
+            {
+                // Per-character, timed: boot to login + lock THAT character out for the minutes given
+                // (default 10). Works offline too (persists; EnterWorld enforces it).
+                var (name, minutes) = ParseNameMinutes(arg, 10);
+                var until = DateTime.UtcNow.AddMinutes(minutes);
+                _ = Task.Run(async () =>
                 {
-                    SendSystemToEntity(kickTarget, "You have been kicked by an admin.");
-                    SaveEntity(kickTarget);
-                    _ = _hub.Clients.Client(kickConn).SendAsync("ForceDisconnect", "Kicked by admin.");
-                    BroadcastSystem($"{kickTarget.Name} was kicked.");
-                }
-                else SendSystemToEntity(admin, $"{arg} is not online.");
+                    bool ok = await _db.SetKickAsync(name, until);
+                    if (ok && FindOnlinePlayer(name) is Entity t &&
+                        _world.EntityToConnection.TryGetValue(t.Id, out var conn))
+                        _ = _hub.Clients.Client(conn).SendAsync("ForceDisconnect", $"Kicked by admin ({minutes}m).");
+                    SendSystemToEntity(admin, ok ? $"{name} kicked for {minutes}m." : $"No character '{name}'.");
+                });
                 break;
+            }
 
             case "ban":
-                BanPlayer(admin, arg, true);
+            {
+                // Per-account, timed: no login at all until it expires (default 60m). Offline-safe.
+                var (name, minutes) = ParseNameMinutes(arg, 60);
+                var until = DateTime.UtcNow.AddMinutes(minutes);
+                _ = Task.Run(async () =>
+                {
+                    bool ok = await _db.BanAccountByCharacterNameAsync(name, until);
+                    if (ok && FindOnlinePlayer(name) is Entity t &&
+                        _world.EntityToConnection.TryGetValue(t.Id, out var conn))
+                        _ = _hub.Clients.Client(conn).SendAsync("ForceDisconnect", $"Account banned ({minutes}m).");
+                    SendSystemToEntity(admin, ok ? $"{name}'s account banned for {minutes}m." : $"No character '{name}'.");
+                });
                 break;
+            }
             case "unban":
-                BanPlayer(admin, arg, false);
+            {
+                string name = arg;
+                _ = Task.Run(async () =>
+                {
+                    bool ok = await _db.BanAccountByCharacterNameAsync(name, null);
+                    SendSystemToEntity(admin, ok ? $"{name}'s account unbanned." : $"No character '{name}'.");
+                });
                 break;
+            }
 
             case "jail":
-                if (FindOnlinePlayer(arg) is Entity jailTarget)
+            {
+                // Per-character, timed. Persist so it SURVIVES a relog (load spawns them in jail), and if
+                // they're online, jail them right now.
+                var (name, minutes) = ParseNameMinutes(arg, 30);
+                var until = DateTime.UtcNow.AddMinutes(minutes);
+                if (FindOnlinePlayer(name) is Entity jailTarget)
                 {
-                    jailTarget.Jailed = true;
-                    jailTarget.X = GameConstants.JailX;
-                    jailTarget.Y = GameConstants.JailY;
-                    jailTarget.TargetX = null;
-                    jailTarget.TargetY = null;
-                    jailTarget.Engaged = false;
-                    _world.Grid.UpdatePosition(jailTarget);
-                    SendSystemToEntity(jailTarget, "You have been jailed.");
-                    SendSystemToEntity(admin, $"{jailTarget.Name} jailed.");
+                    JailNow(jailTarget, until);
+                    SendSystemToEntity(jailTarget, $"You have been jailed for {minutes} minutes.");
                 }
-                else SendSystemToEntity(admin, $"{arg} is not online.");
+                _ = Task.Run(async () =>
+                {
+                    bool ok = await _db.SetJailAsync(name, until);
+                    SendSystemToEntity(admin, ok ? $"{name} jailed for {minutes}m." : $"No character '{name}'.");
+                });
                 break;
+            }
 
             case "unjail":
-                if (FindOnlinePlayer(arg) is Entity unjailTarget)
+            {
+                string name = arg;
+                if (FindOnlinePlayer(name) is Entity unjailTarget)
                 {
-                    unjailTarget.Jailed = false;
-                    SendSystemToEntity(unjailTarget, "You have been released.");
-                    SendSystemToEntity(admin, $"{unjailTarget.Name} released.");
+                    unjailTarget.JailedUntil = null;
+                    SendSystemToEntity(unjailTarget, "You have been released from jail.");
                 }
-                else SendSystemToEntity(admin, $"{arg} is not online.");
+                _ = Task.Run(async () =>
+                {
+                    bool ok = await _db.SetJailAsync(name, null);
+                    SendSystemToEntity(admin, ok ? $"{name} released." : $"No character '{name}'.");
+                });
+                break;
+            }
+
+            case "jailed":
+                _ = Task.Run(async () =>
+                {
+                    var list = await _db.ListJailedAsync();
+                    if (list.Count == 0) { SendSystemToEntity(admin, "No characters are jailed."); return; }
+                    SendSystemToEntity(admin, $"Jailed ({list.Count}):");
+                    foreach (var j in list)
+                    {
+                        var left = j.UntilUtc - DateTime.UtcNow;
+                        string t = left.TotalHours >= 1 ? $"{(int)left.TotalHours}h {left.Minutes}m"
+                                 : $"{Math.Max(0, (int)left.TotalMinutes)}m";
+                        SendSystemToEntity(admin, $"  {j.Name} — {t} left  (/unjail {j.Name})");
+                    }
+                });
                 break;
 
             case "where":
@@ -3103,20 +3183,20 @@ public class GameLoopService : BackgroundService
             e.Kind == EntityKind.Player &&
             string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
 
-    private void BanPlayer(Entity admin, string name, bool banned)
+    /// <summary>Pin an ONLINE player in jail right now (teleport + drop combat/movement). Persistence +
+    /// the relog spawn are handled by the caller's SetJailAsync.</summary>
+    private void JailNow(Entity target, DateTime until)
     {
-        // Persist the ban (works even if the target is offline).
-        _ = Task.Run(async () =>
-        {
-            bool ok = await _db.SetBannedByCharacterNameAsync(name, banned);
-            // Kick if currently online and being banned.
-            if (ok && banned && FindOnlinePlayer(name) is Entity target &&
-                _world.EntityToConnection.TryGetValue(target.Id, out var conn))
-            {
-                _ = _hub.Clients.Client(conn).SendAsync("ForceDisconnect", "You have been banned.");
-            }
-        });
-        SendSystemToEntity(admin, $"{(banned ? "Banned" : "Unbanned")} {name}.");
+        target.JailedUntil = until;
+        target.X = GameConstants.JailX;
+        target.Y = GameConstants.JailY;
+        target.TargetX = null;
+        target.TargetY = null;
+        target.Engaged = false;
+        target.CombatTargetId = null;
+        if (target.CastingSkillId is not null) CancelCast(target, startCooldown: false);
+        _world.Grid.UpdatePosition(target);
+        SaveEntity(target);
     }
 
         private void HandleChat(ChatCmd chat)
@@ -3127,6 +3207,14 @@ public class GameLoopService : BackgroundService
         var text = chat.Text.Trim();
         if (text.Length is 0 or > 200)
             return;
+
+        // JAILED players are silenced — no chat, no whisper (owner). Admin/system messages to them still
+        // come through; this only blocks what THEY send.
+        if (sender.Jailed)
+        {
+            SendSystemToEntity(sender, "You can't speak while jailed.");
+            return;
+        }
 
         var channel = chat.Channel == ChatChannel.System ? ChatChannel.Local : chat.Channel;
 

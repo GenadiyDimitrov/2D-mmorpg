@@ -103,6 +103,17 @@ public class GameHub : Hub
                 && !e.IsOfflineFarming && !e.IsDisconnected))
             return new LoginResult(false, "That character is already online.", Guid.Empty, 0, 0);
 
+        // KICK is per-character + timed: the account can play its OTHER characters, but this one can't
+        // enter the world until the lockout passes (owner).
+        if (await _db.GetKickUntilAsync(auth.AccountId, request.CharacterId) is DateTime kickUntil
+            && kickUntil > DateTime.UtcNow)
+        {
+            var left = kickUntil - DateTime.UtcNow;
+            string t = left.TotalHours >= 1 ? $"{(int)left.TotalHours}h {left.Minutes}m"
+                     : left.TotalMinutes >= 1 ? $"{(int)left.TotalMinutes}m" : $"{(int)left.TotalSeconds}s";
+            return new LoginResult(false, $"This character is locked for another {t}.", Guid.Empty, 0, 0);
+        }
+
         var entity = await _db.LoadCharacterAsync(auth.AccountId, request.CharacterId);
         if (entity is null)
             return new LoginResult(false, "Character not found.", Guid.Empty, 0, 0);

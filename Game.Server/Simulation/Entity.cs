@@ -254,8 +254,12 @@ public class Entity
     /// <summary>God mode: takes no damage (admin only).</summary>
     public bool GodMode { get; set; }
 
-    /// <summary>Jailed players are teleported to jail and cannot move out.</summary>
-    public bool Jailed { get; set; }
+    /// <summary>Jailed players are pinned in jail and can't chat/whisper/escape until this UTC time.
+    /// Loaded from the character row so jail SURVIVES a relog (owner). null = free.</summary>
+    public DateTime? JailedUntil { get; set; }
+
+    /// <summary>True while the jail sentence is still in effect.</summary>
+    public bool Jailed => JailedUntil is DateTime u && u > DateTime.UtcNow;
 
     /// <summary>0 = none; otherwise a ClassCatalog id. PER CLASS.</summary>
     public int SecondClass

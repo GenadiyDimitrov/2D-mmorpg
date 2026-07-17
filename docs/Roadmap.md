@@ -578,6 +578,14 @@ changes and new features that came out of the play session:
 - [x] **Skill reagents/consumables** — done: `SkillDef.ConsumableId`/`ConsumableAmount`; a
   skill with a reagent checks it up front and consumes it on cast completion (refunded on
   interrupt). Empty = casts freely. No skill uses it yet — assign to "ultimate" skills.
+- [~] **Admin MODERATION — roles + jail/kick/ban (owner spec 2026-07-17, BUILDING).** Distinct from the
+  DEBUG cheats: these SHIP in release, so they are authorized SERVER-SIDE by the caller's role/IsAdmin, not
+  by `#if DEBUG`. Accounts carry a ROLE (Player/Gm/Admin; IsAdmin derives). **JAIL** (per character, timed):
+  no chat/whisper, no escape skills (TeleportsToTown), relogin respawns in jail, teleported to a fixed jail
+  spot; admin has an un-jail list. **KICK** (per character, timed): booted to login; the account can log in
+  but that char can't enter for the set time. **BAN** (per account, timed): no login until it expires.
+  Persistence: `Account.Role`/`BannedUntilUtc`, `Character.JailedUntilUtc`/`KickedUntilUtc` (⚠ schema →
+  delete game.db). See [[admin-moderation-design]].
 - [ ] **Premium class-reset item** — lets a player undo the irreversible class-chain commitment.
 - [~] **Client settings panel** — the Settings window gained a **Debug Tuning (admin)** page
   (2026-07-10): live-edit `RateConfig` (exp/sp/drop-chance/drop-amount/gold) + karma
