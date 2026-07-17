@@ -7,6 +7,17 @@ this file.
 
 ---
 
+## 🧪 NETWORK: DELTA SNAPSHOTS (built 2026-07-17) — server SmokeTest-verified, client needs eyes
+
+The world is no longer re-sent in full each tick — only spawns/updates/despawns. Behaviour should be
+IDENTICAL; this is the thing to sanity-check because WPF can't be headless-tested:
+- [ ] **Entities appear, move smoothly, and disappear normally** as you walk around (no ghosts left behind,
+      no frozen mobs, no popping in/out).
+- [ ] **Your own HP/MP/position/death** update as before; another player's name colour / level still right.
+- [ ] Walk far from a mob then back — it despawns and respawns cleanly.
+
+---
+
 ## 🧪 PLAYTEST-6 BATCH — built 2026-07-17 (no schema change, game.db fine). Restart server+client.
 
 Build 0/0, SmokeTest green. Commits e8da0f7 · 39dfab8 · 971b128 on Gena.

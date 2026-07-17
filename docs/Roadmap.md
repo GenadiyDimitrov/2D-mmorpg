@@ -698,12 +698,11 @@ changes and new features that came out of the play session:
   UI (target frame/skill bar/cast bars), then swap billboards for animated 3D models (visual-only).
 - [ ] **Line of sight** — server-side LoS using STATIC occluder data (not entities), for
   the new client. ([[client-3d-and-los-design]])
-- [ ] **Network payload optimization (deferred, owner asked 2026-07-17).** MessagePack + delta snapshots.
-  Order matters — do the biggest lever first:
-  1. **Delta / dirty-flag snapshots** (BIGGEST win). Today `WorldSnapshot` sends EVERY visible entity as a
-     FULL `EntityDto` every tick (10 Hz). Send only entities whose state changed, and only the changed
-     fields → ~80-95% smaller. Interest management (the view-range grid) already limits WHICH entities;
-     this limits how OFTEN + how MUCH per entity.
+- [~] **Network payload optimization (owner asked 2026-07-17).** MessagePack + delta snapshots.
+  1. [x] **Delta / dirty-flag snapshots — BUILT (server SmokeTest-verified; client needs the playtest).**
+     `WorldSnapshot` (full every tick) → `SnapshotDelta(Spawns full, Updates lean, Despawns)`; server diffs
+     per-connection last-sent state, client merges lean onto the cached DTO and runs the same apply path.
+     Legacy full-snapshot path kept but unused. Static fields no longer re-sent 10×/s.
   2. **MessagePack SignalR protocol** (`.AddMessagePackProtocol()` both sides, ~1 line each) — binary,
      drops repeated JSON field names, compact numbers → ~40-60% smaller per full snapshot, compounds with
      deltas. ⚠ **Two gotchas:** (a) our DTOs are positional records with `init` setters — SignalR's
