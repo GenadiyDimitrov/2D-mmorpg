@@ -7,6 +7,23 @@ this file.
 
 ---
 
+## 🧪 ADMIN + SOCIAL (built 2026-07-17/18) — ⚠ **DELETE game.db** (schema: roles/ban/kick/jail + FriendsCsv)
+
+Server bits SmokeTest-verified; the UI + follow/assist need your hands. Slash commands work now; the target
+window gained a `[...]` actions menu.
+- [ ] **Admin (as admin/admin):** `/jail <name> [min]` (target can't chat/whisper/escape, pinned in jail,
+      survives relog), `/unjail`, `/kick <name> [min]` (that character can't re-enter; the account can play
+      others), `/ban <name> [min]` (whole account can't log in), `/unban`, `/jailed` (list), `/tp <name>`
+      (teleport to them), `/god`, `/where`.
+- [ ] **Friends (any player):** `/fadd <name>`, `/frem <name>`, `/flist` (online/offline tags). When a
+      friend logs in you get **"<name> is back online"**.
+- [ ] **Target window `[...]` menu:** on another living player, the **⋯** button reveals **Follow**,
+      **Assist (take target)**, **Invite to Party**, **Request Trade** (each hidden when it doesn't apply).
+- [ ] **Follow** walks you after the player until you move/attack/they leave. **Assist** attacks whatever
+      they're attacking and points your target frame at it.
+
+---
+
 ## 🧪 NETWORK: DELTA SNAPSHOTS (built 2026-07-17) — server SmokeTest-verified, client needs eyes
 
 The world is no longer re-sent in full each tick — only spawns/updates/despawns. Behaviour should be
