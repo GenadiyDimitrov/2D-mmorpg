@@ -303,6 +303,8 @@ public static class ItemCatalog
     public const string ScrollRare = "scroll_rare";
     public const string ScrollReturn = "scroll_return";
     public const string ScrollReturnUltimate = "scroll_return_ultimate";
+    public const string ScrollResurrect = "scroll_resurrect";
+    public const string ScrollResurrectUltimate = "scroll_resurrect_ultimate";
     public const string AttrScrollCommon = "attrscroll_common";
     public const string AttrScrollUncommon = "attrscroll_uncommon";
     public const string AttrScrollRare = "attrscroll_rare";
@@ -555,6 +557,16 @@ public static class ItemCatalog
         list.Add(new ItemDef(ScrollReturnUltimate, "Ultimate Scroll of Return", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare,
             UseSkillId: SkillCatalog.ScrollReturnUltSkill,
+            Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0));
+
+        // Resurrection scrolls: used WHILE DEAD to self-revive (their skill channels a cast). Basic
+        // restores no exp (1500g vendor); the ultimate restores all lost exp (not shop-stocked).
+        list.Add(new ItemDef(ScrollResurrect, "Scroll of Resurrection", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Uncommon,
+            UseSkillId: SkillCatalog.ScrollResurrectSkill, Value: 1500, SellPriceOverride: 0));
+        list.Add(new ItemDef(ScrollResurrectUltimate, "Ultimate Scroll of Resurrection", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Rare,
+            UseSkillId: SkillCatalog.ScrollResurrectUltSkill,
             Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0));
 
         // Elemental Stone — a crafting/reagent material (not drinkable). Stacks; consumed

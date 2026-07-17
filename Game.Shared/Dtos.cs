@@ -75,6 +75,11 @@ public record ProgressUpdate(
 /// Seconds &lt;= 0 means the cast was cancelled — hide the bar.</summary>
 public record CastInfo(string SkillName, float Seconds);
 
+/// <summary>Server -> a fallen player: an ally (or a scroll) offers to resurrect you. The client shows a
+/// confirm prompt; the player accepts/declines (see ResurrectResponse) so they don't revive on top of the
+/// mob that killed them. ExpPct is the fraction of lost exp restored; ExpRestored is the resulting amount.</summary>
+public record ResurrectOffer(string FromName, float ExpPct, long ExpRestored);
+
 /// <summary>Server -> nearby clients: a MOB started casting (drives a cast bar over the mob's head,
 /// so a boss's telegraphed slam is visible/dodgeable). Seconds 0 = the cast ended/was cancelled.</summary>
 public record MobCastInfo(Guid CasterId, string SkillName, float Seconds);

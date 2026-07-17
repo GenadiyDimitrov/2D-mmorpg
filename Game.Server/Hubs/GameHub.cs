@@ -259,6 +259,20 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>Use a TARGETED consumable (a resurrection scroll) on the given entity (a dead ally).</summary>
+    public Task UsePotionOn(Guid instanceId, Guid targetId)
+    {
+        _world.Commands.Enqueue(new UsePotionCmd(Context.ConnectionId, instanceId, targetId));
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Answer a pending resurrection offer (accept = revive; decline = stay dead).</summary>
+    public Task ResurrectResponse(bool accept)
+    {
+        _world.Commands.Enqueue(new ResurrectResponseCmd(Context.ConnectionId, accept));
+        return Task.CompletedTask;
+    }
+
     public Task Enchant(Guid scrollInstanceId, Guid targetInstanceId)
     {
         _world.Commands.Enqueue(new EnchantCmd(Context.ConnectionId, scrollInstanceId, targetInstanceId));

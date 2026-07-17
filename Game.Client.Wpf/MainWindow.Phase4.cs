@@ -602,6 +602,33 @@ public partial class MainWindow
             await _net.TradeRequestAsync(id);
     }
 
+    // =======================================================================
+    // Resurrection offer (a fallen player accepts/declines being revived)
+    // =======================================================================
+
+    private void OnResurrectOffer(ResurrectOffer offer)
+    {
+        string exp = offer.ExpRestored > 0
+            ? $"\nRestores {offer.ExpPct * 100:0}% of lost experience ({offer.ExpRestored:N0})."
+            : "\nRestores none of your lost experience.";
+        ResurrectText.Text = $"{offer.FromName} offers to resurrect you.{exp}";
+        ResurrectPrompt.Visibility = Visibility.Visible;
+    }
+
+    private void HideResurrectPrompt() => ResurrectPrompt.Visibility = Visibility.Collapsed;
+
+    private async void ResurrectAccept_Click(object sender, RoutedEventArgs e)
+    {
+        HideResurrectPrompt();
+        await _net.ResurrectResponseAsync(true);
+    }
+
+    private async void ResurrectDecline_Click(object sender, RoutedEventArgs e)
+    {
+        HideResurrectPrompt();
+        await _net.ResurrectResponseAsync(false);
+    }
+
     private void OnTradeRequest(TradeRequestNotice notice)
     {
         _pendingTradeFrom = notice.FromId;
@@ -1195,6 +1222,16 @@ public partial class MainWindow
         // ignore the heal-potion cooldown (they apply a timed buff instead).
         if (ItemCatalog.IsPotion(def))
         {
+            // A resurrection scroll is used ON a dead ally (your current target), like the healer's res.
+            if (SkillCatalog.Get(def.UseSkillId) is { Resurrect: true })
+            {
+                if (_targetId is Guid rezTarget)
+                    _ = _net.UsePotionOnAsync(item.InstanceId, rezTarget);
+                else
+                    AppendChat(new ChatMessage("SYSTEM",
+                        "Select a fallen ally first, then use the scroll.", ChatChannel.System));
+                return;
+            }
             if (ItemCatalog.IsBuffPotion(def))
                 _ = _net.UsePotionAsync(item.InstanceId);
             else

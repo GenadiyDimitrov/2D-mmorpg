@@ -35,6 +35,9 @@ public static class ShopCatalog
                 // Scroll of Return (500g) — a faster escape than the free 30s Return skill. The
                 // Ultimate scroll is NOT sold here (special vendor later).
                 ItemCatalog.ScrollReturn,
+                // Scroll of Resurrection (1500g) — self-revive while dead (no exp restored). The
+                // Ultimate resurrection scroll (restores all lost exp) is NOT sold here.
+                ItemCatalog.ScrollResurrect,
                 // NOTE: enchant + attribute scrolls are intentionally DROP-ONLY (not sold).
             }),
             new ShopDef(GearMerchant, "Armsmaster", new[]

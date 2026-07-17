@@ -92,6 +92,7 @@ public class GameLoopService : BackgroundService
                 case ClassChangeCmd c: HandleClassChange(c); break;
                 case EquipCmd c: HandleEquip(c); break;
                 case UsePotionCmd c: HandleUsePotion(c); break;
+                case ResurrectResponseCmd c: HandleResurrectResponse(c); break;
                 case EnchantCmd c: HandleEnchant(c); break;
                 case RerollAttributesCmd c: HandleRerollAttributes(c); break;
                 case RemoveItemCmd c: HandleRemoveItem(c); break;
@@ -668,6 +669,23 @@ public class GameLoopService : BackgroundService
                 player.LearnedSkills[SkillCatalog.DivineFocus] = want;
         }
 
+        // Resurrection — ALL clerics (Healer 2nd class) learn L1 @20 and L2 @40; only Healers (the
+        // Lightbringer discipline) continue to L3 @52 and L4 @61. Take the highest level qualified for;
+        // never downgrade (a Lightbringer who dropped below 52 keeps L4, like the other passives).
+        if (player.Archetype == Archetype.Healer)
+        {
+            int resLvl = 0;
+            if (player.Level >= 20) resLvl = 1;
+            if (player.Level >= 40) resLvl = 2;
+            if (player.Discipline == Discipline.Lightbringer)
+            {
+                if (player.Level >= 52) resLvl = 3;
+                if (player.Level >= 61) resLvl = 4;
+            }
+            if (resLvl > 0 && player.SkillLevelOf(SkillCatalog.Resurrection) < resLvl)
+                player.LearnedSkills[SkillCatalog.Resurrection] = resLvl;
+        }
+
         // Combat "training" passive (soulshot/spiritshot stand-in): auto-granted, level chosen by
         // character level (+10%…+100% atk; see TrainingLevelFor). GATED ON THE 3RD CLASS (owner): like
         // the stat swaps, it only appears once you've taken your 3rd-class discipline, not merely at 40.
@@ -893,6 +911,21 @@ public class GameLoopService : BackgroundService
             // though a trap carries damage/CC flags (its deferred payload), it needs no live target.
             targetId = caster.Id;
         }
+        else if (def.Resurrect)
+        {
+            // Resurrection is the one skill that WANTS a dead target (a fallen ally chosen via the party
+            // window or a Shift-click corpse-select). A dead caster can't cast at all (refused above), so
+            // the skill only ever revives someone else — self-res is the scroll's job (item-use path).
+            if (cmd.TargetId is not Guid rid || rid == caster.Id ||
+                !_world.Entities.TryGetValue(rid, out var corpse) ||
+                corpse.Kind != EntityKind.Player || !corpse.Dead ||
+                DistanceSq(caster, corpse) > GameConstants.ViewRange * GameConstants.ViewRange)
+            {
+                SendSystemToEntity(caster, "Resurrection needs a fallen ally as its target.");
+                return;
+            }
+            targetId = rid;
+        }
         else if (offensive)
         {
             if (cmd.TargetId is not Guid tid ||
@@ -991,6 +1024,8 @@ public class GameLoopService : BackgroundService
         entity.Dead = false;
         entity.DiedWhileAway = false;   // the death has now been paid — clear the persisted stick-dead flag
         entity.LostExp = 0;             // town respawn = no exp restore (a resurrection would have restored it)
+        entity.PendingResFromId = null; // drop any unanswered res offer — they chose the town instead
+        entity.PendingResTicks = 0;
         entity.Hp = entity.MaxHp;
         entity.Mp = entity.MaxMp;
         entity.Buffs.Clear();
@@ -1814,22 +1849,37 @@ public class GameLoopService : BackgroundService
             return;
         var item = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
         if (item is not null)
-            UsePotion(player, item);
+            UsePotion(player, item, cmd.TargetId);
+    }
+
+    /// <summary>A dead player answered a resurrection offer. Accept → revive (restoring the offered exp);
+    /// decline → clear the offer and stay dead. A stale offer (already respawned/expired) is a no-op.</summary>
+    private void HandleResurrectResponse(ResurrectResponseCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        if (player.PendingResFromId is not Guid fromId) return;   // no pending offer
+        float pct = player.PendingResExpPct;
+        player.PendingResFromId = null;
+        player.PendingResTicks = 0;
+        if (!cmd.Accept || !player.Dead) return;                  // declined, or already revived/respawned
+        // The rescuer is only used for a courtesy line; if they've since left, the target still revives.
+        var rescuer = _world.Entities.GetValueOrDefault(fromId) ?? player;
+        ResurrectTarget(rescuer, player, pct);
     }
 
     /// <summary>Consume one potion (HP HoT/instant, or a buff potion). Shared by the manual
     /// UsePotion command and the auto-hunt auto-potion path. Returns true if something was drunk
     /// (false = not a potion, or on cooldown). Buff potions ignore the shared heal cooldown.</summary>
-    private bool UsePotion(Entity player, InventoryItem item)
+    private bool UsePotion(Entity player, InventoryItem item, Guid? targetId = null)
     {
         if (player.Dead || ItemCatalog.Get(item.DefId) is not ItemDef def || !ItemCatalog.IsPotion(def))
             return false;
         if (SkillCatalog.Get(def.UseSkillId) is not SkillDef skill)
             return false;   // an inert consumable (a reagent like the Elemental Stone)
 
-        // A consumable with a CAST TIME (the Return scrolls) is channelled: queue the skill and
-        // let the normal cast pipeline run it. It consumes the item itself (its ConsumableId) when
-        // the cast lands, and refunds it if interrupted. The skill is NOT learned — the ITEM grants it.
+        // A consumable with a CAST TIME (the Return / Resurrection scrolls) is channelled: queue the skill
+        // and let the normal cast pipeline run it. It consumes the item itself (its ConsumableId) when the
+        // cast lands, and refunds it if interrupted. The skill is NOT learned — the ITEM grants it.
         if (skill.CastTicks > 0)
         {
             if (player.CastingSkillId is not null || player.QueuedSkillId is not null)
@@ -1838,6 +1888,22 @@ public class GameLoopService : BackgroundService
             {
                 SendSystemToEntity(player, $"{skill.Name} is on cooldown.");
                 return false;
+            }
+            // A resurrection scroll targets a DEAD ALLY (like the healer's res), not the user. Validate the
+            // named target the same way the cast command does; everything else channels on the user.
+            if (skill.Resurrect)
+            {
+                if (targetId is not Guid rid || rid == player.Id ||
+                    !_world.Entities.TryGetValue(rid, out var corpse) ||
+                    corpse.Kind != EntityKind.Player || !corpse.Dead ||
+                    DistanceSq(player, corpse) > GameConstants.ViewRange * GameConstants.ViewRange)
+                {
+                    SendSystemToEntity(player, $"{skill.Name} needs a fallen ally as its target.");
+                    return false;
+                }
+                player.QueuedSkillId = skill.Id;
+                player.QueuedTargetId = rid;
+                return true;
             }
             player.QueuedSkillId = skill.Id;
             player.QueuedTargetId = player.Id;
@@ -3095,7 +3161,15 @@ public class GameLoopService : BackgroundService
                 entity.FlagState = FlagOf(entity);   // name colour for the snapshot
 
             if (entity.Dead)
+            {
+                // Expire a pending resurrection offer the player didn't answer in time.
+                if (entity.PendingResFromId is not null && --entity.PendingResTicks <= 0)
+                {
+                    entity.PendingResFromId = null;
+                    SendTo(entity, "ResurrectOfferExpired", true);
+                }
                 continue;
+            }
 
             if (entity.Kind == EntityKind.Mob)
                 MobAi(entity);
@@ -3742,7 +3816,8 @@ public class GameLoopService : BackgroundService
         Entity? target = selfTargeted ? caster
             : _world.Entities.GetValueOrDefault(targetId);
 
-        if (target is null || target.Dead ||
+        // A resurrect skill is the ONE cast that WANTS a dead target; every other skill drops it.
+        if (target is null || (target.Dead && !def.Resurrect) ||
             (!selfTargeted && DistanceSq(caster, target) >
                 GameConstants.ViewRange * GameConstants.ViewRange))
         {
@@ -3823,9 +3898,12 @@ public class GameLoopService : BackgroundService
         Entity? target = selfTargeted ? caster
             : caster.CastTargetId is Guid tid ? _world.Entities.GetValueOrDefault(tid) : null;
 
-        if (target is null || (target.Dead && target != caster))
+        // Resurrect is the ONLY skill that may target a DEAD ally; everything else needs a live target.
+        if (target is null
+            || (!def.Resurrect && target.Dead && target != caster)
+            || (def.Resurrect && !target.Dead))
         {
-            SendSystemToEntity(caster, "Target lost.");
+            SendSystemToEntity(caster, def.Resurrect ? "You can only resurrect a fallen ally." : "Target lost.");
             return;
         }
 
@@ -3864,6 +3942,14 @@ public class GameLoopService : BackgroundService
             caster.CombatTargetId = null;
             caster.QueuedSkillId = null;
             SendSystemToEntity(caster, $"You return to {town.Name}.");
+            return;
+        }
+
+        // ---- Resurrect: revive a fallen ally (or self via a scroll) to 30% HP/MP and restore ResExpPct of
+        //      the exp they lost to the death penalty, then finish. ----
+        if (def.Resurrect)
+        {
+            OfferResurrect(caster, target, def.ResExpPctAt(lvl));
             return;
         }
 
@@ -5061,6 +5147,58 @@ var effect = def.Effect;
         if (_world.EntityToConnection.TryGetValue(p.Id, out var conn))
             _ = _hub.Clients.Client(conn).SendAsync("Progress", new ProgressUpdate(
                 p.Level, p.Exp, StatCalculator.ExpToNext(p.Level), false));
+    }
+
+    /// <summary>Ticks a resurrection OFFER lingers before it auto-expires (30s at 10 t/s).</summary>
+    private const int ResurrectOfferTicks = 300;
+
+    /// <summary>Offer a resurrection to a fallen player: they see a confirm prompt (who revived them + how
+    /// much exp comes back) and must ACCEPT before actually reviving — so they don't stand up on top of the
+    /// mob that killed them. Generic on caster==target, so a future self-res reuses this same pipe.</summary>
+    private void OfferResurrect(Entity caster, Entity target, float expPct)
+    {
+        if (target is null || target.Kind != EntityKind.Player || !target.Dead) return;
+        expPct = Math.Clamp(expPct, 0f, 1f);
+        target.PendingResFromId = caster.Id;
+        target.PendingResExpPct = expPct;
+        target.PendingResTicks = ResurrectOfferTicks;
+        long wouldRestore = (long)(target.LostExp * expPct);
+        if (_world.EntityToConnection.TryGetValue(target.Id, out var conn))
+            _ = _hub.Clients.Client(conn).SendAsync("ResurrectOffer",
+                new ResurrectOffer(caster.Name, expPct, wouldRestore));
+        if (target != caster)
+            SendSystemToEntity(caster, $"You offer to resurrect {target.Name}.");
+    }
+
+    /// <summary>Revive a fallen player to 30% HP/MP and restore <paramref name="expPct"/> of the exp they
+    /// lost to the death penalty (0 for the basic scroll, 1.0 for the highest res). No-op on a living target
+    /// or a non-player (mobs are removed on death, not resurrected). The next StateUpdate (Dead=false) clears
+    /// the client's death overlay.</summary>
+    private void ResurrectTarget(Entity caster, Entity target, float expPct)
+    {
+        if (target is null || target.Kind != EntityKind.Player || !target.Dead) return;
+        target.PendingResFromId = null;
+        target.PendingResTicks = 0;
+        target.Dead = false;
+        target.RecomputeDerived();
+        target.Hp = Math.Max(1, (int)(target.MaxHp * 0.30f));
+        target.Mp = (int)(target.MaxMp * 0.30f);
+        long restore = (long)(target.LostExp * Math.Clamp(expPct, 0f, 1f));
+        target.LostExp = 0;
+        if (restore > 0)
+        {
+            target.Exp += restore;
+            SendSystemToEntity(target, $"You have been resurrected. {restore:N0} experience restored.");
+            if (_world.EntityToConnection.TryGetValue(target.Id, out var conn))
+                _ = _hub.Clients.Client(conn).SendAsync("Progress", new ProgressUpdate(
+                    target.Level, target.Exp, StatCalculator.ExpToNext(target.Level), false));
+        }
+        else
+        {
+            SendSystemToEntity(target, "You have been resurrected.");
+        }
+        if (target != caster) SendSystemToEntity(caster, "You resurrect a fallen ally.");
+        if (target.Kind == EntityKind.Player) SendStats(target);
     }
 
     private void AwardKillExp(Entity killer, Entity victim)

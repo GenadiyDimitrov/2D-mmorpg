@@ -176,7 +176,11 @@ public record SkillDef(
     bool FixedCast = false,
     bool FixedCooldown = false,
     bool FragileCast = false,
-    bool TeleportsToTown = false)
+    bool TeleportsToTown = false,
+    // Resurrect: targets a DEAD ally (or self, via a scroll) — revives them to 30% HP/MP and restores
+    // ResExpPct (0..1) of the exp they lost to the death penalty. The SkillEffect enum is full, so this
+    // rides as a flag field.
+    bool Resurrect = false, float ResExpPct = 0f)
 {
     /// <summary>The armor-mastery per-weight profile for a learned skill LEVEL, or null
     /// if this skill isn't an armor mastery.</summary>
@@ -207,6 +211,9 @@ public record SkillDef(
     public int PowerAt(int level) => Lvl(level)?.Power ?? Power;
     public int FlatAt(int level) => Lvl(level)?.Flat ?? Flat;
     public float ModAt(int level) => Lvl(level)?.Mod ?? Mod;
+    /// <summary>Resurrect skills: the fraction of lost exp restored at a given level (falls back to the
+    /// SkillDef's ResExpPct for a single-level res, e.g. the scrolls).</summary>
+    public float ResExpPctAt(int level) => Lvl(level)?.ResExpPct ?? ResExpPct;
 
     /// <summary>Resolve this level's PHYSICAL {Flat, Mod}. The old <c>Power</c> IS the Flat part and Mod
     /// defaults to 1, so an untuned skill is exactly K·(Power + pAtk)/def (no change). To make a skill scale
@@ -317,7 +324,9 @@ public record SkillLevel(
     string? Description = null,
     int InitialMpCost = -1,   // -1 = inherit the SkillDef's split (0 up front)
     // GOLD price of this level (0 = free). The stat-swap passives are bought with gold, not SP.
-    int GoldCost = 0);
+    int GoldCost = 0,
+    // Resurrect skills: fraction (0..1) of the target's lost exp restored at THIS level.
+    float ResExpPct = 0f);
 
 /// <summary>Skill window grouping. Passive = a learned, always-on effect (armor
 /// masteries, discipline passives) — never cast and never placed on the action bar.</summary>

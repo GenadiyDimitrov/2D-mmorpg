@@ -411,6 +411,23 @@
             </StackPanel>
         </Border>
 
+        <!-- Resurrection offer prompt (a fallen player accepts/declines being revived) -->
+        <Border x:Name="ResurrectPrompt"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Padding="18,12"
+                Background="#F0203828" CornerRadius="8"
+                Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock x:Name="ResurrectText" Foreground="White" FontSize="13"
+                           TextAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Content="Resurrect" Width="90" Height="26" Margin="0,0,8,0"
+                            Click="ResurrectAccept_Click"/>
+                    <Button Content="Decline" Width="90" Height="26" Click="ResurrectDecline_Click"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
         <!-- Trade request prompt -->
         <Border x:Name="TradePrompt"
                 HorizontalAlignment="Center" VerticalAlignment="Top"

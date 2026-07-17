@@ -127,6 +127,8 @@ public partial class MainWindow : Window
         _net.SelectionReceived += o => Dispatcher.BeginInvoke(() => OnSelection(o));
         _net.TargetDetailsReceived += d => Dispatcher.BeginInvoke(() => OnTargetDetails(d));
         _net.MobCastReceived += c => Dispatcher.BeginInvoke(() => OnMobCast(c));
+        _net.ResurrectOfferReceived += o => Dispatcher.BeginInvoke(() => OnResurrectOffer(o));
+        _net.ResurrectOfferExpired += () => Dispatcher.BeginInvoke(HideResurrectPrompt);
         _net.PartyInviteReceived += p => Dispatcher.BeginInvoke(() => OnPartyInvite(p));
         _net.PartyReceived += p => Dispatcher.BeginInvoke(() => OnParty(p));
         _net.PartyLootVoteReceived += v => Dispatcher.BeginInvoke(() => OnPartyLootVote(v));

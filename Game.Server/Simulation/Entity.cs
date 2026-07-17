@@ -774,6 +774,12 @@ public class Entity
     /// <summary>Exp lost on the most recent death (the 5% death penalty). A resurrection skill/scroll can
     /// restore a fraction of it; a normal town respawn discards it. Runtime only. Cleared on respawn/res.</summary>
     public long LostExp { get; set; }
+    /// <summary>A pending resurrection OFFER: the reviving entity, the fraction of lost exp it would restore,
+    /// and ticks until it auto-expires. The dead player must ACCEPT before reviving, so they don't stand up
+    /// on top of the mob that killed them. Cleared on accept/decline/expire/respawn/revive. Runtime only.</summary>
+    public Guid? PendingResFromId { get; set; }
+    public float PendingResExpPct { get; set; }
+    public int PendingResTicks { get; set; }
     /// <summary>Tick of the last damage dealt or taken — drives the 30s combat-state decay.</summary>
     public long LastCombatTick { get; set; }
 

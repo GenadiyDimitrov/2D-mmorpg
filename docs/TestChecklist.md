@@ -7,6 +7,32 @@ this file.
 
 ---
 
+## 🧪 DEATH XP PENALTY + RESURRECTION (built 2026-07-17) — no schema change (game.db from the 2026-07-16 batch is fine)
+
+Built + `dotnet build` 0/0. Death XP penalty was committed 2026-07-16; resurrection is the new part below.
+
+**Death XP penalty (2026-07-16):**
+- [ ] **Die at level 40+ → lose 5% of the level's exp** (a system line says how much). You **sit at the
+      start of the level — never delevel**. PvP death loses exp too.
+- [ ] **Below level 40 → no loss** (newbie protection). Character window shows a **"Novice's Grace"** passive
+      (display-only, no stats) up to level 40, then it disappears.
+
+**Resurrection (2026-07-17):**
+- [ ] **Cleric resurrection skill.** All clerics (Healer 2nd class) auto-learn **Resurrection** — L1 @20,
+      L2 @40; **Healers (Lightbringer)** continue to L3 @52, L4 @61. Restores **25 / 50 / 75 / 100%** of the
+      target's lost exp and revives at **30% HP/MP**. 10s (fixed) cast.
+- [ ] **Target a fallen ally, then cast** — select the dead party member in the **party window** (click their
+      roster row) and cast Resurrection. (World-corpse Shift-click is a later add; use the party window.)
+- [ ] **Confirmation prompt.** The dead player gets a **"X offers to resurrect you — restores N% exp"** popup
+      with **Resurrect / Decline** — so you don't stand up on top of the mob. Decline → stay dead. Accept →
+      revive at 30% HP/MP + exp restored. Prompt auto-expires after ~30s; a town-respawn cancels it.
+- [ ] **Resurrection scrolls** (used on a dead ally, NOT self). **Scroll of Resurrection** (Apothecary, 1500g)
+      = 10s cast, 0% exp restored. **Ultimate Scroll of Resurrection** (not vendor-stocked; debug-give
+      `scroll_resurrect_ultimate`) = ~0.5s cast, 100% restored. Select the dead ally, use the scroll → same
+      confirm prompt. Both have a 1-min reuse.
+
+---
+
 ## 🧪 BATCH TO TEST (built 2026-07-16) — ⚠ restart client+server + **DELETE game.db** (new `DiedWhileAway` column)
 
 Built + `dotnet build` 0/0 + **SmokeTest green** (main→3rd class→cross-race subclass add, gate, relog). Not

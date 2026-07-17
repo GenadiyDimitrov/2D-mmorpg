@@ -82,6 +82,8 @@ public static partial class SkillCatalog
     public const string ReturnSkill          = "return_town";        // 30s cast, 5min cd, fragile
     public const string ScrollReturnSkill    = "use_scroll_return";  // 10s cast, needs a scroll
     public const string ScrollReturnUltSkill = "use_scroll_return_ult"; // ~0.4s, needs an ult scroll
+    public const string ScrollResurrectSkill    = "use_scroll_resurrect";     // 10s self-res, 0% exp back
+    public const string ScrollResurrectUltSkill = "use_scroll_resurrect_ult"; // 0.5s self-res, 100% exp back
 
     // ---- Multi-level PASSIVE factory: a pure passive whose levels each carry a
     //      PassiveEffect (the floor/lean value for that level). ----
@@ -446,5 +448,24 @@ public static partial class SkillCatalog
             FixedCast: true, FixedCooldown: true, TeleportsToTown: true,
             ConsumableId: ItemCatalog.ScrollReturnUltimate, ConsumableAmount: 1,
             Description: "Use an Ultimate Scroll of Return: near-instant return to the nearest town."),
+
+        // ---- Resurrection scrolls (used by a LIVING player on a DEAD ally, like the healer's res) ----
+        // Basic: 10s fixed cast, 1-min reuse, revives at 30% HP/MP with NO exp restored. Consumes one scroll.
+        new(ScrollResurrectSkill, "Scroll of Resurrection", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 100, CooldownTicks: 600, Range: 600, Power: 0,
+            Category: SkillCategory.Magic, SpCost: 0,
+            FixedCast: true, FixedCooldown: true, Resurrect: true, ResExpPct: 0f,
+            ConsumableId: ItemCatalog.ScrollResurrect, ConsumableAmount: 1,
+            Description: "Channel 10s to revive a fallen ally at 30% HP and MP. Restores none of the "
+                       + "experience they lost on death. 1 min reuse."),
+
+        // Ultimate: 0.5s fixed cast, 1-min reuse, revives at 30% HP/MP and restores ALL lost exp. Consumes one.
+        new(ScrollResurrectUltSkill, "Ultimate Scroll of Resurrection", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 0, CastTicks: 5, CooldownTicks: 600, Range: 600, Power: 0,
+            Category: SkillCategory.Magic, SpCost: 0,
+            FixedCast: true, FixedCooldown: true, Resurrect: true, ResExpPct: 1f,
+            ConsumableId: ItemCatalog.ScrollResurrectUltimate, ConsumableAmount: 1,
+            Description: "Revive a fallen ally at 30% HP and MP almost instantly and restore ALL the "
+                       + "experience they lost on death. 1 min reuse."),
     };
 }

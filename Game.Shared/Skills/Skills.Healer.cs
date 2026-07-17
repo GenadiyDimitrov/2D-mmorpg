@@ -19,6 +19,7 @@ public static partial class SkillCatalog
     public const string HolyFrenzy = "holy_frenzy";  // "Frenzy" — berserk trade-off buff
     public const string CombatStance = "healer_combat_stance";  // TOGGLE: trade M.Atk for P.Atk
     public const string Antidote = "antidote";                  // cure: removes poison/venom
+    public const string Resurrection = "resurrection";          // revive a fallen ally (4 levels)
 
     /// <summary>Healer Armor Mastery per-weight data (lvls 20/25/30/35). Robe = caster lean
     /// (+MP regen / def / max MP); Light = stay-casting + sturdier (+def, slight cast cost,
@@ -250,5 +251,23 @@ public static partial class SkillCatalog
             Category: SkillCategory.Heal, InitialMpCost: 4,
             DispelMask: SkillEffect.Poison | SkillEffect.Venom,
             Description: "Cures poison and venom from an ally (or self)."),
+
+        // Resurrection — revive a fallen ally to 30% HP/MP and restore a fraction of the exp they lost to
+        // the death penalty. 4 levels (25/50/75/100%). All clerics learn L1 @20 & L2 @40; only Healers add
+        // L3 @52 & L4 @61 (grant cadence in AutoLearnCoreSkills). The target must be dead (checked at cast).
+        // Long, FIXED cast (a mid-fight res should be a real commitment, unshortened by cast speed).
+        new(Resurrection, "Resurrection", BaseClass.Mage, SkillEffect.None,
+            MpCost: 120, CastTicks: 40, CooldownTicks: 100, Range: 600, Power: 0,
+            Category: SkillCategory.Heal, InitialMpCost: 24, FixedCast: true,
+            Resurrect: true, ResExpPct: 0.25f,
+            Description: "Revives a fallen ally at 30% HP and MP and restores part of the experience they "
+                       + "lost on death (25% to 100% by level).",
+            Levels: new[]
+            {
+                new SkillLevel(MpCost: 120, InitialMpCost: 24, SpCost: 6400,  ResExpPct: 0.25f, Description: "Revive at 30% HP/MP; restore 25% of lost exp."),
+                new SkillLevel(MpCost: 150, InitialMpCost: 30, SpCost: 12800, ResExpPct: 0.50f, Description: "Revive at 30% HP/MP; restore 50% of lost exp."),
+                new SkillLevel(MpCost: 180, InitialMpCost: 36, SpCost: 25000, ResExpPct: 0.75f, Description: "Revive at 30% HP/MP; restore 75% of lost exp."),
+                new SkillLevel(MpCost: 210, InitialMpCost: 42, SpCost: 50000, ResExpPct: 1.00f, Description: "Revive at 30% HP/MP; restore 100% of lost exp."),
+            }),
     };
 }

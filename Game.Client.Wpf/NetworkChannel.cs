@@ -38,6 +38,8 @@ public class NetworkChannel : IAsyncDisposable
     public event Action<LogoutResult>? LogoutResultReceived;
     public event Action<PvpState>? PvpStateReceived;
     public event Action<DebugConfigDto>? DebugConfigReceived;
+    public event Action<ResurrectOffer>? ResurrectOfferReceived;
+    public event Action? ResurrectOfferExpired;
     public event Action<string>? Disconnected;
     public event Action<string>? ForceDisconnected;
 
@@ -80,6 +82,8 @@ public class NetworkChannel : IAsyncDisposable
         _connection.On<LogoutResult>("LogoutResult", r => LogoutResultReceived?.Invoke(r));
         _connection.On<PvpState>("PvpState", s => PvpStateReceived?.Invoke(s));
         _connection.On<DebugConfigDto>("DebugConfig", c => DebugConfigReceived?.Invoke(c));
+        _connection.On<ResurrectOffer>("ResurrectOffer", o => ResurrectOfferReceived?.Invoke(o));
+        _connection.On<bool>("ResurrectOfferExpired", _ => ResurrectOfferExpired?.Invoke());
         _connection.On<string>("ForceDisconnect", reason => ForceDisconnected?.Invoke(reason));
         _connection.Closed += ex =>
         {
@@ -184,6 +188,14 @@ public class NetworkChannel : IAsyncDisposable
 
     public Task UsePotionAsync(Guid instanceId) =>
         _connection!.SendAsync("UsePotion", instanceId);
+
+    /// <summary>Use a targeted consumable (a resurrection scroll) on a dead ally.</summary>
+    public Task UsePotionOnAsync(Guid instanceId, Guid targetId) =>
+        _connection!.SendAsync("UsePotionOn", instanceId, targetId);
+
+    /// <summary>Answer a pending resurrection offer (true = revive, false = stay dead).</summary>
+    public Task ResurrectResponseAsync(bool accept) =>
+        _connection!.SendAsync("ResurrectResponse", accept);
 
     public Task EnchantAsync(Guid scrollId, Guid targetId) =>
         _connection!.SendAsync("Enchant", scrollId, targetId);

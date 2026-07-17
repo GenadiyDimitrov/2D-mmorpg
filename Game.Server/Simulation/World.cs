@@ -180,7 +180,13 @@ public record ClassChangeCmd(string ConnectionId, int ClassId) : IGameCommand;
 public record EquipCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
 
 /// <summary>Drink a potion from the inventory.</summary>
-public record UsePotionCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
+// TargetId lets a targeted consumable (a resurrection scroll) name the DEAD ally it revives; null =
+// self/untargeted (ordinary potions).
+public record UsePotionCmd(string ConnectionId, Guid InstanceId, Guid? TargetId = null) : IGameCommand;
+
+/// <summary>A dead player's answer to a pending resurrection offer. Accept = revive (restore exp); decline
+/// = stay dead (wait out the mobs, or town-respawn).</summary>
+public record ResurrectResponseCmd(string ConnectionId, bool Accept) : IGameCommand;
 
 /// <summary>Apply an enchant scroll to a target item.</summary>
 public record EnchantCmd(string ConnectionId, Guid ScrollInstanceId, Guid TargetInstanceId) : IGameCommand;
