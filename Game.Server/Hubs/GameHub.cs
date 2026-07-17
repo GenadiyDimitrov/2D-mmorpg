@@ -435,6 +435,13 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>Friend list: action = "add" / "remove" / "list". Any player.</summary>
+    public Task FriendCommand(string action, string name)
+    {
+        _world.Commands.Enqueue(new FriendCmd(Context.ConnectionId, action, name ?? ""));
+        return Task.CompletedTask;
+    }
+
     // ----- Admin commands ----------------------------------------------------
 
     public Task AdminCommand(string command, string argument)

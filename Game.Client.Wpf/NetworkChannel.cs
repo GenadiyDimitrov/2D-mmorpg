@@ -124,6 +124,10 @@ public class NetworkChannel : IAsyncDisposable
     public Task AdminCommandAsync(string command, string argument) =>
         _connection!.SendAsync("AdminCommand", command, argument);
 
+    /// <summary>Friend list: action = "add" / "remove" / "list". Any player.</summary>
+    public Task FriendCommandAsync(string action, string name) =>
+        _connection!.SendAsync("FriendCommand", action, name);
+
     public Task MoveAsync(float targetX, float targetY) =>
         _connection!.SendAsync("Move", new MoveCommand(targetX, targetY));
 

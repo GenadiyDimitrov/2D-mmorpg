@@ -90,6 +90,34 @@ Check("a STATIC change (level-up) re-SPAWNS me, not a lean update", a.Spawned.Co
 await a.Hub.SendAsync("DebugLevel", -1);   // back to level 1 so the leveling math below still lands on 81
 await a.Settle();
 
+// -------------------------------------------------------------------------------------------
+// 1c. FRIENDS: add a seed character (Test2) as a friend, /flist shows it offline, and when Test2 comes
+//     ONLINE we get a "back online" message. Non-admin, per character.
+// -------------------------------------------------------------------------------------------
+a.SystemChat.Clear();
+await a.Hub.SendAsync("FriendCommand", "add", "Test2");
+await a.Settle();
+Check("adding a friend confirms it", a.SystemChat.Any(s => s.Contains("Added Test2")),
+      string.Join(" | ", a.SystemChat));
+
+a.SystemChat.Clear();
+await a.Hub.SendAsync("FriendCommand", "list", "");
+await a.Settle();
+Check("/flist shows the friend as offline",
+      a.SystemChat.Any(s => s.Contains("Test2") && s.Contains("offline")), string.Join(" | ", a.SystemChat));
+
+// Bring Test2 online → the friend should get a "back online" message.
+a.SystemChat.Clear();
+var friend = await ConnectAsync("test2", "test");
+var friendChars = await friend.Hub.InvokeAsync<CharacterList>("ListCharacters");
+await friend.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(friendChars.Characters[0].Id));
+await a.Settle();
+Check("a friend coming online sends a 'back online' message",
+      a.SystemChat.Any(s => s.Contains("Test2") && s.Contains("back online")), string.Join(" | ", a.SystemChat));
+await friend.Hub.SendAsync("LeaveWorld");
+await Task.Delay(400);
+await friend.DisposeAsync();
+
 int mainSlot = a.Subclasses!.Classes[0].Slot;
 var mainClass = a.Subclasses.Classes[0].BaseClass;
 
@@ -336,6 +364,9 @@ sealed class Session : IAsyncDisposable
     public Guid MyId;
     public float MyX, MyY;
 
+    // System-chat lines captured (for friend-list / "back online" assertions).
+    public readonly List<string> SystemChat = new();
+
     public async Task OpenAsync(string url)
     {
         Hub = new HubConnectionBuilder().WithUrl(url).Build();
@@ -348,7 +379,7 @@ sealed class Session : IAsyncDisposable
             foreach (var u in d.Updates) { Updated.Add(u.Id); if (u.Id == MyId) { MyX = u.X; MyY = u.Y; } }
             foreach (var id in d.Despawns) Despawned.Add(id);
         });
-        Hub.On<ChatMessage>("Chat", m => { if (m.Channel == ChatChannel.System) Console.WriteLine($"        [SYSTEM] {m.Text}"); });
+        Hub.On<ChatMessage>("Chat", m => { if (m.Channel == ChatChannel.System) { SystemChat.Add(m.Text); Console.WriteLine($"        [SYSTEM] {m.Text}"); } });
         await Hub.StartAsync();
     }
 

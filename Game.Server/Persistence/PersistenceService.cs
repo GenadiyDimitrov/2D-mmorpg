@@ -370,6 +370,9 @@ public class PersistenceService
         foreach (var rid in rec.KnownRecipesCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
             entity.KnownRecipes.Add(rid);
 
+        foreach (var fn in rec.FriendsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            entity.Friends.Add(fn);
+
         if (!string.IsNullOrEmpty(rec.ActiveQuestsJson))
         {
             try
@@ -483,7 +486,7 @@ public class PersistenceService
         int SecondClass, int ThirdClass, int SkillPoints, int Profession,
         int Con, int Atk, int Wit, int Dex, float X, float Y,
         string LearnedSkillsCsv, string CompletedQuestsCsv, string ActiveQuestsJson,
-        string KnownRecipesCsv, string AutoHuntJson,
+        string KnownRecipesCsv, string FriendsCsv, string AutoHuntJson,
         int ActiveSubclassSlot, IReadOnlyList<SubclassSnapshot> Subclasses,
         int Karma, int PkCount, int PvpCount, int ConsecutivePk, bool DiedWhileAway,
         DateTime? JailedUntilUtc,
@@ -510,6 +513,7 @@ public class PersistenceService
                 string.Join(',', e.CompletedQuests),
                 JsonSerializer.Serialize(e.ActiveQuests.Values.ToList()),
                 string.Join(',', e.KnownRecipes),
+                string.Join(',', e.Friends),
                 JsonSerializer.Serialize(new AutoHuntConfigDto(
                     e.AutoHuntEnabled, e.AutoHpPotionPct, e.AutoMpPotionPct, e.AutoBuffPotions,
                     e.AutoSkills.ToArray(), e.AutoBuffPotionIds.ToArray(),
@@ -581,6 +585,7 @@ public class PersistenceService
         rec.CompletedQuestsCsv = snap.CompletedQuestsCsv;
         rec.ActiveQuestsJson = snap.ActiveQuestsJson;
         rec.KnownRecipesCsv = snap.KnownRecipesCsv;
+        rec.FriendsCsv = snap.FriendsCsv;
         rec.AutoHuntJson = snap.AutoHuntJson;
         rec.Karma = snap.Karma;
         rec.PkCount = snap.PkCount;
@@ -681,6 +686,15 @@ public class PersistenceService
         account.IsBanned = false;   // the timed ban supersedes the legacy permanent flag
         await db.SaveChangesAsync();
         return true;
+    }
+
+    /// <summary>The canonical (case-preserved) name of a character, or null if no such character —
+    /// used to validate a /fadd target that may be offline.</summary>
+    public async Task<string?> ResolveCharacterNameAsync(string name)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var rec = await db.Characters.FirstOrDefaultAsync(c => c.Name.ToLower() == name.ToLower());
+        return rec?.Name;
     }
 
     /// <summary>The kick deadline for a character (if any) — checked at EnterWorld so a kicked character

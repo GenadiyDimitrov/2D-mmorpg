@@ -262,6 +262,9 @@ public record DebugTeleportCmd(string ConnectionId, float X, float Y) : IGameCom
 /// <summary>Admin command (kick/ban/jail/unjail/god). Validated in the hub.</summary>
 public record AdminCmd(string ConnectionId, string Command, string Argument) : IGameCommand;
 
+/// <summary>Friend-list action (add / remove / list). Any player — not admin-gated.</summary>
+public record FriendCmd(string ConnectionId, string Action, string Name) : IGameCommand;
+
 // ----- Party / grouping -----
 public record PartyInviteCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 public record PartyRespondCmd(string ConnectionId, bool Accept) : IGameCommand;

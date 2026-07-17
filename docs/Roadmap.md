@@ -578,7 +578,7 @@ changes and new features that came out of the play session:
 - [x] **Skill reagents/consumables** — done: `SkillDef.ConsumableId`/`ConsumableAmount`; a
   skill with a reagent checks it up front and consumes it on cast completion (refunded on
   interrupt). Empty = casts freely. No skill uses it yet — assign to "ultimate" skills.
-- [~] **Admin MODERATION — roles + jail/kick/ban (owner spec 2026-07-17, BUILDING).** Distinct from the
+- [x] **Admin MODERATION — roles + jail/kick/ban — BUILT 2026-07-17 (0d8fdb0, SmokeTest-verified).** Distinct from the
   DEBUG cheats: these SHIP in release, so they are authorized SERVER-SIDE by the caller's role/IsAdmin, not
   by `#if DEBUG`. Accounts carry a ROLE (Player/Gm/Admin; IsAdmin derives). **JAIL** (per character, timed):
   no chat/whisper, no escape skills (TeleportsToTown), relogin respawns in jail, teleported to a fixed jail

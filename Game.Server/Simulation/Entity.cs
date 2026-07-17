@@ -244,6 +244,10 @@ public class Entity
     /// e.g. the A-grade set recipes). Auto-known recipes are gated by level, not this set.</summary>
     public HashSet<string> KnownRecipes { get; } = new();
 
+    /// <summary>Friend CHARACTER names (case-preserved; matched case-insensitively). When a friend comes
+    /// online you get a "&lt;friend&gt; is back online" message. Per character. Persisted as a CSV.</summary>
+    public HashSet<string> Friends { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>NPC id this entity represents (NPCs only).</summary>
     public string? NpcId { get; set; }
     public NpcRole NpcRole { get; set; }

@@ -2390,6 +2390,23 @@ public partial class MainWindow : Window
             return;
         }
 
+        // Friend slash-commands (ANY player): /fadd <name>, /frem <name>, /flist.
+        if (raw.StartsWith("/fadd ", StringComparison.OrdinalIgnoreCase))
+        {
+            await _net.FriendCommandAsync("add", raw[6..].Trim());
+            return;
+        }
+        if (raw.StartsWith("/frem ", StringComparison.OrdinalIgnoreCase))
+        {
+            await _net.FriendCommandAsync("remove", raw[6..].Trim());
+            return;
+        }
+        if (raw.Equals("/flist", StringComparison.OrdinalIgnoreCase))
+        {
+            await _net.FriendCommandAsync("list", "");
+            return;
+        }
+
         // Admin slash-commands (only sent if server granted admin).
         if (_isAdmin && raw.StartsWith('/') &&
             !raw.StartsWith("/w ", StringComparison.OrdinalIgnoreCase))

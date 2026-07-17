@@ -70,6 +70,7 @@ public class GameLoopService : BackgroundService
             {
                 case EnterWorldCommand c: HandleEnterWorld(c); break;
                 case AdminCmd c: HandleAdmin(c); break;
+                case FriendCmd c: HandleFriend(c); break;
                 case LeaveCommand c: HandleLeave(c); break;
                 case MoveCmd c: HandleMove(c); break;
                 case AttackCmd c: HandleAttack(c); break;
@@ -191,6 +192,7 @@ public class GameLoopService : BackgroundService
             SendPartyUpdate(rejoinParty);   // clear the offline icon for the rest of the party
         if (entity.IsAdmin)
             SendSystemToEntity(entity, "Admin privileges active. Type /help for commands.");
+        NotifyFriendsOnline(entity);   // "X is back online" to online players who friended them
         BroadcastSystem($"{entity.Name} entered the world.");
         _log.LogInformation("Player {Name} entered (char {Id})", entity.Name, entity.PersistentId);
     }
@@ -3055,7 +3057,7 @@ public class GameLoopService : BackgroundService
             case "help":
                 SendSystemToEntity(admin,
                     "Admin: /jail <name> [min], /unjail <name>, /kick <name> [min], /ban <name> [min], " +
-                    "/unban <name>, /jailed, /god, /where <name>");
+                    "/unban <name>, /jailed, /tp <name>, /god, /where <name>");
                 break;
 
             case "god":
@@ -3157,6 +3159,19 @@ public class GameLoopService : BackgroundService
                 });
                 break;
 
+            case "tp":
+                // Teleport the ADMIN to a named online player (admin-only movement aid).
+                if (FindOnlinePlayer(arg) is Entity dest)
+                {
+                    PlaceEntity(admin, dest.X + _rng.Next(-60, 60), dest.Y + _rng.Next(-60, 60));
+                    admin.TargetX = null;
+                    admin.TargetY = null;
+                    admin.Engaged = false;
+                    SendSystemToEntity(admin, $"Teleported to {dest.Name}.");
+                }
+                else SendSystemToEntity(admin, $"{arg} is not online.");
+                break;
+
             case "where":
                 if (FindOnlinePlayer(arg) is Entity who)
                     SendSystemToEntity(admin, $"{who.Name} is at ({(int)who.X}, {(int)who.Y}).");
@@ -3182,6 +3197,63 @@ public class GameLoopService : BackgroundService
         _world.Entities.Values.FirstOrDefault(e =>
             e.Kind == EntityKind.Player &&
             string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Friend list add / remove / list (per character). NOT admin-gated. "list" reports online
+    /// status; add validates the name is a real character (even offline).</summary>
+    private void HandleFriend(FriendCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var p)) return;
+        var name = cmd.Name.Trim();
+
+        switch (cmd.Action.ToLowerInvariant())
+        {
+            case "add":
+                if (name.Length == 0) return;
+                if (string.Equals(name, p.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    SendSystemToEntity(p, "You can't add yourself.");
+                    return;
+                }
+                // Validate the target exists (may be offline) on a worker; add the CANONICAL name.
+                _ = Task.Run(async () =>
+                {
+                    string? canonical = await _db.ResolveCharacterNameAsync(name);
+                    if (canonical is null) { SendSystemToEntity(p, $"No character '{name}'."); return; }
+                    if (!p.Friends.Add(canonical)) { SendSystemToEntity(p, $"{canonical} is already a friend."); return; }
+                    SaveEntity(p);
+                    string tag = FindOnlinePlayer(canonical) is not null ? " [online]" : "";
+                    SendSystemToEntity(p, $"Added {canonical} to friends{tag}.");
+                });
+                break;
+
+            case "remove":
+                var toRemove = p.Friends.FirstOrDefault(f => string.Equals(f, name, StringComparison.OrdinalIgnoreCase));
+                if (toRemove is not null && p.Friends.Remove(toRemove))
+                {
+                    SaveEntity(p);
+                    SendSystemToEntity(p, $"Removed {toRemove} from friends.");
+                }
+                else SendSystemToEntity(p, $"{name} is not on your friend list.");
+                break;
+
+            case "list":
+                if (p.Friends.Count == 0) { SendSystemToEntity(p, "Your friend list is empty."); return; }
+                SendSystemToEntity(p, $"Friends ({p.Friends.Count}):");
+                foreach (var f in p.Friends.OrderBy(x => x))
+                    SendSystemToEntity(p, $"  {f} {(FindOnlinePlayer(f) is not null ? "[online]" : "[offline]")}");
+                break;
+        }
+    }
+
+    /// <summary>When a player enters the world, tell any ONLINE player who has them as a friend that
+    /// they're back. Called from HandleEnterWorld.</summary>
+    private void NotifyFriendsOnline(Entity entered)
+    {
+        foreach (var other in _world.Entities.Values)
+            if (other.Kind == EntityKind.Player && other.Id != entered.Id
+                && other.Friends.Contains(entered.Name))
+                SendSystemToEntity(other, $"{entered.Name} is back online.");
+    }
 
     /// <summary>Pin an ONLINE player in jail right now (teleport + drop combat/movement). Persistence +
     /// the relog spawn are handled by the caller's SetJailAsync.</summary>
