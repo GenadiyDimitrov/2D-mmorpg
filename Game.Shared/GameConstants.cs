@@ -6,6 +6,14 @@ namespace Game.Shared;
 /// </summary>
 public static class GameConstants
 {
+    /// <summary>The game/build version — ONE source of truth shared by server and client (both compile
+    /// this constant in). Shown on the login screen and logged by the server at startup, and checked at
+    /// login: a client whose version differs from the server's is rejected ("please update"), which
+    /// matters because an out-of-date client speaks an out-of-date protocol (see the delta-snapshot /
+    /// DTO changes). BUMP THIS whenever the wire protocol or DB schema changes in a way that breaks an old
+    /// client. Semantic-ish: MAJOR.MINOR.PATCH.</summary>
+    public const string GameVersion = "0.1.0";
+
     /// <summary>Display name of the in-game currency. Generic on purpose (no IP);
     /// change here to rebrand everywhere it's shown.</summary>
     public const string CurrencyName = "Gold";

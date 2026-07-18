@@ -32,6 +32,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.MapHub<GameHub>("/game");
-app.MapGet("/", () => "Game server is running. Hub endpoint: /game");
+app.MapGet("/", () => $"Game server v{Game.Shared.GameConstants.GameVersion} is running. Hub endpoint: /game");
+app.MapGet("/version", () => Game.Shared.GameConstants.GameVersion);
 
+app.Logger.LogInformation("L2Clone server v{Version} starting.", Game.Shared.GameConstants.GameVersion);
 app.Run();

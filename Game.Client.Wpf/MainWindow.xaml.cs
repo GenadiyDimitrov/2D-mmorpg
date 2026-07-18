@@ -105,6 +105,7 @@ public partial class MainWindow : Window
         };
 
         WhisperNames.ItemsSource = _whisperNames;
+        VersionText.Text = $"v{GameConstants.GameVersion}";
         EnableMovablePanels();   // drag strip + ✕ + click-to-raise on every popup
         BuildCreationTree();
         _ = ConnectToServerAsync();

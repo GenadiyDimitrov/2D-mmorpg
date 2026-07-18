@@ -29,7 +29,8 @@ async Task<Session> ConnectAsync(string user, string pass)
 {
     var s = new Session();
     await s.OpenAsync(Url);
-    var auth = await s.Hub.InvokeAsync<AuthResponse>("Login", new AuthRequest(user, pass));
+    var auth = await s.Hub.InvokeAsync<AuthResponse>("Login",
+        new AuthRequest(user, pass), GameConstants.GameVersion);
     if (!auth.Success) throw new Exception($"login failed: {auth.Error}");
     return s;
 }
@@ -41,6 +42,16 @@ Console.WriteLine();
 // -------------------------------------------------------------------------------------------
 // 1. Log in, enter the world.
 // -------------------------------------------------------------------------------------------
+// Version handshake: a client on a different version is rejected (an old client speaks an old protocol).
+{
+    var vs = new Session();
+    await vs.OpenAsync(Url);
+    var bad = await vs.Hub.InvokeAsync<AuthResponse>("Login",
+        new AuthRequest("test1", "test"), "0.0.0-wrong");
+    Check("a client on the wrong version is rejected at login", !bad.Success, bad.Error);
+    await vs.DisposeAsync();
+}
+
 var a = await ConnectAsync("test1", "test");
 
 // A FRESH character every run. The test mutates the character it plays (adds a subclass, levels it),

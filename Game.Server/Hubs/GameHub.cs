@@ -29,21 +29,31 @@ public class GameHub : Hub
 
     // ----- Auth --------------------------------------------------------------
 
-    public async Task<AuthResponse> Register(AuthRequest request)
+    public async Task<AuthResponse> Register(AuthRequest request, string clientVersion = "")
     {
+        if (VersionMismatch(clientVersion) is string v) return new AuthResponse(false, v, false);
         var result = await _db.RegisterAsync(request.Username, request.Password);
         if (result.Success)
             Sessions[Context.ConnectionId] = new AuthState(result.AccountId, result.IsAdmin);
         return new AuthResponse(result.Success, result.Error, result.IsAdmin);
     }
 
-    public async Task<AuthResponse> Login(AuthRequest request)
+    public async Task<AuthResponse> Login(AuthRequest request, string clientVersion = "")
     {
+        if (VersionMismatch(clientVersion) is string v) return new AuthResponse(false, v, false);
         var result = await _db.LoginAsync(request.Username, request.Password);
         if (result.Success)
             Sessions[Context.ConnectionId] = new AuthState(result.AccountId, result.IsAdmin);
         return new AuthResponse(result.Success, result.Error, result.IsAdmin);
     }
+
+    /// <summary>Reject a client whose version differs from the server's — an out-of-date client speaks an
+    /// out-of-date protocol. An EMPTY version (a dev tool / old build that doesn't send one) is allowed
+    /// through, so this never blocks local testing; real clients always send GameConstants.GameVersion.</summary>
+    private static string? VersionMismatch(string clientVersion) =>
+        string.IsNullOrEmpty(clientVersion) || clientVersion == GameConstants.GameVersion
+            ? null
+            : $"Client out of date (v{clientVersion}). Please update to v{GameConstants.GameVersion}.";
 
     // ----- Character selection ----------------------------------------------
 

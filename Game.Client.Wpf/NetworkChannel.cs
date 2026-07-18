@@ -98,11 +98,12 @@ public class NetworkChannel : IAsyncDisposable
         await _connection.StartAsync();
     }
 
+    // Pass our compiled-in version so the server can reject an out-of-date client (stale protocol).
     public Task<AuthResponse> RegisterAsync(string username, string password) =>
-        _connection!.InvokeAsync<AuthResponse>("Register", new AuthRequest(username, password));
+        _connection!.InvokeAsync<AuthResponse>("Register", new AuthRequest(username, password), GameConstants.GameVersion);
 
     public Task<AuthResponse> LoginAsync(string username, string password) =>
-        _connection!.InvokeAsync<AuthResponse>("Login", new AuthRequest(username, password));
+        _connection!.InvokeAsync<AuthResponse>("Login", new AuthRequest(username, password), GameConstants.GameVersion);
 
     public Task<CharacterList> ListCharactersAsync() =>
         _connection!.InvokeAsync<CharacterList>("ListCharacters");

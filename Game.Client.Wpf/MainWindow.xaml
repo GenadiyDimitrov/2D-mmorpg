@@ -635,6 +635,8 @@
                 Background="#E0141C28" CornerRadius="10" Padding="24">
             <StackPanel>
                 <TextBlock Text="L2-like" Foreground="White" FontSize="26" FontWeight="Bold"
+                           HorizontalAlignment="Center" Margin="0,0,0,0"/>
+                <TextBlock x:Name="VersionText" Foreground="#FF6E7C8A" FontSize="10"
                            HorizontalAlignment="Center" Margin="0,0,0,4"/>
                 <TextBlock x:Name="AccountModeText" Text="Log in to your account"
                            Foreground="#FFB9C4CC" FontSize="13"
