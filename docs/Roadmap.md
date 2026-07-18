@@ -6,6 +6,10 @@ Claude keeps this updated as work moves between buckets.
 
 Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` done (kept briefly for context).
 
+**Version: `GameConstants.GameVersion` (currently 0.1.0).** Single shared constant; shown on login +
+`GET /version`; login handshake rejects mismatched clients. **BUMP it on any wire-protocol or DB-schema
+break** (that's what forces a client update). PATCH = safe, MINOR/MAJOR = breaking.
+
 ---
 
 ## NOW (active / immediate)
