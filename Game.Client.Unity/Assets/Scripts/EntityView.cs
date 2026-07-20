@@ -18,6 +18,8 @@ namespace Game.Client
         private Vector3 _target;
         private Transform _cam;
         private Renderer _renderer;
+        private Color _color = Color.white;
+        private bool _dead;
 
         public void Init(Color color)
         {
@@ -27,10 +29,33 @@ namespace Game.Client
                 // Unlit so it reads the same at any camera angle (no scene lighting set up yet).
                 var shader = Shader.Find("Unlit/Color");
                 if (shader != null) _renderer.material = new Material(shader);
-                _renderer.material.color = color;
             }
+            SetColor(color);
             _cam = Camera.main != null ? Camera.main.transform : null;
             _target = transform.position;
+            transform.position = _target;
+        }
+
+        public void SetColor(Color color)
+        {
+            if (_color == color && _renderer != null) return;
+            _color = color;
+            Apply();
+        }
+
+        /// <summary>Corpses stay visible but dim — a kill should read as "that thing died", not as
+        /// an entity mysteriously popping out of existence.</summary>
+        public void SetDead(bool dead)
+        {
+            if (_dead == dead) return;
+            _dead = dead;
+            Apply();
+        }
+
+        private void Apply()
+        {
+            if (_renderer == null || _renderer.material == null) return;
+            _renderer.material.color = _dead ? _color * 0.3f : _color;
         }
 
         /// <summary>Set the newest server position (ground plane); height is added here.</summary>

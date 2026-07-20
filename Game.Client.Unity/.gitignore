@@ -1,4 +1,5 @@
-# Unity-generated — only Assets/ (scripts) + README are source here.
+# Unity project: SOURCE is tracked (Assets/, ProjectSettings/, Packages/manifest), the rest is
+# generated. Same policy as the WPF project — source in, build output out.
 [Ll]ibrary/
 [Tt]emp/
 [Oo]bj/
@@ -7,8 +8,21 @@
 [Ll]ogs/
 [Uu]ser[Ss]ettings/
 [Mm]emoryCaptures/
+
+# IL2CPP / CMake scratch for the Android build.
+.utmp/
+
+# Game.Shared is BUILD OUTPUT, copied in automatically by the server-side build — never source.
+# The .meta goes with it: Unity regenerates one, and nothing references the DLL by GUID.
 Assets/Plugins/Game.Shared.dll
+Assets/Plugins/Game.Shared.dll.meta
+Assets/Plugins/Game.Shared.pdb
+Assets/Plugins/Game.Shared.pdb.meta
+
+# NuGet-restored (NuGetForUnity rebuilds these from Assets/packages.config).
 Assets/Packages/
+Assets/Packages.meta
+
 *.csproj
 *.sln
 *.user

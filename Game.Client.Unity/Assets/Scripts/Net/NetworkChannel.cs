@@ -16,6 +16,10 @@ namespace Game.Client
         private HubConnection _connection;
 
         public event Action<WorldSnapshot> SnapshotReceived;
+        /// <summary>The LIVE world feed. The server stopped sending full "Snapshot" frames long ago —
+        /// it sends deltas (spawn/update/despawn). Subscribing only to SnapshotReceived means an
+        /// eternally empty world, which is exactly how this client behaved before.</summary>
+        public event Action<SnapshotDelta> SnapshotDeltaReceived;
         public event Action<ChatMessage> ChatReceived;
         public event Action<CombatEvent> CombatReceived;
         public event Action<ProgressUpdate> ProgressReceived;
@@ -41,6 +45,7 @@ namespace Game.Client
                 .Build();
 
             _connection.On<WorldSnapshot>("Snapshot", s => SnapshotReceived?.Invoke(s));
+            _connection.On<SnapshotDelta>("SnapshotDelta", d => SnapshotDeltaReceived?.Invoke(d));
             _connection.On<ChatMessage>("Chat", m => ChatReceived?.Invoke(m));
             _connection.On<CombatEvent>("Combat", c => CombatReceived?.Invoke(c));
             _connection.On<ProgressUpdate>("Progress", p => ProgressReceived?.Invoke(p));
@@ -64,11 +69,14 @@ namespace Game.Client
         }
 
         // ----- Auth + character flow -----
+        // The version argument is the handshake from GameConstants.GameVersion: the server rejects a
+        // client whose version differs (an out-of-date client speaks an out-of-date protocol). Because
+        // Game.Shared is compiled INTO this client, sending the constant can never drift out of sync.
         public Task<AuthResponse> RegisterAsync(string username, string password) =>
-            _connection.InvokeAsync<AuthResponse>("Register", new AuthRequest(username, password));
+            _connection.InvokeAsync<AuthResponse>("Register", new AuthRequest(username, password), GameConstants.GameVersion);
 
         public Task<AuthResponse> LoginAsync(string username, string password) =>
-            _connection.InvokeAsync<AuthResponse>("Login", new AuthRequest(username, password));
+            _connection.InvokeAsync<AuthResponse>("Login", new AuthRequest(username, password), GameConstants.GameVersion);
 
         public Task<CharacterList> ListCharactersAsync() =>
             _connection.InvokeAsync<CharacterList>("ListCharacters");
@@ -94,6 +102,12 @@ namespace Game.Client
 
         public Task LeaveWorldAsync() =>
             _connection.SendAsync("LeaveWorld");
+
+        public Task ChatAsync(string text, ChatChannel channel = ChatChannel.Local) =>
+            _connection.SendAsync("Chat", text, channel, null);
+
+        public Task RespawnAsync() =>
+            _connection.SendAsync("Respawn");
 
         public async ValueTask DisposeAsync()
         {

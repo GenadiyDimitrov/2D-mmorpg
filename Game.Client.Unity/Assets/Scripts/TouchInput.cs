@@ -6,14 +6,23 @@ namespace Game.Client
     /// Tap/click to play: tapping an entity targets + attacks it; tapping the ground walks there.
     /// Works with touch (phone) and mouse (editor). Raycasts against entity BoxColliders first,
     /// then falls back to the ground plane (y = 0).
+    ///
+    /// Taps that land on the HUD are ignored — otherwise pressing "Login" would also queue a walk
+    /// to whatever ground happened to be under the button.
     /// </summary>
     public class TouchInput : MonoBehaviour
     {
         public GameBoot Boot;
+        public GameHud Hud;
+
+        private void Awake()
+        {
+            if (Hud == null) Hud = FindAnyObjectByType<GameHud>();
+        }
 
         private void Update()
         {
-            if (Boot == null) return;
+            if (Boot == null || Boot.Phase != ClientPhase.InWorld) return;
 
             bool tapped = false;
             Vector2 screen = default;
@@ -28,6 +37,9 @@ namespace Game.Client
                 screen = Input.mousePosition;
             }
             if (!tapped) return;
+
+            if (Hud == null) Hud = FindAnyObjectByType<GameHud>();
+            if (Hud != null && Hud.BlocksScreenPoint(screen)) return;
 
             var cam = Camera.main;
             if (cam == null) return;

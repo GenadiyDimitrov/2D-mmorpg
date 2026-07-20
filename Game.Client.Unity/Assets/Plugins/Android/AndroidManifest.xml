@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- The app talks to the game server over the network. Unity usually adds this itself once it sees
+         networking code, but declaring it here means it can't go missing. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- android:usesCleartextTraffic="true" is what your question 4.2 was about: it goes as an ATTRIBUTE
+         on <application>, not as its own element. Since Android 9 (API 28) plain HTTP is blocked by
+         default, and our dev server is http://<pc-ip>:5238 — without this the phone fails to connect
+         with a bare "cleartext not permitted" and nothing else to go on.
+         DEV ONLY: put the server behind HTTPS for a real release and delete this attribute. -->
+    <application android:usesCleartextTraffic="true">
+        <!--Used when Application Entry is set to Activity, otherwise remove this activity block-->
+        <activity android:name="com.unity3d.player.UnityPlayerActivity"
+                  android:theme="@style/UnityThemeSelector">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
+        </activity>
+        <!--Used when Application Entry is set to GameActivity, otherwise remove this activity block-->
+        <activity android:name="com.unity3d.player.UnityPlayerGameActivity"
+                  android:theme="@style/BaseUnityGameActivityTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
+            <meta-data android:name="android.app.lib_name" android:value="game" />
+        </activity>
+    </application>
+</manifest>
