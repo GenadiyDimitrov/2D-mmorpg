@@ -133,8 +133,11 @@ public static class GameConstants
 
     /// <summary>Skill-bar slots — 5 rows of 12. The bar is ONE FLAT collection of ids; "rows" are purely a
     /// client visualization (it slices this list into chunks of <see cref="SkillBarColumns"/>). Shared,
-    /// because the SERVER owns the bar and auto-places newly-learned skills — see SyncSkillBar. Old saved
-    /// bars are shorter and just pad with empties on load.</summary>
+    /// because the SERVER owns the bar — see SyncSkillBar. Old saved bars are shorter and just pad with
+    /// empties on load.
+    ///
+    /// The server no longer AUTO-PLACES newly-learned skills (owner, 2026-07-20): it only validates.
+    /// See SyncSkillBar for why.</summary>
     public const int SkillBarSlots = 60;
 
     /// <summary>Slots per visual row (the client draws up to 5 rows of this).</summary>
@@ -148,6 +151,36 @@ public static class GameConstants
     public static bool IsItemSlot(string? id) => id is not null && id.StartsWith(SkillBarItemPrefix, StringComparison.Ordinal);
     public static string ItemSlotToken(string defId) => SkillBarItemPrefix + defId;
     public static string ItemSlotDefId(string token) => token.Substring(SkillBarItemPrefix.Length);
+
+    /// <summary>A bar slot may also hold a built-in ACTION: "action:&lt;id&gt;". These are not skills —
+    /// they cost nothing, have no cooldown and are never learned — but they belong on the bar because
+    /// they are the two things you press constantly. They are the ONLY entries a new character starts
+    /// with (owner, 2026-07-20). Like item slots, SyncSkillBar must not treat them as unknown skills.</summary>
+    public const string SkillBarActionPrefix = "action:";
+    public static bool IsActionSlot(string? id) => id is not null && id.StartsWith(SkillBarActionPrefix, StringComparison.Ordinal);
+    public static string ActionSlotToken(string actionId) => SkillBarActionPrefix + actionId;
+    public static string ActionSlotId(string token) => token.Substring(SkillBarActionPrefix.Length);
+
+    // Action ids. The catalog that describes them (name, icon, what they need) is ActionCatalog.
+    public const string ActionBasicAttack   = "basic_attack";
+    public const string ActionTargetClosest = "target_closest";
+    public const string ActionSitStand      = "sit_stand";
+    public const string ActionRunWalk       = "run_walk";
+    public const string ActionTradeTarget   = "trade_target";
+    public const string ActionPartyInvite   = "party_invite";
+    public const string ActionFollowTarget  = "follow_target";
+    public const string ActionAssistTarget  = "assist_target";
+
+    // A new character starts with a COMPLETELY EMPTY bar (owner, 2026-07-20). Nothing is placed for
+    // you — not skills, not even the actions. The player builds their own bar from the skills window's
+    // Skills and Actions tabs.
+
+    // ----- Target-closest search radius (client preference) -----------------------
+
+    /// <summary>Default radius for the "target closest" action.</summary>
+    public const float TargetSearchRangeDefault = 1000f;
+    public const float TargetSearchRangeMin = 400f;
+    public const float TargetSearchRangeMax = 1500f;
 
     public const int ClassChangeLevel = 20;
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using Game.Shared;
 
 namespace Game.Client.Wpf;
 
@@ -43,6 +44,19 @@ public class ClientSettings
     /// <summary>How many skill-bar rows the player chose to show (1-5). 0 = auto-fit to the highest
     /// occupied slot. The bar data itself is always 60 slots; this is display only.</summary>
     public int SkillBarRows { get; set; }
+
+    /// <summary>Search radius for the "target closest" action, in world units. A PREFERENCE, not a game
+    /// rule — it only decides how far the client looks when picking a target, so it belongs on this
+    /// machine rather than in the character row. Clamped to
+    /// [<see cref="GameConstants.TargetSearchRangeMin"/>, <see cref="GameConstants.TargetSearchRangeMax"/>]
+    /// on read, so a hand-edited file can't set it to something silly.</summary>
+    public double TargetSearchRange
+    {
+        get => Math.Clamp(_targetSearchRange, GameConstants.TargetSearchRangeMin,
+                                              GameConstants.TargetSearchRangeMax);
+        set => _targetSearchRange = value;
+    }
+    private double _targetSearchRange = GameConstants.TargetSearchRangeDefault;
 
     private static string FilePath =>
         Path.Combine(AppContext.BaseDirectory, "client-settings.json");

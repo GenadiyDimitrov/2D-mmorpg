@@ -174,9 +174,9 @@ public class PersistenceService
     /// quietly stops matching the game is worse than no seed: you'd be balance-testing gear that no
     /// longer exists.
     ///
-    /// The skill BAR is deliberately left empty: the server owns auto-placement (SyncSkillBar), so the
-    /// bar lays itself out on first login exactly as it does for any other character. Writing a bar here
-    /// would be the client-authored-bar mistake all over again, in a new place.</summary>
+    /// The skill BAR is left EMPTY. Skills are not auto-placed any more (owner) — not here and not by
+    /// the server — so a kitted character's 18 skills stay off the bar until the player arranges them,
+    /// exactly like any other character.</summary>
     private async Task EndgameKitAsync(string characterName)
     {
         await using var db = await _factory.CreateDbContextAsync();
@@ -247,7 +247,7 @@ public class PersistenceService
             slot0.Wit = stats.Wit;
             slot0.Dex = stats.Dex;
             slot0.LearnedSkillsCsv = learnedCsv;
-            slot0.SkillBarJson = "";   // let SyncSkillBar lay it out on first login
+            slot0.SkillBarJson = "";   // empty bar — the player arranges it themselves
         }
 
         // ---- Gear: the A-grade tier, EQUIPPED. A caster kit: staff + robe + jewels. ----
@@ -430,6 +430,8 @@ public class PersistenceService
             Atk = stats.Atk,
             Wit = stats.Wit,
             Dex = stats.Dex,
+            // The bar starts EMPTY (owner). Nothing is auto-placed — the player builds it from the
+            // skills window's Skills and Actions tabs.
         });
 
         // Starter gear so a brand-new character isn't empty. All NEWBIE (untradeable,

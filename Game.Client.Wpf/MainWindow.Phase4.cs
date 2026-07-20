@@ -1692,18 +1692,27 @@ public partial class MainWindow
             RefreshSkillsWindow();
     }
 
-    private bool _skillTabLearn; // false = Learned, true = Learn
+    /// <summary>Which tab of the skills window is showing.</summary>
+    private enum SkillTab { Learned, Learn, Actions }
+    private SkillTab _skillTab = SkillTab.Learned;
+    private bool _skillTabLearn => _skillTab == SkillTab.Learn;
     private string? _pendingLearnId;
 
     private void SkillTabLearned_Click(object sender, RoutedEventArgs e)
     {
-        _skillTabLearn = false;
+        _skillTab = SkillTab.Learned;
         RefreshSkillsWindow();
     }
 
     private void SkillTabLearn_Click(object sender, RoutedEventArgs e)
     {
-        _skillTabLearn = true;
+        _skillTab = SkillTab.Learn;
+        RefreshSkillsWindow();
+    }
+
+    private void SkillTabActions_Click(object sender, RoutedEventArgs e)
+    {
+        _skillTab = SkillTab.Actions;
         RefreshSkillsWindow();
     }
 
@@ -1719,13 +1728,59 @@ public partial class MainWindow
         SkillPointsText.Text = $"SP: {_skillPoints}";
 
         // Tab highlight.
-        TabLearned.FontWeight = _skillTabLearn ? FontWeights.Normal : FontWeights.Bold;
-        TabLearn.FontWeight = _skillTabLearn ? FontWeights.Bold : FontWeights.Normal;
+        TabLearned.FontWeight = _skillTab == SkillTab.Learned ? FontWeights.Bold : FontWeights.Normal;
+        TabLearn.FontWeight = _skillTab == SkillTab.Learn ? FontWeights.Bold : FontWeights.Normal;
+        TabActions.FontWeight = _skillTab == SkillTab.Actions ? FontWeights.Bold : FontWeights.Normal;
 
-        if (_skillTabLearn)
-            BuildLearnTab();
-        else
-            BuildLearnedTab();
+        switch (_skillTab)
+        {
+            case SkillTab.Learn: BuildLearnTab(); break;
+            case SkillTab.Actions: BuildActionsTab(); break;
+            default: BuildLearnedTab(); break;
+        }
+    }
+
+    /// <summary>Tab 3: the built-in ACTIONS — the things you do constantly that aren't skills (attack,
+    /// target closest, sit/stand, run/walk, trade, party invite, follow, assist).
+    ///
+    /// They get the same "To Bar" gesture as a skill because to the player they ARE bar entries; the
+    /// only difference is that they're always available and never learned.</summary>
+    private void BuildActionsTab()
+    {
+        AddSkillGroupHeader("Actions");
+        foreach (var action in ActionCatalog.All)
+        {
+            string token = GameConstants.ActionSlotToken(action.Id);
+            bool onBar = _skillBar.Any(x => x == token);
+
+            var row = new DockPanel { Margin = new Thickness(0, 0, 0, 6) };
+
+            var assign = new Button
+            {
+                Content = onBar ? "On Bar" : "To Bar",
+                Height = 24, Width = 70, FontSize = 10, IsEnabled = !onBar,
+            };
+            assign.Click += (_, _) => AssignTokenToBar(token);
+            DockPanel.SetDock(assign, Dock.Right);
+            row.Children.Add(assign);
+
+            var name = new TextBlock
+            {
+                Text = $"{action.Icon}  {action.Name}",
+                Foreground = Brushes.White, FontSize = 13,
+                VerticalAlignment = VerticalAlignment.Center,
+                ToolTip = action.Description,
+            };
+            row.Children.Add(name);
+            SkillsList.Items.Add(row);
+        }
+
+        SkillsList.Items.Add(new TextBlock
+        {
+            Text = "Actions are always available — no MP, no cooldown, nothing to learn.",
+            Foreground = Brushes.Gray, FontSize = 11, TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 8, 0, 0),
+        });
     }
 
     /// <summary>Tab 1: skills you've learned, grouped by category, usable/bar-able.</summary>

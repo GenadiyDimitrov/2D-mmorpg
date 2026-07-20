@@ -6521,8 +6521,16 @@ var effect = def.Effect;
 
     /// <summary>Reconcile the ACTIVE class's skill bar with what that class actually knows: drop
     /// assignments for skills it no longer has (one that got REPLACED by a better version, or that
-    /// belongs to a class you swapped away from), then park any newly-learned ACTIVE skill in the first
-    /// free slot. It never MOVES a skill the player placed — the bar is their layout, not ours.
+    /// belongs to a class you swapped away from). It VALIDATES ONLY — it never adds and never moves.
+    /// The bar is the player's layout, not ours.
+    ///
+    /// AUTO-PLACEMENT WAS REMOVED (owner, 2026-07-20). It used to park every newly-learned active skill
+    /// in the first free slot, which made the bar rearrange itself under the player: every level-up and
+    /// every skill learned dropped new icons into whatever gaps existed, and — worse — a skill the
+    /// player had deliberately REMOVED from the bar was still *learned*, so the next push put it
+    /// straight back. There is no way to keep a deliberately sparse bar against a helper that treats
+    /// every gap as a mistake. A new character now starts with the two built-in actions
+    /// (<see cref="GameConstants.DefaultSkillBar"/>) and the player places skills themselves.
     ///
     /// THIS LIVES ON THE SERVER ON PURPOSE. It used to run in the CLIENT on every Learned push, and the
     /// client SAVED the result. That meant any code path which pushed Learned while the client still
@@ -6542,26 +6550,18 @@ var effect = def.Effect;
         for (int i = 0; i < slots.Length && i < bar.Length; i++)
             slots[i] = bar[i] ?? "";
 
-        // Forget what this class no longer knows — but NEVER an item slot ("item:<defId>"): it isn't a
-        // learned skill, so it would otherwise be wiped here, yet it's a perfectly valid bar entry the
-        // player placed on purpose (a potion / return scroll they want one click away).
+        // Forget what this class no longer knows — but NEVER an item slot ("item:<defId>") or an action
+        // slot ("action:<id>"): neither is a learned skill, so both would otherwise be wiped here, yet
+        // both are perfectly valid entries the player placed on purpose (a potion one click away; the
+        // basic-attack and target-closest buttons).
         for (int i = 0; i < slots.Length; i++)
-            if (!string.IsNullOrEmpty(slots[i]) && !GameConstants.IsItemSlot(slots[i])
+            if (!string.IsNullOrEmpty(slots[i])
+                && !GameConstants.IsItemSlot(slots[i]) && !GameConstants.IsActionSlot(slots[i])
                 && !p.LearnedSkills.ContainsKey(slots[i]))
                 slots[i] = "";
 
-        // Park anything newly learned. Ordinal order so it is deterministic, not hash order.
-        var placed = slots.Where(s => !string.IsNullOrEmpty(s)).ToHashSet();
-        foreach (var id in p.LearnedSkills.Keys.OrderBy(x => x, StringComparer.Ordinal))
-        {
-            if (placed.Contains(id)) continue;
-            if (SkillCatalog.Get(id) is not { } def || def.Category == SkillCategory.Passive)
-                continue;   // passives are always on; they never take a bar slot
-            int free = Array.IndexOf(slots, "");
-            if (free < 0) break;
-            slots[free] = id;
-            placed.Add(id);
-        }
+        // NOTHING is added here — see the summary. Newly-learned skills stay off the bar until the
+        // player drags them on.
 
         p.ActiveSkillBar = slots;
     }

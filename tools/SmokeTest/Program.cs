@@ -166,9 +166,13 @@ static string Show(string[]? bar) => bar is null
     : "[" + string.Join(",", bar.Select(s => string.IsNullOrEmpty(s) ? "_" : s)) + "]";
 
 // -------------------------------------------------------------------------------------------
-// 2. Arrange the MAIN class's skill bar, deliberately NOT in the server's auto-placed order.
-//    (Reversing it is the cheapest way to make a layout the server would never produce itself,
-//    so if anything re-derives the bar instead of preserving it, this test notices.)
+// 2. Arrange the MAIN class's skill bar.
+//
+//    The PLAYER lays the bar out now — the server stopped auto-placing newly-learned skills
+//    (owner, 2026-07-20: it rearranged the bar under you on every level-up, and re-added skills you
+//    had deliberately removed). So this test does what the client does: learn the skills, then place
+//    them itself. The layout is deliberately one the server would never produce, so if anything
+//    re-derives the bar instead of preserving it, the assertions below notice.
 // -------------------------------------------------------------------------------------------
 // Give the character real skills FIRST. An all-empty bar proves nothing — every assertion below
 // would pass trivially by comparing empty to empty, which is exactly how a broken bar could sneak
@@ -182,15 +186,32 @@ var mainThird = ThirdClassCatalog.Playable.First(t => t.Race == Race.Human);
 await a.Hub.SendAsync("DebugThirdClass", mainThird.Id);
 await a.Hub.SendAsync("DebugLearnAll");
 await a.Settle();
-Check("the main class has skills on its bar",
-      a.Bar!.Slots.Any(s => !string.IsNullOrEmpty(s)),
-      "an empty bar would make every check below pass for the wrong reason");
-Console.WriteLine($"        main class = {mainClass}, server bar = {Show(a.Bar!.Slots)}");
+// The server must NOT have placed anything: auto-placement is gone.
+Check("the server does NOT auto-place learned skills on the bar",
+      a.Bar!.Slots.All(string.IsNullOrEmpty),
+      $"server bar = {Show(a.Bar!.Slots)}");
 
-string[] mainBar = a.Bar!.Slots.Reverse().ToArray();
+// Now lay the bar out as the PLAYER would: the learned skills, in an order the server would never
+// pick (reverse-alphabetical), plus a built-in ACTION token — the bar must preserve those too.
+var toPlace = a.Learned!.Skills
+    .Select(s => s.Id)
+    .Where(id => SkillCatalog.Get(id) is { } d && d.Category != SkillCategory.Passive)
+    .OrderByDescending(id => id, StringComparer.Ordinal)
+    .ToList();
+
+Check("the character learned some active skills to place",
+      toPlace.Count > 0,
+      "an empty bar would make every check below pass for the wrong reason");
+
+string[] mainBar = new string[GameConstants.SkillBarSlots];
+for (int i = 0; i < mainBar.Length; i++) mainBar[i] = "";
+mainBar[0] = GameConstants.ActionSlotToken(GameConstants.ActionTargetClosest);
+for (int i = 0; i < toPlace.Count && i + 1 < mainBar.Length; i++)
+    mainBar[i + 1] = toPlace[i];
+
 await a.Hub.SendAsync("SetSkillBar", mainBar);
 await a.Settle();
-Console.WriteLine($"        main bar SET to {Show(mainBar)}");
+Console.WriteLine($"        main class = {mainClass}, main bar SET to {Show(mainBar)}");
 
 // -------------------------------------------------------------------------------------------
 // 3. Add a SUBCLASS of the other base class and switch to it.
@@ -428,6 +449,10 @@ sealed class Session : IAsyncDisposable
     public SkillBarDto? Bar;
     public SubclassListDto? Subclasses;
 
+    /// <summary>The last "Learned" push. The test needs it to lay the bar out ITSELF now that the
+    /// server no longer auto-places skills.</summary>
+    public LearnedSkills? Learned;
+
     // Delta-snapshot capture — the live world push. Accumulated so a test can assert an entity was
     // SPAWNED (full), UPDATED (lean), or DESPAWNED, and reset the tallies between phases.
     public readonly HashSet<Guid> Spawned = new();
@@ -448,6 +473,7 @@ sealed class Session : IAsyncDisposable
     {
         Hub = new HubConnectionBuilder().WithUrl(url).Build();
         Hub.On<SkillBarDto>("SkillBar", b => Bar = b);
+        Hub.On<LearnedSkills>("Learned", l => Learned = l);
         Hub.On<SubclassListDto>("Subclasses", s => Subclasses = s);
         Hub.On<SnapshotDelta>("SnapshotDelta", d =>
         {

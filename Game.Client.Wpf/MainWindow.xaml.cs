@@ -111,6 +111,7 @@ public partial class MainWindow : Window
         WhisperNames.ItemsSource = _whisperNames;
         VersionText.Text = $"v{GameConstants.GameVersion}";
         EnableMovablePanels();   // drag strip + ✕ + click-to-raise on every popup
+        InitTargetRangeSlider();   // after _settings is loaded — setting Value fires ValueChanged
         BuildCreationTree();
         _ = ConnectToServerAsync();
 
@@ -881,7 +882,9 @@ public partial class MainWindow : Window
         };
 
         string? entry = _skillBar[slotIndex];
-        if (GameConstants.IsItemSlot(entry))
+        if (ActionCatalog.FromToken(entry) is ActionDef action)
+            BuildActionSlotFace(button, hk, slotIndex, action);
+        else if (GameConstants.IsItemSlot(entry))
             BuildItemSlotFace(button, hk, slotIndex, GameConstants.ItemSlotDefId(entry!));
         else if (entry is string id && SkillCatalog.Get(id) is SkillDef def)
         {
@@ -935,6 +938,34 @@ public partial class MainWindow : Window
 
     /// <summary>Face for an ITEM bar slot: the item's initials + a live count, greyed out when you have
     /// none (like a skill on cooldown). Left-click USES the item — no opening the inventory to find it.</summary>
+    /// <summary>A built-in ACTION slot. No cooldown and no count — an action is always ready — so the
+    /// face is just its icon, tinted to read as "not a skill" at a glance.</summary>
+    private void BuildActionSlotFace(Border button, TextBlock hk, int slotIndex, ActionDef action)
+    {
+        button.Background = new SolidColorBrush(Color.FromRgb(0xB8, 0xC8, 0xD8));
+
+        var face = new TextBlock
+        {
+            Text = action.Icon,
+            Foreground = Brushes.Black, FontSize = 22,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            IsHitTestVisible = false,
+        };
+        var grid = new Grid();
+        grid.Children.Add(face);
+        grid.Children.Add(hk);
+        button.Child = grid;
+        button.ToolTip = $"{action.Name}\n{action.Description}";
+
+        button.MouseLeftButtonUp += (_, _) =>
+        {
+            if (_dragStarted) return;
+            RunAction(action);
+        };
+        button.MouseRightButtonUp += (_, _) => RemoveSkillFromBar(slotIndex);
+    }
+
     private void BuildItemSlotFace(Border button, TextBlock hk, int slotIndex, string defId)
     {
         var def = ItemCatalog.Get(defId);
@@ -989,9 +1020,14 @@ public partial class MainWindow : Window
     /// <summary>Put an inventory item on the bar's first free slot (from the inventory's "To Bar"
     /// button). Stored as an "item:&lt;defId&gt;" token; the SERVER keeps it (SyncSkillBar skips item
     /// slots) and the client uses/greys it by live count.</summary>
-    private void AssignItemToBar(string defId)
+    private void AssignItemToBar(string defId) =>
+        AssignTokenToBar(GameConstants.ItemSlotToken(defId));
+
+    /// <summary>Put any bar TOKEN — an item ("item:…") or a built-in action ("action:…") — in the first
+    /// free slot. This is a PLAYER edit, so saving the bar here is correct; the server never authors
+    /// one (see the skill-bar note in CLAUDE.md).</summary>
+    private void AssignTokenToBar(string token)
     {
-        string token = GameConstants.ItemSlotToken(defId);
         if (_skillBar.Any(x => x == token)) return;   // already on the bar
         int free = Array.IndexOf(_skillBar, null);
         if (free < 0)
@@ -1002,6 +1038,8 @@ public partial class MainWindow : Window
         _skillBar[free] = token;
         SaveSkillBar();
         RenderSkillBar();
+        if (SkillsPanel.Visibility == Visibility.Visible)
+            RefreshSkillsWindow();   // flip the row's button to "On Bar"
     }
 
     private void ChatToggle_Click(object sender, RoutedEventArgs e)
