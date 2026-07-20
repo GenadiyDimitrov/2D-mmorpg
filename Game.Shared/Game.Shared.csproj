@@ -10,4 +10,35 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
+  <!-- Ship the netstandard2.1 build straight into the Unity project.
+
+       This was step 3 of the Unity setup: build the netstandard2.1 target, then hand-copy the DLL into
+       Assets/Plugins/ "whenever DTOs/formulas change". A manual copy keyed to "whenever something
+       changes" is a bug waiting to happen - miss one and Unity silently runs against STALE DTOs, which
+       shows up as a protocol mismatch rather than as the missed copy it actually is.
+
+       So the copy happens automatically, on every netstandard2.1 build. The .pdb goes too (debugging in
+       Unity is worth the file), and the .meta files Unity writes beside them are left alone - Unity owns
+       those, and clobbering them loses the importer settings.
+
+       Set UnityPluginCopy=false to skip it: `dotnet build -p:UnityPluginCopy=false`. -->
+  <Target Name="CopyToUnityPlugins"
+          AfterTargets="Build"
+          Condition="'$(TargetFramework)' == 'netstandard2.1' AND '$(UnityPluginCopy)' != 'false'">
+    <PropertyGroup>
+      <UnityPluginsDir>$(MSBuildProjectDirectory)\..\Game.Client.Unity\Assets\Plugins\</UnityPluginsDir>
+    </PropertyGroup>
+    <!-- Only if the Unity project is actually present, so a server-only checkout still builds clean. -->
+    <MakeDir Directories="$(UnityPluginsDir)"
+             Condition="Exists('$(MSBuildProjectDirectory)\..\Game.Client.Unity')" />
+    <Copy SourceFiles="$(TargetPath);$(TargetDir)$(TargetName).pdb"
+          DestinationFolder="$(UnityPluginsDir)"
+          SkipUnchangedFiles="true"
+          ContinueOnError="true"
+          Condition="Exists('$(UnityPluginsDir)')" />
+    <Message Importance="high"
+             Text="Game.Shared.dll (netstandard2.1) -> Assets/Plugins/"
+             Condition="Exists('$(UnityPluginsDir)')" />
+  </Target>
+
 </Project>

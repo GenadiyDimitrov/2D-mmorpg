@@ -24,12 +24,23 @@ SignalR client:
    `https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity`
 2. **NuGet → Manage NuGet Packages** → search & install **`Microsoft.AspNetCore.SignalR.Client`**
    (pulls its dependencies into `Assets/Packages`).
-3. **Build our shared DLL for Unity and copy it in:**
+3. **Build our shared DLL for Unity — the copy is AUTOMATIC:**
    ```bash
    dotnet build Game.Shared/Game.Shared.csproj -c Release -f netstandard2.1
    ```
-   Copy `Game.Shared/bin/Release/netstandard2.1/Game.Shared.dll` into
-   `Game.Client.Unity/Assets/Plugins/` (create the folder). Re-copy whenever DTOs/formulas change.
+   That's it. A post-build target in `Game.Shared.csproj` (`CopyToUnityPlugins`) drops
+   `Game.Shared.dll` + `.pdb` into `Game.Client.Unity/Assets/Plugins/`, creating the folder if needed.
+   It runs on **every** netstandard2.1 build — including the plain `dotnet build Game.sln` you already
+   run — so the Unity project simply never goes stale.
+
+   There is nothing to re-copy when DTOs or formulas change; that manual step was the whole problem.
+   Missing one copy doesn't look like a missed copy, it looks like a protocol mismatch, and you'd hunt
+   it in the networking code.
+
+   - Skip the copy: `dotnet build -p:UnityPluginCopy=false`
+   - The target no-ops if `Game.Client.Unity/` isn't there, so a server-only checkout still builds.
+   - Unity's `.meta` files next to the DLL are left alone — Unity owns them, and overwriting them
+     loses the importer settings.
 
 > IL2CPP/Android note: if a SignalR method gets stripped, add a `link.xml` preserving
 > `Microsoft.AspNetCore.SignalR.Client` and `System.Text.Json`. Start with the default Mono/IL2CPP
