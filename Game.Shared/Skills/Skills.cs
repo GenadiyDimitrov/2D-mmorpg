@@ -408,9 +408,10 @@ public readonly record struct PassiveEffect(
     // ----- PRIMARY-stat deltas (the level-40 stat-swap passives). Folded in RecomputeDerived's
     // PRE-PASS, before anything is derived, so "+CON" genuinely raises Max HP and "+DEX" genuinely
     // raises evasion/accuracy/crit/attack-speed — not just a number in the stat window.
-    // There is deliberately no MEN here: MEN is no longer a stat. A "±MEN" swap is expressed
-    // directly as its modifiers (MaxMpPct / MagicDefencePct / MpRegenPct above).
-    int Con = 0, int Dex = 0, int Atk = 0, int Wit = 0,
+    // SPT is a full stat here like the rest (owner, 2026-07-20): a "±Spirit" swap is now literally
+    // ±1 SPT per level, not a bundle of MaxMpPct/MagicDefencePct/MpRegenPct. Those percent fields
+    // still exist for ordinary gear that touches only ONE of the three (a robe's +20% MP regen).
+    int Con = 0, int Dex = 0, int Atk = 0, int Wit = 0, int Spt = 0,
     // Heal power (healer OUTPUT) and heal received (target side). Heals no longer use M.Atk:
     // endHeal = (HealPowerFlat + skillPower)·HealPowerMod, then the target's (HealReceivedFlat +
     // endHeal)·HealReceivedMod. Default 0 flat / +0% (so an untrained healer heals exactly skillPower).

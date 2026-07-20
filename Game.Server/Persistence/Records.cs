@@ -117,6 +117,7 @@ public class CharacterRecord
     public int Atk { get; set; }
     public int Wit { get; set; }
     public int Dex { get; set; }
+    public int Spt { get; set; }
 
     // Last known position so you log back in where you left off.
     public float X { get; set; }
@@ -157,6 +158,7 @@ public class SubclassRecord
     public int Atk { get; set; }
     public int Wit { get; set; }
     public int Dex { get; set; }
+    public int Spt { get; set; }
 
     /// <summary>Learned skills as "id:level" pairs, comma-separated.</summary>
     public string LearnedSkillsCsv { get; set; } = "";

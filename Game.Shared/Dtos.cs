@@ -133,7 +133,7 @@ public record TradeStateUpdate(
 /// <summary>Server -> owning client: full derived stats for the Stats window.
 /// Sent whenever stats change (level, equip, class change).</summary>
 public record StatsUpdate(
-    int Con, int Atk, int Wit, int Dex,
+    int Con, int Atk, int Wit, int Dex, int Spt,
     int MaxHp, int MaxMp, int AttackPower, int Defence,
     int Accuracy, int Evasion, float CritChance, float BasicAttackRange,
     int SecondClass, float MoveSpeed, float CastModifier,
@@ -286,7 +286,11 @@ public record DebugConfigDto(
     int IdleCapSeconds, int OfflineCapSeconds, int GraceSeconds,
     // Test skills: the two debug damage skills read Flat=TestSkillPower, Mod=TestSkillMod; testheal heals
     // TestHealPower. Lets the owner read the {Flat, Mod} damage curve live before authoring real skills.
-    int TestHealPower = 1000, int TestSkillPower = 0, float TestSkillMod = 1f);
+    int TestHealPower = 1000, int TestSkillPower = 0, float TestSkillMod = 1f,
+    // Regen: the CADENCE (seconds between natural-regen ticks; 3 = L2's period) and how steeply the
+    // stat weights it (per-point multiplier — 1.03 is L2's CON curve, 1.0 = stat does nothing).
+    // Changing the cadence does NOT change healing speed, only its chunkiness.
+    float RegenIntervalSeconds = 3f, float ConRegenBase = 1.03f);
 
 /// <summary>One member row in the party window. Debuffs = the names of the debuffs currently on this
 /// member, so a healer sees at a glance who to cleanse without selecting each one.</summary>

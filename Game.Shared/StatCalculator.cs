@@ -10,20 +10,26 @@ namespace Game.Shared;
 /// </summary>
 public static class StatCalculator
 {
-    public readonly record struct BaseStats(int Con, int Atk, int Wit, int Dex);
+    public readonly record struct BaseStats(int Con, int Atk, int Wit, int Dex, int Spt);
 
     public static BaseStats GetBaseStats(Race race, BaseClass cls) => (race, cls) switch
     {
-        // BaseStats(Con, Atk, Wit, Dex). Atk = the single power stat: STR for fighters,
+        // BaseStats(Con, Atk, Wit, Dex, Spt). Atk = the single power stat: STR for fighters,
         // INT for mages. Fighter WIT kept low (casts little); mage WIT per the dye-
         // stand-in design (elf 23 / human 20 / ork 19). Authentic-L2-style bases.
-        (Race.Ork, BaseClass.Fighter) => new BaseStats(47, 40, 10, 26),
-        (Race.Ork, BaseClass.Mage)    => new BaseStats(31, 31, 19, 20),
-        (Race.Elf, BaseClass.Fighter) => new BaseStats(36, 36, 20, 35),
-        (Race.Elf, BaseClass.Mage)    => new BaseStats(25, 37, 23, 24),
-        (Race.Human, BaseClass.Fighter) => new BaseStats(43, 40, 15, 30),
-        (Race.Human, BaseClass.Mage)    => new BaseStats(27, 41, 20, 21),
-        _ => new BaseStats(25, 25, 25, 25)
+        //
+        // SPT (Spirit) is a FULL stat like the rest — the retired MEN, made visible and investable.
+        // FIGHTERS keep their original per-race MEN values (ork 27 > elf 26 > human 25) so the ork
+        // fighter stays the sturdiest — a flat fighter value erased that (owner, 2026-07-20).
+        // MAGES take the owner's spread off the human mage: ork +7%, elf −7%. The curve is flat
+        // (~1.6%/point), so those need wide gaps — hence 45 and 32, not 42 and 40.
+        (Race.Ork, BaseClass.Fighter) => new BaseStats(47, 40, 10, 26, 27),
+        (Race.Ork, BaseClass.Mage)    => new BaseStats(31, 31, 19, 20, 45),
+        (Race.Elf, BaseClass.Fighter) => new BaseStats(36, 36, 20, 35, 26),
+        (Race.Elf, BaseClass.Mage)    => new BaseStats(25, 37, 23, 24, 32),
+        (Race.Human, BaseClass.Fighter) => new BaseStats(43, 40, 15, 30, 25),
+        (Race.Human, BaseClass.Mage)    => new BaseStats(27, 41, 20, 21, 39),
+        _ => new BaseStats(25, 25, 25, 25, 30)
     };
 
     // Per design: levels increase hp/mp (max/regen), evasion, accuracy,
@@ -71,27 +77,24 @@ public static class StatCalculator
         (43, 1.48f), (45, 1.57f), (47, 1.67f), (50, 1.83f), (55, 2.14f),
     };
 
-    /// <summary>Per-race+class MEN (we have no MEN stat; this is the L2 base table).
-    /// Mages have high MEN (better magic mitigation), fighters low.</summary>
-    public static int BaseMen(Race race, BaseClass cls) => (race, cls) switch
-    {
-        (Race.Human, BaseClass.Fighter) => 25,
-        (Race.Human, BaseClass.Mage)    => 39,
-        (Race.Elf,   BaseClass.Fighter) => 26,
-        (Race.Elf,   BaseClass.Mage)    => 40,
-        (Race.Ork,   BaseClass.Fighter) => 27,
-        (Race.Ork,   BaseClass.Mage)    => 42,
-        _ => 30
-    };
+    // ----- SPT (Spirit): a FULL stat, exactly like CON/ATK/DEX/WIT ---------------
+    // Owner, 2026-07-20: "if that magic number must exist we must use it as a normal standard stat."
+    // MEN's problem was never that it was an int — it was an INVISIBLE int. SPT is the same number
+    // made visible, investable and displayed, so it earns its place:
+    //
+    //   CON → Max HP  + HP regen          SPT → Max MP + MP regen + M.Def
+    //
+    // Everything that used to be a "±MEN bundle" (the level-40 stat swaps, set bonuses granting
+    // mp+mpreg+mdef together) is now simply ±SPT. Plain percentage effects that touch only ONE of
+    // the three (a robe mastery's +20% MP regen, a ManaPercent attribute roll) stay percentages —
+    // they are ordinary gear, not Spirit.
 
-    /// <summary>MEN → Magic-Defence and Max-MP multiplier. The L2 MEN curve is a gentle
-    /// 1.16→1.65 band (NOT the CON curve): every class is &gt;1, fighters just have less.
-    /// Interpolated from the reference table.</summary>
-    public static float MenModifier(int men) => InterpolateCurve(MenCurve, men);
+    /// <summary>SPT → the Max-MP / M.Def / MP-regen multiplier. This is the old L2 MEN curve, a gentle
+    /// 1.16→1.65 band (NOT the steep CON curve): every class is &gt;1, fighters just have less. Because
+    /// it is flat (~1.6% per point), the per-race SPT bases need WIDE gaps to express a 7% difference.</summary>
+    public static float SptModifier(int spt) => InterpolateCurve(SptCurve, spt);
 
-    // Reference modifier tables (stat → multiplier). Linearly interpolated; clamped
-    // to the endpoints outside the listed range.
-    private static readonly (int stat, float mod)[] MenCurve =
+    private static readonly (int stat, float mod)[] SptCurve =
     {
         (20, 1.16f), (26, 1.28f), (30, 1.35f), (31, 1.36f),
         (37, 1.44f), (40, 1.49f), (45, 1.57f), (50, 1.65f),
@@ -124,9 +127,9 @@ public static class StatCalculator
     /// exponential CON modifier would explode on mob-scale CON, so mobs use this.</summary>
     public static int MobMaxHp(int con, int level) => 50 + con * 4 + level * 10;
 
-    // ----- Max MP (authentic L2: Base_MP tier curve × MEN, like HP) --------
-    //  MaxMP = (MpClassLevelMod·(L²+3L)/2 + Level1BaseMp) × MenModifier
-    //  MP scales with MEN (not WIT). Tiers tuned to the L75 raw tracks:
+    // ----- Max MP (authentic L2: Base_MP tier curve × Spirit, like HP) --------
+    //  MaxMP = (MpClassLevelMod·(L²+3L)/2 + Level1BaseMp) × SpiritModifier
+    //  MP scales with SPIRIT (not WIT). Tiers tuned to the L75 raw tracks:
     //  Healer 2000 · Wizard/Nuker 1550 · Buffer 1100 · Fighter/Tank 500.
 
     public static float MpClassLevelModifier(BaseClass cls, Archetype? arch) => arch switch
@@ -139,19 +142,44 @@ public static class StatCalculator
 
     public static int Level1BaseMp(BaseClass cls) => cls == BaseClass.Mage ? 40 : 15;
 
-    public static int MaxMp(int men, int level, float mpClassLevelMod, int level1BaseMp)
+    public static int MaxMp(int spt, int level, float mpClassLevelMod, int level1BaseMp)
     {
         float rawBase = mpClassLevelMod * (level * level + 3f * level) / 2f + level1BaseMp;
-        return (int)(rawBase * MenModifier(men));
+        return (int)(rawBase * SptModifier(spt));
     }
 
     /// <summary>Mob MP — simple level curve (mobs aren't MP-limited; avoids the
-    /// MEN/tier machinery).</summary>
+    /// Spirit/tier machinery).</summary>
     public static int MobMaxMp(int level) => 40 + level * 6;
 
-    public static float HpRegenPerSecond(int con, int level) => 1f + con * 0.05f + level * 0.1f;
+    // ----- Natural regen -------------------------------------------------------
+    // The stat is the DOMINANT term, as in L2, where regen is
+    //   base(level) × levelMod × CONbonus[CON],  CONbonus[c] = 1.03^(c − 27.632)
+    // — an EXPONENTIAL in the stat. Ours used to be linear (+0.05 per point), which made CON almost
+    // irrelevant: across CON 20→60 our regen moved ×1.33 where L2's moves ×3.25, so a tank and a mage
+    // regenerated at nearly the same rate and CON bought you very little.
+    //
+    // The curve is re-centred on 40 (`stat - 40`) so the MID-RANGE value is exactly what it was before
+    // (old: 1 + 40×0.05 + level×k = 3 + level×k, which is the base below). Nothing shifts for an
+    // average-CON character; the change is purely that CON now separates builds.
 
-    public static float MpRegenPerSecond(int wit, int level) => 1f + wit * 0.05f + level * 0.08f;
+    /// <summary>Per-point regen multiplier for CON (HP). L2's own 1.03 curve.</summary>
+    public static float ConRegenBase = 1.03f;
+
+    public static float HpRegenPerSecond(int con, int level) =>
+        (3f + level * 0.1f) * (float)Math.Pow(ConRegenBase, con - 40);
+
+    /// <summary>MP regen follows SPT, not WIT (owner, 2026-07-20). WIT is cast speed and magic crit;
+    /// it was never meant to be the mana stat. Uses the SAME curve as Max MP and M.Def, so all three
+    /// move together off the one stat — which is the whole point of SPT being a stat.
+    ///
+    /// The base is 2, NOT the 3 the HP curve uses: both come from the old linear formula's constant
+    /// term (<c>1 + stat×0.05</c>), but that has to be read at the stat's REAL range. CON sits at
+    /// 36-47, so 40 → 3. WIT only ever sat at 10-23, so the honest midpoint is 20 → 2. Using 3 here
+    /// would have quietly handed every build 19-36% more MP regen. The /1.4733 renormalises the
+    /// curve so a human mage (SPT 39) sits at ×1.00 and the pre-Spirit numbers are preserved.</summary>
+    public static float MpRegenPerSecond(int spt, int level) =>
+        (2f + level * 0.08f) * (SptModifier(spt) / 1.4733f);
 
     // ----- Unified hit resolution (see docs/CombatResolution.md) -----------
     // Both channels (physical miss, magic fail) call ResolveAvoidChance. It returns
@@ -570,7 +598,10 @@ public static class StatCalculator
     // classes). Tuning knob — raise/lower the level coefficient to make mobs hit
     // harder/softer globally. (Con/Dex unchanged.)
     public static BaseStats MobStats(int level) =>
-        new(Con: 15 + level * 2, Atk: 8 + level * 2, Wit: 5, Dex: 10 + level);
+        // Spt 30 = the neutral middle of the SPT curve. Mobs don't use it (MobMaxMp / MobMagicDefence
+        // are their own curves) — it's here so the record is complete rather than defaulting to 0,
+        // which would sit at the curve's floor if a mob ever did read it.
+        new(Con: 15 + level * 2, Atk: 8 + level * 2, Wit: 5, Dex: 10 + level, Spt: 30);
 
     /// <summary>Mob MAGIC defence by level. The universal <see cref="MagicDefence"/>
     /// base (level/2) leaves low-level mobs at ~0 mDef, so spells divide by ~1 and

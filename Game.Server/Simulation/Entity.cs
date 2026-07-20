@@ -369,6 +369,12 @@ public class Entity
         get => ActiveSubclass.Dex;
         set => ActiveSubclass.Dex = value;
     }
+    /// <summary>SPT (Spirit) — Max MP, MP regen and M.Def. The retired MEN, now a full stat.</summary>
+    public int Spt
+    {
+        get => ActiveSubclass.Spt;
+        set => ActiveSubclass.Spt = value;
+    }
 
     // Primary-stat DELTAS from armor sets (and later dyes/tattoos). Set in RecomputeDerived's
     // pre-pass BEFORE the derived stats are computed, so a set's "CON +3" raises HP, "DEX +1"
@@ -382,7 +388,11 @@ public class Entity
     public int BonusCon { get; set; }
     public int BonusInt { get; set; }
     public int BonusWit { get; set; }
-    public int BonusMen { get; set; }
+    public int BonusSpt { get; set; }
+
+    /// <summary>SPT actually used by the math: born-with base + the stat-swap passives and set
+    /// bonuses. Same rule as <see cref="EffectiveWit"/>.</summary>
+    public int EffectiveSpt => Spt + BonusSpt;
 
     /// <summary>Crafting profession (one per character). Set by level later; debug-set for now.</summary>
     public Profession Profession { get; set; }
@@ -990,20 +1000,20 @@ public class Entity
         // eva/acc/crit, and "ATK +5" actually raises P.Atk/M.Atk — not just the stat window.
         // TWO sources: the active armor set, and the level-40 STAT-SWAP passives. This has to run
         // here, not in the passive loop below, because that loop happens AFTER everything is derived.
-        BonusStr = BonusDex = BonusCon = BonusInt = BonusWit = BonusMen = BonusAtk = 0;
+        BonusStr = BonusDex = BonusCon = BonusInt = BonusWit = BonusSpt = BonusAtk = 0;
         var activeSet = Kind == EntityKind.Player ? DetectActiveSet() : null;
         if (activeSet is not null)
         {
             var pm = activeSet.Mods;
             BonusStr = (int)pm.Str; BonusDex = (int)pm.Dex; BonusCon = (int)pm.Con;
-            BonusInt = (int)pm.Int; BonusWit = (int)pm.Wit; BonusMen = (int)pm.Men;
+            BonusInt = (int)pm.Int; BonusWit = (int)pm.Wit; BonusSpt = (int)pm.Spt;
         }
         if (Kind == EntityKind.Player)
         {
             foreach (var (skillId, skillLevel) in LearnedSkills)
             {
                 if (SkillCatalog.Get(skillId)?.PassiveAt(skillLevel) is not PassiveEffect pe) continue;
-                BonusCon += pe.Con; BonusDex += pe.Dex; BonusAtk += pe.Atk; BonusWit += pe.Wit;
+                BonusCon += pe.Con; BonusDex += pe.Dex; BonusAtk += pe.Atk; BonusWit += pe.Wit; BonusSpt += pe.Spt;
             }
         }
 
@@ -1017,7 +1027,7 @@ public class Entity
                 StatCalculator.Level1BaseHp(Race, BaseClass))
             : MobBaseStats.Hp(Level);
         MaxMp = Kind == EntityKind.Player
-            ? StatCalculator.MaxMp(StatCalculator.BaseMen(Race, BaseClass) + BonusMen, Level,
+            ? StatCalculator.MaxMp(EffectiveSpt, Level,
                 StatCalculator.MpClassLevelModifier(BaseClass, Archetype),
                 StatCalculator.Level1BaseMp(BaseClass))
             : MobBaseStats.Mp(Level);
@@ -1577,7 +1587,7 @@ public class Entity
             // M.Atk stays the INTERNAL (base·levelMod²) value — the √ magic formulas depend on it and mobs
             // share it. Only the DISPLAY is shrunk (EffectiveMagicAttackShown = scale·√internal). Path B.
             MagicDefence = (int)(MagicDefence
-                * StatCalculator.MenModifier(StatCalculator.BaseMen(Race, BaseClass) + BonusMen)
+                * StatCalculator.SptModifier(EffectiveSpt)
                 * StatCalculator.MagicDefenceLevelMod(Level));
         }
 

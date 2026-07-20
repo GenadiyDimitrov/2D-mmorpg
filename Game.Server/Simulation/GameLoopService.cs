@@ -454,7 +454,8 @@ public class GameLoopService : BackgroundService
         RateConfig.GoldAmountRate,
         _karmaBase, (float)_karmaConsecGrowth, (float)_karmaLevelGrowth, _karmaLossPerDeath, _karmaLossPerMob,
         _idleCapSeconds, _offlineCapSeconds, _graceSeconds,
-        _testHealPower, _testSkillPower, _testSkillMod);
+        _testHealPower, _testSkillPower, _testSkillMod,
+        GameConstants.RegenIntervalSeconds, StatCalculator.ConRegenBase);
 
     private void HandleRequestDebugConfig(RequestDebugConfigCmd cmd)
     {
@@ -490,6 +491,13 @@ public class GameLoopService : BackgroundService
         _testHealPower      = Math.Max(0, c.TestHealPower);
         _testSkillPower     = Math.Max(0, c.TestSkillPower);
         _testSkillMod       = Math.Max(0f, c.TestSkillMod);
+
+        // Regen cadence: clamped to whole ticks (the loop can't fire between them) and to a sane
+        // 0.1s–60s band. 3s = L2. The stat bases go no lower than 1.0 — below that MORE of the stat
+        // would mean LESS regen, which is never what you want to test.
+        GameConstants.RegenIntervalTicks =
+            Math.Clamp((int)MathF.Round(c.RegenIntervalSeconds * GameConstants.TickRate), 1, 600);
+        StatCalculator.ConRegenBase = Math.Clamp(c.ConRegenBase, 1f, 1.2f);
     }
 
     // Lives NEXT TO THE EXE (Debug/publish output), like an options.ini — NOT a build item, so an
@@ -3932,7 +3940,8 @@ public class GameLoopService : BackgroundService
     private void Simulate()
     {
         _tick++;
-        bool regenTick = _tick % GameConstants.RegenIntervalTicks == 0;
+        bool secondTick = _tick % GameConstants.SecondIntervalTicks == 0;   // DoT/HoT/buffs/party (always 1s)
+        bool regenTick  = _tick % Math.Max(1, GameConstants.RegenIntervalTicks) == 0;   // natural regen (tunable)
 
         if (_tick % GameConstants.AutoSaveIntervalTicks == 0)
             AutoSaveAll();
@@ -4020,11 +4029,10 @@ public class GameLoopService : BackgroundService
             MoveTowardTarget(entity);
             _world.Grid.UpdatePosition(entity);
 
-            if (regenTick)
+            if (secondTick)
             {
                 TickDots(entity);           // damage-over-time (bleed/poison/venom) ticks per second
                 TickHealOverTime(entity);   // HoT heals even in combat (unlike natural regen)
-                Regenerate(entity);
                 if (entity.Kind == EntityKind.Player)
                 {
                     PushBuffs(entity);
@@ -4032,6 +4040,11 @@ public class GameLoopService : BackgroundService
                         SendAutoHuntStatus(entity);   // keep MP/s live as buffs change
                 }
             }
+
+            // Natural regen runs on its OWN (slower, 3s) cadence — deliberately NOT the 1s one above,
+            // so retuning regen can never change how fast a DoT ticks.
+            if (regenTick)
+                Regenerate(entity);
         }
 
         TickTraps();
@@ -4051,7 +4064,7 @@ public class GameLoopService : BackgroundService
             _endGraceQueue.Clear();
         }
 
-        if (regenTick)
+        if (secondTick)
         {
             RefreshPartyRosters();   // live HP/MP + AFK status for the party window
             SweepPartyInvites();     // drop invites nobody answered
@@ -6151,19 +6164,25 @@ var effect = def.Effect;
             if (b.Has(SkillEffect.BuffMpRegen)) mpRegenPct += b.Percent(SkillEffect.BuffMpRegen);
         }
 
+        // The formulas are authored PER SECOND, so a tick pays out one period's worth. This is what
+        // keeps the tunable cadence honest: moving the interval 1s→3s makes regen arrive in bigger,
+        // rarer chunks WITHOUT changing how fast anyone actually heals, so the panel compares feel
+        // rather than secretly rebalancing the game by the same factor.
+        float period = GameConstants.RegenIntervalSeconds;
+
         if (entity.Hp < entity.MaxHp)
         {
             int regen = Math.Max(1,
                 (int)((StatCalculator.HpRegenPerSecond(entity.Con, entity.Level) + entity.HpRegenBonus)
-                      * multiplier * entity.HpRegenMult * (1f + hpRegenPct)));
+                      * multiplier * entity.HpRegenMult * (1f + hpRegenPct) * period));
             entity.Hp = Math.Min(entity.MaxHp, entity.Hp + regen);
         }
 
         if (entity.Mp < entity.MaxMp)
         {
             int regen = Math.Max(1,
-                (int)((StatCalculator.MpRegenPerSecond(entity.EffectiveWit, entity.Level) + entity.MpRegenBonus)
-                      * multiplier * entity.MpRegenMult * (1f + mpRegenPct)));
+                (int)((StatCalculator.MpRegenPerSecond(entity.EffectiveSpt, entity.Level) + entity.MpRegenBonus)
+                      * multiplier * entity.MpRegenMult * (1f + mpRegenPct) * period));
             entity.Mp = Math.Min(entity.MaxMp, entity.Mp + regen);
         }
     }
@@ -6252,10 +6271,20 @@ var effect = def.Effect;
                 continue;
 
             // Everything this viewer can currently see (self always included).
+            //
+            // A PLAYER'S LEVEL IS PRIVATE (owner, 2026-07-20): it is intel you don't want to hand an
+            // enemy, so it never leaves the server for anyone but its owner — hiding it in the client
+            // alone would be no protection, since the number would still be on the wire for a modified
+            // one to read. MOBS keep their level (the con-colour and the decision to engage depend on
+            // it); party members' levels travel separately on PartyMemberDto, which only the party sees.
             var current = new Dictionary<Guid, EntityDto>();
             foreach (var e in _world.Grid.Nearby(player))
-                current[e.Id] = e.ToDto();
-            current[player.Id] = player.ToDto();
+            {
+                var dto = e.ToDto();
+                if (e.Kind == EntityKind.Player) dto = dto with { Level = 0 };
+                current[e.Id] = dto;
+            }
+            current[player.Id] = player.ToDto();   // self last: your OWN level is yours to see
 
             if (!_lastSentByConn.TryGetValue(connectionId, out var last))
                 _lastSentByConn[connectionId] = last = new Dictionary<Guid, EntityDto>();
@@ -6583,7 +6612,7 @@ var effect = def.Effect;
     {
         var (hpReg, mpReg) = StandingRegen(p);
         SendTo(p, "Stats", new StatsUpdate(
-            p.Con, p.AtkStat, p.EffectiveWit, p.EffectiveDex,
+            p.Con, p.AtkStat, p.EffectiveWit, p.EffectiveDex, p.EffectiveSpt,
             p.MaxHp, p.MaxMp, (int)p.EffectiveAttack, (int)p.EffectiveDefence,
             p.Accuracy, (int)p.EffectiveEvasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
             p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.EffectiveCastSpeedMultiplier, p.EffectiveAttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttackShown, p.MagicCritChance,
@@ -6608,7 +6637,7 @@ var effect = def.Effect;
             if (b.Has(SkillEffect.BuffMpRegen)) mpPct += b.Percent(SkillEffect.BuffMpRegen);
         }
         float hp = (StatCalculator.HpRegenPerSecond(p.Con, p.Level) + p.HpRegenBonus) * p.HpRegenMult * (1f + hpPct);
-        float mp = (StatCalculator.MpRegenPerSecond(p.EffectiveWit, p.Level) + p.MpRegenBonus) * p.MpRegenMult * (1f + mpPct);
+        float mp = (StatCalculator.MpRegenPerSecond(p.EffectiveSpt, p.Level) + p.MpRegenBonus) * p.MpRegenMult * (1f + mpPct);
         return (hp, mp);
     }
 
@@ -6830,7 +6859,9 @@ var effect = def.Effect;
                 .ToArray();
 
         SendTo(player, "TargetDetails", new TargetDetails(
-            t.Id, t.Name, t.Level, isMob,
+            // Level: real for a mob, withheld for a player (see the snapshot builder) — unless you are
+            // inspecting yourself, where it is your own to read.
+            t.Id, t.Name, isMob || t.Id == player.Id ? t.Level : 0, isMob,
             t.Hp, t.MaxHp, t.Mp, t.MaxMp,
             t.AttackPower, (int)t.EffectiveMagicAttackShown,   // shrunk display, matches the stats window
             (int)t.EffectiveDefence, (int)t.EffectiveMagicDefence,

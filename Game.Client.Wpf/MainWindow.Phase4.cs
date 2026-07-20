@@ -1184,9 +1184,18 @@ public partial class MainWindow
                 : $"{_myBaseClass} (base)";
 
         StatsList.Items.Add(MakeStatRow("Class", cls));
-        StatsList.Items.Add(MakeStatRow("CON / ATK / WIT / DEX",
-            $"{st.Con} / {st.Atk} / {st.Wit} / {st.Dex}"));
-        StatsList.Items.Add(MakeStatRow("Max HP / MP", $"{st.MaxHp} / {st.MaxMp}"));
+        StatsList.Items.Add(MakeStatRow("CON / ATK / WIT / DEX / SPT",
+            $"{st.Con} / {st.Atk} / {st.Wit} / {st.Dex} / {st.Spt}",
+            "What each stat buys you:\n\n" +
+            "CON  — Max HP and HP regeneration.\n" +
+            "ATK  — the single power stat: P.Atk for fighters, M.Atk for mages\n" +
+            "         (your WEAPON decides the split).\n" +
+            "WIT  — cast speed and magic critical rate. NOT magic damage.\n" +
+            "DEX  — accuracy, evasion, physical critical rate and attack speed.\n" +
+            "SPT  — Spirit: Max MP, MP regeneration and M.Def.\n\n" +
+            "The level-40 swap passives trade one of these for another."));
+        StatsList.Items.Add(MakeStatRow("Max HP / MP", $"{st.MaxHp} / {st.MaxMp}",
+            "Max HP comes from CON; Max MP from SPT. Both also scale with level and class."));
         StatsList.Items.Add(MakeStatRow("P.Atk / M.Atk", $"{st.AttackPower} / {st.MagicAttack}"));
         StatsList.Items.Add(MakeStatRow("M.Atk (internal / L2-ref)", $"{st.MagicAttackInternal:N0}"));
         StatsList.Items.Add(MakeStatRow("Defence (Phys / Magic)", $"{st.Defence} / {st.MagicDefence}"));
@@ -1263,7 +1272,7 @@ public partial class MainWindow
         return grid;
     }
 
-    private static Grid MakeStatRow(string label, string value)
+    private static Grid MakeStatRow(string label, string value, string? tooltip = null)
     {
         var grid = new Grid { Margin = new Thickness(0, 0, 0, 4) };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
@@ -1275,6 +1284,16 @@ public partial class MainWindow
         Grid.SetColumn(v, 1);
         grid.Children.Add(l);
         grid.Children.Add(v);
+
+        // A stat's NAME says nothing about what it buys you (owner, 2026-07-20). The tooltip goes on
+        // the whole row + both texts, because hovering the label or the number should both work.
+        if (tooltip is not null)
+        {
+            grid.ToolTip = tooltip;
+            grid.Background = Brushes.Transparent;   // a null background is not hit-testable
+            l.ToolTip = tooltip;
+            v.ToolTip = tooltip;
+        }
         return grid;
     }
 

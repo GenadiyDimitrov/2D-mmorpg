@@ -51,6 +51,7 @@ public class Subclass
     public int Atk { get; set; }
     public int Wit { get; set; }
     public int Dex { get; set; }
+    public int Spt { get; set; }
 
     /// <summary>Learned skills → the level of each.</summary>
     public Dictionary<string, int> LearnedSkills { get; } = new();
@@ -63,6 +64,6 @@ public class Subclass
     public void RollBaseStats()
     {
         var s = StatCalculator.GetBaseStats(Race, BaseClass);
-        Con = s.Con; Atk = s.Atk; Wit = s.Wit; Dex = s.Dex;
+        Con = s.Con; Atk = s.Atk; Wit = s.Wit; Dex = s.Dex; Spt = s.Spt;
     }
 }

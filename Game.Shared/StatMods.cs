@@ -49,7 +49,7 @@ public readonly record struct StatMods(
     // Primary-stat deltas (flat, SUMMED). Applied to the entity's core stats BEFORE the derived
     // stats are computed, so a set's "CON +3" actually raises HP, "DEX +1" raises eva/acc/crit, etc.
     // (item/set sources — the "formula counts for them" per owner).
-    float Str = 0f, float Dex = 0f, float Con = 0f, float Int = 0f, float Wit = 0f, float Men = 0f,
+    float Str = 0f, float Dex = 0f, float Con = 0f, float Int = 0f, float Wit = 0f, float Spt = 0f,
     // Lifesteal + reflect fractions (from gear/sets). Reflect returns a fraction of taken MELEE
     // damage to the attacker (bows excluded, never re-reflects) — live in ApplyDamage; capped at 50%.
     float MeleeVamp = 0f, float SpellVamp = 0f, float Reflect = 0f,
@@ -94,7 +94,7 @@ public readonly record struct StatTotals(
     float CritDmgResist = 0f, float CritRateResist = 0f, float BowResist = 0f,
     float CcResist = 0f,
     float RestoreMpBonus = 0f,
-    float Str = 0f, float Dex = 0f, float Con = 0f, float Int = 0f, float Wit = 0f, float Men = 0f,
+    float Str = 0f, float Dex = 0f, float Con = 0f, float Int = 0f, float Wit = 0f, float Spt = 0f,
     float MeleeVamp = 0f, float SpellVamp = 0f, float Reflect = 0f,
     float ShieldDefPct = 0f)
 {
@@ -121,7 +121,7 @@ public readonly record struct StatTotals(
         CritDmgResist + s.CritDmgResist, CritRateResist + s.CritRateResist, BowResist + s.BowResist,
         CcResist + s.CcResist,
         RestoreMpBonus + s.RestoreMpBonus,
-        Str + s.Str, Dex + s.Dex, Con + s.Con, Int + s.Int, Wit + s.Wit, Men + s.Men,
+        Str + s.Str, Dex + s.Dex, Con + s.Con, Int + s.Int, Wit + s.Wit, Spt + s.Spt,
         MeleeVamp + s.MeleeVamp, SpellVamp + s.SpellVamp, Reflect + s.Reflect,
         Mul(ShieldDefPct, s.ShieldDefPct));
 

@@ -65,9 +65,9 @@ public static partial class SkillCatalog
     private static readonly int[] StatSwapGold =
         { 1_000_000, 2_000_000, 3_000_000, 4_000_000, 5_000_000 };
 
-    /// <summary>What ONE point of the retired MEN stat is worth, now that it IS its modifiers:
-    /// 2% Max MP, 2% M.Def and 2% MP regen. So a maxed ±5 swap moves each by ±10%.</summary>
-    private const float MenPointPct = 0.02f;
+    // SPT is a REAL STAT now (owner, 2026-07-20), so a Spirit swap is just ±1 SPT per level like
+    // every other swap — no more bundling percentages. The percentages this used to emit are gone;
+    // the stat itself carries Max MP, M.Def and MP regen through StatCalculator.SptModifier.
 
     /// <summary>Build a stat-swap passive: 5 levels, each +1/−1 further, each priced in gold.
     /// <paramref name="at"/> maps a level (1-5) to that level's cumulative effect.</summary>
@@ -82,21 +82,18 @@ public static partial class SkillCatalog
                 Passive: at(l), Description: describe(l)))
             .ToArray());
 
-    /// <summary>±MEN as its modifiers (MEN is not a stat any more).</summary>
-    private static PassiveEffect MenSwap(int menDelta, int con = 0, int dex = 0, int atk = 0, int wit = 0) =>
-        new(MaxMpPct: menDelta * MenPointPct,
-            MagicDefencePct: menDelta * MenPointPct,
-            MpRegenPct: menDelta * MenPointPct,
-            Con: con, Dex: dex, Atk: atk, Wit: wit);
+    /// <summary>±Spirit — now simply ±SPT, the stat.</summary>
+    private static PassiveEffect MenSwap(int sptDelta, int con = 0, int dex = 0, int atk = 0, int wit = 0) =>
+        new(Con: con, Dex: dex, Atk: atk, Wit: wit, Spt: sptDelta);
 
     private static string Swap2(int n, string up, string down) =>
         $"Passive. +{n} {up}, −{n} {down}. (Level {n} of 5.)";
 
     private static string SwapMenUp(int n, string down) =>
-        $"Passive. +{n * 2}% Max MP, M.Def and MP regen; −{n} {down}. (Level {n} of 5.)";
+        $"Passive. +{n} SPT (Max MP, M.Def, MP regen); −{n} {down}. (Level {n} of 5.)";
 
     private static string SwapMenDown(int n, string up) =>
-        $"Passive. +{n} {up}; −{n * 2}% Max MP, M.Def and MP regen. (Level {n} of 5.)";
+        $"Passive. +{n} {up}; −{n} SPT (Max MP, M.Def, MP regen). (Level {n} of 5.)";
 
     /// <summary>A stat a swap can move. MEN is not a real stat any more (it IS its modifiers — see
     /// <see cref="MenSwap"/>), but for the DIRECTION rule it commits exactly like the others.</summary>

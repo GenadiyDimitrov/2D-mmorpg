@@ -1463,6 +1463,13 @@ public partial class MainWindow : Window
         };
     }
 
+    /// <summary>The " Lv12" suffix for a nameplate / target frame — empty for every player but YOU
+    /// (owner, 2026-07-20: your level is yours and the party's, not an enemy's). Mobs always show it.
+    /// The server backs this up by sending Level=0 for other players, so a modified client gains
+    /// nothing; this method only decides what is DRAWN.</summary>
+    private string LevelTag(EntityDto dto) =>
+        dto.Kind == EntityKind.Mob || dto.Id == _myId ? $" Lv{dto.Level}" : "";
+
     private void UpdateVisualState(EntityVisual visual, EntityDto dto)
     {
         double ratio = dto.MaxHp > 0 ? Math.Clamp((double)dto.Hp / dto.MaxHp, 0, 1) : 0;
@@ -1478,7 +1485,7 @@ public partial class MainWindow : Window
         {
             // Link-dead: a clear title above the head so nearby players know it's a network drop
             // (not an active player). Offline-FARMING players are NOT flagged (look normal).
-            visual.Label.Text = $"{dto.Name} Lv{dto.Level}  ⚠ Disconnected";
+            visual.Label.Text = $"{dto.Name}{LevelTag(dto)}  ⚠ Disconnected";
             visual.Label.Foreground = Brushes.OrangeRed;
         }
         else
@@ -1489,8 +1496,8 @@ public partial class MainWindow : Window
             // not, and you could only find out the hard way (owner).
             string aggro = dto.Aggressive ? " *" : "";   // space before it (owner) — "Wolf *", not "Wolf*"
             visual.Label.Text = dto.Dead
-                ? $"{dto.Name}{aggro} Lv{dto.Level} (dead)"
-                : $"{dto.Name}{aggro}{classTag} Lv{dto.Level}";
+                ? $"{dto.Name}{aggro}{LevelTag(dto)} (dead)"
+                : $"{dto.Name}{aggro}{classTag}{LevelTag(dto)}";
             // Player name colour follows the PvP flag: red = PK, purple = flagged, white = innocent.
             visual.Label.Foreground = dto.Kind == EntityKind.Mob ? MobNameBrush(dto.Level)
                 : dto.Flag switch
@@ -1773,7 +1780,7 @@ public partial class MainWindow : Window
                 ? $" {ClassCatalog.Get(dto.SecondClass)?.Name}" : "";
             string deadTag = dto.Dead ? "  [DEAD]" : "";
             string aggroTag = dto.Aggressive ? " *" : "";   // attacks on sight (space before it, owner)
-            TargetNameText.Text = $"{dto.Name}{aggroTag}{classTag} Lv{dto.Level}  {dto.Hp}/{dto.MaxHp}{deadTag}";
+            TargetNameText.Text = $"{dto.Name}{aggroTag}{classTag}{LevelTag(dto)}  {dto.Hp}/{dto.MaxHp}{deadTag}";
             double ratio = dto.MaxHp > 0 ? Math.Clamp((double)dto.Hp / dto.MaxHp, 0, 1) : 0;
             TargetHpFill.Width = 218 * ratio;
 

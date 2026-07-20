@@ -111,8 +111,20 @@ public static class GameConstants
     /// <summary>Ticks until a dead mob respawns at its home position (10s).</summary>
     public const int MobRespawnTicks = 100;
 
-    /// <summary>Out-of-combat regen is applied once per this many ticks (1s).</summary>
-    public const int RegenIntervalTicks = 10;
+    /// <summary>The once-per-SECOND housekeeping cadence: damage-over-time, heal-over-time, the buff
+    /// push and the party-roster refresh. These are authored "per second" and must stay at 1s no matter
+    /// how the regen cadence is tuned — they used to share the regen flag, so retuning regen would
+    /// silently have nerfed every DoT by the same factor.</summary>
+    public const int SecondIntervalTicks = TickRate;
+
+    /// <summary>Out-of-combat natural regen cadence, in ticks. Default 30 = **3 seconds**, matching
+    /// L2's `HP_REGENERATE_PERIOD = 3000`. NOT a const: it's live-editable from the admin Debug Tuning
+    /// panel so the cadence can be compared in-game. Changing it does NOT change how fast you heal —
+    /// <see cref="RegenIntervalSeconds"/> scales the amount — only how chunky the healing is.</summary>
+    public static int RegenIntervalTicks = 30;
+
+    /// <summary>The regen period in seconds, i.e. how much "per second" regen each tick pays out.</summary>
+    public static float RegenIntervalSeconds => RegenIntervalTicks * TickSeconds;
 
     /// <summary>Maximum stacks a damage-over-time effect can build (bleed/poison/venom).</summary>
     public const int MaxDotStacks = 10;

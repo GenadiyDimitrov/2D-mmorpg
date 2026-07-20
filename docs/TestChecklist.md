@@ -13,6 +13,29 @@ this file.
 
 Server-side behaviour is SmokeTest-verified; everything visual needs your eyes.
 
+**Design (added 2026-07-20, after the batch):**
+- [ ] **Level is PRIVATE.** You see `Lv` on your OWN nameplate and on MOBS. Another player's nameplate,
+      target frame and expand (▼) show **no level** — party members included (their level is in the
+      **party window**, which is the one place it's shared). Enforced server-side: the number isn't
+      even sent for other players, so it can't be read by a modified client.
+
+- [ ] **Regen ticks every 3 seconds** (was 1s) in bigger chunks — L2's cadence. Healing SPEED is
+      unchanged by the cadence itself; only the chunkiness. **CON now drives HP regen hard**: at lvl 40,
+      CON 20 → 11 HP/tick, CON 40 → 21, CON 60 → 37 (CON 40 is deliberately identical to before).
+      Tune live in **Debug Tuning**: *Regen tick (sec)*, *CON regen ×/point*, *MEN regen ×/point*.
+- [ ] **SPT (Spirit) is a real stat now** — the stat window shows **CON / ATK / WIT / DEX / SPT**.
+      It drives Max MP, MP regen and M.Def. Fighters' numbers are UNCHANGED (25/26/27); ork mage +3%,
+      **elf mage −8%** vs before. ⚠ **schema change** — the DB rebuilds itself on first run (DEBUG).
+- [ ] **SPT survives a subclass swap and a relogin** — it persists per-subclass like CON/ATK/WIT/DEX.
+      Swap class, swap back, relog: SPT and Max MP must be right. (SmokeTest territory — run it.)
+- [ ] **±Spirit swap passives now grant ±1 SPT per level** (not ±10% bundles). The stat window's SPT
+      number must MOVE when one is learned, and Max MP / M.Def / MP regen with it. Worth ~+5-7% at
+      level 5, not the old flat +10%.
+- [ ] **Stat tooltips** — hovering the CON/ATK/WIT/DEX/SPT row (label OR number) explains what each
+      stat buys. Also on the Max HP/MP row.
+- [ ] **DoTs still tick every 1 second** — bleed/poison/venom, HoTs and the party window must be
+      UNAFFECTED by the regen cadence (they used to share the same timer).
+
 **Bugs:**
 - [ ] **Enter focuses the chat input** (and un-hides the chat window if hidden), and **clicking anywhere
       outside the chat removes focus** so keys go back to the game.
