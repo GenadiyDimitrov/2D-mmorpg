@@ -41,7 +41,11 @@ public partial class MainWindow : Window
     private BaseClass _myBaseClass;
     private int _mySecondClass;
     private int _myThirdClass;
-    private bool _isAdmin;
+    /// <summary>Staff role of the CHARACTER currently in the world (roles are per-character, so this is
+    /// set at EnterWorld, not at login). Used only to decide which commands are worth sending — the
+    /// server authorizes every one of them regardless.</summary>
+    private AccountRole _role = AccountRole.Player;
+    private bool _isAdmin => _role != AccountRole.Player;
     private DateTime _serverEpoch = DateTime.UtcNow;
     private EntityDto? _myDto;
     private Guid? _targetId;
@@ -148,11 +152,19 @@ public partial class MainWindow : Window
         _net.DebugConfigReceived += c => Dispatcher.BeginInvoke(() => OnDebugConfig(c));
         _net.EnchantReceived += en => Dispatcher.BeginInvoke(() => OnEnchant(en));
         _net.RerollReceived += r => Dispatcher.BeginInvoke(() => OnReroll(r));
+        _net.AdminStateReceived += s => Dispatcher.BeginInvoke(() => OnAdminState(s));
+        _net.AdminBagReceived += b => Dispatcher.BeginInvoke(() => ShowAdminBagWindow(b));
+        _net.AdminGivePickerReceived += b => Dispatcher.BeginInvoke(() => ShowAdminGiveWindow(b));
         _net.ForceDisconnected += reason => Dispatcher.BeginInvoke(() =>
         {
+            // Leave the world FIRST, then explain (owner). Showing the modal first left the kicked
+            // player staring at a dialog on top of a world they'd already been removed from, and the
+            // "OK" read as a confirmation they could decline. Now: back to the login page → then why.
             _inGame = false;
-            MessageBox.Show(reason, "Disconnected");
+            _role = AccountRole.Player;
+            UpdateAdminIndicator();
             ShowAccountPanel();
+            MessageBox.Show(reason, "Disconnected");
         });
         _net.Disconnected += reason => Dispatcher.BeginInvoke(() =>
         {
@@ -220,7 +232,8 @@ public partial class MainWindow : Window
                 return;
             }
 
-            _isAdmin = result.IsAdmin;
+            // Staff role belongs to the CHARACTER now, so it arrives with EnterWorld, not with login.
+            _role = AccountRole.Player;
             await ShowCharacterSelectAsync();
         }
         catch (Exception ex)
@@ -364,6 +377,8 @@ public partial class MainWindow : Window
             _camX = result.X;
             _camY = result.Y;
             _inGame = true;
+            _role = result.Role;   // per-CHARACTER staff role
+            UpdateAdminIndicator();
             _serverEpoch = result.ServerEpochUtc == default ? DateTime.UtcNow : result.ServerEpochUtc;
             GameClock.Epoch = _serverEpoch;
             ClockPanel.Visibility = Visibility.Visible;
@@ -398,7 +413,7 @@ public partial class MainWindow : Window
 
             AppendChat(new ChatMessage("SYSTEM",
                 "Click ground = move, click target = attack, 1-8 = skills, I = inventory." +
-                (_isAdmin ? " Admin: type /help in chat." : ""),
+                (_isAdmin ? $" {_role}: type /help in chat." : ""),
                 ChatChannel.System));
         }
         catch (Exception ex)
@@ -680,18 +695,14 @@ public partial class MainWindow : Window
              : SkillIcons.For(def.Id);
     }
 
-    /// <summary>Short LETTERS label for a skill square (the fallback when it has no icon). Uses the
-    /// skill's authored Abbrev when set, else derives from the (per-class) display name: initials of a
-    /// multi-word name (Magic Bolt → MB), first 3 letters of a single word.</summary>
+    /// <summary>Short LETTERS label for a skill square (the fallback when it has no icon). The skill's
+    /// authored Abbrev wins; otherwise it comes from <see cref="Abbreviations"/>, which resolves the
+    /// whole catalog at once so no two skills or consumables can share a label. Deriving it here, one
+    /// skill at a time, is what gave three different heal-over-time skills the same "HOT" square.</summary>
     private string SkillAbbrev(SkillDef def)
     {
         if (!string.IsNullOrWhiteSpace(def.Abbrev)) return def.Abbrev;
-        string name = SkillDisplayName(def.Id, def.Name);
-        var words = name.Split(new[] { ' ', '-', '\'' }, StringSplitOptions.RemoveEmptyEntries);
-        if (words.Length >= 2)
-            return string.Concat(words.Take(3).Select(w => char.ToUpperInvariant(w[0])));
-        string w = words.Length == 1 ? words[0] : name;
-        return w.Length <= 3 ? w : w.Substring(0, 3);
+        return Abbreviations.For(SkillDisplayName(def.Id, def.Name));
     }
 
     /// <summary>The face of a skill square: the emoji icon if one is set (bigger, black on the light
@@ -962,21 +973,18 @@ public partial class MainWindow : Window
                 AppendChat(new ChatMessage("SYSTEM", $"No {def?.Name ?? defId} left.", ChatChannel.System));
                 return;
             }
-            _ = _net.UsePotionAsync(stack.InstanceId);
+            // Same path the BAG uses — a res scroll needs its target, which this slot used to drop.
+            if (def is not null) UseConsumable(stack.InstanceId, def);
+            else _ = _net.UsePotionAsync(stack.InstanceId);
         };
         button.MouseRightButtonUp += (_, _) => RemoveSkillFromBar(slotIndex);
     }
 
-    /// <summary>Initials for an item bar slot (items have no emoji table yet): 2-word → first letters,
-    /// else 3 chars.</summary>
-    private static string ItemBarAbbrev(ItemDef? def)
-    {
-        if (def is null) return "?";
-        var words = def.Name.Split(new[] { ' ', '-', '\'' }, StringSplitOptions.RemoveEmptyEntries);
-        if (words.Length >= 2)
-            return string.Concat(words.Take(2).Select(w => char.ToUpperInvariant(w[0])));
-        return def.Name.Length <= 3 ? def.Name : def.Name.Substring(0, 3);
-    }
+    /// <summary>Label for an item bar slot (items have no emoji table yet). Shares the catalog-wide
+    /// resolver with skills, so a potion can't collide with a skill square either — the two scrolls both
+    /// showed the same letters before this.</summary>
+    private static string ItemBarAbbrev(ItemDef? def) =>
+        def is null ? "?" : Abbreviations.For(def.Name);
 
     /// <summary>Put an inventory item on the bar's first free slot (from the inventory's "To Bar"
     /// button). Stored as an "item:&lt;defId&gt;" token; the SERVER keeps it (SyncSkillBar skips item
@@ -1000,6 +1008,26 @@ public partial class MainWindow : Window
     {
         ChatPanel.Visibility = ChatPanel.Visibility == Visibility.Visible
             ? Visibility.Collapsed : Visibility.Visible;
+        if (ChatPanel.Visibility != Visibility.Visible) BlurChatInput();
+    }
+
+    /// <summary>Reveal the chat panel if hidden and put the caret in its input box (Enter).</summary>
+    private void FocusChatInput()
+    {
+        ChatPanel.Visibility = Visibility.Visible;
+        ChatInput.Focus();
+        Keyboard.Focus(ChatInput);
+        ChatInput.CaretIndex = ChatInput.Text.Length;
+    }
+
+    /// <summary>Give keyboard focus back to the game. WPF has no "unfocus", so focus is moved onto the
+    /// window itself — that is what makes the hotkeys live again, since OnPreviewKeyDown ignores every
+    /// key while a TextBox holds focus.</summary>
+    private void BlurChatInput()
+    {
+        if (!ChatInput.IsKeyboardFocusWithin) return;
+        Keyboard.ClearFocus();
+        Focus();
     }
 
     // ---- Skill-bar drag & drop (rearrange slots) --------------------------
@@ -1121,6 +1149,15 @@ public partial class MainWindow : Window
         // digit never arrived. Hence "I can't write in the auto-potion boxes, it uses skills".
         if (Keyboard.FocusedElement is TextBox or PasswordBox)
             return;
+
+        // ENTER jumps to the chat box (revealing it first if it's hidden) — the MMO reflex. Focus is
+        // released again by clicking anywhere in the world; see OnWorldMouseDown.
+        if (e.Key is Key.Enter)
+        {
+            FocusChatInput();
+            e.Handled = true;
+            return;
+        }
 
         if (e.Key is Key.I)
         {
@@ -1412,7 +1449,7 @@ public partial class MainWindow : Window
                 ? $" {ClassCatalog.Get(dto.SecondClass)?.Name}" : "";
             // "*" = this mob attacks on sight. A passive mob is safe to walk past; an aggressive one is
             // not, and you could only find out the hard way (owner).
-            string aggro = dto.Aggressive ? "*" : "";
+            string aggro = dto.Aggressive ? " *" : "";   // space before it (owner) — "Wolf *", not "Wolf*"
             visual.Label.Text = dto.Dead
                 ? $"{dto.Name}{aggro} Lv{dto.Level} (dead)"
                 : $"{dto.Name}{aggro}{classTag} Lv{dto.Level}";
@@ -1697,7 +1734,7 @@ public partial class MainWindow : Window
             string classTag = dto.SecondClass > 0
                 ? $" {ClassCatalog.Get(dto.SecondClass)?.Name}" : "";
             string deadTag = dto.Dead ? "  [DEAD]" : "";
-            string aggroTag = dto.Aggressive ? "*" : "";   // attacks on sight
+            string aggroTag = dto.Aggressive ? " *" : "";   // attacks on sight (space before it, owner)
             TargetNameText.Text = $"{dto.Name}{aggroTag}{classTag} Lv{dto.Level}  {dto.Hp}/{dto.MaxHp}{deadTag}";
             double ratio = dto.MaxHp > 0 ? Math.Clamp((double)dto.Hp / dto.MaxHp, 0, 1) : 0;
             TargetHpFill.Width = 218 * ratio;
@@ -1747,6 +1784,9 @@ public partial class MainWindow : Window
             TargetMobDetailsButton.Visibility = Visibility.Collapsed;
             TargetActionsButton.Visibility = Visibility.Collapsed;
             TargetActionsPanel.Visibility = Visibility.Collapsed;
+            // No target, no card — otherwise the popup lingers describing a mob you've stopped fighting.
+            MobInfoPanel.Visibility = Visibility.Collapsed;
+            _mobDetailsExpanded = false;
         }
     }
 
@@ -1810,13 +1850,16 @@ public partial class MainWindow : Window
 
         // A PLAYER's expand shows IDENTITY only — you don't get to read a rival's full stat sheet (P.Atk,
         // defences, crit) off a click (owner, 2026-07-17). A MOB shows the full combat card: it's a
-        // target you're fighting and you want its defences to plan a burst. (Clan is a placeholder — no
-        // clan system yet — so a player expand is just name + level + class for now.)
+        // target you're fighting and you want its defences to plan a burst.
+        //
+        // LEVEL is deliberately absent (owner, 2026-07-20): it is intelligence a player does not want to
+        // hand an enemy, and unlike a name it isn't already on screen. Class stays — it's visible from
+        // the gear and the spells they cast anyway. Title and clan name/rank join this line once clans
+        // exist; the level does not come back.
         if (!d.IsMob)
         {
             string classTag = TargetClassLabel();
-            TargetDetailsText.Text = $"{d.Name}   Level {d.Level}" +
-                                     (classTag.Length > 0 ? $"\n{classTag}" : "");
+            TargetDetailsText.Text = classTag.Length > 0 ? $"{d.Name}\n{classTag}" : d.Name;
             TargetPassivesList.ItemsSource = null;
             TargetMobDetailsButton.Visibility = Visibility.Collapsed;
             TargetDetailsPanel.Visibility = Visibility.Visible;
@@ -1843,10 +1886,13 @@ public partial class MainWindow : Window
     private void TargetMobDetails_Click(object sender, RoutedEventArgs e)
     {
         _mobDetailsExpanded = !_mobDetailsExpanded;
-        // Fetch the drop list ONCE, only when the player opens Details (it's static — no need to poll it).
-        if (_mobDetailsExpanded && _cachedDrops is null && _targetId is Guid id)
-            _ = _net.InspectTargetAsync(id, withDrops: true);
-        RenderMobDetails();
+        if (!_mobDetailsExpanded)
+        {
+            MobInfoPanel.Visibility = Visibility.Collapsed;
+            return;
+        }
+        _mobInfoShowingDrops = false;   // Details is the default tab (owner)
+        RenderMobInfoPopup();
     }
 
     /// <summary>Draw the mob inspect panel from the last details, at the current detail level: compact =
@@ -1856,36 +1902,101 @@ public partial class MainWindow : Window
         if (_lastMobDetails is not { } d) return;
 
         TargetMobDetailsButton.Visibility = Visibility.Visible;
-        TargetMobDetailsButton.Content = _mobDetailsExpanded ? "Details ▾" : "Details ▸";
+        TargetMobDetailsButton.Content = "Details ▸";
 
-        if (!_mobDetailsExpanded)
+        // The target frame itself keeps ONLY these two rows (owner) — everything else moved into the
+        // MobInfo popup. Attack above defence, in the SAME order the popup uses: the two views used to
+        // disagree, so the rows appeared to swap places every time you expanded or collapsed the card.
+        TargetDetailsText.Text =
+            $"P.Atk {d.PAtk}   M.Atk {d.MAtk}\n" +
+            $"P.Def {d.PDef}   M.Def {d.MDef}";
+        TargetPassivesList.ItemsSource = null;
+
+        if (_mobDetailsExpanded) RenderMobInfoPopup();
+    }
+
+    /// <summary>Which tab the mob-info popup is showing. Details is the default (owner) — the drop list
+    /// is what you check once, the stats are what you check mid-fight.</summary>
+    private bool _mobInfoShowingDrops;
+
+    private void MobInfoDetailsTab_Click(object sender, RoutedEventArgs e)
+    {
+        _mobInfoShowingDrops = false;
+        RenderMobInfoPopup();
+    }
+
+    private void MobInfoDropTab_Click(object sender, RoutedEventArgs e)
+    {
+        _mobInfoShowingDrops = true;
+        // Drops are static, so they're fetched once, lazily — the 1s stat refresh never carries them.
+        if (_cachedDrops is null && _targetId is Guid id)
+            _ = _net.InspectTargetAsync(id, withDrops: true);
+        RenderMobInfoPopup();
+    }
+
+    /// <summary>Draw the movable mob card: a Details tab (full stats, effects, passives) and a Drop tab.
+    /// Modelled on the player stats window — more stats can simply be appended to the Details tab.</summary>
+    private void RenderMobInfoPopup()
+    {
+        if (_lastMobDetails is not { } d)
         {
-            TargetDetailsText.Text =
-                $"P.Def {d.PDef}   M.Def {d.MDef}\n" +
-                $"P.Atk {d.PAtk}   M.Atk {d.MAtk}";
-            TargetPassivesList.ItemsSource = null;
+            MobInfoPanel.Visibility = Visibility.Collapsed;
             return;
         }
 
-        string text =
-            $"HP {d.Hp}/{d.MaxHp}   MP {d.Mp}/{d.MaxMp}\n" +
-            $"P.Atk {d.PAtk}   M.Atk {d.MAtk}\n" +
-            $"P.Def {d.PDef}   M.Def {d.MDef}\n" +
-            $"Acc {d.Accuracy}   Eva {d.Evasion}   Crit {d.CritChance * 100:0.#}%";
-        if (d.Effects.Length > 0)
-            text += "\nEffects: " + string.Join(", ", d.Effects);
-        TargetDetailsText.Text = text;
+        MobInfoTitle.Text = $"{d.Name}   Lv {d.Level}";
+        HighlightMobInfoTab();
+        MobInfoBody.Children.Clear();
 
-        var lines = new List<string>(d.Passives);
-        if (d.BowResist > 0f) lines.Add($"Bow Resist +{d.BowResist * 100:0}%");
-        if (d.CritResist > 0f) lines.Add($"Crit Resist +{d.CritResist * 100:0}%");
-        if (_cachedDrops is { Length: > 0 })
+        if (_mobInfoShowingDrops)
         {
-            lines.Add("— Drops —");
-            lines.AddRange(_cachedDrops);
+            if (_cachedDrops is { Length: > 0 })
+                foreach (var drop in _cachedDrops) MobInfoBody.Children.Add(MobInfoLine(drop));
+            else
+                MobInfoBody.Children.Add(MobInfoLine("(no drops known)", dim: true));
         }
-        TargetPassivesList.ItemsSource = lines.Count > 0 ? lines : null;
+        else
+        {
+            MobInfoBody.Children.Add(MobInfoLine($"HP {d.Hp}/{d.MaxHp}    MP {d.Mp}/{d.MaxMp}"));
+            MobInfoBody.Children.Add(MobInfoLine($"P.Atk {d.PAtk}    M.Atk {d.MAtk}"));
+            MobInfoBody.Children.Add(MobInfoLine($"P.Def {d.PDef}    M.Def {d.MDef}"));
+            MobInfoBody.Children.Add(MobInfoLine(
+                $"Acc {d.Accuracy}    Eva {d.Evasion}    Crit {d.CritChance * 100:0.#}%"));
+            if (d.BowResist > 0f) MobInfoBody.Children.Add(MobInfoLine($"Bow Resist +{d.BowResist * 100:0}%"));
+            if (d.CritResist > 0f) MobInfoBody.Children.Add(MobInfoLine($"Crit Resist +{d.CritResist * 100:0}%"));
+            if (d.Effects.Length > 0)
+            {
+                MobInfoBody.Children.Add(MobInfoLine("— Effects —", dim: true));
+                foreach (var effect in d.Effects) MobInfoBody.Children.Add(MobInfoLine(effect));
+            }
+            if (d.Passives.Length > 0)
+            {
+                MobInfoBody.Children.Add(MobInfoLine("— Passives —", dim: true));
+                foreach (var passive in d.Passives) MobInfoBody.Children.Add(MobInfoLine(passive));
+            }
+        }
+
+        Panel.SetZIndex(MobInfoPanel, ++_panelZ);
+        MobInfoPanel.Visibility = Visibility.Visible;
     }
+
+    private void HighlightMobInfoTab()
+    {
+        MobInfoDetailsTab.FontWeight = _mobInfoShowingDrops ? FontWeights.Normal : FontWeights.Bold;
+        MobInfoDropTab.FontWeight = _mobInfoShowingDrops ? FontWeights.Bold : FontWeights.Normal;
+    }
+
+    private static TextBlock MobInfoLine(string text, bool dim = false) => new()
+    {
+        Text = text,
+        Foreground = new SolidColorBrush(dim
+            ? Color.FromRgb(0x8F, 0x9A, 0xA4)
+            : Color.FromRgb(0xD8, 0xE0, 0xE6)),
+        FontSize = 12,
+        FontFamily = new FontFamily("Consolas"),
+        TextWrapping = TextWrapping.Wrap,
+        Margin = new Thickness(0, 1, 0, 1),
+    };
 
     /// <summary>The 2nd/3rd-class label for the current target (from its snapshot), or "" if none.</summary>
     private string TargetClassLabel()
@@ -2305,6 +2416,11 @@ public partial class MainWindow : Window
 
     private async void WorldCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        // Clicking the world takes focus BACK off the chat box (owner) — otherwise Enter drops you into
+        // chat and every hotkey stays dead until you notice why. Done before the dead/not-in-game guard
+        // so it works even while you're lying on the floor.
+        BlurChatInput();
+
         if (!_inGame || _myDto is { Dead: true })
             return;
 

@@ -102,31 +102,57 @@ await a.Hub.SendAsync("DebugLevel", -1);   // back to level 1 so the leveling ma
 await a.Settle();
 
 // -------------------------------------------------------------------------------------------
-// 1c. FRIENDS: add a seed character (Test2) as a friend, /flist shows it offline, and when Test2 comes
-//     ONLINE we get a "back online" message. Non-admin, per character.
+// 1c. FRIENDS are MUTUAL (owner, 2026-07-20). /fadd is only an invite: until the other side adds you
+//     back you are [pending] and get NO presence information at all, and they are deliberately not
+//     notified. Once it's reciprocal, both sides see online/offline. Non-admin, per character.
 // -------------------------------------------------------------------------------------------
 a.SystemChat.Clear();
 await a.Hub.SendAsync("FriendCommand", "add", "Test2");
 await a.Settle();
-Check("adding a friend confirms it", a.SystemChat.Any(s => s.Contains("Added Test2")),
+Check("adding a friend sends a one-way request",
+      a.SystemChat.Any(s => s.Contains("Test2") && s.Contains("pending")),
       string.Join(" | ", a.SystemChat));
 
 a.SystemChat.Clear();
 await a.Hub.SendAsync("FriendCommand", "list", "");
 await a.Settle();
-Check("/flist shows the friend as offline",
-      a.SystemChat.Any(s => s.Contains("Test2") && s.Contains("offline")), string.Join(" | ", a.SystemChat));
+Check("/flist shows an unreciprocated friend as [pending], with NO online/offline state",
+      a.SystemChat.Any(s => s.Contains("Test2") && s.Contains("pending"))
+      && !a.SystemChat.Any(s => s.Contains("Test2") && (s.Contains("[online]") || s.Contains("[offline]"))),
+      string.Join(" | ", a.SystemChat));
 
-// Bring Test2 online → the friend should get a "back online" message.
+// Test2 comes online WITHOUT having added us back → still pending, so no presence message at all.
 a.SystemChat.Clear();
 var friend = await ConnectAsync("test2", "test");
 var friendChars = await friend.Hub.InvokeAsync<CharacterList>("ListCharacters");
 await friend.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(friendChars.Characters[0].Id));
 await a.Settle();
-Check("a friend coming online sends a 'back online' message",
-      a.SystemChat.Any(s => s.Contains("Test2") && s.Contains("back online")), string.Join(" | ", a.SystemChat));
+Check("a PENDING friend coming online tells you nothing",
+      !a.SystemChat.Any(s => s.Contains("Test2") && s.Contains("is now")),
+      string.Join(" | ", a.SystemChat));
+
+// Test2 adds us back → NOW it's a real friendship, and both sides are told.
+a.SystemChat.Clear();
+await friend.Hub.SendAsync("FriendCommand", "add", name);
+await a.Settle();
+Check("reciprocating makes it a real friendship, and both sides hear about it",
+      a.SystemChat.Any(s => s.Contains("Test2") && s.Contains("now your friend")),
+      string.Join(" | ", a.SystemChat));
+
+a.SystemChat.Clear();
+await a.Hub.SendAsync("FriendCommand", "list", "");
+await a.Settle();
+Check("/flist shows a MUTUAL friend's online state",
+      a.SystemChat.Any(s => s.Contains("Test2") && s.Contains("[online]")),
+      string.Join(" | ", a.SystemChat));
+
+// ...and going offline now reports, because the friendship is mutual.
+a.SystemChat.Clear();
 await friend.Hub.SendAsync("LeaveWorld");
 await Task.Delay(400);
+Check("a MUTUAL friend going offline reports it",
+      a.SystemChat.Any(s => s.Contains("Test2") && s.Contains("Offline")),
+      string.Join(" | ", a.SystemChat));
 await friend.DisposeAsync();
 
 // (FOLLOW/ASSIST are verified in the playtest — a position-convergence smoke check depends on two
@@ -296,12 +322,18 @@ await b.Settle();
 bool atJail = Math.Abs(b.MyX - GameConstants.JailX) < 50 && Math.Abs(b.MyY - GameConstants.JailY) < 50;
 Check("jailing a player teleports them to jail (live)", atJail, $"at ({b.MyX:0},{b.MyY:0})");
 
-// Jailed → can't walk out.
-float jx = b.MyX, jy = b.MyY;
-await b.Hub.SendAsync("Move", new MoveCommand(jx + 3000, jy));
-await b.Settle();
-Check("a jailed player can't move out of jail",
-      Math.Abs(b.MyX - jx) < 50 && Math.Abs(b.MyY - jy) < 50, $"moved to ({b.MyX:0},{b.MyY:0})");
+// Jailed → may pace around inside the CELL, but can never leave it (owner, 2026-07-20: serving a
+// sentence should feel like a cell, not paralysis). Walk hard at the wall and confirm we end up
+// clamped to the jail radius rather than either frozen on the spot or out in the world.
+await b.Hub.SendAsync("Move", new MoveCommand(GameConstants.JailX + 3000, GameConstants.JailY));
+for (int i = 0; i < 12; i++) await b.Settle();   // give the walk time to run into the wall
+double fromJail = Math.Sqrt(
+    Math.Pow(b.MyX - GameConstants.JailX, 2) + Math.Pow(b.MyY - GameConstants.JailY, 2));
+Check("a jailed player can MOVE inside the cell",
+      fromJail > 20, $"{fromJail:0} units from the jail centre");
+Check("a jailed player can NOT walk out of the cell",
+      fromJail <= GameConstants.JailRadius + 40,
+      $"{fromJail:0} units out, cell radius is {GameConstants.JailRadius:0}");
 
 // JAIL PERSISTS across a relog: leave, come back, still in jail.
 await b.Hub.SendAsync("LeaveWorld");
@@ -315,22 +347,53 @@ Check("jail SURVIVES a relog (spawns back in jail)",
       Math.Abs(c.MyX - GameConstants.JailX) < 50 && Math.Abs(c.MyY - GameConstants.JailY) < 50,
       $"spawned at ({c.MyX:0},{c.MyY:0})");
 
-// Release, then KICK: the character can't re-enter until the lockout passes. The kick persists the
-// lockout; the smoke client (a raw connection) doesn't act on ForceDisconnect, so leave the world
-// EXPLICITLY (as the real client would on returning to login) before trying to come back — otherwise the
-// "already online" guard fires and hides whether the kick is actually enforced.
+// RELEASE sends you to the STARTING town, never the nearest one — the jail's location has to stay
+// secret, and "nearest" is a map hint (owner, 2026-07-20).
+await gm.Hub.SendAsync("AdminCommand", "unjail", name);
+for (int i = 0; i < 6; i++) await c.Settle();
+var startTown = WorldMap.StartingTown;
+Check("release from jail teleports to the STARTING town (not the nearest)",
+      Math.Abs(c.MyX - startTown.X) < 400 && Math.Abs(c.MyY - startTown.Y) < 400,
+      $"released at ({c.MyX:0},{c.MyY:0}), starting town is ({startTown.X:0},{startTown.Y:0})");
+
+// ADMINS ARE IMMUNE. `/jail admin` used to jail the OWNER in their own jail.
+gm.SystemChat.Clear();
+await gm.Hub.SendAsync("AdminCommand", "jail", "Admin 60");
+await gm.Settle();
+Check("an admin can't jail themselves (or any other admin)",
+      !gm.SystemChat.Any(s => s.Contains("jailed for")),
+      string.Join(" | ", gm.SystemChat));
+
+// Case-INSENSITIVE lookup: the action and the message must agree. `/jail test1` on "Test1" used to
+// jail them for real and then report "No character 'test1'" — the online lookup ignored case, the
+// database lookup did not.
+gm.SystemChat.Clear();
+await gm.Hub.SendAsync("AdminCommand", "jail", $"{name.ToLowerInvariant()} 60");
+await gm.Settle();
+Check("a lower-case name resolves, and does NOT report 'no character'",
+      gm.SystemChat.Any(s => s.Contains("jailed for")) &&
+      !gm.SystemChat.Any(s => s.Contains("No character")),
+      string.Join(" | ", gm.SystemChat));
 await gm.Hub.SendAsync("AdminCommand", "unjail", name);
 await Task.Delay(300);
+
+// KICK must remove the entity SERVER-SIDE, without the kicked client's cooperation.
+//
+// The smoke client is a raw connection: it ignores ForceDisconnect and never calls LeaveWorld. That
+// is exactly the case that used to break — the server only asked the client to leave, so the entity
+// stayed behind as a GHOST (targetable, killable, and still holding the name), and the account was
+// then refused re-entry with "character is already online". So re-entering here WITHOUT leaving
+// first is the whole test: the error must be the kick lockout, never "already online".
 await gm.Hub.SendAsync("AdminCommand", "kick", $"{name} 60");
-await Task.Delay(400);
-await c.Hub.SendAsync("LeaveWorld");
 await Task.Delay(600);
-await c.DisposeAsync();
 var d = await ConnectAsync("test1", "test");
 var enteredD = await d.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(charId));
 Check("a KICKED character can't re-enter until the lockout passes",
       !enteredD.Success && (enteredD.Error?.Contains("locked") ?? false), enteredD.Error);
+Check("kick leaves NO ghost entity behind (re-entry is blocked by the kick, not by 'already online')",
+      !(enteredD.Error?.Contains("already online") ?? false), enteredD.Error);
 await d.DisposeAsync();
+await c.DisposeAsync();
 
 // (No cleanup needed — every run creates a fresh Smoke<timestamp> character, so the jailed/kicked
 //  throwaway char is never reused.)

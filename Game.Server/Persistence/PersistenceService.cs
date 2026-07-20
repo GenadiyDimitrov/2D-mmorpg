@@ -39,7 +39,10 @@ public class PersistenceService
 
     // ----- Accounts ----------------------------------------------------------
 
-    public record AuthResult(bool Success, string? Error, int AccountId, bool IsAdmin);
+    /// <summary><paramref name="IsFirstAccount"/> marks the very first account created on a fresh server
+    /// (the owner's). It is NOT an authorization signal — staff powers live on the CHARACTER's Role and
+    /// are checked at EnterWorld — it only decides that this account's characters start as Admin.</summary>
+    public record AuthResult(bool Success, string? Error, int AccountId, bool IsFirstAccount);
 
     public async Task<AuthResult> RegisterAsync(string username, string password)
     {
@@ -56,7 +59,8 @@ public class PersistenceService
 
         var (hash, salt) = PasswordHasher.Hash(password);
 
-        // First account ever created becomes admin (convenient for testing).
+        // First account ever created is the owner's — its characters are created as Admin (see
+        // CreateCharacterAsync). The role itself lives on the CHARACTER now, not here.
         bool isFirst = !await db.Accounts.AnyAsync();
 
         var account = new AccountRecord
@@ -64,13 +68,11 @@ public class PersistenceService
             Username = username,
             PasswordHash = hash,
             PasswordSalt = salt,
-            Role = isFirst ? AccountRole.Admin : AccountRole.Player,
-            IsAdmin = isFirst   // derived from Role; kept in sync so existing IsAdmin plumbing works
         };
         db.Accounts.Add(account);
         await db.SaveChangesAsync();
 
-        return new AuthResult(true, null, account.Id, account.IsAdmin);
+        return new AuthResult(true, null, account.Id, isFirst);
     }
 
     /// <summary>DEBUG convenience: on an EMPTY db, create ready-to-play accounts so you can skip the
@@ -111,8 +113,9 @@ public class PersistenceService
         if (account.BannedUntilUtc is DateTime until && until > DateTime.UtcNow)
             return new AuthResult(false, $"This account is banned for another {Remaining(until)}.", 0, false);
 
-        // Role is the source of truth for staff; IsAdmin (derived) may be stale on old rows.
-        return new AuthResult(true, null, account.Id, account.Role != AccountRole.Player || account.IsAdmin);
+        // Staff status is NOT decided here any more — it belongs to whichever CHARACTER you then enter
+        // the world with (owner). Login only proves who the account is.
+        return new AuthResult(true, null, account.Id, false);
     }
 
     /// <summary>A short "2d 3h" / "5m" style remaining-time string for a UTC deadline.</summary>
@@ -205,13 +208,21 @@ public class PersistenceService
         if (await db.Characters.CountAsync(c => c.AccountId == accountId) >= GameConstants.MaxCharactersPerAccount)
             return (false, $"Account is full ({GameConstants.MaxCharactersPerAccount} characters max).");
 
-        if (await db.Characters.AnyAsync(c => c.Name == name))
+        // Case-insensitive: "Test1" and "test1" must not both exist, or every name-targeted command
+        // (jail/kick/ban/whisper/friend) becomes ambiguous.
+        var nameLower = name.ToLower();
+        if (await db.Characters.AnyAsync(c => c.Name.ToLower() == nameLower))
             return (false, "That character name is taken.");
+
+        // Characters of the very FIRST account on a fresh server are born Admin (convenient for testing —
+        // it's the owner's account). Everyone else starts a plain Player and is promoted with /role.
+        bool ownerAccount = accountId == await db.Accounts.OrderBy(a => a.Id).Select(a => a.Id).FirstAsync();
 
         var stats = StatCalculator.GetBaseStats(race, baseClass);
         var record = new CharacterRecord
         {
             AccountId = accountId,
+            Role = ownerAccount ? AccountRole.Admin : AccountRole.Player,
             Name = name,
             Race = race,
             BaseClass = baseClass,
@@ -455,6 +466,8 @@ public class PersistenceService
             entity.X = GameConstants.JailX;
             entity.Y = GameConstants.JailY;
         }
+        entity.ChatBannedUntil = rec.ChatBannedUntilUtc;
+        entity.Role = rec.Role;   // staff role is per CHARACTER, not per account (owner)
         return entity;
     }
 
@@ -489,7 +502,7 @@ public class PersistenceService
         string KnownRecipesCsv, string FriendsCsv, string AutoHuntJson,
         int ActiveSubclassSlot, IReadOnlyList<SubclassSnapshot> Subclasses,
         int Karma, int PkCount, int PvpCount, int ConsecutivePk, bool DiedWhileAway,
-        DateTime? JailedUntilUtc,
+        DateTime? JailedUntilUtc, DateTime? ChatBannedUntilUtc,
         IReadOnlyList<ItemSnapshot> Items)
     {
         /// <summary>Capture a character. MUST be called on the tick thread. Returns
@@ -520,7 +533,7 @@ public class PersistenceService
                     e.AutoFarmRange, e.AutoFarmStatic, e.AutoAttackNormal, e.AutoAttackElite, e.AutoAttackBoss)),
                 e.ActiveSubclass.Slot, subs,
                 e.Karma, e.PkCount, e.PvpCount, e.ConsecutivePk, e.DiedWhileAway,
-                e.JailedUntil,
+                e.JailedUntil, e.ChatBannedUntil,
                 items);
         }
     }
@@ -593,6 +606,9 @@ public class PersistenceService
         rec.ConsecutivePk = snap.ConsecutivePk;
         rec.DiedWhileAway = snap.DiedWhileAway;
         rec.JailedUntilUtc = snap.JailedUntilUtc;   // jail persists across a relog
+        rec.ChatBannedUntilUtc = snap.ChatBannedUntilUtc;
+        // NOTE: Role is deliberately NOT written back from the snapshot. It is changed only by /role
+        // (a direct DB write), so a stale in-memory copy can never demote or promote anyone on autosave.
         rec.X = snap.X;
         rec.Y = snap.Y;
 
@@ -673,12 +689,17 @@ public class PersistenceService
 
     // ----- Admin moderation (jail / kick / ban) — all target by CHARACTER name so they work even when
     //        the target is offline. Return false only if the name isn't found. -----------------------
+    //
+    // Every lookup here matches case-INSENSITIVELY. SQLite compares TEXT with `=` case-sensitively, so
+    // `/jail test1` used to miss the row for "Test1" and report "No character 'test1'" — while the ONLINE
+    // lookup (OrdinalIgnoreCase) found them and jailed them anyway. Action succeeded, message lied.
 
     /// <summary>Ban the ACCOUNT that owns this character until <paramref name="until"/> (null = lift).</summary>
     public async Task<bool> BanAccountByCharacterNameAsync(string characterName, DateTime? until)
     {
         await using var db = await _factory.CreateDbContextAsync();
-        var character = await db.Characters.FirstOrDefaultAsync(c => c.Name == characterName);
+        var lower = characterName.ToLower();
+        var character = await db.Characters.FirstOrDefaultAsync(c => c.Name.ToLower() == lower);
         if (character is null) return false;
         var account = await db.Accounts.FirstOrDefaultAsync(a => a.Id == character.AccountId);
         if (account is null) return false;
@@ -697,6 +718,24 @@ public class PersistenceService
         return rec?.Name;
     }
 
+    /// <summary>The friend list of a (possibly OFFLINE) character. Needed because friendship is mutual:
+    /// to know whether someone is a real friend or still just a pending request, you have to read THEIR
+    /// list, and they may not be logged in.</summary>
+    public async Task<HashSet<string>> GetFriendsAsync(string characterName)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var lower = characterName.ToLower();
+        var csv = await db.Characters
+            .Where(c => c.Name.ToLower() == lower)
+            .Select(c => c.FriendsCsv)
+            .FirstOrDefaultAsync();
+        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrEmpty(csv))
+            foreach (var f in csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                set.Add(f);
+        return set;
+    }
+
     /// <summary>The kick deadline for a character (if any) — checked at EnterWorld so a kicked character
     /// can't come back until it passes, while the account plays its other characters freely.</summary>
     public async Task<DateTime?> GetKickUntilAsync(int accountId, int characterId)
@@ -711,7 +750,8 @@ public class PersistenceService
     public async Task<bool> SetJailAsync(string characterName, DateTime? until)
     {
         await using var db = await _factory.CreateDbContextAsync();
-        var character = await db.Characters.FirstOrDefaultAsync(c => c.Name == characterName);
+        var lower = characterName.ToLower();
+        var character = await db.Characters.FirstOrDefaultAsync(c => c.Name.ToLower() == lower);
         if (character is null) return false;
         character.JailedUntilUtc = until;
         await db.SaveChangesAsync();
@@ -722,11 +762,47 @@ public class PersistenceService
     public async Task<bool> SetKickAsync(string characterName, DateTime? until)
     {
         await using var db = await _factory.CreateDbContextAsync();
-        var character = await db.Characters.FirstOrDefaultAsync(c => c.Name == characterName);
+        var lower = characterName.ToLower();
+        var character = await db.Characters.FirstOrDefaultAsync(c => c.Name.ToLower() == lower);
         if (character is null) return false;
         character.KickedUntilUtc = until;
         await db.SaveChangesAsync();
         return true;
+    }
+
+    /// <summary>CHAT-BAN a character until <paramref name="until"/> (null = lift).</summary>
+    public async Task<bool> SetChatBanAsync(string characterName, DateTime? until)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var lower = characterName.ToLower();
+        var character = await db.Characters.FirstOrDefaultAsync(c => c.Name.ToLower() == lower);
+        if (character is null) return false;
+        character.ChatBannedUntilUtc = until;
+        await db.SaveChangesAsync();
+        return true;
+    }
+
+    /// <summary>Set a CHARACTER's staff role (owner: roles are per-character). Works offline. Returns the
+    /// canonical name on success so the caller can echo it, or null if there's no such character.</summary>
+    public async Task<string?> SetRoleAsync(string characterName, AccountRole role)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var lower = characterName.ToLower();
+        var character = await db.Characters.FirstOrDefaultAsync(c => c.Name.ToLower() == lower);
+        if (character is null) return null;
+        character.Role = role;
+        await db.SaveChangesAsync();
+        return character.Name;
+    }
+
+    /// <summary>The role of a character, for authorizing an action against an OFFLINE target (so a
+    /// moderator can't jail an admin who happens to be logged out).</summary>
+    public async Task<AccountRole?> GetRoleAsync(string characterName)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var lower = characterName.ToLower();
+        var character = await db.Characters.FirstOrDefaultAsync(c => c.Name.ToLower() == lower);
+        return character?.Role;
     }
 
     /// <summary>The characters currently jailed (name + release time), for the admin's un-jail list.</summary>

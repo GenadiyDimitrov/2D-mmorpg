@@ -44,6 +44,9 @@ public class NetworkChannel : IAsyncDisposable
     public event Action? ResurrectOfferExpired;
     public event Action<string>? Disconnected;
     public event Action<string>? ForceDisconnected;
+    public event Action<AdminStateDto>? AdminStateReceived;
+    public event Action<AdminBagDto>? AdminBagReceived;
+    public event Action<AdminBagDto>? AdminGivePickerReceived;
 
     public bool IsConnected => _connection?.State == HubConnectionState.Connected;
 
@@ -89,6 +92,9 @@ public class NetworkChannel : IAsyncDisposable
         _connection.On<ResurrectOffer>("ResurrectOffer", o => ResurrectOfferReceived?.Invoke(o));
         _connection.On<bool>("ResurrectOfferExpired", _ => ResurrectOfferExpired?.Invoke());
         _connection.On<string>("ForceDisconnect", reason => ForceDisconnected?.Invoke(reason));
+        _connection.On<AdminStateDto>("AdminState", s => AdminStateReceived?.Invoke(s));
+        _connection.On<AdminBagDto>("AdminBag", b => AdminBagReceived?.Invoke(b));
+        _connection.On<AdminBagDto>("AdminGivePicker", b => AdminGivePickerReceived?.Invoke(b));
         _connection.Closed += ex =>
         {
             Disconnected?.Invoke(ex?.Message ?? "Connection closed.");
@@ -126,6 +132,14 @@ public class NetworkChannel : IAsyncDisposable
 
     public Task AdminCommandAsync(string command, string argument) =>
         _connection!.SendAsync("AdminCommand", command, argument);
+
+    /// <summary>Admin /give: hand one of my items to another online player.</summary>
+    public Task AdminGiveItemAsync(string targetName, Guid instanceId, int quantity) =>
+        _connection!.SendAsync("AdminGiveItem", targetName, instanceId, quantity);
+
+    /// <summary>Admin /bag: destroy an item in another player's bag.</summary>
+    public Task AdminRemoveItemAsync(string targetName, Guid instanceId) =>
+        _connection!.SendAsync("AdminRemoveItem", targetName, instanceId);
 
     /// <summary>Friend list: action = "add" / "remove" / "list". Any player.</summary>
     public Task FriendCommandAsync(string action, string name) =>

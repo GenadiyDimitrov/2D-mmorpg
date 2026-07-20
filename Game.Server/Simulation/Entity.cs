@@ -252,18 +252,51 @@ public class Entity
     public string? NpcId { get; set; }
     public NpcRole NpcRole { get; set; }
 
-    /// <summary>Account-level admin flag (elevated commands, god mode).</summary>
-    public bool IsAdmin { get; set; }
+    /// <summary>Staff role, held PER CHARACTER (owner) — an admin ACCOUNT can also have plain characters.
+    /// Loaded from the character row at EnterWorld.</summary>
+    public AccountRole Role { get; set; } = AccountRole.Player;
+
+    /// <summary>Full admin: every command, god mode, no cap enforcement. NOT a moderator.</summary>
+    public bool IsAdmin => Role == AccountRole.Admin;
+
+    /// <summary>Any staff (admin OR moderator) — the gate for "may issue moderation commands at all".
+    /// WHICH commands is then decided per-command; a moderator gets jail/kick/chatban only.</summary>
+    public bool IsStaff => Role != AccountRole.Player;
 
     /// <summary>God mode: takes no damage (admin only).</summary>
     public bool GodMode { get; set; }
 
-    /// <summary>Jailed players are pinned in jail and can't chat/whisper/escape until this UTC time.
-    /// Loaded from the character row so jail SURVIVES a relog (owner). null = free.</summary>
+    // ----- Admin speed overrides (/speed-cast, /speed-atack, /speed-move, /speed-reset) ---------
+    // Testing aids: when set, they REPLACE the computed stat outright — no caps, no buffs, no gear —
+    // so an admin can dial in an exact number and watch what it does. Runtime only (never persisted);
+    // /speed-reset clears them and the normal formulas resume.
+
+    /// <summary>Raw cast-speed stat override (333 = 1.0x). null = use the real formula.</summary>
+    public float? AdminCastSpeed { get; set; }
+
+    /// <summary>Raw attack-speed stat override (333 = 1.0x). null = use the real formula.</summary>
+    public float? AdminAttackSpeed { get; set; }
+
+    /// <summary>Move-speed override in world units/sec. null = use the real formula.</summary>
+    public float? AdminMoveSpeed { get; set; }
+
+    /// <summary>True if any admin speed override is in force (shown in the /speed readout).</summary>
+    public bool HasSpeedOverride =>
+        AdminCastSpeed is not null || AdminAttackSpeed is not null || AdminMoveSpeed is not null;
+
+    /// <summary>Jailed players are confined to the jail cell and can't chat/whisper/act until this UTC
+    /// time. Loaded from the character row so jail SURVIVES a relog (owner). null = free.</summary>
     public DateTime? JailedUntil { get; set; }
 
     /// <summary>True while the jail sentence is still in effect.</summary>
     public bool Jailed => JailedUntil is DateTime u && u > DateTime.UtcNow;
+
+    /// <summary>Chat-banned until this UTC time — can't type in any channel, but plays normally
+    /// otherwise (owner: a lighter punishment than jail). Persisted, so it survives a relog.</summary>
+    public DateTime? ChatBannedUntil { get; set; }
+
+    /// <summary>True while the chat ban is still in effect.</summary>
+    public bool ChatBanned => ChatBannedUntil is DateTime u && u > DateTime.UtcNow;
 
     /// <summary>0 = none; otherwise a ClassCatalog id. PER CLASS.</summary>
     public int SecondClass
@@ -647,6 +680,8 @@ public class Entity
         {
             if (IsRooted || IsStunned) return 0f;   // held in place by Root or Stun
 
+            if (AdminMoveSpeed is float adminSpeed) return adminSpeed;   // /speed-move: uncapped
+
             if (Kind == EntityKind.Mob)
             {
                 // Mobs walk while wandering, run while aggroed/engaged.
@@ -699,6 +734,10 @@ public class Entity
     {
         get
         {
+            // /speed-cast: an exact stat, bypassing formula and cap alike.
+            if (AdminCastSpeed is float adminCast)
+                return StatCalculator.SpeedBaseline / Math.Max(1f, adminCast);
+
             // Authentic L2: castSpd = classBase × witModifier × weaponFactor
             //   × gearFactor × ∏(1 + buff%), then time = 333 / castSpd (cap 1999 = 6×).
             // witModifier is EXPONENTIAL (×1.63 per +10 WIT). gearFactor = robe mastery /
@@ -730,6 +769,10 @@ public class Entity
     {
         get
         {
+            // /speed-atack: an exact stat, bypassing formula and cap alike.
+            if (AdminAttackSpeed is float adminAtk)
+                return StatCalculator.SpeedBaseline / Math.Max(1f, adminAtk);
+
             // Authentic L2: atkSpd = weaponBase × dexModifier × gearFactor × ∏(1+buff%),
             // cap 1500. dexModifier is EXPONENTIAL (baseline 30 DEX = 1.0). Buffs stack
             // multiplicatively (matching cast speed).

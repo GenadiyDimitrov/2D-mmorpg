@@ -19,7 +19,10 @@ public class GameHub : Hub
     // Connection -> authenticated account (set after login/register).
     private static readonly ConcurrentDictionary<string, AuthState> Sessions = new();
 
-    private record AuthState(int AccountId, bool IsAdmin);
+    /// <summary>Who this connection is. NOT what they're allowed to do — staff powers belong to the
+    /// CHARACTER they enter the world with (owner), and are re-checked on the game loop against
+    /// <see cref="Entity.Role"/> for every moderation command.</summary>
+    private record AuthState(int AccountId);
 
     public GameHub(World world, PersistenceService db)
     {
@@ -31,20 +34,20 @@ public class GameHub : Hub
 
     public async Task<AuthResponse> Register(AuthRequest request, string clientVersion = "")
     {
-        if (VersionMismatch(clientVersion) is string v) return new AuthResponse(false, v, false);
+        if (VersionMismatch(clientVersion) is string v) return new AuthResponse(false, v);
         var result = await _db.RegisterAsync(request.Username, request.Password);
         if (result.Success)
-            Sessions[Context.ConnectionId] = new AuthState(result.AccountId, result.IsAdmin);
-        return new AuthResponse(result.Success, result.Error, result.IsAdmin);
+            Sessions[Context.ConnectionId] = new AuthState(result.AccountId);
+        return new AuthResponse(result.Success, result.Error, AccountRole.Player);
     }
 
     public async Task<AuthResponse> Login(AuthRequest request, string clientVersion = "")
     {
-        if (VersionMismatch(clientVersion) is string v) return new AuthResponse(false, v, false);
+        if (VersionMismatch(clientVersion) is string v) return new AuthResponse(false, v);
         var result = await _db.LoginAsync(request.Username, request.Password);
         if (result.Success)
-            Sessions[Context.ConnectionId] = new AuthState(result.AccountId, result.IsAdmin);
-        return new AuthResponse(result.Success, result.Error, result.IsAdmin);
+            Sessions[Context.ConnectionId] = new AuthState(result.AccountId);
+        return new AuthResponse(result.Success, result.Error, AccountRole.Player);
     }
 
     /// <summary>Reject a client whose version differs from the server's — an out-of-date client speaks an
@@ -128,7 +131,7 @@ public class GameHub : Hub
         if (entity is null)
             return new LoginResult(false, "Character not found.", Guid.Empty, 0, 0);
 
-        entity.IsAdmin = auth.IsAdmin;
+        // entity.Role came from the character row in LoadCharacterAsync — nothing to overlay here.
 
         var tcs = new TaskCompletionSource<LoginResult>(
             TaskCreationOptions.RunContinuationsAsynchronously);
@@ -469,9 +472,30 @@ public class GameHub : Hub
 
     public Task AdminCommand(string command, string argument)
     {
-        if (!Sessions.TryGetValue(Context.ConnectionId, out var auth) || !auth.IsAdmin)
+        // Only checks that the connection is logged in. The REAL authorization is the character's role,
+        // which lives on the game loop (HandleAdmin re-checks it, per command, for every action).
+        if (!Sessions.ContainsKey(Context.ConnectionId))
             return Task.CompletedTask;
         _world.Commands.Enqueue(new AdminCmd(Context.ConnectionId, command, argument));
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Admin: hand one of my items to another online player (/give picker).</summary>
+    public Task AdminGiveItem(string targetName, Guid instanceId, int quantity)
+    {
+        if (!Sessions.ContainsKey(Context.ConnectionId))
+            return Task.CompletedTask;
+        _world.Commands.Enqueue(
+            new AdminGiveItemCmd(Context.ConnectionId, targetName, instanceId, quantity));
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Admin: destroy an item in another player's bag (/bag window).</summary>
+    public Task AdminRemoveItem(string targetName, Guid instanceId)
+    {
+        if (!Sessions.ContainsKey(Context.ConnectionId))
+            return Task.CompletedTask;
+        _world.Commands.Enqueue(new AdminRemoveItemCmd(Context.ConnectionId, targetName, instanceId));
         return Task.CompletedTask;
     }
 

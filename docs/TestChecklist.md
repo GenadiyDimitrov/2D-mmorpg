@@ -7,72 +7,68 @@ this file.
 
 ---
 
-## 🧪 ADMIN + SOCIAL (built 2026-07-17/18) — ⚠ **DELETE game.db** (schema: roles/ban/kick/jail + FriendsCsv)
+## 🧪 PLAYTEST-7 FIX BATCH — BUILT 2026-07-20. ⚠ **DELETE `Game.Server/game.db`** (per-character Role
+## + ChatBannedUntilUtc). Build 0/0, SmokeTest ALL GREEN (incl. new ghost-entity / jail / mutual-friend
+## regression checks). Restart server + client.
 
-Server bits SmokeTest-verified; the UI + follow/assist need your hands. Slash commands work now; the target
-window gained a `[...]` actions menu.
-- [ ] **Admin (as admin/admin):** `/jail <name> [min]` (target can't chat/whisper/escape, pinned in jail,
-      survives relog), `/unjail`, `/kick <name> [min]` (that character can't re-enter; the account can play
-      others), `/ban <name> [min]` (whole account can't log in), `/unban`, `/jailed` (list), `/tp <name>`
-      (teleport to them), `/god`, `/where`.
-- [ ] **Friends (any player):** `/fadd <name>`, `/frem <name>`, `/flist` (online/offline tags). When a
-      friend logs in you get **"<name> is back online"**.
-- [ ] **Target window `[...]` menu:** on another living player, the **⋯** button reveals **Follow**,
-      **Assist (take target)**, **Invite to Party**, **Request Trade** (each hidden when it doesn't apply).
-- [ ] **Follow** walks you after the player until you move/attack/they leave. **Assist** attacks whatever
-      they're attacking and points your target frame at it.
+Server-side behaviour is SmokeTest-verified; everything visual needs your eyes.
+
+**Bugs:**
+- [ ] **Enter focuses the chat input** (and un-hides the chat window if hidden), and **clicking anywhere
+      outside the chat removes focus** so keys go back to the game.
+- [ ] **No duplicate abbreviations anywhere** — skill bar + buff bar, across ALL skills AND consumables.
+      hop/hotw/hotm → HOP/HOW/HOM; the two scrolls → URet/URes (were US/SO). Startup guard against collisions.
+- [ ] **Ultimate Resurrection scroll casts from the SKILL BAR** (it wrongly demanded a friendly dead target;
+      from the bag it worked). Potions + Return from the bar were already fine.
+- [ ] **You can MOVE inside the jail cell** — chat/whisper/skills/items/escape all still blocked.
+- [ ] **Sentence ends → teleport to the STARTING town** (not the nearest — the jail's location stays secret).
+- [ ] **Admins are immune** to `/jail` `/kick` `/ban` (incl. on themselves).
+- [ ] **Name lookup is case-insensitive** and no longer prints "character with name X cannot be found"
+      while actually performing the action.
+- [ ] **Kick/ban is INSTANT and removes the entity.** No ghost left standing (was targetable/killable/
+      buffable 30min later, and blocked re-login with "character is already online"). The victim gets no
+      confirm dialog: dropped to the login page first, THEN a "you have been kicked/banned" modal → OK.
+- [ ] **God mode shows a persistent indicator** (currently only discoverable by re-issuing `/god`).
+- [ ] **Bosses are not aggressive** (the Treant showed `*`); and the `*` has a **space** before it.
+- [ ] **Mob card row order is stable** across expand/collapse (P.Atk/P.Def were swapping).
+
+**New commands / role:**
+- [ ] **Moderator role** (name TBD) — can ONLY `/jail`, `/kick`, `/chatban`. **Admin > Moderator > Player**:
+      moderators can't moderate each other, only an Admin can act on them.
+- [ ] **Roles are PER-CHARACTER, not per-account** — one account can hold an admin character alongside
+      ordinary ones. (Ban stays per-account; jail/kick/chatban are per-character.)
+- [ ] `/role <name> <player|moderator|admin>` — admin-only grant/revoke, works on offline characters.
+- [ ] `/chatban <name> [min]` — blocks chat only (same block as jail's).
+- [ ] `/speed-cast <v>` · `/speed-atack <v>` · `/speed-move <v>` (admin, uncapped) · `/speed-reset`.
+- [ ] `/bag <name>` — admin views a player's inventory and can remove items.
+- [ ] `/give <name>` — admin picks from own inventory, transfers with quantity + enchant; ignores tradability.
+- [ ] `/givegold <name> <amount>` — negative subtracts; `k`/`m`/`b`/`t` suffixes and `1_002_003_004_005`
+      underscores both parse.
+
+**Design changes:**
+- [ ] **Friends are MUTUAL.** `/fadd` invites (silently — the other side isn't notified). Until they add you
+      back, `/flist` shows **[Pending]** and no online state. Once mutual: [Online]/[Offline] tags +
+      "X is now Online/Offline".
+- [ ] **Party-window debuffs use icons/abbreviations + tooltip**, never the full skill name.
+- [ ] **Player expand (▼) shows class only — NOT level** (level is intel to withhold from enemies).
+      Later: title / clan rank / clan name.
+- [ ] **Mob expand → movable POPUP** with two tabs, **Details** (default) and **Drop**, styled like the
+      player stats window. The target window keeps only its two summary rows; everything else lives there.
 
 ---
 
-## 🧪 NETWORK: DELTA SNAPSHOTS (built 2026-07-17) — server SmokeTest-verified, client needs eyes
+## ✅ ADMIN + SOCIAL (2026-07-17/18) — TESTED 2026-07-20 → see PLAYTEST-7 above
+Jail/unjail, `/tp`, `/god`, target `[...]` menu, Follow all work. Kick/ban ghost-entity bug, admin
+self-jail, jail movement, mutual friends → PLAYTEST-7.
 
-The world is no longer re-sent in full each tick — only spawns/updates/despawns. Behaviour should be
-IDENTICAL; this is the thing to sanity-check because WPF can't be headless-tested:
-- [ ] **Entities appear, move smoothly, and disappear normally** as you walk around (no ghosts left behind,
-      no frozen mobs, no popping in/out).
-- [ ] **Your own HP/MP/position/death** update as before; another player's name colour / level still right.
-- [ ] Walk far from a mob then back — it despawns and respawns cleanly.
+## ✅ NETWORK: DELTA SNAPSHOTS (2026-07-17) — VERIFIED 2026-07-20
+Entities spawn/move/despawn cleanly, own vitals + death fine, walk-away/walk-back clean.
 
----
-
-## 🧪 PLAYTEST-6 BATCH — built 2026-07-17 (no schema change, game.db fine). Restart server+client.
-
-Build 0/0, SmokeTest green. Commits e8da0f7 · 39dfab8 · 971b128 on Gena.
-
-**Death / res:**
-- [ ] **Res prompt no longer survives a relogin as a dead button.** Die → get an offer → don't accept →
-      relog → you get ONLY the Respawn button (no stuck Accept/Decline).
-
-**Buff bar:**
-- [ ] **Buffs/debuffs are SQUARES** (were wide pills wrapping into rows), with the skill emoji or initials.
-- [ ] **Short times: 2 digits + 1 unit** — 1h · 59m · 3m · 1m (119s) · 59s · 1d (25h). Every square same width.
-- [ ] **≤60s left → the square BLINKS** (opacity 1↔0.4); debuffs blink too.
-- [ ] Grade-penalty rows read **"Over-Grade Armor" / "Over-Grade Weapon"** (no `(x…)`), with 🛡/⚔ icons.
-
-**Skill icons:**
-- [ ] **Emoji icons on the skill bar, buff bar, and BOTH skills-window tabs** (buffs + mage/healer covered
-      first). A skill with no icon still shows its letters. No two skills of one class share an icon.
-
-**Target / party windows:**
-- [ ] **Party window shows each member's DEBUFFS** (red "⚠ …" line under their bars) so a healer can cleanse.
-- [ ] **A PLAYER's expand (▼) shows identity only** (name/level/class) — no stat sheet.
-- [ ] **A MOB's expand (▼) is a compact card** (P.Def/M.Def · P.Atk/M.Atk) with a **[Details ▸]** button;
-      Details reveals full stats, effects, passives and the **drop list** (item, qty, effective chance).
-- [ ] **Aggressive mobs show `*`** after the name (nameplate + target frame).
-
-**Other:**
-- [ ] **Ultimate Scroll of Return is INSTANT** (0s cast) — the escape button. Debug-give it from Scrolls (x5).
-- [ ] **Bag tab: orange [E] quick-equip** before the red [X], on armor/weapons.
-
-**Skill bar rework (commit e1e3902):**
-- [ ] **Bar has up to 5 rows of 12.** A **+/- control strip** above the bar: `+` opens another row (up to
-      5), then it becomes `−` and collapses back to 1. Bottom row keeps hotkeys 1-9/0; new rows open above.
-- [ ] **Move the WHOLE bar** by the "⠿ drag bar" handle; its position (and the row count) persist across a
-      client restart. *(WPF drag — needs your hands; also re-check slot drag-and-drop still rearranges.)*
-- [ ] **Items on the bar.** In the bag, a consumable has a blue **"Bar"** button → puts it on the bar. The
-      slot shows the item's initials + a live count and **greys out at 0** (like a cooldown); **left-click
-      USES it** (no digging through the bag). Right-click removes it. Count updates as you use/gain them.
-- [ ] Old characters' existing bars still load (24→60 slots pad with empties).
+## ✅ PLAYTEST-6 BATCH (2026-07-17) — VERIFIED 2026-07-20
+Res prompt, square buff bar + short times + ≤60s blink, grade-penalty rows, skill emoji icons, party-window
+debuffs, player/mob expand split, aggro `*`, instant Ultimate Return, bag `[E]` quick-equip, 5-row movable
+skill bar with items on it — all confirmed. Follow-up polish on debuff labels, expand contents, the `*`
+spacing and mob card order → PLAYTEST-7 above.
 
 ---
 

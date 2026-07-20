@@ -17,13 +17,6 @@ public class AccountRecord
     public required string PasswordHash { get; set; }
     public required string PasswordSalt { get; set; }
 
-    /// <summary>Staff role. Admins/GMs get the moderation commands (ban/kick/jail) and admin tools.
-    /// IsAdmin is derived from this (Role != Player) so all the existing IsAdmin plumbing keeps working.</summary>
-    public AccountRole Role { get; set; } = AccountRole.Player;
-
-    /// <summary>Admins get elevated commands (ban/kick/jail, god mode). Derived from Role.</summary>
-    public bool IsAdmin { get; set; }
-
     /// <summary>Legacy permanent-ban flag (kept for compat). The timed ban is BannedUntilUtc.</summary>
     public bool IsBanned { get; set; }
 
@@ -38,6 +31,13 @@ public class CharacterRecord
 {
     public int Id { get; set; }
     public int AccountId { get; set; }
+
+    /// <summary>Staff role — PER CHARACTER, not per account (owner). One account may hold an admin
+    /// character alongside perfectly ordinary ones, so an admin can play the game as a normal player
+    /// without their commands (or their name colour) following them around.
+    /// Admin = everything; Moderator = jail/kick/chatban only; Player = none.
+    /// BAN is the one punishment that stays per-ACCOUNT — see AccountRecord.BannedUntilUtc.</summary>
+    public AccountRole Role { get; set; } = AccountRole.Player;
 
     public required string Name { get; set; }
     public Race Race { get; set; }
@@ -60,6 +60,10 @@ public class CharacterRecord
     /// <summary>Character is KICKED until this UTC time — it can't ENTER the world until it passes, though
     /// the account can still log in and play OTHER characters (owner: kick is per-character + timed).</summary>
     public DateTime? KickedUntilUtc { get; set; }
+
+    /// <summary>Character is CHAT-BANNED until this UTC time — it plays normally but can't type in any
+    /// channel (owner: the light-touch punishment between a warning and a jailing). null = free.</summary>
+    public DateTime? ChatBannedUntilUtc { get; set; }
 
     public long Gold { get; set; }
 

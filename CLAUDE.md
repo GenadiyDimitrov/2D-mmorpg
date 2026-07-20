@@ -51,7 +51,9 @@ and are adapted from L2 references.
 - EF Core + SQLite (`game.db`). Swap to Postgres = `UseSqlite`→`UseNpgsql` (1 line).
 - Uses `EnsureCreated()`, which **only creates the DB if the file is absent** — it
   does NOT add new columns to an existing DB. **Workflow on schema change: delete
-  `Game.Server/bin/Debug/net8.0/game.db` (and `-shm`/`-wal`) and let it recreate.**
+  `Game.Server/game.db` (and `-shm`/`-wal`) and let it recreate.** The connection string is
+  `Data Source=game.db`, resolved against the CONTENT ROOT (`Game.Server/`) — *not* `bin/Debug/net8.0/`,
+  where a stale copy may also sit and mislead you into thinking you reset the schema when you didn't.
   Migrations are deferred until there's real data to preserve.
 - Only **characters/accounts** persist (load on login, save on logout + 60s
   autosave + some events). Mobs, zones, rates, casting state are runtime-only.

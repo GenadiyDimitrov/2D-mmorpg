@@ -57,6 +57,8 @@ public partial class MainWindow
         EnableChrome(DialogPanel);
         EnableChrome(ClassPanel);
         EnableChrome(SkillDetailPopup);
+        EnableChrome(AdminBagPanel);
+        EnableChrome(MobInfoPanel);
         EnableChrome(EquipPopup, () => EquipPopupClose_Click(this, new RoutedEventArgs()));
         // The TARGET frame is draggable because in windowed mode it sits on top of the skills button and
         // you cannot simply close it to get it out of the way: closing it is an ESCAPE (cancel cast +

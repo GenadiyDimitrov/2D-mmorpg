@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 namespace Game.Shared;
 
 /// <summary>
@@ -66,4 +70,19 @@ public static class SkillIcons
     /// <summary>The default glyph for a skill id, or "" if none is mapped.</summary>
     public static string For(string skillId) =>
         skillId is not null && Map.TryGetValue(skillId, out var g) ? g : "";
+
+    /// <summary>The glyph for a skill's DISPLAY NAME, or "" if none is mapped. Buffs and debuffs travel
+    /// to the client as names, not ids (they aren't SkillDefs), so the party roster and buff bar need
+    /// this reverse lookup to show an icon instead of spelling the whole thing out.</summary>
+    public static string ForName(string displayName)
+    {
+        if (string.IsNullOrEmpty(displayName)) return "";
+        _byName ??= SkillCatalog.AllSkills
+            .Where(s => Map.ContainsKey(s.Id))
+            .GroupBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => Map[g.First().Id], StringComparer.OrdinalIgnoreCase);
+        return _byName.TryGetValue(displayName, out var g) ? g : "";
+    }
+
+    private static Dictionary<string, string>? _byName;
 }

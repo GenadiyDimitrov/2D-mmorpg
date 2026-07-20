@@ -35,5 +35,10 @@ app.MapHub<GameHub>("/game");
 app.MapGet("/", () => $"Game server v{Game.Shared.GameConstants.GameVersion} is running. Hub endpoint: /game");
 app.MapGet("/version", () => Game.Shared.GameConstants.GameVersion);
 
+// Fail loudly, at startup, if two skills or consumables ended up sharing a skill-bar label — the same
+// spirit as the skill-id collision guard. An ambiguous square is otherwise invisible until a player
+// squints at their bar mid-fight and can't tell two buffs apart.
+Game.Shared.Abbreviations.Validate();
+
 app.Logger.LogInformation("L2Clone server v{Version} starting.", Game.Shared.GameConstants.GameVersion);
 app.Run();

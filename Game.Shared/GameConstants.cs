@@ -184,6 +184,11 @@ public static class GameConstants
     public const float JailX = 500f;
     public const float JailY = 500f;
 
+    /// <summary>How far a jailed player may wander from the jail centre. Serving a sentence should feel
+    /// like a CELL, not paralysis — they can walk around inside it; everything else (chat, skills, items,
+    /// escape) stays blocked.</summary>
+    public const float JailRadius = 260f;
+
     /// <summary>Periodic character auto-save interval (ticks). 600 = 60s.</summary>
     public const int AutoSaveIntervalTicks = 600;
 

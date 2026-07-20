@@ -299,6 +299,29 @@ public record ToggleCounterAttackCmd(string ConnectionId, bool Enabled) : IGameC
 public record RequestDebugConfigCmd(string ConnectionId) : IGameCommand;
 public record SetDebugConfigCmd(string ConnectionId, DebugConfigDto Config) : IGameCommand;
 
+// ----- Moderation follow-ups ------------------------------------------------------------------
+// These carry a CHARACTER NAME rather than a connection id: the punishment is decided on a worker
+// thread (the target's role may have to be read from the DB) but must be APPLIED by the single
+// writer, and the target may well not be online at all — in which case they are simply no-ops and
+// the persisted sentence does the work at their next login.
+
+/// <summary>Remove a named character from the world immediately (kick / ban).</summary>
+public record ForceRemoveCmd(string CharacterName, string Reason) : IGameCommand;
+
+/// <summary>Pin a named character in jail immediately.</summary>
+public record JailNowCmd(string CharacterName, DateTime Until, int Minutes) : IGameCommand;
+
+/// <summary>Silence a named character immediately.</summary>
+public record ChatBanNowCmd(string CharacterName, DateTime Until, int Minutes) : IGameCommand;
+
+/// <summary>Admin -> server: hand one of MY items to another online player (from the /give picker).
+/// Deliberately ignores tradability — staff can give anything.</summary>
+public record AdminGiveItemCmd(string ConnectionId, string TargetName, Guid InstanceId, int Quantity)
+    : IGameCommand;
+
+/// <summary>Admin -> server: destroy an item out of another player's bag (from the /bag window).</summary>
+public record AdminRemoveItemCmd(string ConnectionId, string TargetName, Guid InstanceId) : IGameCommand;
+
 public record TradeRequestCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 public record TradeRespondCmd(string ConnectionId, bool Accept) : IGameCommand;
 public record TradeOfferCmd(string ConnectionId, Guid[] InstanceIds) : IGameCommand;

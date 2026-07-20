@@ -8,14 +8,17 @@ namespace Game.Shared;
 /// <summary>Client -> Server: enter the world with a character.</summary>
 public record LoginRequest(string CharacterName, Race Race, BaseClass BaseClass);
 
-/// <summary>Server -> Client: result of a login attempt.</summary>
+/// <summary>Server -> Client: result of a login attempt. <paramref name="Role"/> is the staff role of
+/// the CHARACTER you just entered with (roles are per-character, not per-account) — the client uses it
+/// only to decide which commands are worth sending; the server authorizes every one of them anyway.</summary>
 public record LoginResult(
     bool Success,
     string? Error,
     Guid EntityId,
     float X,
     float Y,
-    DateTime ServerEpochUtc = default);
+    DateTime ServerEpochUtc = default,
+    AccountRole Role = AccountRole.Player);
 
 /// <summary>One visible entity's state inside a snapshot.</summary>
 public record EntityDto(
@@ -305,7 +308,19 @@ public record AuthRequest(string Username, string Password);
 
 /// <summary>Server -> Client: auth outcome. Token is the account id used for
 /// subsequent character calls within this connection.</summary>
-public record AuthResponse(bool Success, string? Error, bool IsAdmin);
+/// <summary>Server -> admin client: another player's bag (for /bag), or the admin's own bag when it is
+/// the /give picker. <paramref name="OwnerName"/> is always the character the action TARGETS.</summary>
+public record AdminBagDto(string OwnerName, long Gold, InventoryItemDto[] Items);
+
+/// <summary>Server -> client: admin-only state worth showing PERMANENTLY on screen. God mode and forced
+/// speeds are invisible otherwise — the only way to recall whether god mode was on was to type /god
+/// again and see which way it toggled.</summary>
+public record AdminStateDto(
+    AccountRole Role, bool GodMode, float? CastSpeed, float? AttackSpeed, float? MoveSpeed);
+
+/// <summary>Account login/register result. Carries no staff role: authorization now belongs to the
+/// CHARACTER (see <see cref="LoginResult.Role"/>), so logging in proves identity only.</summary>
+public record AuthResponse(bool Success, string? Error, AccountRole Role = AccountRole.Player);
 
 /// <summary>One character on the account, for the selection screen. PendingDeleteAt
 /// (UTC) is set when the character is scheduled for deletion; null = active.</summary>

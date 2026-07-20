@@ -1,3 +1,4 @@
+using System.Globalization;
 using Game.Server.Hubs;
 using Game.Server.Persistence;
 using Game.Shared;
@@ -62,14 +63,63 @@ public class GameLoopService : BackgroundService
     // 1. Commands
     // =========================================================================
 
+    /// <summary>Commands a JAILED character may not issue. Gated here at the dispatcher rather than in
+    /// each handler so a new action can't silently become a jail loophole: serving a sentence means no
+    /// fighting, no skills, no items, no trading/party, no shopping and no teleporting. MOVEMENT is
+    /// deliberately absent — a jailed player can pace around inside the cell (HandleMove clamps them to
+    /// it) — as are chat (HandleChat answers with its own message) and leaving/logging out.</summary>
+    private bool IsBlockedWhileJailed(IGameCommand cmd)
+    {
+        string? conn = cmd switch
+        {
+            AttackCmd c => c.ConnectionId,
+            SkillCmd c => c.ConnectionId,
+            UsePotionCmd c => c.ConnectionId,
+            EquipCmd c => c.ConnectionId,
+            RemoveItemCmd c => c.ConnectionId,
+            OpenBoxCmd c => c.ConnectionId,
+            SelectBoxItemsCmd c => c.ConnectionId,
+            EnchantCmd c => c.ConnectionId,
+            RerollAttributesCmd c => c.ConnectionId,
+            CraftCmd c => c.ConnectionId,
+            BuyItemCmd c => c.ConnectionId,
+            SellItemCmd c => c.ConnectionId,
+            TeleportCmd c => c.ConnectionId,
+            TalkCmd c => c.ConnectionId,
+            TradeRequestCmd c => c.ConnectionId,
+            TradeRespondCmd c => c.ConnectionId,
+            TradeOfferCmd c => c.ConnectionId,
+            TradeGoldCmd c => c.ConnectionId,
+            TradeReadyCmd c => c.ConnectionId,
+            PartyInviteCmd c => c.ConnectionId,
+            PartyRespondCmd c => c.ConnectionId,
+            FollowCmd c => c.ConnectionId,
+            AssistCmd c => c.ConnectionId,
+            BufferActionCmd c => c.ConnectionId,
+            _ => null,
+        };
+        if (conn is null || !TryGetPlayer(conn, out var p) || !p.Jailed)
+            return false;
+
+        SendSystemToEntity(p, "You can't do that while jailed.");
+        return true;
+    }
+
     private void ProcessCommands()
     {
         while (_world.Commands.TryDequeue(out var cmd))
         {
+            if (IsBlockedWhileJailed(cmd)) continue;
+
             switch (cmd)
             {
                 case EnterWorldCommand c: HandleEnterWorld(c); break;
                 case AdminCmd c: HandleAdmin(c); break;
+                case ForceRemoveCmd c: HandleForceRemove(c); break;
+                case JailNowCmd c: HandleJailNow(c); break;
+                case ChatBanNowCmd c: HandleChatBanNow(c); break;
+                case AdminGiveItemCmd c: HandleAdminGiveItem(c); break;
+                case AdminRemoveItemCmd c: HandleAdminRemoveItem(c); break;
                 case FriendCmd c: HandleFriend(c); break;
                 case FollowCmd c: HandleFollow(c); break;
                 case AssistCmd c: HandleAssist(c); break;
@@ -178,7 +228,8 @@ public class GameLoopService : BackgroundService
         entity.AutoOfflineElapsedTicks = 0;
         entity.AutoHuntLocked = false;
 
-        cmd.Result.TrySetResult(new LoginResult(true, null, entity.Id, entity.X, entity.Y, GameClock.Epoch));
+        cmd.Result.TrySetResult(
+            new LoginResult(true, null, entity.Id, entity.X, entity.Y, GameClock.Epoch, entity.Role));
 
         AutoLearnCoreSkills(entity);
         SendInventory(entity);
@@ -192,8 +243,9 @@ public class GameLoopService : BackgroundService
         SendPvpState(entity);
         if (_world.Parties.TryGetValue(entity.Id, out var rejoinParty))
             SendPartyUpdate(rejoinParty);   // clear the offline icon for the rest of the party
-        if (entity.IsAdmin)
-            SendSystemToEntity(entity, "Admin privileges active. Type /help for commands.");
+        if (entity.IsStaff)
+            SendSystemToEntity(entity,
+                $"{entity.Role} privileges active on this character. Type /help for commands.");
         NotifyFriendsOnline(entity);   // "X is back online" to online players who friended them
         BroadcastSystem($"{entity.Name} entered the world.");
         _log.LogInformation("Player {Name} entered (char {Id})", entity.Name, entity.PersistentId);
@@ -280,6 +332,7 @@ public class GameLoopService : BackgroundService
     /// <summary>The normal exit chain: leave the party, remove the entity, save.</summary>
     private void NormalLeave(Entity entity)
     {
+        NotifyFriendsPresence(entity, online: false);   // while they're still in Entities to compare against
         _world.Entities.Remove(entity.Id, out _);
         CancelTradeFor(entity, notifyPartnerOnly: true);
         _world.PendingTradeRequests.Remove(entity.Id);
@@ -584,10 +637,6 @@ public class GameLoopService : BackgroundService
         if (!TryGetPlayer(move.ConnectionId, out var entity) || entity.Dead)
             return;
 
-        // JAILED players are pinned in jail — no walking out (owner).
-        if (entity.Jailed)
-            return;
-
         // Can't move while standing up from a sit (recovery window).
         if (entity.StandUpTicks > 0)
             return;
@@ -606,8 +655,27 @@ public class GameLoopService : BackgroundService
         entity.QueuedSkillId = null;
         entity.FollowTargetId = null;   // a manual move breaks a follow
 
-        entity.TargetX = Math.Clamp(move.Move.TargetX, 0, GameConstants.ZoneWidth);
-        entity.TargetY = Math.Clamp(move.Move.TargetY, 0, GameConstants.ZoneHeight);
+        float tx = Math.Clamp(move.Move.TargetX, 0, GameConstants.ZoneWidth);
+        float ty = Math.Clamp(move.Move.TargetY, 0, GameConstants.ZoneHeight);
+
+        // JAILED players may walk, but only inside the cell (owner): clamp the destination back onto the
+        // jail circle instead of rejecting the move outright, so they can pace around rather than stand
+        // frozen. Escape skills/scrolls are blocked separately (TeleportsToTown).
+        if (entity.Jailed)
+            (tx, ty) = ClampToJail(tx, ty);
+
+        entity.TargetX = tx;
+        entity.TargetY = ty;
+    }
+
+    /// <summary>Pull a point back inside the jail cell, keeping its direction from the centre.</summary>
+    private static (float X, float Y) ClampToJail(float x, float y)
+    {
+        float dx = x - GameConstants.JailX, dy = y - GameConstants.JailY;
+        float dist = MathF.Sqrt(dx * dx + dy * dy);
+        if (dist <= GameConstants.JailRadius) return (x, y);
+        float k = GameConstants.JailRadius / dist;
+        return (GameConstants.JailX + dx * k, GameConstants.JailY + dy * k);
     }
 
     private void HandleSetMoveState(SetMoveStateCmd cmd)
@@ -3045,62 +3113,174 @@ public class GameLoopService : BackgroundService
         return (arg, defaultMinutes);
     }
 
+    /// <summary>Parse a gold amount: optional sign, underscore separators, and a k/m/b/t suffix
+    /// (10^3 / 10^6 / 10^9 / 10^12). "-10m", "1_002_003_004_005" and "500" all parse. Returns false on
+    /// anything else so a typo can't silently become a fortune.</summary>
+    private static bool TryParseGold(string text, out long amount)
+    {
+        amount = 0;
+        text = text.Trim().Replace("_", "").Replace(",", "");
+        if (text.Length == 0) return false;
+
+        long multiplier = 1;
+        char suffix = char.ToLowerInvariant(text[^1]);
+        if (suffix is 'k' or 'm' or 'b' or 't')
+        {
+            multiplier = suffix switch
+            {
+                'k' => 1_000L,
+                'm' => 1_000_000L,
+                'b' => 1_000_000_000L,
+                _   => 1_000_000_000_000L,
+            };
+            text = text[..^1];
+        }
+        // Allow a decimal with a suffix ("1.5m") — it reads naturally and costs nothing.
+        if (!decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal value))
+            return false;
+        decimal scaled = value * multiplier;
+        if (scaled > long.MaxValue || scaled < long.MinValue) return false;
+        amount = (long)scaled;
+        return true;
+    }
+
+    /// <summary>Which commands each staff role may issue. A MODERATOR is a trusted PLAYER, not a GM:
+    /// they police behaviour (jail / kick / chatban and the lookups that support it) and nothing else —
+    /// no god mode, no teleporting, no item or gold creation (owner).</summary>
+    private static readonly HashSet<string> ModeratorCommands = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "help", "jail", "unjail", "jailed", "kick", "chatban", "unchatban", "where",
+    };
+
+    /// <summary>May <paramref name="actor"/> use a moderation command on a character of role
+    /// <paramref name="targetRole"/>? Strictly downward: you can only act on someone RANKED BELOW you.
+    ///
+    /// This one comparison delivers everything the hierarchy needs — an Admin can act on Moderators and
+    /// Players but not on other Admins, a Moderator only on Players, and (because your own role is never
+    /// below itself) NOBODY can jail/kick/ban themselves. `/jail admin` used to succeed and lock the
+    /// owner in their own jail.</summary>
+    private static bool Outranks(Entity actor, AccountRole targetRole) => targetRole < actor.Role;
+
     private void HandleAdmin(AdminCmd cmd)
     {
-        // SERVER-AUTHORIZED (owner): every moderation action re-checks the caller is staff here, in
+        // SERVER-AUTHORIZED (owner): every moderation action re-checks the caller's role here, in
         // addition to the hub's session check — these SHIP in release, so authorization can't rely on a
         // compile flag the way the DEBUG cheats do.
-        if (!TryGetPlayer(cmd.ConnectionId, out var admin) || !admin.IsAdmin)
+        if (!TryGetPlayer(cmd.ConnectionId, out var admin) || !admin.IsStaff)
             return;
 
         var command = cmd.Command.ToLowerInvariant();
         var arg = cmd.Argument.Trim();
 
+        // A moderator's allow-list. Unknown commands fall through to the switch's default.
+        if (admin.Role == AccountRole.Moderator && !ModeratorCommands.Contains(command))
+        {
+            SendSystemToEntity(admin, $"Moderators can't use /{command}.");
+            return;
+        }
+
         switch (command)
         {
             case "help":
-                SendSystemToEntity(admin,
-                    "Admin: /jail <name> [min], /unjail <name>, /kick <name> [min], /ban <name> [min], " +
-                    "/unban <name>, /jailed, /tp <name>, /god, /where <name>");
+                SendSystemToEntity(admin, admin.Role == AccountRole.Moderator
+                    ? "Moderator: /jail <name> [min], /unjail <name>, /kick <name> [min], " +
+                      "/chatban <name> [min], /unchatban <name>, /jailed, /where <name>"
+                    : "Admin: /jail, /unjail, /kick, /ban, /unban, /chatban, /unchatban, /jailed, " +
+                      "/role <name> <player|moderator|admin>, /tp <name>, /where <name>, /god, " +
+                      "/speed-cast|atack|move <v>, /speed-reset, /bag <name>, /give <name>, " +
+                      "/givegold <name> <amount>");
                 break;
 
             case "god":
                 admin.GodMode = !admin.GodMode;
                 SendSystemToEntity(admin, $"God mode {(admin.GodMode ? "ON" : "OFF")}.");
+                SendAdminState(admin);   // persistent on-screen indicator, not just this one line
                 break;
+
+            case "role":
+            {
+                // Grant/revoke a staff role on a CHARACTER (owner: roles are per-character, so an admin
+                // account can still have ordinary characters). Works on offline characters.
+                int sp = arg.LastIndexOf(' ');
+                if (sp <= 0)
+                {
+                    SendSystemToEntity(admin, "Usage: /role <name> <player|moderator|admin>");
+                    break;
+                }
+                string targetName = arg[..sp].Trim();
+                string roleText = arg[(sp + 1)..].Trim().ToLowerInvariant();
+                AccountRole? newRole = roleText switch
+                {
+                    "player" or "none" => AccountRole.Player,
+                    "moderator" or "mod" => AccountRole.Moderator,
+                    "admin" => AccountRole.Admin,
+                    _ => null,
+                };
+                if (newRole is null)
+                {
+                    SendSystemToEntity(admin, $"Unknown role '{roleText}'. Use player, moderator or admin.");
+                    break;
+                }
+                _ = Task.Run(async () =>
+                {
+                    // You may only re-rank someone currently BELOW you, and never up to your own rank —
+                    // otherwise a second admin could be minted by anyone who already has the command.
+                    var current = FindOnlinePlayer(targetName)?.Role ?? await _db.GetRoleAsync(targetName);
+                    if (current is null)
+                    {
+                        SendSystemToEntity(admin, $"No character '{targetName}'.");
+                        return;
+                    }
+                    if (!Outranks(admin, current.Value) || newRole.Value > admin.Role)
+                    {
+                        SendSystemToEntity(admin, $"You can't change {targetName}'s role.");
+                        return;
+                    }
+                    string? canonical = await _db.SetRoleAsync(targetName, newRole.Value);
+                    if (canonical is null) { SendSystemToEntity(admin, $"No character '{targetName}'."); return; }
+
+                    // Apply live if they're logged in, so it takes effect without a relog.
+                    if (FindOnlinePlayer(canonical) is Entity live)
+                    {
+                        live.Role = newRole.Value;
+                        if (newRole.Value != AccountRole.Admin) live.GodMode = false;
+                        SendAdminState(live);
+                        SendSystemToEntity(live, $"Your role is now {newRole.Value}.");
+                    }
+                    SendSystemToEntity(admin, $"{canonical} is now {newRole.Value}.");
+                });
+                break;
+            }
 
             case "kick":
             {
-                // Per-character, timed: boot to login + lock THAT character out for the minutes given
-                // (default 10). Works offline too (persists; EnterWorld enforces it).
+                // Per-character, timed: boot out of the world + lock THAT character out for the minutes
+                // given (default 10). Works offline too (persists; EnterWorld enforces it).
                 var (name, minutes) = ParseNameMinutes(arg, 10);
                 var until = DateTime.UtcNow.AddMinutes(minutes);
-                _ = Task.Run(async () =>
+                ModerateAsync(admin, name, $"kicked for {minutes}m", async canonical =>
                 {
-                    bool ok = await _db.SetKickAsync(name, until);
-                    if (ok && FindOnlinePlayer(name) is Entity t &&
-                        _world.EntityToConnection.TryGetValue(t.Id, out var conn))
-                        _ = _hub.Clients.Client(conn).SendAsync("ForceDisconnect", $"Kicked by admin ({minutes}m).");
-                    SendSystemToEntity(admin, ok ? $"{name} kicked for {minutes}m." : $"No character '{name}'.");
+                    await _db.SetKickAsync(canonical, until);
+                    // Remove them on the TICK thread — this is world state, and we're on a worker here.
+                    _world.Commands.Enqueue(new ForceRemoveCmd(canonical, $"Kicked by staff ({minutes}m)."));
                 });
                 break;
             }
 
             case "ban":
             {
-                // Per-account, timed: no login at all until it expires (default 60m). Offline-safe.
+                // Per-ACCOUNT, timed: no login at all until it expires (default 60m). Offline-safe.
+                // (Ban is the one punishment that is not per-character — see CharacterRecord.Role.)
                 var (name, minutes) = ParseNameMinutes(arg, 60);
                 var until = DateTime.UtcNow.AddMinutes(minutes);
-                _ = Task.Run(async () =>
+                ModerateAsync(admin, name, $"account banned for {minutes}m", async canonical =>
                 {
-                    bool ok = await _db.BanAccountByCharacterNameAsync(name, until);
-                    if (ok && FindOnlinePlayer(name) is Entity t &&
-                        _world.EntityToConnection.TryGetValue(t.Id, out var conn))
-                        _ = _hub.Clients.Client(conn).SendAsync("ForceDisconnect", $"Account banned ({minutes}m).");
-                    SendSystemToEntity(admin, ok ? $"{name}'s account banned for {minutes}m." : $"No character '{name}'.");
+                    await _db.BanAccountByCharacterNameAsync(canonical, until);
+                    _world.Commands.Enqueue(new ForceRemoveCmd(canonical, $"Account banned ({minutes}m)."));
                 });
                 break;
             }
+
             case "unban":
             {
                 string name = arg;
@@ -3118,15 +3298,10 @@ public class GameLoopService : BackgroundService
                 // they're online, jail them right now.
                 var (name, minutes) = ParseNameMinutes(arg, 30);
                 var until = DateTime.UtcNow.AddMinutes(minutes);
-                if (FindOnlinePlayer(name) is Entity jailTarget)
+                ModerateAsync(admin, name, $"jailed for {minutes}m", async canonical =>
                 {
-                    JailNow(jailTarget, until);
-                    SendSystemToEntity(jailTarget, $"You have been jailed for {minutes} minutes.");
-                }
-                _ = Task.Run(async () =>
-                {
-                    bool ok = await _db.SetJailAsync(name, until);
-                    SendSystemToEntity(admin, ok ? $"{name} jailed for {minutes}m." : $"No character '{name}'.");
+                    await _db.SetJailAsync(canonical, until);
+                    _world.Commands.Enqueue(new JailNowCmd(canonical, until, minutes));
                 });
                 break;
             }
@@ -3135,14 +3310,40 @@ public class GameLoopService : BackgroundService
             {
                 string name = arg;
                 if (FindOnlinePlayer(name) is Entity unjailTarget)
-                {
-                    unjailTarget.JailedUntil = null;
-                    SendSystemToEntity(unjailTarget, "You have been released from jail.");
-                }
+                    ReleaseFromJail(unjailTarget, "You have been released from jail.");
                 _ = Task.Run(async () =>
                 {
                     bool ok = await _db.SetJailAsync(name, null);
                     SendSystemToEntity(admin, ok ? $"{name} released." : $"No character '{name}'.");
+                });
+                break;
+            }
+
+            case "chatban":
+            {
+                // Play on, but silent. The light-touch punishment between a warning and a jailing.
+                var (name, minutes) = ParseNameMinutes(arg, 30);
+                var until = DateTime.UtcNow.AddMinutes(minutes);
+                ModerateAsync(admin, name, $"chat-banned for {minutes}m", async canonical =>
+                {
+                    await _db.SetChatBanAsync(canonical, until);
+                    _world.Commands.Enqueue(new ChatBanNowCmd(canonical, until, minutes));
+                });
+                break;
+            }
+
+            case "unchatban":
+            {
+                string name = arg;
+                if (FindOnlinePlayer(name) is Entity unmute)
+                {
+                    unmute.ChatBannedUntil = null;
+                    SendSystemToEntity(unmute, "You can speak again.");
+                }
+                _ = Task.Run(async () =>
+                {
+                    bool ok = await _db.SetChatBanAsync(name, null);
+                    SendSystemToEntity(admin, ok ? $"{name} can speak again." : $"No character '{name}'.");
                 });
                 break;
             }
@@ -3182,6 +3383,97 @@ public class GameLoopService : BackgroundService
                 else SendSystemToEntity(admin, $"{arg} is not online.");
                 break;
 
+            case "speed-cast":
+            case "speed-atack":
+            case "speed-attack":
+            case "speed-move":
+            {
+                if (!float.TryParse(arg, NumberStyles.Float, CultureInfo.InvariantCulture, out float v) || v <= 0)
+                {
+                    SendSystemToEntity(admin, $"Usage: /{command} <value>  (e.g. /{command} 1234)");
+                    break;
+                }
+                // Deliberately UNCAPPED (owner) — the point is to see what a silly number does.
+                if (command == "speed-move") admin.AdminMoveSpeed = v;
+                else if (command == "speed-cast") admin.AdminCastSpeed = v;
+                else admin.AdminAttackSpeed = v;
+                SendSystemToEntity(admin, $"{command[6..]} speed forced to {v:0.##}.");
+                SendStats(admin);
+                SendAdminState(admin);
+                break;
+            }
+
+            case "speed-reset":
+                admin.AdminCastSpeed = null;
+                admin.AdminAttackSpeed = null;
+                admin.AdminMoveSpeed = null;
+                SendSystemToEntity(admin, "Speeds back to normal.");
+                SendStats(admin);
+                SendAdminState(admin);
+                break;
+
+            case "givegold":
+            {
+                int gsp = arg.LastIndexOf(' ');
+                if (gsp <= 0 || !TryParseGold(arg[(gsp + 1)..], out long amount))
+                {
+                    SendSystemToEntity(admin,
+                        "Usage: /givegold <name> <amount>  — k/m/b/t suffixes and 1_000_000 both work; " +
+                        "a negative amount takes gold away.");
+                    break;
+                }
+                string goldTarget = arg[..gsp].Trim();
+                if (FindOnlinePlayer(goldTarget) is not Entity gt)
+                {
+                    SendSystemToEntity(admin, $"{goldTarget} is not online.");
+                    break;
+                }
+                // Clamp at zero rather than refusing: taking "all of it" shouldn't need the exact figure.
+                long before = gt.Gold;
+                gt.Gold = amount >= 0
+                    ? (gt.Gold > long.MaxValue - amount ? long.MaxValue : gt.Gold + amount)
+                    : Math.Max(0, gt.Gold + amount);
+                long delta = gt.Gold - before;
+                SendGold(gt);
+                SaveEntity(gt);
+                SendSystemToEntity(admin, $"{gt.Name}: {delta:+#,##0;-#,##0;0} gold (now {gt.Gold:#,##0}).");
+                if (gt.Id != admin.Id)
+                    SendSystemToEntity(gt, delta >= 0
+                        ? $"You received {delta:#,##0} gold."
+                        : $"{-delta:#,##0} gold was taken from you.");
+                break;
+            }
+
+            case "bag":
+            {
+                // Read-only-ish view of another player's inventory, with a remove button per row.
+                if (FindOnlinePlayer(arg) is not Entity bagTarget)
+                {
+                    SendSystemToEntity(admin, $"{arg} is not online.");
+                    break;
+                }
+                SendTo(admin, "AdminBag",
+                    new AdminBagDto(bagTarget.Name, bagTarget.Gold,
+                        bagTarget.Inventory.Select(i => i.ToDto()).ToArray()));
+                break;
+            }
+
+            case "give":
+            {
+                // Opens the admin's OWN inventory as a picker; the transfer itself arrives later as an
+                // AdminGiveItemCmd. Deliberately ignores tradability (owner) — staff can hand over
+                // anything, including untradeable and quest items.
+                if (FindOnlinePlayer(arg) is not Entity giveTarget)
+                {
+                    SendSystemToEntity(admin, $"{arg} is not online.");
+                    break;
+                }
+                SendTo(admin, "AdminGivePicker",
+                    new AdminBagDto(giveTarget.Name, giveTarget.Gold,
+                        admin.Inventory.Select(i => i.ToDto()).ToArray()));
+                break;
+            }
+
             case "testcaps":
                 bool shortCaps = arg is not ("off" or "0" or "false");
                 (_idleCapSeconds, _offlineCapSeconds, _graceSeconds) = shortCaps
@@ -3195,6 +3487,145 @@ public class GameLoopService : BackgroundService
                 SendSystemToEntity(admin, $"Unknown command: {command}");
                 break;
         }
+    }
+
+    /// <summary>Apply a kick/ban to an ONLINE character (a no-op if they aren't). The persisted lockout
+    /// was already written by the worker; this is the part that has to happen on the tick thread.</summary>
+    private void HandleForceRemove(ForceRemoveCmd cmd)
+    {
+        if (FindOnlinePlayer(cmd.CharacterName) is Entity target)
+            ForceRemovePlayer(target, cmd.Reason);
+    }
+
+    private void HandleJailNow(JailNowCmd cmd)
+    {
+        if (FindOnlinePlayer(cmd.CharacterName) is not Entity target) return;
+        JailNow(target, cmd.Until);
+        SendSystemToEntity(target, $"You have been jailed for {cmd.Minutes} minutes.");
+    }
+
+    private void HandleChatBanNow(ChatBanNowCmd cmd)
+    {
+        if (FindOnlinePlayer(cmd.CharacterName) is not Entity target) return;
+        target.ChatBannedUntil = cmd.Until;
+        SaveEntity(target);
+        SendSystemToEntity(target, $"You have been silenced for {cmd.Minutes} minutes.");
+    }
+
+    /// <summary>/give: move one of the admin's items to another online player. No tradability check
+    /// (owner) — this is a staff tool, and handing over an untradeable or god item is the point.</summary>
+    private void HandleAdminGiveItem(AdminGiveItemCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var admin) || !admin.IsAdmin) return;
+        if (FindOnlinePlayer(cmd.TargetName) is not Entity target)
+        {
+            SendSystemToEntity(admin, $"{cmd.TargetName} is not online.");
+            return;
+        }
+        var item = admin.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
+        if (item is null) return;
+
+        string itemName = ItemCatalog.Get(item.DefId)?.Name ?? item.DefId;
+        int qty = Math.Clamp(cmd.Quantity, 1, Math.Max(1, item.Quantity));
+
+        if (qty < item.Quantity)
+        {
+            // Partial stack: the giver keeps the remainder, the receiver gets a NEW instance (two
+            // inventories must never share an item instance).
+            item.Quantity -= qty;
+            TransferItem(admin, target, new InventoryItem
+            {
+                DefId = item.DefId,
+                Enchant = item.Enchant,
+                Quantity = qty,
+                Attributes = new List<ItemAttribute>(item.Attributes),
+            });
+            // `item` itself stays in the admin's bag, just smaller — TransferItem only moves the copy.
+        }
+        else
+        {
+            item.Equipped = false;
+            item.PersistentInstanceId = null;   // it belongs to another character's row now
+            TransferItem(admin, target, item);
+            admin.RecomputeDerived();
+        }
+
+        SendInventory(admin);
+        SendInventory(target);
+        SendStats(admin);
+        SendStats(target);
+        SaveEntity(admin);
+        SaveEntity(target);
+        SendSystemToEntity(admin, $"Gave {qty}x {itemName} to {target.Name}.");
+        SendSystemToEntity(target, $"{admin.Name} gave you {qty}x {itemName}.");
+    }
+
+    /// <summary>/bag: destroy an item out of another player's inventory.</summary>
+    private void HandleAdminRemoveItem(AdminRemoveItemCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var admin) || !admin.IsAdmin) return;
+        if (FindOnlinePlayer(cmd.TargetName) is not Entity target) return;
+        var item = target.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
+        if (item is null) return;
+
+        string itemName = ItemCatalog.Get(item.DefId)?.Name ?? item.DefId;
+        bool wasEquipped = item.Equipped;
+        target.Inventory.Remove(item);
+        if (wasEquipped) target.RecomputeDerived();
+        SendInventory(target);
+        SendStats(target);
+        SaveEntity(target);
+        SendSystemToEntity(admin, $"Removed {itemName} from {target.Name}.");
+        SendSystemToEntity(target, $"A staff member removed {itemName} from your bag.");
+        // Refresh the still-open admin view.
+        SendTo(admin, "AdminBag",
+            new AdminBagDto(target.Name, target.Gold, target.Inventory.Select(i => i.ToDto()).ToArray()));
+    }
+
+    /// <summary>Run a punishment against a named character after checking the actor outranks them.
+    ///
+    /// The rank check has to happen on a WORKER (the target may be offline, so their role comes from the
+    /// DB), which is also why <paramref name="action"/> must not touch world state directly — it hands
+    /// that back to the tick thread as a command. The name is resolved to its CANONICAL spelling first,
+    /// so `/jail test1` on a character called "Test1" both works AND reports the truth: it used to
+    /// perform the action through the case-insensitive online lookup while the case-SENSITIVE database
+    /// lookup failed, printing "No character 'test1'" over a jailing that had just happened.</summary>
+    private void ModerateAsync(Entity actor, string targetName, string pastTense, Func<string, Task> action)
+    {
+        if (targetName.Length == 0)
+        {
+            SendSystemToEntity(actor, "Who?");
+            return;
+        }
+        _ = Task.Run(async () =>
+        {
+            var online = FindOnlinePlayer(targetName);
+            string? canonical = online?.Name ?? await _db.ResolveCharacterNameAsync(targetName);
+            if (canonical is null)
+            {
+                SendSystemToEntity(actor, $"No character '{targetName}'.");
+                return;
+            }
+            var targetRole = online?.Role ?? await _db.GetRoleAsync(canonical) ?? AccountRole.Player;
+            if (!Outranks(actor, targetRole))
+            {
+                SendSystemToEntity(actor, string.Equals(canonical, actor.Name, StringComparison.OrdinalIgnoreCase)
+                    ? "You can't do that to yourself."
+                    : $"{canonical} is {targetRole} — you can't do that to them.");
+                return;
+            }
+            await action(canonical);
+            SendSystemToEntity(actor, $"{canonical} {pastTense}.");
+        });
+    }
+
+    /// <summary>Push the admin-only client indicators (god mode, forced speeds) so the state is VISIBLE
+    /// instead of something you rediscover by typing /god again and watching which way it toggles.</summary>
+    private void SendAdminState(Entity e)
+    {
+        if (e.Kind != EntityKind.Player) return;
+        SendTo(e, "AdminState", new AdminStateDto(
+            e.Role, e.GodMode, e.AdminCastSpeed, e.AdminAttackSpeed, e.AdminMoveSpeed));
     }
 
     private Entity? FindOnlinePlayer(string name) =>
@@ -3223,10 +3654,23 @@ public class GameLoopService : BackgroundService
                 {
                     string? canonical = await _db.ResolveCharacterNameAsync(name);
                     if (canonical is null) { SendSystemToEntity(p, $"No character '{name}'."); return; }
-                    if (!p.Friends.Add(canonical)) { SendSystemToEntity(p, $"{canonical} is already a friend."); return; }
+                    if (!p.Friends.Add(canonical)) { SendSystemToEntity(p, $"{canonical} is already on your list."); return; }
                     SaveEntity(p);
-                    string tag = FindOnlinePlayer(canonical) is not null ? " [online]" : "";
-                    SendSystemToEntity(p, $"Added {canonical} to friends{tag}.");
+
+                    // Friendship is MUTUAL (owner): adding someone is only half of it. Until they add
+                    // you back you get NO presence information about them — and they are deliberately
+                    // NOT told you added them ("he doesn't care about you"). The moment it becomes
+                    // mutual, both sides find out.
+                    if (await IsMutualFriendAsync(p, canonical))
+                    {
+                        SendSystemToEntity(p, $"{canonical} is now your friend.");
+                        if (FindOnlinePlayer(canonical) is Entity nowFriend)
+                            SendSystemToEntity(nowFriend, $"{p.Name} is now your friend.");
+                    }
+                    else
+                    {
+                        SendSystemToEntity(p, $"Friend request sent to {canonical}. [pending]");
+                    }
                 });
                 break;
 
@@ -3241,11 +3685,24 @@ public class GameLoopService : BackgroundService
                 break;
 
             case "list":
+            {
                 if (p.Friends.Count == 0) { SendSystemToEntity(p, "Your friend list is empty."); return; }
-                SendSystemToEntity(p, $"Friends ({p.Friends.Count}):");
-                foreach (var f in p.Friends.OrderBy(x => x))
-                    SendSystemToEntity(p, $"  {f} {(FindOnlinePlayer(f) is not null ? "[online]" : "[offline]")}");
+                var names = p.Friends.OrderBy(x => x).ToList();
+                _ = Task.Run(async () =>
+                {
+                    SendSystemToEntity(p, $"Friends ({names.Count}):");
+                    foreach (var f in names)
+                    {
+                        // One-sided entries show [pending] and NOTHING about presence — you don't get to
+                        // watch someone who hasn't accepted you (owner).
+                        string tag = !await IsMutualFriendAsync(p, f) ? "[pending]"
+                                   : FindOnlinePlayer(f) is not null ? "[online]"
+                                   : "[offline]";
+                        SendSystemToEntity(p, $"  {f} {tag}");
+                    }
+                });
                 break;
+            }
         }
     }
 
@@ -3321,12 +3778,31 @@ public class GameLoopService : BackgroundService
 
     /// <summary>When a player enters the world, tell any ONLINE player who has them as a friend that
     /// they're back. Called from HandleEnterWorld.</summary>
-    private void NotifyFriendsOnline(Entity entered)
+    private void NotifyFriendsOnline(Entity entered) => NotifyFriendsPresence(entered, online: true);
+
+    /// <summary>Tell a player's MUTUAL friends they came online / went offline. Both parties are online
+    /// by definition of "someone to notify", so the mutuality test needs no DB round-trip here — a
+    /// one-sided [pending] entry gets nothing, which is the point: presence is only shared between people
+    /// who have both agreed to it (owner).</summary>
+    private void NotifyFriendsPresence(Entity who, bool online)
     {
         foreach (var other in _world.Entities.Values)
-            if (other.Kind == EntityKind.Player && other.Id != entered.Id
-                && other.Friends.Contains(entered.Name))
-                SendSystemToEntity(other, $"{entered.Name} is back online.");
+            if (other.Kind == EntityKind.Player && other.Id != who.Id
+                && other.Friends.Contains(who.Name)      // they listed us
+                && who.Friends.Contains(other.Name))     // and we listed them → mutual
+                SendSystemToEntity(other, $"{who.Name} is now {(online ? "Online" : "Offline")}.");
+    }
+
+    /// <summary>Is <paramref name="otherName"/> a REAL friend of <paramref name="p"/> — i.e. has the
+    /// other side added them back? Reads the other party's list from memory when they're online and from
+    /// the DB when they aren't. Call from a worker thread; it may hit the database.</summary>
+    private async Task<bool> IsMutualFriendAsync(Entity p, string otherName)
+    {
+        if (!p.Friends.Contains(otherName)) return false;
+        if (FindOnlinePlayer(otherName) is Entity online)
+            return online.Friends.Contains(p.Name);
+        var theirs = await _db.GetFriendsAsync(otherName);
+        return theirs.Contains(p.Name);
     }
 
     /// <summary>Pin an ONLINE player in jail right now (teleport + drop combat/movement). Persistence +
@@ -3345,6 +3821,46 @@ public class GameLoopService : BackgroundService
         SaveEntity(target);
     }
 
+    /// <summary>Let a character out of jail and send them to the STARTING town — never the nearest one,
+    /// which would tell them (and anyone watching) roughly where the jail sits on the map.</summary>
+    private void ReleaseFromJail(Entity target, string message)
+    {
+        target.JailedUntil = null;
+        var town = WorldMap.StartingTown;
+        target.X = town.X + _rng.Next(-250, 250);
+        target.Y = town.Y + _rng.Next(-250, 250);
+        target.TargetX = null;
+        target.TargetY = null;
+        _world.Grid.UpdatePosition(target);
+        SendSystemToEntity(target, message);
+        SaveEntity(target);
+        _ = Task.Run(() => _db.SetJailAsync(target.Name, null));
+    }
+
+    /// <summary>Boot a character out of the world RIGHT NOW (kick / ban) and take its entity with it.
+    ///
+    /// Sending "ForceDisconnect" alone was not enough: the client dropped its connection, which arrives
+    /// as an ordinary LeaveCommand, and that path deliberately KEEPS you in the world — offline-farming
+    /// or link-dead for the 180s grace. So a kicked player left a ghost standing there: targetable,
+    /// killable, buffable, and still holding the name, so their own account was refused re-entry with
+    /// "character is already online". A punishment must not depend on the punished client cooperating,
+    /// so removal happens here, server-side, before the notification goes out.</summary>
+    private void ForceRemovePlayer(Entity target, string reason)
+    {
+        if (_world.EntityToConnection.TryGetValue(target.Id, out var conn))
+        {
+            _ = _hub.Clients.Client(conn).SendAsync("ForceDisconnect", reason);
+            _world.ConnectionToEntity.Remove(conn);
+            _world.EntityToConnection.Remove(target.Id);
+        }
+        // Clear the states that would otherwise re-add them to the world on the way out.
+        target.IsOfflineFarming = false;
+        target.IsDisconnected = false;
+        target.AutoHuntEnabled = false;
+        if (target.CastingSkillId is not null) CancelCast(target, startCooldown: false);
+        NormalLeave(target);
+    }
+
         private void HandleChat(ChatCmd chat)
     {
         if (!TryGetPlayer(chat.ConnectionId, out var sender))
@@ -3355,10 +3871,18 @@ public class GameLoopService : BackgroundService
             return;
 
         // JAILED players are silenced — no chat, no whisper (owner). Admin/system messages to them still
-        // come through; this only blocks what THEY send.
+        // come through; this only blocks what THEY send. A CHAT BAN is the same silence without the cell.
         if (sender.Jailed)
         {
             SendSystemToEntity(sender, "You can't speak while jailed.");
+            return;
+        }
+        if (sender.ChatBanned)
+        {
+            var left = sender.ChatBannedUntil!.Value - DateTime.UtcNow;
+            string t = left.TotalHours >= 1 ? $"{(int)left.TotalHours}h {left.Minutes}m"
+                     : left.TotalMinutes >= 1 ? $"{(int)left.TotalMinutes}m" : $"{(int)left.TotalSeconds}s";
+            SendSystemToEntity(sender, $"You are silenced for another {t}.");
             return;
         }
 
@@ -3445,16 +3969,26 @@ public class GameLoopService : BackgroundService
             if (entity.Kind == EntityKind.Mob)
                 MobAi(entity);
 
-            if (entity.Jailed)
+            if (entity.JailedUntil is not null)
             {
-                // Pinned: ignore any movement/skills, keep them at jail.
-                entity.TargetX = null;
-                entity.TargetY = null;
-                entity.X = GameConstants.JailX;
-                entity.Y = GameConstants.JailY;
-                entity.Engaged = false;
-                _world.Grid.UpdatePosition(entity);
-                continue;
+                if (!entity.Jailed)
+                {
+                    // Sentence served. Don't just unlock them where they stand — that teaches everyone
+                    // where the jail is. Ship them home to their STARTING town (owner).
+                    ReleaseFromJail(entity, "Your sentence is over. You have been released.");
+                }
+                else
+                {
+                    // Serving: they may walk, but only inside the cell. Everything else is blocked by
+                    // IsBlockedWhileJailed; here we only make sure they can't drift out (e.g. knockback,
+                    // a stale destination from before the jailing).
+                    entity.Engaged = false;
+                    entity.CombatTargetId = null;
+                    entity.FollowTargetId = null;
+                    (entity.X, entity.Y) = ClampToJail(entity.X, entity.Y);
+                    if (entity.TargetX is float tgx && entity.TargetY is float tgy)
+                        (entity.TargetX, entity.TargetY) = ClampToJail(tgx, tgy);
+                }
             }
 
             // Link-dead grace. While still IN COMBAT (mid-fight drop), keep defending the current
@@ -7439,7 +7973,10 @@ var effect = def.Effect;
             AtkStat = stats.Atk,   // eva/acc/crit only; mob P/M.Atk comes from the base curve
             Wit = stats.Wit,
             Dex = stats.Dex,
-            Aggressive = mobType.Aggressive || rank != MobRank.Normal,
+            // ELITES attack on sight; BOSSES do not (owner). A raid/field boss sits in its lair and is
+            // fought when you choose to pull it — making it aggressive turned every approach into an
+            // ambush and put a "*" on the Treant. Boss difficulty comes from its kit, not from jumping you.
+            Aggressive = mobType.Aggressive || rank == MobRank.Elite,
             ZoneId = zoneId,
             Rank = rank,
             MobTypeId = mobId

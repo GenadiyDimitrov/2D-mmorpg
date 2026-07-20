@@ -921,17 +921,38 @@ public partial class MainWindow
         row.Children.Add(hpBar);
         row.Children.Add(mpBar);
 
-        // Debuffs on this member, so a healer spots who to cleanse straight from the roster. Red, small,
-        // wrapping; the full list is also in the tooltip. Hidden when the member is clean.
+        // Debuffs on this member, so a healer spots who to cleanse straight from the roster.
+        //
+        // ICONS/letters, not full names (owner, 2026-07-20): spelled out, three debuffs wrapped the row
+        // to three lines and pushed the rest of the party off the panel. Each tile carries its own
+        // tooltip, so the full name is one hover away and the roster stays a roster.
         if (m.Debuffs is { Length: > 0 })
-            row.Children.Add(new TextBlock
+        {
+            var debuffRow = new WrapPanel { Margin = new Thickness(0, 2, 0, 0) };
+            var debuffRed = new SolidColorBrush(Color.FromRgb(0xE0, 0x6C, 0x6C));
+            foreach (var debuff in m.Debuffs)
             {
-                Text = "⚠ " + string.Join(", ", m.Debuffs),
-                Foreground = new SolidColorBrush(Color.FromRgb(0xE0, 0x6C, 0x6C)),
-                FontSize = 10, TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 1, 0, 0),
-                ToolTip = "Debuffs: " + string.Join(", ", m.Debuffs)
-            });
+                string icon = SkillIcons.ForName(debuff);
+                debuffRow.Children.Add(new Border
+                {
+                    Background = new SolidColorBrush(Color.FromArgb(0x50, 0x80, 0x20, 0x20)),
+                    BorderBrush = debuffRed,
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(3),
+                    Margin = new Thickness(0, 0, 3, 0),
+                    Padding = new Thickness(3, 0, 3, 0),
+                    ToolTip = debuff,
+                    Child = new TextBlock
+                    {
+                        Text = icon.Length > 0 ? icon : Abbreviations.For(debuff),
+                        Foreground = debuffRed,
+                        FontSize = 10,
+                        FontWeight = FontWeights.SemiBold,
+                    },
+                });
+            }
+            row.Children.Add(debuffRow);
+        }
 
         row.MouseLeftButtonDown += PartyRow_Target;
         return row;
@@ -1285,6 +1306,30 @@ public partial class MainWindow
         await _net.UsePotionAsync(instanceId);
     }
 
+    /// <summary>Use one consumable, from WHEREVER it was clicked — the bag or a skill-bar slot.
+    ///
+    /// It lives in one place because the two call sites disagreed and the bar was wrong: a resurrection
+    /// scroll has to travel with the TARGET it is being used on (like the healer's res), and the bar sent
+    /// the plain no-target message, so the server correctly answered "pick a friendly dead target" and
+    /// the scroll appeared broken on the bar while working perfectly from the bag. Potions and Return
+    /// have no target, which is why only the res scroll showed the split.</summary>
+    private void UseConsumable(Guid instanceId, ItemDef def)
+    {
+        if (SkillCatalog.Get(def.UseSkillId) is { Resurrect: true })
+        {
+            if (_targetId is Guid rezTarget)
+                _ = _net.UsePotionOnAsync(instanceId, rezTarget);
+            else
+                AppendChat(new ChatMessage("SYSTEM",
+                    "Select a fallen ally first, then use the scroll.", ChatChannel.System));
+            return;
+        }
+        if (ItemCatalog.IsBuffPotion(def))
+            _ = _net.UsePotionAsync(instanceId);
+        else
+            _ = DrinkPotion(instanceId);
+    }
+
     // =======================================================================
     // Equip comparison popup
     // =======================================================================
@@ -1298,20 +1343,7 @@ public partial class MainWindow
         // ignore the heal-potion cooldown (they apply a timed buff instead).
         if (ItemCatalog.IsPotion(def))
         {
-            // A resurrection scroll is used ON a dead ally (your current target), like the healer's res.
-            if (SkillCatalog.Get(def.UseSkillId) is { Resurrect: true })
-            {
-                if (_targetId is Guid rezTarget)
-                    _ = _net.UsePotionOnAsync(item.InstanceId, rezTarget);
-                else
-                    AppendChat(new ChatMessage("SYSTEM",
-                        "Select a fallen ally first, then use the scroll.", ChatChannel.System));
-                return;
-            }
-            if (ItemCatalog.IsBuffPotion(def))
-                _ = _net.UsePotionAsync(item.InstanceId);
-            else
-                _ = DrinkPotion(item.InstanceId);
+            UseConsumable(item.InstanceId, def);
             return;
         }
 
@@ -2282,16 +2314,10 @@ public partial class MainWindow
         return square;
     }
 
-    /// <summary>Initials for a buff square when it has no emoji icon (buffs aren't SkillDefs, so this
-    /// works off the display name): multi-word → first letters (Angel's Protection → AP), else 3 chars.</summary>
-    private static string BuffAbbrev(string name)
-    {
-        var words = name.Split(new[] { ' ', '-', '\'' }, StringSplitOptions.RemoveEmptyEntries);
-        if (words.Length >= 2)
-            return string.Concat(words.Take(3).Select(w => char.ToUpperInvariant(w[0])));
-        string w = words.Length == 1 ? words[0] : name;
-        return w.Length <= 3 ? w : w.Substring(0, 3);
-    }
+    /// <summary>Label for a buff square when it has no emoji icon. Buffs aren't SkillDefs, so this works
+    /// off the display name — but it goes through the same catalog-wide resolver as the skill bar, which
+    /// is the whole point: the three heal-over-time buffs used to render an identical "HOT" square.</summary>
+    private static string BuffAbbrev(string name) => Abbreviations.For(name);
 
     /// <summary>A duration as at most TWO digits + ONE unit, floored to the biggest unit that reaches 1
     /// (owner): ≥1d → Nd, ≥1h → Nh, ≥60s → Nm, else Ns. So 3600→1h, 3540→59m, 180→3m, 119→1m, 59→59s,

@@ -139,6 +139,11 @@ public static class WorldMap
         new("outpost_training", "Training Outpost", 24000, 5000, 400),
     };
 
+    /// <summary>The STARTER town (map centre). Used where "nearest" would leak information — a player
+    /// released from jail is sent here rather than to whatever town happens to be closest, so the jail's
+    /// location stays secret.</summary>
+    public static SafeZone StartingTown => SafeZones[0];
+
     /// <summary>The safe zone nearest to a point (always returns one). Used to
     /// respawn the dead at their closest town instead of the map centre.</summary>
     public static SafeZone NearestSafeZone(float x, float y)

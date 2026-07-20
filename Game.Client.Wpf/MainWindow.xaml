@@ -38,6 +38,17 @@
             </StackPanel>
         </Border>
 
+        <!-- STAFF badge: god mode and forced speeds are otherwise invisible, so the only way to recall
+             whether god mode was on was to type /god again and watch which way it toggled. -->
+        <Border x:Name="AdminBadge" HorizontalAlignment="Center" VerticalAlignment="Top"
+                Margin="0,52,0,0" Padding="10,3" CornerRadius="6"
+                Background="#A0402000" BorderBrush="#FFFFC060" BorderThickness="1"
+                Visibility="Collapsed">
+            <TextBlock x:Name="AdminBadgeText" Foreground="#FFFFD98A"
+                       FontFamily="Consolas" FontSize="12" FontWeight="Bold"
+                       Text="ADMIN"/>
+        </Border>
+
         <!-- Player HUD (HP/MP/EXP + buff rows). Named so it can be hidden wholesale when we drop
              back to character select — it used to stay on screen over the char-select panel. -->
         <StackPanel x:Name="HudPanel" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12,8,0,0" Width="240">
@@ -880,6 +891,45 @@
         </Border>
 
         <!-- Skill detail popup (click a skill in the Skills window) -->
+        <!-- Mob info: the full card the target frame's [Details] button opens. A movable popup with two
+             tabs (Details / Drop) instead of an inline expansion, so it can't shove the target frame
+             around and can sit open beside it while you fight. -->
+        <Border x:Name="MobInfoPanel" Width="330" MaxHeight="460"
+                HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,40,0"
+                Background="#F01C2636" CornerRadius="10" Padding="14"
+                Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock x:Name="MobInfoTitle" Foreground="White" FontSize="14"
+                           FontWeight="Bold" Margin="0,0,0,8"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <Button x:Name="MobInfoDetailsTab" Content="Details" Width="86" Height="24"
+                            FontSize="11" Click="MobInfoDetailsTab_Click"/>
+                    <Button x:Name="MobInfoDropTab" Content="Drop" Width="86" Height="24"
+                            FontSize="11" Margin="6,0,0,0" Click="MobInfoDropTab_Click"/>
+                </StackPanel>
+                <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="MobInfoBody"/>
+                </ScrollViewer>
+            </StackPanel>
+        </Border>
+
+        <!-- /bag <name> and /give <name>. One panel shape, two modes: AdminBagList holds either the
+             TARGET's bag (with a Remove button per row) or MY bag (with a Give button per row). -->
+        <Border x:Name="AdminBagPanel" Width="420" MaxHeight="520"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="#F01C2636" CornerRadius="10" Padding="16"
+                Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock x:Name="AdminBagTitle" Foreground="White" FontSize="15"
+                           FontWeight="Bold" Margin="0,0,0,2"/>
+                <TextBlock x:Name="AdminBagSubtitle" Foreground="#FF9FB0BC" FontSize="11"
+                           Margin="0,0,0,8"/>
+                <ScrollViewer MaxHeight="420" VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="AdminBagList"/>
+                </ScrollViewer>
+            </StackPanel>
+        </Border>
+
         <Border x:Name="SkillDetailPopup" Width="360"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 Background="#F01C2636" CornerRadius="10" Padding="18"
