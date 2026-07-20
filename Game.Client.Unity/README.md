@@ -60,7 +60,39 @@ Create an empty scene with:
 
 ## 4. Point it at your server
 - **Emulator (Android Studio AVD):** `http://10.0.2.2:5238/game`
+- **Real phone over USB (easiest — see 4a):** `http://localhost:5238/game`
 - **Real phone on the same Wi-Fi:** `http://<your-PC-LAN-IP>:5238/game` (e.g. `http://192.168.1.20:5238/game`)
+
+> ⚠ **`ServerUrl` is a serialized field on the `GameBoot` component**, so the value saved in the SCENE
+> wins over the default in `GameBoot.cs`. Editing the C# default changes nothing for a scene that
+> already has a `GameBoot` on it — set it in the **Inspector**.
+
+### 4a. Cabled phone: `adb reverse` (skips Wi-Fi, LAN IP *and* the firewall)
+If the phone is on a USB cable, don't bother with the LAN at all. `adb reverse` tunnels the
+**phone's** `localhost:5238` over the cable to **your PC's** `localhost:5238`:
+
+```bash
+adb reverse tcp:5238 tcp:5238
+```
+
+Then set the client's Server URL to `http://localhost:5238/game` and run the server normally.
+This removes all three of the Wi-Fi route's failure points at once:
+
+- no LAN IP to look up (and no picking the right subnet),
+- **no Windows firewall rule** for port 5238 — the one manual step the Wi-Fi route can't automate,
+- no requirement that the phone be on the same Wi-Fi, or on Wi-Fi at all.
+
+`adb` ships with Unity's Android module, so it's already on your disk even if it isn't on `PATH`:
+
+```
+C:\Program Files\Unity\Hub\Editor\<version>\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platform-tools\adb.exe
+```
+
+Check the phone is actually visible first — `adb devices -l` should list it as `device`
+(`unauthorized` means the "Allow USB debugging?" prompt is still waiting on the phone's screen).
+
+> **The tunnel does NOT survive** unplugging the phone, rebooting it, or an adb server restart, and
+> it fails silently — the client just can't connect. Re-run the `adb reverse` line after any of those.
 
 **Two server-side gotchas for a real phone — both are now DONE for you:**
 
@@ -101,8 +133,26 @@ Create an empty scene with:
 - **In the Editor** first (Play): with the server running locally use `http://localhost:5238/game`.
   You should auto-login, spawn, see colored billboards (green = you, cyan = players, red = mobs,
   yellow = NPCs), and tap-to-move / tap-to-attack.
-- **On the phone:** File → Build Settings → Android → *Switch Platform* → connect the phone (USB
-  debugging on) → **Build And Run**.
+- **On the phone:** File → Build Settings → Android → *Switch Platform* (slow the first time — it
+  reimports every asset) → connect the phone (USB debugging on) → **Build And Run**. That compiles
+  the APK, installs it over USB and launches it.
+
+> **If Editor Play mode is unusable** (it has hard-crashed the owner's PC), skip it entirely and go
+> straight to *Build And Run* — the device build doesn't involve Play mode at all. Pair it with the
+> `adb reverse` tunnel from 4a and you never need the Editor to connect to anything.
+
+**Debugging a phone build.** You get no Console window, so read the device log:
+
+```bash
+adb logcat -s Unity          # only Unity's lines
+adb logcat -c                # clear first, so you see only this run
+```
+
+Two failures that look identical on-screen (an app that starts and just never connects):
+- **Wrong URL / no tunnel** → a connect timeout in logcat. Re-check 4a, and remember the tunnel dies
+  on unplug.
+- **IL2CPP stripping** → a "method not found" for a SignalR or `System.Text.Json` member, NOT a
+  network error. Fix with the `link.xml` noted at the end of §2.
 
 ---
 
