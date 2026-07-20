@@ -62,15 +62,40 @@ Create an empty scene with:
 - **Emulator (Android Studio AVD):** `http://10.0.2.2:5238/game`
 - **Real phone on the same Wi-Fi:** `http://<your-PC-LAN-IP>:5238/game` (e.g. `http://192.168.1.20:5238/game`)
 
-**Two server-side gotchas for a real phone:**
-1. The server must listen on the LAN, not just localhost. Run it with:
-   ```bash
-   ASPNETCORE_URLS=http://0.0.0.0:5238 dotnet run --project Game.Server
+**Two server-side gotchas for a real phone — both are now DONE for you:**
+
+1. **LAN binding: already handled.** The server binds `http://0.0.0.0:5238` (all interfaces), so
+   `localhost` keeps working for the WPF client *and* the phone can reach your PC. Just
+   `dotnet run --project Game.Server` — no environment variable needed.
+
+   On startup it prints the exact URL to paste into the Unity client:
    ```
-   (and allow port 5238 through the PC firewall).
-2. Android blocks cleartext HTTP by default. For testing, enable it: Project Settings → Player →
-   Android → *Publishing Settings*, or add a custom `AndroidManifest.xml` with
-   `android:usesCleartextTraffic="true"`. (Later: put the server behind HTTPS and drop this.)
+   Unity/phone clients on this LAN: http://192.168.1.20:5238/game
+   ```
+   (If several are listed, pick the one on the same subnet as your phone.) You still need to **allow
+   port 5238 through the Windows firewall** — that part is not automatable from here, and a blocked
+   port looks exactly like a wrong IP: a connection that just times out.
+
+   > This README used to say `ASPNETCORE_URLS=http://0.0.0.0:5238 dotnet run`. That never worked:
+   > `Program.cs` hardcoded `UseUrls("http://localhost:5238")`, which silently beat the variable, so the
+   > server stayed on loopback and the phone failed to connect with nothing in the log to explain it.
+   > An explicit `ASPNETCORE_URLS` is honoured now, and `launchSettings.json` no longer sets
+   > `applicationUrl` (that key is *also* delivered as `ASPNETCORE_URLS` and quietly won).
+
+2. **Cleartext HTTP: already handled** in `Assets/Plugins/Android/AndroidManifest.xml`. Since Android 9
+   plain HTTP is blocked, and our dev server is `http://…`. The fix is an **attribute on the
+   `<application>` element**, not an element of its own — that's the bit that isn't obvious:
+
+   ```xml
+   <uses-permission android:name="android.permission.INTERNET" />
+
+   <application android:usesCleartextTraffic="true">
+       ...activities...
+   </application>
+   ```
+
+   Without it the phone fails with a bare "cleartext not permitted" and no other clue.
+   *(Dev only — put the server behind HTTPS for a real release and delete the attribute.)*
 
 ## 5. Run
 - **In the Editor** first (Play): with the server running locally use `http://localhost:5238/game`.

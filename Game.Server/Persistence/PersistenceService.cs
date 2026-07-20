@@ -1,5 +1,6 @@
 using Game.Server.Simulation;
 using Game.Shared;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -36,6 +37,62 @@ public class PersistenceService
         await using var db = await _factory.CreateDbContextAsync();
         await db.Database.EnsureCreatedAsync();
     }
+
+#if DEBUG
+    /// <summary>DEV ONLY — DESTRUCTIVE. If the database on disk no longer matches the model, DELETE it
+    /// and build a fresh one. Returns true if it did.
+    ///
+    /// `EnsureCreated` only creates a database when the file is ABSENT; it never adds a column to an
+    /// existing one. So every schema change during development means deleting `game.db` by hand, and
+    /// forgetting is not a quiet failure — the server starts fine and then throws "table Characters has
+    /// no column named X" on the first save, from deep inside an EF batch, which reads like a bug in
+    /// whatever you were building rather than the stale file it is. (It cost a debugging cycle this very
+    /// session.) The owner's rule while in development: no character is worth preserving, so just wipe it.
+    ///
+    /// It is `#if DEBUG` and it will STAY that way. Migrations are the real answer the moment there is
+    /// data worth keeping, and until then a release build must never be able to delete a database. The
+    /// day this project ships, this method should not exist to be called by accident.</summary>
+    public async Task<bool> ResetIfSchemaStaleAsync(ILogger? log = null)
+    {
+        string? path;
+        await using (var db = await _factory.CreateDbContextAsync())
+        {
+            path = db.Database.GetDbConnection().DataSource;
+            if (!File.Exists(path)) return false;   // nothing on disk; EnsureCreated will make it
+
+            // Touch every table the game actually writes. Reading one row materialises ALL mapped
+            // columns, so a missing column fails here — at startup, in one obvious place — instead of
+            // mid-save later. A cheap query against an empty table is free.
+            try
+            {
+                _ = await db.Accounts.FirstOrDefaultAsync();
+                _ = await db.Characters.FirstOrDefaultAsync();
+                _ = await db.Subclasses.FirstOrDefaultAsync();
+                _ = await db.Items.FirstOrDefaultAsync();
+                _ = await db.BossTimers.FirstOrDefaultAsync();
+                return false;   // schema is current
+            }
+            catch (SqliteException ex)
+            {
+                log?.LogWarning("Database schema is stale ({Message}). Recreating {Path}.",
+                    ex.Message, path);
+            }
+        }
+
+        // The context is disposed, but SQLite POOLS connections and a pooled one keeps a file handle —
+        // deleting without this throws "file in use" on Windows.
+        SqliteConnection.ClearAllPools();
+
+        foreach (var file in new[] { path, path + "-shm", path + "-wal" })
+            if (File.Exists(file)) File.Delete(file);
+
+        await using (var fresh = await _factory.CreateDbContextAsync())
+            await fresh.Database.EnsureCreatedAsync();
+
+        log?.LogWarning("Database recreated from scratch — all characters were discarded (DEBUG only).");
+        return true;
+    }
+#endif
 
     // ----- Accounts ----------------------------------------------------------
 
@@ -76,9 +133,16 @@ public class PersistenceService
     }
 
     /// <summary>DEBUG convenience: on an EMPTY db, create ready-to-play accounts so you can skip the
-    /// (already-tested) register/create flow — just log in, pick the char, enter. admin/admin (admin)
-    /// + test1..test9/test, each with one Human Fighter (change class via debug in-game). No-op if any
-    /// account already exists.</summary>
+    /// (already-tested) register/create flow — just log in, pick the char, enter.
+    ///
+    /// admin/admin gets a FULLY KITTED character (see <see cref="EndgameKitAsync"/>): a level-90 Human
+    /// Warchanter in A-grade robe/staff/jewels with every class skill learned. The schema changes often
+    /// during development and every change means deleting the DB, so rebuilding that character by hand
+    /// each time was pure repeated toil (owner, 2026-07-20).
+    /// test1..test9/test stay plain level-1 Human Fighters — they're the "ordinary player" side of every
+    /// moderation and party test, and kitting them out would defeat that.
+    ///
+    /// No-op if any account already exists.</summary>
     public async Task SeedDebugAccountsAsync()
     {
         await using (var db = await _factory.CreateDbContextAsync())
@@ -89,14 +153,133 @@ public class PersistenceService
 
         async Task SeedAsync(string user, string pass, string charName)
         {
-            var acc = await RegisterAsync(user, pass);   // the FIRST account (admin) auto-gets IsAdmin
+            var acc = await RegisterAsync(user, pass);   // the FIRST account created becomes the owner's
             if (acc.Success)
                 await CreateCharacterAsync(acc.AccountId, charName, Race.Human, BaseClass.Fighter);
         }
 
         await SeedAsync("admin", "admin", "Admin");
+        await EndgameKitAsync("Admin");
         for (int i = 1; i <= 9; i++)
             await SeedAsync($"test{i}", "test", $"Test{i}");
+    }
+
+    /// <summary>Turn a freshly-created character into a ready-to-test level-90 Human Warchanter in full
+    /// A-grade gear, with every class skill learned.
+    ///
+    /// Everything here is DERIVED rather than hardcoded — the class comes from
+    /// <see cref="ThirdClassCatalog"/> by race+discipline, the skills from
+    /// <see cref="ClassSkills.Cumulative"/>, the gear from the tier the item catalog itself calls
+    /// A-grade. Hardcoded ids would be silently wrong the first time a catalog moved, and a seed that
+    /// quietly stops matching the game is worse than no seed: you'd be balance-testing gear that no
+    /// longer exists.
+    ///
+    /// The skill BAR is deliberately left empty: the server owns auto-placement (SyncSkillBar), so the
+    /// bar lays itself out on first login exactly as it does for any other character. Writing a bar here
+    /// would be the client-authored-bar mistake all over again, in a new place.</summary>
+    private async Task EndgameKitAsync(string characterName)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var character = await db.Characters
+            .Include(c => c.Subclasses)
+            .Include(c => c.Items)
+            .FirstOrDefaultAsync(c => c.Name == characterName);
+        if (character is null) return;
+
+        // ---- Class: Human Cleric -> Warchanter (looked up, never hardcoded) ----
+        var warchanter = ThirdClassCatalog.Playable
+            .FirstOrDefault(c => c.Race == Race.Human && c.Discipline == Discipline.Warchanter);
+        if (warchanter is null) return;   // catalog changed; leave the plain starter character alone
+        var cleric = ClassCatalog.Get(warchanter.ParentSecondClassId);
+        if (cleric is null) return;
+
+        const int level = GameConstants.MaxPlayerLevel;   // 90
+        var stats = StatCalculator.GetBaseStats(Race.Human, cleric.Base);
+
+        character.BaseClass = cleric.Base;
+        character.SecondClass = cleric.Id;
+        character.ThirdClass = warchanter.Id;
+        character.Level = level;
+        character.Exp = 0;
+        character.Gold = 1_000_000_000;   // enough to buy anything while testing
+        character.Con = stats.Con;
+        character.Atk = stats.Atk;
+        character.Wit = stats.Wit;
+        character.Dex = stats.Dex;
+
+        // ---- Skills: every class skill whose learn-gate this level meets ----
+        var learned = new Dictionary<string, int>();
+        foreach (var cs in ClassSkills.Cumulative(
+                     Race.Human, cleric.Base, cleric.Archetype, warchanter.Discipline))
+        {
+            if (cs.LearnLevel > level) continue;
+            if (!learned.TryGetValue(cs.SkillId, out int have) || cs.SkillLevel > have)
+                learned[cs.SkillId] = cs.SkillLevel;
+        }
+        // Stat swaps are a permanent BUILD decision, and granting them all cancels out to roughly +0
+        // while quietly wrecking the damage numbers — the same reason the debug "learn all" button
+        // refuses them. Buy them deliberately in the skills window.
+        foreach (var id in learned.Keys.Where(id => SkillCatalog.StatSwapOf(id) is not null).ToList())
+            learned.Remove(id);
+        // Cross-skill replacements (a higher-tier spell removes the one it supersedes).
+        foreach (var id in learned.Keys.ToList())
+            if (SkillCatalog.Get(id)?.Replaces is { } replaced)
+                foreach (var r in replaced) learned.Remove(r);
+        // The level-derived training passive, which is granted on login/level-up and gated on a 3rd class.
+        int training = StatCalculator.TrainingLevelFor(level);
+        if (training > 0) learned[SkillCatalog.SpiritTraining] = training;
+
+        string learnedCsv = string.Join(',', learned.Select(kv => $"{kv.Key}:{kv.Value}"));
+        character.LearnedSkillsCsv = learnedCsv;
+        character.SkillPoints = 0;
+
+        // Mirror onto the active subclass row, which is the real source of truth for per-class state.
+        var slot0 = character.Subclasses.FirstOrDefault(s => s.Slot == 0);
+        if (slot0 is not null)
+        {
+            slot0.BaseClass = cleric.Base;
+            slot0.SecondClass = cleric.Id;
+            slot0.ThirdClass = warchanter.Id;
+            slot0.Level = level;
+            slot0.Exp = 0;
+            slot0.Con = stats.Con;
+            slot0.Atk = stats.Atk;
+            slot0.Wit = stats.Wit;
+            slot0.Dex = stats.Dex;
+            slot0.LearnedSkillsCsv = learnedCsv;
+            slot0.SkillBarJson = "";   // let SyncSkillBar lay it out on first login
+        }
+
+        // ---- Gear: the A-grade tier, EQUIPPED. A caster kit: staff + robe + jewels. ----
+        character.Items.Clear();   // drop the newbie staff and starter boxes
+        foreach (var defId in EndgameKitItemIds())
+        {
+            var item = NewItem(defId);
+            item.Equipped = true;
+            character.Items.Add(item);
+        }
+        character.Items.Add(NewItem(ItemCatalog.GreaterPotion, 100));
+        character.Items.Add(NewItem(ItemCatalog.ScrollReturnUltimate, 20));
+
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>The A-grade caster kit, as item ids. A-grade is the top gear tier
+    /// (<see cref="ItemCatalog.TierLetter"/> calls level 76+ "A"), and the tiered ids are
+    /// "&lt;key&gt;_t&lt;level&gt;". L2 jewel layout: 1 necklace, 2 rings, 2 earrings.
+    /// Anything the catalog doesn't have is skipped rather than crashing the seed.</summary>
+    private static IEnumerable<string> EndgameKitItemIds()
+    {
+        const int aGrade = 76;
+        var ids = new[]
+        {
+            $"staff_t{aGrade}", $"robe_t{aGrade}",
+            $"helm_t{aGrade}", $"gloves_t{aGrade}", $"boots_t{aGrade}",
+            $"necklace_t{aGrade}",
+            $"ring_t{aGrade}", $"ring_t{aGrade}",
+            $"earring_t{aGrade}", $"earring_t{aGrade}",
+        };
+        return ids.Where(id => ItemCatalog.Get(id) is not null);
     }
 
     public async Task<AuthResult> LoginAsync(string username, string password)
