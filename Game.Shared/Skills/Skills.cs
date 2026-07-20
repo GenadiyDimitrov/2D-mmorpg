@@ -196,6 +196,20 @@ public record SkillDef(
     // set this (it only preserves buffs; you still need a manual res). Groundwork: no shipped skill uses it yet.
     bool AutoResurrect = false)
 {
+    /// <summary>Hash on the ID alone — and this override MUST stay.
+    ///
+    /// A positional record's compiler-generated GetHashCode is ONE expression of the form
+    /// <c>hash = hash * PRIME + field</c> repeated per field, which IL2CPP transpiles to equally
+    /// nested C++ (<c>add(multiply(add(multiply(…))))</c>). With this record's ~100 members that
+    /// exceeded clang's hard limit and **failed the Android build**:
+    ///   Game.Shared__6.cpp: fatal error: bracket nesting level exceeded maximum of 256
+    /// The desktop build is unaffected, so it only ever shows up as a broken phone build.
+    ///
+    /// Skill ids are unique and collision-guarded at startup, so the id IS the identity. Equals is
+    /// left alone (it generates a flat &amp;&amp; chain, not a nested one) — differing skills that
+    /// share a hash simply collide, which is legal.</summary>
+    public override int GetHashCode() => Id?.GetHashCode() ?? 0;
+
     /// <summary>The armor-mastery per-weight profile for a learned skill LEVEL, or null
     /// if this skill isn't an armor mastery.</summary>
     public ArmorMasteryProfile? ArmorMasteryAt(int level) =>
@@ -416,7 +430,16 @@ public readonly record struct PassiveEffect(
     // endHeal = (HealPowerFlat + skillPower)·HealPowerMod, then the target's (HealReceivedFlat +
     // endHeal)·HealReceivedMod. Default 0 flat / +0% (so an untrained healer heals exactly skillPower).
     int HealPowerFlat = 0, float HealPowerPct = 0f,
-    int HealReceivedFlat = 0, float HealReceivedPct = 0f);
+    int HealReceivedFlat = 0, float HealReceivedPct = 0f)
+{
+    /// <summary>Hash on a few representative fields instead of all ~60. Same IL2CPP bracket-nesting
+    /// reason as <see cref="SkillDef.GetHashCode"/>: this record is the SECOND largest in the
+    /// assembly and grows every time a passive gains a knob, so it is the next one that would have
+    /// broken the Android build. A PassiveEffect is a value bundle with no identity and is never a
+    /// dictionary key, so extra hash collisions cost nothing; Equals still compares every field.</summary>
+    public override int GetHashCode() =>
+        (MaxHpPct, MaxMpPct, Con, Dex, Atk, Wit, Spt).GetHashCode();
+}
 
 /// <summary>Who a skill affects. SelfOnly = caster only; AlliesInRadius = caster + party members
 /// in radius (heals/buffs); EnemiesInRadius = every HOSTILE in radius (an offensive AoE, e.g. a

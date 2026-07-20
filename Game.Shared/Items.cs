@@ -259,6 +259,12 @@ public record ItemDef(
     // EquipSlot.Box so the client's open flow reuses; opening adds the id to the char's KnownRecipes.
     string TeachesRecipeId = "")
 {
+    /// <summary>Hash on the ID alone. Same reason as SkillDef.GetHashCode — a positional record's
+    /// generated hash is one deeply-nested expression per field, and IL2CPP turns that into C++ that
+    /// can exceed clang's 256-bracket limit and break the Android build. Item DefIds are unique, so
+    /// the id is the identity. Keep this override.</summary>
+    public override int GetHashCode() => Id?.GetHashCode() ?? 0;
+
     /// <summary>Unified top-level category (derived from EquipSlot). Weapons are MainHand,
     /// shields OffHand; everything else maps 1:1.</summary>
     public ItemType Type => Slot switch
