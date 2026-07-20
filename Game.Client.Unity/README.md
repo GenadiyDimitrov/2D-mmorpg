@@ -1,19 +1,121 @@
-# Game.Client.Unity — mobile client (vertical slice)
+# Game.Client.Unity — mobile client
 
-Goal of this slice: **connect to the server on your phone, see entities, tap-to-move, tap-to-attack.**
-Built flat (near top-down) now; going 2.5D later is just lowering the camera pitch (see the end).
+**Connect to the server on your phone, see entities, tap-to-move, tap-to-attack**, with a login /
+character-select / HUD UI. Built flat (near top-down); going 2.5D later is just lowering the camera
+pitch (see the end).
 
-This folder holds the **scripts + setup steps** only. Unity generates the project (scene,
-ProjectSettings, .meta files) — you create it once in the Editor and drop these `Assets/Scripts` in.
-The heavy lifting (`Game.Shared`, `NetworkChannel`) is reused from the server solution.
+The whole Unity project is **in git now** (Assets, scene, ProjectSettings, Packages/manifest). Only
+generated things are ignored — `Library/`, `.utmp/`, `Assets/Packages/` (NuGet restores it) and
+`Assets/Plugins/Game.Shared.dll` (the server build copies it in). §1–§4 below are the ONE-TIME setup
+and are already done on this machine; **for day-to-day work you only need §0.**
+
+Unity is **6000.3.19f1 (Unity 6)**. Testing plan: `docs/TestChecklist.Unity.md`.
 
 ---
 
-## 1. Create the Unity project
-- Install **Unity 2022.3 LTS** (via Unity Hub).
-- New project → **3D (Built-in Render Pipeline) / "3D Core"** → name it `Game.Client.Unity`,
-  and point it at THIS folder (so `Assets/Scripts` here is picked up), or create elsewhere and
-  copy `Assets/Scripts` in.
+# §0. Daily run — step by step
+
+Follow this top to bottom to get the phone playing. Steps 1–2 are once per PC reboot; 3–5 every run.
+
+### 1. Plug the phone in and open the tunnel  *(once per reboot / re-plug)*
+
+`adb reverse` tunnels the **phone's** `localhost:5238` to **your PC's** over the cable — no Wi-Fi, no
+LAN IP, no firewall rule. adb ships with Unity's Android module:
+
+```bash
+export ADB="/c/Program Files/Unity/Hub/Editor/6000.3.19f1/Editor/Data/PlaybackEngines/AndroidPlayer/SDK/platform-tools/adb.exe"
+
+"$ADB" devices -l                    # must list the phone as "device"
+"$ADB" reverse tcp:5238 tcp:5238
+```
+
+- `unauthorized` → the "Allow USB debugging?" prompt is still waiting **on the phone's screen**.
+- **The tunnel dies on unplug, reboot, or an adb restart, and it fails silently** — the client just
+  can't connect. Re-run the `reverse` line after any of those.
+
+### 2. Restart Unity if you haven't since 2026-07-20
+
+`ProjectSettings` changed `activeInputHandler` to `2` (Both). **Unity only reads it at startup** —
+until you restart the Editor, legacy `Input.*` throws and **tapping does nothing**.
+
+### 3. Start the server
+
+```bash
+dotnet run --project Game.Server
+```
+
+Leave it running in its own terminal. It binds `0.0.0.0:5238`, so the WPF client and the phone can
+both reach it at once.
+
+### 4. Put the app on the phone
+
+**File → Build Settings → Android** (Switch Platform if it isn't already) → **Build And Run**.
+That compiles the APK, installs it over USB and launches it.
+
+- First build is slow (IL2CPP). Later builds are much faster.
+- **Skip Editor Play mode** if it's still unstable on this PC — Build And Run doesn't use it at all.
+- If the build fails, the APK simply never appears; read `%LOCALAPPDATA%\Unity\Editor\Editor.log`.
+  A bare "Build And Run does nothing" has meant a *failed build* here before, not a launch problem.
+
+Already installed and unchanged? Just relaunch it instead of rebuilding:
+
+```bash
+"$ADB" shell monkey -p com.UnityTechnologies.com.unity.template.urpblank -c android.intent.category.LAUNCHER 1
+```
+
+> That package name is still the **URP template's default** (Player Settings → Other Settings →
+> Identification). Fine for dev, but change it before any release — and note that changing it makes
+> Android treat the app as a *different* app, so uninstall the old one or you'll have two icons.
+
+### 5. In the app
+
+1. The **Sign in** panel appears. Server should read `http://127.0.0.1:5238/game` (with the §1 tunnel).
+2. **Register** a fresh account the first time, **Login** after that. URL + username are remembered.
+3. **Create character** (name, tap to cycle Race/Class) → **Enter**.
+4. Check the **top strip**: green dot and `frames N @ ~10.0/s` means the server feed is live.
+   Red dot or `no frames yet` = not connected; tap **Log** to see why.
+
+### Watching it from the PC while you play
+
+```bash
+"$ADB" logcat -c                     # clear, so you see only this run
+"$ADB" logcat -s Unity               # only Unity's lines
+```
+
+Everything the on-screen console shows also lands here, plus native crashes.
+
+---
+
+# Running a SECOND client (party, trade, PvP, whisper…)
+
+Any test with two actors needs two clients. **Two different accounts** — the server rejects the same
+character logging in twice ("character is already online").
+
+**Best pairing: phone (Unity) + PC (WPF).** Both connect to the same server at once; the phone uses
+the `adb reverse` tunnel, the WPF client uses plain `localhost`. Nothing extra to set up.
+
+It is also the pairing that *earns* the most: WPF is the mature client and the known-good reference,
+so when the phone shows something strange you can immediately tell **"the game is wrong"** from
+**"the Unity client is wrong"** by looking at the same moment in WPF. A second phone couldn't do that.
+It's also the only way to confirm the server truly believes what the phone shows — walk on the phone,
+watch the character move in the WPF window.
+
+Other options, in order of usefulness:
+
+- **Two WPF windows** — for pure game/mechanics tests where the phone adds nothing. Cheapest.
+- **Unity Editor Play mode + the phone** — two Unity clients, for Unity-vs-Unity behaviour.
+  ⚠ Play mode has hard-crashed this PC before (the no-page-file issue); use it only once that's confirmed fixed.
+- **A second Android device / emulator** — most faithful, most setup. An emulator uses
+  `http://10.0.2.2:5238/game` instead of the tunnel.
+
+---
+
+# One-time setup (already done on this machine)
+
+## 1. The Unity project
+Unity **6000.3.19f1** via Unity Hub. The project already exists and is committed — just open this
+folder from the Hub. (Historical note: it began as the **URP Blank** template, which is why
+`Assets/Settings`, `TutorialInfo` and the URP asset files are here.)
 
 ## 2. Add the networking dependencies (the one fiddly part)
 Unity can't reference `net8.0`, so it uses the **netstandard2.1** build of our shared code + the
@@ -46,26 +148,27 @@ SignalR client:
 > `Microsoft.AspNetCore.SignalR.Client` and `System.Text.Json`. Start with the default Mono/IL2CPP
 > settings; only touch this if you hit a runtime "method not found".
 
-## 3. Build the scene
-Create an empty scene with:
-- **Ground**: GameObject → 3D Object → **Plane**, scale ~ (30,1,30), position (120,0,120)
-  (roughly the middle of the 240×240 mapped world). Just so the ground raycast/move has a floor.
-- **Main Camera**: add the **`CameraRig`** component (leave Pitch 78 for now).
-- An empty **`GameController`** GameObject with:
-  - **`EntityManager`**
-  - **`GameBoot`** — drag the `EntityManager` into *Entities* and the Main Camera's `CameraRig`
-    into *CameraRig*. Set **Server URL** (see below).
-  - **`TouchInput`** — drag the `GameBoot` into *Boot*.
-- (`UnityMainThreadDispatcher` self-creates; you don't need to add it.)
+## 3. The scene
+`Assets/Scenes/SampleScene.unity` is committed and already wired: a **Ground** plane, a **Main
+Camera** with `CameraRig`, and a **GameController** holding `EntityManager` + `GameBoot` +
+`TouchInput`.
+
+**`GameBoot` is the only component a scene actually needs.** If the `EntityManager`, `CameraRig`,
+`TouchInput`, `GameHud` or `GroundGrid` is missing it creates one at runtime, so a scene can't be
+half-wired into a silent black screen. (`UnityMainThreadDispatcher` self-creates too.)
 
 ## 4. Point it at your server
 - **Emulator (Android Studio AVD):** `http://10.0.2.2:5238/game`
 - **Real phone over USB (easiest — see 4a):** `http://localhost:5238/game`
 - **Real phone on the same Wi-Fi:** `http://<your-PC-LAN-IP>:5238/game` (e.g. `http://192.168.1.20:5238/game`)
 
-> ⚠ **`ServerUrl` is a serialized field on the `GameBoot` component**, so the value saved in the SCENE
-> wins over the default in `GameBoot.cs`. Editing the C# default changes nothing for a scene that
-> already has a `GameBoot` on it — set it in the **Inspector**.
+> **You can now just type the URL into the login screen** — it's saved to `PlayerPrefs` and reused on
+> the next launch, so this is no longer an Editor-only setting.
+>
+> ⚠ Precedence, if you do set it in the Editor: `PlayerPrefs` (whatever you last typed on that device)
+> beats the **scene's** serialized `GameBoot.ServerUrl`, which in turn beats the C# default in
+> `GameBoot.cs`. So editing the C# default changes nothing for an existing scene — and once you've
+> logged in on the phone, the scene value stops mattering there too.
 
 ### 4a. Cabled phone: `adb reverse` (skips Wi-Fi, LAN IP *and* the firewall)
 If the phone is on a USB cable, don't bother with the LAN at all. `adb reverse` tunnels the
@@ -130,29 +233,24 @@ Check the phone is actually visible first — `adb devices -l` should list it as
    *(Dev only — put the server behind HTTPS for a real release and delete the attribute.)*
 
 ## 5. Run
-- **In the Editor** first (Play): with the server running locally use `http://localhost:5238/game`.
-  You should auto-login, spawn, see colored billboards (green = you, cyan = players, red = mobs,
-  yellow = NPCs), and tap-to-move / tap-to-attack.
-- **On the phone:** File → Build Settings → Android → *Switch Platform* (slow the first time — it
-  reimports every asset) → connect the phone (USB debugging on) → **Build And Run**. That compiles
-  the APK, installs it over USB and launches it.
+See **§0** at the top — that's the every-run guide. Colours in world: **green = you, cyan = other
+players, red = mobs, yellow = NPCs**.
 
-> **If Editor Play mode is unusable** (it has hard-crashed the owner's PC), skip it entirely and go
-> straight to *Build And Run* — the device build doesn't involve Play mode at all. Pair it with the
-> `adb reverse` tunnel from 4a and you never need the Editor to connect to anything.
+> `GameBoot.AutoLogin` (Inspector) skips the login screen using the credentials on the component —
+> convenient in the Editor, off by default so the phone always shows the real login flow.
 
-**Debugging a phone build.** You get no Console window, so read the device log:
+**Diagnosing a phone build.** Three failures that look identical on screen — an app that starts and
+never gets in — and how to tell them apart:
 
-```bash
-adb logcat -s Unity          # only Unity's lines
-adb logcat -c                # clear first, so you see only this run
-```
+- **Wrong URL / no tunnel** → the on-screen log and the login panel both show a connection refusal
+  (the client spells out the `adb reverse` / LAN-IP hint). Remember the tunnel dies on unplug.
+- **Version mismatch** → login is *refused politely*: "Client out of date (vX). Please update to vY."
+  That means the plugin DLL is stale — rebuild `Game.Shared` (§2.3) and rebuild the APK.
+- **IL2CPP stripping** → a "method not found" for a SignalR or `System.Text.Json` member in
+  `adb logcat`, NOT a network error. Fix with the `link.xml` noted at the end of §2.
 
-Two failures that look identical on-screen (an app that starts and just never connects):
-- **Wrong URL / no tunnel** → a connect timeout in logcat. Re-check 4a, and remember the tunnel dies
-  on unplug.
-- **IL2CPP stripping** → a "method not found" for a SignalR or `System.Text.Json` member, NOT a
-  network error. Fix with the `link.xml` noted at the end of §2.
+If the screen is black with **no UI at all**, it's none of the above — the scripts failed to compile
+or threw in `Awake`. Go straight to `adb logcat -s Unity`.
 
 ---
 
@@ -162,8 +260,13 @@ The upright billboards tilt into an angled view with **zero** other changes. Whe
 billboards for animated 3D models, it's a pure visual upgrade in `EntityManager.Create` /
 `EntityView` — the networking, coordinates, camera and input all stay exactly as they are.
 
-## What's in the slice / what's next
-- **In:** connect + auth + enter world, snapshot → billboards with interpolation, follow camera,
-  tap move/attack. `NetworkChannel` also already exposes UseSkill/SetMoveState/etc. for later.
-- **Next:** name/HP labels, target frame + skill buttons UI, cast bars (incl. the mob cast bar),
-  inventory/quest/shop screens, then the 3D-model swap.
+## What's in / what's next
+- **In:** connect + auth + character select/create + enter world; the **delta** feed → billboards
+  with interpolation; follow camera; tap move/attack; login + HUD UI (HP/MP/XP, target panel,
+  nameplates with HP bars, on-screen log console, chat). `NetworkChannel` also exposes
+  UseSkill/SetMoveState/etc. for later.
+- **Next:** skill bar + casting, cast bars (incl. the mob cast bar), inventory/quest/shop screens,
+  party window, then the 3D-model swap.
+- **UI tech:** IMGUI (`OnGUI`) on purpose — it needs no Canvas, prefabs or font assets, so it can be
+  authored outside the Editor and works on device with zero scene wiring. **It is meant to look
+  plain.** A uGUI + TextMeshPro pass belongs with the real art pass, not before.
