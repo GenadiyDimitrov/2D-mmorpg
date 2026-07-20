@@ -1,6 +1,6 @@
 # Unarmored (no-armor) defence — investigation (owner request, 2026-07-15)
 
-**Findings + recommendation. NO code change — companion to `docs/BareHands.md`.**
+**Findings + recommendation. NO code change — companion to `docs/design/BareHands.md`.**
 
 ## The question
 After the P.Atk fix made a naked character *feeble on offence*, is a naked character also too

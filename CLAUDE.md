@@ -169,7 +169,7 @@ dotnet run --project tools/BalanceMatrix
 **Use it before and after any combat/stat change** — it prints the mob curve, mage/fighter stats,
 damage, time-to-kill and levelling pace. Hand-derived balance numbers have been wrong here before
 (the whole 2026-07-14 magic re-scale started from a hand-derived diagnosis that blamed the wrong
-system). Extend the tool rather than hand-computing a new table. `docs/BalanceMatrix.md` is the
+system). Extend the tool rather than hand-computing a new table. `docs/balance/BalanceMatrix.md` is the
 older hand-written audit — its formulas and reasoning are good, its NUMBERS are stale.
 
 ## The skill bar belongs to the SERVER

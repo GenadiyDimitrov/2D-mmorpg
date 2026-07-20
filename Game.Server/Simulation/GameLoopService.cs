@@ -2470,14 +2470,14 @@ public class GameLoopService : BackgroundService
         _                       => mode.ToString(),
     };
 
-    // ----- Auto-hunt / idle farming (docs/AutoHunt.md) -------------------------
+    // ----- Auto-hunt / idle farming (docs/design/AutoHunt.md) -------------------------
 
     // Roaming: how far past the farm circle a current target may be chased (soft static spot), and
     // how close to the static centre counts as "back home".
     private const float AutoChaseMargin = 400f;
     private const float AutoReturnEpsilon = 150f;
 
-    // Runtime caps (docs/AutoHunt.md): online idle 8h, offline 2h; disconnect grace 180s. Tunable in
+    // Runtime caps (docs/design/AutoHunt.md): online idle 8h, offline 2h; disconnect grace 180s. Tunable in
     // seconds via the Debug panel / /testcaps. Purchasable extensions (12h/4h) are a future hook.
     private int _idleCapSeconds = 8 * 3600;
     private int _offlineCapSeconds = 2 * 3600;
@@ -4968,7 +4968,7 @@ var effect = def.Effect;
         }
 
         // ---- Crowd control + DoT (Slow/Stun/Fear/Root, Bleed/Poison/Venom) — lands via the
-        //      contest (docs/Disciplines.md), NOT the fizzle model. Bosses are immune. The
+        //      contest (docs/design/Disciplines.md), NOT the fizzle model. Bosses are immune. The
         //      attacker stat is DEX for bleed/venom, ATK otherwise; defender CON (phys) / WIT (magic). ----
         if ((effect & SkillEffect.ContestCc) != 0)
         {
@@ -5888,7 +5888,7 @@ var effect = def.Effect;
     }
 
     /// <summary>Elite/boss EXTRA loot: a pile of crafting mats (rarity + amount by rank) and a chance
-    /// at the finished tiered set piece — bosses are the reliable gear/mat source (docs/Crafting.md).</summary>
+    /// at the finished tiered set piece — bosses are the reliable gear/mat source (docs/design/Crafting.md).</summary>
     private bool RollBossBonus(Entity recipient, Entity mob, MobType mobType)
     {
         if (mob.Rank is not (MobRank.Boss or MobRank.Elite))

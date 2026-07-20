@@ -1,7 +1,7 @@
 namespace Game.Shared;
 
 /// <summary>
-/// The leveled MOB MASTERY tables from <c>docs/mobs/mobs_passives.csv</c> — the "mob passives like
+/// The leveled MOB MASTERY tables from <c>docs/data/mobs/mobs_passives.csv</c> — the "mob passives like
 /// classes" layer. Each mastery is a table indexed by a LEVEL (1-based); the value is a MULTIPLIER
 /// (1 = neutral) except Armor Weight's evasion (a FLAT add) — so a mob is tuned by picking a level
 /// per mastery. <see cref="Build"/> resolves a set of picks into a <see cref="MobMod"/> (the runtime

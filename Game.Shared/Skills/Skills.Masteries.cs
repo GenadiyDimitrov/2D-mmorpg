@@ -124,7 +124,7 @@ public static partial class SkillCatalog
             Robe:  default,
             // NOTE: the old profile used DefPerLevel: 0.5f (per-CHARACTER-level def); StatMods has
             // no per-level field, so it's baked to a flat PDef here (~mid of the archer band). Archer
-            // mastery numbers are placeholders — retune with the rest. See docs/StatMods.md.
+            // mastery numbers are placeholders — retune with the rest. See docs/design/StatMods.md.
             Light: new StatMods(AtkSpeedPct: 0.3f, CritRate: 0.05f, CritDamage: 0.2f, Evasion: 4, Accuracy: 4, PDef: 15),
             Heavy: default)),
 

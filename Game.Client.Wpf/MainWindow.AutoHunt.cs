@@ -9,7 +9,7 @@ using Game.Shared;
 
 namespace Game.Client.Wpf;
 
-// Auto-hunt / idle-farming config window (docs/AutoHunt.md). Partial of MainWindow — shares its
+// Auto-hunt / idle-farming config window (docs/design/AutoHunt.md). Partial of MainWindow — shares its
 // private fields. The server is authoritative; this is only a config editor + MP/s HUD.
 public partial class MainWindow
 {

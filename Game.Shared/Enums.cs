@@ -154,7 +154,7 @@ public enum SkillEffect : long
 }
 
 /// <summary>Which stat a debuff contests against when landing: physical debuffs are
-/// ATK vs the target's CON, magical debuffs ATK vs the target's WIT (per docs/Disciplines.md).
+/// ATK vs the target's CON, magical debuffs ATK vs the target's WIT (per docs/design/Disciplines.md).
 /// None = not a contested debuff (uses the older fizzle/sure-hit path).</summary>
 public enum DebuffSchool { None = 0, Physical = 1, Magical = 2 }
 

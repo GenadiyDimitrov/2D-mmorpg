@@ -38,7 +38,7 @@ public record SkillDef(
     int CooldownTicks,
     float Range,
     int Power,
-    // {Flat, Mod} damage model (docs/DamageModel.md): physical = 77·(Flat + Mod·pAtk)/def,
+    // {Flat, Mod} damage model (docs/design/DamageModel.md): physical = 77·(Flat + Mod·pAtk)/def,
     // magic = 91·(Flat + Mod·√mAtk)/def. Mod == 0 → LEGACY: fall back to Power (physical adds Power
     // to pAtk; magic multiplies √mAtk by Power) so every existing skill is unchanged.
     int Flat = 0,
@@ -410,7 +410,7 @@ public readonly record struct PassiveEffect(
     float PveSkillDamagePct = 0f, float PveMagicDamagePct = 0f, float PveBasicDamagePct = 0f,
     float PvpSkillDamagePct = 0f, float PvpMagicDamagePct = 0f, float PvpBasicDamagePct = 0f,
     float CancelResistPct = 0f,   // chance each of your buffs resists an enemy cancel
-    // Combat-resolution "sure" floors (see docs/CombatResolution.md). These are
+    // Combat-resolution "sure" floors (see docs/design/CombatResolution.md). These are
     // GUARANTEES (the resolver takes the MAX across passives, not a sum):
     float EvadeFloor = 0f,        // min chance to dodge physical (rogue/archer)
     float HitFloor = 0f,          // min chance THIS entity lands a physical hit (warrior)

@@ -56,7 +56,7 @@ public static class ArmorSetCatalog
             new ClassFlatBonus(), CastSpeedPct: 0.15f, AccessorySetId: NewbieAccessories),
     }.Concat(TieredSets()).ToDictionary(s => s.Id);
 
-    // ----- Tiered gear sets (docs/gear/gear_sets.csv, BASE variant per weight/tier). Each body of a
+    // ----- Tiered gear sets (docs/data/gear/gear_sets.csv, BASE variant per weight/tier). Each body of a
     // tier + that tier's shared accessory line (set_acc_t{lv}) completes it. Bonuses are the FULL
     // StatMods; SECONDARY stats apply now, PRIMARY-stat deltas (Con/Str/…) are stored for the pre-pass.
     // The SHIELD-conditional extras (the CSV's "Shield: <bonus>" clause on the def-oriented heavy

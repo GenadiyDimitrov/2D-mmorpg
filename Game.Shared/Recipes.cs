@@ -8,7 +8,7 @@ public record RecipeInput(string ItemId, int Qty);
 /// <see cref="OutputId"/> ×<see cref="OutputQty"/>, succeeding with <see cref="SuccessChance"/>
 /// (a failed craft consumes the mats — the risk). Auto-known once the crafter's char level reaches
 /// <see cref="LearnLevel"/>, UNLESS <see cref="DropOnly"/> (the recipe itself must be found/bought,
-/// e.g. the A-grade sets). See docs/Crafting.md.
+/// e.g. the A-grade sets). See docs/design/Crafting.md.
 /// </summary>
 public record Recipe(
     string Id,

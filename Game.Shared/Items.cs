@@ -834,7 +834,7 @@ public static class ItemCatalog
                 EquipSlot.QuestItem, ItemGrade.F, ItemRarity.Legendary));
         }
 
-        // ----- Level-tier gear (docs/gear/gear_sets.csv): weapons + base armor/shield/accessory/
+        // ----- Level-tier gear (docs/data/gear/gear_sets.csv): weapons + base armor/shield/accessory/
         //       jewel pieces. SET BONUSES (and the dmg/support VARIANTS) come later; these carry only
         //       their own base stats via the existing equip rails, so no new mechanic to test. -----
         // The tiered gear pieces (Epic rarity) = the craft/boss SET tier. From each base piece we
@@ -859,7 +859,7 @@ public static class ItemCatalog
         return dict;
     }
 
-    /// <summary>Crafting MATERIALS: 5 types × 5 rarities (docs/Crafting.md). Tradable + stackable,
+    /// <summary>Crafting MATERIALS: 5 types × 5 rarities (docs/design/Crafting.md). Tradable + stackable,
     /// no attributes; rarity drives the value. Each type is refined by its owning profession
     /// (Crafting.RefinerOf) but every rarity also drops from mobs.</summary>
     private static IEnumerable<ItemDef> Materials()
@@ -964,7 +964,7 @@ public static class ItemCatalog
     private static ItemGrade TierGrade(int level) =>
         level >= 61 ? ItemGrade.A : level >= 40 ? ItemGrade.B : ItemGrade.E;
 
-    /// <summary>The level-tier weapons from docs/gear/gear_sets.csv — id "<key>_t<level>", base
+    /// <summary>The level-tier weapons from docs/data/gear/gear_sets.csv — id "<key>_t<level>", base
     /// P.Atk/M.Atk straight from the CSV (the two numbers), bow attack-speed variants, and the
     /// IsMagicWeapon flag on wands/staves (their attributes roll the caster pool). Attribute COUNT
     /// + MAX come from the level (AttributeSystem tiered methods), not grade/rarity.</summary>
@@ -1002,7 +1002,7 @@ public static class ItemCatalog
                     ItemLevel: L, IsMagicWeapon: w.Magic, AttackSpeedBase: As);
     }
 
-    /// <summary>The level-tier ARMOR from docs/gear/gear_sets.csv — base bodies (Heavy/Light/Robe),
+    /// <summary>The level-tier ARMOR from docs/data/gear/gear_sets.csv — base bodies (Heavy/Light/Robe),
     /// shields, weightless accessories (Gloves/Boots/Helm) and jewels (Necklace/Ring/Earring). Each
     /// carries only its own base stat (P.Def / M.Def / +MP), via the existing equip path — SET BONUSES
     /// and the dmg/support VARIANTS are deferred (they need the StatMods main-stat pass + a playtest).

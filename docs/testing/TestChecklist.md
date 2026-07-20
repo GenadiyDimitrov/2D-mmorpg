@@ -177,7 +177,7 @@ buffer · Gold & SP · Level · Karma; Class tab grouped Profession & skills · 
 
 M.Atk in the stats window is now P.Atk-size (with the cosmic value kept as the "M.Atk (internal / L2-ref)"
 debug row), unbuffed magic damage + heals are unchanged, and magic-only M.Atk buffs are HONEST (an authored
-+X% gives +X% damage AND +X% on the display) — all confirmed. See docs/DamageModel.md.
++X% gives +X% damage AND +X% on the display) — all confirmed. See docs/design/DamageModel.md.
 
 ⚠ **Owner TODO still open:** re-author `BuffMagAtk` buff VALUES to their effective %s, and give an explicit
 magic % to any buff/passive that should boost magic but used the shared BuffAtk/AttackPct (which is

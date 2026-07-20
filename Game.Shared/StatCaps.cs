@@ -40,7 +40,7 @@ public static class StatCaps
     /// <summary>Magic-fail ceiling (level gap can push fail up to 90%).</summary>
     public const float MagicFailMax = 0.90f;
 
-    // ----- Unified hit resolution (see docs/CombatResolution.md) -----
+    // ----- Unified hit resolution (see docs/design/CombatResolution.md) -----
     // One resolver decides land-vs-avoid for BOTH channels (physical miss, magic fail).
     // The stat roll lives inside a soft [AvoidBase, AvoidSoftCeil] band; true 0/100% are
     // reached only by the level-gap lockout and by Sure-Hit / Immunity flags.

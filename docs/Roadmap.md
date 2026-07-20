@@ -1,7 +1,7 @@
 # Roadmap — L2Clone (branch Gena)
 
 Development TODO for game systems / in-game functions, bucketed by time horizon.
-This is the "what to build" list (the "what to verify" list is `docs/TestChecklist.md`).
+This is the "what to build" list (the "what to verify" list is `docs/testing/TestChecklist.md`).
 Claude keeps this updated as work moves between buckets.
 
 Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` done (kept briefly for context).
@@ -45,7 +45,7 @@ Owner tested the death-penalty + resurrection + Angel's Protection batch. ⚠ **
 started before `3da3d79`**, so every Angel's observation is against the OLD build (20-min, free, no
 Skill-Stone cost, no preservation BuffKey/Rank).
 
-**Every item below is now built** — see docs/TestChecklist.md "PLAYTEST-4 FIX BATCH" for what to verify.
+**Every item below is now built** — see docs/testing/TestChecklist.md "PLAYTEST-4 FIX BATCH" for what to verify.
 Three were not the shallow bugs they looked like:
 - **Clicking a skill bar slot could never cast.** The panel's `PreviewMouseLeftButtonUp` TUNNELS
   (root→source), so it cleared `_dragFromIndex` before the slot's bubbling click handler read it — that
@@ -95,7 +95,7 @@ click-to-target · debug menu reorg.
 
 ### Playtest-3 queue (2026-07-15) — from the owner's test pass, NOT yet built
 
-Almost everything from the 07-13/07-14 queues VERIFIED (see docs/TestChecklist.md). These are the
+Almost everything from the 07-13/07-14 queues VERIFIED (see docs/testing/TestChecklist.md). These are the
 changes and new features that came out of the play session:
 
 **Corrections (small, well-specified):**
@@ -158,7 +158,7 @@ changes and new features that came out of the play session:
   penalty), and `ItemCatalog.RequiredLevel` now delegates to `GradePenalty.MinLevel`. Numbers tunable.
 - [ ] **Marketplace + premium currency.** Player marketplace (list/buy) and a second, premium currency;
   both tradable and inter-convertible with gold. (Noted from the gold work below.)
-- [ ] **Damage-model rework (unified `{Flat, Mod}` skills + lowered M.Atk)** — see `docs/DamageModel.md`.
+- [ ] **Damage-model rework (unified `{Flat, Mod}` skills + lowered M.Atk)** — see `docs/design/DamageModel.md`.
   Makes physical skills scale with pAtk (Mod), unifies physical/magic skill authoring, and drops M.Atk from
   cosmic `levelMod²` to P.Atk-size. Design drafted + measured; **awaiting owner's pick of Option A (linear,
   recommended) vs Option B (keep √)**. Reverses the signed-off magic scaling → calibrate in BalanceMatrix
@@ -181,9 +181,9 @@ changes and new features that came out of the play session:
   range). Tunable consts: `BuffCostPerLevel`, `BufferBuffNominalLevel`, `RestoreCostCap`. When multi-level
   buffs land, the nominal 5 becomes the real per-buff level and cost tracks it. ([[buffer-enchanter-design]])
 - [x] **BARE-HANDS — FIXED 2026-07-15** via the L2 multiplicative P.Atk formula (owner chose this over the
-  penalty). See commit `ac8108f` / `docs/BareHands.md`. Naked is now feeble by the FORMULA (weapon is the
+  penalty). See commit `ac8108f` / `docs/design/BareHands.md`. Naked is now feeble by the FORMULA (weapon is the
   base), armed high-level preserved, magic untouched (proven by A/B). Companion investigation for defence:
-  `docs/Unarmored.md` — conclusion: leave it, no live problem now that naked can't deal damage.
+  `docs/design/Unarmored.md` — conclusion: leave it, no live problem now that naked can't deal damage.
 - [x] **Persist popup positions — DONE 2026-07-15.** `client-settings.json` is now nested
   (`{Window:{Position,Size}, Panels:{<name>:{X,Y}}}`); each popup's drag offset is saved on window CLOSE
   (not per move) and restored next run; untouched panels stay at their default (0,0). Window geometry moved
@@ -383,7 +383,7 @@ changes and new features that came out of the play session:
 
 ### Earlier
 
-- [x] **Mob base-stat curve** — owner sent a L1-85 mob CSV (`docs/mobs/mob_base_stats.csv`).
+- [x] **Mob base-stat curve** — owner sent a L1-85 mob CSV (`docs/data/mobs/mob_base_stats.csv`).
   Wired as `MobBaseStats` (per-level HP/MP/P.Def/M.Def/P.Atk/M.Atk curve, interpolated);
   `Entity.RecomputeDerived` mob branch now reads it (`MobMaxHp/MobMaxMp/MobDefence`/the
   `MobMagicDefence` override are retired for mobs). Structure = `curve(level) × conMod × passives`
@@ -402,12 +402,12 @@ changes and new features that came out of the play session:
   (LearnedSkills + QueuedSkillId); mobs cast at authored time (WIT multiplier bypassed).
 - [x] **Golem-type resist** — obsidian_knight: Pierce ×1.43 P.Def, Bow ×2, Blunt ×0.5 (weak).
 - [~] **RE-CHECK balance after the mob curve** — mobs are now ~2-3× prior HP/def/atk. **Matrices
-  regenerated** (`docs/BalanceMatrix.md` §H Mob↔Player @40/@75; §I per-gear-tier 40/52/61/76 vs the mob
+  regenerated** (`docs/balance/BalanceMatrix.md` §H Mob↔Player @40/@75; §I per-gear-tier 40/52/61/76 vs the mob
   curve from `gear_sets.csv`). NO one-shots; gear DEFENSE keeps pace, but **player OFFENSE falls behind at
   high tiers** (solo grind balloons — fighter 13→131 hits, mage 19→210 casts L40→76). **Owner decision:**
   raise high-tier weapon atk / ease mob HP+def at 61-85 / lean on crit+attributes+party; add a jewel tier.
   Also open: cleric-solo-L30, <40 feel, archer ×2 lethality to squishies.
-- [~] **Gear/item overhaul** (`docs/gear/gear_sets.csv`). **DONE:** foundation (StatMods carries item/set
+- [~] **Gear/item overhaul** (`docs/data/gear/gear_sets.csv`). **DONE:** foundation (StatMods carries item/set
   stats; MAtk%/MagicCrit attr types + ToStatMods bridge) + **40 tiered WEAPONS** (8 types × 20/40/52/61/76,
   ids `<key>_t<level>`, D/C/B/A display) with level-driven attributes (count 40→1/52→1/61→2/76→3, per-level
   maxes, caster pool via `IsMagicWeapon`, bow slow/very-slow via `AttackSpeedBase`) + **attribute-cancel
@@ -427,7 +427,7 @@ changes and new features that came out of the play session:
   damage/skill testing. Reach via debug Teleport → Zones.
 
 - [~] **Tune placeholder numbers** after the next playtest: fighter weapon masteries, armor
-  masteries, healer powers, mob modifiers, caster bow penalty. (See `docs/TestChecklist.md`.)
+  masteries, healer powers, mob modifiers, caster bow penalty. (See `docs/testing/TestChecklist.md`.)
 - ~~Low-level **physical mob damage** so mobs don't ~one-shot players~~ — **NOT A REAL ISSUE
   (owner, 2026-07-14): "mobs don't one hit players".** This entry was stale; the mob-curve rework
   already moved these numbers. Don't act on it.
@@ -514,11 +514,11 @@ changes and new features that came out of the play session:
   variants are indistinguishable and the authored ×1.7 is not what's applied. To do properly:
   split `CcResist` into per-type channels (Sleep / Hold / Poison / Bleed / Stun / Fear), express
   them as the CSV's multiplier on the resisting side of `StatCalculator.DebuffLandChance`, and
-  re-author the set rows from `docs/gear/gear_sets.csv`. Until then the `_dmg` vs `_def` set
+  re-author the set rows from `docs/data/gear/gear_sets.csv`. Until then the `_dmg` vs `_def` set
   identity ("tanky vs aggressive") does not actually differ in CC behaviour.
 
 - [~] **Combat primitives layer** (prerequisite for disciplines, bosses, PvP). Build to
-  `docs/Disciplines.md` rules. **Started:** the ATK-vs-CON/WIT **debuff hit-contest**
+  `docs/design/Disciplines.md` rules. **Started:** the ATK-vs-CON/WIT **debuff hit-contest**
   (`StatCalculator.DebuffLandChance`, 10–90%, 50% at equal, bosses immune) + **Slow**
   (move-speed %, first contested CC; demo skill "Frost Bind" for nukers) + physical
   **`[Double]` crit** (`SkillDef.CanDouble`, ×2 from higher of DEX/ATK cap 30%; demo skill
@@ -605,7 +605,7 @@ changes and new features that came out of the play session:
   flat stat leans exist; needs the combat primitives layer first, then per-race kits.
   Lightbringer (healer) + Warchanter (buffer, gets a "Prophecy" party buff) are first up.
   ([[discipline-skills-plan]], [[class-tier-design]], [[mage-path-wip]])
-- [x] **Crafting & material economy** — BUILT (`docs/Crafting.md` / [[crafting-economy-design]]): mats drop
+- [x] **Crafting & material economy** — BUILT (`docs/design/Crafting.md` / [[crafting-economy-design]]): mats drop
   from mobs (5 types ↔ 5 professions), refine 5-same+2-cross, finished-item recipes, all 5 professions craft,
   profession persist+choose, boss/elite mat piles. Scaled Common/Unc/Rare DROP gear (Epic set = craft/boss).
   **Polish DONE:** `KnownRecipes` (persisted) unlocks DropOnly A-grade recipes via a dropped recipe BOOK
@@ -663,7 +663,7 @@ changes and new features that came out of the play session:
   no-ops → all UI skipped). Disconnect with auto on keeps the char in the world (`IsOfflineFarming`,
   visible/attackable, mobs aggro it); reconnect re-attaches. Runtime caps: **idle 8h / offline 2h**
   (constants; purchasable 12h/4h a hook); cap or **death** stops it (offline = deferred logout via
-  `_endOfflineQueue`); idle cap locks re-enable until re-log. Design: `docs/AutoHunt.md`,
+  `_endOfflineQueue`); idle cap locks re-enable until re-log. Design: `docs/design/AutoHunt.md`,
   [[auto-hunt-design]]. Debug `/testcaps` shrinks caps+grace to seconds (2026-07-10). **ROAMING BUILT
   (2026-07-10):** farm-range radius (200–2000) + roaming vs static-spot (soft chase, return-to-centre) +
   target-rank filter (mobs/elites/bosses) + basic-attack-as-an-auto-skill (`AutoHuntIds.BasicAttack`;
@@ -726,7 +726,7 @@ changes and new features that came out of the play session:
   (DTO fields added most sessions), and JSON stays readable on the wire (SmokeTest + inspection). It's a
   one-line swap you can make LATE once the protocol stabilizes and you've measured. Sits behind the
   `NetworkChannel` seam so the WPF harness + future Unity client share it. ([[client-3d-and-los-design]])
-- [ ] **INSTANCES & DUNGEONS** — full owner spec captured 2026-07-14 in **`docs/Instances.md`**.
+- [ ] **INSTANCES & DUNGEONS** — full owner spec captured 2026-07-14 in **`docs/design/Instances.md`**.
   Read that before touching this. Two features, very different sizes — don't conflate them.
 
   **DUNGEONS = small, mostly DATA.** A dungeon IS a `SpawnZone`: harder mobs, normal respawn, can hold a
@@ -754,7 +754,7 @@ changes and new features that came out of the play session:
   time, or the attempt resets every 4 real hours. Store the last-attempt DATE per character and *compare*;
   then reset needs no scheduled job and survives restarts for free.
 
-  ⚠ **Open questions for the owner are listed at the bottom of `docs/Instances.md`** — the load-bearing one
+  ⚠ **Open questions for the owner are listed at the bottom of `docs/design/Instances.md`** — the load-bearing one
   is whether the daily attempt is GLOBAL (one instance of any kind per day) or PER-INSTANCE. The
   level-29→30 rule implies GLOBAL. It changes the persisted data model, so confirm before building.
 - [ ] **Castles + vault** — consumes the reserved `VendorBuyTaxRate` hook; siege loop.

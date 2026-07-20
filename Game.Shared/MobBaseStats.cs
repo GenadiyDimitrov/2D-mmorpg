@@ -3,7 +3,7 @@ namespace Game.Shared;
 /// <summary>
 /// Mob BASE stat curve by level — the "level modifier" component of the mob stat formula
 /// (final = baseCurve(level) × conMod × ∏passives). Sourced from
-/// <c>docs/mobs/mob_base_stats.csv</c> (the NORMAL, ×1-passive progression). A champion /
+/// <c>docs/data/mobs/mob_base_stats.csv</c> (the NORMAL, ×1-passive progression). A champion /
 /// outlier mob (e.g. a mini-boss with ~3× HP at its level) is the SAME curve × a Max-HP /
 /// P.Def PASSIVE (a MobMod / mastery), never a separate curve — so "assume all monsters are
 /// ×1" reproduces the CSV exactly and outliers layer a passive on top.

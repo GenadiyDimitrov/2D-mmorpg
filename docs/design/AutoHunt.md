@@ -1,4 +1,4 @@
-# Auto-Hunt / Idle Farming (docs/AutoHunt.md)
+# Auto-Hunt / Idle Farming (docs/design/AutoHunt.md)
 
 Owner request (2026-07-08). A server-driven automation layer so a character can farm
 hands-off. **Phase 1 = online idle** (must stay logged in). **Phase 2 = true offline**

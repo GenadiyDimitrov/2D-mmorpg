@@ -28,7 +28,7 @@
 > **⚠ GEAR CAVEAT (owner, 2026-07-03):** every table here assumes **newbie (lvl 1–19) gear** —
 > so it's only accurate for a low-level player. As the player equips stronger sets the numbers
 > change (esp. player→mob, where pAtk/pDef scale hard). Owner is providing **lvl 40 / 52 / 61 / 76
-> armor SETS (mage + fighter) + weapons** for those bands → template at `docs/gear/gear_sets.csv`.
+> armor SETS (mage + fighter) + weapons** for those bands → template at `docs/data/gear/gear_sets.csv`.
 > **TODO:** once filled, regenerate §G/§H per gear tier (each band uses its own set + weapon).
 
 > **Update 2026-06-26 (healer effect layer):** added a broad buff/effect primitive
@@ -97,7 +97,7 @@ Base dmg lvl-mult = (Level + 89) / 100   [listed, but NOT used in the dmg formul
 
 > **Hit / evade / magic-fail** moved to a unified resolver + level-gap curve + class
 > floors (now learnable passives). That layer has its own spec — see
-> **`docs/CombatResolution.md`** (this table no longer tracks the old MissChance / MagicFailChance).
+> **`docs/design/CombatResolution.md`** (this table no longer tracks the old MissChance / MagicFailChance).
 
 ### Fixes
 1. ✅ **MEN modifier (M.Def) DONE** — real MEN table (interpolated). Raised fighter magic def and shrank the mage/fighter gap.
@@ -279,7 +279,7 @@ buffed (robe mastery + Spirit Training + Speed buff). Fighter ≈ 1 hit/s; mage 
 ## H. Mob ↔ Player — after the mob base-stat CURVE + ranged/caster mobs (2026-07-03)
 
 > **Why:** mob stats now come from the authored per-level curve (`MobBaseStats`, from
-> `docs/mobs/mob_base_stats.csv`) instead of the old crude formula — **~2–3× the old HP/def/atk** —
+> `docs/data/mobs/mob_base_stats.csv`) instead of the old crude formula — **~2–3× the old HP/def/atk** —
 > and mobs gained ARCHER (bow, ×2 P.Atk, light armor) and MAGE (no basic; nuke + jab, ×1.5 M.Atk,
 > ×0.5 P.Atk, ×0.7 P.Def) roles. Player stats = §G no-buff (Human, newbie set + 5 jewels). Mob swing
 > ≈ **2.0 s** (`MobAttackIntervalTicks` 20). Mage-mob nuke ≈ 4 s cast + 1 s reuse. Same-level. ESTIMATE,
@@ -333,7 +333,7 @@ L75 → HP 12420 · pDef 490 · mDef 390 · P.Atk 1065 · M.Atk 748.
 
 ---
 
-## I. Per-gear-tier vs the mob curve (from `docs/gear/gear_sets.csv`, 2026-07-03)
+## I. Per-gear-tier vs the mob curve (from `docs/data/gear/gear_sets.csv`, 2026-07-03)
 
 > **ESTIMATE.** Fighter = Heavy body + Gloves/Boots/Helm + **1H Sword** (no shield); Mage = Robe set
 > + **Staff**. **BASE variant** set only. Derived stats built from the level formulas + the CSV gear,

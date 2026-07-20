@@ -2,7 +2,7 @@ namespace Game.Shared;
 
 // ===========================================================================
 //  StatMods — ONE stat-modifier bundle for every buff / debuff / passive /
-//  mastery / item source. See docs/StatMods.md for the full design + phases.
+//  mastery / item source. See docs/design/StatMods.md for the full design + phases.
 //
 //  PHASE 1 (this file): the type + the combiner. NOTHING consumes it yet, so
 //  there is no behavior change — the existing PassiveEffect / MasteryEffect /
@@ -58,10 +58,10 @@ public readonly record struct StatMods(
     float ShieldDefPct = 0f)
 {
     // NOTE: cooldown, interrupt POWER, the PvE/PvP×skill/magic/basic matrix, shield BLOCK CHANCE, bow
-    // range and the combat FLOORS are added as the passive/buff sources migrate (docs/StatMods.md).
+    // range and the combat FLOORS are added as the passive/buff sources migrate (docs/design/StatMods.md).
 
     /// <summary>Fold a set of source mods into running totals (flats SUM, percents COMPOUND
-    /// — see docs/StatMods.md: final = (base + Σflat) × ∏(1+pct%)).</summary>
+    /// — see docs/design/StatMods.md: final = (base + Σflat) × ∏(1+pct%)).</summary>
     public static StatTotals Combine(IEnumerable<StatMods> sources)
     {
         var t = new StatTotals();

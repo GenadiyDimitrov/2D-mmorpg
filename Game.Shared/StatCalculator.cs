@@ -181,7 +181,7 @@ public static class StatCalculator
     public static float MpRegenPerSecond(int spt, int level) =>
         (2f + level * 0.08f) * (SptModifier(spt) / 1.4733f);
 
-    // ----- Unified hit resolution (see docs/CombatResolution.md) -----------
+    // ----- Unified hit resolution (see docs/design/CombatResolution.md) -----------
     // Both channels (physical miss, magic fail) call ResolveAvoidChance. It returns
     // the probability the attack is AVOIDED (missed/fizzled). Order of operations:
     //   1. stat roll  → 2. class floors → 3. level gap (favors higher level) → 4. flags
@@ -391,7 +391,7 @@ public static class StatCalculator
 
     /// <summary>{Flat, Mod} PHYSICAL skill damage: K·(Flat + Mod·pAtk)/def. Mod scales the skill WITH your
     /// pAtk (gear/atk pays off through skills); Flat is a low-pAtk floor. Legacy skills reach this via
-    /// (Flat=Power, Mod=1), reproducing K·(pAtk+Power)/def. See docs/DamageModel.md.</summary>
+    /// (Flat=Power, Mod=1), reproducing K·(pAtk+Power)/def. See docs/design/DamageModel.md.</summary>
     public static int PhysicalDamageFM(int pAtk, int flat, float mod, int pDef, float defenceCoef = 1f)
     {
         float def = Math.Max(1, pDef * defenceCoef);
@@ -419,14 +419,14 @@ public static class StatCalculator
         float def = Math.Max(1, mDef);
         // mAtk here is the INTERNAL value (base·levelMod²·buffs²). The √ stays — it is what self-balances
         // magic across levels. The DISPLAY shrinks this to P.Atk size elsewhere (EffectiveMagicAttackShown);
-        // this formula is unchanged so mob casters + heals keep working. See Path B in docs/DamageModel.md.
+        // this formula is unchanged so mob casters + heals keep working. See Path B in docs/design/DamageModel.md.
         float dmg = MagicK * power * MathF.Sqrt(Math.Max(0, mAtk)) / def;
         return Math.Max(1, (int)dmg);
     }
 
     /// <summary>{Flat, Mod} MAGIC skill damage: K·(Flat + Mod·√mAtk)/mDef. Mod replaces the old scalar
     /// power (Flat is usually 0 for magic). Legacy skills reach this via (Flat=0, Mod=Power), reproducing
-    /// K·Power·√mAtk/mDef exactly. See docs/DamageModel.md.</summary>
+    /// K·Power·√mAtk/mDef exactly. See docs/design/DamageModel.md.</summary>
     public static int MagicDamageFM(int mAtk, int flat, float mod, int mDef)
     {
         float def = Math.Max(1, mDef);
@@ -460,7 +460,7 @@ public static class StatCalculator
         Math.Clamp(wit * 0.001f, 0f, StatCaps.MagicCritRate);
 
     /// <summary>Physical SKILL "[Double]" chance (×2 damage): same scaling as magic crit
-    /// but driven by the HIGHER of DEX/ATK, capped at 30% (per docs/Disciplines.md). Only
+    /// but driven by the HIGHER of DEX/ATK, capped at 30% (per docs/design/Disciplines.md). Only
     /// skills flagged [Double] roll this; ordinary skills don't double.</summary>
     public static float PhysicalDoubleChance(int dexOrAtk) =>
         Math.Clamp(dexOrAtk * 0.001f, 0f, 0.30f);
@@ -505,7 +505,7 @@ public static class StatCalculator
     /// <summary>Chance a contested debuff (slow/stun/root/fear/…) LANDS: the attacker's
     /// ATK (core power stat) vs the defender's resisting stat (CON for physical, WIT for
     /// magical). 50% when equal, scaling by the ratio, clamped to [10%, 90%]
-    /// (per docs/Disciplines.md). Bosses are made immune by the caller.</summary>
+    /// (per docs/design/Disciplines.md). Bosses are made immune by the caller.</summary>
     public static float DebuffLandChance(int attackerAtk, int defenderStat)
     {
         int sum = attackerAtk + defenderStat;

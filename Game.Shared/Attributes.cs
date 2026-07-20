@@ -177,7 +177,7 @@ public static class AttributeSystem
     }
 
     // ===================================================================================
-    //  LEVEL-TIER weapon attributes (docs/gear/gear_sets.csv). Count comes from the item's
+    //  LEVEL-TIER weapon attributes (docs/data/gear/gear_sets.csv). Count comes from the item's
     //  LEVEL (not grade+rarity): 40→1, 52→1, 61→2, 76→3 (20 = none). The MAX of each attribute
     //  is per (weapon family, attribute, tier). Caster weapons (IsMagicWeapon) roll the caster pool.
     // ===================================================================================

@@ -1,7 +1,7 @@
 namespace Game.Shared;
 
 /// <summary>Crafting professions — one per character (auto-learned by level; no re-spec for now).
-/// Each REFINES one material type and crafts one item family. See docs/Crafting.md.</summary>
+/// Each REFINES one material type and crafts one item family. See docs/design/Crafting.md.</summary>
 public enum Profession { None = 0, WeaponSmith, ArmorSmith, Jeweler, PotionMaster, ScrollScribe }
 
 /// <summary>The 5 crafting material types. Each is REFINED (raw → higher rarity) only by its owning

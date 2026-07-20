@@ -9,7 +9,7 @@ generated things are ignored — `Library/`, `.utmp/`, `Assets/Packages/` (NuGet
 `Assets/Plugins/Game.Shared.dll` (the server build copies it in). §1–§4 below are the ONE-TIME setup
 and are already done on this machine; **for day-to-day work you only need §0.**
 
-Unity is **6000.3.19f1 (Unity 6)**. Testing plan: `docs/TestChecklist.Unity.md`.
+Unity is **6000.3.19f1 (Unity 6)**. Testing plan: `docs/testing/TestChecklist.Unity.md`.
 
 ---
 

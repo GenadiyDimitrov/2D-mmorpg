@@ -838,14 +838,14 @@ public class Entity
 
     public Dictionary<string, int> SkillCooldowns { get; } = new();
 
-    // ----- Auto-hunt / idle farming config (docs/AutoHunt.md) -------------------
+    // ----- Auto-hunt / idle farming config (docs/design/AutoHunt.md) -------------------
     public bool AutoHuntEnabled { get; set; }
     public int AutoHpPotionPct { get; set; }
     public int AutoMpPotionPct { get; set; }
     public bool AutoBuffPotions { get; set; }
     public List<AutoSkillDto> AutoSkills { get; } = new();
     public List<string> AutoBuffPotionIds { get; } = new();
-    // Roaming config (docs/AutoHunt.md roaming spec).
+    // Roaming config (docs/design/AutoHunt.md roaming spec).
     public int AutoFarmRange { get; set; } = 1000;
     public bool AutoFarmStatic { get; set; }             // false = roam, true = fixed circle at start
     public bool AutoAttackNormal { get; set; } = true;
@@ -1018,7 +1018,7 @@ public class Entity
         }
 
         // Players derive from core stats + class curves; MOBS read the authored per-level
-        // BASE curve (docs/mobs/mob_base_stats.csv) — the "level modifier" term of the mob
+        // BASE curve (docs/data/mobs/mob_base_stats.csv) — the "level modifier" term of the mob
         // formula. CON/passives (MobMod, later masteries) and rank multipliers layer on top
         // in SpawnOneInZone. See MobBaseStats.
         MaxHp = Kind == EntityKind.Player
@@ -1411,7 +1411,7 @@ public class Entity
         // per-weight StatMods table (bonus for the trained weight, penalty for an untrained
         // one); the worn body weight selects the row. Pure per-level DATA — no character-level
         // / class formula. A class with no mastery skill learned gets nothing (no bonus, no
-        // penalty). See docs/StatMods.md. ---
+        // penalty). See docs/design/StatMods.md. ---
         if (Kind == EntityKind.Player)
         {
             StatMods sm = default;

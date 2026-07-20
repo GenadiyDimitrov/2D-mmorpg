@@ -217,7 +217,7 @@ public record PartyInviteDto(Guid InviterId, string InviterName,
 public record PartyLootVoteDto(LootMode Mode, string RequestedBy, bool Open = true);
 
 
-// ----- Auto-hunt / idle farming (docs/AutoHunt.md) -------------------------
+// ----- Auto-hunt / idle farming (docs/design/AutoHunt.md) -------------------------
 
 /// <summary>One auto-use skill: the skill id, whether it's on, and an ADDITIONAL post-cast delay
 /// (ticks, ≥0) on top of the skill's own reuse (so auto-reuse is never below the default).</summary>

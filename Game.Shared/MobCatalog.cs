@@ -140,7 +140,7 @@ public static class MobCatalog
     private static int GearTier(int level) =>
         level >= 76 ? 76 : level >= 61 ? 61 : level >= 52 ? 52 : level >= 40 ? 40 : 20;
 
-    /// <summary>MATS-PRIMARY drop table (docs/Crafting.md): every mob drops crafting materials
+    /// <summary>MATS-PRIMARY drop table (docs/design/Crafting.md): every mob drops crafting materials
     /// (amount rises with level; rarity gates at 30/60/76 = uncommon/rare/epic), family-flavored mat
     /// types, plus potions/scrolls and a LOW chance at a finished tiered piece (the "usable now" drop).
     /// Bosses layer more via zone rank. Retune via chances or the global RateConfig.</summary>
@@ -206,7 +206,7 @@ public static class MobCatalog
     {
         var list = new[]
         {
-            // ===== The level 1-85 roster (docs/mobs/mob_base_stats.csv). Base stats are the
+            // ===== The level 1-85 roster (docs/data/mobs/mob_base_stats.csv). Base stats are the
             //       shared level curve; a few carry a passive (MobMod) for family/champion
             //       identity. Levels are natural — the mob brings its level, the zone picks
             //       which mobs by band. =====
