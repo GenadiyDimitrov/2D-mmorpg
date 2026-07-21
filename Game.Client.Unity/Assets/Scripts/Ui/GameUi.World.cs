@@ -64,7 +64,7 @@ namespace Game.Client
 
         // slot context menu (press and hold)
         private RectTransform _slotMenu;
-        private Button _slotMenuAuto;
+        private Button _slotMenuAuto, _slotMenuDetail;
         private int _menuSlot = -1;        // page-relative slot the menu belongs to
         private int _pendingMoveFrom = -1; // absolute bar index being moved, or -1
         private TextMeshProUGUI _pageLabel;
@@ -164,6 +164,7 @@ namespace Game.Client
             BuildSkillsWindow();
             BuildDebugPanel();
             BuildFeedback();
+            BuildSkillDetail();
             BuildSlotMenu();
         }
 
@@ -664,6 +665,18 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_slotMenuAuto.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                         new Vector2(0f, -96f), new Vector2(130f, 40f));
 
+            // Details last, because it is the one option that does not change anything.
+            _slotMenuDetail = UiKit.TextButton(inner, "Details", () =>
+            {
+                var token = TokenAt(_menuSlot);
+                var def = SkillCatalog.Get(token);
+                CloseSlotMenu();
+                if (def != null)
+                    ShowSkillDetail(def.Id, Boot.Learned.TryGetValue(def.Id, out var lv) ? lv : 1);
+            }, 16f);
+            UiKit.Place(UiKit.Rect(_slotMenuDetail.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                        new Vector2(0f, -140f), new Vector2(130f, 40f));
+
             _slotMenu.gameObject.SetActive(false);
         }
 
@@ -683,17 +696,26 @@ namespace Game.Client
 
             // Auto is only offered for a real SKILL the autopilot could cast. Actions and items are
             // not part of the auto-hunt contract, and a passive has nothing to fire.
-            bool autoable = SkillCatalog.Get(token) != null && !IsPassive(token);
+            bool isSkill = SkillCatalog.Get(token) != null;
+            bool autoable = isSkill && !IsPassive(token);
+
             _slotMenuAuto.gameObject.SetActive(autoable);
             if (autoable)
                 UiKit.SetButtonText(_slotMenuAuto, Boot.AutoSkills.Contains(token) ? "Auto: ON" : "Auto: off");
 
-            // Sit the menu above the bar, roughly over the slot it belongs to.
+            // Details only for a real skill — an action or an item has no SkillDef to describe.
+            _slotMenuDetail.gameObject.SetActive(isSkill);
+            UiKit.Place(UiKit.Rect(_slotMenuDetail.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                        new Vector2(0f, autoable ? -140f : -96f), new Vector2(130f, 40f));
+
+            // Sit the menu above the bar. It is pinned to the right rather than to the held slot:
+            // anchoring per-slot pushes it off screen for the edge columns on a phone.
+            int rows = 2 + (autoable ? 1 : 0) + (isSkill ? 1 : 0);
             var rt = _slotMenu;
             rt.anchorMin = rt.anchorMax = new Vector2(1f, 0f);
             rt.pivot = new Vector2(1f, 0f);
             rt.anchoredPosition = new Vector2(-12f, 300f);
-            rt.sizeDelta = new Vector2(150f, autoable ? 150f : 106f);
+            rt.sizeDelta = new Vector2(150f, 18f + rows * 44f);
 
             OpenWindow(_slotMenu);
         }

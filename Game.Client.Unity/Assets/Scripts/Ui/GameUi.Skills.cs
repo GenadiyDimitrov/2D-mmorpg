@@ -137,7 +137,8 @@ namespace Game.Client
                 Row(SkillLetters(def) + "  " + def.Name + level + (onBar ? "   * on bar" : ""),
                     passive ? null : (_pendingAssign == token ? "Cancel" : "To bar"),
                     passive ? null : (System.Action)(() => BeginAssign(token)),
-                    passive ? UiKit.TextDim : UiKit.Text);
+                    passive ? UiKit.TextDim : UiKit.Text,
+                    def.Id, Boot.Learned[def.Id]);
             }
         }
 
@@ -184,10 +185,13 @@ namespace Game.Client
                                             : "(SP " + sp + ")";
                     string id = def.Id;
 
+                    // Detail shows the level you would GET, not the one you have — the numbers should
+                    // match the purchase being considered.
                     Row(SkillLetters(def) + "  " + def.Name + levelTag + "   " + price,
                         "Learn",
                         canLearn ? (System.Action)(() => { Boot.LearnSkill(id); _skillsRevision = -1; }) : null,
-                        canLearn ? UiKit.Text : UiKit.TextDim);
+                        canLearn ? UiKit.Text : UiKit.TextDim,
+                        def.Id, cs.SkillLevel);
                 }
             }
 
@@ -281,10 +285,23 @@ namespace Game.Client
             label.gameObject.AddComponent<LayoutElement>().minHeight = 30f;
         }
 
-        private void Row(string text, string buttonText, System.Action onClick, Color colour)
+        /// <param name="detailSkill">Skill id whose details the ROW opens when tapped, or null for a
+        /// row with nothing to explain (an action). The row itself is the target rather than a small
+        /// "?" button — the name is what someone reaches for when they want to know more.</param>
+        private void Row(string text, string buttonText, System.Action onClick, Color colour,
+                         string detailSkill = null, int detailLevel = 1)
         {
             var row = UiKit.Box(_skillsContent, "Row", UiKit.PanelLight);
             row.gameObject.AddComponent<LayoutElement>().minHeight = 44f;
+
+            if (detailSkill != null)
+            {
+                var open = row.gameObject.AddComponent<Button>();
+                open.targetGraphic = row;
+                string id = detailSkill;
+                int level = detailLevel;
+                open.onClick.AddListener(() => ShowSkillDetail(id, level));
+            }
 
             var label = UiKit.Label(row.transform, text, 16f, colour, TextAlignmentOptions.Left);
             UiKit.Stretch(UiKit.Rect(label.gameObject), 12f, 0f, buttonText != null ? 120f : 12f, 0f);
