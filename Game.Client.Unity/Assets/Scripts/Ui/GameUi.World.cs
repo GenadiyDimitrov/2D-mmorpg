@@ -132,7 +132,7 @@ namespace Game.Client
 
         private int _townIndex;
         private TextMeshProUGUI _townLabel;
-        private Button _debugButton, _pvpButton, _autoButton;
+        private Button _debugButton, _pvpButton, _autoButton, _respawnButton;
 
         // confirm dialog
         private RectTransform _confirmPanel;
@@ -322,15 +322,15 @@ namespace Game.Client
         /// </summary>
         private void BuildActionBar()
         {
+            // Attack / Sit-Stand / Walk-Run are gone from here: they exist in ActionCatalog and can be
+            // placed on the SKILL BAR from the Skills window's Actions tab, which is where a thing you
+            // press during combat belongs. Keeping permanent copies of them cost a third of the bar.
+            //
+            // Respawn stays, but only appears while you are DEAD (see RefreshWorld) — it is useless
+            // the rest of the time, and removing it outright could strand a corpse with no way up if
+            // the player never put the action on their bar.
             var actions = new List<(string Label, Action Click)>
             {
-                ("Attack",    () => { if (Boot.TargetId.HasValue) Boot.Attack(Boot.TargetId.Value); }),
-                ("Sit/Stand", () => Boot.SetMoveState(
-                                  Boot.Stats != null && Boot.Stats.MoveState == MoveState.Sitting
-                                      ? MoveState.Running : MoveState.Sitting)),
-                ("Walk/Run",  () => Boot.SetMoveState(
-                                  Boot.Stats != null && Boot.Stats.MoveState == MoveState.Walking
-                                      ? MoveState.Running : MoveState.Walking)),
                 ("Respawn",   () => Boot.Respawn()),
                 ("PvP: off",  () => Boot.TogglePvp()),
                 ("Auto: off", () => Boot.ToggleAutoHunt()),
@@ -357,6 +357,7 @@ namespace Game.Client
                 if (action.Label == "PvP: off") _pvpButton = button;
                 else if (action.Label == "Auto: off") _autoButton = button;
                 else if (action.Label == "Debug") _debugButton = button;
+                else if (action.Label == "Respawn") _respawnButton = button;
             }
         }
 
@@ -517,6 +518,11 @@ namespace Game.Client
             RefreshFeedback();
 
             _debugButton.gameObject.SetActive(Boot.IsAdmin);
+
+            // Respawn only while dead — the rest of the time it is a button that can do nothing.
+            EntityDto self = null;
+            if (Boot.Entities != null) Boot.Entities.TryGetState(Boot.SelfId, out self);
+            _respawnButton.gameObject.SetActive(self != null && self.Dead);
             UiKit.SetButtonText(_pvpButton, Boot.PvpEnabled ? "PvP: ON" : "PvP: off");
             _pvpButton.targetGraphic.color = Boot.PvpEnabled
                 ? new Color(0.55f, 0.20f, 0.20f, 0.95f) : UiKit.PanelLight;
