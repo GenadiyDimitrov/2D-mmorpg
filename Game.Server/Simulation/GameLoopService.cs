@@ -5670,7 +5670,18 @@ var effect = def.Effect;
         target.Hp -= damage;
 
         // Training dummy never dies: it takes (and displays) the hit but floors at 1 HP.
-        if (target.TrainingDummy && target.Hp < 1) target.Hp = 1;
+        //
+        // NPCs get the same floor. Vendors, teleporters and quest givers are furniture with a job —
+        // killing one silently removes a service from the world. Guarding the ATTACK command was not
+        // enough: it only covered basic attacks, and skills (and DoTs, and AoE) reach damage by other
+        // routes, so an NPC could still be killed with a nuke. This line is the ONE place HP ever
+        // decreases, which makes it the only place the rule cannot be routed around.
+        //
+        // FUTURE: PK guards are meant to be mortal but nearly unkillable — a tank + healer + damage
+        // dealer should be able to bring one down if they really want to, like a small raid boss with
+        // no drop and no XP, respawning after ~5 minutes. That will need its own NpcRole rather than
+        // an exception here (see docs/Roadmap.md).
+        if ((target.TrainingDummy || target.Kind == EntityKind.Npc) && target.Hp < 1) target.Hp = 1;
 
         // Being hit while sitting breaks the sit and starts the stand-up window:
         // you can't move/cast until it elapses.

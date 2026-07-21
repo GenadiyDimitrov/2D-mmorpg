@@ -139,6 +139,23 @@ namespace Game.Client
         public Task RespawnAsync() =>
             _connection.SendAsync("Respawn");
 
+        public Task TogglePvpAsync(bool enabled) =>
+            _connection.SendAsync("TogglePvp", enabled);
+
+        public Task ToggleCounterAttackAsync(bool enabled) =>
+            _connection.SendAsync("ToggleCounterAttack", enabled);
+
+        /// <summary>Idle farming: the server drives the character (target, skills, potions) with the
+        /// same brain the WPF client uses. Nothing here is client logic — it is one flag.</summary>
+        public Task ToggleAutoHuntAsync(bool enabled) =>
+            _connection.SendAsync("ToggleAutoHunt", enabled);
+
+        public Task StartOfflineFarmAsync() =>
+            _connection.SendAsync("StartOfflineFarm");
+
+        public Task CancelCastAsync() =>
+            _connection.SendAsync("CancelCast");
+
         public Task LearnSkillAsync(string skillId) =>
             _connection.SendAsync("LearnSkill", skillId);
 

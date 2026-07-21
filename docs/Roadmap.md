@@ -601,6 +601,13 @@ changes and new features that came out of the play session:
 
 ## LATER (bigger systems)
 
+- [ ] **PK guards — mortal, but nearly unkillable** (owner, 2026-07-21). Ordinary NPCs are now
+  immortal outright (they floor at 1 HP like a training dummy, in the single place HP decreases —
+  killing a vendor silently deletes a service from the world). Guards are the deliberate exception:
+  a tank + healer + damage dealer should be able to bring one down *if they really want to*, like a
+  small raid boss — **no drop, no XP**, respawning after ~5 minutes. Wants its own `NpcRole` and its
+  own HP/defence curve rather than an exception carved into the immortality rule.
+
 - [>] **3rd-class discipline kits** — 12 disciplines × per-race skill lists. Framework +
   flat stat leans exist; needs the combat primitives layer first, then per-race kits.
   Lightbringer (healer) + Warchanter (buffer, gets a "Prophecy" party buff) are first up.

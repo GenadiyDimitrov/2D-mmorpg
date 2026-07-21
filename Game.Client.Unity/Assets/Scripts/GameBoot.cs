@@ -156,6 +156,9 @@ namespace Game.Client
             if (FindAnyObjectByType<GroundGrid>() == null)
                 new GameObject("GroundGrid").AddComponent<GroundGrid>();
 
+            if (FindAnyObjectByType<ZoneOverlay>() == null)
+                new GameObject("ZoneOverlay").AddComponent<ZoneOverlay>();
+
             if (Marker == null)
             {
                 Marker = FindAnyObjectByType<MoveMarker>();
@@ -289,6 +292,15 @@ namespace Game.Client
             });
             _net.ChatReceived += m => Main(() => ClientLog.Info(m.From + ": " + m.Text));
             _net.CombatReceived += OnCombat;
+            _net.CastReceived += c => Main(() =>
+            {
+                // Seconds <= 0 is the server saying the cast ENDED (finished or was cancelled), not a
+                // zero-length cast — treating it as one would leave the bar stuck full.
+                if (c == null || c.Seconds <= 0f) { CastingSkill = null; return; }
+                CastingSkill = c.SkillName;
+                CastStartedAt = Time.realtimeSinceStartup;
+                CastEndsAt = CastStartedAt + c.Seconds;
+            });
             _net.Disconnected += m => Main(() =>
             {
                 Phase = ClientPhase.Offline;
@@ -471,11 +483,22 @@ namespace Game.Client
             });
         }
 
+        /// <summary>Raised on the main thread for every combat event that involves YOU — the HUD turns
+        /// these into floating damage numbers.</summary>
+        public event Action<CombatEvent> CombatHappened;
+
+        /// <summary>What this character is casting, and when it finishes (realtime). Name is null when
+        /// nothing is being cast.</summary>
+        public string CastingSkill { get; private set; }
+        public float CastStartedAt { get; private set; }
+        public float CastEndsAt { get; private set; }
+
         private void OnCombat(CombatEvent e)
         {
             Main(() =>
             {
                 if (e.AttackerId != _selfId && e.TargetId != _selfId) return;
+                if (CombatHappened != null) CombatHappened(e);
                 string verb = e.AttackerId == _selfId ? "You → " + e.TargetName : e.AttackerName + " → you";
                 ClientLog.Info(verb + "  " + e.Outcome + (e.Damage != 0 ? " " + e.Damage : "")
                                + (string.IsNullOrEmpty(e.Skill) ? "" : " (" + e.Skill + ")"));
@@ -552,6 +575,65 @@ namespace Game.Client
             }
 
             UseSkill(token);
+        }
+
+        /// <summary>
+        /// Whether this character is willing to fight other PLAYERS.
+        ///
+        /// With it OFF you can only hit mobs — the server refuses a swing at a player outright, which
+        /// is what stops a stray tap in a crowd from starting a fight you did not want. It is not a
+        /// client-side courtesy: <c>CanPvpHit</c> re-checks it, along with safe zones.
+        ///
+        /// Tracked locally because the server has no "your PvP flag is now X" push; the button shows
+        /// what we last ASKED for, and the server remains the authority on what actually lands.
+        /// </summary>
+        public bool PvpEnabled { get; private set; }
+
+        public async void TogglePvp()
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            PvpEnabled = !PvpEnabled;
+            ClientLog.Info(PvpEnabled
+                ? "PvP ON — you can hit other players, and they can hit you back."
+                : "PvP off — mobs only.");
+            try { await _net.TogglePvpAsync(PvpEnabled); }
+            catch (Exception ex) { ClientLog.Warn("PvP: " + ex.Message); }
+        }
+
+        /// <summary>
+        /// Idle farming. The AUTOPILOT LIVES ON THE SERVER — targeting, skill choice, potions, the
+        /// lot — so this is genuinely one flag, not a client bot. That is also why it keeps running
+        /// when the app is closed.
+        /// </summary>
+        public bool AutoHunting { get; private set; }
+
+        public async void ToggleAutoHunt()
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            AutoHunting = !AutoHunting;
+            ClientLog.Info(AutoHunting ? "Auto-hunt ON." : "Auto-hunt off.");
+            try { await _net.ToggleAutoHuntAsync(AutoHunting); }
+            catch (Exception ex) { ClientLog.Warn("AutoHunt: " + ex.Message); }
+        }
+
+        public bool CounterAttack { get; private set; }
+
+        public async void ToggleCounterAttack()
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            CounterAttack = !CounterAttack;
+            ClientLog.Info(CounterAttack ? "Counter-attack ON." : "Counter-attack off.");
+            try { await _net.ToggleCounterAttackAsync(CounterAttack); }
+            catch (Exception ex) { ClientLog.Warn("CounterAttack: " + ex.Message); }
+        }
+
+        /// <summary>ESC/cancel a cast in progress. The server keeps the initial MP and starts the
+        /// cooldown — cancelling is a choice with a cost, not a free undo.</summary>
+        public async void CancelCast()
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.CancelCastAsync(); }
+            catch (Exception ex) { ClientLog.Warn("CancelCast: " + ex.Message); }
         }
 
         public async void LearnSkill(string skillId)

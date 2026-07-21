@@ -113,7 +113,7 @@ namespace Game.Client
 
         private int _townIndex;
         private TextMeshProUGUI _townLabel;
-        private Button _debugButton;
+        private Button _debugButton, _pvpButton, _autoButton;
 
         // confirm dialog
         private RectTransform _confirmPanel;
@@ -144,6 +144,7 @@ namespace Game.Client
             BuildBag();
             BuildSkillsWindow();
             BuildDebugPanel();
+            BuildFeedback();
         }
 
         private void BuildSelfPanel()
@@ -211,7 +212,14 @@ namespace Game.Client
             for (int i = 0; i < SlotsPerPage; i++)
             {
                 int index = i;   // captured; the loop variable is shared
-                var button = UiKit.TextButton(inner, "", () => FireSlot(index), 20f);
+
+                // No onClick: PressAndHold owns both gestures, so a hold can clear the slot without
+                // the button also casting what was in it on release.
+                var button = UiKit.TextButton(inner, "", null, 20f);
+                var press = button.gameObject.AddComponent<PressAndHold>();
+                press.OnTap = () => FireSlot(index);
+                press.OnHold = () => ClearSlot(index);
+                press.Enabled = () => button.interactable;
                 UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                             new Vector2(pad + (i % BarColumns) * (slot + pad),
                                         -(pad + (i / BarColumns) * (slot + pad))),
@@ -266,6 +274,8 @@ namespace Game.Client
                 Boot.Stats != null && Boot.Stats.MoveState == MoveState.Walking
                     ? MoveState.Running : MoveState.Walking));
             AddAction(ref x, "Respawn", () => Boot.Respawn());
+            _pvpButton = AddAction(ref x, "PvP: off", () => Boot.TogglePvp());
+            _autoButton = AddAction(ref x, "Auto: off", () => Boot.ToggleAutoHunt());
             AddAction(ref x, "Bag", () => ToggleWindow(_bagPanel));
             AddAction(ref x, "Skills", () => ToggleWindow(_skillsPanel));
             _debugButton = AddAction(ref x, "Debug", () => ToggleWindow(_debugPanel));
@@ -432,7 +442,17 @@ namespace Game.Client
             RefreshSkillsWindow();
             RefreshNameplates();
 
+            RefreshFeedback();
+
             _debugButton.gameObject.SetActive(Boot.IsAdmin);
+            UiKit.SetButtonText(_pvpButton, Boot.PvpEnabled ? "PvP: ON" : "PvP: off");
+            _pvpButton.targetGraphic.color = Boot.PvpEnabled
+                ? new Color(0.55f, 0.20f, 0.20f, 0.95f) : UiKit.PanelLight;
+
+            UiKit.SetButtonText(_autoButton, Boot.AutoHunting ? "Auto: ON" : "Auto: off");
+            _autoButton.targetGraphic.color = Boot.AutoHunting
+                ? new Color(0.20f, 0.45f, 0.25f, 0.95f) : UiKit.PanelLight;
+
             UpdateSkillBarSwipe();
         }
 
@@ -528,6 +548,20 @@ namespace Game.Client
 
             var bar = Boot.SkillBar;
             if (bar != null && index < bar.Length) Boot.UseSlot(bar[index]);
+        }
+
+        /// <summary>Press and hold a slot to empty it — the phone's stand-in for the WPF right-click.
+        /// Holding an EMPTY slot does nothing rather than nagging.</summary>
+        private void ClearSlot(int slotOnPage)
+        {
+            int index = _barPage * SlotsPerPage + slotOnPage;
+            var bar = Boot.SkillBar;
+            if (bar == null || index >= bar.Length || string.IsNullOrEmpty(bar[index])) return;
+
+            Boot.AssignSlot(index, null);
+            _pendingAssign = null;
+            _skillsRevision = -1;      // the "* on bar" marks in the skills list are now stale
+            ClientLog.Info("Slot " + (slotOnPage + 1) + " cleared.");
         }
 
         private void PageBy(int delta) => _barPage = Mathf.Clamp(_barPage + delta, 0, BarPages - 1);
@@ -665,6 +699,11 @@ namespace Game.Client
             var cam = Camera.main;
             if (cam == null || Boot.Entities == null) return;
 
+            // Your own level, for the mob level-gap colours. Progress is authoritative for yourself;
+            // the entity's own Level is the fallback before the first progress push.
+            int myLevel = Boot.Progress != null ? Boot.Progress.Level : 0;
+            if (myLevel <= 0 && Boot.Entities.TryGetState(Boot.SelfId, out var me)) myLevel = me.Level;
+
             int used = 0;
             foreach (var kv in Boot.Entities.States)
             {
@@ -679,11 +718,11 @@ namespace Game.Client
                 plate.Root.gameObject.SetActive(true);
                 plate.Root.position = screen;
 
-                plate.Label.text = e.Name + (e.Aggressive ? "*" : "");
-                plate.Label.color = e.Id == Boot.SelfId ? UiKit.Good
-                                  : e.Kind == EntityKind.Mob ? new Color(1f, 0.55f, 0.55f)
-                                  : e.Kind == EntityKind.Npc ? new Color(1f, 0.93f, 0.55f)
-                                  : new Color(0.65f, 0.85f, 1f);
+                // The "*" marks an aggressive mob — what to tiptoe around BEFORE it decides for you.
+                string title = e.Name + (e.Aggressive ? "*" : "");
+                if (e.Disconnected) title += "  (disconnected)";
+                plate.Label.text = title;
+                plate.Label.color = e.Id == Boot.SelfId ? UiKit.Good : NameColour(e, myLevel);
 
                 bool bar = e.MaxHp > 0 && e.Kind != EntityKind.Npc;
                 plate.BarBg.gameObject.SetActive(bar);
@@ -692,6 +731,41 @@ namespace Game.Client
 
             for (int i = used; i < _nameplates.Count; i++)
                 _nameplates[i].Root.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// What a name's colour MEANS:
+        ///   you            green
+        ///   player         white / purple (flagged for PvP) / red (a PK) — the wire's PvpFlag
+        ///   mob            level gap to you: red down to grey (see LevelColour)
+        ///   NPC            yellow — a service, and now unkillable
+        ///
+        /// Absolute mob level is nearly useless; the GAP is what decides whether you can take it, so
+        /// that is what the colour encodes.
+        /// </summary>
+        private static Color NameColour(EntityDto e, int myLevel)
+        {
+            if (e.Id == Guid.Empty) return UiKit.Text;
+
+            switch (e.Kind)
+            {
+                case EntityKind.Npc:
+                    return new Color(1f, 0.93f, 0.55f);
+
+                case EntityKind.Player:
+                    switch (e.Flag)
+                    {
+                        case PvpFlag.Pk:      return new Color(1.00f, 0.30f, 0.30f);
+                        case PvpFlag.Flagged: return new Color(0.80f, 0.50f, 1.00f);
+                        default:              return new Color(0.92f, 0.94f, 0.96f);
+                    }
+
+                case EntityKind.Mob:
+                    return LevelColour(e.Level, myLevel);
+
+                default:
+                    return UiKit.Text;
+            }
         }
 
         /// <summary>Nameplates are POOLED. Entities come and go every few seconds as they wander in and
