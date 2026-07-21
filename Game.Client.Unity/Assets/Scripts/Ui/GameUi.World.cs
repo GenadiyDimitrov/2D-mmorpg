@@ -165,6 +165,7 @@ namespace Game.Client
             BuildDebugPanel();
             BuildFeedback();
             BuildSkillDetail();
+            BuildStatsWindow();
             BuildSlotMenu();
         }
 
@@ -300,32 +301,48 @@ namespace Game.Client
                         new Vector2(824f, 78f), new Vector2(90f, 46f));
         }
 
+        /// <summary>
+        /// The action bar SIZES ITSELF to fit. Buttons used to be a fixed 126 wide stepping by 132,
+        /// which silently ran off the right edge once there were ten of them — "Leave" was already
+        /// past the screen before this window was added. Dividing the available width means adding a
+        /// button shrinks the row instead of pushing one into the void.
+        /// </summary>
         private void BuildActionBar()
         {
-            float x = 12f;
-            AddAction(ref x, "Attack", () => { if (Boot.TargetId.HasValue) Boot.Attack(Boot.TargetId.Value); });
-            AddAction(ref x, "Sit/Stand", () => Boot.SetMoveState(
-                Boot.Stats != null && Boot.Stats.MoveState == MoveState.Sitting
-                    ? MoveState.Running : MoveState.Sitting));
-            AddAction(ref x, "Walk/Run", () => Boot.SetMoveState(
-                Boot.Stats != null && Boot.Stats.MoveState == MoveState.Walking
-                    ? MoveState.Running : MoveState.Walking));
-            AddAction(ref x, "Respawn", () => Boot.Respawn());
-            _pvpButton = AddAction(ref x, "PvP: off", () => Boot.TogglePvp());
-            _autoButton = AddAction(ref x, "Auto: off", () => Boot.ToggleAutoHunt());
-            AddAction(ref x, "Bag", () => ToggleWindow(_bagPanel));
-            AddAction(ref x, "Skills", () => ToggleWindow(_skillsPanel));
-            _debugButton = AddAction(ref x, "Debug", () => ToggleWindow(_debugPanel));
-            AddAction(ref x, "Leave", () => Boot.LeaveWorld());
-        }
+            var actions = new List<(string Label, Action Click)>
+            {
+                ("Attack",    () => { if (Boot.TargetId.HasValue) Boot.Attack(Boot.TargetId.Value); }),
+                ("Sit/Stand", () => Boot.SetMoveState(
+                                  Boot.Stats != null && Boot.Stats.MoveState == MoveState.Sitting
+                                      ? MoveState.Running : MoveState.Sitting)),
+                ("Walk/Run",  () => Boot.SetMoveState(
+                                  Boot.Stats != null && Boot.Stats.MoveState == MoveState.Walking
+                                      ? MoveState.Running : MoveState.Walking)),
+                ("Respawn",   () => Boot.Respawn()),
+                ("PvP: off",  () => Boot.TogglePvp()),
+                ("Auto: off", () => Boot.ToggleAutoHunt()),
+                ("Bag",       () => ToggleWindow(_bagPanel)),
+                ("Skills",    () => ToggleWindow(_skillsPanel)),
+                ("Char",      () => ToggleWindow(_statsPanel)),
+                ("Debug",     () => ToggleWindow(_debugPanel)),
+                ("Leave",     () => Boot.LeaveWorld()),
+            };
 
-        private Button AddAction(ref float x, string text, Action onClick)
-        {
-            var button = UiKit.TextButton(_worldRoot, text, onClick, 17f);
-            UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                        new Vector2(x, 12f), new Vector2(126f, 52f));
-            x += 132f;
-            return button;
+            const float margin = 12f, gap = 4f;
+            float width = (UiKit.Reference.x - margin * 2f - gap * (actions.Count - 1)) / actions.Count;
+            float x = margin;
+
+            foreach (var action in actions)
+            {
+                var button = UiKit.TextButton(_worldRoot, action.Label, action.Click, 15f);
+                UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                            new Vector2(x, 12f), new Vector2(width, 52f));
+                x += width + gap;
+
+                if (action.Label == "PvP: off") _pvpButton = button;
+                else if (action.Label == "Auto: off") _autoButton = button;
+                else if (action.Label == "Debug") _debugButton = button;
+            }
         }
 
         private void BuildConsole()
@@ -477,6 +494,7 @@ namespace Game.Client
             RefreshConsole();
             RefreshBag();
             RefreshSkillsWindow();
+            RefreshStatsWindow();
             RefreshNameplates();
 
             RefreshFeedback();
