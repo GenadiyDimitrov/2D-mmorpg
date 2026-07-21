@@ -946,13 +946,27 @@ namespace Game.Client
                 _consoleScroll.y = float.MaxValue;
             }
 
+            // Rows are MEASURED, not assumed to be one line tall. _small inherits wordWrap from the
+            // skin, so a long chat line wraps to two or three lines and a fixed 14px row let it draw
+            // straight over the next message — which is what "the log overlaps" was.
+            float width = inner.width - 22;
+            var heights = new float[lines.Count];
+            float total = 4f;
+            for (int i = 0; i < lines.Count; i++)
+            {
+                heights[i] = Mathf.Max(14f, _small.CalcHeight(new GUIContent(lines[i].Text), width));
+                total += heights[i];
+            }
+
             _consoleScroll = GUI.BeginScrollView(inner, _consoleScroll,
-                                                 new Rect(0, 0, inner.width - 18, lines.Count * 14 + 4));
+                                                 new Rect(0, 0, inner.width - 18, total));
+            float y = 0f;
             for (int i = 0; i < lines.Count; i++)
             {
                 var style = new GUIStyle(_small);
                 style.normal.textColor = lines[i].Color;
-                GUI.Label(new Rect(2, i * 14, inner.width - 22, 14), lines[i].Text, style);
+                GUI.Label(new Rect(2, y, width, heights[i]), lines[i].Text, style);
+                y += heights[i];
             }
             GUI.EndScrollView();
 

@@ -1,3 +1,4 @@
+using Game.Shared;
 using UnityEngine;
 
 namespace Game.Client
@@ -63,7 +64,13 @@ namespace Game.Client
                 var view = hit.collider.GetComponent<EntityView>();
                 if (view != null && !view.IsSelf)
                 {
-                    Boot.Attack(view.Id);
+                    // Tapping SELECTS. Only a mob is also attacked — tapping a vendor used to swing at
+                    // him, which is how an NPC got killed on the phone. (The server now refuses that
+                    // outright; this just stops us asking.)
+                    Boot.TargetId = view.Id;
+                    if (Boot.Entities != null && Boot.Entities.TryGetState(view.Id, out var dto)
+                        && dto.Kind == EntityKind.Mob && !dto.Dead)
+                        Boot.Attack(view.Id);
                     return;
                 }
             }

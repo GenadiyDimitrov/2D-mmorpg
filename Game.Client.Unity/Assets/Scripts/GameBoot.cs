@@ -574,6 +574,10 @@ namespace Game.Client
         {
             if (Phase != ClientPhase.InWorld) return;
             TargetId = targetId;
+            // Attacking supersedes the walk order, so the destination ring has to go. You chase the
+            // TARGET, not the spot you last tapped, so the ring would never be reached and would sit
+            // on the ground pointing at nothing.
+            if (Marker != null) Marker.Hide();
             try { await _net.AttackAsync(targetId); }
             catch (Exception ex) { ClientLog.Warn("Attack: " + ex.Message); }
         }

@@ -37,4 +37,14 @@
   <assembly fullname="System.Text.Encodings.Web" preserve="all" />
   <!-- Our own wire contract: DTOs are (de)serialized reflectively by System.Text.Json. -->
   <assembly fullname="Game.Shared" preserve="all" />
+
+  <!--
+    Physics types that only ever appear at RUNTIME. GameObject.CreatePrimitive attaches a collider
+    chosen by the primitive KIND: a Sphere gets a SphereCollider, a Cylinder a CapsuleCollider. We
+    never name those types in code, so static analysis does not see them referenced, and the stripper
+    removes them - then creating the primitive fails on the device with a "SphereCollider does not
+    exist" style error while the Editor is perfectly happy. Same family as the SignalR bug above:
+    strip-only, device-only. BoxCollider survived purely because AddComponent<BoxCollider>() names it.
+  -->
+  <assembly fullname="UnityEngine.PhysicsModule" preserve="all" />
 </linker>

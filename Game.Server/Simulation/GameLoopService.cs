@@ -717,6 +717,16 @@ public class GameLoopService : BackgroundService
             DistanceSq(attacker, target) > GameConstants.ViewRange * GameConstants.ViewRange)
             return;
 
+        // NPCs are scenery with a job — vendors, teleporters, quest givers. Nothing stopped a client
+        // from attacking one, and since they carry HP like any entity they could be KILLED (found on
+        // the phone, 2026-07-21: the Unity client targeted an NPC and killed it). The WPF client only
+        // ever avoided it by never sending the command, which is not a rule — this is.
+        if (target.Kind == EntityKind.Npc)
+        {
+            SendSystemToEntity(attacker, "You can't attack " + target.Name + ".");
+            return;
+        }
+
         if (target.Kind == EntityKind.Player && !CanPvpHit(attacker, target))
         {
             SendSystemToEntity(attacker, "You can't attack that player here. (Enable PvP; not in towns.)");
