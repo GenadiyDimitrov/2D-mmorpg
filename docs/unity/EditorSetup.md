@@ -13,7 +13,11 @@ things that genuinely cannot be done that way, so you only ever open Unity for w
 
 ---
 
-## 1. Import TMP Essential Resources — **TODO**
+## 1. Import TMP Essential Resources — **DONE (2026-07-21)**
+
+Verified: `Assets/TextMesh Pro/` exists with 81 files including `Resources/TMP Settings.asset`.
+Nothing to do here again unless someone deletes the folder.
+
 
 **Why:** the UI is being rebuilt on uGUI + TextMeshPro (the UI that stays — it is what movable
 windows, resizable panels and a portrait layout will need). TextMeshPro resolves its default font
