@@ -14,15 +14,9 @@ namespace Game.Client
     public class TouchInput : MonoBehaviour
     {
         public GameBoot Boot;
-        public GameHud Hud;
 
         /// <summary>How far a finger may travel and still count as a tap rather than a drag.</summary>
         public float TapSlopPixels = 40f;
-
-        private void Awake()
-        {
-            if (Hud == null) Hud = FindAnyObjectByType<GameHud>();
-        }
 
         private void Update()
         {
@@ -30,6 +24,7 @@ namespace Game.Client
 
             bool tapped = false;
             Vector2 screen = default;
+            int finger = -1;
             if (Input.touchCount > 0)
             {
                 // A tap is decided on RELEASE, not on press, and only while exactly one finger is
@@ -42,6 +37,7 @@ namespace Game.Client
                 {
                     tapped = true;
                     screen = t.position;
+                    finger = t.fingerId;
                 }
             }
             else if (Input.GetMouseButtonDown(0))
@@ -51,8 +47,10 @@ namespace Game.Client
             }
             if (!tapped) return;
 
-            if (Hud == null) Hud = FindAnyObjectByType<GameHud>();
-            if (Hud != null && Hud.BlocksScreenPoint(screen)) return;
+            // uGUI answers this itself now: the EventSystem knows what its raycaster hit, so we no
+            // longer keep a hand-maintained list of UI rectangles that could silently go stale
+            // whenever a panel moved.
+            if (UiKit.OverUi(finger)) return;
 
             var cam = Camera.main;
             if (cam == null) return;

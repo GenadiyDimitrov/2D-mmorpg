@@ -138,9 +138,9 @@ namespace Game.Client
             if (input == null) input = gameObject.AddComponent<TouchInput>();
             input.Boot = this;
 
-            var hud = FindAnyObjectByType<GameHud>();
-            if (hud == null) hud = gameObject.AddComponent<GameHud>();
-            hud.Boot = this;
+            var ui = FindAnyObjectByType<GameUi>();
+            if (ui == null) ui = gameObject.AddComponent<GameUi>();
+            ui.Boot = this;
 
             if (FindAnyObjectByType<GroundGrid>() == null)
                 new GameObject("GroundGrid").AddComponent<GroundGrid>();
