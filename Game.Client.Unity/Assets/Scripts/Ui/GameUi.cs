@@ -50,8 +50,25 @@ namespace Game.Client
         private ClientPhase _builtPhase = (ClientPhase)(-1);
         private int _characterRevision = -1;
 
-        private void Awake()
+        private bool _built;
+
+        /// <summary>
+        /// Build everything on the first frame — NOT in Awake.
+        ///
+        /// Awake runs the moment AddComponent is called, which is BEFORE GameBoot assigns itself to
+        /// <see cref="Boot"/>. Any builder that touches Boot therefore threw a NullReferenceException
+        /// that aborted Awake halfway and left the UI partly constructed: the panels built before the
+        /// throw were on screen and clickable, everything after it did not exist, and phase switching
+        /// had nothing coherent to show or hide. On the device that looks like the game froze.
+        ///
+        /// Building here instead means every builder can rely on Boot existing, so the trap cannot be
+        /// re-set by the next panel someone adds.
+        /// </summary>
+        private void EnsureBuilt()
         {
+            if (_built) return;
+            _built = true;
+
             _canvas = UiKit.CreateCanvas("GameUi");
             _canvas.transform.SetParent(transform, false);
             _root = (RectTransform)_canvas.transform;
@@ -61,6 +78,13 @@ namespace Game.Client
             BuildCharacterSelect();
             BuildWorld();
             BuildOverlays();
+            HookFeedback();
+        }
+
+        private void OnDisable()
+        {
+            Application.wantsToQuit -= OnWantsToQuit;
+            UnhookFeedback();
         }
 
         private bool _fieldsLoaded;
@@ -68,10 +92,8 @@ namespace Game.Client
         private void Update()
         {
             if (Boot == null) return;
+            EnsureBuilt();
 
-            // Awake runs the moment AddComponent is called — BEFORE GameBoot assigns itself to Boot —
-            // so the saved url/username cannot be read while building. Fill them on the first frame
-            // that has a Boot instead of leaving the player to retype the server address.
             if (!_fieldsLoaded)
             {
                 _fieldsLoaded = true;

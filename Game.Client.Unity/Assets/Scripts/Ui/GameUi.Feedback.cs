@@ -63,8 +63,26 @@ namespace Game.Client
             _zoneLabel = UiKit.Label(_worldRoot, "", 15f, UiKit.TextDim, TextAlignmentOptions.Left);
             UiKit.Place(UiKit.Rect(_zoneLabel.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(16f, -168f), new Vector2(360f, 22f));
+        }
 
+        /// <summary>
+        /// Subscribed on the first frame that HAS a Boot, not while building.
+        ///
+        /// Awake runs the instant AddComponent is called — before GameBoot assigns itself to Boot — so
+        /// `Boot.CombatHappened += …` during the build threw a NullReferenceException, which aborted
+        /// Awake halfway and left the UI PARTLY CONSTRUCTED: panels that had already been created were
+        /// on screen, everything after the throw did not exist, and the phase switching then had
+        /// nothing coherent to show or hide. On the device that reads as "the game froze".
+        /// </summary>
+        private void HookFeedback()
+        {
+            Boot.CombatHappened -= SpawnDamageNumber;   // idempotent: no double numbers on a re-hook
             Boot.CombatHappened += SpawnDamageNumber;
+        }
+
+        private void UnhookFeedback()
+        {
+            if (Boot != null) Boot.CombatHappened -= SpawnDamageNumber;
         }
 
         private void RefreshFeedback()

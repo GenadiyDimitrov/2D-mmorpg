@@ -812,8 +812,9 @@ namespace Game.Client
 
         // ----- back button -----------------------------------------------------------------------
 
+        // OnDisable lives in GameUi.cs — a partial class gets ONE of each Unity message, and a second
+        // definition is a compile error rather than a second callback.
         private void OnEnable() { Application.wantsToQuit += OnWantsToQuit; }
-        private void OnDisable() { Application.wantsToQuit -= OnWantsToQuit; }
 
         private bool OnWantsToQuit()
         {
