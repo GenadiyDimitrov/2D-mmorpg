@@ -52,6 +52,92 @@ namespace Game.Client
         private GUIStyle _panel, _label, _small, _title, _button, _field;
         private Texture2D _panelTex, _barBg, _barHp, _barMp, _barXp;
 
+        // confirm dialog (the back-button exit ladder)
+        private string _confirmMessage;
+        private string _confirmOk;
+        private Action _confirmAction;
+        private bool _quitConfirmed;
+        private int _lastBackFrame = -1;
+
+        // ----- back button / graceful exit --------------------------------------------------------
+
+        /// <summary>
+        /// The phone's back button walks OUT of the game one step at a time instead of killing it:
+        /// in world → character select, character select → log out, login screen → quit. Every step
+        /// asks first, so a stray back press can never drop a live session.
+        ///
+        /// Android delivers back as <see cref="KeyCode.Escape"/>, and the player would otherwise quit
+        /// the process outright — hence the <see cref="Application.wantsToQuit"/> veto as well: we
+        /// only let the app die once the player has actually confirmed it.
+        /// </summary>
+        private void Awake()
+        {
+            Application.wantsToQuit += OnWantsToQuit;
+        }
+
+        private void OnDestroy()
+        {
+            Application.wantsToQuit -= OnWantsToQuit;
+        }
+
+        private bool OnWantsToQuit()
+        {
+            if (_quitConfirmed) return true;
+            AskBack();
+            return false;
+        }
+
+        private void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.Escape)) AskBack();
+        }
+
+        private void AskBack()
+        {
+            if (Boot == null) return;
+
+            // A single back press can arrive as BOTH an Escape key and a quit request; without this
+            // the dialog would open and immediately close again in the same frame.
+            if (_lastBackFrame == Time.frameCount) return;
+            _lastBackFrame = Time.frameCount;
+
+            if (_confirmMessage != null) { Dismiss(); return; }   // back also means "cancel"
+
+            switch (Boot.Phase)
+            {
+                case ClientPhase.InWorld:
+                    Ask("Leave the world and return to character select?", "Leave", Boot.LeaveWorld);
+                    break;
+                case ClientPhase.CharacterSelect:
+                case ClientPhase.Entering:
+                    Ask("Log out of this account?", "Log out", Boot.Logout);
+                    break;
+                default:
+                    Ask("Quit the game?", "Quit", Quit);
+                    break;
+            }
+        }
+
+        private void Ask(string message, string okLabel, Action action)
+        {
+            _confirmMessage = message;
+            _confirmOk = okLabel;
+            _confirmAction = action;
+        }
+
+        private void Dismiss()
+        {
+            _confirmMessage = null;
+            _confirmOk = null;
+            _confirmAction = null;
+        }
+
+        private void Quit()
+        {
+            _quitConfirmed = true;
+            Application.Quit();
+        }
+
         // ----- input blocking -------------------------------------------------------------------
 
         /// <summary>True when a screen point (bottom-left origin, as Input reports) lands on a UI
@@ -180,8 +266,33 @@ namespace Game.Client
             }
 
             if (_showConsole) DrawConsole();
+            if (_confirmMessage != null) DrawConfirm();
 
             GUI.matrix = prevMatrix;
+        }
+
+        // ----- confirm dialog ---------------------------------------------------------------------
+
+        private void DrawConfirm()
+        {
+            // The WHOLE screen is registered as UI while a dialog is open, so a tap meant for
+            // "Cancel" can never also order a walk to the ground behind it.
+            Block(new Rect(0, 0, _vw, _vh));
+
+            var box = new Rect(_vw * 0.5f - 150f, _vh * 0.5f - 55f, 300f, 110f);
+            GUI.Box(box, GUIContent.none, _panel);
+            GUI.Label(new Rect(box.x + 14f, box.y + 14f, box.width - 28f, 44f), _confirmMessage, _label);
+
+            float bw = (box.width - 42f) * 0.5f;
+            if (GUI.Button(new Rect(box.x + 14f, box.yMax - 40f, bw, 28f), "Cancel", _button))
+                Dismiss();
+
+            if (GUI.Button(new Rect(box.xMax - 14f - bw, box.yMax - 40f, bw, 28f), _confirmOk, _button))
+            {
+                var action = _confirmAction;
+                Dismiss();
+                if (action != null) action();
+            }
         }
 
         // ----- status strip ---------------------------------------------------------------------

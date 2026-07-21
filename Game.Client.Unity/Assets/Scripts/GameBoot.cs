@@ -45,6 +45,7 @@ namespace Game.Client
         [Header("Scene refs (auto-created when empty)")]
         public EntityManager Entities;
         public CameraRig CameraRig;
+        public MoveMarker Marker;
 
         // ----- State the HUD reads -------------------------------------------------------------
         public ClientPhase Phase { get; private set; } = ClientPhase.Offline;
@@ -127,6 +128,12 @@ namespace Game.Client
 
             if (FindAnyObjectByType<GroundGrid>() == null)
                 new GameObject("GroundGrid").AddComponent<GroundGrid>();
+
+            if (Marker == null)
+            {
+                Marker = FindAnyObjectByType<MoveMarker>();
+                if (Marker == null) Marker = new GameObject("MoveMarker").AddComponent<MoveMarker>();
+            }
         }
 
         private async void Start()
@@ -317,6 +324,7 @@ namespace Game.Client
                 // you never did.
                 if (Entities != null) { Entities.Clear(); Entities.SetSelf(Guid.Empty); }
                 if (CameraRig != null) CameraRig.Target = null;   // re-acquire on the next frame
+                if (Marker != null) { Marker.Follow = null; Marker.Hide(); }
 
                 var result = await _net.EnterWorldAsync(characterId);
                 if (!result.Success) { Fail("Enter failed: " + result.Error); return; }
@@ -377,6 +385,7 @@ namespace Game.Client
             {
                 if (Entities != null) { Entities.Clear(); Entities.SetSelf(Guid.Empty); }
                 if (CameraRig != null) CameraRig.Target = null;
+                if (Marker != null) { Marker.Follow = null; Marker.Hide(); }
                 TargetId = null;
                 Stats = null; Progress = null; Gold = 0;
                 Characters = Array.Empty<CharacterSlot>();
@@ -435,7 +444,11 @@ namespace Game.Client
         {
             if (CameraRig == null || CameraRig.Target != null) return;
             var self = Entities.Find(_selfId);
-            if (self != null) CameraRig.Target = self.transform;
+            if (self != null)
+            {
+                CameraRig.Target = self.transform;
+                if (Marker != null) Marker.Follow = self.transform;   // so it clears on arrival
+            }
         }
 
         // ----- Commands ------------------------------------------------------------------------
@@ -443,6 +456,9 @@ namespace Game.Client
         public async void Move(float serverX, float serverY)
         {
             if (Phase != ClientPhase.InWorld) return;
+            // Drop the destination ring here rather than in TouchInput, so EVERY move order shows one
+            // — including any future ones that don't come from a tap.
+            if (Marker != null) Marker.ShowAt(WorldMapper.ToUnity(serverX, serverY));
             try { await _net.MoveAsync(serverX, serverY); }
             catch (Exception ex) { ClientLog.Warn("Move: " + ex.Message); }
         }

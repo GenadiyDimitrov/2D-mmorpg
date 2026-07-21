@@ -18,6 +18,15 @@ namespace Game.Client
     {
         public Guid SelfId;
 
+        /// <summary>Diameter of an entity marker, in Unity units (the world is 0.01 scale, so 240
+        /// units across). Sized down from 1.5 on 2026-07-21 to match how small entities read in the
+        /// WPF view — at 1.5 they crowded the top-down camera.</summary>
+        public const float EntityScale = 0.9f;
+
+        /// <summary>The marker is smaller than a fingertip, so the tap target is deliberately bigger
+        /// than the marker.</summary>
+        public const float TapTargetScale = 2.0f;
+
         /// <summary>Raised when a frame referenced an entity we never saw spawn — the one symptom of a
         /// desynced delta stream. GameBoot answers it with a resync request.</summary>
         public event Action MissingEntity;
@@ -131,17 +140,22 @@ namespace Game.Client
 
         private EntityView Create(EntityDto e)
         {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            // A SPHERE, not a quad: lit by nothing and drawn in a flat colour, a sphere reads as a
+            // clean CIRCLE from any angle — which is what the top-down view wants, and it needs no
+            // texture, no alpha and no transparency sorting to get round edges. The art pass will
+            // replace it with a textured billboard anyway; until then this is the cheapest circle.
+            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             go.name = string.IsNullOrEmpty(e.Name) ? e.Kind.ToString() : e.Name;
             go.transform.SetParent(transform, false);
-            go.transform.localScale = new Vector3(1.5f, 1.5f, 1f);
+            go.transform.localScale = Vector3.one * EntityScale;
             go.transform.position = WorldMapper.ToUnity(e.X, e.Y) + Vector3.up * 0.75f;
 
-            // Quads come with a MeshCollider; swap for a thin BoxCollider so tap-to-target is reliable.
-            var mesh = go.GetComponent<Collider>();
-            if (mesh != null) Destroy(mesh);
+            // Spheres come with a SphereCollider sized to the mesh. Now that the marker is small, that
+            // is a small tap target too — so give it a deliberately generous one. Fingers are ~9mm.
+            var fitted = go.GetComponent<Collider>();
+            if (fitted != null) Destroy(fitted);
             var box = go.AddComponent<BoxCollider>();
-            box.size = new Vector3(1f, 1f, 0.25f);
+            box.size = Vector3.one * (TapTargetScale / EntityScale);
 
             var view = go.AddComponent<EntityView>();
             view.Id = e.Id;

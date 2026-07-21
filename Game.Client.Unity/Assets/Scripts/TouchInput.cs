@@ -15,6 +15,9 @@ namespace Game.Client
         public GameBoot Boot;
         public GameHud Hud;
 
+        /// <summary>How far a finger may travel and still count as a tap rather than a drag.</summary>
+        public float TapSlopPixels = 40f;
+
         private void Awake()
         {
             if (Hud == null) Hud = FindAnyObjectByType<GameHud>();
@@ -28,8 +31,17 @@ namespace Game.Client
             Vector2 screen = default;
             if (Input.touchCount > 0)
             {
+                // A tap is decided on RELEASE, not on press, and only while exactly one finger is
+                // down. Acting on Began made the first finger of a pinch-to-zoom queue a walk before
+                // the second finger ever landed. Requiring the finger not to have travelled far also
+                // stops a drag from being read as a tap.
                 var t = Input.GetTouch(0);
-                if (t.phase == TouchPhase.Began) { tapped = true; screen = t.position; }
+                if (Input.touchCount == 1 && t.phase == TouchPhase.Ended &&
+                    (t.position - t.rawPosition).magnitude < TapSlopPixels)
+                {
+                    tapped = true;
+                    screen = t.position;
+                }
             }
             else if (Input.GetMouseButtonDown(0))
             {

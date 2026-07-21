@@ -25,8 +25,11 @@ everything below it meaningless, so stop and report at the first ✗ rather than
 **The Editor is no longer needed to ship a build.** `Assets/Editor/CommandLineBuild.cs` builds the APK
 headlessly with Unity CLOSED (it must be — the project lock), so Claude can build, `adb install -r`,
 launch, `screencap` and `logcat` without the owner opening Unity. Only the *owner* closing Unity is
-required. Two APKs currently sit in `builds/`: **`L2Clone.apk` is the current one**;
-`L2CloneMmorpg.apk` is an older product name and may install as a SECOND icon — decide which to keep.
+required. `builds/L2Clone.apk` is the one and only APK (the older `L2CloneMmorpg.apk` was deleted
+2026-07-21). There is a single Android package — the URP template default
+`com.UnityTechnologies.com.unity.template.urpblank`, labelled **`Game.Client.Unity`** on the phone —
+so every build installs OVER the last one regardless of the output filename; a second icon is not
+possible until someone changes the bundle id.
 
 ---
 
@@ -61,8 +64,9 @@ us nothing last time.
 - [ ] A duplicate/invalid name shows the server's error message rather than failing silently.
 - [ ] **Enter** puts you in the world; the phase strip changes to `InWorld`.
 - [ ] **`Account: <name>`** is shown under the "Characters" heading.
-- [ ] **Logout** (next to "Create character") returns to the **Sign in** panel, the phase goes
-      `Offline`, and the password field is empty.
+- [x] **Logout** (next to "Create character") returns to the **Sign in** panel, the phase goes
+      `Offline`, and the password field is empty. Verified on device 2026-07-21, including logging
+      back in afterwards.
 - [ ] After a Logout it does **not** silently sign you back in — the reconnect handler's cached
       credentials must have been cleared. Wait ~30s on the login screen to be sure.
 - [ ] Logging in as a **different account** after a Logout shows THAT account's characters, not the
@@ -73,8 +77,9 @@ us nothing last time.
 The client used to subscribe to `"Snapshot"` while the server only sends `"SnapshotDelta"`, so the
 world was **permanently empty**. These items exist to prove that path end to end.
 
-- [ ] 🔴 **Your own entity is there the moment you enter** — the self panel shows name/Lv/HP/MP, NOT
-      `waiting for your entity …`. **This regressed on 2026-07-21** (mobs rendered, you didn't).
+- [x] 🔴 **Your own entity is there the moment you enter** — the self panel shows name/Lv/HP/MP, NOT
+      `waiting for your entity …`. **This regressed on 2026-07-21** (mobs rendered, you didn't) and was
+      **verified fixed on device the same day** (self panel showed `Admin Lv 90`, HP/MP, pos).
       Cause: `EnterWorld` cleared the world *after* awaiting the reply, so the first frame — the only
       one that ever carries your full DTO — was wiped, and a standing player is byte-identical every
       tick so the server never re-sends it. Mobs recovered only because they wander out of view and
@@ -88,8 +93,11 @@ world was **permanently empty**. These items exist to prove that path end to end
 - [ ] The status strip shows **`frames N @ ~10.0/s`** and the dot is **green**. 10/s is the server
       tick reaching the phone.
 - [ ] **`entities` is > 0** and roughly matches what the WPF client sees standing in the same spot.
-- [ ] **You** are a green billboard, with the camera on you.
-- [ ] Mobs are **red**, NPCs **yellow**, other players **cyan**.
+- [~] **You** are a green billboard, with the camera on you. **2026-07-21: everything was MAGENTA** —
+      `Shader.Find("Unlit/Color")` returns null in a URP *player* build, so the primitives kept Unity's
+      missing-shader material. Fixed via `UnlitMaterials.cs` + Always Included Shaders; **re-test.**
+      Nameplate text colours were always right, so only the quads were affected.
+- [~] Mobs are **red**, NPCs **yellow**, other players **cyan**. (Same magenta bug — re-test.)
 - [ ] **Nameplates** float above every entity, with an HP bar under each (NPCs have no bar).
 - [ ] An **aggressive** mob's nameplate ends in `*`.
 - [ ] **Level privacy holds here too** — your own plate/panel shows `Lv`, another player's does not.
@@ -144,8 +152,9 @@ Two IMGUI text fields sharing state fought over focus on mobile, so the console 
       list shows for the same character.
 - [ ] As a **normal player**, an unknown `/command` prints "Unknown command" **locally** — it must NOT
       be broadcast as chat text for the whole zone to read.
-- [ ] As an **admin/moderator** character, `/`-commands reach the server and take effect. The login
-      line in the log ends with `[Admin]` / `[Moderator]`.
+- [x] As an **admin/moderator** character, `/`-commands reach the server and take effect (an admin
+      kicked a player from the phone, 2026-07-21). The login line in the log ends with
+      `[Admin]` / `[Moderator]`.
 - [ ] A non-admin who fakes an admin command still gets refused **by the server** — the client's
       `IsAdmin` is only an optimisation, never the authorisation.
 
@@ -180,7 +189,15 @@ Don't file these; they're scope, not defects. The Unity client is a viewport, no
 - No skill casting at all — basic attack only.
 - No cast bars, damage numbers, or death overlay.
 - Entities are coloured billboards, not models; no animation.
-- The camera is fixed (`CameraRig.Pitch` = 78°, near top-down like the WPF view); no rotate/zoom/pinch.
-  It was briefly 55° for a 2.5D look — **that is a taste call, not a bug**; say which you want.
+- No debug/admin panel like the WPF one.
+- The back button does nothing — no graceful exit ladder.
+- Portrait layout is not supported; the UI is authored for landscape.
+
+**Queued from the 2026-07-21 playtest** (owner's list — scope, being built next): camera pitch
+78° → **90°**, **smaller + round** entity billboards to match WPF, **higher camera or pinch-zoom /
++– buttons**, a **2 rows × 6 skill bar on the right with swipe between pages 1-5** of the server's
+60-slot bar, **inventory + equip**, a **debug menu**, and the **back-button exit ladder**
+(in world → character select → logout → quit). Layout customisation (moving/resizing windows) is
+Roadmap, not next.
 - UI is IMGUI (`OnGUI`), chosen so it needs no Canvas/prefabs/fonts — **it is meant to look plain**.
   A uGUI + TextMeshPro pass belongs with the real art pass.

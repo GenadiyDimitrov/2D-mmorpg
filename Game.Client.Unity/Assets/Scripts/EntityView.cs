@@ -27,8 +27,10 @@ namespace Game.Client
             if (_renderer != null)
             {
                 // Unlit so it reads the same at any camera angle (no scene lighting set up yet).
-                var shader = Shader.Find("Unlit/Color");
-                if (shader != null) _renderer.material = new Material(shader);
+                // Via UnlitMaterials, NOT Shader.Find here — see that class for why the direct call
+                // made every entity magenta on the phone while looking fine in the Editor.
+                var material = UnlitMaterials.Create(color);
+                if (material != null) _renderer.material = material;
             }
             SetColor(color);
             _cam = Camera.main != null ? Camera.main.transform : null;
@@ -55,7 +57,7 @@ namespace Game.Client
         private void Apply()
         {
             if (_renderer == null || _renderer.material == null) return;
-            _renderer.material.color = _dead ? _color * 0.3f : _color;
+            UnlitMaterials.SetColor(_renderer.material, _dead ? _color * 0.3f : _color);
         }
 
         /// <summary>Set the newest server position (ground plane); height is added here.</summary>

@@ -50,13 +50,9 @@ namespace Game.Client
 
             GetComponent<MeshFilter>().mesh = mesh;
 
-            var shader = Shader.Find("Unlit/Color");
             var renderer = GetComponent<MeshRenderer>();
-            if (shader != null)
-            {
-                renderer.material = new Material(shader);
-                renderer.material.color = LineColor;
-            }
+            var material = UnlitMaterials.Create(LineColor);
+            if (material != null) renderer.material = material;
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             renderer.receiveShadows = false;
 
