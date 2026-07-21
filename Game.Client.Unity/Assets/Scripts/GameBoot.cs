@@ -90,6 +90,19 @@ namespace Game.Client
         /// <summary>The bag, as last sent by the server (it pushes the whole thing on any change).</summary>
         public InventoryItemDto[] Inventory { get; private set; } = new InventoryItemDto[0];
 
+        /// <summary>Active buffs and debuffs. The server pushes these once a second while any are
+        /// running, and once more when the last one drops.</summary>
+        public BuffDto[] Buffs { get; private set; } = new BuffDto[0];
+
+        /// <summary>Cancel a buff you no longer want (a movement-speed buff before a stealth approach,
+        /// a mistaken toggle). Debuffs are NOT cancellable — that would defeat the point of them.</summary>
+        public async void RemoveBuff(string buffKey)
+        {
+            if (Phase != ClientPhase.InWorld || string.IsNullOrEmpty(buffKey)) return;
+            try { await _net.RemoveBuffAsync(buffKey); }
+            catch (Exception ex) { ClientLog.Warn("RemoveBuff: " + ex.Message); }
+        }
+
         /// <summary>Unspent skill points, from the stats push.</summary>
         public int SkillPoints => Stats != null ? Stats.SkillPoints : 0;
 
@@ -268,6 +281,7 @@ namespace Game.Client
                 if (p.LeveledUp) ClientLog.Good("Level up! Now level " + p.Level + ".");
             });
             _net.GoldReceived += g => Main(() => Gold = g.Gold);
+            _net.BuffsReceived += b => Main(() => Buffs = b?.Buffs ?? new BuffDto[0]);
             _net.InventoryReceived += i => Main(() =>
                 Inventory = i?.Items ?? new InventoryItemDto[0]);
             _net.LearnedReceived += l => Main(() =>

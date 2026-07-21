@@ -175,6 +175,9 @@ namespace Game.Client
         public Task UsePotionAsync(Guid instanceId) =>
             _connection.SendAsync("UsePotion", instanceId);
 
+        public Task RemoveBuffAsync(string buffKey) =>
+            _connection.SendAsync("RemoveBuff", buffKey);
+
         public Task RemoveItemAsync(Guid instanceId, bool all) =>
             _connection.SendAsync("RemoveItem", instanceId, all);
 

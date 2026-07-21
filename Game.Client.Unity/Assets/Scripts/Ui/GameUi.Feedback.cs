@@ -72,6 +72,8 @@ namespace Game.Client
             _zoneLabel = UiKit.Label(_worldRoot, "", 15f, UiKit.TextDim, TextAlignmentOptions.Left);
             UiKit.Place(UiKit.Rect(_zoneLabel.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(16f, -168f), new Vector2(360f, 22f));
+
+            BuildBuffBar();
         }
 
         /// <summary>
@@ -99,6 +101,94 @@ namespace Game.Client
             RefreshCastBar();
             RefreshZoneLabel();
             RefreshFloaters();
+            RefreshBuffBar();
+        }
+
+        // ----- buff bar ---------------------------------------------------------------------------
+
+        private RectTransform _buffBar;
+        private readonly List<(RectTransform Root, Image Box, TextMeshProUGUI Label, TextMeshProUGUI Time)>
+            _buffSquares = new List<(RectTransform, Image, TextMeshProUGUI, TextMeshProUGUI)>();
+
+        private void BuildBuffBar()
+        {
+            _buffBar = UiKit.Rect(UiKit.Box(_worldRoot, "BuffBar", new Color(0, 0, 0, 0),
+                                            blocksInput: false).gameObject);
+            UiKit.Place(_buffBar, new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(12f, -196f), new Vector2(900f, 52f));
+        }
+
+        /// <summary>
+        /// Buffs as SQUARES with the remaining time under them, laid out left to right — the WPF
+        /// client's shape. Debuffs are tinted red so a poison is not mistaken for a blessing at a
+        /// glance, and a buff blinks under 60s so you have warning before it drops mid-fight.
+        ///
+        /// Tapping a BUFF cancels it; tapping a debuff does nothing, because being able to click away
+        /// a poison would make debuffs pointless.
+        /// </summary>
+        private void RefreshBuffBar()
+        {
+            var buffs = Boot.Buffs ?? new BuffDto[0];
+
+            while (_buffSquares.Count < buffs.Length)
+            {
+                int index = _buffSquares.Count;
+                var box = UiKit.Box(_buffBar, "Buff", UiKit.PanelLight);
+                UiKit.Place(UiKit.Rect(box.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                            new Vector2(index * 54f, 0f), new Vector2(48f, 48f));
+
+                var button = box.gameObject.AddComponent<Button>();
+                button.targetGraphic = box;
+                button.onClick.AddListener(() =>
+                {
+                    var current = Boot.Buffs;
+                    if (index >= current.Length) return;
+                    if (current[index].IsDebuff) return;
+                    Boot.RemoveBuff(current[index].Key);
+                });
+
+                var label = UiKit.Label(box.transform, "", 15f, UiKit.Text, TextAlignmentOptions.Center);
+                UiKit.Place(UiKit.Rect(label.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                            new Vector2(0f, -4f), new Vector2(46f, 22f));
+
+                var time = UiKit.Label(box.transform, "", 12f, UiKit.TextDim, TextAlignmentOptions.Center);
+                UiKit.Place(UiKit.Rect(time.gameObject), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+                            new Vector2(0f, 3f), new Vector2(46f, 16f));
+
+                _buffSquares.Add((UiKit.Rect(box.gameObject), box, label, time));
+            }
+
+            for (int i = 0; i < _buffSquares.Count; i++)
+            {
+                var square = _buffSquares[i];
+                bool used = i < buffs.Length;
+                square.Root.gameObject.SetActive(used);
+                if (!used) continue;
+
+                var buff = buffs[i];
+                square.Label.text = Abbreviations.For(buff.Name) + (buff.Stacks > 1 ? " x" + buff.Stacks : "");
+                square.Time.text = ShortTime(buff.SecondsLeft);
+
+                var tint = buff.IsDebuff ? new Color(0.45f, 0.18f, 0.18f, 0.95f) : UiKit.PanelLight;
+
+                // Under a minute, blink — a buff that expires mid-fight should not be a surprise.
+                if (!buff.IsDebuff && buff.SecondsLeft > 0f && buff.SecondsLeft <= 60f
+                    && Mathf.Repeat(Time.unscaledTime, 1f) < 0.5f)
+                    tint = new Color(0.50f, 0.42f, 0.15f, 0.95f);
+
+                square.Box.color = tint;
+            }
+        }
+
+        /// <summary>Compact durations: "1h02", "12m", "45s". A buff bar with "3600.0 seconds" on it is
+        /// unreadable at a glance, and a glance is all it ever gets.</summary>
+        private static string ShortTime(float seconds)
+        {
+            if (seconds <= 0f) return "";
+            if (seconds >= 3600f) return Mathf.FloorToInt(seconds / 3600f) + "h"
+                                       + Mathf.FloorToInt(seconds % 3600f / 60f).ToString("00");
+            if (seconds >= 60f) return Mathf.FloorToInt(seconds / 60f) + "m";
+            return Mathf.CeilToInt(seconds) + "s";
         }
 
         private void RefreshCastBar()
