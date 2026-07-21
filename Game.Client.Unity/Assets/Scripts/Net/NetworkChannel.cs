@@ -32,6 +32,10 @@ namespace Game.Client
         /// <summary>An ally (or a scroll) offers to bring you back. The player must ACCEPT — reviving
         /// automatically would drop you on top of whatever just killed you.</summary>
         public event Action<ResurrectOffer> ResurrectOfferReceived;
+        /// <summary>The party roster. An EMPTY member array means "you are not in a party" — that is
+        /// how the server says you left or were the last one out.</summary>
+        public event Action<PartyUpdate> PartyReceived;
+        public event Action<PartyInviteDto> PartyInviteReceived;
         public event Action<LearnedSkills> LearnedReceived;
         /// <summary>The SERVER owns the skill bar and pushes it (always alongside Learned). The client
         /// renders what it is sent and only writes back when the PLAYER edits a slot — see
@@ -78,6 +82,8 @@ namespace Game.Client
             _connection.On<GoldUpdate>("Gold", g => GoldReceived?.Invoke(g));
             _connection.On<TargetDetails>("TargetDetails", d => TargetDetailsReceived?.Invoke(d));
             _connection.On<ResurrectOffer>("ResurrectOffer", o => ResurrectOfferReceived?.Invoke(o));
+            _connection.On<PartyUpdate>("Party", p => PartyReceived?.Invoke(p));
+            _connection.On<PartyInviteDto>("PartyInvite", i => PartyInviteReceived?.Invoke(i));
             _connection.On<string>("ForceDisconnect", reason => ForceDisconnected?.Invoke(reason));
             _connection.Closed += ex =>
             {
@@ -178,6 +184,13 @@ namespace Game.Client
 
         public Task UsePotionAsync(Guid instanceId) =>
             _connection.SendAsync("UsePotion", instanceId);
+
+        // ----- party ------------------------------------------------------------------------------
+        public Task PartyInviteAsync(Guid targetId) => _connection.SendAsync("PartyInvite", targetId);
+        public Task PartyRespondAsync(bool accept) => _connection.SendAsync("PartyRespond", accept);
+        public Task PartyLeaveAsync() => _connection.SendAsync("PartyLeave");
+        public Task PartyKickAsync(Guid targetId) => _connection.SendAsync("PartyKick", targetId);
+        public Task PartySetLootModeAsync(LootMode mode) => _connection.SendAsync("PartySetLootMode", mode);
 
         // ----- NPC interaction --------------------------------------------------------------------
         public Task TalkToNpcAsync(Guid npcEntityId) =>

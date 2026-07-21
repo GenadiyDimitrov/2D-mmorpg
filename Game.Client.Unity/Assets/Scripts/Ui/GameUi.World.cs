@@ -170,6 +170,7 @@ namespace Game.Client
             BuildSettingsWindow();
             BuildQuestWindow();
             BuildDialogWindow();
+            BuildPartyWindow();
             BuildSlotMenu();
         }
 
@@ -515,6 +516,7 @@ namespace Game.Client
             RefreshTargetWindow();
             RefreshQuestWindow();
             RefreshDialogWindow();
+            RefreshPartyWindow();
             RefreshNameplates();
 
             RefreshFeedback();

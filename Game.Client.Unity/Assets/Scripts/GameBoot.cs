@@ -90,6 +90,45 @@ namespace Game.Client
         /// <summary>The bag, as last sent by the server (it pushes the whole thing on any change).</summary>
         public InventoryItemDto[] Inventory { get; private set; } = new InventoryItemDto[0];
 
+        /// <summary>Party roster (empty when you are not in one) and the agreed loot rule.</summary>
+        public PartyMemberDto[] Party { get; private set; } = new PartyMemberDto[0];
+        public LootMode PartyLoot { get; private set; } = LootMode.Random;
+
+        /// <summary>A pending party invitation, or null.</summary>
+        public PartyInviteDto PendingInvite { get; private set; }
+
+        public async void PartyInvite(Guid targetId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.PartyInviteAsync(targetId); }
+            catch (Exception ex) { ClientLog.Warn("Invite: " + ex.Message); }
+        }
+
+        public async void AnswerPartyInvite(bool accept)
+        {
+            PendingInvite = null;
+            try { await _net.PartyRespondAsync(accept); }
+            catch (Exception ex) { ClientLog.Warn("Party: " + ex.Message); }
+        }
+
+        public async void PartyLeave()
+        {
+            try { await _net.PartyLeaveAsync(); }
+            catch (Exception ex) { ClientLog.Warn("Party: " + ex.Message); }
+        }
+
+        public async void PartyKick(Guid targetId)
+        {
+            try { await _net.PartyKickAsync(targetId); }
+            catch (Exception ex) { ClientLog.Warn("Party: " + ex.Message); }
+        }
+
+        public async void PartySetLoot(LootMode mode)
+        {
+            try { await _net.PartySetLootModeAsync(mode); }
+            catch (Exception ex) { ClientLog.Warn("Party: " + ex.Message); }
+        }
+
         /// <summary>The open NPC conversation, or null. Everything an NPC offers — quests, class
         /// change, shop, teleport, buffs, skill reset — arrives in this ONE push.</summary>
         public NpcDialog Dialog { get; private set; }
@@ -368,6 +407,18 @@ namespace Game.Client
             _net.TargetDetailsReceived += d => Main(() => Details = d);
             _net.QuestLogReceived += q => Main(() => Quests = q);
             _net.DialogReceived += d => Main(() => Dialog = d);
+            _net.PartyReceived += p => Main(() =>
+            {
+                Party = p?.Members ?? new PartyMemberDto[0];
+                if (p != null) PartyLoot = p.LootMode;
+            });
+            _net.PartyInviteReceived += i => Main(() =>
+            {
+                PendingInvite = i;
+                // The loot rule is named in the invite ON PURPOSE: joining a party silently changes
+                // who gets the drops, and that is not something to discover after the fact.
+                ClientLog.Good(i.InviterName + " invites you to a party (loot: " + i.LootMode + ").");
+            });
             _net.ResurrectOfferReceived += o => Main(() =>
             {
                 PendingResurrect = o;
