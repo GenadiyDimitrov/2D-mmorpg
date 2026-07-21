@@ -154,6 +154,14 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>Ask for a full re-send of everything visible (see <see cref="ResyncCmd"/>). Cheap and
+    /// idempotent: it only forgets the per-connection diff state, so the next tick sends spawns.</summary>
+    public Task RequestResync()
+    {
+        _world.Commands.Enqueue(new ResyncCmd(Context.ConnectionId));
+        return Task.CompletedTask;
+    }
+
     // ----- Gameplay (unchanged: enqueue commands) ----------------------------
 
     public Task Move(MoveCommand command)

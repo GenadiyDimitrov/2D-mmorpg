@@ -276,6 +276,7 @@ namespace Game.Client
             if (_creating) { DrawCreateForm(); GUILayout.EndArea(); return; }
 
             GUILayout.Label("Characters", _title);
+            GUILayout.Label("Account: " + Boot.Username, _small);
 
             if (Boot.Characters.Length == 0)
                 GUILayout.Label("No characters on this account yet.", _small);
@@ -294,11 +295,19 @@ namespace Game.Client
             }
 
             GUILayout.Space(8);
+            GUILayout.BeginHorizontal();
             if (GUILayout.Button("Create character", _button, GUILayout.Height(32)))
             {
                 _creating = true;
                 Boot.LastError = null;
             }
+            GUILayout.Space(6);
+            if (GUILayout.Button("Logout", _button, GUILayout.Width(84), GUILayout.Height(32)))
+            {
+                _pass = "";           // don't leave the previous account's password sitting in the form
+                Boot.Logout();
+            }
+            GUILayout.EndHorizontal();
 
             GUILayout.Space(4);
             GUILayout.Label(Boot.IsBusy ? "Working …" : Boot.StatusMessage,
@@ -349,7 +358,42 @@ namespace Game.Client
         {
             DrawSelfPanel();
             DrawTargetPanel();
+            DrawCommandBar();
             DrawActionBar();
+        }
+
+        /// <summary>Always-visible chat + command line, so commands don't require opening the log.
+        /// Admins get a hint that slash commands work; everything routes through Boot.Say.</summary>
+        private void DrawCommandBar()
+        {
+            float bh = 26f;
+            float y = _vh - 34f - 6f - bh - 4f;   // sits just above the action bar
+            var r = new Rect(6, y, _vw - 12, bh);
+            r = LiftAboveKeyboard(r);
+            Block(r);
+
+            GUI.SetNextControlName("cmdline");
+            _chat = GUI.TextField(new Rect(r.x, r.y, r.width - 116, bh), _chat, _field);
+
+            string hint = Boot.IsAdmin ? "/help, /god…" : "say / !world / /w";
+            if (string.IsNullOrEmpty(_chat))
+                GUI.Label(new Rect(r.x + 6, r.y + 4, r.width - 130, bh), hint, _small);
+
+            bool enter = Event.current.type == EventType.KeyDown
+                         && (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter)
+                         && GUI.GetNameOfFocusedControl() == "cmdline";
+
+            if (GUI.Button(new Rect(r.x + r.width - 110, r.y, 52, bh), "Send", _button) || enter)
+                SubmitChat();
+            if (GUI.Button(new Rect(r.x + r.width - 54, r.y, 54, bh), "Log", _button))
+                _showConsole = !_showConsole;
+        }
+
+        private void SubmitChat()
+        {
+            if (!string.IsNullOrWhiteSpace(_chat)) Boot.Say(_chat);
+            _chat = "";
+            GUI.FocusControl(null);   // drop focus so movement taps aren't eaten and the keyboard closes
         }
 
         private void DrawSelfPanel()
@@ -485,13 +529,15 @@ namespace Game.Client
 
         private void DrawConsole()
         {
+            // A pure LOG VIEWER now — text input lives in the always-on command bar, so there's only
+            // ever one focused field (two IMGUI text fields sharing state fight over focus on mobile).
             float h = Mathf.Min(200f, _vh * 0.5f);
-            var r = new Rect(6, _vh - h - 46, _vw - 12, h);
-            r = LiftAboveKeyboard(r);   // the chat field sits at the bottom of this panel — keep it visible
+            float bottom = Boot.Phase == ClientPhase.InWorld ? 74f : 30f;   // clear the command/action bars
+            var r = new Rect(6, _vh - h - bottom, _vw - 12, h);
             Block(r);
             GUI.Box(r, GUIContent.none, _panel);
 
-            var inner = new Rect(r.x + 6, r.y + 6, r.width - 12, r.height - 42);
+            var inner = new Rect(r.x + 6, r.y + 6, r.width - 12, r.height - 34);
             var lines = ClientLog.Lines;
 
             // Auto-scroll to the newest line, but only when a new line actually arrived — otherwise
@@ -512,14 +558,9 @@ namespace Game.Client
             }
             GUI.EndScrollView();
 
-            float by = r.y + r.height - 32;
-            _chat = GUI.TextField(new Rect(r.x + 6, by, r.width - 150, 26), _chat, _field);
-            if (GUI.Button(new Rect(r.x + r.width - 140, by, 64, 26), "Say", _button))
-            {
-                Boot.Say(_chat);
-                _chat = "";
-            }
-            if (GUI.Button(new Rect(r.x + r.width - 72, by, 66, 26), "Clear", _button)) ClientLog.Clear();
+            float by = r.y + r.height - 28;
+            if (GUI.Button(new Rect(r.x + r.width - 128, by, 60, 24), "Clear", _button)) ClientLog.Clear();
+            if (GUI.Button(new Rect(r.x + r.width - 64, by, 58, 24), "Close", _button)) _showConsole = false;
         }
     }
 }

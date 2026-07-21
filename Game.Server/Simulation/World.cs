@@ -291,6 +291,12 @@ public record BufferActionCmd(string ConnectionId, Guid NpcEntityId, string Acti
 /// the connection. Distinct from <see cref="LeaveCommand"/>, which is the DISCONNECT path (link-dead
 /// grace / offline farming) — a deliberate exit must actually remove the character from the world.</summary>
 public record LeaveWorldCmd(string ConnectionId) : IGameCommand;
+
+/// <summary>Client -> server: "forget what you think I have, send me everything again." The delta feed
+/// has no other recovery path — a client that misses one spawn frame never hears about that entity
+/// again (a lean update it can't draw, or nothing at all if the entity is standing still), so a client
+/// that notices it is missing something must be able to ask for a clean re-send.</summary>
+public record ResyncCmd(string ConnectionId) : IGameCommand;
 public record ToggleAutoHuntCmd(string ConnectionId, bool Enabled) : IGameCommand;
 public record LogoutCmd(string ConnectionId) : IGameCommand;
 public record StartOfflineFarmCmd(string ConnectionId) : IGameCommand;

@@ -14,28 +14,28 @@ everything below it meaningless, so stop and report at the first ✗ rather than
 
 ## ⚙ First-run setup (do this once per PC reboot / fresh checkout)
 
-- [ ] **Unity was RESTARTED after this batch.** `ProjectSettings/ProjectSettings.asset` changed
-      `activeInputHandler` from `1` (New Input System only) to `2` (Both). Unity only reads that at
-      startup. Until you restart, legacy `Input.*` still throws and **tapping does nothing**.
+- [x] **`activeInputHandler` = `2` (Both)** — was `1` (New Input System only), which made legacy
+      `Input.*` throw every frame so **tapping did nothing**. Baked into the build since `5d35e80`.
 - [ ] Server is running (`dotnet run --project Game.Server`), listening on `http://localhost:5238`.
 - [ ] **Cabled phone:** `adb reverse tcp:5238 tcp:5238` has been re-run **since the last reboot/unplug**
       (the tunnel does not survive either), and the URL is `http://127.0.0.1:5238/game`.
       **Same Wi-Fi instead:** use the PC's LAN IP and make sure the firewall allows 5238.
 - [ ] adb: `C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platform-tools\adb.exe`
 
+**The Editor is no longer needed to ship a build.** `Assets/Editor/CommandLineBuild.cs` builds the APK
+headlessly with Unity CLOSED (it must be — the project lock), so Claude can build, `adb install -r`,
+launch, `screencap` and `logcat` without the owner opening Unity. Only the *owner* closing Unity is
+required. Two APKs currently sit in `builds/`: **`L2Clone.apk` is the current one**;
+`L2CloneMmorpg.apk` is an older product name and may install as a SECOND icon — decide which to keep.
+
 ---
 
-## 1. It starts and tells you something
+## 1. ✅ It starts and tells you something — VERIFIED ON DEVICE 2026-07-21
 
-The whole point of this batch: **before it, a failure was indistinguishable from a black screen.**
-
-- [ ] The app launches and the **top status strip** is visible immediately: a coloured dot, the phase
-      (`Offline`), `no frames yet`, `entities 0`, and the version `v0.27.0` on the right.
-- [ ] The **Sign in** panel is on screen with Server / Username / Password fields.
-- [ ] Text is **finger-sized**, not hairline — the UI scales to the screen's short side.
-- [ ] Tapping a field opens the Android **soft keyboard** and typing works.
-- [ ] The **Log** button (top right) opens a console panel; it already contains
-      `Client v0.27.0 ready. Server: …`.
+Status strip, Sign in panel, finger-sized scaling, soft keyboard, and the Log console all confirmed by
+screenshot on the S23 Ultra. The blocker that hid all of it was **IL2CPP stripping** — see
+`Assets/link.xml`, and **do not delete it**: stripping breaks the phone build ONLY, so desktop testing
+will never catch its return.
 
 ## 2. Connection — honest failure first
 
@@ -60,12 +60,31 @@ us nothing last time.
       (Fighter → Mage). Create returns to the list with the new character on it.
 - [ ] A duplicate/invalid name shows the server's error message rather than failing silently.
 - [ ] **Enter** puts you in the world; the phase strip changes to `InWorld`.
+- [ ] **`Account: <name>`** is shown under the "Characters" heading.
+- [ ] **Logout** (next to "Create character") returns to the **Sign in** panel, the phase goes
+      `Offline`, and the password field is empty.
+- [ ] After a Logout it does **not** silently sign you back in — the reconnect handler's cached
+      credentials must have been cleared. Wait ~30s on the login screen to be sure.
+- [ ] Logging in as a **different account** after a Logout shows THAT account's characters, not the
+      previous one's (the connection is dropped on logout, so no server session can leak across).
 
 ## 4. The world renders — this is what was broken
 
 The client used to subscribe to `"Snapshot"` while the server only sends `"SnapshotDelta"`, so the
 world was **permanently empty**. These items exist to prove that path end to end.
 
+- [ ] 🔴 **Your own entity is there the moment you enter** — the self panel shows name/Lv/HP/MP, NOT
+      `waiting for your entity …`. **This regressed on 2026-07-21** (mobs rendered, you didn't).
+      Cause: `EnterWorld` cleared the world *after* awaiting the reply, so the first frame — the only
+      one that ever carries your full DTO — was wiped, and a standing player is byte-identical every
+      tick so the server never re-sends it. Mobs recovered only because they wander out of view and
+      respawn. Fixed by clearing *before* the request + `EntityManager.SetSelf`.
+- [ ] **Resync safety net:** if the self panel ever does stall, the log must show
+      *"World state out of sync — asking the server to re-send it"* and the world must repopulate
+      within ~2s. **Seeing that line is itself a finding** — it means the race still happens and only
+      the net is saving it. Report it rather than shrugging at a working screen.
+- [ ] Enter → **Leave** → Enter again, three times in a row: the self entity appears every time
+      (this is the timing race, so a single pass proves little).
 - [ ] The status strip shows **`frames N @ ~10.0/s`** and the dot is **green**. 10/s is the server
       tick reaching the phone.
 - [ ] **`entities` is > 0** and roughly matches what the WPF client sees standing in the same spot.
@@ -107,7 +126,38 @@ world was **permanently empty**. These items exist to prove that path end to end
 - [ ] Tapping a **UI panel or button never also moves you** — most obviously: tap Login, then check you
       didn't queue a walk; in world, tap the action bar and confirm you stay put.
 - [ ] Tapping the console's scroll area scrolls it instead of walking.
-- [ ] Chat: type in the console's field, tap **Say**, and the line reaches the **WPF client**.
+- [ ] After tapping **Send**, focus is dropped and the soft keyboard closes — the next tap on the
+      ground must WALK, not get eaten by the text field.
+
+## 9. Command bar, chat and slash commands
+
+The chat field moved OUT of the log console into an always-visible command bar above the action bar.
+Two IMGUI text fields sharing state fought over focus on mobile, so the console is now a pure viewer.
+
+- [ ] The **command bar is visible in world** without opening the log, with a greyed hint in it.
+- [ ] The soft keyboard **lifts the command bar** instead of covering it.
+- [ ] Plain text → **local chat**, and the line reaches the **WPF client** standing nearby.
+- [ ] **`!message`** → world chat (reaches a WPF client anywhere on the map).
+- [ ] **`/w Name message`** → whisper; the target's WPF client shows it, nobody else does.
+- [ ] **`/w Name`** with no message prints the usage hint locally and sends nothing.
+- [ ] **`/fadd Name`**, **`/flist`**, **`/frem Name`** work and match what the WPF client's friend
+      list shows for the same character.
+- [ ] As a **normal player**, an unknown `/command` prints "Unknown command" **locally** — it must NOT
+      be broadcast as chat text for the whole zone to read.
+- [ ] As an **admin/moderator** character, `/`-commands reach the server and take effect. The login
+      line in the log ends with `[Admin]` / `[Moderator]`.
+- [ ] A non-admin who fakes an admin command still gets refused **by the server** — the client's
+      `IsAdmin` is only an optimisation, never the authorisation.
+
+## 10. Reconnect and logout
+
+- [ ] Pull the USB cable / drop Wi-Fi briefly while in world → the log shows
+      `Connection dropped — reconnecting …`, then `Reconnected — restoring session …` → `Session restored.`
+      and you are back **on the same character, in the world** — not on an empty character screen.
+      (SignalR's auto-reconnect gives a NEW connection id, and the server's session is keyed to the
+      connection, so a reconnect leaves you connected but NOT authenticated.)
+- [ ] After a restore, movement/attack still work — prove the server really re-associated you.
+- [ ] **Logout from character select** (see §3) then log in again in the same app session.
 
 ## 8. Resilience
 
@@ -130,6 +180,7 @@ Don't file these; they're scope, not defects. The Unity client is a viewport, no
 - No skill casting at all — basic attack only.
 - No cast bars, damage numbers, or death overlay.
 - Entities are coloured billboards, not models; no animation.
-- The camera is fixed overhead (`CameraRig.Pitch` ≈ 78°); no rotate/zoom/pinch.
+- The camera is fixed (`CameraRig.Pitch` = 78°, near top-down like the WPF view); no rotate/zoom/pinch.
+  It was briefly 55° for a 2.5D look — **that is a taste call, not a bug**; say which you want.
 - UI is IMGUI (`OnGUI`), chosen so it needs no Canvas/prefabs/fonts — **it is meant to look plain**.
   A uGUI + TextMeshPro pass belongs with the real art pass.

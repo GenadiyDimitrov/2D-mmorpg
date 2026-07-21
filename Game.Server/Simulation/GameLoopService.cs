@@ -180,6 +180,7 @@ public class GameLoopService : BackgroundService
                 case SetAutoHuntConfigCmd c: HandleSetAutoHuntConfig(c); break;
                 case SetSkillBarCmd c: HandleSetSkillBar(c); break;
                 case LeaveWorldCmd c: HandleLeaveWorld(c); break;
+                case ResyncCmd c: _lastSentByConn.Remove(c.ConnectionId); break;
                 case ToggleAutoHuntCmd c: HandleToggleAutoHunt(c); break;
                 case LogoutCmd c: HandleLogout(c); break;
                 case StartOfflineFarmCmd c: HandleStartOfflineFarm(c); break;

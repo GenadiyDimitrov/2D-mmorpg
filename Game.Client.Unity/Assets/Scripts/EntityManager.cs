@@ -18,6 +18,10 @@ namespace Game.Client
     {
         public Guid SelfId;
 
+        /// <summary>Raised when a frame referenced an entity we never saw spawn — the one symptom of a
+        /// desynced delta stream. GameBoot answers it with a resync request.</summary>
+        public event Action MissingEntity;
+
         /// <summary>Last full state per entity — spawns write it, lean updates patch the dynamic
         /// fields. This is what the HUD and nameplates read.</summary>
         public readonly Dictionary<Guid, EntityDto> States = new Dictionary<Guid, EntityDto>();
@@ -41,9 +45,11 @@ namespace Game.Client
             if (delta.Updates != null)
                 foreach (var lean in delta.Updates)
                 {
-                    // A lean update for an entity we never saw spawn can't be drawn (no name/kind);
-                    // ignore it rather than inventing a placeholder that would render as a stray box.
-                    if (!States.TryGetValue(lean.Id, out var prev)) continue;
+                    // A lean update for an entity we never saw spawn can't be drawn (no name/kind).
+                    // Don't invent a placeholder — but DO shout, because on its own this entity would
+                    // stay invisible forever: the server believes we already have it and will never
+                    // send the full DTO again.
+                    if (!States.TryGetValue(lean.Id, out var prev)) { MissingEntity?.Invoke(); continue; }
                     Upsert(prev with
                     {
                         X = lean.X,
@@ -72,6 +78,20 @@ namespace Game.Client
             var stale = new List<Guid>();
             foreach (var kv in _views) if (!seen.Contains(kv.Key)) stale.Add(kv.Key);
             foreach (var id in stale) Remove(id);
+        }
+
+        /// <summary>Name which entity is "you". EnterWorld only learns the id AFTER the first frames can
+        /// already have arrived, so anything already on screen has to be re-tinted rather than assumed
+        /// to spawn again — a stationary player is byte-identical every tick and is never re-sent.</summary>
+        public void SetSelf(Guid id)
+        {
+            SelfId = id;
+            foreach (var kv in _views)
+            {
+                if (kv.Value == null) continue;
+                kv.Value.IsSelf = kv.Key == id;
+                if (States.TryGetValue(kv.Key, out var dto)) kv.Value.SetColor(ColorFor(dto));
+            }
         }
 
         public void Clear()

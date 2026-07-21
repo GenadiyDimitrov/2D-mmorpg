@@ -34,6 +34,12 @@ namespace Game.Client
         public event Action<QuestLog> QuestLogReceived;
         public event Action<string> Disconnected;
         public event Action<string> ForceDisconnected;
+        // WithAutomaticReconnect silently gives us a NEW connection id on a transport blip, and the
+        // server drops our session on the old one — so after a reconnect we are connected but NOT
+        // authenticated. GameBoot listens here to re-login + re-enter. Without this, a phone-link
+        // hiccup logs you out invisibly (empty character list, "not logged in" on any action).
+        public event Action Reconnecting;
+        public event Action Reconnected;
 
         public bool IsConnected => _connection?.State == HubConnectionState.Connected;
 
@@ -64,6 +70,8 @@ namespace Game.Client
                 Disconnected?.Invoke(ex?.Message ?? "Connection closed.");
                 return Task.CompletedTask;
             };
+            _connection.Reconnecting += _ => { Reconnecting?.Invoke(); return Task.CompletedTask; };
+            _connection.Reconnected += _ => { Reconnected?.Invoke(); return Task.CompletedTask; };
 
             await _connection.StartAsync();
         }
@@ -103,8 +111,20 @@ namespace Game.Client
         public Task LeaveWorldAsync() =>
             _connection.SendAsync("LeaveWorld");
 
-        public Task ChatAsync(string text, ChatChannel channel = ChatChannel.Local) =>
-            _connection.SendAsync("Chat", text, channel, null);
+        public Task RequestResyncAsync() =>
+            _connection.SendAsync("RequestResync");
+
+        public Task LogoutAsync() =>
+            _connection.SendAsync("Logout");
+
+        public Task ChatAsync(string text, ChatChannel channel = ChatChannel.Local, string whisperTarget = null) =>
+            _connection.SendAsync("Chat", text, channel, whisperTarget);
+
+        public Task AdminCommandAsync(string command, string argument) =>
+            _connection.SendAsync("AdminCommand", command, argument);
+
+        public Task FriendCommandAsync(string action, string name) =>
+            _connection.SendAsync("FriendCommand", action, name);
 
         public Task RespawnAsync() =>
             _connection.SendAsync("Respawn");

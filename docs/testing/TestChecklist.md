@@ -87,6 +87,16 @@ self-jail, jail movement, mutual friends → PLAYTEST-7.
 ## ✅ NETWORK: DELTA SNAPSHOTS (2026-07-17) — VERIFIED 2026-07-20
 Entities spawn/move/despawn cleanly, own vitals + death fine, walk-away/walk-back clean.
 
+## NETWORK: RESYNC (2026-07-21) — server side of a Unity client bug, but it affects BOTH clients
+New hub method **`RequestResync`** → `ResyncCmd` → drops that connection's entry in `_lastSentByConn`,
+so the next tick re-sends every visible entity as a full spawn. Purely additive — no protocol break,
+no `GameVersion` bump. It exists because the delta feed previously had **no recovery path at all**: a
+client that missed one spawn frame never heard about that entity again (a lean update it can't draw,
+or literally nothing if the entity is standing still).
+- [ ] WPF is unaffected — entities still spawn/move/despawn normally after this change.
+- [ ] Nothing in the server log complains when a Unity client asks for a resync mid-session.
+- [ ] Two clients on one account/zone: one resyncing must not disturb the other's stream.
+
 ## ✅ PLAYTEST-6 BATCH (2026-07-17) — VERIFIED 2026-07-20
 Res prompt, square buff bar + short times + ≤60s blink, grade-penalty rows, skill emoji icons, party-window
 debuffs, player/mob expand split, aggro `*`, instant Ultimate Return, bag `[E]` quick-equip, 5-row movable
