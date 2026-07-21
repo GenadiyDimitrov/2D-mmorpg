@@ -181,6 +181,36 @@ Two IMGUI text fields sharing state fought over focus on mobile, so the console 
 
 ---
 
+## 11. The uGUI client (0.28.x) — NOT YET TESTED
+
+The UI was rebuilt on uGUI + TextMeshPro on 2026-07-21. Test in this order; the first two decide
+whether anything below them means anything.
+
+- [ ] **Text renders at all.** If labels are blank, TMP's essential resources are missing and nothing
+      else matters (`docs/unity/EditorSetup.md` step 1).
+- [ ] **Buttons respond**, and tapping a panel does NOT also walk the character.
+- [ ] Login is prefilled **admin/admin**; app info and the status strip show the SAME version the
+      server prints.
+- [ ] **Skills window** — Known/Learn/Actions tabs; learn with SP; "To bar" then tap a slot; the skill
+      sticks across a relog (the server owns the bar).
+- [ ] Passives can **not** be placed on the bar.
+- [ ] **Hold a slot** → Move / Remove / Auto. Move + tap another slot swaps them. Auto shows a green
+      frame and only appears for castable skills.
+- [ ] **Cast bar** appears; tapping it cancels; the **X on the casting slot** cancels; **back** cancels.
+      A DOUBLE TAP on a skill must not start-and-cancel it (0.35s grace).
+- [ ] Tapping the ground mid-cast says "can't move while casting" and shows **no** marker.
+- [ ] **Move marker** is small, appears where you tapped, and clears on arrival, on attack, on a cast
+      and on sitting.
+- [ ] **Name colours**: you green; players white / purple (flagged) / red (PK); mobs by level gap
+      (red ≥9 above → grey trivial); NPCs yellow. Nameplate + HP bar sit ABOVE the marker.
+- [ ] **Zone discs** on the ground and the zone readout under the self panel.
+- [ ] **Floating damage** — crits gold and bigger, incoming red, misses shown.
+- [ ] **NPCs cannot be damaged** by attack OR by skill.
+- [ ] **Auto-hunt** actually fights (it needs at least one Auto-marked skill or basic attack).
+- [ ] **Bag** — equip/unequip, Use on consumables.
+- [ ] **Windows drag** by their title bar and stay on screen; **back** closes them newest-first, then
+      offers to quit; quitting leaves the world and logs out before closing.
+
 ## Known gaps (NOT bugs — not built yet in the Unity client)
 
 Don't file these; they're scope, not defects. The Unity client is a viewport, not the WPF harness.
