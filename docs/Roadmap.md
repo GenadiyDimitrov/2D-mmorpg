@@ -502,6 +502,30 @@ changes and new features that came out of the play session:
 
 ## NEXT (clear, mostly self-contained — can do without owner input)
 
+- [ ] **Equipment presets A / B / C** (owner, 2026-07-21). Three saved loadouts per character. You
+  save the CURRENT equipment into a slot from the equipment/inventory window ("Save as A"), and the
+  bar gets `preset-a` / `preset-b` / `preset-c` buttons that swap to it in one press: unequip what is
+  worn, equip the preset's items from the bag. The case that motivates it is a buffer flipping
+  between **light armour + 2H sword** and **robe + staff** — today that is a dozen taps mid-fight.
+
+  Design notes worth settling BEFORE building:
+  - **Bar tokens, not a new bar concept.** `preset:a` slots in beside the existing `action:` and
+    `item:` tokens, so the skill bar, its persistence and the assign/clear UI all work unchanged.
+    Only the client's slot dispatcher learns a new prefix. ([[skill-bar-and-actions]])
+  - **Server-owned and persisted**, like the bar itself. Equipment is server state; a client-side
+    preset would desync the moment anything else moved an item.
+  - **Store instance ids, not def ids** — you want *that* +10 sword, not any sword. Which means the
+    swap must degrade gracefully: an item that was sold, traded, destroyed or is on another subclass
+    is simply skipped, and the player is told which slots could not be filled rather than the whole
+    swap failing.
+  - **The server still refuses illegal equips** (grade penalty, level and class requirements), so a
+    preset saved at 80 and used on a level-20 subclass fills only what it legally can. That is a
+    partial result to REPORT, not an error.
+  - **Interaction with subclass swap**, which already unequips everything: presets are the natural
+    way to re-dress afterwards, so they should be per-character and usable across classes.
+  - Consider a cooldown or a combat gate — instant full re-gearing mid-fight is a balance decision,
+    not just a convenience. Ask the owner before assuming either way.
+
 - [x] **"Reset skills" NPC (stat-swap re-pick)** — BUILT. `NpcRole.SkillReset` + `ForgetSkillCmd`;
   **Mindwright Sela** in Brackenford un-learns any skill with an `ExclusiveGroup` (today: the
   level-40 stat swaps), freeing its group to commit again. Removing is FREE; the gold spent is NOT
