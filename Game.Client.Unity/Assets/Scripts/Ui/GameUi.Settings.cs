@@ -21,6 +21,9 @@ namespace Game.Client
         private RectTransform _settingsPanel;
 
         private const string PrefPitch      = "cam.pitch";
+        private const string PrefYaw        = "cam.yaw";
+        private const string PrefOrtho      = "cam.ortho";
+        private const string PrefOrthoSize  = "cam.orthoSize";
         private const string PrefEntity     = "ui.entityScale";
         private const string PrefPlate      = "ui.nameplateHeight";
         private const string PrefUiScale    = "ui.referenceHeight";
@@ -41,14 +44,20 @@ namespace Game.Client
             _showDamageNumbers = PlayerPrefs.GetInt(PrefDamage, 1) == 1;
 
             if (Boot != null && Boot.CameraRig != null)
-                Boot.CameraRig.Pitch = PlayerPrefs.GetFloat(PrefPitch, Boot.CameraRig.Pitch);
+            {
+                var rig = Boot.CameraRig;
+                rig.Pitch = PlayerPrefs.GetFloat(PrefPitch, rig.Pitch);
+                rig.Yaw = PlayerPrefs.GetFloat(PrefYaw, rig.Yaw);
+                rig.Orthographic = PlayerPrefs.GetInt(PrefOrtho, 0) == 1;
+                rig.OrthoSize = PlayerPrefs.GetFloat(PrefOrthoSize, rig.OrthoSize);
+            }
         }
 
         private void BuildSettingsWindow()
         {
             _settingsPanel = UiKit.PanelBox(_worldRoot, "Settings");
             UiKit.Place(_settingsPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(640f, 430f));
+                        Vector2.zero, new Vector2(640f, 560f));   // grown for the camera rows
             var inner = _settingsPanel.GetChild(0);
             float chrome = UiKit.WindowChrome(_settingsPanel, "Settings", () => CloseWindow(_settingsPanel));
 
@@ -66,6 +75,23 @@ namespace Game.Client
                 {
                     if (Boot.CameraRig != null) Boot.CameraRig.Distance = v;
                     // The rig owns its own persistence for distance (pinch writes it too).
+                }));
+
+            // Yaw exists on the rig and was hardcoded to 0. As a SLIDER rather than a twist gesture:
+            // a two-finger twist is hard to tell from pinch, and until the world has occluders there
+            // is nothing to rotate around — this is enough to judge whether it is worth a gesture.
+            Row(inner, ref y, UiKit.SliderRow(inner, "Camera rotation", 0f, 360f,
+                Boot.CameraRig != null ? Boot.CameraRig.Yaw : 0f, "0", v =>
+                {
+                    if (Boot.CameraRig != null) Boot.CameraRig.Yaw = v;
+                    PlayerPrefs.SetFloat(PrefYaw, v);
+                }));
+
+            Row(inner, ref y, UiKit.SliderRow(inner, "Ortho zoom", 6f, 60f,
+                Boot.CameraRig != null ? Boot.CameraRig.OrthoSize : 22f, "0", v =>
+                {
+                    if (Boot.CameraRig != null) Boot.CameraRig.OrthoSize = v;
+                    PlayerPrefs.SetFloat(PrefOrthoSize, v);
                 }));
 
             Row(inner, ref y, UiKit.SliderRow(inner, "Entity size", 0.3f, 3f,
@@ -88,6 +114,18 @@ namespace Game.Client
             // is better than silently doing half of it.
             Row(inner, ref y, UiKit.SliderRow(inner, "UI size (restart)", 480f, 1100f,
                 UiKit.Reference.y, "0", v => PlayerPrefs.SetFloat(PrefUiScale, v)));
+
+            var projection = UiKit.TextButton(inner, "", () =>
+            {
+                if (Boot.CameraRig == null) return;
+                Boot.CameraRig.Orthographic = !Boot.CameraRig.Orthographic;
+                PlayerPrefs.SetInt(PrefOrtho, Boot.CameraRig.Orthographic ? 1 : 0);
+                RefreshSettingsLabels();
+            }, 15f);
+            UiKit.Place(UiKit.Rect(projection.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(18f, y), new Vector2(260f, 38f));
+            _projectionToggle = projection;
+            y -= 48f;
 
             var damage = UiKit.TextButton(inner, "", () =>
             {
@@ -117,7 +155,8 @@ namespace Game.Client
 
             var reset = UiKit.TextButton(inner, "Reset to defaults", () =>
             {
-                foreach (var key in new[] { PrefPitch, PrefEntity, PrefPlate, PrefUiScale, PrefDamage, PrefZones })
+                foreach (var key in new[] { PrefPitch, PrefYaw, PrefOrtho, PrefOrthoSize,
+                                            PrefEntity, PrefPlate, PrefUiScale, PrefDamage, PrefZones })
                     PlayerPrefs.DeleteKey(key);
                 PlayerPrefs.Save();
                 ClientLog.Info("Look settings reset — restart the app to apply.");
@@ -129,10 +168,13 @@ namespace Game.Client
             _settingsPanel.gameObject.SetActive(false);
         }
 
-        private Button _damageToggle, _zoneToggle;
+        private Button _damageToggle, _zoneToggle, _projectionToggle;
 
         private void RefreshSettingsLabels()
         {
+            bool ortho = Boot.CameraRig != null && Boot.CameraRig.Orthographic;
+            UiKit.SetButtonText(_projectionToggle, ortho ? "View: ORTHO (even sight)" : "View: perspective");
+
             UiKit.SetButtonText(_damageToggle, _showDamageNumbers ? "Damage numbers: ON" : "Damage numbers: off");
             var overlay = FindAnyObjectByType<ZoneOverlay>();
             bool zonesOn = overlay != null && overlay.gameObject.activeSelf;

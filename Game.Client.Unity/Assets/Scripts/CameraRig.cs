@@ -21,6 +21,27 @@ namespace Game.Client
         public float Distance = 38f;                  // starting height; pinch overrides and persists
         public float Follow = 12f;                    // position smoothing
 
+        /// <summary>
+        /// Orthographic projection: same tilt, but the ground plane maps AFFINELY to the screen, so
+        /// up-screen and down-screen cover the same world distance.
+        ///
+        /// This is the fix for the asymmetry a tilted PERSPECTIVE camera has: its far half of the
+        /// frustum covers more ground than its near half, so at 55° you see roughly 3k ahead and 2k
+        /// behind — enemies approaching from "below" appear later, even though the server already sent
+        /// them (ViewRange is a radius, so the data was always symmetric; only the drawing was not).
+        ///
+        /// Cost: no foreshortening, so distance stops shrinking things and the scene reads flatter.
+        /// Nothing is WARPED — parallel stays parallel, a sphere is still a circle — and with unlit
+        /// spheres and billboards there is almost no perspective information to lose anyway.
+        /// </summary>
+        public bool Orthographic;
+
+        /// <summary>Half the visible world HEIGHT under orthographic projection — the ortho equivalent
+        /// of Distance, and what pinch drives in that mode.</summary>
+        public float OrthoSize = 22f;
+        public float MinOrthoSize = 6f;
+        public float MaxOrthoSize = 60f;
+
         public float MinDistance = 10f;
         public float MaxDistance = 90f;
         public float PinchSpeed = 0.08f;              // world units per pixel of pinch
@@ -50,9 +71,13 @@ namespace Game.Client
                 if (!_pinching) { _pinching = true; _lastPinch = gap; }
                 else
                 {
-                    // Fingers apart = zoom IN = smaller distance.
-                    Distance = Mathf.Clamp(Distance - (gap - _lastPinch) * PinchSpeed,
-                                           MinDistance, MaxDistance);
+                    // Fingers apart = zoom IN. Under ortho that means a SMALLER ortho size; under
+                    // perspective, a smaller distance. Same gesture, different knob.
+                    float delta = (gap - _lastPinch) * PinchSpeed;
+                    if (Orthographic)
+                        OrthoSize = Mathf.Clamp(OrthoSize - delta, MinOrthoSize, MaxOrthoSize);
+                    else
+                        Distance = Mathf.Clamp(Distance - delta, MinDistance, MaxDistance);
                     _lastPinch = gap;
                 }
             }
@@ -80,9 +105,26 @@ namespace Game.Client
             PlayerPrefs.Save();
         }
 
+        /// <summary>
+        /// Push the projection onto the Camera. Distance still positions the rig under ortho — the
+        /// camera has to stay far enough away that the world is inside the near/far planes, even
+        /// though the ortho SIZE is what decides how much you see.
+        /// </summary>
+        private void ApplyProjection()
+        {
+            var cam = GetComponent<Camera>();
+            if (cam == null) cam = Camera.main;
+            if (cam == null) return;
+
+            if (cam.orthographic != Orthographic) cam.orthographic = Orthographic;
+            if (Orthographic) cam.orthographicSize = OrthoSize;
+        }
+
         private void LateUpdate()
         {
             if (Target == null) return;
+
+            ApplyProjection();
 
             var rot = Quaternion.Euler(Pitch, Yaw, 0f);
             var desired = Target.position + rot * Vector3.back * Distance;
