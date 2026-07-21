@@ -30,6 +30,10 @@ namespace Game.Client
         public event Action<GoldUpdate> GoldReceived;
         public event Action<TargetDetails> TargetDetailsReceived;
         public event Action<LearnedSkills> LearnedReceived;
+        /// <summary>The SERVER owns the skill bar and pushes it (always alongside Learned). The client
+        /// renders what it is sent and only writes back when the PLAYER edits a slot — see
+        /// SetSkillBarAsync.</summary>
+        public event Action<SkillBarDto> SkillBarReceived;
         public event Action<NpcDialog> DialogReceived;
         public event Action<QuestLog> QuestLogReceived;
         public event Action<string> Disconnected;
@@ -59,6 +63,7 @@ namespace Game.Client
             _connection.On<InventoryUpdate>("Inventory", i => InventoryReceived?.Invoke(i));
             _connection.On<StatsUpdate>("Stats", st => StatsReceived?.Invoke(st));
             _connection.On<LearnedSkills>("Learned", l => LearnedReceived?.Invoke(l));
+            _connection.On<SkillBarDto>("SkillBar", b => SkillBarReceived?.Invoke(b));
             _connection.On<NpcDialog>("Dialog", d => DialogReceived?.Invoke(d));
             _connection.On<QuestLog>("QuestLog", q => QuestLogReceived?.Invoke(q));
             _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));

@@ -90,6 +90,7 @@ namespace Game.Client
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.Escape)) AskBack();
+            UpdateSkillBarSwipe();
         }
 
         private void AskBack()
@@ -469,8 +470,140 @@ namespace Game.Client
         {
             DrawSelfPanel();
             DrawTargetPanel();
+            DrawSkillBar();
             DrawCommandBar();
             DrawActionBar();
+        }
+
+        // ----- skill bar --------------------------------------------------------------------------
+
+        private const int BarColumns = 6;
+        private const int BarRows = 2;
+        private const int SlotsPerPage = BarColumns * BarRows;   // 12 — one PAGE of the server's 60
+        private const int BarPages = GameConstants.SkillBarSlots / SlotsPerPage;   // 5
+
+        private int _barPage;
+        private int _swipeFinger = -1;
+        private float _swipeStartX;
+        private Rect _barScreenRect;
+
+        /// <summary>
+        /// Two rows of six on the right — page N of the server's 60-slot bar, swipe left/right to
+        /// change page. Row 1 is slots 1-6 of the page, row 2 is 7-12, so the layout matches what the
+        /// WPF client shows for the same character.
+        ///
+        /// It renders <see cref="GameBoot.SkillBar"/> verbatim and never writes one back. See the
+        /// comment on that property for why that rule is absolute.
+        /// </summary>
+        private void DrawSkillBar()
+        {
+            const float slot = 44f, pad = 4f;
+            float w = BarColumns * slot + (BarColumns + 1) * pad;
+            float h = BarRows * slot + (BarRows + 1) * pad + 16f;   // +16 for the page strip
+            var r = new Rect(_vw - w - 6f, _vh - h - 46f, w, h);
+
+            Block(r);
+            GUI.Box(r, GUIContent.none, _panel);
+            _barScreenRect = new Rect(r.x * _scale, r.y * _scale, r.width * _scale, r.height * _scale);
+
+            var bar = Boot.SkillBar;
+            int first = _barPage * SlotsPerPage;
+
+            for (int i = 0; i < SlotsPerPage; i++)
+            {
+                int index = first + i;
+                float x = r.x + pad + (i % BarColumns) * (slot + pad);
+                float y = r.y + pad + (i / BarColumns) * (slot + pad);
+                DrawSlot(new Rect(x, y, slot, slot), index,
+                         bar != null && index < bar.Length ? bar[index] : null);
+            }
+
+            // Page strip: "‹  2 / 5  ›". The arrows exist because a swipe is invisible until someone
+            // tells you it's there — they are the discoverable version of the same gesture.
+            float sy = r.yMax - 15f;
+            if (GUI.Button(new Rect(r.x + pad, sy, 22f, 13f), "‹", _small)) PageBy(-1);
+            GUI.Label(new Rect(r.x + 28f, sy, w - 56f, 13f),
+                      "  " + (_barPage + 1) + " / " + BarPages, _small);
+            if (GUI.Button(new Rect(r.xMax - pad - 22f, sy, 22f, 13f), "›", _small)) PageBy(1);
+        }
+
+        private void PageBy(int delta)
+        {
+            _barPage = Mathf.Clamp(_barPage + delta, 0, BarPages - 1);
+        }
+
+        private void DrawSlot(Rect r, int index, string token)
+        {
+            // The hotkey number is the slot's position ON THE PAGE, 1-12 — the same numbering the WPF
+            // client puts under its first two rows.
+            string hotkey = (index % SlotsPerPage + 1).ToString();
+
+            if (string.IsNullOrEmpty(token))
+            {
+                GUI.Box(r, GUIContent.none, _panel);
+                GUI.Label(new Rect(r.x + 3, r.y + 1, 16, 12), hotkey, _small);
+                return;
+            }
+
+            string face = SlotFace(token, out bool usable);
+            GUI.enabled = usable;
+            if (GUI.Button(r, face, _button)) Boot.UseSlot(token);
+            GUI.enabled = true;
+            GUI.Label(new Rect(r.x + 3, r.y + 1, 16, 12), hotkey, _small);
+        }
+
+        /// <summary>What to print on a slot. Skills use their authored icon or the catalog-wide
+        /// abbreviation — resolved through <see cref="Abbreviations"/> rather than derived here, since
+        /// deriving per-skill is what once gave three different heal-over-times the same "HOT".</summary>
+        private string SlotFace(string token, out bool usable)
+        {
+            usable = true;
+
+            if (ActionCatalog.FromToken(token) is ActionDef action)
+                return string.IsNullOrEmpty(action.Icon) ? Abbreviations.For(action.Name) : action.Icon;
+
+            if (GameConstants.IsItemSlot(token))
+                return "▣";
+
+            var def = SkillCatalog.Get(token);
+            if (def == null) { usable = false; return "?"; }
+
+            // Grey out what this character has not learned — the bar is per-class and a subclass can
+            // legitimately be holding a bar full of skills it does not have.
+            usable = Boot.Learned.Count == 0 || Boot.Learned.ContainsKey(token);
+
+            if (!string.IsNullOrWhiteSpace(def.Icon)) return def.Icon;
+            return string.IsNullOrWhiteSpace(def.Abbrev) ? Abbreviations.For(def.Name) : def.Abbrev;
+        }
+
+        /// <summary>Swipe across the bar to change page. Handled from raw touches rather than IMGUI
+        /// events: IMGUI has no gesture concept, and the buttons underneath would swallow a drag.</summary>
+        private void UpdateSkillBarSwipe()
+        {
+            if (Boot == null || Boot.Phase != ClientPhase.InWorld) return;
+            const float swipePixels = 60f;
+
+            for (int i = 0; i < Input.touchCount; i++)
+            {
+                var t = Input.GetTouch(i);
+
+                // Input reports touches from the BOTTOM-left; the bar rect is in GUI space, which runs
+                // from the TOP-left. Comparing them raw would arm the swipe at the mirrored position.
+                var guiPoint = new Vector2(t.position.x, Screen.height - t.position.y);
+
+                if (t.phase == TouchPhase.Began && _barScreenRect.Contains(guiPoint))
+                {
+                    _swipeFinger = t.fingerId;
+                    _swipeStartX = t.position.x;
+                }
+                else if (t.fingerId == _swipeFinger &&
+                         (t.phase == TouchPhase.Ended || t.phase == TouchPhase.Canceled))
+                {
+                    float dx = t.position.x - _swipeStartX;
+                    if (Mathf.Abs(dx) >= swipePixels * _scale) PageBy(dx < 0 ? 1 : -1);
+                    _swipeFinger = -1;
+                }
+            }
         }
 
         /// <summary>Always-visible chat + command line, so commands don't require opening the log.

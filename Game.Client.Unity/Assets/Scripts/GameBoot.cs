@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Game.Shared;
 using UnityEngine;
@@ -70,6 +71,18 @@ namespace Game.Client
         /// sending admin commands when it believes it's allowed (the server re-checks regardless).</summary>
         public AccountRole Role { get; private set; } = AccountRole.Player;
         public bool IsAdmin => Role == AccountRole.Admin || Role == AccountRole.Moderator;
+
+        /// <summary>
+        /// The skill bar, exactly as the SERVER sent it — 60 slots of skill id / "action:…" / "item:…"
+        /// / null. **This client never authors a bar.** The server owns it and does the placement; a
+        /// client that wrote back a bar it had not been told to write is what destroyed real layouts
+        /// in the WPF client twice (a Learned push arriving while the client held a different bar).
+        /// So: render this, and only send SetSkillBar when the PLAYER edits a slot.
+        /// </summary>
+        public string[] SkillBar { get; private set; } = new string[GameConstants.SkillBarSlots];
+
+        /// <summary>Learned skill id → level, for greying out what isn't castable.</summary>
+        public readonly Dictionary<string, int> Learned = new Dictionary<string, int>();
 
         private NetworkChannel _net;
         private Guid _selfId;
@@ -238,6 +251,21 @@ namespace Game.Client
                 if (p.LeveledUp) ClientLog.Good("Level up! Now level " + p.Level + ".");
             });
             _net.GoldReceived += g => Main(() => Gold = g.Gold);
+            _net.LearnedReceived += l => Main(() =>
+            {
+                Learned.Clear();
+                if (l?.Skills != null)
+                    foreach (var s in l.Skills) Learned[s.Id] = s.Level;
+            });
+            _net.SkillBarReceived += b => Main(() =>
+            {
+                // Copy into a fixed 60 rather than trusting the length: the bar is rendered by index
+                // and a short array from an older server would throw on every frame.
+                var slots = new string[GameConstants.SkillBarSlots];
+                if (b?.Slots != null)
+                    for (int i = 0; i < slots.Length && i < b.Slots.Length; i++) slots[i] = b.Slots[i];
+                SkillBar = slots;
+            });
             _net.ChatReceived += m => Main(() => ClientLog.Info(m.From + ": " + m.Text));
             _net.CombatReceived += OnCombat;
             _net.Disconnected += m => Main(() =>
@@ -461,6 +489,55 @@ namespace Game.Client
             if (Marker != null) Marker.ShowAt(WorldMapper.ToUnity(serverX, serverY));
             try { await _net.MoveAsync(serverX, serverY); }
             catch (Exception ex) { ClientLog.Warn("Move: " + ex.Message); }
+        }
+
+        /// <summary>
+        /// Fire one skill-bar slot. A slot holds a skill id, an "action:…" token or an "item:…" token;
+        /// the server never interprets them, the CLIENT dispatches. Actions the mobile client hasn't
+        /// grown yet say so out loud rather than doing nothing — a dead button that stays silent is
+        /// indistinguishable from a broken one.
+        /// </summary>
+        public void UseSlot(string token)
+        {
+            if (Phase != ClientPhase.InWorld || string.IsNullOrEmpty(token)) return;
+
+            if (ActionCatalog.FromToken(token) is ActionDef action)
+            {
+                switch (action.Id)
+                {
+                    case GameConstants.ActionBasicAttack:
+                        if (TargetId.HasValue) Attack(TargetId.Value);
+                        else ClientLog.Warn("No target.");
+                        break;
+                    case GameConstants.ActionSitStand:
+                        SetMoveState(Stats != null && Stats.MoveState == MoveState.Sitting
+                                     ? MoveState.Running : MoveState.Sitting);
+                        break;
+                    case GameConstants.ActionRunWalk:
+                        SetMoveState(Stats != null && Stats.MoveState == MoveState.Walking
+                                     ? MoveState.Running : MoveState.Walking);
+                        break;
+                    default:
+                        ClientLog.Warn(action.Name + " isn't available on the phone yet.");
+                        break;
+                }
+                return;
+            }
+
+            if (GameConstants.IsItemSlot(token))
+            {
+                ClientLog.Warn("Items aren't usable from the phone yet.");
+                return;
+            }
+
+            UseSkill(token);
+        }
+
+        public async void UseSkill(string skillId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.UseSkillAsync(skillId, TargetId); }
+            catch (Exception ex) { ClientLog.Warn("UseSkill: " + ex.Message); }
         }
 
         public async void Attack(Guid targetId)
