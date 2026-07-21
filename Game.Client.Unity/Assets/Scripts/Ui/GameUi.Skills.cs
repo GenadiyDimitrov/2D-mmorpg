@@ -93,7 +93,9 @@ namespace Game.Client
             // Rebuild only when something that changes the LIST changed. Rows carry captured ids and
             // registered listeners, so a per-frame rebuild would leak both.
             int revision = _skillsTab * 7919 + Boot.Learned.Count * 31 + Boot.SkillPoints
-                         + (Boot.ActiveClass != null ? Boot.ActiveClass.Level * 13 : 0);
+                         + (Boot.ActiveClass != null ? Boot.ActiveClass.Level * 13 : 0)
+                         + (_pendingAssign != null ? _pendingAssign.GetHashCode() : 0)
+                         + BarStamp();
             if (revision == _skillsRevision) return;
             _skillsRevision = revision;
 
@@ -113,19 +115,32 @@ namespace Game.Client
                 return;
             }
 
-            foreach (var entry in Boot.Learned.OrderBy(e => e.Key))
-            {
-                var def = SkillCatalog.Get(entry.Key);
-                if (def == null) continue;
+            // Grouped by CATEGORY and sorted by name inside each, like the WPF panel — a flat
+            // alphabetical list of forty skills is unreadable on a phone.
+            var known = Boot.Learned.Keys
+                .Select(id => SkillCatalog.Get(id))
+                .Where(d => d != null)
+                .OrderBy(d => d.Category).ThenBy(d => d.Name);
 
-                string level = def.MaxLevel > 1 ? "  Lv." + entry.Value : "";
+            SkillCategory? current = null;
+            foreach (var def in known)
+            {
+                if (current == null || current.Value != def.Category)
+                {
+                    current = def.Category;
+                    Note(CategoryName(def.Category));
+                }
+
+                string level = def.MaxLevel > 1 ? "  Lv." + Boot.Learned[def.Id] : "";
                 string token = def.Id;
 
                 // Passive is a PassiveEffect?, not a flag — a skill is passive when it HAS one. A
                 // passive can't go on the bar: there is nothing to press.
                 bool passive = def.Passive != null;
-                Row(Face(def) + "  " + def.Name + level,
-                    passive ? null : "To bar",
+                bool onBar = Boot.SkillBar != null && System.Array.IndexOf(Boot.SkillBar, def.Id) >= 0;
+
+                Row(Face(def) + "  " + def.Name + level + (onBar ? "   • on bar" : ""),
+                    passive ? null : (_pendingAssign == token ? "Cancel" : "To bar"),
                     passive ? null : (System.Action)(() => BeginAssign(token)),
                     passive ? UiKit.TextDim : UiKit.Text);
             }
@@ -224,6 +239,32 @@ namespace Game.Client
                 }
             }
             return SkillCatalog.StatSwapConflict(skillId, new List<string>(Boot.Learned.Keys)) != null;
+        }
+
+        /// <summary>Cheap stamp of what is ON the bar, so the "• on bar" marks refresh the moment a
+        /// skill is placed rather than at the next unrelated change.</summary>
+        private int BarStamp()
+        {
+            var bar = Boot.SkillBar;
+            if (bar == null) return 0;
+            int stamp = 17;
+            for (int i = 0; i < bar.Length; i++)
+                if (!string.IsNullOrEmpty(bar[i])) stamp = stamp * 31 + i + bar[i].Length;
+            return stamp;
+        }
+
+        private static string CategoryName(SkillCategory category)
+        {
+            switch (category)
+            {
+                case SkillCategory.Physical: return "Physical";
+                case SkillCategory.Magic:    return "Magic";
+                case SkillCategory.Buff:     return "Buffs";
+                case SkillCategory.Debuff:   return "Debuffs";
+                case SkillCategory.Heal:     return "Heals";
+                case SkillCategory.Passive:  return "Passives";
+                default:                     return category.ToString();
+            }
         }
 
         private static string Face(SkillDef def)

@@ -24,7 +24,6 @@ namespace Game.Client
 
             bool tapped = false;
             Vector2 screen = default;
-            int finger = -1;
             if (Input.touchCount > 0)
             {
                 // A tap is decided on RELEASE, not on press, and only while exactly one finger is
@@ -37,7 +36,6 @@ namespace Game.Client
                 {
                     tapped = true;
                     screen = t.position;
-                    finger = t.fingerId;
                 }
             }
             else if (Input.GetMouseButtonDown(0))
@@ -47,10 +45,10 @@ namespace Game.Client
             }
             if (!tapped) return;
 
-            // uGUI answers this itself now: the EventSystem knows what its raycaster hit, so we no
-            // longer keep a hand-maintained list of UI rectangles that could silently go stale
+            // uGUI answers this itself now: the canvas raycaster is asked about the tap POINT, so we
+            // no longer keep a hand-maintained list of UI rectangles that could silently go stale
             // whenever a panel moved.
-            if (UiKit.OverUi(finger)) return;
+            if (UiKit.OverUi(screen)) return;
 
             var cam = Camera.main;
             if (cam == null) return;

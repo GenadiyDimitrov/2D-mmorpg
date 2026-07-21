@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -96,12 +97,18 @@ namespace Game.Client
 
         // ----- widgets ---------------------------------------------------------------------------
 
-        public static Image Box(Transform parent, string name, Color colour)
+        /// <summary>
+        /// A filled rectangle. <paramref name="blocksInput"/> false for invisible CONTAINERS: an Image
+        /// with zero alpha still absorbs raycasts, so a full-screen transparent grouping object would
+        /// swallow every tap meant for the world behind it.
+        /// </summary>
+        public static Image Box(Transform parent, string name, Color colour, bool blocksInput = true)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(Image));
             go.transform.SetParent(parent, false);
             var image = go.GetComponent<Image>();
             image.color = colour;
+            image.raycastTarget = blocksInput;
             return image;
         }
 
@@ -187,7 +194,8 @@ namespace Game.Client
         /// itself via a ContentSizeFitter so callers never compute a scroll height.</summary>
         public static RectTransform ScrollArea(Transform parent, out ScrollRect scroll, float spacing = 2f)
         {
-            var root = Box(parent, "Scroll", new Color(0, 0, 0, 0));
+            // The root is a container; the VIEWPORT below is what catches the drag.
+            var root = Box(parent, "Scroll", new Color(0, 0, 0, 0), blocksInput: false);
             scroll = root.gameObject.AddComponent<ScrollRect>();
             scroll.horizontal = false;
             scroll.movementType = ScrollRect.MovementType.Clamped;
@@ -244,14 +252,27 @@ namespace Game.Client
             rt.offsetMax = Vector2.zero;
         }
 
-        /// <summary>True when a screen point is over any interactive UI. TouchInput asks this so
-        /// pressing a button doesn't ALSO order a walk to the ground behind it.</summary>
-        public static bool OverUi(int fingerId)
+        private static readonly List<RaycastResult> RaycastHits = new List<RaycastResult>();
+
+        /// <summary>
+        /// True when a screen POINT is over any interactive UI. TouchInput asks this so pressing a
+        /// button doesn't also order a walk to the ground behind it.
+        ///
+        /// This raycasts the point itself rather than asking
+        /// <c>EventSystem.IsPointerOverGameObject(fingerId)</c>, because that answers about a LIVE
+        /// pointer and the EventSystem drops a touch's pointer data the moment the finger lifts. Taps
+        /// here are decided on RELEASE (so a pinch's first finger can't queue a walk), so the pointer
+        /// was always already gone and the check always said "not over UI" — every tap on a window
+        /// also walked the character.
+        /// </summary>
+        public static bool OverUi(Vector2 screenPoint)
         {
             var events = EventSystem.current;
             if (events == null) return false;
-            return fingerId >= 0 ? events.IsPointerOverGameObject(fingerId)
-                                 : events.IsPointerOverGameObject();
+
+            RaycastHits.Clear();
+            events.RaycastAll(new PointerEventData(events) { position = screenPoint }, RaycastHits);
+            return RaycastHits.Count > 0;
         }
     }
 }

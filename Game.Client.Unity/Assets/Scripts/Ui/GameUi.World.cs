@@ -20,6 +20,15 @@ namespace Game.Client
         private RectTransform _nameplateLayer;
         private readonly List<Nameplate> _nameplates = new List<Nameplate>();
 
+        /// <summary>
+        /// How far ABOVE an entity's origin the nameplate is anchored, in world units.
+        ///
+        /// Straight down at 90° this barely matters — the plate lands on the marker either way and the
+        /// pivot does the work. It matters the moment the camera tilts: at 2.5D a plate anchored at
+        /// the feet drifts down over the body, so this is the knob that puts it back on the head.
+        /// </summary>
+        public float NameplateHeight = 0.9f;
+
         // self / target
         private TextMeshProUGUI _selfName, _selfDetail, _targetName, _targetDetail;
         private Image _selfHp, _selfMp, _selfXp, _targetHp;
@@ -114,10 +123,12 @@ namespace Game.Client
 
         private void BuildWorld()
         {
-            _worldRoot = UiKit.Rect(UiKit.Box(_root, "World", new Color(0, 0, 0, 0)).gameObject);
+            // Both of these are full-screen INVISIBLE containers, so neither may absorb raycasts —
+            // otherwise every tap would land on "the UI" and the character would never walk anywhere.
+            _worldRoot = UiKit.Rect(UiKit.Box(_root, "World", new Color(0, 0, 0, 0), blocksInput: false).gameObject);
             UiKit.Stretch(_worldRoot, 0f, 0f, 0f, 0f);
             // First child = drawn first = BEHIND the panels. Nameplates belong under the UI, not over it.
-            _nameplateLayer = UiKit.Rect(UiKit.Box(_worldRoot, "Nameplates", new Color(0, 0, 0, 0)).gameObject);
+            _nameplateLayer = UiKit.Rect(UiKit.Box(_worldRoot, "Nameplates", new Color(0, 0, 0, 0), blocksInput: false).gameObject);
             UiKit.Stretch(_nameplateLayer, 0f, 0f, 0f, 0f);
 
             BuildSelfPanel();
@@ -488,7 +499,11 @@ namespace Game.Client
 
                 bool usable;
                 _slotFaces[i].text = SlotFace(token, out usable);
-                _slotButtons[i].interactable = usable;
+
+                // An EMPTY slot is a disabled button — which made it impossible to place anything,
+                // because the only target for a pending skill is an empty slot. While an assignment is
+                // waiting, every slot has to be pressable.
+                _slotButtons[i].interactable = usable || _pendingAssign != null;
             }
         }
 
@@ -668,7 +683,7 @@ namespace Game.Client
                 var view = Boot.Entities.Find(e.Id);
                 if (view == null) continue;
 
-                var screen = cam.WorldToScreenPoint(view.transform.position + Vector3.up * 0.9f);
+                var screen = cam.WorldToScreenPoint(view.transform.position + Vector3.up * NameplateHeight);
                 if (screen.z <= 0f) continue;   // behind the camera
 
                 var plate = PlateAt(used++);
@@ -697,8 +712,13 @@ namespace Game.Client
         {
             while (_nameplates.Count <= index)
             {
-                var root = UiKit.Rect(UiKit.Box(_nameplateLayer, "Plate", new Color(0, 0, 0, 0)).gameObject);
+                var root = UiKit.Rect(UiKit.Box(_nameplateLayer, "Plate",
+                                                new Color(0, 0, 0, 0), blocksInput: false).gameObject);
                 root.sizeDelta = new Vector2(200f, 34f);
+                // Pivot at the BOTTOM edge, so the plate grows upward from the screen point and sits
+                // above the character instead of being centred on him. With a centred pivot the name
+                // lands straight on top of the marker.
+                root.pivot = new Vector2(0.5f, 0f);
 
                 var label = UiKit.Label(root, "", 15f, UiKit.Text, TextAlignmentOptions.Bottom);
                 UiKit.Stretch(UiKit.Rect(label.gameObject), 0f, 0f, 0f, 14f);
@@ -707,6 +727,11 @@ namespace Game.Client
                 var bg = (RectTransform)fill.transform.parent;
                 UiKit.Place(bg, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                             new Vector2(0f, 0f), new Vector2(70f, 6f));
+
+                // A nameplate floats over the world, so it must not eat the tap meant for the entity
+                // underneath it — which is precisely where you aim when you want to attack something.
+                fill.raycastTarget = false;
+                bg.GetComponent<Image>().raycastTarget = false;
 
                 _nameplates.Add(new Nameplate
                 {
