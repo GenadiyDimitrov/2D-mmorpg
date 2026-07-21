@@ -134,6 +134,27 @@ namespace Game.Client
         public Task RespawnAsync() =>
             _connection.SendAsync("Respawn");
 
+        // ----- inventory -------------------------------------------------------------------------
+        /// <summary>Equip or UNEQUIP — the server toggles based on the item's current state.</summary>
+        public Task EquipItemAsync(Guid instanceId) =>
+            _connection.SendAsync("EquipItem", instanceId);
+
+        public Task UsePotionAsync(Guid instanceId) =>
+            _connection.SendAsync("UsePotion", instanceId);
+
+        public Task RemoveItemAsync(Guid instanceId, bool all) =>
+            _connection.SendAsync("RemoveItem", instanceId, all);
+
+        // ----- debug (server re-checks admin rights on every one of these) ------------------------
+        public Task DebugLevelAsync(int delta) => _connection.SendAsync("DebugLevel", delta);
+        public Task DebugLearnAllAsync() => _connection.SendAsync("DebugLearnAll");
+        public Task DebugBuffAsync() => _connection.SendAsync("DebugBuff");
+        public Task DebugGoldAsync(long amount) => _connection.SendAsync("DebugGold", amount);
+        public Task DebugSpAsync(long amount) => _connection.SendAsync("DebugSp", amount);
+        public Task DebugTeleportAsync(float x, float y) => _connection.SendAsync("DebugTeleport", x, y);
+        public Task DebugGiveAsync(string defId, int quantity) =>
+            _connection.SendAsync("DebugGive", defId, quantity);
+
         public async ValueTask DisposeAsync()
         {
             if (_connection is not null)

@@ -104,6 +104,11 @@ namespace Game.Client
 
             if (_confirmMessage != null) { Dismiss(); return; }   // back also means "cancel"
 
+            // Back closes what's open before it starts unwinding the session — the ladder should feel
+            // like stepping back one screen, not like abandoning the game from inside a panel.
+            if (_showBag || _showDebug) { _showBag = false; _showDebug = false; return; }
+            if (_showConsole) { _showConsole = false; return; }
+
             switch (Boot.Phase)
             {
                 case ClientPhase.InWorld:
@@ -473,6 +478,137 @@ namespace Game.Client
             DrawSkillBar();
             DrawCommandBar();
             DrawActionBar();
+            if (_showBag) DrawBag();
+            if (_showDebug) DrawDebug();
+        }
+
+        // ----- inventory --------------------------------------------------------------------------
+
+        private bool _showBag;
+        private Vector2 _bagScroll;
+
+        /// <summary>
+        /// The bag: one row per item, tap to equip/unequip. Equipping is a TOGGLE decided by the
+        /// server from the item's own state — the client never tells it which way, so the two cannot
+        /// disagree about what is worn.
+        /// </summary>
+        private void DrawBag()
+        {
+            var r = new Rect(_vw * 0.5f - 170f, 34f, 340f, _vh - 110f);
+            Block(r);
+            GUI.Box(r, GUIContent.none, _panel);
+
+            GUI.Label(new Rect(r.x + 10, r.y + 6, 200, 20), "Bag", _title);
+            if (GUI.Button(new Rect(r.xMax - 34, r.y + 6, 26, 20), "✕", _button)) _showBag = false;
+
+            var items = Boot.Inventory;
+            if (items == null || items.Length == 0)
+            {
+                GUI.Label(new Rect(r.x + 10, r.y + 34, r.width - 20, 20), "Empty.", _small);
+                return;
+            }
+
+            var view = new Rect(r.x + 8, r.y + 32, r.width - 16, r.height - 40);
+            var content = new Rect(0, 0, view.width - 18, items.Length * 34f);
+            _bagScroll = GUI.BeginScrollView(view, _bagScroll, content);
+
+            for (int i = 0; i < items.Length; i++)
+            {
+                var item = items[i];
+                var def = ItemCatalog.Get(item.DefId);
+                var row = new Rect(0, i * 34f, content.width, 30f);
+
+                string name = def != null ? def.Name : item.DefId;
+                if (item.Enchant > 0) name = "+" + item.Enchant + " " + name;
+                if (item.Quantity > 1) name += "  ×" + item.Quantity;
+                if (item.Equipped) name = "● " + name;   // worn
+
+                GUI.Label(new Rect(row.x + 4, row.y + 6, row.width - 96, 20), name,
+                          item.Equipped ? _label : _small);
+
+                // Only WEARABLE slots get an Equip button (EquipSlot has no "None" — it classifies
+                // every item, so consumables and quest items are values too). A consumable gets Use
+                // instead; anything else gets no button rather than one the server would refuse.
+                bool equippable = def != null &&
+                    (def.Slot == EquipSlot.Weapon || def.Slot == EquipSlot.Armor ||
+                     def.Slot == EquipSlot.Shield || def.Slot == EquipSlot.Jewel);
+
+                if (equippable)
+                {
+                    if (GUI.Button(new Rect(row.xMax - 88, row.y, 84, 28),
+                                   item.Equipped ? "Unequip" : "Equip", _button))
+                        Boot.EquipItem(item.InstanceId);
+                }
+                else if (def != null && def.Slot == EquipSlot.Consumable)
+                {
+                    if (GUI.Button(new Rect(row.xMax - 88, row.y, 84, 28), "Use", _button))
+                        Boot.UsePotion(item.InstanceId);
+                }
+            }
+
+            GUI.EndScrollView();
+        }
+
+        // ----- debug panel ------------------------------------------------------------------------
+
+        private bool _showDebug;
+        private int _townIndex;
+
+        /// <summary>
+        /// The phone's version of the WPF debug panel: level, skills, buffs, gold/SP and a town
+        /// teleport, so a build can be set up without walking there. Shown only to staff — but that
+        /// is a convenience, not the gate: every call is re-authorised server-side against the
+        /// account role, exactly like the slash commands.
+        /// </summary>
+        private void DrawDebug()
+        {
+            var r = new Rect(_vw * 0.5f - 150f, 40f, 300f, 232f);
+            Block(r);
+            GUI.Box(r, GUIContent.none, _panel);
+
+            GUI.Label(new Rect(r.x + 10, r.y + 6, 200, 20), "Debug", _title);
+            if (GUI.Button(new Rect(r.xMax - 34, r.y + 6, 26, 20), "✕", _button)) _showDebug = false;
+
+            float y = r.y + 34f;
+            const float h = 26f;
+
+            GUI.Label(new Rect(r.x + 10, y, 60, h), "Level", _small);
+            if (GUI.Button(new Rect(r.x + 62, y, 46, h), "-10", _button)) Boot.Debug(n => n.DebugLevelAsync(-10), "level");
+            if (GUI.Button(new Rect(r.x + 112, y, 40, h), "-1", _button)) Boot.Debug(n => n.DebugLevelAsync(-1), "level");
+            if (GUI.Button(new Rect(r.x + 156, y, 40, h), "+1", _button)) Boot.Debug(n => n.DebugLevelAsync(1), "level");
+            if (GUI.Button(new Rect(r.x + 200, y, 46, h), "+10", _button)) Boot.Debug(n => n.DebugLevelAsync(10), "level");
+            y += h + 6f;
+
+            if (GUI.Button(new Rect(r.x + 10, y, 130, h), "Learn all skills", _button))
+                Boot.Debug(n => n.DebugLearnAllAsync(), "learn all");
+            if (GUI.Button(new Rect(r.x + 148, y, 130, h), "Full buffs", _button))
+                Boot.Debug(n => n.DebugBuffAsync(), "buff");
+            y += h + 6f;
+
+            if (GUI.Button(new Rect(r.x + 10, y, 130, h), "+100k gold", _button))
+                Boot.Debug(n => n.DebugGoldAsync(100000), "gold");
+            if (GUI.Button(new Rect(r.x + 148, y, 130, h), "+100k SP", _button))
+                Boot.Debug(n => n.DebugSpAsync(100000), "sp");
+            y += h + 10f;
+
+            // Teleport: the town list is shared data, so this can never drift from the real map.
+            var towns = WorldMap.SafeZones;
+            _townIndex = Mathf.Clamp(_townIndex, 0, towns.Length - 1);
+            GUI.Label(new Rect(r.x + 10, y, r.width - 20, h), "Teleport to town", _small);
+            y += 20f;
+
+            if (GUI.Button(new Rect(r.x + 10, y, 30, h), "‹", _button))
+                _townIndex = (_townIndex - 1 + towns.Length) % towns.Length;
+            GUI.Label(new Rect(r.x + 46, y + 4, 180, h), towns[_townIndex].Name, _label);
+            if (GUI.Button(new Rect(r.x + 228, y, 30, h), "›", _button))
+                _townIndex = (_townIndex + 1) % towns.Length;
+            y += h + 6f;
+
+            if (GUI.Button(new Rect(r.x + 10, y, r.width - 20, h), "Go", _button))
+            {
+                var town = towns[_townIndex];
+                Boot.Debug(n => n.DebugTeleportAsync(town.X, town.Y), "teleport");
+            }
         }
 
         // ----- skill bar --------------------------------------------------------------------------
@@ -695,7 +831,10 @@ namespace Game.Client
             var r = new Rect(6, _vh - bh - 6, _vw - 12, bh);
             Block(r);
 
-            float bw = Mathf.Min(84f, (r.width - 24) / 5f);
+            // Bag always; Debug only for staff (the server re-checks anyway — this just keeps the bar
+            // uncluttered for a normal player).
+            int buttons = Boot.IsAdmin ? 7 : 6;
+            float bw = Mathf.Min(84f, (r.width - (buttons - 1) * 4f) / buttons);
             float x = r.x;
 
             if (GUI.Button(new Rect(x, r.y, bw, bh), "Attack", _button))
@@ -717,6 +856,21 @@ namespace Game.Client
             x += bw + 4;
             if (GUI.Button(new Rect(x, r.y, bw, bh), "Respawn", _button)) Boot.Respawn();
             x += bw + 4;
+            if (GUI.Button(new Rect(x, r.y, bw, bh), "Bag", _button))
+            {
+                _showBag = !_showBag;
+                if (_showBag) _showDebug = false;   // one panel at a time; the screen is small
+            }
+            x += bw + 4;
+            if (Boot.IsAdmin)
+            {
+                if (GUI.Button(new Rect(x, r.y, bw, bh), "Debug", _button))
+                {
+                    _showDebug = !_showDebug;
+                    if (_showDebug) _showBag = false;
+                }
+                x += bw + 4;
+            }
             if (GUI.Button(new Rect(x, r.y, bw, bh), "Leave", _button)) Boot.LeaveWorld();
         }
 

@@ -84,6 +84,9 @@ namespace Game.Client
         /// <summary>Learned skill id → level, for greying out what isn't castable.</summary>
         public readonly Dictionary<string, int> Learned = new Dictionary<string, int>();
 
+        /// <summary>The bag, as last sent by the server (it pushes the whole thing on any change).</summary>
+        public InventoryItemDto[] Inventory { get; private set; } = new InventoryItemDto[0];
+
         private NetworkChannel _net;
         private Guid _selfId;
 
@@ -251,6 +254,8 @@ namespace Game.Client
                 if (p.LeveledUp) ClientLog.Good("Level up! Now level " + p.Level + ".");
             });
             _net.GoldReceived += g => Main(() => Gold = g.Gold);
+            _net.InventoryReceived += i => Main(() =>
+                Inventory = i?.Items ?? new InventoryItemDto[0]);
             _net.LearnedReceived += l => Main(() =>
             {
                 Learned.Clear();
@@ -538,6 +543,31 @@ namespace Game.Client
             if (Phase != ClientPhase.InWorld) return;
             try { await _net.UseSkillAsync(skillId, TargetId); }
             catch (Exception ex) { ClientLog.Warn("UseSkill: " + ex.Message); }
+        }
+
+        /// <summary>Equip or unequip — the SERVER decides which, from the item's current state, so the
+        /// client can't disagree with it about what is worn.</summary>
+        public async void EquipItem(Guid instanceId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.EquipItemAsync(instanceId); }
+            catch (Exception ex) { ClientLog.Warn("Equip: " + ex.Message); }
+        }
+
+        public async void UsePotion(Guid instanceId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.UsePotionAsync(instanceId); }
+            catch (Exception ex) { ClientLog.Warn("UsePotion: " + ex.Message); }
+        }
+
+        /// <summary>Fire-and-forget debug call. Every one of these is re-checked server-side against
+        /// the account role — <see cref="IsAdmin"/> only decides whether we bother SHOWING the panel.</summary>
+        public async void Debug(Func<NetworkChannel, Task> call, string what)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await call(_net); }
+            catch (Exception ex) { ClientLog.Warn(what + ": " + ex.Message); }
         }
 
         public async void Attack(Guid targetId)
