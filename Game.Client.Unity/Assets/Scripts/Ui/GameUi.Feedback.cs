@@ -51,11 +51,20 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_castLabel.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
                         new Vector2(0f, -3f), new Vector2(400f, 20f));
 
-            // Cancelling a cast needs to be reachable while it is running, so the button lives ON the
-            // cast bar rather than competing for space in the action bar.
-            var cancel = UiKit.TextButton(inner, "Stop", () => Boot.CancelCast(), 14f);
-            UiKit.Place(UiKit.Rect(cancel.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
-                        new Vector2(-6f, 6f), new Vector2(64f, 26f));
+            // THE WHOLE BAR IS THE CANCEL BUTTON.
+            //
+            // Android has no ESC key, and a small "Stop" button next to a 44px bar is a poor target
+            // for a thumb during the two seconds it exists. Mobile MMOs overwhelmingly make the cast
+            // bar itself the cancel target: it is large, it is centred where a thumb already rests,
+            // and it only exists while there is something to cancel. The label stays so it is
+            // obviously pressable rather than a mystery.
+            var cancel = _castPanel.gameObject.AddComponent<Button>();
+            cancel.targetGraphic = _castPanel.GetComponent<Image>();
+            cancel.onClick.AddListener(() => Boot.CancelCast());
+
+            var hint = UiKit.Label(inner, "tap to cancel", 13f, UiKit.TextDim, TextAlignmentOptions.Right);
+            UiKit.Place(UiKit.Rect(hint.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
+                        new Vector2(-10f, -3f), new Vector2(140f, 18f));
 
             _castPanel.gameObject.SetActive(false);
 

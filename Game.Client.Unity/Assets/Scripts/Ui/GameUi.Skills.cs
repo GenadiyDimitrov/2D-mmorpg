@@ -75,7 +75,7 @@ namespace Game.Client
         {
             _assignHint.text = _pendingAssign != null
                 ? "Tap a bar slot to place it.  (tap Cancel to stop)"
-                : "Tap 'To bar', then tap a slot.  Press and HOLD a slot to clear it.";
+                : "Tap 'To bar', then tap a slot.  Press and HOLD a slot for Move / Remove / Auto.";
 
             if (!_skillsPanel.gameObject.activeSelf) return;
 

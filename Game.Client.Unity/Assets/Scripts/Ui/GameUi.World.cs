@@ -48,6 +48,13 @@ namespace Game.Client
         private RectTransform _skillBarPanel;
         private readonly Button[] _slotButtons = new Button[SlotsPerPage];
         private readonly TextMeshProUGUI[] _slotFaces = new TextMeshProUGUI[SlotsPerPage];
+        private readonly Image[] _slotBorders = new Image[SlotsPerPage];
+
+        // slot context menu (press and hold)
+        private RectTransform _slotMenu;
+        private Button _slotMenuAuto;
+        private int _menuSlot = -1;        // page-relative slot the menu belongs to
+        private int _pendingMoveFrom = -1; // absolute bar index being moved, or -1
         private TextMeshProUGUI _pageLabel;
         private int _barPage;
         private int _swipeFinger = -1;
@@ -145,6 +152,7 @@ namespace Game.Client
             BuildSkillsWindow();
             BuildDebugPanel();
             BuildFeedback();
+            BuildSlotMenu();
         }
 
         private void BuildSelfPanel()
@@ -212,18 +220,27 @@ namespace Game.Client
             for (int i = 0; i < SlotsPerPage; i++)
             {
                 int index = i;   // captured; the loop variable is shared
+                var at = new Vector2(pad + (i % BarColumns) * (slot + pad),
+                                     -(pad + (i / BarColumns) * (slot + pad)));
 
-                // No onClick: PressAndHold owns both gestures, so a hold can clear the slot without
+                // The auto-use marker: a green frame drawn BEHIND the slot and peeking out a couple of
+                // pixels. Added first so it renders under the button — a border you have to look for
+                // is useless, one that covers the icon is worse.
+                var border = UiKit.Box(inner, "AutoBorder", new Color(0.35f, 0.85f, 0.40f), blocksInput: false);
+                UiKit.Place(UiKit.Rect(border.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                            at + new Vector2(-3f, 3f), new Vector2(slot + 6f, slot + 6f));
+                border.enabled = false;
+                _slotBorders[i] = border;
+
+                // No onClick: PressAndHold owns both gestures, so a hold can open the menu without
                 // the button also casting what was in it on release.
                 var button = UiKit.TextButton(inner, "", null, 20f);
                 var press = button.gameObject.AddComponent<PressAndHold>();
                 press.OnTap = () => FireSlot(index);
-                press.OnHold = () => ClearSlot(index);
+                press.OnHold = () => OpenSlotMenu(index);
                 press.Enabled = () => button.interactable;
                 UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(pad + (i % BarColumns) * (slot + pad),
-                                        -(pad + (i / BarColumns) * (slot + pad))),
-                            new Vector2(slot, slot));
+                            at, new Vector2(slot, slot));
                 _slotButtons[i] = button;
                 _slotFaces[i] = button.GetComponentInChildren<TextMeshProUGUI>();
 
@@ -511,9 +528,12 @@ namespace Game.Client
                 _slotFaces[i].text = SlotFace(token, out usable);
 
                 // An EMPTY slot is a disabled button — which made it impossible to place anything,
-                // because the only target for a pending skill is an empty slot. While an assignment is
-                // waiting, every slot has to be pressable.
-                _slotButtons[i].interactable = usable || _pendingAssign != null;
+                // because the only target for a pending skill is an empty slot. While an assignment or
+                // a move is waiting, every slot has to be pressable.
+                _slotButtons[i].interactable = usable || _pendingAssign != null || _pendingMoveFrom >= 0;
+
+                // Green frame = the auto-hunt will use this one.
+                _slotBorders[i].enabled = !string.IsNullOrEmpty(token) && Boot.AutoSkills.Contains(token);
             }
         }
 
@@ -543,26 +563,99 @@ namespace Game.Client
         private void FireSlot(int slotOnPage)
         {
             int index = _barPage * SlotsPerPage + slotOnPage;
-            // A slot tap PLACES when the skills window is waiting to assign, and only otherwise casts.
+
+            // A slot tap means whichever pending gesture is armed, and only casts when none is. Move
+            // is checked first because it was started from this very bar.
+            if (_pendingMoveFrom >= 0)
+            {
+                int from = _pendingMoveFrom;
+                _pendingMoveFrom = -1;
+                if (from != index) Boot.SwapSlots(from, index);
+                _skillsRevision = -1;
+                return;
+            }
+
             if (TryPlacePending(index)) return;
 
             var bar = Boot.SkillBar;
             if (bar != null && index < bar.Length) Boot.UseSlot(bar[index]);
         }
 
-        /// <summary>Press and hold a slot to empty it — the phone's stand-in for the WPF right-click.
-        /// Holding an EMPTY slot does nothing rather than nagging.</summary>
-        private void ClearSlot(int slotOnPage)
+        /// <summary>
+        /// Press and hold a slot → Move / Bin / Auto, the phone's stand-in for a right-click menu.
+        /// Auto only appears for things the auto-hunt can actually use; an occupied slot holding an
+        /// action or an item gets Move and Bin only, and an empty slot has no menu at all.
+        /// </summary>
+        private void BuildSlotMenu()
+        {
+            _slotMenu = UiKit.PanelBox(_worldRoot, "SlotMenu");
+            UiKit.Place(_slotMenu, new Vector2(0f, 0f), new Vector2(0.5f, 0f),
+                        Vector2.zero, new Vector2(150f, 150f));
+            var inner = _slotMenu.GetChild(0);
+
+            var move = UiKit.TextButton(inner, "Move", () =>
+            {
+                _pendingMoveFrom = _barPage * SlotsPerPage + _menuSlot;
+                _pendingAssign = null;     // the two modes would fight over the next tap
+                CloseSlotMenu();
+            }, 16f);
+            UiKit.Place(UiKit.Rect(move.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                        new Vector2(0f, -8f), new Vector2(130f, 40f));
+
+            var bin = UiKit.TextButton(inner, "Remove", () =>
+            {
+                int index = _barPage * SlotsPerPage + _menuSlot;
+                Boot.AssignSlot(index, null);
+                _skillsRevision = -1;      // the "* on bar" marks are now stale
+                CloseSlotMenu();
+            }, 16f);
+            UiKit.Place(UiKit.Rect(bin.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                        new Vector2(0f, -52f), new Vector2(130f, 40f));
+
+            _slotMenuAuto = UiKit.TextButton(inner, "Auto", () =>
+            {
+                var token = TokenAt(_menuSlot);
+                if (!string.IsNullOrEmpty(token)) Boot.ToggleAutoSkill(token);
+                CloseSlotMenu();
+            }, 16f);
+            UiKit.Place(UiKit.Rect(_slotMenuAuto.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                        new Vector2(0f, -96f), new Vector2(130f, 40f));
+
+            _slotMenu.gameObject.SetActive(false);
+        }
+
+        private string TokenAt(int slotOnPage)
         {
             int index = _barPage * SlotsPerPage + slotOnPage;
             var bar = Boot.SkillBar;
-            if (bar == null || index >= bar.Length || string.IsNullOrEmpty(bar[index])) return;
-
-            Boot.AssignSlot(index, null);
-            _pendingAssign = null;
-            _skillsRevision = -1;      // the "* on bar" marks in the skills list are now stale
-            ClientLog.Info("Slot " + (slotOnPage + 1) + " cleared.");
+            return bar != null && index >= 0 && index < bar.Length ? bar[index] : null;
         }
+
+        private void OpenSlotMenu(int slotOnPage)
+        {
+            string token = TokenAt(slotOnPage);
+            if (string.IsNullOrEmpty(token)) return;   // nothing to move, bin or automate
+
+            _menuSlot = slotOnPage;
+
+            // Auto is only offered for a real SKILL the autopilot could cast. Actions and items are
+            // not part of the auto-hunt contract, and a passive has nothing to fire.
+            bool autoable = SkillCatalog.Get(token) != null && !IsPassive(token);
+            _slotMenuAuto.gameObject.SetActive(autoable);
+            if (autoable)
+                UiKit.SetButtonText(_slotMenuAuto, Boot.AutoSkills.Contains(token) ? "Auto: ON" : "Auto: off");
+
+            // Sit the menu above the bar, roughly over the slot it belongs to.
+            var rt = _slotMenu;
+            rt.anchorMin = rt.anchorMax = new Vector2(1f, 0f);
+            rt.pivot = new Vector2(1f, 0f);
+            rt.anchoredPosition = new Vector2(-12f, 300f);
+            rt.sizeDelta = new Vector2(150f, autoable ? 150f : 106f);
+
+            OpenWindow(_slotMenu);
+        }
+
+        private void CloseSlotMenu() => CloseWindow(_slotMenu);
 
         private void PageBy(int delta) => _barPage = Mathf.Clamp(_barPage + delta, 0, BarPages - 1);
 
@@ -839,6 +932,12 @@ namespace Game.Client
             _lastBackFrame = Time.frameCount;
 
             if (_confirmPanel.gameObject.activeSelf) { Dismiss(); return; }
+
+            // Back = "undo what I am doing", and the most immediate thing is a cast in progress. This
+            // is the phone's ESC: the desktop client cancels a cast with Escape, and Android delivers
+            // its back button AS Escape, so the two end up meaning the same thing without inventing a
+            // second convention.
+            if (Boot.IsCasting) { Boot.CancelCast(); return; }
 
             // One window per press, newest first. Only when the screen is clear does back mean "I
             // want out" — the old ladder made you confirm your way through leaving the world and

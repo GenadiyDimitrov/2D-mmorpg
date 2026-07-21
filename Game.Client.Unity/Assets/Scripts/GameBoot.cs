@@ -525,9 +525,27 @@ namespace Game.Client
 
         // ----- Commands ------------------------------------------------------------------------
 
+        /// <summary>True while a cast is in progress — casting ROOTS you (commit on start), so the
+        /// server rejects movement until it finishes or you cancel it.</summary>
+        public bool IsCasting => !string.IsNullOrEmpty(CastingSkill)
+                                 && Time.realtimeSinceStartup < CastEndsAt;
+
         public async void Move(float serverX, float serverY)
         {
             if (Phase != ClientPhase.InWorld) return;
+
+            // The server DROPS a move command while casting (HandleMove returns early). Sending one
+            // anyway and dropping a destination ring on the ground advertises an order that was thrown
+            // away — the character stands still next to a marker promising otherwise. Say why instead.
+            //
+            // Deliberately NOT queued-until-the-cast-ends: that is rare in the genre (WoW/FFXIV cancel
+            // the cast on move; L2 roots you and ignores the click) and this project's design is the
+            // L2 one — "casting roots you, ESC cancels".
+            if (IsCasting)
+            {
+                ClientLog.Warn("Can't move while casting — tap the cast bar (or press Back) to cancel.");
+                return;
+            }
             // Drop the destination ring here rather than in TouchInput, so EVERY move order shows one
             // — including any future ones that don't come from a tap.
             if (Marker != null) Marker.ShowAt(WorldMapper.ToUnity(serverX, serverY));
@@ -675,6 +693,9 @@ namespace Game.Client
         public async void CancelCast()
         {
             if (Phase != ClientPhase.InWorld) return;
+            // Clear it locally too: the server has no "cast cancelled" push, so waiting for one would
+            // leave the bar sitting there until the original duration ran out.
+            CastingSkill = null;
             try { await _net.CancelCastAsync(); }
             catch (Exception ex) { ClientLog.Warn("CancelCast: " + ex.Message); }
         }
