@@ -608,8 +608,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Client.GameBoot
   ServerUrl: http://10.2.2.33:5238/game
-  Username: phonedev
-  Password: phonedev1
+  Username: admin
+  Password: admin
   CharacterName: Pathfinder
   Race: 0
   BaseClass: 0

@@ -33,9 +33,12 @@ namespace Game.Client
         [Tooltip("Emulator: http://10.0.2.2:5238/game   Cabled phone (adb reverse): http://127.0.0.1:5238/game   Same Wi-Fi: http://<PC-LAN-IP>:5238/game")]
         public string ServerUrl = "http://127.0.0.1:5238/game";
 
+        // admin/admin is the DEBUG seed account — a level-90 character in full gear with every skill,
+        // which is what you want on the phone when the point is to test a window rather than to level
+        // something up. It only exists in a DEBUG server build.
         [Header("Dev login (prefilled into the login screen)")]
-        public string Username = "phonedev";
-        public string Password = "phonedev1";
+        public string Username = "admin";
+        public string Password = "admin";
         public string CharacterName = "Pathfinder";
         public Race Race = Race.Human;
         public BaseClass BaseClass = BaseClass.Fighter;

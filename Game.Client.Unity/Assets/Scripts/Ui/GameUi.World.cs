@@ -29,6 +29,10 @@ namespace Game.Client
         /// </summary>
         public float NameplateHeight = 0.9f;
 
+        /// <summary>Screen-space gap between the entity and the bottom of its plate, so neither the
+        /// name nor the HP bar is drawn across the marker itself.</summary>
+        private const float PlateGap = 12f;
+
         // self / target
         private TextMeshProUGUI _selfName, _selfDetail, _targetName, _targetDetail;
         private Image _selfHp, _selfMp, _selfXp, _targetHp;
@@ -149,7 +153,7 @@ namespace Game.Client
                         new Vector2(12f, -48f), new Vector2(330f, 116f));
             var inner = panel.GetChild(0);
 
-            _selfName = UiKit.Label(inner, "waiting for your entity …", 19f);
+            _selfName = UiKit.Label(inner, "waiting for your entity ...", 19f);
             UiKit.Place(UiKit.Rect(_selfName.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(12f, -8f), new Vector2(300f, 24f));
 
@@ -221,7 +225,7 @@ namespace Game.Client
                             new Vector2(4f, -2f), new Vector2(20f, 16f));
             }
 
-            var prev = UiKit.TextButton(inner, "‹", () => PageBy(-1), 18f);
+            var prev = UiKit.TextButton(inner, "<", () => PageBy(-1), 18f);
             UiKit.Place(UiKit.Rect(prev.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(pad, 4f), new Vector2(40f, 20f));
 
@@ -229,7 +233,7 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_pageLabel.gameObject), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                         new Vector2(0f, 4f), new Vector2(120f, 20f));
 
-            var next = UiKit.TextButton(inner, "›", () => PageBy(1), 18f);
+            var next = UiKit.TextButton(inner, ">", () => PageBy(1), 18f);
             UiKit.Place(UiKit.Rect(next.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
                         new Vector2(-pad, 4f), new Vector2(40f, 20f));
         }
@@ -283,17 +287,15 @@ namespace Game.Client
             UiKit.Place(_consolePanel, new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(12f, 132f), new Vector2(760f, 320f));
             var inner = _consolePanel.GetChild(0);
+            float chrome = UiKit.WindowChrome(_consolePanel, "Log", () => CloseWindow(_consolePanel));
 
             ScrollRect scroll;
             _consoleContent = UiKit.ScrollArea(inner, out scroll, 1f);
             _consoleScroll = scroll;
-            UiKit.Stretch((RectTransform)scroll.transform, 10f, 10f, 10f, 46f);
+            UiKit.Stretch((RectTransform)scroll.transform, 10f, chrome + 6f, 10f, 46f);
 
             var clear = UiKit.TextButton(inner, "Clear", () => ClientLog.Clear(), 16f);
             UiKit.Place(UiKit.Rect(clear.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
-                        new Vector2(-118f, 8f), new Vector2(100f, 34f));
-            var close = UiKit.TextButton(inner, "Close", () => CloseWindow(_consolePanel), 16f);
-            UiKit.Place(UiKit.Rect(close.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
                         new Vector2(-10f, 8f), new Vector2(100f, 34f));
 
             _consolePanel.gameObject.SetActive(false);
@@ -305,17 +307,11 @@ namespace Game.Client
             UiKit.Place(_bagPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                         Vector2.zero, new Vector2(620f, 460f));
             var inner = _bagPanel.GetChild(0);
-
-            UiKit.Place(UiKit.Rect(UiKit.Label(inner, "Bag", 24f).gameObject),
-                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, -12f),
-                        new Vector2(200f, 32f));
-            var close = UiKit.TextButton(inner, "✕", () => CloseWindow(_bagPanel), 18f);
-            UiKit.Place(UiKit.Rect(close.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
-                        new Vector2(-12f, -12f), new Vector2(44f, 36f));
+            float chrome = UiKit.WindowChrome(_bagPanel, "Bag", () => CloseWindow(_bagPanel));
 
             ScrollRect scroll;
             _bagContent = UiKit.ScrollArea(inner, out scroll, 3f);
-            UiKit.Stretch((RectTransform)scroll.transform, 16f, 56f, 16f, 16f);
+            UiKit.Stretch((RectTransform)scroll.transform, 16f, chrome + 10f, 16f, 16f);
 
             _bagPanel.gameObject.SetActive(false);
         }
@@ -326,15 +322,9 @@ namespace Game.Client
             UiKit.Place(_debugPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                         Vector2.zero, new Vector2(560f, 380f));
             var inner = _debugPanel.GetChild(0);
+            float chrome = UiKit.WindowChrome(_debugPanel, "Debug", () => CloseWindow(_debugPanel));
 
-            UiKit.Place(UiKit.Rect(UiKit.Label(inner, "Debug", 24f).gameObject),
-                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, -12f),
-                        new Vector2(200f, 32f));
-            var close = UiKit.TextButton(inner, "✕", () => CloseWindow(_debugPanel), 18f);
-            UiKit.Place(UiKit.Rect(close.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
-                        new Vector2(-12f, -12f), new Vector2(44f, 36f));
-
-            float y = -60f;
+            float y = -chrome - 14f;
             DebugRow(inner, ref y, "Level",
                 ("-10", () => Boot.Debug(n => n.DebugLevelAsync(-10), "level")),
                 ("-1",  () => Boot.Debug(n => n.DebugLevelAsync(-1), "level")),
@@ -354,7 +344,7 @@ namespace Game.Client
                         new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, y),
                         new Vector2(120f, 28f));
 
-            var prev = UiKit.TextButton(inner, "‹", () => CycleTown(-1), 18f);
+            var prev = UiKit.TextButton(inner, "<", () => CycleTown(-1), 18f);
             UiKit.Place(UiKit.Rect(prev.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(120f, y), new Vector2(44f, 36f));
 
@@ -362,7 +352,7 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_townLabel.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(170f, y - 4f), new Vector2(220f, 28f));
 
-            var next = UiKit.TextButton(inner, "›", () => CycleTown(1), 18f);
+            var next = UiKit.TextButton(inner, ">", () => CycleTown(1), 18f);
             UiKit.Place(UiKit.Rect(next.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(396f, y), new Vector2(44f, 36f));
 
@@ -453,7 +443,7 @@ namespace Game.Client
 
             if (self == null)
             {
-                _selfName.text = "waiting for your entity …";
+                _selfName.text = "waiting for your entity ...";
                 _selfDetail.text = "";
                 return;
             }
@@ -517,9 +507,9 @@ namespace Game.Client
 
             usable = true;
             if (ActionCatalog.FromToken(token) is ActionDef action)
-                return string.IsNullOrEmpty(action.Icon) ? Abbreviations.For(action.Name) : action.Icon;
+                return Abbreviations.For(action.Name);
 
-            if (GameConstants.IsItemSlot(token)) return "▣";
+            if (GameConstants.IsItemSlot(token)) return "[i]";
 
             var def = SkillCatalog.Get(token);
             if (def == null) { usable = false; return "?"; }
@@ -527,8 +517,7 @@ namespace Game.Client
             // A bar is per-class, and a subclass can legitimately hold skills it has not learned.
             usable = Boot.Learned.Count == 0 || Boot.Learned.ContainsKey(token);
 
-            if (!string.IsNullOrWhiteSpace(def.Icon)) return def.Icon;
-            return string.IsNullOrWhiteSpace(def.Abbrev) ? Abbreviations.For(def.Name) : def.Abbrev;
+            return SkillLetters(def);
         }
 
         private void FireSlot(int slotOnPage)
@@ -630,8 +619,8 @@ namespace Game.Client
 
                 string name = def != null ? def.Name : item.DefId;
                 if (item.Enchant > 0) name = "+" + item.Enchant + " " + name;
-                if (item.Quantity > 1) name += "   ×" + item.Quantity;
-                if (item.Equipped) name = "● " + name;
+                if (item.Quantity > 1) name += "   x" + item.Quantity;
+                if (item.Equipped) name = "* " + name;
 
                 var label = UiKit.Label(row.transform, name, 17f,
                                         item.Equipped ? UiKit.Good : UiKit.Text,
@@ -714,19 +703,22 @@ namespace Game.Client
             {
                 var root = UiKit.Rect(UiKit.Box(_nameplateLayer, "Plate",
                                                 new Color(0, 0, 0, 0), blocksInput: false).gameObject);
-                root.sizeDelta = new Vector2(200f, 34f);
+                root.sizeDelta = new Vector2(200f, 34f + PlateGap);
                 // Pivot at the BOTTOM edge, so the plate grows upward from the screen point and sits
                 // above the character instead of being centred on him. With a centred pivot the name
                 // lands straight on top of the marker.
                 root.pivot = new Vector2(0.5f, 0f);
 
                 var label = UiKit.Label(root, "", 15f, UiKit.Text, TextAlignmentOptions.Bottom);
-                UiKit.Stretch(UiKit.Rect(label.gameObject), 0f, 0f, 0f, 14f);
+                UiKit.Stretch(UiKit.Rect(label.gameObject), 0f, 0f, 0f, PlateGap + 10f);
 
+                // The bar clears the marker by PlateGap as well. A bottom pivot alone only guarantees
+                // the plate grows upward FROM the anchor — its lowest element still sits exactly on
+                // the entity, which is why the HP bar was still drawn across the character.
                 var fill = UiKit.ValueBar(root, UiKit.Hp);
                 var bg = (RectTransform)fill.transform.parent;
                 UiKit.Place(bg, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                            new Vector2(0f, 0f), new Vector2(70f, 6f));
+                            new Vector2(0f, PlateGap), new Vector2(70f, 6f));
 
                 // A nameplate floats over the world, so it must not eat the tap meant for the entity
                 // underneath it — which is precisely where you aim when you want to attack something.
@@ -813,7 +805,7 @@ namespace Game.Client
 
         private System.Collections.IEnumerator QuitRoutine()
         {
-            _confirmText.text = "Logging out …";
+            _confirmText.text = "Logging out ...";
             _confirmPanel.gameObject.SetActive(true);
 
             if (Boot.Phase == ClientPhase.InWorld)

@@ -39,18 +39,11 @@ namespace Game.Client
             UiKit.Place(_skillsPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                         Vector2.zero, new Vector2(720f, 500f));
             var inner = _skillsPanel.GetChild(0);
-
-            UiKit.Place(UiKit.Rect(UiKit.Label(inner, "Skills", 24f).gameObject),
-                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, -12f),
-                        new Vector2(160f, 32f));
+            float chrome = UiKit.WindowChrome(_skillsPanel, "Skills", () => CloseWindow(_skillsPanel));
 
             _skillsHeader = UiKit.Label(inner, "", 16f, UiKit.TextDim, TextAlignmentOptions.Right);
             UiKit.Place(UiKit.Rect(_skillsHeader.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
-                        new Vector2(-70f, -14f), new Vector2(340f, 28f));
-
-            var close = UiKit.TextButton(inner, "✕", () => CloseWindow(_skillsPanel), 18f);
-            UiKit.Place(UiKit.Rect(close.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
-                        new Vector2(-12f, -12f), new Vector2(44f, 36f));
+                        new Vector2(-70f, -14f), new Vector2(300f, 28f));
 
             _skillsTabButtons = new Button[3];
             string[] names = { "Known", "Learn", "Actions" };
@@ -63,13 +56,13 @@ namespace Game.Client
                     _skillsRevision = -1;      // force a rebuild
                 }, 17f);
                 UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(18f + i * 150f, -54f), new Vector2(144f, 38f));
+                            new Vector2(18f + i * 150f, -chrome - 6f), new Vector2(144f, 38f));
                 _skillsTabButtons[i] = button;
             }
 
             ScrollRect scroll;
             _skillsContent = UiKit.ScrollArea(inner, out scroll, 3f);
-            UiKit.Stretch((RectTransform)scroll.transform, 16f, 100f, 16f, 44f);
+            UiKit.Stretch((RectTransform)scroll.transform, 16f, chrome + 50f, 16f, 44f);
 
             _assignHint = UiKit.Label(inner, "", 15f, UiKit.Accent);
             UiKit.Place(UiKit.Rect(_assignHint.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
@@ -139,7 +132,7 @@ namespace Game.Client
                 bool passive = def.Passive != null;
                 bool onBar = Boot.SkillBar != null && System.Array.IndexOf(Boot.SkillBar, def.Id) >= 0;
 
-                Row(Face(def) + "  " + def.Name + level + (onBar ? "   • on bar" : ""),
+                Row(SkillLetters(def) + "  " + def.Name + level + (onBar ? "   * on bar" : ""),
                     passive ? null : (_pendingAssign == token ? "Cancel" : "To bar"),
                     passive ? null : (System.Action)(() => BeginAssign(token)),
                     passive ? UiKit.TextDim : UiKit.Text);
@@ -154,7 +147,7 @@ namespace Game.Client
         private void BuildLearnTab()
         {
             var active = Boot.ActiveClass;
-            if (active == null) { Note("Waiting for your class …"); return; }
+            if (active == null) { Note("Waiting for your class ..."); return; }
 
             var archetype = active.SecondClass > 0 ? ClassCatalog.Get(active.SecondClass)?.Archetype : null;
             var discipline = active.ThirdClass > 0 ? ThirdClassCatalog.Get(active.ThirdClass)?.Discipline : null;
@@ -189,7 +182,7 @@ namespace Game.Client
                                             : "(SP " + sp + ")";
                     string id = def.Id;
 
-                    Row(Face(def) + "  " + def.Name + levelTag + "   " + price,
+                    Row(SkillLetters(def) + "  " + def.Name + levelTag + "   " + price,
                         "Learn",
                         canLearn ? (System.Action)(() => { Boot.LearnSkill(id); _skillsRevision = -1; }) : null,
                         canLearn ? UiKit.Text : UiKit.TextDim);
@@ -204,7 +197,7 @@ namespace Game.Client
             foreach (var action in ActionCatalog.All)
             {
                 string token = GameConstants.ActionSlotToken(action.Id);
-                Row((string.IsNullOrEmpty(action.Icon) ? "" : action.Icon + "  ") + action.Name,
+                Row(Abbreviations.For(action.Name) + "  " + action.Name,
                     "To bar", () => BeginAssign(token), UiKit.Text);
             }
         }
@@ -267,9 +260,16 @@ namespace Game.Client
             }
         }
 
-        private static string Face(SkillDef def)
+        /// <summary>
+        /// The LETTERS for a skill square. Deliberately NOT <c>def.Icon</c>: those icons are emoji,
+        /// and the font TMP ships with (LiberationSans) has no emoji glyphs — every one of them would
+        /// draw as the hollow "missing glyph" box, which is what the ✕ close buttons were.
+        ///
+        /// Emoji need a TMP font asset with an emoji fallback, which has to be generated in the
+        /// Editor. Until that exists, letters are honest; boxes are not.
+        /// </summary>
+        internal static string SkillLetters(SkillDef def)
         {
-            if (!string.IsNullOrWhiteSpace(def.Icon)) return def.Icon;
             return string.IsNullOrWhiteSpace(def.Abbrev) ? Abbreviations.For(def.Name) : def.Abbrev;
         }
 

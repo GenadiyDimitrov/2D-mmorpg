@@ -164,6 +164,41 @@ namespace Game.Client
             if (label != null) label.text = text;
         }
 
+        /// <summary>
+        /// Standard window chrome: a draggable title bar with the title and a close button. Returns
+        /// the bar's height so callers can lay content out beneath it.
+        ///
+        /// Every window gets this rather than hand-placing its own title and ✕, so they all move, all
+        /// close the same way, and a new window inherits both for free.
+        /// </summary>
+        public static float WindowChrome(RectTransform panel, string title, Action onClose)
+        {
+            const float height = 46f;
+            var inner = panel.GetChild(0);
+
+            var bar = Box(inner, "TitleBar", PanelLight);
+            var rt = Rect(bar.gameObject);
+            rt.anchorMin = new Vector2(0f, 1f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(0f, height);
+
+            bar.gameObject.AddComponent<DragMove>().Target = panel;
+
+            var label = Label(bar.transform, title, 22f, Text, TextAlignmentOptions.Left);
+            Place(Rect(label.gameObject), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+                  new Vector2(16f, 0f), new Vector2(320f, 30f));
+
+            // "X", not "✕": the bundled LiberationSans has no glyph for the multiplication sign and
+            // TMP draws a missing glyph as a hollow box — which is the "[]" on the close buttons.
+            var close = TextButton(bar.transform, "X", onClose, 20f);
+            Place(Rect(close.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                  new Vector2(-8f, 0f), new Vector2(46f, 34f));
+
+            return height;
+        }
+
         public static TMP_InputField InputField(Transform parent, string placeholder,
                                                 bool password = false, float size = 18f)
         {
