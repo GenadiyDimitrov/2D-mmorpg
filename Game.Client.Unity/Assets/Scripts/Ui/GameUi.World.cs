@@ -167,6 +167,8 @@ namespace Game.Client
             BuildSkillDetail();
             BuildStatsWindow();
             BuildTargetWindow();
+            BuildSettingsWindow();
+            BuildQuestWindow();
             BuildSlotMenu();
         }
 
@@ -335,6 +337,8 @@ namespace Game.Client
                 ("Bag",       () => ToggleWindow(_bagPanel)),
                 ("Skills",    () => ToggleWindow(_skillsPanel)),
                 ("Char",      () => ToggleWindow(_statsPanel)),
+                ("Setup",     () => ToggleWindow(_settingsPanel)),
+                ("Quests",    () => ToggleWindow(_questPanel)),
                 ("Debug",     () => ToggleWindow(_debugPanel)),
                 ("Leave",     () => Boot.LeaveWorld()),
             };
@@ -507,6 +511,7 @@ namespace Game.Client
             RefreshSkillsWindow();
             RefreshStatsWindow();
             RefreshTargetWindow();
+            RefreshQuestWindow();
             RefreshNameplates();
 
             RefreshFeedback();

@@ -69,6 +69,10 @@ namespace Game.Client
             if (_built) return;
             _built = true;
 
+            // Saved look settings first: the canvas reads the reference resolution when it is created,
+            // so loading afterwards would build at the default size and only take effect next launch.
+            LoadLookPrefs();
+
             _canvas = UiKit.CreateCanvas("GameUi");
             _canvas.transform.SetParent(transform, false);
             _root = (RectTransform)_canvas.transform;

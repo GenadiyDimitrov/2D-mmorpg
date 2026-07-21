@@ -20,8 +20,21 @@ namespace Game.Client
 
         /// <summary>Diameter of an entity marker, in Unity units (the world is 0.01 scale, so 240
         /// units across). Sized down from 1.5 on 2026-07-21 to match how small entities read in the
-        /// WPF view — at 1.5 they crowded the top-down camera.</summary>
-        public const float EntityScale = 0.9f;
+        /// WPF view — at 1.5 they crowded the top-down camera.
+        ///
+        /// A FIELD, not a const, because it is tunable from the Settings window: the right value is a
+        /// look question that can only be answered on the device, and a rebuild per guess is a bad
+        /// way to answer it.</summary>
+        public static float EntityScale = 0.9f;
+
+        /// <summary>Re-scale markers already in the world after the setting changes — otherwise the
+        /// new size would only apply to things that happen to respawn.</summary>
+        public void ApplyEntityScale()
+        {
+            foreach (var kv in _views)
+                if (kv.Value != null)
+                    kv.Value.transform.localScale = Vector3.one * EntityScale;
+        }
 
         /// <summary>The marker is smaller than a fingertip, so the tap target is deliberately bigger
         /// than the marker.</summary>

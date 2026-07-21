@@ -256,7 +256,7 @@ namespace Game.Client
 
         private void SpawnDamageNumber(CombatEvent e)
         {
-            if (Boot.Entities == null) return;
+            if (Boot.Entities == null || !_showDamageNumbers) return;
 
             // Anchor on the entity that was HIT — damage belongs where it landed. Misses still show,
             // because "nothing happened" and "I missed" look identical otherwise.

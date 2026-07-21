@@ -90,6 +90,9 @@ namespace Game.Client
         /// <summary>The bag, as last sent by the server (it pushes the whole thing on any change).</summary>
         public InventoryItemDto[] Inventory { get; private set; } = new InventoryItemDto[0];
 
+        /// <summary>The quest log, as last pushed by the server.</summary>
+        public QuestLog Quests { get; private set; }
+
         /// <summary>The expanded target window's contents, or null. Arrives only after asking.</summary>
         public TargetDetails Details { get; private set; }
 
@@ -303,6 +306,7 @@ namespace Game.Client
             _net.GoldReceived += g => Main(() => Gold = g.Gold);
             _net.BuffsReceived += b => Main(() => Buffs = b?.Buffs ?? new BuffDto[0]);
             _net.TargetDetailsReceived += d => Main(() => Details = d);
+            _net.QuestLogReceived += q => Main(() => Quests = q);
             _net.ResurrectOfferReceived += o => Main(() =>
             {
                 PendingResurrect = o;

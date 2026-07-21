@@ -39,8 +39,11 @@ namespace Game.Client
         public static readonly Color BarBg      = new Color(0.08f, 0.09f, 0.11f, 1f);
 
         /// <summary>Design resolution. The scaler matches on HEIGHT, so a taller or narrower phone
-        /// changes how much WIDTH you see rather than rescaling everything.</summary>
-        public static readonly Vector2 Reference = new Vector2(1280f, 720f);
+        /// changes how much WIDTH you see rather than rescaling everything.
+        ///
+        /// Mutable so Settings can change the UI size — but only read at BUILD time, which is why that
+        /// setting is labelled "restart".</summary>
+        public static Vector2 Reference = new Vector2(1280f, 720f);
 
         // ----- root ------------------------------------------------------------------------------
 
@@ -262,6 +265,49 @@ namespace Game.Client
             scroll.viewport = Rect(viewport.gameObject);
             scroll.content = rt;
             return rt;
+        }
+
+        /// <summary>
+        /// A labelled slider row. Returns the Slider so the caller can read it; the label updates
+        /// itself with the live value, because a slider with no number on it is a guess.
+        /// </summary>
+        public static Slider SliderRow(Transform parent, string title, float min, float max,
+                                       float value, string format, Action<float> onChange)
+        {
+            var row = Box(parent, "SliderRow", new Color(0, 0, 0, 0), blocksInput: false);
+
+            var label = Label(row.transform, "", 15f, Text, TextAlignmentOptions.Left);
+            Place(Rect(label.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                  new Vector2(0f, 0f), new Vector2(240f, 22f));
+
+            var track = Box(row.transform, "Track", BarBg);
+            Place(Rect(track.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                  new Vector2(250f, -4f), new Vector2(300f, 14f));
+
+            var slider = track.gameObject.AddComponent<Slider>();
+            slider.minValue = min;
+            slider.maxValue = max;
+
+            var fill = Box(track.transform, "Fill", Accent);
+            var fillRect = Rect(fill.gameObject);
+            fillRect.anchorMin = Vector2.zero;
+            fillRect.anchorMax = new Vector2(1f, 1f);
+            fillRect.offsetMin = Vector2.zero;
+            fillRect.offsetMax = Vector2.zero;
+            slider.fillRect = fillRect;
+
+            // No handle: a 14px-tall track dragged with a thumb is fiddly on a phone, and tapping
+            // anywhere on the track to set the value is both simpler and easier to hit.
+            slider.targetGraphic = track;
+            slider.value = value;
+            label.text = title + "   " + value.ToString(format);
+
+            slider.onValueChanged.AddListener(v =>
+            {
+                label.text = title + "   " + v.ToString(format);
+                if (onChange != null) onChange(v);
+            });
+            return slider;
         }
 
         /// <summary>A value bar (HP/MP/XP): background + a fill whose WIDTH is driven by anchorMax, so
