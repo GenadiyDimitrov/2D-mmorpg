@@ -7196,6 +7196,19 @@ var effect = def.Effect;
             _world.Grid.Add(entity);
         }
         _log.LogInformation("Spawned {Count} NPCs", WorldMap.Npcs.Length);
+
+        // Report what each region actually CONTAINS. Region membership is geometric, so a polygon
+        // authored slightly wrong contains no spawners and fails silently — it would still draw, still
+        // teleport, and simply never show a level band. Printing the counts at startup makes a bad
+        // outline obvious on the first run instead of during a playtest.
+        foreach (var region in RegionMap.All)
+        {
+            var band = RegionMap.LevelBand(region.Id);
+            _log.LogInformation("Region {Name}: {Spawners} spawner(s), {Band}",
+                region.Name,
+                RegionMap.SpawnersIn(region.Id).Length,
+                band is null ? "peaceful" : $"Lv {band.Value.Min}-{band.Value.Max}");
+        }
     }
 
     /// <summary>Resolve a vendor NPC the player is standing next to.</summary>
