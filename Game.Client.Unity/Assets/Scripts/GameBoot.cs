@@ -87,6 +87,14 @@ namespace Game.Client
         /// <summary>The bag, as last sent by the server (it pushes the whole thing on any change).</summary>
         public InventoryItemDto[] Inventory { get; private set; } = new InventoryItemDto[0];
 
+        /// <summary>Unspent skill points, from the stats push.</summary>
+        public int SkillPoints => Stats != null ? Stats.SkillPoints : 0;
+
+        /// <summary>The class currently being PLAYED — race, base/second/third class and its own level.
+        /// A subclass swap replaces it, which is why the skills window reads this rather than anything
+        /// remembered from the character screen.</summary>
+        public SubclassDto ActiveClass { get; private set; }
+
         private NetworkChannel _net;
         private Guid _selfId;
 
@@ -261,6 +269,11 @@ namespace Game.Client
                 Learned.Clear();
                 if (l?.Skills != null)
                     foreach (var s in l.Skills) Learned[s.Id] = s.Level;
+            });
+            _net.SubclassesReceived += s => Main(() =>
+            {
+                if (s?.Classes == null) return;
+                foreach (var c in s.Classes) if (c.Active) { ActiveClass = c; break; }
             });
             _net.SkillBarReceived += b => Main(() =>
             {
@@ -536,6 +549,33 @@ namespace Game.Client
             }
 
             UseSkill(token);
+        }
+
+        public async void LearnSkill(string skillId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.LearnSkillAsync(skillId); }
+            catch (Exception ex) { ClientLog.Warn("Learn: " + ex.Message); }
+        }
+
+        /// <summary>
+        /// Put a token in a bar slot and send the WHOLE bar back.
+        ///
+        /// This is the one write the client is allowed to make, and only because the PLAYER moved
+        /// something. Writing a bar the client authored itself — reacting to a Learned push, say —
+        /// is what destroyed real layouts in the WPF client twice: it looked right on screen while
+        /// the server's copy was already wrong.
+        /// </summary>
+        public async void AssignSlot(int index, string token)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            if (SkillBar == null || index < 0 || index >= SkillBar.Length) return;
+
+            var slots = (string[])SkillBar.Clone();
+            slots[index] = token;
+            SkillBar = slots;               // optimistic: the server echoes the bar back anyway
+            try { await _net.SetSkillBarAsync(slots); }
+            catch (Exception ex) { ClientLog.Warn("SkillBar: " + ex.Message); }
         }
 
         public async void UseSkill(string skillId)

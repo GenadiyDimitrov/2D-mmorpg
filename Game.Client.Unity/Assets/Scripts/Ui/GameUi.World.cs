@@ -44,12 +44,60 @@ namespace Game.Client
         private RectTransform _consolePanel, _consoleContent;
         private ScrollRect _consoleScroll;
         private int _seenLogRevision = -1;
-        private bool _showConsole;
 
         // bag / debug
         private RectTransform _bagPanel, _bagContent, _debugPanel;
-        private bool _showBag, _showDebug;
         private int _bagRevision = -1;
+
+        /// <summary>
+        /// Open windows, oldest first. The back button pops the LAST one opened, so closing walks back
+        /// through the panels in the order you opened them; only when nothing is left does it offer to
+        /// quit. Every future window (skills, character sheet, shops, party …) joins this by calling
+        /// <see cref="OpenWindow"/> — nothing else needs to know about the back button.
+        /// </summary>
+        private readonly List<RectTransform> _windows = new List<RectTransform>();
+
+        private void OpenWindow(RectTransform panel)
+        {
+            if (panel == null) return;
+            _windows.Remove(panel);        // re-opening moves it back to the top of the stack
+            _windows.Add(panel);
+            panel.gameObject.SetActive(true);
+            panel.SetAsLastSibling();      // and draws above the ones opened before it
+        }
+
+        private void CloseWindow(RectTransform panel)
+        {
+            if (panel == null) return;
+            _windows.Remove(panel);
+            panel.gameObject.SetActive(false);
+        }
+
+        private void ToggleWindow(RectTransform panel)
+        {
+            if (panel == null) return;
+            if (panel.gameObject.activeSelf) CloseWindow(panel);
+            else OpenWindow(panel);
+        }
+
+        /// <summary>Close the most recently opened window. False when there was none.</summary>
+        private bool CloseTopWindow()
+        {
+            // Walk from the top: a panel closed by its own ✕ leaves a stale entry behind, and the back
+            // button must not appear to do nothing while it eats those.
+            for (int i = _windows.Count - 1; i >= 0; i--)
+            {
+                var panel = _windows[i];
+                _windows.RemoveAt(i);
+                if (panel != null && panel.gameObject.activeSelf)
+                {
+                    panel.gameObject.SetActive(false);
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private int _townIndex;
         private TextMeshProUGUI _townLabel;
         private Button _debugButton;
@@ -79,6 +127,7 @@ namespace Game.Client
             BuildActionBar();
             BuildConsole();
             BuildBag();
+            BuildSkillsWindow();
             BuildDebugPanel();
         }
 
@@ -186,7 +235,7 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(send.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(720f, 78f), new Vector2(96f, 46f));
 
-            var log = UiKit.TextButton(_worldRoot, "Log", () => ToggleConsole(), 17f);
+            var log = UiKit.TextButton(_worldRoot, "Log", () => ToggleWindow(_consolePanel), 17f);
             UiKit.Place(UiKit.Rect(log.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(824f, 78f), new Vector2(90f, 46f));
         }
@@ -202,9 +251,9 @@ namespace Game.Client
                 Boot.Stats != null && Boot.Stats.MoveState == MoveState.Walking
                     ? MoveState.Running : MoveState.Walking));
             AddAction(ref x, "Respawn", () => Boot.Respawn());
-            AddAction(ref x, "Bag", () => Toggle(ref _showBag, _bagPanel, ref _showDebug, _debugPanel));
-            _debugButton = AddAction(ref x, "Debug",
-                () => Toggle(ref _showDebug, _debugPanel, ref _showBag, _bagPanel));
+            AddAction(ref x, "Bag", () => ToggleWindow(_bagPanel));
+            AddAction(ref x, "Skills", () => ToggleWindow(_skillsPanel));
+            _debugButton = AddAction(ref x, "Debug", () => ToggleWindow(_debugPanel));
             AddAction(ref x, "Leave", () => Boot.LeaveWorld());
         }
 
@@ -215,13 +264,6 @@ namespace Game.Client
                         new Vector2(x, 12f), new Vector2(126f, 52f));
             x += 132f;
             return button;
-        }
-
-        private void Toggle(ref bool flag, RectTransform panel, ref bool otherFlag, RectTransform other)
-        {
-            flag = !flag;
-            if (flag) { otherFlag = false; other.gameObject.SetActive(false); }
-            panel.gameObject.SetActive(flag);
         }
 
         private void BuildConsole()
@@ -239,7 +281,7 @@ namespace Game.Client
             var clear = UiKit.TextButton(inner, "Clear", () => ClientLog.Clear(), 16f);
             UiKit.Place(UiKit.Rect(clear.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
                         new Vector2(-118f, 8f), new Vector2(100f, 34f));
-            var close = UiKit.TextButton(inner, "Close", () => ToggleConsole(false), 16f);
+            var close = UiKit.TextButton(inner, "Close", () => CloseWindow(_consolePanel), 16f);
             UiKit.Place(UiKit.Rect(close.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
                         new Vector2(-10f, 8f), new Vector2(100f, 34f));
 
@@ -256,11 +298,7 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(UiKit.Label(inner, "Bag", 24f).gameObject),
                         new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, -12f),
                         new Vector2(200f, 32f));
-            var close = UiKit.TextButton(inner, "✕", () =>
-            {
-                _showBag = false;
-                _bagPanel.gameObject.SetActive(false);
-            }, 18f);
+            var close = UiKit.TextButton(inner, "✕", () => CloseWindow(_bagPanel), 18f);
             UiKit.Place(UiKit.Rect(close.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
                         new Vector2(-12f, -12f), new Vector2(44f, 36f));
 
@@ -281,11 +319,7 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(UiKit.Label(inner, "Debug", 24f).gameObject),
                         new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, -12f),
                         new Vector2(200f, 32f));
-            var close = UiKit.TextButton(inner, "✕", () =>
-            {
-                _showDebug = false;
-                _debugPanel.gameObject.SetActive(false);
-            }, 18f);
+            var close = UiKit.TextButton(inner, "✕", () => CloseWindow(_debugPanel), 18f);
             UiKit.Place(UiKit.Rect(close.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
                         new Vector2(-12f, -12f), new Vector2(44f, 36f));
 
@@ -394,6 +428,7 @@ namespace Game.Client
             RefreshSkillBar();
             RefreshConsole();
             RefreshBag();
+            RefreshSkillsWindow();
             RefreshNameplates();
 
             _debugButton.gameObject.SetActive(Boot.IsAdmin);
@@ -483,8 +518,11 @@ namespace Game.Client
 
         private void FireSlot(int slotOnPage)
         {
-            var bar = Boot.SkillBar;
             int index = _barPage * SlotsPerPage + slotOnPage;
+            // A slot tap PLACES when the skills window is waiting to assign, and only otherwise casts.
+            if (TryPlacePending(index)) return;
+
+            var bar = Boot.SkillBar;
             if (bar != null && index < bar.Length) Boot.UseSlot(bar[index]);
         }
 
@@ -524,15 +562,9 @@ namespace Game.Client
             _commandField.DeactivateInputField();
         }
 
-        private void ToggleConsole(bool? show = null)
-        {
-            _showConsole = show ?? !_showConsole;
-            _consolePanel.gameObject.SetActive(_showConsole);
-        }
-
         private void RefreshConsole()
         {
-            if (!_showConsole || _seenLogRevision == ClientLog.Revision) return;
+            if (!_consolePanel.gameObject.activeSelf || _seenLogRevision == ClientLog.Revision) return;
             _seenLogRevision = ClientLog.Revision;
 
             for (int i = _consoleContent.childCount - 1; i >= 0; i--)
@@ -554,7 +586,7 @@ namespace Game.Client
 
         private void RefreshBag()
         {
-            if (!_showBag) return;
+            if (!_bagPanel.gameObject.activeSelf) return;
 
             // Cheap change stamp: the server pushes the WHOLE bag on any change, so length plus the
             // equipped/quantity state is enough to know when the rows need rebuilding.
@@ -716,28 +748,12 @@ namespace Game.Client
 
             if (_confirmPanel.gameObject.activeSelf) { Dismiss(); return; }
 
-            if (_showBag || _showDebug)
-            {
-                _showBag = _showDebug = false;
-                _bagPanel.gameObject.SetActive(false);
-                _debugPanel.gameObject.SetActive(false);
-                return;
-            }
-            if (_showConsole) { ToggleConsole(false); return; }
+            // One window per press, newest first. Only when the screen is clear does back mean "I
+            // want out" — the old ladder made you confirm your way through leaving the world and
+            // logging out, which is three prompts to do the one thing you asked for.
+            if (CloseTopWindow()) return;
 
-            switch (Boot.Phase)
-            {
-                case ClientPhase.InWorld:
-                    Ask("Leave the world and return to character select?", "Leave", Boot.LeaveWorld);
-                    break;
-                case ClientPhase.CharacterSelect:
-                case ClientPhase.Entering:
-                    Ask("Log out of this account?", "Log out", Boot.Logout);
-                    break;
-                default:
-                    Ask("Quit the game?", "Quit", Quit);
-                    break;
-            }
+            Ask("Quit the game?", "Quit", QuitGracefully);
         }
 
         private void Ask(string message, string okLabel, Action action)
@@ -754,8 +770,38 @@ namespace Game.Client
             _confirmPanel.gameObject.SetActive(false);
         }
 
-        private void Quit()
+        /// <summary>
+        /// Leave the world and log out BEFORE the process dies, then quit.
+        ///
+        /// "Gracefully" is not politeness: the server keys a session to the connection, and a client
+        /// that vanishes is a link-dead player — it holds the character in world through a grace
+        /// period, and the save happens on logout. Killing the process instead of logging out means
+        /// the last minutes of play can be lost and the character lingers as a target.
+        ///
+        /// The quit still happens if the network calls fail or hang; a shutdown that can be blocked by
+        /// a dead socket is worse than an ungraceful one.
+        /// </summary>
+        private void QuitGracefully()
         {
+            StartCoroutine(QuitRoutine());
+        }
+
+        private System.Collections.IEnumerator QuitRoutine()
+        {
+            _confirmText.text = "Logging out …";
+            _confirmPanel.gameObject.SetActive(true);
+
+            if (Boot.Phase == ClientPhase.InWorld)
+            {
+                Boot.LeaveWorld();
+                float until = Time.realtimeSinceStartup + 1.5f;
+                while (Boot.Phase == ClientPhase.InWorld && Time.realtimeSinceStartup < until)
+                    yield return null;
+            }
+
+            Boot.Logout();
+            yield return new WaitForSecondsRealtime(0.6f);
+
             _quitConfirmed = true;
             Application.Quit();
         }

@@ -16,8 +16,18 @@ public static class GameConstants
     /// 0. 0.27 ≈ the ~27 major systems built so far (combat, stats, skills, 2nd/3rd classes, subclasses,
     /// combat primitives, mobs, bosses, stealth/traps, gear, attributes, crafting, vendors, party, loot,
     /// PvP/karma, auto-hunt, disconnect/Return, death/res, grade penalty, damage/heal rework, buff bar +
-    /// icons, multi-row bar + items, delta snapshots, moderation, social, versioning).</summary>
-    public const string GameVersion = "0.27.0";
+    /// icons, multi-row bar + items, delta snapshots, moderation, social, versioning).
+    ///
+    /// **Bump it on every commit that changes shipped code** — BUILD for an ordinary commit, MINOR for
+    /// a new system. Because server and client both compile this in and the login handshake compares
+    /// them, a bump means the APK and the server must be redeployed TOGETHER: an old client is refused
+    /// rather than left to speak an old protocol. (A docs- or memory-only commit changes nothing that
+    /// ships, so it does not need a bump — that would only force a pointless redeploy.)
+    ///
+    /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
+    /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
+    /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
+    public const string GameVersion = "0.28.1";
 
     /// <summary>Display name of the in-game currency. Generic on purpose (no IP);
     /// change here to rebrand everywhere it's shown.</summary>

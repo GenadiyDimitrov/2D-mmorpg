@@ -34,6 +34,10 @@ namespace Game.Client
         /// renders what it is sent and only writes back when the PLAYER edits a slot — see
         /// SetSkillBarAsync.</summary>
         public event Action<SkillBarDto> SkillBarReceived;
+        /// <summary>The character's classes, one of them Active. This is the only push that carries the
+        /// ACTIVE class's race/base/second/third — which the skills window needs to work out what is
+        /// learnable, and which changes under you on a subclass swap.</summary>
+        public event Action<SubclassListDto> SubclassesReceived;
         public event Action<NpcDialog> DialogReceived;
         public event Action<QuestLog> QuestLogReceived;
         public event Action<string> Disconnected;
@@ -64,6 +68,7 @@ namespace Game.Client
             _connection.On<StatsUpdate>("Stats", st => StatsReceived?.Invoke(st));
             _connection.On<LearnedSkills>("Learned", l => LearnedReceived?.Invoke(l));
             _connection.On<SkillBarDto>("SkillBar", b => SkillBarReceived?.Invoke(b));
+            _connection.On<SubclassListDto>("Subclasses", s => SubclassesReceived?.Invoke(s));
             _connection.On<NpcDialog>("Dialog", d => DialogReceived?.Invoke(d));
             _connection.On<QuestLog>("QuestLog", q => QuestLogReceived?.Invoke(q));
             _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));
@@ -133,6 +138,14 @@ namespace Game.Client
 
         public Task RespawnAsync() =>
             _connection.SendAsync("Respawn");
+
+        public Task LearnSkillAsync(string skillId) =>
+            _connection.SendAsync("LearnSkill", skillId);
+
+        /// <summary>Write the bar back. Legitimate ONLY when the PLAYER moved something — never as a
+        /// reaction to a server push. See GameBoot.SkillBar.</summary>
+        public Task SetSkillBarAsync(string[] slots) =>
+            _connection.SendAsync("SetSkillBar", slots);
 
         // ----- inventory -------------------------------------------------------------------------
         /// <summary>Equip or UNEQUIP — the server toggles based on the item's current state.</summary>
