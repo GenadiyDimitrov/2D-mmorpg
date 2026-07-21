@@ -166,6 +166,7 @@ namespace Game.Client
             BuildFeedback();
             BuildSkillDetail();
             BuildStatsWindow();
+            BuildTargetWindow();
             BuildSlotMenu();
         }
 
@@ -212,7 +213,17 @@ namespace Game.Client
 
             _targetDetail = UiKit.Label(inner, "", 14f, UiKit.TextDim);
             UiKit.Place(UiKit.Rect(_targetDetail.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -58f), new Vector2(276f, 20f));
+                        new Vector2(12f, -58f), new Vector2(190f, 20f));
+
+            // Details are PULLED — the server only sends them when asked, so there has to be an ask.
+            var info = UiKit.TextButton(inner, "Info", () =>
+            {
+                if (!Boot.TargetId.HasValue) return;
+                Boot.InspectTarget(Boot.TargetId.Value, _wantDrops);
+                OpenWindow(_detailsPanel);
+            }, 14f);
+            UiKit.Place(UiKit.Rect(info.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
+                        new Vector2(-10f, 8f), new Vector2(76f, 28f));
         }
 
         /// <summary>
@@ -495,6 +506,7 @@ namespace Game.Client
             RefreshBag();
             RefreshSkillsWindow();
             RefreshStatsWindow();
+            RefreshTargetWindow();
             RefreshNameplates();
 
             RefreshFeedback();

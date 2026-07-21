@@ -90,6 +90,26 @@ namespace Game.Client
         /// <summary>The bag, as last sent by the server (it pushes the whole thing on any change).</summary>
         public InventoryItemDto[] Inventory { get; private set; } = new InventoryItemDto[0];
 
+        /// <summary>The expanded target window's contents, or null. Arrives only after asking.</summary>
+        public TargetDetails Details { get; private set; }
+
+        /// <summary>A pending resurrect offer, or null.</summary>
+        public ResurrectOffer PendingResurrect { get; private set; }
+
+        public async void InspectTarget(Guid targetId, bool withDrops)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.InspectTargetAsync(targetId, withDrops); }
+            catch (Exception ex) { ClientLog.Warn("Inspect: " + ex.Message); }
+        }
+
+        public async void AnswerResurrect(bool accept)
+        {
+            PendingResurrect = null;   // clear locally; the server sends no "offer withdrawn" push
+            try { await _net.ResurrectResponseAsync(accept); }
+            catch (Exception ex) { ClientLog.Warn("Resurrect: " + ex.Message); }
+        }
+
         /// <summary>Active buffs and debuffs. The server pushes these once a second while any are
         /// running, and once more when the last one drops.</summary>
         public BuffDto[] Buffs { get; private set; } = new BuffDto[0];
@@ -282,6 +302,12 @@ namespace Game.Client
             });
             _net.GoldReceived += g => Main(() => Gold = g.Gold);
             _net.BuffsReceived += b => Main(() => Buffs = b?.Buffs ?? new BuffDto[0]);
+            _net.TargetDetailsReceived += d => Main(() => Details = d);
+            _net.ResurrectOfferReceived += o => Main(() =>
+            {
+                PendingResurrect = o;
+                ClientLog.Good(o.FromName + " offers to resurrect you (" + (int)(o.ExpPct * 100f) + "% exp back).");
+            });
             _net.InventoryReceived += i => Main(() =>
                 Inventory = i?.Items ?? new InventoryItemDto[0]);
             _net.LearnedReceived += l => Main(() =>

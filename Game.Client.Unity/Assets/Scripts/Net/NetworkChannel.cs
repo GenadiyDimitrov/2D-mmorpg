@@ -29,6 +29,9 @@ namespace Game.Client
         public event Action<BuffUpdate> BuffsReceived;
         public event Action<GoldUpdate> GoldReceived;
         public event Action<TargetDetails> TargetDetailsReceived;
+        /// <summary>An ally (or a scroll) offers to bring you back. The player must ACCEPT — reviving
+        /// automatically would drop you on top of whatever just killed you.</summary>
+        public event Action<ResurrectOffer> ResurrectOfferReceived;
         public event Action<LearnedSkills> LearnedReceived;
         /// <summary>The SERVER owns the skill bar and pushes it (always alongside Learned). The client
         /// renders what it is sent and only writes back when the PLAYER edits a slot — see
@@ -74,6 +77,7 @@ namespace Game.Client
             _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));
             _connection.On<GoldUpdate>("Gold", g => GoldReceived?.Invoke(g));
             _connection.On<TargetDetails>("TargetDetails", d => TargetDetailsReceived?.Invoke(d));
+            _connection.On<ResurrectOffer>("ResurrectOffer", o => ResurrectOfferReceived?.Invoke(o));
             _connection.On<string>("ForceDisconnect", reason => ForceDisconnected?.Invoke(reason));
             _connection.Closed += ex =>
             {
@@ -174,6 +178,13 @@ namespace Game.Client
 
         public Task UsePotionAsync(Guid instanceId) =>
             _connection.SendAsync("UsePotion", instanceId);
+
+        /// <summary>Ask the server for the expanded target window. withDrops adds a mob's drop list.</summary>
+        public Task InspectTargetAsync(Guid targetId, bool withDrops) =>
+            _connection.SendAsync("InspectTarget", targetId, withDrops);
+
+        public Task ResurrectResponseAsync(bool accept) =>
+            _connection.SendAsync("ResurrectResponse", accept);
 
         public Task RemoveBuffAsync(string buffKey) =>
             _connection.SendAsync("RemoveBuff", buffKey);
