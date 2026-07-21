@@ -31,13 +31,16 @@ namespace Game.Client
             var indices = new int[(lines + 1) * 4];
             int v = 0;
 
+            // Z is NEGATIVE across the whole grid: server Y is a screen-style axis that grows
+            // DOWNWARD, so WorldMapper maps it to -Z (see that class). A grid drawn over +Z would sit
+            // in the empty half of the scene while every entity stood in the other one.
             for (int i = 0; i <= lines; i++)
             {
                 float p = i * step;
-                verts[v] = new Vector3(p, 0f, 0f);    indices[v] = v; v++;
-                verts[v] = new Vector3(p, 0f, size);  indices[v] = v; v++;
-                verts[v] = new Vector3(0f, 0f, p);    indices[v] = v; v++;
-                verts[v] = new Vector3(size, 0f, p);  indices[v] = v; v++;
+                verts[v] = new Vector3(p, 0f, 0f);     indices[v] = v; v++;
+                verts[v] = new Vector3(p, 0f, -size);  indices[v] = v; v++;
+                verts[v] = new Vector3(0f, 0f, -p);    indices[v] = v; v++;
+                verts[v] = new Vector3(size, 0f, -p);  indices[v] = v; v++;
             }
 
             var mesh = new Mesh { name = "GroundGrid" };
