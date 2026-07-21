@@ -49,6 +49,18 @@ namespace Game.Client
         private readonly Button[] _slotButtons = new Button[SlotsPerPage];
         private readonly TextMeshProUGUI[] _slotFaces = new TextMeshProUGUI[SlotsPerPage];
         private readonly Image[] _slotBorders = new Image[SlotsPerPage];
+        private readonly TextMeshProUGUI[] _slotCancel = new TextMeshProUGUI[SlotsPerPage];
+
+        /// <summary>
+        /// How long after a cast STARTS before its slot will accept a cancel tap.
+        ///
+        /// The button that started the cast is under the finger that is still coming up, and a double
+        /// tap on a skill is a natural thing to do — without this, the second tap of a double tap
+        /// would start the cast and immediately cancel it, costing the initial MP and the full
+        /// cooldown for nothing. The X is drawn from the start (so it is visible) but inert until this
+        /// elapses.
+        /// </summary>
+        private const float CastCancelGrace = 0.35f;
 
         // slot context menu (press and hold)
         private RectTransform _slotMenu;
@@ -248,6 +260,13 @@ namespace Game.Client
                 var hotkey = UiKit.Label(button.transform, (i + 1).ToString(), 12f, UiKit.TextDim);
                 UiKit.Place(UiKit.Rect(hotkey.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                             new Vector2(4f, -2f), new Vector2(20f, 16f));
+
+                // The cancel X, drawn over the slot only while THIS skill is the one being cast.
+                var cancel = UiKit.Label(button.transform, "X", 34f, new Color(1f, 0.35f, 0.35f),
+                                         TextAlignmentOptions.Center);
+                UiKit.Stretch(UiKit.Rect(cancel.gameObject), 0f, 0f, 0f, 0f);
+                cancel.gameObject.SetActive(false);
+                _slotCancel[i] = cancel;
             }
 
             var prev = UiKit.TextButton(inner, "<", () => PageBy(-1), 18f);
@@ -534,6 +553,12 @@ namespace Game.Client
 
                 // Green frame = the auto-hunt will use this one.
                 _slotBorders[i].enabled = !string.IsNullOrEmpty(token) && Boot.AutoSkills.Contains(token);
+
+                // X over the slot whose skill is being cast right now, so cancelling is where your
+                // finger already is rather than somewhere else on screen.
+                bool casting = IsCastingSlot(token);
+                _slotCancel[i].gameObject.SetActive(casting);
+                if (casting) _slotButtons[i].interactable = true;
             }
         }
 
@@ -560,9 +585,27 @@ namespace Game.Client
             return SkillLetters(def);
         }
 
+        /// <summary>Is this token the skill currently being cast? Matched by NAME, because the cast
+        /// push (CastInfo) carries a display name rather than the skill id.</summary>
+        private bool IsCastingSlot(string token)
+        {
+            if (!Boot.IsCasting || string.IsNullOrEmpty(token)) return false;
+            var def = SkillCatalog.Get(token);
+            return def != null && def.Name == Boot.CastingSkill;
+        }
+
         private void FireSlot(int slotOnPage)
         {
             int index = _barPage * SlotsPerPage + slotOnPage;
+
+            // Tapping the slot that is mid-cast CANCELS it — but not instantly. See CastCancelGrace:
+            // a double tap would otherwise start the cast and kill it in the same gesture, paying the
+            // initial MP and the whole cooldown for nothing.
+            if (IsCastingSlot(TokenAt(slotOnPage)))
+            {
+                if (Time.realtimeSinceStartup - Boot.CastStartedAt >= CastCancelGrace) Boot.CancelCast();
+                return;
+            }
 
             // A slot tap means whichever pending gesture is armed, and only casts when none is. Move
             // is checked first because it was started from this very bar.
