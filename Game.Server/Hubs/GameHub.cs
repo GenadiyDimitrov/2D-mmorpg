@@ -50,11 +50,12 @@ public class GameHub : Hub
         return new AuthResponse(result.Success, result.Error, AccountRole.Player);
     }
 
-    /// <summary>Reject a client whose version differs from the server's — an out-of-date client speaks an
-    /// out-of-date protocol. An EMPTY version (a dev tool / old build that doesn't send one) is allowed
-    /// through, so this never blocks local testing; real clients always send GameConstants.GameVersion.</summary>
+    /// <summary>Reject a client whose version this server cannot talk to. Compatibility is a LIST, not
+    /// equality (see GameConstants.CompatibleClientVersions): the version bumps on every commit, but
+    /// most commits change nothing on the wire, and demanding an exact match meant every server rebuild
+    /// forced an APK rebuild for no protocol reason. An EMPTY version is a dev tool and always allowed.</summary>
     private static string? VersionMismatch(string clientVersion) =>
-        string.IsNullOrEmpty(clientVersion) || clientVersion == GameConstants.GameVersion
+        GameConstants.IsClientVersionAccepted(clientVersion)
             ? null
             : $"Client out of date (v{clientVersion}). Please update to v{GameConstants.GameVersion}.";
 

@@ -27,7 +27,51 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.28.21";
+    public const string GameVersion = "0.28.22";
+
+    /// <summary>
+    /// Client versions this server will ACCEPT, beyond its own.
+    ///
+    /// Bumping the version every commit is right for tracking what shipped, but it made the version a
+    /// LOCKSTEP: a server rebuilt for a server-side fix refused a client that was byte-identical on
+    /// the wire, so every bump forced an APK rebuild and reinstall for no protocol reason. Most bumps
+    /// change nothing a client can observe.
+    ///
+    /// So the gate is compatibility, not equality. Add a version here when you know it speaks the same
+    /// wire — same DTO shapes, same hub methods, same push names.
+    ///
+    /// **On any wire-breaking change: bump <see cref="ProtocolVersion"/> and CLEAR this list back to
+    /// empty.** An old client that is merely out of date gets told to update; an old client that would
+    /// silently mis-parse a DTO is the bug this whole check exists to prevent.
+    /// </summary>
+    public static readonly string[] CompatibleClientVersions =
+    {
+        // Everything from the uGUI rebuild onward: client-only UI work, no wire changes.
+        "0.28.13", "0.28.14", "0.28.15", "0.28.16", "0.28.17",
+        "0.28.18", "0.28.19", "0.28.20", "0.28.21",
+    };
+
+    /// <summary>
+    /// The WIRE contract's version — bumped only when DTOs, hub methods or push names change in a way
+    /// an older client cannot handle. This is the number that actually matters for compatibility;
+    /// <see cref="GameVersion"/> is a build label.
+    ///
+    /// It is not sent over the wire today (the client sends GameVersion, and changing the login
+    /// payload would itself be a breaking change). It exists as the discipline anchor: when you bump
+    /// this, CompatibleClientVersions must be emptied in the same commit.
+    /// </summary>
+    public const int ProtocolVersion = 1;
+
+    /// <summary>True when a client reporting this version can safely talk to this server. An EMPTY
+    /// version is a dev tool that never sent one — allowed, so local tooling is never blocked.</summary>
+    public static bool IsClientVersionAccepted(string? clientVersion)
+    {
+        if (string.IsNullOrEmpty(clientVersion)) return true;
+        if (clientVersion == GameVersion) return true;
+        foreach (var accepted in CompatibleClientVersions)
+            if (accepted == clientVersion) return true;
+        return false;
+    }
 
     /// <summary>Display name of the in-game currency. Generic on purpose (no IP);
     /// change here to rebrand everywhere it's shown.</summary>
