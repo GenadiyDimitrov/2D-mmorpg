@@ -73,6 +73,32 @@ namespace Game.Client
                                      virtualRect.width * _scale, virtualRect.height * _scale));
         }
 
+        // ----- soft keyboard ---------------------------------------------------------------------
+
+        /// <summary>Height the on-screen keyboard occupies, in the HUD's virtual units (0 when hidden).
+        /// Some devices report a zero area even while the keyboard is up, so fall back to ~45% of the
+        /// screen. In the Editor the keyboard is never visible, so this is a no-op there.</summary>
+        private float KeyboardHeightVirtual()
+        {
+            if (!TouchScreenKeyboard.visible) return 0f;
+            float px = TouchScreenKeyboard.area.height;
+            if (px <= 1f) px = Screen.height * 0.45f;
+            return px / _scale;
+        }
+
+        /// <summary>Slide a panel up just enough that its bottom clears the soft keyboard, without
+        /// letting it ride up under the status strip.</summary>
+        private Rect LiftAboveKeyboard(Rect r)
+        {
+            float kb = KeyboardHeightVirtual();
+            if (kb <= 0f) return r;
+            float keyboardTop = _vh - kb;
+            float overlap = (r.y + r.height + 6f) - keyboardTop;
+            if (overlap > 0f) r.y -= overlap;
+            if (r.y < 26f) r.y = 26f;
+            return r;
+        }
+
         // ----- lifecycle ------------------------------------------------------------------------
 
         private void EnsureStyles()
@@ -196,6 +222,7 @@ namespace Game.Client
             float w = Mathf.Min(360f, _vw - 24f);
             float h = 250f;
             var r = new Rect((_vw - w) / 2f, Mathf.Max(34f, (_vh - h) / 2f - 20f), w, h);
+            r = LiftAboveKeyboard(r);   // so the field you're typing in isn't behind the soft keyboard
             Block(r);
             GUI.Box(r, GUIContent.none, _panel);
 
@@ -460,6 +487,7 @@ namespace Game.Client
         {
             float h = Mathf.Min(200f, _vh * 0.5f);
             var r = new Rect(6, _vh - h - 46, _vw - 12, h);
+            r = LiftAboveKeyboard(r);   // the chat field sits at the bottom of this panel — keep it visible
             Block(r);
             GUI.Box(r, GUIContent.none, _panel);
 

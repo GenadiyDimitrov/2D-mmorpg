@@ -11,9 +11,9 @@ namespace Game.Client
     public class CameraRig : MonoBehaviour
     {
         public Transform Target;
-        [Range(20f, 89f)] public float Pitch = 78f;   // 78 ≈ top-down (WPF-like); ~50 = 2.5D later
+        [Range(20f, 89f)] public float Pitch = 55f;   // ~55 = 2.5D angled; raise toward 78 for near top-down
         public float Yaw = 0f;
-        public float Distance = 28f;
+        public float Distance = 32f;
         public float Follow = 12f;                     // position smoothing
 
         private void LateUpdate()

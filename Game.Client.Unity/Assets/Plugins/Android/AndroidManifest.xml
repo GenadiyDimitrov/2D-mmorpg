@@ -11,7 +11,11 @@
          default, and our dev server is http://<pc-ip>:5238 — without this the phone fails to connect
          with a bare "cleartext not permitted" and nothing else to go on.
          DEV ONLY: put the server behind HTTPS for a real release and delete this attribute. -->
-    <application android:usesCleartextTraffic="true">
+    <!-- android:appCategory="game" tells Android (and Samsung's Game Launcher / Game Booster) that this
+         is a GAME, which is what unlocks the in-game touch-block / "Game tools" overlay, do-not-disturb
+         while playing, etc. Purely a hint; safe on non-Samsung devices. Requires Android 8 (API 26)+. -->
+    <application android:usesCleartextTraffic="true"
+                 android:appCategory="game">
         <!--Used when Application Entry is set to Activity, otherwise remove this activity block-->
         <activity android:name="com.unity3d.player.UnityPlayerActivity"
                   android:theme="@style/UnityThemeSelector">

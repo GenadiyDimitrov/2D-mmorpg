@@ -1,0 +1,40 @@
+<!--
+  IL2CPP managed-code stripping preservation.
+
+  Symptom without this: on the DEVICE (never in the Editor), the very first thing the client does -
+  open the SignalR connection - throws "Sequence contains no matching element" in ~4ms, before any
+  network traffic. The server never even sees a connection attempt.
+
+  Cause: IL2CPP strips managed code it can't see being used through STATIC analysis. SignalR resolves
+  its transports and its JSON hub-protocol through DI / reflection at RUNTIME, so the linker doesn't
+  see those types referenced, strips them, and a LINQ .First()/.Single() over the now-empty list of
+  protocols/transports throws. It cannot happen in the Editor (Mono, no stripping), which is why a
+  client that "worked" in the Editor dies on the phone.
+
+  Fix: keep every assembly on the SignalR path (and its dependencies) whole. This is a dev client;
+  the size cost of preserve="all" is irrelevant next to the debugging cost of a stripped transport.
+  Unity auto-detects any Assets/**/link.xml - no wiring needed.
+-->
+<linker>
+  <assembly fullname="Microsoft.AspNetCore.SignalR.Client" preserve="all" />
+  <assembly fullname="Microsoft.AspNetCore.SignalR.Client.Core" preserve="all" />
+  <assembly fullname="Microsoft.AspNetCore.SignalR.Common" preserve="all" />
+  <assembly fullname="Microsoft.AspNetCore.SignalR.Protocols.Json" preserve="all" />
+  <assembly fullname="Microsoft.AspNetCore.Http.Connections.Client" preserve="all" />
+  <assembly fullname="Microsoft.AspNetCore.Http.Connections.Common" preserve="all" />
+  <assembly fullname="Microsoft.AspNetCore.Connections.Abstractions" preserve="all" />
+  <assembly fullname="Microsoft.Extensions.DependencyInjection" preserve="all" />
+  <assembly fullname="Microsoft.Extensions.DependencyInjection.Abstractions" preserve="all" />
+  <assembly fullname="Microsoft.Extensions.Options" preserve="all" />
+  <assembly fullname="Microsoft.Extensions.Logging" preserve="all" />
+  <assembly fullname="Microsoft.Extensions.Logging.Abstractions" preserve="all" />
+  <assembly fullname="Microsoft.Extensions.Features" preserve="all" />
+  <assembly fullname="Microsoft.Extensions.Primitives" preserve="all" />
+  <assembly fullname="Microsoft.Bcl.AsyncInterfaces" preserve="all" />
+  <assembly fullname="System.IO.Pipelines" preserve="all" />
+  <assembly fullname="System.Threading.Channels" preserve="all" />
+  <assembly fullname="System.Text.Json" preserve="all" />
+  <assembly fullname="System.Text.Encodings.Web" preserve="all" />
+  <!-- Our own wire contract: DTOs are (de)serialized reflectively by System.Text.Json. -->
+  <assembly fullname="Game.Shared" preserve="all" />
+</linker>
