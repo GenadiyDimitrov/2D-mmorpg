@@ -150,6 +150,9 @@ namespace Game.Client
         public Task ToggleAutoHuntAsync(bool enabled) =>
             _connection.SendAsync("ToggleAutoHunt", enabled);
 
+        public Task SetAutoHuntConfigAsync(AutoHuntConfigDto config) =>
+            _connection.SendAsync("SetAutoHuntConfig", config);
+
         public Task StartOfflineFarmAsync() =>
             _connection.SendAsync("StartOfflineFarm");
 

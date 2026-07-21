@@ -1042,6 +1042,15 @@ public class GameLoopService : BackgroundService
                 SendSystemToEntity(caster, $"{def.Name} needs a target.");
                 return;
             }
+            // The SAME rule as a basic attack: NPCs are not valid targets for an offensive skill
+            // either. Guarding only HandleAttack left this route wide open — the owner could still
+            // land nukes on a vendor (they just could not kill him, because damage floors at 1 HP).
+            // Two entry points to "hit that thing" need the same answer at both.
+            if (target.Kind == EntityKind.Npc)
+            {
+                SendSystemToEntity(caster, "You can't attack " + target.Name + ".");
+                return;
+            }
             if (target.Kind == EntityKind.Player && !CanPvpHit(caster, target))
             {
                 SendSystemToEntity(caster, "You can't attack that player here. (Enable PvP; not in towns.)");

@@ -127,9 +127,11 @@ namespace Game.Client
                 string level = def.MaxLevel > 1 ? "  Lv." + Boot.Learned[def.Id] : "";
                 string token = def.Id;
 
-                // Passive is a PassiveEffect?, not a flag — a skill is passive when it HAS one. A
-                // passive can't go on the bar: there is nothing to press.
-                bool passive = def.Passive != null;
+                // Two ways to be passive, and BOTH have to be checked: a PassiveEffect (Passive is a
+                // nullable effect, not a flag) or the Passive category. Testing only the effect let
+                // category-only passives onto the bar, where they sit as buttons that can never do
+                // anything.
+                bool passive = def.Passive != null || def.Category == SkillCategory.Passive;
                 bool onBar = Boot.SkillBar != null && System.Array.IndexOf(Boot.SkillBar, def.Id) >= 0;
 
                 Row(SkillLetters(def) + "  " + def.Name + level + (onBar ? "   * on bar" : ""),
@@ -297,8 +299,23 @@ namespace Game.Client
 
         // ----- assigning to the bar --------------------------------------------------------------
 
+        /// <summary>True for a skill that cannot usefully sit on the bar. Checked again at assign
+        /// time, not just when drawing the row — the server stores whatever token it is sent, so the
+        /// client is the only thing that can keep a passive off the bar.</summary>
+        internal static bool IsPassive(string skillId)
+        {
+            var def = SkillCatalog.Get(skillId);
+            return def != null && (def.Passive != null || def.Category == SkillCategory.Passive);
+        }
+
         private void BeginAssign(string token)
         {
+            if (IsPassive(token))
+            {
+                ClientLog.Warn("Passive skills are always on — they can't go on the bar.");
+                return;
+            }
+
             // Tapping the same entry twice cancels, so there is always a way out of the mode without
             // committing to a slot.
             _pendingAssign = _pendingAssign == token ? null : token;

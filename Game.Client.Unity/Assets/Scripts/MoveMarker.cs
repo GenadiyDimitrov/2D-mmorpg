@@ -14,7 +14,9 @@ namespace Game.Client
     public class MoveMarker : MonoBehaviour
     {
         public Color Colour = new Color(0.35f, 0.65f, 1f);   // click-to-move blue
-        public float Size = 1.6f;
+        // A quarter of the old size: at 1.6 the ring was as big as the character it was leading, which
+        // reads as an object in the world rather than as a destination marker.
+        public float Size = 0.4f;
         public float PulseFrom = 2.2f;      // starts wide and snaps in
         public float PulseSeconds = 0.25f;
         public float ArriveDistance = 1.2f; // Unity units — ~120 server units

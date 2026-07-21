@@ -547,6 +547,7 @@ namespace Game.Client
 
             if (ActionCatalog.FromToken(token) is ActionDef action)
             {
+                CancelMoveOrder();   // every action either stops you or retargets you
                 switch (action.Id)
                 {
                     case GameConstants.ActionBasicAttack:
@@ -607,13 +608,55 @@ namespace Game.Client
         /// </summary>
         public bool AutoHunting { get; private set; }
 
+        /// <summary>Skill ids the player has marked for auto-use, plus the pseudo-id
+        /// <see cref="AutoHuntIds.BasicAttack"/>. The per-slot Auto toggle writes here.</summary>
+        public readonly HashSet<string> AutoSkills = new HashSet<string> { AutoHuntIds.BasicAttack };
+
         public async void ToggleAutoHunt()
         {
             if (Phase != ClientPhase.InWorld) return;
             AutoHunting = !AutoHunting;
-            ClientLog.Info(AutoHunting ? "Auto-hunt ON." : "Auto-hunt off.");
-            try { await _net.ToggleAutoHuntAsync(AutoHunting); }
+
+            try
+            {
+                // The CONFIG has to go first, and it is why auto-hunt "just wandered": the server's
+                // autopilot only uses actions it was GIVEN, and this client had never sent any — so it
+                // roamed looking for something to do with an empty action list. Basic attack is the
+                // pseudo-skill that makes it melee at all; without it a fighter walks up to a mob and
+                // stares at it.
+                if (AutoHunting)
+                {
+                    var skills = new List<AutoSkillDto>();
+                    foreach (var id in AutoSkills)
+                        if (id == AutoHuntIds.BasicAttack || Learned.ContainsKey(id))
+                            skills.Add(new AutoSkillDto(id, true, 0));
+
+                    await _net.SetAutoHuntConfigAsync(new AutoHuntConfigDto(
+                        Enabled: true,
+                        HpPotionPct: 50,
+                        MpPotionPct: 30,
+                        AutoBuffPotions: false,
+                        Skills: skills.ToArray(),
+                        BuffPotionIds: new string[0]));
+                }
+
+                ClientLog.Info(AutoHunting
+                    ? "Auto-hunt ON (" + AutoSkills.Count + " action(s))."
+                    : "Auto-hunt off.");
+                await _net.ToggleAutoHuntAsync(AutoHunting);
+            }
             catch (Exception ex) { ClientLog.Warn("AutoHunt: " + ex.Message); }
+        }
+
+        /// <summary>Mark/unmark a skill for auto-use, and push the change if auto-hunt is running.</summary>
+        public void ToggleAutoSkill(string skillId)
+        {
+            if (string.IsNullOrEmpty(skillId)) return;
+            if (!AutoSkills.Remove(skillId)) AutoSkills.Add(skillId);
+
+            if (!AutoHunting) return;
+            AutoHunting = false;      // re-toggle so the new list is sent
+            ToggleAutoHunt();
         }
 
         public bool CounterAttack { get; private set; }
@@ -663,11 +706,41 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("SkillBar: " + ex.Message); }
         }
 
+        /// <summary>Swap two bar slots and send the bar ONCE. Two AssignSlot calls would send two
+        /// bars, and the second would be built from a copy that never saw the first.</summary>
+        public async void SwapSlots(int from, int to)
+        {
+            if (Phase != ClientPhase.InWorld || SkillBar == null) return;
+            if (from < 0 || to < 0 || from >= SkillBar.Length || to >= SkillBar.Length || from == to) return;
+
+            var slots = (string[])SkillBar.Clone();
+            var moved = slots[from];
+            slots[from] = slots[to];
+            slots[to] = moved;
+            SkillBar = slots;
+            try { await _net.SetSkillBarAsync(slots); }
+            catch (Exception ex) { ClientLog.Warn("SkillBar: " + ex.Message); }
+        }
+
         public async void UseSkill(string skillId)
         {
             if (Phase != ClientPhase.InWorld) return;
+            CancelMoveOrder();
             try { await _net.UseSkillAsync(skillId, TargetId); }
             catch (Exception ex) { ClientLog.Warn("UseSkill: " + ex.Message); }
+        }
+
+        /// <summary>
+        /// Drop the destination ring, because the walk it described is over.
+        ///
+        /// The rule is: the ring means "I am going THERE". Anything that stops the character or sends
+        /// them somewhere else makes it a lie — casting (which roots you), attacking (you chase the
+        /// target instead), sitting, dying, teleporting. Leaving it on the ground pointing at a place
+        /// you are no longer walking to is worse than not having it.
+        /// </summary>
+        public void CancelMoveOrder()
+        {
+            if (Marker != null) Marker.Hide();
         }
 
         /// <summary>Equip or unequip — the SERVER decides which, from the item's current state, so the
@@ -709,6 +782,7 @@ namespace Game.Client
 
         public async void SetMoveState(MoveState state)
         {
+            if (state == MoveState.Sitting) CancelMoveOrder();   // sitting cancels the walk
             try { await _net.SetMoveStateAsync(state); }
             catch (Exception ex) { ClientLog.Warn("MoveState: " + ex.Message); }
         }
