@@ -502,6 +502,16 @@ changes and new features that came out of the play session:
 
 ## NEXT (clear, mostly self-contained — can do without owner input)
 
+- [ ] **Regions — polygonal fields and towns** (owner, 2026-07-22). Full design in
+  `docs/design/Regions.md`. A `Region` wraps a POLYGON outline, arrival points and a list of the
+  existing circular spawners inside it; the level band is derived from those spawners, never authored.
+  Towns become the same wrapper with `Kind = Town`, so they stop being circles and can be surrounded
+  by several fields. Fields join towns as teleport destinations, landing on a random arrival point.
+  **Two stages — stage 2 is the risky one:** `InAnySafeZone` gates PvP, jail release, respawn and
+  vendor access, so replacing a distance check with a polygon test moves *where those rules apply*,
+  silently and without an error. Town polygons must CONTAIN the old circles, and each dependent rule
+  wants a SmokeTest case, because nobody stands on a boundary during a human playtest.
+
 - [ ] **Equipment presets A / B / C** (owner, 2026-07-21). Three saved loadouts per character. You
   save the CURRENT equipment into a slot from the equipment/inventory window ("Save as A"), and the
   bar gets `preset-a` / `preset-b` / `preset-c` buttons that swap to it in one press: unequip what is
