@@ -90,6 +90,66 @@ namespace Game.Client
         /// <summary>The bag, as last sent by the server (it pushes the whole thing on any change).</summary>
         public InventoryItemDto[] Inventory { get; private set; } = new InventoryItemDto[0];
 
+        /// <summary>The open NPC conversation, or null. Everything an NPC offers — quests, class
+        /// change, shop, teleport, buffs, skill reset — arrives in this ONE push.</summary>
+        public NpcDialog Dialog { get; private set; }
+
+        /// <summary>The NPC being talked to. Every dialog action needs it, because the server checks
+        /// you are still standing in front of that specific NPC.</summary>
+        public Guid DialogNpcId { get; private set; }
+
+        public async void TalkToNpc(Guid npcEntityId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            DialogNpcId = npcEntityId;
+            try { await _net.TalkToNpcAsync(npcEntityId); }
+            catch (Exception ex) { ClientLog.Warn("Talk: " + ex.Message); }
+        }
+
+        public void CloseDialog() { Dialog = null; DialogNpcId = Guid.Empty; }
+
+        public async void QuestAction(string action, string id)
+        {
+            if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;
+            try { await _net.QuestActionAsync(action, id, DialogNpcId); }
+            catch (Exception ex) { ClientLog.Warn("Quest: " + ex.Message); }
+        }
+
+        public async void BufferAction(string action, string skillId)
+        {
+            if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;
+            try { await _net.BufferActionAsync(DialogNpcId, action, skillId ?? ""); }
+            catch (Exception ex) { ClientLog.Warn("Buffer: " + ex.Message); }
+        }
+
+        public async void BuyItem(string defId, int quantity)
+        {
+            if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;
+            try { await _net.BuyItemAsync(DialogNpcId, defId, quantity); }
+            catch (Exception ex) { ClientLog.Warn("Buy: " + ex.Message); }
+        }
+
+        public async void SellItem(Guid instanceId, int quantity)
+        {
+            if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;
+            try { await _net.SellItemAsync(DialogNpcId, instanceId, quantity); }
+            catch (Exception ex) { ClientLog.Warn("Sell: " + ex.Message); }
+        }
+
+        public async void TeleportTo(string zoneId)
+        {
+            if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;
+            try { await _net.TeleportAsync(DialogNpcId, zoneId); }
+            catch (Exception ex) { ClientLog.Warn("Teleport: " + ex.Message); }
+        }
+
+        public async void ForgetSkill(string skillId)
+        {
+            if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;
+            try { await _net.ForgetSkillAsync(DialogNpcId, skillId); }
+            catch (Exception ex) { ClientLog.Warn("Forget: " + ex.Message); }
+        }
+
         /// <summary>The quest log, as last pushed by the server.</summary>
         public QuestLog Quests { get; private set; }
 
@@ -307,6 +367,7 @@ namespace Game.Client
             _net.BuffsReceived += b => Main(() => Buffs = b?.Buffs ?? new BuffDto[0]);
             _net.TargetDetailsReceived += d => Main(() => Details = d);
             _net.QuestLogReceived += q => Main(() => Quests = q);
+            _net.DialogReceived += d => Main(() => Dialog = d);
             _net.ResurrectOfferReceived += o => Main(() =>
             {
                 PendingResurrect = o;

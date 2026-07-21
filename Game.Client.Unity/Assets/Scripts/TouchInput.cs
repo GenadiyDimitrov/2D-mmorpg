@@ -60,13 +60,18 @@ namespace Game.Client
                 var view = hit.collider.GetComponent<EntityView>();
                 if (view != null && !view.IsSelf)
                 {
-                    // Tapping SELECTS. Only a mob is also attacked — tapping a vendor used to swing at
-                    // him, which is how an NPC got killed on the phone. (The server now refuses that
-                    // outright; this just stops us asking.)
+                    // Tapping SELECTS. What happens next depends on WHAT it is:
+                    //   mob  → attack (tapping a vendor used to swing at him, which is how an NPC got
+                    //          killed on the phone; the server refuses that now, this stops us asking)
+                    //   NPC  → TALK. Every service in the game — quests, class change, vendors,
+                    //          gatekeepers, buffers — is behind a conversation, so the tap that
+                    //          selects an NPC should also start one.
                     Boot.TargetId = view.Id;
-                    if (Boot.Entities != null && Boot.Entities.TryGetState(view.Id, out var dto)
-                        && dto.Kind == EntityKind.Mob && !dto.Dead)
-                        Boot.Attack(view.Id);
+                    if (Boot.Entities != null && Boot.Entities.TryGetState(view.Id, out var dto) && !dto.Dead)
+                    {
+                        if (dto.Kind == EntityKind.Mob) Boot.Attack(view.Id);
+                        else if (dto.Kind == EntityKind.Npc) Boot.TalkToNpc(view.Id);
+                    }
                     return;
                 }
             }

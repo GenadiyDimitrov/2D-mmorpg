@@ -179,6 +179,32 @@ namespace Game.Client
         public Task UsePotionAsync(Guid instanceId) =>
             _connection.SendAsync("UsePotion", instanceId);
 
+        // ----- NPC interaction --------------------------------------------------------------------
+        public Task TalkToNpcAsync(Guid npcEntityId) =>
+            _connection.SendAsync("TalkToNpc", npcEntityId);
+
+        /// <summary>action is "accept" / "complete" / "changeclass"; id is the quest id, or the class
+        /// id as a string for changeclass. All of them need the NPC, which is why there is no quest
+        /// action anywhere but a conversation.</summary>
+        public Task QuestActionAsync(string action, string id, Guid npcEntityId) =>
+            _connection.SendAsync("QuestAction", action, id, npcEntityId);
+
+        /// <summary>action is "full" / "restore" / "single" (skillId only used by "single").</summary>
+        public Task BufferActionAsync(Guid npcEntityId, string action, string skillId) =>
+            _connection.SendAsync("BufferAction", npcEntityId, action, skillId);
+
+        public Task BuyItemAsync(Guid npcEntityId, string itemDefId, int quantity) =>
+            _connection.SendAsync("BuyItem", npcEntityId, itemDefId, quantity);
+
+        public Task SellItemAsync(Guid npcEntityId, Guid instanceId, int quantity) =>
+            _connection.SendAsync("SellItem", npcEntityId, instanceId, quantity);
+
+        public Task TeleportAsync(Guid npcEntityId, string zoneId) =>
+            _connection.SendAsync("Teleport", npcEntityId, zoneId);
+
+        public Task ForgetSkillAsync(Guid npcEntityId, string skillId) =>
+            _connection.SendAsync("ForgetSkill", npcEntityId, skillId);
+
         /// <summary>Ask the server for the expanded target window. withDrops adds a mob's drop list.</summary>
         public Task InspectTargetAsync(Guid targetId, bool withDrops) =>
             _connection.SendAsync("InspectTarget", targetId, withDrops);
