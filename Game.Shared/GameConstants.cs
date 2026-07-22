@@ -27,50 +27,70 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.28.24";
+    public const string GameVersion = "0.28.25";
 
     /// <summary>
-    /// Client versions this server will ACCEPT, beyond its own.
+    /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
     ///
-    /// Bumping the version every commit is right for tracking what shipped, but it made the version a
-    /// LOCKSTEP: a server rebuilt for a server-side fix refused a client that was byte-identical on
-    /// the wire, so every bump forced an APK rebuild and reinstall for no protocol reason. Most bumps
-    /// change nothing a client can observe.
+    /// Bump it when DTOs, hub methods or push names change in a way an older client cannot handle.
+    /// Do NOT bump it for anything else: a UI-only client release and a server-side balance fix both
+    /// leave the wire untouched, so both sides keep talking with no coordination at all.
     ///
-    /// So the gate is compatibility, not equality. Add a version here when you know it speaks the same
-    /// wire — same DTO shapes, same hub methods, same push names.
-    ///
-    /// **On any wire-breaking change: bump <see cref="ProtocolVersion"/> and CLEAR this list back to
-    /// empty.** An old client that is merely out of date gets told to update; an old client that would
-    /// silently mis-parse a DTO is the bug this whole check exists to prevent.
+    /// Why this and not the build label: <see cref="GameVersion"/> moves on every commit, which made
+    /// the handshake a LOCKSTEP — a server rebuilt for a server-side fix refused a client that was
+    /// byte-identical on the wire. The workaround was a hand-written list of blessed build labels, and
+    /// that list could only ever say "this old client is fine". It had no way to express the case that
+    /// actually happens most: **client-only work, where the CLIENT is ahead of the server.** A version
+    /// number that describes the contract instead of the build makes that case a non-event.
     /// </summary>
-    public static readonly string[] CompatibleClientVersions =
+    public const int ProtocolVersion = 2;
+
+    /// <summary>
+    /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
+    /// "current only"; setting it lower is a deliberate promise to keep handling the older shape, so
+    /// it should only move when someone has actually checked that the code still does.
+    /// </summary>
+    public const int MinAcceptedProtocol = 2;
+
+    /// <summary>
+    /// Build labels accepted from clients too old to send a protocol number. LEGACY — frozen.
+    ///
+    /// Every client from 0.28.25 on sends <see cref="ProtocolVersion"/>, and is judged on that. This
+    /// list exists only so the APKs built before that change keep working; nothing should be added to
+    /// it. Delete it once no old build is installed anywhere.
+    /// </summary>
+    public static readonly string[] LegacyCompatibleClientVersions =
     {
-        // Everything from the uGUI rebuild onward: client-only UI work, no wire changes.
-        "0.28.13", "0.28.14", "0.28.15", "0.28.16", "0.28.17",
-        "0.28.18", "0.28.19", "0.28.20", "0.28.21", "0.28.22", "0.28.23",
+        "0.28.13", "0.28.14", "0.28.15", "0.28.16", "0.28.17", "0.28.18",
+        "0.28.19", "0.28.20", "0.28.21", "0.28.22", "0.28.23", "0.28.24",
     };
 
     /// <summary>
-    /// The WIRE contract's version — bumped only when DTOs, hub methods or push names change in a way
-    /// an older client cannot handle. This is the number that actually matters for compatibility;
-    /// <see cref="GameVersion"/> is a build label.
+    /// Can this client talk to this server? Returns null when yes, or the reason to show when no.
     ///
-    /// It is not sent over the wire today (the client sends GameVersion, and changing the login
-    /// payload would itself be a breaking change). It exists as the discipline anchor: when you bump
-    /// this, CompatibleClientVersions must be emptied in the same commit.
+    /// <paramref name="clientProtocol"/> 0 means the client never sent one — a pre-0.28.25 build, or a
+    /// dev tool — and falls back to the legacy build-label list. That fallback is what lets this ship
+    /// without a flag day: SignalR binds by arity, so a client that sends two arguments still matches a
+    /// hub method whose third parameter is optional, and the APK already on the phone keeps working.
     /// </summary>
-    public const int ProtocolVersion = 1;
-
-    /// <summary>True when a client reporting this version can safely talk to this server. An EMPTY
-    /// version is a dev tool that never sent one — allowed, so local tooling is never blocked.</summary>
-    public static bool IsClientVersionAccepted(string? clientVersion)
+    public static string? ClientRejectionReason(string? clientVersion, int clientProtocol)
     {
-        if (string.IsNullOrEmpty(clientVersion)) return true;
-        if (clientVersion == GameVersion) return true;
-        foreach (var accepted in CompatibleClientVersions)
-            if (accepted == clientVersion) return true;
-        return false;
+        if (clientProtocol > 0)
+            return clientProtocol >= MinAcceptedProtocol && clientProtocol <= ProtocolVersion
+                ? null
+                : clientProtocol > ProtocolVersion
+                    ? $"This client (protocol {clientProtocol}) is NEWER than the server "
+                      + $"(protocol {ProtocolVersion}). Update the server."
+                    : $"Client too old (protocol {clientProtocol}; this server needs "
+                      + $"{MinAcceptedProtocol}). Please update to v{GameVersion}.";
+
+        // No protocol number: an empty version is local tooling and always allowed.
+        if (string.IsNullOrEmpty(clientVersion)) return null;
+        if (clientVersion == GameVersion) return null;
+        foreach (var accepted in LegacyCompatibleClientVersions)
+            if (accepted == clientVersion) return null;
+
+        return $"Client out of date (v{clientVersion}). Please update to v{GameVersion}.";
     }
 
     /// <summary>Display name of the in-game currency. Generic on purpose (no IP);

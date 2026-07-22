@@ -32,32 +32,31 @@ public class GameHub : Hub
 
     // ----- Auth --------------------------------------------------------------
 
-    public async Task<AuthResponse> Register(AuthRequest request, string clientVersion = "")
+    public async Task<AuthResponse> Register(AuthRequest request, string clientVersion = "",
+                                             int clientProtocol = 0)
     {
-        if (VersionMismatch(clientVersion) is string v) return new AuthResponse(false, v);
+        if (VersionMismatch(clientVersion, clientProtocol) is string v) return new AuthResponse(false, v);
         var result = await _db.RegisterAsync(request.Username, request.Password);
         if (result.Success)
             Sessions[Context.ConnectionId] = new AuthState(result.AccountId);
         return new AuthResponse(result.Success, result.Error, AccountRole.Player);
     }
 
-    public async Task<AuthResponse> Login(AuthRequest request, string clientVersion = "")
+    public async Task<AuthResponse> Login(AuthRequest request, string clientVersion = "",
+                                          int clientProtocol = 0)
     {
-        if (VersionMismatch(clientVersion) is string v) return new AuthResponse(false, v);
+        if (VersionMismatch(clientVersion, clientProtocol) is string v) return new AuthResponse(false, v);
         var result = await _db.LoginAsync(request.Username, request.Password);
         if (result.Success)
             Sessions[Context.ConnectionId] = new AuthState(result.AccountId);
         return new AuthResponse(result.Success, result.Error, AccountRole.Player);
     }
 
-    /// <summary>Reject a client whose version this server cannot talk to. Compatibility is a LIST, not
-    /// equality (see GameConstants.CompatibleClientVersions): the version bumps on every commit, but
-    /// most commits change nothing on the wire, and demanding an exact match meant every server rebuild
-    /// forced an APK rebuild for no protocol reason. An EMPTY version is a dev tool and always allowed.</summary>
-    private static string? VersionMismatch(string clientVersion) =>
-        GameConstants.IsClientVersionAccepted(clientVersion)
-            ? null
-            : $"Client out of date (v{clientVersion}). Please update to v{GameConstants.GameVersion}.";
+    /// <summary>Reject a client this server cannot talk to. The gate is the PROTOCOL number, not the
+    /// build label — see GameConstants.ClientRejectionReason for why, and for the legacy fallback that
+    /// keeps pre-0.28.25 builds working.</summary>
+    private static string? VersionMismatch(string clientVersion, int clientProtocol) =>
+        GameConstants.ClientRejectionReason(clientVersion, clientProtocol);
 
     // ----- Character selection ----------------------------------------------
 

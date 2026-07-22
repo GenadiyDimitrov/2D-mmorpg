@@ -106,10 +106,14 @@ namespace Game.Client
         // client whose version differs (an out-of-date client speaks an out-of-date protocol). Because
         // Game.Shared is compiled INTO this client, sending the constant can never drift out of sync.
         public Task<AuthResponse> RegisterAsync(string username, string password) =>
-            _connection.InvokeAsync<AuthResponse>("Register", new AuthRequest(username, password), GameConstants.GameVersion);
+            _connection.InvokeAsync<AuthResponse>("Register", new AuthRequest(username, password),
+                                                  GameConstants.GameVersion, GameConstants.ProtocolVersion);
 
         public Task<AuthResponse> LoginAsync(string username, string password) =>
-            _connection.InvokeAsync<AuthResponse>("Login", new AuthRequest(username, password), GameConstants.GameVersion);
+            // BOTH: the protocol number is what the server GATES on; the build label rides along for
+            // logs and for the "please update to vX" message, where a human-readable version helps.
+            _connection.InvokeAsync<AuthResponse>("Login", new AuthRequest(username, password),
+                                                  GameConstants.GameVersion, GameConstants.ProtocolVersion);
 
         public Task<CharacterList> ListCharactersAsync() =>
             _connection.InvokeAsync<CharacterList>("ListCharacters");

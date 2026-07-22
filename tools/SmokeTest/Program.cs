@@ -30,7 +30,7 @@ async Task<Session> ConnectAsync(string user, string pass)
     var s = new Session();
     await s.OpenAsync(Url);
     var auth = await s.Hub.InvokeAsync<AuthResponse>("Login",
-        new AuthRequest(user, pass), GameConstants.GameVersion);
+        new AuthRequest(user, pass), GameConstants.GameVersion, GameConstants.ProtocolVersion);
     if (!auth.Success) throw new Exception($"login failed: {auth.Error}");
     return s;
 }
