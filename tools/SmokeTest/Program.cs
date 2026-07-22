@@ -10,6 +10,12 @@ using Microsoft.AspNetCore.SignalR.Client;
 //
 // Requires a server already listening on :5238 (and a DB it may write to).
 
+// TWO MODES, one project. `bot` is a live second PLAYER that stays logged in and takes orders; the
+// default is this assert-and-exit smoke test. They share the connect/login/enter plumbing, which is
+// the only part that was ever hard to get right.
+if (args.Length > 0 && (args[0] == "bot" || args[0] == "--bot"))
+    return await Bot.RunAsync(args.Skip(1).ToArray());
+
 const string Url = "http://localhost:5238/game";
 
 int failures = 0;
