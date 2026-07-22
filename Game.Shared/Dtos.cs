@@ -307,8 +307,23 @@ public record PartyUpdate(PartyMemberDto[] Members, LootMode LootMode = LootMode
 
 // ----- Accounts & character selection (Phase 5) ----------------------------
 
-/// <summary>Client -> Server: register or login.</summary>
-public record AuthRequest(string Username, string Password);
+/// <summary>
+/// Client -> Server: register or login.
+///
+/// <paramref name="Protocol"/> is the wire contract the client speaks
+/// (<see cref="GameConstants.ProtocolVersion"/>), and it lives HERE rather than as an extra hub
+/// parameter for one hard-won reason: **SignalR does NOT bind by arity.** A hub method's default
+/// parameter value does not make an omitted argument legal — the dispatcher requires the argument
+/// count to match, and an older client calling the shorter overload gets "Failed to invoke 'Login'
+/// due to an error on the server" on every attempt. (That is exactly what happened: a client one
+/// build old could reconnect its socket but never re-authenticate, so it sat connected and frozen.)
+///
+/// A DTO field has none of that problem. An old client simply omits it from the JSON, the
+/// deserializer leaves it 0, and 0 is the documented "too old to say" value that falls back to the
+/// legacy build-label list. Extending a DTO is the backwards-compatible move; extending a hub
+/// signature is not.
+/// </summary>
+public record AuthRequest(string Username, string Password, int Protocol = 0);
 
 /// <summary>Server -> Client: auth outcome. Token is the account id used for
 /// subsequent character calls within this connection.</summary>

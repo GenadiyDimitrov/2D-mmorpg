@@ -34,7 +34,8 @@ namespace Game.Client
         private const float PlateGap = 12f;
 
         // self / target
-        private TextMeshProUGUI _selfName, _selfDetail, _targetName, _targetDetail;
+        private TextMeshProUGUI _selfName, _targetName, _targetDetail;
+        private TextMeshProUGUI _selfHpText, _selfMpText, _selfXpText, _targetHpText;
         private Image _selfHp, _selfMp, _selfXp, _targetHp;
         private RectTransform _targetPanel;
 
@@ -175,30 +176,39 @@ namespace Game.Client
             BuildSlotMenu();
         }
 
+        /// <summary>
+        /// Name, level, and three bars with their numbers ON them — the ordinary shape of a game HUD.
+        ///
+        /// The numbers used to be a separate line under the bars, which meant reading a value took two
+        /// glances at two places and cost a row of the panel. Bars are also taller now: 18px was fine
+        /// for a plain fill but not with text in it, and the EXP bar's 10px could not hold a digit at
+        /// all. Nothing else lives here — the panel is VITALS ONLY.
+        /// </summary>
         private void BuildSelfPanel()
         {
             var panel = UiKit.PanelBox(_worldRoot, "SelfPanel");
             UiKit.Place(panel, new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -48f), new Vector2(330f, 116f));
+                        new Vector2(12f, -48f), new Vector2(330f, 114f));
             var inner = panel.GetChild(0);
 
             _selfName = UiKit.Label(inner, "waiting for your entity ...", 19f);
             UiKit.Place(UiKit.Rect(_selfName.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -8f), new Vector2(300f, 24f));
+                        new Vector2(12f, -6f), new Vector2(300f, 24f));
 
             _selfHp = UiKit.ValueBar(inner, UiKit.Hp);
             UiKit.Place(UiKit.Rect(_selfHp.transform.parent.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -36f), new Vector2(306f, 18f));
+                        new Vector2(12f, -34f), new Vector2(306f, 22f));
+            _selfHpText = UiKit.BarLabel(_selfHp, 13f);
+
             _selfMp = UiKit.ValueBar(inner, UiKit.Mp);
             UiKit.Place(UiKit.Rect(_selfMp.transform.parent.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -58f), new Vector2(306f, 18f));
+                        new Vector2(12f, -60f), new Vector2(306f, 22f));
+            _selfMpText = UiKit.BarLabel(_selfMp, 13f);
+
             _selfXp = UiKit.ValueBar(inner, UiKit.Xp);
             UiKit.Place(UiKit.Rect(_selfXp.transform.parent.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -80f), new Vector2(306f, 10f));
-
-            _selfDetail = UiKit.Label(inner, "", 14f, UiKit.TextDim);
-            UiKit.Place(UiKit.Rect(_selfDetail.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -94f), new Vector2(306f, 20f));
+                        new Vector2(12f, -86f), new Vector2(306f, 18f));
+            _selfXpText = UiKit.BarLabel(_selfXp, 11f);
         }
 
         /// <summary>
@@ -227,7 +237,8 @@ namespace Game.Client
 
             _targetHp = UiKit.ValueBar(inner, UiKit.Hp);
             UiKit.Place(UiKit.Rect(_targetHp.transform.parent.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -chrome - 34f), new Vector2(276f, 18f));
+                        new Vector2(12f, -chrome - 34f), new Vector2(276f, 22f));
+            _targetHpText = UiKit.BarLabel(_targetHp, 13f);
 
             _targetDetail = UiKit.Label(inner, "", 14f, UiKit.TextDim);
             UiKit.Place(UiKit.Rect(_targetDetail.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
@@ -582,22 +593,33 @@ namespace Game.Client
             if (self == null)
             {
                 _selfName.text = "waiting for your entity ...";
-                _selfDetail.text = "";
+                _selfHpText.text = _selfMpText.text = _selfXpText.text = "";
                 return;
             }
 
             int level = Boot.Progress != null ? Boot.Progress.Level : self.Level;
             _selfName.text = self.Name + "    Lv " + level;
-            UiKit.SetBar(_selfHp, self.Hp, self.MaxHp);
-            UiKit.SetBar(_selfMp, self.Mp, self.MaxMp);
-            if (Boot.Progress != null && Boot.Progress.ExpToNext > 0)
-                UiKit.SetBar(_selfXp, Boot.Progress.Exp, Boot.Progress.ExpToNext);
 
-            // VITALS ONLY. Gold and raw coordinates used to live here and overflowed the panel onto the
-            // world behind it. The rule the owner set is general: the always-on panel carries name,
-            // level, HP/MP/EXP and nothing else — gold belongs to the bag, position to the debug panel,
-            // and anything else to the window that owns it.
-            _selfDetail.text = "HP " + self.Hp + "/" + self.MaxHp + "   MP " + self.Mp + "/" + self.MaxMp;
+            // VITALS ONLY, and the numbers ride ON the bars. Gold and raw coordinates used to live
+            // under them and overflowed the panel onto the world behind it. The rule the owner set is
+            // general: the always-on panel carries name, level, HP/MP/EXP and nothing else — gold
+            // belongs to the bag, position to the debug panel, the rest to whichever window owns it.
+            UiKit.SetBar(_selfHp, self.Hp, self.MaxHp);
+            _selfHpText.text = self.Hp + " / " + self.MaxHp;
+
+            UiKit.SetBar(_selfMp, self.Mp, self.MaxMp);
+            _selfMpText.text = self.Mp + " / " + self.MaxMp;
+
+            if (Boot.Progress != null && Boot.Progress.ExpToNext > 0)
+            {
+                UiKit.SetBar(_selfXp, Boot.Progress.Exp, Boot.Progress.ExpToNext);
+                // Percent as well as the raw pair: at level 80 the numbers run to eight digits, and
+                // "how close am I" is the only question anyone actually asks of an EXP bar.
+                float pct = 100f * Boot.Progress.Exp / Boot.Progress.ExpToNext;
+                _selfXpText.text = "EXP  " + Boot.Progress.Exp.ToString("N0") + " / "
+                                 + Boot.Progress.ExpToNext.ToString("N0")
+                                 + "   (" + pct.ToString("0.0") + "%)";
+            }
         }
 
         private void RefreshTarget()
@@ -612,6 +634,11 @@ namespace Game.Client
             string level = target.Kind == EntityKind.Player && target.Level <= 0 ? "" : "  Lv " + target.Level;
             _targetName.text = target.Name + level + (target.Dead ? "   (dead)" : "");
             UiKit.SetBar(_targetHp, target.Hp, target.MaxHp);
+            // Percent, not the raw pair: another player's exact HP is information you should not have,
+            // and for a mob "how much is left" is the only part that changes how you fight.
+            _targetHpText.text = target.MaxHp > 0
+                ? Mathf.CeilToInt(100f * target.Hp / target.MaxHp) + "%"
+                : "";
             _targetDetail.text = target.Kind + (target.Aggressive ? "   aggressive" : "");
         }
 

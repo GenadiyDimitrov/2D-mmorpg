@@ -324,6 +324,24 @@ namespace Game.Client
             return bar;
         }
 
+        /// <summary>
+        /// A number drawn ON a value bar, the way every game HUD does it — centred over the fill
+        /// rather than on a separate line underneath.
+        ///
+        /// Pass the fill returned by <see cref="ValueBar"/>; the label is parented to the bar's
+        /// BACKGROUND, so it covers the whole track and does not shrink as the bar empties. It is
+        /// outlined because it has to stay readable over both the filled and the empty half, which are
+        /// very different brightnesses, and it never blocks raycasts.
+        /// </summary>
+        public static TextMeshProUGUI BarLabel(Image fill, float size = 12f)
+        {
+            var label = Label(fill.transform.parent, "", size, Text, TextAlignmentOptions.Center);
+            Stretch(Rect(label.gameObject), 4f, 0f, 4f, 0f);
+            label.outlineColor = new Color32(0, 0, 0, 200);
+            label.outlineWidth = 0.2f;
+            return label;
+        }
+
         public static void SetBar(Image fill, float value, float max)
         {
             if (fill == null) return;

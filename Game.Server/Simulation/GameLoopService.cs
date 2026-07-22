@@ -6286,11 +6286,28 @@ var effect = def.Effect;
     // update when only dynamic fields moved, a despawn when it leaves. Pruned when a connection drops.
     private readonly Dictionary<string, Dictionary<Guid, EntityDto>> _lastSentByConn = new();
 
+    /// <summary>
+    /// When each connection last received anything, so a quiet world still produces a HEARTBEAT.
+    ///
+    /// The delta broadcast deliberately sends nothing when nothing changed, which is right for
+    /// bandwidth and wrong for diagnosis: "the world is calm" and "the server has stopped talking to
+    /// me" looked IDENTICAL on the client — both are silence. The client's frames/sec is its only
+    /// health signal, and it read 0/s for a player standing still in an empty town.
+    ///
+    /// So every connection gets at least one (possibly empty) delta per second. An empty delta costs
+    /// three empty arrays and turns frames/sec into a real liveness measure with a floor, which is
+    /// what lets the client call a genuine stall a stall.
+    /// </summary>
+    private readonly Dictionary<string, DateTime> _lastSentAtByConn = new();
+
+    private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(1);
+
     private async Task BroadcastSnapshotsAsync()
     {
         if (_world.EntityToConnection.Count == 0)
         {
             if (_lastSentByConn.Count > 0) _lastSentByConn.Clear();
+            if (_lastSentAtByConn.Count > 0) _lastSentAtByConn.Clear();
             return;
         }
 
@@ -6345,8 +6362,17 @@ var effect = def.Effect;
 
             _lastSentByConn[connectionId] = current;   // this is now "what they have"
 
+            // Nothing changed for this viewer — stay silent, UNLESS they are due a heartbeat. Silence
+            // and a dead server are indistinguishable to a client, so a calm world still has to say
+            // something once a second.
+            var now = DateTime.UtcNow;
             if (spawns is null && updates is null && despawns is null)
-                continue;   // nothing changed this tick for this viewer
+            {
+                if (_lastSentAtByConn.TryGetValue(connectionId, out var lastAt)
+                    && now - lastAt < HeartbeatInterval)
+                    continue;
+            }
+            _lastSentAtByConn[connectionId] = now;
 
             sends.Add(_hub.Clients.Client(connectionId).SendAsync("SnapshotDelta",
                 new SnapshotDelta(
@@ -6360,7 +6386,10 @@ var effect = def.Effect;
         {
             var live = _world.EntityToConnection.Values.ToHashSet();
             foreach (var conn in _lastSentByConn.Keys.Where(c => !live.Contains(c)).ToList())
+            {
                 _lastSentByConn.Remove(conn);
+                _lastSentAtByConn.Remove(conn);   // or the heartbeat clock leaks a row per logout
+            }
         }
 
         try { await Task.WhenAll(sends); }

@@ -66,9 +66,29 @@ namespace Game.Client
             _target = groundPos + Vector3.up * HalfHeight;
         }
 
+        /// <summary>
+        /// Chase the last server position, frame-rate independently.
+        ///
+        /// This was `Lerp(position, target, Time.deltaTime * 10f)`, which is the classic broken
+        /// smoothing: `deltaTime * 10` is a BLEND FACTOR, so the result depends on how often Update
+        /// runs. At 60fps it is 0.17 per frame; on a frame that hitches to 120ms it is 1.2 — past 1,
+        /// which overshoots the target and snaps back. Every stutter in the renderer therefore became
+        /// a stutter in the MOTION, on top of whatever the network was doing.
+        ///
+        /// `1 - exp(-k * dt)` is the same exponential chase expressed correctly: the same convergence
+        /// per SECOND regardless of frame rate, and never greater than 1.
+        ///
+        /// It still eases in — a chase always lags and decelerates as it closes — which is visible
+        /// when updates are sparse. The real cure is snapshot interpolation (buffer the last two
+        /// positions and play back ~150ms behind at constant speed), which the server's per-entity
+        /// Speed field already carries what is needed for. Left as the next step rather than smuggled
+        /// in with a bug fix.
+        /// </summary>
         private void Update()
         {
-            transform.position = Vector3.Lerp(transform.position, _target, Time.deltaTime * 10f);
+            const float chasePerSecond = 12f;
+            float t = 1f - Mathf.Exp(-chasePerSecond * Time.deltaTime);
+            transform.position = Vector3.Lerp(transform.position, _target, t);
         }
 
         private void LateUpdate()

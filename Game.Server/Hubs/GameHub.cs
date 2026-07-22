@@ -32,20 +32,18 @@ public class GameHub : Hub
 
     // ----- Auth --------------------------------------------------------------
 
-    public async Task<AuthResponse> Register(AuthRequest request, string clientVersion = "",
-                                             int clientProtocol = 0)
+    public async Task<AuthResponse> Register(AuthRequest request, string clientVersion = "")
     {
-        if (VersionMismatch(clientVersion, clientProtocol) is string v) return new AuthResponse(false, v);
+        if (VersionMismatch(clientVersion, request.Protocol) is string v) return new AuthResponse(false, v);
         var result = await _db.RegisterAsync(request.Username, request.Password);
         if (result.Success)
             Sessions[Context.ConnectionId] = new AuthState(result.AccountId);
         return new AuthResponse(result.Success, result.Error, AccountRole.Player);
     }
 
-    public async Task<AuthResponse> Login(AuthRequest request, string clientVersion = "",
-                                          int clientProtocol = 0)
+    public async Task<AuthResponse> Login(AuthRequest request, string clientVersion = "")
     {
-        if (VersionMismatch(clientVersion, clientProtocol) is string v) return new AuthResponse(false, v);
+        if (VersionMismatch(clientVersion, request.Protocol) is string v) return new AuthResponse(false, v);
         var result = await _db.LoginAsync(request.Username, request.Password);
         if (result.Success)
             Sessions[Context.ConnectionId] = new AuthState(result.AccountId);

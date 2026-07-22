@@ -106,14 +106,17 @@ namespace Game.Client
         // client whose version differs (an out-of-date client speaks an out-of-date protocol). Because
         // Game.Shared is compiled INTO this client, sending the constant can never drift out of sync.
         public Task<AuthResponse> RegisterAsync(string username, string password) =>
-            _connection.InvokeAsync<AuthResponse>("Register", new AuthRequest(username, password),
-                                                  GameConstants.GameVersion, GameConstants.ProtocolVersion);
+            _connection.InvokeAsync<AuthResponse>("Register",
+                new AuthRequest(username, password, GameConstants.ProtocolVersion),
+                GameConstants.GameVersion);
 
         public Task<AuthResponse> LoginAsync(string username, string password) =>
-            // BOTH: the protocol number is what the server GATES on; the build label rides along for
-            // logs and for the "please update to vX" message, where a human-readable version helps.
-            _connection.InvokeAsync<AuthResponse>("Login", new AuthRequest(username, password),
-                                                  GameConstants.GameVersion, GameConstants.ProtocolVersion);
+            // The protocol travels INSIDE AuthRequest (see that record for why it cannot be another
+            // hub parameter). The build label stays a hub argument — it is already there, every client
+            // sends it, and it is what makes the "please update to vX" message readable.
+            _connection.InvokeAsync<AuthResponse>("Login",
+                new AuthRequest(username, password, GameConstants.ProtocolVersion),
+                GameConstants.GameVersion);
 
         public Task<CharacterList> ListCharactersAsync() =>
             _connection.InvokeAsync<CharacterList>("ListCharacters");

@@ -47,6 +47,7 @@ namespace Game.Client
         private static readonly Race[] Races = { Race.Human, Race.Elf, Race.Ork };   // God is debug-only
         private static readonly BaseClass[] Classes = { BaseClass.Fighter, BaseClass.Mage };
 
+        private float _renderFps;
         private ClientPhase _builtPhase = (ClientPhase)(-1);
         private int _characterRevision = -1;
 
@@ -175,16 +176,36 @@ namespace Game.Client
 
         private void RefreshStatusStrip()
         {
+            // Four states, because yellow used to mean two very different things: "waiting at the
+            // character screen" (fine) and "in world and the frames have STOPPED" (the worst state the
+            // client can be in). Only the small word STALLED told them apart. The failure gets its own
+            // colour now, so the dot carries the alarm instead of the label.
+            //
+            //   green   in world and a frame arrived in the last 2s — the only fully healthy state
+            //   ORANGE  in world, socket up, NO frames: connected to a server that is not talking
+            //   yellow  connected but not in world (login / character select)
+            //   red     not connected at all (SignalR reports Reconnecting as disconnected)
             bool live = Boot.SecondsSinceFrame >= 0f && Boot.SecondsSinceFrame < 2f;
-            _statusDot.color = Boot.Phase == ClientPhase.InWorld && live ? UiKit.Good
-                             : Boot.IsConnected ? new Color(0.95f, 0.8f, 0.3f)
+            bool inWorld = Boot.Phase == ClientPhase.InWorld;
+            _statusDot.color = inWorld && live      ? UiKit.Good
+                             : inWorld && Boot.IsConnected ? new Color(1.00f, 0.55f, 0.15f)
+                             : Boot.IsConnected     ? new Color(0.95f, 0.80f, 0.30f)
                              : UiKit.Bad;
+
+            // Render FPS, smoothed. Deliberately shown NEXT TO the network rate, because the two
+            // answer different questions and are constantly confused: "net" is how fast the SERVER is
+            // reaching us (10/s is the tick rate, and it floors at 1/s on the heartbeat), "fps" is how
+            // fast this phone is drawing. Choppy with a healthy net is the renderer; smooth with a
+            // dead net means you are watching a world that stopped.
+            if (Time.unscaledDeltaTime > 0f)
+                _renderFps = Mathf.Lerp(_renderFps, 1f / Time.unscaledDeltaTime,
+                                        1f - Mathf.Exp(-3f * Time.unscaledDeltaTime));
 
             string text = Boot.Phase.ToString();
             if (Boot.Phase == ClientPhase.InWorld)
             {
-                text += "  ·  frames " + Boot.FramesReceived
-                      + " @ " + Boot.FramesPerSecond.ToString("0.0") + "/s";
+                text += "  ·  net " + Boot.FramesPerSecond.ToString("0.0") + "/s"
+                      + "  ·  " + Mathf.RoundToInt(_renderFps) + " fps";
                 if (Boot.Entities != null) text += "  ·  entities " + Boot.Entities.Count;
                 // A connected socket that has gone quiet looks identical to a healthy one unless we
                 // say so out loud. This is the line that made the empty-world bug visible.
