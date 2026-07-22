@@ -98,6 +98,10 @@ namespace Game.Client
             _windows.Add(panel);
             panel.gameObject.SetActive(true);
             panel.SetAsLastSibling();      // and draws above the ones opened before it
+
+            // The debug window is BUILT once and its contents are rebuilt per tab, so opening it after
+            // levelling/swapping class would otherwise show whatever was true when it was last closed.
+            if (panel == _debugPanel) RefreshDebugPanel();
         }
 
         private void CloseWindow(RectTransform panel)
@@ -132,8 +136,6 @@ namespace Game.Client
             return false;
         }
 
-        private int _townIndex;
-        private TextMeshProUGUI _townLabel;
         private Button _debugButton, _pvpButton, _autoButton, _respawnButton;
         private RectTransform _menuPanel;
 
@@ -508,82 +510,9 @@ namespace Game.Client
             _bagPanel.gameObject.SetActive(false);
         }
 
-        private void BuildDebugPanel()
-        {
-            _debugPanel = UiKit.PanelBox(_worldRoot, "Debug");
-            UiKit.Place(_debugPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(560f, 380f));
-            var inner = _debugPanel.GetChild(0);
-            float chrome = UiKit.WindowChrome(_debugPanel, "Debug", () => CloseWindow(_debugPanel));
-
-            float y = -chrome - 14f;
-            DebugRow(inner, ref y, "Level",
-                ("-10", () => Boot.Debug(n => n.DebugLevelAsync(-10), "level")),
-                ("-1",  () => Boot.Debug(n => n.DebugLevelAsync(-1), "level")),
-                ("+1",  () => Boot.Debug(n => n.DebugLevelAsync(1), "level")),
-                ("+10", () => Boot.Debug(n => n.DebugLevelAsync(10), "level")));
-
-            DebugRow(inner, ref y, "Grant",
-                ("Learn all", () => Boot.Debug(n => n.DebugLearnAllAsync(), "learn all")),
-                ("Buffs",     () => Boot.Debug(n => n.DebugBuffAsync(), "buff")));
-
-            DebugRow(inner, ref y, "Wealth",
-                ("+100k gold", () => Boot.Debug(n => n.DebugGoldAsync(100000), "gold")),
-                ("+100k SP",   () => Boot.Debug(n => n.DebugSpAsync(100000), "sp")));
-
-            // Teleport: the town list is shared data, so it can never drift from the real map.
-            UiKit.Place(UiKit.Rect(UiKit.Label(inner, "Teleport", 15f, UiKit.TextDim).gameObject),
-                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, y),
-                        new Vector2(120f, 28f));
-
-            var prev = UiKit.TextButton(inner, "<", () => CycleTown(-1), 18f);
-            UiKit.Place(UiKit.Rect(prev.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(120f, y), new Vector2(44f, 36f));
-
-            _townLabel = UiKit.Label(inner, "", 17f, UiKit.Text, TextAlignmentOptions.Center);
-            UiKit.Place(UiKit.Rect(_townLabel.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(170f, y - 4f), new Vector2(220f, 28f));
-
-            var next = UiKit.TextButton(inner, ">", () => CycleTown(1), 18f);
-            UiKit.Place(UiKit.Rect(next.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(396f, y), new Vector2(44f, 36f));
-
-            var go = UiKit.TextButton(inner, "Go", () =>
-            {
-                var town = WorldMap.SafeZones[_townIndex];
-                Boot.Debug(n => n.DebugTeleportAsync(town.X, town.Y), "teleport");
-            }, 18f);
-            UiKit.Place(UiKit.Rect(go.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(446f, y), new Vector2(80f, 36f));
-
-            CycleTown(0);
-            _debugPanel.gameObject.SetActive(false);
-        }
-
-        private void DebugRow(Transform parent, ref float y, string title,
-                              params (string Text, Action Click)[] buttons)
-        {
-            UiKit.Place(UiKit.Rect(UiKit.Label(parent, title, 15f, UiKit.TextDim).gameObject),
-                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, y),
-                        new Vector2(100f, 28f));
-
-            float x = 120f;
-            foreach (var entry in buttons)
-            {
-                var button = UiKit.TextButton(parent, entry.Text, entry.Click, 17f);
-                UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(x, y), new Vector2(100f, 36f));
-                x += 106f;
-            }
-            y -= 48f;
-        }
-
-        private void CycleTown(int delta)
-        {
-            var towns = WorldMap.SafeZones;
-            _townIndex = (_townIndex + delta + towns.Length) % towns.Length;
-            if (_townLabel != null) _townLabel.text = towns[_townIndex].Name;
-        }
+        // BuildDebugPanel and everything it needs now live in GameUi.Debug.cs — it grew from four
+        // buttons to the full WPF-parity tool (five tabs + live tuning) and had no business sharing a
+        // file with the bag and the action bar.
 
         private void BuildOverlays()
         {

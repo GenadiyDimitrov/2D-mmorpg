@@ -234,6 +234,15 @@ namespace Game.Client
         /// remembered from the character screen.</summary>
         public SubclassDto ActiveClass { get; private set; }
 
+        /// <summary>Every class this character owns (server-pushed). Drives the debug Class tab.</summary>
+        public SubclassDto[] Subclasses { get; private set; } = System.Array.Empty<SubclassDto>();
+
+        /// <summary>The UI, so a server push can refresh a panel that is currently showing stale data.</summary>
+        public GameUi Ui { get; private set; }
+
+        /// <summary>The server's last-reported tuning values (rates/karma/caps). Null until requested.</summary>
+        public DebugConfigDto DebugConfig { get; private set; }
+
         private NetworkChannel _net;
         private Guid _selfId;
 
@@ -304,6 +313,7 @@ namespace Game.Client
             var ui = FindAnyObjectByType<GameUi>();
             if (ui == null) ui = gameObject.AddComponent<GameUi>();
             ui.Boot = this;
+            Ui = ui;   // so server pushes can refresh a panel that is showing stale data
 
             if (FindAnyObjectByType<GroundGrid>() == null)
                 new GameObject("GroundGrid").AddComponent<GroundGrid>();
@@ -496,7 +506,17 @@ namespace Game.Client
             _net.SubclassesReceived += s => Main(() =>
             {
                 if (s?.Classes == null) return;
+                // Keep the WHOLE list, not just the active one: the debug Class tab lists every class
+                // you own so you can swap between them, which is the owner's way of comparing two
+                // builds in the same gear without relogging.
+                Subclasses = s.Classes;
                 foreach (var c in s.Classes) if (c.Active) { ActiveClass = c; break; }
+                Ui?.RefreshDebugPanel();   // a swap that already happened must not still be offered
+            });
+            _net.DebugConfigReceived += c => Main(() =>
+            {
+                DebugConfig = c;
+                Ui?.FillTuning(c);
             });
             _net.SkillBarReceived += b => Main(() =>
             {

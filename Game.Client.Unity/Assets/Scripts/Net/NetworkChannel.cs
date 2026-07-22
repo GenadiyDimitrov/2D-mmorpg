@@ -49,6 +49,11 @@ namespace Game.Client
         /// ACTIVE class's race/base/second/third — which the skills window needs to work out what is
         /// learnable, and which changes under you on a subclass swap.</summary>
         public event Action<SubclassListDto> SubclassesReceived;
+
+        /// <summary>The server's CURRENT tuning values — sent on request and echoed after a change,
+        /// with the server's clamping already applied. The panel is always filled from this, never
+        /// from what the client last sent.</summary>
+        public event Action<DebugConfigDto> DebugConfigReceived;
         public event Action<NpcDialog> DialogReceived;
         public event Action<QuestLog> QuestLogReceived;
         public event Action<string> Disconnected;
@@ -80,6 +85,7 @@ namespace Game.Client
             _connection.On<LearnedSkills>("Learned", l => LearnedReceived?.Invoke(l));
             _connection.On<SkillBarDto>("SkillBar", b => SkillBarReceived?.Invoke(b));
             _connection.On<SubclassListDto>("Subclasses", s => SubclassesReceived?.Invoke(s));
+            _connection.On<DebugConfigDto>("DebugConfig", c => DebugConfigReceived?.Invoke(c));
             _connection.On<NpcDialog>("Dialog", d => DialogReceived?.Invoke(d));
             _connection.On<QuestLog>("QuestLog", q => QuestLogReceived?.Invoke(q));
             _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));
