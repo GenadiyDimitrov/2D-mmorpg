@@ -59,6 +59,9 @@ namespace Game.Client
             _disc.gameObject.SetActive(true);
         }
 
+        /// <summary>Whether a destination is currently being advertised on the ground.</summary>
+        public bool IsShown => _shownAt >= 0f;
+
         public void Hide()
         {
             _shownAt = -1f;

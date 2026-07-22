@@ -39,7 +39,32 @@ namespace Game.Client
         // ----- client-side prediction (SELF ONLY) -------------------------------------------------
         private bool _predicting;
         private Vector3 _predictTarget;
+        private Vector3 _predictPos;      // where the prediction says we are, independent of the buffer
         private float _predictSpeed;      // Unity units per second
+
+        /// <summary>
+        /// How fast the prediction ERROR bleeds off once prediction stops, per second (exponential).
+        ///
+        /// This is the whole fix for the rubber-band. Prediction runs AHEAD of the server by the
+        /// network delay, so at the moment it stops the two disagree — and that disagreement is
+        /// normal, not a mistake. Cancelling it outright is a jump backwards; obeying the next server
+        /// position is the same jump wearing a different hat (and over a near-zero interpolation span,
+        /// so it plays out in a frame or two — which is exactly what the 0.28.30 attempt still did).
+        ///
+        /// Instead we keep drawing the offset and let it DECAY. The character is never yanked; the
+        /// error is spread across ~half a second of ordinary motion, where nobody can see it. At 3/s
+        /// it is down to 5% within a second — and it is sub-half-a-unit (50 server units) to begin
+        /// with, against skill ranges of 400-900.
+        /// </summary>
+        private const float ErrorDecayRate = 3f;
+
+        /// <summary>How far the drawn position currently leads the server's. Self only; decays to zero.</summary>
+        private Vector3 _selfError;
+
+        /// <summary>Distance from the SERVER's last position to our predicted destination, and whether
+        /// we have one yet. Used to notice that the server is no longer heading where we predicted.</summary>
+        private float _serverDist;
+        private bool _hasServerDist;
 
         /// <summary>
         /// How far the server may disagree with our prediction before we give up and SNAP to it.
@@ -73,7 +98,7 @@ namespace Game.Client
 
             // Seed the buffer with where Create already placed us. Without this the first Update has
             // no samples and the entity would sit at the origin until its second server position.
-            _fromPos = _toPos = transform.position;
+            _fromPos = _toPos = _predictPos = transform.position;
             _fromTime = _toTime = Time.time;
             _hasFrom = true;
         }
@@ -117,18 +142,38 @@ namespace Game.Client
             // is far enough away that we clearly predicted something the server refused — a move
             // during a root, a knockback, a teleport. Correcting the small differences too is what
             // turns authoritative movement into rubber-banding.
+            //
+            // The check is against the PREDICTION's position, not the drawn one, and it no longer
+            // suppresses the buffer: the server stream stays authoritative and up to date at all
+            // times, and what we draw is that stream plus a decaying error (see Update). Suppressing
+            // it was what left a stale segment waiting to be obeyed the moment prediction stopped.
             if (_predicting && IsSelf)
             {
-                // Deliberately NOT written into the interpolation buffer — see EndPrediction. While
-                // predicting we are ahead of this position on purpose, and storing it would be storing
-                // the very point that used to yank us backwards.
-                if ((next - transform.position).sqrMagnitude
-                        > ReconcileSnapDistance * ReconcileSnapDistance)
+                // Is the server still taking us where we think we are going? Distance from the SERVER's
+                // position to our predicted destination should shrink every sample. When it GROWS, the
+                // server is walking us somewhere else and the prediction is already wrong — no need to
+                // wait for the error to pile up past ReconcileSnapDistance.
+                //
+                // That wait was the second-long "teleport": tap a skill on a far target and the server
+                // discards your walk and closes on the ENEMY instead. The client happily predicted the
+                // opposite direction until the guard tripped, then jumped. This notices in one sample
+                // (~100ms) instead of ~1s, and hands over without a jump because the error decays.
+                float dist = (next - _predictTarget).magnitude;
+                bool serverGoingElsewhere = _hasServerDist && dist > _serverDist + 0.01f;
+
+                if (serverGoingElsewhere
+                    || (next - _predictPos).sqrMagnitude > ReconcileSnapDistance * ReconcileSnapDistance)
                 {
-                    transform.position = next;   // the server did something we did not predict
+                    // NOT SnapTo. Ending prediction leaves the accumulated error to decay, so the
+                    // correction is a short glide instead of a teleport. A genuine teleport is still
+                    // caught below, by distance, where it belongs.
                     EndPrediction();
                 }
-                return;
+                else
+                {
+                    _serverDist = dist;
+                    _hasServerDist = true;
+                }
             }
 
             // Ignore a repeat of the same place: it carries no motion, and letting it start a new
@@ -158,30 +203,39 @@ namespace Game.Client
         {
             _predictTarget = groundTarget + Vector3.up * HalfHeight;
             _predictSpeed = speed;
+            // Start from where we are DRAWN, not from the server's position: any error still decaying
+            // from the last walk is part of where the player sees themselves, and restarting from the
+            // server's point would put that error back on screen as a jump at the first step.
+            _predictPos = transform.position;
             _predicting = true;
+            // A fresh destination: the previous walk's distance tells us nothing about this one, and
+            // carrying it over would read as "the server is going elsewhere" on the very first sample.
+            _hasServerDist = false;
         }
 
         public void CancelPrediction() => EndPrediction();
 
+        /// <summary>Whether we are still predicting a walk — i.e. whether the destination the player
+        /// was given is still one we believe in.</summary>
+        public bool IsPredicting => _predicting;
+
         /// <summary>
-        /// Stop predicting AND hand the current position over to the interpolator.
+        /// Stop predicting, LEAVING the accumulated error in place to decay (see <see cref="ErrorDecayRate"/>).
         ///
-        /// 🔴 This is the rubber-band. While predicting, every arriving server position was written
-        /// straight into the interpolation buffer — and that position is behind us BY DESIGN, because
-        /// prediction is ahead of the network. So the instant prediction stopped, Update() fell back
-        /// to interpolation and teleported the character to that stale point. It fired at the end of
-        /// EVERY predicted walk, and most visibly when a skill cut one short: tap, walk, cast, snap
-        /// back to where you started.
+        /// 🔴 This is the rubber-band, and it took three goes to state correctly. Prediction is ahead
+        /// of the server by the network delay — that is what prediction IS — so at the handover the
+        /// two positions disagree, and every attempt to resolve that disagreement AT the handover is a
+        /// jump. 0.28.30 seeded the buffer with our real position, which fixed the first frame and
+        /// nothing after it: the very next server position (still behind us) opened a segment from
+        /// here to there, spanning the few milliseconds since the seed, so the character shot backwards
+        /// in one frame anyway.
         ///
-        /// Seeding the buffer with where we ACTUALLY are means the handover is silent, and the next
-        /// server position simply interpolates forward from here.
+        /// There is nothing to resolve. The offset is legitimate, it is small, and it is allowed to
+        /// simply fade out while the player is looking at something else.
         /// </summary>
         private void EndPrediction()
         {
             _predicting = false;
-            _fromPos = _toPos = transform.position;
-            _fromTime = _toTime = Time.time;
-            _hasFrom = true;
         }
 
         /// <summary>Put the entity AT a position with no interpolation — for spawns, teleports and
@@ -189,9 +243,14 @@ namespace Game.Client
         public void SnapTo(Vector3 groundPos)
         {
             var at = groundPos + Vector3.up * HalfHeight;
-            _fromPos = _toPos = at;
+            _fromPos = _toPos = _predictPos = at;
             _fromTime = _toTime = Time.time;
             _hasFrom = true;
+            // A snap is the one case where the server is deliberately overriding us, so any prediction
+            // and any accumulated error are wrong by definition — drop both rather than let them drag
+            // the character back off the point we were just told to be at.
+            _predicting = false;
+            _selfError = Vector3.zero;
             transform.position = at;
         }
 
@@ -215,8 +274,6 @@ namespace Game.Client
         /// </summary>
         private void Update()
         {
-            // ----- SELF: predict, then reconcile ------------------------------------------------
-            //
             // The character you drive moves on YOUR clock, not on the network's. This is the standard
             // split (Valve, Overwatch, every modern netcode talk): predict the entity you control,
             // interpolate the ones you do not. Everything before this — smoothing the chase, making it
@@ -224,47 +281,85 @@ namespace Game.Client
             // symptom. The character was still waiting for the network to tell it where it was.
             //
             // This is only safe because the walk is DETERMINISTIC and the server is still the
-            // authority: it runs the same straight-line-at-Speed simulation, and SetTarget below
-            // corrects us the moment the two disagree by more than a step.
-            if (_predicting)
-            {
-                var flatTarget = _predictTarget;
-                var here = transform.position;
-                float step = _predictSpeed * Time.deltaTime;
-                var to = flatTarget - here;
+            // authority: it runs the same straight-line-at-Speed simulation, and SetTarget corrects us
+            // the moment the two disagree by more than ReconcileSnapDistance.
+            if (!_hasFrom) return;
 
-                if (to.sqrMagnitude <= step * step)
-                {
-                    transform.position = flatTarget;
-                    EndPrediction();         // arrived; hand over cleanly — see EndPrediction
-                }
-                else
-                {
-                    transform.position = here + to.normalized * step;
-                }
+            // 🔴 SELF IS DELAYED TOO, and that is not the regression it looks like.
+            //
+            // Self was given a delay of ZERO to keep the tap responsive. But zero delay makes this
+            // interpolation DEGENERATE: renderAt is now, and _toTime is the instant the newest sample
+            // arrived, so t is always 1. Self never interpolated at all — it jumped straight to each
+            // arriving position and sat there, a 10Hz staircase of ~0.25-unit hops. That is a
+            // permanent, visible jitter on every metre the SERVER moves you (an attack chase, the tail
+            // of a walk after a skill cancels the prediction) and it survived all three attempts at
+            // the rubber-band, because it was never the rubber-band.
+            //
+            // Responsiveness does not come from the delay any more — it comes from PREDICTION, which
+            // draws your own walks on your own clock. So self can afford to render the past like
+            // everything else for the motion it does not predict, and does.
+            float span = _toTime - _fromTime;
+
+            // 🔴 THE DELAY IS ONE SAMPLE INTERVAL, MEASURED — never a constant.
+            //
+            // This was `(Time.time - InterpolationDelay - _fromTime) / span` with a fixed 150ms delay,
+            // against samples arriving every 100ms and a buffer holding exactly TWO of them. Rendering
+            // 150ms in the past needs a sample at least 150ms old; the oldest one we keep is 100ms old.
+            // So at every arrival t clamped to 0 and the position FROZE for 50ms, then interpolated for
+            // 50ms, then froze again — starved half of every cycle.
+            //
+            // For self that was the visible bug: the base position is frozen while the prediction error
+            // keeps decaying, so the character slips BACKWARDS during the frozen half and jumps forward
+            // when it unfreezes. Walking with a step back on every frame, exactly as reported — and it
+            // was in the interpolator the whole time, not in the prediction anyone kept rewriting.
+            //
+            // Starting the segment at _toTime makes the lag exactly one inter-arrival interval, whatever
+            // that interval turns out to be: t = 0 (at _fromPos) the instant a sample lands, reaching
+            // _toPos one span later, just as the next one arrives. Self-adjusting, so a change to the
+            // server's send rate can never desynchronise it again. When an update is genuinely late the
+            // clamp holds at _toPos — the newest thing we actually know — instead of freezing at an
+            // older one.
+            float t = span > 0.0001f ? Mathf.Clamp01((Time.time - _toTime) / span) : 1f;
+            var basePos = Vector3.Lerp(_fromPos, _toPos, t);
+
+            if (!IsSelf)
+            {
+                transform.position = basePos;
                 return;
             }
 
-            if (!_hasFrom) return;
-
-            // YOUR OWN character is NOT delayed. Interpolation deliberately renders the past, which is
-            // right for entities whose next move you cannot know — and wrong for the one you are
-            // driving: it put 150ms between the tap and the character (and the camera follows him, so
-            // the whole world lagged the input). That is the regression that made movement feel worse
-            // rather than better.
+            // ----- SELF: the server stream PLUS a decaying error --------------------------------
             //
-            // Big-engine practice splits these two jobs and so do we: OTHERS are interpolated,
-            // SELF is not. The proper next step for self is client-side PREDICTION — simulate the same
-            // walk the server does and reconcile when it disagrees. The simulation is deterministic
-            // (walk toward the target at Speed), so it is available; it needs the move target on the
-            // wire, which is why it is its own change and not smuggled in here.
-            float renderAt = Time.time - (IsSelf ? 0f : InterpolationDelay);
-            float span = _toTime - _fromTime;
+            // basePos is what the server says. While predicting we draw the prediction instead and
+            // measure how far ahead of the server it is; once it stops, that measurement is all that
+            // is left, and it fades. Either way the character's drawn position is continuous — there
+            // is no frame where it changes rule and jumps, which is what every previous attempt at
+            // this bug got wrong.
+            if (_predicting)
+            {
+                float step = _predictSpeed * Time.deltaTime;
+                var to = _predictTarget - _predictPos;
 
-            // A zero or negative span means both samples arrived in the same frame; there is nothing
-            // to interpolate along, so sit on the newest.
-            float t = span > 0.0001f ? Mathf.Clamp01((renderAt - _fromTime) / span) : 1f;
-            transform.position = Vector3.Lerp(_fromPos, _toPos, t);
+                if (to.sqrMagnitude <= step * step)
+                {
+                    _predictPos = _predictTarget;
+                    EndPrediction();          // arrived; the error simply starts decaying
+                }
+                else
+                {
+                    _predictPos += to.normalized * step;
+                }
+
+                _selfError = _predictPos - basePos;
+                transform.position = _predictPos;
+                return;
+            }
+
+            // Frame-rate independent decay. Using deltaTime as a blend factor directly is the bug that
+            // started this whole chase — at 120ms a frame it overshoots past the target and back.
+            _selfError *= Mathf.Exp(-ErrorDecayRate * Time.deltaTime);
+            if (_selfError.sqrMagnitude < 0.000001f) _selfError = Vector3.zero;
+            transform.position = basePos + _selfError;
         }
 
         private void LateUpdate()

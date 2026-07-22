@@ -252,6 +252,24 @@ namespace Game.Client
         public Task DebugTeleportAsync(float x, float y) => _connection.SendAsync("DebugTeleport", x, y);
         public Task DebugGiveAsync(string defId, int quantity) =>
             _connection.SendAsync("DebugGive", defId, quantity);
+        public Task DebugKarmaAsync(int delta) => _connection.SendAsync("DebugKarma", delta);
+        public Task DebugSetProfessionAsync(int profession) =>
+            _connection.SendAsync("DebugSetProfession", profession);
+        public Task DebugThirdClassAsync(int thirdClassId) =>
+            _connection.SendAsync("DebugThirdClass", thirdClassId);
+        public Task DebugAddSubclassAsync(int thirdClassId) =>
+            _connection.SendAsync("DebugAddSubclass", thirdClassId);
+        public Task SwitchSubclassAsync(int slot) => _connection.SendAsync("SwitchSubclass", slot);
+        public Task DebugResetAsync(Race race, BaseClass baseClass) =>
+            _connection.SendAsync("DebugReset", (int)race, (int)baseClass);
+        public Task DebugCancelAttrAsync(int index) => _connection.SendAsync("DebugCancelAttr", index);
+
+        // Live tuning. Request populates the panel from the AUTHORITATIVE current values rather than
+        // from whatever the client last sent — the server clamps, and the echo is how we learn what it
+        // actually accepted.
+        public Task RequestDebugConfigAsync() => _connection.SendAsync("RequestDebugConfig");
+        public Task SetDebugConfigAsync(DebugConfigDto config) =>
+            _connection.SendAsync("SetDebugConfig", config);
 
         public async ValueTask DisposeAsync()
         {

@@ -340,6 +340,15 @@ namespace Game.Client
 
         private void Update()
         {
+            // The destination ring lives exactly as long as the walk it describes. Prediction ends when
+            // you arrive, when something cancels the walk, or when the server turns out to be taking you
+            // somewhere else entirely (a skill on a far target makes it close on the ENEMY instead) —
+            // and in every one of those cases a ring still sitting on the ground is a promise the game
+            // is no longer keeping.
+            if (Phase == ClientPhase.InWorld && Marker != null && Marker.IsShown
+                && Entities != null && !Entities.SelfIsPredicting)
+                Marker.Hide();
+
             // Frames/sec over a rolling second: 10/s means a healthy server tick reaching us.
             if (Time.realtimeSinceStartup - _fpsWindowStart >= 1f)
             {
@@ -508,6 +517,10 @@ namespace Game.Client
                 CastingSkill = c.SkillName;
                 CastStartedAt = Time.realtimeSinceStartup;
                 CastEndsAt = CastStartedAt + c.Seconds;
+
+                // The walk is over HERE — when the SERVER confirms a cast started and roots you — and
+                // not when the button was tapped. See UseSkill for why guessing was wrong.
+                CancelMoveOrder();
             });
             _net.Disconnected += m => Main(() =>
             {
@@ -796,7 +809,12 @@ namespace Game.Client
 
             if (ActionCatalog.FromToken(token) is ActionDef action)
             {
-                CancelMoveOrder();   // every action either stops you or retargets you
+                // No blanket CancelMoveOrder here. "Every action either stops you or retargets you" is
+                // simply untrue: a Run/Walk toggle changes your SPEED and you keep going, a basic
+                // attack with no target does nothing at all, and standing up is not a stop. Each case
+                // below already cancels the walk when it really ends it (Attack and SetMoveState do),
+                // so the blanket call could only ever be wrong — and it was: tapping a bar slot cut the
+                // walk's prediction dead while the server walked on.
                 switch (action.Id)
                 {
                     case GameConstants.ActionBasicAttack:
@@ -981,10 +999,23 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("SkillBar: " + ex.Message); }
         }
 
+        /// <summary>
+        /// Ask the server to cast. Deliberately does NOT cancel the walk.
+        ///
+        /// 🔴 It used to, and that was a guess about a decision only the server makes. Tap a skill with
+        /// no target and the server REFUSES it — you keep walking — but the client had already dropped
+        /// the destination ring and killed the prediction. The ring vanished while the character walked
+        /// on (reported: "when I click the skill the ground move-flag disappears"), and the abandoned
+        /// prediction handed the character back to the interpolator mid-walk, which is where the visible
+        /// judder came from.
+        ///
+        /// The walk now ends when the server says a cast STARTED (see the CastReceived handler), which
+        /// is the same moment it actually roots you. Refused casts change nothing, because nothing
+        /// happened.
+        /// </summary>
         public async void UseSkill(string skillId)
         {
             if (Phase != ClientPhase.InWorld) return;
-            CancelMoveOrder();
             try { await _net.UseSkillAsync(skillId, TargetId); }
             catch (Exception ex) { ClientLog.Warn("UseSkill: " + ex.Message); }
         }

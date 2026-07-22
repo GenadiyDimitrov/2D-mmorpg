@@ -139,6 +139,11 @@ namespace Game.Client
         /// <summary>Abandon the prediction — for anything that stops you where you stand (an attack
         /// order, sitting, a cast). Without this the character would keep walking locally toward a
         /// destination the server has already discarded.</summary>
+        /// <summary>Whether your own walk is still being predicted. False once it arrives, is cancelled,
+        /// or the server turns out to be taking you somewhere else.</summary>
+        public bool SelfIsPredicting =>
+            SelfId != Guid.Empty && _views.TryGetValue(SelfId, out var v) && v != null && v.IsPredicting;
+
         public void CancelSelfPrediction()
         {
             if (SelfId != Guid.Empty && _views.TryGetValue(SelfId, out var view) && view != null)

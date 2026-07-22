@@ -128,7 +128,16 @@ namespace Game.Client
 
             var rot = Quaternion.Euler(Pitch, Yaw, 0f);
             var desired = Target.position + rot * Vector3.back * Distance;
-            transform.position = Vector3.Lerp(transform.position, desired, Time.deltaTime * Follow);
+
+            // FRAME-RATE INDEPENDENT smoothing. This was `Lerp(pos, desired, deltaTime * Follow)` —
+            // deltaTime used as a BLEND FACTOR, which is the exact bug that was found and fixed in
+            // EntityView and then left standing here. At Follow 12 any frame longer than 83ms gives a
+            // factor above 1: the camera flies PAST the character and comes back. And because the
+            // camera is what the player actually watches, a wobble here is indistinguishable from the
+            // character jittering — the entity can be perfectly smooth in world space and still look
+            // wrong on screen.
+            transform.position = Vector3.Lerp(
+                transform.position, desired, 1f - Mathf.Exp(-Follow * Time.deltaTime));
 
             // Assign the rotation directly rather than LookAt(Target): at Pitch 90 the view direction
             // is parallel to Vector3.up, which makes LookAt's up-vector degenerate and the image spin

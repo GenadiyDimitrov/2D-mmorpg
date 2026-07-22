@@ -375,7 +375,8 @@ namespace Game.Client
         }
 
         /// <summary>
-        /// The action bar: five buttons TOP-RIGHT, with the rarely-pressed ones behind a Menu.
+        /// The action bar: five buttons TOP-RIGHT in two rows, with the rarely-pressed ones behind a
+        /// Menu. Row one is [PvP][Auto][Menu], row two [Bag][Skills].
         ///
         /// It used to be ten buttons across the whole bottom edge, which is the worst place for them
         /// on a phone: that strip is where the thumbs rest and where the chat and skill bar want to
@@ -394,29 +395,45 @@ namespace Game.Client
             // Respawn is the exception to the top-right grouping — it appears only while you are DEAD
             // (see RefreshWorld) and needs to be impossible to miss, so it sits in the middle instead
             // of hiding behind a menu at the worst possible moment.
-            var actions = new List<(string Label, Action Click)>
+            // TWO ROWS rather than one row of five. Five buttons in a line reached most of the way
+            // across the top edge and collided with the target frame in the middle; stacked, they stay
+            // in the corner the thumb owns.
+            var rows = new List<List<(string Label, Action Click)>>
             {
-                ("PvP: off",  () => Boot.TogglePvp()),
-                ("Auto: off", () => Boot.ToggleAutoHunt()),
-                ("Bag",       () => ToggleWindow(_bagPanel)),
-                ("Skills",    () => ToggleWindow(_skillsPanel)),
-                ("Menu",      () => ToggleWindow(_menuPanel)),
+                new()
+                {
+                    ("PvP: off",  () => Boot.TogglePvp()),
+                    ("Auto: off", () => Boot.ToggleAutoHunt()),
+                    ("Menu",      () => ToggleWindow(_menuPanel)),
+                },
+                new()
+                {
+                    ("Bag",       () => ToggleWindow(_bagPanel)),
+                    ("Skills",    () => ToggleWindow(_skillsPanel)),
+                },
             };
 
             const float gap = 6f, width = 132f, height = 46f;
-            float x = -12f;
+            float y = -48f;
 
-            // Right to left, so the row grows leftward from the screen edge and "Menu" is the button
-            // nearest the corner — the thumb's easiest reach.
-            for (int i = actions.Count - 1; i >= 0; i--)
+            foreach (var row in rows)
             {
-                var button = UiKit.TextButton(_worldRoot, actions[i].Label, actions[i].Click, 15f);
-                UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
-                            new Vector2(x, -48f), new Vector2(width, height));
-                x -= width + gap;
+                float x = -12f;
 
-                if (actions[i].Label == "PvP: off") _pvpButton = button;
-                else if (actions[i].Label == "Auto: off") _autoButton = button;
+                // Right to left, so each row grows leftward from the screen edge and the LAST entry
+                // ends up nearest the corner — the thumb's easiest reach.
+                for (int i = row.Count - 1; i >= 0; i--)
+                {
+                    var button = UiKit.TextButton(_worldRoot, row[i].Label, row[i].Click, 15f);
+                    UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
+                                new Vector2(x, y), new Vector2(width, height));
+                    x -= width + gap;
+
+                    if (row[i].Label == "PvP: off") _pvpButton = button;
+                    else if (row[i].Label == "Auto: off") _autoButton = button;
+                }
+
+                y -= height + gap;
             }
 
             _respawnButton = UiKit.TextButton(_worldRoot, "Respawn", () => Boot.Respawn(), 17f);
