@@ -518,6 +518,8 @@ namespace Game.Client
                 DebugConfig = c;
                 Ui?.FillTuning(c);
             });
+            _net.TradeRequestReceived += t => Main(() => Ui?.OnTradeRequest(t));
+            _net.TradeStateReceived += t => Main(() => Ui?.OnTradeState(t));
             _net.SkillBarReceived += b => Main(() =>
             {
                 // Copy into a fixed 60 rather than trusting the length: the bar is rendered by index
@@ -1070,6 +1072,15 @@ namespace Game.Client
             if (Phase != ClientPhase.InWorld) return;
             try { await _net.UsePotionAsync(instanceId); }
             catch (Exception ex) { ClientLog.Warn("UsePotion: " + ex.Message); }
+        }
+
+        /// <summary>Fire-and-forget trade call. Same shape as <see cref="Debug"/>: the trade window
+        /// never applies anything itself, it just tells the server and redraws from what comes back.</summary>
+        public async void Trade(Func<NetworkChannel, Task> call, string what)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await call(_net); }
+            catch (Exception ex) { ClientLog.Warn("Trade " + what + ": " + ex.Message); }
         }
 
         /// <summary>Fire-and-forget debug call. Every one of these is re-checked server-side against

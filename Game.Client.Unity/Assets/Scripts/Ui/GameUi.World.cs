@@ -137,6 +137,7 @@ namespace Game.Client
         }
 
         private Button _debugButton, _pvpButton, _autoButton, _respawnButton;
+        private Button _targetPartyButton, _targetTradeButton;
         private RectTransform _menuPanel;
 
         // confirm dialog
@@ -168,6 +169,7 @@ namespace Game.Client
             BuildBag();
             BuildSkillsWindow();
             BuildDebugPanel();
+            BuildTradePanel();
             BuildFeedback();
             BuildSkillDetail();
             BuildStatsWindow();
@@ -268,6 +270,28 @@ namespace Game.Client
             }, 14f);
             UiKit.Place(UiKit.Rect(info.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
                         new Vector2(-10f, 8f), new Vector2(76f, 28f));
+
+            // PLAYER-only actions. Boot.PartyInvite existed from the start and nothing ever called it:
+            // the Unity client could not invite anyone to a party, which is why party was untestable
+            // from the phone. Shown only when the target is another player — on a mob these are two
+            // buttons that can only ever produce a server refusal.
+            _targetPartyButton = UiKit.TextButton(inner, "Party", () =>
+            {
+                if (Boot.TargetId.HasValue) Boot.PartyInvite(Boot.TargetId.Value);
+            }, 14f);
+            UiKit.Place(UiKit.Rect(_targetPartyButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                        new Vector2(10f, 8f), new Vector2(80f, 28f));
+
+            _targetTradeButton = UiKit.TextButton(inner, "Trade", () =>
+            {
+                if (Boot.TargetId.HasValue)
+                {
+                    var id = Boot.TargetId.Value;
+                    Boot.Trade(n => n.TradeRequestAsync(id), "request");
+                }
+            }, 14f);
+            UiKit.Place(UiKit.Rect(_targetTradeButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                        new Vector2(96f, 8f), new Vector2(80f, 28f));
         }
 
         /// <summary>
@@ -655,6 +679,12 @@ namespace Game.Client
                 ? Mathf.CeilToInt(100f * target.Hp / target.MaxHp) + "%"
                 : "";
             _targetDetail.text = target.Kind + (target.Aggressive ? "   aggressive" : "");
+
+            // Party/Trade only make sense against another PLAYER — and never against yourself.
+            bool player = target.Kind == EntityKind.Player
+                          && Boot.Entities != null && Boot.TargetId != Boot.Entities.SelfId;
+            if (_targetPartyButton != null) _targetPartyButton.gameObject.SetActive(player);
+            if (_targetTradeButton != null) _targetTradeButton.gameObject.SetActive(player);
         }
 
         private void RefreshSkillBar()

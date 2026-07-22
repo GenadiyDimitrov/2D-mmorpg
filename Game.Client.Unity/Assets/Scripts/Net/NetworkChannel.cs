@@ -54,6 +54,13 @@ namespace Game.Client
         /// with the server's clamping already applied. The panel is always filled from this, never
         /// from what the client last sent.</summary>
         public event Action<DebugConfigDto> DebugConfigReceived;
+
+        /// <summary>Someone wants to trade with you.</summary>
+        public event Action<TradeRequestNotice> TradeRequestReceived;
+
+        /// <summary>The whole trade, re-sent on every change. Active=false closes the window — the
+        /// server is the only thing that decides a trade is over.</summary>
+        public event Action<TradeStateUpdate> TradeStateReceived;
         public event Action<NpcDialog> DialogReceived;
         public event Action<QuestLog> QuestLogReceived;
         public event Action<string> Disconnected;
@@ -86,6 +93,9 @@ namespace Game.Client
             _connection.On<SkillBarDto>("SkillBar", b => SkillBarReceived?.Invoke(b));
             _connection.On<SubclassListDto>("Subclasses", s => SubclassesReceived?.Invoke(s));
             _connection.On<DebugConfigDto>("DebugConfig", c => DebugConfigReceived?.Invoke(c));
+            _connection.On<TradeRequestNotice>("TradeRequest", t => TradeRequestReceived?.Invoke(t));
+            // "Trade", not "TradeState" — the server's name for it (GameLoopService:3122).
+            _connection.On<TradeStateUpdate>("Trade", t => TradeStateReceived?.Invoke(t));
             _connection.On<NpcDialog>("Dialog", d => DialogReceived?.Invoke(d));
             _connection.On<QuestLog>("QuestLog", q => QuestLogReceived?.Invoke(q));
             _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));
@@ -273,6 +283,14 @@ namespace Game.Client
         // Live tuning. Request populates the panel from the AUTHORITATIVE current values rather than
         // from whatever the client last sent — the server clamps, and the echo is how we learn what it
         // actually accepted.
+        // ----- trade (server-side already; this is the client half) -------------------------------
+        public Task TradeRequestAsync(Guid targetId) => _connection.SendAsync("TradeRequest", targetId);
+        public Task TradeRespondAsync(bool accept) => _connection.SendAsync("TradeRespond", accept);
+        public Task TradeOfferAsync(Guid[] instanceIds) => _connection.SendAsync("TradeOffer", instanceIds);
+        public Task TradeGoldAsync(long gold) => _connection.SendAsync("TradeGold", gold);
+        public Task TradeReadyAsync() => _connection.SendAsync("TradeReady");
+        public Task TradeCancelAsync() => _connection.SendAsync("TradeCancel");
+
         public Task RequestDebugConfigAsync() => _connection.SendAsync("RequestDebugConfig");
         public Task SetDebugConfigAsync(DebugConfigDto config) =>
             _connection.SendAsync("SetDebugConfig", config);
