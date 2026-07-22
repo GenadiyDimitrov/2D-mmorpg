@@ -68,10 +68,18 @@ namespace Game.Client
 
             _castPanel.gameObject.SetActive(false);
 
-            // Zone readout rides under the self panel — "where am I and what lives here".
-            _zoneLabel = UiKit.Label(_worldRoot, "", 15f, UiKit.TextDim, TextAlignmentOptions.Left);
-            UiKit.Place(UiKit.Rect(_zoneLabel.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(16f, -168f), new Vector2(360f, 22f));
+            // "You entered X" — a banner across the middle of the screen that FADES, not a permanent
+            // readout.
+            //
+            // It used to be a label pinned under the self panel, which cost a line of the HUD forever
+            // to answer a question you ask when you cross a border and never again. The owner's rule
+            // for the top-left corner is vitals only; everything else is either transient or lives in
+            // a window.
+            _zoneLabel = UiKit.Label(_worldRoot, "", 26f, UiKit.TextDim, TextAlignmentOptions.Center);
+            UiKit.Place(UiKit.Rect(_zoneLabel.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                        new Vector2(0f, -110f), new Vector2(900f, 40f));
+            _zoneLabel.outlineColor = new Color32(0, 0, 0, 220);
+            _zoneLabel.outlineWidth = 0.2f;
 
             BuildBuffBar();
         }
@@ -107,65 +115,93 @@ namespace Game.Client
         // ----- buff bar ---------------------------------------------------------------------------
 
         private RectTransform _buffBar;
-        private readonly List<(RectTransform Root, Image Box, TextMeshProUGUI Label, TextMeshProUGUI Time)>
-            _buffSquares = new List<(RectTransform, Image, TextMeshProUGUI, TextMeshProUGUI)>();
+        private Button _buffCollapse;
+        private bool _buffsCollapsed;
+
+        private class BuffSquare
+        {
+            public RectTransform Root;
+            public Image Box;
+            public TextMeshProUGUI Label, Time;
+            public string Key;          // the buff this square currently SHOWS
+            public bool IsDebuff;
+        }
+
+        private readonly List<BuffSquare> _buffSquares = new List<BuffSquare>();
+
+        private const int BuffsPerRow = 6;
+        private const float BuffSize = 44f, BuffStep = 47f, BuffRowStep = 50f;
 
         private void BuildBuffBar()
         {
+            // Docked directly under the self panel (which ends at -164) instead of floating in the
+            // middle of the world, where it covered the map and belonged to nothing.
             _buffBar = UiKit.Rect(UiKit.Box(_worldRoot, "BuffBar", new Color(0, 0, 0, 0),
                                             blocksInput: false).gameObject);
             UiKit.Place(_buffBar, new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -196f), new Vector2(900f, 52f));
+                        new Vector2(12f, -170f), new Vector2(360f, 220f));
+
+            _buffCollapse = UiKit.TextButton(_worldRoot, "", () => _buffsCollapsed = !_buffsCollapsed, 13f);
+            UiKit.Place(UiKit.Rect(_buffCollapse.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(300f, -170f), new Vector2(58f, 24f));
         }
 
         /// <summary>
-        /// Buffs as SQUARES with the remaining time under them, laid out left to right — the WPF
-        /// client's shape. Debuffs are tinted red so a poison is not mistaken for a blessing at a
-        /// glance, and a buff blinks under 60s so you have warning before it drops mid-fight.
+        /// Buffs as SQUARES with the remaining time under them. Debuffs are tinted red so a poison is
+        /// not mistaken for a blessing at a glance, and a buff blinks under 60s so you have warning
+        /// before it drops mid-fight. Tapping a BUFF cancels it; tapping a debuff does nothing,
+        /// because being able to click away a poison would make debuffs pointless.
         ///
-        /// Tapping a BUFF cancels it; tapping a debuff does nothing, because being able to click away
-        /// a poison would make debuffs pointless.
+        /// Layout, per the owner: SIX per row, wrapping, packed tight. Buffs collapse to a single row
+        /// (a level-90 character carries nine and they ran the width of the screen at three letters
+        /// each). **Debuffs wrap the same way but never collapse** — a hidden debuff is a fight you
+        /// lose without knowing why, so they are always fully visible, and they are drawn FIRST so
+        /// they hold the same place whether the buffs below are open or shut.
+        ///
+        /// Each square remembers the buff KEY it is showing. The old version captured a list INDEX in
+        /// its click handler, which stops being the same buff the moment one expires — cancelling one
+        /// buff could remove a different one.
         /// </summary>
         private void RefreshBuffBar()
         {
-            var buffs = Boot.Buffs ?? new BuffDto[0];
+            var all = Boot.Buffs ?? new BuffDto[0];
 
-            while (_buffSquares.Count < buffs.Length)
+            var debuffs = new List<BuffDto>();
+            var buffs = new List<BuffDto>();
+            foreach (var b in all) (b.IsDebuff ? debuffs : buffs).Add(b);
+
+            int used = 0;
+            float y = 0f;
+            y = LayoutBuffRow(debuffs, ref used, y, collapsible: false);
+
+            _buffCollapse.gameObject.SetActive(buffs.Count > BuffsPerRow);
+            UiKit.SetButtonText(_buffCollapse, _buffsCollapsed
+                ? "+" + (buffs.Count - BuffsPerRow) : "hide");
+            UiKit.Rect(_buffCollapse.gameObject).anchoredPosition = new Vector2(300f, -170f + y);
+
+            LayoutBuffRow(buffs, ref used, y, collapsible: true);
+
+            for (int i = used; i < _buffSquares.Count; i++)
+                _buffSquares[i].Root.gameObject.SetActive(false);
+        }
+
+        /// <summary>Lay one group out six-per-row from <paramref name="y"/> downward, and return the y
+        /// the next group starts at.</summary>
+        private float LayoutBuffRow(List<BuffDto> group, ref int used, float y, bool collapsible)
+        {
+            int shown = collapsible && _buffsCollapsed ? Mathf.Min(group.Count, BuffsPerRow) : group.Count;
+
+            for (int i = 0; i < shown; i++)
             {
-                int index = _buffSquares.Count;
-                var box = UiKit.Box(_buffBar, "Buff", UiKit.PanelLight);
-                UiKit.Place(UiKit.Rect(box.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(index * 54f, 0f), new Vector2(48f, 48f));
+                var square = SquareAt(used++);
+                var buff = group[i];
 
-                var button = box.gameObject.AddComponent<Button>();
-                button.targetGraphic = box;
-                button.onClick.AddListener(() =>
-                {
-                    var current = Boot.Buffs;
-                    if (index >= current.Length) return;
-                    if (current[index].IsDebuff) return;
-                    Boot.RemoveBuff(current[index].Key);
-                });
+                square.Root.anchoredPosition = new Vector2((i % BuffsPerRow) * BuffStep,
+                                                           y - (i / BuffsPerRow) * BuffRowStep);
+                square.Root.gameObject.SetActive(true);
+                square.Key = buff.Key;
+                square.IsDebuff = buff.IsDebuff;
 
-                var label = UiKit.Label(box.transform, "", 15f, UiKit.Text, TextAlignmentOptions.Center);
-                UiKit.Place(UiKit.Rect(label.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                            new Vector2(0f, -4f), new Vector2(46f, 22f));
-
-                var time = UiKit.Label(box.transform, "", 12f, UiKit.TextDim, TextAlignmentOptions.Center);
-                UiKit.Place(UiKit.Rect(time.gameObject), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                            new Vector2(0f, 3f), new Vector2(46f, 16f));
-
-                _buffSquares.Add((UiKit.Rect(box.gameObject), box, label, time));
-            }
-
-            for (int i = 0; i < _buffSquares.Count; i++)
-            {
-                var square = _buffSquares[i];
-                bool used = i < buffs.Length;
-                square.Root.gameObject.SetActive(used);
-                if (!used) continue;
-
-                var buff = buffs[i];
                 square.Label.text = Abbreviations.For(buff.Name) + (buff.Stacks > 1 ? " x" + buff.Stacks : "");
                 square.Time.text = ShortTime(buff.SecondsLeft);
 
@@ -178,6 +214,42 @@ namespace Game.Client
 
                 square.Box.color = tint;
             }
+
+            if (shown == 0) return y;
+            return y - (((shown - 1) / BuffsPerRow) + 1) * BuffRowStep;
+        }
+
+        private BuffSquare SquareAt(int index)
+        {
+            while (_buffSquares.Count <= index)
+            {
+                var box = UiKit.Box(_buffBar, "Buff", UiKit.PanelLight);
+                UiKit.Place(UiKit.Rect(box.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                            Vector2.zero, new Vector2(BuffSize, BuffSize));
+
+                var square = new BuffSquare { Root = UiKit.Rect(box.gameObject), Box = box };
+
+                var button = box.gameObject.AddComponent<Button>();
+                button.targetGraphic = box;
+                // Closes over the SQUARE, not over a position in a list that reshuffles every time a
+                // buff expires.
+                button.onClick.AddListener(() =>
+                {
+                    if (square.IsDebuff || string.IsNullOrEmpty(square.Key)) return;
+                    Boot.RemoveBuff(square.Key);
+                });
+
+                square.Label = UiKit.Label(box.transform, "", 14f, UiKit.Text, TextAlignmentOptions.Center);
+                UiKit.Place(UiKit.Rect(square.Label.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                            new Vector2(0f, -3f), new Vector2(42f, 20f));
+
+                square.Time = UiKit.Label(box.transform, "", 11f, UiKit.TextDim, TextAlignmentOptions.Center);
+                UiKit.Place(UiKit.Rect(square.Time.gameObject), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+                            new Vector2(0f, 3f), new Vector2(42f, 14f));
+
+                _buffSquares.Add(square);
+            }
+            return _buffSquares[index];
         }
 
         /// <summary>Compact durations: "1h02", "12m", "45s". A buff bar with "3600.0 seconds" on it is
@@ -204,35 +276,67 @@ namespace Game.Client
             _castLabel.text = Boot.CastingSkill + "   " + Mathf.Max(0f, total - done).ToString("0.0") + "s";
         }
 
-        /// <summary>Name the ground you are standing on: the town if you are in one, otherwise the
-        /// level band of the spawn zone. Read from WorldMap, which is the same data the server spawns
-        /// from, so it cannot drift.</summary>
+        private string _zoneShown = "";
+        private float _zoneShownAt = -99f;
+        private const float ZoneBannerSeconds = 3.5f;
+
+        /// <summary>
+        /// Announce the ground you just walked onto, once, then fade.
+        ///
+        /// The name is worked out from WorldMap — the same data the server spawns from, so the client
+        /// cannot claim you are somewhere the server disagrees with. Only a CHANGE is announced; the
+        /// banner then fades over <see cref="ZoneBannerSeconds"/> and the screen goes back to being
+        /// the game.
+        ///
+        /// 🔗 When Regions ship on both clients this becomes RegionMap.At() for the name and
+        /// RegionMap.LevelBand() for the "Lv 20-80" — both already exist server-side. That is why the
+        /// band is composed here rather than hand-written into a string per zone.
+        /// </summary>
         private void RefreshZoneLabel()
         {
             EntityDto self = null;
             if (Boot.Entities != null) Boot.Entities.TryGetState(Boot.SelfId, out self);
-            if (self == null) { _zoneLabel.text = ""; return; }
+            if (self == null) return;
+
+            string name;
+            Color colour;
 
             var town = WorldMap.SafeZoneAt(self.X, self.Y);
             if (town != null)
             {
-                _zoneLabel.text = town.Name + "   (safe zone)";
-                _zoneLabel.color = new Color(0.55f, 0.75f, 1f);
-                return;
+                name = town.Name + "   (safe zone)";
+                colour = new Color(0.55f, 0.75f, 1f);
             }
-
-            foreach (var zone in WorldMap.SpawnZones)
+            else
             {
-                float dx = self.X - zone.X, dy = self.Y - zone.Y;
-                if (dx * dx + dy * dy > zone.Radius * zone.Radius) continue;
+                name = null;
+                colour = UiKit.TextDim;
+                foreach (var zone in WorldMap.SpawnZones)
+                {
+                    float dx = self.X - zone.X, dy = self.Y - zone.Y;
+                    if (dx * dx + dy * dy > zone.Radius * zone.Radius) continue;
 
-                _zoneLabel.text = "Hunting ground   Lv " + zone.MinLevel + "-" + zone.MaxLevel;
-                _zoneLabel.color = LevelColour(zone.MaxLevel, self.Level);
-                return;
+                    name = "Hunting ground   Lv " + zone.MinLevel + "-" + zone.MaxLevel;
+                    colour = LevelColour(zone.MaxLevel, self.Level);
+                    break;
+                }
+                if (name == null) name = "Wilds";
             }
 
-            _zoneLabel.text = "Wilds";
-            _zoneLabel.color = UiKit.TextDim;
+            if (name != _zoneShown)
+            {
+                _zoneShown = name;
+                _zoneShownAt = Time.unscaledTime;
+                _zoneLabel.text = "You entered " + name;
+                _zoneLabel.color = colour;
+            }
+
+            // Hold at full strength for the first half, then fade — long enough to read while walking,
+            // short enough that it is gone before it becomes furniture.
+            float age = (Time.unscaledTime - _zoneShownAt) / ZoneBannerSeconds;
+            var faded = _zoneLabel.color;
+            faded.a = age >= 1f ? 0f : Mathf.Clamp01((1f - age) * 2f);
+            _zoneLabel.color = faded;
         }
 
         /// <summary>

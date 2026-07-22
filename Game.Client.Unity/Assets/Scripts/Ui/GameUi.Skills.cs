@@ -198,13 +198,19 @@ namespace Game.Client
             if (!any) Note("Nothing left to learn for this class right now.");
         }
 
+        /// <summary>
+        /// The built-in actions. Each row offers BOTH "Use" and "To bar": an action is a thing you do
+        /// (sit, follow, target closest), and requiring a trip through the bar to do it once is a
+        /// detour — you cannot try one without first spending a slot on it.
+        /// </summary>
         private void BuildActionsTab()
         {
             foreach (var action in ActionCatalog.All)
             {
                 string token = GameConstants.ActionSlotToken(action.Id);
-                Row(Abbreviations.For(action.Name) + "  " + action.Name,
-                    "To bar", () => BeginAssign(token), UiKit.Text);
+                Row2Buttons(Abbreviations.For(action.Name) + "  " + action.Name,
+                            "Use", () => Boot.UseSlot(token),
+                            "To bar", () => BeginAssign(token));
             }
         }
 
@@ -312,6 +318,27 @@ namespace Game.Client
             button.interactable = onClick != null;
             UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
                         new Vector2(-8f, 0f), new Vector2(104f, 36f));
+        }
+
+        /// <summary>A row with TWO buttons on the right. Same shape as <see cref="Row"/>, which keeps
+        /// its single-button form rather than growing an optional-second-button parameter that every
+        /// other caller would have to pass null for.</summary>
+        private void Row2Buttons(string text, string leftText, System.Action onLeft,
+                                 string rightText, System.Action onRight)
+        {
+            var row = UiKit.Box(_skillsContent, "Row", UiKit.PanelLight);
+            row.gameObject.AddComponent<LayoutElement>().minHeight = 44f;
+
+            var label = UiKit.Label(row.transform, text, 16f, UiKit.Text, TextAlignmentOptions.Left);
+            UiKit.Stretch(UiKit.Rect(label.gameObject), 12f, 0f, 220f, 0f);
+
+            var right = UiKit.TextButton(row.transform, rightText, onRight, 15f);
+            UiKit.Place(UiKit.Rect(right.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                        new Vector2(-8f, 0f), new Vector2(104f, 36f));
+
+            var left = UiKit.TextButton(row.transform, leftText, onLeft, 15f);
+            UiKit.Place(UiKit.Rect(left.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                        new Vector2(-118f, 0f), new Vector2(84f, 36f));
         }
 
         // ----- assigning to the bar --------------------------------------------------------------

@@ -47,7 +47,10 @@ namespace Game.Client
 
             // Rebuild only when a number actually moved. Regen ticks every 3s and HP/MP change
             // constantly, so a naive per-frame rebuild would re-lay out a long text block forever.
-            int stamp = s.GetHashCode() ^ (Boot.Progress != null ? Boot.Progress.Level * 7919 : 0);
+            // Karma and the kill counts are in the stamp too — they arrive on their own push, so a
+            // sheet keyed only on StatsUpdate would keep showing yesterday's karma.
+            int stamp = s.GetHashCode() ^ (Boot.Progress != null ? Boot.Progress.Level * 7919 : 0)
+                      ^ (Boot.Karma * 31 + Boot.PkCount * 7 + Boot.PvpCount + (Boot.PvpEnabled ? 1 : 0));
             if (stamp == _statsStamp) return;
             _statsStamp = stamp;
 
@@ -98,6 +101,17 @@ namespace Game.Client
             t.AppendLine(Row2("Armour", string.IsNullOrEmpty(s.ArmorMastery) ? "—" : s.ArmorMastery,
                               "Set", string.IsNullOrEmpty(s.ActiveSet) ? "—" : s.ActiveSet));
             t.AppendLine(Row2("Gold", Boot.Gold.ToString("N0"), "State", s.MoveState.ToString()));
+
+            // PvP / reputation, at the bottom because it is read rarely and matters enormously when it
+            // is. Karma was not shown ANYWHERE before — and karma is what turns guards hostile, makes
+            // you drop gear on death and takes the safety out of towns, so a player carrying it had no
+            // way to find out except by dying.
+            t.AppendLine();
+            t.AppendLine(Head("PvP"));
+            t.AppendLine(Row2("PvP kills", Boot.PvpCount.ToString(), "PK kills", Boot.PkCount.ToString()));
+            t.AppendLine(Row2("Karma", Boot.Karma > 0 ? "<color=#FF6060>" + Boot.Karma.ToString("N0") + "</color>"
+                                                      : "0",
+                              "Flag", Boot.PvpEnabled ? "ON" : "off"));
 
             // Healers care about these and nothing else shows them; skip when they are neutral so a
             // fighter's sheet is not padded with 1.00s that mean "not applicable".

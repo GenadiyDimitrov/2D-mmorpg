@@ -29,7 +29,7 @@ namespace Game.Client
         private RectTransform _root;
 
         // status strip
-        private Image _statusDot;
+        private Image _statusDot, _reconnectNotice;
         private TextMeshProUGUI _statusText, _versionText;
 
         // login
@@ -111,10 +111,18 @@ namespace Game.Client
             // Screens are BUILT once and shown/hidden; only the visible one is refreshed. Rebuilding
             // per frame is what makes an immediate-mode UI expensive, and it is the habit worth
             // dropping along with IMGUI.
-            bool login = Boot.Phase == ClientPhase.Offline || Boot.Phase == ClientPhase.Connecting
-                         || Boot.Phase == ClientPhase.Authenticating;
-            bool select = Boot.Phase == ClientPhase.CharacterSelect || Boot.Phase == ClientPhase.Entering;
+            // Boot.Restoring suppresses the account screens entirely: a silent reconnect after the app
+            // was backgrounded re-logs-in and re-enters, and showing login or character-select for the
+            // length of that round trip is what produced the "few second freeze then a flash of the
+            // character screen" the owner reported. The world stays up; a notice says why it is stuck.
+            bool login = !Boot.Restoring &&
+                         (Boot.Phase == ClientPhase.Offline || Boot.Phase == ClientPhase.Connecting
+                          || Boot.Phase == ClientPhase.Authenticating);
+            bool select = !Boot.Restoring &&
+                          (Boot.Phase == ClientPhase.CharacterSelect || Boot.Phase == ClientPhase.Entering);
             bool world = Boot.Phase == ClientPhase.InWorld;
+
+            _reconnectNotice.gameObject.SetActive(Boot.Restoring);
 
             _loginPanel.gameObject.SetActive(login);
             _selectPanel.gameObject.SetActive(select);
@@ -152,6 +160,17 @@ namespace Game.Client
                                        UiKit.TextDim, TextAlignmentOptions.Right);
             UiKit.Place(UiKit.Rect(_versionText.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
                         new Vector2(-12f, 0f), new Vector2(120f, 20f));
+
+            // Shown only while a silent reconnect is in flight. It is deliberately a NOTICE and not a
+            // full-screen takeover: the world behind it is still the world you were in, and saying so
+            // is better than the client pretending you had logged out.
+            _reconnectNotice = UiKit.Box(_root, "Reconnecting", new Color(0.10f, 0.12f, 0.15f, 0.95f));
+            UiKit.Place(UiKit.Rect(_reconnectNotice.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                        new Vector2(0f, -52f), new Vector2(380f, 44f));
+            var notice = UiKit.Label(_reconnectNotice.transform, "Reconnecting ...", 18f,
+                                     new Color(0.95f, 0.80f, 0.35f), TextAlignmentOptions.Center);
+            UiKit.Stretch(UiKit.Rect(notice.gameObject), 0f, 0f, 0f, 0f);
+            _reconnectNotice.gameObject.SetActive(false);
         }
 
         private void RefreshStatusStrip()

@@ -50,6 +50,7 @@ namespace Game.Client
         private readonly TextMeshProUGUI[] _slotFaces = new TextMeshProUGUI[SlotsPerPage];
         private readonly Image[] _slotBorders = new Image[SlotsPerPage];
         private readonly TextMeshProUGUI[] _slotCancel = new TextMeshProUGUI[SlotsPerPage];
+        private readonly TextMeshProUGUI[] _slotAutoMarks = new TextMeshProUGUI[SlotsPerPage];
 
         /// <summary>
         /// How long after a cast STARTS before its slot will accept a cancel tap.
@@ -63,7 +64,7 @@ namespace Game.Client
         private const float CastCancelGrace = 0.35f;
 
         // slot context menu (press and hold)
-        private RectTransform _slotMenu;
+        private RectTransform _slotMenu, _slotMenuScrim;
         private Button _slotMenuAuto, _slotMenuDetail;
         private int _menuSlot = -1;        // page-relative slot the menu belongs to
         private int _pendingMoveFrom = -1; // absolute bar index being moved, or -1
@@ -200,26 +201,40 @@ namespace Game.Client
                         new Vector2(12f, -94f), new Vector2(306f, 20f));
         }
 
+        /// <summary>
+        /// The target frame: movable, with the standard chrome, and its ✕ is what DESELECTS.
+        ///
+        /// The two jobs WPF's ESC was doing are split here, at the owner's call:
+        ///   back / ESC  → walks the WINDOW STACK only, and never touches the target. Closing the bag
+        ///                 mid-fight must not drop the mob you are hitting.
+        ///   this X      → clears the target, which also hides this panel (it is shown whenever there
+        ///                 IS a target). Deselecting is deliberate, so it costs a deliberate tap.
+        /// </summary>
         private void BuildTargetPanel()
         {
             _targetPanel = UiKit.PanelBox(_worldRoot, "TargetPanel");
             UiKit.Place(_targetPanel, new Vector2(1f, 1f), new Vector2(1f, 1f),
-                        new Vector2(-12f, -48f), new Vector2(300f, 84f));
+                        new Vector2(-12f, -48f), new Vector2(300f, 130f));
             var inner = _targetPanel.GetChild(0);
+
+            // Deliberately NOT CloseWindow: this panel is not in the stack, and hiding it while the
+            // target still existed would only make it reappear on the next frame.
+            float chrome = UiKit.WindowChrome(_targetPanel, "Target", () => Boot.TargetId = null);
 
             _targetName = UiKit.Label(inner, "", 18f);
             UiKit.Place(UiKit.Rect(_targetName.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -8f), new Vector2(272f, 24f));
+                        new Vector2(12f, -chrome - 6f), new Vector2(272f, 24f));
 
             _targetHp = UiKit.ValueBar(inner, UiKit.Hp);
             UiKit.Place(UiKit.Rect(_targetHp.transform.parent.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -36f), new Vector2(276f, 18f));
+                        new Vector2(12f, -chrome - 34f), new Vector2(276f, 18f));
 
             _targetDetail = UiKit.Label(inner, "", 14f, UiKit.TextDim);
             UiKit.Place(UiKit.Rect(_targetDetail.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -58f), new Vector2(190f, 20f));
+                        new Vector2(12f, -chrome - 56f), new Vector2(190f, 20f));
 
             // Details are PULLED — the server only sends them when asked, so there has to be an ask.
+            // On its own ROW under the bar now; anchored bottom-right it overlapped the HP bar.
             var info = UiKit.TextButton(inner, "Info", () =>
             {
                 if (!Boot.TargetId.HasValue) return;
@@ -252,18 +267,23 @@ namespace Game.Client
                 var at = new Vector2(pad + (i % BarColumns) * (slot + pad),
                                      -(pad + (i / BarColumns) * (slot + pad)));
 
-                // The auto-use marker: a green frame drawn BEHIND the slot and peeking out a couple of
-                // pixels. Added first so it renders under the button — a border you have to look for
-                // is useless, one that covers the icon is worse.
+                // The auto-use marker: a THIN green frame drawn behind the slot, peeking out 2px.
+                //
+                // It used to peek 3px, and because the slot's own fill is slightly transparent the
+                // green also washed through the whole face — so an auto slot read as a green BUTTON
+                // rather than a marked one. The frame is thinner now, the slot face below is opaque so
+                // nothing bleeds through, and the actual "this repeats" signal is the small green A in
+                // the corner (see below) rather than colour over the whole square.
                 var border = UiKit.Box(inner, "AutoBorder", new Color(0.35f, 0.85f, 0.40f), blocksInput: false);
                 UiKit.Place(UiKit.Rect(border.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            at + new Vector2(-3f, 3f), new Vector2(slot + 6f, slot + 6f));
+                            at + new Vector2(-2f, 2f), new Vector2(slot + 4f, slot + 4f));
                 border.enabled = false;
                 _slotBorders[i] = border;
 
                 // No onClick: PressAndHold owns both gestures, so a hold can open the menu without
                 // the button also casting what was in it on release.
                 var button = UiKit.TextButton(inner, "", null, 20f);
+                button.targetGraphic.color = new Color(0.17f, 0.20f, 0.24f, 1f);   // opaque: see above
                 var press = button.gameObject.AddComponent<PressAndHold>();
                 press.OnTap = () => FireSlot(index);
                 press.OnHold = () => OpenSlotMenu(index);
@@ -277,6 +297,17 @@ namespace Game.Client
                 var hotkey = UiKit.Label(button.transform, (i + 1).ToString(), 12f, UiKit.TextDim);
                 UiKit.Place(UiKit.Rect(hotkey.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                             new Vector2(4f, -2f), new Vector2(20f, 16f));
+
+                // "A" = the auto-hunt repeats this one. Bottom-RIGHT, because the top-left corner is
+                // the slot number and the middle is the face. The font TMP ships with has no recycle
+                // glyph (nor any other symbol outside ASCII — that is what drew the hollow boxes), so
+                // a letter is the honest version of the icon the owner asked for.
+                var auto = UiKit.Label(button.transform, "A", 13f, new Color(0.40f, 0.95f, 0.45f),
+                                       TextAlignmentOptions.BottomRight);
+                UiKit.Place(UiKit.Rect(auto.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
+                            new Vector2(-4f, 2f), new Vector2(20f, 16f));
+                auto.gameObject.SetActive(false);
+                _slotAutoMarks[i] = auto;
 
                 // The cancel X, drawn over the slot only while THIS skill is the one being cast.
                 var cancel = UiKit.Label(button.transform, "X", 34f, new Color(1f, 0.35f, 0.35f),
@@ -535,6 +566,11 @@ namespace Game.Client
             _autoButton.targetGraphic.color = Boot.AutoHunting
                 ? new Color(0.20f, 0.45f, 0.25f, 0.95f) : UiKit.PanelLight;
 
+            // The scrim follows the menu wherever the menu was closed FROM — the back button pops it
+            // off the window stack directly, and a scrim left behind would silently eat every tap on
+            // the game with nothing on screen to explain why.
+            _slotMenuScrim.gameObject.SetActive(_slotMenu.gameObject.activeSelf);
+
             UpdateSkillBarSwipe();
         }
 
@@ -557,10 +593,11 @@ namespace Game.Client
             if (Boot.Progress != null && Boot.Progress.ExpToNext > 0)
                 UiKit.SetBar(_selfXp, Boot.Progress.Exp, Boot.Progress.ExpToNext);
 
-            // Raw server coordinates: the fastest way to tell real movement from camera drift.
-            _selfDetail.text = "HP " + self.Hp + "/" + self.MaxHp + "   MP " + self.Mp + "/" + self.MaxMp
-                             + "   pos " + Mathf.RoundToInt(self.X) + "," + Mathf.RoundToInt(self.Y)
-                             + "   gold " + Boot.Gold;
+            // VITALS ONLY. Gold and raw coordinates used to live here and overflowed the panel onto the
+            // world behind it. The rule the owner set is general: the always-on panel carries name,
+            // level, HP/MP/EXP and nothing else — gold belongs to the bag, position to the debug panel,
+            // and anything else to the window that owns it.
+            _selfDetail.text = "HP " + self.Hp + "/" + self.MaxHp + "   MP " + self.Mp + "/" + self.MaxMp;
         }
 
         private void RefreshTarget()
@@ -597,8 +634,10 @@ namespace Game.Client
                 // a move is waiting, every slot has to be pressable.
                 _slotButtons[i].interactable = usable || _pendingAssign != null || _pendingMoveFrom >= 0;
 
-                // Green frame = the auto-hunt will use this one.
-                _slotBorders[i].enabled = !string.IsNullOrEmpty(token) && Boot.AutoSkills.Contains(token);
+                // Thin green frame + a corner "A" = the auto-hunt will use this one.
+                bool auto = !string.IsNullOrEmpty(token) && Boot.AutoSkills.Contains(AutoIdFor(token));
+                _slotBorders[i].enabled = auto;
+                _slotAutoMarks[i].gameObject.SetActive(auto);
 
                 // X over the slot whose skill is being cast right now, so cancelling is where your
                 // finger already is rather than somewhere else on screen.
@@ -677,6 +716,21 @@ namespace Game.Client
         /// </summary>
         private void BuildSlotMenu()
         {
+            // A full-screen scrim UNDER the menu, opened and closed with it.
+            //
+            // Without one, the menu was the only thing catching taps: everywhere else on screen the
+            // tap fell through to the world and WALKED the character, while a menu asking you to pick
+            // Move / Remove / Auto was still open. It is invisible but must absorb raycasts (so
+            // TouchInput's UiKit.OverUi check sees it), and tapping it simply dismisses the menu —
+            // which is what a tap outside a popup means everywhere else.
+            _slotMenuScrim = UiKit.Rect(UiKit.Box(_worldRoot, "SlotMenuScrim",
+                                                  new Color(0f, 0f, 0f, 0.001f)).gameObject);
+            UiKit.Stretch(_slotMenuScrim, 0f, 0f, 0f, 0f);
+            var dismiss = _slotMenuScrim.gameObject.AddComponent<Button>();
+            dismiss.targetGraphic = _slotMenuScrim.GetComponent<Image>();
+            dismiss.onClick.AddListener(CloseSlotMenu);
+            _slotMenuScrim.gameObject.SetActive(false);
+
             _slotMenu = UiKit.PanelBox(_worldRoot, "SlotMenu");
             UiKit.Place(_slotMenu, new Vector2(0f, 0f), new Vector2(0.5f, 0f),
                         Vector2.zero, new Vector2(150f, 150f));
@@ -703,8 +757,8 @@ namespace Game.Client
 
             _slotMenuAuto = UiKit.TextButton(inner, "Auto", () =>
             {
-                var token = TokenAt(_menuSlot);
-                if (!string.IsNullOrEmpty(token)) Boot.ToggleAutoSkill(token);
+                var id = AutoIdFor(TokenAt(_menuSlot));
+                if (!string.IsNullOrEmpty(id)) Boot.ToggleAutoSkill(id);
                 CloseSlotMenu();
             }, 16f);
             UiKit.Place(UiKit.Rect(_slotMenuAuto.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
@@ -725,6 +779,26 @@ namespace Game.Client
             _slotMenu.gameObject.SetActive(false);
         }
 
+        /// <summary>
+        /// The auto-hunt id a bar token maps to, or null when the autopilot cannot repeat it.
+        ///
+        /// A skill is its own id. The BASIC ATTACK is the exception: it is an action token on the bar
+        /// but the server knows it as the pseudo-skill <see cref="AutoHuntIds.BasicAttack"/>, which is
+        /// the entry that decides whether the autopilot melees at all. Not mapping it is why the
+        /// attack slot was the one thing on the bar with no Auto toggle — the owner asked why, and the
+        /// answer was simply that the client never joined the two names up.
+        /// </summary>
+        private static string AutoIdFor(string token)
+        {
+            if (string.IsNullOrEmpty(token)) return null;
+
+            var action = ActionCatalog.FromToken(token);
+            if (action != null)
+                return action.Id == GameConstants.ActionBasicAttack ? AutoHuntIds.BasicAttack : null;
+
+            return SkillCatalog.Get(token) != null && !IsPassive(token) ? token : null;
+        }
+
         private string TokenAt(int slotOnPage)
         {
             int index = _barPage * SlotsPerPage + slotOnPage;
@@ -739,14 +813,16 @@ namespace Game.Client
 
             _menuSlot = slotOnPage;
 
-            // Auto is only offered for a real SKILL the autopilot could cast. Actions and items are
-            // not part of the auto-hunt contract, and a passive has nothing to fire.
+            // Auto is offered for anything the autopilot can actually repeat: a castable skill, or the
+            // basic attack (which reaches the server as a pseudo-skill — see AutoIdFor). Items, the
+            // other actions and passives have nothing for it to fire.
             bool isSkill = SkillCatalog.Get(token) != null;
-            bool autoable = isSkill && !IsPassive(token);
+            var autoId = AutoIdFor(token);
+            bool autoable = autoId != null;
 
             _slotMenuAuto.gameObject.SetActive(autoable);
             if (autoable)
-                UiKit.SetButtonText(_slotMenuAuto, Boot.AutoSkills.Contains(token) ? "Auto: ON" : "Auto: off");
+                UiKit.SetButtonText(_slotMenuAuto, Boot.AutoSkills.Contains(autoId) ? "Auto: ON" : "Auto: off");
 
             // Details only for a real skill — an action or an item has no SkillDef to describe.
             _slotMenuDetail.gameObject.SetActive(isSkill);
@@ -762,10 +838,18 @@ namespace Game.Client
             rt.anchoredPosition = new Vector2(-12f, 300f);
             rt.sizeDelta = new Vector2(150f, 18f + rows * 44f);
 
+            // Scrim first, then the menu — OpenWindow raises each to the top as it goes, so this
+            // order is what puts the menu ABOVE the thing that blocks taps around it.
+            _slotMenuScrim.gameObject.SetActive(true);
+            _slotMenuScrim.SetAsLastSibling();
             OpenWindow(_slotMenu);
         }
 
-        private void CloseSlotMenu() => CloseWindow(_slotMenu);
+        private void CloseSlotMenu()
+        {
+            _slotMenuScrim.gameObject.SetActive(false);
+            CloseWindow(_slotMenu);
+        }
 
         private void PageBy(int delta) => _barPage = Mathf.Clamp(_barPage + delta, 0, BarPages - 1);
 
@@ -988,6 +1072,13 @@ namespace Game.Client
 
                 var label = UiKit.Label(root, "", 15f, UiKit.Text, TextAlignmentOptions.Bottom);
                 UiKit.Stretch(UiKit.Rect(label.gameObject), 0f, 0f, 0f, PlateGap + 10f);
+
+                // Outlined, because a nameplate is drawn over WHATEVER is under it and the name
+                // colour is already spoken for — it encodes the level gap and the PvP flag, so it
+                // cannot also be chosen for legibility. A dark outline makes every one of those
+                // colours readable against the ground without changing what the colour MEANS.
+                label.outlineColor = new Color32(0, 0, 0, 210);
+                label.outlineWidth = 0.22f;
 
                 // The bar clears the marker by PlateGap as well. A bottom pivot alone only guarantees
                 // the plate grows upward FROM the anchor — its lowest element still sits exactly on

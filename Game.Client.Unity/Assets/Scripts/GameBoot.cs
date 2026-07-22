@@ -50,6 +50,7 @@ namespace Game.Client
         public EntityManager Entities;
         public CameraRig CameraRig;
         public MoveMarker Marker;
+        public ZoneOverlay Zones;
 
         // ----- State the HUD reads -------------------------------------------------------------
         public ClientPhase Phase { get; private set; } = ClientPhase.Offline;
@@ -291,8 +292,22 @@ namespace Game.Client
             if (FindAnyObjectByType<GroundGrid>() == null)
                 new GameObject("GroundGrid").AddComponent<GroundGrid>();
 
-            if (FindAnyObjectByType<ZoneOverlay>() == null)
-                new GameObject("ZoneOverlay").AddComponent<ZoneOverlay>();
+            // The scene's default 10×10 plane is far smaller than the world and almost the same grey
+            // as the entity markers. WorldGround fixes both, on whatever object is already there.
+            if (FindAnyObjectByType<WorldGround>() == null)
+            {
+                var ground = GameObject.Find("Ground");
+                if (ground != null) ground.AddComponent<WorldGround>();
+            }
+
+            // HELD, not looked up on demand: FindAnyObjectByType skips INACTIVE objects, so once the
+            // overlay was switched off the next lookup returned null and it could never be switched
+            // back on. A toggle that only works in one direction is worse than no toggle.
+            if (Zones == null)
+            {
+                Zones = FindAnyObjectByType<ZoneOverlay>();
+                if (Zones == null) Zones = new GameObject("ZoneOverlay").AddComponent<ZoneOverlay>();
+            }
 
             if (Marker == null)
             {
@@ -405,6 +420,14 @@ namespace Game.Client
             _net.GoldReceived += g => Main(() => Gold = g.Gold);
             _net.BuffsReceived += b => Main(() => Buffs = b?.Buffs ?? new BuffDto[0]);
             _net.TargetDetailsReceived += d => Main(() => Details = d);
+            _net.PvpStateReceived += p => Main(() =>
+            {
+                if (p == null) return;
+                PvpEnabled = p.Pvp;          // authoritative — the server may have refused the toggle
+                Karma = p.Karma;
+                PkCount = p.PkCount;
+                PvpCount = p.PvpCount;
+            });
             _net.QuestLogReceived += q => Main(() => Quests = q);
             _net.DialogReceived += d => Main(() => Dialog = d);
             _net.PartyReceived += p => Main(() =>
@@ -481,6 +504,7 @@ namespace Game.Client
         private async Task RestoreSession()
         {
             if (string.IsNullOrEmpty(_authUser)) return;
+            Restoring = true;
             try
             {
                 ClientLog.Info("Reconnected — restoring session …");
@@ -488,13 +512,25 @@ namespace Game.Client
                 if (!auth.Success) { Fail("Re-login failed: " + auth.Error); return; }
 
                 if (_lastCharacterId >= 0 && Phase == ClientPhase.InWorld)
-                    await EnterWorld(_lastCharacterId);
+                    await EnterWorld(_lastCharacterId, silent: true);
                 else
                     await RefreshCharacters();
                 ClientLog.Good("Session restored.");
             }
             catch (Exception ex) { Fail("Restore failed: " + Describe(ex)); }
+            finally { Restoring = false; }
         }
+
+        /// <summary>
+        /// True while a silent reconnect is re-logging in and re-entering the world.
+        ///
+        /// Backgrounding the app on a phone drops the socket, so coming back always runs this — and it
+        /// USED to show the character-select screen for the length of the round trip, because the
+        /// restore called EnterWorld and the UI treats <see cref="ClientPhase.Entering"/> as "choosing
+        /// a character". Nothing was broken; it just wore the wrong screen. The UI now keeps the world
+        /// up and puts a "Reconnecting" notice over it.
+        /// </summary>
+        public bool Restoring { get; private set; }
 
         public async Task RefreshCharacters()
         {
@@ -524,14 +560,17 @@ namespace Game.Client
             finally { _busy = false; }
         }
 
-        public async Task EnterWorld(int characterId)
+        /// <param name="silent">A re-entry after a transport blip rather than a player choosing a
+        /// character. It keeps the phase at InWorld so the UI does not flash the character-select
+        /// screen for the length of the round trip.</param>
+        public async Task EnterWorld(int characterId, bool silent = false)
         {
             if (_busy) return;
             _busy = true;
             try
             {
-                Phase = ClientPhase.Entering;
-                StatusMessage = "Entering world …";
+                if (!silent) Phase = ClientPhase.Entering;
+                StatusMessage = silent ? "Reconnecting …" : "Entering world …";
 
                 // Wipe the old world BEFORE the request goes out, not after it returns. The server starts
                 // streaming the moment the character is in the world, and those frames can land while we
@@ -759,10 +798,17 @@ namespace Game.Client
         /// is what stops a stray tap in a crowd from starting a fight you did not want. It is not a
         /// client-side courtesy: <c>CanPvpHit</c> re-checks it, along with safe zones.
         ///
-        /// Tracked locally because the server has no "your PvP flag is now X" push; the button shows
-        /// what we last ASKED for, and the server remains the authority on what actually lands.
+        /// Set optimistically on tap and then CORRECTED by the server's PvpState push, which is the
+        /// authority — it also refuses the toggle outright in a safe zone, and a button that keeps
+        /// claiming "PvP ON" after a refusal is worse than one that lags by a tick.
         /// </summary>
         public bool PvpEnabled { get; private set; }
+
+        /// <summary>Reputation, straight from the PvpState push. Karma &gt; 0 makes you a PK: guards
+        /// attack, you drop gear on death, and towns stop being safe for you.</summary>
+        public int Karma { get; private set; }
+        public int PkCount { get; private set; }
+        public int PvpCount { get; private set; }
 
         public async void TogglePvp()
         {

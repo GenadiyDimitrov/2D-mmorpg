@@ -43,6 +43,11 @@ namespace Game.Client
             NameplateHeight = PlayerPrefs.GetFloat(PrefPlate, NameplateHeight);
             _showDamageNumbers = PlayerPrefs.GetInt(PrefDamage, 1) == 1;
 
+            // Applied here rather than only written on tap: the preference was being saved and then
+            // ignored on the next launch, so "zone colours off" never survived a restart.
+            if (Boot != null && Boot.Zones != null)
+                Boot.Zones.gameObject.SetActive(PlayerPrefs.GetInt(PrefZones, 1) == 1);
+
             if (Boot != null && Boot.CameraRig != null)
             {
                 var rig = Boot.CameraRig;
@@ -137,11 +142,16 @@ namespace Game.Client
                         new Vector2(18f, y), new Vector2(260f, 38f));
             _damageToggle = damage;
 
+            // Boot.Zones is a HELD reference. This used to call FindAnyObjectByType<ZoneOverlay>(),
+            // which does not return INACTIVE objects — so the first tap hid the overlay and every tap
+            // after it found nothing to un-hide. The colours could be turned off exactly once, for the
+            // lifetime of the app.
             var zones = UiKit.TextButton(inner, "", () =>
             {
-                var overlay = FindAnyObjectByType<ZoneOverlay>();
-                if (overlay != null) overlay.gameObject.SetActive(!overlay.gameObject.activeSelf);
-                PlayerPrefs.SetInt(PrefZones, overlay != null && overlay.gameObject.activeSelf ? 1 : 0);
+                var overlay = Boot.Zones;
+                if (overlay == null) return;
+                overlay.gameObject.SetActive(!overlay.gameObject.activeSelf);
+                PlayerPrefs.SetInt(PrefZones, overlay.gameObject.activeSelf ? 1 : 0);
                 RefreshSettingsLabels();
             }, 15f);
             UiKit.Place(UiKit.Rect(zones.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
@@ -176,8 +186,7 @@ namespace Game.Client
             UiKit.SetButtonText(_projectionToggle, ortho ? "View: ORTHO (even sight)" : "View: perspective");
 
             UiKit.SetButtonText(_damageToggle, _showDamageNumbers ? "Damage numbers: ON" : "Damage numbers: off");
-            var overlay = FindAnyObjectByType<ZoneOverlay>();
-            bool zonesOn = overlay != null && overlay.gameObject.activeSelf;
+            bool zonesOn = Boot.Zones != null && Boot.Zones.gameObject.activeSelf;
             UiKit.SetButtonText(_zoneToggle, zonesOn ? "Zone colours: ON" : "Zone colours: off");
         }
 

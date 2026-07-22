@@ -29,6 +29,10 @@ namespace Game.Client
         public event Action<BuffUpdate> BuffsReceived;
         public event Action<GoldUpdate> GoldReceived;
         public event Action<TargetDetails> TargetDetailsReceived;
+        /// <summary>PvP toggles + reputation (karma, PK/PvP counts). The client used to TRACK the PvP
+        /// flag locally by flipping a bool on every tap, which is a guess: the server refuses the
+        /// toggle in a safe zone, and nothing told the button. This push is the authority.</summary>
+        public event Action<PvpState> PvpStateReceived;
         /// <summary>An ally (or a scroll) offers to bring you back. The player must ACCEPT — reviving
         /// automatically would drop you on top of whatever just killed you.</summary>
         public event Action<ResurrectOffer> ResurrectOfferReceived;
@@ -81,6 +85,7 @@ namespace Game.Client
             _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));
             _connection.On<GoldUpdate>("Gold", g => GoldReceived?.Invoke(g));
             _connection.On<TargetDetails>("TargetDetails", d => TargetDetailsReceived?.Invoke(d));
+            _connection.On<PvpState>("PvpState", p => PvpStateReceived?.Invoke(p));
             _connection.On<ResurrectOffer>("ResurrectOffer", o => ResurrectOfferReceived?.Invoke(o));
             _connection.On<PartyUpdate>("Party", p => PartyReceived?.Invoke(p));
             _connection.On<PartyInviteDto>("PartyInvite", i => PartyInviteReceived?.Invoke(i));

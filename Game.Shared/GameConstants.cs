@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.28.23";
+    public const string GameVersion = "0.28.24";
 
     /// <summary>
     /// Client versions this server will ACCEPT, beyond its own.
@@ -48,7 +48,7 @@ public static class GameConstants
     {
         // Everything from the uGUI rebuild onward: client-only UI work, no wire changes.
         "0.28.13", "0.28.14", "0.28.15", "0.28.16", "0.28.17",
-        "0.28.18", "0.28.19", "0.28.20", "0.28.21",
+        "0.28.18", "0.28.19", "0.28.20", "0.28.21", "0.28.22", "0.28.23",
     };
 
     /// <summary>
