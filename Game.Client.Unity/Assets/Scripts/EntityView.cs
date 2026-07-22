@@ -119,15 +119,14 @@ namespace Game.Client
             // turns authoritative movement into rubber-banding.
             if (_predicting && IsSelf)
             {
-                _fromPos = _toPos = next;
-                _fromTime = _toTime = Time.time;
-                _hasFrom = true;
-
+                // Deliberately NOT written into the interpolation buffer — see EndPrediction. While
+                // predicting we are ahead of this position on purpose, and storing it would be storing
+                // the very point that used to yank us backwards.
                 if ((next - transform.position).sqrMagnitude
                         > ReconcileSnapDistance * ReconcileSnapDistance)
                 {
-                    _predicting = false;
-                    transform.position = next;
+                    transform.position = next;   // the server did something we did not predict
+                    EndPrediction();
                 }
                 return;
             }
@@ -162,7 +161,28 @@ namespace Game.Client
             _predicting = true;
         }
 
-        public void CancelPrediction() => _predicting = false;
+        public void CancelPrediction() => EndPrediction();
+
+        /// <summary>
+        /// Stop predicting AND hand the current position over to the interpolator.
+        ///
+        /// 🔴 This is the rubber-band. While predicting, every arriving server position was written
+        /// straight into the interpolation buffer — and that position is behind us BY DESIGN, because
+        /// prediction is ahead of the network. So the instant prediction stopped, Update() fell back
+        /// to interpolation and teleported the character to that stale point. It fired at the end of
+        /// EVERY predicted walk, and most visibly when a skill cut one short: tap, walk, cast, snap
+        /// back to where you started.
+        ///
+        /// Seeding the buffer with where we ACTUALLY are means the handover is silent, and the next
+        /// server position simply interpolates forward from here.
+        /// </summary>
+        private void EndPrediction()
+        {
+            _predicting = false;
+            _fromPos = _toPos = transform.position;
+            _fromTime = _toTime = Time.time;
+            _hasFrom = true;
+        }
 
         /// <summary>Put the entity AT a position with no interpolation — for spawns, teleports and
         /// re-entry, where sliding in from wherever it used to be would be a lie.</summary>
@@ -216,7 +236,7 @@ namespace Game.Client
                 if (to.sqrMagnitude <= step * step)
                 {
                     transform.position = flatTarget;
-                    _predicting = false;     // arrived; the server drives again from here
+                    EndPrediction();         // arrived; hand over cleanly — see EndPrediction
                 }
                 else
                 {

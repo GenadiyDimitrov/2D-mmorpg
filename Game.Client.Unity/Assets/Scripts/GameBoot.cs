@@ -390,6 +390,19 @@ namespace Game.Client
                     ClientLog.Info(StatusMessage);
                     await Connect();
                     ClientLog.Good("Connected.");
+
+                    // REMEMBER THE URL AS SOON AS IT CONNECTS, not after a successful login.
+                    //
+                    // It used to be saved only in the login-success branch below, which meant a URL
+                    // that reached the server but failed to authenticate — wrong password, an account
+                    // that does not exist yet, a version refusal — was forgotten, and the address had
+                    // to be typed again on a PHONE KEYBOARD next launch. That is exactly the situation
+                    // when moving between networks, which is the only time the address changes at all.
+                    //
+                    // Connecting is the right test: it proves the address is reachable, and that is
+                    // the only thing the address field is responsible for being right about.
+                    PlayerPrefs.SetString(PrefUrl, ServerUrl);
+                    PlayerPrefs.Save();
                 }
 
                 Phase = ClientPhase.Authenticating;
@@ -1024,7 +1037,11 @@ namespace Game.Client
             // Attacking supersedes the walk order, so the destination ring has to go. You chase the
             // TARGET, not the spot you last tapped, so the ring would never be reached and would sit
             // on the ground pointing at nothing.
-            if (Marker != null) Marker.Hide();
+            //
+            // CancelMoveOrder rather than just hiding the ring: the prediction has to stop for the
+            // same reason the ring does. Chasing a target is a walk the SERVER steers — it follows a
+            // moving mob — so predicting a straight line to the old tap point would diverge and snap.
+            CancelMoveOrder();
             try { await _net.AttackAsync(targetId); }
             catch (Exception ex) { ClientLog.Warn("Attack: " + ex.Message); }
         }
