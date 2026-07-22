@@ -189,8 +189,10 @@ whether anything below them means anything.
 - [ ] **Text renders at all.** If labels are blank, TMP's essential resources are missing and nothing
       else matters (`docs/unity/EditorSetup.md` step 1).
 - [ ] **Buttons respond**, and tapping a panel does NOT also walk the character.
-- [ ] Login is prefilled **admin/admin**; app info and the status strip show the SAME version the
-      server prints.
+- [ ] Login is prefilled **admin/admin**. The app version and the server's may now DIFFER legitimately
+      — since 0.28.22 the server accepts a LIST of compatible client versions, so a server-only fix no
+      longer forces a reinstall. If login is refused as "out of date", the client's version is simply
+      missing from `GameConstants.CompatibleClientVersions`.
 - [ ] **Skills window** — Known/Learn/Actions tabs; learn with SP; "To bar" then tap a slot; the skill
       sticks across a relog (the server owns the bar).
 - [ ] Passives can **not** be placed on the bar.
