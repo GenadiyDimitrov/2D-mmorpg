@@ -257,6 +257,22 @@ namespace Game.Client
             ClientLog.Hook();
             _ = UnityMainThreadDispatcher.Instance;
 
+            // 🔴 UNITY CAPS ANDROID AT 30 FPS BY DEFAULT. Nothing in this project ever set
+            // targetFrameRate, so the client had been running at 30 the whole time — and 30fps is
+            // visible as judder on a phone whose panel does 60+, no matter how good the network is.
+            // Every "the movement is choppy" report had this underneath it.
+            //
+            // -1 would mean "as fast as the platform allows", which on mobile means cooking the
+            // battery for frames nobody asked for. 60 is the honest target for a game this simple.
+            Application.targetFrameRate = 60;
+
+            // KEEP THE SCREEN ON. An MMO is watched as much as it is touched — you stand still while
+            // regenerating, while auto-hunting, while reading a drop list — and the phone reads all of
+            // that as "idle" and dims out. Tapping every ten seconds to stop the screen sleeping is
+            // not gameplay. Unity restores the system setting when the app loses focus, so this only
+            // applies while the game is in front.
+            Screen.sleepTimeout = SleepTimeout.NeverSleep;
+
             // Typing an IP and a username on a phone keyboard every launch is its own punishment.
             ServerUrl = PlayerPrefs.GetString(PrefUrl, ServerUrl);
             Username = PlayerPrefs.GetString(PrefUser, Username);
@@ -744,6 +760,13 @@ namespace Game.Client
             // Drop the destination ring here rather than in TouchInput, so EVERY move order shows one
             // — including any future ones that don't come from a tap.
             if (Marker != null) Marker.ShowAt(WorldMapper.ToUnity(serverX, serverY));
+
+            // PREDICT IMMEDIATELY. Waiting for the server's first position means every step you take
+            // starts a round trip late, and no amount of smoothing hides that on the character you are
+            // driving. The walk is deterministic — straight toward the target at Speed — so the client
+            // can run exactly the same simulation the server will, and be corrected if it is wrong.
+            if (Entities != null) Entities.PredictSelfMoveTo(serverX, serverY);
+
             try { await _net.MoveAsync(serverX, serverY); }
             catch (Exception ex) { ClientLog.Warn("Move: " + ex.Message); }
         }
@@ -964,6 +987,9 @@ namespace Game.Client
         public void CancelMoveOrder()
         {
             if (Marker != null) Marker.Hide();
+            // Stop predicting too, or the character keeps walking locally toward a destination the
+            // server has already thrown away — which then reads as a rubber-band when it corrects.
+            if (Entities != null) Entities.CancelSelfPrediction();
         }
 
         /// <summary>Equip or unequip — the SERVER decides which, from the item's current state, so the

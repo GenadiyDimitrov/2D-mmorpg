@@ -242,6 +242,7 @@ public class GameLoopService : BackgroundService
         SendAutoHuntConfig(entity);   // restore the saved auto-hunt settings in the client UI
         SendAutoHuntStatus(entity);
         SendPvpState(entity);
+        SendProgress(entity);         // see SendProgress: without this the EXP bar starts EMPTY
         if (_world.Parties.TryGetValue(entity.Id, out var rejoinParty))
             SendPartyUpdate(rejoinParty);   // clear the offline icon for the rest of the party
         if (entity.IsStaff)
@@ -448,6 +449,19 @@ public class GameLoopService : BackgroundService
 
     private void SendPvpState(Entity p) =>
         SendTo(p, "PvpState", new PvpState(p.PvpEnabled, p.CounterAttack, p.Karma, p.PkCount, p.PvpCount));
+
+    /// <summary>
+    /// Push level / exp / exp-to-next.
+    ///
+    /// Every other caller sends this on a CHANGE — exp gained, exp lost, level up, subclass swap —
+    /// and nothing sent it on ENTERING THE WORLD. So a character's EXP bar stayed blank from login
+    /// until its first kill, and a MAX-LEVEL character's stayed blank forever. State the client needs
+    /// on arrival has to be pushed on arrival; a change-only push assumes a client that was already
+    /// watching.
+    /// </summary>
+    private void SendProgress(Entity p, bool leveled = false) =>
+        SendTo(p, "Progress", new ProgressUpdate(
+            p.Level, p.Exp, StatCalculator.ExpToNext(p.Level), leveled));
 
     // ----- Debug live-tuning (admin only) -----
     private DebugConfigDto CurrentDebugConfig() => new(

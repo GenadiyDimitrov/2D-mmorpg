@@ -135,6 +135,7 @@ namespace Game.Client
         private int _townIndex;
         private TextMeshProUGUI _townLabel;
         private Button _debugButton, _pvpButton, _autoButton, _respawnButton;
+        private RectTransform _menuPanel;
 
         // confirm dialog
         private RectTransform _confirmPanel;
@@ -191,6 +192,14 @@ namespace Game.Client
                         new Vector2(12f, -48f), new Vector2(330f, 114f));
             var inner = panel.GetChild(0);
 
+            // TAPPING YOUR OWN PANEL OPENS THE CHARACTER SHEET. That is what the sheet is about, and
+            // it is where you are already looking when you wonder — so "Char" does not need a
+            // permanent button competing with the ones you press in a fight. The button is on the
+            // BORDER object, so the whole panel is the target rather than a strip of it.
+            var open = panel.gameObject.AddComponent<Button>();
+            open.targetGraphic = panel.GetComponent<Image>();
+            open.onClick.AddListener(() => ToggleWindow(_statsPanel));
+
             _selfName = UiKit.Label(inner, "waiting for your entity ...", 19f);
             UiKit.Place(UiKit.Rect(_selfName.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(12f, -6f), new Vector2(300f, 24f));
@@ -222,9 +231,12 @@ namespace Game.Client
         /// </summary>
         private void BuildTargetPanel()
         {
+            // TOP-CENTRE by default (owner). The target is what you are looking at, so it belongs
+            // where your eyes already are — above your character — rather than in a corner. It is
+            // movable, so this is only the starting position.
             _targetPanel = UiKit.PanelBox(_worldRoot, "TargetPanel");
-            UiKit.Place(_targetPanel, new Vector2(1f, 1f), new Vector2(1f, 1f),
-                        new Vector2(-12f, -48f), new Vector2(300f, 130f));
+            UiKit.Place(_targetPanel, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                        new Vector2(0f, -48f), new Vector2(300f, 130f));
             var inner = _targetPanel.GetChild(0);
 
             // Deliberately NOT CloseWindow: this panel is not in the stack, and hiding it while the
@@ -269,7 +281,7 @@ namespace Game.Client
 
             _skillBarPanel = UiKit.PanelBox(_worldRoot, "SkillBar");
             UiKit.Place(_skillBarPanel, new Vector2(1f, 0f), new Vector2(1f, 0f),
-                        new Vector2(-12f, 78f), new Vector2(w, h));
+                        new Vector2(-12f, 14f), new Vector2(w, h));
             var inner = _skillBarPanel.GetChild(0);
 
             for (int i = 0; i < SlotsPerPage; i++)
@@ -343,66 +355,105 @@ namespace Game.Client
 
         private void BuildCommandBar()
         {
+            // Bottom edge now that the action bar has left it, with a little padding off the edge —
+            // flush against it is where a phone's own gesture bar lives.
+            const float bottom = 14f;
+
             _commandField = UiKit.InputField(_worldRoot, "say  /  !world  /  /w name msg");
             UiKit.Place(UiKit.Rect(_commandField.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                        new Vector2(12f, 78f), new Vector2(700f, 46f));
+                        new Vector2(12f, bottom), new Vector2(620f, 46f));
             // Submit on the keyboard's enter/done key — the mobile keyboard has no Send button of ours.
             _commandField.onSubmit.AddListener(_ => SubmitCommand());
 
             var send = UiKit.TextButton(_worldRoot, "Send", SubmitCommand, 17f);
             UiKit.Place(UiKit.Rect(send.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                        new Vector2(720f, 78f), new Vector2(96f, 46f));
+                        new Vector2(640f, bottom), new Vector2(96f, 46f));
 
             var log = UiKit.TextButton(_worldRoot, "Log", () => ToggleWindow(_consolePanel), 17f);
             UiKit.Place(UiKit.Rect(log.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                        new Vector2(824f, 78f), new Vector2(90f, 46f));
+                        new Vector2(744f, bottom), new Vector2(90f, 46f));
         }
 
         /// <summary>
-        /// The action bar SIZES ITSELF to fit. Buttons used to be a fixed 126 wide stepping by 132,
-        /// which silently ran off the right edge once there were ten of them — "Leave" was already
-        /// past the screen before this window was added. Dividing the available width means adding a
-        /// button shrinks the row instead of pushing one into the void.
+        /// The action bar: five buttons TOP-RIGHT, with the rarely-pressed ones behind a Menu.
+        ///
+        /// It used to be ten buttons across the whole bottom edge, which is the worst place for them
+        /// on a phone: that strip is where the thumbs rest and where the chat and skill bar want to
+        /// live, and ten equal buttons gave the same prominence to "Bag" (constantly) and "Leave"
+        /// (once). Top-right is reachable, out of the way of the thumbs, and the split is by FREQUENCY:
+        /// what you press mid-fight stays out, what you press once a session goes in the Menu.
+        ///
+        /// Char is not here at all — you open it by tapping your own HP panel, which is both a
+        /// shortcut and where you were already looking.
         /// </summary>
         private void BuildActionBar()
         {
-            // Attack / Sit-Stand / Walk-Run are gone from here: they exist in ActionCatalog and can be
-            // placed on the SKILL BAR from the Skills window's Actions tab, which is where a thing you
-            // press during combat belongs. Keeping permanent copies of them cost a third of the bar.
+            // Attack / Sit-Stand / Walk-Run are not here: they exist in ActionCatalog and belong on the
+            // SKILL BAR, placed from the Skills window's Actions tab.
             //
-            // Respawn stays, but only appears while you are DEAD (see RefreshWorld) — it is useless
-            // the rest of the time, and removing it outright could strand a corpse with no way up if
-            // the player never put the action on their bar.
+            // Respawn is the exception to the top-right grouping — it appears only while you are DEAD
+            // (see RefreshWorld) and needs to be impossible to miss, so it sits in the middle instead
+            // of hiding behind a menu at the worst possible moment.
             var actions = new List<(string Label, Action Click)>
             {
-                ("Respawn",   () => Boot.Respawn()),
                 ("PvP: off",  () => Boot.TogglePvp()),
                 ("Auto: off", () => Boot.ToggleAutoHunt()),
                 ("Bag",       () => ToggleWindow(_bagPanel)),
                 ("Skills",    () => ToggleWindow(_skillsPanel)),
-                ("Char",      () => ToggleWindow(_statsPanel)),
-                ("Setup",     () => ToggleWindow(_settingsPanel)),
-                ("Quests",    () => ToggleWindow(_questPanel)),
-                ("Debug",     () => ToggleWindow(_debugPanel)),
-                ("Leave",     () => Boot.LeaveWorld()),
+                ("Menu",      () => ToggleWindow(_menuPanel)),
             };
 
-            const float margin = 12f, gap = 4f;
-            float width = (UiKit.Reference.x - margin * 2f - gap * (actions.Count - 1)) / actions.Count;
-            float x = margin;
+            const float gap = 6f, width = 132f, height = 46f;
+            float x = -12f;
 
-            foreach (var action in actions)
+            // Right to left, so the row grows leftward from the screen edge and "Menu" is the button
+            // nearest the corner — the thumb's easiest reach.
+            for (int i = actions.Count - 1; i >= 0; i--)
             {
-                var button = UiKit.TextButton(_worldRoot, action.Label, action.Click, 15f);
-                UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                            new Vector2(x, 12f), new Vector2(width, 52f));
-                x += width + gap;
+                var button = UiKit.TextButton(_worldRoot, actions[i].Label, actions[i].Click, 15f);
+                UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
+                            new Vector2(x, -48f), new Vector2(width, height));
+                x -= width + gap;
 
-                if (action.Label == "PvP: off") _pvpButton = button;
-                else if (action.Label == "Auto: off") _autoButton = button;
-                else if (action.Label == "Debug") _debugButton = button;
-                else if (action.Label == "Respawn") _respawnButton = button;
+                if (actions[i].Label == "PvP: off") _pvpButton = button;
+                else if (actions[i].Label == "Auto: off") _autoButton = button;
             }
+
+            _respawnButton = UiKit.TextButton(_worldRoot, "Respawn", () => Boot.Respawn(), 17f);
+            UiKit.Place(UiKit.Rect(_respawnButton.gameObject), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                        new Vector2(0f, -120f), new Vector2(200f, 54f));
+
+            BuildMenuPanel();
+        }
+
+        /// <summary>The overflow menu: everything you press once a session rather than once a fight.</summary>
+        private void BuildMenuPanel()
+        {
+            _menuPanel = UiKit.PanelBox(_worldRoot, "Menu");
+            UiKit.Place(_menuPanel, new Vector2(1f, 1f), new Vector2(1f, 1f),
+                        new Vector2(-12f, -100f), new Vector2(200f, 236f));
+            var inner = _menuPanel.GetChild(0);
+
+            var entries = new List<(string Label, Action Click)>
+            {
+                ("Quests", () => { CloseWindow(_menuPanel); ToggleWindow(_questPanel); }),
+                ("Setup",  () => { CloseWindow(_menuPanel); ToggleWindow(_settingsPanel); }),
+                ("Debug",  () => { CloseWindow(_menuPanel); ToggleWindow(_debugPanel); }),
+                ("Leave",  () => { CloseWindow(_menuPanel); Boot.LeaveWorld(); }),
+            };
+
+            float y = -10f;
+            foreach (var entry in entries)
+            {
+                var button = UiKit.TextButton(inner, entry.Label, entry.Click, 16f);
+                UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                            new Vector2(0f, y), new Vector2(180f, 46f));
+                y -= 52f;
+
+                if (entry.Label == "Debug") _debugButton = button;
+            }
+
+            _menuPanel.gameObject.SetActive(false);
         }
 
         private void BuildConsole()
@@ -605,21 +656,39 @@ namespace Game.Client
             // general: the always-on panel carries name, level, HP/MP/EXP and nothing else — gold
             // belongs to the bag, position to the debug panel, the rest to whichever window owns it.
             UiKit.SetBar(_selfHp, self.Hp, self.MaxHp);
-            _selfHpText.text = self.Hp + " / " + self.MaxHp;
+            _selfHpText.text = ValueAndPct(self.Hp, self.MaxHp);
 
             UiKit.SetBar(_selfMp, self.Mp, self.MaxMp);
-            _selfMpText.text = self.Mp + " / " + self.MaxMp;
+            _selfMpText.text = ValueAndPct(self.Mp, self.MaxMp);
 
-            if (Boot.Progress != null && Boot.Progress.ExpToNext > 0)
+            // The EXP bar was BLANK, and the reason is worth keeping: the text was only written when
+            // ExpToNext > 0, which is false at MAX LEVEL — so the one character most likely to be
+            // looked at (a level 90 admin) showed nothing at all, and it read as a bug in the bar
+            // rather than as "there is no next level". Say so instead.
+            if (Boot.Progress == null)
+            {
+                _selfXpText.text = "";
+            }
+            else if (Boot.Progress.ExpToNext > 0)
             {
                 UiKit.SetBar(_selfXp, Boot.Progress.Exp, Boot.Progress.ExpToNext);
-                // Percent as well as the raw pair: at level 80 the numbers run to eight digits, and
-                // "how close am I" is the only question anyone actually asks of an EXP bar.
-                float pct = 100f * Boot.Progress.Exp / Boot.Progress.ExpToNext;
-                _selfXpText.text = "EXP  " + Boot.Progress.Exp.ToString("N0") + " / "
-                                 + Boot.Progress.ExpToNext.ToString("N0")
-                                 + "   (" + pct.ToString("0.0") + "%)";
+                _selfXpText.text = ValueAndPct(Boot.Progress.Exp, Boot.Progress.ExpToNext);
             }
+            else
+            {
+                UiKit.SetBar(_selfXp, 1, 1);
+                _selfXpText.text = "MAX LEVEL";
+            }
+        }
+
+        /// <summary>"1000 / 2000   50%" — the pair AND the percentage, on every bar. The numbers say
+        /// how much is left in absolute terms (can I survive that hit), the percentage says how far
+        /// through I am; people read one or the other depending on what they are doing.</summary>
+        private static string ValueAndPct(long value, long max)
+        {
+            if (max <= 0) return value.ToString("N0");
+            return value.ToString("N0") + " / " + max.ToString("N0")
+                 + "   " + (100f * value / max).ToString("0.#") + "%";
         }
 
         private void RefreshTarget()
@@ -1036,7 +1105,17 @@ namespace Game.Client
                 string title = e.Name + (e.Aggressive ? "*" : "");
                 if (e.Disconnected) title += "  (disconnected)";
                 plate.Label.text = title;
-                plate.Label.color = e.Id == Boot.SelfId ? UiKit.Good : NameColour(e, myLevel);
+
+                // YOUR OWN flag colour wins over "you are green".
+                //
+                // Self used to be painted green unconditionally, which meant the one player who most
+                // needs to know he is a PK — the one carrying the karma — was the only player on
+                // screen not shown as one. Karma turns guards hostile and makes you drop gear when you
+                // die; forgetting you have it is exactly how that costs you something. Green now means
+                // "you, and clean"; red means "you, and hunted".
+                plate.Label.color = e.Id == Boot.SelfId && e.Flag == PvpFlag.Innocent
+                    ? UiKit.Good
+                    : NameColour(e, myLevel);
 
                 bool bar = e.MaxHp > 0 && e.Kind != EntityKind.Npc;
                 plate.BarBg.gameObject.SetActive(bar);

@@ -123,6 +123,28 @@ namespace Game.Client
             States.Clear();
         }
 
+        /// <summary>Start predicting your own walk to a destination, at the speed the server last
+        /// reported for you. Called the moment the order is given, not when the reply lands.</summary>
+        public void PredictSelfMoveTo(float serverX, float serverY)
+        {
+            if (SelfId == Guid.Empty) return;
+            if (!_views.TryGetValue(SelfId, out var view) || view == null) return;
+
+            float speed = States.TryGetValue(SelfId, out var dto) ? dto.Speed : 0f;
+            if (speed <= 0f) return;   // no speed known yet — let the server drive
+
+            view.PredictTo(WorldMapper.ToUnity(serverX, serverY), speed * WorldMapper.Scale);
+        }
+
+        /// <summary>Abandon the prediction — for anything that stops you where you stand (an attack
+        /// order, sitting, a cast). Without this the character would keep walking locally toward a
+        /// destination the server has already discarded.</summary>
+        public void CancelSelfPrediction()
+        {
+            if (SelfId != Guid.Empty && _views.TryGetValue(SelfId, out var view) && view != null)
+                view.CancelPrediction();
+        }
+
         private void Upsert(EntityDto e)
         {
             States[e.Id] = e;

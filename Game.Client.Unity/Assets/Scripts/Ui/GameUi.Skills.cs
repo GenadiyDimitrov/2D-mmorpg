@@ -134,11 +134,25 @@ namespace Game.Client
                 bool passive = def.Passive != null || def.Category == SkillCategory.Passive;
                 bool onBar = Boot.SkillBar != null && System.Array.IndexOf(Boot.SkillBar, def.Id) >= 0;
 
-                Row(SkillLetters(def) + "  " + def.Name + level + (onBar ? "   * on bar" : ""),
-                    passive ? null : (_pendingAssign == token ? "Cancel" : "To bar"),
-                    passive ? null : (System.Action)(() => BeginAssign(token)),
-                    passive ? UiKit.TextDim : UiKit.Text,
-                    def.Id, Boot.Learned[def.Id]);
+                if (passive)
+                {
+                    // A passive has nothing to press and nowhere to be placed.
+                    Row(SkillLetters(def) + "  " + def.Name + level, null, null, UiKit.TextDim,
+                        def.Id, Boot.Learned[def.Id]);
+                    continue;
+                }
+
+                // "Use" here as well as on the Actions tab: casting from the list is the natural thing
+                // to try, and requiring a bar slot first is a detour.
+                //
+                // "To bar" goes DISABLED once the skill is on the bar, replacing the old "* on bar"
+                // text. The state belongs to the control that acts on it — a greyed button says "no,
+                // and here is why" in the place you were about to press.
+                Row2Buttons(SkillLetters(def) + "  " + def.Name + level,
+                            "Use", () => Boot.UseSlot(token),
+                            _pendingAssign == token ? "Cancel" : "To bar",
+                            onBar && _pendingAssign != token ? null : (System.Action)(() => BeginAssign(token)),
+                            def.Id, Boot.Learned[def.Id]);
             }
         }
 
@@ -322,21 +336,34 @@ namespace Game.Client
 
         /// <summary>A row with TWO buttons on the right. Same shape as <see cref="Row"/>, which keeps
         /// its single-button form rather than growing an optional-second-button parameter that every
-        /// other caller would have to pass null for.</summary>
+        /// other caller would have to pass null for. A null handler renders its button DISABLED, which
+        /// is how "already on the bar" is shown.</summary>
         private void Row2Buttons(string text, string leftText, System.Action onLeft,
-                                 string rightText, System.Action onRight)
+                                 string rightText, System.Action onRight,
+                                 string detailSkill = null, int detailLevel = 1)
         {
             var row = UiKit.Box(_skillsContent, "Row", UiKit.PanelLight);
             row.gameObject.AddComponent<LayoutElement>().minHeight = 44f;
+
+            if (detailSkill != null)
+            {
+                var open = row.gameObject.AddComponent<Button>();
+                open.targetGraphic = row;
+                string id = detailSkill;
+                int level = detailLevel;
+                open.onClick.AddListener(() => ShowSkillDetail(id, level));
+            }
 
             var label = UiKit.Label(row.transform, text, 16f, UiKit.Text, TextAlignmentOptions.Left);
             UiKit.Stretch(UiKit.Rect(label.gameObject), 12f, 0f, 220f, 0f);
 
             var right = UiKit.TextButton(row.transform, rightText, onRight, 15f);
+            right.interactable = onRight != null;
             UiKit.Place(UiKit.Rect(right.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
                         new Vector2(-8f, 0f), new Vector2(104f, 36f));
 
             var left = UiKit.TextButton(row.transform, leftText, onLeft, 15f);
+            left.interactable = onLeft != null;
             UiKit.Place(UiKit.Rect(left.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
                         new Vector2(-118f, 0f), new Vector2(84f, 36f));
         }

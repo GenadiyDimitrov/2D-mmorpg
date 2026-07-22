@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.28.26";
+    public const string GameVersion = "0.28.28";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -69,9 +69,14 @@ public static class GameConstants
     /// Can this client talk to this server? Returns null when yes, or the reason to show when no.
     ///
     /// <paramref name="clientProtocol"/> 0 means the client never sent one — a pre-0.28.25 build, or a
-    /// dev tool — and falls back to the legacy build-label list. That fallback is what lets this ship
-    /// without a flag day: SignalR binds by arity, so a client that sends two arguments still matches a
-    /// hub method whose third parameter is optional, and the APK already on the phone keeps working.
+    /// dev tool — and falls back to the legacy build-label list, which is what let this ship without a
+    /// flag day.
+    ///
+    /// ⚠ The protocol is carried INSIDE <see cref="AuthRequest"/>, not as an extra hub parameter.
+    /// SignalR does NOT bind by arity: the dispatcher requires the argument count to match, and a
+    /// default value on a hub parameter does not make an omitted argument legal. Trying it that way
+    /// broke every reconnect from the previous build. A DTO field degrades gracefully (missing → 0);
+    /// a hub signature does not.
     /// </summary>
     public static string? ClientRejectionReason(string? clientVersion, int clientProtocol)
     {

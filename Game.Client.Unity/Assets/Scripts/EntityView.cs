@@ -36,6 +36,22 @@ namespace Game.Client
         private float _fromTime, _toTime;
         private bool _hasFrom;
 
+        // ----- client-side prediction (SELF ONLY) -------------------------------------------------
+        private bool _predicting;
+        private Vector3 _predictTarget;
+        private float _predictSpeed;      // Unity units per second
+
+        /// <summary>
+        /// How far the server may disagree with our prediction before we give up and SNAP to it.
+        ///
+        /// Small differences are normal and must be tolerated — correcting every one of them is
+        /// literally rubber-banding. A large one means the server did something we did not predict
+        /// (refused the move, rooted us, a knockback, a teleport), and there the server is simply
+        /// right: it is authoritative, and pretending otherwise would let the client walk through
+        /// walls it cannot see.
+        /// </summary>
+        private const float ReconcileSnapDistance = 2.5f;
+
         private Transform _cam;
         private Renderer _renderer;
         private Color _color = Color.white;
@@ -96,6 +112,26 @@ namespace Game.Client
         {
             var next = groundPos + Vector3.up * HalfHeight;
 
+            // RECONCILIATION. While predicting, the server's position is a CHECK, not an instruction:
+            // accept it silently when it is close (that is prediction working), and snap only when it
+            // is far enough away that we clearly predicted something the server refused — a move
+            // during a root, a knockback, a teleport. Correcting the small differences too is what
+            // turns authoritative movement into rubber-banding.
+            if (_predicting && IsSelf)
+            {
+                _fromPos = _toPos = next;
+                _fromTime = _toTime = Time.time;
+                _hasFrom = true;
+
+                if ((next - transform.position).sqrMagnitude
+                        > ReconcileSnapDistance * ReconcileSnapDistance)
+                {
+                    _predicting = false;
+                    transform.position = next;
+                }
+                return;
+            }
+
             // Ignore a repeat of the same place: it carries no motion, and letting it start a new
             // segment would stretch the previous one into a stall.
             if (_hasFrom && (next - _toPos).sqrMagnitude < 0.0001f) return;
@@ -116,6 +152,17 @@ namespace Game.Client
             _toTime = Time.time;
             _hasFrom = true;
         }
+
+        /// <summary>Begin predicting a walk to <paramref name="groundTarget"/> at
+        /// <paramref name="speed"/> Unity units per second. Self only.</summary>
+        public void PredictTo(Vector3 groundTarget, float speed)
+        {
+            _predictTarget = groundTarget + Vector3.up * HalfHeight;
+            _predictSpeed = speed;
+            _predicting = true;
+        }
+
+        public void CancelPrediction() => _predicting = false;
 
         /// <summary>Put the entity AT a position with no interpolation — for spawns, teleports and
         /// re-entry, where sliding in from wherever it used to be would be a lie.</summary>
@@ -148,9 +195,50 @@ namespace Game.Client
         /// </summary>
         private void Update()
         {
+            // ----- SELF: predict, then reconcile ------------------------------------------------
+            //
+            // The character you drive moves on YOUR clock, not on the network's. This is the standard
+            // split (Valve, Overwatch, every modern netcode talk): predict the entity you control,
+            // interpolate the ones you do not. Everything before this — smoothing the chase, making it
+            // frame-rate independent, dropping the interpolation delay for self — was treating the
+            // symptom. The character was still waiting for the network to tell it where it was.
+            //
+            // This is only safe because the walk is DETERMINISTIC and the server is still the
+            // authority: it runs the same straight-line-at-Speed simulation, and SetTarget below
+            // corrects us the moment the two disagree by more than a step.
+            if (_predicting)
+            {
+                var flatTarget = _predictTarget;
+                var here = transform.position;
+                float step = _predictSpeed * Time.deltaTime;
+                var to = flatTarget - here;
+
+                if (to.sqrMagnitude <= step * step)
+                {
+                    transform.position = flatTarget;
+                    _predicting = false;     // arrived; the server drives again from here
+                }
+                else
+                {
+                    transform.position = here + to.normalized * step;
+                }
+                return;
+            }
+
             if (!_hasFrom) return;
 
-            float renderAt = Time.time - InterpolationDelay;
+            // YOUR OWN character is NOT delayed. Interpolation deliberately renders the past, which is
+            // right for entities whose next move you cannot know — and wrong for the one you are
+            // driving: it put 150ms between the tap and the character (and the camera follows him, so
+            // the whole world lagged the input). That is the regression that made movement feel worse
+            // rather than better.
+            //
+            // Big-engine practice splits these two jobs and so do we: OTHERS are interpolated,
+            // SELF is not. The proper next step for self is client-side PREDICTION — simulate the same
+            // walk the server does and reconcile when it disagrees. The simulation is deterministic
+            // (walk toward the target at Speed), so it is available; it needs the move target on the
+            // wire, which is why it is its own change and not smuggled in here.
+            float renderAt = Time.time - (IsSelf ? 0f : InterpolationDelay);
             float span = _toTime - _fromTime;
 
             // A zero or negative span means both samples arrived in the same frame; there is nothing

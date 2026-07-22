@@ -116,7 +116,15 @@ namespace Game.Client
 
         private RectTransform _buffBar;
         private Button _buffCollapse;
-        private bool _buffsCollapsed;
+
+        /// <summary>
+        /// Hide has THREE stages, not two (owner, 2026-07-22):
+        ///   0 Shown     — every group, every row.
+        ///   1 OneRow    — one row per group, the rest counted on the button ("+3").
+        ///   2 Hidden    — no squares at all, just the total ("9+").
+        /// Debuffs are exempt from ALL of it and always draw in full.
+        /// </summary>
+        private int _buffStage;
 
         private class BuffSquare
         {
@@ -141,7 +149,7 @@ namespace Game.Client
             UiKit.Place(_buffBar, new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(12f, -170f), new Vector2(360f, 220f));
 
-            _buffCollapse = UiKit.TextButton(_worldRoot, "", () => _buffsCollapsed = !_buffsCollapsed, 13f);
+            _buffCollapse = UiKit.TextButton(_worldRoot, "", () => _buffStage = (_buffStage + 1) % 3, 13f);
             UiKit.Place(UiKit.Rect(_buffCollapse.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(300f, -170f), new Vector2(58f, 24f));
         }
@@ -166,20 +174,56 @@ namespace Game.Client
         {
             var all = Boot.Buffs ?? new BuffDto[0];
 
+            // FOUR groups, from the BuffRow the server has been sending all along — the client was
+            // splitting on IsDebuff alone and lumping everything else together, which is why a health
+            // potion's effect disappeared under the buff Hide button. A potion is not a buff you cast;
+            // hiding one to tidy the other is wrong.
             var debuffs = new List<BuffDto>();
             var buffs = new List<BuffDto>();
-            foreach (var b in all) (b.IsDebuff ? debuffs : buffs).Add(b);
+            var items = new List<BuffDto>();
+            var consumables = new List<BuffDto>();
+
+            foreach (var b in all)
+            {
+                if (b.IsDebuff || b.Row == BuffRow.Debuff) debuffs.Add(b);
+                else if (b.Row == BuffRow.Item) items.Add(b);
+                else if (b.Row == BuffRow.Consumable) consumables.Add(b);
+                else buffs.Add(b);
+            }
 
             int used = 0;
             float y = 0f;
+
+            // Debuffs FIRST and never hidden. First because they then hold the same place whether the
+            // groups below are open or shut; never hidden because a debuff you cannot see is a fight
+            // you lose without knowing why.
             y = LayoutBuffRow(debuffs, ref used, y, collapsible: false);
+            int debuffRows = debuffs.Count == 0 ? 0 : ((debuffs.Count - 1) / BuffsPerRow) + 1;
 
-            _buffCollapse.gameObject.SetActive(buffs.Count > BuffsPerRow);
-            UiKit.SetButtonText(_buffCollapse, _buffsCollapsed
-                ? "+" + (buffs.Count - BuffsPerRow) : "hide");
-            UiKit.Rect(_buffCollapse.gameObject).anchoredPosition = new Vector2(300f, -170f + y);
+            y = LayoutBuffRow(buffs, ref used, y, collapsible: true);
+            y = LayoutBuffRow(items, ref used, y, collapsible: true);
+            y = LayoutBuffRow(consumables, ref used, y, collapsible: true);
 
-            LayoutBuffRow(buffs, ref used, y, collapsible: true);
+            int hideable = buffs.Count + items.Count + consumables.Count;
+            int visible = _buffStage == 0 ? hideable
+                        : _buffStage == 1 ? Mathf.Min(buffs.Count, BuffsPerRow)
+                                          + Mathf.Min(items.Count, BuffsPerRow)
+                                          + Mathf.Min(consumables.Count, BuffsPerRow)
+                        : 0;
+
+            _buffCollapse.gameObject.SetActive(hideable > 0);
+            UiKit.SetButtonText(_buffCollapse,
+                _buffStage == 0 ? "hide" : "+" + (hideable - visible));
+
+            // WHERE the button sits (owner, 2026-07-22): normally at the END of the first buff row,
+            // where it started — it belongs to the thing it hides, and chasing the bottom of a list
+            // that changes height meant it moved every time a buff expired. When EVERYTHING is hidden
+            // there is no row to sit at the end of, so it takes the FIRST buff's place instead: the
+            // squares are gone, and the button is exactly where you last saw them.
+            float firstBuffRowY = -170f - debuffRows * BuffRowStep;
+            UiKit.Rect(_buffCollapse.gameObject).anchoredPosition = _buffStage == 2
+                ? new Vector2(12f, firstBuffRowY)
+                : new Vector2(12f + BuffsPerRow * BuffStep, firstBuffRowY);
 
             for (int i = used; i < _buffSquares.Count; i++)
                 _buffSquares[i].Root.gameObject.SetActive(false);
@@ -189,7 +233,10 @@ namespace Game.Client
         /// the next group starts at.</summary>
         private float LayoutBuffRow(List<BuffDto> group, ref int used, float y, bool collapsible)
         {
-            int shown = collapsible && _buffsCollapsed ? Mathf.Min(group.Count, BuffsPerRow) : group.Count;
+            int shown = !collapsible ? group.Count
+                      : _buffStage == 0 ? group.Count
+                      : _buffStage == 1 ? Mathf.Min(group.Count, BuffsPerRow)
+                                        : 0;
 
             for (int i = 0; i < shown; i++)
             {
