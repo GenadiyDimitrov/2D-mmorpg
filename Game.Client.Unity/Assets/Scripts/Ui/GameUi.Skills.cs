@@ -69,6 +69,88 @@ namespace Game.Client
                         new Vector2(18f, 12f), new Vector2(660f, 26f));
 
             _skillsPanel.gameObject.SetActive(false);
+
+            BuildLearnConfirm();
+        }
+
+        // ----- learn confirmation ----------------------------------------------------------------
+
+        private RectTransform _learnPanel;
+        private TextMeshProUGUI _learnTitle, _learnBody;
+        private System.Action _learnAction;
+
+        private void BuildLearnConfirm()
+        {
+            _learnPanel = UiKit.PanelBox(_worldRoot, "LearnConfirm");
+            UiKit.Place(_learnPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                        new Vector2(0f, -10f), new Vector2(540f, 360f));
+            var inner = _learnPanel.GetChild(0);
+            float chrome = UiKit.WindowChrome(_learnPanel, "Learn skill", () => CloseWindow(_learnPanel));
+
+            _learnTitle = UiKit.Label(inner, "", 19f, UiKit.Accent, TextAlignmentOptions.TopLeft);
+            UiKit.Place(UiKit.Rect(_learnTitle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(18f, -chrome - 8f), new Vector2(490f, 26f));
+
+            ScrollRect scroll;
+            var content = UiKit.ScrollArea(inner, out scroll, 2f);
+            UiKit.Stretch((RectTransform)scroll.transform, 16f, chrome + 42f, 16f, 70f);
+            _learnBody = UiKit.Label(content, "", 16f, UiKit.Text, TextAlignmentOptions.TopLeft);
+            _learnBody.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var cancel = UiKit.TextButton(inner, "Cancel", () => CloseWindow(_learnPanel), 16f);
+            UiKit.Place(UiKit.Rect(cancel.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                        new Vector2(18f, 14f), new Vector2(230f, 46f));
+
+            var confirm = UiKit.TextButton(inner, "Confirm", () =>
+            {
+                var act = _learnAction;
+                CloseWindow(_learnPanel);
+                act?.Invoke();
+            }, 16f);
+            UiKit.Place(UiKit.Rect(confirm.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
+                        new Vector2(-18f, 14f), new Vector2(230f, 46f));
+
+            _learnPanel.gameObject.SetActive(false);
+        }
+
+        /// <summary>The owner's §7: never spend SP blind. Show what the purchase changes — for an
+        /// UPGRADE the before→after of the numbers that move (power, MP), for a brand-new skill what it
+        /// does — plus the cost, behind a Confirm.</summary>
+        private void ConfirmLearn(SkillDef def, int newLevel, int sp, int gold)
+        {
+            _learnTitle.text = def.Name + (def.MaxLevel > 1 ? "   Lv." + newLevel : "");
+
+            var t = new System.Text.StringBuilder();
+            string desc = def.DescriptionAt(newLevel);
+            if (!string.IsNullOrWhiteSpace(desc)) t.AppendLine(desc).AppendLine();
+
+            int cur = newLevel - 1;
+            if (cur >= 1)   // an upgrade — show the deltas
+            {
+                LearnChange(t, "Power", def.PowerAt(cur), def.PowerAt(newLevel));
+                LearnChange(t, "MP cost", def.MpCostAt(cur), def.MpCostAt(newLevel));
+            }
+            else            // brand-new skill — show the level-1 numbers
+            {
+                if (def.PowerAt(newLevel) > 0)  t.AppendLine("Power   " + def.PowerAt(newLevel));
+                if (def.MpCostAt(newLevel) > 0) t.AppendLine("MP cost   " + def.MpCostAt(newLevel));
+            }
+
+            t.AppendLine();
+            t.AppendLine(gold > 0 ? "Cost:  " + gold.ToString("N0") + " " + GameConstants.CurrencyName
+                                  : "Cost:  " + sp + " SP");
+
+            _learnBody.text = t.ToString().TrimEnd();
+            string id = def.Id;
+            _learnAction = () => { Boot.LearnSkill(id); _skillsRevision = -1; };
+            OpenWindow(_learnPanel);
+        }
+
+        // "->" not "→": the bundled LiberationSans has no arrow glyph (same reason the close button is X).
+        private static void LearnChange(System.Text.StringBuilder t, string label, int from, int to)
+        {
+            if (from == to) { if (to != 0) t.AppendLine(label + "   " + to); }
+            else t.AppendLine(label + "   " + from + "  ->  " + to);
         }
 
         private void RefreshSkillsWindow()
@@ -197,13 +279,14 @@ namespace Game.Client
                     string levelTag = def.MaxLevel > 1 ? "  Lv." + cs.SkillLevel : "";
                     string price = gold > 0 ? "(" + gold.ToString("N0") + " " + GameConstants.CurrencyName + ")"
                                             : "(SP " + sp + ")";
-                    string id = def.Id;
 
                     // Detail shows the level you would GET, not the one you have — the numbers should
                     // match the purchase being considered.
+                    var learnDef = def;
+                    int learnLevel = cs.SkillLevel;
                     Row(SkillLetters(def) + "  " + def.Name + levelTag + "   " + price,
                         "Learn",
-                        canLearn ? (System.Action)(() => { Boot.LearnSkill(id); _skillsRevision = -1; }) : null,
+                        canLearn ? (System.Action)(() => ConfirmLearn(learnDef, learnLevel, sp, gold)) : null,
                         canLearn ? UiKit.Text : UiKit.TextDim,
                         def.Id, cs.SkillLevel);
                 }
