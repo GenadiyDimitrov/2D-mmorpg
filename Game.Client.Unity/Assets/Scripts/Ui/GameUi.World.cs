@@ -179,6 +179,7 @@ namespace Game.Client
             BuildDialogWindow();
             BuildPartyWindow();
             BuildAutoHuntWindows();
+            BuildItemWindows();
             BuildSlotMenu();
         }
 
@@ -1008,6 +1009,10 @@ namespace Game.Client
                 var row = UiKit.Box(_bagContent, "Item", UiKit.PanelLight);
                 row.gameObject.AddComponent<LayoutElement>().minHeight = 46f;
 
+                // The row is now name (qty) + [details] + a fast action — NOT the action inline. Reading
+                // an item and acting on it are two different intents, and cramming both into every row is
+                // what the owner called "30 buttons". Details is where the stats, set info, compare and
+                // bin-delete live (GameUi.Items.cs); the row keeps only the fast path.
                 string name = def != null ? def.Name : item.DefId;
                 if (item.Enchant > 0) name = "+" + item.Enchant + " " + name;
                 if (item.Quantity > 1) name += "   x" + item.Quantity;
@@ -1016,28 +1021,32 @@ namespace Game.Client
                 var label = UiKit.Label(row.transform, name, 17f,
                                         item.Equipped ? UiKit.Good : UiKit.Text,
                                         TextAlignmentOptions.Left);
-                UiKit.Stretch(UiKit.Rect(label.gameObject), 12f, 0f, 130f, 0f);
+                UiKit.Stretch(UiKit.Rect(label.gameObject), 12f, 0f, 210f, 0f);
 
-                // EquipSlot has no "None" — it classifies EVERY item — so the four WEARABLE slots are
-                // tested explicitly. Consumables get Use; anything else gets no button rather than one
-                // the server would refuse.
                 var id = item.InstanceId;
+                var shown = item;
+                var details = UiKit.TextButton(row.transform, "Details", () => OpenItemDetails(shown), 14f);
+                UiKit.Place(UiKit.Rect(details.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                            new Vector2(-8f, 0f), new Vector2(100f, 38f));
+
+                // Fast path: [e] equips/unequips gear, [u] uses a consumable — both skip the details
+                // window. EquipSlot has no "None" (it classifies EVERY item), so the wearable slots are
+                // tested explicitly; anything else gets no fast button rather than one the server refuses.
                 bool wearable = def != null &&
                     (def.Slot == EquipSlot.Weapon || def.Slot == EquipSlot.Armor ||
                      def.Slot == EquipSlot.Shield || def.Slot == EquipSlot.Jewel);
 
                 if (wearable)
                 {
-                    var button = UiKit.TextButton(row.transform, item.Equipped ? "Unequip" : "Equip",
-                                                  () => Boot.EquipItem(id), 15f);
-                    UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                                new Vector2(-8f, 0f), new Vector2(112f, 38f));
+                    var fast = UiKit.TextButton(row.transform, "e", () => Boot.EquipItem(id), 15f);
+                    UiKit.Place(UiKit.Rect(fast.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                                new Vector2(-116f, 0f), new Vector2(56f, 38f));
                 }
                 else if (def != null && def.Slot == EquipSlot.Consumable)
                 {
-                    var button = UiKit.TextButton(row.transform, "Use", () => Boot.UsePotion(id), 15f);
-                    UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                                new Vector2(-8f, 0f), new Vector2(112f, 38f));
+                    var fast = UiKit.TextButton(row.transform, "u", () => Boot.UsePotion(id), 15f);
+                    UiKit.Place(UiKit.Rect(fast.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                                new Vector2(-116f, 0f), new Vector2(56f, 38f));
                 }
             }
         }

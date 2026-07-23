@@ -1109,6 +1109,15 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("UsePotion: " + ex.Message); }
         }
 
+        /// <summary>Drop/destroy an item. all=true bins the whole stack, false a single unit — the
+        /// server enforces which is legal (a non-stackable ignores the distinction).</summary>
+        public async void RemoveItem(Guid instanceId, bool all)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.RemoveItemAsync(instanceId, all); }
+            catch (Exception ex) { ClientLog.Warn("RemoveItem: " + ex.Message); }
+        }
+
         /// <summary>Fire-and-forget trade call. Same shape as <see cref="Debug"/>: the trade window
         /// never applies anything itself, it just tells the server and redraws from what comes back.</summary>
         public async void Trade(Func<NetworkChannel, Task> call, string what)
