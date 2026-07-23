@@ -551,7 +551,11 @@ changes and new features that came out of the play session:
   silently and without an error. Town polygons must CONTAIN the old circles, and each dependent rule
   wants a SmokeTest case, because nobody stands on a boundary during a human playtest.
 
-- [ ] **Equipment presets A / B / C** (owner, 2026-07-21). Three saved loadouts per character. You
+- [x] **Equipment presets A / B / C** — BUILT 2026-07-23 (0.28.50). Server cmds/hub/handlers +
+  `EquipPresetsJson` persistence (⚠ schema reset); apply refused in combat; `preset:<0-2>` bar token;
+  a paper-doll Equipment window (worn items as body-position squares) holds Save/Equip/To-bar. Store
+  INSTANCE ids; missing items skipped + reported. NOT YET PLAYTESTED.
+- [ ] ~~Equipment presets~~ (superseded by the line above) (owner, 2026-07-21). Three saved loadouts per character. You
   save the CURRENT equipment into a slot from the equipment/inventory window ("Save as A"), and the
   bar gets `preset-a` / `preset-b` / `preset-c` buttons that swap to it in one press: unequip what is
   worn, equip the preset's items from the bag. The case that motivates it is a buffer flipping
