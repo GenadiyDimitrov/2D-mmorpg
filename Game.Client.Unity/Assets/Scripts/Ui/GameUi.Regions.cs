@@ -38,9 +38,17 @@ namespace Game.Client
         /// <summary>Show the transient region banner. Called from the server's Region push.</summary>
         public void ShowRegionNotice(RegionNotice r)
         {
-            if (r == null || _regionToastBg == null) return;
+            if (r == null) return;
             string band = r.MaxLevel > 0 ? "   (Lv " + r.MinLevel + "-" + r.MaxLevel + ")" : "";
-            _regionToast.text = "You entered " + r.Name + band;
+            ShowToast("You entered " + r.Name + band);
+        }
+
+        /// <summary>Show any transient centre-top banner (region entry, the 3h "take a break" nudge, …).
+        /// Reuses the region toast slot; the newest message wins and re-arms the fade.</summary>
+        public void ShowToast(string text)
+        {
+            if (_regionToastBg == null || string.IsNullOrEmpty(text)) return;
+            _regionToast.text = text;
             _regionToastBorn = Time.unscaledTime;
             _regionToastBg.gameObject.SetActive(true);
         }
@@ -83,7 +91,7 @@ namespace Game.Client
                 lr.widthMultiplier = 0.6f;
                 lr.material = new Material(UnlitMaterials.Shader);   // IL2CPP-safe (no magenta on device)
                 Color col = region.Kind == RegionKind.Town
-                    ? new Color(0.35f, 0.70f, 1.00f, 0.85f)          // towns: cyan
+                    ? new Color(0.20f, 0.42f, 0.68f, 0.55f)          // towns: muted steel-blue (owner: less blue/lighter)
                     : new Color(1.00f, 0.72f, 0.30f, 0.80f);         // fields: warm amber
                 lr.startColor = lr.endColor = col;
 

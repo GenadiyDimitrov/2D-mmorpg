@@ -146,6 +146,18 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Preset: " + ex.Message); }
         }
 
+        /// <summary>Fetch a leaderboard board and hand the result back on the main thread.</summary>
+        public async void RequestLeaderboard(string category, Action<LeaderboardDto> onResult)
+        {
+            if (Phase != ClientPhase.InWorld || _net == null) return;
+            try
+            {
+                var dto = await _net.RequestLeaderboardAsync(category);
+                if (dto != null) Main(() => onResult(dto));
+            }
+            catch (Exception ex) { ClientLog.Warn("Rank: " + ex.Message); }
+        }
+
         /// <summary>Find a current party member's id by name (for /ptkick, /ptcl). Null if not in party.</summary>
         public Guid? PartyMemberId(string name)
         {
@@ -545,6 +557,7 @@ namespace Game.Client
             });
             _net.AutoHuntStatusReceived += st => Main(() => { if (st != null) AutoHunting = st.Enabled; });
             _net.RegionReceived += r => Main(() => Ui?.ShowRegionNotice(r));
+            _net.NoticeReceived += m => Main(() => Ui?.ShowToast(m));
             _net.PartyReceived += p => Main(() =>
             {
                 Party = p?.Members ?? new PartyMemberDto[0];

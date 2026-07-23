@@ -281,6 +281,43 @@ public record AutoPotionDto(string ItemId, bool Enabled, int ThresholdPct);
 /// place text).</summary>
 public record RegionNotice(string Name, int MinLevel, int MaxLevel);
 
+/// <summary>One row of a leaderboard: rank position, character, the ranked metric value, and the reward
+/// title the #1 in that category wears (empty for everyone else). Value's meaning depends on the
+/// category (gold, kills, seconds online, or level).</summary>
+public record LeaderboardEntry(int Rank, string Name, int Level, long Value, string Title);
+
+/// <summary>Server -> client (request/response): a ranked board for one <see cref="Leaderboards"/>
+/// category — the top N characters by that metric.</summary>
+public record LeaderboardDto(string Category, IReadOnlyList<LeaderboardEntry> Entries);
+
+/// <summary>The leaderboard categories + their labels and the honorary title the #1 in each earns.
+/// Category ids are append-only strings, like skill ids.</summary>
+public static class Leaderboards
+{
+    public static readonly string[] Categories = { "level", "gold", "pvp", "pk", "online" };
+
+    public static string Label(string cat) => cat switch
+    {
+        "level"  => "Level",
+        "gold"   => "Wealth",
+        "pvp"    => "PvP Kills",
+        "pk"     => "Player Kills",
+        "online" => "Time Played",
+        _        => cat,
+    };
+
+    /// <summary>The honorary title the rank-1 character in this category earns.</summary>
+    public static string TopTitle(string cat) => cat switch
+    {
+        "level"  => "the Ascended",
+        "gold"   => "the Wealthy",
+        "pvp"    => "the Warlord",
+        "pk"     => "the Feared",
+        "online" => "the Devoted",
+        _        => "",
+    };
+}
+
 /// <summary>The pseudo skill-id for "basic attack" as an opt-in auto action: put it in
 /// <see cref="AutoHuntConfigDto.Skills"/> (enabled) and the auto-hunt will melee when no real skill
 /// is ready; leave it out/disabled and the character only casts skills (mage style).</summary>

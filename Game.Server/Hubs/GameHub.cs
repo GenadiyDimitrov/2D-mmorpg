@@ -58,6 +58,12 @@ public class GameHub : Hub
 
     // ----- Character selection ----------------------------------------------
 
+    /// <summary>Public read-only board — the top characters for one <see cref="Leaderboards"/> category.
+    /// No world state touched, so it answers straight from persistence off the game loop.</summary>
+    public async Task<LeaderboardDto> RequestLeaderboard(string category)
+        => await _db.GetLeaderboardAsync(
+            Array.IndexOf(Leaderboards.Categories, category) >= 0 ? category : "level", 15);
+
     public async Task<CharacterList> ListCharacters()
     {
         if (!Sessions.TryGetValue(Context.ConnectionId, out var auth))

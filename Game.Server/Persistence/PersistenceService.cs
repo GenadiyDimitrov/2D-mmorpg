@@ -343,6 +343,39 @@ public class PersistenceService
         int Id, string Name, Race Race, BaseClass BaseClass, int SecondClass, int Level,
         DateTime? PendingDeleteAt);
 
+    /// <summary>Top <paramref name="count"/> characters for one leaderboard category, read straight from
+    /// the DB (so it reflects the last autosave — good enough for a board; live values lag ≤60s).
+    /// pvp/pk/gold/online exclude zero-value rows so an empty board shows no one, not random level-1s.</summary>
+    public async Task<LeaderboardDto> GetLeaderboardAsync(string category, int count)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var q = db.Characters.Where(c => c.PendingDeleteAt == null);
+
+        List<CharacterRecord> rows = category switch
+        {
+            "gold"   => await q.Where(c => c.Gold > 0).OrderByDescending(c => c.Gold).Take(count).ToListAsync(),
+            "pvp"    => await q.Where(c => c.PvpCount > 0).OrderByDescending(c => c.PvpCount).Take(count).ToListAsync(),
+            "pk"     => await q.Where(c => c.PkCount > 0).OrderByDescending(c => c.PkCount).Take(count).ToListAsync(),
+            "online" => await q.Where(c => c.TotalOnlineSeconds > 0).OrderByDescending(c => c.TotalOnlineSeconds).Take(count).ToListAsync(),
+            _        => await q.OrderByDescending(c => c.Level).ThenByDescending(c => c.Exp).Take(count).ToListAsync(),
+        };
+
+        long Value(CharacterRecord c) => category switch
+        {
+            "gold"   => c.Gold,
+            "pvp"    => c.PvpCount,
+            "pk"     => c.PkCount,
+            "online" => c.TotalOnlineSeconds,
+            _        => c.Level,
+        };
+
+        var entries = rows
+            .Select((c, i) => new LeaderboardEntry(i + 1, c.Name, c.Level, Value(c),
+                                                   i == 0 ? Leaderboards.TopTitle(category) : ""))
+            .ToList();
+        return new LeaderboardDto(category, entries);
+    }
+
     /// <summary>Schedule (or immediately perform) a character deletion. Returns the
     /// UTC time it will be permanently removed, or null if it was deleted right away
     /// (low level / zero delay). Throws nothing; bad ids are a no-op returning null.</summary>
@@ -633,6 +666,7 @@ public class PersistenceService
         entity.PkCount = rec.PkCount;
         entity.PvpCount = rec.PvpCount;
         entity.ConsecutivePk = rec.ConsecutivePk;
+        entity.TotalOnlineSeconds = rec.TotalOnlineSeconds;
 
         foreach (var item in rec.Items)
         {
@@ -708,7 +742,7 @@ public class PersistenceService
         string KnownRecipesCsv, string FriendsCsv, string AutoHuntJson, string EquipPresetsJson,
         int ActiveSubclassSlot, IReadOnlyList<SubclassSnapshot> Subclasses,
         int Karma, int PkCount, int PvpCount, int ConsecutivePk, bool DiedWhileAway,
-        DateTime? JailedUntilUtc, DateTime? ChatBannedUntilUtc,
+        DateTime? JailedUntilUtc, DateTime? ChatBannedUntilUtc, long TotalOnlineSeconds,
         IReadOnlyList<ItemSnapshot> Items)
     {
         /// <summary>Capture a character. MUST be called on the tick thread. Returns
@@ -741,7 +775,7 @@ public class PersistenceService
                 JsonSerializer.Serialize(e.EquipPresets),
                 e.ActiveSubclass.Slot, subs,
                 e.Karma, e.PkCount, e.PvpCount, e.ConsecutivePk, e.DiedWhileAway,
-                e.JailedUntil, e.ChatBannedUntil,
+                e.JailedUntil, e.ChatBannedUntil, e.TotalOnlineSeconds,
                 items);
         }
     }
@@ -813,6 +847,7 @@ public class PersistenceService
         rec.PkCount = snap.PkCount;
         rec.PvpCount = snap.PvpCount;
         rec.ConsecutivePk = snap.ConsecutivePk;
+        rec.TotalOnlineSeconds = snap.TotalOnlineSeconds;
         rec.DiedWhileAway = snap.DiedWhileAway;
         rec.JailedUntilUtc = snap.JailedUntilUtc;   // jail persists across a relog
         rec.ChatBannedUntilUtc = snap.ChatBannedUntilUtc;

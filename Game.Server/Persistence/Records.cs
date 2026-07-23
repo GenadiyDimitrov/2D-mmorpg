@@ -109,6 +109,9 @@ public class CharacterRecord
     public int PvpCount { get; set; }
     public int ConsecutivePk { get; set; }
 
+    /// <summary>Lifetime seconds this character has been online — powers the online-time leaderboard.</summary>
+    public long TotalOnlineSeconds { get; set; }
+
     /// <summary>True if this character DIED while offline-farming / link-dead (away from keyboard). It
     /// logs back in DEAD (res prompt), not healed — closes the "go offline to dodge a death, come back
     /// full HP" exploit. Cleared when the character actually respawns.</summary>

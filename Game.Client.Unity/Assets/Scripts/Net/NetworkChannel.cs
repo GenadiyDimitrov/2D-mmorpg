@@ -74,6 +74,9 @@ namespace Game.Client
 
         /// <summary>You crossed into a named region — shown as transient centre-screen text.</summary>
         public event Action<RegionNotice> RegionReceived;
+
+        /// <summary>A plain server notice (e.g. the 3h "take a break" nudge) — shown as a transient banner.</summary>
+        public event Action<string> NoticeReceived;
         public event Action<string> Disconnected;
         public event Action<string> ForceDisconnected;
         // WithAutomaticReconnect silently gives us a NEW connection id on a transport blip, and the
@@ -112,6 +115,7 @@ namespace Game.Client
             _connection.On<AutoHuntConfigDto>("AutoConfig", c => AutoConfigReceived?.Invoke(c));
             _connection.On<AutoHuntStatus>("AutoHunt", s => AutoHuntStatusReceived?.Invoke(s));
             _connection.On<RegionNotice>("Region", r => RegionReceived?.Invoke(r));
+            _connection.On<string>("Notice", m => NoticeReceived?.Invoke(m));
             _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));
             _connection.On<GoldUpdate>("Gold", g => GoldReceived?.Invoke(g));
             _connection.On<TargetDetails>("TargetDetails", d => TargetDetailsReceived?.Invoke(d));
@@ -156,6 +160,10 @@ namespace Game.Client
 
         public Task<LoginResult> EnterWorldAsync(int characterId) =>
             _connection.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(characterId));
+
+        /// <summary>Read-only leaderboard fetch — answered straight from the DB, no world round-trip.</summary>
+        public Task<LeaderboardDto> RequestLeaderboardAsync(string category) =>
+            _connection.InvokeAsync<LeaderboardDto>("RequestLeaderboard", category);
 
         // ----- In-world commands (the slice uses Move + Attack; the rest are ready for later) -----
         public Task MoveAsync(float targetX, float targetY) =>

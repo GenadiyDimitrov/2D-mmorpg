@@ -99,8 +99,8 @@ public static class RegionMap
         new("field_hollow", "Bracken Hollow", RegionKind.Field,
             new[]
             {
-                new Vec2(16800, 21200), new Vec2(20600, 20400), new Vec2(21400, 23000),
-                new Vec2(21000, 26400), new Vec2(18200, 27200), new Vec2(16400, 24600),
+                new Vec2(16800, 21200), new Vec2(20600, 20400), new Vec2(20000, 22500),
+                new Vec2(20700, 26600), new Vec2(18200, 27200), new Vec2(16400, 24600),
             },
             new[] { new Vec2(18600, 22400), new Vec2(19400, 25600) }),
 
@@ -109,7 +109,7 @@ public static class RegionMap
             new[]
             {
                 new Vec2(27000, 20600), new Vec2(31400, 21400), new Vec2(32200, 24800),
-                new Vec2(30600, 27400), new Vec2(27400, 26800), new Vec2(26800, 23600),
+                new Vec2(30600, 27400), new Vec2(27400, 26800), new Vec2(28200, 23400),
             },
             new[] { new Vec2(29000, 22600), new Vec2(30200, 25400) }),
 
@@ -121,7 +121,7 @@ public static class RegionMap
             new[]
             {
                 new Vec2(21400, 15600), new Vec2(26600, 15200), new Vec2(28000, 18600),
-                new Vec2(25800, 21000), new Vec2(22000, 20800), new Vec2(20600, 18200),
+                new Vec2(26200, 20050), new Vec2(21800, 20050), new Vec2(20600, 18200),
             },
             new[] { new Vec2(23800, 17600) }),
 
@@ -129,8 +129,8 @@ public static class RegionMap
         new("field_marches", "Sundered Marches", RegionKind.Field,
             new[]
             {
-                new Vec2(25200, 8200), new Vec2(29800, 7600), new Vec2(31400, 10800),
-                new Vec2(29600, 13400), new Vec2(26000, 12800), new Vec2(24600, 10400),
+                new Vec2(26600, 7900), new Vec2(29800, 7600), new Vec2(31400, 10800),
+                new Vec2(29600, 13400), new Vec2(26600, 12600), new Vec2(26900, 11200),
             },
             new[] { new Vec2(27400, 9600), new Vec2(28600, 12000) }),
 
@@ -145,10 +145,11 @@ public static class RegionMap
     };
 
     /// <summary>
-    /// TOWNS as regions (stage 2). Each is an OCTAGON that CONTAINS its old safe-zone circle (inradius
-    /// ≈ 1.03·r &gt; r), so no location safe today becomes unsafe — and `InAnySafeZone` unions the circle
-    /// with these anyway, which makes the migration strictly safe-side. Generated from the circle here
-    /// for correctness; hand-refine into organic outlines later without touching the safe-zone rule.
+    /// TOWNS as regions (stage 2). Each is an OCTAGON INSCRIBED in its safe-zone circle (rad = r, so the
+    /// drawn town sits just inside the safe radius). Safety is UNAFFECTED: `InAnySafeZone` unions the
+    /// full circle with these polygons, so the circle — not the octagon — sets where you're safe. The
+    /// octagon is only the drawn shape, kept snug against the circle so it no longer bleeds into the
+    /// hunting fields around it (owner: regions must not overlap; towns were reading too large).
     /// </summary>
     public static readonly Region[] Towns =
     {
@@ -163,11 +164,12 @@ public static class RegionMap
         Town("dungeon_hollow_crypt", "Hollow Crypt",  6000, 6000, 500),
     };
 
-    /// <summary>An octagon centred on (cx,cy) whose FLAT sides clear a circle of radius r (R = 1.12·r →
-    /// inradius 1.035·r), plus a single arrival point at the centre.</summary>
+    /// <summary>An octagon centred on (cx,cy) INSCRIBED in the safe circle of radius r (its corners
+    /// touch the circle, flat sides sit at 0.924·r), plus a single arrival point at the centre. The
+    /// circle is unioned for safety, so the smaller drawn octagon never makes anywhere unsafe.</summary>
     private static Region Town(string id, string name, float cx, float cy, float r)
     {
-        float rad = r * 1.12f;
+        float rad = r * 1.0f;
         var outline = new Vec2[8];
         for (int i = 0; i < 8; i++)
         {

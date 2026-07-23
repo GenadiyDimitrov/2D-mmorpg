@@ -856,6 +856,12 @@ public class Entity
     /// pushed when this changes. "" = not yet computed / in the wild between regions.</summary>
     public string CurrentRegionId { get; set; } = "";
 
+    /// <summary>Ticks online THIS session (reset on enter), for the "take a break" reminder every 3h.</summary>
+    public long SessionOnlineTicks { get; set; }
+
+    /// <summary>Total seconds this character has spent online, persisted — for the online-time leaderboard.</summary>
+    public long TotalOnlineSeconds { get; set; }
+
     /// <summary>Three saved equipment loadouts (A/B/C), each a list of equipped item INSTANCE ids.
     /// Save snapshots what's worn; apply unequips all then re-equips these (skipping any that were
     /// sold/traded/destroyed). Persisted per character. Index 0=A, 1=B, 2=C.</summary>

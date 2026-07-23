@@ -4139,6 +4139,7 @@ public class GameLoopService : BackgroundService
             {
                 TickPotion(entity);
                 TickRegionNotice(entity);
+                TickOnlineTime(entity);
             }
 
             TickSkillCooldowns(entity);
@@ -4433,6 +4434,20 @@ public class GameLoopService : BackgroundService
 
         var band = RegionMap.LevelBand(region.Id);
         SendTo(entity, "Region", new RegionNotice(region.Name, band?.Min ?? 0, band?.Max ?? 0));
+    }
+
+    /// <summary>Accrues session + lifetime online time and fires the "take a break" reminder every 3h
+    /// of continuous play. Lifetime seconds feed the online-time leaderboard.</summary>
+    private void TickOnlineTime(Entity entity)
+    {
+        entity.SessionOnlineTicks++;
+        if (_tick % GameConstants.TickRate == 0)
+            entity.TotalOnlineSeconds++;
+
+        // Every 3h of THIS session, nudge the player to rest (health-notice, not a penalty).
+        const long threeHoursTicks = 3L * 3600 * GameConstants.TickRate;
+        if (entity.SessionOnlineTicks > 0 && entity.SessionOnlineTicks % threeHoursTicks == 0)
+            SendTo(entity, "Notice", "You've been playing for an extended period — please take a break.");
     }
 
     private void TickPotion(Entity entity)

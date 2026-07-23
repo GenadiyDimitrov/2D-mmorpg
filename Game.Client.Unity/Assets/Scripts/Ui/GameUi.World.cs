@@ -188,6 +188,7 @@ namespace Game.Client
             BuildItemWindows();
             BuildVendorWindow();
             BuildEquipmentWindow();
+            BuildRankWindow();
             BuildRegionUi();
             BuildSlotMenu();
         }
@@ -480,7 +481,7 @@ namespace Game.Client
         {
             _menuPanel = UiKit.PanelBox(_worldRoot, "Menu");
             UiKit.Place(_menuPanel, new Vector2(1f, 1f), new Vector2(1f, 1f),
-                        new Vector2(-12f, -100f), new Vector2(200f, 392f));
+                        new Vector2(-12f, -100f), new Vector2(200f, 448f));
             var inner = _menuPanel.GetChild(0);
 
             var entries = new List<(string Label, Action Click)>
@@ -489,6 +490,7 @@ namespace Game.Client
                 ("Auto Pots", () => { CloseWindow(_menuPanel); OpenAutoPotions(); }),
                 ("Auto Farm", () => { CloseWindow(_menuPanel); OpenAutoFarm(); }),
                 ("Quests", () => { CloseWindow(_menuPanel); ToggleWindow(_questPanel); }),
+                ("Rank",   () => { CloseWindow(_menuPanel); OpenRank(); }),
                 ("Setup",  () => { CloseWindow(_menuPanel); ToggleWindow(_settingsPanel); }),
                 ("Debug",  () => { CloseWindow(_menuPanel); ToggleWindow(_debugPanel); }),
                 ("Leave",  () => { CloseWindow(_menuPanel); Boot.LeaveWorld(); }),
