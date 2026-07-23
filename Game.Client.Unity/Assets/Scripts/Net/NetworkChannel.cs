@@ -63,6 +63,14 @@ namespace Game.Client
         public event Action<TradeStateUpdate> TradeStateReceived;
         public event Action<NpcDialog> DialogReceived;
         public event Action<QuestLog> QuestLogReceived;
+
+        /// <summary>The player's stored auto-hunt config, echoed on login and after every change with
+        /// the server's clamping applied. The config/farm windows fill from THIS, never from what they
+        /// last sent — the server owns the values.</summary>
+        public event Action<AutoHuntConfigDto> AutoConfigReceived;
+        /// <summary>Live auto-hunt HUD: whether it is running + MP/s. Also the authority on the on/off
+        /// state, which the server can flip on its own (idle-time lock, death).</summary>
+        public event Action<AutoHuntStatus> AutoHuntStatusReceived;
         public event Action<string> Disconnected;
         public event Action<string> ForceDisconnected;
         // WithAutomaticReconnect silently gives us a NEW connection id on a transport blip, and the
@@ -98,6 +106,8 @@ namespace Game.Client
             _connection.On<TradeStateUpdate>("Trade", t => TradeStateReceived?.Invoke(t));
             _connection.On<NpcDialog>("Dialog", d => DialogReceived?.Invoke(d));
             _connection.On<QuestLog>("QuestLog", q => QuestLogReceived?.Invoke(q));
+            _connection.On<AutoHuntConfigDto>("AutoConfig", c => AutoConfigReceived?.Invoke(c));
+            _connection.On<AutoHuntStatus>("AutoHunt", s => AutoHuntStatusReceived?.Invoke(s));
             _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));
             _connection.On<GoldUpdate>("Gold", g => GoldReceived?.Invoke(g));
             _connection.On<TargetDetails>("TargetDetails", d => TargetDetailsReceived?.Invoke(d));

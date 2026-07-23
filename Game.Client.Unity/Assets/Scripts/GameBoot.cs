@@ -478,6 +478,20 @@ namespace Game.Client
             });
             _net.QuestLogReceived += q => Main(() => Quests = q);
             _net.DialogReceived += d => Main(() => Dialog = d);
+            _net.AutoConfigReceived += c => Main(() =>
+            {
+                if (c == null) return;
+                AutoConfig = c;                 // the authoritative, already-clamped config
+                AutoHunting = c.Enabled;
+                // Sync the per-slot Auto marks to the server's truth — but only once it actually carries
+                // skills, so a fresh character keeps the client's default (basic attack on).
+                if (c.Skills != null && c.Skills.Length > 0)
+                {
+                    AutoSkills.Clear();
+                    foreach (var s in c.Skills) if (s.Enabled) AutoSkills.Add(s.SkillId);
+                }
+            });
+            _net.AutoHuntStatusReceived += st => Main(() => { if (st != null) AutoHunting = st.Enabled; });
             _net.PartyReceived += p => Main(() =>
             {
                 Party = p?.Members ?? new PartyMemberDto[0];
@@ -908,6 +922,31 @@ namespace Game.Client
         /// <see cref="AutoHuntIds.BasicAttack"/>. The per-slot Auto toggle writes here.</summary>
         public readonly HashSet<string> AutoSkills = new HashSet<string> { AutoHuntIds.BasicAttack };
 
+        /// <summary>The last config the SERVER confirmed (potions %, buff potions, farm range, ranks).
+        /// The auto-potions and auto-farm windows read and edit THIS; every push preserves the fields
+        /// it does not own, because <c>SetAutoHuntConfig</c> replaces the whole config wholesale —
+        /// hardcoding the untouched half (as the toggle used to) silently reset the player's settings on
+        /// every on/off.</summary>
+        public AutoHuntConfigDto AutoConfig { get; private set; } =
+            new AutoHuntConfigDto(false, 60, 40, false, new AutoSkillDto[0], new string[0]);
+
+        /// <summary>Build a full config that flips Enabled and reflects the current auto-skill marks,
+        /// while carrying every other field (potions, farm) forward from the cached config.</summary>
+        private AutoHuntConfigDto BuildAutoConfig(bool enabled)
+        {
+            var skills = new List<AutoSkillDto>();
+            foreach (var id in AutoSkills)
+                if (id == AutoHuntIds.BasicAttack || Learned.ContainsKey(id))
+                {
+                    int extra = 0;   // preserve any per-skill reuse the server already knows
+                    if (AutoConfig.Skills != null)
+                        foreach (var s in AutoConfig.Skills)
+                            if (s.SkillId == id) { extra = s.ExtraDelayTicks; break; }
+                    skills.Add(new AutoSkillDto(id, true, extra));
+                }
+            return AutoConfig with { Enabled = enabled, Skills = skills.ToArray() };
+        }
+
         public async void ToggleAutoHunt()
         {
             if (Phase != ClientPhase.InWorld) return;
@@ -915,33 +954,32 @@ namespace Game.Client
 
             try
             {
-                // The CONFIG has to go first, and it is why auto-hunt "just wandered": the server's
-                // autopilot only uses actions it was GIVEN, and this client had never sent any — so it
-                // roamed looking for something to do with an empty action list. Basic attack is the
-                // pseudo-skill that makes it melee at all; without it a fighter walks up to a mob and
-                // stares at it.
-                if (AutoHunting)
-                {
-                    var skills = new List<AutoSkillDto>();
-                    foreach (var id in AutoSkills)
-                        if (id == AutoHuntIds.BasicAttack || Learned.ContainsKey(id))
-                            skills.Add(new AutoSkillDto(id, true, 0));
-
-                    await _net.SetAutoHuntConfigAsync(new AutoHuntConfigDto(
-                        Enabled: true,
-                        HpPotionPct: 50,
-                        MpPotionPct: 30,
-                        AutoBuffPotions: false,
-                        Skills: skills.ToArray(),
-                        BuffPotionIds: new string[0]));
-                }
-
+                // The CONFIG carries the actions: the server's autopilot only uses skills it was GIVEN,
+                // and an empty list is why auto-hunt "just wandered". Basic attack is the pseudo-skill
+                // that makes it melee at all; without it a fighter walks up to a mob and stares at it.
+                // Sending the WHOLE config (not a bare toggle) keeps the potion/farm settings the player
+                // configured in their windows — a bare enable used to overwrite them with defaults.
+                await _net.SetAutoHuntConfigAsync(BuildAutoConfig(AutoHunting));
                 ClientLog.Info(AutoHunting
                     ? "Auto-hunt ON (" + AutoSkills.Count + " action(s))."
                     : "Auto-hunt off.");
-                await _net.ToggleAutoHuntAsync(AutoHunting);
             }
-            catch (Exception ex) { ClientLog.Warn("AutoHunt: " + ex.Message); }
+            catch (Exception ex)
+            {
+                AutoHunting = !AutoHunting;   // the server never heard us; keep the button honest
+                ClientLog.Warn("AutoHunt: " + ex.Message);
+            }
+        }
+
+        /// <summary>Push a config edited by the auto-potions / auto-farm windows. Optimistic on the
+        /// cache; the server's echo confirms the clamped values.</summary>
+        public async void PushAutoConfig(AutoHuntConfigDto cfg)
+        {
+            if (Phase != ClientPhase.InWorld || cfg == null) return;
+            AutoConfig = cfg;
+            AutoHunting = cfg.Enabled;
+            try { await _net.SetAutoHuntConfigAsync(cfg); }
+            catch (Exception ex) { ClientLog.Warn("Auto config: " + ex.Message); }
         }
 
         /// <summary>Mark/unmark a skill for auto-use, and push the change if auto-hunt is running.</summary>
@@ -949,10 +987,7 @@ namespace Game.Client
         {
             if (string.IsNullOrEmpty(skillId)) return;
             if (!AutoSkills.Remove(skillId)) AutoSkills.Add(skillId);
-
-            if (!AutoHunting) return;
-            AutoHunting = false;      // re-toggle so the new list is sent
-            ToggleAutoHunt();
+            if (AutoHunting) PushAutoConfig(BuildAutoConfig(true));
         }
 
         public bool CounterAttack { get; private set; }
