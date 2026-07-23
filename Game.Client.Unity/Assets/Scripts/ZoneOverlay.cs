@@ -24,8 +24,14 @@ namespace Game.Client
         private void Start()
         {
             foreach (var zone in WorldMap.SpawnZones)
+            {
+                // A spawn zone that falls inside an authored FIELD region is drawn by that field's
+                // coloured FILL instead (owner: colour the fields, not the circles). The rest of the map
+                // has no field polygon yet, so its circles stay until those bands are authored.
+                if (RegionMap.At(zone.X, zone.Y) is { Kind: RegionKind.Field }) continue;
                 Disc(zone.X, zone.Y, zone.Radius, ColourForLevel(zone.MaxLevel), 0.01f,
                      "Zone " + zone.MinLevel + "-" + zone.MaxLevel);
+            }
 
             // Towns last so they draw ON TOP of any spawn zone that overlaps them — a town you cannot
             // pick out is worse than no overlay at all.

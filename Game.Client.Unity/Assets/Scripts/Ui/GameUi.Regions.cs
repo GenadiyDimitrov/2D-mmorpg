@@ -83,6 +83,13 @@ namespace Game.Client
             foreach (var region in RegionMap.All)
             {
                 if (region.Outline == null || region.Outline.Length < 3) continue;
+
+                // FIELDS get a filled polygon coloured by their LEVEL band — this is the field colour the
+                // owner asked for, replacing the spawn-zone circles (ZoneOverlay skips the circles a field
+                // covers). Towns are left as an outline only.
+                if (region.Kind == RegionKind.Field)
+                    BuildRegionFill(region);
+
                 var go = new GameObject(region.Id);
                 go.transform.SetParent(_regionOutlines.transform, false);
                 var lr = go.AddComponent<LineRenderer>();
@@ -92,7 +99,7 @@ namespace Game.Client
                 lr.material = new Material(UnlitMaterials.Shader);   // IL2CPP-safe (no magenta on device)
                 Color col = region.Kind == RegionKind.Town
                     ? new Color(0.20f, 0.42f, 0.68f, 0.55f)          // towns: muted steel-blue (owner: less blue/lighter)
-                    : new Color(1.00f, 0.72f, 0.30f, 0.80f);         // fields: warm amber
+                    : new Color(1.00f, 0.90f, 0.55f, 0.90f);         // fields: a bright rim over the fill
                 lr.startColor = lr.endColor = col;
 
                 lr.positionCount = region.Outline.Length;
@@ -104,6 +111,58 @@ namespace Game.Client
                 }
             }
             _regionOutlines.SetActive(false);
+        }
+
+        /// <summary>A flat filled polygon on the ground, coloured by the field's LEVEL band (same green→
+        /// red reading as the nameplate colours and the old zone discs). Triangulated as a fan and made
+        /// double-sided so it shows regardless of the outline's winding.</summary>
+        private void BuildRegionFill(Region region)
+        {
+            var band = RegionMap.LevelBand(region.Id);
+            Color col = ColourForLevel(band?.Max ?? 1);
+
+            var poly = region.Outline;
+            var verts = new Vector3[poly.Length];
+            for (int i = 0; i < poly.Length; i++)
+            {
+                var u = WorldMapper.ToUnity(poly[i].X, poly[i].Y);
+                u.y = 0.02f;                     // above the ground, below the 0.06 outline
+                verts[i] = u;
+            }
+
+            // Fan (0, i, i+1) — the field outlines are convex, so a fan tessellates them cleanly. Emit
+            // each triangle in BOTH windings so back-face culling can never hide it.
+            int tri = poly.Length - 2;
+            var tris = new int[tri * 6];
+            int t = 0;
+            for (int i = 1; i < poly.Length - 1; i++)
+            {
+                tris[t++] = 0; tris[t++] = i; tris[t++] = i + 1;
+                tris[t++] = 0; tris[t++] = i + 1; tris[t++] = i;
+            }
+
+            var mesh = new Mesh { name = region.Id + "_fill" };
+            mesh.vertices = verts;
+            mesh.triangles = tris;
+            mesh.RecalculateBounds();
+
+            var go = new GameObject(region.Id + "_fill");
+            go.transform.SetParent(_regionOutlines.transform, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var mr = go.AddComponent<MeshRenderer>();
+            mr.material = UnlitMaterials.Create(col);
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+        }
+
+        /// <summary>Green (low) → yellow → red (high), matching ZoneOverlay's disc colours so a field and
+        /// a nameplate of the same level read the same.</summary>
+        private static Color ColourForLevel(int level)
+        {
+            float t = Mathf.Clamp01(level / 80f);
+            return t < 0.5f
+                ? Color.Lerp(new Color(0.25f, 0.55f, 0.25f), new Color(0.70f, 0.68f, 0.20f), t * 2f)
+                : Color.Lerp(new Color(0.70f, 0.68f, 0.20f), new Color(0.65f, 0.20f, 0.20f), (t - 0.5f) * 2f);
         }
     }
 }
