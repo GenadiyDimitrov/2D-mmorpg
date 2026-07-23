@@ -669,9 +669,8 @@ public class GameLoopService : BackgroundService
         if (!TryGetPlayer(move.ConnectionId, out var entity) || entity.Dead)
             return;
 
-        // Can't move while standing up from a sit (recovery window).
-        if (entity.StandUpTicks > 0)
-            return;
+        // Standing up no longer blocks MOVEMENT (only actions) — you can walk off the moment you stand.
+        // Blocking movement here while the client had already stood you up was the rubber-band.
 
         // Casting roots you — movement is rejected until the cast finishes or you
         // cancel it explicitly (ESC). Moving does NOT cancel the cast.

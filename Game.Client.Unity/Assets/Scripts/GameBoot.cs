@@ -888,11 +888,16 @@ namespace Game.Client
                 return;
             }
 
-            // While SITTING (or mid stand-up) the server ignores a move-tap — you must stand first. Don't
-            // predict a walk it will drop, or the character lurches forward locally and snaps back.
-            if (Stats != null && (Stats.MoveState == MoveState.Sitting))
+            // Don't predict a walk the server will DROP — that mismatch is what rubber-bands you. It
+            // drops one while you're SITTING, and whenever your effective speed is 0 (stun / root): the
+            // last delta's self-speed is that number, so a 0 there means "you can't move right now".
+            bool sitting = Stats != null && Stats.MoveState == MoveState.Sitting;
+            bool immobile = Entities != null && Entities.TryGetState(SelfId, out var selfState)
+                            && selfState.Speed <= 0.01f;
+            if (sitting || immobile)
             {
-                ClientLog.Warn("Stand up first — you can't move while sitting.");
+                ClientLog.Warn(sitting ? "Stand up first — you can't move while sitting."
+                                       : "You can't move right now.");
                 return;
             }
 

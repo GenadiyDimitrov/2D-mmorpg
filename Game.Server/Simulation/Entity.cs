@@ -700,7 +700,11 @@ public class Entity
                 return ModifiedStat(mobBase, SkillEffect.BuffMoveSpeed) * (1f - SlowFraction);
             }
 
-            if (StandUpTicks > 0 || MoveState == MoveState.Sitting)
+            // Only SITTING freezes movement. The stand-up recovery (StandUpTicks) gates ACTIONS
+            // (attack/cast) but must NOT zero move speed: zeroing it made the client predict a walk at 0
+            // while the server held you, which is the "standing rubber-bands me" bug. You can walk the
+            // instant you stand; you just can't attack/cast until the recovery elapses.
+            if (MoveState == MoveState.Sitting)
                 return 0f;
             float baseSpeed = MoveState == MoveState.Walking ? WalkSpeed : RunSpeed;
             if (baseSpeed <= 0) baseSpeed = Speed;   // fallback
