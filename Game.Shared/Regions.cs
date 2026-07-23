@@ -130,15 +130,29 @@ public static class RegionMap
             new[] { new Vec2(6850, 29400), new Vec2(7950, 28250), new Vec2(9500, 28200), new Vec2(13050, 30400), new Vec2(14600, 31950), new Vec2(16600, 35100), new Vec2(16550, 36650), new Vec2(15400, 37750), new Vec2(13850, 37800), new Vec2(10950, 35600), new Vec2(9400, 34050), new Vec2(6800, 30950) },
             new[] { new Vec2(14400, 35600), new Vec2(9000, 30400) }),
 
-        // Frostmere Wastes — wraps Frostmere (band 70-85; also covers the emberwyrm elite)
+        // Frostmere Wastes — wraps Frostmere (band 70-85). The emberwyrm elite is left OUT (it sits only
+        // ~2150u from the Hollow Crypt boss room, so it can't share this field or take its own without
+        // overlap) — it stays an isolated circle, like any lone elite.
         new("field_frostmere", "Frostmere Wastes", RegionKind.Field,
-            new[] { new Vec2(6800, 17050), new Vec2(10850, 9250), new Vec2(11250, 8850), new Vec2(11850, 8850), new Vec2(15400, 10250), new Vec2(16550, 11350), new Vec2(16600, 12900), new Vec2(14600, 16050), new Vec2(13050, 17600), new Vec2(9500, 19800), new Vec2(7950, 19750), new Vec2(6850, 18600) },
+            new[] { new Vec2(6800, 17050), new Vec2(9400, 13950), new Vec2(10950, 12400), new Vec2(13850, 10200), new Vec2(15400, 10250), new Vec2(16550, 11350), new Vec2(16600, 12900), new Vec2(14600, 16050), new Vec2(13050, 17600), new Vec2(9500, 19800), new Vec2(7950, 19750), new Vec2(6850, 18600) },
             new[] { new Vec2(14400, 12400), new Vec2(9000, 17600) }),
 
         // Training Grounds — wraps the Training Outpost + all four dummies (band 20-80)
         new("field_training", "Training Grounds", RegionKind.Field,
             new[] { new Vec2(21500, 3500), new Vec2(21900, 3100), new Vec2(26100, 3100), new Vec2(26500, 3500), new Vec2(26500, 4050), new Vec2(26200, 4450), new Vec2(24350, 5900), new Vec2(23650, 5900), new Vec2(21800, 4450), new Vec2(21500, 4050) },
             new[] { new Vec2(22500, 4000), new Vec2(23500, 4000) }),
+
+        // Sunken Vale — the valley-treant BOSS field (band 58-60). The boss sits alone in the centre;
+        // its two trash spawners are >3500u away on the flanks, so you reach the boss without aggro.
+        new("field_treant", "Sunken Vale", RegionKind.Field,
+            new[] { new Vec2(18350, 44200), new Vec2(19400, 43100), new Vec2(28600, 43100), new Vec2(29650, 44200), new Vec2(29650, 45800), new Vec2(28600, 46900), new Vec2(19400, 46900), new Vec2(18350, 45800) },
+            new[] { new Vec2(20500, 45000), new Vec2(27500, 45000) }),
+
+        // Hollow Crypt — the DUNGEON field (band 44-48): the elite rooms + the grave-lich boss. Its
+        // entrance safe zone (dungeon_hollow_crypt) sits just west as a separate island.
+        new("field_dungeon", "Hollow Crypt", RegionKind.Field,
+            new[] { new Vec2(6150, 6050), new Vec2(6600, 5600), new Vec2(7200, 5550), new Vec2(10250, 6650), new Vec2(11450, 7350), new Vec2(11850, 7800), new Vec2(11800, 8400), new Vec2(11400, 8850), new Vec2(10850, 8900), new Vec2(9450, 8550), new Vec2(6500, 7200), new Vec2(6100, 6700) },
+            new[] { new Vec2(8400, 7000), new Vec2(9600, 7500) }),
     };
 
     /// <summary>

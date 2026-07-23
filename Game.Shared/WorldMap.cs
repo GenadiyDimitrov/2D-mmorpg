@@ -109,6 +109,15 @@ public static class WorldMap
             MobTypes: new[] { "valley_treant" }, MaxCount: 1,
             RespawnSeconds: 21 * 3600, RespawnVariance: 3 * 3600, Rank: MobRank.Boss),
 
+        // Sunken Vale — trash for the treant BOSS field, kept on the flanks (>3500u from the boss) so you
+        // reach the boss without an escort. Level 58-60 to sit just under the boss and match its band.
+        new(X: 20500, Y: 45000, Radius: 1400, MinLevel: 58, MaxLevel: 60,
+            MobTypes: new[] { "aether_wisp", "sand_ratman", "bogwood" }, MaxCount: 7,
+            RespawnSeconds: 22, RespawnVariance: 7),
+        new(X: 27500, Y: 45000, Radius: 1400, MinLevel: 58, MaxLevel: 60,
+            MobTypes: new[] { "fen_lizardman", "cursed_blade", "wildhorn_scout" }, MaxCount: 7,
+            RespawnSeconds: 22, RespawnVariance: 7),
+
         // ===== DUNGEON: Hollow Crypt (NW corner, OFF the town ring) =====
         // A dungeon is just a SpawnZone cluster away from the ring with an ENTRANCE safe zone (below),
         // so any gatekeeper offers it and the existing engine runs it for free. Harder ELITE rooms
