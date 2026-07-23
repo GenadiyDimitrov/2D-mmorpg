@@ -213,23 +213,63 @@ whether anything below them means anything.
 - [ ] **Windows drag** by their title bar and stay on screen; **back** closes them newest-first, then
       offers to quit; quitting leaves the world and logs out before closing.
 
+## 12. Parity batches A–F (0.28.41) — NOT YET TESTED (built 2026-07-23)
+
+Everything below shipped in one build cycle to reach WPF *functional* parity. Test after §11.
+
+**Auto-hunt (Menu → Auto Pots / Auto Farm):**
+- [ ] **Auto Potions** — HP and MP each have an on/off (green ON / red off) + a threshold slider;
+      **Save** persists; reopening shows the saved values (off keeps its number). Off = not used.
+- [ ] **Auto Farm** — search-range slider, Keep-position toggle, Normal/Elite/Boss engage toggles;
+      Save persists and survives a relog. **Reset** restores defaults.
+- [ ] Toggling the top-right **Auto** button (or an Auto-marked skill) does **not** wipe the
+      potion/farm settings you saved.
+
+**Mob info (target → Info):**
+- [ ] **Stats tab** shows the full sheet (attributes, offense, defense, utility, effects, traits) and
+      the mob's **rank** in the title for elites/bosses.
+- [ ] **Drops tab** loads the drop table the first time it's opened; switching Stats↔Drops does **not**
+      re-request; **reopening** (Info again) re-requests. A player target has no Drops tab.
+
+**Inventory (Bag):**
+- [ ] Rows are `name (qty) [Details] [e|u]`. **[e]** equips/unequips gear, **[u]** uses a consumable,
+      both without opening the window.
+- [ ] **Details** shows stats (enchant-scaled), attributes, use-skill, and set info; per-kind actions
+      (Use / Equip-Unequip / Bin).
+- [ ] **Compare** (on an unequipped gear piece) opens the worn counterpart alongside, marked orange
+      **E** — the two stat blocks read side by side.
+- [ ] **Bin** — a stack asks *delete one / whole stack* (the reusable selection popup); a single item
+      just confirms; the item is gone after.
+
+**Vendors (talk to a vendor → Buy / Sell):**
+- [ ] **Buy** lists wares with prices; unaffordable rows are dimmed. A stackable item opens the
+      **numpad**; **Max** = the most you can afford; a non-stackable skips straight to confirm.
+- [ ] **Sell** lists your sellable bag (equipped/quest items excluded); **Max** = the whole stack;
+      the confirm shows the right total; after selling, the row updates and your gold changes.
+- [ ] Numpad: digits, **C** clear, **<** backspace, the **number box** accepts the phone keyboard, and
+      **X** backs out of that item (not the whole vendor).
+
+**Skills → Learn:**
+- [ ] Tapping **Learn** opens a **confirm** window showing the change (power/MP before→after for an
+      upgrade, or the level-1 numbers for a new skill) + the SP/gold cost; **Cancel** spends nothing,
+      **Confirm** learns it.
+
+**Trade + party (needs the bot as a second player — [[bot-second-player]]):**
+- [ ] Target another player → **Party** invites; **Trade** opens the trade window. Offer items + gold,
+      both sides Ready → the swap happens; Cancel/close leaves the trade cleanly.
+
 ## Known gaps (NOT bugs — not built yet in the Unity client)
 
 Don't file these; they're scope, not defects. The Unity client is a viewport, not the WPF harness.
+As of 2026-07-23 the A–F parity batches closed most of the old gaps (inventory, skills, skill bar,
+buffs, quests, party, trade, vendors, NPC dialog, debug, auto-hunt, mob info all exist now, on
+uGUI + TextMeshPro). What remains:
 
-- No inventory, skills, skill bar, buffs, quests, party, trade, shops, or NPC dialog UI.
-- No skill casting at all — basic attack only.
-- No cast bars, damage numbers, or death overlay.
-- Entities are coloured billboards, not models; no animation.
-- No debug/admin panel like the WPF one.
-- The back button does nothing — no graceful exit ladder.
+- **Enchant / reroll UI** — deferrable per the owner; not built.
+- **3-tab auto-potions** (4 potions + buff-potions/scrolls) — **blocked on the potion rework**
+  (Roadmap, 2026-07-23). Today's window is HP/MP % only.
+- **Per-skill auto-farm priority / custom-cd / cyclic toggle / heal chain** — deferred design
+  (Roadmap, 2026-07-23); today auto-farm uses the server's priority-scan and skill-bar Auto marks.
+- **Clock** and the **§8 target slash-commands** (`/ptinv` etc.) — deferrable.
+- Entities are coloured billboards, not models; no animation (waits on the art pass).
 - Portrait layout is not supported; the UI is authored for landscape.
-
-**Queued from the 2026-07-21 playtest** (owner's list — scope, being built next): camera pitch
-78° → **90°**, **smaller + round** entity billboards to match WPF, **higher camera or pinch-zoom /
-+– buttons**, a **2 rows × 6 skill bar on the right with swipe between pages 1-5** of the server's
-60-slot bar, **inventory + equip**, a **debug menu**, and the **back-button exit ladder**
-(in world → character select → logout → quit). Layout customisation (moving/resizing windows) is
-Roadmap, not next.
-- UI is IMGUI (`OnGUI`), chosen so it needs no Canvas/prefabs/fonts — **it is meant to look plain**.
-  A uGUI + TextMeshPro pass belongs with the real art pass.

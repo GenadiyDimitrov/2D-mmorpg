@@ -15,6 +15,35 @@ any wire-protocol / DB-schema break (that's what the handshake enforces).
 
 ## NOW (active / immediate)
 
+### Unity↔WPF functional parity — ✅ batches A–F BUILT (2026-07-23, 0.28.35 → 0.28.41)
+The client is now at functional parity with the WPF harness: debug window, trade + party invite,
+auto-hunt setup (two windows), mob info at character depth + lazy drops, inventory rework (details /
+compare / bin / reusable selection popup), vendors (buy/sell + numpad + confirm), learn confirmation.
+See the [CHANGELOG](CHANGELOG.md). **Not yet playtested** — the phone was on 0.28.34 at build time.
+
+### Design ideas agreed 2026-07-23 (NOT built — start after the next playtest)
+
+**Potion rework — flat heal-over-time tiers + an instant panic potion.** Replaces the current %-heal.
+- 4 tiers: **Common** 20/s, **Uncommon** 70/s (both 15s duration / 10s cd), **Rare** 150/s (30s / 20s
+  cd), and an **Instant Healing Potion** (instant +30% max HP, 1 min cd, rare quality). cd < duration
+  on purpose (restart early = lose ~30% of the running effect; patience is rewarded).
+- A potion shares a cooldown only with **itself**; a higher tier removes a lower tier's effect (not its
+  cd); you can't drink a lower tier while a stronger one runs.
+- Rationale: flat scales across levels where % doesn't (useless early / absurd late), keeps each tier
+  relevant at its band, and is hindered by heal-reduction debuffs (⚠ verify the HoT actually runs
+  through heal-reduction) while the instant-% stays as the one debuffed-escape button.
+- **New reward economy (deferrable, after instances):** rare potions + premium consumables sold by a
+  new NPC for **boss/event/challenge points** (not premium currency), earned from bosses/instances/
+  events. Keeps rare potions out of the gold economy.
+- Then the **3-tab auto-potions window** (4 potions each with on/off + threshold; buff-potions/scrolls
+  tab with custom-cd — needed for e.g. an instant-speed potion) becomes buildable.
+
+**Auto-farm skill control (deferred).** Priority = **skill-bar slot index** (slot 1 > slot 10); a
+per-skill **custom reuse** set under the bar's Auto toggle (persistent, with a small clock glyph); a
+**cyclic vs from-1** toggle in the Auto-Farm window (`1-2-3-1-2-3` vs `1-2-1-2` — today's behaviour is
+a strict priority scan from the top); and **healing skills on their own chain** (fired by a threshold
+box in the Auto-Farm window, skipped in the damage chain).
+
 ### Playtest-5 queue (2026-07-17) — ✅ ALL BUILT (build 0/0, BalanceMatrix anchors held)
 
 Owner re-tested the playtest-4 batch: nearly all VERIFIED. What came back, and what it actually was:

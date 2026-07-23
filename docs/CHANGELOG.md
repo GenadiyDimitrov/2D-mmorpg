@@ -14,6 +14,41 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
 ---
 
+## 2026-07-23 — Unity↔WPF functional parity: batches A–F (0.28.35 → 0.28.41)
+
+The program to bring the Unity mobile client to *functional* parity with the WPF harness (agreed
+2026-07-21) reached all six batches. One batch = one commit; every batch verified by a headless
+Unity compile (the `.sln` does not build the Unity assembly).
+
+- **Debug window at full parity** (0.28.35) — six tabs (Equip / Items / Func / TP / Class / Tune),
+  read from the catalogs rather than hand-listed.
+- **Trade + party invite** (0.28.36) — both were already server-side; only the client half was
+  missing. `Boot.PartyInvite` existed and nothing had ever called it, so party was untestable from
+  the phone. Trade redraws only from the server's push (never optimistic — that's how players get
+  robbed).
+- **Auto-hunt setup, two windows** (0.28.37) — Auto-Potions (HP/MP % + on/off) and Auto-Farm (search
+  range, keep-position, engage Normal/Elite/Boss), both opened from the Menu; the on/off stays on the
+  top-right Auto button. Fixed a bug where the Auto toggle hardcoded potion/farm defaults and silently
+  wiped configured settings on every enable — the client now caches the server's config and every path
+  preserves the half it doesn't own.
+- **Mob info at character depth + a lazy Drops tab** (0.28.38) — `TargetDetails` extended with the
+  full stat layer (attributes, speeds, range, crit/vamp/regen/resist, rank). The window is two tabs;
+  the drop table is fetched **once** when the Drops tab is first opened and not again until reopened.
+- **Inventory rework** (0.28.39) — bag rows are `name (qty) [Details] [e|u]`; a details window carries
+  full enchant-scaled stats, attributes, use-skill and set info, with per-kind actions, a bin-delete,
+  and an equipment **Compare** (the worn counterpart opens alongside, marked with an orange E).
+  Introduced a reusable **selection popup** (titled list of choices).
+- **Vendors** (0.28.40) — the vendor asks Buy or Sell; buy lists wares, sell lists your sellable bag;
+  a stackable item opens a **numpad** (digits / clear / backspace / keyboard box / Max) and every deal
+  ends in a plain-text confirm. Selling was impossible from the phone before this.
+- **Learn confirmation** (0.28.41) — the Skills → Learn tab no longer spends SP on one tap; a confirm
+  window shows the change (power/MP before→after for an upgrade, or the level-1 numbers for a new
+  skill) plus the cost.
+
+Friends needed no work — `/fadd /frem /flist` already matched the WPF client (which has no friends
+window). Deferred to the potion rework: the 3-tab auto-potions expansion. See
+[Roadmap.md](Roadmap.md) for the 2026-07-23 design ideas (flat-HoT potions, auto-farm skill priority).
+
 ## 2026-07-20 — Level privacy, regen cadence, Spirit, and the Unity client
 
 - **Unity mobile client, first playable pass** — a login / character-select / in-world HUD, fixing
