@@ -462,9 +462,14 @@ namespace Game.Client
 
             var root = UiKit.Rect(UiKit.Box(_nameplateLayer, "Damage",
                                             new Color(0, 0, 0, 0), blocksInput: false).gameObject);
-            root.sizeDelta = new Vector2(160f, 34f);
+            root.sizeDelta = new Vector2(200f, 34f);
             var label = UiKit.Label(root, "", 20f, UiKit.Text, TextAlignmentOptions.Center);
             UiKit.Stretch(UiKit.Rect(label.gameObject), 0f, 0f, 0f, 0f);
+            // A hard black outline so floating text (a light-blue buff name especially) stays legible
+            // over ground that happens to be the same colour — otherwise it vanishes into the terrain.
+            label.outlineColor = new Color32(0, 0, 0, 230);
+            label.outlineWidth = 0.25f;
+            label.fontStyle = FontStyles.Bold;
 
             var created = new FloatingNumber { Root = root, Label = label };
             _floaters.Add(created);
