@@ -56,8 +56,22 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.MapHub<GameHub>("/game");
-app.MapGet("/", () => $"Game server v{Game.Shared.GameConstants.GameVersion} is running. Hub endpoint: /game");
+app.MapGet("/", () => Results.Content(
+    $"<h2>Game server v{Game.Shared.GameConstants.GameVersion}</h2>" +
+    "<p>Hub: <code>/game</code></p>" +
+    "<p><a href=\"/apk\">Download the Android client (L2Clone.apk)</a></p>", "text/html"));
 app.MapGet("/version", () => Game.Shared.GameConstants.GameVersion);
+
+// Serve the built APK so a phone on this LAN/VPN can download it straight from the browser (no adb):
+// open http://<server-ip>:5238/apk. Reuses the already-allowed game port, so no extra firewall rule.
+app.MapGet("/apk", () =>
+{
+    var apk = Path.GetFullPath(Path.Combine(
+        app.Environment.ContentRootPath, "..", "Game.Client.Unity", "builds", "L2Clone.apk"));
+    return File.Exists(apk)
+        ? Results.File(apk, "application/vnd.android.package-archive", "L2Clone.apk", enableRangeProcessing: true)
+        : Results.NotFound("APK not built yet — check back in a minute.");
+});
 
 // Fail loudly, at startup, if two skills or consumables ended up sharing a skill-bar label — the same
 // spirit as the skill-id collision guard. An ambiguous square is otherwise invisible until a player
