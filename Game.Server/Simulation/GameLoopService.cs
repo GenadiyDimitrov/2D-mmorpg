@@ -2080,11 +2080,22 @@ public class GameLoopService : BackgroundService
             return true;
         }
 
-        // Instant consumable (drink it). Healing potions share one drink cooldown; buff potions
-        // are free of it.
+        // Instant consumable (drink it). Each HEALING potion has its OWN drink cooldown (owner: a potion
+        // shares a cooldown only with itself); buff potions are free of it.
         bool healing = ItemCatalog.IsHealPotion(def);
-        if (healing && player.PotionCooldown > 0)
+        if (healing && player.PotionCooldowns.TryGetValue(def.Id, out var pcd) && pcd > 0)
             return false;
+
+        // Can't drink a WEAKER heal potion while a STRONGER one's effect is still running (owner). Refuse
+        // rather than consume it — ApplyBuff would silently ignore the weaker buff and waste the potion.
+        // (A same-tier re-drink is allowed — it restarts the HoT, losing part of it by design.)
+        if (healing && !string.IsNullOrEmpty(skill.BuffKey) && skill.Rank > 0)
+            foreach (var active in player.Buffs)
+                if (active.Key == skill.BuffKey && active.Rank > skill.Rank)
+                {
+                    SendSystemToEntity(player, $"A stronger effect ({active.Name}) is already active.");
+                    return false;
+                }
 
         // A ZERO-cast consumable still has its own reuse timer — the channelled path above set that for
         // it, so without this an instant scroll would have no cooldown at all.
@@ -2119,7 +2130,8 @@ public class GameLoopService : BackgroundService
         }
 
         ConsumeOne(player, item);
-        if (healing) player.PotionCooldown = def.PotionCooldownTicks;
+        if (healing && def.PotionCooldownTicks > 0)
+            player.PotionCooldowns[def.Id] = def.PotionCooldownTicks;
 
         SendInventory(player);
         SendPotionStatus(player);
@@ -2129,10 +2141,11 @@ public class GameLoopService : BackgroundService
 
     private void SendPotionStatus(Entity player)
     {
-        // The lingering effect is a BUFF now (it shows on the buff bar), so the only thing the
-        // potion channel still owns is the shared drink cooldown.
-        float cd = player.PotionCooldown / (float)GameConstants.TickRate;
-        SendTo(player, "Potion", new PotionStatus(cd, ""));
+        // The lingering effect is a BUFF now (it shows on the buff bar). The potion channel still owns
+        // the drink cooldowns, now PER-POTION; report the longest one remaining as the single HUD value.
+        int maxCd = 0;
+        foreach (var c in player.PotionCooldowns.Values) if (c > maxCd) maxCd = c;
+        SendTo(player, "Potion", new PotionStatus(maxCd / (float)GameConstants.TickRate, ""));
     }
 
     // ----- Trade ---------------------------------------------------------------------------
@@ -2751,13 +2764,14 @@ public class GameLoopService : BackgroundService
 
     private void AutoPotions(Entity p)
     {
-        if (p.AutoHpPotionPct > 0 && p.PotionCooldown <= 0 && p.MaxHp > 0 &&
+        // Per-potion cooldowns are enforced inside UsePotion now, so no shared pre-gate here.
+        if (p.AutoHpPotionPct > 0 && p.MaxHp > 0 &&
             p.Hp * 100 < p.MaxHp * p.AutoHpPotionPct &&
             BestHealPotion(p) is InventoryItem hpPot)
             UsePotion(p, hpPot);
 
         // MP potions don't exist as items yet — reserved plumbing (BestManaPotion returns null).
-        if (p.AutoMpPotionPct > 0 && p.PotionCooldown <= 0 && p.MaxMp > 0 &&
+        if (p.AutoMpPotionPct > 0 && p.MaxMp > 0 &&
             p.Mp * 100 < p.MaxMp * p.AutoMpPotionPct &&
             BestManaPotion(p) is InventoryItem mpPot)
             UsePotion(p, mpPot);
@@ -4331,16 +4345,22 @@ public class GameLoopService : BackgroundService
     {
         bool changed = false;
 
-        if (entity.PotionCooldown > 0)
+        // Tick down each per-potion cooldown; drop the ones that just hit 0 so the dict stays small.
+        if (entity.PotionCooldowns.Count > 0)
         {
-            entity.PotionCooldown--;
-            if (entity.PotionCooldown == 0)
-                changed = true;
+            List<string> done = null;
+            foreach (var key in entity.PotionCooldowns.Keys.ToList())
+            {
+                int v = entity.PotionCooldowns[key] - 1;
+                if (v <= 0) { (done ??= new()).Add(key); changed = true; }
+                else entity.PotionCooldowns[key] = v;
+            }
+            if (done != null) foreach (var k in done) entity.PotionCooldowns.Remove(k);
         }
 
         // The potion heal-over-time is an ordinary buff now, so TickBuffs/TickHealOverTime run it —
-        // there is no separate potion effect channel to tick any more. Only the shared drink
-        // cooldown above is still potion-specific.
+        // there is no separate potion effect channel to tick any more. Only the per-potion drink
+        // cooldowns above are still potion-specific.
         if (changed)
             SendPotionStatus(entity);
     }
@@ -6294,12 +6314,19 @@ var effect = def.Effect;
     {
         if (entity.Dead || entity.Hp >= entity.MaxHp)
             return;
-        float pct = 0f;
+        float pct = 0f, flat = 0f;
         foreach (var b in entity.Buffs)
-            if (b.Has(SkillEffect.HealOverTime)) pct += b.Percent(SkillEffect.HealOverTime);
-        if (pct <= 0f)
+            if (b.Has(SkillEffect.HealOverTime))
+            {
+                pct  += b.Percent(SkillEffect.HealOverTime);   // e.g. Warchanter Renew (% of max HP/s)
+                flat += b.Flat(SkillEffect.HealOverTime);       // the flat potion HoTs (HP/s)
+            }
+        if (pct <= 0f && flat <= 0f)
             return;
-        int heal = Math.Max(1, (int)(entity.MaxHp * pct));
+        // Flat HoT is hindered by heal-received debuffs; the % HoT is not — the same split HealOne uses,
+        // and the whole point of the flat-potion design (you can't out-heal a debuff with a flat potion,
+        // but the % channels stay reliable).
+        int heal = Math.Max(1, (int)(entity.MaxHp * pct + flat * Math.Max(0f, entity.HealReceivedMod)));
         int before = entity.Hp;
         entity.Hp = Math.Min(entity.MaxHp, entity.Hp + heal);
         int healed = entity.Hp - before;

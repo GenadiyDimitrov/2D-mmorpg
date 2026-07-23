@@ -911,7 +911,10 @@ public class Entity
     /// so TickBuffs/TickHealOverTime run it and the buff bar shows it. The bespoke
     /// PotionRarity / PotionHealPercentPerSecond / PotionEffectTicks / PotionEffectName state is
     /// gone — BuffKey + Rank already express "a stronger potion cancels a weaker one".</summary>
-    public int PotionCooldown { get; set; }
+    /// <summary>Drink cooldown PER POTION, keyed by item DefId. A potion shares a cooldown only with
+    /// ITSELF (owner, 2026-07-23), so common/uncommon/rare/instant each cool down independently. Ticks
+    /// down each tick; absent or ≤0 = ready. Runtime-only.</summary>
+    public Dictionary<string, int> PotionCooldowns { get; } = new();
 
     public bool Dead { get; set; }
 

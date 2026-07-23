@@ -329,9 +329,10 @@ public static class ItemCatalog
     // Stable string keys for hand-referenced items (potions, scrolls, legendary).
     // Weapon/armor keys are generated as "<type>_<grade>_<rarity>" — see below.
     // -----------------------------------------------------------------------
-    public const string MinorPotion = "potion_minor";
-    public const string HealingPotion = "potion_healing";
-    public const string GreaterPotion = "potion_greater";
+    public const string MinorPotion = "potion_minor";      // Common HoT
+    public const string HealingPotion = "potion_healing";  // Uncommon HoT
+    public const string GreaterPotion = "potion_greater";  // Rare HoT
+    public const string InstantPotion = "potion_instant";  // Instant %-heal panic potion
     // Buff potions (rarity = tier). Common sold by vendors; Uncommon/Rare drop.
     public const string SpeedPotionC = "potion_speed_c";
     public const string SpeedPotionU = "potion_speed_u";
@@ -584,15 +585,23 @@ public static class ItemCatalog
         // Healing potions: priced so heals are a real gold sink (~500 for the staple).
         // Healing potions: the potion NAMES a skill and the skill heals. PotionCooldownTicks is
         // what marks it a HEAL potion (the shared "one per 30s" drink rule).
-        list.Add(new ItemDef(MinorPotion, "Minor Healing Potion", EquipSlot.Consumable,
+        // Flat heal-over-time tiers (owner, 2026-07-23). PotionCooldownTicks is the PER-POTION drink
+        // cooldown (each tier independent): Common/Uncommon 10s, Rare 20s, Instant 60s. It also marks the
+        // item as a heal potion (IsHealPotion). Rarer potions restore more per second and last longer.
+        list.Add(new ItemDef(MinorPotion, "Common Healing Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Common,
-            UseSkillId: SkillCatalog.PotHealMinor, PotionCooldownTicks: 300, Value: 200));
-        list.Add(new ItemDef(HealingPotion, "Healing Potion", EquipSlot.Consumable,
+            UseSkillId: SkillCatalog.PotHealMinor, PotionCooldownTicks: 100, Value: 60));
+        list.Add(new ItemDef(HealingPotion, "Uncommon Healing Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Uncommon,
-            UseSkillId: SkillCatalog.PotHeal, PotionCooldownTicks: 300, Value: 500));
-        list.Add(new ItemDef(GreaterPotion, "Greater Healing Potion", EquipSlot.Consumable,
+            UseSkillId: SkillCatalog.PotHeal, PotionCooldownTicks: 100, Value: 250));
+        list.Add(new ItemDef(GreaterPotion, "Rare Healing Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare,
-            UseSkillId: SkillCatalog.PotHealGreater, PotionCooldownTicks: 300, Value: 1500));
+            UseSkillId: SkillCatalog.PotHealGreater, PotionCooldownTicks: 200, Value: 1500));
+        // The instant panic potion: +30% max HP, 60s cooldown, rare quality. (Meant for the future
+        // boss/challenge-point shop; a gold value stands in until that exists.)
+        list.Add(new ItemDef(InstantPotion, "Instant Healing Potion", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Rare,
+            UseSkillId: SkillCatalog.PotHealInstant, PotionCooldownTicks: 600, Value: 5000));
 
         // Return scrolls: same mechanism, but their skill has a CAST time, so double-clicking one
         // channels it. The skills are NOT learned — the ITEM is what grants them.
