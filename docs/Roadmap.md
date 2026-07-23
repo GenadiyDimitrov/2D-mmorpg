@@ -23,6 +23,16 @@ See the [CHANGELOG](CHANGELOG.md). **Not yet playtested** — the phone was on 0
 
 ### Design ideas agreed 2026-07-23 (NOT built — start after the next playtest)
 
+**Potion rework — ✅ CORE BUILT 2026-07-23 (0.28.48).** The 4 tiers, per-potion cooldowns, tier
+suppression, the flat-hindered-by-debuffs tick, and the instant potion all shipped. The instant is
+SEPARATE from the 3 tiers (no BuffKey/Rank — it neither cancels nor is cancelled). Still to do below:
+the auto-potions window's Potions tab, potions-on-the-bar, MP potions, and the boss-point shop.
+
+**MP potions (roadmap, owner 2026-07-23).** A parallel set of flat mana-over-time tiers, same shape as
+the heal potions. **Do AFTER the 3rd-class discipline kits** — those decide whether MP actually holds
+or depletes in play (and at what rate), and there's no point authoring MP-potion numbers until the MP
+economy they're meant to patch exists. The auto-potions Potions tab already reserves the MP row.
+
 **Potion rework — flat heal-over-time tiers + an instant panic potion.** Replaces the current %-heal.
 - 4 tiers: **Common** 20/s, **Uncommon** 70/s (both 15s duration / 10s cd), **Rare** 150/s (30s / 20s
   cd), and an **Instant Healing Potion** (instant +30% max HP, 1 min cd, rare quality). cd < duration
