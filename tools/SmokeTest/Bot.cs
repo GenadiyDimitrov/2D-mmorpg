@@ -42,7 +42,13 @@ static class Bot
     static bool _dead;
     static bool _autoAcceptParty = true;
     static bool _autoAcceptRes = true;
+    static bool _autoAcceptTrade = true;
     static bool _running = true;
+
+    // The bot's own inventory (from the server's Inventory push) so it can OFFER items in a trade by
+    // name — the whole point of a second player is exchanging things with the first.
+    static InventoryItemDto[] _inv = Array.Empty<InventoryItemDto>();
+    static readonly List<Guid> _tradeOffer = new();
 
     sealed class Known
     {
@@ -236,6 +242,28 @@ static class Bot
             }
         });
 
+        _hub.On<InventoryUpdate>("Inventory", u => _inv = u.Items ?? Array.Empty<InventoryItemDto>());
+
+        _hub.On<TradeRequestNotice>("TradeRequest", async n =>
+        {
+            Log($"trade request from {n.FromName}");
+            if (_autoAcceptTrade)
+            {
+                _tradeOffer.Clear();
+                await _hub.SendAsync("TradeRespond", true);
+                Log("  → accepted automatically ('autotrade off' to stop). Then: trade offer <item> / trade gold <n> / trade ready");
+            }
+        });
+
+        _hub.On<TradeStateUpdate>("Trade", s =>
+        {
+            if (!s.Active) { Log("trade: closed"); _tradeOffer.Clear(); return; }
+            string Mine(InventoryItemDto[] a) => a.Length == 0 ? "nothing"
+                : string.Join(", ", a.Select(i => (ItemCatalog.Get(i.DefId)?.Name ?? i.DefId) + (i.Quantity > 1 ? $" x{i.Quantity}" : "")));
+            Log($"trade with {s.PartnerName}: I offer [{Mine(s.MyOffer)}] +{s.MyGold}g ({(s.MyReady ? "READY" : "not ready")}); " +
+                $"they offer [{Mine(s.TheirOffer)}] +{s.TheirGold}g ({(s.TheirReady ? "READY" : "not ready")})");
+        });
+
         _hub.On<ProgressUpdate>("Progress", p => Log($"progress: Lv {p.Level}  exp {p.Exp}"));
         _hub.On<string>("ForceDisconnect", m => Log("KICKED: " + m));
         _hub.Closed += _ => { Log("connection closed"); return Task.CompletedTask; };
@@ -285,6 +313,9 @@ static class Bot
                       say <text> / world <text> / w <name> <text>
                       party invite <name> | accept | decline | leave | kick <name>
                       autoparty on|off       auto-accept invites (default on)
+                      trade <name> | accept | offer <item> [qty] | gold <n> | ready | cancel
+                      autotrade on|off       auto-accept trade requests (default on)
+                      bag                    list my inventory
                       res                    accept a resurrect offer
                       autores on|off         auto-accept resurrects (default on)
                       respawn                respawn in town after death
@@ -401,6 +432,59 @@ static class Bot
 
                 case "autoparty": _autoAcceptParty = Rest(1) != "off"; Log($"autoparty {_autoAcceptParty}"); break;
                 case "autores":   _autoAcceptRes   = Rest(1) != "off"; Log($"autores {_autoAcceptRes}"); break;
+                case "autotrade": _autoAcceptTrade = Rest(1) != "off"; Log($"autotrade {_autoAcceptTrade}"); break;
+
+                case "bag":
+                    if (_inv.Length == 0) Log("bag: empty");
+                    foreach (var it in _inv)
+                        Console.WriteLine($"    {(ItemCatalog.Get(it.DefId)?.Name ?? it.DefId),-24} " +
+                                          $"{it.DefId,-20} x{it.Quantity}{(it.Equipped ? "  (equipped)" : "")}");
+                    break;
+
+                case "trade":
+                {
+                    string sub = parts.Length > 1 ? parts[1].ToLowerInvariant() : "";
+                    switch (sub)
+                    {
+                        case "accept":  await _hub.SendAsync("TradeRespond", true); break;
+                        case "decline": await _hub.SendAsync("TradeRespond", false); break;
+                        case "ready":   await _hub.SendAsync("TradeReady"); break;
+                        case "cancel":  await _hub.SendAsync("TradeCancel"); _tradeOffer.Clear(); break;
+                        case "gold":
+                            await _hub.SendAsync("TradeGold",
+                                long.TryParse(parts.ElementAtOrDefault(2), out var g) ? g : 0L);
+                            break;
+                        case "offer":
+                        {
+                            // Add up to [qty] unequipped units of the named item to the offer, then send
+                            // the WHOLE set (the command is idempotent — the server takes the full list).
+                            string want = parts.ElementAtOrDefault(2) ?? "";
+                            int qty = int.TryParse(parts.ElementAtOrDefault(3), out var tq) ? tq : 1;
+                            int added = 0;
+                            foreach (var it in _inv)
+                            {
+                                if (added >= qty) break;
+                                if (it.Equipped) continue;
+                                bool match = it.DefId.Equals(want, StringComparison.OrdinalIgnoreCase)
+                                    || (ItemCatalog.Get(it.DefId)?.Name ?? "").Equals(want, StringComparison.OrdinalIgnoreCase);
+                                if (match && !_tradeOffer.Contains(it.InstanceId)) { _tradeOffer.Add(it.InstanceId); added++; }
+                            }
+                            if (added == 0) Log($"no unoffered '{want}' in my bag (try 'bag')");
+                            await _hub.SendAsync("TradeOffer", _tradeOffer.ToArray());
+                            break;
+                        }
+                        default:
+                        {
+                            // "trade <name>" — initiate a trade with a nearby player.
+                            var id = FindId(Rest(1));
+                            if (id is null) { Log($"no '{Rest(1)}' in view — 'trade accept|offer|gold|ready|cancel' otherwise"); break; }
+                            await _hub.SendAsync("TradeRequest", id.Value);
+                            Log($"trade requested with {Rest(1)}");
+                            break;
+                        }
+                    }
+                    break;
+                }
                 case "res":       await _hub.SendAsync("ResurrectResponse", true); break;
                 case "respawn":   await _hub.SendAsync("Respawn"); break;
                 case "pvp":       await _hub.SendAsync("TogglePvp", Rest(1) != "off"); break;
