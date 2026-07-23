@@ -6932,6 +6932,7 @@ var effect = def.Effect;
                 })
                 .ToArray();
 
+        var (hpReg, mpReg) = StandingRegen(t);
         SendTo(player, "TargetDetails", new TargetDetails(
             // Level: real for a mob, withheld for a player (see the snapshot builder) — unless you are
             // inspecting yourself, where it is your own to read.
@@ -6941,7 +6942,16 @@ var effect = def.Effect;
             (int)t.EffectiveDefence, (int)t.EffectiveMagicDefence,
             t.Accuracy, t.Evasion, t.CritChance,
             t.BowResist, t.CritRateResist,
-            passives, effects, drops));
+            passives, effects, drops,
+            // Extended: same fields the character sheet reads, off the target Entity's own getters.
+            Con: t.Con, Atk: t.AtkStat, Wit: (int)t.EffectiveWit, Dex: (int)t.EffectiveDex, Spt: (int)t.EffectiveSpt,
+            MoveSpeed: t.EffectiveSpeed, AttackSpeedMult: t.EffectiveAttackSpeedMultiplier,
+            CastSpeedMult: t.EffectiveCastSpeedMultiplier, AttackRange: t.BasicAttackRange,
+            MagicCritChance: t.MagicCritChance, CritDamage: t.CritDamageBonus,
+            MeleeVamp: t.MeleeVamp, SpellVamp: t.SpellVamp, CooldownReduction: t.CooldownReduction,
+            HpRegen: hpReg, MpRegen: mpReg,
+            InterruptResist: t.InterruptResist, CritDmgResist: t.CritDmgResist, MagicFailResist: t.MagicFailResist,
+            Rank: isMob ? t.Rank.ToString() : ""));
     }
 
     /// <summary>Roll to interrupt a cast when the caster is hit. Resist = caster

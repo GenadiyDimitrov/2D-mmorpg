@@ -194,7 +194,18 @@ public record TargetDetails(
     string[] Effects,
     // For a MOB only: its level-appropriate drop list, "ItemName (chance%)" (effective chance, after the
     // global drop-rate). Empty for players. Shown behind the [Details] button in the mob target window.
-    string[]? Drops = null);
+    string[]? Drops = null,
+    // Extended detail (appended, so older clients ignore it). Gives the inspect window the SAME depth as
+    // the character sheet — base attributes, speeds, and the whole combat layer — because "better to
+    // have the info and not need it than not have it" (owner). Rank = "Normal"/"Elite"/"Boss", "" for
+    // a player.
+    int Con = 0, int Atk = 0, int Wit = 0, int Dex = 0, int Spt = 0,
+    float MoveSpeed = 0f, float AttackSpeedMult = 1f, float CastSpeedMult = 1f, float AttackRange = 0f,
+    float MagicCritChance = 0f, float CritDamage = 0f,
+    float MeleeVamp = 0f, float SpellVamp = 0f, float CooldownReduction = 0f,
+    float HpRegen = 0f, float MpRegen = 0f,
+    int InterruptResist = 0, float CritDmgResist = 0f, float MagicFailResist = 0f,
+    string Rank = "");
 
 /// <summary>Server -> owning client: the result of an enchant attempt.</summary>
 public record EnchantResultDto(string ItemName, int NewEnchant, string Outcome, bool Destroyed);

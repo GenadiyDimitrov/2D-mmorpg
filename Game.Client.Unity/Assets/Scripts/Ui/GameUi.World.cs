@@ -263,12 +263,7 @@ namespace Game.Client
 
             // Details are PULLED — the server only sends them when asked, so there has to be an ask.
             // On its own ROW under the bar now; anchored bottom-right it overlapped the HP bar.
-            var info = UiKit.TextButton(inner, "Info", () =>
-            {
-                if (!Boot.TargetId.HasValue) return;
-                Boot.InspectTarget(Boot.TargetId.Value, _wantDrops);
-                OpenWindow(_detailsPanel);
-            }, 14f);
+            var info = UiKit.TextButton(inner, "Info", OpenTargetDetails, 14f);
             UiKit.Place(UiKit.Rect(info.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
                         new Vector2(-10f, 8f), new Vector2(76f, 28f));
 
