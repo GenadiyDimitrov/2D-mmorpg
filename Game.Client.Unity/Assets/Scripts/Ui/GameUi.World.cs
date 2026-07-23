@@ -180,6 +180,7 @@ namespace Game.Client
             BuildPartyWindow();
             BuildAutoHuntWindows();
             BuildItemWindows();
+            BuildVendorWindow();
             BuildSlotMenu();
         }
 
@@ -579,6 +580,7 @@ namespace Game.Client
             RefreshQuestWindow();
             RefreshDialogWindow();
             RefreshPartyWindow();
+            RefreshVendorWindow();
             RefreshNameplates();
 
             RefreshFeedback();

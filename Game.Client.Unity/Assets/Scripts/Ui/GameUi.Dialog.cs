@@ -114,18 +114,17 @@ namespace Game.Client
             }
 
             // ----- vendor -------------------------------------------------------------------------
+            // The vendor now ASKS buy-or-sell and hands off to the dedicated window (numpad, Max, a
+            // confirm) rather than a one-tap Buy-x1 per row — see GameUi.Vendor.cs. Selling was
+            // impossible from the phone before this.
             if (d.Shop != null && d.Shop.Items != null)
             {
                 anything = true;
-                Header(string.IsNullOrEmpty(d.Shop.Title) ? "Wares" : d.Shop.Title);
-                foreach (var item in d.Shop.Items)
-                {
-                    string defId = item.DefId;
-                    DialogRow(item.Name + "   " + item.BuyPrice.ToString("N0") + " " + GameConstants.CurrencyName,
-                              "Buy",
-                              () => Boot.BuyItem(defId, 1),
-                              Boot.Gold >= item.BuyPrice ? UiKit.Text : UiKit.TextDim);
-                }
+                Header(string.IsNullOrEmpty(d.Shop.Title) ? "Trade" : d.Shop.Title);
+                DialogRow("Buy — browse the vendor's wares", "Buy",
+                          () => OpenVendor(false), UiKit.Text);
+                DialogRow("Sell — items from your bag", "Sell",
+                          () => OpenVendor(true), UiKit.Text);
             }
 
             // ----- gatekeeper ---------------------------------------------------------------------
