@@ -625,6 +625,7 @@ namespace Game.Client
             RefreshDialogWindow();
             RefreshPartyWindow();
             RefreshVendorWindow();
+            RefreshFarmRing();
             RefreshNameplates();
 
             RefreshFeedback();

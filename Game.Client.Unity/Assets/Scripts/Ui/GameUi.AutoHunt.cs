@@ -33,8 +33,14 @@ namespace Game.Client
         // auto-farm
         private RectTransform _autoFarmPanel;
         private Button _autoStaticToggle, _autoNormalToggle, _autoEliteToggle, _autoBossToggle;
+        private Button _farmShowRangeToggle;
         private Slider _autoRangeSlider;
         private bool _autoStatic, _autoNormal, _autoElite, _autoBoss;
+
+        // farming-range ring drawn in the world (a border-only circle showing the farm radius)
+        private LineRenderer _farmRing;
+        private bool _showFarmRange;
+        private const string PrefFarmRing = "autofarm.showRange";
 
         private static readonly Color AutoOnCol  = new Color(0.20f, 0.42f, 0.24f, 0.95f);
         private static readonly Color AutoOffCol = new Color(0.42f, 0.20f, 0.20f, 0.95f);
@@ -43,6 +49,52 @@ namespace Game.Client
         {
             BuildAutoPotionsWindow();
             BuildAutoFarmWindow();
+            BuildFarmRing();
+        }
+
+        // ----- farming-range ring ----------------------------------------------------------------
+
+        private void BuildFarmRing()
+        {
+            _showFarmRange = PlayerPrefs.GetInt(PrefFarmRing, 0) == 1;
+
+            var go = new GameObject("FarmRangeRing");
+            _farmRing = go.AddComponent<LineRenderer>();
+            _farmRing.useWorldSpace = true;
+            _farmRing.loop = true;
+            _farmRing.widthMultiplier = 0.35f;
+            // The IL2CPP-safe shader (a raw Shader.Find would render magenta on the phone).
+            _farmRing.material = new Material(UnlitMaterials.Shader);
+            _farmRing.startColor = _farmRing.endColor = new Color(1f, 0.9f, 0.2f, 0.9f);
+            _farmRing.positionCount = 0;
+            go.SetActive(false);
+        }
+
+        /// <summary>Draw the farm-radius ring around the player while the toggle is on. Called each frame
+        /// from RefreshWorld. Follows the player; the static-spot centre is a later refinement.</summary>
+        private void RefreshFarmRing()
+        {
+            if (_farmRing == null) return;
+
+            var self = (_showFarmRange && Boot.Phase == ClientPhase.InWorld && Boot.Entities != null)
+                ? Boot.Entities.Find(Boot.SelfId) : null;
+            if (self == null)
+            {
+                if (_farmRing.gameObject.activeSelf) _farmRing.gameObject.SetActive(false);
+                return;
+            }
+
+            if (!_farmRing.gameObject.activeSelf) _farmRing.gameObject.SetActive(true);
+            float radius = Boot.AutoConfig.FarmRange * WorldMapper.Scale;
+            Vector3 c = self.transform.position; c.y = 0.05f;
+
+            const int segs = 64;
+            if (_farmRing.positionCount != segs) _farmRing.positionCount = segs;
+            for (int i = 0; i < segs; i++)
+            {
+                float a = i / (float)segs * Mathf.PI * 2f;
+                _farmRing.SetPosition(i, c + new Vector3(Mathf.Cos(a) * radius, 0f, Mathf.Sin(a) * radius));
+            }
         }
 
         // ----- auto-potions ----------------------------------------------------------------------
@@ -142,6 +194,14 @@ namespace Game.Client
                         new Vector2(330f, y - 8f), new Vector2(300f, 30f));
             y -= 54f;
 
+            // Show/hide the farm-range ring in the world (client-only, persisted).
+            _farmShowRangeToggle = ToggleButton(inner, new Vector2(330f, y), () =>
+            {
+                _showFarmRange = !_showFarmRange;
+                PlayerPrefs.SetInt(PrefFarmRing, _showFarmRange ? 1 : 0);
+                RefreshAutoLabels();
+            }, 290f);
+
             var engage = UiKit.Label(inner, "Engage which ranks:", 14f, UiKit.Accent);
             UiKit.Place(UiKit.Rect(engage.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(18f, y), new Vector2(400f, 22f));
@@ -205,6 +265,7 @@ namespace Game.Client
             SetToggle(_autoNormalToggle, _autoNormal, "Normal mobs");
             SetToggle(_autoEliteToggle,  _autoElite,  "Elite mobs");
             SetToggle(_autoBossToggle,   _autoBoss,   "Boss mobs");
+            SetToggle(_farmShowRangeToggle, _showFarmRange, "Show range");
         }
 
         private static void SetToggle(Button button, bool on, string name)
