@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.28.59";
+    public const string GameVersion = "0.28.60";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -121,6 +121,14 @@ public static class GameConstants
     /// centre (24000,24000). All WorldMap coordinates were scaled ×2 to match.</summary>
     public const float ZoneWidth = 48000f;
     public const float ZoneHeight = 48000f;
+
+    /// <summary>The world's NEGATIVE-coordinate floor. The overworld lives in [0, Zone*]; the negative
+    /// quadrant is reserved for DUNGEONS and JAIL (owner) — special areas you reach by teleport, kept out
+    /// of the positive overworld. Position clamps use [WorldMin*, Zone*], and the cell grid (a sparse
+    /// dictionary) buckets negative coordinates into their own negative cells. It's all data — widen this
+    /// as more instanced content is added.</summary>
+    public const float WorldMinX = -48000f;
+    public const float WorldMinY = -48000f;
 
     /// <summary>Base/maximum player movement speed in units per second.</summary>
     public const float BasePlayerSpeed = 250f;
@@ -312,9 +320,10 @@ public static class GameConstants
 
     // ----- Admin / jail (Phase 5) ----------------------------------------------
 
-    /// <summary>Jail is a corner of the map; jailed players are pinned here.</summary>
-    public const float JailX = 500f;
-    public const float JailY = 500f;
+    /// <summary>Jail sits in the NEGATIVE quadrant (owner: dungeons + jail live at minus coordinates,
+    /// away from the overworld). Jailed players are pinned to this circle.</summary>
+    public const float JailX = -4000f;
+    public const float JailY = -4000f;
 
     /// <summary>How far a jailed player may wander from the jail centre. Serving a sentence should feel
     /// like a CELL, not paralysis — they can walk around inside it; everything else (chat, skills, items,

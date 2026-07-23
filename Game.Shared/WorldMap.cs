@@ -121,20 +121,20 @@ public static class WorldMap
             MobTypes: new[] { "fen_lizardman", "cursed_blade", "wildhorn_scout" }, MaxCount: 7,
             RespawnSeconds: 22, RespawnVariance: 7),
 
-        // ===== DUNGEON: Hollow Crypt (NW corner, OFF the town ring) =====
-        // A dungeon is just a SpawnZone cluster away from the ring with an ENTRANCE safe zone (below),
-        // so any gatekeeper offers it and the existing engine runs it for free. Harder ELITE rooms
-        // (level 44-48) that respawn normally, ending in a boss. Normal drops (unlike an instance).
-        new(X: 7200,  Y: 6500,  Radius: 350, MinLevel: 44, MaxLevel: 44,
+        // ===== DUNGEON: Hollow Crypt — in the NEGATIVE quadrant (owner: dungeons live at minus coords,
+        // reached by teleport, off the overworld). A dungeon is just a SpawnZone cluster + an ENTRANCE
+        // safe zone (below); any gatekeeper teleports you to it. Harder ELITE rooms (level 44-48) that
+        // respawn normally, ending in a boss. Normal drops (unlike an instance). Its field wraps these.
+        new(X: -10800, Y: -11500, Radius: 350, MinLevel: 44, MaxLevel: 44,
             MobTypes: new[] { "hollow_one" }, MaxCount: 6,
             RespawnSeconds: 60, RespawnVariance: 15, Rank: MobRank.Elite),
-        new(X: 8400,  Y: 7000,  Radius: 350, MinLevel: 45, MaxLevel: 45,
+        new(X: -9600,  Y: -11000, Radius: 350, MinLevel: 45, MaxLevel: 45,
             MobTypes: new[] { "grave_robber_fighter" }, MaxCount: 6,
             RespawnSeconds: 60, RespawnVariance: 15, Rank: MobRank.Elite),
-        new(X: 9600,  Y: 7500,  Radius: 350, MinLevel: 46, MaxLevel: 46,
+        new(X: -8400,  Y: -10500, Radius: 350, MinLevel: 46, MaxLevel: 46,
             MobTypes: new[] { "dread_knight" }, MaxCount: 5,
             RespawnSeconds: 90, RespawnVariance: 20, Rank: MobRank.Elite),
-        new(X: 10800, Y: 8000,  Radius: 300, MinLevel: 48, MaxLevel: 48,
+        new(X: -7200,  Y: -10000, Radius: 300, MinLevel: 48, MaxLevel: 48,
             MobTypes: new[] { "grave_lich" }, MaxCount: 1,
             RespawnSeconds: 30 * 60, RespawnVariance: 5 * 60, Rank: MobRank.Boss),
     };
@@ -166,10 +166,11 @@ public static class WorldMap
         // leaving the dummies. Sits just SOUTH of the dummy row (they're at y=4000, radius 200),
         // clear of them — a safe zone keeps mobs out, and the dummies ARE mobs.
         new("outpost_training", "Training Outpost", 24000, 5000, 400),
-        // The Hollow Crypt dungeon ENTRANCE (NW corner). Being a safe zone makes it a teleport
-        // destination from every gatekeeper automatically (TeleportDestinationsFrom default), and gives
-        // a safe spot to arrive/regroup before the elite rooms just east of it.
-        new("dungeon_hollow_crypt", "Hollow Crypt", 6000, 6000, 500),
+        // The Hollow Crypt dungeon ENTRANCE, in the negative quadrant with the dungeon. Being a safe zone
+        // makes it a teleport destination from every gatekeeper automatically (TeleportDestinationsFrom
+        // default) — that teleport IS how you reach the dungeon now — and a safe arrive/regroup spot
+        // before the elite rooms just NE of it.
+        new("dungeon_hollow_crypt", "Hollow Crypt", -12000, -12000, 500),
     };
 
     /// <summary>The STARTER town (map centre). Used where "nearest" would leak information — a player

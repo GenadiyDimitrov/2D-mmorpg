@@ -13,19 +13,16 @@ public class CellGrid
 {
     private readonly Dictionary<(int, int), HashSet<Entity>> _cells = new();
     private readonly float _cellSize;
-    private readonly int _cols;
-    private readonly int _rows;
 
-    public CellGrid(float width, float height, float cellSize)
-    {
-        _cellSize = cellSize;
-        _cols = (int)MathF.Ceiling(width / cellSize);
-        _rows = (int)MathF.Ceiling(height / cellSize);
-    }
+    // width/height are no longer needed to size a fixed grid (the dictionary is sparse and unbounded, so
+    // it spans the negative quadrant for free) — kept in the signature so callers/World.cs stay unchanged.
+    public CellGrid(float width, float height, float cellSize) => _cellSize = cellSize;
 
+    // FLOOR, not truncation + clamp: the grid is a sparse dictionary, so negative coordinates (the
+    // dungeon/jail quadrant) get their OWN negative cells instead of being clamped into cell 0 alongside
+    // the overworld corner. Floor(-0.2) = -1 is the correct bucket; (int)(-0.2) = 0 would not be.
     public (int, int) CellOf(float x, float y) =>
-        ((int)Math.Clamp(x / _cellSize, 0, _cols - 1),
-         (int)Math.Clamp(y / _cellSize, 0, _rows - 1));
+        ((int)MathF.Floor(x / _cellSize), (int)MathF.Floor(y / _cellSize));
 
     public void Add(Entity e)
     {

@@ -148,11 +148,12 @@ public static class RegionMap
             new[] { new Vec2(18350, 44200), new Vec2(19400, 43100), new Vec2(28600, 43100), new Vec2(29650, 44200), new Vec2(29650, 45800), new Vec2(28600, 46900), new Vec2(19400, 46900), new Vec2(18350, 45800) },
             new[] { new Vec2(20500, 45000), new Vec2(27500, 45000) }),
 
-        // Hollow Crypt — the DUNGEON field (band 44-48): the elite rooms + the grave-lich boss. Its
-        // entrance safe zone (dungeon_hollow_crypt) sits just west as a separate island.
+        // Hollow Crypt — the DUNGEON field (band 44-48), in the NEGATIVE quadrant (owner: dungeons live at
+        // minus coords, off the overworld, reached by teleport). Elite rooms + the grave-lich boss; its
+        // entrance safe zone (dungeon_hollow_crypt) sits just SW as a separate island.
         new("field_dungeon", "Hollow Crypt", RegionKind.Field,
-            new[] { new Vec2(6150, 6050), new Vec2(6600, 5600), new Vec2(7200, 5550), new Vec2(10250, 6650), new Vec2(11450, 7350), new Vec2(11850, 7800), new Vec2(11800, 8400), new Vec2(11400, 8850), new Vec2(10850, 8900), new Vec2(9450, 8550), new Vec2(6500, 7200), new Vec2(6100, 6700) },
-            new[] { new Vec2(8400, 7000), new Vec2(9600, 7500) }),
+            new[] { new Vec2(-11850, -11950), new Vec2(-11400, -12400), new Vec2(-10800, -12450), new Vec2(-7750, -11350), new Vec2(-6550, -10650), new Vec2(-6150, -10200), new Vec2(-6200, -9600), new Vec2(-6600, -9150), new Vec2(-7150, -9100), new Vec2(-8550, -9450), new Vec2(-11500, -10800), new Vec2(-11900, -11300) },
+            new[] { new Vec2(-9600, -11000), new Vec2(-8400, -10500) }),
     };
 
     /// <summary>
@@ -172,7 +173,7 @@ public static class RegionMap
         Town("town_duskvale",    "Duskvale",        12000, 33000, 2000),
         Town("town_frostmere",   "Frostmere",       12000, 15000, 2000),
         Town("outpost_training", "Training Outpost", 24000, 5000, 400),
-        Town("dungeon_hollow_crypt", "Hollow Crypt",  6000, 6000, 500),
+        Town("dungeon_hollow_crypt", "Hollow Crypt",  -12000, -12000, 500),
     };
 
     /// <summary>An octagon centred on (cx,cy) INSCRIBED in the safe circle of radius r (its corners

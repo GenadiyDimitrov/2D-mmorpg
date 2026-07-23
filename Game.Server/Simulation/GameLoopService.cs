@@ -215,8 +215,8 @@ public class GameLoopService : BackgroundService
         else
         {
             // Spawn position: where they logged off, nudged into the world bounds.
-            entity.X = Math.Clamp(entity.X, 0, GameConstants.ZoneWidth);
-            entity.Y = Math.Clamp(entity.Y, 0, GameConstants.ZoneHeight);
+            entity.X = Math.Clamp(entity.X, GameConstants.WorldMinX, GameConstants.ZoneWidth);
+            entity.Y = Math.Clamp(entity.Y, GameConstants.WorldMinY, GameConstants.ZoneHeight);
             _world.Entities[entity.Id] = entity;
             _world.Grid.Add(entity);
             // Anchor the static-spot centre at the login position (persisted auto-hunt has no saved centre).
@@ -687,8 +687,8 @@ public class GameLoopService : BackgroundService
         entity.QueuedSkillId = null;
         entity.FollowTargetId = null;   // a manual move breaks a follow
 
-        float tx = Math.Clamp(move.Move.TargetX, 0, GameConstants.ZoneWidth);
-        float ty = Math.Clamp(move.Move.TargetY, 0, GameConstants.ZoneHeight);
+        float tx = Math.Clamp(move.Move.TargetX, GameConstants.WorldMinX, GameConstants.ZoneWidth);
+        float ty = Math.Clamp(move.Move.TargetY, GameConstants.WorldMinY, GameConstants.ZoneHeight);
 
         // JAILED players may walk, but only inside the cell (owner): clamp the destination back onto the
         // jail circle instead of rejecting the move outright, so they can pace around rather than stand
@@ -1520,8 +1520,8 @@ public class GameLoopService : BackgroundService
     private void HandleDebugTeleport(DebugTeleportCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
-        player.X = Math.Clamp(cmd.X, 0, GameConstants.ZoneWidth);
-        player.Y = Math.Clamp(cmd.Y, 0, GameConstants.ZoneHeight);
+        player.X = Math.Clamp(cmd.X, GameConstants.WorldMinX, GameConstants.ZoneWidth);
+        player.Y = Math.Clamp(cmd.Y, GameConstants.WorldMinY, GameConstants.ZoneHeight);
         player.TargetX = null;
         player.TargetY = null;
         _world.Grid.UpdatePosition(player);
@@ -4564,8 +4564,8 @@ public class GameLoopService : BackgroundService
                 }
             }
 
-            tx = Math.Clamp(tx, 0, GameConstants.ZoneWidth);
-            ty = Math.Clamp(ty, 0, GameConstants.ZoneHeight);
+            tx = Math.Clamp(tx, GameConstants.WorldMinX, GameConstants.ZoneWidth);
+            ty = Math.Clamp(ty, GameConstants.WorldMinY, GameConstants.ZoneHeight);
             if (!GameConstants.InSafeZone(tx, ty))
             {
                 mob.TargetX = tx;
@@ -5574,8 +5574,8 @@ var effect = def.Effect;
     /// the interest grid. Used by blink (caster) and knockback (target).</summary>
     private void PlaceEntity(Entity e, float x, float y)
     {
-        e.X = Math.Clamp(x, 0f, GameConstants.ZoneWidth);
-        e.Y = Math.Clamp(y, 0f, GameConstants.ZoneHeight);
+        e.X = Math.Clamp(x, GameConstants.WorldMinX, GameConstants.ZoneWidth);
+        e.Y = Math.Clamp(y, GameConstants.WorldMinY, GameConstants.ZoneHeight);
         e.TargetX = null;
         e.TargetY = null;
         _world.Grid.UpdatePosition(e);
@@ -7660,8 +7660,8 @@ var effect = def.Effect;
 
         player.Gold -= fee;
         // Reposition to the destination centre (small scatter so players don't stack).
-        player.X = Math.Clamp(dest.X + _rng.Next(-150, 150), 0, GameConstants.ZoneWidth);
-        player.Y = Math.Clamp(dest.Y + _rng.Next(-150, 150), 0, GameConstants.ZoneHeight);
+        player.X = Math.Clamp(dest.X + _rng.Next(-150, 150), GameConstants.WorldMinX, GameConstants.ZoneWidth);
+        player.Y = Math.Clamp(dest.Y + _rng.Next(-150, 150), GameConstants.WorldMinY, GameConstants.ZoneHeight);
         player.TargetX = null;
         player.TargetY = null;
         _world.Grid.UpdatePosition(player);
