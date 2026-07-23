@@ -4,6 +4,9 @@ Development TODO for game systems / in-game functions, bucketed by time horizon.
 This is the "what to build" list (the "what to verify" list is `docs/testing/TestChecklist.md`).
 Claude keeps this updated as work moves between buckets.
 
+> **For a one-screen digest** — what's left, what's deferred, what depends on what, and what's next —
+> see **[RoadmapNext.md](RoadmapNext.md)**. This file is the full detail.
+
 Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` done (kept briefly for context).
 
 **Version: `GameConstants.GameVersion` (currently 0.27.0).** Single shared constant; shown on login +
@@ -20,6 +23,12 @@ The client is now at functional parity with the WPF harness: debug window, trade
 auto-hunt setup (two windows), mob info at character depth + lazy drops, inventory rework (details /
 compare / bin / reusable selection popup), vendors (buy/sell + numpad + confirm), learn confirmation.
 See the [CHANGELOG](CHANGELOG.md). **Not yet playtested** — the phone was on 0.28.34 at build time.
+
+### Playtest-10 + features BUILT 2026-07-23 (0.28.42 → 0.28.55) — awaiting playtest
+Playtest-10 fixes, flat HoT potions (+ instant) + auto-potions Potions tab + potions-on-bar, equipment
+presets, **Hollow Crypt dungeon**, **regions stage 2** (non-overlapping), **leaderboards**, **3h break
+reminder**, **equipment folded into the bag**, **all target commands as buttons**. See the
+[CHANGELOG](CHANGELOG.md). **Deferred:** the bot-prevention CAPTCHA (see [RoadmapNext.md](RoadmapNext.md)).
 
 ### Design ideas agreed 2026-07-23 (NOT built — start after the next playtest)
 

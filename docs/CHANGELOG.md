@@ -14,6 +14,45 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
 ---
 
+## 2026-07-23 — Playtest-10 fixes, potion rework, dungeon, regions, leaderboards (0.28.42 → 0.28.55)
+
+Driven by on-phone playtests over VPN. Every entry verified by a headless Unity compile + `dotnet
+build`; the server/client were rebuilt between rounds, never mid-test.
+
+- **Playtest-10 round 1–2** (0.28.42–0.28.46) — click-through fixed (the press, not the release,
+  decides whether a tap was over UI); the party window stops going stale on a member's leave/kick
+  (client clears transients on entry, server pushes an empty party on entry); speed=1 rubber-band
+  fixed (`ToLean` sends `EffectiveSpeed`, so walk/slow/stun predict correctly); **sit mechanics**
+  (sitting freezes movement, standing has a recovery window); `/tpme`; **change-leader**; a 250-slot
+  bag where **worn gear takes no slot** and unequipped gear lives in the Items bag; a hidden-by-default
+  fast-delete toggle; party **buff/debuff view**; floating combat text for buffs/heals; the loot-vote
+  bot for headless party tests.
+- **Auto-farm range ring** (0.28.47) — a ground circle showing the search radius.
+- **Flat heal-over-time potions** (0.28.48–0.28.49) — three tiers (Common/Uncommon/Rare) heal a FLAT
+  amount over time as an ordinary buff, plus a separate **instant** panic potion that does not cancel
+  them. An Auto-Potions **Potions tab** picks the tier per HP threshold, and potions can go on the
+  quick-use bar as `item:<id>` tokens.
+- **Equipment presets + paper-doll** (0.28.50) — save/restore worn gear as A/B/C loadouts (server
+  refuses in combat), persisted in a new `EquipPresetsJson` column.
+- **Hollow Crypt dungeon** (0.28.51) — elite rooms + a boss in the NW corner off the town ring, with
+  an entrance safe zone; any gatekeeper offers it and the existing engine runs it.
+- **Regions stage 2** (0.28.52) — towns became polygons; the safe zone is the UNION of the old circle
+  and the town polygon; "you entered X" entry banners; region outlines on the ground.
+- **Stand-up no longer rubber-bands** (0.28.53) — the recovery window gates actions, not movement, so
+  standing never zeroes your speed under the client's prediction.
+- **Leaderboards, break reminder, non-overlapping regions** (0.28.54) — a Menu → **Rank** window with
+  five boards (Level / Wealth / PvP / PK / Time played), read from the DB off the loop; the #1 of each
+  earns an honorary title. A **3h "take a break"** banner every 3h of continuous play (persisted
+  online time). Field polygons pushed clear of the town safe-circles and town octagons inscribed in
+  the circle, so regions no longer overlap (verified by a geometry script).
+- **Equipment folds into the bag; every target command is a button** (0.28.55) — the standalone
+  Equipment window is gone; the bag's **Equip** toggle expands the window to reveal a compact
+  paper-doll column with the presets. Follow/Assist (the server always had them) and
+  Trade/Party/Target-closest now work from the bar dispatcher, and the target frame shows a contextual
+  Attack / Follow / Assist / Party / Trade / Info grid.
+
+---
+
 ## 2026-07-23 — Unity↔WPF functional parity: batches A–F (0.28.35 → 0.28.41)
 
 The program to bring the Unity mobile client to *functional* parity with the WPF harness (agreed

@@ -258,6 +258,49 @@ Everything below shipped in one build cycle to reach WPF *functional* parity. Te
 - [ ] Target another player → **Party** invites; **Trade** opens the trade window. Offer items + gold,
       both sides Ready → the swap happens; Cancel/close leaves the trade cleanly.
 
+## 13. Playtest-10 + features (0.28.42 → 0.28.55) — NOT YET TESTED (VPN proof-of-concept only, 2026-07-23)
+
+The 2026-07-23 evening test only proved the VPN download/play path. Everything below is unverified.
+
+**Movement / sit (0.28.45, 0.28.53):**
+- [ ] Speed changes (walk, slow, stun) no longer **rubber-band** — you predict at the right speed.
+- [ ] **Sit** freezes movement; **standing** lets you walk immediately (no 3s freeze) but you can't
+      attack/cast for the recovery window. Standing never yanks you back.
+
+**Potions (0.28.48–0.28.49):**
+- [ ] The three flat HoT potions (Common/Uncommon/Rare) heal a flat amount over time; a stronger tier
+      **replaces** a weaker running one; the **instant** potion heals at once and does **not** cancel a HoT.
+- [ ] Per-potion cooldowns are independent; **Auto Pots → Potions tab** picks a tier per HP threshold.
+- [ ] A potion placed on the quick-use bar (`item:` token) drinks from any stack of it.
+
+**Equipment presets + paper-doll in the bag (0.28.50, 0.28.55):**
+- [ ] Bag **Equip** toggle widens the window and shows the worn-gear paper-doll column + A/B/C presets.
+      Collapsing narrows it again. Tapping a filled square opens item details (Unequip).
+- [ ] **Save** stores the worn set into A/B/C; **Equip** re-wears it (refused in combat, reports skipped);
+      **To bar** drops a `preset:` token; a preset survives a relog (`EquipPresetsJson`).
+
+**Dungeon (0.28.51):**
+- [ ] A gatekeeper lists **Hollow Crypt**; teleporting there lands at the entrance safe zone; the elite
+      rooms + boss are present at level 44–48.
+
+**Regions (0.28.52, 0.28.54):**
+- [ ] Crossing into a field/town shows the **"You entered X"** banner (with the level band for fields).
+- [ ] Region **outlines** on the ground follow the zone-colours toggle; towns are muted steel-blue,
+      fields amber, and **no field overlaps a town**.
+
+**Leaderboards + break reminder (0.28.54):**
+- [ ] **Menu → Rank** opens five boards (Level / Wealth / PvP / PK / Time played); each lists the top
+      players; the #1 shows an honorary title; empty boards say so.
+- [ ] After ~3h online a **"take a break"** banner appears (hard to test quickly — trust the wiring).
+
+**All commands as buttons (0.28.55):**
+- [ ] Target a mob → **Attack** / **Info** buttons. Target a player → **Attack / Follow / Assist /
+      Party / Trade**; never on yourself. Each does what it says.
+- [ ] The same actions placed on the **bar** work too (Trade / Party / Follow / Assist / Target-closest
+      no longer say "not available on the phone").
+- [ ] **Target-closest** selects the nearest enemy; pressing again steps to the next.
+- [ ] Party window (as leader): **Kick** and **Lead** (change leader) buttons act on a member.
+
 ## Known gaps (NOT bugs — not built yet in the Unity client)
 
 Don't file these; they're scope, not defects. The Unity client is a viewport, not the WPF harness.
