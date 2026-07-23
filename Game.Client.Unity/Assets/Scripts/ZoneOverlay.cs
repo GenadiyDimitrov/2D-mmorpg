@@ -33,10 +33,9 @@ namespace Game.Client
                      "Zone " + zone.MinLevel + "-" + zone.MaxLevel);
             }
 
-            // Towns last so they draw ON TOP of any spawn zone that overlaps them — a town you cannot
-            // pick out is worse than no overlay at all.
-            foreach (var town in WorldMap.SafeZones)
-                Disc(town.X, town.Y, town.Radius, TownColour, 0.015f, "Town " + town.Name);
+            // Towns are no longer drawn here — the region system paints each town as a neutral "island"
+            // fill on top of its wrapping field (GameUi.Regions). Only spawn zones OUTSIDE any field
+            // (isolated bosses, the dungeon) still fall through to a circle above.
         }
 
         /// <summary>Green (low) → yellow → orange → red (high). Deliberately the same reading as the

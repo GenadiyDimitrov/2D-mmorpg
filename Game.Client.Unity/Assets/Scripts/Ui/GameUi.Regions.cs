@@ -84,11 +84,14 @@ namespace Game.Client
             {
                 if (region.Outline == null || region.Outline.Length < 3) continue;
 
-                // FIELDS get a filled polygon coloured by their LEVEL band — this is the field colour the
-                // owner asked for, replacing the spawn-zone circles (ZoneOverlay skips the circles a field
-                // covers). Towns are left as an outline only.
+                // FIELDS get a filled polygon coloured by their LEVEL band — the field colour that
+                // replaces the spawn-zone circles. TOWNS get a neutral fill drawn ON TOP (higher y), which
+                // masks the field colour under a town so it reads as an island/lake in the field — the
+                // "donut" look without a donut polygon. Gameplay containment is separate (At() = town first).
                 if (region.Kind == RegionKind.Field)
-                    BuildRegionFill(region);
+                    BuildRegionFill(region, ColourForLevel(RegionMap.LevelBand(region.Id)?.Max ?? 1), 0.02f);
+                else
+                    BuildRegionFill(region, new Color(0.28f, 0.30f, 0.35f), 0.03f);   // town island: calm slate
 
                 var go = new GameObject(region.Id);
                 go.transform.SetParent(_regionOutlines.transform, false);
@@ -113,20 +116,18 @@ namespace Game.Client
             _regionOutlines.SetActive(false);
         }
 
-        /// <summary>A flat filled polygon on the ground, coloured by the field's LEVEL band (same green→
-        /// red reading as the nameplate colours and the old zone discs). Triangulated as a fan and made
-        /// double-sided so it shows regardless of the outline's winding.</summary>
-        private void BuildRegionFill(Region region)
+        /// <summary>A flat filled polygon on the ground at height <paramref name="height"/>. Triangulated
+        /// as a fan (the outlines are convex) and made double-sided so it shows regardless of winding.
+        /// Fields use their level colour at a low y; towns use a neutral fill at a higher y so they mask
+        /// the field beneath them (the island look).</summary>
+        private void BuildRegionFill(Region region, Color col, float height)
         {
-            var band = RegionMap.LevelBand(region.Id);
-            Color col = ColourForLevel(band?.Max ?? 1);
-
             var poly = region.Outline;
             var verts = new Vector3[poly.Length];
             for (int i = 0; i < poly.Length; i++)
             {
                 var u = WorldMapper.ToUnity(poly[i].X, poly[i].Y);
-                u.y = 0.02f;                     // above the ground, below the 0.06 outline
+                u.y = height;                    // fields low (0.02), towns higher (0.03) to mask the field
                 verts[i] = u;
             }
 

@@ -86,62 +86,59 @@ public sealed record Region(
 public static class RegionMap
 {
     /// <summary>
-    /// Hunting fields. Outlines are deliberately irregular — the point of the exercise is that the map
-    /// stops looking like scattered circles.
+    /// Hunting fields — ONE per town, each a convex polygon that WRAPS the town and covers its nearby
+    /// spawners, so the whole map reads as filled fields (owner: "switch to fields"). The town sits
+    /// INSIDE its field like an island: `At()` checks towns first, so gameplay containment is correct
+    /// (in the town = the town, step out = the field), and the client masks the field colour under the
+    /// town so it reads as a lake/island — no "donut" polygon needed.
     ///
-    /// These cover the EXISTING spawn zones around the starter town; the remaining bands are data work
-    /// rather than engineering, and a field with no outline authored yet simply has no region (its
-    /// spawners keep working exactly as they do today).
+    /// The outlines are GENERATED (convex hull of the town + its spawner circles, inflated), verified by
+    /// `tools`-side geometry: every field contains its spawners + town centre and no two fields overlap.
+    /// The FILL colour is derived from the spawners the field contains (green→red by level), never
+    /// authored. Isolated spawns with no nearby town (the far bosses, the Hollow Crypt dungeon) keep
+    /// their circles until they get a field of their own.
     /// </summary>
     public static readonly Region[] Fields =
     {
-        // West of Brackenford — the level 1-8 slopes. Wraps the two starter spawners.
-        new("field_hollow", "Bracken Hollow", RegionKind.Field,
-            new[]
-            {
-                new Vec2(16800, 21200), new Vec2(20600, 20400), new Vec2(20000, 22500),
-                new Vec2(20700, 26600), new Vec2(18200, 27200), new Vec2(16400, 24600),
-            },
-            new[] { new Vec2(18600, 22400), new Vec2(19400, 25600) }),
+        // Bracken Reach — wraps Brackenford (band 1-10)
+        new("field_brackenford", "Bracken Reach", RegionKind.Field,
+            new[] { new Vec2(17250, 23250), new Vec2(18250, 22200), new Vec2(23300, 17350), new Vec2(24700, 17350), new Vec2(29750, 22200), new Vec2(30750, 23250), new Vec2(30750, 24750), new Vec2(29750, 25800), new Vec2(25750, 28200), new Vec2(22250, 28200), new Vec2(18250, 25800), new Vec2(17250, 24750) },
+            new[] { new Vec2(19400, 24000), new Vec2(28600, 24000) }),
 
-        // East of Brackenford — the level 4-10 wolds.
-        new("field_wolds", "Ashen Wolds", RegionKind.Field,
-            new[]
-            {
-                new Vec2(27000, 20600), new Vec2(31400, 21400), new Vec2(32200, 24800),
-                new Vec2(30600, 27400), new Vec2(27400, 26800), new Vec2(28200, 23400),
-            },
-            new[] { new Vec2(29000, 22600), new Vec2(30200, 25400) }),
+        // Stonewatch Wilds — wraps Stonewatch (band 10-22)
+        new("field_stonewatch", "Stonewatch Wilds", RegionKind.Field,
+            new[] { new Vec2(18200, 7450), new Vec2(19300, 6350), new Vec2(20800, 6250), new Vec2(28800, 8500), new Vec2(29850, 9650), new Vec2(29850, 11250), new Vec2(28750, 12400), new Vec2(27250, 12450), new Vec2(22950, 12600), new Vec2(19150, 10150), new Vec2(18150, 9050) },
+            new[] { new Vec2(20400, 8400), new Vec2(27600, 10400) }),
 
-        // North approach out of Brackenford — wraps the Lv 8-10 spawner at (24000, 19400).
-        // NOTE: the first draft of this outline stopped at y=19200 and therefore contained NOTHING,
-        // 200 units short. The startup report caught it on the first run; by eye the polygon looked
-        // fine. Author outlines against the spawner coordinates, not against intuition.
-        new("field_downs", "Winterward Downs", RegionKind.Field,
-            new[]
-            {
-                new Vec2(21400, 15600), new Vec2(26600, 15200), new Vec2(28000, 18600),
-                new Vec2(26200, 20050), new Vec2(21800, 20050), new Vec2(20600, 18200),
-            },
-            new[] { new Vec2(23800, 17600) }),
+        // Emberfall Barrens — wraps Emberfall (band 22-34)
+        new("field_emberfall", "Emberfall Barrens", RegionKind.Field,
+            new[] { new Vec2(30850, 11400), new Vec2(31950, 10250), new Vec2(33500, 10200), new Vec2(40200, 14600), new Vec2(41250, 15750), new Vec2(41200, 17350), new Vec2(40100, 18500), new Vec2(38550, 18550), new Vec2(34950, 17600), new Vec2(33400, 16050), new Vec2(30800, 12950) },
+            new[] { new Vec2(33000, 12400), new Vec2(39000, 16400) }),
 
-        // The road north to Stonewatch — the Lv 16-22 band at (27600, 10400).
-        new("field_marches", "Sundered Marches", RegionKind.Field,
-            new[]
-            {
-                new Vec2(26600, 7900), new Vec2(29800, 7600), new Vec2(31400, 10800),
-                new Vec2(29600, 13400), new Vec2(26600, 12600), new Vec2(26900, 11200),
-            },
-            new[] { new Vec2(27400, 9600), new Vec2(28600, 12000) }),
+        // Greymarsh Fens — wraps Greymarsh (band 34-46)
+        new("field_greymarsh", "Greymarsh Fens", RegionKind.Field,
+            new[] { new Vec2(30850, 29400), new Vec2(31950, 28250), new Vec2(33500, 28200), new Vec2(37050, 30400), new Vec2(40250, 33300), new Vec2(41250, 34400), new Vec2(41200, 36000), new Vec2(40100, 37100), new Vec2(38550, 37200), new Vec2(34950, 35600), new Vec2(33400, 34050), new Vec2(30800, 30950) },
+            new[] { new Vec2(33000, 30400), new Vec2(39000, 35000) }),
 
-        // A peaceful one, to prove a region needs no spawners at all: the lake south of the centre.
-        new("field_mirrorlake", "Mirror Lake", RegionKind.Field,
-            new[]
-            {
-                new Vec2(22600, 28200), new Vec2(25600, 28000), new Vec2(26400, 30600),
-                new Vec2(24200, 31800), new Vec2(22000, 30400),
-            },
-            new[] { new Vec2(24200, 29800) }),
+        // Ironreach Marches — wraps Ironreach Keep (band 46-58)
+        new("field_ironreach", "Ironreach Marches", RegionKind.Field,
+            new[] { new Vec2(18150, 39400), new Vec2(19150, 38250), new Vec2(22850, 35200), new Vec2(25150, 35200), new Vec2(28850, 38250), new Vec2(29850, 39400), new Vec2(29800, 40950), new Vec2(28700, 42100), new Vec2(19300, 42100), new Vec2(18200, 40950) },
+            new[] { new Vec2(20400, 40000), new Vec2(27600, 40000) }),
+
+        // Duskvale Hollows — wraps Duskvale (band 58-70)
+        new("field_duskvale", "Duskvale Hollows", RegionKind.Field,
+            new[] { new Vec2(6850, 29400), new Vec2(7950, 28250), new Vec2(9500, 28200), new Vec2(13050, 30400), new Vec2(14600, 31950), new Vec2(16600, 35100), new Vec2(16550, 36650), new Vec2(15400, 37750), new Vec2(13850, 37800), new Vec2(10950, 35600), new Vec2(9400, 34050), new Vec2(6800, 30950) },
+            new[] { new Vec2(14400, 35600), new Vec2(9000, 30400) }),
+
+        // Frostmere Wastes — wraps Frostmere (band 70-85; also covers the emberwyrm elite)
+        new("field_frostmere", "Frostmere Wastes", RegionKind.Field,
+            new[] { new Vec2(6800, 17050), new Vec2(10850, 9250), new Vec2(11250, 8850), new Vec2(11850, 8850), new Vec2(15400, 10250), new Vec2(16550, 11350), new Vec2(16600, 12900), new Vec2(14600, 16050), new Vec2(13050, 17600), new Vec2(9500, 19800), new Vec2(7950, 19750), new Vec2(6850, 18600) },
+            new[] { new Vec2(14400, 12400), new Vec2(9000, 17600) }),
+
+        // Training Grounds — wraps the Training Outpost + all four dummies (band 20-80)
+        new("field_training", "Training Grounds", RegionKind.Field,
+            new[] { new Vec2(21500, 3500), new Vec2(21900, 3100), new Vec2(26100, 3100), new Vec2(26500, 3500), new Vec2(26500, 4050), new Vec2(26200, 4450), new Vec2(24350, 5900), new Vec2(23650, 5900), new Vec2(21800, 4450), new Vec2(21500, 4050) },
+            new[] { new Vec2(22500, 4000), new Vec2(23500, 4000) }),
     };
 
     /// <summary>
