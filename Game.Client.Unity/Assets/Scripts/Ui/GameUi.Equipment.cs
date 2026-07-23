@@ -7,97 +7,92 @@ using UnityEngine.UI;
 namespace Game.Client
 {
     /// <summary>
-    /// GameUi, continued: the EQUIPMENT window — a "paper doll" of what you're wearing (squares laid
-    /// out roughly like a body, each showing the item's abbreviation), plus the three equipment
-    /// PRESETS (A/B/C) at the bottom. Owner's ask: not a plain list.
+    /// GameUi, continued: the EQUIPMENT paper-doll — squares laid out roughly like a body, each showing
+    /// the worn item's abbreviation (empty squares name their slot), plus the three PRESETS (A/B/C).
     ///
-    /// Tapping a filled square opens that item's details (where Unequip lives). A preset row saves the
-    /// worn set, re-equips a saved one (server refuses in combat), or drops a preset:x token on the bar.
+    /// It is no longer its own window: it's a COLLAPSIBLE COLUMN inside the Bag, revealed by the bag's
+    /// "Equip" toggle (owner: fold it into the bag, expand the window to fit it). Tapping a filled square
+    /// opens that item's details (where Unequip lives). A preset row saves the worn set, re-equips a
+    /// saved one (server refuses in combat), or drops a preset:x token on the bar.
     /// </summary>
     public partial class GameUi : MonoBehaviour
     {
-        private RectTransform _equipPanel;
-        private readonly List<(string Key, TextMeshProUGUI Face, Button Btn)> _equipSquares = new();
+        private RectTransform _equipColumn;
+        private readonly List<(string Key, string Name, TextMeshProUGUI Face, Button Btn)> _equipSquares = new();
         private int _equipRevision = -1;
 
-        // Body-slot squares: key + label + top-left offset (from the panel's top-left). Jewels are five
+        // Body-slot squares within the ~320-wide column: key + label + top-left offset. Jewels are five
         // slots filled in the order worn (necklace / earrings / rings — the server enforces the caps).
+        private const float EquipSq = 54f;
         private static readonly (string Key, string Name, float X, float Y)[] EquipSlots =
         {
-            ("head",   "Head",   241f, -74f),
-            ("weapon", "Weapon",  44f, -168f),
-            ("body",   "Body",   241f, -168f),
-            ("shield", "Shield", 438f, -168f),
-            ("gloves", "Gloves", 241f, -262f),
-            ("boots",  "Boots",  241f, -356f),
-            ("jewel0", "",        30f, -462f),
-            ("jewel1", "",       132f, -462f),
-            ("jewel2", "",       234f, -462f),
-            ("jewel3", "",       336f, -462f),
-            ("jewel4", "",       438f, -462f),
+            ("head",   "Head",   133f,  -6f),
+            ("weapon", "Weap",    48f, -66f),
+            ("body",   "Body",   133f, -66f),
+            ("shield", "Shld",   218f, -66f),
+            ("gloves", "Glov",   133f, -126f),
+            ("boots",  "Boot",   133f, -186f),
+            ("jewel0", "—",        8f, -262f),
+            ("jewel1", "—",       68f, -262f),
+            ("jewel2", "—",      128f, -262f),
+            ("jewel3", "—",      188f, -262f),
+            ("jewel4", "—",      248f, -262f),
         };
 
-        private void BuildEquipmentWindow()
+        /// <summary>Build the paper-doll + presets as a column inside <paramref name="parent"/>, anchored
+        /// at <paramref name="topLeft"/> (top-left of the bag inner). Hidden until the bag's Equip toggle.</summary>
+        private void BuildEquipColumn(Transform parent, Vector2 topLeft)
         {
-            _equipPanel = UiKit.PanelBox(_worldRoot, "Equipment");
-            UiKit.Place(_equipPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(560f, 700f));
-            var inner = _equipPanel.GetChild(0);
-            UiKit.WindowChrome(_equipPanel, "Equipment", () => CloseWindow(_equipPanel));
+            var col = UiKit.Box(parent, "EquipColumn", new Color(0, 0, 0, 0), blocksInput: false);
+            _equipColumn = UiKit.Rect(col.gameObject);
+            UiKit.Place(_equipColumn, new Vector2(0f, 1f), new Vector2(0f, 1f), topLeft, new Vector2(320f, 452f));
 
-            const float sq = 88f;
             foreach (var slot in EquipSlots)
             {
-                if (slot.Name.Length > 0)
-                {
-                    var lbl = UiKit.Label(inner, slot.Name, 12f, UiKit.TextDim, TextAlignmentOptions.Center);
-                    UiKit.Place(UiKit.Rect(lbl.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                                new Vector2(slot.X, slot.Y + 16f), new Vector2(sq, 14f));
-                }
-                var box = UiKit.Box(inner, "Slot", UiKit.PanelLight);
+                var box = UiKit.Box(_equipColumn, "Slot", UiKit.PanelLight);
                 UiKit.Place(UiKit.Rect(box.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(slot.X, slot.Y), new Vector2(sq, sq));
+                            new Vector2(slot.X, slot.Y), new Vector2(EquipSq, EquipSq));
                 var btn = box.gameObject.AddComponent<Button>();
                 btn.targetGraphic = box;
-                var face = UiKit.Label(box.transform, "—", 15f, UiKit.TextDim, TextAlignmentOptions.Center);
+                var face = UiKit.Label(box.transform, slot.Name, 13f, UiKit.TextDim, TextAlignmentOptions.Center);
                 UiKit.Stretch(UiKit.Rect(face.gameObject), 2f, 2f, 2f, 2f);
-                _equipSquares.Add((slot.Key, face, btn));
+                _equipSquares.Add((slot.Key, slot.Name, face, btn));
             }
 
-            UiKit.Place(UiKit.Rect(UiKit.Label(inner, "Jewels", 12f, UiKit.TextDim).gameObject),
-                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(30f, -444f), new Vector2(120f, 14f));
+            UiKit.Place(UiKit.Rect(UiKit.Label(_equipColumn, "Jewels", 12f, UiKit.TextDim).gameObject),
+                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(8f, -244f), new Vector2(120f, 14f));
 
             // ----- presets A / B / C -----
-            UiKit.Place(UiKit.Rect(UiKit.Label(inner, "Equipment presets", 14f, UiKit.Accent).gameObject),
-                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(30f, -566f), new Vector2(400f, 20f));
+            UiKit.Place(UiKit.Rect(UiKit.Label(_equipColumn, "Presets", 13f, UiKit.Accent).gameObject),
+                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(8f, -324f), new Vector2(200f, 18f));
             for (int i = 0; i < 3; i++)
             {
                 int idx = i;
-                float y = -594f - i * 34f;
-                UiKit.Place(UiKit.Rect(UiKit.Label(inner, "ABC"[i].ToString(), 16f, UiKit.Text).gameObject),
-                            new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(34f, y), new Vector2(24f, 26f));
+                float y = -346f - i * 32f;
+                UiKit.Place(UiKit.Rect(UiKit.Label(_equipColumn, "ABC"[i].ToString(), 15f, UiKit.Text).gameObject),
+                            new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(8f, y), new Vector2(18f, 26f));
 
-                var save = UiKit.TextButton(inner, "Save", () => Boot.SaveEquipPreset(idx), 14f);
+                var save = UiKit.TextButton(_equipColumn, "Save", () => Boot.SaveEquipPreset(idx), 13f);
                 UiKit.Place(UiKit.Rect(save.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(66f, y), new Vector2(120f, 28f));
-                var equip = UiKit.TextButton(inner, "Equip", () => Boot.ApplyEquipPreset(idx), 14f);
+                            new Vector2(30f, y), new Vector2(82f, 28f));
+                var equip = UiKit.TextButton(_equipColumn, "Equip", () => Boot.ApplyEquipPreset(idx), 13f);
                 UiKit.Place(UiKit.Rect(equip.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(194f, y), new Vector2(120f, 28f));
-                var toBar = UiKit.TextButton(inner, "To bar", () =>
+                            new Vector2(116f, y), new Vector2(82f, 28f));
+                var toBar = UiKit.TextButton(_equipColumn, "To bar", () =>
                 {
                     BeginAssign(GameConstants.PresetSlotToken(idx));
                     ClientLog.Info("Tap a skill-bar slot to place preset " + "ABC"[idx] + ".");
-                }, 14f);
+                }, 13f);
                 UiKit.Place(UiKit.Rect(toBar.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(322f, y), new Vector2(120f, 28f));
+                            new Vector2(202f, y), new Vector2(82f, 28f));
             }
 
-            _equipPanel.gameObject.SetActive(false);
+            _equipColumn.gameObject.SetActive(false);
         }
 
         private void RefreshEquipmentWindow()
         {
-            if (_equipPanel == null || !_equipPanel.gameObject.activeSelf) return;
+            if (_equipColumn == null || !_equipColumn.gameObject.activeSelf) return;
 
             var items = Boot.Inventory ?? System.Array.Empty<InventoryItemDto>();
             int rev = 17;
@@ -117,7 +112,7 @@ namespace Game.Client
                 if (key != null && !byKey.ContainsKey(key)) byKey[key] = it;
             }
 
-            foreach (var (key, face, btn) in _equipSquares)
+            foreach (var (key, name, face, btn) in _equipSquares)
             {
                 btn.onClick.RemoveAllListeners();
                 if (byKey.TryGetValue(key, out var item))
@@ -131,7 +126,7 @@ namespace Game.Client
                 }
                 else
                 {
-                    face.text = "—";
+                    face.text = name;               // empty square names its slot
                     face.color = UiKit.TextDim;
                 }
             }

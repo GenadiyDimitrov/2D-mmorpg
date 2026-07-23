@@ -105,6 +105,22 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Invite: " + ex.Message); }
         }
 
+        /// <summary>Walk after a player until you move or they leave (null stops following).</summary>
+        public async void Follow(Guid? targetId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.FollowAsync(targetId); }
+            catch (Exception ex) { ClientLog.Warn("Follow: " + ex.Message); }
+        }
+
+        /// <summary>Attack whatever the targeted player is attacking.</summary>
+        public async void Assist(Guid targetId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.AssistAsync(targetId); }
+            catch (Exception ex) { ClientLog.Warn("Assist: " + ex.Message); }
+        }
+
         public async void AnswerPartyInvite(bool accept)
         {
             PendingInvite = null;
@@ -186,6 +202,29 @@ namespace Game.Client
                     kv.Value.Name.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase))
                     return kv.Key;
             return null;
+        }
+
+        /// <summary>Select the nearest living enemy (mob) within range; pressing again steps to the
+        /// next-nearest, so you can flick between the ones in front of you.</summary>
+        public void TargetClosest()
+        {
+            const float maxRange = 2500f, maxRangeSq = maxRange * maxRange;
+            if (Entities == null || !Entities.TryGetState(SelfId, out var self)) return;
+
+            var enemies = new List<(Guid Id, float DistSq)>();
+            foreach (var kv in Entities.States)
+            {
+                var e = kv.Value;
+                if (e.Kind != EntityKind.Mob || e.Dead) continue;
+                float dx = e.X - self.X, dy = e.Y - self.Y;
+                float d2 = dx * dx + dy * dy;
+                if (d2 <= maxRangeSq) enemies.Add((kv.Key, d2));
+            }
+            if (enemies.Count == 0) { ClientLog.Warn("No enemy in range."); return; }
+
+            enemies.Sort((a, b) => a.DistSq.CompareTo(b.DistSq));
+            int idx = TargetId.HasValue ? enemies.FindIndex(x => x.Id == TargetId.Value) : -1;
+            TargetId = enemies[(idx + 1) % enemies.Count].Id;   // -1 → nearest; else the next one out
         }
 
         public async void PartySetLoot(LootMode mode)
@@ -964,6 +1003,25 @@ namespace Game.Client
                         else
                             SetMoveState(Stats != null && Stats.MoveState == MoveState.Walking
                                          ? MoveState.Running : MoveState.Walking);
+                        break;
+                    case GameConstants.ActionTargetClosest:
+                        TargetClosest();
+                        break;
+                    case GameConstants.ActionTradeTarget:
+                        if (TargetId.HasValue) { var id = TargetId.Value; Trade(n => n.TradeRequestAsync(id), "request"); }
+                        else ClientLog.Warn("Target a player to trade.");
+                        break;
+                    case GameConstants.ActionPartyInvite:
+                        if (TargetId.HasValue) PartyInvite(TargetId.Value);
+                        else ClientLog.Warn("Target a player to invite.");
+                        break;
+                    case GameConstants.ActionFollowTarget:
+                        if (TargetId.HasValue) Follow(TargetId.Value);
+                        else ClientLog.Warn("Target a player to follow.");
+                        break;
+                    case GameConstants.ActionAssistTarget:
+                        if (TargetId.HasValue) Assist(TargetId.Value);
+                        else ClientLog.Warn("Target a player to assist.");
                         break;
                     default:
                         ClientLog.Warn(action.Name + " isn't available on the phone yet.");

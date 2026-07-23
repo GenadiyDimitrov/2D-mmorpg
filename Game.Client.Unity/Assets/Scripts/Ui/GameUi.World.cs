@@ -82,10 +82,14 @@ namespace Game.Client
         // bag / debug
         private RectTransform _bagPanel, _bagContent, _debugPanel;
         private int _bagRevision = -1;
-        private int _bagTab;                 // 0 Equip (worn), 1 Items (everything unequipped), 2 Quest
+        private int _bagTab = 1;             // FILTER value shown: 1 Items (everything unequipped), 2 Quest
         private Button[] _bagTabButtons;
+        private int[] _bagTabFilters;        // the BagTabOf value each tab button shows
         private Button _bagDelToggle;
         private bool _bagFastDel;            // when on, each row shows a no-confirm Del button
+        private Button _bagEquipToggle;      // expands the paper-doll column (worn gear) beside the list
+        private bool _bagEquipOpen;
+        private const float BagWidthCollapsed = 460f, BagWidthExpanded = 792f, BagHeight = 500f;
         private TextMeshProUGUI _bagGoldLabel, _bagSlotsLabel;
         private static readonly Color GoldColour = new Color(0.95f, 0.82f, 0.35f);
 
@@ -144,6 +148,7 @@ namespace Game.Client
 
         private Button _debugButton, _pvpButton, _autoButton, _respawnButton;
         private Button _targetPartyButton, _targetTradeButton, _targetInfoButton;
+        private Button _targetAttackButton, _targetFollowButton, _targetAssistButton;
         private RectTransform _menuPanel;
 
         // confirm dialog
@@ -187,7 +192,6 @@ namespace Game.Client
             BuildAutoHuntWindows();
             BuildItemWindows();
             BuildVendorWindow();
-            BuildEquipmentWindow();
             BuildRankWindow();
             BuildRegionUi();
             BuildSlotMenu();
@@ -252,7 +256,7 @@ namespace Game.Client
             // movable, so this is only the starting position.
             _targetPanel = UiKit.PanelBox(_worldRoot, "TargetPanel");
             UiKit.Place(_targetPanel, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                        new Vector2(0f, -48f), new Vector2(300f, 130f));
+                        new Vector2(0f, -48f), new Vector2(300f, 176f));
             var inner = _targetPanel.GetChild(0);
 
             // Deliberately NOT CloseWindow: this panel is not in the stack, and hiding it while the
@@ -272,22 +276,40 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_targetDetail.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(12f, -chrome - 56f), new Vector2(190f, 20f));
 
-            // Details are PULLED — the server only sends them when asked, so there has to be an ask.
-            // On its own ROW under the bar now; anchored bottom-right it overlapped the HP bar.
-            _targetInfoButton = UiKit.TextButton(inner, "Info", OpenTargetDetails, 14f);
-            UiKit.Place(UiKit.Rect(_targetInfoButton.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
-                        new Vector2(-10f, 8f), new Vector2(76f, 28f));
+            // Two rows of contextual action buttons, so every target command is one tap — no slash typing.
+            // The server refuses anything invalid, but RefreshTarget only SHOWS the ones that apply to the
+            // current target (enemy vs player) so the frame stays honest. x-slots for three-across.
+            float bx0 = 10f, bx1 = 104f, bx2 = 198f, bw = 88f;
 
-            // PLAYER-only actions. Boot.PartyInvite existed from the start and nothing ever called it:
-            // the Unity client could not invite anyone to a party, which is why party was untestable
-            // from the phone. Shown only when the target is another player — on a mob these are two
-            // buttons that can only ever produce a server refusal.
+            // Top row (y=44): Attack / Follow / Assist.
+            _targetAttackButton = UiKit.TextButton(inner, "Attack", () =>
+            {
+                if (Boot.TargetId.HasValue) Boot.Attack(Boot.TargetId.Value);
+            }, 14f);
+            UiKit.Place(UiKit.Rect(_targetAttackButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                        new Vector2(bx0, 44f), new Vector2(bw, 28f));
+
+            _targetFollowButton = UiKit.TextButton(inner, "Follow", () =>
+            {
+                if (Boot.TargetId.HasValue) Boot.Follow(Boot.TargetId.Value);
+            }, 14f);
+            UiKit.Place(UiKit.Rect(_targetFollowButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                        new Vector2(bx1, 44f), new Vector2(bw, 28f));
+
+            _targetAssistButton = UiKit.TextButton(inner, "Assist", () =>
+            {
+                if (Boot.TargetId.HasValue) Boot.Assist(Boot.TargetId.Value);
+            }, 14f);
+            UiKit.Place(UiKit.Rect(_targetAssistButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                        new Vector2(bx2, 44f), new Vector2(bw, 28f));
+
+            // Bottom row (y=8): Party / Trade / Info.
             _targetPartyButton = UiKit.TextButton(inner, "Party", () =>
             {
                 if (Boot.TargetId.HasValue) Boot.PartyInvite(Boot.TargetId.Value);
             }, 14f);
             UiKit.Place(UiKit.Rect(_targetPartyButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                        new Vector2(10f, 8f), new Vector2(80f, 28f));
+                        new Vector2(bx0, 8f), new Vector2(bw, 28f));
 
             _targetTradeButton = UiKit.TextButton(inner, "Trade", () =>
             {
@@ -298,7 +320,11 @@ namespace Game.Client
                 }
             }, 14f);
             UiKit.Place(UiKit.Rect(_targetTradeButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                        new Vector2(96f, 8f), new Vector2(80f, 28f));
+                        new Vector2(bx1, 8f), new Vector2(bw, 28f));
+
+            _targetInfoButton = UiKit.TextButton(inner, "Info", OpenTargetDetails, 14f);
+            UiKit.Place(UiKit.Rect(_targetInfoButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                        new Vector2(bx2, 8f), new Vector2(bw, 28f));
         }
 
         /// <summary>
@@ -481,12 +507,11 @@ namespace Game.Client
         {
             _menuPanel = UiKit.PanelBox(_worldRoot, "Menu");
             UiKit.Place(_menuPanel, new Vector2(1f, 1f), new Vector2(1f, 1f),
-                        new Vector2(-12f, -100f), new Vector2(200f, 448f));
+                        new Vector2(-12f, -100f), new Vector2(200f, 392f));
             var inner = _menuPanel.GetChild(0);
 
             var entries = new List<(string Label, Action Click)>
             {
-                ("Equipment", () => { CloseWindow(_menuPanel); ToggleWindow(_equipPanel); }),
                 ("Auto Pots", () => { CloseWindow(_menuPanel); OpenAutoPotions(); }),
                 ("Auto Farm", () => { CloseWindow(_menuPanel); OpenAutoFarm(); }),
                 ("Quests", () => { CloseWindow(_menuPanel); ToggleWindow(_questPanel); }),
@@ -534,43 +559,65 @@ namespace Game.Client
         {
             _bagPanel = UiKit.PanelBox(_worldRoot, "Bag");
             UiKit.Place(_bagPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(640f, 480f));
+                        Vector2.zero, new Vector2(BagWidthCollapsed, BagHeight));
             var inner = _bagPanel.GetChild(0);
             float chrome = UiKit.WindowChrome(_bagPanel, "Bag", () => CloseWindow(_bagPanel));
 
-            // Header line: gold (coloured) left, slot usage right — the owner asked for both on the bag.
+            // Header line over the LEFT (list) region: gold left, slot usage beside it. Left-anchored so
+            // they stay put when the window widens to reveal the equip column.
             _bagGoldLabel = UiKit.Label(inner, "", 15f, GoldColour, TextAlignmentOptions.Left);
             UiKit.Place(UiKit.Rect(_bagGoldLabel.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(18f, -chrome - 8f), new Vector2(360f, 22f));
+                        new Vector2(18f, -chrome - 8f), new Vector2(230f, 22f));
             _bagSlotsLabel = UiKit.Label(inner, "", 14f, UiKit.TextDim, TextAlignmentOptions.Right);
-            UiKit.Place(UiKit.Rect(_bagSlotsLabel.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
-                        new Vector2(-18f, -chrome - 8f), new Vector2(220f, 22f));
+            UiKit.Place(UiKit.Rect(_bagSlotsLabel.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(252f, -chrome - 8f), new Vector2(182f, 22f));
 
-            // Tabs: Equip (worn gear) / Items (everything unequipped) / Quest.
-            _bagTabButtons = new Button[3];
-            string[] tabs = { "Equip", "Items", "Quest" };
+            // Row: Items / Quest tabs, then the Equip TOGGLE (expands the paper-doll column), then the
+            // Fast-Del toggle. Del's per-row buttons are hidden until it's on (owner) so a stray tap can't
+            // bin an item. Tabs hold FILTER values (BagTabOf), not indices — there is no "Equip" list tab
+            // any more; worn gear lives on the paper-doll.
+            _bagTabButtons = new Button[2];
+            _bagTabFilters = new[] { 1, 2 };
+            string[] tabs = { "Items", "Quest" };
             for (int i = 0; i < tabs.Length; i++)
             {
-                int tab = i;
-                var button = UiKit.TextButton(inner, tabs[i], () => { _bagTab = tab; _bagRevision = -1; }, 15f);
+                int filter = _bagTabFilters[i];
+                var button = UiKit.TextButton(inner, tabs[i], () => { _bagTab = filter; _bagRevision = -1; }, 15f);
                 UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(18f + i * 118f, -chrome - 36f), new Vector2(112f, 32f));
+                            new Vector2(16f + i * 96f, -chrome - 36f), new Vector2(92f, 32f));
                 _bagTabButtons[i] = button;
             }
 
-            // Fast-Del TOGGLE at the end of the tab row: the per-row Del buttons are HIDDEN by default and
-            // only appear while this is on (owner) — so a stray tap can't bin an item, but a delete spree
-            // is one toggle away.
+            _bagEquipToggle = UiKit.TextButton(inner, "Equip", ToggleBagEquip, 14f);
+            UiKit.Place(UiKit.Rect(_bagEquipToggle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(208f, -chrome - 36f), new Vector2(92f, 32f));
+
             _bagDelToggle = UiKit.TextButton(inner, "Del: off",
                 () => { _bagFastDel = !_bagFastDel; _bagRevision = -1; }, 14f);
-            UiKit.Place(UiKit.Rect(_bagDelToggle.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
-                        new Vector2(-18f, -chrome - 36f), new Vector2(118f, 32f));
+            UiKit.Place(UiKit.Rect(_bagDelToggle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(304f, -chrome - 36f), new Vector2(92f, 32f));
 
+            // The item list is a FIXED-width column on the left, so widening the window for the equip
+            // column never stretches it.
             ScrollRect scroll;
             _bagContent = UiKit.ScrollArea(inner, out scroll, 3f);
-            UiKit.Stretch((RectTransform)scroll.transform, 16f, chrome + 74f, 16f, 16f);
+            UiKit.Place(UiKit.Rect(scroll.transform.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(16f, -chrome - 74f), new Vector2(418f, BagHeight - chrome - 90f));
+
+            // The paper-doll column (hidden until the Equip toggle) sits to the right of the list.
+            BuildEquipColumn(inner, new Vector2(446f, -chrome - 8f));
 
             _bagPanel.gameObject.SetActive(false);
+        }
+
+        /// <summary>Expand/collapse the bag to show the worn-gear paper-doll column beside the item list.</summary>
+        private void ToggleBagEquip()
+        {
+            _bagEquipOpen = !_bagEquipOpen;
+            if (_equipColumn != null) _equipColumn.gameObject.SetActive(_bagEquipOpen);
+            _bagPanel.sizeDelta = new Vector2(_bagEquipOpen ? BagWidthExpanded : BagWidthCollapsed, BagHeight);
+            _bagEquipToggle.targetGraphic.color = _bagEquipOpen ? UiKit.TabActive : UiKit.PanelLight;
+            _equipRevision = -1;   // force the paper-doll to repaint on next refresh
         }
 
         /// <summary>Which bag tab an item belongs to: 0 Equip = what you're WEARING; 2 Quest; 1 Items =
@@ -733,14 +780,19 @@ namespace Game.Client
                 : "";
             _targetDetail.text = target.Kind + (target.Aggressive ? "   aggressive" : "");
 
-            // Party/Trade only make sense against another PLAYER — and never against yourself.
-            bool player = target.Kind == EntityKind.Player
-                          && Boot.Entities != null && Boot.TargetId != Boot.Entities.SelfId;
+            // Party/Trade/Follow/Assist only make sense against another PLAYER — and never yourself.
+            bool self = Boot.Entities != null && Boot.TargetId == Boot.Entities.SelfId;
+            bool player = target.Kind == EntityKind.Player && !self;
+            bool mob = target.Kind == EntityKind.Mob;
             if (_targetPartyButton != null) _targetPartyButton.gameObject.SetActive(player);
             if (_targetTradeButton != null) _targetTradeButton.gameObject.SetActive(player);
+            if (_targetFollowButton != null) _targetFollowButton.gameObject.SetActive(player);
+            if (_targetAssistButton != null) _targetAssistButton.gameObject.SetActive(player);
+            // Attack: any living enemy — every mob, or a player (server gates PvP). Not on yourself/dead.
+            if (_targetAttackButton != null) _targetAttackButton.gameObject.SetActive(!self && !target.Dead && (mob || player));
             // Info is for MOBS (their full stats + drops). A player's numbers are largely private, so
             // the owner asked that a targeted player carry no Info button.
-            if (_targetInfoButton != null) _targetInfoButton.gameObject.SetActive(target.Kind == EntityKind.Mob);
+            if (_targetInfoButton != null) _targetInfoButton.gameObject.SetActive(mob);
         }
 
         private void RefreshSkillBar()
@@ -1070,7 +1122,7 @@ namespace Game.Client
             _bagGoldLabel.text = "Gold: " + Boot.Gold.ToString("N0");
             _bagSlotsLabel.text = "Slots " + used + " / " + GameConstants.InventorySize;
             for (int i = 0; i < _bagTabButtons.Length; i++)
-                _bagTabButtons[i].targetGraphic.color = i == _bagTab ? UiKit.TabActive : UiKit.PanelLight;
+                _bagTabButtons[i].targetGraphic.color = _bagTabFilters[i] == _bagTab ? UiKit.TabActive : UiKit.PanelLight;
             UiKit.SetButtonText(_bagDelToggle, _bagFastDel ? "Del: ON" : "Del: off");
             _bagDelToggle.targetGraphic.color = _bagFastDel ? new Color(0.42f, 0.20f, 0.20f, 0.95f) : UiKit.PanelLight;
 

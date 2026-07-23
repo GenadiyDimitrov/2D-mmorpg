@@ -178,6 +178,14 @@ namespace Game.Client
         public Task SetMoveStateAsync(MoveState state) =>
             _connection.SendAsync("SetMoveState", (int)state);
 
+        /// <summary>Follow a player (null = stop). Assist = attack whatever they're attacking. The server
+        /// already had these; the Unity client just never exposed them, so Follow/Assist had no path.</summary>
+        public Task FollowAsync(Guid? targetId) =>
+            _connection.SendAsync("Follow", targetId);
+
+        public Task AssistAsync(Guid targetId) =>
+            _connection.SendAsync("Assist", targetId);
+
         public Task LeaveWorldAsync() =>
             _connection.SendAsync("LeaveWorld");
 
