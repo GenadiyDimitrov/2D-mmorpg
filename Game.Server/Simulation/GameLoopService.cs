@@ -174,6 +174,7 @@ public class GameLoopService : BackgroundService
                 case PartyInviteCmd c: HandlePartyInvite(c); break;
                 case PartyRespondCmd c: HandlePartyRespond(c); break;
                 case PartyLeaveCmd c: HandlePartyLeave(c); break;
+                case PartyChangeLeaderCmd c: HandlePartyChangeLeader(c); break;
                 case PartyKickCmd c: HandlePartyKick(c); break;
                 case PartySetLootModeCmd c: HandlePartySetLootMode(c); break;
                 case PartyLootVoteCmd c: HandlePartyLootVote(c); break;
@@ -675,9 +676,10 @@ public class GameLoopService : BackgroundService
         if (entity.CastingSkillId is not null)
             return;
 
-        // Moving stands you up instantly (no delay when you choose to move).
+        // A move-tap while sitting does NOTHING (owner) — you must stand up first (sit/stand toggle),
+        // which starts the stand-up delay. Tapping the ground no longer silently stands you.
         if (entity.MoveState == MoveState.Sitting)
-            entity.MoveState = MoveState.Running;
+            return;
 
         entity.Engaged = false;
         entity.CombatTargetId = null;
@@ -716,7 +718,11 @@ public class GameLoopService : BackgroundService
         if (cmd.State == MoveState.Sitting && (player.Engaged || player.CastingSkillId is not null))
             return;
 
-        // Walk<->Run is instant; entering Sit stops movement.
+        // Standing UP from a sit costs the stand-up recovery (the standing animation): you can't move,
+        // cast or act until it elapses. Walk<->Run while already standing stays instant.
+        if (player.MoveState == MoveState.Sitting && cmd.State != MoveState.Sitting)
+            player.StandUpTicks = MovementTuning.StandUpTicks;
+
         player.MoveState = cmd.State;
         if (cmd.State == MoveState.Sitting)
         {
@@ -729,6 +735,10 @@ public class GameLoopService : BackgroundService
     private void HandleAttack(AttackCmd attack)
     {
         if (!TryGetPlayer(attack.ConnectionId, out var attacker) || attacker.Dead)
+            return;
+
+        // Can't act during the stand-up recovery (nor while still sitting).
+        if (attacker.StandUpTicks > 0 || attacker.MoveState == MoveState.Sitting)
             return;
 
         if (attack.TargetId == attacker.Id ||
@@ -955,6 +965,10 @@ public class GameLoopService : BackgroundService
     private void HandleSkill(SkillCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var caster) || caster.Dead)
+            return;
+
+        // No casting during the stand-up recovery, nor while seated — stand first.
+        if (caster.StandUpTicks > 0 || caster.MoveState == MoveState.Sitting)
             return;
 
         var def = SkillCatalog.Get(cmd.SkillId);
@@ -2390,6 +2404,23 @@ public class GameLoopService : BackgroundService
         RemoveFromParty(player, "left the party");
     }
 
+    private void HandlePartyChangeLeader(PartyChangeLeaderCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var leader))
+            return;
+        if (!_world.Parties.TryGetValue(leader.Id, out var party) || party.LeaderId != leader.Id)
+        {
+            SendSystemToEntity(leader, "Only the party leader can pass leadership.");
+            return;
+        }
+        if (cmd.TargetId == leader.Id || !party.Contains(cmd.TargetId))
+            return;
+        party.LeaderId = cmd.TargetId;
+        SendPartyUpdate(party);
+        if (_world.Entities.TryGetValue(cmd.TargetId, out var newLeader))
+            BroadcastToParty(party, $"{newLeader.Name} is now the party leader.");
+    }
+
     private void HandlePartyKick(PartyKickCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var leader))
@@ -3053,9 +3084,9 @@ public class GameLoopService : BackgroundService
             && session.A.Gold >= session.GoldA && session.B.Gold >= session.GoldB;
 
         bool valid = goldOk && itemsA is not null && itemsB is not null &&
-            session.A.Inventory.Count - itemsA.Count + itemsB.Count
+            session.A.Inventory.Count(i => !i.Equipped) - itemsA.Count + itemsB.Count
                 <= GameConstants.InventorySize &&
-            session.B.Inventory.Count - itemsB.Count + itemsA.Count
+            session.B.Inventory.Count(i => !i.Equipped) - itemsB.Count + itemsA.Count
                 <= GameConstants.InventorySize;
 
         if (!valid)
@@ -3423,6 +3454,20 @@ public class GameLoopService : BackgroundService
                     admin.TargetY = null;
                     admin.Engaged = false;
                     SendSystemToEntity(admin, $"Teleported to {dest.Name}.");
+                }
+                else SendSystemToEntity(admin, $"{arg} is not online.");
+                break;
+
+            case "tpme":
+                // REVERSE teleport (owner): bring a named online player TO the admin.
+                if (FindOnlinePlayer(arg) is Entity summoned)
+                {
+                    PlaceEntity(summoned, admin.X + _rng.Next(-60, 60), admin.Y + _rng.Next(-60, 60));
+                    summoned.TargetX = null;
+                    summoned.TargetY = null;
+                    summoned.Engaged = false;
+                    SendSystemToEntity(admin, $"Summoned {summoned.Name} to you.");
+                    SendSystemToEntity(summoned, $"{admin.Name} summoned you.");
                 }
                 else SendSystemToEntity(admin, $"{arg} is not online.");
                 break;
@@ -6468,8 +6513,8 @@ var effect = def.Effect;
             }
         }
 
-        if (player.Inventory.Count >= GameConstants.InventorySize)
-            return false;
+        if (player.Inventory.Count(i => !i.Equipped) >= GameConstants.InventorySize)
+            return false;   // worn gear doesn't occupy a bag slot
 
         var newItem = new InventoryItem { DefId = defId, Quantity = stackable ? quantity : 1 };
         if (rollAttributes && def.Slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Jewel)
@@ -7330,7 +7375,7 @@ var effect = def.Effect;
         }
 
         // Gear (non-stackable) needs a free slot; stackables merge.
-        if (!stackable && player.Inventory.Count >= GameConstants.InventorySize)
+        if (!stackable && player.Inventory.Count(i => !i.Equipped) >= GameConstants.InventorySize)
         {
             SendSystemToEntity(player, "Your inventory is full.");
             return;

@@ -144,7 +144,11 @@ namespace Game.Client
                 {
                     var kick = UiKit.TextButton(row.transform, "Kick", () => Boot.PartyKick(id), 13f);
                     UiKit.Place(UiKit.Rect(kick.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                                new Vector2(-8f, 0f), new Vector2(60f, 30f));
+                                new Vector2(-8f, 0f), new Vector2(58f, 30f));
+                    // Pass leadership — only the leader can, and only to someone else (owner).
+                    var lead = UiKit.TextButton(row.transform, "Lead", () => Boot.PartyChangeLeader(id), 13f);
+                    UiKit.Place(UiKit.Rect(lead.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                                new Vector2(-70f, 0f), new Vector2(58f, 30f));
                 }
             }
 

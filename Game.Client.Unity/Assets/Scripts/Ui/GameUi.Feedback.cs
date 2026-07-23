@@ -27,7 +27,7 @@ namespace Game.Client
         private class FloatingNumber
         {
             public RectTransform Root;
-            public TextMeshProUGUI Label;
+            public TextMeshProUGUI Label, Shadow;
             public Vector3 World;
             public float BornAt;
         }
@@ -450,6 +450,9 @@ namespace Game.Client
             floater.Label.text = text;
             floater.Label.color = colour;
             floater.Label.fontSize = size;
+            floater.Shadow.text = text;
+            floater.Shadow.fontSize = size;
+            floater.Shadow.color = new Color(0f, 0f, 0f, 0.9f);
             floater.World = view.transform.position + Vector3.up * NameplateHeight;
             floater.BornAt = Time.unscaledTime;
             floater.Root.gameObject.SetActive(true);
@@ -463,15 +466,22 @@ namespace Game.Client
             var root = UiKit.Rect(UiKit.Box(_nameplateLayer, "Damage",
                                             new Color(0, 0, 0, 0), blocksInput: false).gameObject);
             root.sizeDelta = new Vector2(200f, 34f);
+
+            // A black SHADOW copy behind the text, offset down-right. This is the reliable readability
+            // trick: the TMP material `outlineWidth` depends on the shared font material's shader
+            // settings and simply did not render, so a light-blue buff name vanished into same-coloured
+            // ground. A second label cannot fail that way. It draws FIRST so it sits behind.
+            var shadow = UiKit.Label(root, "", 20f, new Color(0f, 0f, 0f, 0.9f), TextAlignmentOptions.Center);
+            var srt = UiKit.Stretch(UiKit.Rect(shadow.gameObject), 0f, 0f, 0f, 0f);
+            srt.offsetMin = new Vector2(2f, -2f);
+            srt.offsetMax = new Vector2(2f, -2f);
+            shadow.fontStyle = FontStyles.Bold;
+
             var label = UiKit.Label(root, "", 20f, UiKit.Text, TextAlignmentOptions.Center);
             UiKit.Stretch(UiKit.Rect(label.gameObject), 0f, 0f, 0f, 0f);
-            // A hard black outline so floating text (a light-blue buff name especially) stays legible
-            // over ground that happens to be the same colour — otherwise it vanishes into the terrain.
-            label.outlineColor = new Color32(0, 0, 0, 230);
-            label.outlineWidth = 0.25f;
             label.fontStyle = FontStyles.Bold;
 
-            var created = new FloatingNumber { Root = root, Label = label };
+            var created = new FloatingNumber { Root = root, Label = label, Shadow = shadow };
             _floaters.Add(created);
             return created;
         }
@@ -494,9 +504,16 @@ namespace Game.Client
                 // Rise and fade. The number stays pinned to the WORLD point it was born at rather than
                 // following the entity — a mob that walks off should not drag its damage with it.
                 floater.Root.position = screen + new Vector3(0f, age * FloatRisePixels, 0f);
+                float alpha = 1f - age * age;
                 var colour = floater.Label.color;
-                colour.a = 1f - age * age;
+                colour.a = alpha;
                 floater.Label.color = colour;
+                if (floater.Shadow != null)
+                {
+                    var sc = floater.Shadow.color;
+                    sc.a = alpha * 0.9f;
+                    floater.Shadow.color = sc;
+                }
             }
         }
     }

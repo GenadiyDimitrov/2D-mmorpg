@@ -228,6 +228,7 @@ namespace Game.Client
         public Task PartyRespondAsync(bool accept) => _connection.SendAsync("PartyRespond", accept);
         public Task PartyLeaveAsync() => _connection.SendAsync("PartyLeave");
         public Task PartyKickAsync(Guid targetId) => _connection.SendAsync("PartyKick", targetId);
+        public Task PartyChangeLeaderAsync(Guid targetId) => _connection.SendAsync("PartyChangeLeader", targetId);
         public Task PartySetLootModeAsync(LootMode mode) => _connection.SendAsync("PartySetLootMode", mode);
 
         // ----- NPC interaction --------------------------------------------------------------------

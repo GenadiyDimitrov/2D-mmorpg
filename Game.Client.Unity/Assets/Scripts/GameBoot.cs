@@ -124,6 +124,32 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Party: " + ex.Message); }
         }
 
+        public async void PartyChangeLeader(Guid targetId)
+        {
+            try { await _net.PartyChangeLeaderAsync(targetId); }
+            catch (Exception ex) { ClientLog.Warn("Party: " + ex.Message); }
+        }
+
+        /// <summary>Find a current party member's id by name (for /ptkick, /ptcl). Null if not in party.</summary>
+        public Guid? PartyMemberId(string name)
+        {
+            if (Party == null || string.IsNullOrWhiteSpace(name)) return null;
+            foreach (var m in Party)
+                if (m.Name.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase)) return m.Id;
+            return null;
+        }
+
+        /// <summary>A nearby PLAYER entity by name (for /ptinv). Null if not in view.</summary>
+        public Guid? FindPlayerByName(string name)
+        {
+            if (Entities == null || string.IsNullOrWhiteSpace(name)) return null;
+            foreach (var kv in Entities.States)
+                if (kv.Value.Kind == EntityKind.Player &&
+                    kv.Value.Name.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase))
+                    return kv.Key;
+            return null;
+        }
+
         public async void PartySetLoot(LootMode mode)
         {
             try { await _net.PartySetLootModeAsync(mode); }
@@ -834,6 +860,15 @@ namespace Game.Client
                 ClientLog.Warn("Can't move while casting — tap the cast bar (or press Back) to cancel.");
                 return;
             }
+
+            // While SITTING (or mid stand-up) the server ignores a move-tap — you must stand first. Don't
+            // predict a walk it will drop, or the character lurches forward locally and snaps back.
+            if (Stats != null && (Stats.MoveState == MoveState.Sitting))
+            {
+                ClientLog.Warn("Stand up first — you can't move while sitting.");
+                return;
+            }
+
             // Drop the destination ring here rather than in TouchInput, so EVERY move order shows one
             // — including any future ones that don't come from a tap.
             if (Marker != null) Marker.ShowAt(WorldMapper.ToUnity(serverX, serverY));
@@ -877,8 +912,13 @@ namespace Game.Client
                                      ? MoveState.Running : MoveState.Sitting);
                         break;
                     case GameConstants.ActionRunWalk:
-                        SetMoveState(Stats != null && Stats.MoveState == MoveState.Walking
-                                     ? MoveState.Running : MoveState.Walking);
+                        // Walk/run only changes SPEED, and only once you're standing — toggling it while
+                        // seated must NOT stand you up (owner). Stand first with Sit/Stand.
+                        if (Stats != null && Stats.MoveState == MoveState.Sitting)
+                            ClientLog.Warn("Stand up first — walk/run only changes speed while standing.");
+                        else
+                            SetMoveState(Stats != null && Stats.MoveState == MoveState.Walking
+                                         ? MoveState.Running : MoveState.Walking);
                         break;
                     default:
                         ClientLog.Warn(action.Name + " isn't available on the phone yet.");
@@ -1216,6 +1256,29 @@ namespace Game.Client
                 { await _net.FriendCommandAsync("remove", raw.Substring(6).Trim()); return; }
                 if (raw.Equals("/flist", StringComparison.OrdinalIgnoreCase))
                 { await _net.FriendCommandAsync("list", ""); return; }
+
+                // Party target-commands (leader-only ones are re-checked server-side). Every one has an
+                // action button too (target frame / party window); these are the typed equivalents.
+                if (raw.Equals("/ptleave", StringComparison.OrdinalIgnoreCase))
+                { PartyLeave(); return; }
+                if (raw.StartsWith("/ptinv ", StringComparison.OrdinalIgnoreCase))
+                {
+                    var id = FindPlayerByName(raw.Substring(7).Trim());
+                    if (id is Guid g) PartyInvite(g); else ClientLog.Warn("No player '" + raw.Substring(7).Trim() + "' nearby.");
+                    return;
+                }
+                if (raw.StartsWith("/ptkick ", StringComparison.OrdinalIgnoreCase))
+                {
+                    var id = PartyMemberId(raw.Substring(8).Trim());
+                    if (id is Guid g) PartyKick(g); else ClientLog.Warn("Not a party member.");
+                    return;
+                }
+                if (raw.StartsWith("/ptcl ", StringComparison.OrdinalIgnoreCase))
+                {
+                    var id = PartyMemberId(raw.Substring(6).Trim());
+                    if (id is Guid g) PartyChangeLeader(g); else ClientLog.Warn("Not a party member.");
+                    return;
+                }
 
                 if (raw.StartsWith("/"))
                 {

@@ -1702,7 +1702,12 @@ public class Entity
     /// <summary>The tick-to-tick DYNAMIC fields only (see EntityLean) — position, vitals, dead/dc/flag.
     /// Sent while an entity is already in view; the static fields ride the full spawn DTO.</summary>
     public EntityLean ToLean() =>
-        new(Id, X, Y, Speed, Hp, Mp, Dead, IsDisconnected, FlagState);
+        // EffectiveSpeed, NOT the raw base Speed: the client PREDICTS self-movement at this value, and
+        // the server MOVES at EffectiveSpeed (walk state, slows, stun/sit = 0, the /speed-move admin
+        // override). Sending raw Speed made the client predict ~150 while the server moved at 1 (or at
+        // half while walking, or at all while stunned) — which is exactly the "set speed to 1 and it
+        // rubber-bands" report. Now the two run the same number.
+        new(Id, X, Y, EffectiveSpeed, Hp, Mp, Dead, IsDisconnected, FlagState);
 
     /// <summary>True if the STATIC parts of two DTOs match — i.e. the difference (if any) is purely
     /// dynamic and can go out as an EntityLean. A static change (level-up, class change, name) instead

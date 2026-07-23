@@ -340,6 +340,12 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task PartyChangeLeader(Guid targetId)
+    {
+        _world.Commands.Enqueue(new PartyChangeLeaderCmd(Context.ConnectionId, targetId));
+        return Task.CompletedTask;
+    }
+
     public Task PartyKick(Guid targetId)
     {
         _world.Commands.Enqueue(new PartyKickCmd(Context.ConnectionId, targetId));

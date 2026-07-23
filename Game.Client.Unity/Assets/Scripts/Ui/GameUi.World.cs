@@ -82,8 +82,10 @@ namespace Game.Client
         // bag / debug
         private RectTransform _bagPanel, _bagContent, _debugPanel;
         private int _bagRevision = -1;
-        private int _bagTab;                 // 0 Equip, 1 Items, 2 Quest
+        private int _bagTab;                 // 0 Equip (worn), 1 Items (everything unequipped), 2 Quest
         private Button[] _bagTabButtons;
+        private Button _bagDelToggle;
+        private bool _bagFastDel;            // when on, each row shows a no-confirm Del button
         private TextMeshProUGUI _bagGoldLabel, _bagSlotsLabel;
         private static readonly Color GoldColour = new Color(0.95f, 0.82f, 0.35f);
 
@@ -539,7 +541,7 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_bagSlotsLabel.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
                         new Vector2(-18f, -chrome - 8f), new Vector2(220f, 22f));
 
-            // Tabs: Equip / Items / Quest — a filter over the same inventory.
+            // Tabs: Equip (worn gear) / Items (everything unequipped) / Quest.
             _bagTabButtons = new Button[3];
             string[] tabs = { "Equip", "Items", "Quest" };
             for (int i = 0; i < tabs.Length; i++)
@@ -547,9 +549,17 @@ namespace Game.Client
                 int tab = i;
                 var button = UiKit.TextButton(inner, tabs[i], () => { _bagTab = tab; _bagRevision = -1; }, 15f);
                 UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(18f + i * 128f, -chrome - 36f), new Vector2(122f, 32f));
+                            new Vector2(18f + i * 118f, -chrome - 36f), new Vector2(112f, 32f));
                 _bagTabButtons[i] = button;
             }
+
+            // Fast-Del TOGGLE at the end of the tab row: the per-row Del buttons are HIDDEN by default and
+            // only appear while this is on (owner) — so a stray tap can't bin an item, but a delete spree
+            // is one toggle away.
+            _bagDelToggle = UiKit.TextButton(inner, "Del: off",
+                () => { _bagFastDel = !_bagFastDel; _bagRevision = -1; }, 14f);
+            UiKit.Place(UiKit.Rect(_bagDelToggle.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
+                        new Vector2(-18f, -chrome - 36f), new Vector2(118f, 32f));
 
             ScrollRect scroll;
             _bagContent = UiKit.ScrollArea(inner, out scroll, 3f);
@@ -558,14 +568,13 @@ namespace Game.Client
             _bagPanel.gameObject.SetActive(false);
         }
 
-        /// <summary>Which bag tab an item belongs to: 0 Equip (wearables), 2 Quest, 1 Items (all the
-        /// rest — consumables, scrolls, materials, boxes).</summary>
-        private static int BagTabOf(ItemDef def)
+        /// <summary>Which bag tab an item belongs to: 0 Equip = what you're WEARING; 2 Quest; 1 Items =
+        /// everything else, INCLUDING unequipped gear (owner: an unequipped item lives in the Items bag,
+        /// not the Equipment bag).</summary>
+        private static int BagTabOf(InventoryItemDto item, ItemDef def)
         {
-            if (def == null) return 1;
-            if (def.Slot == EquipSlot.Weapon || def.Slot == EquipSlot.Armor ||
-                def.Slot == EquipSlot.Shield || def.Slot == EquipSlot.Jewel) return 0;
-            if (def.Slot == EquipSlot.QuestItem) return 2;
+            if (item.Equipped) return 0;
+            if (def != null && def.Slot == EquipSlot.QuestItem) return 2;
             return 1;
         }
 
@@ -1027,16 +1036,21 @@ namespace Game.Client
             // Cheap change stamp: the server pushes the WHOLE bag on any change, so length plus the
             // equipped/quantity state is enough to know when the rows need rebuilding.
             var items = Boot.Inventory ?? Array.Empty<InventoryItemDto>();
-            int revision = items.Length * 17 + _bagTab * 7919 + (int)(Boot.Gold % 1_000_000);
+            int used = 0;
+            foreach (var it in items) if (!it.Equipped) used++;   // worn gear doesn't take a slot
+
+            int revision = items.Length * 17 + _bagTab * 7919 + (_bagFastDel ? 104729 : 0) + (int)(Boot.Gold % 1_000_000);
             foreach (var item in items)
                 revision = revision * 31 + (item.Equipped ? 1 : 0) + item.Quantity * 7 + item.Enchant;
             if (revision == _bagRevision) return;
             _bagRevision = revision;
 
             _bagGoldLabel.text = "Gold: " + Boot.Gold.ToString("N0");
-            _bagSlotsLabel.text = "Slots " + items.Length + " / " + GameConstants.InventorySize;
+            _bagSlotsLabel.text = "Slots " + used + " / " + GameConstants.InventorySize;
             for (int i = 0; i < _bagTabButtons.Length; i++)
                 _bagTabButtons[i].targetGraphic.color = i == _bagTab ? UiKit.TabActive : UiKit.PanelLight;
+            UiKit.SetButtonText(_bagDelToggle, _bagFastDel ? "Del: ON" : "Del: off");
+            _bagDelToggle.targetGraphic.color = _bagFastDel ? new Color(0.42f, 0.20f, 0.20f, 0.95f) : UiKit.PanelLight;
 
             for (int i = _bagContent.childCount - 1; i >= 0; i--)
                 Destroy(_bagContent.GetChild(i).gameObject);
@@ -1045,7 +1059,7 @@ namespace Game.Client
             foreach (var item in items)
             {
                 var def = ItemCatalog.Get(item.DefId);
-                if (BagTabOf(def) != _bagTab) continue;
+                if (BagTabOf(item, def) != _bagTab) continue;
                 anyInTab = true;
                 var row = UiKit.Box(_bagContent, "Item", UiKit.PanelLight);
                 row.gameObject.AddComponent<LayoutElement>().minHeight = 46f;
@@ -1066,20 +1080,23 @@ namespace Game.Client
 
                 var id = item.InstanceId;
                 var shown = item;
+                float rightX = -8f;   // buttons grow leftward from the row's right edge
 
-                // Fast-delete: bins the WHOLE stack with NO confirmation (owner's ask). Not offered for
-                // quest items — the server refuses those, so the button would only ever produce an error.
-                if (def == null || def.Slot != EquipSlot.QuestItem)
+                // Fast-delete: HIDDEN unless the Del toggle is on; bins the WHOLE stack with NO
+                // confirmation (owner). Never for quest items, nor WORN gear (unequip it first).
+                if (_bagFastDel && !item.Equipped && (def == null || def.Slot != EquipSlot.QuestItem))
                 {
                     var bin = UiKit.TextButton(row.transform, "Del", () => Boot.RemoveItem(id, true), 14f);
                     bin.targetGraphic.color = new Color(0.42f, 0.20f, 0.20f, 0.95f);
                     UiKit.Place(UiKit.Rect(bin.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                                new Vector2(-8f, 0f), new Vector2(52f, 38f));
+                                new Vector2(rightX, 0f), new Vector2(52f, 38f));
+                    rightX -= 56f;
                 }
 
                 var details = UiKit.TextButton(row.transform, "Details", () => OpenItemDetails(shown), 14f);
                 UiKit.Place(UiKit.Rect(details.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                            new Vector2(-64f, 0f), new Vector2(94f, 38f));
+                            new Vector2(rightX, 0f), new Vector2(94f, 38f));
+                rightX -= 98f;
 
                 // Fast path: [e] equips/unequips gear, [u] uses a consumable — both skip the details
                 // window. EquipSlot has no "None" (it classifies EVERY item), so the wearable slots are
@@ -1092,13 +1109,13 @@ namespace Game.Client
                 {
                     var fast = UiKit.TextButton(row.transform, "e", () => Boot.EquipItem(id), 15f);
                     UiKit.Place(UiKit.Rect(fast.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                                new Vector2(-162f, 0f), new Vector2(48f, 38f));
+                                new Vector2(rightX, 0f), new Vector2(48f, 38f));
                 }
                 else if (def != null && def.Slot == EquipSlot.Consumable)
                 {
                     var fast = UiKit.TextButton(row.transform, "u", () => Boot.UsePotion(id), 15f);
                     UiKit.Place(UiKit.Rect(fast.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                                new Vector2(-162f, 0f), new Vector2(48f, 38f));
+                                new Vector2(rightX, 0f), new Vector2(48f, 38f));
                 }
             }
 

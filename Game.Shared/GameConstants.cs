@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.28.44";
+    public const string GameVersion = "0.28.45";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -220,7 +220,9 @@ public static class GameConstants
 
     // ----- Items / progression / trade (Phase 4) -------------------------------
 
-    public const int InventorySize = 30;
+    // Slot cap counts UNEQUIPPED items only — worn gear doesn't occupy a bag slot (owner). 250 for now
+    // (30 was far too low once every gear piece and material stacked up).
+    public const int InventorySize = 250;
 
     /// <summary>Skill-bar slots — 5 rows of 12. The bar is ONE FLAT collection of ids; "rows" are purely a
     /// client visualization (it slices this list into chunks of <see cref="SkillBarColumns"/>). Shared,

@@ -278,6 +278,7 @@ public record PartyInviteCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 public record PartyRespondCmd(string ConnectionId, bool Accept) : IGameCommand;
 public record PartyLeaveCmd(string ConnectionId) : IGameCommand;
 public record PartyKickCmd(string ConnectionId, Guid TargetId) : IGameCommand;
+public record PartyChangeLeaderCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 public record PartySetLootModeCmd(string ConnectionId, LootMode Mode) : IGameCommand;
 public record PartyLootVoteCmd(string ConnectionId, bool Accept) : IGameCommand;
 public record SetAutoHuntConfigCmd(string ConnectionId, AutoHuntConfigDto Config) : IGameCommand;

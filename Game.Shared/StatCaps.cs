@@ -85,9 +85,9 @@ public static class MovementTuning
     /// <summary>Fraction of run speed used while walking.</summary>
     public const float WalkSpeedFactor = 0.5f;
 
-    /// <summary>Ticks to stand up after being hit while sitting (~0.7s) before
-    /// you can move/cast/act again.</summary>
-    public const int StandUpTicks = 7;
+    /// <summary>Ticks to stand up — after being hit OR choosing to stand — before you can move / cast /
+    /// act again (the standing animation). 3s at 10 ticks/sec (owner, 2026-07-23).</summary>
+    public const int StandUpTicks = 30;
 }
 
 /// <summary>
