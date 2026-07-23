@@ -417,14 +417,29 @@ namespace Game.Client
             bool incoming = e.TargetId == Boot.SelfId;
             string text;
             Color colour;
+            float size = 20f;
 
             switch (e.Outcome)
             {
-                case CombatOutcome.Miss:
+                case CombatOutcome.Miss:                 // physical evade
                     text = "miss"; colour = UiKit.TextDim; break;
                 case CombatOutcome.Crit:
-                    text = e.Damage.ToString() + "!"; colour = new Color(1f, 0.85f, 0.30f); break;
-                default:
+                    text = e.Damage.ToString() + "!"; colour = new Color(1f, 0.85f, 0.30f); size = 26f; break;
+                case CombatOutcome.Heal:                 // +N green, over whoever was healed (incl. party)
+                    if (e.Damage <= 0) return;
+                    text = "+" + e.Damage; colour = UiKit.Good; break;
+                case CombatOutcome.ManaHeal:
+                    if (e.Damage <= 0) return;
+                    text = "+" + e.Damage + " MP"; colour = UiKit.Mp; break;
+                case CombatOutcome.Buff:                 // a buff/debuff landed — show its NAME so you know
+                    text = string.IsNullOrEmpty(e.Skill) ? "buff" : e.Skill;
+                    colour = new Color(0.55f, 0.80f, 1f); size = 16f; break;
+                case CombatOutcome.Fail:                 // spell partially resisted
+                    text = e.Damage > 0 ? e.Damage.ToString() : "resist";
+                    colour = new Color(0.72f, 0.62f, 0.95f); break;
+                case CombatOutcome.Block:
+                    text = e.Damage > 0 ? e.Damage + " blk" : "block"; colour = UiKit.TextDim; break;
+                default:                                  // Hit
                     if (e.Damage <= 0) return;
                     text = e.Damage.ToString();
                     colour = incoming ? new Color(1f, 0.45f, 0.45f) : UiKit.Text;
@@ -434,7 +449,7 @@ namespace Game.Client
             var floater = FreeFloater();
             floater.Label.text = text;
             floater.Label.color = colour;
-            floater.Label.fontSize = e.Outcome == CombatOutcome.Crit ? 26f : 20f;
+            floater.Label.fontSize = size;
             floater.World = view.transform.position + Vector3.up * NameplateHeight;
             floater.BornAt = Time.unscaledTime;
             floater.Root.gameObject.SetActive(true);

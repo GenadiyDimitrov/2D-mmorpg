@@ -152,8 +152,8 @@ namespace Game.Client
             }
 
             // Active tab gets the accent; the other stays neutral.
-            _statsTabButton.targetGraphic.color = _dropsTab ? UiKit.PanelLight : UiKit.Accent;
-            _dropsTabButton.targetGraphic.color = _dropsTab ? UiKit.Accent : UiKit.PanelLight;
+            _statsTabButton.targetGraphic.color = _dropsTab ? UiKit.PanelLight : UiKit.TabActive;
+            _dropsTabButton.targetGraphic.color = _dropsTab ? UiKit.TabActive : UiKit.PanelLight;
 
             _detailsBody.text = _dropsTab ? DropsText(d) : StatsText(d);
         }

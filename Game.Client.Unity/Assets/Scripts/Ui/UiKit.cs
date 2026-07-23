@@ -31,6 +31,9 @@ namespace Game.Client
         public static readonly Color Text       = new Color(0.90f, 0.92f, 0.95f, 1f);
         public static readonly Color TextDim    = new Color(0.68f, 0.72f, 0.78f, 1f);
         public static readonly Color Accent     = new Color(0.35f, 0.65f, 1.00f, 1f);
+        /// <summary>The ACTIVE-tab tint — a muted, slightly transparent blue. The full Accent read as
+        /// "too much blue" on a row of tabs, so selection is shown with this quieter fill instead.</summary>
+        public static readonly Color TabActive  = new Color(0.22f, 0.34f, 0.50f, 0.90f);
         public static readonly Color Good       = new Color(0.45f, 0.85f, 0.50f, 1f);
         public static readonly Color Bad        = new Color(0.90f, 0.35f, 0.35f, 1f);
         public static readonly Color Hp         = new Color(0.78f, 0.22f, 0.22f, 1f);

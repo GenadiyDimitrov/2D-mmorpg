@@ -1036,7 +1036,7 @@ namespace Game.Client
             _bagGoldLabel.text = "Gold: " + Boot.Gold.ToString("N0");
             _bagSlotsLabel.text = "Slots " + items.Length + " / " + GameConstants.InventorySize;
             for (int i = 0; i < _bagTabButtons.Length; i++)
-                _bagTabButtons[i].targetGraphic.color = i == _bagTab ? UiKit.Accent : UiKit.PanelLight;
+                _bagTabButtons[i].targetGraphic.color = i == _bagTab ? UiKit.TabActive : UiKit.PanelLight;
 
             for (int i = _bagContent.childCount - 1; i >= 0; i--)
                 Destroy(_bagContent.GetChild(i).gameObject);

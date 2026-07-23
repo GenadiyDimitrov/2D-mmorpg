@@ -91,8 +91,8 @@ namespace Game.Client
 
             _vendorTitle.text = _vendorSell ? "Sell — pick an item from your bag"
                                             : "Buy — you have " + Boot.Gold.ToString("N0") + " " + GameConstants.CurrencyName;
-            _vendorBuyTab.targetGraphic.color = _vendorSell ? UiKit.PanelLight : UiKit.Accent;
-            _vendorSellTab.targetGraphic.color = _vendorSell ? UiKit.Accent : UiKit.PanelLight;
+            _vendorBuyTab.targetGraphic.color = _vendorSell ? UiKit.PanelLight : UiKit.TabActive;
+            _vendorSellTab.targetGraphic.color = _vendorSell ? UiKit.TabActive : UiKit.PanelLight;
 
             for (int i = _vendorList.childCount - 1; i >= 0; i--)
                 Destroy(_vendorList.GetChild(i).gameObject);

@@ -163,7 +163,7 @@ namespace Game.Client
 
             _skillsHeader.text = "SP " + Boot.SkillPoints + "     " + GameConstants.CurrencyName + " " + Boot.Gold;
             for (int i = 0; i < _skillsTabButtons.Length; i++)
-                _skillsTabButtons[i].targetGraphic.color = i == _skillsTab ? UiKit.Accent : UiKit.PanelLight;
+                _skillsTabButtons[i].targetGraphic.color = i == _skillsTab ? UiKit.TabActive : UiKit.PanelLight;
 
             // Rebuild only when something that changes the LIST changed. Rows carry captured ids and
             // registered listeners, so a per-frame rebuild would leak both.
