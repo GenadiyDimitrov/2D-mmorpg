@@ -139,6 +139,16 @@ namespace Game.Client
             return null;
         }
 
+        /// <summary>The instance id of an unequipped bag item with this def id (any stack), or null —
+        /// for the quick-use bar, where a slot holds "item:&lt;defId&gt;" and any matching stack works.</summary>
+        public Guid? FindBagItem(string defId)
+        {
+            if (Inventory == null || string.IsNullOrEmpty(defId)) return null;
+            foreach (var it in Inventory)
+                if (!it.Equipped && it.DefId == defId) return it.InstanceId;
+            return null;
+        }
+
         /// <summary>A nearby PLAYER entity by name (for /ptinv). Null if not in view.</summary>
         public Guid? FindPlayerByName(string name)
         {
@@ -929,7 +939,11 @@ namespace Game.Client
 
             if (GameConstants.IsItemSlot(token))
             {
-                ClientLog.Warn("Items aren't usable from the phone yet.");
+                // Drink/use one of that item from the bag. The slot holds "item:<defId>", so any stack
+                // of that potion satisfies it — this is the quick-use bar (owner).
+                string defId = token.Substring(GameConstants.SkillBarItemPrefix.Length);
+                if (FindBagItem(defId) is Guid iid) UsePotion(iid);
+                else ClientLog.Warn("You have no " + (ItemCatalog.Get(defId)?.Name ?? defId) + " to use.");
                 return;
             }
 

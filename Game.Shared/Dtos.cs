@@ -265,7 +265,15 @@ public record AutoHuntConfigDto(
     bool StaticSpot = false,       // false = roam (scan follows the char); true = fixed circle at the start
     bool AttackNormal = true,      // engage normal-rank mobs
     bool AttackElite = false,      // engage elites
-    bool AttackBoss = false);      // engage bosses
+    bool AttackBoss = false,       // engage bosses
+    // The auto-potions POTIONS tab: per-potion on/off + HP% threshold. The auto-hunt drinks the
+    // highest-threshold ENABLED heal potion that's ready (so common@80 / uncommon@70 / rare@50 act as
+    // fallbacks). Empty/null = fall back to the single HpPotionPct + best-potion behaviour.
+    AutoPotionDto[]? HealPotions = null);
+
+/// <summary>One line in the auto-potions Potions tab: which potion item, whether it's armed, and the
+/// HP (or MP) percent below which to drink it.</summary>
+public record AutoPotionDto(string ItemId, bool Enabled, int ThresholdPct);
 
 /// <summary>The pseudo skill-id for "basic attack" as an opt-in auto action: put it in
 /// <see cref="AutoHuntConfigDto.Skills"/> (enabled) and the auto-hunt will melee when no real skill

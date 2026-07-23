@@ -145,6 +145,14 @@ namespace Game.Client
             if (def.Slot == EquipSlot.Consumable)
             {
                 actions.Add(("Use", () => { Boot.UsePotion(id); CloseWindow(v.Panel); }));
+                // Quick-use bar: put "item:<defId>" on the skill bar (any stack of it satisfies the slot).
+                // Reuses the skill-assign flow — tap a slot next to place it.
+                actions.Add(("To bar", () =>
+                {
+                    BeginAssign(GameConstants.ItemSlotToken(def.Id));
+                    ClientLog.Info("Tap a skill-bar slot to place " + def.Name + ".");
+                    CloseWindow(v.Panel);
+                }));
             }
             else if (IsWearable(def))
             {

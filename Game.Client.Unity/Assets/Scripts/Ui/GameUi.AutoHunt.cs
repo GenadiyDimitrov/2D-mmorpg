@@ -24,11 +24,22 @@ namespace Game.Client
     /// </summary>
     public partial class GameUi : MonoBehaviour
     {
-        // auto-potions
+        // auto-potions — the Potions tab: the 4 heal tiers + a reserved MP row.
         private RectTransform _autoPotionsPanel;
-        private Button _autoHpToggle, _autoMpToggle;
-        private Slider _autoHpSlider, _autoMpSlider;
-        private bool _autoHpOn, _autoMpOn;
+        private static readonly (string Id, string Name)[] HealPotRows =
+        {
+            (ItemCatalog.MinorPotion,   "Common"),
+            (ItemCatalog.HealingPotion, "Uncommon"),
+            (ItemCatalog.GreaterPotion, "Rare"),
+            (ItemCatalog.InstantPotion, "Instant"),
+        };
+        private static readonly int[] DefaultPotThreshold = { 80, 70, 50, 30 };
+        private readonly Button[] _potToggles = new Button[4];
+        private readonly Slider[] _potSliders = new Slider[4];
+        private readonly bool[] _potOn = new bool[4];
+        private Button _autoMpToggle;
+        private Slider _autoMpSlider;
+        private bool _autoMpOn;
 
         // auto-farm
         private RectTransform _autoFarmPanel;
@@ -103,49 +114,64 @@ namespace Game.Client
         {
             _autoPotionsPanel = UiKit.PanelBox(_worldRoot, "AutoPotions");
             UiKit.Place(_autoPotionsPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(640f, 360f));
+                        Vector2.zero, new Vector2(680f, 430f));
             var inner = _autoPotionsPanel.GetChild(0);
             float chrome = UiKit.WindowChrome(_autoPotionsPanel, "Auto Potions",
                                               () => CloseWindow(_autoPotionsPanel));
 
-            float y = -chrome - 16f;
+            float y = -chrome - 12f;
+            UiKit.Place(UiKit.Rect(UiKit.Label(inner, "Heal potions — drink when HP drops below the %:", 13f, UiKit.Accent).gameObject),
+                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, y), new Vector2(620f, 20f));
+            y -= 26f;
 
-            _autoHpToggle = ToggleButton(inner, new Vector2(18f, y), () =>
+            // One row per tier: an on/off toggle + a threshold slider whose title is the tier name. Armed
+            // from the highest threshold down, so common@80 / uncommon@70 / rare@50 fall back for one
+            // another (the server drinks the first ready one whose line is crossed).
+            for (int i = 0; i < HealPotRows.Length; i++)
             {
-                _autoHpOn = !_autoHpOn;
-                RefreshAutoLabels();
-            });
-            y -= 46f;
-            _autoHpSlider = UiKit.SliderRow(inner, "drink HP below", 5f, 95f, 60f, "0", null);
-            PlaceRow(inner, _autoHpSlider, y);
-            y -= 52f;
+                int idx = i;
+                _potToggles[i] = ToggleButton(inner, new Vector2(18f, y),
+                    () => { _potOn[idx] = !_potOn[idx]; RefreshAutoLabels(); }, 84f);
+                _potSliders[i] = UiKit.SliderRow(inner, HealPotRows[i].Name, 5f, 95f, DefaultPotThreshold[i], "0", null);
+                UiKit.Place(UiKit.Rect(_potSliders[i].transform.parent.gameObject),
+                            new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(112f, y - 6f), new Vector2(556f, 26f));
+                y -= 46f;
+            }
 
-            _autoMpToggle = ToggleButton(inner, new Vector2(18f, y), () =>
-            {
-                _autoMpOn = !_autoMpOn;
-                RefreshAutoLabels();
-            });
-            y -= 46f;
-            _autoMpSlider = UiKit.SliderRow(inner, "drink MP below", 5f, 95f, 40f, "0", null);
-            PlaceRow(inner, _autoMpSlider, y);
-            y -= 52f;
-
-            var note = UiKit.Label(inner,
-                "Drinks the best matching potion in your bag when a bar drops below its %.", 13f, UiKit.TextDim);
-            UiKit.Place(UiKit.Rect(note.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(18f, y), new Vector2(600f, 34f));
+            y -= 6f;
+            UiKit.Place(UiKit.Rect(UiKit.Label(inner, "Mana potion (MP potions arrive with the 3rd-class kits):", 13f, UiKit.TextDim).gameObject),
+                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, y), new Vector2(620f, 20f));
+            y -= 26f;
+            _autoMpToggle = ToggleButton(inner, new Vector2(18f, y), () => { _autoMpOn = !_autoMpOn; RefreshAutoLabels(); }, 84f);
+            _autoMpSlider = UiKit.SliderRow(inner, "MP", 5f, 95f, 40f, "0", null);
+            UiKit.Place(UiKit.Rect(_autoMpSlider.transform.parent.gameObject),
+                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(112f, y - 6f), new Vector2(556f, 26f));
 
             BottomButtons(inner, ResetAutoPotions, SaveAutoPotions, () => CloseWindow(_autoPotionsPanel));
 
             _autoPotionsPanel.gameObject.SetActive(false);
         }
 
+        /// <summary>Find the saved line for a potion id in the config (null if none/unset).</summary>
+        private static AutoPotionDto FindPotLine(AutoPotionDto[] lines, string id)
+        {
+            if (lines != null)
+                foreach (var l in lines)
+                    if (l.ItemId == id) return l;
+            return null;
+        }
+
         private void OpenAutoPotions()
         {
             var c = Boot.AutoConfig;
-            _autoHpOn = c.HpPotionPct > 0;
+            for (int i = 0; i < HealPotRows.Length; i++)
+            {
+                var line = FindPotLine(c.HealPotions, HealPotRows[i].Id);
+                _potOn[i] = line != null && line.Enabled;
+                _potSliders[i].value = line != null && line.ThresholdPct > 0
+                    ? Mathf.Clamp(line.ThresholdPct, 5, 95) : DefaultPotThreshold[i];
+            }
             _autoMpOn = c.MpPotionPct > 0;
-            _autoHpSlider.value = _autoHpOn ? Mathf.Clamp(c.HpPotionPct, 5, 95) : 60f;
             _autoMpSlider.value = _autoMpOn ? Mathf.Clamp(c.MpPotionPct, 5, 95) : 40f;
             RefreshAutoLabels();
             OpenWindow(_autoPotionsPanel);
@@ -153,16 +179,24 @@ namespace Game.Client
 
         private void SaveAutoPotions()
         {
-            int hp = _autoHpOn ? Mathf.RoundToInt(_autoHpSlider.value) : 0;
+            var lines = new AutoPotionDto[HealPotRows.Length];
+            for (int i = 0; i < HealPotRows.Length; i++)
+                lines[i] = new AutoPotionDto(HealPotRows[i].Id, _potOn[i], Mathf.RoundToInt(_potSliders[i].value));
             int mp = _autoMpOn ? Mathf.RoundToInt(_autoMpSlider.value) : 0;
-            Boot.PushAutoConfig(Boot.AutoConfig with { HpPotionPct = hp, MpPotionPct = mp });
+            // HpPotionPct 0 → the server uses the per-potion HealPotions list, not the old single line.
+            Boot.PushAutoConfig(Boot.AutoConfig with { HealPotions = lines, HpPotionPct = 0, MpPotionPct = mp });
             ClientLog.Info("Auto-potions saved.");
         }
 
         private void ResetAutoPotions()
         {
-            _autoHpOn = true;  _autoHpSlider.value = 60f;
-            _autoMpOn = false; _autoMpSlider.value = 40f;
+            for (int i = 0; i < HealPotRows.Length; i++)
+            {
+                _potOn[i] = i == 0;   // Common armed by default
+                _potSliders[i].value = DefaultPotThreshold[i];
+            }
+            _autoMpOn = false;
+            _autoMpSlider.value = 40f;
             RefreshAutoLabels();
         }
 
@@ -259,8 +293,8 @@ namespace Game.Client
         /// toggle, an open, or a reset all land the same green/red state.</summary>
         private void RefreshAutoLabels()
         {
-            SetToggle(_autoHpToggle,     _autoHpOn,  "HP potion");
-            SetToggle(_autoMpToggle,     _autoMpOn,  "MP potion");
+            for (int i = 0; i < _potToggles.Length; i++) SetToggleOnOff(_potToggles[i], _potOn[i]);
+            SetToggleOnOff(_autoMpToggle, _autoMpOn);
             SetToggle(_autoStaticToggle, _autoStatic, "Keep position");
             SetToggle(_autoNormalToggle, _autoNormal, "Normal mobs");
             SetToggle(_autoEliteToggle,  _autoElite,  "Elite mobs");
@@ -272,6 +306,14 @@ namespace Game.Client
         {
             if (button == null) return;
             UiKit.SetButtonText(button, name + ":  " + (on ? "ON" : "off"));
+            if (button.targetGraphic != null) button.targetGraphic.color = on ? AutoOnCol : AutoOffCol;
+        }
+
+        /// <summary>A name-less on/off toggle (the name is carried by the adjacent slider row).</summary>
+        private static void SetToggleOnOff(Button button, bool on)
+        {
+            if (button == null) return;
+            UiKit.SetButtonText(button, on ? "ON" : "off");
             if (button.targetGraphic != null) button.targetGraphic.color = on ? AutoOnCol : AutoOffCol;
         }
 

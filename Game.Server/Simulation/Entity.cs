@@ -845,6 +845,8 @@ public class Entity
     public bool AutoBuffPotions { get; set; }
     public List<AutoSkillDto> AutoSkills { get; } = new();
     public List<string> AutoBuffPotionIds { get; } = new();
+    // The auto-potions Potions tab: per-potion on/off + HP% threshold (empty = use AutoHpPotionPct).
+    public List<AutoPotionDto> AutoHealPotions { get; } = new();
     // Roaming config (docs/design/AutoHunt.md roaming spec).
     public int AutoFarmRange { get; set; } = 1000;
     public bool AutoFarmStatic { get; set; }             // false = roam, true = fixed circle at start

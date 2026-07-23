@@ -2609,6 +2609,9 @@ public class GameLoopService : BackgroundService
         p.AutoBuffPotionIds.Clear();
         foreach (var id in c.BuffPotionIds ?? Array.Empty<string>())
             p.AutoBuffPotionIds.Add(id);
+        p.AutoHealPotions.Clear();
+        foreach (var hp in c.HealPotions ?? Array.Empty<AutoPotionDto>())
+            p.AutoHealPotions.Add(new AutoPotionDto(hp.ItemId, hp.Enabled, Math.Clamp(hp.ThresholdPct, 0, 100)));
         p.AutoFarmRange   = Math.Clamp(c.FarmRange, 200, 2000);
         p.AutoFarmStatic  = c.StaticSpot;
         p.AutoAttackNormal = c.AttackNormal;
@@ -2765,9 +2768,23 @@ public class GameLoopService : BackgroundService
     private void AutoPotions(Entity p)
     {
         // Per-potion cooldowns are enforced inside UsePotion now, so no shared pre-gate here.
-        if (p.AutoHpPotionPct > 0 && p.MaxHp > 0 &&
-            p.Hp * 100 < p.MaxHp * p.AutoHpPotionPct &&
-            BestHealPotion(p) is InventoryItem hpPot)
+        if (p.MaxHp > 0 && p.AutoHealPotions.Count > 0)
+        {
+            // Potions-tab mode: try each ARMED potion from the highest threshold down. The first one
+            // that's ready (UsePotion gates cooldown + tier-suppression) drinks and we stop — so
+            // common@80 / uncommon@70 / rare@50 behave as fallbacks.
+            int hpPctNow = (int)(p.Hp * 100L / p.MaxHp);
+            foreach (var line in p.AutoHealPotions.Where(l => l.Enabled).OrderByDescending(l => l.ThresholdPct))
+            {
+                if (hpPctNow >= line.ThresholdPct) continue;
+                if (p.Inventory.FirstOrDefault(i => i.DefId == line.ItemId && !i.Equipped) is InventoryItem pot
+                    && UsePotion(p, pot))
+                    break;
+            }
+        }
+        else if (p.AutoHpPotionPct > 0 && p.MaxHp > 0 &&
+                 p.Hp * 100 < p.MaxHp * p.AutoHpPotionPct &&
+                 BestHealPotion(p) is InventoryItem hpPot)
             UsePotion(p, hpPot);
 
         // MP potions don't exist as items yet — reserved plumbing (BestManaPotion returns null).
@@ -2951,7 +2968,8 @@ public class GameLoopService : BackgroundService
         SendTo(p, "AutoConfig", new AutoHuntConfigDto(
             p.AutoHuntEnabled, p.AutoHpPotionPct, p.AutoMpPotionPct, p.AutoBuffPotions,
             p.AutoSkills.ToArray(), p.AutoBuffPotionIds.ToArray(),
-            p.AutoFarmRange, p.AutoFarmStatic, p.AutoAttackNormal, p.AutoAttackElite, p.AutoAttackBoss));
+            p.AutoFarmRange, p.AutoFarmStatic, p.AutoAttackNormal, p.AutoAttackElite, p.AutoAttackBoss,
+            p.AutoHealPotions.ToArray()));
 
     /// <summary>Advance the auto-hunt runtime cap for a player. Online = the idle cap (stop + lock);
     /// offline = the offline cap (queue a logout). Called each tick while auto-hunt is enabled.</summary>

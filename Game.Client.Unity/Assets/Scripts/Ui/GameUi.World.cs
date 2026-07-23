@@ -780,7 +780,14 @@ namespace Game.Client
             if (ActionCatalog.FromToken(token) is ActionDef action)
                 return Abbreviations.For(action.Name);
 
-            if (GameConstants.IsItemSlot(token)) return "[i]";
+            if (GameConstants.IsItemSlot(token))
+            {
+                // Show WHICH item (abbreviated), and grey the slot when you have none in the bag.
+                string defId = token.Substring(GameConstants.SkillBarItemPrefix.Length);
+                var idef = ItemCatalog.Get(defId);
+                usable = Boot.FindBagItem(defId) != null;
+                return idef != null ? Abbreviations.For(idef.Name) : "[i]";
+            }
 
             var def = SkillCatalog.Get(token);
             if (def == null) { usable = false; return "?"; }
