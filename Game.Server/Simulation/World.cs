@@ -201,7 +201,9 @@ public record RerollAttributesCmd(string ConnectionId, Guid ScrollInstanceId,
 /// <summary>Destroy an inventory item (later: sell/dismantle).</summary>
 /// <summary>Destroy an item. <paramref name="All"/> = the whole stack; otherwise ONE from the stack
 /// (a single item is removed either way).</summary>
-public record RemoveItemCmd(string ConnectionId, Guid InstanceId, bool All = false) : IGameCommand;
+// Quantity > 0 removes exactly that many from a stack (the bin numpad); 0 falls back to All (whole
+// stack) / single-unit. All still wins for a non-stackable.
+public record RemoveItemCmd(string ConnectionId, Guid InstanceId, bool All = false, int Quantity = 0) : IGameCommand;
 
 /// <summary>DEBUG-only: grant an item by def id.</summary>
 public record DebugGiveCmd(string ConnectionId, string DefId) : IGameCommand;

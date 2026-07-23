@@ -18,6 +18,14 @@ namespace Game.Client
         /// <summary>How far a finger may travel and still count as a tap rather than a drag.</summary>
         public float TapSlopPixels = 40f;
 
+        /// <summary>Whether the CURRENT press started over interactive UI. Captured on the way DOWN,
+        /// while the panel is still there, and consulted on the way up. This is the fix for the
+        /// click-through bug: the tap is decided on RELEASE, but tapping a window's X (or a menu
+        /// button) CLOSES/changes that UI as part of the same tap — so an OverUi check at release
+        /// re-raycasts an empty spot and walked the character to where the button used to be. The
+        /// press began over the button, and that is what decides it.</summary>
+        private bool _downOverUi;
+
         private void Update()
         {
             if (Boot == null || Boot.Phase != ClientPhase.InWorld) return;
@@ -31,6 +39,9 @@ namespace Game.Client
                 // the second finger ever landed. Requiring the finger not to have travelled far also
                 // stops a drag from being read as a tap.
                 var t = Input.GetTouch(0);
+                if (Input.touchCount == 1 && t.phase == TouchPhase.Began)
+                    _downOverUi = UiKit.OverUi(t.position);   // the panel is still on screen NOW
+
                 if (Input.touchCount == 1 && t.phase == TouchPhase.Ended &&
                     (t.position - t.rawPosition).magnitude < TapSlopPixels)
                 {
@@ -40,15 +51,16 @@ namespace Game.Client
             }
             else if (Input.GetMouseButtonDown(0))
             {
+                _downOverUi = UiKit.OverUi(Input.mousePosition);
                 tapped = true;
                 screen = Input.mousePosition;
             }
             if (!tapped) return;
 
-            // uGUI answers this itself now: the canvas raycaster is asked about the tap POINT, so we
-            // no longer keep a hand-maintained list of UI rectangles that could silently go stale
-            // whenever a panel moved.
-            if (UiKit.OverUi(screen)) return;
+            // Skip if the press STARTED over UI (a button that then vanished can't be re-found at
+            // release) OR the release is still over UI. Either way the tap belongs to the HUD, not the
+            // world — otherwise closing a window walks you to where its X was.
+            if (_downOverUi || UiKit.OverUi(screen)) return;
 
             var cam = Camera.main;
             if (cam == null) return;

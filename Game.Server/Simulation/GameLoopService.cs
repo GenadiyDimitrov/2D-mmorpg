@@ -245,6 +245,12 @@ public class GameLoopService : BackgroundService
         SendProgress(entity);         // see SendProgress: without this the EXP bar starts EMPTY
         if (_world.Parties.TryGetValue(entity.Id, out var rejoinParty))
             SendPartyUpdate(rejoinParty);   // clear the offline icon for the rest of the party
+        else
+            // NOT in a party: still push an EMPTY roster, or a client that WAS partied before it
+            // relogged keeps showing the old members forever (it only ever hears about a party from a
+            // push, and nothing was telling it the party is gone). State the client needs on arrival
+            // must be pushed on arrival — same rule as the EXP-bar/Progress fix.
+            SendTo(entity, "Party", new PartyUpdate(Array.Empty<PartyMemberDto>()));
         if (entity.IsStaff)
             SendSystemToEntity(entity,
                 $"{entity.Role} privileges active on this character. Type /help for commands.");
@@ -1423,8 +1429,10 @@ public class GameLoopService : BackgroundService
 
         bool wasEquipped = item.Equipped;
 
-        if (item.Quantity > 1 && !cmd.All)
-            item.Quantity--;             // drop ONE from the stack
+        if (cmd.Quantity > 0 && cmd.Quantity < item.Quantity)
+            item.Quantity -= cmd.Quantity;   // bin numpad: drop exactly N of the stack
+        else if (item.Quantity > 1 && !cmd.All && cmd.Quantity == 0)
+            item.Quantity--;                 // drop ONE from the stack
         else
             player.Inventory.Remove(item);   // whole stack (or a single item)
 

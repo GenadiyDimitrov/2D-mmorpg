@@ -316,9 +316,9 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
-    public Task RemoveItem(Guid instanceId, bool all)
+    public Task RemoveItem(Guid instanceId, bool all, int quantity)
     {
-        _world.Commands.Enqueue(new RemoveItemCmd(Context.ConnectionId, instanceId, all));
+        _world.Commands.Enqueue(new RemoveItemCmd(Context.ConnectionId, instanceId, all, quantity));
         return Task.CompletedTask;
     }
 

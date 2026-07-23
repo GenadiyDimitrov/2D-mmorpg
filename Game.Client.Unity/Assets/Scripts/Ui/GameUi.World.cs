@@ -82,6 +82,10 @@ namespace Game.Client
         // bag / debug
         private RectTransform _bagPanel, _bagContent, _debugPanel;
         private int _bagRevision = -1;
+        private int _bagTab;                 // 0 Equip, 1 Items, 2 Quest
+        private Button[] _bagTabButtons;
+        private TextMeshProUGUI _bagGoldLabel, _bagSlotsLabel;
+        private static readonly Color GoldColour = new Color(0.95f, 0.82f, 0.35f);
 
         /// <summary>
         /// Open windows, oldest first. The back button pops the LAST one opened, so closing walks back
@@ -137,7 +141,7 @@ namespace Game.Client
         }
 
         private Button _debugButton, _pvpButton, _autoButton, _respawnButton;
-        private Button _targetPartyButton, _targetTradeButton;
+        private Button _targetPartyButton, _targetTradeButton, _targetInfoButton;
         private RectTransform _menuPanel;
 
         // confirm dialog
@@ -265,8 +269,8 @@ namespace Game.Client
 
             // Details are PULLED — the server only sends them when asked, so there has to be an ask.
             // On its own ROW under the bar now; anchored bottom-right it overlapped the HP bar.
-            var info = UiKit.TextButton(inner, "Info", OpenTargetDetails, 14f);
-            UiKit.Place(UiKit.Rect(info.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
+            _targetInfoButton = UiKit.TextButton(inner, "Info", OpenTargetDetails, 14f);
+            UiKit.Place(UiKit.Rect(_targetInfoButton.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
                         new Vector2(-10f, 8f), new Vector2(76f, 28f));
 
             // PLAYER-only actions. Boot.PartyInvite existed from the start and nothing ever called it:
@@ -523,15 +527,46 @@ namespace Game.Client
         {
             _bagPanel = UiKit.PanelBox(_worldRoot, "Bag");
             UiKit.Place(_bagPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(620f, 460f));
+                        Vector2.zero, new Vector2(640f, 480f));
             var inner = _bagPanel.GetChild(0);
             float chrome = UiKit.WindowChrome(_bagPanel, "Bag", () => CloseWindow(_bagPanel));
 
+            // Header line: gold (coloured) left, slot usage right — the owner asked for both on the bag.
+            _bagGoldLabel = UiKit.Label(inner, "", 15f, GoldColour, TextAlignmentOptions.Left);
+            UiKit.Place(UiKit.Rect(_bagGoldLabel.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(18f, -chrome - 8f), new Vector2(360f, 22f));
+            _bagSlotsLabel = UiKit.Label(inner, "", 14f, UiKit.TextDim, TextAlignmentOptions.Right);
+            UiKit.Place(UiKit.Rect(_bagSlotsLabel.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
+                        new Vector2(-18f, -chrome - 8f), new Vector2(220f, 22f));
+
+            // Tabs: Equip / Items / Quest — a filter over the same inventory.
+            _bagTabButtons = new Button[3];
+            string[] tabs = { "Equip", "Items", "Quest" };
+            for (int i = 0; i < tabs.Length; i++)
+            {
+                int tab = i;
+                var button = UiKit.TextButton(inner, tabs[i], () => { _bagTab = tab; _bagRevision = -1; }, 15f);
+                UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                            new Vector2(18f + i * 128f, -chrome - 36f), new Vector2(122f, 32f));
+                _bagTabButtons[i] = button;
+            }
+
             ScrollRect scroll;
             _bagContent = UiKit.ScrollArea(inner, out scroll, 3f);
-            UiKit.Stretch((RectTransform)scroll.transform, 16f, chrome + 10f, 16f, 16f);
+            UiKit.Stretch((RectTransform)scroll.transform, 16f, chrome + 74f, 16f, 16f);
 
             _bagPanel.gameObject.SetActive(false);
+        }
+
+        /// <summary>Which bag tab an item belongs to: 0 Equip (wearables), 2 Quest, 1 Items (all the
+        /// rest — consumables, scrolls, materials, boxes).</summary>
+        private static int BagTabOf(ItemDef def)
+        {
+            if (def == null) return 1;
+            if (def.Slot == EquipSlot.Weapon || def.Slot == EquipSlot.Armor ||
+                def.Slot == EquipSlot.Shield || def.Slot == EquipSlot.Jewel) return 0;
+            if (def.Slot == EquipSlot.QuestItem) return 2;
+            return 1;
         }
 
         // BuildDebugPanel and everything it needs now live in GameUi.Debug.cs — it grew from four
@@ -686,6 +721,9 @@ namespace Game.Client
                           && Boot.Entities != null && Boot.TargetId != Boot.Entities.SelfId;
             if (_targetPartyButton != null) _targetPartyButton.gameObject.SetActive(player);
             if (_targetTradeButton != null) _targetTradeButton.gameObject.SetActive(player);
+            // Info is for MOBS (their full stats + drops). A player's numbers are largely private, so
+            // the owner asked that a targeted player carry no Info button.
+            if (_targetInfoButton != null) _targetInfoButton.gameObject.SetActive(target.Kind == EntityKind.Mob);
         }
 
         private void RefreshSkillBar()
@@ -989,25 +1027,26 @@ namespace Game.Client
             // Cheap change stamp: the server pushes the WHOLE bag on any change, so length plus the
             // equipped/quantity state is enough to know when the rows need rebuilding.
             var items = Boot.Inventory ?? Array.Empty<InventoryItemDto>();
-            int revision = items.Length;
+            int revision = items.Length * 17 + _bagTab * 7919 + (int)(Boot.Gold % 1_000_000);
             foreach (var item in items)
                 revision = revision * 31 + (item.Equipped ? 1 : 0) + item.Quantity * 7 + item.Enchant;
             if (revision == _bagRevision) return;
             _bagRevision = revision;
 
+            _bagGoldLabel.text = "Gold: " + Boot.Gold.ToString("N0");
+            _bagSlotsLabel.text = "Slots " + items.Length + " / " + GameConstants.InventorySize;
+            for (int i = 0; i < _bagTabButtons.Length; i++)
+                _bagTabButtons[i].targetGraphic.color = i == _bagTab ? UiKit.Accent : UiKit.PanelLight;
+
             for (int i = _bagContent.childCount - 1; i >= 0; i--)
                 Destroy(_bagContent.GetChild(i).gameObject);
 
-            if (items.Length == 0)
-            {
-                var empty = UiKit.Label(_bagContent, "Empty.", 17f, UiKit.TextDim);
-                empty.gameObject.AddComponent<LayoutElement>().minHeight = 34f;
-                return;
-            }
-
+            bool anyInTab = false;
             foreach (var item in items)
             {
                 var def = ItemCatalog.Get(item.DefId);
+                if (BagTabOf(def) != _bagTab) continue;
+                anyInTab = true;
                 var row = UiKit.Box(_bagContent, "Item", UiKit.PanelLight);
                 row.gameObject.AddComponent<LayoutElement>().minHeight = 46f;
 
@@ -1023,13 +1062,24 @@ namespace Game.Client
                 var label = UiKit.Label(row.transform, name, 17f,
                                         item.Equipped ? UiKit.Good : UiKit.Text,
                                         TextAlignmentOptions.Left);
-                UiKit.Stretch(UiKit.Rect(label.gameObject), 12f, 0f, 210f, 0f);
+                UiKit.Stretch(UiKit.Rect(label.gameObject), 12f, 0f, 224f, 0f);
 
                 var id = item.InstanceId;
                 var shown = item;
+
+                // Fast-delete: bins the WHOLE stack with NO confirmation (owner's ask). Not offered for
+                // quest items — the server refuses those, so the button would only ever produce an error.
+                if (def == null || def.Slot != EquipSlot.QuestItem)
+                {
+                    var bin = UiKit.TextButton(row.transform, "Del", () => Boot.RemoveItem(id, true), 14f);
+                    bin.targetGraphic.color = new Color(0.42f, 0.20f, 0.20f, 0.95f);
+                    UiKit.Place(UiKit.Rect(bin.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                                new Vector2(-8f, 0f), new Vector2(52f, 38f));
+                }
+
                 var details = UiKit.TextButton(row.transform, "Details", () => OpenItemDetails(shown), 14f);
                 UiKit.Place(UiKit.Rect(details.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                            new Vector2(-8f, 0f), new Vector2(100f, 38f));
+                            new Vector2(-64f, 0f), new Vector2(94f, 38f));
 
                 // Fast path: [e] equips/unequips gear, [u] uses a consumable — both skip the details
                 // window. EquipSlot has no "None" (it classifies EVERY item), so the wearable slots are
@@ -1042,14 +1092,22 @@ namespace Game.Client
                 {
                     var fast = UiKit.TextButton(row.transform, "e", () => Boot.EquipItem(id), 15f);
                     UiKit.Place(UiKit.Rect(fast.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                                new Vector2(-116f, 0f), new Vector2(56f, 38f));
+                                new Vector2(-162f, 0f), new Vector2(48f, 38f));
                 }
                 else if (def != null && def.Slot == EquipSlot.Consumable)
                 {
                     var fast = UiKit.TextButton(row.transform, "u", () => Boot.UsePotion(id), 15f);
                     UiKit.Place(UiKit.Rect(fast.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                                new Vector2(-116f, 0f), new Vector2(56f, 38f));
+                                new Vector2(-162f, 0f), new Vector2(48f, 38f));
                 }
+            }
+
+            if (!anyInTab)
+            {
+                var empty = UiKit.Label(_bagContent,
+                    _bagTab == 0 ? "No equipment." : _bagTab == 2 ? "No quest items." : "No items.",
+                    17f, UiKit.TextDim);
+                empty.gameObject.AddComponent<LayoutElement>().minHeight = 34f;
             }
         }
 

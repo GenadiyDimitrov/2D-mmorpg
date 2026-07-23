@@ -266,8 +266,8 @@ namespace Game.Client
         public Task RemoveBuffAsync(string buffKey) =>
             _connection.SendAsync("RemoveBuff", buffKey);
 
-        public Task RemoveItemAsync(Guid instanceId, bool all) =>
-            _connection.SendAsync("RemoveItem", instanceId, all);
+        public Task RemoveItemAsync(Guid instanceId, bool all, int quantity = 0) =>
+            _connection.SendAsync("RemoveItem", instanceId, all, quantity);
 
         // ----- debug (server re-checks admin rights on every one of these) ------------------------
         public Task DebugLevelAsync(int delta) => _connection.SendAsync("DebugLevel", delta);

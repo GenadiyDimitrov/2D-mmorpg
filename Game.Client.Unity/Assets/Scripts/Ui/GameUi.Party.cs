@@ -25,7 +25,7 @@ namespace Game.Client
         {
             _partyPanel = UiKit.PanelBox(_worldRoot, "Party");
             UiKit.Place(_partyPanel, new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -230f), new Vector2(330f, 300f));
+                        new Vector2(12f, -230f), new Vector2(300f, 270f));
             var inner = _partyPanel.GetChild(0);
 
             _partyTitle = UiKit.Label(inner, "", 16f, UiKit.Accent, TextAlignmentOptions.Left);
@@ -37,8 +37,12 @@ namespace Game.Client
                         new Vector2(-10f, -6f), new Vector2(72f, 26f));
 
             ScrollRect scroll;
-            _partyContent = UiKit.ScrollArea(inner, out scroll, 3f);
-            UiKit.Stretch((RectTransform)scroll.transform, 10f, 38f, 10f, 10f);
+            _partyContent = UiKit.ScrollArea(inner, out scroll, 2f);
+            UiKit.Stretch((RectTransform)scroll.transform, 10f, 34f, 10f, 10f);
+
+            // Movable: drag anywhere on the panel BACKGROUND (the member rows and the scroll list
+            // catch their own taps/drags first, so this only fires on empty space and the title strip).
+            inner.gameObject.AddComponent<DragMove>().Target = _partyPanel;
 
             _partyPanel.gameObject.SetActive(false);
 
@@ -99,7 +103,7 @@ namespace Game.Client
             foreach (var member in party)
             {
                 var row = UiKit.Box(_partyContent, "Member", UiKit.PanelLight);
-                row.gameObject.AddComponent<LayoutElement>().minHeight = 54f;
+                row.gameObject.AddComponent<LayoutElement>().minHeight = 48f;
 
                 // Tapping a member TARGETS them — that is how you heal someone without hunting for
                 // their marker in a fight.

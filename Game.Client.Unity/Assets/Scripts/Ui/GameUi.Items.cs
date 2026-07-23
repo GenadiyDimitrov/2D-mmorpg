@@ -166,11 +166,17 @@ namespace Game.Client
         private void ConfirmBin(InventoryItemDto item, ItemDef def)
         {
             var id = item.InstanceId;
-            if (item.Quantity > 1)
+            int stack = item.Quantity;
+            if (stack > 1)
             {
-                ShowSelection("Delete " + def.Name + "  (x" + item.Quantity + ")?",
-                    ("Delete one", () => { Boot.RemoveItem(id, false); CloseAllItemViews(); }),
-                    ("Delete the whole stack", () => { Boot.RemoveItem(id, true); CloseAllItemViews(); }));
+                // Quantity item → pick HOW MANY to bin on the numpad (owner's ask — the plain
+                // one/all/cancel was "not as fancy"). Max is the whole stack.
+                OpenNumpad("Delete " + def.Name, stack, qty =>
+                {
+                    Boot.RemoveItem(id, all: qty >= stack, quantity: qty);
+                    CloseNumpad();
+                    CloseAllItemViews();
+                });
             }
             else
             {

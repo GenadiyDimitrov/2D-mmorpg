@@ -680,6 +680,21 @@ namespace Game.Client
             finally { _busy = false; }
         }
 
+        /// <summary>Clear everything that belongs to the CHARACTER you were playing, so re-entering the
+        /// world (as the same or a different character) never shows a ghost from the last session — the
+        /// party roster that hung around after a relog, a half-open NPC dialog, a stale target window.
+        /// The server re-pushes what still applies on entry; this just makes "nothing" the default.</summary>
+        private void ResetWorldTransients()
+        {
+            TargetId = null;
+            Party = new PartyMemberDto[0];
+            PendingInvite = null;
+            PendingResurrect = null;
+            Dialog = null;
+            Details = null;
+            DialogNpcId = Guid.Empty;
+        }
+
         public async void LeaveWorld()
         {
             try
@@ -688,7 +703,7 @@ namespace Game.Client
                 Main(() =>
                 {
                     if (Entities != null) Entities.Clear();
-                    TargetId = null;
+                    ResetWorldTransients();
                     Phase = ClientPhase.CharacterSelect;
                     StatusMessage = "Left the world.";
                 });
@@ -720,7 +735,7 @@ namespace Game.Client
                 if (Entities != null) { Entities.Clear(); Entities.SetSelf(Guid.Empty); }
                 if (CameraRig != null) CameraRig.Target = null;
                 if (Marker != null) { Marker.Follow = null; Marker.Hide(); }
-                TargetId = null;
+                ResetWorldTransients();
                 Stats = null; Progress = null; Gold = 0;
                 Characters = Array.Empty<CharacterSlot>();
                 LastError = null;
@@ -1111,10 +1126,10 @@ namespace Game.Client
 
         /// <summary>Drop/destroy an item. all=true bins the whole stack, false a single unit — the
         /// server enforces which is legal (a non-stackable ignores the distinction).</summary>
-        public async void RemoveItem(Guid instanceId, bool all)
+        public async void RemoveItem(Guid instanceId, bool all, int quantity = 0)
         {
             if (Phase != ClientPhase.InWorld) return;
-            try { await _net.RemoveItemAsync(instanceId, all); }
+            try { await _net.RemoveItemAsync(instanceId, all, quantity); }
             catch (Exception ex) { ClientLog.Warn("RemoveItem: " + ex.Message); }
         }
 
