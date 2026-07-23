@@ -3040,12 +3040,15 @@ public class GameLoopService : BackgroundService
                 // like DoT stacks aren't shown — they're not something you cure).
                 var debuffs = m.Buffs.Where(b => b.IsDebuff && !b.Internal)
                     .Select(b => b.Name).Distinct().ToArray();
+                var buffs = m.Buffs.Where(b => !b.IsDebuff && !b.Internal)
+                    .Select(b => b.Name).Distinct().ToArray();
                 members.Add(new PartyMemberDto(m.Id, m.Name, m.Level, PartyClassLabel(m),
                     (int)m.Hp, m.MaxHp, (int)m.Mp, m.MaxMp, mid == party.LeaderId,
                     m.IsOfflineFarming || m.IsDisconnected ? PartyMemberStatus.Offline
                         : m.AutoHuntEnabled ? PartyMemberStatus.Auto
                         : PartyMemberStatus.Online,
-                    debuffs.Length > 0 ? debuffs : null));
+                    debuffs.Length > 0 ? debuffs : null,
+                    buffs.Length > 0 ? buffs : null));
             }
         var dto = new PartyUpdate(members.ToArray(), party.LootMode);
         foreach (var mid in party.Members)

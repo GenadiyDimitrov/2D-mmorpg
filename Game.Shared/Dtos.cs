@@ -308,7 +308,10 @@ public record DebugConfigDto(
 public record PartyMemberDto(Guid Id, string Name, int Level, string ClassName,
     int Hp, int MaxHp, int Mp, int MaxMp, bool IsLeader,
     PartyMemberStatus Status = PartyMemberStatus.Online,
-    string[]? Debuffs = null);
+    string[]? Debuffs = null,
+    // Positive buff NAMES (appended) — so the party window can show who has what up, behind a
+    // buffs/debuffs view toggle. Internal counters (DoT stacks) are excluded like Debuffs.
+    string[]? Buffs = null);
 
 /// <summary>Server -> party members: the current roster (empty array = you left/were the last
 /// member, so the client hides the party window). Sent on membership change and refreshed

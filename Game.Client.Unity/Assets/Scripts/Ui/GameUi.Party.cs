@@ -16,7 +16,11 @@ namespace Game.Client
     {
         private RectTransform _partyPanel, _partyContent;
         private TextMeshProUGUI _partyTitle;
+        private Button _partyViewButton;
         private int _partyStamp = -1;
+        // Member buff/debuff view: 0 buffs only, 1 debuffs only, 2 all, 3 none (owner's 4-stage toggle).
+        private int _partyView = 2;
+        private static readonly string[] PartyViewNames = { "buffs", "debuffs", "all", "none" };
 
         private RectTransform _invitePanel;
         private TextMeshProUGUI _inviteText;
@@ -34,7 +38,16 @@ namespace Game.Client
 
             var leave = UiKit.TextButton(inner, "Leave", () => Boot.PartyLeave(), 14f);
             UiKit.Place(UiKit.Rect(leave.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
-                        new Vector2(-10f, -6f), new Vector2(72f, 26f));
+                        new Vector2(-10f, -6f), new Vector2(66f, 26f));
+
+            // 4-stage view of members' effects, like the buff-bar Hide: buffs / debuffs / all / none.
+            _partyViewButton = UiKit.TextButton(inner, "", () =>
+            {
+                _partyView = (_partyView + 1) % 4;
+                _partyStamp = -1;   // force a rebuild
+            }, 13f);
+            UiKit.Place(UiKit.Rect(_partyViewButton.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
+                        new Vector2(-82f, -6f), new Vector2(96f, 26f));
 
             ScrollRect scroll;
             _partyContent = UiKit.ScrollArea(inner, out scroll, 2f);
@@ -87,11 +100,13 @@ namespace Game.Client
 
             // HP/MP move constantly, so the stamp covers them: the party window IS a health display,
             // and a roster that only rebuilds on membership change would show stale bars.
-            int stamp = party.Length * 31 + (int)Boot.PartyLoot;
-            foreach (var m in party) stamp = stamp * 31 + m.Hp + m.Mp * 7 + (int)m.Status;
+            int stamp = party.Length * 31 + (int)Boot.PartyLoot + _partyView * 131;
+            foreach (var m in party) stamp = stamp * 31 + m.Hp + m.Mp * 7 + (int)m.Status
+                + (m.Buffs?.Length ?? 0) * 17 + (m.Debuffs?.Length ?? 0) * 13;
             if (stamp == _partyStamp) return;
             _partyStamp = stamp;
 
+            UiKit.SetButtonText(_partyViewButton, "fx: " + PartyViewNames[_partyView]);
             _partyTitle.text = "Party " + party.Length + "   ·   " + LootName(Boot.PartyLoot);
 
             for (int i = _partyContent.childCount - 1; i >= 0; i--)
@@ -102,8 +117,9 @@ namespace Game.Client
 
             foreach (var member in party)
             {
+                string fx = BuildPartyFx(member);
                 var row = UiKit.Box(_partyContent, "Member", UiKit.PanelLight);
-                row.gameObject.AddComponent<LayoutElement>().minHeight = 48f;
+                row.gameObject.AddComponent<LayoutElement>().minHeight = fx.Length > 0 ? 64f : 46f;
 
                 // Tapping a member TARGETS them — that is how you heal someone without hunting for
                 // their marker in a fight.
@@ -131,13 +147,14 @@ namespace Game.Client
                             new Vector2(10f, -38f), new Vector2(220f, 8f));
                 UiKit.SetBar(mp, member.Mp, member.MaxMp);
 
-                // Debuffs on a party member matter to a healer more than almost anything else.
-                if (member.Debuffs != null && member.Debuffs.Length > 0)
+                // Buffs (green) and/or debuffs (red) per the view toggle — coloured inline via rich text
+                // so one wrapping label carries both. A healer reads who needs a cleanse; a buffer reads
+                // who is missing a chant.
+                if (fx.Length > 0)
                 {
-                    var debuffs = UiKit.Label(row.transform, string.Join(" ", member.Debuffs), 12f,
-                                              new Color(1f, 0.55f, 0.55f), TextAlignmentOptions.Left);
-                    UiKit.Place(UiKit.Rect(debuffs.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                                new Vector2(10f, 2f), new Vector2(230f, 14f));
+                    var effects = UiKit.Label(row.transform, fx, 12f, UiKit.Text, TextAlignmentOptions.TopLeft);
+                    UiKit.Place(UiKit.Rect(effects.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                                new Vector2(10f, 2f), new Vector2(270f, 30f));
                 }
 
                 if (iLead && member.Id != Boot.SelfId)
@@ -160,6 +177,23 @@ namespace Game.Client
                                              () => Boot.PartySetLoot(NextLoot(Boot.PartyLoot)), 14f);
                 cycle.gameObject.AddComponent<LayoutElement>().minHeight = 36f;
             }
+        }
+
+        /// <summary>The coloured effect line for a member, per the 4-stage view toggle: green buff names
+        /// and/or red debuff names (inline rich-text colour), or "" for the None stage.</summary>
+        private string BuildPartyFx(PartyMemberDto member)
+        {
+            if (_partyView == 3) return "";
+            string fx = "";
+            bool showBuffs = _partyView == 0 || _partyView == 2;
+            bool showDebuffs = _partyView == 1 || _partyView == 2;
+            if (showBuffs && member.Buffs != null)
+                foreach (var b in member.Buffs)
+                    fx += (fx.Length > 0 ? "  " : "") + "<color=#6BD97B>" + b + "</color>";
+            if (showDebuffs && member.Debuffs != null)
+                foreach (var d in member.Debuffs)
+                    fx += (fx.Length > 0 ? "  " : "") + "<color=#FF8C8C>" + d + "</color>";
+            return fx;
         }
 
         private static LootMode NextLoot(LootMode mode)

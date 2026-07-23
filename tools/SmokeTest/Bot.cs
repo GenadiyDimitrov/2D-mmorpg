@@ -232,6 +232,17 @@ static class Bot
                 : "party: " + string.Join(", ", p.Members.Select(m =>
                     $"{m.Name} Lv{m.Level} {m.Hp}/{m.MaxHp}" + (m.IsLeader ? " (leader)" : "")))));
 
+        _hub.On<PartyLootVoteDto>("PartyLootVote", async v =>
+        {
+            if (!v.Open) return;
+            Log($"loot-rule vote: {v.RequestedBy} proposes {v.Mode}");
+            if (_autoAcceptParty)
+            {
+                await _hub.SendAsync("PartyLootVote", true);
+                Log("  → voted YES automatically ('autoparty off' to stop)");
+            }
+        });
+
         _hub.On<ResurrectOffer>("ResurrectOffer", async r =>
         {
             Log($"resurrect offered by {r.FromName} ({r.ExpPct:0.#}% exp back)");
