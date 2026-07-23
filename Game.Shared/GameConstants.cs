@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.28.49";
+    public const string GameVersion = "0.28.50";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -243,6 +243,12 @@ public static class GameConstants
     public const string SkillBarItemPrefix = "item:";
     public static bool IsItemSlot(string? id) => id is not null && id.StartsWith(SkillBarItemPrefix, StringComparison.Ordinal);
     public static string ItemSlotToken(string defId) => SkillBarItemPrefix + defId;
+
+    /// <summary>Equipment-preset bar token: "preset:0/1/2" (A/B/C). Tapping it applies that saved
+    /// loadout. Like item:/action: tokens, it just rides the existing skill bar.</summary>
+    public const string SkillBarPresetPrefix = "preset:";
+    public static bool IsPresetSlot(string? id) => id is not null && id.StartsWith(SkillBarPresetPrefix, StringComparison.Ordinal);
+    public static string PresetSlotToken(int slot) => SkillBarPresetPrefix + slot;
     public static string ItemSlotDefId(string token) => token.Substring(SkillBarItemPrefix.Length);
 
     /// <summary>A bar slot may also hold a built-in ACTION: "action:&lt;id&gt;". These are not skills —

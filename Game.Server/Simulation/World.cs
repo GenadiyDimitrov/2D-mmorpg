@@ -279,6 +279,9 @@ public record PartyRespondCmd(string ConnectionId, bool Accept) : IGameCommand;
 public record PartyLeaveCmd(string ConnectionId) : IGameCommand;
 public record PartyKickCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 public record PartyChangeLeaderCmd(string ConnectionId, Guid TargetId) : IGameCommand;
+// Equipment presets A/B/C (slot 0/1/2): save the worn set, or apply a saved one.
+public record SaveEquipPresetCmd(string ConnectionId, int Slot) : IGameCommand;
+public record ApplyEquipPresetCmd(string ConnectionId, int Slot) : IGameCommand;
 public record PartySetLootModeCmd(string ConnectionId, LootMode Mode) : IGameCommand;
 public record PartyLootVoteCmd(string ConnectionId, bool Accept) : IGameCommand;
 public record SetAutoHuntConfigCmd(string ConnectionId, AutoHuntConfigDto Config) : IGameCommand;

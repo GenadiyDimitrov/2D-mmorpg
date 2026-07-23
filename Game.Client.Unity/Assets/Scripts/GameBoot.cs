@@ -130,6 +130,22 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Party: " + ex.Message); }
         }
 
+        /// <summary>Save the currently-worn gear into preset slot 0/1/2 (A/B/C).</summary>
+        public async void SaveEquipPreset(int slot)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.SaveEquipPresetAsync(slot); }
+            catch (Exception ex) { ClientLog.Warn("Preset: " + ex.Message); }
+        }
+
+        /// <summary>Re-equip preset slot 0/1/2. Server refuses in combat + reports skipped items.</summary>
+        public async void ApplyEquipPreset(int slot)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.ApplyEquipPresetAsync(slot); }
+            catch (Exception ex) { ClientLog.Warn("Preset: " + ex.Message); }
+        }
+
         /// <summary>Find a current party member's id by name (for /ptkick, /ptcl). Null if not in party.</summary>
         public Guid? PartyMemberId(string name)
         {
@@ -944,6 +960,13 @@ namespace Game.Client
                 string defId = token.Substring(GameConstants.SkillBarItemPrefix.Length);
                 if (FindBagItem(defId) is Guid iid) UsePotion(iid);
                 else ClientLog.Warn("You have no " + (ItemCatalog.Get(defId)?.Name ?? defId) + " to use.");
+                return;
+            }
+
+            if (GameConstants.IsPresetSlot(token))
+            {
+                if (int.TryParse(token.Substring(GameConstants.SkillBarPresetPrefix.Length), out int ps))
+                    ApplyEquipPreset(ps);
                 return;
             }
 

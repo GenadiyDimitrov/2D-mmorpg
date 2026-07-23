@@ -87,6 +87,9 @@ public class CharacterRecord
     /// <summary>Auto-hunt config as JSON (AutoHuntConfigDto). Empty = defaults/off.</summary>
     public string AutoHuntJson { get; set; } = "";
 
+    /// <summary>Equipment presets A/B/C as JSON: a Guid[][] of worn item instance ids. Empty = none.</summary>
+    public string EquipPresetsJson { get; set; } = "";
+
     /// <summary>Which owned class the character is currently playing (a <see cref="SubclassRecord.Slot"/>).
     /// Slot 0 is the class they were created as.</summary>
     public int ActiveSubclassSlot { get; set; }

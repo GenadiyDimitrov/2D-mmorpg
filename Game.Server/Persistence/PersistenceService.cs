@@ -600,6 +600,8 @@ public class PersistenceService
                         entity.AutoSkills.Add(s);
                     foreach (var id in cfg.BuffPotionIds ?? Array.Empty<string>())
                         entity.AutoBuffPotionIds.Add(id);
+                    foreach (var hp in cfg.HealPotions ?? Array.Empty<AutoPotionDto>())
+                        entity.AutoHealPotions.Add(hp);
                     entity.AutoFarmRange = cfg.FarmRange <= 0 ? 1000 : Math.Clamp(cfg.FarmRange, 200, 2000);
                     entity.AutoFarmStatic = cfg.StaticSpot;
                     entity.AutoAttackNormal = cfg.AttackNormal;
@@ -608,6 +610,21 @@ public class PersistenceService
                 }
             }
             catch { /* ignore malformed auto-hunt json */ }
+        }
+
+        if (!string.IsNullOrEmpty(rec.EquipPresetsJson))
+        {
+            try
+            {
+                var presets = JsonSerializer.Deserialize<Guid[][]>(rec.EquipPresetsJson);
+                if (presets is not null)
+                    for (int i = 0; i < entity.EquipPresets.Length && i < presets.Length; i++)
+                    {
+                        entity.EquipPresets[i].Clear();
+                        if (presets[i] is not null) entity.EquipPresets[i].AddRange(presets[i]);
+                    }
+            }
+            catch { /* ignore malformed preset json */ }
         }
 
         // Clamp on load: karma is never negative, and this heals any row corrupted by the old
@@ -688,7 +705,7 @@ public class PersistenceService
         int SecondClass, int ThirdClass, int SkillPoints, int Profession,
         int Con, int Atk, int Wit, int Dex, int Spt, float X, float Y,
         string LearnedSkillsCsv, string CompletedQuestsCsv, string ActiveQuestsJson,
-        string KnownRecipesCsv, string FriendsCsv, string AutoHuntJson,
+        string KnownRecipesCsv, string FriendsCsv, string AutoHuntJson, string EquipPresetsJson,
         int ActiveSubclassSlot, IReadOnlyList<SubclassSnapshot> Subclasses,
         int Karma, int PkCount, int PvpCount, int ConsecutivePk, bool DiedWhileAway,
         DateTime? JailedUntilUtc, DateTime? ChatBannedUntilUtc,
@@ -719,7 +736,9 @@ public class PersistenceService
                 JsonSerializer.Serialize(new AutoHuntConfigDto(
                     e.AutoHuntEnabled, e.AutoHpPotionPct, e.AutoMpPotionPct, e.AutoBuffPotions,
                     e.AutoSkills.ToArray(), e.AutoBuffPotionIds.ToArray(),
-                    e.AutoFarmRange, e.AutoFarmStatic, e.AutoAttackNormal, e.AutoAttackElite, e.AutoAttackBoss)),
+                    e.AutoFarmRange, e.AutoFarmStatic, e.AutoAttackNormal, e.AutoAttackElite, e.AutoAttackBoss,
+                    e.AutoHealPotions.ToArray())),
+                JsonSerializer.Serialize(e.EquipPresets),
                 e.ActiveSubclass.Slot, subs,
                 e.Karma, e.PkCount, e.PvpCount, e.ConsecutivePk, e.DiedWhileAway,
                 e.JailedUntil, e.ChatBannedUntil,
@@ -789,6 +808,7 @@ public class PersistenceService
         rec.KnownRecipesCsv = snap.KnownRecipesCsv;
         rec.FriendsCsv = snap.FriendsCsv;
         rec.AutoHuntJson = snap.AutoHuntJson;
+        rec.EquipPresetsJson = snap.EquipPresetsJson;
         rec.Karma = snap.Karma;
         rec.PkCount = snap.PkCount;
         rec.PvpCount = snap.PvpCount;

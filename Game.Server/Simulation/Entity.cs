@@ -847,6 +847,11 @@ public class Entity
     public List<string> AutoBuffPotionIds { get; } = new();
     // The auto-potions Potions tab: per-potion on/off + HP% threshold (empty = use AutoHpPotionPct).
     public List<AutoPotionDto> AutoHealPotions { get; } = new();
+
+    /// <summary>Three saved equipment loadouts (A/B/C), each a list of equipped item INSTANCE ids.
+    /// Save snapshots what's worn; apply unequips all then re-equips these (skipping any that were
+    /// sold/traded/destroyed). Persisted per character. Index 0=A, 1=B, 2=C.</summary>
+    public List<Guid>[] EquipPresets { get; } = { new(), new(), new() };
     // Roaming config (docs/design/AutoHunt.md roaming spec).
     public int AutoFarmRange { get; set; } = 1000;
     public bool AutoFarmStatic { get; set; }             // false = roam, true = fixed circle at start

@@ -346,6 +346,18 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task SaveEquipPreset(int slot)
+    {
+        _world.Commands.Enqueue(new SaveEquipPresetCmd(Context.ConnectionId, slot));
+        return Task.CompletedTask;
+    }
+
+    public Task ApplyEquipPreset(int slot)
+    {
+        _world.Commands.Enqueue(new ApplyEquipPresetCmd(Context.ConnectionId, slot));
+        return Task.CompletedTask;
+    }
+
     public Task PartyKick(Guid targetId)
     {
         _world.Commands.Enqueue(new PartyKickCmd(Context.ConnectionId, targetId));

@@ -187,6 +187,7 @@ namespace Game.Client
             BuildAutoHuntWindows();
             BuildItemWindows();
             BuildVendorWindow();
+            BuildEquipmentWindow();
             BuildSlotMenu();
         }
 
@@ -478,11 +479,12 @@ namespace Game.Client
         {
             _menuPanel = UiKit.PanelBox(_worldRoot, "Menu");
             UiKit.Place(_menuPanel, new Vector2(1f, 1f), new Vector2(1f, 1f),
-                        new Vector2(-12f, -100f), new Vector2(200f, 340f));
+                        new Vector2(-12f, -100f), new Vector2(200f, 392f));
             var inner = _menuPanel.GetChild(0);
 
             var entries = new List<(string Label, Action Click)>
             {
+                ("Equipment", () => { CloseWindow(_menuPanel); ToggleWindow(_equipPanel); }),
                 ("Auto Pots", () => { CloseWindow(_menuPanel); OpenAutoPotions(); }),
                 ("Auto Farm", () => { CloseWindow(_menuPanel); OpenAutoFarm(); }),
                 ("Quests", () => { CloseWindow(_menuPanel); ToggleWindow(_questPanel); }),
@@ -625,6 +627,7 @@ namespace Game.Client
             RefreshDialogWindow();
             RefreshPartyWindow();
             RefreshVendorWindow();
+            RefreshEquipmentWindow();
             RefreshFarmRing();
             RefreshNameplates();
 
@@ -787,6 +790,13 @@ namespace Game.Client
                 var idef = ItemCatalog.Get(defId);
                 usable = Boot.FindBagItem(defId) != null;
                 return idef != null ? Abbreviations.For(idef.Name) : "[i]";
+            }
+
+            if (GameConstants.IsPresetSlot(token))
+            {
+                usable = true;
+                string s = token.Substring(GameConstants.SkillBarPresetPrefix.Length);
+                return int.TryParse(s, out int p) && p >= 0 && p < 3 ? "P-" + "ABC"[p] : "P?";
             }
 
             var def = SkillCatalog.Get(token);

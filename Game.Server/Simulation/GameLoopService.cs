@@ -175,6 +175,8 @@ public class GameLoopService : BackgroundService
                 case PartyRespondCmd c: HandlePartyRespond(c); break;
                 case PartyLeaveCmd c: HandlePartyLeave(c); break;
                 case PartyChangeLeaderCmd c: HandlePartyChangeLeader(c); break;
+                case SaveEquipPresetCmd c: HandleSaveEquipPreset(c); break;
+                case ApplyEquipPresetCmd c: HandleApplyEquipPreset(c); break;
                 case PartyKickCmd c: HandlePartyKick(c); break;
                 case PartySetLootModeCmd c: HandlePartySetLootMode(c); break;
                 case PartyLootVoteCmd c: HandlePartyLootVote(c); break;
@@ -1298,6 +1300,63 @@ public class GameLoopService : BackgroundService
         SendInventory(player);
         SendStats(player);
         SaveEntity(player);   // persist equip changes immediately (survive restarts)
+    }
+
+    private static readonly string[] PresetLabels = { "A", "B", "C" };
+
+    /// <summary>Snapshot the currently-worn items into preset A/B/C (their instance ids).</summary>
+    private void HandleSaveEquipPreset(SaveEquipPresetCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        if (cmd.Slot < 0 || cmd.Slot >= player.EquipPresets.Length) return;
+
+        var preset = player.EquipPresets[cmd.Slot];
+        preset.Clear();
+        foreach (var it in player.Inventory)
+            if (it.Equipped) preset.Add(it.InstanceId);
+
+        SaveEntity(player);
+        SendSystemToEntity(player, $"Saved your equipment as preset {PresetLabels[cmd.Slot]} ({preset.Count} item(s)).");
+    }
+
+    /// <summary>Re-equip a saved loadout: unequip everything, then equip each preset item still in the
+    /// bag. Refused in combat (owner). Items sold/traded/destroyed are skipped and reported.</summary>
+    private void HandleApplyEquipPreset(ApplyEquipPresetCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (cmd.Slot < 0 || cmd.Slot >= player.EquipPresets.Length) return;
+
+        if (IsInCombat(player))
+        {
+            SendSystemToEntity(player, "You can't swap equipment in combat.");
+            return;
+        }
+        var preset = player.EquipPresets[cmd.Slot];
+        if (preset.Count == 0)
+        {
+            SendSystemToEntity(player, $"Preset {PresetLabels[cmd.Slot]} is empty — save it first.");
+            return;
+        }
+
+        foreach (var it in player.Inventory) it.Equipped = false;   // strip current gear
+
+        _world.ActiveTrades.TryGetValue(player.Id, out var trade);
+        int missing = 0;
+        foreach (var iid in preset)
+        {
+            var it = player.Inventory.FirstOrDefault(i => i.InstanceId == iid);
+            // An item in a live trade offer can't be equipped; a missing one was sold/traded/destroyed.
+            if (it is null || (trade is not null && trade.OfferOf(player).Contains(iid))) { missing++; continue; }
+            it.Equipped = true;
+        }
+
+        player.RecomputeDerived();
+        SendInventory(player);
+        SendStats(player);
+        SaveEntity(player);
+        SendSystemToEntity(player, missing == 0
+            ? $"Equipped preset {PresetLabels[cmd.Slot]}."
+            : $"Equipped preset {PresetLabels[cmd.Slot]} — {missing} item(s) were missing and skipped.");
     }
 
     private void HandleEnchant(EnchantCmd cmd)

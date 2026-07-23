@@ -229,6 +229,8 @@ namespace Game.Client
         public Task PartyLeaveAsync() => _connection.SendAsync("PartyLeave");
         public Task PartyKickAsync(Guid targetId) => _connection.SendAsync("PartyKick", targetId);
         public Task PartyChangeLeaderAsync(Guid targetId) => _connection.SendAsync("PartyChangeLeader", targetId);
+        public Task SaveEquipPresetAsync(int slot) => _connection.SendAsync("SaveEquipPreset", slot);
+        public Task ApplyEquipPresetAsync(int slot) => _connection.SendAsync("ApplyEquipPreset", slot);
         public Task PartySetLootModeAsync(LootMode mode) => _connection.SendAsync("PartySetLootMode", mode);
 
         // ----- NPC interaction --------------------------------------------------------------------
