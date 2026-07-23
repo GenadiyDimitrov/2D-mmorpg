@@ -78,6 +78,10 @@ app.MapGet("/apk", () =>
 // squints at their bar mid-fight and can't tell two buffs apart.
 Game.Shared.Abbreviations.Validate();
 
+// Enforce "no rogue spawners" (owner) — every spawn zone must fall inside a field. Fails startup loudly
+// with the offending coordinates rather than letting a field-less circle onto the map.
+Game.Shared.RegionMap.ValidateSpawnersInFields();
+
 app.Logger.LogInformation("L2Clone server v{Version} starting.", Game.Shared.GameConstants.GameVersion);
 
 // Print the LAN address the phone should use. "Now listening on: http://0.0.0.0:5238" is technically

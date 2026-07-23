@@ -230,6 +230,27 @@ public static class RegionMap
 
     public static Region? ById(string id) => Array.Find(Regions, r => r.Id == id);
 
+    /// <summary>Enforce the rule "no rogue spawners — every spawner is a child of a field" at startup
+    /// (same spirit as the skill-id / abbreviation guards). A spawner outside every field would show as a
+    /// lone circle with no zone identity, no derived band, and no field to belong to; catch it here rather
+    /// than on the map. Throws listing the offenders.</summary>
+    public static void ValidateSpawnersInFields()
+    {
+        var rogue = new List<string>();
+        foreach (var z in WorldMap.SpawnZones)
+        {
+            bool inField = false;
+            foreach (var f in Fields)
+                if (f.Contains(z.X, z.Y)) { inField = true; break; }
+            if (!inField)
+                rogue.Add($"({z.X:0},{z.Y:0}) Lv{z.MinLevel}-{z.MaxLevel} [{string.Join('/', z.MobTypes)}]");
+        }
+        if (rogue.Count > 0)
+            throw new InvalidOperationException(
+                "Rogue spawners — every spawner must be a child of a field (add/extend a field to cover it):\n  "
+                + string.Join("\n  ", rogue));
+    }
+
     /// <summary>The level band a region covers, derived from its spawners. Null when it has none — a
     /// peaceful area has no level, and showing "0-0" would be worse than showing nothing.</summary>
     public static (int Min, int Max)? LevelBand(string regionId)

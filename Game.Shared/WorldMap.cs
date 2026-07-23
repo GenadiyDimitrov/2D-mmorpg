@@ -102,7 +102,10 @@ public static class WorldMap
             MobTypes: new[] { "training_dummy" }, MaxCount: 1, RespawnSeconds: 5),
 
         // ===== Elite + Boss placeholders (more bosses/instances later) =====
-        new(X: 11600, Y: 10000, Radius: 300,  MinLevel: 78, MaxLevel: 78,
+        // The emberwyrm ELITE roams the Frostmere Wastes (inside that field, an L70-85 zone) — it used to
+        // sit at (11600,10000), which was too near the Hollow Crypt to take its own field, and left it a
+        // "rogue" spawner outside every field. Moved in-zone so every spawner is a child of a field.
+        new(X: 10500, Y: 17000, Radius: 300,  MinLevel: 78, MaxLevel: 78,
             MobTypes: new[] { "emberwyrm_drake" }, MaxCount: 1,
             RespawnSeconds: 180, RespawnVariance: 40, Rank: MobRank.Elite),
         new(X: 24000, Y: 45000, Radius: 250,  MinLevel: 60, MaxLevel: 60,
