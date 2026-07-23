@@ -690,6 +690,11 @@ public class GameLoopService : BackgroundService
         float tx = Math.Clamp(move.Move.TargetX, GameConstants.WorldMinX, GameConstants.ZoneWidth);
         float ty = Math.Clamp(move.Move.TargetY, GameConstants.WorldMinY, GameConstants.ZoneHeight);
 
+        // WALLS: you may only walk within the domain you're STANDING in — the positive overworld can't be
+        // walked out of into the negative dungeon/jail quadrant, and a dungeon can't be walked out of.
+        // Only a teleport crosses between them. (Jail is confined separately, just below.)
+        (tx, ty) = ConfineToDomain(entity, tx, ty);
+
         // JAILED players may walk, but only inside the cell (owner): clamp the destination back onto the
         // jail circle instead of rejecting the move outright, so they can pace around rather than stand
         // frozen. Escape skills/scrolls are blocked separately (TeleportsToTown).
@@ -698,6 +703,50 @@ public class GameLoopService : BackgroundService
 
         entity.TargetX = tx;
         entity.TargetY = ty;
+    }
+
+    /// <summary>Clamp a move destination to the domain the player is CURRENTLY in: the positive overworld
+    /// [0,Zone], or — when they're in the negative quadrant — the bounding box of the dungeon they're in
+    /// (or nearest to). This is the "wall". Teleport/PlaceEntity do NOT go through here, so they alone can
+    /// move a player across a domain boundary. Jailed players are confined by ClampToJail instead.</summary>
+    private static (float, float) ConfineToDomain(Entity e, float tx, float ty)
+    {
+        if (e.Jailed) return (tx, ty);
+
+        if (e.X >= 0 && e.Y >= 0)   // overworld — sealed into the positive quadrant
+            return (Math.Clamp(tx, 0f, GameConstants.ZoneWidth),
+                    Math.Clamp(ty, 0f, GameConstants.ZoneHeight));
+
+        // Negative quadrant: confine to the dungeon you're in / nearest to.
+        var d = RegionMap.DungeonAt(e.X, e.Y) ?? RegionMap.NearestDungeon(e.X, e.Y);
+        if (d != null)
+            return (Math.Clamp(tx, d.MinX, d.MaxX), Math.Clamp(ty, d.MinY, d.MaxY));
+
+        // No dungeons at all — at least keep them out of the positive overworld.
+        return (Math.Clamp(tx, GameConstants.WorldMinX, 0f), Math.Clamp(ty, GameConstants.WorldMinY, 0f));
+    }
+
+    /// <summary>Safety net for broken geodata / a prediction slip: if a (non-jailed) player has ended up
+    /// more than <see cref="WallTolerance"/> OUTSIDE every dungeon while in the negative quadrant, a ward
+    /// teleports them back into the nearest dungeon. Movement is already walled; this catches the rest.</summary>
+    private const float WallTolerance = 500f;
+    private void EnforceDungeonWalls(Entity p)
+    {
+        if (p.Jailed || (p.X >= 0 && p.Y >= 0)) return;   // jail + overworld handled elsewhere
+
+        Region? nearest = null; float best = float.MaxValue;
+        foreach (var d in RegionMap.Dungeons)
+        {
+            float outside = RegionMap.DistanceOutsideBox(d, p.X, p.Y);
+            if (outside <= WallTolerance) return;   // inside, or within the tolerance band at the wall
+            if (outside < best) { best = outside; nearest = d; }
+        }
+        if (nearest != null)
+        {
+            var a = nearest.Arrival(_rng);
+            PlaceEntity(p, a.X, a.Y);
+            SendSystemToEntity(p, "A ward pulls you back inside the dungeon.");
+        }
     }
 
     /// <summary>Pull a point back inside the jail cell, keeping its direction from the centre.</summary>
@@ -4140,6 +4189,7 @@ public class GameLoopService : BackgroundService
                 TickPotion(entity);
                 TickRegionNotice(entity);
                 TickOnlineTime(entity);
+                EnforceDungeonWalls(entity);
             }
 
             TickSkillCooldowns(entity);

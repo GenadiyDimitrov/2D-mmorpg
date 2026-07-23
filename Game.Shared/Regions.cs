@@ -231,6 +231,46 @@ public static class RegionMap
 
     public static Region? ById(string id) => Array.Find(Regions, r => r.Id == id);
 
+    /// <summary>The DUNGEON fields — those authored entirely in the NEGATIVE quadrant (dungeons live off
+    /// the overworld, reached by teleport). Used to WALL players inside a dungeon so they can't wander
+    /// out into the empty negative void or back to the overworld on foot.</summary>
+    public static readonly Region[] Dungeons =
+        Fields.Where(f => f.MaxX < 0 && f.MaxY < 0).ToArray();
+
+    /// <summary>The dungeon whose BOUNDING BOX contains the point, or null when the point is in the
+    /// overworld (both coords ≥ 0). Bbox, not polygon, so a player standing in a dungeon's corner still
+    /// counts as "in the dungeon" and is walled to it rather than snapped to the overworld.</summary>
+    public static Region? DungeonAt(float x, float y)
+    {
+        if (x >= 0 && y >= 0) return null;
+        foreach (var d in Dungeons)
+            if (x >= d.MinX && x <= d.MaxX && y >= d.MinY && y <= d.MaxY) return d;
+        return null;
+    }
+
+    /// <summary>The dungeon whose bounding box is nearest the point (0 = inside it). Null if there are no
+    /// dungeons. Used to pull an escapee back into the closest dungeon.</summary>
+    public static Region? NearestDungeon(float x, float y)
+    {
+        Region? best = null; float bestSq = float.MaxValue;
+        foreach (var d in Dungeons)
+        {
+            float dx = MathF.Max(0f, MathF.Max(d.MinX - x, x - d.MaxX));
+            float dy = MathF.Max(0f, MathF.Max(d.MinY - y, y - d.MaxY));
+            float sq = dx * dx + dy * dy;
+            if (sq < bestSq) { bestSq = sq; best = d; }
+        }
+        return best;
+    }
+
+    /// <summary>How far (world units) the point lies OUTSIDE the dungeon's bounding box; 0 when inside.</summary>
+    public static float DistanceOutsideBox(Region box, float x, float y)
+    {
+        float dx = MathF.Max(0f, MathF.Max(box.MinX - x, x - box.MaxX));
+        float dy = MathF.Max(0f, MathF.Max(box.MinY - y, y - box.MaxY));
+        return MathF.Sqrt(dx * dx + dy * dy);
+    }
+
     /// <summary>Enforce the rule "no rogue spawners — every spawner is a child of a field" at startup
     /// (same spirit as the skill-id / abbreviation guards). A spawner outside every field would show as a
     /// lone circle with no zone identity, no derived band, and no field to belong to; catch it here rather
