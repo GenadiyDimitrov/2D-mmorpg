@@ -275,6 +275,12 @@ public record AutoHuntConfigDto(
 /// HP (or MP) percent below which to drink it.</summary>
 public record AutoPotionDto(string ItemId, bool Enabled, int ThresholdPct);
 
+/// <summary>Server -> owning client: you just crossed into a named region. Shown as transient
+/// centre-screen text that fades. MinLevel/MaxLevel are the derived band (0/0 = a peaceful area or a
+/// town — no band shown). Replaces the always-on zone label (owner: the HUD carries no permanent
+/// place text).</summary>
+public record RegionNotice(string Name, int MinLevel, int MaxLevel);
+
 /// <summary>The pseudo skill-id for "basic attack" as an opt-in auto action: put it in
 /// <see cref="AutoHuntConfigDto.Skills"/> (enabled) and the auto-hunt will melee when no real skill
 /// is ready; leave it out/disabled and the character only casts skills (mage style).</summary>

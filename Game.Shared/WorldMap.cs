@@ -180,7 +180,12 @@ public static class WorldMap
         return best;
     }
 
-    /// <summary>True if the point is inside ANY safe zone.</summary>
+    /// <summary>True if the point is inside ANY safe zone. Stage-2 Regions migration (owner): this is now
+    /// the UNION of the old safe-zone CIRCLES and the TOWN region POLYGONS. Union, not replacement, on
+    /// purpose — the polygons are authored to CONTAIN their circles, but keeping the circle in the test
+    /// means no location safe today can EVER become unsafe (the dangerous direction), while the polygon
+    /// adds the corners the circle missed. This is the one function that gates PvP, jail release,
+    /// respawn and vendor access, so it is deliberately the safe-side migration.</summary>
     public static bool InAnySafeZone(float x, float y)
     {
         foreach (var z in SafeZones)
@@ -189,7 +194,7 @@ public static class WorldMap
             if (dx * dx + dy * dy <= z.Radius * z.Radius)
                 return true;
         }
-        return false;
+        return RegionMap.InTown(x, y);
     }
 
     /// <summary>The safe zone containing a point, or null.</summary>

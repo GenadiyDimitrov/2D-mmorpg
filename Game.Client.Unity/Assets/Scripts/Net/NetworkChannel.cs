@@ -71,6 +71,9 @@ namespace Game.Client
         /// <summary>Live auto-hunt HUD: whether it is running + MP/s. Also the authority on the on/off
         /// state, which the server can flip on its own (idle-time lock, death).</summary>
         public event Action<AutoHuntStatus> AutoHuntStatusReceived;
+
+        /// <summary>You crossed into a named region — shown as transient centre-screen text.</summary>
+        public event Action<RegionNotice> RegionReceived;
         public event Action<string> Disconnected;
         public event Action<string> ForceDisconnected;
         // WithAutomaticReconnect silently gives us a NEW connection id on a transport blip, and the
@@ -108,6 +111,7 @@ namespace Game.Client
             _connection.On<QuestLog>("QuestLog", q => QuestLogReceived?.Invoke(q));
             _connection.On<AutoHuntConfigDto>("AutoConfig", c => AutoConfigReceived?.Invoke(c));
             _connection.On<AutoHuntStatus>("AutoHunt", s => AutoHuntStatusReceived?.Invoke(s));
+            _connection.On<RegionNotice>("Region", r => RegionReceived?.Invoke(r));
             _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));
             _connection.On<GoldUpdate>("Gold", g => GoldReceived?.Invoke(g));
             _connection.On<TargetDetails>("TargetDetails", d => TargetDetailsReceived?.Invoke(d));

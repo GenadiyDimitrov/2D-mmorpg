@@ -188,6 +188,7 @@ namespace Game.Client
             BuildItemWindows();
             BuildVendorWindow();
             BuildEquipmentWindow();
+            BuildRegionUi();
             BuildSlotMenu();
         }
 
@@ -628,6 +629,7 @@ namespace Game.Client
             RefreshPartyWindow();
             RefreshVendorWindow();
             RefreshEquipmentWindow();
+            RefreshRegionUi();
             RefreshFarmRing();
             RefreshNameplates();
 

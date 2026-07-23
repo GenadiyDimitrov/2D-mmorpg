@@ -544,6 +544,7 @@ namespace Game.Client
                 }
             });
             _net.AutoHuntStatusReceived += st => Main(() => { if (st != null) AutoHunting = st.Enabled; });
+            _net.RegionReceived += r => Main(() => Ui?.ShowRegionNotice(r));
             _net.PartyReceived += p => Main(() =>
             {
                 Party = p?.Members ?? new PartyMemberDto[0];

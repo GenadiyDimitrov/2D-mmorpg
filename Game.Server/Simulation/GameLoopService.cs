@@ -4137,7 +4137,10 @@ public class GameLoopService : BackgroundService
                 entity.StealthTicks--;
 
             if (entity.Kind == EntityKind.Player)
+            {
                 TickPotion(entity);
+                TickRegionNotice(entity);
+            }
 
             TickSkillCooldowns(entity);
             TickBuffs(entity);
@@ -4416,6 +4419,21 @@ public class GameLoopService : BackgroundService
 
         foreach (var key in _expiredCooldowns)
             entity.SkillCooldowns.Remove(key);
+    }
+
+    /// <summary>Push a "you entered X" notice when the player crosses into a different region. Between
+    /// regions (the wild), the current id clears so re-entering the same field notices again. Cheap:
+    /// a bbox rejects almost every region in four comparisons.</summary>
+    private void TickRegionNotice(Entity entity)
+    {
+        var region = RegionMap.At(entity.X, entity.Y);
+        string id = region?.Id ?? "";
+        if (id == entity.CurrentRegionId) return;
+        entity.CurrentRegionId = id;
+        if (region is null) return;   // left a region into the wild — no notice
+
+        var band = RegionMap.LevelBand(region.Id);
+        SendTo(entity, "Region", new RegionNotice(region.Name, band?.Min ?? 0, band?.Max ?? 0));
     }
 
     private void TickPotion(Entity entity)

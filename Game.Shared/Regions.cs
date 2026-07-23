@@ -144,9 +144,50 @@ public static class RegionMap
             new[] { new Vec2(24200, 29800) }),
     };
 
-    /// <summary>Every region. Towns join this list in stage 2; until then the array is fields only, and
-    /// safe-zone rules still run off <see cref="WorldMap.SafeZones"/> untouched.</summary>
-    public static IEnumerable<Region> All => Fields;
+    /// <summary>
+    /// TOWNS as regions (stage 2). Each is an OCTAGON that CONTAINS its old safe-zone circle (inradius
+    /// ≈ 1.03·r &gt; r), so no location safe today becomes unsafe — and `InAnySafeZone` unions the circle
+    /// with these anyway, which makes the migration strictly safe-side. Generated from the circle here
+    /// for correctness; hand-refine into organic outlines later without touching the safe-zone rule.
+    /// </summary>
+    public static readonly Region[] Towns =
+    {
+        Town("town_brackenford", "Brackenford",     24000, 24000, 3500),
+        Town("town_stonewatch",  "Stonewatch",      24000, 10000, 2000),
+        Town("town_emberfall",   "Emberfall",       36000, 15000, 2000),
+        Town("town_greymarsh",   "Greymarsh",       36000, 33000, 2000),
+        Town("castle_ironreach", "Ironreach Keep",  24000, 38000, 2200),
+        Town("town_duskvale",    "Duskvale",        12000, 33000, 2000),
+        Town("town_frostmere",   "Frostmere",       12000, 15000, 2000),
+        Town("outpost_training", "Training Outpost", 24000, 5000, 400),
+        Town("dungeon_hollow_crypt", "Hollow Crypt",  6000, 6000, 500),
+    };
+
+    /// <summary>An octagon centred on (cx,cy) whose FLAT sides clear a circle of radius r (R = 1.12·r →
+    /// inradius 1.035·r), plus a single arrival point at the centre.</summary>
+    private static Region Town(string id, string name, float cx, float cy, float r)
+    {
+        float rad = r * 1.12f;
+        var outline = new Vec2[8];
+        for (int i = 0; i < 8; i++)
+        {
+            float a = MathF.PI / 8f + i * (MathF.PI / 4f);   // 22.5° + k·45°, counter-clockwise
+            outline[i] = new Vec2(cx + rad * MathF.Cos(a), cy + rad * MathF.Sin(a));
+        }
+        return new Region(id, name, RegionKind.Town, outline, new[] { new Vec2(cx, cy) });
+    }
+
+    /// <summary>Every region — fields and towns — for the client to draw and "which region am I in".</summary>
+    public static readonly Region[] Regions = Fields.Concat(Towns).ToArray();
+    public static IEnumerable<Region> All => Regions;
+
+    /// <summary>True when the point is inside any TOWN region — the polygon half of the safe-zone rule.</summary>
+    public static bool InTown(float x, float y)
+    {
+        foreach (var t in Towns)
+            if (t.Contains(x, y)) return true;
+        return false;
+    }
 
     private static readonly Dictionary<string, SpawnZone[]> SpawnersByRegion = BuildSpawnerIndex();
 
@@ -163,16 +204,18 @@ public static class RegionMap
     public static SpawnZone[] SpawnersIn(string regionId) =>
         SpawnersByRegion.TryGetValue(regionId, out var zones) ? zones : Array.Empty<SpawnZone>();
 
-    /// <summary>The region containing a point, or null. Fields do not overlap by design; if two ever
-    /// do, the first authored wins, which is at least deterministic.</summary>
+    /// <summary>The region containing a point, or null. TOWNS are checked first, so standing in a town
+    /// that abuts a field reads as "in the town" (the safe area wins). Fields don't overlap by design.</summary>
     public static Region? At(float x, float y)
     {
+        foreach (var region in Towns)
+            if (region.Contains(x, y)) return region;
         foreach (var region in Fields)
             if (region.Contains(x, y)) return region;
         return null;
     }
 
-    public static Region? ById(string id) => Array.Find(Fields, r => r.Id == id);
+    public static Region? ById(string id) => Array.Find(Regions, r => r.Id == id);
 
     /// <summary>The level band a region covers, derived from its spawners. Null when it has none — a
     /// peaceful area has no level, and showing "0-0" would be worse than showing nothing.</summary>

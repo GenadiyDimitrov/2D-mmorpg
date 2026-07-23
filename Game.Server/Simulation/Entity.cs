@@ -848,6 +848,10 @@ public class Entity
     // The auto-potions Potions tab: per-potion on/off + HP% threshold (empty = use AutoHpPotionPct).
     public List<AutoPotionDto> AutoHealPotions { get; } = new();
 
+    /// <summary>The region the player was last known to be in, for the "you entered X" notice — only
+    /// pushed when this changes. "" = not yet computed / in the wild between regions.</summary>
+    public string CurrentRegionId { get; set; } = "";
+
     /// <summary>Three saved equipment loadouts (A/B/C), each a list of equipped item INSTANCE ids.
     /// Save snapshots what's worn; apply unequips all then re-equips these (skipping any that were
     /// sold/traded/destroyed). Persisted per character. Index 0=A, 1=B, 2=C.</summary>
