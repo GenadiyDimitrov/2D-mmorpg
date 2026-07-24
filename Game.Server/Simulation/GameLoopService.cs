@@ -6763,6 +6763,13 @@ var effect = def.Effect;
             newItem.Attributes = def.FixedAttributes is { Length: > 0 } fixedAttrs
                 ? fixedAttrs.ToList()                    // legendary one-off
                 : AttributeSystem.Roll(def, _rng);       // normal random roll
+
+        // A RUNE gets its wall-clock expiry stamped the moment it's ACQUIRED (owner: not only boxes stamp).
+        // The default is the rune's own GrantsRuneSeconds; a box that grants it OVERRIDES this afterwards
+        // with its own duration. So every rune, from any source, always carries an expiry.
+        if (def.IsRune && def.GrantsRuneSeconds > 0)
+            newItem.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(def.GrantsRuneSeconds);
+
         player.Inventory.Add(newItem);
         return true;
     }
@@ -7108,13 +7115,15 @@ var effect = def.Effect;
         if (def.GrantsRuneSeconds > 0 && box.Entries.Length >= 1
             && ItemCatalog.Get(box.Entries[0].ItemId) is { IsRune: true } runeDef)
         {
-            if (!AddItem(player, runeDef.Id, 1, rollAttributes: false))
+            var before = player.Inventory.Where(i => i.DefId == runeDef.Id).Select(i => i.InstanceId).ToHashSet();
+            if (!AddItem(player, runeDef.Id, 1, rollAttributes: false))   // AddItem stamps the rune's DEFAULT expiry
             {
                 SendSystemToEntity(player, "Open the box with a free inventory slot.");
                 return;   // box NOT consumed
             }
             if (item.Quantity > 1) item.Quantity--; else player.Inventory.Remove(item);
-            var rune = player.Inventory.LastOrDefault(i => i.DefId == runeDef.Id && i.ExpiresAtUtc == null);
+            // OVERRIDE the default with the BOX's duration (1h/2h/24h/30d) on the rune just added.
+            var rune = player.Inventory.FirstOrDefault(i => i.DefId == runeDef.Id && !before.Contains(i.InstanceId));
             if (rune != null) rune.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(def.GrantsRuneSeconds);
             ReconcileRuneBuffs(player);   // apply its buff immediately
             SendInventory(player);

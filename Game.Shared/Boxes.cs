@@ -44,14 +44,30 @@ public static class BoxCatalog
                 new BoxEntry(ItemCatalog.NewbieBoots, 1.0f),
             }),
 
-            // Newbie WEAPONS SELECTION box — pick 2 of the fighter weapons.
+            // Newbie WEAPONS SELECTION box — pick 2 of the starter weapons (the STAFF is in here now, so a
+            // mage picks it from the same box as everyone else — the starter reward is class-agnostic).
             new BoxDef(ItemCatalog.BoxNewbieWeapons, new[]
             {
                 new BoxEntry(ItemCatalog.NewbieSword1H, 1.0f),
                 new BoxEntry(ItemCatalog.NewbieDaggers, 1.0f),
                 new BoxEntry(ItemCatalog.NewbieSword2H, 1.0f),
                 new BoxEntry(ItemCatalog.NewbieBow, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieStaff, 1.0f),
             }, PickCount: 2),
+
+            // Newbie ARMOR-SET choice — pick ONE of the two armor boxes (fighter light / mage robe).
+            new BoxDef(ItemCatalog.BoxNewbieArmorChoice, new[]
+            {
+                new BoxEntry(ItemCatalog.BoxNewbieArmorLight, 1.0f),
+                new BoxEntry(ItemCatalog.BoxNewbieArmorRobe, 1.0f),
+            }, PickCount: 1),
+
+            // Newbie SHOT-RUNE choice — pick ONE 1-day rune box (soulshot / spiritshot).
+            new BoxDef(ItemCatalog.BoxNewbieRuneChoice, new[]
+            {
+                new BoxEntry(ItemCatalog.BoxSoulshot24h, 1.0f),
+                new BoxEntry(ItemCatalog.BoxSpiritshot24h, 1.0f),
+            }, PickCount: 1),
 
             // Newbie jewels box — 2 earrings, 2 rings, 1 necklace (100% each).
             new BoxDef(ItemCatalog.BoxNewbieJewels, new[]

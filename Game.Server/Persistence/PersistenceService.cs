@@ -226,9 +226,7 @@ public class PersistenceService
         foreach (var id in learned.Keys.ToList())
             if (SkillCatalog.Get(id)?.Replaces is { } replaced)
                 foreach (var r in replaced) learned.Remove(r);
-        // The level-derived training passive, which is granted on login/level-up and gated on a 3rd class.
-        int training = StatCalculator.TrainingLevelFor(level);
-        if (training > 0) learned[SkillCatalog.SpiritTraining] = training;
+        // (The old training passive is gone — the admin tests shots via the 30-day boxes added below.)
 
         string learnedCsv = string.Join(',', learned.Select(kv => $"{kv.Key}:{kv.Value}"));
         character.LearnedSkillsCsv = learnedCsv;
@@ -262,6 +260,9 @@ public class PersistenceService
         }
         character.Items.Add(NewItem(ItemCatalog.GreaterPotion, 100));
         character.Items.Add(NewItem(ItemCatalog.ScrollReturnUltimate, 20));
+        // Admin gets both 30-day shot boxes to test the rune system straight away (open → 30d rune).
+        character.Items.Add(NewItem(ItemCatalog.BoxSoulshot30d));
+        character.Items.Add(NewItem(ItemCatalog.BoxSpiritshot30d));
 
         await db.SaveChangesAsync();
     }
@@ -471,21 +472,16 @@ public class PersistenceService
             // skills window's Skills and Actions tabs.
         });
 
-        // Starter gear so a brand-new character isn't empty. All NEWBIE (untradeable,
-        // no attributes). Armor + jewels arrive in BOXES the player opens; weapons are
-        // direct for now (a weapons selection-box lands next). A mage gets the staff +
-        // robe armor box; a fighter gets the four weapons + light armor box.
-        if (baseClass == BaseClass.Mage)
-        {
-            record.Items.Add(NewItem(ItemCatalog.NewbieStaff));
-            record.Items.Add(NewItem(ItemCatalog.BoxNewbieArmorRobe));
-        }
-        else
-        {
-            record.Items.Add(NewItem(ItemCatalog.BoxNewbieWeapons));   // selection box: pick 2
-            record.Items.Add(NewItem(ItemCatalog.BoxNewbieArmorLight));
-        }
+        // Starter gear — the SAME for every class now (owner): no fighter/mage split. Everything arrives
+        // in boxes the player opens, all NEWBIE (untradable, no attributes):
+        //  - ARMOR choice box → pick the Fighter (light) or Mage (robe) set,
+        //  - WEAPONS selection box → pick 2 of 5 (the staff is in here too),
+        //  - JEWELS box,
+        //  - 1-DAY SHOT-RUNE choice box → pick a Soulshot (physical) or Spiritshot (magic) rune.
+        record.Items.Add(NewItem(ItemCatalog.BoxNewbieArmorChoice));
+        record.Items.Add(NewItem(ItemCatalog.BoxNewbieWeapons));
         record.Items.Add(NewItem(ItemCatalog.BoxNewbieJewels));
+        record.Items.Add(NewItem(ItemCatalog.BoxNewbieRuneChoice));
         record.Items.Add(NewItem(ItemCatalog.MinorPotion, 5));
         record.Items.Add(NewItem(ItemCatalog.GreaterPotion, 2));
 
