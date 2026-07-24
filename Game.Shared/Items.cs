@@ -682,12 +682,12 @@ public static class ItemCatalog
             list.Add(new ItemDef(id, name, EquipSlot.Box, ItemGrade.F, ItemRarity.Rare,
                 GrantsRuneSeconds: seconds, Tradable: tradable, BuyPriceOverride: buyPrice, SellPriceOverride: 0,
                 Description: desc));
-        ShotBox(BoxSoulshot1h,  "Soulshot Box (1h)",  1 * H, 5000, true,  "Opens to a Soulshot Rune lasting 1 hour. Soulshots boost PHYSICAL damage only (melee/bow) — useless for spells.");
-        ShotBox(BoxSoulshot2h,  "Soulshot Box (2h)",  2 * H, 9000, true,  "Opens to a Soulshot Rune lasting 2 hours. Soulshots boost PHYSICAL damage only (melee/bow) — useless for spells.");
+        ShotBox(BoxSoulshot1h,  "Soulshot Box (1h)",  1 * H, 150000, true,  "Opens to a Soulshot Rune lasting 1 hour. Soulshots boost PHYSICAL damage only (melee/bow) — useless for spells.");
+        ShotBox(BoxSoulshot2h,  "Soulshot Box (2h)",  2 * H, 280000, true,  "Opens to a Soulshot Rune lasting 2 hours. Soulshots boost PHYSICAL damage only (melee/bow) — useless for spells.");
         ShotBox(BoxSoulshot24h, "Soulshot Box (1d)",  1 * D, -1,  false,  "Opens to a Soulshot Rune lasting 24 hours. Soulshots boost PHYSICAL damage only (melee/bow) — useless for spells.");
         ShotBox(BoxSoulshot30d, "Soulshot Box (30d)", 30 * D, -1, false,  "Opens to a Soulshot Rune lasting 30 days. Soulshots boost PHYSICAL damage only (melee/bow) — useless for spells.");
-        ShotBox(BoxSpiritshot1h,  "Spiritshot Box (1h)",  1 * H, 5000, true,  "Opens to a Spiritshot Rune lasting 1 hour. Spiritshots boost MAGIC (spells) only — useless for melee/bow.");
-        ShotBox(BoxSpiritshot2h,  "Spiritshot Box (2h)",  2 * H, 9000, true,  "Opens to a Spiritshot Rune lasting 2 hours. Spiritshots boost MAGIC (spells) only — useless for melee/bow.");
+        ShotBox(BoxSpiritshot1h,  "Spiritshot Box (1h)",  1 * H, 150000, true,  "Opens to a Spiritshot Rune lasting 1 hour. Spiritshots boost MAGIC (spells) only — useless for melee/bow.");
+        ShotBox(BoxSpiritshot2h,  "Spiritshot Box (2h)",  2 * H, 280000, true,  "Opens to a Spiritshot Rune lasting 2 hours. Spiritshots boost MAGIC (spells) only — useless for melee/bow.");
         ShotBox(BoxSpiritshot24h, "Spiritshot Box (1d)",  1 * D, -1,  false,  "Opens to a Spiritshot Rune lasting 24 hours. Spiritshots boost MAGIC (spells) only — useless for melee/bow.");
         ShotBox(BoxSpiritshot30d, "Spiritshot Box (30d)", 30 * D, -1, false,  "Opens to a Spiritshot Rune lasting 30 days. Spiritshots boost MAGIC (spells) only — useless for melee/bow.");
 
@@ -1329,9 +1329,19 @@ public static class ItemCatalog
     /// <summary>Gold charged when BUYING this item from a vendor (incl. the future
     /// castle surcharge). BuyPriceOverride wins (-1 = unbuyable, 0 = free); otherwise
     /// the Value formula (-1 = not buyable).</summary>
-    public static int BuyPrice(ItemDef def) =>
-        def.BuyPriceOverride is int b ? b
-        : def.Value <= 0 ? -1 : Math.Max(1, (int)(def.Value * (1f + GameConstants.VendorBuyTaxRate)));
+    /// <summary>Vendor equipment can't cost less than this (owner: "equipments must start at 200g at
+    /// least" — they were "very very cheap"). Applies to weapons/armor/shields only; JEWELS are exempt
+    /// (the broken-jewel line is deliberately 40-60g) and so are consumables/boxes.</summary>
+    public const int EquipmentMinBuyPrice = 200;
+
+    public static int BuyPrice(ItemDef def)
+    {
+        int price = def.BuyPriceOverride is int b ? b
+                  : def.Value <= 0 ? -1 : Math.Max(1, (int)(def.Value * (1f + GameConstants.VendorBuyTaxRate)));
+        if (price > 0 && def.Slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield)
+            price = Math.Max(EquipmentMinBuyPrice, price);
+        return price;
+    }
 
     /// <summary>An item the player can sell to a vendor: TRADABLE, not a quest item,
     /// and worth something. Untradeable items can only be deleted.</summary>
