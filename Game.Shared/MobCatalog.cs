@@ -191,23 +191,33 @@ public static class MobCatalog
 
         // Usable-now GEAR drops: the SCALED Common/Uncommon/Rare copies of the mob's tier gear
         // (the full Epic set stays craft/boss-only). Family weight picks the body + weapon flavor.
-        int tier = GearTier(level);
-        (string Body, string Weapon) fam = cat switch
+        //
+        // ⚠ GATED at level 18 (owner: "a lvl-8 mob drops E-grade gear"). The lowest tiered gear is E at
+        // level 20, and GearTier() FLOORS everything below 40 to that 20 tier — so without this gate a
+        // level-1..17 mob dropped level-20 (E-grade) gear, badly ahead of a character that band. Below
+        // 18, loot is training/broken gear (the level-10 quest kit), mats and the broken-jewel line; the
+        // first tiered gear appears as you approach its own level.
+        const int GearDropMinLevel = 18;
+        if (level >= GearDropMinLevel)
         {
-            MobCategory.Undead or MobCategory.Angel or MobCategory.MagicCreature => ("robe", "wand"),
-            MobCategory.Animal or MobCategory.Plant or MobCategory.Insect => ("light", "bow"),
-            _ => ("heavy", "sword1h"),
-        };
-        // Body armor + weapon, at each drop rarity. Each is a mutually-exclusive drop GROUP
-        // (GroupId 1 = body, 2 = weapon), so a kill yields at most one body and one weapon — the
-        // rarer copy is a weighted chance within the group, not a stack of three bodies.
-        drops.Add(new($"{fam.Body}_t{tier}_common", 0.040f, GroupId: 1));
-        drops.Add(new($"{fam.Body}_t{tier}_uncommon", 0.015f, GroupId: 1));
-        drops.Add(new($"{fam.Body}_t{tier}_rare", 0.004f, GroupId: 1));
-        drops.Add(new($"{fam.Weapon}_t{tier}_common", 0.025f, GroupId: 2));
-        drops.Add(new($"{fam.Weapon}_t{tier}_uncommon", 0.010f, GroupId: 2));
-        // A scaled accessory (helm) rounds out the set slots (independent roll).
-        drops.Add(new($"helm_t{tier}_common", 0.030f));
+            int tier = GearTier(level);
+            (string Body, string Weapon) fam = cat switch
+            {
+                MobCategory.Undead or MobCategory.Angel or MobCategory.MagicCreature => ("robe", "wand"),
+                MobCategory.Animal or MobCategory.Plant or MobCategory.Insect => ("light", "bow"),
+                _ => ("heavy", "sword1h"),
+            };
+            // Body armor + weapon, at each drop rarity. Each is a mutually-exclusive drop GROUP
+            // (GroupId 1 = body, 2 = weapon), so a kill yields at most one body and one weapon — the
+            // rarer copy is a weighted chance within the group, not a stack of three bodies.
+            drops.Add(new($"{fam.Body}_t{tier}_common", 0.040f, GroupId: 1));
+            drops.Add(new($"{fam.Body}_t{tier}_uncommon", 0.015f, GroupId: 1));
+            drops.Add(new($"{fam.Body}_t{tier}_rare", 0.004f, GroupId: 1));
+            drops.Add(new($"{fam.Weapon}_t{tier}_common", 0.025f, GroupId: 2));
+            drops.Add(new($"{fam.Weapon}_t{tier}_uncommon", 0.010f, GroupId: 2));
+            // A scaled accessory (helm) rounds out the set slots (independent roll).
+            drops.Add(new($"helm_t{tier}_common", 0.030f));
+        }
         if (level >= 70) drops.Add(new(ItemCatalog.AttrScrollLegendary, 0.01f));
         return drops.ToArray();
     }

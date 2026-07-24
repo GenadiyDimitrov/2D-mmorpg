@@ -24,10 +24,11 @@ public static class ShopCatalog
         {
             new ShopDef(PotionMerchant, "Apothecary", new[]
             {
-                // Healing potions.
+                // Healing potions — Common + Uncommon only. The RARE tier (GreaterPotion) is removed from
+                // the vendor (owner): rare potions should come from drops/rewards, not gold, matching the
+                // potion-economy design where the top tier stays out of the shop.
                 ItemCatalog.MinorPotion,
                 ItemCatalog.HealingPotion,
-                ItemCatalog.GreaterPotion,
                 // Common buff potions (the weak tier is vendor-only; stronger ones drop).
                 ItemCatalog.SpeedPotionC,
                 ItemCatalog.CastPotionC,

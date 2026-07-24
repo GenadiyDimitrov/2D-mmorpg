@@ -1149,9 +1149,12 @@ namespace Game.Client
         /// </summary>
         public bool AutoHunting { get; private set; }
 
-        /// <summary>Skill ids the player has marked for auto-use, plus the pseudo-id
-        /// <see cref="AutoHuntIds.BasicAttack"/>. The per-slot Auto toggle writes here.</summary>
-        public readonly HashSet<string> AutoSkills = new HashSet<string> { AutoHuntIds.BasicAttack };
+        /// <summary>Skill ids the player has marked for auto-use (the per-slot Auto toggle writes here).
+        /// Starts EMPTY (owner): only what you explicitly mark Auto is auto-used. Basic attack used to be
+        /// seeded in here, which made auto-hunt swing a weapon the moment it was enabled even though the
+        /// player never asked — the owner's rule is that nothing is auto unless it was marked, so basic
+        /// attack must be opted in like any skill.</summary>
+        public readonly HashSet<string> AutoSkills = new HashSet<string>();
 
         /// <summary>The last config the SERVER confirmed (potions %, buff potions, farm range, ranks).
         /// The auto-potions and auto-farm windows read and edit THIS; every push preserves the fields

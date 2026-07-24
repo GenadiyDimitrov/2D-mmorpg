@@ -350,7 +350,11 @@ public class PersistenceService
     public async Task<LeaderboardDto> GetLeaderboardAsync(string category, int count)
     {
         await using var db = await _factory.CreateDbContextAsync();
-        var q = db.Characters.Where(c => c.PendingDeleteAt == null);
+        // ADMINS are excluded from every board (owner): an admin can /level to 999 and would sit atop the
+        // level/online boards forever, which no real player could ever reach. The role is per CHARACTER,
+        // so an ordinary character on the admin's own account still ranks — only admin characters are
+        // hidden. (Moderators are NOT excluded — they are real players; flag if that should change.)
+        var q = db.Characters.Where(c => c.PendingDeleteAt == null && c.Role != AccountRole.Admin);
 
         List<CharacterRecord> rows = category switch
         {
