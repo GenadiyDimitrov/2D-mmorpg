@@ -29,11 +29,9 @@ a recognised domain so `/tp` to a jailed player warded the admin into a dungeon.
 
 ## 🔴 NEXT UP
 
-**Tier 1 — still broken (4 left of 7)**
-- **Skills→Learn does nothing** — the whole progression loop is unreachable from the phone.
-- **Soft keyboard covers the command bar** instead of lifting it.
-- **`[lead]` doesn't move the party `*` flag** or clear its button (and `*` → star/crown).
-- **Dungeon mobs don't aggro or retaliate** after a debug-menu displacement; they also **clamp together**.
+**Tier 1 — ✅ ALL SEVEN FIXED** (0.28.67 + 0.28.68). Skills→Learn now explains why it can't; the soft
+keyboard lifts the command bar; `[lead]` moves the badge and clears the button; dungeon mobs aggro,
+retaliate and spread out. Root causes in memory `playtest-11-bugfix-progress`. **None device-tested.**
 
 **Tier 2 — cheap UI/UX, mostly client-only**
 Duplicate blue town-entry line · field banner needs **hit-test false** (it blocks ground taps) ·
@@ -44,9 +42,9 @@ the multiplier (`1234/1500 (x3)`) · buff double-tap cancels / single tap opens 
 buff/debuff **squares** + loot proposal **drop-down** · **world border** (orange dashed).
 
 **Tier 3 — server work**
-- **Damage ledger** — no per-attacker damage tracking exists, so "killer" is still the LAST HIT and
-  contested kills are winner-take-all. Both the **most-damage killer** rule and the **damage-% contested
-  split** depend on it. The last unbuilt piece of the exp spec.
+- ✅ **Damage ledger — BUILT (0.28.69).** Most damage earns the kill (drops, quest credit, karma);
+  contested kills split the exp by damage share pooled by party; last hit kept as a raid-boss counter.
+  The exp spec is now complete in code.
 - 🎯 **Partial-stack trading** — design **ANSWERED: YES**. `TradeOffer` must carry per-item counts and
   split on completion. Closes the long-running trade-numpad thread.
 - **Starter-gear redesign** — newbie boxes become a **level-10 quest**; levels 1-10 get the weakest gear
@@ -112,14 +110,15 @@ buff/debuff **squares** + loot proposal **drop-down** · **world border** (orang
 ---
 
 ## My view of the order
-1. **Finish tier-1** (4 bugs) and **commit + playtest** the exp rework. It is a big uncommitted change
-   sitting on an unreliable machine, and it needs on-device confirmation before more lands on top.
+1. 🔴 **PLAYTEST 0.28.69 on the phone.** Three commits of deep change (the whole exp/party/drop system,
+   seven bug fixes, the damage ledger) are pushed and **none of it has been device-tested**. The
+   SmokeTest has not run either, and `AwardExp` touches persisted Exp and SkillPoints. This is the
+   biggest untested stack since the parity batches — verify before more lands on top of it.
 2. **Starter-gear redesign** — the curve half is done; this completes the early-game pass. Verify with
    `BalanceMatrix` before/after.
 3. **Tier-2 UI batch** — a dozen cheap client-only fixes; batch and build once.
 4. **Partial-stack trading**, then the **shop rework** (pairs with starter gear).
-5. **Damage ledger** — unlocks the last of the exp spec; low urgency while nothing competes for kills.
-6. **Chat** (colours/tabs/tags), then **block** — small, and makes the social layer safe.
-7. **Charisma** — the biggest new system; design its board alongside **wearable titles**.
-8. **Client-side collision**, **buy-back**, **warehouse** — self-contained, any time.
-9. **3rd-class kits** the moment the CSVs land — still the highest-value unlock in the file.
+5. **Chat** (colours/tabs/tags), then **block** — small, and makes the social layer safe.
+6. **Charisma** — the biggest new system; design its board alongside **wearable titles**.
+7. **Client-side collision**, **buy-back**, **warehouse** — self-contained, any time.
+8. **3rd-class kits** the moment the CSVs land — still the highest-value unlock in the file.
