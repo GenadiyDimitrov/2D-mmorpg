@@ -12,8 +12,11 @@ startup) · **dungeons + jail in the negative quadrant** (teleport-reached) · *
 overworld / dungeon / jail; 500u ward teleports clip-outs back inside).
 
 ## Independent — buildable any time, no blockers
+- **Shots as RUNES** — 🎯 DESIGN CONFIRMED (2026-07-24), NEXT UP. Soul/spiritshots become timed inventory
+  runes (wall-clock expiry, delete-protected, boxes set the clock on open); removes the TrainingPassive.
+  Full spec in memory `shots-rune-and-warehouse`. Then a **per-char warehouse** (space + rune-disable);
+  account warehouse deferred.
 - **MP potions** — a parallel set of flat mana-over-time tiers, same shape as the HP potions. Small.
-- **Soul/spirit-shots** — consumable granting a per-hit (or timed) damage boost. Notes in Roadmap.md.
 - **Wearable titles** — show the leaderboard title over the head / by the name (extends leaderboards;
   the reward layer the owner hinted at).
 - **Combat depth**: perfect/excellent block, magic-resist passives, position bonuses. Each independent.
@@ -42,8 +45,10 @@ overworld / dungeon / jail; 500u ward teleports clip-outs back inside).
 
 ## My view of what's next
 1. **Playtest 0.28.61** (tomorrow) — big untested stack; verify the world pass + walls on the phone first.
-2. **MP potions** — cheap, completes the potion set. Independent, do anytime.
-3. **Wearable titles** — small; gives the shipped leaderboards real teeth as a reward.
-4. **3rd-class kits** — the moment the CSVs land, highest-value unlock.
-5. **Instances** — after the daily-attempt decision; the walls/negative-quadrant work already set it up.
-6. **Bot-prevention** — when the owner wants it; petrification + tap-CAPTCHA is a contained first slice.
+2. **Rune shots** — design locked; build it (item + expiry + boxes + reconciliation + remove passive +
+   BalanceMatrix). Then the warehouse. See `shots-rune-and-warehouse`.
+3. **MP potions** — cheap, completes the potion set. Independent, do anytime.
+4. **Wearable titles** — small; gives the shipped leaderboards real teeth as a reward.
+5. **3rd-class kits** — the moment the CSVs land, highest-value unlock.
+6. **Instances** — after the daily-attempt decision; the walls/negative-quadrant work already set it up.
+7. **Bot-prevention** — when the owner wants it; petrification + tap-CAPTCHA is a contained first slice.
