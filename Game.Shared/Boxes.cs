@@ -44,8 +44,8 @@ public static class BoxCatalog
                 new BoxEntry(ItemCatalog.NewbieBoots, 1.0f),
             }),
 
-            // Newbie WEAPONS SELECTION box — pick 2 of the starter weapons (the STAFF is in here now, so a
-            // mage picks it from the same box as everyone else — the starter reward is class-agnostic).
+            // Newbie WEAPONS SELECTION box — pick ONE starter weapon (the STAFF is in here now, so a mage
+            // picks it from the same box as everyone else — the starter reward is class-agnostic).
             new BoxDef(ItemCatalog.BoxNewbieWeapons, new[]
             {
                 new BoxEntry(ItemCatalog.NewbieSword1H, 1.0f),
@@ -53,7 +53,7 @@ public static class BoxCatalog
                 new BoxEntry(ItemCatalog.NewbieSword2H, 1.0f),
                 new BoxEntry(ItemCatalog.NewbieBow, 1.0f),
                 new BoxEntry(ItemCatalog.NewbieStaff, 1.0f),
-            }, PickCount: 2),
+            }, PickCount: 1),
 
             // Newbie ARMOR-SET choice — pick ONE of the two armor boxes (fighter light / mage robe).
             new BoxDef(ItemCatalog.BoxNewbieArmorChoice, new[]

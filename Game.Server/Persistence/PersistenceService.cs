@@ -475,7 +475,7 @@ public class PersistenceService
         // Starter gear — the SAME for every class now (owner): no fighter/mage split. Everything arrives
         // in boxes the player opens, all NEWBIE (untradable, no attributes):
         //  - ARMOR choice box → pick the Fighter (light) or Mage (robe) set,
-        //  - WEAPONS selection box → pick 2 of 5 (the staff is in here too),
+        //  - WEAPONS selection box → pick 1 of 5 (the staff is in here too),
         //  - JEWELS box,
         //  - 1-DAY SHOT-RUNE choice box → pick a Soulshot (physical) or Spiritshot (magic) rune.
         record.Items.Add(NewItem(ItemCatalog.BoxNewbieArmorChoice));
