@@ -105,6 +105,23 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Invite: " + ex.Message); }
         }
 
+        /// <summary>Open a box/chest from the inventory (random grants loot; a selection box replies with
+        /// a "Selection" push that the UI turns into a chooser).</summary>
+        public async void OpenBox(Guid instanceId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.OpenBoxAsync(instanceId); }
+            catch (Exception ex) { ClientLog.Warn("Open: " + ex.Message); }
+        }
+
+        /// <summary>Confirm the picked item(s) from a selection box.</summary>
+        public async void SelectBoxItems(Guid instanceId, string[] itemIds)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.SelectBoxItemsAsync(instanceId, itemIds); }
+            catch (Exception ex) { ClientLog.Warn("Select: " + ex.Message); }
+        }
+
         /// <summary>Walk after a player until you move or they leave (null stops following).</summary>
         public async void Follow(Guid? targetId)
         {
@@ -597,6 +614,7 @@ namespace Game.Client
             _net.AutoHuntStatusReceived += st => Main(() => { if (st != null) AutoHunting = st.Enabled; });
             _net.RegionReceived += r => Main(() => Ui?.ShowRegionNotice(r));
             _net.NoticeReceived += m => Main(() => Ui?.ShowToast(m));
+            _net.SelectionReceived += o => Main(() => Ui?.ShowBoxSelection(o));
             _net.PartyReceived += p => Main(() =>
             {
                 Party = p?.Members ?? new PartyMemberDto[0];

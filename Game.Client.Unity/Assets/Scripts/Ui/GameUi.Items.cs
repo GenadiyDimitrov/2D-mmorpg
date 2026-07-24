@@ -122,6 +122,22 @@ namespace Game.Client
             OpenWindow(_selectPopup);
         }
 
+        /// <summary>A SELECTION box was opened — turn its options into the chooser. Picking one confirms
+        /// via SelectBoxItems. (All current selection boxes are pick-ONE; a pick-many box would need
+        /// accumulating selection, not built.)</summary>
+        public void ShowBoxSelection(SelectionOffer offer)
+        {
+            if (offer?.Options == null || offer.Options.Length == 0) return;
+            var boxId = offer.BoxInstanceId;
+            var opts = new (string, Action)[offer.Options.Length];
+            for (int i = 0; i < offer.Options.Length; i++)
+            {
+                string itemId = offer.Options[i].ItemId;
+                opts[i] = (offer.Options[i].Name, () => Boot.SelectBoxItems(boxId, new[] { itemId }));
+            }
+            ShowSelection(offer.BoxName, opts);
+        }
+
         // ----- item details ----------------------------------------------------------------------
 
         public void OpenItemDetails(InventoryItemDto item) => ShowItem(_itemView, item, allowCompare: true);
@@ -162,8 +178,16 @@ namespace Game.Client
                 if (allowCompare && !item.Equipped && FindEquippedCounterpart(def) is InventoryItemDto worn)
                     actions.Add(("Compare", () => ShowItem(_cmpView, worn, allowCompare: false)));
             }
+            else if (def.Slot == EquipSlot.Box)
+            {
+                // Open a box: a random box grants its loot; a selection box replies with a chooser
+                // (ShowBoxSelection). This is how shot boxes → runes on the phone.
+                actions.Add(("Open", () => { Boot.OpenBox(id); CloseWindow(v.Panel); }));
+            }
 
-            actions.Add(("Bin", () => ConfirmBin(item, def)));
+            // Runes can't be binned (server refuses too) — don't offer it.
+            if (!def.IsRune)
+                actions.Add(("Bin", () => ConfirmBin(item, def)));
 
             LayoutButtons(v.Buttons, actions);
             OpenWindow(v.Panel);

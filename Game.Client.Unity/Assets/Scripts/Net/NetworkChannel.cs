@@ -77,6 +77,9 @@ namespace Game.Client
 
         /// <summary>A plain server notice (e.g. the 3h "take a break" nudge) — shown as a transient banner.</summary>
         public event Action<string> NoticeReceived;
+
+        /// <summary>A SELECTION box was opened — the server offers choices; the client shows a chooser.</summary>
+        public event Action<SelectionOffer> SelectionReceived;
         public event Action<string> Disconnected;
         public event Action<string> ForceDisconnected;
         // WithAutomaticReconnect silently gives us a NEW connection id on a transport blip, and the
@@ -116,6 +119,7 @@ namespace Game.Client
             _connection.On<AutoHuntStatus>("AutoHunt", s => AutoHuntStatusReceived?.Invoke(s));
             _connection.On<RegionNotice>("Region", r => RegionReceived?.Invoke(r));
             _connection.On<string>("Notice", m => NoticeReceived?.Invoke(m));
+            _connection.On<SelectionOffer>("Selection", o => SelectionReceived?.Invoke(o));
             _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));
             _connection.On<GoldUpdate>("Gold", g => GoldReceived?.Invoke(g));
             _connection.On<TargetDetails>("TargetDetails", d => TargetDetailsReceived?.Invoke(d));
@@ -164,6 +168,14 @@ namespace Game.Client
         /// <summary>Read-only leaderboard fetch — answered straight from the DB, no world round-trip.</summary>
         public Task<LeaderboardDto> RequestLeaderboardAsync(string category) =>
             _connection.InvokeAsync<LeaderboardDto>("RequestLeaderboard", category);
+
+        /// <summary>Open a box/chest from the inventory. A random box grants its loot immediately; a
+        /// SELECTION box replies with a "Selection" push for the player to choose from.</summary>
+        public Task OpenBoxAsync(Guid instanceId) => _connection.SendAsync("OpenBox", instanceId);
+
+        /// <summary>Confirm the chosen item(s) from a selection box.</summary>
+        public Task SelectBoxItemsAsync(Guid instanceId, string[] itemIds) =>
+            _connection.SendAsync("SelectBoxItems", instanceId, itemIds);
 
         // ----- In-world commands (the slice uses Move + Attack; the rest are ready for later) -----
         public Task MoveAsync(float targetX, float targetY) =>
