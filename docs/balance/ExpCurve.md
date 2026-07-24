@@ -296,3 +296,66 @@ number — while level 79's is 2 099 275 834. The costs that fall out are 2 100 
 This is in the authentic source, not a transcription slip, and 0.03% is invisible in play. It is left
 alone. The SmokeTest's "no transposed rows" check therefore uses a **1% tolerance** — enough to ignore
 this, nowhere near enough to miss a real transposition (the 88/89 swap was a 24% drop).
+
+## Why the player curve is a TABLE and not a formula — settled, do not re-litigate
+
+This was investigated properly on 2026-07-24 because a table costs tunability: you edit 100 numbers
+instead of 2-3 coefficients. That concern is legitimate, and the answer is still "keep the table".
+The workings are here so nobody re-derives them.
+
+### No smooth formula fits, however complex
+
+| model | worst error vs the table |
+|---|---|
+| one power law, whole 1-100 range | **1 091%** |
+| one exponential, whole range | 2 713% |
+| three segments (1-50 / 51-79 / 80-100) | 54% / 90% / **166%** |
+| `a·L^k·exp(b·L)` (power x exponential) | 756% |
+| `a·L^k/(C-L)^f` (pole - explosive endgame), best C=105 | **124%** |
+
+The blocker is **discontinuity, not the choice of function**:
+
+```
+L48 -> L49   x1.07
+L78 -> L79   x3.57      <- wall
+L79 -> L80   x1.00
+```
+
+A neighbouring pair differing by x3.57 while its siblings differ by x1.07 needs f(L) to be near-flat
+AND near-vertical inside one level. No continuous function does that. The pole form was the right
+family to reach for — an asymptote is genuinely the shape of an endgame wall — and it still missed by
+124%.
+
+### A formula WITH the walls as parameters does work, at a cost
+
+```
+exp_to_next(L) = 15.04 · L^3.1553 · PROD(wall multipliers passed)
+walls at 50, 55, 60, 65, 71, 72, 76, 77, 79
+     ->  x1.567, x1.358, x1.528, x1.361, x1.267, x1.497, x2.027, x1.966, x5.281
+```
+
+**11 numbers instead of 75**, worst error **28%** (at level 84). It is fully tunable — `k` steepens the
+whole game, one multiplier softens one wall. The residual 28% is not fixable by better fitting: levels
+**80-84 grow at a flat x1.20 per level regardless of L**, i.e. exponentially, while 10-79 is
+power-law-with-walls. The curve genuinely changes SHAPE at the top, so one model cannot cover both.
+
+Between walls the table is recovered almost exactly (`50-54: 11.37·L^3.3399`, worst **0.01%**) — those
+bands really were authored from a power law. That is also why the MOB curve could be fitted to match it.
+
+### The tunability problem has a better answer than a formula
+
+Keep the exact table and put the knobs **on top of it**:
+
+```
+ExpToNext(L) = Table[L] · ExpCurveScale · EndgameSoftness^(walls passed below L)
+```
+
+- `ExpCurveScale` — stretches/compresses the whole curve. One number.
+- `EndgameSoftness` — 1.0 keeps L2 exactly; 0.8 makes each wall 20% gentler and COMPOUNDS, so levels
+  79-85 shorten dramatically while 1-50 barely moves. One number.
+
+At defaults (1.0, 1.0) it is bit-for-bit the current table, so everything verified stays verified. That
+is more reshaping power than the 11-parameter fit, with none of the 28% error.
+**NOT BUILT** — offered 2026-07-24, owner has not asked for it. Note that global pacing is ALREADY one
+number (`RateConfig.ExpRate`, live-editable in the debug panel); what it cannot do is RESHAPE, which is
+exactly what `EndgameSoftness` would add.
