@@ -91,6 +91,12 @@ namespace Game.Client
         private Button _bagEquipToggle;      // expands the paper-doll column (worn gear) beside the list
         private bool _bagEquipOpen;
         private const float BagWidthCollapsed = 460f, BagWidthExpanded = 792f, BagHeight = 500f;
+        /// <summary>Left inset of the bag's item list when the equip column is CLOSED.</summary>
+        private const float BagListX = 16f;
+        /// <summary>How far the list slides right when the equip column opens on its left — exactly the
+        /// width the window gains, so the list keeps its position relative to the RIGHT edge.</summary>
+        private const float BagEquipColumnWidth = BagWidthExpanded - BagWidthCollapsed;
+        private RectTransform _bagListRect;
         private TextMeshProUGUI _bagGoldLabel, _bagSlotsLabel;
         private static readonly Color GoldColour = new Color(0.95f, 0.82f, 0.35f);
 
@@ -628,6 +634,12 @@ namespace Game.Client
             // Fast-Del toggle. Del's per-row buttons are hidden until it's on (owner) so a stray tap can't
             // bin an item. Tabs hold FILTER values (BagTabOf), not indices — there is no "Equip" list tab
             // any more; worn gear lives on the paper-doll.
+            // EQUIP goes FIRST (owner) — it is the one that changes the window's shape, and the thing you
+            // reach for most, so it leads the row rather than sitting third.
+            _bagEquipToggle = UiKit.TextButton(inner, "Equip", ToggleBagEquip, 14f);
+            UiKit.Place(UiKit.Rect(_bagEquipToggle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(16f, -chrome - 36f), new Vector2(92f, 32f));
+
             _bagTabButtons = new Button[2];
             _bagTabFilters = new[] { 1, 2 };
             string[] tabs = { "Items", "Quest" };
@@ -636,28 +648,27 @@ namespace Game.Client
                 int filter = _bagTabFilters[i];
                 var button = UiKit.TextButton(inner, tabs[i], () => { _bagTab = filter; _bagRevision = -1; }, 15f);
                 UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(16f + i * 96f, -chrome - 36f), new Vector2(92f, 32f));
+                            new Vector2(112f + i * 96f, -chrome - 36f), new Vector2(92f, 32f));
                 _bagTabButtons[i] = button;
             }
-
-            _bagEquipToggle = UiKit.TextButton(inner, "Equip", ToggleBagEquip, 14f);
-            UiKit.Place(UiKit.Rect(_bagEquipToggle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(208f, -chrome - 36f), new Vector2(92f, 32f));
 
             _bagDelToggle = UiKit.TextButton(inner, "Del: off",
                 () => { _bagFastDel = !_bagFastDel; _bagRevision = -1; }, 14f);
             UiKit.Place(UiKit.Rect(_bagDelToggle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(304f, -chrome - 36f), new Vector2(92f, 32f));
 
-            // The item list is a FIXED-width column on the left, so widening the window for the equip
-            // column never stretches it.
+            // The item list is a FIXED-width column, so widening the window for the equip column never
+            // stretches it — it just slides.
             ScrollRect scroll;
             _bagContent = UiKit.ScrollArea(inner, out scroll, 3f);
-            UiKit.Place(UiKit.Rect(scroll.transform.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(16f, -chrome - 74f), new Vector2(418f, BagHeight - chrome - 90f));
+            _bagListRect = UiKit.Rect(scroll.transform.gameObject);
+            UiKit.Place(_bagListRect, new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(BagListX, -chrome - 74f), new Vector2(418f, BagHeight - chrome - 90f));
 
-            // The paper-doll column (hidden until the Equip toggle) sits to the right of the list.
-            BuildEquipColumn(inner, new Vector2(446f, -chrome - 8f));
+            // The paper-doll column (hidden until the Equip toggle) opens on the LEFT (owner), so it
+            // appears where the window grows rather than pushing the list off toward the far edge. The
+            // list slides right by exactly the column's width when it opens; see ToggleBagEquip.
+            BuildEquipColumn(inner, new Vector2(BagListX, -chrome - 8f));
 
             _bagPanel.gameObject.SetActive(false);
         }
@@ -668,6 +679,13 @@ namespace Game.Client
             _bagEquipOpen = !_bagEquipOpen;
             if (_equipColumn != null) _equipColumn.gameObject.SetActive(_bagEquipOpen);
             _bagPanel.sizeDelta = new Vector2(_bagEquipOpen ? BagWidthExpanded : BagWidthCollapsed, BagHeight);
+            // Slide the list right so the paper-doll has the left side to itself.
+            if (_bagListRect != null)
+            {
+                var p = _bagListRect.anchoredPosition;
+                p.x = _bagEquipOpen ? BagListX + BagEquipColumnWidth : BagListX;
+                _bagListRect.anchoredPosition = p;
+            }
             _bagEquipToggle.targetGraphic.color = _bagEquipOpen ? UiKit.TabActive : UiKit.PanelLight;
             _equipRevision = -1;   // force the paper-doll to repaint on next refresh
         }

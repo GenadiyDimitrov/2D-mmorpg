@@ -374,6 +374,17 @@ namespace Game.Client
                     text = e.Damage.ToString() + "!"; colour = new Color(1f, 0.85f, 0.30f); size = 26f; break;
                 case CombatOutcome.Heal:                 // +N green, over whoever was healed (incl. party)
                     if (e.Damage <= 0) return;
+                    // A heal-over-time tick (a potion, Renew) gets its own tint and a small "hot" marker.
+                    // Plain green was shared with cast heals and ambient regen, so a potion ticking away
+                    // was indistinguishable from the world healing you anyway — which is why it read as
+                    // having no floater at all.
+                    if (e.Skill == "HoT")
+                    {
+                        text = "+" + e.Damage + " hot";
+                        colour = new Color(0.45f, 0.95f, 0.65f);
+                        size = 17f;
+                        break;
+                    }
                     text = "+" + e.Damage; colour = UiKit.Good; break;
                 case CombatOutcome.ManaHeal:
                     if (e.Damage <= 0) return;

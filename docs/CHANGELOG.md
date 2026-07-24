@@ -12,6 +12,20 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-24 — Tier-2 UI batch, part 2 (0.28.74)
+
+- **Bag: `Equip` leads the row and the paper-doll opens on the LEFT** (owner). Equip is the control that
+  reshapes the window, so it goes first; the item list now slides right by exactly the width the window
+  gains, keeping its position relative to the right edge instead of being shoved outward.
+- **Potion heal-over-time has its own floater.** The pipeline was already correct end to end — potions
+  carry `SkillEffect.HealOverTime`, the tick broadcasts `CombatOutcome.Heal`, the client draws `+N`.
+  The problem was that it was INDISTINGUISHABLE: a potion tick, a cast heal and ambient regen all drew
+  the same green `+N`. HoT ticks are tagged now and render as a distinct mint `+N hot`.
+  ⚠ Note `TickHealOverTime` early-returns at full HP, so drinking while topped up heals nothing and
+  shows nothing — correct, but it looks identical to broken and may be what was actually seen.
+
+---
+
 ## 2026-07-24 — Weapons carry BOTH their CSV numbers; the caster rule moves into a passive (0.28.73)
 
 The gear CSV has always authored weapons as a PAIR — `92/54` for a level-20 sword — but only one number

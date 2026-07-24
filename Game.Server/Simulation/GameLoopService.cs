@@ -6698,6 +6698,10 @@ var effect = def.Effect;
 
     /// <summary>Heal-over-time buffs (e.g. Warchanter's Renew): heal a % of max HP
     /// each second, in or out of combat, until the buff expires.</summary>
+    /// <summary>Skill tag on a heal-over-time floater. The client keys its potion-tinted "+N" off this,
+    /// so a potion tick is distinguishable from a heal cast on you or from ambient regen.</summary>
+    public const string HotFloaterTag = "HoT";
+
     private void TickHealOverTime(Entity entity)
     {
         if (entity.Dead || entity.Hp >= entity.MaxHp)
@@ -6718,8 +6722,12 @@ var effect = def.Effect;
         int before = entity.Hp;
         entity.Hp = Math.Min(entity.MaxHp, entity.Hp + heal);
         int healed = entity.Hp - before;
+        // Tag the tick "HoT" rather than "Regen" so the client can tell a POTION apart from ambient
+        // regeneration — they were producing an identical green "+N", which is why the potion's healing
+        // read as having no floating text at all (owner). Note the early-out above: drinking at full HP
+        // heals nothing and so shows nothing, which is correct but looks the same as broken.
         if (healed > 0)
-            BroadcastCombat(entity, entity, healed, CombatOutcome.Heal, "Regen");
+            BroadcastCombat(entity, entity, healed, CombatOutcome.Heal, HotFloaterTag);
     }
 
     // ----- Movement --------------------------------------------------------------
