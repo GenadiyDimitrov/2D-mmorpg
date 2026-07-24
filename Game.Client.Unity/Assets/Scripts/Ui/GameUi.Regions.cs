@@ -41,6 +41,57 @@ namespace Game.Client
             _regionToastBg.gameObject.SetActive(false);
 
             BuildRegionOutlines();
+            BuildWorldBorder();
+        }
+
+        private GameObject _worldBorder;
+
+        /// <summary>The edge of the world, as an orange DASHED rectangle on the ground (owner: "like the
+        /// jail's orange dashed line — just for reference; later there will be mountains or an ocean").
+        ///
+        /// It is a PLACEHOLDER for terrain, so unlike the region outlines it does NOT hide behind the
+        /// zone-colours toggle: walking into an invisible wall with nothing to explain it is the problem
+        /// this solves, and that problem does not go away when you turn the map overlay off.
+        ///
+        /// Dashes are separate LineRenderers because a LineRenderer cannot draw gaps — one per dash along
+        /// each of the four edges of the positive overworld [0, ZoneWidth] x [0, ZoneHeight]. The negative
+        /// quadrant (dungeons, jail) is deliberately NOT outlined: it is teleport-only, so its edges are
+        /// never something you can walk up to.</summary>
+        private void BuildWorldBorder()
+        {
+            const float dash = 600f, gap = 400f, y = 0.08f;   // above the region fills (0.02/0.03) and outlines (0.06)
+            var colour = new Color(0.95f, 0.55f, 0.15f, 0.75f);
+
+            _worldBorder = new GameObject("WorldBorder");
+            float w = GameConstants.ZoneWidth, h = GameConstants.ZoneHeight;
+
+            void Edge(float x0, float z0, float x1, float z1)
+            {
+                float len = Mathf.Sqrt((x1 - x0) * (x1 - x0) + (z1 - z0) * (z1 - z0));
+                if (len <= 0f) return;
+                float dx = (x1 - x0) / len, dz = (z1 - z0) / len;
+                for (float t = 0f; t < len; t += dash + gap)
+                {
+                    float e = Mathf.Min(t + dash, len);
+                    var go = new GameObject("Dash");
+                    go.transform.SetParent(_worldBorder.transform, false);
+                    var lr = go.AddComponent<LineRenderer>();
+                    lr.useWorldSpace = true;
+                    lr.widthMultiplier = 8f;      // wide: this is read from a long way off, not up close
+                    lr.material = new Material(UnlitMaterials.Shader);   // IL2CPP-safe (no magenta on device)
+                    lr.startColor = lr.endColor = colour;
+                    lr.positionCount = 2;
+                    var a = WorldMapper.ToUnity(x0 + dx * t, z0 + dz * t); a.y = y;
+                    var b = WorldMapper.ToUnity(x0 + dx * e, z0 + dz * e); b.y = y;
+                    lr.SetPosition(0, a);
+                    lr.SetPosition(1, b);
+                }
+            }
+
+            Edge(0f, 0f, w,  0f);
+            Edge(w,  0f, w,  h);
+            Edge(w,  h,  0f, h);
+            Edge(0f, h,  0f, 0f);
         }
 
         /// <summary>Show the transient region banner. Called from the server's Region push.</summary>
@@ -82,6 +133,14 @@ namespace Game.Client
                 bool show = Boot.Zones != null && Boot.Zones.gameObject.activeSelf
                             && Boot.Phase == ClientPhase.InWorld;
                 if (_regionOutlines.activeSelf != show) _regionOutlines.SetActive(show);
+            }
+
+            // The world border is terrain-in-waiting, not a map overlay — it stays up whenever you are in
+            // the world, regardless of the zone-colours toggle.
+            if (_worldBorder != null)
+            {
+                bool inWorld = Boot.Phase == ClientPhase.InWorld;
+                if (_worldBorder.activeSelf != inWorld) _worldBorder.SetActive(inWorld);
             }
         }
 

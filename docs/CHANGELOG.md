@@ -12,6 +12,32 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-24 — Tier-2 UI batch, part 3 — the list is complete (0.28.75)
+
+All thirteen cheap playtest-11 UI items are now done.
+
+- **Buff taps: single = details, double = cancel.** Cancelling used to be a SINGLE tap, which put an
+  irreversible action one stray touch away on a bar you brush past constantly — and there was no way at
+  all to read what a buff did. A single tap now opens a tooltip-style popup (name, description, time
+  left, whether it can be dismissed) that closes on a tap anywhere outside; a double tap within 0.35s
+  cancels. Debuffs are not yours to dismiss, so double-tapping one just re-shows its details.
+- **Party effects are SQUARES beside each member**, same shape as the personal buff bar and using the
+  same abbreviations, green for buffs and red for debuffs. Rows are a fixed 46px now instead of growing
+  to 64px when someone had effects, which is what kept making the window taller. Panel widened
+  300 -> 380 so the squares clear the leader's Kick/Lead buttons.
+  ⚠ **No `<60s` flashing**, unlike the personal bar: `PartyMemberDto` carries effect NAMES only, with no
+  remaining time, so there is nothing to count down. It needs durations on the wire — a DTO change.
+- **Loot mode is a DROP-DOWN**, not a cycle button. Cycling was not merely fiddly: every tap STARTS A
+  VOTE the whole party has to answer, so tapping past a mode you did not want was not free. Picking a
+  row proposes that mode directly; `NextLoot` is gone.
+- **World border** — an orange dashed rectangle around the overworld, as a placeholder until there are
+  mountains or an ocean. It deliberately does NOT hide behind the zone-colours toggle: walking into an
+  invisible wall with nothing to explain it is the problem it solves, and that does not go away when the
+  map overlay is off. Only the positive overworld is outlined — the negative quadrant is teleport-only,
+  so its edges are never something you can walk up to.
+
+---
+
 ## 2026-07-24 — Tier-2 UI batch, part 2 (0.28.74)
 
 - **Bag: `Equip` leads the row and the paper-doll opens on the LEFT** (owner). Equip is the control that

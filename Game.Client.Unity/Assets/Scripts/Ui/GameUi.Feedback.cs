@@ -130,7 +130,18 @@ namespace Game.Client
             public TextMeshProUGUI Label, Time;
             public string Key;          // the buff this square currently SHOWS
             public bool IsDebuff;
+            public string BuffName, Description;
+            public int Stacks;
+            public float Seconds;
+            public float LastTap = -99f;
         }
+
+        // Buff tap behaviour (owner): SINGLE tap opens details, DOUBLE tap cancels. It used to cancel on
+        // a single tap, which put an irreversible action one stray touch away on a bar you brush past
+        // constantly — and gave no way at all to read what a buff actually does.
+        private const float BuffDoubleTapSeconds = 0.35f;
+        private RectTransform _buffPopup, _buffPopupBackdrop;
+        private TextMeshProUGUI _buffPopupTitle, _buffPopupBody;
 
         private readonly List<BuffSquare> _buffSquares = new List<BuffSquare>();
 
@@ -149,6 +160,62 @@ namespace Game.Client
             _buffCollapse = UiKit.TextButton(_worldRoot, "", () => _buffStage = (_buffStage + 1) % 3, 13f);
             UiKit.Place(UiKit.Rect(_buffCollapse.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(300f, -170f), new Vector2(58f, 24f));
+
+            BuildBuffPopup();
+        }
+
+        /// <summary>The buff DETAILS popup: what this buff is and how long is left. Deliberately NOT a
+        /// window in the back-stack — it behaves like a tooltip, so a tap anywhere outside dismisses it
+        /// (the full-screen backdrop below is what catches that) and Back is not consumed by it.</summary>
+        private void BuildBuffPopup()
+        {
+            // Full-screen, fully transparent, but a raycast target — the only job is to catch the
+            // "tapped somewhere else" gesture. It is BEHIND the popup in sibling order.
+            var backdrop = UiKit.Box(_worldRoot, "BuffPopupBackdrop", new Color(0, 0, 0, 0f));
+            _buffPopupBackdrop = UiKit.Rect(backdrop.gameObject);
+            UiKit.Stretch(_buffPopupBackdrop, 0f, 0f, 0f, 0f);
+            var close = backdrop.gameObject.AddComponent<Button>();
+            close.targetGraphic = backdrop;
+            close.onClick.AddListener(HideBuffPopup);
+
+            _buffPopup = UiKit.PanelBox(_worldRoot, "BuffPopup");
+            UiKit.Place(_buffPopup, new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(12f, -396f), new Vector2(360f, 150f));
+            var inner = _buffPopup.GetChild(0);
+
+            _buffPopupTitle = UiKit.Label(inner, "", 17f, UiKit.Accent, TextAlignmentOptions.TopLeft);
+            UiKit.Place(UiKit.Rect(_buffPopupTitle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(12f, -10f), new Vector2(336f, 24f));
+
+            _buffPopupBody = UiKit.Label(inner, "", 14f, UiKit.Text, TextAlignmentOptions.TopLeft);
+            UiKit.Place(UiKit.Rect(_buffPopupBody.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(12f, -38f), new Vector2(336f, 104f));
+
+            HideBuffPopup();
+        }
+
+        private void ShowBuffPopup(BuffSquare square)
+        {
+            if (_buffPopup == null) return;
+            _buffPopupTitle.text = square.BuffName + (square.Stacks > 1 ? "  x" + square.Stacks : "");
+
+            var t = new System.Text.StringBuilder();
+            if (!string.IsNullOrWhiteSpace(square.Description)) t.AppendLine(square.Description).AppendLine();
+            t.AppendLine(square.Seconds > 0f ? "Remaining: " + ShortTime(square.Seconds) : "Remaining: —");
+            t.Append(square.IsDebuff ? "(a debuff — it cannot be dismissed)" : "Double-tap the icon to cancel.");
+            _buffPopupBody.text = t.ToString();
+
+            _buffPopupBackdrop.gameObject.SetActive(true);
+            _buffPopup.gameObject.SetActive(true);
+            _buffPopupBackdrop.SetAsLastSibling();   // above the world…
+            _buffPopup.SetAsLastSibling();           // …and the popup above the backdrop
+        }
+
+        private void HideBuffPopup()
+        {
+            if (_buffPopup == null) return;
+            _buffPopup.gameObject.SetActive(false);
+            _buffPopupBackdrop.gameObject.SetActive(false);
         }
 
         /// <summary>
@@ -245,6 +312,10 @@ namespace Game.Client
                 square.Root.gameObject.SetActive(true);
                 square.Key = buff.Key;
                 square.IsDebuff = buff.IsDebuff;
+                square.BuffName = buff.Name;
+                square.Description = buff.Description;
+                square.Stacks = buff.Stacks;
+                square.Seconds = buff.SecondsLeft;
 
                 square.Label.text = Abbreviations.For(buff.Name) + (buff.Stacks > 1 ? " x" + buff.Stacks : "");
                 square.Time.text = ShortTime(buff.SecondsLeft);
@@ -279,8 +350,20 @@ namespace Game.Client
                 // buff expires.
                 button.onClick.AddListener(() =>
                 {
-                    if (square.IsDebuff || string.IsNullOrEmpty(square.Key)) return;
-                    Boot.RemoveBuff(square.Key);
+                    if (string.IsNullOrEmpty(square.Key)) return;
+
+                    bool doubleTap = Time.unscaledTime - square.LastTap <= BuffDoubleTapSeconds;
+                    square.LastTap = Time.unscaledTime;
+
+                    // Double tap CANCELS — buffs only. A debuff is not yours to dismiss, so tapping one
+                    // twice just re-shows its details rather than doing nothing silently.
+                    if (doubleTap && !square.IsDebuff)
+                    {
+                        Boot.RemoveBuff(square.Key);
+                        HideBuffPopup();
+                        return;
+                    }
+                    ShowBuffPopup(square);
                 });
 
                 square.Label = UiKit.Label(box.transform, "", 14f, UiKit.Text, TextAlignmentOptions.Center);

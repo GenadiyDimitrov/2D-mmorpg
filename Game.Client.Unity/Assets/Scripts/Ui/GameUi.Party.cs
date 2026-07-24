@@ -28,8 +28,10 @@ namespace Game.Client
         private void BuildPartyWindow()
         {
             _partyPanel = UiKit.PanelBox(_worldRoot, "Party");
+            // 380 wide, not 300: the effect SQUARES sit to the right of each member's bars (owner), and
+            // the leader's Kick/Lead buttons need to clear them.
             UiKit.Place(_partyPanel, new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -230f), new Vector2(300f, 270f));
+                        new Vector2(12f, -230f), new Vector2(380f, 270f));
             var inner = _partyPanel.GetChild(0);
 
             _partyTitle = UiKit.Label(inner, "", 16f, UiKit.Accent, TextAlignmentOptions.Left);
@@ -105,7 +107,7 @@ namespace Game.Client
             // the window never rebuilt: the crown stayed on the old leader and the Lead button stayed
             // put, which read as "[lead] doesn't work". Swapping one member for another with identical
             // HP had the same blind spot, hence the IDs.
-            int stamp = party.Length * 31 + (int)Boot.PartyLoot + _partyView * 131;
+            int stamp = party.Length * 31 + (int)Boot.PartyLoot + _partyView * 131 + (_lootMenuOpen ? 7717 : 0);
             foreach (var m in party) stamp = stamp * 31 + m.Hp + m.Mp * 7 + (int)m.Status
                 + (m.Buffs?.Length ?? 0) * 17 + (m.Debuffs?.Length ?? 0) * 13
                 + (m.IsLeader ? 1000003 : 0) + m.Id.GetHashCode();
@@ -123,9 +125,12 @@ namespace Game.Client
 
             foreach (var member in party)
             {
-                string fx = BuildPartyFx(member);
+                // Effects are SQUARES beside the member now, not a wrapping text line under them — so a
+                // row is a fixed 46px whether or not anything is up, and the window stops growing taller
+                // every time someone gets buffed (owner: "that way the party window will decrease in
+                // height").
                 var row = UiKit.Box(_partyContent, "Member", UiKit.PanelLight);
-                row.gameObject.AddComponent<LayoutElement>().minHeight = fx.Length > 0 ? 64f : 46f;
+                row.gameObject.AddComponent<LayoutElement>().minHeight = 46f;
 
                 // Tapping a member TARGETS them — that is how you heal someone without hunting for
                 // their marker in a fight.
@@ -159,15 +164,14 @@ namespace Game.Client
                             new Vector2(10f, -38f), new Vector2(220f, 8f));
                 UiKit.SetBar(mp, member.Mp, member.MaxMp);
 
-                // Buffs (green) and/or debuffs (red) per the view toggle — coloured inline via rich text
-                // so one wrapping label carries both. A healer reads who needs a cleanse; a buffer reads
-                // who is missing a chant.
-                if (fx.Length > 0)
-                {
-                    var effects = UiKit.Label(row.transform, fx, 12f, UiKit.Text, TextAlignmentOptions.TopLeft);
-                    UiKit.Place(UiKit.Rect(effects.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                                new Vector2(10f, 2f), new Vector2(270f, 30f));
-                }
+                // Effect SQUARES to the right of the bars — the same shape as your own buff bar, minus
+                // the countdown (owner). A healer reads who needs a cleanse; a buffer reads who is
+                // missing a chant, both at a glance rather than by parsing a run-on line of names.
+                //
+                // ⚠ NO <60s flashing here, unlike the personal buff bar: PartyMemberDto carries effect
+                // NAMES only (string[]), no remaining time, so the client has nothing to count down.
+                // Adding it means putting durations on the wire — a DTO change, hence a protocol bump.
+                BuildMemberEffects(row.transform, member);
 
                 if (iLead && member.Id != Boot.SelfId)
                 {
@@ -185,39 +189,75 @@ namespace Game.Client
             // starts a vote rather than setting anything.
             if (iLead)
             {
-                var cycle = UiKit.TextButton(_partyContent, "Propose loot: " + LootName(NextLoot(Boot.PartyLoot)),
-                                             () => Boot.PartySetLoot(NextLoot(Boot.PartyLoot)), 14f);
-                cycle.gameObject.AddComponent<LayoutElement>().minHeight = 36f;
+                // A DROP-DOWN, not a cycle button (owner). Cycling meant tapping through modes you did
+                // not want — and since each tap STARTS A VOTE the party has to answer, an unwanted mode
+                // in passing was not free. Tapping opens the list; picking a row proposes that mode
+                // directly. Tapping the header again closes it without proposing anything.
+                var header = UiKit.TextButton(_partyContent, "Loot: " + LootName(Boot.PartyLoot)
+                                                             + (_lootMenuOpen ? "   ^" : "   v"),
+                                              () => { _lootMenuOpen = !_lootMenuOpen; _partyStamp = -1; }, 14f);
+                header.gameObject.AddComponent<LayoutElement>().minHeight = 36f;
+
+                if (_lootMenuOpen)
+                    foreach (LootMode mode in System.Enum.GetValues(typeof(LootMode)))
+                    {
+                        if (mode == Boot.PartyLoot) continue;   // already active — nothing to propose
+                        var pick = mode;
+                        var row = UiKit.TextButton(_partyContent, "   propose " + LootName(pick),
+                                                   () =>
+                                                   {
+                                                       Boot.PartySetLoot(pick);
+                                                       _lootMenuOpen = false;
+                                                       _partyStamp = -1;
+                                                   }, 13f);
+                        row.gameObject.AddComponent<LayoutElement>().minHeight = 30f;
+                    }
             }
         }
 
-        /// <summary>The coloured effect line for a member, per the 4-stage view toggle: green buff names
-        /// and/or red debuff names (inline rich-text colour), or "" for the None stage.</summary>
-        private string BuildPartyFx(PartyMemberDto member)
+        /// <summary>Is the leader's loot-mode drop-down expanded? Part of the party window's rebuild
+        /// stamp, so opening it repaints.</summary>
+        private bool _lootMenuOpen;
+
+        // Effect-square geometry. Small enough that a fully-buffed member still fits two rows beside
+        // their bars without the row growing.
+        private const float FxSize = 20f, FxStep = 22f, FxLeft = 238f, FxTop = -4f;
+        private const int FxPerRow = 3;
+
+        /// <summary>Draw a member's buffs/debuffs as coloured squares to the right of their bars, per the
+        /// 4-stage view toggle (buffs / debuffs / all / none). Green = buff, red = debuff, matching the
+        /// personal buff bar; the label is the same abbreviation that bar uses so the two read alike.</summary>
+        private void BuildMemberEffects(Transform row, PartyMemberDto member)
         {
-            if (_partyView == 3) return "";
-            string fx = "";
+            if (_partyView == 3) return;   // "none" stage
+
             bool showBuffs = _partyView == 0 || _partyView == 2;
             bool showDebuffs = _partyView == 1 || _partyView == 2;
+
+            int i = 0;
+            void Square(string name, bool debuff)
+            {
+                if (i >= FxPerRow * 2) return;   // two rows is all that fits; the rest are dropped
+                var box = UiKit.Box(row, "Fx", debuff ? new Color(0.45f, 0.18f, 0.18f, 0.95f)
+                                                      : new Color(0.16f, 0.36f, 0.20f, 0.95f));
+                UiKit.Place(UiKit.Rect(box.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                            new Vector2(FxLeft + (i % FxPerRow) * FxStep, FxTop - (i / FxPerRow) * FxStep),
+                            new Vector2(FxSize, FxSize));
+                var text = UiKit.Label(box.transform, Abbreviations.For(name), 10f,
+                                       debuff ? new Color(1f, 0.72f, 0.72f) : new Color(0.72f, 0.95f, 0.76f),
+                                       TextAlignmentOptions.Center);
+                UiKit.Stretch(UiKit.Rect(text.gameObject), 1f, 1f, 1f, 1f);
+                i++;
+            }
+
             if (showBuffs && member.Buffs != null)
-                foreach (var b in member.Buffs)
-                    fx += (fx.Length > 0 ? "  " : "") + "<color=#6BD97B>" + b + "</color>";
+                foreach (var b in member.Buffs) Square(b, false);
             if (showDebuffs && member.Debuffs != null)
-                foreach (var d in member.Debuffs)
-                    fx += (fx.Length > 0 ? "  " : "") + "<color=#FF8C8C>" + d + "</color>";
-            return fx;
+                foreach (var d in member.Debuffs) Square(d, true);
         }
 
-        private static LootMode NextLoot(LootMode mode)
-        {
-            switch (mode)
-            {
-                case LootMode.FindersKeepers: return LootMode.Random;
-                case LootMode.Random:         return LootMode.RoundRobin;
-                case LootMode.RoundRobin:     return LootMode.LeaderOnly;
-                default:                      return LootMode.FindersKeepers;
-            }
-        }
+        // (NextLoot is gone with the cycle button — the drop-down offers every mode directly, so there is
+        // no "next" to compute and no way to tap past the one you wanted.)
 
         private static string LootName(LootMode mode)
         {
