@@ -17,6 +17,7 @@ namespace Game.Client
         private RectTransform _partyPanel, _partyContent;
         private TextMeshProUGUI _partyTitle;
         private Button _partyViewButton;
+        private Button _partyLootButton;
         private int _partyStamp = -1;
         // Member buff/debuff view: 0 buffs only, 1 debuffs only, 2 all, 3 none (owner's 4-stage toggle).
         private int _partyView = 2;
@@ -36,7 +37,7 @@ namespace Game.Client
 
             _partyTitle = UiKit.Label(inner, "", 16f, UiKit.Accent, TextAlignmentOptions.Left);
             UiKit.Place(UiKit.Rect(_partyTitle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -8f), new Vector2(240f, 22f));
+                        new Vector2(12f, -8f), new Vector2(120f, 22f));
 
             var leave = UiKit.TextButton(inner, "Leave", () => Boot.PartyLeave(), 14f);
             UiKit.Place(UiKit.Rect(leave.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
@@ -50,6 +51,20 @@ namespace Game.Client
             }, 13f);
             UiKit.Place(UiKit.Rect(_partyViewButton.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
                         new Vector2(-82f, -6f), new Vector2(96f, 26f));
+
+            // LOOT mode — next to the buffs (fx) button (owner: "the drop down on the blue random next
+            // to the buffs button"). Everyone sees the mode; only the LEADER's tap opens the drop-down.
+            // The mode name is coloured, so "random" reads blue, as asked.
+            _partyLootButton = UiKit.TextButton(inner, "", () =>
+            {
+                if (Boot.Party != null && Array.Exists(Boot.Party, m => m.IsLeader && m.Id == Boot.SelfId))
+                {
+                    _lootMenuOpen = !_lootMenuOpen;
+                    _partyStamp = -1;
+                }
+            }, 13f);
+            UiKit.Place(UiKit.Rect(_partyLootButton.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
+                        new Vector2(-186f, -6f), new Vector2(100f, 26f));
 
             ScrollRect scroll;
             _partyContent = UiKit.ScrollArea(inner, out scroll, 2f);
@@ -115,7 +130,14 @@ namespace Game.Client
             _partyStamp = stamp;
 
             UiKit.SetButtonText(_partyViewButton, "fx: " + PartyViewNames[_partyView]);
-            _partyTitle.text = "Party " + party.Length + "   ·   " + LootName(Boot.PartyLoot);
+            _partyTitle.text = "Party " + party.Length;
+
+            // The loot control shows the current mode, coloured (random = blue). An arrow marks that the
+            // LEADER can open the drop-down; a non-leader just sees the mode.
+            bool iLeadNow = Array.Exists(party, m => m.IsLeader && m.Id == Boot.SelfId);
+            UiKit.SetButtonText(_partyLootButton,
+                "<color=" + LootColour(Boot.PartyLoot) + ">" + LootName(Boot.PartyLoot) + "</color>"
+                + (iLeadNow ? (_lootMenuOpen ? " ^" : " v") : ""));
 
             for (int i = _partyContent.childCount - 1; i >= 0; i--)
                 Destroy(_partyContent.GetChild(i).gameObject);
@@ -186,32 +208,24 @@ namespace Game.Client
 
             // Loot mode is the LEADER's to change, and the server requires a unanimous vote — so this
             // starts a vote rather than setting anything.
-            if (iLead)
-            {
-                // A DROP-DOWN, not a cycle button (owner). Cycling meant tapping through modes you did
-                // not want — and since each tap STARTS A VOTE the party has to answer, an unwanted mode
-                // in passing was not free. Tapping opens the list; picking a row proposes that mode
-                // directly. Tapping the header again closes it without proposing anything.
-                var header = UiKit.TextButton(_partyContent, "Loot: " + LootName(Boot.PartyLoot)
-                                                             + (_lootMenuOpen ? "   ^" : "   v"),
-                                              () => { _lootMenuOpen = !_lootMenuOpen; _partyStamp = -1; }, 14f);
-                header.gameObject.AddComponent<LayoutElement>().minHeight = 36f;
-
-                if (_lootMenuOpen)
-                    foreach (LootMode mode in System.Enum.GetValues(typeof(LootMode)))
-                    {
-                        if (mode == Boot.PartyLoot) continue;   // already active — nothing to propose
-                        var pick = mode;
-                        var row = UiKit.TextButton(_partyContent, "   propose " + LootName(pick),
-                                                   () =>
-                                                   {
-                                                       Boot.PartySetLoot(pick);
-                                                       _lootMenuOpen = false;
-                                                       _partyStamp = -1;
-                                                   }, 13f);
-                        row.gameObject.AddComponent<LayoutElement>().minHeight = 30f;
-                    }
-            }
+            // The loot DROP-DOWN opens from the header button (above), not a cycle button (owner). Cycling
+            // meant tapping through modes you did not want, and since each tap STARTS A VOTE the party has
+            // to answer, an unwanted mode in passing was not free. When open, the modes list here as rows;
+            // picking one proposes it directly.
+            if (iLead && _lootMenuOpen)
+                foreach (LootMode mode in System.Enum.GetValues(typeof(LootMode)))
+                {
+                    if (mode == Boot.PartyLoot) continue;   // already active — nothing to propose
+                    var pick = mode;
+                    var row = UiKit.TextButton(_partyContent, "   propose " + LootName(pick),
+                                               () =>
+                                               {
+                                                   Boot.PartySetLoot(pick);
+                                                   _lootMenuOpen = false;
+                                                   _partyStamp = -1;
+                                               }, 13f);
+                    row.gameObject.AddComponent<LayoutElement>().minHeight = 30f;
+                }
         }
 
         /// <summary>Is the leader's loot-mode drop-down expanded? Part of the party window's rebuild
@@ -267,6 +281,18 @@ namespace Game.Client
                 case LootMode.RoundRobin:     return "round robin";
                 case LootMode.LeaderOnly:     return "leader only";
                 default:                      return mode.ToString();
+            }
+        }
+
+        /// <summary>Colour per loot mode — "random" is blue (owner referred to it as "the blue random").</summary>
+        private static string LootColour(LootMode mode)
+        {
+            switch (mode)
+            {
+                case LootMode.Random:         return "#5AA0FF";   // blue
+                case LootMode.RoundRobin:     return "#6BD97B";   // green
+                case LootMode.LeaderOnly:     return "#FFD24A";   // gold
+                default:                      return "#CFCFCF";   // finders keepers — neutral
             }
         }
     }
