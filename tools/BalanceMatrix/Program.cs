@@ -83,6 +83,29 @@ foreach (int L in new[] { 1, 4, 8, 20 })
 Console.WriteLine("  (before this change a naked L1 fighter had 42 P.Atk and ONE-SHOT level-4-8 mobs)");
 Console.WriteLine();
 
+// -----------------------------------------------------------------------------------------------
+// LOW LEVEL (1-10): a REAL new player — TRAINING gear, NO shots — vs same-level mob HP. This is the
+// band the device playtest flagged ("lvl-1 one-shots a lvl 4-8 mob"). BuildPlayer floors to level-20
+// gear + shots, so it can't show this; BuildStarter equips the training kit and no shot buff.
+// "1-shot?" = the mob dies in a single hit/nuke (mobHp <= dmg).
+// -----------------------------------------------------------------------------------------------
+Console.WriteLine("=== LOW LEVEL 1-10 — REAL new player (training gear, NO shots) ===");
+Console.WriteLine($"{"Lvl",4} | {"MAGE M.Atk",10} {"nuke",5} {"dmg",6} {"mobHP",6} {"1shot?",6} | {"FTR P.Atk",9} {"basic",6} {"1shot?",6}");
+foreach (int L in new[] { 1, 2, 3, 4, 5, 6, 8, 10 })
+{
+    var mage = BuildStarter(BaseClass.Mage, L);
+    var ftr  = BuildStarter(BaseClass.Fighter, L);
+    int mAtk = (int)mage.EffectiveMagicAttack;
+    int power = TopNukePower(mage);
+    int mobMDef = MobBaseStats.MDef(L), mobPDef = MobBaseStats.PDef(L), mobHp = MobBaseStats.Hp(L);
+    int nuke = StatCalculator.MagicDamage(mAtk, power, mobMDef, L);
+    int basic = StatCalculator.PhysicalDamage((int)ftr.EffectiveAttack, 0, mobPDef, L);
+    Console.WriteLine($"{L,4} | {mAtk,10} {power,5} {nuke,6} {mobHp,6} {(nuke >= mobHp ? "YES" : "no"),6} | " +
+                      $"{(int)ftr.EffectiveAttack,9} {basic,6} {(basic >= mobHp ? "YES" : "no"),6}");
+}
+Console.WriteLine("  (a lvl-1 that one-shots a same-or-higher-level mob = the balance bug to fix)");
+Console.WriteLine();
+
 Console.WriteLine("=== PROGRESSION (x1 rates; a NORMAL x1-toughness mob, solo, zero level gap) ===");
 Console.WriteLine($"{"Lvl",4} {"exp/kill",10} {"sp/kill",9} {"expToNext",14} {"mobs/level",11} {"cumulative",12}");
 long cumulative = 0;
@@ -277,4 +300,26 @@ static void Equip(Entity e, string defId)
 {
     if (ItemCatalog.Get(defId) is null) { Console.Error.WriteLine($"  !! missing item {defId}"); return; }
     e.Inventory.Add(new InventoryItem { DefId = defId, Equipped = true });
+}
+
+// A REAL low-level player: TRAINING gear (the level 1-10 kit), NO shot rune buff, learned skills up to
+// this level. This is what a new character actually fights with — unlike BuildPlayer, which floors to
+// level-20 gear + shots and so hides the low-level one-shot the playtest found.
+static Entity BuildStarter(BaseClass cls, int level)
+{
+    var s = StatCalculator.GetBaseStats(Race.Human, cls);
+    var e = new Entity { Name = "starter", Kind = EntityKind.Player, Race = Race.Human, BaseClass = cls, Level = level };
+    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Dex = s.Dex;
+
+    foreach (var cs in ClassSkills.Cumulative(Race.Human, cls, e.Archetype, e.Discipline))
+        if (cs.LearnLevel <= level)
+            e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
+    if (cls == BaseClass.Mage) e.LearnedSkills[SkillCatalog.MasteryRobe] = 1;
+
+    // Training kit only — no shots, no jewels (jewels are earned; the point is the FLOOR gear).
+    Equip(e, cls == BaseClass.Mage ? ItemCatalog.TrainingWand : ItemCatalog.TrainingSword);
+    Equip(e, cls == BaseClass.Mage ? ItemCatalog.TrainingRobe : ItemCatalog.TrainingLeather);
+
+    e.RecomputeDerived();
+    return e;
 }
