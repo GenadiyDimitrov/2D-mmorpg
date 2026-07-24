@@ -9,11 +9,14 @@ public static partial class QuestCatalog
 {
     static partial void RegisterAll()
     {
+        RegisterStarterChain();           // lvl 10/12 — earns the Newbie kit (was given at creation)
         RegisterClassChangeChains();      // 2nd class (lvl 18/20)
         RegisterThirdClassChains();       // 3rd class (lvl 40, longer + harder)
         // Add more (non-class-change) chains here.
     }
 
+    // Implemented in Quests.Starter.cs.
+    static partial void RegisterStarterChain();
     // Implemented in Quests.ClassChangeChains.cs.
     static partial void RegisterClassChangeChains();
     static partial void RegisterThirdClassChains();

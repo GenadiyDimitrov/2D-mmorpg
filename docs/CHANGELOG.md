@@ -12,6 +12,31 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-24 — The level-10 starter quest, and ReachLevel steps actually work (0.28.71)
+
+Completes the starter-gear redesign. The Newbie kit is no longer given away — it is EARNED.
+
+- **New starter chain**, offered by **Armsmaster Dolan** (the gear vendor handing out gear needs no
+  explaining, and a new player is already walking to him to spend their first gold):
+  - **"A Proper Kit"** (level 10) — slay 10 Ashen Wolves, return → the **armor + weapon** choice boxes.
+  - **"Blooded"** (level 12, gated on the first) — slay 15 Werewolves, **reach level 15**, return →
+    the **jewels box + 1-day shot rune**, the two things deliberately removed from character creation.
+- Both rewards are SELECTION boxes, so the chain stays class-agnostic exactly like the creation kit.
+- Pacing against the new curve: the rewards are 52% and 39% of a level — meaningful without
+  trivialising — and the second quest spans **122 mobs** of levelling from 12 to 15, which is the
+  "levelling to ~15 while doing it" the owner asked for.
+- A vendor can host a quest and a shop at once: the dialog only special-cases Buffers, and the shop is
+  attached alongside the quest list.
+
+**`QuestStepType.ReachLevel` had never been implemented.** It has sat in the enum since quests were
+written, but no quest used it, so nothing noticed that no code anywhere advanced such a step — a quest
+reaching one would have stalled forever. `AdvanceLevelQuests()` now handles it, called from three
+places: on **level-up**, on **quest accept** (you may take a quest already past its level) and after a
+**kill or talk step advances** (finishing a step can make a ReachLevel step current, and a level-up is
+the only other trigger — a player already past the level would otherwise sit there permanently).
+
+---
+
 ## 2026-07-24 — Starter gear: the TRAINING tier for levels 1-10 (0.28.70)
 
 The owner's playtest finding was that a new character one-shots everything: it started in the **Newbie**

@@ -6627,6 +6627,7 @@ var effect = def.Effect;
         player.Mp = player.MaxMp;
         SendStats(player);
         SendLearned(player);
+        AdvanceLevelQuests(player);   // any active "reach level N" step may now be satisfied
         BroadcastSystem($"{player.Name} reached level {player.Level}!");
 
         if (player.Level >= GameConstants.ClassChangeLevel && player.SecondClass == 0)
@@ -8344,6 +8345,9 @@ var effect = def.Effect;
 
         player.ActiveQuests[questId] = new CharacterQuestState(questId, 0, 0, false);
         SendSystemToEntity(player, $"Quest accepted: {def.Name}");
+        // A quest can OPEN on a "reach level N" step the player already satisfies (they took it late),
+        // and nothing else would ever re-check it — level-ups are the only other trigger.
+        AdvanceLevelQuests(player);
         SendQuestLog(player);
         SaveEntity(player);
     }
@@ -8371,7 +8375,9 @@ var effect = def.Effect;
                 }
             }
         }
-        if (changed) { SendQuestLog(player); SaveEntity(player); }
+        // Same reason as in AdvanceKillQuests: a talk step can hand over to a "reach level N" step the
+        // player already satisfies, and only a level-up would otherwise re-check it.
+        if (changed) { AdvanceLevelQuests(player); SendQuestLog(player); SaveEntity(player); }
     }
 
     private void CompleteQuestAtNpc(Entity player, string questId, Guid npcEntityId)
@@ -8511,7 +8517,44 @@ var effect = def.Effect;
             }
             changed = true;
         }
-        if (changed) { SendQuestLog(player); }
+        // Finishing a kill step can make a "reach level N" step CURRENT, and level-ups are the only
+        // other thing that checks those — so a player already past the level would sit there forever.
+        if (changed) { AdvanceLevelQuests(player); SendQuestLog(player); }
+    }
+
+    /// <summary>Advance any active quest sitting on a <see cref="QuestStepType.ReachLevel"/> step whose
+    /// level the player has now met.
+    ///
+    /// The step type has existed in the enum since quests were written but was NEVER handled anywhere —
+    /// no quest used it, so nothing noticed. A quest that reached such a step would simply stall
+    /// forever. Called on every level-up AND when a quest is accepted, because a player may already be
+    /// past the required level when they take the quest (or when the step becomes current).</summary>
+    private void AdvanceLevelQuests(Entity player)
+    {
+        bool changed = false;
+        foreach (var qid in player.ActiveQuests.Keys.ToList())
+        {
+            var def = QuestCatalog.Get(qid);
+            var state = player.ActiveQuests[qid];
+            if (def is null || state.Completed) continue;
+
+            var step = def.Steps[state.StepIndex];
+            if (step.Type != QuestStepType.ReachLevel || player.Level < step.Count) continue;
+
+            if (state.StepIndex < def.Steps.Length - 1)
+            {
+                player.ActiveQuests[qid] = state with { StepIndex = state.StepIndex + 1, Counter = 0 };
+                SendSystemToEntity(player, $"{def.Name}: {def.Steps[state.StepIndex + 1].Text}");
+            }
+            else
+            {
+                // A ReachLevel step LAST in the chain has nothing left to do — mark it ready to hand in
+                // by parking the counter at its target, the same shape a finished kill step ends in.
+                player.ActiveQuests[qid] = state with { Counter = step.Count };
+            }
+            changed = true;
+        }
+        if (changed) SendQuestLog(player);
     }
 
     private void SendQuestLog(Entity player)
