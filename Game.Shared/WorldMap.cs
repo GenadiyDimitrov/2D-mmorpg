@@ -7,10 +7,17 @@ namespace Game.Shared;
 /// </summary>
 public static class WorldMap
 {
-    /// <summary>The playable rectangle. Players cannot leave it; the client
-    /// draws its outline so the edge is visible instead of an invisible wall.</summary>
+    /// <summary>The clamp bounds for mob SPAWNING and wandering — the FULL world, negative quadrant
+    /// included. It used to be [0, Zone] (the positive overworld only), which was fine until dungeons
+    /// and the jail moved into the negative quadrant: `ClampToBorder` then snapped every dungeon mob
+    /// spawn (at e.g. -12000,-12000) to (0,0), so all of them piled onto the overworld corner far from
+    /// the dungeon — the device playtest's "mobs spawn on the same spot and don't aggro" in the crypt.
+    /// Now it spans [WorldMin, Zone], so a negative-quadrant spawn stays where it belongs.
+    ///
+    /// This is NOT the player boundary (that's ConfineToDomain) nor the drawn world border (that's the
+    /// client's own [0, Zone] rectangle) — only the spawn/wander safety clamp.</summary>
     public static readonly WorldBorder Border = new(
-        MinX: 0, MinY: 0,
+        MinX: GameConstants.WorldMinX, MinY: GameConstants.WorldMinY,
         MaxX: GameConstants.ZoneWidth, MaxY: GameConstants.ZoneHeight);
 
     /// <summary>

@@ -601,6 +601,14 @@ namespace Game.Client
             _net.ProgressReceived += p => Main(() =>
             {
                 Progress = p;
+                // Keep ActiveClass.Level in step with the live level. The Subclasses push (which sets
+                // ActiveClass) only fires on login and class add/swap — NOT on a normal level-up — so
+                // ActiveClass.Level went STALE the moment you levelled. The Skills window keys both its
+                // rebuild stamp AND the Learn tab's level-gating off it, so newly-learnable skills didn't
+                // appear and Learn looked dead until a relog (device playtest: "dead when I levelled to
+                // 7, had to relog"). SubclassDto is a record, so update it with a fresh copy.
+                if (ActiveClass != null && ActiveClass.Level != p.Level)
+                    ActiveClass = ActiveClass with { Level = p.Level };
                 if (p.LeveledUp) ClientLog.Good("Level up! Now level " + p.Level + ".");
             });
             _net.GoldReceived += g => Main(() => Gold = g.Gold);
