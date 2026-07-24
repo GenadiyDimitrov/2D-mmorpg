@@ -480,16 +480,16 @@ public class PersistenceService
             // skills window's Skills and Actions tabs.
         });
 
-        // Starter gear — the SAME for every class now (owner): no fighter/mage split. Everything arrives
-        // in boxes the player opens, all NEWBIE (untradable, no attributes):
-        //  - ARMOR choice box → pick the Fighter (light) or Mage (robe) set,
-        //  - WEAPONS selection box → pick 1 of 5 (the staff is in here too),
-        //  - JEWELS box,
-        //  - 1-DAY SHOT-RUNE choice box → pick a Soulshot (physical) or Spiritshot (magic) rune.
-        record.Items.Add(NewItem(ItemCatalog.BoxNewbieArmorChoice));
-        record.Items.Add(NewItem(ItemCatalog.BoxNewbieWeapons));
-        record.Items.Add(NewItem(ItemCatalog.BoxNewbieJewels));
-        record.Items.Add(NewItem(ItemCatalog.BoxNewbieRuneChoice));
+        // Starter gear — TRAINING tier, the weakest in the game (owner, 2026-07-24). The Newbie set used
+        // to be handed out here, and it was strong enough to one-shot everything in the first zones; it
+        // is now the reward for the level-10 starter quest, so the opening ten levels are actually
+        // played. Still class-agnostic: one weapon choice box covering all five weapons, one armor
+        // choice box covering light/robe.
+        //
+        // Explicitly NO shots and NO jewels at creation (owner). Jewels are earned — the broken line
+        // drops from level 1-5 mobs and is sold in the shop — and shot runes come with the quest.
+        record.Items.Add(NewItem(ItemCatalog.BoxTrainingWeapons));
+        record.Items.Add(NewItem(ItemCatalog.BoxTrainingArmorChoice));
         record.Items.Add(NewItem(ItemCatalog.MinorPotion, 5));
         record.Items.Add(NewItem(ItemCatalog.GreaterPotion, 2));
 

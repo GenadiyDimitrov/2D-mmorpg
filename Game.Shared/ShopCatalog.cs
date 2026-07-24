@@ -51,6 +51,21 @@ public static class ShopCatalog
             }),
             new ShopDef(GearMerchant, "Armsmaster", new[]
             {
+                // TRAINING tier (400g each) — the level 1-10 gear. Stocked so a new player who picked the
+                // wrong weapon, or lost one, can just buy another instead of being stuck with it.
+                ItemCatalog.TrainingSword,
+                ItemCatalog.TrainingClub,
+                ItemCatalog.TrainingKnives,
+                ItemCatalog.TrainingBow,
+                ItemCatalog.TrainingWand,
+                ItemCatalog.TrainingLeather,
+                ItemCatalog.TrainingRobe,
+                // BROKEN jewels — also drop from level 1-5 mobs. Sold here so the first accessory is
+                // reachable without waiting on a drop (owner: "jewels are dropped from lvl 1-5 mobs and
+                // sold in shop").
+                ItemCatalog.BrokenEarring,
+                ItemCatalog.BrokenRing,
+                ItemCatalog.BrokenNecklace,
                 // Basic plain weapons (F, common).
                 ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.F, ItemRarity.Common),
                 ItemCatalog.WeaponKey(WeaponType.Dual,  ItemGrade.F, ItemRarity.Common),

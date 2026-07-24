@@ -387,8 +387,37 @@ public static class ItemCatalog
     /// PAtkFactor/MAtkFactor.</summary>
     public const float OffChannelFactor = 0.6f;
 
-    // Newbie STARTER weapons — given on character creation. Untradeable, sold for 0,
-    // can't be purchased (see the "newbie" item flags below).
+    // ---- TRAINING tier: levels 1-10, the WEAKEST gear in the game (owner, 2026-07-24) ----
+    // A new character starts with these instead of the Newbie set. The Newbie gear did not go away —
+    // it became the reward for the level-10 starter QUEST, so the first ten levels are played in kit
+    // that cannot one-shot a mob. Bought at any weapon/armor vendor for 400g so a death or a bad pick
+    // is recoverable. Untradeable and attribute-less like all starter gear; unlike the Newbie tier
+    // these DO have a buy price, because being able to replace them is the point.
+    public const string TrainingSword   = "training_sword";
+    public const string TrainingClub    = "training_club";
+    public const string TrainingKnives  = "training_knives";
+    public const string TrainingBow     = "training_bow";
+    public const string TrainingWand    = "training_wand";
+    public const string TrainingLeather = "training_leather_armor";
+    public const string TrainingRobe    = "training_robe";
+    /// <summary>Price of every training weapon and armor at a vendor (owner: 400g each).</summary>
+    public const int TrainingGearPrice = 400;
+
+    // ---- BROKEN jewels: the level 1-5 drop line, and the only jewels a new character can get ----
+    // The Newbie jewels box is gone from character creation (owner: "no shot/jewels"). These drop from
+    // level 1-5 mobs and are sold in the shop, so the first accessories are EARNED. Tradable, unlike
+    // the bound starter kit — an early player having something worth selling is the point.
+    public const string BrokenEarring  = "broken_earring";
+    public const string BrokenRing     = "broken_ring";
+    public const string BrokenNecklace = "broken_necklace";
+
+    /// <summary>Training WEAPONS selection box — pick ONE of the five. Given at character creation.</summary>
+    public const string BoxTrainingWeapons = "box_training_weapons";
+    /// <summary>Training ARMOR choice — pick leather (fighter) or robe (mage). Given at creation.</summary>
+    public const string BoxTrainingArmorChoice = "box_training_armor_choice";
+
+    // Newbie STARTER weapons — now the level-10 QUEST reward, no longer given at creation.
+    // Untradeable, sold for 0, can't be purchased (see the "newbie" item flags below).
     public const string NewbieSword1H = "newbie_sword_1h";
     public const string NewbieDaggers = "newbie_daggers";
     public const string NewbieSword2H = "newbie_sword_2h";
@@ -773,6 +802,70 @@ public static class ItemCatalog
             AtkBonus: 24, PAtkFactor: 0.6f, MAtkFactor: 1.0f, MpBonus: 20, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
 
         // ===================================================================
+        //  TRAINING tier — levels 1-10, the weakest gear in the game (owner). Roughly a QUARTER of the
+        //  Newbie weapons' power, so a starting character cannot one-shot its way through the first zones.
+        //  Buyable at 400g; untradeable and attribute-less like the rest of the starter kit.
+        //
+        //  ⚠ The owner authored these as "P.Atk / M.Atk" pairs: sword 6/5, club 6/5, knives 5/5,
+        //  bow 11/5, wand 5/7. Only the FIRST number is authored here as AtkBonus — the second follows
+        //  from the CHANNEL FACTOR, which is deliberate. Forcing a dagger's M.Atk to equal its P.Atk
+        //  would mean MAtkFactor 1.0, i.e. daggers casting as well as a staff, which reverses the
+        //  weapon-identity rule this file is built on (see OffChannelFactor). The standard 0.6 gives
+        //  sword/club 6/3.6, knives 5/3, bow 11/6.6, and the wand inverts to 4.2/7 — within a point or
+        //  two of his list at level 1, with the design intact.
+        list.Add(new ItemDef(TrainingSword, "Training Sword", EquipSlot.Weapon,
+            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Sword,
+            AtkBonus: 6, PAtkFactor: 1.0f, MAtkFactor: OffChannelFactor,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
+            Description: "Blunt-edged practice sword. The weakest blade there is — replace it as soon as you can."));
+        list.Add(new ItemDef(TrainingClub, "Training Club", EquipSlot.Weapon,
+            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Blunt,
+            AtkBonus: 6, PAtkFactor: 1.0f, MAtkFactor: OffChannelFactor,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
+            Description: "A weighted stick. It hits about as well as you would expect."));
+        list.Add(new ItemDef(TrainingKnives, "Training Knives", EquipSlot.Weapon,
+            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Dual,
+            AtkBonus: 5, PAtkFactor: 1.0f, MAtkFactor: OffChannelFactor,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
+            Description: "Dulled practice knives. Fast, and barely dangerous."));
+        list.Add(new ItemDef(TrainingBow, "Training Bow", EquipSlot.Weapon,
+            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Bow,
+            AtkBonus: 11, PAtkFactor: 1.0f, MAtkFactor: OffChannelFactor, WeaponRange: 400,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
+            Description: "A short practice bow. Hits harder than the melee training gear, from a distance."));
+        list.Add(new ItemDef(TrainingWand, "Training Wand", EquipSlot.Weapon,
+            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Blunt,
+            AtkBonus: 7, PAtkFactor: OffChannelFactor, MAtkFactor: 1.0f, MpBonus: 6,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
+            Description: "An apprentice's wand. Poor in the hand, but it carries a spell."));
+
+        // Training ARMOR — light (fighter) and robe (mage). No set bonus: the set line starts at Newbie.
+        list.Add(new ItemDef(TrainingLeather, "Training Leather Armor", EquipSlot.Armor,
+            ItemGrade.F, ItemRarity.Common, Weight: ArmorWeight.Light, ArmorSlot: ArmorSlot.Body,
+            DefBonus: 53,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
+            Description: "Scuffed practice leathers."));
+        list.Add(new ItemDef(TrainingRobe, "Training Robe", EquipSlot.Armor,
+            ItemGrade.F, ItemRarity.Common, Weight: ArmorWeight.Robe, ArmorSlot: ArmorSlot.Body,
+            DefBonus: 27, MpBonus: 29,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
+            Description: "A rough apprentice's robe."));
+
+        // BROKEN jewels — the level 1-5 drop line. TRADABLE on purpose: these are the first thing a new
+        // player owns that is worth anything, and selling them is the first bit of economy they touch.
+        // The owner's "40g / 30g / 60g" is the SHOP price, so it goes on BuyPriceOverride; the sell-back
+        // value falls out of the normal Value formula, as it does for every other tradable item.
+        list.Add(new ItemDef(BrokenEarring, "Broken Earring", EquipSlot.Jewel, ItemGrade.F, ItemRarity.Common,
+            MDefBonus: 11, JewelType: JewelType.Earring, Value: 40, BuyPriceOverride: 40, NoAttributes: true,
+            Description: "Cracked, but it still turns a little magic."));
+        list.Add(new ItemDef(BrokenRing, "Broken Ring", EquipSlot.Jewel, ItemGrade.F, ItemRarity.Common,
+            MDefBonus: 7, JewelType: JewelType.Ring, Value: 30, BuyPriceOverride: 30, NoAttributes: true,
+            Description: "Bent out of shape, and worth a few coins."));
+        list.Add(new ItemDef(BrokenNecklace, "Broken Necklace", EquipSlot.Jewel, ItemGrade.F, ItemRarity.Common,
+            MDefBonus: 15, JewelType: JewelType.Necklace, Value: 60, BuyPriceOverride: 60, NoAttributes: true,
+            Description: "The chain is mended with wire."));
+
+        // ===================================================================
         //  BOXES / CHESTS — opened from inventory; contents roll the BoxCatalog table.
         // ===================================================================
         list.Add(new ItemDef(BoxNewbie, "Newbie Box", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
@@ -786,6 +879,12 @@ public static class ItemCatalog
             Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
         list.Add(new ItemDef(BoxNewbieWeapons, "Newbie Weapons Box", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
             Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
+        list.Add(new ItemDef(BoxTrainingWeapons, "Training Weapons Box", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true,
+            Description: "Pick one training weapon."));
+        list.Add(new ItemDef(BoxTrainingArmorChoice, "Training Armor Box", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true,
+            Description: "Pick leather or robe."));
 
         // ===================================================================
         //  NEWBIE ARMOR (two sets) + JEWELS — no attributes, untradeable, sell 0, buy -1.

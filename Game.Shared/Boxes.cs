@@ -55,6 +55,25 @@ public static class BoxCatalog
                 new BoxEntry(ItemCatalog.NewbieStaff, 1.0f),
             }, PickCount: 1),
 
+            // TRAINING weapons — pick ONE of the five. This is the character-creation weapon box now;
+            // the Newbie one moved to the level-10 quest.
+            new BoxDef(ItemCatalog.BoxTrainingWeapons, new[]
+            {
+                new BoxEntry(ItemCatalog.TrainingSword, 1.0f),
+                new BoxEntry(ItemCatalog.TrainingClub, 1.0f),
+                new BoxEntry(ItemCatalog.TrainingKnives, 1.0f),
+                new BoxEntry(ItemCatalog.TrainingBow, 1.0f),
+                new BoxEntry(ItemCatalog.TrainingWand, 1.0f),
+            }, PickCount: 1),
+
+            // TRAINING armor — pick leather (fighter) or robe (mage). No accessories: the helm/gloves/
+            // boots line starts at the Newbie tier, i.e. at the level-10 quest.
+            new BoxDef(ItemCatalog.BoxTrainingArmorChoice, new[]
+            {
+                new BoxEntry(ItemCatalog.TrainingLeather, 1.0f),
+                new BoxEntry(ItemCatalog.TrainingRobe, 1.0f),
+            }, PickCount: 1),
+
             // Newbie ARMOR-SET choice — pick ONE of the two armor boxes (fighter light / mage robe).
             new BoxDef(ItemCatalog.BoxNewbieArmorChoice, new[]
             {

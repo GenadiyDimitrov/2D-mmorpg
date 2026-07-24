@@ -179,6 +179,16 @@ public static class MobCatalog
         if (level >= 60) drops.Add(new(Mat(mats.A, ItemRarity.Rare), 0.03f));
         if (level >= 76) drops.Add(new(Mat(mats.A, ItemRarity.Epic), 0.005f));
 
+        // BROKEN jewels — the level 1-5 line (owner, 2026-07-24). A new character no longer starts with
+        // any jewels, so these are the first accessory anyone owns: earned off the mobs in the starting
+        // zones, or bought cheaply. One mutually-exclusive GROUP, so a kill yields at most one piece.
+        if (level <= 5)
+        {
+            drops.Add(new(ItemCatalog.BrokenEarring, 0.04f, GroupId: 3));
+            drops.Add(new(ItemCatalog.BrokenRing, 0.04f, GroupId: 3));
+            drops.Add(new(ItemCatalog.BrokenNecklace, 0.02f, GroupId: 3));
+        }
+
         // Usable-now GEAR drops: the SCALED Common/Uncommon/Rare copies of the mob's tier gear
         // (the full Epic set stays craft/boss-only). Family weight picks the body + weapon flavor.
         int tier = GearTier(level);

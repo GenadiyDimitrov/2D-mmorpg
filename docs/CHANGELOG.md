@@ -12,6 +12,32 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-24 — Starter gear: the TRAINING tier for levels 1-10 (0.28.70)
+
+The owner's playtest finding was that a new character one-shots everything: it started in the **Newbie**
+set, which is strong enough to trivialise the first zones. That set is now the **level-10 quest reward**
+(quest still to build), and a new character starts in a new, deliberately feeble **Training** tier.
+
+- **Training weapons** (~a quarter of the Newbie numbers): Training Sword 6, Club 6, Knives 5, Bow 11,
+  Wand 7 M.Atk. **400g each** at the Armsmaster, so a bad pick or a loss is recoverable — unlike the
+  Newbie tier these are buyable.
+  ⚠ The owner authored these as P.Atk/M.Atk pairs (6/5, 6/5, 5/5, 11/5, 5/7). Only the FIRST number is
+  authored; the second follows from the weapon's CHANNEL FACTOR. Forcing a dagger's M.Atk to match its
+  P.Atk would mean `MAtkFactor 1.0` — daggers casting as well as a staff — which reverses the
+  weapon-identity rule the item model is built on. The standard 0.6 lands within a point or two.
+- **Training armor**: Leather 53 P.Def, Robe 27 P.Def + 29 MP. No set bonus — the set line starts at
+  the Newbie tier, i.e. at the quest.
+- **NO jewels and NO shot runes at creation** (owner). Both were in the old kit.
+- **Broken jewels** — a new level 1-5 drop line and the first accessory anyone owns: Broken Earring
+  (11 M.Def, 40g), Ring (7, 30g), Necklace (15, 60g). They drop as one mutually-exclusive group (10%
+  combined) from mobs at level ≤5 and are stocked at the Armsmaster. **Tradable**, unlike the bound
+  starter kit — the first thing a new player owns that is worth selling.
+- Both character-creation paths (`CreateCharacterAsync` and the live `GiveStarterKit`) now hand out the
+  same two class-agnostic selection boxes, so there is no fighter/mage branch left to drift.
+
+**Still to build:** the level-10 starter QUEST that awards the Newbie set, the jewels box and the 1-day
+shot rune.
+
 ---
 
 ## 2026-07-24 — Damage ledger: most-damage earns the kill, contested kills split (0.28.69)

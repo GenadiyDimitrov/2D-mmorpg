@@ -2110,17 +2110,12 @@ public class GameLoopService : BackgroundService
             AddItem(player, defId, qty);
         }
 
-        if (player.BaseClass == BaseClass.Mage)
-        {
-            Give(ItemCatalog.NewbieStaff);
-            Give(ItemCatalog.BoxNewbieArmorRobe);
-        }
-        else
-        {
-            Give(ItemCatalog.BoxNewbieWeapons);   // selection box: pick 2
-            Give(ItemCatalog.BoxNewbieArmorLight);
-        }
-        Give(ItemCatalog.BoxNewbieJewels);
+        // TRAINING tier, matching CreateCharacterAsync (owner, 2026-07-24). Class-agnostic: both boxes
+        // are selection boxes covering every option, so there is no fighter/mage branch to keep in sync.
+        // No jewels and no shot runes at creation — jewels are earned from level 1-5 mobs or bought, and
+        // the shot rune arrives with the level-10 starter quest along with the Newbie set.
+        Give(ItemCatalog.BoxTrainingWeapons);
+        Give(ItemCatalog.BoxTrainingArmorChoice);
         Give(ItemCatalog.MinorPotion, 5);
         Give(ItemCatalog.GreaterPotion, 2);
     }
