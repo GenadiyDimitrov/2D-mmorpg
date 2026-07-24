@@ -12,6 +12,26 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-24 — Every name-only command is now a bar ACTION (0.28.76)
+
+Completing the owner's "every command that doesn't need a value, only a name, as an action button". The
+Actions tab already had eight (Attack, Target Closest, Sit/Stand, Run/Walk, Trade, Party Invite, Follow,
+Assist) — so no command was ever homeless — and this adds the remaining six:
+
+- **Add Friend / Remove Friend** (target a player) and **Friend List**.
+- **Leave Party**, **Kick from Party** (target a member), **Pass Leadership** (target a member).
+
+Each is placeable on the skill bar like any action. The TARGET supplies the name, so nothing is typed.
+Commands that need a real VALUE stay typed — `/w <name> <message>` (a message) and trade quantities (a
+number) — because a button cannot supply one. Admin commands are excluded (owner: "except admins").
+
+Implementation note: the friend actions resolve the target to a NAME (the hub takes a name, because
+friendship must work on someone offline or out of view); the party actions take an id, since a party
+member is present by definition. The slash equivalents (`/fadd` `/frem` `/flist` `/ptleave` `/ptkick`
+`/ptcl`) all still work.
+
+---
+
 ## 2026-07-24 — Tier-2 UI batch, part 3 — the list is complete (0.28.75)
 
 All thirteen cheap playtest-11 UI items are now done.

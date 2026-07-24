@@ -210,6 +210,24 @@ namespace Game.Client
             return null;
         }
 
+        /// <summary>Send a friend command. The hub takes a NAME rather than an id on purpose — friendship
+        /// has to work on someone who is offline or out of view, which no entity id can express.</summary>
+        public async void FriendCommand(string action, string name)
+        {
+            try { await _net.FriendCommandAsync(action, name); }
+            catch (Exception ex) { ClientLog.Warn("Friend: " + ex.Message); }
+        }
+
+        /// <summary>The NAME of the currently targeted player, or null when the target is missing, is a
+        /// mob, or is yourself. Used by the name-only actions, which take a target instead of typing.</summary>
+        public string TargetPlayerName()
+        {
+            if (!TargetId.HasValue || Entities == null) return null;
+            if (TargetId.Value == SelfId) return null;
+            return Entities.TryGetState(TargetId.Value, out var e)
+                   && e.Kind == EntityKind.Player ? e.Name : null;
+        }
+
         /// <summary>A nearby PLAYER entity by name (for /ptinv). Null if not in view.</summary>
         public Guid? FindPlayerByName(string name)
         {
@@ -1040,6 +1058,32 @@ namespace Game.Client
                     case GameConstants.ActionAssistTarget:
                         if (TargetId.HasValue) Assist(TargetId.Value);
                         else ClientLog.Warn("Target a player to assist.");
+                        break;
+
+                    // ---- Name-only commands: the TARGET supplies the name, so nothing is typed. The
+                    //      friend hub takes a NAME (friendship must work on someone who is offline), so
+                    //      these resolve the target to its name first; the party ones take an id. ----
+                    case GameConstants.ActionFriendAdd:
+                        if (TargetPlayerName() is string addName) FriendCommand("add", addName);
+                        else ClientLog.Warn("Target a player to add as a friend.");
+                        break;
+                    case GameConstants.ActionFriendRemove:
+                        if (TargetPlayerName() is string remName) FriendCommand("remove", remName);
+                        else ClientLog.Warn("Target a player to remove from your friends.");
+                        break;
+                    case GameConstants.ActionFriendList:
+                        FriendCommand("list", "");
+                        break;
+                    case GameConstants.ActionPartyLeave:
+                        PartyLeave();
+                        break;
+                    case GameConstants.ActionPartyKick:
+                        if (TargetId.HasValue) PartyKick(TargetId.Value);
+                        else ClientLog.Warn("Target a party member to remove.");
+                        break;
+                    case GameConstants.ActionPartyLeader:
+                        if (TargetId.HasValue) PartyChangeLeader(TargetId.Value);
+                        else ClientLog.Warn("Target a party member to pass leadership to.");
                         break;
                     default:
                         ClientLog.Warn(action.Name + " isn't available on the phone yet.");

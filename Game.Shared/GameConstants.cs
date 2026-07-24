@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.28.75";
+    public const string GameVersion = "0.28.76";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -277,6 +277,15 @@ public static class GameConstants
     public const string ActionPartyInvite   = "party_invite";
     public const string ActionFollowTarget  = "follow_target";
     public const string ActionAssistTarget  = "assist_target";
+    // Every remaining command whose only argument is a NAME — so the TARGET supplies it and nothing has
+    // to be typed (owner, 2026-07-24). Commands that need a real VALUE (a whisper's message, a trade
+    // quantity) stay typed, because a button cannot supply one.
+    public const string ActionFriendAdd     = "friend_add";
+    public const string ActionFriendRemove  = "friend_remove";
+    public const string ActionFriendList    = "friend_list";
+    public const string ActionPartyLeave    = "party_leave";
+    public const string ActionPartyKick     = "party_kick";
+    public const string ActionPartyLeader   = "party_leader";
 
     // A new character starts with a COMPLETELY EMPTY bar (owner, 2026-07-20). Nothing is placed for
     // you — not skills, not even the actions. The player builds their own bar from the skills window's

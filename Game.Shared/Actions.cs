@@ -70,6 +70,31 @@ public static class ActionCatalog
 
         new(GameConstants.ActionAssistTarget, "Assist", "🫱",
             "Attack whatever the targeted player is attacking.", ActionNeeds.PlayerTarget),
+
+        // ---- Everything else whose only argument is a NAME (owner, 2026-07-24): the TARGET supplies it,
+        //      so nothing has to be typed. Commands that need a real VALUE — a whisper's message, a trade
+        //      quantity — stay typed, because a button has no way to provide one. ----
+
+        new(GameConstants.ActionFriendAdd, "Add Friend", "➕",
+            "Send the targeted player a friend request. Friendship is MUTUAL: until they add you back "
+            + "you are only [pending] and neither of you sees the other's comings and goings.",
+            ActionNeeds.PlayerTarget),
+
+        new(GameConstants.ActionFriendRemove, "Remove Friend", "➖",
+            "Remove the targeted player from your friend list.", ActionNeeds.PlayerTarget),
+
+        new(GameConstants.ActionFriendList, "Friend List", "📖",
+            "Show your friends and which of them are online."),
+
+        new(GameConstants.ActionPartyLeave, "Leave Party", "🚪",
+            "Leave your current party."),
+
+        new(GameConstants.ActionPartyKick, "Kick from Party", "👢",
+            "Remove the targeted player from the party. Leader only.", ActionNeeds.PlayerTarget),
+
+        new(GameConstants.ActionPartyLeader, "Pass Leadership", "👑",
+            "Make the targeted party member the leader. Leader only, and it cannot be undone by you.",
+            ActionNeeds.PlayerTarget),
     };
 
     private static readonly Dictionary<string, ActionDef> ById =
