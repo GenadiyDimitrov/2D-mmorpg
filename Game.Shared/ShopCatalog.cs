@@ -41,6 +41,12 @@ public static class ShopCatalog
                 // Reagents: Skill Stone (400g — Angel's Protection etc.) + Elemental Stone (20k — nuker burst).
                 ItemCatalog.SkillStone,
                 ItemCatalog.ElementalStone,
+                // Shot boxes — 1h/2h only (24h/30d are premium/pass, debug-only for now). Fighters buy the
+                // Soulshot box, mages the Spiritshot; anyone may buy either (e.g. a buffer for melee).
+                ItemCatalog.BoxSoulshot1h,
+                ItemCatalog.BoxSoulshot2h,
+                ItemCatalog.BoxSpiritshot1h,
+                ItemCatalog.BoxSpiritshot2h,
                 // NOTE: enchant + attribute scrolls are intentionally DROP-ONLY (not sold).
             }),
             new ShopDef(GearMerchant, "Armsmaster", new[]

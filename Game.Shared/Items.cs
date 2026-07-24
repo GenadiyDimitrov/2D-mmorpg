@@ -78,7 +78,7 @@ public enum ItemRarity { Common = 0, Uncommon = 1, Rare = 2, Epic = 3, Legendary
 // Jewel = the magic-defence slot. ONE jewel equips for now; the equip code is
 // written to expand to the L2 layout (2 rings / 2 earrings / 1 necklace) later
 // by allowing several Jewel-slot items at once.
-public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2, Scroll = 3, QuestItem = 4, Shield = 5, Jewel = 6, Box = 7, Material = 8 }
+public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2, Scroll = 3, QuestItem = 4, Shield = 5, Jewel = 6, Box = 7, Material = 8, Rune = 9 }
 
 /// <summary>Jewel sub-type — limits how many can be worn: 2 Rings, 2 Earrings, 1 Necklace.</summary>
 public enum JewelType { None = 0, Ring = 1, Earring = 2, Necklace = 3 }
@@ -86,7 +86,7 @@ public enum JewelType { None = 0, Ring = 1, Earring = 2, Necklace = 3 }
 /// <summary>Unified TOP-LEVEL item category, derived from EquipSlot (see ItemDef.Type).
 /// One clean axis for grouping/filtering. A 2H weapon is MainHand AND occupies the
 /// OffHand (no separate type — see ItemDef.OccupiesOffHand).</summary>
-public enum ItemType { Other = 0, MainHand, OffHand, Armor, Jewel, Consumable, Scroll, Box, Quest, Material }
+public enum ItemType { Other = 0, MainHand, OffHand, Armor, Jewel, Consumable, Scroll, Box, Quest, Material, Rune }
 
 /// <summary>Unified SUB-TYPE across all items (see ItemDef.Subtype), derived from the
 /// per-domain enums (WeaponType / ArmorSlot / JewelType / ScrollKind …). Lets you ask
@@ -257,7 +257,18 @@ public record ItemDef(
     int AttackSpeedBase = 0,
     // Recipe BOOK: the recipe id this item teaches when "opened" ("" = not a book). A book is an
     // EquipSlot.Box so the client's open flow reuses; opening adds the id to the char's KnownRecipes.
-    string TeachesRecipeId = "")
+    string TeachesRecipeId = "",
+    // ----- RUNE (soul/spiritshot). A held, non-equipped item that grants a timed buff while it's in the
+    // MAIN inventory and not expired (wall-clock ExpiresAtUtc lives on the item INSTANCE, not here). The
+    // buff is the named skill. Delete-protected (see the bin handler). Not equipped, not consumed. -----
+    bool IsRune = false,
+    string RuneBuffSkillId = "",
+    // ----- BOX that grants a RUNE: seconds the granted rune lasts, stamped as ExpiresAtUtc at OPEN time
+    // (so buying the sealed box doesn't start the clock). 0 = not a rune box. -----
+    int GrantsRuneSeconds = 0,
+    // ----- Optional blunt flavour/warning text shown in item details ("" = none; consumables fall back to
+    // their use-skill's description). Used to spell out e.g. "Soulshots boost PHYSICAL damage only". -----
+    string Description = "")
 {
     /// <summary>Hash on the ID alone. Same reason as SkillDef.GetHashCode — a positional record's
     /// generated hash is one deeply-nested expression per field, and IL2CPP turns that into C++ that
@@ -278,6 +289,7 @@ public record ItemDef(
         EquipSlot.Box => ItemType.Box,
         EquipSlot.QuestItem => ItemType.Quest,
         EquipSlot.Material => ItemType.Material,
+        EquipSlot.Rune => ItemType.Rune,
         _ => ItemType.Other
     };
 
@@ -393,6 +405,17 @@ public static class ItemCatalog
     public const string NewbieEarring     = "newbie_earring";
     public const string NewbieRing        = "newbie_ring";
     public const string NewbieNecklace    = "newbie_necklace";
+    // Shot RUNES + their sealed boxes (open → rune, wall-clock expiry set on open).
+    public const string SoulshotRune      = "rune_soulshot";
+    public const string SpiritshotRune    = "rune_spiritshot";
+    public const string BoxSoulshot1h     = "box_soulshot_1h";
+    public const string BoxSoulshot2h     = "box_soulshot_2h";
+    public const string BoxSoulshot24h    = "box_soulshot_24h";
+    public const string BoxSoulshot30d    = "box_soulshot_30d";
+    public const string BoxSpiritshot1h   = "box_spiritshot_1h";
+    public const string BoxSpiritshot2h   = "box_spiritshot_2h";
+    public const string BoxSpiritshot24h  = "box_spiritshot_24h";
+    public const string BoxSpiritshot30d  = "box_spiritshot_30d";
     // Boxes/chests — opened from the inventory; roll their BoxCatalog loot table.
     public const string BoxNewbie         = "box_newbie";
     public const string BoxTreasure       = "box_treasure";
@@ -602,6 +625,34 @@ public static class ItemCatalog
         list.Add(new ItemDef(InstantPotion, "Instant Healing Potion", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare,
             UseSkillId: SkillCatalog.PotHealInstant, PotionCooldownTicks: 600, Value: 5000));
+
+        // ----- SHOT RUNES + their boxes. The rune is HELD (not equipped/consumed): while it's in the main
+        // inventory and unexpired the reconciliation loop keeps its buff up. Tradable:false (can't sell/
+        // trade) AND delete-protected in the bin handler (IsRune). The box is sealed — OPENING it stamps
+        // ExpiresAtUtc = now + GrantsRuneSeconds, so the clock starts on open, not on purchase. -----
+        list.Add(new ItemDef(SoulshotRune, "Soulshot Rune", EquipSlot.Rune, ItemGrade.F, ItemRarity.Rare,
+            IsRune: true, RuneBuffSkillId: SkillCatalog.SoulshotRuneBuff, Tradable: false, Value: 0,
+            Description: "Held rune: +100% P.Atk while in your bag. Boosts PHYSICAL damage only (melee/bow) — useless for spells. Move it to the warehouse to switch it off; it can't be deleted."));
+        list.Add(new ItemDef(SpiritshotRune, "Spiritshot Rune", EquipSlot.Rune, ItemGrade.F, ItemRarity.Rare,
+            IsRune: true, RuneBuffSkillId: SkillCatalog.SpiritshotRuneBuff, Tradable: false, Value: 0,
+            Description: "Held rune: +magic damage & cast speed while in your bag. Boosts MAGIC (spells) only — useless for melee/bow. Move it to the warehouse to switch it off; it can't be deleted."));
+
+        // Sealed shot boxes. 1h/2h are vendor-stocked (Apothecary, real gold price); 24h/30d are debug-only
+        // (BuyPrice -1 = can't be bought — they come from the premium shop / a pass later). Prices are a
+        // stand-in for the future premium economy and are easy to retune.
+        const int H = 3600, D = 24 * 3600;
+        void ShotBox(string id, string name, int seconds, int buyPrice, string desc) =>
+            list.Add(new ItemDef(id, name, EquipSlot.Box, ItemGrade.F, ItemRarity.Rare,
+                GrantsRuneSeconds: seconds, Tradable: false, BuyPriceOverride: buyPrice, SellPriceOverride: 0,
+                Description: desc));
+        ShotBox(BoxSoulshot1h,  "Soulshot Box (1h)",  1 * H, 5000,  "Opens to a Soulshot Rune lasting 1 hour. Soulshots boost PHYSICAL damage only (melee/bow) — useless for spells.");
+        ShotBox(BoxSoulshot2h,  "Soulshot Box (2h)",  2 * H, 9000,  "Opens to a Soulshot Rune lasting 2 hours. Soulshots boost PHYSICAL damage only (melee/bow) — useless for spells.");
+        ShotBox(BoxSoulshot24h, "Soulshot Box (1d)",  1 * D, -1,    "Opens to a Soulshot Rune lasting 24 hours. Soulshots boost PHYSICAL damage only (melee/bow) — useless for spells.");
+        ShotBox(BoxSoulshot30d, "Soulshot Box (30d)", 30 * D, -1,   "Opens to a Soulshot Rune lasting 30 days. Soulshots boost PHYSICAL damage only (melee/bow) — useless for spells.");
+        ShotBox(BoxSpiritshot1h,  "Spiritshot Box (1h)",  1 * H, 5000,  "Opens to a Spiritshot Rune lasting 1 hour. Spiritshots boost MAGIC (spells) only — useless for melee/bow.");
+        ShotBox(BoxSpiritshot2h,  "Spiritshot Box (2h)",  2 * H, 9000,  "Opens to a Spiritshot Rune lasting 2 hours. Spiritshots boost MAGIC (spells) only — useless for melee/bow.");
+        ShotBox(BoxSpiritshot24h, "Spiritshot Box (1d)",  1 * D, -1,    "Opens to a Spiritshot Rune lasting 24 hours. Spiritshots boost MAGIC (spells) only — useless for melee/bow.");
+        ShotBox(BoxSpiritshot30d, "Spiritshot Box (30d)", 30 * D, -1,   "Opens to a Spiritshot Rune lasting 30 days. Spiritshots boost MAGIC (spells) only — useless for melee/bow.");
 
         // Return scrolls: same mechanism, but their skill has a CAST time, so double-clicking one
         // channels it. The skills are NOT learned — the ITEM is what grants them.

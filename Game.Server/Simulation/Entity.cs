@@ -106,8 +106,13 @@ public class InventoryItem
     /// <summary>DB instance id, preserved across saves (null = never persisted).</summary>
     public Guid? PersistentInstanceId { get; set; }
 
+    /// <summary>Wall-clock expiry for a TIMED item (a shot rune). Set when its box is opened; the item is
+    /// deleted once <c>DateTime.UtcNow &gt;= ExpiresAtUtc</c>. Wall-clock, so it counts down even offline.
+    /// null = never expires (everything that isn't a rune).</summary>
+    public DateTime? ExpiresAtUtc { get; set; }
+
     public InventoryItemDto ToDto() =>
-        new(InstanceId, DefId, Equipped, Enchant, Quantity, Attributes.ToArray());
+        new(InstanceId, DefId, Equipped, Enchant, Quantity, Attributes.ToArray(), ExpiresAtUtc);
 }
 
 /// <summary>

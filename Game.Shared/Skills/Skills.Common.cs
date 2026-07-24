@@ -27,6 +27,12 @@ public static partial class SkillCatalog
     //      magic (√mAtk) — the soulshot/spiritshot ratio. ----
     public const string PhysicalTraining = "physical_training";  // multi-level (9): +10%…+100% atk
     public const string SpiritTraining   = "spirit_training";    // multi-level (9): +atk + cast speed
+    // ---- SHOT RUNE buffs — the item-driven REPLACEMENT for the training passives above. A held rune
+    //      applies one of these while it's in the main inventory and unexpired; the reconciliation loop
+    //      keeps it in sync with the item. Soulshot = +100% P.Atk (×2 physical); Spiritshot = +41%
+    //      effective M.Atk (×1.414 magic) + a flat +40 cast, exactly the old passive's numbers. ----
+    public const string SoulshotRuneBuff   = "rune_soulshot";
+    public const string SpiritshotRuneBuff = "rune_spiritshot";
     // ---- Class identity "sure" floor passives — now ONE multi-level skill each
     //      (auto-granted at the class-change milestone, level = tier 1/2/3). The floor
     //      VALUES live in the SkillDef Levels, not in code. See FloorPassiveFor. ----
@@ -253,6 +259,26 @@ public static partial class SkillCatalog
             Category: SkillCategory.Heal,
             Description: "Instantly restores 30% of max HP."),
 
+        // ----- SHOT RUNE buffs. Applied/kept by the rune reconciliation while a matching rune sits in the
+        //       main inventory unexpired; its remaining time is driven by the item's wall-clock expiry, so
+        //       DurationTicks here is only the nominal apply value (the loop overwrites TicksRemaining). -----
+        new(SoulshotRuneBuff, "Soulshot", BaseClass.Fighter, SkillEffect.BuffPhysAtk,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            DurationTicks: 36000, BuffKey: "rune_soulshot", Rank: 1,
+            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffPhysAtk, 1.00f) },
+            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable,
+            Description: "Soulshot: +100% P.Atk (physical damage) while the rune is held."),
+        new(SpiritshotRuneBuff, "Spiritshot", BaseClass.Mage, SkillEffect.BuffMagAtk | SkillEffect.BuffCastSpeed,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            DurationTicks: 36000, BuffKey: "rune_spiritshot", Rank: 1,
+            Magnitudes: new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffMagAtk, 0.414f),                       // +41% EFFECTIVE M.Atk = ×1.414 magic
+                new(SkillEffect.BuffCastSpeed, 40, ModifierMode.Flat),     // flat +40 cast stat (not %, per the old passive)
+            },
+            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable,
+            Description: "Spiritshot: +magic damage and cast speed while the rune is held."),
+
         // ----- Buff-potion buffs (consumed, not cast). Same BuffKey per line so a
         //       rarer potion supersedes a weaker one; rare = bigger + longer. -----
         new(PBuffSpeedC, "Swiftness (Lesser)", BaseClass.Fighter, SkillEffect.BuffMoveSpeed,
@@ -382,13 +408,8 @@ public static partial class SkillCatalog
         BalancePassive(BalanceHealer,  "Class Balance (Healer)",  BaseClass.Mage),
         BalancePassive(BalanceMage,    "Class Balance",           BaseClass.Mage),
 
-        // ===== Combat training passives (auto-granted; level by character level) =====
-        // 9 levels: +10%…+80% attack (40→75) then +100% (76+). The auto-grant level
-        // comes from StatCalculator.TrainingLevelFor.
-        TrainingPassive(PhysicalTraining, "Physical Training", BaseClass.Fighter, magic: false, 0f,
-            "Passive. Relentless conditioning — PHYSICAL attack grows with level (+10% to +100%)."),
-        TrainingPassive(SpiritTraining, "Spirit Training", BaseClass.Mage, magic: true, 40f,
-            "Passive. Honed focus — +40 casting speed and MAGIC attack growing with level (+5% to +41%)."),
+        // ===== (Combat training passives REMOVED 2026-07-24) — the soul/spiritshot bonus is now a held
+        //       RUNE item (SoulshotRuneBuff / SpiritshotRuneBuff above), not an auto-granted passive. =====
 
         // ===== Class identity "sure" floor passives (auto-granted at 20/40/76 = lvl 1/2/3) =====
         // Rogue identity now DATA: the evade floor + the archetype crit/evasion LEANS (+20% crit,

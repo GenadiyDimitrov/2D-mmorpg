@@ -855,10 +855,8 @@ public class GameLoopService : BackgroundService
         // tables like any other skill: L1 @20 / L2 @40 on the cleric list (every cleric keeps those
         // through any 3rd class), L3 @52 / L4 @61 on the Lightbringer list. See ClassSkillTables.
 
-        // Combat "training" passive (soulshot/spiritshot stand-in): auto-granted, level chosen by
-        // character level (+10%…+100% atk; see TrainingLevelFor). GATED ON THE 3RD CLASS (owner): like
-        // the stat swaps, it only appears once you've taken your 3rd-class discipline, not merely at 40.
-        SyncTrainingPassive(player);
+        // (The old combat-"training" passive that stood in for soul/spiritshots is GONE — shots are now
+        // held RUNE items that grant the same buff, see ReconcileRuneBuffs / SkillCatalog.SoulshotRuneBuff.)
 
         // Class identity "sure" floor passive for the current class tier (level = tier).
         if (SkillCatalog.FloorPassiveFor(player.Archetype, player.Level) is { } floor)
@@ -1543,6 +1541,14 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // Runes are DELETE-PROTECTED (owner: can't fat-finger it off, like a buff). To switch one off,
+        // move it to the warehouse; it expires on its own either way.
+        if (ItemCatalog.Get(item.DefId) is { IsRune: true })
+        {
+            SendSystemToEntity(player, "A rune can't be deleted — move it to the warehouse to switch it off.");
+            return;
+        }
+
         // Block destroying items that are currently in a trade offer.
         if (_world.ActiveTrades.TryGetValue(player.Id, out var trade) &&
             trade.OfferOf(player).Contains(item.InstanceId))
@@ -1891,9 +1897,7 @@ public class GameLoopService : BackgroundService
         }
         else
         {
-            // Delevel: keep the learned skills, but re-sync the level-derived training passive
-            // (see the note above) and rebuild the stats off the new level.
-            SyncTrainingPassive(player);
+            // Delevel: keep the learned skills, rebuild the stats off the new level.
             player.RecomputeDerived();
             player.Hp = Math.Min(player.Hp, player.MaxHp);
             player.Mp = Math.Min(player.Mp, player.MaxMp);
@@ -1906,23 +1910,6 @@ public class GameLoopService : BackgroundService
                 player.Level, player.Exp, StatCalculator.ExpToNext(player.Level), up));
         SendSystemToEntity(player, $"[DEBUG] Level {(up ? "up" : "down")} -> {player.Level}.");
         SaveEntity(player);   // persist so debug levels survive a server restart
-    }
-
-    /// <summary>Re-point the auto-granted combat-training passive at the level the character is NOW.
-    /// The single grant point for this passive (called on login, level-up and delevel).
-    ///
-    /// GATED ON THE 3RD CLASS (owner, 2026-07-15): the passive only exists once you've taken your
-    /// 3rd-class discipline — the same rule as the level-40 stat swaps. Without a 3rd class, or below
-    /// its level band, it is removed outright.</summary>
-    private static void SyncTrainingPassive(Entity player)
-    {
-        string id = player.BaseClass == BaseClass.Mage
-            ? SkillCatalog.SpiritTraining
-            : SkillCatalog.PhysicalTraining;
-
-        int lvl = player.ThirdClass > 0 ? StatCalculator.TrainingLevelFor(player.Level) : 0;
-        if (lvl > 0) player.LearnedSkills[id] = lvl;
-        else player.LearnedSkills.Remove(id);
     }
 
     private void HandleDebugLearnAll(DebugLearnAllCmd cmd)
@@ -4190,6 +4177,7 @@ public class GameLoopService : BackgroundService
                 TickRegionNotice(entity);
                 TickOnlineTime(entity);
                 EnforceDungeonWalls(entity);
+                if (_tick % GameConstants.TickRate == 0) ReconcileRuneBuffs(entity);   // shot runes, ~1/s
             }
 
             TickSkillCooldowns(entity);
@@ -4498,6 +4486,71 @@ public class GameLoopService : BackgroundService
         const long threeHoursTicks = 3L * 3600 * GameConstants.TickRate;
         if (entity.SessionOnlineTicks > 0 && entity.SessionOnlineTicks % threeHoursTicks == 0)
             SendTo(entity, "Notice", "You've been playing for an extended period — please take a break.");
+    }
+
+    private static readonly string[] RuneBuffKeys = { SkillCatalog.SoulshotRuneBuff, SkillCatalog.SpiritshotRuneBuff };
+
+    /// <summary>Keep each shot-rune's buff in sync with the MAIN inventory: purge expired runes (wall-clock),
+    /// apply/keep the buff for any held unexpired rune (driving its remaining from the item's ExpiresAtUtc),
+    /// and drop a rune buff whose rune is gone (expired, or moved to the warehouse — a rune only applies
+    /// from the main bag). Cheap; runs ~1/s + on box-open + on login.</summary>
+    private void ReconcileRuneBuffs(Entity p)
+    {
+        if (p.Kind != EntityKind.Player) return;
+        var now = DateTime.UtcNow;
+        bool invChanged = false, statsChanged = false;
+
+        // 1. Purge expired runes.
+        for (int i = p.Inventory.Count - 1; i >= 0; i--)
+        {
+            var it = p.Inventory[i];
+            if (it.ExpiresAtUtc is DateTime exp && exp <= now && ItemCatalog.Get(it.DefId) is { IsRune: true } d)
+            {
+                p.Inventory.RemoveAt(i);
+                invChanged = true;
+                SendSystemToEntity(p, $"{d.Name} has expired.");
+            }
+        }
+
+        // 2. Which rune buffs SHOULD be up, and until when (latest expiry among that type's held runes)?
+        var wantUntil = new Dictionary<string, DateTime>(StringComparer.Ordinal);
+        foreach (var it in p.Inventory)
+        {
+            if (it.ExpiresAtUtc is not DateTime exp || exp <= now) continue;
+            if (ItemCatalog.Get(it.DefId) is not { IsRune: true } d || string.IsNullOrEmpty(d.RuneBuffSkillId)) continue;
+            if (!wantUntil.TryGetValue(d.RuneBuffSkillId, out var cur) || exp > cur) wantUntil[d.RuneBuffSkillId] = exp;
+        }
+
+        // 3. Apply/keep wanted buffs; drive their remaining from the wall-clock (survives offline on login).
+        foreach (var kv in wantUntil)
+        {
+            if (SkillCatalog.Get(kv.Key) is not SkillDef skill) continue;
+            var existing = p.Buffs.FirstOrDefault(b => b.Key == kv.Key);
+            if (existing == null)
+            {
+                ApplyBuff(p, skill);
+                existing = p.Buffs.FirstOrDefault(b => b.Key == kv.Key);
+                statsChanged = true;
+            }
+            if (existing != null)
+                existing.TicksRemaining = (int)Math.Clamp((kv.Value - now).TotalSeconds * GameConstants.TickRate, 1, int.MaxValue);
+        }
+
+        // 4. Remove rune buffs whose rune is gone.
+        for (int i = p.Buffs.Count - 1; i >= 0; i--)
+            if (Array.IndexOf(RuneBuffKeys, p.Buffs[i].Key) >= 0 && !wantUntil.ContainsKey(p.Buffs[i].Key))
+            {
+                p.Buffs.RemoveAt(i);
+                statsChanged = true;
+            }
+
+        if (statsChanged)
+        {
+            p.RecomputeDerived();
+            PushBuffs(p);
+            SendStats(p);
+        }
+        if (invChanged) SendInventory(p);
     }
 
     private void TickPotion(Entity entity)
@@ -7047,6 +7100,26 @@ var effect = def.Effect;
                 .Select(e => new SelectionOption(e.ItemId, ItemCatalog.Get(e.ItemId)?.Name ?? e.ItemId))
                 .ToArray();
             SendTo(player, "Selection", new SelectionOffer(item.InstanceId, def.Name, options, box.PickCount));
+            return;
+        }
+
+        // RUNE box: grant the single rune and STAMP its wall-clock expiry (the box's GrantsRuneSeconds)
+        // starting NOW — buying the sealed box never started the clock; opening does. Needs a free slot.
+        if (def.GrantsRuneSeconds > 0 && box.Entries.Length >= 1
+            && ItemCatalog.Get(box.Entries[0].ItemId) is { IsRune: true } runeDef)
+        {
+            if (!AddItem(player, runeDef.Id, 1, rollAttributes: false))
+            {
+                SendSystemToEntity(player, "Open the box with a free inventory slot.");
+                return;   // box NOT consumed
+            }
+            if (item.Quantity > 1) item.Quantity--; else player.Inventory.Remove(item);
+            var rune = player.Inventory.LastOrDefault(i => i.DefId == runeDef.Id && i.ExpiresAtUtc == null);
+            if (rune != null) rune.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(def.GrantsRuneSeconds);
+            ReconcileRuneBuffs(player);   // apply its buff immediately
+            SendInventory(player);
+            SaveEntity(player);
+            SendSystemToEntity(player, $"{def.Name} opened — {runeDef.Name} is now active.");
             return;
         }
 

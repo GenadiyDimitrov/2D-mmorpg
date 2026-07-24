@@ -190,6 +190,10 @@ public class ItemRecord
     /// Rolled once at drop time and immutable thereafter (except by an explicit
     /// reroll), so persisting them verbatim is exactly right.</summary>
     public List<ItemAttribute> Attributes { get; set; } = new();
+
+    /// <summary>Wall-clock expiry for a timed item (shot rune); null = never expires. Persisted so a rune
+    /// keeps counting down across relogs/restarts and is purged on load if the time has passed.</summary>
+    public DateTime? ExpiresAtUtc { get; set; }
 }
 
 

@@ -75,10 +75,29 @@ public static class BoxCatalog
         };
 
         var dict = new Dictionary<string, BoxDef>();
-        foreach (var b in list.Concat(TieredAccessoryBoxes()))
+        foreach (var b in list.Concat(TieredAccessoryBoxes()).Concat(ShotBoxes()))
             if (!dict.TryAdd(b.Id, b))
                 throw new InvalidOperationException($"Duplicate box id '{b.Id}'.");
         return dict;
+    }
+
+    /// <summary>The sealed shot boxes → their rune (100%). The DURATION isn't here — it's on the box's
+    /// ItemDef (GrantsRuneSeconds), stamped onto the rune at open time.</summary>
+    private static IEnumerable<BoxDef> ShotBoxes()
+    {
+        foreach (var boxId in new[]
+                 {
+                     ItemCatalog.BoxSoulshot1h, ItemCatalog.BoxSoulshot2h,
+                     ItemCatalog.BoxSoulshot24h, ItemCatalog.BoxSoulshot30d,
+                 })
+            yield return new BoxDef(boxId, new[] { new BoxEntry(ItemCatalog.SoulshotRune, 1f) });
+
+        foreach (var boxId in new[]
+                 {
+                     ItemCatalog.BoxSpiritshot1h, ItemCatalog.BoxSpiritshot2h,
+                     ItemCatalog.BoxSpiritshot24h, ItemCatalog.BoxSpiritshot30d,
+                 })
+            yield return new BoxDef(boxId, new[] { new BoxEntry(ItemCatalog.SpiritshotRune, 1f) });
     }
 
     /// <summary>One accessory box per gear tier → the 3 accessories of that tier (100% each).</summary>

@@ -218,9 +218,17 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level)
         e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
     }
 
-    int train = StatCalculator.TrainingLevelFor(level);
-    if (train > 0)
-        e.LearnedSkills[cls == BaseClass.Mage ? SkillCatalog.SpiritTraining : SkillCatalog.PhysicalTraining] = train;
+    // Shots (2026-07-24): the old training passive is gone — soul/spiritshots are now held RUNE items that
+    // grant this buff. Apply it directly here so the matrix reflects the EXPECTED play state (shots ON).
+    // Its numbers are identical to the old max passive (+100% P.Atk / +41% eff. M.Atk / +40 cast), so the
+    // tuned curve is unchanged for a shotted player; a shot-LESS player is ~half offence (intended, L2).
+    var shot = SkillCatalog.Get(cls == BaseClass.Mage ? SkillCatalog.SpiritshotRuneBuff : SkillCatalog.SoulshotRuneBuff);
+    if (shot != null)
+        e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+        {
+            Effect = shot.Effect, Magnitudes = shot.Magnitudes,
+            TicksRemaining = int.MaxValue, Name = shot.Name, Key = shot.BuffKey,
+        });
     if (cls == BaseClass.Mage)
         e.LearnedSkills[SkillCatalog.MasteryRobe] = 1;
 

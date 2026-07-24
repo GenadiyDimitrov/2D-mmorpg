@@ -670,6 +670,11 @@ public class PersistenceService
 
         foreach (var item in rec.Items)
         {
+            // A timed item (shot rune) whose wall-clock ran out while offline is purged on load — it never
+            // reaches the bag, so the player logs in without the spent rune (and without its buff).
+            if (item.ExpiresAtUtc is DateTime exp && exp <= DateTime.UtcNow)
+                continue;
+
             entity.Inventory.Add(new InventoryItem
             {
                 DefId = item.DefId,
@@ -677,7 +682,8 @@ public class PersistenceService
                 Enchant = item.Enchant,
                 Quantity = item.Quantity,
                 Attributes = item.Attributes.ToList(),
-                PersistentInstanceId = item.InstanceId
+                PersistentInstanceId = item.InstanceId,
+                ExpiresAtUtc = item.ExpiresAtUtc,
             });
         }
 
@@ -754,7 +760,7 @@ public class PersistenceService
             foreach (var i in e.Inventory)
                 items.Add(new ItemSnapshot(
                     i.PersistentInstanceId ?? Guid.NewGuid(), i.DefId, i.Equipped,
-                    i.Enchant, i.Quantity, new List<ItemAttribute>(i.Attributes)));
+                    i.Enchant, i.Quantity, new List<ItemAttribute>(i.Attributes), i.ExpiresAtUtc));
 
             var subs = e.Subclasses.Select(SubclassSnapshot.From).ToList();
 
@@ -782,7 +788,7 @@ public class PersistenceService
 
     public sealed record ItemSnapshot(
         Guid InstanceId, string DefId, bool Equipped, int Enchant, int Quantity,
-        List<ItemAttribute> Attributes);
+        List<ItemAttribute> Attributes, DateTime? ExpiresAtUtc = null);
 
     /// <summary>Persist one snapshot back to its character row (logout / event save).
     /// Replaces the item set wholesale — simplest correct approach for now.</summary>
@@ -898,7 +904,8 @@ public class PersistenceService
             Equipped = i.Equipped,
             Enchant = i.Enchant,
             Quantity = i.Quantity,
-            Attributes = i.Attributes.ToList()
+            Attributes = i.Attributes.ToList(),
+            ExpiresAtUtc = i.ExpiresAtUtc,
         }).ToList();
     }
 
