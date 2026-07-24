@@ -139,12 +139,11 @@ namespace Game.Client
                 var id = member.Id;
                 select.onClick.AddListener(() => Boot.TargetId = id);
 
-                // Leader badge: a gold star instead of the old bare "*" (owner asked for a star/crown).
-                // ⚠ FONT RISK — the bundled LiberationSans has no glyph for "→" or "✕" and TMP draws a
-                // missing glyph as a hollow box (that is where the "[]" close buttons came from). U+2605
-                // BLACK STAR is usually present, but VERIFY ON DEVICE: if this shows a box, fall back to
-                // "<color=#FFD24A>*</color>" — the colour is what makes it read as a badge either way.
-                string crown = member.IsLeader ? "<color=#FFD24A>★</color> " : "";
+                // Leader badge: a GOLD asterisk. The font risk was real — ★ (U+2605) drew as a hollow
+                // "[]" box on device (playtest 0.28.78), exactly as feared, because the bundled
+                // LiberationSans has no glyph for it. The colour is what makes a plain "*" read as a
+                // badge, so this keeps the intent without depending on a glyph the font lacks.
+                string crown = member.IsLeader ? "<color=#FFD24A>*</color> " : "";
                 string title = crown + member.Name + "   Lv " + member.Level;
                 if (member.Status != PartyMemberStatus.Online) title += "   (" + member.Status + ")";
 

@@ -47,22 +47,23 @@ namespace Game.Client
         private GameObject _worldBorder;
 
         /// <summary>The edge of the world, as an orange DASHED rectangle on the ground (owner: "like the
-        /// jail's orange dashed line — just for reference; later there will be mountains or an ocean").
+        /// jail's orange dashed line — just for reference").
         ///
-        /// It is a PLACEHOLDER for terrain, so unlike the region outlines it does NOT hide behind the
-        /// zone-colours toggle: walking into an invisible wall with nothing to explain it is the problem
-        /// this solves, and that problem does not go away when you turn the map overlay off.
-        ///
-        /// Dashes are separate LineRenderers because a LineRenderer cannot draw gaps — one per dash along
-        /// each of the four edges of the positive overworld [0, ZoneWidth] x [0, ZoneHeight]. The negative
-        /// quadrant (dungeons, jail) is deliberately NOT outlined: it is teleport-only, so its edges are
-        /// never something you can walk up to.</summary>
+        /// ⚠ REWRITTEN after the 0.28.78 device playtest, where the log flooded with per-frame yellow
+        /// warnings. The first version created ONE Material PER DASH — ~192 of them — all always on, and
+        /// that (a LineRenderer × material-instance per-frame render warning, ×192) is the prime suspect.
+        /// Now: ONE shared material for every dash, far fewer/bigger dashes, and — critically — the
+        /// border rides the SAME zone-colours toggle as the region outlines, so it is OFF by default.
+        /// That guarantees the flood stops (nothing renders when off) and lets the owner confirm the
+        /// diagnosis by toggling. If it needs to be always-on again, the material must first be proven
+        /// not to warn per frame.</summary>
         private void BuildWorldBorder()
         {
-            const float dash = 600f, gap = 400f, y = 0.08f;   // above the region fills (0.02/0.03) and outlines (0.06)
+            const float dash = 1500f, gap = 1200f, y = 0.08f;   // bigger dashes → far fewer renderers
             var colour = new Color(0.95f, 0.55f, 0.15f, 0.75f);
 
             _worldBorder = new GameObject("WorldBorder");
+            var sharedMat = new Material(UnlitMaterials.Shader) { color = colour };   // ONE material, not one-per-dash
             float w = GameConstants.ZoneWidth, h = GameConstants.ZoneHeight;
 
             void Edge(float x0, float z0, float x1, float z1)
@@ -78,7 +79,7 @@ namespace Game.Client
                     var lr = go.AddComponent<LineRenderer>();
                     lr.useWorldSpace = true;
                     lr.widthMultiplier = 8f;      // wide: this is read from a long way off, not up close
-                    lr.material = new Material(UnlitMaterials.Shader);   // IL2CPP-safe (no magenta on device)
+                    lr.sharedMaterial = sharedMat;
                     lr.startColor = lr.endColor = colour;
                     lr.positionCount = 2;
                     var a = WorldMapper.ToUnity(x0 + dx * t, z0 + dz * t); a.y = y;
@@ -92,6 +93,8 @@ namespace Game.Client
             Edge(w,  0f, w,  h);
             Edge(w,  h,  0f, h);
             Edge(0f, h,  0f, 0f);
+
+            _worldBorder.SetActive(false);   // off until the zone-colours toggle turns it on
         }
 
         /// <summary>Show the transient region banner. Called from the server's Region push.</summary>
@@ -135,12 +138,15 @@ namespace Game.Client
                 if (_regionOutlines.activeSelf != show) _regionOutlines.SetActive(show);
             }
 
-            // The world border is terrain-in-waiting, not a map overlay — it stays up whenever you are in
-            // the world, regardless of the zone-colours toggle.
+            // The world border now rides the SAME toggle as the region outlines (was: always-on). This
+            // is the flood mitigation from the 0.28.78 playtest — off by default, so its LineRenderers
+            // don't render (and can't warn) unless the map overlay is on. Re-evaluate once the per-frame
+            // warning is confirmed fixed.
             if (_worldBorder != null)
             {
-                bool inWorld = Boot.Phase == ClientPhase.InWorld;
-                if (_worldBorder.activeSelf != inWorld) _worldBorder.SetActive(inWorld);
+                bool show = Boot.Zones != null && Boot.Zones.gameObject.activeSelf
+                            && Boot.Phase == ClientPhase.InWorld;
+                if (_worldBorder.activeSelf != show) _worldBorder.SetActive(show);
             }
         }
 
