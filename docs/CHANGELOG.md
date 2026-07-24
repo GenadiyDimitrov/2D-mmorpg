@@ -14,6 +14,28 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
 ---
 
+## 2026-07-24 — Damage ledger: most-damage earns the kill, contested kills split (0.28.69)
+
+The last unbuilt piece of the exp spec. Until now there was **no per-attacker damage tracking at all**,
+so "killer" meant whoever landed the final blow: a party could do 99% of the work, lose the last hit and
+walk away with nothing.
+
+- **New `Entity.DamageLog`** (mobs) — attacker id → damage actually dealt. Deliberately SEPARATE from
+  `Threat`: threat is a targeting signal that taunt and detaunt move around on purpose, so it says who
+  the mob wants to hit, not who earned it. Only PLAYER damage is banked. Cleared on spawn and on reset,
+  so a mob that leashed home and healed owes nobody.
+- **The top damager earns the kill** — drops, quest credit and the karma tick all key off them now.
+- **Contested kills split the EXP by damage share**, pooled BY PARTY so a party counts as one contender:
+  80% of the damage takes 80% of the exp; the other side takes 20% and no drops. Each contender's slice
+  then runs the normal rules — pot × roll × party bonus, split equally, personal level-gap penalty.
+- A contributor who **left the world** is skipped but their damage stays in the total: their share is
+  forfeited, not redistributed, so having a friend log off can't inflate your cut.
+- **`Entity.LastHitterId`** records the final blow. It is no longer what rewards pay on, but it is kept
+  as a counter for raid/epic bosses (owner).
+- One roll per kill still covers everyone on it, so two parties on one corpse see consistent numbers.
+
+---
+
 ## 2026-07-24 — The last four playtest-11 tier-1 bugs (0.28.68)
 
 All seven tier-1 bugs are now fixed. The two interesting ones were invisible from the symptom.

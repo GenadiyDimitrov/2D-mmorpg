@@ -824,6 +824,20 @@ public class Entity
     /// <summary>Threat/aggro table (mobs): attacker entity id → accumulated threat. The mob
     /// targets the highest-threat entity. Taunt spikes it; detaunt drops it.</summary>
     public Dictionary<Guid, float> Threat { get; } = new();
+
+    /// <summary>DAMAGE ledger (mobs): attacker entity id → total damage actually dealt to this mob.
+    ///
+    /// Deliberately SEPARATE from <see cref="Threat"/>. Threat is a targeting signal that taunt and
+    /// detaunt move around on purpose, so it says who the mob wants to hit — not who earned the kill.
+    /// Rewards are owed to damage, so they read this instead: the top damager is the "killer" for drops
+    /// and, on a contested kill, exp is split by each side's share of the total.
+    ///
+    /// Cleared on spawn and on reset (a mob that leashed home and re-healed owes nobody anything).</summary>
+    public Dictionary<Guid, long> DamageLog { get; } = new();
+
+    /// <summary>Who landed the FINAL blow. Not what rewards are paid on (that is the damage ledger) —
+    /// kept because raid/epic bosses want a last-hit counter of their own (owner).</summary>
+    public Guid? LastHitterId { get; set; }
     /// <summary>While &gt; 0 a taunt locks the mob onto its taunter (ignores threat retargeting).</summary>
     public int TauntLockTicks { get; set; }
 

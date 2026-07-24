@@ -4738,6 +4738,11 @@ public class GameLoopService : BackgroundService
         mob.Hp = mob.MaxHp;
         mob.Buffs.Clear();
         mob.Threat.Clear();
+        // A mob that leashed home and healed to full owes nobody: whatever damage was on it has been
+        // undone, so the ledger must go too, or the next killer would share the reward with whoever
+        // failed to finish it earlier.
+        mob.DamageLog.Clear();
+        mob.LastHitterId = null;
         mob.TauntLockTicks = 0;
         mob.TargetX = mob.HomeX;
         mob.TargetY = mob.HomeY;
@@ -5986,7 +5991,17 @@ var effect = def.Effect;
 
         // Threat: damage to a mob from a known attacker builds aggro (retargets to top threat).
         if (attacker is not null && target.Kind == EntityKind.Mob && damage > 0)
+        {
             AddThreat(target, attacker, damage);
+
+            // …and the DAMAGE ledger, which is what rewards are actually paid on. Threat can't serve
+            // that role: taunt and detaunt move it around by design, so it answers "who is the mob
+            // angry at", not "who earned this". Only PLAYER damage is banked — a mob killed by another
+            // mob, or by a trap, owes nobody.
+            if (attacker.Kind == EntityKind.Player)
+                target.DamageLog[attacker.Id] =
+                    target.DamageLog.TryGetValue(attacker.Id, out var had) ? had + damage : damage;
+        }
 
         // Absorb shields soak damage before HP; a depleted shield is removed.
         if (damage > 0 && target.Buffs.Any(b => b.Has(SkillEffect.Shield) && b.ShieldPool > 0))
@@ -6090,15 +6105,23 @@ var effect = def.Effect;
 
         if (victim.Kind == EntityKind.Mob)
         {
-            if (killer.Kind == EntityKind.Player)
+            // Last hit is RECORDED but is no longer what rewards are paid on (owner: keep it as a
+            // counter for raid/epic bosses). The reward "killer" is the top DAMAGER, so a lucky final
+            // blow can't steal a mob somebody else fought down.
+            victim.LastHitterId = killer.Kind == EntityKind.Player ? killer.Id : null;
+
+            var earner = TopDamager(victim)
+                         ?? (killer.Kind == EntityKind.Player ? killer : null);
+
+            if (earner is not null)
             {
-                AwardKillExp(killer, victim);
-                RollDrop(killer, victim);   // loot still goes to the killer (loot rules deferred)
-                // Kill-quest credit for the killer + every party member in range.
-                foreach (var m in KillCreditMembers(killer))
+                AwardKillExp(earner, victim);   // splits across contenders by damage share
+                RollDrop(earner, victim);       // drops go WHOLLY to the most damage
+                // Kill-quest credit for the earner + every party member in range.
+                foreach (var m in KillCreditMembers(earner))
                     AdvanceKillQuests(m, victim);
                 // A PK works off karma by grinding — each mob kill sheds a little.
-                ReduceKarma(killer, _karmaLossPerMob);
+                ReduceKarma(earner, _karmaLossPerMob);
             }
 
             OnMobKilled(victim);
@@ -6483,16 +6506,52 @@ var effect = def.Effect;
     /// a low-level can't be dragged through a high zone, and a high-level gains nothing babysitting a
     /// low one. (This replaced an older rule where the killer's own gap zeroed everybody, and a
     /// level-weighted split; both are gone on purpose.) Kill-QUEST credit is untouched.</summary>
-    private void AwardKillExp(Entity killer, Entity victim)
+    private void AwardKillExp(Entity topDamager, Entity victim)
     {
-        var members = KillCreditMembers(killer);
-        if (members.Count == 0) return;
+        // ONE roll for the whole kill, shared by everyone on it (see ExpCurve.RandomFactor).
+        double roll = ExpCurve.RandomFactor(_rng);
+        long baseExp = MobExpValue(victim);
+        long baseSp = MobSpValue(victim);
 
-        double roll  = ExpCurve.RandomFactor(_rng);
-        float  bonus = ExpCurve.PartyBonus(members.Count);
+        long total = 0;
+        foreach (var d in victim.DamageLog.Values) total += d;
 
-        double shareExp = MobExpValue(victim) * roll * bonus / members.Count;
-        double shareSp  = MobSpValue(victim)  * roll * bonus / members.Count;
+        if (total <= 0)
+        {
+            // No ledger at all — e.g. finished by a DoT whose caster has since left, or a kill with no
+            // recorded player damage. Pay the nominated killer's group in full rather than nobody.
+            PayKillShare(topDamager, victim, baseExp, baseSp, roll, 1.0);
+            return;
+        }
+
+        // CONTESTED KILLS split by damage share (owner): a party that did 80% of the damage takes 80%
+        // of the exp and the other side takes 20%. Contributions POOL BY PARTY, so a party is measured
+        // as one contender rather than as several small ones.
+        var groups = new Dictionary<Guid, (Entity Rep, long Damage)>();
+        foreach (var (id, dmg) in victim.DamageLog)
+        {
+            // Someone who left the world is skipped, but their damage STAYS in the total: their share is
+            // forfeited, not redistributed. Otherwise having a friend log off would inflate your cut.
+            if (!_world.Entities.TryGetValue(id, out var p) || p.Kind != EntityKind.Player) continue;
+            Guid key = _world.Parties.TryGetValue(p.Id, out var party) ? party.LeaderId : p.Id;
+            groups[key] = groups.TryGetValue(key, out var g) ? (g.Rep, g.Damage + dmg) : (p, dmg);
+        }
+
+        foreach (var g in groups.Values)
+            PayKillShare(g.Rep, victim, baseExp, baseSp, roll, g.Damage / (double)total);
+    }
+
+    /// <summary>Pay one contender (a solo player or a party) its slice of a kill. The pot is shared and
+    /// the penalty is personal: pot = base × roll × partyBonus × damageShare, split EQUALLY between the
+    /// in-range members, then each member's own level gap versus the MOB scales their share.</summary>
+    private void PayKillShare(Entity rep, Entity victim, long baseExp, long baseSp, double roll, double share)
+    {
+        var members = KillCreditMembers(rep);
+        if (members.Count == 0 || share <= 0) return;
+
+        float bonus = ExpCurve.PartyBonus(members.Count);
+        double shareExp = baseExp * roll * bonus * share / members.Count;
+        double shareSp = baseSp * roll * bonus * share / members.Count;
 
         foreach (var m in members)
         {
@@ -6500,6 +6559,23 @@ var effect = def.Effect;
             if (gap <= 0f) continue;   // 13+ levels out: nothing at all
             AwardExp(m, (long)(shareExp * gap), (long)(shareSp * gap));
         }
+    }
+
+    /// <summary>Who actually earned this kill: the player who dealt the MOST damage, not whoever landed
+    /// the final blow. This is what drops and quest credit key off (owner). Returns null when nobody in
+    /// the ledger is still in the world.</summary>
+    private Entity? TopDamager(Entity mob)
+    {
+        Entity? best = null;
+        long bestDmg = -1;
+        foreach (var (id, dmg) in mob.DamageLog)
+            if (dmg > bestDmg && _world.Entities.TryGetValue(id, out var e)
+                && e.Kind == EntityKind.Player && !e.Dead)
+            {
+                bestDmg = dmg;
+                best = e;
+            }
+        return best;
     }
 
     /// <summary>Bank EXP (and optionally SP) on a player, applying the server rates and rolling any
@@ -8607,6 +8683,8 @@ var effect = def.Effect;
         mob.Mp = mob.MaxMp;
         mob.HomeX = mob.X;
         mob.HomeY = mob.Y;
+        mob.DamageLog.Clear();
+        mob.LastHitterId = null;
 
         // Training dummy: TAKES damage (so you see the numbers) but never dies — a huge HP
         // pool + big regen, plus a death-floor in ApplyDamage. Stationary, never attacks.
