@@ -431,6 +431,49 @@ namespace Game.Client
             var log = UiKit.TextButton(_worldRoot, "Log", () => ToggleWindow(_consolePanel), 17f);
             UiKit.Place(UiKit.Rect(log.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(744f, bottom), new Vector2(90f, 46f));
+
+            // Remember where the row sits so the keyboard lift can be applied as an offset from it.
+            _cmdBarRects = new[]
+            {
+                UiKit.Rect(_commandField.gameObject), UiKit.Rect(send.gameObject), UiKit.Rect(log.gameObject),
+            };
+            _cmdBarHome = new Vector2[_cmdBarRects.Length];
+            for (int i = 0; i < _cmdBarRects.Length; i++)
+                _cmdBarHome[i] = _cmdBarRects[i].anchoredPosition;
+        }
+
+        private RectTransform[] _cmdBarRects;
+        private Vector2[] _cmdBarHome;
+        private float _keyboardLift = -1f;
+
+        /// <summary>Lift the command row above the soft keyboard while it is open.
+        ///
+        /// Android's keyboard is an OVERLAY — it does not resize the game view and Unity reports no
+        /// layout change — so anything pinned to the bottom edge is simply swallowed by it. Nothing was
+        /// handling that, which is why the checklist item "the soft keyboard lifts the command bar
+        /// instead of covering it" failed: the lift had never been written.
+        ///
+        /// `TouchScreenKeyboard.area` is in SCREEN pixels while the canvas is scaled to a reference
+        /// HEIGHT (matchWidthOrHeight = 1), so the height converts by Reference.y / Screen.height. Some
+        /// devices report an empty area for a frame or two after the keyboard opens; rather than let the
+        /// bar sit under it, fall back to a conservative 45% of the screen until a real value arrives.</summary>
+        private void UpdateKeyboardLift()
+        {
+            if (_cmdBarRects == null) return;
+
+            float lift = 0f;
+            if (TouchScreenKeyboard.visible && Screen.height > 0)
+            {
+                float px = TouchScreenKeyboard.area.height;
+                if (px <= 0f || px >= Screen.height) px = Screen.height * 0.45f;
+                lift = px * (UiKit.Reference.y / Screen.height);
+            }
+
+            if (Mathf.Approximately(lift, _keyboardLift)) return;
+            _keyboardLift = lift;
+
+            for (int i = 0; i < _cmdBarRects.Length; i++)
+                _cmdBarRects[i].anchoredPosition = _cmdBarHome[i] + new Vector2(0f, lift);
         }
 
         /// <summary>

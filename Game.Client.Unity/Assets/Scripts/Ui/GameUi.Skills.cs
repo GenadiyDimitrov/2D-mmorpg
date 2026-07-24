@@ -113,6 +113,20 @@ namespace Game.Client
             _learnPanel.gameObject.SetActive(false);
         }
 
+        /// <summary>Why this row can't be bought yet, in the player's terms. Checked in the same order
+        /// the server checks them, so the message matches what a Learn would actually be refused for.</summary>
+        private string LearnBlockedReason(SkillDef def, int levelGate, bool levelMet, int sp, int gold)
+        {
+            if (!levelMet)
+                return def.Name + " requires level " + levelGate + " — you are " + (Boot.ActiveClass?.Level ?? 0) + ".";
+            if (Boot.SkillPoints < sp)
+                return def.Name + " costs " + sp + " SP — you have " + Boot.SkillPoints + ".";
+            if (gold > 0 && Boot.Gold < gold)
+                return def.Name + " costs " + gold.ToString("N0") + " " + GameConstants.CurrencyName
+                     + " — you have " + Boot.Gold.ToString("N0") + ".";
+            return def.Name + " can't be learned right now.";
+        }
+
         /// <summary>The owner's §7: never spend SP blind. Show what the purchase changes — for an
         /// UPGRADE the before→after of the numbers that move (power, MP), for a brand-new skill what it
         /// does — plus the cost, behind a Confirm.</summary>
@@ -284,9 +298,18 @@ namespace Game.Client
                     // match the purchase being considered.
                     var learnDef = def;
                     int learnLevel = cs.SkillLevel;
+
+                    // The button is ALWAYS wired. It used to be `canLearn ? action : null`, which made an
+                    // unaffordable row a dead button: tapping Learn did nothing at all, with no message,
+                    // which is indistinguishable from the feature being broken (and was reported as
+                    // exactly that). When you can't buy it yet, say WHY.
+                    int lvlGate = group.Key;
+                    System.Action act = canLearn
+                        ? () => ConfirmLearn(learnDef, learnLevel, sp, gold)
+                        : () => ClientLog.Warn(LearnBlockedReason(learnDef, lvlGate, levelMet, sp, gold));
+
                     Row(SkillLetters(def) + "  " + def.Name + levelTag + "   " + price,
-                        "Learn",
-                        canLearn ? (System.Action)(() => ConfirmLearn(learnDef, learnLevel, sp, gold)) : null,
+                        "Learn", act,
                         canLearn ? UiKit.Text : UiKit.TextDim,
                         def.Id, cs.SkillLevel);
                 }

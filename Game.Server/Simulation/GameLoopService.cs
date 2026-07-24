@@ -345,6 +345,10 @@ public class GameLoopService : BackgroundService
     private void NormalLeave(Entity entity)
     {
         NotifyFriendsPresence(entity, online: false);   // while they're still in Entities to compare against
+        // Shed every mob locked onto them BEFORE they vanish, or those mobs sit Engaged on an id that
+        // no longer resolves — MobAi's engaged branch returns early, so they would never re-aggro and
+        // never wander again. MobAi now self-heals from that too, but clearing it here is the tidy half.
+        DropAggroOn(entity);
         _world.Entities.Remove(entity.Id, out _);
         CancelTradeFor(entity, notifyPartnerOnly: true);
         _world.PendingTradeRequests.Remove(entity.Id);
@@ -4633,6 +4637,20 @@ public class GameLoopService : BackgroundService
 
         if (mob.Engaged)
         {
+            // A target that left the world, died or went out of range used to leave the mob Engaged
+            // FOREVER. This branch returns early, so such a mob never re-scanned for aggro and never
+            // wandered again — it just stood where it was, mute. That is BOTH halves of the dungeon
+            // report: "mobs don't aggro or fight back" and "the mobs are clamped together in the crypt"
+            // (frozen on the spot they were standing when the player teleported away from the debug
+            // menu). Nothing cleared it, because DropAggroOn was only ever wired to the stealth path.
+            if (!HasLiveTarget(mob))
+            {
+                if (mob.CombatTargetId is Guid stale) mob.Threat.Remove(stale);
+                mob.CombatTargetId = null;
+                RetargetByThreat(mob);          // someone else may still be hitting it
+                if (!HasLiveTarget(mob)) { Disengage(mob); return; }
+            }
+
             float dx = mob.X - mob.HomeX;
             float dy = mob.Y - mob.HomeY;
             if (dx * dx + dy * dy > GameConstants.MobLeashRange * GameConstants.MobLeashRange)
@@ -4670,20 +4688,27 @@ public class GameLoopService : BackgroundService
 
         if (_rng.NextDouble() < 0.7)
         {
-            float tx = mob.HomeX + _rng.Next(-1000, 1001);
-            float ty = mob.HomeY + _rng.Next(-1000, 1001);
-
-            // Keep wander inside the mob's own zone so they don't drift into
-            // neighbours. Pull the target back toward the zone centre if outside.
+            // The wander span has to FIT THE ZONE. It was a flat +/-1000 against the crypt's rooms of
+            // radius 300-350, so nearly every target landed outside and got projected exactly ONTO the
+            // rim — six mobs sharing one home all walking to the same small circle, which is what read
+            // as "the mobs are clamped together". Scale the span to the room, and land INSIDE the
+            // circle rather than on it.
             var zone = _zones.FirstOrDefault(z => z.Zone.Id == mob.ZoneId)?.Zone;
+            float span = zone is not null ? Math.Min(1000f, zone.Radius * 0.6f) : 1000f;
+
+            float tx = mob.HomeX + (float)(_rng.NextDouble() * 2.0 - 1.0) * span;
+            float ty = mob.HomeY + (float)(_rng.NextDouble() * 2.0 - 1.0) * span;
+
+            // Keep wander inside the mob's own zone so they don't drift into neighbours.
             if (zone is not null)
             {
+                float inner = zone.Radius * 0.9f;   // inside the rim, not parked on it
                 float dx = tx - zone.X, dy = ty - zone.Y;
                 float distSq = dx * dx + dy * dy;
-                if (distSq > zone.Radius * zone.Radius)
+                if (distSq > inner * inner)
                 {
                     float dist = MathF.Sqrt(distSq);
-                    float scale = zone.Radius / dist;
+                    float scale = inner / dist;
                     tx = zone.X + dx * scale;
                     ty = zone.Y + dy * scale;
                 }
@@ -4698,6 +4723,13 @@ public class GameLoopService : BackgroundService
             }
         }
     }
+
+    /// <summary>Does this mob still have a target worth staying engaged on — one that exists, is alive
+    /// and is in view? Anything else means the fight is over and the mob should go home.</summary>
+    private bool HasLiveTarget(Entity mob) =>
+        mob.CombatTargetId is Guid id
+        && _world.Entities.TryGetValue(id, out var t) && !t.Dead
+        && DistanceSq(mob, t) <= GameConstants.ViewRange * GameConstants.ViewRange;
 
     private void ResetMob(Entity mob)
     {

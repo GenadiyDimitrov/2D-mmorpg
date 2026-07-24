@@ -131,7 +131,7 @@ namespace Game.Client
 
             if (login) _loginStatus.text = Boot.StatusMessage;
             if (select) RefreshCharacterSelect();
-            if (world) RefreshWorld();
+            if (world) { RefreshWorld(); UpdateKeyboardLift(); }
 
             UpdateBackButton();
             _builtPhase = Boot.Phase;

@@ -14,6 +14,35 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
 ---
 
+## 2026-07-24 — The last four playtest-11 tier-1 bugs (0.28.68)
+
+All seven tier-1 bugs are now fixed. The two interesting ones were invisible from the symptom.
+
+- **Skills → Learn now says why it can't.** The row was `canLearn ? action : null`, so an unaffordable or
+  level-locked skill got a **dead button** — tapping did nothing, with no message, which is
+  indistinguishable from a broken feature (and was reported as one). The server was always fine; every
+  rejection path there sends a reason. The button is now always wired and explains level / SP / gold.
+- **The soft keyboard lifts the command bar.** There was no keyboard handling anywhere in the client —
+  the lift had never been written. Android's keyboard is an overlay that does not resize the game view,
+  so a bar pinned to the bottom edge is simply swallowed. The field + Send + Log now offset by the
+  keyboard height (converted from screen pixels to canvas units via the reference height).
+- **`[lead]` moves the badge and the button.** The server was already correct; the client's party window
+  only rebuilds when a **stamp** changes, and the stamp covered HP/MP/status/buff counts but **not
+  `IsLeader`** — so passing leadership changed nothing it could see. `IsLeader` and the member IDs are
+  in the stamp now (the IDs also catch swapping a member for another with identical HP). The `*` badge
+  became a gold star.
+- **Dungeon mobs aggro, retaliate and spread out again.** One root cause behind both symptoms: `MobAi`'s
+  engaged branch returns early after a leash check, and **nothing ever cleared `Engaged` when the target
+  left the world** (`DropAggroOn` was only wired to the stealth path). A mob whose target teleported away
+  from the debug menu stayed engaged forever — never re-scanning for aggro, never wandering, just
+  standing there, which read as both "they don't fight back" and "they're clamped together". Fixed with a
+  live-target guard that retargets by threat or disengages, plus shedding aggro when a player leaves.
+  Aggravating factor for the clumping: wander used a flat ±1000 offset and projected anything outside the
+  zone **exactly onto the rim**, and the crypt's rooms are radius 300-350 — so every mob walked to the
+  same small circle. The span now scales to the room and lands inside it.
+
+---
+
 ## 2026-07-24 — EXP/party/drop rework + first playtest-11 fixes (0.28.67)
 
 - **The whole progression curve moved to `Game.Shared/ExpCurve.cs`** — one place for the level curve,
