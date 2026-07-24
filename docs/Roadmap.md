@@ -18,6 +18,17 @@ any wire-protocol / DB-schema break (that's what the handshake enforces).
 
 ## NOW (active / immediate)
 
+### ⏸ SP extraction — "SP bottles" (owner, 2026-07-24) — DEFERRED, design captured
+Skill points become an extractable currency: **1 000 000 000 SP → one "SP bottle"** item, and skills
+then cost **bottles + gold** rather than raw SP.
+
+Why it matters beyond flavour: it is also what keeps `SkillPoints` an `int` honest. A full 1→85 earns
+~1.5e9 SP at x1, comfortably inside the 2.15e9 ceiling but reachable at higher SP rates — and because
+bottling *drains* the counter instead of letting it pile up forever, the field never needs widening to
+`long` (which would be a wire + DB-schema change). `AwardExp` saturates at `int.MaxValue` in the
+meantime; a silent wrap to negative is the one outcome that must never happen.
+Depends on nothing; build whenever. See `docs/balance/ExpCurve.md` finding 7.
+
 ### 🎉 PLAYTEST-11 (2026-07-24, 0.28.66) — the whole Unity checklist PASSED
 The owner tested `docs/testing/TestChecklist.Unity.md` end to end. **Sections §§1-15 all verified**,
 closing in one pass: the **A–F parity programme**, the **playtest-10 batch**, the **world pass** and the
@@ -36,7 +47,9 @@ never for players** — and the 0.28.55 player-target button grid comes OUT, bec
 means **entries in the Skills window's ACTIONS tab that drag onto the skill bar**, not target-frame
 buttons · debug-menu chat spam (items/buffs/levels should be silent) · `[lead]` doesn't
 move the party `*` flag or clear its button (and `*` should become a **star/crown**) · a stale blue
-town-entry line under the big banner · **`isAdmin` is per-character, must be per-ACCOUNT** ·
+town-entry line under the big banner · ✅ **`isAdmin`** — FIXED; the role is per-CHARACTER **by design**
+(`CharacterRecord.Role`), the real bug was that EVERY character on the first account was born Admin
+instead of only the first. Do not "fix" this by moving Role to the account ·
 **Skills→Learn does nothing**.
 
 **Changes (16).** Stand-up delay (instant if seated >3s) · bag `Equip` button first + column expands

@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.28.66";
+    public const string GameVersion = "0.28.67";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -296,10 +296,12 @@ public static class GameConstants
     /// 3rd-class discipline. The player-facing swap rules (safe-zone-only, 5-min delay) are separate.</summary>
     public const int MaxSubclasses = 4;
 
-    /// <summary>Party EXP share band: a member more than this many levels from the KILLER earns nothing
-    /// from that kill (owner, 2026-07-17). Anti-powerlevelling — the level-weighting alone still let a
-    /// level-1 ride a level-80's kills for a trickle. Outside the band you get a flat zero, and the
-    /// in-band members split the whole reward between them. Kill-QUEST credit ignores this (range only).</summary>
+    /// <summary>OBSOLETE (2026-07-24) — no longer read by anything; kept only so the history is legible.
+    /// This was the old party EXP band: a member more than this many levels from the KILLER earned
+    /// nothing. It has been replaced by <see cref="ExpCurve.LevelGapMultiplier"/>, which is measured
+    /// against the MOB rather than the killer, tapers (0.85 per level past 5) instead of cliff-edging,
+    /// zeroes at 13, and applies PERSONALLY to each member's share rather than gating the whole party.
+    /// Delete once nobody needs the breadcrumb.</summary>
     public const int PartyExpMaxLevelGap = 9;
 
     /// <summary>Level ceiling for a normal character. ADMINS ARE EXEMPT — an admin can push past it,
@@ -329,6 +331,15 @@ public static class GameConstants
     /// like a CELL, not paralysis — they can walk around inside it; everything else (chat, skills, items,
     /// escape) stays blocked.</summary>
     public const float JailRadius = 260f;
+
+    /// <summary>Broadcast "X entered/left the world." to EVERY player. **Off** (owner): presence is
+    /// private — you should not learn that someone logged in, nor should they learn that you did,
+    /// unless you are MUTUAL friends (that notice is `NotifyFriendsPresence`, which is a different and
+    /// correctly-gated message). Flip to true only as a debugging aid; the server log records every
+    /// entry regardless, so debugging rarely needs it.
+    /// (`static readonly`, not `const` — a const false makes the call sites dead code and the compiler
+    /// warns on every one of them.)</summary>
+    public static readonly bool AnnounceWorldEntryExit = false;
 
     /// <summary>Periodic character auto-save interval (ticks). 600 = 60s.</summary>
     public const int AutoSaveIntervalTicks = 600;

@@ -83,15 +83,43 @@ foreach (int L in new[] { 1, 4, 8, 20 })
 Console.WriteLine("  (before this change a naked L1 fighter had 42 P.Atk and ONE-SHOT level-4-8 mobs)");
 Console.WriteLine();
 
-Console.WriteLine("=== PROGRESSION (x1 rates; a NORMAL x1-toughness mob) ===");
-Console.WriteLine($"{"Lvl",4} {"exp/kill",9} {"expToNext",10} {"mobs/level",11}");
-foreach (int L in levels)
+Console.WriteLine("=== PROGRESSION (x1 rates; a NORMAL x1-toughness mob, solo, zero level gap) ===");
+Console.WriteLine($"{"Lvl",4} {"exp/kill",10} {"sp/kill",9} {"expToNext",14} {"mobs/level",11} {"cumulative",12}");
+long cumulative = 0;
+for (int L = 1; L <= ExpCurve.MaxLevel; L++)
 {
-    int exp = StatCalculator.MobExpReward(L);
-    long next = StatCalculator.ExpToNext(L);
-    Console.WriteLine($"{L,4} {exp,9} {next,10} {next / (float)exp,11:F0}");
+    long exp = StatCalculator.MobExpReward(L);
+    long sp = StatCalculator.MobSpReward(L);
+    long next = ExpCurve.ExpToNext(L);
+    long mobs = next <= 0 ? 0 : (long)Math.Ceiling(next / (double)exp);
+    cumulative += mobs;
+    if (levels.Contains(L) || L is 1 or 2 or 5 or 10 or 79 or 80 or 85)
+        Console.WriteLine($"{L,4} {exp,10:N0} {sp,9:N0} {next,14:N0} {mobs,11:N0} {cumulative,12:N0}");
 }
-Console.WriteLine("  (a mob that buys bulk with an HP-multiplier passive now pays that multiple in EXP)");
+Console.WriteLine($"  TOTAL mobs 1->{ExpCurve.MaxLevel}: {cumulative:N0}"
+    + $"  (~{cumulative * 10 / 3600.0:N0} h at 10s/kill)");
+Console.WriteLine("  (a mob that buys bulk with an HP-multiplier passive pays that multiple in EXP and SP)");
+Console.WriteLine();
+
+Console.WriteLine("=== LEVEL-GAP PENALTY (symmetric; applies to EXP and DROPS, personal per member) ===");
+Console.Write("  gap ");
+for (int g = 0; g <= 14; g++) Console.Write($"{g,6}");
+Console.WriteLine();
+Console.Write("  mult");
+for (int g = 0; g <= 14; g++) Console.Write($"{ExpCurve.LevelGapMultiplier(g),6:F2}");
+Console.WriteLine();
+Console.WriteLine();
+
+Console.WriteLine("=== PARTY BONUS (multiplies the pot; the pot is then split EQUALLY) ===");
+Console.Write("  members  ");
+for (int n = 1; n <= 9; n++) Console.Write($"{n,7}");
+Console.WriteLine();
+Console.Write("  bonus    ");
+for (int n = 1; n <= 9; n++) Console.Write($"{ExpCurve.PartyBonus(n),7:F2}");
+Console.WriteLine();
+Console.Write("  per head ");
+for (int n = 1; n <= 9; n++) Console.Write($"{ExpCurve.PartyBonus(n) / n,7:P0}");
+Console.WriteLine("   <- share of a solo kill; the party must out-kill this to win");
 Console.WriteLine();
 
 // Every item that claims a SetId must resolve to a real set, or the client's set panel silently

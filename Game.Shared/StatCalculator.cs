@@ -571,10 +571,15 @@ public static class StatCalculator
 
     // ----- Progression -------------------------------------------------------
 
-    /// <summary>Exp required to go from <paramref name="level"/> to the next.</summary>
-    public static long ExpToNext(int level) => 25L * level * level;
+    /// <summary>Exp required to go from <paramref name="level"/> to the next.
+    /// The curve itself lives in <see cref="ExpCurve"/>; these stay as the long-standing call sites.</summary>
+    public static long ExpToNext(int level) => ExpCurve.ExpToNext(level);
 
-    public static int MobExpReward(int mobLevel) => 40 + mobLevel * 35;
+    /// <summary>Base EXP a normal mob of this level pays (before toughness / gap / party / roll).</summary>
+    public static long MobExpReward(int mobLevel) => ExpCurve.MobExpReward(mobLevel);
+
+    /// <summary>Base SP a normal mob of this level pays.</summary>
+    public static long MobSpReward(int mobLevel) => ExpCurve.MobSpReward(mobLevel);
 
     /// <summary>Raid ±10-level rule: damage a player deals TO a boss is scaled by how far the
     /// player's level is from the boss's — full within ±5, tapering to a 0.1 floor beyond ~±16.

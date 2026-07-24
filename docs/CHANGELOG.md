@@ -14,6 +14,39 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
 ---
 
+## 2026-07-24 — EXP/party/drop rework + first playtest-11 fixes (0.28.67)
+
+- **The whole progression curve moved to `Game.Shared/ExpCurve.cs`** — one place for the level curve,
+  the mob reward, the SP ratio, the level-difference penalty, the party bonus and the random roll.
+  - **Player curve = the real Lineage 2 table, levels 1-100.** Not a formula: its own shape is a power
+    law (~8.492·L^3.2891) only to level 50, after which SEVEN multiplicative walls at 51/56/61/66/72/77/80
+    stack to ~52x by 85. Levels 1-85 from the masterwork source, 86-100 spliced from 4Game (joining at 86
+    reads x1.37; joining at 4Game's own 85 would have jumped x8.6 in one level). 4Game publishes levels
+    88/89 transposed — 89 was CHEAPER than 88 — and they are swapped back into order here.
+  - **Mob reward** `0.026314·L^3.2427`, fitted to 8.5k/30k/47.5k at levels 50/75/85; below level 30 it is
+    interpolated through seven hand anchors so the opening costs 1-2-4-5-5 mobs rather than 295/805/858.
+  - **Level-difference penalty** `0.85^(gap-5)`, zero at 13, **symmetric** — fighting up is penalised too,
+    which is what stops a level-1 bow last-hitting a level-78 mob. Applies to EXP **and drops**.
+  - **Party: shared pot, personal penalty.** `pot = mobValue × roll × partyBonus(n)`, split EQUALLY, then
+    each member's own gap penalty applies to their share. The killer no longer gates the party's exp.
+    Party bonus 2→x1.2 … 6→x2.0 … 9→x2.3.
+  - **±20% random roll** on the final award, one roll per kill shared by the party, covering exp and SP.
+  - EXP is `long` end to end. SP saturates at `int.MaxValue` by design — see the SP-bottle plan in
+    [Roadmap.md](Roadmap.md).
+  - `BalanceMatrix` now prints the full curve plus the gap and party tables, and reproduces
+    [balance/ExpCurve.md](balance/ExpCurve.md) exactly: 1 mob for level 1, 20 at level 10, 121 at 20,
+    125 828 at 85 — **631 799 to reach 86**, ~136 million to reach 100.
+- **Fix: only the FIRST character of the owner's account is born Admin.** Every character on that account
+  used to be, which quietly broke the per-character role model — a deliberately ordinary character still
+  had every admin command. The role is per-CHARACTER by design; do not move it to the account.
+- **Fix: world entry/exit no longer leaks to everyone.** The friend notice was already correctly
+  mutual-only; a *separate* global broadcast was the leak. Now behind `AnnounceWorldEntryExit`, off.
+- **Fix: `/tp` to a jailed player lands in the JAIL, not a dungeon.** The jail sits in the negative
+  quadrant but is not a dungeon, so the dungeon ward grabbed any non-jailed visitor. It is now a
+  first-class domain in both the movement wall and the ward.
+
+---
+
 ## 2026-07-24 — Inventory boxes + item details (0.28.65 → 0.28.66), and PLAYTEST-11
 
 - **Open boxes from the inventory** (0.28.65) — a plain box grants its contents straight to the bag; a

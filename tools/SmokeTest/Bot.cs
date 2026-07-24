@@ -423,6 +423,14 @@ static class Bot
                     Log($"sent admin /{parts[1]} {Rest(2)}");
                     break;
 
+                // "friend add|remove|list [name]" -> FriendCommand hub method (same as /fadd, /frem, /flist).
+                case "friend":
+                    await _hub.SendAsync("FriendCommand",
+                        parts.Length > 1 ? parts[1].ToLowerInvariant() : "list",
+                        parts.Length > 2 ? Rest(2) : "");
+                    Log($"friend {Rest(1)}");
+                    break;
+
                 case "party":
                 {
                     string sub = parts.Length > 1 ? parts[1].ToLowerInvariant() : "";

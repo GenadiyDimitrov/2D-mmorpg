@@ -424,7 +424,8 @@ public class PersistenceService
 
         await using var db = await _factory.CreateDbContextAsync();
 
-        if (await db.Characters.CountAsync(c => c.AccountId == accountId) >= GameConstants.MaxCharactersPerAccount)
+        int existingChars = await db.Characters.CountAsync(c => c.AccountId == accountId);
+        if (existingChars >= GameConstants.MaxCharactersPerAccount)
             return (false, $"Account is full ({GameConstants.MaxCharactersPerAccount} characters max).");
 
         // Case-insensitive: "Test1" and "test1" must not both exist, or every name-targeted command
@@ -433,15 +434,22 @@ public class PersistenceService
         if (await db.Characters.AnyAsync(c => c.Name.ToLower() == nameLower))
             return (false, "That character name is taken.");
 
-        // Characters of the very FIRST account on a fresh server are born Admin (convenient for testing —
-        // it's the owner's account). Everyone else starts a plain Player and is promoted with /role.
+        // Only the very FIRST character of the very FIRST account on a fresh server is born Admin
+        // (convenient for testing — it's the owner's seeded "Admin"). Every LATER character, even on that
+        // same account, starts a plain Player and is promoted with /role.
+        //
+        // This used to make EVERY character of the owner's account an Admin, which quietly broke the
+        // per-character role model (see CharacterRecord.Role): the owner made an ordinary character to
+        // play as a normal player and it still had every admin command. The role is per CHARACTER on
+        // purpose — an account may hold an admin character alongside perfectly ordinary ones.
         bool ownerAccount = accountId == await db.Accounts.OrderBy(a => a.Id).Select(a => a.Id).FirstAsync();
+        bool bornAdmin = ownerAccount && existingChars == 0;
 
         var stats = StatCalculator.GetBaseStats(race, baseClass);
         var record = new CharacterRecord
         {
             AccountId = accountId,
-            Role = ownerAccount ? AccountRole.Admin : AccountRole.Player,
+            Role = bornAdmin ? AccountRole.Admin : AccountRole.Player,
             Name = name,
             Race = race,
             BaseClass = baseClass,

@@ -257,8 +257,9 @@ public class GameLoopService : BackgroundService
         if (entity.IsStaff)
             SendSystemToEntity(entity,
                 $"{entity.Role} privileges active on this character. Type /help for commands.");
-        NotifyFriendsOnline(entity);   // "X is back online" to online players who friended them
-        BroadcastSystem($"{entity.Name} entered the world.");
+        NotifyFriendsOnline(entity);   // "X is back online" — MUTUAL friends only, see NotifyFriendsPresence
+        if (GameConstants.AnnounceWorldEntryExit)
+            BroadcastSystem($"{entity.Name} entered the world.");
         _log.LogInformation("Player {Name} entered (char {Id})", entity.Name, entity.PersistentId);
     }
 
@@ -356,7 +357,8 @@ public class GameLoopService : BackgroundService
         // while it is still IN the world (so allies can see and revive it) — leaving is leaving.
         _world.Grid.Remove(entity);
         SaveEntity(entity);
-        BroadcastSystem($"{entity.Name} left the world.");
+        if (GameConstants.AnnounceWorldEntryExit)
+            BroadcastSystem($"{entity.Name} left the world.");
     }
 
     /// <summary>End a link-dead grace that expired (or whose owner died): the normal removal chain.
@@ -713,6 +715,11 @@ public class GameLoopService : BackgroundService
     {
         if (e.Jailed) return (tx, ty);
 
+        // The JAIL is its own domain, not a dungeon. Anyone STANDING in it — including an admin who
+        // teleported there to talk to an inmate — is confined to the cell, not dragged to the nearest
+        // dungeon. Without this a non-jailed visitor fell through to the dungeon branch below.
+        if (InJail(e.X, e.Y)) return ClampToJail(tx, ty);
+
         if (e.X >= 0 && e.Y >= 0)   // overworld — sealed into the positive quadrant
             return (Math.Clamp(tx, 0f, GameConstants.ZoneWidth),
                     Math.Clamp(ty, 0f, GameConstants.ZoneHeight));
@@ -734,6 +741,12 @@ public class GameLoopService : BackgroundService
     {
         if (p.Jailed || (p.X >= 0 && p.Y >= 0)) return;   // jail + overworld handled elsewhere
 
+        // The jail is a legitimate place to STAND without being jailed (an admin visiting an inmate via
+        // /tp). It sits in the negative quadrant but is not a dungeon, so without this check the ward
+        // below fired on every visitor and yanked them into the nearest dungeon — the owner's
+        // "/jail test1 then /tp test1 puts me in the dungeon, not the jail".
+        if (InJail(p.X, p.Y)) return;
+
         Region? nearest = null; float best = float.MaxValue;
         foreach (var d in RegionMap.Dungeons)
         {
@@ -747,6 +760,15 @@ public class GameLoopService : BackgroundService
             PlaceEntity(p, a.X, a.Y);
             SendSystemToEntity(p, "A ward pulls you back inside the dungeon.");
         }
+    }
+
+    /// <summary>Is this point inside the jail cell? The jail is its own DOMAIN (like the overworld or a
+    /// dungeon), so both the movement wall and the ward have to recognise it — otherwise a non-jailed
+    /// visitor standing there looks like someone loose in the negative quadrant.</summary>
+    private static bool InJail(float x, float y)
+    {
+        float dx = x - GameConstants.JailX, dy = y - GameConstants.JailY;
+        return dx * dx + dy * dy <= GameConstants.JailRadius * GameConstants.JailRadius;
     }
 
     /// <summary>Pull a point back inside the jail cell, keeping its direction from the centre.</summary>
@@ -6095,13 +6117,20 @@ var effect = def.Effect;
         if (mob.MobTypeId is null)
             return;
 
+        // DROPS are decided by the KILLER (owner): their level gap to the mob scales both gold and the
+        // drop chances, on the same symmetric 0.85^(gap-5) curve as exp, zero at 13. This is what stops
+        // a level-1 bow last-hitting a level-78 mob for its loot table.
+        float dropGap = ExpCurve.LevelGapMultiplier(killer.Level - mob.Level);
+        if (dropGap <= 0f)
+            return;
+
         // In-range kill-credit members (killer + party members within share range). Solo = [killer].
         var eligible = KillCreditMembers(killer);
         _world.Parties.TryGetValue(killer.Id, out var party);
 
         // Gold ALWAYS splits evenly among in-range members regardless of loot mode; the killer takes
         // the remainder. Solo = it all goes to the killer. (Level x rate, +/-20% variance.)
-        int gold = (int)(StatCalculator.MobGoldReward(mob.Level) * RateConfig.GoldAmountRate
+        int gold = (int)(StatCalculator.MobGoldReward(mob.Level) * RateConfig.GoldAmountRate * dropGap
             * (0.8f + (float)_rng.NextDouble() * 0.4f));
         if (gold > 0)
             AwardGold(killer, eligible, gold);
@@ -6142,7 +6171,7 @@ var effect = def.Effect;
         // Independent entries (GroupId == 0): each its own rate-scaled roll.
         foreach (var entry in applicable.Where(e => e.GroupId == 0))
         {
-            float chance = Math.Min(1f, entry.Chance * RateConfig.DropChanceRate);
+            float chance = Math.Min(1f, entry.Chance * RateConfig.DropChanceRate * dropGap);
             if (_rng.NextDouble() <= chance)
                 Award(entry);
         }
@@ -6151,7 +6180,7 @@ var effect = def.Effect;
         foreach (var group in applicable.Where(e => e.GroupId != 0).GroupBy(e => e.GroupId))
         {
             var members = group.ToList();
-            float total = Math.Min(1f, members.Sum(e => e.Chance) * RateConfig.DropChanceRate);
+            float total = Math.Min(1f, members.Sum(e => e.Chance) * RateConfig.DropChanceRate * dropGap);
             if (_rng.NextDouble() > total)
                 continue;
             // Weighted pick within the group (weights = the raw member chances).
@@ -6294,14 +6323,19 @@ var effect = def.Effect;
     /// it. Toughness is read straight off the spawned mob (its rank multiplier and MobMod HP
     /// passive are already baked into MaxHp) relative to the level's base curve, so a mob that
     /// buys bulk with an "HP Increase (2x)" passive automatically pays 2x.</summary>
-    private static int MobExpValue(Entity mob)
-    {
-        float toughness = Math.Clamp(mob.MaxHp / (float)Math.Max(1, MobBaseStats.Hp(mob.Level)), 0.25f, 20f);
-        return Math.Max(1, (int)(StatCalculator.MobExpReward(mob.Level) * toughness));
-    }
+    private static long MobExpValue(Entity mob) =>
+        Math.Max(1L, (long)(StatCalculator.MobExpReward(mob.Level) * MobToughness(mob)));
 
-    /// <summary>Award a mob kill's EXP: solo → all to the killer; party → split among members in
-    /// range, weighted by level (anti-leech), with a small size bonus to reward grouping.</summary>
+    /// <summary>SP for one kill. Toughness applies here too, so a bulky mob pays its multiple of SP
+    /// exactly as it pays its multiple of EXP; the level-dependent SP:EXP ratio lives in ExpCurve.</summary>
+    private static long MobSpValue(Entity mob) =>
+        Math.Max(1L, (long)(StatCalculator.MobSpReward(mob.Level) * MobToughness(mob)));
+
+    /// <summary>How tough this spawn is versus the plain curve for its level (rank multipliers and HP
+    /// passives are already baked into MaxHp). Clamped so a freak spawn can't pay 1000x.</summary>
+    private static float MobToughness(Entity mob) =>
+        Math.Clamp(mob.MaxHp / (float)Math.Max(1, MobBaseStats.Hp(mob.Level)), 0.25f, 20f);
+
     /// <summary>Death exp penalty: lose 5% of the level's exp, floored at 0 (no delevel). Stores the lost
     /// amount in LostExp so a resurrection skill/scroll can restore a fraction; a normal town respawn drops it.</summary>
     private void ApplyDeathExpPenalty(Entity p)
@@ -6400,38 +6434,60 @@ var effect = def.Effect;
         if (target.Kind == EntityKind.Player) SendStats(target);
     }
 
+    /// <summary>Award one mob kill's EXP/SP. **The pot is SHARED, the penalty is PERSONAL** (owner,
+    /// 2026-07-24):
+    /// <code>
+    ///   pot    = mobValue * randomRoll(0.80-1.20) * partyBonus(n)   // no level penalty here
+    ///   share  = pot / memberCount                                   // equal, everyone alike
+    ///   each m = share * levelGapMultiplier(m.Level - mob.Level)     // personal
+    /// </code>
+    /// The ONE random roll is shared by the whole party — rolling per member would show 16k to one
+    /// player and 24k to another off the same corpse, which reads as a bug and looks like a rigged
+    /// split. It covers EXP and SP together so their ratio can't drift.
+    ///
+    /// The killer does NOT gate the party: the pot is the full mob value whoever landed the kill, so a
+    /// level-60 who kills a level-75 mob earns 0 *for himself* while his level-75 mates bank full
+    /// shares. Anti-powerlevelling is enforced entirely by the PERSONAL penalty, from both directions —
+    /// a low-level can't be dragged through a high zone, and a high-level gains nothing babysitting a
+    /// low one. (This replaced an older rule where the killer's own gap zeroed everybody, and a
+    /// level-weighted split; both are gone on purpose.) Kill-QUEST credit is untouched.</summary>
     private void AwardKillExp(Entity killer, Entity victim)
     {
-        int total = MobExpValue(victim);
-        // Only members within PartyExpMaxLevelGap levels of the KILLER share the exp; anyone further
-        // out earns a flat zero (owner, 2026-07-17 — anti-powerlevelling). Filtering BEFORE the split
-        // means the in-band members divide the whole reward and the out-of-band member doesn't dilute
-        // the size bonus either. The killer is always in his own band. Kill-QUEST credit is untouched.
-        var share = KillCreditMembers(killer)
-            .Where(m => Math.Abs(m.Level - killer.Level) <= GameConstants.PartyExpMaxLevelGap)
-            .ToList();
-        if (share.Count <= 1)
+        var members = KillCreditMembers(killer);
+        if (members.Count == 0) return;
+
+        double roll  = ExpCurve.RandomFactor(_rng);
+        float  bonus = ExpCurve.PartyBonus(members.Count);
+
+        double shareExp = MobExpValue(victim) * roll * bonus / members.Count;
+        double shareSp  = MobSpValue(victim)  * roll * bonus / members.Count;
+
+        foreach (var m in members)
         {
-            AwardExp(killer, total);
-            return;
-        }
-        float bonus = 1f + 0.10f * (share.Count - 1);   // grouping incentive (retune later)
-        long levelSum = share.Sum(m => (long)m.Level);
-        foreach (var m in share)
-        {
-            int amt = (int)(total * bonus * ((float)m.Level / levelSum));
-            if (amt > 0) AwardExp(m, amt);
+            float gap = ExpCurve.LevelGapMultiplier(m.Level - victim.Level);
+            if (gap <= 0f) continue;   // 13+ levels out: nothing at all
+            AwardExp(m, (long)(shareExp * gap), (long)(shareSp * gap));
         }
     }
 
-    private void AwardExp(Entity player, int amount)
+    /// <summary>Bank EXP (and optionally SP) on a player, applying the server rates and rolling any
+    /// levels that result. Pass <paramref name="spAmount"/> = -1 to derive SP from the exp the old way
+    /// (quest rewards, which carry no mob level of their own).</summary>
+    private void AwardExp(Entity player, long amount, long spAmount = -1)
     {
         // Server rates scale progression (x10 exp for testing, etc.).
-        int expGain = (int)(amount * RateConfig.ExpRate);
-        player.Exp += expGain;
-        // Skill points accrue at a fraction of exp, with their own rate.
-        player.SkillPoints += Math.Max(1,
-            (int)(amount * GameConstants.SkillPointRatio * RateConfig.SpRate));
+        player.Exp += (long)(amount * RateConfig.ExpRate);
+
+        long sp = spAmount >= 0
+            ? (long)(spAmount * RateConfig.SpRate)
+            : (long)(amount * GameConstants.SkillPointRatio * RateConfig.SpRate);
+        // SkillPoints SATURATES at int.MaxValue — deliberate (owner, 2026-07-24), not a stopgap. A full
+        // 1->85 earns ~1.5e9 SP at x1, so the ceiling is genuinely reachable at higher SP rates, but the
+        // planned sink makes that fine: SP EXTRACTION will convert 1 000 000 000 SP into one "SP bottle"
+        // item, and skills will then cost bottles + gold rather than raw SP. Because SP is drained into
+        // bottles instead of piling up forever, the counter never needs to be a long. Roadmapped as
+        // deferred — see docs/Roadmap.md. What must NEVER happen is silent wrapping to negative.
+        player.SkillPoints = (int)Math.Min(int.MaxValue, player.SkillPoints + Math.Max(1L, sp));
 
         bool leveled = false;
         while (player.Level < LevelCapFor(player)
