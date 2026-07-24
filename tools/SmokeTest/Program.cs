@@ -108,6 +108,41 @@ await a.Hub.SendAsync("DebugLevel", -1);   // back to level 1 so the leveling ma
 await a.Settle();
 
 // -------------------------------------------------------------------------------------------
+// 1b-2. THE EXP CURVE ON THE WIRE. The curve moved to the real Lineage 2 table (ExpCurve), where the
+//     shape is a power law only to level 50 and then SEVEN multiplicative walls — so a plain formula
+//     can no longer stand in for it, and an off-by-one in the table shifts every level by one.
+//     That is invisible in play: the bar still fills, just against the wrong denominator. It is only
+//     visible as the wrong ExpToNext arriving on the wire, which is exactly what this reads.
+//     (The off-by-one below is not hypothetical — the first cut of the table had it.)
+// -------------------------------------------------------------------------------------------
+Check("the server pushes progress at all", a.Progress is not null);
+if (a.Progress is not null)
+{
+    Check($"exp-to-next at level {a.Progress.Level} matches the curve",
+          a.Progress.ExpToNext == ExpCurve.ExpToNext(a.Progress.Level),
+          $"server says {a.Progress.ExpToNext:N0}, curve says {ExpCurve.ExpToNext(a.Progress.Level):N0}");
+}
+// Level 1 is the anchor the off-by-one shows up at first: 68, not 295 (which is level 2's cost).
+Check("level 1 costs 68 exp (the table is not shifted by one)", ExpCurve.ExpToNext(1) == 68,
+      $"got {ExpCurve.ExpToNext(1)}");
+// The wall at 79->80 is the loudest feature in the table; if the tail is misaligned this moves.
+Check("the level-79 wall is intact (x3.57 step)", ExpCurve.ExpToNext(79) == 2_100_724_166L,
+      $"got {ExpCurve.ExpToNext(79):N0}");
+// Levels 86-100 are spliced from a second source, where rows 88 and 89 were published TRANSPOSED and
+// are swapped back here — so a level costing meaningfully LESS than the one before it means a row is
+// out of order. Tolerance is 1%: real L2 pins level 80's cumulative total at exactly 4 200 000 000, a
+// deliberately round number, which makes level 80 come out 0.03% cheaper than 79. That dip is in the
+// authentic data and is not worth "fixing"; a transposition looks nothing like it (88/89 was 24%).
+int transposedAt = 0;
+for (int L = 2; L <= ExpCurve.MaxLevel; L++)
+    if (ExpCurve.ExpToNext(L) < ExpCurve.ExpToNext(L - 1) * 0.99) { transposedAt = L; break; }
+Check("no level is materially cheaper than the one before it (no transposed rows)",
+      transposedAt == 0, $"level {transposedAt} costs less than {transposedAt - 1}");
+// EXP is long end to end now; int would wrap negative past level 79.
+Check("the top of the curve exceeds int range (so long is actually required)",
+      ExpCurve.ExpToNext(85) > int.MaxValue);
+
+// -------------------------------------------------------------------------------------------
 // 1c. FRIENDS are MUTUAL (owner, 2026-07-20). /fadd is only an invite: until the other side adds you
 //     back you are [pending] and get NO presence information at all, and they are deliberately not
 //     notified. Once it's reciprocal, both sides see online/offline. Non-admin, per character.
@@ -475,6 +510,11 @@ sealed class Session : IAsyncDisposable
     // System-chat lines captured (for friend-list / "back online" assertions).
     public readonly List<string> SystemChat = new();
 
+    /// <summary>The last Progress push (level / exp / exp-to-next). The exp CURVE is the thing this
+    /// captures: a wrong curve looks perfectly fine on screen and is only visible as the wrong
+    /// exp-to-next arriving on the wire.</summary>
+    public ProgressUpdate? Progress;
+
     public async Task OpenAsync(string url)
     {
         Hub = new HubConnectionBuilder().WithUrl(url).Build();
@@ -488,6 +528,7 @@ sealed class Session : IAsyncDisposable
             foreach (var u in d.Updates) { Updated.Add(u.Id); if (u.Id == MyId) { MyX = u.X; MyY = u.Y; } }
             foreach (var id in d.Despawns) Despawned.Add(id);
         });
+        Hub.On<ProgressUpdate>("Progress", p => Progress = p);
         Hub.On<ChatMessage>("Chat", m => { if (m.Channel == ChatChannel.System) { SystemChat.Add(m.Text); Console.WriteLine($"        [SYSTEM] {m.Text}"); } });
         await Hub.StartAsync();
     }

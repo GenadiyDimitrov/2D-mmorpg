@@ -267,3 +267,13 @@ different story — see finding 7.)
 **What the tail actually costs.** Levels 86-100 add ~135.3 million mobs on top of the 631 799 needed to
 reach 86 — a total of **135 981 911** for 1->100, or ~377 700 hours at 10 s/kill. That is L2's real
 post-85 curve and it is not meant to be reachable by ordinary play; it is here so the ceiling exists.
+
+## Known quirk: level 80 is 0.03% cheaper than level 79
+
+Real Lineage 2 pins level 80's CUMULATIVE total at exactly **4 200 000 000** — a deliberately round
+number — while level 79's is 2 099 275 834. The costs that fall out are 2 100 724 166 for level 79 and
+2 100 000 000 for level 80, so **level 80 costs very slightly less than 79**.
+
+This is in the authentic source, not a transcription slip, and 0.03% is invisible in play. It is left
+alone. The SmokeTest's "no transposed rows" check therefore uses a **1% tolerance** — enough to ignore
+this, nowhere near enough to miss a real transposition (the 88/89 swap was a 24% drop).
