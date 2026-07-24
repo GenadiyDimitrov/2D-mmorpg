@@ -4,11 +4,30 @@ Generated 2026-07-24 from the owner's spec in memory `exp-party-and-drop-design`
 Implemented in `Game.Shared/ExpCurve.cs`; machine-readable copy:
 [ExpCurve.csv](ExpCurve.csv) (TAB-separated).
 
+## What is a TABLE and what is a FORMULA
+
+**The player curve is a stored TABLE. Everything else is a formula.** That split is forced, not a
+preference: no smooth function reproduces a x3.57 step from level 79 to 80, nor the seven walls at
+51/56/61/66/72/77/80, so `ExpCurve.ExpToNext()` reads the stored cumulative totals and always has.
+
+| quantity | table or formula | where |
+|---|---|---|
+| **exp to next level** | **TABLE** (levels 1-101 verbatim) | `ExpCurve.Cumulative[]` |
+| mob exp | FORMULA (power law + 7 low anchors) | `ExpCurve.MobExpReward()` |
+| SP ratio | FORMULA (4 interpolated anchors) | `ExpCurve.SpRatio()` |
+| level-gap penalty | FORMULA `0.85^(gap-5)` | `ExpCurve.LevelGapMultiplier()` |
+| party bonus | FORMULA (two-slope) | `ExpCurve.PartyBonus()` |
+
+⚠ **`8.492*L^3.2891` below is DESCRIPTIVE ONLY — it is never called.** It records that levels 3-50 fit a
+power law within +/-2%, which is how the curve's shape was established and why the mob curve could be
+fitted to match it. Do not "simplify" the table into it: everything past level 50 would be wrong, by up
+to 99% at level 85.
+
 ## Formulas
 ```
-exp_to_next(L) = levels 1-85  : the real Lineage 2 table (masterwork source) - a power law
-                                8.492*L^3.2891 up to ~50, then SEVEN wall multipliers at
-                                51/56/61/66/72/77/80 stacking to ~52x by level 85.
+exp_to_next(L) = levels 1-85  : the real Lineage 2 table (masterwork source). Its SHAPE is a power
+                                law 8.492*L^3.2891 up to ~50 (descriptive - see above), then SEVEN
+                                wall multipliers at 51/56/61/66/72/77/80 stacking to ~52x by 85.
                  levels 86-100: 4Game per-level costs spliced on (see the note below).
 
 mob_exp(L)     = L >= 30 : 0.026314 * L^3.2427    <- fitted to the owner`s L50/L75/L85 anchors
