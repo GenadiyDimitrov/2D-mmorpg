@@ -414,6 +414,15 @@ static class Bot
                 case "world": await _hub.SendAsync("Chat", Rest(1), ChatChannel.World, null); break;
                 case "w":     await _hub.SendAsync("Chat", Rest(2), ChatChannel.Whisper, parts[1]); break;
 
+                // Raw admin slash command: "admin <cmd> <args>" -> AdminCommand(cmd, args). Slash commands
+                // do NOT go through chat (that just broadcasts) — the client splits "/cmd arg" and calls
+                // AdminCommand, so the bot does the same. e.g. "admin tpme Test1", "admin jail Test1 5".
+                case "admin":
+                    if (parts.Length < 2) { Log("usage: admin <cmd> [args]"); break; }
+                    await _hub.SendAsync("AdminCommand", parts[1], Rest(2));
+                    Log($"sent admin /{parts[1]} {Rest(2)}");
+                    break;
+
                 case "party":
                 {
                     string sub = parts.Length > 1 ? parts[1].ToLowerInvariant() : "";
