@@ -14,6 +14,23 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
 ---
 
+## 2026-07-24 — Inventory boxes + item details (0.28.65 → 0.28.66), and PLAYTEST-11
+
+- **Open boxes from the inventory** (0.28.65) — a plain box grants its contents straight to the bag; a
+  **selection** box opens the choice popup and grants only the picked entry.
+- **Item-details layout** (0.28.66) — the stat block is no longer crammed under the item name.
+- 🎉 **Playtest-11 (0.28.66)** — the owner tested the **whole** `TestChecklist.Unity.md` end to end and
+  **§§1-15 all passed**, closing the A–F parity programme, the playtest-10 batch, the world pass and the
+  rune shots in a single pass. Exceptions: **Skills→Learn does nothing**, the **soft keyboard covers the
+  command bar** instead of lifting it, and the 3h break banner can't be tested in a sitting. 0.28.65 and
+  0.28.66 shipped after the test and remain unverified.
+  The resulting work — 11 bugs, 16 changes, 5 additions (**block**, **charisma**, **buy-back**), and a
+  **level 1-20 starter-gear redesign** — is queued in [Roadmap.md](Roadmap.md) and §17 of the checklist.
+  Two design answers came out of it: **partial-stack trading is a YES**, and **admins must be excluded
+  from the leaderboards**.
+
+---
+
 ## 2026-07-24 — World pass (fields, walls, negative quadrant) + rune shots (0.28.56 → 0.28.64)
 
 - **Whole map on FIELDS** (0.28.56–0.28.58) — field polygons are FILLED and coloured by level (replacing

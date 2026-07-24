@@ -18,17 +18,91 @@ any wire-protocol / DB-schema break (that's what the handshake enforces).
 
 ## NOW (active / immediate)
 
-### Unity↔WPF functional parity — ✅ batches A–F BUILT (2026-07-23, 0.28.35 → 0.28.41)
-The client is now at functional parity with the WPF harness: debug window, trade + party invite,
+### 🎉 PLAYTEST-11 (2026-07-24, 0.28.66) — the whole Unity checklist PASSED
+The owner tested `docs/testing/TestChecklist.Unity.md` end to end. **Sections §§1-15 all verified**,
+closing in one pass: the **A–F parity programme**, the **playtest-10 batch**, the **world pass** and the
+**rune shots**. Only exceptions: `§11 Skills→Learn` is dead, `§9`'s soft keyboard covers the command
+bar, and the 3h break banner is untestable in a session. 0.28.65/0.28.66 shipped after the test and are
+still unverified. Full authoritative findings in memory `playtest-11-queue`; the retest list is
+`§17` of the Unity checklist.
+
+### 🔴 Playtest-11 queue (2026-07-24) — NOT built, this is the work in front of us
+
+**Bugs (11).** `/tp` to a jailed player lands in the dungeon not the jail (negative-quadrant clamp) ·
+mobs don't aggro or retaliate in the dungeon after a debug-menu displacement · mobs clamp together in
+the crypt · soft keyboard covers the command bar · "X entered the world" leaks to non-friends
+(**must be mutual-friends only**; keep the rest debug-only) · **`[info]` shows only for monsters/bosses,
+never for players** — and the 0.28.55 player-target button grid comes OUT, because "commands as buttons"
+means **entries in the Skills window's ACTIONS tab that drag onto the skill bar**, not target-frame
+buttons · debug-menu chat spam (items/buffs/levels should be silent) · `[lead]` doesn't
+move the party `*` flag or clear its button (and `*` should become a **star/crown**) · a stale blue
+town-entry line under the big banner · **`isAdmin` is per-character, must be per-ACCOUNT** ·
+**Skills→Learn does nothing**.
+
+**Changes (16).** Stand-up delay (instant if seated >3s) · bag `Equip` button first + column expands
+LEFT · spiritshot buff shows `719h59` not `29d` · **admins excluded from the rankings** · shop items
+need details + buy-time info (the soulshot's "PHYSICAL only" text is missing) · **shop prices far too
+cheap** (equipment ≥**200g** minimum; runes **150k/1h and 280k/2h** — a ~7% bulk discount vs two 1h
+runes, confirmed 2026-07-24) · show raw attack/cast speed numbers beside
+the multiplier (`1234/1500 (x3)`) · no HoT floating text for potions · target window HP as digits (+MP
+bar for players) · party window buff/debuff **squares** on the right + loot proposal as a **drop-down** ·
+a **world border** (orange dashed — the fallback marker where no wall art exists) · **real impassable
+WALLS as a client/server split**: the CLIENT gets collision (stop at the surface, never emit
+out-of-world coords, reject out-of-world taps — this half doesn't exist yet) while the SERVER keeps its
+rubber-band (`ConfineToDomain`, `GameLoopService.cs:712`) as the **anti-cheat backstop**; worlds stay
+teleport-only. Full design: memory `worlds-and-collision-design` ·
+**target a party member with no range restriction** so kick/change-leader work from buttons ·
+buff double-tap cancels / single tap opens a details popup · the field banner needs **hit-test false**
+(blocks tapping the ground) · 🎯 **partial-stack trading — the owner ANSWERED the open design call: YES.**
+
+**Additions (5).** Chat **colours / tabs / tags** (`[!]` world, `[W]` whisper) · **every non-admin
+command as an action button** (friend, party, sit/walk/run, attack/assist/nextTarget) · a **block
+system** (`/block` `/unblock` `/blocklist`, permanent, all chat forms) · a **charisma system** (see
+below) · a **buy-back menu** (last 10 deleted/sold; free restore for deleted or sold-for-0).
+
+**Charisma — full spec (owner, 2026-07-24).** `/like <name>` gives +1; **20 likes per day**; never
+negative. Killing costs **karma × 0.01** (15 000 karma → −150). **Every 20 charisma = +1% exp/sp drop,
+capped at 1000 = +50%** — so 50 likers, or one liker for 50 days, reaches the cap. Penalties scale per
+started hour: **chatban −20/h, jail −100/h, kick −250/h**; a **ban zeroes both**. **Two values**, neither
+below 0: a **0-1000 bonus pool** (drained by kills/jail/kick) and a **lifetime total** that may exceed
+1000, used for **ranking**.
+
+**Starter-gear redesign — CONFIRMED WORK (not a question; the owner listed it under "not sure" by
+mistake).** Starting with the best 0-20 gear one-shots every mob. The newbie boxes become a **level-10
+QUEST** (levelling to ~15 along the way, which helps reach 30, make money and get better drops), and
+levels 1-10 get the **weakest gear in the game** — training weapons at 400g (`training_sword 6/5`,
+`training_club 6/5`, `training_knifes 5/5`, `training_bow 11/5`, `training_wand 5/7`), training armor
+(`training_leather_armor 53/0`, `training_robe 27/29`), **no shots or jewels**; broken jewels drop from
+level 1-5 mobs and sell cheap (`broken_earring 11/40g`, `broken_ring 7/30g`, `broken_necklace 15/60g`).
+
+### 🔴 Levelling curve — a finding, not a request (2026-07-24)
+The owner asked whether mob XP follows the L2 formula or a per-mob value. **Neither.**
+`ExpToNext(level) = 25L²` (`StatCalculator.cs:575`) is a **quadratic** curve; `MobExpReward(level) =
+40 + 35·L` (`StatCalculator.cs:577`) is **linear**, with no authored per-mob value anywhere. The only
+per-mob variation is `MobExpValue()` (`GameLoopService.cs:6297`) scaling by **toughness**
+(`MaxHp / MobBaseStats.Hp(level)`, clamped 0.25-20), so a boss with 8.5× HP pays ~8.5× — deliberate,
+since paying purely by level made a boss worth the same as the trash beside it.
+
+**Quadratic ÷ linear makes the whole game short:** ~**2 200 kills for all of 1→80** at `ExpRate 1`, and
+only ~**220** at the current ×10. Level 10 on ×10 needs **0.64 kills per level** — you level more than
+once per kill, exactly what the playtest showed. Endgame sits at ~56 kills/level, trivially fast for an
+MMO (L2's curve is far steeper past 76). **This is not an ×10 artifact — the curve/reward shapes need an
+owner decision**, and it should be settled alongside the starter-gear redesign since both target the
+early game. Measure any change with `tools/BalanceMatrix`, never by hand.
+
+### Unity↔WPF functional parity — ✅ batches A–F BUILT (0.28.35 → 0.28.41), VERIFIED 2026-07-24
+The client reached functional parity with the WPF harness: debug window, trade + party invite,
 auto-hunt setup (two windows), mob info at character depth + lazy drops, inventory rework (details /
 compare / bin / reusable selection popup), vendors (buy/sell + numpad + confirm), learn confirmation.
-See the [CHANGELOG](CHANGELOG.md). **Not yet playtested** — the phone was on 0.28.34 at build time.
+See the [CHANGELOG](CHANGELOG.md). **Playtested and verified 2026-07-24** — except the learn
+confirmation, which is blocked by the Skills→Learn bug above.
 
-### Playtest-10 + features BUILT 2026-07-23 (0.28.42 → 0.28.55) — awaiting playtest
+### Playtest-10 + features BUILT 2026-07-23 (0.28.42 → 0.28.55) — ✅ VERIFIED 2026-07-24
 Playtest-10 fixes, flat HoT potions (+ instant) + auto-potions Potions tab + potions-on-bar, equipment
 presets, **Hollow Crypt dungeon**, **regions stage 2** (non-overlapping), **leaderboards**, **3h break
 reminder**, **equipment folded into the bag**, **all target commands as buttons**. See the
-[CHANGELOG](CHANGELOG.md). **Deferred:** the bot-prevention CAPTCHA (see [RoadmapNext.md](RoadmapNext.md)).
+[CHANGELOG](CHANGELOG.md). All verified on the phone except the **3h break banner** (needs 3h of play).
+**Deferred:** the bot-prevention CAPTCHA (see [RoadmapNext.md](RoadmapNext.md)).
 
 ### Design ideas agreed 2026-07-23 (NOT built — start after the next playtest)
 
