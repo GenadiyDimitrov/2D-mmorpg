@@ -12,6 +12,26 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-24 — Console lag fix + playtest APK (0.28.77)
+
+Live device playtest (Gena) surfaced a real one the SmokeTest can't: with the chat/console window
+OPEN, the phone lagged worse and worse until the log was cleared.
+
+- **Console now appends instead of rebuilding.** `RefreshConsole` used to Destroy every child and
+  rebuild all up-to-200 labels — each with a ContentSizeFitter — plus a `Canvas.ForceUpdateCanvases()`,
+  on EVERY new log line while the window was open. During combat/debug spam that is many full
+  teardown/rebuilds a second, and the cost grew with the accumulated line count — so clearing (→ ~0
+  rows) made it cheap again, exactly what was seen. `ClientLog.Line` gained a monotonic `Seq` and a
+  `ClearGeneration`; the console draws only undrawn lines and trims oldest rows past a 120 cap. Bounded
+  work per frame regardless of session length.
+
+Also fixed the deploy-order slip that made the first two rebuilds ship a STALE version label: the APK
+version is stamped from `GameConstants.GameVersion` in the Unity plugin DLL, so `dotnet build` (which
+copies the fresh DLL into Assets/Plugins) MUST run before the headless Unity build — see
+`version-bump-deploy-order`. The served APK is now correctly 0.28.77.
+
+---
+
 ## 2026-07-24 — Every name-only command is now a bar ACTION (0.28.76)
 
 Completing the owner's "every command that doesn't need a value, only a name, as an action button". The

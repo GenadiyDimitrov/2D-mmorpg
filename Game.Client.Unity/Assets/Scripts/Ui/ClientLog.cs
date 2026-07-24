@@ -19,7 +19,12 @@ namespace Game.Client
         {
             public string Text;
             public Color Color;
+            /// <summary>Monotonic id, never reused. Lets the console APPEND only the lines it hasn't
+            /// drawn yet instead of rebuilding the whole buffer every time one arrives.</summary>
+            public long Seq;
         }
+
+        private static long _seq;
 
         private const int Capacity = 200;
         private static readonly List<Line> _lines = new List<Line>(Capacity);
@@ -27,6 +32,10 @@ namespace Game.Client
 
         /// <summary>Bumped on every append so the console can auto-scroll only when something changed.</summary>
         public static int Revision { get; private set; }
+
+        /// <summary>Bumped ONLY when the buffer is cleared. The console watches it to know when to throw
+        /// away its rows and rebuild, versus just appending the new lines onto what it already drew.</summary>
+        public static int ClearGeneration { get; private set; }
 
         public static IReadOnlyList<Line> Lines => _lines;
 
@@ -73,14 +82,14 @@ namespace Game.Client
             lock (_lines)
             {
                 if (_lines.Count >= Capacity) _lines.RemoveAt(0);
-                _lines.Add(new Line { Text = DateTime.Now.ToString("HH:mm:ss") + "  " + text, Color = color });
+                _lines.Add(new Line { Text = DateTime.Now.ToString("HH:mm:ss") + "  " + text, Color = color, Seq = _seq++ });
                 Revision++;
             }
         }
 
         public static void Clear()
         {
-            lock (_lines) { _lines.Clear(); Revision++; }
+            lock (_lines) { _lines.Clear(); Revision++; ClearGeneration++; }
         }
     }
 }

@@ -79,6 +79,11 @@ namespace Game.Client
         private RectTransform _consolePanel, _consoleContent;
         private ScrollRect _consoleScroll;
         private int _seenLogRevision = -1;
+        private long _renderedLogSeq = -1;   // highest ClientLog.Line.Seq already drawn as a row
+        private int _seenClearGen = -1;      // last ClientLog.ClearGeneration we rebuilt for
+        /// <summary>Cap on console ROWS kept alive. Plenty of scrollback, but bounded so the window can
+        /// never accumulate hundreds of live labels — see RefreshConsole for why that mattered.</summary>
+        private const int ConsoleDisplayRows = 120;
 
         // bag / debug
         private RectTransform _bagPanel, _bagContent, _debugPanel;
@@ -1167,21 +1172,49 @@ namespace Game.Client
             if (!_consolePanel.gameObject.activeSelf || _seenLogRevision == ClientLog.Revision) return;
             _seenLogRevision = ClientLog.Revision;
 
-            for (int i = _consoleContent.childCount - 1; i >= 0; i--)
-                Destroy(_consoleContent.GetChild(i).gameObject);
-
             var lines = ClientLog.Lines;
+
+            // APPEND ONLY. This used to Destroy every child and rebuild all up-to-200 labels — each with
+            // a ContentSizeFitter — plus a Canvas.ForceUpdateCanvases(), EVERY time a single line arrived
+            // while the window was open. During combat or debug spam that is many full teardown/rebuilds
+            // a second, and the cost grows with the accumulated line count — which is why the phone
+            // "lagged a lot until I cleared it" (owner, playtest 0.28.76): clearing dropped the buffer
+            // back to ~0 rows, so the rebuild went cheap again. Now each refresh only draws the lines it
+            // has not drawn before, and trims the oldest rows past a cap. Reported 2026-07-24; fixed same.
+
+            // A Clear wipes the rows once; everything else just appends. ClearGeneration is bumped only
+            // by ClientLog.Clear, so this is unambiguous — no guessing from buffer indices.
+            if (_seenClearGen != ClientLog.ClearGeneration)
+            {
+                _seenClearGen = ClientLog.ClearGeneration;
+                for (int i = _consoleContent.childCount - 1; i >= 0; i--)
+                    Destroy(_consoleContent.GetChild(i).gameObject);
+                _renderedLogSeq = -1;
+            }
+
+            int appended = 0;
             for (int i = 0; i < lines.Count; i++)
             {
+                if (lines[i].Seq <= _renderedLogSeq) continue;   // already drawn
                 var label = UiKit.Label(_consoleContent, lines[i].Text, 15f, lines[i].Color);
                 // Rows GROW with wrapped text instead of a fixed height. A fixed row is what made
                 // long messages draw over each other in the IMGUI console.
                 var fitter = label.gameObject.AddComponent<ContentSizeFitter>();
                 fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                _renderedLogSeq = lines[i].Seq;
+                appended++;
             }
 
-            Canvas.ForceUpdateCanvases();
-            _consoleScroll.verticalNormalizedPosition = 0f;   // newest line
+            // Trim the oldest rows so the window never holds more than the cap — bounded work forever,
+            // regardless of how long the session runs.
+            while (_consoleContent.childCount > ConsoleDisplayRows)
+                Destroy(_consoleContent.GetChild(0).gameObject);
+
+            if (appended > 0)
+            {
+                Canvas.ForceUpdateCanvases();
+                _consoleScroll.verticalNormalizedPosition = 0f;   // newest line
+            }
         }
 
         private void RefreshBag()
