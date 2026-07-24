@@ -139,18 +139,20 @@ namespace Game.Client
 
         private static string Pct(float value) => (value * 100f).ToString("0.#") + "%";
 
-        /// <summary>Attack/cast speed as the RAW STAT against its cap, with the multiplier after it:
-        /// "1234 / 1500  (x3.70)".
+        /// <summary>Attack/cast speed as the RAW STAT against its cap, with the SPEED multiplier after
+        /// it: "702 / 1999  (x2.11)".
         ///
-        /// A bare "x1.10" was the whole display, and it tells you nothing you can plan with — you cannot
-        /// see how much headroom is left, or how far a buff moved you (owner: "where are the numbers
-        /// 1000/1500, 1234/1999?"). The engine uses the L2 model where the stat is what matters and
-        /// 333 = 1.0x (StatCalculator.SpeedBaseline), so the raw value is simply mult x 333 and needs no
-        /// extra field on the wire. The caps are the real ones from StatCaps.</summary>
+        /// ⚠ The DTO field is a cast/attack-TIME multiplier where LOWER = FASTER: the server returns
+        /// `SpeedBaseline / stat`, so a fast caster's field is SMALL. The raw stat is therefore
+        /// `SpeedBaseline / mult` (NOT mult × baseline — that inverts it, which is the bug that made a
+        /// fully-buffed caster read "158 (x0.47)" when the real stat was ~702 at ~2.1×). The speed-vs-
+        /// baseline multiplier the player expects is 1/mult = raw/333. Caps are the real StatCaps values.</summary>
         private static string SpeedStat(float mult, int cap)
         {
-            int raw = Mathf.RoundToInt(mult * StatCalculator.SpeedBaseline);
-            return raw.ToString("N0") + " / " + cap.ToString("N0") + "  (x" + mult.ToString("0.00") + ")";
+            float m = Mathf.Max(0.001f, mult);
+            int raw = Mathf.RoundToInt(StatCalculator.SpeedBaseline / m);   // the stat (higher = faster)
+            float speedX = 1f / m;                                          // vs the 333 = 1.0x baseline
+            return raw.ToString("N0") + " / " + cap.ToString("N0") + "  (x" + speedX.ToString("0.00") + ")";
         }
     }
 }

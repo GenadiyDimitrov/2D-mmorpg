@@ -12,6 +12,25 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-25 — Console freeze fix + speed-display fix (0.28.78)
+
+Two device-playtest fixes.
+
+- **Console freeze (regression from 0.28.77).** The append rewrite in 0.28.77 was correct, but the trim
+  I added — `while (childCount > 120) Destroy(oldest)` — FROZE the phone: Unity's `Destroy` is deferred
+  to end of frame, so `childCount` never drops inside the loop and `GetChild(0)` keeps returning the same
+  already-marked object → an infinite loop the moment the log passed 120 lines. Now the excess is counted
+  ONCE and that many rows are destroyed by index. (0.28.76 lag = real accumulation; 0.28.77 freeze = this
+  trim bug; 0.28.78 resolves both.)
+- **Attack/cast speed display was inverted.** The DTO field is a cast/attack-TIME multiplier (lower =
+  faster: the server sends `SpeedBaseline / stat`), but the tier-2 display did `raw = mult × baseline`,
+  which flips it — a fully-buffed caster read "158 (x0.47)" when the real stat was ~702 at ~2.1×. The raw
+  stat is `baseline / mult` and the speed multiplier is `1/mult`. (Playtest: the cast-speed and M.Atk
+  NUMBERS a player flagged were display artifacts; the lvl-1-one-shots-lvl-4-8 finding is real and
+  deferred to a measured BalanceMatrix pass.)
+
+---
+
 ## 2026-07-24 — Console lag fix + playtest APK (0.28.77)
 
 Live device playtest (Gena) surfaced a real one the SmokeTest can't: with the chat/console window

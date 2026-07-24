@@ -1205,10 +1205,15 @@ namespace Game.Client
                 appended++;
             }
 
-            // Trim the oldest rows so the window never holds more than the cap — bounded work forever,
-            // regardless of how long the session runs.
-            while (_consoleContent.childCount > ConsoleDisplayRows)
-                Destroy(_consoleContent.GetChild(0).gameObject);
+            // Trim the oldest rows so the window never holds more than the cap.
+            // ⚠ Count the excess ONCE and destroy that many by index. A `while (childCount > cap)` loop
+            // FREEZES: Unity's Destroy is deferred to end-of-frame, so childCount does NOT drop inside
+            // the loop — the condition stays true and GetChild(0) keeps returning the same (already
+            // marked) object forever. That infinite loop is what locked the phone in 0.28.77; this is
+            // the real fix on top of the append rewrite.
+            int excess = _consoleContent.childCount - ConsoleDisplayRows;
+            for (int i = 0; i < excess; i++)
+                Destroy(_consoleContent.GetChild(i).gameObject);
 
             if (appended > 0)
             {
