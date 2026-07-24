@@ -301,6 +301,41 @@ The 2026-07-23 evening test only proved the VPN download/play path. Everything b
 - [ ] **Target-closest** selects the nearest enemy; pressing again steps to the next.
 - [ ] Party window (as leader): **Kick** and **Lead** (change leader) buttons act on a member.
 
+## 14. World pass — fields, walls, negative quadrant (0.28.56 → 0.28.61) — NOT YET TESTED (2026-07-24)
+
+**Fields (Setup → zone colours toggle ON):**
+- [ ] The map shows **filled colour FIELDS** (green→red by level), NOT the old spawn circles, wrapping
+      each town; the **town sits inside as a neutral "island"**. Field OUTLINES + the muted-blue town
+      outlines draw on top.
+- [ ] The **Training Grounds** is one field over the four dummies; **Sunken Vale** (boss field, south) and
+      **Hollow Crypt** (dungeon) read as fields too. Only the far lone spawns still show as circles.
+- [ ] Crossing a boundary shows the **"You entered X"** banner (level band for fields).
+
+**Walls + negative quadrant (dungeons/jail live at minus coords, reached by teleport):**
+- [ ] You **can't walk off the overworld** into negative space — walking toward x<0 or y<0 stops at the
+      edge; you can't reach the jail on foot.
+- [ ] A **gatekeeper teleports you to Hollow Crypt** (the dungeon) — you arrive at the entrance safe zone
+      and can walk into the crypt.
+- [ ] Inside the dungeon you **can't walk back out** — movement is confined to the dungeon.
+- [ ] (Admin) `/jail` a test char → they're pinned to the jail cell (negative coords) and can't wander out.
+
+## 15. Rune shots (0.28.62 → 0.28.64) — NOT YET TESTED (2026-07-24)
+
+The old always-on training passive is GONE; shots are held RUNE items now. **Admin (`admin/admin`)** starts
+with both **30-day** shot boxes for testing.
+
+- [ ] Open a **Soulshot Box** (admin has the 30d; or buy a **1h/2h** at the Apothecary) → you get a
+      **Soulshot Rune** in the bag and a **Soulshot buff appears on the bar** with a countdown.
+- [ ] With the rune, a fighter's **physical damage roughly DOUBLES**; a **Spiritshot Rune** boosts a
+      mage's spell damage + cast speed. Wrong-type does nothing (soulshot on a mage's spells = no effect).
+- [ ] The rune **can't be deleted** (bin refuses — "move it to the warehouse"); it **can't be traded**.
+      The 1h/2h *boxes* CAN be traded; the 24h/30d boxes cannot.
+- [ ] **Relog** → the rune is still there with the buff, its remaining time reduced by the time away
+      (wall-clock — it counts down offline). Let a short one lapse → the rune vanishes + buff drops.
+- [ ] A brand-new character's starter kit is **class-agnostic**: an **Armor choice box** (pick Fighter or
+      Mage set), a **Weapons box** (pick ONE of 5, incl. staff), jewels, and a **1-day shot-rune choice
+      box** (pick Soulshot or Spiritshot). All bound.
+
 ## Known gaps (NOT bugs — not built yet in the Unity client)
 
 Don't file these; they're scope, not defects. The Unity client is a viewport, not the WPF harness.

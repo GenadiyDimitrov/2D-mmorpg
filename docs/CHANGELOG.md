@@ -14,6 +14,26 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
 ---
 
+## 2026-07-24 — World pass (fields, walls, negative quadrant) + rune shots (0.28.56 → 0.28.64)
+
+- **Whole map on FIELDS** (0.28.56–0.28.58) — field polygons are FILLED and coloured by level (replacing
+  the spawn-zone circles); one convex field WRAPS each town with the town drawn on top as an island; a
+  boss field (Sunken Vale) + a dungeon field (Hollow Crypt) + a Training Grounds field. All generated as
+  convex hulls and verified (no overlaps; every spawner inside its field).
+- **No rogue spawners** (0.28.59) — a startup guard throws if any spawner sits outside every field.
+- **Dungeons + jail in the NEGATIVE quadrant** (0.28.60) — reached by teleport, off the positive
+  overworld; position clamps + the (sparse) cell grid handle negative coordinates.
+- **Walls** (0.28.61) — movement is confined to the domain you stand in: the overworld can't be walked
+  out of into negative space, and a dungeon can't be walked out of; a ~500u ward teleports a clip-out
+  back inside. Teleport is the only way across.
+- **Soul/spiritshots as RUNES** (0.28.62–0.28.64) — the always-on training passive is gone; shots are
+  held rune items with a wall-clock expiry (persisted, counts down offline, delete-protected). Delivered
+  in boxes whose open stamps the clock (also stamped on any other acquire). 1h/2h at the Apothecary
+  (tradable), 24h/30d premium/debug (bound); admin seeds both 30d. The newbie starter kit is now
+  class-agnostic (armor choice box, one weapon of five incl. staff, a 1-day shot-rune choice box).
+
+---
+
 ## 2026-07-23 — Playtest-10 fixes, potion rework, dungeon, regions, leaderboards (0.28.42 → 0.28.55)
 
 Driven by on-phone playtests over VPN. Every entry verified by a headless Unity compile + `dotnet
