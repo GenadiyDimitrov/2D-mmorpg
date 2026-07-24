@@ -7139,13 +7139,16 @@ var effect = def.Effect;
         for (int i = 0; i < slots.Length && i < bar.Length; i++)
             slots[i] = bar[i] ?? "";
 
-        // Forget what this class no longer knows — but NEVER an item slot ("item:<defId>") or an action
-        // slot ("action:<id>"): neither is a learned skill, so both would otherwise be wiped here, yet
-        // both are perfectly valid entries the player placed on purpose (a potion one click away; the
-        // basic-attack and target-closest buttons).
+        // Forget what this class no longer knows — but NEVER an item slot ("item:<defId>"), an action
+        // slot ("action:<id>"), or an equip-PRESET slot ("preset:<abc>"): none is a learned skill, so
+        // all three would otherwise be wiped here, yet all are valid entries the player placed on purpose
+        // (a potion one click away; the basic-attack/target-closest buttons; an A/B/C gear swap).
+        // ⚠ preset: was MISSING from this list, so an equip preset placed on the bar was stripped on the
+        // very next re-sync (login / level-up / learn) — it vanished on relog. Device playtest 0.28.79.
         for (int i = 0; i < slots.Length; i++)
             if (!string.IsNullOrEmpty(slots[i])
                 && !GameConstants.IsItemSlot(slots[i]) && !GameConstants.IsActionSlot(slots[i])
+                && !GameConstants.IsPresetSlot(slots[i])
                 && !p.LearnedSkills.ContainsKey(slots[i]))
                 slots[i] = "";
 

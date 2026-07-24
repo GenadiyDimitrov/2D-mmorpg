@@ -323,10 +323,17 @@ Check("skill bar is 60 slots (5 rows x 12)",
       $"got {a.Bar!.Slots.Length}, expected {GameConstants.SkillBarSlots}");
 
 string itemToken = GameConstants.ItemSlotToken(ItemCatalog.HealingPotion);
+// Also place an equip-PRESET token. Presets were added AFTER this test, and SyncSkillBar's "forget
+// unknown skills" pass did not exempt them — so a preset on the bar was wiped on the very next re-sync
+// and vanished on relog (device playtest 0.28.79). This asserts it survives, so that can't regress.
+string presetToken = GameConstants.PresetSlotToken(0);   // "preset:0" = the A preset
 var withItem = (string[])mainBar.Clone();
 int freeIdx = Array.FindIndex(withItem, string.IsNullOrEmpty);
 Check("the bar has a free slot to place an item token", freeIdx >= 0);
 if (freeIdx >= 0) withItem[freeIdx] = itemToken;
+int presetIdx = Array.FindIndex(withItem, string.IsNullOrEmpty);
+Check("the bar has a second free slot for a preset token", presetIdx >= 0);
+if (presetIdx >= 0) withItem[presetIdx] = presetToken;
 mainBar = withItem;                       // this is now the canonical main bar the relog must reproduce
 await a.Hub.SendAsync("SetSkillBar", mainBar);
 await a.Settle();
@@ -352,6 +359,8 @@ Check("MAIN class's bar survived the relog",
       b.Bar is not null && b.Bar.Slots.SequenceEqual(mainBar));
 Check("the ITEM slot survived the relog (SyncSkillBar kept the item: token, not wiped as a skill)",
       b.Bar is not null && b.Bar.Slots.Contains(itemToken));
+Check("the PRESET slot survived the relog (SyncSkillBar kept the preset: token, not wiped as a skill)",
+      b.Bar is not null && b.Bar.Slots.Contains(presetToken));
 Check("levels survived the relog (main 81, subclass 5)",
       b.Subclasses!.Classes.First(c => c.Slot == mainSlot).Level == 81 &&
       b.Subclasses.Classes.First(c => c.Slot == subSlot).Level == 5,
