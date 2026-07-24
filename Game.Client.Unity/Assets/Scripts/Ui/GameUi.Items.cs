@@ -59,11 +59,13 @@ namespace Game.Client
 
             v.Title = UiKit.Label(inner, "", 18f, UiKit.Accent, TextAlignmentOptions.TopLeft);
             UiKit.Place(UiKit.Rect(v.Title.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(44f, -chrome - 6f), new Vector2(490f, 24f));
+                        new Vector2(44f, -chrome - 6f), new Vector2(490f, 26f));
 
+            // Body starts well BELOW the title (was chrome+38, only ~8px under it — the first stat line
+            // "Attack +0" crammed under the name). chrome+66 gives a clear gap.
             ScrollRect scroll;
             var content = UiKit.ScrollArea(inner, out scroll, 2f);
-            UiKit.Stretch((RectTransform)scroll.transform, 16f, chrome + 38f, 16f, 70f);
+            UiKit.Stretch((RectTransform)scroll.transform, 16f, chrome + 66f, 16f, 70f);
             v.Body = UiKit.Label(content, "", 15f, UiKit.Text, TextAlignmentOptions.TopLeft);
             v.Body.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
