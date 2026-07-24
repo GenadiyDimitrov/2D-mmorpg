@@ -33,13 +33,14 @@ a recognised domain so `/tp` to a jailed player warded the admin into a dungeon.
 keyboard lifts the command bar; `[lead]` moves the badge and clears the button; dungeon mobs aggro,
 retaliate and spread out. Root causes in memory `playtest-11-bugfix-progress`. **None device-tested.**
 
-**Tier 2 — cheap UI/UX, mostly client-only**
-Duplicate blue town-entry line · field banner needs **hit-test false** (it blocks ground taps) ·
-player target frame `[info]`-only · debug-menu chat spam · spiritshot buff reads `719h59` not `29d` ·
-bag `Equip` button first + column expands LEFT · stand-up delay (instant if seated >3s) · HoT floating
-text for potions · target-window HP as digits + an MP bar for players · raw attack/cast speed beside
-the multiplier (`1234/1500 (x3)`) · buff double-tap cancels / single tap opens details · party
-buff/debuff **squares** + loot proposal **drop-down** · **world border** (orange dashed).
+**Tier 2 — ✅ ALL 13 DONE** (0.28.72 / 0.28.74 / 0.28.75). Duplicate town line · banner hit-test ·
+player target frame · debug chat spam · `719h59`→`29d` · bag Equip-first + left column · stand-up delay ·
+potion HoT floater · target HP digits + MP bar · raw speed numbers · buff tap behaviour · party effect
+squares + loot drop-down · world border. **None device-tested.**
+
+⚠ **One sub-item could NOT be built:** the party `<60s` effect flashing. `PartyMemberDto` carries effect
+NAMES only, with no remaining time, so there is nothing to count down — it needs durations on the wire
+(a DTO change, hence a protocol bump).
 
 **Tier 3 — server work**
 - ✅ **Damage ledger — BUILT (0.28.69).** Most damage earns the kill (drops, quest credit, karma);
@@ -57,6 +58,12 @@ buff/debuff **squares** + loot proposal **drop-down** · **world border** (orang
   mechanism. Memory `worlds-and-collision-design`.
 - **Target a party member with no range restriction**, so kick/change-leader work from buttons.
 - **Admins excluded from the rankings** — an admin at level 999 breaks every board.
+
+**🔴 The gap tier-2 opened — do this next**
+- **Every non-admin command as an ACTION** (friend, party, sit/walk/run, attack/assist/next), living in
+  the Skills window's **Actions tab** and placeable on the skill bar. This stopped being optional: the
+  player target frame was stripped of its buttons in 0.28.72 on the owner's instruction, so **party,
+  trade, follow and assist currently have nowhere to live**. It should not reach a playtest like that.
 
 **Tier 4 — new systems**
 - **Chat**: colours, tabs, tags (`[!]` world, `[W]` whisper) — WPF already has the first two — plus
@@ -110,14 +117,15 @@ buff/debuff **squares** + loot proposal **drop-down** · **world border** (orang
 ---
 
 ## My view of the order
-1. 🔴 **PLAYTEST 0.28.69 on the phone.** Three commits of deep change (the whole exp/party/drop system,
-   seven bug fixes, the damage ledger) are pushed and **none of it has been device-tested**. The
-   SmokeTest has not run either, and `AwardExp` touches persisted Exp and SkillPoints. This is the
-   biggest untested stack since the parity batches — verify before more lands on top of it.
-2. **Starter-gear redesign** — the curve half is done; this completes the early-game pass. Verify with
-   `BalanceMatrix` before/after.
-3. **Tier-2 UI batch** — a dozen cheap client-only fixes; batch and build once.
-4. **Partial-stack trading**, then the **shop rework** (pairs with starter gear).
+1. 🔴 **Commands as ACTIONS** — closes the hole tier-2 opened. Party/trade/follow/assist have no home
+   until the Actions tab hosts them.
+2. 🔴 **PLAYTEST 0.28.75 on the phone.** Ten commits of deep change are pushed and **none of it has been
+   device-tested**: the whole exp/party/drop system, seven tier-1 bug fixes, the damage ledger, the
+   training-gear tier, the starter quest, the weapon M.Atk migration and all thirteen tier-2 UI items.
+   The SmokeTest is green and the client compiles, but neither proves it *plays*. A fresh `game.db`
+   gives the truest picture — existing characters keep their old kit.
+3. **Partial-stack trading**, then the **shop rework** (pairs with the starter-gear tier).
+4. **Combat toggle** (+P.Atk / −M.Atk stance) — the last piece of the owner's weapon-identity plan.
 5. **Chat** (colours/tabs/tags), then **block** — small, and makes the social layer safe.
 6. **Charisma** — the biggest new system; design its board alongside **wearable titles**.
 7. **Client-side collision**, **buy-back**, **warehouse** — self-contained, any time.
