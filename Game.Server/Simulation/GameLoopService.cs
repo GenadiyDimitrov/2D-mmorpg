@@ -796,12 +796,24 @@ public class GameLoopService : BackgroundService
 
         // Standing UP from a sit costs the stand-up recovery (the standing animation): you can't move,
         // cast or act until it elapses. Walk<->Run while already standing stays instant.
+        //
+        // EXCEPT after a real rest (owner): if you have been seated at least SettledSeconds, standing is
+        // INSTANT. The recovery exists to stop sit/stand spam — tapping sit for the regen tick and
+        // popping straight back up — and that is the only thing it should cost. Someone who actually sat
+        // down to rest has already paid far more time than the delay, so charging them again just makes
+        // resting feel bad. Being HIT while seated still applies the full delay (see Kill/damage path):
+        // that is a combat interrupt, not a voluntary stand, and it must stay punishing.
         if (player.MoveState == MoveState.Sitting && cmd.State != MoveState.Sitting)
-            player.StandUpTicks = MovementTuning.StandUpTicks;
+        {
+            long seatedTicks = _tick - player.SatDownTick;
+            if (seatedTicks < MovementTuning.SettledSeconds * GameConstants.TickRate)
+                player.StandUpTicks = MovementTuning.StandUpTicks;
+        }
 
         player.MoveState = cmd.State;
         if (cmd.State == MoveState.Sitting)
         {
+            player.SatDownTick = _tick;
             player.TargetX = null;
             player.TargetY = null;
         }
@@ -1620,7 +1632,10 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, "Inventory full.");
             return;
         }
-        SendSystemToEntity(player, $"[DEBUG] Added {def.Name}.");
+        // No chat line: the debug menu's item buttons are the most-pressed thing in it, and taking ten
+        // potions filled the log with ten identical rows (owner). The inventory refresh below IS the
+        // feedback. The rarely-used debug actions — teleport coordinates, karma, class change — keep
+        // theirs, because those genuinely tell you something the UI does not.
         SendInventory(player);
     }
 
@@ -1934,7 +1949,8 @@ public class GameLoopService : BackgroundService
         if (_world.EntityToConnection.TryGetValue(player.Id, out var conn))
             _ = _hub.Clients.Client(conn).SendAsync("Progress", new ProgressUpdate(
                 player.Level, player.Exp, StatCalculator.ExpToNext(player.Level), up));
-        SendSystemToEntity(player, $"[DEBUG] Level {(up ? "up" : "down")} -> {player.Level}.");
+        // Silent (owner): the level and the XP bar both move on screen, and holding +10 to climb to 80
+        // otherwise wrote eight rows into the log for something already visible.
         SaveEntity(player);   // persist so debug levels survive a server restart
     }
 
@@ -8140,7 +8156,7 @@ var effect = def.Effect;
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
             return;
         GrantFullBuffSet(player);
-        SendSystemToEntity(player, "[DEBUG] Full buff set applied (1 hour).");
+        // Silent (owner): the buff bar filling up is the feedback.
     }
 
     /// <summary>DEBUG: adjust karma by a delta. Clamped to [0, 1M]; clearing to 0 resets the PK streak

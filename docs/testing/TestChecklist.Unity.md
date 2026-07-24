@@ -17,7 +17,22 @@ everything below it meaningless, so stop and report at the first ✗ rather than
 confirmed working. **Landmines, do not undo:** `Assets/link.xml` must stay (IL2CPP stripping breaks the
 PHONE build only, so desktop testing never catches its return); there is ONE Android package, so every
 APK installs over the last one; `builds/L2Clone.apk` is the only APK.
-Headless builds work with Unity CLOSED — see `Assets/Editor/CommandLineBuild.cs`.
+Headless builds work with Unity CLOSED — see `Assets/Editor/CommandLineBuild.cs`. The exact invocation
+(the method name must be FULLY QUALIFIED — passing bare `CommandLineBuild.BuildAndroid` fails with
+"executeMethod class could not be found", and Unity still exits 0 through a shell wrapper, so it looks
+like it worked while quietly building nothing):
+
+```
+"C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Unity.exe" -quit -batchmode -nographics ^
+  -projectPath "G:\Work\Repository\L2Clone\Game.Client.Unity" ^
+  -executeMethod Game.Client.Editor.CommandLineBuild.BuildAndroid ^
+  -logFile "<some>\unitybuild.log"
+```
+
+Check the log for `error CS` (compile) and for `executeMethod class ... could not be found` (wrong name)
+— an APK whose timestamp did not change is the tell. Note this is also the ONLY way to compile-check the
+client: `dotnet build Game.sln` does not include the Unity project, so client-only edits are unverified
+until a headless build runs.
 
 ## 1. ✅ It starts and tells you something — VERIFIED ON DEVICE 2026-07-21
 

@@ -88,6 +88,13 @@ public static class MovementTuning
     /// <summary>Ticks to stand up — after being hit OR choosing to stand — before you can move / cast /
     /// act again (the standing animation). 3s at 10 ticks/sec (owner, 2026-07-23).</summary>
     public const int StandUpTicks = 30;
+
+    /// <summary>Seconds seated after which standing up is INSTANT (owner, 2026-07-24). The stand-up
+    /// recovery exists to stop sit/stand SPAM — tapping sit for the regen tick and popping straight back
+    /// up — so it should only cost that. Someone who genuinely rested has already spent far more time
+    /// than the delay, and charging them again just makes resting feel bad. Being HIT while seated still
+    /// pays the full recovery regardless: that is a combat interrupt, not a voluntary stand.</summary>
+    public const float SettledSeconds = 3f;
 }
 
 /// <summary>

@@ -178,8 +178,8 @@ namespace Game.Client
             t.AppendLine(Pair("Accuracy", d.Accuracy.ToString(), "Atk range", d.AttackRange.ToString("0")));
             t.AppendLine(Pair("Crit", Pct(d.CritChance), "M.Crit", Pct(d.MagicCritChance)));
             t.AppendLine(Pair("Crit dmg", "x" + (1f + d.CritDamage).ToString("0.##"),
-                              "Atk speed", "x" + d.AttackSpeedMult.ToString("0.##")));
-            t.AppendLine(Pair("Cast speed", "x" + d.CastSpeedMult.ToString("0.##"),
+                              "Atk speed", SpeedStat(d.AttackSpeedMult, StatCaps.AttackSpeed)));
+            t.AppendLine(Pair("Cast speed", SpeedStat(d.CastSpeedMult, StatCaps.CastSpeed),
                               "Move speed", d.MoveSpeed.ToString("0")));
 
             t.AppendLine();

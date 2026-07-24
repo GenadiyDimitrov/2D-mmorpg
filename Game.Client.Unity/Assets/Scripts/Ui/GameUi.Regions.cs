@@ -30,6 +30,14 @@ namespace Game.Client
             _regionToast = UiKit.Label(_regionToastBg.transform, "", 28f, UiKit.Text, TextAlignmentOptions.Center);
             _regionToast.fontStyle = FontStyles.Bold;
             UiKit.Stretch(UiKit.Rect(_regionToast.gameObject), 8f, 4f, 8f, 4f);
+
+            // The banner must NOT eat touches. It sits centre-top over open ground, and as a plain
+            // Image + text it was a raycast target, so every tap that landed on it was swallowed —
+            // "the 'you entered a field' message prevents me clicking below my char". It is a notice,
+            // never a control, so nothing about it should ever be interactive.
+            _regionToastBg.raycastTarget = false;
+            _regionToast.raycastTarget = false;
+
             _regionToastBg.gameObject.SetActive(false);
 
             BuildRegionOutlines();

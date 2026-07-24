@@ -80,11 +80,12 @@ namespace Game.Client
             t.AppendLine();
 
             t.AppendLine(Head("Offence"));
+            // (SpeedStat below turns the bare multiplier into "1234 / 1500  (x3.70)" — see its summary.)
             t.AppendLine(Row2("P.Atk", s.AttackPower.ToString(), "M.Atk", s.MagicAttack.ToString()));
             t.AppendLine(Row2("Accuracy", s.Accuracy.ToString(), "Crit", Pct(s.CritChance)));
             t.AppendLine(Row2("Magic crit", Pct(s.MagicCritChance), "Crit dmg", "+" + Pct(s.CritDamage)));
-            t.AppendLine(Row2("Atk speed", "x" + s.AttackSpeedMult.ToString("0.00"),
-                              "Cast speed", "x" + s.CastSpeedMult.ToString("0.00")));
+            t.AppendLine(Row2("Atk speed", SpeedStat(s.AttackSpeedMult, StatCaps.AttackSpeed),
+                              "Cast speed", SpeedStat(s.CastSpeedMult, StatCaps.CastSpeed)));
             t.AppendLine();
 
             t.AppendLine(Head("Defence"));
@@ -137,5 +138,19 @@ namespace Game.Client
         }
 
         private static string Pct(float value) => (value * 100f).ToString("0.#") + "%";
+
+        /// <summary>Attack/cast speed as the RAW STAT against its cap, with the multiplier after it:
+        /// "1234 / 1500  (x3.70)".
+        ///
+        /// A bare "x1.10" was the whole display, and it tells you nothing you can plan with — you cannot
+        /// see how much headroom is left, or how far a buff moved you (owner: "where are the numbers
+        /// 1000/1500, 1234/1999?"). The engine uses the L2 model where the stat is what matters and
+        /// 333 = 1.0x (StatCalculator.SpeedBaseline), so the raw value is simply mult x 333 and needs no
+        /// extra field on the wire. The caps are the real ones from StatCaps.</summary>
+        private static string SpeedStat(float mult, int cap)
+        {
+            int raw = Mathf.RoundToInt(mult * StatCalculator.SpeedBaseline);
+            return raw.ToString("N0") + " / " + cap.ToString("N0") + "  (x" + mult.ToString("0.00") + ")";
+        }
     }
 }

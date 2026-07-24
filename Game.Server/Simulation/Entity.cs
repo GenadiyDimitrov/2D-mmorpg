@@ -342,6 +342,10 @@ public class Entity
     /// While &gt; 0 the player can't move/cast/act.</summary>
     public int StandUpTicks { get; set; }
 
+    /// <summary>Tick the entity last SAT DOWN, so a voluntary stand can tell a genuine rest from
+    /// sit/stand spam. Runtime only — sitting does not survive a relog.</summary>
+    public long SatDownTick { get; set; }
+
     /// <summary>Per-entity move-speed ceiling (default 250; a future rogue
     /// ultimate raises it to outrun even a buffed mage).</summary>
     public float MoveSpeedCap { get; set; } = StatCaps.MoveSpeed;

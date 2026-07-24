@@ -12,6 +12,42 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-24 — Tier-2 UI batch, part 1 (0.28.72)
+
+Seven of the thirteen cheap playtest-11 UI items. Client scripts compile-checked with a headless Unity
+build (`dotnet build Game.sln` does NOT cover the Unity project — see the checklist for the invocation).
+
+- **The duplicate town line is gone.** There were TWO independent "You entered X" systems: the server's
+  Region banner (big, with a background) and an older client-side zone label that coloured towns blue.
+  The second one's own comment said it should be replaced "when Regions ship on both clients" — which
+  they have. Removed.
+- **The region banner no longer eats taps.** As a plain Image + text it was a raycast target, so every
+  tap landing on it was swallowed ("prevents me clicking below my char"). It is a notice, never a
+  control, so nothing about it is interactive now.
+- **Durations roll over into DAYS** — a 30-day shot rune read `719h59`, which is true and useless. Now
+  `29d`; past a week the hours are dropped entirely, so every tier stays at most four characters.
+- **Debug-menu chat spam removed** for items, levels and buffs — taking ten potions wrote ten identical
+  rows. Each already has visible feedback (inventory refresh, the level number, the buff bar). The rare
+  ones keep their line: teleport coordinates, karma, class change.
+- **A targeted PLAYER carries no fast buttons at all.** Attack/Follow/Assist/Party/Trade come off the
+  frame; those belong in the Skills window's Actions tab, placeable on the bar. Mobs keep Attack (the
+  core loop) and Info (stats + drops).
+- **Target HP/MP as digits**: current/max instead of a percentage, plus an MP bar for player targets.
+  ⚠ This REVERSES the older "another player's exact HP is information you should not have" rule, at the
+  owner's request. Level stays private.
+- **Attack/cast speed show the raw stat**: `1234 / 1500  (x3.70)` instead of a bare `x1.10`, in both the
+  Stats window and mob Info. No wire change — the engine uses the L2 model where 333 = 1.0x, so the raw
+  value is `mult x 333`, and the caps are the real `StatCaps` ones.
+- **Standing up is INSTANT after a real rest** (seated >= 3s). The recovery exists to stop sit/stand
+  spam and now only costs that. Being HIT while seated still pays the full delay — a combat interrupt is
+  not a voluntary stand.
+
+Remaining in the batch: bag Equip-first + expand-left, potion HoT floating text, buff double-tap
+cancel / single-tap details, party buff-debuff squares + loot drop-down, world border, and
+commands-as-actions.
+
+---
+
 ## 2026-07-24 — The level-10 starter quest, and ReachLevel steps actually work (0.28.71)
 
 Completes the starter-gear redesign. The Newbie kit is no longer given away — it is EARNED.

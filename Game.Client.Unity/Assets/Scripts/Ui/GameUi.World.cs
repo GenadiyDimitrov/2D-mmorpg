@@ -35,8 +35,9 @@ namespace Game.Client
 
         // self / target
         private TextMeshProUGUI _selfName, _targetName, _targetDetail;
-        private TextMeshProUGUI _selfHpText, _selfMpText, _selfXpText, _targetHpText;
-        private Image _selfHp, _selfMp, _selfXp, _targetHp;
+        private TextMeshProUGUI _selfHpText, _selfMpText, _selfXpText, _targetHpText, _targetMpText;
+        private Image _selfHp, _selfMp, _selfXp, _targetHp, _targetMp;
+        private RectTransform _targetMpRow;
         private RectTransform _targetPanel;
 
         // command bar
@@ -272,9 +273,17 @@ namespace Game.Client
                         new Vector2(12f, -chrome - 34f), new Vector2(276f, 22f));
             _targetHpText = UiKit.BarLabel(_targetHp, 13f);
 
+            // MP bar — shown for PLAYER targets only (owner). A mob's mana tells you nothing you can act
+            // on; another player's is what tells a healer whether they can still cast.
+            _targetMp = UiKit.ValueBar(inner, UiKit.Mp);
+            _targetMpRow = UiKit.Rect(_targetMp.transform.parent.gameObject);
+            UiKit.Place(_targetMpRow, new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(12f, -chrome - 56f), new Vector2(276f, 18f));
+            _targetMpText = UiKit.BarLabel(_targetMp, 12f);
+
             _targetDetail = UiKit.Label(inner, "", 14f, UiKit.TextDim);
             UiKit.Place(UiKit.Rect(_targetDetail.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -chrome - 56f), new Vector2(190f, 20f));
+                        new Vector2(12f, -chrome - 76f), new Vector2(190f, 20f));
 
             // Two rows of contextual action buttons, so every target command is one tap — no slash typing.
             // The server refuses anything invalid, but RefreshTarget only SHOWS the ones that apply to the
@@ -815,26 +824,37 @@ namespace Game.Client
 
             string level = target.Kind == EntityKind.Player && target.Level <= 0 ? "" : "  Lv " + target.Level;
             _targetName.text = target.Name + level + (target.Dead ? "   (dead)" : "");
-            UiKit.SetBar(_targetHp, target.Hp, target.MaxHp);
-            // Percent, not the raw pair: another player's exact HP is information you should not have,
-            // and for a mob "how much is left" is the only part that changes how you fight.
-            _targetHpText.text = target.MaxHp > 0
-                ? Mathf.CeilToInt(100f * target.Hp / target.MaxHp) + "%"
-                : "";
-            _targetDetail.text = target.Kind + (target.Aggressive ? "   aggressive" : "");
-
-            // Party/Trade/Follow/Assist only make sense against another PLAYER — and never yourself.
             bool self = Boot.Entities != null && Boot.TargetId == Boot.Entities.SelfId;
             bool player = target.Kind == EntityKind.Player && !self;
             bool mob = target.Kind == EntityKind.Mob;
-            if (_targetPartyButton != null) _targetPartyButton.gameObject.SetActive(player);
-            if (_targetTradeButton != null) _targetTradeButton.gameObject.SetActive(player);
-            if (_targetFollowButton != null) _targetFollowButton.gameObject.SetActive(player);
-            if (_targetAssistButton != null) _targetAssistButton.gameObject.SetActive(player);
-            // Attack: any living enemy — every mob, or a player (server gates PvP). Not on yourself/dead.
-            if (_targetAttackButton != null) _targetAttackButton.gameObject.SetActive(!self && !target.Dead && (mob || player));
-            // Info is for MOBS (their full stats + drops). A player's numbers are largely private, so
-            // the owner asked that a targeted player carry no Info button.
+
+            UiKit.SetBar(_targetHp, target.Hp, target.MaxHp);
+            // CURRENT/MAX digits, not a percentage (owner, 2026-07-24). This reverses the older "another
+            // player's exact HP is information you should not have" rule — he asked for the raw pair on
+            // both mobs and players. Level stays private; only HP/MP opened up.
+            _targetHpText.text = target.MaxHp > 0 ? target.Hp.ToString("N0") + " / " + target.MaxHp.ToString("N0") : "";
+
+            // MP: players only. A mob's mana is not something you can act on.
+            if (_targetMpRow != null) _targetMpRow.gameObject.SetActive(player && target.MaxMp > 0);
+            if (player && target.MaxMp > 0)
+            {
+                UiKit.SetBar(_targetMp, target.Mp, target.MaxMp);
+                _targetMpText.text = target.Mp.ToString("N0") + " / " + target.MaxMp.ToString("N0");
+            }
+
+            _targetDetail.text = target.Kind + (target.Aggressive ? "   aggressive" : "");
+
+            // A targeted PLAYER carries NO fast buttons at all (owner, 2026-07-24): attack, follow,
+            // assist, party and trade all come off the frame. They are not lost — they belong in the
+            // Skills window's ACTIONS tab, placeable on the skill bar like a skill, which is what
+            // "every command as a button" actually meant. The frame keeps ONE button, Info, and only
+            // for mobs (their stats and drop table are the thing you genuinely need looked up).
+            if (_targetPartyButton != null) _targetPartyButton.gameObject.SetActive(false);
+            if (_targetTradeButton != null) _targetTradeButton.gameObject.SetActive(false);
+            if (_targetFollowButton != null) _targetFollowButton.gameObject.SetActive(false);
+            if (_targetAssistButton != null) _targetAssistButton.gameObject.SetActive(false);
+            // Attack stays for MOBS — killing things is the core loop and one tap for it is not clutter.
+            if (_targetAttackButton != null) _targetAttackButton.gameObject.SetActive(mob && !target.Dead);
             if (_targetInfoButton != null) _targetInfoButton.gameObject.SetActive(mob);
         }
 

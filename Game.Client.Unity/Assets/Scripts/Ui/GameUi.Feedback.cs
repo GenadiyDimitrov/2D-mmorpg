@@ -21,7 +21,6 @@ namespace Game.Client
         private Image _castFill;
 
         // zone readout
-        private TextMeshProUGUI _zoneLabel;
 
         // floating damage
         private class FloatingNumber
@@ -75,11 +74,10 @@ namespace Game.Client
             // to answer a question you ask when you cross a border and never again. The owner's rule
             // for the top-left corner is vitals only; everything else is either transient or lives in
             // a window.
-            _zoneLabel = UiKit.Label(_worldRoot, "", 26f, UiKit.TextDim, TextAlignmentOptions.Center);
-            UiKit.Place(UiKit.Rect(_zoneLabel.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                        new Vector2(0f, -110f), new Vector2(900f, 40f));
-            _zoneLabel.outlineColor = new Color32(0, 0, 0, 220);
-            _zoneLabel.outlineWidth = 0.2f;
+            // (The old client-side "You entered X" zone banner lived here. It has been REMOVED — the
+            // server's Region notice supersedes it, and the two fired together: the big banner plus a
+            // second blue line underneath it on every town entry. Its own comment always said it was
+            // to be replaced once Regions shipped on both clients, which they now have.)
 
             BuildBuffBar();
         }
@@ -107,7 +105,6 @@ namespace Game.Client
         private void RefreshFeedback()
         {
             RefreshCastBar();
-            RefreshZoneLabel();
             RefreshFloaters();
             RefreshBuffBar();
         }
@@ -299,11 +296,23 @@ namespace Game.Client
             return _buffSquares[index];
         }
 
-        /// <summary>Compact durations: "1h02", "12m", "45s". A buff bar with "3600.0 seconds" on it is
-        /// unreadable at a glance, and a glance is all it ever gets.</summary>
+        /// <summary>Compact durations: "29d", "2d06", "1h02", "12m", "45s". A buff bar with
+        /// "3600.0 seconds" on it is unreadable at a glance, and a glance is all it ever gets.
+        ///
+        /// DAYS matter now that shot RUNES last 24h and 30d: without a day tier a 30-day rune read
+        /// "719h59", which is technically true and completely useless. Rolling over at 24h keeps every
+        /// tier to at most four characters.</summary>
         private static string ShortTime(float seconds)
         {
             if (seconds <= 0f) return "";
+            const float day = 86400f;
+            if (seconds >= day)
+            {
+                int days = Mathf.FloorToInt(seconds / day);
+                int hours = Mathf.FloorToInt(seconds % day / 3600f);
+                // Past a week the hours are noise — "29d" says everything that matters.
+                return days >= 7 || hours == 0 ? days + "d" : days + "d" + hours.ToString("00");
+            }
             if (seconds >= 3600f) return Mathf.FloorToInt(seconds / 3600f) + "h"
                                        + Mathf.FloorToInt(seconds % 3600f / 60f).ToString("00");
             if (seconds >= 60f) return Mathf.FloorToInt(seconds / 60f) + "m";
@@ -323,68 +332,6 @@ namespace Game.Client
             _castLabel.text = Boot.CastingSkill + "   " + Mathf.Max(0f, total - done).ToString("0.0") + "s";
         }
 
-        private string _zoneShown = "";
-        private float _zoneShownAt = -99f;
-        private const float ZoneBannerSeconds = 3.5f;
-
-        /// <summary>
-        /// Announce the ground you just walked onto, once, then fade.
-        ///
-        /// The name is worked out from WorldMap — the same data the server spawns from, so the client
-        /// cannot claim you are somewhere the server disagrees with. Only a CHANGE is announced; the
-        /// banner then fades over <see cref="ZoneBannerSeconds"/> and the screen goes back to being
-        /// the game.
-        ///
-        /// 🔗 When Regions ship on both clients this becomes RegionMap.At() for the name and
-        /// RegionMap.LevelBand() for the "Lv 20-80" — both already exist server-side. That is why the
-        /// band is composed here rather than hand-written into a string per zone.
-        /// </summary>
-        private void RefreshZoneLabel()
-        {
-            EntityDto self = null;
-            if (Boot.Entities != null) Boot.Entities.TryGetState(Boot.SelfId, out self);
-            if (self == null) return;
-
-            string name;
-            Color colour;
-
-            var town = WorldMap.SafeZoneAt(self.X, self.Y);
-            if (town != null)
-            {
-                name = town.Name + "   (safe zone)";
-                colour = new Color(0.55f, 0.75f, 1f);
-            }
-            else
-            {
-                name = null;
-                colour = UiKit.TextDim;
-                foreach (var zone in WorldMap.SpawnZones)
-                {
-                    float dx = self.X - zone.X, dy = self.Y - zone.Y;
-                    if (dx * dx + dy * dy > zone.Radius * zone.Radius) continue;
-
-                    name = "Hunting ground   Lv " + zone.MinLevel + "-" + zone.MaxLevel;
-                    colour = LevelColour(zone.MaxLevel, self.Level);
-                    break;
-                }
-                if (name == null) name = "Wilds";
-            }
-
-            if (name != _zoneShown)
-            {
-                _zoneShown = name;
-                _zoneShownAt = Time.unscaledTime;
-                _zoneLabel.text = "You entered " + name;
-                _zoneLabel.color = colour;
-            }
-
-            // Hold at full strength for the first half, then fade — long enough to read while walking,
-            // short enough that it is gone before it becomes furniture.
-            float age = (Time.unscaledTime - _zoneShownAt) / ZoneBannerSeconds;
-            var faded = _zoneLabel.color;
-            faded.a = age >= 1f ? 0f : Mathf.Clamp01((1f - age) * 2f);
-            _zoneLabel.color = faded;
-        }
 
         /// <summary>
         /// How dangerous something is RELATIVE to you, L2-style: far above → red, above → orange,
