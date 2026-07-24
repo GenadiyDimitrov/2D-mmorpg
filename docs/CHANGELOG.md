@@ -12,6 +12,37 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-24 — Weapons carry BOTH their CSV numbers; the caster rule moves into a passive (0.28.73)
+
+The gear CSV has always authored weapons as a PAIR — `92/54` for a level-20 sword — but only one number
+ever reached the game. A fighter weapon kept P and discarded M; a magic weapon kept M and discarded P.
+The missing channel was reconstructed by multiplying the WHOLE finished channel by `OffChannelFactor`
+(0.6), an invisible per-item multiplier. Two consequences: no weapon in the catalogue set `MAtkBonus`,
+so **no weapon ever showed an M.Atk line on its card**, and "why is my M.Atk 60%?" had no in-game answer.
+
+- **Both numbers are authored now** — `AtkBonus` = P, `MAtkBonus` = M, straight from the CSV, for all
+  eight weapon families across all five tiers. `PAtkFactor`/`MAtkFactor` are retired to 1.0.
+- **Weapons contribute their own M.Atk** like every other slot. Items that predate the migration have
+  `MAtkBonus = 0` and fall back to the old shared-number behaviour, so nothing rebalances under them.
+- **The caster rule moved into `Weapon Proficiency`**, where a player can read it. It is now TWO gates,
+  because they answer different questions: **cast speed** keys on the trained TYPE (sword/blunt, which
+  includes wands and staves), while **M.Atk** keys on the weapon actually being a MAGIC weapon — which
+  the type cannot answer, since a wand and a mace are both `Blunt`. That is precisely the hole
+  `MAtkFactor` was plugging: the old type check waved a mace-swinging caster through at full power.
+- The multiplier lives once, on the class rule (`Entity.NonMagicWeaponMagicMult`), instead of on every
+  weapon — so a fighter picking up a wand is no longer silently taxed for a caster's problem.
+
+**Verified by measurement, not by reasoning** — this area has a history of hand-derived diagnoses
+blaming the wrong system. `BalanceMatrix` output is byte-identical before and after across every case
+it covers (mage, tank/fighter, mob curve, TTK, levelling pace).
+
+Two deltas it does NOT cover, reasoned explicitly: a **caster holding a mace** now contributes the
+weapon's real M.Atk (132 at A-grade) rather than its P.Atk (281) before the penalty, so that build gets
+weaker — the intended direction. A **fighter's** M.Atk shifts slightly, since `(base + 281) x 0.6`
+becomes `base + 132`; fighters have no spells, so it is inert unless a hybrid leans on it.
+
+---
+
 ## 2026-07-24 — Tier-2 UI batch, part 1 (0.28.72)
 
 Seven of the thirteen cheap playtest-11 UI items. Client scripts compile-checked with a headless Unity

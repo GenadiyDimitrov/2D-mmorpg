@@ -678,6 +678,12 @@ public class Entity
     private static bool IsMageTrainedWeapon(WeaponType w) =>
         (w & (WeaponType.AnySword | WeaponType.AnyBlunt)) != 0;
 
+    /// <summary>How much of their magic a trained caster keeps while holding a NON-magic weapon (a mace
+    /// rather than a wand). Replaces the old per-item MAtkFactor 0.6: the number is the same order, but
+    /// it now lives on the CLASS rule instead of on every weapon, so a fighter picking up a wand is not
+    /// silently penalised for a caster's problem. Retune here, not in the item catalogue.</summary>
+    public const float NonMagicWeaponMagicMult = 0.6f;
+
     /// <summary>Buffed attack power for BASIC attacks (archetype-scaled). Basic attacks
     /// are physical, so they take the shared BuffAtk plus physical-only BuffPhysAtk.</summary>
     public float EffectiveBasicAttack => AtkDebuffed(ModifiedStatDual(BasicAttackPower, SkillEffect.BuffAtk, SkillEffect.BuffPhysAtk));
@@ -1195,12 +1201,15 @@ public class Entity
 
             int atkBonus = EnchantRules.BonusAt(def.AtkBonus, item.Enchant);
             AttackPower += atkBonus;
-            // A WEAPON has one power number and contributes it to BOTH channels; the channel
-            // factors below decide the split. Everything else (armor/jewels) keeps its own
-            // separate M.Atk bonus.
-            MagicAttack += def.Slot == EquipSlot.Weapon
+            // Every piece — weapons included — now contributes its OWN authored M.Atk. A weapon used to
+            // contribute its single power number to both channels and let the channel factors split it,
+            // which meant the CSV's second column never reached the game and the item card never showed
+            // an M.Atk line. Weapons that predate the migration have MAtkBonus 0, so they fall back to
+            // the old shared-number behaviour and nothing rebalances under them.
+            int mAtkBonus = EnchantRules.BonusAt(def.MAtkBonus, item.Enchant);
+            MagicAttack += def.Slot == EquipSlot.Weapon && mAtkBonus == 0
                 ? atkBonus
-                : EnchantRules.BonusAt(def.MAtkBonus, item.Enchant);
+                : mAtkBonus;
             Defence += EnchantRules.BonusAt(def.DefBonus, item.Enchant);
             MagicDefence += EnchantRules.BonusAt(def.MDefBonus, item.Enchant);  // jewels
             MaxHp += EnchantRules.BonusAt(def.HpBonus, item.Enchant);
@@ -1601,11 +1610,22 @@ public class Entity
             //  • Weapon Proficiency (all mages): an untrained weapon (not sword/blunt; wand/staff ARE blunt)
             //    halves cast speed.  • Divine Focus (clerics): no magic weapon scales healing down (Lv1 ×0.5,
             //    Lv2 ×0.75 for Warchanters, so buffers stay useful in fighter gear).
+            // CAST SPEED is gated on the trained TYPE (sword/blunt — a wand and a mace are both Blunt),
+            // and collapses on anything else: bow, dagger, bare hands.
             if (HasSkill(SkillCatalog.WeaponProficiency) && !IsMageTrainedWeapon(WeaponType))
             {
                 CastSpeedPenaltyMult = 0.5f;
                 MagicWeaponPenaltyMult = 0.05f;   // untrained weapon → magic collapses (damage + heals + shown M.Atk)
             }
+            // M.ATK is gated on the weapon being an actual MAGIC weapon, which the type cannot tell you:
+            // a wand and a mace are both Blunt, so the old type check waved a mace-swinging caster
+            // through at full magic power. That leak used to be plugged by MAtkFactor 0.6 on the ITEM —
+            // an invisible multiplier on the whole channel, with no in-game explanation for "why is my
+            // M.Atk 60%?". The weapon now just carries its authored M.Atk, and the CLASS's own passive
+            // states the rule instead: train with a magic weapon or lose most of your magic. Same
+            // outcome, but it is data a player can read rather than a constant they cannot.
+            else if (HasSkill(SkillCatalog.WeaponProficiency) && !HasMagicWeapon)
+                MagicWeaponPenaltyMult = NonMagicWeaponMagicMult;
             int divineFocus = SkillLevelOf(SkillCatalog.DivineFocus);
             if (divineFocus > 0 && !HasMagicWeapon)
                 HealOutputMult = divineFocus >= 2 ? 0.75f : 0.5f;

@@ -1164,14 +1164,25 @@ public static class ItemCatalog
             ("staff",   "Staff",      WeaponType.TwoHandedBlunt, true,  0,
                 new[] { (20,90,79,0),(40,135,111,0),(52,189,145,0),(61,226,167,0),(76,274,193,0) }),
         };
+        // BOTH CSV numbers are authored now (owner, 2026-07-24): P -> AtkBonus, M -> MAtkBonus. Until
+        // this, only ONE of the pair survived — a fighter weapon kept P and threw M away, a magic weapon
+        // kept M and threw P away — and the discarded channel was reconstructed by multiplying the WHOLE
+        // finished channel by OffChannelFactor. That hid the second number from the item card entirely
+        // (no weapon in the game set MAtkBonus, so no weapon ever showed an M.Atk line) and made the
+        // split an invisible property of code rather than of data.
+        //
+        // The factors are gone (1.0 both ways). What they were really enforcing — "a caster swinging a
+        // mace should not cast like a caster holding a wand" — is not a property of the WEAPON at all;
+        // it is a property of the CLASS's training, so it belongs in a passive that says so out loud.
+        // Entity's caster check now keys on IsMagicWeapon instead of the weapon TYPE, which is what
+        // actually distinguishes a wand from a mace (both are Blunt).
         foreach (var w in weapons)
             foreach (var (L, P, M, As) in w.Rows)
                 yield return new ItemDef($"{w.Key}_t{L}", $"{TierLetter(L)}-Grade {w.Noun}",
                     EquipSlot.Weapon, TierGrade(L), ItemRarity.Epic,
                     WeaponType: w.Type,
-                    AtkBonus: w.Magic ? M : P,
-                    PAtkFactor: w.Magic ? OffChannelFactor : 1f,
-                    MAtkFactor: w.Magic ? 1f : OffChannelFactor,
+                    AtkBonus: P,
+                    MAtkBonus: M,
                     WeaponRange: w.Range,
                     ItemLevel: L, IsMagicWeapon: w.Magic, AttackSpeedBase: As);
     }

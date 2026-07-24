@@ -366,15 +366,22 @@ public static partial class SkillCatalog
             },
             ArmorMasteryLevels: MageRobeLevels),
 
-        // ---- Weapon Proficiency — all mages auto-learn at level 1. Worded like Robe Mastery (the trained
-        //      weapon gives the bonus); the EFFECT is a ×0.5 cast-speed penalty on an untrained weapon.
-        //      Handled in Entity.RecomputeDerived by WeaponType (sword/blunt incl. wand/staff = trained). ----
+        // ---- Weapon Proficiency — all mages auto-learn at level 1. Two SEPARATE gates, because they ask
+        //      different questions (both in Entity.RecomputeDerived):
+        //        • CAST SPEED keys on the trained TYPE — sword/blunt, which includes wands and staves.
+        //          Bow / dual / bare hands => x0.5 cast speed and magic collapses to 5%.
+        //        • M.ATK keys on the weapon actually being a MAGIC weapon (IsMagicWeapon), which the type
+        //          cannot answer: a wand and a mace are both Blunt. A caster swinging a mace keeps
+        //          NonMagicWeaponMagicMult of their magic.
+        //      That second gate replaced MAtkFactor on the item — same effect, but stated in a passive the
+        //      player can read instead of an invisible per-item multiplier. ----
         new(WeaponProficiency, "Weapon Proficiency", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
-            Description: "Passive. Equipping a sword or blunt weapon (wands and staves count) lets you cast "
-                       + "spells efficiently. With a bow, dual blades, or bare hands your casting speed is "
-                       + "halved and your magic attack collapses to a fraction."),
+            Description: "Passive. A wand or staff is your trained weapon: full casting speed and full "
+                       + "magic attack. A sword or mace still lets you cast at full speed, but your magic "
+                       + "attack drops sharply — it is not a caster's weapon. With a bow, dual blades, or "
+                       + "bare hands your casting speed is halved and your magic attack collapses."),
 
         // ---- Divine Focus — clerics (Healer 2nd class) auto-learn Lv1 at 20; the Warchanter discipline
         //      upgrades to Lv2 at 40. EFFECT: with NO magic weapon equipped, healing OUTPUT is scaled down
