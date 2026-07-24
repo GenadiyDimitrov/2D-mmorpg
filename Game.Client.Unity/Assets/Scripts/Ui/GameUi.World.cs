@@ -95,7 +95,7 @@ namespace Game.Client
         private bool _bagFastDel;            // when on, each row shows a no-confirm Del button
         private Button _bagEquipToggle;      // expands the paper-doll column (worn gear) beside the list
         private bool _bagEquipOpen;
-        private const float BagWidthCollapsed = 460f, BagWidthExpanded = 792f, BagHeight = 500f;
+        private const float BagWidthCollapsed = 460f, BagWidthExpanded = 792f, BagHeight = 560f;
         /// <summary>Left inset of the bag's item list when the equip column is CLOSED.</summary>
         private const float BagListX = 16f;
         /// <summary>How far the list slides right when the equip column opens on its left — exactly the
@@ -673,7 +673,7 @@ namespace Game.Client
             // The paper-doll column (hidden until the Equip toggle) opens on the LEFT (owner), so it
             // appears where the window grows rather than pushing the list off toward the far edge. The
             // list slides right by exactly the column's width when it opens; see ToggleBagEquip.
-            BuildEquipColumn(inner, new Vector2(BagListX, -chrome - 8f));
+            BuildEquipColumn(inner, new Vector2(BagListX, -chrome - 74f));   // below the header row, aligned with the list (was -8, which put the Head slot over the tabs)
 
             _bagPanel.gameObject.SetActive(false);
         }

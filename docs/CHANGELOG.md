@@ -12,6 +12,38 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-25 — Overnight bug + polish batch (0.28.80)
+
+Autonomous session against the device-playtest findings (`playtest-12-results`). No schema changes, so
+existing characters survive. Large social/economy features (charisma, block, buy-back, chat tabs,
+partial-stack trade, client collision, wearable titles) are deliberately NOT here — they need a schema
+change and/or the owner's input, flagged for a session together.
+
+Fixed:
+- **Equip presets on the bar no longer vanish** — `SyncSkillBar` was wiping `preset:` tokens (item:/
+  action: were exempt, preset: was missed); it's now exempt too. SmokeTest guards it.
+- **Dungeon mobs spawn in the dungeon and aggro** — `WorldMap.Border` was the positive overworld only,
+  so `ClampToBorder` snapped every negative-quadrant (dungeon) spawn to (0,0); it now spans the full
+  world. This was "mobs spawn on one spot and don't fight back" in the crypt.
+- **Learn tab refreshes on level-up** — it keyed off `ActiveClass.Level`, which only the Subclasses push
+  set (login/swap), so it went stale after a level-up; the Progress push now keeps it in step.
+- **Basic attack is not auto by default** — the client seeded it into the auto set; now nothing is auto
+  unless explicitly marked.
+- **Admin characters excluded from all leaderboards** (an admin at level 999 would top them forever).
+- **Shop pricing** — shot runes 150k/1h and 280k/2h; equipment floored at 200g (jewels exempt).
+- **Low-level gear drops gated** — a level-8 mob no longer drops E-grade (level-20) gear; below mob
+  level 18 the loot is training/broken gear + mats.
+- **Rare healing potion removed from the vendor** (drops/rewards only).
+- **Party loot control** moved to a coloured button by the buffs toggle (random = blue), leader-only
+  drop-down.
+- **Bag equip paper-doll** moved below the header so the Head slot no longer overlaps the tabs.
+
+Measured, not changed (flagged for an owner decision): the "low-level one-shot" is the mage nuke, which
+one-shots trash at every level (the tuned level-20+ matrix does the same) — consistent nuker design, not
+a low-level bug. BalanceMatrix now prints levels 1-10 with real starter gear.
+
+---
+
 ## 2026-07-25 — Console freeze fix + speed-display fix (0.28.78)
 
 Two device-playtest fixes.

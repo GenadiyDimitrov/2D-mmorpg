@@ -57,7 +57,7 @@ namespace Game.Client
             // The mode name is coloured, so "random" reads blue, as asked.
             _partyLootButton = UiKit.TextButton(inner, "", () =>
             {
-                if (Boot.Party != null && Array.Exists(Boot.Party, m => m.IsLeader && m.Id == Boot.SelfId))
+                if (Boot.Party != null && System.Array.Exists(Boot.Party, m => m.IsLeader && m.Id == Boot.SelfId))
                 {
                     _lootMenuOpen = !_lootMenuOpen;
                     _partyStamp = -1;
@@ -134,7 +134,7 @@ namespace Game.Client
 
             // The loot control shows the current mode, coloured (random = blue). An arrow marks that the
             // LEADER can open the drop-down; a non-leader just sees the mode.
-            bool iLeadNow = Array.Exists(party, m => m.IsLeader && m.Id == Boot.SelfId);
+            bool iLeadNow = System.Array.Exists(party, m => m.IsLeader && m.Id == Boot.SelfId);
             UiKit.SetButtonText(_partyLootButton,
                 "<color=" + LootColour(Boot.PartyLoot) + ">" + LootName(Boot.PartyLoot) + "</color>"
                 + (iLeadNow ? (_lootMenuOpen ? " ^" : " v") : ""));
