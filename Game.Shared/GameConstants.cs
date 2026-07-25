@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.28.87";
+    public const string GameVersion = "0.28.88";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -258,6 +258,18 @@ public static class GameConstants
     /// <summary>Exp/sp multiplier from a character's charisma pool (1.0 … 1.5).</summary>
     public static float CharismaExpMultiplier(int pool) =>
         1f + Math.Clamp(pool, 0, CharismaPoolCap) / (float)(CharismaPerBonusPercent * 100);
+
+    // Moderation charisma penalties (per STARTED hour-band): a chatban costs 20, a jail 100, a kick 250,
+    // scaling by the duration tier (&lt;1h ×1, &lt;2h ×2, …). A ban zeroes both values. All drain BOTH the
+    // pool and the lifetime — a griefer can't top the ranking board and just eat the punishments.
+    public const int CharismaChatBanPenaltyPerHour = 20;
+    public const int CharismaJailPenaltyPerHour = 100;
+    public const int CharismaKickPenaltyPerHour = 250;
+
+    /// <summary>Charisma lost for a moderation action of <paramref name="minutes"/> minutes: the per-hour
+    /// base × the duration tier (minutes/60 + 1, so &lt;1h=×1, [1h,2h)=×2, …).</summary>
+    public static int CharismaModerationPenalty(int basePerHour, int minutes) =>
+        basePerHour * (Math.Max(0, minutes) / 60 + 1);
 
     /// <summary>Skill-bar slots — 5 rows of 12. The bar is ONE FLAT collection of ids; "rows" are purely a
     /// client visualization (it slices this list into chunks of <see cref="SkillBarColumns"/>). Shared,

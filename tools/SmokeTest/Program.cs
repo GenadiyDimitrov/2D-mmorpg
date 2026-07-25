@@ -225,10 +225,14 @@ a.SystemChat.Clear();
 await a.Hub.SendAsync("Like", name);   // can't like yourself
 await a.Settle();
 Check("you can't like yourself", a.SystemChat.Any(s => s.Contains("can't like yourself")));
+await friend.Hub.SendAsync("Like", name);   // Test2 likes the smoke char, so a later jail has charisma to drain
+await a.Settle();
 var chBoard = await a.Hub.InvokeAsync<LeaderboardDto>("RequestLeaderboard", "charisma");
 Check("the liked player reached the charisma board",
       chBoard.Entries.Any(e => e.Name == "Test2" && e.Value >= 1),
       string.Join(",", chBoard.Entries.Select(e => $"{e.Name}:{e.Value}")));
+Check("the smoke char is on the charisma board after being liked",
+      chBoard.Entries.Any(e => e.Name == name && e.Value >= 1));
 
 // -------------------------------------------------------------------------------------------
 // 4b. BLOCK / IGNORE. A blocked player's whisper (and world/local chat) is filtered out for you; the
@@ -512,6 +516,13 @@ await gm.Hub.SendAsync("AdminCommand", "jail", $"{name} 60");
 await b.Settle();
 bool atJail = Math.Abs(b.MyX - GameConstants.JailX) < 50 && Math.Abs(b.MyY - GameConstants.JailY) < 50;
 Check("jailing a player teleports them to jail (live)", atJail, $"at ({b.MyX:0},{b.MyY:0})");
+
+// The 60-min jail also DRAINED the player's charisma (−200) below the +1 they'd been liked for → off the board.
+await b.Settle();
+var boardAfterJail = await b.Hub.InvokeAsync<LeaderboardDto>("RequestLeaderboard", "charisma");
+Check("a jail drained the player's charisma (dropped off the board)",
+      boardAfterJail.Entries.All(e => e.Name != name),
+      string.Join(",", boardAfterJail.Entries.Select(e => e.Name)));
 
 // Jailed → may pace around inside the CELL, but can never leave it (owner, 2026-07-20: serving a
 // sentence should feel like a cell, not paralysis). Walk hard at the wall and confirm we end up

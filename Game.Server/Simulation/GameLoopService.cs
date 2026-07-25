@@ -121,6 +121,7 @@ public class GameLoopService : BackgroundService
                 case AdminCmd c: HandleAdmin(c); break;
                 case ForceRemoveCmd c: HandleForceRemove(c); break;
                 case JailNowCmd c: HandleJailNow(c); break;
+                case CharismaAdjustCmd c: HandleCharismaAdjust(c); break;
                 case ChatBanNowCmd c: HandleChatBanNow(c); break;
                 case AdminGiveItemCmd c: HandleAdminGiveItem(c); break;
                 case AdminRemoveItemCmd c: HandleAdminRemoveItem(c); break;
@@ -3610,11 +3611,13 @@ public class GameLoopService : BackgroundService
                 // given (default 10). Works offline too (persists; EnterWorld enforces it).
                 var (name, minutes) = ParseNameMinutes(arg, 10);
                 var until = DateTime.UtcNow.AddMinutes(minutes);
+                int kickPen = GameConstants.CharismaModerationPenalty(GameConstants.CharismaKickPenaltyPerHour, minutes);
                 ModerateAsync(admin, name, $"kicked for {minutes}m", async canonical =>
                 {
                     await _db.SetKickAsync(canonical, until);
                     // Remove them on the TICK thread — this is world state, and we're on a worker here.
                     _world.Commands.Enqueue(new ForceRemoveCmd(canonical, $"Kicked by staff ({minutes}m)."));
+                    _world.Commands.Enqueue(new CharismaAdjustCmd(canonical, -kickPen, -kickPen));
                 });
                 break;
             }
@@ -3629,6 +3632,7 @@ public class GameLoopService : BackgroundService
                 {
                     await _db.BanAccountByCharacterNameAsync(canonical, until);
                     _world.Commands.Enqueue(new ForceRemoveCmd(canonical, $"Account banned ({minutes}m)."));
+                    _world.Commands.Enqueue(new CharismaAdjustCmd(canonical, 0, 0, Zero: true));   // a ban zeroes reputation
                 });
                 break;
             }
@@ -3650,10 +3654,12 @@ public class GameLoopService : BackgroundService
                 // they're online, jail them right now.
                 var (name, minutes) = ParseNameMinutes(arg, 30);
                 var until = DateTime.UtcNow.AddMinutes(minutes);
+                int jailPen = GameConstants.CharismaModerationPenalty(GameConstants.CharismaJailPenaltyPerHour, minutes);
                 ModerateAsync(admin, name, $"jailed for {minutes}m", async canonical =>
                 {
                     await _db.SetJailAsync(canonical, until);
                     _world.Commands.Enqueue(new JailNowCmd(canonical, until, minutes));
+                    _world.Commands.Enqueue(new CharismaAdjustCmd(canonical, -jailPen, -jailPen));
                 });
                 break;
             }
@@ -3676,10 +3682,12 @@ public class GameLoopService : BackgroundService
                 // Play on, but silent. The light-touch punishment between a warning and a jailing.
                 var (name, minutes) = ParseNameMinutes(arg, 30);
                 var until = DateTime.UtcNow.AddMinutes(minutes);
+                int cbPen = GameConstants.CharismaModerationPenalty(GameConstants.CharismaChatBanPenaltyPerHour, minutes);
                 ModerateAsync(admin, name, $"chat-banned for {minutes}m", async canonical =>
                 {
                     await _db.SetChatBanAsync(canonical, until);
                     _world.Commands.Enqueue(new ChatBanNowCmd(canonical, until, minutes));
+                    _world.Commands.Enqueue(new CharismaAdjustCmd(canonical, -cbPen, -cbPen));
                 });
                 break;
             }
@@ -4128,6 +4136,24 @@ public class GameLoopService : BackgroundService
     {
         target.Charisma = Math.Clamp(target.Charisma + poolDelta, 0, GameConstants.CharismaPoolCap);
         target.CharismaLifetime = Math.Max(0, target.CharismaLifetime + lifetimeDelta);
+    }
+
+    /// <summary>Apply a charisma change to a character by name on the tick thread (online → live entity;
+    /// offline → DB). Enqueued by the worker-thread moderation callbacks.</summary>
+    private void HandleCharismaAdjust(CharismaAdjustCmd cmd)
+    {
+        if (FindOnlinePlayer(cmd.Name) is Entity online)
+        {
+            if (cmd.Zero) { online.Charisma = 0; online.CharismaLifetime = 0; }
+            else GrantCharisma(online, cmd.PoolDelta, cmd.LifetimeDelta);
+            SaveEntity(online);
+            return;
+        }
+        _ = Task.Run(async () =>
+        {
+            if (cmd.Zero) await _db.ZeroCharismaAsync(cmd.Name);
+            else await _db.AddCharismaAsync(cmd.Name, cmd.PoolDelta, cmd.LifetimeDelta);
+        });
     }
 
     /// <summary>Refill the daily like budget if it's a new UTC day.</summary>

@@ -1068,6 +1068,19 @@ public class PersistenceService
         return c.CharismaLifetime;
     }
 
+    /// <summary>Wipe BOTH charisma values of a possibly-offline character (a ban zeroes reputation).</summary>
+    public async Task<bool> ZeroCharismaAsync(string characterName)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var lower = characterName.ToLower();
+        var c = await db.Characters.FirstOrDefaultAsync(ch => ch.Name.ToLower() == lower);
+        if (c is null) return false;
+        c.Charisma = 0;
+        c.CharismaLifetime = 0;
+        await db.SaveChangesAsync();
+        return true;
+    }
+
     /// <summary>CHAT-BAN a character until <paramref name="until"/> (null = lift).</summary>
     public async Task<bool> SetChatBanAsync(string characterName, DateTime? until)
     {

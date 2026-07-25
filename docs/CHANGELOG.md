@@ -12,6 +12,14 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-25 — Charisma: moderation drains (0.28.88)
+
+Completes charisma. The moderation actions now drain BOTH values (per started hour-band): **chatban −20/h,
+jail −100/h, kick −250/h; ban → 0**. Because the admin handlers run on WORKER threads, each enqueues a
+tick-thread `CharismaAdjustCmd(name, poolΔ, lifetimeΔ, zero?)` which applies to the live entity if online,
+else via the DB (`AddCharismaAsync` / `ZeroCharismaAsync`). No schema change (reuses the charisma columns).
+SmokeTest: a liked player is on the board, then a 60-min jail (−200) drops them off it.
+
 ## 2026-07-25 — Charisma / reputation — core (0.28.87)
 
 Reputation with **two persisted values** (neither below 0): a **pool 0–1000** (drives the reward — every
