@@ -205,6 +205,13 @@ public record RerollAttributesCmd(string ConnectionId, Guid ScrollInstanceId,
 // stack) / single-unit. All still wins for a non-stackable.
 public record RemoveItemCmd(string ConnectionId, Guid InstanceId, bool All = false, int Quantity = 0) : IGameCommand;
 
+/// <summary>Open the private warehouse (fetch its contents). Gated to safe zones.</summary>
+public record OpenWarehouseCmd(string ConnectionId) : IGameCommand;
+/// <summary>Move a whole item instance bag → warehouse.</summary>
+public record WarehouseDepositCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
+/// <summary>Move a whole item instance warehouse → bag.</summary>
+public record WarehouseWithdrawCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
+
 /// <summary>DEBUG-only: grant an item by def id.</summary>
 public record DebugGiveCmd(string ConnectionId, string DefId) : IGameCommand;
 

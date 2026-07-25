@@ -194,6 +194,10 @@ public class ItemRecord
     /// <summary>Wall-clock expiry for a timed item (shot rune); null = never expires. Persisted so a rune
     /// keeps counting down across relogs/restarts and is purged on load if the time has passed.</summary>
     public DateTime? ExpiresAtUtc { get; set; }
+
+    /// <summary>True = this item lives in the character's private WAREHOUSE, not the bag. Routes the item
+    /// to the right list on load. (Schema change — delete game.db to recreate.)</summary>
+    public bool InWarehouse { get; set; }
 }
 
 

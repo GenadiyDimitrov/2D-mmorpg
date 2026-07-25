@@ -12,6 +12,22 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-25 — Private warehouse (0.28.83, server-side)
+
+Built the per-character warehouse the shot-rune system already pointed at ("move a rune to the warehouse
+to switch it off" — a rune's buff only applies while it's in the bag).
+
+- **Model**: `Entity.Warehouse` — a second item list, separate from the bag so every bag iteration
+  (equip, RecomputeDerived, drops, trade) is untouched. Base **50** slots (`GameConstants.WarehouseSize`).
+- **Persistence** (SCHEMA CHANGE — delete game.db): items carry an `InWarehouse` flag; snapshot writes both
+  lists, load routes each item to the bag or bank. Verified by SmokeTest (deposit → relog → item is in the
+  BANK, not the bag).
+- **Commands/DTO**: `OpenWarehouse` / `WarehouseDeposit` / `WarehouseWithdraw` + `WarehouseUpdate`. Deposit
+  auto-unequips and `ReconcileRuneBuffs` drops a deposited rune's buff (withdraw re-applies it); a banked
+  rune still expires. Sent on login so the client has it without a town trip. Access gated to **safe zones**.
+- **NOT YET**: the client warehouse window (Unity + WPF) — server + protocol only; UI is the follow-up for
+  the next APK. Account warehouse + slot-expansion tickets remain deferred.
+
 ## 2026-07-25 — Gear ladder: low-grade fills, named sets (0.28.82)
 
 Filled the low-level gear holes and gave every tiered piece a proper name.

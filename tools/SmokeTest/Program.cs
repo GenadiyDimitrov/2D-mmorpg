@@ -81,6 +81,28 @@ Check("server pushed the subclass list", a.Subclasses is not null);
 Check("character starts with exactly one class", a.Subclasses?.Classes.Length == 1,
       $"got {a.Subclasses?.Classes.Length}");
 Check("server pushed a skill bar", a.Bar is not null);
+Check("server pushed the warehouse on login", a.Ware is not null);
+
+// -------------------------------------------------------------------------------------------
+// 1c. WAREHOUSE (private bank). Deposit an item in the spawn town, then let the RELOG below prove it
+//     came back from the DB in the BANK (not the bag). Done here because the bank is town-gated and the
+//     character walks off into the field in later phases.
+// -------------------------------------------------------------------------------------------
+Guid bankedId = Guid.Empty;
+await a.Hub.SendAsync("DebugGive", ItemCatalog.HealingPotion, 1);
+await a.Settle();
+var toBank = a.Inv?.Items.FirstOrDefault(i => i.DefId == ItemCatalog.HealingPotion);
+Check("got a potion to deposit", toBank is not null);
+if (toBank is not null)
+{
+    bankedId = toBank.InstanceId;
+    await a.Hub.SendAsync("WarehouseDeposit", bankedId);
+    await a.Settle();
+    Check("deposit moved the potion INTO the warehouse",
+          a.Ware?.Items.Any(i => i.InstanceId == bankedId) == true);
+    Check("deposit removed the potion from the BAG",
+          a.Inv?.Items.All(i => i.InstanceId != bankedId) == true);
+}
 
 // -------------------------------------------------------------------------------------------
 // 1b. DELTA SNAPSHOTS (the live world push). The full state is no longer re-sent every tick — an
@@ -355,6 +377,12 @@ await b.Settle();
 
 Check("both classes survived the relog", b.Subclasses?.Classes.Length == 2,
       $"got {b.Subclasses?.Classes.Length}");
+// Assert by DefId, not InstanceId: a never-saved item is assigned a fresh persistent Guid on its first
+// save, so its InstanceId legitimately changes across the relog. The character has exactly one potion.
+Check("the warehoused potion survived the relog IN THE BANK",
+      bankedId != Guid.Empty && b.Ware?.Items.Any(i => i.DefId == ItemCatalog.HealingPotion) == true);
+Check("the warehoused potion did NOT leak back into the bag on relog",
+      b.Inv is not null && b.Inv.Items.All(i => i.DefId != ItemCatalog.HealingPotion));
 Check("MAIN class's bar survived the relog",
       b.Bar is not null && b.Bar.Slots.SequenceEqual(mainBar));
 Check("the ITEM slot survived the relog (SyncSkillBar kept the item: token, not wiped as a skill)",
@@ -498,6 +526,8 @@ sealed class Session : IAsyncDisposable
     public HubConnection Hub { get; private set; } = null!;
     public SkillBarDto? Bar;
     public SubclassListDto? Subclasses;
+    public InventoryUpdate? Inv;
+    public WarehouseUpdate? Ware;
 
     /// <summary>The last "Learned" push. The test needs it to lay the bar out ITSELF now that the
     /// server no longer auto-places skills.</summary>
@@ -528,6 +558,8 @@ sealed class Session : IAsyncDisposable
     {
         Hub = new HubConnectionBuilder().WithUrl(url).Build();
         Hub.On<SkillBarDto>("SkillBar", b => Bar = b);
+        Hub.On<InventoryUpdate>("Inventory", i => Inv = i);
+        Hub.On<WarehouseUpdate>("Warehouse", w => Ware = w);
         Hub.On<LearnedSkills>("Learned", l => Learned = l);
         Hub.On<SubclassListDto>("Subclasses", s => Subclasses = s);
         Hub.On<SnapshotDelta>("SnapshotDelta", d =>

@@ -114,6 +114,10 @@ public record InventoryItemDto(Guid InstanceId, string DefId, bool Equipped, int
 /// <summary>Server -> owning client: full inventory sync (sent on change).</summary>
 public record InventoryUpdate(InventoryItemDto[] Items);
 
+/// <summary>The character's private warehouse contents (same shape as the bag). Sent when the warehouse
+/// window is opened and after every deposit/withdraw.</summary>
+public record WarehouseUpdate(InventoryItemDto[] Items);
+
 /// <summary>Server -> client: someone wants to trade with you.</summary>
 public record TradeRequestNotice(Guid FromId, string FromName);
 

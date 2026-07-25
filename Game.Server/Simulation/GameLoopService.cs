@@ -84,6 +84,9 @@ public class GameLoopService : BackgroundService
             CraftCmd c => c.ConnectionId,
             BuyItemCmd c => c.ConnectionId,
             SellItemCmd c => c.ConnectionId,
+            OpenWarehouseCmd c => c.ConnectionId,
+            WarehouseDepositCmd c => c.ConnectionId,
+            WarehouseWithdrawCmd c => c.ConnectionId,
             TeleportCmd c => c.ConnectionId,
             TalkCmd c => c.ConnectionId,
             TradeRequestCmd c => c.ConnectionId,
@@ -149,6 +152,9 @@ public class GameLoopService : BackgroundService
                 case EnchantCmd c: HandleEnchant(c); break;
                 case RerollAttributesCmd c: HandleRerollAttributes(c); break;
                 case RemoveItemCmd c: HandleRemoveItem(c); break;
+                case OpenWarehouseCmd c: HandleOpenWarehouse(c); break;
+                case WarehouseDepositCmd c: HandleWarehouseDeposit(c); break;
+                case WarehouseWithdrawCmd c: HandleWarehouseWithdraw(c); break;
                 case DebugGiveCmd c: HandleDebugGive(c); break;
                 case DebugCancelAttrCmd c: HandleDebugCancelAttr(c); break;
                 case CraftCmd c: HandleCraft(c); break;
@@ -237,6 +243,7 @@ public class GameLoopService : BackgroundService
 
         AutoLearnCoreSkills(entity);
         SendInventory(entity);
+        SendWarehouse(entity);   // the bank travels with login so the client can show it without a town trip
         SendStats(entity);
         SendLearned(entity);   // sends the skill BAR with it, in the right order — see SendLearned
         SendSubclasses(entity);
@@ -1607,6 +1614,82 @@ public class GameLoopService : BackgroundService
         SendInventory(player);
         if (wasEquipped)
             SendStats(player);
+    }
+
+    private void SendWarehouse(Entity player) =>
+        SendTo(player, "Warehouse", new WarehouseUpdate(
+            player.Warehouse.Select(i => i.ToDto()).ToArray()));
+
+    /// <summary>The private warehouse is reachable only in a town (safe zone), like L2's warehouse keeper —
+    /// so you can't stash mid-fight. Sends the reason and returns false when out of town.</summary>
+    private bool WarehouseReachable(Entity player)
+    {
+        if (GameConstants.InSafeZone(player.X, player.Y)) return true;
+        SendSystemToEntity(player, "You can only reach your warehouse in a town.");
+        return false;
+    }
+
+    private void HandleOpenWarehouse(OpenWarehouseCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (!WarehouseReachable(player)) return;
+        SendWarehouse(player);
+    }
+
+    private void HandleWarehouseDeposit(WarehouseDepositCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (!WarehouseReachable(player)) return;
+
+        var item = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
+        if (item is null) return;
+
+        // Can't stash an item that's in a live trade offer.
+        if (_world.ActiveTrades.TryGetValue(player.Id, out var trade) &&
+            trade.OfferOf(player).Contains(item.InstanceId))
+            return;
+
+        if (player.Warehouse.Count >= GameConstants.WarehouseSize)
+        {
+            SendSystemToEntity(player, "Warehouse full.");
+            return;
+        }
+
+        item.Equipped = false;                 // nothing is worn from the bank
+        player.Inventory.Remove(item);
+        player.Warehouse.Add(item);
+
+        ReconcileRuneBuffs(player);            // a deposited rune stops applying its buff (no longer in the bag)
+        player.RecomputeDerived();             // reflect the un-equip
+        SendInventory(player);
+        SendWarehouse(player);
+        SendStats(player);
+        SaveEntity(player);
+    }
+
+    private void HandleWarehouseWithdraw(WarehouseWithdrawCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (!WarehouseReachable(player)) return;
+
+        var item = player.Warehouse.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
+        if (item is null) return;
+
+        if (player.Inventory.Count(i => !i.Equipped) >= GameConstants.InventorySize)
+        {
+            SendSystemToEntity(player, "Inventory full.");
+            return;
+        }
+
+        player.Warehouse.Remove(item);
+        player.Inventory.Add(item);
+
+        ReconcileRuneBuffs(player);            // a withdrawn rune re-applies its buff (back in the bag)
+        player.RecomputeDerived();
+        SendInventory(player);
+        SendWarehouse(player);
+        SendStats(player);
+        SaveEntity(player);
     }
 
 #pragma warning disable CS1998
@@ -4581,6 +4664,19 @@ public class GameLoopService : BackgroundService
                 statsChanged = true;
             }
 
+        // Warehoused runes don't apply a buff, but they STILL expire (bank = space, not a time-pause).
+        bool whChanged = false;
+        for (int i = p.Warehouse.Count - 1; i >= 0; i--)
+        {
+            var it = p.Warehouse[i];
+            if (it.ExpiresAtUtc is DateTime wexp && wexp <= now && ItemCatalog.Get(it.DefId) is { IsRune: true } wd)
+            {
+                p.Warehouse.RemoveAt(i);
+                whChanged = true;
+                SendSystemToEntity(p, $"{wd.Name} in your warehouse has expired.");
+            }
+        }
+
         if (statsChanged)
         {
             p.RecomputeDerived();
@@ -4588,6 +4684,7 @@ public class GameLoopService : BackgroundService
             SendStats(p);
         }
         if (invChanged) SendInventory(p);
+        if (whChanged) SendWarehouse(p);
     }
 
     private void TickPotion(Entity entity)

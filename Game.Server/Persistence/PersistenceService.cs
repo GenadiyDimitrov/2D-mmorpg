@@ -683,10 +683,11 @@ public class PersistenceService
             if (item.ExpiresAtUtc is DateTime exp && exp <= DateTime.UtcNow)
                 continue;
 
-            entity.Inventory.Add(new InventoryItem
+            // Warehoused items load into the bank list, never equipped; everything else into the bag.
+            (item.InWarehouse ? entity.Warehouse : entity.Inventory).Add(new InventoryItem
             {
                 DefId = item.DefId,
-                Equipped = item.Equipped,
+                Equipped = item.Equipped && !item.InWarehouse,
                 Enchant = item.Enchant,
                 Quantity = item.Quantity,
                 Attributes = item.Attributes.ToList(),
@@ -764,11 +765,15 @@ public class PersistenceService
         public static CharacterSnapshot? From(Entity e)
         {
             if (e.PersistentId is not int id) return null;
-            var items = new List<ItemSnapshot>(e.Inventory.Count);
+            var items = new List<ItemSnapshot>(e.Inventory.Count + e.Warehouse.Count);
             foreach (var i in e.Inventory)
                 items.Add(new ItemSnapshot(
                     i.PersistentInstanceId ?? Guid.NewGuid(), i.DefId, i.Equipped,
                     i.Enchant, i.Quantity, new List<ItemAttribute>(i.Attributes), i.ExpiresAtUtc));
+            foreach (var i in e.Warehouse)
+                items.Add(new ItemSnapshot(
+                    i.PersistentInstanceId ?? Guid.NewGuid(), i.DefId, false,   // never equipped in the bank
+                    i.Enchant, i.Quantity, new List<ItemAttribute>(i.Attributes), i.ExpiresAtUtc, InWarehouse: true));
 
             var subs = e.Subclasses.Select(SubclassSnapshot.From).ToList();
 
@@ -796,7 +801,7 @@ public class PersistenceService
 
     public sealed record ItemSnapshot(
         Guid InstanceId, string DefId, bool Equipped, int Enchant, int Quantity,
-        List<ItemAttribute> Attributes, DateTime? ExpiresAtUtc = null);
+        List<ItemAttribute> Attributes, DateTime? ExpiresAtUtc = null, bool InWarehouse = false);
 
     /// <summary>Persist one snapshot back to its character row (logout / event save).
     /// Replaces the item set wholesale — simplest correct approach for now.</summary>
@@ -914,6 +919,7 @@ public class PersistenceService
             Quantity = i.Quantity,
             Attributes = i.Attributes.ToList(),
             ExpiresAtUtc = i.ExpiresAtUtc,
+            InWarehouse = i.InWarehouse,
         }).ToList();
     }
 

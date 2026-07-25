@@ -554,6 +554,12 @@ public class Entity
 
     public List<InventoryItem> Inventory { get; } = new();
 
+    /// <summary>The private WAREHOUSE — a second, separate item list (not the bag). Items here are OUT of
+    /// play: not equippable, not sold, and a rune stored here does NOT apply its buff (it still expires).
+    /// Kept as its own list so every bag iteration (equip, RecomputeDerived, drops, trade) stays unchanged.
+    /// Persisted alongside the bag via the InWarehouse flag on the item record.</summary>
+    public List<InventoryItem> Warehouse { get; } = new();
+
     // ----- Buffs / debuffs ------------------------------------------------------------
 
     public List<BuffInstance> Buffs { get; } = new();

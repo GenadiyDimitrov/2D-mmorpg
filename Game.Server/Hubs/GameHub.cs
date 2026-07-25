@@ -216,6 +216,24 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task OpenWarehouse()
+    {
+        _world.Commands.Enqueue(new OpenWarehouseCmd(Context.ConnectionId));
+        return Task.CompletedTask;
+    }
+
+    public Task WarehouseDeposit(Guid instanceId)
+    {
+        _world.Commands.Enqueue(new WarehouseDepositCmd(Context.ConnectionId, instanceId));
+        return Task.CompletedTask;
+    }
+
+    public Task WarehouseWithdraw(Guid instanceId)
+    {
+        _world.Commands.Enqueue(new WarehouseWithdrawCmd(Context.ConnectionId, instanceId));
+        return Task.CompletedTask;
+    }
+
     public Task Teleport(Guid npcEntityId, string zoneId)
     {
         _world.Commands.Enqueue(new TeleportCmd(Context.ConnectionId, npcEntityId, zoneId));
