@@ -219,6 +219,18 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Friend: " + ex.Message); }
         }
 
+        public async void BlockCommand(string action, string name)
+        {
+            try { await _net.BlockCommandAsync(action, name); }
+            catch (Exception ex) { ClientLog.Warn("Block: " + ex.Message); }
+        }
+
+        public async void Like(string name)
+        {
+            try { await _net.LikeAsync(name); }
+            catch (Exception ex) { ClientLog.Warn("Like: " + ex.Message); }
+        }
+
         /// <summary>The NAME of the currently targeted player, or null when the target is missing, is a
         /// mob, or is yourself. Used by the name-only actions, which take a target instead of typing.</summary>
         public string TargetPlayerName()
@@ -1105,6 +1117,18 @@ namespace Game.Client
                         break;
                     case GameConstants.ActionFriendList:
                         FriendCommand("list", "");
+                        break;
+                    case GameConstants.ActionLike:
+                        if (TargetPlayerName() is string likeName) Like(likeName);
+                        else ClientLog.Warn("Target a player to like.");
+                        break;
+                    case GameConstants.ActionBlock:
+                        if (TargetPlayerName() is string blkName) BlockCommand("block", blkName);
+                        else ClientLog.Warn("Target a player to block.");
+                        break;
+                    case GameConstants.ActionUnblock:
+                        if (TargetPlayerName() is string ublkName) BlockCommand("unblock", ublkName);
+                        else ClientLog.Warn("Target a player to unblock.");
                         break;
                     case GameConstants.ActionPartyLeave:
                         PartyLeave();

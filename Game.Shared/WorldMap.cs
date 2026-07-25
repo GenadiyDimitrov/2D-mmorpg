@@ -284,6 +284,16 @@ public static class WorldMap
         //     at the south. Buff up, walk 800 north to the dummies, teleport out when done. ---
         new("gatekeeper_training", "Gatekeeper Vess",    24000, 4800, NpcRole.Teleporter),
         new("buffer_training",     "Spirit Helper Ilva", 24000, 5200, NpcRole.Buffer),
+
+        // --- Warehouse Keepers: one per MAIN town (offset from the gatekeeper so labels don't overlap).
+        //     Talking opens the private warehouse (deposit/withdraw). ---
+        new("warehouse_brackenford", "Keeper Bram",   25500, 21500, NpcRole.Warehouse),
+        new("warehouse_stonewatch",  "Keeper Osric",  25500, 10000, NpcRole.Warehouse),
+        new("warehouse_emberfall",   "Keeper Fenn",   37500, 15000, NpcRole.Warehouse),
+        new("warehouse_greymarsh",   "Keeper Wyn",    37500, 33000, NpcRole.Warehouse),
+        new("warehouse_ironreach",   "Keeper Dagr",   25500, 38000, NpcRole.Warehouse),
+        new("warehouse_duskvale",    "Keeper Lys",    13500, 33000, NpcRole.Warehouse),
+        new("warehouse_frostmere",   "Keeper Hald",   13500, 15000, NpcRole.Warehouse),
     };
 
     public static readonly RoadPath[] Roads =
@@ -432,7 +442,7 @@ public record RoadPath(float Width, MapPoint[] Points)
 
 }
 
-public enum NpcRole { QuestGiver = 0, ClassChange = 1, Vendor = 2, Teleporter = 3, Buffer = 4, SkillReset = 5 }
+public enum NpcRole { QuestGiver = 0, ClassChange = 1, Vendor = 2, Teleporter = 3, Buffer = 4, SkillReset = 5, Warehouse = 6 }
 
 /// <summary>A placed NPC. Id is referenced by quests + class-change requirements.</summary>
 public record NpcDef(string Id, string Name, float X, float Y, NpcRole Role);

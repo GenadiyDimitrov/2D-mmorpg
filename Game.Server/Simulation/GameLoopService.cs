@@ -8637,7 +8637,8 @@ var effect = def.Effect;
 
         SendTo(player, "Dialog", new NpcDialog(
             npc.Name, npc.NpcRole.ToString(),
-            offered, turnable.ToArray(), inProgress.ToArray(), changes.ToArray(), shop, teleport, reset));
+            offered, turnable.ToArray(), inProgress.ToArray(), changes.ToArray(), shop, teleport, reset,
+            Warehouse: npc.NpcRole == NpcRole.Warehouse));
 
         // Talking can itself advance a TalkTo step.
         AdvanceTalkStep(player, npcId);

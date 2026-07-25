@@ -12,6 +12,16 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-25 — Warehouse NPC + block/like/unblock actions (0.28.90)
+
+- **Warehouse is its own NPC** (owner): new `NpcRole.Warehouse` + a **Keeper in each of the 7 main towns**;
+  its dialog opens the warehouse (`NpcDialog.Warehouse` flag). Moved the open trigger off the vendor dialog
+  (the 0.28.89 stopgap) onto the keeper.
+- **Block / Like / Unblock are ACTIONS** (owner: "/commands need an action button"): 3 new `ActionCatalog`
+  entries (PlayerTarget) + client dispatch — the target supplies the name, like the friend actions.
+- ⚠ The client pieces (dialog button, action dispatch) are Unity — NOT compile-verified until the next APK
+  build. The server/shared side (NPC role + placement, NpcDialog flag, action catalog) is dotnet-verified.
+
 ## 2026-07-25 — Warehouse UI (Unity) (0.28.89)
 
 The client warehouse window (`GameUi.Warehouse.cs`) — Deposit / Withdraw tabs, tap a row to move the whole

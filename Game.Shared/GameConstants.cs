@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.28.89";
+    public const string GameVersion = "0.28.90";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -325,6 +325,9 @@ public static class GameConstants
     public const string ActionPartyLeave    = "party_leave";
     public const string ActionPartyKick     = "party_kick";
     public const string ActionPartyLeader   = "party_leader";
+    public const string ActionLike          = "like_target";
+    public const string ActionBlock         = "block_target";
+    public const string ActionUnblock       = "unblock_target";
 
     // A new character starts with a COMPLETELY EMPTY bar (owner, 2026-07-20). Nothing is placed for
     // you — not skills, not even the actions. The player builds their own bar from the skills window's

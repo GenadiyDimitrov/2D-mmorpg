@@ -480,7 +480,8 @@ public record NpcDialog(
     ShopInfo? Shop = null,       // vendor wares (null for non-vendors)
     TeleportInfo? Teleport = null, // gatekeeper destinations (null for non-gatekeepers)
     SkillResetInfo? SkillReset = null, // un-learnable skills (null for non-reset NPCs)
-    BufferInfo? Buffer = null); // buffer options (null for non-buffers)
+    BufferInfo? Buffer = null, // buffer options (null for non-buffers)
+    bool Warehouse = false); // true for a Warehouse Keeper — the client shows an "Open Warehouse" button
 
 /// <summary>Server -> client: the skills a reset NPC can un-learn — the permanent, mutually-
 /// exclusive picks (the level-40 stat swaps). Removing is FREE, but the gold you spent is NOT

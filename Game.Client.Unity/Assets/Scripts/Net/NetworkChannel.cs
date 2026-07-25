@@ -218,6 +218,12 @@ namespace Game.Client
         public Task FriendCommandAsync(string action, string name) =>
             _connection.SendAsync("FriendCommand", action, name);
 
+        public Task BlockCommandAsync(string action, string name) =>
+            _connection.SendAsync("BlockCommand", action, name);
+
+        public Task LikeAsync(string name) =>
+            _connection.SendAsync("Like", name);
+
         public Task RespawnAsync() =>
             _connection.SendAsync("Respawn");
 

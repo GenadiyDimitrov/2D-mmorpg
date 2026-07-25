@@ -95,6 +95,17 @@ public static class ActionCatalog
         new(GameConstants.ActionPartyLeader, "Pass Leadership", "👑",
             "Make the targeted party member the leader. Leader only, and it cannot be undone by you.",
             ActionNeeds.PlayerTarget),
+
+        new(GameConstants.ActionLike, "Like", "👍",
+            "Give the targeted player +1 charisma from your daily budget (20/day). Their reputation "
+            + "grants an exp/sp bonus and ranks on the charisma board.", ActionNeeds.PlayerTarget),
+
+        new(GameConstants.ActionBlock, "Block", "🚫",
+            "Ignore the targeted player — you stop seeing their chat (whisper / world / local). "
+            + "They are not told.", ActionNeeds.PlayerTarget),
+
+        new(GameConstants.ActionUnblock, "Unblock", "🔊",
+            "Stop ignoring the targeted player.", ActionNeeds.PlayerTarget),
     };
 
     private static readonly Dictionary<string, ActionDef> ById =

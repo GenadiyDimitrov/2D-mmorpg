@@ -125,7 +125,14 @@ namespace Game.Client
                           () => OpenVendor(false), UiKit.Text);
                 DialogRow("Sell — items from your bag", "Sell",
                           () => OpenVendor(true), UiKit.Text);
-                DialogRow("Warehouse — deposit / withdraw (town)", "Bank",
+            }
+
+            // ----- warehouse keeper ---------------------------------------------------------------
+            if (d.Warehouse)
+            {
+                anything = true;
+                Header("Warehouse");
+                DialogRow("Open your warehouse — deposit / withdraw", "Open",
                           () => { Boot.OpenWarehouse(); OpenWarehouseWindow(); }, UiKit.Text);
             }
 
