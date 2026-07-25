@@ -90,6 +90,18 @@ public class BuffInstance
 }
 
 /// <summary>One item instance in a player's inventory.</summary>
+/// <summary>A recently-sold item held for buy-back — enough to restore it exactly (enchant + rolled
+/// attributes) and to charge the same price it was sold for.</summary>
+public class BuyBackEntry
+{
+    public required string DefId { get; init; }
+    public int Quantity { get; init; } = 1;
+    public int Enchant { get; init; }
+    public List<Game.Shared.ItemAttribute> Attributes { get; init; } = new();
+    /// <summary>Gold paid per unit when it was sold — the buy-back charges the same, so it's a clean undo.</summary>
+    public long UnitPrice { get; init; }
+}
+
 public class InventoryItem
 {
     public Guid InstanceId { get; } = Guid.NewGuid();
@@ -256,6 +268,11 @@ public class Entity
     /// <summary>Ignored (blocked) character names. Chat from these players — whisper, world and local —
     /// is not delivered to you. Persisted as a CSV, like the friend list.</summary>
     public HashSet<string> Blocked { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Recently-SOLD items, re-buyable at any vendor for the sell price you got. In-memory only
+    /// (cleared on logout), newest last, capped at <see cref="GameConstants.BuyBackSlots"/>. Stores enough
+    /// to restore the item faithfully (enchant + rolled attributes).</summary>
+    public List<BuyBackEntry> BuyBack { get; } = new();
 
     /// <summary>NPC id this entity represents (NPCs only).</summary>
     public string? NpcId { get; set; }

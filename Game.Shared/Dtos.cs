@@ -451,6 +451,14 @@ public record ShopItemDto(string DefId, string Name, int BuyPrice);
 /// <summary>A vendor's wares, attached to the dialog when talking to a vendor.</summary>
 public record ShopInfo(string Title, ShopItemDto[] Items);
 
+/// <summary>One entry in the buy-back list: an item you recently SOLD, re-buyable for what you got for it.
+/// Index is the entry's position in the list (the client passes it back to re-buy).</summary>
+public record BuyBackEntryDto(int Index, string DefId, string Name, int Quantity, int Enchant, long UnitPrice);
+
+/// <summary>The character's current buy-back list (recently-sold items). Sent when a shop opens and after
+/// every sell / buy-back. In-memory only — it does not survive logout.</summary>
+public record BuyBackUpdate(BuyBackEntryDto[] Items);
+
 /// <summary>One teleport destination offered by a gatekeeper. MinLevel/MaxLevel are
 /// the level band of the hunting grounds around that town (0/0 = unknown), shown so
 /// players know where they're going.</summary>

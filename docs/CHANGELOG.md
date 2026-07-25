@@ -12,6 +12,16 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-25 — Buy-back (0.28.86, server-side)
+
+Re-buy a recently-sold item at any vendor for the price you got. `Entity.BuyBack` is an in-memory list
+(newest last, capped at `GameConstants.BuyBackSlots`=24, cleared on logout — no schema change) that records
+each sale with enough to restore the item faithfully (enchant + rolled attributes). `HandleSell` records
+the sale; `BuyBack(npc, index)` charges `unitPrice × qty` and restores the item. `BuyBackUpdate` is sent
+when a vendor opens and after every sell/buy-back. Build-verified; NOT SmokeTest-covered (shop interaction
+needs vendor-proximity the harness lacks; in-memory so no persistence risk). Client buy-back tab is the
+next-APK follow-up alongside the warehouse/block windows.
+
 ## 2026-07-25 — Block / ignore list (0.28.85)
 
 Per-character ignore list. `BlockCommand` block/unblock/list (mirrors the friend list). A blocked player's

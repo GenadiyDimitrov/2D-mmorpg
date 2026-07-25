@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.28.85";
+    public const string GameVersion = "0.28.86";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -237,6 +237,10 @@ public static class GameConstants
     /// holds equipped gear. A timed rune stored here still expires but does NOT apply its buff — that's
     /// how you switch a rune off.</summary>
     public const int WarehouseSize = 50;
+
+    /// <summary>How many recently-sold items the buy-back list keeps (per character, in-memory). Selling
+    /// past this drops the oldest entry.</summary>
+    public const int BuyBackSlots = 24;
 
     /// <summary>Skill-bar slots — 5 rows of 12. The bar is ONE FLAT collection of ids; "rows" are purely a
     /// client visualization (it slices this list into chunks of <see cref="SkillBarColumns"/>). Shared,

@@ -216,6 +216,12 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task BuyBack(Guid npcEntityId, int index)
+    {
+        _world.Commands.Enqueue(new BuyBackCmd(Context.ConnectionId, npcEntityId, index));
+        return Task.CompletedTask;
+    }
+
     public Task OpenWarehouse()
     {
         _world.Commands.Enqueue(new OpenWarehouseCmd(Context.ConnectionId));

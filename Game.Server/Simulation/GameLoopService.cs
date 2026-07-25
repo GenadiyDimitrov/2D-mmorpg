@@ -84,6 +84,7 @@ public class GameLoopService : BackgroundService
             CraftCmd c => c.ConnectionId,
             BuyItemCmd c => c.ConnectionId,
             SellItemCmd c => c.ConnectionId,
+            BuyBackCmd c => c.ConnectionId,
             OpenWarehouseCmd c => c.ConnectionId,
             WarehouseDepositCmd c => c.ConnectionId,
             WarehouseWithdrawCmd c => c.ConnectionId,
@@ -153,6 +154,7 @@ public class GameLoopService : BackgroundService
                 case EnchantCmd c: HandleEnchant(c); break;
                 case RerollAttributesCmd c: HandleRerollAttributes(c); break;
                 case RemoveItemCmd c: HandleRemoveItem(c); break;
+                case BuyBackCmd c: HandleBuyBack(c); break;
                 case OpenWarehouseCmd c: HandleOpenWarehouse(c); break;
                 case WarehouseDepositCmd c: HandleWarehouseDeposit(c); break;
                 case WarehouseWithdrawCmd c: HandleWarehouseWithdraw(c); break;
@@ -8064,10 +8066,71 @@ var effect = def.Effect;
         }
 
         player.Gold += total;
+
+        // Remember it for BUY-BACK — re-buyable at any vendor for the same price, restored faithfully
+        // (enchant + rolled attributes). In-memory, newest last, oldest dropped past the cap.
+        player.BuyBack.Add(new BuyBackEntry
+        {
+            DefId = def.Id, Quantity = qty, Enchant = item.Enchant,
+            Attributes = new List<ItemAttribute>(item.Attributes),
+            UnitPrice = ItemCatalog.SellPrice(def),
+        });
+        while (player.BuyBack.Count > GameConstants.BuyBackSlots) player.BuyBack.RemoveAt(0);
+
         SendGold(player);
         SendInventory(player);
+        SendBuyBack(player);
         SendSystemToEntity(player,
             $"Sold {def.Name}{(qty > 1 ? $" x{qty}" : "")} for {total:N0} {GameConstants.CurrencyName}.");
+    }
+
+    private void SendBuyBack(Entity player) =>
+        SendTo(player, "BuyBack", new BuyBackUpdate(
+            player.BuyBack.Select((e, i) => new BuyBackEntryDto(
+                i, e.DefId, ItemCatalog.Get(e.DefId)?.Name ?? e.DefId, e.Quantity, e.Enchant, e.UnitPrice))
+                .ToArray()));
+
+    /// <summary>Re-buy a recently-sold item by its list index, for the same gold it was sold for.</summary>
+    private void HandleBuyBack(BuyBackCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        if (!TryGetVendorNpc(player, cmd.NpcEntityId, out _)) return;
+        if (cmd.Index < 0 || cmd.Index >= player.BuyBack.Count) return;
+
+        var entry = player.BuyBack[cmd.Index];
+        if (ItemCatalog.Get(entry.DefId) is not ItemDef def)
+        {
+            player.BuyBack.RemoveAt(cmd.Index);
+            SendBuyBack(player);
+            return;
+        }
+
+        long cost = entry.UnitPrice * entry.Quantity;
+        if (player.Gold < cost)
+        {
+            SendSystemToEntity(player, $"You need {cost:N0} {GameConstants.CurrencyName} to buy that back.");
+            return;
+        }
+        if (player.Inventory.Count(i => !i.Equipped) >= GameConstants.InventorySize)
+        {
+            SendSystemToEntity(player, "Inventory full.");
+            return;
+        }
+
+        player.Gold -= cost;
+        player.Inventory.Add(new InventoryItem
+        {
+            DefId = entry.DefId, Quantity = entry.Quantity, Enchant = entry.Enchant,
+            Attributes = new List<ItemAttribute>(entry.Attributes),
+        });
+        player.BuyBack.RemoveAt(cmd.Index);
+
+        SendGold(player);
+        SendInventory(player);
+        SendBuyBack(player);
+        SendSystemToEntity(player,
+            $"Bought back {def.Name}{(entry.Quantity > 1 ? $" x{entry.Quantity}" : "")} for {cost:N0} {GameConstants.CurrencyName}.");
+        SaveEntity(player);
     }
 
     /// <summary>The skills a reset NPC can un-learn: the ones you committed to permanently (any
@@ -8447,6 +8510,7 @@ var effect = def.Effect;
                 .Select(d => new ShopItemDto(d!.Id, d.Name, ItemCatalog.BuyPrice(d)))
                 .ToArray();
             shop = new ShopInfo(shopDef.Title, items);
+            SendBuyBack(player);   // the vendor also shows what you recently sold, to re-buy
         }
 
         // Gatekeeper destinations (every safe zone except this one).

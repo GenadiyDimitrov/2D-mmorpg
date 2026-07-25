@@ -144,6 +144,9 @@ public record BuyItemCmd(string ConnectionId, Guid NpcEntityId, string ItemDefId
 /// <summary>Sell an inventory item to a vendor NPC.</summary>
 public record SellItemCmd(string ConnectionId, Guid NpcEntityId, Guid InstanceId, int Quantity) : IGameCommand;
 
+/// <summary>Re-buy a recently-sold item (by its index in the buy-back list) at a vendor.</summary>
+public record BuyBackCmd(string ConnectionId, Guid NpcEntityId, int Index) : IGameCommand;
+
 /// <summary>Pay a gatekeeper to warp to a safe zone.</summary>
 public record TeleportCmd(string ConnectionId, Guid NpcEntityId, string ZoneId) : IGameCommand;
 
