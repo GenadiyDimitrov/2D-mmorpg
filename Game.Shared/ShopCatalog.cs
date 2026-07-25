@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace Game.Shared;
 
 /// <summary>
@@ -20,6 +22,18 @@ public static class ShopCatalog
 
     private static Dictionary<string, ShopDef> Build()
     {
+        // The LOW sets of each grade (Low F/E/D — ids like "sword1h_t20lo"), sold alongside the training
+        // kit so the early ladder is reachable by gold as well as by drops (owner 2026-07-25). Derived
+        // from the catalogue so it never drifts from LowTierFillers. (Could be split across town vendors
+        // by grade later; one gear NPC for now.)
+        var lowGearIds = ItemCatalog.AllItems
+            .Where(d => d.Rarity == ItemRarity.Epic
+                && d.Slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel
+                && d.Id.Contains("_t", System.StringComparison.Ordinal)
+                && d.Id.EndsWith("lo", System.StringComparison.Ordinal))
+            .Select(d => d.Id)
+            .ToArray();
+
         var shops = new[]
         {
             new ShopDef(PotionMerchant, "Apothecary", new[]
@@ -84,7 +98,7 @@ public static class ShopCatalog
                 // Starter shield + jewel.
                 ItemCatalog.WoodenShield,
                 ItemCatalog.BrassAmulet,
-            }),
+            }.Concat(lowGearIds).ToArray()),
         };
 
         var dict = new Dictionary<string, ShopDef>(StringComparer.OrdinalIgnoreCase);

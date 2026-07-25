@@ -12,6 +12,22 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-25 — Gear ladder: low-grade fills, named sets (0.28.82)
+
+Filled the low-level gear holes and gave every tiered piece a proper name.
+
+- **Low sets** (`ItemCatalog.LowTierFillers`): each grade now has a LOW set covering the bottom of its band,
+  beside the existing TOP set — **Low F** (lvl 2-9), **Low E** (20-32), **Low D** (40-44). Equippable at the
+  grade level (ItemLevel 1/20/40), ids `_t{L}lo`, armour interpolated between the Newbie floor and each
+  grade top (fixes an inversion where low armour sat under the Newbie set). All 8 weapons + full armour.
+- **Buyable + drop**: low sets sold at the Armsmaster (ids derived from the catalogue) with ItemLevel-scaled
+  prices (Low F < E < D), and they auto-generate rarity drop copies like every tier.
+- **Named gear**: `ItemCatalog.GradeTheme` gives each grade a MATERIAL prefix starting with the grade LETTER
+  — Ferrite/Electrum/Darksteel/Cobalt/Bloodsteel/Adamantine/Soulcrystal/Starstone/Seraphite. Names are
+  "{Material} {noun}" (Blade, Maul, Fangs, Longbow, Battlestaff; heavy Bulwark/Warplate, robe Vestments/
+  Raiment, shield Aegis, Pendant/Band/Stud …). e.g. **Bloodsteel Warplate**, **Darksteel Vestments**. Low
+  sets add "(Lesser)". S-grade themes are wired, waiting on the endgame CSV.
+
 ## 2026-07-25 — Magic stat model: weapon-based M.Atk (0.28.81)
 
 Reworked M.Atk to L2's **multiplicative** shape (matching P.Atk, which already worked this way), because

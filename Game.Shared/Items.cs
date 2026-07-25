@@ -1014,7 +1014,7 @@ public static class ItemCatalog
         // The tiered gear pieces (Epic rarity) = the craft/boss SET tier. From each base piece we
         // also generate weaker Common/Uncommon/Rare DROP versions (scaled stats, no set), so mobs
         // can drop usable-now gear while the full set stays a crafting/boss goal.
-        var tieredGear = TieredWeapons().Concat(TieredArmor()).ToList();
+        var tieredGear = TieredWeapons().Concat(TieredArmor()).Concat(LowTierFillers()).ToList();
         list.AddRange(tieredGear);
         list.AddRange(ScaledDropItems(tieredGear));
         list.AddRange(Materials());
@@ -1076,6 +1076,10 @@ public static class ItemCatalog
         int i = id.LastIndexOf("_t", StringComparison.Ordinal);
         if (i < 0) return false;
         string tail = id.Substring(i + 2);
+        // The LOW sets of a grade share the grade's equip level with the top set, so their id carries a
+        // "lo" suffix after the level (e.g. sword1h_t20lo = Low E, alongside sword1h_t20 = Top E). Strip it
+        // so they still count as base tiers and get their own rarity drop copies.
+        if (tail.EndsWith("lo", StringComparison.Ordinal)) tail = tail[..^2];
         return tail.Length > 0 && tail.All(char.IsDigit);
     }
 
@@ -1132,7 +1136,25 @@ public static class ItemCatalog
     /// <summary>Display letter for a gear LEVEL tier (20/40/52/61/76 → E/D/C/B/A). Cosmetic —
     /// the item's <see cref="ItemDef.ItemLevel"/> drives the mechanics, not the letter.</summary>
     public static string TierLetter(int level) =>
-        level >= 76 ? "A" : level >= 61 ? "B" : level >= 52 ? "C" : level >= 40 ? "D" : "E";
+        level >= 76 ? "A" : level >= 61 ? "B" : level >= 52 ? "C" : level >= 40 ? "D"
+        : level >= 20 ? "E" : "F";
+
+    /// <summary>The grade's MATERIAL name — the display prefix that signals grade at a glance (owner
+    /// 2026-07-25). Each starts with the grade's LETTER as a mnemonic (D→Darksteel, A→Adamantine…). The
+    /// item name is "{GradeTheme} {noun}", e.g. "Darksteel Warplate". S/S*/S** are ready for the endgame
+    /// CSV. Retune any word here — it changes every item of that grade at once.</summary>
+    public static string GradeTheme(int itemLevel) => itemLevel switch
+    {
+        >= 85 => "Seraphite",       // S**
+        >= 83 => "Starstone",       // S*
+        >= 80 => "Soulcrystal",     // S
+        >= 76 => "Adamantine",      // A
+        >= 61 => "Bloodsteel",      // B
+        >= 52 => "Cobalt",          // C
+        >= 40 => "Darksteel",       // D
+        >= 20 => "Electrum",        // E
+        _     => "Ferrite",         // F
+    };
 
     // Enum grade for pricing/sorting only (the enum has no C/D). ItemLevel is the real tier.
     private static ItemGrade TierGrade(int level) =>
@@ -1147,21 +1169,21 @@ public static class ItemCatalog
         var weapons = new (string Key, string Noun, WeaponType Type, bool Magic, float Range,
             (int L, int P, int M, int As)[] Rows)[]
         {
-            ("sword1h", "Sword",      WeaponType.Sword,          false, 0,
+            ("sword1h", "Blade",      WeaponType.Sword,          false, 0,
                 new[] { (20,92,54,0),(40,156,83,0),(52,194,99,0),(61,232,114,0),(76,281,132,0) }),
             ("sword2h", "Greatsword", WeaponType.TwoHandedSword, false, 0,
                 new[] { (20,112,54,0),(40,190,83,0),(52,236,99,0),(61,282,114,0),(76,342,132,0) }),
             ("blunt1h", "Mace",       WeaponType.Blunt,          false, 0,
                 new[] { (20,92,54,0),(40,156,83,0),(52,194,99,0),(61,232,114,0),(76,281,132,0) }),
-            ("blunt2h", "Warhammer",  WeaponType.TwoHandedBlunt, false, 0,
+            ("blunt2h", "Maul",       WeaponType.TwoHandedBlunt, false, 0,
                 new[] { (20,112,54,0),(40,190,83,0),(52,236,99,0),(61,282,114,0),(76,342,132,0) }),
-            ("duals",   "Daggers",    WeaponType.Dual,           false, 0,
+            ("duals",   "Fangs",      WeaponType.Dual,           false, 0,
                 new[] { (20,80,54,0),(40,136,83,0),(52,170,99,0),(61,203,114,0),(76,271,132,0) }),
-            ("bow",     "Bow",        WeaponType.Bow,            false, 400,
+            ("bow",     "Longbow",    WeaponType.Bow,            false, 400,
                 new[] { (20,191,55,293),(40,316,84,293),(52,400,99,293),(61,528,114,227),(76,581,132,293) }),
             ("wand",    "Wand",       WeaponType.Blunt,          true,  0,
                 new[] { (20,74,72,0),(40,111,101,0),(52,140,122,0),(61,186,152,0),(76,225,175,0) }),
-            ("staff",   "Staff",      WeaponType.TwoHandedBlunt, true,  0,
+            ("staff",   "Battlestaff",WeaponType.TwoHandedBlunt, true,  0,
                 new[] { (20,90,79,0),(40,135,111,0),(52,189,145,0),(61,226,167,0),(76,274,193,0) }),
         };
         // BOTH CSV numbers are authored now (owner, 2026-07-24): P -> AtkBonus, M -> MAtkBonus. Until
@@ -1178,7 +1200,7 @@ public static class ItemCatalog
         // actually distinguishes a wand from a mace (both are Blunt).
         foreach (var w in weapons)
             foreach (var (L, P, M, As) in w.Rows)
-                yield return new ItemDef($"{w.Key}_t{L}", $"{TierLetter(L)}-Grade {w.Noun}",
+                yield return new ItemDef($"{w.Key}_t{L}", $"{GradeTheme(L)} {w.Noun}",
                     EquipSlot.Weapon, TierGrade(L), ItemRarity.Epic,
                     WeaponType: w.Type,
                     AtkBonus: P,
@@ -1199,13 +1221,13 @@ public static class ItemCatalog
         // ---- Bodies: (key, noun, weight, pDef[5], mp[5]) — robe carries inherent +MaxMP. ----
         var bodies = new (string Key, string Noun, ArmorWeight W, int[] Def, int[] Mp)[]
         {
-            ("heavy", "Plate Armor",   ArmorWeight.Heavy, new[]{167,240,270,293,332}, new[]{0,0,0,0,0}),
-            ("light", "Leather Armor", ArmorWeight.Light, new[]{125,218,202,220,249}, new[]{0,0,0,0,0}),
+            ("heavy", "Bulwark",       ArmorWeight.Heavy, new[]{167,240,270,293,332}, new[]{0,0,0,0,0}),
+            ("light", "Leathers",      ArmorWeight.Light, new[]{125,218,202,220,249}, new[]{0,0,0,0,0}),
             ("robe",  "Robe",          ArmorWeight.Robe,  new[]{84,110,135,147,166},  new[]{274,508,613,718,866}),
         };
         foreach (var b in bodies)
             for (int i = 0; i < lv.Length; i++)
-                yield return new ItemDef($"{b.Key}_t{lv[i]}", $"{TierLetter(lv[i])}-Grade {b.Noun}",
+                yield return new ItemDef($"{b.Key}_t{lv[i]}", $"{GradeTheme(lv[i])} {b.Noun}",
                     EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Epic,
                     Weight: b.W, ArmorSlot: ArmorSlot.Body, DefBonus: b.Def[i], MpBonus: b.Mp[i],
                     ItemLevel: lv[i], NoAttributes: true, SetId: $"set_{b.Key}_t{lv[i]}");
@@ -1214,18 +1236,19 @@ public static class ItemCatalog
         //      nuke lines from the CSV). They share the tier's accessory line. (Bonuses in ArmorSets.) ----
         var variants = new (string Key, ArmorWeight W, string Noun, int L, int Def, int Mp, string Role)[]
         {
-            ("heavy_t52_dmg",  ArmorWeight.Heavy, "Plate Armor",   52, 270, 0,   "Assault"),
-            ("heavy_t61_dmg",  ArmorWeight.Heavy, "Plate Armor",   61, 293, 0,   "Assault"),
-            ("light_t40_pdef", ArmorWeight.Light, "Leather Armor", 40, 218, 0,   "Bulwark"),
-            ("light_t40_mdef", ArmorWeight.Light, "Leather Armor", 40, 218, 0,   "Warded"),
-            ("light_t40_str",  ArmorWeight.Light, "Leather Armor", 40, 218, 0,   "Brawler"),
-            ("light_t52_sup",  ArmorWeight.Light, "Leather Armor", 52, 202, 0,   "Sage"),
-            ("light_t61_dmg",  ArmorWeight.Light, "Leather Armor", 61, 220, 0,   "Assault"),
-            ("robe_t40_sup",   ArmorWeight.Robe,  "Robe",          40, 110, 508, "Warden"),
-            ("robe_t40_nuke",  ArmorWeight.Robe,  "Robe",          40, 110, 508, "Destroyer"),
+            // Noun carries the ROLE (dmg=Warplate/Warhide, tank/def=Guardhide, etc.); "{GradeTheme} {Noun}".
+            ("heavy_t52_dmg",  ArmorWeight.Heavy, "Warplate",  52, 270, 0,   "Assault"),
+            ("heavy_t61_dmg",  ArmorWeight.Heavy, "Warplate",  61, 293, 0,   "Assault"),
+            ("light_t40_pdef", ArmorWeight.Light, "Guardhide", 40, 218, 0,   "Bulwark"),
+            ("light_t40_mdef", ArmorWeight.Light, "Wardhide",  40, 218, 0,   "Warded"),
+            ("light_t40_str",  ArmorWeight.Light, "Brawlhide", 40, 218, 0,   "Brawler"),
+            ("light_t52_sup",  ArmorWeight.Light, "Sagehide",  52, 202, 0,   "Sage"),
+            ("light_t61_dmg",  ArmorWeight.Light, "Warhide",   61, 220, 0,   "Assault"),
+            ("robe_t40_sup",   ArmorWeight.Robe,  "Raiment",   40, 110, 508, "Warden"),
+            ("robe_t40_nuke",  ArmorWeight.Robe,  "Vestments", 40, 110, 508, "Destroyer"),
         };
         foreach (var v in variants)
-            yield return new ItemDef(v.Key, $"{TierLetter(v.L)}-Grade {v.Noun} ({v.Role})",
+            yield return new ItemDef(v.Key, $"{GradeTheme(v.L)} {v.Noun}",
                 EquipSlot.Armor, TierGrade(v.L), ItemRarity.Epic,
                 Weight: v.W, ArmorSlot: ArmorSlot.Body, DefBonus: v.Def, MpBonus: v.Mp,
                 ItemLevel: v.L, NoAttributes: true, SetId: $"set_{v.Key}");
@@ -1234,12 +1257,12 @@ public static class ItemCatalog
         var acc = new (string Key, string Noun, ArmorSlot Slot, int[] Def)[]
         {
             ("gloves", "Gauntlets", ArmorSlot.Gloves, new[]{29,39,44,49,55}),
-            ("boots",  "Boots",     ArmorSlot.Boots,  new[]{29,39,44,49,55}),
-            ("helm",   "Helmet",    ArmorSlot.Head,   new[]{41,58,66,73,83}),
+            ("boots",  "Greaves",   ArmorSlot.Boots,  new[]{29,39,44,49,55}),
+            ("helm",   "Helm",      ArmorSlot.Head,   new[]{41,58,66,73,83}),
         };
         foreach (var a in acc)
             for (int i = 0; i < lv.Length; i++)
-                yield return new ItemDef($"{a.Key}_t{lv[i]}", $"{TierLetter(lv[i])}-Grade {a.Noun}",
+                yield return new ItemDef($"{a.Key}_t{lv[i]}", $"{GradeTheme(lv[i])} {a.Noun}",
                     EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Epic,
                     ArmorSlot: a.Slot, DefBonus: a.Def[i], ItemLevel: lv[i], NoAttributes: true,
                     SetId: $"set_acc_t{lv[i]}");   // shared accessory line per tier (all weights)
@@ -1253,7 +1276,7 @@ public static class ItemCatalog
         // The shield belongs to its tier's HEAVY set (the CSV puts shields in the same GroupId).
         // It is NOT required to complete the set — wearing it just adds the set's ShieldBonus.
         for (int i = 0; i < lv.Length; i++)
-            yield return new ItemDef($"shield_t{lv[i]}", $"{TierLetter(lv[i])}-Grade Kite Shield",
+            yield return new ItemDef($"shield_t{lv[i]}", $"{GradeTheme(lv[i])} Aegis",
                 EquipSlot.Shield, TierGrade(lv[i]), ItemRarity.Epic,
                 BlockChance: shBlock[i], BlockReduction: shReduce[i], ShieldDefense: shDef[i],
                 ShieldCritDefense: shCrit[i], ShieldEvasionPenalty: shEvaPen[i],
@@ -1263,13 +1286,13 @@ public static class ItemCatalog
         // ---- Jewels (M.Def + inherent +MP at 61/76). L2 layout = 1 necklace / 2 rings / 2 earrings. ----
         var jewels = new (string Key, string Noun, JewelType T, int[] MDef, int[] Mp)[]
         {
-            ("necklace", "Necklace", JewelType.Necklace, new[]{45,64,72,85,95}, new[]{0,0,0,33,42}),
-            ("ring",     "Ring",     JewelType.Ring,     new[]{22,32,36,42,48}, new[]{0,0,0,17,21}),
-            ("earring",  "Earring",  JewelType.Earring,  new[]{34,45,54,63,71}, new[]{0,0,0,25,31}),
+            ("necklace", "Pendant",  JewelType.Necklace, new[]{45,64,72,85,95}, new[]{0,0,0,33,42}),
+            ("ring",     "Band",     JewelType.Ring,     new[]{22,32,36,42,48}, new[]{0,0,0,17,21}),
+            ("earring",  "Stud",     JewelType.Earring,  new[]{34,45,54,63,71}, new[]{0,0,0,25,31}),
         };
         foreach (var j in jewels)
             for (int i = 0; i < lv.Length; i++)
-                yield return new ItemDef($"{j.Key}_t{lv[i]}", $"{TierLetter(lv[i])}-Grade {j.Noun}",
+                yield return new ItemDef($"{j.Key}_t{lv[i]}", $"{GradeTheme(lv[i])} {j.Noun}",
                     EquipSlot.Jewel, TierGrade(lv[i]), ItemRarity.Epic,
                     MDefBonus: j.MDef[i], MpBonus: j.Mp[i], JewelType: j.T,
                     ItemLevel: lv[i], NoAttributes: true);
@@ -1277,8 +1300,110 @@ public static class ItemCatalog
         // ---- Accessory BOX per tier (debug convenience): opens into the 3 accessories, so you
         //      grab a full accessory line at once instead of three items (see BoxCatalog). ----
         foreach (int L in lv)
-            yield return new ItemDef($"box_acc_t{L}", $"{TierLetter(L)}-Grade Accessory Box",
+            yield return new ItemDef($"box_acc_t{L}", $"{GradeTheme(L)} Accessory Box",
                 EquipSlot.Box, TierGrade(L), ItemRarity.Rare);
+    }
+
+    /// <summary>The LOW set of each low grade — the pieces a player wears in the BOTTOM of a grade's level
+    /// band, before the existing "top" set of that grade (owner 2026-07-25). Each grade is equippable
+    /// without penalty at its level (F@1, E@20, D@40) and spans a band; the CURRENT tiered sets are the
+    /// TOP of their grade (T@E covers ~33-39, T@D ~45-51, the Newbie set = T@F covers 10-19). These fill
+    /// the LOWER part: <b>Low F</b> (lvl 2-9, below Newbie), <b>Low E</b> (20-32, below T@E), <b>Low D</b>
+    /// (40-44, below T@D).
+    ///
+    /// Same equip level as their grade's top (ItemLevel 1/20/40), so ids carry a "lo" suffix
+    /// (<c>sword1h_t20lo</c> = Low E, beside <c>sword1h_t20</c> = Top E); <see cref="IsBaseTier"/> strips it
+    /// so they still spawn rarity drop copies. Weapons: Low E = the owner-confirmed 60/40 line, Low D one
+    /// step under T@D, Low F one step under the Newbie set. ARMOUR is interpolated between the Newbie/T@F
+    /// FLOOR and each grade's top (an earlier pass wrongly put a low body UNDER the Newbie set). No SetId
+    /// (set bonuses start at the grade tops). ⚠ INTERPOLATED numbers — retune here or swap for the owner's
+    /// CSV. Endgame S-grades wait on that CSV.</summary>
+    private static IEnumerable<ItemDef> LowTierFillers()
+    {
+        // Three low tiers by ItemLevel = grade equip level: [0]=Low F@1, [1]=Low E@20, [2]=Low D@40.
+        int[] lv = { 1, 20, 40 };
+
+        // Explicit gold value, scaled by ItemLevel + slot — the default price is grade-enum-based (Low F and
+        // Low E both map to "E", so they'd cost the same) and rarity-inflated (these base pieces are Epic ×8).
+        // This orders them F < E < D. Vendor buy price follows Value; drop copies keep their own rarity price.
+        static int Val(float slotMul, int itemLevel) => Math.Max(40, (int)(slotMul * (120 + itemLevel * 20)));
+
+        // Weapons: (key, noun, type, magic, range, {F,E,D} P, {F,E,D} M, attackSpeedBase)
+        var weapons = new (string Key, string Noun, WeaponType Type, bool Magic, float Range,
+            int[] P, int[] M, int As)[]
+        {
+            ("sword1h", "Blade",      WeaponType.Sword,          false, 0,   new[]{14,60,124},  new[]{9,40,69},  0),
+            ("sword2h", "Greatsword", WeaponType.TwoHandedSword, false, 0,   new[]{17,73,151},  new[]{10,40,69}, 0),
+            ("blunt1h", "Mace",       WeaponType.Blunt,          false, 0,   new[]{14,60,124},  new[]{9,40,69},  0),
+            ("blunt2h", "Maul",       WeaponType.TwoHandedBlunt, false, 0,   new[]{17,73,151},  new[]{10,40,69}, 0),
+            ("duals",   "Fangs",      WeaponType.Dual,           false, 0,   new[]{12,52,108},  new[]{9,40,69},  0),
+            ("bow",     "Longbow",    WeaponType.Bow,            false, 400, new[]{30,129,254}, new[]{9,41,70},  293),
+            ("wand",    "Wand",       WeaponType.Blunt,          true,  0,   new[]{13,56,93},   new[]{14,58,87}, 0),
+            ("staff",   "Battlestaff",WeaponType.TwoHandedBlunt, true,  0,   new[]{15,68,113},  new[]{16,63,95}, 0),
+        };
+        foreach (var w in weapons)
+            for (int i = 0; i < lv.Length; i++)
+                yield return new ItemDef($"{w.Key}_t{lv[i]}lo", $"{GradeTheme(lv[i])} {w.Noun} (Lesser)",
+                    EquipSlot.Weapon, TierGrade(lv[i]), ItemRarity.Epic,
+                    WeaponType: w.Type, AtkBonus: w.P[i], MAtkBonus: w.M[i], WeaponRange: w.Range,
+                    ItemLevel: lv[i], IsMagicWeapon: w.Magic, AttackSpeedBase: w.As, NoAttributes: true,
+                    Value: Val(2.0f, lv[i]));
+
+        // Bodies: (key, noun, weight, {F,E,D} P.Def, {F,E,D} +MaxMP) — robe carries MP.
+        var bodies = new (string Key, string Noun, ArmorWeight W, int[] Def, int[] Mp)[]
+        {
+            ("heavy", "Bulwark",       ArmorWeight.Heavy, new[]{72,140,207}, new[]{0,0,0}),
+            ("light", "Leathers",      ArmorWeight.Light, new[]{70,107,176}, new[]{0,0,0}),
+            ("robe",  "Robe",          ArmorWeight.Robe,  new[]{38,68,98},   new[]{69,200,403}),
+        };
+        foreach (var b in bodies)
+            for (int i = 0; i < lv.Length; i++)
+                yield return new ItemDef($"{b.Key}_t{lv[i]}lo", $"{GradeTheme(lv[i])} {b.Noun} (Lesser)",
+                    EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Epic,
+                    Weight: b.W, ArmorSlot: ArmorSlot.Body, DefBonus: b.Def[i], MpBonus: b.Mp[i],
+                    ItemLevel: lv[i], NoAttributes: true, Value: Val(1.6f, lv[i]));
+
+        // Weightless accessories: (key, noun, slot, {F,E,D} P.Def)
+        var acc = new (string Key, string Noun, ArmorSlot Slot, int[] Def)[]
+        {
+            ("gloves", "Gauntlets", ArmorSlot.Gloves, new[]{10,23,34}),
+            ("boots",  "Greaves",   ArmorSlot.Boots,  new[]{10,23,34}),
+            ("helm",   "Helm",      ArmorSlot.Head,   new[]{15,32,50}),
+        };
+        foreach (var a in acc)
+            for (int i = 0; i < lv.Length; i++)
+                yield return new ItemDef($"{a.Key}_t{lv[i]}lo", $"{GradeTheme(lv[i])} {a.Noun} (Lesser)",
+                    EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Epic,
+                    ArmorSlot: a.Slot, DefBonus: a.Def[i], ItemLevel: lv[i], NoAttributes: true,
+                    Value: Val(0.8f, lv[i]));
+
+        // Shields (per tier): def, block, reduction, critDef, evaPenalty — below the Wooden->Iron line.
+        var shields = new (int Def, float Block, float Reduce, float Crit, int EvaPen)[]
+        {
+            (60,  0.18f, 0.34f, 0.08f, 5),
+            (107, 0.21f, 0.36f, 0.09f, 6),
+            (176, 0.23f, 0.38f, 0.11f, 7),
+        };
+        for (int i = 0; i < lv.Length; i++)
+            yield return new ItemDef($"shield_t{lv[i]}lo", $"{GradeTheme(lv[i])} Aegis (Lesser)",
+                EquipSlot.Shield, TierGrade(lv[i]), ItemRarity.Epic,
+                BlockChance: shields[i].Block, BlockReduction: shields[i].Reduce, ShieldDefense: shields[i].Def,
+                ShieldCritDefense: shields[i].Crit, ShieldEvasionPenalty: shields[i].EvaPen,
+                ItemLevel: lv[i], NoAttributes: true, Value: Val(1.2f, lv[i]));
+
+        // Jewels: (key, noun, type, {F,E,D} M.Def) — no inherent MP until 61+.
+        var jewels = new (string Key, string Noun, JewelType T, int[] MDef)[]
+        {
+            ("necklace", "Pendant",  JewelType.Necklace, new[]{11,32,55}),
+            ("ring",     "Band",     JewelType.Ring,     new[]{5,15,28}),
+            ("earring",  "Stud",     JewelType.Earring,  new[]{8,24,40}),
+        };
+        foreach (var j in jewels)
+            for (int i = 0; i < lv.Length; i++)
+                yield return new ItemDef($"{j.Key}_t{lv[i]}lo", $"{GradeTheme(lv[i])} {j.Noun} (Lesser)",
+                    EquipSlot.Jewel, TierGrade(lv[i]), ItemRarity.Epic,
+                    MDefBonus: j.MDef[i], JewelType: j.T, ItemLevel: lv[i], NoAttributes: true,
+                    Value: Val(1.4f, lv[i]));
     }
 
     /// <summary>Formula gold value by slot/grade/rarity, used when an item def does

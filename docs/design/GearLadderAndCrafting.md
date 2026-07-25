@@ -33,9 +33,12 @@ the ceiling.
 either (a) re-slot the existing five tiers onto these bands, or (b) add real intermediate tiers. Needs a
 tier→level-band table from the owner, or I propose one and confirm.
 
-**Within a grade there are quality steps** (owner): e.g. at A-grade+, the *floor* A staff is M.Atk ~193
-(t76, the current one), a **level-81 quest** staff ~**240**, and the **strongest** (boss/instance/craft)
-~**281**. So a grade is a *range*, not a single item — the ladder needs multiple entries per top grade.
+**Confirmed staff M.Atk anchors (owner 2026-07-25):** A(top, t76 = the current one) **193**, S(80)
+**212**, S\*(83) **243**, S\*\*(85) **281**. So 281 is S\*\* (boss/instance/craft), 243 ≈ the lvl-81 quest
+staff (S\*). ⚠ These four are the ONLY gear numbers the owner has fixed; **the full weapon+armor+jewel
+tables for 76→S grades are coming as a CSV from the owner** — do NOT extrapolate/ship guessed values.
+A proposed proportional extrapolation (S/S\*/S\*\* = ×1.098/1.259/1.456 of A, applied to all stats) was
+computed this session and PARKED pending that CSV.
 
 ### Weapon M.Atk is now the endgame lever
 Since M.Atk went weapon-based (see §3), the staff/wand M.Atk column IS the mage endgame dial. Current
