@@ -209,6 +209,27 @@ Check("/flist shows a MUTUAL friend's online state",
       a.SystemChat.Any(s => s.Contains("Test2") && s.Contains("[online]")),
       string.Join(" | ", a.SystemChat));
 
+// -------------------------------------------------------------------------------------------
+// 4b. BLOCK / IGNORE. A blocked player's whisper (and world/local chat) is filtered out for you; the
+//     SENDER is told it wasn't accepted, the recipient hears nothing. Both players are online here.
+// -------------------------------------------------------------------------------------------
+a.AllChat.Clear();
+await friend.Hub.SendAsync("Chat", "hello before block", ChatChannel.Whisper, name);
+await a.Settle();
+Check("a whisper is delivered BEFORE blocking",
+      a.AllChat.Any(m => m.Channel == ChatChannel.Whisper && m.From == "Test2"));
+
+await a.Hub.SendAsync("BlockCommand", "block", "Test2");
+await a.Settle();
+a.AllChat.Clear();
+friend.SystemChat.Clear();
+await friend.Hub.SendAsync("Chat", "still there?", ChatChannel.Whisper, name);
+await a.Settle();
+Check("a blocked player's whisper is NOT delivered",
+      !a.AllChat.Any(m => m.Channel == ChatChannel.Whisper && m.From == "Test2"));
+Check("the blocked SENDER is told the message wasn't accepted",
+      friend.SystemChat.Any(s => s.Contains("not accepting")));
+
 // ...and going offline now reports, because the friendship is mutual.
 a.SystemChat.Clear();
 await friend.Hub.SendAsync("LeaveWorld");
@@ -383,6 +404,11 @@ Check("the warehoused potion survived the relog IN THE BANK",
       bankedId != Guid.Empty && b.Ware?.Items.Any(i => i.DefId == ItemCatalog.HealingPotion) == true);
 Check("the warehoused potion did NOT leak back into the bag on relog",
       b.Inv is not null && b.Inv.Items.All(i => i.DefId != ItemCatalog.HealingPotion));
+b.SystemChat.Clear();
+await b.Hub.SendAsync("BlockCommand", "list", "");
+await b.Settle();
+Check("the block list survived the relog (BlockedCsv persisted)",
+      b.SystemChat.Any(s => s.Contains("Test2")));
 Check("MAIN class's bar survived the relog",
       b.Bar is not null && b.Bar.Slots.SequenceEqual(mainBar));
 Check("the ITEM slot survived the relog (SyncSkillBar kept the item: token, not wiped as a skill)",
@@ -594,6 +620,9 @@ sealed class Session : IAsyncDisposable
     // System-chat lines captured (for friend-list / "back online" assertions).
     public readonly List<string> SystemChat = new();
 
+    /// <summary>Every chat message received (all channels) — for whisper / block assertions.</summary>
+    public readonly List<ChatMessage> AllChat = new();
+
     /// <summary>The last Progress push (level / exp / exp-to-next). The exp CURVE is the thing this
     /// captures: a wrong curve looks perfectly fine on screen and is only visible as the wrong
     /// exp-to-next arriving on the wire.</summary>
@@ -615,7 +644,7 @@ sealed class Session : IAsyncDisposable
             foreach (var id in d.Despawns) Despawned.Add(id);
         });
         Hub.On<ProgressUpdate>("Progress", p => Progress = p);
-        Hub.On<ChatMessage>("Chat", m => { if (m.Channel == ChatChannel.System) { SystemChat.Add(m.Text); Console.WriteLine($"        [SYSTEM] {m.Text}"); } });
+        Hub.On<ChatMessage>("Chat", m => { AllChat.Add(m); if (m.Channel == ChatChannel.System) { SystemChat.Add(m.Text); Console.WriteLine($"        [SYSTEM] {m.Text}"); } });
         await Hub.StartAsync();
     }
 

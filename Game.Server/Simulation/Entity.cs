@@ -253,6 +253,10 @@ public class Entity
     /// online you get a "&lt;friend&gt; is back online" message. Per character. Persisted as a CSV.</summary>
     public HashSet<string> Friends { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Ignored (blocked) character names. Chat from these players — whisper, world and local —
+    /// is not delivered to you. Persisted as a CSV, like the friend list.</summary>
+    public HashSet<string> Blocked { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>NPC id this entity represents (NPCs only).</summary>
     public string? NpcId { get; set; }
     public NpcRole NpcRole { get; set; }

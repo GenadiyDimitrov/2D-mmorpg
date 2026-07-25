@@ -124,6 +124,7 @@ public class GameLoopService : BackgroundService
                 case AdminGiveItemCmd c: HandleAdminGiveItem(c); break;
                 case AdminRemoveItemCmd c: HandleAdminRemoveItem(c); break;
                 case FriendCmd c: HandleFriend(c); break;
+                case BlockCmd c: HandleBlock(c); break;
                 case FollowCmd c: HandleFollow(c); break;
                 case AssistCmd c: HandleAssist(c); break;
                 case LeaveCommand c: HandleLeave(c); break;
@@ -4064,6 +4065,55 @@ public class GameLoopService : BackgroundService
         }
     }
 
+    /// <summary>Ignore list: block / unblock / list. Blocking is ONE-SIDED and silent — the blocked player
+    /// is never told. It only filters what YOU receive (whisper / world / local chat); it does not stop you
+    /// messaging them. Persisted per character like the friend list.</summary>
+    private void HandleBlock(BlockCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var p)) return;
+        var name = cmd.Name.Trim();
+
+        switch (cmd.Action.ToLowerInvariant())
+        {
+            case "block":
+                if (name.Length == 0) return;
+                if (string.Equals(name, p.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    SendSystemToEntity(p, "You can't block yourself.");
+                    return;
+                }
+                // Resolve to the CANONICAL name (may be offline), like a friend add.
+                _ = Task.Run(async () =>
+                {
+                    string? canonical = await _db.ResolveCharacterNameAsync(name);
+                    if (canonical is null) { SendSystemToEntity(p, $"No character '{name}'."); return; }
+                    // Block and friend may coexist — blocking only filters CHAT; friend presence (a system
+                    // message, not chat) still comes through, so there's nothing to reconcile.
+                    if (!p.Blocked.Add(canonical)) { SendSystemToEntity(p, $"{canonical} is already blocked."); return; }
+                    SaveEntity(p);
+                    SendSystemToEntity(p, $"Blocked {canonical}. You won't see their messages.");
+                });
+                break;
+
+            case "unblock":
+                var toRemove = p.Blocked.FirstOrDefault(b => string.Equals(b, name, StringComparison.OrdinalIgnoreCase));
+                if (toRemove is not null && p.Blocked.Remove(toRemove))
+                {
+                    SaveEntity(p);
+                    SendSystemToEntity(p, $"Unblocked {toRemove}.");
+                }
+                else SendSystemToEntity(p, $"{name} is not on your block list.");
+                break;
+
+            case "list":
+                if (p.Blocked.Count == 0) { SendSystemToEntity(p, "Your block list is empty."); return; }
+                SendSystemToEntity(p, $"Blocked ({p.Blocked.Count}):");
+                foreach (var b in p.Blocked.OrderBy(x => x))
+                    SendSystemToEntity(p, $"  {b}");
+                break;
+        }
+    }
+
     /// <summary>Start/stop FOLLOWING a player. Only players are followable, and never yourself. Follow
     /// ends the current attack (you're tailing, not fighting) — assist is the "fight with them" verb.</summary>
     private void HandleFollow(FollowCmd cmd)
@@ -4262,6 +4312,14 @@ public class GameLoopService : BackgroundService
                 return;
             }
 
+            // Blocked: the recipient ignores your whisper. Told to the sender (a dead-end whisper that
+            // silently vanished would read as a bug), never to the recipient.
+            if (target.Blocked.Contains(sender.Name))
+            {
+                SendSystemTo(chat.ConnectionId, $"{target.Name} is not accepting your messages.");
+                return;
+            }
+
             var whisper = new ChatMessage(sender.Name, text, ChatChannel.Whisper, target.Name);
             _ = _hub.Clients.Client(targetConn).SendAsync("Chat", whisper);
             _ = _hub.Clients.Client(chat.ConnectionId).SendAsync("Chat", whisper);
@@ -4272,12 +4330,16 @@ public class GameLoopService : BackgroundService
 
         if (channel == ChatChannel.World)
         {
-            _ = _hub.Clients.All.SendAsync("Chat", message);
+            // Deliver to every online player EXCEPT those who have blocked the sender.
+            foreach (var (entId, conn) in _world.EntityToConnection)
+                if (!(_world.Entities.TryGetValue(entId, out var e) && e.Blocked.Contains(sender.Name)))
+                    _ = _hub.Clients.Client(conn).SendAsync("Chat", message);
             return;
         }
 
         foreach (var nearby in _world.Grid.Nearby(sender))
         {
+            if (nearby.Blocked.Contains(sender.Name)) continue;   // they've ignored you
             if (_world.EntityToConnection.TryGetValue(nearby.Id, out var conn))
                 _ = _hub.Clients.Client(conn).SendAsync("Chat", message);
         }

@@ -503,6 +503,12 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task BlockCommand(string action, string name)
+    {
+        _world.Commands.Enqueue(new BlockCmd(Context.ConnectionId, action, name ?? ""));
+        return Task.CompletedTask;
+    }
+
     /// <summary>Follow a player (null = stop). Assist = attack whatever they're attacking.</summary>
     public Task Follow(Guid? targetId)
     {

@@ -613,6 +613,8 @@ public class PersistenceService
 
         foreach (var fn in rec.FriendsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
             entity.Friends.Add(fn);
+        foreach (var bn in rec.BlockedCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            entity.Blocked.Add(bn);
 
         if (!string.IsNullOrEmpty(rec.ActiveQuestsJson))
         {
@@ -754,7 +756,7 @@ public class PersistenceService
         int SecondClass, int ThirdClass, int SkillPoints, int Profession,
         int Con, int Atk, int Wit, int Dex, int Spt, float X, float Y,
         string LearnedSkillsCsv, string CompletedQuestsCsv, string ActiveQuestsJson,
-        string KnownRecipesCsv, string FriendsCsv, string AutoHuntJson, string EquipPresetsJson,
+        string KnownRecipesCsv, string FriendsCsv, string BlockedCsv, string AutoHuntJson, string EquipPresetsJson,
         int ActiveSubclassSlot, IReadOnlyList<SubclassSnapshot> Subclasses,
         int Karma, int PkCount, int PvpCount, int ConsecutivePk, bool DiedWhileAway,
         DateTime? JailedUntilUtc, DateTime? ChatBannedUntilUtc, long TotalOnlineSeconds,
@@ -786,6 +788,7 @@ public class PersistenceService
                 JsonSerializer.Serialize(e.ActiveQuests.Values.ToList()),
                 string.Join(',', e.KnownRecipes),
                 string.Join(',', e.Friends),
+                string.Join(',', e.Blocked),
                 JsonSerializer.Serialize(new AutoHuntConfigDto(
                     e.AutoHuntEnabled, e.AutoHpPotionPct, e.AutoMpPotionPct, e.AutoBuffPotions,
                     e.AutoSkills.ToArray(), e.AutoBuffPotionIds.ToArray(),
@@ -860,6 +863,7 @@ public class PersistenceService
         rec.ActiveQuestsJson = snap.ActiveQuestsJson;
         rec.KnownRecipesCsv = snap.KnownRecipesCsv;
         rec.FriendsCsv = snap.FriendsCsv;
+        rec.BlockedCsv = snap.BlockedCsv;
         rec.AutoHuntJson = snap.AutoHuntJson;
         rec.EquipPresetsJson = snap.EquipPresetsJson;
         rec.Karma = snap.Karma;

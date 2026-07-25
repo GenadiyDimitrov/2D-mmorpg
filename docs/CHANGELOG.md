@@ -12,6 +12,15 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-25 — Block / ignore list (0.28.85)
+
+Per-character ignore list. `BlockCommand` block/unblock/list (mirrors the friend list). A blocked player's
+**whisper, world and local chat** is filtered out for you; the blocked player is told nothing, but the
+SENDER of a blocked whisper is told it wasn't accepted (a silently-vanishing whisper would read as a bug).
+Block and friend may coexist — blocking only filters chat, and friend presence is a system message, not
+chat. Persisted as `BlockedCsv` (SCHEMA CHANGE — delete game.db). SmokeTest: whisper filtered after block,
+sender notified, list survives a relog.
+
 ## 2026-07-25 — Blueprint crafting + a latent crafting-crash fix (0.28.84)
 
 - **Fixed a latent crash**: `RecipeCatalog` set `_byId = Build()` as an inline field initializer *before*

@@ -81,6 +81,10 @@ public class CharacterRecord
     /// <summary>Friend character names, comma-separated. Per character.</summary>
     public string FriendsCsv { get; set; } = "";
 
+    /// <summary>Blocked (ignored) character names, comma-separated. Per character. (Schema change — delete
+    /// game.db to recreate.)</summary>
+    public string BlockedCsv { get; set; } = "";
+
     /// <summary>Active quests as JSON list of CharacterQuestState.</summary>
     public string ActiveQuestsJson { get; set; } = "";
 
