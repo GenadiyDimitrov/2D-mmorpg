@@ -12,6 +12,16 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-25 — Warehouse UI (Unity) (0.28.89)
+
+The client warehouse window (`GameUi.Warehouse.cs`) — Deposit / Withdraw tabs, tap a row to move the whole
+item; opened from a town NPC's dialog ("Bank"). `NetworkChannel` gains the `Warehouse` push + Open/Deposit/
+Withdraw calls; `GameBoot` holds `Warehouse` and the three methods. Mirrors the vendor window's tab+list
+shape (no prices/numpad — a move is reversible; the server owns the transfer + town-gate).
+⚠ **NOT yet Unity-compile-verified** — `dotnet build` doesn't compile the Unity project (owner: leave the
+APK). It mirrors the proven vendor patterns, so risk is low; the next Unity/APK build confirms it. Server
++ protocol were already done (0.28.83).
+
 ## 2026-07-25 — Charisma: moderation drains (0.28.88)
 
 Completes charisma. The moderation actions now drain BOTH values (per started hour-band): **chatban −20/h,

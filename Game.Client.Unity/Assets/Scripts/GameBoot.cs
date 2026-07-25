@@ -90,6 +90,7 @@ namespace Game.Client
 
         /// <summary>The bag, as last sent by the server (it pushes the whole thing on any change).</summary>
         public InventoryItemDto[] Inventory { get; private set; } = new InventoryItemDto[0];
+        public InventoryItemDto[] Warehouse { get; private set; } = new InventoryItemDto[0];
 
         /// <summary>Party roster (empty when you are not in one) and the agreed loot rule.</summary>
         public PartyMemberDto[] Party { get; private set; } = new PartyMemberDto[0];
@@ -312,6 +313,27 @@ namespace Game.Client
             if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;
             try { await _net.SellItemAsync(DialogNpcId, instanceId, quantity); }
             catch (Exception ex) { ClientLog.Warn("Sell: " + ex.Message); }
+        }
+
+        public async void OpenWarehouse()
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.OpenWarehouseAsync(); }
+            catch (Exception ex) { ClientLog.Warn("Warehouse: " + ex.Message); }
+        }
+
+        public async void WarehouseDeposit(Guid instanceId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.WarehouseDepositAsync(instanceId); }
+            catch (Exception ex) { ClientLog.Warn("Deposit: " + ex.Message); }
+        }
+
+        public async void WarehouseWithdraw(Guid instanceId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.WarehouseWithdrawAsync(instanceId); }
+            catch (Exception ex) { ClientLog.Warn("Withdraw: " + ex.Message); }
         }
 
         public async void TeleportTo(string zoneId)
@@ -660,6 +682,8 @@ namespace Game.Client
             });
             _net.InventoryReceived += i => Main(() =>
                 Inventory = i?.Items ?? new InventoryItemDto[0]);
+            _net.WarehouseReceived += w => Main(() =>
+                Warehouse = w?.Items ?? new InventoryItemDto[0]);
             _net.LearnedReceived += l => Main(() =>
             {
                 Learned.Clear();

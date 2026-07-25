@@ -125,6 +125,8 @@ namespace Game.Client
                           () => OpenVendor(false), UiKit.Text);
                 DialogRow("Sell — items from your bag", "Sell",
                           () => OpenVendor(true), UiKit.Text);
+                DialogRow("Warehouse — deposit / withdraw (town)", "Bank",
+                          () => { Boot.OpenWarehouse(); OpenWarehouseWindow(); }, UiKit.Text);
             }
 
             // ----- gatekeeper ---------------------------------------------------------------------
