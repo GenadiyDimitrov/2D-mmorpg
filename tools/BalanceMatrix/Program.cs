@@ -106,6 +106,28 @@ foreach (int L in new[] { 1, 2, 3, 4, 5, 6, 8, 10 })
 Console.WriteLine("  (a lvl-1 that one-shots a same-or-higher-level mob = the balance bug to fix)");
 Console.WriteLine();
 
+// -----------------------------------------------------------------------------------------------
+// M.ATK DISPLAY RAMP (owner 2026-07-25): the shown M.Atk = scale·√internal. "now" uses the flat
+// scale 20; "new" ramps scale = min(level, 20) so low levels read close to L2 (a lvl-1 wand mage
+// showed ~72 where L2 shows ~8). DAMAGE is untouched (it uses the internal value, printed too).
+// Training gear, no shots — a real new character 1-30.
+// -----------------------------------------------------------------------------------------------
+Console.WriteLine("=== M.ATK DISPLAY: flat-20 (now) vs min(internal, 20·√internal) (new) — best gear ===");
+Console.WriteLine("  new = show raw internal until it passes 20·√internal (crossover at internal=400), then shrink.");
+Console.WriteLine($"{"Lvl",4} | {"FTR int",8} {"now",6} {"new",6} | {"MAGE int",9} {"now",6} {"new",6}");
+static float ShownNow(Entity e) => 20 * MathF.Sqrt(e.EffectiveMagicAttack);
+static float ShownNew(Entity e) => MathF.Min(e.EffectiveMagicAttack, 20 * MathF.Sqrt(e.EffectiveMagicAttack));
+foreach (int L in new[] { 1, 5, 10, 20, 30, 40, 52, 61, 76, 85 })
+{
+    // Below 20 use training gear (no tier gear exists), at/above 20 use best-for-tier — the real play state.
+    var ftr  = L >= 20 ? BuildPlayer(Race.Human, BaseClass.Fighter, L) : BuildStarter(BaseClass.Fighter, L);
+    var mage = L >= 20 ? BuildPlayer(Race.Human, BaseClass.Mage, L)    : BuildStarter(BaseClass.Mage, L);
+    Console.WriteLine(
+        $"{L,4} | {ftr.EffectiveMagicAttack,8:F0} {ShownNow(ftr),6:F0} {ShownNew(ftr),6:F0} | " +
+        $"{mage.EffectiveMagicAttack,9:F0} {ShownNow(mage),6:F0} {ShownNew(mage),6:F0}");
+}
+Console.WriteLine();
+
 Console.WriteLine("=== PROGRESSION (x1 rates; a NORMAL x1-toughness mob, solo, zero level gap) ===");
 Console.WriteLine($"{"Lvl",4} {"exp/kill",10} {"sp/kill",9} {"expToNext",14} {"mobs/level",11} {"cumulative",12}");
 long cumulative = 0;

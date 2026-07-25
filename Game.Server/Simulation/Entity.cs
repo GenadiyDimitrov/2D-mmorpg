@@ -667,11 +667,28 @@ public class Entity
         }
     }
 
-    /// <summary>The DISPLAYED M.Atk — the internal value shrunk to P.Atk size (= scale·√internal). Combat
-    /// (damage + heals) uses the INTERNAL EffectiveMagicAttack with a √; this shrinks only what the player
-    /// SEES. A squared buff shows here as its honest % (scale·√(internal·(1+p)²) = shown·(1+p)). Path B.</summary>
-    public float EffectiveMagicAttackShown =>
-        StatCalculator.MagicAttackDisplayScale * MathF.Sqrt(Math.Max(0f, EffectiveMagicAttack));
+    /// <summary>The DISPLAYED M.Atk. Combat (damage + heals) always uses the INTERNAL EffectiveMagicAttack
+    /// with a √; this shrinks only what the player SEES. Path B, refined by the owner 2026-07-25:
+    ///
+    ///   shown = min(internal, scale·√internal)   (scale = 20)
+    ///
+    /// i.e. show the HONEST raw internal until it outgrows the shrink, then switch to scale·√internal. The
+    /// two are equal at internal = 400 (20·√400 = 400), so the switch is continuous. Below it a small
+    /// M.Atk reads as itself (a level-1 wand mage shows ~its real ~13, a fighter's stays tiny); only a
+    /// high-M.Atk geared caster — internal past 400, ~level 30-40 — crosses into the shrink that keeps the
+    /// endgame number from going cosmic. This makes the display STAT-driven, not level-driven: fighters
+    /// stay low on their own because their M.Atk never reaches the crossover. A squared magic buff still
+    /// shows its honest % in the shrink regime; in the raw regime it shows squared, which is fine — that
+    /// band is the low numbers nobody buffs around. Damage is untouched either way.</summary>
+    public float EffectiveMagicAttackShown
+    {
+        get
+        {
+            float internalMAtk = Math.Max(0f, EffectiveMagicAttack);
+            float shrunk = StatCalculator.MagicAttackDisplayScale * MathF.Sqrt(internalMAtk);
+            return MathF.Min(internalMAtk, shrunk);
+        }
+    }
 
     /// <summary>Is this a weapon a mage is TRAINED with (sword or blunt — wands/staves are blunt)? An
     /// untrained weapon (bow/dual/bare hands) triggers the Weapon Proficiency cast-speed penalty.</summary>
@@ -1092,8 +1109,12 @@ public class Entity
         AttackPower = Kind == EntityKind.Player
             ? 0
             : MobBaseStats.PAtk(Level);
+        // Player M.Atk is now WEAPON-based like P.Atk: seed 0 (no additive stat floor), let the equipped
+        // weapon's M.Atk accumulate below, then multiply by the stat (StatCalculator.MagicAttackStatScaled)
+        // and levelMod². The old additive seed (atkStat + level·2 + INT·3) is what made a level-1 mage read
+        // ~40 M.Atk (L2: ~8); removed. INT-via-dye will return as a stat-mult input, not a flat add.
         MagicAttack = Kind == EntityKind.Player
-            ? StatCalculator.AttackPower(EffectiveAtk, Level) + BonusInt * 3   // INT → M.Atk
+            ? 0
             : MobBaseStats.MAtk(Level);
         // Defence (authentic L2): players use armor/jewel-driven base + level²/100, no CON
         // term. Mobs use their authored base curve (P.Def and M.Def separately).
@@ -1265,7 +1286,11 @@ public class Entity
         {
             int weaponPAtk = (int)(AttackPower * weaponPFactor);
             AttackPower = StatCalculator.PhysicalAttackPower(weaponPAtk, EffectiveAtk, Level);
-            MagicAttack = Math.Max(0, (int)(MagicAttack * weaponMFactor));
+            // M.Atk mirrors P.Atk: the accumulated weapon M.Atk is the base, the stat multiplies it.
+            // levelMod² is applied later (the magic ² level term), so this stays level-free like the
+            // additive base it replaces — set/jewel/passive M.Atk still layer on afterwards.
+            int weaponMAtk = (int)(MagicAttack * weaponMFactor);
+            MagicAttack = StatCalculator.MagicAttackStatScaled(weaponMAtk, EffectiveAtk);
         }
 
         // ----- Item attributes (rolled per drop) -----

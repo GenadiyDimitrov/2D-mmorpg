@@ -119,20 +119,17 @@ public static class ExpCurve
 
     // ----- Skill points -------------------------------------------------------------------------
 
-    /// <summary>SP as a fraction of the same kill's EXP. The owner's anchors: ~1.0 at the start,
-    /// 0.15 at 50, 0.10 at 70, 0.05 at 85 — SP matters most while you are still buying your kit.
-    /// ⚠ These four points do NOT sit on any single power law or exponential (fitting 50+85 predicts
-    /// 0.075 at 70; fitting 50+70 predicts 0.079 at 85), so they are interpolated rather than fitted.
-    /// A consequence worth knowing: <see cref="MobSpReward"/> PEAKS near level 68 and then declines,
-    /// because the ratio falls faster than mob exp rises.</summary>
-    private static readonly (int Level, double Ratio)[] SpAnchors =
-    {
-        (1, 1.00d), (50, 0.15d), (70, 0.10d), (85, 0.05d),
-    };
+    /// <summary>SP as a CONSTANT fraction of the same kill's EXP — retail L2's shape (owner 2026-07-25).
+    /// L2 mob SP is a flat ~1/20–1/35 of exp at every level (a level-1 keltir pays 35 exp / 1 sp, a
+    /// level-8 goblin 285 / 10 — ratios of 0.029 and 0.035), NOT a curve. The earlier decaying anchors
+    /// (~1.0 at start → 0.05 at 85) made a low-level mob pay as much SP as EXP, ~30–70× L2; replaced by
+    /// one number. 1/20 is the round figure the owner named; our own exp sits ~2× L2's, so the ABSOLUTE
+    /// SP still lands a little above retail, but the RATIO now matches.</summary>
+    public const float SpToExpRatio = 1f / 20f;
 
-    /// <summary>SP-to-EXP ratio at this level.</summary>
-    public static float SpRatio(int level) =>
-        (float)InterpolateGeometric(SpAnchors, Math.Max(1, level), SpAnchors[^1].Level, SpAnchors[^1].Ratio);
+    /// <summary>SP-to-EXP ratio at this level. Constant now (see <see cref="SpToExpRatio"/>); the level
+    /// parameter is kept so callers need not change if the ratio ever varies by level again.</summary>
+    public static float SpRatio(int level) => SpToExpRatio;
 
     /// <summary>Base SP a normal mob of this level pays.</summary>
     public static long MobSpReward(int mobLevel) =>

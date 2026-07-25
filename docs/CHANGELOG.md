@@ -12,6 +12,25 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-25 — Magic stat model: weapon-based M.Atk (0.28.81)
+
+Reworked M.Atk to L2's **multiplicative** shape (matching P.Atk, which already worked this way), because
+the old **additive** base (`atkStat + level·2 + weaponM`) put the ~41-point power stat in as a flat FLOOR
+— a level-1 mage read ~40 internal M.Atk where L2 has ~8, doing ~2.2× L2's magic damage and one-shotting
+low-level mobs. Now the **weapon M.Atk is the base and the ATK stat multiplies it** (fist value when
+unarmed), so a small wand yields small M.Atk and the staff's big base carries the endgame.
+
+- **Two stat multipliers** (owner's "2 coefficients"): `PAtkStatMult` linear, `MAtkStatMult` super-linear
+  `(atk/40)^1.75` ("INT is king" for magic). The exponent mainly rewards ATK *investment* (dyes/swaps) —
+  geared endgame is driven by weapon M.Atk + robe `M.Atk ×1.17` + attributes, not the stat.
+- Measured (BalanceMatrix): lvl-1 mage internal M.Atk 40→**8** (L2-exact); lvl-8 nuke 399→154. Endgame now
+  lands on the original anchors (414 dmg vs a high-lvl tank [anchor 300-400], ~3.8 casts). Fighter physical
+  untouched. Endgame magic will be set by the coming S-grade staff M.Atk, not the stat.
+- **M.Atk display** = `min(internal, 20·√internal)` — honest small number low, shrink only the cosmic high end.
+- **Mob M.Def** coefficient 3.0→3.16 (L2 lvl-83 mob = 262). **Mob SP** = flat **1/20** of exp (was a decaying
+  1.0→0.05 curve; L2 is flat). `ExpCurve.md/.csv` regenerated.
+- Roadmap added: `docs/design/GearLadderAndCrafting.md` (S/S\*/S\*\* grades, ladder gaps, blueprint crafting).
+
 ## 2026-07-25 — Overnight bug + polish batch (0.28.80)
 
 Autonomous session against the device-playtest findings (`playtest-12-results`). No schema changes, so

@@ -111,8 +111,10 @@ public static class MobBaseStats
     /// <summary>Base physical defence — LINEAR in level, as in retail L2 (≈4.2·lvl).</summary>
     public static int PDef(int level) => Math.Max(44, (int)(4.2f * level));
 
-    /// <summary>Base magic defence — LINEAR in level, as in retail L2 (≈3·lvl).</summary>
-    public static int MDef(int level) => Math.Max(30, (int)(3.0f * level));
+    /// <summary>Base magic defence — LINEAR in level, as in retail L2. Coefficient 3.16 (owner 2026-07-25):
+    /// bumped from 3.0 to land the high end on the real table (L2 lvl-83 mob = 262 M.Def; 3.16·83 = 262,
+    /// and 3.16·80 = 253, matching L2's ~253 at 80). Floored at 30 for the first ~9 levels.</summary>
+    public static int MDef(int level) => Math.Max(30, (int)(3.16f * level));
 
     public static int Mp(int level)   => Interp(level, r => r.Mp);
     public static int PAtk(int level) => Interp(level, r => r.PAtk);

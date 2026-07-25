@@ -281,6 +281,42 @@ public static class StatCalculator
     public static int PhysicalAttackPower(int weaponPAtk, int atkStat, int level) =>
         Math.Max(1, (int)((UnarmedFistPAtk + weaponPAtk) * PAtkStatMult(atkStat) * LevelMod(level)));
 
+    // ----- M.Atk (same MULTIPLICATIVE shape as P.Atk; owner 2026-07-25) -----------------------
+    //
+    // M.Atk was the ONLY channel still ADDITIVE: base = (atkStat + level·2 + weaponM), which put the
+    // ~41-point power stat in as a flat FLOOR at every level. That floor dominates low levels (a lvl-1
+    // wand mage read ~40 M.Atk where L2 has ~8 → √-damage ~2.2× too high → one-shots) and fades to
+    // nothing by the endgame — exactly the level-dependent divergence the owner measured. The WEAPON is
+    // now the base and the stat MULTIPLIES it (a small fist value when unarmed), same as P.Atk, so a
+    // small wand base yields a small M.Atk and the staff's big base carries the endgame. The weapon's
+    // MAtkFactor still does the physical/magic split. levelMod² is applied LATER in RecomputeDerived
+    // (magic keeps its own ² level term; physical bakes levelMod into the formula above).
+    public const int UnarmedFistMAtk = 3;
+
+    /// <summary>ATK value the M.Atk multiplier is centred on → ×1.0 there.</summary>
+    public const int MAtkStatReference = 40;
+
+    /// <summary>How steeply M.Atk scales with the ATK stat — the SECOND of the two stat multipliers
+    /// (P.Atk is the first, and stays LINEAR = exponent 1). Magic is super-linear (owner 2026-07-25):
+    /// this is the "INT is king for a mage" curve, and it's the lever that restores the endgame after the
+    /// move to a weapon-based M.Atk. At 1.75 a same-tier mage matches the old signed-off endgame M.Atk
+    /// (~2953 at 85 on the A-grade FLOOR staff) while level 1 stays at ~8 — because (41/40)^1.75 ≈ 1.04 at
+    /// the base but (100/40)^1.75 ≈ 5.0 once gear has pushed ATK up. ⚠ It also makes +ATK stat-swaps/dyes
+    /// scale magic hard; that's intended (mage identity), flag if it needs a cap.</summary>
+    public const float MagicStatExponent = 1.75f;
+
+    /// <summary>The power-stat multiplier for M.Atk — the second, STEEPER of the two channel multipliers.
+    /// ~1.0 at the reference, rising super-linearly with ATK (see <see cref="MagicStatExponent"/>).</summary>
+    public static float MAtkStatMult(int atkStat) =>
+        Math.Max(0.2f, MathF.Pow(atkStat / (float)MAtkStatReference, MagicStatExponent));
+
+    /// <summary>Multiplicative M.Atk base (mirrors <see cref="PhysicalAttackPower"/> without the level
+    /// term): (fist + weaponMAtk) × ATKbonus. <paramref name="weaponMAtk"/> is the weapon's own M.Atk
+    /// contribution (its authored M.Atk × the M channel factor); 0 = no magic weapon. RecomputeDerived
+    /// then applies levelMod² on top of this, exactly as it did to the old additive base.</summary>
+    public static int MagicAttackStatScaled(int weaponMAtk, int atkStat) =>
+        Math.Max(0, (int)((UnarmedFistMAtk + weaponMAtk) * MAtkStatMult(atkStat)));
+
     /// <summary>Which LEVEL of the combat-training passive a character should hold at a
     /// given character level (auto-granted; our soulshot/spiritshot stand-in). 0 below
     /// 40; levels 1–8 step every 5 levels (40→1 … 75→8 = +10%…+80%); 9 from the
