@@ -22,7 +22,12 @@ public record Recipe(
 
 public static class RecipeCatalog
 {
-    private static readonly Dictionary<string, Recipe> _byId = Build();
+    // ⚠ Set in the EXPLICIT static constructor, NOT an inline initializer. Build() reads the static Cross
+    // and Steps tables below; inline field initializers run in TEXTUAL order, so an inline "= Build()" here
+    // would run before Cross/Steps exist and NRE (TypeInitializationException on first craft). The explicit
+    // static cctor runs AFTER every field initializer, so Cross/Steps are ready. (Found 2026-07-25.)
+    private static readonly Dictionary<string, Recipe> _byId;
+    static RecipeCatalog() => _byId = Build();
 
     private static Dictionary<string, Recipe> Build()
     {

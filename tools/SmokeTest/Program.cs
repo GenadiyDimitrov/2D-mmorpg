@@ -404,6 +404,51 @@ Check("SUBCLASS's bar survived the relog too",
 b.MyId = entered2.EntityId;
 
 // -------------------------------------------------------------------------------------------
+// 5b. CRAFTING + BLUEPRINTS. Crafting had NEVER been exercised end-to-end, which hid a static-init crash
+//     (RecipeCatalog threw on first access). This proves it runs, and proves the blueprint economy:
+//     1 blueprint to UNLOCK the recipe + 1 consumed per craft (so the first craft costs 2).
+// -------------------------------------------------------------------------------------------
+{
+    const string recipeId = "craft_sword1h_t76";      // A-grade (DropOnly), success 1.0, deterministic
+    var recipe = RecipeCatalog.Get(recipeId);
+    Check("RecipeCatalog initialises without throwing (the static-init bug is fixed)", recipe is not null);
+    if (recipe is not null)
+    {
+        string bpId = ItemCatalog.RecipeBookId(recipeId);
+        int Count(Session s, string defId) => s.Inv?.Items.Where(i => i.DefId == defId).Sum(i => i.Quantity) ?? 0;
+
+        await b.Hub.SendAsync("DebugSetProfession", (int)recipe.Profession);
+        await b.Hub.SendAsync("DebugGive", bpId, 2);      // two blueprints: one to learn, one to craft
+        await b.Settle();
+        Check("got two blueprints", Count(b, bpId) == 2, $"have {Count(b, bpId)}");
+
+        // UNLOCK: open one blueprint to learn the recipe (consumes it → 1 left).
+        var oneBp = b.Inv!.Items.First(i => i.DefId == bpId);
+        await b.Hub.SendAsync("OpenBox", oneBp.InstanceId);
+        await b.Settle();
+        Check("unlocking the recipe consumed ONE blueprint (1 of 2 left)", Count(b, bpId) == 1,
+              $"have {Count(b, bpId)}");
+
+        // Give the mats, then craft — should succeed and consume the SECOND blueprint.
+        foreach (var inp in recipe.Inputs) await b.Hub.SendAsync("DebugGive", inp.ItemId, inp.Qty);
+        await b.Settle();
+        await b.Hub.SendAsync("Craft", recipeId);
+        await b.Settle();
+        Check("the craft produced the item", Count(b, recipe.OutputId) == 1, $"have {Count(b, recipe.OutputId)}");
+        Check("the craft consumed the second blueprint (0 left → first craft cost 2)", Count(b, bpId) == 0,
+              $"have {Count(b, bpId)}");
+
+        // With the recipe still LEARNED and mats re-supplied but NO blueprint, the craft must be blocked.
+        foreach (var inp in recipe.Inputs) await b.Hub.SendAsync("DebugGive", inp.ItemId, inp.Qty);
+        await b.Settle();
+        await b.Hub.SendAsync("Craft", recipeId);
+        await b.Settle();
+        Check("a craft with no blueprint is blocked (still just one crafted item)",
+              Count(b, recipe.OutputId) == 1, $"have {Count(b, recipe.OutputId)}");
+    }
+}
+
+// -------------------------------------------------------------------------------------------
 // 6. ADMIN MODERATION — jail (per-char, live + persists + pins), kick (per-char lockout). These SHIP in
 //    release, so they're authorized server-side by the caller's role; verify the behaviour, not the UI.
 // -------------------------------------------------------------------------------------------

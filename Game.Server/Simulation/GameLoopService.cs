@@ -1778,7 +1778,7 @@ public class GameLoopService : BackgroundService
         {
             if (!player.KnownRecipes.Contains(recipe.Id))
             {
-                SendSystemToEntity(player, "You haven't learned that recipe (find its recipe book).");
+                SendSystemToEntity(player, "You haven't learned that recipe — unlock it with its blueprint first.");
                 return;
             }
         }
@@ -1787,14 +1787,28 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, $"You must be level {recipe.LearnLevel} to craft this.");
             return;
         }
+
+        // Endgame (DropOnly) recipes ALSO consume ONE BLUEPRINT per craft — the very item that unlocked the
+        // recipe (owner's design: 1 blueprint to learn + 1 every craft, so the first craft costs 2). The
+        // blueprint is the recipe's own book item, which always exists for a DropOnly (A-grade) recipe.
+        string? blueprintId = recipe.DropOnly ? ItemCatalog.RecipeBookId(recipe.Id) : null;
+        if (blueprintId != null && ItemCatalog.Get(blueprintId) is null) blueprintId = null;
+
         foreach (var inp in recipe.Inputs)
             if (CountItem(player, inp.ItemId) < inp.Qty)
             {
                 SendSystemToEntity(player, "You don't have the required materials.");
                 return;
             }
+        if (blueprintId != null && CountItem(player, blueprintId) < 1)
+        {
+            SendSystemToEntity(player, "You need a blueprint to craft this — one is consumed each time.");
+            return;
+        }
         foreach (var inp in recipe.Inputs)
             ConsumeItem(player, inp.ItemId, inp.Qty);
+        if (blueprintId != null)
+            ConsumeItem(player, blueprintId, 1);
 
         string outName = ItemCatalog.Get(recipe.OutputId)?.Name ?? recipe.OutputId;
         if (_rng.NextDouble() < recipe.SuccessChance)
@@ -7359,7 +7373,10 @@ var effect = def.Effect;
         if (item.Quantity > 1) item.Quantity--; else player.Inventory.Remove(item);
 
         string outName = ItemCatalog.Get(recipe.OutputId)?.Name ?? recipe.OutputId;
-        SendSystemToEntity(player, $"Learned recipe: {outName}. (Requires the {recipe.Profession} profession to craft.)");
+        // The blueprint is spent to UNLOCK, and each craft spends one more — tell the player up front.
+        SendSystemToEntity(player,
+            $"Unlocked the blueprint for {outName}. Each craft consumes another blueprint" +
+            (recipe.Profession != Profession.None ? $" and needs the {recipe.Profession} profession." : "."));
         SendInventory(player);
         SaveEntity(player);
     }

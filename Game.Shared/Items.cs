@@ -1095,7 +1095,7 @@ public static class ItemCatalog
             if (d.ItemLevel < 76 || d.Rarity != ItemRarity.Epic) continue;   // A-grade set pieces only
             if (d.Slot is not (EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel)) continue;
             string recipeId = $"craft_{d.Id}";
-            yield return new ItemDef(RecipeBookId(recipeId), $"Recipe: {d.Name}",
+            yield return new ItemDef(RecipeBookId(recipeId), $"Blueprint: {d.Name}",
                 EquipSlot.Box, ItemGrade.A, ItemRarity.Epic,
                 TeachesRecipeId: recipeId);
         }

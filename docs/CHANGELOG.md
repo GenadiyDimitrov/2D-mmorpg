@@ -12,6 +12,18 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-25 — Blueprint crafting + a latent crafting-crash fix (0.28.84)
+
+- **Fixed a latent crash**: `RecipeCatalog` set `_byId = Build()` as an inline field initializer *before*
+  the `Cross`/`Steps` tables it reads — static initializers run in textual order, so `Build()` NRE'd and
+  the whole catalog threw `TypeInitializationException` **on first access (i.e. the first craft)**. It
+  survived because crafting had never been exercised end-to-end. Fixed with an explicit static constructor
+  (runs after all field initializers). Now covered by a SmokeTest craft.
+- **Blueprint economy** (owner's design): an endgame (DropOnly / A-grade) recipe is unlocked by consuming
+  **1 blueprint** (its recipe book — renamed "Blueprint: …"), and **each craft consumes 1 more**, so the
+  first craft costs 2. `HandleCraft` requires + consumes `RecipeBookId(recipe.Id)` for DropOnly recipes;
+  learn/craft messages spell out the cost. SmokeTest verifies unlock→craft→blocked-without-blueprint.
+
 ## 2026-07-25 — Private warehouse (0.28.83, server-side)
 
 Built the per-character warehouse the shot-rune system already pointed at ("move a rune to the warehouse
