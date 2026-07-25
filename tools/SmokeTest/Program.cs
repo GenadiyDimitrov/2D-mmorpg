@@ -210,6 +210,27 @@ Check("/flist shows a MUTUAL friend's online state",
       string.Join(" | ", a.SystemChat));
 
 // -------------------------------------------------------------------------------------------
+// 4a. CHARISMA — /like gives +1 from a 20/day budget; it ranks on the charisma board.
+// -------------------------------------------------------------------------------------------
+friend.SystemChat.Clear();
+a.SystemChat.Clear();
+await a.Hub.SendAsync("Like", "Test2");
+await a.Settle();
+Check("liking a player raised their charisma",
+      friend.SystemChat.Any(s => s.Contains("liked you") && s.Contains("charisma")),
+      string.Join(" | ", friend.SystemChat));
+Check("the liker spent one from the daily budget",
+      a.SystemChat.Any(s => s.Contains("likes left today")));
+a.SystemChat.Clear();
+await a.Hub.SendAsync("Like", name);   // can't like yourself
+await a.Settle();
+Check("you can't like yourself", a.SystemChat.Any(s => s.Contains("can't like yourself")));
+var chBoard = await a.Hub.InvokeAsync<LeaderboardDto>("RequestLeaderboard", "charisma");
+Check("the liked player reached the charisma board",
+      chBoard.Entries.Any(e => e.Name == "Test2" && e.Value >= 1),
+      string.Join(",", chBoard.Entries.Select(e => $"{e.Name}:{e.Value}")));
+
+// -------------------------------------------------------------------------------------------
 // 4b. BLOCK / IGNORE. A blocked player's whisper (and world/local chat) is filtered out for you; the
 //     SENDER is told it wasn't accepted, the recipient hears nothing. Both players are online here.
 // -------------------------------------------------------------------------------------------

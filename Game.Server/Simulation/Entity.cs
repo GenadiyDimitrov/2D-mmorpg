@@ -274,6 +274,17 @@ public class Entity
     /// to restore the item faithfully (enchant + rolled attributes).</summary>
     public List<BuyBackEntry> BuyBack { get; } = new();
 
+    // ----- Charisma (reputation). Two values, neither below 0 (see GameConstants). -----
+    /// <summary>The 0–<see cref="GameConstants.CharismaPoolCap"/> bonus POOL — drives the exp/sp bonus.</summary>
+    public int Charisma { get; set; }
+    /// <summary>Uncapped LIFETIME charisma — what the ranking board uses. Likes raise it; kills (and later
+    /// moderation) lower it, so a griefer can't top the board.</summary>
+    public long CharismaLifetime { get; set; }
+    /// <summary>Likes left to GIVE today (budget, resets daily). </summary>
+    public int LikesRemainingToday { get; set; } = GameConstants.DailyLikeBudget;
+    /// <summary>UTC date (yyyy-MM-dd) the like budget was last granted; a new day refills it to the budget.</summary>
+    public string LikeBudgetDay { get; set; } = "";
+
     /// <summary>NPC id this entity represents (NPCs only).</summary>
     public string? NpcId { get; set; }
     public NpcRole NpcRole { get; set; }

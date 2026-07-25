@@ -126,6 +126,7 @@ public class GameLoopService : BackgroundService
                 case AdminRemoveItemCmd c: HandleAdminRemoveItem(c); break;
                 case FriendCmd c: HandleFriend(c); break;
                 case BlockCmd c: HandleBlock(c); break;
+                case LikeCmd c: HandleLike(c); break;
                 case FollowCmd c: HandleFollow(c); break;
                 case AssistCmd c: HandleAssist(c); break;
                 case LeaveCommand c: HandleLeave(c); break;
@@ -620,6 +621,10 @@ public class GameLoopService : BackgroundService
             killer.Karma += gain;
             killer.ConsecutivePk++;
             killer.PkCount++;
+            // PKing costs REPUTATION: drain both charisma values by karma × 0.01 (persisted by the
+            // SaveEntity(killer) at the end of this method). A griefer can't sit atop the charisma board.
+            GrantCharisma(killer, -(int)Math.Round(gain * GameConstants.CharismaKillPenaltyPerKarma),
+                                  -(long)Math.Round(gain * GameConstants.CharismaKillPenaltyPerKarma));
             SendSystemToEntity(killer, $"You killed an innocent — Karma +{gain} (now {killer.Karma:N0}). You are now a PK.");
         }
         else
@@ -4116,6 +4121,70 @@ public class GameLoopService : BackgroundService
         }
     }
 
+    // ----- Charisma (reputation) -----
+
+    /// <summary>Move a charisma delta onto a LIVE entity: pool clamped [0,cap], lifetime floored at 0.</summary>
+    private static void GrantCharisma(Entity target, int poolDelta, long lifetimeDelta)
+    {
+        target.Charisma = Math.Clamp(target.Charisma + poolDelta, 0, GameConstants.CharismaPoolCap);
+        target.CharismaLifetime = Math.Max(0, target.CharismaLifetime + lifetimeDelta);
+    }
+
+    /// <summary>Refill the daily like budget if it's a new UTC day.</summary>
+    private static void RefreshLikeBudget(Entity p)
+    {
+        string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        if (p.LikeBudgetDay != today)
+        {
+            p.LikeBudgetDay = today;
+            p.LikesRemainingToday = GameConstants.DailyLikeBudget;
+        }
+    }
+
+    /// <summary>Give a player +1 charisma from your daily budget. Works on an offline target (DB write).</summary>
+    private void HandleLike(LikeCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var p)) return;
+        var name = cmd.Name.Trim();
+        if (name.Length == 0) return;
+        if (string.Equals(name, p.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            SendSystemToEntity(p, "You can't like yourself.");
+            return;
+        }
+
+        RefreshLikeBudget(p);
+        if (p.LikesRemainingToday <= 0)
+        {
+            SendSystemToEntity(p, "You've used all your likes today. They refresh at midnight (UTC).");
+            return;
+        }
+
+        // Online target: apply on the tick thread (safe entity mutation).
+        if (FindOnlinePlayer(name) is Entity online)
+        {
+            p.LikesRemainingToday--;
+            GrantCharisma(online, 1, 1);
+            SaveEntity(p);
+            SaveEntity(online);
+            SendSystemToEntity(p, $"You liked {online.Name}. ({p.LikesRemainingToday} likes left today)");
+            SendSystemToEntity(online, $"{p.Name} liked you — charisma is now {online.Charisma}.");
+            return;
+        }
+
+        // Offline target: spend the like, then resolve + apply in the DB on a worker (no live entity to race).
+        // A typo'd offline name simply costs the like — no off-tick refund (keeps the single-writer rule).
+        p.LikesRemainingToday--;
+        SaveEntity(p);
+        _ = Task.Run(async () =>
+        {
+            string? canonical = await _db.ResolveCharacterNameAsync(name);
+            if (canonical is null) { SendSystemToEntity(p, $"No character '{name}'."); return; }
+            await _db.AddCharismaAsync(canonical, 1, 1);
+            SendSystemToEntity(p, $"You liked {canonical} (offline). ({p.LikesRemainingToday} likes left today)");
+        });
+    }
+
     /// <summary>Start/stop FOLLOWING a player. Only players are followable, and never yourself. Follow
     /// ends the current attack (you're tailing, not fighting) — assist is the "fight with them" verb.</summary>
     private void HandleFollow(FollowCmd cmd)
@@ -6743,7 +6812,10 @@ var effect = def.Effect;
         {
             float gap = ExpCurve.LevelGapMultiplier(m.Level - victim.Level);
             if (gap <= 0f) continue;   // 13+ levels out: nothing at all
-            AwardExp(m, (long)(shareExp * gap), (long)(shareSp * gap));
+            // Personal amplifiers, applied at the same stage as the level gap (owner): the shared party
+            // share × the mob-level gap × this member's own CHARISMA bonus (1.0…1.5).
+            float cha = GameConstants.CharismaExpMultiplier(m.Charisma);
+            AwardExp(m, (long)(shareExp * gap * cha), (long)(shareSp * gap * cha));
         }
     }
 

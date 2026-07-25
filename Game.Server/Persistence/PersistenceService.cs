@@ -362,6 +362,7 @@ public class PersistenceService
             "pvp"    => await q.Where(c => c.PvpCount > 0).OrderByDescending(c => c.PvpCount).Take(count).ToListAsync(),
             "pk"     => await q.Where(c => c.PkCount > 0).OrderByDescending(c => c.PkCount).Take(count).ToListAsync(),
             "online" => await q.Where(c => c.TotalOnlineSeconds > 0).OrderByDescending(c => c.TotalOnlineSeconds).Take(count).ToListAsync(),
+            "charisma" => await q.Where(c => c.CharismaLifetime > 0).OrderByDescending(c => c.CharismaLifetime).Take(count).ToListAsync(),
             _        => await q.OrderByDescending(c => c.Level).ThenByDescending(c => c.Exp).Take(count).ToListAsync(),
         };
 
@@ -371,6 +372,7 @@ public class PersistenceService
             "pvp"    => c.PvpCount,
             "pk"     => c.PkCount,
             "online" => c.TotalOnlineSeconds,
+            "charisma" => c.CharismaLifetime,
             _        => c.Level,
         };
 
@@ -615,6 +617,10 @@ public class PersistenceService
             entity.Friends.Add(fn);
         foreach (var bn in rec.BlockedCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
             entity.Blocked.Add(bn);
+        entity.Charisma = rec.Charisma;
+        entity.CharismaLifetime = rec.CharismaLifetime;
+        entity.LikesRemainingToday = rec.LikesRemainingToday;
+        entity.LikeBudgetDay = rec.LikeBudgetDay;
 
         if (!string.IsNullOrEmpty(rec.ActiveQuestsJson))
         {
@@ -760,6 +766,7 @@ public class PersistenceService
         int ActiveSubclassSlot, IReadOnlyList<SubclassSnapshot> Subclasses,
         int Karma, int PkCount, int PvpCount, int ConsecutivePk, bool DiedWhileAway,
         DateTime? JailedUntilUtc, DateTime? ChatBannedUntilUtc, long TotalOnlineSeconds,
+        int Charisma, long CharismaLifetime, int LikesRemainingToday, string LikeBudgetDay,
         IReadOnlyList<ItemSnapshot> Items)
     {
         /// <summary>Capture a character. MUST be called on the tick thread. Returns
@@ -798,6 +805,7 @@ public class PersistenceService
                 e.ActiveSubclass.Slot, subs,
                 e.Karma, e.PkCount, e.PvpCount, e.ConsecutivePk, e.DiedWhileAway,
                 e.JailedUntil, e.ChatBannedUntil, e.TotalOnlineSeconds,
+                e.Charisma, e.CharismaLifetime, e.LikesRemainingToday, e.LikeBudgetDay,
                 items);
         }
     }
@@ -864,6 +872,10 @@ public class PersistenceService
         rec.KnownRecipesCsv = snap.KnownRecipesCsv;
         rec.FriendsCsv = snap.FriendsCsv;
         rec.BlockedCsv = snap.BlockedCsv;
+        rec.Charisma = snap.Charisma;
+        rec.CharismaLifetime = snap.CharismaLifetime;
+        rec.LikesRemainingToday = snap.LikesRemainingToday;
+        rec.LikeBudgetDay = snap.LikeBudgetDay;
         rec.AutoHuntJson = snap.AutoHuntJson;
         rec.EquipPresetsJson = snap.EquipPresetsJson;
         rec.Karma = snap.Karma;
@@ -1038,6 +1050,22 @@ public class PersistenceService
         character.KickedUntilUtc = until;
         await db.SaveChangesAsync();
         return true;
+    }
+
+    /// <summary>Apply a charisma delta to a possibly-OFFLINE character by name (pool clamped [0,cap],
+    /// lifetime floored at 0). For liking a logged-off player. Returns their new lifetime, or null if no
+    /// such character. If they are ONLINE, the caller must update the live Entity instead (this write
+    /// would be overwritten by their next autosave).</summary>
+    public async Task<long?> AddCharismaAsync(string characterName, int poolDelta, long lifetimeDelta)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var lower = characterName.ToLower();
+        var c = await db.Characters.FirstOrDefaultAsync(ch => ch.Name.ToLower() == lower);
+        if (c is null) return null;
+        c.Charisma = Math.Clamp(c.Charisma + poolDelta, 0, GameConstants.CharismaPoolCap);
+        c.CharismaLifetime = Math.Max(0, c.CharismaLifetime + lifetimeDelta);
+        await db.SaveChangesAsync();
+        return c.CharismaLifetime;
     }
 
     /// <summary>CHAT-BAN a character until <paramref name="until"/> (null = lift).</summary>

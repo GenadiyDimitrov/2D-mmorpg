@@ -12,6 +12,22 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-25 — Charisma / reputation — core (0.28.87)
+
+Reputation with **two persisted values** (neither below 0): a **pool 0–1000** (drives the reward — every
+20 = +1% exp/sp, cap +50%) and an uncapped **lifetime** (the ranking board).
+- **`/like <name>`** (`Like` hub cmd): +1 to both, from a **20/day budget** (freely distributed, resets at
+  UTC midnight, no receive cap). Works on an online target (live) or offline (DB write).
+- **PK drain**: a kill drains both values by `karma × 0.01` — so a griefer can't top the board.
+- **Exp/sp bonus**: each earner's own charisma multiplies their share (1.0–1.5), applied at the same
+  personal stage as the mob-level gap (so it amplifies party-split exp per player).
+- **Ranking**: a new **"charisma"** leaderboard on the lifetime value (#1 = "the Beloved").
+- Persisted (Charisma / CharismaLifetime / daily-budget — SCHEMA CHANGE, game.db reset). SmokeTest: like
+  raises charisma + spends budget + reaches the board; self-like blocked.
+- ⏳ **Deferred**: the moderation drains (chatban/jail/kick −tiers, ban → 0). Those admin paths run on
+  WORKER threads, so draining an online target's charisma there needs a tick-thread command — a bounded
+  follow-up. Kills already drain lifetime, so the anti-griefer intent holds for PK now.
+
 ## 2026-07-25 — Buy-back (0.28.86, server-side)
 
 Re-buy a recently-sold item at any vendor for the price you got. `Entity.BuyBack` is an in-memory list

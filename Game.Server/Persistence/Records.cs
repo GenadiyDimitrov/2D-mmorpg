@@ -85,6 +85,12 @@ public class CharacterRecord
     /// game.db to recreate.)</summary>
     public string BlockedCsv { get; set; } = "";
 
+    // ----- Charisma (reputation). Schema change — delete game.db to recreate. -----
+    public int Charisma { get; set; }
+    public long CharismaLifetime { get; set; }
+    public int LikesRemainingToday { get; set; } = GameConstants.DailyLikeBudget;
+    public string LikeBudgetDay { get; set; } = "";
+
     /// <summary>Active quests as JSON list of CharacterQuestState.</summary>
     public string ActiveQuestsJson { get; set; } = "";
 

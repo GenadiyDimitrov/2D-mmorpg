@@ -280,6 +280,9 @@ public record FriendCmd(string ConnectionId, string Action, string Name) : IGame
 /// <summary>Ignore list: Action = block / unblock / list.</summary>
 public record BlockCmd(string ConnectionId, string Action, string Name) : IGameCommand;
 
+/// <summary>Give a player +1 charisma (from your daily like budget).</summary>
+public record LikeCmd(string ConnectionId, string Name) : IGameCommand;
+
 /// <summary>FOLLOW a player: walk toward them each tick until cancelled. TargetId null = stop following.</summary>
 public record FollowCmd(string ConnectionId, Guid? TargetId) : IGameCommand;
 

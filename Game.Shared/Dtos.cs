@@ -298,7 +298,7 @@ public record LeaderboardDto(string Category, IReadOnlyList<LeaderboardEntry> En
 /// Category ids are append-only strings, like skill ids.</summary>
 public static class Leaderboards
 {
-    public static readonly string[] Categories = { "level", "gold", "pvp", "pk", "online" };
+    public static readonly string[] Categories = { "level", "gold", "pvp", "pk", "online", "charisma" };
 
     public static string Label(string cat) => cat switch
     {
@@ -307,6 +307,7 @@ public static class Leaderboards
         "pvp"    => "PvP Kills",
         "pk"     => "Player Kills",
         "online" => "Time Played",
+        "charisma" => "Charisma",
         _        => cat,
     };
 
@@ -318,6 +319,7 @@ public static class Leaderboards
         "pvp"    => "the Warlord",
         "pk"     => "the Feared",
         "online" => "the Devoted",
+        "charisma" => "the Beloved",
         _        => "",
     };
 }

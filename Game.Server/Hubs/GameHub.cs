@@ -515,6 +515,12 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task Like(string name)
+    {
+        _world.Commands.Enqueue(new LikeCmd(Context.ConnectionId, name ?? ""));
+        return Task.CompletedTask;
+    }
+
     /// <summary>Follow a player (null = stop). Assist = attack whatever they're attacking.</summary>
     public Task Follow(Guid? targetId)
     {

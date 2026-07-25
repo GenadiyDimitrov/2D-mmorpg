@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.28.86";
+    public const string GameVersion = "0.28.87";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -241,6 +241,23 @@ public static class GameConstants
     /// <summary>How many recently-sold items the buy-back list keeps (per character, in-memory). Selling
     /// past this drops the oldest entry.</summary>
     public const int BuyBackSlots = 24;
+
+    // ----- Charisma (reputation) -----
+    /// <summary>Likes a player may GIVE per day (a budget, freely distributed; resets at UTC midnight).</summary>
+    public const int DailyLikeBudget = 20;
+    /// <summary>Charisma POOL cap. Every <see cref="CharismaPerBonusPercent"/> of pool = +1% exp/sp, so the
+    /// cap is +50%. The pool is drained by kills (and, later, moderation); the lifetime value (uncapped)
+    /// is what the ranking board uses.</summary>
+    public const int CharismaPoolCap = 1000;
+    /// <summary>Pool points per +1% exp/sp. 20 → cap 1000 gives +50%.</summary>
+    public const int CharismaPerBonusPercent = 20;
+    /// <summary>A kill drains this × the karma gained from it, off BOTH charisma values (200 karma → −2,
+    /// 15 000 → −150). Bad behaviour costs reputation.</summary>
+    public const double CharismaKillPenaltyPerKarma = 0.01;
+
+    /// <summary>Exp/sp multiplier from a character's charisma pool (1.0 … 1.5).</summary>
+    public static float CharismaExpMultiplier(int pool) =>
+        1f + Math.Clamp(pool, 0, CharismaPoolCap) / (float)(CharismaPerBonusPercent * 100);
 
     /// <summary>Skill-bar slots — 5 rows of 12. The bar is ONE FLAT collection of ids; "rows" are purely a
     /// client visualization (it slices this list into chunks of <see cref="SkillBarColumns"/>). Shared,
