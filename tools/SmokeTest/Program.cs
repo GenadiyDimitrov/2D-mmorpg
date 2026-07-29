@@ -409,11 +409,65 @@ await a.Settle();
 // below (SyncSkillBar kept the item: token) is the real proof it was accepted AND persisted.
 
 // -------------------------------------------------------------------------------------------
+// 4c. STACKABLES IN THE BANK. Crafting materials used to land as one warehouse ROW PER DEPOSIT
+//     (playtest-13) because deposit moved the whole InventoryItem instead of merging. Deposit the
+//     same material twice and assert ONE row holding both.
+// -------------------------------------------------------------------------------------------
+string matId = Crafting.MaterialId(MaterialType.Ingot, ItemRarity.Common);
+await a.Hub.SendAsync("DebugGive", matId, 5);
+await a.Settle();
+var matStack = a.Inv?.Items.FirstOrDefault(i => i.DefId == matId);
+Check("materials arrive as ONE stacked bag row", matStack is not null && matStack.Quantity >= 5,
+      $"qty {matStack?.Quantity}");
+if (matStack is not null)
+{
+    await a.Hub.SendAsync("WarehouseDeposit", matStack.InstanceId);
+    await a.Settle();
+    await a.Hub.SendAsync("DebugGive", matId, 3);
+    await a.Settle();
+    var second = a.Inv?.Items.FirstOrDefault(i => i.DefId == matId);
+    if (second is not null)
+    {
+        await a.Hub.SendAsync("WarehouseDeposit", second.InstanceId);
+        await a.Settle();
+    }
+    int matRows = a.Ware?.Items.Count(i => i.DefId == matId) ?? 0;
+    int matTotal = a.Ware?.Items.Where(i => i.DefId == matId).Sum(i => i.Quantity) ?? 0;
+    Check("two deposits of one material MERGE into a single bank row", matRows == 1, $"rows {matRows}");
+    Check("the merged bank row keeps the full quantity", matTotal >= 8, $"qty {matTotal}");
+}
+
+// -------------------------------------------------------------------------------------------
+// 4d. BUFFS BEFORE THE RELOG. Buffs used to die on every logout because nothing saved them
+//     (playtest-13). Take one here; the relog below proves it came back from the DB with LESS
+//     time on it — full time would mean it was re-cast, and none would mean it was lost.
+// -------------------------------------------------------------------------------------------
+await a.Hub.SendAsync("DebugGive", ItemCatalog.SpeedPotionC, 1);
+await a.Settle();
+float buffSecondsBefore = 0f;
+string? buffKey = null;
+var buffPotion = a.Inv?.Items.FirstOrDefault(i => i.DefId == ItemCatalog.SpeedPotionC);
+Check("got a buff potion", buffPotion is not null);
+if (buffPotion is not null)
+{
+    await a.Hub.SendAsync("UsePotion", buffPotion.InstanceId);
+    await a.Settle();
+    var up = a.Buffs?.Buffs.FirstOrDefault(b => !b.IsDebuff && b.SecondsLeft > 0);
+    Check("the potion put a timed buff up", up is not null);
+    if (up is not null) { buffKey = up.Key; buffSecondsBefore = up.SecondsLeft; }
+}
+
+// -------------------------------------------------------------------------------------------
 // 5. THE REAL TEST: log out completely and log back in on a NEW connection. Everything above
 //    could still be alive purely in server memory. Only a relog proves it reached the DB.
+//
+//    INVOKE, not Send: the server completes LeaveWorld only after the character has been SAVED, and
+//    answers with a refusal reason when leaving is blocked (in combat / a DoT ticking). SendAsync
+//    returns the moment the message is written and waits for neither — which is exactly the bug that
+//    left the character-select screen showing the level from before the session.
 // -------------------------------------------------------------------------------------------
-await a.Hub.SendAsync("LeaveWorld");
-await Task.Delay(600);
+var leaveRefusal = await a.Hub.InvokeAsync<string?>("LeaveWorld");
+Check("LeaveWorld was not refused (out of combat, nothing ticking)", leaveRefusal is null, leaveRefusal);
 await a.DisposeAsync();
 
 var b = await ConnectAsync("test1", "test");
@@ -445,6 +499,36 @@ Check("levels survived the relog (main 81, subclass 5)",
       b.Subclasses.Classes.First(c => c.Slot == subSlot).Level == 5,
       $"main {b.Subclasses!.Classes.First(c => c.Slot == mainSlot).Level}, " +
       $"sub {b.Subclasses.Classes.First(c => c.Slot == subSlot).Level}");
+
+// The merged material row must come back as ONE row, not split again by the save/load round trip.
+Check("the merged material row survived the relog as ONE row",
+      b.Ware?.Items.Count(i => i.DefId == matId) == 1,
+      $"rows {b.Ware?.Items.Count(i => i.DefId == matId)}");
+
+// BUFFS ACROSS THE RELOG (0.28.94). Not "is it still there" — a re-cast would also look like that.
+// The timer must have gone DOWN, which is the only evidence the wall-clock expiry was restored rather
+// than the buff being freshly applied at full duration.
+if (buffKey is not null)
+{
+    var back = b.Buffs?.Buffs.FirstOrDefault(x => x.Key == buffKey);
+    // No failure-detail here: Check prints the detail on PASS too, so "PASS … (buff was lost)" reads
+    // like a contradiction.
+    Check("the buff survived the relog", back is not null);
+    if (back is not null)
+        Check("the restored buff kept its REMAINING time (not re-cast at full duration)",
+              back.SecondsLeft < buffSecondsBefore && back.SecondsLeft > 0f,
+              $"{buffSecondsBefore:0.0}s before -> {back.SecondsLeft:0.0}s after");
+    int copies = b.Buffs?.Buffs.Count(x => x.Key == buffKey) ?? 0;
+    Check("the restored buff is applied exactly ONCE (no double-apply)", copies == 1, $"copies {copies}");
+}
+
+// CHARACTER SELECT freshness (0.28.92/0.28.95): LeaveWorld only completes after the save, so the
+// character list must already show the level this session reached — and the class, which the row
+// used to ignore entirely.
+var afterChars = await b.Hub.InvokeAsync<CharacterList>("ListCharacters");
+var mine = afterChars.Characters.First(c => c.Id == charId);
+Check("character select shows THIS session's level (the save is awaited, not raced)",
+      mine.Level == 81, $"listed level {mine.Level}");
 
 // And the SUBCLASS's own bar must still be its own, after the relog.
 b.Bar = null;
@@ -660,6 +744,11 @@ sealed class Session : IAsyncDisposable
     /// exp-to-next arriving on the wire.</summary>
     public ProgressUpdate? Progress;
 
+    /// <summary>The last "Buffs" push. Buffs are pushed CONDITIONALLY (about once a second while any
+    /// are running), which is exactly why they need asserting on the wire: a buff bar can look right
+    /// while the server holds something else entirely.</summary>
+    public BuffUpdate? Buffs;
+
     public async Task OpenAsync(string url)
     {
         Hub = new HubConnectionBuilder().WithUrl(url).Build();
@@ -676,6 +765,7 @@ sealed class Session : IAsyncDisposable
             foreach (var id in d.Despawns) Despawned.Add(id);
         });
         Hub.On<ProgressUpdate>("Progress", p => Progress = p);
+        Hub.On<BuffUpdate>("Buffs", b => Buffs = b);
         Hub.On<ChatMessage>("Chat", m => { AllChat.Add(m); if (m.Channel == ChatChannel.System) { SystemChat.Add(m.Text); Console.WriteLine($"        [SYSTEM] {m.Text}"); } });
         await Hub.StartAsync();
     }
