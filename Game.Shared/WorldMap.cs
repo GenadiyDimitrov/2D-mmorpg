@@ -56,66 +56,85 @@ public static class WorldMap
         // Fields sit >=2500 from their town centre (outside the safe zone) and are spaced so two bands
         // never bleed into one another.
 
+        // AggressiveTypes is AUTHORED per field: as many or as few as the field should have. The
+        // starter fields are deliberately PEACEFUL (empty list) — nothing should jump a level-3
+        // character — and danger ramps from one type to two as the bands climb.
+
         // ===== Brackenford (centre, 24000/24000) — levels 1-16 =====
         new(X: 19400, Y: 24000, Radius: 1500, MinLevel: 1,  MaxLevel: 12,
             MobTypes: new[] { "ridgeback_pup", "fox", "goblin_scout", "ashen_wolf", "werewolf" }, MaxCount: 12,
-            RespawnSeconds: 8, RespawnVariance: 3),
+            RespawnSeconds: 8, RespawnVariance: 3,
+            AggressiveTypes: new string[0]),                       // the very first field: nothing hunts you
         new(X: 28600, Y: 24000, Radius: 1500, MinLevel: 8,  MaxLevel: 16,
             MobTypes: new[] { "goblin_scout", "ashen_wolf", "werewolf", "hook_spider", "orc_archer" }, MaxCount: 12,
-            RespawnSeconds: 10, RespawnVariance: 4),
+            RespawnSeconds: 10, RespawnVariance: 4,
+            AggressiveTypes: new[] { "werewolf" }),                // one thing to learn to watch for
 
         // ===== Stonewatch (north, 24000/10000) — levels 16-40 =====
         new(X: 20000, Y: 10000, Radius: 1400, MinLevel: 16, MaxLevel: 22,
             MobTypes: new[] { "orc_archer", "skeleton_grunt", "shield_skeleton", "grizzly_bear" }, MaxCount: 12,
-            RespawnSeconds: 12, RespawnVariance: 4),
+            RespawnSeconds: 12, RespawnVariance: 4,
+            AggressiveTypes: new[] { "grizzly_bear" }),
         new(X: 28000, Y: 10000, Radius: 1400, MinLevel: 22, MaxLevel: 28,
             MobTypes: new[] { "grizzly_bear", "cinder_imp", "watcher_eye", "lizardman_warrior" }, MaxCount: 12,
-            RespawnSeconds: 14, RespawnVariance: 5),
+            RespawnSeconds: 14, RespawnVariance: 5,
+            AggressiveTypes: new[] { "cinder_imp", "lizardman_warrior" }),
         new(X: 24000, Y: 6800,  Radius: 1300, MinLevel: 28, MaxLevel: 34,
             MobTypes: new[] { "lizardman_warrior", "marauder_recruit", "mantis_worker", "grave_robber_fighter", "medusa", "plunder_beetle" }, MaxCount: 12,
-            RespawnSeconds: 15, RespawnVariance: 5),
+            RespawnSeconds: 15, RespawnVariance: 5,
+            AggressiveTypes: new[] { "lizardman_warrior", "marauder_recruit" }),
         new(X: 24000, Y: 14000, Radius: 1400, MinLevel: 34, MaxLevel: 40,
             MobTypes: new[] { "medusa", "plunder_beetle", "wyrm", "marsh_mantis_soldier", "fen_lizardman_archer", "dune_orc_archer" }, MaxCount: 12,
-            RespawnSeconds: 16, RespawnVariance: 5),
+            RespawnSeconds: 16, RespawnVariance: 5,
+            AggressiveTypes: new[] { "wyrm", "dune_orc_archer" }),
 
         // ===== Greymarsh (south-east, 36000/33000) — levels 40-60 =====
         new(X: 32000, Y: 33000, Radius: 1400, MinLevel: 40, MaxLevel: 45,
             MobTypes: new[] { "dune_orc_archer", "rift_portling", "harpy", "ridge_orc_overlord", "grave_lich", "fomor_brute" }, MaxCount: 11,
-            RespawnSeconds: 18, RespawnVariance: 6),
+            RespawnSeconds: 18, RespawnVariance: 6,
+            AggressiveTypes: new[] { "harpy", "grave_lich" }),
         new(X: 40000, Y: 33000, Radius: 1400, MinLevel: 45, MaxLevel: 50,
             MobTypes: new[] { "fomor_brute", "marsh_marauder", "warped_drake", "amber_basilisk", "wildhorn_grunt", "mantis_follower", "ravener" }, MaxCount: 11,
-            RespawnSeconds: 20, RespawnVariance: 6),
+            RespawnSeconds: 20, RespawnVariance: 6,
+            AggressiveTypes: new[] { "warped_drake", "ravener" }),
         new(X: 36000, Y: 29000, Radius: 1400, MinLevel: 50, MaxLevel: 55,
             MobTypes: new[] { "mantis_follower", "ravener", "marauder_warrior", "fallen_angel", "thornback", "gaze_hound", "ash_orc_soldier" }, MaxCount: 11,
-            RespawnSeconds: 20, RespawnVariance: 6),
+            RespawnSeconds: 20, RespawnVariance: 6,
+            AggressiveTypes: new[] { "gaze_hound", "fallen_angel" }),
         new(X: 36000, Y: 37000, Radius: 1400, MinLevel: 55, MaxLevel: 60,
             MobTypes: new[] { "ash_orc_soldier", "mirror_ghost", "mirror_wraith", "dune_orc_porter", "aether_wisp", "hollow_one", "sand_ratman", "valley_treant" }, MaxCount: 10,
-            RespawnSeconds: 22, RespawnVariance: 7),
+            RespawnSeconds: 22, RespawnVariance: 7,
+            AggressiveTypes: new[] { "mirror_wraith", "hollow_one" }),
 
         // ===== Ironreach (south, 24000/38000) — levels 60-75 =====
         new(X: 19500, Y: 38000, Radius: 1400, MinLevel: 60, MaxLevel: 65,
             MobTypes: new[] { "sand_ratman", "valley_treant", "cursed_blade", "bogwood", "fen_lizardman", "obsidian_knight", "crimson_drake", "wildhorn_scout", "dread_knight" }, MaxCount: 10,
-            RespawnSeconds: 24, RespawnVariance: 7),
+            RespawnSeconds: 24, RespawnVariance: 7,
+            AggressiveTypes: new[] { "crimson_drake", "dread_knight" }),
         new(X: 28500, Y: 38000, Radius: 1400, MinLevel: 65, MaxLevel: 70,
             MobTypes: new[] { "dread_knight", "spiteful_ghost", "wildhorn_elder", "highland_kookaburra", "highland_buffalo", "highland_buffalo_tamed", "dread_archer", "dire_beast" }, MaxCount: 10,
-            RespawnSeconds: 26, RespawnVariance: 8),
+            RespawnSeconds: 26, RespawnVariance: 8,
+            AggressiveTypes: new[] { "dread_knight", "dread_archer" }),
         new(X: 24000, Y: 33500, Radius: 1400, MinLevel: 70, MaxLevel: 75,
             MobTypes: new[] { "dire_beast", "revenant_minion", "redhorn_footman", "redhorn_elite", "sunland_orc_scout", "redhorn_recruit", "sunland_orc_warrior" }, MaxCount: 10,
-            RespawnSeconds: 28, RespawnVariance: 8),
+            RespawnSeconds: 28, RespawnVariance: 8,
+            AggressiveTypes: new[] { "dire_beast", "redhorn_elite" }),
 
         // ===== Frostmere (north-west, 12000/15000) — levels 76-90, the endgame city =====
         // Each field carries an ELITE spawner ~1200 away: close enough to be the same trip, far enough
         // that the elite does not aggro you while you clear the normal camp (owner: 1-1.5k).
         new(X: 8000,  Y: 15000, Radius: 1400, MinLevel: 76, MaxLevel: 80,
             MobTypes: new[] { "redhorn_soldier", "sunland_orc_commander", "sunland_orc_captain", "redhorn_general", "emberwyrm_drake", "scarlet_mantis", "wrathborn_demon" }, MaxCount: 10,
-            RespawnSeconds: 30, RespawnVariance: 9),
+            RespawnSeconds: 30, RespawnVariance: 9,
+            AggressiveTypes: new[] { "wrathborn_demon", "emberwyrm_drake", "redhorn_general" }),   // endgame: three
         new(X: 8000,  Y: 12200, Radius: 400,  MinLevel: 80, MaxLevel: 80,
             MobTypes: new[] { "scarlet_mantis", "wrathborn_demon" }, MaxCount: 2,
             RespawnSeconds: 180, RespawnVariance: 40, Rank: MobRank.Elite),
 
         new(X: 16000, Y: 15000, Radius: 1400, MinLevel: 81, MaxLevel: 84,
             MobTypes: new[] { "radiant_scout", "radiant_berserker", "radiant_mage", "splinter_mantis_drone", "needle_mantis_overseer", "splinter_mantis_walker" }, MaxCount: 10,
-            RespawnSeconds: 30, RespawnVariance: 9),
+            RespawnSeconds: 30, RespawnVariance: 9,
+            AggressiveTypes: new[] { "radiant_berserker", "radiant_mage", "needle_mantis_overseer" }),
         new(X: 16000, Y: 12200, Radius: 400,  MinLevel: 84, MaxLevel: 84,
             MobTypes: new[] { "needle_mantis_overseer", "splinter_mantis_walker" }, MaxCount: 2,
             RespawnSeconds: 180, RespawnVariance: 40, Rank: MobRank.Elite),
@@ -124,7 +143,8 @@ public static class WorldMap
         // respawn all the way to the cap and the last five levels have somewhere to happen.
         new(X: 12000, Y: 19500, Radius: 1500, MinLevel: 85, MaxLevel: 90,
             MobTypes: new[] { "disciple_of_the_dawn", "drake_leader", "radiant_berserker", "needle_mantis_overseer", "splinter_mantis_walker" }, MaxCount: 10,
-            RespawnSeconds: 32, RespawnVariance: 10, ForceZoneLevel: true),
+            RespawnSeconds: 32, RespawnVariance: 10, ForceZoneLevel: true,
+            AggressiveTypes: new[] { "drake_leader", "disciple_of_the_dawn", "radiant_berserker" }),
         new(X: 14700, Y: 21200, Radius: 400,  MinLevel: 90, MaxLevel: 90,
             MobTypes: new[] { "disciple_of_the_dawn", "drake_leader" }, MaxCount: 2,
             RespawnSeconds: 180, RespawnVariance: 40, Rank: MobRank.Elite, ForceZoneLevel: true),
@@ -489,7 +509,10 @@ public record SpawnZone(
     // ZONE wins: every spawn rolls MinLevel..MaxLevel regardless of the template. Used by the top
     // field so the level-85 roster can fill 86-90 until creatures are authored for that band — a
     // deliberate reuse, not a fallback (owner, 2026-07-29).
-    bool ForceZoneLevel = false)
+    bool ForceZoneLevel = false,
+    // WHICH mob types attack on sight here. null = just the first entry; a list = exactly those;
+    // an empty list = none. See IsAggressiveType.
+    string[]? AggressiveTypes = null)
 {
     /// <summary>Stable id from coordinates+rank, used to persist boss timers.</summary>
     public string Id => $"{(int)X}_{(int)Y}_{Rank}";
@@ -497,7 +520,7 @@ public record SpawnZone(
     /// <summary>Does EVERY aggressive template in this zone actually attack on sight?
     ///
     /// Only dungeons/instances and elite/boss grounds (owner, playtest-13). Out in the ordinary
-    /// fields exactly ONE mob type is aggressive — see <see cref="AggressiveType"/> — because 71 of
+    /// fields only the AUTHORED types are aggressive — see <see cref="IsAggressiveType"/> — because 71 of
     /// the 80 templates are flagged aggressive, and a level-22 champion walking into a 22-28 field was
     /// being jumped by casters and melee at once and simply dying. Danger should be somewhere you
     /// CHOOSE to go.
@@ -506,10 +529,21 @@ public record SpawnZone(
     /// that is what identifies one — no extra flag to keep in sync.</summary>
     public bool AllAggressive => Rank != MobRank.Normal || X < 0 || Y < 0;
 
-    /// <summary>In an ordinary field, the ONE mob type that attacks on sight: the first entry in
-    /// <see cref="MobTypes"/>. Making it positional means every zone already declares one and the
-    /// roster reads as "the dangerous one, then the rest".</summary>
-    public string AggressiveType => MobTypes.Length > 0 ? MobTypes[0] : "";
+    /// <summary>Which mob types in this zone attack on sight. AUTHORED per zone, not positional
+    /// (owner, 2026-07-29) — a field might want two of five to be dangerous, or none at all, and
+    /// "whichever is listed first" cannot express either.
+    ///
+    ///   • <c>null</c> (the default) — the FIRST entry in <see cref="MobTypes"/> is aggressive. This
+    ///     is just a sane default so a new zone is never accidentally wall-to-wall aggro.
+    ///   • a list — exactly those types, however many.
+    ///   • an EMPTY list — nothing here attacks on sight; a genuinely peaceful hunting field.
+    ///
+    /// A template that is passive stays passive either way: this can only ever REMOVE aggression,
+    /// never grant it (see GameLoopService.ResolveAggression).</summary>
+    public bool IsAggressiveType(string mobId) =>
+        AggressiveTypes is null
+            ? MobTypes.Length > 0 && mobId == MobTypes[0]
+            : Array.IndexOf(AggressiveTypes, mobId) >= 0;
 
     public bool IsActiveAt(DayPhase phase) => Active switch
     {

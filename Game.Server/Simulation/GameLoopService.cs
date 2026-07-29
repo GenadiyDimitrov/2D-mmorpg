@@ -9243,7 +9243,7 @@ var effect = def.Effect;
 
         var zone = WorldMap.SpawnZones.FirstOrDefault(z => z.Id == zoneId);
         if (zone is null) return mobType.Aggressive;   // boss ADDs and debug spawns keep the template
-        return zone.AllAggressive || mobId == zone.AggressiveType;
+        return zone.AllAggressive || zone.IsAggressiveType(mobId);
     }
 
     private Entity BuildMob(string mobId, int level, MobRank rank, float x, float y, string zoneId)

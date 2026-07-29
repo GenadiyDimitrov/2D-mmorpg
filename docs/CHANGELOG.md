@@ -12,6 +12,27 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-29 — Which mobs are aggressive is AUTHORED per field (0.30.1)
+
+0.29.2 made exactly one mob type aggressive per ordinary field — the roster's FIRST entry. The owner
+pointed out the obvious limit: *"a zone where I want more than one, or 3 out of 5, now I cannot do."*
+Positional means exactly one, always.
+
+`SpawnZone.AggressiveTypes` replaces it:
+- **`null`** (default) — the first roster entry, so a new zone is never accidentally wall-to-wall aggro.
+- **a list** — exactly those types, however many.
+- **an EMPTY list** — nothing here attacks on sight: a genuinely peaceful hunting field.
+
+Every field now states its own answer, and the danger ramps deliberately instead of falling out of
+list order: the **first Brackenford field is peaceful** (nothing should jump a level-3 character), the
+second has one, the mid bands have two, and the Frostmere endgame fields have three.
+
+**New startup guard**: an `AggressiveTypes` entry that names a mob the zone does not spawn now throws,
+listing the zone and the bad id. That typo fails in the worst possible direction — the field silently
+turns peaceful, which reads as a design choice rather than a mistake, and nobody notices until a
+playtest says "nothing attacks me here". Verified by deliberately breaking one entry and watching the
+server refuse to start.
+
 ## 2026-07-29 — The world is five cities (0.30.0) — ⚠ DELETE `game.db`
 
 The world re-layout from playtest-13. Seven towns in a ring, each with two wide bands, becomes **five

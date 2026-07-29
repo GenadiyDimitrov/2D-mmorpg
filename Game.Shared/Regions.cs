@@ -335,6 +335,21 @@ public static class RegionMap
             throw new InvalidOperationException(
                 "Rogue spawners — every spawner must be a child of a field (add/extend a field to cover it):\n  "
                 + string.Join("\n  ", rogue));
+
+        // A zone's AggressiveTypes must name mobs the zone actually SPAWNS. A typo there fails silently
+        // and in the worst direction — the field simply turns peaceful, which looks like a design choice
+        // rather than a mistake, and nobody notices until a playtest says "nothing attacks me here".
+        var unknown = new List<string>();
+        foreach (var z in WorldMap.SpawnZones)
+        {
+            if (z.AggressiveTypes is null) continue;
+            foreach (var id in z.AggressiveTypes)
+                if (Array.IndexOf(z.MobTypes, id) < 0)
+                    unknown.Add($"({z.X:0},{z.Y:0}) Lv{z.MinLevel}-{z.MaxLevel}: '{id}' is not in this zone's roster");
+        }
+        if (unknown.Count > 0)
+            throw new InvalidOperationException(
+                "AggressiveTypes naming a mob the zone doesn't spawn:\n  " + string.Join("\n  ", unknown));
     }
 
     /// <summary>The level band a region covers, derived from its spawners. Null when it has none — a
