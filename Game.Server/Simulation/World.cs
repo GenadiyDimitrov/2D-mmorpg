@@ -229,7 +229,14 @@ public record CraftCmd(string ConnectionId, string RecipeId) : IGameCommand;
 public record ChooseProfessionCmd(string ConnectionId, int Profession) : IGameCommand;
 
 /// <summary>DEBUG-only: set the player's crafting profession (until level-based assignment lands).</summary>
+/// <summary>Set the CRAFTING profession (WeaponSmith … ScrollScribe). Not the class — see
+/// <see cref="DebugSecondClassCmd"/>. The two were confused in the debug UI, which sent a 2nd-class id
+/// (1-18) here, where it was clamped into the 5-value crafting enum and silently became ScrollScribe.</summary>
 public record DebugSetProfessionCmd(string ConnectionId, int Profession) : IGameCommand;
+
+/// <summary>Debug: become a 2nd CLASS directly, skipping the quest and level gates the real
+/// class-change path enforces.</summary>
+public record DebugSecondClassCmd(string ConnectionId, int ClassId) : IGameCommand;
 
 /// <summary>DEBUG-only: grant one level.</summary>
 /// <summary>DEBUG: shift the character's level by <paramref name="Delta"/> (+1 / +10 / −1 / −10).

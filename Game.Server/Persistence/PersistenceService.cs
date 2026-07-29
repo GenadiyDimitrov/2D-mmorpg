@@ -63,13 +63,17 @@ public class PersistenceService
             // Touch every table the game actually writes. Reading one row materialises ALL mapped
             // columns, so a missing column fails here — at startup, in one obvious place — instead of
             // mid-save later. A cheap query against an empty table is free.
+            // OrderBy(Id) on each: EF warns (10103) about First/FirstOrDefault with neither a filter nor
+            // an order, because the row you get is then whatever the engine felt like returning. It does
+            // not matter here — any row materialises the columns, which is the whole point — but the
+            // warning was real noise on every startup, and "any row" is cheap to state explicitly.
             try
             {
-                _ = await db.Accounts.FirstOrDefaultAsync();
-                _ = await db.Characters.FirstOrDefaultAsync();
-                _ = await db.Subclasses.FirstOrDefaultAsync();
-                _ = await db.Items.FirstOrDefaultAsync();
-                _ = await db.BossTimers.FirstOrDefaultAsync();
+                _ = await db.Accounts.OrderBy(x => x.Id).FirstOrDefaultAsync();
+                _ = await db.Characters.OrderBy(x => x.Id).FirstOrDefaultAsync();
+                _ = await db.Subclasses.OrderBy(x => x.Id).FirstOrDefaultAsync();
+                _ = await db.Items.OrderBy(x => x.Id).FirstOrDefaultAsync();
+                _ = await db.BossTimers.OrderBy(x => x.Id).FirstOrDefaultAsync();
                 return false;   // schema is current
             }
             catch (SqliteException ex)

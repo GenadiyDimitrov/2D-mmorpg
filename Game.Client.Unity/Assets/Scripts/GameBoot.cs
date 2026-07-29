@@ -683,7 +683,12 @@ namespace Game.Client
                     foreach (var s in c.Skills) if (s.Enabled) AutoSkills.Add(s.SkillId);
                 }
             });
-            _net.AutoHuntStatusReceived += st => Main(() => { if (st != null) AutoHunting = st.Enabled; });
+            _net.AutoHuntStatusReceived += st => Main(() =>
+            {
+                if (st == null) return;
+                AutoHunting = st.Enabled;
+                FarmCenter = new Vector2(st.FarmCenterX, st.FarmCenterY);
+            });
             _net.RegionReceived += r => Main(() => Ui?.ShowRegionNotice(r));
             _net.NoticeReceived += m => Main(() => Ui?.ShowToast(m));
             _net.SelectionReceived += o => Main(() => Ui?.ShowBoxSelection(o));
@@ -1235,6 +1240,11 @@ namespace Game.Client
         /// when the app is closed.
         /// </summary>
         public bool AutoHunting { get; private set; }
+
+        /// <summary>Where the STATIC farm circle is anchored, in world units, as the server reports it.
+        /// Only meaningful while AutoConfig.StaticSpot is on — the roaming mode has no anchor because
+        /// the scan follows the character.</summary>
+        public Vector2 FarmCenter { get; private set; }
 
         /// <summary>Skill ids the player has marked for auto-use (the per-slot Auto toggle writes here).
         /// Starts EMPTY (owner): only what you explicitly mark Auto is auto-used. Basic attack used to be

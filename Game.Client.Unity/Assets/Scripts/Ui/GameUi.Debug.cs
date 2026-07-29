@@ -398,12 +398,29 @@ namespace Game.Client
 
             // The owner didn't recognise a dedicated class panel and asked for class change to live
             // HERE instead (playtest 9, §10): NPCs change class via quest, debug changes it directly.
-            DebugHeader("Change profession (2nd class)");
+            //
+            // These rows used to call DebugSetProfession — the CRAFTING profession — passing a class id
+            // (1-18) into a 5-value enum, so every class from id 5 up silently became ScrollScribe
+            // (playtest-13). Only classes of your own race + base class are offered; the rest need a
+            // Reset first, and listing them would just be 15 rows that refuse.
+            DebugHeader("Change 2nd class");
+            var mine = Boot.ActiveClass;
             foreach (var sc in ClassCatalog.Playable.OrderBy(s => s.Race).ThenBy(s => s.Name))
             {
+                if (mine != null && (sc.Race != mine.Race || sc.Base != mine.BaseClass)) continue;
                 int id = sc.Id;
                 DebugAction($"{sc.Race} {sc.Name}",
-                            () => Boot.Debug(n => n.DebugSetProfessionAsync(id), "profession"));
+                            () => Boot.Debug(n => n.DebugSecondClassAsync(id), "2nd class"));
+            }
+
+            // The CRAFTING profession is a separate axis (it gates which recipes you can craft) and now
+            // has its own rows, instead of being the accidental target of the class list above.
+            DebugHeader("Crafting profession");
+            foreach (Profession prof in Enum.GetValues(typeof(Profession)))
+            {
+                Profession p = prof;
+                DebugAction(p.ToString(),
+                            () => Boot.Debug(n => n.DebugSetProfessionAsync((int)p), "crafting profession"));
             }
 
             // The owner's real test loop: swap class on the spot to compare two builds in the SAME

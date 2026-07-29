@@ -82,7 +82,8 @@ namespace Game.Client
         }
 
         /// <summary>Draw the farm-radius ring around the player while the toggle is on. Called each frame
-        /// from RefreshWorld. Follows the player; the static-spot centre is a later refinement.</summary>
+        /// from RefreshWorld. Centred on the STATIC anchor when "keep position" is on, otherwise on the
+        /// player (roaming really does follow the character).</summary>
         private void RefreshFarmRing()
         {
             if (_farmRing == null) return;
@@ -97,7 +98,15 @@ namespace Game.Client
 
             if (!_farmRing.gameObject.activeSelf) _farmRing.gameObject.SetActive(true);
             float radius = Boot.AutoConfig.FarmRange * WorldMapper.Scale;
-            Vector3 c = self.transform.position; c.y = 0.05f;
+
+            // "Keep position" means the circle is a PLACE, not a leash drawn around you: the server
+            // holds you to FarmCenter, so the ring belongs there. Drawing it around the character made
+            // the one setting whose whole point is standing still look like it was following you
+            // (playtest-13). Roaming mode has no anchor — the scan really does follow the character.
+            Vector3 c = Boot.AutoConfig != null && Boot.AutoConfig.StaticSpot
+                ? WorldMapper.ToUnity(Boot.FarmCenter.x, Boot.FarmCenter.y)
+                : self.transform.position;
+            c.y = 0.05f;
 
             const int segs = 64;
             if (_farmRing.positionCount != segs) _farmRing.positionCount = segs;

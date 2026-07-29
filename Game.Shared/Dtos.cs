@@ -343,7 +343,13 @@ public record AutoSkillReuse(string SkillId, string Name, float ReuseSeconds, fl
 
 /// <summary>Server -> client HUD: total MP/s of all enabled auto-skills (after cost/CD-reduction
 /// buffs) + the per-skill breakdown, refreshed as buffs change.</summary>
-public record AutoHuntStatus(bool Enabled, float MpPerSec, AutoSkillReuse[] Skills);
+/// <summary>Server -> client auto-hunt state. FarmCenterX/Y is where the STATIC farm circle is
+/// anchored — the server owns that anchor, and without it on the wire the client drew the range ring
+/// around the CHARACTER, so "keep position" showed a circle that walked off with you instead of
+/// marking the spot you were held to (playtest-13). Server-to-client only, so it never round-trips
+/// back as part of the config the client saves.</summary>
+public record AutoHuntStatus(bool Enabled, float MpPerSec, AutoSkillReuse[] Skills,
+    float FarmCenterX = 0f, float FarmCenterY = 0f);
 
 /// <summary>Server -> client: the result of an exit/logout request. Ok=false when blocked (e.g.
 /// in combat); the client keeps playing and shows Reason. Ok=true → the client may close.</summary>

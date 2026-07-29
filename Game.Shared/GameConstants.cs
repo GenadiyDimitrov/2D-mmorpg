@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.28.95";
+    public const string GameVersion = "0.28.96";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -43,14 +43,14 @@ public static class GameConstants
     /// actually happens most: **client-only work, where the CLIENT is ahead of the server.** A version
     /// number that describes the contract instead of the build makes that case a non-event.
     /// </summary>
-    public const int ProtocolVersion = 4;
+    public const int ProtocolVersion = 5;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
     /// "current only"; setting it lower is a deliberate promise to keep handling the older shape, so
     /// it should only move when someone has actually checked that the code still does.
     /// </summary>
-    public const int MinAcceptedProtocol = 4;
+    public const int MinAcceptedProtocol = 5;
 
     /// <summary>
     /// Build labels accepted from clients too old to send a protocol number. LEGACY — frozen.

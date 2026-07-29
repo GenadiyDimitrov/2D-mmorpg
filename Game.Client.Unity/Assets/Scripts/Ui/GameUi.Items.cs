@@ -28,6 +28,9 @@ namespace Game.Client
             public RectTransform Panel;
             public TextMeshProUGUI Emark, Title, Body;
             public RectTransform Buttons;
+            /// <summary>Kept so the body can be scrolled back to the TOP and its layout rebuilt when
+            /// new text is put in it — see ShowItem.</summary>
+            public ScrollRect Scroll;
         }
 
         private DetailView _itemView, _cmpView;
@@ -66,6 +69,7 @@ namespace Game.Client
             ScrollRect scroll;
             var content = UiKit.ScrollArea(inner, out scroll, 2f);
             UiKit.Stretch((RectTransform)scroll.transform, 16f, chrome + 66f, 16f, 70f);
+            v.Scroll = scroll;
             v.Body = UiKit.Label(content, "", 15f, UiKit.Text, TextAlignmentOptions.TopLeft);
             v.Body.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
@@ -144,6 +148,20 @@ namespace Game.Client
 
         public void OpenItemDetails(InventoryItemDto item) => ShowItem(_itemView, item, allowCompare: true);
 
+        /// <summary>Force the body's layout to reflect the text just assigned, and scroll to the top.
+        /// Both halves matter: without the rebuild the ContentSizeFitter has not resized the label yet,
+        /// and without the reset the ScrollRect keeps the offset from whatever was shown last.</summary>
+        private static void ResetDetailScroll(DetailView v)
+        {
+            if (v.Body != null)
+                LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)v.Body.transform);
+            if (v.Scroll != null)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)v.Scroll.transform);
+                v.Scroll.verticalNormalizedPosition = 1f;
+            }
+        }
+
         private void ShowItem(DetailView v, InventoryItemDto item, bool allowCompare)
         {
             var def = ItemCatalog.Get(item.DefId);
@@ -152,6 +170,12 @@ namespace Game.Client
             v.Emark.gameObject.SetActive(item.Equipped);
             v.Title.text = DetailTitle(def, item);
             v.Body.text = ItemStatsText(def, item) + SetInfoText(def);
+            // The ContentSizeFitter resizes the body on the NEXT layout pass, and the ScrollRect keeps
+            // whatever scroll offset it had. On the first open both were stale, so the content sat too
+            // high and the first stat row ("Attack …") hid under the title bar — then looked fine on
+            // every reopen, because by then the layout had caught up (playtest-13). Rebuild now and
+            // pin the view to the top, so the first open renders like every other one.
+            ResetDetailScroll(v);
 
             for (int i = v.Buttons.childCount - 1; i >= 0; i--)
                 Destroy(v.Buttons.GetChild(i).gameObject);

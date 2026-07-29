@@ -624,11 +624,23 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
-    /// <summary>DEBUG: set the crafting profession (0=None..5).</summary>
+    /// <summary>DEBUG: set the CRAFTING profession (0=None..5=ScrollScribe). For the 2nd CLASS use
+    /// <see cref="DebugSecondClass"/> — the debug panel used to send class ids here, and they were
+    /// clamped into this 5-value enum.</summary>
     public Task DebugSetProfession(int profession)
     {
 #if DEBUG
         _world.Commands.Enqueue(new DebugSetProfessionCmd(Context.ConnectionId, profession));
+#endif
+        return Task.CompletedTask;
+    }
+
+    /// <summary>DEBUG: become a 2nd CLASS directly (ClassCatalog id), skipping the quest and level
+    /// gates. The NPC path stays the real one — this is the "compare two builds now" lever.</summary>
+    public Task DebugSecondClass(int classId)
+    {
+#if DEBUG
+        _world.Commands.Enqueue(new DebugSecondClassCmd(Context.ConnectionId, classId));
 #endif
         return Task.CompletedTask;
     }

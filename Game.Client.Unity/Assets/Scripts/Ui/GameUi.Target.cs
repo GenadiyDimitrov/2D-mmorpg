@@ -27,6 +27,8 @@ namespace Game.Client
         private bool _dropsTab;
         private bool _dropsRequested;
 
+        private ScrollRect _detailsScroll;
+
         private RectTransform _resPanel;
         private TextMeshProUGUI _resText;
 
@@ -54,6 +56,7 @@ namespace Game.Client
             ScrollRect scroll;
             var content = UiKit.ScrollArea(inner, out scroll, 2f);
             UiKit.Stretch((RectTransform)scroll.transform, 16f, chrome + 70f, 16f, 16f);
+            _detailsScroll = scroll;
 
             _detailsBody = UiKit.Label(content, "", 15f, UiKit.Text, TextAlignmentOptions.TopLeft);
             var fitter = _detailsBody.gameObject.AddComponent<ContentSizeFitter>();
@@ -155,7 +158,21 @@ namespace Game.Client
             _statsTabButton.targetGraphic.color = _dropsTab ? UiKit.PanelLight : UiKit.TabActive;
             _dropsTabButton.targetGraphic.color = _dropsTab ? UiKit.TabActive : UiKit.PanelLight;
 
-            _detailsBody.text = _dropsTab ? DropsText(d) : StatsText(d);
+            // Only touch the label when the text actually changes: this runs every frame the window is
+            // open, and a forced layout rebuild per frame would be wasteful. The rebuild + scroll reset
+            // is what stops the body being laid out against its PREVIOUS size — which showed as the mob
+            // sheet rendering with its top rows above the visible area (playtest-13).
+            string body = _dropsTab ? DropsText(d) : StatsText(d);
+            if (_detailsBody.text != body)
+            {
+                _detailsBody.text = body;
+                LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)_detailsBody.transform);
+                if (_detailsScroll != null)
+                {
+                    LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)_detailsScroll.transform);
+                    _detailsScroll.verticalNormalizedPosition = 1f;
+                }
+            }
         }
 
         /// <summary>The FULL stat sheet — same depth as the character window, on the owner's rule that

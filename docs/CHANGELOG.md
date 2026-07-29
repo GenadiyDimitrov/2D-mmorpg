@@ -12,6 +12,37 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-29 — Playtest-13 tier 2 (0.28.96) — protocol 5
+
+- **The server console is readable again.** EF Core logs every statement at Information, and this
+  server saves constantly (event saves + a 60s autosave over every online player), so the useful lines
+  were buried. Filters added in `Program.cs` for the EF command/query/infrastructure categories and
+  ASP.NET's per-request lines; warnings and errors still come through. Verified: a full startup went
+  from a wall of SQL to **64 lines, zero `Executed DbCommand`**.
+- **EF warning 10103 gone.** The startup schema probes called `FirstOrDefault` with neither a filter
+  nor an order. Any row will do — that's the point of the probe — so they now say so with
+  `OrderBy(x => x.Id)`.
+- **The debug "2nd class" buttons set the CLASS, not the crafting profession.** They were wired to
+  `DebugSetProfession`, passing a class id (1-18) into the 5-value crafting enum, where it was clamped
+  — so everything from id 5 up silently became ScrollScribe. New `DebugSecondClass` command/hub method
+  applies the class directly, skipping the quest and level gates (race + base class are still checked).
+  Crafting professions now have their own rows, and the class list only offers classes you could
+  actually be.
+- **The auto-farm "keep position" circle stays put.** `AutoHuntStatus` now carries `FarmCenterX/Y` —
+  the server owns that anchor and it was never on the wire, so the client drew the ring around the
+  CHARACTER. The one setting whose whole point is standing still looked like it was following you.
+  Roaming mode still centres on the player, which is correct there.
+- **Item-details and mob-info windows no longer render clipped.** Both put a `ContentSizeFitter` label
+  in a `ScrollRect` and set its text without forcing a layout pass, so the body was laid out against
+  its PREVIOUS size and the scroll offset was stale — the item window hid its first stat row under the
+  title bar on the first open (fine on reopen), and the mob sheet showed with its top rows above the
+  visible area. Both now rebuild and pin to the top when the text changes; the target window only does
+  it when the text actually differs, since that refresh runs every frame.
+  ⚠ **Unity-side, so NOT compile-verified** — `dotnet build` does not build the Unity project. The
+  mob-window fix in particular wants an on-device look.
+
+⚠ **Protocol 5** — new `DebugSecondClass` hub method, and `AutoHuntStatus` gained fields.
+
 ## 2026-07-29 — No combat-logging out of a DoT (0.28.95) — protocol 4
 
 Owner's rule: a DoT keeps you IN COMBAT, so you can only return to character select once you have

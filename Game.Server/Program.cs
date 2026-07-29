@@ -28,6 +28,18 @@ try
     Console.WriteLine($"URLS:{urls}");
     builder.WebHost.UseUrls(urls);
 
+    // Keep the console READABLE. EF Core logs every command it executes at Information, and this server
+    // saves characters constantly (event saves + a 60s autosave over every online player), so the useful
+    // lines — who logged in, what the game loop said — were buried under a continuous stream of SQL
+    // (owner, playtest-13: "it's overflooding it, just important information"). Warnings and errors from
+    // EF still come through; only the per-statement chatter is dropped.
+    builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
+    builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Infrastructure", LogLevel.Warning);
+    builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Query", LogLevel.Warning);
+    // ASP.NET's own per-request lines are the same kind of noise on a game server whose real traffic is
+    // the SignalR hub, not HTTP.
+    builder.Logging.AddFilter("Microsoft.AspNetCore.Hosting.Diagnostics", LogLevel.Warning);
+
     builder.Services.AddSignalR();
 
     // Persistence: SQLite file next to the executable. Swap UseSqlite for

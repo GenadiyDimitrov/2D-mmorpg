@@ -332,8 +332,13 @@ namespace Game.Client
         public Task DebugGiveAsync(string defId, int quantity) =>
             _connection.SendAsync("DebugGive", defId, quantity);
         public Task DebugKarmaAsync(int delta) => _connection.SendAsync("DebugKarma", delta);
+        /// <summary>The CRAFTING profession (WeaponSmith … ScrollScribe) — not the class.</summary>
         public Task DebugSetProfessionAsync(int profession) =>
             _connection.SendAsync("DebugSetProfession", profession);
+
+        /// <summary>Become a 2nd CLASS directly (ClassCatalog id), skipping the quest/level gates.</summary>
+        public Task DebugSecondClassAsync(int classId) =>
+            _connection.SendAsync("DebugSecondClass", classId);
         public Task DebugThirdClassAsync(int thirdClassId) =>
             _connection.SendAsync("DebugThirdClass", thirdClassId);
         public Task DebugAddSubclassAsync(int thirdClassId) =>

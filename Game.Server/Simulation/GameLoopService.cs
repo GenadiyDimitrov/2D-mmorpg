@@ -165,6 +165,7 @@ public class GameLoopService : BackgroundService
                 case CraftCmd c: HandleCraft(c); break;
                 case ChooseProfessionCmd c: HandleChooseProfession(c); break;
                 case DebugSetProfessionCmd c: HandleDebugSetProfession(c); break;
+                case DebugSecondClassCmd c: HandleDebugSecondClass(c); break;
                 case DebugLevelCmd c: HandleDebugLevel(c); break;
                 case DebugLearnAllCmd c: HandleDebugLearnAll(c); break;
                 case DebugGoldCmd c: HandleDebugGold(c); break;
@@ -1903,7 +1904,40 @@ public class GameLoopService : BackgroundService
         if (!TryGetPlayer(cmd.ConnectionId, out var player))
             return;
         player.Profession = (Profession)Math.Clamp(cmd.Profession, 0, (int)Profession.ScrollScribe);
-        SendSystemToEntity(player, $"[DEBUG] Profession set to {player.Profession}.");
+        SendSystemToEntity(player, $"[DEBUG] Crafting profession set to {player.Profession}.");
+    }
+
+    /// <summary>Debug: become a 2nd CLASS on the spot, skipping the quest and level gates the NPC path
+    /// enforces. This is the "compare two builds in the same gear" lever the owner actually wanted from
+    /// the debug panel's class list — which was wired to the CRAFTING profession instead, so every class
+    /// id above 4 was clamped to ScrollScribe (playtest-13).
+    ///
+    /// Race and base class are still checked: a Human Fighter cannot debug into an Elf Mage's class, and
+    /// letting it would produce a character whose skill tables do not match its own race.</summary>
+    private void HandleDebugSecondClass(DebugSecondClassCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+
+        var def = ClassCatalog.Get(cmd.ClassId);
+        if (def is null || def.Race != player.Race || def.Base != player.BaseClass)
+        {
+            SendSystemToEntity(player,
+                "[DEBUG] That class belongs to another race or base class — use Reset first.");
+            return;
+        }
+
+        player.SecondClass = def.Id;
+        player.ThirdClass = 0;   // the old discipline belonged to the old 2nd class
+        AutoLearnCoreSkills(player);
+        player.RecomputeDerived();
+        player.Hp = player.MaxHp;
+        player.Mp = player.MaxMp;
+
+        SendStats(player);
+        SendLearned(player);
+        SendSubclasses(player);   // the class label the client shows comes from here
+        SendSystemToEntity(player, $"[DEBUG] You are now a {def.Name}.");
     }
 
     // ===== SUBCLASSES ==========================================================================
@@ -3240,7 +3274,8 @@ public class GameLoopService : BackgroundService
             string name = ClassSkills.DisplayName(def.Id, p.Race, p.BaseClass, p.Archetype, p.Discipline);
             rows.Add(new AutoSkillReuse(def.Id, name, reuseSec, mps));
         }
-        SendTo(p, "AutoHunt", new AutoHuntStatus(p.AutoHuntEnabled, totalMps, rows.ToArray()));
+        SendTo(p, "AutoHunt", new AutoHuntStatus(p.AutoHuntEnabled, totalMps, rows.ToArray(),
+                                                 p.FarmCenterX, p.FarmCenterY));
     }
 
     /// <summary>Echo the full stored config so the client UI reflects the persisted settings.</summary>
