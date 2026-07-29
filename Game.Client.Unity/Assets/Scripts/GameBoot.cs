@@ -406,8 +406,11 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("RemoveBuff: " + ex.Message); }
         }
 
-        /// <summary>Unspent skill points, from the stats push.</summary>
-        public int SkillPoints => Stats != null ? Stats.SkillPoints : 0;
+        /// <summary>Unspent skill points. Fed by BOTH the stats push (login, learning a skill) and the
+        /// progress push (every kill) — SP is earned on the kill event, which never sends stats, so
+        /// reading it from StatsUpdate alone left the figure frozen at its login value for the whole
+        /// session and only right again after a relog.</summary>
+        public int SkillPoints { get; private set; }
 
         /// <summary>The class currently being PLAYED — race, base/second/third class and its own level.
         /// A subclass swap replaces it, which is why the skills window reads this rather than anything
@@ -639,7 +642,7 @@ namespace Game.Client
             _net = new NetworkChannel();
             _net.SnapshotDeltaReceived += OnDelta;
             _net.SnapshotReceived += OnFullSnapshot;
-            _net.StatsReceived += s => Main(() => Stats = s);
+            _net.StatsReceived += s => Main(() => { Stats = s; if (s != null) SkillPoints = s.SkillPoints; });
             _net.ProgressReceived += p => Main(() =>
             {
                 Progress = p;
@@ -651,6 +654,7 @@ namespace Game.Client
                 // 7, had to relog"). SubclassDto is a record, so update it with a fresh copy.
                 if (ActiveClass != null && ActiveClass.Level != p.Level)
                     ActiveClass = ActiveClass with { Level = p.Level };
+                SkillPoints = p.SkillPoints;   // SP is earned on this event; stats aren't pushed here
                 if (p.LeveledUp) ClientLog.Good("Level up! Now level " + p.Level + ".");
             });
             _net.GoldReceived += g => Main(() => Gold = g.Gold);
@@ -888,6 +892,15 @@ namespace Game.Client
             Dialog = null;
             Details = null;
             DialogNpcId = Guid.Empty;
+            // Buffs and BuyBack are the two per-character caches the server pushes CONDITIONALLY —
+            // buffs only while some are running, buy-back only when a vendor opens. Everything else
+            // here (inventory, warehouse, stats, learned, quests, gold) is re-pushed on login, so it
+            // corrects itself. These two do not: switching from a character with 30-day shot runes to
+            // one with nothing left the first character's buffs sitting on the bar until some unrelated
+            // push happened to replace them (using a potion "fixed" it). Same for the sold-items list.
+            Buffs = new BuffDto[0];
+            BuyBack = new BuyBackEntryDto[0];
+            SkillPoints = 0;   // its own field now, so it no longer clears with Stats
         }
 
         public async void LeaveWorld()

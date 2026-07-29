@@ -336,13 +336,14 @@ public class PersistenceService
         return await db.Characters
             .Where(c => c.AccountId == accountId)
             .Select(c => new CharacterSummary(
-                c.Id, c.Name, c.Race, c.BaseClass, c.SecondClass, c.Level, c.PendingDeleteAt))
+                c.Id, c.Name, c.Race, c.BaseClass, c.SecondClass, c.Level, c.PendingDeleteAt,
+                c.ThirdClass))
             .ToListAsync();
     }
 
     public record CharacterSummary(
         int Id, string Name, Race Race, BaseClass BaseClass, int SecondClass, int Level,
-        DateTime? PendingDeleteAt);
+        DateTime? PendingDeleteAt, int ThirdClass = 0);
 
     /// <summary>Top <paramref name="count"/> characters for one leaderboard category, read straight from
     /// the DB (so it reflects the last autosave — good enough for a board; live values lag ≤60s).

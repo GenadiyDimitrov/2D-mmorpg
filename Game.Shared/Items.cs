@@ -276,6 +276,15 @@ public record ItemDef(
     /// the id is the identity. Keep this override.</summary>
     public override int GetHashCode() => Id?.GetHashCode() ?? 0;
 
+    /// <summary>Does this item merge into a single inventory ROW with a quantity, rather than
+    /// occupying one row per unit? Consumables, scrolls and crafting materials stack.
+    ///
+    /// This lives HERE, on the shared def, because it is asked on BOTH sides and the two copies
+    /// drifted: the server's AddItem stacked Material while the client's vendor did not, so a
+    /// stack of 11 gems showed as "x11" but sold one at a time with no quantity numpad. Anything
+    /// that needs the answer asks this property — never re-list the slots.</summary>
+    public bool IsStackable => Slot is EquipSlot.Consumable or EquipSlot.Scroll or EquipSlot.Material;
+
     /// <summary>Unified top-level category (derived from EquipSlot). Weapons are MainHand,
     /// shields OffHand; everything else maps 1:1.</summary>
     public ItemType Type => Slot switch

@@ -354,7 +354,7 @@ public class GameLoopService : BackgroundService
     }
 
     /// <summary>The normal exit chain: leave the party, remove the entity, save.</summary>
-    private void NormalLeave(Entity entity)
+    private Task NormalLeave(Entity entity)
     {
         NotifyFriendsPresence(entity, online: false);   // while they're still in Entities to compare against
         // Shed every mob locked onto them BEFORE they vanish, or those mobs sit Engaged on an id that
@@ -372,9 +372,10 @@ public class GameLoopService : BackgroundService
         // beside the orphan, so corpses stacked one per relog. A dead entity is only kept in the grid
         // while it is still IN the world (so allies can see and revive it) — leaving is leaving.
         _world.Grid.Remove(entity);
-        SaveEntity(entity);
+        var saved = SaveEntity(entity);
         if (GameConstants.AnnounceWorldEntryExit)
             BroadcastSystem($"{entity.Name} left the world.");
+        return saved;
     }
 
     /// <summary>End a link-dead grace that expired (or whose owner died): the normal removal chain.
@@ -394,10 +395,16 @@ public class GameLoopService : BackgroundService
     private void HandleLeaveWorld(LeaveWorldCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player))
+        {
+            cmd.Result?.TrySetResult(false);   // nothing to save; never leave the hub waiting
             return;
+        }
         _world.ConnectionToEntity.Remove(cmd.ConnectionId);
         _world.EntityToConnection.Remove(player.Id);
-        NormalLeave(player);
+        // Signal the hub only once the save has landed, so the character list it fetches next shows
+        // this session's level and class rather than the row from login.
+        NormalLeave(player).ContinueWith(_ => cmd.Result?.TrySetResult(true),
+                                         TaskScheduler.Default);
     }
 
     private void HandleLogout(LogoutCmd cmd)
@@ -488,7 +495,7 @@ public class GameLoopService : BackgroundService
     /// </summary>
     private void SendProgress(Entity p, bool leveled = false) =>
         SendTo(p, "Progress", new ProgressUpdate(
-            p.Level, p.Exp, StatCalculator.ExpToNext(p.Level), leveled));
+            p.Level, p.Exp, StatCalculator.ExpToNext(p.Level), leveled, p.SkillPoints));
 
     // ----- Debug live-tuning (admin only) -----
     private DebugConfigDto CurrentDebugConfig() => new(
@@ -657,10 +664,13 @@ public class GameLoopService : BackgroundService
     /// <summary>Save a character without blocking the tick loop. The snapshot is taken
     /// HERE (on the single-writer thread) so the async DB write never reads the live,
     /// mutating entity; the DB I/O runs off-thread.</summary>
-    private void SaveEntity(Entity entity)
+    /// <summary>Snapshot + queue a background save. Returns the write's Task so a caller that must
+    /// not race it (the leave-to-character-select path) can await; everything else ignores it.</summary>
+    private Task SaveEntity(Entity entity)
     {
         if (PersistenceService.CharacterSnapshot.From(entity) is { } snap)
-            RunSave(() => _db.SaveCharacterAsync(snap));
+            return RunSave(() => _db.SaveCharacterAsync(snap));
+        return Task.CompletedTask;
     }
 
     /// <summary>Periodic crash-safety save of every online player. Snapshots all of
@@ -680,7 +690,7 @@ public class GameLoopService : BackgroundService
 
     /// <summary>Fire-and-forget a DB write off the tick thread, logging any failure
     /// (so an exception in a background save can't go unobserved).</summary>
-    private void RunSave(Func<Task> save) => _ = Task.Run(async () =>
+    private Task RunSave(Func<Task> save) => Task.Run(async () =>
     {
         try { await save(); }
         catch (Exception ex) { _log.LogError(ex, "Background character save failed"); }
@@ -1658,7 +1668,15 @@ public class GameLoopService : BackgroundService
             trade.OfferOf(player).Contains(item.InstanceId))
             return;
 
-        if (player.Warehouse.Count >= GameConstants.WarehouseSize)
+        // A stackable merges into the row that's already in the bank instead of taking a new one —
+        // otherwise depositing 5 gems and later 6 more left TWO rows of the same material, and a
+        // full warehouse refused a deposit it had room for.
+        var def = ItemCatalog.Get(item.DefId);
+        var mergeInto = def is { IsStackable: true }
+            ? player.Warehouse.FirstOrDefault(i => i.DefId == item.DefId)
+            : null;
+
+        if (mergeInto is null && player.Warehouse.Count >= GameConstants.WarehouseSize)
         {
             SendSystemToEntity(player, "Warehouse full.");
             return;
@@ -1666,7 +1684,8 @@ public class GameLoopService : BackgroundService
 
         item.Equipped = false;                 // nothing is worn from the bank
         player.Inventory.Remove(item);
-        player.Warehouse.Add(item);
+        if (mergeInto is not null) mergeInto.Quantity += item.Quantity;
+        else player.Warehouse.Add(item);
 
         ReconcileRuneBuffs(player);            // a deposited rune stops applying its buff (no longer in the bag)
         player.RecomputeDerived();             // reflect the un-equip
@@ -1684,14 +1703,21 @@ public class GameLoopService : BackgroundService
         var item = player.Warehouse.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
         if (item is null) return;
 
-        if (player.Inventory.Count(i => !i.Equipped) >= GameConstants.InventorySize)
+        // Same merge rule coming back out — a withdrawn stack joins the bag row it belongs to.
+        var def = ItemCatalog.Get(item.DefId);
+        var mergeInto = def is { IsStackable: true }
+            ? player.Inventory.FirstOrDefault(i => i.DefId == item.DefId)
+            : null;
+
+        if (mergeInto is null && player.Inventory.Count(i => !i.Equipped) >= GameConstants.InventorySize)
         {
             SendSystemToEntity(player, "Inventory full.");
             return;
         }
 
         player.Warehouse.Remove(item);
-        player.Inventory.Add(item);
+        if (mergeInto is not null) mergeInto.Quantity += item.Quantity;
+        else player.Inventory.Add(item);
 
         ReconcileRuneBuffs(player);            // a withdrawn rune re-applies its buff (back in the bag)
         player.RecomputeDerived();
@@ -1985,7 +2011,7 @@ public class GameLoopService : BackgroundService
         SendSubclasses(player);
         if (_world.EntityToConnection.TryGetValue(player.Id, out var conn))
             _ = _hub.Clients.Client(conn).SendAsync("Progress", new ProgressUpdate(
-                player.Level, player.Exp, StatCalculator.ExpToNext(player.Level), false));
+                player.Level, player.Exp, StatCalculator.ExpToNext(player.Level), false, player.SkillPoints));
 
         SendSystemToEntity(player, message
             ?? $"[DEBUG] Now playing class #{slot}: {player.BaseClass} (level {player.Level}).");
@@ -2054,7 +2080,7 @@ public class GameLoopService : BackgroundService
 
         if (_world.EntityToConnection.TryGetValue(player.Id, out var conn))
             _ = _hub.Clients.Client(conn).SendAsync("Progress", new ProgressUpdate(
-                player.Level, player.Exp, StatCalculator.ExpToNext(player.Level), up));
+                player.Level, player.Exp, StatCalculator.ExpToNext(player.Level), up, player.SkillPoints));
         // Silent (owner): the level and the XP bar both move on screen, and holding +10 to climb to 80
         // otherwise wrote eight rows into the log for something already visible.
         SaveEntity(player);   // persist so debug levels survive a server restart
@@ -6689,7 +6715,7 @@ var effect = def.Effect;
         SendSystemToEntity(p, $"You lost {lost:N0} experience.");
         if (_world.EntityToConnection.TryGetValue(p.Id, out var conn))
             _ = _hub.Clients.Client(conn).SendAsync("Progress", new ProgressUpdate(
-                p.Level, p.Exp, StatCalculator.ExpToNext(p.Level), false));
+                p.Level, p.Exp, StatCalculator.ExpToNext(p.Level), false, p.SkillPoints));
     }
 
     /// <summary>Can this skill be aimed at a PARTY MEMBER, or only at yourself?
@@ -6760,7 +6786,7 @@ var effect = def.Effect;
             SendSystemToEntity(target, $"You have been resurrected. {restore:N0} experience restored.");
             if (_world.EntityToConnection.TryGetValue(target.Id, out var conn))
                 _ = _hub.Clients.Client(conn).SendAsync("Progress", new ProgressUpdate(
-                    target.Level, target.Exp, StatCalculator.ExpToNext(target.Level), false));
+                    target.Level, target.Exp, StatCalculator.ExpToNext(target.Level), false, target.SkillPoints));
         }
         else
         {
@@ -6902,7 +6928,7 @@ var effect = def.Effect;
         if (_world.EntityToConnection.TryGetValue(player.Id, out var conn))
         {
             _ = _hub.Clients.Client(conn).SendAsync("Progress", new ProgressUpdate(
-                player.Level, player.Exp, StatCalculator.ExpToNext(player.Level), leveled));
+                player.Level, player.Exp, StatCalculator.ExpToNext(player.Level), leveled, player.SkillPoints));
         }
     }
 
@@ -6916,6 +6942,10 @@ var effect = def.Effect;
         player.Mp = player.MaxMp;
         SendStats(player);
         SendLearned(player);
+        // The ACTIVE class carries its own level, and the client gates the Learn tab on it. Without
+        // this push it kept the value from login, so reaching a learn level mid-session left the new
+        // skills greyed out until a relog (playtest-13: locked at 7, fine at 14 — after a relog).
+        SendSubclasses(player);
         AdvanceLevelQuests(player);   // any active "reach level N" step may now be satisfied
         BroadcastSystem($"{player.Name} reached level {player.Level}!");
 
@@ -6926,13 +6956,18 @@ var effect = def.Effect;
 
     private void Regenerate(Entity entity)
     {
-        if (entity.Engaged || entity.CastingSkillId is not null)
+        // In combat regen is REDUCED, not switched off. Auto-farm made "off" permanent — an engaged
+        // fighter never leaves the state while targets remain — so a farming character could not
+        // recover MP at all until they stopped. See GameConstants.CombatRegenMultiplier.
+        bool inCombat = entity.Engaged || entity.CastingSkillId is not null;
+        if (inCombat && GameConstants.CombatRegenMultiplier <= 0f)
             return;
 
         float multiplier = entity.Kind == EntityKind.Player &&
                            GameConstants.InSafeZone(entity.X, entity.Y)
             ? GameConstants.SafeZoneRegenMultiplier
             : 1f;
+        if (inCombat) multiplier *= GameConstants.CombatRegenMultiplier;
 
         // Movement-state bonus (Walking +20%, Sitting +80%) for players.
         if (entity.Kind == EntityKind.Player)
@@ -7201,7 +7236,7 @@ var effect = def.Effect;
         if (ItemCatalog.Get(defId) is not ItemDef def)
             return false;
 
-        bool stackable = def.Slot is EquipSlot.Consumable or EquipSlot.Scroll or EquipSlot.Material;
+        bool stackable = def.IsStackable;
         if (stackable)
         {
             var existing = player.Inventory.FirstOrDefault(i => i.DefId == defId);
@@ -8695,13 +8730,13 @@ var effect = def.Effect;
 
         switch (cmd.Action)
         {
-            case "accept": AcceptQuest(player, cmd.Id); break;
+            case "accept": AcceptQuest(player, cmd.Id, cmd.NpcEntityId); break;
             case "complete": CompleteQuestAtNpc(player, cmd.Id, cmd.NpcEntityId); break;
             case "changeclass": DoQuestClassChange(player, cmd.Id, cmd.NpcEntityId); break;
         }
     }
 
-    private void AcceptQuest(Entity player, string questId)
+    private void AcceptQuest(Entity player, string questId, Guid npcEntityId)
     {
         var def = QuestCatalog.Get(questId);
         if (def is null) return;
@@ -8715,6 +8750,13 @@ var effect = def.Effect;
         // and nothing else would ever re-check it — level-ups are the only other trigger.
         AdvanceLevelQuests(player);
         SendQuestLog(player);
+        // Re-send the OPEN dialog so it shows the objective straight away. Without this the panel kept
+        // rendering the pre-accept text — the quest still offered, no word on what to kill — and the
+        // player had to close the NPC and talk to it again to be told (playtest-13). Completing a quest
+        // already refreshed the dialog this way; accepting simply never passed the NPC through.
+        if (npcEntityId != Guid.Empty
+            && _world.Entities.TryGetValue(npcEntityId, out var npc) && npc.Kind == EntityKind.Npc)
+            SendDialog(player, npc);
         SaveEntity(player);
     }
 

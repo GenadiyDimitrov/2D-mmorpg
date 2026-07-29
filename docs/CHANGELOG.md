@@ -12,6 +12,45 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-29 — Playtest-13 tier 1: seven bug fixes (0.28.92) — protocol 3
+
+The first batch off [testing/Playtest-13.md](testing/Playtest-13.md). Seven of the eight tier-1 items;
+each root cause is noted at the fix site.
+
+- **Crafting materials stack properly.** `ItemDef.IsStackable` is now ONE shared predicate. The client's
+  vendor had its own copy that omitted `EquipSlot.Material`, so a stack of 11 showed "x11" but sold one
+  at a time with no quantity numpad, while the server happily stacked it. The warehouse also moved whole
+  rows without merging, leaving several rows of the same material — deposit and withdraw now merge.
+- **SP updates as it is earned.** `AwardExp` grants SP but only pushes `Progress`, never `Stats`, so the
+  figure sat at its login value all session and only corrected on relog. `ProgressUpdate` now carries
+  `SkillPoints` (the one push that fires per kill) and the client tracks it from both pushes. Sending
+  the ~45-field `StatsUpdate` on every kill would have fixed it far more expensively.
+- **Character select shows the real level and class.** Two separate faults. The level was stale because
+  `LeaveWorld` returned before the background save landed and the client fetches the list immediately —
+  the hub now awaits the save (5s cap, so a stuck write can't freeze the screen). The class was never
+  *rendered*: the row printed `Race + BaseClass`, so every archer read "Human Fighter" and a Warchanter
+  read "Human Mage". `CharacterSlot` gained `ThirdClass` and the row names discipline → second class →
+  base class.
+- **Newly learnable skills unlock without a relog.** `OnLevelUp` never re-sent the subclass, so the
+  client's active-class level stayed at its login value and the Learn tab gated against it.
+- **Buffs no longer cancel by double-tap — press and HOLD.** Double-tap was unusable on a phone: the
+  details pop-up opened on the first tap and swallowed the second, so cancelling took a burst of taps
+  that also cancelled the neighbours. Uses the same `PressAndHold` the skill bar already uses.
+- **The previous character's buffs no longer linger.** `Buffs` and `BuyBack` are the only two
+  per-character caches the server pushes CONDITIONALLY, so unlike inventory/stats/quests they were never
+  replaced on a character switch. Both are cleared in `ResetWorldTransients`.
+- **Quest-giver dialog refreshes on accept.** Accepting never passed the NPC through, so the panel kept
+  showing the pre-accept text and you had to close and re-talk to learn the objective.
+- **Regen no longer stops dead in combat.** New `GameConstants.CombatRegenMultiplier` (0.3) replaces the
+  hard early-return. Auto-farm made "no regen" permanent — a fighter with Basic Attack enabled is engaged
+  for as long as targets exist — so MP never recovered until farming stopped. ⚠ This is a BALANCE value:
+  measure with `tools/BalanceMatrix` and tune. 0 restores the old behaviour.
+
+⚠ **Protocol 3** — `ProgressUpdate` and `CharacterSlot` both gained fields. The additions are optional,
+but a NEW client against an OLD server would read SP as 0 after every kill, so the handshake must reject
+that pairing. Server and APK deploy together.
+⚠ **Not yet run:** SmokeTest (this touches the leave/save path and persistence) and a device test.
+
 ## 2026-07-25 — Buy-back window (Unity) (0.28.91)
 
 Client UI for buy-back (server was done in 0.28.86). `GameUi.BuyBack.cs` — lists items you recently sold

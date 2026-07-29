@@ -71,7 +71,8 @@ public class GameHub : Hub
 
         var chars = await _db.ListCharactersAsync(auth.AccountId);
         return new CharacterList(chars
-            .Select(c => new CharacterSlot(c.Id, c.Name, c.Race, c.BaseClass, c.SecondClass, c.Level, c.PendingDeleteAt))
+            .Select(c => new CharacterSlot(c.Id, c.Name, c.Race, c.BaseClass, c.SecondClass, c.Level,
+                                          c.PendingDeleteAt, c.ThirdClass))
             .ToArray());
     }
 
@@ -152,10 +153,16 @@ public class GameHub : Hub
     /// exit, so it must NOT go through LeaveCommand — that is the DISCONNECT path, which parks the
     /// character in a 180s link-dead grace (or offline-farming). Doing that on a char-select left the
     /// entity in the world and then refused to let you back into your own character.</summary>
-    public Task LeaveWorld()
+    public async Task LeaveWorld()
     {
-        _world.Commands.Enqueue(new LeaveWorldCmd(Context.ConnectionId));
-        return Task.CompletedTask;
+        // Awaits the SAVE, not just the command. The client calls ListCharacters as soon as this
+        // returns, and the save is a background write off the tick — returning immediately meant the
+        // select screen read the row as it was at login.
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _world.Commands.Enqueue(new LeaveWorldCmd(Context.ConnectionId, tcs));
+
+        // Never hang the client on a stuck write — a stale row beats a frozen screen.
+        await Task.WhenAny(tcs.Task, Task.Delay(TimeSpan.FromSeconds(5)));
     }
 
     /// <summary>Ask for a full re-send of everything visible (see <see cref="ResyncCmd"/>). Cheap and

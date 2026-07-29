@@ -133,13 +133,15 @@ namespace Game.Client
             public string BuffName, Description;
             public int Stacks;
             public float Seconds;
-            public float LastTap = -99f;
         }
 
-        // Buff tap behaviour (owner): SINGLE tap opens details, DOUBLE tap cancels. It used to cancel on
-        // a single tap, which put an irreversible action one stray touch away on a bar you brush past
-        // constantly — and gave no way at all to read what a buff actually does.
-        private const float BuffDoubleTapSeconds = 0.35f;
+        // Buff tap behaviour (owner): TAP opens details, PRESS-AND-HOLD cancels.
+        //
+        // It cancelled on a single tap first — an irreversible action one stray touch away on a bar you
+        // brush past constantly. Double-tap replaced that and was worse on a phone (playtest-13): the
+        // details pop-up opened on the first tap and swallowed the second, so cancelling took a burst of
+        // spammed taps that then cancelled the NEIGHBOURING buffs too. Hold is unambiguous, needs no
+        // timing window between two touches, and is already the bar's idiom for "the other action".
         private RectTransform _buffPopup, _buffPopupBackdrop;
         private TextMeshProUGUI _buffPopupTitle, _buffPopupBody;
 
@@ -202,7 +204,7 @@ namespace Game.Client
             var t = new System.Text.StringBuilder();
             if (!string.IsNullOrWhiteSpace(square.Description)) t.AppendLine(square.Description).AppendLine();
             t.AppendLine(square.Seconds > 0f ? "Remaining: " + ShortTime(square.Seconds) : "Remaining: —");
-            t.Append(square.IsDebuff ? "(a debuff — it cannot be dismissed)" : "Double-tap the icon to cancel.");
+            t.Append(square.IsDebuff ? "(a debuff — it cannot be dismissed)" : "Press and HOLD the icon to cancel.");
             _buffPopupBody.text = t.ToString();
 
             _buffPopupBackdrop.gameObject.SetActive(true);
@@ -344,27 +346,24 @@ namespace Game.Client
 
                 var square = new BuffSquare { Root = UiKit.Rect(box.gameObject), Box = box };
 
-                var button = box.gameObject.AddComponent<Button>();
-                button.targetGraphic = box;
+                // No Button/onClick: PressAndHold owns both gestures, exactly as the skill-bar slots do.
                 // Closes over the SQUARE, not over a position in a list that reshuffles every time a
                 // buff expires.
-                button.onClick.AddListener(() =>
+                var press = box.gameObject.AddComponent<PressAndHold>();
+                press.OnTap = () =>
                 {
                     if (string.IsNullOrEmpty(square.Key)) return;
-
-                    bool doubleTap = Time.unscaledTime - square.LastTap <= BuffDoubleTapSeconds;
-                    square.LastTap = Time.unscaledTime;
-
-                    // Double tap CANCELS — buffs only. A debuff is not yours to dismiss, so tapping one
-                    // twice just re-shows its details rather than doing nothing silently.
-                    if (doubleTap && !square.IsDebuff)
-                    {
-                        Boot.RemoveBuff(square.Key);
-                        HideBuffPopup();
-                        return;
-                    }
                     ShowBuffPopup(square);
-                });
+                };
+                // HOLD cancels — buffs only. A debuff is not yours to dismiss, so holding one just
+                // shows its details rather than doing nothing silently.
+                press.OnHold = () =>
+                {
+                    if (string.IsNullOrEmpty(square.Key)) return;
+                    if (square.IsDebuff) { ShowBuffPopup(square); return; }
+                    Boot.RemoveBuff(square.Key);
+                    HideBuffPopup();
+                };
 
                 square.Label = UiKit.Label(box.transform, "", 14f, UiKit.Text, TextAlignmentOptions.Center);
                 UiKit.Place(UiKit.Rect(square.Label.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),

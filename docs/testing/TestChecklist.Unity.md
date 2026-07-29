@@ -215,8 +215,8 @@ of these once fixed. Nothing here has been built yet.
 24. [ ] **Target a party member with NO range restriction** so move-to/assist/heal/buff still resolve
         out of view and **kick / change-leader work from the action buttons**. Minimal frame — no HP/MP
         bars, or empty ones.
-25. [ ] **Buff tap behaviour** — double-tap cancels, single tap opens a details popup that closes on an
-        outside tap.
+25. [ ] **Buff tap behaviour** — press-and-HOLD cancels, a single tap opens a details popup that closes
+        on an outside tap. Holding a DEBUFF shows its details instead (debuffs can't be dismissed).
 26. [ ] **"You entered <field>" needs hit-test FALSE** — it currently blocks tapping the ground beneath
         it (click-through family).
 27. [ ] 🎯 **Partial-stack trading** — "5 of my 15 sticks for his 10 of 16 stones". **The owner's answer

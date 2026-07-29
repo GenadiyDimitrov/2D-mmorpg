@@ -177,8 +177,10 @@ namespace Game.Client
         }
 
         // Stackable = the server's rule for what a quantity even means (Consumable / Scroll).
-        private static bool IsStackable(ItemDef def) =>
-            def.Slot == EquipSlot.Consumable || def.Slot == EquipSlot.Scroll;
+        // Asks the SHARED def (ItemDef.IsStackable) rather than re-listing the slots here. The local
+        // copy used to omit Material, so crafting mats had no quantity numpad and sold one at a time
+        // while the server happily stacked them.
+        private static bool IsStackable(ItemDef def) => def.IsStackable;
 
         private void VendorNote(string text)
         {

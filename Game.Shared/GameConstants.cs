@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.28.91";
+    public const string GameVersion = "0.28.92";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -43,14 +43,14 @@ public static class GameConstants
     /// actually happens most: **client-only work, where the CLIENT is ahead of the server.** A version
     /// number that describes the contract instead of the build makes that case a non-event.
     /// </summary>
-    public const int ProtocolVersion = 2;
+    public const int ProtocolVersion = 3;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
     /// "current only"; setting it lower is a deliberate promise to keep handling the older shape, so
     /// it should only move when someone has actually checked that the code still does.
     /// </summary>
-    public const int MinAcceptedProtocol = 2;
+    public const int MinAcceptedProtocol = 3;
 
     /// <summary>
     /// Build labels accepted from clients too old to send a protocol number. LEGACY — frozen.
@@ -171,6 +171,13 @@ public static class GameConstants
     public const float SafeZoneRadius = 1200f;
 
     public const int SafeZoneRegenMultiplier = 5;
+
+    /// <summary>Regen multiplier while ENGAGED in combat (or mid-cast). Combat used to stop regen
+    /// dead, which auto-farm turned into a permanent state: a fighter with Basic Attack enabled is
+    /// engaged for as long as a target exists, so HP and MP never recovered at all and the only way
+    /// to get regen back was to stop farming (playtest-13). A reduced rate keeps combat costly
+    /// without making sustained play impossible. 0 restores the old all-or-nothing behaviour.</summary>
+    public static float CombatRegenMultiplier = 0.3f;
 
     /// <summary>True inside ANY placed safe zone (see WorldMap.SafeZones).</summary>
     public static bool InSafeZone(float x, float y) => WorldMap.InAnySafeZone(x, y);

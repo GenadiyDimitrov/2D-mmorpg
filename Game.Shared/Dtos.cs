@@ -87,12 +87,18 @@ public record CombatEvent(
     CombatOutcome Outcome,
     string? Skill = null);
 
-/// <summary>Server -> the owning client: exp/level progress after a kill.</summary>
+/// <summary>Server -> the owning client: exp/level progress after a kill.
+///
+/// SkillPoints rides along because SP is earned on the SAME event as exp, and this is the only push
+/// that fires on every kill. It used to travel solely in StatsUpdate, which the kill path never sent,
+/// so the SP figure sat at its login value for a whole session and only corrected on relog. Sending
+/// the full ~45-field StatsUpdate per kill would fix it far more expensively.</summary>
 public record ProgressUpdate(
     int Level,
     long Exp,
     long ExpToNext,
-    bool LeveledUp);
+    bool LeveledUp,
+    int SkillPoints = 0);
 
 /// <summary>Server -> the casting client: show/update the cast bar.
 /// Seconds &lt;= 0 means the cast was cancelled — hide the bar.</summary>
@@ -415,7 +421,7 @@ public record AuthResponse(bool Success, string? Error, AccountRole Role = Accou
 /// <summary>One character on the account, for the selection screen. PendingDeleteAt
 /// (UTC) is set when the character is scheduled for deletion; null = active.</summary>
 public record CharacterSlot(int Id, string Name, Race Race, BaseClass BaseClass, int SecondClass,
-    int Level, DateTime? PendingDeleteAt = null);
+    int Level, DateTime? PendingDeleteAt = null, int ThirdClass = 0);
 
 /// <summary>Server -> Client: the account's characters.</summary>
 public record CharacterList(CharacterSlot[] Characters);

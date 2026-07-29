@@ -386,7 +386,7 @@ namespace Game.Client
                 row.gameObject.AddComponent<LayoutElement>().minHeight = 56f;
 
                 var label = UiKit.Label(row.transform,
-                    slot.Name + "    Lv " + slot.Level + "    " + slot.Race + " " + slot.BaseClass,
+                    slot.Name + "    Lv " + slot.Level + "    " + slot.Race + " " + CharacterClassName(slot),
                     18f, UiKit.Text, TextAlignmentOptions.Left);
                 UiKit.Stretch(UiKit.Rect(label.gameObject), 14f, 0f, 150f, 0f);
 
@@ -395,6 +395,19 @@ namespace Game.Client
                 UiKit.Place(UiKit.Rect(enter.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
                             new Vector2(-10f, 0f), new Vector2(120f, 42f));
             }
+        }
+
+        /// <summary>The most specific class name a character actually holds: discipline, else second
+        /// class, else the base class. The row used to print BaseClass alone, so every archer read
+        /// "Human Fighter" and a Warchanter read "Human Mage" — not stale data, just a name that was
+        /// never rendered. Mirrors the debug panel's SubclassLabel.</summary>
+        private static string CharacterClassName(CharacterSlot slot)
+        {
+            if (slot.ThirdClass > 0 && ThirdClassCatalog.Get(slot.ThirdClass) is { } third)
+                return third.Discipline.ToString();
+            if (slot.SecondClass > 0 && ClassCatalog.Get(slot.SecondClass) is { } second)
+                return second.Name;
+            return slot.BaseClass.ToString();
         }
     }
 }
