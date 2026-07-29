@@ -106,19 +106,28 @@ Console.WriteLine();
     float dblF  = CritFactor(StatCalculator.PhysicalDoubleChance(Math.Max(champ.Dex, champ.AtkStat)), 2f);
 
     int crushHit = StatCalculator.PhysicalDamage(cAtk, refPower, mobPDef, refLevel);
-    float crushCycle = (refCastTicks + refReuseTicks) * GameConstants.TickSeconds;
+    // A PHYSICAL skill's cast time is shortened by ATTACK speed, exactly as a spell's is by cast speed
+    // (SkillReuseTicks picks the multiplier by SkillCategory). Leaving Crush at a flat 1.8s while the
+    // nuke's 4s shrank to 2.6s quietly taxed the Champion for being buffed — its attack speed nearly
+    // doubled and none of that reached its skill.
+    int crushCastTicks = Math.Max(2, (int)(refCastTicks * champ.EffectiveAttackSpeedMultiplier));
+    float crushCycle = (crushCastTicks + refReuseTicks) * GameConstants.TickSeconds;
     float crushDps = crushHit * critF * dblF / crushCycle;
 
     int autoHit = StatCalculator.PhysicalDamage(cAtk, 0, mobPDef, refLevel);
     float autoEvery = AutoAttackSeconds(champ);
     // Autoattacks only fill the time the cast is NOT occupying.
-    float autoShare = (crushCycle - refCastTicks * GameConstants.TickSeconds) / crushCycle;
+    float autoShare = (crushCycle - crushCastTicks * GameConstants.TickSeconds) / crushCycle;
     float autoDps = autoHit * critF / autoEvery * autoShare;
 
-    Console.WriteLine($"  CHAMPION  P.Atk {cAtk}  crit x{critF:F2}  double x{dblF:F2}");
-    Console.WriteLine($"    Heavenly Crush  {crushHit,6} dmg / {crushCycle:F1}s  = {crushDps,7:F1} dps");
-    Console.WriteLine($"    autoattack      {autoHit,6} dmg / {autoEvery:F2}s   = {autoDps,7:F1} dps");
-    Console.WriteLine($"    TOTAL                                    = {crushDps + autoDps,7:F1} dps"
+    // Print the AVERAGE damage — crit and double already folded in — so the arithmetic on each line
+    // reconciles. Printing the raw hit next to a crit-adjusted dps read as a mistake (2119 / 8.8s is
+    // 241, not 309); the gap was the crit multiplier, invisibly applied to only one of the two.
+    Console.WriteLine($"  CHAMPION  P.Atk {cAtk}  crit x{critF:F2}  double x{dblF:F2}   (avg dmg = hit x crit x double)");
+    Console.WriteLine($"    Heavenly Crush  {crushHit * critF * dblF,6:F0} avg / {crushCycle,4:F1}s  = {crushDps,7:F1} dps");
+    Console.WriteLine($"    autoattack      {autoHit * critF,6:F0} avg / {autoEvery,4:F2}s  = {autoDps,7:F1} dps"
+                      + $"   (only {autoShare:P0} of the cycle is free to swing)");
+    Console.WriteLine($"    TOTAL                                  = {crushDps + autoDps,7:F1} dps"
                       + $"   ({mobHp / Math.Max(1f, crushDps + autoDps):F1}s to kill)");
 
     // ---- Nuker: the REFERENCE top nuke, same basis as the Champion's ----
@@ -145,7 +154,7 @@ Console.WriteLine();
     float nukeDps = nukeHit * mCritF / nukeCycle;
 
     Console.WriteLine($"  NUKER     M.Atk {mAtk}  magic crit x{mCritF:F2}");
-    Console.WriteLine($"    top nuke (power {nukePower})  {nukeHit,6} dmg / {nukeCycle:F1}s  = {nukeDps,7:F1} dps"
+    Console.WriteLine($"    top nuke (power {nukePower})  {nukeHit * mCritF,6:F0} avg / {nukeCycle,4:F1}s  = {nukeDps,7:F1} dps"
                       + $"   ({mobHp / Math.Max(1f, nukeDps):F1}s to kill)");
     Console.WriteLine($"    -> CHAMPION/NUKER = {(crushDps + autoDps) / Math.Max(1f, nukeDps):F2}x");
     Console.WriteLine();
@@ -165,8 +174,8 @@ Console.WriteLine();
     Console.WriteLine($"    {"reuse-",7} {"champion",9} {"nuker",9} {"ratio",7}");
     foreach (float cdr in new[] { 0f, 0.10f, 0.20f, 0.30f })
     {
-        float cCycle = (refCastTicks + Math.Max(1, (int)(refReuseTicks * (1f - cdr)))) * GameConstants.TickSeconds;
-        float cShare = (cCycle - refCastTicks * GameConstants.TickSeconds) / cCycle;
+        float cCycle = (crushCastTicks + Math.Max(1, (int)(refReuseTicks * (1f - cdr)))) * GameConstants.TickSeconds;
+        float cShare = (cCycle - crushCastTicks * GameConstants.TickSeconds) / cCycle;
         float cDps = crushHit * critF * dblF / cCycle + autoHit * critF / autoEvery * cShare;
 
         float nCast = Math.Max(2, (int)(nukeCastTicks * nuker.EffectiveCastSpeedMultiplier));
