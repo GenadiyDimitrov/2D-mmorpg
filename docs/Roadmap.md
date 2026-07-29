@@ -18,6 +18,30 @@ any wire-protocol / DB-schema break (that's what the handshake enforces).
 
 ## NOW (active / immediate)
 
+### 🔴 Playtest-13 queue (2026-07-29, build ~0.28.91) — THE ACTIVE LIST
+Three sessions (elf mage ~15 · marksman 24 · champion 28), one of them with the **server hosted on
+the phone** (Termux + proot-ubuntu, .NET 10). Verdict: *"it was fun playing… still plain (no sounds,
+a bit woody, no good visuals) but a game that I enjoyed."*
+
+The raw report is [testing/Playtest-13.md](testing/Playtest-13.md); the ordered queue with the
+reasoning is [RoadmapNext.md](RoadmapNext.md). In short:
+
+- **Tier 1 (8 bugs)** — buffs wiped by relog/class-change · SP stale after buying a skill ·
+  char-select shows stale level AND stale class text · crafting mats don't stack · rankings don't
+  update · MP regen stalls in auto-farm · quest-giver dialog doesn't refresh on accept · buff
+  cancel must become press-and-hold.
+- **Tier 2** — clipped item/mob windows, EF/SQL console flood, EF `10103` warning, auto-farm
+  keep-position circle, debug 2nd-class button granting the crafting class.
+- **Tier 3** — the item/vendor batch (rarity out of the name, descriptions, F/E/D-only shop with
+  the new price table, split Armsmaster, warehouse grouping, weapon M.Atk audit); the quest batch
+  (level ranges, detail window, abandon, **repeatable quests**, daily apothecary shot quest,
+  3-tab quest window with track/details); the world batch (aggression pass, mob cast bar,
+  re-layout into 4-level fields under five cities).
+- **Tier 4** — char delete, chat tabs, target visual on the mob, auto-farm target display,
+  new-quest indicator, kill-summary chat line.
+- **Confirmed finding:** `Archetype.Archer` registers only `BattleFury @20` + `PowerShot @24` —
+  every other archetype has a full 20-36 ladder. **The archer 20-40 kit must be authored.**
+
 ### ⏸ SP extraction — "SP bottles" (owner, 2026-07-24) — DEFERRED, design captured
 Skill points become an extractable currency: **1 000 000 000 SP → one "SP bottle"** item, and skills
 then cost **bottles + gold** rather than raw SP.
