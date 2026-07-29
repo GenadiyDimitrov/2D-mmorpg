@@ -82,10 +82,21 @@ namespace Game.Client
                 var label = UiKit.Label(row.transform, text.ToString().TrimEnd(), 15f,
                                         quest.CanComplete ? UiKit.Good : UiKit.Text,
                                         TextAlignmentOptions.TopLeft);
-                UiKit.Stretch(UiKit.Rect(label.gameObject), 12f, 8f, 12f, 8f);
+                UiKit.Stretch(UiKit.Rect(label.gameObject), 12f, 8f, 120f, 8f);   // room for the button
 
                 var fitter = label.gameObject.AddComponent<ContentSizeFitter>();
                 fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+                // ABANDON, with a confirmation — the progress is gone, and if you have since climbed
+                // past the quest's level ceiling you cannot take it again (owner, playtest-13).
+                string qid = quest.Id, qname = quest.Name;
+                var drop = UiKit.TextButton(row.transform, "Abandon",
+                    () => Ask("Abandon \"" + qname + "\"?\nAll progress on it is lost, and if you are "
+                              + "outside its level range you will not be able to take it again.",
+                              "Abandon", () => Boot.QuestAction("abandon", qid)), 14f);
+                UiKit.Place(UiKit.Rect(drop.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
+                            new Vector2(-10f, -10f), new Vector2(100f, 34f));
+                drop.targetGraphic.color = new Color(0.42f, 0.20f, 0.20f, 0.95f);   // destructive
             }
 
             if (log.Completed.Length > 0)

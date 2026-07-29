@@ -12,6 +12,7 @@ public static partial class QuestCatalog
         RegisterStarterChain();           // lvl 10/12 — earns the Newbie kit (was given at creation)
         RegisterClassChangeChains();      // 2nd class (lvl 18/20)
         RegisterThirdClassChains();       // 3rd class (lvl 40, longer + harder)
+        RegisterDailyQuests();            // repeatable once per server day
         // Add more (non-class-change) chains here.
     }
 
@@ -20,6 +21,8 @@ public static partial class QuestCatalog
     // Implemented in Quests.ClassChangeChains.cs.
     static partial void RegisterClassChangeChains();
     static partial void RegisterThirdClassChains();
+    // Implemented in Quests.Daily.cs.
+    static partial void RegisterDailyQuests();
 }
 
 public static partial class ClassChangeRequirements

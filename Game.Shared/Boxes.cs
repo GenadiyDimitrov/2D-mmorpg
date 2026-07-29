@@ -88,6 +88,13 @@ public static class BoxCatalog
                 new BoxEntry(ItemCatalog.BoxSpiritshot24h, 1.0f),
             }, PickCount: 1),
 
+            // The Apothecary's DAILY favour — the same choice, one hour instead of one day.
+            new BoxDef(ItemCatalog.BoxDailyShotChoice, new[]
+            {
+                new BoxEntry(ItemCatalog.BoxSoulshot1h, 1.0f),
+                new BoxEntry(ItemCatalog.BoxSpiritshot1h, 1.0f),
+            }, PickCount: 1),
+
             // Newbie jewels box — 2 earrings, 2 rings, 1 necklace (100% each).
             new BoxDef(ItemCatalog.BoxNewbieJewels, new[]
             {

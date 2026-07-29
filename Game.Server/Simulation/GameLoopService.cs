@@ -8672,7 +8672,12 @@ var effect = def.Effect;
             return;
         }
 
-        bool Completed(string qid) => player.CompletedQuests.Contains(qid);
+        // A DAILY is "completed" only for TODAY: it stores a dated stamp rather than its bare id, so
+        // once the server day rolls over the quest is on offer again.
+        bool Completed(string qid) =>
+            QuestCatalog.Get(qid) is { Daily: true }
+                ? !DailyQuestReady(player, qid)
+                : player.CompletedQuests.Contains(qid);
         bool Active(string qid) => player.ActiveQuests.ContainsKey(qid);
 
         // Class choice is irreversible: once you've taken (active OR completed) any
@@ -8832,6 +8837,7 @@ var effect = def.Effect;
         switch (cmd.Action)
         {
             case "accept": AcceptQuest(player, cmd.Id, cmd.NpcEntityId); break;
+            case "abandon": AbandonQuest(player, cmd.Id); break;
             case "complete": CompleteQuestAtNpc(player, cmd.Id, cmd.NpcEntityId); break;
             case "changeclass": DoQuestClassChange(player, cmd.Id, cmd.NpcEntityId); break;
         }
@@ -8841,8 +8847,22 @@ var effect = def.Effect;
     {
         var def = QuestCatalog.Get(questId);
         if (def is null) return;
-        if (player.ActiveQuests.ContainsKey(questId) || player.CompletedQuests.Contains(questId)) return;
-        if (player.Level < def.MinLevel) return;
+        if (player.ActiveQuests.ContainsKey(questId)) return;
+        // A DAILY re-opens once the server day rolls over; anything else is one-shot.
+        if (player.CompletedQuests.Contains(questId) && !def.Daily) return;
+        if (def.Daily && !DailyQuestReady(player, questId))
+        {
+            SendSystemToEntity(player, $"{def.Name} can be taken again tomorrow.");
+            return;
+        }
+        // LEVEL RANGE (owner): too low OR too high blocks the ACCEPT. Class quests carry no ceiling.
+        if (!def.LevelInRange(player.Level))
+        {
+            SendSystemToEntity(player, player.Level < def.MinLevel
+                ? $"{def.Name} requires level {def.MinLevel}."
+                : $"You have outgrown {def.Name} (levels {def.MinLevel}-{def.MaxLevel}).");
+            return;
+        }
         if (def.RequiresQuestId is not null && !player.CompletedQuests.Contains(def.RequiresQuestId)) return;
 
         player.ActiveQuests[questId] = new CharacterQuestState(questId, 0, 0, false);
@@ -8860,6 +8880,33 @@ var effect = def.Effect;
             SendDialog(player, npc);
         SaveEntity(player);
     }
+
+    /// <summary>Give a quest up. All progress on it is lost, and if the character has since climbed
+    /// past the quest's level ceiling they cannot take it again — which is exactly why the client asks
+    /// for confirmation first (owner, playtest-13). A COMPLETED quest is not abandonable; there is
+    /// nothing to give up.</summary>
+    private void AbandonQuest(Entity player, string questId)
+    {
+        if (!player.ActiveQuests.Remove(questId)) return;
+        var def = QuestCatalog.Get(questId);
+        string name = def?.Name ?? questId;
+        SendSystemToEntity(player, def is not null && !def.LevelInRange(player.Level)
+            ? $"Abandoned: {name}. You are outside its level range and cannot take it again."
+            : $"Abandoned: {name}.");
+        SendQuestLog(player);
+        SaveEntity(player);
+    }
+
+    /// <summary>Has the server day rolled over since this daily was last completed? The stamp is kept
+    /// in the character's completed-quest set as "<id>@<yyyy-MM-dd>", so it needs no new column and a
+    /// day's worth of dailies costs one string each.</summary>
+    private static bool DailyQuestReady(Entity player, string questId)
+    {
+        string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        return !player.CompletedQuests.Contains(DailyStamp(questId, today));
+    }
+
+    private static string DailyStamp(string questId, string day) => $"{questId}@{day}";
 
     /// <summary>Advance a TalkTo step if the current step targets this npc.</summary>
     private void AdvanceTalkStep(Entity player, string npcId)
@@ -8912,7 +8959,13 @@ var effect = def.Effect;
                 AddItem(player, itemId);
 
         player.ActiveQuests.Remove(questId);
-        player.CompletedQuests.Add(questId);
+        if (def.Daily)
+        {
+            // A daily records TODAY's stamp rather than closing permanently, so it re-opens when the
+            // server day rolls over. The plain id is deliberately NOT added — that would retire it.
+            player.CompletedQuests.Add(DailyStamp(questId, DateTime.UtcNow.ToString("yyyy-MM-dd")));
+        }
+        else player.CompletedQuests.Add(questId);
         SendSystemToEntity(player, $"Quest complete: {def.Name}!");
         SendInventory(player);
         SendQuestLog(player);

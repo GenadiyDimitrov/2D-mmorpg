@@ -12,6 +12,29 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-29 — Quests: level ranges, abandon, and the Apothecary's daily (0.29.3)
+
+- **Quests have a level RANGE, not just a floor.** `QuestDef.MaxLevel` (0 = no ceiling) closes a quest
+  to new takers once you outgrow it, and `OfferedBy` stops listing it. Being mid-quest is never
+  affected — only ACCEPTING is blocked, which is what stops a level-60 walking back to farm the
+  starter chain. **Class quests deliberately carry no ceiling** (owner: "you need your job").
+- **Abandon.** `QuestAction "abandon"` drops an active quest and its progress. The client puts a red
+  Abandon button on every active row behind a confirmation that says what it costs — including that
+  you may not be able to retake it if you are outside its level range.
+- **DAILY quests.** `QuestDef.Daily` marks a quest that re-opens when the server day rolls over.
+  Completing one records a dated stamp (`<id>@yyyy-MM-dd`) in the completed set instead of the bare id,
+  so it never retires — no new DB column, one string per daily per day.
+- 🆕 **"The Apothecary's Favour"** (`Quests.Daily.cs`) — talk to Apothecary Miren, get a **1-hour shot
+  selection box**, once a day, **levels 6-75**. No kills: its whole job is to put shots in the hands of
+  someone without 150 000 gold spare, so the early game is not shot-less while the mid game still buys
+  them. The window closes at 75 because by then gold is not the constraint.
+  The reward box is **untradable** and worth nothing at a vendor — unlike the 1h boxes Miren *sells* —
+  since a free daily that could be farmed across characters and sold on would be a gold faucet.
+
+⚠ Deferred from the quest batch: the on-screen quest TRACKER, the three-tab quest window
+(active/unavailable/completed), the per-quest detail window with accept/decline, the new-quest
+indicator over NPCs, and the full repeatable-quest system with per-mob exp/gold multipliers.
+
 ## 2026-07-29 — One aggressive mob type per field (0.29.2)
 
 **71 of the 80 mob templates are flagged aggressive**, so every field above level 10 was wall-to-wall

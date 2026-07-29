@@ -465,6 +465,8 @@ public static class ItemCatalog
     // Newbie CHOICE selection-boxes (pick one of two sub-boxes).
     public const string BoxNewbieArmorChoice = "box_newbie_armor_choice";
     public const string BoxNewbieRuneChoice  = "box_newbie_rune_choice";
+    /// <summary>The Apothecary's daily reward — pick soul or spirit, 1 hour, untradable.</summary>
+    public const string BoxDailyShotChoice   = "box_daily_shot_choice";
     // Boxes/chests — opened from the inventory; roll their BoxCatalog loot table.
     public const string BoxNewbie         = "box_newbie";
     public const string BoxTreasure       = "box_treasure";
@@ -714,6 +716,13 @@ public static class ItemCatalog
             Tradable: false, SellPriceOverride: 0, Description: "Choose ONE: a Fighter (light) or Mage (robe) armor set."));
         list.Add(new ItemDef(BoxNewbieRuneChoice, "Newbie Shot Rune", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
             Tradable: false, SellPriceOverride: 0, Description: "Choose ONE: a 1-day Soulshot (physical) or Spiritshot (magic) rune box."));
+        // The DAILY quest reward. Untradable and worth nothing at a vendor, unlike the 1h boxes the
+        // Apothecary SELLS: a free daily that could be farmed across characters and sold on would be a
+        // gold faucet rather than a leg-up (owner: quest shot boxes untradable, bought ones not).
+        list.Add(new ItemDef(BoxDailyShotChoice, "Shot Box (1h) — Daily", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
+            Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0,
+            Description: "Choose ONE: a 1-hour Soulshot (physical) or Spiritshot (magic) rune box. "
+                       + "Untradable — the Apothecary gives these out, she does not sell them."));
 
         // Return scrolls: same mechanism, but their skill has a CAST time, so double-clicking one
         // channels it. The skills are NOT learned — the ITEM is what grants them.

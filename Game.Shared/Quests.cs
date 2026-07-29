@@ -41,7 +41,21 @@ public record QuestDef(
     bool PreClassChange = false,
     // 3rd-class gating: only offer to a character holding this 2nd class, and only
     // before they take a 3rd class (these chains stop the moment a discipline is chosen).
-    int? ForSecondClass = null);
+    int? ForSecondClass = null,
+    // ----- Level RANGE (owner, playtest-13). MinLevel above is the floor; this is the ceiling, past
+    //       which the quest can no longer be ACCEPTED (0 = no ceiling). A quest already in progress is
+    //       never cancelled by out-levelling it — only taking it fresh is blocked, which is what stops
+    //       a level-60 walking back to farm the starter chain.
+    //       CLASS quests deliberately have NO ceiling: you need your job whenever you get round to it.
+    int MaxLevel = 0,
+    // ----- DAILY: the quest can be taken again after the server-time day rolls over. Completing it
+    //       moves it out of CompletedQuests and into the daily ledger instead, so it never permanently
+    //       closes. 0 = a normal one-shot quest.
+    bool Daily = false)
+{
+    /// <summary>Can a character of this level ACCEPT the quest? (Being mid-quest is unaffected.)</summary>
+    public bool LevelInRange(int level) => level >= MinLevel && (MaxLevel <= 0 || level <= MaxLevel);
+}
 
 /// <summary>Per-character progress on a quest (persisted). StepIndex = current
 /// step; Counter = kills/collected for that step; Completed when fully done.</summary>
@@ -109,14 +123,19 @@ public static partial class QuestCatalog
         foreach (var q in AllQuests)
         {
             if (q.OfferNpcId != npcId) continue;
-            if (level < q.MinLevel) continue;
+            // LEVEL RANGE, not just a floor (owner): a quest you have outgrown stops being offered
+            // rather than sitting in the list for a level-60 to farm. Class quests set no ceiling.
+            if (!q.LevelInRange(level)) continue;
             if (q.ForRace is Race r && r != race) continue;
             if (q.ForBaseClass is BaseClass b && b != baseClass) continue;
             if (q.PreClassChange && secondClass != 0) continue;
             // 3rd-class chains: only for the matching 2nd class, and never once a
             // 3rd class is taken (so the other discipline's chain stops being offered).
             if (q.ForSecondClass is int sc && (sc != secondClass || thirdClass != 0)) continue;
-            if (isCompleted(q.Id) || isActive(q.Id)) continue;
+            // A DAILY is never permanently "completed" — the caller's isCompleted answers for today's
+            // stamp instead, so the quest reappears when the server day rolls over.
+            if (isActive(q.Id)) continue;
+            if (isCompleted(q.Id)) continue;
             if (q.RequiresQuestId is not null && !isCompleted(q.RequiresQuestId)) continue;
             yield return q;
         }
