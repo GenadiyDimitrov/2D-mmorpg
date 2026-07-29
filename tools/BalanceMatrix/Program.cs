@@ -251,7 +251,8 @@ static string NameOf(string id) => SkillCatalog.Get(id)?.Name ?? id;
 
 // The gear tier a character of this level would realistically be wearing.
 static int GearTier(int level) =>
-    level >= 76 ? 76 : level >= 61 ? 61 : level >= 52 ? 52 : level >= 40 ? 40 : 20;
+    level >= ItemCatalog.SGradeLevel ? ItemCatalog.SGradeLevel
+    : level >= 76 ? 76 : level >= 61 ? 61 : level >= 52 ? 52 : level >= 40 ? 40 : 20;
 
 // Highest-power MagicDamage skill the character knows, at the level they know it.
 static int TopNukePower(Entity e)
@@ -272,7 +273,9 @@ static int TopNukePower(Entity e)
 
 // A character at `level` with every skill their class table offers by then, wearing the
 // full best-for-tier gear line (weapon + body + accessories + 5 jewels + shield for fighters).
-static Entity BuildPlayer(Race race, BaseClass cls, int level)
+/// <param name="quality">Gear QUALITY suffix: null/"epic" = the authored tier piece, or "mythic" /
+/// "legendary" / "rare" / … to measure the six-quality ladder's other rungs.</param>
+static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality = null)
 {
     var s = StatCalculator.GetBaseStats(race, cls);
     var e = new Entity { Name = "calc", Kind = EntityKind.Player };
@@ -305,14 +308,19 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level)
     if (cls == BaseClass.Mage)
         e.LearnedSkills[SkillCatalog.MasteryRobe] = 1;
 
+    // QUALITY suffix. The tiered tables are authored as the EPIC piece, and the six-quality ladder
+    // (0.29.1) derives everything else from it — so the bare id IS the Epic, and "_mythic" is the new
+    // 100% ceiling at 1/0.7 ≈ +43%. Passing a quality here is what lets the matrix MEASURE that raise
+    // instead of asserting it.
     int t = GearTier(level);
-    Equip(e, cls == BaseClass.Mage ? $"staff_t{t}" : $"sword1h_t{t}");
-    Equip(e, cls == BaseClass.Mage ? $"robe_t{t}" : $"heavy_t{t}");
-    if (cls == BaseClass.Fighter) Equip(e, $"shield_t{t}");
-    foreach (var acc in new[] { "helm", "gloves", "boots" }) Equip(e, $"{acc}_t{t}");
-    Equip(e, $"necklace_t{t}");
-    Equip(e, $"ring_t{t}"); Equip(e, $"ring_t{t}");
-    Equip(e, $"earring_t{t}"); Equip(e, $"earring_t{t}");
+    string q = quality is null or "epic" ? "" : "_" + quality;
+    Equip(e, (cls == BaseClass.Mage ? $"staff_t{t}" : $"sword1h_t{t}") + q);
+    Equip(e, (cls == BaseClass.Mage ? $"robe_t{t}" : $"heavy_t{t}") + q);
+    if (cls == BaseClass.Fighter) Equip(e, $"shield_t{t}{q}");
+    foreach (var acc in new[] { "helm", "gloves", "boots" }) Equip(e, $"{acc}_t{t}{q}");
+    Equip(e, $"necklace_t{t}{q}");
+    Equip(e, $"ring_t{t}{q}"); Equip(e, $"ring_t{t}{q}");
+    Equip(e, $"earring_t{t}{q}"); Equip(e, $"earring_t{t}{q}");
 
     e.RecomputeDerived();
     return e;

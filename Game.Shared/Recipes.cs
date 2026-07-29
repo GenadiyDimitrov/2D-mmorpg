@@ -150,9 +150,14 @@ public static class RecipeCatalog
     {
         foreach (var d in ItemCatalog.AllItems)
         {
-            if (d.ItemLevel <= 0) continue;              // only the tiered gear
-            if (d.Rarity != ItemRarity.Epic) continue;   // only the Epic SET pieces are craftable
-                                                         // (the scaled Common/Unc/Rare copies are drop-only)
+            if (d.ItemLevel <= 0) continue;                // only the tiered gear
+            // Only the AUTHORED set piece is craftable; the derived quality copies are drop-only. That
+            // authored piece used to be the Epic rung and is now the MYTHIC one (the ladder re-anchored
+            // so the authored number is the ceiling rather than a 70% mid-point) — this filter is how
+            // "the real item" is identified, so it had to move with it. Leaving it on Epic silently
+            // produced ZERO craftable recipes, which the SmokeTest caught as RecipeCatalog returning
+            // null for a known id.
+            if (d.Rarity != ItemRarity.Mythic) continue;
             if (d.Slot is not (EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel)) continue;
             var prof = ProfOf(d);
             if (prof == Profession.None) continue;

@@ -8,7 +8,11 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <!-- Must track Game.Server, which it references. The server moved to net10.0 (the owner needed it
+         to run under proot-Ubuntu on the phone) and this tool was left on net8.0 — being outside
+         Game.sln, `dotnet build` never caught it, so the break only surfaced the next time someone
+         reached for the balance numbers. -->
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Game.Tools.BalanceMatrix</RootNamespace>

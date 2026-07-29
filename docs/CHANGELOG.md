@@ -12,6 +12,43 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-29 — S grade, and the ladder re-anchored to the top (0.31.0) — ⚠ DELETE `game.db`
+
+The owner's reading of the ladder: **our A-grade is L2's LOW S-grade**, so A at full power is already
+about right for level 85 — the +43% Mythic sitting above it was inflation, not content.
+
+**The authored tier tables are now the MYTHIC piece** (100%), not the Epic (70%) anchor. Every lesser
+quality is a fraction of the authored number instead of a multiple. Measured with `BalanceMatrix`:
+**every existing stat is unchanged** — the only thing that disappeared is the phantom rung that used
+to sit 43% above anything the game had been balanced for.
+
+**New S grade** (`ItemLevel 80`, "Soulcrystal"), for levels 80+:
+- **Derived from A × `SGradeOverA` (1.60)**, not hand-authored — one constant retunes the whole grade
+  (owner: *"not so much authoring"*). A 1H blade: A **281** → S **450**.
+- **Top half of the ladder only — Epic / Legendary / Mythic.** Below Epic a piece carries no set bonus
+  and no attributes, which is not what endgame gear is for. More importantly **crafting produces
+  LEGENDARY ONLY**, so an S grade without a Legendary rung could never be crafted at all and the
+  blueprint economy would dead-end at A.
+- A keeps its full six rungs; only S is top-half.
+
+⚠ **This broke crafting and the SmokeTest caught it.** `FinishedItemRecipes` identified "the real
+item" by `Rarity == Epic`. Re-anchoring made that match nothing, so **zero** craftable recipes were
+generated — silently, with no error. The filter now keys on `Mythic`, and the same applies to
+`RecipeBooks`. Worth remembering: several places use a rarity as a *proxy for "the authored piece"*.
+
+**Where level 85 lands, in S gear** (was A gear):
+| | M.Atk / P.Atk | kills a same-level mob in |
+|---|---|---|
+| Mage | 1511 → **2039** | 3.8 → **3.3 casts** |
+| Fighter | 1100 → **1738** | 24.6 → **15.5 hits** |
+
+S closes some of the fighter's gap, but **24.6 → 15.5 hits vs the mage's 3.3 casts is still a wide
+gulf** — a pre-existing curve problem the ladder inherits rather than causes, and worth its own pass.
+
+`tools/BalanceMatrix` also **had to be repaired to run at all**: it sat on `net8.0` after the server
+moved to `net10.0`, and being outside `Game.sln` nothing caught it. It now takes a gear QUALITY and
+knows about the S tier.
+
 ## 2026-07-29 — Which mobs are aggressive is AUTHORED per field (0.30.1)
 
 0.29.2 made exactly one mob type aggressive per ordinary field — the roster's FIRST entry. The owner

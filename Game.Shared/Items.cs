@@ -1106,22 +1106,39 @@ public static class ItemCatalog
     /// have the same raw stats, and THIS is the difference between them.</summary>
     public static bool HasIdentity(ItemRarity r) => r >= ItemRarity.Epic && r != ItemRarity.God;
 
-    /// <summary>Stat multiplier relative to the AUTHORED numbers. The gear tables were authored as the
-    /// Epic (70%) piece — the owner's anchor, so today's best gear keeps exactly the stats it has — and
-    /// everything else is derived from it. Legendary and Mythic therefore sit ABOVE what the game had
-    /// before (Mythic is 1/0.7 ≈ +43%), which is a deliberate ceiling raise: measure it with
-    /// tools/BalanceMatrix rather than deriving it by hand.</summary>
-    public static float RarityScale(ItemRarity r) => RarityPercent(r) / 70f;
+    /// <summary>Stat multiplier relative to the AUTHORED numbers.
+    ///
+    /// The authored tier tables ARE the Mythic piece (owner, 2026-07-29) — 100% — and every lesser
+    /// quality is a fraction of it. This was re-anchored from Epic: anchoring at 70% meant a GENERATED
+    /// Mythic sat 43% above anything the game had ever been balanced for, which was a real ceiling
+    /// raise nobody had measured. Anchoring at the top instead makes the authored number the ceiling
+    /// again, and the ladder above A becomes authored content (the S grade) rather than a multiplier
+    /// artefact. The owner's reading of it: our A-grade is L2's LOW S-grade, so A at full power is
+    /// already about right for level 85.</summary>
+    public static float RarityScale(ItemRarity r) => RarityPercent(r) / 100f;
 
-    // The DROP copies generated off each authored (Epic) piece. Epic itself is the authored item, so it
-    // is not in this list — it would collide with its own id.
+    /// <summary>How much stronger the S grade is than A. ONE number, because S is DERIVED from the
+    /// A row rather than authored (owner: "not so much authoring") — retune the grade by moving this.</summary>
+    public const float SGradeOverA = 1.60f;
+
+    /// <summary>The level S gear is built for: 80+, sitting above A's 76-80 window.</summary>
+    public const int SGradeLevel = 80;
+
+    /// <summary>S carries only the TOP HALF of the quality ladder — Epic, Legendary, Mythic (owner).
+    /// Two reasons. Below Epic is where a piece has no set bonus and no attributes, which is not what
+    /// endgame gear is for; and CRAFTING PRODUCES LEGENDARY ONLY, so an S grade without a Legendary
+    /// rung could never be crafted at all and the whole blueprint economy would stop at A.</summary>
+    public static bool IsTopHalfOnly(int itemLevel) => itemLevel >= SGradeLevel;
+
+    // The DROP copies generated off each authored piece. MYTHIC is the authored item itself, so it is
+    // not in this list — it would collide with its own id.
     private static (ItemRarity Rarity, float Scale)[] DropTiers => new[]
     {
         (ItemRarity.Common,    RarityScale(ItemRarity.Common)),
         (ItemRarity.Uncommon,  RarityScale(ItemRarity.Uncommon)),
         (ItemRarity.Rare,      RarityScale(ItemRarity.Rare)),
+        (ItemRarity.Epic,      RarityScale(ItemRarity.Epic)),
         (ItemRarity.Legendary, RarityScale(ItemRarity.Legendary)),
-        (ItemRarity.Mythic,    RarityScale(ItemRarity.Mythic)),
     };
 
     /// <summary>True for a plain base-tier id like "heavy_t52" (the part after the last "_t" is all
@@ -1157,7 +1174,8 @@ public static class ItemCatalog
     {
         foreach (var d in tiered)
         {
-            if (d.ItemLevel < 76 || d.Rarity != ItemRarity.Epic) continue;   // A-grade set pieces only
+            // A- and S-grade SET pieces (the authored tier item, which is the Mythic rung).
+            if (d.ItemLevel < 76 || d.Rarity != ItemRarity.Mythic) continue;
             if (d.Slot is not (EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel)) continue;
             string recipeId = $"craft_{d.Id}";
             yield return new ItemDef(RecipeBookId(recipeId), $"Blueprint: {d.Name}",
@@ -1181,6 +1199,11 @@ public static class ItemCatalog
 
             foreach (var (rarity, scale) in DropTiers)
             {
+                // S grade is TOP HALF ONLY — Epic / Legendary / Mythic. Below Epic a piece has no set
+                // bonus and no attributes, which is not what endgame gear is for, and the low rungs
+                // would just be clutter nobody would ever equip at 80+.
+                if (IsTopHalfOnly(d.ItemLevel) && !HasIdentity(rarity)) continue;
+
                 int S(int v) => v == 0 ? 0 : Math.Max(1, (int)(v * scale));
                 // The quality is NOT in the name (owner). "Common Electrum Longbow" became a different
                 // item's name in the player's head; the piece is an Electrum Longbow and its quality is
@@ -1276,15 +1299,29 @@ public static class ItemCatalog
         // Entity's caster check now keys on IsMagicWeapon instead of the weapon TYPE, which is what
         // actually distinguishes a wand from a mace (both are Blunt).
         foreach (var w in weapons)
-            foreach (var (L, P, M, As) in w.Rows)
+        {
+            // The S row is DERIVED from A × SGradeOverA rather than authored, so the whole grade is one
+            // number to retune (owner: "not so much authoring"). Attack speed carries over unchanged —
+            // S is stronger, not faster.
+            var a = w.Rows[w.Rows.Length - 1];
+            var rows = w.Rows.Append(
+                (SGradeLevel, Scale(a.P), Scale(a.M), a.As));
+
+            foreach (var (L, P, M, As) in rows)
                 yield return new ItemDef($"{w.Key}_t{L}", $"{GradeTheme(L)} {w.Noun}",
-                    EquipSlot.Weapon, TierGrade(L), ItemRarity.Epic,
+                    EquipSlot.Weapon, TierGrade(L), ItemRarity.Mythic,
                     WeaponType: w.Type,
                     AtkBonus: P,
                     MAtkBonus: M,
                     WeaponRange: w.Range,
                     ItemLevel: L, IsMagicWeapon: w.Magic, AttackSpeedBase: As);
+        }
     }
+
+    /// <summary>A-grade stat → S-grade stat. Zero stays zero so a weapon with no M.Atk does not
+    /// suddenly gain one.</summary>
+    private static int Scale(int aValue) =>
+        aValue == 0 ? 0 : Math.Max(1, (int)Math.Round(aValue * SGradeOverA));
 
     /// <summary>The level-tier ARMOR from docs/data/gear/gear_sets.csv — base bodies (Heavy/Light/Robe),
     /// shields, weightless accessories (Gloves/Boots/Helm) and jewels (Necklace/Ring/Earring). Each
@@ -1293,19 +1330,23 @@ public static class ItemCatalog
     /// Armors roll NO attributes for now (owner). Ids: "<key>_t<level>".</summary>
     private static IEnumerable<ItemDef> TieredArmor()
     {
-        int[] lv = { 20, 40, 52, 61, 76 };
+        // …plus the derived S tier. Every table below is authored A-last, so appending SGradeLevel and
+        // scaling the final entry gives the whole grade without another column of hand numbers.
+        int[] lv = { 20, 40, 52, 61, 76, SGradeLevel };
+
+        static int[] WithS(int[] a) => a.Append(Scale(a[a.Length - 1])).ToArray();
 
         // ---- Bodies: (key, noun, weight, pDef[5], mp[5]) — robe carries inherent +MaxMP. ----
         var bodies = new (string Key, string Noun, ArmorWeight W, int[] Def, int[] Mp)[]
         {
-            ("heavy", "Bulwark",       ArmorWeight.Heavy, new[]{167,240,270,293,332}, new[]{0,0,0,0,0}),
-            ("light", "Leathers",      ArmorWeight.Light, new[]{125,218,202,220,249}, new[]{0,0,0,0,0}),
-            ("robe",  "Robe",          ArmorWeight.Robe,  new[]{84,110,135,147,166},  new[]{274,508,613,718,866}),
+            ("heavy", "Bulwark",       ArmorWeight.Heavy, WithS(new[]{167,240,270,293,332}), WithS(new[]{0,0,0,0,0})),
+            ("light", "Leathers",      ArmorWeight.Light, WithS(new[]{125,218,202,220,249}), WithS(new[]{0,0,0,0,0})),
+            ("robe",  "Robe",          ArmorWeight.Robe,  WithS(new[]{84,110,135,147,166}),  WithS(new[]{274,508,613,718,866})),
         };
         foreach (var b in bodies)
             for (int i = 0; i < lv.Length; i++)
                 yield return new ItemDef($"{b.Key}_t{lv[i]}", $"{GradeTheme(lv[i])} {b.Noun}",
-                    EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Epic,
+                    EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Mythic,
                     Weight: b.W, ArmorSlot: ArmorSlot.Body, DefBonus: b.Def[i], MpBonus: b.Mp[i],
                     ItemLevel: lv[i], NoAttributes: true, SetId: $"set_{b.Key}_t{lv[i]}");
 
@@ -1326,35 +1367,35 @@ public static class ItemCatalog
         };
         foreach (var v in variants)
             yield return new ItemDef(v.Key, $"{GradeTheme(v.L)} {v.Noun}",
-                EquipSlot.Armor, TierGrade(v.L), ItemRarity.Epic,
+                EquipSlot.Armor, TierGrade(v.L), ItemRarity.Mythic,
                 Weight: v.W, ArmorSlot: ArmorSlot.Body, DefBonus: v.Def, MpBonus: v.Mp,
                 ItemLevel: v.L, NoAttributes: true, SetId: $"set_{v.Key}");
 
         // ---- Weightless accessories (shared across weights). ----
         var acc = new (string Key, string Noun, ArmorSlot Slot, int[] Def)[]
         {
-            ("gloves", "Gauntlets", ArmorSlot.Gloves, new[]{29,39,44,49,55}),
-            ("boots",  "Greaves",   ArmorSlot.Boots,  new[]{29,39,44,49,55}),
-            ("helm",   "Helm",      ArmorSlot.Head,   new[]{41,58,66,73,83}),
+            ("gloves", "Gauntlets", ArmorSlot.Gloves, WithS(new[]{29,39,44,49,55})),
+            ("boots",  "Greaves",   ArmorSlot.Boots,  WithS(new[]{29,39,44,49,55})),
+            ("helm",   "Helm",      ArmorSlot.Head,   WithS(new[]{41,58,66,73,83})),
         };
         foreach (var a in acc)
             for (int i = 0; i < lv.Length; i++)
                 yield return new ItemDef($"{a.Key}_t{lv[i]}", $"{GradeTheme(lv[i])} {a.Noun}",
-                    EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Epic,
+                    EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Mythic,
                     ArmorSlot: a.Slot, DefBonus: a.Def[i], ItemLevel: lv[i], NoAttributes: true,
                     SetId: $"set_acc_t{lv[i]}");   // shared accessory line per tier (all weights)
 
         // ---- Shields (ShieldDefense from the CSV P.Def; block stats extrapolate Wooden→Iron, tunable). ----
-        int[] shDef = { 143, 203, 230, 256, 299 };
-        float[] shBlock = { 0.22f, 0.24f, 0.26f, 0.28f, 0.30f };
-        float[] shReduce = { 0.37f, 0.39f, 0.41f, 0.43f, 0.45f };
-        float[] shCrit = { 0.10f, 0.11f, 0.12f, 0.13f, 0.15f };
-        int[] shEvaPen = { 7, 7, 8, 8, 9 };
+        int[] shDef = WithS(new[]{ 143, 203, 230, 256, 299 });
+        float[] shBlock = { 0.22f, 0.24f, 0.26f, 0.28f, 0.30f, 0.32f };
+        float[] shReduce = { 0.37f, 0.39f, 0.41f, 0.43f, 0.45f, 0.47f };
+        float[] shCrit = { 0.10f, 0.11f, 0.12f, 0.13f, 0.15f, 0.16f };
+        int[] shEvaPen = { 7, 7, 8, 8, 9, 9 };
         // The shield belongs to its tier's HEAVY set (the CSV puts shields in the same GroupId).
         // It is NOT required to complete the set — wearing it just adds the set's ShieldBonus.
         for (int i = 0; i < lv.Length; i++)
             yield return new ItemDef($"shield_t{lv[i]}", $"{GradeTheme(lv[i])} Aegis",
-                EquipSlot.Shield, TierGrade(lv[i]), ItemRarity.Epic,
+                EquipSlot.Shield, TierGrade(lv[i]), ItemRarity.Mythic,
                 BlockChance: shBlock[i], BlockReduction: shReduce[i], ShieldDefense: shDef[i],
                 ShieldCritDefense: shCrit[i], ShieldEvasionPenalty: shEvaPen[i],
                 SetId: $"set_heavy_t{lv[i]}",
@@ -1363,14 +1404,14 @@ public static class ItemCatalog
         // ---- Jewels (M.Def + inherent +MP at 61/76). L2 layout = 1 necklace / 2 rings / 2 earrings. ----
         var jewels = new (string Key, string Noun, JewelType T, int[] MDef, int[] Mp)[]
         {
-            ("necklace", "Pendant",  JewelType.Necklace, new[]{45,64,72,85,95}, new[]{0,0,0,33,42}),
-            ("ring",     "Band",     JewelType.Ring,     new[]{22,32,36,42,48}, new[]{0,0,0,17,21}),
-            ("earring",  "Stud",     JewelType.Earring,  new[]{34,45,54,63,71}, new[]{0,0,0,25,31}),
+            ("necklace", "Pendant",  JewelType.Necklace, WithS(new[]{45,64,72,85,95}), WithS(new[]{0,0,0,33,42})),
+            ("ring",     "Band",     JewelType.Ring,     WithS(new[]{22,32,36,42,48}), WithS(new[]{0,0,0,17,21})),
+            ("earring",  "Stud",     JewelType.Earring,  WithS(new[]{34,45,54,63,71}), WithS(new[]{0,0,0,25,31})),
         };
         foreach (var j in jewels)
             for (int i = 0; i < lv.Length; i++)
                 yield return new ItemDef($"{j.Key}_t{lv[i]}", $"{GradeTheme(lv[i])} {j.Noun}",
-                    EquipSlot.Jewel, TierGrade(lv[i]), ItemRarity.Epic,
+                    EquipSlot.Jewel, TierGrade(lv[i]), ItemRarity.Mythic,
                     MDefBonus: j.MDef[i], MpBonus: j.Mp[i], JewelType: j.T,
                     ItemLevel: lv[i], NoAttributes: true);
 

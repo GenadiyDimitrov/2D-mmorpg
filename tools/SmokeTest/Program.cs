@@ -108,6 +108,39 @@ Check("server pushed the warehouse on login", a.Ware is not null);
           $"{vendors} vendors, {empty} empty");
 }
 
+// -------------------------------------------------------------------------------------------
+// 1a-1b. THE GEAR LADDER'S SHAPE. The authored tier tables are the MYTHIC piece and every lesser
+//     quality is derived from it; S grade is derived from A. All of that is arithmetic nobody sees
+//     until an item is in hand, so assert it on the catalogue directly.
+// -------------------------------------------------------------------------------------------
+{
+    var aSword = ItemCatalog.Get("sword1h_t76");
+    var sSword = ItemCatalog.Get($"sword1h_t{ItemCatalog.SGradeLevel}");
+    Check("A-grade sword is MYTHIC (the authored number is the ceiling, not a 70% anchor)",
+          aSword is { Rarity: ItemRarity.Mythic }, $"{aSword?.Rarity}");
+    Check("S grade exists and is ~60% above A",
+          sSword is not null && aSword is not null
+            && sSword.AtkBonus == (int)Math.Round(aSword.AtkBonus * ItemCatalog.SGradeOverA),
+          $"A {aSword?.AtkBonus} -> S {sSword?.AtkBonus}");
+
+    var aEpic = ItemCatalog.Get("sword1h_t76_epic");
+    Check("A-Epic is 70% of A-Mythic (the split rung, same stats as Rare)",
+          aEpic is not null && aSword is not null
+            && aEpic.AtkBonus == (int)(aSword.AtkBonus * 0.70f),
+          $"{aEpic?.AtkBonus} vs {aSword?.AtkBonus}");
+
+    // S is TOP HALF ONLY — crafting produces Legendary, so that rung must exist or S can never be
+    // crafted; and the sub-Epic rungs must NOT exist or they would be endgame clutter.
+    Check("S has a LEGENDARY rung (crafting produces Legendary — without it S is uncraftable)",
+          ItemCatalog.Get($"sword1h_t{ItemCatalog.SGradeLevel}_legendary") is not null);
+    Check("S has NO common/uncommon/rare rungs",
+          ItemCatalog.Get($"sword1h_t{ItemCatalog.SGradeLevel}_common") is null
+          && ItemCatalog.Get($"sword1h_t{ItemCatalog.SGradeLevel}_uncommon") is null
+          && ItemCatalog.Get($"sword1h_t{ItemCatalog.SGradeLevel}_rare") is null);
+    Check("A still HAS the low rungs (only S is top-half)",
+          ItemCatalog.Get("sword1h_t76_common") is not null);
+}
+
 Check("server pushed quest markers on login", a.Marks is not null);
 // A level-1 character legitimately has NO markers: the starter chain opens at 10 and the class
 // chains at 18. Asserting "> 0" here would be asserting a bug. The real check is after the level-up
