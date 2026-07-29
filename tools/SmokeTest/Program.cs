@@ -84,6 +84,20 @@ Check("server pushed a skill bar", a.Bar is not null);
 Check("server pushed the warehouse on login", a.Ware is not null);
 
 // -------------------------------------------------------------------------------------------
+// 1a-2. QUEST MARKERS. The "!" over an NPC's head is per-PLAYER (level, race, class and what you
+//     have already done all decide it), so it is computed server-side and pushed with the quest log.
+//     A marker that is right in the client while the server thinks otherwise is exactly the class of
+//     bug this test exists for — assert it on the wire.
+// -------------------------------------------------------------------------------------------
+Check("server pushed quest markers on login", a.Marks is not null);
+// A level-1 character legitimately has NO markers: the starter chain opens at 10 and the class
+// chains at 18. Asserting "> 0" here would be asserting a bug. The real check is after the level-up
+// below — markers must APPEAR once the character is old enough to be offered something.
+Check("a level-1 character has no quest markers yet (nothing opens before level 10)",
+      a.Marks is not null && a.Marks.Marks.Length == 0,
+      $"{a.Marks?.Marks.Length ?? 0} marks");
+
+// -------------------------------------------------------------------------------------------
 // 1c. WAREHOUSE (private bank). Deposit an item in the spawn town, then let the RELOG below prove it
 //     came back from the DB in the BANK (not the bag). Done here because the bank is town-gated and the
 //     character walks off into the field in later phases.
@@ -413,6 +427,12 @@ await a.Settle();
 //     (playtest-13) because deposit moved the whole InventoryItem instead of merging. Deposit the
 //     same material twice and assert ONE row holding both.
 // -------------------------------------------------------------------------------------------
+// Quest markers must now EXIST: the character is far past the level the starter chain opens at, so
+// the Armsmaster has something to offer and the server should be saying so.
+Check("quest markers appear once the character is old enough to be offered a quest",
+      a.Marks is not null && a.Marks.Marks.Length > 0,
+      $"{a.Marks?.Marks.Length ?? 0} marks at level {a.Progress?.Level}");
+
 string matId = Crafting.MaterialId(MaterialType.Ingot, ItemRarity.Common);
 await a.Hub.SendAsync("DebugGive", matId, 5);
 await a.Settle();
@@ -749,6 +769,9 @@ sealed class Session : IAsyncDisposable
     /// while the server holds something else entirely.</summary>
     public BuffUpdate? Buffs;
 
+    /// <summary>The last "QuestMarks" push — which NPCs have a marker for this character.</summary>
+    public QuestMarks? Marks;
+
     public async Task OpenAsync(string url)
     {
         Hub = new HubConnectionBuilder().WithUrl(url).Build();
@@ -766,6 +789,7 @@ sealed class Session : IAsyncDisposable
         });
         Hub.On<ProgressUpdate>("Progress", p => Progress = p);
         Hub.On<BuffUpdate>("Buffs", b => Buffs = b);
+        Hub.On<QuestMarks>("QuestMarks", m => Marks = m);
         Hub.On<ChatMessage>("Chat", m => { AllChat.Add(m); if (m.Channel == ChatChannel.System) { SystemChat.Add(m.Text); Console.WriteLine($"        [SYSTEM] {m.Text}"); } });
         await Hub.StartAsync();
     }

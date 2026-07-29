@@ -751,6 +751,7 @@ namespace Game.Client
             RefreshStatsWindow();
             RefreshTargetWindow();
             RefreshQuestWindow();
+            RefreshQuestTracker();   // on screen even when the log is closed — that is its whole point
             RefreshDialogWindow();
             RefreshPartyWindow();
             RefreshVendorWindow();
@@ -1361,6 +1362,11 @@ namespace Game.Client
                 // The "*" marks an aggressive mob — what to tiptoe around BEFORE it decides for you.
                 string title = e.Name + (e.Aggressive ? "*" : "");
                 if (e.Disconnected) title += "  (disconnected)";
+                // Quest marker over an NPC's head, so you can SEE who has something for you instead of
+                // walking the town tapping everyone (owner, playtest-13). Prefixed rather than suffixed
+                // so a row of NPCs lines its markers up.
+                string mark = QuestMarkGlyph(e.Id);
+                if (mark.Length > 0) title = mark + " " + title;
                 plate.Label.text = title;
 
                 // YOUR OWN flag colour wins over "you are green".
@@ -1509,6 +1515,25 @@ namespace Game.Client
             if (CloseTopWindow()) return;
 
             Ask("Quit the game?", "Quit", QuitGracefully);
+        }
+
+        /// <summary>The glyph over an NPC's head: gold "!" = a quest you can take, grey "?" = one you
+        /// are on, gold "?" = one you can hand in NOW. The MMO shorthand, so it needs no explaining.</summary>
+        private string QuestMarkGlyph(Guid entityId)
+        {
+            if (Boot.QuestMarks == null) return "";
+            for (int i = 0; i < Boot.QuestMarks.Length; i++)
+            {
+                if (Boot.QuestMarks[i].NpcEntityId != entityId) continue;
+                switch (Boot.QuestMarks[i].State)
+                {
+                    case QuestMarkState.Available:     return "<color=#FFD23C>!</color>";
+                    case QuestMarkState.ReadyToHandIn: return "<color=#FFD23C>?</color>";
+                    case QuestMarkState.InProgress:    return "<color=#9AA3AD>?</color>";
+                }
+                return "";
+            }
+            return "";
         }
 
         private void Ask(string message, string okLabel, Action action)

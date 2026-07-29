@@ -373,6 +373,10 @@ namespace Game.Client
         /// <summary>The quest log, as last pushed by the server.</summary>
         public QuestLog Quests { get; private set; }
 
+        /// <summary>Which NPCs have a quest marker for me, from the server. Arrives with every quest-log
+        /// push, so it is always in step with the log.</summary>
+        public QuestMark[] QuestMarks { get; private set; } = new QuestMark[0];
+
         /// <summary>The expanded target window's contents, or null. Arrives only after asking.</summary>
         public TargetDetails Details { get; private set; }
 
@@ -669,6 +673,7 @@ namespace Game.Client
                 PvpCount = p.PvpCount;
             });
             _net.QuestLogReceived += q => Main(() => Quests = q);
+            _net.QuestMarksReceived += m => Main(() => QuestMarks = m?.Marks ?? new QuestMark[0]);
             _net.DialogReceived += d => Main(() => Dialog = d);
             _net.AutoConfigReceived += c => Main(() =>
             {

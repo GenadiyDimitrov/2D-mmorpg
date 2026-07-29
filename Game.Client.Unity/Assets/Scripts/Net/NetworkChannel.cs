@@ -65,6 +65,7 @@ namespace Game.Client
         public event Action<TradeStateUpdate> TradeStateReceived;
         public event Action<NpcDialog> DialogReceived;
         public event Action<QuestLog> QuestLogReceived;
+        public event Action<QuestMarks> QuestMarksReceived;
 
         /// <summary>The player's stored auto-hunt config, echoed on login and after every change with
         /// the server's clamping applied. The config/farm windows fill from THIS, never from what they
@@ -119,6 +120,7 @@ namespace Game.Client
             _connection.On<TradeStateUpdate>("Trade", t => TradeStateReceived?.Invoke(t));
             _connection.On<NpcDialog>("Dialog", d => DialogReceived?.Invoke(d));
             _connection.On<QuestLog>("QuestLog", q => QuestLogReceived?.Invoke(q));
+            _connection.On<QuestMarks>("QuestMarks", m => QuestMarksReceived?.Invoke(m));
             _connection.On<AutoHuntConfigDto>("AutoConfig", c => AutoConfigReceived?.Invoke(c));
             _connection.On<AutoHuntStatus>("AutoHunt", s => AutoHuntStatusReceived?.Invoke(s));
             _connection.On<RegionNotice>("Region", r => RegionReceived?.Invoke(r));

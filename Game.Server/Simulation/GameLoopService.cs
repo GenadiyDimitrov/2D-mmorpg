@@ -2063,6 +2063,11 @@ public class GameLoopService : BackgroundService
         SendLearned(player);   // carries this class's OWN bar with it — see SendLearned
         PushBuffs(player);
         SendSubclasses(player);
+        // Each class carries its OWN level, so swapping changes what quests are on offer — and with
+        // them the "!" markers over NPC heads. Without this the markers kept describing the class you
+        // just swapped AWAY from: the SmokeTest found a level-81 main showing no markers at all,
+        // because the last push had been computed while a level-5 subclass was active.
+        SendQuestLog(player);
         if (_world.EntityToConnection.TryGetValue(player.Id, out var conn))
             _ = _hub.Clients.Client(conn).SendAsync("Progress", new ProgressUpdate(
                 player.Level, player.Exp, StatCalculator.ExpToNext(player.Level), false, player.SkillPoints));
@@ -7049,6 +7054,12 @@ var effect = def.Effect;
         // skills greyed out until a relog (playtest-13: locked at 7, fine at 14 — after a relog).
         SendSubclasses(player);
         AdvanceLevelQuests(player);   // any active "reach level N" step may now be satisfied
+        // A level-up can OPEN a quest (and close one, now that quests have level ceilings), so the log
+        // and its NPC markers have to be re-pushed even when no active quest moved. AdvanceLevelQuests
+        // only pushes when it changed something, so without this the "!" over an NPC's head appeared
+        // one unrelated quest event late — caught by the SmokeTest, which found no markers at all on a
+        // level-81 character who had every starter quest available.
+        SendQuestLog(player);
         BroadcastSystem($"{player.Name} reached level {player.Level}!");
 
         if (player.Level >= GameConstants.ClassChangeLevel && player.SecondClass == 0)
@@ -9125,6 +9136,56 @@ var effect = def.Effect;
             .Select(st => { var d = QuestCatalog.Get(st.QuestId); return d is null ? null : Summarize(player, d, st); })
             .Where(x => x is not null).Select(x => x!).ToArray();
         SendTo(player, "QuestLog", new QuestLog(active, player.CompletedQuests.ToArray()));
+        SendQuestMarks(player);
+    }
+
+    /// <summary>Tell the client which NPCs have something for this player, so it can put a marker over
+    /// their heads (owner, playtest-13: "quest giver need indication for new quest"). Sent from
+    /// SendQuestLog so it is emitted at every point the answer can change — accept, complete, abandon,
+    /// level-up, login — without a second set of call sites to keep in step.
+    ///
+    /// READY-TO-HAND-IN beats IN-PROGRESS beats AVAILABLE: if an NPC is both the end of one quest and
+    /// the start of another, the thing you can finish NOW is the more useful thing to show.</summary>
+    private void SendQuestMarks(Entity player)
+    {
+        var marks = new List<QuestMark>();
+        foreach (var npc in _world.Entities.Values)
+        {
+            if (npc.Kind != EntityKind.Npc || string.IsNullOrEmpty(npc.NpcId)) continue;
+            var state = QuestMarkState.None;
+
+            // Anything active whose CURRENT step points at this NPC.
+            foreach (var st in player.ActiveQuests.Values)
+            {
+                if (QuestCatalog.Get(st.QuestId) is not QuestDef d) continue;
+                bool handIn = st.Completed || st.StepIndex >= d.Steps.Length - 1;
+                var step = st.StepIndex >= 0 && st.StepIndex < d.Steps.Length ? d.Steps[st.StepIndex] : null;
+                bool talkHere = step is { Type: QuestStepType.TalkTo } && step.TargetId == npc.NpcId;
+                if (d.OfferNpcId == npc.NpcId || talkHere)
+                    state = (handIn && talkHere) || (d.OfferNpcId == npc.NpcId && st.Completed)
+                        ? QuestMarkState.ReadyToHandIn
+                        : state == QuestMarkState.ReadyToHandIn ? state : QuestMarkState.InProgress;
+            }
+
+            if (state == QuestMarkState.None && OfferedQuestCount(player, npc.NpcId) > 0)
+                state = QuestMarkState.Available;
+
+            if (state != QuestMarkState.None) marks.Add(new QuestMark(npc.Id, state));
+        }
+        SendTo(player, "QuestMarks", new QuestMarks(marks.ToArray()));
+    }
+
+    /// <summary>How many quests this NPC would offer the player right now (level range, race/class
+    /// gating, prerequisites and the daily's day-stamp all applied).</summary>
+    private int OfferedQuestCount(Entity player, string npcId)
+    {
+        bool Completed(string qid) =>
+            QuestCatalog.Get(qid) is { Daily: true }
+                ? !DailyQuestReady(player, qid)
+                : player.CompletedQuests.Contains(qid);
+        bool Active(string qid) => player.ActiveQuests.ContainsKey(qid);
+        return QuestCatalog.OfferedBy(npcId, player.Level, player.Race, player.BaseClass,
+                                      player.SecondClass, player.ThirdClass, Completed, Active).Count();
     }
 
         private void SpawnOneInZone(ZoneRuntime zr)

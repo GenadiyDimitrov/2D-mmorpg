@@ -48,6 +48,19 @@ public record EntityDto(
     // bool per snapshot and no catalog lookups.
     bool Aggressive = false);
 
+/// <summary>What to draw over an NPC's head about quests. Sent per player, because availability is
+/// personal — level, race, class and what you have already done all decide it.</summary>
+public enum QuestMarkState { None = 0, Available = 1, InProgress = 2, ReadyToHandIn = 3 }
+
+/// <summary>One NPC's quest marker.</summary>
+public record QuestMark(Guid NpcEntityId, QuestMarkState State);
+
+/// <summary>Server -> owning client: which NPCs currently have something quest-shaped for YOU.
+/// Rides alongside every QuestLog push, so it can never drift out of step with the log. The NPC
+/// roster is small (a couple of dozen), so this sends every marked NPC rather than only the visible
+/// ones — cheaper than tracking view state, and the marker is already right when one comes on screen.</summary>
+public record QuestMarks(QuestMark[] Marks);
+
 /// <summary>Client -> Server: "move me toward this point" (click-to-move).
 /// Moving cancels engagement, queued skills, and casting (classic MMO).</summary>
 public record MoveCommand(float TargetX, float TargetY);

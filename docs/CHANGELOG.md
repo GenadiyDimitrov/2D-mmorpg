@@ -12,6 +12,38 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-29 — Quest markers over NPCs + the on-screen tracker (0.29.4) — protocol 7
+
+The two things the owner asked to see and test alongside abandon: *"i would like to see the
+notifications and track"*.
+
+- **Quest markers over NPC heads.** New `QuestMarks` push (gold **!** = a quest you can take, gold
+  **?** = one you can hand in NOW, grey **?** = one you are on). Availability is PER PLAYER — level,
+  race, class and history all decide it — so it is computed server-side and sent **from
+  `SendQuestLog`**, which means it is emitted at every point the answer can change without a second
+  set of call sites to keep in step. Ready-to-hand-in outranks in-progress outranks available.
+- **On-screen quest TRACKER.** A `[Track]` button on every active quest row pins it to a small
+  draggable panel that shows the objective and the kill counter while you fight, capped at **5**
+  (owner asked for 3-5). Pinning past the cap drops the oldest rather than refusing — a button that
+  silently does nothing reads as broken. Pins for quests that end are dropped automatically, and the
+  panel hides itself when nothing is pinned.
+
+🔴 **The SmokeTest earned its keep here — it found TWO real push bugs, both the same family** as the
+playtest-13 tier-1 ones (server state changes, nothing tells the client):
+- **A level-up never re-pushed the quest log.** `AdvanceLevelQuests` only pushes when it changed an
+  active quest, so crossing a quest's MinLevel produced no marker until some unrelated quest event
+  happened. `OnLevelUp` now pushes unconditionally — quests can now CLOSE on level too, so this
+  matters in both directions.
+- **A subclass swap never re-pushed it either.** Each class carries its own level, so swapping changes
+  what is on offer; the markers kept describing the class you swapped away from. The test caught a
+  level-81 main showing no markers at all, because the last push had been computed while a level-5
+  subclass was active.
+
+Both were invisible in play — exactly what the headless test exists for. New assertions cover the
+markers at login, at level 1 (correctly none — nothing opens before 10) and after levelling.
+
+⚠ **Protocol 7** — new `QuestMarks` push.
+
 ## 2026-07-29 — Quests: level ranges, abandon, and the Apothecary's daily (0.29.3)
 
 - **Quests have a level RANGE, not just a floor.** `QuestDef.MaxLevel` (0 = no ceiling) closes a quest
