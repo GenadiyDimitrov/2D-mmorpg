@@ -9210,8 +9210,11 @@ var effect = def.Effect;
         string mobId = zone.MobTypes[_rng.Next(zone.MobTypes.Length)];
         var mobType = MobCatalog.Get(mobId);
         // A mob with a natural level brings its own (its authored base curve is tuned for it);
-        // otherwise the zone assigns the level.
-        int level = mobType.Level > 0 ? mobType.Level : _rng.Next(zone.MinLevel, zone.MaxLevel + 1);
+        // otherwise the zone assigns the level. ForceZoneLevel flips that: the ZONE wins, which is how
+        // the 85-90 field re-uses the top roster to fill the last levels to the cap.
+        int level = mobType.Level > 0 && !zone.ForceZoneLevel
+            ? mobType.Level
+            : _rng.Next(zone.MinLevel, zone.MaxLevel + 1);
         BuildMob(mobId, level, zone.Rank, x, y, zone.Id);
         zr.OnSpawned();
     }

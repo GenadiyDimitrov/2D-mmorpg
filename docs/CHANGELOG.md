@@ -12,6 +12,42 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-29 — The world is five cities (0.30.0) — ⚠ DELETE `game.db`
+
+The world re-layout from playtest-13. Seven towns in a ring, each with two wide bands, becomes **five
+cities** each owning a level range and holding 2-4 **tighter fields** — 6-level bands meant half of
+every band was spent farming grey mobs or being outclassed.
+
+| City | Band | Fields |
+|---|---|---|
+| Brackenford | 1-16 | 2 |
+| Stonewatch | 16-40 | 4 |
+| Greymarsh | 40-60 | 4 |
+| Ironreach | 60-75 | 3 |
+| Frostmere | **76-90** | 3 + three ELITE spawners (80 / 84 / 90) |
+
+- **Emberfall and Duskvale are deleted** — towns, NPCs, roads, regions and safe zones. Their rosters
+  were redistributed into the bands above; the level ladder is unbroken because the mob roster is a
+  dense 1-85 run.
+- **There is finally somewhere to reach the cap.** New `SpawnZone.ForceZoneLevel` makes the ZONE's
+  band win over a named mob's own level, and the 85-90 field uses it so the top roster respawns at
+  86-90 (owner: *"make it so we can have a place to lvl up from 86 to 90"*). Purpose-built creatures
+  for that band come later — this is a deliberate reuse, not a fallback.
+- **Each Frostmere field carries an elite spawner ~1200 away**: same trip, but far enough that the
+  elite does not aggro while you clear the normal camp (owner asked for 1-1.5k).
+- **Field outlines are GENERATED, not hand-drawn.** This is what made the re-layout possible at all.
+  Each field used to be a dozen literal polygon vertices that had to keep agreeing with the circles
+  inside it, enforced by a startup guard that refuses to boot on a "rogue spawner" — move a zone 500
+  units and the server dies. `RegionMap.FieldOf` now builds the outline as a convex hull of the zone
+  circles plus a margin, and `ZonesNear` picks a field's zones by POSITION, so re-ordering or
+  re-banding the list cannot silently reshuffle the map. A field simply IS where its spawners are.
+
+⚠ The generated hulls are larger than the hand-drawn ones, and the first attempt had **Stonewatch
+swallowing the training dummies** (6 spawners, Lv 16-60, instead of 4 at 16-40) — caught by the
+server's own field-membership report. The 28-34 field moved north and that field's margin tightened.
+Verified: every band now reports exactly its own range, no rogue spawners.
+✅ SmokeTest green on a fresh DB.
+
 ## 2026-07-29 — Every town is a real town (0.29.6)
 
 **Every MAIN town now carries the same service set** (owner): a buffer, a warehouse keeper, the

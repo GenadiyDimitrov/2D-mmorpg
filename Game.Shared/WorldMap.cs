@@ -36,66 +36,98 @@ public static class WorldMap
     // zones aren't clustered; zone radii kept so the gaps between them grew.
     public static readonly SpawnZone[] SpawnZones =
     {
-        // Named mobs bring their OWN level (MobType.Level); the band on each zone is
-        // descriptive — the roster below places each creature in its natural band.
-        // ===== Brackenford (centre) — levels 1-10 =====
-        new(X: 19400, Y: 24000, Radius: 1400, MinLevel: 1,  MaxLevel: 4,
-            MobTypes: new[] { "ridgeback_pup", "fox" }, MaxCount: 10,
+        // ===================== THE FIVE CITIES (owner, 2026-07-29) =====================
+        // The world was seven towns in a ring, each with two wide bands. It is FIVE cities now, each
+        // owning a level range and holding 2-4 tighter FIELDS, because 6-level bands meant a character
+        // spent half of every band either farming grey mobs or being outclassed:
+        //
+        //   Brackenford  1-16    2 fields     Stonewatch  16-40   4 fields
+        //   Greymarsh    40-60   4 fields     Ironreach   60-75   3 fields
+        //   Frostmere    76-90   3 fields + three ELITE spawners (80 / 84 / 90)
+        //
+        // Emberfall and Duskvale are GONE — their rosters redistributed into the bands above.
+        //
+        // Named mobs bring their OWN level (MobType.Level), so a field's roster is chosen to sit inside
+        // its band; the band is what the UI reports. The one exception is the 85-90 field, which sets
+        // ForceZoneLevel so the top-level roster respawns at 86-90 and there is somewhere to finish the
+        // climb to the cap (owner: "make it so we can have a place to lvl up from 86 to 90" — new
+        // creatures for that band come later).
+        //
+        // Fields sit >=2500 from their town centre (outside the safe zone) and are spaced so two bands
+        // never bleed into one another.
+
+        // ===== Brackenford (centre, 24000/24000) — levels 1-16 =====
+        new(X: 19400, Y: 24000, Radius: 1500, MinLevel: 1,  MaxLevel: 12,
+            MobTypes: new[] { "ridgeback_pup", "fox", "goblin_scout", "ashen_wolf", "werewolf" }, MaxCount: 12,
             RespawnSeconds: 8, RespawnVariance: 3),
-        new(X: 28600, Y: 24000, Radius: 1400, MinLevel: 4,  MaxLevel: 8,
-            MobTypes: new[] { "fox", "goblin_scout" }, MaxCount: 10,
-            RespawnSeconds: 8, RespawnVariance: 3),
-        new(X: 24000, Y: 19400, Radius: 1300, MinLevel: 8,  MaxLevel: 10,
-            MobTypes: new[] { "goblin_scout", "ashen_wolf" }, MaxCount: 10,
+        new(X: 28600, Y: 24000, Radius: 1500, MinLevel: 8,  MaxLevel: 16,
+            MobTypes: new[] { "goblin_scout", "ashen_wolf", "werewolf", "hook_spider", "orc_archer" }, MaxCount: 12,
             RespawnSeconds: 10, RespawnVariance: 4),
 
-        // ===== Stonewatch (north) — levels 10-22 =====
-        new(X: 20400, Y: 8400,  Radius: 1500, MinLevel: 10, MaxLevel: 15,
-            MobTypes: new[] { "ashen_wolf", "werewolf", "hook_spider" }, MaxCount: 12,
-            RespawnSeconds: 12, RespawnVariance: 4),
-        new(X: 27600, Y: 10400, Radius: 1500, MinLevel: 16, MaxLevel: 22,
+        // ===== Stonewatch (north, 24000/10000) — levels 16-40 =====
+        new(X: 20000, Y: 10000, Radius: 1400, MinLevel: 16, MaxLevel: 22,
             MobTypes: new[] { "orc_archer", "skeleton_grunt", "shield_skeleton", "grizzly_bear" }, MaxCount: 12,
-            RespawnSeconds: 14, RespawnVariance: 5),
-
-        // ===== Emberfall (north-east) — levels 22-34 =====
-        new(X: 33000, Y: 12400, Radius: 1500, MinLevel: 22, MaxLevel: 28,
+            RespawnSeconds: 12, RespawnVariance: 4),
+        new(X: 28000, Y: 10000, Radius: 1400, MinLevel: 22, MaxLevel: 28,
             MobTypes: new[] { "grizzly_bear", "cinder_imp", "watcher_eye", "lizardman_warrior" }, MaxCount: 12,
-            RespawnSeconds: 15, RespawnVariance: 5),
-        new(X: 39000, Y: 16400, Radius: 1500, MinLevel: 28, MaxLevel: 34,
+            RespawnSeconds: 14, RespawnVariance: 5),
+        new(X: 24000, Y: 6800,  Radius: 1300, MinLevel: 28, MaxLevel: 34,
             MobTypes: new[] { "lizardman_warrior", "marauder_recruit", "mantis_worker", "grave_robber_fighter", "medusa", "plunder_beetle" }, MaxCount: 12,
+            RespawnSeconds: 15, RespawnVariance: 5),
+        new(X: 24000, Y: 14000, Radius: 1400, MinLevel: 34, MaxLevel: 40,
+            MobTypes: new[] { "medusa", "plunder_beetle", "wyrm", "marsh_mantis_soldier", "fen_lizardman_archer", "dune_orc_archer" }, MaxCount: 12,
             RespawnSeconds: 16, RespawnVariance: 5),
 
-        // ===== Greymarsh (south-east) — levels 34-46 =====
-        new(X: 33000, Y: 30400, Radius: 1500, MinLevel: 34, MaxLevel: 40,
-            MobTypes: new[] { "medusa", "wyrm", "marsh_mantis_soldier", "fen_lizardman_archer", "dune_orc_archer" }, MaxCount: 11,
+        // ===== Greymarsh (south-east, 36000/33000) — levels 40-60 =====
+        new(X: 32000, Y: 33000, Radius: 1400, MinLevel: 40, MaxLevel: 45,
+            MobTypes: new[] { "dune_orc_archer", "rift_portling", "harpy", "ridge_orc_overlord", "grave_lich", "fomor_brute" }, MaxCount: 11,
             RespawnSeconds: 18, RespawnVariance: 6),
-        new(X: 39000, Y: 35000, Radius: 1500, MinLevel: 40, MaxLevel: 46,
-            MobTypes: new[] { "rift_portling", "ridge_orc_overlord", "harpy", "grave_lich", "fomor_brute", "marsh_marauder" }, MaxCount: 11,
+        new(X: 40000, Y: 33000, Radius: 1400, MinLevel: 45, MaxLevel: 50,
+            MobTypes: new[] { "fomor_brute", "marsh_marauder", "warped_drake", "amber_basilisk", "wildhorn_grunt", "mantis_follower", "ravener" }, MaxCount: 11,
             RespawnSeconds: 20, RespawnVariance: 6),
-
-        // ===== Ironreach (south) — levels 46-58 =====
-        new(X: 20400, Y: 40000, Radius: 1500, MinLevel: 46, MaxLevel: 52,
-            MobTypes: new[] { "marsh_marauder", "warped_drake", "wildhorn_grunt", "amber_basilisk", "ravener", "mantis_follower", "marauder_warrior", "fallen_angel" }, MaxCount: 11,
+        new(X: 36000, Y: 29000, Radius: 1400, MinLevel: 50, MaxLevel: 55,
+            MobTypes: new[] { "mantis_follower", "ravener", "marauder_warrior", "fallen_angel", "thornback", "gaze_hound", "ash_orc_soldier" }, MaxCount: 11,
             RespawnSeconds: 20, RespawnVariance: 6),
-        new(X: 27600, Y: 40000, Radius: 1500, MinLevel: 52, MaxLevel: 58,
-            MobTypes: new[] { "fallen_angel", "thornback", "gaze_hound", "ash_orc_soldier", "mirror_wraith", "mirror_ghost", "dune_orc_porter", "aether_wisp", "hollow_one" }, MaxCount: 10,
+        new(X: 36000, Y: 37000, Radius: 1400, MinLevel: 55, MaxLevel: 60,
+            MobTypes: new[] { "ash_orc_soldier", "mirror_ghost", "mirror_wraith", "dune_orc_porter", "aether_wisp", "hollow_one", "sand_ratman", "valley_treant" }, MaxCount: 10,
             RespawnSeconds: 22, RespawnVariance: 7),
 
-        // ===== Duskvale (south-west) — levels 58-70 =====
-        new(X: 14400, Y: 35600, Radius: 1500, MinLevel: 58, MaxLevel: 64,
-            MobTypes: new[] { "aether_wisp", "valley_treant", "sand_ratman", "cursed_blade", "bogwood", "fen_lizardman", "obsidian_knight", "crimson_drake", "wildhorn_scout" }, MaxCount: 10,
+        // ===== Ironreach (south, 24000/38000) — levels 60-75 =====
+        new(X: 19500, Y: 38000, Radius: 1400, MinLevel: 60, MaxLevel: 65,
+            MobTypes: new[] { "sand_ratman", "valley_treant", "cursed_blade", "bogwood", "fen_lizardman", "obsidian_knight", "crimson_drake", "wildhorn_scout", "dread_knight" }, MaxCount: 10,
             RespawnSeconds: 24, RespawnVariance: 7),
-        new(X: 9000,  Y: 30400, Radius: 1500, MinLevel: 64, MaxLevel: 70,
-            MobTypes: new[] { "crimson_drake", "dread_knight", "wildhorn_elder", "spiteful_ghost", "highland_kookaburra", "highland_buffalo", "highland_buffalo_tamed", "dread_archer", "dire_beast" }, MaxCount: 10,
+        new(X: 28500, Y: 38000, Radius: 1400, MinLevel: 65, MaxLevel: 70,
+            MobTypes: new[] { "dread_knight", "spiteful_ghost", "wildhorn_elder", "highland_kookaburra", "highland_buffalo", "highland_buffalo_tamed", "dread_archer", "dire_beast" }, MaxCount: 10,
             RespawnSeconds: 26, RespawnVariance: 8),
-
-        // ===== Frostmere (north-west) — levels 70-85 =====
-        new(X: 14400, Y: 12400, Radius: 1500, MinLevel: 70, MaxLevel: 76,
-            MobTypes: new[] { "dire_beast", "revenant_minion", "redhorn_footman", "sunland_orc_scout", "redhorn_elite", "redhorn_recruit", "sunland_orc_warrior", "redhorn_soldier", "sunland_orc_commander" }, MaxCount: 10,
+        new(X: 24000, Y: 33500, Radius: 1400, MinLevel: 70, MaxLevel: 75,
+            MobTypes: new[] { "dire_beast", "revenant_minion", "redhorn_footman", "redhorn_elite", "sunland_orc_scout", "redhorn_recruit", "sunland_orc_warrior" }, MaxCount: 10,
             RespawnSeconds: 28, RespawnVariance: 8),
-        new(X: 9000,  Y: 17600, Radius: 1500, MinLevel: 76, MaxLevel: 85,
-            MobTypes: new[] { "redhorn_soldier", "sunland_orc_captain", "redhorn_general", "emberwyrm_drake", "wrathborn_demon", "scarlet_mantis", "radiant_scout", "radiant_berserker", "radiant_mage", "splinter_mantis_drone", "needle_mantis_overseer", "splinter_mantis_walker", "drake_leader", "disciple_of_the_dawn" }, MaxCount: 10,
+
+        // ===== Frostmere (north-west, 12000/15000) — levels 76-90, the endgame city =====
+        // Each field carries an ELITE spawner ~1200 away: close enough to be the same trip, far enough
+        // that the elite does not aggro you while you clear the normal camp (owner: 1-1.5k).
+        new(X: 8000,  Y: 15000, Radius: 1400, MinLevel: 76, MaxLevel: 80,
+            MobTypes: new[] { "redhorn_soldier", "sunland_orc_commander", "sunland_orc_captain", "redhorn_general", "emberwyrm_drake", "scarlet_mantis", "wrathborn_demon" }, MaxCount: 10,
             RespawnSeconds: 30, RespawnVariance: 9),
+        new(X: 8000,  Y: 12200, Radius: 400,  MinLevel: 80, MaxLevel: 80,
+            MobTypes: new[] { "scarlet_mantis", "wrathborn_demon" }, MaxCount: 2,
+            RespawnSeconds: 180, RespawnVariance: 40, Rank: MobRank.Elite),
+
+        new(X: 16000, Y: 15000, Radius: 1400, MinLevel: 81, MaxLevel: 84,
+            MobTypes: new[] { "radiant_scout", "radiant_berserker", "radiant_mage", "splinter_mantis_drone", "needle_mantis_overseer", "splinter_mantis_walker" }, MaxCount: 10,
+            RespawnSeconds: 30, RespawnVariance: 9),
+        new(X: 16000, Y: 12200, Radius: 400,  MinLevel: 84, MaxLevel: 84,
+            MobTypes: new[] { "needle_mantis_overseer", "splinter_mantis_walker" }, MaxCount: 2,
+            RespawnSeconds: 180, RespawnVariance: 40, Rank: MobRank.Elite),
+
+        // 85-90: the ONLY field that forces its own levels onto the roster, so the level-85 creatures
+        // respawn all the way to the cap and the last five levels have somewhere to happen.
+        new(X: 12000, Y: 19500, Radius: 1500, MinLevel: 85, MaxLevel: 90,
+            MobTypes: new[] { "disciple_of_the_dawn", "drake_leader", "radiant_berserker", "needle_mantis_overseer", "splinter_mantis_walker" }, MaxCount: 10,
+            RespawnSeconds: 32, RespawnVariance: 10, ForceZoneLevel: true),
+        new(X: 14700, Y: 21200, Radius: 400,  MinLevel: 90, MaxLevel: 90,
+            MobTypes: new[] { "disciple_of_the_dawn", "drake_leader" }, MaxCount: 2,
+            RespawnSeconds: 180, RespawnVariance: 40, Rank: MobRank.Elite, ForceZoneLevel: true),
 
         // ===== Training Grounds: immortal, stationary, 0-damage dummies at fixed levels
         //       (20/40/60/80) for testing damage/skills. Clustered, one per level. =====
@@ -162,13 +194,12 @@ public static class WorldMap
         // Starter town at the map centre; six more ring it (clockwise from north).
         // Brackenford is the biggest (it holds all the quest/class/vendor NPCs, which
         // are spread out so their labels don't overlap); ring towns are roomy too.
-        new("town_brackenford", "Brackenford",     24000, 24000, 3500),
-        new("town_stonewatch",  "Stonewatch",      24000, 10000, 2000),
-        new("town_emberfall",   "Emberfall",       36000, 15000, 2000),
-        new("town_greymarsh",   "Greymarsh",       36000, 33000, 2000),
-        new("castle_ironreach",  "Ironreach Keep", 24000, 38000, 2200),
-        new("town_duskvale",    "Duskvale",        12000, 33000, 2000),
-        new("town_frostmere",   "Frostmere",       12000, 15000, 2000),
+        // FIVE cities (owner, 2026-07-29). Emberfall and Duskvale are gone — see SpawnZones.
+        new("town_brackenford", "Brackenford",     24000, 24000, 3500),   // 1-16
+        new("town_stonewatch",  "Stonewatch",      24000, 10000, 2000),   // 16-40
+        new("town_greymarsh",   "Greymarsh",       36000, 33000, 2000),   // 40-60
+        new("castle_ironreach",  "Ironreach Keep", 24000, 38000, 2200),   // 60-75
+        new("town_frostmere",   "Frostmere",       12000, 15000, 2000),   // 76-90
         // Small outpost beside the Training Grounds, so you can buff up and teleport out without
         // leaving the dummies. Sits just SOUTH of the dummy row (they're at y=4000, radius 200),
         // clear of them — a safe zone keeps mobs out, and the dummies ARE mobs.
@@ -291,10 +322,8 @@ public static class WorldMap
         // anywhere in town, so it should not be inside either cluster.
         new("gatekeeper_brackenford", "Gatekeeper Pell",   24000, 22200, NpcRole.Teleporter),
         new("gatekeeper_stonewatch",  "Gatekeeper Soren",  24000, 10000, NpcRole.Teleporter),
-        new("gatekeeper_emberfall",   "Gatekeeper Ryn",    36000, 15000, NpcRole.Teleporter),
         new("gatekeeper_greymarsh",   "Gatekeeper Maela",  36000, 33000, NpcRole.Teleporter),
         new("gatekeeper_ironreach",   "Gatekeeper Vurst",  24000, 38000, NpcRole.Teleporter),
-        new("gatekeeper_duskvale",    "Gatekeeper Talia",  12000, 33000, NpcRole.Teleporter),
         new("gatekeeper_frostmere",   "Gatekeeper Khaz",   12000, 15000, NpcRole.Teleporter),
 
         // --- Training Outpost (24000, 5000, r=400), beside the dummies. The two NPCs are OFFSET
@@ -331,14 +360,10 @@ public static class WorldMap
         {
             ("stonewatch", 24000, 10000, "Keeper Osric", "Spirit Helper Aven",
                 "Apothecary Rilla", "Armsmaster Toren", "Outfitter Maeve"),
-            ("emberfall",  36000, 15000, "Keeper Fenn",  "Spirit Helper Doryn",
-                "Apothecary Sable", "Armsmaster Garrick", "Outfitter Isla"),
             ("greymarsh",  36000, 33000, "Keeper Wyn",   "Spirit Helper Cael",
                 "Apothecary Thessa", "Armsmaster Rurik", "Outfitter Nerys"),
             ("ironreach",  24000, 38000, "Keeper Dagr",  "Spirit Helper Orla",
                 "Apothecary Venn", "Armsmaster Hakon", "Outfitter Brida"),
-            ("duskvale",   12000, 33000, "Keeper Lys",   "Spirit Helper Sethi",
-                "Apothecary Corin", "Armsmaster Alder", "Outfitter Wren"),
             ("frostmere",  12000, 15000, "Keeper Hald",  "Spirit Helper Ylva",
                 "Apothecary Nim", "Armsmaster Bors", "Outfitter Sigrid"),
         };
@@ -364,12 +389,12 @@ public static class WorldMap
 
     public static readonly RoadPath[] Roads =
     {
-        // Spokes from Brackenford (centre) out to each ring town (coords ×2; wider too).
+        // Spokes from Brackenford (centre) out to each of the four other cities. The Emberfall and
+        // Duskvale spokes went with their towns; the remaining four are the level path through the
+        // world — north to Stonewatch, then round to Greymarsh, Ironreach and finally Frostmere.
         new(Width: 600, Points: new[] { new MapPoint(24000, 24000), new MapPoint(24000, 10000) }), // Stonewatch (N)
-        new(Width: 600, Points: new[] { new MapPoint(24000, 24000), new MapPoint(36000, 15000) }), // Emberfall (NE)
         new(Width: 600, Points: new[] { new MapPoint(24000, 24000), new MapPoint(36000, 33000) }), // Greymarsh (SE)
         new(Width: 600, Points: new[] { new MapPoint(24000, 24000), new MapPoint(24000, 38000) }), // Ironreach (S)
-        new(Width: 600, Points: new[] { new MapPoint(24000, 24000), new MapPoint(12000, 33000) }), // Duskvale (SW)
         new(Width: 600, Points: new[] { new MapPoint(24000, 24000), new MapPoint(12000, 15000) }), // Frostmere (NW)
     };
 
@@ -459,7 +484,12 @@ public record SpawnZone(
     string[] MobTypes, int MaxCount,
     double RespawnSeconds = 10, double RespawnVariance = 0,
     MobRank Rank = MobRank.Normal,
-    ActiveTime Active = ActiveTime.Always)
+    ActiveTime Active = ActiveTime.Always,
+    // Normally a NAMED mob brings its own level and the band here is descriptive. Set this and the
+    // ZONE wins: every spawn rolls MinLevel..MaxLevel regardless of the template. Used by the top
+    // field so the level-85 roster can fill 86-90 until creatures are authored for that band — a
+    // deliberate reuse, not a fallback (owner, 2026-07-29).
+    bool ForceZoneLevel = false)
 {
     /// <summary>Stable id from coordinates+rank, used to persist boss timers.</summary>
     public string Id => $"{(int)X}_{(int)Y}_{Rank}";

@@ -98,44 +98,22 @@ public static class RegionMap
     /// authored. Isolated spawns with no nearby town (the far bosses, the Hollow Crypt dungeon) keep
     /// their circles until they get a field of their own.
     /// </summary>
-    public static readonly Region[] Fields =
+    public static readonly Region[] Fields = new[]
     {
-        // Bracken Reach — wraps Brackenford (band 1-10)
-        new("field_brackenford", "Bracken Reach", RegionKind.Field,
-            new[] { new Vec2(17250, 23250), new Vec2(18250, 22200), new Vec2(23300, 17350), new Vec2(24700, 17350), new Vec2(29750, 22200), new Vec2(30750, 23250), new Vec2(30750, 24750), new Vec2(29750, 25800), new Vec2(25750, 28200), new Vec2(22250, 28200), new Vec2(18250, 25800), new Vec2(17250, 24750) },
-            new[] { new Vec2(19400, 24000), new Vec2(28600, 24000) }),
-
-        // Stonewatch Wilds — wraps Stonewatch (band 10-22)
-        new("field_stonewatch", "Stonewatch Wilds", RegionKind.Field,
-            new[] { new Vec2(18200, 7450), new Vec2(19300, 6350), new Vec2(20800, 6250), new Vec2(28800, 8500), new Vec2(29850, 9650), new Vec2(29850, 11250), new Vec2(28750, 12400), new Vec2(27250, 12450), new Vec2(22950, 12600), new Vec2(19150, 10150), new Vec2(18150, 9050) },
-            new[] { new Vec2(20400, 8400), new Vec2(27600, 10400) }),
-
-        // Emberfall Barrens — wraps Emberfall (band 22-34)
-        new("field_emberfall", "Emberfall Barrens", RegionKind.Field,
-            new[] { new Vec2(30850, 11400), new Vec2(31950, 10250), new Vec2(33500, 10200), new Vec2(40200, 14600), new Vec2(41250, 15750), new Vec2(41200, 17350), new Vec2(40100, 18500), new Vec2(38550, 18550), new Vec2(34950, 17600), new Vec2(33400, 16050), new Vec2(30800, 12950) },
-            new[] { new Vec2(33000, 12400), new Vec2(39000, 16400) }),
-
-        // Greymarsh Fens — wraps Greymarsh (band 34-46)
-        new("field_greymarsh", "Greymarsh Fens", RegionKind.Field,
-            new[] { new Vec2(30850, 29400), new Vec2(31950, 28250), new Vec2(33500, 28200), new Vec2(37050, 30400), new Vec2(40250, 33300), new Vec2(41250, 34400), new Vec2(41200, 36000), new Vec2(40100, 37100), new Vec2(38550, 37200), new Vec2(34950, 35600), new Vec2(33400, 34050), new Vec2(30800, 30950) },
-            new[] { new Vec2(33000, 30400), new Vec2(39000, 35000) }),
-
-        // Ironreach Marches — wraps Ironreach Keep (band 46-58)
-        new("field_ironreach", "Ironreach Marches", RegionKind.Field,
-            new[] { new Vec2(18150, 39400), new Vec2(19150, 38250), new Vec2(22850, 35200), new Vec2(25150, 35200), new Vec2(28850, 38250), new Vec2(29850, 39400), new Vec2(29800, 40950), new Vec2(28700, 42100), new Vec2(19300, 42100), new Vec2(18200, 40950) },
-            new[] { new Vec2(20400, 40000), new Vec2(27600, 40000) }),
-
-        // Duskvale Hollows — wraps Duskvale (band 58-70)
-        new("field_duskvale", "Duskvale Hollows", RegionKind.Field,
-            new[] { new Vec2(6850, 29400), new Vec2(7950, 28250), new Vec2(9500, 28200), new Vec2(13050, 30400), new Vec2(14600, 31950), new Vec2(16600, 35100), new Vec2(16550, 36650), new Vec2(15400, 37750), new Vec2(13850, 37800), new Vec2(10950, 35600), new Vec2(9400, 34050), new Vec2(6800, 30950) },
-            new[] { new Vec2(14400, 35600), new Vec2(9000, 30400) }),
-
-        // Frostmere Wastes — wraps Frostmere (band 70-85). The emberwyrm elite is left OUT (it sits only
-        // ~2150u from the Hollow Crypt boss room, so it can't share this field or take its own without
-        // overlap) — it stays an isolated circle, like any lone elite.
-        new("field_frostmere", "Frostmere Wastes", RegionKind.Field,
-            new[] { new Vec2(6800, 17050), new Vec2(9400, 13950), new Vec2(10950, 12400), new Vec2(13850, 10200), new Vec2(15400, 10250), new Vec2(16550, 11350), new Vec2(16600, 12900), new Vec2(14600, 16050), new Vec2(13050, 17600), new Vec2(9500, 19800), new Vec2(7950, 19750), new Vec2(6850, 18600) },
-            new[] { new Vec2(14400, 12400), new Vec2(9000, 17600) }),
+        // ===== THE FIVE CITIES' HUNTING FIELDS — GENERATED from their spawn zones =====
+        // These used to be a dozen hand-written vertices each, which had to keep agreeing with the
+        // circles inside them or the startup guard refused to boot the server. They are now derived:
+        // a field IS "wherever its spawners are, plus a margin" (see FieldOf), so moving or re-banding
+        // a zone can no longer strand it outside its own field. That is what made the 7-town → 5-city
+        // re-layout a data edit instead of a geometry exercise.
+        //
+        // One field per CITY, wrapping all of that city's bands. Zones are picked by position rather
+        // than index so re-ordering the list above cannot silently reshuffle the map.
+        FieldOf("field_brackenford", "Bracken Reach", 900f, ZonesNear(24000, 24000, 7000)),
+        FieldOf("field_stonewatch",  "Stonewatch Wilds", 600f, ZonesNear(24000, 10000, 6000)),
+        FieldOf("field_greymarsh",   "Greymarsh Fens", 900f, ZonesNear(36000, 33000, 6000)),
+        FieldOf("field_ironreach",   "Ironreach Marches", 900f, ZonesNear(24000, 38000, 6000)),
+        FieldOf("field_frostmere",   "Frostmere Wastes", 900f, ZonesNear(12000, 15000, 9000)),
 
         // Training Grounds — wraps the Training Outpost + all four dummies (band 20-80)
         new("field_training", "Training Grounds", RegionKind.Field,
@@ -167,14 +145,81 @@ public static class RegionMap
     {
         Town("town_brackenford", "Brackenford",     24000, 24000, 3500),
         Town("town_stonewatch",  "Stonewatch",      24000, 10000, 2000),
-        Town("town_emberfall",   "Emberfall",       36000, 15000, 2000),
         Town("town_greymarsh",   "Greymarsh",       36000, 33000, 2000),
         Town("castle_ironreach", "Ironreach Keep",  24000, 38000, 2200),
-        Town("town_duskvale",    "Duskvale",        12000, 33000, 2000),
         Town("town_frostmere",   "Frostmere",       12000, 15000, 2000),
         Town("outpost_training", "Training Outpost", 24000, 5000, 400),
         Town("dungeon_hollow_crypt", "Hollow Crypt",  -12000, -12000, 500),
     };
+
+    /// <summary>Build a FIELD's outline from the spawn zones it should contain, instead of hand-drawing
+    /// a polygon around them.
+    ///
+    /// Hand-authored outlines were the single most fragile thing in the world file: every field was a
+    /// dozen literal vertices that had to keep agreeing with the circles inside it, and a startup guard
+    /// (<see cref="ValidateNoRogueSpawners"/>) throws if any spawner escapes. Move a zone by 500 units
+    /// and the server refuses to boot. Deriving the outline means a field simply IS "wherever its
+    /// spawners are, plus a margin" — the two can no longer disagree.
+    ///
+    /// The shape is a convex hull of points sampled around each zone circle (radius + margin), which
+    /// gives an organic outline that hugs however the zones happen to be arranged: a line of zones
+    /// becomes a corridor, a clump becomes a blob. Arrival points are the zone centres, so a teleport
+    /// spreads people across the field rather than stacking them on one doorstep.</summary>
+    /// <summary>Every OVERWORLD spawn zone whose centre lies within <paramref name="radius"/> of a
+    /// city. Picking a field's zones by POSITION rather than by index means re-ordering or re-banding
+    /// the zone list cannot silently reshuffle which field owns what. Boss, dungeon and training
+    /// spawners are excluded by their own fields being authored separately — they sit far outside any
+    /// city radius.</summary>
+    private static SpawnZone[] ZonesNear(float cx, float cy, float radius) =>
+        WorldMap.SpawnZones
+            .Where(z => (z.X - cx) * (z.X - cx) + (z.Y - cy) * (z.Y - cy) <= radius * radius)
+            .ToArray();
+
+    private static Region FieldOf(string id, string name, float margin, params SpawnZone[] zones)
+    {
+        const int samples = 12;
+        var pts = new List<Vec2>(zones.Length * samples);
+        foreach (var z in zones)
+        {
+            float r = z.Radius + margin;
+            for (int i = 0; i < samples; i++)
+            {
+                float a = i * (MathF.PI * 2f / samples);
+                pts.Add(new Vec2(z.X + r * MathF.Cos(a), z.Y + r * MathF.Sin(a)));
+            }
+        }
+        return new Region(id, name, RegionKind.Field, ConvexHull(pts),
+                          zones.Select(z => new Vec2(z.X, z.Y)).ToArray());
+    }
+
+    /// <summary>Andrew's monotone chain — sort by x then y, sweep the lower and upper hulls. Returns the
+    /// hull counter-clockwise, which is the winding <see cref="Region.Outline"/> documents.</summary>
+    private static Vec2[] ConvexHull(List<Vec2> pts)
+    {
+        if (pts.Count <= 3) return pts.ToArray();
+        pts.Sort((a, b) => a.X != b.X ? a.X.CompareTo(b.X) : a.Y.CompareTo(b.Y));
+
+        static float Cross(Vec2 o, Vec2 a, Vec2 b) =>
+            (a.X - o.X) * (b.Y - o.Y) - (a.Y - o.Y) * (b.X - o.X);
+
+        var hull = new List<Vec2>(pts.Count * 2);
+        foreach (var p in pts)   // lower
+        {
+            while (hull.Count >= 2 && Cross(hull[hull.Count - 2], hull[hull.Count - 1], p) <= 0)
+                hull.RemoveAt(hull.Count - 1);
+            hull.Add(p);
+        }
+        int lower = hull.Count + 1;
+        for (int i = pts.Count - 2; i >= 0; i--)   // upper
+        {
+            var p = pts[i];
+            while (hull.Count >= lower && Cross(hull[hull.Count - 2], hull[hull.Count - 1], p) <= 0)
+                hull.RemoveAt(hull.Count - 1);
+            hull.Add(p);
+        }
+        hull.RemoveAt(hull.Count - 1);   // last point repeats the first
+        return hull.ToArray();
+    }
 
     /// <summary>An octagon centred on (cx,cy) INSCRIBED in the safe circle of radius r (its corners
     /// touch the circle, flat sides sit at 0.924·r), plus a single arrival point at the centre. The
