@@ -12,6 +12,47 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-29 — The six-quality gear ladder + real shop prices (0.29.1) — ⚠ DELETE `game.db`
+
+One item, six qualities (owner). Design: [design/RarityLadder.md](design/RarityLadder.md).
+
+- **`ItemRarity` gains `Mythic`** (appended as 5 — these values are persisted on every saved item).
+  The ladder is **Common 45 / Uncommon 55 / Rare 70 / Epic 70 / Legendary 85 / Mythic 100 %**.
+- **THE SPLIT IS AT 70 %.** Rare and Epic carry identical raw stats; **Epic is where set bonuses and
+  rolled attributes switch on** (`ItemCatalog.HasIdentity`). Below Epic you buy numbers, from Epic up
+  you buy identity — which is what makes two same-statted qualities worth telling apart.
+- **The authored gear tables are the EPIC anchor**, so today's best gear keeps exactly the stats it
+  had, and Legendary/Mythic are new tiers ABOVE it (Mythic = 1/0.7 ≈ **+43 %**). ⚠ That is a real
+  ceiling raise, taken deliberately — measure it with `tools/BalanceMatrix`, don't hand-derive it.
+- **Attribute caps scale with quality too** (`AttributeSystem.Roll` × `RarityScale`). Without it,
+  quality moved the stat block but left the rolls identical, so the top of the ladder was worth much
+  less than its numbers implied.
+- **Quality is OUT of the item name.** A piece is an "Electrum Longbow"; its quality is a property,
+  shown by the name's **colour** and a `Rarity:` row. `Common Electrum Longbow` read as a different
+  item rather than the same bow at a lower grade.
+- **Six-colour rarity palette in the Unity client** — item details, vendor buy/sell rows, warehouse
+  rows and the worn-equipment squares. The WPF harness only ever had three colours; Unity had none.
+- **Structured item description**: Name / Grade / Rarity (+ % power) / Type, then the stats, with an
+  Untradable line where it applies.
+- **The "(Lesser)" line no longer spawns quality copies.** That is what made the two ladders
+  interleave — a Lesser E bow (129) sat between the main line's Common (124) and Uncommon (148), so
+  "lesser" read like a quality when it is a different ITEM. One ladder per piece now.
+- **Real shop prices** (`ItemCatalog.TieredGearPrice`) from the owner's table, authored as the RARE
+  price: F/E/D across gloves-boots / helm-shield / body / 1H / 2H / ring / earring / necklace, from
+  3 000 up to 3 000 000. Quality scales it — **Common 35 %, Uncommon 70 %, Rare 100 %** — because the
+  low qualities drop freely and at full price nobody would ever buy one.
+- **The shop sells only F/E/D, and only to Rare.** The legacy generated grid ("Worn Sword" at P.Atk 6,
+  the Fine/Masterwork prefixes), `AshWand` and `IronMace` are no longer stocked — they predate the
+  gear ladder by a generation and were half of why the vendor list was unreadable. The catalogue still
+  defines them so old saves resolve.
+
+⚠ Still deferred from the design: folding the "(Lesser)" line away entirely (the main line has no F
+tier yet, so it would leave levels 1-19 with nothing), scaled SET BONUSES, the vendor UI rework
+(grid/list + confirm dialog), and splitting Armsmaster into two NPCs.
+⚠ Epic+ price multipliers (1.5 / 2.5 / 4.0) are mine, not the owner's — they only affect what SELLING
+one pays, since those tiers are never vendor stock.
+✅ SmokeTest green on a fresh DB.
+
 ## 2026-07-29 — Archer merges into Rogue (0.29.0) — protocol 6, ⚠ DELETE `game.db`
 
 Bow and dagger are ONE class until 40 (owner). You are a Rogue, you learn both the Stab and the Shot

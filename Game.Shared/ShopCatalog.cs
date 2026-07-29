@@ -34,6 +34,24 @@ public static class ShopCatalog
             .Select(d => d.Id)
             .ToArray();
 
+        // The REAL gear ladder at the three shop grades. Only F/E/D is ever sold (owner) — C and above
+        // are crafted, dropped or taken off a boss — and only up to RARE, because Epic is where set
+        // bonuses and rolled attributes begin and that tier is not for sale at any price.
+        //
+        // ItemLevel 1/20/40 are the F/E/D tiers; the price for each comes from the owner's table in
+        // ItemCatalog.TieredGearPrice, scaled down for the low qualities (they drop freely, so at full
+        // price nobody would buy one).
+        var shopGrades = new[] { 1, 20, 40 };
+        var shopQualities = new[] { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare };
+        var ladderGearIds = ItemCatalog.AllItems
+            .Where(d => shopGrades.Contains(d.ItemLevel)
+                && shopQualities.Contains(d.Rarity)
+                && d.Slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel
+                && !d.Id.Contains("lo_", System.StringComparison.Ordinal))   // not the (Lesser) copies
+            .OrderBy(d => d.ItemLevel).ThenBy(d => d.Slot).ThenBy(d => d.Rarity).ThenBy(d => d.Name)
+            .Select(d => d.Id)
+            .ToArray();
+
         var shops = new[]
         {
             new ShopDef(PotionMerchant, "Apothecary", new[]
@@ -81,24 +99,15 @@ public static class ShopCatalog
                 ItemCatalog.BrokenEarring,
                 ItemCatalog.BrokenRing,
                 ItemCatalog.BrokenNecklace,
-                // Basic plain weapons (F, common).
-                ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.F, ItemRarity.Common),
-                ItemCatalog.WeaponKey(WeaponType.Dual,  ItemGrade.F, ItemRarity.Common),
-                ItemCatalog.WeaponKey(WeaponType.Bow,   ItemGrade.F, ItemRarity.Common),
-                ItemCatalog.WeaponKey(WeaponType.TwoHandedBlunt, ItemGrade.F, ItemRarity.Common),
-                ItemCatalog.IronMace,
-                ItemCatalog.AshWand,
-                // Basic plain body armor (F, common) + accessories.
-                ItemCatalog.ArmorKey(ArmorWeight.Heavy, ArmorSlot.Body, ItemGrade.F, ItemRarity.Common),
-                ItemCatalog.ArmorKey(ArmorWeight.Light, ArmorSlot.Body, ItemGrade.F, ItemRarity.Common),
-                ItemCatalog.ArmorKey(ArmorWeight.Robe,  ArmorSlot.Body, ItemGrade.F, ItemRarity.Common),
-                ItemCatalog.ArmorKey(ArmorWeight.None, ArmorSlot.Head,   ItemGrade.F, ItemRarity.Common),
-                ItemCatalog.ArmorKey(ArmorWeight.None, ArmorSlot.Gloves, ItemGrade.F, ItemRarity.Common),
-                ItemCatalog.ArmorKey(ArmorWeight.None, ArmorSlot.Boots,  ItemGrade.F, ItemRarity.Common),
-                // Starter shield + jewel.
+                // The LEGACY generated grid ("Worn Sword" at P.Atk 6, "Fine"/"Masterwork" prefixes) plus
+                // Ash Wand and Iron Mace are GONE from the shop (owner, playtest-13). They predate the
+                // gear ladder by a whole generation, so the vendor was showing two unrelated eras of
+                // equipment in one undifferentiated list — which is most of why "i hve no idea which is
+                // which". The catalogue still defines them so old saves resolve; nothing sells them.
+                // Starter shield + jewel stay: they are the level-1 stopgaps.
                 ItemCatalog.WoodenShield,
                 ItemCatalog.BrassAmulet,
-            }.Concat(lowGearIds).ToArray()),
+            }.Concat(lowGearIds).Concat(ladderGearIds).ToArray()),
         };
 
         var dict = new Dictionary<string, ShopDef>(StringComparer.OrdinalIgnoreCase);

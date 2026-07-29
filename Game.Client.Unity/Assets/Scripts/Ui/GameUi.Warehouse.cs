@@ -95,7 +95,7 @@ namespace Game.Client
                 if (def == null) continue;
                 any = true;
 
-                string label = def.Name + (item.Quantity > 1 ? "   x" + item.Quantity : "");
+                string label = Coloured(def.Name, def.Rarity) + (item.Quantity > 1 ? "   x" + item.Quantity : "");
                 var id = item.InstanceId;
                 WarehouseRow(label, () =>
                 {

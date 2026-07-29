@@ -120,7 +120,9 @@ namespace Game.Client
                     var def = ItemCatalog.Get(item.DefId);
                     face.text = (item.Enchant > 0 ? "+" + item.Enchant + " " : "")
                               + Abbreviations.For(def != null ? def.Name : item.DefId);
-                    face.color = UiKit.Good;
+                    // Quality colour, so a worn square says what grade of the piece you have on. Falls
+                    // back to the old green when the def is missing (an item id from a newer build).
+                    face.color = def != null ? RarityColour(def.Rarity) : UiKit.Good;
                     var captured = item;
                     btn.onClick.AddListener(() => OpenItemDetails(captured));
                 }

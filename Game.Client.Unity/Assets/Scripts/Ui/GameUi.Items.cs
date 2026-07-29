@@ -285,10 +285,45 @@ namespace Game.Client
             }
         }
 
+        /// <summary>The colour a quality is drawn in. This is now the ONLY place quality shows on a
+        /// name — the word used to be baked into it ("Common Electrum Longbow"), which read as a
+        /// different item rather than the same bow at a lower grade (owner, playtest-13). The WPF
+        /// harness only ever defined three of these; the ladder has six.</summary>
+        public static Color RarityColour(ItemRarity r) => r switch
+        {
+            ItemRarity.Uncommon  => new Color(0.45f, 0.78f, 1.00f),   // pale blue
+            ItemRarity.Rare      => new Color(1.00f, 0.84f, 0.20f),   // gold
+            ItemRarity.Epic      => new Color(0.72f, 0.45f, 1.00f),   // violet — the 70% split: identity starts here
+            ItemRarity.Legendary => new Color(1.00f, 0.50f, 0.15f),   // orange
+            ItemRarity.Mythic    => new Color(1.00f, 0.30f, 0.35f),   // red
+            ItemRarity.God       => new Color(0.60f, 1.00f, 0.60f),   // debug tier
+            _                    => new Color(0.85f, 0.85f, 0.85f),   // Common — plain
+        };
+
+        /// <summary>Wrap a name in its quality colour for a TextMeshPro label.</summary>
+        public static string Coloured(string text, ItemRarity r)
+        {
+            var c = RarityColour(r);
+            return "<color=#" + ColorUtility.ToHtmlStringRGB(c) + ">" + text + "</color>";
+        }
+
         private static string DetailTitle(ItemDef def, InventoryItemDto item)
         {
             string name = item.Enchant > 0 ? "+" + item.Enchant + " " + def.Name : def.Name;
-            return name + "    " + def.Grade + " / " + def.Rarity;
+            return Coloured(name, def.Rarity);   // grade/rarity moved into the description block below
+        }
+
+        /// <summary>Human-readable "what IS this" line: weapon type + hands, armour weight + slot,
+        /// jewel kind, or the plain slot for everything else.</summary>
+        private static string TypeLine(ItemDef def)
+        {
+            if (def.Slot == EquipSlot.Weapon)
+                return def.WeaponType.Base() + (def.WeaponType.IsTwoHanded() ? " (2H)" : " (1H)")
+                       + (def.IsMagicWeapon ? " — caster" : "");
+            if (def.Slot == EquipSlot.Armor)
+                return (def.Weight == ArmorWeight.None ? "" : def.Weight + " ") + def.ArmorSlot;
+            if (def.Slot == EquipSlot.Jewel) return def.JewelType.ToString();
+            return def.Slot.ToString();
         }
 
         /// <summary>The item's stats, enchant-scaled where enchant applies — the same lines the WPF
@@ -297,6 +332,16 @@ namespace Game.Client
         {
             var t = new StringBuilder();
             void Line(string s) => t.AppendLine(s);
+
+            // The identity block the owner asked for: Name / Grade / Rarity / Type, then the stats.
+            // Quality lives HERE and in the name's colour — never in the name itself.
+            Line("Name:  " + def.Name);
+            Line("Grade:  " + (def.ItemLevel > 0 ? ItemCatalog.TierLetter(def.ItemLevel) : def.Grade.ToString()));
+            Line("Rarity:  " + Coloured(def.Rarity.ToString(), def.Rarity)
+                 + "   (" + ItemCatalog.RarityPercent(def.Rarity) + "% power)");
+            Line("Type:  " + TypeLine(def));
+            if (!def.Tradable) Line("<color=#FF8080>Untradable</color>");
+            Line("");
 
             if (def.AtkBonus > 0)  Line("Attack  +" + EnchantRules.BonusAt(def.AtkBonus, item.Enchant));
             if (def.MAtkBonus > 0) Line("M.Atk  +" + EnchantRules.BonusAt(def.MAtkBonus, item.Enchant));

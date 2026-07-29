@@ -73,7 +73,15 @@ public static class GradePenalty
     public static string GradeNameOf(ItemDef def) => GradeNames[StepForLevel(ItemGradeLevel(def))];
 }
 
-public enum ItemRarity { Common = 0, Uncommon = 1, Rare = 2, Epic = 3, Legendary = 4, God = 99 }
+/// <summary>Item quality. The ladder is one item at six qualities (owner, 2026-07-29):
+/// Common 45% / Uncommon 55% / Rare 70% / Epic 70% / Legendary 85% / Mythic 100% of the piece's full
+/// stats. THE SPLIT IS AT 70%: Rare and Epic carry identical raw numbers, and Epic is where set
+/// bonuses and rolled attributes switch on. Below Epic you are buying numbers; from Epic up you are
+/// buying identity — which is what makes the ladder readable.
+///
+/// Mythic is APPENDED (5), never inserted: these values are persisted on every saved item.
+/// God (99) is the untouchable debug tier and is not part of the ladder.</summary>
+public enum ItemRarity { Common = 0, Uncommon = 1, Rare = 2, Epic = 3, Legendary = 4, Mythic = 5, God = 99 }
 
 // Jewel = the magic-defence slot. ONE jewel equips for now; the equip code is
 // written to expand to the L2 layout (2 rings / 2 earrings / 1 necklace) later
@@ -1071,15 +1079,54 @@ public static class ItemCatalog
     /// VARIANTS (e.g. "heavy_t52_dmg") stay set-only. Ids: "<baseid>_common" etc.</summary>
     // A property, not a static field: BuildCatalog() runs from the `All` field initializer above
     // this declaration, so a field here would still be null when ScaledDropItems reads it.
+    /// <summary>The percentage of a piece's FULL power each quality carries. See <see cref="ItemRarity"/>.
+    /// Mythic (100) is the ceiling; the authored numbers in the tiered tables are the EPIC anchor, which
+    /// is why the scale factors below divide by 70.</summary>
+    public static int RarityPercent(ItemRarity r) => r switch
+    {
+        ItemRarity.Common    => 45,
+        ItemRarity.Uncommon  => 55,
+        ItemRarity.Rare      => 70,
+        ItemRarity.Epic      => 70,
+        ItemRarity.Legendary => 85,
+        ItemRarity.Mythic    => 100,
+        _ => 70,
+    };
+
+    /// <summary>Does this quality carry set bonuses and rolled attributes? The 70% split: Rare and Epic
+    /// have the same raw stats, and THIS is the difference between them.</summary>
+    public static bool HasIdentity(ItemRarity r) => r >= ItemRarity.Epic && r != ItemRarity.God;
+
+    /// <summary>Stat multiplier relative to the AUTHORED numbers. The gear tables were authored as the
+    /// Epic (70%) piece — the owner's anchor, so today's best gear keeps exactly the stats it has — and
+    /// everything else is derived from it. Legendary and Mythic therefore sit ABOVE what the game had
+    /// before (Mythic is 1/0.7 ≈ +43%), which is a deliberate ceiling raise: measure it with
+    /// tools/BalanceMatrix rather than deriving it by hand.</summary>
+    public static float RarityScale(ItemRarity r) => RarityPercent(r) / 70f;
+
+    // The DROP copies generated off each authored (Epic) piece. Epic itself is the authored item, so it
+    // is not in this list — it would collide with its own id.
     private static (ItemRarity Rarity, float Scale)[] DropTiers => new[]
     {
-        (ItemRarity.Common,   0.65f),
-        (ItemRarity.Uncommon, 0.78f),
-        (ItemRarity.Rare,     0.90f),
+        (ItemRarity.Common,    RarityScale(ItemRarity.Common)),
+        (ItemRarity.Uncommon,  RarityScale(ItemRarity.Uncommon)),
+        (ItemRarity.Rare,      RarityScale(ItemRarity.Rare)),
+        (ItemRarity.Legendary, RarityScale(ItemRarity.Legendary)),
+        (ItemRarity.Mythic,    RarityScale(ItemRarity.Mythic)),
     };
 
     /// <summary>True for a plain base-tier id like "heavy_t52" (the part after the last "_t" is all
     /// digits) — excludes alternate variants like "heavy_t52_dmg".</summary>
+    /// <summary>True for the "(Lesser)" vendor-line ids, whose level carries an "lo" suffix
+    /// (e.g. "sword1h_t20lo").</summary>
+    private static bool IsLowTierId(string id)
+    {
+        int i = id.LastIndexOf("_t", StringComparison.Ordinal);
+        if (i < 0) return false;
+        string tail = id.Substring(i + 2);
+        return tail.EndsWith("lo", StringComparison.Ordinal);
+    }
+
     private static bool IsBaseTier(string id)
     {
         int i = id.LastIndexOf("_t", StringComparison.Ordinal);
@@ -1116,11 +1163,20 @@ public static class ItemCatalog
         {
             if (d.Slot is not (EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel)) continue;
             if (!IsBaseTier(d.Id)) continue;   // only plain base-tier pieces spawn drop copies
+            // The "(Lesser)" vendor line does NOT spawn quality copies. It used to, which is what made
+            // the ladders interleave: a Lesser E bow (129) landed between the top line's Common (124)
+            // and Uncommon (148), so "lesser" read like a quality when it is a different ITEM. One
+            // ladder per piece — the qualities below are it. (The Lesser line itself is still the
+            // cheap F/E/D vendor stock; folding it away needs an F tier on the main line first.)
+            if (d.Id.Contains("lo", StringComparison.Ordinal) && IsLowTierId(d.Id)) continue;
 
             foreach (var (rarity, scale) in DropTiers)
             {
                 int S(int v) => v == 0 ? 0 : Math.Max(1, (int)(v * scale));
-                string name = $"{rarity} {d.Name}";
+                // The quality is NOT in the name (owner). "Common Electrum Longbow" became a different
+                // item's name in the player's head; the piece is an Electrum Longbow and its quality is
+                // a property — shown by the name's COLOUR and a Rarity: row in the description.
+                string name = d.Name;
                 yield return d with
                 {
                     Id = $"{d.Id}_{rarity.ToString().ToLowerInvariant()}",
@@ -1134,8 +1190,11 @@ public static class ItemCatalog
                     MpBonus = S(d.MpBonus),
                     EvaBonus = S(d.EvaBonus),
                     ShieldDefense = S(d.ShieldDefense),
-                    SetId = "",            // drop copies are standalone (no set bonus)
-                    NoAttributes = true,   // armors carry no attributes for now (owner)
+                    // THE 70% SPLIT. Below Epic a piece is numbers only — no set bonus, no rolled
+                    // attributes — and from Epic up it keeps its identity. That one rule is what makes
+                    // Rare and Epic (identical raw stats) different things worth wanting.
+                    SetId = HasIdentity(rarity) ? d.SetId : "",
+                    NoAttributes = !HasIdentity(rarity),
                     Value = 0,             // filled from DefaultValue (rarity-scaled)
                 };
             }
@@ -1418,10 +1477,73 @@ public static class ItemCatalog
     /// <summary>Formula gold value by slot/grade/rarity, used when an item def does
     /// not set an explicit Value. Quest items and god-tier one-offs return 0 so they
     /// can be neither bought nor sold.</summary>
+    /// <summary>Vendor price of TIERED GEAR at the three shop grades (F/E/D), or null if this item is
+    /// not one of them and should fall through to the generic formula.
+    ///
+    /// The owner's table (playtest-13), authored as the RARE price — gear was "way to lo price", and
+    /// these numbers are what make gold worth farming:
+    ///
+    ///                    F        E        D
+    ///   gloves/boots     6 000    175 000    600 000
+    ///   helm/shield     10 000    250 000  1 000 000
+    ///   body armor      18 000    400 000  1 800 000
+    ///   1H weapon       27 000    670 000  2 700 000
+    ///   2H weapon       30 000    750 000  3 000 000
+    ///   ring             3 000     70 000    250 000
+    ///   earring          6 000    140 000    500 000
+    ///   necklace        12 000    280 000  1 500 000
+    ///
+    /// 1H is cheaper than 2H because it hits softer AND needs a shield bought beside it — about a
+    /// third of the shield's price is the saving. Quality then scales it: the low qualities drop free
+    /// from mobs, so at full price nobody would ever buy one (owner) — they are priced as the
+    /// convenience they are. Epic and above are NOT vendor stock; their multipliers exist only so
+    /// selling one pays sensibly.</summary>
+    private static int? TieredGearPrice(ItemDef def)
+    {
+        int tier = def.ItemLevel >= 40 ? 2 : def.ItemLevel >= 20 ? 1 : def.ItemLevel >= 1 ? 0 : -1;
+        if (tier < 0) return null;   // untiered/legacy gear keeps the old formula
+
+        int[]? row = def.Slot switch
+        {
+            EquipSlot.Shield => new[] { 10_000, 250_000, 1_000_000 },
+            EquipSlot.Armor => def.ArmorSlot switch
+            {
+                ArmorSlot.Body => new[] { 18_000, 400_000, 1_800_000 },
+                ArmorSlot.Head => new[] { 10_000, 250_000, 1_000_000 },
+                _              => new[] { 6_000, 175_000, 600_000 },   // gloves / boots
+            },
+            EquipSlot.Weapon => def.WeaponType.IsTwoHanded()
+                ? new[] { 30_000, 750_000, 3_000_000 }
+                : new[] { 27_000, 670_000, 2_700_000 },
+            EquipSlot.Jewel => def.JewelType switch
+            {
+                JewelType.Necklace => new[] { 12_000, 280_000, 1_500_000 },
+                JewelType.Earring  => new[] { 6_000, 140_000, 500_000 },
+                _                  => new[] { 3_000, 70_000, 250_000 },   // ring
+            },
+            _ => null,
+        };
+        if (row is null) return null;
+
+        float qualityMul = def.Rarity switch
+        {
+            ItemRarity.Common    => 0.35f,
+            ItemRarity.Uncommon  => 0.70f,
+            ItemRarity.Rare      => 1.00f,
+            ItemRarity.Epic      => 1.50f,   // not sold by vendors — sell value only
+            ItemRarity.Legendary => 2.50f,
+            ItemRarity.Mythic    => 4.00f,
+            _ => 1.00f,
+        };
+        return Math.Max(1, (int)(row[tier] * qualityMul));
+    }
+
     public static int DefaultValue(ItemDef def)
     {
         if (def.Slot == EquipSlot.QuestItem || def.Rarity == ItemRarity.God)
             return 0;
+
+        if (TieredGearPrice(def) is int tiered) return tiered;
 
         int gradeBase = def.Grade switch
         {

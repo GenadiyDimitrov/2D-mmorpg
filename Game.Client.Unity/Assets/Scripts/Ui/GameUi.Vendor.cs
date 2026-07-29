@@ -119,7 +119,9 @@ namespace Game.Client
                 string defId = ware.DefId;
                 string name = ware.Name;
 
-                VendorRow(name + "   " + unit.ToString("N0") + " " + GameConstants.CurrencyName,
+                // Quality reads off the COLOUR now, not the name — the shop stocks the same piece at
+                // Common/Uncommon/Rare, so without it three identical-looking rows differ only in price.
+                VendorRow(Coloured(name, def.Rarity) + "   " + unit.ToString("N0") + " " + GameConstants.CurrencyName,
                           afford ? UiKit.Text : UiKit.TextDim,
                           () => BuyTap(defId, name, def, unit));
             }
@@ -135,7 +137,7 @@ namespace Game.Client
                 any = true;
 
                 long unit = ItemCatalog.SellPrice(def);
-                string label = def.Name + (item.Quantity > 1 ? "   x" + item.Quantity : "")
+                string label = Coloured(def.Name, def.Rarity) + (item.Quantity > 1 ? "   x" + item.Quantity : "")
                              + "   " + unit.ToString("N0") + " " + GameConstants.CurrencyName + " ea";
                 var captured = item;
                 VendorRow(label, UiKit.Text, () => SellTap(captured, def, unit));

@@ -242,7 +242,12 @@ public static class AttributeSystem
                 int idx = rng.Next(wpool.Count);
                 var t = wpool[idx];
                 wpool.RemoveAt(idx);
-                int max = TieredWeaponMax(def.WeaponType, def.IsMagicWeapon, t, def.ItemLevel);
+                // The attribute CAP scales with quality, like the base stats do: a Mythic piece rolls up
+                // to the full authored maximum, an Epic to 70% of it. Without this, quality moved the
+                // stat block but left the rolls identical, so the top of the ladder was worth much less
+                // than its numbers suggested.
+                int max = (int)(TieredWeaponMax(def.WeaponType, def.IsMagicWeapon, t, def.ItemLevel)
+                                * ItemCatalog.RarityScale(def.Rarity));
                 if (max > 0) result.Add(new ItemAttribute(t, rng.Next(1, max + 1)));
             }
             return result;
