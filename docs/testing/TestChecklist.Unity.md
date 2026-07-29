@@ -217,6 +217,11 @@ of these once fixed. Nothing here has been built yet.
         bars, or empty ones.
 25. [ ] **Buff tap behaviour** — press-and-HOLD cancels, a single tap opens a details popup that closes
         on an outside tap. Holding a DEBUFF shows its details instead (debuffs can't be dismissed).
+25a.[ ] **Buffs survive a relog** — take buffs, note the timers, exit to character select and re-enter:
+        they come back with LESS time, not full time and not gone. Wait a few minutes offline and the
+        clock should have kept running. A buff that ran out while away must NOT reappear. Runes
+        (soul/spiritshot) must appear exactly ONCE, not twice. Switching to another character on the
+        same account must show that character's buffs, not the first one's.
 26. [ ] **"You entered <field>" needs hit-test FALSE** — it currently blocks tapping the ground beneath
         it (click-through family).
 27. [ ] 🎯 **Partial-stack trading** — "5 of my 15 sticks for his 10 of 16 stones". **The owner's answer

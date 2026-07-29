@@ -17,6 +17,12 @@ public class BuffInstance
 
     public string Key { get; init; } = "";
     public int Rank { get; init; }
+
+    /// <summary>The SKILL LEVEL this was applied at. Rank is the stacking-priority number, which is
+    /// not the same thing — this is the argument ApplyBuff was called with, kept so a buff can be
+    /// rebuilt exactly (magnitudes, DoT power and shield pool are all level-derived) when restoring
+    /// a character's buffs on login.</summary>
+    public int Level { get; init; } = 1;
     public string[] Replaces { get; init; } = Array.Empty<string>();
 
     /// <summary>The skill this buff came from — kept so the client can show the SKILL's icon on the buff
@@ -595,6 +601,11 @@ public class Entity
     // ----- Buffs / debuffs ------------------------------------------------------------
 
     public List<BuffInstance> Buffs { get; } = new();
+
+    /// <summary>Buffs loaded from the DB but not yet re-applied. The loader cannot apply them itself —
+    /// ApplyBuff recomputes derived stats and pushes to the client, which is tick-thread work — so it
+    /// parks them here and the game loop drains the list on entry to the world.</summary>
+    public List<Persistence.PersistenceService.BuffSnapshot> PendingBuffs { get; } = new();
 
     /// <summary>Held in place by a Root effect — cannot move until it expires.</summary>
     public bool IsRooted

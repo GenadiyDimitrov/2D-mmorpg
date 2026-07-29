@@ -33,6 +33,12 @@ public static partial class SkillCatalog
     //      effective M.Atk (×1.414 magic) + a flat +40 cast, exactly the old passive's numbers. ----
     public const string SoulshotRuneBuff   = "rune_soulshot";
     public const string SpiritshotRuneBuff = "rune_spiritshot";
+
+    /// <summary>Is this buff granted by a held RUNE rather than cast? Such buffs are owned by the
+    /// reconciliation loop, which re-derives them from the rune item (and its expiry) — so they must
+    /// never be saved/restored as ordinary buffs, or login would apply them a second time.</summary>
+    public static bool IsRuneBuff(string skillId) =>
+        skillId == SoulshotRuneBuff || skillId == SpiritshotRuneBuff;
     // ---- Class identity "sure" floor passives — now ONE multi-level skill each
     //      (auto-granted at the class-change milestone, level = tier 1/2/3). The floor
     //      VALUES live in the SkillDef Levels, not in code. See FloorPassiveFor. ----

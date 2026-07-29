@@ -247,6 +247,7 @@ public class GameLoopService : BackgroundService
             new LoginResult(true, null, entity.Id, entity.X, entity.Y, GameClock.Epoch, entity.Role));
 
         AutoLearnCoreSkills(entity);
+        RestorePersistedBuffs(entity);   // before SendStats — the buffs change the numbers it sends
         SendInventory(entity);
         SendWarehouse(entity);   // the bank travels with login so the client can show it without a town trip
         SendStats(entity);
@@ -4813,6 +4814,52 @@ public class GameLoopService : BackgroundService
     /// apply/keep the buff for any held unexpired rune (driving its remaining from the item's ExpiresAtUtc),
     /// and drop a rune buff whose rune is gone (expired, or moved to the warehouse — a rune only applies
     /// from the main bag). Cheap; runs ~1/s + on box-open + on login.</summary>
+    /// <summary>Re-apply the buffs this character was carrying when it last left the world.
+    ///
+    /// Buffs used to die on every logout purely because nothing saved them, which the owner called out
+    /// in playtest-13: a buff should end when it EXPIRES, is dispelled/cancelled, or the subclass
+    /// changes — not because you closed the game. Rebuilding goes through the normal ApplyBuff path so
+    /// the buff comes back with its CURRENT definition; only the remaining time, stack count and shield
+    /// pool are carried over from the save.
+    ///
+    /// Time offline counts: the snapshot stores a wall-clock expiry, so an hour away spends an hour of
+    /// a one-hour buff, and anything that ran out while logged out simply never comes back.</summary>
+    private void RestorePersistedBuffs(Entity p)
+    {
+        if (p.PendingBuffs.Count == 0) return;
+
+        var now = DateTime.UtcNow;
+        foreach (var snap in p.PendingBuffs)
+        {
+            if (SkillCatalog.Get(snap.SkillId) is not SkillDef def) continue;   // skill retired since
+
+            bool toggle = snap.ExpiresAtUtc is null;
+            int ticksLeft = int.MaxValue;
+            if (!toggle)
+            {
+                double secondsLeft = (snap.ExpiresAtUtc!.Value - now).TotalSeconds;
+                if (secondsLeft <= 0) continue;                                  // expired while away
+                ticksLeft = Math.Max(1, (int)(secondsLeft / GameConstants.TickSeconds));
+            }
+
+            ApplyBuff(p, def, snap.Level, displayName: snap.DisplayName, refresh: false, toggle: toggle);
+
+            // ApplyBuff starts the buff at its FULL duration and stack 1 — overwrite with what was
+            // actually left. Find it by the same key ApplyBuff used.
+            string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
+            if (p.Buffs.FirstOrDefault(b => b.Key == key) is not BuffInstance restored) continue;
+            restored.TicksRemaining = ticksLeft;
+            restored.Stacks = Math.Clamp(snap.Stacks, 1, Math.Max(1, restored.MaxStacks));
+            if (restored.ShieldPool > 0) restored.ShieldPool = snap.ShieldPool;
+        }
+
+        p.PendingBuffs.Clear();   // one-shot: a later logout re-captures from the live list
+        p.RecomputeDerived();
+        p.Hp = Math.Min(p.Hp, p.MaxHp);   // a restored +MaxHP buff must not leave HP over the new cap
+        p.Mp = Math.Min(p.Mp, p.MaxMp);
+        PushBuffs(p);   // the periodic push is ~1/s; don't make the bar appear a second late
+    }
+
     private void ReconcileRuneBuffs(Entity p)
     {
         if (p.Kind != EntityKind.Player) return;
@@ -5829,6 +5876,7 @@ var effect = def.Effect;
             Name = shownName,
             Key = key,
             Rank = def.Rank,
+            Level = level,
             Replaces = def.Replaces ?? Array.Empty<string>(),
             PhysMpCostPct = def.PhysMpCostPct,
             MagicMpCostPct = def.MagicMpCostPct,

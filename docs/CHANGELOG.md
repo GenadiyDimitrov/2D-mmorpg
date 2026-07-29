@@ -12,6 +12,33 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-29 — Buffs survive logout (0.28.94) — ⚠ DELETE `game.db`
+
+The last tier-1 item from [testing/Playtest-13.md](testing/Playtest-13.md). Buffs died on every logout
+for the plain reason that nothing saved them. The owner's rule: a buff ends when it EXPIRES, is
+dispelled/cancelled, or the subclass changes — not because you closed the game.
+
+- New `CharacterRecord.BuffsJson` column + `PersistenceService.BuffSnapshot`. The snapshot is
+  deliberately minimal — skill id, the LEVEL it was cast at, wall-clock expiry, stacks, shield pool,
+  display name. Everything else (effect flags, magnitudes, DoT power) is rebuilt from the catalog, so a
+  buff restored after a skill was retuned comes back with the CURRENT definition, not a stale copy.
+- `BuffInstance.Level` records the level ApplyBuff was called with. `Rank` is stacking priority and was
+  never the same number.
+- Restored through the normal `ApplyBuff` path on entry to the world (`RestorePersistedBuffs`), then the
+  remaining ticks / stacks / shield pool are written over the fresh values. **Time offline counts**: the
+  expiry is wall-clock, so an hour away spends an hour of a one-hour buff and anything that ran out
+  while you were gone never comes back.
+- **Not saved, each for a reason:** debuffs (a DoT needs a live applier for damage attribution — so a
+  relog still clears them; fixing that needs the attribution problem solved, not a bigger snapshot);
+  internal DoT stack counters; the synthetic grade-penalty rows (recomputed); and RUNE buffs, which
+  `ReconcileRuneBuffs` already re-derives from the held item, so saving them would double-apply.
+- The four `Buffs.Clear()` sites — town respawn, subclass swap, character reset, death — are all
+  deliberate and unchanged.
+
+⚠ **Schema change.** `EnsureCreated()` only creates a DB that is absent; it will NOT add the new column.
+**Delete `Game.Server/game.db` (+ `-shm`/`-wal`) before running.**
+⚠ Wire is unchanged — still protocol 3.
+
 ## 2026-07-29 — Playtest-13 tier 1: seven bug fixes (0.28.93) — protocol 3
 
 The first batch off [testing/Playtest-13.md](testing/Playtest-13.md). Seven of the eight tier-1 items;

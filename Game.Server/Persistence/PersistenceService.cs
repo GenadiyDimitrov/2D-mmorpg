@@ -635,6 +635,19 @@ public class PersistenceService
             catch { /* ignore malformed quest json */ }
         }
 
+        // Buffs are PARKED, not applied: rebuilding one goes through GameLoopService.ApplyBuff (stat
+        // recompute, stacking rules, pushes), which is tick-thread work — this is a DB load. The game
+        // loop drains PendingBuffs when the character enters the world.
+        if (!string.IsNullOrEmpty(rec.BuffsJson))
+        {
+            try
+            {
+                var buffs = JsonSerializer.Deserialize<List<BuffSnapshot>>(rec.BuffsJson);
+                if (buffs is not null) entity.PendingBuffs.AddRange(buffs);
+            }
+            catch { /* ignore malformed buff json */ }
+        }
+
         if (!string.IsNullOrEmpty(rec.AutoHuntJson))
         {
             try
@@ -764,6 +777,7 @@ public class PersistenceService
         int Con, int Atk, int Wit, int Dex, int Spt, float X, float Y,
         string LearnedSkillsCsv, string CompletedQuestsCsv, string ActiveQuestsJson,
         string KnownRecipesCsv, string FriendsCsv, string BlockedCsv, string AutoHuntJson, string EquipPresetsJson,
+        string BuffsJson,
         int ActiveSubclassSlot, IReadOnlyList<SubclassSnapshot> Subclasses,
         int Karma, int PkCount, int PvpCount, int ConsecutivePk, bool DiedWhileAway,
         DateTime? JailedUntilUtc, DateTime? ChatBannedUntilUtc, long TotalOnlineSeconds,
@@ -803,6 +817,7 @@ public class PersistenceService
                     e.AutoFarmRange, e.AutoFarmStatic, e.AutoAttackNormal, e.AutoAttackElite, e.AutoAttackBoss,
                     e.AutoHealPotions.ToArray())),
                 JsonSerializer.Serialize(e.EquipPresets),
+                JsonSerializer.Serialize(BuffSnapshot.CaptureAll(e)),
                 e.ActiveSubclass.Slot, subs,
                 e.Karma, e.PkCount, e.PvpCount, e.ConsecutivePk, e.DiedWhileAway,
                 e.JailedUntil, e.ChatBannedUntil, e.TotalOnlineSeconds,
@@ -814,6 +829,48 @@ public class PersistenceService
     public sealed record ItemSnapshot(
         Guid InstanceId, string DefId, bool Equipped, int Enchant, int Quantity,
         List<ItemAttribute> Attributes, DateTime? ExpiresAtUtc = null, bool InWarehouse = false);
+
+    /// <summary>One saved buff. Deliberately MINIMAL — the skill id plus the level it was cast at is
+    /// enough to rebuild everything else (effect flags, magnitudes, DoT power, shield size) through the
+    /// normal ApplyBuff path, which also means a buff restored after a catalog change comes back with
+    /// the CURRENT definition rather than a stale snapshot of the old one.
+    ///
+    /// <paramref name="ExpiresAtUtc"/> is wall-clock (null = a toggle, which has no duration), so an
+    /// hour spent logged out costs an hour of a one-hour buff. DisplayName is kept because per-class
+    /// flavour names (Holy/Moonlight/Spirit Bolt) are an argument to ApplyBuff, not a property of the
+    /// def.</summary>
+    public sealed record BuffSnapshot(
+        string SkillId, int Level, DateTime? ExpiresAtUtc, int Stacks, int ShieldPool,
+        string DisplayName)
+    {
+        /// <summary>The buffs on an entity that are worth saving.
+        ///
+        /// Excluded, each for its own reason:
+        /// • DEBUFFS — a DoT needs a live applier for damage attribution and kill credit, and its
+        ///   SourceId cannot survive a restart. (Relog therefore still clears debuffs; if that becomes
+        ///   an exploit, it needs the attribution problem solved first, not a bigger snapshot.)
+        /// • INTERNAL stack counters — mechanic state belonging to whoever applied the DoT.
+        /// • Buffs with no SourceSkillId — the synthetic grade-penalty rows, which are recomputed.
+        /// • RUNE buffs — ReconcileRuneBuffs re-derives these from the held rune items on login, using
+        ///   the item's own expiry. Saving them too would apply the same buff twice.</summary>
+        public static List<BuffSnapshot> CaptureAll(Entity e)
+        {
+            var now = DateTime.UtcNow;
+            var list = new List<BuffSnapshot>();
+            foreach (var b in e.Buffs)
+            {
+                if (b.IsDebuff || b.Internal || string.IsNullOrEmpty(b.SourceSkillId)) continue;
+                if (SkillCatalog.IsRuneBuff(b.SourceSkillId)) continue;
+
+                DateTime? expires = b.Toggle
+                    ? null
+                    : now.AddSeconds(b.TicksRemaining * GameConstants.TickSeconds);
+                list.Add(new BuffSnapshot(b.SourceSkillId, b.Level, expires, b.Stacks, b.ShieldPool,
+                                          b.Name));
+            }
+            return list;
+        }
+    }
 
     /// <summary>Persist one snapshot back to its character row (logout / event save).
     /// Replaces the item set wholesale — simplest correct approach for now.</summary>
@@ -879,6 +936,7 @@ public class PersistenceService
         rec.LikeBudgetDay = snap.LikeBudgetDay;
         rec.AutoHuntJson = snap.AutoHuntJson;
         rec.EquipPresetsJson = snap.EquipPresetsJson;
+        rec.BuffsJson = snap.BuffsJson;
         rec.Karma = snap.Karma;
         rec.PkCount = snap.PkCount;
         rec.PvpCount = snap.PvpCount;

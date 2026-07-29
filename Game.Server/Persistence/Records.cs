@@ -97,6 +97,12 @@ public class CharacterRecord
     /// <summary>Auto-hunt config as JSON (AutoHuntConfigDto). Empty = defaults/off.</summary>
     public string AutoHuntJson { get; set; } = "";
 
+    /// <summary>Active BUFFS as JSON (PersistenceService.BuffSnapshot list). Buffs used to die on every
+    /// logout simply because nothing stored them; the owner's rule is that a buff ends only when it
+    /// expires, is dispelled/cancelled, or the subclass changes. Expiry is stored as WALL-CLOCK UTC, so
+    /// time spent offline still burns the duration.</summary>
+    public string BuffsJson { get; set; } = "";
+
     /// <summary>Equipment presets A/B/C as JSON: a Guid[][] of worn item instance ids. Empty = none.</summary>
     public string EquipPresetsJson { get; set; } = "";
 
