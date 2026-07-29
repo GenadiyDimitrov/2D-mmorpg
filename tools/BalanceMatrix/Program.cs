@@ -120,22 +120,30 @@ Console.WriteLine();
     Console.WriteLine($"    TOTAL                                    = {crushDps + autoDps,7:F1} dps"
                       + $"   ({mobHp / Math.Max(1f, crushDps + autoDps):F1}s to kill)");
 
-    // ---- Nuker: its best real nuke, back to back ----
+    // ---- Nuker: EVERY nuke it knows, ranked by DPS ----
+    //
+    // Ranking by POWER is the wrong question for a DPS comparison and gave the wrong answer: it picked
+    // Vampiric Bolt, whose shorter cycle flatters it, over the main nuke. Listing them all shows which
+    // spell a player would actually spam — and whether the dedicated nuke ladder is really the best one.
     var nuker = BuildPlayer(Race.Human, BaseClass.Mage, refLevel);
-    var (nukeDef, nukeLvl) = TopSkill(nuker, SkillEffect.MagicDamage);
-    if (nukeDef is not null)
-    {
-        int mAtk = (int)nuker.EffectiveMagicAttack;
-        float mCritF = CritFactor(nuker.MagicCritChance, StatCalculator.MagicCritMult(nuker.CritDamageBonus));
-        int nukeHit = StatCalculator.MagicDamage(mAtk, nukeDef.PowerAt(nukeLvl), mobMDef, refLevel);
-        float nukeCycle = SkillCycleSeconds(nuker, nukeDef);
-        float nukeDps = nukeHit * mCritF / nukeCycle;
+    int mAtk = (int)nuker.EffectiveMagicAttack;
+    float mCritF = CritFactor(nuker.MagicCritChance, StatCalculator.MagicCritMult(nuker.CritDamageBonus));
+    Console.WriteLine($"  NUKER     M.Atk {mAtk}  magic crit x{mCritF:F2}");
 
-        Console.WriteLine($"  NUKER     M.Atk {mAtk}  magic crit x{mCritF:F2}");
-        Console.WriteLine($"    {nukeDef.Name} L{nukeLvl} (power {nukeDef.PowerAt(nukeLvl)})"
-                          + $"  {nukeHit,6} dmg / {nukeCycle:F1}s = {nukeDps,7:F1} dps"
-                          + $"   ({mobHp / Math.Max(1f, nukeDps):F1}s to kill)");
+    var nukes = new List<(string Name, int Power, int Hit, float Cycle, float Dps)>();
+    foreach (var (id, lvl) in nuker.LearnedSkills)
+    {
+        var def = SkillCatalog.Get(id);
+        if (def is null || (def.Effect & SkillEffect.MagicDamage) == 0) continue;
+        if (!string.IsNullOrEmpty(def.ConsumableId)) continue;
+        int power = def.PowerAt(lvl);
+        int hit = StatCalculator.MagicDamage(mAtk, power, mobMDef, refLevel);
+        float cycle = SkillCycleSeconds(nuker, def);
+        nukes.Add(($"{def.Name} L{lvl}", power, hit, cycle, hit * mCritF / cycle));
     }
+    foreach (var n in nukes.OrderByDescending(n => n.Dps))
+        Console.WriteLine($"    {n.Name,-22} power {n.Power,4}  {n.Hit,6} dmg / {n.Cycle:F1}s = {n.Dps,7:F1} dps"
+                          + $"   ({mobHp / Math.Max(1f, n.Dps):F1}s to kill)");
     Console.WriteLine();
 }
 
