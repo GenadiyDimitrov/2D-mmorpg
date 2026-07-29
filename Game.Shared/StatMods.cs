@@ -60,6 +60,25 @@ public readonly record struct StatMods(
     // NOTE: cooldown, interrupt POWER, the PvE/PvP×skill/magic/basic matrix, shield BLOCK CHANCE, bow
     // range and the combat FLOORS are added as the passive/buff sources migrate (docs/design/StatMods.md).
 
+    /// <summary>Every field multiplied by <paramref name="f"/>. Used to derive a set bonus for a lower
+    /// QUALITY of the same gear: the authored numbers are the MYTHIC set, and Epic/Legendary get the
+    /// same shape at 70% / 85%. Scaling uniformly is deliberate — choosing which fields shrink would be
+    /// a per-set design decision, and this keeps one authored set as the single source of truth.</summary>
+    public StatMods Scaled(float f) => new(
+        MaxHp * f, MaxHpPct * f, MaxMp * f, MaxMpPct * f,
+        PDef * f, PDefPct * f, MDef * f, MDefPct * f,
+        PAtk * f, PAtkPct * f, MAtk * f, MAtkPct * f,
+        Accuracy * f, Evasion * f, EvasionPct * f,
+        CritRate * f, CritRatePct * f, CritDamage * f, CritDamagePct * f, MagicCritRate * f,
+        AtkSpeedPct * f, CastSpeedPct * f, MoveSpeed * f, MoveSpeedPct * f,
+        HpRegen * f, HpRegenPct * f, MpRegen * f, MpRegenPct * f,
+        InterruptResist * f,
+        CritDmgResist * f, CritRateResist * f, BowResist * f,
+        CcResist * f, RestoreMpBonus * f,
+        Str * f, Dex * f, Con * f, Int * f, Wit * f, Spt * f,
+        MeleeVamp * f, SpellVamp * f, Reflect * f,
+        ShieldDefPct * f);
+
     /// <summary>Fold a set of source mods into running totals (flats SUM, percents COMPOUND
     /// — see docs/design/StatMods.md: final = (base + Σflat) × ∏(1+pct%)).</summary>
     public static StatTotals Combine(IEnumerable<StatMods> sources)

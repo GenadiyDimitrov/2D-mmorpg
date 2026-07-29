@@ -23,7 +23,17 @@ public enum Archetype
 public record ClassFlatBonus(
     int Con = 0, int Atk = 0, int Wit = 0, int Dex = 0,        // primary
     int MaxHp = 0, int MaxMp = 0, int Defence = 0, int Attack = 0, // secondary
-    int Evasion = 0, int Accuracy = 0);
+    int Evasion = 0, int Accuracy = 0)
+{
+    /// <summary>Every field scaled — used to derive a lower-QUALITY armour set's bonus from the
+    /// authored (Mythic) one. See StatMods.Scaled.</summary>
+    public ClassFlatBonus Scaled(float f) => new(
+        (int)MathF.Round(Con * f), (int)MathF.Round(Atk * f),
+        (int)MathF.Round(Wit * f), (int)MathF.Round(Dex * f),
+        (int)MathF.Round(MaxHp * f), (int)MathF.Round(MaxMp * f),
+        (int)MathF.Round(Defence * f), (int)MathF.Round(Attack * f),
+        (int)MathF.Round(Evasion * f), (int)MathF.Round(Accuracy * f));
+}
 
 public record SecondClassDef(int Id, string Name, Race Race, BaseClass Base, Archetype Archetype,
     string? RequiredQuestId = null, ClassFlatBonus? Bonus = null);

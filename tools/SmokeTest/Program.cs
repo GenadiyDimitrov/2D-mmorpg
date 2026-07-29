@@ -175,6 +175,47 @@ Check("server pushed the warehouse on login", a.Ware is not null);
         Check($"the F {setName} set's accessory line matches the F helm's set id",
               set is not null && helm is not null && set.AccessorySetId == helm.SetId);
     }
+
+    // ---- A SET MUST BE FOUR PIECES OF THE SAME QUALITY (owner) ----
+    // Previously every Epic/Legendary/Mythic copy carried the SAME set id, so a Mythic body finished
+    // by Epic accessories completed the MYTHIC set at full strength — mixing beat matching. Assert the
+    // ids now segregate by quality, and that each quality's set exists with a scaled bonus.
+    {
+        var mythicBody = ItemCatalog.Get("light_t20");            // authored piece = Mythic
+        var epicBody   = ItemCatalog.Get("light_t20_epic");
+        var legBody    = ItemCatalog.Get("light_t20_legendary");
+        var rareBody   = ItemCatalog.Get("light_t20_rare");
+        Check("Epic and Mythic bodies do NOT share a set id (no mixing)",
+              epicBody is not null && mythicBody is not null && epicBody.SetId != mythicBody.SetId,
+              $"epic '{epicBody?.SetId}' vs mythic '{mythicBody?.SetId}'");
+        Check("Legendary has its own set id too",
+              legBody is not null && legBody.SetId != mythicBody!.SetId && legBody.SetId != epicBody!.SetId);
+        Check("below Epic there is no set at all", rareBody is { SetId: "" }, $"rare SetId '{rareBody?.SetId}'");
+
+        var mSet = ArmorSetCatalog.Get(mythicBody!.SetId);
+        var eSet = ArmorSetCatalog.Get(epicBody!.SetId);
+        Check("both the Mythic and Epic sets exist", mSet is not null && eSet is not null);
+        // The Epic set must be WEAKER — 70% of the authored numbers. Asserted on the HEAVY t20 set
+        // because it is the one that actually carries MaxHp (135); the light set uses Evasion/MaxMp,
+        // and picking a field a set does not use compares 0 against 0 and passes for the wrong reason.
+        var mHeavy = ArmorSetCatalog.Get("set_heavy_t20");
+        var eHeavy = ArmorSetCatalog.Get("set_heavy_t20_epic");
+        Check("the Epic set's bonus is scaled below Mythic's",
+              mHeavy is not null && eHeavy is not null
+                && eHeavy.Mods.MaxHp > 0 && eHeavy.Mods.MaxHp < mHeavy.Mods.MaxHp,
+              $"epic {eHeavy?.Mods.MaxHp} vs mythic {mHeavy?.Mods.MaxHp}");
+        Check("the Epic set's SHIELD bonus is scaled too",
+              mHeavy is not null && eHeavy is not null
+                && eHeavy.ShieldBonus.ShieldDefPct > 0f
+                && eHeavy.ShieldBonus.ShieldDefPct < mHeavy.ShieldBonus.ShieldDefPct);
+        // An Epic body must want EPIC accessories, not the shared line.
+        var epicHelm = ItemCatalog.Get("helm_t20_epic");
+        Check("an Epic body's set wants EPIC accessories",
+              eSet is not null && epicHelm is not null && eSet.AccessorySetId == epicHelm.SetId,
+              $"set wants '{eSet?.AccessorySetId}', epic helm has '{epicHelm?.SetId}'");
+        Check("...and a MYTHIC helm would NOT satisfy it",
+              eSet is not null && ItemCatalog.Get("helm_t20") is { } mh && eSet.AccessorySetId != mh.SetId);
+    }
 }
 
 Check("server pushed quest markers on login", a.Marks is not null);

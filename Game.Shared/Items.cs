@@ -1174,7 +1174,13 @@ public static class ItemCatalog
                     // THE 70% SPLIT. Below Epic a piece is numbers only — no set bonus, no rolled
                     // attributes — and from Epic up it keeps its identity. That one rule is what makes
                     // Rare and Epic (identical raw stats) different things worth wanting.
-                    SetId = HasIdentity(rarity) ? d.SetId : "",
+                    // QUALITY-MATCHED set id. A copy joins the set of ITS OWN quality, not the authored
+                    // one — otherwise a Mythic body + Epic accessories completed the Mythic set and paid
+                    // full price, making a mixed bag strictly better than a matched one (owner).
+                    // Mythic IS the authored item, so only Epic/Legendary need the suffix.
+                    SetId = HasIdentity(rarity) && !string.IsNullOrEmpty(d.SetId)
+                        ? d.SetId + "_" + rarity.ToString().ToLowerInvariant()
+                        : "",
                     NoAttributes = !HasIdentity(rarity),
                     Value = 0,             // filled from DefaultValue (rarity-scaled)
                 };

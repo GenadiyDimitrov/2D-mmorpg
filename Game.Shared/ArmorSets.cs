@@ -75,7 +75,42 @@ public static class ArmorSetCatalog
         // light — the defensive line, same numbers. One line to change if heavy should differ.
         new ArmorSetDef(FHeavySet, "Ferrite Bulwark",
             new ClassFlatBonus(MaxHp: 42), DefencePct: 0.02f, AccessorySetId: FAccessorySet),
-    }.Concat(TieredSets()).ToDictionary(s => s.Id);
+    }.Concat(TieredSets()).SelectMany(QualityVariants).ToDictionary(s => s.Id);
+
+    /// <summary>A set at every quality that can wear it — the authored one (MYTHIC) plus derived
+    /// EPIC and LEGENDARY copies at 70% / 85%.
+    ///
+    /// THE POINT: a set must be completed by four pieces of the SAME quality (owner, 2026-07-30).
+    /// Before this, every Epic/Legendary/Mythic copy of a piece carried the SAME set id, so a Mythic
+    /// body + Epic helm + Legendary gloves + Epic boots completed the set — and paid the FULL Mythic
+    /// bonus. Mixing was strictly better than matching, and the quality of an accessory did not matter
+    /// at all as long as it was Epic or above. Now each quality has its own set id and its own scaled
+    /// bonus, so four Mythics earn the Mythic set and four Epics earn the Epic one.
+    ///
+    /// Below Epic there is no set at all (those copies carry no set id) — see ItemCatalog.HasIdentity.</summary>
+    private static IEnumerable<ArmorSetDef> QualityVariants(ArmorSetDef authored)
+    {
+        yield return authored;   // the authored numbers ARE the Mythic set
+        foreach (var q in new[] { ItemRarity.Epic, ItemRarity.Legendary })
+        {
+            float f = ItemCatalog.RarityScale(q);
+            string suffix = "_" + q.ToString().ToLowerInvariant();
+            yield return authored with
+            {
+                Id = authored.Id + suffix,
+                Name = $"{authored.Name} ({q})",
+                Bonus = authored.Bonus.Scaled(f),
+                Mods = authored.Mods.Scaled(f),
+                DefencePct = authored.DefencePct * f,
+                CastSpeedPct = authored.CastSpeedPct * f,
+                ShieldBonus = authored.ShieldBonus.Scaled(f),
+                // The accessory line must be quality-matched too, or a Mythic body would still be
+                // completed by Epic accessories through the shared accessory id.
+                AccessorySetId = string.IsNullOrEmpty(authored.AccessorySetId)
+                    ? "" : authored.AccessorySetId + suffix,
+            };
+        }
+    }
 
     // ----- Tiered gear sets (docs/data/gear/gear_sets.csv, BASE variant per weight/tier). Each body of a
     // tier + that tier's shared accessory line (set_acc_t{lv}) completes it. Bonuses are the FULL

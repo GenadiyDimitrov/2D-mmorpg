@@ -12,6 +12,40 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-30 — A set needs FOUR pieces of the same quality (0.32.0) — ⚠ DELETE `game.db`
+
+The owner asked whether a Mythic set could be completed by an Epic helm, Legendary gloves and Epic
+boots. **It could** — and it paid the full Mythic bonus.
+
+Every Epic/Legendary/Mythic copy of a piece carried the *same* set id as the authored one, and all
+accessories shared one line, so **mixing was strictly better than matching**: the quality of your
+accessories didn't matter at all as long as they were Epic or above. (A Common/Uncommon/Rare piece has
+no set id, so his "common helmet" would in fact have *broken* the set — the only part of the old
+behaviour that was right.)
+
+Now **each quality has its own set, and its own scaled bonus**:
+- Item copies take a quality-suffixed set id (`set_light_t20_epic`, `…_legendary`); the authored piece
+  is the Mythic rung and keeps the plain id.
+- **The accessory line is quality-matched too** — otherwise a Mythic body would still have been
+  completed by Epic accessories through the shared accessory id, which was half the original hole.
+- Each authored set now generates Epic (70%) and Legendary (85%) variants via `StatMods.Scaled` and
+  `ClassFlatBonus.Scaled`, including the shield-conditional extra. Measured: heavy T20's set HP goes
+  **135 → 94.5** at Epic.
+- Below Epic there is still no set at all.
+
+Scaling every field uniformly is deliberate: choosing which fields shrink is a per-set design decision,
+and this keeps ONE authored set as the single source of truth for its whole quality column.
+
+**This also closes the "scaled set bonuses" gap** that had been open since 0.29.1 — and with it the S
+grade's, whose `set_*_t80` ids now resolve like any other.
+
+New SmokeTest assertions: Epic/Legendary/Mythic bodies do not share a set id, sub-Epic has none, the
+Epic set's bonus (and shield bonus) is scaled below Mythic's, an Epic body's set demands Epic
+accessories, and a Mythic helm does not satisfy it.
+⚠ One of those assertions was wrong first time — it compared `Mods.MaxHp` on the LIGHT set, which
+doesn't use that field, so it was comparing 0 against 0 and passing for the wrong reason. It asserts on
+the heavy set, which actually carries HP.
+
 ## 2026-07-30 — The F sets exist; wire them to the F tier (0.31.3)
 
 Correcting 0.31.2. I dropped the F-tier `SetId`s on the grounds that `ArmorSetCatalog` had no F set —
