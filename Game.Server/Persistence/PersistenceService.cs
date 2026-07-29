@@ -187,6 +187,7 @@ public class PersistenceService
         var character = await db.Characters
             .Include(c => c.Subclasses)
             .Include(c => c.Items)
+            .AsSplitQuery()   // two collections in one statement = cartesian product; see LoadCharacterAsync
             .FirstOrDefaultAsync(c => c.Name == characterName);
         if (character is null) return;
 
@@ -562,10 +563,17 @@ public class PersistenceService
     {
         await using var db = await _factory.CreateDbContextAsync();
 
+        // SPLIT QUERY. Pulling Items→Attributes AND Subclasses in one statement is a cartesian product:
+        // EF joins them all, so the row count is (items × attributes) × subclasses and every row drags a
+        // full copy of the character. A geared character with a stocked warehouse turns a ~50-row read
+        // into hundreds. Two extra round trips against a local SQLite file cost far less than that
+        // multiplication — and this is the LOGIN path, so it runs for every player entering the world.
+        // (This is also what EF's 20504 warning was pointing at.)
         var rec = await db.Characters
             .Include(c => c.Items)
             .ThenInclude(i => i.Attributes)
             .Include(c => c.Subclasses)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(c => c.Id == characterId && c.AccountId == accountId);
 
         if (rec is null || rec.PendingDeleteAt is not null)
@@ -887,6 +895,7 @@ public class PersistenceService
             var rec = await db.Characters
                 .Include(c => c.Items).ThenInclude(i => i.Attributes)
                 .Include(c => c.Subclasses)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(c => c.Id == snap.CharacterId);
             if (rec is null)
                 return;
@@ -913,6 +922,7 @@ public class PersistenceService
                 var rec = await db.Characters
                     .Include(c => c.Items).ThenInclude(i => i.Attributes)
                     .Include(c => c.Subclasses)
+                    .AsSplitQuery()
                     .FirstOrDefaultAsync(c => c.Id == snap.CharacterId);
                 if (rec is not null)
                     ApplySnapshot(db, rec, snap);

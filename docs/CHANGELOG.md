@@ -12,6 +12,28 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-30 — EF cartesian-product warning fixed (0.31.1)
+
+The `Microsoft.EntityFrameworkCore.Query[20504]` warning on startup and on every login. Four queries
+loaded `Items` → `Attributes` **and** `Subclasses` in one statement, which EF resolves as a single
+JOIN — so the row count is (items × attributes) × subclasses and **every row drags a full copy of the
+character**. A geared character with a stocked warehouse turns a ~50-row read into hundreds.
+
+All four now use **`AsSplitQuery()`**: three round trips against a local SQLite file cost far less
+than that multiplication. The login path (`LoadCharacterAsync`) is the one that matters — it runs for
+every player entering the world. Verified: startup + a full SmokeTest login cycle now logs **zero**
+EF warnings of any kind.
+
+Fixed per-query rather than globally via `UseQuerySplittingBehavior`, deliberately: a global switch
+would silently change every query in the app, including ones nobody has looked at, and the next
+multi-collection query *should* raise the warning so someone decides about it.
+
+**Also fixed a flaky SmokeTest assertion.** The charisma-board check ("a jail drained the player's
+charisma") read the leaderboard once, but that board comes from the DATABASE and the drain reaches it
+via a fire-and-forget background save — so the read raced the write and failed about one run in four
+while the code was perfectly correct. It now polls for up to ~3s. A flaky assertion is as misleading
+as a non-idempotent one: it trains you to re-run instead of to look.
+
 ## 2026-07-29 — S grade, and the ladder re-anchored to the top (0.31.0) — ⚠ DELETE `game.db`
 
 The owner's reading of the ladder: **our A-grade is L2's LOW S-grade**, so A at full power is already

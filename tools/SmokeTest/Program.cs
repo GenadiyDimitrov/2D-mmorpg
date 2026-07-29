@@ -674,8 +674,19 @@ bool atJail = Math.Abs(b.MyX - GameConstants.JailX) < 50 && Math.Abs(b.MyY - Gam
 Check("jailing a player teleports them to jail (live)", atJail, $"at ({b.MyX:0},{b.MyY:0})");
 
 // The 60-min jail also DRAINED the player's charisma (−200) below the +1 they'd been liked for → off the board.
-await b.Settle();
-var boardAfterJail = await b.Hub.InvokeAsync<LeaderboardDto>("RequestLeaderboard", "charisma");
+//
+// POLLED, not read once. The leaderboard comes from the DATABASE, and the charisma drain reaches it via
+// a background save (RunSave is fire-and-forget), so a single read races that write — this check failed
+// about one run in four while otherwise being correct. A flaky assertion is as misleading as a
+// non-idempotent one: it trains you to re-run instead of to look. Poll for up to ~3s and take the first
+// answer that reflects the drain.
+LeaderboardDto boardAfterJail = null!;
+for (int attempt = 0; attempt < 10; attempt++)
+{
+    boardAfterJail = await b.Hub.InvokeAsync<LeaderboardDto>("RequestLeaderboard", "charisma");
+    if (!boardAfterJail.Entries.Any(e => e.Name == name)) break;
+    await Task.Delay(300);
+}
 Check("a jail drained the player's charisma (dropped off the board)",
       boardAfterJail.Entries.All(e => e.Name != name),
       string.Join(",", boardAfterJail.Entries.Select(e => e.Name)));
