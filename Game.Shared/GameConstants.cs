@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.28.92";
+    public const string GameVersion = "0.28.93";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -172,12 +172,9 @@ public static class GameConstants
 
     public const int SafeZoneRegenMultiplier = 5;
 
-    /// <summary>Regen multiplier while ENGAGED in combat (or mid-cast). Combat used to stop regen
-    /// dead, which auto-farm turned into a permanent state: a fighter with Basic Attack enabled is
-    /// engaged for as long as a target exists, so HP and MP never recovered at all and the only way
-    /// to get regen back was to stop farming (playtest-13). A reduced rate keeps combat costly
-    /// without making sustained play impossible. 0 restores the old all-or-nothing behaviour.</summary>
-    public static float CombatRegenMultiplier = 0.3f;
+    // NOTE: there is deliberately NO combat regen multiplier (owner, 2026-07-29). Regen is modified by
+    // STANCE only — MovementTuning.RegenMultiplier: sitting ×1.8, walking ×1.2, running ×1.0 — plus the
+    // safe zone, SPT/CON and buffs. See Regenerate() for why the old Engaged/casting suppression went.
 
     /// <summary>True inside ANY placed safe zone (see WorldMap.SafeZones).</summary>
     public static bool InSafeZone(float x, float y) => WorldMap.InAnySafeZone(x, y);

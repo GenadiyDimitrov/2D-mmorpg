@@ -6956,18 +6956,16 @@ var effect = def.Effect;
 
     private void Regenerate(Entity entity)
     {
-        // In combat regen is REDUCED, not switched off. Auto-farm made "off" permanent — an engaged
-        // fighter never leaves the state while targets remain — so a farming character could not
-        // recover MP at all until they stopped. See GameConstants.CombatRegenMultiplier.
-        bool inCombat = entity.Engaged || entity.CastingSkillId is not null;
-        if (inCombat && GameConstants.CombatRegenMultiplier <= 0f)
-            return;
-
+        // NO combat penalty (owner, 2026-07-29). Regen used to stop dead while Engaged or mid-cast;
+        // that rule was ours, not L2's — L2 modifies regen by STANCE, never by being in combat — and it
+        // is the stance stack below that is meant to express "resting vs fighting". It also broke
+        // sustained play outright: auto-farm re-asserts Engaged every tick a target exists, so a farming
+        // fighter regenerated nothing at all until they stopped (playtest-13). Regen is now governed by
+        // stance, SPT/CON, the safe zone and buffs only.
         float multiplier = entity.Kind == EntityKind.Player &&
                            GameConstants.InSafeZone(entity.X, entity.Y)
             ? GameConstants.SafeZoneRegenMultiplier
             : 1f;
-        if (inCombat) multiplier *= GameConstants.CombatRegenMultiplier;
 
         // Movement-state bonus (Walking +20%, Sitting +80%) for players.
         if (entity.Kind == EntityKind.Player)
@@ -7497,8 +7495,9 @@ var effect = def.Effect;
             p.HealPowerFlat, p.HealPowerMod, p.HealReceivedFlat, p.HealReceivedMod));
     }
 
-    /// <summary>The player's STANDING (out-of-combat, running) HP/MP regen per second —
-    /// base + flat bonus, ×mastery mult, ×buff regen% — for the stats window.</summary>
+    /// <summary>The player's baseline HP/MP regen per second at the RUNNING stance (×1.0) and outside
+    /// a safe zone — base + flat bonus, ×mastery mult, ×buff regen% — for the stats window. Walking
+    /// (×1.2) and sitting (×1.8) scale up from this; combat no longer changes it at all.</summary>
     private static (float Hp, float Mp) StandingRegen(Entity p)
     {
         float hpPct = 0f, mpPct = 0f;

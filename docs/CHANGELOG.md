@@ -12,7 +12,7 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 2026-07-29 — Playtest-13 tier 1: seven bug fixes (0.28.92) — protocol 3
+## 2026-07-29 — Playtest-13 tier 1: seven bug fixes (0.28.93) — protocol 3
 
 The first batch off [testing/Playtest-13.md](testing/Playtest-13.md). Seven of the eight tier-1 items;
 each root cause is noted at the fix site.
@@ -41,10 +41,13 @@ each root cause is noted at the fix site.
   replaced on a character switch. Both are cleared in `ResetWorldTransients`.
 - **Quest-giver dialog refreshes on accept.** Accepting never passed the NPC through, so the panel kept
   showing the pre-accept text and you had to close and re-talk to learn the objective.
-- **Regen no longer stops dead in combat.** New `GameConstants.CombatRegenMultiplier` (0.3) replaces the
-  hard early-return. Auto-farm made "no regen" permanent — a fighter with Basic Attack enabled is engaged
-  for as long as targets exist — so MP never recovered until farming stopped. ⚠ This is a BALANCE value:
-  measure with `tools/BalanceMatrix` and tune. 0 restores the old behaviour.
+- **Combat no longer suppresses regen at all** (owner's call). `Regenerate` used to return early while
+  `Engaged` or mid-cast. Auto-farm made that permanent — it re-asserts `Engaged` every tick a target
+  exists — so a farming fighter regenerated nothing until they stopped. The rule was ours, not L2's:
+  L2 modifies regen by STANCE, never by combat, and the stance stack already expresses "resting vs
+  fighting". Regen is now governed by stance (sitting ×1.8, walking ×1.2, running ×1.0), the safe zone,
+  SPT/CON and buffs only. Mages were never affected by the `Engaged` half — `ExecuteSkill` skips it for
+  `BaseClass.Mage` — but they were paused mid-cast; that is gone too.
 
 ⚠ **Protocol 3** — `ProgressUpdate` and `CharacterSlot` both gained fields. The additions are optional,
 but a NEW client against an OLD server would read SP as 0 after every kill, so the handshake must reject
