@@ -12,6 +12,14 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-25 — Buy-back window (Unity) (0.28.91)
+
+Client UI for buy-back (server was done in 0.28.86). `GameUi.BuyBack.cs` — lists items you recently sold
+(`Boot.BuyBack`, pushed when a vendor opens), tap a row to re-buy for the same gold; affordable rows lit,
+others dimmed. Opened from the vendor dialog ("Buy back" row). `NetworkChannel`/`GameBoot` gain the
+`BuyBack` push + `BuyBackItem(index)` call. Mirrors the (verified) warehouse window.
+✅ Unity-compile-verified (headless build SUCCEEDED).
+
 ## 2026-07-25 — Warehouse NPC + block/like/unblock actions (0.28.90)
 
 - **Warehouse is its own NPC** (owner): new `NpcRole.Warehouse` + a **Keeper in each of the 7 main towns**;

@@ -91,6 +91,7 @@ namespace Game.Client
         /// <summary>The bag, as last sent by the server (it pushes the whole thing on any change).</summary>
         public InventoryItemDto[] Inventory { get; private set; } = new InventoryItemDto[0];
         public InventoryItemDto[] Warehouse { get; private set; } = new InventoryItemDto[0];
+        public BuyBackEntryDto[] BuyBack { get; private set; } = new BuyBackEntryDto[0];
 
         /// <summary>Party roster (empty when you are not in one) and the agreed loot rule.</summary>
         public PartyMemberDto[] Party { get; private set; } = new PartyMemberDto[0];
@@ -325,6 +326,13 @@ namespace Game.Client
             if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;
             try { await _net.SellItemAsync(DialogNpcId, instanceId, quantity); }
             catch (Exception ex) { ClientLog.Warn("Sell: " + ex.Message); }
+        }
+
+        public async void BuyBackItem(int index)
+        {
+            if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;
+            try { await _net.BuyBackAsync(DialogNpcId, index); }
+            catch (Exception ex) { ClientLog.Warn("BuyBack: " + ex.Message); }
         }
 
         public async void OpenWarehouse()
@@ -696,6 +704,8 @@ namespace Game.Client
                 Inventory = i?.Items ?? new InventoryItemDto[0]);
             _net.WarehouseReceived += w => Main(() =>
                 Warehouse = w?.Items ?? new InventoryItemDto[0]);
+            _net.BuyBackReceived += b => Main(() =>
+                BuyBack = b?.Items ?? new BuyBackEntryDto[0]);
             _net.LearnedReceived += l => Main(() =>
             {
                 Learned.Clear();

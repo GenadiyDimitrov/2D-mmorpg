@@ -125,6 +125,8 @@ namespace Game.Client
                           () => OpenVendor(false), UiKit.Text);
                 DialogRow("Sell — items from your bag", "Sell",
                           () => OpenVendor(true), UiKit.Text);
+                DialogRow("Buy back — items you recently sold", "Back",
+                          () => OpenBuyBackWindow(), UiKit.Text);
             }
 
             // ----- warehouse keeper ---------------------------------------------------------------
