@@ -131,8 +131,10 @@ public class NetworkChannel : IAsyncDisposable
     public Task<string?> CancelDeleteCharacterAsync(int characterId) =>
         _connection!.InvokeAsync<string?>("CancelDeleteCharacter", characterId);
 
-    public Task LeaveWorldAsync() =>
-        _connection!.SendAsync("LeaveWorld");
+    /// <summary>Invoke (not Send): the server completes this only after saving, and returns a refusal
+    /// reason when leaving is blocked (in combat / a DoT ticking). Null = the character left.</summary>
+    public Task<string?> LeaveWorldAsync() =>
+        _connection!.InvokeAsync<string?>("LeaveWorld");
 
     public Task AdminCommandAsync(string command, string argument) =>
         _connection!.SendAsync("AdminCommand", command, argument);

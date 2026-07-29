@@ -316,12 +316,14 @@ public record BufferActionCmd(string ConnectionId, Guid NpcEntityId, string Acti
 /// <summary>Client -> server: DELIBERATELY leave the world and go back to character select, keeping
 /// the connection. Distinct from <see cref="LeaveCommand"/>, which is the DISCONNECT path (link-dead
 /// grace / offline farming) — a deliberate exit must actually remove the character from the world.</summary>
-/// <summary>Deliberate return to character select. Carries an optional completion source the hub
-/// awaits: the character SAVE is a background write, and the client asks for the character list the
-/// moment LeaveWorld returns — so without waiting, the select screen listed the level and class from
-/// BEFORE the session (playtest-13). Completed once the save has actually landed.</summary>
+/// <summary>Deliberate return to character select. The completion source carries the REFUSAL REASON
+/// (null = left successfully), and the hub awaits it for two reasons:
+/// • the character SAVE is a background write and the client lists characters the moment this
+///   returns, so without waiting the select screen showed the level/class from BEFORE the session;
+/// • leaving is refused while in combat — including while a DoT is ticking — and the client has to
+///   learn that, or it would sit on the character screen while the entity stayed in the world.</summary>
 public record LeaveWorldCmd(string ConnectionId,
-    TaskCompletionSource<bool>? Result = null) : IGameCommand;
+    TaskCompletionSource<string?>? Result = null) : IGameCommand;
 
 /// <summary>Client -> server: "forget what you think I have, send me everything again." The delta feed
 /// has no other recovery path — a client that misses one spawn frame never hears about that entity

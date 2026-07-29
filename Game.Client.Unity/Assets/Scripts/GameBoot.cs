@@ -907,7 +907,15 @@ namespace Game.Client
         {
             try
             {
-                await _net.LeaveWorldAsync();
+                // The server REFUSES this in combat (including while a DoT ticks), so stay put and say
+                // why — going to the character screen anyway would leave the entity in the world and
+                // then refuse to let us back into our own character.
+                string refused = await _net.LeaveWorldAsync();
+                if (!string.IsNullOrEmpty(refused))
+                {
+                    Main(() => { StatusMessage = refused; ClientLog.Warn(refused); });
+                    return;
+                }
                 Main(() =>
                 {
                     if (Entities != null) Entities.Clear();

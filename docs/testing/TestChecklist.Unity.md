@@ -217,6 +217,10 @@ of these once fixed. Nothing here has been built yet.
         bars, or empty ones.
 25. [ ] **Buff tap behaviour** — press-and-HOLD cancels, a single tap opens a details popup that closes
         on an outside tap. Holding a DEBUFF shows its details instead (debuffs can't be dismissed).
+25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
+        must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends
+        (and combat decays) it works. Same for `/exit`. Pulling the plug mid-DoT must not run the
+        link-dead grace down.
 25a.[ ] **Buffs survive a relog** — take buffs, note the timers, exit to character select and re-enter:
         they come back with LESS time, not full time and not gone. Wait a few minutes offline and the
         clock should have kept running. A buff that ran out while away must NOT reappear. Runes

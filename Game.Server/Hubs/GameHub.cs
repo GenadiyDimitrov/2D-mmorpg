@@ -153,16 +153,21 @@ public class GameHub : Hub
     /// exit, so it must NOT go through LeaveCommand — that is the DISCONNECT path, which parks the
     /// character in a 180s link-dead grace (or offline-farming). Doing that on a char-select left the
     /// entity in the world and then refused to let you back into your own character.</summary>
-    public async Task LeaveWorld()
+    /// <returns>null when the character left; otherwise the reason it was refused (in combat).</returns>
+    /// <remarks>The client must call this with <c>InvokeAsync</c>, NOT <c>SendAsync</c> — SendAsync
+    /// returns as soon as the message is written and never waits for the hub method, so both the save
+    /// and the refusal would be invisible to it.</remarks>
+    public async Task<string?> LeaveWorld()
     {
         // Awaits the SAVE, not just the command. The client calls ListCharacters as soon as this
         // returns, and the save is a background write off the tick — returning immediately meant the
         // select screen read the row as it was at login.
-        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var tcs = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
         _world.Commands.Enqueue(new LeaveWorldCmd(Context.ConnectionId, tcs));
 
         // Never hang the client on a stuck write — a stale row beats a frozen screen.
-        await Task.WhenAny(tcs.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+        var finished = await Task.WhenAny(tcs.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+        return finished == tcs.Task ? await tcs.Task : null;
     }
 
     /// <summary>Ask for a full re-send of everything visible (see <see cref="ResyncCmd"/>). Cheap and

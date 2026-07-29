@@ -12,6 +12,28 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-29 — No combat-logging out of a DoT (0.28.95) — protocol 4
+
+Owner's rule: a DoT keeps you IN COMBAT, so you can only return to character select once you have
+escaped, killed them or died **and** nothing is ticking on you. This is the answer to the hole left by
+0.28.94 — debuffs are deliberately not persisted (a DoT needs a live applier for attribution), so
+without it you could shed a Venomweaver's stacks by quitting to the character screen.
+
+- `IsInCombat` now also returns true while any `SkillEffect.AnyDot` buff is present. It is the shared
+  predicate, so the same rule covers `/exit`, the equipment-preset swap, and the link-dead grace timer
+  (which stays PAUSED while a DoT ticks — pulling the plug mid-bleed no longer runs the clock down).
+- **Character select was not gated at all.** `/exit` checked combat; leaving to the character screen
+  did not, which was the actual hole. It now refuses with the same rule.
+
+🔴 **And a real bug in 0.28.92's save fix:** the client called `LeaveWorld` with SignalR's
+**`SendAsync`**, which returns as soon as the message is written and never waits for the hub method.
+So the hub awaiting the save delayed nothing and the character-select level could still be stale. Both
+clients now use **`InvokeAsync`**, which is also what lets the refusal reach them. `LeaveWorld` returns
+`string?` — null = left, otherwise the reason — and the clients stay in the world when refused rather
+than showing the character list while the server still holds the entity.
+
+⚠ **Protocol 4** — `LeaveWorld` changed shape and meaning.
+
 ## 2026-07-29 — Buffs survive logout (0.28.94) — ⚠ DELETE `game.db`
 
 The last tier-1 item from [testing/Playtest-13.md](testing/Playtest-13.md). Buffs died on every logout

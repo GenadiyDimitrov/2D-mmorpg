@@ -202,8 +202,11 @@ namespace Game.Client
         public Task AssistAsync(Guid targetId) =>
             _connection.SendAsync("Assist", targetId);
 
-        public Task LeaveWorldAsync() =>
-            _connection.SendAsync("LeaveWorld");
+        /// <summary>Return to character select. INVOKE, not Send: the server only completes this once
+        /// the character has been saved, and it answers with a refusal reason (in combat) that Send
+        /// would throw away. Returns null when the character actually left.</summary>
+        public Task<string> LeaveWorldAsync() =>
+            _connection.InvokeAsync<string>("LeaveWorld");
 
         public Task RequestResyncAsync() =>
             _connection.SendAsync("RequestResync");

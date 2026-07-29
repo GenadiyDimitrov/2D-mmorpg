@@ -281,8 +281,16 @@ public class GameLoopService : BackgroundService
     private int DisconnectGraceLimit => _graceSeconds * GameConstants.TickRate;
 
     /// <summary>A player is "in combat" for 30s after the last damage dealt/taken.</summary>
+    /// <summary>In combat = traded blows recently, OR something is still ticking damage on you.
+    ///
+    /// The DoT half is what stops combat-logging out of a bleed (owner, 2026-07-29). A Venomweaver
+    /// stacks a DoT, you quit to character select, and the debuff is gone — debuffs are deliberately
+    /// NOT persisted, because a DoT needs a live applier for damage attribution. Gating the EXIT is the
+    /// answer instead of saving the debuff: you may leave once you have escaped, killed them or died
+    /// AND nothing is ticking on you.</summary>
     private bool IsInCombat(Entity e) =>
-        e.LastCombatTick > 0 && _tick - e.LastCombatTick < CombatDecayTicks;
+        (e.LastCombatTick > 0 && _tick - e.LastCombatTick < CombatDecayTicks)
+        || e.Buffs.Any(b => (b.Effect & SkillEffect.AnyDot) != 0);
 
     /// <summary>A connection dropped (network or client close). Decide the character's fate:
     /// auto-hunting or mid-combat → keep offline-farming; otherwise a short link-dead grace so a
@@ -397,14 +405,25 @@ public class GameLoopService : BackgroundService
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player))
         {
-            cmd.Result?.TrySetResult(false);   // nothing to save; never leave the hub waiting
+            cmd.Result?.TrySetResult(null);   // nothing to save; never leave the hub waiting
             return;
         }
+
+        // Character select is an EXIT, so it is gated exactly like /exit — otherwise it is the
+        // combat-log hole: quit to the character screen mid-fight and every debuff on you is gone,
+        // since debuffs are not persisted. IsInCombat also counts an active DoT.
+        if (IsInCombat(player))
+        {
+            SendSystemToEntity(player, "You can't leave while in combat.");
+            cmd.Result?.TrySetResult("You can't leave while in combat.");
+            return;
+        }
+
         _world.ConnectionToEntity.Remove(cmd.ConnectionId);
         _world.EntityToConnection.Remove(player.Id);
         // Signal the hub only once the save has landed, so the character list it fetches next shows
         // this session's level and class rather than the row from login.
-        NormalLeave(player).ContinueWith(_ => cmd.Result?.TrySetResult(true),
+        NormalLeave(player).ContinueWith(_ => cmd.Result?.TrySetResult(null),
                                          TaskScheduler.Default);
     }
 

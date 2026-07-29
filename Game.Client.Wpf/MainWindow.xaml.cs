@@ -510,10 +510,19 @@ public partial class MainWindow : Window
     /// selection, keeping the connection alive so another character can be entered.</summary>
     private async Task ReturnToCharacterSelectAsync()
     {
-        _inGame = false;
-
-        try { await _net.LeaveWorldAsync(); }
+        try
+        {
+            // Refused while in combat (or while a DoT ticks) — stay in the world, or the server would
+            // keep the entity while this window showed the character list.
+            if (await _net.LeaveWorldAsync() is { Length: > 0 } refused)
+            {
+                AddChatLine(SystemList, SystemScroll, refused, Brushes.Gainsboro);
+                return;
+            }
+        }
         catch { /* connection may be down; we still fall back to selection */ }
+
+        _inGame = false;
 
         // Tear down the in-world view.
         foreach (var visual in _visuals.Values)
