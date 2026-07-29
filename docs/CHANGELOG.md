@@ -12,6 +12,31 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-30 — The F sets exist; wire them to the F tier (0.31.3)
+
+Correcting 0.31.2. I dropped the F-tier `SetId`s on the grounds that `ArmorSetCatalog` had no F set —
+it did: the **Newbie sets** WERE the F sets (owner). Light = **+42 Max HP, +2% P.Def**; Robe =
+**+15% cast speed**.
+
+When the newbie kit became the F-grade top, those set ids needed to follow it onto the tiered pieces.
+They didn't, so the bonuses were left **orphaned** — defined, but attached to items that no longer
+exist. Renamed to the ids the tier generator actually emits (`set_light_t1`, `set_robe_t1`,
+`set_acc_t1`) and the SetIds restored.
+
+- **Heavy at F is new.** The newbie kit was fighter-light / mage-robe, so heavy had no set — but the F
+  tier does have a heavy body, so a tank in F would complete nothing. It mirrors light (same numbers,
+  the defensive line). One line to change if heavy should differ.
+- Light's P.Def stays at the existing **2%**, not the 5% first mentioned — owner confirmed 2%.
+- The old `set_newbie_*` ids are kept but unreferenced, so an old save resolves to a name.
+
+**New SmokeTest assertions check the JOIN, not just that both halves exist.** A set is bound to its
+pieces by an id string and nothing else, so a mismatch is a bonus that silently never applies — which
+is exactly the bug 0.31.2 introduced. It now asserts each F body's `SetId` resolves to a definition
+AND that the definition's accessory line matches the id the F accessories carry.
+
+⚠ **S grade (level 80) still has this gap** — its bodies name `set_*_t80` with no definition, so that
+bonus does nothing. That remains the open "scaled set bonuses" item.
+
 ## 2026-07-30 — F grade joins the ladder; "(Lesser)" is gone (0.31.2) — ⚠ DELETE `game.db`
 
 Two owner calls, and they turn out to be the same change.

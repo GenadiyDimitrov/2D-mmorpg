@@ -154,6 +154,27 @@ Check("server pushed the warehouse on login", a.Ware is not null);
     Check("...and it is themed Ferrite (F grade)", fSword?.Name.StartsWith("Ferrite") == true, fSword?.Name);
     Check("F grade has the low rungs too (so the shop has something cheap)",
           ItemCatalog.Get($"sword1h_t{ItemCatalog.FGradeLevel}_common") is not null);
+
+    // A set is joined to its pieces by an id STRING and nothing else, so a mismatch is a bonus that
+    // silently never applies — exactly what happened when the newbie kit became the F tier and its set
+    // ids were left pointing at the retired items. Assert the join, not just that both halves exist.
+    foreach (var (bodyId, setName) in new[]
+             {
+                 (ItemCatalog.NewbieLightBody, "light"),
+                 (ItemCatalog.NewbieRobeBody, "robe"),
+                 ($"heavy_t{ItemCatalog.FGradeLevel}", "heavy"),
+             })
+    {
+        var body = ItemCatalog.Get(bodyId);
+        var set = body is null ? null : ArmorSetCatalog.Get(body.SetId);
+        // No failure-detail on these: Check prints the detail on PASS too, so "PASS … (has no
+        // ArmorSetDef)" reads as a contradiction.
+        Check($"the F {setName} body's set RESOLVES (id matches a definition)", set is not null);
+        // …and the accessory line it names must resolve to the F accessories the pieces carry.
+        var helm = ItemCatalog.Get(ItemCatalog.NewbieHelm);
+        Check($"the F {setName} set's accessory line matches the F helm's set id",
+              set is not null && helm is not null && set.AccessorySetId == helm.SetId);
+    }
 }
 
 Check("server pushed quest markers on login", a.Marks is not null);

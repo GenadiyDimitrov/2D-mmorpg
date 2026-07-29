@@ -36,6 +36,16 @@ public static class ArmorSetCatalog
 {
     // ----- Stable set ids -----
     public const string DarkDominion = "set_dark_dominion";
+    // F grade's sets. The ids MUST match what the tiered generator emits for ItemLevel 1
+    // (ItemCatalog.TieredArmor: "set_{weight}_t{level}" and "set_acc_t{level}") — a set is joined to
+    // its pieces by nothing but this string, so a mismatch is a bonus that silently never applies.
+    public const string FLightSet     = "set_light_t1";
+    public const string FRobeSet      = "set_robe_t1";
+    public const string FHeavySet     = "set_heavy_t1";
+    public const string FAccessorySet = "set_acc_t1";
+
+    // Retired ids — the newbie kit is the F-grade top now, so nothing carries these. Kept only so an
+    // old save referencing one still resolves to a name rather than throwing.
     public const string NewbieLight = "set_newbie_light";
     public const string NewbieRobe  = "set_newbie_robe";
     // SHARED newbie accessory line (boots/gloves/helm) used by BOTH newbie body sets.
@@ -50,10 +60,21 @@ public static class ArmorSetCatalog
                                Evasion: 6, Accuracy: 6)),
         // Newbie sets — the light/robe BODY grants the bonus; both share the same
         // newbie accessory line (boots/gloves/helm). Full set = body + 3 accessories.
-        new ArmorSetDef(NewbieLight, "Newbie Light",
-            new ClassFlatBonus(MaxHp: 42), DefencePct: 0.02f, AccessorySetId: NewbieAccessories),
-        new ArmorSetDef(NewbieRobe, "Newbie Robe",
-            new ClassFlatBonus(), CastSpeedPct: 0.15f, AccessorySetId: NewbieAccessories),
+        // ===== F GRADE ("Ferrite") — the old Newbie sets, now the F tier's own =====
+        // These already existed as the Newbie sets; when the newbie kit became the F-grade top
+        // (0.31.2) their IDS had to follow it onto the tiered pieces, or the bonus would have been
+        // orphaned — defined, but attached to items that no longer exist. Same bonuses, same shape:
+        // light is the defensive line, robe buys cast speed.
+        //
+        new ArmorSetDef(FLightSet, "Ferrite Leathers",
+            new ClassFlatBonus(MaxHp: 42), DefencePct: 0.02f, AccessorySetId: FAccessorySet),
+        new ArmorSetDef(FRobeSet, "Ferrite Robe",
+            new ClassFlatBonus(), CastSpeedPct: 0.15f, AccessorySetId: FAccessorySet),
+        // HEAVY at F had no newbie equivalent (the starter kit was fighter-light / mage-robe), but the
+        // F tier does have a heavy body, so a tank in F would otherwise complete nothing. It mirrors
+        // light — the defensive line, same numbers. One line to change if heavy should differ.
+        new ArmorSetDef(FHeavySet, "Ferrite Bulwark",
+            new ClassFlatBonus(MaxHp: 42), DefencePct: 0.02f, AccessorySetId: FAccessorySet),
     }.Concat(TieredSets()).ToDictionary(s => s.Id);
 
     // ----- Tiered gear sets (docs/data/gear/gear_sets.csv, BASE variant per weight/tier). Each body of a

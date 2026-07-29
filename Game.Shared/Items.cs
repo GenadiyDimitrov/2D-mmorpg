@@ -1305,9 +1305,7 @@ public static class ItemCatalog
                     EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Mythic,
                     Weight: b.W, ArmorSlot: ArmorSlot.Body, DefBonus: b.Def[i], MpBonus: b.Mp[i],
                     ItemLevel: lv[i], NoAttributes: true,
-                    // No SetId at F: set bonuses start at E, and ArmorSetCatalog has no F set. An item
-                    // advertising a set that cannot exist is worse than one that plainly has none.
-                    SetId: lv[i] == FGradeLevel ? "" : $"set_{b.Key}_t{lv[i]}");
+                    SetId: $"set_{b.Key}_t{lv[i]}");
 
         // ---- Body VARIANTS: same base P.Def as the tier's body, alternate SET bonus (dmg/support/
         //      nuke lines from the CSV). They share the tier's accessory line. (Bonuses in ArmorSets.) ----
@@ -1342,7 +1340,7 @@ public static class ItemCatalog
                 yield return new ItemDef($"{a.Key}_t{lv[i]}", $"{GradeTheme(lv[i])} {a.Noun}",
                     EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Mythic,
                     ArmorSlot: a.Slot, DefBonus: a.Def[i], ItemLevel: lv[i], NoAttributes: true,
-                    SetId: lv[i] == FGradeLevel ? "" : $"set_acc_t{lv[i]}");   // shared accessory line per tier
+                    SetId: $"set_acc_t{lv[i]}");   // shared accessory line per tier (all weights)
 
         // ---- Shields (ShieldDefense from the CSV P.Def; block stats extrapolate Wooden→Iron, tunable). ----
         int[] shDef = WithS(40, new[]{ 143, 203, 230, 256, 299 });
@@ -1357,7 +1355,7 @@ public static class ItemCatalog
                 EquipSlot.Shield, TierGrade(lv[i]), ItemRarity.Mythic,
                 BlockChance: shBlock[i], BlockReduction: shReduce[i], ShieldDefense: shDef[i],
                 ShieldCritDefense: shCrit[i], ShieldEvasionPenalty: shEvaPen[i],
-                SetId: lv[i] == FGradeLevel ? "" : $"set_heavy_t{lv[i]}",
+                SetId: $"set_heavy_t{lv[i]}",
                 ItemLevel: lv[i], NoAttributes: true);
 
         // ---- Jewels (M.Def + inherent +MP at 61/76). L2 layout = 1 necklace / 2 rings / 2 earrings. ----
