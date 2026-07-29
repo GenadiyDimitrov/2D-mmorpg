@@ -12,6 +12,36 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-29 — Archer merges into Rogue (0.29.0) — protocol 6, ⚠ DELETE `game.db`
+
+Bow and dagger are ONE class until 40 (owner). You are a Rogue, you learn both the Stab and the Shot
+ladders, and the split moves to the 3rd class. Design: [design/RogueArcherMerge.md](design/RogueArcherMerge.md).
+
+- **Three 2nd classes removed:** Hunter (4, Ork), Warden (10, Elf), Marksman (16, Human). Their ids
+  are left as permanent GAPS — class ids are persisted, so reusing one would silently turn an old save
+  into a different class.
+- **This fixes the hollow archer by deletion.** The old Archer table had exactly two skills
+  (`BattleFury` @20, `PowerShot` @24) where every other archetype had a full 20-36 ladder — the
+  playtest-13 finding. The Rogue table already taught BOTH `PiercingStab` and `PreciseShot` across
+  20/24/28/32/36, so the merge needed no new authoring; the two orphans folded into it.
+- **`Disciplines.Of` is now RACE-AWARE**, which is what lets one 2nd class open into different pairs:
+  Human → **Nullblade** / Sharpshooter · Ork → Venomweaver / **Hunter** · Elf → Phantom / Trapper.
+  Each race keeps one melee and one ranged branch. This matches the race flavours already written in
+  `design/Disciplines.md` ("human evades magic, the elf evades phys, the ork should outlive the
+  target"), so every branch maps onto a kit that was already designed — `Nullblade` is the human
+  Phantom (anti-magic) under its own name, `Hunter` is the ork Sharpshooter.
+- **Two new `Discipline` values, APPENDED** (Nullblade 12, Hunter 13) — never renumbered, they are
+  persisted on characters. `Disciplines.Parent` sends all six rogue-line disciplines to `Rogue`.
+- **The bow behaviours follow the Rogue line now**: the bow-skill range tier (`SkillMath.EffectiveRange`)
+  and the basic-attack range bonus (`Entity.RecomputeDerived`) accept Rogue. `Range >= 300` still
+  separates a bow skill from a dagger one, so a rogue's melee skills are untouched.
+- `Archetype.Archer` stays in the enum (the HP track and those range rules still name it) but no 2nd
+  class carries it.
+
+⚠ **Protocol 6** — the client compiles `ClassCatalog` in, so an old client would still offer Marksman.
+⚠ **Delete `game.db`**: any character holding class 4/10/16 no longer resolves.
+✅ SmokeTest green on a fresh DB.
+
 ## 2026-07-29 — Playtest-13 tier 2 (0.28.96) — protocol 5
 
 - **The server console is readable again.** EF Core logs every statement at Information, and this

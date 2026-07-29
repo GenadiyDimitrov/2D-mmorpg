@@ -93,8 +93,12 @@ public static partial class ClassSkillTables
                 new ClassSkill(RogueArmorMastery, 36, SkillLevel: 5),
                 new ClassSkill(RogueWeaponMastery, 36, SkillLevel: 5),
                 new ClassSkill(PiercingStab, 36, SkillLevel: 5),
-                new ClassSkill(PreciseShot, 36, SkillLevel: 5));
-            ClassSkills.Register(race, BaseClass.Fighter, Archetype.Archer,
+                new ClassSkill(PreciseShot, 36, SkillLevel: 5),
+                // The ARCHER MERGE (2026-07-29) folded the old Archer 2nd class in here. Its whole
+                // table was these two lines — which is why archers were hollow — while the Rogue block
+                // above already taught BOTH the Stab (dagger) and Shot (bow) ladders. So the merge is
+                // this: the rogue keeps both weapons to 40, and the bow/dagger split becomes the 3rd
+                // class. Nothing else needed authoring.
                 new ClassSkill(BattleFury, 20), new ClassSkill(PowerShot, 24));
 
             // Nuker (CSV nuker 20-35): Elemental Bolt (replaces Magic Bolt), Quick Bolt,

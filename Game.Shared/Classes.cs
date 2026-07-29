@@ -30,27 +30,41 @@ public record SecondClassDef(int Id, string Name, Race Race, BaseClass Base, Arc
 
 public static class ClassCatalog
 {
+    // ===== THE ARCHER MERGE (owner, 2026-07-29) ==================================================
+    // Archer is no longer a 2ND class. Bow and dagger are ONE class until 40 — you are a Rogue, you
+    // learn both the Stab and the Shot ladders, and the split happens at the 3rd class (see
+    // Disciplines.Of, which is race-aware for exactly this).
+    //
+    // Ids 4 (Hunter/Ork), 10 (Warden/Elf) and 16 (Marksman/Human) are therefore GONE. They are left
+    // as gaps, never reused: class ids are persisted on characters, so recycling one would silently
+    // turn an old save into a different class. `Archetype.Archer` stays in the enum — the bow range
+    // tier and the HP track still refer to it — but no 2nd class carries it any more.
+    //
+    // This also closed the bug that started it: Archer's 2nd-class table only ever had two skills
+    // (BattleFury @20, PowerShot @24) while every other archetype had a full 20-36 ladder, so archers
+    // were hollow. The Rogue table already taught BOTH weapons, so the merge fixed it by deletion.
     private static readonly Dictionary<int, SecondClassDef> All = new SecondClassDef[]
     {
         // Ork / Demon
         new(1,  "Beast",       Race.Ork,   BaseClass.Fighter, Archetype.Tank),
         new(2,  "Warrior",     Race.Ork,   BaseClass.Fighter, Archetype.Warrior),
         new(3,  "Stalker",     Race.Ork,   BaseClass.Fighter, Archetype.Rogue),
-        new(4,  "Hunter",      Race.Ork,   BaseClass.Fighter, Archetype.Archer),
+        // (id 4 was Hunter, the Ork archer — see the ARCHER MERGE note below. The name now belongs to
+        //  the Ork's ranged 3rd-class discipline.)
         new(5,  "Shaman",      Race.Ork,   BaseClass.Mage,    Archetype.Healer),
         new(6,  "Witch",       Race.Ork,   BaseClass.Mage,    Archetype.Nuker),
         // Elf / Angel
         new(7,  "Templar",     Race.Elf,   BaseClass.Fighter, Archetype.Tank),
         new(8,  "Sentinel",    Race.Elf,   BaseClass.Fighter, Archetype.Warrior),
         new(9,  "Shadowblade", Race.Elf,   BaseClass.Fighter, Archetype.Rogue),
-        new(10, "Warden",      Race.Elf,   BaseClass.Fighter, Archetype.Archer),
+        // (id 10 was Warden, the Elf archer — merged into Shadowblade; see the ARCHER MERGE note.)
         new(11, "Priest",      Race.Elf,   BaseClass.Mage,    Archetype.Healer),
         new(12, "Inquisitor",  Race.Elf,   BaseClass.Mage,    Archetype.Nuker),
         // Human
         new(13, "Knight",      Race.Human, BaseClass.Fighter, Archetype.Tank),
         new(14, "Champion",    Race.Human, BaseClass.Fighter, Archetype.Warrior),
         new(15, "Assassin",    Race.Human, BaseClass.Fighter, Archetype.Rogue),
-        new(16, "Marksman",    Race.Human, BaseClass.Fighter, Archetype.Archer),
+        // (id 16 was Marksman, the Human archer — merged into Assassin; see the ARCHER MERGE note.)
         new(17, "Cleric",      Race.Human, BaseClass.Mage,    Archetype.Healer,
             Bonus: new ClassFlatBonus(MaxMp: 60, MaxHp: 30, Defence: 10)),
         new(18, "Sorcerer",    Race.Human, BaseClass.Mage,    Archetype.Nuker),

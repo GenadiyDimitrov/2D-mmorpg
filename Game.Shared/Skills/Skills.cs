@@ -514,9 +514,13 @@ public static class SkillMath
         if (def.Range <= 0)
             return basicAttackRange;
 
-        // Bow skills: archer ranged physical attacks still scale by bow tier.
+        // Bow skills: ranged physical attacks still scale by bow tier. ROGUE counts since the archer
+        // merge — the rogue line owns the bow now, from level 20 all the way through Sharpshooter /
+        // Hunter / Trapper. Archer is kept for any character still carrying the retired archetype.
+        // The `Range >= 300` test is what separates a bow skill from a dagger one, so a rogue's melee
+        // skills are unaffected by being in the same class.
         bool isBowSkill = def.Effect.HasFlag(SkillEffect.PhysicalDamage)
-            && archetype is Archetype.Archer && def.Range >= 300;
+            && archetype is Archetype.Archer or Archetype.Rogue && def.Range >= 300;
         if (isBowSkill)
             return RangeTier(level) switch { 3 => 900f, 2 => 600f, _ => 350f };
 

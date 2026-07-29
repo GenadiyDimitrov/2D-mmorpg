@@ -25,18 +25,42 @@ public enum Discipline
     Warchanter = 9,   // buffer: stat buffs + heal-over-time (farm-oriented)
     // Nuker
     Magus = 10,       // single-target glass cannon
-    Tempest = 11      // AoE damage + control
+    Tempest = 11,     // AoE damage + control
+    // Rogue, continued — the ARCHER MERGE (2026-07-29). Bow and dagger are one class to 40, and the
+    // split at 40 is RACE-BASED, so the rogue line needs two more disciplines. APPENDED, never
+    // renumbered: these values are persisted on characters.
+    Nullblade = 12,   // HUMAN melee rogue — anti-magic dagger (stealth + bleed + crit)
+    Hunter = 13       // ORK ranged rogue — the ork's own bow kit (damage focus, party atk buff)
 }
 
 /// <summary>Maps between archetypes and their two disciplines.</summary>
 public static class Disciplines
 {
-    /// <summary>The two disciplines an archetype splits into (branch A, branch B).</summary>
-    public static (Discipline A, Discipline B) Of(Archetype a) => a switch
+    /// <summary>The two disciplines an archetype splits into (branch A, branch B).
+    ///
+    /// RACE-AWARE, because of the archer merge (owner, 2026-07-29): the ROGUE now covers both dagger
+    /// and bow to level 40, and which pair of specialisations it opens into depends on the race —
+    /// each race gets one melee and one ranged branch, with its own identity:
+    ///
+    ///   Human — Nullblade (anti-magic dagger)      / Sharpshooter (accuracy, single-target)
+    ///   Ork   — Venomweaver (venom DoT dagger)     / Hunter (ork bow kit)
+    ///   Elf   — Phantom (physical-evasion dagger)  / Trapper (utility bow)
+    ///
+    /// That mirrors the race flavours already written into docs/design/Disciplines.md — "human evades
+    /// magic, the elf evades phys, the ork should outlive the target" — so no kit had to be invented.
+    /// Every other archetype ignores race and returns the same pair for everyone.</summary>
+    public static (Discipline A, Discipline B) Of(Race race, Archetype a) => a switch
     {
         Archetype.Tank    => (Discipline.Bulwark, Discipline.Vanguard),
         Archetype.Warrior => (Discipline.Ravager, Discipline.Warlord),
-        Archetype.Rogue   => (Discipline.Phantom, Discipline.Venomweaver),
+        Archetype.Rogue   => race switch
+        {
+            Race.Ork => (Discipline.Venomweaver, Discipline.Hunter),
+            Race.Elf => (Discipline.Phantom, Discipline.Trapper),
+            _        => (Discipline.Nullblade, Discipline.Sharpshooter),   // Human (and the God dummy)
+        },
+        // No 2nd class carries Archer any more (see ClassCatalog's ARCHER MERGE note); kept so an old
+        // persisted value still resolves to something sane rather than falling through to Bulwark.
         Archetype.Archer  => (Discipline.Sharpshooter, Discipline.Trapper),
         Archetype.Healer  => (Discipline.Lightbringer, Discipline.Warchanter),
         Archetype.Nuker   => (Discipline.Magus, Discipline.Tempest),
@@ -60,6 +84,8 @@ public static class Disciplines
         Discipline.Warchanter   => "Warchanter — the buffer. Stat buffs and heal-over-time; built to empower allies and farm.",
         Discipline.Magus        => "Magus — single-target glass cannon. The highest burst spells, but very fragile.",
         Discipline.Tempest      => "Tempest — area spells and control. Devastates groups and locks them down.",
+        Discipline.Nullblade    => "Nullblade — the anti-magic dagger. Strikes from stealth and leaves foes' spells failing.",
+        Discipline.Hunter       => "Hunter — the ork bow. Raw ranged damage, and a war cry that sharpens the whole party.",
         _ => ""
     };
 
@@ -68,8 +94,11 @@ public static class Disciplines
     {
         Discipline.Bulwark or Discipline.Vanguard => Archetype.Tank,
         Discipline.Ravager or Discipline.Warlord => Archetype.Warrior,
-        Discipline.Phantom or Discipline.Venomweaver => Archetype.Rogue,
-        Discipline.Sharpshooter or Discipline.Trapper => Archetype.Archer,
+        // Every rogue-line discipline — melee AND ranged — parents to Rogue now, because Rogue is the
+        // 2nd class all six evolve from. This is what makes the 2nd-class skill lookup work: the
+        // discipline is asked for its parent to find the class table it continues.
+        Discipline.Phantom or Discipline.Venomweaver or Discipline.Nullblade => Archetype.Rogue,
+        Discipline.Sharpshooter or Discipline.Trapper or Discipline.Hunter => Archetype.Rogue,
         Discipline.Lightbringer or Discipline.Warchanter => Archetype.Healer,
         Discipline.Magus or Discipline.Tempest => Archetype.Nuker,
         _ => Archetype.Tank,
@@ -105,7 +134,7 @@ public static class ThirdClassCatalog
         var d = new Dictionary<int, ThirdClassDef>();
         foreach (var sc in ClassCatalog.Playable)
         {
-            var (a, b) = Disciplines.Of(sc.Archetype);
+            var (a, b) = Disciplines.Of(sc.Race, sc.Archetype);
             int baseId = 100 + (sc.Id - 1) * 2;   // 2nd id 1 -> 101/102 ... 18 -> 135/136
             d[baseId + 1] = new ThirdClassDef(baseId + 1, a.ToString(), sc.Race, sc.Id, a, FlatFor(a));
             d[baseId + 2] = new ThirdClassDef(baseId + 2, b.ToString(), sc.Race, sc.Id, b, FlatFor(b));

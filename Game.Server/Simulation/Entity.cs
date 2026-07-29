@@ -1308,9 +1308,11 @@ public class Entity
             if (def.WeaponRange > 0)
             {
                 float range = def.WeaponRange;
-                // Archer bow range grows by class-change tier (passives):
+                // Bow range grows by class-change tier (passives):
                 //   tier 1 (1-20): base 400; tier 2 (21-40): +200; tier 3 (40+): +500.
-                if (Archetype == Game.Shared.Archetype.Archer)
+                // The ROGUE line owns the bow since the archer merge, so it earns the tier bonus; a
+                // mage who picks a bow up still shoots at the flat base range.
+                if (Archetype is Game.Shared.Archetype.Archer or Game.Shared.Archetype.Rogue)
                 {
                     int tier = SkillMath.RangeTier(Level);
                     float bonus = tier >= 3 ? 500f : tier >= 2 ? 200f : 0f;
