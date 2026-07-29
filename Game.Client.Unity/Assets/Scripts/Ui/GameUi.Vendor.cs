@@ -141,7 +141,11 @@ namespace Game.Client
 
                 // Quality reads off the COLOUR now, not the name — the shop stocks the same piece at
                 // Common/Uncommon/Rare, so without it three identical-looking rows differ only in price.
-                string head = Coloured(name, def.Rarity) + "   " + unit.ToString("N0") + " " + GameConstants.CurrencyName;
+                // ⚠ Only colour it when you can AFFORD it. TMP's <color> markup overrides the label's
+                // own colour for that span, so a coloured name ignored the dimming that says "you can't
+                // buy this" — the quality cue was quietly cancelling the affordability cue.
+                string head = (afford ? Coloured(name, def.Rarity) : name)
+                              + "   " + unit.ToString("N0") + " " + GameConstants.CurrencyName;
                 // DETAIL view adds a second line saying WHAT the thing is (owner: "i hve no idea which
                 // is which"). Compact view is the old one-line row, for scrolling a long ladder fast.
                 string label = _vendorDetailed ? head + "\n<size=12><color=#9AA3AD>" + WareSummary(def) + "</color></size>"

@@ -12,6 +12,29 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-30 — Rarity colour in every item list (0.32.1)
+
+The **bag** was the one list still painting every row the same grey — the list you look at most, and
+the one where it matters most now that a piece exists at six qualities under ONE name. Two rows of
+"Electrum Blade" were indistinguishable.
+
+Coloured now: **bag rows** (`RefreshBag`), **trade offers**, **buy-back rows**, and **box selection
+options**. Together with the vendor, warehouse, item details and worn squares from 0.29.1, every place
+an item name is drawn carries its quality.
+
+- An **equipped** bag row stays green. "This is what you are wearing" is the more urgent fact while
+  scanning a bag, and the `*` prefix alone is easy to miss.
+- Trade and box-selection get it deliberately: both are commitments made without inspecting the item,
+  and box selection is irreversible.
+
+🔴 **Fixed a conflict I introduced in 0.29.1.** TMP's `<color>` markup **overrides the label's own
+colour** for that span, so colouring a vendor row's name cancelled the dimming that means "you can't
+afford this" — the quality cue was quietly killing the affordability cue. The vendor and buy-back lists
+now colour the name only when affordable, and leave it dim when not.
+
+✅ Unity-compile-verified (headless APK build, zero `error CS`) — which also covers every client edit
+since 0.30.1: quest markers, the tracker, the vendor detail view and the clipped-window fixes.
+
 ## 2026-07-30 — A set needs FOUR pieces of the same quality (0.32.0) — ⚠ DELETE `game.db`
 
 The owner asked whether a Mythic set could be completed by an Epic helm, Legendary gloves and Epic

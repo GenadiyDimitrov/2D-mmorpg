@@ -1271,8 +1271,17 @@ namespace Game.Client
                 if (item.Quantity > 1) name += "   x" + item.Quantity;
                 if (item.Equipped) name = "* " + name;
 
+                // QUALITY COLOUR on the bag row. The vendor, warehouse, item details and worn squares
+                // all colour by rarity; the bag — the list you look at most — was the one place still
+                // painting everything the same grey. That matters more now than it used to: the same
+                // piece exists at six qualities under ONE name, so without the colour two rows of
+                // "Electrum Blade" are indistinguishable.
+                //
+                // An EQUIPPED row stays green: "this is what you are wearing" is the more urgent fact
+                // while scanning a bag, and the "*" prefix alone is easy to miss.
                 var label = UiKit.Label(row.transform, name, 17f,
-                                        item.Equipped ? UiKit.Good : UiKit.Text,
+                                        item.Equipped ? UiKit.Good
+                                                      : def != null ? RarityColour(def.Rarity) : UiKit.Text,
                                         TextAlignmentOptions.Left);
                 UiKit.Stretch(UiKit.Rect(label.gameObject), 12f, 0f, 224f, 0f);
 

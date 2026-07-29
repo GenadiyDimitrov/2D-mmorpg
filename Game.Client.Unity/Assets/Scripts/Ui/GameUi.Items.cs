@@ -139,7 +139,12 @@ namespace Game.Client
             for (int i = 0; i < offer.Options.Length; i++)
             {
                 string itemId = offer.Options[i].ItemId;
-                opts[i] = (offer.Options[i].Name, () => Boot.SelectBoxItems(boxId, new[] { itemId }));
+                // Quality colour here too: a selection box can offer the same piece at different rungs,
+                // and this is a one-shot irreversible choice.
+                var optDef = ItemCatalog.Get(itemId);
+                string optName = optDef != null
+                    ? Coloured(offer.Options[i].Name, optDef.Rarity) : offer.Options[i].Name;
+                opts[i] = (optName, () => Boot.SelectBoxItems(boxId, new[] { itemId }));
             }
             ShowSelection(offer.BoxName, opts);
         }

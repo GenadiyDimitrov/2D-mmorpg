@@ -198,10 +198,13 @@ namespace Game.Client
 
         private static string TradeItemLabel(InventoryItemDto item)
         {
-            string name = ItemCatalog.Get(item.DefId)?.Name ?? item.DefId;
+            var def = ItemCatalog.Get(item.DefId);
+            string name = def?.Name ?? item.DefId;
             if (item.Enchant > 0) name += " +" + item.Enchant;
             if (item.Quantity > 1) name += "  x" + item.Quantity;
-            return name;
+            // Quality colour matters MOST here: a trade is the one place you commit to an item you
+            // cannot inspect, and the same piece exists at six qualities under one name.
+            return def != null ? Coloured(name, def.Rarity) : name;
         }
 
         private void FillTradeBag()

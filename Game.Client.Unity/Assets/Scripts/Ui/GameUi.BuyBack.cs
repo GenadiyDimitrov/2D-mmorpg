@@ -69,7 +69,13 @@ namespace Game.Client
             {
                 long cost = e.UnitPrice * e.Quantity;
                 bool afford = Boot.Gold >= cost;
-                string label = e.Name + (e.Quantity > 1 ? "   x" + e.Quantity : "")
+                // Quality colour, like every other item list — the name alone no longer says which
+                // rung of the ladder you sold.
+                // Colour only when affordable — TMP's <color> markup wins over the label colour, so a
+                // coloured name would cancel the dimming that marks a row you can't pay for.
+                var def = ItemCatalog.Get(e.DefId);
+                string shown = def != null && afford ? Coloured(e.Name, def.Rarity) : e.Name;
+                string label = shown + (e.Quantity > 1 ? "   x" + e.Quantity : "")
                              + "   " + cost.ToString("N0") + " " + GameConstants.CurrencyName;
                 int idx = e.Index;
                 var button = UiKit.TextButton(_buyBackList, label, () => Boot.BuyBackItem(idx), 16f);
