@@ -12,10 +12,19 @@ using Game.Shared;
 //   2. A mage does 300-400 damage per nuke to a high-level tank.
 //
 // Run:  dotnet run --project tools/BalanceMatrix
+//
+// ⚠ WHAT THIS CANNOT TELL YOU YET (owner, 2026-07-29). The 3rd-class DISCIPLINE kits are
+// PLACEHOLDERS — they re-use existing skills with a display name — and there is no 4th class at all.
+// So every row from 40 up is measuring a character fighting with its SECOND-class kit, which is not
+// what an endgame character will actually have. The gear, stat and mob curves below are real; the
+// LEVEL 61/76/85 damage columns are a floor, not a forecast. Treat them as "this is the worst the
+// endgame can be" and re-run the moment the discipline CSVs land.
 
 int[] levels = { 20, 40, 52, 61, 76, 85 };
 
 Console.WriteLine();
+Console.WriteLine("!! 3rd/4th-class kits are placeholders — levels 61+ measure a 2nd-class kit.");
+Console.WriteLine("!! Endgame damage below is a FLOOR, not a forecast. See the header comment.");
 Console.WriteLine("=== MOB CURVE ===");
 Console.WriteLine($"{"Lvl",4} {"HP",8} {"P.Def",7} {"M.Def",7} {"P.Atk",7} {"M.Atk",7}");
 foreach (int L in Enumerable.Range(1, 85).Where(l => l == 1 || l % 10 == 0 || l == 85))
@@ -47,7 +56,9 @@ foreach (int L in levels)
 
 Console.WriteLine();
 Console.WriteLine("=== TANK / FIGHTER (Human Fighter, best gear for tier) ===");
-Console.WriteLine($"{"Lvl",4} {"P.Atk",7} {"MaxHP",7} {"P.Def",7} {"M.Def",7} | {"basic",7} {"mobHP",7} {"hits",6}");
+Console.WriteLine("  'basic' = autoattack; 'skill' = best physical skill. Compare SKILL against the mage's");
+Console.WriteLine("  nuke — the basic column is not the fighter's damage, it is its filler.");
+Console.WriteLine($"{"Lvl",4} {"P.Atk",7} {"MaxHP",7} {"P.Def",7} {"M.Def",7} | {"basic",7} {"skill",7} {"mobHP",7} {"hits",6}");
 
 foreach (int L in levels)
 {
@@ -56,10 +67,11 @@ foreach (int L in levels)
     int mobPDef = MobBaseStats.PDef(L);
     int mobHp = MobBaseStats.Hp(L);
     int hit = StatCalculator.PhysicalDamage(pAtk, 0, mobPDef, L);
-    float hits = hit > 0 ? mobHp / (float)hit : 0;
+    int skillHit = StatCalculator.PhysicalDamage(pAtk, TopPhysSkillPower(f), mobPDef, L);
+    float hits = skillHit > 0 ? mobHp / (float)skillHit : 0;
 
     Console.WriteLine($"{L,4} {pAtk,7} {f.MaxHp,7} {(int)f.EffectiveDefence,7} {(int)f.EffectiveMagicDefence,7} | " +
-                      $"{hit,7} {mobHp,7} {hits,6:F1}");
+                      $"{hit,7} {skillHit,7} {mobHp,7} {hits,6:F1}");
 }
 Console.WriteLine();
 Console.WriteLine("=== UNARMED / NAKED (no weapon, no armor) — should be FEEBLE ===");
@@ -271,6 +283,28 @@ static int TopNukePower(Entity e)
     return best;
 }
 
+/// <summary>The strongest PHYSICAL-damage skill the character knows, mirroring TopNukePower.
+///
+/// Without this the fighter row was measured on a power-0 BASIC ATTACK while the mage row used its
+/// best nuke — so the two columns were never comparable, and the "fighter needs 24.6 hits vs the
+/// mage's 3.8 casts" reading was an artefact of comparing an autoattack to a spell. A fighter's
+/// damage comes from its skills exactly as a mage's does.</summary>
+static int TopPhysSkillPower(Entity e)
+{
+    int best = 0;
+    string bestName = "-";
+    foreach (var (id, lvl) in e.LearnedSkills)
+    {
+        var def = SkillCatalog.Get(id);
+        if (def is null) continue;
+        if ((def.Effect & SkillEffect.PhysicalDamage) == 0) continue;
+        if (!string.IsNullOrEmpty(def.ConsumableId)) continue;   // reagent ultimates aren't the baseline
+        if (def.PowerAt(lvl) > best) { best = def.PowerAt(lvl); bestName = $"{def.Name} L{lvl}"; }
+    }
+    Console.Error.WriteLine($"   [lvl {e.Level}] top phys skill = {bestName} ({best})");
+    return best;
+}
+
 // A character at `level` with every skill their class table offers by then, wearing the
 // full best-for-tier gear line (weapon + body + accessories + 5 jewels + shield for fighters).
 /// <param name="quality">Gear QUALITY suffix: null/"epic" = the authored tier piece, or "mythic" /
@@ -288,11 +322,28 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
     if (level >= 20) e.SecondClass = cls == BaseClass.Mage ? 18 : 13;
 
     // Every skill the class table teaches by this level, at the highest level learnable.
+    //
+    // The BASE-CLASS kit is added separately, because Cumulative does NOT return it once an archetype
+    // is set: the base Fighter/Mage skills are registered under archetype=null and the lookup keys on
+    // (race, class, archetype, discipline), so asking as a Tank finds only the Tank list. A REAL
+    // character keeps what it learned before level 20 — LearnedSkills is persisted — so a synthetic
+    // one built from Cumulative alone was a fighter with NO attack skill at all, which is why the
+    // fighter row used to be measured on autoattacks.
+    foreach (var cs in ClassSkills.ForClass(race, cls, null, null))
+    {
+        if (cs.LearnLevel > level) continue;
+        e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
+    }
     foreach (var cs in ClassSkills.Cumulative(race, cls, e.Archetype, e.Discipline))
     {
         if (cs.LearnLevel > level) continue;
         e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
     }
+    // Drop anything a later skill supersedes (Smash replaces Strike, etc.) so the "best skill" is the
+    // one actually usable, not a retired ladder rung.
+    foreach (var id in e.LearnedSkills.Keys.ToList())
+        if (SkillCatalog.Get(id)?.Replaces is { } replaced)
+            foreach (var r in replaced) e.LearnedSkills.Remove(r);
 
     // Shots (2026-07-24): the old training passive is gone — soul/spiritshots are now held RUNE items that
     // grant this buff. Apply it directly here so the matrix reflects the EXPECTED play state (shots ON).
