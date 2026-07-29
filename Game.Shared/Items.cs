@@ -433,24 +433,31 @@ public static class ItemCatalog
     /// <summary>Training ARMOR choice — pick leather (fighter) or robe (mage). Given at creation.</summary>
     public const string BoxTrainingArmorChoice = "box_training_armor_choice";
 
-    // Newbie STARTER weapons — now the level-10 QUEST reward, no longer given at creation.
-    // Untradeable, sold for 0, can't be purchased (see the "newbie" item flags below).
-    public const string NewbieSword1H = "newbie_sword_1h";
-    public const string NewbieDaggers = "newbie_daggers";
-    public const string NewbieSword2H = "newbie_sword_2h";
-    public const string NewbieBow     = "newbie_bow";
-    public const string NewbieStaff   = "newbie_staff";
-    // Newbie armor (two sets: Light for fighters, Robe for mages) + jewels. No random
-    // attributes, untradeable, sell 0, buy -1. Full set = body + helm + gloves + boots.
-    public const string NewbieLightBody   = "newbie_light_body";
-    public const string NewbieRobeBody    = "newbie_robe_body";
+    // ===== THE NEWBIE KIT *IS* THE F-GRADE TOP (owner, 2026-07-30) ============================
+    // "Make the newbie gear the Ferrite Mythic — it's the top for its grade."
+    //
+    // These were a parallel item line sitting beside the real ladder at the same levels. They are now
+    // ALIASES onto the F tier's MYTHIC rung — the authored F piece, themed "Ferrite" by GradeTheme — so
+    // the level-10 quest hands out the best F-grade gear there is instead of a separate set that has to
+    // be kept in step with it by hand. The F tier's Mythic numbers were authored FROM these, so nothing
+    // got stronger or weaker in the swap; there is simply one item where there were two.
+    //
+    // The names change with it (Newbie Sword → Ferrite Blade), which is the point: it is a real rung on
+    // the ladder, not a tutorial prop.
+    public const string NewbieSword1H = "sword1h_t1";
+    public const string NewbieDaggers = "duals_t1";
+    public const string NewbieSword2H = "sword2h_t1";
+    public const string NewbieBow     = "bow_t1";
+    public const string NewbieStaff   = "staff_t1";
+    public const string NewbieLightBody   = "light_t1";
+    public const string NewbieRobeBody    = "robe_t1";
     // SHARED accessories — used by BOTH the light and robe newbie sets.
-    public const string NewbieHelm        = "newbie_helm";
-    public const string NewbieGloves      = "newbie_gloves";
-    public const string NewbieBoots       = "newbie_boots";
-    public const string NewbieEarring     = "newbie_earring";
-    public const string NewbieRing        = "newbie_ring";
-    public const string NewbieNecklace    = "newbie_necklace";
+    public const string NewbieHelm        = "helm_t1";
+    public const string NewbieGloves      = "gloves_t1";
+    public const string NewbieBoots       = "boots_t1";
+    public const string NewbieEarring     = "earring_t1";
+    public const string NewbieRing        = "ring_t1";
+    public const string NewbieNecklace    = "necklace_t1";
     // Shot RUNES + their sealed boxes (open → rune, wall-clock expiry set on open).
     public const string SoulshotRune      = "rune_soulshot";
     public const string SpiritshotRune    = "rune_spiritshot";
@@ -811,21 +818,6 @@ public static class ItemCatalog
         // ONE power number + channel factors (see ItemDef). Fighter weapons: power = P.Atk,
         // P×1.0 / M×0.6. The staff: power = its M.Atk, M×1.0 / P×0.6 (its P.Atk is nerfed —
         // a mage should not swing like a fighter now that the archetype multiplier is gone).
-        list.Add(new ItemDef(NewbieSword1H, "Newbie Sword", EquipSlot.Weapon,
-            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Sword,
-            AtkBonus: 24, PAtkFactor: 1.0f, MAtkFactor: 0.6f, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
-        list.Add(new ItemDef(NewbieDaggers, "Newbie Daggers", EquipSlot.Weapon,
-            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Dual,
-            AtkBonus: 21, PAtkFactor: 1.0f, MAtkFactor: 0.6f, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
-        list.Add(new ItemDef(NewbieSword2H, "Newbie Greatsword", EquipSlot.Weapon,
-            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.TwoHandedSword,
-            AtkBonus: 29, PAtkFactor: 1.0f, MAtkFactor: 0.6f, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
-        list.Add(new ItemDef(NewbieBow, "Newbie Bow", EquipSlot.Weapon,
-            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Bow,
-            AtkBonus: 49, PAtkFactor: 1.0f, MAtkFactor: 0.6f, WeaponRange: 400, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
-        list.Add(new ItemDef(NewbieStaff, "Newbie Staff", EquipSlot.Weapon,
-            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.TwoHandedBlunt,
-            AtkBonus: 24, PAtkFactor: 0.6f, MAtkFactor: 1.0f, MpBonus: 20, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
 
         // ===================================================================
         //  TRAINING tier — levels 1-10, the weakest gear in the game (owner). Roughly a QUARTER of the
@@ -918,32 +910,6 @@ public static class ItemCatalog
         //  Full set = body + helm + gloves + boots (set bonus from ArmorSetCatalog).
         // ===================================================================
         // Bodies — each grants its set's bonus (light/robe). They SHARE the accessories below.
-        list.Add(new ItemDef(NewbieLightBody, "Newbie Light Armor", EquipSlot.Armor, ItemGrade.F, ItemRarity.Common,
-            Weight: ArmorWeight.Light, ArmorSlot: ArmorSlot.Body, DefBonus: 86, SetId: ArmorSetCatalog.NewbieLight,
-            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
-        list.Add(new ItemDef(NewbieRobeBody, "Newbie Robe Armor", EquipSlot.Armor, ItemGrade.F, ItemRarity.Common,
-            Weight: ArmorWeight.Robe, ArmorSlot: ArmorSlot.Body, DefBonus: 49, MpBonus: 109, SetId: ArmorSetCatalog.NewbieRobe,
-            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
-
-        // SHARED accessories — complete EITHER newbie set (SetId = NewbieAccessories).
-        list.Add(new ItemDef(NewbieHelm, "Newbie Helmet", EquipSlot.Armor, ItemGrade.F, ItemRarity.Common,
-            ArmorSlot: ArmorSlot.Head, DefBonus: 21, SetId: ArmorSetCatalog.NewbieAccessories,
-            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
-        list.Add(new ItemDef(NewbieGloves, "Newbie Gloves", EquipSlot.Armor, ItemGrade.F, ItemRarity.Common,
-            ArmorSlot: ArmorSlot.Gloves, DefBonus: 15, SetId: ArmorSetCatalog.NewbieAccessories,
-            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
-        list.Add(new ItemDef(NewbieBoots, "Newbie Boots", EquipSlot.Armor, ItemGrade.F, ItemRarity.Common,
-            ArmorSlot: ArmorSlot.Boots, DefBonus: 15, SetId: ArmorSetCatalog.NewbieAccessories,
-            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
-
-        // Jewels (earring/ring give M.Def; necklace gives P.Def). Earrings/rings handed
-        // out in pairs (see the jewels box). One jewel slot equips for now (expandable).
-        list.Add(new ItemDef(NewbieEarring, "Newbie Earring", EquipSlot.Jewel, ItemGrade.F, ItemRarity.Common,
-            MDefBonus: 13, JewelType: JewelType.Earring, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
-        list.Add(new ItemDef(NewbieRing, "Newbie Ring", EquipSlot.Jewel, ItemGrade.F, ItemRarity.Common,
-            MDefBonus: 9, JewelType: JewelType.Ring, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
-        list.Add(new ItemDef(NewbieNecklace, "Newbie Necklace", EquipSlot.Jewel, ItemGrade.F, ItemRarity.Common,
-            DefBonus: 18, JewelType: JewelType.Necklace, Tradable: false, SellPriceOverride: 0, BuyPriceOverride: -1, NoAttributes: true));
 
         // ===================================================================
         //  JEWELS — the ONLY source of magic defence (beyond the level base).
@@ -1040,7 +1006,7 @@ public static class ItemCatalog
         // The tiered gear pieces (Epic rarity) = the craft/boss SET tier. From each base piece we
         // also generate weaker Common/Uncommon/Rare DROP versions (scaled stats, no set), so mobs
         // can drop usable-now gear while the full set stays a crafting/boss goal.
-        var tieredGear = TieredWeapons().Concat(TieredArmor()).Concat(LowTierFillers()).ToList();
+        var tieredGear = TieredWeapons().Concat(TieredArmor()).ToList();
         list.AddRange(tieredGear);
         list.AddRange(ScaledDropItems(tieredGear));
         list.AddRange(Materials());
@@ -1143,16 +1109,6 @@ public static class ItemCatalog
 
     /// <summary>True for a plain base-tier id like "heavy_t52" (the part after the last "_t" is all
     /// digits) — excludes alternate variants like "heavy_t52_dmg".</summary>
-    /// <summary>True for the "(Lesser)" vendor-line ids, whose level carries an "lo" suffix
-    /// (e.g. "sword1h_t20lo").</summary>
-    private static bool IsLowTierId(string id)
-    {
-        int i = id.LastIndexOf("_t", StringComparison.Ordinal);
-        if (i < 0) return false;
-        string tail = id.Substring(i + 2);
-        return tail.EndsWith("lo", StringComparison.Ordinal);
-    }
-
     private static bool IsBaseTier(string id)
     {
         int i = id.LastIndexOf("_t", StringComparison.Ordinal);
@@ -1190,13 +1146,6 @@ public static class ItemCatalog
         {
             if (d.Slot is not (EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel)) continue;
             if (!IsBaseTier(d.Id)) continue;   // only plain base-tier pieces spawn drop copies
-            // The "(Lesser)" vendor line does NOT spawn quality copies. It used to, which is what made
-            // the ladders interleave: a Lesser E bow (129) landed between the top line's Common (124)
-            // and Uncommon (148), so "lesser" read like a quality when it is a different ITEM. One
-            // ladder per piece — the qualities below are it. (The Lesser line itself is still the
-            // cheap F/E/D vendor stock; folding it away needs an F tier on the main line first.)
-            if (d.Id.Contains("lo", StringComparison.Ordinal) && IsLowTierId(d.Id)) continue;
-
             foreach (var (rarity, scale) in DropTiers)
             {
                 // S grade is TOP HALF ONLY — Epic / Legendary / Mythic. Below Epic a piece has no set
@@ -1258,7 +1207,12 @@ public static class ItemCatalog
 
     // Enum grade for pricing/sorting only (the enum has no C/D). ItemLevel is the real tier.
     private static ItemGrade TierGrade(int level) =>
-        level >= 61 ? ItemGrade.A : level >= 40 ? ItemGrade.B : ItemGrade.E;
+        level >= 61 ? ItemGrade.A : level >= 40 ? ItemGrade.B : level >= 20 ? ItemGrade.E : ItemGrade.F;
+
+    /// <summary>The F tier's level. F-grade is now part of the ONE ladder rather than a separate
+    /// "(Lesser)" line, and its MYTHIC rung is deliberately the old Newbie gear's power — the newbie
+    /// kit IS the top of F grade (owner, 2026-07-30), not a parallel item set beside it.</summary>
+    public const int FGradeLevel = 1;
 
     /// <summary>The level-tier weapons from docs/data/gear/gear_sets.csv — id "<key>_t<level>", base
     /// P.Atk/M.Atk straight from the CSV (the two numbers), bow attack-speed variants, and the
@@ -1269,22 +1223,24 @@ public static class ItemCatalog
         var weapons = new (string Key, string Noun, WeaponType Type, bool Magic, float Range,
             (int L, int P, int M, int As)[] Rows)[]
         {
+            // The FIRST row of each is the F tier (level 1), whose Mythic rung is the old Newbie gear's
+            // power — so the newbie kit is the top of F grade instead of a parallel item line.
             ("sword1h", "Blade",      WeaponType.Sword,          false, 0,
-                new[] { (20,92,54,0),(40,156,83,0),(52,194,99,0),(61,232,114,0),(76,281,132,0) }),
+                new[] { (1,24,14,0),(20,92,54,0),(40,156,83,0),(52,194,99,0),(61,232,114,0),(76,281,132,0) }),
             ("sword2h", "Greatsword", WeaponType.TwoHandedSword, false, 0,
-                new[] { (20,112,54,0),(40,190,83,0),(52,236,99,0),(61,282,114,0),(76,342,132,0) }),
+                new[] { (1,29,14,0),(20,112,54,0),(40,190,83,0),(52,236,99,0),(61,282,114,0),(76,342,132,0) }),
             ("blunt1h", "Mace",       WeaponType.Blunt,          false, 0,
-                new[] { (20,92,54,0),(40,156,83,0),(52,194,99,0),(61,232,114,0),(76,281,132,0) }),
+                new[] { (1,24,14,0),(20,92,54,0),(40,156,83,0),(52,194,99,0),(61,232,114,0),(76,281,132,0) }),
             ("blunt2h", "Maul",       WeaponType.TwoHandedBlunt, false, 0,
-                new[] { (20,112,54,0),(40,190,83,0),(52,236,99,0),(61,282,114,0),(76,342,132,0) }),
+                new[] { (1,29,14,0),(20,112,54,0),(40,190,83,0),(52,236,99,0),(61,282,114,0),(76,342,132,0) }),
             ("duals",   "Fangs",      WeaponType.Dual,           false, 0,
-                new[] { (20,80,54,0),(40,136,83,0),(52,170,99,0),(61,203,114,0),(76,271,132,0) }),
+                new[] { (1,21,14,0),(20,80,54,0),(40,136,83,0),(52,170,99,0),(61,203,114,0),(76,271,132,0) }),
             ("bow",     "Longbow",    WeaponType.Bow,            false, 400,
-                new[] { (20,191,55,293),(40,316,84,293),(52,400,99,293),(61,528,114,227),(76,581,132,293) }),
+                new[] { (1,50,14,293),(20,191,55,293),(40,316,84,293),(52,400,99,293),(61,528,114,227),(76,581,132,293) }),
             ("wand",    "Wand",       WeaponType.Blunt,          true,  0,
-                new[] { (20,74,72,0),(40,111,101,0),(52,140,122,0),(61,186,152,0),(76,225,175,0) }),
+                new[] { (1,20,19,0),(20,74,72,0),(40,111,101,0),(52,140,122,0),(61,186,152,0),(76,225,175,0) }),
             ("staff",   "Battlestaff",WeaponType.TwoHandedBlunt, true,  0,
-                new[] { (20,90,79,0),(40,135,111,0),(52,189,145,0),(61,226,167,0),(76,274,193,0) }),
+                new[] { (1,24,21,0),(20,90,79,0),(40,135,111,0),(52,189,145,0),(61,226,167,0),(76,274,193,0) }),
         };
         // BOTH CSV numbers are authored now (owner, 2026-07-24): P -> AtkBonus, M -> MAtkBonus. Until
         // this, only ONE of the pair survived — a fighter weapon kept P and threw M away, a magic weapon
@@ -1332,23 +1288,26 @@ public static class ItemCatalog
     {
         // …plus the derived S tier. Every table below is authored A-last, so appending SGradeLevel and
         // scaling the final entry gives the whole grade without another column of hand numbers.
-        int[] lv = { 20, 40, 52, 61, 76, SGradeLevel };
+        int[] lv = { FGradeLevel, 20, 40, 52, 61, 76, SGradeLevel };
 
-        static int[] WithS(int[] a) => a.Append(Scale(a[a.Length - 1])).ToArray();
+        static int[] WithS(int fVal, int[] a) => a.Prepend(fVal).Append(Scale(a[a.Length - 1])).ToArray();
 
         // ---- Bodies: (key, noun, weight, pDef[5], mp[5]) — robe carries inherent +MaxMP. ----
         var bodies = new (string Key, string Noun, ArmorWeight W, int[] Def, int[] Mp)[]
         {
-            ("heavy", "Bulwark",       ArmorWeight.Heavy, WithS(new[]{167,240,270,293,332}), WithS(new[]{0,0,0,0,0})),
-            ("light", "Leathers",      ArmorWeight.Light, WithS(new[]{125,218,202,220,249}), WithS(new[]{0,0,0,0,0})),
-            ("robe",  "Robe",          ArmorWeight.Robe,  WithS(new[]{84,110,135,147,166}),  WithS(new[]{274,508,613,718,866})),
+            ("heavy", "Bulwark",       ArmorWeight.Heavy, WithS(115, new[]{167,240,270,293,332}), WithS(0, new[]{0,0,0,0,0})),
+            ("light", "Leathers",      ArmorWeight.Light, WithS(86, new[]{125,218,202,220,249}), WithS(0, new[]{0,0,0,0,0})),
+            ("robe",  "Robe",          ArmorWeight.Robe,  WithS(49, new[]{84,110,135,147,166}),  WithS(109, new[]{274,508,613,718,866})),
         };
         foreach (var b in bodies)
             for (int i = 0; i < lv.Length; i++)
                 yield return new ItemDef($"{b.Key}_t{lv[i]}", $"{GradeTheme(lv[i])} {b.Noun}",
                     EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Mythic,
                     Weight: b.W, ArmorSlot: ArmorSlot.Body, DefBonus: b.Def[i], MpBonus: b.Mp[i],
-                    ItemLevel: lv[i], NoAttributes: true, SetId: $"set_{b.Key}_t{lv[i]}");
+                    ItemLevel: lv[i], NoAttributes: true,
+                    // No SetId at F: set bonuses start at E, and ArmorSetCatalog has no F set. An item
+                    // advertising a set that cannot exist is worse than one that plainly has none.
+                    SetId: lv[i] == FGradeLevel ? "" : $"set_{b.Key}_t{lv[i]}");
 
         // ---- Body VARIANTS: same base P.Def as the tier's body, alternate SET bonus (dmg/support/
         //      nuke lines from the CSV). They share the tier's accessory line. (Bonuses in ArmorSets.) ----
@@ -1374,23 +1333,23 @@ public static class ItemCatalog
         // ---- Weightless accessories (shared across weights). ----
         var acc = new (string Key, string Noun, ArmorSlot Slot, int[] Def)[]
         {
-            ("gloves", "Gauntlets", ArmorSlot.Gloves, WithS(new[]{29,39,44,49,55})),
-            ("boots",  "Greaves",   ArmorSlot.Boots,  WithS(new[]{29,39,44,49,55})),
-            ("helm",   "Helm",      ArmorSlot.Head,   WithS(new[]{41,58,66,73,83})),
+            ("gloves", "Gauntlets", ArmorSlot.Gloves, WithS(15, new[]{29,39,44,49,55})),
+            ("boots",  "Greaves",   ArmorSlot.Boots,  WithS(15, new[]{29,39,44,49,55})),
+            ("helm",   "Helm",      ArmorSlot.Head,   WithS(21, new[]{41,58,66,73,83})),
         };
         foreach (var a in acc)
             for (int i = 0; i < lv.Length; i++)
                 yield return new ItemDef($"{a.Key}_t{lv[i]}", $"{GradeTheme(lv[i])} {a.Noun}",
                     EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Mythic,
                     ArmorSlot: a.Slot, DefBonus: a.Def[i], ItemLevel: lv[i], NoAttributes: true,
-                    SetId: $"set_acc_t{lv[i]}");   // shared accessory line per tier (all weights)
+                    SetId: lv[i] == FGradeLevel ? "" : $"set_acc_t{lv[i]}");   // shared accessory line per tier
 
         // ---- Shields (ShieldDefense from the CSV P.Def; block stats extrapolate Wooden→Iron, tunable). ----
-        int[] shDef = WithS(new[]{ 143, 203, 230, 256, 299 });
-        float[] shBlock = { 0.22f, 0.24f, 0.26f, 0.28f, 0.30f, 0.32f };
-        float[] shReduce = { 0.37f, 0.39f, 0.41f, 0.43f, 0.45f, 0.47f };
-        float[] shCrit = { 0.10f, 0.11f, 0.12f, 0.13f, 0.15f, 0.16f };
-        int[] shEvaPen = { 7, 7, 8, 8, 9, 9 };
+        int[] shDef = WithS(40, new[]{ 143, 203, 230, 256, 299 });
+        float[] shBlock = { 0.15f, 0.22f, 0.24f, 0.26f, 0.28f, 0.30f, 0.32f };
+        float[] shReduce = { 0.34f, 0.37f, 0.39f, 0.41f, 0.43f, 0.45f, 0.47f };
+        float[] shCrit = { 0.08f, 0.10f, 0.11f, 0.12f, 0.13f, 0.15f, 0.16f };
+        int[] shEvaPen = { 5, 7, 7, 8, 8, 9, 9 };
         // The shield belongs to its tier's HEAVY set (the CSV puts shields in the same GroupId).
         // It is NOT required to complete the set — wearing it just adds the set's ShieldBonus.
         for (int i = 0; i < lv.Length; i++)
@@ -1398,15 +1357,15 @@ public static class ItemCatalog
                 EquipSlot.Shield, TierGrade(lv[i]), ItemRarity.Mythic,
                 BlockChance: shBlock[i], BlockReduction: shReduce[i], ShieldDefense: shDef[i],
                 ShieldCritDefense: shCrit[i], ShieldEvasionPenalty: shEvaPen[i],
-                SetId: $"set_heavy_t{lv[i]}",
+                SetId: lv[i] == FGradeLevel ? "" : $"set_heavy_t{lv[i]}",
                 ItemLevel: lv[i], NoAttributes: true);
 
         // ---- Jewels (M.Def + inherent +MP at 61/76). L2 layout = 1 necklace / 2 rings / 2 earrings. ----
         var jewels = new (string Key, string Noun, JewelType T, int[] MDef, int[] Mp)[]
         {
-            ("necklace", "Pendant",  JewelType.Necklace, WithS(new[]{45,64,72,85,95}), WithS(new[]{0,0,0,33,42})),
-            ("ring",     "Band",     JewelType.Ring,     WithS(new[]{22,32,36,42,48}), WithS(new[]{0,0,0,17,21})),
-            ("earring",  "Stud",     JewelType.Earring,  WithS(new[]{34,45,54,63,71}), WithS(new[]{0,0,0,25,31})),
+            ("necklace", "Pendant",  JewelType.Necklace, WithS(18, new[]{45,64,72,85,95}), WithS(0, new[]{0,0,0,33,42})),
+            ("ring",     "Band",     JewelType.Ring,     WithS(9, new[]{22,32,36,42,48}), WithS(0, new[]{0,0,0,17,21})),
+            ("earring",  "Stud",     JewelType.Earring,  WithS(13, new[]{34,45,54,63,71}), WithS(0, new[]{0,0,0,25,31})),
         };
         foreach (var j in jewels)
             for (int i = 0; i < lv.Length; i++)
@@ -1422,107 +1381,6 @@ public static class ItemCatalog
                 EquipSlot.Box, TierGrade(L), ItemRarity.Rare);
     }
 
-    /// <summary>The LOW set of each low grade — the pieces a player wears in the BOTTOM of a grade's level
-    /// band, before the existing "top" set of that grade (owner 2026-07-25). Each grade is equippable
-    /// without penalty at its level (F@1, E@20, D@40) and spans a band; the CURRENT tiered sets are the
-    /// TOP of their grade (T@E covers ~33-39, T@D ~45-51, the Newbie set = T@F covers 10-19). These fill
-    /// the LOWER part: <b>Low F</b> (lvl 2-9, below Newbie), <b>Low E</b> (20-32, below T@E), <b>Low D</b>
-    /// (40-44, below T@D).
-    ///
-    /// Same equip level as their grade's top (ItemLevel 1/20/40), so ids carry a "lo" suffix
-    /// (<c>sword1h_t20lo</c> = Low E, beside <c>sword1h_t20</c> = Top E); <see cref="IsBaseTier"/> strips it
-    /// so they still spawn rarity drop copies. Weapons: Low E = the owner-confirmed 60/40 line, Low D one
-    /// step under T@D, Low F one step under the Newbie set. ARMOUR is interpolated between the Newbie/T@F
-    /// FLOOR and each grade's top (an earlier pass wrongly put a low body UNDER the Newbie set). No SetId
-    /// (set bonuses start at the grade tops). ⚠ INTERPOLATED numbers — retune here or swap for the owner's
-    /// CSV. Endgame S-grades wait on that CSV.</summary>
-    private static IEnumerable<ItemDef> LowTierFillers()
-    {
-        // Three low tiers by ItemLevel = grade equip level: [0]=Low F@1, [1]=Low E@20, [2]=Low D@40.
-        int[] lv = { 1, 20, 40 };
-
-        // Explicit gold value, scaled by ItemLevel + slot — the default price is grade-enum-based (Low F and
-        // Low E both map to "E", so they'd cost the same) and rarity-inflated (these base pieces are Epic ×8).
-        // This orders them F < E < D. Vendor buy price follows Value; drop copies keep their own rarity price.
-        static int Val(float slotMul, int itemLevel) => Math.Max(40, (int)(slotMul * (120 + itemLevel * 20)));
-
-        // Weapons: (key, noun, type, magic, range, {F,E,D} P, {F,E,D} M, attackSpeedBase)
-        var weapons = new (string Key, string Noun, WeaponType Type, bool Magic, float Range,
-            int[] P, int[] M, int As)[]
-        {
-            ("sword1h", "Blade",      WeaponType.Sword,          false, 0,   new[]{14,60,124},  new[]{9,40,69},  0),
-            ("sword2h", "Greatsword", WeaponType.TwoHandedSword, false, 0,   new[]{17,73,151},  new[]{10,40,69}, 0),
-            ("blunt1h", "Mace",       WeaponType.Blunt,          false, 0,   new[]{14,60,124},  new[]{9,40,69},  0),
-            ("blunt2h", "Maul",       WeaponType.TwoHandedBlunt, false, 0,   new[]{17,73,151},  new[]{10,40,69}, 0),
-            ("duals",   "Fangs",      WeaponType.Dual,           false, 0,   new[]{12,52,108},  new[]{9,40,69},  0),
-            ("bow",     "Longbow",    WeaponType.Bow,            false, 400, new[]{30,129,254}, new[]{9,41,70},  293),
-            ("wand",    "Wand",       WeaponType.Blunt,          true,  0,   new[]{13,56,93},   new[]{14,58,87}, 0),
-            ("staff",   "Battlestaff",WeaponType.TwoHandedBlunt, true,  0,   new[]{15,68,113},  new[]{16,63,95}, 0),
-        };
-        foreach (var w in weapons)
-            for (int i = 0; i < lv.Length; i++)
-                yield return new ItemDef($"{w.Key}_t{lv[i]}lo", $"{GradeTheme(lv[i])} {w.Noun} (Lesser)",
-                    EquipSlot.Weapon, TierGrade(lv[i]), ItemRarity.Epic,
-                    WeaponType: w.Type, AtkBonus: w.P[i], MAtkBonus: w.M[i], WeaponRange: w.Range,
-                    ItemLevel: lv[i], IsMagicWeapon: w.Magic, AttackSpeedBase: w.As, NoAttributes: true,
-                    Value: Val(2.0f, lv[i]));
-
-        // Bodies: (key, noun, weight, {F,E,D} P.Def, {F,E,D} +MaxMP) — robe carries MP.
-        var bodies = new (string Key, string Noun, ArmorWeight W, int[] Def, int[] Mp)[]
-        {
-            ("heavy", "Bulwark",       ArmorWeight.Heavy, new[]{72,140,207}, new[]{0,0,0}),
-            ("light", "Leathers",      ArmorWeight.Light, new[]{70,107,176}, new[]{0,0,0}),
-            ("robe",  "Robe",          ArmorWeight.Robe,  new[]{38,68,98},   new[]{69,200,403}),
-        };
-        foreach (var b in bodies)
-            for (int i = 0; i < lv.Length; i++)
-                yield return new ItemDef($"{b.Key}_t{lv[i]}lo", $"{GradeTheme(lv[i])} {b.Noun} (Lesser)",
-                    EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Epic,
-                    Weight: b.W, ArmorSlot: ArmorSlot.Body, DefBonus: b.Def[i], MpBonus: b.Mp[i],
-                    ItemLevel: lv[i], NoAttributes: true, Value: Val(1.6f, lv[i]));
-
-        // Weightless accessories: (key, noun, slot, {F,E,D} P.Def)
-        var acc = new (string Key, string Noun, ArmorSlot Slot, int[] Def)[]
-        {
-            ("gloves", "Gauntlets", ArmorSlot.Gloves, new[]{10,23,34}),
-            ("boots",  "Greaves",   ArmorSlot.Boots,  new[]{10,23,34}),
-            ("helm",   "Helm",      ArmorSlot.Head,   new[]{15,32,50}),
-        };
-        foreach (var a in acc)
-            for (int i = 0; i < lv.Length; i++)
-                yield return new ItemDef($"{a.Key}_t{lv[i]}lo", $"{GradeTheme(lv[i])} {a.Noun} (Lesser)",
-                    EquipSlot.Armor, TierGrade(lv[i]), ItemRarity.Epic,
-                    ArmorSlot: a.Slot, DefBonus: a.Def[i], ItemLevel: lv[i], NoAttributes: true,
-                    Value: Val(0.8f, lv[i]));
-
-        // Shields (per tier): def, block, reduction, critDef, evaPenalty — below the Wooden->Iron line.
-        var shields = new (int Def, float Block, float Reduce, float Crit, int EvaPen)[]
-        {
-            (60,  0.18f, 0.34f, 0.08f, 5),
-            (107, 0.21f, 0.36f, 0.09f, 6),
-            (176, 0.23f, 0.38f, 0.11f, 7),
-        };
-        for (int i = 0; i < lv.Length; i++)
-            yield return new ItemDef($"shield_t{lv[i]}lo", $"{GradeTheme(lv[i])} Aegis (Lesser)",
-                EquipSlot.Shield, TierGrade(lv[i]), ItemRarity.Epic,
-                BlockChance: shields[i].Block, BlockReduction: shields[i].Reduce, ShieldDefense: shields[i].Def,
-                ShieldCritDefense: shields[i].Crit, ShieldEvasionPenalty: shields[i].EvaPen,
-                ItemLevel: lv[i], NoAttributes: true, Value: Val(1.2f, lv[i]));
-
-        // Jewels: (key, noun, type, {F,E,D} M.Def) — no inherent MP until 61+.
-        var jewels = new (string Key, string Noun, JewelType T, int[] MDef)[]
-        {
-            ("necklace", "Pendant",  JewelType.Necklace, new[]{11,32,55}),
-            ("ring",     "Band",     JewelType.Ring,     new[]{5,15,28}),
-            ("earring",  "Stud",     JewelType.Earring,  new[]{8,24,40}),
-        };
-        foreach (var j in jewels)
-            for (int i = 0; i < lv.Length; i++)
-                yield return new ItemDef($"{j.Key}_t{lv[i]}lo", $"{GradeTheme(lv[i])} {j.Noun} (Lesser)",
-                    EquipSlot.Jewel, TierGrade(lv[i]), ItemRarity.Epic,
-                    MDefBonus: j.MDef[i], JewelType: j.T, ItemLevel: lv[i], NoAttributes: true,
-                    Value: Val(1.4f, lv[i]));
-    }
 
     /// <summary>Formula gold value by slot/grade/rarity, used when an item def does
     /// not set an explicit Value. Quest items and god-tier one-offs return 0 so they

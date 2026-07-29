@@ -24,21 +24,16 @@ public static class ShopCatalog
 
     private static Dictionary<string, ShopDef> Build()
     {
-        // The LOW sets of each grade (Low F/E/D — ids like "sword1h_t20lo"), sold alongside the training
-        // kit so the early ladder is reachable by gold as well as by drops (owner 2026-07-25). Derived
-        // from the catalogue so it never drifts from LowTierFillers. (Could be split across town vendors
-        // by grade later; one gear NPC for now.)
         // WEAPONS go to the Armsmaster; ARMOR, shields and jewels to the Outfitter. One vendor holding
         // the whole F/E/D ladder at three qualities is ~150 rows, and that flat wall is most of what
         // made the shop unreadable (owner, playtest-13).
+        //
+        // The separate "(Lesser)" line is GONE (owner, 2026-07-30): "we should have lesser items no
+        // longer, they've become the common ones". It was a parallel item set at the same levels as the
+        // real ladder, priced by the same table but flagged Epic — so the shop was showing Epic-priced
+        // Lesser gear beside the ladder's own Common/Uncommon/Rare. One ladder per slot per grade now,
+        // and the low QUALITIES are what "cheap gear" means.
         static bool IsWeapon(ItemDef d) => d.Slot == EquipSlot.Weapon;
-
-        var lowGear = ItemCatalog.AllItems
-            .Where(d => d.Rarity == ItemRarity.Epic
-                && d.Slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel
-                && d.Id.Contains("_t", System.StringComparison.Ordinal)
-                && d.Id.EndsWith("lo", System.StringComparison.Ordinal))
-            .ToArray();
 
         // The REAL gear ladder at the three shop grades. Only F/E/D is ever sold (owner) — C and above
         // are crafted, dropped or taken off a boss — and only up to RARE, because Epic is where set
@@ -47,13 +42,13 @@ public static class ShopCatalog
         // ItemLevel 1/20/40 are the F/E/D tiers; the price for each comes from the owner's table in
         // ItemCatalog.TieredGearPrice, scaled down for the low qualities (they drop freely, so at full
         // price nobody would buy one).
-        var shopGrades = new[] { 1, 20, 40 };
+        var shopGrades = new[] { ItemCatalog.FGradeLevel, 20, 40 };
         var shopQualities = new[] { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare };
         var ladderGear = ItemCatalog.AllItems
             .Where(d => shopGrades.Contains(d.ItemLevel)
                 && shopQualities.Contains(d.Rarity)
                 && d.Slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel
-                && !d.Id.Contains("lo_", System.StringComparison.Ordinal))   // not the (Lesser) copies
+                )
             .OrderBy(d => d.ItemLevel).ThenBy(d => d.Slot).ThenBy(d => d.Rarity).ThenBy(d => d.Name)
             .ToArray();
 
@@ -105,7 +100,7 @@ public static class ShopCatalog
                 ItemCatalog.TrainingKnives,
                 ItemCatalog.TrainingBow,
                 ItemCatalog.TrainingWand,
-            }.Concat(WeaponsOf(lowGear, ladderGear)).ToArray()),
+            }.Concat(WeaponsOf(ladderGear)).ToArray()),
 
             // ARMOR, shields and jewels.
             new ShopDef(ArmorMerchant, "Outfitter — Armor & Jewels", new[]
@@ -120,7 +115,7 @@ public static class ShopCatalog
                 ItemCatalog.BrokenNecklace,
                 ItemCatalog.WoodenShield,
                 ItemCatalog.BrassAmulet,
-            }.Concat(ArmorOf(lowGear, ladderGear)).ToArray()),
+            }.Concat(ArmorOf(ladderGear)).ToArray()),
         };
 
         var dict = new Dictionary<string, ShopDef>(StringComparer.OrdinalIgnoreCase);

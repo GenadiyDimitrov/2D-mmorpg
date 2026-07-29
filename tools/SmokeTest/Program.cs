@@ -139,6 +139,21 @@ Check("server pushed the warehouse on login", a.Ware is not null);
           && ItemCatalog.Get($"sword1h_t{ItemCatalog.SGradeLevel}_rare") is null);
     Check("A still HAS the low rungs (only S is top-half)",
           ItemCatalog.Get("sword1h_t76_common") is not null);
+
+    // The "(Lesser)" line is GONE — it became the low QUALITIES of the real ladder.
+    int lesser = ItemCatalog.AllItems.Count(d => d.Name.Contains("(Lesser)")
+                                                 && d.Slot is EquipSlot.Weapon or EquipSlot.Armor
+                                                            or EquipSlot.Shield or EquipSlot.Jewel);
+    Check("no '(Lesser)' GEAR exists any more", lesser == 0, $"{lesser} found");
+
+    // The newbie kit IS the F-grade top: same item, "Ferrite" themed, Mythic rung.
+    var fSword = ItemCatalog.Get(ItemCatalog.NewbieSword1H);
+    Check("the newbie weapon is the F-grade MYTHIC piece",
+          fSword is { Rarity: ItemRarity.Mythic, ItemLevel: ItemCatalog.FGradeLevel },
+          $"{fSword?.Name} {fSword?.Rarity} lvl {fSword?.ItemLevel}");
+    Check("...and it is themed Ferrite (F grade)", fSword?.Name.StartsWith("Ferrite") == true, fSword?.Name);
+    Check("F grade has the low rungs too (so the shop has something cheap)",
+          ItemCatalog.Get($"sword1h_t{ItemCatalog.FGradeLevel}_common") is not null);
 }
 
 Check("server pushed quest markers on login", a.Marks is not null);

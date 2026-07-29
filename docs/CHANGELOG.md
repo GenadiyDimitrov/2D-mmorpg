@@ -12,6 +12,36 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-30 — F grade joins the ladder; "(Lesser)" is gone (0.31.2) — ⚠ DELETE `game.db`
+
+Two owner calls, and they turn out to be the same change.
+
+**The "(Lesser)" gear line is deleted.** *"We should have lesser items no longer — they've become the
+common ones."* It was a parallel item set at the same levels as the real ladder, flagged `Epic` and
+priced off the same table, so the shop was listing **Epic-priced Lesser gear beside the ladder's own
+Common/Uncommon/Rare** — which is the wrong-price bug. One ladder per slot per grade now, and the low
+QUALITIES are what "cheap gear" means.
+
+**F grade is now part of that one ladder** (`ItemLevel 1`, themed "Ferrite" by `GradeTheme`). This is
+what made deleting the Lesser line possible — it had been the only source of F gear, which is why the
+deletion was deferred twice.
+
+**The newbie kit IS the F-grade top.** *"Make the newbie gear the Ferrite Mythic — it's the top for
+its grade."* The `Newbie*` ids are now aliases onto the F tier's **Mythic** rung, and the F tier's
+Mythic numbers were authored FROM the old newbie stats — so **nothing got stronger or weaker in the
+swap**; there is simply one item where there were two. `Newbie Sword` → **`Ferrite Blade`**, which is
+the point: a real rung on the ladder, not a tutorial prop.
+
+- F carries the full six qualities, so the shop still has something cheap (F-Common) and the level-10
+  quest hands out the best F there is (F-Mythic).
+- **No SetId at F.** Set bonuses start at E and `ArmorSetCatalog` has no F set; an item advertising a
+  set that cannot exist is worse than one that plainly has none.
+- ⚠ The same gap exists at **S** (level 80): its bodies carry a `SetId` with no matching
+  `ArmorSetDef`, so the bonus silently does nothing. That is the still-open "scaled set bonuses" item.
+
+New SmokeTest assertions: no `(Lesser)` gear exists, the newbie weapon is F-grade Mythic and themed
+Ferrite, and F has its low rungs.
+
 ## 2026-07-30 — EF cartesian-product warning fixed (0.31.1)
 
 The `Microsoft.EntityFrameworkCore.Query[20504]` warning on startup and on every login. Four queries
