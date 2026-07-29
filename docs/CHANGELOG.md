@@ -12,6 +12,30 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-29 — Vendor split + shop detail view + Brackenford town layout (0.29.5)
+
+- **The gear trade is split in two** (owner, playtest-13): **Armsmaster Dolan** sells WEAPONS,
+  **Outfitter Bryn** sells armor, shields and jewels. One vendor stocking the whole F/E/D ladder at
+  three qualities is ~150 rows, and that flat wall is most of what made the shop unreadable.
+- **Detail / Compact toggle** on the vendor window. Detail (the default) adds a second line per row
+  naming the quality, grade, type and the stat that matters for the slot; Compact is the old one-line
+  row for scrolling a long ladder fast. The preference is remembered across vendors.
+- **The confirm dialog now carries the item's full stats and description** — the last moment before
+  the gold leaves, and the only place with room to say what you are buying. That matters much more now
+  that a piece exists at three qualities and the NAME no longer tells you which one you tapped.
+
+**Brackenford is laid out by what you came for** (owner), instead of NPCs scattered around the town:
+- **EAST — one shopping stop**: Apothecary, Armsmaster, Outfitter, and **Keeper Bram** moved in with
+  them (banking and shopping are the same errand — you sell, you stash, you buy).
+- **WEST — quests and class changes**: High Priest Oren, Elder Marius, Class Master Vael, Grandmaster
+  Thorne.
+- **TOP-CENTRE, alone**: Gatekeeper Pell — the one NPC you walk to from anywhere, so it belongs in
+  neither cluster.
+- **BOTTOM-CENTRE, alone**: Mindwright Sela. She used to stand 500 units from the Apothecary, where
+  the two read as one clump and put a service next to a shop.
+
+Each cluster is ~450 apart: close enough to be one stop, far enough that the name labels do not overlap.
+
 ## 2026-07-29 — Quest markers over NPCs + the on-screen tracker (0.29.4) — protocol 7
 
 The two things the owner asked to see and test alongside abandon: *"i would like to see the

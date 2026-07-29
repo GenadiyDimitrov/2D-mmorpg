@@ -255,23 +255,43 @@ public static class WorldMap
         // --- Starter town: Brackenford (map centre, 24000,24000, radius 3500). NPCs
         //     are spread ~2000 units apart (≈360px on screen) so labels don't overlap;
         //     the centre is left clear (where new characters spawn). ---
-        new("priest_oren",   "High Priest Oren",   22000, 22500, NpcRole.QuestGiver),
-        new("elder_marius",  "Elder Marius",       26000, 22500, NpcRole.QuestGiver),
-        new("master_class",  "Class Master Vael",  21500, 24500, NpcRole.ClassChange),
+        // ===== BRACKENFORD TOWN LAYOUT (owner, 2026-07-29) ==========================================
+        // Grouped by WHAT YOU CAME FOR instead of scattered: everyone who sells stands together on the
+        // EAST side, everyone who gives a quest or changes your class on the WEST, the gatekeeper alone
+        // at top-centre and the skill-resetter alone at bottom-centre. Each cluster is ~450 apart —
+        // close enough to be one stop, far enough that the name labels do not overlap.
+        // (The Apothecary and the Mindwright used to sit 500 apart on the same side, which read as one
+        // clump and put a vendor next to a service that is nothing to do with shopping.)
+        //
+        // Smaller Y is NORTH on screen (WorldMapper flips Y), so 22200 is "above" the 24000 centre.
+
+        // --- WEST: quests + class changes ---
+        new("priest_oren",   "High Priest Oren",   22600, 24250, NpcRole.QuestGiver),
+        new("elder_marius",  "Elder Marius",       22150, 24250, NpcRole.QuestGiver),
+        new("master_class",  "Class Master Vael",  22800, 23800, NpcRole.ClassChange),
         // 3rd-class master: gives the harder lvl-40 discipline chains AND performs
         // the change (an NpcRole.ClassChange NPC can also be a quest giver).
-        new("master_class3", "Grandmaster Thorne", 26500, 24500, NpcRole.ClassChange),
-        // Vendors (their wares are defined by ShopCatalog, keyed on these ids).
-        new("merchant_potions", "Apothecary Miren", 22000, 26000, NpcRole.Vendor),
-        new("merchant_gear",    "Armsmaster Dolan",  26000, 26000, NpcRole.Vendor),
+        new("master_class3", "Grandmaster Thorne", 22350, 23800, NpcRole.ClassChange),
+        // --- EAST: the three vendors, one stop ---
+        // (their wares are defined by ShopCatalog, keyed on these ids)
+        new("merchant_potions", "Apothecary Miren", 25200, 23800, NpcRole.Vendor),
+        // The gear trade is split in two (owner, playtest-13): one Armsmaster selling WEAPONS, one
+        // Outfitter selling ARMOR, shields and jewels. A single vendor stocking the whole F/E/D ladder
+        // at three qualities is ~150 rows, which is most of why the list read as "no idea which is which".
+        new("merchant_gear",    "Armsmaster Dolan",  25650, 23800, NpcRole.Vendor),
+        new("merchant_armor",   "Outfitter Bryn",    25400, 24250, NpcRole.Vendor),
         // Newbie buffer: blesses lvl 6-75 characters with a buffer's full buff set.
-        new("buffer_newbie",    "Spirit Helper Nyra", 24000, 26500, NpcRole.Buffer),
+        new("buffer_newbie",    "Spirit Helper Nyra", 23400, 25800, NpcRole.Buffer),
         // Skill reset: un-learns the PERMANENT, mutually-exclusive picks (the level-40 stat swaps)
         // so a bad commitment can be re-chosen. Free to forget — the gold is NOT refunded.
-        new("resetter_main",    "Mindwright Sela",   21500, 26000, NpcRole.SkillReset),
+        // BOTTOM-CENTRE, on its own: it is a service, not a shop, and it used to stand 500 from the
+        // Apothecary where the two read as one clump (owner).
+        new("resetter_main",    "Mindwright Sela",   24000, 25800, NpcRole.SkillReset),
         // --- Gatekeepers: one in every town (stands at its centre) so the whole
         //     travel network is reachable in both directions. ---
-        new("gatekeeper_brackenford", "Gatekeeper Pell",   24000, 21500, NpcRole.Teleporter),
+        // Brackenford's stands alone at TOP-CENTRE (owner) — it is the one NPC you walk to from
+        // anywhere in town, so it should not be inside either cluster.
+        new("gatekeeper_brackenford", "Gatekeeper Pell",   24000, 22200, NpcRole.Teleporter),
         new("gatekeeper_stonewatch",  "Gatekeeper Soren",  24000, 10000, NpcRole.Teleporter),
         new("gatekeeper_emberfall",   "Gatekeeper Ryn",    36000, 15000, NpcRole.Teleporter),
         new("gatekeeper_greymarsh",   "Gatekeeper Maela",  36000, 33000, NpcRole.Teleporter),
@@ -287,7 +307,9 @@ public static class WorldMap
 
         // --- Warehouse Keepers: one per MAIN town (offset from the gatekeeper so labels don't overlap).
         //     Talking opens the private warehouse (deposit/withdraw). ---
-        new("warehouse_brackenford", "Keeper Bram",   25500, 21500, NpcRole.Warehouse),
+        // Brackenford's keeper joins the VENDOR cluster (owner): banking and shopping are the same
+        // errand — you sell, you stash, you buy — so they belong in one stop.
+        new("warehouse_brackenford", "Keeper Bram",   25650, 24700, NpcRole.Warehouse),
         new("warehouse_stonewatch",  "Keeper Osric",  25500, 10000, NpcRole.Warehouse),
         new("warehouse_emberfall",   "Keeper Fenn",   37500, 15000, NpcRole.Warehouse),
         new("warehouse_greymarsh",   "Keeper Wyn",    37500, 33000, NpcRole.Warehouse),

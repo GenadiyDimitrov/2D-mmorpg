@@ -17,6 +17,8 @@ public static class ShopCatalog
 {
     public const string PotionMerchant = "merchant_potions";
     public const string GearMerchant = "merchant_gear";
+    /// <summary>The armor/shield/jewel half of the gear trade — see the split in Build().</summary>
+    public const string ArmorMerchant = "merchant_armor";
 
     private static readonly Dictionary<string, ShopDef> Shops = Build();
 
@@ -26,12 +28,16 @@ public static class ShopCatalog
         // kit so the early ladder is reachable by gold as well as by drops (owner 2026-07-25). Derived
         // from the catalogue so it never drifts from LowTierFillers. (Could be split across town vendors
         // by grade later; one gear NPC for now.)
-        var lowGearIds = ItemCatalog.AllItems
+        // WEAPONS go to the Armsmaster; ARMOR, shields and jewels to the Outfitter. One vendor holding
+        // the whole F/E/D ladder at three qualities is ~150 rows, and that flat wall is most of what
+        // made the shop unreadable (owner, playtest-13).
+        static bool IsWeapon(ItemDef d) => d.Slot == EquipSlot.Weapon;
+
+        var lowGear = ItemCatalog.AllItems
             .Where(d => d.Rarity == ItemRarity.Epic
                 && d.Slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel
                 && d.Id.Contains("_t", System.StringComparison.Ordinal)
                 && d.Id.EndsWith("lo", System.StringComparison.Ordinal))
-            .Select(d => d.Id)
             .ToArray();
 
         // The REAL gear ladder at the three shop grades. Only F/E/D is ever sold (owner) — C and above
@@ -43,14 +49,18 @@ public static class ShopCatalog
         // price nobody would buy one).
         var shopGrades = new[] { 1, 20, 40 };
         var shopQualities = new[] { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare };
-        var ladderGearIds = ItemCatalog.AllItems
+        var ladderGear = ItemCatalog.AllItems
             .Where(d => shopGrades.Contains(d.ItemLevel)
                 && shopQualities.Contains(d.Rarity)
                 && d.Slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel
                 && !d.Id.Contains("lo_", System.StringComparison.Ordinal))   // not the (Lesser) copies
             .OrderBy(d => d.ItemLevel).ThenBy(d => d.Slot).ThenBy(d => d.Rarity).ThenBy(d => d.Name)
-            .Select(d => d.Id)
             .ToArray();
+
+        string[] WeaponsOf(params ItemDef[][] sets) =>
+            sets.SelectMany(s => s).Where(IsWeapon).Select(d => d.Id).ToArray();
+        string[] ArmorOf(params ItemDef[][] sets) =>
+            sets.SelectMany(s => s).Where(d => !IsWeapon(d)).Select(d => d.Id).ToArray();
 
         var shops = new[]
         {
@@ -82,7 +92,11 @@ public static class ShopCatalog
                 ItemCatalog.BoxSpiritshot2h,
                 // NOTE: enchant + attribute scrolls are intentionally DROP-ONLY (not sold).
             }),
-            new ShopDef(GearMerchant, "Armsmaster", new[]
+            // WEAPONS. The LEGACY generated grid ("Worn Sword" at P.Atk 6, the Fine/Masterwork
+            // prefixes) plus Ash Wand and Iron Mace are GONE from the shop (owner, playtest-13): they
+            // predate the gear ladder by a whole generation, so the vendor was showing two unrelated
+            // eras of equipment in one list. The catalogue still defines them so old saves resolve.
+            new ShopDef(GearMerchant, "Armsmaster — Weapons", new[]
             {
                 // TRAINING tier (400g each) — the level 1-10 gear. Stocked so a new player who picked the
                 // wrong weapon, or lost one, can just buy another instead of being stuck with it.
@@ -91,23 +105,22 @@ public static class ShopCatalog
                 ItemCatalog.TrainingKnives,
                 ItemCatalog.TrainingBow,
                 ItemCatalog.TrainingWand,
+            }.Concat(WeaponsOf(lowGear, ladderGear)).ToArray()),
+
+            // ARMOR, shields and jewels.
+            new ShopDef(ArmorMerchant, "Outfitter — Armor & Jewels", new[]
+            {
                 ItemCatalog.TrainingLeather,
                 ItemCatalog.TrainingRobe,
                 // BROKEN jewels — also drop from level 1-5 mobs. Sold here so the first accessory is
                 // reachable without waiting on a drop (owner: "jewels are dropped from lvl 1-5 mobs and
-                // sold in shop").
+                // sold in shop"). Starter shield + amulet are the level-1 stopgaps.
                 ItemCatalog.BrokenEarring,
                 ItemCatalog.BrokenRing,
                 ItemCatalog.BrokenNecklace,
-                // The LEGACY generated grid ("Worn Sword" at P.Atk 6, "Fine"/"Masterwork" prefixes) plus
-                // Ash Wand and Iron Mace are GONE from the shop (owner, playtest-13). They predate the
-                // gear ladder by a whole generation, so the vendor was showing two unrelated eras of
-                // equipment in one undifferentiated list — which is most of why "i hve no idea which is
-                // which". The catalogue still defines them so old saves resolve; nothing sells them.
-                // Starter shield + jewel stay: they are the level-1 stopgaps.
                 ItemCatalog.WoodenShield,
                 ItemCatalog.BrassAmulet,
-            }.Concat(lowGearIds).Concat(ladderGearIds).ToArray()),
+            }.Concat(ArmorOf(lowGear, ladderGear)).ToArray()),
         };
 
         var dict = new Dictionary<string, ShopDef>(StringComparer.OrdinalIgnoreCase);

@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using Game.Shared;
 using TMPro;
 using UnityEngine;
@@ -23,8 +24,11 @@ namespace Game.Client
     {
         private RectTransform _vendorPanel, _vendorList;
         private TextMeshProUGUI _vendorTitle;
-        private Button _vendorBuyTab, _vendorSellTab;
+        private Button _vendorBuyTab, _vendorSellTab, _vendorViewTab;
         private bool _vendorSell;
+        /// <summary>Detail view = two lines per row (name+price, then what it IS). Remembered across
+        /// vendors because it is a preference, not a per-shop mode.</summary>
+        private bool _vendorDetailed = true;
         private int _vendorRevision = -1;
 
         // numpad
@@ -53,6 +57,13 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_vendorSellTab.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(144f, -chrome - 32f), new Vector2(120f, 30f));
 
+            // COMPACT vs DETAIL. Compact is one line per item for scrolling a long ladder; detail adds
+            // a second line naming the type, grade, quality and the stat that matters (owner asked for
+            // a button that switches between "list-rows" and rows carrying their description).
+            _vendorViewTab = UiKit.TextButton(inner, "Detail", ToggleVendorView, 15f);
+            UiKit.Place(UiKit.Rect(_vendorViewTab.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
+                        new Vector2(-18f, -chrome - 32f), new Vector2(120f, 30f));
+
             ScrollRect scroll;
             _vendorList = UiKit.ScrollArea(inner, out scroll, 3f);
             UiKit.Stretch((RectTransform)scroll.transform, 16f, chrome + 68f, 16f, 16f);
@@ -76,6 +87,12 @@ namespace Game.Client
             _vendorRevision = -1;
         }
 
+        private void ToggleVendorView()
+        {
+            _vendorDetailed = !_vendorDetailed;
+            _vendorRevision = -1;
+        }
+
         /// <summary>Rebuild the list when the mode, gold, or inventory changed — so a sell removes the
         /// row it sold and a buy re-checks what you can still afford, both driven by the server's push.</summary>
         private void RefreshVendorWindow()
@@ -83,7 +100,8 @@ namespace Game.Client
             if (!_vendorPanel.gameObject.activeSelf) return;
 
             var items = Boot.Inventory ?? Array.Empty<InventoryItemDto>();
-            int revision = (_vendorSell ? 1 : 0) * 92821 + (int)(Boot.Gold % 1_000_000);
+            int revision = (_vendorSell ? 1 : 0) * 92821 + (_vendorDetailed ? 7919 : 0)
+                         + (int)(Boot.Gold % 1_000_000);
             revision = revision * 31 + (Boot.Dialog?.Shop?.Items?.Length ?? 0);
             foreach (var it in items) revision = revision * 31 + it.Quantity + (it.Equipped ? 7 : 0);
             if (revision == _vendorRevision) return;
@@ -93,6 +111,8 @@ namespace Game.Client
                                             : "Buy — you have " + Boot.Gold.ToString("N0") + " " + GameConstants.CurrencyName;
             _vendorBuyTab.targetGraphic.color = _vendorSell ? UiKit.PanelLight : UiKit.TabActive;
             _vendorSellTab.targetGraphic.color = _vendorSell ? UiKit.TabActive : UiKit.PanelLight;
+            UiKit.SetButtonText(_vendorViewTab, _vendorDetailed ? "Compact" : "Detail");
+            _vendorViewTab.targetGraphic.color = _vendorDetailed ? UiKit.TabActive : UiKit.PanelLight;
 
             for (int i = _vendorList.childCount - 1; i >= 0; i--)
                 Destroy(_vendorList.GetChild(i).gameObject);
@@ -121,9 +141,13 @@ namespace Game.Client
 
                 // Quality reads off the COLOUR now, not the name — the shop stocks the same piece at
                 // Common/Uncommon/Rare, so without it three identical-looking rows differ only in price.
-                VendorRow(Coloured(name, def.Rarity) + "   " + unit.ToString("N0") + " " + GameConstants.CurrencyName,
-                          afford ? UiKit.Text : UiKit.TextDim,
-                          () => BuyTap(defId, name, def, unit));
+                string head = Coloured(name, def.Rarity) + "   " + unit.ToString("N0") + " " + GameConstants.CurrencyName;
+                // DETAIL view adds a second line saying WHAT the thing is (owner: "i hve no idea which
+                // is which"). Compact view is the old one-line row, for scrolling a long ladder fast.
+                string label = _vendorDetailed ? head + "\n<size=12><color=#9AA3AD>" + WareSummary(def) + "</color></size>"
+                                               : head;
+                VendorRow(label, afford ? UiKit.Text : UiKit.TextDim,
+                          () => BuyTap(defId, name, def, unit), _vendorDetailed ? 56f : 38f);
             }
         }
 
@@ -168,8 +192,23 @@ namespace Game.Client
 
         private void ConfirmBuy(string defId, string name, long unit, int qty)
         {
-            Ask("Buy " + qty + " x " + name + " for " + (unit * qty).ToString("N0") + " " + GameConstants.CurrencyName + "?",
-                "Confirm", () => { Boot.BuyItem(defId, qty); CloseNumpad(); });
+            // The confirm dialog is where the item DESCRIPTION belongs (owner, playtest-13: "clicking on
+            // the item opens confirmation dialog with the items description"). It is the last moment
+            // before the gold leaves, and the only place there is room to say what you are actually
+            // buying — which matters far more now that a piece exists at three qualities and the name
+            // no longer tells you which one you tapped.
+            var def = ItemCatalog.Get(defId);
+            var t = new StringBuilder();
+            t.Append("Buy ").Append(qty).Append(" x ").Append(name)
+             .Append(" for ").Append((unit * qty).ToString("N0")).Append(' ').Append(GameConstants.CurrencyName).Append('?');
+            if (def != null)
+            {
+                t.AppendLine().AppendLine();
+                t.AppendLine(ItemStatsText(def, new InventoryItemDto(Guid.Empty, defId, false, 0, 1, null)).TrimEnd());
+                if (!string.IsNullOrWhiteSpace(def.Description))
+                    t.AppendLine().Append("<size=13><color=#9AA3AD>").Append(def.Description).Append("</color></size>");
+            }
+            Ask(t.ToString(), "Confirm", () => { Boot.BuyItem(defId, qty); CloseNumpad(); });
         }
 
         private void ConfirmSell(Guid instanceId, string name, long unit, int qty)
@@ -190,12 +229,29 @@ namespace Game.Client
             label.gameObject.AddComponent<LayoutElement>().minHeight = 34f;
         }
 
-        private void VendorRow(string text, Color colour, Action onTap)
+        private void VendorRow(string text, Color colour, Action onTap, float height = 44f)
         {
             var button = UiKit.TextButton(_vendorList, text, onTap, 16f);
             var label = button.GetComponentInChildren<TextMeshProUGUI>();
             if (label != null) { label.alignment = TextAlignmentOptions.Left; label.color = colour; }
-            button.gameObject.AddComponent<LayoutElement>().minHeight = 44f;
+            button.gameObject.AddComponent<LayoutElement>().minHeight = height;
+        }
+
+        /// <summary>The one-line "what IS this" a shopper needs before tapping: type, grade, quality and
+        /// the stat that matters for the slot. The full sheet is in the confirm dialog.</summary>
+        private static string WareSummary(ItemDef def)
+        {
+            var t = new StringBuilder();
+            t.Append(def.Rarity).Append("  ")
+             .Append(def.ItemLevel > 0 ? ItemCatalog.TierLetter(def.ItemLevel) : def.Grade.ToString())
+             .Append("-grade  ").Append(TypeLine(def));
+            if (def.AtkBonus > 0)  t.Append("   Atk ").Append(def.AtkBonus);
+            if (def.MAtkBonus > 0) t.Append("   M.Atk ").Append(def.MAtkBonus);
+            if (def.DefBonus > 0)  t.Append("   Def ").Append(def.DefBonus);
+            if (def.MDefBonus > 0) t.Append("   M.Def ").Append(def.MDefBonus);
+            if (def.HpBonus > 0)   t.Append("   HP +").Append(def.HpBonus);
+            if (def.MpBonus > 0)   t.Append("   MP +").Append(def.MpBonus);
+            return t.ToString();
         }
 
         // ----- numpad ----------------------------------------------------------------------------
