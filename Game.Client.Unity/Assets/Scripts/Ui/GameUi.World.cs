@@ -719,6 +719,9 @@ namespace Game.Client
             var inner = _confirmPanel.GetChild(0);
 
             _confirmText = UiKit.Label(inner, "", 19f, UiKit.Text, TextAlignmentOptions.TopLeft);
+            // Belt and braces with the sizing in Ask(): if a message somehow exceeds the height cap,
+            // TRUNCATE it inside its own rect rather than letting it draw over the buttons.
+            _confirmText.overflowMode = TextOverflowModes.Truncate;
             UiKit.Place(UiKit.Rect(_confirmText.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(22f, -22f), new Vector2(470f, 80f));
 
@@ -1545,9 +1548,30 @@ namespace Game.Client
             return "";
         }
 
+        /// <summary>The confirm dialog, GROWN to fit its message.
+        ///
+        /// It used to be a fixed 520x200 panel with an 80px text box, which was fine for one-line
+        /// questions ("Sell 3 x Potion?") and broke the moment the vendor confirmation started carrying
+        /// the item's full stat block — the text simply ran out through the bottom of the panel, past
+        /// the buttons (owner: "the vendor details are good, just coming out of the confirm dialogue").
+        ///
+        /// Measuring with TMP's own GetPreferredValues means the dialog fits whatever it is given rather
+        /// than every caller having to guess a height. The clamp keeps it on screen on a phone; the
+        /// bottom padding always reserves room for the buttons, so text can never overlap them.</summary>
         private void Ask(string message, string okLabel, Action action)
         {
             _confirmText.text = message;
+
+            var textRect = (RectTransform)_confirmText.transform;
+            const float pad = 22f, buttonRow = 52f, gap = 18f;
+            float wrapWidth = textRect.sizeDelta.x;
+            // Cap the TEXT, not the panel, so the buttons keep their room whatever the message is.
+            float textH = Mathf.Clamp(_confirmText.GetPreferredValues(message, wrapWidth, 0f).y,
+                                      56f, 460f);
+            textRect.sizeDelta = new Vector2(wrapWidth, textH);
+            _confirmPanel.sizeDelta = new Vector2(_confirmPanel.sizeDelta.x,
+                                                  pad + textH + gap + buttonRow + pad);
+
             UiKit.SetButtonText(_confirmOkButton, okLabel);
             _confirmAction = action;
             _confirmPanel.gameObject.SetActive(true);

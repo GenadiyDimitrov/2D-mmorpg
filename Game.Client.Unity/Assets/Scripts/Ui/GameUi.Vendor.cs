@@ -207,10 +207,17 @@ namespace Game.Client
              .Append(" for ").Append((unit * qty).ToString("N0")).Append(' ').Append(GameConstants.CurrencyName).Append('?');
             if (def != null)
             {
-                t.AppendLine().AppendLine();
-                t.AppendLine(ItemStatsText(def, new InventoryItemDto(Guid.Empty, defId, false, 0, 1, null)).TrimEnd());
+                // The stat block is set SMALLER than the question. The question is the decision; the
+                // stats are the evidence for it, and at the dialog's 19px they ran the panel past the
+                // bottom of the screen. Dropping the redundant "Name:" row helps too — the name is
+                // already in the question line above.
+                t.AppendLine().AppendLine().Append("<size=15>");
+                string stats = ItemStatsText(def, new InventoryItemDto(Guid.Empty, defId, false, 0, 1, null));
+                foreach (var line in stats.Split('\n'))
+                    if (!line.StartsWith("Name:")) t.AppendLine(line.TrimEnd());
                 if (!string.IsNullOrWhiteSpace(def.Description))
-                    t.AppendLine().Append("<size=13><color=#9AA3AD>").Append(def.Description).Append("</color></size>");
+                    t.Append("<color=#9AA3AD>").Append(def.Description).Append("</color>");
+                t.Append("</size>");
             }
             Ask(t.ToString(), "Confirm", () => { Boot.BuyItem(defId, qty); CloseNumpad(); });
         }

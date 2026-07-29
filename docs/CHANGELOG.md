@@ -12,6 +12,25 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-30 — The confirm dialog grows to fit its message (0.32.2)
+
+*"The vendor details are good, just coming out of the confirm dialogue."* The dialog was a fixed
+**520×200** panel with an **80px** text box — fine for "Sell 3 x Potion?", and it broke the moment the
+vendor confirmation started carrying the item's full stat block: the text ran straight out through the
+bottom of the panel, past the buttons.
+
+- **`Ask()` now measures the message** with TMP's own `GetPreferredValues` and sizes the panel to it, so
+  the dialog fits whatever it is given instead of every caller guessing a height. The cap is on the
+  TEXT (56-460px), never the panel, so the button row always keeps its space and text can never overlap
+  it. Clamped to stay on a phone screen.
+- `overflowMode = Truncate` as a backstop: if a message ever exceeds the cap it is clipped inside its
+  own rect rather than drawn over the buttons.
+- The vendor's stat block is set at **15px** against the question's 19px — the question is the decision,
+  the stats are evidence for it — and the redundant `Name:` row is dropped, since the name is already in
+  the question line above.
+
+⚠ Unity-side, so NOT compile-verified — the owner is holding APK builds until the fix batch is done.
+
 ## 2026-07-30 — Rarity colour in every item list (0.32.1)
 
 The **bag** was the one list still painting every row the same grey — the list you look at most, and
