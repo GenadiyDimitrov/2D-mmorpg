@@ -100,6 +100,7 @@ Console.WriteLine();
 
     // ---- Champion: Heavenly Crush on cooldown, autoattacks filling the gaps ----
     var champ = BuildPlayer(Race.Human, BaseClass.Fighter, refLevel, warrior: true);
+    ApplyNpcBuffs(champ);
     int cAtk = (int)champ.EffectiveAttack;
     float critF = CritFactor(champ.CritChance, StatCalculator.PhysicalCritMult(champ.CritDamageBonus));
     float dblF  = CritFactor(StatCalculator.PhysicalDoubleChance(Math.Max(champ.Dex, champ.AtkStat)), 2f);
@@ -133,6 +134,7 @@ Console.WriteLine();
     const int nukeReuseTicks = 10;  // 1s
 
     var nuker = BuildPlayer(Race.Human, BaseClass.Mage, refLevel);
+    ApplyNpcBuffs(nuker);
     int mAtk = (int)nuker.EffectiveMagicAttack;
     float mCritF = CritFactor(nuker.MagicCritChance, StatCalculator.MagicCritMult(nuker.CritDamageBonus));
 
@@ -146,6 +148,33 @@ Console.WriteLine();
     Console.WriteLine($"    top nuke (power {nukePower})  {nukeHit,6} dmg / {nukeCycle:F1}s  = {nukeDps,7:F1} dps"
                       + $"   ({mobHp / Math.Max(1f, nukeDps):F1}s to kill)");
     Console.WriteLine($"    -> CHAMPION/NUKER = {(crushDps + autoDps) / Math.Max(1f, nukeDps):F2}x");
+    Console.WriteLine();
+
+    // ---- REUSE REDUCTION sweep ----
+    //
+    // ⚠ THERE IS NO REUSE BUFF IN THE GAME. CooldownPct exists as a field and is used by exactly one
+    // thing — the healer's Caster Mastery passive — so nothing a player can be BUFFED with reduces
+    // reuse today. This sweep models what one would be worth before it gets authored.
+    //
+    // It is not symmetric, and that is the point: reuse shortens the COOLDOWN only, never the cast.
+    // The Champion's Crush is 1.8s cast on a 7s cooldown, so almost all of its cycle is reducible.
+    // The nuke is a ~2.9s cast on a 1s cooldown — barely any of it is. A reuse buff is therefore a
+    // WARRIOR buff wearing a neutral name, and handing "the same" buff to both classes would quietly
+    // hand the fight to the melee.
+    Console.WriteLine("  REUSE-REDUCTION sweep (no such buff exists yet — this is what one would do):");
+    Console.WriteLine($"    {"reuse-",7} {"champion",9} {"nuker",9} {"ratio",7}");
+    foreach (float cdr in new[] { 0f, 0.10f, 0.20f, 0.30f })
+    {
+        float cCycle = (refCastTicks + Math.Max(1, (int)(refReuseTicks * (1f - cdr)))) * GameConstants.TickSeconds;
+        float cShare = (cCycle - refCastTicks * GameConstants.TickSeconds) / cCycle;
+        float cDps = crushHit * critF * dblF / cCycle + autoHit * critF / autoEvery * cShare;
+
+        float nCast = Math.Max(2, (int)(nukeCastTicks * nuker.EffectiveCastSpeedMultiplier));
+        float nCycle = (nCast + Math.Max(1, (int)(nukeReuseTicks * (1f - cdr)))) * GameConstants.TickSeconds;
+        float nDps = nukeHit * mCritF / nCycle;
+
+        Console.WriteLine($"    {cdr,6:P0} {cDps,9:F1} {nDps,9:F1} {cDps / Math.Max(1f, nDps),7:F2}x");
+    }
     Console.WriteLine();
 
     // The PLACEHOLDER catalogue kit, listed separately and ranked by DPS so it is never mistaken for
@@ -391,6 +420,24 @@ static int TopNukePower(Entity e)
 //  CATEGORY (physical skills scale with ATTACK speed, spells with CAST speed — see SkillReuseTicks),
 //  and CooldownTicks reduced by CooldownReduction.
 // =====================================================================================================
+
+/// <summary>Lay the NPC buffer's FULL set on an entity — the same `SkillCatalog.NewbieBuffSet` the
+/// buffer NPC and the debug button use, so "buffed" here means exactly what it means in game.
+///
+/// This matters because the owner signs off on BUFFED numbers: an unbuffed matrix was measuring a
+/// state almost nobody plays in.</summary>
+static void ApplyNpcBuffs(Entity e)
+{
+    foreach (var id in SkillCatalog.NewbieBuffSet)
+        if (SkillCatalog.Get(id) is SkillDef def)
+            e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+            {
+                Effect = def.Effect,
+                Magnitudes = def.MagnitudesAt(1) ?? Array.Empty<EffectMagnitude>(),
+                TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey, Level = 1,
+            });
+    e.RecomputeDerived();
+}
 
 /// <summary>Expected damage multiplier from crit: 1 + chance × (mult − 1).</summary>
 static float CritFactor(float chance, float mult) => 1f + chance * (mult - 1f);
