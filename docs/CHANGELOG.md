@@ -12,6 +12,26 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-29 — One aggressive mob type per field (0.29.2)
+
+**71 of the 80 mob templates are flagged aggressive**, so every field above level 10 was wall-to-wall
+aggro — a level-22 champion walking into a 22-28 zone was jumped by casters and melee at once and
+simply died (owner, playtest-13: "22 lvl champion getting ganked by magic monsters and few melees
+equals death").
+
+Aggression is now decided at SPAWN time, per zone, instead of purely by the template:
+
+- **Elites** still attack on sight; **bosses** still do not (unchanged — a boss is pulled deliberately).
+- **Dungeons, instances and elite/boss grounds keep FULL aggression.** That is their character, and
+  you go there on purpose. Dungeons identify themselves by construction: the overworld lives in
+  `[0, Zone*]` and the negative quadrant is dungeon/jail space, so there is no extra flag to keep in
+  sync (`SpawnZone.AllAggressive`).
+- **An ordinary field has exactly ONE aggressive type** — the zone's FIRST roster entry
+  (`SpawnZone.AggressiveType`). The field still bites; you can just fight one thing at a time.
+
+A template that is passive stays passive everywhere — this rule only ever REMOVES aggression, never
+adds it. To change which creature is the dangerous one in a zone, reorder its `MobTypes`.
+
 ## 2026-07-29 — The six-quality gear ladder + real shop prices (0.29.1) — ⚠ DELETE `game.db`
 
 One item, six qualities (owner). Design: [design/RarityLadder.md](design/RarityLadder.md).

@@ -9106,6 +9106,29 @@ var effect = def.Effect;
     /// rank multipliers (elite/boss), the template's MobMod passives, the role archetype, and — for a
     /// Boss — its unique skill kit (BossCatalog) or the generic slam. Zone spawns pass the zone rank/id;
     /// boss ADDS pass Normal rank + an empty zone id so they don't schedule a zone respawn.</summary>
+    /// <summary>Does this spawn attack on sight?
+    ///
+    /// The template flag is no longer the whole answer (owner, playtest-13): 71 of 80 templates are
+    /// aggressive, so every field above level 10 was wall-to-wall aggro and a melee character walking
+    /// into a band-appropriate zone was ganked by several casters and melee at once. The rule now:
+    ///
+    ///   • ELITES always attack on sight (unchanged) — BOSSES never do, they are pulled deliberately.
+    ///   • Dungeons, instances and elite/boss grounds keep FULL aggression — that is their character,
+    ///     and you go there on purpose.
+    ///   • An ordinary field has exactly ONE aggressive type (the zone's first roster entry), so it
+    ///     still bites, but you can fight one thing at a time.
+    ///
+    /// A mob whose template is passive stays passive everywhere — this only ever REMOVES aggression.</summary>
+    private static bool ResolveAggression(string mobId, MobType mobType, MobRank rank, string zoneId)
+    {
+        if (rank == MobRank.Elite) return true;
+        if (!mobType.Aggressive) return false;
+
+        var zone = WorldMap.SpawnZones.FirstOrDefault(z => z.Id == zoneId);
+        if (zone is null) return mobType.Aggressive;   // boss ADDs and debug spawns keep the template
+        return zone.AllAggressive || mobId == zone.AggressiveType;
+    }
+
     private Entity BuildMob(string mobId, int level, MobRank rank, float x, float y, string zoneId)
     {
         var mobType = MobCatalog.Get(mobId);
@@ -9139,7 +9162,7 @@ var effect = def.Effect;
             // ELITES attack on sight; BOSSES do not (owner). A raid/field boss sits in its lair and is
             // fought when you choose to pull it — making it aggressive turned every approach into an
             // ambush and put a "*" on the Treant. Boss difficulty comes from its kit, not from jumping you.
-            Aggressive = mobType.Aggressive || rank == MobRank.Elite,
+            Aggressive = ResolveAggression(mobId, mobType, rank, zoneId),
             ZoneId = zoneId,
             Rank = rank,
             MobTypeId = mobId

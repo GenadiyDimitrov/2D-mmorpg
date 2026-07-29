@@ -398,6 +398,23 @@ public record SpawnZone(
     /// <summary>Stable id from coordinates+rank, used to persist boss timers.</summary>
     public string Id => $"{(int)X}_{(int)Y}_{Rank}";
 
+    /// <summary>Does EVERY aggressive template in this zone actually attack on sight?
+    ///
+    /// Only dungeons/instances and elite/boss grounds (owner, playtest-13). Out in the ordinary
+    /// fields exactly ONE mob type is aggressive — see <see cref="AggressiveType"/> — because 71 of
+    /// the 80 templates are flagged aggressive, and a level-22 champion walking into a 22-28 field was
+    /// being jumped by casters and melee at once and simply dying. Danger should be somewhere you
+    /// CHOOSE to go.
+    ///
+    /// Dungeons are the negative quadrant by construction (the overworld lives in [0, Zone*]), so
+    /// that is what identifies one — no extra flag to keep in sync.</summary>
+    public bool AllAggressive => Rank != MobRank.Normal || X < 0 || Y < 0;
+
+    /// <summary>In an ordinary field, the ONE mob type that attacks on sight: the first entry in
+    /// <see cref="MobTypes"/>. Making it positional means every zone already declares one and the
+    /// roster reads as "the dangerous one, then the rest".</summary>
+    public string AggressiveType => MobTypes.Length > 0 ? MobTypes[0] : "";
+
     public bool IsActiveAt(DayPhase phase) => Active switch
     {
         ActiveTime.Day => phase == DayPhase.Day,
