@@ -74,6 +74,71 @@ foreach (int L in levels)
                       $"{hit,7} {skillHit,7} {mobHp,7} {hits,6:F1}");
 }
 Console.WriteLine();
+// =====================================================================================================
+//  DPS COMPARISON — a CHAMPION's reference skill vs a NUKER's best, at the same level.
+//
+//  The owner's reference (2026-07-29): "Heavenly Crush" — power 7600, 7s reuse, 1.8s cast, can double.
+//  It does not exist in the catalogue yet; it is modelled here so warrior and nuker can be compared on
+//  the one measure that means anything, DAMAGE PER SECOND, before it gets authored.
+//
+//  Note the shape of our formula: power is ADDITIVE with P.Atk and defence DIVIDES the sum, so a big
+//  L2-style power number is tempered rather than explosive — 7600 is not the outlier it looks like next
+//  to a nuke's power 116.
+// =====================================================================================================
+{
+    const int refLevel = 74;
+    const int refPower = 7600;
+    const int refCastTicks = 18;   // 1.8s
+    const int refReuseTicks = 70;  // 7s
+
+    int mobPDef = MobBaseStats.PDef(refLevel);
+    int mobMDef = MobBaseStats.MDef(refLevel);
+    int mobHp = MobBaseStats.Hp(refLevel);
+
+    Console.WriteLine($"=== DPS @ {refLevel}: CHAMPION (reference skill) vs NUKER (best real skill) ===");
+    Console.WriteLine($"  mob: {mobHp} HP, {mobPDef} P.Def, {mobMDef} M.Def");
+
+    // ---- Champion: Heavenly Crush on cooldown, autoattacks filling the gaps ----
+    var champ = BuildPlayer(Race.Human, BaseClass.Fighter, refLevel, warrior: true);
+    int cAtk = (int)champ.EffectiveAttack;
+    float critF = CritFactor(champ.CritChance, StatCalculator.PhysicalCritMult(champ.CritDamageBonus));
+    float dblF  = CritFactor(StatCalculator.PhysicalDoubleChance(Math.Max(champ.Dex, champ.AtkStat)), 2f);
+
+    int crushHit = StatCalculator.PhysicalDamage(cAtk, refPower, mobPDef, refLevel);
+    float crushCycle = (refCastTicks + refReuseTicks) * GameConstants.TickSeconds;
+    float crushDps = crushHit * critF * dblF / crushCycle;
+
+    int autoHit = StatCalculator.PhysicalDamage(cAtk, 0, mobPDef, refLevel);
+    float autoEvery = AutoAttackSeconds(champ);
+    // Autoattacks only fill the time the cast is NOT occupying.
+    float autoShare = (crushCycle - refCastTicks * GameConstants.TickSeconds) / crushCycle;
+    float autoDps = autoHit * critF / autoEvery * autoShare;
+
+    Console.WriteLine($"  CHAMPION  P.Atk {cAtk}  crit x{critF:F2}  double x{dblF:F2}");
+    Console.WriteLine($"    Heavenly Crush  {crushHit,6} dmg / {crushCycle:F1}s  = {crushDps,7:F1} dps");
+    Console.WriteLine($"    autoattack      {autoHit,6} dmg / {autoEvery:F2}s   = {autoDps,7:F1} dps");
+    Console.WriteLine($"    TOTAL                                    = {crushDps + autoDps,7:F1} dps"
+                      + $"   ({mobHp / Math.Max(1f, crushDps + autoDps):F1}s to kill)");
+
+    // ---- Nuker: its best real nuke, back to back ----
+    var nuker = BuildPlayer(Race.Human, BaseClass.Mage, refLevel);
+    var (nukeDef, nukeLvl) = TopSkill(nuker, SkillEffect.MagicDamage);
+    if (nukeDef is not null)
+    {
+        int mAtk = (int)nuker.EffectiveMagicAttack;
+        float mCritF = CritFactor(nuker.MagicCritChance, StatCalculator.MagicCritMult(nuker.CritDamageBonus));
+        int nukeHit = StatCalculator.MagicDamage(mAtk, nukeDef.PowerAt(nukeLvl), mobMDef, refLevel);
+        float nukeCycle = SkillCycleSeconds(nuker, nukeDef);
+        float nukeDps = nukeHit * mCritF / nukeCycle;
+
+        Console.WriteLine($"  NUKER     M.Atk {mAtk}  magic crit x{mCritF:F2}");
+        Console.WriteLine($"    {nukeDef.Name} L{nukeLvl} (power {nukeDef.PowerAt(nukeLvl)})"
+                          + $"  {nukeHit,6} dmg / {nukeCycle:F1}s = {nukeDps,7:F1} dps"
+                          + $"   ({mobHp / Math.Max(1f, nukeDps):F1}s to kill)");
+    }
+    Console.WriteLine();
+}
+
 Console.WriteLine("=== UNARMED / NAKED (no weapon, no armor) — should be FEEBLE ===");
 Console.WriteLine($"{"Lvl",4} {"class",8} {"P.Atk",7} | {"basic",7} {"mobHP",7} {"hits",6}");
 foreach (int L in new[] { 1, 4, 8, 20 })
@@ -283,6 +348,56 @@ static int TopNukePower(Entity e)
     return best;
 }
 
+// =====================================================================================================
+//  DPS — the only honest way to compare a fighter with a caster.
+//
+//  "Hits to kill" says nothing: it ignores how long a hit TAKES. A 400-damage skill on a 15s reuse and
+//  a 300-damage one on 3s are not comparable by damage, and a fighter filling the gaps with autoattacks
+//  is doing work that a hits-count never sees. So model the rotation the server actually runs:
+//
+//      skill damage / (cast + reuse)  +  autoattack damage / attack interval
+//
+//  …with crit folded in as an EXPECTED multiplier (chance × (mult − 1)), because over a fight that is
+//  what crit is worth. Every timing below comes from the server: PlayerAttackIntervalTicks scaled by
+//  EffectiveAttackSpeedMultiplier (CombatTick), CastTicks × the speed multiplier for that skill's
+//  CATEGORY (physical skills scale with ATTACK speed, spells with CAST speed — see SkillReuseTicks),
+//  and CooldownTicks reduced by CooldownReduction.
+// =====================================================================================================
+
+/// <summary>Expected damage multiplier from crit: 1 + chance × (mult − 1).</summary>
+static float CritFactor(float chance, float mult) => 1f + chance * (mult - 1f);
+
+/// <summary>Seconds between autoattacks, exactly as CombatTick computes the cooldown.</summary>
+static float AutoAttackSeconds(Entity e) =>
+    Math.Max(2, (int)(GameConstants.PlayerAttackIntervalTicks * e.EffectiveAttackSpeedMultiplier))
+    * GameConstants.TickSeconds;
+
+/// <summary>Seconds one cast of a skill occupies: cast time (scaled by the speed that skill's category
+/// uses) plus its reuse. This is SkillReuseTicks' arithmetic.</summary>
+static float SkillCycleSeconds(Entity e, SkillDef def)
+{
+    float speedMult = def.Category == SkillCategory.Physical
+        ? e.EffectiveAttackSpeedMultiplier : e.EffectiveCastSpeedMultiplier;
+    int castTicks = Math.Max(2, (int)(def.CastTicks * speedMult));
+    int cd = def.CooldownTicks;
+    if (cd > 0 && e.CooldownReduction > 0f) cd = Math.Max(1, (int)(cd * (1f - e.CooldownReduction)));
+    return Math.Max(1, castTicks + cd) * GameConstants.TickSeconds;
+}
+
+/// <summary>The strongest damaging skill of a channel, returned with its def so the caller can time it.</summary>
+static (SkillDef? Def, int Level) TopSkill(Entity e, SkillEffect channel)
+{
+    SkillDef? best = null; int bestLvl = 0;
+    foreach (var (id, lvl) in e.LearnedSkills)
+    {
+        var def = SkillCatalog.Get(id);
+        if (def is null || (def.Effect & channel) == 0) continue;
+        if (!string.IsNullOrEmpty(def.ConsumableId)) continue;
+        if (best is null || def.PowerAt(lvl) > best.PowerAt(bestLvl)) { best = def; bestLvl = lvl; }
+    }
+    return (best, bestLvl);
+}
+
 /// <summary>The strongest PHYSICAL-damage skill the character knows, mirroring TopNukePower.
 ///
 /// Without this the fighter row was measured on a power-0 BASIC ATTACK while the mage row used its
@@ -309,7 +424,9 @@ static int TopPhysSkillPower(Entity e)
 // full best-for-tier gear line (weapon + body + accessories + 5 jewels + shield for fighters).
 /// <param name="quality">Gear QUALITY suffix: null/"epic" = the authored tier piece, or "mythic" /
 /// "legendary" / "rare" / … to measure the six-quality ladder's other rungs.</param>
-static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality = null)
+/// <param name="warrior">Fighters default to the KNIGHT (tank) 2nd class; set this for the CHAMPION
+/// (warrior), whose kit is the damage-dealing one.</param>
+static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality = null, bool warrior = false)
 {
     var s = StatCalculator.GetBaseStats(race, cls);
     var e = new Entity { Name = "calc", Kind = EntityKind.Player };
@@ -319,7 +436,8 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
     e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Dex = s.Dex;
 
     // Second class at 20 (Human Sorcerer / Human Knight) so the archetype kits apply.
-    if (level >= 20) e.SecondClass = cls == BaseClass.Mage ? 18 : 13;
+    // 18 = Sorcerer (nuker), 13 = Knight (tank), 14 = Champion (warrior).
+    if (level >= 20) e.SecondClass = cls == BaseClass.Mage ? 18 : warrior ? 14 : 13;
 
     // Every skill the class table teaches by this level, at the highest level learnable.
     //
