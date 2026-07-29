@@ -217,6 +217,32 @@ of these once fixed. Nothing here has been built yet.
         bars, or empty ones.
 25. [ ] **Buff tap behaviour** — press-and-HOLD cancels, a single tap opens a details popup that closes
         on an outside tap. Holding a DEBUFF shows its details instead (debuffs can't be dismissed).
+### 🔴 0.30.0 — the big batch (nothing below has been played)
+26a.[ ] **Rogue uses BOTH weapons** — make a Fighter → Rogue. At 20/24/28/32/36 the Learn tab must
+        offer BOTH the dagger ladder (`PiercingStab`) and the bow ladder (`PreciseShot`). Marksman /
+        Warden / Hunter must NOT appear as 2nd classes. Bow range should still grow with tier.
+26b.[ ] **Gear quality reads off COLOUR, not the name** — a vendor stocks the same piece at Common /
+        Uncommon / Rare. Names identical, colours differ, and the item details show a `Rarity:` row
+        with the % power. Check the inventory, both vendors, the warehouse and the worn squares.
+26c.[ ] **Shop prices bite** — F/E/D only, nothing above Rare for sale. An F body ≈ 18k at Rare,
+        6.3k at Common. Two vendors now: **Armsmaster** (weapons) and **Outfitter** (armor/jewels).
+26d.[ ] **Vendor Detail/Compact toggle**, and the BUY confirmation shows full stats + description.
+26e.[ ] **One aggressive mob per field** — walk a 22-28 field. Exactly one creature type should
+        attack on sight; the rest ignore you until hit. Dungeons stay all-aggro.
+26f.[ ] **Quest markers** over NPC heads: gold **!** takeable, gold **?** hand in now, grey **?** in
+        progress. They must appear the moment you LEVEL into a quest, without relogging.
+26g.[ ] **Track / Abandon** — [Track] pins to the on-screen panel (max 5, draggable, hides when
+        empty). [Abandon] confirms first and the quest really goes.
+26h.[ ] **Apothecary daily** — Miren gives a 1h shot box, levels 6-75, once per server day. The
+        reward box must be UNTRADABLE; the ones she sells are not.
+26i.[ ] **Town layout** — Brackenford: shops + Keeper east, class/quests west, Gatekeeper top-centre,
+        Mindwright bottom-centre. **Every** other town has buffer / keeper / 3 vendors / gatekeeper.
+26j.[ ] **The five-city world** — Brackenford 1-16 · Stonewatch 16-40 · Greymarsh 40-60 ·
+        Ironreach 60-75 · Frostmere 76-90. Emberfall and Duskvale must be GONE from the map and from
+        every gatekeeper's travel list. **Grandmaster Thorne is in Greymarsh**, not Brackenford.
+26k.[ ] **86-90 exists** — the Frostmere 85-90 field must actually spawn mobs at 86-90 (not all 85),
+        and each Frostmere field's elite spawner should be close but not aggro you from the camp.
+
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends
         (and combat decays) it works. Same for `/exit`. Pulling the plug mid-DoT must not run the

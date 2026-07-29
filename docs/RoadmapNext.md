@@ -63,7 +63,31 @@ These break or corrupt state; several are one-line-class bugs with an outsized f
 - Debug 2nd-class button grants the CRAFTING class (ScrollScribe). Needs to grant the current
   path's real 2nd/3rd profession — or let admins bypass the class-master quest gate.
 
-## 🟡 TIER 3 — systems to rework
+## 🟡 TIER 3 — MOSTLY DONE (0.29.0 → 0.30.0)
+
+**Shipped:** archer→rogue merge · six-quality gear ladder + real shop prices + rarity colours ·
+one aggressive mob type per field · quest level ranges / abandon / daily shot box / NPC markers /
+on-screen tracker · vendor split + detail view + description in the buy confirmation · every town
+fully serviced · **the five-city world**. See the CHANGELOG entries for 0.29.x-0.30.0.
+
+**STILL OPEN from tier 3** (the honest remainder):
+- **Repeatable quests** — endless gathering with a per-mob `QuestItemRewardModifier` paying exp+gold
+  per quest item on turn-in, finite repeatables, talk-to repeatables. The `Daily` flag and the dated
+  stamp that backs it already exist, so this builds on rails that are in.
+- **The 3-tab quest window** (active / unavailable / completed) and the **per-quest detail window**
+  with accept/decline at the NPC. Track and Abandon shipped; the tabs did not.
+- **Scaled SET BONUSES.** Epic+ copies keep their `SetId`, so the bonus applies — but at FULL
+  strength regardless of quality. Scaling needs a `StatMods * float` helper and one generated
+  `ArmorSetDef` per quality.
+- **Numeric skill descriptions** — magnitudes per learned level, including the armour-conditional
+  lines ("Light Armor: Evasion +3"). Started reading `PassiveEffect`/`EffectMagnitude`; no code yet.
+- **Folding the "(Lesser)" line away.** It no longer spawns quality copies (so the interleaving is
+  gone), but it still exists as the F/E/D vendor line because the main ladder has no F tier — it
+  starts at level 20. Deleting it needs an F tier authored first.
+
+**The older tier-3 detail below is kept as the record of what was asked for.**
+
+## 🟡 TIER 3 — the original list
 
 **Items & vendors** (one connected batch — now driven by [design/RarityLadder.md](design/RarityLadder.md))
 - 🆕 **The six-rarity ladder** — one base item per slot/grade at Common/Uncommon/Rare/Epic/
@@ -210,11 +234,11 @@ well as in memory.
 ## My view of the order
 1. ✅ ~~Tier 1, all eight~~ — DONE (0.28.92-95).
 2. ✅ ~~Tier 2 hygiene~~ — DONE (0.28.96).
-3. 🔴 **DEVICE PLAYTEST FIRST.** Five versions of deep change — buff persistence, a new DB column, a
-   combat-log gate, two protocol bumps and a pile of Unity edits that were never compiled — are
-   sitting untested on hardware. The SmokeTest proves the server; it cannot prove the client.
-4. **The archer 20-40 kit / the Rogue merge** — a whole playable class is hollow today, and unlike
-   the 3rd-class work it is blocked on nothing. The merge design makes it mostly a deletion.
+3. ✅ ~~Archer/rogue merge, gear ladder, aggression, quests, vendors, towns, five-city world~~ —
+   DONE (0.29.0 → 0.30.0). APK **0.30.0 built and installed**, zero compile errors — which is what
+   finally verified every Unity-side change from this run.
+4. 🔴 **DEVICE PLAYTEST — this is the next thing.** Ten versions of deep change are on the phone and
+   none of it has been played. The SmokeTest proves the server; it cannot prove the game.
 4. **The item/vendor batch** — rarity-out-of-name, descriptions, shop grades + prices, vendor UI,
    warehouse grouping. They touch the same code and the same screens; splitting them costs more.
 5. **The quest batch** — detail window, level ranges, abandon, then repeatables and the quest
