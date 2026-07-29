@@ -19,9 +19,16 @@ weapon-based multiplicative M.Atk · the low-grade gear fills + named tier sets 
 (server + UI + its own Keeper NPC) · **blueprint crafting** · **block list** · **charisma/reputation**
 + moderation drains · **buy-back** (server + UI). Tier-1 and tier-2 of playtest-11 are all closed.
 
+**✅ Playtest-13 TIERS 1 AND 2 ARE DONE (0.28.92 → 0.28.96, protocol 5).** SmokeTest verified green
+against a live server on a fresh DB, and extended to cover the new work. Details in
+[CHANGELOG.md](CHANGELOG.md); the two tier sections below are kept as the record of what was wrong.
+**Everything from here is TIER 3 onward.**
+⚠ Not yet device-tested, and the Unity-side tier-2 changes are not compile-verified.
+⚠ `game.db` must be deleted before running (the `BuffsJson` column).
+
 ---
 
-## 🔴 TIER 1 — playtest-13 bugs (do these first)
+## ✅ TIER 1 — playtest-13 bugs — ALL DONE (0.28.92-95)
 
 These break or corrupt state; several are one-line-class bugs with an outsized feel.
 
@@ -45,7 +52,7 @@ These break or corrupt state; several are one-line-class bugs with an outsized f
 8. **Buff cancel must become press-and-hold.** Double-click is unusable on a phone: the pop-up
    eats the taps and spamming cancels the neighbouring buffs.
 
-## 🟠 TIER 2 — UI + server hygiene
+## ✅ TIER 2 — UI + server hygiene — ALL DONE (0.28.96)
 
 - Item details: the Atk row hides under the title bar on first open, correct on reopen.
 - Mob-info window is clipped — the box reads as centre-aligned with its top half off-screen
@@ -201,12 +208,13 @@ well as in memory.
 ---
 
 ## My view of the order
-1. 🔴 **Tier 1, all eight.** Buff persistence and mat stacking are the two that change how the
-   game feels; the rest are small. This is one batch, one build.
-2. 🟠 **Tier 2 hygiene** — quiet the SQL log first (it costs nothing and makes every later
-   server session readable), then the two clipped windows.
-3. **The archer 20-40 kit** — a whole playable class is currently hollow, and unlike the 3rd-class
-   work it is not blocked on anything.
+1. ✅ ~~Tier 1, all eight~~ — DONE (0.28.92-95).
+2. ✅ ~~Tier 2 hygiene~~ — DONE (0.28.96).
+3. 🔴 **DEVICE PLAYTEST FIRST.** Five versions of deep change — buff persistence, a new DB column, a
+   combat-log gate, two protocol bumps and a pile of Unity edits that were never compiled — are
+   sitting untested on hardware. The SmokeTest proves the server; it cannot prove the client.
+4. **The archer 20-40 kit / the Rogue merge** — a whole playable class is hollow today, and unlike
+   the 3rd-class work it is blocked on nothing. The merge design makes it mostly a deletion.
 4. **The item/vendor batch** — rarity-out-of-name, descriptions, shop grades + prices, vendor UI,
    warehouse grouping. They touch the same code and the same screens; splitting them costs more.
 5. **The quest batch** — detail window, level ranges, abandon, then repeatables and the quest
