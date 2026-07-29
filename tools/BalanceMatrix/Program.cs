@@ -95,7 +95,7 @@ Console.WriteLine();
     int mobMDef = MobBaseStats.MDef(refLevel);
     int mobHp = MobBaseStats.Hp(refLevel);
 
-    Console.WriteLine($"=== DPS @ {refLevel}: CHAMPION (reference skill) vs NUKER (best real skill) ===");
+    Console.WriteLine($"=== DPS @ {refLevel}: CHAMPION vs NUKER — both on the OWNER-SPECIFIED reference skills ===");
     Console.WriteLine($"  mob: {mobHp} HP, {mobPDef} P.Def, {mobMDef} M.Def");
 
     // ---- Champion: Heavenly Crush on cooldown, autoattacks filling the gaps ----
@@ -120,17 +120,38 @@ Console.WriteLine();
     Console.WriteLine($"    TOTAL                                    = {crushDps + autoDps,7:F1} dps"
                       + $"   ({mobHp / Math.Max(1f, crushDps + autoDps):F1}s to kill)");
 
-    // ---- Nuker: EVERY nuke it knows, ranked by DPS ----
+    // ---- Nuker: the REFERENCE top nuke, same basis as the Champion's ----
     //
-    // Ranking by POWER is the wrong question for a DPS comparison and gave the wrong answer: it picked
-    // Vampiric Bolt, whose shorter cycle flatters it, over the main nuke. Listing them all shows which
-    // spell a player would actually spam — and whether the dedicated nuke ladder is really the best one.
+    // Also the owner's number, not the catalogue's: power 108, 4s cast, 1s reuse. Taking it from the
+    // catalogue would measure the PLACEHOLDER 3rd-class kit and quietly pass an estimate off as data —
+    // and it did exactly that, picking a fast low-power spell that flatters the class. Both sides of
+    // this comparison are now the same kind of number: what the owner intends the class to have at 74.
+    // Neither class's next skill improves DPS — the nuker's level-76 nuke is SLOWER, and the
+    // Champion's is utility with less power — so level 74 is the fair place to compare.
+    const int nukePower = 108;
+    const int nukeCastTicks = 40;   // 4s base, shortened by cast speed below
+    const int nukeReuseTicks = 10;  // 1s
+
     var nuker = BuildPlayer(Race.Human, BaseClass.Mage, refLevel);
     int mAtk = (int)nuker.EffectiveMagicAttack;
     float mCritF = CritFactor(nuker.MagicCritChance, StatCalculator.MagicCritMult(nuker.CritDamageBonus));
-    Console.WriteLine($"  NUKER     M.Atk {mAtk}  magic crit x{mCritF:F2}");
 
-    var nukes = new List<(string Name, int Power, int Hit, float Cycle, float Dps)>();
+    int nukeHit = StatCalculator.MagicDamage(mAtk, nukePower, mobMDef, refLevel);
+    // Cast time scales with CAST speed exactly as SkillReuseTicks does; reuse does not.
+    float nukeCycle = (Math.Max(2, (int)(nukeCastTicks * nuker.EffectiveCastSpeedMultiplier)) + nukeReuseTicks)
+                      * GameConstants.TickSeconds;
+    float nukeDps = nukeHit * mCritF / nukeCycle;
+
+    Console.WriteLine($"  NUKER     M.Atk {mAtk}  magic crit x{mCritF:F2}");
+    Console.WriteLine($"    top nuke (power {nukePower})  {nukeHit,6} dmg / {nukeCycle:F1}s  = {nukeDps,7:F1} dps"
+                      + $"   ({mobHp / Math.Max(1f, nukeDps):F1}s to kill)");
+    Console.WriteLine($"    -> CHAMPION/NUKER = {(crushDps + autoDps) / Math.Max(1f, nukeDps):F2}x");
+    Console.WriteLine();
+
+    // The PLACEHOLDER catalogue kit, listed separately and ranked by DPS so it is never mistaken for
+    // the reference above. This is where the estimated kit's own problems show up.
+    Console.WriteLine("  (placeholder catalogue kit at this level, ranked by DPS — NOT the reference:)");
+    var nukes = new List<(string Name, int Power, float Dps)>();
     foreach (var (id, lvl) in nuker.LearnedSkills)
     {
         var def = SkillCatalog.Get(id);
@@ -139,11 +160,10 @@ Console.WriteLine();
         int power = def.PowerAt(lvl);
         int hit = StatCalculator.MagicDamage(mAtk, power, mobMDef, refLevel);
         float cycle = SkillCycleSeconds(nuker, def);
-        nukes.Add(($"{def.Name} L{lvl}", power, hit, cycle, hit * mCritF / cycle));
+        nukes.Add(($"{def.Name} L{lvl}", power, hit * mCritF / cycle));
     }
     foreach (var n in nukes.OrderByDescending(n => n.Dps))
-        Console.WriteLine($"    {n.Name,-22} power {n.Power,4}  {n.Hit,6} dmg / {n.Cycle:F1}s = {n.Dps,7:F1} dps"
-                          + $"   ({mobHp / Math.Max(1f, n.Dps):F1}s to kill)");
+        Console.WriteLine($"      {n.Name,-22} power {n.Power,4}  = {n.Dps,7:F1} dps");
     Console.WriteLine();
 }
 
