@@ -126,6 +126,20 @@ public static class ShopCatalog
         var dict = new Dictionary<string, ShopDef>(StringComparer.OrdinalIgnoreCase);
         foreach (var s in shops)
             dict[s.NpcId] = s;
+
+        // EVERY main town sells the same three inventories (owner, 2026-07-29). The ring towns' vendor
+        // ids are the Brackenford id plus a town suffix (see WorldMap.RingTownServices), so the stock is
+        // shared by REFERENCE rather than copied — one list to edit, and a town can never quietly end up
+        // selling last month's catalogue. Anything town-specific later just overrides its own key.
+        foreach (var npc in WorldMap.Npcs)
+        {
+            if (npc.Role != NpcRole.Vendor || dict.ContainsKey(npc.Id)) continue;
+            int cut = npc.Id.LastIndexOf('_');
+            if (cut <= 0) continue;
+            string baseId = npc.Id.Substring(0, cut);
+            if (dict.TryGetValue(baseId, out var template))
+                dict[npc.Id] = template with { NpcId = npc.Id };
+        }
         return dict;
     }
 

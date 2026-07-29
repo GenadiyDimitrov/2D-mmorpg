@@ -250,7 +250,7 @@ public static class WorldMap
     /// <summary>NPCs placed in the world (quest givers, class-change masters).
     /// Stationary, non-combat. Add NPCs here; quests/class-changes reference
     /// them by Id.</summary>
-    public static readonly NpcDef[] Npcs =
+    public static readonly NpcDef[] Npcs = new NpcDef[]
     {
         // --- Starter town: Brackenford (map centre, 24000,24000, radius 3500). NPCs
         //     are spread ~2000 units apart (≈360px on screen) so labels don't overlap;
@@ -269,9 +269,7 @@ public static class WorldMap
         new("priest_oren",   "High Priest Oren",   22600, 24250, NpcRole.QuestGiver),
         new("elder_marius",  "Elder Marius",       22150, 24250, NpcRole.QuestGiver),
         new("master_class",  "Class Master Vael",  22800, 23800, NpcRole.ClassChange),
-        // 3rd-class master: gives the harder lvl-40 discipline chains AND performs
-        // the change (an NpcRole.ClassChange NPC can also be a quest giver).
-        new("master_class3", "Grandmaster Thorne", 22350, 23800, NpcRole.ClassChange),
+        // (The 3rd-class Grandmaster is NOT here — he stands in Greymarsh, below. See RingTownServices.)
         // --- EAST: the three vendors, one stop ---
         // (their wares are defined by ShopCatalog, keyed on these ids)
         new("merchant_potions", "Apothecary Miren", 25200, 23800, NpcRole.Vendor),
@@ -310,13 +308,59 @@ public static class WorldMap
         // Brackenford's keeper joins the VENDOR cluster (owner): banking and shopping are the same
         // errand — you sell, you stash, you buy — so they belong in one stop.
         new("warehouse_brackenford", "Keeper Bram",   25650, 24700, NpcRole.Warehouse),
-        new("warehouse_stonewatch",  "Keeper Osric",  25500, 10000, NpcRole.Warehouse),
-        new("warehouse_emberfall",   "Keeper Fenn",   37500, 15000, NpcRole.Warehouse),
-        new("warehouse_greymarsh",   "Keeper Wyn",    37500, 33000, NpcRole.Warehouse),
-        new("warehouse_ironreach",   "Keeper Dagr",   25500, 38000, NpcRole.Warehouse),
-        new("warehouse_duskvale",    "Keeper Lys",    13500, 33000, NpcRole.Warehouse),
-        new("warehouse_frostmere",   "Keeper Hald",   13500, 15000, NpcRole.Warehouse),
-    };
+    }.Concat(RingTownServices()).ToArray();
+
+    /// <summary>Every MAIN town carries the same service set (owner, 2026-07-29): a buffer, a
+    /// warehouse keeper, the THREE vendors and a gatekeeper. A town you cannot resupply in is a town
+    /// you teleport out of, which made the ring towns waypoints rather than places.
+    ///
+    /// Only the STARTER town differs, and only by holding what you use once: the class masters and the
+    /// skill-resetter (hand-placed above). The 3rd-class Grandmaster moved OUT to Greymarsh, the first
+    /// town whose band spans level 40 — you should not be walking back to the newbie town to take a
+    /// level-40 quest. Later 3rd-class quest NPCs belong beside him there.
+    ///
+    /// Generated rather than hand-listed: six towns × five NPCs is thirty rows that must all agree
+    /// about their own layout, and the previous hand-listing had already drifted (keepers at the town
+    /// edge, no vendors or buffer at all outside Brackenford).</summary>
+    private static IEnumerable<NpcDef> RingTownServices()
+    {
+        // (id-suffix, display town, centre X, centre Y, keeper name, buffer name, apothecary,
+        //  armsmaster, outfitter)
+        var towns = new (string Key, float X, float Y, string Keeper, string Buffer,
+                         string Potions, string Weapons, string Armor)[]
+        {
+            ("stonewatch", 24000, 10000, "Keeper Osric", "Spirit Helper Aven",
+                "Apothecary Rilla", "Armsmaster Toren", "Outfitter Maeve"),
+            ("emberfall",  36000, 15000, "Keeper Fenn",  "Spirit Helper Doryn",
+                "Apothecary Sable", "Armsmaster Garrick", "Outfitter Isla"),
+            ("greymarsh",  36000, 33000, "Keeper Wyn",   "Spirit Helper Cael",
+                "Apothecary Thessa", "Armsmaster Rurik", "Outfitter Nerys"),
+            ("ironreach",  24000, 38000, "Keeper Dagr",  "Spirit Helper Orla",
+                "Apothecary Venn", "Armsmaster Hakon", "Outfitter Brida"),
+            ("duskvale",   12000, 33000, "Keeper Lys",   "Spirit Helper Sethi",
+                "Apothecary Corin", "Armsmaster Alder", "Outfitter Wren"),
+            ("frostmere",  12000, 15000, "Keeper Hald",  "Spirit Helper Ylva",
+                "Apothecary Nim", "Armsmaster Bors", "Outfitter Sigrid"),
+        };
+
+        foreach (var t in towns)
+        {
+            // Same shape as Brackenford, scaled to the ring towns' smaller radius (2000): the three
+            // vendors + the keeper cluster EAST as one shopping stop, the buffer sits bottom-centre,
+            // and the gatekeeper stands alone top-centre. ~300-450 apart so labels don't overlap.
+            yield return new NpcDef($"merchant_potions_{t.Key}", t.Potions, t.X + 600, t.Y - 200, NpcRole.Vendor);
+            yield return new NpcDef($"merchant_gear_{t.Key}",    t.Weapons, t.X + 950, t.Y - 200, NpcRole.Vendor);
+            yield return new NpcDef($"merchant_armor_{t.Key}",   t.Armor,   t.X + 775, t.Y + 150, NpcRole.Vendor);
+            yield return new NpcDef($"warehouse_{t.Key}",        t.Keeper,  t.X + 950, t.Y + 500, NpcRole.Warehouse);
+            yield return new NpcDef($"buffer_{t.Key}",           t.Buffer,  t.X,       t.Y + 800, NpcRole.Buffer);
+        }
+
+        // The 3rd-class master lives in GREYMARSH (band 34-46) — the first town whose levels reach the
+        // level-40 discipline change (owner). He stands on the WEST side, mirroring Brackenford's
+        // "services east, class business west" split, and this is where the other 3rd-class quest NPCs
+        // should join him rather than accumulating back in the starter town.
+        yield return new NpcDef("master_class3", "Grandmaster Thorne", 35100, 33000, NpcRole.ClassChange);
+    }
 
     public static readonly RoadPath[] Roads =
     {

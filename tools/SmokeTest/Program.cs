@@ -89,6 +89,25 @@ Check("server pushed the warehouse on login", a.Ware is not null);
 //     A marker that is right in the client while the server thinks otherwise is exactly the class of
 //     bug this test exists for — assert it on the wire.
 // -------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------
+// 1a-1. EVERY VENDOR NPC RESOLVES TO A SHOP. The ring towns' vendors inherit Brackenford's stock by
+//     an id CONVENTION ("merchant_gear_stonewatch" -> "merchant_gear"), and a convention that silently
+//     stops matching gives you a vendor who greets you and sells nothing. Cheap to assert, and it is
+//     pure catalogue data, so no world state is needed.
+// -------------------------------------------------------------------------------------------
+{
+    int vendors = 0, empty = 0;
+    foreach (var npc in WorldMap.Npcs)
+    {
+        if (npc.Role != NpcRole.Vendor) continue;
+        vendors++;
+        var shop = ShopCatalog.Get(npc.Id);
+        if (shop is null || shop.ItemIds.Length == 0) { empty++; Console.WriteLine($"        [SHOP] {npc.Id} has NO stock"); }
+    }
+    Check("every vendor NPC in the world resolves to a stocked shop", empty == 0 && vendors > 0,
+          $"{vendors} vendors, {empty} empty");
+}
+
 Check("server pushed quest markers on login", a.Marks is not null);
 // A level-1 character legitimately has NO markers: the starter chain opens at 10 and the class
 // chains at 18. Asserting "> 0" here would be asserting a bug. The real check is after the level-up

@@ -12,6 +12,32 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-29 — Every town is a real town (0.29.6)
+
+**Every MAIN town now carries the same service set** (owner): a buffer, a warehouse keeper, the
+**three** vendors and a gatekeeper. Before this the six ring towns had only a gatekeeper and a keeper —
+no vendor, no buffer — so they were waypoints you teleported out of rather than places you could
+resupply in. 24 NPCs → **49**.
+
+- **Generated, not hand-listed** (`WorldMap.RingTownServices`). Six towns × five NPCs is thirty rows
+  that all have to agree about their own layout, and the hand-listing had already drifted. Each town
+  uses Brackenford's shape scaled to the smaller radius: vendors + keeper clustered EAST as one
+  shopping stop, buffer bottom-centre, gatekeeper alone top-centre.
+- **Shops are shared by REFERENCE.** A ring town's vendor id is the Brackenford id plus a town suffix
+  (`merchant_gear_stonewatch` → `merchant_gear`), and `ShopCatalog` resolves it, so there is ONE stock
+  list to edit and a town cannot quietly end up selling last month's catalogue. A town-specific
+  override is just its own key.
+- **The 3rd-class Grandmaster moved OUT of the starter town** to **Greymarsh** — the first town whose
+  band (34-46) reaches the level-40 discipline change. You should not walk back to the newbie town to
+  take a level-40 quest. The other 3rd-class quest NPCs belong beside him there, not accumulating in
+  Brackenford.
+- **Brackenford keeps what you use once**: the class masters and Mindwright Sela. Its vendor ids are
+  unchanged, which matters — the starter chain and the Apothecary's daily reference them by id.
+
+New SmokeTest assertion: **every vendor NPC in the world resolves to a stocked shop** (21 vendors, 0
+empty). The suffix convention is exactly the kind of thing that silently stops matching and leaves you
+with a vendor who greets you and sells nothing.
+
 ## 2026-07-29 — Vendor split + shop detail view + Brackenford town layout (0.29.5)
 
 - **The gear trade is split in two** (owner, playtest-13): **Armsmaster Dolan** sells WEAPONS,
