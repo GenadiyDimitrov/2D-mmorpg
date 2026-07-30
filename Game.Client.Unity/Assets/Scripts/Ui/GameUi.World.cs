@@ -1461,6 +1461,12 @@ namespace Game.Client
                 label.outlineColor = new Color32(0, 0, 0, 210);
                 label.outlineWidth = 0.22f;
 
+                // No wrapping on a nameplate. The plate is 200 wide, and the doubled quest glyph costs
+                // ~30 of that — wrap it and a long-named NPC's "!" ends up on a line of its own above
+                // the name, which is exactly the overlap we were fixing. Overflowing sideways is fine:
+                // the plate is transparent and centred on the NPC.
+                label.enableWordWrapping = false;
+
                 // The bar clears the marker by PlateGap as well. A bottom pivot alone only guarantees
                 // the plate grows upward FROM the anchor — its lowest element still sits exactly on
                 // the entity, which is why the HP bar was still drawn across the character.
@@ -1529,6 +1535,14 @@ namespace Game.Client
             Ask("Quit the game?", "Quit", QuitGracefully);
         }
 
+        // Drawn at DOUBLE the name's size and bold (owner: "double the size of the quest ! and ?, they
+        // are just too small"). At name size a "!" is a couple of phone pixels wide — the whole point of
+        // the marker is to be readable while running past, without reading the name. `line-height=100%`
+        // pins the plate's line box to the NAME's height, so the bigger glyph does not shove the name
+        // down or push the row into the one above it.
+        private const string QuestMarkOpen  = "<line-height=100%><size=200%><b>";
+        private const string QuestMarkClose = "</b></size></line-height>";
+
         /// <summary>The glyph over an NPC's head: gold "!" = a quest you can take, grey "?" = one you
         /// are on, gold "?" = one you can hand in NOW. The MMO shorthand, so it needs no explaining.</summary>
         private string QuestMarkGlyph(Guid entityId)
@@ -1539,13 +1553,16 @@ namespace Game.Client
                 if (Boot.QuestMarks[i].NpcEntityId != entityId) continue;
                 switch (Boot.QuestMarks[i].State)
                 {
-                    case QuestMarkState.Available:     return "<color=#FFD23C>!</color>";
-                    case QuestMarkState.ReadyToHandIn: return "<color=#FFD23C>?</color>";
-                    case QuestMarkState.InProgress:    return "<color=#9AA3AD>?</color>";
+                    case QuestMarkState.Available:     return Mark("!", "#FFD23C");
+                    case QuestMarkState.ReadyToHandIn: return Mark("?", "#FFD23C");
+                    case QuestMarkState.InProgress:    return Mark("?", "#9AA3AD");
                 }
                 return "";
             }
             return "";
+
+            static string Mark(string glyph, string hex) =>
+                "<color=" + hex + ">" + QuestMarkOpen + glyph + QuestMarkClose + "</color>";
         }
 
         /// <summary>The confirm dialog, GROWN to fit its message.

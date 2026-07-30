@@ -316,21 +316,27 @@ public static class WorldMap
         //
         // Smaller Y is NORTH on screen (WorldMapper flips Y), so 22200 is "above" the 24000 centre.
 
+        // ⚠ NO TWO NPCs IN A CLUSTER SHARE A Y (owner, 2026-07-30). Side-by-side NPCs at the same Y put
+        // their name labels on the same screen line, and a long name then covers the neighbour's plate —
+        // including its quest "!"/"?", which is the one thing you are scanning the town for. Every
+        // cluster is a DIAGONAL staircase instead: each NPC steps ~450 across and ~300 down from the
+        // last, so labels never share a line and are still one short walk apart.
+
         // --- WEST: quests + class changes ---
-        new("priest_oren",   "High Priest Oren",   22600, 24250, NpcRole.QuestGiver),
-        new("elder_marius",  "Elder Marius",       22150, 24250, NpcRole.QuestGiver),
-        new("master_class",  "Class Master Vael",  22800, 23800, NpcRole.ClassChange),
+        new("master_class",  "Class Master Vael",  22900, 23650, NpcRole.ClassChange),
+        new("priest_oren",   "High Priest Oren",   22450, 23950, NpcRole.QuestGiver),
+        new("elder_marius",  "Elder Marius",       22000, 24250, NpcRole.QuestGiver),
         // (The 3rd-class Grandmaster is NOT here — he stands in Greymarsh, below. See RingTownServices.)
         // --- EAST: the three vendors, one stop ---
         // (their wares are defined by ShopCatalog, keyed on these ids)
-        new("merchant_potions", "Apothecary Miren", 25200, 23800, NpcRole.Vendor),
+        new("merchant_potions", "Apothecary Miren", 25100, 23750, NpcRole.Vendor),
         // The gear trade is split in two (owner, playtest-13): one Armsmaster selling WEAPONS, one
         // Outfitter selling ARMOR, shields and jewels. A single vendor stocking the whole F/E/D ladder
         // at three qualities is ~150 rows, which is most of why the list read as "no idea which is which".
-        new("merchant_gear",    "Armsmaster Dolan",  25650, 23800, NpcRole.Vendor),
-        new("merchant_armor",   "Outfitter Bryn",    25400, 24250, NpcRole.Vendor),
+        new("merchant_gear",    "Armsmaster Dolan",  25550, 24050, NpcRole.Vendor),
+        new("merchant_armor",   "Outfitter Bryn",    25000, 24350, NpcRole.Vendor),
         // Newbie buffer: blesses lvl 6-75 characters with a buffer's full buff set.
-        new("buffer_newbie",    "Spirit Helper Nyra", 23400, 25800, NpcRole.Buffer),
+        new("buffer_newbie",    "Spirit Helper Nyra", 23400, 25550, NpcRole.Buffer),
         // Skill reset: un-learns the PERMANENT, mutually-exclusive picks (the level-40 stat swaps)
         // so a bad commitment can be re-chosen. Free to forget — the gold is NOT refunded.
         // BOTTOM-CENTRE, on its own: it is a service, not a shop, and it used to stand 500 from the
@@ -341,10 +347,13 @@ public static class WorldMap
         // Brackenford's stands alone at TOP-CENTRE (owner) — it is the one NPC you walk to from
         // anywhere in town, so it should not be inside either cluster.
         new("gatekeeper_brackenford", "Gatekeeper Pell",   24000, 22200, NpcRole.Teleporter),
-        new("gatekeeper_stonewatch",  "Gatekeeper Soren",  24000, 10000, NpcRole.Teleporter),
-        new("gatekeeper_greymarsh",   "Gatekeeper Maela",  36000, 33000, NpcRole.Teleporter),
-        new("gatekeeper_ironreach",   "Gatekeeper Vurst",  24000, 38000, NpcRole.Teleporter),
-        new("gatekeeper_frostmere",   "Gatekeeper Khaz",   12000, 15000, NpcRole.Teleporter),
+        // The ring towns' gatekeepers stand TOP-CENTRE too, 900 above the town centre. They used to sit
+        // on the centre point itself, which put them on the same screen line as the generated armsmaster
+        // (and, in Greymarsh, the Grandmaster) — the exact label overlap the ⚠ note is about.
+        new("gatekeeper_stonewatch",  "Gatekeeper Soren",  24000,  9100, NpcRole.Teleporter),
+        new("gatekeeper_greymarsh",   "Gatekeeper Maela",  36000, 32100, NpcRole.Teleporter),
+        new("gatekeeper_ironreach",   "Gatekeeper Vurst",  24000, 37100, NpcRole.Teleporter),
+        new("gatekeeper_frostmere",   "Gatekeeper Khaz",   12000, 14100, NpcRole.Teleporter),
 
         // --- Training Outpost (24000, 5000, r=400), beside the dummies. The two NPCs are OFFSET
         //     from each other so their labels don't overlap: gatekeeper at the north edge, buffer
@@ -356,7 +365,7 @@ public static class WorldMap
         //     Talking opens the private warehouse (deposit/withdraw). ---
         // Brackenford's keeper joins the VENDOR cluster (owner): banking and shopping are the same
         // errand — you sell, you stash, you buy — so they belong in one stop.
-        new("warehouse_brackenford", "Keeper Bram",   25650, 24700, NpcRole.Warehouse),
+        new("warehouse_brackenford", "Keeper Bram",   25450, 24650, NpcRole.Warehouse),
     }.Concat(RingTownServices()).ToArray();
 
     /// <summary>Every MAIN town carries the same service set (owner, 2026-07-29): a buffer, a
@@ -392,19 +401,44 @@ public static class WorldMap
         {
             // Same shape as Brackenford, scaled to the ring towns' smaller radius (2000): the three
             // vendors + the keeper cluster EAST as one shopping stop, the buffer sits bottom-centre,
-            // and the gatekeeper stands alone top-centre. ~300-450 apart so labels don't overlap.
-            yield return new NpcDef($"merchant_potions_{t.Key}", t.Potions, t.X + 600, t.Y - 200, NpcRole.Vendor);
-            yield return new NpcDef($"merchant_gear_{t.Key}",    t.Weapons, t.X + 950, t.Y - 200, NpcRole.Vendor);
-            yield return new NpcDef($"merchant_armor_{t.Key}",   t.Armor,   t.X + 775, t.Y + 150, NpcRole.Vendor);
-            yield return new NpcDef($"warehouse_{t.Key}",        t.Keeper,  t.X + 950, t.Y + 500, NpcRole.Warehouse);
-            yield return new NpcDef($"buffer_{t.Key}",           t.Buffer,  t.X,       t.Y + 800, NpcRole.Buffer);
+            // and the gatekeeper stands alone at the centre. A DIAGONAL staircase (~300 across, ~300
+            // down per step) so no two of them share a Y — see the ⚠ note on the Brackenford block.
+            yield return new NpcDef($"merchant_potions_{t.Key}", t.Potions, t.X + 600, t.Y - 350, NpcRole.Vendor);
+            yield return new NpcDef($"merchant_gear_{t.Key}",    t.Weapons, t.X + 900, t.Y -  50, NpcRole.Vendor);
+            yield return new NpcDef($"merchant_armor_{t.Key}",   t.Armor,   t.X + 600, t.Y + 250, NpcRole.Vendor);
+            yield return new NpcDef($"warehouse_{t.Key}",        t.Keeper,  t.X + 900, t.Y + 550, NpcRole.Warehouse);
+            yield return new NpcDef($"buffer_{t.Key}",           t.Buffer,  t.X,       t.Y + 900, NpcRole.Buffer);
         }
 
         // The 3rd-class master lives in GREYMARSH (band 34-46) — the first town whose levels reach the
         // level-40 discipline change (owner). He stands on the WEST side, mirroring Brackenford's
         // "services east, class business west" split, and this is where the other 3rd-class quest NPCs
         // should join him rather than accumulating back in the starter town.
-        yield return new NpcDef("master_class3", "Grandmaster Thorne", 35100, 33000, NpcRole.ClassChange);
+        yield return new NpcDef("master_class3", "Grandmaster Thorne", 34800, 33400, NpcRole.ClassChange);
+    }
+
+    /// <summary>Startup guard for the ⚠ rule above: no two NPCs standing near each other may share a
+    /// screen line. Two NPCs at the same Y draw their name plates at the same height, and one long name
+    /// then paints over the neighbour's plate — hiding the quest "!"/"?" you were scanning the town for
+    /// (owner, playtest-13). Layouts drift as NPCs are added, and the failure is invisible in code and
+    /// obvious only on a phone screen, so it is checked at boot instead.
+    ///
+    /// "Near" = within <paramref name="near"/> on X; "same line" = within <paramref name="minDy"/> on Y.
+    /// Throws with both names and coordinates so the fix is a one-line nudge.</summary>
+    public static void ValidateNpcLabels(float near = 1500f, float minDy = 200f)
+    {
+        var bad = new List<string>();
+        for (int i = 0; i < Npcs.Length; i++)
+            for (int j = i + 1; j < Npcs.Length; j++)
+            {
+                var a = Npcs[i]; var b = Npcs[j];
+                if (Math.Abs(a.X - b.X) <= near && Math.Abs(a.Y - b.Y) < minDy)
+                    bad.Add($"{a.Name} ({a.X},{a.Y}) and {b.Name} ({b.X},{b.Y})");
+            }
+        if (bad.Count > 0)
+            throw new InvalidOperationException(
+                "NPC labels would overlap — nudge one of each pair diagonally (see the ⚠ note in " +
+                "WorldMap.Npcs):\n  " + string.Join("\n  ", bad));
     }
 
     public static readonly RoadPath[] Roads =

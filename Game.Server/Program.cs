@@ -100,6 +100,10 @@ try
     // with the offending coordinates rather than letting a field-less circle onto the map.
     Game.Shared.RegionMap.ValidateSpawnersInFields();
 
+    // Enforce "no two neighbouring NPCs on the same screen line" (owner, playtest-13) — an overlapping
+    // name plate hides the neighbour's quest "!"/"?" and is only visible on a phone.
+    Game.Shared.WorldMap.ValidateNpcLabels();
+
     app.Logger.LogInformation("L2Clone server v{Version} starting.", Game.Shared.GameConstants.GameVersion);
 
     // Print the LAN address the phone should use. "Now listening on: http://0.0.0.0:5238" is technically

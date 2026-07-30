@@ -12,6 +12,28 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-30 — NPCs stand on a diagonal; the quest !/? is twice the size (0.32.3)
+
+*"Make the NPCs that are on the same line (y level) and next to each other a bit diagonal. Now their
+names are overlapping and hiding their quest signs. Also double the size of the quest ! and ?, they are
+just too small."* Two NPCs at the same Y draw their name plates at the same screen height, and one long
+name then paints over the neighbour's plate — including the `!` you were scanning the town for. So the
+marker was both hidden *and* too small to read when it wasn't.
+
+- **Every town cluster is a diagonal staircase**, ~300-450 across and ~300 down per step, so no two
+  neighbouring NPCs share a screen line. Brackenford's vendor row (Apothecary / Armsmaster / Outfitter /
+  Keeper) and the generated ring-town clusters both re-laid out; the ring towns' gatekeepers moved 900
+  above their town centre (they were standing *on* the centre point, on the same line as the generated
+  armsmaster), and Greymarsh's Grandmaster moved to 1200 west, clear of the Outfitter.
+- **`WorldMap.ValidateNpcLabels()` is a startup guard** — any two NPCs within 1500 on X and under 200
+  apart on Y fail the boot, naming both and their coordinates. Layouts drift as NPCs are added and the
+  failure is invisible in code, visible only on a phone screen. It caught five real collisions the moment
+  it was written, all of them in the hand-placed gatekeeper block.
+- **The quest glyph is drawn at 200% and bold.** `line-height=100%` pins the plate's line box to the
+  *name's* height so the bigger glyph doesn't shove the name down, and nameplate labels no longer word-wrap
+  — a 200-wide plate plus a 30px glyph would otherwise wrap a long-named NPC's `!` onto its own line,
+  which is the overlap this whole entry is about.
+
 ## 2026-07-30 — The confirm dialog grows to fit its message (0.32.2)
 
 *"The vendor details are good, just coming out of the confirm dialogue."* The dialog was a fixed
