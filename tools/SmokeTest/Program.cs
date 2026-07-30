@@ -72,6 +72,38 @@ if (createErr is not null) return Finish();
 var chars = await a.Hub.InvokeAsync<CharacterList>("ListCharacters");
 int charId = chars.Characters.First(c => c.Name == name).Id;
 
+// The former "debug menu" is ADMIN-gated now, not `#if DEBUG`-gated (0.33.1) — it used to be compiled
+// out, so the release server on the phone accepted every one of those calls and did nothing. This test
+// leans on them heavily (levels, items, subclasses, professions), and test1 is an ordinary account, so the
+// fresh character has to be promoted first. `/role` works on OFFLINE characters, which is why this can run
+// before the character enters the world.
+async Task PromoteToAdminAsync(string charName)
+{
+    var promoter = await ConnectAsync("admin", "admin");
+    var pchars = await promoter.Hub.InvokeAsync<CharacterList>("ListCharacters");
+    await promoter.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(pchars.Characters[0].Id));
+    await promoter.Settle();
+    await promoter.Hub.SendAsync("AdminCommand", "role", $"{charName} admin");
+    await promoter.Settle();
+    await promoter.Hub.SendAsync("LeaveWorld");
+    await Task.Delay(300);
+    await promoter.DisposeAsync();
+}
+await PromoteToAdminAsync(name);
+
+// A SECOND fresh character, deliberately left an ordinary player: the moderation section needs a victim
+// it can jail, kick and drain the charisma of, and none of that can be done to an admin (an admin may not
+// re-rank an equal, by design, so the protagonist cannot be demoted back down once promoted). Keeping the
+// two roles as two characters is also just truer to what the test is checking — the protagonist uses the
+// admin toolbox, the victim is on the receiving end of moderation.
+string victimName = "Vict" + DateTime.UtcNow.ToString("HHmmssff");
+var victimErr = await a.Hub.InvokeAsync<string?>("CreateCharacter",
+    new CreateCharacterRequest(victimName, Race.Human, BaseClass.Fighter));
+Check("created a plain (non-admin) victim character", victimErr is null, victimErr);
+if (victimErr is not null) return Finish();
+var chars0 = await a.Hub.InvokeAsync<CharacterList>("ListCharacters");
+int victimId = chars0.Characters.First(c => c.Name == victimName).Id;
+
 var entered = await a.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(charId));
 Check("entered the world", entered.Success, entered.Error);
 if (!entered.Success) return Finish();
@@ -430,6 +462,23 @@ Check("a PENDING friend coming online tells you nothing",
       !a.SystemChat.Any(s => s.Contains("Test2") && s.Contains("is now")),
       string.Join(" | ", a.SystemChat));
 
+// ---- The admin gate on the former DEBUG menu (0.33.1) ----
+// These commands SHIP now — they used to be compiled out, so the release server on the phone silently
+// ignored them. Shipping them means the gate has to be real, and "real" has to be proven from a plain
+// account: a missing check hands any player free gold, levels and a 3rd class. Test2 is an ordinary
+// account, and `friend` is the only plain session this test has.
+{
+    friend.SystemChat.Clear();
+    friend.Gold = -1;
+    await friend.Hub.SendAsync("DebugGold", 1_000_000L);
+    await friend.Settle();
+    Check("a NON-admin is refused an admin-only command", friend.Gold == -1,
+          friend.Gold == -1 ? null : $"gold arrived: {friend.Gold}");
+    Check("...and is TOLD, not silently ignored",
+          friend.SystemChat.Any(s => s.Contains("admin-only")),
+          string.Join(" | ", friend.SystemChat));
+}
+
 // Test2 adds us back → NOW it's a real friendship, and both sides are told.
 a.SystemChat.Clear();
 await friend.Hub.SendAsync("FriendCommand", "add", name);
@@ -461,14 +510,26 @@ a.SystemChat.Clear();
 await a.Hub.SendAsync("Like", name);   // can't like yourself
 await a.Settle();
 Check("you can't like yourself", a.SystemChat.Any(s => s.Contains("can't like yourself")));
-await friend.Hub.SendAsync("Like", name);   // Test2 likes the smoke char, so a later jail has charisma to drain
+// Test2 likes the VICTIM (offline — Like resolves offline targets in the DB), so the later jail has
+// charisma to drain. It used to like the protagonist, which stopped working the moment the protagonist
+// became an admin: STAFF ARE EXCLUDED FROM THE LEADERBOARDS, which is the answer to the owner's
+// playtest-13 puzzle — "my ranking board was never updated ... aaa, my chars are admins".
+await friend.Hub.SendAsync("Like", victimName);
 await a.Settle();
-var chBoard = await a.Hub.InvokeAsync<LeaderboardDto>("RequestLeaderboard", "charisma");
+LeaderboardDto chBoard = null!;
+for (int attempt = 0; attempt < 10; attempt++)
+{
+    chBoard = await a.Hub.InvokeAsync<LeaderboardDto>("RequestLeaderboard", "charisma");
+    if (chBoard.Entries.Any(e => e.Name == victimName)) break;
+    await Task.Delay(300);   // the offline like lands via a background DB write
+}
 Check("the liked player reached the charisma board",
       chBoard.Entries.Any(e => e.Name == "Test2" && e.Value >= 1),
       string.Join(",", chBoard.Entries.Select(e => $"{e.Name}:{e.Value}")));
-Check("the smoke char is on the charisma board after being liked",
-      chBoard.Entries.Any(e => e.Name == name && e.Value >= 1));
+Check("an offline like reached the board too (the victim)",
+      chBoard.Entries.Any(e => e.Name == victimName && e.Value >= 1));
+Check("an ADMIN character is kept OFF the leaderboard (staff don't compete)",
+      chBoard.Entries.All(e => e.Name != name));
 
 // -------------------------------------------------------------------------------------------
 // 4b. BLOCK / IGNORE. A blocked player's whisper (and world/local chat) is filtered out for you; the
@@ -836,13 +897,25 @@ Check("admin account entered the world", gmEnter.Success, gmEnter.Error);
 gm.MyId = gmEnter.EntityId;   // without this the session tracks no position and every place check reads (0,0)
 await gm.Settle();
 
-// JAIL the victim (b) live.
-await b.Settle();   // make sure b's position is current
-b.MyX = 0; b.MyY = 0;
-await gm.Hub.SendAsync("AdminCommand", "jail", $"{name} 60");
-await b.Settle();
-bool atJail = Math.Abs(b.MyX - GameConstants.JailX) < 50 && Math.Abs(b.MyY - GameConstants.JailY) < 50;
-Check("jailing a player teleports them to jail (live)", atJail, $"at ({b.MyX:0},{b.MyY:0})");
+// The moderation victim is the PLAIN character, not the protagonist: the protagonist is an admin (it needs
+// the admin toolbox), and moderation deliberately refuses to act on staff — an admin can neither jail nor
+// re-rank an equal. The protagonist's own session is done with; log the victim in.
+var bLeave = await b.Hub.InvokeAsync<string?>("LeaveWorld");
+Check("the protagonist left cleanly before the moderation section", bLeave is null, bLeave);
+await b.DisposeAsync();
+
+var v = await ConnectAsync("test1", "test");
+var enteredV = await v.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(victimId));
+Check("the plain victim entered the world", enteredV.Success, enteredV.Error);
+v.MyId = enteredV.EntityId;
+await v.Settle();
+
+// JAIL the victim live.
+v.MyX = 0; v.MyY = 0;
+await gm.Hub.SendAsync("AdminCommand", "jail", $"{victimName} 60");
+await v.Settle();
+bool atJail = Math.Abs(v.MyX - GameConstants.JailX) < 50 && Math.Abs(v.MyY - GameConstants.JailY) < 50;
+Check("jailing a player teleports them to jail (live)", atJail, $"at ({v.MyX:0},{v.MyY:0})");
 
 // The 60-min jail also DRAINED the player's charisma (−200) below the +1 they'd been liked for → off the board.
 //
@@ -854,21 +927,21 @@ Check("jailing a player teleports them to jail (live)", atJail, $"at ({b.MyX:0},
 LeaderboardDto boardAfterJail = null!;
 for (int attempt = 0; attempt < 10; attempt++)
 {
-    boardAfterJail = await b.Hub.InvokeAsync<LeaderboardDto>("RequestLeaderboard", "charisma");
-    if (!boardAfterJail.Entries.Any(e => e.Name == name)) break;
+    boardAfterJail = await v.Hub.InvokeAsync<LeaderboardDto>("RequestLeaderboard", "charisma");
+    if (!boardAfterJail.Entries.Any(e => e.Name == victimName)) break;
     await Task.Delay(300);
 }
 Check("a jail drained the player's charisma (dropped off the board)",
-      boardAfterJail.Entries.All(e => e.Name != name),
+      boardAfterJail.Entries.All(e => e.Name != victimName),
       string.Join(",", boardAfterJail.Entries.Select(e => e.Name)));
 
 // Jailed → may pace around inside the CELL, but can never leave it (owner, 2026-07-20: serving a
 // sentence should feel like a cell, not paralysis). Walk hard at the wall and confirm we end up
 // clamped to the jail radius rather than either frozen on the spot or out in the world.
-await b.Hub.SendAsync("Move", new MoveCommand(GameConstants.JailX + 3000, GameConstants.JailY));
-for (int i = 0; i < 12; i++) await b.Settle();   // give the walk time to run into the wall
+await v.Hub.SendAsync("Move", new MoveCommand(GameConstants.JailX + 3000, GameConstants.JailY));
+for (int i = 0; i < 12; i++) await v.Settle();   // give the walk time to run into the wall
 double fromJail = Math.Sqrt(
-    Math.Pow(b.MyX - GameConstants.JailX, 2) + Math.Pow(b.MyY - GameConstants.JailY, 2));
+    Math.Pow(v.MyX - GameConstants.JailX, 2) + Math.Pow(v.MyY - GameConstants.JailY, 2));
 Check("a jailed player can MOVE inside the cell",
       fromJail > 20, $"{fromJail:0} units from the jail centre");
 Check("a jailed player can NOT walk out of the cell",
@@ -876,11 +949,11 @@ Check("a jailed player can NOT walk out of the cell",
       $"{fromJail:0} units out, cell radius is {GameConstants.JailRadius:0}");
 
 // JAIL PERSISTS across a relog: leave, come back, still in jail.
-await b.Hub.SendAsync("LeaveWorld");
+await v.Hub.SendAsync("LeaveWorld");
 await Task.Delay(600);
-await b.DisposeAsync();
+await v.DisposeAsync();
 var c = await ConnectAsync("test1", "test");
-var enteredC = await c.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(charId));
+var enteredC = await c.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(victimId));
 c.MyId = enteredC.EntityId;
 await c.Settle();
 Check("jail SURVIVES a relog (spawns back in jail)",
@@ -889,7 +962,7 @@ Check("jail SURVIVES a relog (spawns back in jail)",
 
 // RELEASE sends you to the STARTING town, never the nearest one — the jail's location has to stay
 // secret, and "nearest" is a map hint (owner, 2026-07-20).
-await gm.Hub.SendAsync("AdminCommand", "unjail", name);
+await gm.Hub.SendAsync("AdminCommand", "unjail", victimName);
 for (int i = 0; i < 6; i++) await c.Settle();
 var startTown = WorldMap.StartingTown;
 Check("release from jail teleports to the STARTING town (not the nearest)",
@@ -908,13 +981,13 @@ Check("an admin can't jail themselves (or any other admin)",
 // jail them for real and then report "No character 'test1'" — the online lookup ignored case, the
 // database lookup did not.
 gm.SystemChat.Clear();
-await gm.Hub.SendAsync("AdminCommand", "jail", $"{name.ToLowerInvariant()} 60");
+await gm.Hub.SendAsync("AdminCommand", "jail", $"{victimName.ToLowerInvariant()} 60");
 await gm.Settle();
 Check("a lower-case name resolves, and does NOT report 'no character'",
       gm.SystemChat.Any(s => s.Contains("jailed for")) &&
       !gm.SystemChat.Any(s => s.Contains("No character")),
       string.Join(" | ", gm.SystemChat));
-await gm.Hub.SendAsync("AdminCommand", "unjail", name);
+await gm.Hub.SendAsync("AdminCommand", "unjail", victimName);
 await Task.Delay(300);
 
 // KICK must remove the entity SERVER-SIDE, without the kicked client's cooperation.
@@ -924,10 +997,10 @@ await Task.Delay(300);
 // stayed behind as a GHOST (targetable, killable, and still holding the name), and the account was
 // then refused re-entry with "character is already online". So re-entering here WITHOUT leaving
 // first is the whole test: the error must be the kick lockout, never "already online".
-await gm.Hub.SendAsync("AdminCommand", "kick", $"{name} 60");
+await gm.Hub.SendAsync("AdminCommand", "kick", $"{victimName} 60");
 await Task.Delay(600);
 var d = await ConnectAsync("test1", "test");
-var enteredD = await d.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(charId));
+var enteredD = await d.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(victimId));
 Check("a KICKED character can't re-enter until the lockout passes",
       !enteredD.Success && (enteredD.Error?.Contains("locked") ?? false), enteredD.Error);
 Check("kick leaves NO ghost entity behind (re-entry is blocked by the kick, not by 'already online')",

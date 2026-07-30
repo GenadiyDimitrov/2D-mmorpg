@@ -12,6 +12,53 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-30 — The debug menu is an ADMIN menu: it works in release builds now (0.33.1)
+
+*"The server deploy on the phone made the #debug sections not working (you published it in release rather
+than debug). Can we make the debug menu into an admin menu, each debug command into an admin command,
+leaving the server gate to check isAdmin."*
+
+Fifteen hub methods were wrapped in `#if DEBUG`, so the **release** server published to the phone accepted
+every one of those calls and did nothing: the window opened, the buttons pressed, and pressing them was
+silence. A compile flag was the wrong gate anyway — the question was never "is this a debug build" but
+"is this character an admin", which the server already tracks at runtime.
+
+- **`IAdminCommand`** is a new marker on all fifteen commands (+ the two tuning-panel ones). `ProcessCommands`
+  checks it **once**, centrally, before dispatch — a per-handler check would be fifteen places to forget,
+  and forgetting one in a shipped build hands a player free levels. A non-admin is **told**
+  ("That is an admin-only command") and logged, not silently ignored: silence is what cost this an
+  afternoon in the first place.
+- The hub methods keep their `Debug*` **wire names** deliberately. Renaming ~50 string literals across two
+  clients and two tools buys no behaviour and fails *silently* when one is missed — a fire-and-forget
+  SignalR call to a method that no longer exists does exactly what the `#if DEBUG` bug did.
+- **The menu entry is "Admin" and it COLLAPSES.** The overflow menu was laid out with fixed offsets, so
+  hiding the entry left a 52px hole between Setup and Leave and an over-tall panel. It re-stacks the visible
+  buttons and shrinks the panel to fit (owner: *"don't leave a gap between the buttons, collapse it"*). The
+  window's title bar says **Admin** too.
+- New `Boot.CanUseAdminTools` (`Role == Admin`) drives the toolbox, deliberately narrower than
+  `Boot.IsAdmin` (Admin **or** Moderator), which still drives the moderation commands. A moderator was
+  being shown a menu whose every button would answer "that is an admin-only command".
+- **Character delete** got the same treatment: the 10-second undo window is now for ADMIN characters as well
+  as debug builds. A `#if DEBUG` convenience is no convenience on the release server where the testing
+  actually happens.
+- Still `#if DEBUG`, correctly: the **admin/test account seeding** and the **destructive stale-schema DB
+  reset**. Neither has an admin to authorise it — they run before anyone is logged in. Registration is
+  unchanged (open in every build), and the existing bootstrap still applies: the **first character of the
+  first account on a fresh server is born Admin**, which is how the phone gets a usable admin at all.
+
+**Verified on a real release deployment**, not just by reading: `dotnet publish -c Release` to a clean
+folder, empty database, `dotnet Game.Server.dll`, then the bot registered an account, was told "Admin
+privileges active", and got `+10,000,000 Gold` and `reached level 6`. The bot now **self-registers** when
+login fails, which is what makes it usable against a freshly published server (the seeding it used to rely
+on is debug-only).
+
+**SmokeTest restructured** around the new gate, and it got better for it: the protagonist is promoted to
+Admin (it leans on the toolbox for levels, items, subclasses, professions), and a **second plain character**
+is created as the moderation victim — an admin can be neither jailed nor demoted, both by design. Two new
+assertions: a non-admin is refused *and told*, and an **admin character is kept off the leaderboards** —
+which is the answer to the owner's playtest-13 puzzle, *"my ranking board was never updated … aaa, my chars
+are admins"*.
+
 ## 2026-07-30 — The overworld is a PLAN: 4-level camps, named gates, managing cities (0.33.0, protocol 8)
 
 *"How exactly am I supposed to kill a pig next to a werewolf? I wanted spawners to be close to level, not

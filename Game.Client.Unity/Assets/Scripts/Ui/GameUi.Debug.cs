@@ -10,7 +10,13 @@ using UnityEngine.UI;
 namespace Game.Client
 {
     /// <summary>
-    /// THE DEBUG WINDOW, at parity with the WPF harness (batch F).
+    /// THE ADMIN WINDOW (the former debug window), at parity with the WPF harness (batch F).
+    ///
+    /// It was called "Debug" while its commands were compiled out with `#if DEBUG`. That made the RELEASE
+    /// server published to the phone accept every one of them and do nothing — the window opened, the
+    /// buttons worked, and pressing them was silence (owner, 2026-07-30). The commands ship in every build
+    /// now and are authorised server-side on the account ROLE, so this is an admin toolbox, not a debug
+    /// one, and the menu entry that opens it collapses away entirely for a normal player.
     ///
     /// The owner uses this constantly — it is how a build gets into the state worth testing without
     /// playing thirty levels to get there. It was explicitly ruled "FULL functionality wanted, do NOT
@@ -73,7 +79,7 @@ namespace Game.Client
             UiKit.Place(_debugPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                         Vector2.zero, new Vector2(720f, 560f));
             var inner = _debugPanel.GetChild(0);
-            float chrome = UiKit.WindowChrome(_debugPanel, "Debug", () => CloseWindow(_debugPanel));
+            float chrome = UiKit.WindowChrome(_debugPanel, "Admin", () => CloseWindow(_debugPanel));
 
             // Tabs across the top. Short labels: five of them have to fit a phone in landscape.
             string[] tabs = { "Equip", "Items", "Func", "TP", "Class", "Tune" };

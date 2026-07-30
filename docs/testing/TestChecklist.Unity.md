@@ -266,6 +266,22 @@ of these once fixed. Nothing here has been built yet.
         You should be able to farm the normal camp right up to its edge without the elite aggroing, and
         have to walk in on purpose.
 
+### 🔴 0.33.1 — the ADMIN menu (this is the one to test on the PHONE's release server)
+28a.[ ] **The admin menu works on the phone** — on the RELEASE server, as an admin character, open
+        Menu → **Admin** and use each tab: give gear, give an item, +10 levels, gold, SP, buff, karma,
+        set profession, 2nd/3rd class, add subclass, swap subclass, character reset, teleport, tuning.
+        Every one must actually DO something. This is the whole bug: they were compiled out of release.
+28b.[ ] **A normal character sees no Admin entry, and no hole** — log in as a plain character and open the
+        overflow menu. Between **Setup** and **Leave** there must be no gap, and the panel must be one row
+        shorter, not the same height with a blank strip.
+28c.[ ] **A plain character is refused, and told** — if you get a plain character to send an admin command
+        (an old client, or `/`-command), chat must say "That is an admin-only command" rather than nothing.
+28d.[ ] **A fresh phone server bootstraps an admin** — on an empty database, register the first account and
+        make its first character: it must say "Admin privileges active on this character". Every LATER
+        character, even on the same account, must be a plain player.
+28e.[ ] **Character delete is quick for an admin** — deleting an admin character over level 20 should give
+        the ~10s undo window and free the name straight after, not lock it for 24h.
+
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends
         (and combat decays) it works. Same for `/exit`. Pulling the plug mid-DoT must not run the

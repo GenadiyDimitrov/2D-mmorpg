@@ -158,7 +158,7 @@ namespace Game.Client
             return false;
         }
 
-        private Button _debugButton, _pvpButton, _autoButton, _respawnButton;
+        private Button _pvpButton, _autoButton, _respawnButton;
         private Button _targetPartyButton, _targetTradeButton, _targetInfoButton;
         private Button _targetAttackButton, _targetFollowButton, _targetAssistButton;
         private RectTransform _menuPanel;
@@ -567,7 +567,14 @@ namespace Game.Client
             BuildMenuPanel();
         }
 
-        /// <summary>The overflow menu: everything you press once a session rather than once a fight.</summary>
+        /// <summary>The overflow menu: everything you press once a session rather than once a fight.
+        ///
+        /// Laid out by <see cref="LayoutMenuPanel"/> rather than at build time, because one entry (Admin)
+        /// is only there for staff. Hiding it with fixed offsets left a 52px HOLE between Setup and Leave
+        /// and an over-tall panel — the owner's *"don't leave a gap between the buttons, collapse it"*.</summary>
+        private readonly List<(Button Button, bool AdminOnly)> _menuButtons = new();
+        private bool _menuLaidOutForAdmin;
+
         private void BuildMenuPanel()
         {
             _menuPanel = UiKit.PanelBox(_worldRoot, "Menu");
@@ -575,29 +582,55 @@ namespace Game.Client
                         new Vector2(-12f, -100f), new Vector2(200f, 392f));
             var inner = _menuPanel.GetChild(0);
 
-            var entries = new List<(string Label, Action Click)>
+            var entries = new List<(string Label, Action Click, bool AdminOnly)>
             {
-                ("Auto Pots", () => { CloseWindow(_menuPanel); OpenAutoPotions(); }),
-                ("Auto Farm", () => { CloseWindow(_menuPanel); OpenAutoFarm(); }),
-                ("Quests", () => { CloseWindow(_menuPanel); ToggleWindow(_questPanel); }),
-                ("Rank",   () => { CloseWindow(_menuPanel); OpenRank(); }),
-                ("Setup",  () => { CloseWindow(_menuPanel); ToggleWindow(_settingsPanel); }),
-                ("Debug",  () => { CloseWindow(_menuPanel); ToggleWindow(_debugPanel); }),
-                ("Leave",  () => { CloseWindow(_menuPanel); Boot.LeaveWorld(); }),
+                ("Auto Pots", () => { CloseWindow(_menuPanel); OpenAutoPotions(); }, false),
+                ("Auto Farm", () => { CloseWindow(_menuPanel); OpenAutoFarm(); }, false),
+                ("Quests", () => { CloseWindow(_menuPanel); ToggleWindow(_questPanel); }, false),
+                ("Rank",   () => { CloseWindow(_menuPanel); OpenRank(); }, false),
+                ("Setup",  () => { CloseWindow(_menuPanel); ToggleWindow(_settingsPanel); }, false),
+                // The admin toolbox. It was labelled "Debug" while its commands were compiled out of
+                // release builds; they ship now and are gated on the account role, server-side.
+                ("Admin",  () => { CloseWindow(_menuPanel); ToggleWindow(_debugPanel); }, true),
+                ("Leave",  () => { CloseWindow(_menuPanel); Boot.LeaveWorld(); }, false),
             };
 
-            float y = -10f;
             foreach (var entry in entries)
             {
                 var button = UiKit.TextButton(inner, entry.Label, entry.Click, 16f);
-                UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                            new Vector2(0f, y), new Vector2(180f, 46f));
-                y -= 52f;
-
-                if (entry.Label == "Debug") _debugButton = button;
+                _menuButtons.Add((button, entry.AdminOnly));
+                // (the admin entry is found by its AdminOnly flag in _menuButtons — no field needed)
             }
 
+            _menuLaidOutForAdmin = !Boot.CanUseAdminTools;   // force the first layout
+            LayoutMenuPanel();
             _menuPanel.gameObject.SetActive(false);
+        }
+
+        /// <summary>Stack the VISIBLE menu buttons with no holes, and shrink the panel to fit them. Only
+        /// re-runs when admin-ness actually changes (it is known at login, and again on a role change), so
+        /// this is not per-frame work.</summary>
+        private void LayoutMenuPanel()
+        {
+            bool admin = Boot.CanUseAdminTools;
+            if (admin == _menuLaidOutForAdmin) return;
+            _menuLaidOutForAdmin = admin;
+
+            const float rowH = 46f, rowStep = 52f, padTop = 10f, padBottom = 14f;
+            float y = -padTop;
+            int shown = 0;
+            foreach (var (button, adminOnly) in _menuButtons)
+            {
+                bool visible = admin || !adminOnly;
+                button.gameObject.SetActive(visible);
+                if (!visible) continue;
+
+                UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                            new Vector2(0f, y), new Vector2(180f, rowH));
+                y -= rowStep;
+                shown++;
+            }
+            _menuPanel.sizeDelta = new Vector2(200f, padTop + shown * rowStep + padBottom);
         }
 
         private void BuildConsole()
@@ -767,7 +800,9 @@ namespace Game.Client
 
             RefreshFeedback();
 
-            _debugButton.gameObject.SetActive(Boot.IsAdmin);
+            // The admin entry appears/disappears with the account role, and the menu RE-STACKS so there is
+            // no hole where it was (owner). No-ops unless admin-ness changed.
+            LayoutMenuPanel();
 
             // Respawn only while dead — the rest of the time it is a button that can do nothing.
             EntityDto self = null;

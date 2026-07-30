@@ -74,7 +74,16 @@ namespace Game.Client
         /// <summary>Staff role of the character in world — mirrors the WPF client, which only bothers
         /// sending admin commands when it believes it's allowed (the server re-checks regardless).</summary>
         public AccountRole Role { get; private set; } = AccountRole.Player;
+
+        /// <summary>STAFF — may use the moderation commands (/jail, /kick, /bag …). Moderators included.</summary>
         public bool IsAdmin => Role == AccountRole.Admin || Role == AccountRole.Moderator;
+
+        /// <summary>May use the ADMIN TOOLBOX (the former debug menu — free levels, gold, items, class
+        /// changes). Admin ONLY, deliberately narrower than <see cref="IsAdmin"/>, because that is exactly
+        /// what the server's gate is (<c>Entity.IsAdmin</c> is <c>Role == Admin</c>). Showing a moderator a
+        /// menu whose every button answers "that is an admin-only command" is worse than not showing it:
+        /// moderators moderate, they do not cheat.</summary>
+        public bool CanUseAdminTools => Role == AccountRole.Admin;
 
         /// <summary>
         /// The skill bar, exactly as the SERVER sent it — 60 slots of skill id / "action:…" / "item:…"

@@ -81,7 +81,22 @@ static class Bot
 
         var auth = await _hub.InvokeAsync<AuthResponse>("Login",
             new AuthRequest(user, pass, GameConstants.ProtocolVersion), GameConstants.GameVersion);
-        if (!auth.Success) { Log($"LOGIN FAILED: {auth.Error}"); return 1; }
+        if (!auth.Success)
+        {
+            // No such account: REGISTER it and log in. This is what makes the bot usable against a
+            // RELEASE server — the admin/test account seeding is `#if DEBUG`, so a freshly published
+            // server (the phone's) has an empty database and nothing to log in as. The FIRST character of
+            // the FIRST account on a fresh server is born Admin (PersistenceService.CreateCharacterAsync),
+            // so bootstrapping this way also produces a usable admin, which is how the admin toolbox gets
+            // exercised on a real deployment rather than only in a debug build.
+            Log($"login failed ({auth.Error}) — registering '{user}'");
+            var reg = await _hub.InvokeAsync<AuthResponse>("Register",
+                new AuthRequest(user, pass, GameConstants.ProtocolVersion), GameConstants.GameVersion);
+            if (!reg.Success) { Log($"REGISTER FAILED: {reg.Error}"); return 1; }
+            auth = await _hub.InvokeAsync<AuthResponse>("Login",
+                new AuthRequest(user, pass, GameConstants.ProtocolVersion), GameConstants.GameVersion);
+            if (!auth.Success) { Log($"LOGIN FAILED: {auth.Error}"); return 1; }
+        }
 
         // Reuse a character if the account has one — the point is a PERSISTENT second player whose
         // level and gear survive between sessions, not a fresh throwaway like the smoke test wants.

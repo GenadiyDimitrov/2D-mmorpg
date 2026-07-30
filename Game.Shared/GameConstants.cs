@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.33.0";
+    public const string GameVersion = "0.33.1";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -143,16 +143,22 @@ public static class GameConstants
     /// before it becomes permanent. Higher-level characters get a longer grace period.
     /// Below the class-change level it's instant.
     ///
-    /// DEBUG builds collapse the whole ladder to <see cref="DebugCharacterDeleteSeconds"/>: while testing,
-    /// BOTH ends of the live rule get in the way — under level 20 a delete is INSTANT, so a misclick is
-    /// unrecoverable; at 20+ the character (and its NAME) is locked away for 24h-30d, so you cannot re-make
-    /// the character you just deleted. A few seconds gives an undo window AND frees the name straight after
-    /// (owner, 2026-07-17). The live ladder is unchanged for real builds.</summary>
-    public static TimeSpan CharacterDeleteDelay(int level) =>
+    /// ADMIN characters — and DEBUG builds — collapse the whole ladder to
+    /// <see cref="DebugCharacterDeleteSeconds"/>: while testing, BOTH ends of the live rule get in the way —
+    /// under level 20 a delete is INSTANT, so a misclick is unrecoverable; at 20+ the character (and its
+    /// NAME) is locked away for 24h-30d, so you cannot re-make the character you just deleted. A few
+    /// seconds gives an undo window AND frees the name straight after (owner, 2026-07-17).
+    ///
+    /// The <paramref name="admin"/> door exists for the same reason the debug menu became an admin menu
+    /// (0.33.1): a `#if DEBUG` convenience is no convenience at all on the RELEASE server running on the
+    /// owner's phone, which is where the testing actually happens. Ordinary players keep the live
+    /// ladder.</summary>
+    public static TimeSpan CharacterDeleteDelay(int level, bool admin = false) =>
 #if DEBUG
         TimeSpan.FromSeconds(DebugCharacterDeleteSeconds);
 #else
-        level >= 76 ? TimeSpan.FromDays(30)
+        admin ? TimeSpan.FromSeconds(DebugCharacterDeleteSeconds)
+        : level >= 76 ? TimeSpan.FromDays(30)
         : level >= 40 ? TimeSpan.FromDays(7)
         : level >= 20 ? TimeSpan.FromHours(24)
         : TimeSpan.Zero;

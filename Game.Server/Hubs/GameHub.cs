@@ -577,36 +577,44 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
-    // ----- Debug (DEBUG builds only) -----------------------------------------
+    // ----- ADMIN TOOLS (the former "debug menu") -------------------------------------------------
+    //
+    // These were `#if DEBUG`, which meant the RELEASE server published to the phone accepted every one of
+    // these calls and did nothing — the menu was on screen and pressing it was silence (owner, 2026-07-30).
+    // A compile flag was the wrong gate: the question is "is this character an admin", which is a runtime
+    // fact. They ship in every build now and are authorised on the game loop, once, by IAdminCommand →
+    // GameLoopService.IsBlockedForNonAdmin. Same shape as AdminCommand above: the hub only checks that the
+    // connection is logged in and enqueues; the real authorisation is the character's role.
+    //
+    // The WIRE names keep their `Debug` prefix on purpose. Renaming ~50 string literals across two clients
+    // and two tools buys no behaviour and fails SILENTLY when one is missed — a fire-and-forget SignalR
+    // call to a method that no longer exists does exactly what the #if DEBUG bug did.
 
+    /// <summary>Admin: grant an item by def id (quantity = extra copies, for stackables).</summary>
     public Task DebugGive(string defId, int quantity)
     {
-#if DEBUG
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
         _world.Commands.Enqueue(new DebugGiveCmd(Context.ConnectionId, defId));
-        // Extra copies for stackables (debug convenience: 10 potions/scrolls).
         for (int i = 1; i < Math.Max(1, quantity); i++)
             _world.Commands.Enqueue(new DebugGiveCmd(Context.ConnectionId, defId));
-#endif
         return Task.CompletedTask;
     }
 
-    /// <summary>DEBUG: shift level by delta (+1 / +10 / -1 / -10). Delevel keeps learned skills.</summary>
+    /// <summary>Admin: shift level by delta (+1 / +10 / -1 / -10). Delevel keeps learned skills.</summary>
     public Task DebugLevel(int delta)
     {
-#if DEBUG
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
         // Clamp the STEP, not the level — the level cap itself is applied on the game loop, where the
         // admin exemption lives. This just stops a malformed payload jumping 10,000 levels.
         _world.Commands.Enqueue(new DebugLevelCmd(Context.ConnectionId, Math.Clamp(delta, -10, 10)));
-#endif
         return Task.CompletedTask;
     }
 
-    /// <summary>DEBUG: cancel an attribute on the equipped weapon (index; -1 = all).</summary>
+    /// <summary>Admin: cancel an attribute on the equipped weapon (index; -1 = all).</summary>
     public Task DebugCancelAttr(int index)
     {
-#if DEBUG
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
         _world.Commands.Enqueue(new DebugCancelAttrCmd(Context.ConnectionId, index));
-#endif
         return Task.CompletedTask;
     }
 
@@ -624,108 +632,103 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
-    /// <summary>DEBUG: set the CRAFTING profession (0=None..5=ScrollScribe). For the 2nd CLASS use
-    /// <see cref="DebugSecondClass"/> — the debug panel used to send class ids here, and they were
+    /// <summary>Admin: set the CRAFTING profession (0=None..5=ScrollScribe). For the 2nd CLASS use
+    /// <see cref="DebugSecondClass"/> — the admin panel used to send class ids here, and they were
     /// clamped into this 5-value enum.</summary>
     public Task DebugSetProfession(int profession)
     {
-#if DEBUG
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
         _world.Commands.Enqueue(new DebugSetProfessionCmd(Context.ConnectionId, profession));
-#endif
         return Task.CompletedTask;
     }
 
-    /// <summary>DEBUG: become a 2nd CLASS directly (ClassCatalog id), skipping the quest and level
+    /// <summary>Admin: become a 2nd CLASS directly (ClassCatalog id), skipping the quest and level
     /// gates. The NPC path stays the real one — this is the "compare two builds now" lever.</summary>
     public Task DebugSecondClass(int classId)
     {
-#if DEBUG
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
         _world.Commands.Enqueue(new DebugSecondClassCmd(Context.ConnectionId, classId));
-#endif
         return Task.CompletedTask;
     }
 
+    /// <summary>Admin: learn every skill the class can learn at the current level, free.</summary>
     public Task DebugLearnAll()
     {
-#if DEBUG
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
         _world.Commands.Enqueue(new DebugLearnAllCmd(Context.ConnectionId));
-#endif
         return Task.CompletedTask;
     }
 
+    /// <summary>Admin: grant gold.</summary>
     public Task DebugGold(long amount)
     {
-#if DEBUG
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
         _world.Commands.Enqueue(new DebugGoldCmd(Context.ConnectionId, amount));
-#endif
         return Task.CompletedTask;
     }
 
-    /// <summary>DEBUG: full NPC buff set on yourself, any level, no walk to the NPC.</summary>
+    /// <summary>Admin: full NPC buff set on yourself, any level, no walk to the NPC.</summary>
     public Task DebugBuff()
     {
-#if DEBUG
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
         _world.Commands.Enqueue(new DebugBuffCmd(Context.ConnectionId));
-#endif
         return Task.CompletedTask;
     }
 
+    /// <summary>Admin: nudge karma by a delta (test the red-name gradient + clearing).</summary>
     public Task DebugKarma(int delta)
     {
-#if DEBUG
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
         _world.Commands.Enqueue(new DebugKarmaCmd(Context.ConnectionId, delta));
-#endif
         return Task.CompletedTask;
     }
 
-    /// <summary>DEBUG: add a SUBCLASS (another class this character owns) and switch to it.</summary>
+    /// <summary>Admin: add a SUBCLASS (another class this character owns) and switch to it.</summary>
     public Task DebugAddSubclass(int thirdClassId)
     {
-#if DEBUG
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
         _world.Commands.Enqueue(new DebugAddSubclassCmd(Context.ConnectionId, thirdClassId));
-#endif
         return Task.CompletedTask;
     }
 
-    /// <summary>Switch to a class this character already owns. DEBUG for now — the player-facing
-    /// version gates this on a safe zone + a delay, which will wrap this same command.</summary>
+    /// <summary>Switch to a class this character already owns. ADMIN for now — the player-facing version
+    /// gates this on a safe zone + a delay, and will wrap this same command.</summary>
     public Task SwitchSubclass(int slot)
     {
-#if DEBUG
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
         _world.Commands.Enqueue(new SwitchSubclassCmd(Context.ConnectionId, slot));
-#endif
         return Task.CompletedTask;
     }
 
+    /// <summary>Admin: grant skill points.</summary>
     public Task DebugSp(long amount)
     {
-#if DEBUG
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
         _world.Commands.Enqueue(new DebugSpCmd(Context.ConnectionId, amount));
-#endif
         return Task.CompletedTask;
     }
 
+    /// <summary>Admin: re-roll this character (new race/base class, back to level 1 with the starter kit).</summary>
     public Task DebugReset(int race, int baseClass)
     {
-#if DEBUG
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
         _world.Commands.Enqueue(new DebugResetCmd(Context.ConnectionId, (Race)race, (BaseClass)baseClass));
-#endif
         return Task.CompletedTask;
     }
 
+    /// <summary>Admin: take a 3rd class (discipline) directly, bypassing the quest chain + items.</summary>
     public Task DebugThirdClass(int thirdClassId)
     {
-#if DEBUG
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
         _world.Commands.Enqueue(new DebugThirdClassCmd(Context.ConnectionId, thirdClassId));
-#endif
         return Task.CompletedTask;
     }
 
+    /// <summary>Admin: teleport to arbitrary world coordinates.</summary>
     public Task DebugTeleport(float x, float y)
     {
-#if DEBUG
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
         _world.Commands.Enqueue(new DebugTeleportCmd(Context.ConnectionId, x, y));
-#endif
         return Task.CompletedTask;
     }
 

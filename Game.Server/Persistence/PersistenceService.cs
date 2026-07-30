@@ -401,7 +401,8 @@ public class PersistenceService
         if (rec is null)
             return (false, null, "Character not found.");
 
-        var delay = GameConstants.CharacterDeleteDelay(rec.Level);
+        // Staff characters get the short undo window in every build — see CharacterDeleteDelay.
+        var delay = GameConstants.CharacterDeleteDelay(rec.Level, rec.Role == AccountRole.Admin);
         if (delay <= TimeSpan.Zero)
         {
             db.Characters.Remove(rec);

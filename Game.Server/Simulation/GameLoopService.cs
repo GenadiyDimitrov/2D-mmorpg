@@ -109,11 +109,35 @@ public class GameLoopService : BackgroundService
         return true;
     }
 
+    /// <summary>THE authorisation gate for every <see cref="IAdminCommand"/> — the whole former debug menu.
+    ///
+    /// One check, before dispatch, rather than fifteen handlers each remembering to look. These used to be
+    /// compiled out with <c>#if DEBUG</c> in the hub, so the release server published to the phone accepted
+    /// the calls and did nothing: the buttons were on screen and pressing them was silence (owner). The
+    /// gate belongs here because "is this character an admin" is a runtime fact, and the loop is the only
+    /// thread that may read entity state.
+    ///
+    /// A non-admin gets told, rather than ignored. There is nothing to hide: the client already hides the
+    /// menu unless your account role says otherwise, so a request arriving from a non-admin means either a
+    /// stale client or someone poking the hub — and in both cases silence is the reply that costs an hour
+    /// to diagnose.</summary>
+    private bool IsBlockedForNonAdmin(IGameCommand cmd)
+    {
+        if (cmd is not IAdminCommand admin) return false;
+        if (!TryGetPlayer(admin.ConnectionId, out var p)) return true;   // not in the world: nothing to do
+        if (p.IsAdmin) return false;
+
+        SendSystemToEntity(p, "That is an admin-only command.");
+        _log.LogWarning("Non-admin {Name} tried {Command}", p.Name, cmd.GetType().Name);
+        return true;
+    }
+
     private void ProcessCommands()
     {
         while (_world.Commands.TryDequeue(out var cmd))
         {
             if (IsBlockedWhileJailed(cmd)) continue;
+            if (IsBlockedForNonAdmin(cmd)) continue;
 
             switch (cmd)
             {

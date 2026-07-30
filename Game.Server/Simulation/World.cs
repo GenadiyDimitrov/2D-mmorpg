@@ -110,6 +110,29 @@ public class World
 
 public interface IGameCommand { }
 
+/// <summary>
+/// A command only an ADMIN character may run — the whole former "debug menu".
+///
+/// These used to be compiled out with <c>#if DEBUG</c> in the hub, which meant the tools the owner
+/// actually uses to get a build into a testable state simply did nothing in the RELEASE server published
+/// to the phone: the buttons were there, the calls arrived, and nothing happened (owner, 2026-07-30).
+/// A compile flag was the wrong gate anyway — the question was never "is this a debug build" but "is
+/// this character an admin", which is a runtime fact the server already tracks.
+///
+/// So they are admin commands now, present in every build and authorised by
+/// <see cref="Entity.IsAdmin"/>. Implementing this marker is the ONLY thing a command has to do to be
+/// gated: <c>ProcessCommands</c> checks it once, centrally, before dispatch. A per-handler check would
+/// mean fifteen places to forget, and forgetting one in a shipped build hands a player free levels.
+///
+/// What stays <c>#if DEBUG</c> is only what has no admin to authorise it: account REGISTRATION and the
+/// admin/test account SEEDING (both run before anyone is logged in), and the destructive stale-schema
+/// database reset.
+/// </summary>
+public interface IAdminCommand : IGameCommand
+{
+    string ConnectionId { get; }
+}
+
 public record EnterWorldCommand(
     string ConnectionId,
     Entity Entity,
@@ -216,11 +239,11 @@ public record WarehouseDepositCmd(string ConnectionId, Guid InstanceId) : IGameC
 public record WarehouseWithdrawCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
 
 /// <summary>DEBUG-only: grant an item by def id.</summary>
-public record DebugGiveCmd(string ConnectionId, string DefId) : IGameCommand;
+public record DebugGiveCmd(string ConnectionId, string DefId) : IAdminCommand;
 
 /// <summary>DEBUG-only: strip an attribute off the EQUIPPED weapon (Index = which; -1 = all).
 /// Lets you test with only the base weapon / a chosen attribute, not the full rolled set.</summary>
-public record DebugCancelAttrCmd(string ConnectionId, int Index) : IGameCommand;
+public record DebugCancelAttrCmd(string ConnectionId, int Index) : IAdminCommand;
 
 /// <summary>Craft a recipe (consume its inputs, roll success, produce the output).</summary>
 public record CraftCmd(string ConnectionId, string RecipeId) : IGameCommand;
@@ -232,51 +255,51 @@ public record ChooseProfessionCmd(string ConnectionId, int Profession) : IGameCo
 /// <summary>Set the CRAFTING profession (WeaponSmith … ScrollScribe). Not the class — see
 /// <see cref="DebugSecondClassCmd"/>. The two were confused in the debug UI, which sent a 2nd-class id
 /// (1-18) here, where it was clamped into the 5-value crafting enum and silently became ScrollScribe.</summary>
-public record DebugSetProfessionCmd(string ConnectionId, int Profession) : IGameCommand;
+public record DebugSetProfessionCmd(string ConnectionId, int Profession) : IAdminCommand;
 
 /// <summary>Debug: become a 2nd CLASS directly, skipping the quest and level gates the real
 /// class-change path enforces.</summary>
-public record DebugSecondClassCmd(string ConnectionId, int ClassId) : IGameCommand;
+public record DebugSecondClassCmd(string ConnectionId, int ClassId) : IAdminCommand;
 
 /// <summary>DEBUG-only: grant one level.</summary>
 /// <summary>DEBUG: shift the character's level by <paramref name="Delta"/> (+1 / +10 / −1 / −10).
 /// Negative = delevel, which keeps every learned skill (see HandleDebugLevel).</summary>
-public record DebugLevelCmd(string ConnectionId, int Delta) : IGameCommand;
+public record DebugLevelCmd(string ConnectionId, int Delta) : IAdminCommand;
 
 /// <summary>DEBUG-only: learn every skill the class can learn at the current level (free).</summary>
-public record DebugLearnAllCmd(string ConnectionId) : IGameCommand;
+public record DebugLearnAllCmd(string ConnectionId) : IAdminCommand;
 
 /// <summary>DEBUG-only: grant gold.</summary>
-public record DebugGoldCmd(string ConnectionId, long Amount) : IGameCommand;
+public record DebugGoldCmd(string ConnectionId, long Amount) : IAdminCommand;
 
 /// <summary>DEBUG: apply the full NPC buff set to yourself, at any level, without visiting the NPC.</summary>
-public record DebugBuffCmd(string ConnectionId) : IGameCommand;
+public record DebugBuffCmd(string ConnectionId) : IAdminCommand;
 
 /// <summary>DEBUG: nudge your karma by a delta (test the red-name gradient + clearing).</summary>
-public record DebugKarmaCmd(string ConnectionId, int Delta) : IGameCommand;
+public record DebugKarmaCmd(string ConnectionId, int Delta) : IAdminCommand;
 
 /// <summary>DEBUG: add a new SUBCLASS (a second/third class this character owns) and switch to it.
 /// No cap, no delay, no safe-zone requirement — the real rules come with the player-facing system.</summary>
 /// <summary>Add a SUBCLASS by its 3rd-class discipline id (a ThirdClassCatalog id). The new class
 /// starts at level 1 but with that 3rd class already approved (race/base/2nd derived from it).</summary>
-public record DebugAddSubclassCmd(string ConnectionId, int ThirdClassId) : IGameCommand;
+public record DebugAddSubclassCmd(string ConnectionId, int ThirdClassId) : IAdminCommand;
 
 /// <summary>DEBUG: switch to another class this character already owns.</summary>
-public record SwitchSubclassCmd(string ConnectionId, int Slot) : IGameCommand;
+public record SwitchSubclassCmd(string ConnectionId, int Slot) : IAdminCommand;
 
 /// <summary>DEBUG-only: grant skill points.</summary>
-public record DebugSpCmd(string ConnectionId, long Amount) : IGameCommand;
+public record DebugSpCmd(string ConnectionId, long Amount) : IAdminCommand;
 
 /// <summary>DEBUG-only: re-roll the current character (new race/base class, reset to
 /// level 1 with the starter kit; keeps the same character row + gold).</summary>
-public record DebugResetCmd(string ConnectionId, Race Race, BaseClass BaseClass) : IGameCommand;
+public record DebugResetCmd(string ConnectionId, Race Race, BaseClass BaseClass) : IAdminCommand;
 
 /// <summary>DEBUG-only: take a 3rd class (discipline) directly, bypassing the quest
 /// chain + items. Parent 2nd class must already match the discipline.</summary>
-public record DebugThirdClassCmd(string ConnectionId, int ThirdClassId) : IGameCommand;
+public record DebugThirdClassCmd(string ConnectionId, int ThirdClassId) : IAdminCommand;
 
 /// <summary>Debug-menu teleport to arbitrary world coordinates.</summary>
-public record DebugTeleportCmd(string ConnectionId, float X, float Y) : IGameCommand;
+public record DebugTeleportCmd(string ConnectionId, float X, float Y) : IAdminCommand;
 
 /// <summary>Admin command (kick/ban/jail/unjail/god). Validated in the hub.</summary>
 public record AdminCmd(string ConnectionId, string Command, string Argument) : IGameCommand;
@@ -342,8 +365,8 @@ public record LogoutCmd(string ConnectionId) : IGameCommand;
 public record StartOfflineFarmCmd(string ConnectionId) : IGameCommand;
 public record TogglePvpCmd(string ConnectionId, bool Enabled) : IGameCommand;
 public record ToggleCounterAttackCmd(string ConnectionId, bool Enabled) : IGameCommand;
-public record RequestDebugConfigCmd(string ConnectionId) : IGameCommand;
-public record SetDebugConfigCmd(string ConnectionId, DebugConfigDto Config) : IGameCommand;
+public record RequestDebugConfigCmd(string ConnectionId) : IAdminCommand;
+public record SetDebugConfigCmd(string ConnectionId, DebugConfigDto Config) : IAdminCommand;
 
 // ----- Moderation follow-ups ------------------------------------------------------------------
 // These carry a CHARACTER NAME rather than a connection id: the punishment is decided on a worker
