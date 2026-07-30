@@ -182,22 +182,6 @@ login, a subclass swap) made it re-park skills against the wrong bar and save th
 the real layout on the server while the client went on to receive the correct bar and *look* perfectly
 fine. It bit twice before it was understood.
 
-## Shipping a build to the phone: the `builds` BRANCH
-Artifacts are published to a dedicated **orphan `builds` branch**, so the owner can download them
-from a phone browser anywhere without a cable:
-```
-pwsh tools/publish-build.ps1        # publishes builds/L2Clone-<ver>.apk + builds/Game.Server-<ver>.zip
-```
-- Local `builds/` is **gitignored** and must stay that way. An APK is already compressed, so git
-  cannot pack it: committing ~56 MB per release onto the working branch would add more permanent,
-  unremovable history in a week than the whole source repo has in months.
-- The branch is **REWRITTEN, never appended to** — one parentless commit per publish, holding the
-  newest 3 versions, force-pushed. Dropped blobs become unreachable and the remote gets them back.
-  This is the one place a `--force` push is correct; nothing on it is unreproducible.
-- The script uses a temporary git index, so it never touches the working tree or the real index.
-- **Publish the APK and the server together.** The version handshake refuses a mismatched pair, so a
-  half-published branch is worse than none.
-
 ## Working style (owner's rules — these matter)
 - **Never launch the server/client unprompted.** The owner tests manually and will say when to run.
   Build (`dotnet build`) freely; don't `dotnet run` the game to "check" something.
