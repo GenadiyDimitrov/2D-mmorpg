@@ -172,6 +172,39 @@ public static class MobCatalog
     /// gear table with their own rank row (§3), so the drop roll has to tell gear from mats/consumables.</summary>
     public static bool IsGearGroup(int groupId) => groupId >= 10;
 
+    /// <summary>Groups authored as ABSOLUTE chances rather than as a x1 design: mats 100%, always 100%,
+    /// scrolls 70%. The global drop rate does not apply to them (owner: *"at x10 or x200 I still want the
+    /// group chances at their current ones"*) — multiplying a 100% group by a server rate cannot make it
+    /// more generous, it only pins it at the clamp and discards every weight inside it.</summary>
+    public static bool IsGuaranteedGroup(int groupId) =>
+        groupId is GroupMats or GroupScrolls or GroupAlways;
+
+    /// <summary>The tuning NAME of a drop group — the key into <see cref="RateConfig.DropGroupRates"/>
+    /// and the word the admin types at <c>/droprate</c>. Independent entries (GroupId 0) are "other".</summary>
+    public static string GroupName(int groupId) => groupId switch
+    {
+        GroupMats => "mats",
+        GroupScrolls => "scrolls",
+        GroupAlways => "always",
+        // Parenthesised on purpose: without them `a / 10 switch {…}` parses as `a / (10 switch {…})`.
+        _ when IsGearGroup(groupId) => ((groupId - 10) / 10) switch
+        {
+            FamilyArmor => "armor",
+            FamilyAccessory => "accessory",
+            FamilyWeapon => "weapon",
+            _ => "jewel",
+        },
+        _ => "other",
+    };
+
+    /// <summary>THE rate a drop entry actually rolls at: the global rate (unless the group is guaranteed)
+    /// times the group's own multiplier. Everything that shows or rolls a drop chance must go through
+    /// here — the kill roll, the target-inspect list and tools/BalanceMatrix — or the number on screen
+    /// stops being the number you get, which is the one bug this whole system exists to avoid.</summary>
+    public static float EffectiveRate(int groupId) =>
+        (IsGuaranteedGroup(groupId) ? 1f : RateConfig.DropChanceRate)
+        * RateConfig.DropGroupRate(GroupName(groupId));
+
     // The tables below are PROPERTIES, not static readonly fields, and that is load-bearing: `All =
     // Build()` is declared at the top of this class and C# runs static field initializers in declaration
     // order, so any field declared here would still be null when Build() reaches StandardDrops. Same
@@ -288,12 +321,11 @@ public static class MobCatalog
             foreach (var (qty, w) in matRungs)
                 drops.Add(new(Mat(type, ItemRarity.Common), w / matTypes.Length, qty, qty, GroupId: GroupMats));
 
-        // Higher-rarity mats stay INDEPENDENT low-chance rolls, gated by mob level. Their chances are the
-        // old ones x3 on purpose: DropChanceRate went 3 -> 1 in the same change, and only what the owner
-        // actually specified should move — a silent 3x cut to crafting mats is not part of the ask.
-        if (level >= 30) { drops.Add(new(Mat(mats.A, ItemRarity.Uncommon), 0.24f)); drops.Add(new(Mat(mats.B, ItemRarity.Uncommon), 0.15f)); }
-        if (level >= 60) drops.Add(new(Mat(mats.A, ItemRarity.Rare), 0.09f));
-        if (level >= 76) drops.Add(new(Mat(mats.A, ItemRarity.Epic), 0.015f));
+        // Higher-rarity mats stay INDEPENDENT low-chance rolls (group "other"), gated by mob level. These
+        // are the ORIGINAL x1 numbers — the global rate still applies to them, as it always did.
+        if (level >= 30) { drops.Add(new(Mat(mats.A, ItemRarity.Uncommon), 0.08f)); drops.Add(new(Mat(mats.B, ItemRarity.Uncommon), 0.05f)); }
+        if (level >= 60) drops.Add(new(Mat(mats.A, ItemRarity.Rare), 0.03f));
+        if (level >= 76) drops.Add(new(Mat(mats.A, ItemRarity.Epic), 0.005f));
 
         // ---- SCROLLS (§4): one per trigger at C 40 / U 20 / R 10 — half an enchant scroll of the grade,
         //      half a BUFF potion (never a healing one; those are the Always group's job). The rungs
@@ -341,8 +373,7 @@ public static class MobCatalog
         //      The broken pieces stay in the catalog and on the starter vendor's shelf.
         drops.AddRange(GearDrops(level, MobRank.Normal));
 
-        // x3 for the same reason as the rare mats above (DropChanceRate 3 -> 1).
-        if (level >= 70) drops.Add(new(ItemCatalog.AttrScrollLegendary, 0.03f));
+        if (level >= 70) drops.Add(new(ItemCatalog.AttrScrollLegendary, 0.01f));
         return drops.ToArray();
     }
 

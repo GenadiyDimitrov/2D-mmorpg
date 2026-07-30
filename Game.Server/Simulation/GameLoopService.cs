@@ -3658,7 +3658,7 @@ public class GameLoopService : BackgroundService
                     : "Admin: /jail, /unjail, /kick, /ban, /unban, /chatban, /unchatban, /jailed, " +
                       "/role <name> <player|moderator|admin>, /tp <name>, /where <name>, /god, " +
                       "/speed-cast|atack|move <v>, /speed-reset, /bag <name>, /give <name>, " +
-                      "/givegold <name> <amount>");
+                      "/givegold <name> <amount>, /droprate [group|gear|global] [mult]");
                 break;
 
             case "god":
@@ -3932,6 +3932,61 @@ public class GameLoopService : BackgroundService
                     SendSystemToEntity(gt, delta >= 0
                         ? $"You received {delta:#,##0} gold."
                         : $"{-delta:#,##0} gold was taken from you.");
+                break;
+            }
+
+            case "droprate":
+            {
+                // Live drop tuning, per GROUP. This is a chat command rather than a row in the tuning
+                // panel on purpose: the panel's payload is a wire DTO, and adding eight fields to it
+                // would bump the protocol and need a matching Unity build — for a knob whose whole value
+                // is being adjustable mid-playtest, on the phone, without rebuilding anything.
+                string[] parts = arg.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 0)
+                {
+                    SendSystemToEntity(admin,
+                        $"Global drop rate x{RateConfig.DropChanceRate:0.###}  (mats/scrolls/always are exempt)");
+                    foreach (var (name, mul) in RateConfig.DropGroupRates.OrderBy(k => k.Key))
+                        SendSystemToEntity(admin, $"  {name,-10} x{mul:0.###}");
+                    SendSystemToEntity(admin,
+                        "Usage: /droprate <group|gear|global> <multiplier>  — 'gear' sets all four " +
+                        "equipment groups at once, 'global' sets the server-wide rate.");
+                    break;
+                }
+                if (parts.Length < 2 || !float.TryParse(parts[1],
+                        System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out float mult) || mult < 0f)
+                {
+                    SendSystemToEntity(admin, "Usage: /droprate <group|gear|global> <multiplier>");
+                    break;
+                }
+                string which = parts[0].ToLowerInvariant();
+                if (which == "global")
+                {
+                    RateConfig.DropChanceRate = mult;
+                    SendSystemToEntity(admin, $"Global drop rate = x{mult:0.###}.");
+                }
+                else if (which == "gear")
+                {
+                    foreach (var g in new[] { "armor", "accessory", "weapon", "jewel" })
+                        RateConfig.DropGroupRates[g] = mult;
+                    SendSystemToEntity(admin, $"armor/accessory/weapon/jewel = x{mult:0.###} "
+                        + $"(effective x{RateConfig.DropChanceRate * mult:0.###} with the global rate).");
+                }
+                else if (RateConfig.DropGroupRates.ContainsKey(which))
+                {
+                    RateConfig.DropGroupRates[which] = mult;
+                    // mats/scrolls/always are exempt from the global rate, so their multiplier IS the
+                    // effective one — say which it is rather than printing a number that isn't true.
+                    float eff = which is "mats" or "scrolls" or "always"
+                        ? mult : mult * RateConfig.DropChanceRate;
+                    SendSystemToEntity(admin, $"{which} = x{mult:0.###} (effective x{eff:0.###}).");
+                }
+                else
+                {
+                    SendSystemToEntity(admin,
+                        $"Unknown group '{which}'. Known: {string.Join(", ", RateConfig.DropGroupRates.Keys.OrderBy(k => k))}, gear, global.");
+                }
                 break;
             }
 
@@ -6688,16 +6743,18 @@ var effect = def.Effect;
         // Independent entries (GroupId == 0): each its own rate-scaled roll.
         foreach (var entry in applicable.Where(e => e.GroupId == 0))
         {
-            float chance = Math.Min(1f, entry.Chance * RateConfig.DropChanceRate * dropGap);
+            float chance = Math.Min(1f, entry.Chance * MobCatalog.EffectiveRate(0) * dropGap);
             if (_rng.NextDouble() <= chance)
                 Award(entry);
         }
 
-        // Drop groups (GroupId > 0): roll once at the summed chance, then pick one weighted member.
+        // Drop groups (GroupId > 0): roll once at the summed chance, then pick one weighted member. The
+        // rate is PER GROUP now (global x the group's own multiplier), so a server can run x200 drops
+        // without every kill also handing out a guaranteed potion three times over.
         foreach (var group in applicable.Where(e => e.GroupId != 0).GroupBy(e => e.GroupId))
         {
             var members = group.ToList();
-            float total = Math.Min(1f, members.Sum(e => e.Chance) * RateConfig.DropChanceRate * dropGap);
+            float total = Math.Min(1f, members.Sum(e => e.Chance) * MobCatalog.EffectiveRate(group.Key) * dropGap);
             if (_rng.NextDouble() > total)
                 continue;
             // Weighted pick within the group (weights = the raw member chances).
@@ -7969,19 +8026,19 @@ var effect = def.Effect;
                 rows.RemoveAll(d => MobCatalog.IsGearGroup(d.GroupId));
                 rows.AddRange(MobCatalog.GearDrops(t.Level, t.Rank));
             }
-            string Line(IEnumerable<DropEntry> members, float rawChance)
+            string Line(IEnumerable<DropEntry> members, float rawChance, int groupId)
             {
                 var list = members.ToList();
-                float chance = Math.Min(1f, rawChance * RateConfig.DropChanceRate);
+                float chance = Math.Min(1f, rawChance * MobCatalog.EffectiveRate(groupId));
                 string names = string.Join(" / ", list
                     .Select(d => ItemCatalog.Get(d.ItemId)?.Name ?? d.ItemId).Distinct());
                 int lo = list.Min(d => d.MinQty), hi = list.Max(d => d.MaxQty);
                 string qty = hi > 1 ? $" x{lo}-{hi}" : "";
                 return $"{names}{qty}  ({chance * 100:0.##}%)";
             }
-            drops = rows.Where(d => d.GroupId == 0).Select(d => Line(new[] { d }, d.Chance))
+            drops = rows.Where(d => d.GroupId == 0).Select(d => Line(new[] { d }, d.Chance, 0))
                 .Concat(rows.Where(d => d.GroupId != 0).GroupBy(d => d.GroupId)
-                    .Select(g => Line(g, g.Sum(d => d.Chance))))
+                    .Select(g => Line(g, g.Sum(d => d.Chance), g.Key)))
                 .ToArray();
         }
 

@@ -307,11 +307,11 @@ static IEnumerable<(DropEntry Entry, float Chance)> Marginals(IEnumerable<DropEn
 {
     var applicable = table.Where(e => e.AppliesAtLevel(mobLevel)).ToList();
     foreach (var e in applicable.Where(e => e.GroupId == 0))
-        yield return (e, Math.Min(1f, e.Chance * RateConfig.DropChanceRate));
+        yield return (e, Math.Min(1f, e.Chance * MobCatalog.EffectiveRate(0)));
     foreach (var g in applicable.Where(e => e.GroupId != 0).GroupBy(e => e.GroupId))
     {
         float sum = g.Sum(e => e.Chance);
-        float trigger = Math.Min(1f, sum * RateConfig.DropChanceRate);
+        float trigger = Math.Min(1f, sum * MobCatalog.EffectiveRate(g.Key));
         foreach (var e in g)
             yield return (e, sum <= 0 ? 0 : trigger * (e.Chance / sum));
     }
@@ -363,7 +363,8 @@ Console.WriteLine();
 // on) and at x1, because a 10x exp rate means 10x FEWER kills for the same level — and therefore 10x
 // less trash gold. Getting that backwards is how a "16x cut" turns into "68x".
 Console.WriteLine("=== ECONOMY: cumulative TRASH GOLD by level (kills-to-level x gold-per-kill) ===");
-Console.WriteLine($"  live ExpRate = x{RateConfig.ExpRate:0.##}, DropChanceRate = x{RateConfig.DropChanceRate:0.##}");
+Console.WriteLine($"  live ExpRate = x{RateConfig.ExpRate:0.##}, DropChanceRate = x{RateConfig.DropChanceRate:0.##}"
+    + $" (gear groups x{RateConfig.DropGroupRate("armor"):0.##}; mats/scrolls/always are EXEMPT from the global rate)");
 Console.WriteLine($"{"Lvl",4} {"kills(live)",12} {"sold(live)",14} | {"kills(x1)",11} {"sold(x1)",14}");
 double soldLive = 0, soldX1 = 0;
 double killsLive = 0, killsX1 = 0;
@@ -383,6 +384,35 @@ for (int L = 1; L <= 85; L++)
 }
 Console.WriteLine("  ^ the level column is the level REACHED. The owner's target: ~400k by level 25.");
 Console.WriteLine("  (he reported 3,000,000 on the 0.33.1 build — divide to get the achieved cut)");
+Console.WriteLine();
+
+// The GEAR-GROUP multiplier is the knob that moves trash gold without touching a single authored number,
+// and it is live-tunable in game with `/droprate gear <x>`. Sweep it so the owner can pick a value from a
+// measured column instead of guessing — the whole reason per-group multipliers exist.
+Console.WriteLine("=== ECONOMY: /droprate gear <x> — what it does to trash gold by level 25 ===");
+Console.WriteLine($"{"gear x",8} {"effective",10} {"gold @25",14} {"vs 400k target",16}");
+float[] saved = new[] { "armor", "accessory", "weapon", "jewel" }
+    .Select(g => RateConfig.DropGroupRate(g)).ToArray();
+foreach (float mul in new[] { 1f, 0.5f, 0.34f, 0.25f, 0.1f })
+{
+    foreach (var g in new[] { "armor", "accessory", "weapon", "jewel" })
+        RateConfig.DropGroupRates[g] = mul;
+    double sold = 0;
+    for (int L = 1; L <= 25; L++)
+    {
+        long exp = StatCalculator.MobExpReward(L);
+        long next = ExpCurve.ExpToNext(L);
+        if (next <= 0 || exp <= 0) continue;
+        double kills = next / (double)exp / Math.Max(0.01f, RateConfig.ExpRate);
+        sold += kills * MobsNear(L).Select(m => KillValue(m, L))
+            .Average(x => x.Gear + x.Mats + x.Consumables + x.Gold);
+    }
+    Console.WriteLine($"{mul,8:0.##} {mul * RateConfig.DropChanceRate,10:0.##}x {sold,14:N0} "
+        + $"{sold / 400_000.0,16:0.00}x");
+}
+for (int i = 0; i < saved.Length; i++)
+    RateConfig.DropGroupRates[new[] { "armor", "accessory", "weapon", "jewel" }[i]] = saved[i];
+Console.WriteLine("  'effective' = the global DropChanceRate x this multiplier — what a gear group really rolls at.");
 Console.WriteLine();
 
 // Integrity: a drop entry naming an item that does not exist is a silent hole in the loot table — the
@@ -421,7 +451,7 @@ var hotGroups = MobCatalog.Templates
     .SelectMany(m => (m.Drops ?? Array.Empty<DropEntry>())
         .Where(d => d.GroupId != 0)
         .GroupBy(d => d.GroupId)
-        .Select(g => (Mob: m.Id, Group: g.Key, Sum: g.Sum(d => d.Chance) * RateConfig.DropChanceRate)))
+        .Select(g => (Mob: m.Id, Group: g.Key, Sum: g.Sum(d => d.Chance) * MobCatalog.EffectiveRate(g.Key))))
     .Where(x => x.Sum > 1.0001f)
     .ToArray();
 Console.WriteLine($"  {hotGroups.Length} group(s) clamped at 100% (weights inside would be preserved anyway,"

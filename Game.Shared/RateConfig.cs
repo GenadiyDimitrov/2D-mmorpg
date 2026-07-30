@@ -20,12 +20,41 @@ public static class RateConfig
     /// <summary>Multiplier on each drop's CHANCE (x3 = three times as likely).
     /// Result is clamped to 100%.
     ///
-    /// **1, deliberately** (playtest-14 §2/§3, 2026-07-30). The owner authors drop rates as the numbers
-    /// he wants to SEE in game ("now roughly 20/12/5, target 5/2/0.2"), and he reads them off the target
-    /// window. At x3 the authored table was not the table: 5% became 15%, and — worse — the guaranteed
-    /// groups (mats 100%, always 100%, scrolls 70%) all saturated at the 100% clamp, which silently threw
-    /// away every weight inside them. The 1x table IS the design now; retune a mob's numbers, not this.</summary>
-    public static float DropChanceRate = 1f;
+    /// The authored drop tables are the **x1 design** (owner, 2026-07-30): 5% authored means 5% at x1 and
+    /// 15% at x3. This is the SERVER's rate knob and it is expected to move — including to absurd values
+    /// like x200 for an event — which is exactly why it no longer touches everything (see
+    /// <see cref="DropGroupRates"/>).</summary>
+    public static float DropChanceRate = 3f;
+
+    /// <summary>Per-GROUP multipliers, composed on top of <see cref="DropChanceRate"/>. The owner's own
+    /// example: *"drop chance x200 and armor group multiplier x0.01 — in reality armor will be x2 drops."*
+    /// So a group's real rate is `DropChanceRate x DropGroupRates[group]`, and one group can be tuned
+    /// without touching another or re-authoring a mob.
+    ///
+    /// The GUARANTEED groups (mats / scrolls / always) are exempt from <see cref="DropChanceRate"/>
+    /// entirely — see <c>MobCatalog.EffectiveRate</c>. Their chances are authored as absolutes (mats 100%,
+    /// always 100%, scrolls 70%) and the owner wants them to stay put *"at x10 or x200"*. Multiplying them
+    /// by a server rate does not make them more generous, it just pins them at the 100% clamp and throws
+    /// away every weight inside the group. Their multiplier here still works, so they remain tunable.
+    ///
+    /// Live-editable with <c>/droprate</c> (admin), so a rate can be dialled in DURING a playtest rather
+    /// than guessed at and rebuilt.</summary>
+    public static readonly Dictionary<string, float> DropGroupRates =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            // The four GEAR groups ship at 1/3, which is not a fudge — it is this system doing its job.
+            // The authored table is the x1 design and the server runs at x3, but the owner's acceptance
+            // test is an ABSOLUTE one: ~400k of trash gold by level 25. At x3 flat that is 1.08M (2.7x
+            // over); x3 x 1/3 measures 402k. So the design stays readable at x1 AND the faucet stays shut
+            // at the live rate, which is the whole point of separating the two knobs.
+            // If DropChanceRate is ever set back to 1, set these back to 1 with it.
+            ["armor"] = 1f / 3f, ["accessory"] = 1f / 3f, ["weapon"] = 1f / 3f, ["jewel"] = 1f / 3f,
+            ["mats"] = 1f, ["scrolls"] = 1f, ["always"] = 1f, ["other"] = 1f,
+        };
+
+    /// <summary>A group's own multiplier (1 for anything unknown, so a new group is inert until named).</summary>
+    public static float DropGroupRate(string group) =>
+        DropGroupRates.TryGetValue(group, out float v) ? v : 1f;
 
     /// <summary>Multiplier on each drop's QUANTITY (stack size).</summary>
     public static float DropAmountRate = 1f;

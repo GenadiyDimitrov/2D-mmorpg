@@ -328,8 +328,13 @@ of these once fixed. Nothing here has been built yet.
 30j.[ ] **A boss pays out properly** — the Grave Lich (48) / Valley Treant (60) should drop **several**
         pieces: Epic 70%, Legendary 40%, Mythic 2%, per slot family. This is a NERF from the old flat
         50% Mythic body — say so if it now feels thin.
-30k.[ ] **Rates read true.** `DropChanceRate` is 1 now, so what the drop list SAYS is what you get. If a
-        number on screen doesn't match what you observe over ~50 kills, that is a real bug.
+30k.[ ] **Rates read true.** The [Details] list shows the EFFECTIVE chance (global rate × the group's own
+        multiplier). If a number on screen doesn't match what you observe over ~50 kills, that is a bug.
+30l.[ ] **`/droprate` works and tunes live** — type `/droprate` for the current table, then
+        `/droprate gear 1` and confirm gear drops roughly TRIPLE without a restart (it removes the ×1/3
+        the gear groups ship with). Put it back with `/droprate gear 0.333`. Also try
+        `/droprate mats 2` — mats must double while nothing else moves. **This is how you tune the
+        economy during the playtest instead of asking for a rebuild.**
 
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends

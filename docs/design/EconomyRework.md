@@ -76,12 +76,40 @@ Roughly a **4× cut** on Common (20 % → 5 %).
 piece is far rarer than before. That is the shape the owner asked for ("trading with other newbies
 should be the better route").
 
-⚠ **`RateConfig.DropChanceRate` is now 1, not 3.** This is the load-bearing half of the rate change. The
-owner authors rates as what he wants to SEE (*"now roughly 20/12/5, target 5/2/0.2"*) and reads them off
-the target window; at ×3 the authored 5 % was really 15 %. Worse, the guaranteed groups (mats 100 %,
-always 100 %, scrolls 70 %) all hit the 100 % clamp, which silently discarded every weight inside them.
-Everything the owner did *not* specify — the rare-mat rungs, the Legendary attribute scroll — was
-multiplied by 3 in its authored value so only the specified numbers moved.
+### ⚙ Two rate knobs, not one (owner, 2026-07-30 — corrects a first reading)
+
+**The authored table is the ×1 design.** 5 % authored means 5 % at ×1 and **15 % at ×3**.
+`RateConfig.DropChanceRate` stays the server's rate knob and is expected to move, *"x10 or x200"*.
+
+But a global rate cannot be the only knob, because the guaranteed groups are authored as **absolutes**
+(mats 100 %, always 100 %, scrolls 70 %) and must stay put at any rate — multiplying a 100 % group by
+×200 makes it no more generous, it just pins it at the clamp and discards every weight inside it.
+So, in the owner's own words:
+
+> *"we can introduce each group multiplier (global), so we can have drop chance ×200 and armor group
+> multiplier ×0.01 — in reality armor will be ×2 drops."*
+
+**`RateConfig.DropGroupRates`** is that: a per-group multiplier composed on top of the global rate.
+`MobCatalog.EffectiveRate(groupId)` is the ONE place the two combine —
+
+```
+rate = (guaranteed group ? 1 : DropChanceRate) × DropGroupRates[group]
+```
+
+— and the kill roll, the target-inspect list and `BalanceMatrix` all call it, so the number on screen
+cannot drift from the number you get. Groups: `armor` · `accessory` · `weapon` · `jewel` · `mats` ·
+`scrolls` · `always` · `other` (the independent entries).
+
+**Shipped defaults: global ×3 (unchanged), gear groups ×1/3, everything else ×1.** The 1/3 is this
+system doing its job rather than a fudge: the design reads at ×1, the server runs at ×3, and the owner's
+acceptance test is absolute (~400k by level 25) — ×3 flat measures 1.08M, ×3 × 1/3 measures 402k.
+**If `DropChanceRate` ever goes back to 1, put the gear groups back to 1 with it.**
+
+Live-tunable in game, admin only — **`/droprate`** lists everything, `/droprate <group> <x>` sets one,
+`/droprate gear <x>` sets all four equipment groups, `/droprate global <x>` sets the server rate. It is a
+CHAT command and not a tuning-panel row on purpose: the panel's payload is a wire DTO, so eight new
+fields there would bump the protocol and need a matching Unity build — for a knob whose entire value is
+being adjustable mid-playtest, on the phone, without rebuilding anything.
 
 **Epic drops at 0.01 % from normal mobs** (the owner's own column), but only from **E grade up**: §1 puts
 F at Common/Uncommon/Rare only. Legendary and Mythic stay boss-only.
@@ -279,6 +307,7 @@ in §5 — reading it the other way moves every price by 2.86× and halves the f
 
 - **Recipe drops below A grade** (§2's "below level 74 also drop a recipe at 0.1 %"). No item exists to
   drop — recipes under 76 are learned by level, not found. Needs recipe books authored for F–B first.
+  **Owner's call (2026-07-30): add it later, the same way A+ was added.** Not a blocker.
 - **Delete the training gear entirely?** Not done, and now arguably unnecessary: with the armor re-cut,
   the training kit reads as a deliberate worst rung rather than a parallel line. The owner's §1 wording
   ("delete the training gear, replace with an untradable Common") would give the same *shape*; the
@@ -306,6 +335,7 @@ in §5 — reading it the other way moves every price by 2.86× and halves the f
   bakes the Normal row into each template; `GameLoopService.RollDrop` swaps in the Elite/Boss row.
 - `MobCatalog.NormalGearRates` / `EliteGearRates` / `BossGearRates` — the three §2 columns, one place.
   ⚠ They are **properties, not fields**: `All = Build()` is declared first and would read a null field.
-- `RateConfig.DropChanceRate` — now 1. See §2.
+- `RateConfig.DropChanceRate` (×3) + `RateConfig.DropGroupRates` (per group) — combined ONLY by
+  `MobCatalog.EffectiveRate(groupId)`. See §2. Admin command: `/droprate`.
 - `tools/BalanceMatrix` § ECONOMY — the measurement. **Re-run it after touching any of the above**; the
   faucet arithmetic multiplies and has been hand-derived wrong twice.
