@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.33.2";
+    public const string GameVersion = "0.33.3";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -413,8 +413,18 @@ public static class GameConstants
 
     // ----- Vendors (Phase 21) -------------------------------------------------
 
-    /// <summary>Fraction of an item's Value a vendor pays when you SELL to it.</summary>
+    /// <summary>Fraction of an item's Value a vendor pays when you SELL to it. Applies to the
+    /// GENERIC price formula only — mats, potions, scrolls, legacy gear. Tiered gear has its own
+    /// rule (<see cref="GearSellDivisor"/>), because gear is what floods the economy.</summary>
     public const float VendorSellFraction = 0.30f;
+
+    /// <summary>Tiered gear sells for its BUY price divided by this (owner, playtest-14). It is not a
+    /// tuning knob picked from thin air: the owner's own acceptance test is "selling ~25 Robes should
+    /// buy one Leathers", and since both are the Armor slot at the same grade+rarity they share a buy
+    /// price, so the divisor IS that ratio. 25 also means the trash a mob drops pays ~12-30x less than
+    /// before (more at the high rarities), which with the 4x drop-rate cut is the ~50x faucet
+    /// reduction playtest-14 asked for — level 25 with 3kk gold from selling trash.</summary>
+    public const int GearSellDivisor = 25;
 
     /// <summary>Extra fraction added to an item's Value when you BUY from a vendor.
     /// Reserved for the future castle system: a vendor in a castle-owned village

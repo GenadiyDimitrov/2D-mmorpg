@@ -1389,66 +1389,101 @@ public static class ItemCatalog
     /// <summary>Formula gold value by slot/grade/rarity, used when an item def does
     /// not set an explicit Value. Quest items and god-tier one-offs return 0 so they
     /// can be neither bought nor sold.</summary>
-    /// <summary>Vendor price of TIERED GEAR at the three shop grades (F/E/D), or null if this item is
-    /// not one of them and should fall through to the generic formula.
+    /// <summary>Vendor price of TIERED GEAR at all seven grades, or null if this item is not tiered
+    /// gear and should fall through to the generic formula.
     ///
-    /// The owner's table (playtest-13), authored as the RARE price — gear was "way to lo price", and
-    /// these numbers are what make gold worth farming:
+    /// The table below is the **MYTHIC** rung, because Mythic is the 100 % base the rarity scale is a
+    /// fraction of. But the F/E/D half is NOT authored here — it is written as <c>Shop(x)</c>, where
+    /// x is the owner's shop price. **The shop sells RARE only, at F-D**, and those shop numbers are
+    /// the fixed points of this whole table (owner, playtest-14: *"the F, E, D prices that are in the
+    /// shop are for rare"*). <see cref="Shop"/> divides by the Rare multiplier to find the Mythic rung
+    /// above them, so the Rare price always comes back out at exactly the authored number — the source
+    /// keeps showing the shop's numbers and the round-trip is exact by construction.
     ///
-    ///                    F        E        D
-    ///   gloves/boots     6 000    175 000    600 000
-    ///   helm/shield     10 000    250 000  1 000 000
-    ///   body armor      18 000    400 000  1 800 000
-    ///   1H weapon       27 000    670 000  2 700 000
-    ///   2H weapon       30 000    750 000  3 000 000
-    ///   ring             3 000     70 000    250 000
-    ///   earring          6 000    140 000    500 000
-    ///   necklace        12 000    280 000  1 500 000
+    ///                    F        E         D          C           B           A            S
+    ///   gloves/boots     6 000    175 000     600 000    5 400 000   12 000 000   24 000 000  120 000 000
+    ///   helm/shield     10 000    250 000   1 000 000    9 000 000   20 000 000   40 000 000  200 000 000
+    ///   body armor      18 000    400 000   1 800 000   16 200 000   36 000 000   72 000 000  360 000 000
+    ///   1H weapon       27 000    670 000   2 700 000   24 300 000   54 000 000  108 000 000  540 000 000
+    ///   2H weapon       30 000    750 000   3 000 000   27 000 000   60 000 000  120 000 000  600 000 000
+    ///   ring             3 000     70 000     250 000    2 250 000    5 000 000   10 000 000   50 000 000
+    ///   earring          6 000    140 000     500 000    4 500 000   10 000 000   20 000 000  100 000 000
+    ///   necklace        12 000    280 000   1 500 000   13 500 000   30 000 000   60 000 000  300 000 000
+    ///           (F/E/D columns are RARE prices; C/B/A/S columns are MYTHIC prices)
     ///
-    /// 1H is cheaper than 2H because it hits softer AND needs a shield bought beside it — about a
-    /// third of the shield's price is the saving. Quality then scales it: the low qualities drop free
-    /// from mobs, so at full price nobody would ever buy one (owner) — they are priced as the
-    /// convenience they are. Epic and above are NOT vendor stock; their multipliers exist only so
-    /// selling one pays sensibly.</summary>
+    /// The 2H weapon's C..S column is the owner's own: C 27kk, B 60kk ("30 was to cheap"), A 120kk,
+    /// S 600kk. Every other C..S cell is DERIVED by holding that column's slot fractions, which is not
+    /// a guess — they are the fractions the authored F/E/D numbers already satisfy:
+    ///   * a 2H weapon = 75 % of a full 4-piece armor set (body+helm+gloves+boots);
+    ///   * the set splits 45 / 25 / 15 / 15 between those pieces;
+    ///   * 1H = 90 % of 2H — it hits softer AND needs a shield bought beside it, about a third of the
+    ///     shield's price being the saving;
+    ///   * jewels: ring 1/12, earring 1/6, necklace 1/2 of the 2H price (the D column's split).
+    /// So retuning a grade is ONE number — the 2H cell — not eight.
+    ///
+    /// RARITY then scales it at HALF the power ratio (owner): the rarity ladder's power runs
+    /// 45/55/70/70/85/100 %, so gold moves 22.5/27.5/35/35/42.5 % — rarity is worth less in gold than
+    /// it is in stats, deliberately. Mythic is a 2.35x jump over Legendary, which is intended: Mythic
+    /// is craft-only and meant to be traded between players for absurd sums. Epic and above are NOT
+    /// vendor stock; their multipliers exist only so selling one pays sensibly.</summary>
     private static int? TieredGearPrice(ItemDef def)
     {
-        int tier = def.ItemLevel >= 40 ? 2 : def.ItemLevel >= 20 ? 1 : def.ItemLevel >= 1 ? 0 : -1;
+        int tier = def.ItemLevel switch
+        {
+            >= SGradeLevel => 6,   // S (and S*/S** when they are authored)
+            >= 76 => 5,            // A
+            >= 61 => 4,            // B
+            >= 52 => 3,            // C
+            >= 40 => 2,            // D
+            >= 20 => 1,            // E
+            >= 1  => 0,            // F
+            _ => -1,
+        };
         if (tier < 0) return null;   // untiered/legacy gear keeps the old formula
 
         int[]? row = def.Slot switch
         {
-            EquipSlot.Shield => new[] { 10_000, 250_000, 1_000_000 },
+            EquipSlot.Shield => new[] { Shop(10_000), Shop(250_000), Shop(1_000_000), 9_000_000, 20_000_000, 40_000_000, 200_000_000 },
             EquipSlot.Armor => def.ArmorSlot switch
             {
-                ArmorSlot.Body => new[] { 18_000, 400_000, 1_800_000 },
-                ArmorSlot.Head => new[] { 10_000, 250_000, 1_000_000 },
-                _              => new[] { 6_000, 175_000, 600_000 },   // gloves / boots
+                ArmorSlot.Body => new[] { Shop(18_000), Shop(400_000), Shop(1_800_000), 16_200_000, 36_000_000, 72_000_000, 360_000_000 },
+                ArmorSlot.Head => new[] { Shop(10_000), Shop(250_000), Shop(1_000_000), 9_000_000, 20_000_000, 40_000_000, 200_000_000 },
+                _              => new[] { Shop(6_000), Shop(175_000), Shop(600_000), 5_400_000, 12_000_000, 24_000_000, 120_000_000 },   // gloves / boots
             },
             EquipSlot.Weapon => def.WeaponType.IsTwoHanded()
-                ? new[] { 30_000, 750_000, 3_000_000 }
-                : new[] { 27_000, 670_000, 2_700_000 },
+                ? new[] { Shop(30_000), Shop(750_000), Shop(3_000_000), 27_000_000, 60_000_000, 120_000_000, 600_000_000 }
+                : new[] { Shop(27_000), Shop(670_000), Shop(2_700_000), 24_300_000, 54_000_000, 108_000_000, 540_000_000 },
             EquipSlot.Jewel => def.JewelType switch
             {
-                JewelType.Necklace => new[] { 12_000, 280_000, 1_500_000 },
-                JewelType.Earring  => new[] { 6_000, 140_000, 500_000 },
-                _                  => new[] { 3_000, 70_000, 250_000 },   // ring
+                JewelType.Necklace => new[] { Shop(12_000), Shop(280_000), Shop(1_500_000), 13_500_000, 30_000_000, 60_000_000, 300_000_000 },
+                JewelType.Earring  => new[] { Shop(6_000), Shop(140_000), Shop(500_000), 4_500_000, 10_000_000, 20_000_000, 100_000_000 },
+                _                  => new[] { Shop(3_000), Shop(70_000), Shop(250_000), 2_250_000, 5_000_000, 10_000_000, 50_000_000 },   // ring
             },
             _ => null,
         };
         if (row is null) return null;
 
-        float qualityMul = def.Rarity switch
-        {
-            ItemRarity.Common    => 0.35f,
-            ItemRarity.Uncommon  => 0.70f,
-            ItemRarity.Rare      => 1.00f,
-            ItemRarity.Epic      => 1.50f,   // not sold by vendors — sell value only
-            ItemRarity.Legendary => 2.50f,
-            ItemRarity.Mythic    => 4.00f,
-            _ => 1.00f,
-        };
-        return Math.Max(1, (int)(row[tier] * qualityMul));
+        return Math.Max(1, (int)Math.Round(row[tier] * (double)RarityPriceMul(def.Rarity)));
     }
+
+    /// <summary>The owner's F/E/D shop price is the price of a **RARE** item. This lifts it to the
+    /// MYTHIC rung the price table is expressed in, so that multiplying back down by the Rare
+    /// multiplier returns the shop's number exactly.</summary>
+    private static int Shop(int rareShopPrice) =>
+        (int)Math.Round(rareShopPrice / (double)RarityPriceMul(ItemRarity.Rare));
+
+    /// <summary>Rarity's effect on GOLD — the power ratio halved (see <see cref="TieredGearPrice"/>).
+    /// Epic shares Rare's 70 % power, so it shares its price too; Mythic is the 100 % base.</summary>
+    public static float RarityPriceMul(ItemRarity rarity) => rarity switch
+    {
+        ItemRarity.Common    => 0.225f,
+        ItemRarity.Uncommon  => 0.275f,
+        ItemRarity.Rare      => 0.350f,
+        ItemRarity.Epic      => 0.350f,
+        ItemRarity.Legendary => 0.425f,
+        ItemRarity.Mythic    => 1.000f,
+        _ => 0.350f,
+    };
 
     public static int DefaultValue(ItemDef def)
     {
@@ -1489,9 +1524,16 @@ public static class ItemCatalog
     }
 
     /// <summary>Gold paid to a player who SELLS this item. SellPriceOverride wins
-    /// (0 = sells for nothing); otherwise the Value formula (0 = not sellable).</summary>
+    /// (0 = sells for nothing); otherwise it DERIVES from the buy price.
+    ///
+    /// Tiered gear divides its buy price by <see cref="GameConstants.GearSellDivisor"/> (25) instead of
+    /// taking the generic 30 % — that is the playtest-14 faucet fix, and it is deliberately confined to
+    /// gear: mats, potions and scrolls are not what made a level-25 character rich, and cutting them
+    /// too would quietly nerf crafting income nobody asked to nerf. Everything else keeps
+    /// <see cref="GameConstants.VendorSellFraction"/>.</summary>
     public static int SellPrice(ItemDef def) =>
         def.SellPriceOverride is int s ? Math.Max(0, s)
+        : TieredGearPrice(def) is int gear ? Math.Max(1, gear / GameConstants.GearSellDivisor)
         : def.Value <= 0 ? 0 : Math.Max(1, (int)(def.Value * GameConstants.VendorSellFraction));
 
     /// <summary>Gold charged when BUYING this item from a vendor (incl. the future
