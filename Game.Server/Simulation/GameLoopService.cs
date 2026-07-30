@@ -5218,7 +5218,9 @@ public class GameLoopService : BackgroundService
         if (zr is null)
             return;
 
-        zr.OnDeath(_tick, _rng);
+        // A mob from a dedicated spawner respawns as ITSELF (owner, playtest-14) — the werewolf you
+        // killed for a quest comes back a werewolf instead of re-rolling the camp's roster.
+        zr.OnDeath(_tick, _rng, mob.SpawnerMobId);
 
         // Persist boss/elite respawn time (real-world) so it survives a restart.
         if (zr.Zone.Rank != MobRank.Normal && zr.NextPendingTick is long nextTick)
@@ -8177,10 +8179,17 @@ var effect = def.Effect;
                 }
             }
 
-            int fill = zr.InitialFill(_lastPhase);
-            for (int i = 0; i < fill; i++)
-                SpawnOneInZone(zr);
+            foreach (string? dedicated in zr.InitialFill(_lastPhase))
+                SpawnOneInZone(zr, dedicated);
         }
+
+        // Say out loud which quest targets NO camp guarantees. A quest whose TargetId is misspelt, or
+        // whose level window no longer overlaps the camp that holds the creature, is otherwise invisible
+        // until a player takes it and cannot finish it.
+        string[] unserved = WorldPlan.UnservedKillTargets();
+        if (unserved.Length > 0)
+            _log.LogWarning("Quest kill targets with no dedicated spawner: {Targets}",
+                            string.Join(", ", unserved));
     }
 
     /// <summary>Per-tick: spawn any matured respawns (cap + time-of-day aware),
@@ -8196,11 +8205,8 @@ var effect = def.Effect;
         }
 
         foreach (var zr in _zones)
-        {
-            int due = zr.DueToSpawn(_tick, phase);
-            for (int i = 0; i < due; i++)
-                SpawnOneInZone(zr);
-        }
+            foreach (string? dedicated in zr.DueToSpawn(_tick, phase))
+                SpawnOneInZone(zr, dedicated);
     }
 
     /// <summary>When day flips to night (or back), despawn zones that are no
@@ -8222,14 +8228,17 @@ var effect = def.Effect;
             }
         }
 
-        // Re-init zone alive-counts and fill those now active (and empty).
+        // Re-init zone alive-counts and fill those now active (and empty). The counts are re-seeded from
+        // the world rather than adjusted, because a phase flip REMOVES mobs without killing them — no
+        // OnDeath runs, so the zone's own tallies (mixed pool and each dedicated bucket) are stale.
         foreach (var zr in _zones)
         {
-            int alive = _world.Entities.Values.Count(e =>
-                e.Kind == EntityKind.Mob && e.ZoneId == zr.Zone.Id && !e.Dead);
-            int need = zr.Zone.IsActiveAt(phase) ? zr.Zone.MaxCount - alive : 0;
-            for (int i = 0; i < need; i++)
-                SpawnOneInZone(zr);
+            zr.ResetAlive(_world.Entities.Values
+                .Where(e => e.Kind == EntityKind.Mob && e.ZoneId == zr.Zone.Id && !e.Dead)
+                .Select(e => e.MobTypeId ?? ""));
+
+            foreach (string? dedicated in zr.RefillNeeded(phase))
+                SpawnOneInZone(zr, dedicated);
         }
 
         BroadcastSystem(phase == DayPhase.Night ? "Night falls." : "Day breaks.");
@@ -9310,7 +9319,10 @@ var effect = def.Effect;
                                       player.SecondClass, player.ThirdClass, Completed, Active).Count();
     }
 
-        private void SpawnOneInZone(ZoneRuntime zr)
+    /// <summary>Place one mob in a zone. <paramref name="dedicatedMobId"/> names the template when the
+    /// spawn comes from one of the zone's per-template spawners; null means the mixed pool, which rolls
+    /// the roster.</summary>
+    private void SpawnOneInZone(ZoneRuntime zr, string? dedicatedMobId = null)
     {
         var zone = zr.Zone;
         float x = zone.X, y = zone.Y;
@@ -9329,7 +9341,7 @@ var effect = def.Effect;
             }
         }
 
-        string mobId = zone.MobTypes[_rng.Next(zone.MobTypes.Length)];
+        string mobId = dedicatedMobId ?? zone.MobTypes[_rng.Next(zone.MobTypes.Length)];
         var mobType = MobCatalog.Get(mobId);
         // A mob with a natural level brings its own (its authored base curve is tuned for it);
         // otherwise the zone assigns the level. ForceZoneLevel flips that: the ZONE wins, which is how
@@ -9337,8 +9349,9 @@ var effect = def.Effect;
         int level = mobType.Level > 0 && !zone.ForceZoneLevel
             ? mobType.Level
             : _rng.Next(zone.MinLevel, zone.MaxLevel + 1);
-        BuildMob(mobId, level, zone.Rank, x, y, zone.Id);
-        zr.OnSpawned();
+        var mob = BuildMob(mobId, level, zone.Rank, x, y, zone.Id);
+        mob.SpawnerMobId = dedicatedMobId;
+        zr.OnSpawned(dedicatedMobId);
     }
 
     /// <summary>Create, configure and register one live mob: base stats from the level curve, the

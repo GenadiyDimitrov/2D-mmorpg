@@ -262,7 +262,76 @@ public static class WorldPlan
 
         return new SpawnZone(x, y, radius, band.Min, band.Max, roster, maxCount,
                              respawn, variance, rank, ActiveTime.Always,
-                             band.ForceZoneLevel, aggressive);
+                             band.ForceZoneLevel, aggressive,
+                             DedicatedFor(roster, band, rank));
+    }
+
+    /// <summary>How many of a quest target a camp keeps in its OWN spawner, on top of the mixed pool.</summary>
+    private const int QuestSpawnPerType = 4;
+
+    /// <summary>Floor for the above once a camp has several quest targets to serve.</summary>
+    private const int MinQuestSpawn = 2;
+
+    /// <summary>The per-template spawners for a camp: one for every roster entry some quest asks the
+    /// player to KILL, sized so the guaranteed population never more than doubles the camp.
+    ///
+    /// The band check matters as much as the roster check. A quest step accepts kills only inside its
+    /// own level window, so a camp that CAN spawn the creature but never at a level the step counts is
+    /// no use to that quest and gets no dedicated spawner — which is also what keeps a level-12
+    /// werewolf's guaranteed slice in the camp where the quest can actually use it.
+    ///
+    /// Elites and bosses are excluded: their camps hold 2 mobs by design, and a guaranteed slice of
+    /// four would turn an elite ground into a normal one.</summary>
+    private static DedicatedSpawn[]? DedicatedFor(string[] roster, Band band, MobRank rank)
+    {
+        if (rank != MobRank.Normal) return null;
+
+        var targets = new List<string>();
+        foreach (string id in roster)
+        {
+            var target = QuestCatalog.KillTargets
+                .FirstOrDefault(t => string.Equals(t.MobId, id, StringComparison.OrdinalIgnoreCase));
+            if (target is null) continue;
+
+            // The levels this camp can actually produce for this template: its own natural level,
+            // unless the zone overrides levels wholesale (ForceZoneLevel), in which case the band wins.
+            var mob = MobCatalog.Get(id);
+            int spawnMin = mob.Level > 0 && !band.ForceZoneLevel ? mob.Level : band.Min;
+            int spawnMax = mob.Level > 0 && !band.ForceZoneLevel ? mob.Level : band.Max;
+
+            // Overlap against the step's window, where 0 means "unbounded".
+            if (target.MinLevel > 0 && spawnMax < target.MinLevel) continue;
+            if (target.MaxLevel > 0 && spawnMin > target.MaxLevel) continue;
+
+            targets.Add(id);
+        }
+
+        if (targets.Count == 0) return null;
+
+        // Cap the total addition at the camp's own size, so a roster full of quest targets cannot
+        // triple the population.
+        int per = Math.Min(QuestSpawnPerType, Math.Max(MinQuestSpawn, 11 / targets.Count));
+        return targets.Select(id => new DedicatedSpawn(id, per)).ToArray();
+    }
+
+    /// <summary>Quest kill targets that NO generated camp serves with a dedicated spawner — either the
+    /// creature is in no camp's roster at all, or only at levels the quest step will not count.
+    ///
+    /// Returned rather than thrown: a target may legitimately live in a hand-authored dungeon zone
+    /// (<see cref="WorldMap.SpawnZones"/> appends those) or be a boss, and failing the boot over one
+    /// would be worse than saying so. The server logs it at startup — which is the only way a typo in
+    /// a quest's TargetId, or a quest whose band no longer matches any camp, ever becomes visible.</summary>
+    public static string[] UnservedKillTargets()
+    {
+        var served = SpawnZones
+            .SelectMany(z => z.DedicatedSpawns.Select(d => d.MobId))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return QuestCatalog.KillTargets
+            .Where(t => !served.Contains(t.MobId))
+            .Select(t => t.MobId)
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
     }
 
     /// <summary>The N types that attack on sight: the TOUGHEST aggressive-capable creatures in the roster.

@@ -1044,6 +1044,15 @@ public class Entity
 
     /// <summary>Mob template id (MobCatalog) — for drops + quest kill matching.</summary>
     public string? MobTypeId { get; set; }
+
+    /// <summary>Set when this mob came from one of its zone's per-template <see cref="DedicatedSpawn"/>s
+    /// (the value is that template id); null for an ordinary mixed-roster spawn.
+    ///
+    /// The spawner has to be RECORDED rather than worked out from <see cref="MobTypeId"/> at death:
+    /// a mixed roll can legitimately produce a template that also has a dedicated spawner, and
+    /// crediting that death to the wrong bucket is what would let a guaranteed quest population drift.
+    /// Runtime only — mobs are never persisted.</summary>
+    public string? SpawnerMobId { get; set; }
     /// <summary>Training dummy: immortal (GodMode), stationary, never attacks/aggroes.</summary>
     public bool TrainingDummy { get; set; }
     /// <summary>Caster mob (Mage role): no basic attack — casts the mob spells gated on MP;

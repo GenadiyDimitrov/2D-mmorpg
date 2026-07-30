@@ -388,11 +388,29 @@ public enum MobRank { Normal = 0, Elite = 1, Boss = 2 }
 public enum ActiveTime { Always = 0, Day = 1, Night = 2 }
 
 /// <summary>
+/// A spawner for ONE named template, layered on top of a zone's mixed roster. It keeps exactly
+/// <paramref name="Count"/> of <paramref name="MobId"/> alive, and a death here respawns THAT
+/// creature — not a fresh roll of the roster.
+///
+/// This is the fix for the owner's playtest-14 note: *"killing a werewolf guarantees the spawn of a
+/// werewolf again, not a 4-mob rotation"*. In a camp with a five-type roster, a mixed spawner turns
+/// every kill into a 1-in-5 chance of the thing you actually need, so farming a quest mob meant
+/// clearing the whole camp and waiting — and the population of any one creature drifted with the
+/// dice. A quest target gets its own guaranteed slice instead. Which templates qualify is DERIVED
+/// from the quest catalogue (<see cref="QuestCatalog.KillTargets"/>), so a new kill quest is served
+/// automatically.
+/// </summary>
+public record DedicatedSpawn(string MobId, int Count);
+
+/// <summary>
 /// A spawn zone: a disc that maintains up to MaxCount living mobs. When a mob
 /// dies the zone waits RespawnSeconds (± Variance) then respawns it — but never
 /// exceeds MaxCount, and only while the zone is active for the current time of
 /// day. Respawn timing is authored in SECONDS (real seconds); the in-game
 /// description shows "[center ±variance]".
+///
+/// On top of that mixed pool a zone may carry <see cref="DedicatedSpawn"/>s: per-template spawners
+/// whose deaths respawn the SAME creature.
 /// </summary>
 public record SpawnZone(
     float X, float Y, float Radius,
@@ -408,10 +426,30 @@ public record SpawnZone(
     bool ForceZoneLevel = false,
     // WHICH mob types attack on sight here. null = just the first entry; a list = exactly those;
     // an empty list = none. See IsAggressiveType.
-    string[]? AggressiveTypes = null)
+    string[]? AggressiveTypes = null,
+    // Per-template spawners layered ON TOP of the mixed roster above. See DedicatedSpawn.
+    DedicatedSpawn[]? Dedicated = null)
 {
     /// <summary>Stable id from coordinates+rank, used to persist boss timers.</summary>
     public string Id => $"{(int)X}_{(int)Y}_{Rank}";
+
+    /// <summary>The per-template spawners, never null.</summary>
+    public DedicatedSpawn[] DedicatedSpawns => Dedicated ?? Array.Empty<DedicatedSpawn>();
+
+    /// <summary>How many of this template the zone keeps alive in its OWN spawner (0 = it has none and
+    /// is part of the mixed roster pool instead).</summary>
+    public int DedicatedCount(string mobId)
+    {
+        foreach (var d in DedicatedSpawns)
+            if (string.Equals(d.MobId, mobId, StringComparison.OrdinalIgnoreCase))
+                return d.Count;
+        return 0;
+    }
+
+    /// <summary>Total living mobs this zone maintains: the mixed pool PLUS every dedicated spawner.
+    /// Dedicated counts are additive (owner: *"a self spawner that is on top of the one they are in
+    /// right now"*) — a guaranteed quest population must not be paid for out of the camp's variety.</summary>
+    public int TotalCount => MaxCount + DedicatedSpawns.Sum(d => d.Count);
 
     /// <summary>Does EVERY aggressive template in this zone actually attack on sight?
     ///

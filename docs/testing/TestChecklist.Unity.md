@@ -282,6 +282,26 @@ of these once fixed. Nothing here has been built yet.
 28e.[ ] **Character delete is quick for an admin** — deleting an admin character over level 20 should give
         the ~10s undo window and free the name straight after, not lock it for 24h.
 
+### 🔴 0.34.0 — per-mob spawners + F-grade drops
+29a.[ ] **Killing a quest mob puts THAT mob back** — in the Bracken Downs level 8-12 camp, kill the
+        werewolves and ashen wolves repeatedly. The camp must keep at least **4 of each** alive at all
+        times; you must never have to clear the camp and wait to find the one the quest wants. Do the same
+        at Greyhollow Moor 16-20 for **orc archer / skeleton grunt / shield skeleton** (3 of each).
+29b.[ ] **The camps are not overcrowded** — the same camps now hold ~19-20 mobs instead of 11. Check it
+        still plays: you should be able to pull one at a time, not walk into a wall of aggro. (Only ONE
+        type in an ordinary field attacks on sight, so this should hold — verify it does.)
+29c.[ ] **Low-level mobs finally drop gear** — kill level 1-17 mobs (Ridgeback Pup, Fox, Goblin Scout).
+        They must drop **Ferrite** (F-grade) armor/weapons/helms — before this they dropped only mats,
+        potions and broken jewels. Rarity by mob level: Common from 1, **Uncommon from 5**, **Rare from
+        10** — a level-1 pup must never drop an Uncommon.
+29d.[ ] **Every early drop is an UPGRADE, never a downgrade** — the starter Training armor was re-cut
+        (light 53→35 P.Def, robe 27→20) so that the first Ferrite Common body you loot beats it. Equip
+        what drops and confirm the numbers go UP. Nothing you can loot at level 1-19 should be worse than
+        what you started in.
+29e.[ ] **The server log names no unserved quest target** — at startup the log must NOT contain
+        "Quest kill targets with no dedicated spawner". If it does, that quest cannot be reliably farmed
+        and the mob/band needs fixing.
+
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends
         (and combat decays) it works. Same for `/exit`. Pulling the plug mid-DoT must not run the

@@ -136,9 +136,12 @@ public static class MobCatalog
         new(id, name, run * 0.55f, run, Aggressive: aggressive,
             Drops: StandardDrops(level, cat), Mod: mod, Level: level, Category: cat, Role: role);
 
-    /// <summary>Nearest gear TIER (20/40/52/61/76) a mob's level drops — the level-appropriate set.</summary>
+    /// <summary>Nearest gear TIER (1/20/40/52/61/76) a mob's level drops — the level-appropriate set.
+    /// The bottom rung is the F tier at level 1: it used to FLOOR at 20, which is why gear drops had to
+    /// be gated away from low-level mobs entirely (a level-8 mob dropping E-grade gear).</summary>
     private static int GearTier(int level) =>
-        level >= 76 ? 76 : level >= 61 ? 61 : level >= 52 ? 52 : level >= 40 ? 40 : 20;
+        level >= 76 ? 76 : level >= 61 ? 61 : level >= 52 ? 52 : level >= 40 ? 40
+        : level >= 20 ? 20 : ItemCatalog.FGradeLevel;
 
     /// <summary>MATS-PRIMARY drop table (docs/design/Crafting.md): every mob drops crafting materials
     /// (amount rises with level; rarity gates at 30/60/76 = uncommon/rare/epic), family-flavored mat
@@ -192,13 +195,15 @@ public static class MobCatalog
         // Usable-now GEAR drops: the SCALED Common/Uncommon/Rare copies of the mob's tier gear
         // (the full Epic set stays craft/boss-only). Family weight picks the body + weapon flavor.
         //
-        // ⚠ GATED at level 18 (owner: "a lvl-8 mob drops E-grade gear"). The lowest tiered gear is E at
-        // level 20, and GearTier() FLOORS everything below 40 to that 20 tier — so without this gate a
-        // level-1..17 mob dropped level-20 (E-grade) gear, badly ahead of a character that band. Below
-        // 18, loot is training/broken gear (the level-10 quest kit), mats and the broken-jewel line; the
-        // first tiered gear appears as you approach its own level.
-        const int GearDropMinLevel = 18;
-        if (level >= GearDropMinLevel)
+        // The old level-18 gate is GONE, and this is why: it existed because GearTier() floored every
+        // level below 40 to the level-20 (E) tier, so a level-8 mob dropped gear a whole grade ahead of
+        // the character killing it (owner: "a lvl-8 mob drops E-grade gear"). The fix is the F tier
+        // being part of the one ladder now — a low mob drops F gear, which is what it should always have
+        // dropped. Levels 1-19 no longer have mats-and-nothing-else as their entire loot table.
+        //
+        // RARITY is gated by MOB LEVEL instead (owner, playtest-14 §1): Common from level 1, Uncommon
+        // from 5, Rare from 10. Rarity is introduced as the character meets it rather than all at once,
+        // so the first hour has somewhere to go.
         {
             int tier = GearTier(level);
             (string Body, string Weapon) fam = cat switch
@@ -207,14 +212,20 @@ public static class MobCatalog
                 MobCategory.Animal or MobCategory.Plant or MobCategory.Insect => ("light", "bow"),
                 _ => ("heavy", "sword1h"),
             };
+            const int UncommonFromLevel = 5;
+            const int RareFromLevel = 10;
+
             // Body armor + weapon, at each drop rarity. Each is a mutually-exclusive drop GROUP
             // (GroupId 1 = body, 2 = weapon), so a kill yields at most one body and one weapon — the
             // rarer copy is a weighted chance within the group, not a stack of three bodies.
             drops.Add(new($"{fam.Body}_t{tier}_common", 0.040f, GroupId: 1));
-            drops.Add(new($"{fam.Body}_t{tier}_uncommon", 0.015f, GroupId: 1));
-            drops.Add(new($"{fam.Body}_t{tier}_rare", 0.004f, GroupId: 1));
+            if (level >= UncommonFromLevel)
+                drops.Add(new($"{fam.Body}_t{tier}_uncommon", 0.015f, GroupId: 1));
+            if (level >= RareFromLevel)
+                drops.Add(new($"{fam.Body}_t{tier}_rare", 0.004f, GroupId: 1));
             drops.Add(new($"{fam.Weapon}_t{tier}_common", 0.025f, GroupId: 2));
-            drops.Add(new($"{fam.Weapon}_t{tier}_uncommon", 0.010f, GroupId: 2));
+            if (level >= UncommonFromLevel)
+                drops.Add(new($"{fam.Weapon}_t{tier}_uncommon", 0.010f, GroupId: 2));
             // A scaled accessory (helm) rounds out the set slots (independent roll).
             drops.Add(new($"helm_t{tier}_common", 0.030f));
         }

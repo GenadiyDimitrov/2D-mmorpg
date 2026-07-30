@@ -113,6 +113,57 @@ public static partial class QuestCatalog
         get { EnsureInit(); return All.Values; }
     }
 
+    /// <summary>One mob template a quest asks the player to KILL, and the level band the step
+    /// accepts. See <see cref="KillTargets"/>.</summary>
+    public record KillTarget(string MobId, int MinLevel, int MaxLevel);
+
+    private static KillTarget[]? _killTargets;
+
+    /// <summary>Every mob template some quest asks you to KILL, merged across quests to the WIDEST
+    /// level band any step accepts.
+    ///
+    /// This is what the world generator uses to give a quest mob its own dedicated spawner
+    /// (<see cref="SpawnZone.Dedicated"/>), so killing one respawns THAT creature instead of rolling
+    /// the camp's roster again. Derived rather than hand-listed on purpose: a new kill quest gets its
+    /// guaranteed population for free, and a list would silently rot the first time a quest's target
+    /// changed (the same reasoning as rosters deriving from the band).</summary>
+    public static KillTarget[] KillTargets
+    {
+        get
+        {
+            if (_killTargets is not null) return _killTargets;
+
+            var widest = new Dictionary<string, KillTarget>(StringComparer.OrdinalIgnoreCase);
+            foreach (var q in AllQuests)
+                foreach (var step in q.Steps)
+                {
+                    if (step.Type != QuestStepType.KillMobs || step.TargetId.Length == 0) continue;
+                    // A step with no band (0/0) accepts any level, so it WIDENS to everything: 0 stays 0
+                    // as "unbounded" rather than collapsing the band to level zero.
+                    if (widest.TryGetValue(step.TargetId, out var cur))
+                    {
+                        widest[step.TargetId] = cur with
+                        {
+                            MinLevel = cur.MinLevel == 0 || step.MinLevel == 0
+                                ? 0 : Math.Min(cur.MinLevel, step.MinLevel),
+                            MaxLevel = cur.MaxLevel == 0 || step.MaxLevel == 0
+                                ? 0 : Math.Max(cur.MaxLevel, step.MaxLevel),
+                        };
+                    }
+                    else
+                    {
+                        widest[step.TargetId] = new KillTarget(step.TargetId, step.MinLevel, step.MaxLevel);
+                    }
+                }
+
+            return _killTargets = widest.Values.OrderBy(t => t.MobId, StringComparer.Ordinal).ToArray();
+        }
+    }
+
+    /// <summary>Does any quest ask the player to kill this mob template?</summary>
+    public static bool IsKillTarget(string mobId) =>
+        KillTargets.Any(t => string.Equals(t.MobId, mobId, StringComparison.OrdinalIgnoreCase));
+
     /// <summary>Quests a given NPC offers to a character: right level + race +
     /// base class, not yet taken/completed, prerequisite already completed, and
     /// (for pre-class-change quests) no second class yet.</summary>

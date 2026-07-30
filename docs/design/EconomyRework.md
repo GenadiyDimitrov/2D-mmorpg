@@ -23,10 +23,43 @@ full six-rarity ladder.
   - level 5+ → **Uncommon**
   - level 10+ → **Rare**
 
-> ❓ **First job of batch 2, unanswered:** does an F-grade **Common** land close to today's training
-> gear? Owner asked this directly. It decides whether the starter kit is a straight swap or needs its
-> numbers moved. **Measure it with `tools/BalanceMatrix` — do not hand-derive** (this project has been
-> burned by hand-derived balance before).
+### ✅ ANSWERED + BUILT (0.34.0) — "does F-Common ≈ the training gear?"
+
+Measured off the built catalog, not derived. **No — and it missed in opposite directions:**
+
+| | F-Common | training (old) | ratio |
+|---|---|---|---|
+| 1H sword P.Atk | 10 | 6 | 1.67× |
+| daggers | 9 | 5 | 1.80× |
+| bow | 22 | 11 | 2.00× |
+| **light body P.Def** | **38** | **53** | **0.72×** |
+| robe body P.Def | 22 | 27 | 0.81× |
+| robe body +MP | 49 | 29 | 1.69× |
+
+The WEAPONS were fine; the **armor was above the first thing you could loot**, so every early armor
+drop was a downgrade. The owner's diagnosis of why (2026-07-30): the training armor was authored as the
+**sum of an L2 upper + lower body**, taken from the **top** of the no-grade range, whereas this
+ladder's F Common rung is 45 % of a **mid** no-grade set. The weapons were cut from L2's **top**
+no-grade weapon, which is why they line up and the armor does not.
+
+**Fix (his call, and the right one): move the STARTER down, not the F rung up** — light 53 → **35**,
+robe 27 → **20**, +MP unchanged. Lifting F-Common instead would have broken the ladder's single rule
+(every quality is a fixed fraction of the authored Mythic piece). Defence is a small share of survival
+this early — he has levelled a melee fighter wearing none.
+
+Verified: **every** F-Common piece now beats its starter counterpart (armor, all five weapon lines,
+and the robe's MP). The starter kit stays as it is; you begin in something worse and gear UP.
+
+### ✅ The F tier was ALREADY authored — and one thing here was wrong
+
+`Items.cs` has carried F at Common/Uncommon/Rare since 0.31.2/0.31.3 (the `Ferrite` line, generated
+from the one ladder). So §1's "author an F tier" was mostly already done.
+
+⚠ **Correction to an earlier reading of this file:** the old generated `"Worn"` / `"Steel"` item line
+(`sword_f_common`, `light_body_f_common` — 4-6 P.Def) is **DEAD CODE**. It lives under
+`LootTables` in `Items.cs`, which is referenced from nowhere in the solution. Mobs never dropped it.
+The live drop path is `MobCatalog.StandardDrops`, which has always used the tiered `_t<level>_<rarity>`
+copies. Do not "fix" the drop tables to point away from it — there is nothing to repoint.
 
 ## 2. Drop rates (playtest-14 §3, unchanged)
 
@@ -180,10 +213,28 @@ in §5 — reading it the other way moves every price by 2.86× and halves the f
 
 ## Still open (batch 2 proper — the drop side)
 
-- **Does an F-grade Common land close to today's training gear?** Owner asked directly; decides whether
-  the starter kit is a straight swap. **Measure with `tools/BalanceMatrix`, do not hand-derive.**
-- Levels 1-19 gear drops are gated at level 18 in `MobCatalog.cs` — the F tier authoring (§1) lifts that.
-- The group/grade-lock engine work in §3.
+- **The rates in §2** (5 % / 2 % / 0.2 % / 0.01 %, elite and boss columns) — deliberately NOT applied in
+  0.34.0. Today's chances (4 % / 1.5 % / 0.4 % body, 2.5 % / 1 % weapon, 3 % helm) are untouched, so the
+  rate decision is still open and un-pre-empted. §2 and §3 are the SAME edit.
+- **Grade LOCK (§3)** — a mob still drops only its own tier via `GearTier(level)`, but that is a *floor*
+  mapping, not the authored lock, and the slot family is still `cat`-derived rather than randomised
+  across the family.
+- **Delete the training gear entirely?** Not done, and now arguably unnecessary: with the armor re-cut,
+  the training kit reads as a deliberate worst rung rather than a parallel line. The owner's §1 wording
+  ("delete the training gear, replace with an untradable Common") would give the same *shape*; the
+  re-cut achieves it without a second set of ids. **Confirm which he wants before deleting anything.**
+- **F Epic/Legendary copies still exist** (`ScaledDropItems` only excludes the top-half rule at S).
+  §1 says F should be Common/Uncommon/Rare only. Harmless today — drops are C/U/R and F recipes do not
+  exist — so it was left alone rather than risking the crafting path an hour before a build.
+
+## ✅ Built in 0.34.0
+
+- **F-grade gear now drops.** `GearTier()` returns the F tier (level 1) below level 20 instead of
+  flooring to 20, and the level-18 gear gate is GONE — it only existed *because* of that floor (a
+  level-8 mob dropping E-grade gear). Rarity is gated by mob level instead, per §1: **Common from 1,
+  Uncommon from 5, Rare from 10.** Verified: 1087 drop entries across the roster, 0 unresolved ids.
+- **Training armor re-cut** (see above), so nothing lootable at 1-19 is a downgrade.
+- **Per-mob spawners** (playtest-14 batch 3) — see `DedicatedSpawn` in `WorldMap.cs`.
 
 ## Where it lives in code
 

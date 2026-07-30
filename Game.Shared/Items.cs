@@ -858,14 +858,26 @@ public static class ItemCatalog
             Description: "An apprentice's wand. Poor in the hand, but it carries a spell."));
 
         // Training ARMOR — light (fighter) and robe (mage). No set bonus: the set line starts at Newbie.
+        //
+        // ⚠ These were RE-CUT (owner, 2026-07-30): light 53 → 35, robe 27 → 20, +MP unchanged. The old
+        // numbers were the sum of an L2 upper + lower body, taken from the TOP of the no-grade range,
+        // while this ladder's F Common rung is 45 % of a MID no-grade set — so the starter armor sat
+        // ABOVE the first armor you could loot and every early armor drop was a DOWNGRADE. The weapons
+        // never had this problem: they were cut from L2's top no-grade weapon, which lines up with the
+        // ladder, which is why only the armor moved.
+        //
+        // The rule this restores: you start in gear that is WORSE than what drops, and gear UP as you
+        // play. Fixed on the STARTER side rather than by lifting the F rung, so the ladder keeps its one
+        // rule (every quality is a fixed fraction of the authored Mythic piece). Defence is a small share
+        // of survival at this level anyway — the owner has levelled a melee fighter wearing none.
         list.Add(new ItemDef(TrainingLeather, "Training Leather Armor", EquipSlot.Armor,
             ItemGrade.F, ItemRarity.Common, Weight: ArmorWeight.Light, ArmorSlot: ArmorSlot.Body,
-            DefBonus: 53,
+            DefBonus: 35,
             Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
             Description: "Scuffed practice leathers."));
         list.Add(new ItemDef(TrainingRobe, "Training Robe", EquipSlot.Armor,
             ItemGrade.F, ItemRarity.Common, Weight: ArmorWeight.Robe, ArmorSlot: ArmorSlot.Body,
-            DefBonus: 27, MpBonus: 29,
+            DefBonus: 20, MpBonus: 29,
             Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
             Description: "A rough apprentice's robe."));
 
