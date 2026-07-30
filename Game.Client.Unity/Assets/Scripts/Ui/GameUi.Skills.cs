@@ -150,6 +150,12 @@ namespace Game.Client
                 if (def.MpCostAt(newLevel) > 0) t.AppendLine("MP cost   " + def.MpCostAt(newLevel));
             }
 
+            // A PASSIVE has no Power and no MP cost, so everything above skips it and the page you were
+            // spending SP on said nothing but its prose. Its numbers live in the PassiveEffect/mastery
+            // tables — state them, and for an upgrade state the level you have next to the one you'd buy.
+            LearnEffects(t, "Now", def, cur);
+            LearnEffects(t, cur >= 1 ? "After" : "Effect", def, newLevel);
+
             t.AppendLine();
             t.AppendLine(gold > 0 ? "Cost:  " + gold.ToString("N0") + " " + GameConstants.CurrencyName
                                   : "Cost:  " + sp + " SP");
@@ -158,6 +164,19 @@ namespace Game.Client
             string id = def.Id;
             _learnAction = () => { Boot.LearnSkill(id); _skillsRevision = -1; };
             OpenWindow(_learnPanel);
+        }
+
+        /// <summary>Every numeric effect a skill has at one LEVEL, on one line per source. Silent when
+        /// the level doesn't exist (level 0 = "you don't have it yet") or carries no numbers.</summary>
+        private static void LearnEffects(System.Text.StringBuilder t, string label, SkillDef def, int level)
+        {
+            if (level < 1) return;
+            var lines = SkillText.Passive(def.PassiveAt(level) ?? default);
+            if (def.ArmorMasteryAt(level) is ArmorMasteryProfile armor) lines.AddRange(SkillText.ArmorMastery(armor));
+            if (def.WeaponMasteryAt(level) is WeaponMasteryProfile weapon) lines.AddRange(SkillText.WeaponMastery(weapon));
+            lines.AddRange(SkillText.Buff(def, level));
+            if (lines.Count == 0) return;
+            t.AppendLine(label + "   " + string.Join(", ", lines));
         }
 
         // "->" not "→": the bundled LiberationSans has no arrow glyph (same reason the close button is X).

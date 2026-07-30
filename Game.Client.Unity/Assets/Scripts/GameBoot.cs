@@ -97,6 +97,16 @@ namespace Game.Client
         /// <summary>Learned skill id → level, for greying out what isn't castable.</summary>
         public readonly Dictionary<string, int> Learned = new Dictionary<string, int>();
 
+        /// <summary>A running reuse timer, as the BAR sees it: when it ends (client clock) and how long
+        /// it ran for, which is the denominator of the shrinking overlay.</summary>
+        public struct Reuse { public float EndsAt; public float Total; }
+
+        /// <summary>Action-bar token → its running reuse. Fed by the server's Cooldowns push and then
+        /// counted down LOCALLY: the server sends one message when a timer starts, not one per tick, so
+        /// the bar can animate at frame rate without any extra traffic. Entries are dropped as they
+        /// expire, so an empty dictionary means "everything is ready".</summary>
+        public readonly Dictionary<string, Reuse> Cooldowns = new Dictionary<string, Reuse>();
+
         /// <summary>The bag, as last sent by the server (it pushes the whole thing on any change).</summary>
         public InventoryItemDto[] Inventory { get; private set; } = new InventoryItemDto[0];
         public InventoryItemDto[] Warehouse { get; private set; } = new InventoryItemDto[0];
@@ -680,6 +690,7 @@ namespace Game.Client
                 if (p.LeveledUp) ClientLog.Good("Level up! Now level " + p.Level + ".");
             });
             _net.GoldReceived += g => Main(() => Gold = g.Gold);
+            _net.CooldownsReceived += c => Main(() => ApplyCooldowns(c));
             _net.BuffsReceived += b => Main(() => Buffs = b?.Buffs ?? new BuffDto[0]);
             _net.TargetDetailsReceived += d => Main(() => Details = d);
             _net.PvpStateReceived += p => Main(() =>
@@ -801,6 +812,77 @@ namespace Game.Client
             _net.Reconnected += () => Main(() => { _ = RestoreSession(); });
 
             await _net.ConnectAsync(ServerUrl);
+        }
+
+        /// <summary>
+        /// Fold a server cooldown snapshot into <see cref="Cooldowns"/>. The snapshot is authoritative
+        /// about WHAT is running, so anything absent from it is dropped — that is what clears an
+        /// overlay when a timer was wiped rather than ticked away.
+        ///
+        /// The "total" (the overlay's denominator) is inferred, not sent: the push happens the tick a
+        /// timer starts, so the first Seconds seen for a token IS its full reuse. It is only replaced
+        /// when Seconds comes back HIGHER than what we were counting down to — i.e. the timer restarted.
+        /// </summary>
+        private void ApplyCooldowns(CooldownUpdate update)
+        {
+            var entries = update?.Entries;
+            if (entries == null || entries.Length == 0) { Cooldowns.Clear(); return; }
+
+            float now = Time.unscaledTime;
+            _cooldownSeen.Clear();
+            foreach (var e in entries)
+            {
+                if (e == null || string.IsNullOrEmpty(e.Id) || e.Seconds <= 0f) continue;
+                _cooldownSeen.Add(e.Id);
+
+                float total = e.Seconds;
+                Reuse existing;
+                if (Cooldowns.TryGetValue(e.Id, out existing))
+                {
+                    float remaining = existing.EndsAt - now;
+                    // Still counting down the same run → keep the denominator we already have.
+                    if (e.Seconds <= remaining + 0.15f) total = existing.Total;
+                }
+                Cooldowns[e.Id] = new Reuse { EndsAt = now + e.Seconds, Total = total };
+            }
+
+            // Drop what the server no longer lists.
+            _cooldownDrop.Clear();
+            foreach (var key in Cooldowns.Keys)
+                if (!_cooldownSeen.Contains(key)) _cooldownDrop.Add(key);
+            foreach (var key in _cooldownDrop) Cooldowns.Remove(key);
+        }
+
+        private readonly HashSet<string> _cooldownSeen = new HashSet<string>();
+        private readonly List<string> _cooldownDrop = new List<string>();
+
+        /// <summary>Seconds left on a bar token's reuse, and 0..1 of how much of it is still to run
+        /// (1 = just started). Both 0 when the token is ready. Expired entries are reaped here, so the
+        /// bar asking is also what keeps the dictionary small.</summary>
+        public bool ReuseOf(string token, out float secondsLeft, out float fraction)
+        {
+            secondsLeft = 0f; fraction = 0f;
+            if (string.IsNullOrEmpty(token)) return false;
+
+            string key = token;
+            Reuse r;
+            if (!Cooldowns.TryGetValue(key, out r))
+            {
+                // A consumable has TWO reuse channels: a healing potion's per-item drink timer (which
+                // the server keys by the item token) and a scroll's own skill reuse (keyed by the skill
+                // the item grants). The bar only holds the item token, so resolve the second one here
+                // or a Return scroll would look ready the whole time it isn't.
+                if (!GameConstants.IsItemSlot(token)) return false;
+                var idef = ItemCatalog.Get(GameConstants.ItemSlotDefId(token));
+                if (idef == null || string.IsNullOrEmpty(idef.UseSkillId)) return false;
+                key = idef.UseSkillId;
+                if (!Cooldowns.TryGetValue(key, out r)) return false;
+            }
+
+            secondsLeft = r.EndsAt - Time.unscaledTime;
+            if (secondsLeft <= 0f) { Cooldowns.Remove(key); secondsLeft = 0f; return false; }
+            fraction = r.Total > 0f ? Mathf.Clamp01(secondsLeft / r.Total) : 1f;
+            return true;
         }
 
         /// <summary>After a transport reconnect the new connection has no server session, so silently
@@ -928,6 +1010,7 @@ namespace Game.Client
             // push happened to replace them (using a potion "fixed" it). Same for the sold-items list.
             Buffs = new BuffDto[0];
             BuyBack = new BuyBackEntryDto[0];
+            Cooldowns.Clear();   // same conditional-push reason as Buffs: reuse is per CHARACTER
             SkillPoints = 0;   // its own field now, so it no longer clears with Stats
         }
 

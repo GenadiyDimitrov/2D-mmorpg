@@ -336,6 +336,24 @@ of these once fixed. Nothing here has been built yet.
         `/droprate mats 2` — mats must double while nothing else moves. **This is how you tune the
         economy during the playtest instead of asking for a rebuild.**
 
+--- 31. FEEDBACK / WORDING (0.34.3) — playtest-14 batch 4, the last of that queue. ---
+31a.[ ] **The skill bar shows reuse.** Cast something with a long cooldown: the square goes dark and the
+        dark part DRAINS from the top as the timer runs, with the seconds left in the middle (tenths
+        under 10s). It must clear exactly when the skill is castable again — not early, not late.
+31b.[ ] **ESC starts the reuse and the bar says so** — cancelling your own cast pays the cooldown, and
+        the overlay must appear. An ENEMY interrupt does not (you can retry immediately); if the bar
+        goes dark after being interrupted, that is a bug.
+31c.[ ] **Potions and scrolls show their reuse too** — a healing potion on the bar darkens for its own
+        drink timer; a Return scroll darkens for its skill reuse. Each potion has its OWN timer, so a
+        greater potion must not grey out the lesser one.
+31d.[ ] **Reuse survives a relog sensibly** — exit to character select and come back: the bar must not
+        show a stale timer from the character you just left.
+31e.[ ] **Passives finally say what they DO** — open any passive in the Skills window (an armor or
+        weapon mastery is the best test). It must list real numbers ("P.Def +8%, Max HP +5%"), and a
+        mastery must break them down per weight / per weapon type. Prose-only is the bug being fixed.
+31f.[ ] **Learning is not blind** — the Learn confirmation for a passive must show its numbers, and for
+        an UPGRADE show "Now …" above "After …" so the SP buys something you can see.
+
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends
         (and combat decays) it works. Same for `/exit`. Pulling the plug mid-DoT must not run the

@@ -30,6 +30,9 @@ namespace Game.Client
         public event Action<StatsUpdate> StatsReceived;
         public event Action<BuffUpdate> BuffsReceived;
         public event Action<GoldUpdate> GoldReceived;
+        /// <summary>Reuse timers, pushed when one starts. The client counts them down itself, so this
+        /// arrives a handful of times per fight — not per tick.</summary>
+        public event Action<CooldownUpdate> CooldownsReceived;
         public event Action<TargetDetails> TargetDetailsReceived;
         /// <summary>PvP toggles + reputation (karma, PK/PvP counts). The client used to TRACK the PvP
         /// flag locally by flipping a bool on every tap, which is a guess: the server refuses the
@@ -128,6 +131,7 @@ namespace Game.Client
             _connection.On<SelectionOffer>("Selection", o => SelectionReceived?.Invoke(o));
             _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));
             _connection.On<GoldUpdate>("Gold", g => GoldReceived?.Invoke(g));
+            _connection.On<CooldownUpdate>("Cooldowns", c => CooldownsReceived?.Invoke(c));
             _connection.On<TargetDetails>("TargetDetails", d => TargetDetailsReceived?.Invoke(d));
             _connection.On<PvpState>("PvpState", p => PvpStateReceived?.Invoke(p));
             _connection.On<ResurrectOffer>("ResurrectOffer", o => ResurrectOfferReceived?.Invoke(o));

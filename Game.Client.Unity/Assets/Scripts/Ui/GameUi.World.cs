@@ -47,11 +47,17 @@ namespace Game.Client
         private const int BarColumns = 6, BarRows = 2;
         private const int SlotsPerPage = BarColumns * BarRows;
         private const int BarPages = GameConstants.SkillBarSlots / SlotsPerPage;
+        /// <summary>Side of one square. A field, not a local, because the reuse overlay resizes itself
+        /// against it every frame and the two must not drift apart.</summary>
+        private const float SlotSize = 78f;
         private RectTransform _skillBarPanel;
         private readonly Button[] _slotButtons = new Button[SlotsPerPage];
         private readonly TextMeshProUGUI[] _slotFaces = new TextMeshProUGUI[SlotsPerPage];
         private readonly Image[] _slotBorders = new Image[SlotsPerPage];
         private readonly TextMeshProUGUI[] _slotCancel = new TextMeshProUGUI[SlotsPerPage];
+        private readonly Image[] _slotReuse = new Image[SlotsPerPage];
+        private readonly RectTransform[] _slotReuseRects = new RectTransform[SlotsPerPage];
+        private readonly TextMeshProUGUI[] _slotReuseText = new TextMeshProUGUI[SlotsPerPage];
         private readonly TextMeshProUGUI[] _slotAutoMarks = new TextMeshProUGUI[SlotsPerPage];
 
         /// <summary>
@@ -356,7 +362,7 @@ namespace Game.Client
         /// </summary>
         private void BuildSkillBar()
         {
-            const float slot = 78f, pad = 6f;
+            const float slot = SlotSize, pad = 6f;
             float w = BarColumns * slot + (BarColumns + 1) * pad;
             float h = BarRows * slot + (BarRows + 1) * pad + 26f;
 
@@ -412,6 +418,33 @@ namespace Game.Client
                             new Vector2(-4f, 2f), new Vector2(20f, 16f));
                 auto.gameObject.SetActive(false);
                 _slotAutoMarks[i] = auto;
+
+                // ----- REUSE (cooldown) -----------------------------------------------------------
+                // A dark sheet over the slot that DRAINS from the top as the reuse runs out, plus the
+                // seconds left in the middle. Two signals on purpose: the sheet is the one you read
+                // without looking (how much of the bar is dark), the number is the one you read when
+                // you are deciding whether to wait. Both are drawn UNDER the cancel X — a cast in
+                // progress is the more urgent thing to say about the same square.
+                //
+                // The sheet shrinks by RESIZING (anchored to the slot's top edge) rather than with a
+                // filled Image: a filled Image needs a sprite, and every box in this UI is spriteless.
+                var shade = UiKit.Box(button.transform, "Reuse", new Color(0.04f, 0.05f, 0.07f, 0.78f),
+                                      blocksInput: false);
+                var shadeRect = UiKit.Rect(shade.gameObject);
+                shadeRect.anchorMin = new Vector2(0f, 1f);
+                shadeRect.anchorMax = new Vector2(1f, 1f);
+                shadeRect.pivot = new Vector2(0.5f, 1f);
+                shadeRect.anchoredPosition = Vector2.zero;
+                shadeRect.sizeDelta = new Vector2(0f, slot);
+                shade.gameObject.SetActive(false);
+                _slotReuse[i] = shade;
+                _slotReuseRects[i] = shadeRect;
+
+                var reuseText = UiKit.Label(button.transform, "", 22f, new Color(1f, 0.86f, 0.55f),
+                                            TextAlignmentOptions.Center);
+                UiKit.Stretch(UiKit.Rect(reuseText.gameObject), 0f, 0f, 0f, 0f);
+                reuseText.gameObject.SetActive(false);
+                _slotReuseText[i] = reuseText;
 
                 // The cancel X, drawn over the slot only while THIS skill is the one being cast.
                 var cancel = UiKit.Label(button.transform, "X", 34f, new Color(1f, 0.35f, 0.35f),
@@ -947,6 +980,23 @@ namespace Game.Client
                 bool auto = !string.IsNullOrEmpty(token) && Boot.AutoSkills.Contains(AutoIdFor(token));
                 _slotBorders[i].enabled = auto;
                 _slotAutoMarks[i].gameObject.SetActive(auto);
+
+                // The reuse sheet + its countdown. Driven from the client's own clock (the server sends
+                // one message when the timer starts, not one per tick), so this animates at frame rate.
+                float left, fraction;
+                bool cooling = Boot.ReuseOf(token, out left, out fraction);
+                _slotReuse[i].gameObject.SetActive(cooling);
+                _slotReuseText[i].gameObject.SetActive(cooling);
+                if (cooling)
+                {
+                    var size = _slotReuseRects[i].sizeDelta;
+                    size.y = SlotSize * fraction;
+                    _slotReuseRects[i].sizeDelta = size;
+                    // Tenths under 10s — the difference between "now" and "still a while" is the whole
+                    // reason to look; a bare "1" for anything under two seconds hides it.
+                    _slotReuseText[i].text = left >= 10f ? Mathf.CeilToInt(left).ToString()
+                                                         : left.ToString("0.0");
+                }
 
                 // X over the slot whose skill is being cast right now, so cancelling is where your
                 // finger already is rather than somewhere else on screen.

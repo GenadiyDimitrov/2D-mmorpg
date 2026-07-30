@@ -181,6 +181,21 @@ public record StatsUpdate(
 /// or an active potion effect changed. Cooldown 0 = ready.</summary>
 public record PotionStatus(float CooldownSeconds, string ActiveEffect);
 
+/// <summary>One reuse timer for the action bar. <paramref name="Id"/> is the bar TOKEN it belongs
+/// to — a skill id for a skill slot, an "item:defId" token for a consumable — so the client can
+/// look it up with the token it already holds and needs no second mapping.
+///
+/// There is deliberately no "total" field: the push happens the tick the timer STARTS, so the first
+/// Seconds the client sees for an id IS the full reuse. The client keeps that as the denominator and
+/// only replaces it when Seconds jumps back UP (a restart) — which costs the server no extra state.</summary>
+public record CooldownEntry(string Id, float Seconds);
+
+/// <summary>Server -> owning client: every reuse timer currently running, pushed whenever one
+/// STARTS (and once on entering the world). The client counts them down locally — expiry needs no
+/// message. A full snapshot each time, not a delta: it is a handful of entries and it self-corrects
+/// after any dropped push.</summary>
+public record CooldownUpdate(CooldownEntry[] Entries);
+
 
 /// <summary>One active buff/debuff on the player, for the buff bar + tooltip. Stacks &gt; 1
 /// for a stacking effect (shown as "Name xN"). Icon = an emoji/glyph for the square (server-resolved,

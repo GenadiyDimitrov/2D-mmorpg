@@ -277,6 +277,7 @@ public class GameLoopService : BackgroundService
         SendWarehouse(entity);   // the bank travels with login so the client can show it without a town trip
         SendStats(entity);
         SendLearned(entity);   // sends the skill BAR with it, in the right order — see SendLearned
+        SendCooldowns(entity); // after the bar: the overlay has nothing to sit on before it exists
         SendSubclasses(entity);
         SendQuestLog(entity);
         SendGold(entity);
@@ -2488,8 +2489,33 @@ public class GameLoopService : BackgroundService
 
         SendInventory(player);
         SendPotionStatus(player);
+        SendCooldowns(player);   // both channels: the drink timer AND the scroll's own reuse
         if (!healing) SendSystemToEntity(player, $"{skill.Name} active.");
         return true;
+    }
+
+    /// <summary>Push every reuse timer the player has running, keyed by the ACTION-BAR TOKEN
+    /// (skill id, or "item:defId" for a drink cooldown) so the client can match it against the bar it
+    /// already holds. Called whenever a timer STARTS — the client counts down from there, so an
+    /// expiry costs no message and the per-tick decrement stays silent.</summary>
+    private void SendCooldowns(Entity player)
+    {
+        if (player.Kind != EntityKind.Player) return;
+        int n = player.SkillCooldowns.Count + player.PotionCooldowns.Count;
+        if (n == 0)
+        {
+            // Still send the EMPTY set: it is what clears a stale overlay after a cooldown was
+            // wiped rather than ticked away (a subclass swap, a death, an admin reset).
+            SendTo(player, "Cooldowns", new CooldownUpdate(Array.Empty<CooldownEntry>()));
+            return;
+        }
+        var entries = new List<CooldownEntry>(n);
+        foreach (var kv in player.SkillCooldowns)
+            if (kv.Value > 0) entries.Add(new CooldownEntry(kv.Key, kv.Value * GameConstants.TickSeconds));
+        foreach (var kv in player.PotionCooldowns)
+            if (kv.Value > 0) entries.Add(new CooldownEntry(GameConstants.ItemSlotToken(kv.Key),
+                                                            kv.Value * GameConstants.TickSeconds));
+        SendTo(player, "Cooldowns", new CooldownUpdate(entries.ToArray()));
     }
 
     private void SendPotionStatus(Entity player)
@@ -5633,6 +5659,7 @@ public class GameLoopService : BackgroundService
         if (cooldown > 0 && !def.FixedCooldown && caster.CooldownReduction > 0f)
             cooldown = Math.Max(1, (int)(cooldown * (1f - caster.CooldownReduction)));
         caster.SkillCooldowns[def.Id] = cooldown;
+        SendCooldowns(caster);   // the bar's reuse overlay starts the tick the reuse does
 
         // ---- Return: teleport the caster to the nearest safe town, then finish (the whole effect).
         if (def.TeleportsToTown)
@@ -7790,7 +7817,10 @@ var effect = def.Effect;
             return;
 
         if (startCooldown && SkillCatalog.Get(entity.CastingSkillId) is SkillDef def)
+        {
             entity.SkillCooldowns[def.Id] = def.CooldownTicks;
+            SendCooldowns(entity);   // ESC pays the reuse — the bar has to show that it did
+        }
 
         entity.CastingSkillId = null;
         entity.CastTargetId = null;

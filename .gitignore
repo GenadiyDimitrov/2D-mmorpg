@@ -29,3 +29,6 @@ Game.Client.Unity/Assets/Resources/PerformanceTestRunInfo.json
 Game.Client.Unity/Assets/Resources/PerformanceTestRunInfo.json.meta
 Game.Client.Unity/Assets/Resources/PerformanceTestRunSettings.json
 Game.Client.Unity/Assets/Resources/PerformanceTestRunSettings.json.meta
+
+# Local build artifacts staged for the phone (APK + server publish). Large and regenerated.
+builds/

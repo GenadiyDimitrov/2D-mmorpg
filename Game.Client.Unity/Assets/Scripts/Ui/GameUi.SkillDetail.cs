@@ -56,7 +56,20 @@ namespace Game.Client
             var text = new StringBuilder();
             if (!string.IsNullOrWhiteSpace(def.Description)) text.AppendLine(def.Description).AppendLine();
 
-            text.AppendLine(Line("Type", def.Category + (def.Passive != null ? "  (passive)" : "")));
+            bool passive = def.Passive != null || def.Category == SkillCategory.Passive;
+            text.AppendLine(Line("Type", def.Category + (passive ? "  (passive)" : "")));
+
+            // ----- WHAT IT ACTUALLY DOES ------------------------------------------------------
+            // The authored Description is prose, and prose was all a passive ever showed: you could
+            // read "toughens your hide" and still not know whether it was worth an SP. The numbers
+            // were on the def the whole time; SkillText formats them, at THIS level, for both clients.
+            AppendEffects(text, "Effect", SkillText.Passive(def.PassiveAt(level) ?? default));
+            if (def.ArmorMasteryAt(level) is ArmorMasteryProfile armor)
+                AppendEffects(text, "Armor", SkillText.ArmorMastery(armor));
+            if (def.WeaponMasteryAt(level) is WeaponMasteryProfile weapon)
+                AppendEffects(text, "Weapon", SkillText.WeaponMastery(weapon));
+            AppendEffects(text, def.Category == SkillCategory.Debuff ? "Applies" : "Grants",
+                          SkillText.Buff(def, level));
 
             if (def.Passive == null)
             {
@@ -85,6 +98,14 @@ namespace Game.Client
 
             _detailBody.text = text.ToString().TrimEnd();
             OpenWindow(_detailPanel);
+        }
+
+        /// <summary>One "label: a, b, c" block, or nothing at all when the list is empty — a heading
+        /// with no numbers under it is exactly the emptiness this was meant to remove.</summary>
+        private static void AppendEffects(StringBuilder text, string label, System.Collections.Generic.List<string> lines)
+        {
+            if (lines == null || lines.Count == 0) return;
+            text.AppendLine(Line(label, string.Join(", ", lines)));
         }
 
         private static string Line(string label, string value) => label.PadRight(11) + value;

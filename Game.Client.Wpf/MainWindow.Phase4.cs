@@ -2081,7 +2081,7 @@ public partial class MainWindow
         if (IsPassive(def))
         {
             lines.Add("Passive — always active once learned (no MP, not cast).");
-            var ps = PassiveSummary(def);
+            var ps = PassiveSummary(def, lvl);
             if (ps.Count > 0) lines.Add(string.Join(",  ", ps));
             return string.Join("\n", lines);
         }
@@ -2109,80 +2109,27 @@ public partial class MainWindow
         if (def.DurationTicks > 0)
             lines.Add($"Duration: {def.DurationTicks * GameConstants.TickSeconds:0}s");
 
-        var bs = BuffSummary(def);
+        var bs = BuffSummary(def, lvl);
         if (bs.Count > 0) lines.Add(string.Join(",  ", bs));
         return string.Join("\n", lines);
     }
 
-    /// <summary>Always-on bonuses carried by a passive skill (PassiveEffect).</summary>
-    private static List<string> PassiveSummary(SkillDef def)
+    /// <summary>Always-on bonuses carried by a passive skill, at the level you KNOW it — including the
+    /// mastery tables, which this used to skip entirely (an armor mastery listed nothing at all).
+    /// The formatting lives in <see cref="SkillText"/> so this harness and the Unity client cannot
+    /// disagree about what a passive is worth.</summary>
+    private static List<string> PassiveSummary(SkillDef def, int level = 1)
     {
-        var outp = new List<string>();
-        if (def.Passive is not PassiveEffect p) return outp;
-        void Pct(string label, float v) { if (Math.Abs(v) > 0.0001f) outp.Add($"{label} {(v >= 0 ? "+" : "")}{v * 100:0.#}%"); }
-        void Flat(string label, int v) { if (v != 0) outp.Add($"{label} {(v >= 0 ? "+" : "")}{v}"); }
-        Pct("Max HP", p.MaxHpPct); Pct("Max MP", p.MaxMpPct);
-        Flat("Defence", p.Defence); Flat("Magic Def", p.MagicDefence);
-        Flat("Attack", p.Attack); Pct("Attack", p.AttackPct);
-        Flat("Evasion", p.Evasion); Flat("Accuracy", p.Accuracy);
-        Pct("Crit Rate", p.CritRate); Pct("Crit Dmg", p.CritDamage); Pct("Magic Crit", p.MagicCritRate);
-        Pct("HP Regen", p.HpRegen); Pct("MP Regen", p.MpRegen);
-        Pct("Atk Speed", p.AtkSpeedPct); Pct("Cast Speed", p.CastSpeedPct); Pct("Move Speed", p.MoveSpeedPct);
+        var outp = SkillText.Passive(def.PassiveAt(level) ?? default);
+        if (def.ArmorMasteryAt(level) is ArmorMasteryProfile armor)
+            outp.AddRange(SkillText.ArmorMastery(armor));
+        if (def.WeaponMasteryAt(level) is WeaponMasteryProfile weapon)
+            outp.AddRange(SkillText.WeaponMastery(weapon));
         return outp;
     }
 
     /// <summary>Per-effect magnitudes of a buff/debuff/HoT, e.g. "Attack +20%".</summary>
-    private static List<string> BuffSummary(SkillDef def)
-    {
-        var outp = new List<string>();
-        if (def.Magnitudes is null) return outp;
-        foreach (var m in def.Magnitudes)
-        {
-            string label = EffectLabel(m.Effect);
-            if (label.Length == 0) continue;
-            outp.Add(m.Mode == ModifierMode.Flat
-                ? $"{label} {(m.Value >= 0 ? "+" : "")}{m.Value:0.#}"
-                : $"{label} {(m.Value >= 0 ? "+" : "")}{m.Value * 100:0.#}%");
-        }
-        return outp;
-    }
-
-    private static string EffectLabel(SkillEffect e) => e switch
-    {
-        SkillEffect.BuffAtk => "Attack",
-        SkillEffect.BuffDef => "Defence",
-        SkillEffect.BuffMagicDef => "Magic Def",
-        SkillEffect.BuffCastSpeed => "Cast Speed",
-        SkillEffect.BuffAtkSpeed => "Atk Speed",
-        SkillEffect.BuffMoveSpeed => "Move Speed",
-        SkillEffect.BuffEvasion => "Evasion",
-        SkillEffect.BuffHp => "Max HP",
-        SkillEffect.BuffMp => "Max MP",
-        SkillEffect.BuffHpRegen => "HP Regen",
-        SkillEffect.BuffMpRegen => "MP Regen",
-        SkillEffect.BuffBlockChance => "Block Chance",
-        SkillEffect.BuffShieldDef => "Shield Def",
-        SkillEffect.DebuffDef => "Def Down",
-        SkillEffect.DebuffHealRecv => "Healing Down",
-        SkillEffect.HealOverTime => "Heal/sec",
-        SkillEffect.BuffPhysAtk => "P.Atk",
-        SkillEffect.BuffMagAtk => "M.Atk",
-        SkillEffect.BuffAccuracy => "Accuracy",
-        SkillEffect.BuffCritRate => "Crit Rate",
-        SkillEffect.BuffMagicCritRate => "M.Crit Rate",
-        SkillEffect.BuffCritDamage => "Crit Dmg",
-        SkillEffect.BuffCritDmgResist => "Crit Dmg Resist",
-        SkillEffect.BuffCritRateResist => "Crit Rate Resist",
-        SkillEffect.BuffBowResist => "Bow Resist",
-        SkillEffect.BuffMagicFailFloor => "Anti-Magic",
-        SkillEffect.BuffMagicFailResist => "Spell Focus",
-        SkillEffect.BuffInterruptPower => "Cancel Power",
-        SkillEffect.BuffInterruptResist => "Cancel Resist",
-        SkillEffect.BuffMeleeVamp => "Vampiric",
-        SkillEffect.BuffSpellVamp => "Spell Vamp",
-        SkillEffect.BuffCooldown => "Reuse",
-        _ => ""
-    };
+    private static List<string> BuffSummary(SkillDef def, int level = 1) => SkillText.Buff(def, level);
 
     private void OpenSkillDetail(string skillId)
     {
