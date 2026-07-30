@@ -11,6 +11,18 @@ public enum RegionKind { Field = 0, Town = 1 }
 public readonly record struct Vec2(float X, float Y);
 
 /// <summary>
+/// A NAMED teleport destination inside a region — one camp's doorstep.
+///
+/// Arrival used to be "pick one of the region's points at random", which meant a gatekeeper could only
+/// offer "Frostmere Wastes" and then drop you anywhere in it, including in the middle of a level-90 camp
+/// (owner: *"each teleport point not to be coordinates for a random teleport but to have a name +
+/// description — fieldName1 West, fieldName1 East"*). A gate has an identity instead: a name a
+/// gatekeeper can list, a description saying which levels and creatures are there, and ONE spot it
+/// always lands you on — the camp's town-facing rim, so you arrive at the edge looking in.
+/// </summary>
+public sealed record TeleportPoint(string Id, string Name, string Description, Vec2 At);
+
+/// <summary>
 /// A named area of the world with a real OUTLINE.
 ///
 /// The world used to be a bag of circles — spawn zones and towns were both (x, y, radius) — which is
@@ -32,9 +44,16 @@ public sealed record Region(
     RegionKind Kind,
     /// <summary>Polygon outline, counter-clockwise, in world coordinates.</summary>
     Vec2[] Outline,
-    /// <summary>Where a teleport lands. ONE point = always the same spot; several = pick at random,
-    /// which spreads arrivals out instead of stacking everyone on a doorstep.</summary>
-    Vec2[] ArrivalPoints)
+    /// <summary>The NAMED teleport gates in this region — one per camp for a field, one for a town. Each
+    /// is a listed destination in its city's gatekeeper menu.</summary>
+    TeleportPoint[] Gates,
+    /// <summary>The MANAGING CITY's safe-zone id: which city owns this field.
+    ///
+    /// A field belongs to a city (owner), and that is where you respawn when you die in it — not
+    /// "whatever town is nearest", which on a map with cities 13k apart could send you to a city whose
+    /// gatekeeper does not even list the field you just died in. Empty for towns and for the isolated
+    /// areas (the dungeon, the boss vale), where nearest-city remains the rule.</summary>
+    string CityId = "")
 {
     /// <summary>Axis-aligned bounds, computed once. Containment tests run per player per tick, and a
     /// box rejects almost every candidate in four comparisons — the polygon test only has to run for
@@ -64,12 +83,13 @@ public sealed record Region(
         return inside;
     }
 
-    /// <summary>A teleport arrival point, or the outline's centroid when none was authored — landing
-    /// somewhere sensible beats refusing to travel.</summary>
+    /// <summary>SOME point inside the region — used where the caller has no destination in mind (the ward
+    /// that pulls an escapee back into a dungeon). Named travel goes through a <see cref="TeleportPoint"/>
+    /// instead; this is the fallback, and the centroid keeps it sensible when a region has no gates.</summary>
     public Vec2 Arrival(Random rng)
     {
-        if (ArrivalPoints.Length == 1) return ArrivalPoints[0];
-        if (ArrivalPoints.Length > 1) return ArrivalPoints[rng.Next(ArrivalPoints.Length)];
+        if (Gates.Length == 1) return Gates[0].At;
+        if (Gates.Length > 1) return Gates[rng.Next(Gates.Length)].At;
         return Outline.Length == 0
             ? new Vec2(0f, 0f)
             : new Vec2(Outline.Average(p => p.X), Outline.Average(p => p.Y));
@@ -86,53 +106,59 @@ public sealed record Region(
 public static class RegionMap
 {
     /// <summary>
-    /// Hunting fields — ONE per town, each a convex polygon that WRAPS the town and covers its nearby
-    /// spawners, so the whole map reads as filled fields (owner: "switch to fields"). The town sits
-    /// INSIDE its field like an island: `At()` checks towns first, so gameplay containment is correct
-    /// (in the town = the town, step out = the field), and the client masks the field colour under the
-    /// town so it reads as a lake/island — no "donut" polygon needed.
+    /// Hunting fields — 2-3 per city, each a convex polygon wrapping the CAMPS it holds, with a named
+    /// gate per camp and a managing city.
     ///
-    /// The outlines are GENERATED (convex hull of the town + its spawner circles, inflated), verified by
-    /// `tools`-side geometry: every field contains its spawners + town centre and no two fields overlap.
-    /// The FILL colour is derived from the spawners the field contains (green→red by level), never
-    /// authored. Isolated spawns with no nearby town (the far bosses, the Hollow Crypt dungeon) keep
-    /// their circles until they get a field of their own.
+    /// It used to be ONE field per city, hulled around every band that city owned, and the town sat inside
+    /// it like an island. That is why a gatekeeper could only offer "Bracken Reach" and then drop you at a
+    /// random point inside it. A field is a PLACE now — one arc of camps at one distance from town, a name,
+    /// and 1-3 doorsteps you can be sent to by name.
+    ///
+    /// The outlines are still GENERATED (convex hull of the camp circles, inflated by
+    /// <see cref="WorldPlan.FieldMargin"/>) so a field cannot disagree with the camps inside it, and the
+    /// fill colour is still derived from the band, never authored. Fields no longer contain their town, so
+    /// there is nothing to mask under: they sit <see cref="WorldPlan.TownGap"/> clear of the wall.
     /// </summary>
-    public static readonly Region[] Fields = new[]
+    public static readonly Region[] Fields =
+        WorldPlan.Fields.Select(PlannedField).Concat(new Region[]
     {
-        // ===== THE FIVE CITIES' HUNTING FIELDS — GENERATED from their spawn zones =====
-        // These used to be a dozen hand-written vertices each, which had to keep agreeing with the
-        // circles inside them or the startup guard refused to boot the server. They are now derived:
-        // a field IS "wherever its spawners are, plus a margin" (see FieldOf), so moving or re-banding
-        // a zone can no longer strand it outside its own field. That is what made the 7-town → 5-city
-        // re-layout a data edit instead of a geometry exercise.
-        //
-        // One field per CITY, wrapping all of that city's bands. Zones are picked by position rather
-        // than index so re-ordering the list above cannot silently reshuffle the map.
-        FieldOf("field_brackenford", "Bracken Reach", 900f, ZonesNear(24000, 24000, 7000)),
-        FieldOf("field_stonewatch",  "Stonewatch Wilds", 600f, ZonesNear(24000, 10000, 6000)),
-        FieldOf("field_greymarsh",   "Greymarsh Fens", 900f, ZonesNear(36000, 33000, 6000)),
-        FieldOf("field_ironreach",   "Ironreach Marches", 900f, ZonesNear(24000, 38000, 6000)),
-        FieldOf("field_frostmere",   "Frostmere Wastes", 900f, ZonesNear(12000, 15000, 9000)),
+        // ===== The AREAS THAT ARE NOT LEVEL BANDS — hand-authored, because they are not a city's
+        //       hunting grounds and so have no place in WorldPlan =====
+        // Everything above this comes from WorldPlan: one Region per planned FIELD, its polygon hulled
+        // around its camps, its gates named per camp, and its managing city recorded. There used to be
+        // ONE field per city wrapping every band it owned, which is why a gatekeeper could only offer
+        // "Bracken Reach" and drop you anywhere inside it.
 
         // Training Grounds — wraps the Training Outpost + all four dummies (band 20-80)
         new("field_training", "Training Grounds", RegionKind.Field,
             new[] { new Vec2(21500, 3500), new Vec2(21900, 3100), new Vec2(26100, 3100), new Vec2(26500, 3500), new Vec2(26500, 4050), new Vec2(26200, 4450), new Vec2(24350, 5900), new Vec2(23650, 5900), new Vec2(21800, 4450), new Vec2(21500, 4050) },
-            new[] { new Vec2(22500, 4000), new Vec2(23500, 4000) }),
+            new[] { Gate("field_training#0", "Training Grounds", "Immortal dummies at Lv 20 / 40 / 60 / 80", 22500, 4000) }),
 
         // Sunken Vale — the valley-treant BOSS field (band 58-60). The boss sits alone in the centre;
         // its two trash spawners are >3500u away on the flanks, so you reach the boss without aggro.
         new("field_treant", "Sunken Vale", RegionKind.Field,
             new[] { new Vec2(18350, 44200), new Vec2(19400, 43100), new Vec2(28600, 43100), new Vec2(29650, 44200), new Vec2(29650, 45800), new Vec2(28600, 46900), new Vec2(19400, 46900), new Vec2(18350, 45800) },
-            new[] { new Vec2(20500, 45000), new Vec2(27500, 45000) }),
+            new[] { Gate("field_treant#0", "Sunken Vale West", "Lv 58-60 · trash flank, west of the boss", 20500, 45000),
+                    Gate("field_treant#1", "Sunken Vale East", "Lv 58-60 · trash flank, east of the boss", 27500, 45000) }),
 
         // Hollow Crypt — the DUNGEON field (band 44-48), in the NEGATIVE quadrant (owner: dungeons live at
         // minus coords, off the overworld, reached by teleport). Elite rooms + the grave-lich boss; its
         // entrance safe zone (dungeon_hollow_crypt) sits just SW as a separate island.
         new("field_dungeon", "Hollow Crypt", RegionKind.Field,
             new[] { new Vec2(-11850, -11950), new Vec2(-11400, -12400), new Vec2(-10800, -12450), new Vec2(-7750, -11350), new Vec2(-6550, -10650), new Vec2(-6150, -10200), new Vec2(-6200, -9600), new Vec2(-6600, -9150), new Vec2(-7150, -9100), new Vec2(-8550, -9450), new Vec2(-11500, -10800), new Vec2(-11900, -11300) },
-            new[] { new Vec2(-9600, -11000), new Vec2(-8400, -10500) }),
-    };
+            new[] { Gate("field_dungeon#0", "Hollow Crypt Halls", "Lv 44-48 · elite rooms, all aggressive", -9600, -11000) }),
+    }).ToArray();
+
+    private static TeleportPoint Gate(string id, string name, string description, float x, float y) =>
+        new(id, name, description, new Vec2(x, y));
+
+    /// <summary>Turn one PLANNED field into a Region: hull its camps (elite included, so the elite camp is
+    /// inside its own field), carry its named gates across, and record the managing city.</summary>
+    private static Region PlannedField(WorldPlan.Field field) =>
+        new(field.Plan.Id, field.Plan.Name, RegionKind.Field,
+            HullOf(field.Zones, WorldPlan.FieldMargin),
+            field.Gates,
+            field.Plan.CityId);
 
     /// <summary>
     /// TOWNS as regions (stage 2). Each is an OCTAGON INSCRIBED in its safe-zone circle (rad = r, so the
@@ -141,16 +167,10 @@ public static class RegionMap
     /// octagon is only the drawn shape, kept snug against the circle so it no longer bleeds into the
     /// hunting fields around it (owner: regions must not overlap; towns were reading too large).
     /// </summary>
+    /// Derived from <see cref="Game.Shared.Towns.All"/> rather than re-listed: the same seven ids,
+    /// names, centres and radii were written out twice and had to keep agreeing.
     public static readonly Region[] Towns =
-    {
-        Town("town_brackenford", "Brackenford",     24000, 24000, 3500),
-        Town("town_stonewatch",  "Stonewatch",      24000, 10000, 2000),
-        Town("town_greymarsh",   "Greymarsh",       36000, 33000, 2000),
-        Town("castle_ironreach", "Ironreach Keep",  24000, 38000, 2200),
-        Town("town_frostmere",   "Frostmere",       12000, 15000, 2000),
-        Town("outpost_training", "Training Outpost", 24000, 5000, 400),
-        Town("dungeon_hollow_crypt", "Hollow Crypt",  -12000, -12000, 500),
-    };
+        Game.Shared.Towns.All.Select(z => Town(z.Id, z.Name, z.X, z.Y, z.Radius)).ToArray();
 
     /// <summary>Build a FIELD's outline from the spawn zones it should contain, instead of hand-drawing
     /// a polygon around them.
@@ -165,17 +185,11 @@ public static class RegionMap
     /// gives an organic outline that hugs however the zones happen to be arranged: a line of zones
     /// becomes a corridor, a clump becomes a blob. Arrival points are the zone centres, so a teleport
     /// spreads people across the field rather than stacking them on one doorstep.</summary>
-    /// <summary>Every OVERWORLD spawn zone whose centre lies within <paramref name="radius"/> of a
-    /// city. Picking a field's zones by POSITION rather than by index means re-ordering or re-banding
-    /// the zone list cannot silently reshuffle which field owns what. Boss, dungeon and training
-    /// spawners are excluded by their own fields being authored separately — they sit far outside any
-    /// city radius.</summary>
-    private static SpawnZone[] ZonesNear(float cx, float cy, float radius) =>
-        WorldMap.SpawnZones
-            .Where(z => (z.X - cx) * (z.X - cx) + (z.Y - cy) * (z.Y - cy) <= radius * radius)
-            .ToArray();
-
-    private static Region FieldOf(string id, string name, float margin, params SpawnZone[] zones)
+    /// <summary>The outline that WRAPS a set of camps: a convex hull of points sampled around each camp
+    /// circle (radius + margin). A field simply IS "wherever its camps are, plus a margin", so the two can
+    /// never disagree — which is what the old hand-authored dozen-vertex outlines could not promise. The
+    /// shape hugs however the camps happen to be arranged: an arc of camps becomes a crescent.</summary>
+    private static Vec2[] HullOf(SpawnZone[] zones, float margin)
     {
         const int samples = 12;
         var pts = new List<Vec2>(zones.Length * samples);
@@ -188,8 +202,7 @@ public static class RegionMap
                 pts.Add(new Vec2(z.X + r * MathF.Cos(a), z.Y + r * MathF.Sin(a)));
             }
         }
-        return new Region(id, name, RegionKind.Field, ConvexHull(pts),
-                          zones.Select(z => new Vec2(z.X, z.Y)).ToArray());
+        return ConvexHull(pts);
     }
 
     /// <summary>Andrew's monotone chain — sort by x then y, sweep the lower and upper hulls. Returns the
@@ -233,7 +246,8 @@ public static class RegionMap
             float a = MathF.PI / 8f + i * (MathF.PI / 4f);   // 22.5° + k·45°, counter-clockwise
             outline[i] = new Vec2(cx + rad * MathF.Cos(a), cy + rad * MathF.Sin(a));
         }
-        return new Region(id, name, RegionKind.Town, outline, new[] { new Vec2(cx, cy) });
+        return new Region(id, name, RegionKind.Town, outline,
+                          new[] { new TeleportPoint(id, name, "City", new Vec2(cx, cy)) });
     }
 
     /// <summary>Every region — fields and towns — for the client to draw and "which region am I in".</summary>
@@ -275,6 +289,39 @@ public static class RegionMap
     }
 
     public static Region? ById(string id) => Array.Find(Regions, r => r.Id == id);
+
+    // ── City ⇄ field ownership (owner, 2026-07-30) ────────────────────────────────────────────────
+    // "Each field has its parent city (managing city), each city has its children (owned) fields." Two
+    // things read this: the gatekeeper menu (a city lists the gates of the fields it owns, and only those)
+    // and DEATH (you wake up in the city that manages where you fell, not in whatever town happens to be
+    // nearest — which on a map with cities 13k apart could be a city whose gatekeeper cannot even send you
+    // back). Nearest-city stays the FAILSAFE for the places no city manages: the boss vale, the dungeon,
+    // and the empty ground between fields.
+
+    /// <summary>The fields a city manages, ordered by their level band (lowest first) — the order a
+    /// gatekeeper should list them in.</summary>
+    public static Region[] FieldsOf(string cityId) =>
+        Fields.Where(f => f.CityId == cityId)
+              .OrderBy(f => LevelBand(f.Id)?.Min ?? int.MaxValue)
+              .ToArray();
+
+    /// <summary>The city that manages the field containing this point, or null when no field does (open
+    /// ground, a town, the boss vale, a dungeon). Callers fall back to nearest-city.</summary>
+    public static SafeZone? ManagingCity(float x, float y)
+    {
+        foreach (var f in Fields)
+            if (f.CityId.Length > 0 && f.Contains(x, y))
+                return Game.Shared.Towns.ById(f.CityId);
+        return null;
+    }
+
+    private static readonly Dictionary<string, (TeleportPoint Gate, Region Field)> GateIndex =
+        Regions.SelectMany(r => r.Gates.Select(g => (Gate: g, Field: r)))
+               .ToDictionary(t => t.Gate.Id, t => t, StringComparer.Ordinal);
+
+    /// <summary>A named teleport gate and the region it belongs to, by gate id.</summary>
+    public static (TeleportPoint Gate, Region Field)? GateById(string id) =>
+        GateIndex.TryGetValue(id, out var hit) ? hit : null;
 
     /// <summary>The DUNGEON fields — those authored entirely in the NEGATIVE quadrant (dungeons live off
     /// the overworld, reached by teleport). Used to WALL players inside a dungeon so they can't wander

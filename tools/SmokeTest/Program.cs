@@ -218,6 +218,99 @@ Check("server pushed the warehouse on login", a.Ware is not null);
     }
 }
 
+// -------------------------------------------------------------------------------------------
+// 1b². THE WORLD LAYOUT — camps, bands, fields, gates, managing cities.
+// -------------------------------------------------------------------------------------------
+// These are pure CATALOG checks (no protocol), and they exist because every one of them describes a bug
+// that a playtest showed only as a bad afternoon. The headline one is the owner's: a hand-listed roster
+// spanning levels 1-12 put a level-12 Werewolf in the level-1 camp, because a mob with a natural level
+// ignores the zone's band. "How exactly am I supposed to kill a pig next to a werewolf?"
+{
+    // The pig-and-werewolf guard. ForceZoneLevel camps are exempt BY DESIGN — they deliberately borrow a
+    // lower roster and re-level it, which is how 86-90 exists at all.
+    var strays = new List<string>();
+    foreach (var f in WorldPlan.Fields)
+        foreach (var z in f.Zones)
+        {
+            if (z.ForceZoneLevel) continue;
+            foreach (var id in z.MobTypes)
+            {
+                int lvl = MobCatalog.Get(id).Level;
+                if (lvl < z.MinLevel || lvl > z.MaxLevel)
+                    strays.Add($"{f.Plan.Name} Lv{z.MinLevel}-{z.MaxLevel} has {id} (Lv{lvl})");
+            }
+        }
+    Check("no camp holds a creature outside its own level band (no pig next to a werewolf)",
+          strays.Count == 0, strays.Count == 0 ? null : string.Join("; ", strays.Take(3)));
+
+    // Bands are 4 levels wide (2 at the top) — the owner's "1-4, 4-8, 8-12 …", not the old 5-6-level
+    // spans. The boundaries are SHARED in that notation (4-8 follows 1-4), so the span to assert on is
+    // Max-Min ≤ 4, and the previous world's 22-28 / 76-80 camps are what this rules out.
+    var wide = WorldPlan.Plans.SelectMany(p => p.Bands.Select(b => (p.Name, b)))
+                              .Where(t => t.b.Max - t.b.Min > 4).ToArray();
+    Check("every band is at most 4 levels wide", wide.Length == 0,
+          string.Join(", ", wide.Select(t => $"{t.Name} {t.b.Min}-{t.b.Max}")));
+
+    // Nothing empty: a band whose levels no creature occupies would spawn nothing and read as an empty field.
+    int empty = WorldPlan.Fields.SelectMany(f => f.Zones).Count(z => z.MobTypes.Length == 0);
+    Check("no camp has an empty roster", empty == 0, $"{empty} empty");
+
+    // Starter camps must be PEACEFUL — nothing should ever jump a level-3 character.
+    var starter = WorldPlan.Fields.First(f => f.Plan.Id == "field_bracken_hollow");
+    Check("the two starter camps are peaceful (nothing attacks on sight)",
+          starter.Zones.All(z => z.AggressiveTypes is { Length: 0 }));
+    // …and the endgame is not.
+    var summit = WorldPlan.Fields.First(f => f.Plan.Id == "field_frost_summit");
+    Check("an endgame camp has three aggressive types",
+          summit.Zones.Any(z => z.Rank == MobRank.Normal && z.AggressiveTypes is { Length: 3 }));
+
+    // Every field is OWNED by a city, and that city's gatekeeper can therefore send you there.
+    var orphan = RegionMap.Fields.Where(f => f.CityId.Length == 0)
+                                 .Select(f => f.Id).ToArray();
+    Check("every planned field records a managing city",
+          orphan.All(id => id is "field_training" or "field_treant" or "field_dungeon"),
+          string.Join(", ", orphan));
+    Check("every city owns at least two fields",
+          WorldPlan.Cities.All(c => RegionMap.FieldsOf(c.Id).Length >= 2),
+          string.Join(", ", WorldPlan.Cities.Select(c => $"{c.Name}:{RegionMap.FieldsOf(c.Id).Length}")));
+
+    // Gates: named, described, uniquely identified, and resolvable back to their field. A gate id is the
+    // whole wire contract for travel now — a collision would silently send you to the wrong camp.
+    var gates = RegionMap.Regions.SelectMany(r => r.Gates).ToArray();
+    Check("gate ids are unique", gates.Select(g => g.Id).Distinct().Count() == gates.Length);
+    Check("every gate has a name and a description",
+          gates.All(g => g.Name.Length > 0 && g.Description.Length > 0));
+    Check("every gate resolves by id back to its own field",
+          gates.All(g => RegionMap.GateById(g.Id) is not null));
+    // …and every NORMAL camp has one, or a band would be unreachable by gatekeeper.
+    int gateless = WorldPlan.Fields.Sum(f => f.Zones.Count(z => z.Rank == MobRank.Normal) - f.Gates.Length);
+    Check("every normal camp has a gate (elites deliberately do not)", gateless == 0, $"{gateless} missing");
+
+    // A gate must land you INSIDE its own field — it is stepped back onto the camp's town-facing rim, and
+    // an arithmetic slip there would drop you in open ground outside the polygon.
+    var outside = RegionMap.Fields
+        .Where(f => f.CityId.Length > 0)
+        .SelectMany(f => f.Gates.Select(g => (f, g)))
+        .Where(t => !t.f.Contains(t.g.At.X, t.g.At.Y))
+        .Select(t => t.g.Name).ToArray();
+    Check("every gate lands inside its own field", outside.Length == 0, string.Join(", ", outside));
+
+    // The managing-city lookup must agree with the plan at every camp centre — this is what death reads.
+    var mismatch = WorldPlan.Fields
+        .SelectMany(f => f.Zones.Select(z => (f, z)))
+        .Where(t => RegionMap.ManagingCity(t.z.X, t.z.Y)?.Id != t.f.Plan.CityId)
+        .Select(t => $"{t.f.Plan.Name} Lv{t.z.MinLevel}").ToArray();
+    Check("every camp reports its own city as the managing city (this is where you respawn)",
+          mismatch.Length == 0, string.Join(", ", mismatch.Take(3)));
+
+    // No hole in the climb: every level 1..90 must have somewhere to earn it.
+    var uncovered = Enumerable.Range(1, GameConstants.MaxPlayerLevel)
+        .Where(l => !WorldPlan.Plans.Any(p => p.Bands.Any(b => l >= b.Min && l <= b.Max)))
+        .ToArray();
+    Check("every level 1-90 is covered by some camp", uncovered.Length == 0,
+          string.Join(", ", uncovered));
+}
+
 Check("server pushed quest markers on login", a.Marks is not null);
 // A level-1 character legitimately has NO markers: the starter chain opens at 10 and the class
 // chains at 18. Asserting "> 0" here would be asserting a bug. The real check is after the level-up
@@ -740,6 +833,7 @@ var gm = await ConnectAsync("admin", "admin");
 var gmChars = await gm.Hub.InvokeAsync<CharacterList>("ListCharacters");
 var gmEnter = await gm.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(gmChars.Characters[0].Id));
 Check("admin account entered the world", gmEnter.Success, gmEnter.Error);
+gm.MyId = gmEnter.EntityId;   // without this the session tracks no position and every place check reads (0,0)
 await gm.Settle();
 
 // JAIL the victim (b) live.
@@ -841,6 +935,69 @@ Check("kick leaves NO ghost entity behind (re-entry is blocked by the kick, not 
 await d.DisposeAsync();
 await c.DisposeAsync();
 
+// -------------------------------------------------------------------------------------------
+// 7. THE GATEKEEPER, END TO END — a named field gate, over the wire.
+// -------------------------------------------------------------------------------------------
+// The catalog checks above prove the gates EXIST and are well-formed. They cannot prove the wire path
+// works, and that path is new in three places at once: the dialog now carries this city's own field
+// gates, the destination id is a GATE id rather than a safe-zone id, and the handler has to reject a gate
+// belonging to a different city. Travel is also the kind of thing that "works" while silently landing you
+// somewhere else, which no amount of catalog assertion catches.
+{
+    var pell = WorldMap.NpcById("gatekeeper_brackenford")!;
+    await gm.Hub.SendAsync("DebugTeleport", pell.X, pell.Y - 40f);   // within TalkRange
+    await gm.Hub.SendAsync("DebugGold", 200_000L);
+    await gm.Settle();
+
+    var pellId = gm.EntityNames.FirstOrDefault(kv => kv.Value == pell.Name).Key;
+    Check("the Brackenford gatekeeper is visible after teleporting to him", pellId != Guid.Empty, pell.Name);
+
+    gm.Dialog = null;
+    await gm.Hub.SendAsync("TalkToNpc", pellId);
+    await gm.Settle();
+
+    var menu = gm.Dialog?.Teleport?.Destinations ?? Array.Empty<TeleportDest>();
+    // Brackenford owns Bracken Hollow + Bracken Downs = 4 camps = 4 gates, then the other cities.
+    var local = menu.Where(t => t.Group.Length > 0).ToArray();
+    Check("the gatekeeper lists its OWN city's field gates", local.Length == 4,
+          $"{local.Length} local gates of {menu.Length} destinations");
+    Check("...grouped under their field, with the band and roster in the description",
+          local.Any(t => t.Group == "Bracken Hollow" && t.Description.Contains("Lv 1-4")),
+          local.FirstOrDefault(t => t.Group == "Bracken Hollow")?.Description);
+    Check("...and the other cities are still offered (Group empty)",
+          menu.Any(t => t.Group.Length == 0 && t.DestId == "town_frostmere"));
+
+    // Travel to the level 1-4 gate and land ON it. This is the assertion that the "random teleport
+    // factor" is gone: one named gate, one landing spot (±150 of scatter).
+    var target = local.First(t => t.Group == "Bracken Hollow" && t.Description.Contains("Lv 1-4"));
+    var gate = RegionMap.GateById(target.DestId)!.Value.Gate;
+    long goldBefore = gm.Gold;
+    await gm.Hub.SendAsync("Teleport", pellId, target.DestId);
+    await gm.Settle();
+
+    double off = Math.Sqrt(Math.Pow(gm.MyX - gate.At.X, 2) + Math.Pow(gm.MyY - gate.At.Y, 2));
+    Check("teleporting to a named gate lands you AT that gate", off < 250,
+          $"{off:0} from ({gate.At.X:0},{gate.At.Y:0})");
+    Check("...and charged the fee", gm.Gold == goldBefore - target.Fee,
+          $"{goldBefore} -> {gm.Gold}, fee {target.Fee}");
+    Check("...and the gate is inside the field it belongs to",
+          RegionMap.At(gm.MyX, gm.MyY)?.Id == "field_bracken_hollow",
+          RegionMap.At(gm.MyX, gm.MyY)?.Name);
+
+    // A gate belonging to a DIFFERENT city must be refused — the gatekeeper knows its own grounds and the
+    // roads out, nothing further. Without this the id becomes a free warp anywhere in the world.
+    await gm.Hub.SendAsync("DebugTeleport", pell.X, pell.Y - 40f);
+    await gm.Settle();
+    var foreign = RegionMap.FieldsOf("town_frostmere")[0].Gates[0];
+    long goldBeforeDenied = gm.Gold;
+    await gm.Hub.SendAsync("Teleport", pellId, foreign.Id);
+    await gm.Settle();
+    Check("a gate in ANOTHER city's field is refused (no free warp across the world)",
+          gm.Gold == goldBeforeDenied
+            && Math.Abs(gm.MyX - pell.X) < 400 && Math.Abs(gm.MyY - pell.Y) < 400,
+          $"at ({gm.MyX:0},{gm.MyY:0}), gold {gm.Gold}");
+}
+
 // (No cleanup needed — every run creates a fresh Smoke<timestamp> character, so the jailed/kicked
 //  throwaway char is never reused.)
 await gm.Hub.SendAsync("LeaveWorld");
@@ -893,6 +1050,17 @@ sealed class Session : IAsyncDisposable
     public Guid MyId;
     public float MyX, MyY;
 
+    /// <summary>Entity id → name, from full spawns. The only way to address an NPC over the protocol is by
+    /// its runtime Guid, and a test that wants "the Brackenford gatekeeper" has nothing else to go on.</summary>
+    public readonly Dictionary<Guid, string> EntityNames = new();
+
+    /// <summary>The last "Dialog" push — what an NPC offered when talked to.</summary>
+    public NpcDialog? Dialog;
+
+    /// <summary>The last "Gold" push. Needed to assert a teleport actually CHARGED, and to know whether a
+    /// fee is affordable before asserting the travel succeeded.</summary>
+    public long Gold;
+
     // System-chat lines captured (for friend-list / "back online" assertions).
     public readonly List<string> SystemChat = new();
 
@@ -923,13 +1091,15 @@ sealed class Session : IAsyncDisposable
         Hub.On<SnapshotDelta>("SnapshotDelta", d =>
         {
             DeltaCount++;
-            foreach (var s in d.Spawns) { Spawned.Add(s.Id); if (s.Id == MyId) { MyX = s.X; MyY = s.Y; } }
+            foreach (var s in d.Spawns) { Spawned.Add(s.Id); EntityNames[s.Id] = s.Name; if (s.Id == MyId) { MyX = s.X; MyY = s.Y; } }
             foreach (var u in d.Updates) { Updated.Add(u.Id); if (u.Id == MyId) { MyX = u.X; MyY = u.Y; } }
             foreach (var id in d.Despawns) Despawned.Add(id);
         });
         Hub.On<ProgressUpdate>("Progress", p => Progress = p);
         Hub.On<BuffUpdate>("Buffs", b => Buffs = b);
         Hub.On<QuestMarks>("QuestMarks", m => Marks = m);
+        Hub.On<NpcDialog>("Dialog", d => Dialog = d);
+        Hub.On<GoldUpdate>("Gold", g => Gold = g.Gold);
         Hub.On<ChatMessage>("Chat", m => { AllChat.Add(m); if (m.Channel == ChatChannel.System) { SystemChat.Add(m.Text); Console.WriteLine($"        [SYSTEM] {m.Text}"); } });
         await Hub.StartAsync();
     }

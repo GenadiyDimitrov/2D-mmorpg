@@ -1310,8 +1310,15 @@ public class GameLoopService : BackgroundService
         entity.Hp = entity.MaxHp;
         entity.Mp = entity.MaxMp;
         entity.Buffs.Clear();
-        // Respawn at the nearest town (the world is large now).
-        var town = WorldMap.NearestSafeZone(entity.X, entity.Y);
+        // Respawn in the city that MANAGES the field you fell in, and only fall back to the nearest town
+        // when no field does — open ground, the boss vale, a dungeon (owner: "each field has its parent
+        // city; dying returns you to that city, and as a failsafe keep the nearest-city formula").
+        //
+        // Nearest-town alone was wrong in the one case that matters: cities are 13-15k apart and a city's
+        // fields reach ~7k, so dying on the far edge of a field could put you in a DIFFERENT city — one
+        // whose gatekeeper doesn't list the field you just died in, leaving you to walk back.
+        var town = RegionMap.ManagingCity(entity.X, entity.Y)
+                   ?? WorldMap.NearestSafeZone(entity.X, entity.Y);
         entity.X = town.X + _rng.Next(-250, 250);
         entity.Y = town.Y + _rng.Next(-250, 250);
         entity.TargetX = null;
@@ -8191,10 +8198,17 @@ var effect = def.Effect;
         foreach (var region in RegionMap.All)
         {
             var band = RegionMap.LevelBand(region.Id);
-            _log.LogInformation("Region {Name}: {Spawners} spawner(s), {Band}",
+            // The managing city and the gate names are printed too: both are AUTHORED-ONCE, DERIVED-EVERYWHERE
+            // (the city decides where you respawn, the gates are the gatekeeper's whole menu), and both are
+            // invisible until you die in the wrong place or open a gatekeeper on a phone.
+            _log.LogInformation("Region {Name}: {Spawners} spawner(s), {Band}{City}",
                 region.Name,
                 RegionMap.SpawnersIn(region.Id).Length,
-                band is null ? "peaceful" : $"Lv {band.Value.Min}-{band.Value.Max}");
+                band is null ? "peaceful" : $"Lv {band.Value.Min}-{band.Value.Max}",
+                region.CityId.Length == 0 ? "" : $", managed by {Towns.ById(region.CityId)?.Name ?? region.CityId}");
+            foreach (var gate in region.Gates)
+                if (region.Kind == RegionKind.Field)
+                    _log.LogInformation("    gate '{Gate}' — {Desc}", gate.Name, gate.Description);
         }
     }
 
@@ -8446,14 +8460,35 @@ var effect = def.Effect;
         }
 
         var home = WorldMap.SafeZoneAt(npc.X, npc.Y);
-        var dest = WorldMap.SafeZones.FirstOrDefault(z => z.Id == cmd.ZoneId);
-        if (home is null || dest is null || dest.Id == home.Id)
+        if (home is null)
         {
             SendSystemToEntity(player, "You can't travel there.");
             return;
         }
 
-        int fee = GameConstants.TeleportFee(home, dest);
+        // A destination is EITHER another city OR one of this city's own field gates. The gate branch is
+        // what makes "go hunting" a named choice instead of a random landing spot in a polygon, and
+        // restricting it to the gatekeeper's OWN fields is the owner's rule: a city's gatekeeper knows its
+        // own hunting grounds and the roads to the other cities, nothing further.
+        float tx, ty;
+        string destName;
+        var town = WorldMap.SafeZones.FirstOrDefault(z => z.Id == cmd.ZoneId);
+        if (town is not null && town.Id != home.Id)
+        {
+            (tx, ty, destName) = (town.X, town.Y, town.Name);
+        }
+        else if (RegionMap.GateById(cmd.ZoneId) is (TeleportPoint gate, Region field)
+                 && field.CityId == home.Id)
+        {
+            (tx, ty, destName) = (gate.At.X, gate.At.Y, gate.Name);
+        }
+        else
+        {
+            SendSystemToEntity(player, "You can't travel there.");
+            return;
+        }
+
+        int fee = GameConstants.TeleportFee(home.X, home.Y, tx, ty);
         if (player.Gold < fee)
         {
             SendSystemToEntity(player,
@@ -8462,16 +8497,16 @@ var effect = def.Effect;
         }
 
         player.Gold -= fee;
-        // Reposition to the destination centre (small scatter so players don't stack).
-        player.X = Math.Clamp(dest.X + _rng.Next(-150, 150), GameConstants.WorldMinX, GameConstants.ZoneWidth);
-        player.Y = Math.Clamp(dest.Y + _rng.Next(-150, 150), GameConstants.WorldMinY, GameConstants.ZoneHeight);
+        // Small scatter so a party arriving together doesn't stack on one pixel.
+        player.X = Math.Clamp(tx + _rng.Next(-150, 150), GameConstants.WorldMinX, GameConstants.ZoneWidth);
+        player.Y = Math.Clamp(ty + _rng.Next(-150, 150), GameConstants.WorldMinY, GameConstants.ZoneHeight);
         player.TargetX = null;
         player.TargetY = null;
         _world.Grid.UpdatePosition(player);
 
         SendGold(player);
         SendSystemToEntity(player,
-            $"Teleported to {dest.Name} for {fee:N0} {GameConstants.CurrencyName}.");
+            $"Teleported to {destName} for {fee:N0} {GameConstants.CurrencyName}.");
     }
 
     private void HandleTalk(TalkCmd cmd)
@@ -8763,23 +8798,39 @@ var effect = def.Effect;
             SendBuyBack(player);   // the vendor also shows what you recently sold, to re-buy
         }
 
-        // Gatekeeper destinations (every safe zone except this one).
+        // Gatekeeper destinations: THIS city's own field gates first, then every other town.
+        //
+        // Owner: "each gatekeeper teleports you to their own fields + the other cities", and each gate is a
+        // NAMED point, not a random spot in a polygon. Listing the local fields first is the ordering that
+        // matches why you walked over — you are far more often going hunting than emigrating.
         TeleportInfo? teleport = null;
         if (npc.NpcRole == NpcRole.Teleporter
             && WorldMap.SafeZoneAt(npc.X, npc.Y) is SafeZone home)
         {
-            var dests = WorldMap.TeleportDestinationsFrom(npcId, home)
+            var dests = new List<TeleportDest>();
+
+            foreach (var field in RegionMap.FieldsOf(home.Id))
+            {
+                var band = RegionMap.LevelBand(field.Id);
+                foreach (var gate in field.Gates)
+                    dests.Add(new TeleportDest(
+                        gate.Id, gate.Name,
+                        GameConstants.TeleportFee(home.X, home.Y, gate.At.X, gate.At.Y),
+                        band?.Min ?? 0, band?.Max ?? 0, gate.Description, field.Name));
+            }
+
+            dests.AddRange(WorldMap.TeleportDestinationsFrom(npcId, home)
                 .Select(z =>
                 {
                     var band = WorldMap.LevelRangeNear(z);
                     return new TeleportDest(z.Id, z.Name, GameConstants.TeleportFee(home, z),
-                        band?.Min ?? 0, band?.Max ?? 0);
+                        band?.Min ?? 0, band?.Max ?? 0, "City", "");
                 })
-                // Order by hunting-ground level so the "next" town is at the top.
+                // Order by hunting-ground level so the "next" city is at the top.
                 .OrderBy(d => d.MinLevel == 0 ? int.MaxValue : d.MinLevel)
-                .ThenBy(d => d.Name)
-                .ToArray();
-            teleport = new TeleportInfo(dests);
+                .ThenBy(d => d.Name));
+
+            teleport = new TeleportInfo(dests.ToArray());
         }
 
         // Skill reset (only for reset NPCs): the permanent, mutually-exclusive picks you've made.

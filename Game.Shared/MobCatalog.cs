@@ -337,4 +337,21 @@ public static class MobCatalog
         All.TryGetValue(id, out var m) ? m : new MobType(id, id, 60f, 110f);
 
     public static bool IsAggressive(string id) => Get(id).Aggressive;
+
+    /// <summary>Every template, ordered by natural level then id. Deterministic order matters: it is
+    /// what makes the GENERATED spawner rosters (see <see cref="WorldPlan"/>) reproducible.</summary>
+    public static IEnumerable<MobType> Templates =>
+        All.Values.OrderBy(m => m.Level).ThenBy(m => m.Id, StringComparer.Ordinal);
+
+    /// <summary>The templates whose NATURAL level falls inside [min,max], ascending.
+    ///
+    /// This is what lets a spawner's roster be derived from its level band instead of hand-listed, and
+    /// it is the fix for the owner's *"how am I supposed to kill a pig next to a werewolf"*: a mob with a
+    /// natural level ignores the zone's band (its stat curve is tuned for its own level), so a hand-listed
+    /// roster could — and did — put a level-12 Werewolf in the level 1-12 starter camp. Choosing the
+    /// roster BY level makes that impossible by construction rather than by vigilance.
+    ///
+    /// Dummies are excluded: the training dummies are placed by hand at fixed levels.</summary>
+    public static MobType[] InBand(int min, int max) =>
+        Templates.Where(m => !m.Dummy && m.Level >= min && m.Level <= max).ToArray();
 }

@@ -21,134 +21,21 @@ public static class WorldMap
         MaxX: GameConstants.ZoneWidth, MaxY: GameConstants.ZoneHeight);
 
     /// <summary>
-    /// Mob spawn zones. Each is a circle at (X, Y) with a Radius that spawns
-    /// MobCount mobs of the given types between MinLevel and MaxLevel.
+    /// Mob spawn zones — the circles that actually maintain living mobs.
     ///
-    /// To add a zone — e.g. "at (1000,1000) radius 800, level 5-7 boars and
-    /// spiders" — just add a SpawnZone line. Order doesn't matter; the server
-    /// spawns each independently and the client tints each one.
+    /// The OVERWORLD's zones are GENERATED from <see cref="WorldPlan"/>: 4-level bands (2 at the top),
+    /// grouped into fields, grouped under cities, with each camp's roster chosen BY LEVEL from
+    /// <see cref="MobCatalog"/>. They used to be hand-placed circles with hand-listed rosters, and that is
+    /// exactly how a level-12 Werewolf came to share the starter camp with a level-1 Ridgeback Pup — a
+    /// natural-level mob ignores the zone's band, so a 1-12 roster spawned both (owner: "how exactly am I
+    /// supposed to kill a pig next to a werewolf"). Deriving the roster from the band makes that
+    /// impossible rather than merely discouraged. To reshape the overworld, edit WorldPlan.Plans.
+    ///
+    /// What stays HAND-AUTHORED below is everything that is not a level band: the training dummies (fixed
+    /// levels, immortal, no drops), the world boss and its trash flanks, and the Hollow Crypt dungeon rooms.
     /// </summary>
-    // The world is a 48000x48000 square. The starter town (Brackenford) sits at the
-    // centre (24000,24000); six more towns ring it, and difficulty rises as you
-    // tour the ring clockwise from the north (Stonewatch → Emberfall → Greymarsh →
-    // Ironreach → Duskvale → Frostmere). Each band has 1-2 spawn zones beside its town.
-    // Coordinates were scaled ×2 from the old 24000 world so towns are far apart and
-    // zones aren't clustered; zone radii kept so the gaps between them grew.
-    public static readonly SpawnZone[] SpawnZones =
+    public static readonly SpawnZone[] SpawnZones = WorldPlan.SpawnZones.Concat(new SpawnZone[]
     {
-        // ===================== THE FIVE CITIES (owner, 2026-07-29) =====================
-        // The world was seven towns in a ring, each with two wide bands. It is FIVE cities now, each
-        // owning a level range and holding 2-4 tighter FIELDS, because 6-level bands meant a character
-        // spent half of every band either farming grey mobs or being outclassed:
-        //
-        //   Brackenford  1-16    2 fields     Stonewatch  16-40   4 fields
-        //   Greymarsh    40-60   4 fields     Ironreach   60-75   3 fields
-        //   Frostmere    76-90   3 fields + three ELITE spawners (80 / 84 / 90)
-        //
-        // Emberfall and Duskvale are GONE — their rosters redistributed into the bands above.
-        //
-        // Named mobs bring their OWN level (MobType.Level), so a field's roster is chosen to sit inside
-        // its band; the band is what the UI reports. The one exception is the 85-90 field, which sets
-        // ForceZoneLevel so the top-level roster respawns at 86-90 and there is somewhere to finish the
-        // climb to the cap (owner: "make it so we can have a place to lvl up from 86 to 90" — new
-        // creatures for that band come later).
-        //
-        // Fields sit >=2500 from their town centre (outside the safe zone) and are spaced so two bands
-        // never bleed into one another.
-
-        // AggressiveTypes is AUTHORED per field: as many or as few as the field should have. The
-        // starter fields are deliberately PEACEFUL (empty list) — nothing should jump a level-3
-        // character — and danger ramps from one type to two as the bands climb.
-
-        // ===== Brackenford (centre, 24000/24000) — levels 1-16 =====
-        new(X: 19400, Y: 24000, Radius: 1500, MinLevel: 1,  MaxLevel: 12,
-            MobTypes: new[] { "ridgeback_pup", "fox", "goblin_scout", "ashen_wolf", "werewolf" }, MaxCount: 12,
-            RespawnSeconds: 8, RespawnVariance: 3,
-            AggressiveTypes: new string[0]),                       // the very first field: nothing hunts you
-        new(X: 28600, Y: 24000, Radius: 1500, MinLevel: 8,  MaxLevel: 16,
-            MobTypes: new[] { "goblin_scout", "ashen_wolf", "werewolf", "hook_spider", "orc_archer" }, MaxCount: 12,
-            RespawnSeconds: 10, RespawnVariance: 4,
-            AggressiveTypes: new[] { "werewolf" }),                // one thing to learn to watch for
-
-        // ===== Stonewatch (north, 24000/10000) — levels 16-40 =====
-        new(X: 20000, Y: 10000, Radius: 1400, MinLevel: 16, MaxLevel: 22,
-            MobTypes: new[] { "orc_archer", "skeleton_grunt", "shield_skeleton", "grizzly_bear" }, MaxCount: 12,
-            RespawnSeconds: 12, RespawnVariance: 4,
-            AggressiveTypes: new[] { "grizzly_bear" }),
-        new(X: 28000, Y: 10000, Radius: 1400, MinLevel: 22, MaxLevel: 28,
-            MobTypes: new[] { "grizzly_bear", "cinder_imp", "watcher_eye", "lizardman_warrior" }, MaxCount: 12,
-            RespawnSeconds: 14, RespawnVariance: 5,
-            AggressiveTypes: new[] { "cinder_imp", "lizardman_warrior" }),
-        new(X: 24000, Y: 6800,  Radius: 1300, MinLevel: 28, MaxLevel: 34,
-            MobTypes: new[] { "lizardman_warrior", "marauder_recruit", "mantis_worker", "grave_robber_fighter", "medusa", "plunder_beetle" }, MaxCount: 12,
-            RespawnSeconds: 15, RespawnVariance: 5,
-            AggressiveTypes: new[] { "lizardman_warrior", "marauder_recruit" }),
-        new(X: 24000, Y: 14000, Radius: 1400, MinLevel: 34, MaxLevel: 40,
-            MobTypes: new[] { "medusa", "plunder_beetle", "wyrm", "marsh_mantis_soldier", "fen_lizardman_archer", "dune_orc_archer" }, MaxCount: 12,
-            RespawnSeconds: 16, RespawnVariance: 5,
-            AggressiveTypes: new[] { "wyrm", "dune_orc_archer" }),
-
-        // ===== Greymarsh (south-east, 36000/33000) — levels 40-60 =====
-        new(X: 32000, Y: 33000, Radius: 1400, MinLevel: 40, MaxLevel: 45,
-            MobTypes: new[] { "dune_orc_archer", "rift_portling", "harpy", "ridge_orc_overlord", "grave_lich", "fomor_brute" }, MaxCount: 11,
-            RespawnSeconds: 18, RespawnVariance: 6,
-            AggressiveTypes: new[] { "harpy", "grave_lich" }),
-        new(X: 40000, Y: 33000, Radius: 1400, MinLevel: 45, MaxLevel: 50,
-            MobTypes: new[] { "fomor_brute", "marsh_marauder", "warped_drake", "amber_basilisk", "wildhorn_grunt", "mantis_follower", "ravener" }, MaxCount: 11,
-            RespawnSeconds: 20, RespawnVariance: 6,
-            AggressiveTypes: new[] { "warped_drake", "ravener" }),
-        new(X: 36000, Y: 29000, Radius: 1400, MinLevel: 50, MaxLevel: 55,
-            MobTypes: new[] { "mantis_follower", "ravener", "marauder_warrior", "fallen_angel", "thornback", "gaze_hound", "ash_orc_soldier" }, MaxCount: 11,
-            RespawnSeconds: 20, RespawnVariance: 6,
-            AggressiveTypes: new[] { "gaze_hound", "fallen_angel" }),
-        new(X: 36000, Y: 37000, Radius: 1400, MinLevel: 55, MaxLevel: 60,
-            MobTypes: new[] { "ash_orc_soldier", "mirror_ghost", "mirror_wraith", "dune_orc_porter", "aether_wisp", "hollow_one", "sand_ratman", "valley_treant" }, MaxCount: 10,
-            RespawnSeconds: 22, RespawnVariance: 7,
-            AggressiveTypes: new[] { "mirror_wraith", "hollow_one" }),
-
-        // ===== Ironreach (south, 24000/38000) — levels 60-75 =====
-        new(X: 19500, Y: 38000, Radius: 1400, MinLevel: 60, MaxLevel: 65,
-            MobTypes: new[] { "sand_ratman", "valley_treant", "cursed_blade", "bogwood", "fen_lizardman", "obsidian_knight", "crimson_drake", "wildhorn_scout", "dread_knight" }, MaxCount: 10,
-            RespawnSeconds: 24, RespawnVariance: 7,
-            AggressiveTypes: new[] { "crimson_drake", "dread_knight" }),
-        new(X: 28500, Y: 38000, Radius: 1400, MinLevel: 65, MaxLevel: 70,
-            MobTypes: new[] { "dread_knight", "spiteful_ghost", "wildhorn_elder", "highland_kookaburra", "highland_buffalo", "highland_buffalo_tamed", "dread_archer", "dire_beast" }, MaxCount: 10,
-            RespawnSeconds: 26, RespawnVariance: 8,
-            AggressiveTypes: new[] { "dread_knight", "dread_archer" }),
-        new(X: 24000, Y: 33500, Radius: 1400, MinLevel: 70, MaxLevel: 75,
-            MobTypes: new[] { "dire_beast", "revenant_minion", "redhorn_footman", "redhorn_elite", "sunland_orc_scout", "redhorn_recruit", "sunland_orc_warrior" }, MaxCount: 10,
-            RespawnSeconds: 28, RespawnVariance: 8,
-            AggressiveTypes: new[] { "dire_beast", "redhorn_elite" }),
-
-        // ===== Frostmere (north-west, 12000/15000) — levels 76-90, the endgame city =====
-        // Each field carries an ELITE spawner ~1200 away: close enough to be the same trip, far enough
-        // that the elite does not aggro you while you clear the normal camp (owner: 1-1.5k).
-        new(X: 8000,  Y: 15000, Radius: 1400, MinLevel: 76, MaxLevel: 80,
-            MobTypes: new[] { "redhorn_soldier", "sunland_orc_commander", "sunland_orc_captain", "redhorn_general", "emberwyrm_drake", "scarlet_mantis", "wrathborn_demon" }, MaxCount: 10,
-            RespawnSeconds: 30, RespawnVariance: 9,
-            AggressiveTypes: new[] { "wrathborn_demon", "emberwyrm_drake", "redhorn_general" }),   // endgame: three
-        new(X: 8000,  Y: 12200, Radius: 400,  MinLevel: 80, MaxLevel: 80,
-            MobTypes: new[] { "scarlet_mantis", "wrathborn_demon" }, MaxCount: 2,
-            RespawnSeconds: 180, RespawnVariance: 40, Rank: MobRank.Elite),
-
-        new(X: 16000, Y: 15000, Radius: 1400, MinLevel: 81, MaxLevel: 84,
-            MobTypes: new[] { "radiant_scout", "radiant_berserker", "radiant_mage", "splinter_mantis_drone", "needle_mantis_overseer", "splinter_mantis_walker" }, MaxCount: 10,
-            RespawnSeconds: 30, RespawnVariance: 9,
-            AggressiveTypes: new[] { "radiant_berserker", "radiant_mage", "needle_mantis_overseer" }),
-        new(X: 16000, Y: 12200, Radius: 400,  MinLevel: 84, MaxLevel: 84,
-            MobTypes: new[] { "needle_mantis_overseer", "splinter_mantis_walker" }, MaxCount: 2,
-            RespawnSeconds: 180, RespawnVariance: 40, Rank: MobRank.Elite),
-
-        // 85-90: the ONLY field that forces its own levels onto the roster, so the level-85 creatures
-        // respawn all the way to the cap and the last five levels have somewhere to happen.
-        new(X: 12000, Y: 19500, Radius: 1500, MinLevel: 85, MaxLevel: 90,
-            MobTypes: new[] { "disciple_of_the_dawn", "drake_leader", "radiant_berserker", "needle_mantis_overseer", "splinter_mantis_walker" }, MaxCount: 10,
-            RespawnSeconds: 32, RespawnVariance: 10, ForceZoneLevel: true,
-            AggressiveTypes: new[] { "drake_leader", "disciple_of_the_dawn", "radiant_berserker" }),
-        new(X: 14700, Y: 21200, Radius: 400,  MinLevel: 90, MaxLevel: 90,
-            MobTypes: new[] { "disciple_of_the_dawn", "drake_leader" }, MaxCount: 2,
-            RespawnSeconds: 180, RespawnVariance: 40, Rank: MobRank.Elite, ForceZoneLevel: true),
-
         // ===== Training Grounds: immortal, stationary, 0-damage dummies at fixed levels
         //       (20/40/60/80) for testing damage/skills. Clustered, one per level. =====
         new(X: 22500, Y: 4000, Radius: 200, MinLevel: 20, MaxLevel: 20,
@@ -160,13 +47,11 @@ public static class WorldMap
         new(X: 25500, Y: 4000, Radius: 200, MinLevel: 80, MaxLevel: 80,
             MobTypes: new[] { "training_dummy" }, MaxCount: 1, RespawnSeconds: 5),
 
-        // ===== Elite + Boss placeholders (more bosses/instances later) =====
-        // The emberwyrm ELITE roams the Frostmere Wastes (inside that field, an L70-85 zone) — it used to
-        // sit at (11600,10000), which was too near the Hollow Crypt to take its own field, and left it a
-        // "rogue" spawner outside every field. Moved in-zone so every spawner is a child of a field.
-        new(X: 10500, Y: 17000, Radius: 300,  MinLevel: 78, MaxLevel: 78,
-            MobTypes: new[] { "emberwyrm_drake" }, MaxCount: 1,
-            RespawnSeconds: 180, RespawnVariance: 40, Rank: MobRank.Elite),
+        // ===== Boss placeholders (more bosses/instances later) =====
+        // The lone emberwyrm ELITE that used to roam here is GONE: every Frostmere field now generates its
+        // own elite camp at its band cap (80 / 84 / 90), placed 1500 out from the field's top camp — so a
+        // hand-placed elite at a hand-picked level was both redundant and the one spawner most likely to
+        // land on top of a generated camp.
         new(X: 24000, Y: 45000, Radius: 250,  MinLevel: 60, MaxLevel: 60,
             MobTypes: new[] { "valley_treant" }, MaxCount: 1,
             RespawnSeconds: 21 * 3600, RespawnVariance: 3 * 3600, Rank: MobRank.Boss),
@@ -196,45 +81,18 @@ public static class WorldMap
         new(X: -7200,  Y: -10000, Radius: 300, MinLevel: 48, MaxLevel: 48,
             MobTypes: new[] { "grave_lich" }, MaxCount: 1,
             RespawnSeconds: 30 * 60, RespawnVariance: 5 * 60, Rank: MobRank.Boss),
-    };
+    }).ToArray();
 
-    /// <summary>
-    /// "Roads": wide strips where mobs do NOT spawn, so there are safe-ish
-    /// corridors leading toward the hunting grounds. The client draws them as
-    /// thick, semi-transparent grey lines. Each path is a sequence of points
-    /// with a half-width; the strip is the area within Width of any segment.
-    /// </summary>
-    /// <summary>Safe zones (cities/castles): no mobs spawn or enter, aggro
-    /// clears inside, regen is boosted. Each has a stable id so teleports can
-    /// target them later. The first is the starter town at map centre.</summary>
-    // NOTE: all place names here are original/generic on purpose — NEVER use town,
-    // region, or NPC names trademarked by other games (no Lineage/L2 names, etc.).
-    public static readonly SafeZone[] SafeZones =
-    {
-        // Starter town at the map centre; six more ring it (clockwise from north).
-        // Brackenford is the biggest (it holds all the quest/class/vendor NPCs, which
-        // are spread out so their labels don't overlap); ring towns are roomy too.
-        // FIVE cities (owner, 2026-07-29). Emberfall and Duskvale are gone — see SpawnZones.
-        new("town_brackenford", "Brackenford",     24000, 24000, 3500),   // 1-16
-        new("town_stonewatch",  "Stonewatch",      24000, 10000, 2000),   // 16-40
-        new("town_greymarsh",   "Greymarsh",       36000, 33000, 2000),   // 40-60
-        new("castle_ironreach",  "Ironreach Keep", 24000, 38000, 2200),   // 60-75
-        new("town_frostmere",   "Frostmere",       12000, 15000, 2000),   // 76-90
-        // Small outpost beside the Training Grounds, so you can buff up and teleport out without
-        // leaving the dummies. Sits just SOUTH of the dummy row (they're at y=4000, radius 200),
-        // clear of them — a safe zone keeps mobs out, and the dummies ARE mobs.
-        new("outpost_training", "Training Outpost", 24000, 5000, 400),
-        // The Hollow Crypt dungeon ENTRANCE, in the negative quadrant with the dungeon. Being a safe zone
-        // makes it a teleport destination from every gatekeeper automatically (TeleportDestinationsFrom
-        // default) — that teleport IS how you reach the dungeon now — and a safe arrive/regroup spot
-        // before the elite rooms just NE of it.
-        new("dungeon_hollow_crypt", "Hollow Crypt", -12000, -12000, 500),
-    };
+    /// <summary>Safe zones (cities/castles). AUTHORED IN <see cref="Towns"/> — this forwards, so every
+    /// existing call site is unchanged. They moved out because <see cref="SpawnZones"/> is generated from
+    /// <see cref="WorldPlan"/>, which needs the city centres: leaving the towns here made the two types
+    /// initialise each other and read a half-built array. See the comment on Towns.</summary>
+    public static SafeZone[] SafeZones => Towns.All;
 
     /// <summary>The STARTER town (map centre). Used where "nearest" would leak information — a player
     /// released from jail is sent here rather than to whatever town happens to be closest, so the jail's
     /// location stays secret.</summary>
-    public static SafeZone StartingTown => SafeZones[0];
+    public static SafeZone StartingTown => Towns.Starting;
 
     /// <summary>The safe zone nearest to a point (always returns one). Used to
     /// respawn the dead at their closest town instead of the map centre.</summary>
@@ -461,19 +319,23 @@ public static class WorldMap
         return false;
     }
 
-    /// <summary>The level band of the normal hunting grounds around a town: the
-    /// min/max level across spawn zones whose nearest town is this one. Returns null
-    /// if the town has no normal zones beside it (elite/boss spots are ignored).</summary>
+    /// <summary>The level band of the hunting grounds a city MANAGES — what a gatekeeper shows beside
+    /// another city's name so "where am I going" is answered before you pay.
+    ///
+    /// Derived from the city's OWNED fields (<see cref="WorldPlan.FieldsOf"/>), not from "whichever normal
+    /// spawn zones happen to be nearest this town". Nearest-town was a proxy that happened to agree with
+    /// ownership; with fields reaching ~7k and cities 13-15k apart, one bearing re-aimed toward a
+    /// neighbour is all it takes for the proxy to attribute a field to the wrong city.</summary>
     public static (int Min, int Max)? LevelRangeNear(SafeZone town)
     {
         int min = int.MaxValue, max = 0;
-        foreach (var z in SpawnZones)
-        {
-            if (z.Rank != MobRank.Normal) continue;
-            if (NearestSafeZone(z.X, z.Y).Id != town.Id) continue;
-            min = Math.Min(min, z.MinLevel);
-            max = Math.Max(max, z.MaxLevel);
-        }
+        foreach (var field in WorldPlan.FieldsOf(town.Id))
+            foreach (var z in field.Zones)
+            {
+                if (z.Rank != MobRank.Normal) continue;
+                min = Math.Min(min, z.MinLevel);
+                max = Math.Max(max, z.MaxLevel);
+            }
         return max == 0 ? null : (min, max);
     }
 

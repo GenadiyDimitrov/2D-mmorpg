@@ -486,10 +486,19 @@ public record BuyBackEntryDto(int Index, string DefId, string Name, int Quantity
 /// every sell / buy-back. In-memory only — it does not survive logout.</summary>
 public record BuyBackUpdate(BuyBackEntryDto[] Items);
 
-/// <summary>One teleport destination offered by a gatekeeper. MinLevel/MaxLevel are
-/// the level band of the hunting grounds around that town (0/0 = unknown), shown so
-/// players know where they're going.</summary>
-public record TeleportDest(string ZoneId, string Name, int Fee, int MinLevel = 0, int MaxLevel = 0);
+/// <summary>One teleport destination offered by a gatekeeper.
+///
+/// <paramref name="DestId"/> is EITHER a city's safe-zone id OR a named field gate's id
+/// (<see cref="TeleportPoint"/>) — a gatekeeper now sends you to a specific camp doorstep, not just to
+/// another town (owner: *"a city gatekeeper should list all the owned fields and their teleporting
+/// points, removing the random teleporting factor"*). It was called ZoneId while towns were the only
+/// possible destination.
+///
+/// MinLevel/MaxLevel are the level band you are travelling TO (0/0 = unknown), and
+/// <paramref name="Group"/> is the field a gate belongs to (empty for a city), so the client can list
+/// gates under their field instead of as a flat wall of names.</summary>
+public record TeleportDest(string DestId, string Name, int Fee, int MinLevel = 0, int MaxLevel = 0,
+                           string Description = "", string Group = "");
 
 /// <summary>A gatekeeper's destinations, attached to the dialog.</summary>
 public record TeleportInfo(TeleportDest[] Destinations);

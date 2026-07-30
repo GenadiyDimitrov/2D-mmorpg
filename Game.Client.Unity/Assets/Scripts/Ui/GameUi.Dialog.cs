@@ -142,12 +142,26 @@ namespace Game.Client
             if (d.Teleport != null && d.Teleport.Destinations != null)
             {
                 anything = true;
-                Header("Travel");
+                // A gatekeeper now offers this city's own hunting-field GATES (named, one per camp) before
+                // the roads to the other cities. Grouped under the field they belong to: fifteen flat rows
+                // of "<place> <compass>" is unreadable on a phone, and the field is the thing you are
+                // actually choosing. The server sends the local gates first, cities last (empty Group).
+                string group = null;
                 foreach (var dest in d.Teleport.Destinations)
                 {
-                    string zone = dest.ZoneId;
+                    if (dest.Group != group)
+                    {
+                        group = dest.Group;
+                        Header(string.IsNullOrEmpty(group) ? "Travel — other cities" : group);
+                    }
+
+                    string zone = dest.DestId;
                     string band = dest.MaxLevel > 0 ? "   (Lv " + dest.MinLevel + "-" + dest.MaxLevel + ")" : "";
-                    DialogRow(dest.Name + band + "   " + dest.Fee.ToString("N0") + " " + GameConstants.CurrencyName,
+                    // The description is what the band actually CONTAINS ("Lv 8-12 · Goblin Scout, Ashen
+                    // Wolf, Werewolf") — the whole reason to name a gate rather than dump you in a polygon.
+                    string what = string.IsNullOrEmpty(dest.Description) || dest.Description == "City"
+                                ? "" : "\n" + dest.Description;
+                    DialogRow(dest.Name + band + "   " + dest.Fee.ToString("N0") + " " + GameConstants.CurrencyName + what,
                               "Go", () => Boot.TeleportTo(zone),
                               Boot.Gold >= dest.Fee ? UiKit.Text : UiKit.TextDim);
                 }

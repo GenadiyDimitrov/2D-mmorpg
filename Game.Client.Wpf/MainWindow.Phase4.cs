@@ -3152,17 +3152,26 @@ public partial class MainWindow
         if (dialog.Teleport is TeleportInfo teleport)
         {
             AddDialogHeader("Travel");
+            // Grouped by field (the local hunting grounds) then the cities, which arrive with an empty
+            // Group — the same order the server sends them in.
+            string group = "";
             foreach (var dest in teleport.Destinations)
             {
+                if (dest.Group != group)
+                {
+                    group = dest.Group;
+                    if (group.Length > 0) AddDialogHeader(group);
+                }
                 string band = dest.MaxLevel > 0 ? $"  (Lv {dest.MinLevel}-{dest.MaxLevel})" : "";
+                string what = dest.Description.Length > 0 ? $"\n{dest.Description}" : "";
                 var btn = new Button
                 {
-                    Content = $"Travel to {dest.Name}{band}  —  {dest.Fee:N0} {GameConstants.CurrencyName}",
-                    Height = 28, HorizontalAlignment = HorizontalAlignment.Left,
+                    Content = $"Travel to {dest.Name}{band}  —  {dest.Fee:N0} {GameConstants.CurrencyName}{what}",
+                    MinHeight = 28, HorizontalAlignment = HorizontalAlignment.Left,
                     Margin = new Thickness(0, 2, 0, 4), Padding = new Thickness(8, 0, 8, 0),
                     IsEnabled = _gold >= dest.Fee
                 };
-                string zoneId = dest.ZoneId;
+                string zoneId = dest.DestId;
                 btn.Click += async (_, _) =>
                 {
                     await _net.TeleportAsync(_dialogNpcId, zoneId);

@@ -243,6 +243,29 @@ of these once fixed. Nothing here has been built yet.
 26k.[ ] **86-90 exists** — the Frostmere 85-90 field must actually spawn mobs at 86-90 (not all 85),
         and each Frostmere field's elite spawner should be close but not aggro you from the camp.
 
+### 🔴 0.33.0 — the world PLAN (camps, gates, managing cities)
+27a.[ ] **A camp holds ONE band, not a level spread** — stand in the level 1-4 camp west of Brackenford.
+        Every creature must be Ridgeback Pup or Fox, levels 1-4. **No Werewolves** (they are level 12 and
+        belong two camps away). Then check the 4-8 camp: Fox and Goblin Scout only.
+27b.[ ] **Camps are visibly separate** — walking from one camp to the next crosses ~1000 units of empty
+        ground, and nothing from the higher camp follows you into the lower one.
+27c.[ ] **Fields are off the town wall** — leaving Brackenford by any gate you walk ~1500 clear before the
+        field colour starts. Stepping out of town must never be stepping into a camp.
+27d.[ ] **The gatekeeper lists NAMED field gates** — talk to Gatekeeper Pell. Above the other cities there
+        should be a group per field ("Bracken Hollow", "Bracken Downs") with a row per camp, each naming its
+        band and its creatures ("Lv 8-12 · Goblin Scout, Ashen Wolf, Werewolf"). Levels and fee shown.
+27e.[ ] **Travel lands you at the gate, every time** — take the same gate twice. Both times you arrive on
+        the camp's **town-facing edge**, in the same spot (±150), looking into the camp. Never inside it,
+        never somewhere different.
+27f.[ ] **Each city offers its OWN fields** — Stonewatch's gatekeeper lists the three Stonewatch fields
+        (16-24 / 24-32 / 32-40) and NOT Brackenford's or Frostmere's.
+27g.[ ] **Death returns you to the managing city** — die on the far edge of a Stonewatch field (the side
+        facing Brackenford). You must wake in **Stonewatch**, the city that owns the field, not in whichever
+        town is closest. Dying in open ground between cities still uses nearest-town.
+27h.[ ] **The elite camp is a choice** — each Frostmere field's elite camp sits ~1500 beyond the top camp.
+        You should be able to farm the normal camp right up to its edge without the elite aggroing, and
+        have to walk in on purpose.
+
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends
         (and combat decays) it works. Same for `/exit`. Pulling the plug mid-DoT must not run the

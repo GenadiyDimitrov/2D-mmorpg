@@ -125,15 +125,15 @@ fully serviced · **the five-city world**. See the CHANGELOG entries for 0.29.x-
   on-screen tracker (3-5 max), `[details]` on every row.
 
 **World & mobs**
-- **Aggression pass** — all-aggro belongs to dungeons, instances and boss zones only. Elsewhere
-  make ONE mob type aggressive per zone; today a level-22 champion in a 22-28 zone is ganked by
-  casters plus melee and dies.
+- ✅ ~~**Aggression pass**~~ — authored per camp, ramped 0/1/2/3 by level (0.30.0, refined 0.33.0).
 - **Mob cast bar** — believed built, not showing.
-- **World re-layout** — 4-level fields (1-4, 4-8, … 88-89, 90), grouped under five cities
-  (1-16 starter with two fields · 16-40 · 40-60 · 60-75 · 76-90 with elite spawners at 80/84/90),
-  spacing between bands so they don't bleed, elite spawners near but out of aggro range
-  (1-1.5k), every city carrying vendors + keeper + gatekeeper, gatekeepers linking their own
-  fields and the other cities, dungeon gates inside the matching city.
+- ✅ ~~**World re-layout**~~ — DONE 0.33.0. Generated from `Game.Shared/WorldPlan.cs`: 4-level camps
+  (1-4, 4-8, … 88-89, 90) grouped into 2-3 fields per city under five cities, rosters chosen BY level
+  (so no level-12 Werewolf in the level-1 camp), 1000 rim-to-rim between camps, 1500 clear of the town
+  wall, elite camps 1500 out from their field's top camp, named teleport gates per camp, each field
+  owning a managing city that death returns you to. Two startup guards enforce all of it.
+- **Dungeon gates inside the matching city** — the last piece of the re-layout still open: every
+  gatekeeper currently offers Hollow Crypt, rather than only the city whose band matches it.
 
 **Skills & classes**
 - **Numeric skill/passive descriptions**, per learned level, including conditional lines
@@ -237,12 +237,14 @@ well as in memory.
 3. ✅ ~~Archer/rogue merge, gear ladder, aggression, quests, vendors, towns, five-city world~~ —
    DONE (0.29.0 → 0.30.0). APK **0.30.0 built and installed**, zero compile errors — which is what
    finally verified every Unity-side change from this run.
-4. 🔴 **DEVICE PLAYTEST — this is the next thing.** Ten versions of deep change are on the phone and
-   none of it has been played. The SmokeTest proves the server; it cannot prove the game.
-4. **The item/vendor batch** — rarity-out-of-name, descriptions, shop grades + prices, vendor UI,
-   warehouse grouping. They touch the same code and the same screens; splitting them costs more.
-5. **The quest batch** — detail window, level ranges, abandon, then repeatables and the quest
-   window's three tabs. The daily apothecary quest falls out of repeatables almost free.
-6. **Aggression pass**, then the **world re-layout** (the bigger of the two by far).
-7. **Tier 4 conveniences** — char delete, chat tabs, target visual, kill summary line.
-8. **3rd-class kits** the moment the CSVs land.
+4. ✅ ~~Item/vendor batch, quest markers + track/abandon, town layout~~ — DONE (0.30.x → 0.32.3).
+5. ✅ ~~**World re-layout**~~ — DONE (0.33.0). 4-level camps, named gates, managing cities, guards.
+6. 🔴 **DEVICE PLAYTEST — this is the next thing.** Everything from 0.28.92 to 0.33.0 is unplayed, and
+   the world it happens in was just rebuilt. The SmokeTest proves the server; it cannot prove the game.
+   **DELETE `Game.Server/game.db` first** — item ids, set ids and the whole spawn layout changed.
+   Checklist 26a-26k and the new **27a-27h**.
+7. **The quest batch's remainder** — repeatables, the three-tab quest window, per-quest detail with
+   accept/decline. The daily apothecary quest falls out of repeatables almost free.
+8. **Numeric skill descriptions**, then **Tier 4 conveniences** (char delete, chat tabs, target visual,
+   kill summary line).
+9. **3rd-class kits** the moment the CSVs land.

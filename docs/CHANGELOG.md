@@ -12,6 +12,60 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-30 — The overworld is a PLAN: 4-level camps, named gates, managing cities (0.33.0, protocol 8)
+
+*"How exactly am I supposed to kill a pig next to a werewolf? I wanted spawners to be close to level, not
+to coordinates."* A mob with a natural level brings its **own** level — the zone's band is only a hint — so
+the hand-listed 1-12 starter roster spawned Ridgeback Pups at 1 and Werewolves at 12 in the same circle.
+The world is now generated from an authored **plan** (`Game.Shared/WorldPlan.cs`), and the roster is chosen
+BY the band, which makes that impossible rather than merely discouraged.
+
+**The layout**
+
+- **4-level camps** (2 at the top), exactly the owner's `1-4, 4-8, 8-12 … 88-89, 90`. 27 normal camps + 3
+  elite camps replace the old 13 wide zones.
+- **Fields group camps under a city**: Brackenford 1-16 (2 fields), Stonewatch 16-40 (3), Greymarsh 40-60
+  (3), Ironreach 60-75 (3), Frostmere 76-90 (3, each with an elite camp at 80 / 84 / 90).
+- A field sits on a **bearing** from its city at a fixed distance, its camps marching along the arc — so
+  the whole field is one walk out, and levels step sideways rather than deeper. (Marching outward would put
+  the top camp ~6000 further out; with cities 13-15k apart that runs one city's fields into the next.)
+- **Camps are 1000 apart rim-to-rim** (past the 400 aggro range), **fields clear the town wall by 1500**
+  (*"the fields not to be exactly next to the city"*), and each **elite camp sits 1500 out from its
+  field's top camp** — rims 450 apart, so you can clear the normal camp to its edge without waking it.
+- Rosters, respawn cadence (8s → 32s by level) and the aggression ramp (0 types below 13, 1 to 40, 2 to 75,
+  3 at the endgame) are all **derived**. Aggression is still authorable per camp — a count, or an explicit
+  list of ids.
+- The lone hand-placed level-78 emberwyrm elite is gone; every Frostmere field generates its own.
+
+**Named teleport gates, and a managing city**
+
+- Every camp has a **named gate** on its town-facing rim: `Bracken Downs North — Lv 8-12 · Goblin Scout,
+  Ashen Wolf, Werewolf`. `Region.ArrivalPoints` (pick one at random) became `Region.Gates` — a
+  `TeleportPoint` with an id, a name and a description. Arriving in the middle of a level-90 camp was a
+  death, not a journey.
+- A **gatekeeper lists its own city's field gates first**, grouped by field, then the roads to the other
+  cities. `TeleportDest.ZoneId` → `DestId`, which now carries either a city id or a gate id (**protocol 8**),
+  plus `Description` and `Group`. A gate belonging to another city is refused — otherwise a gate id would be
+  a free warp anywhere on the map.
+- Every field records its **managing city**, and **death sends you there**, with nearest-town kept as the
+  failsafe for the places no city manages (open ground, the boss vale, a dungeon). Nearest-town alone was
+  wrong in the case that matters: fields reach ~7k and cities are 13-15k apart, so dying on a field's far
+  edge could wake you in a city whose gatekeeper cannot even send you back.
+
+**Structure**
+
+- `Towns.cs` is new and holds the safe zones, purely to break a static-init **cycle**: WorldMap's spawn
+  zones are generated from WorldPlan, which needs the city centres. `WorldMap.SafeZones` forwards, so no
+  call site changed. `RegionMap.Towns` now derives from the same list instead of re-listing all seven.
+- **Two startup guards** (`WorldPlan.ValidateLayout` / `ValidateLevelCoverage`) fail the boot on: a roster
+  member outside its band, an empty roster, camps too close, an elite inside aggro range or too far, a camp
+  inside the town gap, overlapping fields, and any level 1-90 with nowhere to earn it. The first run caught
+  four real clearance failures around Brackenford. A bearing is not a picture — none of this is visible in
+  the source.
+- 14 new SmokeTest assertions on the layout, plus an end-to-end gatekeeper test: talk, read the menu,
+  travel to a named gate, land on it (79 units), get charged, and be refused a foreign city's gate.
+- The startup region report now prints each field's managing city and its gates with descriptions.
+
 ## 2026-07-30 — NPCs stand on a diagonal; the quest !/? is twice the size (0.32.3)
 
 *"Make the NPCs that are on the same line (y level) and next to each other a bit diagonal. Now their

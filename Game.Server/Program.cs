@@ -100,6 +100,12 @@ try
     // with the offending coordinates rather than letting a field-less circle onto the map.
     Game.Shared.RegionMap.ValidateSpawnersInFields();
 
+    // The generated world layout: camp spacing, elite distance, town clearance, no overlapping fields, and
+    // every camp's roster inside its own level band (the "pig next to a werewolf" guard). A bearing is not
+    // a picture — none of this is visible in the source, and all of it is obvious only after walking there.
+    Game.Shared.WorldPlan.ValidateLayout();
+    Game.Shared.WorldPlan.ValidateLevelCoverage();
+
     // Enforce "no two neighbouring NPCs on the same screen line" (owner, playtest-13) — an overlapping
     // name plate hides the neighbour's quest "!"/"?" and is only visible on a phone.
     Game.Shared.WorldMap.ValidateNpcLabels();
