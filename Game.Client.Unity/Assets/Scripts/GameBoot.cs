@@ -309,9 +309,18 @@ namespace Game.Client
 
         public void CloseDialog() { Dialog = null; DialogNpcId = Guid.Empty; }
 
+        /// <summary>Accept / complete / change-class are NPC conversations: the server re-checks you are
+        /// standing in front of that specific NPC, so sending them without one is pointless and the guard
+        /// below drops them.
+        ///
+        /// ABANDON IS NOT. It is issued from the QUEST LOG, where there is no dialog open and
+        /// <see cref="DialogNpcId"/> is therefore <c>Guid.Empty</c> — so the guard swallowed it and the
+        /// button did nothing but show its confirmation (owner, playtest-14). The server's AbandonQuest
+        /// never reads the npc id at all.</summary>
         public async void QuestAction(string action, string id)
         {
-            if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;
+            if (Phase != ClientPhase.InWorld) return;
+            if (action != "abandon" && DialogNpcId == Guid.Empty) return;
             try { await _net.QuestActionAsync(action, id, DialogNpcId); }
             catch (Exception ex) { ClientLog.Warn("Quest: " + ex.Message); }
         }
@@ -935,14 +944,36 @@ namespace Game.Client
                     Main(() => { StatusMessage = refused; ClientLog.Warn(refused); });
                     return;
                 }
+                // Fetch the FRESH list BEFORE showing the select screen, then switch in ONE step.
+                //
+                // This used to flip the phase first and refresh after, which meant the select screen came
+                // up holding the array captured at LOGIN — so your level and class read stale for exactly
+                // one round trip (owner, playtest-13, and still visible in playtest-14). The server side
+                // was never the problem: GameHub.LeaveWorld already awaits the character SAVE, so the row
+                // on disk is correct by the time we get here. The only fault was drawing before asking.
+                //
+                // A failed list is not a reason to strand the player in a world we are about to clear —
+                // fall back to the array we have and switch anyway.
+                CharacterSlot[] fresh;
+                try
+                {
+                    var list = await _net.ListCharactersAsync();
+                    fresh = list.Characters ?? Array.Empty<CharacterSlot>();
+                }
+                catch (Exception ex)
+                {
+                    ClientLog.Warn("Leave (character list): " + ex.Message);
+                    fresh = Characters;
+                }
+
                 Main(() =>
                 {
                     if (Entities != null) Entities.Clear();
                     ResetWorldTransients();
+                    Characters = fresh;
                     Phase = ClientPhase.CharacterSelect;
                     StatusMessage = "Left the world.";
                 });
-                await RefreshCharacters();
             }
             catch (Exception ex) { ClientLog.Warn("Leave: " + ex.Message); }
         }

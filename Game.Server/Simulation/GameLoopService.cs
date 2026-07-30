@@ -6560,8 +6560,13 @@ var effect = def.Effect;
 
             if (earner is not null)
             {
+                // Open the reward tally so the exp pass and the gold pass land in ONE chat line.
+                _killTally = new Dictionary<Entity, (long Exp, long Sp, long Gold)>();
                 AwardKillExp(earner, victim);   // splits across contenders by damage share
                 RollDrop(earner, victim);       // drops go WHOLLY to the most damage
+                // After both, so the line carries the whole kill — and after RollDrop's loot lines,
+                // so the summary reads as the closing line of the kill rather than the opening one.
+                FlushKillTally();
                 // Kill-quest credit for the earner + every party member in range.
                 foreach (var m in KillCreditMembers(earner))
                     AdvanceKillQuests(m, victim);
@@ -6709,6 +6714,7 @@ var effect = def.Effect;
         if (eligible.Count <= 1)
         {
             killer.Gold += gold;
+            TallyReward(killer, 0, 0, gold);
             SendGold(killer);
             return;
         }
@@ -6716,7 +6722,9 @@ var effect = def.Effect;
         int remainder = gold - each * eligible.Count;
         foreach (var m in eligible)
         {
-            m.Gold += each + (m.Id == killer.Id ? remainder : 0);
+            int share = each + (m.Id == killer.Id ? remainder : 0);
+            m.Gold += share;
+            TallyReward(m, 0, 0, share);
             SendGold(m);
         }
     }
@@ -7026,13 +7034,48 @@ var effect = def.Effect;
         return best;
     }
 
+    // ----- The per-kill reward line ---------------------------------------------------------------
+    //
+    // "Exp: +eee, SP: +sss, Gold: +ggg" — one line per kill, per player (owner, playtest-14).
+    //
+    // Exp/SP and gold are banked by two unrelated paths (AwardKillExp -> AwardExp, and RollDrop ->
+    // AwardGold), each already looping over the in-range party members. Having either one announce its
+    // own share would produce two lines per member on a party kill, interleaved with the loot lines. So
+    // a kill OPENS a tally, both paths add into it, and one line per recipient is flushed at the end.
+    //
+    // The tally is null outside a kill, so the other AwardExp callers (quest rewards) can't feed it and
+    // don't need to know it exists.
+    private Dictionary<Entity, (long Exp, long Sp, long Gold)>? _killTally;
+
+    private void TallyReward(Entity p, long exp, long sp, long gold)
+    {
+        if (_killTally is null || p.Kind != EntityKind.Player) return;
+        _killTally.TryGetValue(p, out var t);
+        _killTally[p] = (t.Exp + exp, t.Sp + sp, t.Gold + gold);
+    }
+
+    /// <summary>Emit the one-line kill summary to everyone who earned something, then close the tally.
+    /// Called after BOTH the exp and the drop pass, so the numbers are the whole kill.</summary>
+    private void FlushKillTally()
+    {
+        if (_killTally is null) return;
+        foreach (var (p, t) in _killTally)
+        {
+            if (t.Exp <= 0 && t.Sp <= 0 && t.Gold <= 0) continue;
+            SendSystemToEntity(p,
+                $"Exp: +{t.Exp:N0}, SP: +{t.Sp:N0}, {GameConstants.CurrencyName}: +{t.Gold:N0}");
+        }
+        _killTally = null;
+    }
+
     /// <summary>Bank EXP (and optionally SP) on a player, applying the server rates and rolling any
     /// levels that result. Pass <paramref name="spAmount"/> = -1 to derive SP from the exp the old way
     /// (quest rewards, which carry no mob level of their own).</summary>
     private void AwardExp(Entity player, long amount, long spAmount = -1)
     {
         // Server rates scale progression (x10 exp for testing, etc.).
-        player.Exp += (long)(amount * RateConfig.ExpRate);
+        long expGained = (long)(amount * RateConfig.ExpRate);
+        player.Exp += expGained;
 
         long sp = spAmount >= 0
             ? (long)(spAmount * RateConfig.SpRate)
@@ -7043,7 +7086,11 @@ var effect = def.Effect;
         // item, and skills will then cost bottles + gold rather than raw SP. Because SP is drained into
         // bottles instead of piling up forever, the counter never needs to be a long. Roadmapped as
         // deferred — see docs/Roadmap.md. What must NEVER happen is silent wrapping to negative.
+        int spBefore = player.SkillPoints;
         player.SkillPoints = (int)Math.Min(int.MaxValue, player.SkillPoints + Math.Max(1L, sp));
+        // Report what was actually BANKED, not what was computed — at the saturation ceiling those
+        // differ, and a line claiming SP you did not receive is worse than no line.
+        TallyReward(player, expGained, player.SkillPoints - spBefore, 0);
 
         bool leveled = false;
         while (player.Level < LevelCapFor(player)

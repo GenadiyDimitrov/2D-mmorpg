@@ -12,6 +12,38 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-30 — Abandon actually abandons; char-select stops lying; the kill line (0.33.2)
+
+Playtest-14's two "not working" items and one of its asks. Protocol is **unchanged (8)** — all three
+ride existing messages.
+
+- **The Abandon button did nothing but show its confirmation.** `GameBoot.QuestAction` bailed out on
+  `DialogNpcId == Guid.Empty`, and Abandon is pressed from the QUEST LOG, where no dialog is open — so
+  the call was never sent. The guard is right for accept / complete / change-class (the server re-checks
+  you are standing in front of that specific NPC) and wrong for abandon, whose server handler never reads
+  the npc id at all. Now exempted by name.
+
+- **Char-select showed a stale level and class for one round trip.** `LeaveWorld` flipped the phase to
+  `CharacterSelect` and refreshed the list *after*, so the screen came up holding the array captured at
+  LOGIN. The server was never at fault — `GameHub.LeaveWorld` has awaited the character SAVE since
+  playtest-13, so the row on disk was already correct. The fault was drawing before asking. It now fetches
+  the list first and switches screens in one step; a failed fetch falls back to the old array and switches
+  anyway rather than stranding the player in a world that is about to be cleared.
+
+- **The kill line** — `Exp: +eee, SP: +sss, Gold: +ggg`, one per kill, per player. Exp/SP and gold are
+  banked by two unrelated paths (`AwardKillExp`→`AwardExp`, `RollDrop`→`AwardGold`), each already looping
+  over the in-range party members, so letting either announce its own share would print two lines per
+  member on a party kill, interleaved with the loot lines. A kill opens a tally, both paths add into it,
+  and one line per recipient is flushed after both — after the loot lines, so it reads as the kill's
+  closing line. The tally is null outside a kill, so quest exp can't feed it. SP is reported as what was
+  actually **banked**, not what was computed: those differ at the `int.MaxValue` saturation ceiling, and a
+  line claiming SP you did not receive is worse than no line.
+
+**Also confirmed, no code needed:** playtest-14 asked to make `/givegold` and the admin commands work on
+the phone. 0.33.1 already did it — `DebugGoldCmd` is an `IAdminCommand` gated at runtime by role, and the
+only `#if DEBUG` left in the server is account seeding and the destructive schema reset. The report was
+against the installed 0.30.1 APK, which predates the fix. The APK rebuild is what proves it.
+
 ## 2026-07-30 — The debug menu is an ADMIN menu: it works in release builds now (0.33.1)
 
 *"The server deploy on the phone made the #debug sections not working (you published it in release rather
