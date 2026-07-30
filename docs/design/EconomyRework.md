@@ -124,11 +124,19 @@ Other authored rules that check out exactly:
 The E-grade Common gauntlet — the level-25 playtest's trash — sold for **18.4k** and now sells for
 **4.5k**. With the 4× drop cut, trash gold at that level falls **~16×**.
 
-⚠ **Not the ~100× the report aimed at, and not the ~47× a first (wrong) reading of the price answer
-suggested.** Anchoring F/E/D at Rare instead of Mythic is the difference: it lifts every price above
-Common, and since sell = buy ÷ 25, a higher buy price gives back part of the sell cut. **If 16× is not
-enough, the lever is the drop rates or the Common multiplier — not the divisor**, because the divisor
-is pinned by the "25 Robes buys one Leathers" test.
+**That 16× is the TOTAL — both levers, not the sell side alone**: 4.1× (sell) × 4× (drop rate). It is
+easy to double-count the drop cut on top of it and get 68×.
+
+### 🎯 The owner's target: ~400k of trash gold by level 25
+
+Given the 3kk the playtest reported, that is a **7.5×** total cut. The plan as built gives **16.3×**
+(→ ~184k), so it currently **overshoots by ~2.2×**.
+
+**Do not tune for it yet.** Grade lock and the mutually-exclusive groups (§3) will move the number
+again, so build the drop side first and re-measure the real figure. If it still needs softening, the
+knob is the **Common price multiplier** (22.5 %) — raising it lifts sell price, though it also makes
+Common gear dearer to buy, which is already the flagged complaint below. The **÷25 divisor is pinned**
+by the "25 Robes buys one Leathers" test and is not the knob.
 
 ⚠ **Common gear now costs 1.84× MORE at the vendor** (E Common body 140k → 257k). That follows from
 the rarity scale — Common is 22.5/35 = 64 % of the Rare shop price where it used to be 35 % — but it
