@@ -18,8 +18,14 @@ public static class RateConfig
     public static float SpRate = 1f;
 
     /// <summary>Multiplier on each drop's CHANCE (x3 = three times as likely).
-    /// Result is clamped to 100%.</summary>
-    public static float DropChanceRate = 3f;
+    /// Result is clamped to 100%.
+    ///
+    /// **1, deliberately** (playtest-14 §2/§3, 2026-07-30). The owner authors drop rates as the numbers
+    /// he wants to SEE in game ("now roughly 20/12/5, target 5/2/0.2"), and he reads them off the target
+    /// window. At x3 the authored table was not the table: 5% became 15%, and — worse — the guaranteed
+    /// groups (mats 100%, always 100%, scrolls 70%) all saturated at the 100% clamp, which silently threw
+    /// away every weight inside them. The 1x table IS the design now; retune a mob's numbers, not this.</summary>
+    public static float DropChanceRate = 1f;
 
     /// <summary>Multiplier on each drop's QUANTITY (stack size).</summary>
     public static float DropAmountRate = 1f;

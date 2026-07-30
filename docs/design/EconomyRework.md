@@ -61,7 +61,7 @@ from the one ladder). So §1's "author an F tier" was mostly already done.
 The live drop path is `MobCatalog.StandardDrops`, which has always used the tiered `_t<level>_<rarity>`
 copies. Do not "fix" the drop tables to point away from it — there is nothing to repoint.
 
-## 2. Drop rates (playtest-14 §3, unchanged)
+## 2. Drop rates ✅ BUILT (0.34.1)
 
 | | Common | Uncommon | Rare | Epic | Recipe |
 |---|---|---|---|---|---|
@@ -71,17 +71,60 @@ copies. Do not "fix" the drop tables to point away from it — there is nothing 
 
 Roughly a **4× cut** on Common (20 % → 5 %).
 
-**Real drops are limited to Common / Uncommon / Rare.** Epic and above are craft/boss only.
+⚠ **These are per GROUP, not in total.** With four gear groups a normal kill yields *some* Common piece
+~20 % of the time — but spread over **18 item lines** instead of the 3 that used to drop, so any ONE
+piece is far rarer than before. That is the shape the owner asked for ("trading with other newbies
+should be the better route").
 
-## 3. Grade lock + drop groups (playtest-14 §4, unchanged)
+⚠ **`RateConfig.DropChanceRate` is now 1, not 3.** This is the load-bearing half of the rate change. The
+owner authors rates as what he wants to SEE (*"now roughly 20/12/5, target 5/2/0.2"*) and reads them off
+the target window; at ×3 the authored 5 % was really 15 %. Worse, the guaranteed groups (mats 100 %,
+always 100 %, scrolls 70 %) all hit the 100 % clamp, which silently discarded every weight inside them.
+Everything the owner did *not* specify — the rare-mat rungs, the Legendary attribute scroll — was
+multiplied by 3 in its authored value so only the specified numbers moved.
+
+**Epic drops at 0.01 % from normal mobs** (the owner's own column), but only from **E grade up**: §1 puts
+F at Common/Uncommon/Rare only. Legendary and Mythic stay boss-only.
+
+**Recipes are NOT dropped below A grade.** There is no item to drop — every recipe under level 76 is
+learned by LEVEL (`RecipeCatalog.DropOnly` is only set at 76+), so the owner's "below level 74 also drop
+a recipe at 0.1 %" needs recipe books authored for the lower grades first. Flagged, not faked.
+
+## 3. Grade lock + drop groups ✅ BUILT (0.34.1)
 
 A mob drops **only its own grade** — a level-40 mob drops D recipe/armor/weapon, never E or C. Group
 trigger chances and the inner rarity rolls are in the playtest doc's table.
 
-⚠ The group ENGINE already exists: `DropEntry.GroupId > 0` rolls once at the summed member chances then
-picks one weighted (`MobCatalog.cs`, resolved in `GameLoopService.cs` ~6640-6700). That is
-mathematically identical to the owner's "trigger 50 % then double the inner roll". What is missing is
-**more groups, the grade lock, and randomising across the slot family** — not a new mechanism.
+⚠ The group ENGINE already existed: `DropEntry.GroupId > 0` rolls once at the summed member chances then
+picks one weighted (`MobCatalog.cs`, resolved in `GameLoopService.cs` ~6650). That is mathematically
+identical to the owner's "trigger 50 % then double the inner roll", so a member's authored chance IS its
+marginal drop chance and the §2 table could be written straight in — no new mechanism was needed.
+
+**How it was built (`MobCatalog.GearDrops`):**
+- **Four gear groups** — Armor (heavy/light/robe) · Accessories (helm/gloves/boots/shield) ·
+  Weapons (all 8 lines) · Jewels (necklace/ring/earring). A hit randomises across the whole family, so
+  **where you farm no longer decides which armor weight or weapon line you can ever loot.** The old
+  category flavour (Undead → robe+wand) is gone for GEAR; mats keep theirs.
+- **The grade lock is `GearTier(level)`** — a mob offers exactly ONE tier (1/20/40/52/61/76), so there
+  is nothing to lock out. S (80) is deliberately absent: S is top-half-only and stays craft/boss.
+- A group id is `10 + family*10 + (int)rarity` — **one group per rarity RUNG.** That is what lets the
+  boss row (E 70 + L 40 + M 2 = 112 %) pay out several pieces while each rung still randomises across the
+  family. Cost for a normal mob: a 0.1 % chance of both a Common and an Uncommon armor off one kill.
+- **Elite and boss REPLACE the gear half at kill time**, in `RollDrop` — rank is a property of the SPAWN
+  (the zone assigns it), not of the template, so it cannot live in the baked table. `RollBossBonus` keeps
+  the mat pile and now rolls the owner's recipe numbers (boss armor 50 / weapon 40 / jewel 60, elite 0.1),
+  but no longer decides gear itself.
+- **Broken jewels are out of the drop tables** — §1 makes the F Common jewels that line, and the Jewel
+  group drops them from level 1. The items stay in the catalog and on the starter vendor's shelf.
+- **Mats: one stack per kill and the roll IS the amount** (50 % → 1, 40 % → 2, 9 % → 4, 1 % → 10),
+  authored as one group member per (type, amount) so the existing weighted pick resolves both at once.
+- **Scrolls (70 %)**: half an enchant scroll of the grade, half a buff potion; rungs unlock at level
+  20 / 45. **Always (100 %)**: a healing potion / return scroll / resurrection scroll, C 70 · U 30, and
+  C 55 · U 40 · R 5 from level 75 where the Ultimate scrolls join. Measured, these are ~7 % of trash
+  income — the buff potions do not re-open the faucet through a second pipe.
+- The **target-inspect drop list** now collapses each group to one line. Not cosmetic: a mob carries ~97
+  entries now, and 97 near-identical 0.6 % rows told the player nothing. One line per group is also more
+  truthful — the 5 % really is one roll shared across the family.
 
 ## 4. Sell prices — **sell = buy ÷ 25** ✅ BUILT
 
@@ -160,16 +203,37 @@ The E-grade Common gauntlet — the level-25 playtest's trash — sold for **18.
 **That 16× is the TOTAL — both levers, not the sell side alone**: 4.1× (sell) × 4× (drop rate). It is
 easy to double-count the drop cut on top of it and get 68×.
 
-### 🎯 The owner's target: ~400k of trash gold by level 25
+### 🎯 The owner's target: ~400k of trash gold by level 25 — ✅ **HIT, 403k** (measured 0.34.1)
 
-Given the 3kk the playtest reported, that is a **7.5×** total cut. The plan as built gives **16.3×**
-(→ ~184k), so it currently **overshoots by ~2.2×**.
+The ~184k / "overshoots by 2.2×" figure that used to stand here was the PRICE side alone; the drop side
+moved it back up, exactly as this section predicted it would. Measured on the built catalog by
+`tools/BalanceMatrix` (§ ECONOMY), which resolves the real drop tables with the real group math and the
+real vendor prices:
 
-**Do not tune for it yet.** Grade lock and the mutually-exclusive groups (§3) will move the number
-again, so build the drop side first and re-measure the real figure. If it still needs softening, the
-knob is the **Common price multiplier** (22.5 %) — raising it lifts sell price, though it also makes
-Common gear dearer to buy, which is already the flagged complaint below. The **÷25 divisor is pinned**
-by the "25 Robes buys one Leathers" test and is not the knob.
+| level reached | kills (live ×10 exp) | trash gold sold |
+|---|---|---|
+| 11 | 8 | 2.5k |
+| 21 | 75 | 81k |
+| **26** | **168** | **403k** ← target was ~400k |
+| 41 | 753 | 2.9M |
+| 62 | 2,132 | 51M |
+| 86 | 63,175 | 10.5B |
+
+Per kill at level 25: **3,477 gold** — gear 2,989 · consumables 261 · coin 225 · mats 2.
+
+The model assumes he vendors everything and kills his own level, which is what "3kk purely from selling
+trash" described. Validation anchor: the tool prices the E Common gauntlet at **sell 4,500**, identical
+to the figure measured for the price half in 0.33.3 — so the price path is the same one, and only the
+drop side is new arithmetic.
+
+⚠ **The top of the curve is steep on purpose** — 51M by 61, 10.5B by 85. That is the owner's own
+*"gold farming stays meaningful only at the top grades"*, and it follows from A-grade Common body armor
+selling for 648k. Worth confirming he means it at that magnitude; it is one number (the grade's 2H cell)
+to retune if not.
+
+If it ever needs softening again the knob is the **Common price multiplier** (22.5 %) — raising it lifts
+sell price, though it also makes Common gear dearer to buy, which is the flagged complaint below. The
+**÷25 divisor is pinned** by the "25 Robes buys one Leathers" test and is not the knob.
 
 ⚠ **Common gear now costs 1.84× MORE at the vendor** (E Common body 140k → 257k). That follows from
 the rarity scale — Common is 22.5/35 = 64 % of the Rare shop price where it used to be 35 % — but it
@@ -211,14 +275,10 @@ half that**, so rarity moves price less than it moves power:
 at F-D), so Mythic is derived *above* it, not equal to it. This is the single most load-bearing fact
 in §5 — reading it the other way moves every price by 2.86× and halves the faucet fix.
 
-## Still open (batch 2 proper — the drop side)
+## Still open
 
-- **The rates in §2** (5 % / 2 % / 0.2 % / 0.01 %, elite and boss columns) — deliberately NOT applied in
-  0.34.0. Today's chances (4 % / 1.5 % / 0.4 % body, 2.5 % / 1 % weapon, 3 % helm) are untouched, so the
-  rate decision is still open and un-pre-empted. §2 and §3 are the SAME edit.
-- **Grade LOCK (§3)** — a mob still drops only its own tier via `GearTier(level)`, but that is a *floor*
-  mapping, not the authored lock, and the slot family is still `cat`-derived rather than randomised
-  across the family.
+- **Recipe drops below A grade** (§2's "below level 74 also drop a recipe at 0.1 %"). No item exists to
+  drop — recipes under 76 are learned by level, not found. Needs recipe books authored for F–B first.
 - **Delete the training gear entirely?** Not done, and now arguably unnecessary: with the armor re-cut,
   the training kit reads as a deliberate worst rung rather than a parallel line. The owner's §1 wording
   ("delete the training gear, replace with an untradable Common") would give the same *shape*; the
@@ -242,3 +302,10 @@ in §5 — reading it the other way moves every price by 2.86× and halves the f
 - `ItemCatalog.RarityPriceMul` — 22.5 / 27.5 / 35 / 35 / 42.5 / 100 %.
 - `ItemCatalog.SellPrice` — tiered gear takes `buy ÷ GearSellDivisor`; everything else keeps
   `VendorSellFraction`.
+- `MobCatalog.GearDrops(level, rank)` — the §2/§3 rate table × the four slot families. `StandardDrops`
+  bakes the Normal row into each template; `GameLoopService.RollDrop` swaps in the Elite/Boss row.
+- `MobCatalog.NormalGearRates` / `EliteGearRates` / `BossGearRates` — the three §2 columns, one place.
+  ⚠ They are **properties, not fields**: `All = Build()` is declared first and would read a null field.
+- `RateConfig.DropChanceRate` — now 1. See §2.
+- `tools/BalanceMatrix` § ECONOMY — the measurement. **Re-run it after touching any of the above**; the
+  faucet arithmetic multiplies and has been hand-derived wrong twice.

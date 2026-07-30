@@ -6650,6 +6650,16 @@ var effect = def.Effect;
         // sharing a GroupId > 0 form a mutually-exclusive group (roll once, pick one weighted).
         var applicable = mobType.Drops.Where(e => e.AppliesAtLevel(mob.Level)).ToList();
 
+        // ELITE and BOSS kills REPLACE the gear half of the table with their own rank row (playtest-14
+        // §3) — the elite column has no Common rung at all, and the boss column is Epic/Legendary/Mythic.
+        // Rank is a property of the SPAWN (the zone assigns it), not of the template, so it can only be
+        // applied here; mats, scrolls and the always-group are untouched and still roll.
+        if (mob.Rank != MobRank.Normal)
+        {
+            applicable.RemoveAll(e => MobCatalog.IsGearGroup(e.GroupId));
+            applicable.AddRange(MobCatalog.GearDrops(mob.Level, mob.Rank));
+        }
+
         // Everyone who received something this kill (refresh their inventory once at the end).
         var touched = new HashSet<Entity>();
         void Award(DropEntry entry)
@@ -6786,24 +6796,34 @@ var effect = def.Effect;
         if (boss && mob.Level >= 30 && _rng.NextDouble() < 0.5) GiveMat(primary, ItemRarity.Rare, 1);
         if (boss && mob.Level >= 76 && _rng.NextDouble() < 0.2) GiveMat(primary, ItemRarity.Epic, 1);
 
-        // A chance at a gear body by family: a BOSS drops the finished Epic SET piece; an ELITE
-        // drops the weaker scaled Rare copy (the full set stays a boss/craft goal).
-        string weight = mobType.Category switch
+        // The GEAR a boss or elite drops is no longer decided here — RollDrop swaps the normal gear groups
+        // for MobCatalog.GearDrops(level, rank), which is the owner's §3 rank table (elite U 10 / R 2 /
+        // E 0.2; boss E 70 / L 40 / M 2) across all four slot families. What stays here is the mat pile
+        // above and the RECIPE roll below, neither of which is a per-slot rarity roll.
+
+        // RECIPE BOOKS (§3: boss armor 50% / weapon 40% / jewel 60%, elite 0.1%). Books only EXIST from
+        // A grade up — every recipe below 76 is learned by LEVEL, not found (RecipeCatalog.DropOnly), so
+        // there is no item to drop for the owner's "below level 74 also drop a recipe at 0.1%". That rung
+        // needs recipe books authored for the lower grades first; flagged, not faked.
+        if (tier >= 76)
         {
-            MobCategory.Undead or MobCategory.Angel or MobCategory.MagicCreature => "robe",
-            MobCategory.Animal or MobCategory.Plant or MobCategory.Insect => "light",
-            _ => "heavy",
-        };
-        if (boss)
-        {
-            if (_rng.NextDouble() < 0.5) AddItem(recipient, $"{weight}_t{tier}");
-            // A-grade (76) bosses can drop a DropOnly recipe BOOK for the tier's set body.
-            if (tier >= 76 && _rng.NextDouble() < 0.10)
-                AddItem(recipient, ItemCatalog.RecipeBookId($"craft_{weight}_t{tier}"));
-        }
-        else if (_rng.NextDouble() < 0.20)
-        {
-            AddItem(recipient, $"{weight}_t{tier}_rare");
+            string PickRecipe(params string[] keys) =>
+                ItemCatalog.RecipeBookId($"craft_{keys[_rng.Next(keys.Length)]}_t{tier}");
+            void RecipeRoll(float chance, params string[] keys)
+            {
+                if (_rng.NextDouble() < chance) AddItem(recipient, PickRecipe(keys));
+            }
+            if (boss)
+            {
+                RecipeRoll(0.50f, "heavy", "light", "robe", "helm", "gloves", "boots", "shield");
+                RecipeRoll(0.40f, "sword1h", "sword2h", "blunt1h", "blunt2h", "duals", "bow", "wand", "staff");
+                RecipeRoll(0.60f, "necklace", "ring", "earring");
+            }
+            else
+            {
+                RecipeRoll(0.001f, "heavy", "light", "robe", "sword1h", "sword2h", "bow", "wand",
+                    "necklace", "ring", "earring");
+            }
         }
 
         SendSystemToEntity(recipient, $"{mob.Name} dropped crafting materials!");
@@ -7933,18 +7953,37 @@ var effect = def.Effect;
         // EFFECTIVE one (after the global drop-rate). Computed ONLY when the client asks (the [Details]
         // click sets WithDrops) — the 1s refresh loop leaves it false, so the static drop table isn't
         // re-resolved and re-serialized every second for every player inspecting a mob.
+        //
+        // GROUPED entries are collapsed to ONE line per group, showing the group's own chance and the
+        // items it can pick between. That is not cosmetic: since the drop rework a mob carries ~97 entries
+        // (four slot families x four qualities x every line in the family), and listing them raw gave a
+        // 97-row popup of near-identical 0.6% lines that told the player nothing. One line per group —
+        // "Leathers / Bulwark / Robe (5%)" — is both shorter AND more truthful, because the 5% really is
+        // one roll shared between them, not three independent ones.
         string[]? drops = null;
         if (cmd.WithDrops && isMob && t.MobTypeId is not null && MobCatalog.Get(t.MobTypeId).Drops is { } table)
-            drops = table
-                .Where(d => d.AppliesAtLevel(t.Level))
-                .Select(d =>
-                {
-                    float chance = Math.Min(1f, d.Chance * RateConfig.DropChanceRate);
-                    string name = ItemCatalog.Get(d.ItemId)?.Name ?? d.ItemId;
-                    string qty = d.MaxQty > 1 ? $" x{d.MinQty}-{d.MaxQty}" : "";
-                    return $"{name}{qty}  ({chance * 100:0.#}%)";
-                })
+        {
+            var rows = table.Where(d => d.AppliesAtLevel(t.Level)).ToList();
+            if (t.Rank != MobRank.Normal)
+            {
+                rows.RemoveAll(d => MobCatalog.IsGearGroup(d.GroupId));
+                rows.AddRange(MobCatalog.GearDrops(t.Level, t.Rank));
+            }
+            string Line(IEnumerable<DropEntry> members, float rawChance)
+            {
+                var list = members.ToList();
+                float chance = Math.Min(1f, rawChance * RateConfig.DropChanceRate);
+                string names = string.Join(" / ", list
+                    .Select(d => ItemCatalog.Get(d.ItemId)?.Name ?? d.ItemId).Distinct());
+                int lo = list.Min(d => d.MinQty), hi = list.Max(d => d.MaxQty);
+                string qty = hi > 1 ? $" x{lo}-{hi}" : "";
+                return $"{names}{qty}  ({chance * 100:0.##}%)";
+            }
+            drops = rows.Where(d => d.GroupId == 0).Select(d => Line(new[] { d }, d.Chance))
+                .Concat(rows.Where(d => d.GroupId != 0).GroupBy(d => d.GroupId)
+                    .Select(g => Line(g, g.Sum(d => d.Chance))))
                 .ToArray();
+        }
 
         var (hpReg, mpReg) = StandingRegen(t);
         SendTo(player, "TargetDetails", new TargetDetails(

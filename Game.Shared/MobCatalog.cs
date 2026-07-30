@@ -138,10 +138,124 @@ public static class MobCatalog
 
     /// <summary>Nearest gear TIER (1/20/40/52/61/76) a mob's level drops — the level-appropriate set.
     /// The bottom rung is the F tier at level 1: it used to FLOOR at 20, which is why gear drops had to
-    /// be gated away from low-level mobs entirely (a level-8 mob dropping E-grade gear).</summary>
+    /// be gated away from low-level mobs entirely (a level-8 mob dropping E-grade gear).
+    ///
+    /// This IS the GRADE LOCK (playtest-14 §4, "a level-40 mob drops D — never E or C"): a mob offers
+    /// exactly ONE tier, so there is nothing to lock out. S (level 80) is deliberately absent — S carries
+    /// only the top half of the quality ladder and stays craft/boss-only.</summary>
     private static int GearTier(int level) =>
         level >= 76 ? 76 : level >= 61 ? 61 : level >= 52 ? 52 : level >= 40 ? 40
         : level >= 20 ? 20 : ItemCatalog.FGradeLevel;
+
+    // ===================================================================
+    //  DROP GROUPS (playtest-14 §4)
+    // ===================================================================
+    // Every gear group is MUTUALLY EXCLUSIVE, so one kill yields at most one armor body, one accessory,
+    // one weapon and one jewel — never "20 light armors off one lucky kill" (owner).
+    //
+    // The engine rolls a group once at the SUM of its members' chances and then picks ONE member weighted
+    // by that chance, which means a member's authored chance IS its marginal drop chance. So authoring the
+    // §2 rate divided across the slot family reproduces the owner's "trigger % -> rarity roll -> randomise
+    // the slot" exactly, with no new mechanism: his Armor row (50% x C 10 / U 4 / R 0.4 / E 0.02) and the
+    // §3 target (C 5 / U 2 / R 0.2 / E 0.01) are the same numbers, and §3 is the one written here.
+    //
+    // A gear group id is `10 + family*10 + (int)rarity` — one group PER RARITY RUNG. That is what lets a
+    // BOSS row whose chances sum past 100% (E 70 + L 40 + M 2) drop several pieces while each rung still
+    // randomises across the family. For a normal mob the cost is a 0.1% chance of both a Common and an
+    // Uncommon armor off one kill, which is not the failure mode the groups exist to prevent.
+    public const int GroupMats = 1, GroupScrolls = 2, GroupAlways = 3;
+    private const int FamilyArmor = 0, FamilyAccessory = 1, FamilyWeapon = 2, FamilyJewel = 3;
+
+    private static int GearGroupId(int family, ItemRarity rarity) => 10 + family * 10 + (int)rarity;
+
+    /// <summary>Is this drop group one of the four GEAR groups? Elite and boss kills REPLACE the normal
+    /// gear table with their own rank row (§3), so the drop roll has to tell gear from mats/consumables.</summary>
+    public static bool IsGearGroup(int groupId) => groupId >= 10;
+
+    // The tables below are PROPERTIES, not static readonly fields, and that is load-bearing: `All =
+    // Build()` is declared at the top of this class and C# runs static field initializers in declaration
+    // order, so any field declared here would still be null when Build() reaches StandardDrops. Same
+    // trick, same reason, as ItemCatalog.DropTiers.
+
+    // The slot FAMILY behind each gear group. A hit randomises across the whole family (owner), so where
+    // you farm no longer decides which armor weight or weapon line you are able to loot at all.
+    private static (int Family, string[] Keys)[] GearFamilies => new[]
+    {
+        (FamilyArmor,     new[] { "heavy", "light", "robe" }),
+        (FamilyAccessory, new[] { "helm", "gloves", "boots", "shield" }),
+        (FamilyWeapon,    new[] { "sword1h", "sword2h", "blunt1h", "blunt2h", "duals", "bow", "wand", "staff" }),
+        (FamilyJewel,     new[] { "necklace", "ring", "earring" }),
+    };
+
+    /// <summary>NORMAL mobs (playtest-14 §3). Per GROUP, not in total — four groups means ~20% of kills
+    /// yield some Common piece, spread over 18 item lines instead of the 3 that used to drop.</summary>
+    private static (ItemRarity Rarity, float Chance)[] NormalGearRates => new[]
+    {
+        (ItemRarity.Common,   0.050f),
+        (ItemRarity.Uncommon, 0.020f),
+        (ItemRarity.Rare,     0.002f),
+        (ItemRarity.Epic,     0.0001f),
+    };
+
+    /// <summary>ELITE / dungeon / instance (§3): no Common rung at all, and a full band better.</summary>
+    private static (ItemRarity Rarity, float Chance)[] EliteGearRates => new[]
+    {
+        (ItemRarity.Uncommon, 0.100f),
+        (ItemRarity.Rare,     0.020f),
+        (ItemRarity.Epic,     0.002f),
+    };
+
+    /// <summary>BOSS (§3). Sums past 100% on purpose — a boss is meant to pay out several pieces, which
+    /// the per-rung grouping allows (each rung rolls on its own).</summary>
+    private static (ItemRarity Rarity, float Chance)[] BossGearRates => new[]
+    {
+        (ItemRarity.Epic,      0.70f),
+        (ItemRarity.Legendary, 0.40f),
+        (ItemRarity.Mythic,    0.02f),
+    };
+
+    /// <summary>The tiered item id for a slot key at a grade + quality. MYTHIC is the AUTHORED piece, so
+    /// it carries no rarity suffix — the scaled copies are what get one.</summary>
+    private static string TieredId(string key, int tier, ItemRarity rarity) =>
+        rarity == ItemRarity.Mythic ? $"{key}_t{tier}"
+        : $"{key}_t{tier}_{rarity.ToString().ToLowerInvariant()}";
+
+    /// <summary>Which qualities a mob of this level may drop. Rarity is introduced BY MOB LEVEL (owner,
+    /// §1) so the first hour has somewhere to go, and EPIC and above are held to E grade and up — F is
+    /// Common/Uncommon/Rare only, because F gear is worn for under an hour.</summary>
+    private static bool RarityDrops(ItemRarity r, int level, int tier) => r switch
+    {
+        ItemRarity.Common => true,
+        ItemRarity.Uncommon => level >= 5,
+        ItemRarity.Rare => level >= 10,
+        // The MYTHIC rung is the AUTHORED piece, which exists at every tier including F — so a boss below
+        // E grade still has something to pay out instead of dropping nothing but a mat pile.
+        ItemRarity.Mythic => true,
+        _ => tier >= 20,
+    };
+
+    /// <summary>The GEAR half of a mob's drop table at one level and rank. Normal-rank entries are baked
+    /// into the template (below); Elite and Boss are built at KILL time by the drop roll, because rank is
+    /// a property of the SPAWN — the zone assigns it — and not of the template.</summary>
+    public static IEnumerable<DropEntry> GearDrops(int level, MobRank rank)
+    {
+        int tier = GearTier(level);
+        var rates = rank switch
+        {
+            MobRank.Boss => BossGearRates,
+            MobRank.Elite => EliteGearRates,
+            _ => NormalGearRates,
+        };
+        foreach (var (family, keys) in GearFamilies)
+            foreach (var (rarity, chance) in rates)
+            {
+                if (!RarityDrops(rarity, level, tier)) continue;
+                float each = chance / keys.Length;
+                foreach (var key in keys)
+                    yield return new DropEntry(TieredId(key, tier, rarity), each,
+                        GroupId: GearGroupId(family, rarity));
+            }
+    }
 
     /// <summary>MATS-PRIMARY drop table (docs/design/Crafting.md): every mob drops crafting materials
     /// (amount rises with level; rarity gates at 30/60/76 = uncommon/rare/epic), family-flavored mat
@@ -149,13 +263,8 @@ public static class MobCatalog
     /// Bosses layer more via zone rank. Retune via chances or the global RateConfig.</summary>
     private static DropEntry[] StandardDrops(int level, MobCategory cat)
     {
-        string potion = level >= 60 ? ItemCatalog.GreaterPotion
-                      : level >= 30 ? ItemCatalog.HealingPotion
-                      : ItemCatalog.MinorPotion;
-        string scroll = level >= 45 ? ItemCatalog.ScrollRare
-                      : level >= 20 ? ItemCatalog.ScrollUncommon
-                      : ItemCatalog.ScrollCommon;
-        // Family-flavored primary mat types (+ Gem is universal).
+        // Family-flavored primary mat types (+ Gem is universal). The mats keep their category flavor —
+        // only the GEAR families were randomised (owner, §4); what a wolf is made of is not a slot roll.
         (MaterialType A, MaterialType B) mats = cat switch
         {
             MobCategory.Animal or MobCategory.Plant => (MaterialType.Leather, MaterialType.Wood),
@@ -166,70 +275,74 @@ public static class MobCatalog
             _ => (MaterialType.Gem, MaterialType.Wood),   // MagicCreature / Angel
         };
         string Mat(MaterialType type, ItemRarity r) => Crafting.MaterialId(type, r);
-        int matMax = 1 + level / 15;   // amount rises with mob level (L15→2 … L75→6)
 
-        var drops = new List<DropEntry>
-        {
-            new(potion, 0.30f, 1, level >= 30 ? 2 : 1),
-            new(scroll, 0.06f),
-            // Common materials — the MAIN loot.
-            new(Mat(mats.A, ItemRarity.Common), 0.55f, 1, matMax),
-            new(Mat(mats.B, ItemRarity.Common), 0.40f, 1, matMax),
-            new(Mat(MaterialType.Gem, ItemRarity.Common), 0.20f, 1, Math.Max(1, matMax / 2)),
-        };
-        // Higher-rarity mats gated by mob level (low → very low chances).
-        if (level >= 30) { drops.Add(new(Mat(mats.A, ItemRarity.Uncommon), 0.08f)); drops.Add(new(Mat(mats.B, ItemRarity.Uncommon), 0.05f)); }
-        if (level >= 60) drops.Add(new(Mat(mats.A, ItemRarity.Rare), 0.03f));
-        if (level >= 76) drops.Add(new(Mat(mats.A, ItemRarity.Epic), 0.005f));
+        var drops = new List<DropEntry>();
 
-        // BROKEN jewels — the level 1-5 line (owner, 2026-07-24). A new character no longer starts with
-        // any jewels, so these are the first accessory anyone owns: earned off the mobs in the starting
-        // zones, or bought cheaply. One mutually-exclusive GROUP, so a kill yields at most one piece.
-        if (level <= 5)
+        // ---- MATS (§4): every kill yields exactly one material stack, and THE ROLL IS THE AMOUNT
+        //      (owner: "roll the material and let rarity BE the amount"). 50% -> 1, 40% -> 2, 9% -> 4,
+        //      1% -> 10, authored as one member per (type, amount) so the existing weighted group picks
+        //      both in a single roll. The three types share the weight, so the group totals exactly 1.0.
+        var matRungs = new (int Qty, float Weight)[] { (1, 0.50f), (2, 0.40f), (4, 0.09f), (10, 0.01f) };
+        var matTypes = new[] { mats.A, mats.B, MaterialType.Gem };
+        foreach (var type in matTypes)
+            foreach (var (qty, w) in matRungs)
+                drops.Add(new(Mat(type, ItemRarity.Common), w / matTypes.Length, qty, qty, GroupId: GroupMats));
+
+        // Higher-rarity mats stay INDEPENDENT low-chance rolls, gated by mob level. Their chances are the
+        // old ones x3 on purpose: DropChanceRate went 3 -> 1 in the same change, and only what the owner
+        // actually specified should move — a silent 3x cut to crafting mats is not part of the ask.
+        if (level >= 30) { drops.Add(new(Mat(mats.A, ItemRarity.Uncommon), 0.24f)); drops.Add(new(Mat(mats.B, ItemRarity.Uncommon), 0.15f)); }
+        if (level >= 60) drops.Add(new(Mat(mats.A, ItemRarity.Rare), 0.09f));
+        if (level >= 76) drops.Add(new(Mat(mats.A, ItemRarity.Epic), 0.015f));
+
+        // ---- SCROLLS (§4): one per trigger at C 40 / U 20 / R 10 — half an enchant scroll of the grade,
+        //      half a BUFF potion (never a healing one; those are the Always group's job). The rungs
+        //      unlock on the thresholds the enchant-scroll tier already used (20 / 45): a level-3 mob has
+        //      no business handing out a Rare enchant scroll.
+        void ScrollRung(float weight, string enchant, string[] buffs)
         {
-            drops.Add(new(ItemCatalog.BrokenEarring, 0.04f, GroupId: 3));
-            drops.Add(new(ItemCatalog.BrokenRing, 0.04f, GroupId: 3));
-            drops.Add(new(ItemCatalog.BrokenNecklace, 0.02f, GroupId: 3));
+            drops.Add(new(enchant, weight * 0.5f, GroupId: GroupScrolls));
+            foreach (var b in buffs)
+                drops.Add(new(b, weight * 0.5f / buffs.Length, GroupId: GroupScrolls));
         }
+        ScrollRung(0.40f, ItemCatalog.ScrollCommon,
+            new[] { ItemCatalog.SpeedPotionC, ItemCatalog.CastPotionC, ItemCatalog.AtkPotionC });
+        if (level >= 20)
+            ScrollRung(0.20f, ItemCatalog.ScrollUncommon,
+                new[] { ItemCatalog.SpeedPotionU, ItemCatalog.CastPotionU, ItemCatalog.AtkPotionU });
+        if (level >= 45)
+            ScrollRung(0.10f, ItemCatalog.ScrollRare,
+                new[] { ItemCatalog.SpeedPotionR, ItemCatalog.CastPotionR, ItemCatalog.AtkPotionR });
 
-        // Usable-now GEAR drops: the SCALED Common/Uncommon/Rare copies of the mob's tier gear
-        // (the full Epic set stays craft/boss-only). Family weight picks the body + weapon flavor.
-        //
-        // The old level-18 gate is GONE, and this is why: it existed because GearTier() floored every
-        // level below 40 to the level-20 (E) tier, so a level-8 mob dropped gear a whole grade ahead of
-        // the character killing it (owner: "a lvl-8 mob drops E-grade gear"). The fix is the F tier
-        // being part of the one ladder now — a low mob drops F gear, which is what it should always have
-        // dropped. Levels 1-19 no longer have mats-and-nothing-else as their entire loot table.
-        //
-        // RARITY is gated by MOB LEVEL instead (owner, playtest-14 §1): Common from level 1, Uncommon
-        // from 5, Rare from 10. Rarity is introduced as the character meets it rather than all at once,
-        // so the first hour has somewhere to go.
+        // ---- ALWAYS (§4): every kill yields one consumable — a healing potion, a return scroll or a
+        //      resurrection scroll. C 70 / U 30 below level 75, C 55 / U 40 / R 5 from 75, where the Rare
+        //      rung adds the Greater potion and the two Ultimate scrolls. The potion TIER still tracks the
+        //      mob's level (Minor / Healing / Greater), so the rarity rung is which of the two you get,
+        //      not a level-70 mob handing out Minor potions.
+        string potLow = level >= 60 ? ItemCatalog.GreaterPotion
+                      : level >= 30 ? ItemCatalog.HealingPotion
+                      : ItemCatalog.MinorPotion;
+        string potHigh = level >= 30 ? ItemCatalog.GreaterPotion : ItemCatalog.HealingPotion;
+        bool topLevel = level >= 75;
+        void AlwaysRung(float weight, int maxQty, params string[] items)
         {
-            int tier = GearTier(level);
-            (string Body, string Weapon) fam = cat switch
-            {
-                MobCategory.Undead or MobCategory.Angel or MobCategory.MagicCreature => ("robe", "wand"),
-                MobCategory.Animal or MobCategory.Plant or MobCategory.Insect => ("light", "bow"),
-                _ => ("heavy", "sword1h"),
-            };
-            const int UncommonFromLevel = 5;
-            const int RareFromLevel = 10;
-
-            // Body armor + weapon, at each drop rarity. Each is a mutually-exclusive drop GROUP
-            // (GroupId 1 = body, 2 = weapon), so a kill yields at most one body and one weapon — the
-            // rarer copy is a weighted chance within the group, not a stack of three bodies.
-            drops.Add(new($"{fam.Body}_t{tier}_common", 0.040f, GroupId: 1));
-            if (level >= UncommonFromLevel)
-                drops.Add(new($"{fam.Body}_t{tier}_uncommon", 0.015f, GroupId: 1));
-            if (level >= RareFromLevel)
-                drops.Add(new($"{fam.Body}_t{tier}_rare", 0.004f, GroupId: 1));
-            drops.Add(new($"{fam.Weapon}_t{tier}_common", 0.025f, GroupId: 2));
-            if (level >= UncommonFromLevel)
-                drops.Add(new($"{fam.Weapon}_t{tier}_uncommon", 0.010f, GroupId: 2));
-            // A scaled accessory (helm) rounds out the set slots (independent roll).
-            drops.Add(new($"helm_t{tier}_common", 0.030f));
+            foreach (var i in items)
+                drops.Add(new(i, weight / items.Length, 1, maxQty, GroupId: GroupAlways));
         }
-        if (level >= 70) drops.Add(new(ItemCatalog.AttrScrollLegendary, 0.01f));
+        AlwaysRung(topLevel ? 0.55f : 0.70f, level >= 30 ? 2 : 1, potLow, ItemCatalog.ScrollReturn);
+        AlwaysRung(topLevel ? 0.40f : 0.30f, 1, potHigh, ItemCatalog.ScrollResurrect);
+        if (topLevel)
+            AlwaysRung(0.05f, 1, ItemCatalog.GreaterPotion,
+                ItemCatalog.ScrollReturnUltimate, ItemCatalog.ScrollResurrectUltimate);
+
+        // ---- GEAR (§2/§3/§4): the four grade-locked, slot-randomised groups. The BROKEN jewels that
+        //      used to be the level 1-5 accessory line are gone from here — §1 makes the F Common jewels
+        //      (necklace/ring/earring_t1_common) that line, and the Jewel group drops them from level 1.
+        //      The broken pieces stay in the catalog and on the starter vendor's shelf.
+        drops.AddRange(GearDrops(level, MobRank.Normal));
+
+        // x3 for the same reason as the rare mats above (DropChanceRate 3 -> 1).
+        if (level >= 70) drops.Add(new(ItemCatalog.AttrScrollLegendary, 0.03f));
         return drops.ToArray();
     }
 

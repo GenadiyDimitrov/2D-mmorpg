@@ -289,6 +289,146 @@ Console.WriteLine($"  TOTAL mobs 1->{ExpCurve.MaxLevel}: {cumulative:N0}"
 Console.WriteLine("  (a mob that buys bulk with an HP-multiplier passive pays that multiple in EXP and SP)");
 Console.WriteLine();
 
+// =====================================================================================================
+//  ECONOMY — the playtest-14 faucet. "Level 25 with 3kk gold purely from selling trash" (owner).
+//
+//  Every number here comes from the REAL drop tables (MobCatalog.StandardDrops, resolved with the same
+//  group math GameLoopService.RollDrop runs) and the REAL vendor prices (ItemCatalog.SellPrice). It
+//  exists because the 3kk figure has been argued about from hand-derived multipliers twice, and the two
+//  levers (drop chance and sell price) MULTIPLY — which is exactly the shape of arithmetic people get
+//  wrong. Do not re-derive; change a number and re-run this.
+// =====================================================================================================
+Console.WriteLine("=== ECONOMY: expected TRASH GOLD per kill (real drop tables x real sell prices) ===");
+
+// The marginal chance of each entry, replicating RollDrop: independents roll alone; a group rolls once
+// at the summed member chance, then picks one member weighted — so a member's marginal chance is
+// min(1, groupSum * rate) * (its share of the group). Level gap is 0 here (killing your own level).
+static IEnumerable<(DropEntry Entry, float Chance)> Marginals(IEnumerable<DropEntry> table, int mobLevel)
+{
+    var applicable = table.Where(e => e.AppliesAtLevel(mobLevel)).ToList();
+    foreach (var e in applicable.Where(e => e.GroupId == 0))
+        yield return (e, Math.Min(1f, e.Chance * RateConfig.DropChanceRate));
+    foreach (var g in applicable.Where(e => e.GroupId != 0).GroupBy(e => e.GroupId))
+    {
+        float sum = g.Sum(e => e.Chance);
+        float trigger = Math.Min(1f, sum * RateConfig.DropChanceRate);
+        foreach (var e in g)
+            yield return (e, sum <= 0 ? 0 : trigger * (e.Chance / sum));
+    }
+}
+
+// What one kill is worth AT A VENDOR, split by what produced it. Quantity uses the entry's mean.
+static (double Gear, double Mats, double Consumables, double Gold, double Items) KillValue(
+    MobType mob, int mobLevel)
+{
+    double gear = 0, mats = 0, cons = 0, items = 0;
+    foreach (var (e, chance) in Marginals(mob.Drops ?? Array.Empty<DropEntry>(), mobLevel))
+    {
+        if (ItemCatalog.Get(e.ItemId) is not ItemDef def) continue;
+        double qty = (e.MinQty + e.MaxQty) / 2.0 * RateConfig.DropAmountRate;
+        double value = chance * qty * ItemCatalog.SellPrice(def);
+        items += chance;
+        if (MobCatalog.IsGearGroup(e.GroupId)) gear += value;
+        else if (e.GroupId == MobCatalog.GroupMats || def.Id.StartsWith("mat_")) mats += value;
+        else cons += value;
+    }
+    return (gear, mats, cons, StatCalculator.MobGoldReward(mobLevel) * RateConfig.GoldAmountRate, items);
+}
+
+// The roster mob(s) closest to a given level — averaged, so one odd template can't skew a row.
+static MobType[] MobsNear(int level) =>
+    MobCatalog.Templates.Where(m => !m.Dummy && m.Level > 0)
+        .GroupBy(m => Math.Abs(m.Level - level)).OrderBy(g => g.Key).First().ToArray();
+
+Console.WriteLine($"{"Lvl",4} {"mob",22} {"items/kill",10} | {"gear",10} {"mats",8} {"cons",8} {"coin",7} {"TOTAL",10}");
+foreach (int L in new[] { 5, 10, 15, 20, 25, 30, 40, 52, 61, 76 })
+{
+    var near = MobsNear(L);
+    var v = near.Select(m => KillValue(m, L)).ToArray();
+    Console.WriteLine($"{L,4} {near[0].Name,22} {v.Average(x => x.Items),10:F2} | " +
+        $"{v.Average(x => x.Gear),10:N0} {v.Average(x => x.Mats),8:N0} {v.Average(x => x.Consumables),8:N0} " +
+        $"{v.Average(x => x.Gold),7:N0} {v.Average(x => x.Gear + x.Mats + x.Consumables + x.Gold),10:N0}");
+}
+Console.WriteLine("  'cons' = potions/scrolls (the Always + Scrolls groups). 'coin' = the gold drop itself.");
+// Price anchors, so the per-kill column above can be checked by hand against docs/design/EconomyRework.md
+// without re-deriving the whole ladder. The E Common gauntlet is the level-25 playtest's actual trash.
+foreach (var id in new[] { "gloves_t20_common", "heavy_t20_common", "sword2h_t20_common",
+                           "ring_t20_common", "heavy_t76_common", "potion_minor" })
+    if (ItemCatalog.Get(id) is ItemDef anchor)
+        Console.Write($"  {anchor.Name} [{id.Split('_')[^1]}] buy {ItemCatalog.BuyPrice(anchor):N0} / sell {ItemCatalog.SellPrice(anchor):N0}\n");
+Console.WriteLine();
+
+// The owner's actual acceptance test: how much gold has a character SOLD by the time it hits level 25,
+// assuming it vendors everything and kills only its own level. Run at the LIVE ExpRate (what he plays
+// on) and at x1, because a 10x exp rate means 10x FEWER kills for the same level — and therefore 10x
+// less trash gold. Getting that backwards is how a "16x cut" turns into "68x".
+Console.WriteLine("=== ECONOMY: cumulative TRASH GOLD by level (kills-to-level x gold-per-kill) ===");
+Console.WriteLine($"  live ExpRate = x{RateConfig.ExpRate:0.##}, DropChanceRate = x{RateConfig.DropChanceRate:0.##}");
+Console.WriteLine($"{"Lvl",4} {"kills(live)",12} {"sold(live)",14} | {"kills(x1)",11} {"sold(x1)",14}");
+double soldLive = 0, soldX1 = 0;
+double killsLive = 0, killsX1 = 0;
+for (int L = 1; L <= 85; L++)
+{
+    var near = MobsNear(L);
+    double perKill = near.Select(m => KillValue(m, L)).Average(x => x.Gear + x.Mats + x.Consumables + x.Gold);
+    long exp = StatCalculator.MobExpReward(L);
+    long next = ExpCurve.ExpToNext(L);
+    if (next <= 0 || exp <= 0) continue;
+    double kX1 = next / (double)exp;
+    double kLive = kX1 / Math.Max(0.01f, RateConfig.ExpRate);
+    killsX1 += kX1; killsLive += kLive;
+    soldX1 += kX1 * perKill; soldLive += kLive * perKill;
+    if (L is 10 or 20 or 25 or 40 or 61 or 85)
+        Console.WriteLine($"{L + 1,4} {killsLive,12:N0} {soldLive,14:N0} | {killsX1,11:N0} {soldX1,14:N0}");
+}
+Console.WriteLine("  ^ the level column is the level REACHED. The owner's target: ~400k by level 25.");
+Console.WriteLine("  (he reported 3,000,000 on the 0.33.1 build — divide to get the achieved cut)");
+Console.WriteLine();
+
+// Integrity: a drop entry naming an item that does not exist is a silent hole in the loot table — the
+// roll succeeds and the player gets nothing. Cheap to check, and it has caught renames before.
+Console.WriteLine("=== ECONOMY: drop-table integrity ===");
+var badDrops = MobCatalog.Templates
+    .SelectMany(m => (m.Drops ?? Array.Empty<DropEntry>()).Select(d => (Mob: m.Id, d.ItemId)))
+    .Where(x => ItemCatalog.Get(x.ItemId) is null)
+    .ToArray();
+int entryCount = MobCatalog.Templates.Sum(m => m.Drops?.Length ?? 0);
+Console.WriteLine($"  {entryCount:N0} drop entries across {MobCatalog.Templates.Count()} templates; "
+    + $"{badDrops.Length} unresolved id(s).");
+foreach (var b in badDrops.Take(20)) Console.WriteLine($"    !! {b.Mob} -> {b.ItemId}");
+
+// ELITE and BOSS gear is built at kill time, not baked into a template, so it never passes through the
+// check above — and it is the path that reaches the Legendary and Mythic ids nothing else touches.
+foreach (var rank in new[] { MobRank.Elite, MobRank.Boss })
+{
+    var rows = new List<string>();
+    foreach (int L in new[] { 1, 10, 19, 20, 40, 52, 61, 76, 85 })
+    {
+        var table = MobCatalog.GearDrops(L, rank).ToArray();
+        var missing = table.Where(d => ItemCatalog.Get(d.ItemId) is null).Select(d => d.ItemId).ToArray();
+        double best = table.Length == 0 ? 0
+            : Marginals(table, L).Where(x => ItemCatalog.Get(x.Entry.ItemId) is ItemDef)
+                .Sum(x => x.Chance);
+        rows.Add($"L{L}:{best:P0}{(missing.Length > 0 ? $" !!{missing.Length} MISSING ({missing[0]})" : "")}"
+               + (table.Length == 0 ? " !!EMPTY" : ""));
+    }
+    Console.WriteLine($"  {rank,-5} gear pieces per kill:  {string.Join("  ", rows)}");
+}
+
+// Every group must be a sane probability: a group that sums past 1.0 is silently clamped, which throws
+// away the weights inside it (this is what DropChanceRate = 3 was doing to the 100% groups).
+var hotGroups = MobCatalog.Templates
+    .SelectMany(m => (m.Drops ?? Array.Empty<DropEntry>())
+        .Where(d => d.GroupId != 0)
+        .GroupBy(d => d.GroupId)
+        .Select(g => (Mob: m.Id, Group: g.Key, Sum: g.Sum(d => d.Chance) * RateConfig.DropChanceRate)))
+    .Where(x => x.Sum > 1.0001f)
+    .ToArray();
+Console.WriteLine($"  {hotGroups.Length} group(s) clamped at 100% (weights inside would be preserved anyway,"
+    + " but the group's own rate is capped).");
+foreach (var h in hotGroups.Take(10)) Console.WriteLine($"    !! {h.Mob} group {h.Group} = {h.Sum:P0}");
+Console.WriteLine();
+
 Console.WriteLine("=== LEVEL-GAP PENALTY (symmetric; applies to EXP and DROPS, personal per member) ===");
 Console.Write("  gap ");
 for (int g = 0; g <= 14; g++) Console.Write($"{g,6}");

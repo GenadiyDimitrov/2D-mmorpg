@@ -302,6 +302,35 @@ of these once fixed. Nothing here has been built yet.
         "Quest kill targets with no dedicated spawner". If it does, that quest cannot be reliably farmed
         and the mob/band needs fixing.
 
+--- 30. THE ECONOMY REWORK (0.34.1) — the whole point of playtest-14. Test this with GOLD in mind. ---
+30a.[ ] **The faucet is closed: ~400k of trash gold by level 25, not 3kk.** This is THE acceptance test.
+        Take a fresh character, sell everything you loot, kill your own level, and look at your gold when
+        you hit 25. `tools/BalanceMatrix` predicts **403k over ~168 kills** at the live ×10 exp rate. If
+        you land wildly off that, say the NUMBER — the model can then be corrected instead of guessed at.
+30b.[ ] **One kill never dumps a pile of the same slot** — the old "20 light armors off one lucky kill"
+        must be impossible. At most ONE body, one accessory, one weapon and one jewel per kill.
+30c.[ ] **Loot is no longer decided by WHERE you farm** — an armor drop is now a coin-flip between
+        Leathers / Bulwark / Robe and a weapon between all 8 lines, whatever the mob's family. Killing
+        undead must be able to drop a bow; killing wolves must be able to drop a robe. (Mats keep their
+        family flavour — that part is intentional.)
+30d.[ ] **A mob drops ONLY its own grade** — a level-40 mob drops Darksteel (D), never Electrum (E) or
+        Cobalt (C). Check the [Details] drop list on a few mobs across the bands.
+30e.[ ] **The drop list is readable** — [Details] on a mob must show ~20 grouped lines
+        ("Leathers / Bulwark / Robe  (5%)"), not ~97 near-identical 0.6% rows.
+30f.[ ] **Every kill gives a potion, most give a scroll** — the Always group is 100% (healing potion /
+        return / resurrect) and the Scrolls group ~70% (enchant scroll or a BUFF potion, never healing).
+        Confirm you stop having to buy basic potions. Flag it if the inventory churn is annoying.
+30g.[ ] **Mats: one stack per kill, amount 1 / 2 / 4 / 10** — you should see the occasional x10. You no
+        longer get three different mat types off one mob; that is the change, not a bug.
+30h.[ ] **Jewels and shields drop now** — they never did before. Rings/earrings/pendants from level 1.
+30i.[ ] **An elite pays a band better than trash** — the dungeon elites (Hollow Crypt, 44-48) and the
+        generated elite camps drop **no Common at all**: Uncommon 10%, Rare 2%, Epic 0.2%.
+30j.[ ] **A boss pays out properly** — the Grave Lich (48) / Valley Treant (60) should drop **several**
+        pieces: Epic 70%, Legendary 40%, Mythic 2%, per slot family. This is a NERF from the old flat
+        50% Mythic body — say so if it now feels thin.
+30k.[ ] **Rates read true.** `DropChanceRate` is 1 now, so what the drop list SAYS is what you get. If a
+        number on screen doesn't match what you observe over ~50 kills, that is a real bug.
+
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends
         (and combat decays) it works. Same for `/exit`. Pulling the plug mid-DoT must not run the
