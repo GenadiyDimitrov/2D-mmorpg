@@ -74,9 +74,31 @@ public static class SkillIcons
         ["resurrection"] = "✝️",
     };
 
+    /// <summary>Glyph per buff FAMILY, for the ladders authored in Skills.BuffLadders.cs. Those ids
+    /// are `buff_{family}_{rung}` and there are six rungs of some of them, so one entry per family
+    /// beats sixty per-id entries — and it enforces the rule that matters here anyway: every rung of
+    /// a family is the SAME buff at a different strength, so it must show the SAME glyph whether it
+    /// came from a potion, a scroll or a cleric.</summary>
+    private static readonly Dictionary<string, string> FamilyMap = new()
+    {
+        ["atk_phys"] = "💪", ["def_phys"] = "🛡", ["atk_mag"] = "🔮", ["def_mag"] = "🌐",
+        ["vamp"] = "🩸", ["accuracy"] = "🎯", ["interrupt"] = "🔰",
+        ["hp_max"] = "❤", ["mp_max"] = "💙", ["hp_regen"] = "🌿", ["mp_regen"] = "🫧",
+        ["crit_rate"] = "🎲", ["crit_dmg"] = "🗡", ["mcrit_rate"] = "✨", ["frenzy"] = "😤",
+    };
+
     /// <summary>The default glyph for a skill id, or "" if none is mapped.</summary>
-    public static string For(string skillId) =>
-        skillId is not null && Map.TryGetValue(skillId, out var g) ? g : "";
+    public static string For(string skillId)
+    {
+        if (skillId is null) return "";
+        if (Map.TryGetValue(skillId, out var g)) return g;
+        // `buff_{family}_{rung}` — strip the prefix and the trailing rung number.
+        if (skillId.StartsWith("buff_", StringComparison.Ordinal)
+            && skillId.LastIndexOf('_') is var cut && cut > 4
+            && FamilyMap.TryGetValue(skillId[5..cut], out var fam))
+            return fam;
+        return "";
+    }
 
     /// <summary>The glyph for a skill's DISPLAY NAME, or "" if none is mapped. Buffs and debuffs travel
     /// to the client as names, not ids (they aren't SkillDefs), so the party roster and buff bar need
@@ -85,9 +107,9 @@ public static class SkillIcons
     {
         if (string.IsNullOrEmpty(displayName)) return "";
         _byName ??= SkillCatalog.AllSkills
-            .Where(s => Map.ContainsKey(s.Id))
+            .Where(s => For(s.Id) != "")
             .GroupBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => Map[g.First().Id], StringComparer.OrdinalIgnoreCase);
+            .ToDictionary(g => g.Key, g => For(g.First().Id), StringComparer.OrdinalIgnoreCase);
         return _byName.TryGetValue(displayName, out var g) ? g : "";
     }
 

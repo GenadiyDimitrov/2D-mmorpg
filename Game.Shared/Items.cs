@@ -390,6 +390,59 @@ public static class ItemCatalog
     public const string EvaScrollC = "scroll_eva_c";
     public const string EvaScrollU = "scroll_eva_u";
     public const string EvaScrollR = "scroll_eva_r";
+    // ---- The rest of the buff ladders (docs/design/BuffLadders.md, step 6). Four families with
+    //      a potion AND a scroll (Common/Uncommon/Rare), then eight SCROLL-ONLY families whose
+    //      cheapest rung is Epic — that is what "no potion analogue" buys you. Item ids spell the
+    //      STAT, not the buff's display name, which has already changed twice. ----
+    public const string MightPotionC = "potion_patk_c";
+    public const string MightPotionU = "potion_patk_u";
+    public const string MightPotionR = "potion_patk_r";
+    public const string MightScrollC = "scroll_patk_c";
+    public const string MightScrollU = "scroll_patk_u";
+    public const string MightScrollR = "scroll_patk_r";
+    public const string BulwarkPotionC = "potion_pdef_c";
+    public const string BulwarkPotionU = "potion_pdef_u";
+    public const string BulwarkPotionR = "potion_pdef_r";
+    public const string BulwarkScrollC = "scroll_pdef_c";
+    public const string BulwarkScrollU = "scroll_pdef_u";
+    public const string BulwarkScrollR = "scroll_pdef_r";
+    public const string ForcePotionC = "potion_matk_c";
+    public const string ForcePotionU = "potion_matk_u";
+    public const string ForcePotionR = "potion_matk_r";
+    public const string ForceScrollC = "scroll_matk_c";
+    public const string ForceScrollU = "scroll_matk_u";
+    public const string ForceScrollR = "scroll_matk_r";
+    public const string WardPotionC = "potion_mdef_c";
+    public const string WardPotionU = "potion_mdef_u";
+    public const string WardPotionR = "potion_mdef_r";
+    public const string WardScrollC = "scroll_mdef_c";
+    public const string WardScrollU = "scroll_mdef_u";
+    public const string WardScrollR = "scroll_mdef_r";
+    // Scroll-only: Epic / Legendary / Mythic = rungs 2 / 4 / 6 of a six-rung ladder.
+    public const string BodyScrollE = "scroll_hp_e";
+    public const string BodyScrollL = "scroll_hp_l";
+    public const string BodyScrollM = "scroll_hp_m";
+    public const string SoulScrollE = "scroll_mp_e";
+    public const string SoulScrollL = "scroll_mp_l";
+    public const string SoulScrollM = "scroll_mp_m";
+    public const string VigorScrollE = "scroll_hpreg_e";
+    public const string VigorScrollL = "scroll_hpreg_l";
+    public const string VigorScrollM = "scroll_hpreg_m";
+    public const string SerenityScrollE = "scroll_mpreg_e";
+    public const string SerenityScrollL = "scroll_mpreg_l";
+    public const string SerenityScrollM = "scroll_mpreg_m";
+    public const string FocusScrollE = "scroll_crit_e";
+    public const string FocusScrollL = "scroll_crit_l";
+    public const string FocusScrollM = "scroll_crit_m";
+    public const string FerocityScrollE = "scroll_critdmg_e";
+    public const string FerocityScrollL = "scroll_critdmg_l";
+    public const string FerocityScrollM = "scroll_critdmg_m";
+    public const string InsightScrollE = "scroll_mcrit_e";
+    public const string InsightScrollL = "scroll_mcrit_l";
+    public const string InsightScrollM = "scroll_mcrit_m";
+    public const string FrenzyScrollE = "scroll_frenzy_e";
+    public const string FrenzyScrollL = "scroll_frenzy_l";
+    public const string FrenzyScrollM = "scroll_frenzy_m";
     // Dash — the short sprint burst, six rarities, no scroll.
     public const string DashPotionC = "potion_dash_c";
     public const string DashPotionU = "potion_dash_u";
@@ -847,6 +900,79 @@ public static class ItemCatalog
             ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.ScrAgilityU, Value: 15000));
         list.Add(new ItemDef(EvaScrollR, "Scroll of Agility (Greater)", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.ScrAgilityR, Value: 36000));
+
+        // ----- The other buff ladders (BuffLadders.md step 6). Same shape as the four speed
+        //       families above, so the prices are the same ladder: potion 1.5k/5k/12k, scroll
+        //       3x that. The SCROLL-ONLY families have no cheap rung at all — their entry price
+        //       is Epic, which is the point: no potion analogue means you pay for the hour.
+        //       One line per rarity, so a price change is a one-line edit. -----
+        void BuffPotion(string id, string name, ItemRarity rarity, string skill) =>
+            list.Add(new ItemDef(id, name, EquipSlot.Consumable, ItemGrade.F, rarity,
+                UseSkillId: skill, Value: rarity switch
+                {
+                    ItemRarity.Common => 1500, ItemRarity.Uncommon => 5000, _ => 12000,
+                }));
+
+        void BuffScroll(string id, string name, ItemRarity rarity, string skill) =>
+            list.Add(new ItemDef(id, name, EquipSlot.Consumable, ItemGrade.F, rarity,
+                UseSkillId: skill, Value: rarity switch
+                {
+                    ItemRarity.Common => 4500, ItemRarity.Uncommon => 15000, ItemRarity.Rare => 36000,
+                    ItemRarity.Epic => 75000, ItemRarity.Legendary => 150000, _ => 300000,
+                }));
+
+        BuffPotion(MightPotionC, "Might Potion (Lesser)",  ItemRarity.Common,   SkillCatalog.PotMightC);
+        BuffPotion(MightPotionU, "Might Potion",           ItemRarity.Uncommon, SkillCatalog.PotMightU);
+        BuffPotion(MightPotionR, "Might Potion (Greater)", ItemRarity.Rare,     SkillCatalog.PotMightR);
+        BuffScroll(MightScrollC, "Scroll of Might (Lesser)",  ItemRarity.Common,   SkillCatalog.ScrMightC);
+        BuffScroll(MightScrollU, "Scroll of Might",           ItemRarity.Uncommon, SkillCatalog.ScrMightU);
+        BuffScroll(MightScrollR, "Scroll of Might (Greater)", ItemRarity.Rare,     SkillCatalog.ScrMightR);
+
+        BuffPotion(BulwarkPotionC, "Bulwark Potion (Lesser)",  ItemRarity.Common,   SkillCatalog.PotBulwarkC);
+        BuffPotion(BulwarkPotionU, "Bulwark Potion",           ItemRarity.Uncommon, SkillCatalog.PotBulwarkU);
+        BuffPotion(BulwarkPotionR, "Bulwark Potion (Greater)", ItemRarity.Rare,     SkillCatalog.PotBulwarkR);
+        BuffScroll(BulwarkScrollC, "Scroll of Bulwark (Lesser)",  ItemRarity.Common,   SkillCatalog.ScrBulwarkC);
+        BuffScroll(BulwarkScrollU, "Scroll of Bulwark",           ItemRarity.Uncommon, SkillCatalog.ScrBulwarkU);
+        BuffScroll(BulwarkScrollR, "Scroll of Bulwark (Greater)", ItemRarity.Rare,     SkillCatalog.ScrBulwarkR);
+
+        BuffPotion(ForcePotionC, "Force Potion (Lesser)",  ItemRarity.Common,   SkillCatalog.PotForceC);
+        BuffPotion(ForcePotionU, "Force Potion",           ItemRarity.Uncommon, SkillCatalog.PotForceU);
+        BuffPotion(ForcePotionR, "Force Potion (Greater)", ItemRarity.Rare,     SkillCatalog.PotForceR);
+        BuffScroll(ForceScrollC, "Scroll of Force (Lesser)",  ItemRarity.Common,   SkillCatalog.ScrForceC);
+        BuffScroll(ForceScrollU, "Scroll of Force",           ItemRarity.Uncommon, SkillCatalog.ScrForceU);
+        BuffScroll(ForceScrollR, "Scroll of Force (Greater)", ItemRarity.Rare,     SkillCatalog.ScrForceR);
+
+        BuffPotion(WardPotionC, "Ward Potion (Lesser)",  ItemRarity.Common,   SkillCatalog.PotWardC);
+        BuffPotion(WardPotionU, "Ward Potion",           ItemRarity.Uncommon, SkillCatalog.PotWardU);
+        BuffPotion(WardPotionR, "Ward Potion (Greater)", ItemRarity.Rare,     SkillCatalog.PotWardR);
+        BuffScroll(WardScrollC, "Scroll of Ward (Lesser)",  ItemRarity.Common,   SkillCatalog.ScrWardC);
+        BuffScroll(WardScrollU, "Scroll of Ward",           ItemRarity.Uncommon, SkillCatalog.ScrWardU);
+        BuffScroll(WardScrollR, "Scroll of Ward (Greater)", ItemRarity.Rare,     SkillCatalog.ScrWardR);
+
+        // Scroll-only. Rarity here is the PRICE tier, not the power rung — see BuffLadders.md.
+        void ScrollOnly(string e, string l, string m, string name, string se, string sl, string sm)
+        {
+            BuffScroll(e, $"Scroll of {name} (Superior)", ItemRarity.Epic, se);
+            BuffScroll(l, $"Scroll of {name} (Grand)",    ItemRarity.Legendary, sl);
+            BuffScroll(m, $"Scroll of {name} (Supreme)",  ItemRarity.Mythic, sm);
+        }
+
+        ScrollOnly(BodyScrollE, BodyScrollL, BodyScrollM, "Body",
+            SkillCatalog.ScrBodyE, SkillCatalog.ScrBodyL, SkillCatalog.ScrBodyM);
+        ScrollOnly(SoulScrollE, SoulScrollL, SoulScrollM, "Soul",
+            SkillCatalog.ScrSoulE, SkillCatalog.ScrSoulL, SkillCatalog.ScrSoulM);
+        ScrollOnly(VigorScrollE, VigorScrollL, VigorScrollM, "Vigor",
+            SkillCatalog.ScrVigorE, SkillCatalog.ScrVigorL, SkillCatalog.ScrVigorM);
+        ScrollOnly(SerenityScrollE, SerenityScrollL, SerenityScrollM, "Serenity",
+            SkillCatalog.ScrSerenityE, SkillCatalog.ScrSerenityL, SkillCatalog.ScrSerenityM);
+        ScrollOnly(FocusScrollE, FocusScrollL, FocusScrollM, "Focus",
+            SkillCatalog.ScrFocusE, SkillCatalog.ScrFocusL, SkillCatalog.ScrFocusM);
+        ScrollOnly(FerocityScrollE, FerocityScrollL, FerocityScrollM, "Ferocity",
+            SkillCatalog.ScrFerocityE, SkillCatalog.ScrFerocityL, SkillCatalog.ScrFerocityM);
+        ScrollOnly(InsightScrollE, InsightScrollL, InsightScrollM, "Insight",
+            SkillCatalog.ScrInsightE, SkillCatalog.ScrInsightL, SkillCatalog.ScrInsightM);
+        ScrollOnly(FrenzyScrollE, FrenzyScrollL, FrenzyScrollM, "Frenzy",
+            SkillCatalog.ScrFrenzyE, SkillCatalog.ScrFrenzyL, SkillCatalog.ScrFrenzyM);
 
         // Dash — 15 seconds of sprint on a 1-minute reuse, six rarities, no scroll. Priced at half
         // a buff potion of the same rarity: it is a burst, not a blessing.

@@ -9243,7 +9243,10 @@ var effect = def.Effect;
     // formula already reads a per-buff level, so it scales automatically when that lands.
 
     private const int BufferMinLvl = 6, BufferMaxLvl = 75, BufferFreeUnderLvl = 40;
-    private const long BuffCostPerLevel = 3_000;   // per buff, per buff-LEVEL, when 41-75
+    // Halved when the buffer's five bundled blessings were split into singles (0.40.0): the set
+    // went from 9 buttons to 19, and per-buff pricing would have doubled the full-set bill on an
+    // economy the owner had just signed off. 19 x 1500 x 5 ~= the old 9 x 3000 x 5.
+    private const long BuffCostPerLevel = 1_500;   // per buff, per buff-LEVEL, when 41-75
     private const long RestoreCostCap = 10_000;    // per pool (HP, MP); a full restore of both = 20k
 
     // The NPC buffs are single-level defs today but they are the MAX-STRENGTH set, so we price each as
@@ -9370,11 +9373,11 @@ var effect = def.Effect;
         SendBufferDialog(player, npc);   // refresh (restore cost drops to 0, gold changed)
     }
 
-    /// <summary>Lay the full NPC buff set on a player. Shared by the buffer NPC and the debug button —
-    /// the ONLY difference between them is the NPC's level gate, which is exactly the point.</summary>
-    private void GrantFullBuffSet(Entity player)
+    /// <summary>Lay a whole buff set on a player. The buffer NPC passes its own set; the debug
+    /// button passes the ADMIN set, which is the same list plus Harmony.</summary>
+    private void GrantFullBuffSet(Entity player, string[]? set = null)
     {
-        foreach (var id in SkillCatalog.NewbieBuffSet)
+        foreach (var id in set ?? SkillCatalog.NewbieBuffSet)
             if (SkillCatalog.Get(id) is SkillDef def)
                 ApplyBuff(player, def, refresh: false);
         // One refresh after all buffs (instead of per-buff recompute/push).
@@ -9386,12 +9389,13 @@ var effect = def.Effect;
     /// <summary>DEBUG: the full buff set, at any level, without walking to the NPC. Deliberately has
     /// NO level gate — the NPC's 6-75 window is a game rule, and debug exists to sidestep the walk,
     /// not to re-enforce it. This is the ONLY way to get buffed above 75 today, which matters because
-    /// the balance numbers the owner signs off on are BUFFED numbers.</summary>
+    /// the balance numbers the owner signs off on are BUFFED numbers — and the only way to see
+    /// Harmony at all, which is why this uses the ADMIN set (owner 2026-07-31).</summary>
     private void HandleDebugBuff(DebugBuffCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
             return;
-        GrantFullBuffSet(player);
+        GrantFullBuffSet(player, SkillCatalog.AdminBuffSet);
         // Silent (owner): the buff bar filling up is the feedback.
     }
 

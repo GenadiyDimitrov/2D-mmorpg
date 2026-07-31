@@ -1,25 +1,34 @@
 # Buff ladders — improved buffs as groups of single buffs
 
-**Status: steps 1-4 BUILT 2026-07-31 (0.36.0).** The mechanism and the whole speed group ship;
-steps 5-6 (client grouping, the other families) are still open — see *Build order* at the bottom.
+**Status: ALL SIX STEPS BUILT.** Steps 1-4 (mechanism + speed group) in 0.36.0, step 5 (client
+grouping) in 0.37.0, **step 6 (every other family, their potions and scrolls) in 0.40.0**.
 Supersedes the buff half of playtest-15 §2 (`docs/testing/Playtest-15.md`).
+Still open beyond this doc: **Harmony as party buffs**, and Harmony's own split into children.
 
-## Naming (owner, 2026-07-31)
+## Naming (owner, 2026-07-31, revised the same day)
 
-A **single** buff is named for its effect and nothing else; the **group** that hands out several
-of them is named "Improved …" or as a compound. So the cleric's buff is **Improved Speed** and it
-gives you Swift, Alacrity, Agility and Haste. Applied so far:
+A **single** buff is named for its effect and nothing else. A **group** is named for what it hands
+out — a flavour name, **never "Improved X"** (owner's revision: *"improved buffs also flavour name
+… body, soul singles become body and soul, no improved something"*). So the group is the compound
+of its two headline children.
 
-| Effect | Single buff | Group |
-|---|---|---|
-| move speed | Swift | **Improved Speed** |
-| cast speed | Alacrity (*not* "Force" — that name belongs to M.Atk) | |
-| evasion | Agility | |
-| attack speed | Haste | |
+| Group | Children |
+|---|---|
+| **Swift and Sure** (was "Improved Speed") | Swift (move) · Alacrity (cast) · Agility (evasion) · Haste (attack speed) |
+| **Might and Bulwark** | Might (% P.Atk) · Bulwark (% P.Def) · Vampirism · Accuracy |
+| **Force and Ward** | Force (% M.Atk) · Ward (% M.Def) · Resolve (interrupt resist) |
+| **Focus and Ferocity** | Focus (crit rate) · Ferocity (crit damage) · Insight (magic crit) |
+| **Body and Soul** | Body (Max HP) · Soul (Max MP) · Vigor (HP regen) · Serenity (MP regen) |
+| **Frenzy** | (not a group — one family whose rung is a whole buff) |
 
-Reserved for the families still to author (owner's words): **Force** = M.Atk, **Force Defence** =
-M.Def, group **Improved Force**. **Body** = Max HP, **Spirit** = Max MP, plus Body Regeneration and
-Spirit Regeneration, group **Body and Spirit** (not "Body" — the group names both halves).
+Two earlier reservations were overtaken by that revision and are recorded here so the change is
+not mistaken for a slip: "Force **Defence**" for M.Def became **Ward** (flavour, not a compound),
+and "**Spirit**" for Max MP became **Soul** — which also frees the word Spirit, since it is already
+the name of a *stat* (see the spirit-replaces-MEN design).
+
+⚠ **Ids do not follow names.** These buffs were renamed twice while the design settled, and skill
+ids are append-only. So the ladders authored in step 6 use `buff_{family}_{rung}` where the family
+spells the STAT (`buff_atk_phys_3`, not `buff_might_r`). A display name can now change for free.
 
 ## The problem
 
@@ -210,22 +219,53 @@ no potion or scroll analogue at all.
 - Note: the "already up" test reads the *caster's* buff list, so a member who joined late, was out
   of radius, or died and lost buffs waits for the next natural expiry. Acceptable for now.
 
-## Still to author
+## The other fourteen families — AS BUILT (0.40.0)
 
-The remaining improved buffs need their six-level child tables written. The **single-buff ladders**
-are mostly derivable from the NPC buffer's max values (`Skills.Buffer.cs`), which are L6:
+All of it lives in `Game.Shared/Skills/Skills.BuffLadders.cs`, one line per family.
 
-| Buff | L6 values (= NPC buffer) | Consumables |
-|---|---|---|
-| Might | +15% P.Atk, +15% P.Def, 9% melee vamp, +4 accuracy | potion+scroll: Attack (pAtk), Defence (pDef) |
-| Force | +32% M.Atk, +30% M.Def, +60 interrupt resist | potion+scroll: Magic-Attack, Magic-Defence |
-| Focus | +30% crit rate, +35% crit dmg, ×2 magic crit | scroll only: Critical, Critical-Damage, Magic-Critical |
-| Body | +35% Max HP, +35% Max MP, +20% HP/MP regen | scroll only: Health, Mana, HP-Regen, MP-Regen |
-| Frenzy | −10% HP/MP, +8% AS/cast/P.Atk/M.Atk, +8 move, −8 eva | scroll only: Frenzy (whole buff) |
+**Potion + scroll, three rungs (Common / Uncommon / Rare):**
 
-Owner-given anchors: pAtk/pDef = 8/12/15% (C/U/R) · mDef = 10/20/30% · Max HP six levels =
-10/15/20/25/30/35%, with scrolls at Epic 15 / Legendary 25 / Mythic 35 (ranks 2/4/6 — rarity ≠
-rank, as above).
+| Family | Single | Mode | r1 | r2 | r3 |
+|---|---|---|---|---|---|
+| `atk_phys` | Might | % | 8 | 12 | **15** |
+| `def_phys` | Bulwark | % | 8 | 12 | **15** |
+| `atk_mag` | Force | % | 15 | 25 | **32** |
+| `def_mag` | Ward | % | 10 | 20 | **30** |
+
+**No consumable at any price** — only a class buff grants these:
+
+| Family | Single | Mode | rungs |
+|---|---|---|---|
+| `vamp` | Vampirism | % | 3 / 6 / **9** |
+| `accuracy` | Accuracy | flat | 2 / 3 / **4** |
+| `interrupt` | Resolve | flat | 18 / 25 / 40 / **60** |
+
+**Scroll only, six rungs; the scrolls are rungs 2 / 4 / 6 = Epic / Legendary / Mythic:**
+
+| Family | Single | Mode | rungs |
+|---|---|---|---|
+| `hp_max` | Body | % | 10 / *15* / 20 / *25* / 30 / ***35*** |
+| `mp_max` | Soul | % | 10 / *15* / 20 / *25* / 30 / ***35*** |
+| `hp_regen` | Vigor | % | 5 / *10* / 12 / *15* / 17 / ***20*** |
+| `mp_regen` | Serenity | % | 5 / *10* / 12 / *15* / 17 / ***20*** |
+| `crit_rate` | Focus | % | 5 / *10* / 15 / *20* / 25 / ***30*** |
+| `crit_dmg` | Ferocity | % | 10 / *15* / 20 / *25* / 30 / ***35*** |
+| `mcrit_rate` | Insight | % | 20 / *35* / 50 / *65* / 80 / ***100*** |
+| `frenzy` | Frenzy | whole buff | penalty 30→10%, gain 5→8% |
+
+*(italic = the rung a scroll sells)*. The rightmost rung of every ladder is the NPC buffer's value,
+i.e. the max-level class buff — so the ladders end exactly where the old monolithic buffs did.
+
+**Frenzy** is the one family whose rung is a whole buff rather than one number, because the owner
+wants the scroll to carry "the full frenzy". Its Max HP/MP penalty *shrinks* as the rung climbs while
+the offence grows, so power stays monotonic. Its **−8 evasion is flat across the ladder** on purpose:
+a penalty that grew with the rung would make a higher rung genuinely worse in one respect, which is
+the one thing a single rank number cannot express.
+
+Each class buff's levels 1-4 reproduce **exactly** the numbers it cast before the split (that is what
+made the rung values non-uniform in places — 25% M.Atk and 20% crit rate are the cleric's own), and
+levels 5-6 climb to the NPC buffer's max. Nothing a player has today got weaker except where noted:
+the old Might used `BuffAtk` (**both** channels), and the Might family is P.Atk only.
 
 Scroll-only families start at **Epic** rarity; families with a potion analogue start at **Common**.
 
@@ -236,11 +276,11 @@ Scroll-only families start at **Epic** rarity; families with a potion analogue s
 3. ✅ The auto-buff "already up" child test + the sweep for parent-key assumptions.
 4. ✅ The four `spd_*` families, the new Swift/Alacrity/Agility/Haste potions + scrolls, the Dash
    line, Wind Walk deleted, Improved Speed re-authored to six levels.
-5. ⬜ Client: collapse buffs by `SourceSkillId` — **needs `BuffDto.SourceSkillId` + a protocol
-   bump** (see *Display* above). Also: a double-click on a collapsed group should drop the whole
-   group, which means sending the group id, not one child's `Key`, to `RemoveBuffCmd`.
-6. ⬜ Everything else (Might / Force / Focus / Body and Spirit / Frenzy families, Harmony split) is
-   data entry after the mechanism is proven on the speed group.
+5. ✅ Client: collapse buffs by `SourceSkillId` (0.37.0). No protocol bump was needed after all — a
+   DTO field WITH A DEFAULT degrades gracefully; only a hub signature change breaks the wire.
+6. ✅ The other fourteen families, their potions and scrolls, the class buffs re-authored as groups,
+   and the NPC buffer split into 19 singles (0.40.0 — see the section above and the changelog).
+   **Harmony's own split is still open**, and so is Harmony-as-party-buffs.
 
 ### What steps 1-4 actually touched (0.36.0)
 
@@ -262,8 +302,29 @@ Scroll-only families start at **Epic** rarity; families with a potion analogue s
   refresh for anyone who relogged. `BuffSnapshot` now stores both.
 - Six levels of Improved Speed exist, but the cleric table still stops at **level 4** (char 35):
   levels 5-6 have no learn slot until the Warchanter discipline tables are re-authored.
-- Dash Epic/Legendary/Mythic have **no drop or shop source** yet (vendor stocks Common, drops
-  cover C/U/R) — they wait for the §3 drop-group rework.
+- Dash Epic/Legendary/Mythic had **no drop or shop source** — 0.40.0 gives Dash Epic and Legendary
+  one (see below). Dash Mythic and the Mythic buff scrolls still have none, and wait for the §3
+  drop-group rework.
+
+### What step 6 touched (0.40.0)
+
+- **`Skills.BuffLadders.cs`** (new) — 14 families, ~60 single buffs, 24 potions, 48 scrolls, built
+  from a `Ladder(...)` helper so a family is one line and its number line is an array.
+- `Items.cs` — 48 new item defs off two price helpers; `ShopCatalog` stocks the four new Common
+  potions; `Recipes.cs` gains their Common scroll / Uncommon potion recipes.
+- `MobCatalog` — the four new families join the C/U/R scroll rungs; a new `BuffRung` (no enchant
+  scroll, since none exists above Rare) adds the scroll-only families at **Epic from 60** and
+  **Legendary from 76**. Rung weights are unchanged: a rung with more items splits the same weight.
+- `Skills.Mage.cs` / `Skills.Healer.cs` — Might, Force, Focus, Body and Frenzy re-authored as
+  six-level groups; Improved Speed renamed **Swift and Sure**.
+- `Skills.Buffer.cs` — the five bundled NPC blessings became 15 singles (19 with the speed four),
+  plus `AdminBuffSet` = those 19 + the three Harmony buffs, which the debug button now grants.
+- `GameLoopService` — `GrantFullBuffSet` takes a set; `BuffCostPerLevel` halved to 1500 so 19
+  buttons cost what 9 did.
+- `SkillIcons` — a `FamilyMap` keyed on the family, so all six rungs of a ladder share one glyph
+  without sixty per-id entries, and `ForName` resolves through it.
+- `BuildCatalog` — **new startup guard**: a group naming an unknown child id now throws. Before, a
+  typo there compiled and produced a buff that cast, cost MP and did nothing.
 
 **Run `tools/SmokeTest` after** — buffs persist, and the family-key rename orphans any buff saved
 under an old key (harmless, short-lived, and `game.db` is reset regularly anyway).

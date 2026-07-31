@@ -74,36 +74,40 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 301, MpCost: 52, InitialMpCost: 11, SpCost: 25000, Description: "Heal power 301."),
             }),
 
-        // Might — party-castable Attack & Defence buff (20 min). Lvl 1 = base-mage
-        // (+8%/+8%); the Healer CONTINUES it at lvls 2-4 (20/25/30); lvl 4 adds basic-
-        // (melee) attack vampirism.
-        new(Might, "Might", BaseClass.Mage, SkillEffect.BuffAtk | SkillEffect.BuffDef,
+        // Might and Bulwark — the P.Atk / P.Def blessing, now a GROUP: it applies no buff of its
+        // own, only children off the atk_phys / def_phys / vamp / accuracy ladders, so a Might
+        // potion competes with the Might part alone and leaves the rest of the blessing standing.
+        // Levels 1-4 are the SAME numbers this buff has always cast (8/8 → 12/12 + 6% vamp);
+        // 5-6 climb to the NPC buffer's max and wait for the Warchanter tables.
+        // ⚠ One real change: the old buff used BuffAtk, which raised BOTH channels — a mage's
+        // M.Atk rode along on a *physical* blessing. The Might family is P.Atk only; M.Atk has
+        // its own family (Force) and its own potion. See docs/design/BuffLadders.md.
+        new(Might, "Might and Bulwark", BaseClass.Mage, SkillEffect.BuffPhysAtk | SkillEffect.BuffDef,
             MpCost: 20, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
             DurationTicks: 12000, BuffKey: "mage_might", Rank: 1, InitialMpCost: 4,
-            Magnitudes: new EffectMagnitude[]
-            {
-                new(SkillEffect.BuffAtk, 0.08f), new(SkillEffect.BuffDef, 0.08f),
-            },
+            ChildBuffs: new[] { BuffPAtk1, BuffPDef1 },
             Category: SkillCategory.Buff, SpCost: 960,
-            Description: "Blesses an ally (or self) with +Attack and +Defence for 20 minutes.",
+            Description: "Blesses an ally (or self) with +P.Atk and +P.Def for 20 minutes.",
             Levels: new[]
             {
                 new SkillLevel(MpCost: 20, InitialMpCost: 4,  SpCost: 960,
-                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtk, 0.08f), new(SkillEffect.BuffDef, 0.08f) },
-                    Description: "+8% Attack and +8% Defence for 20 minutes."),
+                    ChildBuffs: new[] { BuffPAtk1, BuffPDef1 },
+                    Description: "+8% P.Atk and +8% P.Def for 20 minutes."),
                 new SkillLevel(MpCost: 50, InitialMpCost: 10, SpCost: 3200,
-                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtk, 0.12f), new(SkillEffect.BuffDef, 0.08f) },
-                    Description: "+12% Attack and +8% Defence for 20 minutes."),
+                    ChildBuffs: new[] { BuffPAtk2, BuffPDef1 },
+                    Description: "+12% P.Atk and +8% P.Def for 20 minutes."),
                 new SkillLevel(MpCost: 50, InitialMpCost: 10, SpCost: 6400,
-                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtk, 0.12f), new(SkillEffect.BuffDef, 0.12f) },
-                    Description: "+12% Attack and +12% Defence for 20 minutes."),
+                    ChildBuffs: new[] { BuffPAtk2, BuffPDef2 },
+                    Description: "+12% P.Atk and +12% P.Def for 20 minutes."),
                 new SkillLevel(MpCost: 50, InitialMpCost: 10, SpCost: 12800,
-                    Magnitudes: new EffectMagnitude[]
-                    {
-                        new(SkillEffect.BuffAtk, 0.12f), new(SkillEffect.BuffDef, 0.12f),
-                        new(SkillEffect.BuffMeleeVamp, 0.06f),
-                    },
-                    Description: "+12% Attack, +12% Defence, and 6% melee-attack vampirism for 20 minutes."),
+                    ChildBuffs: new[] { BuffPAtk2, BuffPDef2, BuffVamp2 },
+                    Description: "+12% P.Atk, +12% P.Def, and 6% melee-attack vampirism for 20 minutes."),
+                new SkillLevel(MpCost: 65, InitialMpCost: 13, SpCost: 25000,
+                    ChildBuffs: new[] { BuffPAtk3, BuffPDef3, BuffVamp2, BuffAcc2 },
+                    Description: "+15% P.Atk, +15% P.Def, 6% melee vampirism, +3 Accuracy."),
+                new SkillLevel(MpCost: 80, InitialMpCost: 16, SpCost: 50000,
+                    ChildBuffs: new[] { BuffPAtk3, BuffPDef3, BuffVamp3, BuffAcc3 },
+                    Description: "+15% P.Atk, +15% P.Def, 9% melee vampirism, +4 Accuracy."),
             }),
 
         // Anti-Magic — learnable mage passive: +M.Def and a magic-fail (fizzle) floor.

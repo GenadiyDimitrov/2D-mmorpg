@@ -609,14 +609,32 @@ static int TopNukePower(Entity e)
 /// state almost nobody plays in.</summary>
 static void ApplyNpcBuffs(Entity e)
 {
+    // ⚠ The buffer's blessings are CHILD WRAPPERS now (docs/design/BuffLadders.md): the wrapper owns
+    // the duration and names a single-buff skill, and carries NO magnitudes of its own. Reading
+    // MagnitudesAt off the wrapper therefore yields an EMPTY array — the buffs "apply" and do
+    // nothing, and the whole matrix silently reports UNBUFFED numbers under a "buffed" heading.
+    // That is exactly the kind of wrong number this tool exists to prevent, so follow the children.
+    // (This was already true of the four speed singles from 0.36.0 on.)
+    void Add(SkillDef def)
+    {
+        var kids = def.ChildBuffsAt(1);
+        if (kids is { Length: > 0 })
+        {
+            foreach (var kid in kids)
+                if (SkillCatalog.Get(kid) is SkillDef child) Add(child);
+            return;
+        }
+        e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+        {
+            Effect = def.Effect,
+            Magnitudes = def.MagnitudesAt(1) ?? Array.Empty<EffectMagnitude>(),
+            TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey, Level = 1,
+        });
+    }
+
     foreach (var id in SkillCatalog.NewbieBuffSet)
         if (SkillCatalog.Get(id) is SkillDef def)
-            e.Buffs.Add(new Game.Server.Simulation.BuffInstance
-            {
-                Effect = def.Effect,
-                Magnitudes = def.MagnitudesAt(1) ?? Array.Empty<EffectMagnitude>(),
-                TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey, Level = 1,
-            });
+            Add(def);
     e.RecomputeDerived();
 }
 

@@ -348,26 +348,61 @@ public static class MobCatalog
             foreach (var b in buffs)
                 drops.Add(new(b, weight * 0.5f / buffs.Length, GroupId: GroupScrolls));
         }
-        // Each rung carries that rarity's four buff potions, its four scrolls (the same buff for an
-        // hour) and the Dash potion. Dash Epic/Legendary/Mythic have no drop source yet — they wait
-        // for the §3 drop-group rework, which wants to roll the ITEM rather than the rarity.
+        // The buff rungs WITHOUT an enchant scroll — used above Rare, where no enchant scroll of
+        // that rarity exists. Same halved weight, so a high-level mob's scroll group is not richer
+        // than a low one's; it just has more to choose between.
+        void BuffRung(float weight, string[] buffs)
+        {
+            foreach (var b in buffs)
+                drops.Add(new(b, weight * 0.5f / buffs.Length, GroupId: GroupScrolls));
+        }
+        // Each rung carries that rarity's buff potions, its scrolls (the same buff for an hour) and
+        // the Dash potion. The group's total weight does NOT grow when a rung gains items — it is
+        // split finer. That is the point: more variety at the same faucet.
+        // Mythic (rung 6) buff scrolls have no drop source yet, the way Dash Mythic doesn't: they
+        // wait for the §3 drop-group rework, which wants to roll the ITEM rather than the rarity.
         ScrollRung(0.40f, ItemCatalog.ScrollCommon,
             new[] { ItemCatalog.SpeedPotionC, ItemCatalog.CastPotionC, ItemCatalog.AtkPotionC,
                     ItemCatalog.EvaPotionC, ItemCatalog.DashPotionC,
+                    ItemCatalog.MightPotionC, ItemCatalog.BulwarkPotionC,
+                    ItemCatalog.ForcePotionC, ItemCatalog.WardPotionC,
                     ItemCatalog.SpeedScrollC, ItemCatalog.CastScrollC, ItemCatalog.AtkScrollC,
-                    ItemCatalog.EvaScrollC });
+                    ItemCatalog.EvaScrollC,
+                    ItemCatalog.MightScrollC, ItemCatalog.BulwarkScrollC,
+                    ItemCatalog.ForceScrollC, ItemCatalog.WardScrollC });
         if (level >= 20)
             ScrollRung(0.20f, ItemCatalog.ScrollUncommon,
                 new[] { ItemCatalog.SpeedPotionU, ItemCatalog.CastPotionU, ItemCatalog.AtkPotionU,
                         ItemCatalog.EvaPotionU, ItemCatalog.DashPotionU,
+                        ItemCatalog.MightPotionU, ItemCatalog.BulwarkPotionU,
+                        ItemCatalog.ForcePotionU, ItemCatalog.WardPotionU,
                         ItemCatalog.SpeedScrollU, ItemCatalog.CastScrollU, ItemCatalog.AtkScrollU,
-                        ItemCatalog.EvaScrollU });
+                        ItemCatalog.EvaScrollU,
+                        ItemCatalog.MightScrollU, ItemCatalog.BulwarkScrollU,
+                        ItemCatalog.ForceScrollU, ItemCatalog.WardScrollU });
         if (level >= 45)
             ScrollRung(0.10f, ItemCatalog.ScrollRare,
                 new[] { ItemCatalog.SpeedPotionR, ItemCatalog.CastPotionR, ItemCatalog.AtkPotionR,
                         ItemCatalog.EvaPotionR, ItemCatalog.DashPotionR,
+                        ItemCatalog.MightPotionR, ItemCatalog.BulwarkPotionR,
+                        ItemCatalog.ForcePotionR, ItemCatalog.WardPotionR,
                         ItemCatalog.SpeedScrollR, ItemCatalog.CastScrollR, ItemCatalog.AtkScrollR,
-                        ItemCatalog.EvaScrollR });
+                        ItemCatalog.EvaScrollR,
+                        ItemCatalog.MightScrollR, ItemCatalog.BulwarkScrollR,
+                        ItemCatalog.ForceScrollR, ItemCatalog.WardScrollR });
+        // The SCROLL-ONLY families enter here: Epic from 60, Legendary from 76. They have no potion
+        // at any rarity — a scroll is the only way to get Max HP/MP, regeneration, criticals or
+        // Frenzy out of an item — which is why their cheapest rung is Epic in the first place.
+        if (level >= 60)
+            BuffRung(0.06f,
+                new[] { ItemCatalog.BodyScrollE, ItemCatalog.SoulScrollE, ItemCatalog.VigorScrollE,
+                        ItemCatalog.SerenityScrollE, ItemCatalog.FocusScrollE, ItemCatalog.FerocityScrollE,
+                        ItemCatalog.InsightScrollE, ItemCatalog.FrenzyScrollE, ItemCatalog.DashPotionE });
+        if (level >= 76)
+            BuffRung(0.04f,
+                new[] { ItemCatalog.BodyScrollL, ItemCatalog.SoulScrollL, ItemCatalog.VigorScrollL,
+                        ItemCatalog.SerenityScrollL, ItemCatalog.FocusScrollL, ItemCatalog.FerocityScrollL,
+                        ItemCatalog.InsightScrollL, ItemCatalog.FrenzyScrollL, ItemCatalog.DashPotionL });
 
         // ---- ALWAYS (§4): every kill yields one consumable — a healing potion, a return scroll or a
         //      resurrection scroll. C 70 / U 30 below level 75, C 55 / U 40 / R 5 from 75, where the Rare

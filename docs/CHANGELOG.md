@@ -12,6 +12,68 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-31 — A potion buys one blessing, not all of them (0.40.0)
+
+Playtest-15 big design **#2**, and step 6 of `docs/design/BuffLadders.md`. The speed group proved the
+mechanism in 0.36.0; this is the other eleven families, their potions and scrolls, and the end of the
+bug that started it: *"buff potions stack with the current buffs, making characters stronger than
+intended."*
+
+**Fifteen families, one number line each.** Every source of an effect — a potion, a scroll, a rung of
+a class buff, the NPC buffer's hour — now applies the *same* single-buff skill, so they compete on the
+family key by rank instead of adding up.
+
+| | Family | Potion | Scroll |
+|---|---|---|---|
+| **Might** | % P.Atk | ✓ | ✓ |
+| **Bulwark** | % P.Def | ✓ | ✓ |
+| **Force** | % M.Atk | ✓ | ✓ |
+| **Ward** | % M.Def | ✓ | ✓ |
+| **Vampirism / Accuracy / Resolve** | melee vamp · accuracy · interrupt resist | — | — |
+| **Body / Soul** | % Max HP · % Max MP | — | ✓ |
+| **Vigor / Serenity** | % HP regen · % MP regen | — | ✓ |
+| **Focus / Ferocity / Insight** | crit rate · crit damage · magic crit | — | ✓ |
+| **Frenzy** | the whole trade-off buff | — | ✓ |
+
+- **Potion + scroll families** run Common/Uncommon/Rare and the Rare rung equals the strongest class
+  buff. Deliberate: consumables can cover the whole *basic* layer, and what keeps a buffer worth
+  grouping with is Harmony, which has no consumable at all.
+- **Scroll-only families** run **six** rungs and their scrolls sit on rungs 2 / 4 / 6, sold as Epic /
+  Legendary / Mythic. Rarity is the price tier, rank is the power — an Epic Body scroll is rung 2 of 6.
+  Three of the four families with no potion at all are the ones a class buff climbs furthest on.
+- **Vampirism, Accuracy and Resolve have no consumable at any price.** They exist only inside a class
+  buff, which is what a buffer still sells that a shopping trip cannot.
+
+**The class buffs became groups.** Might (base mage + cleric), Force, Focus, Body and Frenzy now apply
+children instead of one monolithic buff, the way Improved Speed already did. **Levels 1-4 cast exactly
+the numbers they cast before** — nobody's buff changes today — and levels 5-6 climb to the NPC
+buffer's maximum, waiting for the Warchanter tables. Their names follow the owner's rule (no "Improved
+X"): **Might and Bulwark · Force and Ward · Focus and Ferocity · Body and Soul**, and Improved Speed
+is renamed **Swift and Sure**.
+
+⚠ **One real change of substance:** the old Might used `BuffAtk`, which raises *both* channels — a
+mage's M.Atk was riding along on a physical blessing. The Might family is P.Atk only; M.Atk is the
+Force family, with its own potion.
+
+**The NPC buffer split too.** Its five bundled blessings were the last place a potion could stack on
+top of something (a monolithic 1h Might on its own key). It now hands out **19 singles**, one per
+family, each cancellable on its own — the "Full buff" button is unchanged and still does all of them
+in one click. Per-buff price **halved** (3000 → 1500 per buff-level) so the full set costs about what
+it did with 9 buttons rather than double.
+
+**The admin buff button** now grants the **admin set**: those 19 *plus* the three Harmony blessings,
+which no NPC offers and no consumable can reach (owner's ask). It is the only way to see a fully
+buffed character, which is the state balance numbers should be read at.
+
+**Where they come from.** The four potion families join the existing drop rungs (Common/Uncommon/Rare)
+and the alchemist/scribe recipe lists; the Common potions are vendor-stocked. Scroll-only families
+enter the drop table at **Epic from level 60** and **Legendary from 76**. Mythic buff scrolls have no
+source yet, the same way Dash Mythic doesn't — both wait on playtest-15 §3, the drop-group rework.
+Group weights were **not** raised: a rung with more items in it splits the same weight finer.
+
+**Also:** `BuildCatalog` now fails at startup if a group buff names a child id that doesn't exist. A
+typo there compiled fine and produced a buff that cast, cost MP and did nothing at all.
+
 ## 2026-07-31 — The autopilot casts in an order you chose (0.39.0)
 
 Playtest-15 big design **#1**, plus §32u (free travel while levelling).

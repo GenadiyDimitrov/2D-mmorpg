@@ -489,6 +489,7 @@ public static partial class SkillCatalog
     {
         var list = new List<SkillDef>();
         list.AddRange(CommonSkills());        // Skills.Common.cs
+        list.AddRange(BuffLadderSkills());    // Skills.BuffLadders.cs (every family but speed + its potions/scrolls)
         list.AddRange(StatSwapSkillDefs());   // Skills.StatSwap.cs (the level-40 +stat/−stat passives)
         list.AddRange(FighterSkills());       // Skills.Fighter.cs
         list.AddRange(MageSkills());          // Skills.Mage.cs
@@ -504,6 +505,20 @@ public static partial class SkillCatalog
         foreach (var sk in list)
             if (!dict.TryAdd(sk.Id, sk))
                 throw new InvalidOperationException($"Duplicate skill id '{sk.Id}'.");
+
+        // CHILD-ID guard, the sibling of the duplicate-id guard above. A group buff names its
+        // children by STRING; a typo there does not fail to compile, it just silently applies
+        // nothing — a buff that casts, costs MP and does absolutely no work. Fail at startup.
+        foreach (var sk in dict.Values)
+        {
+            foreach (var child in sk.ChildBuffs ?? Array.Empty<string>())
+                if (!dict.ContainsKey(child))
+                    throw new InvalidOperationException($"Skill '{sk.Id}' names unknown child buff '{child}'.");
+            foreach (var lvl in sk.Levels ?? Array.Empty<SkillLevel>())
+                foreach (var child in lvl.ChildBuffs ?? Array.Empty<string>())
+                    if (!dict.ContainsKey(child))
+                        throw new InvalidOperationException($"Skill '{sk.Id}' names unknown child buff '{child}'.");
+        }
         return dict;
     }
 

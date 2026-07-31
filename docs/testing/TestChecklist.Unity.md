@@ -361,12 +361,12 @@ playtest-15 big design #1). §32 is now fully built.
         tap popup must list the parts with their own times, and press-and-HOLD must remove the WHOLE
         group — no leftovers. Then check a potion/scroll square is unchanged: a Swift potion still
         reads "Swift", NOT "Swift Potion (Greater)".
-32w.[ ] **The NPC buffer gives BASIC buffs only, one hour each.** Its list must be Might · Force ·
-        Focus · Body · Frenzy · Swift · Alacrity · Agility · Haste — **no "Improved Speed" group and
-        no Harmony of Protection / Warrior / Wizard**. Each lands as ONE buff square at 1h. Check the
-        overlap rule still holds: take Swift from the buffer, then drink a Swift potion of the same
-        tier — the potion must be REFUSED (not eaten) because the buffer's hour is longer; a HIGHER
-        tier potion must replace it. Full-set price is unchanged (nine buffs).
+32w.[ ] **The NPC buffer gives BASIC buffs only, one hour each.** ⚠ **The list GREW in 0.40.0** —
+        see 33d, which supersedes the nine-buff list this item was written against. Still true and
+        still worth checking here: **no group buff and no Harmony** at the NPC, each blessing lands as
+        ONE buff square at 1h, and the overlap rule holds — take Swift from the buffer, then drink a
+        Swift potion of the same tier and the potion must be REFUSED (not eaten), because the buffer's
+        hour is longer; a HIGHER tier potion must replace it.
 32v.[ ] **Auto-farm shows its target** — while the autopilot is running, the target window must show the
         creature it is currently on, update as it switches, and clear when it has none. The server
         already picks one (`GameLoopService` sets `CombatTargetId` in the auto-hunt path, ~:3043/:3056);
@@ -381,6 +381,41 @@ playtest-15 big design #1). §32 is now fully built.
         the scroll's must have grown at the others' expense — **the group must NOT fire more often**,
         because it was already guaranteed. `/droprate item Scroll of Resurrect 1` clears it and the
         tree goes back to a plain name list. A wrong name must suggest near matches, not fail silently.
+
+--- 33. 🔴 THE POTION SPLIT (0.40.0) — playtest-15 big design #2, `docs/design/BuffLadders.md`. ---
+**All server-side. No Unity file changed, so the current APK proves it as well as a new one would.**
+The one thing to prove above all: **a buff potion no longer stacks with the buff it duplicates.**
+33a.[ ] **A potion competes with the class buff instead of adding to it.** Get a cleric's Might (now
+        **"Might and Bulwark"**) at level 1 (+8% P.Atk / +8% P.Def), note P.Atk in the stats window,
+        then drink a **Might Potion (Lesser)** — also +8%. It must be **REFUSED and not consumed**
+        ("a stronger effect is already active"), and P.Atk must NOT move. Now drink a **Might Potion
+        (Greater)** (+15%): it replaces the P.Atk part, P.Atk rises — and the **P.Def part of the
+        blessing stays at +8%**, because Bulwark is a different family. That last sentence is the
+        whole design; if the buff vanishes entirely, the split is wrong.
+33b.[ ] **The class buffs cast the same numbers they always did.** Levels 1-4 of Might and Bulwark ·
+        Force and Ward · Focus and Ferocity · Body and Soul · Frenzy were re-authored as GROUPS but
+        must not change any number a cleric already casts. ⚠ **One deliberate exception:** Might used
+        to raise BOTH channels, so a mage's M.Atk fell with this change — M.Atk is now the **Force**
+        family, with its own potion. Check a mage's M.Atk before/after and that Force restores it.
+33c.[ ] **The new potions and scrolls exist and are buyable/lootable.** Apothecary stocks Might ·
+        Bulwark · Force · Ward potions (Lesser). Their Uncommon/Rare rungs and all their scrolls drop
+        from the usual scroll rung. Each says what it does, lasts **20 min (potion) / 1 h (scroll)**,
+        and a scroll takes a second to read while a potion is instant.
+33d.[ ] **The NPC buffer offers 19 single blessings + Full buff.** Might · Bulwark · Vampirism ·
+        Accuracy · Force · Ward · Resolve · Focus · Ferocity · Insight · Body · Soul · Vigor ·
+        Serenity · Swift · Alacrity · Agility · Haste · Frenzy. The list must **scroll**. Each is
+        cancellable on its own. **Full buff must cost about what it did with nine buttons** (the
+        per-buff price was halved to compensate) — if it doubled, say so.
+33e.[ ] **The admin buff button gives everything INCLUDING Harmony.** Debug/ADMIN → buff: 22 squares,
+        the 19 above plus **Harmony of Protection / Warrior / Wizard**, which no NPC sells and no
+        potion can reach. This is the only way to see a fully buffed character.
+33f.[ ] **Scroll-only families are scroll-only.** There is no potion of Body · Soul · Vigor · Serenity ·
+        Focus · Ferocity · Insight · Frenzy at any price, and their cheapest scroll is **Epic**. They
+        drop from level **60+** (Epic) and **76+** (Legendary). ⚠ **Mythic buff scrolls have no source
+        yet** — like Dash Mythic, they wait on the §3 drop-group rework. Not a bug.
+33g.[ ] **Nothing orphaned by the rename.** `game.db` should be reset before this playtest: buffs saved
+        under the OLD keys (`mage_might`, `holy_body`, …) no longer match a family. If you keep the db,
+        a stale square that never expires is the thing to watch for.
 
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends

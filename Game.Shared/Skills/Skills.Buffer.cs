@@ -7,18 +7,34 @@ namespace Game.Shared;
 /// NPC. Channel-split atk (Might = P.Atk, Force = M.Atk) via the buff/effect layer.</summary>
 public static partial class SkillCatalog
 {
-    public const string NpcMight  = "npc_might";
-    public const string NpcForce  = "npc_force";
-    public const string NpcFocus  = "npc_focus";
-    public const string NpcSpeed  = "npc_speed";
-    public const string NpcBody   = "npc_body";
-    public const string NpcFrenzy = "npc_frenzy";
+    // The five ORIGINAL blessings. Each was one monolithic multi-effect buff on its own key —
+    // which is exactly why a Might potion could stack on top of the buffer's Might. They are now
+    // SINGLES too (owner 2026-07-31): npc_might hands out the P.Atk rung and nothing else, and its
+    // old companions have their own buttons below. Ids kept (append-only), meaning changed.
+    public const string NpcMight  = "npc_might";     // Might   — % P.Atk
+    public const string NpcForce  = "npc_force";     // Force   — % M.Atk
+    public const string NpcFocus  = "npc_focus";     // Focus   — % crit rate
+    public const string NpcSpeed  = "npc_speed";     // the old GROUP — no longer offered
+    public const string NpcBody   = "npc_body";      // Body    — % Max HP
+    public const string NpcFrenzy = "npc_frenzy";    // Frenzy  — the whole trade-off buff
     // The four SPEED singles, one hour each — the scroll tier handed out one buff at a time.
     // They replaced the "Improved Speed" GROUP the buffer used to give (owner 2026-07-31).
     public const string NpcSwift    = "npc_swift";
     public const string NpcAlacrity = "npc_alacrity";
     public const string NpcAgility  = "npc_agility";
     public const string NpcHaste    = "npc_haste";
+    // The rest of the singles, one per family, so every effect the buffer used to bundle can now
+    // be taken (and cancelled) on its own — and so a potion of that family competes with it.
+    public const string NpcBulwark   = "npc_bulwark";     // % P.Def
+    public const string NpcVampirism = "npc_vampirism";   // % melee vampirism
+    public const string NpcAccuracy  = "npc_accuracy";    // flat accuracy
+    public const string NpcWard      = "npc_ward";        // % M.Def
+    public const string NpcResolve   = "npc_resolve";     // flat interrupt resistance
+    public const string NpcFerocity  = "npc_ferocity";    // % crit damage
+    public const string NpcInsight   = "npc_insight";     // % magic crit rate
+    public const string NpcSoul      = "npc_soul";        // % Max MP
+    public const string NpcVigor     = "npc_vigor";       // % HP regeneration
+    public const string NpcSerenity  = "npc_serenity";    // % MP regeneration
     // "Harmony" GREATER buffs (max-level; owner 2026-07-03). They STACK on top of the six above
     // (distinct BuffKeys). NO LONGER OFFERED by the newbie buffer — see NewbieBuffSet. The defs
     // stay because a real 3rd-class buffer is meant to have them; nothing grants them today.
@@ -36,8 +52,19 @@ public static partial class SkillCatalog
     /// groups. Frenzy stays in (it's a FULL buffer; cancel that one buff if you don't want its
     /// −10% Max HP/MP).</summary>
     public static readonly string[] NewbieBuffSet =
-        { NpcMight, NpcForce, NpcFocus, NpcBody, NpcFrenzy,
-          NpcSwift, NpcAlacrity, NpcAgility, NpcHaste };
+        { NpcMight, NpcBulwark, NpcVampirism, NpcAccuracy,
+          NpcForce, NpcWard, NpcResolve,
+          NpcFocus, NpcFerocity, NpcInsight,
+          NpcBody, NpcSoul, NpcVigor, NpcSerenity,
+          NpcSwift, NpcAlacrity, NpcAgility, NpcHaste,
+          NpcFrenzy };
+
+    /// <summary>What the ADMIN buff button hands out: everything the buffer sells PLUS the three
+    /// Harmony blessings, which no NPC offers and no consumable can reach (owner 2026-07-31).
+    /// Harmony is the layer that keeps a real buffer class worth grouping with, so the only way to
+    /// see a fully-buffed character — the state the balance numbers are read at — is from here.</summary>
+    public static readonly string[] AdminBuffSet =
+        NewbieBuffSet.Concat(new[] { NpcHarmonyProtection, NpcHarmonyWarrior, NpcHarmonyWizard }).ToArray();
 
     private static SkillDef NpcBuff(string id, string name, string buffKey,
         SkillEffect effect, EffectMagnitude[] mags, string desc,
@@ -75,32 +102,23 @@ public static partial class SkillCatalog
 
     private static SkillDef[] BufferSkills() => new SkillDef[]
     {
-        NpcBuff(NpcMight, "Might", "mage_might",
-            SkillEffect.BuffPhysAtk | SkillEffect.BuffDef | SkillEffect.BuffMeleeVamp | SkillEffect.BuffAccuracy,
-            new EffectMagnitude[]
-            {
-                new(SkillEffect.BuffPhysAtk, 0.15f), new(SkillEffect.BuffDef, 0.15f),
-                new(SkillEffect.BuffMeleeVamp, 0.09f), new(SkillEffect.BuffAccuracy, 4, ModifierMode.Flat),
-            },
-            "+15% P.Atk & P.Def, 9% melee vampirism, +4 accuracy"),
+        // ---- The MIGHT family, one button each (was a single four-effect "Might"). ----
+        NpcSingle(NpcMight, "Might", BuffPAtk3, SkillEffect.BuffPhysAtk, "+15% P.Atk"),
+        NpcSingle(NpcBulwark, "Bulwark", BuffPDef3, SkillEffect.BuffDef, "+15% P.Def"),
+        NpcSingle(NpcVampirism, "Vampirism", BuffVamp3, SkillEffect.BuffMeleeVamp, "9% melee vampirism"),
+        NpcSingle(NpcAccuracy, "Accuracy", BuffAcc3, SkillEffect.BuffAccuracy, "+4 Accuracy"),
 
-        NpcBuff(NpcForce, "Force", "holy_force",
-            SkillEffect.BuffInterruptResist | SkillEffect.BuffMagAtk | SkillEffect.BuffMagicDef,
-            new EffectMagnitude[]
-            {
-                new(SkillEffect.BuffInterruptResist, 60, ModifierMode.Flat),
-                new(SkillEffect.BuffMagAtk, 0.32f), new(SkillEffect.BuffMagicDef, 0.30f),
-            },
-            "+32% M.Atk, +30% M.Def, strong cast-cancel resist"),
+        // ---- The FORCE family (was a single three-effect "Force"). ----
+        NpcSingle(NpcForce, "Force", BuffMAtk3, SkillEffect.BuffMagAtk, "+32% M.Atk"),
+        NpcSingle(NpcWard, "Ward", BuffMDef3, SkillEffect.BuffMagicDef, "+30% M.Def"),
+        NpcSingle(NpcResolve, "Resolve", BuffIntr4, SkillEffect.BuffInterruptResist,
+            "+60 interrupt resistance"),
 
-        NpcBuff(NpcFocus, "Focus", "holy_focus",
-            SkillEffect.BuffCritRate | SkillEffect.BuffCritDamage | SkillEffect.BuffMagicCritRate,
-            new EffectMagnitude[]
-            {
-                new(SkillEffect.BuffCritRate, 0.30f), new(SkillEffect.BuffCritDamage, 0.35f),
-                new(SkillEffect.BuffMagicCritRate, 1.0f),
-            },
-            "+30% physical crit rate, +35% crit damage, double magic crit rate"),
+        // ---- The FOCUS family (was a single three-effect "Focus"). ----
+        NpcSingle(NpcFocus, "Focus", Rung(FamCritRate, 6), SkillEffect.BuffCritRate, "+30% critical rate"),
+        NpcSingle(NpcFerocity, "Ferocity", Rung(FamCritDmg, 6), SkillEffect.BuffCritDamage, "+35% critical damage"),
+        NpcSingle(NpcInsight, "Insight", Rung(FamMagCrit, 6), SkillEffect.BuffMagicCritRate,
+            "double magic critical rate"),
 
         // Speed used to be an IMPROVED (group) buff here. The owner cut it (2026-07-31): the NPC
         // buffer gives the SCROLL tier — four separate single buffs, bought and cancelled one at a
@@ -119,27 +137,16 @@ public static partial class SkillCatalog
         NpcSingle(NpcAgility, "Agility", BuffAgilityR, SkillEffect.BuffEvasion, "+4 Evasion"),
         NpcSingle(NpcHaste, "Haste", BuffHasteR, SkillEffect.BuffAtkSpeed, "+33% Attack Speed"),
 
-        NpcBuff(NpcBody, "Body", "holy_body",
-            SkillEffect.BuffHp | SkillEffect.BuffMp | SkillEffect.BuffHpRegen | SkillEffect.BuffMpRegen,
-            new EffectMagnitude[]
-            {
-                new(SkillEffect.BuffHp, 0.35f), new(SkillEffect.BuffMp, 0.35f),
-                new(SkillEffect.BuffHpRegen, 0.20f), new(SkillEffect.BuffMpRegen, 0.20f),
-            },
-            "+35% Max HP & MP, +20% HP & MP regen"),
+        // ---- The BODY family (was a single four-effect "Body"). ----
+        NpcSingle(NpcBody, "Body", Rung(FamMaxHp, 6), SkillEffect.BuffHp, "+35% Max HP"),
+        NpcSingle(NpcSoul, "Soul", Rung(FamMaxMp, 6), SkillEffect.BuffMp, "+35% Max MP"),
+        NpcSingle(NpcVigor, "Vigor", Rung(FamHpRegen, 6), SkillEffect.BuffHpRegen, "+20% HP regeneration"),
+        NpcSingle(NpcSerenity, "Serenity", Rung(FamMpRegen, 6), SkillEffect.BuffMpRegen, "+20% MP regeneration"),
 
-        // Frenzy — a reckless trade-off buff. INCLUDED in the full NPC buffer set (it's a FULL
-        // buffer); a player who doesn't want the -10% Max HP/MP can just cancel this one buff.
-        NpcBuff(NpcFrenzy, "Frenzy", "holy_frenzy",
-            SkillEffect.BuffHp | SkillEffect.BuffMp | SkillEffect.BuffAtkSpeed | SkillEffect.BuffCastSpeed
-            | SkillEffect.BuffPhysAtk | SkillEffect.BuffMagAtk | SkillEffect.BuffMoveSpeed | SkillEffect.BuffEvasion,
-            new EffectMagnitude[]
-            {
-                new(SkillEffect.BuffHp, -0.10f), new(SkillEffect.BuffMp, -0.10f),
-                new(SkillEffect.BuffAtkSpeed, 0.08f), new(SkillEffect.BuffCastSpeed, 0.08f),
-                new(SkillEffect.BuffPhysAtk, 0.08f), new(SkillEffect.BuffMagAtk, 0.08f),
-                new(SkillEffect.BuffMoveSpeed, 8, ModifierMode.Flat), new(SkillEffect.BuffEvasion, -8, ModifierMode.Flat),
-            },
+        // Frenzy — a reckless trade-off buff, and the one family whose rung is a whole buff rather
+        // than one stat. INCLUDED in the full set (it's a FULL buffer); a player who doesn't want
+        // the -10% Max HP/MP can just cancel this one buff.
+        NpcSingle(NpcFrenzy, "Frenzy", Rung(FamFrenzy, 6), SkillEffect.BuffPhysAtk,
             "-10% Max HP/MP but +8% P.Atk / +8% M.Atk / +8% atk & cast speed / +8 move / -8 evasion"),
 
         // ----- Greater "Harmony" buffs (max-level). Reflect (Protection) and the −physical/−magic

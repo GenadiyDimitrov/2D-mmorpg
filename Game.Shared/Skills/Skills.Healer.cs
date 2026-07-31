@@ -81,7 +81,7 @@ public static partial class SkillCatalog
         //
         // Levels 5-6 exist as data but have no learn slot yet: the cleric table stops at level 4
         // (char 35) and the Warchanter discipline tables are still commented out pending their CSVs.
-        new(HolySpeed, "Improved Speed", BaseClass.Mage,
+        new(HolySpeed, "Swift and Sure", BaseClass.Mage,
             SkillEffect.BuffCastSpeed | SkillEffect.BuffMoveSpeed | SkillEffect.BuffEvasion | SkillEffect.BuffAtkSpeed,
             MpCost: 50, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
             DurationTicks: 12000, BuffKey: "holy_speed", Rank: 1, InitialMpCost: 10,
@@ -138,13 +138,39 @@ public static partial class SkillCatalog
             Description: "Transfers 60 MP to an ally (costs 72 — a net loss). Can't be used on "
                        + "yourself or another mana-restorer."),
 
-        // Body — party-castable HP-regen buff (20 min). Learned at 35 (single level).
-        new(HolyBody, "Body", BaseClass.Mage, SkillEffect.BuffHpRegen,
+        // Body and Soul — the vitality group. Level 1 is exactly the +10% HP regen this buff has
+        // always cast; the higher levels fold in MP regen, then Max HP, then Max MP, reaching the
+        // NPC buffer's max at level 6. The four families it draws on (hp_max / mp_max / hp_regen /
+        // mp_regen) are SCROLL-ONLY: there is no potion of any of them, which is why their scrolls
+        // start at Epic. See docs/design/BuffLadders.md.
+        new(HolyBody, "Body and Soul", BaseClass.Mage,
+            SkillEffect.BuffHpRegen | SkillEffect.BuffMpRegen | SkillEffect.BuffHp | SkillEffect.BuffMp,
             MpCost: 25, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
             DurationTicks: 12000, BuffKey: "holy_body", Rank: 1, InitialMpCost: 5,
             Category: SkillCategory.Buff, SpCost: 25000,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffHpRegen, 0.10f) },
-            Description: "Blesses an ally (or self) with +10% HP regeneration for 20 minutes."),
+            ChildBuffs: new[] { Rung(FamHpRegen, 2) },
+            Description: "Blesses an ally (or self) with vitality — regeneration, and at higher ranks Max HP and MP.",
+            Levels: new[]
+            {
+                new SkillLevel(MpCost: 25, InitialMpCost: 5, SpCost: 25000,
+                    ChildBuffs: new[] { Rung(FamHpRegen, 2) },
+                    Description: "+10% HP regeneration."),
+                new SkillLevel(MpCost: 35, InitialMpCost: 7, SpCost: 25000,
+                    ChildBuffs: new[] { Rung(FamHpRegen, 3), Rung(FamMpRegen, 2) },
+                    Description: "+12% HP and +10% MP regeneration."),
+                new SkillLevel(MpCost: 50, InitialMpCost: 10, SpCost: 50000,
+                    ChildBuffs: new[] { Rung(FamHpRegen, 4), Rung(FamMpRegen, 3), Rung(FamMaxHp, 1) },
+                    Description: "+15% HP and +12% MP regeneration, +10% Max HP."),
+                new SkillLevel(MpCost: 65, InitialMpCost: 13, SpCost: 50000,
+                    ChildBuffs: new[] { Rung(FamHpRegen, 5), Rung(FamMpRegen, 4), Rung(FamMaxHp, 2), Rung(FamMaxMp, 1) },
+                    Description: "+17% HP and +15% MP regeneration, +15% Max HP, +10% Max MP."),
+                new SkillLevel(MpCost: 80, InitialMpCost: 16, SpCost: 100000,
+                    ChildBuffs: new[] { Rung(FamHpRegen, 6), Rung(FamMpRegen, 5), Rung(FamMaxHp, 4), Rung(FamMaxMp, 3) },
+                    Description: "+20% HP and +17% MP regeneration, +25% Max HP, +20% Max MP."),
+                new SkillLevel(MpCost: 95, InitialMpCost: 19, SpCost: 100000,
+                    ChildBuffs: new[] { Rung(FamHpRegen, 6), Rung(FamMpRegen, 6), Rung(FamMaxHp, 6), Rung(FamMaxMp, 6) },
+                    Description: "+20% HP and MP regeneration, +35% Max HP and Max MP."),
+            }),
 
         // Spell Mastery — caster passive (replaces Weapon Mastery). Flat M/P.Atk, a 10%
         // reuse-delay reduction, +5% cast speed and (from lvl 2) MP/HP-regen multipliers.
@@ -169,53 +195,106 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 25000, Description: "With sword/blunt: +12 M.Atk, +10 P.Atk, +5% cast, -10% reuse, +50% MP regen, +10% HP regen."),
             }),
 
-        // Force — steadies casting (interrupt resist = "magic-cancel resist"); rank 2 adds
-        // a big Magic Attack buff. 2 levels (20/25), castable on an ally or self.
-        new(HolyForce, "Force", BaseClass.Mage,
-            SkillEffect.BuffInterruptResist | SkillEffect.BuffMagAtk,
+        // Force and Ward — the caster's group. Levels 1-2 are the numbers this buff already cast
+        // (+18 interrupt resist, then +25 with +25% M.Atk); from level 3 it adds M.Def, and at 6
+        // it equals the NPC buffer. M.Atk and M.Def each have a potion AND a scroll, so a Force
+        // potion overrides only the M.Atk part. Resolve (interrupt resist) has no consumable at
+        // all — a buffer is the only source. See docs/design/BuffLadders.md.
+        new(HolyForce, "Force and Ward", BaseClass.Mage,
+            SkillEffect.BuffInterruptResist | SkillEffect.BuffMagAtk | SkillEffect.BuffMagicDef,
             MpCost: 25, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
             DurationTicks: 12000, BuffKey: "holy_force", Rank: 1, InitialMpCost: 5,
             Category: SkillCategory.Buff,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffInterruptResist, 18, ModifierMode.Flat) },
-            Description: "Steadies an ally's casting (harder to interrupt/cancel); higher ranks add Magic Attack.",
+            ChildBuffs: new[] { BuffIntr1 },
+            Description: "Steadies an ally's casting (harder to interrupt/cancel); higher ranks add Magic Attack and Magic Defence.",
             Levels: new[]
             {
                 new SkillLevel(MpCost: 25, InitialMpCost: 5,  SpCost: 3200,
-                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffInterruptResist, 18, ModifierMode.Flat) },
+                    ChildBuffs: new[] { BuffIntr1 },
                     Description: "+18 interrupt resistance (harder to cancel your casts)."),
                 new SkillLevel(MpCost: 50, InitialMpCost: 10, SpCost: 6400,
-                    Magnitudes: new EffectMagnitude[]
-                    {
-                        new(SkillEffect.BuffInterruptResist, 25, ModifierMode.Flat),
-                        new(SkillEffect.BuffMagAtk, 0.25f),
-                    },
-                    Description: "+25 interrupt resistance and +25% Magic Attack."),
+                    ChildBuffs: new[] { BuffIntr2, BuffMAtk2 },
+                    Description: "+25 interrupt resistance and +25% M.Atk."),
+                new SkillLevel(MpCost: 65, InitialMpCost: 13, SpCost: 12800,
+                    ChildBuffs: new[] { BuffIntr3, BuffMAtk2, BuffMDef1 },
+                    Description: "+40 interrupt resistance, +25% M.Atk, +10% M.Def."),
+                new SkillLevel(MpCost: 80, InitialMpCost: 16, SpCost: 25000,
+                    ChildBuffs: new[] { BuffIntr3, BuffMAtk3, BuffMDef2 },
+                    Description: "+40 interrupt resistance, +32% M.Atk, +20% M.Def."),
+                new SkillLevel(MpCost: 95, InitialMpCost: 19, SpCost: 50000,
+                    ChildBuffs: new[] { BuffIntr4, BuffMAtk3, BuffMDef2 },
+                    Description: "+60 interrupt resistance, +32% M.Atk, +20% M.Def."),
+                new SkillLevel(MpCost: 110, InitialMpCost: 22, SpCost: 100000,
+                    ChildBuffs: new[] { BuffIntr4, BuffMAtk3, BuffMDef3 },
+                    Description: "+60 interrupt resistance, +32% M.Atk, +30% M.Def."),
             }),
 
-        // Focus — +20% physical crit rate (for melee allies). Single level (25).
-        new(HolyFocus, "Focus", BaseClass.Mage, SkillEffect.BuffCritRate,
+        // Focus and Ferocity — the critical group. Level 1 is the +20% crit rate this buff has
+        // always cast; the rest add crit damage and then magic crit, reaching the NPC buffer's
+        // max at 6. All three families are SCROLL-ONLY (Epic and up).
+        new(HolyFocus, "Focus and Ferocity", BaseClass.Mage,
+            SkillEffect.BuffCritRate | SkillEffect.BuffCritDamage | SkillEffect.BuffMagicCritRate,
             MpCost: 25, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
             DurationTicks: 12000, BuffKey: "holy_focus", Rank: 1, InitialMpCost: 5,
             Category: SkillCategory.Buff, SpCost: 6400,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffCritRate, 0.20f) },
-            Description: "Sharpens an ally's aim: +20% physical critical rate for 20 minutes."),
+            ChildBuffs: new[] { Rung(FamCritRate, 4) },
+            Description: "Sharpens an ally's aim: critical rate, and at higher ranks critical damage and magic criticals.",
+            Levels: new[]
+            {
+                new SkillLevel(MpCost: 25, InitialMpCost: 5, SpCost: 6400,
+                    ChildBuffs: new[] { Rung(FamCritRate, 4) },
+                    Description: "+20% physical critical rate."),
+                new SkillLevel(MpCost: 40, InitialMpCost: 8, SpCost: 12800,
+                    ChildBuffs: new[] { Rung(FamCritRate, 5), Rung(FamCritDmg, 1) },
+                    Description: "+25% critical rate, +10% critical damage."),
+                new SkillLevel(MpCost: 55, InitialMpCost: 11, SpCost: 25000,
+                    ChildBuffs: new[] { Rung(FamCritRate, 5), Rung(FamCritDmg, 3), Rung(FamMagCrit, 1) },
+                    Description: "+25% critical rate, +20% critical damage, +20% magic critical rate."),
+                new SkillLevel(MpCost: 70, InitialMpCost: 14, SpCost: 50000,
+                    ChildBuffs: new[] { Rung(FamCritRate, 6), Rung(FamCritDmg, 4), Rung(FamMagCrit, 2) },
+                    Description: "+30% critical rate, +25% critical damage, +35% magic critical rate."),
+                new SkillLevel(MpCost: 85, InitialMpCost: 17, SpCost: 100000,
+                    ChildBuffs: new[] { Rung(FamCritRate, 6), Rung(FamCritDmg, 5), Rung(FamMagCrit, 4) },
+                    Description: "+30% critical rate, +30% critical damage, +65% magic critical rate."),
+                new SkillLevel(MpCost: 100, InitialMpCost: 20, SpCost: 100000,
+                    ChildBuffs: new[] { Rung(FamCritRate, 6), Rung(FamCritDmg, 6), Rung(FamMagCrit, 6) },
+                    Description: "+30% critical rate, +35% critical damage, double magic critical rate."),
+            }),
 
-        // Frenzy — reckless surge: lower Max HP/MP for more offence + speed. Single level (35).
+        // Frenzy — reckless surge: lower Max HP/MP for more offence + speed. The one family whose
+        // rung is a WHOLE buff rather than one stat (the owner wants the scroll to carry "the full
+        // frenzy"), so this is a thin wrapper: each level hands out one rung of the frenzy ladder.
+        // Level 1 = what it cast before; level 6 = the NPC buffer's. Scroll-only (Epic and up).
         new(HolyFrenzy, "Frenzy", BaseClass.Mage,
             SkillEffect.BuffHp | SkillEffect.BuffMp | SkillEffect.BuffPhysAtk | SkillEffect.BuffMagAtk
-            | SkillEffect.BuffCastSpeed | SkillEffect.BuffAtkSpeed | SkillEffect.BuffMoveSpeed,
+            | SkillEffect.BuffCastSpeed | SkillEffect.BuffAtkSpeed | SkillEffect.BuffMoveSpeed
+            | SkillEffect.BuffEvasion,
             MpCost: 125, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
             DurationTicks: 12000, BuffKey: "holy_frenzy", Rank: 1, InitialMpCost: 25,
             Category: SkillCategory.Buff, SpCost: 25000,
-            Magnitudes: new EffectMagnitude[]
+            ChildBuffs: new[] { Rung(FamFrenzy, 1) },
+            Description: "A reckless surge: less Max HP/MP, but more attack and speed for 20 minutes.",
+            Levels: new[]
             {
-                new(SkillEffect.BuffHp, -0.30f), new(SkillEffect.BuffMp, -0.30f),
-                new(SkillEffect.BuffPhysAtk, 0.05f), new(SkillEffect.BuffMagAtk, 0.05f),
-                new(SkillEffect.BuffCastSpeed, 0.05f), new(SkillEffect.BuffAtkSpeed, 0.05f),
-                new(SkillEffect.BuffMoveSpeed, 5, ModifierMode.Flat),
-            },
-            Description: "A reckless surge: -30% Max HP/MP, but +5% Attack, +5% Magic Attack, "
-                       + "+5% cast & attack speed and +5 move speed for 20 minutes."),
+                new SkillLevel(MpCost: 125, InitialMpCost: 25, SpCost: 25000,
+                    ChildBuffs: new[] { Rung(FamFrenzy, 1) },
+                    Description: "−30% Max HP/MP, +5% offence and speed, +5 move, −8 evasion."),
+                new SkillLevel(MpCost: 135, InitialMpCost: 27, SpCost: 25000,
+                    ChildBuffs: new[] { Rung(FamFrenzy, 2) },
+                    Description: "−26% Max HP/MP, +6% offence and speed, +6 move, −8 evasion."),
+                new SkillLevel(MpCost: 145, InitialMpCost: 29, SpCost: 50000,
+                    ChildBuffs: new[] { Rung(FamFrenzy, 3) },
+                    Description: "−22% Max HP/MP, +6% offence and speed, +6 move, −8 evasion."),
+                new SkillLevel(MpCost: 155, InitialMpCost: 31, SpCost: 50000,
+                    ChildBuffs: new[] { Rung(FamFrenzy, 4) },
+                    Description: "−18% Max HP/MP, +7% offence and speed, +7 move, −8 evasion."),
+                new SkillLevel(MpCost: 165, InitialMpCost: 33, SpCost: 100000,
+                    ChildBuffs: new[] { Rung(FamFrenzy, 5) },
+                    Description: "−14% Max HP/MP, +7% offence and speed, +7 move, −8 evasion."),
+                new SkillLevel(MpCost: 175, InitialMpCost: 35, SpCost: 100000,
+                    ChildBuffs: new[] { Rung(FamFrenzy, 6) },
+                    Description: "−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion."),
+            }),
 
         // Combat Stance — TOGGLE. Pours magic into melee: +P.Atk, -M.Atk (weaker heals/
         // spells) while wielding a mace, so a cleric can solo-farm. Click again to end.

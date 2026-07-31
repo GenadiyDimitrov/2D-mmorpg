@@ -72,6 +72,10 @@ public static class ShopCatalog
                 ItemCatalog.CastPotionC,
                 ItemCatalog.AtkPotionC,
                 ItemCatalog.EvaPotionC,
+                ItemCatalog.MightPotionC,
+                ItemCatalog.BulwarkPotionC,
+                ItemCatalog.ForcePotionC,
+                ItemCatalog.WardPotionC,
                 ItemCatalog.DashPotionC,
                 // Scroll of Return (500g) — a faster escape than the free 30s Return skill. The
                 // Ultimate scroll is NOT sold here (special vendor later).
