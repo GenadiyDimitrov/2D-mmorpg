@@ -75,13 +75,18 @@ if ($Apk) {
     $log = Join-Path $env:TEMP "unitybuild-$version.log"
     Write-Host "Unity headless build (several minutes) — log: $log" -ForegroundColor Cyan
 
+    # Start-Process -Wait, NOT the call operator: Unity.exe is a GUI-subsystem binary, so `& $UnityExe`
+    # returns the instant it is launched, leaves $LASTEXITCODE empty and makes a perfectly good build
+    # look like a failure (the script then checks for an APK that is still being written).
+    #
     # -executeMethod needs the FULLY QUALIFIED name; a bare class name fails with "executeMethod class
     # could not be found" and Unity can still exit 0, so the log is checked below either way.
-    & $UnityExe -quit -batchmode -nographics `
-        -projectPath $unityProject `
-        -executeMethod Game.Client.Editor.CommandLineBuild.BuildAndroid `
-        -logFile $log
-    $unityExit = $LASTEXITCODE
+    $unity = Start-Process -FilePath $UnityExe -Wait -PassThru -NoNewWindow -ArgumentList @(
+        "-quit", "-batchmode", "-nographics",
+        "-projectPath", $unityProject,
+        "-executeMethod", "Game.Client.Editor.CommandLineBuild.BuildAndroid",
+        "-logFile", $log)
+    $unityExit = $unity.ExitCode
 
     if (Test-Path $log) {
         $bad = Select-String -Path $log -Pattern "error CS|executeMethod class .* could not be found"
