@@ -260,7 +260,10 @@ and the displayed rate matching what he observed. **Still open** → §32.
 while an enemy interrupt does not, consumables carry their own timers, no stale timer survives a relog,
 and the Learn confirmation shows its numbers. **31e is right but unreadable** → §32.
 
---- 32. 🔴 PLAYTEST-15 (2026-07-31, server 0.34.3) — NOT BUILT YET. Full report: `Playtest-15.md`. ---
+--- 32. 🔴 PLAYTEST-15 (2026-07-31, server 0.34.3) — full report: `Playtest-15.md`. ---
+**BUILT IN 0.35.0 — test these:** 32a · 32b · 32h · 32i · 32j · 32k · 32l · **32m** · 32o · 32p · 32s · 32v.
+(32m and 32s came out of the SAME line — see 32s. 32m was scheduled for the Unity batch and arrived early.)
+**STILL OPEN:** 32c · 32d · 32e · 32f · 32g · 32n · 32q · 32r · 32t · 32u.
 32a.[ ] **The phone server starts with no hand-editing** — unzip a fresh `Game.Server` on the phone and
         `dotnet Game.Server.dll` must just run. It currently dies with `GC heap initialization failed
         (0x8007000E)` — Server GC tries to reserve 256 GiB — and he has to `nano
@@ -296,7 +299,10 @@ and the Learn confirmation shows its numbers. **31e is right but unreadable** �
 32q.[ ] **Auto-farm and offline farming show their remaining time** — buff-timer format (`24h00m01s` ==
         `1d`), on the button when enabled, or one chat line on every on/off change.
 32r.[ ] **The farming-range circle only shows when the range toggle AND auto-farm are both on.**
-32s.[ ] **Party members can be killed with PvP on** — currently impossible.
+32s.[ ] **Party members can be killed with PvP on** — and in fact ANY player: the root cause was never a
+        party rule. `TouchInput` only sent an Attack when the tapped entity was a MOB, so tapping a
+        player targeted them and did nothing. Verify a duel works at all, then that a party member is no
+        different, and that the server still refuses in town / with PvP off (with its message).
 32t.[ ] **Jewels have designated slots** — 2 rings, 2 earrings, 1 necklace, 1 pendant; equipping swaps
         like gloves do. Swap rule: replace the WEAKER of the two; if both are the same rarity replace
         slot 1; empty counts as weaker than Common.

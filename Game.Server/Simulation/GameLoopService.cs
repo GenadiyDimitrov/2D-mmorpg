@@ -3027,7 +3027,10 @@ public class GameLoopService : BackgroundService
         AutoPotions(p);
 
         if (!p.AutoHuntEnabled)
+        {
+            PushAutoTarget(p, null);   // the window must not keep showing the autopilot's last pick
             return;
+        }
         if (p.CastingSkillId is not null || p.QueuedSkillId is not null)
             return;   // let an in-progress cast/queue resolve
 
@@ -3041,15 +3044,19 @@ public class GameLoopService : BackgroundService
             if (!finishMob)
             {
                 p.CombatTargetId = foe.Id;
+                PushAutoTarget(p, foe.Id);
                 p.Engaged = AutoBasicAttackEnabled(p);
                 if (TryAutoSkill(p, foe))
                     return;
-                if (!p.Engaged) { p.TargetX = foe.X; p.TargetY = foe.Y; }   // mage: close in for skills
                 return;
             }
         }
 
-        var target = ValidAutoTarget(p) ?? AcquireAutoTarget(p);
+        // RETALIATION FIRST (owner, playtest-15): something already swinging at you outranks whatever
+        // merely happens to be nearest. He was being shot by orc archers while the autopilot calmly
+        // worked through the closest mobs. See RetaliationTarget for the two guards that keep it from
+        // thrashing (finish a nearly-dead mob; stay on an attacker you are already fighting).
+        var target = RetaliationTarget(p) ?? ValidAutoTarget(p) ?? AcquireAutoTarget(p);
         bool basic = AutoBasicAttackEnabled(p);
         if (target is not null)
         {
@@ -3061,6 +3068,7 @@ public class GameLoopService : BackgroundService
             p.Engaged = false;
             p.CombatTargetId = null;
         }
+        PushAutoTarget(p, p.CombatTargetId);
 
         // A queued skill (buffs/heals need no target; attack/debuff do) is cast+chased by UpdateAction.
         if (TryAutoSkill(p, target))
@@ -3069,12 +3077,13 @@ public class GameLoopService : BackgroundService
         if (target is not null)
         {
             // Have a target but nothing to cast this tick. Basic on → UpdateAutoAttack (via Engaged)
-            // handles it. Basic off (mage) → walk toward the target so a skill can land when ready.
-            if (!basic)
-            {
-                p.TargetX = target.X;
-                p.TargetY = target.Y;
-            }
+            // handles the approach and the swing.
+            //
+            // Basic OFF (a mage, an archer) → STAND STILL. This used to walk you onto the target "so a
+            // skill can land when ready", which is why the owner's mage ran into melee range and then
+            // just stood on top of the mob between casts (playtest-15). It was never needed: a queued
+            // skill does its own approach — UpdateQueuedSkill walks only as far as CAST range — so the
+            // walk here did nothing except close a distance the caster wanted to keep.
             return;
         }
 
@@ -3093,6 +3102,55 @@ public class GameLoopService : BackgroundService
         if (!CanPvpHit(p, a))
             return null;
         return DistanceSq(p, a) <= GameConstants.ViewRange * GameConstants.ViewRange ? a : null;
+    }
+
+    /// <summary>Tell the client what the autopilot is on, but only when it CHANGES — the loop runs
+    /// 10x/s and the target usually does not move between kills.</summary>
+    private void PushAutoTarget(Entity p, Guid? targetId)
+    {
+        if (p.SentAutoTargetId == targetId)
+            return;
+        p.SentAutoTargetId = targetId;
+        SendTo(p, "AutoTarget", new AutoTargetUpdate(targetId));
+    }
+
+    /// <summary>A mob that is ATTACKING us — preferred over whatever is merely nearest (owner,
+    /// playtest-15: "a mob hitting you is higher priority than nearest").
+    ///
+    /// Two guards stop this from making the autopilot indecisive:
+    ///  1. A nearly-dead current target (&lt;25% HP) is FINISHED first. Swapping off a mob about to die
+    ///     wastes the damage already spent — the same heuristic the PvP counter-attack already used.
+    ///  2. If the mob we are already on is itself attacking us, keep it. Otherwise two attackers at
+    ///     similar range would swap the target back and forth every tick and neither would die.
+    /// Searched over the farm circle plus the chase margin, so retaliation cannot drag the autopilot
+    /// out of its farm area.</summary>
+    private Entity? RetaliationTarget(Entity p)
+    {
+        Entity? cur = null;
+        if (p.CombatTargetId is Guid ct && _world.Entities.TryGetValue(ct, out var c) &&
+            c.Kind == EntityKind.Mob && !c.Dead)
+            cur = c;
+
+        if (cur is not null && cur.MaxHp > 0 && (float)cur.Hp / cur.MaxHp < 0.25f)
+            return null;                                  // finish it
+        if (cur is not null && cur.CombatTargetId == p.Id)
+            return cur;                                   // already trading with an attacker
+
+        var (cx, cy) = FarmCenter(p);
+        float margin = p.AutoFarmRange + AutoChaseMargin;
+        Entity? best = null;
+        float bestSq = float.MaxValue;
+        foreach (var e in _world.Grid.Nearby(p))
+        {
+            if (e.Kind != EntityKind.Mob || e.Dead || e.TrainingDummy) continue;
+            if (e.CombatTargetId != p.Id) continue;       // only things actually on us
+            if (GameConstants.InSafeZone(e.X, e.Y) || !CanAttackRank(p, e)) continue;
+            float ecx = e.X - cx, ecy = e.Y - cy;
+            if (ecx * ecx + ecy * ecy > margin * margin) continue;
+            float d = DistanceSq(p, e);
+            if (d < bestSq) { bestSq = d; best = e; }
+        }
+        return best;
     }
 
     /// <summary>"Basic Attack" opted into the auto-skill list — the auto-hunt may melee.</summary>
@@ -9308,6 +9366,17 @@ var effect = def.Effect;
         SendInventory(player);
         SendStats(player);
         SendLearned(player);
+        // THE class-change push, and the one this handler was missing (playtest-15: "my class doesn't
+        // update, I need to relog, and then the skills window is slow to show my unlearned list").
+        // The client's ActiveClass — the label it shows AND what the Skills window gates the Learn tab
+        // on — is set ONLY by this message. Stats carries SecondClass but nothing reads it for that,
+        // so the class silently stayed the old one until the next login re-sent the list. The debug
+        // class-change, the subclass swap and the character reset all send it; the REAL, quest-gated
+        // class change was the one path that did not.
+        SendSubclasses(player);
+        // A new class changes which quests are offered, and with them the "!" markers over NPC heads —
+        // the same reason the subclass swap re-sends this.
+        SendQuestLog(player);
         SendDialog(player, npc);
         BroadcastSystem($"{player.Name} has become a {req.ClassName}!");
         SaveEntity(player);

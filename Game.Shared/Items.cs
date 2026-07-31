@@ -733,9 +733,12 @@ public static class ItemCatalog
 
         // Return scrolls: same mechanism, but their skill has a CAST time, so double-clicking one
         // channels it. The skills are NOT learned — the ITEM is what grants them.
+        // Sellable as of 2026-07-31 (playtest-15): it is tradable and drops constantly, so refusing it
+        // at the vendor read as a bug. It sells through the use-consumable /25 rule (500 -> 20), not the
+        // generic 30 %, so making it sellable does not re-open the faucet playtest-14 just closed.
         list.Add(new ItemDef(ScrollReturn, "Scroll of Return", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Common,
-            UseSkillId: SkillCatalog.ScrollReturnSkill, Value: 500, SellPriceOverride: 0));
+            UseSkillId: SkillCatalog.ScrollReturnSkill, Value: 500));
         list.Add(new ItemDef(ScrollReturnUltimate, "Ultimate Scroll of Return", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare,
             UseSkillId: SkillCatalog.ScrollReturnUltSkill,
@@ -743,9 +746,12 @@ public static class ItemCatalog
 
         // Resurrection scrolls: used WHILE DEAD to self-revive (their skill channels a cast). Basic
         // restores no exp (1500g vendor); the ultimate restores all lost exp (not shop-stocked).
+        // Sellable too, same rule and same reason as the Scroll of Return (1500 -> 60). The UNTRADABLE
+        // ultimates below keep SellPriceOverride: 0 — the owner's complaint was specifically about
+        // scrolls that are tradable yet still refused at the counter.
         list.Add(new ItemDef(ScrollResurrect, "Scroll of Resurrection", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Uncommon,
-            UseSkillId: SkillCatalog.ScrollResurrectSkill, Value: 1500, SellPriceOverride: 0));
+            UseSkillId: SkillCatalog.ScrollResurrectSkill, Value: 1500));
         list.Add(new ItemDef(ScrollResurrectUltimate, "Ultimate Scroll of Resurrection", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare,
             UseSkillId: SkillCatalog.ScrollResurrectUltSkill,
@@ -789,9 +795,12 @@ public static class ItemCatalog
         //  tanks make them matter via Shield Mastery passives. Base values are
         //  modest; passives/buffs scale them. Block = flat % damage reduction.
         // ===================================================================
+        // The Wooden Shield is STARTER kit, so it sits below the F ladder the same way the training
+        // armor does (owner, 2026-07-31): 40 -> 35. At 40 it equalled the F-tier Ferrite Aegis, so the
+        // first shield you could loot was never an upgrade — the identical bug the training armor had.
         list.Add(new ItemDef(WoodenShield, "Wooden Shield", EquipSlot.Shield,
             ItemGrade.F, ItemRarity.Common,
-            BlockChance: 0.15f, BlockReduction: 0.30f, ShieldDefense: 40,
+            BlockChance: 0.15f, BlockReduction: 0.30f, ShieldDefense: 35,
             ShieldCritDefense: 0.05f, ShieldEvasionPenalty: 4));
         list.Add(new ItemDef(IronShield, "Iron Shield", EquipSlot.Shield,
             ItemGrade.E, ItemRarity.Uncommon,
@@ -824,36 +833,42 @@ public static class ItemCatalog
         //  Newbie weapons' power, so a starting character cannot one-shot its way through the first zones.
         //  Buyable at 400g; untradeable and attribute-less like the rest of the starter kit.
         //
-        //  ⚠ The owner authored these as "P.Atk / M.Atk" pairs: sword 6/5, club 6/5, knives 5/5,
-        //  bow 11/5, wand 5/7. Only the FIRST number is authored here as AtkBonus — the second follows
-        //  from the CHANNEL FACTOR, which is deliberate. Forcing a dagger's M.Atk to equal its P.Atk
-        //  would mean MAtkFactor 1.0, i.e. daggers casting as well as a staff, which reverses the
-        //  weapon-identity rule this file is built on (see OffChannelFactor). The standard 0.6 gives
-        //  sword/club 6/3.6, knives 5/3, bow 11/6.6, and the wand inverts to 4.2/7 — within a point or
-        //  two of his list at level 1, with the design intact.
+        //  The owner authored these as "P.Atk / M.Atk" pairs: sword 6/5, club 6/5, knives 5/5,
+        //  bow 11/5, wand 6/7 — and as of 2026-07-31 (playtest-15) BOTH numbers are authored, exactly
+        //  as the level-tier ladder below already does (P -> AtkBonus, M -> MAtkBonus, factors 1.0).
+        //
+        //  This tier was simply left behind by the 2026-07-24 migration: it still carried one power
+        //  number and reconstructed the M column with OffChannelFactor, which meant no training weapon
+        //  ever showed an M.Atk line on its card and a mage's starter numbers were whatever the factor
+        //  happened to produce. The old objection here — "daggers with MAtkFactor 1.0 cast as well as a
+        //  staff" — does not apply to authored numbers: knives are 5/5 because that is what was written,
+        //  not because a factor let the shared base leak through. Weapon identity now lives in the
+        //  class passive and IsMagicWeapon, per the note on the ladder below.
         list.Add(new ItemDef(TrainingSword, "Training Sword", EquipSlot.Weapon,
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Sword,
-            AtkBonus: 6, PAtkFactor: 1.0f, MAtkFactor: OffChannelFactor,
+            AtkBonus: 6, MAtkBonus: 5,
             Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
             Description: "Blunt-edged practice sword. The weakest blade there is — replace it as soon as you can."));
         list.Add(new ItemDef(TrainingClub, "Training Club", EquipSlot.Weapon,
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Blunt,
-            AtkBonus: 6, PAtkFactor: 1.0f, MAtkFactor: OffChannelFactor,
+            AtkBonus: 6, MAtkBonus: 5,
             Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
             Description: "A weighted stick. It hits about as well as you would expect."));
         list.Add(new ItemDef(TrainingKnives, "Training Knives", EquipSlot.Weapon,
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Dual,
-            AtkBonus: 5, PAtkFactor: 1.0f, MAtkFactor: OffChannelFactor,
+            AtkBonus: 5, MAtkBonus: 5,
             Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
             Description: "Dulled practice knives. Fast, and barely dangerous."));
         list.Add(new ItemDef(TrainingBow, "Training Bow", EquipSlot.Weapon,
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Bow,
-            AtkBonus: 11, PAtkFactor: 1.0f, MAtkFactor: OffChannelFactor, WeaponRange: 400,
+            AtkBonus: 11, MAtkBonus: 5, WeaponRange: 400,
             Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
             Description: "A short practice bow. Hits harder than the melee training gear, from a distance."));
+        // The wand's +6 MaxMP is GONE (owner, 2026-07-31): the training tier is meant to be the weakest
+        // gear in the game, and a stat no other training weapon carried made it the default pick.
         list.Add(new ItemDef(TrainingWand, "Training Wand", EquipSlot.Weapon,
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Blunt,
-            AtkBonus: 7, PAtkFactor: OffChannelFactor, MAtkFactor: 1.0f, MpBonus: 6,
+            AtkBonus: 6, MAtkBonus: 7,
             Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
             Description: "An apprentice's wand. Poor in the hand, but it carries a spell."));
 
@@ -1361,7 +1376,10 @@ public static class ItemCatalog
                     SetId: $"set_acc_t{lv[i]}");   // shared accessory line per tier (all weights)
 
         // ---- Shields (ShieldDefense from the CSV P.Def; block stats extrapolate Wooden→Iron, tunable). ----
-        int[] shDef = WithS(40, new[]{ 143, 203, 230, 256, 299 });
+        // F rung 40 -> 90 (owner, 2026-07-31): the Ferrite Aegis at MYTHIC used to match the starter
+        // Wooden Shield exactly, so the entire F shield rarity ladder was worthless. 90 puts the Mythic
+        // F shield where the ladder expects it, and its Common rung (45%) still lands above the 35 starter.
+        int[] shDef = WithS(90, new[]{ 143, 203, 230, 256, 299 });
         float[] shBlock = { 0.15f, 0.22f, 0.24f, 0.26f, 0.28f, 0.30f, 0.32f };
         float[] shReduce = { 0.34f, 0.37f, 0.39f, 0.41f, 0.43f, 0.45f, 0.47f };
         float[] shCrit = { 0.08f, 0.10f, 0.11f, 0.12f, 0.13f, 0.15f, 0.16f };
@@ -1543,10 +1561,26 @@ public static class ItemCatalog
     /// gear: mats, potions and scrolls are not what made a level-25 character rich, and cutting them
     /// too would quietly nerf crafting income nobody asked to nerf. Everything else keeps
     /// <see cref="GameConstants.VendorSellFraction"/>.</summary>
+    /// USE-CONSUMABLES (buff potions and the cast-on-use scrolls) take the same /25 as gear, added
+    /// 2026-07-31 for playtest-15. They are the other half of the same faucet: the Always and Scrolls
+    /// drop groups hand one out on essentially every kill, so at the generic 30 % a Lesser buff potion
+    /// paid 450 — a third of a tiered F body — for something the player never has to buy. /25 puts it
+    /// at 60, which is the owner's own number. HEALING potions are deliberately NOT in this branch:
+    /// they carry a PotionCooldownTicks and their oversupply is being fixed at the DROP rate instead,
+    /// so their price is left alone rather than nerfed twice.
     public static int SellPrice(ItemDef def) =>
         def.SellPriceOverride is int s ? Math.Max(0, s)
         : TieredGearPrice(def) is int gear ? Math.Max(1, gear / GameConstants.GearSellDivisor)
+        : IsUseConsumable(def) && def.Value > 0
+            ? Math.Max(1, def.Value / GameConstants.GearSellDivisor)
         : def.Value <= 0 ? 0 : Math.Max(1, (int)(def.Value * GameConstants.VendorSellFraction));
+
+    /// <summary>A consumable whose worth is the EFFECT it casts, not a heal on a timer: buff potions
+    /// and the Return/Resurrection scrolls. Keyed off "no heal cooldown + it uses a skill", which is
+    /// what separates them from healing potions.</summary>
+    private static bool IsUseConsumable(ItemDef def) =>
+        def.Slot == EquipSlot.Consumable && def.PotionCooldownTicks == 0
+        && !string.IsNullOrEmpty(def.UseSkillId);
 
     /// <summary>Gold charged when BUYING this item from a vendor (incl. the future
     /// castle surcharge). BuyPriceOverride wins (-1 = unbuyable, 0 = free); otherwise

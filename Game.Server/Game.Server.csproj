@@ -4,6 +4,13 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Workstation GC, deliberately. Server GC reserves its heap regions up front — on the phone
+         (Termux/proot) that is a 256 GiB reservation the process is not allowed to make, and CoreCLR
+         dies before Main with "GC heap initialization failed 0x8007000E". This property is what puts
+         "System.GC.Server": false into the published runtimeconfig.json, so a fresh unzip just runs
+         instead of needing the file hand-edited after every deploy. A single-writer 10 tick/s loop
+         has nothing to gain from Server GC anyway. -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
   </PropertyGroup>
 
   <ItemGroup>

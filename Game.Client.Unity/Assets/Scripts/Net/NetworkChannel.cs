@@ -33,6 +33,9 @@ namespace Game.Client
         /// <summary>Reuse timers, pushed when one starts. The client counts them down itself, so this
         /// arrives a handful of times per fight — not per tick.</summary>
         public event Action<CooldownUpdate> CooldownsReceived;
+        /// <summary>What the AUTOPILOT is currently on. Pushed on a change only, so the target window
+        /// can follow auto-hunt instead of sitting empty while it fights.</summary>
+        public event Action<AutoTargetUpdate> AutoTargetReceived;
         public event Action<TargetDetails> TargetDetailsReceived;
         /// <summary>PvP toggles + reputation (karma, PK/PvP counts). The client used to TRACK the PvP
         /// flag locally by flipping a bool on every tap, which is a guess: the server refuses the
@@ -132,6 +135,7 @@ namespace Game.Client
             _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));
             _connection.On<GoldUpdate>("Gold", g => GoldReceived?.Invoke(g));
             _connection.On<CooldownUpdate>("Cooldowns", c => CooldownsReceived?.Invoke(c));
+            _connection.On<AutoTargetUpdate>("AutoTarget", t => AutoTargetReceived?.Invoke(t));
             _connection.On<TargetDetails>("TargetDetails", d => TargetDetailsReceived?.Invoke(d));
             _connection.On<PvpState>("PvpState", p => PvpStateReceived?.Invoke(p));
             _connection.On<ResurrectOffer>("ResurrectOffer", o => ResurrectOfferReceived?.Invoke(o));

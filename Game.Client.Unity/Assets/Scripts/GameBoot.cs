@@ -690,6 +690,10 @@ namespace Game.Client
                 if (p.LeveledUp) ClientLog.Good("Level up! Now level " + p.Level + ".");
             });
             _net.GoldReceived += g => Main(() => Gold = g.Gold);
+            // Auto-hunt drives the target window. The server owns the choice while the autopilot is on,
+            // so this simply adopts it; when auto-hunt stops the server sends null and the window clears
+            // rather than freezing on the last mob it killed.
+            _net.AutoTargetReceived += t => Main(() => TargetId = t.TargetId);
             _net.CooldownsReceived += c => Main(() => ApplyCooldowns(c));
             _net.BuffsReceived += b => Main(() => Buffs = b?.Buffs ?? new BuffDto[0]);
             _net.TargetDetailsReceived += d => Main(() => Details = d);

@@ -379,6 +379,14 @@ public record AutoSkillReuse(string SkillId, string Name, float ReuseSeconds, fl
 public record AutoHuntStatus(bool Enabled, float MpPerSec, AutoSkillReuse[] Skills,
     float FarmCenterX = 0f, float FarmCenterY = 0f);
 
+/// <summary>Server -> client: what the AUTOPILOT is currently on. null = it has nothing.
+///
+/// The autopilot has always picked a target server-side (CombatTargetId) and never told the client,
+/// so while auto-hunting the target window sat empty or stale and you could not see what it had
+/// chosen — which also made the targeting RULE impossible to judge (playtest-15). Sent only when the
+/// choice CHANGES, like the Cooldowns push: a few messages per fight, not one per tick.</summary>
+public record AutoTargetUpdate(Guid? TargetId);
+
 /// <summary>Server -> client: the result of an exit/logout request. Ok=false when blocked (e.g.
 /// in combat); the client keeps playing and shows Reason. Ok=true → the client may close.</summary>
 public record LogoutResult(bool Ok, string Reason);

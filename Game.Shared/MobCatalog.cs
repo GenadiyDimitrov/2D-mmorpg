@@ -356,16 +356,34 @@ public static class MobCatalog
                       : ItemCatalog.MinorPotion;
         string potHigh = level >= 30 ? ItemCatalog.GreaterPotion : ItemCatalog.HealingPotion;
         bool topLevel = level >= 75;
-        void AlwaysRung(float weight, int maxQty, params string[] items)
+        // ⚠ POTIONS ARE A MINORITY OF THIS GROUP (owner, 2026-07-31, playtest-15). The group still fires
+        // on EVERY kill — he explicitly liked never having to buy basic potions again (30f passed) — so
+        // what changed is the split inside it, not the 100 %.
+        //
+        // Before: each rung divided its weight EVENLY between a potion and a scroll (35/35 and 15/15),
+        // giving a 50 % potion share, and the first rung stacked up to TWO at level 30+. That is ~0.75
+        // healing potions per kill, which is why he reported being unable to die while still taking real
+        // damage. Now: a 30 % potion share and a stack of ONE — a ~2.5x cut — with the freed weight going
+        // to the return/resurrection scrolls that were always the other half of the group.
+        //
+        // Deliberately NOT fixed with /droprate always: that multiplier scales the whole group, so it
+        // would take the scrolls down with the potions. The weights are the right lever. Each branch
+        // must SUM TO 1.0 — that sum is what makes the group exactly 100 %.
+        void Always(string item, float weight) =>
+            drops.Add(new(item, weight, 1, 1, GroupId: GroupAlways));
+        if (!topLevel)
         {
-            foreach (var i in items)
-                drops.Add(new(i, weight / items.Length, 1, maxQty, GroupId: GroupAlways));
+            Always(potLow,  0.20f); Always(ItemCatalog.ScrollReturn,    0.50f);
+            Always(potHigh, 0.10f); Always(ItemCatalog.ScrollResurrect, 0.20f);
         }
-        AlwaysRung(topLevel ? 0.55f : 0.70f, level >= 30 ? 2 : 1, potLow, ItemCatalog.ScrollReturn);
-        AlwaysRung(topLevel ? 0.40f : 0.30f, 1, potHigh, ItemCatalog.ScrollResurrect);
-        if (topLevel)
-            AlwaysRung(0.05f, 1, ItemCatalog.GreaterPotion,
-                ItemCatalog.ScrollReturnUltimate, ItemCatalog.ScrollResurrectUltimate);
+        else
+        {
+            Always(potLow,  0.15f); Always(ItemCatalog.ScrollReturn,    0.40f);
+            Always(potHigh, 0.10f); Always(ItemCatalog.ScrollResurrect, 0.28f);
+            Always(ItemCatalog.GreaterPotion,           0.02f);
+            Always(ItemCatalog.ScrollReturnUltimate,    0.03f);
+            Always(ItemCatalog.ScrollResurrectUltimate, 0.02f);
+        }
 
         // ---- GEAR (§2/§3/§4): the four grade-locked, slot-randomised groups. The BROKEN jewels that
         //      used to be the level 1-5 accessory line are gone from here — §1 makes the F Common jewels

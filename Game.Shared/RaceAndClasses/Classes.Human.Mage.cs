@@ -16,8 +16,12 @@ public static partial class ClassSkillTables
         // Cleric (Healer) learnable progression is dropped pending the new cleric@20
         // CSV — re-author here (HP Boost, Wind Walk as "Holy Speed", etc.) when it lands.
 
-        // Sorcerer (Nuker) extra.
-        ClassSkills.Register(Race.Human, BaseClass.Mage, Archetype.Nuker,
-            new ClassSkill(WindWalk, 25));
+        // Sorcerer (Nuker) has NO extra beyond the shared archetype kit.
+        //
+        // Wind Walk @25 used to live here and was removed 2026-07-31 (playtest-15): a nuker
+        // self-buffing move speed stacked on top of the cleric's Wind Walk line — same effect,
+        // different BuffKey holder — and made the class quietly faster than intended. Speed is the
+        // BUFFER's identity to give, so the skill stays in the catalog for cleric/god and the nuker
+        // no longer learns it.
     }
 }

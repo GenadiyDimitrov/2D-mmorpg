@@ -73,16 +73,28 @@ namespace Game.Client
                 if (view != null && !view.IsSelf)
                 {
                     // Tapping SELECTS. What happens next depends on WHAT it is:
-                    //   mob  → attack (tapping a vendor used to swing at him, which is how an NPC got
-                    //          killed on the phone; the server refuses that now, this stops us asking)
-                    //   NPC  → TALK. Every service in the game — quests, class change, vendors,
-                    //          gatekeepers, buffers — is behind a conversation, so the tap that
-                    //          selects an NPC should also start one.
+                    //   NPC        → TALK, on the first tap. Every service in the game — quests, class
+                    //                change, vendors, gatekeepers, buffers — is behind a conversation,
+                    //                so the tap that selects an NPC should also start one.
+                    //   mob/player → the FIRST tap only opens the target window; a SECOND tap on the
+                    //                SAME target attacks. Tapping a DIFFERENT one just re-targets.
+                    //
+                    // Two playtest-15 findings meet on this line. (1) One tap used to charge straight in,
+                    // which is miserable on a mage or an archer: you cannot inspect a mob, or switch
+                    // targets, without committing to melee. (2) The `Kind == Mob` test meant a tap on a
+                    // PLAYER selected them and sent nothing — so no player could ever be basic-attacked,
+                    // which is what the owner hit as "cannot kill party members even with pvp on". It was
+                    // never a party rule; players simply were not in the attack branch. The server has
+                    // always policed this properly (CanPvpHit: safe zones, the PvP opt-in, flags) and
+                    // answers a refused swing with a system message, so the client does not duplicate it.
+                    var previous = Boot.TargetId;
                     Boot.TargetId = view.Id;
                     if (Boot.Entities != null && Boot.Entities.TryGetState(view.Id, out var dto) && !dto.Dead)
                     {
-                        if (dto.Kind == EntityKind.Mob) Boot.Attack(view.Id);
-                        else if (dto.Kind == EntityKind.Npc) Boot.TalkToNpc(view.Id);
+                        if (dto.Kind == EntityKind.Npc) Boot.TalkToNpc(view.Id);
+                        else if (previous == view.Id &&
+                                 (dto.Kind == EntityKind.Mob || dto.Kind == EntityKind.Player))
+                            Boot.Attack(view.Id);
                     }
                     return;
                 }

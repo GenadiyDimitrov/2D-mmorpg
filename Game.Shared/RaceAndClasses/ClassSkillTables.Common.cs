@@ -99,7 +99,14 @@ public static partial class ClassSkillTables
                 // above already taught BOTH the Stab (dagger) and Shot (bow) ladders. So the merge is
                 // this: the rogue keeps both weapons to 40, and the bow/dagger split becomes the 3rd
                 // class. Nothing else needed authoring.
-                new ClassSkill(BattleFury, 20), new ClassSkill(PowerShot, 24));
+                //
+                // Battle Fury @20 was the other half of that inherited pair and is GONE as of
+                // 2026-07-31 (playtest-15) — it was never in the authored class CSV, it arrived only
+                // because the dead Archer table was folded in wholesale. The SkillDef stays in the
+                // catalog: five 3rd-class disciplines still grant it under their own names
+                // (Shadowstep, Creeping Toxin, Steady Aim, Nullstep, Blood Draw), so deleting the
+                // definition would hollow out those disciplines instead.
+                new ClassSkill(PowerShot, 24));
 
             // Nuker (CSV nuker 20-35): Elemental Bolt (replaces Magic Bolt), Quick Bolt,
             // Vampiric Bolt (continues, lvls 2-5), Restore Spirit, Mage Armor Mastery,

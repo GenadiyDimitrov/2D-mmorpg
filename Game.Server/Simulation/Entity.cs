@@ -1001,6 +1001,10 @@ public class Entity
     public bool CounterAttack { get; set; }
     /// <summary>The last player who damaged me — the counter-attack retaliation target.</summary>
     public Guid? LastPvpAttackerId { get; set; }
+
+    /// <summary>The autopilot target last PUSHED to this player's client, so the push happens on a
+    /// change instead of every tick. Runtime-only; never persisted.</summary>
+    public Guid? SentAutoTargetId { get; set; }
     /// <summary>Purple flag: I recently attacked another player and am freely attackable until this
     /// tick (killing me = a PvP kill, not a PK). Refreshed on each PvP action.</summary>
     public long PvpFlagUntilTick { get; set; }
