@@ -418,6 +418,12 @@ public static class ItemCatalog
     public const string WardScrollC = "scroll_mdef_c";
     public const string WardScrollU = "scroll_mdef_u";
     public const string WardScrollR = "scroll_mdef_r";
+    public const string AimPotionC = "potion_acc_c";
+    public const string AimPotionU = "potion_acc_u";
+    public const string AimPotionR = "potion_acc_r";
+    public const string AimScrollC = "scroll_acc_c";
+    public const string AimScrollU = "scroll_acc_u";
+    public const string AimScrollR = "scroll_acc_r";
     // Scroll-only: Epic / Legendary / Mythic = rungs 2 / 4 / 6 of a six-rung ladder.
     public const string BodyScrollE = "scroll_hp_e";
     public const string BodyScrollL = "scroll_hp_l";
@@ -948,6 +954,14 @@ public static class ItemCatalog
         BuffScroll(WardScrollC, "Scroll of Ward (Lesser)",  ItemRarity.Common,   SkillCatalog.ScrWardC);
         BuffScroll(WardScrollU, "Scroll of Ward",           ItemRarity.Uncommon, SkillCatalog.ScrWardU);
         BuffScroll(WardScrollR, "Scroll of Ward (Greater)", ItemRarity.Rare,     SkillCatalog.ScrWardR);
+
+        // Aim — accuracy, the mirror of the Agility (evasion) line and priced identically.
+        BuffPotion(AimPotionC, "Aim Potion (Lesser)",  ItemRarity.Common,   SkillCatalog.PotAimC);
+        BuffPotion(AimPotionU, "Aim Potion",           ItemRarity.Uncommon, SkillCatalog.PotAimU);
+        BuffPotion(AimPotionR, "Aim Potion (Greater)", ItemRarity.Rare,     SkillCatalog.PotAimR);
+        BuffScroll(AimScrollC, "Scroll of Aim (Lesser)",  ItemRarity.Common,   SkillCatalog.ScrAimC);
+        BuffScroll(AimScrollU, "Scroll of Aim",           ItemRarity.Uncommon, SkillCatalog.ScrAimU);
+        BuffScroll(AimScrollR, "Scroll of Aim (Greater)", ItemRarity.Rare,     SkillCatalog.ScrAimR);
 
         // Scroll-only. Rarity here is the PRICE tier, not the power rung — see BuffLadders.md.
         void ScrollOnly(string e, string l, string m, string name, string se, string sl, string sm)

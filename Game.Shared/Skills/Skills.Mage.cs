@@ -78,34 +78,37 @@ public static partial class SkillCatalog
         // own, only children off the atk_phys / def_phys / vamp / accuracy ladders, so a Might
         // potion competes with the Might part alone and leaves the rest of the blessing standing.
         // Levels 1-4 are the SAME numbers this buff has always cast (8/8 → 12/12 + 6% vamp);
-        // 5-6 climb to the NPC buffer's max and wait for the Warchanter tables.
+        // 5-6 climb to the NPC buffer's max.
+        // ⚠ NOBODY LEARNS THIS BELOW 74 ANY MORE (owner 2026-07-31). The base mage and the cleric
+        // learn the INDIVIDUAL buffs (`cast_atk_phys`, `cast_def_phys`, …) at 30-50 MP; the group
+        // is the Warchanter's, at 150-200 MP — five effects in one cast is what a buffer class buys.
         // ⚠ One real change: the old buff used BuffAtk, which raised BOTH channels — a mage's
         // M.Atk rode along on a *physical* blessing. The Might family is P.Atk only; M.Atk has
         // its own family (Force) and its own potion. See docs/design/BuffLadders.md.
         new(Might, "Might and Bulwark", BaseClass.Mage, SkillEffect.BuffPhysAtk | SkillEffect.BuffDef,
-            MpCost: 20, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
-            DurationTicks: 12000, BuffKey: "mage_might", Rank: 1, InitialMpCost: 4,
+            MpCost: 150, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
+            DurationTicks: 12000, BuffKey: "mage_might", Rank: 1, InitialMpCost: 30,
             ChildBuffs: new[] { BuffPAtk1, BuffPDef1 },
             Category: SkillCategory.Buff, SpCost: 960,
             Description: "Blesses an ally (or self) with +P.Atk and +P.Def for 20 minutes.",
             Levels: new[]
             {
-                new SkillLevel(MpCost: 20, InitialMpCost: 4,  SpCost: 960,
+                new SkillLevel(MpCost: 150, InitialMpCost: 30, SpCost: 960,
                     ChildBuffs: new[] { BuffPAtk1, BuffPDef1 },
                     Description: "+8% P.Atk and +8% P.Def for 20 minutes."),
-                new SkillLevel(MpCost: 50, InitialMpCost: 10, SpCost: 3200,
+                new SkillLevel(MpCost: 160, InitialMpCost: 32, SpCost: 3200,
                     ChildBuffs: new[] { BuffPAtk2, BuffPDef1 },
                     Description: "+12% P.Atk and +8% P.Def for 20 minutes."),
-                new SkillLevel(MpCost: 50, InitialMpCost: 10, SpCost: 6400,
+                new SkillLevel(MpCost: 170, InitialMpCost: 34, SpCost: 6400,
                     ChildBuffs: new[] { BuffPAtk2, BuffPDef2 },
                     Description: "+12% P.Atk and +12% P.Def for 20 minutes."),
-                new SkillLevel(MpCost: 50, InitialMpCost: 10, SpCost: 12800,
+                new SkillLevel(MpCost: 180, InitialMpCost: 36, SpCost: 12800,
                     ChildBuffs: new[] { BuffPAtk2, BuffPDef2, BuffVamp2 },
                     Description: "+12% P.Atk, +12% P.Def, and 6% melee-attack vampirism for 20 minutes."),
-                new SkillLevel(MpCost: 65, InitialMpCost: 13, SpCost: 25000,
+                new SkillLevel(MpCost: 190, InitialMpCost: 38, SpCost: 25000,
                     ChildBuffs: new[] { BuffPAtk3, BuffPDef3, BuffVamp2, BuffAcc2 },
-                    Description: "+15% P.Atk, +15% P.Def, 6% melee vampirism, +3 Accuracy."),
-                new SkillLevel(MpCost: 80, InitialMpCost: 16, SpCost: 50000,
+                    Description: "+15% P.Atk, +15% P.Def, 6% melee vampirism, +2 Accuracy."),
+                new SkillLevel(MpCost: 200, InitialMpCost: 40, SpCost: 50000,
                     ChildBuffs: new[] { BuffPAtk3, BuffPDef3, BuffVamp3, BuffAcc3 },
                     Description: "+15% P.Atk, +15% P.Def, 9% melee vampirism, +4 Accuracy."),
             }),

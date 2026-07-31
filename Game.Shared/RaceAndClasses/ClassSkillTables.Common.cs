@@ -203,27 +203,36 @@ public static partial class ClassSkillTables
                 new ClassSkill(PartyHeal, 30, SkillLevel: 3),
                 new ClassSkill(PartyHeal, 35, SkillLevel: 4),
 
-                // Might — continues the base-mage buff (lvls 2-4; lvl 4 adds melee vampirism).
-                new ClassSkill(Might, 20, SkillLevel: 2),
-                new ClassSkill(Might, 25, SkillLevel: 3),
-                new ClassSkill(Might, 30, SkillLevel: 4),
-
-                // Force — interrupt resist (+M.Atk @rank 2).
-                new ClassSkill(HolyForce, 20, SkillLevel: 1),
-                new ClassSkill(HolyForce, 25, SkillLevel: 2),
-
-                // Focus — physical crit-rate buff (25). Frenzy — berserk buff (35).
-                new ClassSkill(HolyFocus, 25, SkillLevel: 1),
-                new ClassSkill(HolyFrenzy, 35, SkillLevel: 1),
-
-                // Speed — cast/move/evasion buff.
-                new ClassSkill(HolySpeed, 20, SkillLevel: 1),
-                new ClassSkill(HolySpeed, 25, SkillLevel: 2),
-                new ClassSkill(HolySpeed, 30, SkillLevel: 3),
-                new ClassSkill(HolySpeed, 35, SkillLevel: 4),
-
-                // Body — HP-regen buff (35 only).
-                new ClassSkill(HolyBody, 35, SkillLevel: 1),
+                // ---- The INDIVIDUAL buffs (owner 2026-07-31). The cleric used to learn the four
+                // GROUP buffs — Might, Force, Focus, Speed, Body; those are now the Warchanter's,
+                // at 150+ MP. A cleric buffs one effect per cast, at 30-50 MP, which is what makes
+                // "five casts vs one" the buffer class's actual advantage.
+                //
+                // Every rung below is the one the corresponding group level used to hand out, so a
+                // cleric who buffs their whole list ends up exactly where they were — it just costs
+                // more casts. See docs/design/BuffLadders.md.
+                // 20 — what Might L2 / Force L1 / Speed L1 gave.
+                new ClassSkill(CastId(FamPhysAtk), 20, SkillLevel: 2),      // Might   +12% P.Atk
+                new ClassSkill(CastId(FamMove), 20, SkillLevel: 2),         // Swift   +20 move
+                new ClassSkill(CastId(FamCast), 20, SkillLevel: 1),         // Alacrity +15% cast
+                new ClassSkill(CastId(FamInterrupt), 20, SkillLevel: 1),    // Resolve +18 interrupt
+                // 25 — Might L3, Force L2 (the +25% M.Atk rung), Focus L1, Speed L2.
+                new ClassSkill(CastId(FamPhysDef), 25, SkillLevel: 2),      // Bulwark +12% P.Def
+                new ClassSkill(CastId(FamMagAtk), 25, SkillLevel: 2),       // Force   +25% M.Atk
+                new ClassSkill(CastId(FamInterrupt), 25, SkillLevel: 2),    // Resolve +25 interrupt
+                new ClassSkill(CastId(FamCritRate), 25, SkillLevel: 4),     // Focus   +20% crit rate
+                new ClassSkill(CastId(FamMove), 25, SkillLevel: 3),         // Swift   +33 move
+                new ClassSkill(CastId(FamCast), 25, SkillLevel: 2),         // Alacrity +23% cast
+                // 30 — Might L4 (adds vampirism), Speed L3 (adds evasion).
+                new ClassSkill(CastId(FamVamp), 30, SkillLevel: 2),         // Vampirism 6%
+                new ClassSkill(CastId(FamEva), 30, SkillLevel: 2),          // Agility +2 evasion
+                new ClassSkill(CastId(FamAccuracy), 30, SkillLevel: 2),     // Aim     +2 accuracy
+                // 35 — Speed L4 (adds attack speed), Body L1, Frenzy.
+                new ClassSkill(CastId(FamCast), 35, SkillLevel: 3),         // Alacrity +30% cast
+                new ClassSkill(CastId(FamAs), 35, SkillLevel: 1),           // Haste   +15% attack speed
+                new ClassSkill(CastId(FamHpRegen), 35, SkillLevel: 2),      // Vigor   +10% HP regen
+                new ClassSkill(CastId(FamMagDef), 35, SkillLevel: 1),       // Ward    +10% M.Def
+                new ClassSkill(HolyFrenzy, 35, SkillLevel: 1),              // Frenzy (already a single)
 
                 // Restore Mana — MP restore on an ally (35 only).
                 new ClassSkill(RestoreMana, 35, SkillLevel: 1),

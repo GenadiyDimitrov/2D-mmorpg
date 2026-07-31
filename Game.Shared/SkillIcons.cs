@@ -82,9 +82,12 @@ public static class SkillIcons
     private static readonly Dictionary<string, string> FamilyMap = new()
     {
         ["atk_phys"] = "💪", ["def_phys"] = "🛡", ["atk_mag"] = "🔮", ["def_mag"] = "🌐",
-        ["vamp"] = "🩸", ["accuracy"] = "🎯", ["interrupt"] = "🔰",
+        ["vamp"] = "🩸", ["accuracy"] = "🏹", ["interrupt"] = "🔰",
         ["hp_max"] = "❤", ["mp_max"] = "💙", ["hp_regen"] = "🌿", ["mp_regen"] = "🫧",
         ["crit_rate"] = "🎲", ["crit_dmg"] = "🗡", ["mcrit_rate"] = "✨", ["frenzy"] = "😤",
+        // The speed four: their RUNGS are listed by id in Map above (they shipped first, with
+        // named rather than numbered ids), but their castable singles resolve through here.
+        ["spd_move"] = "🌀", ["spd_cast"] = "🌠", ["spd_eva"] = "🤸", ["spd_as"] = "⏩",
     };
 
     /// <summary>The default glyph for a skill id, or "" if none is mapped.</summary>
@@ -92,6 +95,10 @@ public static class SkillIcons
     {
         if (skillId is null) return "";
         if (Map.TryGetValue(skillId, out var g)) return g;
+        // `cast_{family}` — the castable single a buffer class learns. Same effect, same glyph.
+        if (skillId.StartsWith("cast_", StringComparison.Ordinal)
+            && FamilyMap.TryGetValue(skillId[5..], out var cast))
+            return cast;
         // `buff_{family}_{rung}` — strip the prefix and the trailing rung number.
         if (skillId.StartsWith("buff_", StringComparison.Ordinal)
             && skillId.LastIndexOf('_') is var cut && cut > 4

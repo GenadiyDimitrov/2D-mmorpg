@@ -12,6 +12,40 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-31 — The cleric buffs one at a time; the group is the buffer's (0.41.0)
+
+The other half of playtest-15 §2, and the answer to *"when I gave the CSV I made the buffs improved"*.
+
+**Aim — the accuracy line, and the last missing potion.** Accuracy was a class-buff-only family; it is
+now the exact mirror of Agility (evasion): **+1 / +2 / +4**, with its own potion and its own scroll at
+Common / Uncommon / Rare. Hit and evade are the two halves of one contest, so a player who can buy one
+can now buy the other. Vendor-stocked at Common, in the drop rungs and the recipe lists like the rest.
+
+**The cleric learns the INDIVIDUAL buffs.** It used to learn five *groups*. Now:
+
+| | learns | MP |
+|---|---|---|
+| **Base mage** (7) | Might, Bulwark | 30 |
+| **Cleric** (20-35) | Might · Bulwark · Force · Ward · Aim · Vampirism · Resolve · Focus · Vigor · Swift · Alacrity · Agility · Haste · Frenzy | **30-50** |
+| **Warchanter** (74) | Might and Bulwark · Force and Ward · Focus and Ferocity · Body and Soul · Swift and Sure · Frenzy at its top rung | **150-200** |
+
+Every rung a cleric gets is the one the corresponding group level used to hand out, so a cleric who
+buffs their whole list lands **exactly where they were** — it just costs more casts. That is the point:
+the group is not a bigger number, it is four or five effects in one cast, and it is what the buffer
+*class* buys. Six new levels of MP were added to each group to match (150 → 200 across levels 1-6).
+
+**Harmony has somewhere to go.** The three Harmony blessings are **learnable by the Warchanter at
+40 / 52 / 62** — the layer with no potion, no scroll and no NPC that sells it, stacking on top of the
+basic buffs. They became real player skills (200 MP, 1.5s cast, 600 range, 20 minutes) instead of
+NPC-only defs. ⚠ The owner listed 40/52/62/**74** for Harmony, but only three Harmony blessings exist,
+so 74 is the improved tier's slot; a fourth would have to be authored. All of this is explicitly a
+placeholder — it will be re-cut with the 3rd-class CSV.
+
+**The admin buff button grants everything**: the five improved groups, the three Harmony blessings and
+all 19 singles — 27 in total. The groups are applied **first** on purpose, so the buff bar shows them
+collapsed as groups rather than as fifteen loose squares (a group and its singles are the same rungs
+for the same hour, and equal rank + equal time is refused, so whoever lands first owns the bar).
+
 ## 2026-07-31 — A potion buys one blessing, not all of them (0.40.0)
 
 Playtest-15 big design **#2**, and step 6 of `docs/design/BuffLadders.md`. The speed group proved the

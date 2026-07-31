@@ -489,7 +489,7 @@ public static partial class SkillCatalog
     {
         var list = new List<SkillDef>();
         list.AddRange(CommonSkills());        // Skills.Common.cs
-        list.AddRange(BuffLadderSkills());    // Skills.BuffLadders.cs (every family but speed + its potions/scrolls)
+        list.AddRange(BuffLadderSkills(list)); // Skills.BuffLadders.cs (every family but speed + its potions/scrolls)
         list.AddRange(StatSwapSkillDefs());   // Skills.StatSwap.cs (the level-40 +stat/−stat passives)
         list.AddRange(FighterSkills());       // Skills.Fighter.cs
         list.AddRange(MageSkills());          // Skills.Mage.cs

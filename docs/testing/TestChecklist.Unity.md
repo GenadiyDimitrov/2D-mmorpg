@@ -415,7 +415,24 @@ The one thing to prove above all: **a buff potion no longer stacks with the buff
         yet** — like Dash Mythic, they wait on the §3 drop-group rework. Not a bug.
 33g.[ ] **Nothing orphaned by the rename.** `game.db` should be reset before this playtest: buffs saved
         under the OLD keys (`mage_might`, `holy_body`, …) no longer match a family. If you keep the db,
-        a stale square that never expires is the thing to watch for.
+        a stale square that never expires is the thing to watch for. ⚠ 0.41.0 also moves five skills
+        off the cleric — an existing character may still hold `might` / `holy_speed` / … on its bar.
+33h.[ ] **Aim — the accuracy potion** (0.41.0). Accuracy is now the mirror of evasion: **+1 / +2 / +4**,
+        with a potion AND a scroll at Common/Uncommon/Rare, vendor-stocked at Common. Check it sits
+        next to Agility in the Apothecary and that a cleric's Aim and an Aim potion do not stack.
+33i.[ ] **The cleric buffs ONE effect per cast** (0.41.0). A new cleric learns Might · Bulwark · Force ·
+        Ward · Aim · Vampirism · Resolve · Focus · Vigor · Swift · Alacrity · Agility · Haste · Frenzy
+        as SEPARATE skills at **30-50 MP**, not five group buffs. The base mage learns Might + Bulwark
+        at 7 (it used to be one "Might"). **Buffing the whole list must land the same numbers it did
+        before** — that is the check that matters; it just takes more casts and more MP.
+33j.[ ] **The improved and Harmony buffs have somewhere to go** (0.41.0, placeholder — will be re-cut
+        with the 3rd-class CSV). A Warchanter learns **Harmony of Protection / the Warrior / the
+        Wizard at 40 / 52 / 62** (200 MP, 20 min, and nothing else in the game grants them), and at
+        **74** the five improved groups at **150-200 MP**. Nobody below 74 can learn a group any more.
+33k.[ ] **Admin buff = 27** (0.41.0, replaces 33e's "22"): five improved groups + three Harmony + the
+        19 singles. The bar should show the GROUPS collapsed (Might and Bulwark, Force and Ward, Focus
+        and Ferocity, Body and Soul, Swift and Sure) rather than fifteen loose squares — the groups
+        are applied first for exactly that reason. Harmony must be visible as its own three squares.
 
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends

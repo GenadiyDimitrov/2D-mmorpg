@@ -28,12 +28,15 @@ public static partial class SkillCatalog
     public const string FamPhysDef = "def_phys";    // Bulwark — % P.Def
     public const string FamMagAtk  = "atk_mag";     // Force   — % M.Atk
     public const string FamMagDef  = "def_mag";     // Ward    — % M.Def
+    // Aim is accuracy's ladder and it is the exact mirror of Agility's (evasion): 1 / 2 / 4, its own
+    // potion and its own scroll. Hit and evasion are the two halves of one contest, so a player who
+    // can buy one must be able to buy the other (owner 2026-07-31).
+    public const string FamAccuracy = "accuracy";   // Aim     — flat accuracy
 
     // ---- Families with NO consumable at all: they exist only as children of a class buff.
     //      Rung count is free here (nothing has to line up with a rarity), so it is chosen to
     //      reproduce the values the cleric already casts today. ----
     public const string FamVamp      = "vamp";        // Vampirism — % melee vampirism
-    public const string FamAccuracy  = "accuracy";    // Accuracy  — flat accuracy
     public const string FamInterrupt = "interrupt";   // Resolve   — flat interrupt resistance
 
     // ---- Scroll-only families: six rungs, and the scrolls sit on rungs 2 / 4 / 6
@@ -75,6 +78,8 @@ public static partial class SkillCatalog
     public const string ScrForceC = "scr_matk_c", ScrForceU = "scr_matk_u", ScrForceR = "scr_matk_r";
     public const string PotWardC = "pot_mdef_c", PotWardU = "pot_mdef_u", PotWardR = "pot_mdef_r";
     public const string ScrWardC = "scr_mdef_c", ScrWardU = "scr_mdef_u", ScrWardR = "scr_mdef_r";
+    public const string PotAimC = "pot_acc_c", PotAimU = "pot_acc_u", PotAimR = "pot_acc_r";
+    public const string ScrAimC = "scr_acc_c", ScrAimU = "scr_acc_u", ScrAimR = "scr_acc_r";
 
     public const string ScrBodyE = "scr_hp_e", ScrBodyL = "scr_hp_l", ScrBodyM = "scr_hp_m";
     public const string ScrSoulE = "scr_mp_e", ScrSoulL = "scr_mp_l", ScrSoulM = "scr_mp_m";
@@ -125,7 +130,54 @@ public static partial class SkillCatalog
             Description: $"−{penalty * 100:0}% Max HP/MP, +{gain * 100:0}% P.Atk / M.Atk / attack & cast speed, "
                        + $"+{move} Move Speed, −{eva} Evasion.");
 
-    private static SkillDef[] BuffLadderSkills()
+    // ---------------------------------------------------------------------------------------
+    //  CASTABLE singles — what a BUFFER CLASS learns (owner 2026-07-31: "I want the cleric to
+    //  learn the individual buffs"). One skill per family, one level per rung, 20 minutes, on an
+    //  ally or yourself. Mechanically identical to a potion or a scroll: the wrapper owns the
+    //  duration and hands out the family's rung, so a cleric's Might and a Might potion are the
+    //  same buff and the better one wins.
+    //
+    //  The improved GROUPS are the tier above (150+ MP, a Warchanter's skill) — the whole point
+    //  of splitting is that the cleric now spends five casts and a lot of MP on what the group
+    //  does in one.
+    // ---------------------------------------------------------------------------------------
+    public static string CastId(string family) => $"cast_{family}";
+
+    private const int SingleBuffMpLow = 30, SingleBuffMpHigh = 50;   // owner: "make it 30-50"
+    private static readonly int[] BuffSpCosts = { 3200, 6400, 12800, 25000, 50000, 100000 };
+
+    /// <summary>One castable single buff, with a level per rung of its family. MP climbs across the
+    /// rungs from 30 to 50 — the ceiling is the owner's, and it is what makes the improved group
+    /// (150+) the efficient choice for a class that has one.</summary>
+    /// <param name="children">The family's rungs, weakest first — one skill LEVEL each. Passed in
+    /// rather than derived, because the speed families shipped first and their ids are named
+    /// (`buff_swift_c`), not numbered.</param>
+    /// <param name="text">The rung's own description, used as the level's.</param>
+    private static SkillDef CastSingle(string family, string name, SkillEffect effect,
+        string[] children, Func<string, string> text, string desc)
+    {
+        int n = children.Length;
+        var levels = new SkillLevel[n];
+        for (int i = 0; i < n; i++)
+        {
+            int mp = n == 1 ? SingleBuffMpLow
+                   : SingleBuffMpLow + (SingleBuffMpHigh - SingleBuffMpLow) * i / (n - 1);
+            levels[i] = new SkillLevel(MpCost: mp, InitialMpCost: mp / 5,
+                SpCost: BuffSpCosts[Math.Min(i, BuffSpCosts.Length - 1)],
+                ChildBuffs: new[] { children[i] }, Description: text(children[i]));
+        }
+        return new SkillDef(CastId(family), name, BaseClass.Mage, effect,
+            MpCost: SingleBuffMpLow, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
+            DurationTicks: 12000, InitialMpCost: SingleBuffMpLow / 5,
+            ChildBuffs: new[] { children[0] },
+            Category: SkillCategory.Buff, SpCost: BuffSpCosts[0],
+            Description: desc, Levels: levels);
+    }
+
+    /// <param name="alreadyBuilt">Everything BuildCatalog has assembled so far. Needed because the
+    /// four SPEED families shipped in Skills.Common.cs, and the castable singles below quote their
+    /// rungs' descriptions rather than restating the numbers.</param>
+    private static SkillDef[] BuffLadderSkills(IReadOnlyList<SkillDef> alreadyBuilt)
     {
         var list = new List<SkillDef>();
 
@@ -138,10 +190,11 @@ public static partial class SkillCatalog
         // Percent M.Atk is authored at the EFFECTIVE value (see docs — magic-buff authoring).
         list.AddRange(Ladder(FamMagAtk,  "Force",   SkillEffect.BuffMagAtk,  ModifierMode.Percent, "M.Atk", 0.15f, 0.25f, 0.32f));
         list.AddRange(Ladder(FamMagDef,  "Ward",    SkillEffect.BuffMagicDef,ModifierMode.Percent, "M.Def", 0.10f, 0.20f, 0.30f));
+        // Aim mirrors Agility exactly — the two sides of the hit/evade contest cost the same.
+        list.AddRange(Ladder(FamAccuracy,"Aim",     SkillEffect.BuffAccuracy,ModifierMode.Flat,    "Accuracy", 1, 2, 4));
 
         // ===== No-consumable families — class buffs only =====
         list.AddRange(Ladder(FamVamp,     "Vampirism", SkillEffect.BuffMeleeVamp,      ModifierMode.Percent, "melee vampirism", 0.03f, 0.06f, 0.09f));
-        list.AddRange(Ladder(FamAccuracy, "Accuracy",  SkillEffect.BuffAccuracy,       ModifierMode.Flat,    "Accuracy", 2, 3, 4));
         list.AddRange(Ladder(FamInterrupt,"Resolve",   SkillEffect.BuffInterruptResist,ModifierMode.Flat,    "interrupt resistance", 18, 25, 40, 60));
 
         // ===== Scroll-only families — SIX rungs; the scrolls are rungs 2 / 4 / 6 =====
@@ -188,6 +241,9 @@ public static partial class SkillCatalog
         Pair(PotWardC, ScrWardC, "Ward Potion (Lesser)",  "Scroll of Ward (Lesser)",  BuffMDef1, SkillEffect.BuffMagicDef, "+10% M.Def");
         Pair(PotWardU, ScrWardU, "Ward Potion",           "Scroll of Ward",           BuffMDef2, SkillEffect.BuffMagicDef, "+20% M.Def");
         Pair(PotWardR, ScrWardR, "Ward Potion (Greater)", "Scroll of Ward (Greater)", BuffMDef3, SkillEffect.BuffMagicDef, "+30% M.Def");
+        Pair(PotAimC, ScrAimC, "Aim Potion (Lesser)",  "Scroll of Aim (Lesser)",  Rung(FamAccuracy, 1), SkillEffect.BuffAccuracy, "+1 Accuracy");
+        Pair(PotAimU, ScrAimU, "Aim Potion",           "Scroll of Aim",           Rung(FamAccuracy, 2), SkillEffect.BuffAccuracy, "+2 Accuracy");
+        Pair(PotAimR, ScrAimR, "Aim Potion (Greater)", "Scroll of Aim (Greater)", Rung(FamAccuracy, 3), SkillEffect.BuffAccuracy, "+4 Accuracy");
 
         // Scroll-only families. The rarity is the PRICE tier, the rung is the POWER — Epic reads
         // rung 2, Legendary rung 4, Mythic rung 6. There is no potion of any of these.
@@ -215,6 +271,40 @@ public static partial class SkillCatalog
             SkillEffect.BuffPhysAtk, "−18% Max HP/MP but +7% offence and speed"));
         list.Add(Scroll(ScrFrenzyM, "Scroll of Frenzy (Supreme)", Rung(FamFrenzy, 6),
             SkillEffect.BuffPhysAtk, "−10% Max HP/MP but +8% offence and speed"));
+
+        // ===== What a buffer CLASS casts: one skill per family, one level per rung =====
+        // The level descriptions are the rungs' own, read back out of what we just built, so a
+        // ladder value is written down exactly once.
+        string Text(string childId) =>
+            (list.FirstOrDefault(s => s.Id == childId)
+             ?? alreadyBuilt.FirstOrDefault(s => s.Id == childId))?.Description ?? "";
+        string[] Rungs(string family, int n) => Enumerable.Range(1, n).Select(i => Rung(family, i)).ToArray();
+
+        void Castable(string family, string name, SkillEffect effect, string[] children, string what) =>
+            list.Add(CastSingle(family, name, effect, children, Text,
+                $"Blesses an ally (or self) with {what} for 20 minutes."));
+
+        Castable(FamPhysAtk, "Might", SkillEffect.BuffPhysAtk, Rungs(FamPhysAtk, 3), "more Physical Attack");
+        Castable(FamPhysDef, "Bulwark", SkillEffect.BuffDef, Rungs(FamPhysDef, 3), "more Physical Defence");
+        Castable(FamMagAtk, "Force", SkillEffect.BuffMagAtk, Rungs(FamMagAtk, 3), "more Magic Attack");
+        Castable(FamMagDef, "Ward", SkillEffect.BuffMagicDef, Rungs(FamMagDef, 3), "more Magic Defence");
+        Castable(FamAccuracy, "Aim", SkillEffect.BuffAccuracy, Rungs(FamAccuracy, 3), "a steadier hand");
+        Castable(FamVamp, "Vampirism", SkillEffect.BuffMeleeVamp, Rungs(FamVamp, 3), "melee attacks that heal");
+        Castable(FamInterrupt, "Resolve", SkillEffect.BuffInterruptResist, Rungs(FamInterrupt, 4), "casting that is harder to cancel");
+        Castable(FamCritRate, "Focus", SkillEffect.BuffCritRate, Rungs(FamCritRate, 6), "a higher critical rate");
+        Castable(FamCritDmg, "Ferocity", SkillEffect.BuffCritDamage, Rungs(FamCritDmg, 6), "heavier criticals");
+        Castable(FamMagCrit, "Insight", SkillEffect.BuffMagicCritRate, Rungs(FamMagCrit, 6), "more magic criticals");
+        Castable(FamMaxHp, "Body", SkillEffect.BuffHp, Rungs(FamMaxHp, 6), "more Max HP");
+        Castable(FamMaxMp, "Soul", SkillEffect.BuffMp, Rungs(FamMaxMp, 6), "more Max MP");
+        Castable(FamHpRegen, "Vigor", SkillEffect.BuffHpRegen, Rungs(FamHpRegen, 6), "faster HP regeneration");
+        Castable(FamMpRegen, "Serenity", SkillEffect.BuffMpRegen, Rungs(FamMpRegen, 6), "faster MP regeneration");
+        // The speed four shipped first, so their rungs are named rather than numbered.
+        Castable(FamMove, "Swift", SkillEffect.BuffMoveSpeed, new[] { BuffSwiftC, BuffSwiftU, BuffSwiftR }, "more Move Speed");
+        Castable(FamCast, "Alacrity", SkillEffect.BuffCastSpeed, new[] { BuffAlacrityC, BuffAlacrityU, BuffAlacrityR }, "faster casting");
+        Castable(FamEva, "Agility", SkillEffect.BuffEvasion, new[] { BuffAgilityC, BuffAgilityU, BuffAgilityR }, "more Evasion");
+        Castable(FamAs, "Haste", SkillEffect.BuffAtkSpeed, new[] { BuffHasteC, BuffHasteU, BuffHasteR }, "faster attacks");
+        // Frenzy's castable single already exists as the cleric's `holy_frenzy` (Skills.Healer.cs) —
+        // it was a wrapper over one family before this, so it needed no second copy.
 
         return list.ToArray();
     }

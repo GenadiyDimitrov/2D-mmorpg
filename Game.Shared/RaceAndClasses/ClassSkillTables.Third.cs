@@ -130,6 +130,40 @@ public static partial class ClassSkillTables
         // pending the new lvl-40 CSVs. Their skill DEFS remain in the catalog; only the
         // learn assignments are gone, so nothing references them until re-authored.
         // RegisterLightbringer();  RegisterWarchanter();
+        //
+        // …with ONE exception: the buffer's two exclusive layers now have somewhere to live.
+        RegisterWarchanterBuffs();
+    }
+
+    /// <summary>The Warchanter's own two layers, and nothing else — the rest of the discipline
+    /// still waits for its CSV (owner 2026-07-31: *"for now just to have somewhere the improved
+    /// and harmony to go"*, so expect the levels below to be re-cut with the 3rd-class CSV).
+    ///
+    /// **Harmony** at 40 / 52 / 62: the layer with no potion, no scroll and no NPC that sells it,
+    /// stacking on top of the basic buffs. It is what keeps a buffer worth grouping with now that
+    /// consumables can cover the whole basic layer.
+    ///
+    /// **The improved groups** at 74: one cast for four or five effects, at 150-200 MP. A cleric
+    /// buys the same numbers one single at a time for 30-50 MP each — the group is the buffer
+    /// class's efficiency, not a bigger number. See docs/design/BuffLadders.md.
+    ///
+    /// ⚠ The owner listed 40/52/62/**74** for Harmony, but only three Harmony blessings exist, so
+    /// 74 is the improved tier's slot. A fourth Harmony would have to be authored first.</summary>
+    private static void RegisterWarchanterBuffs()
+    {
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+            ClassSkills.RegisterThird(race, Discipline.Warchanter,
+                new ClassSkill(NpcHarmonyProtection, 40),
+                new ClassSkill(NpcHarmonyWarrior, 52),
+                new ClassSkill(NpcHarmonyWizard, 62),
+                // The improved groups, at their top level — a Warchanter at 74 is the max-level
+                // buffer the NPC's blessings were always modelled on.
+                new ClassSkill(Might, 74, SkillLevel: 6),        // Might and Bulwark
+                new ClassSkill(HolyForce, 74, SkillLevel: 6),    // Force and Ward
+                new ClassSkill(HolyFocus, 74, SkillLevel: 6),    // Focus and Ferocity
+                new ClassSkill(HolyBody, 74, SkillLevel: 6),     // Body and Soul
+                new ClassSkill(HolySpeed, 74, SkillLevel: 6),    // Swift and Sure
+                new ClassSkill(HolyFrenzy, 74, SkillLevel: 6));  // Frenzy at its top rung
     }
 
     // The first fully-authored discipline (Phase 24.1): one shared idea (keep the

@@ -231,13 +231,16 @@ All of it lives in `Game.Shared/Skills/Skills.BuffLadders.cs`, one line per fami
 | `def_phys` | Bulwark | % | 8 | 12 | **15** |
 | `atk_mag` | Force | % | 15 | 25 | **32** |
 | `def_mag` | Ward | % | 10 | 20 | **30** |
+| `accuracy` | Aim | flat | 1 | 2 | **4** |
+
+Aim is the exact mirror of Agility (evasion), on purpose: hit and evade are the two halves of one
+contest, so a player who can buy one must be able to buy the other (owner, 0.41.0).
 
 **No consumable at any price** — only a class buff grants these:
 
 | Family | Single | Mode | rungs |
 |---|---|---|---|
 | `vamp` | Vampirism | % | 3 / 6 / **9** |
-| `accuracy` | Accuracy | flat | 2 / 3 / **4** |
 | `interrupt` | Resolve | flat | 18 / 25 / 40 / **60** |
 
 **Scroll only, six rungs; the scrolls are rungs 2 / 4 / 6 = Epic / Legendary / Mythic:**
@@ -268,6 +271,31 @@ levels 5-6 climb to the NPC buffer's max. Nothing a player has today got weaker 
 the old Might used `BuffAtk` (**both** channels), and the Might family is P.Atk only.
 
 Scroll-only families start at **Epic** rarity; families with a potion analogue start at **Common**.
+
+## Who casts what (0.41.0)
+
+The split has a second half, and it is the one that gives the buffer class its job back. Owner,
+2026-07-31: *"when I gave the CSV I made the buffs improved — now I want that cleric to learn the
+individual buffs"*.
+
+| Tier | Skill | MP | Learned |
+|---|---|---|---|
+| **single** | `cast_{family}` — one effect, one level per rung | **30-50** | base mage (7), cleric (20-35) |
+| **improved** | the groups — four or five effects in one cast | **150-200** | Warchanter (74) |
+| **Harmony** | no potion, no scroll, no NPC; stacks on top | 200 | Warchanter (40 / 52 / 62) |
+
+Every rung the cleric learns is the one that group level used to hand out, so **a cleric who buffs
+their whole list lands exactly where they did before** — it just costs more casts. The group is not a
+bigger number; it is fewer casts and less MP per effect, and that is what a buffer class buys.
+
+⚠ **All of the Warchanter assignment is a placeholder** — `RegisterWarchanterBuffs()` in
+`ClassSkillTables.Third.cs` exists so the improved and Harmony tiers have somewhere to live until the
+3rd-class CSV lands, and the rest of that discipline is still commented out. The owner listed
+40/52/62/**74** for Harmony but only three Harmony blessings exist, so 74 holds the improved tier.
+
+**Frenzy is the one single that isn't 30-50 MP** (125 at rung 1 → 175 at rung 6). It is a family whose
+rung is a whole eight-effect buff, and that was its price before the split; it was left alone rather
+than quietly rebalanced.
 
 ## Build order
 

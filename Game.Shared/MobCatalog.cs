@@ -365,31 +365,31 @@ public static class MobCatalog
             new[] { ItemCatalog.SpeedPotionC, ItemCatalog.CastPotionC, ItemCatalog.AtkPotionC,
                     ItemCatalog.EvaPotionC, ItemCatalog.DashPotionC,
                     ItemCatalog.MightPotionC, ItemCatalog.BulwarkPotionC,
-                    ItemCatalog.ForcePotionC, ItemCatalog.WardPotionC,
+                    ItemCatalog.ForcePotionC, ItemCatalog.WardPotionC, ItemCatalog.AimPotionC,
                     ItemCatalog.SpeedScrollC, ItemCatalog.CastScrollC, ItemCatalog.AtkScrollC,
                     ItemCatalog.EvaScrollC,
                     ItemCatalog.MightScrollC, ItemCatalog.BulwarkScrollC,
-                    ItemCatalog.ForceScrollC, ItemCatalog.WardScrollC });
+                    ItemCatalog.ForceScrollC, ItemCatalog.WardScrollC, ItemCatalog.AimScrollC });
         if (level >= 20)
             ScrollRung(0.20f, ItemCatalog.ScrollUncommon,
                 new[] { ItemCatalog.SpeedPotionU, ItemCatalog.CastPotionU, ItemCatalog.AtkPotionU,
                         ItemCatalog.EvaPotionU, ItemCatalog.DashPotionU,
                         ItemCatalog.MightPotionU, ItemCatalog.BulwarkPotionU,
-                        ItemCatalog.ForcePotionU, ItemCatalog.WardPotionU,
+                        ItemCatalog.ForcePotionU, ItemCatalog.WardPotionU, ItemCatalog.AimPotionU,
                         ItemCatalog.SpeedScrollU, ItemCatalog.CastScrollU, ItemCatalog.AtkScrollU,
                         ItemCatalog.EvaScrollU,
                         ItemCatalog.MightScrollU, ItemCatalog.BulwarkScrollU,
-                        ItemCatalog.ForceScrollU, ItemCatalog.WardScrollU });
+                        ItemCatalog.ForceScrollU, ItemCatalog.WardScrollU, ItemCatalog.AimScrollU });
         if (level >= 45)
             ScrollRung(0.10f, ItemCatalog.ScrollRare,
                 new[] { ItemCatalog.SpeedPotionR, ItemCatalog.CastPotionR, ItemCatalog.AtkPotionR,
                         ItemCatalog.EvaPotionR, ItemCatalog.DashPotionR,
                         ItemCatalog.MightPotionR, ItemCatalog.BulwarkPotionR,
-                        ItemCatalog.ForcePotionR, ItemCatalog.WardPotionR,
+                        ItemCatalog.ForcePotionR, ItemCatalog.WardPotionR, ItemCatalog.AimPotionR,
                         ItemCatalog.SpeedScrollR, ItemCatalog.CastScrollR, ItemCatalog.AtkScrollR,
                         ItemCatalog.EvaScrollR,
                         ItemCatalog.MightScrollR, ItemCatalog.BulwarkScrollR,
-                        ItemCatalog.ForceScrollR, ItemCatalog.WardScrollR });
+                        ItemCatalog.ForceScrollR, ItemCatalog.WardScrollR, ItemCatalog.AimScrollR });
         // The SCROLL-ONLY families enter here: Epic from 60, Legendary from 76. They have no potion
         // at any rarity — a scroll is the only way to get Max HP/MP, regeneration, criticals or
         // Frenzy out of an item — which is why their cheapest rung is Epic in the first place.

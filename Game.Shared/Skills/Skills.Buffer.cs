@@ -35,6 +35,12 @@ public static partial class SkillCatalog
     public const string NpcSoul      = "npc_soul";        // % Max MP
     public const string NpcVigor     = "npc_vigor";       // % HP regeneration
     public const string NpcSerenity  = "npc_serenity";    // % MP regeneration
+    // The IMPROVED (group) versions at max rungs. No NPC hands these out — a buffer CLASS does —
+    // but the admin buff button grants them so the group shape can be seen and tested (owner).
+    public const string NpcMightGroup = "npc_might_group";   // Might and Bulwark
+    public const string NpcForceGroup = "npc_force_group";   // Force and Ward
+    public const string NpcFocusGroup = "npc_focus_group";   // Focus and Ferocity
+    public const string NpcBodyGroup  = "npc_body_group";    // Body and Soul
     // "Harmony" GREATER buffs (max-level; owner 2026-07-03). They STACK on top of the six above
     // (distinct BuffKeys). NO LONGER OFFERED by the newbie buffer — see NewbieBuffSet. The defs
     // stay because a real 3rd-class buffer is meant to have them; nothing grants them today.
@@ -59,12 +65,39 @@ public static partial class SkillCatalog
           NpcSwift, NpcAlacrity, NpcAgility, NpcHaste,
           NpcFrenzy };
 
-    /// <summary>What the ADMIN buff button hands out: everything the buffer sells PLUS the three
-    /// Harmony blessings, which no NPC offers and no consumable can reach (owner 2026-07-31).
-    /// Harmony is the layer that keeps a real buffer class worth grouping with, so the only way to
-    /// see a fully-buffed character — the state the balance numbers are read at — is from here.</summary>
+    /// <summary>What the ADMIN buff button hands out: EVERYTHING that exists — the improved groups,
+    /// the three Harmony blessings and every single (owner 2026-07-31). Harmony and the groups are
+    /// the two layers no NPC sells and no consumable can reach, so this is the only way to see a
+    /// fully-buffed character, which is the state the balance numbers are read at.
+    ///
+    /// ⚠ ORDER MATTERS. The GROUPS come first deliberately: a group and its singles hand out the
+    /// same rungs for the same hour, and equal rank + equal time is REFUSED, so whichever lands
+    /// first owns the buff bar. Groups first means the bar shows four collapsed group squares
+    /// instead of fifteen loose ones — which is the whole point of looking at them. Any single a
+    /// group does not cover (Frenzy, Resolve's top rung, the speed four) still lands after.</summary>
     public static readonly string[] AdminBuffSet =
-        NewbieBuffSet.Concat(new[] { NpcHarmonyProtection, NpcHarmonyWarrior, NpcHarmonyWizard }).ToArray();
+        new[] { NpcMightGroup, NpcForceGroup, NpcFocusGroup, NpcBodyGroup, NpcSpeed,
+                NpcHarmonyProtection, NpcHarmonyWarrior, NpcHarmonyWizard }
+            .Concat(NewbieBuffSet).ToArray();
+
+    /// <summary>A HARMONY blessing — the layer above the basic buffs, with no potion, no scroll and
+    /// no NPC that sells it. Unlike the rest of this file these are LEARNABLE (Warchanter, from
+    /// level 40 — owner 2026-07-31: "for now just to have somewhere the harmony to go"), so they
+    /// carry a real MP cost, a cast time and a range. Duration is the ordinary player-buff 20
+    /// minutes, not the NPC's hour.
+    ///
+    /// They keep their own BuffKeys and are NOT split into children: Harmony's whole job is to
+    /// stack ON TOP of the basic layer, and nothing else grants what they grant, so there is no
+    /// family for them to compete on. Splitting them waits for a second Harmony-tier source.</summary>
+    private static SkillDef HarmonyBuff(string id, string name, string buffKey,
+        SkillEffect effect, EffectMagnitude[] mags, string desc,
+        float physMpCost = 0f, float magicMpCost = 0f) =>
+        new(id, name, BaseClass.Mage, effect,
+            MpCost: 200, CastTicks: 15, CooldownTicks: 10, Range: 600, Power: 0,
+            DurationTicks: 12000, BuffKey: buffKey, Rank: NpcBuffRank,
+            Category: SkillCategory.Buff, Magnitudes: mags, InitialMpCost: 40, SpCost: 100000,
+            PhysMpCostPct: physMpCost, MagicMpCostPct: magicMpCost,
+            Description: desc + " (20 minutes).");
 
     private static SkillDef NpcBuff(string id, string name, string buffKey,
         SkillEffect effect, EffectMagnitude[] mags, string desc,
@@ -126,10 +159,30 @@ public static partial class SkillCatalog
         // grants it) so the group shape stays documented in one place; NewbieBuffSet no longer lists
         // it. The buffer's edge is the DURATION (1 hour vs a potion's 20 minutes), which the
         // equal-rank "longer time wins" rule in ApplyBuff protects. See docs/design/BuffLadders.md.
-        NpcBuffGroup(NpcSpeed, "Improved Speed",
+        NpcBuffGroup(NpcSpeed, "Swift and Sure",
             SkillEffect.BuffAtkSpeed | SkillEffect.BuffMoveSpeed | SkillEffect.BuffCastSpeed | SkillEffect.BuffEvasion,
             new[] { BuffSwiftR, BuffAlacrityR, BuffAgilityR, BuffHasteR },
             "+33% attack speed, +30% cast speed, +33 move, +4 evasion"),
+
+        // ---- The IMPROVED (group) versions at max rungs. Nothing in the world grants these — the
+        //      admin buff button does, so the collapsed-group display and the group's own numbers
+        //      can be checked without levelling a Warchanter to 74. ----
+        NpcBuffGroup(NpcMightGroup, "Might and Bulwark",
+            SkillEffect.BuffPhysAtk | SkillEffect.BuffDef | SkillEffect.BuffMeleeVamp | SkillEffect.BuffAccuracy,
+            new[] { BuffPAtk3, BuffPDef3, BuffVamp3, Rung(FamAccuracy, 3) },
+            "+15% P.Atk & P.Def, 9% melee vampirism, +4 accuracy"),
+        NpcBuffGroup(NpcForceGroup, "Force and Ward",
+            SkillEffect.BuffMagAtk | SkillEffect.BuffMagicDef | SkillEffect.BuffInterruptResist,
+            new[] { BuffMAtk3, BuffMDef3, BuffIntr4 },
+            "+32% M.Atk, +30% M.Def, +60 interrupt resistance"),
+        NpcBuffGroup(NpcFocusGroup, "Focus and Ferocity",
+            SkillEffect.BuffCritRate | SkillEffect.BuffCritDamage | SkillEffect.BuffMagicCritRate,
+            new[] { Rung(FamCritRate, 6), Rung(FamCritDmg, 6), Rung(FamMagCrit, 6) },
+            "+30% critical rate, +35% critical damage, double magic critical rate"),
+        NpcBuffGroup(NpcBodyGroup, "Body and Soul",
+            SkillEffect.BuffHp | SkillEffect.BuffMp | SkillEffect.BuffHpRegen | SkillEffect.BuffMpRegen,
+            new[] { Rung(FamMaxHp, 6), Rung(FamMaxMp, 6), Rung(FamHpRegen, 6), Rung(FamMpRegen, 6) },
+            "+35% Max HP & MP, +20% HP & MP regeneration"),
 
         // ---- The four speed singles the buffer actually offers, one hour each. ----
         NpcSingle(NpcSwift, "Swift", BuffSwiftR, SkillEffect.BuffMoveSpeed, "+33 Move Speed"),
@@ -151,7 +204,7 @@ public static partial class SkillCatalog
 
         // ----- Greater "Harmony" buffs (max-level). Reflect (Protection) and the −physical/−magic
         // MP-consumption (Warrior/Wizard) are now WIRED. -----
-        NpcBuff(NpcHarmonyProtection, "Harmony of Protection", "harmony_protection",
+        HarmonyBuff(NpcHarmonyProtection, "Harmony of Protection", "harmony_protection",
             SkillEffect.BuffDef | SkillEffect.BuffMagicDef | SkillEffect.BuffHp
             | SkillEffect.BuffHpRegen | SkillEffect.BuffEvasion | SkillEffect.BuffReflect,
             new EffectMagnitude[]
@@ -162,7 +215,7 @@ public static partial class SkillCatalog
             },
             "+25% P.Def & M.Def, +30% Max HP, +20% HP regen, +3 evasion, reflects 20% of melee damage"),
 
-        NpcBuff(NpcHarmonyWarrior, "Harmony of the Warrior", "harmony_warrior",
+        HarmonyBuff(NpcHarmonyWarrior, "Harmony of the Warrior", "harmony_warrior",
             SkillEffect.BuffPhysAtk | SkillEffect.BuffAtkSpeed | SkillEffect.BuffCritDamage
             | SkillEffect.BuffCritRate | SkillEffect.BuffAccuracy | SkillEffect.BuffMeleeVamp,
             new EffectMagnitude[]
@@ -174,7 +227,7 @@ public static partial class SkillCatalog
             "+12% P.Atk, +15% atk speed, +35% crit damage, +75% crit rate, +4 acc, 8% vamp, −20% physical-skill MP cost",
             physMpCost: 0.20f),
 
-        NpcBuff(NpcHarmonyWizard, "Harmony of the Wizard", "harmony_wizard",
+        HarmonyBuff(NpcHarmonyWizard, "Harmony of the Wizard", "harmony_wizard",
             SkillEffect.BuffCastSpeed | SkillEffect.BuffMagAtk | SkillEffect.BuffMpRegen,
             new EffectMagnitude[]
             {
