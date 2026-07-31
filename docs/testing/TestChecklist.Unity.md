@@ -266,7 +266,8 @@ and the Learn confirmation shows its numbers. **31e is right but unreadable** �
 **BUILT IN 0.37.0 — test these:** 32c · 32d · 32e · 32f · 32g · 32n · 32q · 32r, plus **32w** (the NPC
 buffer's new basic-only list). All but 32f/32g/32q are Unity-side, so the APK is what proves them.
 **BUILT IN 0.38.0 — test this:** 32t (jewel slots). Server + Unity paper-doll.
-**STILL OPEN:** 32u (a design call, never built).
+**BUILT IN 0.39.0 — test these:** 32u (free travel under 40) + **32z** (the auto-farm skill chains,
+playtest-15 big design #1). §32 is now fully built.
 32a.[ ] **The phone server starts with no hand-editing** — unzip a fresh `Game.Server` on the phone and
         `dotnet Game.Server.dll` must just run. It currently dies with `GC heap initialization failed
         (0x8007000E)` — Server GC tries to reserve 256 GiB — and he has to `nano
@@ -331,8 +332,30 @@ buffer's new basic-only list). All but 32f/32g/32q are Unity-side, so the APK is
         → a **rare** replaces slot 1 (tie) → an **uncommon** replaces slot 2 (weaker) → another
         uncommon replaces slot 2 again. Slot 1 always holds the stronger of the pair. Then **relog**:
         the pair must come back in the same two squares (the slot is derived, not stored).
-32u.[ ] **Free teleport under 40** — NEVER BUILT (the fee is distance-only, min 50). Open design call,
-        not a regression.
+32u.[ ] **Free teleport under 40** (0.39.0). At level 39 every gatekeeper row must read **"Free"**, not
+        "0 gold", and the ride must actually cost nothing (watch the gold counter). At 40 the distance
+        fee is back, minimum 50 — quote and charge must match, so read the row's price and then check
+        the gold you lost. Both the local field gates and the other cities.
+32z.[ ] **Auto-farm skill chains** (0.39.0, playtest-15 big design #1). In the **Auto Farm** window:
+        · **Cyclic OFF** (default, "first available") — put a short-reuse skill in slot 1 and two
+          slower ones after it: the order should read 1-2-1-3-1-2.
+        · **Cyclic ON** — the same bar must read 1-2-3-1-2-3: after casting 1 it does NOT go back to 1
+          until the others have had their turn. (It does wrap early if every later skill is still on
+          cooldown — that is deliberate, the alternative is standing idle.)
+        · **Priority** — with a heal, a buff and an attack all auto-on, a needed heal always beats the
+          buff, and the buff always beats the attack.
+        · **Heal threshold** — set it to 50: nothing heals above 50% HP, and below it the heal chain
+          takes over until you are back over. Set it to **100** on a healer: heals fire on cooldown,
+          and in a party they land on the most injured member in range, not always on yourself. Turn
+          the heal row **off**: heals never auto-cast at all.
+        · **Buff renewal** — an auto-buff must be recast when it drops under **60s**, not only when it
+          has expired, and must NOT be recast while a stronger version of the same family is running.
+        · **Debuff** — cast a rank-1 debuff, then learn/press the higher rank: the chain must replace
+          it rather than treat "something with that key is on the mob" as done.
+        · **Assist party leader** — in a party you don't lead, with it ON: you attack only what the
+          leader attacks, you follow him onto a new target, and when he has none you stand still and
+          your target frame is empty (no roaming, no picking your own, no chasing what hit you).
+        · All of it must survive a **relog** (it rides in `AutoHuntJson` — no db reset).
 32x.[ ] **An improved buff is ONE square on the bar.** Cast the cleric's Improved Speed: exactly one
         square named "Improved Speed" (0.36.0 put up four). Its timer must be the SHORTEST part, the
         tap popup must list the parts with their own times, and press-and-HOLD must remove the WHOLE

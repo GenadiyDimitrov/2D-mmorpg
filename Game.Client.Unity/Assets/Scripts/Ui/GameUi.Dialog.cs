@@ -161,7 +161,9 @@ namespace Game.Client
                     // Wolf, Werewolf") — the whole reason to name a gate rather than dump you in a polygon.
                     string what = string.IsNullOrEmpty(dest.Description) || dest.Description == "City"
                                 ? "" : "\n" + dest.Description;
-                    DialogRow(dest.Name + band + "   " + dest.Fee.ToString("N0") + " " + GameConstants.CurrencyName + what,
+                    // A free ride (under the free-travel level) says so — "0 gold" reads like a bug.
+                    string price = dest.Fee <= 0 ? "Free" : dest.Fee.ToString("N0") + " " + GameConstants.CurrencyName;
+                    DialogRow(dest.Name + band + "   " + price + what,
                               "Go", () => Boot.TeleportTo(zone),
                               Boot.Gold >= dest.Fee ? UiKit.Text : UiKit.TextDim);
                 }

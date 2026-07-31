@@ -26,7 +26,8 @@ the exact seam Phase 2 (offline) needs.
   - **Buff** (`SkillCategory.Buff` / `AnyBuff`, self) → cast only if its buff key is
     MISSING on self.
   - **Debuff** (ContestCc / DebuffSchool, no damage) → cast only if the TARGET lacks it.
-  - **Heal** (self) → cast if self HP < 70% (simple Phase-1 rule).
+  - **Heal** (self) → cast if self HP < 70% (Phase-1 rule; superseded by the configurable
+    `HealThresholdPct` — see *Skill chains* below).
   - `ExtraDelayTicks ≥ 0` — an ADDITIONAL post-cast delay on top of the skill's own
     reuse (so the effective auto-reuse is never below the skill default; you can only slow
     it down). Enforced via `Entity.AutoReadyTick[skillId]`.
@@ -99,7 +100,34 @@ circle and walk back to the centre when empty (with a soft chase margin). **Basi
 pseudo-skill (`AutoHuntIds.BasicAttack`) in the skill list: on = melee when no skill is ready (fighters),
 off = skills-only (mages). Debug `/testcaps` shrinks the caps/grace to seconds for testing.
 
+## Skill CHAINS (BUILT 0.39.0 — playtest-15 big design #1)
+The single top-to-bottom priority scan became **three groups scanned in priority order**, and the
+condition rules got the sharper tests the owner asked for.
+
+- **Priority: heals → buffs/debuffs → attacks.** Only the first group with something castable acts on
+  a given tick (`TryAutoSkill` → `TryAutoChain` per group). Inside a group the order is still the
+  config/bar order.
+- **`CyclicOrder`** (per character): `false` = *first available* — the scan restarts at the top every
+  time, so a short-reuse skill 1 dominates (1-2-1-3-1-4). `true` = *cyclic* — the scan starts from the
+  entry after the last one cast in that group and only wraps once the rest have been offered their
+  turn (1-2-3-4-1). Each group carries its own cursor (`Entity.AutoChainCursor`), cleared whenever the
+  config changes. **Cyclic wraps rather than waits**: a strict "never return to 1 until the last one
+  has fired" would leave the character standing idle while a long-reuse skill recharges.
+- **`HealThresholdPct`** replaces the hard-coded 70%. `0` = never auto-heal; `100` = heal on cooldown,
+  which is the owner's one sanctioned bit of auto-support (a played healer parks there). The heal
+  chain also picks a TARGET: the most injured party member under the threshold and inside the skill's
+  own range, else yourself — so a party heal is not wasted on a full-HP caster.
+- **Buffs are renewed, not just re-applied**: missing, a weaker rank, or **under 60s remaining**
+  (`AutoBuffRefreshTicks`, capped at half the buff's own duration so a short buff isn't spammed). A
+  *strictly stronger* buff of the same family counts as covered — recasting under it would only be
+  refused by `ApplyBuff` and burn the MP. Group (improved) buffs test every child, as before.
+- **Debuffs** fire when missing **or weaker** on the enemy; the old test was "any buff with this key",
+  which let a rank-1 debuff block its own rank-3 upgrade for a whole duration.
+- **`AssistPartyLeader`** — in a party you don't lead, the only target you may take is the leader's,
+  and with no leader target you stand still (no acquisition, no retaliation, no roaming). The leader's
+  pick is still filtered by your own rank toggles / PvP rules / farm radius + chase margin.
+
 ## Still deferred
-Full common-skills bar (sit/walk/dance placeable), auto-heal of party members, per-skill target-type
-overrides, a reduced idle/offline loot rate, drag-reorder skill priority, purchasable cap extensions,
-and a client "offline status / gains" summary.
+Full common-skills bar (sit/walk/dance placeable), per-skill target-type overrides, a reduced
+idle/offline loot rate, drag-reorder skill priority, purchasable cap extensions, and a client "offline
+status / gains" summary.

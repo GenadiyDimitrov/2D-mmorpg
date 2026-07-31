@@ -47,6 +47,10 @@ namespace Game.Client
         private Button _farmShowRangeToggle;
         private Slider _autoRangeSlider;
         private bool _autoStatic, _autoNormal, _autoElite, _autoBoss;
+        // skill chains (playtest-15 design #1)
+        private Button _autoCyclicToggle, _autoAssistToggle, _autoHealToggle;
+        private Slider _autoHealSlider;
+        private bool _autoCyclic, _autoAssist, _autoHealOn;
 
         // farming-range ring drawn in the world (a border-only circle showing the farm radius)
         private LineRenderer _farmRing;
@@ -219,7 +223,7 @@ namespace Game.Client
         {
             _autoFarmPanel = UiKit.PanelBox(_worldRoot, "AutoFarm");
             UiKit.Place(_autoFarmPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(640f, 420f));
+                        Vector2.zero, new Vector2(660f, 600f));
             var inner = _autoFarmPanel.GetChild(0);
             float chrome = UiKit.WindowChrome(_autoFarmPanel, "Auto Farm",
                                               () => CloseWindow(_autoFarmPanel));
@@ -249,6 +253,41 @@ namespace Game.Client
                 RefreshAutoLabels();
             }, 290f);
 
+            // ----- skill chain (playtest-15 design #1) -----
+            // Shares its row with the Show-range toggle at x=330, so this label stops short of it.
+            // ASCII arrows/dots on purpose: no visible UI string in this client uses "→" or "…" yet, and
+            // a glyph the TMP atlas doesn't carry renders as a box on the phone.
+            var chain = UiKit.Label(inner, "Skill chain — heals, then buffs, then attacks:", 14f, UiKit.Accent);
+            UiKit.Place(UiKit.Rect(chain.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(18f, y), new Vector2(300f, 22f));
+            y -= 34f;
+
+            _autoCyclicToggle = ToggleButton(inner, new Vector2(18f, y), () =>
+            {
+                _autoCyclic = !_autoCyclic;
+                RefreshAutoLabels();
+            }, 300f);
+            var cyclicNote = UiKit.Label(inner, "on = 1-2-3-4-1...  off = back to the top each time (1-2-1-3)",
+                                         12f, UiKit.TextDim);
+            UiKit.Place(UiKit.Rect(cyclicNote.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(330f, y - 8f), new Vector2(310f, 30f));
+            y -= 48f;
+
+            // The heal chain's OWN threshold — deliberately not the auto-potion one: a potion and a heal
+            // are used at different moments (and a healer parks this at 100 to heal on cooldown).
+            _autoHealToggle = ToggleButton(inner, new Vector2(18f, y), () => { _autoHealOn = !_autoHealOn; RefreshAutoLabels(); }, 84f);
+            _autoHealSlider = UiKit.SliderRow(inner, "heal below HP%", 10f, 100f, 70f, "0", null);
+            UiKit.Place(UiKit.Rect(_autoHealSlider.transform.parent.gameObject),
+                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(112f, y - 6f), new Vector2(526f, 26f));
+            y -= 48f;
+
+            _autoAssistToggle = ToggleButton(inner, new Vector2(18f, y), () => { _autoAssist = !_autoAssist; RefreshAutoLabels(); }, 300f);
+            var assistNote = UiKit.Label(inner, "only attack the party leader's target; idle if he has none",
+                                         12f, UiKit.TextDim);
+            UiKit.Place(UiKit.Rect(assistNote.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(330f, y - 8f), new Vector2(310f, 30f));
+            y -= 54f;
+
             var engage = UiKit.Label(inner, "Engage which ranks:", 14f, UiKit.Accent);
             UiKit.Place(UiKit.Rect(engage.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(18f, y), new Vector2(400f, 22f));
@@ -273,6 +312,10 @@ namespace Game.Client
             _autoNormal = c.AttackNormal;
             _autoElite  = c.AttackElite;
             _autoBoss   = c.AttackBoss;
+            _autoCyclic = c.CyclicOrder;
+            _autoAssist = c.AssistPartyLeader;
+            _autoHealOn = c.HealThresholdPct > 0;             // 0 = the heal chain is off
+            _autoHealSlider.value = _autoHealOn ? Mathf.Clamp(c.HealThresholdPct, 10, 100) : 70f;
             RefreshAutoLabels();
             OpenWindow(_autoFarmPanel);
         }
@@ -286,6 +329,9 @@ namespace Game.Client
                 AttackNormal = _autoNormal,
                 AttackElite  = _autoElite,
                 AttackBoss   = _autoBoss,
+                CyclicOrder  = _autoCyclic,
+                HealThresholdPct = _autoHealOn ? Mathf.RoundToInt(_autoHealSlider.value) : 0,
+                AssistPartyLeader = _autoAssist,
             });
             ClientLog.Info("Auto-farm settings saved.");
         }
@@ -297,6 +343,10 @@ namespace Game.Client
             _autoNormal = true;
             _autoElite  = false;
             _autoBoss   = false;
+            _autoCyclic = false;
+            _autoAssist = false;
+            _autoHealOn = true;
+            _autoHealSlider.value = 70f;
             RefreshAutoLabels();
         }
 
@@ -313,6 +363,9 @@ namespace Game.Client
             SetToggle(_autoEliteToggle,  _autoElite,  "Elite mobs");
             SetToggle(_autoBossToggle,   _autoBoss,   "Boss mobs");
             SetToggle(_farmShowRangeToggle, _showFarmRange, "Show range");
+            SetToggle(_autoCyclicToggle, _autoCyclic, "Cyclic order");
+            SetToggle(_autoAssistToggle, _autoAssist, "Assist party leader");
+            SetToggleOnOff(_autoHealToggle, _autoHealOn);
         }
 
         private static void SetToggle(Button button, bool on, string name)

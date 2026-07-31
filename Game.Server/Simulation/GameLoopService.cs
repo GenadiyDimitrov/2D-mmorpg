@@ -3060,7 +3060,11 @@ public class GameLoopService : BackgroundService
         p.AutoAttackNormal = c.AttackNormal;
         p.AutoAttackElite = c.AttackElite;
         p.AutoAttackBoss  = c.AttackBoss;
+        p.AutoCyclic      = c.CyclicOrder;
+        p.AutoHealPct     = Math.Clamp(c.HealThresholdPct, 0, 100);
+        p.AutoAssistLeader = c.AssistPartyLeader;
         p.AutoReadyTick.Clear();
+        Array.Clear(p.AutoChainCursor);   // the bar changed under the cursors; start the cycle over
         if (p.AutoHuntEnabled) { p.FarmCenterX = p.X; p.FarmCenterY = p.Y; }   // (re)anchor the static circle
         SendAutoHuntStatus(p);   // persisted by the normal autosave/logout snapshot
     }
@@ -3131,11 +3135,29 @@ public class GameLoopService : BackgroundService
             }
         }
 
+        // ASSIST MODE (owner, playtest-15): "you only assist — if the party leader has no target you
+        // wait; don't choose on your own." So it replaces acquisition AND retaliation AND roaming: an
+        // assisting alt that wanders off after whatever hit it is not assisting. No leader target =
+        // stand still with nothing selected.
+        var target = AutoAssistTarget(p);
+        if (target is null && AutoAssisting(p))
+        {
+            p.Engaged = false;
+            p.CombatTargetId = null;
+            p.AttackCommandTargetId = null;
+            PushAutoTarget(p, null);
+            // Still run the chain with NO target: heals and buffs need none, which is exactly the
+            // between-pulls moment a healing/buffing alt is for. Attacks and debuffs require a target
+            // and skip themselves, and roaming is deliberately not reached.
+            TryAutoSkill(p, null);
+            return;
+        }
+
         // RETALIATION FIRST (owner, playtest-15): something already swinging at you outranks whatever
         // merely happens to be nearest. He was being shot by orc archers while the autopilot calmly
         // worked through the closest mobs. See RetaliationTarget for the two guards that keep it from
         // thrashing (finish a nearly-dead mob; stay on an attacker you are already fighting).
-        var target = RetaliationTarget(p) ?? ValidAutoTarget(p) ?? AcquireAutoTarget(p);
+        target ??= RetaliationTarget(p) ?? ValidAutoTarget(p) ?? AcquireAutoTarget(p);
         bool basic = AutoBasicAttackEnabled(p);
         if (target is not null)
         {
@@ -3234,6 +3256,35 @@ public class GameLoopService : BackgroundService
             if (d < bestSq) { bestSq = d; best = e; }
         }
         return best;
+    }
+
+    /// <summary>Is this character actually in ASSIST mode right now? The toggle only means something
+    /// inside a party you don't lead — the leader assisting himself would simply never fight.</summary>
+    private bool AutoAssisting(Entity p) =>
+        p.AutoAssistLeader && _world.Parties.TryGetValue(p.Id, out var party) && party.LeaderId != p.Id;
+
+    /// <summary>What the party leader is on, if that is something we may hit: alive, a mob whose rank
+    /// the config allows (or a legal PvP target), and inside the farm circle plus the chase margin so
+    /// assisting cannot tow the alt across the map. Null when not assisting or the leader is idle.</summary>
+    private Entity? AutoAssistTarget(Entity p)
+    {
+        if (!p.AutoAssistLeader || !_world.Parties.TryGetValue(p.Id, out var party) || party.LeaderId == p.Id)
+            return null;
+        if (!_world.Entities.TryGetValue(party.LeaderId, out var leader) || leader.Dead)
+            return null;
+        if (leader.CombatTargetId is not Guid tid || !_world.Entities.TryGetValue(tid, out var t) || t.Dead)
+            return null;
+        if (t.Id == p.Id) return null;                                   // the leader is targeting US
+        if (t.Kind == EntityKind.Mob)
+        {
+            if (t.TrainingDummy || GameConstants.InSafeZone(t.X, t.Y) || !CanAttackRank(p, t)) return null;
+        }
+        else if (t.Kind != EntityKind.Player || !CanPvpHit(p, t))
+        {
+            return null;
+        }
+        float margin = p.AutoFarmRange + AutoChaseMargin;
+        return DistanceSq(p, t) <= margin * margin ? t : null;
     }
 
     /// <summary>"Basic Attack" opted into the auto-skill list — the auto-hunt may melee.</summary>
@@ -3435,14 +3486,85 @@ public class GameLoopService : BackgroundService
         return p.Buffs.Any(b => b.Key == key);
     }
 
-    /// <summary>Queue the first eligible auto-skill (known, enabled, off base-cd AND past its extra
-    /// delay, MP affordable, condition met). Returns true if one was queued.</summary>
+    /// <summary>How little time may be left on an auto-buff before the chain renews it (owner: "below
+    /// 60s"). Capped at HALF the buff's own duration, because a two-minute buff would otherwise spend
+    /// half its life "about to expire" and a 30s one would never be fresh at all.</summary>
+    private const int AutoBuffRefreshTicks = 600;   // 60s at 10 ticks/s
+
+    /// <summary>Does the chain consider this buff already taken care of? Yes when a STRICTLY STRONGER
+    /// buff of the family is up (recasting under it would just be refused by ApplyBuff and burn the MP),
+    /// or when our own rank is up with more than the refresh window left.</summary>
+    private static bool AutoBuffCovered(Entity e, SkillDef def, int window)
+    {
+        string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
+        foreach (var b in e.Buffs)
+        {
+            if (b.Key != key) continue;
+            if (b.Rank > def.Rank) return true;                     // something better is running
+            if (b.Rank == def.Rank) return b.Toggle || b.TicksRemaining > window;
+        }
+        return false;                                                // absent, or only a weaker one
+    }
+
+    /// <summary>The auto-chain's version of <see cref="BuffAlreadyUp"/>: same group-aware walk, but a
+    /// buff also counts as missing when it is about to run out (owner: "not active / below 60s / a
+    /// lesser effect"). Kept separate from BuffAlreadyUp, which the auto-POTION faucet uses — renewing
+    /// a bottle a minute early is a different (and more expensive) proposition than recasting a skill.</summary>
+    private static bool AutoBuffUpToDate(Entity p, SkillDef def, int level)
+    {
+        if (def.ChildBuffsAt(level) is { Length: > 0 } children)
+        {
+            foreach (var childId in children)
+            {
+                if (SkillCatalog.Get(childId) is not SkillDef child) continue;
+                if (!AutoBuffCovered(p, child, RefreshWindow(child))) return false;
+            }
+            return true;
+        }
+        return AutoBuffCovered(p, def, RefreshWindow(def));
+    }
+
+    private static int RefreshWindow(SkillDef def) =>
+        def.DurationTicks > 0 ? Math.Min(AutoBuffRefreshTicks, def.DurationTicks / 2) : 0;
+
+    /// <summary>Queue the next auto-skill. Priority is by GROUP (owner, playtest-15):
+    /// <b>heals → buffs/debuffs → attacks</b>, and only the first group with something to cast gets to
+    /// act this tick. Within a group the order is the bar order and
+    /// <see cref="Entity.AutoCyclic"/> decides where the scan starts. Returns true if one was queued.</summary>
     private bool TryAutoSkill(Entity p, Entity? target)
     {
-        foreach (var entry in p.AutoSkills)
+        if (AutoHealWanted(p) && TryAutoChain(p, target, AutoSkillKind.Heal)) return true;
+        if (TryAutoChain(p, target, AutoSkillKind.Buff)) return true;
+        if (TryAutoChain(p, target, AutoSkillKind.Debuff)) return true;
+        return TryAutoChain(p, target, AutoSkillKind.Attack);
+    }
+
+    /// <summary>Is the heal chain armed? Below the threshold, or at a threshold of 100 — a dedicated
+    /// healer, which the owner's spec makes the ONE piece of auto-support an alt is allowed to give
+    /// ("if the healer sets his threshold to 100% he always heals on cooldown"). 0 = never.</summary>
+    private static bool AutoHealWanted(Entity p) =>
+        p.AutoHealPct > 0 && (p.AutoHealPct >= 100 || (p.MaxHp > 0 && p.Hp * 100f / p.MaxHp < p.AutoHealPct));
+
+    /// <summary>One priority group's turn: walk the auto-skill list from the group's cursor (cyclic) or
+    /// from the top (first-available) and queue the first entry that can fire.
+    ///
+    /// CYCLIC wraps rather than waits. A strict "never go back to 1 until the last one has been used"
+    /// would park the character doing nothing while a long-reuse skill recharges; wrapping only AFTER
+    /// the rest of the group has been offered its turn keeps the 1-2-3-4-1 shape the owner asked for and
+    /// still degrades to "cast what you can" when the tail is on cooldown.</summary>
+    private bool TryAutoChain(Entity p, Entity? target, AutoSkillKind kind)
+    {
+        int n = p.AutoSkills.Count;
+        if (n == 0) return false;
+        int start = p.AutoCyclic ? ((p.AutoChainCursor[(int)kind] % n) + n) % n : 0;
+
+        for (int k = 0; k < n; k++)
         {
+            int i = (start + k) % n;
+            var entry = p.AutoSkills[i];
             if (!entry.Enabled) continue;
-            if (SkillCatalog.Get(entry.SkillId) is not SkillDef def || !p.HasSkill(def.Id)) continue;
+            if (SkillCatalog.Get(entry.SkillId) is not SkillDef def || ClassifyAuto(def) != kind) continue;
+            if (!p.HasSkill(def.Id)) continue;
             if (p.SkillCooldowns.ContainsKey(def.Id)) continue;
             if (_tick < p.AutoReadyTick.GetValueOrDefault(def.Id)) continue;
 
@@ -3450,18 +3572,19 @@ public class GameLoopService : BackgroundService
             int mpNeed = (int)((def.InitialMpAt(lvl) + def.FinishMpAt(lvl)) * MpCostFactor(p, def));
             if (p.Mp < mpNeed) continue;
 
-            string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
             Guid tgtId;
-            switch (ClassifyAuto(def))
+            switch (kind)
             {
                 case AutoSkillKind.Buff:
-                    if (BuffAlreadyUp(p, def, lvl)) continue;
+                    if (AutoBuffUpToDate(p, def, lvl)) continue;
                     tgtId = p.Id; break;
                 case AutoSkillKind.Heal:
-                    if (p.MaxHp <= 0 || (float)p.Hp / p.MaxHp >= 0.70f) continue;
-                    tgtId = p.Id; break;
+                    if (AutoHealTarget(p, def) is not Entity ht) continue;
+                    tgtId = ht.Id; break;
                 case AutoSkillKind.Debuff:
-                    if (target is null || target.Buffs.Any(b => b.Key == key)) continue;
+                    // Missing or WEAKER on the enemy (owner) — the old test was "any buff with this
+                    // key", which let a rank-1 poison block the rank-3 one for its whole duration.
+                    if (target is null || AutoBuffCovered(target, def, 0)) continue;
                     tgtId = target.Id; break;
                 case AutoSkillKind.Attack:
                     if (target is null) continue;
@@ -3473,9 +3596,36 @@ public class GameLoopService : BackgroundService
             p.QueuedSkillId = def.Id;
             p.QueuedTargetId = tgtId;
             p.AutoReadyTick[def.Id] = _tick + AutoCycleTicks(p, def, entry.ExtraDelayTicks);
+            p.AutoChainCursor[(int)kind] = (i + 1) % n;
             return true;
         }
         return false;
+    }
+
+    /// <summary>Who this heal should land on: the most injured party member under the threshold and in
+    /// range, else yourself. A heal that cannot reach anybody who needs it returns null so the chain
+    /// falls through to buffs/attacks instead of stalling on it.</summary>
+    private Entity? AutoHealTarget(Entity p, SkillDef def)
+    {
+        Entity? best = null;
+        float bestPct = float.MaxValue;
+        bool Wants(Entity e) => e.MaxHp > 0 && (p.AutoHealPct >= 100 || e.Hp * 100f / e.MaxHp < p.AutoHealPct);
+
+        if (Wants(p)) { best = p; bestPct = p.Hp * 100f / p.MaxHp; }
+
+        if (IsAllyTargetable(def) && _world.Parties.TryGetValue(p.Id, out var party))
+        {
+            float range = SkillMath.EffectiveRange(def, p.Archetype, p.BasicAttackRange, p.Level);
+            foreach (var id in party.Members)
+            {
+                if (id == p.Id) continue;
+                if (!_world.Entities.TryGetValue(id, out var m) || m.Dead || !Wants(m)) continue;
+                if (DistanceSq(p, m) > range * range) continue;
+                float pct = m.Hp * 100f / m.MaxHp;
+                if (pct < bestPct) { bestPct = pct; best = m; }
+            }
+        }
+        return best;
     }
 
     /// <summary>Estimated full recast cycle in ticks: cast time + (cooldown-reduced) reuse + the
@@ -3533,7 +3683,7 @@ public class GameLoopService : BackgroundService
             p.AutoHuntEnabled, p.AutoHpPotionPct, p.AutoMpPotionPct, p.AutoBuffPotions,
             p.AutoSkills.ToArray(), p.AutoBuffPotionIds.ToArray(),
             p.AutoFarmRange, p.AutoFarmStatic, p.AutoAttackNormal, p.AutoAttackElite, p.AutoAttackBoss,
-            p.AutoHealPotions.ToArray()));
+            p.AutoHealPotions.ToArray(), p.AutoCyclic, p.AutoHealPct, p.AutoAssistLeader));
 
     /// <summary>Advance the auto-hunt runtime cap for a player. Online = the idle cap (stop + lock);
     /// offline = the offline cap (queue a logout). Called each tick while auto-hunt is enabled.</summary>
@@ -9044,7 +9194,7 @@ var effect = def.Effect;
             return;
         }
 
-        int fee = GameConstants.TeleportFee(home.X, home.Y, tx, ty);
+        int fee = GameConstants.TeleportFee(player.Level, home.X, home.Y, tx, ty);
         if (player.Gold < fee)
         {
             SendSystemToEntity(player,
@@ -9371,7 +9521,7 @@ var effect = def.Effect;
                 foreach (var gate in field.Gates)
                     dests.Add(new TeleportDest(
                         gate.Id, gate.Name,
-                        GameConstants.TeleportFee(home.X, home.Y, gate.At.X, gate.At.Y),
+                        GameConstants.TeleportFee(player.Level, home.X, home.Y, gate.At.X, gate.At.Y),
                         band?.Min ?? 0, band?.Max ?? 0, gate.Description, field.Name));
             }
 
@@ -9379,7 +9529,7 @@ var effect = def.Effect;
                 .Select(z =>
                 {
                     var band = WorldMap.LevelRangeNear(z);
-                    return new TeleportDest(z.Id, z.Name, GameConstants.TeleportFee(home, z),
+                    return new TeleportDest(z.Id, z.Name, GameConstants.TeleportFee(player.Level, home, z),
                         band?.Min ?? 0, band?.Max ?? 0, "City", "");
                 })
                 // Order by hunting-ground level so the "next" city is at the top.

@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.38.1";
+    public const string GameVersion = "0.39.0";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -440,9 +440,23 @@ public static class GameConstants
     /// <summary>Minimum teleport fee regardless of distance.</summary>
     public const int TeleportMinFee = 50;
 
+    /// <summary>Below this level every gatekeeper ride is FREE (owner, playtest-15 §32u). Levelling
+    /// characters change hunting ground constantly and have no income yet; the fee only starts to be a
+    /// meaningful sink once you are farming for gold rather than for levels.</summary>
+    public const int FreeTeleportUnderLevel = 40;
+
     /// <summary>Gold fee to warp between two safe zones (distance-based).</summary>
     public static int TeleportFee(SafeZone from, SafeZone to) =>
         TeleportFee(from.X, from.Y, to.X, to.Y);
+
+    /// <summary>The fee THIS character pays — the distance fee, or nothing while under
+    /// <see cref="FreeTeleportUnderLevel"/>. Both the gatekeeper's price list and the charge itself go
+    /// through here, so what you are quoted is what you are billed.</summary>
+    public static int TeleportFee(int level, float fromX, float fromY, float toX, float toY) =>
+        level < FreeTeleportUnderLevel ? 0 : TeleportFee(fromX, fromY, toX, toY);
+
+    public static int TeleportFee(int level, SafeZone from, SafeZone to) =>
+        TeleportFee(level, from.X, from.Y, to.X, to.Y);
 
     /// <summary>Gold fee to warp between two POINTS. Field gates are points, not safe zones, and a short
     /// hop to a camp on your own city's doorstep should cost accordingly — so the fee is the same

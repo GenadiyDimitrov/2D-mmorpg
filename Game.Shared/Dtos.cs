@@ -313,7 +313,18 @@ public record AutoHuntConfigDto(
     // The auto-potions POTIONS tab: per-potion on/off + HP% threshold. The auto-hunt drinks the
     // highest-threshold ENABLED heal potion that's ready (so common@80 / uncommon@70 / rare@50 act as
     // fallbacks). Empty/null = fall back to the single HpPotionPct + best-potion behaviour.
-    AutoPotionDto[]? HealPotions = null);
+    AutoPotionDto[]? HealPotions = null,
+    // ----- skill CHAINS (playtest-15 design #1) -----
+    // How the next skill is chosen inside a priority group. false = "first available": the scan always
+    // restarts at the top of the bar (1-2-1-3-1-4…). true = "cyclic": it carries on from the last one
+    // used and only wraps once the rest of the group has had its turn (1-2-3-4-1…).
+    bool CyclicOrder = false,
+    // HP% below which the auto-HEAL chain takes over from buffs/debuffs/attacks. 0 = never auto-heal,
+    // 100 = a dedicated healer that heals on cooldown. Distinct from the auto-POTION thresholds.
+    int HealThresholdPct = 70,
+    // Only ever attack what the party leader is attacking; with no leader target, wait rather than
+    // pick your own. (Ignored when you are not in a party, or you ARE the leader.)
+    bool AssistPartyLeader = false);
 
 /// <summary>One line in the auto-potions Potions tab: which potion item, whether it's armed, and the
 /// HP (or MP) percent below which to drink it.</summary>

@@ -12,6 +12,45 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-31 — The autopilot casts in an order you chose (0.39.0)
+
+Playtest-15 big design **#1**, plus §32u (free travel while levelling).
+
+**Skill chains.** The auto-hunt used to walk one flat list top-to-bottom and cast the first thing that
+was ready, which meant a short-reuse skill in slot 1 could starve everything below it and a heal
+competed with an attack for the same turn. Now:
+
+- **Three priority groups — heals → buffs/debuffs → attacks.** The first group with something to cast
+  gets the tick; inside a group the order is still the bar order.
+- **Cyclic vs first-available**, a toggle in the Auto Farm window. *First available* is the old shape
+  (restart at the top: 1-2-1-3-1-4); *cyclic* carries on from the last skill used and only wraps once
+  the rest of the group has had its turn (1-2-3-4-1). One cursor per group. Cyclic **wraps rather than
+  waits** — the strict reading ("never go back to 1 until the last has fired") would park the
+  character doing nothing while a 60s skill recharges.
+- **A heal threshold of your own** (slider, 10–100, or off) instead of the hard-coded 70%. At **100**
+  it heals on cooldown — the owner's one sanctioned piece of auto-support for a played healer. The
+  heal also picks a target now: the most injured party member under the threshold within the skill's
+  range, else yourself.
+- **Buffs are renewed at under 60s left**, not only when missing, and a weaker rank counts as missing.
+  The window is capped at half the buff's own duration so a 30s buff isn't recast every cycle, and a
+  *strictly stronger* buff of the family is left alone (recasting under it is refused by `ApplyBuff`
+  anyway — it would just burn MP every cycle).
+- **Debuffs** fire when missing **or weaker** on the enemy. The old test was "any buff with this key",
+  so a rank-1 debuff blocked its own rank-3 upgrade for the whole duration.
+- **Assist party leader**: in a party you don't lead, the only target you may take is the leader's —
+  and with no leader target you stand still. It overrides acquisition, retaliation and roaming
+  together, because an "assist" that wanders off after whatever hit it is not assisting.
+
+Config travels in `AutoHuntConfigDto` (three new optional fields) and persists inside the existing
+`AutoHuntJson` blob — **no schema change, no `game.db` reset**. An old client that never sends them
+gets exactly today's behaviour (threshold 70, first-available, no assist).
+
+**Free travel under level 40 (§32u).** The gatekeeper fee is now `TeleportFee(level, …)`: nothing
+below `GameConstants.FreeTeleportUnderLevel` = 40, the distance fee from 40 on. The price list and the
+charge go through the same call, so you are billed what you were quoted, and both clients print
+**"Free"** rather than "0 gold". It was never built before — the owner's "what happened to the free
+teleport under 40?" had the answer "nothing, it doesn't exist yet".
+
 ## 2026-07-31 — A single item can be tuned on its own (0.38.1)
 
 Playtest-15 big design **#3**, scoped down after the answer turned out to be "the math already

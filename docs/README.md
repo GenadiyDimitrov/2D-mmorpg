@@ -8,6 +8,7 @@ Index of everything under `docs/`.
 
 ## `guides/` — how to build & run
 - [UnityClient.md](guides/UnityClient.md) — build and run the mobile client on a phone.
+- [Publishing.md](guides/Publishing.md) — `tools/publish.ps1`: the versioned server zip + APK in `builds/`.
 
 ## `testing/` — what to verify
 - [TestChecklist.md](testing/TestChecklist.md) — the running WPF / server playtest checklist.

@@ -988,6 +988,18 @@ public class Entity
     public float FarmCenterY { get; set; }
     /// <summary>Per-skill earliest auto-recast tick (base reuse + the user's extra delay).</summary>
     public Dictionary<string, long> AutoReadyTick { get; } = new();
+
+    // ----- Auto-hunt skill chains (playtest-15 design #1) -----
+    /// <summary>Cyclic chain order: carry on from the last skill used instead of restarting at the top
+    /// of the bar every time. See AutoChainPick.</summary>
+    public bool AutoCyclic { get; set; }
+    /// <summary>HP% under which the auto-HEAL chain runs (0 = never, 100 = heal on cooldown).</summary>
+    public int AutoHealPct { get; set; } = 70;
+    /// <summary>Assist-only: attack what the party leader attacks, and nothing else.</summary>
+    public bool AutoAssistLeader { get; set; }
+    /// <summary>Cyclic cursor per priority group (index into AutoSkills of the LAST one cast, +1).
+    /// Indexed by <c>(int)AutoSkillKind</c>; reset whenever the config changes.</summary>
+    public int[] AutoChainCursor { get; } = new int[5];
     /// <summary>Disconnected but still auto-hunting in the world (no connection = no UI pushes).</summary>
     public bool IsOfflineFarming { get; set; }
     /// <summary>Link-dead grace: connection lost while out of combat + not auto-farming. Frozen in

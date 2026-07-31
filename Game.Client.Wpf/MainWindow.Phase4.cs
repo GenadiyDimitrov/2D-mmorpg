@@ -3117,7 +3117,8 @@ public partial class MainWindow
                 string what = dest.Description.Length > 0 ? $"\n{dest.Description}" : "";
                 var btn = new Button
                 {
-                    Content = $"Travel to {dest.Name}{band}  —  {dest.Fee:N0} {GameConstants.CurrencyName}{what}",
+                    Content = $"Travel to {dest.Name}{band}  —  " +
+                              (dest.Fee <= 0 ? "Free" : $"{dest.Fee:N0} {GameConstants.CurrencyName}") + what,
                     MinHeight = 28, HorizontalAlignment = HorizontalAlignment.Left,
                     Margin = new Thickness(0, 2, 0, 4), Padding = new Thickness(8, 0, 8, 0),
                     IsEnabled = _gold >= dest.Fee

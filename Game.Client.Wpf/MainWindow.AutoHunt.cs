@@ -227,7 +227,13 @@ public partial class MainWindow
             StaticSpot: AutoStaticCheck.IsChecked == true,
             AttackNormal: AutoRankNormal.IsChecked == true,
             AttackElite: AutoRankElite.IsChecked == true,
-            AttackBoss: AutoRankBoss.IsChecked == true);
+            AttackBoss: AutoRankBoss.IsChecked == true,
+            // The harness has no editor for these — carry the phone's settings through instead of
+            // silently resetting them (this window replaces the WHOLE config server-side).
+            HealPotions: _autoConfig?.HealPotions,
+            CyclicOrder: _autoConfig?.CyclicOrder ?? false,
+            HealThresholdPct: _autoConfig?.HealThresholdPct ?? 70,
+            AssistPartyLeader: _autoConfig?.AssistPartyLeader ?? false);
 
         _autoConfig = cfg;
         await _net.SetAutoHuntConfigAsync(cfg);
