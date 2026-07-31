@@ -59,6 +59,9 @@ namespace Game.Client
         private readonly RectTransform[] _slotReuseRects = new RectTransform[SlotsPerPage];
         private readonly TextMeshProUGUI[] _slotReuseText = new TextMeshProUGUI[SlotsPerPage];
         private readonly TextMeshProUGUI[] _slotAutoMarks = new TextMeshProUGUI[SlotsPerPage];
+        /// <summary>How many of a consumable slot's item are in the bag (32n). Bottom-LEFT, because the
+        /// top-left is the slot number and the bottom-right is the auto "A".</summary>
+        private readonly TextMeshProUGUI[] _slotCounts = new TextMeshProUGUI[SlotsPerPage];
 
         /// <summary>
         /// How long after a cast STARTS before its slot will accept a cancel tap.
@@ -419,6 +422,15 @@ namespace Game.Client
                             new Vector2(-4f, 2f), new Vector2(20f, 16f));
                 auto.gameObject.SetActive(false);
                 _slotAutoMarks[i] = auto;
+
+                // How many are left, bottom-LEFT. Only ever shown for an item slot: a potion bar you
+                // cannot count is a bar you have to open the bag to trust (32n).
+                var count = UiKit.Label(button.transform, "", 13f, new Color(0.95f, 0.88f, 0.55f),
+                                        TextAlignmentOptions.BottomLeft);
+                UiKit.Place(UiKit.Rect(count.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                            new Vector2(4f, 2f), new Vector2(34f, 16f));
+                count.gameObject.SetActive(false);
+                _slotCounts[i] = count;
 
                 // ----- REUSE (cooldown) -----------------------------------------------------------
                 // A dark sheet over the slot that DRAINS from the top as the reuse runs out, plus the
@@ -846,7 +858,11 @@ namespace Game.Client
             _pvpButton.targetGraphic.color = Boot.PvpEnabled
                 ? new Color(0.55f, 0.20f, 0.20f, 0.95f) : UiKit.PanelLight;
 
-            UiKit.SetButtonText(_autoButton, Boot.AutoHunting ? "Auto: ON" : "Auto: off");
+            // While it runs, the button IS the timer (32q): the idle budget is spent silently and the
+            // session used to just stop one day with a chat line you may have scrolled past.
+            int autoLeft = Boot.AutoIdleSecondsLeftNow;
+            UiKit.SetButtonText(_autoButton, !Boot.AutoHunting ? "Auto: off"
+                                : autoLeft <= 0 ? "Auto: ON" : "Auto " + ShortTime(autoLeft));
             _autoButton.targetGraphic.color = Boot.AutoHunting
                 ? new Color(0.20f, 0.45f, 0.25f, 0.95f) : UiKit.PanelLight;
 
@@ -981,6 +997,13 @@ namespace Game.Client
                 bool auto = !string.IsNullOrEmpty(token) && Boot.AutoSkills.Contains(AutoIdFor(token));
                 _slotBorders[i].enabled = auto;
                 _slotAutoMarks[i].gameObject.SetActive(auto);
+
+                // How many of this consumable remain (32n) — 1…99 then "99+", so a full stack of 300
+                // potions cannot push the digits across the face of the square.
+                bool isItem = !string.IsNullOrEmpty(token) && GameConstants.IsItemSlot(token);
+                int have = isItem ? Boot.BagCount(token.Substring(GameConstants.SkillBarItemPrefix.Length)) : 0;
+                _slotCounts[i].gameObject.SetActive(isItem);
+                if (isItem) _slotCounts[i].text = have > 99 ? "99+" : have.ToString();
 
                 // The reuse sheet + its countdown. Driven from the client's own clock (the server sends
                 // one message when the timer starts, not one per tick), so this animates at frame rate.

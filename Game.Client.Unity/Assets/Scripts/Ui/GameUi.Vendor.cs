@@ -173,25 +173,55 @@ namespace Game.Client
             if (!any) VendorNote("Nothing here can be sold (equipped or bound items can't).");
         }
 
+        // A stackable used to jump STRAIGHT to the numpad (32d/26d): you were typing a quantity for
+        // something you had not been told anything about, and the description only appeared at the
+        // confirm, one step too late to change your mind cheaply. Now every tap says WHAT it is first;
+        // the numpad is the second step, and the confirm still asks before the gold moves.
         private void BuyTap(string defId, string name, ItemDef def, long unit)
         {
-            if (IsStackable(def))
-            {
-                // Max = the most you can AFFORD, clamped to the server's 999 cap — never a refusal.
-                int affordable = unit > 0 ? (int)Math.Min(999, Boot.Gold / unit) : 999;
-                OpenNumpad("Buy " + name, Mathf.Max(1, affordable),
-                           qty => ConfirmBuy(defId, name, unit, qty));
-            }
-            else ConfirmBuy(defId, name, unit, 1);
+            if (!IsStackable(def)) { ConfirmBuy(defId, name, unit, 1); return; }
+
+            // Max = the most you can AFFORD, clamped to the server's 999 cap — never a refusal.
+            int affordable = unit > 0 ? (int)Math.Min(999, Boot.Gold / unit) : 999;
+            var t = new StringBuilder();
+            t.Append(name).Append(" — ").Append(unit.ToString("N0"))
+             .Append(' ').Append(GameConstants.CurrencyName).Append(" each.");
+            AppendItemDetails(t, def, defId);
+            Ask(t.ToString(), "How many?",
+                () => OpenNumpad("Buy " + name, Mathf.Max(1, affordable),
+                                 qty => ConfirmBuy(defId, name, unit, qty)));
         }
 
         private void SellTap(InventoryItemDto item, ItemDef def, long unit)
         {
             var id = item.InstanceId;
-            if (IsStackable(def) && item.Quantity > 1)
-                OpenNumpad("Sell " + def.Name, item.Quantity, qty => ConfirmSell(id, def.Name, unit, qty));
-            else
-                ConfirmSell(id, def.Name, unit, 1);
+            if (!IsStackable(def) || item.Quantity <= 1) { ConfirmSell(id, def.Name, unit, 1); return; }
+
+            var t = new StringBuilder();
+            t.Append(def.Name).Append(" — you have ").Append(item.Quantity)
+             .Append(", worth ").Append(unit.ToString("N0"))
+             .Append(' ').Append(GameConstants.CurrencyName).Append(" each.");
+            AppendItemDetails(t, def, item.DefId);
+            Ask(t.ToString(), "How many?",
+                () => OpenNumpad("Sell " + def.Name, item.Quantity,
+                                 qty => ConfirmSell(id, def.Name, unit, qty)));
+        }
+
+        /// <summary>Append an item's stat block and description to a vendor message. Shared by the
+        /// details step and the final confirm so the two can never describe the same item differently.
+        /// The "Name:" row is dropped — the name is already in the line above it.</summary>
+        private void AppendItemDetails(StringBuilder t, ItemDef def, string defId)
+        {
+            if (def == null) return;
+            // Smaller than the question: the question is the decision, the stats are its evidence, and
+            // at the dialog's 19px they ran the panel past the bottom of the screen.
+            t.AppendLine().AppendLine().Append("<size=15>");
+            string stats = ItemStatsText(def, new InventoryItemDto(Guid.Empty, defId, false, 0, 1, null));
+            foreach (var line in stats.Split('\n'))
+                if (!line.StartsWith("Name:")) t.AppendLine(line.TrimEnd());
+            if (!string.IsNullOrWhiteSpace(def.Description))
+                t.Append("<color=#9AA3AD>").Append(def.Description).Append("</color>");
+            t.Append("</size>");
         }
 
         private void ConfirmBuy(string defId, string name, long unit, int qty)
@@ -205,20 +235,7 @@ namespace Game.Client
             var t = new StringBuilder();
             t.Append("Buy ").Append(qty).Append(" x ").Append(name)
              .Append(" for ").Append((unit * qty).ToString("N0")).Append(' ').Append(GameConstants.CurrencyName).Append('?');
-            if (def != null)
-            {
-                // The stat block is set SMALLER than the question. The question is the decision; the
-                // stats are the evidence for it, and at the dialog's 19px they ran the panel past the
-                // bottom of the screen. Dropping the redundant "Name:" row helps too — the name is
-                // already in the question line above.
-                t.AppendLine().AppendLine().Append("<size=15>");
-                string stats = ItemStatsText(def, new InventoryItemDto(Guid.Empty, defId, false, 0, 1, null));
-                foreach (var line in stats.Split('\n'))
-                    if (!line.StartsWith("Name:")) t.AppendLine(line.TrimEnd());
-                if (!string.IsNullOrWhiteSpace(def.Description))
-                    t.Append("<color=#9AA3AD>").Append(def.Description).Append("</color>");
-                t.Append("</size>");
-            }
+            AppendItemDetails(t, def, defId);
             Ask(t.ToString(), "Confirm", () => { Boot.BuyItem(defId, qty); CloseNumpad(); });
         }
 

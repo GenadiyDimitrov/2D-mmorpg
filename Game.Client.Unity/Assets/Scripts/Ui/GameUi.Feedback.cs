@@ -128,11 +128,81 @@ namespace Game.Client
             public RectTransform Root;
             public Image Box;
             public TextMeshProUGUI Label, Time;
-            public string Key;          // the buff this square currently SHOWS
+            /// <summary>The buff key(s) this square currently SHOWS — more than one when it is a
+            /// collapsed group, and cancelling it must then drop every part of the blessing.</summary>
+            public readonly List<string> Keys = new List<string>();
             public bool IsDebuff;
             public string BuffName, Description;
             public int Stacks;
             public float Seconds;
+        }
+
+        /// <summary>One SQUARE's worth of buff: either a single buff, or a whole improved group merged
+        /// into one (docs/design/BuffLadders.md step 5).
+        ///
+        /// A group buff applies no buff of its own — it applies children, each an independent buff on
+        /// its own family ladder, which is exactly what lets a potion override one part of it. Correct
+        /// on the server, and four squares on the bar for one blessing. The server now names the parent
+        /// on every child, so they can be put back together HERE, where it is only a display question.
+        /// </summary>
+        private class BuffView
+        {
+            public string Name = "", Description = "";
+            public float Seconds;
+            public bool IsDebuff;
+            public int Stacks = 1;
+            public BuffRow Row;
+            public readonly List<string> Keys = new List<string>();
+        }
+
+        /// <summary>Collapse the raw buff list into what the bar draws: children sharing a parent become
+        /// ONE view. The timer shows the SHORTEST remaining child, because that is when the blessing
+        /// starts coming apart — and the popup lists the parts with their own times, so a group whose
+        /// pieces are expiring at different moments can still be read in full.</summary>
+        private List<BuffView> BuildBuffViews(BuffDto[] all)
+        {
+            var views = new List<BuffView>();
+            var byGroup = new Dictionary<string, BuffView>();
+            var parts = new Dictionary<string, List<string>>();
+
+            foreach (var b in all)
+            {
+                if (string.IsNullOrEmpty(b.SourceSkillId))
+                {
+                    var single = new BuffView
+                    {
+                        Name = b.Name, Description = b.Description, Seconds = b.SecondsLeft,
+                        IsDebuff = b.IsDebuff, Stacks = b.Stacks, Row = b.Row,
+                    };
+                    single.Keys.Add(b.Key);
+                    views.Add(single);
+                    continue;
+                }
+
+                if (!byGroup.TryGetValue(b.SourceSkillId, out var view))
+                {
+                    view = new BuffView
+                    {
+                        Name = string.IsNullOrEmpty(b.SourceName) ? b.Name : b.SourceName,
+                        Seconds = b.SecondsLeft, IsDebuff = b.IsDebuff, Row = b.Row,
+                    };
+                    byGroup[b.SourceSkillId] = view;
+                    parts[b.SourceSkillId] = new List<string>();
+                    views.Add(view);
+                }
+
+                // A toggle reports -1 (no timer) and must not win the "shortest" comparison.
+                if (b.SecondsLeft >= 0f && (view.Seconds < 0f || b.SecondsLeft < view.Seconds))
+                    view.Seconds = b.SecondsLeft;
+                view.Keys.Add(b.Key);
+                parts[b.SourceSkillId].Add(
+                    b.Name + (b.SecondsLeft > 0f ? "  " + ShortTime(b.SecondsLeft) : ""));
+            }
+
+            foreach (var pair in byGroup)
+                pair.Value.Description = "Parts:  " + string.Join(",  ", parts[pair.Key]);
+
+            return views;
         }
 
         // Buff tap behaviour (owner): TAP opens details, PRESS-AND-HOLD cancels.
@@ -238,16 +308,16 @@ namespace Game.Client
         /// </summary>
         private void RefreshBuffBar()
         {
-            var all = Boot.Buffs ?? new BuffDto[0];
+            var all = BuildBuffViews(Boot.Buffs ?? new BuffDto[0]);
 
             // FOUR groups, from the BuffRow the server has been sending all along — the client was
             // splitting on IsDebuff alone and lumping everything else together, which is why a health
             // potion's effect disappeared under the buff Hide button. A potion is not a buff you cast;
             // hiding one to tidy the other is wrong.
-            var debuffs = new List<BuffDto>();
-            var buffs = new List<BuffDto>();
-            var items = new List<BuffDto>();
-            var consumables = new List<BuffDto>();
+            var debuffs = new List<BuffView>();
+            var buffs = new List<BuffView>();
+            var items = new List<BuffView>();
+            var consumables = new List<BuffView>();
 
             foreach (var b in all)
             {
@@ -297,7 +367,7 @@ namespace Game.Client
 
         /// <summary>Lay one group out six-per-row from <paramref name="y"/> downward, and return the y
         /// the next group starts at.</summary>
-        private float LayoutBuffRow(List<BuffDto> group, ref int used, float y, bool collapsible)
+        private float LayoutBuffRow(List<BuffView> group, ref int used, float y, bool collapsible)
         {
             int shown = !collapsible ? group.Count
                       : _buffStage == 0 ? group.Count
@@ -312,20 +382,22 @@ namespace Game.Client
                 square.Root.anchoredPosition = new Vector2((i % BuffsPerRow) * BuffStep,
                                                            y - (i / BuffsPerRow) * BuffRowStep);
                 square.Root.gameObject.SetActive(true);
-                square.Key = buff.Key;
+                square.Keys.Clear();
+                square.Keys.AddRange(buff.Keys);
                 square.IsDebuff = buff.IsDebuff;
                 square.BuffName = buff.Name;
                 square.Description = buff.Description;
                 square.Stacks = buff.Stacks;
-                square.Seconds = buff.SecondsLeft;
+                square.Seconds = buff.Seconds;
 
                 square.Label.text = Abbreviations.For(buff.Name) + (buff.Stacks > 1 ? " x" + buff.Stacks : "");
-                square.Time.text = ShortTime(buff.SecondsLeft);
+                square.Time.text = ShortTime(buff.Seconds);
 
                 var tint = buff.IsDebuff ? new Color(0.45f, 0.18f, 0.18f, 0.95f) : UiKit.PanelLight;
 
                 // Under a minute, blink — a buff that expires mid-fight should not be a surprise.
-                if (!buff.IsDebuff && buff.SecondsLeft > 0f && buff.SecondsLeft <= 60f
+                // For a collapsed group this is the SHORTEST part, which is the right warning.
+                if (!buff.IsDebuff && buff.Seconds > 0f && buff.Seconds <= 60f
                     && Mathf.Repeat(Time.unscaledTime, 1f) < 0.5f)
                     tint = new Color(0.50f, 0.42f, 0.15f, 0.95f);
 
@@ -352,16 +424,19 @@ namespace Game.Client
                 var press = box.gameObject.AddComponent<PressAndHold>();
                 press.OnTap = () =>
                 {
-                    if (string.IsNullOrEmpty(square.Key)) return;
+                    if (square.Keys.Count == 0) return;
                     ShowBuffPopup(square);
                 };
                 // HOLD cancels — buffs only. A debuff is not yours to dismiss, so holding one just
                 // shows its details rather than doing nothing silently.
                 press.OnHold = () =>
                 {
-                    if (string.IsNullOrEmpty(square.Key)) return;
+                    if (square.Keys.Count == 0) return;
                     if (square.IsDebuff) { ShowBuffPopup(square); return; }
-                    Boot.RemoveBuff(square.Key);
+                    // A collapsed group drops WHOLE. Cancelling one square and being left with three
+                    // unnamed leftovers of a blessing you just dismissed would be worse than not
+                    // collapsing it at all.
+                    foreach (var key in square.Keys) Boot.RemoveBuff(key);
                     HideBuffPopup();
                 };
 

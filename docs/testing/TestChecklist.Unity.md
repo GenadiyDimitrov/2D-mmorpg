@@ -263,7 +263,9 @@ and the Learn confirmation shows its numbers. **31e is right but unreadable** �
 --- 32. 🔴 PLAYTEST-15 (2026-07-31, server 0.34.3) — full report: `Playtest-15.md`. ---
 **BUILT IN 0.35.0 — test these:** 32a · 32b · 32h · 32i · 32j · 32k · 32l · **32m** · 32o · 32p · 32s · 32v.
 (32m and 32s came out of the SAME line — see 32s. 32m was scheduled for the Unity batch and arrived early.)
-**STILL OPEN:** 32c · 32d · 32e · 32f · 32g · 32n · 32q · 32r · 32t · 32u.
+**BUILT IN 0.37.0 — test these:** 32c · 32d · 32e · 32f · 32g · 32n · 32q · 32r, plus **32w** (the NPC
+buffer's new basic-only list). All but 32f/32g/32q are Unity-side, so the APK is what proves them.
+**STILL OPEN:** 32t (jewel slots — its own batch) · 32u (a design call, never built).
 32a.[ ] **The phone server starts with no hand-editing** — unzip a fresh `Game.Server` on the phone and
         `dotnet Game.Server.dll` must just run. It currently dies with `GC heap initialization failed
         (0x8007000E)` — Server GC tries to reserve 256 GiB — and he has to `nano
@@ -324,6 +326,17 @@ and the Learn confirmation shows its numbers. **31e is right but unreadable** �
         slot 1; empty counts as weaker than Common.
 32u.[ ] **Free teleport under 40** — NEVER BUILT (the fee is distance-only, min 50). Open design call,
         not a regression.
+32x.[ ] **An improved buff is ONE square on the bar.** Cast the cleric's Improved Speed: exactly one
+        square named "Improved Speed" (0.36.0 put up four). Its timer must be the SHORTEST part, the
+        tap popup must list the parts with their own times, and press-and-HOLD must remove the WHOLE
+        group — no leftovers. Then check a potion/scroll square is unchanged: a Swift potion still
+        reads "Swift", NOT "Swift Potion (Greater)".
+32w.[ ] **The NPC buffer gives BASIC buffs only, one hour each.** Its list must be Might · Force ·
+        Focus · Body · Frenzy · Swift · Alacrity · Agility · Haste — **no "Improved Speed" group and
+        no Harmony of Protection / Warrior / Wizard**. Each lands as ONE buff square at 1h. Check the
+        overlap rule still holds: take Swift from the buffer, then drink a Swift potion of the same
+        tier — the potion must be REFUSED (not eaten) because the buffer's hour is longer; a HIGHER
+        tier potion must replace it. Full-set price is unchanged (nine buffs).
 32v.[ ] **Auto-farm shows its target** — while the autopilot is running, the target window must show the
         creature it is currently on, update as it switches, and clear when it has none. The server
         already picks one (`GameLoopService` sets `CombatTargetId` in the auto-hunt path, ~:3043/:3056);

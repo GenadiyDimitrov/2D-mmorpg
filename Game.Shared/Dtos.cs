@@ -200,8 +200,14 @@ public record CooldownUpdate(CooldownEntry[] Entries);
 /// <summary>One active buff/debuff on the player, for the buff bar + tooltip. Stacks &gt; 1
 /// for a stacking effect (shown as "Name xN"). Icon = an emoji/glyph for the square (server-resolved,
 /// per-class); "" falls back to the name's initials on the client.</summary>
+/// <para>SourceSkillId/SourceName are set ONLY for a child of an improved (GROUP) buff with more
+/// than one child, and name the parent: they are what lets the buff bar collapse a whole blessing
+/// into one square instead of the four independent buffs it really is (docs/design/BuffLadders.md).
+/// Deliberately not set for a potion or a scroll — those are one-child groups, and labelling their
+/// square with the bottle's name instead of the effect's would be noise, not grouping.</para>
 public record BuffDto(string Name, string Description, float SecondsLeft, bool IsDebuff,
-    string Key = "", int Stacks = 1, BuffRow Row = BuffRow.Buff, string Icon = "");
+    string Key = "", int Stacks = 1, BuffRow Row = BuffRow.Buff, string Icon = "",
+    string SourceSkillId = "", string SourceName = "");
 
 /// <summary>Server -> client: the character's learned skills (id + current level) + SP.</summary>
 public record LearnedSkills(SkillRef[] Skills, int SkillPoints);
@@ -376,8 +382,15 @@ public record AutoSkillReuse(string SkillId, string Name, float ReuseSeconds, fl
 /// around the CHARACTER, so "keep position" showed a circle that walked off with you instead of
 /// marking the spot you were held to (playtest-13). Server-to-client only, so it never round-trips
 /// back as part of the config the client saves.</summary>
+/// <para><paramref name="IdleSecondsLeft"/> / <paramref name="OfflineSecondsLeft"/> are the two
+/// runtime budgets left on the clock (online idle 8h, offline 2h by default), so the client can
+/// count the Auto button down instead of the session simply stopping one day with no warning.
+/// <c>-1</c> = uncapped (the owner sets a cap of 0 to leave a character farming overnight).
+/// New fields with defaults: an older client just ignores them — see GameConstants.ProtocolVersion,
+/// where DTO fields are explicitly NOT a protocol break, unlike a hub signature.</para>
 public record AutoHuntStatus(bool Enabled, float MpPerSec, AutoSkillReuse[] Skills,
-    float FarmCenterX = 0f, float FarmCenterY = 0f);
+    float FarmCenterX = 0f, float FarmCenterY = 0f,
+    int IdleSecondsLeft = -1, int OfflineSecondsLeft = -1);
 
 /// <summary>Server -> client: what the AUTOPILOT is currently on. null = it has nothing.
 ///

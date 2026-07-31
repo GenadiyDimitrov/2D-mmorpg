@@ -476,7 +476,12 @@ public class GameLoopService : BackgroundService
         player.AutoHuntLocked = false;
         player.FarmCenterX = player.X; player.FarmCenterY = player.Y;   // anchor the static circle here
         // Tell the client (it returns to the account screen), then drop the connection + go offline.
-        _ = _hub.Clients.Client(cmd.ConnectionId).SendAsync("ForceDisconnect", "You are now farming offline.");
+        // Say how long it will run (32q) — the session ends on a budget you otherwise can't see.
+        int offlineLeft = AutoOfflineSecondsLeft(player);
+        _ = _hub.Clients.Client(cmd.ConnectionId).SendAsync("ForceDisconnect",
+            offlineLeft < 0
+                ? "You are now farming offline (no time limit)."
+                : $"You are now farming offline for {HumanTime(offlineLeft)}.");
         _world.ConnectionToEntity.Remove(cmd.ConnectionId);
         _world.EntityToConnection.Remove(player.Id);
         BeginOfflineFarm(player);
@@ -3064,7 +3069,21 @@ public class GameLoopService : BackgroundService
         SendAutoHuntStatus(p);
         if (_world.Parties.TryGetValue(p.Id, out var pty))
             SendPartyUpdate(pty);   // toggle the party AFK/Auto icon promptly
-        SendSystemToEntity(p, p.AutoHuntEnabled ? "Auto-hunt ON." : "Auto-hunt OFF.");
+        // Say the budget on every switch (32q). The button counts down too, but a chat line is what
+        // you still have five minutes later when the button is off-screen behind a window.
+        int left = AutoIdleSecondsLeft(p);
+        SendSystemToEntity(p, p.AutoHuntEnabled
+            ? left < 0 ? "Auto-hunt ON (no time limit)." : $"Auto-hunt ON — {HumanTime(left)} of idle time left."
+            : left < 0 ? "Auto-hunt OFF." : $"Auto-hunt OFF — {HumanTime(left)} of idle time left.");
+    }
+
+    /// <summary>"2h 05m" / "5m 30s" / "42s" — the chat-line spelling of a budget. The client's own
+    /// ShortTime does the compact button version; this one is meant to be read in a sentence.</summary>
+    private static string HumanTime(int seconds)
+    {
+        if (seconds <= 0) return "0s";
+        int h = seconds / 3600, m = seconds % 3600 / 60, s = seconds % 60;
+        return h > 0 ? $"{h}h {m:00}m" : m > 0 ? $"{m}m {s:00}s" : $"{s}s";
     }
 
     /// <summary>Per-tick automation for a player (called before UpdateAction). Auto-potions always
@@ -3479,8 +3498,19 @@ public class GameLoopService : BackgroundService
             rows.Add(new AutoSkillReuse(def.Id, name, reuseSec, mps));
         }
         SendTo(p, "AutoHunt", new AutoHuntStatus(p.AutoHuntEnabled, totalMps, rows.ToArray(),
-                                                 p.FarmCenterX, p.FarmCenterY));
+                                                 p.FarmCenterX, p.FarmCenterY,
+                                                 AutoIdleSecondsLeft(p), AutoOfflineSecondsLeft(p)));
     }
+
+    /// <summary>Seconds left on the ONLINE idle budget; -1 when uncapped. The clock only advances
+    /// while auto-hunt is actually running, so this is a genuine "time left", not wall time.</summary>
+    private int AutoIdleSecondsLeft(Entity p) => _idleCapSeconds <= 0 ? -1
+        : Math.Max(0, (int)((AutoIdleCapTicks(p) - p.AutoIdleElapsedTicks) * GameConstants.TickSeconds));
+
+    /// <summary>Seconds left on the OFFLINE budget; -1 when uncapped. Meaningful before you go
+    /// offline too — it is what an offline session started now would get.</summary>
+    private int AutoOfflineSecondsLeft(Entity p) => _offlineCapSeconds <= 0 ? -1
+        : Math.Max(0, (int)((AutoOfflineCapTicks(p) - p.AutoOfflineElapsedTicks) * GameConstants.TickSeconds));
 
     /// <summary>Echo the full stored config so the client UI reflects the persisted settings.</summary>
     private void SendSkillBar(Entity p) =>
@@ -7851,12 +7881,36 @@ var effect = def.Effect;
         }
     }
 
+    /// <summary>Is this skill an improved (GROUP) buff with MORE THAN ONE child? Only those are worth
+    /// collapsing on the buff bar. A potion and a scroll are one-child groups by the same mechanism,
+    /// and merging one square into one square would only replace the effect's name with the bottle's.
+    /// Checks every LEVEL because a group buff's levels are pure child references — the cleric's
+    /// Improved Speed carries no children on the def itself.</summary>
+    private static bool IsMultiChildGroup(string skillId)
+    {
+        if (string.IsNullOrEmpty(skillId) || SkillCatalog.Get(skillId) is not SkillDef def) return false;
+        if (def.ChildBuffs is { Length: > 1 }) return true;
+        if (def.Levels != null)
+            foreach (var lvl in def.Levels)
+                if (lvl.ChildBuffs is { Length: > 1 }) return true;
+        return false;
+    }
+
+    /// <summary>The group's name as THIS character knows it (per-class flavour), for the one square
+    /// its children collapse into.</summary>
+    private static string GroupDisplayName(Entity p, string skillId) =>
+        SkillCatalog.Get(skillId) is SkillDef def
+            ? ClassSkills.DisplayName(def.Id, p.Race, p.BaseClass, p.Archetype, p.Discipline)
+            : "";
+
     private void PushBuffs(Entity player)
     {
         var dtos = player.Buffs.Where(b => !b.Internal).Select(b => new BuffDto(
             b.Name, b.Description,
             b.Toggle ? -1f : b.TicksRemaining * GameConstants.TickSeconds, b.IsDebuff, b.Key, b.Stacks,
-            b.Row, BuffIcon(player, b.SourceSkillId))).ToList();
+            b.Row, BuffIcon(player, b.SourceSkillId),
+            IsMultiChildGroup(b.SourceSkillId) ? b.SourceSkillId : "",
+            IsMultiChildGroup(b.SourceSkillId) ? GroupDisplayName(player, b.SourceSkillId) : "")).ToList();
 
         // The GRADE PENALTY rides along as a synthetic, never-expiring DEBUFF row. It is not a real
         // BuffInstance (nothing casts it — it's a property of what you're wearing), but without a row on
@@ -8260,20 +8314,35 @@ var effect = def.Effect;
                 rows.RemoveAll(d => MobCatalog.IsGearGroup(d.GroupId));
                 rows.AddRange(MobCatalog.GearDrops(t.Level, t.Rank));
             }
-            string Line(IEnumerable<DropEntry> members, float rawChance, int groupId)
+            string ItemLine(DropEntry d)
             {
-                var list = members.ToList();
-                float chance = Math.Min(1f, rawChance * MobCatalog.EffectiveRate(groupId));
-                string names = string.Join(" / ", list
-                    .Select(d => ItemCatalog.Get(d.ItemId)?.Name ?? d.ItemId).Distinct());
-                int lo = list.Min(d => d.MinQty), hi = list.Max(d => d.MaxQty);
-                string qty = hi > 1 ? $" x{lo}-{hi}" : "";
-                return $"{names}{qty}  ({chance * 100:0.##}%)";
+                string name = ItemCatalog.Get(d.ItemId)?.Name ?? d.ItemId;
+                return d.MaxQty > 1 ? $"{name} x{d.MinQty}-{d.MaxQty}" : name;
             }
-            drops = rows.Where(d => d.GroupId == 0).Select(d => Line(new[] { d }, d.Chance, 0))
-                .Concat(rows.Where(d => d.GroupId != 0).GroupBy(d => d.GroupId)
-                    .Select(g => Line(g, g.Sum(d => d.Chance), g.Key)))
-                .ToArray();
+            // "Armor · Rare", "Mats", "Scrolls" — the group's tuning name (the word /droprate takes),
+            // plus the rarity for the four gear families, which is the half that tells them apart.
+            string GroupTitle(int groupId)
+            {
+                string name = MobCatalog.GroupName(groupId);
+                string head = char.ToUpperInvariant(name[0]) + name.Substring(1);
+                return MobCatalog.IsGearGroup(groupId)
+                    ? $"{head} · {(ItemRarity)((groupId - 10) % 10)}" : head;
+            }
+
+            var lines = new List<string>();
+            // GroupId 0 rolls independently, so each entry is its own row carrying its own chance.
+            foreach (var d in rows.Where(d => d.GroupId == 0))
+                lines.Add($"{ItemLine(d)}  ({Math.Min(1f, d.Chance * MobCatalog.EffectiveRate(0)) * 100:0.##}%)");
+            // A GROUP is ONE roll shared by its members, so it reads as a TREE (32f): a title line with
+            // the group's own chance, then the items it can land on indented beneath. As flat rows a
+            // single 5% group looked like five separate 5% drops, which is five times the truth.
+            foreach (var g in rows.Where(d => d.GroupId != 0).GroupBy(d => d.GroupId))
+            {
+                float chance = Math.Min(1f, g.Sum(d => d.Chance) * MobCatalog.EffectiveRate(g.Key));
+                lines.Add($"{GroupTitle(g.Key)}  ({chance * 100:0.##}%)");
+                foreach (var name in g.Select(ItemLine).Distinct()) lines.Add("   " + name);
+            }
+            drops = lines.ToArray();
         }
 
         var (hpReg, mpReg) = StandingRegen(t);

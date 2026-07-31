@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Game.Shared;
 using TMPro;
@@ -385,7 +386,8 @@ namespace Game.Client
             return t.ToString().TrimEnd();
         }
 
-        private static string SetInfoText(ItemDef def)
+        // NOT static: the piece list says which slots you have FILLED, which needs the live inventory.
+        private string SetInfoText(ItemDef def)
         {
             if (string.IsNullOrEmpty(def.SetId) || ArmorSetCatalog.Get(def.SetId) is not ArmorSetDef set)
                 return "";
@@ -394,7 +396,7 @@ namespace Game.Client
             t.AppendLine();
             t.AppendLine();
             t.AppendLine("<b>Set: " + set.Name + "</b>");
-            t.AppendLine("  Wear the full set (body + head + gloves + boots) for a bonus.");
+            AppendSetPieces(t, set);
 
             var b = set.Bonus;
             var parts = new List<string>();
@@ -409,6 +411,58 @@ namespace Game.Client
             if (parts.Count > 0) t.AppendLine("  Bonus: " + string.Join(", ", parts));
 
             return t.ToString().TrimEnd('\r', '\n');
+        }
+
+        /// <summary>Which pieces the set wants, and which of them you are actually wearing (32c).
+        ///
+        /// The window used to say only "wear the full set for a bonus" — with no way to learn WHICH
+        /// four items that meant, or how close you were, short of tapping every piece in the shop.
+        /// The completion rule mirrors the server's DetectActiveSet exactly: the BODY carries the
+        /// set's own id, the other slots carry the shared ACCESSORY line (which is what lets a light
+        /// and a robe body share one set of gloves/boots/helm).
+        ///
+        /// [x]/[ ] rather than a tick or a cross: the font TMP ships with has no glyph outside ASCII
+        /// and draws a hollow box for one.</summary>
+        private void AppendSetPieces(StringBuilder t, ArmorSetDef set)
+        {
+            string accId = string.IsNullOrEmpty(set.AccessorySetId) ? set.Id : set.AccessorySetId;
+            var required = set.RequiredSlots ?? ArmorSetCatalog.DefaultSlots;
+
+            // What is worn in each armor slot right now, by set id (missing = that slot is empty).
+            var wornSet = new Dictionary<ArmorSlot, string>();
+            var wornName = new Dictionary<ArmorSlot, string>();
+            if (Boot.Inventory != null)
+                foreach (var it in Boot.Inventory)
+                {
+                    if (!it.Equipped || ItemCatalog.Get(it.DefId) is not ItemDef sd
+                        || sd.Slot != EquipSlot.Armor) continue;
+                    wornSet[sd.ArmorSlot] = sd.SetId ?? "";
+                    wornName[sd.ArmorSlot] = sd.Name;
+                }
+
+            int have = 0;
+            var rows = new List<string>();
+            foreach (var slot in required)
+            {
+                string needId = slot == ArmorSlot.Body ? set.Id : accId;
+                bool filled = wornSet.TryGetValue(slot, out var ws) && ws == needId;
+                if (filled) have++;
+
+                // The piece(s) in the catalog that satisfy this slot. A set can offer more than one
+                // body variant, so join them rather than picking the first arbitrarily.
+                string names = string.Join(" / ", ItemCatalog.AllItems
+                    .Where(i => i.Slot == EquipSlot.Armor && i.ArmorSlot == slot && i.SetId == needId)
+                    .Select(i => i.Name).Distinct());
+                if (names.Length == 0) names = "(no piece authored yet)";
+
+                string row = "  " + (filled ? "[x] " : "[ ] ") + slot + ":  " + names;
+                if (!filled && wornName.TryGetValue(slot, out var wn)) row += "   (wearing " + wn + ")";
+                rows.Add(row);
+            }
+
+            t.AppendLine("  Pieces worn: " + have + " / " + required.Length
+                         + (have == required.Length ? "  — bonus ACTIVE" : ""));
+            foreach (var row in rows) t.AppendLine(row);
         }
     }
 }

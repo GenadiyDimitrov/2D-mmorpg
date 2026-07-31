@@ -12,6 +12,60 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-31 — Playtest-15 batch 2: the windows stop withholding what they know (0.37.0)
+
+The rest of §32 apart from the two that want their own pass (32t jewel slots, 32u free teleport).
+Every item here is the same shape: the data existed and nothing was showing it.
+
+- **The NPC buffer gives the BASIC tier only, one hour each** (owner: *"not the improved and
+  harmonies … just the scroll buffs, 1h of single basic buff"*). Its Improved Speed GROUP is gone
+  from `NewbieBuffSet`, replaced by four separate one-hour singles — **Swift / Alacrity / Agility /
+  Haste** — and the three **Harmony** buffs are no longer offered at all. Both sets of `SkillDef`s
+  stay in the catalogue (a buffer CLASS is meant to have the improved groups; nothing grants Harmony
+  today). The buffer's edge over a potion is now only the DURATION, which is what the buff ladders
+  were built to make true. Price is unchanged: still nine buffs.
+- **32c the set bonus lists its pieces.** Which slots the set needs, the item that fills each, `[x]`
+  for the ones you are wearing, `n / 4` at the top, and the piece you have on instead when it is the
+  wrong one. The completion rule mirrors the server's `DetectActiveSet` (body carries the set id,
+  the other slots the shared accessory line) rather than guessing at it.
+- **32d a stackable opens its DETAILS first, then the numpad.** You were typing a quantity for
+  something you had not been told anything about; the description only appeared at the confirm, one
+  step too late. Buying and selling share one description builder now, so they cannot drift.
+- **32e character select can delete a character.** There was no button at all — the server side
+  (schedule, grace window, cancel) has been there the whole time and only the WPF harness could
+  reach it. Delete is behind a confirm naming the character; a scheduled character stays listed,
+  dimmed, counting down, with Restore in place of Delete. This is also what made 28e untestable.
+- **32f the drop list is a TREE.** A group is a title line carrying the group's own name and chance
+  (`Armor · Rare  (2.4%)`) with its items indented under it. As flat rows one 5% group read as five
+  separate 5% drops — five times the truth.
+- **32g mastery numbers are grouped by STAT, not by weapon.** `Cast speed:  Blunt +5%, Other −10%`
+  instead of a cast-speed line under each weapon in turn. The mage's weapon proficiency read
+  "+cast, −cast, +cast …" down the window and left the reader to hold four numbers in their head to
+  see which weapon they should be holding.
+- **32n consumables count on the hotbar** — bottom-left, `1…99` then `99+`, summed across split
+  stacks.
+- **32q auto-farm shows its remaining time.** `AutoHuntStatus` now carries the two runtime budgets
+  (online idle, offline), the Auto button counts down in buff-timer format, and both the toggle and
+  the start of an offline session say the budget in chat. The idle cap was being spent silently and
+  the session simply stopped one day.
+- **32r the farming-range circle needs auto-farm ON as well as the toggle** — with farming off it was
+  drawing a rule nothing was enforcing. The toggle stays a remembered preference.
+- **Buff ladders step 5: an improved buff is ONE square again.** Casting the cleric's Improved Speed
+  put four squares on the bar — correct (the group applies four independent children, which is what
+  lets a potion override one part of it) and unreadable. `BuffDto` now carries `SourceSkillId` +
+  `SourceName`, set only for a group with MORE than one child, and the bar merges them: the parent's
+  name, the SHORTEST remaining child as the timer, the parts with their own times in the popup, and a
+  hold-to-cancel that drops the whole blessing rather than leaving three unnamed leftovers. A potion
+  and a scroll are one-child groups by the same mechanism and are deliberately left alone — labelling
+  their square with the bottle instead of the effect would be noise, not grouping.
+
+⚠ **Protocol stays 8.** `AutoHuntStatus` and `BuffDto` each gained fields WITH DEFAULTS, which by the rule written
+on `GameConstants.ProtocolVersion` is not a break (a missing DTO field degrades to its default; a hub
+signature does not).
+⚠ **Unity-side and therefore NOT compile-verified by `dotnet build`** — `GameUi.cs`,
+`GameUi.World.cs`, `GameUi.Items.cs`, `GameUi.Vendor.cs`, `GameUi.AutoHunt.cs`, `GameBoot.cs` and
+`NetworkChannel.cs` all changed. The APK build is the only thing that compiles them.
+
 ## 2026-07-30 — Abandon actually abandons; char-select stops lying; the kill line (0.33.2)
 
 Playtest-14's two "not working" items and one of its asks. Protocol is **unchanged (8)** — all three

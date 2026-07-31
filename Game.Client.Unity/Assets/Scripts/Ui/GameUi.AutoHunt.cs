@@ -88,7 +88,11 @@ namespace Game.Client
         {
             if (_farmRing == null) return;
 
-            var self = (_showFarmRange && Boot.Phase == ClientPhase.InWorld && Boot.Entities != null)
+            // BOTH switches, not just the toggle (32r): the ring describes where the autopilot will
+            // hunt, so with auto-farm off it is drawing a rule that nothing is enforcing. The toggle
+            // stays a remembered preference — turn farming on and the ring is simply there again.
+            var self = (_showFarmRange && Boot.AutoHunting
+                        && Boot.Phase == ClientPhase.InWorld && Boot.Entities != null)
                 ? Boot.Entities.Find(Boot.SelfId) : null;
             if (self == null)
             {

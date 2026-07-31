@@ -13,9 +13,15 @@ public static partial class SkillCatalog
     public const string NpcSpeed  = "npc_speed";
     public const string NpcBody   = "npc_body";
     public const string NpcFrenzy = "npc_frenzy";
+    // The four SPEED singles, one hour each — the scroll tier handed out one buff at a time.
+    // They replaced the "Improved Speed" GROUP the buffer used to give (owner 2026-07-31).
+    public const string NpcSwift    = "npc_swift";
+    public const string NpcAlacrity = "npc_alacrity";
+    public const string NpcAgility  = "npc_agility";
+    public const string NpcHaste    = "npc_haste";
     // "Harmony" GREATER buffs (max-level; owner 2026-07-03). They STACK on top of the six above
-    // (distinct BuffKeys). Later the NPC buffer will hand out ONE level below each max so a real
-    // buffer stays valuable, and 76+/ultimate buffs come after.
+    // (distinct BuffKeys). NO LONGER OFFERED by the newbie buffer — see NewbieBuffSet. The defs
+    // stay because a real 3rd-class buffer is meant to have them; nothing grants them today.
     public const string NpcHarmonyProtection = "npc_harmony_protection";
     public const string NpcHarmonyWarrior    = "npc_harmony_warrior";
     public const string NpcHarmonyWizard     = "npc_harmony_wizard";
@@ -23,12 +29,15 @@ public static partial class SkillCatalog
     public const int NpcBuffTicks = 36000;   // 1 hour @ 10 ticks/s
     public const int NpcBuffRank  = 100;     // overrides player self-buffs (rank 1-4)
 
-    /// <summary>The buffs the newbie buffer NPC grants — the full max-level set (the six basics +
-    /// the three greater Harmony buffs). Frenzy stays in (it's a FULL buffer; cancel that one buff
-    /// if you don't want its −10% Max HP/MP).</summary>
+    /// <summary>The buffs the newbie buffer NPC grants: the BASIC tier only, one hour each — the
+    /// scroll tier (owner 2026-07-31: "not the improved and harmonies … just the scroll buffs,
+    /// 1h of single basic buff"). So no GROUP buff and no Harmony: the buffer's edge over a potion
+    /// is the DURATION, and its ceiling stays below a real buffer class, which keeps the improved
+    /// groups. Frenzy stays in (it's a FULL buffer; cancel that one buff if you don't want its
+    /// −10% Max HP/MP).</summary>
     public static readonly string[] NewbieBuffSet =
-        { NpcMight, NpcForce, NpcFocus, NpcSpeed, NpcBody, NpcFrenzy,
-          NpcHarmonyProtection, NpcHarmonyWarrior, NpcHarmonyWizard };
+        { NpcMight, NpcForce, NpcFocus, NpcBody, NpcFrenzy,
+          NpcSwift, NpcAlacrity, NpcAgility, NpcHaste };
 
     private static SkillDef NpcBuff(string id, string name, string buffKey,
         SkillEffect effect, EffectMagnitude[] mags, string desc,
@@ -49,6 +58,18 @@ public static partial class SkillCatalog
         new(id, name, BaseClass.Mage, effect,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             DurationTicks: NpcBuffTicks, ChildBuffs: children,
+            Category: SkillCategory.Buff,
+            Description: desc + " (buffer's blessing, 1 hour).");
+
+    /// <summary>An NPC-buffer buff that hands out exactly ONE single buff (the scroll tier) for an
+    /// hour. Mechanically the same shape as a Scroll — one child, the wrapper owns the duration —
+    /// so it competes on the child's family key by Rank and can never stack with a potion or a
+    /// cleric's rung of the same effect.</summary>
+    private static SkillDef NpcSingle(string id, string name, string child,
+        SkillEffect effect, string desc) =>
+        new(id, name, BaseClass.Mage, effect,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            DurationTicks: NpcBuffTicks, ChildBuffs: new[] { child },
             Category: SkillCategory.Buff,
             Description: desc + " (buffer's blessing, 1 hour).");
 
@@ -81,14 +102,22 @@ public static partial class SkillCatalog
             },
             "+30% physical crit rate, +35% crit damage, double magic crit rate"),
 
-        // Speed is now an IMPROVED (group) buff — it hands out the four single speed buffs at their
-        // top rung, which is exactly level 6 of the cleric's own Improved Speed. Its edge over a
-        // player buffer is no longer a bigger number but the DURATION (1 hour vs 20 minutes), which
-        // the equal-rank "longer time wins" rule in ApplyBuff protects. See docs/design/BuffLadders.md.
+        // Speed used to be an IMPROVED (group) buff here. The owner cut it (2026-07-31): the NPC
+        // buffer gives the SCROLL tier — four separate single buffs, bought and cancelled one at a
+        // time — and the improved GROUP is what a buffer CLASS gives. The def below is kept (nothing
+        // grants it) so the group shape stays documented in one place; NewbieBuffSet no longer lists
+        // it. The buffer's edge is the DURATION (1 hour vs a potion's 20 minutes), which the
+        // equal-rank "longer time wins" rule in ApplyBuff protects. See docs/design/BuffLadders.md.
         NpcBuffGroup(NpcSpeed, "Improved Speed",
             SkillEffect.BuffAtkSpeed | SkillEffect.BuffMoveSpeed | SkillEffect.BuffCastSpeed | SkillEffect.BuffEvasion,
             new[] { BuffSwiftR, BuffAlacrityR, BuffAgilityR, BuffHasteR },
             "+33% attack speed, +30% cast speed, +33 move, +4 evasion"),
+
+        // ---- The four speed singles the buffer actually offers, one hour each. ----
+        NpcSingle(NpcSwift, "Swift", BuffSwiftR, SkillEffect.BuffMoveSpeed, "+33 Move Speed"),
+        NpcSingle(NpcAlacrity, "Alacrity", BuffAlacrityR, SkillEffect.BuffCastSpeed, "+30% Cast Speed"),
+        NpcSingle(NpcAgility, "Agility", BuffAgilityR, SkillEffect.BuffEvasion, "+4 Evasion"),
+        NpcSingle(NpcHaste, "Haste", BuffHasteR, SkillEffect.BuffAtkSpeed, "+33% Attack Speed"),
 
         NpcBuff(NpcBody, "Body", "holy_body",
             SkillEffect.BuffHp | SkillEffect.BuffMp | SkillEffect.BuffHpRegen | SkillEffect.BuffMpRegen,

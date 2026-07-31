@@ -367,6 +367,11 @@ namespace Game.Client
             // captured id, so rebuilding every frame would also re-register listeners every frame.
             int revision = Boot.Characters != null ? Boot.Characters.Length : 0;
             revision = revision * 31 + (_builtPhase == Boot.Phase ? 0 : 1);
+            // Pending-delete state is part of the row (Delete becomes Restore), so a deletion that
+            // does not change the COUNT still has to rebuild.
+            if (Boot.Characters != null)
+                foreach (var c in Boot.Characters)
+                    revision = revision * 31 + (c.PendingDeleteAt.HasValue ? 7 : 3) + c.Level;
             if (revision == _characterRevision) return;
             _characterRevision = revision;
 
@@ -385,15 +390,35 @@ namespace Game.Client
                 var row = UiKit.Box(_characterList, "Character", UiKit.PanelLight);
                 row.gameObject.AddComponent<LayoutElement>().minHeight = 56f;
 
+                // A character scheduled for deletion is still listed — you have to be able to SEE it to
+                // change your mind, which is the entire point of the grace window.
+                bool doomed = slot.PendingDeleteAt.HasValue;
+                string when = doomed ? DeleteCountdown(slot.PendingDeleteAt.Value) : "";
+
                 var label = UiKit.Label(row.transform,
-                    slot.Name + "    Lv " + slot.Level + "    " + slot.Race + " " + CharacterClassName(slot),
-                    18f, UiKit.Text, TextAlignmentOptions.Left);
-                UiKit.Stretch(UiKit.Rect(label.gameObject), 14f, 0f, 150f, 0f);
+                    slot.Name + "    Lv " + slot.Level + "    " + slot.Race + " " + CharacterClassName(slot)
+                    + (doomed ? "\n<size=13>deleting in " + when + "</size>" : ""),
+                    18f, doomed ? UiKit.TextDim : UiKit.Text, TextAlignmentOptions.Left);
+                UiKit.Stretch(UiKit.Rect(label.gameObject), 14f, 0f, 270f, 0f);
 
                 int id = slot.Id;   // captured per row — the loop variable would be shared
+                string name = slot.Name;
                 var enter = UiKit.TextButton(row.transform, "Enter", () => { _ = Boot.EnterWorld(id); }, 17f);
                 UiKit.Place(UiKit.Rect(enter.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
                             new Vector2(-10f, 0f), new Vector2(120f, 42f));
+
+                // Delete / Restore (32e) — there was no way to remove a character from the phone at all.
+                // Always behind a confirm naming the character: this is the one irreversible button on
+                // the screen, and it sits next to the one you press every time you play.
+                var kill = UiKit.TextButton(row.transform, doomed ? "Restore" : "Delete", () =>
+                {
+                    if (doomed) { _ = Boot.CancelDeleteCharacter(id); return; }
+                    Ask("Delete " + name + "?\n\n<size=15>Low-level characters go immediately; otherwise the "
+                        + "server schedules it and you can Restore until then.</size>",
+                        "Delete", () => { _ = Boot.DeleteCharacter(id); });
+                }, 15f);
+                UiKit.Place(UiKit.Rect(kill.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                            new Vector2(-136f, 0f), new Vector2(118f, 42f));
             }
         }
 
@@ -401,6 +426,18 @@ namespace Game.Client
         /// class, else the base class. The row used to print BaseClass alone, so every archer read
         /// "Human Fighter" and a Warchanter read "Human Mage" — not stale data, just a name that was
         /// never rendered. Mirrors the debug panel's SubclassLabel.</summary>
+        /// <summary>How long until a scheduled deletion actually happens. The server sends a UTC
+        /// instant, so compare in UTC — a local-time comparison is off by the whole timezone and would
+        /// read "0m" on a character with hours left.</summary>
+        private static string DeleteCountdown(DateTime whenUtc)
+        {
+            var left = whenUtc - DateTime.UtcNow;
+            if (left.TotalSeconds <= 0) return "moments";
+            if (left.TotalHours >= 1) return (int)left.TotalHours + "h " + left.Minutes + "m";
+            if (left.TotalMinutes >= 1) return left.Minutes + "m " + left.Seconds + "s";
+            return left.Seconds + "s";
+        }
+
         private static string CharacterClassName(CharacterSlot slot)
         {
             if (slot.ThirdClass > 0 && ThirdClassCatalog.Get(slot.ThirdClass) is { } third)

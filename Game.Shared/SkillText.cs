@@ -172,43 +172,60 @@ public static class SkillText
 
     // ----- masteries ----------------------------------------------------------------------
 
-    /// <summary>An armor mastery's per-WEIGHT lines at one skill level, e.g.
-    /// "Heavy:  P.Def +8%, Max HP +5%". Only the weights that actually do something are listed —
-    /// including a PENALTY one, which is the whole point of an armor mastery.</summary>
-    public static List<string> ArmorMastery(ArmorMasteryProfile prof)
+    /// <summary>Pivot a per-SOURCE listing (one entry per weapon / per armour weight) into a
+    /// per-STAT one: "Cast speed:  Blunt +5%, Other −10%" instead of a Cast-speed line under Blunt
+    /// and another under Other.
+    ///
+    /// A mastery's whole point is the COMPARISON between the weapons, and source-major hid it: the
+    /// mage's weapon proficiency read "+cast, −cast, +cast …" down the window with the reader left
+    /// to hold four numbers in their head to see which weapon they should be holding (32g/31e).
+    /// The stat's own order is the one <see cref="Passive"/> emits, so it stays stable.</summary>
+    private static List<string> ByStat(List<(string Source, List<string> Lines)> groups)
     {
+        var order = new List<string>();
+        var byStat = new Dictionary<string, List<string>>();
+        foreach (var (source, lines) in groups)
+            foreach (var line in lines)
+            {
+                // Every line this class emits is "<label> <value>" and the value never contains a
+                // space, so the LAST space is the split — no second formatter to keep in sync.
+                int cut = line.LastIndexOf(' ');
+                string stat = cut > 0 ? line.Substring(0, cut) : line;
+                string value = cut > 0 ? line.Substring(cut + 1) : "";
+                if (!byStat.TryGetValue(stat, out var list))
+                {
+                    byStat[stat] = list = new List<string>();
+                    order.Add(stat);
+                }
+                list.Add(source + " " + value);
+            }
+
         var o = new List<string>();
-        Weight(o, "Robe", prof.Robe);
-        Weight(o, "Light", prof.Light);
-        Weight(o, "Heavy", prof.Heavy);
-        Weight(o, "No armor", prof.None);
+        foreach (var stat in order) o.Add(stat + ":  " + string.Join(", ", byStat[stat]));
         return o;
     }
 
-    private static void Weight(List<string> o, string label, StatMods m)
+    /// <summary>An armor mastery at one skill level, grouped by STAT, e.g.
+    /// "P.Def:  Heavy +8%, Robe −5%". Only what actually does something is listed — including the
+    /// PENALTY weights, which are the whole point of an armor mastery.</summary>
+    public static List<string> ArmorMastery(ArmorMasteryProfile prof) => ByStat(new()
     {
-        var lines = Mods(m);
-        if (lines.Count > 0) o.Add(label + ":  " + string.Join(", ", lines));
-    }
+        ("Robe", Mods(prof.Robe)),
+        ("Light", Mods(prof.Light)),
+        ("Heavy", Mods(prof.Heavy)),
+        ("No armor", Mods(prof.None)),
+    });
 
-    /// <summary>A weapon mastery's per-WEAPON lines at one skill level. Same shape as
-    /// <see cref="ArmorMastery"/>; "Other" covers empty hand and any unlisted type.</summary>
-    public static List<string> WeaponMastery(WeaponMasteryProfile prof)
+    /// <summary>A weapon mastery at one skill level. Same shape as <see cref="ArmorMastery"/>;
+    /// "Other" covers empty hand and any unlisted type.</summary>
+    public static List<string> WeaponMastery(WeaponMasteryProfile prof) => ByStat(new()
     {
-        var o = new List<string>();
-        Weapon(o, "Sword", prof.Sword);
-        Weapon(o, "Dual/dagger", prof.Dual);
-        Weapon(o, "Bow", prof.Bow);
-        Weapon(o, "Blunt", prof.Blunt);
-        Weapon(o, "Other/unarmed", prof.Other);
-        return o;
-    }
-
-    private static void Weapon(List<string> o, string label, PassiveEffect p)
-    {
-        var lines = Passive(p);
-        if (lines.Count > 0) o.Add(label + ":  " + string.Join(", ", lines));
-    }
+        ("Sword", Passive(prof.Sword)),
+        ("Dual/dagger", Passive(prof.Dual)),
+        ("Bow", Passive(prof.Bow)),
+        ("Blunt", Passive(prof.Blunt)),
+        ("Other/unarmed", Passive(prof.Other)),
+    });
 
     // ----- active buffs / debuffs ----------------------------------------------------------
 

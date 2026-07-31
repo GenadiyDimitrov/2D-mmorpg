@@ -176,6 +176,16 @@ namespace Game.Client
         public Task<string> CreateCharacterAsync(string name, Race race, BaseClass baseClass) =>
             _connection.InvokeAsync<string>("CreateCharacter", new CreateCharacterRequest(name, race, baseClass));
 
+        /// <summary>Schedule a character for deletion (low levels go immediately; the rest get the
+        /// server's grace window, which <see cref="CancelDeleteCharacterAsync"/> undoes). Returns null
+        /// on success or the server's refusal.</summary>
+        public Task<string> DeleteCharacterAsync(int characterId) =>
+            _connection.InvokeAsync<string>("DeleteCharacter", characterId);
+
+        /// <summary>Undo a pending deletion.</summary>
+        public Task<string> CancelDeleteCharacterAsync(int characterId) =>
+            _connection.InvokeAsync<string>("CancelDeleteCharacter", characterId);
+
         public Task<LoginResult> EnterWorldAsync(int characterId) =>
             _connection.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(characterId));
 

@@ -234,6 +234,17 @@ namespace Game.Client
             return null;
         }
 
+        /// <summary>How many of this item are in the bag, counting stack quantities and summing the
+        /// separate stacks a split can leave behind. Drives the hotbar's consumable count (32n).</summary>
+        public int BagCount(string defId)
+        {
+            if (Inventory == null || string.IsNullOrEmpty(defId)) return 0;
+            int n = 0;
+            foreach (var it in Inventory)
+                if (!it.Equipped && it.DefId == defId) n += Mathf.Max(1, it.Quantity);
+            return n;
+        }
+
         /// <summary>Send a friend command. The hub takes a NAME rather than an id on purpose — friendship
         /// has to work on someone who is offline or out of view, which no entity id can express.</summary>
         public async void FriendCommand(string action, string name)
@@ -729,6 +740,9 @@ namespace Game.Client
                 if (st == null) return;
                 AutoHunting = st.Enabled;
                 FarmCenter = new Vector2(st.FarmCenterX, st.FarmCenterY);
+                AutoIdleSecondsLeft = st.IdleSecondsLeft;
+                AutoOfflineSecondsLeft = st.OfflineSecondsLeft;
+                _autoBudgetStamp = Time.unscaledTime;
             });
             _net.RegionReceived += r => Main(() => Ui?.ShowRegionNotice(r));
             _net.NoticeReceived += m => Main(() => Ui?.ShowToast(m));
@@ -948,6 +962,41 @@ namespace Game.Client
                 var err = await _net.CreateCharacterAsync(name, race, baseClass);
                 if (!string.IsNullOrEmpty(err)) { Fail("Create failed: " + err); return; }
                 ClientLog.Good("Created " + name + ".");
+                await RefreshCharacters();
+            }
+            catch (Exception ex) { Fail(Describe(ex)); }
+            finally { _busy = false; }
+        }
+
+        /// <summary>Delete a character (32e). The SERVER decides whether that is immediate or a
+        /// scheduled deletion with a grace window — the client only asks and re-reads the list, so the
+        /// rule lives in one place. There was no way to do this from the phone at all, which is also
+        /// what made the admin fast-delete untestable.</summary>
+        public async Task DeleteCharacter(int characterId)
+        {
+            if (_busy) return;
+            _busy = true;
+            try
+            {
+                var err = await _net.DeleteCharacterAsync(characterId);
+                if (!string.IsNullOrEmpty(err)) { Fail("Delete failed: " + err); return; }
+                ClientLog.Good("Character deleted.");
+                await RefreshCharacters();
+            }
+            catch (Exception ex) { Fail(Describe(ex)); }
+            finally { _busy = false; }
+        }
+
+        /// <summary>Undo a pending deletion.</summary>
+        public async Task CancelDeleteCharacter(int characterId)
+        {
+            if (_busy) return;
+            _busy = true;
+            try
+            {
+                var err = await _net.CancelDeleteCharacterAsync(characterId);
+                if (!string.IsNullOrEmpty(err)) { Fail("Restore failed: " + err); return; }
+                ClientLog.Good("Character restored.");
                 await RefreshCharacters();
             }
             catch (Exception ex) { Fail(Describe(ex)); }
@@ -1381,6 +1430,19 @@ namespace Game.Client
         /// Only meaningful while AutoConfig.StaticSpot is on — the roaming mode has no anchor because
         /// the scan follows the character.</summary>
         public Vector2 FarmCenter { get; private set; }
+
+        // ---- Auto-hunt time budgets (32q). The server pushes them with every AutoHunt status (each
+        //      regen tick); between pushes we count down locally off the stamp, so the button ticks
+        //      smoothly instead of jumping in 3-second steps. -1 = uncapped.
+        public int AutoIdleSecondsLeft { get; private set; } = -1;
+        public int AutoOfflineSecondsLeft { get; private set; } = -1;
+        private float _autoBudgetStamp;
+
+        /// <summary>Idle seconds left, interpolated since the last push. -1 when uncapped. The clock
+        /// only runs while auto-hunt is ON — that is the budget the server actually spends.</summary>
+        public int AutoIdleSecondsLeftNow => AutoIdleSecondsLeft < 0 ? -1
+            : Mathf.Max(0, AutoIdleSecondsLeft - (AutoHunting
+                ? Mathf.FloorToInt(Time.unscaledTime - _autoBudgetStamp) : 0));
 
         /// <summary>Skill ids the player has marked for auto-use (the per-slot Auto toggle writes here).
         /// Starts EMPTY (owner): only what you explicitly mark Auto is auto-used. Basic attack used to be
