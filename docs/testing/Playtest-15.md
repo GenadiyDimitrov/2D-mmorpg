@@ -106,6 +106,11 @@ root@localhost:~/Game.Server# nano Game.Server.runtimeconfig.json
 12. The **"show farming range" toggle should only show when it is enabled AND auto-farm is on**. Now I
     have a rogue circle in the farm zone while I'm selling in the shop with auto-farm off.
 13. **Cannot kill party members even with PvP on.**
+    - ⚠ CLARIFIED by the owner 2026-07-31, after this was first read as a bug: this is the behaviour he
+      **wants kept and enforced**. *"I want to NOT be able to kill a party player — in a mass fight,
+      accidentally tapping a party member means you are helping the enemy."* The tap-to-target /
+      tap-again-to-attack rule applies to everything, **but on a party member the second tap starts to
+      FOLLOW**, since you can't attack/PvP/PK them.
 14. **Jewels should be like helmet/gloves — designated slots.**
     - now I equip jewels in a list, and I can try to equip a 3rd ring and it tells me that I can't
     - I want **two ring slots, two earring slots, one necklace slot**

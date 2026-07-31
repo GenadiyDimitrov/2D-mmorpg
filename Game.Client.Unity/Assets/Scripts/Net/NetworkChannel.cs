@@ -198,6 +198,11 @@ namespace Game.Client
         public Task AttackAsync(Guid targetId) =>
             _connection.SendAsync("Attack", targetId);
 
+        /// <summary>Follow a player (null = stop). The server walks you after them and re-paths as
+        /// they move; any manual move order breaks it.</summary>
+        public Task FollowAsync(Guid? targetId) =>
+            _connection.SendAsync("Follow", targetId);
+
         public Task UseSkillAsync(string skillId, Guid? targetId) =>
             _connection.SendAsync("UseSkill", skillId, targetId);
 

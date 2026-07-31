@@ -299,10 +299,13 @@ and the Learn confirmation shows its numbers. **31e is right but unreadable** �
 32q.[ ] **Auto-farm and offline farming show their remaining time** — buff-timer format (`24h00m01s` ==
         `1d`), on the button when enabled, or one chat line on every on/off change.
 32r.[ ] **The farming-range circle only shows when the range toggle AND auto-farm are both on.**
-32s.[ ] **Party members can be killed with PvP on** — and in fact ANY player: the root cause was never a
-        party rule. `TouchInput` only sent an Attack when the tapped entity was a MOB, so tapping a
-        player targeted them and did nothing. Verify a duel works at all, then that a party member is no
-        different, and that the server still refuses in town / with PvP off (with its message).
+32s.[ ] **Your own party can NEVER be hit — and the tap follows them instead.** Tap a party member
+        twice: you must start FOLLOWING ("You follow X."), never swing. Try it with PvP ON, and with a
+        RED party member — both must still refuse, with "You can't attack a member of your own party."
+        Try an offensive SKILL on them too (the rule lives in `CanPvpHit`, so every route inherits it).
+        Then confirm a NON-party player CAN be attacked on the second tap when PvP is on and you are
+        out of town — that half was genuinely broken: `TouchInput` only sent an Attack for a MOB, so
+        tapping any player did nothing at all.
 32t.[ ] **Jewels have designated slots** — 2 rings, 2 earrings, 1 necklace, 1 pendant; equipping swaps
         like gloves do. Swap rule: replace the WEAKER of the two; if both are the same rarity replace
         slot 1; empty counts as weaker than Common.

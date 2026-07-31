@@ -73,28 +73,36 @@ namespace Game.Client
                 if (view != null && !view.IsSelf)
                 {
                     // Tapping SELECTS. What happens next depends on WHAT it is:
-                    //   NPC        → TALK, on the first tap. Every service in the game — quests, class
-                    //                change, vendors, gatekeepers, buffers — is behind a conversation,
-                    //                so the tap that selects an NPC should also start one.
-                    //   mob/player → the FIRST tap only opens the target window; a SECOND tap on the
-                    //                SAME target attacks. Tapping a DIFFERENT one just re-targets.
+                    //   NPC           → TALK, on the first tap. Every service in the game — quests,
+                    //                   class change, vendors, gatekeepers, buffers — is behind a
+                    //                   conversation, so the tap that selects an NPC starts one.
+                    //   mob / player  → the FIRST tap only opens the target window; a SECOND tap on the
+                    //                   SAME target acts. Tapping a DIFFERENT one just re-targets.
+                    //   PARTY member  → that second tap FOLLOWS instead of attacking.
                     //
-                    // Two playtest-15 findings meet on this line. (1) One tap used to charge straight in,
-                    // which is miserable on a mage or an archer: you cannot inspect a mob, or switch
-                    // targets, without committing to melee. (2) The `Kind == Mob` test meant a tap on a
-                    // PLAYER selected them and sent nothing — so no player could ever be basic-attacked,
-                    // which is what the owner hit as "cannot kill party members even with pvp on". It was
-                    // never a party rule; players simply were not in the attack branch. The server has
-                    // always policed this properly (CanPvpHit: safe zones, the PvP opt-in, flags) and
-                    // answers a refused swing with a system message, so the client does not duplicate it.
+                    // The two-tap rule exists because one tap used to charge straight in, which is
+                    // miserable on a mage or an archer: you could not inspect a mob, or switch targets,
+                    // without committing to melee (playtest-15).
+                    //
+                    // Your own party is NEVER attackable — the server refuses it outright, PvP flag or
+                    // not, because in a mass fight a mis-tap on the ally beside you would quietly make
+                    // you the enemy's best asset. So for a party member the second tap does the thing
+                    // you almost certainly meant: follow them. Everything else still routes to Attack
+                    // and the SERVER decides — safe zones, the PvP opt-in and flags all live in
+                    // CanPvpHit, and it answers a refused swing with a system message. The client
+                    // checks party membership only to pick which ACTION to send, never as the rule.
                     var previous = Boot.TargetId;
                     Boot.TargetId = view.Id;
                     if (Boot.Entities != null && Boot.Entities.TryGetState(view.Id, out var dto) && !dto.Dead)
                     {
                         if (dto.Kind == EntityKind.Npc) Boot.TalkToNpc(view.Id);
-                        else if (previous == view.Id &&
-                                 (dto.Kind == EntityKind.Mob || dto.Kind == EntityKind.Player))
-                            Boot.Attack(view.Id);
+                        else if (previous == view.Id)
+                        {
+                            if (dto.Kind == EntityKind.Player && Boot.IsPartyMember(view.Id))
+                                Boot.Follow(view.Id);
+                            else if (dto.Kind == EntityKind.Mob || dto.Kind == EntityKind.Player)
+                                Boot.Attack(view.Id);
+                        }
                     }
                     return;
                 }

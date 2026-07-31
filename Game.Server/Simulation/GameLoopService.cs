@@ -635,17 +635,32 @@ public class GameLoopService : BackgroundService
 
     /// <summary>May 'attacker' damage 'target'? A mob on either side = always (normal PvE). Player→
     /// player requires out of safe zones, and: a RED/PURPLE target is freely attackable (retaliation
-    /// / executing an outlaw), while attacking an INNOCENT (white) needs the PvP opt-in.</summary>
+    /// / executing an outlaw), while attacking an INNOCENT (white) needs the PvP opt-in.
+    ///
+    /// YOUR OWN PARTY IS NEVER ATTACKABLE — not with PvP on, not if they have gone red, not by any
+    /// route (owner, playtest-15). This is a usability rule, not a karma one: in a mass fight a
+    /// mis-tap on the ally standing next to you would silently turn you into the enemy's best asset.
+    /// Because it lives in here, every path inherits it at once — basic attack, offensive skills, the
+    /// autopilot's retaliation and the PvP counter-attack all ask this one question.</summary>
     private bool CanPvpHit(Entity attacker, Entity target)
     {
         if (attacker.Kind != EntityKind.Player || target.Kind != EntityKind.Player)
             return true;
         if (attacker.Id == target.Id || target.Dead)
             return false;
+        if (SameParty(attacker, target))
+            return false;
         if (GameConstants.InSafeZone(attacker.X, attacker.Y) || GameConstants.InSafeZone(target.X, target.Y))
             return false;
         return FlagOf(target) != PvpFlag.Innocent || attacker.PvpEnabled;
     }
+
+    /// <summary>Why a swing at this player was refused. Split out so the party rule can say so
+    /// plainly — "enable PvP" is misleading advice when PvP would not have helped.</summary>
+    private string PvpRefusalReason(Entity attacker, Entity target) =>
+        SameParty(attacker, target)
+            ? "You can't attack a member of your own party."
+            : "You can't attack that player here. (Enable PvP; not in towns.)";
 
     /// <summary>Award kill consequences for a player killing a player: an INNOCENT victim → PK
     /// (karma + red name, consecutive/level-scaled); a FLAGGED/RED victim → a justified PvP kill.</summary>
@@ -919,7 +934,7 @@ public class GameLoopService : BackgroundService
 
         if (target.Kind == EntityKind.Player && !CanPvpHit(attacker, target))
         {
-            SendSystemToEntity(attacker, "You can't attack that player here. (Enable PvP; not in towns.)");
+            SendSystemToEntity(attacker, PvpRefusalReason(attacker, target));
             return;
         }
 
@@ -1245,7 +1260,7 @@ public class GameLoopService : BackgroundService
             }
             if (target.Kind == EntityKind.Player && !CanPvpHit(caster, target))
             {
-                SendSystemToEntity(caster, "You can't attack that player here. (Enable PvP; not in towns.)");
+                SendSystemToEntity(caster, PvpRefusalReason(caster, target));
                 return;
             }
             targetId = tid;

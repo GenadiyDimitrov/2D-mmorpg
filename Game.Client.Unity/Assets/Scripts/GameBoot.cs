@@ -1615,6 +1615,27 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Attack: " + ex.Message); }
         }
 
+        /// <summary>True if that player is in YOUR party. Party members can never be attacked
+        /// (the server enforces it); the client uses this to offer FOLLOW in place of the swing.</summary>
+        public bool IsPartyMember(Guid id)
+        {
+            for (int i = 0; i < Party.Length; i++)
+                if (Party[i].Id == id) return true;
+            return false;
+        }
+
+        /// <summary>Follow a party member (null = stop). Sent instead of Attack when the second tap
+        /// lands on someone you cannot fight — the tap still does something useful.</summary>
+        public async void Follow(Guid? targetId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            // Same reasoning as Attack: the server steers this walk, so a predicted straight line to
+            // the last tap point would diverge and snap.
+            CancelMoveOrder();
+            try { await _net.FollowAsync(targetId); }
+            catch (Exception ex) { ClientLog.Warn("Follow: " + ex.Message); }
+        }
+
         public async void SetMoveState(MoveState state)
         {
             if (state == MoveState.Sitting) CancelMoveOrder();   // sitting cancels the walk
