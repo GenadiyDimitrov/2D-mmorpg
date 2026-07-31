@@ -2816,11 +2816,15 @@ public partial class MainWindow
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.AttrScrollRare, "Attr Scroll (Rare) x10", 10));
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.AttrScrollLegendary, "Attr Scroll (Legendary) x10", 10));
 
-        AddDebugHeader("Buff Potions (x5)");
-        DebugList.Children.Add(DebugGiveButton(ItemCatalog.SpeedPotionC, "Swiftness (Lesser) x5", 5));
-        DebugList.Children.Add(DebugGiveButton(ItemCatalog.SpeedPotionR, "Swiftness (Greater) x5", 5));
-        DebugList.Children.Add(DebugGiveButton(ItemCatalog.CastPotionR, "Focus (Greater) x5", 5));
-        DebugList.Children.Add(DebugGiveButton(ItemCatalog.AtkPotionR, "Haste (Greater) x5", 5));
+        AddDebugHeader("Buff Potions & Scrolls (x5)");
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.SpeedPotionC, "Swift Potion (Lesser) x5", 5));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.SpeedPotionR, "Swift Potion (Greater) x5", 5));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.CastPotionR, "Alacrity Potion (Greater) x5", 5));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.AtkPotionR, "Haste Potion (Greater) x5", 5));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.EvaPotionR, "Agility Potion (Greater) x5", 5));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.SpeedScrollR, "Scroll of Swift (Greater) x5", 5));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.CastScrollR, "Scroll of Alacrity (Greater) x5", 5));
+        DebugList.Children.Add(DebugGiveButton(ItemCatalog.DashPotionM, "Dash Potion (Supreme) x5", 5));
 
         AddDebugHeader("Potions (x10)");
         DebugList.Children.Add(DebugGiveButton(ItemCatalog.MinorPotion, "Minor Potion x10", 10));

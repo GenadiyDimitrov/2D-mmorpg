@@ -1317,6 +1317,26 @@ public class GameLoopService : BackgroundService
     /// double-click (HandleRemoveBuff) also turns it off.</summary>
     private void HandleToggle(Entity caster, SkillDef def)
     {
+        // A GROUP toggle (ChildBuffs) holds no buff under its own key — it is "on" when its children
+        // are, and turning it off means dropping all of them. No shipped toggle is a group yet; this
+        // is here so the first one that is doesn't fail silently as an un-turn-off-able stance.
+        if (def.ChildBuffs is { Length: > 0 } toggleKids)
+        {
+            var kidKeys = toggleKids
+                .Select(id => SkillCatalog.Get(id))
+                .Where(d => d is not null)
+                .Select(d => string.IsNullOrEmpty(d!.BuffKey) ? d.Name : d.BuffKey)
+                .ToHashSet();
+            if (caster.Buffs.RemoveAll(b => kidKeys.Contains(b.Key)) > 0)
+            {
+                caster.RecomputeDerived();
+                PushBuffs(caster);
+                SendStats(caster);
+                SendSystemToEntity(caster, $"{def.Name} deactivated.");
+                return;
+            }
+        }
+
         string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
         var existing = caster.Buffs.FirstOrDefault(b => b.Key == key);
         if (existing is not null)
@@ -2477,9 +2497,6 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, $"{skill.Name} is on cooldown.");
             return false;
         }
-        if (skill.CooldownTicks > 0)
-            player.SkillCooldowns[skill.Id] = skill.CooldownTicks;   // fixed: never shortened by reuse buffs
-
         // The SKILL decides what happens — we only deliver it. An instant Heal restores a % of max
         // HP; anything with a lasting effect (a HoT potion, a buff potion) becomes an ordinary buff,
         // so it lands on the buff bar and supersedes weaker ones by BuffKey + Rank.
@@ -2498,9 +2515,20 @@ public class GameLoopService : BackgroundService
         }
         if ((skill.Effect & SkillEffect.AnyBuff) != 0)
         {
-            ApplyBuff(player, skill);
+            // REFUSED on rank (something stronger — or equally strong but longer — is already up):
+            // don't eat the item and don't start its reuse. This used to consume it either way,
+            // which was rare before improved buffs became ladders and is common now.
+            if (!ApplyBuff(player, skill))
+            {
+                SendSystemToEntity(player, $"{skill.Name} had no effect — a stronger blessing is already active.");
+                return false;
+            }
             PushBuffs(player);
         }
+
+        // Reuse starts only once the item has actually done something (see above).
+        if (skill.CooldownTicks > 0)
+            player.SkillCooldowns[skill.Id] = skill.CooldownTicks;   // fixed: never shortened by reuse buffs
 
         ConsumeOne(player, item);
         if (healing && def.PotionCooldownTicks > 0)
@@ -3266,9 +3294,17 @@ public class GameLoopService : BackgroundService
                     continue;
                 if (!all && !p.AutoBuffPotionIds.Contains(item.DefId))
                     continue;
-                string key = string.IsNullOrEmpty(bd.BuffKey) ? bd.Name : bd.BuffKey;
-                if (p.Buffs.Any(b => b.Key == key))
-                    continue;   // buff already up
+                // A BURST potion (Dash: 15s up, 1 min reuse) is for the player's finger, not the
+                // autopilot — on "keep every buff up" it would drink the whole stack, a bottle a
+                // minute, for fifteen seconds of speed each time.
+                if (bd.DurationTicks > 0 && bd.DurationTicks < 600)
+                    continue;
+                // "Already up" must be asked of the potion's CHILDREN — a buff potion applies no buff
+                // under its own key any more, so the old test never matched and the autopilot would
+                // drink the entire stack, one bottle per cycle. It is also the right question: if a
+                // stronger blessing already covers that family, the potion would be refused anyway.
+                if (BuffAlreadyUp(p, bd, 1))
+                    continue;
                 UsePotion(p, item);
             }
         }
@@ -3344,6 +3380,30 @@ public class GameLoopService : BackgroundService
         return AutoSkillKind.Other;
     }
 
+    /// <summary>Is this buff already running on the entity, so the autopilot should skip it?
+    ///
+    /// An IMPROVED (group) buff applies NO buff under its own key — only its children — so the old
+    /// "is my BuffKey in the list" test can never match one, and the autopilot would re-queue it
+    /// every single cycle: MP drained, the whole party re-stamped, an offline buffer dry in minutes.
+    /// So a group is "up" only when EVERY child is present at (at least) its own rank. That is also
+    /// the better behaviour: when an overriding potion on one child expires, this goes false and the
+    /// buffer restores that one child next cycle instead of leaving a hole until the group expires.</summary>
+    private static bool BuffAlreadyUp(Entity p, SkillDef def, int level)
+    {
+        if (def.ChildBuffsAt(level) is { Length: > 0 } children)
+        {
+            foreach (var childId in children)
+            {
+                if (SkillCatalog.Get(childId) is not SkillDef child) continue;
+                string ck = string.IsNullOrEmpty(child.BuffKey) ? child.Name : child.BuffKey;
+                if (!p.Buffs.Any(b => b.Key == ck && b.Rank >= child.Rank)) return false;
+            }
+            return true;
+        }
+        string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
+        return p.Buffs.Any(b => b.Key == key);
+    }
+
     /// <summary>Queue the first eligible auto-skill (known, enabled, off base-cd AND past its extra
     /// delay, MP affordable, condition met). Returns true if one was queued.</summary>
     private bool TryAutoSkill(Entity p, Entity? target)
@@ -3364,7 +3424,7 @@ public class GameLoopService : BackgroundService
             switch (ClassifyAuto(def))
             {
                 case AutoSkillKind.Buff:
-                    if (p.Buffs.Any(b => b.Key == key)) continue;   // already up
+                    if (BuffAlreadyUp(p, def, lvl)) continue;
                     tgtId = p.Id; break;
                 case AutoSkillKind.Heal:
                     if (p.MaxHp <= 0 || (float)p.Hp / p.MaxHp >= 0.70f) continue;
@@ -5096,10 +5156,17 @@ public class GameLoopService : BackgroundService
                 ticksLeft = Math.Max(1, (int)(secondsLeft / GameConstants.TickSeconds));
             }
 
-            ApplyBuff(p, def, snap.Level, displayName: snap.DisplayName, refresh: false, toggle: toggle);
+            // Restore the exact buff that was saved, with the time it had left — and with the group
+            // it belonged to (SourceSkillId), so an improved buff's children come back collapsed
+            // under the same icon instead of scattering into four squares after a relog.
+            ApplyBuff(p, def, snap.Level, displayName: snap.DisplayName, refresh: false, toggle: toggle,
+                      durationOverride: toggle ? -1 : ticksLeft,
+                      sourceSkillId: string.IsNullOrEmpty(snap.SourceSkillId) ? null : snap.SourceSkillId,
+                      // The bar ROW belongs to whatever granted it (a potion's child stays in the
+                      // consumable row); the child's own def only knows the plain buff row.
+                      rowOverride: SkillCatalog.Get(snap.SourceSkillId)?.BuffRow);
 
-            // ApplyBuff starts the buff at its FULL duration and stack 1 — overwrite with what was
-            // actually left. Find it by the same key ApplyBuff used.
+            // Stacks and shield pool still need carrying over. Find it by the same key ApplyBuff used.
             string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
             if (p.Buffs.FirstOrDefault(b => b.Key == key) is not BuffInstance restored) continue;
             restored.TicksRemaining = ticksLeft;
@@ -6066,15 +6133,50 @@ var effect = def.Effect;
 
     /// <summary>Apply a buff with the two stacking rules:
     /// (1) Same BuffKey: apply only if the incoming Rank >= existing Rank
-    ///     (weaker self-recast is ignored entirely); on apply, replace it.
+    ///     (weaker self-recast is ignored entirely); on apply, replace it. On EQUAL rank the
+    ///     one with the longer time left wins — potions and scrolls share tiers and differ only
+    ///     in duration, so without that a 20-minute potion would silently eat a 1-hour scroll.
     /// (2) Replaces: unconditionally remove any active buff whose key is listed,
-    ///     regardless of rank or magnitude.</summary>
-    private void ApplyBuff(Entity target, SkillDef def, int level = 1, string? displayName = null,
-        bool refresh = true, bool toggle = false, int maxStacks = -1)
+    ///     regardless of rank or magnitude.
+    /// An IMPROVED (group) buff — one with ChildBuffs — applies no buff of its own and fans out
+    /// to its children instead; see docs/design/BuffLadders.md.
+    /// Returns TRUE if anything actually landed: a consumable must not be eaten when it didn't.</summary>
+    /// <param name="durationOverride">Ticks to run for, overriding the skill's own DurationTicks
+    /// (-1 = use the skill's). A group buff's children run for the PARENT's duration.</param>
+    /// <param name="sourceSkillId">The skill id stamped on the buff for the bar's icon/grouping
+    /// (null = this skill's own). A group buff stamps its children with the PARENT's id, so the
+    /// client can collapse them into one square.</param>
+    /// <param name="rowOverride">Which buff-bar row the effect lands in, overriding the skill's own
+    /// (null = its own). A group buff's children land in the PARENT's row, so a potion's child still
+    /// shows as "from your bag" rather than in the buffer's row.</param>
+    private bool ApplyBuff(Entity target, SkillDef def, int level = 1, string? displayName = null,
+        bool refresh = true, bool toggle = false, int maxStacks = -1,
+        int durationOverride = -1, string? sourceSkillId = null, BuffRow? rowOverride = null)
     {
+        // ---- IMPROVED buff: apply the CHILDREN, not a buff of our own. Each child is an ordinary
+        //      buff on its own family key + rank and resolves independently, so an overriding potion
+        //      replaces exactly one part of the group and leaves the rest standing. ----
+        if (def.ChildBuffsAt(level) is { Length: > 0 } children)
+        {
+            bool landed = false;
+            foreach (var childId in children)
+                if (SkillCatalog.Get(childId) is SkillDef child)
+                    landed |= ApplyBuff(target, child, 1, refresh: false, toggle: toggle,
+                                        durationOverride: def.DurationTicks, sourceSkillId: def.Id,
+                                        rowOverride: def.BuffRow);
+            if (landed && refresh)
+            {
+                target.RecomputeDerived();
+                if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
+            }
+            return landed;
+        }
+
         string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
         string shownName = string.IsNullOrEmpty(displayName) ? def.Name : displayName!;
         int eff = maxStacks >= 0 ? maxStacks : def.EffectiveMaxStacks;
+        int duration = toggle ? int.MaxValue
+                              : (durationOverride >= 0 ? durationOverride : def.DurationTicks);
 
         // Stacking effect (MaxStacks > 1): reapplying ADDS a stack (capped) and refreshes,
         // rather than replacing. If the skill has a per-stack table, the status re-snapshots
@@ -6083,7 +6185,7 @@ var effect = def.Effect;
         {
             stack.Stacks = Math.Min(eff, stack.Stacks + 1);
             stack.MaxStacks = eff;
-            stack.TicksRemaining = toggle ? int.MaxValue : def.DurationTicks;   // refresh
+            stack.TicksRemaining = duration;   // refresh
             if (def.StackLevelAt(stack.Stacks) is StackLevel slv)
             {
                 stack.Effect = slv.Effect;
@@ -6094,7 +6196,7 @@ var effect = def.Effect;
                 target.RecomputeDerived();
                 if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
             }
-            return;
+            return true;
         }
 
         // Rule 1 — same-key rank comparison.
@@ -6102,7 +6204,12 @@ var effect = def.Effect;
         if (same is not null)
         {
             if (def.Rank < same.Rank)
-                return;                         // weaker: do nothing (no refresh)
+                return false;                   // weaker: do nothing (no refresh)
+            // Equal rank = the same numbers from a different source (a potion and a scroll of the
+            // tier are identical but for how long they last). Keep whichever runs LONGER, or a
+            // 20-minute potion silently eats the 1-hour scroll you just read.
+            if (def.Rank == same.Rank && same.TicksRemaining > duration)
+                return false;
             target.Buffs.Remove(same);          // equal/stronger: full replace
         }
 
@@ -6116,7 +6223,7 @@ var effect = def.Effect;
         {
             Effect = first?.Effect ?? def.Effect,
             Magnitudes = first?.Magnitudes ?? def.MagnitudesAt(level) ?? Array.Empty<EffectMagnitude>(),
-            TicksRemaining = toggle ? int.MaxValue : def.DurationTicks,
+            TicksRemaining = duration,
             Toggle = toggle,
             // DoT damage effect (bleed/poison/venom): carries its per-tick damage so TickDots
             // hits for DotPower each second. Damage does NOT stack — stacks live on a separate
@@ -6128,8 +6235,11 @@ var effect = def.Effect;
                 : 0,
             MaxStacks = eff,
             Cancellable = def.Cancellable,
-            SourceRow = def.BuffRow,   // which buff-bar row this lands in (debuffs override it)
-            SourceSkillId = def.Id,    // so the buff bar can show the skill's icon
+            SourceRow = rowOverride ?? def.BuffRow,   // which buff-bar row this lands in (debuffs override it)
+            // So the buff bar can show the skill's icon — and, for a group buff's child, the
+            // PARENT's id, which is what lets the client collapse the group into one square.
+            SourceSkillId = string.IsNullOrEmpty(sourceSkillId) ? def.Id : sourceSkillId!,
+            SkillId = def.Id,          // what can rebuild this exact buff (persistence saves THIS)
             Name = shownName,
             Key = key,
             Rank = def.Rank,
@@ -6155,6 +6265,7 @@ var effect = def.Effect;
                 SendStats(target);
             }
         }
+        return true;
     }
 
     /// <summary>Apply a damage-over-time. Two SEPARATE statuses (the L2 split): (1) the bleed

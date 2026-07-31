@@ -211,6 +211,18 @@ public static class RecipeCatalog
         yield return Potion(ItemCatalog.SpeedPotionU, ItemRarity.Uncommon, 30, 3);
         yield return Potion(ItemCatalog.CastPotionU, ItemRarity.Uncommon, 30, 3);
         yield return Potion(ItemCatalog.AtkPotionU, ItemRarity.Uncommon, 30, 3);
+        yield return Potion(ItemCatalog.EvaPotionU, ItemRarity.Uncommon, 30, 3);
+        yield return Potion(ItemCatalog.DashPotionU, ItemRarity.Uncommon, 30, 3);
+        // The buff SCROLLS: the same rung as the potion, but an hour instead of 20 minutes, so the
+        // scribe (not the alchemist) makes them and they cost the better material rung.
+        yield return Scroll(ItemCatalog.SpeedScrollC, ItemRarity.Common, 20, 3);
+        yield return Scroll(ItemCatalog.CastScrollC, ItemRarity.Common, 20, 3);
+        yield return Scroll(ItemCatalog.AtkScrollC, ItemRarity.Common, 20, 3);
+        yield return Scroll(ItemCatalog.EvaScrollC, ItemRarity.Common, 20, 3);
+        yield return Scroll(ItemCatalog.SpeedScrollU, ItemRarity.Uncommon, 40, 3);
+        yield return Scroll(ItemCatalog.CastScrollU, ItemRarity.Uncommon, 40, 3);
+        yield return Scroll(ItemCatalog.AtkScrollU, ItemRarity.Uncommon, 40, 3);
+        yield return Scroll(ItemCatalog.EvaScrollU, ItemRarity.Uncommon, 40, 3);
         yield return Scroll(ItemCatalog.ScrollUncommon, ItemRarity.Common, 20, 5);
         yield return Scroll(ItemCatalog.ScrollRare, ItemRarity.Uncommon, 40, 5);
         yield return Scroll(ItemCatalog.AttrScrollUncommon, ItemRarity.Common, 20, 3);

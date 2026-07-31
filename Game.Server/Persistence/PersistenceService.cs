@@ -852,9 +852,14 @@ public class PersistenceService
     /// hour spent logged out costs an hour of a one-hour buff. DisplayName is kept because per-class
     /// flavour names (Holy/Moonlight/Spirit Bolt) are an argument to ApplyBuff, not a property of the
     /// def.</summary>
+    /// <param name="SkillId">The skill that CREATED the buff — for a child of an improved (group)
+    /// buff that is the child, never the parent: re-applying the parent on login would restore every
+    /// sibling at full duration, so a relog would refresh the whole blessing for free.</param>
+    /// <param name="SourceSkillId">The id the buff bar groups/icons by (the PARENT for a group
+    /// child). "" = same as SkillId, which is also what an older save deserializes to.</param>
     public sealed record BuffSnapshot(
         string SkillId, int Level, DateTime? ExpiresAtUtc, int Stacks, int ShieldPool,
-        string DisplayName)
+        string DisplayName, string SourceSkillId = "")
     {
         /// <summary>The buffs on an entity that are worth saving.
         ///
@@ -872,14 +877,15 @@ public class PersistenceService
             var list = new List<BuffSnapshot>();
             foreach (var b in e.Buffs)
             {
-                if (b.IsDebuff || b.Internal || string.IsNullOrEmpty(b.SourceSkillId)) continue;
-                if (SkillCatalog.IsRuneBuff(b.SourceSkillId)) continue;
+                string skillId = string.IsNullOrEmpty(b.SkillId) ? b.SourceSkillId : b.SkillId;
+                if (b.IsDebuff || b.Internal || string.IsNullOrEmpty(skillId)) continue;
+                if (SkillCatalog.IsRuneBuff(skillId)) continue;
 
                 DateTime? expires = b.Toggle
                     ? null
                     : now.AddSeconds(b.TicksRemaining * GameConstants.TickSeconds);
-                list.Add(new BuffSnapshot(b.SourceSkillId, b.Level, expires, b.Stacks, b.ShieldPool,
-                                          b.Name));
+                list.Add(new BuffSnapshot(skillId, b.Level, expires, b.Stacks, b.ShieldPool,
+                                          b.Name, b.SourceSkillId));
             }
             return list;
         }

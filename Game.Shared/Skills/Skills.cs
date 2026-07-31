@@ -48,6 +48,16 @@ public record SkillDef(
     string BuffKey = "",
     int Rank = 0,
     string[]? Replaces = null,
+    // IMPROVED (group) buff — see docs/design/BuffLadders.md. A skill with ChildBuffs applies NO
+    // buff of its own: ApplyBuff fans out and applies each CHILD skill id here as an ordinary buff,
+    // each on its own family BuffKey + Rank, so each resolves independently against what the player
+    // already has (a rare Alacrity potion can override just the cast part of a low Speed buff and
+    // leave the move part alone). The children carry only effect + family + rank; DURATION, target
+    // mode and MP cost stay on the PARENT, and the parent's id is stamped on every child as
+    // SourceSkillId so the buff bar can collapse the group into one icon.
+    // The parent's own Effect must still be the UNION of the children's flags — that is what marks
+    // it a buff at all (AnyBuff gates the cast/consume paths). null/empty = an ordinary single buff.
+    string[]? ChildBuffs = null,
     string Description = "",
     int SpCost = 1,
     SkillCategory Category = SkillCategory.Physical,
@@ -255,6 +265,9 @@ public record SkillDef(
     public (int Flat, float Mod) MagicDamageAt(int level) =>
         ModAt(level) > 0f ? (FlatAt(level), ModAt(level)) : (0, PowerAt(level));
     public EffectMagnitude[]? MagnitudesAt(int level) => Lvl(level)?.Magnitudes ?? Magnitudes;
+    /// <summary>The CHILD buff ids this (group) buff applies at a level — an improved buff's levels
+    /// are pure child references (see SkillDef.ChildBuffs). Null/empty = an ordinary single buff.</summary>
+    public string[]? ChildBuffsAt(int level) => Lvl(level)?.ChildBuffs ?? ChildBuffs;
     public int MpCostAt(int level) => Lvl(level)?.MpCost ?? MpCost;
     public int SpCostAt(int level) => Lvl(level)?.SpCost ?? SpCost;
     /// <summary>GOLD price of a level (0 = not bought with gold).</summary>
@@ -354,7 +367,11 @@ public record SkillLevel(
     // GOLD price of this level (0 = free). The stat-swap passives are bought with gold, not SP.
     int GoldCost = 0,
     // Resurrect skills: fraction (0..1) of the target's lost exp restored at THIS level.
-    float ResExpPct = 0f);
+    float ResExpPct = 0f,
+    // IMPROVED (group) buff: the CHILD buff ids this LEVEL applies (see SkillDef.ChildBuffs).
+    // A group buff's levels are pure child references — level N simply names a stronger rung of
+    // each family's ladder. null = inherit the SkillDef's ChildBuffs.
+    string[]? ChildBuffs = null);
 
 /// <summary>Skill window grouping. Passive = a learned, always-on effect (armor
 /// masteries, discipline passives) — never cast and never placed on the action bar.</summary>

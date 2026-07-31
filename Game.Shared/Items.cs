@@ -362,16 +362,41 @@ public static class ItemCatalog
     public const string HealingPotion = "potion_healing";  // Uncommon HoT
     public const string GreaterPotion = "potion_greater";  // Rare HoT
     public const string InstantPotion = "potion_instant";  // Instant %-heal panic potion
-    // Buff potions (rarity = tier). Common sold by vendors; Uncommon/Rare drop.
-    public const string SpeedPotionC = "potion_speed_c";
+    // ---- Buff potions and scrolls (rarity = the rung on the family's ladder). A potion and a
+    //      scroll of the same rarity grant the SAME buff and differ only in duration: 20 minutes
+    //      vs an hour. Common sold by vendors; the rest drop or are crafted.
+    //      See docs/design/BuffLadders.md. ----
+    public const string SpeedPotionC = "potion_speed_c";   // Swift    (move speed)
     public const string SpeedPotionU = "potion_speed_u";
     public const string SpeedPotionR = "potion_speed_r";
-    public const string CastPotionC = "potion_cast_c";
+    public const string CastPotionC = "potion_cast_c";     // Alacrity (cast speed)
     public const string CastPotionU = "potion_cast_u";
     public const string CastPotionR = "potion_cast_r";
-    public const string AtkPotionC = "potion_atk_c";
+    public const string AtkPotionC = "potion_atk_c";       // Haste    (attack speed)
     public const string AtkPotionU = "potion_atk_u";
     public const string AtkPotionR = "potion_atk_r";
+    public const string EvaPotionC = "potion_eva_c";       // Agility  (evasion)
+    public const string EvaPotionU = "potion_eva_u";
+    public const string EvaPotionR = "potion_eva_r";
+    public const string SpeedScrollC = "scroll_speed_c";
+    public const string SpeedScrollU = "scroll_speed_u";
+    public const string SpeedScrollR = "scroll_speed_r";
+    public const string CastScrollC = "scroll_cast_c";
+    public const string CastScrollU = "scroll_cast_u";
+    public const string CastScrollR = "scroll_cast_r";
+    public const string AtkScrollC = "scroll_atk_c";
+    public const string AtkScrollU = "scroll_atk_u";
+    public const string AtkScrollR = "scroll_atk_r";
+    public const string EvaScrollC = "scroll_eva_c";
+    public const string EvaScrollU = "scroll_eva_u";
+    public const string EvaScrollR = "scroll_eva_r";
+    // Dash — the short sprint burst, six rarities, no scroll.
+    public const string DashPotionC = "potion_dash_c";
+    public const string DashPotionU = "potion_dash_u";
+    public const string DashPotionR = "potion_dash_r";
+    public const string DashPotionE = "potion_dash_e";
+    public const string DashPotionL = "potion_dash_l";
+    public const string DashPotionM = "potion_dash_m";
     public const string ScrollCommon = "scroll_common";
     public const string ScrollUncommon = "scroll_uncommon";
     public const string ScrollRare = "scroll_rare";
@@ -767,28 +792,76 @@ public static class ItemCatalog
         list.Add(new ItemDef(SkillStone, "Skill Stone", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Uncommon, Value: 400));
 
-        // ----- Buff potions: consume to gain a timed (weaker-than-class) buff. Rarity
-        //       is the tier; same line supersedes by rank. No heal cooldown. -----
-        // Common (Lesser) buff potions are vendor-sold staples: ~1.5k each. The
-        // Uncommon/Greater tiers are drop-only; priced higher for sell value.
-        list.Add(new ItemDef(SpeedPotionC, "Swiftness Potion (Lesser)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PBuffSpeedC, Value: 1500));
-        list.Add(new ItemDef(SpeedPotionU, "Swiftness Potion", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PBuffSpeedU, Value: 5000));
-        list.Add(new ItemDef(SpeedPotionR, "Swiftness Potion (Greater)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PBuffSpeedR, Value: 12000));
-        list.Add(new ItemDef(CastPotionC, "Focus Potion (Lesser)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PBuffCastC, Value: 1500));
-        list.Add(new ItemDef(CastPotionU, "Focus Potion", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PBuffCastU, Value: 5000));
-        list.Add(new ItemDef(CastPotionR, "Focus Potion (Greater)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PBuffCastR, Value: 12000));
+        // ----- Buff potions and scrolls: consume to gain one SINGLE buff off a family's ladder
+        //       (docs/design/BuffLadders.md). Rarity IS the rung, so a Greater potion supersedes a
+        //       Lesser one — and equally supersedes the same rung of a cleric's blessing, because
+        //       they are literally the same buff. No heal cooldown; 1s reuse.
+        //       Common (Lesser) potions are vendor-sold staples; the rest drop or are crafted.
+        //       A scroll is the same rung for an HOUR instead of 20 minutes, so it costs 3x. -----
+        list.Add(new ItemDef(SpeedPotionC, "Swift Potion (Lesser)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotSwiftC, Value: 1500));
+        list.Add(new ItemDef(SpeedPotionU, "Swift Potion", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotSwiftU, Value: 5000));
+        list.Add(new ItemDef(SpeedPotionR, "Swift Potion (Greater)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PotSwiftR, Value: 12000));
+        list.Add(new ItemDef(CastPotionC, "Alacrity Potion (Lesser)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotAlacrityC, Value: 1500));
+        list.Add(new ItemDef(CastPotionU, "Alacrity Potion", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotAlacrityU, Value: 5000));
+        list.Add(new ItemDef(CastPotionR, "Alacrity Potion (Greater)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PotAlacrityR, Value: 12000));
         list.Add(new ItemDef(AtkPotionC, "Haste Potion (Lesser)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PBuffAtkC, Value: 1500));
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotHasteC, Value: 1500));
         list.Add(new ItemDef(AtkPotionU, "Haste Potion", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PBuffAtkU, Value: 5000));
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotHasteU, Value: 5000));
         list.Add(new ItemDef(AtkPotionR, "Haste Potion (Greater)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PBuffAtkR, Value: 12000));
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PotHasteR, Value: 12000));
+        list.Add(new ItemDef(EvaPotionC, "Agility Potion (Lesser)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotAgilityC, Value: 1500));
+        list.Add(new ItemDef(EvaPotionU, "Agility Potion", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotAgilityU, Value: 5000));
+        list.Add(new ItemDef(EvaPotionR, "Agility Potion (Greater)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PotAgilityR, Value: 12000));
+
+        list.Add(new ItemDef(SpeedScrollC, "Scroll of Swift (Lesser)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.ScrSwiftC, Value: 4500));
+        list.Add(new ItemDef(SpeedScrollU, "Scroll of Swift", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.ScrSwiftU, Value: 15000));
+        list.Add(new ItemDef(SpeedScrollR, "Scroll of Swift (Greater)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.ScrSwiftR, Value: 36000));
+        list.Add(new ItemDef(CastScrollC, "Scroll of Alacrity (Lesser)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.ScrAlacrityC, Value: 4500));
+        list.Add(new ItemDef(CastScrollU, "Scroll of Alacrity", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.ScrAlacrityU, Value: 15000));
+        list.Add(new ItemDef(CastScrollR, "Scroll of Alacrity (Greater)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.ScrAlacrityR, Value: 36000));
+        list.Add(new ItemDef(AtkScrollC, "Scroll of Haste (Lesser)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.ScrHasteC, Value: 4500));
+        list.Add(new ItemDef(AtkScrollU, "Scroll of Haste", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.ScrHasteU, Value: 15000));
+        list.Add(new ItemDef(AtkScrollR, "Scroll of Haste (Greater)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.ScrHasteR, Value: 36000));
+        list.Add(new ItemDef(EvaScrollC, "Scroll of Agility (Lesser)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.ScrAgilityC, Value: 4500));
+        list.Add(new ItemDef(EvaScrollU, "Scroll of Agility", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.ScrAgilityU, Value: 15000));
+        list.Add(new ItemDef(EvaScrollR, "Scroll of Agility (Greater)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.ScrAgilityR, Value: 36000));
+
+        // Dash — 15 seconds of sprint on a 1-minute reuse, six rarities, no scroll. Priced at half
+        // a buff potion of the same rarity: it is a burst, not a blessing.
+        list.Add(new ItemDef(DashPotionC, "Dash Potion (Lesser)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotDashC, Value: 750));
+        list.Add(new ItemDef(DashPotionU, "Dash Potion", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotDashU, Value: 2500));
+        list.Add(new ItemDef(DashPotionR, "Dash Potion (Greater)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PotDashR, Value: 6000));
+        list.Add(new ItemDef(DashPotionE, "Dash Potion (Superior)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Epic, UseSkillId: SkillCatalog.PotDashE, Value: 12500));
+        list.Add(new ItemDef(DashPotionL, "Dash Potion (Grand)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Legendary, UseSkillId: SkillCatalog.PotDashL, Value: 25000));
+        list.Add(new ItemDef(DashPotionM, "Dash Potion (Supreme)", EquipSlot.Consumable,
+            ItemGrade.F, ItemRarity.Mythic, UseSkillId: SkillCatalog.PotDashM, Value: 50000));
 
         // ===================================================================
         //  SHIELDS — equippable by any class (with a one-hand weapon), but only

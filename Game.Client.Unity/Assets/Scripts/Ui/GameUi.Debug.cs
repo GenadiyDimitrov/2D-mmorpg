@@ -285,11 +285,15 @@ namespace Game.Client
             DebugGive(ItemCatalog.AttrScrollRare, "Attr Scroll (Rare) x10", 10);
             DebugGive(ItemCatalog.AttrScrollLegendary, "Attr Scroll (Legendary) x10", 10);
 
-            DebugHeader("Buff potions (x5)");
-            DebugGive(ItemCatalog.SpeedPotionC, "Swiftness (Lesser) x5", 5);
-            DebugGive(ItemCatalog.SpeedPotionR, "Swiftness (Greater) x5", 5);
-            DebugGive(ItemCatalog.CastPotionR, "Focus (Greater) x5", 5);
-            DebugGive(ItemCatalog.AtkPotionR, "Haste (Greater) x5", 5);
+            DebugHeader("Buff potions & scrolls (x5)");
+            DebugGive(ItemCatalog.SpeedPotionC, "Swift Potion (Lesser) x5", 5);
+            DebugGive(ItemCatalog.SpeedPotionR, "Swift Potion (Greater) x5", 5);
+            DebugGive(ItemCatalog.CastPotionR, "Alacrity Potion (Greater) x5", 5);
+            DebugGive(ItemCatalog.AtkPotionR, "Haste Potion (Greater) x5", 5);
+            DebugGive(ItemCatalog.EvaPotionR, "Agility Potion (Greater) x5", 5);
+            DebugGive(ItemCatalog.SpeedScrollR, "Scroll of Swift (Greater) x5", 5);
+            DebugGive(ItemCatalog.CastScrollR, "Scroll of Alacrity (Greater) x5", 5);
+            DebugGive(ItemCatalog.DashPotionM, "Dash Potion (Supreme) x5", 5);
 
             DebugHeader("Potions (x10)");
             DebugGive(ItemCatalog.MinorPotion, "Minor Potion x10", 10);

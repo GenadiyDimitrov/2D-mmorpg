@@ -337,14 +337,26 @@ public static class MobCatalog
             foreach (var b in buffs)
                 drops.Add(new(b, weight * 0.5f / buffs.Length, GroupId: GroupScrolls));
         }
+        // Each rung carries that rarity's four buff potions, its four scrolls (the same buff for an
+        // hour) and the Dash potion. Dash Epic/Legendary/Mythic have no drop source yet — they wait
+        // for the §3 drop-group rework, which wants to roll the ITEM rather than the rarity.
         ScrollRung(0.40f, ItemCatalog.ScrollCommon,
-            new[] { ItemCatalog.SpeedPotionC, ItemCatalog.CastPotionC, ItemCatalog.AtkPotionC });
+            new[] { ItemCatalog.SpeedPotionC, ItemCatalog.CastPotionC, ItemCatalog.AtkPotionC,
+                    ItemCatalog.EvaPotionC, ItemCatalog.DashPotionC,
+                    ItemCatalog.SpeedScrollC, ItemCatalog.CastScrollC, ItemCatalog.AtkScrollC,
+                    ItemCatalog.EvaScrollC });
         if (level >= 20)
             ScrollRung(0.20f, ItemCatalog.ScrollUncommon,
-                new[] { ItemCatalog.SpeedPotionU, ItemCatalog.CastPotionU, ItemCatalog.AtkPotionU });
+                new[] { ItemCatalog.SpeedPotionU, ItemCatalog.CastPotionU, ItemCatalog.AtkPotionU,
+                        ItemCatalog.EvaPotionU, ItemCatalog.DashPotionU,
+                        ItemCatalog.SpeedScrollU, ItemCatalog.CastScrollU, ItemCatalog.AtkScrollU,
+                        ItemCatalog.EvaScrollU });
         if (level >= 45)
             ScrollRung(0.10f, ItemCatalog.ScrollRare,
-                new[] { ItemCatalog.SpeedPotionR, ItemCatalog.CastPotionR, ItemCatalog.AtkPotionR });
+                new[] { ItemCatalog.SpeedPotionR, ItemCatalog.CastPotionR, ItemCatalog.AtkPotionR,
+                        ItemCatalog.EvaPotionR, ItemCatalog.DashPotionR,
+                        ItemCatalog.SpeedScrollR, ItemCatalog.CastScrollR, ItemCatalog.AtkScrollR,
+                        ItemCatalog.EvaScrollR });
 
         // ---- ALWAYS (§4): every kill yields one consumable — a healing potion, a return scroll or a
         //      resurrection scroll. C 70 / U 30 below level 75, C 55 / U 40 / R 5 from 75, where the Rare

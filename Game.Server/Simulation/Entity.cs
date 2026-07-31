@@ -25,10 +25,17 @@ public class BuffInstance
     public int Level { get; init; } = 1;
     public string[] Replaces { get; init; } = Array.Empty<string>();
 
-    /// <summary>The skill this buff came from — kept so the client can show the SKILL's icon on the buff
-    /// bar (the buff bar has no other handle on the source). "" for non-skill buffs (e.g. the synthetic
-    /// grade-penalty rows, which supply their own icon).</summary>
+    /// <summary>The skill whose icon the buff bar shows, and the id buffs are GROUPED by: for a child
+    /// of an improved (group) buff this is the PARENT's id, so the client can collapse the whole
+    /// blessing into one square (docs/design/BuffLadders.md). "" for non-skill buffs (e.g. the
+    /// synthetic grade-penalty rows, which supply their own icon).</summary>
     public string SourceSkillId { get; init; } = "";
+
+    /// <summary>The skill that actually CREATED this buff — the same as <see cref="SourceSkillId"/>
+    /// except for a group buff's child, where the source is the parent. This is the one that can
+    /// rebuild the buff, so it is what persistence saves: saving the parent instead would re-apply
+    /// every sibling at full duration on the next login (a free refresh for anyone who relogs).</summary>
+    public string SkillId { get; init; } = "";
 
     /// <summary>A TOGGLE/stance buff: never expires on its own (the player clicks the
     /// skill again, or double-clicks the buff, to end it). TickBuffs skips it.</summary>

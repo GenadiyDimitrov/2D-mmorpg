@@ -66,10 +66,13 @@ public static class ShopCatalog
                 // potion-economy design where the top tier stays out of the shop.
                 ItemCatalog.MinorPotion,
                 ItemCatalog.HealingPotion,
-                // Common buff potions (the weak tier is vendor-only; stronger ones drop).
+                // Common buff potions (the weak rung is vendor-stocked; stronger ones drop or are
+                // crafted). Scrolls are NOT sold: the same buff for an hour is a drop/craft reward.
                 ItemCatalog.SpeedPotionC,
                 ItemCatalog.CastPotionC,
                 ItemCatalog.AtkPotionC,
+                ItemCatalog.EvaPotionC,
+                ItemCatalog.DashPotionC,
                 // Scroll of Return (500g) — a faster escape than the free 30s Return skill. The
                 // Ultimate scroll is NOT sold here (special vendor later).
                 ItemCatalog.ScrollReturn,

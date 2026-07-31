@@ -55,20 +55,80 @@ public static partial class SkillCatalog
     public const string PotHeal        = "pot_heal";           // Uncommon HoT tier
     public const string PotHealGreater = "pot_heal_greater";   // Rare HoT tier
     public const string PotHealInstant = "pot_heal_instant";   // Instant %-heal panic potion
-    // ---- Buff-potion buffs (consumed, not cast). ----
-    public const string PBuffSpeedC = "pbuff_speed_c";
-    public const string PBuffSpeedU = "pbuff_speed_u";
-    public const string PBuffSpeedR = "pbuff_speed_r";
-    public const string PBuffCastC = "pbuff_cast_c";
-    public const string PBuffCastU = "pbuff_cast_u";
-    public const string PBuffCastR = "pbuff_cast_r";
-    public const string PBuffAtkC = "pbuff_atk_c";
-    public const string PBuffAtkU = "pbuff_atk_u";
-    public const string PBuffAtkR = "pbuff_atk_r";
+    // ======================================================================================
+    //  BUFF LADDERS (docs/design/BuffLadders.md) — the SINGLE buffs of the speed group.
+    //
+    //  Four families, one number line each: move / cast / evasion / attack speed. Every source
+    //  of an effect — a potion, a scroll, one rung of the cleric's improved Speed — applies the
+    //  SAME single-buff skill, so they can never stack: they compete on the family's BuffKey by
+    //  Rank (1/2/3 = the Common/Uncommon/Rare rung), which is what ApplyBuff already arbitrates.
+    //  These are never learned and never cast directly; they are applied as CHILDREN.
+    //  ONE FAMILY = ONE MODIFIER MODE (all flat or all percent) or the ranking would lie.
+    // ======================================================================================
+    public const string FamMove = "spd_move";   // Swift    — flat move speed
+    public const string FamCast = "spd_cast";   // Alacrity — % cast speed
+    public const string FamEva  = "spd_eva";    // Agility  — flat evasion
+    public const string FamAs   = "spd_as";     // Haste    — % attack speed
+
+    public const string BuffSwiftC = "buff_swift_c";        // +15 move
+    public const string BuffSwiftU = "buff_swift_u";        // +20 move
+    public const string BuffSwiftR = "buff_swift_r";        // +33 move
+    public const string BuffAlacrityC = "buff_alacrity_c";  // +15% cast
+    public const string BuffAlacrityU = "buff_alacrity_u";  // +23% cast
+    public const string BuffAlacrityR = "buff_alacrity_r";  // +30% cast
+    public const string BuffAgilityC = "buff_agility_c";    // +1 evasion
+    public const string BuffAgilityU = "buff_agility_u";    // +2 evasion
+    public const string BuffAgilityR = "buff_agility_r";    // +4 evasion
+    public const string BuffHasteC = "buff_haste_c";        // +15% attack speed
+    public const string BuffHasteU = "buff_haste_u";        // +23% attack speed
+    public const string BuffHasteR = "buff_haste_r";        // +33% attack speed
+
+    // ---- The consumables that grant them. A potion and a scroll of the SAME tier grant the
+    //      SAME single buff and differ only in duration (20 min vs 1 h) and cast (instant vs 1s):
+    //      drinking a potion over an equal-tier scroll is refused, not silently eaten. ----
+    public const string PotSwiftC = "pot_swift_c";
+    public const string PotSwiftU = "pot_swift_u";
+    public const string PotSwiftR = "pot_swift_r";
+    public const string PotAlacrityC = "pot_alacrity_c";
+    public const string PotAlacrityU = "pot_alacrity_u";
+    public const string PotAlacrityR = "pot_alacrity_r";
+    public const string PotAgilityC = "pot_agility_c";
+    public const string PotAgilityU = "pot_agility_u";
+    public const string PotAgilityR = "pot_agility_r";
+    public const string PotHasteC = "pot_haste_c";
+    public const string PotHasteU = "pot_haste_u";
+    public const string PotHasteR = "pot_haste_r";
+    public const string ScrSwiftC = "scr_swift_c";
+    public const string ScrSwiftU = "scr_swift_u";
+    public const string ScrSwiftR = "scr_swift_r";
+    public const string ScrAlacrityC = "scr_alacrity_c";
+    public const string ScrAlacrityU = "scr_alacrity_u";
+    public const string ScrAlacrityR = "scr_alacrity_r";
+    public const string ScrAgilityC = "scr_agility_c";
+    public const string ScrAgilityU = "scr_agility_u";
+    public const string ScrAgilityR = "scr_agility_r";
+    public const string ScrHasteC = "scr_haste_c";
+    public const string ScrHasteU = "scr_haste_u";
+    public const string ScrHasteR = "scr_haste_r";
+
+    // ---- DASH — deliberately OUTSIDE the spd_move family (owner 2026-07-31). A 15-second burst
+    //      on a 1-minute reuse, six rarities up to +60 move, no scroll. If it shared spd_move it
+    //      would evict your 1-hour Swift scroll and hand it back fifteen seconds later. ----
+    public const string FamDash = "dash";
+    public const string BuffDashC = "buff_dash_c";
+    public const string BuffDashU = "buff_dash_u";
+    public const string BuffDashR = "buff_dash_r";
+    public const string BuffDashE = "buff_dash_e";
+    public const string BuffDashL = "buff_dash_l";
+    public const string BuffDashM = "buff_dash_m";
+    public const string PotDashC = "pot_dash_c";
+    public const string PotDashU = "pot_dash_u";
+    public const string PotDashR = "pot_dash_r";
+    public const string PotDashE = "pot_dash_e";
+    public const string PotDashL = "pot_dash_l";
+    public const string PotDashM = "pot_dash_m";
     // ---- Learnable HP Boost — ONE multi-level skill (3 levels: +5/+15/+35%). ----
     public const string HpBoost = "hp_boost";
-    public const string WindWalk = "wind_walk";
-    public const string MassWindWalk = "mass_wind_walk";
     // ============================ TEST ONLY — DELETE ME ============================
     // A 1000-power heal, auto-granted to EVERY character at level 76, purely to calibrate the heal
     // formula against the owner's target (a 1000-power heal should land ~2000 for a healer at 76).
@@ -98,6 +158,49 @@ public static partial class SkillCatalog
     public const string ScrollResurrectSkill    = "use_scroll_resurrect";     // 10s ally-res, 0% exp back
     public const string ScrollResurrectUltSkill = "use_scroll_resurrect_ult"; // 0.5s ally-res, 100% exp back
     public const string AngelsProtection        = "angels_protection";        // noblesse: keep buffs on death
+
+    // ======================================================================================
+    //  BUFF-LADDER factories (docs/design/BuffLadders.md).
+    // ======================================================================================
+
+    /// <summary>A SINGLE buff — one effect, one family key, one rung. Never learned and never cast
+    /// on its own: it is applied as a CHILD, by a potion, a scroll or one level of an improved
+    /// group buff, and the applier supplies the duration (hence DurationTicks 0 here).</summary>
+    private static SkillDef SingleBuff(string id, string name, string family, int rank,
+        SkillEffect effect, EffectMagnitude mag, string desc) => new(
+        id, name, BaseClass.Fighter, effect,
+        MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+        BuffKey: family, Rank: rank, Magnitudes: new[] { mag },
+        Category: SkillCategory.Buff, Description: desc);
+
+    /// <summary>A consumable that grants ONE single buff: the item's skill, which owns the
+    /// DURATION, the cast time and the reuse, and applies the child. Potion and scroll of a tier
+    /// share the child (same family, same rank) and differ only in how long they last — so drinking
+    /// a potion on top of an equal-tier scroll is refused instead of quietly wasting it.</summary>
+    private static SkillDef ConsumableBuff(string id, string name, string child, SkillEffect effect,
+        int durationTicks, int castTicks, int cooldownTicks, string desc) => new(
+        id, name, BaseClass.Fighter, effect,
+        MpCost: 0, CastTicks: castTicks, CooldownTicks: cooldownTicks, Range: 0, Power: 0,
+        DurationTicks: durationTicks, ChildBuffs: new[] { child },
+        Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable,
+        TargetMode: TargetMode.SelfOnly, Description: desc);
+
+    private const int PotionBuffTicks = 12000;   // 20 min
+    private const int ScrollBuffTicks = 36000;   // 1 hour
+
+    private static SkillDef Potion(string id, string name, string child, SkillEffect effect, string what) =>
+        ConsumableBuff(id, name, child, effect, PotionBuffTicks, castTicks: 0, cooldownTicks: 10,
+            desc: $"{what} for 20 minutes.");
+
+    private static SkillDef Scroll(string id, string name, string child, SkillEffect effect, string what) =>
+        ConsumableBuff(id, name, child, effect, ScrollBuffTicks, castTicks: 10, cooldownTicks: 10,
+            desc: $"{what} for 1 hour.");
+
+    /// <summary>Dash: a 15-second sprint on a 1-minute reuse, on its OWN family — it must never
+    /// join spd_move, or it would evict an hour-long Swift scroll and give it back 15s later.</summary>
+    private static SkillDef DashPotion(string id, string name, string child, int move) =>
+        ConsumableBuff(id, name, child, SkillEffect.BuffMoveSpeed, durationTicks: 150,
+            castTicks: 0, cooldownTicks: 600, desc: $"+{move} Move Speed for 15 seconds.");
 
     // ---- Multi-level PASSIVE factory: a pure passive whose levels each carry a
     //      PassiveEffect (the floor/lean value for that level). ----
@@ -285,55 +388,87 @@ public static partial class SkillCatalog
             Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable,
             Description: "Spiritshot: +magic damage and cast speed while the rune is held."),
 
-        // ----- Buff-potion buffs (consumed, not cast). Same BuffKey per line so a
-        //       rarer potion supersedes a weaker one; rare = bigger + longer. -----
-        new(PBuffSpeedC, "Swiftness (Lesser)", BaseClass.Fighter, SkillEffect.BuffMoveSpeed,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            DurationTicks: 600, BuffKey: "pbuff_speed", Rank: 1,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffMoveSpeed, 15, ModifierMode.Flat) },
-            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, Description: "+15 Move Speed for 60s."),
-        new(PBuffSpeedU, "Swiftness", BaseClass.Fighter, SkillEffect.BuffMoveSpeed,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            DurationTicks: 900, BuffKey: "pbuff_speed", Rank: 2,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffMoveSpeed, 20, ModifierMode.Flat) },
-            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, Description: "+20 Move Speed for 90s."),
-        new(PBuffSpeedR, "Swiftness (Greater)", BaseClass.Fighter, SkillEffect.BuffMoveSpeed,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            DurationTicks: 1800, BuffKey: "pbuff_speed", Rank: 3,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffMoveSpeed, 30, ModifierMode.Flat) },
-            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, Description: "+30 Move Speed for 180s."),
+        // ================== BUFF LADDERS — the single buffs and their consumables ==================
+        //  See docs/design/BuffLadders.md. Four families, three rungs each; the improved "Speed"
+        //  buff (cleric / NPC buffer) applies these SAME skills as its children, so a potion and a
+        //  class buff can never stack — they compete on the family key and the better one wins.
+        // ==========================================================================================
+        SingleBuff(BuffSwiftC, "Swift", FamMove, 1, SkillEffect.BuffMoveSpeed,
+            new(SkillEffect.BuffMoveSpeed, 15, ModifierMode.Flat), "+15 Move Speed."),
+        SingleBuff(BuffSwiftU, "Swift", FamMove, 2, SkillEffect.BuffMoveSpeed,
+            new(SkillEffect.BuffMoveSpeed, 20, ModifierMode.Flat), "+20 Move Speed."),
+        SingleBuff(BuffSwiftR, "Swift", FamMove, 3, SkillEffect.BuffMoveSpeed,
+            new(SkillEffect.BuffMoveSpeed, 33, ModifierMode.Flat), "+33 Move Speed."),
 
-        new(PBuffCastC, "Focus (Lesser)", BaseClass.Mage, SkillEffect.BuffCastSpeed,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            DurationTicks: 600, BuffKey: "pbuff_cast", Rank: 1,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffCastSpeed, 0.08f) },
-            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, Description: "+8% Cast Speed for 60s."),
-        new(PBuffCastU, "Focus", BaseClass.Mage, SkillEffect.BuffCastSpeed,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            DurationTicks: 900, BuffKey: "pbuff_cast", Rank: 2,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffCastSpeed, 0.12f) },
-            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, Description: "+12% Cast Speed for 90s."),
-        new(PBuffCastR, "Focus (Greater)", BaseClass.Mage, SkillEffect.BuffCastSpeed,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            DurationTicks: 1800, BuffKey: "pbuff_cast", Rank: 3,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffCastSpeed, 0.20f) },
-            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, Description: "+20% Cast Speed for 180s."),
+        SingleBuff(BuffAlacrityC, "Alacrity", FamCast, 1, SkillEffect.BuffCastSpeed,
+            new(SkillEffect.BuffCastSpeed, 0.15f), "+15% Cast Speed."),
+        SingleBuff(BuffAlacrityU, "Alacrity", FamCast, 2, SkillEffect.BuffCastSpeed,
+            new(SkillEffect.BuffCastSpeed, 0.23f), "+23% Cast Speed."),
+        SingleBuff(BuffAlacrityR, "Alacrity", FamCast, 3, SkillEffect.BuffCastSpeed,
+            new(SkillEffect.BuffCastSpeed, 0.30f), "+30% Cast Speed."),
 
-        new(PBuffAtkC, "Haste (Lesser)", BaseClass.Fighter, SkillEffect.BuffAtkSpeed,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            DurationTicks: 600, BuffKey: "pbuff_atkspeed", Rank: 1,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtkSpeed, 0.08f) },
-            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, Description: "+8% Attack Speed for 60s."),
-        new(PBuffAtkU, "Haste", BaseClass.Fighter, SkillEffect.BuffAtkSpeed,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            DurationTicks: 900, BuffKey: "pbuff_atkspeed", Rank: 2,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtkSpeed, 0.12f) },
-            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, Description: "+12% Attack Speed for 90s."),
-        new(PBuffAtkR, "Haste (Greater)", BaseClass.Fighter, SkillEffect.BuffAtkSpeed,
-            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            DurationTicks: 1800, BuffKey: "pbuff_atkspeed", Rank: 3,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtkSpeed, 0.20f) },
-            Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable, Description: "+20% Attack Speed for 180s."),
+        SingleBuff(BuffAgilityC, "Agility", FamEva, 1, SkillEffect.BuffEvasion,
+            new(SkillEffect.BuffEvasion, 1, ModifierMode.Flat), "+1 Evasion."),
+        SingleBuff(BuffAgilityU, "Agility", FamEva, 2, SkillEffect.BuffEvasion,
+            new(SkillEffect.BuffEvasion, 2, ModifierMode.Flat), "+2 Evasion."),
+        SingleBuff(BuffAgilityR, "Agility", FamEva, 3, SkillEffect.BuffEvasion,
+            new(SkillEffect.BuffEvasion, 4, ModifierMode.Flat), "+4 Evasion."),
+
+        SingleBuff(BuffHasteC, "Haste", FamAs, 1, SkillEffect.BuffAtkSpeed,
+            new(SkillEffect.BuffAtkSpeed, 0.15f), "+15% Attack Speed."),
+        SingleBuff(BuffHasteU, "Haste", FamAs, 2, SkillEffect.BuffAtkSpeed,
+            new(SkillEffect.BuffAtkSpeed, 0.23f), "+23% Attack Speed."),
+        SingleBuff(BuffHasteR, "Haste", FamAs, 3, SkillEffect.BuffAtkSpeed,
+            new(SkillEffect.BuffAtkSpeed, 0.33f), "+33% Attack Speed."),
+
+        // ---- Potions: 20 minutes, instant, 1s reuse. ----
+        Potion(PotSwiftC, "Swift Potion (Lesser)", BuffSwiftC, SkillEffect.BuffMoveSpeed, "+15 Move Speed"),
+        Potion(PotSwiftU, "Swift Potion",          BuffSwiftU, SkillEffect.BuffMoveSpeed, "+20 Move Speed"),
+        Potion(PotSwiftR, "Swift Potion (Greater)",BuffSwiftR, SkillEffect.BuffMoveSpeed, "+33 Move Speed"),
+        Potion(PotAlacrityC, "Alacrity Potion (Lesser)", BuffAlacrityC, SkillEffect.BuffCastSpeed, "+15% Cast Speed"),
+        Potion(PotAlacrityU, "Alacrity Potion",          BuffAlacrityU, SkillEffect.BuffCastSpeed, "+23% Cast Speed"),
+        Potion(PotAlacrityR, "Alacrity Potion (Greater)",BuffAlacrityR, SkillEffect.BuffCastSpeed, "+30% Cast Speed"),
+        Potion(PotAgilityC, "Agility Potion (Lesser)", BuffAgilityC, SkillEffect.BuffEvasion, "+1 Evasion"),
+        Potion(PotAgilityU, "Agility Potion",          BuffAgilityU, SkillEffect.BuffEvasion, "+2 Evasion"),
+        Potion(PotAgilityR, "Agility Potion (Greater)",BuffAgilityR, SkillEffect.BuffEvasion, "+4 Evasion"),
+        Potion(PotHasteC, "Haste Potion (Lesser)", BuffHasteC, SkillEffect.BuffAtkSpeed, "+15% Attack Speed"),
+        Potion(PotHasteU, "Haste Potion",          BuffHasteU, SkillEffect.BuffAtkSpeed, "+23% Attack Speed"),
+        Potion(PotHasteR, "Haste Potion (Greater)",BuffHasteR, SkillEffect.BuffAtkSpeed, "+33% Attack Speed"),
+
+        // ---- Scrolls: the same tiers for an HOUR, but they take a second to read. ----
+        Scroll(ScrSwiftC, "Scroll of Swift (Lesser)", BuffSwiftC, SkillEffect.BuffMoveSpeed, "+15 Move Speed"),
+        Scroll(ScrSwiftU, "Scroll of Swift",          BuffSwiftU, SkillEffect.BuffMoveSpeed, "+20 Move Speed"),
+        Scroll(ScrSwiftR, "Scroll of Swift (Greater)",BuffSwiftR, SkillEffect.BuffMoveSpeed, "+33 Move Speed"),
+        Scroll(ScrAlacrityC, "Scroll of Alacrity (Lesser)", BuffAlacrityC, SkillEffect.BuffCastSpeed, "+15% Cast Speed"),
+        Scroll(ScrAlacrityU, "Scroll of Alacrity",          BuffAlacrityU, SkillEffect.BuffCastSpeed, "+23% Cast Speed"),
+        Scroll(ScrAlacrityR, "Scroll of Alacrity (Greater)",BuffAlacrityR, SkillEffect.BuffCastSpeed, "+30% Cast Speed"),
+        Scroll(ScrAgilityC, "Scroll of Agility (Lesser)", BuffAgilityC, SkillEffect.BuffEvasion, "+1 Evasion"),
+        Scroll(ScrAgilityU, "Scroll of Agility",          BuffAgilityU, SkillEffect.BuffEvasion, "+2 Evasion"),
+        Scroll(ScrAgilityR, "Scroll of Agility (Greater)",BuffAgilityR, SkillEffect.BuffEvasion, "+4 Evasion"),
+        Scroll(ScrHasteC, "Scroll of Haste (Lesser)", BuffHasteC, SkillEffect.BuffAtkSpeed, "+15% Attack Speed"),
+        Scroll(ScrHasteU, "Scroll of Haste",          BuffHasteU, SkillEffect.BuffAtkSpeed, "+23% Attack Speed"),
+        Scroll(ScrHasteR, "Scroll of Haste (Greater)",BuffHasteR, SkillEffect.BuffAtkSpeed, "+33% Attack Speed"),
+
+        // ---- DASH — its own family, so it never touches your Swift buff. 15s, 1 min reuse. ----
+        SingleBuff(BuffDashC, "Dash", FamDash, 1, SkillEffect.BuffMoveSpeed,
+            new(SkillEffect.BuffMoveSpeed, 15, ModifierMode.Flat), "+15 Move Speed."),
+        SingleBuff(BuffDashU, "Dash", FamDash, 2, SkillEffect.BuffMoveSpeed,
+            new(SkillEffect.BuffMoveSpeed, 30, ModifierMode.Flat), "+30 Move Speed."),
+        SingleBuff(BuffDashR, "Dash", FamDash, 3, SkillEffect.BuffMoveSpeed,
+            new(SkillEffect.BuffMoveSpeed, 45, ModifierMode.Flat), "+45 Move Speed."),
+        SingleBuff(BuffDashE, "Dash", FamDash, 4, SkillEffect.BuffMoveSpeed,
+            new(SkillEffect.BuffMoveSpeed, 50, ModifierMode.Flat), "+50 Move Speed."),
+        SingleBuff(BuffDashL, "Dash", FamDash, 5, SkillEffect.BuffMoveSpeed,
+            new(SkillEffect.BuffMoveSpeed, 55, ModifierMode.Flat), "+55 Move Speed."),
+        SingleBuff(BuffDashM, "Dash", FamDash, 6, SkillEffect.BuffMoveSpeed,
+            new(SkillEffect.BuffMoveSpeed, 60, ModifierMode.Flat), "+60 Move Speed."),
+
+        DashPotion(PotDashC, "Dash Potion (Lesser)",   BuffDashC, 15),
+        DashPotion(PotDashU, "Dash Potion",            BuffDashU, 30),
+        DashPotion(PotDashR, "Dash Potion (Greater)",  BuffDashR, 45),
+        DashPotion(PotDashE, "Dash Potion (Superior)", BuffDashE, 50),
+        DashPotion(PotDashL, "Dash Potion (Grand)",    BuffDashL, 55),
+        DashPotion(PotDashM, "Dash Potion (Supreme)",  BuffDashM, 60),
 
         // ---- Learnable HP Boost — ONE skill, 3 levels (+5 / +15 / +35% Max HP) ----
         new(HpBoost, "HP Boost", BaseClass.Mage, SkillEffect.BuffHp,
@@ -445,32 +580,9 @@ public static partial class SkillCatalog
             "Passive. Spells fizzle on you at least 10/15/20% of the time.",
             new PassiveEffect(MagicFailFloor: 0.10f), new PassiveEffect(MagicFailFloor: 0.15f), new PassiveEffect(MagicFailFloor: 0.20f)),
 
-        // ---- Wind Walk (move-speed self buff, learnable) ----
-        new(WindWalk, "Wind Walk", BaseClass.Mage,
-            SkillEffect.BuffMoveSpeed | SkillEffect.BuffEvasion,
-            MpCost: 30, CastTicks: 10, CooldownTicks: 10, Range: 0, Power: 0,
-            DurationTicks: 12000, BuffKey: "wind_walk", Rank: 1,
-            Magnitudes: new EffectMagnitude[]
-            {
-                new(SkillEffect.BuffMoveSpeed, 33, ModifierMode.Flat),
-                new(SkillEffect.BuffEvasion, 5, ModifierMode.Flat),
-            },
-            Category: SkillCategory.Buff, SpCost: 1500, TargetMode: TargetMode.SelfOnly,
-            Description: "Move +33 and Evasion +5 for 20 minutes (self)."),
-
-        // Party version: same effect + same BuffKey, but buffs nearby allies.
-        new(MassWindWalk, "Mass Wind Walk", BaseClass.Mage,
-            SkillEffect.BuffMoveSpeed | SkillEffect.BuffEvasion,
-            MpCost: 120, CastTicks: 15, CooldownTicks: 50, Range: 0, Power: 0,
-            DurationTicks: 12000, BuffKey: "wind_walk", Rank: 1,
-            Magnitudes: new EffectMagnitude[]
-            {
-                new(SkillEffect.BuffMoveSpeed, 33, ModifierMode.Flat),
-                new(SkillEffect.BuffEvasion, 5, ModifierMode.Flat),
-            },
-            Category: SkillCategory.Buff, SpCost: 5000,
-            TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
-            Description: "Move +33 and Evasion +5 to nearby allies for 20 minutes."),
+        // (Wind Walk / Mass Wind Walk DELETED 2026-07-31 — the buff-ladder pass. They were a second,
+        //  unranked source of move speed sitting outside every family; the improved Speed buff and
+        //  the Swift line replace them. Don't re-home them.)
 
         // ---- Return line (universal escape / recall to the nearest town) ----
         // The FREE fallback: a long 30s channel that ANY damage cancels (FragileCast), 5-min reuse.

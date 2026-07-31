@@ -674,8 +674,8 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>The per-class display name for a skill (cleric's wind_walk =
-    /// "Holy Speed"); falls back to the canonical name.</summary>
+    /// <summary>The per-class display name for a skill (the God class's holy_speed =
+    /// "God Speed"); falls back to the canonical name.</summary>
     private string SkillDisplayName(string skillId, string fallback)
     {
         Archetype? arch = _mySecondClass > 0 ? ClassCatalog.Get(_mySecondClass)?.Archetype : null;

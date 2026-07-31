@@ -20,7 +20,6 @@ public static class SkillIcons
     private static readonly Dictionary<string, string> Map = new()
     {
         // ---- Universal / common ----
-        ["wind_walk"]        = "🌀",   // Wind Walk (nuker move-speed buff)
         ["return_town"]      = "🏠",
         ["use_scroll_return"]     = "📜",
         ["use_scroll_return_ult"] = "🕊",
@@ -29,8 +28,16 @@ public static class SkillIcons
         ["angels_protection"] = "😇",
 
         // ---- BUFFS (highest priority) ----
+        // The four SINGLE speed buffs (docs/design/BuffLadders.md): a potion, a scroll and one rung
+        // of the improved Speed group all apply these, so the glyph is the EFFECT's, not the source's.
+        ["buff_swift_c"] = "🌀", ["buff_swift_u"] = "🌀", ["buff_swift_r"] = "🌀",
+        ["buff_alacrity_c"] = "🌠", ["buff_alacrity_u"] = "🌠", ["buff_alacrity_r"] = "🌠",
+        ["buff_agility_c"] = "🤸", ["buff_agility_u"] = "🤸", ["buff_agility_r"] = "🤸",
+        ["buff_haste_c"] = "⏩", ["buff_haste_u"] = "⏩", ["buff_haste_r"] = "⏩",
+        ["buff_dash_c"] = "🏃", ["buff_dash_u"] = "🏃", ["buff_dash_r"] = "🏃",
+        ["buff_dash_e"] = "🏃", ["buff_dash_l"] = "🏃", ["buff_dash_m"] = "🏃",
         ["mage_might"]  = "💪",   // Might — atk/def
-        ["holy_speed"]  = "💨",   // cleric "Holy Speed"
+        ["holy_speed"]  = "💨",   // the improved Speed group
         ["holy_body"]   = "🌿",   // HP-regen
         ["holy_force"]  = "🔰",   // interrupt resist / +M.Atk
         ["holy_focus"]  = "🎯",   // crit rate

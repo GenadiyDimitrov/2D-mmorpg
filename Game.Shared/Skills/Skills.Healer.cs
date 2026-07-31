@@ -73,51 +73,41 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 241, MpCost: 96, InitialMpCost: 20, SpCost: 25000, Description: "Party heal power 241."),
             }),
 
-        // Speed — party-castable cast-speed + move-speed (+evasion) buff (20 min).
-        new(HolySpeed, "Speed", BaseClass.Mage,
-            SkillEffect.BuffCastSpeed | SkillEffect.BuffMoveSpeed | SkillEffect.BuffEvasion,
+        // Improved Speed — the first IMPROVED (group) buff: it applies no buff of its own, only its
+        // CHILDREN — one rung of each of the four speed families (swift / alacrity / agility / haste).
+        // Each child competes on its own family key, so a rare Alacrity potion can override just the
+        // cast part and leave the rest of the blessing standing. Levels are pure child references;
+        // every value below is a rung the potions and scrolls also sell. See docs/design/BuffLadders.md.
+        //
+        // Levels 5-6 exist as data but have no learn slot yet: the cleric table stops at level 4
+        // (char 35) and the Warchanter discipline tables are still commented out pending their CSVs.
+        new(HolySpeed, "Improved Speed", BaseClass.Mage,
+            SkillEffect.BuffCastSpeed | SkillEffect.BuffMoveSpeed | SkillEffect.BuffEvasion | SkillEffect.BuffAtkSpeed,
             MpCost: 50, CastTicks: 10, CooldownTicks: 10, Range: 600, Power: 0,
             DurationTicks: 12000, BuffKey: "holy_speed", Rank: 1, InitialMpCost: 10,
             Category: SkillCategory.Buff,
-            Magnitudes: new EffectMagnitude[]
-            {
-                new(SkillEffect.BuffCastSpeed, 0.15f),
-                new(SkillEffect.BuffMoveSpeed, 20, ModifierMode.Flat),
-            },
+            ChildBuffs: new[] { BuffSwiftU, BuffAlacrityC },
             Description: "Blesses an ally (or self): faster casting and movement for 20 minutes.",
             Levels: new[]
             {
                 new SkillLevel(MpCost: 50, InitialMpCost: 10, SpCost: 3200,
-                    Magnitudes: new EffectMagnitude[]
-                    {
-                        new(SkillEffect.BuffCastSpeed, 0.15f),
-                        new(SkillEffect.BuffMoveSpeed, 20, ModifierMode.Flat),
-                    },
-                    Description: "Cast +15%, Move +20."),
+                    ChildBuffs: new[] { BuffSwiftU, BuffAlacrityC },
+                    Description: "Move +20, Cast +15%."),
                 new SkillLevel(MpCost: 75, InitialMpCost: 15, SpCost: 6400,
-                    Magnitudes: new EffectMagnitude[]
-                    {
-                        new(SkillEffect.BuffCastSpeed, 0.15f),
-                        new(SkillEffect.BuffMoveSpeed, 20, ModifierMode.Flat),
-                        new(SkillEffect.BuffEvasion, 2, ModifierMode.Flat),
-                    },
-                    Description: "Cast +15%, Move +20, Evasion +2."),
+                    ChildBuffs: new[] { BuffSwiftR, BuffAlacrityU },
+                    Description: "Move +33, Cast +23%."),
                 new SkillLevel(MpCost: 75, InitialMpCost: 15, SpCost: 12800,
-                    Magnitudes: new EffectMagnitude[]
-                    {
-                        new(SkillEffect.BuffCastSpeed, 0.15f),
-                        new(SkillEffect.BuffMoveSpeed, 33, ModifierMode.Flat),
-                        new(SkillEffect.BuffEvasion, 2, ModifierMode.Flat),
-                    },
-                    Description: "Cast +15%, Move +33, Evasion +2."),
-                new SkillLevel(MpCost: 75, InitialMpCost: 15, SpCost: 25000,
-                    Magnitudes: new EffectMagnitude[]
-                    {
-                        new(SkillEffect.BuffCastSpeed, 0.23f),
-                        new(SkillEffect.BuffMoveSpeed, 33, ModifierMode.Flat),
-                        new(SkillEffect.BuffEvasion, 2, ModifierMode.Flat),
-                    },
-                    Description: "Cast +23%, Move +33, Evasion +2."),
+                    ChildBuffs: new[] { BuffSwiftR, BuffAlacrityU, BuffAgilityU },
+                    Description: "Move +33, Cast +23%, Evasion +2."),
+                new SkillLevel(MpCost: 90, InitialMpCost: 18, SpCost: 25000,
+                    ChildBuffs: new[] { BuffSwiftR, BuffAlacrityR, BuffAgilityU, BuffHasteC },
+                    Description: "Move +33, Cast +30%, Evasion +2, Attack Speed +15%."),
+                new SkillLevel(MpCost: 105, InitialMpCost: 21, SpCost: 50000,
+                    ChildBuffs: new[] { BuffSwiftR, BuffAlacrityR, BuffAgilityR, BuffHasteU },
+                    Description: "Move +33, Cast +30%, Evasion +4, Attack Speed +23%."),
+                new SkillLevel(MpCost: 120, InitialMpCost: 24, SpCost: 100000,
+                    ChildBuffs: new[] { BuffSwiftR, BuffAlacrityR, BuffAgilityR, BuffHasteR },
+                    Description: "Move +33, Cast +30%, Evasion +4, Attack Speed +33%."),
             }),
 
         // Armor Mastery — DATA-DRIVEN passive that replaces Robe Mastery: its effect

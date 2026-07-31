@@ -40,6 +40,18 @@ public static partial class SkillCatalog
             PhysMpCostPct: physMpCost, MagicMpCostPct: magicMpCost,
             Description: desc + " (buffer's blessing, 1 hour).");
 
+    /// <summary>An NPC-buffer buff that is a GROUP: it applies the named single buffs (children)
+    /// rather than one monolithic buff of its own, so each part competes on its own family ladder
+    /// with whatever the player already drank, read or was blessed with. Rank lives on the CHILDREN
+    /// (NpcBuffRank is meaningless for a group — the buffer's advantage is its 1-hour duration).</summary>
+    private static SkillDef NpcBuffGroup(string id, string name, SkillEffect effect,
+        string[] children, string desc) =>
+        new(id, name, BaseClass.Mage, effect,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            DurationTicks: NpcBuffTicks, ChildBuffs: children,
+            Category: SkillCategory.Buff,
+            Description: desc + " (buffer's blessing, 1 hour).");
+
     private static SkillDef[] BufferSkills() => new SkillDef[]
     {
         NpcBuff(NpcMight, "Might", "mage_might",
@@ -69,13 +81,13 @@ public static partial class SkillCatalog
             },
             "+30% physical crit rate, +35% crit damage, double magic crit rate"),
 
-        NpcBuff(NpcSpeed, "Speed", "holy_speed",
+        // Speed is now an IMPROVED (group) buff — it hands out the four single speed buffs at their
+        // top rung, which is exactly level 6 of the cleric's own Improved Speed. Its edge over a
+        // player buffer is no longer a bigger number but the DURATION (1 hour vs 20 minutes), which
+        // the equal-rank "longer time wins" rule in ApplyBuff protects. See docs/design/BuffLadders.md.
+        NpcBuffGroup(NpcSpeed, "Improved Speed",
             SkillEffect.BuffAtkSpeed | SkillEffect.BuffMoveSpeed | SkillEffect.BuffCastSpeed | SkillEffect.BuffEvasion,
-            new EffectMagnitude[]
-            {
-                new(SkillEffect.BuffAtkSpeed, 0.33f), new(SkillEffect.BuffMoveSpeed, 33, ModifierMode.Flat),
-                new(SkillEffect.BuffCastSpeed, 0.30f), new(SkillEffect.BuffEvasion, 4, ModifierMode.Flat),
-            },
+            new[] { BuffSwiftR, BuffAlacrityR, BuffAgilityR, BuffHasteR },
             "+33% attack speed, +30% cast speed, +33 move, +4 evasion"),
 
         NpcBuff(NpcBody, "Body", "holy_body",
