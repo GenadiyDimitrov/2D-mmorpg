@@ -70,11 +70,12 @@ public static partial class SkillCatalog
     /// the two layers no NPC sells and no consumable can reach, so this is the only way to see a
     /// fully-buffed character, which is the state the balance numbers are read at.
     ///
-    /// ⚠ ORDER MATTERS. The GROUPS come first deliberately: a group and its singles hand out the
-    /// same rungs for the same hour, and equal rank + equal time is REFUSED, so whichever lands
-    /// first owns the buff bar. Groups first means the bar shows four collapsed group squares
-    /// instead of fifteen loose ones — which is the whole point of looking at them. Any single a
-    /// group does not cover (Frenzy, Resolve's top rung, the speed four) still lands after.</summary>
+    /// ⚠ The GROUPS come first, and now they simply WIN: a group covers its families at group rank,
+    /// so every single it contains is refused when it arrives after. The bar ends up as the five
+    /// group squares + the three Harmonies + Frenzy (the one family no group contains) — nine rows
+    /// for the whole game's buff layer, which is the point of the improved tier. The order is kept
+    /// deliberate anyway: reversed, the singles would land first and then be evicted, which is the
+    /// same picture through twice the work.</summary>
     public static readonly string[] AdminBuffSet =
         new[] { NpcMightGroup, NpcForceGroup, NpcFocusGroup, NpcBodyGroup, NpcSpeed,
                 NpcHarmonyProtection, NpcHarmonyWarrior, NpcHarmonyWizard }
@@ -113,10 +114,10 @@ public static partial class SkillCatalog
             PhysMpCostPct: physMpCost, MagicMpCostPct: magicMpCost,
             Description: desc + " (buffer's blessing, 1 hour).");
 
-    /// <summary>An NPC-buffer buff that is a GROUP: it applies the named single buffs (children)
-    /// rather than one monolithic buff of its own, so each part competes on its own family ladder
-    /// with whatever the player already drank, read or was blessed with. Rank lives on the CHILDREN
-    /// (NpcBuffRank is meaningless for a group — the buffer's advantage is its 1-hour duration).</summary>
+    /// <summary>An NPC-buffer buff that is a GROUP: ONE buff carrying the numbers of every child
+    /// named here, covering each child's family. It evicts those singles and outranks anything the
+    /// player can drink or read afterwards — a group is by definition the max version of its parts
+    /// (docs/design/BuffLadders.md). NpcBuffRank does not apply: a group's rank is the GROUP rank.</summary>
     private static SkillDef NpcBuffGroup(string id, string name, SkillEffect effect,
         string[] children, string desc) =>
         new(id, name, BaseClass.Mage, effect,

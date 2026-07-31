@@ -761,6 +761,30 @@ if (buffPotion is not null)
 }
 
 // -------------------------------------------------------------------------------------------
+// 4e. A BUFF SCROLL IS PAID FOR (0.42.0). Every buff scroll read for free until then: the cast
+//     pipeline consumed a skill's own ConsumableId, which only the Return/Resurrect scrolls
+//     declare — so all 48 buff scrolls granted their hour and stayed in the bag. Invisible in a
+//     playtest until you notice the stack never shrinks, which is exactly this tool's job.
+//     A DIFFERENT family from 4d's potion (cast speed, not move speed) so the relog assertions
+//     below still measure the potion they were written for.
+// -------------------------------------------------------------------------------------------
+await a.Hub.SendAsync("DebugGive", ItemCatalog.CastScrollC, 2);
+await a.Settle();
+int ScrollsHeld() => a.Inv?.Items.Where(i => i.DefId == ItemCatalog.CastScrollC).Sum(i => i.Quantity) ?? 0;
+var scroll = a.Inv?.Items.FirstOrDefault(i => i.DefId == ItemCatalog.CastScrollC);
+Check("got two buff scrolls", ScrollsHeld() == 2, $"qty {ScrollsHeld()}");
+if (scroll is not null)
+{
+    await a.Hub.SendAsync("UsePotion", scroll.InstanceId);
+    await Task.Delay(1500);   // the scroll CHANNELS for ~1s; Settle's 500ms lands mid-cast
+    Check("reading a buff scroll CONSUMES one", ScrollsHeld() == 1, $"{ScrollsHeld()} left");
+    // Only a scroll runs an hour — the 20-minute potion from 4d can never clear 2000s, so this
+    // cannot pass on the potion's square by accident.
+    Check("the scroll's own hour-long buff is up",
+          a.Buffs?.Buffs.Any(x => !x.IsDebuff && x.SecondsLeft > 2000f) == true);
+}
+
+// -------------------------------------------------------------------------------------------
 // 5. THE REAL TEST: log out completely and log back in on a NEW connection. Everything above
 //    could still be alive purely in server memory. Only a relog proves it reached the DB.
 //

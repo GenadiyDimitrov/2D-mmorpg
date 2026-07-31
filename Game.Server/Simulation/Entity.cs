@@ -18,6 +18,22 @@ public class BuffInstance
     public string Key { get; init; } = "";
     public int Rank { get; init; }
 
+    /// <summary>For an IMPROVED (group) buff: the family keys it CONTAINS. The group is one buff at
+    /// one rank, but it competes for every family in here — it evicts those singles when it lands and
+    /// outranks any that are cast, drunk or read afterwards. Empty for an ordinary single buff, which
+    /// competes on <see cref="Key"/> alone. See docs/design/BuffLadders.md.</summary>
+    public string[] CoveredKeys { get; init; } = Array.Empty<string>();
+
+    /// <summary>Every family this buff occupies — its own, plus anything it covers.</summary>
+    public IEnumerable<string> Families
+    {
+        get
+        {
+            yield return Key;
+            foreach (var k in CoveredKeys) yield return k;
+        }
+    }
+
     /// <summary>The SKILL LEVEL this was applied at. Rank is the stacking-priority number, which is
     /// not the same thing — this is the argument ApplyBuff was called with, kept so a buff can be
     /// rebuilt exactly (magnitudes, DoT power and shield pool are all level-derived) when restoring
@@ -950,6 +966,16 @@ public class Entity
     /// so we know what was spent if it's interrupted/cancelled and what remains
     /// to charge on completion.</summary>
     public int CastInitialMpPaid { get; set; }
+
+    /// <summary>The inventory item that STARTED this cast, for a consumable with a cast time (a buff
+    /// scroll). One unit of it is taken when the cast lands, and nothing is taken if it is interrupted
+    /// — which is the whole reason the item is not consumed up front.
+    ///
+    /// It exists because the older mechanism keyed on the SKILL's <c>ConsumableId</c>, i.e. the skill
+    /// had to name its own item. The Return/Resurrection scrolls do; the 48 buff scrolls never did, so
+    /// they read for free, for ever. Naming the instance instead means every present and future
+    /// channelled consumable is charged for without authoring anything.</summary>
+    public Guid? CastFromItemInstance { get; set; }
 
     public Dictionary<string, int> SkillCooldowns { get; } = new();
 

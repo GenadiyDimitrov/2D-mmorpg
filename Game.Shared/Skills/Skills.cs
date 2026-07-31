@@ -48,14 +48,24 @@ public record SkillDef(
     string BuffKey = "",
     int Rank = 0,
     string[]? Replaces = null,
-    // IMPROVED (group) buff — see docs/design/BuffLadders.md. A skill with ChildBuffs applies NO
-    // buff of its own: ApplyBuff fans out and applies each CHILD skill id here as an ordinary buff,
-    // each on its own family BuffKey + Rank, so each resolves independently against what the player
-    // already has (a rare Alacrity potion can override just the cast part of a low Speed buff and
-    // leave the move part alone). The children carry only effect + family + rank; DURATION, target
-    // mode and MP cost stay on the PARENT, and the parent's id is stamped on every child as
-    // SourceSkillId so the buff bar can collapse the group into one icon.
-    // The parent's own Effect must still be the UNION of the children's flags — that is what marks
+    // The single buff(s) this skill hands out — see docs/design/BuffLadders.md. The COUNT decides
+    // what it is:
+    //
+    //   ONE child  = a WRAPPER (a potion, a scroll, a buffer's blessing, a class's single buff). The
+    //                buff that lands is the CHILD — the family's rung, on the family's key, at the
+    //                family's rank — and the wrapper contributes only DURATION, target mode, MP cost
+    //                and the icon. That is what makes a Greater Might potion and a cleric's Might
+    //                the same buff from different bottles, so they can never stack.
+    //   MANY       = an IMPROVED (group) buff. It lands as ONE buff carrying every child's numbers,
+    //                on the skill's own BuffKey, at GROUP rank (above every ladder), COVERING each
+    //                child's family: it evicts those singles when it lands and no single, potion or
+    //                scroll can override any part of it afterwards. One blessing, one bar square.
+    //
+    // ⚠ AUTHORING RULE for a group: it locks its families out, so it must be at least as strong as
+    // the best single obtainable in EVERY family it contains, or it is a downgrade the player cannot
+    // refuse. Today every group is granted at its max level only (Warchanter 66-74, the NPC/admin
+    // sets), which satisfies it.
+    // The skill's own Effect must still be the UNION of the children's flags — that is what marks
     // it a buff at all (AnyBuff gates the cast/consume paths). null/empty = an ordinary single buff.
     string[]? ChildBuffs = null,
     string Description = "",

@@ -357,10 +357,11 @@ playtest-15 big design #1). §32 is now fully built.
           your target frame is empty (no roaming, no picking your own, no chasing what hit you).
         · All of it must survive a **relog** (it rides in `AutoHuntJson` — no db reset).
 32x.[ ] **An improved buff is ONE square on the bar.** Cast the cleric's Improved Speed: exactly one
-        square named "Improved Speed" (0.36.0 put up four). Its timer must be the SHORTEST part, the
-        tap popup must list the parts with their own times, and press-and-HOLD must remove the WHOLE
-        group — no leftovers. Then check a potion/scroll square is unchanged: a Swift potion still
-        reads "Swift", NOT "Swift Potion (Greater)".
+        square (0.36.0 put up four). ⚠ **0.42.0 changed how**: it is now literally one buff, so the
+        timer is the GROUP's own (not "the shortest part") and there are no per-part times in the
+        popup — see 34a/34b, which replace the middle of this row. Still true and still worth
+        checking: press-and-HOLD removes the whole thing, and a potion square is unchanged — a Swift
+        potion reads "Swift", NOT "Swift Potion (Greater)".
 32w.[ ] **The NPC buffer gives BASIC buffs only, one hour each.** ⚠ **The list GREW in 0.40.0** —
         see 33d, which supersedes the nine-buff list this item was written against. Still true and
         still worth checking here: **no group buff and no Harmony** at the NPC, each blessing lands as
@@ -389,7 +390,9 @@ version handshake — nothing on this list is a client change.
 area: a buff potion puts a timed buff up, the buff **survives a relog**, keeps its **remaining** time
 (1200.0s → 1194.4s, not re-cast at full) and is applied **exactly once**.
 The one thing to prove above all: **a buff potion no longer stacks with the buff it duplicates.**
-33a.[ ] **A potion competes with the class buff instead of adding to it.** Get a cleric's Might (now
+33a.[ ] ⚠ **DEAD — REVERSED BY 0.42.0 (see §34).** A potion no longer takes over one part of a
+        group; a group outranks all of its parts. The row is kept only so the old behaviour is
+        recognisable if you see it. Original text: **A potion competes with the class buff instead of adding to it.** Get a cleric's Might (now
         **"Might and Bulwark"**) at level 1 (+8% P.Atk / +8% P.Def), note P.Atk in the stats window,
         then drink a **Might Potion (Lesser)** — also +8%. It must be **REFUSED and not consumed**
         ("a stronger effect is already active"), and P.Atk must NOT move. Now drink a **Might Potion
@@ -439,10 +442,38 @@ The one thing to prove above all: **a buff potion no longer stacks with the buff
         Warchanter learns e.g. **Might and Bulwark**, the separate Might / Bulwark / Vampirism / Aim
         skills must DISAPPEAR from the bar and the learn list; the buff bar is unaffected (the
         replacement is on the skill, not the buff).
-33k.[ ] **Admin buff = 27** (0.41.0, replaces 33e's "22"): five improved groups + three Harmony + the
-        19 singles. The bar should show the GROUPS collapsed (Might and Bulwark, Force and Ward, Focus
-        and Ferocity, Body and Soul, Swift and Sure) rather than fifteen loose squares — the groups
-        are applied first for exactly that reason. Harmony must be visible as its own three squares.
+33k.[ ] ⚠ **SUPERSEDED BY 34f** — the admin buff is **9 rows** now, not 27. Read 34f instead.
+
+--- 34. 🔴 THE GROUP BUFF IS ONE BUFF (0.42.0) — the L2 rule, replacing the 0.36-0.41 "bag of
+parts". Server-side only; no Unity file changed. ⚠ reset `game.db`. ---
+It reverses part of §33: a potion no longer takes over one part of a blessing. **33a is dead** —
+what it describes was the old model. Everything about the potion/scroll LADDER (33b-33j) still holds.
+34a.[ ] **The group eats its singles and cannot be undone.** Take Swift and Agility from the NPC
+        buffer (1h each), then have a Warchanter cast **Swift and Sure**: both squares vanish, ONE
+        square replaces them, and the numbers are the group's max rungs. Now drink a **Rare Agility
+        potion**: refused, **still in your bag**, evasion does not move. Same with the cleric's own
+        Agility — "a stronger blessing is already active".
+34b.[ ] **The group's own square behaves.** One timer (the group's), the tap popup lists all its
+        parts and their numbers, press-and-hold removes the WHOLE thing, and after it goes the
+        singles do NOT come back (they were consumed, not parked).
+34c.[ ] 🔴 **Buff scrolls are finally CONSUMED.** Read a Scroll of Might: the buff lands and the
+        stack drops by one. Before 0.42.0 no buff scroll was ever taken — only Return/Resurrect
+        named their own item, so all 48 buff scrolls read for free, for ever. Check the count on a
+        potion too (that half always worked).
+34d.[ ] **A scroll that would be refused is not read at all.** Under a stronger buff, pressing the
+        scroll gives "would have no effect" **before** the 1s cast starts — no cast bar, no cooldown,
+        nothing lost. Interrupt a scroll mid-read (walk into a mob): the scroll must survive that too.
+34e.[ ] **Two groups that share nothing coexist.** Might and Bulwark + Swift and Sure both up, two
+        squares, all eight numbers live. And a HIGHER rank of the same group replaces the lower one
+        rather than being refused.
+34f.[ ] **Admin buff = 9 rows** (replaces 33e/33k): five groups + three Harmony + **Frenzy** — the
+        only family no group contains. Every other single is refused by the group covering it. If you
+        see fifteen loose squares, the covering rule is not firing.
+34g.[ ] **Relog.** A group comes back as ONE square with LESS time, its full numbers intact, applied
+        exactly once. (Old saves hold the individual children — reset `game.db` or expect leftovers.)
+34h.[ ] **The autopilot knows.** With auto-buff on and a group up, it must not re-cast it every cycle
+        (watch MP), and auto-potions must not drink a Might potion under Might and Bulwark. When the
+        group expires it may cast it again.
 
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends

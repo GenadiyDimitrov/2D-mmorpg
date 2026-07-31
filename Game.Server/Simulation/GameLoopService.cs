@@ -1322,27 +1322,13 @@ public class GameLoopService : BackgroundService
     /// double-click (HandleRemoveBuff) also turns it off.</summary>
     private void HandleToggle(Entity caster, SkillDef def)
     {
-        // A GROUP toggle (ChildBuffs) holds no buff under its own key — it is "on" when its children
-        // are, and turning it off means dropping all of them. No shipped toggle is a group yet; this
-        // is here so the first one that is doesn't fail silently as an un-turn-off-able stance.
-        if (def.ChildBuffs is { Length: > 0 } toggleKids)
-        {
-            var kidKeys = toggleKids
-                .Select(id => SkillCatalog.Get(id))
-                .Where(d => d is not null)
-                .Select(d => string.IsNullOrEmpty(d!.BuffKey) ? d.Name : d.BuffKey)
-                .ToHashSet();
-            if (caster.Buffs.RemoveAll(b => kidKeys.Contains(b.Key)) > 0)
-            {
-                caster.RecomputeDerived();
-                PushBuffs(caster);
-                SendStats(caster);
-                SendSystemToEntity(caster, $"{def.Name} deactivated.");
-                return;
-            }
-        }
-
-        string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
+        // A one-child WRAPPER holds its buff under the CHILD's family key, not its own; a GROUP holds
+        // one buff under its own key, so the ordinary path below finds that. No shipped toggle is
+        // either, but the wrapper case would otherwise be an un-turn-off-able stance.
+        string key = def.ChildBuffs is { Length: 1 } toggleKid
+                     && SkillCatalog.Get(toggleKid[0]) is SkillDef kid
+                   ? (string.IsNullOrEmpty(kid.BuffKey) ? kid.Name : kid.BuffKey)
+                   : string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
         var existing = caster.Buffs.FirstOrDefault(b => b.Key == key);
         if (existing is not null)
         {
@@ -2469,6 +2455,13 @@ public class GameLoopService : BackgroundService
                 SendSystemToEntity(player, $"{skill.Name} is on cooldown.");
                 return false;
             }
+            // A buff scroll is charged for when the cast LANDS, so a read that would be refused on
+            // rank has to be stopped here — otherwise the scroll is spent on nothing at all.
+            if ((skill.Effect & SkillEffect.AnyBuff) != 0 && !BuffWouldLand(player, skill, 1))
+            {
+                SendSystemToEntity(player, $"{skill.Name} would have no effect — a stronger blessing is already active.");
+                return false;
+            }
             // A resurrection scroll targets a DEAD ALLY (like the healer's res), not the user. Validate the
             // named target the same way the cast command does; everything else channels on the user.
             if (skill.Resurrect)
@@ -2487,6 +2480,12 @@ public class GameLoopService : BackgroundService
             }
             player.QueuedSkillId = skill.Id;
             player.QueuedTargetId = player.Id;
+            // A buff scroll's skill names no ConsumableId (there are 48 of them and the id would have
+            // to be authored on both sides), so remember the INSTANCE that started the cast and charge
+            // for that when it lands. Skills that DO name their item keep the old path — setting this
+            // as well would consume two scrolls for one read.
+            if (string.IsNullOrEmpty(skill.ConsumableId))
+                player.CastFromItemInstance = item.InstanceId;
             return true;
         }
 
@@ -3464,26 +3463,16 @@ public class GameLoopService : BackgroundService
 
     /// <summary>Is this buff already running on the entity, so the autopilot should skip it?
     ///
-    /// An IMPROVED (group) buff applies NO buff under its own key — only its children — so the old
-    /// "is my BuffKey in the list" test can never match one, and the autopilot would re-queue it
-    /// every single cycle: MP drained, the whole party re-stamped, an offline buffer dry in minutes.
-    /// So a group is "up" only when EVERY child is present at (at least) its own rank. That is also
-    /// the better behaviour: when an overriding potion on one child expires, this goes false and the
-    /// buffer restores that one child next cycle instead of leaving a hole until the group expires.</summary>
+    /// A ONE-CHILD wrapper (a potion, a scroll, a buffer's single blessing) puts up no buff under its
+    /// own key — the CHILD's family key is what lands — so testing the wrapper's key would never match
+    /// and the autopilot would re-queue it every cycle: MP drained, the party re-stamped, an offline
+    /// buffer dry in minutes. A GROUP does land under its own key, so that one tests directly.</summary>
     private static bool BuffAlreadyUp(Entity p, SkillDef def, int level)
     {
-        if (def.ChildBuffsAt(level) is { Length: > 0 } children)
-        {
-            foreach (var childId in children)
-            {
-                if (SkillCatalog.Get(childId) is not SkillDef child) continue;
-                string ck = string.IsNullOrEmpty(child.BuffKey) ? child.Name : child.BuffKey;
-                if (!p.Buffs.Any(b => b.Key == ck && b.Rank >= child.Rank)) return false;
-            }
-            return true;
-        }
-        string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
-        return p.Buffs.Any(b => b.Key == key);
+        // BuffPlan resolves a wrapper to its child, so this asks about the buff that actually lands.
+        // A group covering the family counts too: don't drink a Might potion under Might and Bulwark.
+        var (key, rank, _, _) = BuffPlan(def, level);
+        return p.Buffs.Any(b => (b.Key == key || b.CoveredKeys.Contains(key)) && b.Rank >= rank);
     }
 
     /// <summary>How little time may be left on an auto-buff before the chain renews it (owner: "below
@@ -3494,14 +3483,16 @@ public class GameLoopService : BackgroundService
     /// <summary>Does the chain consider this buff already taken care of? Yes when a STRICTLY STRONGER
     /// buff of the family is up (recasting under it would just be refused by ApplyBuff and burn the MP),
     /// or when our own rank is up with more than the refresh window left.</summary>
-    private static bool AutoBuffCovered(Entity e, SkillDef def, int window)
+    private static bool AutoBuffCovered(Entity e, SkillDef def, int window, int rank)
     {
         string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
         foreach (var b in e.Buffs)
         {
-            if (b.Key != key) continue;
-            if (b.Rank > def.Rank) return true;                     // something better is running
-            if (b.Rank == def.Rank) return b.Toggle || b.TicksRemaining > window;
+            // A group covering this family counts as covering the single too — recasting the single
+            // under an improved buff would just be refused, and the autopilot must not keep trying.
+            if (b.Key != key && !b.CoveredKeys.Contains(key)) continue;
+            if (b.Rank > rank) return true;                          // something better is running
+            if (b.Rank == rank) return b.Toggle || b.TicksRemaining > window;
         }
         return false;                                                // absent, or only a weaker one
     }
@@ -3512,16 +3503,13 @@ public class GameLoopService : BackgroundService
     /// a bottle a minute early is a different (and more expensive) proposition than recasting a skill.</summary>
     private static bool AutoBuffUpToDate(Entity p, SkillDef def, int level)
     {
-        if (def.ChildBuffsAt(level) is { Length: > 0 } children)
-        {
-            foreach (var childId in children)
-            {
-                if (SkillCatalog.Get(childId) is not SkillDef child) continue;
-                if (!AutoBuffCovered(p, child, RefreshWindow(child))) return false;
-            }
-            return true;
-        }
-        return AutoBuffCovered(p, def, RefreshWindow(def));
+        // One child = the wrapper hands out that family's rung; ask about the CHILD.
+        if (def.ChildBuffsAt(level) is { Length: 1 } one
+            && SkillCatalog.Get(one[0]) is SkillDef child)
+            return AutoBuffCovered(p, child, RefreshWindow(child), child.Rank);
+        // A group lands under its own key at GROUP rank, which is what a renewal has to beat.
+        bool isGroup = def.ChildBuffsAt(level) is { Length: > 1 };
+        return AutoBuffCovered(p, def, RefreshWindow(def), isGroup ? GroupRank(level) : def.Rank);
     }
 
     private static int RefreshWindow(SkillDef def) =>
@@ -3584,7 +3572,7 @@ public class GameLoopService : BackgroundService
                 case AutoSkillKind.Debuff:
                     // Missing or WEAKER on the enemy (owner) — the old test was "any buff with this
                     // key", which let a rank-1 poison block the rank-3 one for its whole duration.
-                    if (target is null || AutoBuffCovered(target, def, 0)) continue;
+                    if (target is null || AutoBuffCovered(target, def, 0, def.Rank)) continue;
                     tgtId = target.Id; break;
                 case AutoSkillKind.Attack:
                     if (target is null) continue;
@@ -5410,8 +5398,9 @@ public class GameLoopService : BackgroundService
                       // consumable row); the child's own def only knows the plain buff row.
                       rowOverride: SkillCatalog.Get(snap.SourceSkillId)?.BuffRow);
 
-            // Stacks and shield pool still need carrying over. Find it by the same key ApplyBuff used.
-            string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
+            // Stacks and shield pool still need carrying over. Find it by the same key ApplyBuff used
+            // (BuffPlan, so a wrapper resolves to the child that actually landed).
+            string key = BuffPlan(def, snap.Level).Key;
             if (p.Buffs.FirstOrDefault(b => b.Key == key) is not BuffInstance restored) continue;
             restored.TicksRemaining = ticksLeft;
             restored.Stacks = Math.Clamp(snap.Stacks, 1, Math.Max(1, restored.MaxStacks));
@@ -6028,6 +6017,23 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // The consumable that STARTED this cast (a buff scroll): take one unit now that it lands.
+        // Gone from the bag mid-cast (traded, dropped, sold) = cancel without charging the finish MP,
+        // exactly like a missing reagent.
+        if (caster.CastFromItemInstance is Guid usedInstance)
+        {
+            caster.CastFromItemInstance = null;
+            var used = caster.Inventory.FirstOrDefault(i => i.InstanceId == usedInstance);
+            if (used is null)
+            {
+                SendSystemToEntity(caster, $"You no longer have the {def.Name.Replace("Scroll of ", "")} scroll.");
+                CancelCast(caster);
+                return;
+            }
+            ConsumeOne(caster, used);
+            SendInventory(caster);
+        }
+
         // Reagent: consume the required item now that the cast lands (re-check in case it
         // was traded/dropped mid-cast). Missing = cancel without charging the finish MP.
         if (!string.IsNullOrEmpty(def.ConsumableId))
@@ -6375,48 +6381,129 @@ var effect = def.Effect;
             Kill(target, caster);
     }
 
+    /// <summary>The rank an IMPROVED (group) buff lands at. Far above any single's (a family ladder
+    /// has at most six rungs), because a group is by definition the max version of everything it
+    /// contains: no potion, scroll or single blessing may override one part of it. The LEVEL is added
+    /// so a higher rank of the same group still replaces a lower one that is already running.</summary>
+    private static int GroupRank(int level) => 100 + level;
+
+    /// <summary>What a skill will actually put up: the family key it lands under, the rank it
+    /// competes at, the families it covers (a group only) and how long it runs. A ONE-CHILD wrapper
+    /// resolves to its child, because that is the buff that lands — the wrapper only lends it a
+    /// duration. This is the single source of truth for both applying a buff and asking whether it
+    /// WOULD apply.</summary>
+    private static (string Key, int Rank, string[] Covered, int Duration) BuffPlan(SkillDef def, int level)
+    {
+        var kids = def.ChildBuffsAt(level);
+        if (kids is { Length: 1 } && SkillCatalog.Get(kids[0]) is SkillDef only)
+        {
+            var inner = BuffPlan(only, 1);
+            return (inner.Key, inner.Rank, inner.Covered, def.DurationTicks);
+        }
+        string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
+        if (kids is { Length: > 1 })
+        {
+            var covered = new List<string>(kids.Length);
+            foreach (var childId in kids)
+                if (SkillCatalog.Get(childId) is SkillDef child)
+                    covered.Add(string.IsNullOrEmpty(child.BuffKey) ? child.Name : child.BuffKey);
+            return (key, GroupRank(level), covered.ToArray(), def.DurationTicks);
+        }
+        return (key, def.Rank, Array.Empty<string>(), def.DurationTicks);
+    }
+
+    /// <summary>Would this buff land, or be refused by something stronger? Asked BEFORE a channelled
+    /// consumable starts its cast — a buff scroll is taken from the bag when the cast LANDS, so
+    /// without this you would spend a second reading a scroll and lose it for nothing.</summary>
+    private static bool BuffWouldLand(Entity target, SkillDef def, int level)
+    {
+        var (key, rank, covered, duration) = BuffPlan(def, level);
+        foreach (var b in target.Buffs)
+        {
+            if (!BuffsConflict(b, key, covered)) continue;
+            if (rank < b.Rank) return false;
+            if (rank == b.Rank && b.TicksRemaining > duration) return false;
+        }
+        return true;
+    }
+
+    /// <summary>Do these two occupy any of the same families? A single competes on its own key; a
+    /// group competes on every family it covers. Groups that share nothing (Might and Bulwark vs
+    /// Swift and Sure) coexist untouched.</summary>
+    private static bool BuffsConflict(BuffInstance active, string key, string[] covered)
+    {
+        foreach (var f in active.Families)
+        {
+            if (f == key) return true;
+            foreach (var c in covered) if (f == c) return true;
+        }
+        return false;
+    }
+
     /// <summary>Apply a buff with the two stacking rules:
-    /// (1) Same BuffKey: apply only if the incoming Rank >= existing Rank
-    ///     (weaker self-recast is ignored entirely); on apply, replace it. On EQUAL rank the
-    ///     one with the longer time left wins — potions and scrolls share tiers and differ only
-    ///     in duration, so without that a 20-minute potion would silently eat a 1-hour scroll.
+    /// (1) FAMILY conflict, then Rank: apply only if the incoming Rank >= the rank of every active
+    ///     buff whose family set overlaps this one's (weaker is ignored entirely); on apply, replace
+    ///     them. On EQUAL rank the one with the longer time left wins — potions and scrolls share
+    ///     tiers and differ only in duration, so without that a 20-minute potion would silently eat
+    ///     a 1-hour scroll.
     /// (2) Replaces: unconditionally remove any active buff whose key is listed,
     ///     regardless of rank or magnitude.
-    /// An IMPROVED (group) buff — one with ChildBuffs — applies no buff of its own and fans out
-    /// to its children instead; see docs/design/BuffLadders.md.
+    /// A skill with ONE child hands out that child (the family's rung) and keeps only the duration
+    /// and bar row; a skill with SEVERAL is an improved GROUP and lands as one covering buff.
+    /// See docs/design/BuffLadders.md.
     /// Returns TRUE if anything actually landed: a consumable must not be eaten when it didn't.</summary>
     /// <param name="durationOverride">Ticks to run for, overriding the skill's own DurationTicks
-    /// (-1 = use the skill's). A group buff's children run for the PARENT's duration.</param>
-    /// <param name="sourceSkillId">The skill id stamped on the buff for the bar's icon/grouping
-    /// (null = this skill's own). A group buff stamps its children with the PARENT's id, so the
-    /// client can collapse them into one square.</param>
+    /// (-1 = use the skill's). A wrapper's child runs for the WRAPPER's duration.</param>
+    /// <param name="sourceSkillId">The skill id stamped on the buff for the bar's icon
+    /// (null = this skill's own). A wrapper stamps its child with the WRAPPER's id, so the square
+    /// shows the potion or the blessing that produced it.</param>
     /// <param name="rowOverride">Which buff-bar row the effect lands in, overriding the skill's own
-    /// (null = its own). A group buff's children land in the PARENT's row, so a potion's child still
+    /// (null = its own). A wrapper's child lands in the WRAPPER's row, so a potion's buff still
     /// shows as "from your bag" rather than in the buffer's row.</param>
     private bool ApplyBuff(Entity target, SkillDef def, int level = 1, string? displayName = null,
         bool refresh = true, bool toggle = false, int maxStacks = -1,
         int durationOverride = -1, string? sourceSkillId = null, BuffRow? rowOverride = null)
     {
-        // ---- IMPROVED buff: apply the CHILDREN, not a buff of our own. Each child is an ordinary
-        //      buff on its own family key + rank and resolves independently, so an overriding potion
-        //      replaces exactly one part of the group and leaves the rest standing. ----
-        if (def.ChildBuffsAt(level) is { Length: > 0 } children)
+        // ---- ONE-CHILD WRAPPER (a potion, a scroll, a buffer class's single blessing): it owns the
+        //      duration and the bar row, but the buff that lands is the CHILD — the family's rung,
+        //      under the family's key, at the family's rank. That is what lets a Greater potion and a
+        //      cleric's Might compete: they are literally the same buff from different bottles. ----
+        var kids = def.ChildBuffsAt(level);
+        if (kids is { Length: 1 } && SkillCatalog.Get(kids[0]) is SkillDef onlyChild)
+            return ApplyBuff(target, onlyChild, 1, refresh: refresh, toggle: toggle,
+                             durationOverride: durationOverride >= 0 ? durationOverride : def.DurationTicks,
+                             sourceSkillId: string.IsNullOrEmpty(sourceSkillId) ? def.Id : sourceSkillId,
+                             rowOverride: rowOverride ?? def.BuffRow);
+
+        // ---- IMPROVED (group) buff — MORE than one child. It is ONE buff carrying every child's
+        //      numbers, on the group's own key, at GROUP rank, declaring the families it COVERS.
+        //      Covering is the whole mechanic (docs/design/BuffLadders.md): the group removes the
+        //      singles of those families on the way in, and no single, potion or scroll can override
+        //      it afterwards — it is always the strongest version of everything it contains.
+        //
+        //      0.36-0.41 applied the children INDEPENDENTLY instead, so a potion could take over one
+        //      part of a blessing. That is not how the game reads: an improved buff is the max-level
+        //      version of its parts, and casting it over your bits and pieces is meant to be a
+        //      straight upgrade. It also cost a bar square per part, which is what a 24-slot buff
+        //      limit would spend its whole budget on. ----
+        SkillEffect groupEffect = SkillEffect.None;
+        EffectMagnitude[]? groupMags = null;
+        bool isGroup = kids is { Length: > 1 };
+        if (isGroup)
         {
-            bool landed = false;
-            foreach (var childId in children)
-                if (SkillCatalog.Get(childId) is SkillDef child)
-                    landed |= ApplyBuff(target, child, 1, refresh: false, toggle: toggle,
-                                        durationOverride: def.DurationTicks, sourceSkillId: def.Id,
-                                        rowOverride: def.BuffRow);
-            if (landed && refresh)
+            var mags = new List<EffectMagnitude>();
+            foreach (var childId in kids!)
             {
-                target.RecomputeDerived();
-                if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
+                if (SkillCatalog.Get(childId) is not SkillDef child) continue;
+                groupEffect |= child.Effect;
+                mags.AddRange(child.MagnitudesAt(1) ?? Array.Empty<EffectMagnitude>());
             }
-            return landed;
+            groupMags = mags.ToArray();
         }
 
-        string key = string.IsNullOrEmpty(def.BuffKey) ? def.Name : def.BuffKey;
+        // Key / rank / covered families come from the SAME resolver the "would this land?" test uses,
+        // so a refusal message can never disagree with what actually happens.
+        var (key, rank, covered, _) = BuffPlan(def, level);
         string shownName = string.IsNullOrEmpty(displayName) ? def.Name : displayName!;
         int eff = maxStacks >= 0 ? maxStacks : def.EffectiveMaxStacks;
         int duration = toggle ? int.MaxValue
@@ -6443,19 +6530,22 @@ var effect = def.Effect;
             return true;
         }
 
-        // Rule 1 — same-key rank comparison.
-        var same = target.Buffs.FirstOrDefault(b => b.Key == key);
-        if (same is not null)
+        // Rule 1 — CONFLICT BY FAMILY, then rank. Two buffs conflict when their family sets overlap:
+        // the same single twice, a single against a group that covers its family, or two groups that
+        // share one. Disjoint groups (Might and Bulwark vs Swift and Sure) never see each other.
+        var conflicts = target.Buffs.Where(b => BuffsConflict(b, key, covered)).ToList();
+        foreach (var c in conflicts)
         {
-            if (def.Rank < same.Rank)
+            if (rank < c.Rank)
                 return false;                   // weaker: do nothing (no refresh)
             // Equal rank = the same numbers from a different source (a potion and a scroll of the
             // tier are identical but for how long they last). Keep whichever runs LONGER, or a
             // 20-minute potion silently eats the 1-hour scroll you just read.
-            if (def.Rank == same.Rank && same.TicksRemaining > duration)
+            if (rank == c.Rank && c.TicksRemaining > duration)
                 return false;
-            target.Buffs.Remove(same);          // equal/stronger: full replace
         }
+        foreach (var c in conflicts)
+            target.Buffs.Remove(c);             // equal/stronger: full replace
 
         // Rule 2 — explicit Replaces list (unconditional).
         if (def.Replaces is { Length: > 0 })
@@ -6465,8 +6555,10 @@ var effect = def.Effect;
         var first = def.StackLevelAt(1);
         target.Buffs.Add(new BuffInstance
         {
-            Effect = first?.Effect ?? def.Effect,
-            Magnitudes = first?.Magnitudes ?? def.MagnitudesAt(level) ?? Array.Empty<EffectMagnitude>(),
+            Effect = isGroup ? groupEffect : (first?.Effect ?? def.Effect),
+            Magnitudes = isGroup ? groupMags!
+                       : first?.Magnitudes ?? def.MagnitudesAt(level) ?? Array.Empty<EffectMagnitude>(),
+            CoveredKeys = covered,
             TicksRemaining = duration,
             Toggle = toggle,
             // DoT damage effect (bleed/poison/venom): carries its per-tick damage so TickDots
@@ -6480,20 +6572,22 @@ var effect = def.Effect;
             MaxStacks = eff,
             Cancellable = def.Cancellable,
             SourceRow = rowOverride ?? def.BuffRow,   // which buff-bar row this lands in (debuffs override it)
-            // So the buff bar can show the skill's icon — and, for a group buff's child, the
-            // PARENT's id, which is what lets the client collapse the group into one square.
+            // The skill whose icon the bar shows. For a one-child wrapper that is the WRAPPER (the
+            // potion / the blessing), so a Swift potion and a cleric's Swift look like what cast them.
             SourceSkillId = string.IsNullOrEmpty(sourceSkillId) ? def.Id : sourceSkillId!,
             SkillId = def.Id,          // what can rebuild this exact buff (persistence saves THIS)
             Name = shownName,
             Key = key,
-            Rank = def.Rank,
+            Rank = rank,
             Level = level,
             Replaces = def.Replaces ?? Array.Empty<string>(),
             PhysMpCostPct = def.PhysMpCostPct,
             MagicMpCostPct = def.MagicMpCostPct,
             KeepsBuffsOnDeath = def.KeepsBuffsOnDeath,
             AutoResurrect = def.AutoResurrect,
-            Description = SkillCatalog.DescriptionOf(def.Id)
+            // A group's numbers live on its LEVEL, so the bar's tap popup must read the level's text
+            // ("Move +33, Cast +30%, Evasion +4, Attack Speed +33%"), not the skill's generic blurb.
+            Description = isGroup ? def.DescriptionAt(level) : SkillCatalog.DescriptionOf(def.Id)
         });
 
         // Re-bake derived stats (Max HP/MP, shield, atk/def) and refresh the owner's
@@ -8301,6 +8395,7 @@ var effect = def.Effect;
         entity.CastTargetId = null;
         entity.CastTicksRemaining = 0;
         entity.CastInitialMpPaid = 0;
+        entity.CastFromItemInstance = null;   // interrupted: the scroll stays in the bag
         if (entity.Kind == EntityKind.Mob)
         {
             // Clear the mob's cast bar on nearby clients (interrupt/cancel).

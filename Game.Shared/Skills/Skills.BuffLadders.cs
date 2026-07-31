@@ -9,6 +9,11 @@ namespace Game.Shared;
 //  blessing — applies the SAME single-buff skill, so they can never stack. They compete on the
 //  family's BuffKey by Rank, which ApplyBuff already arbitrates.
 //
+//  ⚠ An IMPROVED (group) buff is NOT a bundle of independent parts (it was, 0.36-0.41). It is one
+//  buff at GROUP rank that COVERS several families at once: casting it evicts those singles, and
+//  no potion, scroll or single blessing can take one part of it back afterwards. The rungs below
+//  are still where its numbers come from — a group names the rungs it contains.
+//
 //  ⚠ RANK IS NOT RARITY. For the four families that have a potion, they coincide (three rungs,
 //  Common/Uncommon/Rare). For the scroll-only families they do NOT: a scroll's rarity is its
 //  price/drop tier — chosen because the family has no potion analogue — while its rank is its

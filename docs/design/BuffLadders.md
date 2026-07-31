@@ -5,6 +5,58 @@ grouping) in 0.37.0, **step 6 (every other family, their potions and scrolls) in
 Supersedes the buff half of playtest-15 §2 (`docs/testing/Playtest-15.md`).
 Still open beyond this doc: **Harmony as party buffs**, and Harmony's own split into children.
 
+---
+
+## ⚠ REVISED IN 0.42.0 — a group is ONE buff that OUTRANKS its parts
+
+**Read this before the rest of the document.** Everything below still describes the *ladders* — one
+number line per effect, families, rank, potions and scrolls competing on one key — and all of that
+stands. What changed is the **improved (group) buff**, and the change reverses the passage headed
+*The decision*.
+
+0.36-0.41 made a group a **bag of independent children**: five separate buffs, resolving one by one,
+so a rare potion could take over one part of a blessing. Played, that reads wrong (owner, 2026-08-01):
+
+> *in l2 an improved buff overrides its single parts. It's always max level, so a single buff cannot
+> override it … if I have windwalk + agility and cast improved movement, it removes the singles and
+> applies improved; if I try a single afterwards it fails.*
+
+And it had two visible failures. A group cast over singles it could not beat did **nothing at all**
+for those families — the blessing was silently a no-op and stayed one for its whole duration. And it
+spent a **bar square per part**: five blessings could hold twenty rows, which is the entire budget of
+the 24-slot buff limit that is the next thing to build.
+
+**As built in 0.42.0:**
+
+- A skill with **one** child is a *wrapper* — a potion, a scroll, an NPC blessing, a buffer class's
+  single buff. It hands out that child (the family's rung, the family's key, the family's rank) and
+  contributes only duration, target mode, MP cost and the icon. Unchanged, and it is what keeps a
+  Greater Might potion and a cleric's Might from ever stacking.
+- A skill with **several** children is a *group*. It lands as **one buff** carrying every child's
+  numbers, on its own key, at **group rank** (`100 + level`, far above any six-rung ladder), and it
+  declares the families it **covers**. Covering does two things: the singles of those families are
+  evicted when it lands, and nothing single can override any part of it afterwards.
+- Conflict is decided **by family, not by key**: two buffs compete when their family sets overlap.
+  So a group beats each of its singles, a higher rank of a group replaces a lower one, and two groups
+  that share no family (*Might and Bulwark* vs *Swift and Sure*) coexist untouched.
+
+⚠ **Authoring rule this creates:** a group locks its families out, so it must be at least as strong
+as the best single obtainable in **every** family it contains, or it is a downgrade the player cannot
+refuse. Today that holds by construction — every group is granted at its **max level only**
+(Warchanter 66-74, the NPC group defs, the admin set).
+
+Consequences worth knowing: the **admin buff button** now yields **nine rows**, not twenty-seven —
+five groups + three Harmony + Frenzy (the one family no group contains) — because every single it
+also lists is refused by the group that covers it. The client needs **no change**: a group was
+already drawn as one square, and now it genuinely is one buff, so the collapse logic degenerates
+harmlessly. Protocol stays **8**; nothing on the wire moved.
+
+The **buff-slot cap** (L2's 24) is the natural follow-up and is not built. When it is, dropping the
+**oldest** buff beats refusing the new one — a refusal makes the player hunt for something to cancel
+mid-fight.
+
+---
+
 ## Naming (owner, 2026-07-31, revised the same day)
 
 A **single** buff is named for its effect and nothing else. A **group** is named for what it hands
@@ -42,7 +94,7 @@ move + cast + evasion + attack speed, so a single key forces an all-or-nothing d
 Force potion (30% cast) would be refused in favour of a low-level buff's 15% cast, leaving the
 player strictly worse off with no recourse but to cancel the whole buff.
 
-## The decision
+## The decision  *(⚠ REVERSED IN 0.42.0 — see the block at the top)*
 
 **An improved buff is a bag of single buffs.** The cleric/warchanter "Speed" does not apply a
 buff of its own — it applies four *children* (swift, force, agility, haste), each an ordinary
