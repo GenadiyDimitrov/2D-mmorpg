@@ -217,142 +217,96 @@ of these once fixed. Nothing here has been built yet.
         bars, or empty ones.
 25. [ ] **Buff tap behaviour** — press-and-HOLD cancels, a single tap opens a details popup that closes
         on an outside tap. Holding a DEBUFF shows its details instead (debuffs can't be dismissed).
-### 🔴 0.30.0 — the big batch (nothing below has been played)
-26a.[ ] **Rogue uses BOTH weapons** — make a Fighter → Rogue. At 20/24/28/32/36 the Learn tab must
-        offer BOTH the dagger ladder (`PiercingStab`) and the bow ladder (`PreciseShot`). Marksman /
-        Warden / Hunter must NOT appear as 2nd classes. Bow range should still grow with tier.
-26b.[ ] **Gear quality reads off COLOUR, not the name** — a vendor stocks the same piece at Common /
-        Uncommon / Rare. Names identical, colours differ, and the item details show a `Rarity:` row
-        with the % power. Check the inventory, both vendors, the warehouse and the worn squares.
-26c.[ ] **Shop prices bite** — F/E/D only, nothing above Rare for sale. An F body ≈ 18k at Rare,
-        6.3k at Common. Two vendors now: **Armsmaster** (weapons) and **Outfitter** (armor/jewels).
-26d.[ ] **Vendor Detail/Compact toggle**, and the BUY confirmation shows full stats + description.
-26e.[ ] **One aggressive mob per field** — walk a 22-28 field. Exactly one creature type should
-        attack on sight; the rest ignore you until hit. Dungeons stay all-aggro.
-26f.[ ] **Quest markers** over NPC heads: gold **!** takeable, gold **?** hand in now, grey **?** in
-        progress. They must appear the moment you LEVEL into a quest, without relogging.
-26g.[ ] **Track / Abandon** — [Track] pins to the on-screen panel (max 5, draggable, hides when
-        empty). [Abandon] confirms first and the quest really goes.
-26h.[ ] **Apothecary daily** — Miren gives a 1h shot box, levels 6-75, once per server day. The
-        reward box must be UNTRADABLE; the ones she sells are not.
-26i.[ ] **Town layout** — Brackenford: shops + Keeper east, class/quests west, Gatekeeper top-centre,
-        Mindwright bottom-centre. **Every** other town has buffer / keeper / 3 vendors / gatekeeper.
-26j.[ ] **The five-city world** — Brackenford 1-16 · Stonewatch 16-40 · Greymarsh 40-60 ·
-        Ironreach 60-75 · Frostmere 76-90. Emberfall and Duskvale must be GONE from the map and from
-        every gatekeeper's travel list. **Grandmaster Thorne is in Greymarsh**, not Brackenford.
-26k.[ ] **86-90 exists** — the Frostmere 85-90 field must actually spawn mobs at 86-90 (not all 85),
-        and each Frostmere field's elite spawner should be close but not aggro you from the camp.
+### ✅ 0.30.0 — the big batch — VERIFIED ON DEVICE 2026-07-31 (playtest-15)
+All of **26a-26k** confirmed: rogue learns both ladders, gear rarity reads off colour, shop prices bite,
+one aggressive type per field, quest markers + tracker, the apothecary daily, town layouts, the five-city
+world and the 86-90 band. **One finding carried forward** → §32.
 
-### 🔴 0.33.0 — the world PLAN (camps, gates, managing cities)
-27a.[ ] **A camp holds ONE band, not a level spread** — stand in the level 1-4 camp west of Brackenford.
-        Every creature must be Ridgeback Pup or Fox, levels 1-4. **No Werewolves** (they are level 12 and
-        belong two camps away). Then check the 4-8 camp: Fox and Goblin Scout only.
-27b.[ ] **Camps are visibly separate** — walking from one camp to the next crosses ~1000 units of empty
-        ground, and nothing from the higher camp follows you into the lower one.
-27c.[ ] **Fields are off the town wall** — leaving Brackenford by any gate you walk ~1500 clear before the
-        field colour starts. Stepping out of town must never be stepping into a camp.
-27d.[ ] **The gatekeeper lists NAMED field gates** — talk to Gatekeeper Pell. Above the other cities there
-        should be a group per field ("Bracken Hollow", "Bracken Downs") with a row per camp, each naming its
-        band and its creatures ("Lv 8-12 · Goblin Scout, Ashen Wolf, Werewolf"). Levels and fee shown.
-27e.[ ] **Travel lands you at the gate, every time** — take the same gate twice. Both times you arrive on
-        the camp's **town-facing edge**, in the same spot (±150), looking into the camp. Never inside it,
-        never somewhere different.
-27f.[ ] **Each city offers its OWN fields** — Stonewatch's gatekeeper lists the three Stonewatch fields
-        (16-24 / 24-32 / 32-40) and NOT Brackenford's or Frostmere's.
-27g.[ ] **Death returns you to the managing city** — die on the far edge of a Stonewatch field (the side
-        facing Brackenford). You must wake in **Stonewatch**, the city that owns the field, not in whichever
-        town is closest. Dying in open ground between cities still uses nearest-town.
-27h.[ ] **The elite camp is a choice** — each Frostmere field's elite camp sits ~1500 beyond the top camp.
-        You should be able to farm the normal camp right up to its edge without the elite aggroing, and
-        have to walk in on purpose.
+### ✅ 0.33.0 — the world PLAN — VERIFIED ON DEVICE 2026-07-31 (playtest-15)
+All of **27a-27h** confirmed: one band per camp, camps visibly separate, fields off the town wall, named
+field gates, a repeatable landing spot on the town-facing edge, per-city field lists, death returning you
+to the managing city, and elite camps you have to walk into on purpose.
 
-### 🔴 0.33.1 — the ADMIN menu (this is the one to test on the PHONE's release server)
-28a.[ ] **The admin menu works on the phone** — on the RELEASE server, as an admin character, open
-        Menu → **Admin** and use each tab: give gear, give an item, +10 levels, gold, SP, buff, karma,
-        set profession, 2nd/3rd class, add subclass, swap subclass, character reset, teleport, tuning.
-        Every one must actually DO something. This is the whole bug: they were compiled out of release.
-28b.[ ] **A normal character sees no Admin entry, and no hole** — log in as a plain character and open the
-        overflow menu. Between **Setup** and **Leave** there must be no gap, and the panel must be one row
-        shorter, not the same height with a blank strip.
-28c.[ ] **A plain character is refused, and told** — if you get a plain character to send an admin command
-        (an old client, or `/`-command), chat must say "That is an admin-only command" rather than nothing.
-28d.[ ] **A fresh phone server bootstraps an admin** — on an empty database, register the first account and
-        make its first character: it must say "Admin privileges active on this character". Every LATER
-        character, even on the same account, must be a plain player.
-28e.[ ] **Character delete is quick for an admin** — deleting an admin character over level 20 should give
-        the ~10s undo window and free the name straight after, not lock it for 24h.
+### ✅ 0.33.1 — the ADMIN menu — VERIFIED ON THE PHONE 2026-07-31 (playtest-15)
+**28a-28d** confirmed on the release server: every admin tab does something, a plain character sees no
+Admin row and no gap, admin commands are refused with a message, and a fresh DB bootstraps exactly one
+admin. **28e could not be tested — there is no delete button in character select at all** → §32.
 
-### 🔴 0.34.0 — per-mob spawners + F-grade drops
-29a.[ ] **Killing a quest mob puts THAT mob back** — in the Bracken Downs level 8-12 camp, kill the
-        werewolves and ashen wolves repeatedly. The camp must keep at least **4 of each** alive at all
-        times; you must never have to clear the camp and wait to find the one the quest wants. Do the same
-        at Greyhollow Moor 16-20 for **orc archer / skeleton grunt / shield skeleton** (3 of each).
-29b.[ ] **The camps are not overcrowded** — the same camps now hold ~19-20 mobs instead of 11. Check it
-        still plays: you should be able to pull one at a time, not walk into a wall of aggro. (Only ONE
-        type in an ordinary field attacks on sight, so this should hold — verify it does.)
-29c.[ ] **Low-level mobs finally drop gear** — kill level 1-17 mobs (Ridgeback Pup, Fox, Goblin Scout).
-        They must drop **Ferrite** (F-grade) armor/weapons/helms — before this they dropped only mats,
-        potions and broken jewels. Rarity by mob level: Common from 1, **Uncommon from 5**, **Rare from
-        10** — a level-1 pup must never drop an Uncommon.
-29d.[ ] **Every early drop is an UPGRADE, never a downgrade** — the starter Training armor was re-cut
-        (light 53→35 P.Def, robe 27→20) so that the first Ferrite Common body you loot beats it. Equip
-        what drops and confirm the numbers go UP. Nothing you can loot at level 1-19 should be worse than
-        what you started in.
-29e.[ ] **The server log names no unserved quest target** — at startup the log must NOT contain
-        "Quest kill targets with no dedicated spawner". If it does, that quest cannot be reliably farmed
-        and the mob/band needs fixing.
+### ✅ 0.34.0 — per-mob spawners + F-grade drops — VERIFIED ON DEVICE 2026-07-31 (playtest-15)
+All of **29a-29e** confirmed: quest mobs respawn per-mob so a target is always available, the fuller camps
+still pull one at a time, level 1-17 mobs drop Ferrite gear with the right rarity gates, early drops are
+upgrades on the re-cut Training armor, and the server log names no unserved quest target.
 
---- 30. THE ECONOMY REWORK (0.34.1) — the whole point of playtest-14. Test this with GOLD in mind. ---
-30a.[ ] **The faucet is closed: ~400k of trash gold by level 25, not 3kk.** This is THE acceptance test.
-        Take a fresh character, sell everything you loot, kill your own level, and look at your gold when
-        you hit 25. `tools/BalanceMatrix` predicts **403k over ~168 kills** at the live ×10 exp rate. If
-        you land wildly off that, say the NUMBER — the model can then be corrected instead of guessed at.
-30b.[ ] **One kill never dumps a pile of the same slot** — the old "20 light armors off one lucky kill"
-        must be impossible. At most ONE body, one accessory, one weapon and one jewel per kill.
-30c.[ ] **Loot is no longer decided by WHERE you farm** — an armor drop is now a coin-flip between
-        Leathers / Bulwark / Robe and a weapon between all 8 lines, whatever the mob's family. Killing
-        undead must be able to drop a bow; killing wolves must be able to drop a robe. (Mats keep their
-        family flavour — that part is intentional.)
-30d.[ ] **A mob drops ONLY its own grade** — a level-40 mob drops Darksteel (D), never Electrum (E) or
-        Cobalt (C). Check the [Details] drop list on a few mobs across the bands.
-30e.[ ] **The drop list is readable** — [Details] on a mob must show ~20 grouped lines
-        ("Leathers / Bulwark / Robe  (5%)"), not ~97 near-identical 0.6% rows.
-30f.[ ] **Every kill gives a potion, most give a scroll** — the Always group is 100% (healing potion /
-        return / resurrect) and the Scrolls group ~70% (enchant scroll or a BUFF potion, never healing).
-        Confirm you stop having to buy basic potions. Flag it if the inventory churn is annoying.
-30g.[ ] **Mats: one stack per kill, amount 1 / 2 / 4 / 10** — you should see the occasional x10. You no
-        longer get three different mat types off one mob; that is the change, not a bug.
-30h.[ ] **Jewels and shields drop now** — they never did before. Rings/earrings/pendants from level 1.
+### ✅ 30. THE ECONOMY REWORK (0.34.1/.2) — VERIFIED ON DEVICE 2026-07-31 (playtest-15)
+**30a PASSES — the faucet is closed.** A mage reached level 25 in ~2h with **~1kk gold, potions and
+scrolls UNSOLD** (vs 3kk of pure trash gold on 0.33.1); his words: *"now seems fine and will be better
+when we fix the drop logic"*. **30b, 30c, 30d, 30f, 30g, 30h, 30k** all confirmed: one piece per slot
+family per kill, family flavour gone for gear, grade-locked drops, the potion/scroll/mat/jewel groups,
+and the displayed rate matching what he observed. **Still open** → §32.
+
 30i.[ ] **An elite pays a band better than trash** — the dungeon elites (Hollow Crypt, 44-48) and the
         generated elite camps drop **no Common at all**: Uncommon 10%, Rare 2%, Epic 0.2%.
 30j.[ ] **A boss pays out properly** — the Grave Lich (48) / Valley Treant (60) should drop **several**
         pieces: Epic 70%, Legendary 40%, Mythic 2%, per slot family. This is a NERF from the old flat
         50% Mythic body — say so if it now feels thin.
-30k.[ ] **Rates read true.** The [Details] list shows the EFFECTIVE chance (global rate × the group's own
-        multiplier). If a number on screen doesn't match what you observe over ~50 kills, that is a bug.
 30l.[ ] **`/droprate` works and tunes live** — type `/droprate` for the current table, then
         `/droprate gear 1` and confirm gear drops roughly TRIPLE without a restart (it removes the ×1/3
         the gear groups ship with). Put it back with `/droprate gear 0.333`. Also try
         `/droprate mats 2` — mats must double while nothing else moves. **This is how you tune the
         economy during the playtest instead of asking for a rebuild.**
 
---- 31. FEEDBACK / WORDING (0.34.3) — playtest-14 batch 4, the last of that queue. ---
-31a.[ ] **The skill bar shows reuse.** Cast something with a long cooldown: the square goes dark and the
-        dark part DRAINS from the top as the timer runs, with the seconds left in the middle (tenths
-        under 10s). It must clear exactly when the skill is castable again — not early, not late.
-31b.[ ] **ESC starts the reuse and the bar says so** — cancelling your own cast pays the cooldown, and
-        the overlay must appear. An ENEMY interrupt does not (you can retry immediately); if the bar
-        goes dark after being interrupted, that is a bug.
-31c.[ ] **Potions and scrolls show their reuse too** — a healing potion on the bar darkens for its own
-        drink timer; a Return scroll darkens for its skill reuse. Each potion has its OWN timer, so a
-        greater potion must not grey out the lesser one.
-31d.[ ] **Reuse survives a relog sensibly** — exit to character select and come back: the bar must not
-        show a stale timer from the character you just left.
-31e.[ ] **Passives finally say what they DO** — open any passive in the Skills window (an armor or
-        weapon mastery is the best test). It must list real numbers ("P.Def +8%, Max HP +5%"), and a
-        mastery must break them down per weight / per weapon type. Prose-only is the bug being fixed.
-31f.[ ] **Learning is not blind** — the Learn confirmation for a passive must show its numbers, and for
-        an UPGRADE show "Now …" above "After …" so the SP buys something you can see.
+### ✅ 31. FEEDBACK / WORDING (0.34.3) — VERIFIED ON DEVICE 2026-07-31 (playtest-15)
+**31a, 31b, 31c, 31d, 31f** confirmed: the reuse overlay drains and clears on time, ESC pays the cooldown
+while an enemy interrupt does not, consumables carry their own timers, no stale timer survives a relog,
+and the Learn confirmation shows its numbers. **31e is right but unreadable** → §32.
+
+--- 32. 🔴 PLAYTEST-15 (2026-07-31, server 0.34.3) — NOT BUILT YET. Full report: `Playtest-15.md`. ---
+32a.[ ] **The phone server starts with no hand-editing** — unzip a fresh `Game.Server` on the phone and
+        `dotnet Game.Server.dll` must just run. It currently dies with `GC heap initialization failed
+        (0x8007000E)` — Server GC tries to reserve 256 GiB — and he has to `nano
+        Game.Server.runtimeconfig.json` and flip `System.GC.Server` to false after EVERY update.
+32b.[ ] **Class change applies without a relog** — finish the class-change quest, take the change at the
+        class master: the class must update immediately, and the Skills window must show the new
+        unlearned list at once (today: no update, relog required, then a further delay).
+32c.[ ] **The set bonus lists its pieces** — the set bonus is shown but not which equipment the set
+        requires and which slots are filled. That listing is missing entirely.
+32d.[ ] **Vendor details for stackables** — tapping a quantity item in a vendor must open the details
+        window first, not jump straight to the numpad (carried from 26d).
+32e.[ ] **Character select has a delete button** — there is none at all today, which is also why 28e
+        (the admin's fast delete + 10s undo) has never been testable.
+32f.[ ] **The drop list reads as a tree** — group is a TITLE line carrying the group name and the group
+        %, with its item rows INDENTED beneath it. Flat and clustered today (carried from 30e).
+32g.[ ] **Passive numbers are grouped** — the mage's weapon proficiency currently reads "+cast, −cast,
+        +cast …". Same-stat entries must be gathered together (carried from 31e).
+32h.[ ] **HP potions drop less** — infinite potions make you unkillable. He still takes real damage and
+        had to use vampiric to survive, so it is the potion FAUCET to close, not the damage.
+32i.[ ] **Nuker has no Wind Walk** — it is a self buff that stacks with other buffs and should not be on
+        the class. Same for the rogue's **Battle Fury** — not in the original CSV.
+32j.[ ] **Starter gear numbers** — Training (Wooden) shield 35 def · Ferrite Aegis 90 pDef at Mythic ·
+        ALL training weapons show 5 mAtk · training wand pAtk 6 / mAtk 7 and **no +6 maxMP**.
+32k.[ ] **Auto-farm retaliates** — a mob that is hitting you outranks the nearest one as a target. He was
+        being ganked by orc archers while the autopilot kept killing the nearest thing.
+32l.[ ] **Auto-farm doesn't melee-walk casters** — with `BasicAttackAction` NOT on the bar, auto-farm
+        must not walk you into melee range; the mage stood on top of the mob waiting to cast.
+32m.[ ] **Tap-to-target, tap-again-to-attack** — the first tap only opens the target window; a second tap
+        on the SAME target starts the approach/attack. Tapping a different target only re-targets.
+32n.[ ] **Consumables show a count on the hotbar** — 1, 2, 3 … 98, 99, then `99+`.
+32o.[ ] **Escape/return scrolls can be sold** — they are tradable but the vendor refuses them.
+32p.[ ] **Buff potions sell at ÷25 like everything else** — 1500/25 = 60, not 450.
+32q.[ ] **Auto-farm and offline farming show their remaining time** — buff-timer format (`24h00m01s` ==
+        `1d`), on the button when enabled, or one chat line on every on/off change.
+32r.[ ] **The farming-range circle only shows when the range toggle AND auto-farm are both on.**
+32s.[ ] **Party members can be killed with PvP on** — currently impossible.
+32t.[ ] **Jewels have designated slots** — 2 rings, 2 earrings, 1 necklace, 1 pendant; equipping swaps
+        like gloves do. Swap rule: replace the WEAKER of the two; if both are the same rarity replace
+        slot 1; empty counts as weaker than Common.
+32u.[ ] **Free teleport under 40** — NEVER BUILT (the fee is distance-only, min 50). Open design call,
+        not a regression.
+32v.[ ] **Auto-farm shows its target** — while the autopilot is running, the target window must show the
+        creature it is currently on, update as it switches, and clear when it has none. The server
+        already picks one (`GameLoopService` sets `CombatTargetId` in the auto-hunt path, ~:3043/:3056);
+        what's missing is that your own client is never told, so the frame sits empty or stale. Pairs
+        with 32k — you can't see it retaliate if you can't see what it's chosen.
 
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends
