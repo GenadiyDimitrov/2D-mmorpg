@@ -135,35 +135,73 @@ public static partial class ClassSkillTables
         RegisterWarchanterBuffs();
     }
 
-    /// <summary>The Warchanter's own two layers, and nothing else — the rest of the discipline
-    /// still waits for its CSV (owner 2026-07-31: *"for now just to have somewhere the improved
-    /// and harmony to go"*, so expect the levels below to be re-cut with the 3rd-class CSV).
+    /// <summary>The Warchanter's buff kit — the rest of the discipline still waits for its CSV
+    /// (owner 2026-07-31: *"just to have somewhere the improved and harmony to go … it will be
+    /// changed with the 3rd class CSV"*), so every level below is a placeholder.
     ///
-    /// **Harmony** at 40 / 52 / 62: the layer with no potion, no scroll and no NPC that sells it,
-    /// stacking on top of the basic buffs. It is what keeps a buffer worth grouping with now that
-    /// consumables can cover the whole basic layer.
+    /// The shape the owner asked for, and the reason it reads bottom-up:
     ///
-    /// **The improved groups** at 74: one cast for four or five effects, at 150-200 MP. A cleric
-    /// buys the same numbers one single at a time for 30-50 MP each — the group is the buffer
-    /// class's efficiency, not a bigger number. See docs/design/BuffLadders.md.
+    /// - **40-64: the singles, topped out.** The cleric leaves off mid-ladder (Might L2 of 3, Focus
+    ///   L4 of 6, …) and never sees Ferocity, Insight, Body, Soul or Serenity at all. The Warchanter
+    ///   finishes every ladder, and finishes each family **before** the improved buff that contains
+    ///   it. Not a hard requirement — nothing enforces the order — just the logic of the class:
+    ///   you learn the parts, then you learn to cast them in one breath.
+    /// - **60 / 62 / 64: the three Harmony blessings.** The layer with no potion, no scroll and no
+    ///   NPC that sells it, stacking on top of the basic buffs. It is what keeps a buffer worth
+    ///   grouping with now that consumables can cover the whole basic layer.
+    /// - **66-74: the five improved groups**, one per learnable level. Each one `Replaces` the
+    ///   singles it contains, so the bar collapses as the class matures: four skills become one.
     ///
-    /// ⚠ The owner listed 40/52/62/**74** for Harmony, but only three Harmony blessings exist, so
-    /// 74 is the improved tier's slot. A fourth Harmony would have to be authored first.</summary>
+    /// Frenzy is deliberately NOT one of the five — its "rung" is already a whole eight-effect buff,
+    /// so it ramps with the singles. See docs/design/BuffLadders.md.</summary>
     private static void RegisterWarchanterBuffs()
     {
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
             ClassSkills.RegisterThird(race, Discipline.Warchanter,
-                new ClassSkill(NpcHarmonyProtection, 40),
-                new ClassSkill(NpcHarmonyWarrior, 52),
-                new ClassSkill(NpcHarmonyWizard, 62),
-                // The improved groups, at their top level — a Warchanter at 74 is the max-level
-                // buffer the NPC's blessings were always modelled on.
-                new ClassSkill(Might, 74, SkillLevel: 6),        // Might and Bulwark
-                new ClassSkill(HolyForce, 74, SkillLevel: 6),    // Force and Ward
-                new ClassSkill(HolyFocus, 74, SkillLevel: 6),    // Focus and Ferocity
-                new ClassSkill(HolyBody, 74, SkillLevel: 6),     // Body and Soul
-                new ClassSkill(HolySpeed, 74, SkillLevel: 6),    // Swift and Sure
-                new ClassSkill(HolyFrenzy, 74, SkillLevel: 6));  // Frenzy at its top rung
+                // ---- 40-44: finish SPEED and MIGHT (the cleric got most of speed already) ----
+                new ClassSkill(CastId(FamEva), 40, SkillLevel: 3),        // Agility   +4 evasion
+                new ClassSkill(CastId(FamAs), 40, SkillLevel: 2),         // Haste     +23% atk speed
+                new ClassSkill(CastId(FamPhysAtk), 40, SkillLevel: 3),    // Might     +15% P.Atk
+                new ClassSkill(CastId(FamPhysDef), 40, SkillLevel: 3),    // Bulwark   +15% P.Def
+                new ClassSkill(CastId(FamAs), 44, SkillLevel: 3),         // Haste     +33% atk speed
+                new ClassSkill(CastId(FamVamp), 44, SkillLevel: 3),       // Vampirism 9%
+                new ClassSkill(CastId(FamAccuracy), 44, SkillLevel: 3),   // Aim       +4 accuracy
+                // ---- 48-52: finish FORCE, start FOCUS ----
+                new ClassSkill(CastId(FamMagAtk), 48, SkillLevel: 3),     // Force     +32% M.Atk
+                new ClassSkill(CastId(FamMagDef), 48, SkillLevel: 2),     // Ward      +20% M.Def
+                new ClassSkill(CastId(FamInterrupt), 48, SkillLevel: 3),  // Resolve   +40 interrupt
+                new ClassSkill(CastId(FamMagDef), 52, SkillLevel: 3),     // Ward      +30% M.Def
+                new ClassSkill(CastId(FamInterrupt), 52, SkillLevel: 4),  // Resolve   +60 interrupt
+                new ClassSkill(CastId(FamCritRate), 52, SkillLevel: 5),   // Focus     +25% crit
+                new ClassSkill(CastId(FamCritDmg), 52, SkillLevel: 3),    // Ferocity  +20% crit dmg
+                new ClassSkill(CastId(FamMagCrit), 52, SkillLevel: 2),    // Insight   +35% magic crit
+                // ---- 56: finish FOCUS ----
+                new ClassSkill(CastId(FamCritRate), 56, SkillLevel: 6),   // Focus     +30% crit
+                new ClassSkill(CastId(FamCritDmg), 56, SkillLevel: 6),    // Ferocity  +35% crit dmg
+                new ClassSkill(CastId(FamMagCrit), 56, SkillLevel: 4),    // Insight   +65% magic crit
+                // ---- 60-64: the BODY ladder, Frenzy, and the three Harmonies ----
+                new ClassSkill(NpcHarmonyProtection, 60),
+                new ClassSkill(CastId(FamMagCrit), 60, SkillLevel: 6),    // Insight   double magic crit
+                new ClassSkill(CastId(FamMaxHp), 60, SkillLevel: 3),      // Body      +20% Max HP
+                new ClassSkill(CastId(FamMaxMp), 60, SkillLevel: 3),      // Soul      +20% Max MP
+                new ClassSkill(CastId(FamHpRegen), 60, SkillLevel: 4),    // Vigor     +15% HP regen
+                new ClassSkill(CastId(FamMpRegen), 60, SkillLevel: 4),    // Serenity  +15% MP regen
+                new ClassSkill(NpcHarmonyWarrior, 62),
+                new ClassSkill(CastId(FamMaxHp), 62, SkillLevel: 5),      // Body      +30% Max HP
+                new ClassSkill(CastId(FamMaxMp), 62, SkillLevel: 5),      // Soul      +30% Max MP
+                new ClassSkill(CastId(FamHpRegen), 62, SkillLevel: 6),    // Vigor     +20% HP regen
+                new ClassSkill(CastId(FamMpRegen), 62, SkillLevel: 6),    // Serenity  +20% MP regen
+                new ClassSkill(HolyFrenzy, 62, SkillLevel: 3),            // Frenzy    rung 3
+                new ClassSkill(NpcHarmonyWizard, 64),
+                new ClassSkill(CastId(FamMaxHp), 64, SkillLevel: 6),      // Body      +35% Max HP
+                new ClassSkill(CastId(FamMaxMp), 64, SkillLevel: 6),      // Soul      +35% Max MP
+                new ClassSkill(HolyFrenzy, 64, SkillLevel: 6),            // Frenzy    rung 6
+                // ---- 66-74: the improved groups, one per level. Each REPLACES its singles. ----
+                new ClassSkill(HolySpeed, 66, SkillLevel: 6),    // Swift and Sure
+                new ClassSkill(Might, 68, SkillLevel: 6),        // Might and Bulwark
+                new ClassSkill(HolyForce, 70, SkillLevel: 6),    // Force and Ward
+                new ClassSkill(HolyFocus, 72, SkillLevel: 6),    // Focus and Ferocity
+                new ClassSkill(HolyBody, 74, SkillLevel: 6));    // Body and Soul
     }
 
     // The first fully-authored discipline (Phase 24.1): one shared idea (keep the

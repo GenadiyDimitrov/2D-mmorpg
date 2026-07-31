@@ -90,7 +90,9 @@ public static partial class SkillCatalog
             DurationTicks: 12000, BuffKey: "mage_might", Rank: 1, InitialMpCost: 30,
             ChildBuffs: new[] { BuffPAtk1, BuffPDef1 },
             Category: SkillCategory.Buff, SpCost: 960,
-            Description: "Blesses an ally (or self) with +P.Atk and +P.Def for 20 minutes.",
+            TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
+            Replaces: new[] { CastId(FamPhysAtk), CastId(FamPhysDef), CastId(FamVamp), CastId(FamAccuracy) },
+            Description: "Blesses you and nearby allies with +P.Atk and +P.Def for 20 minutes.",
             Levels: new[]
             {
                 new SkillLevel(MpCost: 150, InitialMpCost: 30, SpCost: 960,

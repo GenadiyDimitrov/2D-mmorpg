@@ -87,7 +87,9 @@ public static partial class SkillCatalog
             DurationTicks: 12000, BuffKey: "holy_speed", Rank: 1, InitialMpCost: 30,
             Category: SkillCategory.Buff,
             ChildBuffs: new[] { BuffSwiftU, BuffAlacrityC },
-            Description: "Blesses an ally (or self): faster casting and movement for 20 minutes.",
+            TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
+            Replaces: new[] { CastId(FamMove), CastId(FamCast), CastId(FamEva), CastId(FamAs) },
+            Description: "Blesses you and nearby allies: faster casting and movement for 20 minutes.",
             Levels: new[]
             {
                 new SkillLevel(MpCost: 150, InitialMpCost: 30, SpCost: 3200,
@@ -149,7 +151,9 @@ public static partial class SkillCatalog
             DurationTicks: 12000, BuffKey: "holy_body", Rank: 1, InitialMpCost: 30,
             Category: SkillCategory.Buff, SpCost: 25000,
             ChildBuffs: new[] { Rung(FamHpRegen, 2) },
-            Description: "Blesses an ally (or self) with vitality — regeneration, and at higher ranks Max HP and MP.",
+            TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
+            Replaces: new[] { CastId(FamMaxHp), CastId(FamMaxMp), CastId(FamHpRegen), CastId(FamMpRegen) },
+            Description: "Blesses you and nearby allies with vitality — regeneration, and at higher ranks Max HP and MP.",
             Levels: new[]
             {
                 new SkillLevel(MpCost: 150, InitialMpCost: 30, SpCost: 25000,
@@ -206,7 +210,9 @@ public static partial class SkillCatalog
             DurationTicks: 12000, BuffKey: "holy_force", Rank: 1, InitialMpCost: 30,
             Category: SkillCategory.Buff,
             ChildBuffs: new[] { BuffIntr1 },
-            Description: "Steadies an ally's casting (harder to interrupt/cancel); higher ranks add Magic Attack and Magic Defence.",
+            TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
+            Replaces: new[] { CastId(FamMagAtk), CastId(FamMagDef), CastId(FamInterrupt) },
+            Description: "Steadies the casting of you and nearby allies; higher ranks add Magic Attack and Magic Defence.",
             Levels: new[]
             {
                 new SkillLevel(MpCost: 150, InitialMpCost: 30, SpCost: 3200,
@@ -238,7 +244,9 @@ public static partial class SkillCatalog
             DurationTicks: 12000, BuffKey: "holy_focus", Rank: 1, InitialMpCost: 30,
             Category: SkillCategory.Buff, SpCost: 6400,
             ChildBuffs: new[] { Rung(FamCritRate, 4) },
-            Description: "Sharpens an ally's aim: critical rate, and at higher ranks critical damage and magic criticals.",
+            TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
+            Replaces: new[] { CastId(FamCritRate), CastId(FamCritDmg), CastId(FamMagCrit) },
+            Description: "Sharpens you and nearby allies: critical rate, and at higher ranks critical damage and magic criticals.",
             Levels: new[]
             {
                 new SkillLevel(MpCost: 150, InitialMpCost: 30, SpCost: 6400,

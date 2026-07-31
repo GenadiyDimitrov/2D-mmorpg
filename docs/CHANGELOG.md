@@ -12,6 +12,32 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-31 — The Warchanter's kit, and the improved buffs go party-wide (0.41.1)
+
+Still a placeholder until the 3rd-class CSV, but the shape is the owner's now.
+
+**The improved groups are PARTY buffs** (`AlliesInRadius`, 800) — the answer to *"improved are party
+right? If not make them."* **Harmony went with them**: that was already the recorded decision in the
+design doc, and for a concrete reason — the autopilot hard-targets *self* for buffs, so a
+single-target Harmony could never be handed out by a buffer left on auto-farm.
+
+**Each improved group `Replaces` the singles it contains.** Learn *Might and Bulwark* and Might,
+Bulwark, Vampirism and Aim leave the bar. Four skills become one; the bar collapses as the class
+matures. (The replacement is on the *skill*, not the buff — the buffs still resolve by family rank.)
+
+**The Warchanter's buff kit, 40 → 74:**
+
+| Levels | What |
+|---|---|
+| **40-64** | every single ladder **topped out** — the cleric leaves off mid-ladder (Might L2 of 3, Focus L4 of 6) and never sees Ferocity, Insight, Body, Soul or Serenity at all |
+| **60 / 62 / 64** | the three **Harmony** blessings (was 40/52/62) |
+| **66 / 68 / 70 / 72 / 74** | the five **improved** groups, one per learnable level: Swift and Sure · Might and Bulwark · Force and Ward · Focus and Ferocity · Body and Soul |
+
+Every family reaches its **max rung before** the improved buff that contains it — not enforced
+anywhere, just the logic of the class: you learn the parts, then you learn to cast them in one breath.
+Frenzy is deliberately not one of the five (its rung is already a whole eight-effect buff), so it ramps
+with the singles at 62 and 64.
+
 ## 2026-07-31 — The cleric buffs one at a time; the group is the buffer's (0.41.0)
 
 The other half of playtest-15 §2, and the answer to *"when I gave the CSV I made the buffs improved"*.

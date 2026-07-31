@@ -425,10 +425,16 @@ The one thing to prove above all: **a buff potion no longer stacks with the buff
         as SEPARATE skills at **30-50 MP**, not five group buffs. The base mage learns Might + Bulwark
         at 7 (it used to be one "Might"). **Buffing the whole list must land the same numbers it did
         before** — that is the check that matters; it just takes more casts and more MP.
-33j.[ ] **The improved and Harmony buffs have somewhere to go** (0.41.0, placeholder — will be re-cut
-        with the 3rd-class CSV). A Warchanter learns **Harmony of Protection / the Warrior / the
-        Wizard at 40 / 52 / 62** (200 MP, 20 min, and nothing else in the game grants them), and at
-        **74** the five improved groups at **150-200 MP**. Nobody below 74 can learn a group any more.
+33j.[ ] **The Warchanter's buff kit** (0.41.1, placeholder — will be re-cut with the 3rd-class CSV).
+        **40-64:** every single ladder tops out (the cleric leaves off mid-ladder and never sees
+        Ferocity, Insight, Body, Soul, Serenity at all). **60/62/64:** the three Harmony blessings,
+        200 MP, 20 min, granted by nothing else in the game. **66/68/70/72/74:** the five improved
+        groups, one per level, 150-200 MP. Check each family is at its MAX rung before its group.
+33l.[ ] **The improved buffs are PARTY buffs and eat their singles** (0.41.1). Cast one in a party:
+        it must land on every member in 800 range, not just the target — same for Harmony. And when a
+        Warchanter learns e.g. **Might and Bulwark**, the separate Might / Bulwark / Vampirism / Aim
+        skills must DISAPPEAR from the bar and the learn list; the buff bar is unaffected (the
+        replacement is on the skill, not the buff).
 33k.[ ] **Admin buff = 27** (0.41.0, replaces 33e's "22"): five improved groups + three Harmony + the
         19 singles. The bar should show the GROUPS collapsed (Might and Bulwark, Force and Ward, Focus
         and Ferocity, Body and Soul, Swift and Sure) rather than fifteen loose squares — the groups

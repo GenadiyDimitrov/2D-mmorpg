@@ -278,20 +278,28 @@ The split has a second half, and it is the one that gives the buffer class its j
 2026-07-31: *"when I gave the CSV I made the buffs improved — now I want that cleric to learn the
 individual buffs"*.
 
-| Tier | Skill | MP | Learned |
-|---|---|---|---|
-| **single** | `cast_{family}` — one effect, one level per rung | **30-50** | base mage (7), cleric (20-35) |
-| **improved** | the groups — four or five effects in one cast | **150-200** | Warchanter (74) |
-| **Harmony** | no potion, no scroll, no NPC; stacks on top | 200 | Warchanter (40 / 52 / 62) |
+| Tier | Skill | MP | Target | Learned |
+|---|---|---|---|---|
+| **single** | `cast_{family}` — one effect, one level per rung | **30-50** | one ally | base mage (7), cleric (20-35), Warchanter tops the ladders 40-64 |
+| **improved** | the groups — four or five effects in one cast | **150-200** | **party** | Warchanter, one per level at 66 / 68 / 70 / 72 / 74 |
+| **Harmony** | no potion, no scroll, no NPC; stacks on top | 200 | **party** | Warchanter (60 / 62 / 64) |
 
 Every rung the cleric learns is the one that group level used to hand out, so **a cleric who buffs
 their whole list lands exactly where they did before** — it just costs more casts. The group is not a
-bigger number; it is fewer casts and less MP per effect, and that is what a buffer class buys.
+bigger number; it is fewer casts, less MP per effect, and it lands on the whole party.
+
+**Each improved group `Replaces` the singles it contains** (owner, 0.41.1), so the bar collapses as
+the class matures: learn *Might and Bulwark* and Might, Bulwark, Vampirism and Aim leave it. Note the
+replacement is on the SKILL, not the buff — `ApplyBuff`'s Replaces rule matches buff *keys*, and these
+are skill ids, so nothing is stripped from the buff bar. Family rank still does that work.
+
+The Warchanter's singles are ordered so **every family hits its max rung before the improved buff that
+contains it**. Nothing enforces that; it is just the logic of the class — you learn the parts, then
+you learn to cast them in one breath.
 
 ⚠ **All of the Warchanter assignment is a placeholder** — `RegisterWarchanterBuffs()` in
-`ClassSkillTables.Third.cs` exists so the improved and Harmony tiers have somewhere to live until the
-3rd-class CSV lands, and the rest of that discipline is still commented out. The owner listed
-40/52/62/**74** for Harmony but only three Harmony blessings exist, so 74 holds the improved tier.
+`ClassSkillTables.Third.cs` exists so the singles, improved and Harmony tiers have somewhere to live
+until the 3rd-class CSV lands; the rest of that discipline is still commented out.
 
 **Frenzy is the one single that isn't 30-50 MP** (125 at rung 1 → 175 at rung 6). It is a family whose
 rung is a whole eight-effect buff, and that was its price before the split; it was left alone rather
