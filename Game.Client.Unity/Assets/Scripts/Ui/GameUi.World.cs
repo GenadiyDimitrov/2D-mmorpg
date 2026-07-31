@@ -1343,15 +1343,24 @@ namespace Game.Client
         {
             if (!_bagPanel.gameObject.activeSelf) return;
 
-            // Cheap change stamp: the server pushes the WHOLE bag on any change, so length plus the
-            // equipped/quantity state is enough to know when the rows need rebuilding.
+            // Cheap change stamp: the server pushes the WHOLE bag on any change, so this only has to
+            // notice that the push differs from what is on screen.
+            //
+            // It MUST include each item's IDENTITY (owner, playtest-16: "the newbie/shot box opening
+            // doesn't refresh the inventory with the out-of-box items"). The stamp used to hash only
+            // length + equipped + quantity + enchant, and opening a box is a SWAP: one box leaves, one
+            // item arrives. Same length, same quantities, same everything it looked at — an identical
+            // stamp, so the rows were never rebuilt and the bag still showed the box you just opened.
+            // Any other loot changed the length and hid the bug. InstanceId is unique per item, so a
+            // swap can no longer be invisible (the warehouse and paper-doll stamps already did this).
             var items = Boot.Inventory ?? Array.Empty<InventoryItemDto>();
             int used = 0;
             foreach (var it in items) if (!it.Equipped) used++;   // worn gear doesn't take a slot
 
             int revision = items.Length * 17 + _bagTab * 7919 + (_bagFastDel ? 104729 : 0) + (int)(Boot.Gold % 1_000_000);
             foreach (var item in items)
-                revision = revision * 31 + (item.Equipped ? 1 : 0) + item.Quantity * 7 + item.Enchant;
+                revision = revision * 31 + item.InstanceId.GetHashCode()
+                         + (item.Equipped ? 1 : 0) + item.Quantity * 7 + item.Enchant;
             if (revision == _bagRevision) return;
             _bagRevision = revision;
 

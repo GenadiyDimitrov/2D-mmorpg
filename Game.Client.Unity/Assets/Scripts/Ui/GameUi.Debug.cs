@@ -413,14 +413,45 @@ namespace Game.Client
             // (1-18) into a 5-value enum, so every class from id 5 up silently became ScrollScribe
             // (playtest-13). Only classes of your own race + base class are offered; the rest need a
             // Reset first, and listing them would just be 15 rows that refuse.
-            DebugHeader("Change 2nd class");
+            // ONE list for BOTH tiers (owner, playtest-16): the panel only ever offered the 2nd class,
+            // so a 3rd class was reachable only through its quest — items and kills included — which is
+            // exactly what an admin is trying to skip. Picking a DISCIPLINE row grants the 2nd class with
+            // it (the server forces the parent 2nd class in HandleDebugThirdClass), so one tap is the
+            // whole change; the plain 2nd-class row above each pair stays for below level 40, where the
+            // server refuses a 3rd class on purpose.
             var mine = Boot.ActiveClass;
+            DebugHeader("Change class — pick a discipline to get 2nd + 3rd at once");
+            if (mine != null && mine.Level < ThirdClassCatalog.ChangeLevel)
+                DebugNote($"Lv {mine.Level} — disciplines need level {ThirdClassCatalog.ChangeLevel} " +
+                          "(the Func tab levels you).");
+
+            // A discipline may be walked only ONCE across the classes one character owns, so anything a
+            // SIBLING class already holds is shown but not offered — the server would refuse it anyway.
+            var takenElsewhere = new HashSet<Discipline>();
+            foreach (var s in Boot.Subclasses)
+                if (!s.Active && s.ThirdClass > 0 && ThirdClassCatalog.Get(s.ThirdClass) is { } t)
+                    takenElsewhere.Add(t.Discipline);
+
             foreach (var sc in ClassCatalog.Playable.OrderBy(s => s.Race).ThenBy(s => s.Name))
             {
                 if (mine != null && (sc.Race != mine.Race || sc.Base != mine.BaseClass)) continue;
                 int id = sc.Id;
-                DebugAction($"{sc.Race} {sc.Name}",
+                bool current2nd = mine != null && mine.SecondClass == sc.Id;
+                DebugAction($"{sc.Race} {sc.Name}  (2nd only){(current2nd ? "   <- current" : "")}",
                             () => Boot.Debug(n => n.DebugSecondClassAsync(id), "2nd class"));
+
+                foreach (var tcd in ThirdClassCatalog.ForParent(sc.Id))
+                {
+                    if (takenElsewhere.Contains(tcd.Discipline))
+                    {
+                        DebugNote($"     {tcd.Discipline} — another of your classes walks this");
+                        continue;
+                    }
+                    int tid = tcd.Id;
+                    bool current3rd = mine != null && mine.ThirdClass == tcd.Id;
+                    DebugAction($"     -> {tcd.Discipline}{(current3rd ? "   <- current" : "")}",
+                                () => Boot.Debug(n => n.DebugThirdClassAsync(tid), "3rd class"));
+                }
             }
 
             // The CRAFTING profession is a separate axis (it gates which recipes you can craft) and now

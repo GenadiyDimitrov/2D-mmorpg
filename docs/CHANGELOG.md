@@ -12,6 +12,23 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-08-01 — The admin class change picks the discipline, not just the 2nd class (0.42.1)
+
+The admin panel's **Class** tab only ever offered the *2nd* class. The 3rd class had a hub method
+(`DebugThirdClass`) and the Unity channel had the call — nothing anywhere invoked it, so the only
+route to a discipline on the phone was its quest, with the item hand-ins and kill counts an admin is
+trying to skip in the first place.
+
+One list now covers **both tiers**. Each 2nd class is a row, with its two disciplines indented under
+it; tapping a discipline grants the 2nd class along with it (`HandleDebugThirdClass` already forces
+the parent 2nd class), so the whole change is **one tap**. The plain 2nd-class row stays for
+below level 40, where the server refuses a 3rd class deliberately — the panel says so instead of
+letting you find out by being refused. A discipline a *sibling* class already walks is shown greyed
+as a note rather than offered, matching the uniqueness rule the server enforces.
+
+A debug 2nd-class change also **saves immediately** now, as the 3rd-class path always did, instead of
+waiting for the 60s autosave.
+
 ## 2026-07-31 — The Warchanter's kit, and the improved buffs go party-wide (0.41.1)
 
 Still a placeholder until the 3rd-class CSV, but the shape is the owner's now.

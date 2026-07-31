@@ -2011,6 +2011,7 @@ public class GameLoopService : BackgroundService
         SendStats(player);
         SendLearned(player);
         SendSubclasses(player);   // the class label the client shows comes from here
+        SaveEntity(player);       // same as the 3rd-class path — a class change shouldn't wait for autosave
         SendSystemToEntity(player, $"[DEBUG] You are now a {def.Name}.");
     }
 

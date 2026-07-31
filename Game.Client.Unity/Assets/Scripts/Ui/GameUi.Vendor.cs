@@ -103,7 +103,10 @@ namespace Game.Client
             int revision = (_vendorSell ? 1 : 0) * 92821 + (_vendorDetailed ? 7919 : 0)
                          + (int)(Boot.Gold % 1_000_000);
             revision = revision * 31 + (Boot.Dialog?.Shop?.Items?.Length ?? 0);
-            foreach (var it in items) revision = revision * 31 + it.Quantity + (it.Equipped ? 7 : 0);
+            // Identity, not just quantity — same reason as the bag stamp: an item swapped for another
+            // of the same count would otherwise leave the sell list showing what you no longer own.
+            foreach (var it in items)
+                revision = revision * 31 + it.InstanceId.GetHashCode() + it.Quantity + (it.Equipped ? 7 : 0);
             if (revision == _vendorRevision) return;
             _vendorRevision = revision;
 

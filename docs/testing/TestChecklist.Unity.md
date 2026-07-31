@@ -275,19 +275,22 @@ playtest-15 big design #1). §32 is now fully built.
 32b.[ ] **Class change applies without a relog** — finish the class-change quest, take the change at the
         class master: the class must update immediately, and the Skills window must show the new
         unlearned list at once (today: no update, relog required, then a further delay).
-32c.[ ] **The set bonus lists its pieces** — the set bonus is shown but not which equipment the set
-        requires and which slots are filled. That listing is missing entirely.
-32d.[ ] **Vendor details for stackables** — tapping a quantity item in a vendor must open the details
+32c.[x] ✅ **VERIFIED 2026-08-01** — pieces and filled slots are listed. **→ follow-up in §35a: it still
+        never says what the set GRANTS** ("what does that set do?"). Original: the set bonus is shown
+        but not which equipment the set requires and which slots are filled.
+32d.[x] ✅ **VERIFIED 2026-08-01** — a stackable opens details first. **→ follow-up in §35b: that made it
+        a DOUBLE confirmation.** Original: tapping a quantity item in a vendor must open the details
         window first, not jump straight to the numpad (carried from 26d).
-32e.[ ] **Character select has a delete button** — there is none at all today, which is also why 28e
-        (the admin's fast delete + 10s undo) has never been testable.
-32f.[ ] **The drop list reads as a tree** — group is a TITLE line carrying the group name and the group
-        %, with its item rows INDENTED beneath it. Flat and clustered today (carried from 30e).
-32g.[ ] **Passive numbers are grouped** — the mage's weapon proficiency currently reads "+cast, −cast,
-        +cast …". Same-stat entries must be gathered together (carried from 31e).
+32e.[x] ✅ **VERIFIED 2026-08-01** — character select has a delete button (this also unblocks 28e).
+32f.[x] ✅ **VERIFIED 2026-08-01** — the drop list reads as a tree. **→ follow-up in §35c: the indented
+        item rows want their own % too.** Original: group is a TITLE line carrying the group name and
+        the group %, with its item rows INDENTED beneath it.
+32g.[x] ✅ **VERIFIED 2026-08-01** — same-stat entries are gathered. **→ follow-up in §35d: grouped on the
+        wrong axis — he wants them by WEAPON.** Original: the mage's weapon proficiency read "+cast,
+        −cast, +cast …".
 32h.[ ] **HP potions drop less** — infinite potions make you unkillable. He still takes real damage and
         had to use vampiric to survive, so it is the potion FAUCET to close, not the damage.
-32i.[ ] **Nuker has no Wind Walk** — it is a self buff that stacks with other buffs and should not be on
+32i.[x] OK **VERIFIED 2026-08-01** - **Nuker has no Wind Walk** — it is a self buff that stacks with other buffs and should not be on
         the class. Same for the rogue's **Battle Fury** — not in the original CSV.
 32j.[ ] **Starter gear numbers** — Training (Wooden) shield 35 def · Ferrite Aegis 90 pDef at Mythic ·
         ALL training weapons show 5 mAtk · training wand pAtk 6 / mAtk 7 and **no +6 maxMP**.
@@ -310,12 +313,12 @@ playtest-15 big design #1). §32 is now fully built.
         walks in; bow → shoots from range), a party member → follows. Then do the identical checks with
         the **Attack action on the skill bar** and the **Attack button on the target frame** — all three
         are one code path (`GameBoot.AttackOrFollow`) and must not differ.
-32n.[ ] **Consumables show a count on the hotbar** — 1, 2, 3 … 98, 99, then `99+`.
+32n.[x] OK **VERIFIED 2026-08-01** - **Consumables show a count on the hotbar** — 1, 2, 3 … 98, 99, then `99+`.
 32o.[ ] **Escape/return scrolls can be sold** — they are tradable but the vendor refuses them.
 32p.[ ] **Buff potions sell at ÷25 like everything else** — 1500/25 = 60, not 450.
-32q.[ ] **Auto-farm and offline farming show their remaining time** — buff-timer format (`24h00m01s` ==
+32q.[x] OK **VERIFIED 2026-08-01** - **Auto-farm and offline farming show their remaining time** — buff-timer format (`24h00m01s` ==
         `1d`), on the button when enabled, or one chat line on every on/off change.
-32r.[ ] **The farming-range circle only shows when the range toggle AND auto-farm are both on.**
+32r.[x] OK **VERIFIED 2026-08-01** - **The farming-range circle only shows when the range toggle AND auto-farm are both on.**
 32s.[ ] **Your own party can NEVER be hit — and the tap follows them instead.** Tap a party member
         twice: you must start FOLLOWING ("You follow X."), never swing. Try it with PvP ON, and with a
         RED party member — both must still refuse, with "You can't attack a member of your own party."
@@ -332,7 +335,7 @@ playtest-15 big design #1). §32 is now fully built.
         → a **rare** replaces slot 1 (tie) → an **uncommon** replaces slot 2 (weaker) → another
         uncommon replaces slot 2 again. Slot 1 always holds the stronger of the pair. Then **relog**:
         the pair must come back in the same two squares (the slot is derived, not stored).
-32u.[ ] **Free teleport under 40** (0.39.0). At level 39 every gatekeeper row must read **"Free"**, not
+32u.[x] OK **VERIFIED 2026-08-01** - **Free teleport under 40** (0.39.0). At level 39 every gatekeeper row must read **"Free"**, not
         "0 gold", and the ride must actually cost nothing (watch the gold counter). At 40 the distance
         fee is back, minimum 50 — quote and charge must match, so read the row's price and then check
         the gold you lost. Both the local field gates and the other cities.
@@ -362,7 +365,7 @@ playtest-15 big design #1). §32 is now fully built.
         popup — see 34a/34b, which replace the middle of this row. Still true and still worth
         checking: press-and-HOLD removes the whole thing, and a potion square is unchanged — a Swift
         potion reads "Swift", NOT "Swift Potion (Greater)".
-32w.[ ] **The NPC buffer gives BASIC buffs only, one hour each.** ⚠ **The list GREW in 0.40.0** —
+32w.[x] OK **VERIFIED 2026-08-01** - **The NPC buffer gives BASIC buffs only, one hour each.** ⚠ **The list GREW in 0.40.0** —
         see 33d, which supersedes the nine-buff list this item was written against. Still true and
         still worth checking here: **no group buff and no Harmony** at the NPC, each blessing lands as
         ONE buff square at 1h, and the overlap rule holds — take Swift from the buffer, then drink a
@@ -404,11 +407,11 @@ The one thing to prove above all: **a buff potion no longer stacks with the buff
         must not change any number a cleric already casts. ⚠ **One deliberate exception:** Might used
         to raise BOTH channels, so a mage's M.Atk fell with this change — M.Atk is now the **Force**
         family, with its own potion. Check a mage's M.Atk before/after and that Force restores it.
-33c.[ ] **The new potions and scrolls exist and are buyable/lootable.** Apothecary stocks Might ·
+33c.[x] OK **VERIFIED 2026-08-01** - **The new potions and scrolls exist and are buyable/lootable.** Apothecary stocks Might ·
         Bulwark · Force · Ward potions (Lesser). Their Uncommon/Rare rungs and all their scrolls drop
         from the usual scroll rung. Each says what it does, lasts **20 min (potion) / 1 h (scroll)**,
         and a scroll takes a second to read while a potion is instant.
-33d.[ ] **The NPC buffer offers 19 single blessings + Full buff.** Might · Bulwark · Vampirism ·
+33d.[x] OK **VERIFIED 2026-08-01** - **The NPC buffer offers 19 single blessings + Full buff.** Might · Bulwark · Vampirism ·
         Accuracy · Force · Ward · Resolve · Focus · Ferocity · Insight · Body · Soul · Vigor ·
         Serenity · Swift · Alacrity · Agility · Haste · Frenzy. The list must **scroll**. Each is
         cancellable on its own. **Full buff must cost about what it did with nine buttons** (the
@@ -416,28 +419,28 @@ The one thing to prove above all: **a buff potion no longer stacks with the buff
 33e.[ ] **The admin buff button gives everything INCLUDING Harmony.** Debug/ADMIN → buff: 22 squares,
         the 19 above plus **Harmony of Protection / Warrior / Wizard**, which no NPC sells and no
         potion can reach. This is the only way to see a fully buffed character.
-33f.[ ] **Scroll-only families are scroll-only.** There is no potion of Body · Soul · Vigor · Serenity ·
+33f.[x] OK **VERIFIED 2026-08-01** - **Scroll-only families are scroll-only.** There is no potion of Body · Soul · Vigor · Serenity ·
         Focus · Ferocity · Insight · Frenzy at any price, and their cheapest scroll is **Epic**. They
         drop from level **60+** (Epic) and **76+** (Legendary). ⚠ **Mythic buff scrolls have no source
         yet** — like Dash Mythic, they wait on the §3 drop-group rework. Not a bug.
-33g.[ ] **Nothing orphaned by the rename.** `game.db` should be reset before this playtest: buffs saved
+33g.[x] OK **VERIFIED 2026-08-01** - **Nothing orphaned by the rename.** `game.db` should be reset before this playtest: buffs saved
         under the OLD keys (`mage_might`, `holy_body`, …) no longer match a family. If you keep the db,
         a stale square that never expires is the thing to watch for. ⚠ 0.41.0 also moves five skills
         off the cleric — an existing character may still hold `might` / `holy_speed` / … on its bar.
 33h.[ ] **Aim — the accuracy potion** (0.41.0). Accuracy is now the mirror of evasion: **+1 / +2 / +4**,
         with a potion AND a scroll at Common/Uncommon/Rare, vendor-stocked at Common. Check it sits
         next to Agility in the Apothecary and that a cleric's Aim and an Aim potion do not stack.
-33i.[ ] **The cleric buffs ONE effect per cast** (0.41.0). A new cleric learns Might · Bulwark · Force ·
+33i.[x] OK **VERIFIED 2026-08-01** - **The cleric buffs ONE effect per cast** (0.41.0). A new cleric learns Might · Bulwark · Force ·
         Ward · Aim · Vampirism · Resolve · Focus · Vigor · Swift · Alacrity · Agility · Haste · Frenzy
         as SEPARATE skills at **30-50 MP**, not five group buffs. The base mage learns Might + Bulwark
         at 7 (it used to be one "Might"). **Buffing the whole list must land the same numbers it did
         before** — that is the check that matters; it just takes more casts and more MP.
-33j.[ ] **The Warchanter's buff kit** (0.41.1, placeholder — will be re-cut with the 3rd-class CSV).
+33j.[x] OK **VERIFIED 2026-08-01** - **The Warchanter's buff kit** (0.41.1, placeholder — will be re-cut with the 3rd-class CSV).
         **40-64:** every single ladder tops out (the cleric leaves off mid-ladder and never sees
         Ferocity, Insight, Body, Soul, Serenity at all). **60/62/64:** the three Harmony blessings,
         200 MP, 20 min, granted by nothing else in the game. **66/68/70/72/74:** the five improved
         groups, one per level, 150-200 MP. Check each family is at its MAX rung before its group.
-33l.[ ] **The improved buffs are PARTY buffs and eat their singles** (0.41.1). Cast one in a party:
+33l.[~] OK **the EATING half VERIFIED 2026-08-01**; the PARTY half not reported - **The improved buffs are PARTY buffs and eat their singles** (0.41.1). Cast one in a party:
         it must land on every member in 800 range, not just the target — same for Harmony. And when a
         Warchanter learns e.g. **Might and Bulwark**, the separate Might / Bulwark / Vampirism / Aim
         skills must DISAPPEAR from the bar and the learn list; the buff bar is unaffected (the
@@ -474,6 +477,35 @@ what it describes was the old model. Everything about the potion/scroll LADDER (
 34h.[ ] **The autopilot knows.** With auto-buff on and a group up, it must not re-cast it every cycle
         (watch MP), and auto-potions must not drink a Might potion under Might and Bulwark. When the
         group expires it may cast it again.
+
+--- 35. 🔴 PLAYTEST-16 (2026-08-01, played on 0.42.0) — built in **0.42.1**. Unity-side, so the APK
+proves them. ⚠ He numbers his own copy by VERSION (his "37c" = the 0.37.0 item = 32c here). ---
+**17 items passed** (ticked above in §32/§33). Four passed *with a follow-up*, and he found two bugs.
+35a.[ ] **A set says what it DOES.** 32c gave the piece list and the filled slots but never the reward:
+        *"the effect is not shown — what does that set do?"* The bonus lines (the actual stats, and
+        anything gated on wearing more pieces) must be on the set panel next to the pieces.
+35b.[ ] **One confirmation at a vendor, not two.** 32d put a details window in front of the numpad, so
+        buying a stack now confirms twice. Wanted: **the detail on the ROW itself, better worded** —
+        for *all* vendor items, not only stackables — and for a consumable the **numpad IS the
+        confirmation**, reached in one tap. Check buy AND sell, and that a non-stackable still has a
+        way to be read before it is bought.
+35c.[ ] **Every drop row carries its own %.** 32f's tree gives the group title and the group's chance;
+        the indented item rows must print their individual chance too (a share of a group is not the
+        same number as the group's — the row must show what YOU actually get per kill).
+35d.[ ] **Mastery/passive lines group by WEAPON, not by stat.** 32g gathered same-stat entries, which
+        was the wrong axis — it still reads "P.Atk: sword +10, blunt +10 / cast: sword +10, blunt +10,
+        dagger −100, bow −100". Verbatim: *"sword/blunt +10 pAtk +10 mAtk +10 cast, dagger/bow −100
+        cast — more compact, logically written, not throw everything there."* One line per weapon
+        GROUP, its stats after it, weapons that share a number folded into one row.
+35e.[ ] **A hold registers while your finger is still down.** It used to be decided on RELEASE, so a
+        long press gave nothing back until you let go. Hold a buff square / skill slot: at **1s** the
+        menu must appear *under the finger*, and letting go afterwards must NOT also fire the tap.
+        Then **scroll a long list slowly** — that must NOT count as a hold (40px of travel cancels it).
+35f.[ ] **A box's contents appear in the bag immediately.** Open a newbie box, a selection box and a
+        shot/rune box with the BAG WINDOW OPEN: the box goes, its contents appear, no re-open needed.
+        This was a swap the bag's change-stamp could not see (1 item out, 1 in — same length, same
+        quantities). Check the same at a **vendor** with the sell list open, which had the same blind
+        spot: sell one item and the row must go without re-opening the tab.
 
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends
