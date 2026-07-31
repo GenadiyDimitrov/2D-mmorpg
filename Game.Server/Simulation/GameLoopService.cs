@@ -8653,14 +8653,16 @@ var effect = def.Effect;
             {
                 float chance = Math.Min(1f, g.Sum(MobCatalog.EffectiveChance));
                 lines.Add($"{GroupTitle(g.Key)}  ({chance * 100:0.##}%)");
-                // A per-item override changes an item's SHARE of the group, which a bare name list can't
-                // show — so a tuned member says its share outright rather than silently reading like its
-                // untuned siblings. Untouched groups look exactly as they did.
+                // EVERY member prints its own chance (owner, playtest-16: "add the rows also individual
+                // %"). It used to print one only when a per-item override had been set, so an untouched
+                // group was a bare name list and the reader was left to assume the members split the
+                // group's chance evenly — which is exactly what the weights do NOT guarantee. The number
+                // shown is what you actually get per kill: the group's chance times this item's share of
+                // the weights, so the members always sum back to the group's own line.
                 double weightSum = g.Sum(d => (double)MobCatalog.ItemWeight(d));
-                bool tuned = g.Any(d => RateConfig.DropItemRate(d.ItemId) != 1f);
                 foreach (var d in g.GroupBy(ItemLine))
                 {
-                    if (!tuned || weightSum <= 0) { lines.Add("   " + d.Key); continue; }
+                    if (weightSum <= 0) { lines.Add("   " + d.Key); continue; }
                     double share = d.Sum(x => (double)MobCatalog.ItemWeight(x)) / weightSum;
                     lines.Add($"   {d.Key}  ({chance * share * 100:0.##}%)");
                 }

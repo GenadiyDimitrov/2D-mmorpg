@@ -12,6 +12,34 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-08-01 — Playtest-16: four windows that showed the work but not the answer (0.42.2)
+
+Four items passed their checklist row and still failed the reader. Each was told what it was, never
+what it was worth.
+
+**A set now says what it grants** (§35a). The item window printed the set's `ClassFlatBonus` — and
+*every tiered set leaves that empty*, carrying its real bonus in `Mods`. So the answer to "what does
+this set do?" was a piece list and a blank, for nearly every set in the game. It reads `SkillText.Mods`
+now (the formatter both clients already share), and the shield-conditional extra gets its own line,
+because the shield completes nothing — it only adds.
+
+**One confirmation at a vendor, not two** (§35b). 32d put a details dialog in FRONT of the numpad, so
+buying a stack walked three windows to spend gold once. The details moved onto the **row** — buy *and*
+sell, with a consumable's effect on it — and for a stackable **the pad is the confirmation**: it shows
+the running total on every keystroke and its button says `Buy` / `Sell` rather than `OK`. A
+non-stackable keeps the single confirm dialog; it has no pad to carry the question.
+
+**Every drop row carries its own %** (§35c). The tree printed a member's share only when a per-item
+override had been set, so an untouched group was a bare name list and looked like an even split, which
+the weights never promised. Every member now prints `chance × its share` — what you actually get per
+kill — and they sum back to the group's line.
+
+**Masteries group by WEAPON, not by stat** (§35d). 32g pivoted them stat-major; the owner rejected it
+on sight, and he's right: these are authored per weapon group, so stat-major reprints the same numbers
+under every stat. Sources granting identical effects are folded into one row —
+`Sword/Blunt:  P.Atk +10, M.Atk +10, Cast speed +10%` over `Dual/dagger/Bow:  Cast speed -100%`.
+Sources granting nothing are dropped: a mastery that ignores bows says so by not mentioning them.
+
 ## 2026-08-01 — The admin class change picks the discipline, not just the 2nd class (0.42.1)
 
 The admin panel's **Class** tab only ever offered the *2nd* class. The 3rd class had a hub method

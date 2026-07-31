@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using Game.Shared;
 using TMPro;
@@ -13,8 +14,12 @@ namespace Game.Client
     /// A vendor asks first: buy or sell? Buy shows the vendor's wares; sell shows MY sellable
     /// inventory. Picking an item that stacks opens a NUMPAD (digits, clear, backspace, a keyboard-
     /// capable number box, and a Max/All that fills the whole stack when selling or the most you can
-    /// afford when buying — so Max can never order a refusal). A non-stacking item skips the numpad. In
-    /// both cases the last step is a plain-text confirm, so nothing leaves your purse by a single tap.
+    /// afford when buying — so Max can never order a refusal).
+    ///
+    /// ONE confirmation, never two (playtest-16). Every row already describes its item, so a stackable
+    /// goes straight to the pad and the PAD is the confirmation: it shows the running total and its
+    /// button says "Buy"/"Sell". A non-stacking item has no pad, so it gets the plain confirm dialog
+    /// with the full stat sheet. Either way nothing leaves your purse on a single unlabelled tap.
     ///
     /// The server owns the transaction and every price: the buy price rides the shop DTO, the sell
     /// price is the shared ItemCatalog formula, and the server re-checks gold, stock and sellability —
@@ -35,8 +40,13 @@ namespace Game.Client
         private RectTransform _numpadPanel;
         private TextMeshProUGUI _numpadTitle;
         private TMP_InputField _numpadInput;
+        private Button _numpadOkButton;
         private int _numpadMax = 1;
         private Action<int> _numpadOk;
+        private string _numpadHead = "";
+        /// <summary>Renders the running total under the title — the pad is the confirmation now, so
+        /// the price has to live on it.</summary>
+        private Func<int, string> _numpadSummary;
 
         private void BuildVendorWindow()
         {
@@ -168,31 +178,39 @@ namespace Game.Client
                 any = true;
 
                 long unit = ItemCatalog.SellPrice(def);
-                string label = Coloured(def.Name, def.Rarity) + (item.Quantity > 1 ? "   x" + item.Quantity : "")
-                             + "   " + unit.ToString("N0") + " " + GameConstants.CurrencyName + " ea";
+                string head = Coloured(def.Name, def.Rarity) + (item.Quantity > 1 ? "   x" + item.Quantity : "")
+                            + "   " + unit.ToString("N0") + " " + GameConstants.CurrencyName + " ea";
+                // The SELL side gets the same second line the buy side has — "the details on the row"
+                // is what replaced the details dialog, so it has to be on both or selling still needs it.
+                string label = _vendorDetailed
+                    ? head + "\n<size=12><color=#9AA3AD>" + WareSummary(def) + "</color></size>"
+                    : head;
                 var captured = item;
-                VendorRow(label, UiKit.Text, () => SellTap(captured, def, unit));
+                VendorRow(label, UiKit.Text, () => SellTap(captured, def, unit),
+                          _vendorDetailed ? 56f : 44f);
             }
             if (!any) VendorNote("Nothing here can be sold (equipped or bound items can't).");
         }
 
-        // A stackable used to jump STRAIGHT to the numpad (32d/26d): you were typing a quantity for
-        // something you had not been told anything about, and the description only appeared at the
-        // confirm, one step too late to change your mind cheaply. Now every tap says WHAT it is first;
-        // the numpad is the second step, and the confirm still asks before the gold moves.
+        // ONE confirmation per purchase (owner, playtest-16). 32d put a details dialog in FRONT of the
+        // numpad, and with the confirm behind it a stack cost three taps through three windows — he
+        // called it "like a double confirmation… the details can be on the row, just better worded".
+        //
+        // So the details moved onto the ROW (detail view is on by default, buy AND sell), and for a
+        // stackable **the numpad IS the confirmation**: it names the item, prices it, and its button
+        // says what it will do. Nothing is asked twice. A NON-stackable still gets the one confirm
+        // dialog — it has no numpad to carry the question, and it is a single step, not a second one.
         private void BuyTap(string defId, string name, ItemDef def, long unit)
         {
             if (!IsStackable(def)) { ConfirmBuy(defId, name, unit, 1); return; }
 
             // Max = the most you can AFFORD, clamped to the server's 999 cap — never a refusal.
             int affordable = unit > 0 ? (int)Math.Min(999, Boot.Gold / unit) : 999;
-            var t = new StringBuilder();
-            t.Append(name).Append(" — ").Append(unit.ToString("N0"))
-             .Append(' ').Append(GameConstants.CurrencyName).Append(" each.");
-            AppendItemDetails(t, def, defId);
-            Ask(t.ToString(), "How many?",
-                () => OpenNumpad("Buy " + name, Mathf.Max(1, affordable),
-                                 qty => ConfirmBuy(defId, name, unit, qty)));
+            OpenNumpad("Buy " + name, Mathf.Max(1, affordable), "Buy",
+                       qty => { Boot.BuyItem(defId, qty); CloseNumpad(); },
+                       qty => qty + " x " + unit.ToString("N0") + " = " + (unit * qty).ToString("N0")
+                              + " " + GameConstants.CurrencyName
+                              + "   (you have " + Boot.Gold.ToString("N0") + ")");
         }
 
         private void SellTap(InventoryItemDto item, ItemDef def, long unit)
@@ -200,14 +218,10 @@ namespace Game.Client
             var id = item.InstanceId;
             if (!IsStackable(def) || item.Quantity <= 1) { ConfirmSell(id, def.Name, unit, 1); return; }
 
-            var t = new StringBuilder();
-            t.Append(def.Name).Append(" — you have ").Append(item.Quantity)
-             .Append(", worth ").Append(unit.ToString("N0"))
-             .Append(' ').Append(GameConstants.CurrencyName).Append(" each.");
-            AppendItemDetails(t, def, item.DefId);
-            Ask(t.ToString(), "How many?",
-                () => OpenNumpad("Sell " + def.Name, item.Quantity,
-                                 qty => ConfirmSell(id, def.Name, unit, qty)));
+            OpenNumpad("Sell " + def.Name, item.Quantity, "Sell",
+                       qty => { Boot.SellItem(id, qty); CloseNumpad(); },
+                       qty => qty + " of " + item.Quantity + "   you get "
+                              + (unit * qty).ToString("N0") + " " + GameConstants.CurrencyName);
         }
 
         /// <summary>Append an item's stat block and description to a vendor message. Shared by the
@@ -268,20 +282,33 @@ namespace Game.Client
             button.gameObject.AddComponent<LayoutElement>().minHeight = height;
         }
 
-        /// <summary>The one-line "what IS this" a shopper needs before tapping: type, grade, quality and
-        /// the stat that matters for the slot. The full sheet is in the confirm dialog.</summary>
+        /// <summary>The one-line "what IS this" a shopper needs before tapping: quality, grade, type,
+        /// then the stats that matter — and for a consumable, what USING it does.
+        ///
+        /// This row is now the ONLY description before the numpad (the details dialog in front of it
+        /// was the double confirmation, playtest-16), so it carries the consumable's effect too: a
+        /// potion whose row says "Rare F-grade Potion" and nothing else is the case that sent people
+        /// looking for a second window in the first place. Stats read "Atk 12, M.Atk 3" rather than
+        /// column-spaced, so the eye can take the line in one pass.</summary>
         private static string WareSummary(ItemDef def)
         {
             var t = new StringBuilder();
-            t.Append(def.Rarity).Append("  ")
+            t.Append(def.Rarity).Append(' ')
              .Append(def.ItemLevel > 0 ? ItemCatalog.TierLetter(def.ItemLevel) : def.Grade.ToString())
-             .Append("-grade  ").Append(TypeLine(def));
-            if (def.AtkBonus > 0)  t.Append("   Atk ").Append(def.AtkBonus);
-            if (def.MAtkBonus > 0) t.Append("   M.Atk ").Append(def.MAtkBonus);
-            if (def.DefBonus > 0)  t.Append("   Def ").Append(def.DefBonus);
-            if (def.MDefBonus > 0) t.Append("   M.Def ").Append(def.MDefBonus);
-            if (def.HpBonus > 0)   t.Append("   HP +").Append(def.HpBonus);
-            if (def.MpBonus > 0)   t.Append("   MP +").Append(def.MpBonus);
+             .Append("-grade ").Append(TypeLine(def));
+
+            var stats = new List<string>();
+            if (def.AtkBonus > 0)  stats.Add("Atk " + def.AtkBonus);
+            if (def.MAtkBonus > 0) stats.Add("M.Atk " + def.MAtkBonus);
+            if (def.DefBonus > 0)  stats.Add("Def " + def.DefBonus);
+            if (def.MDefBonus > 0) stats.Add("M.Def " + def.MDefBonus);
+            if (def.HpBonus > 0)   stats.Add("HP +" + def.HpBonus);
+            if (def.MpBonus > 0)   stats.Add("MP +" + def.MpBonus);
+            if (stats.Count > 0) t.Append(" — ").Append(string.Join(", ", stats));
+
+            // A consumable's whole value is its skill, so say what it does right here.
+            if (SkillCatalog.Get(def.UseSkillId) is SkillDef use && !string.IsNullOrWhiteSpace(use.Description))
+                t.Append(" — ").Append(use.Description);
             return t.ToString();
         }
 
@@ -295,20 +322,21 @@ namespace Game.Client
             var inner = _numpadPanel.GetChild(0);
             float chrome = UiKit.WindowChrome(_numpadPanel, "Quantity", CloseNumpad);
 
+            // Two lines: what you are ordering, and what it will cost at the quantity showing.
             _numpadTitle = UiKit.Label(inner, "", 16f, UiKit.Text, TextAlignmentOptions.Center);
             UiKit.Place(UiKit.Rect(_numpadTitle.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                        new Vector2(0f, -chrome - 8f), new Vector2(320f, 24f));
+                        new Vector2(0f, -chrome - 4f), new Vector2(320f, 44f));
 
             _numpadInput = UiKit.InputField(inner, "1", false, 22f);
             _numpadInput.contentType = TMP_InputField.ContentType.IntegerNumber;
             _numpadInput.onValueChanged.AddListener(OnNumpadTyped);
             UiKit.Place(UiKit.Rect(_numpadInput.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-                        new Vector2(0f, -chrome - 40f), new Vector2(320f, 46f));
+                        new Vector2(0f, -chrome - 56f), new Vector2(320f, 46f));
 
             // 3-column pad: 1-9, then C 0 <.
             string[] keys = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "C", "0", "<" };
             const float bw = 96f, bh = 54f, gap = 8f;
-            float x0 = -(bw + gap), y0 = -chrome - 100f;
+            float x0 = -(bw + gap), y0 = -chrome - 114f;
             for (int i = 0; i < keys.Length; i++)
             {
                 string k = keys[i];
@@ -322,8 +350,8 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(max.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(18f, 16f), new Vector2(100f, 46f));
 
-            var ok = UiKit.TextButton(inner, "OK", NumpadConfirm, 17f);
-            UiKit.Place(UiKit.Rect(ok.gameObject), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+            _numpadOkButton = UiKit.TextButton(inner, "OK", NumpadConfirm, 17f);
+            UiKit.Place(UiKit.Rect(_numpadOkButton.gameObject), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                         new Vector2(0f, 16f), new Vector2(110f, 46f));
 
             // X closes the numpad for THIS item (back to the list) — NOT the whole vendor.
@@ -334,14 +362,31 @@ namespace Game.Client
             _numpadPanel.gameObject.SetActive(false);
         }
 
-        private void OpenNumpad(string title, int max, Action<int> onOk)
+        /// <summary>Open the quantity pad. <paramref name="okLabel"/> names what the button will DO
+        /// ("Buy"/"Sell"), because this pad is now the confirmation itself — an "OK" that silently
+        /// spends gold is exactly the ambiguity the removed confirm dialog used to cover.
+        /// <paramref name="summary"/> re-renders under the title on every keystroke, so the total is
+        /// on screen at the moment you press the button.</summary>
+        private void OpenNumpad(string title, int max, string okLabel, Action<int> onOk,
+                                Func<int, string> summary = null)
         {
             _numpadMax = Mathf.Max(1, max);
             _numpadOk = onOk;
-            _numpadTitle.text = title + "   (max " + _numpadMax + ")";
+            _numpadHead = title + "   (max " + _numpadMax + ")";
+            _numpadSummary = summary;
+            UiKit.SetButtonText(_numpadOkButton, okLabel);
             _numpadInput.SetTextWithoutNotify("1");
+            RefreshNumpadTitle();
             OpenWindow(_numpadPanel);
         }
+
+        private int NumpadQty() =>
+            int.TryParse(_numpadInput.text, out int v) ? Mathf.Clamp(v, 1, _numpadMax) : 1;
+
+        private void RefreshNumpadTitle() =>
+            _numpadTitle.text = _numpadSummary == null
+                ? _numpadHead
+                : _numpadHead + "\n<size=14><color=#9AA3AD>" + _numpadSummary(NumpadQty()) + "</color></size>";
 
         private void CloseNumpad() => CloseWindow(_numpadPanel);
 
@@ -365,12 +410,9 @@ namespace Game.Client
         {
             if (int.TryParse(s, out int v) && v > _numpadMax)
                 _numpadInput.SetTextWithoutNotify(_numpadMax.ToString());
+            RefreshNumpadTitle();   // the total is part of the question, so it follows every keystroke
         }
 
-        private void NumpadConfirm()
-        {
-            int qty = int.TryParse(_numpadInput.text, out int v) ? Mathf.Clamp(v, 1, _numpadMax) : 1;
-            _numpadOk?.Invoke(qty);
-        }
+        private void NumpadConfirm() => _numpadOk?.Invoke(NumpadQty());
     }
 }

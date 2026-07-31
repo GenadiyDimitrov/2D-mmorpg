@@ -478,9 +478,12 @@ what it describes was the old model. Everything about the potion/scroll LADDER (
         (watch MP), and auto-potions must not drink a Might potion under Might and Bulwark. When the
         group expires it may cast it again.
 
---- 35. 🔴 PLAYTEST-16 (2026-08-01, played on 0.42.0) — built in **0.42.1**. Unity-side, so the APK
-proves them. ⚠ He numbers his own copy by VERSION (his "37c" = the 0.37.0 item = 32c here). ---
+--- 35. 🔴 PLAYTEST-16 (2026-08-01, played on 0.42.0). ⚠ He numbers his own copy by VERSION (his
+"37c" = the 0.37.0 item = 32c here). ---
 **17 items passed** (ticked above in §32/§33). Four passed *with a follow-up*, and he found two bugs.
+**BUILT IN 0.42.1 — test these:** 35e (the hold gesture) · 35f (the box/bag refresh).
+**BUILT IN 0.42.2 — test these:** 35a · 35b · 35c · 35d. All but 35c are Unity-side (35c is the
+server's drop-line builder), so the APK is what proves them.
 35a.[ ] **A set says what it DOES.** 32c gave the piece list and the filled slots but never the reward:
         *"the effect is not shown — what does that set do?"* The bonus lines (the actual stats, and
         anything gated on wearing more pieces) must be on the set panel next to the pieces.

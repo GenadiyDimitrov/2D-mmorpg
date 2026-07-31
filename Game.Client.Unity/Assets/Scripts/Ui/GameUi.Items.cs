@@ -235,12 +235,13 @@ namespace Game.Client
             {
                 // Quantity item → pick HOW MANY to bin on the numpad (owner's ask — the plain
                 // one/all/cancel was "not as fancy"). Max is the whole stack.
-                OpenNumpad("Delete " + def.Name, stack, qty =>
+                OpenNumpad("Delete " + def.Name, stack, "Delete", qty =>
                 {
                     Boot.RemoveItem(id, all: qty >= stack, quantity: qty);
                     CloseNumpad();
                     CloseAllItemViews();
-                });
+                },
+                qty => qty >= stack ? "the whole stack" : qty + " of " + stack + ", keeping " + (stack - qty));
             }
             else
             {
@@ -398,17 +399,27 @@ namespace Game.Client
             t.AppendLine("<b>Set: " + set.Name + "</b>");
             AppendSetPieces(t, set);
 
-            var b = set.Bonus;
+            // WHAT THE SET DOES (owner, playtest-16: "the effect is not shown — what does that set
+            // do?"). This listed only the ClassFlatBonus, and every tiered set leaves that empty and
+            // carries its bonus in Mods — so the answer for nearly every set in the game was a blank.
             var parts = new List<string>();
-            if (b.MaxHp != 0)    parts.Add("HP +" + b.MaxHp);
-            if (b.MaxMp != 0)    parts.Add("MP +" + b.MaxMp);
-            if (b.Defence != 0)  parts.Add("Def +" + b.Defence);
-            if (b.Attack != 0)   parts.Add("Atk +" + b.Attack);
-            if (b.Evasion != 0)  parts.Add("Eva +" + b.Evasion);
-            if (b.Accuracy != 0) parts.Add("Acc +" + b.Accuracy);
-            if (set.DefencePct > 0f)   parts.Add("Def +" + (set.DefencePct * 100f).ToString("0.#") + "%");
-            if (set.CastSpeedPct > 0f) parts.Add("Cast +" + (set.CastSpeedPct * 100f).ToString("0.#") + "%");
-            if (parts.Count > 0) t.AppendLine("  Bonus: " + string.Join(", ", parts));
+            var b = set.Bonus;
+            if (b.MaxHp != 0)    parts.Add("Max HP +" + b.MaxHp);
+            if (b.MaxMp != 0)    parts.Add("Max MP +" + b.MaxMp);
+            if (b.Defence != 0)  parts.Add("P.Def +" + b.Defence);
+            if (b.Attack != 0)   parts.Add("P.Atk +" + b.Attack);
+            if (b.Evasion != 0)  parts.Add("Evasion +" + b.Evasion);
+            if (b.Accuracy != 0) parts.Add("Accuracy +" + b.Accuracy);
+            if (set.DefencePct > 0f)   parts.Add("P.Def +" + (set.DefencePct * 100f).ToString("0.#") + "%");
+            if (set.CastSpeedPct > 0f) parts.Add("Cast speed +" + (set.CastSpeedPct * 100f).ToString("0.#") + "%");
+            parts.AddRange(SkillText.Mods(set.Mods));   // the shared formatter both clients read from
+            if (parts.Count > 0) t.AppendLine("  Grants: " + string.Join(", ", parts));
+
+            // The shield extra is never required to complete the set, so it reads as a separate line
+            // rather than being mixed into the numbers you get for wearing four pieces.
+            var shield = SkillText.Mods(set.ShieldBonus);
+            if (shield.Count > 0)
+                t.AppendLine("  With the set's shield: " + string.Join(", ", shield));
 
             return t.ToString().TrimEnd('\r', '\n');
         }

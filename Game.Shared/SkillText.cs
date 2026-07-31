@@ -172,43 +172,50 @@ public static class SkillText
 
     // ----- masteries ----------------------------------------------------------------------
 
-    /// <summary>Pivot a per-SOURCE listing (one entry per weapon / per armour weight) into a
-    /// per-STAT one: "Cast speed:  Blunt +5%, Other −10%" instead of a Cast-speed line under Blunt
-    /// and another under Other.
+    /// <summary>Group a per-SOURCE listing (one entry per weapon / per armour weight) by the SOURCE,
+    /// folding together every source that grants exactly the same thing:
     ///
-    /// A mastery's whole point is the COMPARISON between the weapons, and source-major hid it: the
-    /// mage's weapon proficiency read "+cast, −cast, +cast …" down the window with the reader left
-    /// to hold four numbers in their head to see which weapon they should be holding (32g/31e).
-    /// The stat's own order is the one <see cref="Passive"/> emits, so it stays stable.</summary>
-    private static List<string> ByStat(List<(string Source, List<string> Lines)> groups)
+    ///     Sword/Blunt:    P.Atk +10, M.Atk +10, Cast speed +10%
+    ///     Dual/dagger/Bow:  Cast speed -100%
+    ///
+    /// This replaced a by-STAT pivot ("Cast speed:  Sword +10%, Blunt +10%, Bow −100% …"), which was
+    /// 32g's answer to "+cast, −cast, +cast" and which the owner rejected on sight (playtest-16):
+    /// *"you can still make P.Atk: sword +10 blunt +10, cast: sword +10 blunt +10 dagger −100 bow
+    /// −100 … to become sword/blunt +10 pAtk +10 mAtk +10 cast, dagger/bow −100 cast — more compact,
+    /// logically written, not throw everything there."*
+    ///
+    /// He is right, and the reason is that these masteries are authored per WEAPON GROUP: the same
+    /// numbers repeat across two or three weapons, so a stat-major listing prints every one of them
+    /// again under each stat. Source-major with identical sources merged prints each number ONCE, and
+    /// what you read is the decision you are actually making — which weapon to hold.
+    ///
+    /// Sources granting nothing are dropped rather than listed as empty: a mastery that ignores bows
+    /// says so by not mentioning them.</summary>
+    private static List<string> BySource(List<(string Source, List<string> Lines)> groups)
     {
-        var order = new List<string>();
-        var byStat = new Dictionary<string, List<string>>();
+        var order = new List<string>();                       // first appearance wins the position
+        var names = new Dictionary<string, List<string>>();   // effects -> the sources granting them
         foreach (var (source, lines) in groups)
-            foreach (var line in lines)
+        {
+            if (lines.Count == 0) continue;
+            string key = string.Join(", ", lines);
+            if (!names.TryGetValue(key, out var list))
             {
-                // Every line this class emits is "<label> <value>" and the value never contains a
-                // space, so the LAST space is the split — no second formatter to keep in sync.
-                int cut = line.LastIndexOf(' ');
-                string stat = cut > 0 ? line.Substring(0, cut) : line;
-                string value = cut > 0 ? line.Substring(cut + 1) : "";
-                if (!byStat.TryGetValue(stat, out var list))
-                {
-                    byStat[stat] = list = new List<string>();
-                    order.Add(stat);
-                }
-                list.Add(source + " " + value);
+                names[key] = list = new List<string>();
+                order.Add(key);
             }
+            list.Add(source);
+        }
 
         var o = new List<string>();
-        foreach (var stat in order) o.Add(stat + ":  " + string.Join(", ", byStat[stat]));
+        foreach (var key in order) o.Add(string.Join("/", names[key]) + ":  " + key);
         return o;
     }
 
-    /// <summary>An armor mastery at one skill level, grouped by STAT, e.g.
-    /// "P.Def:  Heavy +8%, Robe −5%". Only what actually does something is listed — including the
-    /// PENALTY weights, which are the whole point of an armor mastery.</summary>
-    public static List<string> ArmorMastery(ArmorMasteryProfile prof) => ByStat(new()
+    /// <summary>An armor mastery at one skill level, grouped by WEIGHT, e.g.
+    /// "Heavy:  P.Def +8%". Only what actually does something is listed — including the PENALTY
+    /// weights, which are the whole point of an armor mastery.</summary>
+    public static List<string> ArmorMastery(ArmorMasteryProfile prof) => BySource(new()
     {
         ("Robe", Mods(prof.Robe)),
         ("Light", Mods(prof.Light)),
@@ -218,12 +225,12 @@ public static class SkillText
 
     /// <summary>A weapon mastery at one skill level. Same shape as <see cref="ArmorMastery"/>;
     /// "Other" covers empty hand and any unlisted type.</summary>
-    public static List<string> WeaponMastery(WeaponMasteryProfile prof) => ByStat(new()
+    public static List<string> WeaponMastery(WeaponMasteryProfile prof) => BySource(new()
     {
         ("Sword", Passive(prof.Sword)),
+        ("Blunt", Passive(prof.Blunt)),
         ("Dual/dagger", Passive(prof.Dual)),
         ("Bow", Passive(prof.Bow)),
-        ("Blunt", Passive(prof.Blunt)),
         ("Other/unarmed", Passive(prof.Other)),
     });
 
