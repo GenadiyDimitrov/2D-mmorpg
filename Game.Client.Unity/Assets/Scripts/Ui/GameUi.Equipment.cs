@@ -21,8 +21,9 @@ namespace Game.Client
         private readonly List<(string Key, string Name, TextMeshProUGUI Face, Button Btn)> _equipSquares = new();
         private int _equipRevision = -1;
 
-        // Body-slot squares within the ~320-wide column: key + label + top-left offset. Jewels are five
-        // slots filled in the order worn (necklace / earrings / rings — the server enforces the caps).
+        // Body-slot squares within the ~320-wide column: key + label + top-left offset. Jewels have
+        // DESIGNATED slots now (owner, playtest-15 §14) — necklace, two earrings, two rings — so an
+        // empty square names what belongs there and a worn pair never shuffles between refreshes.
         private const float EquipSq = 54f;
         private static readonly (string Key, string Name, float X, float Y)[] EquipSlots =
         {
@@ -32,11 +33,21 @@ namespace Game.Client
             ("shield", "Shld",   218f, -66f),
             ("gloves", "Glov",   133f, -126f),
             ("boots",  "Boot",   133f, -186f),
-            ("jewel0", "—",        8f, -262f),
-            ("jewel1", "—",       68f, -262f),
-            ("jewel2", "—",      128f, -262f),
-            ("jewel3", "—",      188f, -262f),
-            ("jewel4", "—",      248f, -262f),
+            ("neck",   "Neck",     8f, -262f),
+            ("ear1",   "Ear",     68f, -262f),
+            ("ear2",   "Ear",    128f, -262f),
+            ("ring1",  "Ring",   188f, -262f),
+            ("ring2",  "Ring",   248f, -262f),
+        };
+
+        // The two-slot families, in paper-doll order. Slot 1 holds the STRONGER of the pair, matching
+        // the server's displace rule (ItemCatalog.JewelSlotOrder), so what the square shows and what a
+        // new jewel would replace can never disagree.
+        private static readonly (JewelType Type, string[] Keys)[] JewelSlotKeys =
+        {
+            (JewelType.Necklace, new[] { "neck" }),
+            (JewelType.Earring,  new[] { "ear1", "ear2" }),
+            (JewelType.Ring,     new[] { "ring1", "ring2" }),
         };
 
         /// <summary>Build the paper-doll + presets as a column inside <paramref name="parent"/>, anchored
@@ -100,16 +111,32 @@ namespace Game.Client
             if (rev == _equipRevision) return;
             _equipRevision = rev;
 
-            // Map each worn item to a slot key; jewels fill jewel0..4 in the order they're found.
+            // Map each worn item to a slot key. Jewels are placed per sub-type, strongest first, so
+            // the ring you'd displace next is always the one in the higher-numbered square.
             var byKey = new Dictionary<string, InventoryItemDto>();
-            int jewel = 0;
             foreach (var it in items)
             {
                 if (!it.Equipped) continue;
                 var def = ItemCatalog.Get(it.DefId);
-                if (def == null) continue;
-                string key = EquipKeyOf(def, ref jewel);
+                if (def == null || def.Slot == EquipSlot.Jewel) continue;
+                string key = EquipKeyOf(def);
                 if (key != null && !byKey.ContainsKey(key)) byKey[key] = it;
+            }
+
+            foreach (var family in JewelSlotKeys)
+            {
+                var worn = new List<(InventoryItemDto Item, ItemDef Def)>();
+                foreach (var it in items)
+                {
+                    if (!it.Equipped) continue;
+                    var def = ItemCatalog.Get(it.DefId);
+                    if (def != null && def.Slot == EquipSlot.Jewel && def.JewelType == family.Type)
+                        worn.Add((it, def));
+                }
+                worn.Sort((a, b) => ItemCatalog.JewelSlotOrder(a.Def, a.Item.Enchant)
+                            .CompareTo(ItemCatalog.JewelSlotOrder(b.Def, b.Item.Enchant)));
+                for (int i = 0; i < worn.Count && i < family.Keys.Length; i++)
+                    byKey[family.Keys[i]] = worn[i].Item;
             }
 
             foreach (var (key, name, face, btn) in _equipSquares)
@@ -134,13 +161,14 @@ namespace Game.Client
             }
         }
 
-        private static string EquipKeyOf(ItemDef def, ref int jewel)
+        /// <summary>Slot key for everything that is one-per-slot. Jewels are NOT handled here — they
+        /// need the whole worn set to order a pair, so RefreshEquipmentWindow places them.</summary>
+        private static string EquipKeyOf(ItemDef def)
         {
             switch (def.Slot)
             {
                 case EquipSlot.Weapon: return "weapon";
                 case EquipSlot.Shield: return "shield";
-                case EquipSlot.Jewel:  return jewel < 5 ? "jewel" + (jewel++) : null;
                 case EquipSlot.Armor:
                     switch (def.ArmorSlot)
                     {

@@ -1461,19 +1461,31 @@ public class GameLoopService : BackgroundService
                 trade.OfferOf(player).Contains(item.InstanceId))
                 return;
 
-            // JEWELS stack PER SUB-TYPE: 2 rings, 2 earrings, 1 necklace. Refuse when
-            // that sub-type's slots are full (other slots are one-per-slot).
+            // JEWELS have DESIGNATED slots per sub-type: 2 rings, 2 earrings, 1 necklace. A full
+            // pair no longer REFUSES the new jewel — it behaves like gloves and displaces one
+            // (owner, playtest-15 §14). Which one: the WEAKEST by rarity, and when they tie, the
+            // one in SLOT 1. Since the slots are ordered strongest-first, "the weakest, lowest
+            // slot index" is simply the first entry whose strength equals the minimum.
             if (def.Slot == EquipSlot.Jewel)
             {
-                int sameType = player.Inventory.Count(i => i.Equipped && i != item
-                    && ItemCatalog.Get(i.DefId) is ItemDef j
-                    && j.Slot == EquipSlot.Jewel && j.JewelType == def.JewelType);
-                if (sameType >= ItemCatalog.MaxOfJewelType(def.JewelType))
+                var worn = player.Inventory
+                    .Where(i => i.Equipped && i != item
+                                && ItemCatalog.Get(i.DefId) is ItemDef j
+                                && j.Slot == EquipSlot.Jewel && j.JewelType == def.JewelType)
+                    .OrderBy(i => ItemCatalog.JewelSlotOrder(ItemCatalog.Get(i.DefId)!, i.Enchant))
+                    .ToList();
+
+                // `while`, not `if`: a character wearing more than the cap (older save, changed cap)
+                // sheds down to it rather than staying over budget forever.
+                int max = ItemCatalog.MaxOfJewelType(def.JewelType);
+                while (worn.Count >= max && worn.Count > 0)
                 {
-                    string label = def.JewelType.ToString().ToLowerInvariant();
-                    SendSystemToEntity(player,
-                        $"You can't wear another {label} ({ItemCatalog.MaxOfJewelType(def.JewelType)} max).");
-                    return;
+                    long weakest = worn.Min(i => ItemCatalog.JewelStrength(ItemCatalog.Get(i.DefId)!, i.Enchant));
+                    var loser = worn.First(i => ItemCatalog.JewelStrength(ItemCatalog.Get(i.DefId)!, i.Enchant) == weakest);
+                    loser.Equipped = false;
+                    worn.Remove(loser);
+                    if (ItemCatalog.Get(loser.DefId) is ItemDef lost)
+                        SendSystemToEntity(player, $"You take off your {lost.Name}.");
                 }
             }
 

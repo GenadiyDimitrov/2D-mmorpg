@@ -265,7 +265,8 @@ and the Learn confirmation shows its numbers. **31e is right but unreadable** �
 (32m and 32s came out of the SAME line — see 32s. 32m was scheduled for the Unity batch and arrived early.)
 **BUILT IN 0.37.0 — test these:** 32c · 32d · 32e · 32f · 32g · 32n · 32q · 32r, plus **32w** (the NPC
 buffer's new basic-only list). All but 32f/32g/32q are Unity-side, so the APK is what proves them.
-**STILL OPEN:** 32t (jewel slots — its own batch) · 32u (a design call, never built).
+**BUILT IN 0.38.0 — test this:** 32t (jewel slots). Server + Unity paper-doll.
+**STILL OPEN:** 32u (a design call, never built).
 32a.[ ] **The phone server starts with no hand-editing** — unzip a fresh `Game.Server` on the phone and
         `dotnet Game.Server.dll` must just run. It currently dies with `GC heap initialization failed
         (0x8007000E)` — Server GC tries to reserve 256 GiB — and he has to `nano
@@ -321,9 +322,15 @@ buffer's new basic-only list). All but 32f/32g/32q are Unity-side, so the APK is
         Then confirm a NON-party player CAN be attacked on the second tap when PvP is on and you are
         out of town — that half was genuinely broken: `TouchInput` only sent an Attack for a MOB, so
         tapping any player did nothing at all.
-32t.[ ] **Jewels have designated slots** — 2 rings, 2 earrings, 1 necklace, 1 pendant; equipping swaps
-        like gloves do. Swap rule: replace the WEAKER of the two; if both are the same rarity replace
-        slot 1; empty counts as weaker than Common.
+32t.[ ] **Jewels have designated slots** — the paper-doll shows **Neck · Ear · Ear · Ring · Ring**, and an
+        empty square names its slot. (FIVE slots, not six: the report's "pendant" is the necklace —
+        the necklace-family items are literally *named* Pendant in the catalogue.) Equipping swaps
+        like gloves do — a third ring must NEVER be refused with a message. Swap rule: replace the
+        WEAKER of the two; if both are the same rarity replace **slot 1**; empty counts as weaker
+        than Common. Walk his worked example: no rings → common goes to slot 1 → 2nd common to slot 2
+        → a **rare** replaces slot 1 (tie) → an **uncommon** replaces slot 2 (weaker) → another
+        uncommon replaces slot 2 again. Slot 1 always holds the stronger of the pair. Then **relog**:
+        the pair must come back in the same two squares (the slot is derived, not stored).
 32u.[ ] **Free teleport under 40** — NEVER BUILT (the fee is distance-only, min 50). Open design call,
         not a regression.
 32x.[ ] **An improved buff is ONE square on the bar.** Cast the cleric's Improved Speed: exactly one

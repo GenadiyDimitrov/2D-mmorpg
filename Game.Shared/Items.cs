@@ -83,9 +83,9 @@ public static class GradePenalty
 /// God (99) is the untouchable debug tier and is not part of the ladder.</summary>
 public enum ItemRarity { Common = 0, Uncommon = 1, Rare = 2, Epic = 3, Legendary = 4, Mythic = 5, God = 99 }
 
-// Jewel = the magic-defence slot. ONE jewel equips for now; the equip code is
-// written to expand to the L2 layout (2 rings / 2 earrings / 1 necklace) later
-// by allowing several Jewel-slot items at once.
+// Jewel = the magic-defence slot. Five DESIGNATED slots: 2 rings, 2 earrings, 1 necklace
+// (see MaxOfJewelType). Equipping into a full pair displaces one rather than refusing —
+// the choice is JewelStrength + "ties go to slot 1".
 public enum EquipSlot { Weapon = 0, Armor = 1, Consumable = 2, Scroll = 3, QuestItem = 4, Shield = 5, Jewel = 6, Box = 7, Material = 8, Rune = 9 }
 
 /// <summary>Jewel sub-type — limits how many can be worn: 2 Rings, 2 Earrings, 1 Necklace.</summary>
@@ -1694,6 +1694,22 @@ public static class ItemCatalog
         JewelType.Necklace => 1,
         _ => 1   // untyped jewel: single
     };
+
+    /// <summary>How strong a worn jewel is, for deciding which one a new one displaces and which
+    /// end of a PAIR it sits in. RARITY is the owner's stated ordering (empty &lt; common &lt;
+    /// uncommon &lt; … &lt; mythic); enchant only breaks a rarity tie, so a +3 common outranks a +0
+    /// common instead of the choice falling to an arbitrary slot.
+    ///
+    /// Deliberately NOT persisted: which physical slot a jewel occupies is a pure function of what
+    /// you are wearing (strongest first — see JewelSlotOrder), so it survives a relog with no extra
+    /// column and can never drift out of sync with the items themselves.</summary>
+    public static long JewelStrength(ItemDef def, int enchant) => (long)def.Rarity * 1000 + enchant;
+
+    /// <summary>Sort key placing worn jewels of one sub-type into their designated slots: the
+    /// STRONGER of a pair takes slot 1. DefId breaks a full tie so the order is stable across
+    /// relogs (a live InstanceId is regenerated on load and would not be).</summary>
+    public static (long NegStrength, string DefId) JewelSlotOrder(ItemDef def, int enchant)
+        => (-JewelStrength(def, enchant), def.Id);
 
     public static ItemDef? Get(string id) => id is null ? null : All.GetValueOrDefault(id);
 

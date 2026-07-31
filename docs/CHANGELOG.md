@@ -12,6 +12,28 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-31 — Jewels get their own slots (0.38.0)
+
+Checklist **32t**, the last build item in §32. Jewels behaved like a LIST — five anonymous squares
+filled in whatever order the bag happened to be in, and a third ring was refused with a message
+instead of replacing one. Now they behave like gloves.
+
+- **Five designated slots**: necklace · earring · earring · ring · ring. The paper-doll squares are
+  named (`neck`, `ear1/2`, `ring1/2`), so an empty one says what belongs there.
+- **Equipping into a full pair displaces, never refuses.** Which one goes: the **weakest**, and on a
+  tie **slot 1** — the owner's rule, verbatim (`no slot < common < uncommon < … < mythic`). His
+  worked example traces exactly: 1st common → slot 1; 2nd common → slot 2; a rare → slot 1 (tie); an
+  uncommon → slot 2 (weaker); another uncommon → slot 2 again. A necklace (cap 1) degenerates to the
+  same rule and simply swaps. You are told what came off.
+- **Enchant breaks a rarity tie** (`ItemCatalog.JewelStrength`) — the one place the owner's rule was
+  silent. Without it, replacing "the weakest of two commons" would drop the +3 as readily as the +0.
+- **Which slot a jewel sits in is DERIVED, not stored** (`ItemCatalog.JewelSlotOrder`: strongest
+  first, `DefId` as the stable tie-break). No new column, so **no `game.db` reset**, and the slot can
+  never drift out of sync with the items. `DefId` rather than an instance id on purpose: the live
+  `InstanceId` is regenerated on load and would reshuffle the pair on every relog.
+- Server and both clients share the same two helpers, so the square you see and the jewel the server
+  would replace can't disagree.
+
 ## 2026-07-31 — Playtest-15 batch 2: the windows stop withholding what they know (0.37.0)
 
 The rest of §32 apart from the two that want their own pass (32t jewel slots, 32u free teleport).
