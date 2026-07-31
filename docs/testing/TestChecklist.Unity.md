@@ -382,8 +382,12 @@ playtest-15 big design #1). §32 is now fully built.
         because it was already guaranteed. `/droprate item Scroll of Resurrect 1` clears it and the
         tree goes back to a plain name list. A wrong name must suggest near matches, not fail silently.
 
---- 33. 🔴 THE POTION SPLIT (0.40.0) — playtest-15 big design #2, `docs/design/BuffLadders.md`. ---
-**All server-side. No Unity file changed, so the current APK proves it as well as a new one would.**
+--- 33. 🔴 THE POTION SPLIT (0.40.0 → 0.41.1) — playtest-15 big design #2, `docs/design/BuffLadders.md`. ---
+**All server-side. No Unity file changed across 0.40.0/0.41.0/0.41.1**, so the APK only moves for the
+version handshake — nothing on this list is a client change.
+✅ **SmokeTest RUN AND GREEN on 0.41.1** — 144 checks, all passed, including the three that cover this
+area: a buff potion puts a timed buff up, the buff **survives a relog**, keeps its **remaining** time
+(1200.0s → 1194.4s, not re-cast at full) and is applied **exactly once**.
 The one thing to prove above all: **a buff potion no longer stacks with the buff it duplicates.**
 33a.[ ] **A potion competes with the class buff instead of adding to it.** Get a cleric's Might (now
         **"Might and Bulwark"**) at level 1 (+8% P.Atk / +8% P.Def), note P.Atk in the stats window,
