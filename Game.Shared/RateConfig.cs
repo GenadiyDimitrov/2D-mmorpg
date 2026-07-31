@@ -56,6 +56,26 @@ public static class RateConfig
     public static float DropGroupRate(string group) =>
         DropGroupRates.TryGetValue(group, out float v) ? v : 1f;
 
+    /// <summary>Per-ITEM multipliers, composed on top of the group's rate — the third and finest knob
+    /// (owner, playtest-15 §3: *"so a single item, a Scroll of Resurrect, a specific potion, can be
+    /// tuned independently of its rarity"*).
+    ///
+    /// Empty by default: an item with no entry here multiplies by 1, so this changes nothing until
+    /// something is deliberately named. Set with <c>/droprate item &lt;id|name&gt; &lt;mult&gt;</c>;
+    /// setting it back to 1 removes the override rather than storing a no-op.
+    ///
+    /// Inside an exclusive drop GROUP an entry's chance is a WEIGHT, so this knob does two things at
+    /// once and both are wanted: it scales the item's share of the pick AND its contribution to the
+    /// group firing at all. Raising one member of a guaranteed group (always = 100%) therefore takes
+    /// share FROM its siblings rather than making the group fire more often, which is exactly what
+    /// "tune this one item, not its rarity rung" has to mean.</summary>
+    public static readonly Dictionary<string, float> DropItemRates =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>An item's own multiplier (1 when it has no override, which is the normal case).</summary>
+    public static float DropItemRate(string itemId) =>
+        itemId is not null && DropItemRates.TryGetValue(itemId, out float v) ? v : 1f;
+
     /// <summary>Multiplier on each drop's QUANTITY (stack size).</summary>
     public static float DropAmountRate = 1f;
 

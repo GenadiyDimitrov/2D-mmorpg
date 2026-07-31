@@ -350,6 +350,15 @@ buffer's new basic-only list). All but 32f/32g/32q are Unity-side, so the APK is
         what's missing is that your own client is never told, so the frame sits empty or stale. Pairs
         with 32k — you can't see it retaliate if you can't see what it's chosen.
 
+32y.[ ] **One item can be tuned on its own** (0.38.1, playtest-15 big design #3 — the group MATH was
+        already what you described, so only the per-item knob is new). On the phone, as admin:
+        `/droprate item Scroll of Resurrect 5` — it must accept the NAME, not just the id, and confirm.
+        `/droprate` with no args must then list it under "Per-item overrides". Inspect a mob's drop
+        tree: the Always group still reads 100%, but its members now print their individual SHARES and
+        the scroll's must have grown at the others' expense — **the group must NOT fire more often**,
+        because it was already guaranteed. `/droprate item Scroll of Resurrect 1` clears it and the
+        tree goes back to a plain name list. A wrong name must suggest near matches, not fail silently.
+
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends
         (and combat decays) it works. Same for `/exit`. Pulling the plug mid-DoT must not run the

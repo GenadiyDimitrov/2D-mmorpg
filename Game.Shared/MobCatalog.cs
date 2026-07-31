@@ -205,6 +205,17 @@ public static class MobCatalog
         (IsGuaranteedGroup(groupId) ? 1f : RateConfig.DropChanceRate)
         * RateConfig.DropGroupRate(GroupName(groupId));
 
+    /// <summary>An entry's authored chance with its PER-ITEM multiplier applied, but NOT the group or
+    /// global rate. This is the number that acts as a WEIGHT inside an exclusive group, so the weighted
+    /// pick and the group's fire chance are built from the same quantity and cannot disagree.</summary>
+    public static float ItemWeight(DropEntry e) => e.Chance * RateConfig.DropItemRate(e.ItemId);
+
+    /// <summary>THE chance one drop entry actually rolls at, before the level-gap penalty: the authored
+    /// chance times all three knobs (per-item x per-group x global). Everything that rolls or DISPLAYS a
+    /// drop chance goes through here — the kill roll, the target-inspect list and tools/BalanceMatrix —
+    /// so the number on screen stays the number you get.</summary>
+    public static float EffectiveChance(DropEntry e) => ItemWeight(e) * EffectiveRate(e.GroupId);
+
     // The tables below are PROPERTIES, not static readonly fields, and that is load-bearing: `All =
     // Build()` is declared at the top of this class and C# runs static field initializers in declaration
     // order, so any field declared here would still be null when Build() reaches StandardDrops. Same

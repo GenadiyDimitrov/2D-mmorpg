@@ -307,13 +307,15 @@ static IEnumerable<(DropEntry Entry, float Chance)> Marginals(IEnumerable<DropEn
 {
     var applicable = table.Where(e => e.AppliesAtLevel(mobLevel)).ToList();
     foreach (var e in applicable.Where(e => e.GroupId == 0))
-        yield return (e, Math.Min(1f, e.Chance * MobCatalog.EffectiveRate(0)));
+        yield return (e, Math.Min(1f, MobCatalog.EffectiveChance(e)));
     foreach (var g in applicable.Where(e => e.GroupId != 0).GroupBy(e => e.GroupId))
     {
-        float sum = g.Sum(e => e.Chance);
-        float trigger = Math.Min(1f, sum * MobCatalog.EffectiveRate(g.Key));
+        // Weights are the PER-ITEM-TUNED chances (MobCatalog.ItemWeight), matching RollDrop exactly —
+        // this tool's whole job is to be the same arithmetic, so it reads the same two helpers.
+        float sum = g.Sum(MobCatalog.ItemWeight);
+        float trigger = Math.Min(1f, g.Sum(MobCatalog.EffectiveChance));
         foreach (var e in g)
-            yield return (e, sum <= 0 ? 0 : trigger * (e.Chance / sum));
+            yield return (e, sum <= 0 ? 0 : trigger * (MobCatalog.ItemWeight(e) / sum));
     }
 }
 
@@ -451,7 +453,7 @@ var hotGroups = MobCatalog.Templates
     .SelectMany(m => (m.Drops ?? Array.Empty<DropEntry>())
         .Where(d => d.GroupId != 0)
         .GroupBy(d => d.GroupId)
-        .Select(g => (Mob: m.Id, Group: g.Key, Sum: g.Sum(d => d.Chance) * MobCatalog.EffectiveRate(g.Key))))
+        .Select(g => (Mob: m.Id, Group: g.Key, Sum: g.Sum(MobCatalog.EffectiveChance))))
     .Where(x => x.Sum > 1.0001f)
     .ToArray();
 Console.WriteLine($"  {hotGroups.Length} group(s) clamped at 100% (weights inside would be preserved anyway,"

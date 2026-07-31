@@ -3868,7 +3868,7 @@ public class GameLoopService : BackgroundService
                     : "Admin: /jail, /unjail, /kick, /ban, /unban, /chatban, /unchatban, /jailed, " +
                       "/role <name> <player|moderator|admin>, /tp <name>, /where <name>, /god, " +
                       "/speed-cast|atack|move <v>, /speed-reset, /bag <name>, /give <name>, " +
-                      "/givegold <name> <amount>, /droprate [group|gear|global] [mult]");
+                      "/givegold <name> <amount>, /droprate [group|gear|global|item <id>] [mult]");
                 break;
 
             case "god":
@@ -4158,9 +4158,61 @@ public class GameLoopService : BackgroundService
                         $"Global drop rate x{RateConfig.DropChanceRate:0.###}  (mats/scrolls/always are exempt)");
                     foreach (var (name, mul) in RateConfig.DropGroupRates.OrderBy(k => k.Key))
                         SendSystemToEntity(admin, $"  {name,-10} x{mul:0.###}");
+                    // Per-item overrides are listed only when there ARE any — an empty section every
+                    // time would be four wasted lines on a phone screen.
+                    if (RateConfig.DropItemRates.Count > 0)
+                    {
+                        SendSystemToEntity(admin, "Per-item overrides:");
+                        foreach (var (id, mul) in RateConfig.DropItemRates.OrderBy(k => k.Key))
+                            SendSystemToEntity(admin,
+                                $"  {ItemCatalog.Get(id)?.Name ?? id} ({id}) x{mul:0.###}");
+                    }
                     SendSystemToEntity(admin,
                         "Usage: /droprate <group|gear|global> <multiplier>  — 'gear' sets all four " +
                         "equipment groups at once, 'global' sets the server-wide rate.");
+                    SendSystemToEntity(admin,
+                        "       /droprate item <id or name> <multiplier>  — tunes ONE item on its own " +
+                        "(x1 clears it). Inside a group this moves its share, not its rarity rung.");
+                    break;
+                }
+                // ITEM first: its id/name may contain spaces, so it is parsed as "everything between
+                // 'item' and the trailing multiplier" rather than by a fixed token count.
+                if (parts[0].Equals("item", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (parts.Length < 3 || !float.TryParse(parts[^1],
+                            System.Globalization.NumberStyles.Float,
+                            System.Globalization.CultureInfo.InvariantCulture, out float imult) || imult < 0f)
+                    {
+                        SendSystemToEntity(admin, "Usage: /droprate item <id or name> <multiplier>");
+                        break;
+                    }
+                    string needle = string.Join(' ', parts[1..^1]).Trim();
+                    // Accept the ITEM ID or the display NAME: the drop list on the phone shows names,
+                    // and nothing in the client ever shows an id, so id-only would mean guessing.
+                    var target = ItemCatalog.Get(needle)
+                        ?? ItemCatalog.AllItems.FirstOrDefault(d =>
+                               d.Name.Equals(needle, StringComparison.OrdinalIgnoreCase));
+                    if (target is null)
+                    {
+                        var near = ItemCatalog.AllItems
+                            .Where(d => d.Name.Contains(needle, StringComparison.OrdinalIgnoreCase))
+                            .Take(5).Select(d => $"{d.Name} ({d.Id})").ToArray();
+                        SendSystemToEntity(admin, near.Length > 0
+                            ? $"No item '{needle}'. Did you mean: {string.Join(", ", near)}"
+                            : $"No item '{needle}'.");
+                        break;
+                    }
+                    if (Math.Abs(imult - 1f) < 0.0001f)
+                    {
+                        RateConfig.DropItemRates.Remove(target.Id);
+                        SendSystemToEntity(admin, $"{target.Name} ({target.Id}) back to its table value.");
+                    }
+                    else
+                    {
+                        RateConfig.DropItemRates[target.Id] = imult;
+                        SendSystemToEntity(admin, $"{target.Name} ({target.Id}) = x{imult:0.###}. "
+                            + "Inside a drop group this changes its SHARE of that group's one roll.");
+                    }
                     break;
                 }
                 if (parts.Length < 2 || !float.TryParse(parts[1],
@@ -7016,7 +7068,7 @@ var effect = def.Effect;
         // Independent entries (GroupId == 0): each its own rate-scaled roll.
         foreach (var entry in applicable.Where(e => e.GroupId == 0))
         {
-            float chance = Math.Min(1f, entry.Chance * MobCatalog.EffectiveRate(0) * dropGap);
+            float chance = Math.Min(1f, MobCatalog.EffectiveChance(entry) * dropGap);
             if (_rng.NextDouble() <= chance)
                 Award(entry);
         }
@@ -7027,15 +7079,18 @@ var effect = def.Effect;
         foreach (var group in applicable.Where(e => e.GroupId != 0).GroupBy(e => e.GroupId))
         {
             var members = group.ToList();
-            float total = Math.Min(1f, members.Sum(e => e.Chance) * MobCatalog.EffectiveRate(group.Key) * dropGap);
+            float total = Math.Min(1f, members.Sum(MobCatalog.EffectiveChance) * dropGap);
             if (_rng.NextDouble() > total)
                 continue;
-            // Weighted pick within the group (weights = the raw member chances).
-            double weightSum = members.Sum(e => (double)e.Chance);
+            // Weighted pick within the group. The weight is the PER-ITEM-TUNED chance, the same
+            // quantity the trigger above was summed from — take the raw authored chance here instead
+            // and a per-item multiplier would move how often the group fires without moving which
+            // member it lands on, which is the one thing the knob exists to do.
+            double weightSum = members.Sum(e => (double)MobCatalog.ItemWeight(e));
             double pick = _rng.NextDouble() * weightSum;
             foreach (var e in members)
             {
-                pick -= e.Chance;
+                pick -= MobCatalog.ItemWeight(e);
                 if (pick <= 0) { Award(e); break; }
             }
         }
@@ -8344,15 +8399,25 @@ var effect = def.Effect;
             var lines = new List<string>();
             // GroupId 0 rolls independently, so each entry is its own row carrying its own chance.
             foreach (var d in rows.Where(d => d.GroupId == 0))
-                lines.Add($"{ItemLine(d)}  ({Math.Min(1f, d.Chance * MobCatalog.EffectiveRate(0)) * 100:0.##}%)");
+                lines.Add($"{ItemLine(d)}  ({Math.Min(1f, MobCatalog.EffectiveChance(d)) * 100:0.##}%)");
             // A GROUP is ONE roll shared by its members, so it reads as a TREE (32f): a title line with
             // the group's own chance, then the items it can land on indented beneath. As flat rows a
             // single 5% group looked like five separate 5% drops, which is five times the truth.
             foreach (var g in rows.Where(d => d.GroupId != 0).GroupBy(d => d.GroupId))
             {
-                float chance = Math.Min(1f, g.Sum(d => d.Chance) * MobCatalog.EffectiveRate(g.Key));
+                float chance = Math.Min(1f, g.Sum(MobCatalog.EffectiveChance));
                 lines.Add($"{GroupTitle(g.Key)}  ({chance * 100:0.##}%)");
-                foreach (var name in g.Select(ItemLine).Distinct()) lines.Add("   " + name);
+                // A per-item override changes an item's SHARE of the group, which a bare name list can't
+                // show — so a tuned member says its share outright rather than silently reading like its
+                // untuned siblings. Untouched groups look exactly as they did.
+                double weightSum = g.Sum(d => (double)MobCatalog.ItemWeight(d));
+                bool tuned = g.Any(d => RateConfig.DropItemRate(d.ItemId) != 1f);
+                foreach (var d in g.GroupBy(ItemLine))
+                {
+                    if (!tuned || weightSum <= 0) { lines.Add("   " + d.Key); continue; }
+                    double share = d.Sum(x => (double)MobCatalog.ItemWeight(x)) / weightSum;
+                    lines.Add($"   {d.Key}  ({chance * share * 100:0.##}%)");
+                }
             }
             drops = lines.ToArray();
         }

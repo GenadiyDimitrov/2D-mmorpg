@@ -105,8 +105,22 @@ system doing its job rather than a fudge: the design reads at ×1, the server ru
 acceptance test is absolute (~400k by level 25) — ×3 flat measures 1.08M, ×3 × 1/3 measures 402k.
 **If `DropChanceRate` ever goes back to 1, put the gear groups back to 1 with it.**
 
+**A THIRD knob, per ITEM** (2026-07-31, playtest-15 §3): `RateConfig.DropItemRates`, empty by default,
+composed on top of the group and global rates. It exists because a gear group is authored as one
+family × rarity rung, so nothing could move a single named item — a Scroll of Resurrect, one potion —
+without moving its whole rung. Two helpers do the composing: `MobCatalog.ItemWeight` (authored chance ×
+item rate) and `MobCatalog.EffectiveChance` (that × the group rate).
+
+⚠ **Inside an exclusive group an entry's chance is a WEIGHT**, so a per-item multiplier moves both the
+member's share of the pick and its contribution to the group firing. In a group already at 100% (mats /
+always) it therefore moves **share, not volume** — measured, Scroll of Resurrect at ×5 takes level-25
+consumable value from 95 to 107 with items-per-kill unchanged at 2.89. That is the correct reading of
+"tune this item, not its rarity rung".
+
 Live-tunable in game, admin only — **`/droprate`** lists everything, `/droprate <group> <x>` sets one,
-`/droprate gear <x>` sets all four equipment groups, `/droprate global <x>` sets the server rate. It is a
+`/droprate gear <x>` sets all four equipment groups, `/droprate global <x>` sets the server rate, and
+**`/droprate item <id or name> <x>`** tunes one item (×1 clears it; it takes the display NAME too,
+because the drop list on the phone shows names and never ids). It is a
 CHAT command and not a tuning-panel row on purpose: the panel's payload is a wire DTO, so eight new
 fields there would bump the protocol and need a matching Unity build — for a knob whose entire value is
 being adjustable mid-playtest, on the phone, without rebuilding anything.
@@ -337,5 +351,9 @@ in §5 — reading it the other way moves every price by 2.86× and halves the f
   ⚠ They are **properties, not fields**: `All = Build()` is declared first and would read a null field.
 - `RateConfig.DropChanceRate` (×3) + `RateConfig.DropGroupRates` (per group) — combined ONLY by
   `MobCatalog.EffectiveRate(groupId)`. See §2. Admin command: `/droprate`.
+- `RateConfig.DropItemRates` (per item, empty by default) — combined ONLY by `MobCatalog.ItemWeight` /
+  `MobCatalog.EffectiveChance`. **Everything that rolls or DISPLAYS a chance must call these two** (the
+  kill roll, the target-inspect tree, BalanceMatrix) or the number on screen stops being the number you
+  get, which is the one bug this whole system exists to avoid.
 - `tools/BalanceMatrix` § ECONOMY — the measurement. **Re-run it after touching any of the above**; the
   faucet arithmetic multiplies and has been hand-derived wrong twice.

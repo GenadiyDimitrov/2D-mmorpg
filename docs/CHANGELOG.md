@@ -12,6 +12,37 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-07-31 — A single item can be tuned on its own (0.38.1)
+
+Playtest-15 big design **#3**, scoped down after the answer turned out to be "the math already
+exists". His question — *"10 items all at the same %, roll 0.048 → pick one of the Commons"*, and
+*"group at 100%, all items 100% — how to pick one at random?"* — describes **weighted single-pick**,
+which is what `RollDrop` has done since the groups shipped: a group rolls once at the summed member
+chance, then picks one member weighted by the individual chances. Equal percentages are equal
+weights, so "all at 100%" is a uniform random pick. Nothing to build there.
+
+What was genuinely missing is the ability to move **one item** without moving its whole rarity rung,
+since a gear group is authored as one family × rarity rung. So: a third rate knob, per ITEM.
+
+- **`RateConfig.DropItemRates`** — empty by default, so this ships inert. Composed on top of the
+  group and global rates in two new helpers, `MobCatalog.ItemWeight` (authored chance × item rate)
+  and `MobCatalog.EffectiveChance` (that × the group rate).
+- **`/droprate item <id or name> <mult>`**, `x1` clears the override. It accepts the display **name**
+  as well as the id, because the drop list on the phone shows names and nothing in the client ever
+  shows an id — id-only would have meant guessing. A miss suggests up to five near matches.
+- **The weighted pick now uses the tuned weight**, the same quantity the group's trigger is summed
+  from. Using the raw authored chance there instead would have let the knob change how often a group
+  fires without changing which member it lands on — the one thing it exists to do.
+- **Inside a guaranteed group the knob moves SHARE, not volume.** Measured: Scroll of Resurrect at
+  ×5 moves level-25 consumable value 95 → 107 while items-per-kill stays 2.89, because the Always
+  group is already at 100% and the boost comes out of its siblings. That is the correct meaning of
+  "tune this item, not its rarity".
+- The target-inspect tree and `tools/BalanceMatrix` read the same two helpers, so a tuned item's
+  displayed % stays the real one; a tuned group additionally prints each member's share.
+- **Verified a no-op at default**: `BalanceMatrix` output is byte-identical before and after.
+  The gear groups were deliberately left alone — they produce the gold curve the 2026-07-31 playtest
+  confirmed by play, and re-authoring them was the branch not taken.
+
 ## 2026-07-31 — Jewels get their own slots (0.38.0)
 
 Checklist **32t**, the last build item in §32. Jewels behaved like a LIST — five anonymous squares
