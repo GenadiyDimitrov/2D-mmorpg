@@ -147,6 +147,9 @@ namespace Game.Client
         public async void Follow(Guid? targetId)
         {
             if (Phase != ClientPhase.InWorld) return;
+            // Same reasoning as Attack: the server steers this walk (it re-paths as they move), so a
+            // predicted straight line to the last tap point would diverge and snap.
+            CancelMoveOrder();
             try { await _net.FollowAsync(targetId); }
             catch (Exception ex) { ClientLog.Warn("Follow: " + ex.Message); }
         }
@@ -1236,7 +1239,8 @@ namespace Game.Client
                 switch (action.Id)
                 {
                     case GameConstants.ActionBasicAttack:
-                        if (TargetId.HasValue) Attack(TargetId.Value);
+                        // Same verb as the second tap — including "a party member is followed, not hit".
+                        if (TargetId.HasValue) AttackOrFollow(TargetId.Value);
                         else ClientLog.Warn("No target.");
                         break;
                     case GameConstants.ActionSitStand:
@@ -1624,16 +1628,21 @@ namespace Game.Client
             return false;
         }
 
-        /// <summary>Follow a party member (null = stop). Sent instead of Attack when the second tap
-        /// lands on someone you cannot fight — the tap still does something useful.</summary>
-        public async void Follow(Guid? targetId)
+        /// <summary>THE attack verb, for every way of asking: the second tap on a target, the Attack
+        /// action on the skill bar, the target frame's Attack button. One method because they are one
+        /// command and must not drift apart — the owner's rule is "attack button = same logic as the
+        /// second tap".
+        ///
+        /// A party member cannot be fought (the server refuses it outright), so the order becomes the
+        /// thing you almost certainly meant: follow them. Everything else routes to Attack and the
+        /// SERVER decides — safe zones, the PvP opt-in and flags all live in CanPvpHit, which answers a
+        /// refused swing with a system message. The client checks party membership only to pick which
+        /// command to send, never as the rule.</summary>
+        public void AttackOrFollow(Guid targetId)
         {
             if (Phase != ClientPhase.InWorld) return;
-            // Same reasoning as Attack: the server steers this walk, so a predicted straight line to
-            // the last tap point would diverge and snap.
-            CancelMoveOrder();
-            try { await _net.FollowAsync(targetId); }
-            catch (Exception ex) { ClientLog.Warn("Follow: " + ex.Message); }
+            if (IsPartyMember(targetId)) Follow(targetId);
+            else Attack(targetId);
         }
 
         public async void SetMoveState(MoveState state)

@@ -312,7 +312,8 @@ namespace Game.Client
             // Top row (y=44): Attack / Follow / Assist.
             _targetAttackButton = UiKit.TextButton(inner, "Attack", () =>
             {
-                if (Boot.TargetId.HasValue) Boot.Attack(Boot.TargetId.Value);
+                // The same verb as the second tap and the bar's Attack action — never its own logic.
+                if (Boot.TargetId.HasValue) Boot.AttackOrFollow(Boot.TargetId.Value);
             }, 14f);
             UiKit.Place(UiKit.Rect(_targetAttackButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(bx0, 44f), new Vector2(bw, 28f));

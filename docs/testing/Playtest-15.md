@@ -88,6 +88,12 @@ root@localhost:~/Game.Server# nano Game.Server.runtimeconfig.json
    - when auto-farm is on, whatever class you are, you don't move towards the target when
      `BasicAttackAction` is not active in the hotbar
    - now my mage goes for melee and just sits over the mob waiting for the next cast — that goes for all
+   - ⚠ CLARIFIED by the owner 2026-07-31, after the first pass shipped this as "don't melee-walk
+     CASTERS": the rule has no class in it. *"I don't want anyone to move for melee range if not
+     explicitly commanded."* Only three things command it — the second tap on a target, the Attack
+     button (hot bar or target frame), and, in auto-mode, the basic-attack action being on the bar and
+     set to auto-on. Anything else stands still with the target selected; an active skill still moves
+     into CAST range. A skill therefore never starts a melee chase on its own, for any class.
 7. Make **basic attack on tap/click be AFTER the target window**:
    - I click once, it only shows the target, not immediately going towards it
    - after the target is shown, if I click again (on the same target) it starts to move

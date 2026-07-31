@@ -289,10 +289,23 @@ and the Learn confirmation shows its numbers. **31e is right but unreadable** �
         ALL training weapons show 5 mAtk · training wand pAtk 6 / mAtk 7 and **no +6 maxMP**.
 32k.[ ] **Auto-farm retaliates** — a mob that is hitting you outranks the nearest one as a target. He was
         being ganked by orc archers while the autopilot kept killing the nearest thing.
-32l.[ ] **Auto-farm doesn't melee-walk casters** — with `BasicAttackAction` NOT on the bar, auto-farm
-        must not walk you into melee range; the mage stood on top of the mob waiting to cast.
-32m.[ ] **Tap-to-target, tap-again-to-attack** — the first tap only opens the target window; a second tap
-        on the SAME target starts the approach/attack. Tapping a different target only re-targets.
+32l.[ ] **NOTHING walks you into melee unless you commanded it** (widened from "casters" — the owner's
+        rule has no class in it). Check all four:
+        · **Auto-farm** with the Attack action NOT on the bar (or on it but auto-OFF): stands still with
+          the target selected; an active skill still closes to CAST range only. With it auto-ON it may
+          melee. This holds for a FIGHTER too, not just a mage.
+        · **A skill alone never closes.** Press an offensive skill on a distant mob having given no
+          attack order: you cast (walking only as far as cast range) and then STAY there. Try it as a
+          fighter and as a bow rogue — both used to charge in after the cast.
+        · **The melee combo survives**, because that one IS commanded: tap-tap a mob (you approach and
+          swing), then fire a skill at the SAME mob → you resume auto-attacking afterwards.
+        · **A walk order or a follow cancels the standing order**: after tapping the ground, a later
+          skill must not resume the melee.
+32m.[ ] **Tap-to-target, tap-again-to-attack — and the Attack button means exactly the same thing.**
+        First tap only opens the target window; a second tap on the SAME target attacks (melee weapon →
+        walks in; bow → shoots from range), a party member → follows. Then do the identical checks with
+        the **Attack action on the skill bar** and the **Attack button on the target frame** — all three
+        are one code path (`GameBoot.AttackOrFollow`) and must not differ.
 32n.[ ] **Consumables show a count on the hotbar** — 1, 2, 3 … 98, 99, then `99+`.
 32o.[ ] **Escape/return scrolls can be sold** — they are tradable but the vendor refuses them.
 32p.[ ] **Buff potions sell at ÷25 like everything else** — 1500/25 = 60, not 450.

@@ -892,6 +892,15 @@ public class Entity
     public bool Engaged { get; set; }
     public int AttackCooldown { get; set; }
 
+    /// <summary>The entity the PLAYER explicitly ordered a basic attack on (second tap, the Attack
+    /// action, the target frame's Attack, assist). NOT set by anything the game decides for you.
+    ///
+    /// It exists because the owner's rule is that nothing ever walks you into melee unless you asked
+    /// for it, and a cast wipes <see cref="Engaged"/> — so after the cast the server has to know
+    /// whether the melee it would resume was YOUR order or its own idea. Survives a cast; cleared by
+    /// a manual move, a follow, disengaging and death. Runtime only.</summary>
+    public Guid? AttackCommandTargetId { get; set; }
+
     /// <summary>FOLLOW: while set, the player is walked toward this entity each tick (auto-repath as it
     /// moves), stopping a short distance away. Cleared by a manual move, attacking, death, or the target
     /// leaving view. Runtime only.</summary>

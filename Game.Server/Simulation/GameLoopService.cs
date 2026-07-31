@@ -779,6 +779,7 @@ public class GameLoopService : BackgroundService
         entity.CombatTargetId = null;
         entity.QueuedSkillId = null;
         entity.FollowTargetId = null;   // a manual move breaks a follow
+        entity.AttackCommandTargetId = null;   // ...and withdraws the order to melee
 
         float tx = Math.Clamp(move.Move.TargetX, GameConstants.WorldMinX, GameConstants.ZoneWidth);
         float ty = Math.Clamp(move.Move.TargetY, GameConstants.WorldMinY, GameConstants.ZoneHeight);
@@ -943,6 +944,9 @@ public class GameLoopService : BackgroundService
         attacker.FollowTargetId = null;   // attacking breaks a follow
         attacker.CombatTargetId = target.Id;
         attacker.Engaged = true;
+        // THIS is the explicit order to melee. Everything that closes the distance to swing traces
+        // back to here; nothing else may set it.
+        attacker.AttackCommandTargetId = target.Id;
     }
 
     /// <summary>Grant (for free) the class's core skills whose level is met.
@@ -3061,6 +3065,7 @@ public class GameLoopService : BackgroundService
                 p.CombatTargetId = foe.Id;
                 PushAutoTarget(p, foe.Id);
                 p.Engaged = AutoBasicAttackEnabled(p);
+                p.AttackCommandTargetId = p.Engaged ? foe.Id : null;
                 if (TryAutoSkill(p, foe))
                     return;
                 return;
@@ -3077,11 +3082,15 @@ public class GameLoopService : BackgroundService
         {
             p.CombatTargetId = target.Id;
             p.Engaged = basic;   // only auto BASIC-attack if the Basic Attack row is enabled
+            // While the autopilot drives, IT owns the melee order: enabling the Basic Attack row is
+            // the command, and with the row off there is no standing order for a skill to resume.
+            p.AttackCommandTargetId = basic ? target.Id : null;
         }
         else
         {
             p.Engaged = false;
             p.CombatTargetId = null;
+            p.AttackCommandTargetId = null;
         }
         PushAutoTarget(p, p.CombatTargetId);
 
@@ -4502,6 +4511,7 @@ public class GameLoopService : BackgroundService
         p.FollowTargetId = tid;
         p.Engaged = false;
         p.CombatTargetId = null;
+        p.AttackCommandTargetId = null;
         SendSystemToEntity(p, $"You follow {target.Name}.");
     }
 
@@ -6405,10 +6415,18 @@ var effect = def.Effect;
     {
         caster.StealthTicks = 0;   // any offensive action breaks stealth
 
-        // Mages don't fall back to melee auto-attack after a spell: chasing the mob
-        // to swing a staff is never what a nuker/healer wants. Fighters still engage
-        // so a melee skill flows into auto-attacks.
-        if (!target.Dead && caster.BaseClass != BaseClass.Mage)
+        // A skill NEVER starts a melee chase. The rule is the owner's and it has no class in it:
+        // nothing walks you into melee range unless you explicitly commanded it (owner, playtest-15).
+        // This used to read `BaseClass != Mage`, which spared the nuker and still charged everyone
+        // else — but a bow rogue who opens with a shot did not ask to close, and neither does anyone
+        // else who only pressed a skill.
+        //
+        // What survives is the melee combo, because that IS commanded: HandleAttack records the order
+        // in AttackCommandTargetId and a cast does not clear it, so a fighter who tapped Attack and
+        // then fired a skill at the SAME target resumes swinging afterwards. Mobs are unaffected —
+        // their AI is not taking orders from a hot bar.
+        bool commanded = caster.Kind != EntityKind.Player || caster.AttackCommandTargetId == target.Id;
+        if (!target.Dead && commanded)
         {
             caster.CombatTargetId = target.Id;
             caster.Engaged = true;
@@ -6501,6 +6519,7 @@ var effect = def.Effect;
     {
         entity.Engaged = false;
         entity.CombatTargetId = null;
+        entity.AttackCommandTargetId = null;   // the order died with the target (or it left view)
         if (entity.Kind == EntityKind.Mob)
             ResetMob(entity);
     }
@@ -6681,6 +6700,7 @@ var effect = def.Effect;
         victim.Dead = true;
         victim.Engaged = false;
         victim.CombatTargetId = null;
+        victim.AttackCommandTargetId = null;
         victim.QueuedSkillId = null;
         victim.CastingSkillId = null;
         victim.TargetX = null;

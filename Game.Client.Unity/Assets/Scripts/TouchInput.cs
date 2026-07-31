@@ -84,25 +84,17 @@ namespace Game.Client
                     // miserable on a mage or an archer: you could not inspect a mob, or switch targets,
                     // without committing to melee (playtest-15).
                     //
-                    // Your own party is NEVER attackable — the server refuses it outright, PvP flag or
-                    // not, because in a mass fight a mis-tap on the ally beside you would quietly make
-                    // you the enemy's best asset. So for a party member the second tap does the thing
-                    // you almost certainly meant: follow them. Everything else still routes to Attack
-                    // and the SERVER decides — safe zones, the PvP opt-in and flags all live in
-                    // CanPvpHit, and it answers a refused swing with a system message. The client
-                    // checks party membership only to pick which ACTION to send, never as the rule.
+                    // Party-vs-not is decided inside AttackOrFollow, which is the SAME verb the Attack
+                    // action on the bar and the target frame's Attack button use — the second tap must
+                    // not mean anything different from pressing Attack (owner).
                     var previous = Boot.TargetId;
                     Boot.TargetId = view.Id;
                     if (Boot.Entities != null && Boot.Entities.TryGetState(view.Id, out var dto) && !dto.Dead)
                     {
                         if (dto.Kind == EntityKind.Npc) Boot.TalkToNpc(view.Id);
-                        else if (previous == view.Id)
-                        {
-                            if (dto.Kind == EntityKind.Player && Boot.IsPartyMember(view.Id))
-                                Boot.Follow(view.Id);
-                            else if (dto.Kind == EntityKind.Mob || dto.Kind == EntityKind.Player)
-                                Boot.Attack(view.Id);
-                        }
+                        else if (previous == view.Id &&
+                                 (dto.Kind == EntityKind.Mob || dto.Kind == EntityKind.Player))
+                            Boot.AttackOrFollow(view.Id);
                     }
                     return;
                 }
