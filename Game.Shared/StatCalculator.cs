@@ -367,7 +367,7 @@ public static class StatCalculator
         Math.Max(0, (int)((UnarmedFistMAtk + weaponMAtk) * MAtkStatMult(atkStat)));
 
     /// <summary>Which LEVEL of the combat-training passive a character should hold at a
-    /// given character level (auto-granted; our soulshot/spiritshot stand-in). 0 below
+    /// given character level (auto-granted; our war rune/spell rune stand-in). 0 below
     /// 40; levels 1–8 step every 5 levels (40→1 … 75→8 = +10%…+80%); 9 from the
     /// 4th-class change (76+ = +100%). The per-level AttackPct lives in the SkillDef.</summary>
     public static int TrainingLevelFor(int level)
@@ -461,7 +461,7 @@ public static class StatCalculator
 
     /// <summary>Physical ratio damage (L2 model): 77·(pAtk + skillPower)/pDef. No level
     /// term (level is already baked into pAtk/pDef growth). 'power' is 0 for a basic
-    /// attack, the skill's power for a skill. Crit / variance / soulshot are applied by
+    /// attack, the skill's power for a skill. Crit / variance / war rune are applied by
     /// the caller. Defence floored at 1.
     /// <paramref name="defenceCoef"/> is the defender's WEAPON-TYPE resistance (see
     /// <see cref="WeaponDefenceCoef"/>): the resist rides INSIDE pDef (so a def-ignoring
@@ -498,7 +498,7 @@ public static class StatCalculator
     /// <summary>Magic ratio damage (L2 model): K·skillPower·√mAtk/mDef. The SQUARE ROOT
     /// of M.Atk means stacking raw M.Atk gives diminishing returns. 'power' is the
     /// spell's base power. Divides by MAGIC defence (separate channel). Crit / fail /
-    /// blessed-spiritshot are applied by the caller. Defence floored at 1.</summary>
+    /// blessed-spell rune are applied by the caller. Defence floored at 1.</summary>
     public static int MagicDamage(int mAtk, int power, int mDef, int casterLevel)
     {
         float def = Math.Max(1, mDef);

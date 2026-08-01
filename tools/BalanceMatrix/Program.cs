@@ -227,9 +227,9 @@ Console.WriteLine("  (before this change a naked L1 fighter had 42 P.Atk and ONE
 Console.WriteLine();
 
 // -----------------------------------------------------------------------------------------------
-// LOW LEVEL (1-10): a REAL new player — TRAINING gear, NO shots — vs same-level mob HP. This is the
+// LOW LEVEL (1-10): a REAL new player — TRAINING gear, NO runes — vs same-level mob HP. This is the
 // band the device playtest flagged ("lvl-1 one-shots a lvl 4-8 mob"). BuildPlayer floors to level-20
-// gear + shots, so it can't show this; BuildStarter equips the training kit and no shot buff.
+// gear + runes, so it can't show this; BuildStarter equips the training kit and no rune buff.
 // "1-shot?" = the mob dies in a single hit/nuke (mobHp <= dmg).
 // -----------------------------------------------------------------------------------------------
 Console.WriteLine("=== LOW LEVEL 1-10 — REAL new player (training gear, NO shots) ===");
@@ -737,11 +737,11 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
         if (SkillCatalog.Get(id)?.Replaces is { } replaced)
             foreach (var r in replaced) e.LearnedSkills.Remove(r);
 
-    // Shots (2026-07-24): the old training passive is gone — soul/spiritshots are now held RUNE items that
-    // grant this buff. Apply it directly here so the matrix reflects the EXPECTED play state (shots ON).
+    // Shots (2026-07-24): the old training passive is gone — soul/spell runes are now held RUNE items that
+    // grant this buff. Apply it directly here so the matrix reflects the EXPECTED play state (runes ON).
     // Its numbers are identical to the old max passive (+100% P.Atk / +41% eff. M.Atk / +40 cast), so the
-    // tuned curve is unchanged for a shotted player; a shot-LESS player is ~half offence (intended, L2).
-    var shot = SkillCatalog.Get(cls == BaseClass.Mage ? SkillCatalog.SpiritshotRuneBuff : SkillCatalog.SoulshotRuneBuff);
+    // tuned curve is unchanged for a runed player; a rune-LESS player is ~half offence (intended, L2).
+    var shot = SkillCatalog.Get(cls == BaseClass.Mage ? SkillCatalog.SpellRuneBuff : SkillCatalog.WarRuneBuff);
     if (shot != null)
         e.Buffs.Add(new Game.Server.Simulation.BuffInstance
         {
@@ -775,7 +775,7 @@ static void Equip(Entity e, string defId)
     e.Inventory.Add(new InventoryItem { DefId = defId, Equipped = true });
 }
 
-// A REAL low-level player: TRAINING gear (the level 1-10 kit), NO shot rune buff, learned skills up to
+// A REAL low-level player: TRAINING gear (the level 1-10 kit), NO rune buff, learned skills up to
 // this level. This is what a new character actually fights with — unlike BuildPlayer, which floors to
 // level-20 gear + shots and so hides the low-level one-shot the playtest found.
 static Entity BuildStarter(BaseClass cls, int level)
@@ -789,7 +789,7 @@ static Entity BuildStarter(BaseClass cls, int level)
             e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
     if (cls == BaseClass.Mage) e.LearnedSkills[SkillCatalog.MasteryRobe] = 1;
 
-    // Training kit only — no shots, no jewels (jewels are earned; the point is the FLOOR gear).
+    // Training kit only — no runes, no jewels (jewels are earned; the point is the FLOOR gear).
     Equip(e, cls == BaseClass.Mage ? ItemCatalog.TrainingWand : ItemCatalog.TrainingSword);
     Equip(e, cls == BaseClass.Mage ? ItemCatalog.TrainingRobe : ItemCatalog.TrainingLeather);
 

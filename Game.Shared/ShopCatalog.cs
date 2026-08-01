@@ -87,12 +87,12 @@ public static class ShopCatalog
                 // Reagents: Skill Stone (400g — Angel's Protection etc.) + Elemental Stone (20k — nuker burst).
                 ItemCatalog.SkillStone,
                 ItemCatalog.ElementalStone,
-                // Shot boxes — 1h/2h only (24h/30d are premium/pass, debug-only for now). Fighters buy the
-                // Soulshot box, mages the Spiritshot; anyone may buy either (e.g. a buffer for melee).
-                ItemCatalog.BoxSoulshot1h,
-                ItemCatalog.BoxSoulshot2h,
-                ItemCatalog.BoxSpiritshot1h,
-                ItemCatalog.BoxSpiritshot2h,
+                // Rune boxes — 1h/2h only (24h/30d are premium/pass, debug-only for now). Fighters buy the
+                // War Rune box, mages the Spell Rune; anyone may buy either (e.g. a buffer for melee).
+                ItemCatalog.BoxWarRune1h,
+                ItemCatalog.BoxWarRune2h,
+                ItemCatalog.BoxSpellRune1h,
+                ItemCatalog.BoxSpellRune2h,
                 // NOTE: enchant + attribute scrolls are intentionally DROP-ONLY (not sold).
             }),
             // WEAPONS. The LEGACY generated grid ("Worn Sword" at P.Atk 6, the Fine/Masterwork

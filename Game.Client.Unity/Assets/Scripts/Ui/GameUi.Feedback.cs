@@ -475,7 +475,7 @@ namespace Game.Client
         /// <summary>Compact durations: "29d", "2d06", "1h02", "12m", "45s". A buff bar with
         /// "3600.0 seconds" on it is unreadable at a glance, and a glance is all it ever gets.
         ///
-        /// DAYS matter now that shot RUNES last 24h and 30d: without a day tier a 30-day rune read
+        /// DAYS matter now that RUNES last 24h and 30d: without a day tier a 30-day rune read
         /// "719h59", which is technically true and completely useless. Rolling over at 24h keeps every
         /// tier to at most four characters.</summary>
         private static string ShortTime(float seconds)

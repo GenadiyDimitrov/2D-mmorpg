@@ -147,7 +147,7 @@ public class InventoryItem
     /// <summary>DB instance id, preserved across saves (null = never persisted).</summary>
     public Guid? PersistentInstanceId { get; set; }
 
-    /// <summary>Wall-clock expiry for a TIMED item (a shot rune). Set when its box is opened; the item is
+    /// <summary>Wall-clock expiry for a TIMED item (a war/spell rune). Set when its box is opened; the item is
     /// deleted once <c>DateTime.UtcNow &gt;= ExpiresAtUtc</c>. Wall-clock, so it counts down even offline.
     /// null = never expires (everything that isn't a rune).</summary>
     public DateTime? ExpiresAtUtc { get; set; }
@@ -575,7 +575,7 @@ public class Entity
 
     /// <summary>Cast-time multiplier from item Cast Speed attributes (0.8 = 20% faster).</summary>
     public float CastSpeedMultiplier { get; set; } = 1f;
-    /// <summary>FLAT addition to the casting-speed stat, from passives (the spiritshot +40).
+    /// <summary>FLAT addition to the casting-speed stat, from passives (the spell rune +40).
     /// Added AFTER the multiplicative chain, so it does not compound with WIT/gear/buffs.</summary>
     public float CastSpeedFlatBonus { get; set; }
     /// <summary>Weapon Proficiency: ×0.5 cast speed while wielding an untrained weapon (not sword/blunt).
@@ -873,7 +873,7 @@ public class Entity
                 if (buff.Has(SkillEffect.DebuffCastSpeed)) buffMult *= 1f - buff.Percent(SkillEffect.DebuffCastSpeed);
             }
 
-            // The spiritshot-style flat bonus is ADDED to the finished stat, not folded into
+            // The spell rune-style flat bonus is ADDED to the finished stat, not folded into
             // the chain — that's what keeps it from compounding with WIT/gear/buffs.
             float castSpd = baseCast * witMod * gearFactor * buffMult * CastSpeedPenaltyMult + CastSpeedFlatBonus;
             castSpd = Math.Clamp(castSpd, 30f, StatCaps.CastSpeed);
@@ -1694,7 +1694,7 @@ public class Entity
                 if (pe.MpRegenPct != 0f) MpRegenMult *= 1f + pe.MpRegenPct;
                 if (pe.AtkSpeedPct != 0f) AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier * (1f - pe.AtkSpeedPct), 0.4f, 2.5f);
                 if (pe.CastSpeedPct != 0f) CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier * (1f - pe.CastSpeedPct), 0.4f, 2.5f);
-                CastSpeedFlatBonus += pe.CastSpeedFlat;   // spiritshot-style flat +cast (added AFTER the multiplicative chain)
+                CastSpeedFlatBonus += pe.CastSpeedFlat;   // spell rune-style flat +cast (added AFTER the multiplicative chain)
                 if (pe.MoveSpeedPct != 0f) { RunSpeed *= 1f + pe.MoveSpeedPct; WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor; Speed = RunSpeed; }
                 CooldownReduction += pe.CooldownPct;
                 CritRateResist += pe.CritRateResist;

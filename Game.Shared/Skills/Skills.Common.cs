@@ -22,23 +22,23 @@ public static partial class SkillCatalog
     //      newbie can SEE that death costs no exp yet. No mechanical effect (the level check in
     //      ApplyDeathExpPenalty does the work); auto-removed once they reach the level. ----
     public const string NoviceGrace = "novice_grace";
-    // ---- Combat "training" passives, auto-granted at level 40 (soulshot/spiritshot
+    // ---- Combat "training" passives, auto-granted at level 40 (war rune/spell rune
     //      stand-in). Doubling the atk STAT gives ×2 physical (linear) but ×1.414
-    //      magic (√mAtk) — the soulshot/spiritshot ratio. ----
+    //      magic (√mAtk) — the war rune/spell rune ratio. ----
     public const string PhysicalTraining = "physical_training";  // multi-level (9): +10%…+100% atk
     public const string SpiritTraining   = "spirit_training";    // multi-level (9): +atk + cast speed
-    // ---- SHOT RUNE buffs — the item-driven REPLACEMENT for the training passives above. A held rune
+    // ---- RUNE buffs — the item-driven REPLACEMENT for the training passives above. A held rune
     //      applies one of these while it's in the main inventory and unexpired; the reconciliation loop
-    //      keeps it in sync with the item. Soulshot = +100% P.Atk (×2 physical); Spiritshot = +41%
+    //      keeps it in sync with the item. War Rune = +100% P.Atk (×2 physical); Spell Rune = +41%
     //      effective M.Atk (×1.414 magic) + a flat +40 cast, exactly the old passive's numbers. ----
-    public const string SoulshotRuneBuff   = "rune_soulshot";
-    public const string SpiritshotRuneBuff = "rune_spiritshot";
+    public const string WarRuneBuff   = "rune_war";
+    public const string SpellRuneBuff = "rune_spell";
 
     /// <summary>Is this buff granted by a held RUNE rather than cast? Such buffs are owned by the
     /// reconciliation loop, which re-derives them from the rune item (and its expiry) — so they must
     /// never be saved/restored as ordinary buffs, or login would apply them a second time.</summary>
     public static bool IsRuneBuff(string skillId) =>
-        skillId == SoulshotRuneBuff || skillId == SpiritshotRuneBuff;
+        skillId == WarRuneBuff || skillId == SpellRuneBuff;
     // ---- Class identity "sure" floor passives — now ONE multi-level skill each
     //      (auto-granted at the class-change milestone, level = tier 1/2/3). The floor
     //      VALUES live in the SkillDef Levels, not in code. See FloorPassiveFor. ----
@@ -211,13 +211,13 @@ public static partial class SkillCatalog
         Category: SkillCategory.Passive, SpCost: 0, Description: desc,
         Levels: perLevel.Select(p => new SkillLevel(Passive: p)).ToArray());
 
-    // Combat-training passive: 9 levels, +10%…+80% then +100% attack (the soulshot/
-    // spiritshot stand-in). At max level the +100% atk = ×2 P.Atk/M.Atk, which is exactly
-    // what a shot does: ×2 physical damage (linear), ×1.414 magic (√mAtk).
-    // castSpeedFlat mirrors the real spiritshot bonus: a FLAT +40 to the cast stat. It used
+    // Combat-training passive: 9 levels, +10%…+80% then +100% attack (the war rune/
+    // spell rune stand-in). At max level the +100% atk = ×2 P.Atk/M.Atk, which is exactly
+    // what a rune does: ×2 physical damage (linear), ×1.414 magic (√mAtk).
+    // castSpeedFlat mirrors the real spell rune bonus: a FLAT +40 to the cast stat. It used
     // to be a 0.40 PERCENT, applied as a time cut (×0.6 time = +67% speed), which compounded
     // with WIT/gear/buffs and inflated a buffed L40 mage to ~2200 against the 1999 cap.
-    /// <param name="magic">A MAGE's training (spiritshots) — boosts M.Atk. A fighter's (soulshots)
+    /// <param name="magic">A MAGE's training (spell runes) — boosts M.Atk. A fighter's (war runes)
     /// boosts P.Atk. This used to be one channel-blind <c>AttackPct</c>, which applies to BOTH
     /// channels — so a fighter's PHYSICAL conditioning was doubling his MAGIC attack. That is what
     /// let a level-76 tank heal almost as hard as a healer (his M.Atk was silently ×2), and it made
@@ -233,7 +233,7 @@ public static partial class SkillCatalog
                 Passive: magic
                     // MagAtkPct is stored as the EFFECTIVE magic % (it gets squared in RecomputeDerived to
                     // cancel the √), so stored value = description = effect. √(1+p)-1 reproduces the old
-                    // spiritshot dampening exactly: physical +100% → magic +41%, but the number now READS 41%.
+                    // spell rune dampening exactly: physical +100% → magic +41%, but the number now READS 41%.
                     ? new PassiveEffect(MagAtkPct: MathF.Sqrt(1f + p) - 1f, CastSpeedFlat: castSpeedFlat)
                     : new PassiveEffect(PhysAtkPct: p))).ToArray());
     }
@@ -368,25 +368,25 @@ public static partial class SkillCatalog
             Category: SkillCategory.Heal,
             Description: "Instantly restores 30% of max HP."),
 
-        // ----- SHOT RUNE buffs. Applied/kept by the rune reconciliation while a matching rune sits in the
+        // ----- RUNE buffs. Applied/kept by the rune reconciliation while a matching rune sits in the
         //       main inventory unexpired; its remaining time is driven by the item's wall-clock expiry, so
         //       DurationTicks here is only the nominal apply value (the loop overwrites TicksRemaining). -----
-        new(SoulshotRuneBuff, "Soulshot", BaseClass.Fighter, SkillEffect.BuffPhysAtk,
+        new(WarRuneBuff, "War Rune", BaseClass.Fighter, SkillEffect.BuffPhysAtk,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            DurationTicks: 36000, BuffKey: "rune_soulshot", Rank: 1,
+            DurationTicks: 36000, BuffKey: "rune_war", Rank: 1,
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffPhysAtk, 1.00f) },
             Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable,
-            Description: "Soulshot: +100% P.Atk (physical damage) while the rune is held."),
-        new(SpiritshotRuneBuff, "Spiritshot", BaseClass.Mage, SkillEffect.BuffMagAtk | SkillEffect.BuffCastSpeed,
+            Description: "War Rune: +100% P.Atk (physical damage) while the rune is held."),
+        new(SpellRuneBuff, "Spell Rune", BaseClass.Mage, SkillEffect.BuffMagAtk | SkillEffect.BuffCastSpeed,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
-            DurationTicks: 36000, BuffKey: "rune_spiritshot", Rank: 1,
+            DurationTicks: 36000, BuffKey: "rune_spell", Rank: 1,
             Magnitudes: new EffectMagnitude[]
             {
                 new(SkillEffect.BuffMagAtk, 0.414f),                       // +41% EFFECTIVE M.Atk = ×1.414 magic
                 new(SkillEffect.BuffCastSpeed, 40, ModifierMode.Flat),     // flat +40 cast stat (not %, per the old passive)
             },
             Category: SkillCategory.Buff, BuffRow: BuffRow.Consumable,
-            Description: "Spiritshot: +magic damage and cast speed while the rune is held."),
+            Description: "Spell Rune: +magic damage and cast speed while the rune is held."),
 
         // ================== BUFF LADDERS — the single buffs and their consumables ==================
         //  See docs/design/BuffLadders.md. Four families, three rungs each; the improved "Speed"
@@ -556,8 +556,8 @@ public static partial class SkillCatalog
         BalancePassive(BalanceHealer,  "Class Balance (Healer)",  BaseClass.Mage),
         BalancePassive(BalanceMage,    "Class Balance",           BaseClass.Mage),
 
-        // ===== (Combat training passives REMOVED 2026-07-24) — the soul/spiritshot bonus is now a held
-        //       RUNE item (SoulshotRuneBuff / SpiritshotRuneBuff above), not an auto-granted passive. =====
+        // ===== (Combat training passives REMOVED 2026-07-24) — the soul/spell rune bonus is now a held
+        //       RUNE item (WarRuneBuff / SpellRuneBuff above), not an auto-granted passive. =====
 
         // ===== Class identity "sure" floor passives (auto-granted at 20/40/76 = lvl 1/2/3) =====
         // Rogue identity now DATA: the evade floor + the archetype crit/evasion LEANS (+20% crit,

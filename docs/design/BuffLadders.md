@@ -240,7 +240,7 @@ are *alternatives* to each other. These are deliberately outside it:
   they cannot share a flat family regardless.
 - **Wind Walk / Mass Wind Walk** (`Skills.Common.cs:449`, `:462`) — **being deleted**, owner
   2026-07-31. Remove rather than re-home.
-- **Spiritshot rune** — flat +40 cast stat, not a percent; stays its own key.
+- **Spell Rune** — flat +40 cast stat, not a percent; stays its own key.
 
 ## Harmony — the second layer
 

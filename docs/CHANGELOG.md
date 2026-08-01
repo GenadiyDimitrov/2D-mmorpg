@@ -7,10 +7,32 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.42.3**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.42.4**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 2026-08-01 — Two words a player can actually say (0.42.4)
+
+The damage runes carried borrowed names. "Soulshot" and "Spiritshot" are another game's words, and
+this project's rule is that formulas may be adapted but names may not be borrowed — the same rule
+that renamed the towns and the currency. They are now the **War Rune** (+100% P.Atk, physical only)
+and the **Spell Rune** (+41% effective M.Atk and +40 flat cast, magic only).
+
+The owner picked the pair on the grounds that matter at a vendor: *"otherwise players will have a
+mouthful to buy/sell/explain."* Two syllables each, and which one a fighter wants is legible from the
+name alone.
+
+Renamed with them: the eight sealed boxes (`War Rune Box (1h)` … `Spell Rune Box (30d)`), the
+newbie choice box, the Apothecary's daily (`daily_runes`), and every id behind them —
+`rune_war` / `rune_spell` / `box_war_rune_*` / `box_spell_rune_*`. ⚠ The item and quest **ids
+changed**, so an existing `game.db` holds rows pointing at defs that no longer exist; delete it
+(only the seeded admin account and any character that opened a box is affected).
+
+Two skill names went the same way for the same reason: **Power Strike → Brutal Strike** and
+**Power Shot → Heavy Draw**. Their skill ids are untouched — ids are append-only here and never
+reach a player's eye. The bow skills that merely contain the ordinary English word "shot"
+(Precise Shot, Repelling Shot, Snare Shot) were left alone.
 
 ## 2026-08-01 — Mobs stopped out-healing the player (0.42.3)
 
@@ -1866,7 +1888,7 @@ All seven tier-1 bugs are now fixed. The two interesting ones were invisible fro
 - **Walls** (0.28.61) — movement is confined to the domain you stand in: the overworld can't be walked
   out of into negative space, and a dungeon can't be walked out of; a ~500u ward teleports a clip-out
   back inside. Teleport is the only way across.
-- **Soul/spiritshots as RUNES** (0.28.62–0.28.64) — the always-on training passive is gone; shots are
+- **War/Spell Runes as RUNES** (0.28.62–0.28.64) — the always-on training passive is gone; shots are
   held rune items with a wall-clock expiry (persisted, counts down offline, delete-protected). Delivered
   in boxes whose open stamps the clock (also stamped on any other acquire). 1h/2h at the Apothecary
   (tradable), 24h/30d premium/debug (bound); admin seeds both 30d. The newbie starter kit is now

@@ -101,8 +101,8 @@ instead of only the first. Do not "fix" this by moving Role to the account ·
 **Skills→Learn does nothing**.
 
 **Changes (16).** Stand-up delay (instant if seated >3s) · bag `Equip` button first + column expands
-LEFT · spiritshot buff shows `719h59` not `29d` · **admins excluded from the rankings** · shop items
-need details + buy-time info (the soulshot's "PHYSICAL only" text is missing) · **shop prices far too
+LEFT · spell rune buff shows `719h59` not `29d` · **admins excluded from the rankings** · shop items
+need details + buy-time info (the war rune's "PHYSICAL only" text is missing) · **shop prices far too
 cheap** (equipment ≥**200g** minimum; runes **150k/1h and 280k/2h** — a ~7% bulk discount vs two 1h
 runes, confirmed 2026-07-24) · show raw attack/cast speed numbers beside
 the multiplier (`1234/1500 (x3)`) · no HoT floating text for potions · target window HP as digits (+MP
@@ -648,16 +648,16 @@ changes and new features that came out of the play session:
 
 - [ ] **Training passives as a purchasable BUFF or ITEM, not an auto-granted passive** (owner idea,
   2026-07-14 — thinking out loud, not decided). Physical/Spirit Training is currently auto-granted and
-  its level is a pure function of character level (it is our soulshot/spiritshot stand-in: +10%…+100%
+  its level is a pure function of character level (it is our war rune/spell rune stand-in: +10%…+100%
   attack). The idea: make it something you BUY — a day-long buff, or an item effect — rather than
   something you simply have. That would give the gold sink real teeth and make "am I shotted?" a
   decision instead of a constant. **Consequences to think through before building:** every damage number
   in `tools/BalanceMatrix` currently assumes the passive is ON (it is granted automatically), so the
   baseline would shift; and an unbuffed/unshotted character becomes a genuinely different power level,
-  which is exactly what soulshots do in L2. See [[stats-via-skills-not-hardcoded]].
+  which is exactly what war runes do in L2. See [[stats-via-skills-not-hardcoded]].
 
 - [ ] **Shot-buff items + passive RUNES** (owner, 2026-07-17 — NEXT, after the death/res playtest). Reframe
-  soul/spiritshots as inventory items that grant a TIMED buff (not per-hit): soulshot ≈ +100% pAtk, spiritshot
+  war/spell runes as inventory items that grant a TIMED buff (not per-hit): war rune ≈ +100% pAtk, spell rune
   ≈ +41% effective mAtk. Needs a **`SurvivesDeath` buff flag** (persists through death, independent of Angel's
   Protection). Alongside them, **RUNES that act like a passive**: while held in the INVENTORY they add to your
   passives / the items buff-bar row — timed, do NOT disappear on death, and are NOT consumed (an inventory-held
@@ -1005,5 +1005,5 @@ changes and new features that came out of the play session:
 
 - ~~Magic-resist layer~~ — magic mitigation is ONLY mDef (divisor) + the magic-fail/fizzle
   floor. "mRes" in owner CSVs = the fizzle floor. No flat magic-damage-reduction stat.
-- ~~Soulshots / spiritshots~~ — the leveled **Attack-training** passive is the permanent
-  replacement; there is no shot consumable system.
+- ~~Per-hit damage consumables~~ (the ammunition-you-burn-per-swing model) — offence comes from
+  the held **War Rune / Spell Rune** instead: a timed item, not a stack you spend.

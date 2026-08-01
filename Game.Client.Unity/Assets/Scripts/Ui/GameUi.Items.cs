@@ -213,7 +213,7 @@ namespace Game.Client
             else if (def.Slot == EquipSlot.Box)
             {
                 // Open a box: a random box grants its loot; a selection box replies with a chooser
-                // (ShowBoxSelection). This is how shot boxes → runes on the phone.
+                // (ShowBoxSelection). This is how rune boxes → runes on the phone.
                 actions.Add(("Open", () => { Boot.OpenBox(id); CloseWindow(v.Panel); }));
             }
 

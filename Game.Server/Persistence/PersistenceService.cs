@@ -231,7 +231,7 @@ public class PersistenceService
         foreach (var id in learned.Keys.ToList())
             if (SkillCatalog.Get(id)?.Replaces is { } replaced)
                 foreach (var r in replaced) learned.Remove(r);
-        // (The old training passive is gone — the admin tests shots via the 30-day boxes added below.)
+        // (The old training passive is gone — the admin tests the runes via the 30-day boxes added below.)
 
         string learnedCsv = string.Join(',', learned.Select(kv => $"{kv.Key}:{kv.Value}"));
         character.LearnedSkillsCsv = learnedCsv;
@@ -265,9 +265,9 @@ public class PersistenceService
         }
         character.Items.Add(NewItem(ItemCatalog.GreaterPotion, 100));
         character.Items.Add(NewItem(ItemCatalog.ScrollReturnUltimate, 20));
-        // Admin gets both 30-day shot boxes to test the rune system straight away (open → 30d rune).
-        character.Items.Add(NewItem(ItemCatalog.BoxSoulshot30d));
-        character.Items.Add(NewItem(ItemCatalog.BoxSpiritshot30d));
+        // Admin gets both 30-day rune boxes to test the rune system straight away (open → 30d rune).
+        character.Items.Add(NewItem(ItemCatalog.BoxWarRune30d));
+        character.Items.Add(NewItem(ItemCatalog.BoxSpellRune30d));
 
         await db.SaveChangesAsync();
     }
@@ -499,8 +499,8 @@ public class PersistenceService
         // played. Still class-agnostic: one weapon choice box covering all five weapons, one armor
         // choice box covering light/robe.
         //
-        // Explicitly NO shots and NO jewels at creation (owner). Jewels are earned — the broken line
-        // drops from level 1-5 mobs and is sold in the shop — and shot runes come with the quest.
+        // Explicitly NO runes and NO jewels at creation (owner). Jewels are earned — the broken line
+        // drops from level 1-5 mobs and is sold in the shop — and runes come with the quest.
         record.Items.Add(NewItem(ItemCatalog.BoxTrainingWeapons));
         record.Items.Add(NewItem(ItemCatalog.BoxTrainingArmorChoice));
         record.Items.Add(NewItem(ItemCatalog.MinorPotion, 5));
@@ -716,9 +716,17 @@ public class PersistenceService
 
         foreach (var item in rec.Items)
         {
-            // A timed item (shot rune) whose wall-clock ran out while offline is purged on load — it never
+            // A timed item (rune) whose wall-clock ran out while offline is purged on load — it never
             // reaches the bag, so the player logs in without the spent rune (and without its buff).
             if (item.ExpiresAtUtc is DateTime exp && exp <= DateTime.UtcNow)
+                continue;
+
+            // An item whose DefId is no longer in the catalog is DROPPED rather than loaded. Without
+            // this a renamed or retired def leaves a ghost row in the bag: every `ItemCatalog.Get`
+            // downstream returns null, so it has no name, no slot and no price, and the client draws a
+            // blank it cannot click. Renames are the common cause (0.42.4 renamed the war/spell runes
+            // and their boxes), which used to mean "delete game.db"; now the stale rows simply vanish.
+            if (ItemCatalog.Get(item.DefId) is null)
                 continue;
 
             // Warehoused items load into the bank list, never equipped; everything else into the bag.

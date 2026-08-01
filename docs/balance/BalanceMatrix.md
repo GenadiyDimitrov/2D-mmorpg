@@ -66,7 +66,7 @@ Base dmg lvl-mult = (Level + 89) / 100   [listed, but NOT used in the dmg formul
 - **MEN_Modifier:** 20→1.16 · 26→1.28 · 30→1.35 · 31→1.36 · 37→1.44 · 40→1.49 · 45→1.57 · 50→1.65
 - **WIT_Modifier:** 20→1.00 · 23→1.18 · 25→1.30 · 30→1.63 · 35→2.06 · 40→2.65 · 45→3.39 · 50→4.32
 - **DEX_Modifier:** 20→0.90 · 25→0.95 · 30→1.00 · 35→1.05 · 40→1.11 · 45→1.17 · 50→1.23
-- **Shots:** Soulshot ×2.00 · Spiritshot ×1.414 · Blessed Spiritshot ×1.414 (+40% cast-bar cut)
+- **Shots:** War Rune ×2.00 · Spell Rune ×1.414 · Blessed Spell Rune ×1.414 (+40% cast-bar cut)
 
 ---
 
@@ -84,10 +84,10 @@ Base dmg lvl-mult = (Level + 89) / 100   [listed, but NOT used in the dmg formul
 | **P.Def** | ✅ structure | naked 68 + level²/100 + armor. ⚠ mastery is added FLAT, ref wants it as a `×Mastery` multiplier (minor). |
 | **M.Def** | ✅ fixed | 20 + level²/100 + jewels, ×MEN (now the real curve), ×buffs. |
 | **CON modifier** | ✅ **fixed** | now interpolates the real CON table (`ConCurve`, 20→0.79 … 36→1.12 … 50→1.83) — accurate at every reference point (was +7% high at CON 36). |
-| **Attack training** | ✅ **leveled** | soulshot/spiritshot stand-in is now a LEVELED passive: `TrainingAttackPct` +10% @40 → +80% @75 → +100% @76+ (was a flat +100% @40). Applied to both atk channels. |
+| **Attack training** | ✅ **leveled** | war rune/spell rune stand-in is now a LEVELED passive: `TrainingAttackPct` +10% @40 → +80% @75 → +100% @76+ (was a flat +100% @40). Applied to both atk channels. |
 | **MEN modifier** | ✅ **fixed** | now interpolates the real MEN table (1.16→1.65). Fighters ×1.26–1.30, mages ×1.47–1.52 — everyone ≥1, small gap. |
 | **MP** | ✅ **reworked** | `(MpClassLevelMod·(L²+3L)/2 + Level1BaseMp) × MEN modifier`; scales with **MEN** (Healer 0.68/Nuker 0.53/fighter 0.17 tiers; base mage 0.50). Mobs use a simple level curve. |
-| **Soulshot / Spiritshot** | ➖ **cut** | DESIGN DECISION: no damage consumables. The leveled **Attack training** passive (above) is the permanent replacement — there is no shot system to build. |
+| **Per-hit damage consumables** | ➖ **cut** | DESIGN DECISION: nothing is burned per swing. Superseded twice: first by the leveled **Attack training** passive (above), and since 0.28.62 by the held **War Rune / Spell Rune** (a timed item). |
 | **(Level+89)/100 dmg mult** | ➖ removed | listed in ref data but the explicit dmg formulas omit it; we removed it from physical. Ambiguous — leaving out for now. |
 
 | **Buff/effect layer** | ✅ **built (2026-06-26)** | `SkillEffect` widened to `long`; flat+% Max HP/MP & regen, channel-split P/M.Atk buffs, p/m crit rate, crit-dmg/rate resist, bow resist, magic-fail floor/resist, interrupt power/resist, melee/spell vamp, cooldown reduction, % heal, MP restore. Folded in `RecomputeDerived` + combat hooks. Inert unless a buff/passive carries them. |
@@ -104,7 +104,7 @@ Base dmg lvl-mult = (Level + 89) / 100   [listed, but NOT used in the dmg formul
 2. ✅ **MP rework DONE** — Base_MP tier curve × MEN modifier; no longer uses WIT.
 3. ✅ **CON modifier DONE** — table-interpolated (`ConCurve`); CON 36 now 1.12 (was 1.20).
 4. ✅ **Tank HP tier DONE** — class-mod 0.96→1.02; L75 tank raw ≈ 3100.
-5. ✅ **Soulshots CUT** — replaced by the leveled Attack-training passive (no consumable damage).
+5. ✅ **Per-hit damage consumables CUT** — replaced by the leveled Attack-training passive, and that in turn by the held War/Spell Rune.
 6. ⬜ *Later:* mastery as a `×` multiplier on def (not flat); buffed matrix; archetype-level matrix.
 
 ---

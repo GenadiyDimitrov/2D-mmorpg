@@ -997,8 +997,8 @@ public class GameLoopService : BackgroundService
         // tables like any other skill: L1 @20 / L2 @40 on the cleric list (every cleric keeps those
         // through any 3rd class), L3 @52 / L4 @61 on the Lightbringer list. See ClassSkillTables.
 
-        // (The old combat-"training" passive that stood in for soul/spiritshots is GONE — shots are now
-        // held RUNE items that grant the same buff, see ReconcileRuneBuffs / SkillCatalog.SoulshotRuneBuff.)
+        // (The old combat-"training" passive that stood in for soul/spell runes is GONE — runes are now
+        // held RUNE items that grant the same buff, see ReconcileRuneBuffs / SkillCatalog.WarRuneBuff.)
 
         // Class identity "sure" floor passive for the current class tier (level = tier).
         if (SkillCatalog.FloorPassiveFor(player.Archetype, player.Level) is { } floor)
@@ -2402,8 +2402,8 @@ public class GameLoopService : BackgroundService
 
         // TRAINING tier, matching CreateCharacterAsync (owner, 2026-07-24). Class-agnostic: both boxes
         // are selection boxes covering every option, so there is no fighter/mage branch to keep in sync.
-        // No jewels and no shot runes at creation — jewels are earned from level 1-5 mobs or bought, and
-        // the shot rune arrives with the level-10 starter quest along with the Newbie set.
+        // No jewels and no runes at creation — jewels are earned from level 1-5 mobs or bought, and
+        // the rune arrives with the level-10 starter quest along with the Newbie set.
         Give(ItemCatalog.BoxTrainingWeapons);
         Give(ItemCatalog.BoxTrainingArmorChoice);
         Give(ItemCatalog.MinorPotion, 5);
@@ -5052,7 +5052,7 @@ public class GameLoopService : BackgroundService
                 TickRegionNotice(entity);
                 TickOnlineTime(entity);
                 EnforceDungeonWalls(entity);
-                if (_tick % GameConstants.TickRate == 0) ReconcileRuneBuffs(entity);   // shot runes, ~1/s
+                if (_tick % GameConstants.TickRate == 0) ReconcileRuneBuffs(entity);   // runes, ~1/s
             }
 
             TickSkillCooldowns(entity);
@@ -5363,9 +5363,9 @@ public class GameLoopService : BackgroundService
             SendTo(entity, "Notice", "You've been playing for an extended period — please take a break.");
     }
 
-    private static readonly string[] RuneBuffKeys = { SkillCatalog.SoulshotRuneBuff, SkillCatalog.SpiritshotRuneBuff };
+    private static readonly string[] RuneBuffKeys = { SkillCatalog.WarRuneBuff, SkillCatalog.SpellRuneBuff };
 
-    /// <summary>Keep each shot-rune's buff in sync with the MAIN inventory: purge expired runes (wall-clock),
+    /// <summary>Keep each rune's buff in sync with the MAIN inventory: purge expired runes (wall-clock),
     /// apply/keep the buff for any held unexpired rune (driving its remaining from the item's ExpiresAtUtc),
     /// and drop a rune buff whose rune is gone (expired, or moved to the warehouse — a rune only applies
     /// from the main bag). Cheap; runs ~1/s + on box-open + on login.</summary>

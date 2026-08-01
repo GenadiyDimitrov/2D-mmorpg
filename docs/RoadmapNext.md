@@ -70,7 +70,8 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
 - **Account warehouse** — the private one shipped; the account-wide half is still open.
 
 **Combat depth** — perfect/excellent block, position bonuses (hook reserved), PvP/PvE damage
-multipliers (still 1.0). ⚠ Magic-resist as a stat and soulshots are **dropped, not pending** — see the
+multipliers (still 1.0). ⚠ Magic-resist as a stat and per-hit damage consumables are **dropped, not
+pending** (offence comes from the held War/Spell Rune) — see the
 bottom of [Roadmap.md](Roadmap.md).
 
 **Presentation** — the owner's own words, still true: *"no sounds, a bit woody, no good visuals."* Not a

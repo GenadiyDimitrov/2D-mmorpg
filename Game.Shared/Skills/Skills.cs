@@ -443,7 +443,7 @@ public readonly record struct PassiveEffect(
     float HitFloor = 0f,          // min chance THIS entity lands a physical hit (warrior)
     float MagicFailFloor = 0f,    // min chance a spell fizzles vs this entity (tank/mage anti-magic)
     // FLAT addition to the casting-speed STAT (not a percent). This is how L2's spirit-
-    // shots work: +40 flat on top of the multiplicative chain, so it matters a lot at low
+    // the spell rune works: +40 flat on top of the multiplicative chain, so it matters a lot at low
     // cast speed and barely at high — unlike a percent, which compounds and runs away.
     float CastSpeedFlat = 0f,
     // ----- PRIMARY-stat deltas (the level-40 stat-swap passives). Folded in RecomputeDerived's

@@ -142,7 +142,7 @@ the dungeon confines movement; `/jail` pins a character to the cell.
 ## 15. ✅ Rune shots (0.28.62 → 0.28.64) — VERIFIED 2026-07-24
 
 Boxes open into runes, the buff appears on the bar with a countdown, physical damage roughly doubles
-with a soulshot and spell damage/cast speed rise with a spiritshot, wrong-type does nothing, runes
+with a war rune and spell damage/cast speed rise with a spell rune, wrong-type does nothing, runes
 refuse deletion and trade while 1h/2h boxes trade, the wall-clock expiry survives a relog, and the
 class-agnostic starter kit hands out its four choice boxes.
 **Two defects + the economy findings — see §17 items 14, 4-6.**
@@ -188,9 +188,9 @@ of these once fixed. Nothing here has been built yet.
 **Changes**
 12. [ ] **Stand-up delay** rules (§5).
 13. [ ] **Bag: `Equip` button first**, equip column **expands LEFT**.
-14. [ ] **Spiritshot buff reads `719h59` instead of `29d`** — duration needs day rollover.
+14. [ ] **Spell Rune buff reads `719h59` instead of `29d`** — duration needs day rollover.
 15. [ ] **Admins must be excluded from the ranking system** (an admin at level 999 breaks every board).
-16. [ ] **Shop items need details + buy-time info** — a soulshot shows no "works ONLY on PHYSICAL" text
+16. [ ] **Shop items need details + buy-time info** — a war rune shows no "works ONLY on PHYSICAL" text
         anywhere.
 17. [ ] **Shop prices far too cheap** — equipment from **200g** minimum; runes **150k / 1h** and
         **280k / 2h** (confirmed 2026-07-24: two 1h = 300k, so the 2h carries a ~7% bulk discount).
@@ -552,7 +552,7 @@ full, so **36c-36f are all new behaviour that has never existed before**, not re
 25a.[ ] **Buffs survive a relog** — take buffs, note the timers, exit to character select and re-enter:
         they come back with LESS time, not full time and not gone. Wait a few minutes offline and the
         clock should have kept running. A buff that ran out while away must NOT reappear. Runes
-        (soul/spiritshot) must appear exactly ONCE, not twice. Switching to another character on the
+        (war/spell rune) must appear exactly ONCE, not twice. Switching to another character on the
         same account must show that character's buffs, not the first one's.
 26. [ ] **"You entered <field>" needs hit-test FALSE** — it currently blocks tapping the ground beneath
         it (click-through family).

@@ -11,7 +11,7 @@ namespace Game.Shared;
 ///
 /// Two parts, so the reward arrives in two useful pieces rather than one lump at the end:
 ///   1. "A Proper Kit"  (lvl 10) — kill Ashen Wolves, come back → the ARMOR + WEAPON boxes.
-///   2. "Blooded"       (lvl 12) — kill Werewolves and REACH LEVEL 15 → the JEWELS + shot rune.
+///   2. "Blooded"       (lvl 12) — kill Werewolves and REACH LEVEL 15 → the JEWELS + rune.
 /// Part 2 gates on part 1, so the order is fixed and the second half cannot be skipped.
 /// </summary>
 public static partial class QuestCatalog
@@ -64,7 +64,7 @@ public static partial class QuestCatalog
                 new QuestStep(QuestStepType.ReachLevel, "Reach level 15", Count: 15),
                 new QuestStep(QuestStepType.TalkTo, "Return to Armsmaster Dolan", TargetId: StarterGiver),
             },
-            // The jewels and the shot rune — the two things deliberately REMOVED from character
+            // The jewels and the rune — the two things deliberately REMOVED from character
             // creation. Reaching them is the point of the chain.
             Reward: new QuestReward(Exp: 30000, SkillPoints: 3, ItemIds: new[]
             {

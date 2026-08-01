@@ -81,18 +81,18 @@ public static class BoxCatalog
                 new BoxEntry(ItemCatalog.BoxNewbieArmorRobe, 1.0f),
             }, PickCount: 1),
 
-            // Newbie SHOT-RUNE choice — pick ONE 1-day rune box (soulshot / spiritshot).
+            // Newbie RUNE choice — pick ONE 1-day rune box (war rune / spell rune).
             new BoxDef(ItemCatalog.BoxNewbieRuneChoice, new[]
             {
-                new BoxEntry(ItemCatalog.BoxSoulshot24h, 1.0f),
-                new BoxEntry(ItemCatalog.BoxSpiritshot24h, 1.0f),
+                new BoxEntry(ItemCatalog.BoxWarRune24h, 1.0f),
+                new BoxEntry(ItemCatalog.BoxSpellRune24h, 1.0f),
             }, PickCount: 1),
 
             // The Apothecary's DAILY favour — the same choice, one hour instead of one day.
-            new BoxDef(ItemCatalog.BoxDailyShotChoice, new[]
+            new BoxDef(ItemCatalog.BoxDailyRuneChoice, new[]
             {
-                new BoxEntry(ItemCatalog.BoxSoulshot1h, 1.0f),
-                new BoxEntry(ItemCatalog.BoxSpiritshot1h, 1.0f),
+                new BoxEntry(ItemCatalog.BoxWarRune1h, 1.0f),
+                new BoxEntry(ItemCatalog.BoxSpellRune1h, 1.0f),
             }, PickCount: 1),
 
             // Newbie jewels box — 2 earrings, 2 rings, 1 necklace (100% each).
@@ -117,29 +117,29 @@ public static class BoxCatalog
         };
 
         var dict = new Dictionary<string, BoxDef>();
-        foreach (var b in list.Concat(TieredAccessoryBoxes()).Concat(ShotBoxes()))
+        foreach (var b in list.Concat(TieredAccessoryBoxes()).Concat(RuneBoxes()))
             if (!dict.TryAdd(b.Id, b))
                 throw new InvalidOperationException($"Duplicate box id '{b.Id}'.");
         return dict;
     }
 
-    /// <summary>The sealed shot boxes → their rune (100%). The DURATION isn't here — it's on the box's
+    /// <summary>The sealed rune boxes → their rune (100%). The DURATION isn't here — it's on the box's
     /// ItemDef (GrantsRuneSeconds), stamped onto the rune at open time.</summary>
-    private static IEnumerable<BoxDef> ShotBoxes()
+    private static IEnumerable<BoxDef> RuneBoxes()
     {
         foreach (var boxId in new[]
                  {
-                     ItemCatalog.BoxSoulshot1h, ItemCatalog.BoxSoulshot2h,
-                     ItemCatalog.BoxSoulshot24h, ItemCatalog.BoxSoulshot30d,
+                     ItemCatalog.BoxWarRune1h, ItemCatalog.BoxWarRune2h,
+                     ItemCatalog.BoxWarRune24h, ItemCatalog.BoxWarRune30d,
                  })
-            yield return new BoxDef(boxId, new[] { new BoxEntry(ItemCatalog.SoulshotRune, 1f) });
+            yield return new BoxDef(boxId, new[] { new BoxEntry(ItemCatalog.WarRune, 1f) });
 
         foreach (var boxId in new[]
                  {
-                     ItemCatalog.BoxSpiritshot1h, ItemCatalog.BoxSpiritshot2h,
-                     ItemCatalog.BoxSpiritshot24h, ItemCatalog.BoxSpiritshot30d,
+                     ItemCatalog.BoxSpellRune1h, ItemCatalog.BoxSpellRune2h,
+                     ItemCatalog.BoxSpellRune24h, ItemCatalog.BoxSpellRune30d,
                  })
-            yield return new BoxDef(boxId, new[] { new BoxEntry(ItemCatalog.SpiritshotRune, 1f) });
+            yield return new BoxDef(boxId, new[] { new BoxEntry(ItemCatalog.SpellRune, 1f) });
     }
 
     /// <summary>One accessory box per gear tier → the 3 accessories of that tier (100% each).</summary>

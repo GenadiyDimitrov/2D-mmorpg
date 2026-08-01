@@ -157,7 +157,8 @@ generated level 1-90 world, and the Unity client. Still to do: 3rd/4th class kit
 owner's CSVs); repeatable quests + the 3-tab quest window; instances/dungeons; castles + vault
 (consumes the `VendorBuyTaxRate` hook); perfect/excellent block; position bonuses; PvP/PvE damage
 multipliers (hooks default 1.0); the presentation pass. **Dropped, don't re-add:** a magic-resist stat
-and soulshots (see the bottom of `docs/Roadmap.md`).
+and per-hit damage consumables — offence comes from the held **War Rune / Spell Rune** instead
+(see the bottom of `docs/Roadmap.md`).
 
 ## Verify server behaviour with the SMOKE TEST, not by playing
 `tools/SmokeTest` is a headless SignalR client speaking the real protocol (no window). With the

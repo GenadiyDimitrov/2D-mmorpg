@@ -1061,7 +1061,7 @@ namespace Game.Client
             // Buffs and BuyBack are the two per-character caches the server pushes CONDITIONALLY —
             // buffs only while some are running, buy-back only when a vendor opens. Everything else
             // here (inventory, warehouse, stats, learned, quests, gold) is re-pushed on login, so it
-            // corrects itself. These two do not: switching from a character with 30-day shot runes to
+            // corrects itself. These two do not: switching from a character with 30-day runes to
             // one with nothing left the first character's buffs sitting on the bar until some unrelated
             // push happened to replace them (using a potion "fixed" it). Same for the sold-items list.
             Buffs = new BuffDto[0];

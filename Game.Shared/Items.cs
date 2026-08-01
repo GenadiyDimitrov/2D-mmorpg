@@ -266,7 +266,7 @@ public record ItemDef(
     // Recipe BOOK: the recipe id this item teaches when "opened" ("" = not a book). A book is an
     // EquipSlot.Box so the client's open flow reuses; opening adds the id to the char's KnownRecipes.
     string TeachesRecipeId = "",
-    // ----- RUNE (soul/spiritshot). A held, non-equipped item that grants a timed buff while it's in the
+    // ----- RUNE (soul/spell rune). A held, non-equipped item that grants a timed buff while it's in the
     // MAIN inventory and not expired (wall-clock ExpiresAtUtc lives on the item INSTANCE, not here). The
     // buff is the named skill. Delete-protected (see the bin handler). Not equipped, not consumed. -----
     bool IsRune = false,
@@ -275,7 +275,7 @@ public record ItemDef(
     // (so buying the sealed box doesn't start the clock). 0 = not a rune box. -----
     int GrantsRuneSeconds = 0,
     // ----- Optional blunt flavour/warning text shown in item details ("" = none; consumables fall back to
-    // their use-skill's description). Used to spell out e.g. "Soulshots boost PHYSICAL damage only". -----
+    // their use-skill's description). Used to spell out e.g. "War Runes boost PHYSICAL damage only". -----
     string Description = "")
 {
     /// <summary>Hash on the ID alone. Same reason as SkillDef.GetHashCode — a positional record's
@@ -542,22 +542,22 @@ public static class ItemCatalog
     public const string NewbieEarring     = "earring_t1";
     public const string NewbieRing        = "ring_t1";
     public const string NewbieNecklace    = "necklace_t1";
-    // Shot RUNES + their sealed boxes (open → rune, wall-clock expiry set on open).
-    public const string SoulshotRune      = "rune_soulshot";
-    public const string SpiritshotRune    = "rune_spiritshot";
-    public const string BoxSoulshot1h     = "box_soulshot_1h";
-    public const string BoxSoulshot2h     = "box_soulshot_2h";
-    public const string BoxSoulshot24h    = "box_soulshot_24h";
-    public const string BoxSoulshot30d    = "box_soulshot_30d";
-    public const string BoxSpiritshot1h   = "box_spiritshot_1h";
-    public const string BoxSpiritshot2h   = "box_spiritshot_2h";
-    public const string BoxSpiritshot24h  = "box_spiritshot_24h";
-    public const string BoxSpiritshot30d  = "box_spiritshot_30d";
+    // RUNES + their sealed boxes (open → rune, wall-clock expiry set on open).
+    public const string WarRune      = "rune_war";
+    public const string SpellRune    = "rune_spell";
+    public const string BoxWarRune1h     = "box_war_rune_1h";
+    public const string BoxWarRune2h     = "box_war_rune_2h";
+    public const string BoxWarRune24h    = "box_war_rune_24h";
+    public const string BoxWarRune30d    = "box_war_rune_30d";
+    public const string BoxSpellRune1h   = "box_spell_rune_1h";
+    public const string BoxSpellRune2h   = "box_spell_rune_2h";
+    public const string BoxSpellRune24h  = "box_spell_rune_24h";
+    public const string BoxSpellRune30d  = "box_spell_rune_30d";
     // Newbie CHOICE selection-boxes (pick one of two sub-boxes).
     public const string BoxNewbieArmorChoice = "box_newbie_armor_choice";
     public const string BoxNewbieRuneChoice  = "box_newbie_rune_choice";
     /// <summary>The Apothecary's daily reward — pick soul or spirit, 1 hour, untradable.</summary>
-    public const string BoxDailyShotChoice   = "box_daily_shot_choice";
+    public const string BoxDailyRuneChoice   = "box_daily_rune_choice";
     // Boxes/chests — opened from the inventory; roll their BoxCatalog loot table.
     public const string BoxNewbie         = "box_newbie";
     public const string BoxTreasure       = "box_treasure";
@@ -768,51 +768,51 @@ public static class ItemCatalog
             ItemGrade.F, ItemRarity.Rare,
             UseSkillId: SkillCatalog.PotHealInstant, PotionCooldownTicks: 600, Value: 5000));
 
-        // ----- SHOT RUNES + their boxes. The rune is HELD (not equipped/consumed): while it's in the main
+        // ----- RUNES + their boxes. The rune is HELD (not equipped/consumed): while it's in the main
         // inventory and unexpired the reconciliation loop keeps its buff up. Tradable:false (can't sell/
         // trade) AND delete-protected in the bin handler (IsRune). The box is sealed — OPENING it stamps
         // ExpiresAtUtc = now + GrantsRuneSeconds, so the clock starts on open, not on purchase. -----
         // GrantsRuneSeconds on the RUNE is its DEFAULT lifespan, stamped at ACQUIRE time (AddItem) for any
         // source — a drop, a direct give, a quest — not just a box. A box that grants the rune OVERRIDES
         // this with its own duration. So a rune always has a wall-clock expiry the moment you get it.
-        list.Add(new ItemDef(SoulshotRune, "Soulshot Rune", EquipSlot.Rune, ItemGrade.F, ItemRarity.Rare,
-            IsRune: true, RuneBuffSkillId: SkillCatalog.SoulshotRuneBuff, GrantsRuneSeconds: 3600,
+        list.Add(new ItemDef(WarRune, "War Rune", EquipSlot.Rune, ItemGrade.F, ItemRarity.Rare,
+            IsRune: true, RuneBuffSkillId: SkillCatalog.WarRuneBuff, GrantsRuneSeconds: 3600,
             Tradable: false, Value: 0,
             Description: "Held rune: +100% P.Atk while in your bag. Boosts PHYSICAL damage only (melee/bow) — useless for spells. Move it to the warehouse to switch it off; it can't be deleted."));
-        list.Add(new ItemDef(SpiritshotRune, "Spiritshot Rune", EquipSlot.Rune, ItemGrade.F, ItemRarity.Rare,
-            IsRune: true, RuneBuffSkillId: SkillCatalog.SpiritshotRuneBuff, GrantsRuneSeconds: 3600,
+        list.Add(new ItemDef(SpellRune, "Spell Rune", EquipSlot.Rune, ItemGrade.F, ItemRarity.Rare,
+            IsRune: true, RuneBuffSkillId: SkillCatalog.SpellRuneBuff, GrantsRuneSeconds: 3600,
             Tradable: false, Value: 0,
             Description: "Held rune: +magic damage & cast speed while in your bag. Boosts MAGIC (spells) only — useless for melee/bow. Move it to the warehouse to switch it off; it can't be deleted."));
 
-        // Sealed shot boxes. 1h/2h are vendor-stocked (Apothecary, real gold price) and TRADABLE (giftable
+        // Sealed rune boxes. 1h/2h are vendor-stocked (Apothecary, real gold price) and TRADABLE (giftable
         // sealed — the RUNE inside is still bound). 24h/30d are premium/pass items: not buyable (BuyPrice
         // -1) and NOT tradable. Prices/tradability are a stand-in for the future premium economy.
         const int H = 3600, D = 24 * 3600;
-        void ShotBox(string id, string name, int seconds, int buyPrice, bool tradable, string desc) =>
+        void RuneBox(string id, string name, int seconds, int buyPrice, bool tradable, string desc) =>
             list.Add(new ItemDef(id, name, EquipSlot.Box, ItemGrade.F, ItemRarity.Rare,
                 GrantsRuneSeconds: seconds, Tradable: tradable, BuyPriceOverride: buyPrice, SellPriceOverride: 0,
                 Description: desc));
-        ShotBox(BoxSoulshot1h,  "Soulshot Box (1h)",  1 * H, 150000, true,  "Opens to a Soulshot Rune lasting 1 hour. Soulshots boost PHYSICAL damage only (melee/bow) — useless for spells.");
-        ShotBox(BoxSoulshot2h,  "Soulshot Box (2h)",  2 * H, 280000, true,  "Opens to a Soulshot Rune lasting 2 hours. Soulshots boost PHYSICAL damage only (melee/bow) — useless for spells.");
-        ShotBox(BoxSoulshot24h, "Soulshot Box (1d)",  1 * D, -1,  false,  "Opens to a Soulshot Rune lasting 24 hours. Soulshots boost PHYSICAL damage only (melee/bow) — useless for spells.");
-        ShotBox(BoxSoulshot30d, "Soulshot Box (30d)", 30 * D, -1, false,  "Opens to a Soulshot Rune lasting 30 days. Soulshots boost PHYSICAL damage only (melee/bow) — useless for spells.");
-        ShotBox(BoxSpiritshot1h,  "Spiritshot Box (1h)",  1 * H, 150000, true,  "Opens to a Spiritshot Rune lasting 1 hour. Spiritshots boost MAGIC (spells) only — useless for melee/bow.");
-        ShotBox(BoxSpiritshot2h,  "Spiritshot Box (2h)",  2 * H, 280000, true,  "Opens to a Spiritshot Rune lasting 2 hours. Spiritshots boost MAGIC (spells) only — useless for melee/bow.");
-        ShotBox(BoxSpiritshot24h, "Spiritshot Box (1d)",  1 * D, -1,  false,  "Opens to a Spiritshot Rune lasting 24 hours. Spiritshots boost MAGIC (spells) only — useless for melee/bow.");
-        ShotBox(BoxSpiritshot30d, "Spiritshot Box (30d)", 30 * D, -1, false,  "Opens to a Spiritshot Rune lasting 30 days. Spiritshots boost MAGIC (spells) only — useless for melee/bow.");
+        RuneBox(BoxWarRune1h,  "War Rune Box (1h)",  1 * H, 150000, true,  "Opens to a War Rune lasting 1 hour. War Runes boost PHYSICAL damage only (melee/bow) — useless for spells.");
+        RuneBox(BoxWarRune2h,  "War Rune Box (2h)",  2 * H, 280000, true,  "Opens to a War Rune lasting 2 hours. War Runes boost PHYSICAL damage only (melee/bow) — useless for spells.");
+        RuneBox(BoxWarRune24h, "War Rune Box (1d)",  1 * D, -1,  false,  "Opens to a War Rune lasting 24 hours. War Runes boost PHYSICAL damage only (melee/bow) — useless for spells.");
+        RuneBox(BoxWarRune30d, "War Rune Box (30d)", 30 * D, -1, false,  "Opens to a War Rune lasting 30 days. War Runes boost PHYSICAL damage only (melee/bow) — useless for spells.");
+        RuneBox(BoxSpellRune1h,  "Spell Rune Box (1h)",  1 * H, 150000, true,  "Opens to a Spell Rune lasting 1 hour. Spell Runes boost MAGIC (spells) only — useless for melee/bow.");
+        RuneBox(BoxSpellRune2h,  "Spell Rune Box (2h)",  2 * H, 280000, true,  "Opens to a Spell Rune lasting 2 hours. Spell Runes boost MAGIC (spells) only — useless for melee/bow.");
+        RuneBox(BoxSpellRune24h, "Spell Rune Box (1d)",  1 * D, -1,  false,  "Opens to a Spell Rune lasting 24 hours. Spell Runes boost MAGIC (spells) only — useless for melee/bow.");
+        RuneBox(BoxSpellRune30d, "Spell Rune Box (30d)", 30 * D, -1, false,  "Opens to a Spell Rune lasting 30 days. Spell Runes boost MAGIC (spells) only — useless for melee/bow.");
 
-        // Newbie CHOICE selection-boxes (untradable): armor set (fighter vs mage) and a 1-day shot rune
+        // Newbie CHOICE selection-boxes (untradable): armor set (fighter vs mage) and a 1-day rune
         // (soul vs spirit). Each is a PickCount:1 box whose OPTIONS are other boxes — pick one, open it.
         list.Add(new ItemDef(BoxNewbieArmorChoice, "Newbie Armor Set", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
             Tradable: false, SellPriceOverride: 0, Description: "Choose ONE: a Fighter (light) or Mage (robe) armor set."));
-        list.Add(new ItemDef(BoxNewbieRuneChoice, "Newbie Shot Rune", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
-            Tradable: false, SellPriceOverride: 0, Description: "Choose ONE: a 1-day Soulshot (physical) or Spiritshot (magic) rune box."));
+        list.Add(new ItemDef(BoxNewbieRuneChoice, "Newbie Rune", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
+            Tradable: false, SellPriceOverride: 0, Description: "Choose ONE: a 1-day War Rune (physical) or Spell Rune (magic) rune box."));
         // The DAILY quest reward. Untradable and worth nothing at a vendor, unlike the 1h boxes the
         // Apothecary SELLS: a free daily that could be farmed across characters and sold on would be a
-        // gold faucet rather than a leg-up (owner: quest shot boxes untradable, bought ones not).
-        list.Add(new ItemDef(BoxDailyShotChoice, "Shot Box (1h) — Daily", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
+        // gold faucet rather than a leg-up (owner: quest rune boxes untradable, bought ones not).
+        list.Add(new ItemDef(BoxDailyRuneChoice, "Rune Box (1h) — Daily", EquipSlot.Box, ItemGrade.F, ItemRarity.Common,
             Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0,
-            Description: "Choose ONE: a 1-hour Soulshot (physical) or Spiritshot (magic) rune box. "
+            Description: "Choose ONE: a 1-hour War Rune (physical) or Spell Rune (magic) rune box. "
                        + "Untradable — the Apothecary gives these out, she does not sell them."));
 
         // Return scrolls: same mechanism, but their skill has a CAST time, so double-clicking one

@@ -1,7 +1,7 @@
 namespace Game.Shared;
 
 /// <summary>Base Fighter kit — the skills available to all fighters before (and
-/// after) the level-20 class change. Archer's bow skill (Power Shot) lives here
+/// after) the level-20 class change. Archer's bow skill (Heavy Draw) lives here
 /// too, since archers are a fighter archetype and have no separate base file.</summary>
 public static partial class SkillCatalog
 {
@@ -342,7 +342,7 @@ public static partial class SkillCatalog
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffAtkSpeed, 0.08f) },
             Description: "Steadies your aim: +8% attack speed while wielding a bow, for 20 minutes."),
 
-        new(PowerStrike, "Power Strike", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+        new(PowerStrike, "Brutal Strike", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: 10, CastTicks: 5, CooldownTicks: 30, Range: 0, Power: 30,
             Category: SkillCategory.Physical,
             Description: "A forceful melee blow. Bonus accuracy, but can still miss."),
@@ -574,7 +574,7 @@ public static partial class SkillCatalog
             Category: SkillCategory.Physical,
             Description: "Two rapid dagger slashes. Short cast and cooldown."),
 
-        new(PowerShot, "Power Shot", BaseClass.Fighter, SkillEffect.PhysicalDamage,
+        new(PowerShot, "Heavy Draw", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: 16, CastTicks: 8, CooldownTicks: 40, Range: 900, Power: 70,
             Category: SkillCategory.Physical,
             Description: "A long-range aimed shot dealing heavy damage."),

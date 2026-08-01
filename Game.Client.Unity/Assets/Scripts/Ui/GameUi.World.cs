@@ -1346,7 +1346,7 @@ namespace Game.Client
             // Cheap change stamp: the server pushes the WHOLE bag on any change, so this only has to
             // notice that the push differs from what is on screen.
             //
-            // It MUST include each item's IDENTITY (owner, playtest-16: "the newbie/shot box opening
+            // It MUST include each item's IDENTITY (owner, playtest-16: "the newbie/rune box opening
             // doesn't refresh the inventory with the out-of-box items"). The stamp used to hash only
             // length + equipped + quantity + enchant, and opening a box is a SWAP: one box leaves, one
             // item arrives. Same length, same quantities, same everything it looked at — an identical
