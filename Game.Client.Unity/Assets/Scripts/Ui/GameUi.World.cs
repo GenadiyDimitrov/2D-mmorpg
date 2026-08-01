@@ -1506,6 +1506,11 @@ namespace Game.Client
                 // so a row of NPCs lines its markers up.
                 string mark = QuestMarkGlyph(e.Id);
                 if (mark.Length > 0) title = mark + " " + title;
+                // YOUR TARGET, marked on the name itself (owner, 2026-08-01: "can't it be a simple
+                // circle on both sides of the name? Like the ! ? for quests"). Outermost, so the dots
+                // stay at both ends whatever else the plate is carrying, and using the quest mark's own
+                // size/weight so the two markers read as one family.
+                if (Boot.TargetId.HasValue && Boot.TargetId.Value == e.Id) title = TargetDot + title + TargetDot;
                 plate.Label.text = title;
 
                 // YOUR OWN flag colour wins over "you are green".
@@ -1717,6 +1722,23 @@ namespace Game.Client
         // down or push the row into the one above it.
         private const string QuestMarkOpen  = "<line-height=100%><size=200%><b>";
         private const string QuestMarkClose = "</b></size></line-height>";
+
+        /// <summary>
+        /// The dot on each side of your TARGET's name — the whole "which of these five did I tap"
+        /// answer, in the place the eye is already reading.
+        ///
+        /// It is a BULLET (U+2022), not "●" and not the blue-circle emoji, and that is not a style
+        /// choice: this project ships TMP's LiberationSans atlas in **static** population mode with the
+        /// source font excluded from the build, so the only glyphs that exist are the ~250 baked ones.
+        /// U+25CF and every emoji are not among them and TMP draws a missing glyph as a hollow box —
+        /// the same trap that once put "[]" on every close button (see UiKit.WindowChrome). The bullet
+        /// IS in the atlas; at 200% and bold it draws as the solid dot this wants.
+        /// </summary>
+        /// <remarks>Written as the ESCAPE, not the character: a literal bullet in the source depends on
+        /// the compiler reading this file as UTF-8, and a mis-decoded string is a bug you only see on
+        /// the device. Comments can afford that risk; the glyph we actually draw cannot.</remarks>
+        private const string TargetDot =
+            "<color=#59A6FF>" + QuestMarkOpen + "\u2022" + QuestMarkClose + "</color>";
 
         /// <summary>The glyph over an NPC's head: gold "!" = a quest you can take, grey "?" = one you
         /// are on, gold "?" = one you can hand in NOW. The MMO shorthand, so it needs no explaining.</summary>

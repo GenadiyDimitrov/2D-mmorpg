@@ -68,9 +68,10 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
 **UI / conveniences**
 - **Chat tabs** on the phone (colours + tags only ever shipped in the WPF harness, deleted in 0.42.8 —
   the reference implementation is `MainWindow.xaml.cs` at commit `f33ed0e`; oldest open item in the file).
-- ~~Target visual on the mob itself~~ — **built 0.43.1.** A coloured ring on the ground under whatever
-  is selected (mob red / player blue / NPC yellow / self green, dimmed on a corpse), breathing so a
-  standing target still reads, and with no collider so it never eats the tap aimed at its own entity.
+- ~~Target visual on the mob itself~~ — **built 0.43.1.** A blue dot on each side of the target's name
+  (`• Foxhound •`), at the quest marker's size and weight. The owner's call over the ground ring that
+  was built first. ⚠ A **bullet**, U+2022 — the TMP atlas is static, so `●` and every emoji draw as a
+  hollow box.
 - **Wearable titles** — the leaderboard title over the head / by the name.
 - **Every non-admin command as an ACTION** in the Skills window's Actions tab. Block/like/unblock landed
   there; friend/party/sit/attack/assist still have nowhere to live.

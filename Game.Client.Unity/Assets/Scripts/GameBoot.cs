@@ -50,9 +50,6 @@ namespace Game.Client
         public EntityManager Entities;
         public CameraRig CameraRig;
         public MoveMarker Marker;
-        /// <summary>The selection ring under your current target — the only thing on the battlefield
-        /// itself that says which of five identical mobs you actually tapped.</summary>
-        public TargetMarker TargetRing;
         public ZoneOverlay Zones;
 
         // ----- State the HUD reads -------------------------------------------------------------
@@ -596,13 +593,6 @@ namespace Game.Client
                 Marker = FindAnyObjectByType<MoveMarker>();
                 if (Marker == null) Marker = new GameObject("MoveMarker").AddComponent<MoveMarker>();
             }
-
-            if (TargetRing == null)
-            {
-                TargetRing = FindAnyObjectByType<TargetMarker>();
-                if (TargetRing == null)
-                    TargetRing = new GameObject("TargetMarker").AddComponent<TargetMarker>();
-            }
         }
 
         private async void Start()
@@ -622,7 +612,6 @@ namespace Game.Client
                 && Entities != null && !Entities.SelfIsPredicting)
                 Marker.Hide();
 
-            UpdateTargetRing();
             if (_mobCasts.Count > 0) PruneMobCasts();
 
             // Frames/sec over a rolling second: 10/s means a healthy server tick reaching us.
@@ -1121,7 +1110,6 @@ namespace Game.Client
             // Nobody in the world you are LEAVING is still casting at you. Entity ids are per-session,
             // so a leftover entry could otherwise land a bar on an unrelated mob after a relog.
             _mobCasts.Clear();
-            if (TargetRing != null) TargetRing.Hide();
             Cooldowns.Clear();   // same conditional-push reason as Buffs: reuse is per CHARACTER
             SkillPoints = 0;   // its own field now, so it no longer clears with Stats
         }
@@ -1296,40 +1284,6 @@ namespace Game.Client
             FramesReceived++;
             _fpsWindowCount++;
             LastFrameTime = Time.realtimeSinceStartup;
-        }
-
-        /// <summary>
-        /// Keep the selection ring under the current target — every frame, because both the ring's
-        /// owner (you re-target constantly) and its position (the mob is running) change constantly.
-        ///
-        /// The colour is the entity KIND, not the level gap the nameplate encodes: at a glance the ring
-        /// answers "what did I select", and the name above it already answers "can I take it".
-        /// </summary>
-        private void UpdateTargetRing()
-        {
-            if (TargetRing == null) return;
-
-            if (Phase != ClientPhase.InWorld || !TargetId.HasValue || Entities == null)
-            {
-                TargetRing.Hide();
-                return;
-            }
-
-            var view = Entities.Find(TargetId.Value);
-            if (view == null) { TargetRing.Hide(); return; }   // despawned between frames
-
-            var colour = new Color(1.00f, 0.35f, 0.30f);       // a mob: the common case
-            if (Entities.TryGetState(TargetId.Value, out var dto))
-            {
-                if (TargetId.Value == _selfId) colour = new Color(0.45f, 0.85f, 0.50f);
-                else if (dto.Kind == EntityKind.Npc) colour = new Color(1.00f, 0.93f, 0.55f);
-                else if (dto.Kind == EntityKind.Player) colour = new Color(0.55f, 0.80f, 1.00f);
-                // A corpse is still a legal target (you loot it), so the ring stays — dimmed, the same
-                // way the marker itself dims, so "dead" reads the same everywhere.
-                if (dto.Dead) colour *= 0.45f;
-            }
-
-            TargetRing.Show(view.transform, colour);
         }
 
         private void AcquireCamera()

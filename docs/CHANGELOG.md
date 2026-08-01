@@ -29,15 +29,18 @@ listener that was never written rather than a feature that was never built.
   instead of going through `CancelCast`, and cancelling is what PUSHES the clear — so an interrupted
   cast cleaned up and a *lethally* interrupted one did not. It now routes through `CancelCast`, which
   also fixes the same hole for a player killed mid-cast (their own bar).
-- **A selection ring under your target.** Until now the only place a target existed was the target
-  *window*: on the battlefield, the mob you were about to hit looked exactly like the four beside it.
-  Fine with a mouse cursor sitting on it, useless on a phone where the finger has already lifted.
-  There is now a ring on the ground under whatever is selected — a real ring rather than a filled disc
-  (a disc would cover the thing it points at, and the click-to-move marker is already a filled disc),
-  coloured by what it is: red for a mob, blue for a player, yellow for an NPC, green for yourself, and
-  dimmed on a corpse. It breathes gently so a standing target still catches the eye, and it has no
-  collider — a marker that ate the taps aimed at the thing it marks would make your target the hardest
-  entity on screen to touch.
+- **A dot on each side of your target's name.** Until now the only place a target existed was the
+  target *window*: on the battlefield, the mob you were about to hit looked exactly like the four
+  beside it. Fine with a mouse cursor sitting on it, useless on a phone where the finger has already
+  lifted. The nameplate now reads `• Foxhound •` in blue on whatever is selected — the owner's own
+  call (*"can't it be a simple circle on both sides of the name? Like the ! ? for quests"*), and it is
+  drawn with the quest marker's exact size and weight so the two read as one family. A ground ring was
+  built first and thrown away: it was a procedural mesh, a per-frame follow and a collider to keep out
+  of the way of taps, to say something a character on a label says just as well.
+  - ⚠ It is a **bullet** (U+2022), not `●` and not the blue-circle emoji. This project ships TMP's
+    LiberationSans atlas in *static* mode with the source font excluded from the build, so only the
+    ~250 baked glyphs exist and everything else draws as a hollow box — the same trap that once put
+    "[]" on every close button. U+25CF and the emoji are not in the atlas; the bullet is.
 
 No protocol change (**9**, `MinAcceptedProtocol` still 8) and no `game.db` reset: nothing new goes over
 the wire. It does need a **new APK** — all of it is client rendering. Checklist §41.

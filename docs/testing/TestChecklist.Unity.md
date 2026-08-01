@@ -669,15 +669,15 @@ work). No `game.db` reset. Menu → Quests.
         up and confirm the corpse is bare.
 41d.[ ] **Several at once.** Pull two casters and confirm each gets its OWN bar on its own plate, and
         that walking away and back does not leave a ghost bar on anything.
-41e.[ ] **A ring appears under whatever you target.** Tap a mob: a coloured ring on the GROUND under
-        it. It follows the mob as it runs, with no lag or trailing, and disappears when you clear the
-        target (the target window's X) or the mob despawns.
-41f.[ ] **The ring's colour says what it is** — mob red, player blue, NPC yellow, yourself green (via
-        the party window), and DIMMED on a corpse. It pulses gently; it is a ring, not a filled disc,
-        and it is distinct from the blue click-to-move disc.
-41g.[ ] 🔴 **The ring does not eat taps.** Tap the targeted mob again (the second tap = attack) and tap
-        the ground right where the ring is drawn: both must behave exactly as before — the ring is
-        never what you hit.
+41e.[ ] **Your target's NAME is flanked by two blue dots** — `• Foxhound •`, the same size and weight
+        as the quest `!`. Tap a different mob and the dots move with the selection; clear the target
+        (the target window's X) and they go.
+41f.[ ] 🔴 **They are DOTS, not empty boxes.** The TMP atlas is static — a glyph it does not have draws
+        as a hollow rectangle, which is what `●` and any emoji would do here. If you see "[]" instead
+        of a dot, say so: the character has to change, not the code around it.
+41g.[ ] **They stack with everything else on the plate.** Target an aggressive mob (`*`) and a quest
+        NPC (`!`): the dots sit OUTSIDE both, the name stays centred over its owner, and nothing is
+        pushed onto a second line.
 
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends
