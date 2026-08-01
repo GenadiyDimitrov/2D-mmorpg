@@ -157,8 +157,18 @@ namespace Game.Client
 
         /// <summary>Collapse the raw buff list into what the bar draws: children sharing a parent become
         /// ONE view. The timer shows the SHORTEST remaining child, because that is when the blessing
-        /// starts coming apart — and the popup lists the parts with their own times, so a group whose
-        /// pieces are expiring at different moments can still be read in full.</summary>
+        /// starts coming apart.
+        ///
+        /// The popup shows the buff's OWN description — "+15% P.Atk & P.Def, 9% melee vampirism…" — so an
+        /// improved buff reads exactly like a Harmony one (owner, 2026-08-01). It used to say
+        /// "Parts: Might and Bulwark", which is both useless and, since 0.42.0, a lie about the shape of
+        /// the thing: a group is now ONE buff carrying the merged numbers, and the server already sends
+        /// its level's description (`ApplyBuff`: <c>isGroup ? def.DescriptionAt(level)</c>). The client
+        /// was throwing that away and writing a list of one name over it.
+        ///
+        /// The part list survives for the case it was actually written for: SEVERAL rows genuinely
+        /// sharing a parent — a pre-0.42 buff restored from the database, or a potion that overrode one
+        /// child — where the single collapsed timer no longer tells the whole story.</summary>
         private List<BuffView> BuildBuffViews(BuffDto[] all)
         {
             var views = new List<BuffView>();
@@ -184,6 +194,7 @@ namespace Game.Client
                     view = new BuffView
                     {
                         Name = string.IsNullOrEmpty(b.SourceName) ? b.Name : b.SourceName,
+                        Description = b.Description,
                         Seconds = b.SecondsLeft, IsDebuff = b.IsDebuff, Row = b.Row,
                     };
                     byGroup[b.SourceSkillId] = view;
@@ -199,8 +210,16 @@ namespace Game.Client
                     b.Name + (b.SecondsLeft > 0f ? "  " + ShortTime(b.SecondsLeft) : ""));
             }
 
+            // One row = one buff, and its own description is the truth. Only a genuinely SPLIT group —
+            // several rows under one parent — needs the part list, and then it is appended to the
+            // description rather than replacing it.
             foreach (var pair in byGroup)
-                pair.Value.Description = "Parts:  " + string.Join(",  ", parts[pair.Key]);
+            {
+                if (parts[pair.Key].Count < 2) continue;
+                pair.Value.Description =
+                    (string.IsNullOrWhiteSpace(pair.Value.Description) ? "" : pair.Value.Description + "\n\n")
+                    + "Parts:  " + string.Join(",  ", parts[pair.Key]);
+            }
 
             return views;
         }

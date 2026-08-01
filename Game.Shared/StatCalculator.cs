@@ -181,6 +181,55 @@ public static class StatCalculator
     public static float MpRegenPerSecond(int spt, int level) =>
         (2f + level * 0.08f) * (SptModifier(spt) / 1.4733f);
 
+    // ----- MOB regen: a % of the mob's own pool, and NOTHING to do with CON --------------------
+    //
+    // Mobs must not use HpRegenPerSecond. Their CON is 15 + 2·level — a level-90 mob has CON 195,
+    // where a player's ENTIRE range is 36-47 — so 1.03^(con−40) compounds ×1.06 per level while
+    // MobBaseStats.Hp only grows as 0.8·level². Exponential against polynomial has one ending:
+    //
+    //     level 37:    29 HP/s  vs a 1,135 bar   (2.6%/s)
+    //     level 90: 1,170 HP/s  vs a 6,520 bar   (18%/s — its whole bar every 5.6 seconds)
+    //     level 200:  1.5M HP/s vs a 32,040 bar  (47× its bar per second)
+    //
+    // Owner, 2026-08-01: *"if I'm not top geared and start doing 100-200 the regen will overpower
+    // me"*. It did, and it was arithmetic, not gear. Dividing the curve by a constant was considered
+    // and rejected: ÷10 keeps it sane to about level 110 and is absurd again by 150, so it is not a
+    // fix, it is the same cliff moved 40 levels along — *"I don't want to get caught balancing
+    // everything for today's level range and tomorrow need rebalance for introducing higher lvls"*.
+    //
+    // A fraction of MAX HP has no level term at all, so there is nothing to rebalance, ever, and no
+    // boss special case: 5%/s is 20 seconds to full whether the bar is 40 or five million.
+    //
+    // Players keep the CON curve untouched. Across their real 36-47 band it is a ×1.4 spread — which
+    // is what it was designed to be. It only broke when fed a number three times larger than any
+    // player will ever have.
+
+    /// <summary>Fraction of its own Max HP a mob regenerates per second WHILE ENGAGED. Deliberately
+    /// tiny: its only job is to stop a hopelessly weak attacker from chipping something down forever
+    /// (a mob wedged on geometry, say). Read it as a MAXIMUM KILL TIME — a mob healing p of its bar
+    /// per second cannot be killed by damage below p, so you must finish inside 1/p seconds. 0.001 =
+    /// a ~16-minute wall, and that sentence stays true at every level and every HP total.
+    ///
+    /// It is NOT the anti-underlevelled mechanic; the level-gap table already is (75% avoid at 19
+    /// levels, a total lockout at 20+). This only catches the in-range chipper that gap misses.</summary>
+    public static float MobHpRegenPctCombat = 0.001f;
+
+    /// <summary>Fraction of its own pool a mob regenerates per second while NOT engaged: 5%/s, so
+    /// anything is back to full 20 seconds after it drops combat. This replaced an instant full heal
+    /// in ResetMob — the owner wanted the window to exist so a mob you ran from can be re-engaged
+    /// while it is still hurt, instead of being pristine the moment you left its view.</summary>
+    public static float MobRegenPctIdle = 0.05f;
+
+    /// <summary>Fraction of its own Max MP a mob regenerates per second while engaged. Higher than the
+    /// HP figure — mobs are not meant to be MP-limited (see <see cref="MobMaxMp"/>).</summary>
+    public static float MobMpRegenPctCombat = 0.01f;
+
+    public static float MobHpRegenPerSecond(int maxHp, bool engaged) =>
+        maxHp * (engaged ? MobHpRegenPctCombat : MobRegenPctIdle);
+
+    public static float MobMpRegenPerSecond(int maxMp, bool engaged) =>
+        maxMp * (engaged ? MobMpRegenPctCombat : MobRegenPctIdle);
+
     // ----- Unified hit resolution (see docs/design/CombatResolution.md) -----------
     // Both channels (physical miss, magic fail) call ResolveAvoidChance. It returns
     // the probability the attack is AVOIDED (missed/fizzled). Order of operations:

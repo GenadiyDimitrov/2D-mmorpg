@@ -430,7 +430,12 @@ public record DebugConfigDto(
     // Regen: the CADENCE (seconds between natural-regen ticks; 3 = L2's period) and how steeply the
     // stat weights it (per-point multiplier — 1.03 is L2's CON curve, 1.0 = stat does nothing).
     // Changing the cadence does NOT change healing speed, only its chunkiness.
-    float RegenIntervalSeconds = 3f, float ConRegenBase = 1.03f);
+    float RegenIntervalSeconds = 3f, float ConRegenBase = 1.03f,
+    // Mob regen is a FRACTION OF THE MOB'S OWN POOL per second, not the CON curve (see
+    // StatCalculator.MobHpRegenPerSecond). No level term, so neither number ever needs revisiting
+    // when the level range grows. IN COMBAT reads as a maximum kill time (0.001 = you must finish
+    // inside ~16 minutes); IDLE reads as time-to-full (0.05 = 20 seconds).
+    float MobHpRegenPctCombat = 0.001f, float MobRegenPctIdle = 0.05f);
 
 /// <summary>One member row in the party window. Debuffs = the names of the debuffs currently on this
 /// member, so a healer sees at a glance who to cleanse without selecting each one.</summary>

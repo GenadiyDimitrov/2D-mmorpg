@@ -12,6 +12,74 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-08-01 — Mobs stopped out-healing the player (0.42.3)
+
+**Mob regen was on the PLAYER's CON curve, and mob CON is not player CON.** `HpRegenPerSecond` is
+`(3 + 0.1·level) × 1.03^(CON − 40)` — an exponential, correct for a player, whose CON spans 36–47 and
+so spreads only ×1.4 across every build in the game. A mob's CON is `15 + 2·level`: **195 at level 90**,
+compounding ×1.06 *per level*, while `MobBaseStats.Hp` only grows as `40 + 0.8·level²`. Exponential
+against polynomial has exactly one ending:
+
+| mob level | CON | old regen | its whole HP bar | % of bar per second |
+|---|---|---|---|---|
+| 37 | 89 | ~29 HP/s | 1,135 | 2.6% |
+| 75 | 165 | ~420 HP/s | 4,540 | 9.3% |
+| 90 | 195 | ~1,170 HP/s | 6,520 | **18%** — its whole bar every 5.6s |
+| 200 | 415 | ~1,500,000 HP/s | 32,040 | 4,700% |
+
+The owner met the mid-level end of it: *"someone hitting a lvl-37 mob for 500 … if I'm not top geared
+and start doing 100–200 the regen will overpower me"*. It was arithmetic, not gear.
+
+**Dividing the curve was considered and rejected.** `÷10` holds to about level 110 and is absurd again
+by 150 — it does not fix the cliff, it slides it forty levels along, which is the trap the owner named:
+*"I don't want to get caught balancing everything for today's level range and tomorrow need rebalance
+for introducing higher lvls"*. Anything with a level term in it has that problem. The fix has none.
+
+**Mob regen is now a fraction of the mob's own pool, split by combat**, with no level term anywhere:
+
+| | rate | what it means |
+|---|---|---|
+| engaged | **0.1%/s** | a maximum kill time: finish inside ~16 minutes |
+| idle | **5%/s** | 20 seconds back to full, from any HP |
+
+Both sentences stay true at level 1, level 200, on a 40-HP rat and on a five-million-HP boss, which is
+why there is no boss special case and nothing here to revisit later. The in-combat figure is
+deliberately tiny — its *only* job is to stop a hopelessly weak attacker chipping something down
+forever (a mob wedged on geometry). It is **not** the anti-underlevelled mechanic: the level-gap table
+already is that, with 75% avoid at 19 levels and a total lockout at 20+.
+
+**`ResetMob` no longer heals to full**, and that is the substance of the change rather than a detail.
+It ran from `Disengage` as well as from the leash, so a mob was *pristine the instant you left its
+view* — the climb back to full never existed and nothing could be re-engaged while still hurt. It now
+walks home wounded. The fast idle rate is its own abuse limit: hit-and-run into a safe zone gives the
+mob back 5% of its bar for every second you are away.
+
+Three things moved out of `ResetMob` into a new `MobRecoveryCheck`, which fires when the bar actually
+reaches the top — they are properties of *"this pull is over and the creature is whole again"*, not of
+*"it stopped chasing you"*:
+
+- **the damage ledger** (owner: take it to 30%, run, and you are still on the ledger whether someone
+  else finishes it or you come back — it resets at 100% *and* out of combat),
+- **enrage** (a boss that disengages at 30% is still the enraged boss you left),
+- **the boss phase cursor** — re-arming that at 30% HP would have made `AdvanceBossPhases` fire every
+  remaining threshold in a single tick on the next pull: announces, enrages and add waves at once.
+  Previously unreachable, because the full heal hid it.
+
+**Players are untouched** — the tank keeps his CON bonus. Across the real 36–47 band the curve is a
+×1.4 spread, which is exactly what it was designed to be; it only broke when fed a number three times
+larger than any player will ever have. Both percentages are on the **live tuning panel**
+(`Mob regen in combat` / `Mob regen idle`), so they can be swept during play instead of rebuilt.
+
+**An improved buff reads like a Harmony buff.** Its popup said `Parts: Might and Bulwark` — a list of
+one name. Since 0.42.0 a group is ONE buff carrying merged numbers, and the server has been sending
+that buff's real description all along (`ApplyBuff`: `isGroup ? def.DescriptionAt(level)`); the client
+was overwriting it with a part list built for the old fan-out shape. It keeps the description now, and
+only appends the parts when several rows genuinely share a parent.
+
+**Press-and-hold: 1.0s → 0.65s.** Reported as *"like 2s"* — a threshold with no feedback until it fires
+always feels longer than it is. Android's own long-press is ~0.5s; this sits just above it so a slow tap
+is still a tap.
+
 ## 2026-08-01 — Playtest-16: four windows that showed the work but not the answer (0.42.2)
 
 Four items passed their checklist row and still failed the reader. Each was told what it was, never

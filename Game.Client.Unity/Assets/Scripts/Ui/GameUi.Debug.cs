@@ -71,6 +71,8 @@ namespace Game.Client
             ("testSkillMod", "Test skill Mod x", true),
             ("regenInterval", "Regen tick (sec)", true),
             ("conRegen", "CON regen x/point", true),
+            ("mobRegen", "Mob regen in combat (frac/s)", true),
+            ("mobRegenIdle", "Mob regen idle (frac/s)", true),
         };
 
         private void BuildDebugPanel()
@@ -579,6 +581,8 @@ namespace Game.Client
             Set("testSkillMod", S(d.TestSkillMod));
             Set("regenInterval", S(d.RegenIntervalSeconds));
             Set("conRegen", S(d.ConRegenBase));
+            Set("mobRegen", d.MobHpRegenPctCombat.ToString("0.####", CultureInfo.InvariantCulture));
+            Set("mobRegenIdle", d.MobRegenPctIdle.ToString("0.####", CultureInfo.InvariantCulture));
         }
 
         private void ApplyTuning()
@@ -595,7 +599,7 @@ namespace Game.Client
                 I("karmaBase"), F("karmaConsec"), F("karmaLevel"), I("karmaDeath"), I("karmaMob"),
                 I("idleCap"), I("offlineCap"), I("grace"),
                 I("testHealPower"), I("testSkillPower"), F("testSkillMod"),
-                F("regenInterval"), F("conRegen"));
+                F("regenInterval"), F("conRegen"), F("mobRegen"), F("mobRegenIdle"));
 
             Boot.Debug(n => n.SetDebugConfigAsync(dto), "tuning");
         }

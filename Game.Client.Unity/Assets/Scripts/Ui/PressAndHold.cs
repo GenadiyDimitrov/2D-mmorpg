@@ -21,9 +21,12 @@ namespace Game.Client
     /// </summary>
     public class PressAndHold : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler
     {
-        /// <summary>How long the finger must stay down. Longer than Android's ~0.5s on purpose: now
-        /// that the hold fires on its own, a threshold that short turns a slow tap into a hold.</summary>
-        public float HoldSeconds = 1.0f;
+        /// <summary>How long the finger must stay down. 0.65s — Android's own long-press is ~0.5s, and
+        /// this sits just above it so a slow tap still reads as a tap now that the hold fires on its own.
+        /// It was 1.0s and the owner read that as "about two seconds" (2026-08-01): a threshold with no
+        /// feedback until it fires always feels longer than it is, so the honest fix is a shorter
+        /// one.</summary>
+        public float HoldSeconds = 0.65f;
 
         /// <summary>Screen pixels of finger travel that cancel a pending hold. Without it, dragging a
         /// SCROLLING list slowly would arm a hold — the widget travels with the content, so the pointer

@@ -35,6 +35,8 @@ public partial class MainWindow
         ("testSkillMod", "Test skill Mod ×", true),
         ("regenInterval", "Regen tick (sec)", true),
         ("conRegen", "CON regen ×/point", true),
+        ("mobRegen", "Mob regen in combat (frac/s)", true),
+        ("mobRegenIdle", "Mob regen idle (frac/s)", true),
     };
 
     private void TuneOpen_Click(object sender, RoutedEventArgs e)
@@ -92,6 +94,8 @@ public partial class MainWindow
         _debugFields["testSkillMod"].Text = Str(d.TestSkillMod);
         _debugFields["regenInterval"].Text = Str(d.RegenIntervalSeconds);
         _debugFields["conRegen"].Text = Str(d.ConRegenBase);
+        _debugFields["mobRegen"].Text = d.MobHpRegenPctCombat.ToString("0.####", CultureInfo.InvariantCulture);
+        _debugFields["mobRegenIdle"].Text = d.MobRegenPctIdle.ToString("0.####", CultureInfo.InvariantCulture);
     }
 
     private async void TuneApply_Click(object sender, RoutedEventArgs e)
@@ -101,7 +105,7 @@ public partial class MainWindow
             I("karmaBase"), F("karmaConsec"), F("karmaLevel"), I("karmaDeath"), I("karmaMob"),
             I("idleCap"), I("offlineCap"), I("grace"),
             I("testHealPower"), I("testSkillPower"), F("testSkillMod"),
-            F("regenInterval"), F("conRegen"));
+            F("regenInterval"), F("conRegen"), F("mobRegen"), F("mobRegenIdle"));
         await _net.SetDebugConfigAsync(d);
     }
 

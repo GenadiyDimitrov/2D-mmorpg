@@ -555,7 +555,8 @@ public class GameLoopService : BackgroundService
         _karmaBase, (float)_karmaConsecGrowth, (float)_karmaLevelGrowth, _karmaLossPerDeath, _karmaLossPerMob,
         _idleCapSeconds, _offlineCapSeconds, _graceSeconds,
         _testHealPower, _testSkillPower, _testSkillMod,
-        GameConstants.RegenIntervalSeconds, StatCalculator.ConRegenBase);
+        GameConstants.RegenIntervalSeconds, StatCalculator.ConRegenBase,
+        StatCalculator.MobHpRegenPctCombat, StatCalculator.MobRegenPctIdle);
 
     private void HandleRequestDebugConfig(RequestDebugConfigCmd cmd)
     {
@@ -598,6 +599,13 @@ public class GameLoopService : BackgroundService
         GameConstants.RegenIntervalTicks =
             Math.Clamp((int)MathF.Round(c.RegenIntervalSeconds * GameConstants.TickRate), 1, 600);
         StatCalculator.ConRegenBase = Math.Clamp(c.ConRegenBase, 1f, 1.2f);
+
+        // In combat: 0 = mobs never heal in a fight (defensible — the level-gap lockout is the real
+        // anti-underlevelled rule); 0.1 = 10% of the bar per second, faster than most players out-damage.
+        // Idle is floored at 0.001 rather than 0 because ResetMob no longer heals: at exactly 0 a mob
+        // that once took a scratch would carry it until something killed it.
+        StatCalculator.MobHpRegenPctCombat = Math.Clamp(c.MobHpRegenPctCombat, 0f, 0.1f);
+        StatCalculator.MobRegenPctIdle = Math.Clamp(c.MobRegenPctIdle, 0.001f, 1f);
     }
 
     // Lives NEXT TO THE EXE (Debug/publish output), like an options.ini — NOT a build item, so an
@@ -5644,20 +5652,43 @@ public class GameLoopService : BackgroundService
     {
         mob.Engaged = false;
         mob.CombatTargetId = null;
-        mob.Hp = mob.MaxHp;
         mob.Buffs.Clear();
         mob.Threat.Clear();
-        // A mob that leashed home and healed to full owes nobody: whatever damage was on it has been
-        // undone, so the ledger must go too, or the next killer would share the reward with whoever
-        // failed to finish it earlier.
-        mob.DamageLog.Clear();
-        mob.LastHitterId = null;
         mob.TauntLockTicks = 0;
         mob.TargetX = mob.HomeX;
         mob.TargetY = mob.HomeY;
+        mob.CombatTicks = 0;
+        mob.BossSkillCooldown = 0;
+        mob.SkillCooldowns.Clear();   // fresh boss-skill reuse on a leash reset
 
-        // Boss: drop enrage (undo its stat spike) and reset the combat/skill timers so the next
-        // pull starts fresh.
+        // NOT healed here any more, and that is the whole point of the change: a mob used to be
+        // pristine the instant you left its view (this ran from Disengage as well as from the leash),
+        // so the 20-second climb back to full simply did not exist and nothing could ever be
+        // re-engaged while it was still hurt. It now walks home wounded and regenerates.
+        //
+        // Three things therefore do NOT belong here either — they are properties of "this pull is
+        // over and the creature is whole again", not of "it stopped chasing you". They live in
+        // MobRecoveryCheck, which fires when the bar is actually full:
+        //   • the damage LEDGER (owner: you take it to 30%, run, and you are still on the ledger if
+        //     someone else finishes it or you come back — it resets at 100% + out of combat),
+        //   • ENRAGE (a boss that disengages at 30% is still the enraged boss you left),
+        //   • the boss PHASE cursor — re-arming it at 30% HP would make AdvanceBossPhases fire every
+        //     threshold at once on the next pull, announces, add waves and all.
+    }
+
+    /// <summary>A disengaged mob that has regenerated to full is a FRESH mob again: it owes nobody,
+    /// its boss script re-arms and its enrage lapses. Called from the regen tick, which is the only
+    /// place that can observe the bar reaching the top on its own.</summary>
+    private void MobRecoveryCheck(Entity mob)
+    {
+        if (mob.Engaged || mob.Dead || mob.Hp < mob.MaxHp)
+            return;
+        if (mob.DamageLog.Count == 0 && mob.BossPhaseIndex == 0 && !mob.Enraged)
+            return;   // already fresh — nothing to undo
+
+        mob.DamageLog.Clear();
+        mob.LastHitterId = null;
+        mob.BossPhaseIndex = 0;
         if (mob.Enraged)
         {
             mob.AttackPower = (int)(mob.AttackPower / 1.5f);
@@ -5666,10 +5697,6 @@ public class GameLoopService : BackgroundService
             mob.AttackSpeedMultiplier /= 0.7f;
             mob.Enraged = false;
         }
-        mob.CombatTicks = 0;
-        mob.BossSkillCooldown = 0;
-        mob.BossPhaseIndex = 0;       // re-arm the phase script for the next pull
-        mob.SkillCooldowns.Clear();   // fresh boss-skill reuse on a leash reset
     }
 
     /// <summary>A mob died: remove it from the world and let its zone schedule
@@ -7828,21 +7855,38 @@ var effect = def.Effect;
         // rather than secretly rebalancing the game by the same factor.
         float period = GameConstants.RegenIntervalSeconds;
 
+        // A mob is NOT a player with big numbers: it regenerates a fraction of its own pool, because
+        // its CON is on a curve the player formula was never meant to be fed (StatCalculator's
+        // MobHpRegenPerSecond explains what that produced). Mob masteries (mod.HpRegen) still scale it.
+        //
+        // Mobs also split on COMBAT, which players deliberately do not (owner, 2026-07-29 — regen by
+        // stance, never by being in combat). That rule was about auto-farm starving a player who never
+        // leaves combat; a mob has no such problem, and the split is what lets the idle rate be fast
+        // enough to matter (5%/s → 20s to full) without a fight becoming a war of attrition.
+        bool player = entity.Kind == EntityKind.Player;
+        bool engaged = !player && entity.Engaged;
+
         if (entity.Hp < entity.MaxHp)
         {
+            float perSecond = player
+                ? StatCalculator.HpRegenPerSecond(entity.Con, entity.Level) + entity.HpRegenBonus
+                : StatCalculator.MobHpRegenPerSecond(entity.MaxHp, engaged);
             int regen = Math.Max(1,
-                (int)((StatCalculator.HpRegenPerSecond(entity.Con, entity.Level) + entity.HpRegenBonus)
-                      * multiplier * entity.HpRegenMult * (1f + hpRegenPct) * period));
+                (int)(perSecond * multiplier * entity.HpRegenMult * (1f + hpRegenPct) * period));
             entity.Hp = Math.Min(entity.MaxHp, entity.Hp + regen);
         }
 
         if (entity.Mp < entity.MaxMp)
         {
+            float perSecond = player
+                ? StatCalculator.MpRegenPerSecond(entity.EffectiveSpt, entity.Level) + entity.MpRegenBonus
+                : StatCalculator.MobMpRegenPerSecond(entity.MaxMp, engaged);
             int regen = Math.Max(1,
-                (int)((StatCalculator.MpRegenPerSecond(entity.EffectiveSpt, entity.Level) + entity.MpRegenBonus)
-                      * multiplier * entity.MpRegenMult * (1f + mpRegenPct) * period));
+                (int)(perSecond * multiplier * entity.MpRegenMult * (1f + mpRegenPct) * period));
             entity.Mp = Math.Min(entity.MaxMp, entity.Mp + regen);
         }
+
+        if (!player) MobRecoveryCheck(entity);
     }
 
     /// <summary>Heal-over-time buffs (e.g. Warchanter's Renew): heal a % of max HP

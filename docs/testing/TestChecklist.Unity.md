@@ -501,14 +501,49 @@ server's drop-line builder), so the APK is what proves them.
         cast — more compact, logically written, not throw everything there."* One line per weapon
         GROUP, its stats after it, weapons that share a number folded into one row.
 35e.[ ] **A hold registers while your finger is still down.** It used to be decided on RELEASE, so a
-        long press gave nothing back until you let go. Hold a buff square / skill slot: at **1s** the
-        menu must appear *under the finger*, and letting go afterwards must NOT also fire the tap.
+        long press gave nothing back until you let go. Hold a buff square / skill slot: at **0.65s**
+        (was 1s in 0.42.1 — he read that as "like 2s", so 0.42.3 shortened it) the menu must appear
+        *under the finger*, and letting go afterwards must NOT also fire the tap.
         Then **scroll a long list slowly** — that must NOT count as a hold (40px of travel cancels it).
 35f.[ ] **A box's contents appear in the bag immediately.** Open a newbie box, a selection box and a
         shot/rune box with the BAG WINDOW OPEN: the box goes, its contents appear, no re-open needed.
         This was a swap the bag's change-stamp could not see (1 item out, 1 in — same length, same
         quantities). Check the same at a **vendor** with the sell list open, which had the same blind
         spot: sell one item and the row must go without re-opening the tab.
+
+--- 36. 🔴 MOB REGEN + the 0.42.3 batch (built 2026-08-01, unplayed). ---
+The regen rework is the one that needs real play: mobs used to regenerate on the PLAYER's CON curve,
+which at level 90 healed a mob's whole bar every 5.6s. It is now a flat fraction of the mob's own
+pool — **0.1%/s engaged, 5%/s idle** — with no level term at all. ⚠ `ResetMob` no longer heals to
+full, so **36c-36f are all new behaviour that has never existed before**, not regressions to re-check.
+36a.[ ] **An improved buff's popup shows its EFFECT.** Tap a group buff square (admin buff button is
+        the quickest source): the body must read its real numbers — *"+15% P.Atk & P.Def, 9% melee
+        vampirism, +4 accuracy"* — exactly the way a **Harmony** buff reads. It said `Parts: Might and
+        Bulwark` (a list of ONE name) before. The part list may only appear when several rows genuinely
+        share a parent, e.g. a buff restored from the DB.
+36b.[ ] **Nothing out-heals you any more.** Find a mob a few levels above you and chip at it with
+        weak/unbuffed damage. The bar must go DOWN and stay down. Before, a level-37 mob regenerated
+        ~29 HP/s and a level-90 one ~1170 HP/s.
+36c.[ ] **The 20-second window.** Take a mob to ~30%, run out of its view so it disengages, then watch
+        it (or come back at intervals). It must **walk home wounded and climb back over ~20 seconds**,
+        NOT be instantly full. Re-engage it mid-climb and it must still be hurt. This is the whole
+        point of the change — the old code full-healed it the moment you left ViewRange.
+36d.[ ] **The damage ledger survives a disengage.** Take a mob to ~30%, run, and while it is still
+        healing let it be killed (return and finish it, or have the bot/another character do it). You
+        must still be **on the ledger** — sharing exp/drop credit. Then let one heal ALL the way to
+        full and kill it fresh: that time the ledger must have **reset** (no share for the earlier
+        damage). The rule is 100% HP *and* out of combat, not "it stopped chasing you".
+36e.[ ] 🔴 **A boss re-pulled while wounded does NOT dump its phase script.** Pull a boss past a phase
+        threshold, break combat, then re-engage it before it heals. It must **continue** — not replay
+        every announce/enrage/add-wave at once. (The phase cursor used to re-arm on disengage; the
+        instant full heal was the only thing hiding it.) A boss that disengaged **enraged** must still
+        be enraged when you come back, and lose it only after healing to full.
+36f.[ ] **Safe-zone kiting is self-limiting.** Aggro something, step into town so it resets, step out.
+        You may re-engage it wounded — but it is healing at 5%/s while you wait, so hit-and-run must
+        not let a weak character grind down something far above them.
+36g.[ ] **The two new tuning rows.** Debug → tuning: `Mob regen in combat (frac/s)` and `Mob regen
+        idle (frac/s)`. Change them, Apply, and confirm the echo comes back clamped (combat 0-0.1,
+        idle 0.001-1) and that the new rate is live without a restart.
 
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends
