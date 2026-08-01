@@ -35,8 +35,9 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
    version stamp. **No `game.db` reset needed** (no schema change since 0.42.0 — that one did need it).
    §36 is: the buff popup · nothing out-heals you · the 20s idle window · the ledger surviving a
    disengage · **the boss phase script must not replay** · safe-zone kiting · the two tuning rows.
-   ⚠ `GameUi.Feedback.cs` and `GameUi.Debug.cs` are **not compile-verified** — the Unity scripts aren't
-   in `Game.sln`, so the APK build is their first real compile.
+   ⚠ (Was: "the Unity scripts are never compile-verified until the APK build." No longer true —
+   `cd Game.Client.Unity && dotnet build Assembly-CSharp.csproj` type-checks them in ~18s. Do that
+   before every APK.)
 2. **Regen from gear vs regen from level — the owner's call, not built.** `AttributeType.MpRegen` rolls
    **flat** MP/s scaled by GRADE `(1+g, 3+g·2)`, while the level term is nearly flat (2.8 → 9.2 across
    levels 1-90). So gear dominates regen at *every* level; a level-35 subclass wearing the main's
