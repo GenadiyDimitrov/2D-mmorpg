@@ -7,10 +7,69 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.42.8**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.42.9**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 2026-08-01 — Repeatable quests: the Huntmaster's contracts (0.42.9)
+
+**The last unbuilt system of any size.** The owner asked for repeatable quests in playtest-13 and named
+three shapes; all three are now one flag, `QuestDef.Repeatable`, plus a gathering mechanism for the
+first.
+
+- **Endless gathering** — *"can be kill mobs indefinitely (gathering quest items as u farm in a
+  specific zone)"*. A contract carries `QuestGather` lines: while it is active, each named creature
+  drops its own token on a credited kill. Its single step is a TalkTo back at the giver, so you hand in
+  whenever you like — after one kill or after an hour — take the payment, and take the contract again.
+- **Finite** — *"kill 10 of those, 50 of those… just dont close on finish"*. An ordinary kill quest
+  with `Repeatable: true`. No new machinery at all.
+- **Talk-to** — the same with nothing to kill. The Apothecary's daily was already one.
+
+**The payout has no authored numbers.** Each line's `RewardModifier` **is** the owner's
+`QuestItemRewardModifier`, and it multiplies the creature's *own* kill value: a token pays that
+fraction of `MobExpReward`/`MobGoldReward` at the creature's natural level, again. So his worked
+example — `20 × mod(skeletons) × Exp + 55 × mod(bears) × Exp` — falls out directly, the per-mob
+modifier has an obvious meaning ("how much of a bonus is farming *this* worth"), and a contract stays
+level-appropriate at every band with nothing to re-tune when the exp curve moves. The finite contracts'
+completion bonus is written the same way, as "five kills' worth", rather than as a number that dates.
+A live kill's toughness multiplier and level-gap penalty are **not** applied to a token — both make it
+pay slightly less than its share, which is the safe direction, and it means a level-90 farming foxes
+cashes them at a fox's rate.
+
+**Repeatable ≠ un-completed.** A repeatable still records its bare id in `CompletedQuests`, so
+"have you ever done this" and `RequiresQuestId` chains keep working; what makes it repeatable is that
+the offer filter ignores that record. That filter is now one method, `QuestClosed`, asked by both the
+NPC's list and the "!" markers so they cannot disagree — and it checks `Daily` **first**, which is
+exactly the owner's *"can be taken again — if not daily limited"*.
+
+**Content: a Huntmaster in every city**, standing beside the gatekeeper (taking a contract is the
+errand immediately before "teleport me to the field"). Each offers one endless contract covering the
+three bands his city manages, with the modifier rising by creature — 0.25 / 0.30 / 0.35, so working a
+contract is worth roughly **+25-35% exp and gold** on the hour you farm it. Stonewatch and Ironreach
+also carry a finite contract each, to prove that shape. Fifteen gathering tokens, one per creature,
+so each can pay its own modifier.
+
+Two supporting changes this needed:
+
+- **Quest items stack.** A contract hands out a token per kill; one row each would fill the bag in
+  twenty minutes. The class-change proofs are quest items too and are unaffected — a chain grants
+  exactly one of each — but the class change now consumes *one*, by quantity, rather than removing the
+  row.
+- **Abandoning a gathering contract destroys its tokens.** It has to: quest items cannot be discarded
+  (the rule that protects the class proofs), so tokens left behind would be undeletable dead weight.
+  Safe to do bluntly because a gather token belongs to exactly one quest — `QuestCatalog.Register`
+  refuses a duplicate at startup, along with two lines of one quest sharing a token.
+
+The gather creatures feed `QuestCatalog.KillTargets` like kill steps do, so each gets its dedicated
+spawner for free and a misspelt id shows up in the startup warning rather than as a contract nobody
+can fill. Verified: all fifteen resolve, every Huntmaster exists, `UnservedKillTargets()` is empty.
+
+Progress is shown by folding the token counts into the step text (`Gathered: Bear Pelt 12, …`), and the
+offer shows what a contract collects and from what (`Collects: Bear Pelt (Grizzly Bear), …`) so the
+accept decision is informed. That keeps `ProtocolVersion` at **8** — an installed 0.42.x APK plays this
+with no rebuild. The 3-tab quest window will want it structured; it can have it then, with one protocol
+bump instead of two. `game.db` does **not** need deleting.
 
 ## 2026-08-01 — The WPF harness is gone (0.42.8)
 

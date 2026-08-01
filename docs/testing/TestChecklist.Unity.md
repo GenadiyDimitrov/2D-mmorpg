@@ -562,8 +562,8 @@ completion and a shortfall fails the WHOLE trade** — never a partial delivery.
 37e.[ ] **A full bag is judged correctly.** With a nearly full bag, receiving a stack of something you
         ALREADY hold must succeed (it merges — no new slot); receiving something new must be refused.
         Giving away *part* of a stack must NOT be counted as freeing a slot.
-37f.[ ] **The WPF harness asks too.** Same flow in the desktop client: clicking a stack opens a small
-        "How many?" box; Cancel offers nothing (it does not silently offer the whole stack).
+37f.[~] ~~The WPF harness asks too.~~ **DEAD — the harness was deleted in 0.42.8.** The phone's numpad
+        (37a) is the only flow there is now.
 
 --- 38. 🔴 THE ACCOUNT WAREHOUSE (0.42.7, built 2026-08-01, unplayed). ⚠ DELETE `game.db` FIRST. ---
 Needs two characters on the SAME account. The warehouse window has a second button row now:
@@ -584,6 +584,42 @@ Needs two characters on the SAME account. The warehouse window has a second butt
         from before B touched it. (No item may be duplicated by this — that is the real risk.)
 38f.[ ] **A rune still expires in there.** Park a war/spell rune in the account bank: it applies no
         buff, but the clock keeps running and it vanishes when it runs out.
+
+--- 39. 🔴 REPEATABLE QUESTS — the Huntmaster's contracts (0.42.9, built 2026-08-01, unplayed). ---
+No `game.db` reset and **no new APK needed** — the protocol is still 8, so an installed 0.42.x build
+plays this. There is a new **Huntmaster** NPC beside the gatekeeper in every city; Brackenford's is
+Huntmaster Cera, 700 west of Gatekeeper Pell.
+39a.[ ] **The contract is offered, and says what it wants.** Talk to Huntmaster Cera at level 3-20:
+        *Bracken Contract* is listed, and its line reads **`Collects: Fox Pelt (Fox), Werewolf Fang
+        (Werewolf), Barbed Hook (Hook Spider)`** — you can tell what to hunt BEFORE accepting.
+39b.[ ] **Tokens drop as you farm, and stack.** Accept it, kill a few Foxes: each kill gives a
+        **Fox Pelt** with a chat line counting them, and the bag shows **one row, x12** — not twelve
+        rows. Check the quest window: the step line reads `Gathered: Fox Pelt 12, Werewolf Fang 0, …`
+        and climbs as you kill.
+39c.[ ] **Hand in whenever you like.** Return to Cera → Complete. She takes every token (one "Handed
+        over 12x Fox Pelt" line each), and pays exp **and gold** for them. Doing it after ONE kill must
+        also work — that is the owner's *"you killed 1 mob just to return the quest"* case.
+39d.[ ] 🔴 **It does not close.** The moment you hand in, the SAME contract is offered again at the
+        same NPC, and the "!" over her head comes back. Take it again and the counts start at zero.
+        This is the whole feature — if it disappears from her list, `QuestClosed` is wrong.
+39e.[ ] **The payout is a farm bonus, not a jackpot.** Roughly **+25-35%** on what those kills already
+        gave you. A Fox Pelt is worth ~102 exp / 14 gold, a Barbed Hook ~455 / 47. If a hand-in is
+        paying multiples of an hour's farming, the modifier is being applied to the wrong number.
+39f.[ ] **A finite contract repeats too.** At Huntmaster Radd (Stonewatch, level 18-34): *Thin the
+        Herd*, kill 20 Grizzly Bears → reward at the end, and it is **still on his list afterwards**.
+        Ironreach has the same shape (*Standing Orders*, 25 Redhorn Footmen).
+39g.[ ] **Abandoning destroys the trophies.** Take a contract, gather a few tokens, Abandon it: the
+        tokens leave the bag with *"Your gathered trophies are discarded."* (They have to — a quest
+        item cannot be discarded by hand, so leaving them would be undeletable dead weight.)
+39h.[ ] **The daily is unaffected.** The Apothecary's rune quest is still once-a-day: hand it in and it
+        must NOT come straight back (daily beats repeatable).
+39i.[ ] **The creatures actually spawn.** Each contract's three creatures now have their own dedicated
+        spawner. Check the server log at startup says nothing about *"Quest kill targets with no
+        dedicated spawner"*, and that you can find Foxes/Werewolves/Hook Spiders without clearing a
+        whole camp first.
+39j.[ ] **A class change still works.** Quest items stack now, and the class change was changed to
+        consume ONE rather than remove the row. Take a 2nd class at Class Master Vael and confirm the
+        two proofs are consumed and nothing else vanishes.
 
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends

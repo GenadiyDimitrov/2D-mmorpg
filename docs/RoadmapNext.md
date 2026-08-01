@@ -45,12 +45,15 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
 
 ## 🟡 OPEN — carried forward, nothing blocking them
 
-**Quests** — the last unbuilt batch of any size.
-- **Repeatable quests** — endless gathering with a per-mob `QuestItemRewardModifier` paying exp+gold per
-  quest item on turn-in, finite repeatables, talk-to repeatables. The `Daily` flag and its dated stamp
-  already exist, so this builds on rails that are in.
+**Quests**
+- ~~Repeatable quests~~ — **built 0.42.9.** `QuestDef.Repeatable` covers all three shapes the owner
+  named; gathering contracts carry `QuestGather` lines whose `RewardModifier` **is** his
+  `QuestItemRewardModifier`, paying a fraction of the creature's own kill exp+gold per token. A
+  Huntmaster in every city, ~+25-35% on the hour you farm one. See the CHANGELOG.
 - **The 3-tab quest window** (active / unavailable / completed) and the **per-quest detail window** with
-  accept/decline at the NPC. Track and Abandon shipped; the tabs did not.
+  accept/decline at the NPC. Track and Abandon shipped; the tabs did not. ⚠ This is where the gather
+  counts should become structured DTO fields — 0.42.9 folded them into the step text on purpose, to
+  keep the protocol at 8 and spend one bump here rather than two.
 
 **World**
 - **Mob cast bar** — believed built, never seen on screen. Verify before rebuilding.

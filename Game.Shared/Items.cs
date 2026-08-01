@@ -290,8 +290,14 @@ public record ItemDef(
     /// This lives HERE, on the shared def, because it is asked on BOTH sides and the two copies
     /// drifted: the server's AddItem stacked Material while the client's vendor did not, so a
     /// stack of 11 gems showed as "x11" but sold one at a time with no quantity numpad. Anything
-    /// that needs the answer asks this property — never re-list the slots.</summary>
-    public bool IsStackable => Slot is EquipSlot.Consumable or EquipSlot.Scroll or EquipSlot.Material;
+    /// that needs the answer asks this property — never re-list the slots.
+    ///
+    /// <para>Quest items stack too, and must: a GATHERING quest hands out one token per kill, so an
+    /// hour of farming is 200+ of them. One row per token would fill the bag in twenty minutes and
+    /// make the feature unusable. The class-change proofs are quest items as well and are unaffected —
+    /// a chain grants exactly one of each, so a stack of one is the row it always was.</para></summary>
+    public bool IsStackable => Slot is EquipSlot.Consumable or EquipSlot.Scroll or EquipSlot.Material
+                                    or EquipSlot.QuestItem;
 
     /// <summary>Unified top-level category (derived from EquipSlot). Weapons are MainHand,
     /// shields OffHand; everything else maps 1:1.</summary>
@@ -469,6 +475,46 @@ public static class ItemCatalog
     public const string AttrScrollLegendary = "attrscroll_legendary";
     public const string MarkOfFaith = "quest_mark_of_faith";
     public const string ClericsProof = "quest_clerics_proof";
+
+    // ----- Repeatable-hunt gathering tokens (Quests.Repeatable.cs authors which creature drops which).
+    //       Named after the creature, not the quest: the Huntmaster's list can be re-cut without the
+    //       token in the player's bag suddenly meaning something else.
+    public const string TokenFoxPelt = "quest_token_fox_pelt";
+    public const string TokenWerewolfFang = "quest_token_werewolf_fang";
+    public const string TokenSpiderHook = "quest_token_spider_hook";
+    public const string TokenCrackedRib = "quest_token_cracked_rib";
+    public const string TokenBearPelt = "quest_token_bear_pelt";
+    public const string TokenMantisClaw = "quest_token_mantis_claw";
+    public const string TokenHarpyFeather = "quest_token_harpy_feather";
+    public const string TokenBasiliskScale = "quest_token_basilisk_scale";
+    public const string TokenAshOrcInsignia = "quest_token_ash_orc_insignia";
+    public const string TokenRustedShard = "quest_token_rusted_shard";
+    public const string TokenDreadSigil = "quest_token_dread_sigil";
+    public const string TokenRedhornBadge = "quest_token_redhorn_badge";
+    public const string TokenEmberScale = "quest_token_ember_scale";
+    public const string TokenRadiantPlume = "quest_token_radiant_plume";
+    public const string TokenSplinterChitin = "quest_token_splinter_chitin";
+
+    /// <summary>Every gathering token and its display name, in one list so the defs are built from the
+    /// same place the ids are declared.</summary>
+    private static readonly (string Id, string Name)[] GatherTokens =
+    {
+        (TokenFoxPelt,        "Fox Pelt"),
+        (TokenWerewolfFang,   "Werewolf Fang"),
+        (TokenSpiderHook,     "Barbed Hook"),
+        (TokenCrackedRib,     "Cracked Rib"),
+        (TokenBearPelt,       "Bear Pelt"),
+        (TokenMantisClaw,     "Mantis Claw"),
+        (TokenHarpyFeather,   "Harpy Feather"),
+        (TokenBasiliskScale,  "Amber Scale"),
+        (TokenAshOrcInsignia, "Ash Orc Insignia"),
+        (TokenRustedShard,    "Rusted Shard"),
+        (TokenDreadSigil,     "Dread Sigil"),
+        (TokenRedhornBadge,   "Redhorn Badge"),
+        (TokenEmberScale,     "Emberwyrm Scale"),
+        (TokenRadiantPlume,   "Radiant Plume"),
+        (TokenSplinterChitin, "Splinter Chitin"),
+    };
     public const string GodWeapon = "god_judgment";
     public const string GodArmor = "god_robes";
     public const string WoodenShield = "shield_wooden";
@@ -1188,6 +1234,15 @@ public static class ItemCatalog
             ItemGrade.F, ItemRarity.Rare));
         list.Add(new ItemDef(ClericsProof, "Cleric's Proof", EquipSlot.QuestItem,
             ItemGrade.F, ItemRarity.Epic));
+
+        // ----- GATHERING TOKENS: the trophies the repeatable hunt quests collect. One token per
+        //       creature, so the Huntmaster can pay a different QuestItemRewardModifier for each
+        //       (see Quests.Repeatable.cs). Common rarity — they are proof of work, not treasure, and
+        //       they carry no value: the whole reward is the exp+gold paid at turn-in.
+        foreach (var (id, name) in GatherTokens)
+            list.Add(new ItemDef(id, name, EquipSlot.QuestItem, ItemGrade.F, ItemRarity.Common,
+                Description: "A hunting trophy. Worth nothing to a merchant — bring it to the "
+                           + "Huntmaster who asked for it."));
 
         // ===================================================================
         //  GOD-TIER one-offs (debug). Every attribute maxed at 100%.

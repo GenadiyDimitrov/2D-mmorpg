@@ -19,7 +19,28 @@ public record QuestStep(
     int MaxLevel = 0);
 
 /// <summary>What the player gets on completion. ItemIds grants quest items.</summary>
-public record QuestReward(int Exp = 0, int SkillPoints = 0, string[]? ItemIds = null);
+public record QuestReward(int Exp = 0, int SkillPoints = 0, string[]? ItemIds = null, int Gold = 0);
+
+/// <summary>
+/// One "this creature yields this token" line of a GATHERING quest (owner, playtest-13: *"can be kill
+/// mobs indefinitely, gathering quest items as u farm in a specific zone"*).
+///
+/// While the quest is active, every credited kill of <paramref name="MobId"/> rolls
+/// <paramref name="DropChance"/> for one <paramref name="ItemId"/>. On turn-in the tokens are counted,
+/// consumed, and paid out ON TOP of the quest's own reward.
+///
+/// <para><b>RewardModifier is the owner's per-mob <c>QuestItemRewardModifier</c></b>: each token pays
+/// that fraction of the creature's OWN kill exp and gold, again. So a token is always worth what the
+/// thing that dropped it was worth — a quest authored once stays level-appropriate, and the only
+/// number an author picks is "how much of a bonus is farming this worth", which is what the knob is
+/// for. Deriving it from the mob is also why the modifier is per-MOB and not per-quest: 20 skeletons
+/// and 55 bears pay separately, exactly as he wrote it.</para>
+/// </summary>
+public record QuestGather(
+    string MobId,
+    string ItemId,
+    float DropChance = 1f,
+    float RewardModifier = 0.25f);
 
 /// <summary>
 /// A quest definition (static content). OfferNpcId is the NPC who gives it;
@@ -51,10 +72,22 @@ public record QuestDef(
     // ----- DAILY: the quest can be taken again after the server-time day rolls over. Completing it
     //       moves it out of CompletedQuests and into the daily ledger instead, so it never permanently
     //       closes. 0 = a normal one-shot quest.
-    bool Daily = false)
+    bool Daily = false,
+    // ----- REPEATABLE: handing it in does not retire it. The id is still recorded in CompletedQuests
+    //       (so "have I ever done this" and RequiresQuestId chains still work), but the offer filter
+    //       ignores that record and the NPC hands it straight back. Combine with Daily to get the
+    //       owner's "can be taken again — if not daily limited": Daily wins, and the day-stamp gates it.
+    bool Repeatable = false,
+    // ----- GATHERING lines: creatures that drop this quest's tokens while it is active, each with its
+    //       own QuestItemRewardModifier. A quest with Gathers is the "endless" kind — its only step is
+    //       normally a TalkTo back at the giver, so you hand in whenever you have farmed enough.
+    QuestGather[]? Gathers = null)
 {
     /// <summary>Can a character of this level ACCEPT the quest? (Being mid-quest is unaffected.)</summary>
     public bool LevelInRange(int level) => level >= MinLevel && (MaxLevel <= 0 || level <= MaxLevel);
+
+    /// <summary>The gather lines, never null.</summary>
+    public QuestGather[] GatherLines => Gathers ?? Array.Empty<QuestGather>();
 }
 
 /// <summary>Per-character progress on a quest (persisted). StepIndex = current
@@ -70,6 +103,10 @@ public static partial class QuestCatalog
 {
     private static readonly Dictionary<string, QuestDef> All = new();
 
+    /// <summary>gather token id -> the one quest that owns it (see <see cref="Register"/>).</summary>
+    private static readonly Dictionary<string, string> GatherItemOwner =
+        new(StringComparer.OrdinalIgnoreCase);
+
     private static bool _initialized;
     private static void EnsureInit()
     {
@@ -84,6 +121,15 @@ public static partial class QuestCatalog
     {
         if (!All.TryAdd(quest.Id, quest))
             throw new InvalidOperationException($"Duplicate quest id '{quest.Id}'.");
+        // A gather token belongs to exactly ONE quest, globally. Two lines of one quest sharing a token
+        // would be counted twice at turn-in and paid at whichever modifier came first; two QUESTS
+        // sharing one would make abandoning either confiscate the other's progress. Both are silent, so
+        // they are refused at startup rather than debugged later.
+        foreach (var g in quest.GatherLines)
+            if (!GatherItemOwner.TryAdd(g.ItemId, quest.Id))
+                throw new InvalidOperationException(
+                    $"Quest '{quest.Id}' gathers '{g.ItemId}', which already belongs to "
+                    + $"'{GatherItemOwner[g.ItemId]}'. A gather token belongs to one quest.");
     }
 
     public static QuestDef? Get(string id)
@@ -134,6 +180,18 @@ public static partial class QuestCatalog
             if (_killTargets is not null) return _killTargets;
 
             var widest = new Dictionary<string, KillTarget>(StringComparer.OrdinalIgnoreCase);
+
+            // A GATHERING quest farms its creature exactly as hard as a kill step does, so its mobs
+            // want the same guaranteed spawner — and the same startup warning when a TargetId is
+            // misspelt. The band is the creature's own (it has a natural level), expressed here as
+            // unbounded: a gather line names a mob, never a level window.
+            foreach (var q in AllQuests)
+                foreach (var g in q.GatherLines)
+                {
+                    if (g.MobId.Length == 0) continue;
+                    widest[g.MobId] = new KillTarget(g.MobId, 0, 0);
+                }
+
             foreach (var q in AllQuests)
                 foreach (var step in q.Steps)
                 {

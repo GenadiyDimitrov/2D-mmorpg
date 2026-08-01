@@ -9851,12 +9851,7 @@ var effect = def.Effect;
             return;
         }
 
-        // A DAILY is "completed" only for TODAY: it stores a dated stamp rather than its bare id, so
-        // once the server day rolls over the quest is on offer again.
-        bool Completed(string qid) =>
-            QuestCatalog.Get(qid) is { Daily: true }
-                ? !DailyQuestReady(player, qid)
-                : player.CompletedQuests.Contains(qid);
+        bool Completed(string qid) => QuestClosed(player, qid);
         bool Active(string qid) => player.ActiveQuests.ContainsKey(qid);
 
         // Class choice is irreversible: once you've taken (active OR completed) any
@@ -10002,9 +9997,33 @@ var effect = def.Effect;
         bool canComplete = state is not null
             && stepIndex == def.Steps.Length - 1
             && def.Steps[^1].Type == QuestStepType.TalkTo;
-        return new QuestSummary(def.Id, def.Name, def.Description, step.Text,
+        return new QuestSummary(def.Id, def.Name, def.Description, GatherText(player, def, state, step.Text),
             stepIndex, def.Steps.Length, counter, needed,
             state?.Completed ?? false, canComplete, StepLocation(step));
+    }
+
+    /// <summary>The step line for a GATHERING contract, which has no step of its own worth reading —
+    /// its only step is "come back when you're done", and what the player actually wants to know is
+    /// what to hunt and how much they are carrying.
+    ///
+    /// Deliberately folded into the existing step TEXT rather than sent as new fields: this is the whole
+    /// feature made visible on a client that has not been rebuilt. The 3-tab quest window will want it
+    /// structured; it can have it then, with one protocol bump instead of two.</summary>
+    private static string GatherText(Entity player, QuestDef def, CharacterQuestState? state, string stepText)
+    {
+        var lines = def.GatherLines;
+        if (lines.Length == 0) return stepText;
+
+        var parts = lines.Select(g =>
+        {
+            string item = ItemCatalog.Get(g.ItemId)?.Name ?? g.ItemId;
+            // Not yet taken: name what drops it, so "is this contract worth my level" is answerable
+            // before accepting. Taken: the running count is the only thing that matters.
+            return state is null
+                ? $"{item} ({MobCatalog.Get(g.MobId).Name})"
+                : $"{item} {CountItem(player, g.ItemId)}";
+        });
+        return $"{stepText}\n{(state is null ? "Collects" : "Gathered")}: {string.Join(", ", parts)}";
     }
 
     /// <summary>A "who/where" hint for a quest step: the NPC + town to talk to, or
@@ -10043,13 +10062,15 @@ var effect = def.Effect;
         var def = QuestCatalog.Get(questId);
         if (def is null) return;
         if (player.ActiveQuests.ContainsKey(questId)) return;
-        // A DAILY re-opens once the server day rolls over; anything else is one-shot.
-        if (player.CompletedQuests.Contains(questId) && !def.Daily) return;
+        // A DAILY re-opens once the server day rolls over, a REPEATABLE immediately; anything else is
+        // one-shot. Same rule as the offer list — see QuestClosed. The daily gets its own line first,
+        // because "not today" is worth saying and "already done, forever" is not.
         if (def.Daily && !DailyQuestReady(player, questId))
         {
             SendSystemToEntity(player, $"{def.Name} can be taken again tomorrow.");
             return;
         }
+        if (QuestClosed(player, questId)) return;
         // LEVEL RANGE (owner): too low OR too high blocks the ACCEPT. Class quests carry no ceiling.
         if (!def.LevelInRange(player.Level))
         {
@@ -10088,6 +10109,23 @@ var effect = def.Effect;
         SendSystemToEntity(player, def is not null && !def.LevelInRange(player.Level)
             ? $"Abandoned: {name}. You are outside its level range and cannot take it again."
             : $"Abandoned: {name}.");
+        // Giving up a GATHERING contract destroys what you gathered for it. It has to: a quest item
+        // cannot be discarded (that rule protects the class-change proofs), so tokens left behind would
+        // be dead weight in the bag with no way out — and a token is worthless without the contract
+        // anyway. Safe to do bluntly because a gather token belongs to exactly one quest, which
+        // QuestCatalog.Register enforces at startup.
+        if (def is not null)
+        {
+            bool tookAny = false;
+            foreach (var g in def.GatherLines)
+            {
+                int held = CountItem(player, g.ItemId);
+                if (held <= 0) continue;
+                ConsumeItem(player, g.ItemId, held);
+                tookAny = true;
+            }
+            if (tookAny) { SendInventory(player); SendSystemToEntity(player, "Your gathered trophies are discarded."); }
+        }
         SendQuestLog(player);
         SaveEntity(player);
     }
@@ -10100,6 +10138,23 @@ var effect = def.Effect;
         string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
         return !player.CompletedQuests.Contains(DailyStamp(questId, today));
     }
+
+    /// <summary>Is this quest CLOSED to the player — done, and not coming back? The one answer both the
+    /// NPC's offer list and the "!" markers ask, so they can never disagree.
+    ///
+    /// Three shapes, in priority order:
+    ///   • DAILY     — closed only for TODAY (it records a dated stamp, not its bare id).
+    ///   • REPEATABLE— never closed. The id IS still in CompletedQuests, so "have you ever done this"
+    ///                 and RequiresQuestId chains keep working; this is what makes the NPC hand it back.
+    ///   • anything else — closed once completed.
+    /// Daily is checked FIRST, which is what gives the owner's "can be taken again — if not daily
+    /// limited": a quest marked both is offered once a day, not endlessly.</summary>
+    private static bool QuestClosed(Entity player, string questId) => QuestCatalog.Get(questId) switch
+    {
+        { Daily: true } => !DailyQuestReady(player, questId),
+        { Repeatable: true } => false,
+        _ => player.CompletedQuests.Contains(questId),
+    };
 
     private static string DailyStamp(string questId, string day) => $"{questId}@{day}";
 
@@ -10142,12 +10197,22 @@ var effect = def.Effect;
         if (finalStep.Type != QuestStepType.TalkTo) return;
         if (!_world.Entities.TryGetValue(npcEntityId, out var npc) || npc.NpcId != finalStep.TargetId) return;
 
-        // Grant rewards.
-        if (def.Reward.Exp > 0) AwardExp(player, def.Reward.Exp);
+        // Grant rewards. The gathered tokens are cashed FIRST so their exp joins the quest's own in one
+        // levelling pass rather than two.
+        var (gatherExp, gatherGold) = CashInGatheredTokens(player, def);
+
+        long exp = def.Reward.Exp + gatherExp;
+        if (exp > 0) AwardExp(player, exp);
         if (def.Reward.SkillPoints > 0)
         {
             player.SkillPoints += def.Reward.SkillPoints;
             SendLearned(player);
+        }
+        long gold = def.Reward.Gold + gatherGold;
+        if (gold > 0)
+        {
+            player.Gold += gold;
+            SendGold(player);
         }
         if (def.Reward.ItemIds is { Length: > 0 })
             foreach (var itemId in def.Reward.ItemIds)
@@ -10160,6 +10225,9 @@ var effect = def.Effect;
             // server day rolls over. The plain id is deliberately NOT added — that would retire it.
             player.CompletedQuests.Add(DailyStamp(questId, DateTime.UtcNow.ToString("yyyy-MM-dd")));
         }
+        // A REPEATABLE still records its bare id: it is genuinely completed, prerequisites that name it
+        // are satisfied, and the "completed" list stays a true history. What makes it repeatable is that
+        // the offer filter ignores that record (QuestClosed) — not a missing entry.
         else player.CompletedQuests.Add(questId);
         SendSystemToEntity(player, $"Quest complete: {def.Name}!");
         SendInventory(player);
@@ -10211,18 +10279,16 @@ var effect = def.Effect;
 
         // Must hold all required quest items.
         foreach (var itemId in req.RequiredItemIds)
-            if (!player.Inventory.Any(i => i.DefId == itemId))
+            if (CountItem(player, itemId) < 1)
             {
                 SendSystemToEntity(player, "You don't have the required items.");
                 return;
             }
 
-        // Consume the quest items.
+        // Consume ONE of each, by quantity — quest items stack now (the gathering contracts need it),
+        // so removing the ROW would take the whole stack.
         foreach (var itemId in req.RequiredItemIds)
-        {
-            var item = player.Inventory.FirstOrDefault(i => i.DefId == itemId);
-            if (item is not null) player.Inventory.Remove(item);
-        }
+            ConsumeItem(player, itemId, 1);
 
         if (req.Tier == 3) player.ThirdClass = classId;
         else player.SecondClass = classId;
@@ -10288,6 +10354,78 @@ var effect = def.Effect;
         // Finishing a kill step can make a "reach level N" step CURRENT, and level-ups are the only
         // other thing that checks those — so a player already past the level would sit there forever.
         if (changed) { AdvanceLevelQuests(player); SendQuestLog(player); }
+
+        // Gathering contracts run BESIDE the step machine, not through it: their tokens accrue whatever
+        // step the quest is on, and the quest's own step is only ever "come back when you're done".
+        // Log without the marker sweep — see SendQuestLog.
+        if (RollGatherTokens(player, mob) && !changed) SendQuestLog(player, withMarks: false);
+    }
+
+    /// <summary>Mob death, gathering half: drop this creature's token for every active contract that
+    /// asks for it (owner, playtest-13: *"gathering quest items as u farm in a specific zone"*).
+    ///
+    /// Called from <see cref="AdvanceKillQuests"/>, so it inherits kill CREDIT — the top damager and
+    /// every party member in range, exactly who the kill counted for. Returns true if anything dropped,
+    /// so the caller re-sends the log and the counts on screen move as you farm.</summary>
+    private bool RollGatherTokens(Entity player, Entity mob)
+    {
+        bool any = false;
+        foreach (var qid in player.ActiveQuests.Keys.ToList())
+        {
+            if (QuestCatalog.Get(qid) is not QuestDef def) continue;
+            foreach (var g in def.GatherLines)
+            {
+                if (!string.Equals(mob.MobTypeId, g.MobId, StringComparison.OrdinalIgnoreCase)) continue;
+                if (g.DropChance < 1f && _rng.NextDouble() > g.DropChance) continue;
+                // A full bag silently eats the token otherwise, and the player has no way to tell a
+                // failed roll from a failed ADD — so say so, once, and don't count it.
+                if (!AddItem(player, g.ItemId))
+                {
+                    SendSystemToEntity(player, "Your inventory is full — the trophy was left behind.");
+                    continue;
+                }
+                any = true;
+                SendSystemToEntity(player,
+                    $"{def.Name}: {ItemCatalog.Get(g.ItemId)?.Name ?? g.ItemId} {CountItem(player, g.ItemId)}");
+            }
+        }
+        if (any) SendInventory(player);
+        return any;
+    }
+
+    /// <summary>Turn-in, gathering half: count the contract's tokens, consume them, and return what
+    /// they are worth.
+    ///
+    /// The owner's formula, verbatim — *"20 * QuestItemRewardModifier(sceletons) * Exp + 20 *
+    /// QuestItemRewardModifier(sceletons) * Gold + 55 * ..."*. "Exp" here is the CREATURE's own kill
+    /// value, so a token is always worth a fraction of the thing that dropped it and nothing in a
+    /// contract has to be re-tuned when the curves move. The mob's NATURAL level is the right one to
+    /// read: every gather creature has one, and a zone only overrides levels where it says so.
+    ///
+    /// Two multipliers a real kill applies are deliberately NOT applied here: the mob's toughness
+    /// (a template has none — it belongs to a live entity) and the level-gap penalty (the token pays
+    /// for the creature, not for who cashed it). Both make the token pay slightly LESS than its share
+    /// of the kill, which is the safe direction, and the gap in particular cannot be farmed: a
+    /// creature far below you pays a fraction of a level-4 fox.
+    ///
+    /// Exp is returned rather than awarded here so the caller banks it in one pass with the quest's own
+    /// reward; gold gets the same server rate a dropped coin does.</summary>
+    private (long Exp, long Gold) CashInGatheredTokens(Entity player, QuestDef def)
+    {
+        long exp = 0, gold = 0;
+        foreach (var g in def.GatherLines)
+        {
+            int held = CountItem(player, g.ItemId);
+            if (held <= 0) continue;
+            int mobLevel = Math.Max(1, MobCatalog.Get(g.MobId).Level);
+            exp  += (long)(held * g.RewardModifier * StatCalculator.MobExpReward(mobLevel));
+            gold += (long)(held * g.RewardModifier * StatCalculator.MobGoldReward(mobLevel)
+                                * RateConfig.GoldAmountRate);
+            ConsumeItem(player, g.ItemId, held);
+            SendSystemToEntity(player,
+                $"Handed over {held}x {ItemCatalog.Get(g.ItemId)?.Name ?? g.ItemId}.");
+        }
+        return (exp, gold);
     }
 
     /// <summary>Advance any active quest sitting on a <see cref="QuestStepType.ReachLevel"/> step whose
@@ -10325,13 +10463,19 @@ var effect = def.Effect;
         if (changed) SendQuestLog(player);
     }
 
-    private void SendQuestLog(Entity player)
+    /// <summary><paramref name="withMarks"/> = false sends the LOG only. The marker sweep walks every
+    /// entity in the world and then re-runs the whole offer filter per NPC, which is fine at the
+    /// handful of moments the answer can change (accept / complete / abandon / level / login) and is
+    /// not fine per mob kill — which is what a gathering contract, always active while you farm, would
+    /// otherwise make it. A token dropping cannot change any marker: the contract was already
+    /// hand-in-able the moment it was taken.</summary>
+    private void SendQuestLog(Entity player, bool withMarks = true)
     {
         var active = player.ActiveQuests.Values
             .Select(st => { var d = QuestCatalog.Get(st.QuestId); return d is null ? null : Summarize(player, d, st); })
             .Where(x => x is not null).Select(x => x!).ToArray();
         SendTo(player, "QuestLog", new QuestLog(active, player.CompletedQuests.ToArray()));
-        SendQuestMarks(player);
+        if (withMarks) SendQuestMarks(player);
     }
 
     /// <summary>Tell the client which NPCs have something for this player, so it can put a marker over
@@ -10374,10 +10518,7 @@ var effect = def.Effect;
     /// gating, prerequisites and the daily's day-stamp all applied).</summary>
     private int OfferedQuestCount(Entity player, string npcId)
     {
-        bool Completed(string qid) =>
-            QuestCatalog.Get(qid) is { Daily: true }
-                ? !DailyQuestReady(player, qid)
-                : player.CompletedQuests.Contains(qid);
+        bool Completed(string qid) => QuestClosed(player, qid);
         bool Active(string qid) => player.ActiveQuests.ContainsKey(qid);
         return QuestCatalog.OfferedBy(npcId, player.Level, player.Race, player.BaseClass,
                                       player.SecondClass, player.ThirdClass, Completed, Active).Count();

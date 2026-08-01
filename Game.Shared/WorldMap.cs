@@ -214,6 +214,11 @@ public static class WorldMap
         // Brackenford's stands alone at TOP-CENTRE (owner) — it is the one NPC you walk to from
         // anywhere in town, so it should not be inside either cluster.
         new("gatekeeper_brackenford", "Gatekeeper Pell",   24000, 22200, NpcRole.Teleporter),
+        // The HUNTMASTER stands beside the gatekeeper, in every city (the ring towns' are generated
+        // below). He hands out the repeatable hunting contracts for the fields THIS city manages, and
+        // taking one is the errand immediately before "teleport me to the field" — so he belongs on
+        // that walk rather than in the quest cluster on the far side of town.
+        new("hunter_brackenford",     "Huntmaster Cera",   23300, 22500, NpcRole.QuestGiver),
         // The ring towns' gatekeepers stand TOP-CENTRE too, 900 above the town centre. They used to sit
         // on the centre point itself, which put them on the same screen line as the generated armsmaster
         // (and, in Greymarsh, the Grandmaster) — the exact label overlap the ⚠ note is about.
@@ -252,16 +257,16 @@ public static class WorldMap
         // (id-suffix, display town, centre X, centre Y, keeper name, buffer name, apothecary,
         //  armsmaster, outfitter)
         var towns = new (string Key, float X, float Y, string Keeper, string Buffer,
-                         string Potions, string Weapons, string Armor)[]
+                         string Potions, string Weapons, string Armor, string Hunter)[]
         {
             ("stonewatch", 24000, 10000, "Keeper Osric", "Spirit Helper Aven",
-                "Apothecary Rilla", "Armsmaster Toren", "Outfitter Maeve"),
+                "Apothecary Rilla", "Armsmaster Toren", "Outfitter Maeve", "Huntmaster Radd"),
             ("greymarsh",  36000, 33000, "Keeper Wyn",   "Spirit Helper Cael",
-                "Apothecary Thessa", "Armsmaster Rurik", "Outfitter Nerys"),
+                "Apothecary Thessa", "Armsmaster Rurik", "Outfitter Nerys", "Huntmaster Sela"),
             ("ironreach",  24000, 38000, "Keeper Dagr",  "Spirit Helper Orla",
-                "Apothecary Venn", "Armsmaster Hakon", "Outfitter Brida"),
+                "Apothecary Venn", "Armsmaster Hakon", "Outfitter Brida", "Huntmaster Torv"),
             ("frostmere",  12000, 15000, "Keeper Hald",  "Spirit Helper Ylva",
-                "Apothecary Nim", "Armsmaster Bors", "Outfitter Sigrid"),
+                "Apothecary Nim", "Armsmaster Bors", "Outfitter Sigrid", "Huntmaster Ingra"),
         };
 
         foreach (var t in towns)
@@ -275,6 +280,9 @@ public static class WorldMap
             yield return new NpcDef($"merchant_armor_{t.Key}",   t.Armor,   t.X + 600, t.Y + 250, NpcRole.Vendor);
             yield return new NpcDef($"warehouse_{t.Key}",        t.Keeper,  t.X + 900, t.Y + 550, NpcRole.Warehouse);
             yield return new NpcDef($"buffer_{t.Key}",           t.Buffer,  t.X,       t.Y + 900, NpcRole.Buffer);
+            // Beside the gatekeeper (top-centre, Y-900), west of it and on its own Y — see the
+            // Brackenford Huntmaster for why he stands on the way OUT of town.
+            yield return new NpcDef($"hunter_{t.Key}",           t.Hunter,  t.X - 700, t.Y - 650, NpcRole.QuestGiver);
         }
 
         // The 3rd-class master lives in GREYMARSH (band 34-46) — the first town whose levels reach the

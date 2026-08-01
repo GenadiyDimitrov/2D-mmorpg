@@ -119,6 +119,13 @@ from L2 references.
   (`/droprate item`). Guaranteed groups (mats/always/scrolls) ignore the global — they are
   authored as absolutes. Never do this arithmetic at a call site: the kill roll, target-inspect
   and BalanceMatrix must all read the same number the player is shown.
+- **Repeatable quests are ONE flag** (`QuestDef.Repeatable`) covering all three shapes the owner named
+  (endless gathering / finite / talk-to). A repeatable STILL records its id in `CompletedQuests` — what
+  re-offers it is the filter (`GameLoopService.QuestClosed`), which checks `Daily` first. A gathering
+  contract's `QuestGather.RewardModifier` **is** his `QuestItemRewardModifier`, and it multiplies the
+  CREATURE's own `MobExpReward`/`MobGoldReward` at its natural level — never an authored per-quest exp
+  number, which is what keeps a contract level-appropriate with nothing to re-tune. A gather token
+  belongs to exactly one quest (enforced at startup) and quest items STACK.
 - **Buffs**: flat skill id = ability identity; `BuffKey` = buff identity for
   stacking. Stacking rules in `ApplyBuff`: (1) conflict is by **FAMILY** — two buffs compete when
   their family sets intersect — and same-family compares `Rank` (incoming ≥ existing → replace;
@@ -158,8 +165,8 @@ Ironreach, Duskvale, Frostmere). Stat *formulas* are not copyrightable; *names* 
 detail and the archive of past playtest queues. Built since this file's list was first written: the
 gold wallet, NPC vendors, teleport-for-fee, the buff ladder (potions + scrolls), party/grouping with
 loot modes, boss mechanics (±10-level rule, phases, adds, enrage), PvP/karma, auto-hunt, crafting, the
-generated level 1-90 world, and the Unity client. Still to do: 3rd/4th class kits (blocked on the
-owner's CSVs); repeatable quests + the 3-tab quest window; instances/dungeons; castles + vault
+generated level 1-90 world, the Unity client, and repeatable quests. Still to do: 3rd/4th class kits (blocked on the
+owner's CSVs); the 3-tab quest window; instances/dungeons; castles + vault
 (consumes the `VendorBuyTaxRate` hook); perfect/excellent block; position bonuses; PvP/PvE damage
 multipliers (hooks default 1.0); the presentation pass. **Dropped, don't re-add:** a magic-resist stat
 and per-hit damage consumables — offence comes from the held **War Rune / Spell Rune** instead
