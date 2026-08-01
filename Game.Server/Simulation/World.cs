@@ -99,6 +99,12 @@ public class World
     /// <summary>targetEntityId -> requesterEntityId (one pending request each).</summary>
     public Dictionary<Guid, Guid> PendingTradeRequests { get; } = new();
 
+    /// <summary>accountId -> the ACCOUNT-wide bank, shared by every character on that account.
+    /// Loaded once (first login of any of its characters) and kept live from then on: two characters
+    /// of one account can be in the world at the same time — offline farming makes that ordinary —
+    /// and they must see ONE list, not two copies of it that quietly diverge.</summary>
+    public Dictionary<int, List<InventoryItem>> AccountWarehouses { get; } = new();
+
     /// <summary>Every party MEMBER id maps to the shared <see cref="Party"/> object.</summary>
     public Dictionary<Guid, Party> Parties { get; } = new();
 
@@ -144,10 +150,14 @@ public interface IAdminCommand : IGameCommand
     string ConnectionId { get; }
 }
 
+/// <summary><paramref name="AccountBank"/> is the account warehouse as READ FROM THE DB during login.
+/// The loop adopts it only if that account has no live list yet — a list already in memory is newer
+/// than anything on disk (another character of the same account may be standing in it).</summary>
 public record EnterWorldCommand(
     string ConnectionId,
     Entity Entity,
-    TaskCompletionSource<LoginResult> Result) : IGameCommand;
+    TaskCompletionSource<LoginResult> Result,
+    List<InventoryItem>? AccountBank = null) : IGameCommand;
 
 public record LeaveCommand(string ConnectionId) : IGameCommand;
 
@@ -248,6 +258,14 @@ public record OpenWarehouseCmd(string ConnectionId) : IGameCommand;
 public record WarehouseDepositCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
 /// <summary>Move a whole item instance warehouse → bag.</summary>
 public record WarehouseWithdrawCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
+
+/// <summary>Open the ACCOUNT warehouse (fetch its contents). Same safe-zone gate as the private one.</summary>
+public record OpenAccountWarehouseCmd(string ConnectionId) : IGameCommand;
+/// <summary>Move a whole item instance bag → account warehouse. Tradable items only; a NEW slot
+/// costs <see cref="GameConstants.AccountWarehouseSlotFee"/> gold.</summary>
+public record AccountWarehouseDepositCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
+/// <summary>Move a whole item instance account warehouse → bag. Free.</summary>
+public record AccountWarehouseWithdrawCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
 
 /// <summary>DEBUG-only: grant an item by def id.</summary>
 public record DebugGiveCmd(string ConnectionId, string DefId) : IAdminCommand;

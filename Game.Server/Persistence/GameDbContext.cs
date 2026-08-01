@@ -8,6 +8,7 @@ public class GameDbContext : DbContext
     public DbSet<CharacterRecord> Characters => Set<CharacterRecord>();
     public DbSet<ItemRecord> Items => Set<ItemRecord>();
     public DbSet<SubclassRecord> Subclasses => Set<SubclassRecord>();
+    public DbSet<AccountItemRecord> AccountItems => Set<AccountItemRecord>();
     public DbSet<BossTimerRecord> BossTimers => Set<BossTimerRecord>();
 
     public GameDbContext(DbContextOptions<GameDbContext> options) : base(options) { }
@@ -44,6 +45,12 @@ public class GameDbContext : DbContext
             e.HasIndex(i => i.InstanceId);
             // Rolled attributes persist as a single JSON column on the item row.
             // Adding a new AttributeType never needs a migration this way.
+            e.OwnsMany(i => i.Attributes, a => a.ToJson());
+        });
+
+        b.Entity<AccountItemRecord>(e =>
+        {
+            e.HasIndex(i => i.AccountId);
             e.OwnsMany(i => i.Attributes, a => a.ToJson());
         });
 

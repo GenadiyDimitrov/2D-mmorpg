@@ -88,6 +88,9 @@ public class GameLoopService : BackgroundService
             OpenWarehouseCmd c => c.ConnectionId,
             WarehouseDepositCmd c => c.ConnectionId,
             WarehouseWithdrawCmd c => c.ConnectionId,
+            OpenAccountWarehouseCmd c => c.ConnectionId,
+            AccountWarehouseDepositCmd c => c.ConnectionId,
+            AccountWarehouseWithdrawCmd c => c.ConnectionId,
             TeleportCmd c => c.ConnectionId,
             TalkCmd c => c.ConnectionId,
             TradeRequestCmd c => c.ConnectionId,
@@ -184,6 +187,9 @@ public class GameLoopService : BackgroundService
                 case OpenWarehouseCmd c: HandleOpenWarehouse(c); break;
                 case WarehouseDepositCmd c: HandleWarehouseDeposit(c); break;
                 case WarehouseWithdrawCmd c: HandleWarehouseWithdraw(c); break;
+                case OpenAccountWarehouseCmd c: HandleOpenAccountWarehouse(c); break;
+                case AccountWarehouseDepositCmd c: HandleAccountWarehouseDeposit(c); break;
+                case AccountWarehouseWithdrawCmd c: HandleAccountWarehouseWithdraw(c); break;
                 case DebugGiveCmd c: HandleDebugGive(c); break;
                 case DebugCancelAttrCmd c: HandleDebugCancelAttr(c); break;
                 case CraftCmd c: HandleCraft(c); break;
@@ -263,6 +269,12 @@ public class GameLoopService : BackgroundService
         _world.EntityToConnection[entity.Id] = cmd.ConnectionId;
         _world.ConnectionToEntity[cmd.ConnectionId] = entity.Id;
 
+        // Adopt the account bank read during login ONLY if this account has no live list. One already
+        // in memory is newer than the disk read — another character of the same account may be in the
+        // world (offline farming) and may have moved something since.
+        if (cmd.AccountBank is not null && entity.AccountId != 0)
+            _world.AccountWarehouses.TryAdd(entity.AccountId, cmd.AccountBank);
+
         // Fresh session: refill the runtime budgets and clear any cap lock.
         entity.AutoIdleElapsedTicks = 0;
         entity.AutoOfflineElapsedTicks = 0;
@@ -275,6 +287,7 @@ public class GameLoopService : BackgroundService
         RestorePersistedBuffs(entity);   // before SendStats — the buffs change the numbers it sends
         SendInventory(entity);
         SendWarehouse(entity);   // the bank travels with login so the client can show it without a town trip
+        SendAccountWarehouse(entity);
         SendStats(entity);
         SendLearned(entity);   // sends the skill BAR with it, in the right order — see SendLearned
         SendCooldowns(entity); // after the bar: the overlay has nothing to sit on before it exists
@@ -1828,6 +1841,143 @@ public class GameLoopService : BackgroundService
         SendWarehouse(player);
         SendStats(player);
         SaveEntity(player);
+    }
+
+    // ----- Account warehouse ----------------------------------------------------------------
+    //
+    // The private warehouse is a bigger bag; this one is a DOOR BETWEEN YOUR CHARACTERS, which is a
+    // different thing and priced differently. Two rules carry it:
+    //   * TRADABLE ONLY. An item that cannot be traded is bound to the character that earned it —
+    //     quest items, bound gear. Letting the account bank move them would make it a laundering
+    //     route around the tradable flag rather than a convenience.
+    //   * 10 000 GOLD PER SLOT. Charged when the deposit has to OPEN a slot; merging into a stack
+    //     already in there is free. The fee buys the slot, not the deposit, so the second thousand
+    //     of a material costs nothing — and a mule account is no longer free storage.
+    // Withdrawing is always free: charging to get your own things back is a trap, not a cost.
+
+    /// <summary>The account bank, creating an empty one if this account has never opened it. Reached
+    /// only for a logged-in character, so the account id is always real by here.</summary>
+    private List<InventoryItem> AccountBankOf(Entity player)
+    {
+        if (!_world.AccountWarehouses.TryGetValue(player.AccountId, out var bank))
+            _world.AccountWarehouses[player.AccountId] = bank = new List<InventoryItem>();
+        return bank;
+    }
+
+    private void SendAccountWarehouse(Entity player) =>
+        SendTo(player, "AccountWarehouse", new AccountWarehouseUpdate(
+            AccountBankOf(player).Select(i => i.ToDto()).ToArray()));
+
+    /// <summary>Persist the account bank AND push it to every character of that account who is in the
+    /// world — the list is shared, so a second character standing at a keeper must not go on showing
+    /// the contents from before their own character moved something.</summary>
+    private void SaveAndSyncAccountBank(Entity player)
+    {
+        int accountId = player.AccountId;
+        var snapshot = PersistenceService.AccountItemSnapshot.From(AccountBankOf(player));
+        _ = _db.SaveAccountWarehouseAsync(accountId, snapshot);
+
+        foreach (var e in _world.Entities.Values)
+            if (e.Kind == EntityKind.Player && e.AccountId == accountId &&
+                _world.EntityToConnection.ContainsKey(e.Id))
+                SendAccountWarehouse(e);
+    }
+
+    private void HandleOpenAccountWarehouse(OpenAccountWarehouseCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (!WarehouseReachable(player)) return;
+        SendAccountWarehouse(player);
+    }
+
+    private void HandleAccountWarehouseDeposit(AccountWarehouseDepositCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (!WarehouseReachable(player)) return;
+
+        var item = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
+        if (item is null) return;
+
+        // Can't stash an item that's in a live trade offer.
+        if (_world.ActiveTrades.TryGetValue(player.Id, out var trade) &&
+            trade.Offers(player, item.InstanceId))
+            return;
+
+        var def = ItemCatalog.Get(item.DefId);
+        if (def is null) return;
+        if (!def.Tradable || ItemCatalog.IsQuestItem(def))
+        {
+            SendSystemToEntity(player, $"{def.Name} is bound to this character — it can't go in the account warehouse.");
+            return;
+        }
+
+        var bank = AccountBankOf(player);
+        var mergeInto = def.IsStackable ? bank.FirstOrDefault(i => i.DefId == item.DefId) : null;
+
+        if (mergeInto is null)
+        {
+            if (bank.Count >= GameConstants.AccountWarehouseSize)
+            {
+                SendSystemToEntity(player, "Account warehouse full.");
+                return;
+            }
+            if (player.Gold < GameConstants.AccountWarehouseSlotFee)
+            {
+                SendSystemToEntity(player,
+                    $"A new account-warehouse slot costs {GameConstants.AccountWarehouseSlotFee:N0} {GameConstants.CurrencyName}.");
+                return;
+            }
+            player.Gold -= GameConstants.AccountWarehouseSlotFee;
+            SendSystemToEntity(player,
+                $"Paid {GameConstants.AccountWarehouseSlotFee:N0} {GameConstants.CurrencyName} for an account-warehouse slot.");
+        }
+
+        item.Equipped = false;                 // nothing is worn from the bank
+        player.Inventory.Remove(item);
+        item.PersistentInstanceId = null;      // it leaves this character's item rows for the account's
+        if (mergeInto is not null) mergeInto.Quantity += item.Quantity;
+        else bank.Add(item);
+
+        ReconcileRuneBuffs(player);            // a deposited rune stops applying its buff
+        player.RecomputeDerived();
+        SendInventory(player);
+        SendStats(player);
+        SendGold(player);
+        SaveEntity(player);
+        SaveAndSyncAccountBank(player);
+    }
+
+    private void HandleAccountWarehouseWithdraw(AccountWarehouseWithdrawCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+        if (!WarehouseReachable(player)) return;
+
+        var bank = AccountBankOf(player);
+        var item = bank.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
+        if (item is null) return;
+
+        var def = ItemCatalog.Get(item.DefId);
+        var mergeInto = def is { IsStackable: true }
+            ? player.Inventory.FirstOrDefault(i => i.DefId == item.DefId)
+            : null;
+
+        if (mergeInto is null && player.Inventory.Count(i => !i.Equipped) >= GameConstants.InventorySize)
+        {
+            SendSystemToEntity(player, "Inventory full.");
+            return;
+        }
+
+        bank.Remove(item);
+        item.PersistentInstanceId = null;      // it belongs to this character's item rows now
+        if (mergeInto is not null) mergeInto.Quantity += item.Quantity;
+        else player.Inventory.Add(item);
+
+        ReconcileRuneBuffs(player);            // a withdrawn rune re-applies its buff (back in the bag)
+        player.RecomputeDerived();
+        SendInventory(player);
+        SendStats(player);
+        SaveEntity(player);
+        SaveAndSyncAccountBank(player);
     }
 
 #pragma warning disable CS1998
@@ -5551,6 +5701,23 @@ public class GameLoopService : BackgroundService
                 whChanged = true;
                 SendSystemToEntity(p, $"{wd.Name} in your warehouse has expired.");
             }
+        }
+
+        // Same for the ACCOUNT bank — it's shared storage, not a stasis field either.
+        if (p.AccountId != 0 && _world.AccountWarehouses.TryGetValue(p.AccountId, out var acctBank))
+        {
+            bool acctChanged = false;
+            for (int i = acctBank.Count - 1; i >= 0; i--)
+            {
+                var it = acctBank[i];
+                if (it.ExpiresAtUtc is DateTime aexp && aexp <= now && ItemCatalog.Get(it.DefId) is { IsRune: true } ad)
+                {
+                    acctBank.RemoveAt(i);
+                    acctChanged = true;
+                    SendSystemToEntity(p, $"{ad.Name} in your account warehouse has expired.");
+                }
+            }
+            if (acctChanged) SaveAndSyncAccountBank(p);
         }
 
         if (statsChanged)

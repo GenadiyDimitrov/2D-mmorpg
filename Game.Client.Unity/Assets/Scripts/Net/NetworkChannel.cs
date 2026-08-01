@@ -26,6 +26,7 @@ namespace Game.Client
         public event Action<CastInfo> CastReceived;
         public event Action<InventoryUpdate> InventoryReceived;
         public event Action<WarehouseUpdate> WarehouseReceived;
+        public event Action<AccountWarehouseUpdate> AccountWarehouseReceived;
         public event Action<BuyBackUpdate> BuyBackReceived;
         public event Action<StatsUpdate> StatsReceived;
         public event Action<BuffUpdate> BuffsReceived;
@@ -115,6 +116,7 @@ namespace Game.Client
             _connection.On<CastInfo>("Cast", c => CastReceived?.Invoke(c));
             _connection.On<InventoryUpdate>("Inventory", i => InventoryReceived?.Invoke(i));
             _connection.On<WarehouseUpdate>("Warehouse", w => WarehouseReceived?.Invoke(w));
+            _connection.On<AccountWarehouseUpdate>("AccountWarehouse", w => AccountWarehouseReceived?.Invoke(w));
             _connection.On<BuyBackUpdate>("BuyBack", b => BuyBackReceived?.Invoke(b));
             _connection.On<StatsUpdate>("Stats", st => StatsReceived?.Invoke(st));
             _connection.On<LearnedSkills>("Learned", l => LearnedReceived?.Invoke(l));
@@ -322,6 +324,9 @@ namespace Game.Client
         public Task OpenWarehouseAsync() => _connection.SendAsync("OpenWarehouse");
         public Task WarehouseDepositAsync(Guid instanceId) => _connection.SendAsync("WarehouseDeposit", instanceId);
         public Task WarehouseWithdrawAsync(Guid instanceId) => _connection.SendAsync("WarehouseWithdraw", instanceId);
+        public Task OpenAccountWarehouseAsync() => _connection.SendAsync("OpenAccountWarehouse");
+        public Task AccountWarehouseDepositAsync(Guid instanceId) => _connection.SendAsync("AccountWarehouseDeposit", instanceId);
+        public Task AccountWarehouseWithdrawAsync(Guid instanceId) => _connection.SendAsync("AccountWarehouseWithdraw", instanceId);
 
         public Task TeleportAsync(Guid npcEntityId, string zoneId) =>
             _connection.SendAsync("Teleport", npcEntityId, zoneId);

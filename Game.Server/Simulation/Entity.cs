@@ -260,6 +260,10 @@ public class Entity
     /// <summary>DB character id (null for mobs / unsaved).</summary>
     public int? PersistentId { get; set; }
 
+    /// <summary>DB account id (0 for mobs / unsaved). The key into the shared ACCOUNT warehouse —
+    /// the one piece of state that is not this character's.</summary>
+    public int AccountId { get; set; }
+
     /// <summary>Unspent skill points (earned with exp, spent to learn skills). PER CLASS.</summary>
     public int SkillPoints
     {

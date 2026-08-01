@@ -7,10 +7,43 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.42.6**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.42.7**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 2026-08-01 — The account warehouse (0.42.7) — ⚠ DELETE `game.db`
+
+**A door between your own characters.** The private warehouse shipped long ago; the account-wide half
+had been open on the roadmap since. It is now built, and it is deliberately *not* just a bigger
+private bank — it answers a different question, so it has different rules:
+
+- **Tradable items only.** An item that cannot be traded is bound to the character that earned it —
+  quest items, bound gear. If the account bank could move them it would be a laundering route around
+  the tradable flag rather than a convenience, so a bound item is not even listed in its deposit tab.
+- **10 000 gold per SLOT**, charged when a deposit has to *open* a slot. Merging into a stack already
+  in there is free: the fee buys the slot, not the deposit, so the second thousand of a material
+  costs nothing and a mule account stops being free storage. The private warehouse stays free.
+- **Withdrawing is free.** Charging to get your own things back is a trap, not a cost.
+
+Fifty slots, town-only (the same safe-zone gate as the private one), and a warehoused rune still
+expires there — the bank is space, not a time-pause.
+
+**The shared list is the interesting part.** Two characters of one account *can* be in the world at
+the same time, because offline farming leaves a character standing there after its player logs in on
+another. So the bank is one live list in `World.AccountWarehouses`, keyed by account id, and the copy
+read from the database during login is adopted **only if that account has no live list yet** — a list
+already in memory is newer than anything on disk. Every deposit or withdrawal pushes the new contents
+to *every* character of that account who is in the world, so the second one is never looking at
+contents from before the first one moved something.
+
+It also gets its own table (`AccountItemRecord`) rather than a flag on the character's items.
+Hanging shared goods off whichever character happened to deposit them would mean deleting that
+character took the account's bank with it.
+
+The phone's warehouse window grew a second row of buttons — **Private / Account** — instead of a
+second window, because the question at the keeper is "where do I put this", which is one task with a
+choice in it, not two errands. ⚠ **New table: delete `Game.Server/game.db` (+ `-shm`/`-wal`).**
 
 ## 2026-08-01 — Twenty of your fifty potions (0.42.6)
 

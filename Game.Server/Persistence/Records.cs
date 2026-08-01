@@ -217,6 +217,32 @@ public class ItemRecord
 }
 
 
+/// <summary>An item in the ACCOUNT warehouse — a separate table from <see cref="ItemRecord"/> on
+/// purpose: this one belongs to the account, not to any character, which is the whole point of it.
+/// Hanging it off a character row would tie shared goods to whichever character happened to deposit
+/// them, and deleting that character would take the shared bank with it.
+/// (Schema addition — delete game.db to recreate.)</summary>
+public class AccountItemRecord
+{
+    public int Id { get; set; }
+    public int AccountId { get; set; }
+
+    /// <summary>The live-game InstanceId, preserved across saves.</summary>
+    public Guid InstanceId { get; set; }
+
+    public required string DefId { get; set; }
+    public int Enchant { get; set; }
+    public int Quantity { get; set; } = 1;
+
+    /// <summary>Rolled attributes — a JSON column, same as on the character's items.</summary>
+    public List<ItemAttribute> Attributes { get; set; } = new();
+
+    /// <summary>Wall-clock expiry for a timed item (a rune); null = never expires. The account bank
+    /// is space, not a time-pause — same rule as the private one.</summary>
+    public DateTime? ExpiresAtUtc { get; set; }
+}
+
+
 /// <summary>Persisted respawn time for a boss/elite zone, so a long timer
 /// survives a server restart. Keyed by the zone's stable Id.</summary>
 public class BossTimerRecord

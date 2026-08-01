@@ -565,6 +565,26 @@ completion and a shortfall fails the WHOLE trade** — never a partial delivery.
 37f.[ ] **The WPF harness asks too.** Same flow in the desktop client: clicking a stack opens a small
         "How many?" box; Cancel offers nothing (it does not silently offer the whole stack).
 
+--- 38. 🔴 THE ACCOUNT WAREHOUSE (0.42.7, built 2026-08-01, unplayed). ⚠ DELETE `game.db` FIRST. ---
+Needs two characters on the SAME account. The warehouse window has a second button row now:
+**Private / Account**.
+38a.[ ] **It crosses characters.** Deposit a weapon into the **Account** bank on character A, log out,
+        log in character B on the same account, open the keeper → Account → Withdraw: the weapon is
+        there, and taking it out is FREE.
+38b.[ ] **10k per new slot, merges are free.** With the account bank empty, deposit one stack of a
+        material: gold drops by 10 000 and a system line says so. Deposit **more of the same
+        material**: the stack merges and gold does **not** move. Deposit something different: another
+        10 000. Under 10 000 gold, a new-slot deposit is refused with the price in the message.
+38c.[ ] **Tradable only.** A quest item / untradable piece must not even be LISTED in the Account
+        deposit tab (it still lists in Private). Private stays free for everything.
+38d.[ ] **Town only.** Out in a field both banks refuse with "You can only reach your warehouse in a
+        town."
+38e.[ ] **Both characters see one bank.** Leave character A offline-farming, log in B, move something
+        in the account bank from B, then bring A back: A must show the CURRENT contents, not the ones
+        from before B touched it. (No item may be duplicated by this — that is the real risk.)
+38f.[ ] **A rune still expires in there.** Park a war/spell rune in the account bank: it applies no
+        buff, but the clock keeps running and it vanishes when it runs out.
+
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends
         (and combat decays) it works. Same for `/exit`. Pulling the plug mid-DoT must not run the

@@ -60,7 +60,6 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
 - **Wearable titles** — the leaderboard title over the head / by the name.
 - **Every non-admin command as an ACTION** in the Skills window's Actions tab. Block/like/unblock landed
   there; friend/party/sit/attack/assist still have nowhere to live.
-- **Account warehouse** — the private one shipped; the account-wide half is still open.
 
 **Combat depth** — perfect/excellent block, position bonuses (hook reserved), PvP/PvE damage
 multipliers (still 1.0). ⚠ Magic-resist as a stat and per-hit damage consumables are **dropped, not

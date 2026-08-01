@@ -137,6 +137,11 @@ public record InventoryUpdate(InventoryItemDto[] Items);
 /// window is opened and after every deposit/withdraw.</summary>
 public record WarehouseUpdate(InventoryItemDto[] Items);
 
+/// <summary>The ACCOUNT-wide warehouse, shared by every character on the account. Same shape as the
+/// private one; the size cap and the per-slot deposit fee are constants both sides already know
+/// (<see cref="GameConstants.AccountWarehouseSize"/>, <see cref="GameConstants.AccountWarehouseSlotFee"/>).</summary>
+public record AccountWarehouseUpdate(InventoryItemDto[] Items);
+
 /// <summary>Server -> client: someone wants to trade with you.</summary>
 public record TradeRequestNotice(Guid FromId, string FromName);
 

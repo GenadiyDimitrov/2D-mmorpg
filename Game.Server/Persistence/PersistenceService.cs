@@ -590,6 +590,7 @@ public class PersistenceService
             Speed = GameConstants.BasePlayerSpeed,
             Gold = rec.Gold,
             PersistentId = rec.Id,
+            AccountId = rec.AccountId,
             Profession = (Profession)rec.Profession
         };
 
@@ -1028,6 +1029,68 @@ public class PersistenceService
             ExpiresAtUtc = i.ExpiresAtUtc,
             InWarehouse = i.InWarehouse,
         }).ToList();
+    }
+
+    // ----- Account warehouse -------------------------------------------------
+
+    /// <summary>Load the ACCOUNT-wide bank. Called once per account, on the first login of any of its
+    /// characters; the loop keeps the live list from then on (two characters of one account can be in
+    /// the world at once — offline farming makes that ordinary — and they must share one list, not two
+    /// copies that diverge).</summary>
+    public async Task<List<InventoryItem>> LoadAccountWarehouseAsync(int accountId)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var rows = await db.AccountItems.Where(i => i.AccountId == accountId).ToListAsync();
+
+        var items = new List<InventoryItem>(rows.Count);
+        foreach (var r in rows)
+        {
+            // Same rule as the bag: an item whose DefId left the catalog (a rename) is dropped rather
+            // than resurrected as an unusable row.
+            if (ItemCatalog.Get(r.DefId) is null) continue;
+            items.Add(new InventoryItem
+            {
+                DefId = r.DefId,
+                Enchant = r.Enchant,
+                Quantity = r.Quantity,
+                Attributes = r.Attributes.ToList(),
+                ExpiresAtUtc = r.ExpiresAtUtc,
+                PersistentInstanceId = r.InstanceId,
+            });
+        }
+        return items;
+    }
+
+    /// <summary>Rewrite an account's bank wholesale, exactly like the character item set. Snapshot on
+    /// the tick thread (<see cref="AccountItemSnapshot.From"/>), write off it.</summary>
+    public async Task SaveAccountWarehouseAsync(int accountId, IReadOnlyList<AccountItemSnapshot> items)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var old = await db.AccountItems.Where(i => i.AccountId == accountId).ToListAsync();
+        db.AccountItems.RemoveRange(old);
+        foreach (var i in items)
+            db.AccountItems.Add(new AccountItemRecord
+            {
+                AccountId = accountId,
+                InstanceId = i.InstanceId,
+                DefId = i.DefId,
+                Enchant = i.Enchant,
+                Quantity = i.Quantity,
+                Attributes = i.Attributes.ToList(),
+                ExpiresAtUtc = i.ExpiresAtUtc,
+            });
+        await db.SaveChangesAsync();
+    }
+
+    public sealed record AccountItemSnapshot(
+        Guid InstanceId, string DefId, int Enchant, int Quantity,
+        List<ItemAttribute> Attributes, DateTime? ExpiresAtUtc)
+    {
+        /// <summary>Capture a bank. MUST be called on the tick thread.</summary>
+        public static List<AccountItemSnapshot> From(IEnumerable<InventoryItem> items) =>
+            items.Select(i => new AccountItemSnapshot(
+                i.PersistentInstanceId ?? Guid.NewGuid(), i.DefId, i.Enchant, i.Quantity,
+                new List<ItemAttribute>(i.Attributes), i.ExpiresAtUtc)).ToList();
     }
 
     // ----- Boss timers -------------------------------------------------------

@@ -110,6 +110,9 @@ namespace Game.Client
         /// <summary>The bag, as last sent by the server (it pushes the whole thing on any change).</summary>
         public InventoryItemDto[] Inventory { get; private set; } = new InventoryItemDto[0];
         public InventoryItemDto[] Warehouse { get; private set; } = new InventoryItemDto[0];
+
+        /// <summary>The ACCOUNT bank — shared by every character on the account.</summary>
+        public InventoryItemDto[] AccountWarehouse { get; private set; } = new InventoryItemDto[0];
         public BuyBackEntryDto[] BuyBack { get; private set; } = new BuyBackEntryDto[0];
 
         /// <summary>Party roster (empty when you are not in one) and the agreed loot rule.</summary>
@@ -395,6 +398,27 @@ namespace Game.Client
         {
             if (Phase != ClientPhase.InWorld) return;
             try { await _net.WarehouseWithdrawAsync(instanceId); }
+            catch (Exception ex) { ClientLog.Warn("Withdraw: " + ex.Message); }
+        }
+
+        public async void OpenAccountWarehouse()
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.OpenAccountWarehouseAsync(); }
+            catch (Exception ex) { ClientLog.Warn("AccountWarehouse: " + ex.Message); }
+        }
+
+        public async void AccountWarehouseDeposit(Guid instanceId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.AccountWarehouseDepositAsync(instanceId); }
+            catch (Exception ex) { ClientLog.Warn("Deposit: " + ex.Message); }
+        }
+
+        public async void AccountWarehouseWithdraw(Guid instanceId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.AccountWarehouseWithdrawAsync(instanceId); }
             catch (Exception ex) { ClientLog.Warn("Withdraw: " + ex.Message); }
         }
 
@@ -768,6 +792,8 @@ namespace Game.Client
                 Inventory = i?.Items ?? new InventoryItemDto[0]);
             _net.WarehouseReceived += w => Main(() =>
                 Warehouse = w?.Items ?? new InventoryItemDto[0]);
+            _net.AccountWarehouseReceived += w => Main(() =>
+                AccountWarehouse = w?.Items ?? new InventoryItemDto[0]);
             _net.BuyBackReceived += b => Main(() =>
                 BuyBack = b?.Items ?? new BuyBackEntryDto[0]);
             _net.LearnedReceived += l => Main(() =>

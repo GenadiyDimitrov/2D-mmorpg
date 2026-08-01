@@ -138,9 +138,13 @@ public class GameHub : Hub
 
         // entity.Role came from the character row in LoadCharacterAsync — nothing to overlay here.
 
+        // The ACCOUNT bank is read here, on the async login path, not on the tick thread. The loop
+        // discards it if that account already has a live list (see EnterWorldCommand).
+        var accountBank = await _db.LoadAccountWarehouseAsync(auth.AccountId);
+
         var tcs = new TaskCompletionSource<LoginResult>(
             TaskCreationOptions.RunContinuationsAsynchronously);
-        _world.Commands.Enqueue(new EnterWorldCommand(Context.ConnectionId, entity, tcs));
+        _world.Commands.Enqueue(new EnterWorldCommand(Context.ConnectionId, entity, tcs, accountBank));
 
         var timeout = Task.Delay(TimeSpan.FromSeconds(5));
         var finished = await Task.WhenAny(tcs.Task, timeout);
@@ -243,6 +247,24 @@ public class GameHub : Hub
     public Task WarehouseDeposit(Guid instanceId)
     {
         _world.Commands.Enqueue(new WarehouseDepositCmd(Context.ConnectionId, instanceId));
+        return Task.CompletedTask;
+    }
+
+    public Task OpenAccountWarehouse()
+    {
+        _world.Commands.Enqueue(new OpenAccountWarehouseCmd(Context.ConnectionId));
+        return Task.CompletedTask;
+    }
+
+    public Task AccountWarehouseDeposit(Guid instanceId)
+    {
+        _world.Commands.Enqueue(new AccountWarehouseDepositCmd(Context.ConnectionId, instanceId));
+        return Task.CompletedTask;
+    }
+
+    public Task AccountWarehouseWithdraw(Guid instanceId)
+    {
+        _world.Commands.Enqueue(new AccountWarehouseWithdrawCmd(Context.ConnectionId, instanceId));
         return Task.CompletedTask;
     }
 
