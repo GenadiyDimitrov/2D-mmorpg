@@ -595,5 +595,45 @@ public record BufferInfo(
     BufferBuff[] Buffs);    // single buffs, each with its own cost
 public record BufferBuff(string SkillId, string Name, long Cost);
 
-/// <summary>Server -> client: the full quest log.</summary>
-public record QuestLog(QuestSummary[] Active, string[] Completed);
+// ----- The quest WINDOW's view (0.43.0) ------------------------------------
+//
+// QuestSummary above is the DIALOG's view: one line about the step you are on, already formatted by
+// the server. The window needs the other thing — every quest this character can ever see, whether it
+// is takeable, and what each of its steps was — so the three tabs (active / available / completed) and
+// the per-quest detail window can be drawn without the client knowing any quest rules.
+
+/// <summary>Where a quest stands for THIS character, which is also the tab it lands in.
+/// <see cref="Available"/> and <see cref="Locked"/> share one tab: a list of what you cannot do yet,
+/// with no way to see what you CAN take, is only half an answer.</summary>
+public enum QuestAvailability { Available = 0, Active = 1, Completed = 2, Locked = 3 }
+
+/// <summary>One objective line of a quest, structured. Until 0.43.0 a step reached the client only as
+/// a pre-formatted sentence — enough for one line in the log, useless for a detail window that shows
+/// every step with its own progress and tick.</summary>
+public record QuestStepDto(string Text, string Location, int Counter, int Needed,
+                           bool Done, bool Current);
+
+/// <summary>One gathering line of a contract: what drops, off what, how many you carry, and what a
+/// token is worth (a fraction of that creature's own kill exp+gold — see <c>QuestGather</c>).
+/// 0.42.9 folded this into the step TEXT to avoid a protocol bump; this is it structured, as promised.</summary>
+public record QuestGatherDto(string ItemName, string MobName, int Held,
+                             float DropChance, float RewardModifier);
+
+/// <summary>One quest as the quest WINDOW sees it. <paramref name="Status"/> is the one line that
+/// explains the state — "Requires level 20", "Ready to hand in", "Repeatable", "Again tomorrow" —
+/// so a locked row never just sits there greyed out without saying why.</summary>
+public record QuestEntry(
+    string Id, string Name, string Description,
+    QuestAvailability State, string Status,
+    string GiverName, string GiverLocation,
+    int MinLevel, int MaxLevel,
+    bool Repeatable, bool Daily, bool CanComplete,
+    int StepIndex,
+    QuestStepDto[] Steps,
+    QuestGatherDto[] Gathers,
+    string RewardText);
+
+/// <summary>Server -> client: the full quest log. <paramref name="Active"/> and
+/// <paramref name="Completed"/> stay as they were (the on-screen tracker reads them);
+/// <paramref name="Entries"/> is every quest this character can see, in every state.</summary>
+public record QuestLog(QuestSummary[] Active, string[] Completed, QuestEntry[] Entries);

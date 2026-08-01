@@ -621,6 +621,36 @@ Huntmaster Cera, 700 west of Gatekeeper Pell.
         consume ONE rather than remove the row. Take a 2nd class at Class Master Vael and confirm the
         two proofs are consumed and nothing else vanishes.
 
+--- 40. 🔴 THE QUEST WINDOW — three tabs and a page per quest (0.43.0, built 2026-08-01, unplayed). ---
+**Needs a new APK** (protocol 9; the server still accepts a 0.42.x client, but the tabs are client
+work). No `game.db` reset. Menu → Quests.
+40a.[ ] **Three tabs, and they are populated.** *Active* / *Available* / *Completed* across the top,
+        Active selected. Active looks as it always did (step line, progress, Where, Track, Abandon) —
+        with a **Details** button now as well.
+40b.[ ] **Available lists what you have NOT taken.** Takeable quests first, each showing the giver and
+        his town ("From: Elder Marius — Brackenford"); then the shut ones, dimmed, each stating WHY:
+        `Requires level N`, `Outgrown — level N at most`, `Requires: <the quest before it>`.
+40c.[ ] **Nothing from another race or class is listed.** A Human Fighter must not see elf-only or
+        mage-only quests anywhere in the window — those are hidden, not locked. Nor another 2nd class's
+        change chain once you have picked one.
+40d.[ ] **Completed lists NAMES.** It used to print raw ids in one comma-separated line. A daily you
+        did today reads *"Done today — again after the server day rolls over"*; a repeatable you have
+        done sits in **Available** saying *"Repeatable — take it again"*, not in Completed.
+40e.[ ] **Details, from any row of any tab.** Description, status, level band, giver + town, then every
+        step in order: `[x]` for done, `→` for the one you are on (with its counter), `·` for ahead,
+        each with its own "where". Reward at the bottom.
+40f.[ ] **A contract's gather lines are structured now.** Details on a Huntmaster contract lists each
+        token: what drops it, how often, how many you carry, and that each pays a % of that creature's
+        own exp and gold.
+40g.[ ] 🔴 **Accept moved to the detail page.** Talk to a quest giver: the offer is now a one-line row
+        with a **Details** button (no wall of description in the dialog). Tapping it opens the page with
+        **Accept** and **Decline**. Accept takes the quest and the dialog updates behind it; Decline
+        just closes and takes nothing.
+40h.[ ] **An open detail page stays live.** Open Details on an active kill quest, then kill one of its
+        mobs without closing: the step counter on the page moves.
+40i.[ ] **Track still works** — pin from the Active tab, tracker appears on screen, capped at 5, and a
+        handed-in quest unpins itself.
+
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends
         (and combat decays) it works. Same for `/exit`. Pulling the plug mid-DoT must not run the

@@ -7,10 +7,45 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.42.9**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.43.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 2026-08-01 — The quest window: three tabs and a page per quest (0.43.0)
+
+**The oldest reader complaint in the file, closed.** Owner, playtest-13: *"need info on an active quest
+what to kill or do — the quest window should show active/unavailable/compleated … each row in each tab
+must have a [details] button to show information about the quest/description — who gave it, what u had
+to do each step etc"*. Until now the log was one flat list of what you happened to be carrying: no way
+to see what was coming, no way to see what you had done (completed quests were printed as raw *ids*),
+and no way to read a quest at all.
+
+- **Three tabs.** *Active* is the old list, with Track and Abandon where they were. *Completed* is
+  every quest you have finished, by name. The middle tab is **Available**, not "unavailable": it lists
+  every quest you have not taken — the ones you can take now first, then the shut ones each carrying
+  the reason (`Requires level 20`, `Outgrown — level 15 at most`, `Requires: <the quest before it>`).
+  A tab that could only ever tell you what you *cannot* do would leave *"what can I do now"* answered
+  nowhere but the marks over NPC heads.
+- **Hidden vs. locked** is the owner's own rule (*"not compatables can be hidden"*): another race's or
+  another class's quest is not a goal you can work towards, so it never appears; a level floor or an
+  unfinished prerequisite is a plan, so it does. The gating deliberately mirrors
+  `QuestCatalog.OfferedBy` — if the window said "available" about something the NPC would not hand
+  over, it would be lying.
+- **A page per quest** — every step with a tick, an arrow on the one you are on, its own counter and
+  its own "where", plus the giver and his town, the level band, the gathering lines and the reward.
+  Reachable from every row of every tab, and from the NPC.
+- **Accept and Decline moved onto that page.** An offer in a conversation is now a one-line row with a
+  Details button, so the dialog is no longer a wall of description text; the decision is taken on the
+  page that shows what the quest actually asks for. (Roadmap: *"per-quest detail window with
+  accept/decline instead of one wall of text"*.)
+
+**The protocol bump 0.42.9 promised.** That release folded the gathering counts into the step *text*
+to avoid spending one; this is where it was spent (**protocol 9**), and the counts are structured
+fields now — `QuestStepDto`, `QuestGatherDto`, `QuestEntry` — so the client formats them instead of
+parsing a sentence. `MinAcceptedProtocol` stays at **8**: the only wire change is a field *added* to
+`QuestLog`, which an older client does not read, so an installed 0.42.x APK still plays against this
+server. No `game.db` reset.
 
 ## 2026-08-01 — Repeatable quests: the Huntmaster's contracts (0.42.9)
 

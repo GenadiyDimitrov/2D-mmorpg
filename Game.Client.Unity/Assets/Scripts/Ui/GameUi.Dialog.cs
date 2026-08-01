@@ -76,12 +76,17 @@ namespace Game.Client
                           () => Boot.QuestAction("complete", id), UiKit.Good);
             }
 
+            // An OFFER opens the detail window rather than accepting from a wall of text (owner: *"per-
+            // quest detail window with accept/decline instead of one wall of text"*). The row says what
+            // it is and where it leads; the decision — with every step, the level band and the reward on
+            // one page — is made in the window that Accept/Decline lives in.
             foreach (var quest in d.Offered ?? new QuestSummary[0])
             {
                 anything = true;
                 string id = quest.Id;
-                DialogRow(quest.Name + "\n" + quest.Description, "Accept",
-                          () => Boot.QuestAction("accept", id), UiKit.Text);
+                DialogRow("[New]  " + quest.Name
+                          + (string.IsNullOrWhiteSpace(quest.Location) ? "" : "\n" + quest.Location),
+                          "Details", () => ShowQuestDetail(id), UiKit.Text);
             }
 
             foreach (var quest in d.InProgress ?? new QuestSummary[0])

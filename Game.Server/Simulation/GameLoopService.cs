@@ -10474,8 +10474,151 @@ var effect = def.Effect;
         var active = player.ActiveQuests.Values
             .Select(st => { var d = QuestCatalog.Get(st.QuestId); return d is null ? null : Summarize(player, d, st); })
             .Where(x => x is not null).Select(x => x!).ToArray();
-        SendTo(player, "QuestLog", new QuestLog(active, player.CompletedQuests.ToArray()));
+        SendTo(player, "QuestLog", new QuestLog(active, player.CompletedQuests.ToArray(),
+                                                BuildQuestEntries(player)));
         if (withMarks) SendQuestMarks(player);
+    }
+
+    /// <summary>Every quest this character can SEE, in whatever state it is in — the three tabs of the
+    /// quest window (owner, playtest-13: *"the quest windows should show active/unavailable/compleated"*).
+    ///
+    /// What is hidden rather than listed as locked is the owner's own rule (*"not compatables can be
+    /// hidden"*): another race's or another class's quest is not a goal you can work towards, so it is
+    /// noise. What you have merely not reached yet — a level floor, an unfinished prerequisite — IS
+    /// listed, with the reason, because that is a plan.
+    ///
+    /// The gating below mirrors <see cref="QuestCatalog.OfferedBy"/> deliberately: if this list said
+    /// "available" about something the NPC would not hand over, the window would be lying.</summary>
+    private static QuestEntry[] BuildQuestEntries(Entity player)
+    {
+        int committed2 = CommittedClassChain(player, 2);
+        int committed3 = CommittedClassChain(player, 3);
+        var entries = new List<QuestEntry>();
+
+        foreach (var def in QuestCatalog.AllQuests)
+        {
+            player.ActiveQuests.TryGetValue(def.Id, out var state);
+            bool everDone = player.CompletedQuests.Contains(def.Id);
+
+            // ----- hidden: nothing this character could ever do -------------------------------------
+            if (state is null && !everDone)
+            {
+                if (def.ForRace is Race r && r != player.Race) continue;
+                if (def.ForBaseClass is BaseClass b && b != player.BaseClass) continue;
+                if (def.PreClassChange && player.SecondClass != 0) continue;
+                // A class chain belongs to the class you hold; once a tier is committed (or already
+                // taken) the other chains of that tier are gone for good.
+                if (def.ForSecondClass is int sc && (sc != player.SecondClass || player.ThirdClass != 0))
+                    continue;
+                var (cid, tier) = QuestCatalog.ClassChainOf(def.Id);
+                if (tier == 2 && committed2 != 0 && cid != committed2) continue;
+                if (tier == 3 && committed3 != 0 && cid != committed3) continue;
+            }
+
+            entries.Add(BuildQuestEntry(player, def, state, everDone));
+        }
+
+        // Active first (what you are doing), then what you could take, then locked, then done — and
+        // inside each, by level, so the list reads as an order to do things in.
+        return entries
+            .OrderBy(e => e.State switch
+            {
+                QuestAvailability.Active => 0,
+                QuestAvailability.Available => 1,
+                QuestAvailability.Locked => 2,
+                _ => 3,
+            })
+            .ThenBy(e => e.MinLevel)
+            .ThenBy(e => e.Name, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static QuestEntry BuildQuestEntry(Entity player, QuestDef def,
+                                              CharacterQuestState? state, bool everDone)
+    {
+        var availability = QuestAvailability.Available;
+        string status = "";
+
+        if (state is not null)
+        {
+            availability = QuestAvailability.Active;
+        }
+        else if (QuestClosed(player, def.Id))
+        {
+            availability = QuestAvailability.Completed;
+            status = def.Daily ? "Done today — again after the server day rolls over" : "Completed";
+        }
+        else if (player.Level < def.MinLevel)
+        {
+            availability = QuestAvailability.Locked;
+            status = $"Requires level {def.MinLevel}";
+        }
+        else if (def.MaxLevel > 0 && player.Level > def.MaxLevel)
+        {
+            availability = QuestAvailability.Locked;
+            status = $"Outgrown — level {def.MaxLevel} at most";
+        }
+        else if (def.RequiresQuestId is string prereq && !player.CompletedQuests.Contains(prereq))
+        {
+            availability = QuestAvailability.Locked;
+            status = $"Requires: {QuestCatalog.Get(prereq)?.Name ?? prereq}";
+        }
+        else if (def.Daily) status = everDone ? "Daily — ready again" : "Daily";
+        else if (def.Repeatable) status = everDone ? "Repeatable — take it again" : "Repeatable";
+
+        // Ready to hand in = on the final step and that step is a TalkTo (same rule as Summarize).
+        bool canComplete = state is not null
+            && state.StepIndex == def.Steps.Length - 1
+            && def.Steps[^1].Type == QuestStepType.TalkTo;
+        if (state is not null)
+            status = canComplete || state.Completed ? "Ready to hand in" : "In progress";
+
+        var steps = new QuestStepDto[def.Steps.Length];
+        for (int i = 0; i < def.Steps.Length; i++)
+        {
+            var step = def.Steps[i];
+            int needed = step.Type switch
+            {
+                QuestStepType.KillMobs or QuestStepType.CollectItem => Math.Max(1, step.Count),
+                _ => 1,
+            };
+            bool current = state is not null && state.StepIndex == i && !state.Completed;
+            // A step BEFORE the one you are on is done; the current one carries the live counter. On a
+            // quest you have not taken, nothing is done and nothing is current — it reads as a plan.
+            bool done = state is not null && (state.Completed || state.StepIndex > i);
+            steps[i] = new QuestStepDto(step.Text, StepLocation(step),
+                                        current ? state!.Counter : done ? needed : 0,
+                                        needed, done, current);
+        }
+
+        var gathers = def.GatherLines
+            .Select(g => new QuestGatherDto(
+                ItemCatalog.Get(g.ItemId)?.Name ?? g.ItemId,
+                MobCatalog.Get(g.MobId).Name,
+                state is null ? 0 : CountItem(player, g.ItemId),
+                g.DropChance, g.RewardModifier))
+            .ToArray();
+
+        var giver = WorldMap.NpcById(def.OfferNpcId);
+
+        return new QuestEntry(
+            def.Id, def.Name, def.Description, availability, status,
+            giver?.Name ?? "", giver is null ? "" : WorldMap.NearestSafeZone(giver.X, giver.Y).Name,
+            def.MinLevel, def.MaxLevel, def.Repeatable, def.Daily, canComplete,
+            state?.StepIndex ?? 0, steps, gathers, RewardText(def.Reward));
+    }
+
+    /// <summary>The reward, as one line. Zero-valued parts are left out entirely — "SP: 0" is not
+    /// information, it is a field that happens to exist.</summary>
+    private static string RewardText(QuestReward reward)
+    {
+        var parts = new List<string>();
+        if (reward.Exp > 0) parts.Add($"{reward.Exp:N0} exp");
+        if (reward.SkillPoints > 0) parts.Add($"{reward.SkillPoints:N0} SP");
+        if (reward.Gold > 0) parts.Add($"{reward.Gold:N0} {GameConstants.CurrencyName}");
+        foreach (var id in reward.ItemIds ?? Array.Empty<string>())
+            parts.Add(ItemCatalog.Get(id)?.Name ?? id);
+        return string.Join(" · ", parts);
     }
 
     /// <summary>Tell the client which NPCs have something for this player, so it can put a marker over

@@ -834,6 +834,7 @@ namespace Game.Client
             RefreshTargetWindow();
             RefreshQuestWindow();
             RefreshQuestTracker();   // on screen even when the log is closed — that is its whole point
+            RefreshQuestDetail();
             RefreshDialogWindow();
             RefreshPartyWindow();
             RefreshVendorWindow();

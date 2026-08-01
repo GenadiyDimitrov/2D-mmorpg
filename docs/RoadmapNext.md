@@ -50,10 +50,12 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
   named; gathering contracts carry `QuestGather` lines whose `RewardModifier` **is** his
   `QuestItemRewardModifier`, paying a fraction of the creature's own kill exp+gold per token. A
   Huntmaster in every city, ~+25-35% on the hour you farm one. See the CHANGELOG.
-- **The 3-tab quest window** (active / unavailable / completed) and the **per-quest detail window** with
-  accept/decline at the NPC. Track and Abandon shipped; the tabs did not. ⚠ This is where the gather
-  counts should become structured DTO fields — 0.42.9 folded them into the step text on purpose, to
-  keep the protocol at 8 and spend one bump here rather than two.
+- ~~The 3-tab quest window and the per-quest detail window~~ — **built 0.43.0.** Active / Available /
+  Completed, Details on every row, Accept+Decline moved onto the detail page and out of the NPC's wall
+  of text. The middle tab is *Available* rather than "unavailable" — it holds both what you can take and
+  what is shut, with the reason. The promised protocol bump was spent here (**9**): the gather counts
+  are structured fields now (`QuestEntry`/`QuestStepDto`/`QuestGatherDto`). `MinAcceptedProtocol` stays
+  8, so an installed 0.42.x APK still connects. Checklist §40 — **unplayed, needs an APK.**
 
 **World**
 - **Mob cast bar** — believed built, never seen on screen. Verify before rebuilding.
