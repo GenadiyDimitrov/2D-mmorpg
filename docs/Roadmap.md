@@ -9,7 +9,7 @@ Claude keeps this updated as work moves between buckets.
 
 Legend: `[ ]` open · `[~]` partially done · `[>]` blocked/waiting · `[x]` done (kept briefly for context).
 
-**Version: `GameConstants.GameVersion` (currently 0.27.0).** Single shared constant; shown on login +
+**Version: `GameConstants.GameVersion` (currently 0.42.3; `ProtocolVersion` 8).** Single shared constant; shown on login +
 `GET /version`; login handshake rejects mismatched clients. Scheme **MAJOR.MINOR.BUILD**: a bigger change
 (new system) bumps MINOR (BUILD→0); an in-between commit bumps BUILD. Pre-release → MAJOR 0. Also bump on
 any wire-protocol / DB-schema break (that's what the handshake enforces).
@@ -18,7 +18,31 @@ any wire-protocol / DB-schema break (that's what the handshake enforces).
 
 ## NOW (active / immediate)
 
-### 🔴 Playtest-13 queue (2026-07-29, build ~0.28.91) — THE ACTIVE LIST
+### 🔴 THE ACTIVE LIST lives in [RoadmapNext.md](RoadmapNext.md) (2026-08-01, 0.42.3)
+
+Everything below this block is **history** — playtest queues from 0.28.x and earlier, kept because they
+record what was asked for and why. Read `RoadmapNext.md` first; it is the current one-screen state.
+
+The three live items, as of 0.42.3 (after playtest-16, played on 0.42.0):
+
+1. **Publish 0.42.3 and play Unity checklist §36** — the mob-regen batch. `pwsh tools/publish.ps1`;
+   `dotnet build` **before** the Unity build or the APK ships a stale version stamp. No `game.db` reset
+   needed. `GameUi.Feedback.cs` / `GameUi.Debug.cs` are not compile-verified until that APK builds.
+2. **The 24-slot buff cap** — the natural follow-up to 0.42.0's one-buff groups. Drop the OLDEST buff
+   rather than refusing the new one.
+3. **Flat gear MP-regen rolls dwarf the level curve** — `AttributeType.MpRegen` rolls flat MP/s scaled
+   by grade while the level term is nearly flat (2.8 → 9.2 across levels 1-90). Owner's call: make the
+   roll a % of base, or scale the base harder with level. Not built.
+
+Playtest-16's verdict: 17 checklist items passed, 4 passed but failed the reader (all four fixed in
+0.42.2), 2 client bugs (fixed in 0.42.1), and one real simulation bug found only by playing — mob regen
+on the player's CON curve (fixed in 0.42.3). Nothing crashed and nothing corrupted.
+
+---
+
+## ARCHIVE — past playtest queues (all closed, or carried into RoadmapNext.md)
+
+### 🔴 Playtest-13 queue (2026-07-29, build ~0.28.91) — closed; ALL tiers 1-2 built, tier 3 mostly
 Three sessions (elf mage ~15 · marksman 24 · champion 28), one of them with the **server hosted on
 the phone** (Termux + proot-ubuntu, .NET 10). Verdict: *"it was fun playing… still plain (no sounds,
 a bit woody, no good visuals) but a game that I enjoyed."*
@@ -885,7 +909,12 @@ changes and new features that came out of the play session:
   universal auto-granted **Return** skill (30s/5min, fragile) + **Scroll of Return** (Apothecary 500g,
   10s) + **Ultimate** scroll (near-instant, not sold). `ItemDef.UseCastSkillId` (double-click a
   consumable → cast). Deferred: purchasable cap extensions, PvP no-counter, ultimate-scroll vendor.
-- [ ] **Buffer = "Enchanter" + full-buff NPC to 75** — owner direction ([[buffer-enchanter-design]]):
+- [~] **Buffer = "Enchanter" + full-buff NPC to 75** — LARGELY BUILT 0.40.0-0.42.0: the 14-family buff
+  ladder with ranks, 24 potions + 48 scrolls, the cleric teaching the SINGLES and the **Warchanter**
+  owning the improved GROUPS + the three party-wide Harmony blessings, and a group that is ONE buff
+  outranking its own singles (0.42.0). The NPC buffer gives the **basic tier only, one hour each** — its
+  edge over a potion is duration, which is what the ladder was built to make true. **Still open:** dances
+  and songs; the 24-slot buff cap. Original direction below.
   ONE buffer class holds ALL buffs (race-flavored); add **dances/songs** (extra atk/cast mults) to the NPC
   buffer later; a **full-buff NPC buffer up to lvl 75** is the SOLO stopgap. High-tier solo being hard is
   INTENDED — buffs/party close the gap, don't nerf the mob curve.

@@ -7,7 +7,7 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently 0.27.0) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.42.3**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
@@ -392,6 +392,261 @@ signature does not).
 ⚠ **Unity-side and therefore NOT compile-verified by `dotnet build`** — `GameUi.cs`,
 `GameUi.World.cs`, `GameUi.Items.cs`, `GameUi.Vendor.cs`, `GameUi.AutoHunt.cs`, `GameBoot.cs` and
 `NetworkChannel.cs` all changed. The APK build is the only thing that compiles them.
+
+## 2026-07-31 — A potion argues with one part of a blessing, not the whole of it (0.36.0)
+
+> ⚠ **Superseded by 0.42.0.** The child fan-out described here was the owner's later rejection: a
+> group is ONE buff again, and conflicts resolve by FAMILY rather than by key. Kept as the record of
+> why the ladder exists at all — the *families* and *ranks* below are still the live model.
+
+An improved buff stopped applying a buff of its own and applied **children** instead — Swift,
+Alacrity, Agility, Haste — each an ordinary buff on its own family key with its own rank, each
+resolving alone against whatever you had already drunk, read or been blessed with. A rare Alacrity
+potion took over the cast part of a low-level Speed and left the movement alone. No override tables:
+one number line per effect.
+
+**Equal rank keeps the LONGER remaining time**, which is the rule that makes the ladder honest — a
+potion and a scroll of one tier are the same buff and differ only in duration, so a 20-minute potion
+would otherwise have eaten an hour-long scroll. And a consumable refused on rank is no longer
+swallowed and put on cooldown for nothing: it says a stronger blessing is up and stays in the bag.
+
+Three things the fan-out broke on the way, all fixed here: the *"already up"* test keyed on the
+parent (which now matched nothing, so the autopilot would re-cast every cycle and drink a whole stack
+one bottle at a time); persistence saved a buff under the id of whatever GRANTED it, so a relog
+re-applied every sibling at full duration — a free refresh for logging out; burst potions (Dash) are
+never auto-drunk.
+
+**Data:** the four speed families at Common/Uncommon/Rare, their potions (20 min) and scrolls (1 h),
+the six-rarity Dash line on its own family (it must never evict an hour-long Swift), Improved Speed
+re-authored to six levels, Wind Walk deleted. Spec: [design/BuffLadders.md](design/BuffLadders.md).
+
+## 2026-07-31 — Nothing walks you into melee unless you asked it to (0.35.1)
+
+The owner's correction to 0.35.0's half-measure. That build shipped *"auto-farm does not melee-walk
+CASTERS"*; **the rule has no class in it** — nothing closes the distance unless commanded. Exactly
+three things command it: the second tap on a target, the Attack button (bar action or target frame),
+and, in auto-mode, the basic-attack action being on the bar and set to auto-on.
+
+`AfterOffensiveSkill` tested `BaseClass != Mage`, which spared the nuker and still charged the bow
+rogue in after a shot. It now asks whether the melee it is about to resume was **ordered** — which
+needed somewhere to remember the order, since `HandleCast` deliberately wipes `Engaged`:
+`Entity.AttackCommandTargetId`, set only by `HandleAttack`, cleared by a manual move, a follow, a
+disengage and death, but **not** by a cast. So tap-tap-then-skill still chases, while a skill pressed
+on its own never starts one, for any class. Mobs are exempt — their AI takes no orders from a hot bar.
+
+Client-side the three ways to say "attack" were three code paths, and only the tap knew a party member
+should be followed instead. They are one verb now (`GameBoot.AttackOrFollow`).
+
+Also fixed a compile break 0.35.0 shipped: it added `GameBoot.Follow`/`FollowAsync` that already
+existed — two CS0111s. **The Unity scripts are not in `Game.sln`, so `dotnet build` never saw them**
+and the APK build would have failed.
+
+## 2026-07-31 — The phone server just runs, and a tap no longer charges (0.35.0)
+
+First batch off playtest-15 — 12 of the 22 §32 items.
+
+**The phone server ships with Workstation GC.** Server GC reserved 256 GiB of regions up front, which
+CoreCLR cannot do under proot, so it died before `Main` and had to be hand-edited out of
+`runtimeconfig.json` after every deploy. Verified in the published output, not just the csproj.
+
+**Tapping targets first and attacks on the second tap of the same target.** That one line fixes two
+separate reports: charging in on the first tap is miserable on a caster, and the same line only ever
+sent an `Attack` for a **mob** — so tapping a PLAYER selected them and sent nothing. That was the whole
+of *"cannot kill party members even with pvp on"*; it was never a party rule, and the server had been
+policing PvP correctly all along. (Follow-up the same day: `CanPvpHit` now refuses **same-party
+outright** — opt-in irrelevant, a red party member irrelevant — because in a mass fight a mis-tap on
+the ally beside you would quietly make you the enemy's best asset. The second tap follows them instead.)
+
+**Auto-farm retaliates**: a mob already swinging at you outranks whatever is merely nearest, guarded so
+it finishes a nearly-dead target and does not thrash between two attackers. It also stops walking
+casters into melee, and finally tells the client what it is fighting, so the target window follows the
+autopilot instead of sitting empty.
+
+**The class change applies without a relog.** The client's `ActiveClass` — both the label and the Skills
+window's Learn gate — is set only by the `Subclasses` push; the debug change, the subclass swap and the
+reset all sent it, and the real quest-gated change was the one path that did not.
+
+Also: the healing potion's share of the guaranteed drop group falls 50% → 30% with no stacking (the
+group still fires every kill); Wind Walk leaves the nuker and Battle Fury the rogue (both `SkillDef`s
+stay — clerics and five 3rd-class disciplines still grant them); the training tier authors its M.Atk
+column like the rest of the ladder; buff potions and the Return/Resurrection scrolls sell at /25 like
+gear, having previously been unsellable outright. SmokeTest: **ALL CHECKS PASSED**.
+
+## 2026-07-30 — The bar counts your reuse down, and a passive states its numbers (0.34.3)
+
+Playtest-14 batch 4 — the last two items in that queue, both client-side.
+
+**Skill cooldowns.** The client knew nothing about reuse: the server tracked `SkillCooldowns` /
+`PotionCooldowns` and told nobody, so the only way to learn a skill was still cooling was to tap it and
+read the refusal. A new `Cooldowns` push is keyed by the **action-bar token** — a skill id, or
+`item:defId` for a drink timer — so the client matches it against the bar it already holds and needs no
+second mapping. Sent when a timer **starts** (cast completion, ESC-cancel, consumable use) and once on
+entering the world; **not per tick** — the client counts down locally, so the overlay animates at frame
+rate for one message per cast. No "total" on the wire either: the push happens the tick the timer
+starts, so the first `Seconds` seen for a token IS the full reuse, replaced only when it comes back
+higher. The square darkens and the dark part drains from the top with the seconds left in the middle
+(it resizes rather than using a filled `Image`, because a filled `Image` needs a sprite and every box in
+this UI is spriteless). A consumable has two reuse channels — the drink timer and the skill the item
+grants — and the bar only holds the item token, so `ReuseOf` resolves `UseSkillId` as a fallback or a
+Return scroll would look ready when it isn't.
+
+**Passives state their numbers.** A passive showed its authored prose and nothing else — you could read
+*"toughens your hide"* and still not know what an SP bought. The numbers were on the def the whole time;
+nothing formatted them. New `Game.Shared/SkillText.cs` renders `PassiveEffect` (all ~60 fields),
+`StatMods`, armor/weapon mastery profiles (broken down per weight and per weapon type) and buff
+magnitudes as `Label +12%` lines, **level-aware**. Unity's skill detail and the Learn confirmation both
+use it (Learn shows *"Now …"* above *"After …"* for an upgrade), and **the WPF harness delegates to the
+same helper** instead of its own partial copy — 17 fields, level-1 only, masteries missing entirely — so
+the two clients cannot disagree about what a passive is worth.
+
+## 2026-07-30 — The rate is TWO knobs: a global one and one per drop group (0.34.2)
+
+Corrects 0.34.1's reading of the rate table. **The authored numbers are the ×1 design, not what the
+server hands out** — 5% authored is 5% at ×1 and 15% at ×3. So `DropChanceRate` goes back to 3, where it
+always was, and every entry the owner did not specify goes back to its authored value with it.
+
+But one global rate cannot be the whole story, and this is the owner's point: **the guaranteed groups are
+authored as absolutes.** Mats 100%, always 100%, scrolls 70%. Multiplying those by a server rate cannot
+make them more generous — it pins them at the clamp and throws away every weight inside the group. He
+wants them to stay put *"at x10 or x200"*, and gear tunable independently: *"drop chance x200 and armor
+group multiplier x0.01, in reality armor will be x2 drops"*.
+
+So `RateConfig.DropGroupRates` — a multiplier per group (armor, accessory, weapon, jewel, mats, scrolls,
+always, other) — composed with the global in exactly **one** place, `MobCatalog.EffectiveRate(groupId)`,
+returning `(guaranteed ? 1 : DropChanceRate) × the group's own multiplier`. The kill roll, target-inspect
+and BalanceMatrix all call it. That is deliberate: the one bug this system exists to prevent is the
+number on screen drifting from the number you get, and three call sites each doing their own arithmetic
+is how that happens.
+
+Shipped defaults: global ×3, gear groups ×1/3, everything else ×1. The 1/3 is the system working rather
+than a fudge — the design reads at ×1, the server runs at ×3, and his acceptance test is absolute
+(~400k of trash gold by level 25). Measured: ×3 flat gives 1.08M, ×3 × 1/3 gives **402k**.
+
+**`/droprate` makes it live.** No args lists the table; `/droprate <group> <x>` sets one; `/droprate gear
+<x>` sets all four equipment groups; `/droprate global <x>` sets the server rate. A chat command and not
+a tuning-panel row on purpose: the panel's payload is a wire DTO, so eight new fields there would bump
+the protocol and demand a matching Unity build — for a knob whose entire value is being adjustable
+mid-playtest, on the phone, without rebuilding anything.
+
+## 2026-07-30 — The drop side lands, and the faucet closes on his number (0.34.1)
+
+Playtest-14 batch 2 finished: §2 (rates) and §3 (grade lock + groups) were always one edit.
+
+**Four gear groups, each grade-locked to the mob's single tier and randomised across its whole slot
+family** — Armor (heavy/light/robe), Accessories (helm/gloves/boots/shield), Weapons (all 8 lines),
+Jewels. C 5 / U 2 / R 0.2 / E 0.01 per group. *Where you farm no longer decides what you can loot* —
+undead can drop a bow. Mats keep their family flavour, deliberately.
+
+The group **engine** already existed and needed nothing: a group rolls once at the summed member chance
+then picks one weighted, so a member's authored chance IS its marginal chance and the owner's table could
+be written straight in. The one new idea is the **group id** — `10 + family*10 + rarity`, one group per
+rarity **rung** — which is what lets the boss row (E 70 + L 40 + M 2 = 112%) pay several pieces while each
+rung still randomises across the family.
+
+Elite and boss **replace** the gear half at kill time, in `RollDrop`: rank is a property of the spawn, not
+of the template, so it cannot live in a baked table. Mats are one stack per kill with the roll AS the
+amount (50→1, 40→2, 9→4, 1→10). Scrolls 70% (half enchant, half buff potion). Always 100% (healing potion
+/ return / resurrect). Broken jewels leave the drop tables — the F Commons are that line now — and stay
+on the vendor's shelf.
+
+**Measured, not derived.** `tools/BalanceMatrix` grows an ECONOMY section that resolves the real tables
+with the real group math and the real vendor prices: **403k of trash gold by level 25** against his stated
+~400k target, over ~168 kills at the live ×10 exp rate. Anchor: it prices the E Common gauntlet at sell
+4,500, identical to the 0.33.3 measurement, so only the drop arithmetic is new. 0 unresolved ids across
+7,886 entries.
+
+Two things the code found that hand-reading did not: `MobCatalog.All = Build()` is declared first, so any
+`static readonly` table below it is null when `Build()` runs (the rate tables had to become properties —
+same trap as `ItemCatalog.DropTiers`); and *"below level 74 also drop a recipe at 0.1%"* **cannot be
+built** — no recipe item exists under A grade, because recipes below 76 are learned by level rather than
+found. Flagged, not faked.
+
+**Target-inspect collapses each group to one line.** Not cosmetic: a mob carries ~97 entries now, and 97
+near-identical 0.6% rows told the player nothing. One line per group is also the truthful reading — the 5%
+really is one shared roll.
+
+## 2026-07-30 — A quest mob respawns as ITSELF, and F gear finally drops (0.34.0)
+
+**Per-mob spawners** (playtest-14 batch 3). A camp's mixed roster meant killing a werewolf was a 1-in-5
+chance of getting a werewolf back, so farming a quest mob meant clearing the camp and waiting, and any
+one creature's population drifted with the dice.
+
+A zone now carries `DedicatedSpawn[]` on **top** of its mixed pool (owner: *"a self spawner that is on top
+of the one they are in right now"*): a fixed count of ONE template whose deaths respawn that same
+template. Which templates qualify is **derived from the quest catalogue** — `QuestCatalog.KillTargets`
+collects every `KillMobs` step's target and merges it to the widest band any step accepts — so a new kill
+quest gets its guaranteed population for free and a hand-list cannot rot. A camp qualifies only if it can
+spawn the creature at a level the step will **count**. Elites/bosses are excluded (2-mob camps by design).
+Result: 6 camps, 41 guaranteed mobs, biggest camp 11 → 20. `WorldPlan.UnservedKillTargets()` is logged at
+startup: a misspelt `TargetId`, or a band that no longer overlaps its camp, is otherwise invisible until a
+player takes the quest and cannot finish it.
+
+The two population kinds are tracked **separately** in `ZoneRuntime`, and a spawn **records** which spawner
+made it (`Entity.SpawnerMobId`) rather than inferring it from the template: a mixed roll can legitimately
+produce a dedicated template, and crediting that death to the wrong bucket is exactly what would let the
+guaranteed population drift back to the dice.
+
+**F-grade gear drops.** `GearTier()` floored every level below 40 to the level-20 (E) tier, which is the
+only reason gear drops were gated away from mobs under 18. F is part of the one ladder now, so the floor
+becomes the F tier and the gate is gone: levels 1-19 no longer have mats-and-nothing as their whole loot
+table. Rarity gates on **mob level** instead — Common from 1, Uncommon from 5, Rare from 10. 1087 drop
+entries, 0 unresolved ids.
+
+**Training armor re-cut, so early drops are never a downgrade.** Measured F-Common against the starter kit:
+weapons were fine (1.7-2.0× up) but the **armor** was 0.72× — the first body you could loot was *worse than
+what you start in*. The training armor was the sum of an upper + lower body from the TOP of the no-grade
+range, while F Common is 45% of a MID no-grade set. Fixed on the **starter** side (light 53 → 35 P.Def,
+robe 27 → 20, MP unchanged) so the ladder keeps its one rule: every quality is a fixed fraction of the
+authored Mythic piece.
+
+⚠ Also recorded: the old `"Worn"`/`"Steel"` item line under `LootTables` in `Items.cs` is **dead code**,
+referenced from nowhere. The live path has always been `MobCatalog.StandardDrops` on the tiered ids.
+
+## 2026-07-30 — The price ladder is one series, and gear stops paying for itself (0.33.3)
+
+Playtest-14's headline was **level 25 with 3kk of gold from selling trash**. This is the PRICE half of the
+fix; the drop half is 0.34.1.
+
+**Sell price derives from buy**: tiered gear pays `buy / GearSellDivisor` (25). Not a knob picked from thin
+air — the owner's acceptance test is *"~25 Robes buys one Leathers"*, and both are the Armor slot at the
+same grade+rarity so they share a buy price, which makes the divisor exactly that ratio. Measured: 25.0.
+The cut is confined to **gear**; mats/potions/scrolls keep `VendorSellFraction`, because they are not what
+made a level-25 character rich and cutting them would nerf crafting income nobody asked to nerf.
+
+**Rarity scales gold at HALF the power ratio** (22.5/27.5/35/35/42.5/100 % against power's
+45/55/70/70/85/100), so rarity is worth less in gold than in stats. Mythic is the 100% base — a 2.35×
+jump over Legendary, intended: Mythic is craft-only and meant to be traded between players for absurd sums.
+
+**The table grows from 3 grades to 7.** It had been capping at the D column for every level ≥ 40, so a
+B-grade item was priced as if it were D; that is why the top grades get dearer here, and it is what makes
+*"gold farming stays meaningful only at the top grades"* true. The table is expressed in Mythic, but the
+F/E/D cells are written as `Shop(x)` with `x` the owner's shop price — because the shop sells **Rare** only
+at F-D, those numbers are the fixed points of the whole table; `Shop()` lifts them to the Mythic rung so
+multiplying back down returns them exactly (all 35 verified identical). C..S hold the 2H weapon column's
+slot fractions (set 45/25/15/15, 2H = 75% of a set, 1H = 90% of 2H, jewels 1/12, 1/6, 1/2) — the fractions
+F/E/D already satisfy, so retuning a grade is one number, not eight.
+
+Measured, E Common trash: **sells 18.4k → 4.5k**. Two consequences worth knowing: Common gear costs 1.84×
+MORE at the vendor now, and B+ low-rarity gear sells for more than before.
+
+⚠ **The 16× is BOTH levers** — sell (4.1×) × drop rate (4×) — not the sell side alone, which is easy to
+double-count and read as 68×. So 3kk of trash gold at level 25 lands at ~184k. The owner names **~400k** as
+the good number (a 7.5× cut), so the plan overshoots by ~2.2×; deliberately not tuned here, because the
+grade lock and the mutually-exclusive groups move the figure again and the gap gets closed against a real
+measurement (it was: 402k, 0.34.2).
+
+## 2026-07-30 — Builds by git branch: built, then reverted (no version)
+
+`tools/publish-build.ps1` published the APK + server zip to an **orphan `builds` branch** that was
+rewritten rather than appended to — one parentless commit per publish holding the newest 3 versions,
+force-pushed, so the blobs it dropped became unreachable and the branch stayed one generation of builds in
+size. (At ~41 MB APK + ~15 MB zip per release and four releases in a day, committing `builds/` onto the
+working branch would have added more permanent history in a week than the entire source repo has in months.)
+
+**Reverted the same day, on the owner's call**: he remotes into the PC and takes the artifacts from
+`builds/` directly, so nothing has to reach him through git at all. The branch was deleted from the remote.
+Local `builds/` stays gitignored. ⚠ **Don't rebuild this** — dead weight in a repo gets rediscovered later
+and half-believed.
 
 ## 2026-07-30 — Abandon actually abandons; char-select stops lying; the kill line (0.33.2)
 

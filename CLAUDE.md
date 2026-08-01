@@ -103,13 +103,25 @@ and are adapted from L2 references.
   at any level = same drops; different loot = new mob id; tougher elsewhere = higher
   zone. **Drop tables** are per-mob `DropEntry(itemId, chance:float, minQty, maxQty,
   MinLevel, MaxLevel)`; the level band lets one mob drop different loot at different
-  levels.
-- **Rates are GLOBAL** (`RateConfig`: ExpRate, SpRate, DropChanceRate,
-  DropAmountRate; gold rate reserved), not per-item.
+  levels. ⚠ A mob's HP curve is **`MobBaseStats.Hp(level) = 40 + 0.8·level²`** — NOT the linear
+  `StatCalculator.MobMaxHp`, which is a different, mostly-unused path; check which one a mob
+  actually uses before quoting numbers. **Mob regen is a fraction of the mob's OWN pool with no
+  level term** (0.1%/s engaged, 5%/s idle) — players keep the exponential CON curve, which is
+  correct for a 36-47 CON spread and absurd for a mob's `15 + 2·level`.
+- **Rates are TWO knobs, composed in ONE place** (`MobCatalog.EffectiveRate`): the global
+  `RateConfig.DropChanceRate` × the drop GROUP's own multiplier (`DropGroupRates`: armor,
+  accessory, weapon, jewel, mats, scrolls, always, other), plus a per-ITEM override
+  (`/droprate item`). Guaranteed groups (mats/always/scrolls) ignore the global — they are
+  authored as absolutes. Never do this arithmetic at a call site: the kill roll, target-inspect
+  and BalanceMatrix must all read the same number the player is shown.
 - **Buffs**: flat skill id = ability identity; `BuffKey` = buff identity for
-  stacking. Stacking rules in `ApplyBuff`: (1) same `BuffKey` compares `Rank`
-  (incoming ≥ existing → replace; weaker → ignore); (2) explicit `Replaces[]`
-  removes listed buffs. Per-class flavor = `DisplayName` override on `ClassSkill`.
+  stacking. Stacking rules in `ApplyBuff`: (1) conflict is by **FAMILY** — two buffs compete when
+  their family sets intersect — and same-family compares `Rank` (incoming ≥ existing → replace;
+  weaker → ignore; equal rank keeps the LONGER remaining time); (2) explicit `Replaces[]` removes
+  listed buffs. An **improved/group buff is ONE buff** with `GroupRank = 100 + level` carrying every
+  child's magnitudes and declaring `CoveredKeys`, so it always outranks and evicts its singles and a
+  potion can never override it (the L2 rule, 0.42.0). ⚠ Authoring rule: a group must be ≥ the best
+  single in EVERY family it covers. Per-class flavor = `DisplayName` override on `ClassSkill`.
 - **Spell range is PER-SPELL** (the skill's own `Range`), NOT class-tier-based:
   `SkillMath.EffectiveRange` returns `def.Range` for spells (heals shorter than attack
   spells; healer attack ~750, nuker ~900, base nuke 600 — authored per skill). The ONE
@@ -137,12 +149,15 @@ generic fantasy names (current towns: Brackenford, Stonewatch, Emberfall, Greyma
 Ironreach, Duskvale, Frostmere). Stat *formulas* are not copyrightable; *names* are.
 
 ## Roadmap (not yet built)
-Built since this list was first written: gold wallet, NPC shop vendors, teleport-for-fee,
-buff potions, the level 1-80 world. Still to do: 3rd/4th class tower (cleric→bishop quest
-chains); party/grouping (replace "allies in radius" stand-in); boss mechanics (±10-level
-rule, boss skills, enrage); instances/dungeons; castles + vault (consumes the
-`VendorBuyTaxRate` hook); perfect/excellent block; magic-resist passives; soulshots;
-position bonuses; PvP/PvE multipliers (hooks default 1.0); the real 2D client.
+**The live list is `docs/RoadmapNext.md`** — one screen, kept current; `docs/Roadmap.md` is the full
+detail and the archive of past playtest queues. Built since this file's list was first written: the
+gold wallet, NPC vendors, teleport-for-fee, the buff ladder (potions + scrolls), party/grouping with
+loot modes, boss mechanics (±10-level rule, phases, adds, enrage), PvP/karma, auto-hunt, crafting, the
+generated level 1-90 world, and the Unity client. Still to do: 3rd/4th class kits (blocked on the
+owner's CSVs); repeatable quests + the 3-tab quest window; instances/dungeons; castles + vault
+(consumes the `VendorBuyTaxRate` hook); perfect/excellent block; position bonuses; PvP/PvE damage
+multipliers (hooks default 1.0); the presentation pass. **Dropped, don't re-add:** a magic-resist stat
+and soulshots (see the bottom of `docs/Roadmap.md`).
 
 ## Verify server behaviour with the SMOKE TEST, not by playing
 `tools/SmokeTest` is a headless SignalR client speaking the real protocol (no window). With the
