@@ -545,6 +545,26 @@ full, so **36c-36f are all new behaviour that has never existed before**, not re
         idle (frac/s)`. Change them, Apply, and confirm the echo comes back clamped (combat 0-0.1,
         idle 0.001-1) and that the new rate is live without a restart.
 
+--- 37. 🔴 PARTIAL-STACK TRADING (0.42.6, built 2026-08-01, unplayed). ---
+Needs two characters (the bot works: `tools/SmokeTest -- bot`, then `trade <name>` / `trade offer
+<item> <n>` / `trade ready`). The rule the whole feature rests on: **the offer is re-checked at
+completion and a shortfall fails the WHOLE trade** — never a partial delivery.
+37a.[ ] **Offering part of a stack.** Tap a stack of 50 potions in the trade bag → the **numpad**
+        opens ("Offer", max 50) and its subtitle counts what you KEEP. Offer 20. The offer list shows
+        `x20`; **the bag row stays, now reading x30**. Tap it again and you may add more, up to 50.
+37b.[ ] **Non-stackables still toggle.** Tap a weapon/armor piece: no numpad, straight onto the table,
+        and a second tap takes it back.
+37c.[ ] **The split is real.** Complete a 20-of-50 trade: you keep 30, they gain 20 — **merged into
+        the stack they already had**, not a second row of the same potion.
+37d.[ ] **A shortfall kills the trade.** Offer 20, then (before confirming) drink or sell some so you
+        hold fewer than 20. Both sides confirm → *"Trade failed (items/gold changed or bags full)"*
+        and **nothing moves**. Neither side may end up with 14.
+37e.[ ] **A full bag is judged correctly.** With a nearly full bag, receiving a stack of something you
+        ALREADY hold must succeed (it merges — no new slot); receiving something new must be refused.
+        Giving away *part* of a stack must NOT be counted as freeing a slot.
+37f.[ ] **The WPF harness asks too.** Same flow in the desktop client: clicking a stack opens a small
+        "How many?" box; Cancel offers nothing (it does not silently offer the whole stack).
+
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends
         (and combat decays) it works. Same for `/exit`. Pulling the plug mid-DoT must not run the
@@ -558,6 +578,7 @@ full, so **36c-36f are all new behaviour that has never existed before**, not re
         it (click-through family).
 27. [ ] 🎯 **Partial-stack trading** — "5 of my 15 sticks for his 10 of 16 stones". **The owner's answer
         to the open design call: YES.** `TradeOffer` must carry per-item counts and split on completion.
+        ➡ **BUILT IN 0.42.6 — test it as §37 below.**
 
 **Additions**
 28. [ ] Chat **colours**, **tabs**, **tags** (§9).

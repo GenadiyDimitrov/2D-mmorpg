@@ -484,9 +484,9 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
-    public Task TradeOffer(Guid[] instanceIds)
+    public Task TradeOffer(TradeOfferEntry[] entries)
     {
-        _world.Commands.Enqueue(new TradeOfferCmd(Context.ConnectionId, instanceIds));
+        _world.Commands.Enqueue(new TradeOfferCmd(Context.ConnectionId, entries ?? Array.Empty<TradeOfferEntry>()));
         return Task.CompletedTask;
     }
 

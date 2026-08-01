@@ -998,10 +998,10 @@ public partial class MainWindow
         TheirOfferLabel.Text = $"{state.PartnerName}'s offer" +
             (state.TheirReady ? "  (READY)" : "");
 
-        // Mirror the server's authoritative view of my offer.
+        // Mirror the server's authoritative view of my offer — including the COUNTS it accepted.
         _myTradeOffer.Clear();
         foreach (var item in state.MyOffer)
-            _myTradeOffer.Add(item.InstanceId);
+            _myTradeOffer[item.InstanceId] = item.Quantity;
 
         FillOfferList(MyOfferList, state.MyOffer, removable: true);
         FillOfferList(TheirOfferList, state.TheirOffer, removable: false);
@@ -1079,7 +1079,7 @@ public partial class MainWindow
                 button.Click += async (_, _) =>
                 {
                     _myTradeOffer.Remove(instanceId);
-                    await _net.TradeOfferAsync(_myTradeOffer.ToArray());
+                    await SendTradeOffer();
                 };
             }
             list.Items.Add(button);
@@ -1091,16 +1091,23 @@ public partial class MainWindow
         TradeBagList.Items.Clear();
         foreach (var item in _inventory)
         {
-            if (item.Equipped || _myTradeOffer.Contains(item.InstanceId))
+            if (item.Equipped)
                 continue;
 
             var def = ItemCatalog.Get(item.DefId);
             if (def is null)
                 continue;
 
+            // A stack that is only PARTLY on the table stays listed, showing what's left to add —
+            // otherwise offering 20 of 50 potions makes the other 30 vanish from your own bag.
+            int offered = _myTradeOffer.TryGetValue(item.InstanceId, out var o) ? o : 0;
+            int spare = item.Quantity - offered;
+            if (spare <= 0)
+                continue;
+
             var button = new Button
             {
-                Content = $"{def.Name}{(item.Quantity > 1 ? $" x{item.Quantity}" : "")}  {def.Grade}/{def.Rarity}",
+                Content = $"{def.Name}{(spare > 1 ? $" x{spare}" : "")}  {def.Grade}/{def.Rarity}",
                 Height = 26,
                 Margin = new Thickness(0, 0, 0, 3),
                 HorizontalContentAlignment = HorizontalAlignment.Left,
@@ -1111,15 +1118,64 @@ public partial class MainWindow
                 Foreground = RarityBrush(def.Rarity)
             };
             var instanceId = item.InstanceId;
+            var dto = item;
             button.Click += async (_, _) =>
             {
-                if (_myTradeOffer.Count >= GameConstants.TradeMaxOfferSlots)
+                if (!_myTradeOffer.ContainsKey(instanceId) &&
+                    _myTradeOffer.Count >= GameConstants.TradeMaxOfferSlots)
                     return;
-                _myTradeOffer.Add(instanceId);
-                await _net.TradeOfferAsync(_myTradeOffer.ToArray());
+
+                // Stackable → ask how many. One unit is the common case, so the prompt starts on the
+                // whole stack and Cancel simply means "changed my mind", not "offer all of it".
+                int add = dto.Quantity > 1 && def.IsStackable
+                    ? PromptQuantity($"How many {def.Name}? (1-{dto.Quantity})", dto.Quantity)
+                    : 1;
+                if (add <= 0) return;
+
+                _myTradeOffer[instanceId] = Math.Min(dto.Quantity,
+                    (_myTradeOffer.TryGetValue(instanceId, out var had) ? had : 0) + add);
+                await SendTradeOffer();
             };
             TradeBagList.Items.Add(button);
         }
+    }
+
+    private System.Threading.Tasks.Task SendTradeOffer() =>
+        _net.TradeOfferAsync(_myTradeOffer.Select(kv => new TradeOfferEntry(kv.Key, kv.Value)).ToArray());
+
+    /// <summary>A tiny modal "how many?" box. The harness has no number-entry control of its own and
+    /// the phone client's numpad is Unity-only, so this is built in code rather than in XAML.
+    /// Returns 0 for cancel / nonsense input.</summary>
+    private int PromptQuantity(string message, int max)
+    {
+        var box = new TextBox { Text = max.ToString(), FontSize = 14, Margin = new Thickness(0, 8, 0, 8) };
+        var ok = new Button { Content = "OK", Width = 70, IsDefault = true, Margin = new Thickness(0, 0, 6, 0) };
+        var cancel = new Button { Content = "Cancel", Width = 70, IsCancel = true };
+
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        buttons.Children.Add(ok);
+        buttons.Children.Add(cancel);
+
+        var panel = new StackPanel { Margin = new Thickness(12) };
+        panel.Children.Add(new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap });
+        panel.Children.Add(box);
+        panel.Children.Add(buttons);
+
+        var dialog = new Window
+        {
+            Title = "Quantity",
+            Content = panel,
+            SizeToContent = SizeToContent.WidthAndHeight,
+            Width = 300,
+            ResizeMode = ResizeMode.NoResize,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Owner = this,
+        };
+        ok.Click += (_, _) => { dialog.DialogResult = true; };
+
+        box.Loaded += (_, _) => { box.Focus(); box.SelectAll(); };
+        if (dialog.ShowDialog() != true) return 0;
+        return int.TryParse(box.Text.Trim(), out var n) ? Math.Clamp(n, 0, max) : 0;
     }
 
     private async void TradeReady_Click(object sender, RoutedEventArgs e) =>

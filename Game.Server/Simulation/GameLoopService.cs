@@ -1452,7 +1452,7 @@ public class GameLoopService : BackgroundService
 
             // Items being traded cannot be equipped mid-trade.
             if (_world.ActiveTrades.TryGetValue(player.Id, out var trade) &&
-                trade.OfferOf(player).Contains(item.InstanceId))
+                trade.Offers(player, item.InstanceId))
                 return;
 
             // JEWELS have DESIGNATED slots per sub-type: 2 rings, 2 earrings, 1 necklace. A full
@@ -1559,7 +1559,7 @@ public class GameLoopService : BackgroundService
         {
             var it = player.Inventory.FirstOrDefault(i => i.InstanceId == iid);
             // An item in a live trade offer can't be equipped; a missing one was sold/traded/destroyed.
-            if (it is null || (trade is not null && trade.OfferOf(player).Contains(iid))) { missing++; continue; }
+            if (it is null || (trade is not null && trade.Offers(player, iid))) { missing++; continue; }
             it.Equipped = true;
         }
 
@@ -1718,7 +1718,7 @@ public class GameLoopService : BackgroundService
 
         // Block destroying items that are currently in a trade offer.
         if (_world.ActiveTrades.TryGetValue(player.Id, out var trade) &&
-            trade.OfferOf(player).Contains(item.InstanceId))
+            trade.Offers(player, item.InstanceId))
             return;
 
         bool wasEquipped = item.Equipped;
@@ -1768,7 +1768,7 @@ public class GameLoopService : BackgroundService
 
         // Can't stash an item that's in a live trade offer.
         if (_world.ActiveTrades.TryGetValue(player.Id, out var trade) &&
-            trade.OfferOf(player).Contains(item.InstanceId))
+            trade.Offers(player, item.InstanceId))
             return;
 
         // A stackable merges into the row that's already in the bank instead of taking a new one —
@@ -2689,14 +2689,24 @@ public class GameLoopService : BackgroundService
         var offer = session.OfferOf(player);
         offer.Clear();
 
-        foreach (var instanceId in cmd.InstanceIds.Distinct()
-                     .Take(GameConstants.TradeMaxOfferSlots))
+        var seen = new HashSet<Guid>();
+        foreach (var entry in cmd.Entries)
         {
-            var item = player.Inventory.FirstOrDefault(i => i.InstanceId == instanceId);
+            if (!seen.Add(entry.InstanceId)) continue;
+            if (offer.Count >= GameConstants.TradeMaxOfferSlots) break;
+
+            var item = player.Inventory.FirstOrDefault(i => i.InstanceId == entry.InstanceId);
             if (item is null || item.Equipped) continue;
-            if (ItemCatalog.Get(item.DefId) is ItemDef d && (!d.Tradable || ItemCatalog.IsQuestItem(d)))
+            var d = ItemCatalog.Get(item.DefId);
+            if (d is not null && (!d.Tradable || ItemCatalog.IsQuestItem(d)))
                 continue;   // untradeable / quest items can't be traded
-            offer.Add(instanceId);
+
+            // Clamp the count here rather than trusting the client: only a stackable can be split,
+            // and never past what is actually in the stack.
+            int qty = d is { IsStackable: true }
+                ? Math.Clamp(entry.Quantity, 1, item.Quantity)
+                : 1;
+            offer.Add(new TradeOfferEntry(entry.InstanceId, qty));
         }
 
         // Changing an offer resets both ready flags (no bait-and-switch).
@@ -3830,10 +3840,8 @@ public class GameLoopService : BackgroundService
             && session.A.Gold >= session.GoldA && session.B.Gold >= session.GoldB;
 
         bool valid = goldOk && itemsA is not null && itemsB is not null &&
-            session.A.Inventory.Count(i => !i.Equipped) - itemsA.Count + itemsB.Count
-                <= GameConstants.InventorySize &&
-            session.B.Inventory.Count(i => !i.Equipped) - itemsB.Count + itemsA.Count
-                <= GameConstants.InventorySize;
+            BagFitsAfterTrade(session.A, itemsA, itemsB) &&
+            BagFitsAfterTrade(session.B, itemsB, itemsA);
 
         if (!valid)
         {
@@ -3843,10 +3851,10 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        foreach (var item in itemsA!)
-            TransferItem(session.A, session.B, item);
-        foreach (var item in itemsB!)
-            TransferItem(session.B, session.A, item);
+        foreach (var (item, qty) in itemsA!)
+            TransferPart(session.A, session.B, item, qty);
+        foreach (var (item, qty) in itemsB!)
+            TransferPart(session.B, session.A, item, qty);
 
         // Gold changes hands (net, so a swap of equal offers is a no-op).
         if (session.GoldA != 0 || session.GoldB != 0)
@@ -3866,17 +3874,74 @@ public class GameLoopService : BackgroundService
         SaveEntity(session.B);
     }
 
-    private static List<InventoryItem>? ResolveOffer(Entity owner, List<Guid> offer)
+    /// <summary>Re-resolve an offer against the bag AT COMPLETION TIME. Null = the offer no longer
+    /// holds (item gone, item equipped since, or the stack shrank below what was promised) and the
+    /// whole trade must fail — never partially.</summary>
+    private static List<(InventoryItem Item, int Qty)>? ResolveOffer(Entity owner, List<TradeOfferEntry> offer)
     {
-        var items = new List<InventoryItem>();
-        foreach (var id in offer)
+        var items = new List<(InventoryItem, int)>();
+        foreach (var entry in offer)
         {
-            var item = owner.Inventory.FirstOrDefault(i => i.InstanceId == id);
-            if (item is null || item.Equipped)
+            var item = owner.Inventory.FirstOrDefault(i => i.InstanceId == entry.InstanceId);
+            if (item is null || item.Equipped || entry.Quantity <= 0 || entry.Quantity > item.Quantity)
                 return null;
-            items.Add(item);
+            items.Add((item, entry.Quantity));
         }
         return items;
+    }
+
+    /// <summary>Will this bag still fit after giving <paramref name="outgoing"/> and receiving
+    /// <paramref name="incoming"/>? A PARTIAL stack frees no slot (the remainder stays), and an
+    /// incoming stackable costs no slot if a stack of it survives here — which is exactly what
+    /// <see cref="TransferPart"/> then does, so the check and the move agree.</summary>
+    private static bool BagFitsAfterTrade(Entity owner,
+                                          List<(InventoryItem Item, int Qty)> outgoing,
+                                          List<(InventoryItem Item, int Qty)> incoming)
+    {
+        int slots = owner.Inventory.Count(i => !i.Equipped);
+        var stacksHere = new HashSet<string>(owner.Inventory
+            .Where(i => !i.Equipped && ItemCatalog.Get(i.DefId) is { IsStackable: true })
+            .Select(i => i.DefId));
+
+        foreach (var (item, qty) in outgoing)
+        {
+            if (qty < item.Quantity) continue;          // partial — the stack stays put
+            slots--;
+            if (!owner.Inventory.Any(i => !i.Equipped && i.DefId == item.DefId && !ReferenceEquals(i, item)))
+                stacksHere.Remove(item.DefId);
+        }
+
+        foreach (var (item, _) in incoming)
+        {
+            bool stackable = ItemCatalog.Get(item.DefId) is { IsStackable: true };
+            if (stackable && stacksHere.Contains(item.DefId)) continue;   // merges into what's here
+            slots++;
+            if (stackable) stacksHere.Add(item.DefId);
+        }
+
+        return slots <= GameConstants.InventorySize;
+    }
+
+    /// <summary>Move <paramref name="qty"/> of an item across. A full stack moves as the same
+    /// instance; a partial one is SPLIT — the source keeps the remainder and a fresh instance carries
+    /// the traded part (so the receiver never inherits the sender's persistence row).</summary>
+    private static void TransferPart(Entity from, Entity to, InventoryItem item, int qty)
+    {
+        if (qty >= item.Quantity)
+        {
+            TransferItem(from, to, item);
+            return;
+        }
+
+        item.Quantity -= qty;
+        TransferItem(from, to, new InventoryItem
+        {
+            DefId = item.DefId,
+            Enchant = item.Enchant,
+            Quantity = qty,
+            Attributes = new List<ItemAttribute>(item.Attributes),
+            ExpiresAtUtc = item.ExpiresAtUtc,
+        });
     }
 
     private void CancelTradeFor(Entity player, bool notifyPartnerOnly)
@@ -3922,10 +3987,12 @@ public class GameLoopService : BackgroundService
             session.GoldOf(partner));
     }
 
-    private static InventoryItemDto[] OfferDtos(Entity owner, List<Guid> offer) =>
-        offer.Select(id => owner.Inventory.FirstOrDefault(i => i.InstanceId == id))
-            .Where(i => i is not null)
-            .Select(i => i!.ToDto())
+    /// <summary>Draw the offer as items. The DTO's Quantity is the OFFERED count, not the stack's —
+    /// the window has to show what is on the table, or "50 potions" reads as a promise of all 50.</summary>
+    private static InventoryItemDto[] OfferDtos(Entity owner, List<TradeOfferEntry> offer) =>
+        offer.Select(e => (Entry: e, Item: owner.Inventory.FirstOrDefault(i => i.InstanceId == e.InstanceId)))
+            .Where(p => p.Item is not null)
+            .Select(p => p.Item!.ToDto() with { Quantity = Math.Min(p.Entry.Quantity, p.Item!.Quantity) })
             .ToArray();
 
     // ----- Chat -----------------------------------------------------------------------------
@@ -8233,8 +8300,7 @@ var effect = def.Effect;
     {
         from.Inventory.Remove(item);
 
-        if (ItemCatalog.Get(item.DefId) is ItemDef def &&
-            def.Slot is EquipSlot.Consumable or EquipSlot.Scroll or EquipSlot.Material)
+        if (ItemCatalog.Get(item.DefId) is { IsStackable: true })
         {
             var existing = to.Inventory.FirstOrDefault(i => i.DefId == item.DefId);
             if (existing is not null)

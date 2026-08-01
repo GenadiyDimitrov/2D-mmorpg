@@ -36,9 +36,10 @@ namespace Game.Client
         private TMP_InputField _tradeGoldField;
         private Button _tradeConfirmButton;
 
-        /// <summary>What I have put up, by item instance. The server owns the real list; this is only
-        /// what we send when it changes, and it is re-synced from every push.</summary>
-        private readonly List<Guid> _tradeOffer = new();
+        /// <summary>What I have put up: item instance → HOW MANY of it (a stack can go over in part).
+        /// The server owns the real list; this is only what we send when it changes, and it is
+        /// re-synced from every push.</summary>
+        private readonly Dictionary<Guid, int> _tradeOffer = new();
 
         private Guid? _tradeRequestFrom;
 
@@ -162,7 +163,7 @@ namespace Game.Client
             // Re-sync from the server rather than trusting what we sent — if it rejected an item
             // (untradable, already gone) the bag must stop showing it as offered.
             _tradeOffer.Clear();
-            foreach (var item in state.MyOffer) _tradeOffer.Add(item.InstanceId);
+            foreach (var item in state.MyOffer) _tradeOffer[item.InstanceId] = item.Quantity;
 
             _tradeStatus.text = (state.MyReady ? "you: READY" : "you: not ready") + "    " +
                                 (state.TheirReady ? "them: READY" : "them: not ready");
@@ -196,12 +197,15 @@ namespace Game.Client
             }
         }
 
-        private static string TradeItemLabel(InventoryItemDto item)
+        /// <summary><paramref name="showQty"/> overrides the stack size — a bag row for a partly-offered
+        /// stack has to read as what is still HERE, not as the whole stack.</summary>
+        private static string TradeItemLabel(InventoryItemDto item, int showQty = -1)
         {
             var def = ItemCatalog.Get(item.DefId);
             string name = def?.Name ?? item.DefId;
+            int qty = showQty >= 0 ? showQty : item.Quantity;
             if (item.Enchant > 0) name += " +" + item.Enchant;
-            if (item.Quantity > 1) name += "  x" + item.Quantity;
+            if (qty > 1) name += "  x" + qty;
             // Quality colour matters MOST here: a trade is the one place you commit to an item you
             // cannot inspect, and the same piece exists at six qualities under one name.
             return def != null ? Coloured(name, def.Rarity) : name;
@@ -218,22 +222,56 @@ namespace Game.Client
                 // produce a tap that silently does nothing.
                 if (item.Equipped) continue;
 
-                bool offered = _tradeOffer.Contains(item.InstanceId);
+                int offered = _tradeOffer.TryGetValue(item.InstanceId, out var o) ? o : 0;
                 var id = item.InstanceId;
-                var button = UiKit.TextButton(_tradeBag,
-                    (offered ? "- " : "+ ") + TradeItemLabel(item), () => ToggleTradeItem(id), 14f);
+                var it = item;
+                // A partly-offered stack keeps its row and shows the REMAINDER, so the 30 potions you
+                // kept back don't look like they left your bag; a fully-offered one shows "-" to undo.
+                string label = offered >= item.Quantity
+                    ? "- " + TradeItemLabel(item)
+                    : "+ " + TradeItemLabel(item, item.Quantity - offered);
+                var button = UiKit.TextButton(_tradeBag, label, () => TapTradeItem(it), 14f);
                 button.gameObject.AddComponent<LayoutElement>().preferredHeight = 32f;
             }
         }
 
-        /// <summary>Add or remove one item and send the WHOLE offer. The server's command takes the
+        /// <summary>Tap a bag row. A single item toggles; a stack opens the numpad so you can put part
+        /// of it on the table. Either way the WHOLE offer is sent — the server's command takes the
         /// complete set, which makes the message idempotent: a lost or duplicated tap cannot leave the
         /// two sides disagreeing about what is on the table.</summary>
-        private void ToggleTradeItem(Guid instanceId)
+        private void TapTradeItem(InventoryItemDto item)
         {
-            if (!_tradeOffer.Remove(instanceId)) _tradeOffer.Add(instanceId);
-            var ids = _tradeOffer.ToArray();
-            Boot.Trade(n => n.TradeOfferAsync(ids), "offer");
+            var def = ItemCatalog.Get(item.DefId);
+            int offered = _tradeOffer.TryGetValue(item.InstanceId, out var o) ? o : 0;
+
+            if (offered >= item.Quantity)                    // fully offered → take it all back
+            {
+                _tradeOffer.Remove(item.InstanceId);
+                SendTradeOffer();
+                return;
+            }
+
+            if (item.Quantity <= 1 || def == null || !def.IsStackable)
+            {
+                _tradeOffer[item.InstanceId] = 1;
+                SendTradeOffer();
+                return;
+            }
+
+            int spare = item.Quantity - offered;
+            OpenNumpad("Offer " + def.Name, spare, "Offer", qty =>
+            {
+                _tradeOffer[item.InstanceId] = offered + qty;
+                CloseNumpad();
+                SendTradeOffer();
+            },
+            qty => qty + " of " + item.Quantity + ", keeping " + (item.Quantity - offered - qty));
+        }
+
+        private void SendTradeOffer()
+        {
+            var entries = _tradeOffer.Select(kv => new TradeOfferEntry(kv.Key, kv.Value)).ToArray();
+            Boot.Trade(n => n.TradeOfferAsync(entries), "offer");
             FillTradeBag();   // immediate feedback; the server's push is what settles it
         }
     }

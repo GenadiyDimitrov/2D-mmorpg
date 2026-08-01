@@ -57,7 +57,6 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
 **UI / conveniences**
 - **Chat tabs** on the phone (colours + tags shipped in WPF only; the oldest open item in the file).
 - **Target visual on the mob itself**, not just in the target window.
-- **Partial-stack trading** — `TradeOffer` carries per-item counts and splits on completion.
 - **Wearable titles** — the leaderboard title over the head / by the name.
 - **Every non-admin command as an ACTION** in the Skills window's Actions tab. Block/like/unblock landed
   there; friend/party/sit/attack/assist still have nowhere to live.

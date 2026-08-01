@@ -329,8 +329,8 @@ public class NetworkChannel : IAsyncDisposable
     public Task TradeRespondAsync(bool accept) =>
         _connection!.SendAsync("TradeRespond", accept);
 
-    public Task TradeOfferAsync(Guid[] instanceIds) =>
-        _connection!.SendAsync("TradeOffer", instanceIds);
+    public Task TradeOfferAsync(TradeOfferEntry[] entries) =>
+        _connection!.SendAsync("TradeOffer", entries);
 
     public Task TradeGoldAsync(long gold) =>
         _connection!.SendAsync("TradeGold", gold);

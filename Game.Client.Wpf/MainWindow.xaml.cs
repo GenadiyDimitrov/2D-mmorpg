@@ -75,7 +75,9 @@ public partial class MainWindow : Window
 
     // Phase 4 state (see MainWindow.Phase4.cs)
     private readonly List<InventoryItemDto> _inventory = new();
-    private readonly HashSet<Guid> _myTradeOffer = new();
+    /// <summary>What I have on the trade table: instance → how many of it (a stack can go over in
+    /// part). Mirrored from the server's push, never authored locally for longer than one round-trip.</summary>
+    private readonly Dictionary<Guid, int> _myTradeOffer = new();
     private bool _tradeActive;
     private Guid? _pendingTradeFrom;
 

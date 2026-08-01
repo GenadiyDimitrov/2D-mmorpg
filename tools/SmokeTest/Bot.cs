@@ -48,7 +48,7 @@ static class Bot
     // The bot's own inventory (from the server's Inventory push) so it can OFFER items in a trade by
     // name — the whole point of a second player is exchanging things with the first.
     static InventoryItemDto[] _inv = Array.Empty<InventoryItemDto>();
-    static readonly List<Guid> _tradeOffer = new();
+    static readonly List<TradeOfferEntry> _tradeOffer = new();
 
     sealed class Known
     {
@@ -499,8 +499,9 @@ static class Bot
                             break;
                         case "offer":
                         {
-                            // Add up to [qty] unequipped units of the named item to the offer, then send
-                            // the WHOLE set (the command is idempotent — the server takes the full list).
+                            // Add up to [qty] UNITS of the named item to the offer (a stack can now go
+                            // over in part), then send the WHOLE set — the command is idempotent, the
+                            // server takes the full list.
                             string want = parts.ElementAtOrDefault(2) ?? "";
                             int qty = int.TryParse(parts.ElementAtOrDefault(3), out var tq) ? tq : 1;
                             int added = 0;
@@ -510,7 +511,10 @@ static class Bot
                                 if (it.Equipped) continue;
                                 bool match = it.DefId.Equals(want, StringComparison.OrdinalIgnoreCase)
                                     || (ItemCatalog.Get(it.DefId)?.Name ?? "").Equals(want, StringComparison.OrdinalIgnoreCase);
-                                if (match && !_tradeOffer.Contains(it.InstanceId)) { _tradeOffer.Add(it.InstanceId); added++; }
+                                if (!match || _tradeOffer.Any(o => o.InstanceId == it.InstanceId)) continue;
+                                int take = Math.Min(it.Quantity, qty - added);
+                                _tradeOffer.Add(new TradeOfferEntry(it.InstanceId, take));
+                                added += take;
                             }
                             if (added == 0) Log($"no unoffered '{want}' in my bag (try 'bag')");
                             await _hub.SendAsync("TradeOffer", _tradeOffer.ToArray());

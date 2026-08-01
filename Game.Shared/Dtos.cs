@@ -140,6 +140,11 @@ public record WarehouseUpdate(InventoryItemDto[] Items);
 /// <summary>Server -> client: someone wants to trade with you.</summary>
 public record TradeRequestNotice(Guid FromId, string FromName);
 
+/// <summary>Client -> server: ONE line of a trade offer — an item instance and HOW MANY of it.
+/// Quantity is meaningful only for stackables (the server clamps it to 1..stack, and to 1 for gear),
+/// which is what lets you put 20 of your 50 potions on the table instead of the whole stack.</summary>
+public record TradeOfferEntry(Guid InstanceId, int Quantity);
+
 /// <summary>Server -> both traders: full trade state (sent on every change).
 /// Active=false closes the trade window.</summary>
 public record TradeStateUpdate(

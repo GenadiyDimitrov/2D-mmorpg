@@ -374,7 +374,7 @@ namespace Game.Client
         // ----- trade (server-side already; this is the client half) -------------------------------
         public Task TradeRequestAsync(Guid targetId) => _connection.SendAsync("TradeRequest", targetId);
         public Task TradeRespondAsync(bool accept) => _connection.SendAsync("TradeRespond", accept);
-        public Task TradeOfferAsync(Guid[] instanceIds) => _connection.SendAsync("TradeOffer", instanceIds);
+        public Task TradeOfferAsync(TradeOfferEntry[] entries) => _connection.SendAsync("TradeOffer", entries);
         public Task TradeGoldAsync(long gold) => _connection.SendAsync("TradeGold", gold);
         public Task TradeReadyAsync() => _connection.SendAsync("TradeReady");
         public Task TradeCancelAsync() => _connection.SendAsync("TradeCancel");

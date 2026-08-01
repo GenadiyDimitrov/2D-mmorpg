@@ -8,8 +8,10 @@ public class TradeSession
 {
     public required Entity A { get; init; }
     public required Entity B { get; init; }
-    public List<Guid> OfferA { get; } = new();
-    public List<Guid> OfferB { get; } = new();
+    /// <summary>What each side has on the table: item instance + HOW MANY of it (a stack can be
+    /// offered in part). The server owns these lists; the clients only propose replacements.</summary>
+    public List<TradeOfferEntry> OfferA { get; } = new();
+    public List<TradeOfferEntry> OfferB { get; } = new();
     public bool ReadyA { get; set; }
     public bool ReadyB { get; set; }
 
@@ -18,7 +20,16 @@ public class TradeSession
     public long GoldB { get; set; }
 
     public Entity PartnerOf(Entity e) => e == A ? B : A;
-    public List<Guid> OfferOf(Entity e) => e == A ? OfferA : OfferB;
+    public List<TradeOfferEntry> OfferOf(Entity e) => e == A ? OfferA : OfferB;
+
+    /// <summary>Is this instance on the table for that side? Guards the ways an item could otherwise
+    /// leave a bag mid-trade (sell, deposit, destroy) while still showing in the partner's window.</summary>
+    public bool Offers(Entity e, Guid instanceId)
+    {
+        foreach (var entry in OfferOf(e))
+            if (entry.InstanceId == instanceId) return true;
+        return false;
+    }
     public bool ReadyOf(Entity e) => e == A ? ReadyA : ReadyB;
     public void SetReady(Entity e, bool value) { if (e == A) ReadyA = value; else ReadyB = value; }
     public long GoldOf(Entity e) => e == A ? GoldA : GoldB;
@@ -393,7 +404,7 @@ public record AdminRemoveItemCmd(string ConnectionId, string TargetName, Guid In
 
 public record TradeRequestCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 public record TradeRespondCmd(string ConnectionId, bool Accept) : IGameCommand;
-public record TradeOfferCmd(string ConnectionId, Guid[] InstanceIds) : IGameCommand;
+public record TradeOfferCmd(string ConnectionId, TradeOfferEntry[] Entries) : IGameCommand;
 public record TradeReadyCmd(string ConnectionId) : IGameCommand;
 /// <summary>Client -> server: set how much GOLD you're putting into the current trade.</summary>
 public record TradeGoldCmd(string ConnectionId, long Gold) : IGameCommand;

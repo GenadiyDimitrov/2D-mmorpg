@@ -7,10 +7,37 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.42.5**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.42.6**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 2026-08-01 — Twenty of your fifty potions (0.42.6)
+
+**A trade offer carries counts now.** Until this version an item went on the trade table whole: you
+could hand over a stack of fifty healing potions or none of them, and the only way to give a friend
+twenty was to sell forty to a vendor first and buy them back afterwards. `TradeOffer` now sends
+`TradeOfferEntry(InstanceId, Quantity)` instead of a bare instance id, and the stack **splits at
+completion** — the sender keeps the remainder, the receiver gets a fresh instance that merges into
+whatever stack they already had.
+
+Three details are the whole of the correctness here:
+
+- **The count is clamped on the server**, not trusted from the client: to `1..stack` for a stackable
+  and to exactly `1` for anything else. A client asking to trade 500 of its 50 potions is not an
+  exploit, it is a rounding error.
+- **The offer is re-resolved at completion, and a shortfall fails the WHOLE trade** rather than
+  delivering what is left. If you promised twenty and drank six while the window was open, the other
+  side agreed to twenty; handing them fourteen is a different bargain they never accepted.
+- **The bag-space check learned what a partial stack does.** Giving away part of a stack frees no
+  slot (the remainder stays), and an incoming stackable costs no slot if a stack of it survives on
+  the receiving side. The old check counted rows and would have refused legal trades and allowed
+  illegal ones once splits existed.
+
+Both clients ask how many: the phone reuses the vendor **numpad** ("Offer", showing what you keep),
+and the WPF harness gets a small modal quantity box, since it had no number entry of its own. A
+partly-offered stack **stays in your bag list showing the remainder** — the alternative, a row that
+disappears the moment you offer one of it, reads as though the other forty-nine went with it.
 
 ## 2026-08-01 — A door to the crypt, and a ceiling on the bar (0.42.5)
 
