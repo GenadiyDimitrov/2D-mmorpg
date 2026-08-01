@@ -679,6 +679,61 @@ work). No `game.db` reset. Menu → Quests.
         targeted: no stray circles floating anywhere. Tap ten mobs in a row: exactly ONE pair on
         screen, always on the current one.
 
+--- 42. 🔴 TITLES, CHAT TABS AND THE LAST ACTIONS (0.44.0, built 2026-08-01, unplayed). ---
+**Needs a new APK** (protocol **10**; a 0.42/0.43 APK still connects, it just sees none of this) and
+🔴 **`game.db` MUST be deleted** — `CharacterRecord` gained a `TitleCategory` column and `EnsureCreated`
+does not add columns to an existing file. Delete `Game.Server/game.db` + `-shm`/`-wal`.
+
+⚠ **Test titles on a NON-ADMIN character.** Admin characters are excluded from every leaderboard (that
+was a deliberate call), so `admin/admin` can never hold a title. Any `test1..9` character tops the
+*Level* board the moment it exists, which is enough to see the whole feature.
+
+**Wearable titles**
+42a.[ ] **You are told when you win one.** Log in a plain character; within a few minutes (the server
+        re-reads the boards every 5 min, and once at startup) a green line arrives: *"You now top the
+        Level board — the title «the Ascended» is yours to wear (Rank window)."*
+42b.[ ] **The picker.** Menu → Rank → **Titles** (the 7th tab). It lists **No title** plus one row per
+        board you top, each with a **Wear** button; the one you are wearing reads **Worn** and its text
+        is green. A character holding nothing sees the "reach #1 on any board" note instead.
+42c.[ ] **It appears over your head.** Wear one: a small **gold line above your name** on your own
+        nameplate, reading `the Ascended` (no quotes). Take it off with **No title** and the line goes.
+42d.[ ] **Other players see it too.** With two characters online (second phone, or offline-farm one and
+        log the other in), the title must show over the OTHER character's head as well — it rides the
+        entity snapshot, not a private push.
+42e.[ ] **It survives a relog.** Wear a title, exit to character select, come back: still worn, still
+        drawn. (The *choice* is what persists — the title itself is re-checked against the board.)
+42f.[ ] **A title is HELD, not owned.** Give a second character more gold than the first (`/gold`), wait
+        for the refresh: the Wealth title moves. The loser gets *"«the Wealthy» is no longer yours"* and
+        their plate line disappears — without them having to re-pick anything. Win it back and it comes
+        straight back on (the choice was remembered).
+42g.[ ] **The cast bar still clears it.** Cast something while wearing a title: your cast bar sits
+        ABOVE the title line, not through it.
+
+**Chat tabs** (the oldest open item in the roadmap — colours + tabs + tags, §9/§28)
+42h.[ ] **The button is "Chat" now**, and the window is titled Chat. Five tabs: **All / Local / World /
+        PM / System**. The old console is the *System* tab — everything that used to be in the Log is
+        still there, nothing was hidden.
+42i.[ ] **Colours and tags.** Say something plain → white, *Local* tab. `!hello` → **gold**, tagged
+        `[W]`, *World* tab. `/w Name hi` → **violet**, tagged `[PM]`, *PM* tab. Server lines → green,
+        *System*. In **All** every one of them appears, with its tag, in the order it arrived.
+42j.[ ] **A tab only shows its own.** Switch to *World* and confirm nothing local/system is listed;
+        switch back to All and it is all still there (switching is a filter, not a wipe). **Clear**
+        empties everything.
+42k.[ ] **Reply.** Have someone whisper you, open Chat → **Reply**: the command box fills with
+        `/w <their name> ` and the keyboard opens with the caret at the end. Type and send.
+42l.[ ] **The log still behaves.** Spam combat for a minute with the window open — no lag spike, no
+        rows drawing over each other, newest line always at the bottom. (This is the append-only path
+        from 0.28.77; the tab filter must not have reintroduced the rebuild.)
+
+**Actions**
+42m.[ ] **Whisper is an action.** Skills → Actions → **Whisper**: with a player targeted, *Use* fills
+        the command box with `/w <name> ` (same as Reply). With no target it says so. Place it on the
+        bar and confirm the bar slot does the same thing.
+42n.[ ] **The list is complete.** The Actions tab now covers every non-admin command: attack ·
+        target-closest · sit/stand · walk/run · trade · party invite/leave/kick/leader · follow ·
+        assist · friend add/remove/list · like · block/unblock · whisper. Nothing a player can type is
+        missing from it except a whisper's own message text (which no button can supply).
+
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends
         (and combat decays) it works. Same for `/exit`. Pulling the plug mid-DoT must not run the
@@ -695,11 +750,13 @@ work). No `game.db` reset. Menu → Quests.
         ➡ **BUILT IN 0.42.6 — test it as §37 below.**
 
 **Additions**
-28. [ ] Chat **colours**, **tabs**, **tags** (§9).
+28. [ ] Chat **colours**, **tabs**, **tags** (§9). ➡ **BUILT IN 0.44.0 — test it as §42 below.**
 29. [ ] **Every non-admin command as an ACTION** — friend add/remove/list · party
         invite/kick/changeleader · sit/walk/run · attack/assist/nextTarget. Clarified 2026-07-24:
         these live in the Skills window's **Actions tab** and must be **placeable on the skill bar**,
         exactly like a skill. Not target-frame buttons (see item 6).
+        ➡ **CLOSED IN 0.44.0** — the list was already complete bar one; Whisper (the only command that
+        needs typed text) now has an action that fills the box in for you. Test as §42m/§42n.
 30. [ ] **Block system** — `/block <name>` (all chat forms ignored; sender sees "<me> person has blocked
         you"; permanent), `/unblock <name>`, `/blocklist`.
 31. [ ] **Charisma system** — `/like` (+1, 20/day, never negative); killing costs `karma × 0.01`; every

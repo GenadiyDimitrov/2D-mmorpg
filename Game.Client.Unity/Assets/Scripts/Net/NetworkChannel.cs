@@ -46,6 +46,9 @@ namespace Game.Client
         /// flag locally by flipping a bool on every tap, which is a guess: the server refuses the
         /// toggle in a safe zone, and nothing told the button. This push is the authority.</summary>
         public event Action<PvpState> PvpStateReceived;
+        /// <summary>Which leaderboard titles you currently HOLD, and which you are wearing. Pushed on
+        /// login, whenever the server re-reads the boards, and on every pick.</summary>
+        public event Action<TitlesDto> TitlesReceived;
         /// <summary>An ally (or a scroll) offers to bring you back. The player must ACCEPT — reviving
         /// automatically would drop you on top of whatever just killed you.</summary>
         public event Action<ResurrectOffer> ResurrectOfferReceived;
@@ -145,6 +148,7 @@ namespace Game.Client
             _connection.On<AutoTargetUpdate>("AutoTarget", t => AutoTargetReceived?.Invoke(t));
             _connection.On<TargetDetails>("TargetDetails", d => TargetDetailsReceived?.Invoke(d));
             _connection.On<PvpState>("PvpState", p => PvpStateReceived?.Invoke(p));
+            _connection.On<TitlesDto>("Titles", t => TitlesReceived?.Invoke(t));
             _connection.On<ResurrectOffer>("ResurrectOffer", o => ResurrectOfferReceived?.Invoke(o));
             _connection.On<PartyUpdate>("Party", p => PartyReceived?.Invoke(p));
             _connection.On<PartyInviteDto>("PartyInvite", i => PartyInviteReceived?.Invoke(i));
@@ -199,6 +203,10 @@ namespace Game.Client
         /// <summary>Read-only leaderboard fetch — answered straight from the DB, no world round-trip.</summary>
         public Task<LeaderboardDto> RequestLeaderboardAsync(string category) =>
             _connection.InvokeAsync<LeaderboardDto>("RequestLeaderboard", category);
+
+        /// <summary>Wear the title of a leaderboard category, or "" for none. The server re-checks that
+        /// you hold it and answers with a fresh Titles push either way.</summary>
+        public Task SetTitleAsync(string category) => _connection.SendAsync("SetTitle", category ?? "");
 
         /// <summary>Open a box/chest from the inventory. A random box grants its loot immediately; a
         /// SELECTION box replies with a "Selection" push for the player to choose from.</summary>

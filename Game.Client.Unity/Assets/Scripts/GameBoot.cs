@@ -745,6 +745,12 @@ namespace Game.Client
                 PkCount = p.PkCount;
                 PvpCount = p.PvpCount;
             });
+            _net.TitlesReceived += t => Main(() =>
+            {
+                HeldTitles = t?.Held ?? new string[0];
+                WornTitle = t?.Worn ?? "";
+                TitlesRevision++;
+            });
             _net.QuestLogReceived += q => Main(() => Quests = q);
             _net.QuestMarksReceived += m => Main(() => QuestMarks = m?.Marks ?? new QuestMark[0]);
             _net.DialogReceived += d => Main(() => Dialog = d);
@@ -830,7 +836,7 @@ namespace Game.Client
                     for (int i = 0; i < slots.Length && i < b.Slots.Length; i++) slots[i] = b.Slots[i];
                 SkillBar = slots;
             });
-            _net.ChatReceived += m => Main(() => ClientLog.Info(m.From + ": " + m.Text));
+            _net.ChatReceived += m => Main(() => AppendChat(m));
             _net.CombatReceived += OnCombat;
             _net.CastReceived += c => Main(() =>
             {
@@ -1420,6 +1426,13 @@ namespace Game.Client
                     case GameConstants.ActionFriendList:
                         FriendCommand("list", "");
                         break;
+                    // The one action that can't finish the job: a whisper needs a MESSAGE, and no button
+                    // can supply one. So it does the half a button CAN do — the name, which is the part
+                    // that is miserable to type on a phone — and hands you the caret.
+                    case GameConstants.ActionWhisperTarget:
+                        if (TargetPlayerName() is string wspName) ComposeWhisper(wspName);
+                        else ClientLog.Warn("Target a player to whisper.");
+                        break;
                     case GameConstants.ActionLike:
                         if (TargetPlayerName() is string likeName) Like(likeName);
                         else ClientLog.Warn("Target a player to like.");
@@ -1488,6 +1501,25 @@ namespace Game.Client
         public int Karma { get; private set; }
         public int PkCount { get; private set; }
         public int PvpCount { get; private set; }
+
+        // ----- Wearable titles -----------------------------------------------------------------
+        /// <summary>Leaderboard categories this character currently TOPS — the titles it may wear. The
+        /// server decides; the picker only ever offers what is in here.</summary>
+        public string[] HeldTitles { get; private set; } = Array.Empty<string>();
+
+        /// <summary>The category whose title is being worn, "" for none. Reported as "" by the server
+        /// when the choice is no longer held, so this and the plate always agree.</summary>
+        public string WornTitle { get; private set; } = "";
+
+        /// <summary>Bumped on every Titles push so the Rank window redraws only when something changed.</summary>
+        public int TitlesRevision { get; private set; }
+
+        public async void SetTitle(string category)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.SetTitleAsync(category ?? ""); }
+            catch (Exception ex) { ClientLog.Warn("Title: " + ex.Message); }
+        }
 
         public async void TogglePvp()
         {
@@ -1875,6 +1907,64 @@ namespace Game.Client
                 await _net.ChatAsync(raw, ChatChannel.Local);
             }
             catch (Exception ex) { ClientLog.Warn("Chat: " + ex.Message); }
+        }
+
+        /// <summary>
+        /// Route one incoming chat message to its tab, with its channel's colour.
+        ///
+        /// Every line goes to exactly ONE tab; "All" is a filter that accepts them all rather than a
+        /// second copy of each line. That is why the channel tag ("[W]", "[PM]") is baked into the text
+        /// here — in All the tabs cannot tell you where a line came from, and without the tag world
+        /// chat and local chat look identical.
+        ///
+        /// Colours are the WPF harness's, which the owner played for months: world gold, whisper
+        /// violet, local white, system green.
+        /// </summary>
+        private void AppendChat(ChatMessage m)
+        {
+            if (m == null) return;
+            switch (m.Channel)
+            {
+                case ChatChannel.World:
+                    ClientLog.Chat("[W] " + m.From + ": " + m.Text,
+                                   new Color(1f, 0.84f, 0.35f), ClientLog.Tab.World);
+                    break;
+                case ChatChannel.Whisper:
+                    // Both directions land here — the server echoes your own whisper back — so the line
+                    // says who spoke to whom rather than assuming it was sent TO you.
+                    RememberWhisper(string.Equals(m.From, CharacterName, StringComparison.OrdinalIgnoreCase)
+                                    ? (m.To ?? "") : m.From);
+                    ClientLog.Chat("[PM] " + m.From + " -> " + (m.To ?? "?") + ": " + m.Text,
+                                   new Color(0.85f, 0.6f, 1f), ClientLog.Tab.Whisper);
+                    break;
+                case ChatChannel.System:
+                    // Through Good() rather than Chat(): a server system line is also a diagnostic
+                    // ("you can't do that here", a refusal, a ban notice), and logcat should keep it.
+                    ClientLog.Good(m.From + ": " + m.Text);
+                    break;
+                default:
+                    ClientLog.Chat(m.From + ": " + m.Text,
+                                   new Color(0.92f, 0.94f, 0.96f), ClientLog.Tab.Local);
+                    break;
+            }
+        }
+
+        /// <summary>Put "/w &lt;name&gt; " in the command box and open the keyboard on it. Used by the
+        /// Whisper action and by the chat window's Reply button.</summary>
+        public void ComposeWhisper(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) { ClientLog.Warn("No one to whisper."); return; }
+            if (Ui != null) Ui.ComposeCommand("/w " + name.Trim() + " ");
+        }
+
+        /// <summary>The last person a whisper passed between you and — what the Whisper tab's "Reply"
+        /// fills in. One name, not a list: on a phone the case that matters is answering the message
+        /// you are looking at.</summary>
+        public string LastWhisperName { get; private set; } = "";
+
+        private void RememberWhisper(string name)
+        {
+            if (!string.IsNullOrWhiteSpace(name)) LastWhisperName = name;
         }
 
         // ----- Helpers -------------------------------------------------------------------------

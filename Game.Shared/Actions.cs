@@ -96,6 +96,13 @@ public static class ActionCatalog
             "Make the targeted party member the leader. Leader only, and it cannot be undone by you.",
             ActionNeeds.PlayerTarget),
 
+        // The one exception to "a value must be typed": a whisper needs a MESSAGE, so this action
+        // cannot send one. What it can do is everything up to the message — the half that is fiddly on
+        // a phone — by putting "/w <name> " in the command box with the caret after it.
+        new(GameConstants.ActionWhisperTarget, "Whisper", "✉",
+            "Start a whisper to the targeted player: the command box is filled in with their name and "
+            + "you type the message.", ActionNeeds.PlayerTarget),
+
         new(GameConstants.ActionLike, "Like", "👍",
             "Give the targeted player +1 charisma from your daily budget (20/day). Their reputation "
             + "grants an exp/sp bonus and ranks on the charisma board.", ActionNeeds.PlayerTarget),

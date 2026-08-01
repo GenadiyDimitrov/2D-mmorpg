@@ -389,6 +389,30 @@ public class PersistenceService
         return new LeaderboardDto(category, entries);
     }
 
+    /// <summary>
+    /// Who is rank 1 of each board right now — the holder of each wearable title.
+    ///
+    /// Deliberately implemented as one <see cref="GetLeaderboardAsync"/> call per category rather than
+    /// its own query: the board's rules (admins excluded, zero rows excluded, the tie-breaks) are not
+    /// obvious, and a second copy of them would drift until the title over a head disagreed with the
+    /// board the player is looking at. Six top-1 reads every few minutes is nothing.
+    ///
+    /// Keyed by character NAME because that is all a board row carries, and names are unique.
+    /// </summary>
+    public async Task<Dictionary<string, List<string>>> GetTitleHoldersAsync()
+    {
+        var byName = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var cat in Leaderboards.Categories)
+        {
+            var board = await GetLeaderboardAsync(cat, 1);
+            if (board.Entries.Count == 0) continue;
+            string name = board.Entries[0].Name;
+            if (!byName.TryGetValue(name, out var list)) byName[name] = list = new List<string>();
+            list.Add(cat);
+        }
+        return byName;
+    }
+
     /// <summary>Schedule (or immediately perform) a character deletion. Returns the
     /// UTC time it will be permanently removed, or null if it was deleted right away
     /// (low level / zero delay). Throws nothing; bad ids are a no-op returning null.</summary>
@@ -636,6 +660,9 @@ public class PersistenceService
         entity.CharismaLifetime = rec.CharismaLifetime;
         entity.LikesRemainingToday = rec.LikesRemainingToday;
         entity.LikeBudgetDay = rec.LikeBudgetDay;
+        // The CHOICE comes back; whether it is still HELD is decided by the loop's title refresh, which
+        // is what fills entity.Title. A choice for a board you have since lost simply draws nothing.
+        entity.TitleCategory = rec.TitleCategory ?? "";
 
         if (!string.IsNullOrEmpty(rec.ActiveQuestsJson))
         {
@@ -807,6 +834,7 @@ public class PersistenceService
         int Karma, int PkCount, int PvpCount, int ConsecutivePk, bool DiedWhileAway,
         DateTime? JailedUntilUtc, DateTime? ChatBannedUntilUtc, long TotalOnlineSeconds,
         int Charisma, long CharismaLifetime, int LikesRemainingToday, string LikeBudgetDay,
+        string TitleCategory,
         IReadOnlyList<ItemSnapshot> Items)
     {
         /// <summary>Capture a character. MUST be called on the tick thread. Returns
@@ -847,6 +875,7 @@ public class PersistenceService
                 e.Karma, e.PkCount, e.PvpCount, e.ConsecutivePk, e.DiedWhileAway,
                 e.JailedUntil, e.ChatBannedUntil, e.TotalOnlineSeconds,
                 e.Charisma, e.CharismaLifetime, e.LikesRemainingToday, e.LikeBudgetDay,
+                e.TitleCategory,
                 items);
         }
     }
@@ -967,6 +996,7 @@ public class PersistenceService
         rec.CharismaLifetime = snap.CharismaLifetime;
         rec.LikesRemainingToday = snap.LikesRemainingToday;
         rec.LikeBudgetDay = snap.LikeBudgetDay;
+        rec.TitleCategory = snap.TitleCategory;
         rec.AutoHuntJson = snap.AutoHuntJson;
         rec.EquipPresetsJson = snap.EquipPresetsJson;
         rec.BuffsJson = snap.BuffsJson;

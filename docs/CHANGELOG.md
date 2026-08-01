@@ -7,10 +7,55 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.43.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.44.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 2026-08-01 — Titles you can wear, chat that is sorted, and the last action (0.44.0)
+
+Three of the four remaining 🟡 OPEN items. The fourth, combat depth, is **deferred at the owner's
+request** and is not in this release.
+
+- **Wearable titles.** The leaderboards have handed out honorary titles since 0.28.54 — "the Wealthy",
+  "the Warlord" — and they existed only as a word beside a name inside the Rank window. A title is now
+  something you **wear**: pick one in Rank → **Titles**, and it draws as a small gold line above your
+  name in the world, for everyone near you.
+  - **A title is HELD, not earned-and-kept.** You hold it while you are rank 1 of its board, and the
+    server re-reads the boards every five minutes. The alternative — a persisted "titles I have ever
+    won" set — says the opposite of what the board says the moment someone out-earns you, and the
+    board is the entire point of the title. It also means no new writes to offline rows and no set to
+    keep in sync: the only thing persisted is your **choice** (the category id), which survives losing
+    and regaining the board, so a title you win back comes straight back on with nothing to re-pick.
+  - The boards are read by ONE method (`GetTitleHoldersAsync` calls `GetLeaderboardAsync(cat, 1)` per
+    category) rather than a second query of its own, so the rules that decide a board — admins
+    excluded, zero rows excluded, the tie-breaks — cannot drift away from the board the player is
+    looking at. It runs on a worker and hands the answer to the single writer as a command.
+  - ⚠ **Admin characters are excluded from every board**, so an admin can never hold a title. That is
+    the existing (deliberate) rule, not a new one — test on a plain character.
+  - Schema: `CharacterRecord.TitleCategory`. **Delete `game.db`.**
+- **Chat tabs, colours and tags on the phone** — the oldest open item in the roadmap, and the last
+  thing the deleted WPF harness still did better. Chat and diagnostics shared one undifferentiated
+  list, so a whisper was one grey line among a hundred warnings. The window is now **Chat**, with
+  **All / Local / World / PM / System**, world in gold tagged `[W]`, whispers in violet tagged `[PM]`,
+  system in green, local white. The old console is the System tab — nothing that was visible has been
+  hidden.
+  - The tabs are a **filter over one buffer**, not four buffers: a line is written once and each tab
+    decides whether to draw it. That keeps "All" free, keeps the interleaving between channels honest,
+    and keeps the monotonic `Seq` that lets the console append rows instead of rebuilding them (the
+    0.28.77 lag fix). Only a tab *switch* redraws — once per tap, never per message.
+  - **Reply** fills the command box with `/w <last whisperer> ` and opens the keyboard on it.
+- **The action list is complete.** Every non-admin command has lived in the Skills → Actions tab since
+  2026-07-24 except one: a whisper needs a MESSAGE, and no button can supply one. **Whisper** is now an
+  action that does the half a button can — it puts `/w <target's name> ` in the command box and hands
+  you the caret. The name is the part that is miserable to type on a phone.
+- Fixed while in there: the Rank window's tab row had six boards at 104px in a 560px window since
+  charisma was added, so the last tab hung off the edge. The window is 700 wide and the tabs are sized
+  to fit the row (seven of them now).
+
+Protocol **10** (`EntityDto.Title`, a `SetTitle` hub method, a `Titles` push). `MinAcceptedProtocol`
+stays **8**: both are additions an older client neither reads nor calls, so an installed 0.42/0.43 APK
+still plays — it simply sees no titles and no tabs.
 
 ## 2026-08-01 — Two things you could not see: the mob's cast, and your own target (0.43.1)
 

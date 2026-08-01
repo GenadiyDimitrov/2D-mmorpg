@@ -91,6 +91,11 @@ public class CharacterRecord
     public int LikesRemainingToday { get; set; } = GameConstants.DailyLikeBudget;
     public string LikeBudgetDay { get; set; } = "";
 
+    /// <summary>The leaderboard category whose title this character wears ("" = none). The CATEGORY id,
+    /// not the text — a title is only drawn while the character still holds that board.
+    /// (Schema change — delete game.db to recreate.)</summary>
+    public string TitleCategory { get; set; } = "";
+
     /// <summary>Active quests as JSON list of CharacterQuestState.</summary>
     public string ActiveQuestsJson { get; set; } = "";
 

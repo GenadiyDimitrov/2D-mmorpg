@@ -230,6 +230,8 @@ public class GameLoopService : BackgroundService
                 case LogoutCmd c: HandleLogout(c); break;
                 case StartOfflineFarmCmd c: HandleStartOfflineFarm(c); break;
                 case TogglePvpCmd c: HandleTogglePvp(c); break;
+                case SetTitleCmd c: HandleSetTitle(c); break;
+                case TitleHoldersCmd c: ApplyTitleHolders(c); break;
                 case ToggleCounterAttackCmd c: HandleToggleCounterAttack(c); break;
                 case RequestDebugConfigCmd c: HandleRequestDebugConfig(c); break;
                 case SetDebugConfigCmd c: HandleSetDebugConfig(c); break;
@@ -297,6 +299,7 @@ public class GameLoopService : BackgroundService
         SendAutoHuntConfig(entity);   // restore the saved auto-hunt settings in the client UI
         SendAutoHuntStatus(entity);
         SendPvpState(entity);
+        RefreshTitle(entity);         // resolves the saved title choice against the boards, and pushes it
         SendProgress(entity);         // see SendProgress: without this the EXP bar starts EMPTY
         if (_world.Parties.TryGetValue(entity.Id, out var rejoinParty))
             SendPartyUpdate(rejoinParty);   // clear the offline icon for the rest of the party
@@ -547,6 +550,110 @@ public class GameLoopService : BackgroundService
 
     private void SendPvpState(Entity p) =>
         SendTo(p, "PvpState", new PvpState(p.PvpEnabled, p.CounterAttack, p.Karma, p.PkCount, p.PvpCount));
+
+    // =========================================================================
+    // Wearable titles
+    // =========================================================================
+    //
+    // A title is HELD while you are rank 1 of its board, not EARNED once and kept. The alternative was
+    // a persisted "titles I have ever won" set, and it says the wrong thing: "the Wealthy" worn by a
+    // player who was out-earned a month ago contradicts the board it came from, and the board is the
+    // entire point of the title. Holding it also needs no new schema and no writes to offline rows —
+    // only the CHOICE is persisted (Entity.TitleCategory), and it survives losing and regaining the
+    // board, so a lost title comes back on its own.
+
+    /// <summary>Character NAME -> the categories they currently top. Written ONLY by the single writer
+    /// (via <see cref="TitleHoldersCmd"/>); the DB read that fills it happens on a worker.</summary>
+    private Dictionary<string, List<string>> _titleHolders = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>How often the boards are re-read. Five minutes: the boards themselves are only as fresh
+    /// as the last autosave (≤60s), nothing about a title is urgent, and re-reading them per minute
+    /// would make a two-way tie flicker over two players' heads.</summary>
+    private const int TitleRefreshTicks = GameConstants.TickRate * 300;
+
+    /// <summary>Fire the first read on the very first tick (so titles are right the moment anyone logs
+    /// in), then every <see cref="TitleRefreshTicks"/>.</summary>
+    private void TickTitles()
+    {
+        if (_tick % TitleRefreshTicks == 1) RefreshTitleHolders();
+    }
+
+    private void RefreshTitleHolders() => _ = Task.Run(async () =>
+    {
+        try { _world.Commands.Enqueue(new TitleHoldersCmd(await _db.GetTitleHoldersAsync())); }
+        catch (Exception ex) { _log.LogError(ex, "Title holder refresh failed"); }
+    });
+
+    private void ApplyTitleHolders(TitleHoldersCmd cmd)
+    {
+        var before = _titleHolders;
+        _titleHolders = cmd.Holders;
+
+        foreach (var p in _world.Entities.Values)
+        {
+            if (p.Kind != EntityKind.Player) continue;
+
+            // A title you just won is worth SAYING — it is the whole reward, and nothing else on screen
+            // would tell you. (On the first read after a restart `before` is empty, so whoever is online
+            // is told once; that is the same message they would have got had they won it while online.)
+            before.TryGetValue(p.Name, out var had);
+            if (_titleHolders.TryGetValue(p.Name, out var has))
+                foreach (var cat in has)
+                    if (had is null || !had.Contains(cat))
+                        SendSystemToEntity(p,
+                            $"You now top the {Leaderboards.Label(cat)} board — the title "
+                            + $"\"{Leaderboards.TopTitle(cat)}\" is yours to wear (Rank window).");
+
+            RefreshTitle(p);
+        }
+    }
+
+    /// <summary>Recompute what this player's plate should read and tell their client. Called on every
+    /// board refresh, on login, and when they pick a different one.</summary>
+    private void RefreshTitle(Entity p, bool notifyLoss = true)
+    {
+        string was = p.Title;
+        p.Title = HoldsTitle(p, p.TitleCategory) ? Leaderboards.TopTitle(p.TitleCategory) : "";
+
+        // The CHOICE is deliberately left alone when the board is lost — regain it and the title comes
+        // straight back on, with nothing to re-pick.
+        if (notifyLoss && was.Length > 0 && p.Title.Length == 0)
+            SendSystemToEntity(p, $"\"{was}\" is no longer yours — someone else tops that board.");
+
+        SendTitles(p);
+    }
+
+    private bool HoldsTitle(Entity p, string category) =>
+        category.Length > 0 &&
+        _titleHolders.TryGetValue(p.Name, out var cats) && cats.Contains(category);
+
+    /// <summary>Worn is reported as "" when the chosen title is not currently held, so the picker shows
+    /// the truth (nothing worn) even though the choice itself is still remembered.</summary>
+    private void SendTitles(Entity p) =>
+        SendTo(p, "Titles", new TitlesDto(
+            _titleHolders.TryGetValue(p.Name, out var cats) ? cats.ToArray() : Array.Empty<string>(),
+            p.Title.Length > 0 ? p.TitleCategory : ""));
+
+    private void HandleSetTitle(SetTitleCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var p)) return;
+
+        string cat = cmd.Category ?? "";
+        if (cat.Length > 0 && !Leaderboards.IsCategory(cat)) return;
+
+        if (cat.Length > 0 && !HoldsTitle(p, cat))
+        {
+            SendSystemToEntity(p, "You don't hold that title.");
+            SendTitles(p);   // put the client's picker back in step with the truth
+            return;
+        }
+
+        p.TitleCategory = cat;
+        RefreshTitle(p, notifyLoss: false);   // taking it OFF is not losing it
+        SendSystemToEntity(p, cat.Length == 0
+            ? "Title removed."
+            : $"You are wearing \"{Leaderboards.TopTitle(cat)}\".");
+    }
 
     /// <summary>
     /// Push level / exp / exp-to-next.
@@ -5253,6 +5360,8 @@ public class GameLoopService : BackgroundService
 
         if (_tick % GameConstants.AutoSaveIntervalTicks == 0)
             AutoSaveAll();
+
+        TickTitles();
 
         UpdateZones();
 

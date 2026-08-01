@@ -326,6 +326,17 @@ public class Entity
     /// <summary>UTC date (yyyy-MM-dd) the like budget was last granted; a new day refills it to the budget.</summary>
     public string LikeBudgetDay { get; set; } = "";
 
+    // ----- Wearable leaderboard title -----
+    /// <summary>The leaderboard CATEGORY whose title this player chose to wear ("" = none). Persisted.
+    /// The category id is stored rather than the text so re-wording a title re-words everyone's, and so
+    /// a title that is no longer HELD can be recognised and simply not drawn.</summary>
+    public string TitleCategory { get; set; } = "";
+
+    /// <summary>The title's display text, or "" when nothing is worn OR the worn one is no longer held.
+    /// Recomputed on the tick thread whenever the title holders are re-read; the snapshot only ever
+    /// copies it, so no DB or catalog work happens on the broadcast path.</summary>
+    public string Title { get; set; } = "";
+
     /// <summary>NPC id this entity represents (NPCs only).</summary>
     public string? NpcId { get; set; }
     public NpcRole NpcRole { get; set; }
@@ -1919,7 +1930,7 @@ public class Entity
     public EntityDto ToDto() =>
         new(Id, Name, Kind, Race, BaseClass, X, Y, Speed, Level,
             Hp, MaxHp, Mp, MaxMp, SecondClass, ThirdClass, Dead, IsDisconnected, FlagState,
-            Kind == EntityKind.Mob && Aggressive);
+            Kind == EntityKind.Mob && Aggressive, Title);
 
     /// <summary>The tick-to-tick DYNAMIC fields only (see EntityLean) — position, vitals, dead/dc/flag.
     /// Sent while an entity is already in view; the static fields ride the full spawn DTO.</summary>
@@ -1937,5 +1948,8 @@ public class Entity
     public static bool StaticFieldsEqual(EntityDto a, EntityDto b) =>
         a.Name == b.Name && a.Kind == b.Kind && a.Race == b.Race && a.BaseClass == b.BaseClass &&
         a.Level == b.Level && a.MaxHp == b.MaxHp && a.MaxMp == b.MaxMp &&
-        a.SecondClass == b.SecondClass && a.ThirdClass == b.ThirdClass && a.Aggressive == b.Aggressive;
+        a.SecondClass == b.SecondClass && a.ThirdClass == b.ThirdClass && a.Aggressive == b.Aggressive &&
+        // Title is static too: changing it (or losing the board) must force a full DTO, or the new
+        // title would only reach the people who walked into view after it changed.
+        a.Title == b.Title;
 }

@@ -1,6 +1,6 @@
 # Roadmap — compact view (what's left, what depends on what)
 
-A one-screen digest of [Roadmap.md](Roadmap.md). Updated **2026-08-01 (0.42.3, after playtest-16)**.
+A one-screen digest of [Roadmap.md](Roadmap.md). Updated **2026-08-01 (0.44.0)**.
 Full history: [CHANGELOG.md](CHANGELOG.md). The checklists: [testing/TestChecklist.Unity.md](testing/TestChecklist.Unity.md)
 (the phone) and [testing/TestChecklist.md](testing/TestChecklist.md) (server-side; its client steps
 predate the WPF harness being dropped in 0.42.8 — read them as "on the phone").
@@ -30,11 +30,13 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
 
 ## 🔴 NOW — the next three things
 
-1. **Publish 0.42.3 and play checklist §36.** `pwsh tools/publish.ps1` → `builds/Game.Server-0.42.3.zip`
-   + `builds/L2Clone-0.42.3.apk`. ⚠ `dotnet build` **before** the Unity build or the APK ships a stale
-   version stamp. **No `game.db` reset needed** (no schema change since 0.42.0 — that one did need it).
-   §36 is: the buff popup · nothing out-heals you · the 20s idle window · the ledger surviving a
-   disengage · **the boss phase script must not replay** · safe-zone kiting · the two tuning rows.
+1. **Publish 0.44.0 and play §36 + §40-42 in one pass.** `pwsh tools/publish.ps1` →
+   `builds/Game.Server-0.44.0.zip` + `builds/L2Clone-0.44.0.apk`. ⚠ `dotnet build` **before** the Unity
+   build or the APK ships a stale version stamp, and 🔴 **delete `Game.Server/game.db`** (+ `-shm`/`-wal`)
+   — 0.44.0 added a column. §36 is the 0.42.3 mob-regen batch (the buff popup · nothing out-heals you ·
+   the 20s idle window · the ledger surviving a disengage · **the boss phase script must not replay** ·
+   safe-zone kiting · the two tuning rows); §40 the quest window, §41 the cast bar + target circles,
+   §42 titles + chat tabs. All four are unplayed and all four are in this one APK.
    ⚠ (Was: "the Unity scripts are never compile-verified until the APK build." No longer true —
    `cd Game.Client.Unity && dotnet build Assembly-CSharp.csproj` type-checks them in ~18s. Do that
    before every APK.)
@@ -66,20 +68,29 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
   hanging over the corpse.
 
 **UI / conveniences**
-- **Chat tabs** on the phone (colours + tags only ever shipped in the WPF harness, deleted in 0.42.8 —
-  the reference implementation is `MainWindow.xaml.cs` at commit `f33ed0e`; oldest open item in the file).
+- ~~Chat tabs~~ — **built 0.44.0**, and with them the colours and tags: the phone's Log window is now a
+  Chat window with **All / Local / World / PM / System**, world gold `[W]`, whispers violet `[PM]`,
+  system green, local white, plus a **Reply** that fills in `/w <name> `. The tabs are a FILTER over
+  the one log buffer, so "All" costs nothing and the append-only draw (the 0.28.77 lag fix) survives.
+  This was the oldest open item in the file.
 - ~~Target visual on the mob itself~~ — **built 0.43.1.** Two blue circles flanking the target's name,
   as real UI elements created on target and destroyed when it clears, drawn from a runtime-generated
   circle sprite and placed from the name's rendered width. The owner rejected both earlier shapes: a
   ground ring, then a text bullet ("no one wants font circles").
-- **Wearable titles** — the leaderboard title over the head / by the name.
-- **Every non-admin command as an ACTION** in the Skills window's Actions tab. Block/like/unblock landed
-  there; friend/party/sit/attack/assist still have nowhere to live.
+- ~~Wearable titles~~ — **built 0.44.0.** Rank → **Titles** picks one, and it draws as a gold line above
+  your name in the world. A title is **held while you are rank 1**, not earned and kept: the server
+  re-reads the boards every 5 minutes, only your CHOICE is persisted (`TitleCategory`), and a title you
+  win back returns on its own. Admin characters are excluded from the boards, so they hold none.
+  ⚠ Schema change — **delete `game.db`**. Checklist §42.
+- ~~Every non-admin command as an ACTION~~ — **closed 0.44.0.** The list was already complete except
+  for the one command that needs typed text: **Whisper** is now an action that fills the command box
+  with `/w <target> ` and hands you the caret. (The roadmap's "friend/party/sit/attack/assist have
+  nowhere to live" was stale — they have been in the Actions tab since 2026-07-24.)
 
-**Combat depth** — perfect/excellent block, position bonuses (hook reserved), PvP/PvE damage
-multipliers (still 1.0). ⚠ Magic-resist as a stat and per-hit damage consumables are **dropped, not
-pending** (offence comes from the held War/Spell Rune) — see the
-bottom of [Roadmap.md](Roadmap.md).
+**Combat depth** — ⏸ **DEFERRED at the owner's request (2026-08-01)**, not dropped: perfect/excellent
+block, position bonuses (hook reserved), PvP/PvE damage multipliers (still 1.0). ⚠ Magic-resist as a
+stat and per-hit damage consumables are **dropped, not pending** (offence comes from the held War/Spell
+Rune) — see the bottom of [Roadmap.md](Roadmap.md).
 
 **Presentation** — the owner's own words, still true: *"no sounds, a bit woody, no good visuals."* Not a
 scheduled work item, and now the loudest remaining gap.

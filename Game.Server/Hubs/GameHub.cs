@@ -476,6 +476,14 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>Wear the title of a leaderboard category, or "" to wear none. The server checks you
+    /// actually hold that board — the client only offers what it was told you hold.</summary>
+    public Task SetTitle(string category)
+    {
+        _world.Commands.Enqueue(new SetTitleCmd(Context.ConnectionId, category ?? ""));
+        return Task.CompletedTask;
+    }
+
     public Task ToggleCounterAttack(bool enabled)
     {
         _world.Commands.Enqueue(new ToggleCounterAttackCmd(Context.ConnectionId, enabled));

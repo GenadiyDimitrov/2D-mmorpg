@@ -15,6 +15,19 @@ namespace Game.Client
     /// </summary>
     public static class ClientLog
     {
+        /// <summary>
+        /// Which tab of the chat window a line belongs to.
+        ///
+        /// The tabs are a FILTER over one buffer, not four buffers: a line is written once and every
+        /// tab decides whether to draw it. That is what makes "All" free, and it keeps the ordering
+        /// between channels intact — two buffers merged for display would have to be re-sorted, and
+        /// the Seq that lets the console append instead of rebuild would stop being monotonic per tab.
+        ///
+        /// Everything that is not player chat (errors, warnings, combat notes, server system lines)
+        /// is <see cref="Tab.System"/> — the old, single-list console, now one tab of five.
+        /// </summary>
+        public enum Tab { System = 0, Local = 1, World = 2, Whisper = 3 }
+
         public struct Line
         {
             public string Text;
@@ -22,6 +35,7 @@ namespace Game.Client
             /// <summary>Monotonic id, never reused. Lets the console APPEND only the lines it hasn't
             /// drawn yet instead of rebuilding the whole buffer every time one arrives.</summary>
             public long Seq;
+            public Tab Where;
         }
 
         private static long _seq;
@@ -52,6 +66,7 @@ namespace Game.Client
             // come from us (they are tagged) to avoid duplicating every line.
             if (condition != null && condition.StartsWith("[hud] ")) return;
 
+            // Unity's own log — always System; nothing here is chat.
             Color c;
             switch (type)
             {
@@ -69,20 +84,29 @@ namespace Game.Client
         public static void Warn(string text) => AddTagged(text, new Color(1f, 0.85f, 0.4f));
         public static void Error(string text) => AddTagged(text, new Color(1f, 0.45f, 0.45f));
 
+        /// <summary>A line of PLAYER chat, tabbed by channel. Not routed through Debug.Log: chat is not
+        /// diagnostics, and mirroring every whisper into logcat is both noise and a small privacy leak
+        /// on a shared phone.</summary>
+        public static void Chat(string text, Color color, Tab tab) => Append(text, color, tab);
+
         /// <summary>Log to BOTH the on-screen console and Unity's log (so logcat / the Editor still
         /// have the full story), without the hook echoing it back as a second line.</summary>
         private static void AddTagged(string text, Color color)
         {
             Debug.Log("[hud] " + text);
-            Append(text, color);
+            Append(text, color, Tab.System);
         }
 
-        private static void Append(string text, Color color)
+        private static void Append(string text, Color color, Tab tab = Tab.System)
         {
             lock (_lines)
             {
                 if (_lines.Count >= Capacity) _lines.RemoveAt(0);
-                _lines.Add(new Line { Text = DateTime.Now.ToString("HH:mm:ss") + "  " + text, Color = color, Seq = _seq++ });
+                _lines.Add(new Line
+                {
+                    Text = DateTime.Now.ToString("HH:mm:ss") + "  " + text,
+                    Color = color, Seq = _seq++, Where = tab,
+                });
                 Revision++;
             }
         }

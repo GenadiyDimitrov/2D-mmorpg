@@ -18,20 +18,31 @@ namespace Game.Client
         private readonly List<(string Cat, Button Btn)> _rankTabs = new();
         private string _rankCategory = "level";
 
+        /// <summary>The pseudo-category for the TITLES tab. Not a leaderboard: it shows what you may
+        /// wear rather than who is winning, and it lives in this window because the titles come from
+        /// these boards and this is where you were looking when you read that you had won one.</summary>
+        private const string TitlesTab = "titles";
+
+        /// <summary>Last Titles push drawn, so the tab redraws when the server re-reads the boards.</summary>
+        private int _seenTitlesRevision = -1;
+
         private void BuildRankWindow()
         {
             _rankPanel = UiKit.PanelBox(_worldRoot, "Rank");
             UiKit.Place(_rankPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(560f, 640f));
+                        Vector2.zero, new Vector2(700f, 640f));
             var inner = _rankPanel.GetChild(0);
             float chrome = UiKit.WindowChrome(_rankPanel, "Leaderboards", () => CloseWindow(_rankPanel));
 
-            // Tab row.
-            float tw = 104f, gap = 6f, x0 = 10f;
-            for (int i = 0; i < Leaderboards.Categories.Length; i++)
+            // Tab row: the boards, then Titles. Sized to FIT the row — at the old 104 wide the sixth
+            // board (charisma, added later) already hung off the right edge of the window.
+            float tw = 92f, gap = 6f, x0 = 10f;
+            for (int i = 0; i <= Leaderboards.Categories.Length; i++)
             {
-                string cat = Leaderboards.Categories[i];
-                var btn = UiKit.TextButton(inner, Leaderboards.Label(cat), () => SelectRankTab(cat), 13f);
+                bool titles = i == Leaderboards.Categories.Length;
+                string cat = titles ? TitlesTab : Leaderboards.Categories[i];
+                var btn = UiKit.TextButton(inner, titles ? "Titles" : Leaderboards.Label(cat),
+                                           () => SelectRankTab(cat), 13f);
                 UiKit.Place(UiKit.Rect(btn.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                             new Vector2(x0 + i * (tw + gap), -chrome - 4f), new Vector2(tw, 36f));
                 _rankTabs.Add((cat, btn));
@@ -60,8 +71,61 @@ namespace Game.Client
                 btn.colors = cb;
             }
 
+            if (category == TitlesTab) { PopulateTitles(); return; }
+
             RankNote("Loading…");
             Boot.RequestLeaderboard(category, PopulateRank);
+        }
+
+        /// <summary>
+        /// The titles you may WEAR. One row per board you currently top, plus "No title".
+        ///
+        /// It only ever offers what the server said you hold: a title is held while you are rank 1, not
+        /// earned and kept, so this list shrinks when someone out-ranks you and the server refuses
+        /// anything stale anyway.
+        /// </summary>
+        private void PopulateTitles()
+        {
+            if (_rankList == null) return;
+            _seenTitlesRevision = Boot.TitlesRevision;
+
+            for (int i = _rankList.childCount - 1; i >= 0; i--)
+                Destroy(_rankList.GetChild(i).gameObject);
+
+            var held = Boot.HeldTitles ?? new string[0];
+            string worn = Boot.WornTitle ?? "";
+
+            TitleRow("No title", worn.Length == 0, () => Boot.SetTitle(""));
+
+            foreach (var cat in held)
+                TitleRow("«" + Leaderboards.TopTitle(cat) + "»   — top of " + Leaderboards.Label(cat),
+                         cat == worn, () => Boot.SetTitle(cat));
+
+            if (held.Length == 0)
+            {
+                var note = UiKit.Label(_rankList,
+                    "You hold no titles yet. Reach #1 on any board and its title becomes yours to wear "
+                    + "— for as long as you hold the top spot.", 15f, UiKit.TextDim);
+                note.gameObject.AddComponent<LayoutElement>().minHeight = 60f;
+            }
+        }
+
+        /// <summary>One pickable title: the name, and a button that reads WORN when it is the one on
+        /// your head. The state is on the button rather than a separate tick so there is exactly one
+        /// thing to look at per row.</summary>
+        private void TitleRow(string text, bool worn, System.Action onWear)
+        {
+            var row = UiKit.Box(_rankList, "Row", UiKit.PanelLight);
+            row.gameObject.AddComponent<LayoutElement>().minHeight = 46f;
+
+            var label = UiKit.Label(row.transform, text, 16f,
+                                    worn ? UiKit.Good : UiKit.Text, TextAlignmentOptions.Left);
+            UiKit.Place(UiKit.Rect(label.gameObject), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+                        new Vector2(14f, 0f), new Vector2(460f, 40f));
+
+            var button = UiKit.TextButton(row.transform, worn ? "Worn" : "Wear", onWear, 15f);
+            UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                        new Vector2(-12f, 0f), new Vector2(96f, 38f));
         }
 
         private void PopulateRank(LeaderboardDto dto)
@@ -87,6 +151,16 @@ namespace Game.Client
                                         e.Rank == 1 ? UiKit.Good : UiKit.Text, TextAlignmentOptions.Left);
                 label.gameObject.AddComponent<LayoutElement>().minHeight = 34f;
             }
+        }
+
+        /// <summary>Redraw the Titles tab when the server pushes a new set — you may have just won or
+        /// lost one while the window was open, and a picker showing a title you no longer hold would
+        /// only produce a refusal.</summary>
+        private void RefreshTitlesTab()
+        {
+            if (_rankPanel == null || !_rankPanel.gameObject.activeSelf) return;
+            if (_rankCategory != TitlesTab || _seenTitlesRevision == Boot.TitlesRevision) return;
+            PopulateTitles();
         }
 
         private void RankNote(string text)

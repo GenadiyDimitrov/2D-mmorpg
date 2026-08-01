@@ -84,12 +84,23 @@ namespace Game.Client
         private int _swipeFinger = -1;
         private float _swipeStartX;
 
-        // console
+        // console / chat
         private RectTransform _consolePanel, _consoleContent;
         private ScrollRect _consoleScroll;
         private int _seenLogRevision = -1;
         private long _renderedLogSeq = -1;   // highest ClientLog.Line.Seq already drawn as a row
         private int _seenClearGen = -1;      // last ClientLog.ClearGeneration we rebuilt for
+
+        /// <summary>Which chat tab is showing. -1 is ALL (no filter); otherwise the
+        /// <see cref="ClientLog.Tab"/> being shown on its own.</summary>
+        private int _chatTab = -1;
+        private Button[] _chatTabButtons;
+        private readonly int[] _chatTabValues =
+        {
+            -1, (int)ClientLog.Tab.Local, (int)ClientLog.Tab.World,
+            (int)ClientLog.Tab.Whisper, (int)ClientLog.Tab.System,
+        };
+        private Button _chatReplyButton;
         /// <summary>Cap on console ROWS kept alive. Plenty of scrollback, but bounded so the window can
         /// never accumulate hundreds of live labels — see RefreshConsole for why that mattered.</summary>
         private const int ConsoleDisplayRows = 120;
@@ -496,7 +507,8 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(send.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(640f, bottom), new Vector2(96f, 46f));
 
-            var log = UiKit.TextButton(_worldRoot, "Log", () => ToggleWindow(_consolePanel), 17f);
+            // "Chat", not "Log": it is the chat window now — the diagnostics live on its System tab.
+            var log = UiKit.TextButton(_worldRoot, "Chat", () => ToggleWindow(_consolePanel), 17f);
             UiKit.Place(UiKit.Rect(log.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(744f, bottom), new Vector2(90f, 46f));
 
@@ -679,25 +691,85 @@ namespace Game.Client
             _menuPanel.sizeDelta = new Vector2(200f, padTop + shown * rowStep + padBottom);
         }
 
+        /// <summary>
+        /// The chat window: five tabs over the one log buffer, plus the command box's Reply shortcut.
+        ///
+        /// It is the old debug console grown up. Chat and diagnostics shared a single undifferentiated
+        /// list, so a whisper was one uncoloured line among a hundred warnings — the WPF harness had
+        /// colours and tabs and the phone never got them (the oldest open item in the roadmap). System
+        /// is now just one of the five tabs, so nothing that used to be visible has been hidden.
+        /// </summary>
         private void BuildConsole()
         {
             _consolePanel = UiKit.PanelBox(_worldRoot, "Console");
             UiKit.Place(_consolePanel, new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(12f, 132f), new Vector2(760f, 320f));
             var inner = _consolePanel.GetChild(0);
-            float chrome = UiKit.WindowChrome(_consolePanel, "Log", () => CloseWindow(_consolePanel));
+            float chrome = UiKit.WindowChrome(_consolePanel, "Chat", () => CloseWindow(_consolePanel));
+
+            // Tabs. "PM" rather than "Whisper": the row has five buttons across 760px on a phone, and
+            // every MMO player already reads PM.
+            string[] names = { "All", "Local", "World", "PM", "System" };
+            _chatTabButtons = new Button[names.Length];
+            for (int i = 0; i < names.Length; i++)
+            {
+                int value = _chatTabValues[i];
+                var button = UiKit.TextButton(inner, names[i], () => SetChatTab(value), 15f);
+                UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                            new Vector2(12f + i * 100f, -chrome - 4f), new Vector2(96f, 32f));
+                _chatTabButtons[i] = button;
+            }
 
             ScrollRect scroll;
             _consoleContent = UiKit.ScrollArea(inner, out scroll, 1f);
             _consoleScroll = scroll;
-            UiKit.Stretch((RectTransform)scroll.transform, 10f, chrome + 6f, 10f, 46f);
+            UiKit.Stretch((RectTransform)scroll.transform, 10f, chrome + 40f, 10f, 46f);
 
             var clear = UiKit.TextButton(inner, "Clear", () => ClientLog.Clear(), 16f);
             UiKit.Place(UiKit.Rect(clear.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
                         new Vector2(-10f, 8f), new Vector2(100f, 34f));
 
+            // Reply: fills the command box with "/w <last whisperer> ". Answering a whisper otherwise
+            // means retyping a name you can see on screen but cannot copy.
+            _chatReplyButton = UiKit.TextButton(inner, "Reply",
+                                                () => Boot.ComposeWhisper(Boot.LastWhisperName), 16f);
+            UiKit.Place(UiKit.Rect(_chatReplyButton.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
+                        new Vector2(-118f, 8f), new Vector2(100f, 34f));
+
+            HighlightChatTabs();
             _consolePanel.gameObject.SetActive(false);
         }
+
+        /// <summary>Switch tab: the rows are a FILTERED projection of one buffer, so changing the filter
+        /// throws the drawn rows away and redraws from the buffer. That is the expensive path the append
+        /// rewrite removed from the per-LINE case — here it happens once per tap, not per message.</summary>
+        private void SetChatTab(int tab)
+        {
+            if (_chatTab == tab) return;
+            _chatTab = tab;
+            RebuildConsoleRows();
+            HighlightChatTabs();
+        }
+
+        private void HighlightChatTabs()
+        {
+            if (_chatTabButtons == null) return;
+            for (int i = 0; i < _chatTabButtons.Length; i++)
+                _chatTabButtons[i].targetGraphic.color =
+                    _chatTabValues[i] == _chatTab ? UiKit.TabActive : UiKit.PanelLight;
+        }
+
+        /// <summary>Drop every drawn row and let the next refresh redraw the ones the filter accepts.</summary>
+        private void RebuildConsoleRows()
+        {
+            for (int i = _consoleContent.childCount - 1; i >= 0; i--)
+                Destroy(_consoleContent.GetChild(i).gameObject);
+            _renderedLogSeq = -1;
+            _seenLogRevision = -1;   // force RefreshConsole to run even if no new line has arrived
+        }
+
+        /// <summary>True if a line belongs in the tab being shown. All (-1) accepts everything.</summary>
+        private bool ChatTabAccepts(ClientLog.Tab where) => _chatTab < 0 || (int)where == _chatTab;
 
         private void BuildBag()
         {
@@ -828,6 +900,7 @@ namespace Game.Client
             RefreshTarget();
             RefreshSkillBar();
             RefreshConsole();
+            RefreshTitlesTab();
             RefreshBag();
             RefreshSkillsWindow();
             RefreshStatsWindow();
@@ -1285,6 +1358,20 @@ namespace Game.Client
             _commandField.DeactivateInputField();
         }
 
+        /// <summary>Put text in the command box and open the keyboard with the caret after it — the
+        /// "/w Name " half of a whisper that no button can finish. Used by the Whisper action and the
+        /// chat window's Reply.</summary>
+        public void ComposeCommand(string text)
+        {
+            if (_commandField == null) return;
+            _commandField.text = text ?? "";
+            _commandField.Select();
+            _commandField.ActivateInputField();
+            _commandField.caretPosition = _commandField.text.Length;
+            _commandField.selectionAnchorPosition = _commandField.caretPosition;
+            _commandField.selectionFocusPosition = _commandField.caretPosition;
+        }
+
         private void RefreshConsole()
         {
             if (!_consolePanel.gameObject.activeSelf || _seenLogRevision == ClientLog.Revision) return;
@@ -1305,15 +1392,17 @@ namespace Game.Client
             if (_seenClearGen != ClientLog.ClearGeneration)
             {
                 _seenClearGen = ClientLog.ClearGeneration;
-                for (int i = _consoleContent.childCount - 1; i >= 0; i--)
-                    Destroy(_consoleContent.GetChild(i).gameObject);
-                _renderedLogSeq = -1;
+                RebuildConsoleRows();
             }
 
             int appended = 0;
             for (int i = 0; i < lines.Count; i++)
             {
                 if (lines[i].Seq <= _renderedLogSeq) continue;   // already drawn
+                // A line the current tab does not want is SKIPPED, not remembered: _renderedLogSeq only
+                // advances past lines that were actually drawn, so switching tabs (which resets it to
+                // -1) redraws the buffer from the start with the new filter.
+                if (!ChatTabAccepts(lines[i].Where)) continue;
                 var label = UiKit.Label(_consoleContent, lines[i].Text, 15f, lines[i].Color);
                 // Rows GROW with wrapped text instead of a fixed height. A fixed row is what made
                 // long messages draw over each other in the IMGUI console.
@@ -1468,7 +1557,17 @@ namespace Game.Client
             public RectTransform Cast;
             public Image CastFill;
             public TextMeshProUGUI CastLabel;
+            /// <summary>The worn leaderboard title, on its own line above the name (players only).</summary>
+            public TextMeshProUGUI TitleLabel;
         }
+
+        /// <summary>A worn title is gold and smaller than the name — it must read as a decoration on the
+        /// character, not as part of who they are. The name keeps its own colour, which already means
+        /// something (level gap, PvP flag), so the title cannot borrow it.</summary>
+        private static readonly Color TitleColour = new Color(0.95f, 0.83f, 0.45f, 1f);
+
+        /// <summary>Height of the title line, and how far the cast bar is pushed up when one is showing.</summary>
+        private const float TitleLineHeight = 17f;
 
         /// <summary>A telegraphed spell is amber — deliberately neither the HP red under it nor the
         /// blue of your own cast bar, so "something is about to hit me" has its own colour.</summary>
@@ -1528,6 +1627,17 @@ namespace Game.Client
                 plate.Label.color = e.Id == Boot.SelfId && e.Flag == PvpFlag.Innocent
                     ? UiKit.Good
                     : NameColour(e, myLevel);
+
+                // THE WORN TITLE, on its own gold line above the name. The server has already decided
+                // whether it is still held — an unheld one arrives as "" — so there is nothing to check
+                // here beyond "is there text".
+                bool hasTitle = !string.IsNullOrEmpty(e.Title);
+                plate.TitleLabel.gameObject.SetActive(hasTitle);
+                if (hasTitle) plate.TitleLabel.text = e.Title;
+
+                // The cast bar shares the space above the plate, so it steps up over a title rather than
+                // drawing through it.
+                plate.Cast.anchoredPosition = new Vector2(0f, hasTitle ? 2f + TitleLineHeight : 2f);
 
                 bool bar = e.MaxHp > 0 && e.Kind != EntityKind.Npc;
                 plate.BarBg.gameObject.SetActive(bar);
@@ -1773,8 +1883,21 @@ namespace Game.Client
 
                 castRoot.gameObject.SetActive(false);
 
+                // The TITLE sits directly above the name, hanging off the top of the plate for the same
+                // reason the cast bar does: almost nobody is wearing one, and growing every plate in the
+                // world to reserve a line for it would lift every name off its owner's head.
+                var titleLabel = UiKit.Label(root, "", 12f, TitleColour, TextAlignmentOptions.Bottom);
+                UiKit.Place(UiKit.Rect(titleLabel.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 0f),
+                            new Vector2(0f, 0f), new Vector2(200f, TitleLineHeight));
+                titleLabel.outlineColor = new Color32(0, 0, 0, 210);
+                titleLabel.outlineWidth = 0.22f;
+                titleLabel.enableWordWrapping = false;
+                titleLabel.raycastTarget = false;
+                titleLabel.gameObject.SetActive(false);
+
                 _nameplates.Add(new Nameplate
                 {
+                    TitleLabel = titleLabel,
                     Root = root,
                     Label = label,
                     BarBg = bg.GetComponent<Image>(),

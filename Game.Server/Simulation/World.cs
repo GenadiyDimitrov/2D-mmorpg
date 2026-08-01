@@ -394,6 +394,15 @@ public record LogoutCmd(string ConnectionId) : IGameCommand;
 public record StartOfflineFarmCmd(string ConnectionId) : IGameCommand;
 public record TogglePvpCmd(string ConnectionId, bool Enabled) : IGameCommand;
 public record ToggleCounterAttackCmd(string ConnectionId, bool Enabled) : IGameCommand;
+/// <summary>Client -> server: wear the title of this leaderboard category, or "" for none. Refused
+/// (silently, with a system line) if the character does not currently hold that board.</summary>
+public record SetTitleCmd(string ConnectionId, string Category) : IGameCommand;
+
+/// <summary>Worker thread -> the single writer: the boards were just re-read, and these characters
+/// hold these title categories (by NAME). Carries the whole answer rather than a "go look" signal so
+/// the tick thread never touches the DB — same shape as the moderation commands below.</summary>
+public record TitleHoldersCmd(Dictionary<string, List<string>> Holders) : IGameCommand;
+
 public record RequestDebugConfigCmd(string ConnectionId) : IAdminCommand;
 public record SetDebugConfigCmd(string ConnectionId, DebugConfigDto Config) : IAdminCommand;
 

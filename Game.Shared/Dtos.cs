@@ -46,7 +46,11 @@ public record EntityDto(
     // Mobs only: this one attacks on sight. Clients mark it with a "*" after the name so you can see
     // what to tiptoe around BEFORE it decides for you. Cached on the entity at spawn, so this costs a
     // bool per snapshot and no catalog lookups.
-    bool Aggressive = false);
+    bool Aggressive = false,
+    // The leaderboard title this player is WEARING, already resolved to its display text ("the
+    // Wealthy") — clients draw it over the head and never have to know the category ids. Empty for
+    // everyone not wearing one, which is nearly everyone, so it costs an empty string per snapshot.
+    string Title = "");
 
 /// <summary>What to draw over an NPC's head about quests. Sent per player, because availability is
 /// personal — level, race, class and what you have already done all decide it.</summary>
@@ -372,6 +376,9 @@ public static class Leaderboards
         _        => cat,
     };
 
+    public static bool IsCategory(string? cat) =>
+        cat is not null && Array.IndexOf(Categories, cat) >= 0;
+
     /// <summary>The honorary title the rank-1 character in this category earns.</summary>
     public static string TopTitle(string cat) => cat switch
     {
@@ -384,6 +391,20 @@ public static class Leaderboards
         _        => "",
     };
 }
+
+/// <summary>
+/// Server -> owning client: the titles this character may WEAR, and which one is worn.
+///
+/// A title is HELD, not owned: you hold it for as long as you are rank 1 of that board, and the server
+/// re-reads the boards every few minutes. That is deliberately different from an achievement — "the
+/// Wealthy" that stays on a player who has since been out-earned says the opposite of what the board
+/// says, and the whole point of the thing is to advertise the board.
+///
+/// <paramref name="Held"/> and <paramref name="Worn"/> are CATEGORY ids (append-only, like skill ids),
+/// not display text: the text comes from <see cref="Leaderboards.TopTitle"/>, so re-wording a title
+/// re-words everyone's. Worn = "" means none.
+/// </summary>
+public record TitlesDto(string[] Held, string Worn);
 
 /// <summary>The pseudo skill-id for "basic attack" as an opt-in auto action: put it in
 /// <see cref="AutoHuntConfigDto.Skills"/> (enabled) and the auto-hunt will melee when no real skill
