@@ -1464,7 +1464,15 @@ namespace Game.Client
             public RectTransform Root;
             public TextMeshProUGUI Label;
             public Image BarBg, BarFill;
+            /// <summary>The MOB cast bar and the name of what it is casting — see RefreshNameplates.</summary>
+            public RectTransform Cast;
+            public Image CastFill;
+            public TextMeshProUGUI CastLabel;
         }
+
+        /// <summary>A telegraphed spell is amber — deliberately neither the HP red under it nor the
+        /// blue of your own cast bar, so "something is about to hit me" has its own colour.</summary>
+        private static readonly Color CastColour = new Color(0.95f, 0.72f, 0.25f, 1f);
 
         private void RefreshNameplates()
         {
@@ -1514,6 +1522,23 @@ namespace Game.Client
                 bool bar = e.MaxHp > 0 && e.Kind != EntityKind.Npc;
                 plate.BarBg.gameObject.SetActive(bar);
                 if (bar) UiKit.SetBar(plate.BarFill, e.Hp, e.MaxHp);
+
+                // THE MOB CAST BAR. The server has broadcast a mob's casts since bosses shipped and
+                // nothing drew them, which is why a boss's telegraphed slam has always landed out of
+                // nowhere. A named, filling bar over its head is the whole point of telegraphing: it is
+                // the window in which you walk out of it, interrupt it, or decide to eat it.
+                //
+                // It fills on the CLIENT's clock from the duration the server sent — the server pushes
+                // once at the start, not per tick — and a finished bar simply stops being reported.
+                GameBoot.MobCast cast = null;
+                bool casting = !e.Dead && Boot.TryGetMobCast(e.Id, out cast);
+                plate.Cast.gameObject.SetActive(casting);
+                if (casting)
+                {
+                    float total = Mathf.Max(0.01f, cast.EndsAt - cast.StartedAt);
+                    UiKit.SetBar(plate.CastFill, Time.realtimeSinceStartup - cast.StartedAt, total);
+                    plate.CastLabel.text = cast.SkillName;
+                }
             }
 
             for (int i = used; i < _nameplates.Count; i++)
@@ -1599,12 +1624,43 @@ namespace Game.Client
                 fill.raycastTarget = false;
                 bg.GetComponent<Image>().raycastTarget = false;
 
+                // The cast bar goes ABOVE the name, not below it, and hangs off the TOP of the plate
+                // rect (anchor 1, pivot 0) rather than being fitted inside it: the plate's height is
+                // sized for the name and the HP bar, and a mob is casting for two seconds in a hundred.
+                // Growing every plate permanently to hold a row that is almost always empty would push
+                // every name in the world further off its owner's head.
+                var castRoot = UiKit.Rect(UiKit.Box(root, "Cast", new Color(0, 0, 0, 0),
+                                                    blocksInput: false).gameObject);
+                UiKit.Place(castRoot, new Vector2(0.5f, 1f), new Vector2(0.5f, 0f),
+                            new Vector2(0f, 2f), new Vector2(120f, 30f));
+
+                var castFill = UiKit.ValueBar(castRoot, CastColour);
+                var castBg = (RectTransform)castFill.transform.parent;
+                UiKit.Place(castBg, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+                            Vector2.zero, new Vector2(80f, 6f));
+                castFill.raycastTarget = false;
+                castBg.GetComponent<Image>().raycastTarget = false;
+
+                // Named, because "it is casting SOMETHING" is only half the warning — a boss's slam and
+                // its self-heal want opposite reactions, and you have one and a half seconds to pick.
+                var castLabel = UiKit.Label(castRoot, "", 13f, CastColour, TextAlignmentOptions.Bottom);
+                UiKit.Place(UiKit.Rect(castLabel.gameObject), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+                            new Vector2(0f, 7f), new Vector2(200f, 18f));
+                castLabel.outlineColor = new Color32(0, 0, 0, 210);
+                castLabel.outlineWidth = 0.22f;
+                castLabel.enableWordWrapping = false;
+
+                castRoot.gameObject.SetActive(false);
+
                 _nameplates.Add(new Nameplate
                 {
                     Root = root,
                     Label = label,
                     BarBg = bg.GetComponent<Image>(),
                     BarFill = fill,
+                    Cast = castRoot,
+                    CastFill = castFill,
+                    CastLabel = castLabel,
                 });
             }
             return _nameplates[index];

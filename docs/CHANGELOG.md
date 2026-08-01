@@ -7,10 +7,40 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.43.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.43.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 2026-08-01 — Two things you could not see: the mob's cast, and your own target (0.43.1)
+
+Both were on the roadmap's open list, both are pure *reader* work, and one of them turned out to be a
+listener that was never written rather than a feature that was never built.
+
+- **The mob cast bar.** The server has broadcast `MobCastInfo` to everyone near a casting mob since
+  bosses shipped (2026-07-07) — caster, skill name, seconds — and the Unity client subscribed to
+  neither the message nor anything like it. That is why the roadmap said *"believed built, never seen
+  on screen"*: it **was** built, on the half nobody could see. The nameplate now carries an amber bar
+  and the spell's name above the mob's head, filling on the client's own clock from the duration the
+  server sent (there is one push, at the start — not one per tick). This is the whole point of a
+  telegraph: a boss's slam is now something you get a second and a half of warning about, and can walk
+  out of, interrupt, or decide to eat.
+- **A killed caster no longer leaves a bar over its corpse.** `Kill` cleared `CastingSkillId` by hand
+  instead of going through `CancelCast`, and cancelling is what PUSHES the clear — so an interrupted
+  cast cleaned up and a *lethally* interrupted one did not. It now routes through `CancelCast`, which
+  also fixes the same hole for a player killed mid-cast (their own bar).
+- **A selection ring under your target.** Until now the only place a target existed was the target
+  *window*: on the battlefield, the mob you were about to hit looked exactly like the four beside it.
+  Fine with a mouse cursor sitting on it, useless on a phone where the finger has already lifted.
+  There is now a ring on the ground under whatever is selected — a real ring rather than a filled disc
+  (a disc would cover the thing it points at, and the click-to-move marker is already a filled disc),
+  coloured by what it is: red for a mob, blue for a player, yellow for an NPC, green for yourself, and
+  dimmed on a corpse. It breathes gently so a standing target still catches the eye, and it has no
+  collider — a marker that ate the taps aimed at the thing it marks would make your target the hardest
+  entity on screen to touch.
+
+No protocol change (**9**, `MinAcceptedProtocol` still 8) and no `game.db` reset: nothing new goes over
+the wire. It does need a **new APK** — all of it is client rendering. Checklist §41.
 
 ## 2026-08-01 — The quest window: three tabs and a page per quest (0.43.0)
 

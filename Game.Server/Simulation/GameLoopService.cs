@@ -7461,7 +7461,10 @@ var effect = def.Effect;
         victim.CombatTargetId = null;
         victim.AttackCommandTargetId = null;
         victim.QueuedSkillId = null;
-        victim.CastingSkillId = null;
+        // Through CancelCast, not a bare `CastingSkillId = null`: cancelling is what PUSHES the cast
+        // bar's clear (a mob's to everyone nearby, a player's to themselves). Killing a caster
+        // mid-spell left that bar hanging over its corpse until it happened to time out.
+        CancelCast(victim);
         victim.TargetX = null;
         victim.TargetY = null;
         // Angel's Protection (noblesse): if a "keeps buffs on death" buff is up, death removes ONLY the

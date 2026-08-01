@@ -50,6 +50,9 @@ namespace Game.Client
         public EntityManager Entities;
         public CameraRig CameraRig;
         public MoveMarker Marker;
+        /// <summary>The selection ring under your current target — the only thing on the battlefield
+        /// itself that says which of five identical mobs you actually tapped.</summary>
+        public TargetMarker TargetRing;
         public ZoneOverlay Zones;
 
         // ----- State the HUD reads -------------------------------------------------------------
@@ -593,6 +596,13 @@ namespace Game.Client
                 Marker = FindAnyObjectByType<MoveMarker>();
                 if (Marker == null) Marker = new GameObject("MoveMarker").AddComponent<MoveMarker>();
             }
+
+            if (TargetRing == null)
+            {
+                TargetRing = FindAnyObjectByType<TargetMarker>();
+                if (TargetRing == null)
+                    TargetRing = new GameObject("TargetMarker").AddComponent<TargetMarker>();
+            }
         }
 
         private async void Start()
@@ -611,6 +621,9 @@ namespace Game.Client
             if (Phase == ClientPhase.InWorld && Marker != null && Marker.IsShown
                 && Entities != null && !Entities.SelfIsPredicting)
                 Marker.Hide();
+
+            UpdateTargetRing();
+            if (_mobCasts.Count > 0) PruneMobCasts();
 
             // Frames/sec over a rolling second: 10/s means a healthy server tick reaching us.
             if (Time.realtimeSinceStartup - _fpsWindowStart >= 1f)
@@ -842,6 +855,19 @@ namespace Game.Client
                 // The walk is over HERE — when the SERVER confirms a cast started and roots you — and
                 // not when the button was tapped. See UseSkill for why guessing was wrong.
                 CancelMoveOrder();
+            });
+            _net.MobCastReceived += c => Main(() =>
+            {
+                if (c == null) return;
+                // Seconds 0 = the mob's cast was cancelled or interrupted — drop the bar at once.
+                // A cast that COMPLETES sends nothing (the server has no "finished" push), so a
+                // finished bar has to expire on its own clock: see PruneMobCasts.
+                if (c.Seconds <= 0f) { _mobCasts.Remove(c.CasterId); return; }
+                float now = Time.realtimeSinceStartup;
+                _mobCasts[c.CasterId] = new MobCast
+                {
+                    SkillName = c.SkillName, StartedAt = now, EndsAt = now + c.Seconds,
+                };
             });
             _net.Disconnected += m => Main(() =>
             {
@@ -1092,6 +1118,10 @@ namespace Game.Client
             // push happened to replace them (using a potion "fixed" it). Same for the sold-items list.
             Buffs = new BuffDto[0];
             BuyBack = new BuyBackEntryDto[0];
+            // Nobody in the world you are LEAVING is still casting at you. Entity ids are per-session,
+            // so a leftover entry could otherwise land a bar on an unrelated mob after a relog.
+            _mobCasts.Clear();
+            if (TargetRing != null) TargetRing.Hide();
             Cooldowns.Clear();   // same conditional-push reason as Buffs: reuse is per CHARACTER
             SkillPoints = 0;   // its own field now, so it no longer clears with Stats
         }
@@ -1212,6 +1242,43 @@ namespace Game.Client
         public float CastStartedAt { get; private set; }
         public float CastEndsAt { get; private set; }
 
+        /// <summary>One MOB's cast in progress — what it is casting and the window it lands in.</summary>
+        public class MobCast
+        {
+            public string SkillName;
+            public float StartedAt, EndsAt;
+        }
+
+        /// <summary>Casts in progress by nearby MOBS, keyed by caster. The nameplate layer draws a bar
+        /// from this over each one's head.</summary>
+        private readonly Dictionary<Guid, MobCast> _mobCasts = new Dictionary<Guid, MobCast>();
+
+        /// <summary>Scratch list for the prune below — reused so a per-frame sweep allocates nothing.</summary>
+        private readonly List<Guid> _mobCastsDone = new List<Guid>();
+
+        /// <summary>What <paramref name="id"/> is casting, or false if it is casting nothing right now.
+        /// An entry past its end time counts as nothing: the cast landed.</summary>
+        public bool TryGetMobCast(Guid id, out MobCast cast) =>
+            _mobCasts.TryGetValue(id, out cast) && Time.realtimeSinceStartup < cast.EndsAt;
+
+        /// <summary>
+        /// Forget casts that have finished, and casts by mobs that are no longer here.
+        ///
+        /// Both are needed because the server only ever pushes a CANCELLATION: a spell that actually
+        /// goes off says nothing, and a mob that dies or wanders out of the grid mid-cast says nothing
+        /// either. Without this the dictionary would grow for the whole session and a killed caster
+        /// would leave a bar hanging over its corpse.
+        /// </summary>
+        private void PruneMobCasts()
+        {
+            float now = Time.realtimeSinceStartup;
+            _mobCastsDone.Clear();
+            foreach (var kv in _mobCasts)
+                if (now >= kv.Value.EndsAt || Entities == null || !Entities.States.ContainsKey(kv.Key))
+                    _mobCastsDone.Add(kv.Key);
+            foreach (var id in _mobCastsDone) _mobCasts.Remove(id);
+        }
+
         private void OnCombat(CombatEvent e)
         {
             Main(() =>
@@ -1229,6 +1296,40 @@ namespace Game.Client
             FramesReceived++;
             _fpsWindowCount++;
             LastFrameTime = Time.realtimeSinceStartup;
+        }
+
+        /// <summary>
+        /// Keep the selection ring under the current target — every frame, because both the ring's
+        /// owner (you re-target constantly) and its position (the mob is running) change constantly.
+        ///
+        /// The colour is the entity KIND, not the level gap the nameplate encodes: at a glance the ring
+        /// answers "what did I select", and the name above it already answers "can I take it".
+        /// </summary>
+        private void UpdateTargetRing()
+        {
+            if (TargetRing == null) return;
+
+            if (Phase != ClientPhase.InWorld || !TargetId.HasValue || Entities == null)
+            {
+                TargetRing.Hide();
+                return;
+            }
+
+            var view = Entities.Find(TargetId.Value);
+            if (view == null) { TargetRing.Hide(); return; }   // despawned between frames
+
+            var colour = new Color(1.00f, 0.35f, 0.30f);       // a mob: the common case
+            if (Entities.TryGetState(TargetId.Value, out var dto))
+            {
+                if (TargetId.Value == _selfId) colour = new Color(0.45f, 0.85f, 0.50f);
+                else if (dto.Kind == EntityKind.Npc) colour = new Color(1.00f, 0.93f, 0.55f);
+                else if (dto.Kind == EntityKind.Player) colour = new Color(0.55f, 0.80f, 1.00f);
+                // A corpse is still a legal target (you loot it), so the ring stays — dimmed, the same
+                // way the marker itself dims, so "dead" reads the same everywhere.
+                if (dto.Dead) colour *= 0.45f;
+            }
+
+            TargetRing.Show(view.transform, colour);
         }
 
         private void AcquireCamera()

@@ -24,6 +24,10 @@ namespace Game.Client
         public event Action<CombatEvent> CombatReceived;
         public event Action<ProgressUpdate> ProgressReceived;
         public event Action<CastInfo> CastReceived;
+        /// <summary>A MOB near you started (or stopped) casting — drives a cast bar over ITS head, so a
+        /// boss's telegraphed slam can be seen, walked out of, or interrupted. Seconds 0 = it ended.
+        /// The server has broadcast this since bosses shipped; nothing was listening until 0.43.1.</summary>
+        public event Action<MobCastInfo> MobCastReceived;
         public event Action<InventoryUpdate> InventoryReceived;
         public event Action<WarehouseUpdate> WarehouseReceived;
         public event Action<AccountWarehouseUpdate> AccountWarehouseReceived;
@@ -114,6 +118,7 @@ namespace Game.Client
             _connection.On<CombatEvent>("Combat", c => CombatReceived?.Invoke(c));
             _connection.On<ProgressUpdate>("Progress", p => ProgressReceived?.Invoke(p));
             _connection.On<CastInfo>("Cast", c => CastReceived?.Invoke(c));
+            _connection.On<MobCastInfo>("MobCast", c => MobCastReceived?.Invoke(c));
             _connection.On<InventoryUpdate>("Inventory", i => InventoryReceived?.Invoke(i));
             _connection.On<WarehouseUpdate>("Warehouse", w => WarehouseReceived?.Invoke(w));
             _connection.On<AccountWarehouseUpdate>("AccountWarehouse", w => AccountWarehouseReceived?.Invoke(w));

@@ -59,12 +59,18 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
   8, so an installed 0.42.x APK still connects. Checklist §40 — **unplayed, needs an APK.**
 
 **World**
-- **Mob cast bar** — believed built, never seen on screen. Verify before rebuilding.
+- ~~Mob cast bar~~ — **built 0.43.1**, and the "believed built" was half right: the SERVER had been
+  broadcasting `MobCastInfo` to everyone nearby since bosses shipped, and no client ever subscribed.
+  The nameplate now draws an amber bar + the spell's name over the mob's head. Also fixed: `Kill`
+  cleared the cast by hand instead of through `CancelCast`, so a caster killed mid-spell left its bar
+  hanging over the corpse.
 
 **UI / conveniences**
 - **Chat tabs** on the phone (colours + tags only ever shipped in the WPF harness, deleted in 0.42.8 —
   the reference implementation is `MainWindow.xaml.cs` at commit `f33ed0e`; oldest open item in the file).
-- **Target visual on the mob itself**, not just in the target window.
+- ~~Target visual on the mob itself~~ — **built 0.43.1.** A coloured ring on the ground under whatever
+  is selected (mob red / player blue / NPC yellow / self green, dimmed on a corpse), breathing so a
+  standing target still reads, and with no collider so it never eats the tap aimed at its own entity.
 - **Wearable titles** — the leaderboard title over the head / by the name.
 - **Every non-admin command as an ACTION** in the Skills window's Actions tab. Block/like/unblock landed
   there; friend/party/sit/attack/assist still have nowhere to live.
