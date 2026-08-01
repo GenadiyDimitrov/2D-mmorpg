@@ -146,15 +146,24 @@ public static class WorldMap
 
     /// <summary>The towns a gatekeeper offers travel to: its curated list if present
     /// in <see cref="GatekeeperDestinations"/>, otherwise every other town. Always
-    /// excludes the gatekeeper's own town.</summary>
+    /// excludes the gatekeeper's own town, and always excludes a zone GATED to a
+    /// different city (see <see cref="SafeZone.GatedByCityId"/>) — that is how the
+    /// Hollow Crypt stopped appearing on the level-1 town's menu.</summary>
     public static IEnumerable<SafeZone> TeleportDestinationsFrom(string gatekeeperNpcId, SafeZone home)
     {
         if (GatekeeperDestinations.TryGetValue(gatekeeperNpcId, out var ids))
             return ids.Select(id => Array.Find(SafeZones, z => z.Id == id))
-                      .Where(z => z is not null && z.Id != home.Id)
+                      .Where(z => z is not null && z.Id != home.Id && OfferedFrom(z!, home))
                       .Select(z => z!);
-        return SafeZones.Where(z => z.Id != home.Id);
+        return SafeZones.Where(z => z.Id != home.Id && OfferedFrom(z, home));
     }
+
+    /// <summary>May the gatekeeper standing in <paramref name="home"/> send you to
+    /// <paramref name="zone"/>? True unless the zone is gated to some OTHER city. A curated
+    /// <see cref="GatekeeperDestinations"/> list is filtered by this too: a hand-written menu
+    /// naming a gated zone is a mistake, not an override.</summary>
+    private static bool OfferedFrom(SafeZone zone, SafeZone home) =>
+        zone.GatedByCityId.Length == 0 || zone.GatedByCityId == home.Id;
 
     /// <summary>NPCs placed in the world (quest givers, class-change masters).
     /// Stationary, non-combat. Add NPCs here; quests/class-changes reference
@@ -529,5 +538,11 @@ public enum NpcRole { QuestGiver = 0, ClassChange = 1, Vendor = 2, Teleporter = 
 public record NpcDef(string Id, string Name, float X, float Y, NpcRole Role);
 
 /// <summary>A safe zone (city/castle). Id is referenced by teleports later.</summary>
-public record SafeZone(string Id, string Name, float X, float Y, float Radius);
+/// <param name="GatedByCityId">Empty for a city — every gatekeeper offers it, which is what makes the
+/// world one connected map. Set to a CITY id for a place that should be reached through ONE door: a
+/// dungeon entrance belongs to the city whose hunting band matches the dungeon's, so finding it is
+/// part of levelling into that band rather than a line on every menu from level 1. Enforced in
+/// <see cref="WorldMap.TeleportDestinationsFrom"/>; the gated zone's own gatekeeper (if it has one)
+/// still offers everything, so a dungeon is never a one-way trip.</param>
+public record SafeZone(string Id, string Name, float X, float Y, float Radius, string GatedByCityId = "");
 

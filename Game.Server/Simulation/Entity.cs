@@ -41,6 +41,14 @@ public class BuffInstance
     public int Level { get; init; } = 1;
     public string[] Replaces { get; init; } = Array.Empty<string>();
 
+    /// <summary>The server tick this buff was (re)applied on — how "oldest" is decided when the
+    /// <see cref="GameConstants.MaxBuffSlots"/> cap has to evict one. Settable rather than init-only
+    /// because re-applying a buff makes it NEW: a blessing you just recast should not be first out
+    /// of the door simply because an older copy of it once sat in that list slot. Not persisted —
+    /// on login every restored buff is stamped with the same tick, which is honest (they all arrived
+    /// at once) and only matters if a returning player is already at 24.</summary>
+    public long AppliedAtTick { get; set; }
+
     /// <summary>The skill whose icon the buff bar shows, and the id buffs are GROUPED by: for a child
     /// of an improved (group) buff this is the PARENT's id, so the client can collapse the whole
     /// blessing into one square (docs/design/BuffLadders.md). "" for non-skill buffs (e.g. the

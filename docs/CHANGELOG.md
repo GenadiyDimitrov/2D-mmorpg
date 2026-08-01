@@ -7,10 +7,43 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.42.4**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.42.5**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 2026-08-01 — A door to the crypt, and a ceiling on the bar (0.42.5)
+
+**The Hollow Crypt was on every gatekeeper's menu.** A dungeon entrance is a safe zone, and every
+safe zone was offered by every gatekeeper — so a level-1 standing in Brackenford was shown a level
+44-48 dungeon in the same list as his first hunting field. Worse, the crypt's *field* was managed by
+no city at all, which meant its named gate ("Hollow Crypt Halls") appeared in **nobody's** menu: the
+only way inside was to teleport to the entrance and walk. So the dungeon was simultaneously offered
+to everyone and reachable by no one.
+
+A safe zone can now name a city that gates it (`SafeZone.GatedByCityId`), and the crypt names
+**Greymarsh** — the city whose hunting band (40-60) contains the crypt's (44-48). Greymarsh's
+gatekeeper offers the entrance and the halls; nobody else offers either. Giving the field a managing
+city also fixed the second consequence: dying in the crypt used to fall through to nearest-city, and
+from a point at (-9600, -11000) that is a meaningless answer, since every city is thousands of units
+away in the positive quadrant. The crypt now returns its dead to the city that sent them.
+
+The boss vale was deliberately left alone. Its band (58-60) is the last two levels of Greymarsh's
+range, but it sits on Ironreach's doorstep — band and geography disagree, and there is no obviously
+right answer to pick on the owner's behalf.
+
+**The buff bar has a ceiling: 24.** Over it, the **oldest buff is dropped and the new one lands** —
+never the reverse. A refusal arrives mid-fight and sends you hunting through the bar for something to
+cancel, which is the exact moment you cannot afford to be reading icons. Three kinds of effect sit
+outside the budget, each for its own reason: **debuffs**, because you did not choose them (counting
+them would make every DoT a dispel, refusing them would make a full bar a debuff immunity);
+**persistent gear effects**, because reconciliation puts them straight back, so evicting one buys a
+slot for a fraction of a second and costs a flicker; and **toggles**, because only you switch those
+off. Re-applying a buff makes it young again, so recasting a blessing does not leave it first out of
+the door.
+
+Also verified rather than built: **admins were already excluded from every leaderboard**
+(`Role != AccountRole.Admin`, one query, one place). The roadmap had been carrying it as open work.
 
 ## 2026-08-01 — Two words a player can actually say (0.42.4)
 

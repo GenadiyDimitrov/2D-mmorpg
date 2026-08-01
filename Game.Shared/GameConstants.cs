@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.42.4";
+    public const string GameVersion = "0.42.5";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -104,6 +104,17 @@ public static class GameConstants
 
     /// <summary>Simulation ticks per second on the server.</summary>
     public const int TickRate = 10;
+
+    /// <summary>How many COLLECTED buffs one entity may carry — the buffer's blessings, the potions
+    /// and the scrolls (bar rows Buff and Consumable). Debuffs are not counted: a poison is not
+    /// something you chose, and letting one evict a blessing would turn every DoT into a dispel.
+    /// Persistent gear effects are not counted either — they are re-applied the moment they are
+    /// removed, so "evicting" one only produces a flicker.
+    ///
+    /// Over the cap the OLDEST buff is dropped and the new one lands. It is never the other way
+    /// round: a refusal arrives mid-fight and sends you hunting through the bar for something to
+    /// cancel, which is the exact moment you cannot afford to be reading icons.</summary>
+    public const int MaxBuffSlots = 24;
 
     /// <summary>Seconds per tick (0.1s at 10 t/s).</summary>
     public const float TickSeconds = 1f / TickRate;

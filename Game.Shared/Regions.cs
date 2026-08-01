@@ -144,9 +144,20 @@ public static class RegionMap
         // Hollow Crypt — the DUNGEON field (band 44-48), in the NEGATIVE quadrant (owner: dungeons live at
         // minus coords, off the overworld, reached by teleport). Elite rooms + the grave-lich boss; its
         // entrance safe zone (dungeon_hollow_crypt) sits just SW as a separate island.
+        //
+        // MANAGED BY GREYMARSH (44-48 sits inside Greymarsh's 40-60). It used to be managed by nobody,
+        // which had two consequences that both read as bugs. Its gate appeared in NO gatekeeper's menu,
+        // so the only way into the halls was to teleport to the entrance and walk. And dying in it fell
+        // through to nearest-city — from a point at (-9600, -11000) that is a meaningless answer, since
+        // every city is thousands of units away in the positive quadrant. Naming the city fixes both:
+        // Greymarsh lists the halls, and the crypt returns its dead to the city that sent them.
+        // (The boss vale is deliberately NOT given a city the same way: its band, 58-60, is the last two
+        // levels of Greymarsh's range but it sits on Ironreach's doorstep, so band and geography
+        // disagree and there is no obviously right answer to pick on the owner's behalf.)
         new("field_dungeon", "Hollow Crypt", RegionKind.Field,
             new[] { new Vec2(-11850, -11950), new Vec2(-11400, -12400), new Vec2(-10800, -12450), new Vec2(-7750, -11350), new Vec2(-6550, -10650), new Vec2(-6150, -10200), new Vec2(-6200, -9600), new Vec2(-6600, -9150), new Vec2(-7150, -9100), new Vec2(-8550, -9450), new Vec2(-11500, -10800), new Vec2(-11900, -11300) },
-            new[] { Gate("field_dungeon#0", "Hollow Crypt Halls", "Lv 44-48 · elite rooms, all aggressive", -9600, -11000) }),
+            new[] { Gate("field_dungeon#0", "Hollow Crypt Halls", "Lv 44-48 · elite rooms, all aggressive", -9600, -11000) },
+            "town_greymarsh"),
     }).ToArray();
 
     private static TeleportPoint Gate(string id, string name, string description, float x, float y) =>

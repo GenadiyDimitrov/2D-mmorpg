@@ -6545,6 +6545,7 @@ var effect = def.Effect;
             stack.Stacks = Math.Min(eff, stack.Stacks + 1);
             stack.MaxStacks = eff;
             stack.TicksRemaining = duration;   // refresh
+            stack.AppliedAtTick = _tick;       // re-applied = young again, for the slot cap
             if (def.StackLevelAt(stack.Stacks) is StackLevel slv)
             {
                 stack.Effect = slv.Effect;
@@ -6579,6 +6580,12 @@ var effect = def.Effect;
         if (def.Replaces is { Length: > 0 })
             target.Buffs.RemoveAll(b => def.Replaces.Contains(b.Key));
 
+        // Rule 3 — the SLOT CAP. Run last, after the two rules above have freed whatever they were
+        // going to free, so a buff that merely replaces another never evicts a third by accident.
+        BuffRow landingRow = rowOverride ?? def.BuffRow;
+        if (CountsAgainstBuffCap(landingRow, toggle))
+            EvictOldestBuffIfFull(target);
+
         // A leveled-stack effect starts at stack 1's entry; otherwise the skill's own effect.
         var first = def.StackLevelAt(1);
         target.Buffs.Add(new BuffInstance
@@ -6598,6 +6605,7 @@ var effect = def.Effect;
                 ? def.PowerAt(level) + (int)(target.MaxHp * def.MagnitudeOf(SkillEffect.Shield, ModifierMode.Percent, level))
                 : 0,
             MaxStacks = eff,
+            AppliedAtTick = _tick,
             Cancellable = def.Cancellable,
             SourceRow = rowOverride ?? def.BuffRow,   // which buff-bar row this lands in (debuffs override it)
             // The skill whose icon the bar shows. For a one-child wrapper that is the WRAPPER (the
@@ -6632,6 +6640,46 @@ var effect = def.Effect;
             }
         }
         return true;
+    }
+
+    /// <summary>Does a buff landing in this row occupy one of the <see cref="GameConstants.MaxBuffSlots"/>
+    /// slots — and, equivalently, may it be evicted to make room for another?
+    ///
+    /// Only what a player COLLECTS: the buffer's blessings (row Buff) and what came out of the bag
+    /// (row Consumable). Three things are deliberately outside the budget:
+    ///   • DEBUFFS — you did not choose them. Counting them would let an enemy's poison push a
+    ///     blessing off your bar, making every DoT a dispel; refusing them would make a full bar a
+    ///     debuff immunity. Both are worse than not counting them.
+    ///   • Row Item — armor sets, weapon abilities, the War/Spell Rune. These are re-applied by
+    ///     reconciliation the moment they vanish, so evicting one buys a slot for a fraction of a
+    ///     second and costs a flicker on the bar.
+    ///   • TOGGLES — you switched it on and only you switch it off. A toggle that silently died
+    ///     because you drank a potion would look like a bug, and re-arming it is a manual act.</summary>
+    private static bool CountsAgainstBuffCap(BuffRow row, bool toggle) =>
+        !toggle && row is BuffRow.Buff or BuffRow.Consumable;
+
+    /// <summary>Make room for one more collected buff, dropping the OLDEST if the target is already at
+    /// the cap (owner's rule: drop the oldest, never refuse the new one — a refusal arrives mid-fight
+    /// and sends you hunting the bar for something to cancel). Loops rather than dropping exactly one,
+    /// so a cap lowered at runtime settles instead of leaking a slot per cast.</summary>
+    private void EvictOldestBuffIfFull(Entity target)
+    {
+        while (true)
+        {
+            var counted = target.Buffs.Where(b => CountsAgainstBuffCap(b.SourceRow, b.Toggle)).ToList();
+            if (counted.Count < GameConstants.MaxBuffSlots) return;
+
+            // Oldest by application, and among equals the one expiring soonest — on login every
+            // restored buff shares a tick, and there "oldest" alone would be an arbitrary pick.
+            var victim = counted
+                .OrderBy(b => b.AppliedAtTick)
+                .ThenBy(b => b.TicksRemaining)
+                .First();
+            target.Buffs.Remove(victim);
+            if (target.Kind == EntityKind.Player)
+                SendSystemToEntity(target,
+                    $"{victim.Name} faded — you can only hold {GameConstants.MaxBuffSlots} buffs at once.");
+        }
     }
 
     /// <summary>Apply a damage-over-time. Two SEPARATE statuses (the L2 split): (1) the bleed

@@ -36,10 +36,7 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
    disengage · **the boss phase script must not replay** · safe-zone kiting · the two tuning rows.
    ⚠ `GameUi.Feedback.cs` and `GameUi.Debug.cs` are **not compile-verified** — the Unity scripts aren't
    in `Game.sln`, so the APK build is their first real compile.
-2. **The 24-slot buff cap.** The natural follow-up to 0.42.0 and the owner's original motive for the
-   wrapper design he didn't get. When built: **drop the oldest buff, don't refuse the new one** — a
-   refusal makes you hunt for something to cancel mid-fight.
-3. **Regen from gear vs regen from level — the owner's call, not built.** `AttributeType.MpRegen` rolls
+2. **Regen from gear vs regen from level — the owner's call, not built.** `AttributeType.MpRegen` rolls
    **flat** MP/s scaled by GRADE `(1+g, 3+g·2)`, while the level term is nearly flat (2.8 → 9.2 across
    levels 1-90). So gear dominates regen at *every* level; a level-35 subclass wearing the main's
    level-90 gear (28 MP/s on a ~4.9/s base) is only what made it visible. Options: make the roll a % of
@@ -55,8 +52,6 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
   accept/decline at the NPC. Track and Abandon shipped; the tabs did not.
 
 **World**
-- **Dungeon gates inside the matching city** — the last piece of the 0.33.0 re-layout: every gatekeeper
-  still offers Hollow Crypt rather than only the city whose band matches it.
 - **Mob cast bar** — believed built, never seen on screen. Verify before rebuilding.
 
 **UI / conveniences**
@@ -66,7 +61,6 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
 - **Wearable titles** — the leaderboard title over the head / by the name.
 - **Every non-admin command as an ACTION** in the Skills window's Actions tab. Block/like/unblock landed
   there; friend/party/sit/attack/assist still have nowhere to live.
-- **Admins excluded from the rankings.**
 - **Account warehouse** — the private one shipped; the account-wide half is still open.
 
 **Combat depth** — perfect/excellent block, position bonuses (hook reserved), PvP/PvE damage
