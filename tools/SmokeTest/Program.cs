@@ -776,7 +776,12 @@ Check("got two buff scrolls", ScrollsHeld() == 2, $"qty {ScrollsHeld()}");
 if (scroll is not null)
 {
     await a.Hub.SendAsync("UsePotion", scroll.InstanceId);
-    await Task.Delay(1500);   // the scroll CHANNELS for ~1s; Settle's 500ms lands mid-cast
+    // POLL, don't sleep a fixed span. The scroll's 1s authored channel is scaled by the CASTER's
+    // cast-speed multiplier, and this character is a heavy-armour tank with tank WIT — its real
+    // channel is ~3.5s, so the old flat 1500ms wait ended while the cast was still running and
+    // reported "the scroll is never consumed" against a server that was working correctly.
+    for (int i = 0; i < 40 && ScrollsHeld() == 2; i++)
+        await Task.Delay(250);
     Check("reading a buff scroll CONSUMES one", ScrollsHeld() == 1, $"{ScrollsHeld()} left");
     // Only a scroll runs an hour — the 20-minute potion from 4d can never clear 2000s, so this
     // cannot pass on the potion's square by accident.
