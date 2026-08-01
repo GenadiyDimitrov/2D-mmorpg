@@ -17,7 +17,8 @@ Index of everything under `docs/`.
 ## `testing/` — what to verify
 - [TestChecklist.md](testing/TestChecklist.md) — the running WPF / server playtest checklist.
 - [TestChecklist.Unity.md](testing/TestChecklist.Unity.md) — the Unity client checklist (the live one).
-- Playtest reports, verbatim: [Playtest-15.md](testing/Playtest-15.md) ·
+- Playtest reports, verbatim: [Playtest-16.md](testing/Playtest-16.md) ·
+  [Playtest-15.md](testing/Playtest-15.md) ·
   [Playtest-14.md](testing/Playtest-14.md) · [Playtest-13.md](testing/Playtest-13.md) ·
   [Playtest-0.28.76.md](testing/Playtest-0.28.76.md).
 
