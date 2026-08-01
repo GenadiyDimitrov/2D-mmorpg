@@ -449,7 +449,22 @@ public static class MobCatalog
         //      The broken pieces stay in the catalog and on the starter vendor's shelf.
         drops.AddRange(GearDrops(level, MobRank.Normal));
 
-        if (level >= 70) drops.Add(new(ItemCatalog.AttrScrollLegendary, 0.01f));
+        // ---- ATTRIBUTE SCROLLS. Each is banded to the gear grade it can touch (D-C-B / A / S),
+        //      so a mob only drops the scrolls that are useful against the gear at its own level.
+        //      These are the ONLY source of attributes now, which is why the entry scroll of each
+        //      band is the common one and the "top half" scrolls stay rare.
+        if (level >= 40)
+        {
+            drops.Add(new(ItemCatalog.AttrScrollCommon, 0.05f));
+            drops.Add(new(ItemCatalog.AttrScrollUncommon, 0.03f));
+            drops.Add(new(ItemCatalog.AttrScrollRare, 0.01f));
+        }
+        if (level >= 76)
+        {
+            drops.Add(new(ItemCatalog.AttrScrollEpic, 0.03f));
+            drops.Add(new(ItemCatalog.AttrScrollLegendary, 0.01f));
+        }
+        if (level >= 80) drops.Add(new(ItemCatalog.AttrScrollMythic, 0.003f));
         return drops.ToArray();
     }
 

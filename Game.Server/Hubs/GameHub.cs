@@ -373,10 +373,10 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
-    public Task RerollAttributes(Guid scrollInstanceId, Guid targetInstanceId, int[] lockedIndices)
+    public Task RerollAttributes(Guid scrollInstanceId, Guid targetInstanceId)
     {
         _world.Commands.Enqueue(new RerollAttributesCmd(Context.ConnectionId,
-            scrollInstanceId, targetInstanceId, lockedIndices ?? System.Array.Empty<int>()));
+            scrollInstanceId, targetInstanceId));
         return Task.CompletedTask;
     }
 

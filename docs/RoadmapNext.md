@@ -1,6 +1,6 @@
 # Roadmap — compact view (what's left, what depends on what)
 
-A one-screen digest of [Roadmap.md](Roadmap.md). Updated **2026-08-01 (0.44.0)**.
+A one-screen digest of [Roadmap.md](Roadmap.md). Updated **2026-08-02 (0.45.0)**.
 Full history: [CHANGELOG.md](CHANGELOG.md). The checklists: [testing/TestChecklist.Unity.md](testing/TestChecklist.Unity.md)
 (the phone) and [testing/TestChecklist.md](testing/TestChecklist.md) (server-side; its client steps
 predate the WPF harness being dropped in 0.42.8 — read them as "on the phone").
@@ -30,21 +30,24 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
 
 ## 🔴 NOW — the next three things
 
-1. **Publish 0.44.0 and play §36 + §40-42 in one pass.** `pwsh tools/publish.ps1` →
-   `builds/Game.Server-0.44.0.zip` + `builds/L2Clone-0.44.0.apk`. ⚠ `dotnet build` **before** the Unity
+1. **Publish 0.45.0 and play §36 + §40-43 in one pass.** `pwsh tools/publish.ps1` →
+   `builds/Game.Server-0.45.0.zip` + `builds/L2Clone-0.45.0.apk`. ⚠ `dotnet build` **before** the Unity
    build or the APK ships a stale version stamp, and 🔴 **delete `Game.Server/game.db`** (+ `-shm`/`-wal`)
-   — 0.44.0 added a column. §36 is the 0.42.3 mob-regen batch (the buff popup · nothing out-heals you ·
-   the 20s idle window · the ledger surviving a disengage · **the boss phase script must not replay** ·
-   safe-zone kiting · the two tuning rows); §40 the quest window, §41 the cast bar + target circles,
-   §42 titles + chat tabs. All four are unplayed and all four are in this one APK.
+   — 0.44.0 added a column and 0.45.0 invalidates every stored item attribute. §36 is the 0.42.3
+   mob-regen batch (the buff popup · nothing out-heals you · the 20s idle window · the ledger surviving
+   a disengage · **the boss phase script must not replay** · safe-zone kiting · the two tuning rows);
+   §40 the quest window, §41 the cast bar + target circles, §42 titles + chat tabs, §43 accuracy +
+   attributes + the scroll windows. All five are unplayed and all five are in this one APK.
    ⚠ (Was: "the Unity scripts are never compile-verified until the APK build." No longer true —
    `cd Game.Client.Unity && dotnet build Assembly-CSharp.csproj` type-checks them in ~18s. Do that
    before every APK.)
-2. **Regen from gear vs regen from level — the owner's call, not built.** `AttributeType.MpRegen` rolls
-   **flat** MP/s scaled by GRADE `(1+g, 3+g·2)`, while the level term is nearly flat (2.8 → 9.2 across
-   levels 1-90). So gear dominates regen at *every* level; a level-35 subclass wearing the main's
-   level-90 gear (28 MP/s on a ~4.9/s base) is only what made it visible. Options: make the roll a % of
-   base, or scale the base harder with level.
+2. ~~**Regen from gear vs regen from level**~~ — **answered and built in 0.45.0.** Gear regen is a
+   PERCENT roll now (rings, 1-5% by grade) rather than a flat MP/s that dominated the level curve at
+   every level. The flat types stay in the enum for pre-0.45 saves and nothing rolls them.
+3. **Watch endgame mob crit after the DEX change.** A normal mob's DEX went from `10 + level` (100 at
+   level 90) to a flat 30, which fixed the accuracy collapse but also cut mob crit rate and attack
+   speed at high level. If endgame mobs feel soft, the answer is a MobMod passive on the ones that
+   should be nasty — **not** putting the DEX curve back. See §43d.
 
 ## 🟡 OPEN — carried forward, nothing blocking them
 
@@ -66,6 +69,18 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
   The nameplate now draws an amber bar + the spell's name over the mob's head. Also fixed: `Kill`
   cleared the cast by hand instead of through `CancelCast`, so a caster killed mid-spell left its bar
   hanging over the corpse.
+
+**Items**
+- ~~The attribute system~~ — **rebuilt 0.45.0** on the owner's spec. One attribute per item, **nothing
+  drops with one** (a scroll is the only source, so a scroll is never wasted on trash), armor carries
+  none at all (its identity is its set), and item QUALITY no longer gates or scales it — the table is
+  absolute per GRADE (D/C/B/A/S = `ItemLevel` 40/52/61/76/80). Six scrolls, each locked to one band:
+  Common/Uncommon/Rare for D-C-B, **Epic**/Legendary for A, **Mythic** for S (always MAX). No lock,
+  no guaranteed top roll outside S. Checklist §43.
+- ~~Enchant + attribute scroll UI on the phone~~ — **built 0.45.0**, and the reason they "didn't work"
+  was that the client had no window at all: the hub methods had existed since the enchant system
+  shipped and nothing ever called them. Both now run one flow — tap the scroll → **Use** → a list of
+  legal targets → confirm — filtered by `AttributeSystem`, the same code the server validates with.
 
 **UI / conveniences**
 - ~~Chat tabs~~ — **built 0.44.0**, and with them the colours and tags: the phone's Log window is now a

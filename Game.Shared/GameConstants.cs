@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.44.0";
+    public const string GameVersion = "0.45.0";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -43,17 +43,20 @@ public static class GameConstants
     /// actually happens most: **client-only work, where the CLIENT is ahead of the server.** A version
     /// number that describes the contract instead of the build makes that case a non-event.
     /// </summary>
-    public const int ProtocolVersion = 10;
+    public const int ProtocolVersion = 11;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
     /// "current only"; setting it lower is a deliberate promise to keep handling the older shape, so
     /// it should only move when someone has actually checked that the code still does.
     ///
-    /// Held at 8 through the 9 (0.43.0, a field added to QuestLog) and 10 (0.44.0, a Title field added
-    /// to EntityDto plus a new SetTitle hub method) bumps: both are pure ADDITIONS that an older client
-    /// does not read and never calls. Its windows keep working exactly as they did, so an installed
-    /// 0.42.x APK still plays against this server — it simply shows no titles and no chat tabs.
+    /// Held at 8 through the 9 (0.43.0, a field added to QuestLog), 10 (0.44.0, a Title field added
+    /// to EntityDto plus a new SetTitle hub method) and 11 bumps. The first two are pure ADDITIONS an
+    /// older client does not read and never calls. 11 (0.45.0) DOES change a hub signature —
+    /// RerollAttributes dropped its lockedIndices argument — but no shipped client has ever called it:
+    /// attribute scrolls had no phone UI at all until this build, which is exactly why the system was
+    /// rebuilt. So an installed 0.42.x-0.44.x APK still plays against this server; it simply shows no
+    /// titles, no chat tabs and no scroll windows.
     /// </summary>
     public const int MinAcceptedProtocol = 8;
 

@@ -289,14 +289,24 @@ public static class StatCalculator
         return Math.Clamp(m, 0f, 1f);
     }
 
-    /// <summary>Physical accuracy from DEX (+ weapon/buffs added by the caller).
-    /// Level is NO LONGER baked in — cross-level effects come from the level-gap
-    /// curve in ResolveAvoidChance.</summary>
-    public static int Accuracy(int dex) => dex;
+    // ----- Accuracy / evasion: DEX + LEVEL (owner, 2026-08-02) --------------------------
+    //
+    // Both sides of the miss roll are `DEX + level`, so SAME DEX + SAME LEVEL is always the
+    // 5%/95% base and one point of difference is worth exactly 1% (StatCaps.AvoidStatSlope).
+    //
+    // This replaced a flat `= DEX`, which was a silent disaster: a player's DEX never grows,
+    // while a mob's is `10 + level`. The two crossed at level 20 and diverged 1 point per level
+    // in BOTH directions at once — a naked level-90 fighter missed 75% of his swings while the
+    // mob, sitting on the 5% floor, never missed him. Level now cancels out and the gear/passive
+    // layer is what creates a spread: fighters buy ACCURACY, rogues buy EVASION.
 
-    /// <summary>Physical evasion from DEX (+ archetype/gear/buffs added by caller).
-    /// Level handled by the level-gap curve, not here.</summary>
-    public static int Evasion(int dex) => dex;
+    /// <summary>Physical accuracy: DEX + level (+ weapon/gear/buffs added by the caller).
+    /// Cross-level effects still come from the level-gap curve in ResolveAvoidChance —
+    /// this term only keeps a same-level pair honest.</summary>
+    public static int Accuracy(int dex, int level) => dex + level;
+
+    /// <summary>Physical evasion: DEX + level (+ archetype/gear/buffs added by caller).</summary>
+    public static int Evasion(int dex, int level) => dex + level;
 
     // ----- Combat (Phase 2) -------------------------------------------------
 
@@ -691,7 +701,19 @@ public static class StatCalculator
         // Spt 30 = the neutral middle of the SPT curve. Mobs don't use it (MobMaxMp / MobMagicDefence
         // are their own curves) — it's here so the record is complete rather than defaulting to 0,
         // which would sit at the curve's floor if a mob ever did read it.
-        new(Con: 15 + level * 2, Atk: 8 + level * 2, Wit: 5, Dex: 10 + level, Spt: 30);
+        //
+        // ⚠ DEX IS FLAT, and deliberately (owner, 2026-08-02). It used to be `10 + level`, which was
+        // the real cause of the accuracy collapse: DEX drives accuracy, evasion, crit rate and attack
+        // speed, and a PLAYER's DEX never grows. Making accuracy `DEX + level` on both sides does NOT
+        // fix that on its own — the level terms cancel and the mob's own DEX growth still runs away.
+        // MobDexReference is the human-fighter base, so a same-level normal mob is a NEUTRAL opponent
+        // (5% both ways) and every point of spread comes from gear and passives, where it is earned.
+        new(Con: 15 + level * 2, Atk: 8 + level * 2, Wit: 5, Dex: MobDexReference, Spt: 30);
+
+    /// <summary>A normal mob's DEX at every level — the human-fighter base, so it is the neutral
+    /// benchmark both sides of the miss roll are measured against. A tougher/nimbler creature buys
+    /// its evasion with a MobMod passive (the Armor Weight mastery's ±10), not with a steeper curve.</summary>
+    public const int MobDexReference = 30;
 
     /// <summary>Mob MAGIC defence by level. The universal <see cref="MagicDefence"/>
     /// base (level/2) leaves low-level mobs at ~0 mDef, so spells divide by ~1 and

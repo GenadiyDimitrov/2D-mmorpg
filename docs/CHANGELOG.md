@@ -7,10 +7,89 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.44.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.45.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 2026-08-02 — Accuracy that scales, attributes you choose, and scrolls that finally work (0.45.0)
+
+Three connected things: the miss roll was quietly broken at every level above 20, attributes were
+rebuilt around scrolls instead of drops, and both scroll types got the phone UI they never had.
+
+### Accuracy and evasion — `DEX + level`, and a mob's DEX is flat
+
+The old rule was `Accuracy = Evasion = DEX`, with level handled only by the cross-level gap curve.
+That reads as reasonable and is a disaster in practice, because **a player's DEX never grows** (it is
+rolled at creation and only gear/stat-swap passives move it) while a mob's was `10 + level`. The two
+crossed at level 20 and then diverged one point — one percent — per level, in *both directions at
+once*: the mob out-evaded the player AND out-accuracied him into the 5% floor. A naked level-90
+fighter missed **75%** of his swings at a same-level mob, and the mob never missed him at all.
+
+- Accuracy and evasion are now **`DEX + level`** on both sides (`StatCalculator.Accuracy/Evasion`).
+- ⚠ **That alone fixes nothing** — the level terms cancel and the mob's own DEX growth still runs
+  away. Measured, not assumed: the first build of this change produced the identical 75%. So a
+  normal mob's DEX is now the **flat `StatCalculator.MobDexReference = 30`**, the human-fighter base.
+- The result, from `tools/BalanceMatrix`: a naked human fighter vs a same-level normal mob sits at
+  **5% both ways at every level from 1 to 90**. All spread now comes from gear and passives, which is
+  where it was always supposed to come from — fighters buy **accuracy** (weapon masteries, the
+  `Precision` hit floor), rogues buy **evasion** (`Evasion Mastery`, the light-armour masteries).
+  Both passives already existed; they simply never mattered against a curve that outran them.
+- ⚠ **Side effect, deliberate but worth watching:** DEX also drives crit rate and attack speed, so a
+  level-90 mob went from DEX 100 to 30 and now crits less and swings slightly slower. If endgame
+  mobs feel soft, the fix is a MobMod passive on the ones that should be nasty — not the DEX curve,
+  which is the thing that just got fixed.
+- `tools/BalanceMatrix` now prints a **HIT / MISS** table (naked and geared, both directions). This
+  change was diagnosed and verified there rather than by hand, per the standing rule.
+
+### Attributes — one per item, and only ever from a scroll
+
+- **Nothing drops with an attribute any more.** Every dropped weapon and jewel is bare. The reason is
+  economic (owner): *"you won't waste scrolls on trash when you know the next drop can be better."*
+  Only the god-tier debug one-offs, which author theirs in the catalog, still arrive with any.
+- **One attribute per item**, maximum. The multi-roll and the whole attribute-LOCK mechanic are gone.
+- **Armor carries none at all** — armor identity is its SET bonus. `ArmorPool`/`ArmorSlotPool` deleted.
+- **Item QUALITY no longer touches attributes.** It used to both gate them (Epic+ only) and scale the
+  ceiling (70/85/100%). The new table is absolute per GRADE, so a Common sword can carry the same
+  maximum roll as a Mythic one. Quality still buys raw stats and set identity.
+- The table is keyed on the **real ladder** — `ItemLevel` 40/52/61/76/80 = D/C/B/A/S — not the
+  `ItemGrade` enum, which has no C or D. Attributes start at **D grade, level 40**.
+- Per-family pools, authored by the owner: magic weapons roll cast speed / M.Atk / max MP; swords
+  attack speed / crit rate / max HP; blunt attack speed / crit damage / max HP; duals evasion / crit
+  rate / crit damage; bows accuracy / crit rate / crit damage. Jewels are 1–5%: rings HP/MP **regen**,
+  earrings max HP/MP, necklaces P.Atk/M.Atk.
+- **Accuracy and the regens became PERCENT rolls.** A flat accuracy roll made no sense once the base
+  stat grows with level — it would decay to nothing. The three old flat types are kept in the enum so
+  pre-0.45 saves still render, but nothing rolls them.
+
+### The scrolls, and the phone UI they never had
+
+Six attribute scrolls, each locked to one grade band and doing exactly one thing:
+
+| Band | Roll a type | Re-roll the value | Re-roll in the top half |
+|---|---|---|---|
+| **D / C / B** | Common | Uncommon | Rare |
+| **A** | Epic *(new)* | — | Legendary |
+| **S** | Mythic *(new)* — always at MAX | — | — |
+
+- A "re-roll the value" scroll **cannot create** an attribute — it refuses a bare item and tells you
+  which scroll to use first. A refusal never consumes the scroll.
+- No lock, and no guaranteed-top-value scroll outside S.
+- **Both scroll types are usable on the phone for the first time.** The commands had existed on the
+  server since the enchant system was built and *nothing ever sent them* — the client had no window,
+  so scrolls were dead weight in the bag. Inventory → tap a scroll → **Use** → a filtered list of
+  legal targets → confirm. The list is built from `AttributeSystem`, the same code the server
+  validates with, so it can never offer a target the server will refuse. Enchant's confirm box states
+  the odds *and* what a failure costs (a Common scroll destroys the item).
+- The item page now shows a **"Can roll"** block: what this base could carry and its range, before
+  you spend anything on it.
+- ⚠ **Soulcrystal/Starstone/Seraphite items (level 80+) were labelled A grade.** `TierGrade` had no S
+  rung, so every S item came out as A — which the new grade-banded scrolls would have read wrong.
+  Fixed.
+
+**Protocol 11** (`RerollAttributes` dropped its `lockedIndices` argument). `MinAcceptedProtocol` stays
+8: no shipped client has ever called that method, because none had the UI. 🔴 **Delete `game.db`** —
+existing items still carry old multi-attribute rolls. Checklist §43.
 
 ## 2026-08-01 — Titles you can wear, chat that is sorted, and the last action (0.44.0)
 

@@ -538,10 +538,10 @@ public class PersistenceService
     private static ItemRecord NewItem(string defId, int qty = 1)
     {
         var rec = new ItemRecord { InstanceId = Guid.NewGuid(), DefId = defId, Quantity = qty };
-        if (ItemCatalog.Get(defId) is ItemDef def && def.Slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Jewel)
-            rec.Attributes = def.FixedAttributes is { Length: > 0 } fixedAttrs
-                ? fixedAttrs.ToList()
-                : AttributeSystem.Roll(def, Random.Shared);
+        // 0.45.0: items are created BARE — attributes come only from an attribute scroll.
+        // The god-tier one-offs keep their authored FixedAttributes.
+        if (ItemCatalog.Get(defId) is ItemDef def && def.FixedAttributes is { Length: > 0 } fixedAttrs)
+            rec.Attributes = fixedAttrs.ToList();
         return rec;
     }
 

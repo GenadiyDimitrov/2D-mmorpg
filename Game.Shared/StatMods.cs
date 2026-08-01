@@ -27,8 +27,9 @@ public readonly record struct StatMods(
     // Physical / magic attack
     float PAtk = 0f, float PAtkPct = 0f,
     float MAtk = 0f, float MAtkPct = 0f,
-    // Accuracy / evasion
-    float Accuracy = 0f,
+    // Accuracy / evasion. Both have a flat and a percent form; the percent multiplies the
+    // finished stat (DEX + level + flats), which is what a bow's "Accuracy +30%" rolls.
+    float Accuracy = 0f, float AccuracyPct = 0f,
     float Evasion = 0f, float EvasionPct = 0f,
     // Crit (physical rate/damage, magic rate)
     float CritRate = 0f, float CritRatePct = 0f,
@@ -68,7 +69,7 @@ public readonly record struct StatMods(
         MaxHp * f, MaxHpPct * f, MaxMp * f, MaxMpPct * f,
         PDef * f, PDefPct * f, MDef * f, MDefPct * f,
         PAtk * f, PAtkPct * f, MAtk * f, MAtkPct * f,
-        Accuracy * f, Evasion * f, EvasionPct * f,
+        Accuracy * f, AccuracyPct * f, Evasion * f, EvasionPct * f,
         CritRate * f, CritRatePct * f, CritDamage * f, CritDamagePct * f, MagicCritRate * f,
         AtkSpeedPct * f, CastSpeedPct * f, MoveSpeed * f, MoveSpeedPct * f,
         HpRegen * f, HpRegenPct * f, MpRegen * f, MpRegenPct * f,
@@ -100,7 +101,7 @@ public readonly record struct StatTotals(
     float MDef = 0f, float MDefPct = 0f,
     float PAtk = 0f, float PAtkPct = 0f,
     float MAtk = 0f, float MAtkPct = 0f,
-    float Accuracy = 0f,
+    float Accuracy = 0f, float AccuracyPct = 0f,
     float Evasion = 0f, float EvasionPct = 0f,
     float CritRate = 0f, float CritRatePct = 0f,
     float CritDamage = 0f, float CritDamagePct = 0f,
@@ -127,7 +128,7 @@ public readonly record struct StatTotals(
         MDef + s.MDef, Mul(MDefPct, s.MDefPct),
         PAtk + s.PAtk, Mul(PAtkPct, s.PAtkPct),
         MAtk + s.MAtk, Mul(MAtkPct, s.MAtkPct),
-        Accuracy + s.Accuracy,
+        Accuracy + s.Accuracy, Mul(AccuracyPct, s.AccuracyPct),
         Evasion + s.Evasion, Mul(EvasionPct, s.EvasionPct),
         CritRate + s.CritRate, Mul(CritRatePct, s.CritRatePct),
         CritDamage + s.CritDamage, Mul(CritDamagePct, s.CritDamagePct),

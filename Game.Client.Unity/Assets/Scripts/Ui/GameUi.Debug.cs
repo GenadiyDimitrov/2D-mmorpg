@@ -285,7 +285,9 @@ namespace Game.Client
             DebugGive(ItemCatalog.AttrScrollCommon, "Attr Scroll (Common) x10", 10);
             DebugGive(ItemCatalog.AttrScrollUncommon, "Attr Scroll (Uncommon) x10", 10);
             DebugGive(ItemCatalog.AttrScrollRare, "Attr Scroll (Rare) x10", 10);
+            DebugGive(ItemCatalog.AttrScrollEpic, "Attr Scroll (Epic) x10", 10);
             DebugGive(ItemCatalog.AttrScrollLegendary, "Attr Scroll (Legendary) x10", 10);
+            DebugGive(ItemCatalog.AttrScrollMythic, "Attr Scroll (Mythic) x10", 10);
 
             DebugHeader("Buff potions & scrolls (x5)");
             DebugGive(ItemCatalog.SpeedPotionC, "Swift Potion (Lesser) x5", 5);

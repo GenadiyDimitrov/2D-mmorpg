@@ -742,6 +742,60 @@ was a deliberate call), so `admin/admin` can never hold a title. Any `test1..9` 
         assist · friend add/remove/list · like · block/unblock · whisper. Nothing a player can type is
         missing from it except a whisper's own message text (which no button can supply).
 
+--- 43. 🔴 ACCURACY, ATTRIBUTES AND THE SCROLL WINDOWS (0.45.0, built 2026-08-02, unplayed). ---
+**Protocol 11 → needs a NEW APK.** 🔴 **Delete `game.db`** — every item in an existing save still
+carries the old multi-attribute rolls, and armor is not supposed to have any at all now.
+
+**Accuracy / evasion.** The old rule was a silent disaster: accuracy was `DEX` alone, and a player's
+DEX never grows while a mob's was `10 + level`. They crossed at level 20 and diverged 1 point (= 1%)
+per level in BOTH directions — a naked level-90 fighter missed 75% of his swings and the mob, sitting
+on the 5% floor, never missed him. Accuracy and evasion are now `DEX + level` on both sides AND a
+mob's DEX is a flat 30 (the human-fighter base), so a same-level pair sits at the 5% base both ways
+and every point of spread is bought with gear or a passive.
+43a.[ ] **A same-level mob is a fair fight at every level.** Take a level-20-ish character and a level
+        70+ one against NORMAL same-level mobs: neither should feel like it whiffs constantly. The
+        endgame character in particular must NOT miss most of its swings — that is the bug being fixed.
+43b.[ ] **Level gap still bites.** A mob 10+ levels above you must still be hard to hit, and 20+ must
+        still be the full lockout. The gap curve was not touched; only the same-level baseline was.
+43c.[ ] **Rogues dodge, fighters land.** A dagger/rogue with Evasion Mastery should visibly take more
+        misses than a knight does; a fighter with Precision should keep landing hits on something that
+        evades well. Both passives already existed — this is checking they now MATTER.
+43d.[ ] ⚠ **Mob crit dropped as a side effect.** Mob DEX went from ~100 to 30 at level 90, and DEX also
+        drives crit rate and attack speed — so high-level mobs now crit less often and swing slightly
+        slower. Watch whether endgame mobs became too soft; if so the fix is a MobMod passive, not the
+        DEX curve.
+
+**Attributes — rebuilt.** One attribute per item, maximum. **Nothing drops with an attribute any
+more** — a scroll is the only source. Armor carries none at all (its identity is its set). Item
+QUALITY no longer matters: a Common sword can roll the same maximum as a Mythic one.
+43e.[ ] **A fresh drop is bare.** Kill things until a weapon or jewel drops and confirm it has NO
+        attribute line. Same for armor at every quality — armor must never show one.
+43f.[ ] **"Can roll" is on the item page.** Open any D-grade-or-better weapon/jewel: below the stats it
+        lists what that base COULD carry and the range, e.g. `Crit Rate 10~30%` for a B dagger. This is
+        the whole point — you decide if a base is worth a scroll before spending one.
+43g.[ ] **The scroll windows exist at all.** Inventory → tap an enchant or attribute scroll → **Use** →
+        a list of legal targets → confirm. Neither had ANY phone UI before this build.
+43h.[ ] **The target list is filtered, not just long.** A Common attribute scroll must offer only D/C/B
+        weapons and jewels; an Epic only A; a Mythic only S. An **Uncommon/Rare/Legendary must not
+        offer a bare item** (they re-roll a value, they can't create one) — the list should be empty
+        with a message saying so if you own nothing eligible.
+43i.[ ] **Each scroll does its own thing.** On a B-grade dagger: Common gives it a random attribute of
+        the dagger's three; Uncommon keeps that attribute and moves the number; Rare keeps it and lands
+        in the TOP HALF. On an A weapon: Epic = the Common behaviour, Legendary = the Rare behaviour.
+        On an S weapon: Mythic rolls a type at its MAXIMUM every time.
+43j.[ ] **Ranges match the table.** Spot-check a few: magic weapon cast speed tops out at 15%, a bow's
+        crit damage at 35%, a ring's HP regen at 5%. An S item always rolls the single top value.
+43k.[ ] **A refusal costs nothing.** If the server rejects a use (wrong grade, nothing to re-roll), the
+        scroll must still be in your bag afterwards.
+43l.[ ] **The stat actually moves.** Put an Attack Speed roll on a worn sword and watch the character
+        sheet / swing rate change; take it off and it goes away. Same for a bow's Accuracy % — it must
+        multiply your finished accuracy, not add 30 flat.
+43m.[ ] **Enchant failure behaves as advertised.** The confirm box states the odds and what a failure
+        costs. A Common scroll failing must DESTROY the item; Uncommon resets to +0; Rare drops 1.
+43n.[ ] **Soulcrystal gear reads S.** Level-80+ items (Soulcrystal / Starstone / Seraphite) were
+        labelled A grade by the pricing enum. They must show S now — and only a Mythic attribute
+        scroll may touch them.
+
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends
         (and combat decays) it works. Same for `/exit`. Pulling the plug mid-DoT must not run the
@@ -793,7 +847,7 @@ As of 2026-07-23 the A–F parity batches closed most of the old gaps (inventory
 buffs, quests, party, trade, vendors, NPC dialog, debug, auto-hunt, mob info all exist now, on
 uGUI + TextMeshPro). What remains:
 
-- **Enchant / reroll UI** — deferrable per the owner; not built.
+- ~~**Enchant / reroll UI**~~ — **BUILT IN 0.45.0**, test it as §43.
 - **3-tab auto-potions** (4 potions + buff-potions/scrolls) — **blocked on the potion rework**
   (Roadmap, 2026-07-23). Today's window is HP/MP % only.
 - **Per-skill auto-farm priority / custom-cd / cyclic toggle / heal chain** — deferred design

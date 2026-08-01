@@ -216,6 +216,16 @@ namespace Game.Client
         public Task SelectBoxItemsAsync(Guid instanceId, string[] itemIds) =>
             _connection.SendAsync("SelectBoxItems", instanceId, itemIds);
 
+        /// <summary>Burn an ENCHANT scroll on a piece of gear (+1 on success; the scroll kind decides
+        /// what a failure costs — break / reset to +0 / −1).</summary>
+        public Task EnchantAsync(Guid scrollInstanceId, Guid targetInstanceId) =>
+            _connection.SendAsync("Enchant", scrollInstanceId, targetInstanceId);
+
+        /// <summary>Burn an ATTRIBUTE scroll on a weapon or jewel. The item holds at most one
+        /// attribute; the scroll kind decides whether this creates one or re-rolls its value.</summary>
+        public Task RerollAttributesAsync(Guid scrollInstanceId, Guid targetInstanceId) =>
+            _connection.SendAsync("RerollAttributes", scrollInstanceId, targetInstanceId);
+
         // ----- In-world commands (the slice uses Move + Attack; the rest are ready for later) -----
         public Task MoveAsync(float targetX, float targetY) =>
             _connection.SendAsync("Move", new MoveCommand(targetX, targetY));

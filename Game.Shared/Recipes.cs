@@ -240,8 +240,13 @@ public static class RecipeCatalog
         yield return Scroll(ItemCatalog.AimScrollU, ItemRarity.Uncommon, 40, 3);
         yield return Scroll(ItemCatalog.ScrollUncommon, ItemRarity.Common, 20, 5);
         yield return Scroll(ItemCatalog.ScrollRare, ItemRarity.Uncommon, 40, 5);
+        // Attribute scrolls: the D-C-B pair is craftable early, the A-grade pair late. The
+        // Common (entry) scroll and the S-grade Mythic are deliberately NOT craftable — those
+        // stay a drop, so the attribute economy has a faucet the scribe can't flood.
         yield return Scroll(ItemCatalog.AttrScrollUncommon, ItemRarity.Common, 20, 3);
         yield return Scroll(ItemCatalog.AttrScrollRare, ItemRarity.Uncommon, 40, 3);
+        yield return Scroll(ItemCatalog.AttrScrollEpic, ItemRarity.Rare, 76, 3);
+        yield return Scroll(ItemCatalog.AttrScrollLegendary, ItemRarity.Rare, 76, 3);
     }
 
     public static Recipe? Get(string id) => id is null ? null : _byId.GetValueOrDefault(id);

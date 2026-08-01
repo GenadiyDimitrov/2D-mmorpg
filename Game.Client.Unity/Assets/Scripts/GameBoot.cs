@@ -146,6 +146,22 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Select: " + ex.Message); }
         }
 
+        /// <summary>Use an enchant scroll on a piece of gear.</summary>
+        public async void Enchant(Guid scrollInstanceId, Guid targetInstanceId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.EnchantAsync(scrollInstanceId, targetInstanceId); }
+            catch (Exception ex) { ClientLog.Warn("Enchant: " + ex.Message); }
+        }
+
+        /// <summary>Use an attribute scroll on a weapon or jewel.</summary>
+        public async void RerollAttributes(Guid scrollInstanceId, Guid targetInstanceId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.RerollAttributesAsync(scrollInstanceId, targetInstanceId); }
+            catch (Exception ex) { ClientLog.Warn("Attribute: " + ex.Message); }
+        }
+
         /// <summary>Walk after a player until you move or they leave (null stops following).</summary>
         public async void Follow(Guid? targetId)
         {

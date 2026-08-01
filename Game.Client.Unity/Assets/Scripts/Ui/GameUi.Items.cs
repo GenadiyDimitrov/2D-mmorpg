@@ -216,6 +216,14 @@ namespace Game.Client
                 // (ShowBoxSelection). This is how rune boxes → runes on the phone.
                 actions.Add(("Open", () => { Boot.OpenBox(id); CloseWindow(v.Panel); }));
             }
+            else if (ItemCatalog.IsEnchantScroll(def) || ItemCatalog.IsAttributeScroll(def))
+            {
+                // Enchant and attribute scrolls both work the same way from the player's side:
+                // tap Use, pick which of your items to burn it on, confirm. Until 0.45.0 neither
+                // had ANY phone UI at all — the commands existed on the server and nothing sent
+                // them, so scrolls were dead weight in the bag.
+                actions.Add(("Use", () => BeginScrollUse(item, def)));
+            }
 
             // Runes can't be binned (server refuses too) — don't offer it.
             if (!def.IsRune)
@@ -224,6 +232,120 @@ namespace Game.Client
             LayoutButtons(v.Buttons, actions);
             OpenWindow(v.Panel);
         }
+
+        // ----- scrolls: enchant + attribute -------------------------------------------------------
+        //
+        // One flow for both. The eligibility rules are NOT re-implemented here — an attribute
+        // scroll's grade band and "needs an existing attribute" rule come from AttributeSystem,
+        // the same code the server validates with, so the list can never offer a target the
+        // server will refuse. The server is still the authority; this only saves the player taps.
+
+        /// <summary>Tapping Use on a scroll: offer the items it can legally be spent on.</summary>
+        private void BeginScrollUse(InventoryItemDto scroll, ItemDef scrollDef)
+        {
+            bool attribute = ItemCatalog.IsAttributeScroll(scrollDef);
+            var options = new List<(string Label, Action OnPick)>();
+
+            foreach (var it in Boot.Inventory ?? Array.Empty<InventoryItemDto>())
+            {
+                var d = ItemCatalog.Get(it.DefId);
+                if (d == null || !ScrollCanTarget(scrollDef, d, it, attribute)) continue;
+
+                var target = it;
+                var targetDef = d;
+                options.Add((ScrollTargetLabel(targetDef, target, attribute),
+                             () => ConfirmScrollUse(scroll, scrollDef, target, targetDef, attribute)));
+            }
+
+            if (options.Count == 0)
+            {
+                // Say WHY there is nothing, not just "nothing" — for an attribute scroll the reason
+                // is almost always the grade band or a bare item, and both are fixable.
+                ClientLog.Info(attribute
+                    ? "Nothing to use it on: this scroll takes " + AttributeSystem.AcceptedGrades(scrollDef.AttrScroll)
+                      + " grade weapons and jewels"
+                      + (AttributeSystem.NeedsExisting(scrollDef.AttrScroll)
+                            ? ", and only ones that already have an attribute." : ".")
+                    : "Nothing to enchant — every piece you own is already at max enchant.");
+                return;
+            }
+
+            ShowSelection(scrollDef.Name, options.ToArray());
+        }
+
+        private static bool ScrollCanTarget(ItemDef scrollDef, ItemDef def, InventoryItemDto item, bool attribute)
+        {
+            if (attribute)
+            {
+                if (!AttributeSystem.CanHoldAttribute(def)) return false;
+                if (!AttributeSystem.Accepts(scrollDef.AttrScroll, AttributeSystem.TierOf(def.ItemLevel)))
+                    return false;
+                // A value re-roll needs something to re-roll.
+                if (AttributeSystem.NeedsExisting(scrollDef.AttrScroll)
+                    && (item.Attributes == null || item.Attributes.Length == 0)) return false;
+                return true;
+            }
+            return ItemCatalog.IsEquippable(def) && item.Enchant < EnchantRules.MaxEnchant;
+        }
+
+        /// <summary>A target row: the item, plus the one number that decides whether to spend the
+        /// scroll on it — its current attribute, or the odds this enchant survives.</summary>
+        private static string ScrollTargetLabel(ItemDef def, InventoryItemDto item, bool attribute)
+        {
+            string name = Coloured((item.Enchant > 0 ? "+" + item.Enchant + " " : "") + def.Name, def.Rarity);
+            if (item.Equipped) name += "  (worn)";
+
+            if (attribute)
+            {
+                if (item.Attributes != null && item.Attributes.Length > 0)
+                {
+                    var a = item.Attributes[0];
+                    return name + "\n<size=13>" + AttributeSystem.DisplayName(a.Type) + " +" + a.Value
+                           + (AttributeSystem.IsPercent(a.Type) ? "%" : "") + "</size>";
+                }
+                return name + "\n<size=13>no attribute</size>";
+            }
+            int pct = Mathf.RoundToInt(EnchantRules.SuccessChance(item.Enchant) * 100f);
+            return name + "\n<size=13>+" + (item.Enchant + 1) + " at " + pct + "%</size>";
+        }
+
+        /// <summary>Last stop before the scroll is gone. Enchant spells out what a FAILURE costs,
+        /// because that is the part that loses the item — a Common scroll shatters it.</summary>
+        private void ConfirmScrollUse(InventoryItemDto scroll, ItemDef scrollDef,
+                                      InventoryItemDto target, ItemDef targetDef, bool attribute)
+        {
+            string question;
+            if (attribute)
+            {
+                question = "Use " + scrollDef.Name + " on " + targetDef.Name + "?";
+                if (AttributeSystem.ActionOf(scrollDef.AttrScroll) == AttrScrollAction.RollType
+                    && target.Attributes != null && target.Attributes.Length > 0)
+                    question += "\n\nThis REPLACES its current attribute with a random one.";
+            }
+            else
+            {
+                int pct = Mathf.RoundToInt(EnchantRules.SuccessChance(target.Enchant) * 100f);
+                question = "Enchant " + targetDef.Name + " to +" + (target.Enchant + 1) + "?"
+                         + "\n\nSuccess " + pct + "%.  On failure: " + EnchantFailureText(scrollDef.ScrollKind);
+            }
+
+            var scrollId = scroll.InstanceId;
+            var targetId = target.InstanceId;
+            Ask(question, "Use", () =>
+            {
+                if (attribute) Boot.RerollAttributes(scrollId, targetId);
+                else Boot.Enchant(scrollId, targetId);
+                CloseAllItemViews();
+            });
+        }
+
+        private static string EnchantFailureText(ScrollKind kind) => kind switch
+        {
+            ScrollKind.Common => "<color=#FF8080>the item is DESTROYED</color>.",
+            ScrollKind.Uncommon => "the enchant resets to +0.",
+            ScrollKind.Rare => "the enchant drops by 1.",
+            _ => "nothing happens."
+        };
 
         /// <summary>Bin-delete: a stack asks one-vs-all through the reusable popup; a single item just
         /// confirms. Either way the details window closes once the item is gone.</summary>
@@ -370,10 +492,33 @@ namespace Game.Client
             if (item.Attributes != null && item.Attributes.Length > 0)
             {
                 t.AppendLine();
-                t.AppendLine("<b>Attributes</b>");
+                t.AppendLine("<b>Attribute</b>");
                 foreach (var a in item.Attributes)
                     Line("  " + AttributeSystem.DisplayName(a.Type) + "  +" + a.Value
                          + (AttributeSystem.IsPercent(a.Type) ? "%" : ""));
+            }
+
+            // What this base COULD carry. Shown whether or not it already has one, because the
+            // whole point of attributes-by-scroll is deciding if a base is worth a scroll BEFORE
+            // you spend it — you can see a D-grade dagger tops out at 30% crit rate without
+            // burning anything to find out.
+            if (AttributeSystem.CanHoldAttribute(def))
+            {
+                var rolls = AttributeSystem.PossibleRolls(def).ToList();
+                if (rolls.Count > 0)
+                {
+                    t.AppendLine();
+                    t.AppendLine("<b>Can roll</b>  (attribute scroll, "
+                                 + AttributeSystem.TierName(AttributeSystem.TierOf(def.ItemLevel)) + " grade)");
+                    foreach (var r in rolls) Line("  " + r);
+                }
+            }
+
+            // Scrolls (and anything else with authored flavour) explain themselves.
+            if (!string.IsNullOrEmpty(def.Description))
+            {
+                t.AppendLine();
+                Line(def.Description);
             }
 
             // Every consumable describes itself through the SKILL it grants.

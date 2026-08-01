@@ -240,10 +240,11 @@ public record ResurrectResponseCmd(string ConnectionId, bool Accept) : IGameComm
 /// <summary>Apply an enchant scroll to a target item.</summary>
 public record EnchantCmd(string ConnectionId, Guid ScrollInstanceId, Guid TargetInstanceId) : IGameCommand;
 
-/// <summary>Reroll a target item's rolled attributes with an attribute scroll,
-/// locking the slots at LockedIndices (clamped to the scroll's lock capacity).</summary>
+/// <summary>Apply an attribute scroll to a target item. The item holds AT MOST ONE attribute;
+/// what the scroll does to it (create / re-roll the value / re-roll high / max) is the scroll
+/// kind's business — see AttributeSystem.ApplyScroll. There is no lock any more.</summary>
 public record RerollAttributesCmd(string ConnectionId, Guid ScrollInstanceId,
-    Guid TargetInstanceId, int[] LockedIndices) : IGameCommand;
+    Guid TargetInstanceId) : IGameCommand;
 
 /// <summary>Destroy an inventory item (later: sell/dismantle).</summary>
 /// <summary>Destroy an item. <paramref name="All"/> = the whole stack; otherwise ONE from the stack

@@ -1777,33 +1777,24 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        if (target.Attributes.Count == 0)
+        // ONE attribute per item (0.45.0). AttributeSystem owns every rule — grade band, whether
+        // the scroll can create an attribute or only re-roll one, and the value window — so a
+        // refusal here is always a message the player can act on, and the scroll is NOT consumed.
+        var current = target.Attributes.Count > 0 ? target.Attributes[0] : null;
+        var roll = AttributeSystem.ApplyScroll(targetDef, current, scrollDef.AttrScroll, _rng);
+        if (!roll.Ok || roll.Attribute is null)
         {
-            SendSystemToEntity(player, $"{targetDef.Name} has no attributes to reroll.");
+            SendSystemToEntity(player, roll.Message);
             return;
         }
 
-        // Build the lock mask from the requested indices, clamped to the scroll's capacity.
-        int capacity = AttributeSystem.RerollLockCapacity(scrollDef.AttrScroll);
-        var locked = new bool[target.Attributes.Count];
-        int lockedCount = 0;
-        foreach (var idx in cmd.LockedIndices.Distinct())
-        {
-            if (idx < 0 || idx >= locked.Length || lockedCount >= capacity) continue;
-            locked[idx] = true;
-            lockedCount++;
-        }
-
-        bool forceMax = scrollDef.AttrScroll == AttrScrollKind.Legendary;
-        target.Attributes = AttributeSystem.Reroll(targetDef, target.Attributes, locked, forceMax, _rng);
+        target.Attributes = new List<ItemAttribute> { roll.Attribute };
 
         ConsumeOne(player, scroll);
         if (target.Equipped)
             player.RecomputeDerived();
 
-        string outcome = forceMax
-            ? $"{targetDef.Name} attributes rerolled to MAX."
-            : $"{targetDef.Name} attributes rerolled.";
+        string outcome = roll.Message;
         // Inventory first (see HandleEnchant) so the reroll popup re-renders from fresh data.
         SendInventory(player);
         SendTo(player, "Reroll", new RerollResultDto(targetDef.Name, outcome));
@@ -8543,10 +8534,12 @@ var effect = def.Effect;
             return false;   // worn gear doesn't occupy a bag slot
 
         var newItem = new InventoryItem { DefId = defId, Quantity = stackable ? quantity : 1 };
-        if (rollAttributes && def.Slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Jewel)
-            newItem.Attributes = def.FixedAttributes is { Length: > 0 } fixedAttrs
-                ? fixedAttrs.ToList()                    // legendary one-off
-                : AttributeSystem.Roll(def, _rng);       // normal random roll
+        // 0.45.0: nothing drops WITH an attribute any more. A dropped weapon/jewel is bare and
+        // the player decides whether it is worth a scroll (owner: "you won't waste scrolls on
+        // trash when you know the next drop can be better"). Only the god-tier one-offs, which
+        // author their attributes in the catalog, still arrive with any.
+        if (rollAttributes && def.FixedAttributes is { Length: > 0 } fixedAttrs)
+            newItem.Attributes = fixedAttrs.ToList();
 
         // A RUNE gets its wall-clock expiry stamped the moment it's ACQUIRED (owner: not only boxes stamp).
         // The default is the rune's own GrantsRuneSeconds; a box that grants it OVERRIDES this afterwards

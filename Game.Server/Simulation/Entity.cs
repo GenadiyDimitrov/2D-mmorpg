@@ -1292,8 +1292,8 @@ public class Entity
         PvpMagicDamageBonus = 0f;
         PvpBasicDamageBonus = 0f;
         CancelResist = 0f;
-        Accuracy = StatCalculator.Accuracy(EffectiveDex);
-        Evasion = StatCalculator.Evasion(EffectiveDex);
+        Accuracy = StatCalculator.Accuracy(EffectiveDex, Level);
+        Evasion = StatCalculator.Evasion(EffectiveDex, Level);
         CritChance = StatCalculator.PhysicalCritChance(EffectiveDex);
         MagicCritChance = StatCalculator.MagicCritChance(EffectiveWit);
         InterruptResist = StatCalculator.InterruptResist(EffectiveWit, Level);
@@ -1434,10 +1434,13 @@ public class Entity
             MagicAttack = StatCalculator.MagicAttackStatScaled(weaponMAtk, EffectiveAtk);
         }
 
-        // ----- Item attributes (rolled per drop) -----
+        // ----- Item attributes (0.45.0: at most one per item, put there by an attribute
+        //       scroll — items no longer drop with any. The flat Accuracy/HpRegen/MpRegen
+        //       cases only fire for items rolled before the change. -----
         float hpPct = 0, mpPct = 0, speedPct = 0, castPct = 0, atkSpeedPct = 0, atkPct = 0, evaPct = 0, defPct = 0;
         float accFlat = 0, hpRegFlat = 0, mpRegFlat = 0, critRatePct = 0, critDmgPct = 0;
         float mAtkPct = 0, magicCritPct = 0;
+        float accPct = 0, hpRegPct = 0, mpRegPct = 0, pAtkPct = 0;
         foreach (var item in Inventory)
         {
             if (!item.Equipped) continue;
@@ -1460,13 +1463,17 @@ public class Entity
                     case AttributeType.CritDamage: critDmgPct += attr.Value; break;
                     case AttributeType.MagicAttackPercent: mAtkPct += attr.Value; break;   // caster wands/staves
                     case AttributeType.MagicCritRate: magicCritPct += attr.Value; break;
+                    case AttributeType.AccuracyPercent: accPct += attr.Value; break;       // bow
+                    case AttributeType.HpRegenPercent: hpRegPct += attr.Value; break;      // ring
+                    case AttributeType.MpRegenPercent: mpRegPct += attr.Value; break;      // ring
+                    case AttributeType.PhysicalAttackPercent: pAtkPct += attr.Value; break; // necklace
                 }
             }
         }
 
         MaxHp += (int)(MaxHp * hpPct / 100f);
         MaxMp += (int)(MaxMp * mpPct / 100f);
-        AttackPower += (int)(AttackPower * atkPct / 100f);
+        AttackPower += (int)(AttackPower * (atkPct + pAtkPct) / 100f);
         MagicAttack += (int)(MagicAttack * (atkPct + mAtkPct) / 100f);
         if (magicCritPct != 0f) MagicCritChance = Math.Clamp(MagicCritChance + magicCritPct / 100f, 0f, StatCaps.MagicCritRate);
         Evasion += (int)(Evasion * evaPct / 100f);
@@ -1479,9 +1486,14 @@ public class Entity
         }
         CastSpeedMultiplier = Math.Max(0.4f, 1f - castPct / 100f);
         AttackSpeedMultiplier = Math.Max(0.4f, 1f - atkSpeedPct / 100f);
+        // Flat first, then the percent — the percent roll multiplies the finished
+        // (DEX + level + flats) accuracy, so it keeps pace as you level.
         Accuracy += (int)accFlat;
+        if (accPct != 0f) Accuracy += (int)(Accuracy * accPct / 100f);
         HpRegenBonus = hpRegFlat;
         MpRegenBonus = mpRegFlat;
+        if (hpRegPct != 0f) HpRegenMult *= 1f + hpRegPct / 100f;
+        if (mpRegPct != 0f) MpRegenMult *= 1f + mpRegPct / 100f;
         CritDamageBonus = critDmgPct / 100f;   // e.g. 20 -> +0.20x crit multiplier
 
         // ----- Flat class bonuses (class identity; additive over gear) -----
@@ -1541,7 +1553,7 @@ public class Entity
             AttackPower = (int)((AttackPower + (int)m.PAtk) * (1f + m.PAtkPct));
             MagicAttack = (int)((MagicAttack + (int)m.MAtk) * (1f + m.MAtkPct));
             Evasion = (int)((Evasion + (int)m.Evasion) * (1f + m.EvasionPct));
-            Accuracy += (int)m.Accuracy;
+            Accuracy = (int)((Accuracy + (int)m.Accuracy) * (1f + m.AccuracyPct));
             if (m.CastSpeedPct != 0f)
                 CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier / (1f + m.CastSpeedPct), 0.4f, 2.5f);
             if (m.AtkSpeedPct != 0f)

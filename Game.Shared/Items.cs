@@ -170,11 +170,14 @@ public static class WeaponTypes
 /// Rare -> enchant drops by 1 (never breaks).</summary>
 public enum ScrollKind { None = 0, Common = 1, Uncommon = 2, Rare = 3 }
 
-/// <summary>Attribute (re-roll) scroll tier. Rarity decides how many of the item's
-/// rolled attributes you can LOCK while the rest re-roll: Common locks 0 (reroll all),
-/// Uncommon 1, Rare 2; Legendary rerolls ALL and forces each to its MAX value (for a
-/// legendary item whose every stat must be maxed).</summary>
-public enum AttrScrollKind { None = 0, Common = 1, Uncommon = 2, Rare = 3, Legendary = 4 }
+/// <summary>Attribute scroll tier (0.45.0). Each kind serves ONE grade band and does ONE
+/// thing — see <see cref="AttributeSystem.ActionOf"/> / <see cref="AttributeSystem.Accepts"/>:
+///   D-C-B: Common = roll a type, Uncommon = re-roll the value, Rare = re-roll in the top half.
+///   A:     Epic = roll a type, Legendary = re-roll in the top half.
+///   S:     Mythic = roll a type at its maximum.
+/// There is no attribute LOCK any more, and outside S no scroll guarantees the top value.
+/// (Epic/Mythic are appended out of ladder order because the values are persisted.)</summary>
+public enum AttrScrollKind { None = 0, Common = 1, Uncommon = 2, Rare = 3, Legendary = 4, Epic = 5, Mythic = 6 }
 
 /// <summary>
 /// An item template. The Id is a STABLE STRING KEY (e.g. "sword_e_rare") — it
@@ -473,6 +476,8 @@ public static class ItemCatalog
     public const string AttrScrollUncommon = "attrscroll_uncommon";
     public const string AttrScrollRare = "attrscroll_rare";
     public const string AttrScrollLegendary = "attrscroll_legendary";
+    public const string AttrScrollEpic = "attrscroll_epic";
+    public const string AttrScrollMythic = "attrscroll_mythic";
     public const string MarkOfFaith = "quest_mark_of_faith";
     public const string ClericsProof = "quest_clerics_proof";
 
@@ -1216,16 +1221,34 @@ public static class ItemCatalog
         list.Add(new ItemDef(ScrollRare, "Enchant Scroll (Rare)", EquipSlot.Scroll,
             ItemGrade.F, ItemRarity.Rare, ScrollKind: ScrollKind.Rare));
 
-        // ----- Attribute (re-roll) scrolls: reroll an item's rolled attributes,
-        //       locking some by scroll tier. Legendary rerolls all at MAX value. -----
+        // ----- Attribute scrolls (0.45.0). A weapon or jewel drops BARE; a scroll is the only
+        //       way it ever gains an attribute. Three scrolls cover the D-C-B stretch, a pair
+        //       covers A, and one covers S. Each is locked to its grade band so a cheap scroll
+        //       can never touch endgame gear. -----
         list.Add(new ItemDef(AttrScrollCommon, "Attribute Scroll (Common)", EquipSlot.Scroll,
-            ItemGrade.F, ItemRarity.Common, AttrScroll: AttrScrollKind.Common));
+            ItemGrade.F, ItemRarity.Common, AttrScroll: AttrScrollKind.Common,
+            Description: "D, C or B grade. Gives the item a random attribute for its type, "
+                       + "at a random value. Replaces whatever it had."));
         list.Add(new ItemDef(AttrScrollUncommon, "Attribute Scroll (Uncommon)", EquipSlot.Scroll,
-            ItemGrade.F, ItemRarity.Uncommon, AttrScroll: AttrScrollKind.Uncommon));
+            ItemGrade.F, ItemRarity.Uncommon, AttrScroll: AttrScrollKind.Uncommon,
+            Description: "D, C or B grade. Keeps the attribute the item already has and "
+                       + "re-rolls its value. The item must already have one."));
         list.Add(new ItemDef(AttrScrollRare, "Attribute Scroll (Rare)", EquipSlot.Scroll,
-            ItemGrade.F, ItemRarity.Rare, AttrScroll: AttrScrollKind.Rare));
+            ItemGrade.F, ItemRarity.Rare, AttrScroll: AttrScrollKind.Rare,
+            Description: "D, C or B grade. Keeps the attribute and re-rolls its value in the "
+                       + "TOP HALF of the range. The item must already have one."));
+        list.Add(new ItemDef(AttrScrollEpic, "Attribute Scroll (Epic)", EquipSlot.Scroll,
+            ItemGrade.A, ItemRarity.Epic, AttrScroll: AttrScrollKind.Epic,
+            Description: "A grade only. Gives the item a random attribute for its type, at a "
+                       + "random value. Replaces whatever it had."));
         list.Add(new ItemDef(AttrScrollLegendary, "Attribute Scroll (Legendary)", EquipSlot.Scroll,
-            ItemGrade.F, ItemRarity.Legendary, AttrScroll: AttrScrollKind.Legendary));
+            ItemGrade.A, ItemRarity.Legendary, AttrScroll: AttrScrollKind.Legendary,
+            Description: "A grade only. Keeps the attribute and re-rolls its value in the TOP "
+                       + "HALF of the range. The item must already have one."));
+        list.Add(new ItemDef(AttrScrollMythic, "Attribute Scroll (Mythic)", EquipSlot.Scroll,
+            ItemGrade.S, ItemRarity.Mythic, AttrScroll: AttrScrollKind.Mythic,
+            Description: "S grade only. Gives the item a random attribute for its type, "
+                       + "always at its MAXIMUM value."));
 
         // ===================================================================
         //  QUEST ITEMS — non-droppable, non-tradeable proofs for class changes.
@@ -1507,8 +1530,12 @@ public static class ItemCatalog
     };
 
     // Enum grade for pricing/sorting only (the enum has no C/D). ItemLevel is the real tier.
+    // ⚠ The S rung is NOT optional cosmetics: without it the Soulcrystal/Starstone/Seraphite
+    // items (levels 80/83/85) came out labelled A grade, and every grade-banded system that
+    // reads the enum — pricing, the attribute scrolls — put them in the wrong band.
     private static ItemGrade TierGrade(int level) =>
-        level >= 61 ? ItemGrade.A : level >= 40 ? ItemGrade.B : level >= 20 ? ItemGrade.E : ItemGrade.F;
+        level >= 80 ? ItemGrade.S : level >= 61 ? ItemGrade.A : level >= 40 ? ItemGrade.B
+        : level >= 20 ? ItemGrade.E : ItemGrade.F;
 
     /// <summary>The F tier's level. F-grade is now part of the ONE ladder rather than a separate
     /// "(Lesser)" line, and its MYTHIC rung is deliberately the old Newbie gear's power — the newbie

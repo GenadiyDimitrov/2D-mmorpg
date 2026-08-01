@@ -32,6 +32,27 @@ foreach (int L in Enumerable.Range(1, 85).Where(l => l == 1 || l % 10 == 0 || l 
                       $"{MobBaseStats.PAtk(L),7} {MobBaseStats.MAtk(L),7}");
 
 Console.WriteLine();
+Console.WriteLine("=== HIT / MISS vs a SAME-LEVEL mob (accuracy = DEX + level, 1 point = 1%) ===");
+Console.WriteLine("  'naked' = base stats only, no gear and no passives. 'geared' = best gear for tier + kit.");
+Console.WriteLine("  A same-DEX, same-level pair must sit at the 5% base BOTH ways — that is the whole point of");
+Console.WriteLine("  the level term. Before it, a player's accuracy was flat for life while the mob's grew +1/level:");
+Console.WriteLine("  they crossed at 20 and a naked level-90 fighter missed 75% while the mob never missed at all.");
+Console.WriteLine($"{"Lvl",4} {"mob A/E",8} | {"naked",6} {"nk miss",8} {"mob miss",9} | " +
+                  $"{"gear A",7} {"gear E",7} {"miss",6} {"mob miss",9}");
+
+foreach (int L in Enumerable.Range(1, 90).Where(l => l == 1 || l % 10 == 0))
+{
+    var mob = BuildMobEntity(L);
+    var naked = BuildNaked(Race.Human, BaseClass.Fighter, L);
+    var geared = BuildPlayer(Race.Human, BaseClass.Fighter, L, warrior: true);
+
+    Console.WriteLine($"{L,4} {mob.Accuracy + "/" + (int)mob.EffectiveEvasion,8} | " +
+                      $"{naked.Accuracy,6} {Pct(Miss(naked, mob)),8} {Pct(Miss(mob, naked)),9} | " +
+                      $"{geared.Accuracy,7} {(int)geared.EffectiveEvasion,7} " +
+                      $"{Pct(Miss(geared, mob)),6} {Pct(Miss(mob, geared)),9}");
+}
+
+Console.WriteLine();
 Console.WriteLine("=== MAGE (Human Mage / Nuker, best gear for tier) ===");
 Console.WriteLine($"{"Lvl",4} {"Gear",5} {"M.Atk",7} {"MaxHP",7} {"M.Def",7} | {"nuke",5} {"dmg",7} {"mobHP",7} {"casts",6} | {"vs TANK",8}");
 
@@ -778,6 +799,37 @@ static void Equip(Entity e, string defId)
 // A REAL low-level player: TRAINING gear (the level 1-10 kit), NO rune buff, learned skills up to
 // this level. This is what a new character actually fights with — unlike BuildPlayer, which floors to
 // level-20 gear + shots and so hides the low-level one-shot the playtest found.
+// ----- hit/miss helpers ---------------------------------------------------------------------
+
+/// <summary>A mob exactly as GameLoopService.BuildMob makes one, stat-wise: MobStats(level)
+/// through the same RecomputeDerived. No MobMod — that is the "assume every monster is x1" rule.</summary>
+static Entity BuildMobEntity(int level)
+{
+    var s = StatCalculator.MobStats(level);
+    var e = new Entity { Name = "mob", Kind = EntityKind.Mob, Level = level };
+    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Dex = s.Dex; e.Spt = s.Spt;
+    e.RecomputeDerived();
+    return e;
+}
+
+/// <summary>Base stats and NOTHING else — no gear, no learned skills, so no passive floors.
+/// This is the row that shows what the FORMULA does before the character sheet touches it.</summary>
+static Entity BuildNaked(Race race, BaseClass cls, int level)
+{
+    var s = StatCalculator.GetBaseStats(race, cls);
+    var e = new Entity { Name = "naked", Kind = EntityKind.Player, Race = race, BaseClass = cls, Level = level };
+    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Dex = s.Dex; e.Spt = s.Spt;
+    e.RecomputeDerived();
+    return e;
+}
+
+/// <summary>Physical miss chance for attacker → defender, through the one real resolver.</summary>
+static float Miss(Entity attacker, Entity defender) =>
+    StatCalculator.ResolveAvoidChance(attacker.Accuracy, (int)defender.EffectiveEvasion,
+        defender.EvadeFloor, attacker.HitFloor, attacker.Level, defender.Level);
+
+static string Pct(float f) => (f * 100f).ToString("0") + "%";
+
 static Entity BuildStarter(BaseClass cls, int level)
 {
     var s = StatCalculator.GetBaseStats(Race.Human, cls);
