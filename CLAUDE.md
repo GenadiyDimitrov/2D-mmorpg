@@ -3,22 +3,25 @@
 This file orients Claude Code on this project. Read it before making changes.
 
 ## What this is
-A server-authoritative, L2-inspired MMORPG built solo for learning. The WPF
-client is a **test harness**, not the final client (a 2D cross-platform client
-reusing `Game.Shared` + `NetworkChannel` is the eventual goal). Names are
-deliberately generic to avoid IP issues; stat *formulas* are not copyrightable
-and are adapted from L2 references.
+A server-authoritative, L2-inspired MMORPG built solo for learning. The **Unity
+Android client is the client** (`Game.Client.Unity/`, outside `Game.sln`) — there
+is no desktop client any more; the WPF test harness was deleted in 0.42.8 once
+Unity reached parity, and lives on only in git history. Names are deliberately
+generic to avoid IP issues; stat *formulas* are not copyrightable and are adapted
+from L2 references.
 
 ## Build & run
-- Open `Game.sln` in Visual Studio. Configure **Multiple Startup Projects**:
-  set **Game.Server** and **Game.Client.Wpf** both to *Start*, then F5.
-- CLI: `dotnet run --project Game.Server` and `dotnet run --project Game.Client.Wpf`.
+- Open `Game.sln` in Visual Studio — it holds the server and the shared library
+  only. F5 runs `Game.Server`.
+- CLI: `dotnet run --project Game.Server`.
 - Server listens at `http://localhost:5238`, SignalR hub at `/game`.
+- The client is the phone: see `docs/guides/UnityClient.md`. To exercise the
+  server without a client, use `tools/SmokeTest` (below).
 - **The sandbox that authored most of this could NOT compile** — so there may be
   occasional compile slips. When you (Claude Code) build, fix real `dotnet build`
   errors directly; that's the main advantage of working here vs. chat.
 
-## Solution layout (3 projects)
+## Solution layout (2 projects)
 - **Game.Shared** (`net8.0` lib) — DTOs, enums, formulas, catalogs. No server/
   client deps. Key files: `Dtos.cs`, `Enums.cs`, `GameConstants.cs`,
   `StatCalculator.cs` (damage/speed/crit/interrupt math), `Skills/` (skill defs
@@ -35,9 +38,11 @@ and are adapted from L2 references.
   `GameLoopService.cs` = the single-writer tick loop, ~2k lines, where almost all
   game logic lives; `CellGrid.cs`, `ZoneRuntime.cs`), `Persistence/` (EF Core
   SQLite: `GameDbContext.cs`, `Records.cs`, `PersistenceService.cs`).
-- **Game.Client.Wpf** (`net8.0-windows`) — `NetworkChannel.cs` (transport seam,
-  reusable by a future Unity client), `MainWindow.xaml(.cs)`, `MainWindow.Phase4.cs`
-  (partial of the same class — they share private fields).
+- **Game.Client.Unity** (Unity 6, Android — its OWN solution, not in `Game.sln`)
+  — `Assets/Scripts/Net/NetworkChannel.cs` (the transport seam), `GameBoot.cs`,
+  `EntityManager.cs`, and `Assets/Scripts/Ui/GameUi.*.cs` (one partial class per
+  window: Skills, Items, Vendor, Trade, Warehouse, Party, Quests, Debug, …).
+  It compiles against `Game.Shared` (which multi-targets `netstandard2.1` for it).
 
 ## Concurrency model (important)
 - Hub methods ONLY enqueue command records onto `World.Commands` (a

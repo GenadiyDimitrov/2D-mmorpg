@@ -2,7 +2,8 @@
 
 A one-screen digest of [Roadmap.md](Roadmap.md). Updated **2026-08-01 (0.42.3, after playtest-16)**.
 Full history: [CHANGELOG.md](CHANGELOG.md). The checklists: [testing/TestChecklist.Unity.md](testing/TestChecklist.Unity.md)
-(the phone) and [testing/TestChecklist.md](testing/TestChecklist.md) (WPF/server).
+(the phone) and [testing/TestChecklist.md](testing/TestChecklist.md) (server-side; its client steps
+predate the WPF harness being dropped in 0.42.8 — read them as "on the phone").
 
 ## Where things stand
 
@@ -55,7 +56,8 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
 - **Mob cast bar** — believed built, never seen on screen. Verify before rebuilding.
 
 **UI / conveniences**
-- **Chat tabs** on the phone (colours + tags shipped in WPF only; the oldest open item in the file).
+- **Chat tabs** on the phone (colours + tags only ever shipped in the WPF harness, deleted in 0.42.8 —
+  the reference implementation is `MainWindow.xaml.cs` at commit `f33ed0e`; oldest open item in the file).
 - **Target visual on the mob itself**, not just in the target window.
 - **Wearable titles** — the leaderboard title over the head / by the name.
 - **Every non-admin command as an ACTION** in the Skills window's Actions tab. Block/like/unblock landed

@@ -34,17 +34,17 @@ tradition (levels, grades, buffs, drop tables, class trees), because that's the 
 
 ## How it works
 
-Three projects, and one rule that shapes everything:
+Three parts, and one rule that shapes everything:
 
 ```
-Game.Shared   →  DTOs, enums, formulas, catalogs. No server or client dependencies.
-                 Both clients compile against it, so the wire contract cannot drift.
+Game.Shared        →  DTOs, enums, formulas, catalogs. No server or client dependencies.
+                      Both sides compile against it, so the wire contract cannot drift.
 
-Game.Server   →  ASP.NET Core console app. SignalR hub + the simulation.
-                 The hub is deliberately thin: it only enqueues commands.
+Game.Server        →  ASP.NET Core console app. SignalR hub + the simulation.
+                      The hub is deliberately thin: it only enqueues commands.
 
-Game.Client.* →  Renderers. WPF (desktop test harness) and Unity (mobile).
-                 Both talk through the same NetworkChannel seam.
+Game.Client.Unity  →  The client. Unity 6, Android. A pure renderer: it draws what
+                      the server sends and talks through the NetworkChannel seam.
 ```
 
 **The concurrency model is the point.** Hub methods never touch game state — they push command
@@ -61,32 +61,34 @@ zones, casting state — is deliberately runtime-only and rebuilt on start.
 
 ## Tech
 
-.NET 8 · ASP.NET Core · SignalR · EF Core + SQLite · WPF · Unity 6 (Android)
+.NET 8 · ASP.NET Core · SignalR · EF Core + SQLite · Unity 6 (Android)
 
 ## Running it
 
-Requires the **.NET 8 SDK** (and Windows for the WPF client).
+Requires the **.NET 8 SDK**.
 
 ```bash
 dotnet run --project Game.Server        # http://localhost:5238, hub at /game
-dotnet run --project Game.Client.Wpf    # one per client
 ```
 
-In Visual Studio: open `Game.sln`, set **Game.Server** and **Game.Client.Wpf** as multiple startup
-projects, then F5.
+In Visual Studio: open `Game.sln` and F5.
 
-For the mobile client see [docs/guides/UnityClient.md](docs/guides/UnityClient.md).
+The client is the Android app — building and installing it is covered in
+[docs/guides/UnityClient.md](docs/guides/UnityClient.md). To drive the server without a client at
+all, `tools/SmokeTest` speaks the real protocol headlessly.
 
-### Controls (WPF)
+> A WPF desktop harness used to live here as a second client. It was removed once the Unity client
+> reached feature parity; it is still in the git history if you want to read it.
+
+### Controls
 
 | Action | Input |
 |---|---|
-| Move | Left-click ground |
-| Target & attack | Left-click a monster |
-| Target a player | Left-click a player |
-| Skills | Keys **1–6**, or the skill bar |
-| Inventory | **I** |
-| Skills window | **K** |
+| Move | Tap ground |
+| Target & attack | Tap a monster |
+| Target a player | Tap a player |
+| Skills | The skill bar |
+| Windows | The side menu (inventory, skills, quests, party, …) |
 | Chat: local / world / whisper | plain text / `!text` / `/w Name text` |
 
 ## Repository layout
@@ -94,8 +96,7 @@ For the mobile client see [docs/guides/UnityClient.md](docs/guides/UnityClient.m
 ```
 Game.Shared/        formulas, catalogs, DTOs — the shared contract
 Game.Server/        Hubs/ (thin) · Simulation/ (the tick loop) · Persistence/
-Game.Client.Wpf/    desktop client — the test harness
-Game.Client.Unity/  mobile client (Unity 6, Android)
+Game.Client.Unity/  the client (Unity 6, Android) — its own solution
 tools/              SmokeTest (headless protocol test) · BalanceMatrix (balance harness)
 docs/               design specs, guides, checklists, changelog
 ```

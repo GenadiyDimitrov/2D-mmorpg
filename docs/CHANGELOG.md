@@ -7,10 +7,34 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.42.7**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.42.8**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 2026-08-01 — The WPF harness is gone (0.42.8)
+
+**Two clients, one of them unplayed since the first APK.** `Game.Client.Wpf` — 8,699 lines of desktop
+test harness — has been deleted, and `Game.sln` is now the server and the shared library only.
+
+It was never the real client; it was scaffolding from before there was a phone build, and it did its
+job. But it was still *in the solution*, which meant every DTO change, every new protocol field and
+every new window had to either be mirrored into a WPF panel nobody opened or left to break the build.
+That tax was being paid on every batch, for a client with no user.
+
+Nothing depended on it. `tools/SmokeTest` and `tools/BalanceMatrix` reference only `Game.Shared` and
+`Game.Server`; `tools/publish.ps1` never touched it; and `NetworkChannel` — originally written in the
+WPF project as the reusable transport seam — was forked into the Unity client long ago
+(`Assets/Scripts/Net/NetworkChannel.cs`), so the copy that mattered is the one that stayed.
+
+The Unity client had already reached parity window-for-window: skills, items, equipment, vendor,
+buyback, trade, warehouse, party, quests, rank, regions, target, auto-hunt, settings and debug all
+have a `GameUi.*` partial. The one thing WPF still had that the phone does not is **chat tabs with
+colours and tags**, which remains an open roadmap item — the reference implementation is
+`Game.Client.Wpf/MainWindow.xaml.cs` at commit `f33ed0e`, and git keeps it.
+
+No gameplay, protocol or persistence change: `ProtocolVersion` stays at **8**, so an installed 0.42.x
+APK still connects. `game.db` does **not** need deleting.
 
 ## 2026-08-01 — The account warehouse (0.42.7) — ⚠ DELETE `game.db`
 
