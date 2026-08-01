@@ -1485,6 +1485,7 @@ namespace Game.Client
             if (myLevel <= 0 && Boot.Entities.TryGetState(Boot.SelfId, out var me)) myLevel = me.Level;
 
             int used = 0;
+            bool targetDrawn = false;
             foreach (var kv in Boot.Entities.States)
             {
                 var e = kv.Value;
@@ -1506,12 +1507,16 @@ namespace Game.Client
                 // so a row of NPCs lines its markers up.
                 string mark = QuestMarkGlyph(e.Id);
                 if (mark.Length > 0) title = mark + " " + title;
-                // YOUR TARGET, marked on the name itself (owner, 2026-08-01: "can't it be a simple
-                // circle on both sides of the name? Like the ! ? for quests"). Outermost, so the dots
-                // stay at both ends whatever else the plate is carrying, and using the quest mark's own
-                // size/weight so the two markers read as one family.
-                if (Boot.TargetId.HasValue && Boot.TargetId.Value == e.Id) title = TargetDot + title + TargetDot;
                 plate.Label.text = title;
+
+                // YOUR TARGET, marked with a circle on each side of the name (owner, 2026-08-01).
+                // Positioned here because this is the one place that knows both where the plate landed
+                // this frame and how wide the name turned out to be.
+                if (Boot.TargetId.HasValue && Boot.TargetId.Value == e.Id)
+                {
+                    PlaceTargetDots(plate, title);
+                    targetDrawn = true;
+                }
 
                 // YOUR OWN flag colour wins over "you are green".
                 //
@@ -1546,8 +1551,119 @@ namespace Game.Client
                 }
             }
 
+            // Nothing targeted, or the target is off screen / behind the camera — the dots are DESTROYED
+            // rather than hidden. There is only ever one target, so they are cheap to make and there is
+            // nothing to pool: keeping two dead objects around to avoid two allocations per re-target
+            // would be the more complicated of the two.
+            if (!targetDrawn) DestroyTargetDots();
+
             for (int i = used; i < _nameplates.Count; i++)
                 _nameplates[i].Root.gameObject.SetActive(false);
+        }
+
+        // ----- the target dots --------------------------------------------------------------------
+
+        /// <summary>The two circles flanking your target's name. Created when something is targeted,
+        /// destroyed when it is not — there is exactly one target, so there is exactly one pair.</summary>
+        private Image _targetDotLeft, _targetDotRight;
+
+        /// <summary>Diameter of a dot and its gap from the name, in UI units.</summary>
+        private const float TargetDotSize = 11f, TargetDotGap = 7f;
+
+        /// <summary>
+        /// How far above the entity's screen point the dots sit — the NAME's vertical middle.
+        ///
+        /// Derived from the plate's own layout rather than eyeballed: the label box starts at
+        /// <see cref="PlateGap"/> + 10 (see PlateAt) and the 15pt line is bottom-aligned inside it, so
+        /// the glyphs' middle lands about a third of a line above that edge. Change the plate's layout
+        /// and this has to move with it.
+        /// </summary>
+        private const float TargetDotY = PlateGap + 10f + 5f;
+
+        /// <summary>
+        /// Put the two dots either side of the name that was just drawn on <paramref name="plate"/>.
+        ///
+        /// The x offset is the RENDERED width of the title, asked of TMP directly — the plate is a
+        /// fixed 200 wide with the name centred and free to overflow, so the box says nothing about
+        /// where the text actually ends. Rich text (the quest "!" at 200%) is included in that measure,
+        /// which is what keeps the dots outside the marker rather than on top of it.
+        /// </summary>
+        private void PlaceTargetDots(Nameplate plate, string title)
+        {
+            if (_targetDotLeft == null) CreateTargetDots();
+
+            float half = plate.Label.GetPreferredValues(title).x * 0.5f + TargetDotGap + TargetDotSize * 0.5f;
+
+            // The plate's position is in SCREEN pixels; everything above is in UI units. lossyScale is
+            // the canvas scaler's factor between them — without it the dots would drift away from the
+            // name on any device whose resolution is not the 1280x720 the UI is authored at.
+            float k = _nameplateLayer.lossyScale.x;
+            var at = plate.Root.position + new Vector3(0f, TargetDotY * k, 0f);
+
+            _targetDotLeft.rectTransform.position = at + new Vector3(-half * k, 0f, 0f);
+            _targetDotRight.rectTransform.position = at + new Vector3(half * k, 0f, 0f);
+        }
+
+        private void CreateTargetDots()
+        {
+            _targetDotLeft = NewTargetDot();
+            _targetDotRight = NewTargetDot();
+        }
+
+        private Image NewTargetDot()
+        {
+            var dot = UiKit.Box(_nameplateLayer, "TargetDot", UiKit.Accent, blocksInput: false);
+            dot.sprite = CircleSprite();
+            UiKit.Place(UiKit.Rect(dot.gameObject), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                        Vector2.zero, new Vector2(TargetDotSize, TargetDotSize));
+            return dot;
+        }
+
+        private void DestroyTargetDots()
+        {
+            if (_targetDotLeft != null) Destroy(_targetDotLeft.gameObject);
+            if (_targetDotRight != null) Destroy(_targetDotRight.gameObject);
+            _targetDotLeft = null;
+            _targetDotRight = null;
+        }
+
+        /// <summary>
+        /// A filled white circle, GENERATED at runtime and shared by everything that wants one.
+        ///
+        /// Built rather than imported because this UI is authored entirely in code — the owner does not
+        /// open the Editor, so an imported .png would be a file only the Editor can add and nobody can
+        /// review in a diff (see UiKit's header). A uGUI Image tints whatever sprite it is given, so one
+        /// white circle serves any colour.
+        ///
+        /// The edge fades over the last pixel instead of stopping dead, which is what stops an 11px dot
+        /// from reading as a tiny staircase. Alpha works here where it does not in the world: uGUI's
+        /// shader is alpha-blended, unlike the opaque unlit one the 3D markers use.
+        /// </summary>
+        private static Sprite _circleSprite;
+
+        private static Sprite CircleSprite()
+        {
+            if (_circleSprite != null) return _circleSprite;
+
+            const int size = 64;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { name = "Circle" };
+            texture.wrapMode = TextureWrapMode.Clamp;
+
+            var pixels = new Color32[size * size];
+            float centre = (size - 1) * 0.5f, radius = size * 0.5f - 1f;
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = x - centre, dy = y - centre;
+                    float alpha = Mathf.Clamp01(radius - Mathf.Sqrt(dx * dx + dy * dy));
+                    pixels[y * size + x] = new Color32(255, 255, 255, (byte)(alpha * 255f));
+                }
+            texture.SetPixels32(pixels);
+            texture.Apply();
+
+            _circleSprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f));
+            _circleSprite.name = "Circle";
+            return _circleSprite;
         }
 
         /// <summary>
@@ -1722,23 +1838,6 @@ namespace Game.Client
         // down or push the row into the one above it.
         private const string QuestMarkOpen  = "<line-height=100%><size=200%><b>";
         private const string QuestMarkClose = "</b></size></line-height>";
-
-        /// <summary>
-        /// The dot on each side of your TARGET's name — the whole "which of these five did I tap"
-        /// answer, in the place the eye is already reading.
-        ///
-        /// It is a BULLET (U+2022), not "●" and not the blue-circle emoji, and that is not a style
-        /// choice: this project ships TMP's LiberationSans atlas in **static** population mode with the
-        /// source font excluded from the build, so the only glyphs that exist are the ~250 baked ones.
-        /// U+25CF and every emoji are not among them and TMP draws a missing glyph as a hollow box —
-        /// the same trap that once put "[]" on every close button (see UiKit.WindowChrome). The bullet
-        /// IS in the atlas; at 200% and bold it draws as the solid dot this wants.
-        /// </summary>
-        /// <remarks>Written as the ESCAPE, not the character: a literal bullet in the source depends on
-        /// the compiler reading this file as UTF-8, and a mis-decoded string is a bug you only see on
-        /// the device. Comments can afford that risk; the glyph we actually draw cannot.</remarks>
-        private const string TargetDot =
-            "<color=#59A6FF>" + QuestMarkOpen + "\u2022" + QuestMarkClose + "</color>";
 
         /// <summary>The glyph over an NPC's head: gold "!" = a quest you can take, grey "?" = one you
         /// are on, gold "?" = one you can hand in NOW. The MMO shorthand, so it needs no explaining.</summary>

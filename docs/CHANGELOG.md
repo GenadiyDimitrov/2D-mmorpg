@@ -29,18 +29,23 @@ listener that was never written rather than a feature that was never built.
   instead of going through `CancelCast`, and cancelling is what PUSHES the clear — so an interrupted
   cast cleaned up and a *lethally* interrupted one did not. It now routes through `CancelCast`, which
   also fixes the same hole for a player killed mid-cast (their own bar).
-- **A dot on each side of your target's name.** Until now the only place a target existed was the
+- **A circle on each side of your target's name.** Until now the only place a target existed was the
   target *window*: on the battlefield, the mob you were about to hit looked exactly like the four
   beside it. Fine with a mouse cursor sitting on it, useless on a phone where the finger has already
-  lifted. The nameplate now reads `• Foxhound •` in blue on whatever is selected — the owner's own
-  call (*"can't it be a simple circle on both sides of the name? Like the ! ? for quests"*), and it is
-  drawn with the quest marker's exact size and weight so the two read as one family. A ground ring was
-  built first and thrown away: it was a procedural mesh, a per-frame follow and a collider to keep out
-  of the way of taps, to say something a character on a label says just as well.
-  - ⚠ It is a **bullet** (U+2022), not `●` and not the blue-circle emoji. This project ships TMP's
-    LiberationSans atlas in *static* mode with the source font excluded from the build, so only the
-    ~250 baked glyphs exist and everything else draws as a hollow box — the same trap that once put
-    "[]" on every close button. U+25CF and the emoji are not in the atlas; the bullet is.
+  lifted. Two blue dots now flank the selected entity's name, positioned from the name's *rendered*
+  width so they sit outside it however long it is and whatever else the plate is carrying (the quest
+  `!`, the aggressive `*`).
+  - They are **real UI elements, created when something is targeted and destroyed when nothing is**
+    (owner's call, twice: first over a ground ring, then over a text glyph). There is exactly one
+    target, so there is exactly one pair and nothing to pool — losing the target, walking it off
+    screen, or leaving the world all destroy them.
+  - The circle itself is a **sprite generated at runtime** — a 64px texture with a one-pixel feathered
+    edge, built once and tinted by the Image. Not an imported .png, because this UI is authored
+    entirely in code: an image asset is a file only the Editor can add and nobody can review in a diff.
+    Two earlier attempts are worth recording as *not* the answer: a procedural ground ring (a mesh, a
+    per-frame follow and a collider to keep out of the way of taps) and a bullet character (still a
+    font glyph, and the TMP atlas here is static — `●` and every emoji draw as a hollow box, the trap
+    that once put "[]" on every close button).
 
 No protocol change (**9**, `MinAcceptedProtocol` still 8) and no `game.db` reset: nothing new goes over
 the wire. It does need a **new APK** — all of it is client rendering. Checklist §41.

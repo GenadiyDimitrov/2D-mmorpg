@@ -669,15 +669,15 @@ work). No `game.db` reset. Menu → Quests.
         up and confirm the corpse is bare.
 41d.[ ] **Several at once.** Pull two casters and confirm each gets its OWN bar on its own plate, and
         that walking away and back does not leave a ghost bar on anything.
-41e.[ ] **Your target's NAME is flanked by two blue dots** — `• Foxhound •`, the same size and weight
-        as the quest `!`. Tap a different mob and the dots move with the selection; clear the target
-        (the target window's X) and they go.
-41f.[ ] 🔴 **They are DOTS, not empty boxes.** The TMP atlas is static — a glyph it does not have draws
-        as a hollow rectangle, which is what `●` and any emoji would do here. If you see "[]" instead
-        of a dot, say so: the character has to change, not the code around it.
-41g.[ ] **They stack with everything else on the plate.** Target an aggressive mob (`*`) and a quest
-        NPC (`!`): the dots sit OUTSIDE both, the name stays centred over its owner, and nothing is
-        pushed onto a second line.
+41e.[ ] **Your target's name is flanked by two blue circles.** Round and solid (a generated sprite, not
+        a letter). Tap a different mob and they move to it; clear the target with the target window's X
+        and they vanish; walk the target off screen and they vanish, and come back when it does.
+41f.[ ] **They sit OUTSIDE the whole name, at any length.** Try a short name and a long one, an
+        aggressive mob (`*`) and a quest NPC (`!`): the circles clear the text and the quest glyph
+        rather than overlapping either, and stay level with the middle of the name.
+41g.[ ] **They survive a relog and a target switch spree.** Leave the world and come back with nothing
+        targeted: no stray circles floating anywhere. Tap ten mobs in a row: exactly ONE pair on
+        screen, always on the current one.
 
 25b.[ ] **No combat-logging out of a DoT** — while a bleed/poison/venom is on you, "character select"
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends
