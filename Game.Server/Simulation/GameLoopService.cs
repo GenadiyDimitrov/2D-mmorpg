@@ -5329,6 +5329,19 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // WORLD chat has a level floor (GameConstants.WorldChatMinLevel). It is the one channel that
+        // reaches every player at once, so it is the one worth making throwaway accounts for; local and
+        // whisper stay open, so a new player can still ask for help where they are standing. Staff are
+        // exempt — announcing is part of the job.
+        if (channel == ChatChannel.World &&
+            sender.Level < GameConstants.WorldChatMinLevel && !sender.IsStaff)
+        {
+            SendSystemToEntity(sender,
+                $"World chat opens at level {GameConstants.WorldChatMinLevel}. "
+                + "Local chat and whispers work now.");
+            return;
+        }
+
         var message = new ChatMessage(sender.Name, text, channel);
 
         if (channel == ChatChannel.World)

@@ -725,6 +725,14 @@ was a deliberate call), so `admin/admin` can never hold a title. Any `test1..9` 
         rows drawing over each other, newest line always at the bottom. (This is the append-only path
         from 0.28.77; the tab filter must not have reintroduced the rebuild.)
 
+**World chat level floor**
+42o.[ ] **A low-level character cannot use world chat.** On a fresh character below
+        `GameConstants.WorldChatMinLevel` (**10** by default), `!hello` is refused with *"World chat
+        opens at level 10. Local chat and whispers work now."* — and plain chat and `/w` still work.
+        Level past it and `!hello` goes out. **Staff are exempt**, so `admin/admin` can always use it —
+        test the floor on a `test1..9` character. One line in `GameConstants` changes the number (set
+        it to 1 to open world chat to everyone).
+
 **Actions**
 42m.[ ] **Whisper is an action.** Skills → Actions → **Whisper**: with a player targeted, *Use* fills
         the command box with `/w <name> ` (same as Reply). With no target it says so. Place it on the

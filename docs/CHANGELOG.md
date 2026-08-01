@@ -49,6 +49,11 @@ request** and is not in this release.
   2026-07-24 except one: a whisper needs a MESSAGE, and no button can supply one. **Whisper** is now an
   action that does the half a button can — it puts `/w <target's name> ` in the command box and hands
   you the caret. The name is the part that is miserable to type on a phone.
+- **A level floor on world chat** (`GameConstants.WorldChatMinLevel`, default **10**). World is the one
+  channel that reaches every player at once, so it is the one worth making throwaway accounts for;
+  local and whisper stay open so a new player can still ask for help where they are standing. Staff are
+  exempt. A mutable static rather than a `const` on purpose — it is a policy dial, not a fact about the
+  game; set it to 1 to open world chat to everyone.
 - Fixed while in there: the Rank window's tab row had six boards at 104px in a 560px window since
   charisma was added, so the last tab hung off the edge. The window is 700 wide and the tabs are sized
   to fit the row (seven of them now).

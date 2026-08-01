@@ -252,6 +252,17 @@ public static class GameConstants
     /// <summary>Client keeps at most this many lines per chat tab.</summary>
     public const int ChatHistoryLimit = 150;
 
+    /// <summary>
+    /// Minimum level to speak in WORLD chat. Local chat and whispers are never gated — the point is
+    /// the channel that reaches everyone at once, which is the one worth farming accounts for.
+    ///
+    /// A mutable static rather than a `const` on purpose: it is a policy dial, not a fact about the
+    /// game, and the value that is right depends on how much bot spam there actually is. Set it to 1
+    /// to open world chat to everyone; wire it to the debug tuning panel if it ever needs changing
+    /// mid-playtest. Staff (admin/moderator) are exempt — they have to be able to announce.
+    /// </summary>
+    public static int WorldChatMinLevel = 10;
+
     // ----- Items / progression / trade (Phase 4) -------------------------------
 
     // Slot cap counts UNEQUIPPED items only — worn gear doesn't occupy a bag slot (owner). 250 for now
