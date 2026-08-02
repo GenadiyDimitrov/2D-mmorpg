@@ -102,6 +102,16 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
   with `/w <target> ` and hands you the caret. (The roadmap's "friend/party/sit/attack/assist have
   nowhere to live" was stale — they have been in the Actions tab since 2026-07-24.)
 
+**Release hygiene**
+- 🔴 **Two app icons on the phone — delete the second launcher activity before any real release.**
+  `Assets/Plugins/Android/AndroidManifest.xml` declares BOTH `UnityPlayerActivity` and
+  `UnityPlayerGameActivity` with a LAUNCHER intent-filter (Unity's template ships both and expects you to
+  delete the unused one). Entry point is GameActivity, so `UnityPlayerActivity` merges in as
+  `enabled="false"` yet still shows an icon. **Kept deliberately for now (2026-08-02)** while the owner
+  tests party/duo with two entries. ⚠ It cannot actually host a second client — same package, same
+  process, `launchMode="singleTask"`; two simultaneous logins need Dual Messenger / Secure Folder / a
+  second user profile. The fix is deleting that one `<activity>` block; nothing references it.
+
 **Combat depth** — ⏸ **DEFERRED at the owner's request (2026-08-01)**, not dropped: perfect/excellent
 block, position bonuses (hook reserved), PvP/PvE damage multipliers (still 1.0). ⚠ Magic-resist as a
 stat and per-hit damage consumables are **dropped, not pending** (offence comes from the held War/Spell

@@ -17,6 +17,13 @@
     <application android:usesCleartextTraffic="true"
                  android:appCategory="game">
         <!--Used when Application Entry is set to Activity, otherwise remove this activity block-->
+        <!-- 🔴 PRODUCTION: DELETE THIS WHOLE <activity> BLOCK BEFORE A REAL RELEASE.
+             Our Application Entry is GameActivity (ProjectSettings androidApplicationEntry: 2), so this
+             activity is merged in with android:enabled="false" — but it KEEPS its LAUNCHER intent-filter,
+             which is the second app icon on the phone. Kept for now (2026-08-02, owner's call) while he
+             tests party/duo with two entries; it is the same package and launchMode="singleTask", so it
+             cannot actually run a second client — a genuine second instance needs Dual Messenger /
+             Secure Folder. Deleting it is safe: nothing here targets UnityPlayerActivity. -->
         <activity android:name="com.unity3d.player.UnityPlayerActivity"
                   android:theme="@style/UnityThemeSelector">
             <intent-filter>
