@@ -103,14 +103,17 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
   nowhere to live" was stale — they have been in the Actions tab since 2026-07-24.)
 
 **Release hygiene**
-- 🔴 **Two app icons on the phone — delete the second launcher activity before any real release.**
-  `Assets/Plugins/Android/AndroidManifest.xml` declares BOTH `UnityPlayerActivity` and
-  `UnityPlayerGameActivity` with a LAUNCHER intent-filter (Unity's template ships both and expects you to
-  delete the unused one). Entry point is GameActivity, so `UnityPlayerActivity` merges in as
-  `enabled="false"` yet still shows an icon. **Kept deliberately for now (2026-08-02)** while the owner
-  tests party/duo with two entries. ⚠ It cannot actually host a second client — same package, same
-  process, `launchMode="singleTask"`; two simultaneous logins need Dual Messenger / Secure Folder / a
-  second user profile. The fix is deleting that one `<activity>` block; nothing references it.
+- ✅ **Two app icons on the phone — KEPT ON PURPOSE as the duo-testing rig; remove before the store.**
+  The second entry runs a fully independent client: 2026-08-02 the owner logged in as admin on one and
+  test1 on the other, both connected, saw each other in the world and **formed a working party**. This is
+  now how party/duo is tested — no second device, no bot needed. 🔴 **It must be gone for a store
+  release.** Half the cause is ours: `Assets/Plugins/Android/AndroidManifest.xml` declares BOTH
+  `UnityPlayerActivity` and `UnityPlayerGameActivity` with a LAUNCHER intent-filter (Unity's template
+  ships both and expects the unused one deleted); our entry is GameActivity, so `UnityPlayerActivity`
+  merges in `enabled="false"` yet still shows an icon. ⚠ But that block alone can't produce two *running*
+  clients — same package, one process, `launchMode="singleTask"` — so a Samsung profile-level clone
+  (Dual Messenger / Secure Folder) is likely also in play, and **that half is a phone setting no manifest
+  edit removes.** Verify on the device (`adb shell pm list users`) at store time.
 
 **Combat depth** — ⏸ **DEFERRED at the owner's request (2026-08-01)**, not dropped: perfect/excellent
 block, position bonuses (hook reserved), PvP/PvE damage multipliers (still 1.0). ⚠ Magic-resist as a

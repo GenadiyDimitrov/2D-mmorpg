@@ -17,13 +17,23 @@
     <application android:usesCleartextTraffic="true"
                  android:appCategory="game">
         <!--Used when Application Entry is set to Activity, otherwise remove this activity block-->
-        <!-- 🔴 PRODUCTION: DELETE THIS WHOLE <activity> BLOCK BEFORE A REAL RELEASE.
+        <!-- 🔴 PRODUCTION: DELETE THIS WHOLE <activity> BLOCK BEFORE A STORE RELEASE.
              Our Application Entry is GameActivity (ProjectSettings androidApplicationEntry: 2), so this
              activity is merged in with android:enabled="false" — but it KEEPS its LAUNCHER intent-filter,
-             which is the second app icon on the phone. Kept for now (2026-08-02, owner's call) while he
-             tests party/duo with two entries; it is the same package and launchMode="singleTask", so it
-             cannot actually run a second client — a genuine second instance needs Dual Messenger /
-             Secure Folder. Deleting it is safe: nothing here targets UnityPlayerActivity. -->
+             and the phone shows a SECOND app icon. Deleting it is safe: nothing here targets
+             UnityPlayerActivity.
+
+             ✅ KEPT DELIBERATELY, AS A TEST FEATURE (2026-08-02, owner's explicit call). The second entry
+             runs a genuinely INDEPENDENT client: he logged in as admin on one and test1 on the other,
+             both connected, saw each other in the world, and formed a working party. That is how duo /
+             party testing is done now — do not remove it without asking.
+
+             ⚠ At store time, VERIFY ON THE DEVICE which mechanism actually produced the second icon.
+             Two independent clients cannot come from this block alone (same package, one process,
+             launchMode="singleTask"), so a Samsung profile-level clone (Dual Messenger / Secure Folder,
+             separate UID + data dir) is likely also involved — and that one is a PHONE SETTING no
+             manifest edit can remove. Check `adb shell pm list users` and `pm list packages --user <id>`
+             with the phone attached before declaring it fixed. -->
         <activity android:name="com.unity3d.player.UnityPlayerActivity"
                   android:theme="@style/UnityThemeSelector">
             <intent-filter>
