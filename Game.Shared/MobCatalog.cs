@@ -435,28 +435,28 @@ public static class MobCatalog
         // E1/E2). It used to: every kill yielded a consumable, which by level 23 had handed him 550
         // return scrolls (he uses ~1 per 250 kills) and 320 healing potions. His verdict: return
         // scrolls /20, healing potions /10 — "if I need them I need to buy them". The drop roll takes
-        // a group once at its SUMMED chance and only then picks a member, so a branch summing to 0.255
-        // simply means the group fires on ~26 % of kills and is silent on the rest. Do not "restore"
+        // a group once at its SUMMED chance and only then picks a member, so a branch summing to ~0.06
+        // simply means the group fires on ~6 % of kills and is silent on the rest. Do not "restore"
         // the 1.0 sum; the potion economy is now a faucet, not a guarantee.
         //
-        // Untouched on purpose: the RESURRECTION scrolls. He measured returns and potions and named
-        // only those two — the resurrection rung floods at exactly the same rate and is now most of
-        // what this group hands out, but silently retuning a number he did not ask about is how the
-        // last balance argument started. Flagged to him instead.
+        // RESURRECTION is a TENTH of the return scroll at every rung (owner, same day): *"if you want
+        // to resurrect you buy — if you're lucky you get the drop"*. It is the one consumable whose
+        // absence is supposed to hurt, so it is the rarest thing in the group rather than, as it was,
+        // the most common. The ratio is deliberate and holds for the Ultimate pair too.
         void Always(string item, float weight) =>
             drops.Add(new(item, weight, 1, 1, GroupId: GroupAlways));
         if (!topLevel)
         {
             Always(potLow,  0.020f); Always(ItemCatalog.ScrollReturn,    0.025f);
-            Always(potHigh, 0.010f); Always(ItemCatalog.ScrollResurrect, 0.200f);
+            Always(potHigh, 0.010f); Always(ItemCatalog.ScrollResurrect, 0.0025f);
         }
         else
         {
             Always(potLow,  0.015f); Always(ItemCatalog.ScrollReturn,    0.020f);
-            Always(potHigh, 0.010f); Always(ItemCatalog.ScrollResurrect, 0.280f);
+            Always(potHigh, 0.010f); Always(ItemCatalog.ScrollResurrect, 0.0020f);
             Always(ItemCatalog.GreaterPotion,           0.002f);
             Always(ItemCatalog.ScrollReturnUltimate,    0.0015f);
-            Always(ItemCatalog.ScrollResurrectUltimate, 0.020f);
+            Always(ItemCatalog.ScrollResurrectUltimate, 0.00015f);
         }
 
         // ---- GEAR (§2/§3/§4): the four grade-locked, slot-randomised groups. The BROKEN jewels that
