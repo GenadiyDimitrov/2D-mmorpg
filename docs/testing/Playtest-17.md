@@ -133,6 +133,19 @@ different font from the name.
 
 **C17. Admins and moderators get their own titles.**
 
+**C18. 🔴 Buy-back must cover DELETED items, restored for 0 gold.** (Added 2026-08-03, after the
+checklist went in — and it is not theoretical, it has already cost him an item.)
+> buy back should work for deleted items as well .. u delete -> can buyback for 0 ... now i delete by
+> mistake and cannot restore it (or buyback for shops last 10-20 items and restore last 5 items if they
+> cant go in one place)
+
+The buy-back design has said "last 10 deleted/sold" since 2026-07-24 (checklist item 32) and was never
+built; **the DELETE half is the half he actually needs.** His own fallback if one list is awkward: the
+**shop** keeps its last **10-20 sold**, and **deleted** keeps its own last **5**. ⚠ The deleted list must
+NOT live behind a vendor window — you bin things in the field, which is exactly where the accident
+happens. Restoring a binned item is free; a sold item still costs what it sold for (a sold-for-0 item is
+free, same as a binned one).
+
 ---
 
 ## 🟡 ECONOMY / FAUCET — drop rates he measured at level 23

@@ -55,7 +55,9 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
       went with the harness; leaving to character select is refused in combat) — `/offline` + a button +
       the remaining time on the character-select row · `B1` auto-farm auto-on is stored per ACCOUNT and
       survives a character delete, and un-slotting must clear it · `B7` an out-of-range party member
-      cannot be targeted, so assist/heal/buff/kick are unreachable.
+      cannot be targeted, so assist/heal/buff/kick are unreachable · `C18` **buy-back for DELETED items,
+      restored for 0** — designed since 2026-07-24, never built, and it has now cost him an item he
+      binned by mistake. Undoing an accident belongs with the other four; the shop half can wait.
    2. 🟠 **Inventory hygiene** — `B4` quest items must be refused by every disposal path (sell, both
       banks, trade, bin) and must stop counting only when they are in the quest bag (pairs with §39e:
       warehousing a token silently stalls the quest step, then Complete takes it anyway) · `C8` filters

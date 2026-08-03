@@ -829,8 +829,12 @@ QUALITY no longer matters: a Common sword can roll the same maximum as a Mythic 
 31. [~] ⚠ P17 — HALF THERE: the like ACTION works; the chat commands are missing and the exp/karma side was not tested. Original: **Charisma system** — `/like` (+1, 20/day, never negative); killing costs `karma × 0.01`; every
         20 charisma = **+1% exp/sp drop, capped 1000 = +50%**; chatban −20/h, jail −100/h, kick −250/h,
         ban zeroes both; **two values** — a 0-1000 bonus pool and a lifetime total for ranking.
-32. [ ] **Buy-back menu** — last 10 deleted/sold items; deleted or sold-for-0 restore via `[r]`, sold
-        for >0 buy back at price.
+32. [ ] 🔴 **Buy-back menu** — last 10 deleted/sold items; deleted or sold-for-0 restore via `[r]`, sold
+        for >0 buy back at price. **RE-RAISED 2026-08-03 (P17/C18), and it BIT him: he binned an item by
+        mistake and there is no way to get it back.** The DELETE half is the half he needs — a binned
+        item must be restorable for **0 gold**, not only a sold one. If the two cannot share one list,
+        split them: **the shop keeps its last 10-20 sold, and DELETED keeps its own last 5.** The
+        deleted list must not depend on standing at a vendor — you bin things in the field.
 
 **Confirmed work (was "not sure", resolved 2026-07-24)**
 33. [~] ⚠ P17 — *"this is true now after shield fix"*, i.e. the 1-10 band is finally weak. The BOX→quest half is still open. Original: **Starter-gear redesign** — the best 0-20 items one-shot everything. Newbie boxes become a
@@ -865,7 +869,9 @@ filters Equip/Consum/Mats, name-ordered · C9 a [Speak] button on NPCs · C10 je
 not rarity alone · C11 compare + details become ONE two-column window · C12 `/offline` + an [Offline]
 button (**he currently cannot start offline farming at all**) · C13 newbie quest band 10-35 · C14 a 2h
 weapon greys the offhand · C15 Feretite Wand into the newbie box · C16 titles need colour + font sass ·
-C17 admin/moderator titles.
+C17 admin/moderator titles · 🔴 **C18 buy-back must cover DELETED items,
+restored for 0 — he binned something by mistake and lost it** (see item 32 below; if one list can't
+hold both, shops keep the last 10-20 sold and deleted keeps its own last 5).
 
 **Economy** — E1 Scroll of Return ÷20 · E2 heal potions ÷10 with Uncommon@40 / Rare@61 · E3 the buff
 economy (no scroll drops at all, potions sell at 0, two rarities, one max-rung scroll per buff,
