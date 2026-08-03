@@ -521,9 +521,13 @@ public record AdminStateDto(
 public record AuthResponse(bool Success, string? Error, AccountRole Role = AccountRole.Player);
 
 /// <summary>One character on the account, for the selection screen. PendingDeleteAt
-/// (UTC) is set when the character is scheduled for deletion; null = active.</summary>
+/// (UTC) is set when the character is scheduled for deletion; null = active.
+///
+/// <para><paramref name="OfflineSecondsLeft"/>: null = not offline-farming (the normal case), -1 =
+/// farming with no time limit, >= 0 = seconds of offline budget left. The character screen is the
+/// ONLY place this can be seen — an offline farmer has no connection and no UI to push it to.</para></summary>
 public record CharacterSlot(int Id, string Name, Race Race, BaseClass BaseClass, int SecondClass,
-    int Level, DateTime? PendingDeleteAt = null, int ThirdClass = 0);
+    int Level, DateTime? PendingDeleteAt = null, int ThirdClass = 0, int? OfflineSecondsLeft = null);
 
 /// <summary>Server -> Client: the account's characters.</summary>
 public record CharacterList(CharacterSlot[] Characters);

@@ -371,7 +371,8 @@ namespace Game.Client
             // does not change the COUNT still has to rebuild.
             if (Boot.Characters != null)
                 foreach (var c in Boot.Characters)
-                    revision = revision * 31 + (c.PendingDeleteAt.HasValue ? 7 : 3) + c.Level;
+                    revision = revision * 31 + (c.PendingDeleteAt.HasValue ? 7 : 3) + c.Level
+                             + (c.OfflineSecondsLeft ?? 0);
             if (revision == _characterRevision) return;
             _characterRevision = revision;
 
@@ -395,9 +396,18 @@ namespace Game.Client
                 bool doomed = slot.PendingDeleteAt.HasValue;
                 string when = doomed ? DeleteCountdown(slot.PendingDeleteAt.Value) : "";
 
+                // Offline farming is the one state you can only see from HERE — the character is in the
+                // world with no connection to push anything to (playtest-17 C12). Pressing Enter on it
+                // takes the live entity over, budget and all.
+                string second =
+                    doomed ? "deleting in " + when
+                    : slot.OfflineSecondsLeft is int left
+                        ? "farming offline" + (left < 0 ? "" : " — " + ShortTime(left) + " left")
+                    : "";
+
                 var label = UiKit.Label(row.transform,
                     slot.Name + "    Lv " + slot.Level + "    " + slot.Race + " " + CharacterClassName(slot)
-                    + (doomed ? "\n<size=13>deleting in " + when + "</size>" : ""),
+                    + (second.Length > 0 ? "\n<size=13>" + second + "</size>" : ""),
                     18f, doomed ? UiKit.TextDim : UiKit.Text, TextAlignmentOptions.Left);
                 UiKit.Stretch(UiKit.Rect(label.gameObject), 14f, 0f, 270f, 0f);
 
@@ -429,6 +439,14 @@ namespace Game.Client
         /// <summary>How long until a scheduled deletion actually happens. The server sends a UTC
         /// instant, so compare in UTC — a local-time comparison is off by the whole timezone and would
         /// read "0m" on a character with hours left.</summary>
+        /// <summary>A duration in seconds as "2h 14m" / "14m" / "40s" — the offline budget on a row.</summary>
+        private static string ShortTime(int seconds)
+        {
+            if (seconds >= 3600) return (seconds / 3600) + "h " + (seconds % 3600 / 60) + "m";
+            if (seconds >= 60) return (seconds / 60) + "m";
+            return seconds + "s";
+        }
+
         private static string DeleteCountdown(DateTime whenUtc)
         {
             var left = whenUtc - DateTime.UtcNow;

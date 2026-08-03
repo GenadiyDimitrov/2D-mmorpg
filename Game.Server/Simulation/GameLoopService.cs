@@ -374,6 +374,7 @@ public class GameLoopService : BackgroundService
     {
         entity.IsOfflineFarming = true;
         entity.AutoOfflineElapsedTicks = 0;
+        entity.OfflineSecondsLeft = AutoOfflineSecondsLeft(entity);   // right from the first second
         CancelTradeFor(entity, notifyPartnerOnly: true);
         _world.PendingTradeRequests.Remove(entity.Id);
         if (_world.Parties.TryGetValue(entity.Id, out var party))
@@ -3948,6 +3949,7 @@ public class GameLoopService : BackgroundService
         {
             if (++p.AutoOfflineElapsedTicks >= AutoOfflineCapTicks(p))
                 _endOfflineQueue.Add(p.Id);
+            p.OfflineSecondsLeft = AutoOfflineSecondsLeft(p);   // read by the character screen
         }
         else if (++p.AutoIdleElapsedTicks >= AutoIdleCapTicks(p))
         {

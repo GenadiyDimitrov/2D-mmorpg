@@ -404,15 +404,19 @@ public static class MobCatalog
                         ItemCatalog.SerenityScrollL, ItemCatalog.FocusScrollL, ItemCatalog.FerocityScrollL,
                         ItemCatalog.InsightScrollL, ItemCatalog.FrenzyScrollL, ItemCatalog.DashPotionL });
 
-        // ---- ALWAYS (§4): every kill yields one consumable — a healing potion, a return scroll or a
-        //      resurrection scroll. C 70 / U 30 below level 75, C 55 / U 40 / R 5 from 75, where the Rare
-        //      rung adds the Greater potion and the two Ultimate scrolls. The potion TIER still tracks the
-        //      mob's level (Minor / Healing / Greater), so the rarity rung is which of the two you get,
-        //      not a level-70 mob handing out Minor potions.
-        string potLow = level >= 60 ? ItemCatalog.GreaterPotion
-                      : level >= 30 ? ItemCatalog.HealingPotion
-                      : ItemCatalog.MinorPotion;
-        string potHigh = level >= 30 ? ItemCatalog.GreaterPotion : ItemCatalog.HealingPotion;
+        // ---- ALWAYS (§4): the consumable group — a healing potion, a return scroll or a resurrection
+        //      scroll. The name is now historical: it fired on EVERY kill until playtest-17 cut the
+        //      potion and return-scroll faucets (see the weights below). The potion TIER still tracks
+        //      the mob's level, so the rarity rung is which of the two you get, not a level-70 mob
+        //      handing out Minor potions.
+        // POTION TIER FLOORS (owner, 2026-08-03, playtest-17 E2): "Uncommon must not drop before 40,
+        // Rare before 61". So the ladder is Common below 40, Common+Uncommon to 60, Uncommon+Rare from
+        // 61 — potHigh is one rung above potLow, and neither may cross its floor. Below 40 both rungs
+        // are the Minor potion; the two weights simply add, which is the intended "only Common exists".
+        string potLow  = level >= 61 ? ItemCatalog.HealingPotion : ItemCatalog.MinorPotion;
+        string potHigh = level >= 61 ? ItemCatalog.GreaterPotion
+                       : level >= 40 ? ItemCatalog.HealingPotion
+                       : ItemCatalog.MinorPotion;
         bool topLevel = level >= 75;
         // ⚠ POTIONS ARE A MINORITY OF THIS GROUP (owner, 2026-07-31, playtest-15). The group still fires
         // on EVERY kill — he explicitly liked never having to buy basic potions again (30f passed) — so
@@ -425,22 +429,34 @@ public static class MobCatalog
         // to the return/resurrection scrolls that were always the other half of the group.
         //
         // Deliberately NOT fixed with /droprate always: that multiplier scales the whole group, so it
-        // would take the scrolls down with the potions. The weights are the right lever. Each branch
-        // must SUM TO 1.0 — that sum is what makes the group exactly 100 %.
+        // would take the scrolls down with the potions. The weights are the right lever.
+        //
+        // ⚠ THE GROUP NO LONGER SUMS TO 1.0, AND THAT IS THE POINT (owner, 2026-08-03, playtest-17
+        // E1/E2). It used to: every kill yielded a consumable, which by level 23 had handed him 550
+        // return scrolls (he uses ~1 per 250 kills) and 320 healing potions. His verdict: return
+        // scrolls /20, healing potions /10 — "if I need them I need to buy them". The drop roll takes
+        // a group once at its SUMMED chance and only then picks a member, so a branch summing to 0.255
+        // simply means the group fires on ~26 % of kills and is silent on the rest. Do not "restore"
+        // the 1.0 sum; the potion economy is now a faucet, not a guarantee.
+        //
+        // Untouched on purpose: the RESURRECTION scrolls. He measured returns and potions and named
+        // only those two — the resurrection rung floods at exactly the same rate and is now most of
+        // what this group hands out, but silently retuning a number he did not ask about is how the
+        // last balance argument started. Flagged to him instead.
         void Always(string item, float weight) =>
             drops.Add(new(item, weight, 1, 1, GroupId: GroupAlways));
         if (!topLevel)
         {
-            Always(potLow,  0.20f); Always(ItemCatalog.ScrollReturn,    0.50f);
-            Always(potHigh, 0.10f); Always(ItemCatalog.ScrollResurrect, 0.20f);
+            Always(potLow,  0.020f); Always(ItemCatalog.ScrollReturn,    0.025f);
+            Always(potHigh, 0.010f); Always(ItemCatalog.ScrollResurrect, 0.200f);
         }
         else
         {
-            Always(potLow,  0.15f); Always(ItemCatalog.ScrollReturn,    0.40f);
-            Always(potHigh, 0.10f); Always(ItemCatalog.ScrollResurrect, 0.28f);
-            Always(ItemCatalog.GreaterPotion,           0.02f);
-            Always(ItemCatalog.ScrollReturnUltimate,    0.03f);
-            Always(ItemCatalog.ScrollResurrectUltimate, 0.02f);
+            Always(potLow,  0.015f); Always(ItemCatalog.ScrollReturn,    0.020f);
+            Always(potHigh, 0.010f); Always(ItemCatalog.ScrollResurrect, 0.280f);
+            Always(ItemCatalog.GreaterPotion,           0.002f);
+            Always(ItemCatalog.ScrollReturnUltimate,    0.0015f);
+            Always(ItemCatalog.ScrollResurrectUltimate, 0.020f);
         }
 
         // ---- GEAR (§2/§3/§4): the four grade-locked, slot-randomised groups. The BROKEN jewels that

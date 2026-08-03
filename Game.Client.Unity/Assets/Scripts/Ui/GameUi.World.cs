@@ -650,6 +650,13 @@ namespace Game.Client
                 // The admin toolbox. It was labelled "Debug" while its commands were compiled out of
                 // release builds; they ship now and are gated on the account role, server-side.
                 ("Admin",  () => { CloseWindow(_menuPanel); ToggleWindow(_debugPanel); }, true),
+                // Offline sits directly above Leave because they are the same decision — "I'm done for
+                // now" — with the character either staying in the world hunting or coming out of it.
+                ("Offline", () => { CloseWindow(_menuPanel);
+                                    Ask("Keep hunting offline?\n\n<size=15>Your character stays in the "
+                                        + "world under the autopilot until its offline time runs out. "
+                                        + "Set up Auto Farm first.</size>",
+                                        "Offline", () => Boot.StartOfflineFarm()); }, false),
                 ("Leave",  () => { CloseWindow(_menuPanel); Boot.LeaveWorld(); }, false),
             };
 

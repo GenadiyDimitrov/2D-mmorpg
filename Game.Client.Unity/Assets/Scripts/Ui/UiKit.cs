@@ -229,6 +229,10 @@ namespace Game.Client
             field.contentType = password ? TMP_InputField.ContentType.Password
                                          : TMP_InputField.ContentType.Standard;
             field.lineType = TMP_InputField.LineType.SingleLine;
+            // Focus must place the caret, never select-all: with select-all on, the first keystroke
+            // REPLACES a pre-filled value instead of editing it, which killed Reply ("/w name "),
+            // the whisper action and re-editing the saved server URL. One switch, whole client.
+            field.onFocusSelectAll = false;
             field.text = "";
             return field;
         }

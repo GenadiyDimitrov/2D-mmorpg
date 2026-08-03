@@ -70,9 +70,19 @@ public class GameHub : Hub
             return new CharacterList(Array.Empty<CharacterSlot>());
 
         var chars = await _db.ListCharactersAsync(auth.AccountId);
+
+        // A character that is offline-farming is IN THE WORLD while its owner is at this screen, so
+        // its remaining budget can only be shown here (playtest-17 C12). This is a READ of a value the
+        // game loop stamps once per tick — no entity is mutated, so it does not break the single-writer
+        // rule; the worst case is a number one tick stale, which nobody can see.
+        int? OfflineLeft(int characterId) =>
+            _world.Entities.Values.FirstOrDefault(
+                e => e.IsOfflineFarming && e.PersistentId is int pid && pid == characterId)
+                ?.OfflineSecondsLeft;
+
         return new CharacterList(chars
             .Select(c => new CharacterSlot(c.Id, c.Name, c.Race, c.BaseClass, c.SecondClass, c.Level,
-                                          c.PendingDeleteAt, c.ThirdClass))
+                                          c.PendingDeleteAt, c.ThirdClass, OfflineLeft(c.Id)))
             .ToArray());
     }
 

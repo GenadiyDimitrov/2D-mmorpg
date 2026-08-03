@@ -1101,6 +1101,10 @@ public class Entity
     public long AutoIdleElapsedTicks { get; set; }
     /// <summary>Ticks auto-hunt has run this session while OFFLINE (offline cap).</summary>
     public long AutoOfflineElapsedTicks { get; set; }
+    /// <summary>Seconds of offline budget left, stamped by the game loop each tick while offline
+    /// farming (-1 = uncapped). It exists so the HUB can show it on the character screen without
+    /// computing anything: the loop is still the only writer, the hub only reads the last value.</summary>
+    public int OfflineSecondsLeft { get; set; } = -1;
 
     // ----- Potion channel -------------------------------------------------------------
     /// <summary>Shared cooldown across all HEALING potions, in ticks. This is all that's left of

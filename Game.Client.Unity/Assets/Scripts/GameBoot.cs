@@ -887,7 +887,13 @@ namespace Game.Client
                 ClientLog.Error(StatusMessage);
                 if (Entities != null) Entities.Clear();
             });
-            _net.ForceDisconnected += m => Main(() => ClientLog.Error("Kicked by server: " + m));
+            _net.ForceDisconnected += m => Main(() =>
+            {
+                // The same message carries a kick AND the "you are now farming offline for 2h" reply
+                // to our own /offline. Only one of those is bad news.
+                if (_offlineFarmRequested) { _offlineFarmRequested = false; StatusMessage = m; ClientLog.Info(m); }
+                else ClientLog.Error("Kicked by server: " + m);
+            });
             _net.Reconnecting += () => Main(() =>
             {
                 StatusMessage = "Connection dropped — reconnecting …";
@@ -1182,6 +1188,56 @@ namespace Game.Client
             }
             catch (Exception ex) { ClientLog.Warn("Leave: " + ex.Message); }
         }
+
+        /// <summary>
+        /// Go offline-farming: the character STAYS in the world under the autopilot while this client
+        /// returns to character select. The WPF harness had a button for this and the phone never got
+        /// one, so since 0.42.8 there has been no way to start an offline session at all (playtest-17
+        /// C12) — the whole server side was already here and simply had no caller.
+        ///
+        /// The server unbinds the character from this connection and answers with ForceDisconnect, but
+        /// it does NOT drop the account session (that is keyed separately), so the same socket can go
+        /// straight to character select — where the row now shows the offline timer.
+        /// </summary>
+        public async void StartOfflineFarm()
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try
+            {
+                _offlineFarmRequested = true;
+                await _net.StartOfflineFarmAsync();
+
+                // The unbind happens on the server's next TICK. Asking for the list before that comes
+                // back with no offline timer on the row we just left, which reads as "it didn't work".
+                await Task.Delay(400);
+
+                CharacterSlot[] fresh;
+                try { fresh = (await _net.ListCharactersAsync()).Characters ?? Array.Empty<CharacterSlot>(); }
+                catch (Exception ex)
+                {
+                    ClientLog.Warn("Offline farm (character list): " + ex.Message);
+                    fresh = Characters;
+                }
+
+                Main(() =>
+                {
+                    if (Entities != null) Entities.Clear();
+                    ResetWorldTransients();
+                    Characters = fresh;
+                    Phase = ClientPhase.CharacterSelect;
+                    StatusMessage = "Farming offline — your character keeps hunting.";
+                });
+            }
+            catch (Exception ex)
+            {
+                _offlineFarmRequested = false;
+                ClientLog.Warn("Offline farm: " + ex.Message);
+            }
+        }
+
+        /// <summary>Set while our OWN /offline request is in flight, so the ForceDisconnect it provokes
+        /// is not reported as "kicked by server".</summary>
+        private bool _offlineFarmRequested;
 
         /// <summary>Sign out of the account and go back to the login screen. The connection itself is
         /// dropped, because the server's session (which account, which character) is keyed by the
@@ -1885,6 +1941,12 @@ namespace Game.Client
                 { await _net.FriendCommandAsync("remove", raw.Substring(6).Trim()); return; }
                 if (raw.Equals("/flist", StringComparison.OrdinalIgnoreCase))
                 { await _net.FriendCommandAsync("list", ""); return; }
+
+                // The typed twin of the Menu's [Offline] button. It has to be here rather than in the
+                // admin passthrough below: offline farming is a PLAYER command, and everything that
+                // reaches the admin branch is refused for a non-staff character.
+                if (raw.Equals("/offline", StringComparison.OrdinalIgnoreCase))
+                { StartOfflineFarm(); return; }
 
                 // Party target-commands (leader-only ones are re-checked server-side). Every one has an
                 // action button too (target frame / party window); these are the typed equivalents.
