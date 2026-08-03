@@ -7,6 +7,11 @@ The Unity client is a **thin view over the same server** — it shares `Game.Sha
 real protocol through `NetworkChannel`. So most items here test the CLIENT, not the game: if a
 number is wrong in both clients it's a server bug and belongs in `TestChecklist.md`.
 
+> **PLAYTEST-17, 2026-08-03 (server 0.45.0)** — the largest catch-up pass so far: §36 and §38-§43, six
+> versions of unplayed work, went through in one sitting. **84 items verified (marked `P17`)** plus 22 of
+> the ancient playtest-11 findings closed. What came back is edge-case bugs and a long "make it a game"
+> queue, not broken systems — see **§44** and `Playtest-17.md`.
+
 **Test in this order.** Every section depends on the one above it — a failure at step 2 makes
 everything below it meaningless, so stop and report at the first ✗ rather than ticking on.
 
@@ -156,9 +161,9 @@ class-agnostic starter kit hands out its four choice boxes.
 
 Shipped after the last docs pass; not covered by the 2026-07-24 playtest.
 
-- [ ] **Open a box from the inventory** — a plain box grants its contents straight to the bag; a
+- [x] ✅ P17 **Open a box from the inventory** — a plain box grants its contents straight to the bag; a
       **selection** box opens the choice popup and grants only the picked entry (0.28.65).
-- [ ] **Item details layout** — the stat block is no longer crammed under the item name; long names
+- [x] ✅ P17 **Item details layout** — the stat block is no longer crammed under the item name; long names
       and full stat sheets both lay out cleanly (0.28.66).
 
 ---
@@ -169,47 +174,47 @@ Full authoritative list with the owner's own wording lives in memory `playtest-1
 of these once fixed. Nothing here has been built yet.
 
 **Bugs**
-1. [ ] `/jail test1` then `/tp test1` teleports to the **dungeon, not the jail** (position clamping —
+1. [~] ⚠ P17 — STILL OPEN, and now understood: **the jail has no border of its own**, so an admin teleported into it is re-clamped into the dungeon the moment he moves. Original: `/jail test1` then `/tp test1` teleports to the **dungeon, not the jail** (position clamping —
        both live in the negative quadrant).
-2. [ ] **Mobs don't attack inside the dungeon** when you're displaced/teleported in from the debug
+2. [x] ✅ P17 **Mobs don't attack inside the dungeon** when you're displaced/teleported in from the debug
        menu — no aggro, no retaliation.
-3. [ ] **Mobs are clamped together** in the crypt (bunched on one spot).
-4. [ ] **Soft keyboard covers the command bar** instead of lifting it (§9).
-5. [ ] **"Test1 entered the world" leaks to non-friends** — shown while a request is only `[pending]`.
+3. [x] ✅ P17 **Mobs are clamped together** in the crypt (bunched on one spot).
+4. [x] ✅ P17 **Soft keyboard covers the command bar** instead of lifting it (§9).
+5. [x] ✅ P17 **"Test1 entered the world" leaks to non-friends** — shown while a request is only `[pending]`.
        Entry/exit notices must be **mutual friends only**; keep the rest debug-only.
-6. [ ] **`[info]` shows only for monsters/bosses, never for a player target** — and the 0.28.55
+6. [x] ✅ P17 **`[info]` shows only for monsters/bosses, never for a player target** — and the 0.28.55
        player-target button grid comes OUT. Clarified 2026-07-24: "commands as buttons" means entries
        in the Skills window's **ACTIONS tab**, draggable onto the **skill bar** — not target-frame
        buttons. Retest with item 29.
-7. [ ] **Debug-menu chat spam** — 10 potions print 10 lines. Drop the system messages for debug
+7. [x] ✅ P17 **Debug-menu chat spam** — 10 potions print 10 lines. Drop the system messages for debug
        items/buffs/levels; keep the rare ones (tp coords, karma cleared, change class).
-8. [ ] **`[lead]` doesn't update the party `*` flag** or remove the `[lead]` button; change `*` to a
+8. [x] ✅ P17 **`[lead]` doesn't update the party `*` flag** or remove the `[lead]` button; change `*` to a
        **star or crown**.
-9. [ ] **Duplicate town-entry text** — a blue line under the big banner; remove the old one.
-10. [ ] **`isAdmin` is per-CHARACTER, not per-ACCOUNT** — a non-admin character in an admin account can
+9. [x] ✅ P17 **Duplicate town-entry text** — a blue line under the big banner; remove the old one.
+10. [x] ✅ P17 **`isAdmin` is per-CHARACTER, not per-ACCOUNT** — a non-admin character in an admin account can
         run admin commands.
-11. [ ] **Skills → Learn does nothing** (§11).
+11. [x] ✅ P17 **Skills → Learn does nothing** (§11).
 
 **Changes**
-12. [ ] **Stand-up delay** rules (§5).
-13. [ ] **Bag: `Equip` button first**, equip column **expands LEFT**.
-14. [ ] **Spell Rune buff reads `719h59` instead of `29d`** — duration needs day rollover.
-15. [ ] **Admins must be excluded from the ranking system** (an admin at level 999 breaks every board).
-16. [ ] **Shop items need details + buy-time info** — a war rune shows no "works ONLY on PHYSICAL" text
+12. [x] ✅ P17 **Stand-up delay** rules (§5).
+13. [x] ✅ P17 **Bag: `Equip` button first**, equip column **expands LEFT**.
+14. [x] ✅ P17 **Spell Rune buff reads `719h59` instead of `29d`** — duration needs day rollover.
+15. [x] ✅ P17 **Admins must be excluded from the ranking system** (an admin at level 999 breaks every board).
+16. [x] ✅ P17 **Shop items need details + buy-time info** — a war rune shows no "works ONLY on PHYSICAL" text
         anywhere.
-17. [ ] **Shop prices far too cheap** — equipment from **200g** minimum; runes **150k / 1h** and
+17. [x] ✅ P17 **Shop prices far too cheap** — equipment from **200g** minimum; runes **150k / 1h** and
         **280k / 2h** (confirmed 2026-07-24: two 1h = 300k, so the 2h carries a ~7% bulk discount).
-18. [ ] **Show raw attack/cast speed numbers, not just the multiplier** — `1234/1500 (x3)`,
+18. [x] ✅ P17 **Show raw attack/cast speed numbers, not just the multiplier** — `1234/1500 (x3)`,
         `333/1999 (x1)` rather than a bare `x1.1` / `x0.5`.
-19. [ ] **No HoT floating text for potions.**
-20. [ ] **Target window numbers** — mobs: current/max HP as digits; players: the same **plus an MP bar**.
-21. [ ] **Party window** — buffs/debuffs as **squares to the right** of each member (like the buff bar
+19. [x] ✅ P17 **No HoT floating text for potions.**
+20. [x] ✅ P17 **Target window numbers** — mobs: current/max HP as digits; players: the same **plus an MP bar**.
+21. [x] ✅ P17 **Party window** — buffs/debuffs as **squares to the right** of each member (like the buff bar
         but no duration text, still flashing under 60s) to cut the height; **loot proposal as a
         drop-down** (or tap the blue "random" to open one).
-22. [ ] **World border** — an orange dashed line like the jail's. It is the **fallback for where there is
+22. [x] ✅ P17 **World border** — an orange dashed line like the jail's. It is the **fallback for where there is
         no physical collision marker**: something that says "this is the end, you cannot go further".
         Not a substitute for the collision in item 23. (Mountains/ocean later.)
-23. [ ] **Real impassable WALLS — a CLIENT/SERVER split** (clarified 2026-07-24).
+23. [~] ⚠ P17 — the SERVER half is confirmed working (it rubber-bands you); **the client half still does not exist** — nothing stops you at the surface. Original: **Real impassable WALLS — a CLIENT/SERVER split** (clarified 2026-07-24).
         **Client = collision:** you press against a wall and **stop at the surface**; the client never
         emits out-of-world coordinates, and a **tap outside your current world is rejected before it
         becomes a move order**. *This half doesn't exist yet — it is the work.*
@@ -217,10 +222,10 @@ of these once fixed. Nothing here has been built yet.
         **stays as the anti-cheat backstop** — do NOT weaken it. Today's snap-back is the symptom of the
         missing client half, not a bug in the clamp.
         Crossing between worlds stays **teleport-only**. Full design: memory `worlds-and-collision-design`.
-24. [ ] **Target a party member with NO range restriction** so move-to/assist/heal/buff still resolve
+24. [!] 🔴 P17 — NOT DONE: a party member out of range **cannot be targeted at all**, so move-to / assist / heal / buff and kick / change-leader are all unreachable exactly when you need them. Original: **Target a party member with NO range restriction** so move-to/assist/heal/buff still resolve
         out of view and **kick / change-leader work from the action buttons**. Minimal frame — no HP/MP
         bars, or empty ones.
-25. [ ] **Buff tap behaviour** — press-and-HOLD cancels, a single tap opens a details popup that closes
+25. [x] ✅ P17 **Buff tap behaviour** — press-and-HOLD cancels, a single tap opens a details popup that closes
         on an outside tap. Holding a DEBUFF shows its details instead (debuffs can't be dismissed).
 ### ✅ 0.30.0 — the big batch — VERIFIED ON DEVICE 2026-07-31 (playtest-15)
 All of **26a-26k** confirmed: rogue learns both ladders, gear rarity reads off colour, shop prices bite,
@@ -273,7 +278,7 @@ buffer's new basic-only list). All but 32f/32g/32q are Unity-side, so the APK is
 **BUILT IN 0.38.0 — test this:** 32t (jewel slots). Server + Unity paper-doll.
 **BUILT IN 0.39.0 — test these:** 32u (free travel under 40) + **32z** (the auto-farm skill chains,
 playtest-15 big design #1). §32 is now fully built.
-32a.[ ] **The phone server starts with no hand-editing** — unzip a fresh `Game.Server` on the phone and
+32a.[x] ✅ P17 **The phone server starts with no hand-editing** — unzip a fresh `Game.Server` on the phone and
         `dotnet Game.Server.dll` must just run. It currently dies with `GC heap initialization failed
         (0x8007000E)` — Server GC tries to reserve 256 GiB — and he has to `nano
         Game.Server.runtimeconfig.json` and flip `System.GC.Server` to false after EVERY update.
@@ -297,11 +302,11 @@ playtest-15 big design #1). §32 is now fully built.
         had to use vampiric to survive, so it is the potion FAUCET to close, not the damage.
 32i.[x] OK **VERIFIED 2026-08-01** - **Nuker has no Wind Walk** — it is a self buff that stacks with other buffs and should not be on
         the class. Same for the rogue's **Battle Fury** — not in the original CSV.
-32j.[ ] **Starter gear numbers** — Training (Wooden) shield 35 def · Ferrite Aegis 90 pDef at Mythic ·
+32j.[x] ✅ P17 **Starter gear numbers** — Training (Wooden) shield 35 def · Ferrite Aegis 90 pDef at Mythic ·
         ALL training weapons show 5 mAtk · training wand pAtk 6 / mAtk 7 and **no +6 maxMP**.
-32k.[ ] **Auto-farm retaliates** — a mob that is hitting you outranks the nearest one as a target. He was
+32k.[x] ✅ P17 **Auto-farm retaliates** — a mob that is hitting you outranks the nearest one as a target. He was
         being ganked by orc archers while the autopilot kept killing the nearest thing.
-32l.[ ] **NOTHING walks you into melee unless you commanded it** (widened from "casters" — the owner's
+32l.[x] ✅ P17 **NOTHING walks you into melee unless you commanded it** (widened from "casters" — the owner's
         rule has no class in it). Check all four:
         · **Auto-farm** with the Attack action NOT on the bar (or on it but auto-OFF): stands still with
           the target selected; an active skill still closes to CAST range only. With it auto-ON it may
@@ -313,7 +318,7 @@ playtest-15 big design #1). §32 is now fully built.
           swing), then fire a skill at the SAME mob → you resume auto-attacking afterwards.
         · **A walk order or a follow cancels the standing order**: after tapping the ground, a later
           skill must not resume the melee.
-32m.[ ] **Tap-to-target, tap-again-to-attack — and the Attack button means exactly the same thing.**
+32m.[x] ✅ P17 **Tap-to-target, tap-again-to-attack — and the Attack button means exactly the same thing.**
         First tap only opens the target window; a second tap on the SAME target attacks (melee weapon →
         walks in; bow → shoots from range), a party member → follows. Then do the identical checks with
         the **Attack action on the skill bar** and the **Attack button on the target frame** — all three
@@ -331,7 +336,7 @@ playtest-15 big design #1). §32 is now fully built.
         Then confirm a NON-party player CAN be attacked on the second tap when PvP is on and you are
         out of town — that half was genuinely broken: `TouchInput` only sent an Attack for a MOB, so
         tapping any player did nothing at all.
-32t.[ ] **Jewels have designated slots** — the paper-doll shows **Neck · Ear · Ear · Ring · Ring**, and an
+32t.[x] ✅ P17 **Jewels have designated slots** — the paper-doll shows **Neck · Ear · Ear · Ring · Ring**, and an
         empty square names its slot. (FIVE slots, not six: the report's "pendant" is the necklace —
         the necklace-family items are literally *named* Pendant in the catalogue.) Equipping swaps
         like gloves do — a third ring must NEVER be refused with a message. Swap rule: replace the
@@ -364,7 +369,7 @@ playtest-15 big design #1). §32 is now fully built.
           leader attacks, you follow him onto a new target, and when he has none you stand still and
           your target frame is empty (no roaming, no picking your own, no chasing what hit you).
         · All of it must survive a **relog** (it rides in `AutoHuntJson` — no db reset).
-32x.[ ] **An improved buff is ONE square on the bar.** Cast the cleric's Improved Speed: exactly one
+32x.[x] ✅ P17 **An improved buff is ONE square on the bar.** Cast the cleric's Improved Speed: exactly one
         square (0.36.0 put up four). ⚠ **0.42.0 changed how**: it is now literally one buff, so the
         timer is the GROUP's own (not "the shortest part") and there are no per-part times in the
         popup — see 34a/34b, which replace the middle of this row. Still true and still worth
@@ -376,7 +381,7 @@ playtest-15 big design #1). §32 is now fully built.
         ONE buff square at 1h, and the overlap rule holds — take Swift from the buffer, then drink a
         Swift potion of the same tier and the potion must be REFUSED (not eaten), because the buffer's
         hour is longer; a HIGHER tier potion must replace it.
-32v.[ ] **Auto-farm shows its target** — while the autopilot is running, the target window must show the
+32v.[x] ✅ P17 **Auto-farm shows its target** — while the autopilot is running, the target window must show the
         creature it is currently on, update as it switches, and clear when it has none. The server
         already picks one (`GameLoopService` sets `CombatTargetId` in the auto-hunt path, ~:3043/:3056);
         what's missing is that your own client is never told, so the frame sits empty or stale. Pairs
@@ -407,7 +412,7 @@ The one thing to prove above all: **a buff potion no longer stacks with the buff
         (Greater)** (+15%): it replaces the P.Atk part, P.Atk rises — and the **P.Def part of the
         blessing stays at +8%**, because Bulwark is a different family. That last sentence is the
         whole design; if the buff vanishes entirely, the split is wrong.
-33b.[ ] **The class buffs cast the same numbers they always did.** Levels 1-4 of Might and Bulwark ·
+33b.[x] ✅ P17 **The class buffs cast the same numbers they always did.** Levels 1-4 of Might and Bulwark ·
         Force and Ward · Focus and Ferocity · Body and Soul · Frenzy were re-authored as GROUPS but
         must not change any number a cleric already casts. ⚠ **One deliberate exception:** Might used
         to raise BOTH channels, so a mage's M.Atk fell with this change — M.Atk is now the **Force**
@@ -421,7 +426,7 @@ The one thing to prove above all: **a buff potion no longer stacks with the buff
         Serenity · Swift · Alacrity · Agility · Haste · Frenzy. The list must **scroll**. Each is
         cancellable on its own. **Full buff must cost about what it did with nine buttons** (the
         per-buff price was halved to compensate) — if it doubled, say so.
-33e.[ ] **The admin buff button gives everything INCLUDING Harmony.** Debug/ADMIN → buff: 22 squares,
+33e.[x] ✅ P17 **The admin buff button gives everything INCLUDING Harmony.** Debug/ADMIN → buff: 22 squares,
         the 19 above plus **Harmony of Protection / Warrior / Wizard**, which no NPC sells and no
         potion can reach. This is the only way to see a fully buffed character.
 33f.[x] OK **VERIFIED 2026-08-01** - **Scroll-only families are scroll-only.** There is no potion of Body · Soul · Vigor · Serenity ·
@@ -432,7 +437,7 @@ The one thing to prove above all: **a buff potion no longer stacks with the buff
         under the OLD keys (`mage_might`, `holy_body`, …) no longer match a family. If you keep the db,
         a stale square that never expires is the thing to watch for. ⚠ 0.41.0 also moves five skills
         off the cleric — an existing character may still hold `might` / `holy_speed` / … on its bar.
-33h.[ ] **Aim — the accuracy potion** (0.41.0). Accuracy is now the mirror of evasion: **+1 / +2 / +4**,
+33h.[x] ✅ P17 **Aim — the accuracy potion** (0.41.0). Accuracy is now the mirror of evasion: **+1 / +2 / +4**,
         with a potion AND a scroll at Common/Uncommon/Rare, vendor-stocked at Common. Check it sits
         next to Agility in the Apothecary and that a cleric's Aim and an Aim potion do not stack.
 33i.[x] OK **VERIFIED 2026-08-01** - **The cleric buffs ONE effect per cast** (0.41.0). A new cleric learns Might · Bulwark · Force ·
@@ -456,12 +461,12 @@ The one thing to prove above all: **a buff potion no longer stacks with the buff
 parts". Server-side only; no Unity file changed. ⚠ reset `game.db`. ---
 It reverses part of §33: a potion no longer takes over one part of a blessing. **33a is dead** —
 what it describes was the old model. Everything about the potion/scroll LADDER (33b-33j) still holds.
-34a.[ ] **The group eats its singles and cannot be undone.** Take Swift and Agility from the NPC
+34a.[x] ✅ P17 **The group eats its singles and cannot be undone.** Take Swift and Agility from the NPC
         buffer (1h each), then have a Warchanter cast **Swift and Sure**: both squares vanish, ONE
         square replaces them, and the numbers are the group's max rungs. Now drink a **Rare Agility
         potion**: refused, **still in your bag**, evasion does not move. Same with the cleric's own
         Agility — "a stronger blessing is already active".
-34b.[ ] **The group's own square behaves.** One timer (the group's), the tap popup lists all its
+34b.[x] ✅ P17 **The group's own square behaves.** One timer (the group's), the tap popup lists all its
         parts and their numbers, press-and-hold removes the WHOLE thing, and after it goes the
         singles do NOT come back (they were consumed, not parked).
 34c.[ ] 🔴 **Buff scrolls are finally CONSUMED.** Read a Scroll of Might: the buff lands and the
@@ -471,15 +476,15 @@ what it describes was the old model. Everything about the potion/scroll LADDER (
 34d.[ ] **A scroll that would be refused is not read at all.** Under a stronger buff, pressing the
         scroll gives "would have no effect" **before** the 1s cast starts — no cast bar, no cooldown,
         nothing lost. Interrupt a scroll mid-read (walk into a mob): the scroll must survive that too.
-34e.[ ] **Two groups that share nothing coexist.** Might and Bulwark + Swift and Sure both up, two
+34e.[x] ✅ P17 **Two groups that share nothing coexist.** Might and Bulwark + Swift and Sure both up, two
         squares, all eight numbers live. And a HIGHER rank of the same group replaces the lower one
         rather than being refused.
-34f.[ ] **Admin buff = 9 rows** (replaces 33e/33k): five groups + three Harmony + **Frenzy** — the
+34f.[x] ✅ P17 **Admin buff = 9 rows** (replaces 33e/33k): five groups + three Harmony + **Frenzy** — the
         only family no group contains. Every other single is refused by the group covering it. If you
         see fifteen loose squares, the covering rule is not firing.
-34g.[ ] **Relog.** A group comes back as ONE square with LESS time, its full numbers intact, applied
+34g.[x] ✅ P17 **Relog.** A group comes back as ONE square with LESS time, its full numbers intact, applied
         exactly once. (Old saves hold the individual children — reset `game.db` or expect leftovers.)
-34h.[ ] **The autopilot knows.** With auto-buff on and a group up, it must not re-cast it every cycle
+34h.[x] ✅ P17 **The autopilot knows.** With auto-buff on and a group up, it must not re-cast it every cycle
         (watch MP), and auto-potions must not drink a Might potion under Might and Bulwark. When the
         group expires it may cast it again.
 
@@ -489,28 +494,28 @@ what it describes was the old model. Everything about the potion/scroll LADDER (
 **BUILT IN 0.42.1 — test these:** 35e (the hold gesture) · 35f (the box/bag refresh).
 **BUILT IN 0.42.2 — test these:** 35a · 35b · 35c · 35d. All but 35c are Unity-side (35c is the
 server's drop-line builder), so the APK is what proves them.
-35a.[ ] **A set says what it DOES.** 32c gave the piece list and the filled slots but never the reward:
+35a.[x] ✅ P17 **A set says what it DOES.** 32c gave the piece list and the filled slots but never the reward:
         *"the effect is not shown — what does that set do?"* The bonus lines (the actual stats, and
         anything gated on wearing more pieces) must be on the set panel next to the pieces.
-35b.[ ] **One confirmation at a vendor, not two.** 32d put a details window in front of the numpad, so
+35b.[x] ✅ P17 **One confirmation at a vendor, not two.** 32d put a details window in front of the numpad, so
         buying a stack now confirms twice. Wanted: **the detail on the ROW itself, better worded** —
         for *all* vendor items, not only stackables — and for a consumable the **numpad IS the
         confirmation**, reached in one tap. Check buy AND sell, and that a non-stackable still has a
         way to be read before it is bought.
-35c.[ ] **Every drop row carries its own %.** 32f's tree gives the group title and the group's chance;
+35c.[x] ✅ P17 **Every drop row carries its own %.** 32f's tree gives the group title and the group's chance;
         the indented item rows must print their individual chance too (a share of a group is not the
         same number as the group's — the row must show what YOU actually get per kill).
-35d.[ ] **Mastery/passive lines group by WEAPON, not by stat.** 32g gathered same-stat entries, which
+35d.[x] ✅ P17 **Mastery/passive lines group by WEAPON, not by stat.** 32g gathered same-stat entries, which
         was the wrong axis — it still reads "P.Atk: sword +10, blunt +10 / cast: sword +10, blunt +10,
         dagger −100, bow −100". Verbatim: *"sword/blunt +10 pAtk +10 mAtk +10 cast, dagger/bow −100
         cast — more compact, logically written, not throw everything there."* One line per weapon
         GROUP, its stats after it, weapons that share a number folded into one row.
-35e.[ ] **A hold registers while your finger is still down.** It used to be decided on RELEASE, so a
+35e.[x] ✅ P17 **A hold registers while your finger is still down.** It used to be decided on RELEASE, so a
         long press gave nothing back until you let go. Hold a buff square / skill slot: at **0.65s**
         (was 1s in 0.42.1 — he read that as "like 2s", so 0.42.3 shortened it) the menu must appear
         *under the finger*, and letting go afterwards must NOT also fire the tap.
         Then **scroll a long list slowly** — that must NOT count as a hold (40px of travel cancels it).
-35f.[ ] **A box's contents appear in the bag immediately.** Open a newbie box, a selection box and a
+35f.[x] ✅ P17 **A box's contents appear in the bag immediately.** Open a newbie box, a selection box and a
         shot/rune box with the BAG WINDOW OPEN: the box goes, its contents appear, no re-open needed.
         This was a swap the bag's change-stamp could not see (1 item out, 1 in — same length, same
         quantities). Check the same at a **vendor** with the sell list open, which had the same blind
@@ -521,19 +526,19 @@ The regen rework is the one that needs real play: mobs used to regenerate on the
 which at level 90 healed a mob's whole bar every 5.6s. It is now a flat fraction of the mob's own
 pool — **0.1%/s engaged, 5%/s idle** — with no level term at all. ⚠ `ResetMob` no longer heals to
 full, so **36c-36f are all new behaviour that has never existed before**, not regressions to re-check.
-36a.[ ] **An improved buff's popup shows its EFFECT.** Tap a group buff square (admin buff button is
+36a.[x] ✅ P17 **An improved buff's popup shows its EFFECT.** Tap a group buff square (admin buff button is
         the quickest source): the body must read its real numbers — *"+15% P.Atk & P.Def, 9% melee
         vampirism, +4 accuracy"* — exactly the way a **Harmony** buff reads. It said `Parts: Might and
         Bulwark` (a list of ONE name) before. The part list may only appear when several rows genuinely
         share a parent, e.g. a buff restored from the DB.
-36b.[ ] **Nothing out-heals you any more.** Find a mob a few levels above you and chip at it with
+36b.[x] ✅ P17 **Nothing out-heals you any more.** Find a mob a few levels above you and chip at it with
         weak/unbuffed damage. The bar must go DOWN and stay down. Before, a level-37 mob regenerated
         ~29 HP/s and a level-90 one ~1170 HP/s.
-36c.[ ] **The 20-second window.** Take a mob to ~30%, run out of its view so it disengages, then watch
+36c.[x] ✅ P17 **The 20-second window.** Take a mob to ~30%, run out of its view so it disengages, then watch
         it (or come back at intervals). It must **walk home wounded and climb back over ~20 seconds**,
         NOT be instantly full. Re-engage it mid-climb and it must still be hurt. This is the whole
         point of the change — the old code full-healed it the moment you left ViewRange.
-36d.[ ] **The damage ledger survives a disengage.** Take a mob to ~30%, run, and while it is still
+36d.[x] ✅ P17 **The damage ledger survives a disengage.** Take a mob to ~30%, run, and while it is still
         healing let it be killed (return and finish it, or have the bot/another character do it). You
         must still be **on the ledger** — sharing exp/drop credit. Then let one heal ALL the way to
         full and kill it fresh: that time the ledger must have **reset** (no share for the earlier
@@ -546,7 +551,7 @@ full, so **36c-36f are all new behaviour that has never existed before**, not re
 36f.[ ] **Safe-zone kiting is self-limiting.** Aggro something, step into town so it resets, step out.
         You may re-engage it wounded — but it is healing at 5%/s while you wait, so hit-and-run must
         not let a weak character grind down something far above them.
-36g.[ ] **The two new tuning rows.** Debug → tuning: `Mob regen in combat (frac/s)` and `Mob regen
+36g.[x] ✅ P17 **The two new tuning rows.** Debug → tuning: `Mob regen in combat (frac/s)` and `Mob regen
         idle (frac/s)`. Change them, Apply, and confirm the echo comes back clamped (combat 0-0.1,
         idle 0.001-1) and that the new rate is live without a restart.
 
@@ -573,109 +578,109 @@ completion and a shortfall fails the WHOLE trade** — never a partial delivery.
 --- 38. 🔴 THE ACCOUNT WAREHOUSE (0.42.7, built 2026-08-01, unplayed). ⚠ DELETE `game.db` FIRST. ---
 Needs two characters on the SAME account. The warehouse window has a second button row now:
 **Private / Account**.
-38a.[ ] **It crosses characters.** Deposit a weapon into the **Account** bank on character A, log out,
+38a.[x] ✅ P17 **It crosses characters.** Deposit a weapon into the **Account** bank on character A, log out,
         log in character B on the same account, open the keeper → Account → Withdraw: the weapon is
         there, and taking it out is FREE.
-38b.[ ] **10k per new slot, merges are free.** With the account bank empty, deposit one stack of a
+38b.[x] ✅ P17 **10k per new slot, merges are free.** With the account bank empty, deposit one stack of a
         material: gold drops by 10 000 and a system line says so. Deposit **more of the same
         material**: the stack merges and gold does **not** move. Deposit something different: another
         10 000. Under 10 000 gold, a new-slot deposit is refused with the price in the message.
-38c.[ ] **Tradable only.** A quest item / untradable piece must not even be LISTED in the Account
+38c.[x] ✅ P17 **Tradable only.** A quest item / untradable piece must not even be LISTED in the Account
         deposit tab (it still lists in Private). Private stays free for everything.
-38d.[ ] **Town only.** Out in a field both banks refuse with "You can only reach your warehouse in a
+38d.[x] ✅ P17 **Town only.** Out in a field both banks refuse with "You can only reach your warehouse in a
         town."
-38e.[ ] **Both characters see one bank.** Leave character A offline-farming, log in B, move something
+38e.[x] ✅ P17 **Both characters see one bank.** Leave character A offline-farming, log in B, move something
         in the account bank from B, then bring A back: A must show the CURRENT contents, not the ones
         from before B touched it. (No item may be duplicated by this — that is the real risk.)
-38f.[ ] **A rune still expires in there.** Park a war/spell rune in the account bank: it applies no
+38f.[x] ✅ P17 **A rune still expires in there.** Park a war/spell rune in the account bank: it applies no
         buff, but the clock keeps running and it vanishes when it runs out.
 
 --- 39. 🔴 REPEATABLE QUESTS — the Huntmaster's contracts (0.42.9, built 2026-08-01, unplayed). ---
 No `game.db` reset and **no new APK needed** — the protocol is still 8, so an installed 0.42.x build
 plays this. There is a new **Huntmaster** NPC beside the gatekeeper in every city; Brackenford's is
 Huntmaster Cera, 700 west of Gatekeeper Pell.
-39a.[ ] **The contract is offered, and says what it wants.** Talk to Huntmaster Cera at level 3-20:
+39a.[x] ✅ P17 **The contract is offered, and says what it wants.** Talk to Huntmaster Cera at level 3-20:
         *Bracken Contract* is listed, and its line reads **`Collects: Fox Pelt (Fox), Werewolf Fang
         (Werewolf), Barbed Hook (Hook Spider)`** — you can tell what to hunt BEFORE accepting.
-39b.[ ] **Tokens drop as you farm, and stack.** Accept it, kill a few Foxes: each kill gives a
+39b.[x] ✅ P17 **Tokens drop as you farm, and stack.** Accept it, kill a few Foxes: each kill gives a
         **Fox Pelt** with a chat line counting them, and the bag shows **one row, x12** — not twelve
         rows. Check the quest window: the step line reads `Gathered: Fox Pelt 12, Werewolf Fang 0, …`
         and climbs as you kill.
-39c.[ ] **Hand in whenever you like.** Return to Cera → Complete. She takes every token (one "Handed
+39c.[x] ✅ P17 **Hand in whenever you like.** Return to Cera → Complete. She takes every token (one "Handed
         over 12x Fox Pelt" line each), and pays exp **and gold** for them. Doing it after ONE kill must
         also work — that is the owner's *"you killed 1 mob just to return the quest"* case.
-39d.[ ] 🔴 **It does not close.** The moment you hand in, the SAME contract is offered again at the
+39d.[x] ✅ P17 🔴 **It does not close.** The moment you hand in, the SAME contract is offered again at the
         same NPC, and the "!" over her head comes back. Take it again and the counts start at zero.
         This is the whole feature — if it disappears from her list, `QuestClosed` is wrong.
-39e.[ ] **The payout is a farm bonus, not a jackpot.** Roughly **+25-35%** on what those kills already
+39e.[~] ⚠ P17 — payout is fine; two faults found: (1) 🔴 **quest tokens can be put in the WAREHOUSE** — while stored, the quest step count does NOT drop, and Complete then takes them anyway (quest items must be refused by both banks, §38c says they already are for Account — check Private); (2) the hand-in must PRINT the reward (exp / sp / gold), it currently says nothing. Original: **The payout is a farm bonus, not a jackpot.** Roughly **+25-35%** on what those kills already
         gave you. A Fox Pelt is worth ~102 exp / 14 gold, a Barbed Hook ~455 / 47. If a hand-in is
         paying multiples of an hour's farming, the modifier is being applied to the wrong number.
-39f.[ ] **A finite contract repeats too.** At Huntmaster Radd (Stonewatch, level 18-34): *Thin the
+39f.[x] ✅ P17 **A finite contract repeats too.** At Huntmaster Radd (Stonewatch, level 18-34): *Thin the
         Herd*, kill 20 Grizzly Bears → reward at the end, and it is **still on his list afterwards**.
         Ironreach has the same shape (*Standing Orders*, 25 Redhorn Footmen).
-39g.[ ] **Abandoning destroys the trophies.** Take a contract, gather a few tokens, Abandon it: the
+39g.[x] ✅ P17 **Abandoning destroys the trophies.** Take a contract, gather a few tokens, Abandon it: the
         tokens leave the bag with *"Your gathered trophies are discarded."* (They have to — a quest
         item cannot be discarded by hand, so leaving them would be undeletable dead weight.)
-39h.[ ] **The daily is unaffected.** The Apothecary's rune quest is still once-a-day: hand it in and it
+39h.[x] ✅ P17 **The daily is unaffected.** The Apothecary's rune quest is still once-a-day: hand it in and it
         must NOT come straight back (daily beats repeatable).
-39i.[ ] **The creatures actually spawn.** Each contract's three creatures now have their own dedicated
+39i.[x] ✅ P17 **The creatures actually spawn.** Each contract's three creatures now have their own dedicated
         spawner. Check the server log at startup says nothing about *"Quest kill targets with no
         dedicated spawner"*, and that you can find Foxes/Werewolves/Hook Spiders without clearing a
         whole camp first.
-39j.[ ] **A class change still works.** Quest items stack now, and the class change was changed to
+39j.[x] ✅ P17 **A class change still works.** Quest items stack now, and the class change was changed to
         consume ONE rather than remove the row. Take a 2nd class at Class Master Vael and confirm the
         two proofs are consumed and nothing else vanishes.
 
 --- 40. 🔴 THE QUEST WINDOW — three tabs and a page per quest (0.43.0, built 2026-08-01, unplayed). ---
 **Needs a new APK** (protocol 9; the server still accepts a 0.42.x client, but the tabs are client
 work). No `game.db` reset. Menu → Quests.
-40a.[ ] **Three tabs, and they are populated.** *Active* / *Available* / *Completed* across the top,
+40a.[x] ✅ P17 **Three tabs, and they are populated.** *Active* / *Available* / *Completed* across the top,
         Active selected. Active looks as it always did (step line, progress, Where, Track, Abandon) —
         with a **Details** button now as well.
-40b.[ ] **Available lists what you have NOT taken.** Takeable quests first, each showing the giver and
+40b.[x] ✅ P17 **Available lists what you have NOT taken.** Takeable quests first, each showing the giver and
         his town ("From: Elder Marius — Brackenford"); then the shut ones, dimmed, each stating WHY:
         `Requires level N`, `Outgrown — level N at most`, `Requires: <the quest before it>`.
-40c.[ ] **Nothing from another race or class is listed.** A Human Fighter must not see elf-only or
+40c.[x] ✅ P17 **Nothing from another race or class is listed.** A Human Fighter must not see elf-only or
         mage-only quests anywhere in the window — those are hidden, not locked. Nor another 2nd class's
         change chain once you have picked one.
-40d.[ ] **Completed lists NAMES.** It used to print raw ids in one comma-separated line. A daily you
+40d.[x] ✅ P17 **Completed lists NAMES.** It used to print raw ids in one comma-separated line. A daily you
         did today reads *"Done today — again after the server day rolls over"*; a repeatable you have
         done sits in **Available** saying *"Repeatable — take it again"*, not in Completed.
-40e.[ ] **Details, from any row of any tab.** Description, status, level band, giver + town, then every
+40e.[x] ✅ P17 **Details, from any row of any tab.** Description, status, level band, giver + town, then every
         step in order: `[x]` for done, `→` for the one you are on (with its counter), `·` for ahead,
         each with its own "where". Reward at the bottom.
-40f.[ ] **A contract's gather lines are structured now.** Details on a Huntmaster contract lists each
+40f.[x] ✅ P17 **A contract's gather lines are structured now.** Details on a Huntmaster contract lists each
         token: what drops it, how often, how many you carry, and that each pays a % of that creature's
         own exp and gold.
-40g.[ ] 🔴 **Accept moved to the detail page.** Talk to a quest giver: the offer is now a one-line row
+40g.[x] ✅ P17 🔴 **Accept moved to the detail page.** Talk to a quest giver: the offer is now a one-line row
         with a **Details** button (no wall of description in the dialog). Tapping it opens the page with
         **Accept** and **Decline**. Accept takes the quest and the dialog updates behind it; Decline
         just closes and takes nothing.
-40h.[ ] **An open detail page stays live.** Open Details on an active kill quest, then kill one of its
+40h.[x] ✅ P17 **An open detail page stays live.** Open Details on an active kill quest, then kill one of its
         mobs without closing: the step counter on the page moves.
-40i.[ ] **Track still works** — pin from the Active tab, tracker appears on screen, capped at 5, and a
+40i.[x] ✅ P17 **Track still works** — pin from the Active tab, tracker appears on screen, capped at 5, and a
         handed-in quest unpins itself.
 
 --- 41. 🔴 THE MOB CAST BAR + THE TARGET RING (0.43.1, built 2026-08-01, unplayed). ---
 **Needs the same new APK as §40** (all client rendering; protocol still 9). No `game.db` reset.
-41a.[ ] **A casting mob shows a bar over its head.** Find a caster mob (any ranged/caster field mob, or
+41a.[x] ✅ P17 **A casting mob shows a bar over its head.** Find a caster mob (any ranged/caster field mob, or
         a boss) and let it cast: an **amber bar with the spell's NAME above it** appears over that
         mob's nameplate, fills over the cast, and is gone when the spell lands. It must be over the
         MOB — your own cast bar is still the centred one at the bottom.
-41b.[ ] **It clears on an interrupt.** Interrupt a casting mob (hit it hard / a skill with interrupt
+41b.[x] ✅ P17 **It clears on an interrupt.** Interrupt a casting mob (hit it hard / a skill with interrupt
         power): the bar disappears at once rather than running to the end.
-41c.[ ] 🔴 **Killing a caster mid-cast leaves NO bar on the corpse.** This was the bug found while
+41c.[x] ✅ P17 🔴 **Killing a caster mid-cast leaves NO bar on the corpse.** This was the bug found while
         building it — `Kill` bypassed the code that pushes the clear. Kill something while its bar is
         up and confirm the corpse is bare.
-41d.[ ] **Several at once.** Pull two casters and confirm each gets its OWN bar on its own plate, and
+41d.[x] ✅ P17 **Several at once.** Pull two casters and confirm each gets its OWN bar on its own plate, and
         that walking away and back does not leave a ghost bar on anything.
-41e.[ ] **Your target's name is flanked by two blue circles.** Round and solid (a generated sprite, not
+41e.[x] ✅ P17 **Your target's name is flanked by two blue circles.** Round and solid (a generated sprite, not
         a letter). Tap a different mob and they move to it; clear the target with the target window's X
         and they vanish; walk the target off screen and they vanish, and come back when it does.
-41f.[ ] **They sit OUTSIDE the whole name, at any length.** Try a short name and a long one, an
+41f.[x] ✅ P17 **They sit OUTSIDE the whole name, at any length.** Try a short name and a long one, an
         aggressive mob (`*`) and a quest NPC (`!`): the circles clear the text and the quest glyph
         rather than overlapping either, and stay level with the middle of the name.
-41g.[ ] **They survive a relog and a target switch spree.** Leave the world and come back with nothing
+41g.[x] ✅ P17 **They survive a relog and a target switch spree.** Leave the world and come back with nothing
         targeted: no stray circles floating anywhere. Tap ten mobs in a row: exactly ONE pair on
         screen, always on the current one.
 
@@ -689,44 +694,44 @@ was a deliberate call), so `admin/admin` can never hold a title. Any `test1..9` 
 *Level* board the moment it exists, which is enough to see the whole feature.
 
 **Wearable titles**
-42a.[ ] **You are told when you win one.** Log in a plain character; within a few minutes (the server
+42a.[x] ✅ P17 **You are told when you win one.** Log in a plain character; within a few minutes (the server
         re-reads the boards every 5 min, and once at startup) a green line arrives: *"You now top the
         Level board — the title «the Ascended» is yours to wear (Rank window)."*
-42b.[ ] **The picker.** Menu → Rank → **Titles** (the 7th tab). It lists **No title** plus one row per
+42b.[x] ✅ P17 **The picker.** Menu → Rank → **Titles** (the 7th tab). It lists **No title** plus one row per
         board you top, each with a **Wear** button; the one you are wearing reads **Worn** and its text
         is green. A character holding nothing sees the "reach #1 on any board" note instead.
-42c.[ ] **It appears over your head.** Wear one: a small **gold line above your name** on your own
+42c.[x] ✅ P17 **It appears over your head.** Wear one: a small **gold line above your name** on your own
         nameplate, reading `the Ascended` (no quotes). Take it off with **No title** and the line goes.
-42d.[ ] **Other players see it too.** With two characters online (second phone, or offline-farm one and
+42d.[x] ✅ P17 **Other players see it too.** With two characters online (second phone, or offline-farm one and
         log the other in), the title must show over the OTHER character's head as well — it rides the
         entity snapshot, not a private push.
-42e.[ ] **It survives a relog.** Wear a title, exit to character select, come back: still worn, still
+42e.[x] ✅ P17 **It survives a relog.** Wear a title, exit to character select, come back: still worn, still
         drawn. (The *choice* is what persists — the title itself is re-checked against the board.)
-42f.[ ] **A title is HELD, not owned.** Give a second character more gold than the first (`/gold`), wait
+42f.[x] ✅ P17 **A title is HELD, not owned.** Give a second character more gold than the first (`/gold`), wait
         for the refresh: the Wealth title moves. The loser gets *"«the Wealthy» is no longer yours"* and
         their plate line disappears — without them having to re-pick anything. Win it back and it comes
         straight back on (the choice was remembered).
-42g.[ ] **The cast bar still clears it.** Cast something while wearing a title: your cast bar sits
+42g.[x] ✅ P17 **The cast bar still clears it.** Cast something while wearing a title: your cast bar sits
         ABOVE the title line, not through it.
 
 **Chat tabs** (the oldest open item in the roadmap — colours + tabs + tags, §9/§28)
-42h.[ ] **The button is "Chat" now**, and the window is titled Chat. Five tabs: **All / Local / World /
+42h.[~] ⚠ P17 — TABS WORK, wants a 6th: **Combat**, in its OWN window, holding the damage / loot / exp lines pulled OUT of System (`You → Enemy <dmg>`, `You looted:`, `Exp/Sp/Gold`); YOUR damage green (not lime), the enemy's red. Original: **The button is "Chat" now**, and the window is titled Chat. Five tabs: **All / Local / World /
         PM / System**. The old console is the *System* tab — everything that used to be in the Log is
         still there, nothing was hidden.
-42i.[ ] **Colours and tags.** Say something plain → white, *Local* tab. `!hello` → **gold**, tagged
+42i.[x] ✅ P17 **Colours and tags.** Say something plain → white, *Local* tab. `!hello` → **gold**, tagged
         `[W]`, *World* tab. `/w Name hi` → **violet**, tagged `[PM]`, *PM* tab. Server lines → green,
         *System*. In **All** every one of them appears, with its tag, in the order it arrived.
-42j.[ ] **A tab only shows its own.** Switch to *World* and confirm nothing local/system is listed;
+42j.[x] ✅ P17 **A tab only shows its own.** Switch to *World* and confirm nothing local/system is listed;
         switch back to All and it is all still there (switching is a filter, not a wipe). **Clear**
         empties everything.
-42k.[ ] **Reply.** Have someone whisper you, open Chat → **Reply**: the command box fills with
+42k.[~] 🔴 P17 — REPLY FILLS IT, BUT TYPING WIPES IT. Every text box in the client behaves this way: the pre-filled `/w <name> ` (and the saved server IP) is CLEARED the moment you start typing instead of being EDITED. Fix the focus/first-keystroke handling once, for all boxes. Original: **Reply.** Have someone whisper you, open Chat → **Reply**: the command box fills with
         `/w <their name> ` and the keyboard opens with the caret at the end. Type and send.
-42l.[ ] **The log still behaves.** Spam combat for a minute with the window open — no lag spike, no
+42l.[x] ✅ P17 **The log still behaves.** Spam combat for a minute with the window open — no lag spike, no
         rows drawing over each other, newest line always at the bottom. (This is the append-only path
         from 0.28.77; the tab filter must not have reintroduced the rebuild.)
 
 **World chat level floor**
-42o.[ ] **A low-level character cannot use world chat.** On a fresh character below
+42o.[x] ✅ P17 **A low-level character cannot use world chat.** On a fresh character below
         `GameConstants.WorldChatMinLevel` (**10** by default), `!hello` is refused with *"World chat
         opens at level 10. Local chat and whispers work now."* — and plain chat and `/w` still work.
         Level past it and `!hello` goes out. **Staff are exempt**, so `admin/admin` can always use it —
@@ -734,10 +739,10 @@ was a deliberate call), so `admin/admin` can never hold a title. Any `test1..9` 
         it to 1 to open world chat to everyone).
 
 **Actions**
-42m.[ ] **Whisper is an action.** Skills → Actions → **Whisper**: with a player targeted, *Use* fills
+42m.[~] ⚠ P17 — same bug as 42k (the action fills the box, the first keystroke wipes it). Original: **Whisper is an action.** Skills → Actions → **Whisper**: with a player targeted, *Use* fills
         the command box with `/w <name> ` (same as Reply). With no target it says so. Place it on the
         bar and confirm the bar slot does the same thing.
-42n.[ ] **The list is complete.** The Actions tab now covers every non-admin command: attack ·
+42n.[~] ⚠ P17 — NOT complete: **block/unblock and like are missing** from the Actions list (the buttons exist elsewhere, the list entries do not). Original: **The list is complete.** The Actions tab now covers every non-admin command: attack ·
         target-closest · sit/stand · walk/run · trade · party invite/leave/kick/leader · follow ·
         assist · friend add/remove/list · like · block/unblock · whisper. Nothing a player can type is
         missing from it except a whisper's own message text (which no button can supply).
@@ -752,15 +757,15 @@ per level in BOTH directions — a naked level-90 fighter missed 75% of his swin
 on the 5% floor, never missed him. Accuracy and evasion are now `DEX + level` on both sides AND a
 mob's DEX is a flat 30 (the human-fighter base), so a same-level pair sits at the 5% base both ways
 and every point of spread is bought with gear or a passive.
-43a.[ ] **A same-level mob is a fair fight at every level.** Take a level-20-ish character and a level
+43a.[x] ✅ P17 **A same-level mob is a fair fight at every level.** Take a level-20-ish character and a level
         70+ one against NORMAL same-level mobs: neither should feel like it whiffs constantly. The
         endgame character in particular must NOT miss most of its swings — that is the bug being fixed.
-43b.[ ] **Level gap still bites.** A mob 10+ levels above you must still be hard to hit, and 20+ must
+43b.[x] ✅ P17 **Level gap still bites.** A mob 10+ levels above you must still be hard to hit, and 20+ must
         still be the full lockout. The gap curve was not touched; only the same-level baseline was.
-43c.[ ] **Rogues dodge, fighters land.** A dagger/rogue with Evasion Mastery should visibly take more
+43c.[x] ✅ P17 **Rogues dodge, fighters land.** A dagger/rogue with Evasion Mastery should visibly take more
         misses than a knight does; a fighter with Precision should keep landing hits on something that
         evades well. Both passives already existed — this is checking they now MATTER.
-43d.[ ] ⚠ **Mob crit dropped as a side effect.** Mob DEX went from ~100 to 30 at level 90, and DEX also
+43d.[x] ✅ P17 ⚠ **Mob crit dropped as a side effect.** Mob DEX went from ~100 to 30 at level 90, and DEX also
         drives crit rate and attack speed — so high-level mobs now crit less often and swing slightly
         slower. Watch whether endgame mobs became too soft; if so the fix is a MobMod passive, not the
         DEX curve.
@@ -768,31 +773,31 @@ and every point of spread is bought with gear or a passive.
 **Attributes — rebuilt.** One attribute per item, maximum. **Nothing drops with an attribute any
 more** — a scroll is the only source. Armor carries none at all (its identity is its set). Item
 QUALITY no longer matters: a Common sword can roll the same maximum as a Mythic one.
-43e.[ ] **A fresh drop is bare.** Kill things until a weapon or jewel drops and confirm it has NO
+43e.[x] ✅ P17 **A fresh drop is bare.** Kill things until a weapon or jewel drops and confirm it has NO
         attribute line. Same for armor at every quality — armor must never show one.
-43f.[ ] **"Can roll" is on the item page.** Open any D-grade-or-better weapon/jewel: below the stats it
+43f.[x] ✅ P17 **"Can roll" is on the item page.** Open any D-grade-or-better weapon/jewel: below the stats it
         lists what that base COULD carry and the range, e.g. `Crit Rate 10~30%` for a B dagger. This is
         the whole point — you decide if a base is worth a scroll before spending one.
-43g.[ ] **The scroll windows exist at all.** Inventory → tap an enchant or attribute scroll → **Use** →
+43g.[x] ✅ P17 **The scroll windows exist at all.** Inventory → tap an enchant or attribute scroll → **Use** →
         a list of legal targets → confirm. Neither had ANY phone UI before this build.
-43h.[ ] **The target list is filtered, not just long.** A Common attribute scroll must offer only D/C/B
+43h.[x] ✅ P17 **The target list is filtered, not just long.** A Common attribute scroll must offer only D/C/B
         weapons and jewels; an Epic only A; a Mythic only S. An **Uncommon/Rare/Legendary must not
         offer a bare item** (they re-roll a value, they can't create one) — the list should be empty
         with a message saying so if you own nothing eligible.
-43i.[ ] **Each scroll does its own thing.** On a B-grade dagger: Common gives it a random attribute of
+43i.[x] ✅ P17 **Each scroll does its own thing.** On a B-grade dagger: Common gives it a random attribute of
         the dagger's three; Uncommon keeps that attribute and moves the number; Rare keeps it and lands
         in the TOP HALF. On an A weapon: Epic = the Common behaviour, Legendary = the Rare behaviour.
         On an S weapon: Mythic rolls a type at its MAXIMUM every time.
-43j.[ ] **Ranges match the table.** Spot-check a few: magic weapon cast speed tops out at 15%, a bow's
+43j.[x] ✅ P17 **Ranges match the table.** Spot-check a few: magic weapon cast speed tops out at 15%, a bow's
         crit damage at 35%, a ring's HP regen at 5%. An S item always rolls the single top value.
-43k.[ ] **A refusal costs nothing.** If the server rejects a use (wrong grade, nothing to re-roll), the
+43k.[x] ✅ P17 **A refusal costs nothing.** If the server rejects a use (wrong grade, nothing to re-roll), the
         scroll must still be in your bag afterwards.
-43l.[ ] **The stat actually moves.** Put an Attack Speed roll on a worn sword and watch the character
+43l.[x] ✅ P17 **The stat actually moves.** Put an Attack Speed roll on a worn sword and watch the character
         sheet / swing rate change; take it off and it goes away. Same for a bow's Accuracy % — it must
         multiply your finished accuracy, not add 30 flat.
-43m.[ ] **Enchant failure behaves as advertised.** The confirm box states the odds and what a failure
+43m.[x] ✅ P17 **Enchant failure behaves as advertised.** The confirm box states the odds and what a failure
         costs. A Common scroll failing must DESTROY the item; Uncommon resets to +0; Rare drops 1.
-43n.[ ] **Soulcrystal gear reads S.** Level-80+ items (Soulcrystal / Starstone / Seraphite) were
+43n.[!] 🔴 P17 — HALF FIXED: the attribute scroll it accepts is **Mythic** (so `AttributeSystem` sees S) but the item DETAILS panel still prints **A grade**. The display path reads a different grade than the validator. Original: **Soulcrystal gear reads S.** Level-80+ items (Soulcrystal / Starstone / Seraphite) were
         labelled A grade by the pricing enum. They must show S now — and only a Mythic attribute
         scroll may touch them.
 
@@ -800,12 +805,12 @@ QUALITY no longer matters: a Common sword can roll the same maximum as a Mythic 
         must REFUSE with "You can't leave while in combat" and you stay in the world. Once the DoT ends
         (and combat decays) it works. Same for `/exit`. Pulling the plug mid-DoT must not run the
         link-dead grace down.
-25a.[ ] **Buffs survive a relog** — take buffs, note the timers, exit to character select and re-enter:
+25a.[x] ✅ P17 **Buffs survive a relog** — take buffs, note the timers, exit to character select and re-enter:
         they come back with LESS time, not full time and not gone. Wait a few minutes offline and the
         clock should have kept running. A buff that ran out while away must NOT reappear. Runes
         (war/spell rune) must appear exactly ONCE, not twice. Switching to another character on the
         same account must show that character's buffs, not the first one's.
-26. [ ] **"You entered <field>" needs hit-test FALSE** — it currently blocks tapping the ground beneath
+26. [x] ✅ P17 **"You entered <field>" needs hit-test FALSE** — it currently blocks tapping the ground beneath
         it (click-through family).
 27. [ ] 🎯 **Partial-stack trading** — "5 of my 15 sticks for his 10 of 16 stones". **The owner's answer
         to the open design call: YES.** `TradeOffer` must carry per-item counts and split on completion.
@@ -819,25 +824,57 @@ QUALITY no longer matters: a Common sword can roll the same maximum as a Mythic 
         exactly like a skill. Not target-frame buttons (see item 6).
         ➡ **CLOSED IN 0.44.0** — the list was already complete bar one; Whisper (the only command that
         needs typed text) now has an action that fills the box in for you. Test as §42m/§42n.
-30. [ ] **Block system** — `/block <name>` (all chat forms ignored; sender sees "<me> person has blocked
+30. [~] ⚠ P17 — HALF THERE: the block ACTION button works; the `/block` `/unblock` `/blocklist` chat commands and the Actions rows do not exist, and **an admin or moderator must not be blockable**. Original: **Block system** — `/block <name>` (all chat forms ignored; sender sees "<me> person has blocked
         you"; permanent), `/unblock <name>`, `/blocklist`.
-31. [ ] **Charisma system** — `/like` (+1, 20/day, never negative); killing costs `karma × 0.01`; every
+31. [~] ⚠ P17 — HALF THERE: the like ACTION works; the chat commands are missing and the exp/karma side was not tested. Original: **Charisma system** — `/like` (+1, 20/day, never negative); killing costs `karma × 0.01`; every
         20 charisma = **+1% exp/sp drop, capped 1000 = +50%**; chatban −20/h, jail −100/h, kick −250/h,
         ban zeroes both; **two values** — a 0-1000 bonus pool and a lifetime total for ranking.
 32. [ ] **Buy-back menu** — last 10 deleted/sold items; deleted or sold-for-0 restore via `[r]`, sold
         for >0 buy back at price.
 
 **Confirmed work (was "not sure", resolved 2026-07-24)**
-33. [ ] **Starter-gear redesign** — the best 0-20 items one-shot everything. Newbie boxes become a
+33. [~] ⚠ P17 — *"this is true now after shield fix"*, i.e. the 1-10 band is finally weak. The BOX→quest half is still open. Original: **Starter-gear redesign** — the best 0-20 items one-shot everything. Newbie boxes become a
         **level-10 QUEST** (levelling to ~15 along the way); levels 1-10 get the **weakest gear in the
         game** — training weapons at 400g, training armor, **no shots or jewels**; broken jewels drop
         from level 1-5 mobs and sell cheap. Full numbers in memory `playtest-11-queue`.
-34. [ ] 🔴 **Levelling curve** — the mob-XP question is answered: it is **neither** the L2 formula nor a
+34. [ ] 🔴 P17: *"can't test. Need full working game to start playing and test only it's"* — parked until the game is playable end to end. **Levelling curve** — the mob-XP question is answered: it is **neither** the L2 formula nor a
         per-mob value. `ExpToNext = 25L²` (quadratic) vs `MobExpReward = 40 + 35·L` (linear), with a
         toughness multiplier from the mob's HP as the only per-mob variation. That shape gives **~2 200
         kills for all of 1→80** at `ExpRate 1` (~220 at the current ×10), and only ~56 kills/level at
         endgame. **Needs an owner decision on the curve**, ideally together with item 33. Measure any
         change with `tools/BalanceMatrix` — never by hand.
+
+---
+## 44. 🔴 PLAYTEST-17 QUEUE (2026-08-03) — the work that came OUT of the 0.45.0 pass
+
+The full report in his own wording is **`Playtest-17.md`** and it is the authoritative list; this is the
+index. Nothing below is built.
+
+**Bugs** — B1 auto-farm actions are per-ACCOUNT not per-character (and un-slotting must clear auto-on) ·
+B2 compare on a pendant opens a RING · B3 skills exist outside his CSVs (⏭ owed: the list) · B4 quest
+items show in vendor sell + warehouse · B5 relog resets the offline-farm TIMER display · B6 **every text
+box wipes its pre-filled value on the first keystroke** (one fix, whole client) · B7 an out-of-range
+party member cannot be targeted · B8 Soulcrystal details print A while the scroll it takes is Mythic ·
+B9 the jail has no border · B10 no client-side collision · B11 `/block` + `/like` have no chat commands
+or Actions rows, and an admin/moderator must not be blockable.
+
+**Changes** — C1 chat clears on relog (cap ~1000) · C2 newbie gear untradable + 30-day timer · C3 timed
+items show remaining time, colour-graded · C4 buff potions/scrolls take auto-on · C5 an NPC lists only
+ITS quests · C6 quest text only in Details · C7 gatekeeper tabs Zones/Cities · C8 bag + vendor + keeper
+filters Equip/Consum/Mats, name-ordered · C9 a [Speak] button on NPCs · C10 jewel swap must weigh grade,
+not rarity alone · C11 compare + details become ONE two-column window · C12 `/offline` + an [Offline]
+button (**he currently cannot start offline farming at all**) · C13 newbie quest band 10-35 · C14 a 2h
+weapon greys the offhand · C15 Feretite Wand into the newbie box · C16 titles need colour + font sass ·
+C17 admin/moderator titles.
+
+**Economy** — E1 Scroll of Return ÷20 · E2 heal potions ÷10 with Uncommon@40 / Rare@61 · E3 the buff
+economy (no scroll drops at all, potions sell at 0, two rarities, one max-rung scroll per buff,
+**Apothecary sells 250k selection boxes of 10**) · E4 attribute-scroll bands 40/52/61/76/76+/80+.
+
+**Design** — D1 the enchant rework (three scroll TYPES — break / −1 / **safe** — with rarity choosing the
+GRADE, E→S) · D2 `/enchant <value>` + all scrolls in the admin menu · D3 **crafting is now the blocker**
+for anything above Epic · D4 a top-of-family party Frenzy + more Harmonies for 76+ · D5 a [Combat] chat
+tab in its own window.
 
 ---
 ## Known gaps (NOT bugs — not built yet in the Unity client)

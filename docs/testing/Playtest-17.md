@@ -1,0 +1,206 @@
+# Playtest-17 — the 0.45.0 pass (owner, 2026-08-03)
+
+**Source: `Open-Checklist-0.45.0.md`, filled in on the phone.** This file is the AUTHORITATIVE queue —
+his own wording is kept verbatim under each item, my reading is the line above it. The checklist ticks
+themselves went back into `TestChecklist.Unity.md` (search `P17`).
+
+**The verdict in one line:** the biggest unplayed batch in the project's history — §36 and §38-§43,
+six versions' worth — went through in a single pass and **almost all of it passed**. 84 checklist items
+verified, 22 more from the ancient playtest-11 list closed. What came back is not broken machinery;
+it is a **queue of bugs at the edges plus a long list of "now make it a game"** — inventory hygiene,
+the scroll/enchant economy, crafting, and a text-box bug that affects every input in the client.
+
+---
+
+## 🔴 BUGS — these are defects, not opinions
+
+**B1. Auto-farm actions are stored per ACCOUNT, not per CHARACTER.**
+> with the 1st character In the acc I put basic attack action on the bar and made it auto on ...(then
+> delete that char) then entered with the newly created second char and when I put the action ot the bar
+> it was already on.... When I removed it from the bar it still acted in a auto-farm. The actions should
+> act as a skill for the character not for the account. Also removing something from the bar
+> automatically disables the auto-on..when u put it back u need to reactivate it.
+
+Two faults in one: the auto-on flag survives a character DELETE (so it is keyed on the account), and
+removing a slot from the bar does not clear its auto flag — the autopilot keeps firing an action that
+is no longer on the bar. Rule: **auto-on belongs to the character, and un-slotting always clears it.**
+
+**B2. Compare on a pendant opens a RING's detail window.** Wrong slot resolved when picking what to
+compare against — see also C10, the same swap logic is picking the wrong jewel.
+
+**B3. Skills exist that are not in the CSVs.**
+> Heavy Draw, Twin Blade should not exist. They are learned after lvl 20 and they are weaker than the
+> actual csv skills - u can give me list with what is outside the csvs so i can tell you what skilsl to
+> be removed
+
+⏭ **Deliverable back to him: a list of every skill in the catalog that is NOT in his class CSVs**, so
+he can mark the ones to delete. Do not delete anything before he answers.
+
+**B4. Quest items appear in vendor sell lists and the warehouse.**
+> Quest items must not be shown in the selling vendor list or in the keeper. quest items are in their
+> own bag, unless is specifcally told that this quest item is tradable/sellable and it will go inside
+> the normal inventory not the quest bag
+
+Pairs with §39e: tokens parked in the warehouse stop counting toward the quest step but are still taken
+on hand-in. **A quest item must be refusable by every disposal path** (sell, both banks, trade, bin).
+
+**B5. Relogging resets the auto-farm/offline TIMER.**
+> Reloging make my auto farm timer to reset - server did not reset just the timer .. farmed for 15 mins
+> went to town reloged then came back start to auto farm and timer from 7h44 to 7h59
+
+The server kept the real budget (7h44 was right); the displayed remaining time jumped back up to 7h59.
+A display/session-start bug, not a grant bug — but it reads as free time.
+
+**B6. Every text box WIPES its pre-filled value on the first keystroke instead of editing it.** (§42k,
+§42m)
+> same problem with the general texbox. It auto fill /w name, but when I start to type it overrides it
+> dosnt edit it … it's for every textbox..when it do "/w test" and when I select/start typing it clears
+> the /w test and the message becomes normal - same goes for the ip/game connection string and any
+> textbox ..click start type is clear old value not edit
+
+**One fix, whole client**: focus must place the caret, not select-all-and-replace. This kills Reply,
+the Whisper action and re-editing the server IP.
+
+**B7. A party member out of range cannot be TARGETED at all.** (§17-24) — so assist / heal / buff /
+kick / change-leader are unreachable exactly when they matter.
+
+**B8. Soulcrystal-tier gear still prints A grade in item details** while the attribute scroll it accepts
+is Mythic. (§43n) The display path and `AttributeSystem` read different grades.
+
+**B9. The jail has no border**, so an admin teleported in is clamped straight back to the dungeon the
+moment he moves. (§17-1)
+
+**B10. Client-side collision still does not exist** — only the server rubber-band. (§17-23)
+
+**B11. `/block` and `/like` have no chat commands and no Actions entries** (the buttons work). Also:
+**you must not be able to block an admin or a moderator.**
+
+---
+
+## 🟠 CHANGES — agreed behaviour changes, small to medium
+
+**C1. Chat must reset on exit.** A new character inherited the deleted character's chat log. Clear on
+every relog, and cap the buffer (~1000 lines).
+
+**C2. Newbie equipment untradable and unsellable**, and **timed like a rune** (30 days).
+
+**C3. Timed items must show their remaining time in the details panel** — **green** over 7d, **white**
+over 1d, **yellow** over 1h, **red** until it disappears.
+
+**C4. Buff potions and scrolls get auto-on on the hotbar**, the same as buffs — "they act as a buff,
+they should be threaded as one".
+
+**C5. An NPC's window must list only the quests THAT NPC deals with.** Today every NPC shows three.
+
+**C6. Quest text only inside Details.** Everywhere else (NPC window, lists) shows the NAME only.
+
+**C7. Gatekeepers need tabs: Zones / Cities.** One flat list today.
+
+**C8. Bag → Items needs tabs or a filter — Equip / Consumables / Mats — ordered by name.** The same
+filter goes on **sell vendors and the warehouse keeper**.
+
+**C9. NPCs get a [Speak] button** where a monster's [Attack] button sits: it walks you into range and
+opens the dialog.
+
+**C10. Jewel swap picks the wrong piece.** Mythic F ring + Uncommon E ring, equipping another E ring
+replaces the *Uncommon E*, not the F. **Swap must weigh grade AND rarity (or simply the defence value),
+not rarity alone.**
+
+**C11. Compare and details are ONE window, not two.**
+> They must be as one (like the equipment panel in the bag) - You click compare and it extends to left
+> and shows the equiped item details. The equiped item part dont have the bin/unequip buttons - its a
+> comparison part/column/side - only item details for equiped. If I select item from inventory then
+> click compare - it will show left side the equiped details (nothing more) and on the right the
+> selected item details + [bin][equip] buttons. If I select item from equipped panel then click compare
+> - left side the equiped details, right side the same item details + [bin][unequip] buttons.
+
+**C12. `/offline` command + an [Offline] button.** He cannot start offline farming at all any more —
+the WPF client had a button, and leaving to character select is refused while in combat. The character
+select must show the remaining time on a character that is offline-farming. (This is also §"others" Q1
+— *"How to start offline farm?"* — the answer today is "you can't".)
+
+**C13. Newbie quest band 10→35** (its gear is unusable later), and the follow-on chain *Blooded* /
+*Proper kit* 12→35.
+
+**C14. A 2h weapon should show something in the offhand slot** — the same icon greyed/disabled rather
+than an empty square.
+
+**C15. Add the Feretite Wand to the newbie selection box.**
+
+**C16. Titles need more sass.** Gold board = golden, online = green, PvP = purplish (but not the PvP-flag
+colour), PK = dark red. Not *"the Devouted"* — either *"Devouted"* or at least a capital *The*, and a
+different font from the name.
+
+**C17. Admins and moderators get their own titles.**
+
+---
+
+## 🟡 ECONOMY / FAUCET — drop rates he measured at level 23
+
+**E1. Scroll of Return drop rate ÷20.** *"at lvl 23 i have 550 .. when im returning ill need 5-10 …
+I use ~1 per ~250 dropped"*.
+
+**E2. Healing potion drop rate ÷10.** *"now i have 200C and 120U at lvl 23 .. should have ~20C and 0U
+and if i need them i need to buy them"*. **Uncommon must not drop before 40, Rare before 61.**
+
+**E3. The buff-scroll and buff-potion economy** — his full spec:
+- **Remove every buff SCROLL from drops. Even bosses.**
+- **Buff potion sell price = 0.** *"no potions gold farm → they must be buff aid not exploit"* — still
+  tradable and sellable so a fighter can pass a mage's potion on, just worth nothing.
+- **Buff potions have 2 rarities** (down from the current ladder).
+- **Dash potions are drop-only + boss points** — no vendor, sell price stays. They are classified as a
+  buff potion but behave differently; leave them alone.
+- **Remove every single-buff scroll that is not the MAX level of its buff.** One scroll per buff, Rare
+  quality, top rung. *"no need for 6 scrolls for 1 buff"*.
+- **The Apothecary sells buff-scroll SELECTION BOXES: 250k for a pick of up to 10.** At 76+ the 19 buffs
+  cost two boxes = 500k — affordable in about an hour, so **a real buffer is still the better option**,
+  which is the point. **Scrolls out of these boxes are untradable/unsellable; the BOX is tradable and
+  sellable at price ÷ 25.**
+
+**E4. Attribute-scroll drop bands** — Common from 40, Uncommon 52, Rare 61, Epic 76, Legendary from
+bosses 76+, Mythic from bosses/instance bosses 80+ and dungeon monsters at 90.
+
+---
+
+## 🔵 DESIGN — the enchant rework (his spec, verbatim intent)
+
+**D1. Three enchant scroll TYPES, and rarity means GRADE, not behaviour:**
+
+| Scroll | On failure |
+|---|---|
+| **Scroll of Enchant** (today's Common behaviour) | the item BREAKS |
+| **Greater Scroll of Enchant** (today's Rare behaviour) | −1 enchant |
+| **Safe Scroll of Enchant** (new) | keeps the current enchant level |
+
+…and the RARITY of the scroll selects the grade it works on: **Common→E, Uncommon→D, Rare→C, Epic→B,
+Legendary→A, Mythic→S** (one grade below the attribute-scroll bands).
+
+**Drops:** normal scrolls drop like today's Uncommon (Common from 20+, Uncommon 40+, Rare 52+, Epic 61+,
+Legendary from elites at a low chance and bosses higher 76+, Mythic from bosses/instance bosses 80+ and
+dungeon monsters at 90). **Greater** drops from elites at a *very* low chance, **Safe** only from bosses
+at a *very very* low chance. Below A grade there are no elites — those come from **instances** later.
+
+**D2. Admin support for it:** every scroll in the admin menu, plus **`/enchant <value>`** — opens an item
+picker and enchants the chosen weapon/armor to that value, unrestricted (`/enchant 999999` on an F
+weapon must work).
+
+**D3. Crafting is now the blocker for the item ladder.**
+> We need the craft - professions, window, etc .. now even in admin the only mytic are the set,
+> everything else is epic rarity
+
+**D4. A new party buff at the top of the Frenzy family** ("Madness" or similar) — an Improved Frenzy with
+no stat change of its own. Plus: **the healer gets all the single buffs + single Frenzy; party buffs and
+Harmonies stay Warchanter-only; 2-3 more Harmonies and 1-2 more improved buffs for 76+.**
+
+**D5. A [Combat] chat tab in its OWN window** — see §42h.
+
+---
+
+## Still untested after this pass (no APK problem, just not reached)
+
+§37 partial-stack trading (needs a second character — the duo-icon rig can do it now) · §36e boss
+phase re-pull · §36f safe-zone kiting · §34c/§34d scroll consumption · §33l party-wide improved buffs ·
+§32b class change without relog · §32h potion faucet · §32o escape scrolls sellable · §32p buff-potion
+sell price (**superseded by E3 — the answer is 0**) · §32s party members can never be hit · §32y
+`/droprate item` · §32z auto-farm skill chains · §25b combat-logging out of a DoT · §13a the 3h banner ·
+§9a chat peek/fade (not built).

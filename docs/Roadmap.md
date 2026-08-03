@@ -18,10 +18,14 @@ any wire-protocol / DB-schema break (that's what the handshake enforces).
 
 ## NOW (active / immediate)
 
-### 🔴 THE ACTIVE LIST lives in [RoadmapNext.md](RoadmapNext.md) (2026-08-01, 0.42.3)
+### 🔴 THE ACTIVE LIST lives in [RoadmapNext.md](RoadmapNext.md) (2026-08-03, after playtest-17)
 
 Everything below this block is **history** — playtest queues from 0.28.x and earlier, kept because they
 record what was asked for and why. Read `RoadmapNext.md` first; it is the current one-screen state.
+
+**Superseded 2026-08-03 by playtest-17** (played on 0.45.0): the §36 batch below was played and passed,
+0.42.3 was published long since, and the flat gear MP-regen roll was answered in 0.45.0 (it is a PERCENT
+roll now). The live queue is `RoadmapNext.md` + `testing/Playtest-17.md`. Kept for the record:
 
 The three live items, as of 0.42.3 (after playtest-16, played on 0.42.0):
 

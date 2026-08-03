@@ -1,11 +1,24 @@
 # Roadmap — compact view (what's left, what depends on what)
 
-A one-screen digest of [Roadmap.md](Roadmap.md). Updated **2026-08-02 (0.45.0)**.
+A one-screen digest of [Roadmap.md](Roadmap.md). Updated **2026-08-03 (after playtest-17)**.
 Full history: [CHANGELOG.md](CHANGELOG.md). The checklists: [testing/TestChecklist.Unity.md](testing/TestChecklist.Unity.md)
 (the phone) and [testing/TestChecklist.md](testing/TestChecklist.md) (server-side; its client steps
 predate the WPF harness being dropped in 0.42.8 — read them as "on the phone").
 
 ## Where things stand
+
+**Playtest-17 (2026-08-03, server 0.45.0) cleared the backlog.** Six versions of unplayed work — §36
+mob regen, §38 the account warehouse, §39 repeatable quests, §40 the quest window, §41 the mob cast bar,
+§42 titles + chat tabs, §43 accuracy + attributes + the scroll windows — went through in **one** pass.
+**84 items verified, plus 22 of the playtest-11 findings finally closed.** Not one of them was a broken
+system; the four `[~]`s and the handful of `[!]`s are edge cases (see [testing/Playtest-17.md](testing/Playtest-17.md)
+and §44 of the Unity checklist).
+
+**So the machinery is done arguing and the game is now what's missing.** What he sent back is not a bug
+list, it is a *game* list: inventory that cannot be navigated (no filters, no tabs, quest items sold by
+accident), an enchant/scroll economy he has now fully specified, drop faucets he measured at level 23 and
+wants cut by 10-20×, no way to start offline farming at all, and — behind it all — **crafting, which is
+now the single blocker for every item above Epic**. Nothing above the 🔴 line is engine work.
 
 **Playtest-15 (0.34.3) was the economy verdict; playtest-16 (0.42.0) was the polish verdict.** Fifteen
 versions ran between them and the shape of the work changed again: nothing in playtest-16 was a crash,
@@ -30,24 +43,47 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
 
 ## 🔴 NOW — the next three things
 
-1. **Publish 0.45.0 and play §36 + §40-43 in one pass.** `pwsh tools/publish.ps1` →
-   `builds/Game.Server-0.45.0.zip` + `builds/L2Clone-0.45.0.apk`. ⚠ `dotnet build` **before** the Unity
-   build or the APK ships a stale version stamp, and 🔴 **delete `Game.Server/game.db`** (+ `-shm`/`-wal`)
-   — 0.44.0 added a column and 0.45.0 invalidates every stored item attribute. §36 is the 0.42.3
-   mob-regen batch (the buff popup · nothing out-heals you · the 20s idle window · the ledger surviving
-   a disengage · **the boss phase script must not replay** · safe-zone kiting · the two tuning rows);
-   §40 the quest window, §41 the cast bar + target circles, §42 titles + chat tabs, §43 accuracy +
-   attributes + the scroll windows. All five are unplayed and all five are in this one APK.
-   ⚠ (Was: "the Unity scripts are never compile-verified until the APK build." No longer true —
-   `cd Game.Client.Unity && dotnet build Assembly-CSharp.csproj` type-checks them in ~18s. Do that
-   before every APK.)
-2. ~~**Regen from gear vs regen from level**~~ — **answered and built in 0.45.0.** Gear regen is a
+1. ~~**Publish 0.45.0 and play §36 + §40-43**~~ — **DONE, 2026-08-03.** See the paragraph above; the
+   queue it produced is [testing/Playtest-17.md](testing/Playtest-17.md) / §44. Still-unreached items
+   are listed at the bottom of that file (§37 partial-stack trading is top of them — the duo-icon rig
+   makes it testable without a bot now).
+2. **The playtest-17 batch, in this order** — it splits cleanly into four passes and they are ordered by
+   how much of his play time they give back:
+   1. 🔴 **The four defects that block play**: `B6` every text box wipes its pre-filled value on the
+      first keystroke (ONE fix, whole client — it breaks Reply, Whisper and re-editing the server IP) ·
+      `C12` there is **no way to start offline farming at all** any more (the WPF `[Offline]` button
+      went with the harness; leaving to character select is refused in combat) — `/offline` + a button +
+      the remaining time on the character-select row · `B1` auto-farm auto-on is stored per ACCOUNT and
+      survives a character delete, and un-slotting must clear it · `B7` an out-of-range party member
+      cannot be targeted, so assist/heal/buff/kick are unreachable.
+   2. 🟠 **Inventory hygiene** — `B4` quest items must be refused by every disposal path (sell, both
+      banks, trade, bin) and must stop counting only when they are in the quest bag (pairs with §39e:
+      warehousing a token silently stalls the quest step, then Complete takes it anyway) · `C8` filters
+      Equip/Consum/Mats on bag + vendor + keeper, name-ordered · `C7` gatekeeper tabs · `C5`/`C6` an NPC
+      shows only ITS quests and only names · `C11` compare + details as one two-column window (`B2` a
+      pendant opening a ring's window dies with it) · `C10` jewel swap must weigh grade, not rarity.
+   3. 🟡 **The faucet + the scroll economy** — `E1`/`E2` (÷20 return scrolls, ÷10 heal potions, rarity
+      bands by level) are one-line rate changes and he measured them himself, so do them first; `E3` is
+      the real work (**no buff-scroll drops at all**, potions sell at 0, two rarities, one max-rung
+      scroll per buff, and an **Apothecary selection box: 250k for a pick of 10** — deliberately priced
+      so a live buffer stays the better deal).
+   4. 🔵 **The enchant rework** `D1` — three scroll TYPES (breaks / −1 / **safe**) with the RARITY
+      choosing the grade E→S, drop bands one grade below the attribute scrolls, safe scrolls from bosses
+      only. Plus `D2` `/enchant <value>` and every scroll in the admin menu.
+   ⏭ **Owed to him before anything is deleted:** the list of every skill in the catalog that is NOT in
+   his class CSVs (`B3` — Heavy Draw and Twin Blade are the two he spotted, both learned after 20 and
+   weaker than the CSV skills). He marks it up, then we delete.
+3. ~~**Regen from gear vs regen from level**~~ — **answered and built in 0.45.0.** Gear regen is a
    PERCENT roll now (rings, 1-5% by grade) rather than a flat MP/s that dominated the level curve at
    every level. The flat types stay in the enum for pre-0.45 saves and nothing rolls them.
-3. **Watch endgame mob crit after the DEX change.** A normal mob's DEX went from `10 + level` (100 at
-   level 90) to a flat 30, which fixed the accuracy collapse but also cut mob crit rate and attack
-   speed at high level. If endgame mobs feel soft, the answer is a MobMod passive on the ones that
-   should be nasty — **not** putting the DEX curve back. See §43d.
+4. **CRAFTING is now the top content blocker** — his words: *"we need the craft — professions, window,
+   etc .. now even in admin the only mythic are the set, everything else is epic rarity."* Every design
+   is written ([design/Crafting.md](design/Crafting.md), [design/GearLadderAndCrafting.md](design/GearLadderAndCrafting.md));
+   nothing above Epic can be reached in play without it. It outranks the deferred combat-depth work and
+   is second only to the 3rd/4th class kits, which are still blocked on his CSVs.
+   ~~**Watch endgame mob crit after the DEX change.**~~ — checked in playtest-17 (§43d) and mobs do
+   **not** feel like paper; the flat-30 DEX stays. If a specific creature should be nasty it gets a
+   MobMod passive, not the old `10 + level` curve back.
 
 ## 🟡 OPEN — carried forward, nothing blocking them
 
@@ -83,6 +119,12 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
   legal targets → confirm — filtered by `AttributeSystem`, the same code the server validates with.
 
 **UI / conveniences**
+- 🆕 **The playtest-17 UI queue** (2026-08-03) — the whole C-list in
+  [testing/Playtest-17.md](testing/Playtest-17.md): bag/vendor/keeper filters, gatekeeper tabs, NPC quest
+  scoping, the merged compare+details window, a [Speak] button on NPCs, timed-item countdowns with
+  colour, auto-on for buff potions/scrolls, a **[Combat] chat tab in its own window**, title colours and
+  fonts, admin/moderator titles. Individually small, collectively the difference between a systems demo
+  and a game — and the text-box focus bug (`B6`) is a prerequisite for two of them.
 - ~~Chat tabs~~ — **built 0.44.0**, and with them the colours and tags: the phone's Log window is now a
   Chat window with **All / Local / World / PM / System**, world gold `[W]`, whispers violet `[PM]`,
   system green, local white, plus a **Reply** that fills in `/w <name> `. The tabs are a FILTER over

@@ -12,6 +12,26 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-08-03 — Playtest-17: the whole backlog played in one pass (no code)
+
+Six versions of unplayed work went through in a single sitting on the 0.45.0 APK: §36 mob regen, §38 the
+account warehouse, §39 repeatable quests, §40 the quest window, §41 the mob cast bar and target circles,
+§42 titles and chat tabs, §43 accuracy + attributes + the scroll windows. **84 checklist items verified,
+and 22 of the playtest-11 findings from 2026-07-24 finally closed.** Nothing came back as a broken
+system — the failures are edge cases (a per-account auto-farm flag, a text box that wipes its own
+pre-filled value, a pendant opening a ring's window, an out-of-range party member that cannot be
+targeted, Soulcrystal gear printing A grade while taking a Mythic scroll).
+
+What replaced them is a *game* list rather than a bug list: inventory filters and tabs, quest items that
+must be refused by every disposal path, drop faucets he measured at level 23 (return scrolls ÷20, heal
+potions ÷10), a fully-specified buff-scroll economy (no scroll drops at all, an Apothecary selection box
+at 250k for ten), a three-type enchant rework (breaks / −1 / **safe**, with the scroll's rarity choosing
+the GRADE), and **crafting, which is now the single blocker for anything above Epic rarity.**
+
+Report: [testing/Playtest-17.md](testing/Playtest-17.md) (his own wording) · index: §44 of
+[testing/TestChecklist.Unity.md](testing/TestChecklist.Unity.md) · queue:
+[RoadmapNext.md](RoadmapNext.md).
+
 ## 2026-08-02 — Accuracy that scales, attributes you choose, and scrolls that finally work (0.45.0)
 
 Three connected things: the miss roll was quietly broken at every level above 20, attributes were
