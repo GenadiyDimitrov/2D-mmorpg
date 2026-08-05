@@ -12,6 +12,68 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 0.47.0 — 2026-08-05 — The playtest-18 friction tier, and four defects a review caught first
+
+**Protocol stays 12; no schema change, no db reset.** This is the label for everything that landed on
+top of 0.46.0 unpublished: the playtest-17 inventory-hygiene tier, the whole playtest-18 quest section
+(`Q1`-`Q5`), and the four items below.
+
+**`F1` — turning auto-farm off no longer drops what you are fighting.** The server was swinging the
+whole time: `AutoPilot` pushed `AutoTarget(null)` on the first manual tick and the client's selection
+follows that push, while `CombatTargetId` / `Engaged` / `AttackCommandTargetId` all stayed set — so
+*"i must reselect mid fight to finish the kill"* was re-selecting something already being hit.
+Switching to manual now **hands the target over**: it re-pushes the current target for as long as that
+still names something alive and present, and only then null. `StopAutoHunt` (death, spent budget)
+clears `CombatTargetId` itself, so the paths that really end a fight push null exactly as before.
+
+**`V1` — quick-sell.** `QSell: off/ON` beside the Sell tab, in the bin's armed red, and hidden on the
+buy side — a toggle that goes dead when you tap Buy reads as a bug. On, a row sells the WHOLE stack in
+one tap: no numpad, no confirm, non-stacking rows included. It may skip the confirmation where the bin
+cannot, because a sale is undoable from the buy-back list.
+
+**`G4` — save-login checkbox.** `[x] Save login on this device` under the password field. It stores
+username *and* password only after a login that actually SUCCEEDED (storing on submit would remember a
+typo forever), and OFF stores neither, comes up blank, and **wipes what is already on disk** rather
+than merely stopping future writes. The server ADDRESS is remembered either way — it is not a
+credential. Default on with the inspector's admin/admin as the fallback, so the debug rig is untouched.
+⚠ PlayerPrefs is not a secret store; that is what every phone "remember me" gives, and it is why this
+is a choice rather than unconditional.
+
+**`G5` — Dash and Sprint become ONE speed family.** Ranked by magnitude end to end:
+
+| rank | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|---|---|---|---|---|---|---|---|
+| | Dash C +15 | Dash U +30 | **Sprint L1 +40** | Dash R +45 | Dash E +50 | Dash L +55 | Dash M +60 | **Sprint L2 +60** |
+
+which is his spec exactly: Sprint L1 replaces Dash C/U, Sprint L2 replaces everything including Sprint
+L1. Sprint L2 sits above Dash M at the same +60 **on purpose** — a class skill you levelled must not be
+overridable by a bottle, the same rule a group buff follows. ⚠ `Rank` lives on `SkillDef` and not on
+`SkillLevel`, so a two-level skill cannot vary its rank: Sprint is authored as a **one-child wrapper**
+whose level picks the child, the machinery a potion already uses. Its old private `"sprint"` BuffKey is
+gone — that key having a family to itself is what let Sprint and a Dash potion both run at once.
+
+**Four UI defects found by review before they were ever played:**
+- A quest token already IN a warehouse **could never be taken out**. `B4` stops one going in, but the
+  private bank accepted them until `B4` shipped, and `InCategory(All, …)` hides Quest while the keeper
+  has no Quest tab — so the token was unreachable and its quest step stalled, with every tab reading
+  "Your warehouse is empty". The All tab rescues it on the withdraw side now.
+- The quest tracker sized its rows by counting `\n`. Word-wrap is on, so a real objective is one
+  newline and two drawn lines: wrapped rows came out short and spilled onto the pin below. It measures
+  with `GetPreferredValues` now, and the panel — a fixed 180px, which `Q2`'s auto-pin made worse —
+  grows with its content.
+- The bag's paper-doll column hung off the bottom of the window: `C8`'s second tab row pushed it down
+  36px and **preset C drew outside the window, over the world** (a `PanelBox` does not clip). The bag
+  is 60px taller while the column is open, and the list takes the extra height.
+- Opening compare moved the column you were reading a quarter-screen right — the panel's pivot is its
+  centre, so growing it pushes both edges outward. Shifting the panel left by half a column cancels it.
+
+**Not built, and why:** `G1`'s skill deletion. Checking the list against the code first showed five of
+its lines were wrong — `evade_mastery`, `precision` and `anti_magic` are **auto-granted to every rogue /
+warrior / tank** at 20/40/76 by `AutoLearnCoreSkills`, and `class_balance_*` to every character alive.
+They feed `EvadeFloor` / `HitFloor` / `MagicFailFloor` and are the class identity floors documented in
+`design/CombatResolution.md`; they are absent from the CSVs only because they are auto-granted rather
+than learned. See the red block in `testing/Skills-Not-In-CSVs.md` §3. Nothing was deleted.
+
 ## 0.46.0 — 2026-08-05 — Four playtest defects: auto marks, distant party targets, empty slots, undo
 
 ⚠ **Protocol 12** (`MinAcceptedProtocol` stays 8, so an installed 0.45.x APK still connects — it simply
