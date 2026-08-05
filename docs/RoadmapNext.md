@@ -35,7 +35,7 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
 | | |
 |---|---|
 | **World** | the overworld is a generated PLAN (4-level camps, named gates, managing cities) · five cities, every town fully serviced · aggression authored per field · per-mob quest spawners |
-| **Items & economy** | the six-quality ladder from F to S on one series · sets need four pieces of the same quality · rarity colour everywhere · **the price ladder** (sell derives from buy ÷ 25) · **the drop side** (grade-locked slot-family groups, `/droprate` global + per-group + per-item) · jewel slots |
+| **Items & economy** | the six-quality ladder from F to S on one series · sets need four pieces of the same quality · rarity colour everywhere · **the price ladder** (sell derives from buy ÷ 10) · **the drop side** (grade-locked slot-family groups, `/droprate` global + per-group + per-item) · jewel slots |
 | **Buffs** | the ladder: 14 families × ranks, 24 potions + 48 scrolls · the cleric buffs singles, the Warchanter owns the groups and Harmony (party-wide) · **a group is ONE buff that outranks and eats its singles** (0.42.0, reversing 0.36-0.41) · buff scrolls are actually consumed now |
 | **Autopilot** | priority groups, cyclic order, heal threshold, assist-leader · retaliation · nothing walks you into melee unless you commanded it |
 | **UI** | cooldown countdown on the bar · passives and masteries state their numbers (`SkillText`, shared by both clients) · character delete · drop tree with per-row % · consumable counts · set effects · one confirmation at a vendor |
@@ -83,8 +83,9 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
    - 🔴 Three defects: **`Q1`** quest tracking is a client-only in-memory list and dies with the app
      (must be per CHARACTER, server-side with the quest log) · **`G7`** a hotbar consumable at 0 count is
      *disabled*, which also kills the gesture that would remove it — draw a permanent 100 % cooldown ·
-     **`V2`** the sell fraction ⚠ *his 0.8 matches no code path* (gear is buy ÷ 25, generic × 0.30), so
-     ask which item he measured before touching the constant.
+     ~~**`V2`** the sell fraction~~ ✅ **DONE 2026-08-05** — his 0.8 was a misread (he sold a Robe, not
+     the gloves). Real fix from his three-character farm: gear drop groups ×1/3 → **×0.025** and
+     `GearSellDivisor` 25 → **10**. 4.06kk → 1.23kk over the same farm. See `EconomyRework.md` §4a.
    - `G5` the Dash potion and Sprint become ONE speed family (six rungs, potion E1/E2/E4/E5, Sprint
      E3/E6) — pure authoring on the existing family+Rank machinery · `Q2`-`Q5` tracker and Active-tab
      polish (same "full text only in Details" rule as `C6`) · `F1` leaving auto-farm must not drop the

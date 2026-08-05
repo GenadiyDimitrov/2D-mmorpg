@@ -137,12 +137,40 @@ amount in one tap instead of asking for a quantity — the same shape as the inv
 > I know this will lower the price of A/S grade but the idea is not selling in the shop getting rich
 > from trash.
 
-⚠ **His measurement does not match the code and must be reconciled before anything changes.** At HEAD:
-tiered gear sells at **buy ÷ 25** (4 %, `GameConstants.GearSellDivisor`), use-consumables the same,
-everything else at **× 0.30** (`VendorSellFraction`) — no path produces 0.8. Either he read a different
-number than I think he did, or an item class is escaping the tiered path. ⏭ **Ask him which item he
-measured on** — moving the constant to 0.25 blind would *raise* the gear faucet 6×, the opposite of what
-he is asking for.
+✅ **RESOLVED AND BUILT 2026-08-05 — but not as written.** The 0.8 was his own misread: he sold a
+**Feretite Robe** and read the number as the gloves' price. So there was no bug, and the ask became the
+real one underneath it — *"selling items/trash making money ok .. but not farming"*.
+
+He then produced the best economy datum this project has: **three characters, same ~14-15 h idle farm.**
+Mage 34 selling nothing = **350k**. Tank 36 selling only equipment = **3.3kk**. Rogue 34 selling
+everything = **4.6kk**. BalanceMatrix reproduces all three and shows **gear is the entire faucet** (10×
+the coin drop; mats + potions are 2%).
+
+**Shipped:** the cut went on the **drop rate**, not the price — cutting the price alone leaves you
+wading through the same flood of junk, which is the actual complaint. Gear groups **×1/3 → ×0.025**
+(13× rarer) and `GearSellDivisor` **25 → 10** (each drop worth 2.5× more). Measured: **4,055,588 →
+1,227,289** over that farm, gear:coin from 10.3× down to 1.9×.
+
+**V2b — the scroll pass, same day, also BUILT.** He corrected the consumable finding: Return/Resurrection
+were already cut 20×/200× and *"are usefull u wont be seling all"*; and *"if you sell them not trade or
+ecnaht the gear .. well goodluck not being part of the economy."* His ask: enchant + attribute scrolls
+need *"lower the chances + move them in the lvls a bit"*. Measuring it flipped the diagnosis twice:
+
+- **Enchant and attribute scrolls already sell for 0** (no `Value:` on the ItemDef) — they cannot feed
+  the gold economy at all. The reason to cut them is the BAG, not the faucet.
+- **The consumable gold was buff potions/scrolls**, 155/kill. His playtest-17 *"buff pots are 0 sell"*
+  had **never been implemented** — and the ÷10 had just made them 2.5× richer.
+- **Attribute scrolls at 27%/kill were an accident**: independent rolls take the global ×3 that the
+  guaranteed groups are exempt from. Authored 0.09, delivered 0.27.
+
+Shipped: `SellPriceOverride: 0` on every buff potion / buff scroll / Dash potion · enchant share of a
+scroll rung 0.5 → **0.15**, floors 1/20/45 → **10/30/55** · attribute chances cut ~5× and spread over
+their band (floors 40/52/61/76/80/84). Measured at level 33: enchant 30% → **9%**, attribute 27% →
+**3.6%**, buff gold 155 → **2**/kill. **Total 1,038,115 = 1.04× target** (gear 65 / coin 34 / cons 1).
+
+⏭ **Still open, not urgent:** gear value follows the tier ladder while coin is linear, so the ratio
+still drifts to 51× by level 76 — the fix there is the **coin curve**, not another multiplier.
+Full detail: `docs/design/EconomyRework.md` §4a + §4b.
 
 **Later, not now — trash becomes crafting mats instead of gold:**
 > Later we can make trash disasemble for crafting mats (rarity for mats rarity) (grade for mats ammount)

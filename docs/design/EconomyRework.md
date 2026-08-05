@@ -168,7 +168,14 @@ marginal drop chance and the §2 table could be written straight in — no new m
   entries now, and 97 near-identical 0.6 % rows told the player nothing. One line per group is also more
   truthful — the 5 % really is one roll shared across the family.
 
-## 4. Sell prices — **sell = buy ÷ 25** ✅ BUILT
+## 4. Sell prices — **sell = buy ÷ 10** ✅ BUILT
+
+> ⚠ **Retuned 2026-08-05 (playtest-18 V2): the divisor is now 10, not 25, and it moved UP on purpose.**
+> The faucet cut went onto the drop RATE instead — the four gear groups dropped from ×1/3 to **×0.025**
+> (13× rarer). Rationale: cutting the *price* leaves the player wading through the same flood of
+> near-worthless drops, which is the complaint, not the fix. Fewer drops, each worth 2.5× more.
+> The "25 Robes buys one Leathers" test below is therefore superseded — it is **10 Robes** now.
+> Measured in `tools/BalanceMatrix`; see §4a. The rest of this section is the original reasoning.
 
 Owner confirmed (2026-07-30): sell **derives from buy**, it is not a cut off the old sell price.
 *"that's why always I give the buy prices — this is the Server's price, the economy may differ in
@@ -185,6 +192,100 @@ The intent, in the owner's own terms:
 - Trading with other newbies should be the better route.
 - Gear farming becomes about **gearing up, not gold farming**.
 - Gold farming stays meaningful only at the **top grades**, where the items are genuinely expensive.
+
+## 4a. The playtest-18 faucet retune ✅ BUILT (2026-08-05)
+
+The owner ran **three characters through the same ~14-15 h idle farm** and reported the gold each
+finished with. That is the strongest economy datum this project has ever had, because the only variable
+was what each one sold:
+
+| character | what it sold | gold |
+|---|---|---|
+| mage, level 34 | nothing — coin only | **350k** |
+| tank, level 36 | equipment only | **3.3kk** |
+| rogue, level 34 | everything | **4.6kk** |
+
+`tools/BalanceMatrix` reproduces this (calibrating on the coin, which involves no player choice: 350k
+⇒ **1,211 kills**, ~84/h). It put sold gear at **10× the mob's own gold drop**, and mats + potions
+together at **2%** — so **gear was the entire faucet**, and his tank selling only equipment already
+banking 3.3 of the 4.6 is the same finding from the other direction.
+
+Target: ~1kk over that farm. Two knobs reach it, and the choice between them is a *feel* decision, not
+an arithmetic one — cutting the sell price alone leaves the drop volume untouched, so the offline farm
+still buries you in junk to click through. Owner picked the drop rate, then pushed the price the other
+way so the rarer drop is worth having:
+
+| | before | after |
+|---|---|---|
+| gear group multiplier | ×1/3 | **×0.025** (13× rarer) |
+| `GearSellDivisor` | 25 | **10** (worth 2.5× more) |
+| gear sales over the farm | 3,619,984 | **678,747** |
+| consumables + mats | 85,688 | **198,542** |
+| coin | 350,000 | 350,000 |
+| **total** | **4,055,588** | **1,227,289** (1.23× target) |
+| gear : coin ratio | 10.3× | **1.9×** |
+
+**Two things this surfaced, both still open:**
+
+1. **The consumable line went UP 2.3×**, because `GearSellDivisor` governs use-consumables too. The
+   owner believed buff potions were 0-sell and scrolls did not drop; neither fully holds — `GroupScrolls`
+   (70% guaranteed) carries enchant *and* buff scrolls, and `GroupAlways` carries Scroll of Return
+   (sells 50 now, was 20) and Resurrection (150, was 60). Consumables are now **16%** of income, and are
+   what puts the result at 1.23× rather than 1.0×. Left as-is deliberately — inside the noise of the
+   original measurement.
+2. **Gear sale value follows the tier ladder; the mob's coin drop is linear in level.** So *any* flat
+   multiplier fixes one band and drifts:
+
+   | level | gear/kill | coin/kill | ratio |
+   |---|---|---|---|
+   | 33 | 560 | 289 | 1.9× |
+   | 52 | 7,362 | 441 | 16.7× |
+   | 76 | 32,719 | 633 | 51.7× |
+
+   Much flatter than the 275× it was, but the shape is unchanged. The real fix is the **coin curve**, not
+   another multiplier. Not urgent — revisit when the endgame is actually played.
+
+Context the owner gave for wanting this shut: *"later there will be gold sellers (3rd party 'hakers')
+bots that sell gold for real money that i need to ban off somehow."* Trash-selling as the dominant
+faucet is exactly what an idle bot farm monetises.
+
+### 4b. The scroll pass, same day — and the 16 % turned out to be the wrong culprit
+
+The owner's reply to the 16 % consumable line corrected the premise: Return/Resurrection were already cut
+20×/200× in playtest-17 and *"are usefull u wont be seling all"*; and for the others, *"if you sell them
+not trade or ecnaht the gear .. well goodluck not being part of the economy."* He asked instead for the
+**enchant and attribute scrolls** to have *"lower the chances + move them in the lvls a bit"*.
+
+Measuring that flipped the diagnosis twice:
+
+- **Enchant and attribute scrolls sell for 0 already.** Neither carries a `Value:`, so `SellPrice`
+  returns 0 — they cannot be vendored for gold at all, only traded. His concern was already enforced by
+  the code. The reason to cut them is the **bag**, not the economy.
+- **The 16 % was buff potions and buff scrolls**, at 155 gold/kill (≈188k of the 199k). His playtest-17
+  intent — *"buff pots are 0 sell (ppl still can sell them to others if they want)"* — **had never been
+  implemented**: potions carried `Value` 1500/5000/12000 and scrolls 4500 → 300000, and the new ÷10
+  divisor had just made all of them 2.5× richer.
+- **Attribute scrolls at 27 %/kill were a mechanical accident.** They are INDEPENDENT rolls, so they take
+  the global ×3 that the guaranteed groups are exempt from: authored 0.09, delivered 0.27.
+
+| | before | after |
+|---|---|---|
+| buff potions + scrolls + Dash | `Value`-derived (150–30,000 each) | **`SellPriceOverride: 0`** |
+| enchant share of a scroll rung | 0.5 | **0.15** |
+| enchant floors (Common/Uncommon/Rare) | 1 / 20 / 45 | **10 / 30 / 55** |
+| attribute scroll chances | .05 / .03 / .01 / .03 / .01 / .003 | **.012 / .006 / .002 / .008 / .003 / .001** |
+| attribute floors | 40 / 40 / 40 / 76 / 76 / 80 | **40 / 52 / 61 / 76 / 80 / 84** |
+
+Measured per-kill frequency (`tools/BalanceMatrix`, SCROLLS section):
+
+| level | enchant | attribute | buff gold/kill |
+|---|---|---|---|
+| 33 | 30 % → **9 %** | — | 155 → **2** |
+| 40 | 30 % → **9 %** | 27 % → **3.6 %** | 155 → **2** |
+| 85 | 35 % → **10.5 %** | 39.9 % → **9.6 %** | 747 → **1** |
+
+The residual 2 gold/kill is Return + Resurrection, which share the `BuffPotion` subtype. **Total over the
+reference farm: 1,038,115 — 1.04× target**, split gear 65 % / coin 34 % / consumables 1 %.
 
 ## 5. Buy prices ✅ BUILT
 

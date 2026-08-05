@@ -342,9 +342,20 @@ public static class MobCatalog
         //      half a BUFF potion (never a healing one; those are the Always group's job). The rungs
         //      unlock on the thresholds the enchant-scroll tier already used (20 / 45): a level-3 mob has
         //      no business handing out a Rare enchant scroll.
-        void ScrollRung(float weight, string enchant, string[] buffs)
+        // ENCHANT SHARE (owner, playtest-18 V2b, 2026-08-05: *"the attribute scrolls and enchant scrolls
+        // also need to lower the chances + move them in the lvls a bit"*). The enchant scroll used to take
+        // HALF the rung, which measured at 20 % of all kills from level 1, 30 % from 20 and 35 % from 45 —
+        // ~360 scrolls over a 14-15 h farm. That does not flood the ECONOMY (an enchant scroll has no
+        // Value and sells for 0) but it floods the BAG and makes enchanting feel free. At 0.15 it is
+        // roughly one per eleven kills. The buff half is unchanged; the rung simply sums to less, which
+        // this group is already designed to do (see the Always-group note below).
+        const float EnchantShare = 0.15f;
+        // `enchant: null` = this rung's buff potions drop but its enchant scroll does not yet — that is
+        // the "move them in the levels" half, letting the enchant floor sit ABOVE its rung's floor.
+        void ScrollRung(float weight, string? enchant, string[] buffs)
         {
-            drops.Add(new(enchant, weight * 0.5f, GroupId: GroupScrolls));
+            if (enchant is not null)
+                drops.Add(new(enchant, weight * EnchantShare, GroupId: GroupScrolls));
             foreach (var b in buffs)
                 drops.Add(new(b, weight * 0.5f / buffs.Length, GroupId: GroupScrolls));
         }
@@ -361,7 +372,7 @@ public static class MobCatalog
         // split finer. That is the point: more variety at the same faucet.
         // Mythic (rung 6) buff scrolls have no drop source yet, the way Dash Mythic doesn't: they
         // wait for the §3 drop-group rework, which wants to roll the ITEM rather than the rarity.
-        ScrollRung(0.40f, ItemCatalog.ScrollCommon,
+        ScrollRung(0.40f, level >= 10 ? ItemCatalog.ScrollCommon : null,
             new[] { ItemCatalog.SpeedPotionC, ItemCatalog.CastPotionC, ItemCatalog.AtkPotionC,
                     ItemCatalog.EvaPotionC, ItemCatalog.DashPotionC,
                     ItemCatalog.MightPotionC, ItemCatalog.BulwarkPotionC,
@@ -371,7 +382,7 @@ public static class MobCatalog
                     ItemCatalog.MightScrollC, ItemCatalog.BulwarkScrollC,
                     ItemCatalog.ForceScrollC, ItemCatalog.WardScrollC, ItemCatalog.AimScrollC });
         if (level >= 20)
-            ScrollRung(0.20f, ItemCatalog.ScrollUncommon,
+            ScrollRung(0.20f, level >= 30 ? ItemCatalog.ScrollUncommon : null,
                 new[] { ItemCatalog.SpeedPotionU, ItemCatalog.CastPotionU, ItemCatalog.AtkPotionU,
                         ItemCatalog.EvaPotionU, ItemCatalog.DashPotionU,
                         ItemCatalog.MightPotionU, ItemCatalog.BulwarkPotionU,
@@ -381,7 +392,7 @@ public static class MobCatalog
                         ItemCatalog.MightScrollU, ItemCatalog.BulwarkScrollU,
                         ItemCatalog.ForceScrollU, ItemCatalog.WardScrollU, ItemCatalog.AimScrollU });
         if (level >= 45)
-            ScrollRung(0.10f, ItemCatalog.ScrollRare,
+            ScrollRung(0.10f, level >= 55 ? ItemCatalog.ScrollRare : null,
                 new[] { ItemCatalog.SpeedPotionR, ItemCatalog.CastPotionR, ItemCatalog.AtkPotionR,
                         ItemCatalog.EvaPotionR, ItemCatalog.DashPotionR,
                         ItemCatalog.MightPotionR, ItemCatalog.BulwarkPotionR,
@@ -469,18 +480,18 @@ public static class MobCatalog
         //      so a mob only drops the scrolls that are useful against the gear at its own level.
         //      These are the ONLY source of attributes now, which is why the entry scroll of each
         //      band is the common one and the "top half" scrolls stay rare.
-        if (level >= 40)
-        {
-            drops.Add(new(ItemCatalog.AttrScrollCommon, 0.05f));
-            drops.Add(new(ItemCatalog.AttrScrollUncommon, 0.03f));
-            drops.Add(new(ItemCatalog.AttrScrollRare, 0.01f));
-        }
-        if (level >= 76)
-        {
-            drops.Add(new(ItemCatalog.AttrScrollEpic, 0.03f));
-            drops.Add(new(ItemCatalog.AttrScrollLegendary, 0.01f));
-        }
-        if (level >= 80) drops.Add(new(ItemCatalog.AttrScrollMythic, 0.003f));
+        //      ⚠ THESE ARE INDEPENDENT ROLLS, so unlike the guaranteed groups they DO take the global
+        //      DropChanceRate (×3). That is why the authored 0.05+0.03+0.01 was landing as a measured
+        //      **27 % of every kill** from level 40 — an accident of which side of the exemption they sit
+        //      on, not a decision. Cut ~5× and the three rungs spread out over the band they serve
+        //      (owner, playtest-18 V2b: "lower the chances + move them in the lvls a bit"), so the
+        //      top-half re-roll is not handed out the moment the band opens.
+        if (level >= 40) drops.Add(new(ItemCatalog.AttrScrollCommon, 0.012f));
+        if (level >= 52) drops.Add(new(ItemCatalog.AttrScrollUncommon, 0.006f));
+        if (level >= 61) drops.Add(new(ItemCatalog.AttrScrollRare, 0.002f));
+        if (level >= 76) drops.Add(new(ItemCatalog.AttrScrollEpic, 0.008f));
+        if (level >= 80) drops.Add(new(ItemCatalog.AttrScrollLegendary, 0.003f));
+        if (level >= 84) drops.Add(new(ItemCatalog.AttrScrollMythic, 0.001f));
         return drops.ToArray();
     }
 

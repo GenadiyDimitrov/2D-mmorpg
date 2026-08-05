@@ -909,70 +909,77 @@ public static class ItemCatalog
         //       Common (Lesser) potions are vendor-sold staples; the rest drop or are crafted.
         //       A scroll is the same rung for an HOUR instead of 20 minutes, so it costs 3x. -----
         list.Add(new ItemDef(SpeedPotionC, "Swift Potion (Lesser)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotSwiftC, Value: 1500));
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotSwiftC, SellPriceOverride: 0, Value: 1500));
         list.Add(new ItemDef(SpeedPotionU, "Swift Potion", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotSwiftU, Value: 5000));
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotSwiftU, SellPriceOverride: 0, Value: 5000));
         list.Add(new ItemDef(SpeedPotionR, "Swift Potion (Greater)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PotSwiftR, Value: 12000));
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PotSwiftR, SellPriceOverride: 0, Value: 12000));
         list.Add(new ItemDef(CastPotionC, "Alacrity Potion (Lesser)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotAlacrityC, Value: 1500));
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotAlacrityC, SellPriceOverride: 0, Value: 1500));
         list.Add(new ItemDef(CastPotionU, "Alacrity Potion", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotAlacrityU, Value: 5000));
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotAlacrityU, SellPriceOverride: 0, Value: 5000));
         list.Add(new ItemDef(CastPotionR, "Alacrity Potion (Greater)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PotAlacrityR, Value: 12000));
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PotAlacrityR, SellPriceOverride: 0, Value: 12000));
         list.Add(new ItemDef(AtkPotionC, "Haste Potion (Lesser)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotHasteC, Value: 1500));
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotHasteC, SellPriceOverride: 0, Value: 1500));
         list.Add(new ItemDef(AtkPotionU, "Haste Potion", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotHasteU, Value: 5000));
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotHasteU, SellPriceOverride: 0, Value: 5000));
         list.Add(new ItemDef(AtkPotionR, "Haste Potion (Greater)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PotHasteR, Value: 12000));
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PotHasteR, SellPriceOverride: 0, Value: 12000));
         list.Add(new ItemDef(EvaPotionC, "Agility Potion (Lesser)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotAgilityC, Value: 1500));
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotAgilityC, SellPriceOverride: 0, Value: 1500));
         list.Add(new ItemDef(EvaPotionU, "Agility Potion", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotAgilityU, Value: 5000));
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotAgilityU, SellPriceOverride: 0, Value: 5000));
         list.Add(new ItemDef(EvaPotionR, "Agility Potion (Greater)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PotAgilityR, Value: 12000));
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PotAgilityR, SellPriceOverride: 0, Value: 12000));
 
         list.Add(new ItemDef(SpeedScrollC, "Scroll of Swift (Lesser)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.ScrSwiftC, Value: 4500));
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.ScrSwiftC, SellPriceOverride: 0, Value: 4500));
         list.Add(new ItemDef(SpeedScrollU, "Scroll of Swift", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.ScrSwiftU, Value: 15000));
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.ScrSwiftU, SellPriceOverride: 0, Value: 15000));
         list.Add(new ItemDef(SpeedScrollR, "Scroll of Swift (Greater)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.ScrSwiftR, Value: 36000));
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.ScrSwiftR, SellPriceOverride: 0, Value: 36000));
         list.Add(new ItemDef(CastScrollC, "Scroll of Alacrity (Lesser)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.ScrAlacrityC, Value: 4500));
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.ScrAlacrityC, SellPriceOverride: 0, Value: 4500));
         list.Add(new ItemDef(CastScrollU, "Scroll of Alacrity", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.ScrAlacrityU, Value: 15000));
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.ScrAlacrityU, SellPriceOverride: 0, Value: 15000));
         list.Add(new ItemDef(CastScrollR, "Scroll of Alacrity (Greater)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.ScrAlacrityR, Value: 36000));
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.ScrAlacrityR, SellPriceOverride: 0, Value: 36000));
         list.Add(new ItemDef(AtkScrollC, "Scroll of Haste (Lesser)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.ScrHasteC, Value: 4500));
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.ScrHasteC, SellPriceOverride: 0, Value: 4500));
         list.Add(new ItemDef(AtkScrollU, "Scroll of Haste", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.ScrHasteU, Value: 15000));
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.ScrHasteU, SellPriceOverride: 0, Value: 15000));
         list.Add(new ItemDef(AtkScrollR, "Scroll of Haste (Greater)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.ScrHasteR, Value: 36000));
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.ScrHasteR, SellPriceOverride: 0, Value: 36000));
         list.Add(new ItemDef(EvaScrollC, "Scroll of Agility (Lesser)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.ScrAgilityC, Value: 4500));
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.ScrAgilityC, SellPriceOverride: 0, Value: 4500));
         list.Add(new ItemDef(EvaScrollU, "Scroll of Agility", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.ScrAgilityU, Value: 15000));
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.ScrAgilityU, SellPriceOverride: 0, Value: 15000));
         list.Add(new ItemDef(EvaScrollR, "Scroll of Agility (Greater)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.ScrAgilityR, Value: 36000));
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.ScrAgilityR, SellPriceOverride: 0, Value: 36000));
 
         // ----- The other buff ladders (BuffLadders.md step 6). Same shape as the four speed
         //       families above, so the prices are the same ladder: potion 1.5k/5k/12k, scroll
         //       3x that. The SCROLL-ONLY families have no cheap rung at all — their entry price
         //       is Epic, which is the point: no potion analogue means you pay for the hour.
         //       One line per rarity, so a price change is a one-line edit. -----
+        // ⚠ SellPriceOverride: 0 on BOTH ladders (owner, playtest-18 V2b, 2026-08-05): *"buff pots are 0
+        // sell (ppl still can sell them to others if they want)"*. He believed this was already done in
+        // the playtest-17 vendor rework; it was not, and the ÷10 divisor had just made them 2.5x richer.
+        // They drop on ~33 % of kills at level 33, which measured at ~188k of gold over a 14-15 h farm —
+        // the entire remaining consumable faucet once gear was cut. Value stays: it is still the BUY
+        // price, and player-to-player trade is untouched. The point is that a buff potion is something
+        // you DRINK or trade, never a coin the vendor mints for you.
         void BuffPotion(string id, string name, ItemRarity rarity, string skill) =>
             list.Add(new ItemDef(id, name, EquipSlot.Consumable, ItemGrade.F, rarity,
-                UseSkillId: skill, Value: rarity switch
+                UseSkillId: skill, SellPriceOverride: 0, Value: rarity switch
                 {
                     ItemRarity.Common => 1500, ItemRarity.Uncommon => 5000, _ => 12000,
                 }));
 
         void BuffScroll(string id, string name, ItemRarity rarity, string skill) =>
             list.Add(new ItemDef(id, name, EquipSlot.Consumable, ItemGrade.F, rarity,
-                UseSkillId: skill, Value: rarity switch
+                UseSkillId: skill, SellPriceOverride: 0, Value: rarity switch
                 {
                     ItemRarity.Common => 4500, ItemRarity.Uncommon => 15000, ItemRarity.Rare => 36000,
                     ItemRarity.Epic => 75000, ItemRarity.Legendary => 150000, _ => 300000,
@@ -1042,17 +1049,17 @@ public static class ItemCatalog
         // Dash — 15 seconds of sprint on a 1-minute reuse, six rarities, no scroll. Priced at half
         // a buff potion of the same rarity: it is a burst, not a blessing.
         list.Add(new ItemDef(DashPotionC, "Dash Potion (Lesser)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotDashC, Value: 750));
+            ItemGrade.F, ItemRarity.Common, UseSkillId: SkillCatalog.PotDashC, SellPriceOverride: 0, Value: 750));
         list.Add(new ItemDef(DashPotionU, "Dash Potion", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotDashU, Value: 2500));
+            ItemGrade.F, ItemRarity.Uncommon, UseSkillId: SkillCatalog.PotDashU, SellPriceOverride: 0, Value: 2500));
         list.Add(new ItemDef(DashPotionR, "Dash Potion (Greater)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PotDashR, Value: 6000));
+            ItemGrade.F, ItemRarity.Rare, UseSkillId: SkillCatalog.PotDashR, SellPriceOverride: 0, Value: 6000));
         list.Add(new ItemDef(DashPotionE, "Dash Potion (Superior)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Epic, UseSkillId: SkillCatalog.PotDashE, Value: 12500));
+            ItemGrade.F, ItemRarity.Epic, UseSkillId: SkillCatalog.PotDashE, SellPriceOverride: 0, Value: 12500));
         list.Add(new ItemDef(DashPotionL, "Dash Potion (Grand)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Legendary, UseSkillId: SkillCatalog.PotDashL, Value: 25000));
+            ItemGrade.F, ItemRarity.Legendary, UseSkillId: SkillCatalog.PotDashL, SellPriceOverride: 0, Value: 25000));
         list.Add(new ItemDef(DashPotionM, "Dash Potion (Supreme)", EquipSlot.Consumable,
-            ItemGrade.F, ItemRarity.Mythic, UseSkillId: SkillCatalog.PotDashM, Value: 50000));
+            ItemGrade.F, ItemRarity.Mythic, UseSkillId: SkillCatalog.PotDashM, SellPriceOverride: 0, Value: 50000));
 
         // ===================================================================
         //  SHIELDS — equippable by any class (with a one-hand weapon), but only

@@ -461,13 +461,17 @@ public static class GameConstants
     /// rule (<see cref="GearSellDivisor"/>), because gear is what floods the economy.</summary>
     public const float VendorSellFraction = 0.30f;
 
-    /// <summary>Tiered gear sells for its BUY price divided by this (owner, playtest-14). It is not a
-    /// tuning knob picked from thin air: the owner's own acceptance test is "selling ~25 Robes should
-    /// buy one Leathers", and since both are the Armor slot at the same grade+rarity they share a buy
-    /// price, so the divisor IS that ratio. 25 also means the trash a mob drops pays ~12-30x less than
-    /// before (more at the high rarities), which with the 4x drop-rate cut is the ~50x faucet
-    /// reduction playtest-14 asked for — level 25 with 3kk gold from selling trash.</summary>
-    public const int GearSellDivisor = 25;
+    /// <summary>Tiered gear (and use-consumables) sell for their BUY price divided by this. The owner's
+    /// original acceptance test was "selling ~25 Robes should buy one Leathers" — same slot, same
+    /// grade+rarity, so they share a buy price and the divisor IS that ratio. That was 25.
+    ///
+    /// It is 10 as of playtest-18 (owner, 2026-08-05), and the direction is deliberate: sold gear was
+    /// ~10x the mob's own gold drop and the faucet had to come down ~4x, but doing that with the PRICE
+    /// would have left the player wading through the same flood of near-worthless drops. So the cut went
+    /// on the drop RATE instead (<see cref="RateConfig.DropGroupRates"/>, the four gear groups, 13x
+    /// rarer) and this moved the OTHER way — fewer drops, each one worth 2.5x more. Ten Robes buy one
+    /// Leathers now. Measured in tools/BalanceMatrix; change it there and re-run, don't re-derive.</summary>
+    public const int GearSellDivisor = 10;
 
     /// <summary>Extra fraction added to an item's Value when you BUY from a vendor.
     /// Reserved for the future castle system: a vendor in a castle-owned village

@@ -42,13 +42,24 @@ public static class RateConfig
     public static readonly Dictionary<string, float> DropGroupRates =
         new(StringComparer.OrdinalIgnoreCase)
         {
-            // The four GEAR groups ship at 1/3, which is not a fudge — it is this system doing its job.
-            // The authored table is the x1 design and the server runs at x3, but the owner's acceptance
-            // test is an ABSOLUTE one: ~400k of trash gold by level 25. At x3 flat that is 1.08M (2.7x
-            // over); x3 x 1/3 measures 402k. So the design stays readable at x1 AND the faucet stays shut
-            // at the live rate, which is the whole point of separating the two knobs.
-            // If DropChanceRate is ever set back to 1, set these back to 1 with it.
-            ["armor"] = 1f / 3f, ["accessory"] = 1f / 3f, ["weapon"] = 1f / 3f, ["jewel"] = 1f / 3f,
+            // The four GEAR groups ship at 0.025, which is not a fudge — it is this system doing its job.
+            // The authored table is the x1 design and the server runs at x3; this multiplier is what
+            // holds the FAUCET shut, and it is set from a measurement, not a guess (playtest-18, owner
+            // 2026-08-05). He ran three characters through the same ~14-15 h idle farm: one that sold
+            // nothing finished level 34 with 350k (pure coin), one that sold only EQUIPMENT finished with
+            // 3.3kk, one that sold everything finished with 4.6kk. BalanceMatrix reproduces all three,
+            // and it puts SOLD GEAR at ~10x the mob's own gold drop — mats and potions together are 2%,
+            // so gear is the entire faucet and the only group worth cutting.
+            //
+            // His target was ~1kk over that farm, and the choice of KNOB was deliberate: cutting the
+            // sell price alone leaves you buried in junk to click through, so the drop RATE takes the cut
+            // (13x rarer) and the price moves the other way (GearSellDivisor 25 -> 10) so that the piece
+            // you do find is worth finding. Measured result: ~1.1M over the same farm.
+            // Re-run `dotnet run --project tools/BalanceMatrix` after touching this; do not re-derive it.
+            //
+            // ⚠ These four are NOT a compensation for DropChanceRate any more. If the global rate ever
+            // goes back to 1, RE-MEASURE — don't reflexively set these back to 1 with it.
+            ["armor"] = 0.025f, ["accessory"] = 0.025f, ["weapon"] = 0.025f, ["jewel"] = 0.025f,
             ["mats"] = 1f, ["scrolls"] = 1f, ["always"] = 1f, ["other"] = 1f,
         };
 

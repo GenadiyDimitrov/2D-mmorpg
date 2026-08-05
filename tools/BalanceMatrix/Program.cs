@@ -438,6 +438,113 @@ for (int i = 0; i < saved.Length; i++)
 Console.WriteLine("  'effective' = the global DropChanceRate x this multiplier — what a gear group really rolls at.");
 Console.WriteLine();
 
+// =====================================================================================================
+//  ECONOMY — the playtest-18 THREE-CHARACTER experiment (owner, 2026-08-05). He ran three characters
+//  through the same ~14-15 h of idle farm: a mage that sold NOTHING finished level 34 with 350k, a tank
+//  that sold only EQUIPMENT finished 36 with 3.3kk, a rogue that sold EVERYTHING finished 34 with 4.6kk.
+//  Those three numbers pin the live faucet from the actual game, so this section calibrates on the one
+//  with no player choice in it — the COIN — and then prices the same kills. If the model reproduces his
+//  3.3 and 4.6, the sweep under it can be trusted to pick the cut instead of guessing a multiplier.
+// =====================================================================================================
+Console.WriteLine("=== ECONOMY: the playtest-18 three-character experiment (level ~34, ~14-15 h idle) ===");
+const int PlaytestLevel = 33;          // a level-34 character killing its own level
+const double CoinObserved = 350_000;   // his mage: gold drops only, sold nothing — the calibration point
+
+static (double Gear, double Trash, double Coin) PerKill(int level)
+{
+    var v = MobsNear(level).Select(m => KillValue(m, level)).ToArray();
+    return (v.Average(x => x.Gear), v.Average(x => x.Mats + x.Consumables), v.Average(x => x.Gold));
+}
+
+var pk = PerKill(PlaytestLevel);
+double farmKills = CoinObserved / Math.Max(1, pk.Coin);
+Console.WriteLine($"  per kill: gear {pk.Gear,9:N0}  trash {pk.Trash,7:N0}  coin {pk.Coin,6:N0}"
+    + $"   (gear is {pk.Gear / Math.Max(1, pk.Coin):N0}x the coin)");
+Console.WriteLine($"  his 350k of coin => {farmKills:N0} kills ({farmKills / 14.5:N0}/h over 14.5 h)");
+Console.WriteLine($"  those same kills:    sells gear only {farmKills * (pk.Gear + pk.Coin),12:N0}   (he measured 3,300,000)");
+Console.WriteLine($"                     sells EVERYTHING {farmKills * (pk.Gear + pk.Trash + pk.Coin),11:N0}   (he measured 4,600,000)");
+Console.WriteLine();
+
+// The two levers, swept TOGETHER, against his stated target: ~1kk total over that same farm. Sell price
+// is linear in the divisor and drop chance is linear in the group multiplier, so both are applied
+// analytically to the measured per-kill value — no mutation of the live catalog needed.
+Console.WriteLine("=== ECONOMY: picking the cut — gear DROP rate x gear SELL divisor, level ~34 ===");
+Console.WriteLine($"  owner's target: ~1,000,000 over this farm (350k coin + ~650k of sales)");
+Console.WriteLine($"{"gear x",7} {"sell /",7} | {"gear gold",11} {"trash",8} {"coin",8} {"TOTAL",11} {"vs 1kk",7} {"gear:coin",10}");
+// The baselines are whatever the catalog is LIVE at — pk.Gear was measured through them, so the sweep
+// has to divide them back out. Hardcoding 1/3 and 25 here would silently misreport the moment either
+// knob is retuned, which is exactly the arithmetic this section exists to stop people getting wrong.
+float liveGearMul = RateConfig.DropGroupRate("armor");
+int liveDivisor = GameConstants.GearSellDivisor;
+Console.WriteLine($"  live now: gear groups x{liveGearMul:0.###}, GearSellDivisor {liveDivisor}");
+foreach (var (gearMul, divisor) in new (float, int)[]
+         {
+             (1f / 3f, 25),   // the pre-playtest-18 setting, for reference
+             (1f / 3f, 250),  // sell price x0.1, drops untouched
+             (0.05f,   25),   // drops x0.15, price untouched
+             (0.1f,    50),   // both, split evenly
+             (0.025f,  10),   // SHIPPED (playtest-18): 13x rarer, worth 2.5x more
+             (0.025f,  25),
+             (0.05f,   10),
+             (0.0125f, 10),
+         })
+{
+    double gearGold = farmKills * pk.Gear * (gearMul / liveGearMul) * (liveDivisor / (double)divisor);
+    double trash = farmKills * pk.Trash;
+    double coin = farmKills * pk.Coin;
+    double total = gearGold + trash + coin;
+    Console.WriteLine($"{gearMul,7:0.###} {divisor,7} | {gearGold,11:N0} {trash,8:N0} {coin,8:N0} "
+        + $"{total,11:N0} {total / 1_000_000.0,7:0.00}x {gearGold / coin,10:0.0}");
+}
+Console.WriteLine("  'gear:coin' = how many times the sold gear outweighs the mob's own gold drop.");
+Console.WriteLine();
+
+// The STRUCTURAL problem behind the number: gear sell value follows the tier ladder (roughly geometric)
+// while the mob's own gold drop is linear in level. Any FLAT cut fixes exactly one level band and is
+// wrong again twenty levels later — so print the drift, which is what decides whether one multiplier
+// is even the right shape of fix.
+Console.WriteLine("=== ECONOMY: gear-sale vs coin drift across the ladder (why a flat cut expires) ===");
+Console.WriteLine($"{"Lvl",4} {"gear/kill",11} {"coin/kill",10} {"ratio",8}");
+foreach (int L in new[] { 10, 20, 25, 33, 40, 52, 61, 76, 85 })
+{
+    var p = PerKill(L);
+    Console.WriteLine($"{L,4} {p.Gear,11:N0} {p.Coin,10:N0} {p.Gear / Math.Max(1, p.Coin),8:0.0}x");
+}
+Console.WriteLine();
+
+// =====================================================================================================
+//  SCROLL FLOOD — how OFTEN each scroll family lands, and what it is worth (owner, playtest-18 V2b:
+//  "the attribute scrolls and enchant scrolls also need to lower the chances + move them in the lvls").
+//
+//  Frequency, not gold, is the measure here — enchant and attribute scrolls have no Value at all, so
+//  they sell for 0 and cannot flood the ECONOMY however many drop. What they flood is the bag, and what
+//  they cheapen is enchanting. The BuffPotion column is the opposite case: it is pure gold, and it is
+//  the whole of the remaining consumable faucet.
+// =====================================================================================================
+Console.WriteLine("=== SCROLLS: per-kill chance by family, and gold (enchant/attribute sell for 0) ===");
+Console.WriteLine($"{"Lvl",4} {"enchant",9} {"attribute",10} {"buff pot/scr",13} | {"buff gold/kill",15}");
+foreach (int L in new[] { 5, 15, 20, 33, 40, 45, 52, 61, 76, 80, 85 })
+{
+    var near = MobsNear(L);
+    double ench = 0, attr = 0, buff = 0, buffGold = 0;
+    foreach (var m in near)
+        foreach (var (e, chance) in Marginals(m.Drops ?? Array.Empty<DropEntry>(), L))
+        {
+            if (ItemCatalog.Get(e.ItemId) is not ItemDef def) continue;
+            double c = chance / near.Length;
+            switch (def.Subtype)
+            {
+                case ItemSubtype.EnchantScroll: ench += c; break;
+                case ItemSubtype.AttributeScroll: attr += c; break;
+                case ItemSubtype.BuffPotion:
+                    buff += c; buffGold += c * ItemCatalog.SellPrice(def); break;
+            }
+        }
+    Console.WriteLine($"{L,4} {ench,9:P1} {attr,10:P1} {buff,13:P1} | {buffGold,15:N0}");
+}
+Console.WriteLine("  'buff pot/scr' = the non-enchant half of the Scrolls group (buff potions AND buff scrolls).");
+Console.WriteLine();
+
 // Integrity: a drop entry naming an item that does not exist is a silent hole in the loot table — the
 // roll succeeds and the player gets nothing. Cheap to check, and it has caught renames before.
 Console.WriteLine("=== ECONOMY: drop-table integrity ===");

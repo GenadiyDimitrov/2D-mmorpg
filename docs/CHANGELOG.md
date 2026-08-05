@@ -12,6 +12,86 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-08-05 — Playtest-18 V2: the gold faucet, cut on the DROP RATE instead of the price
+
+The owner's reported "equipment sells at 0.8" turned out to be his own misread — he sold a Feretite Robe
+and read the number as the gloves'. No bug. But the ask underneath was real: *"selling items/trash making
+money ok .. but not farming."*
+
+He then produced the best economy measurement this project has had: **three characters through the same
+~14-15 h idle farm**, differing only in what they sold. A mage that sold nothing finished level 34 with
+**350k**; a tank that sold only equipment finished 36 with **3.3kk**; a rogue that sold everything
+finished 34 with **4.6kk**.
+
+`tools/BalanceMatrix` gained a section that reproduces exactly that experiment. It calibrates on the
+COIN — the one component with no player choice in it — so 350k resolves to **1,211 kills at ~84/h**, and
+then prices those same kills through the real drop tables. It lands within ~15% of both other characters,
+which is what makes the rest of the tuning trustworthy rather than derived.
+
+The verdict it returned: **gear is the entire faucet.** Sold gear was **10× the mob's own gold drop**;
+mats and potions together were **2%**. The owner's tank banking 3.3 of the 4.6 while selling only
+equipment is the same finding arriving from the other direction. Cutting `VendorSellFraction` — the
+obvious-looking knob — would have achieved nothing at all.
+
+His first proposal was to cut the sell price ×0.1, which measures correctly (0.80× of his ~1kk target)
+but only moves one number. The drop VOLUME would have been untouched, so the offline farm still buries
+the player in junk to click through, and the buy:sell spread would have gone to 250:1 — a Robe you find
+sells for 450 while the shop sells it for 112,500. He agreed, and chose the sharper version of the
+alternative: put the cut on the rate and push the price the *other* way, so what you do find is worth
+finding.
+
+| | before | after |
+|---|---|---|
+| gear group multiplier (`RateConfig.DropGroupRates`) | ×1/3 | **×0.025** (13× rarer) |
+| `GameConstants.GearSellDivisor` | 25 | **10** (worth 2.5× more) |
+| gear sales over that farm | 3,619,984 | **678,747** |
+| consumables + mats | 85,688 | **198,542** |
+| coin | 350,000 | 350,000 |
+| **total** | **4,055,588** | **1,227,289** |
+| gear : coin ratio | 10.3× | **1.9×** |
+
+"Ten Robes buys one Leathers" replaces the old ÷25 acceptance test.
+
+Two things the measurement surfaced that are **not** fixed. First, the consumable line went *up* 2.3×,
+because `GearSellDivisor` governs use-consumables as well as gear — the belief that buff potions are
+0-sell and scrolls don't drop does not hold (`GroupScrolls`, 70% guaranteed, carries enchant *and* buff
+scrolls; `GroupAlways` carries Scroll of Return and Resurrection). Consumables are now 16% of income and
+are what puts the result at 1.23× rather than 1.0×; left alone deliberately, being inside the noise of
+the original measurement. Second, gear sale value follows the tier ladder while the mob's coin drop is
+linear in level, so *any* flat multiplier fixes one band and drifts — 1.9× at level 33, 16.7× at 52,
+51.7× at 76. Much flatter than the 275× it was, but the same shape. The real fix there is the coin curve,
+not another multiplier, and it can wait until the endgame is actually played.
+
+The sweep in BalanceMatrix now normalises against the LIVE values of both knobs rather than hardcoded
+1/3 and 25, so it keeps telling the truth after any future retune. Full detail:
+`docs/design/EconomyRework.md` §4a.
+
+**The scroll pass, same day.** The owner rejected the consumable finding on its merits — Return and
+Resurrection were already cut 20× and 200× in playtest-17, and *"are usefull u wont be seling all"* — and
+redirected it at the enchant and attribute scrolls. Measuring that flipped the diagnosis twice. Enchant
+and attribute scrolls carry no `Value:` at all, so they **already sell for 0** and cannot feed the gold
+economy however many drop; what they flood is the bag. The gold in the consumable line was **buff potions
+and buff scrolls** at 155/kill — his playtest-17 decision that *"buff pots are 0 sell (ppl still can sell
+them to others if they want)"* had never actually been implemented, and the new ÷10 divisor had just made
+them 2.5× richer. And attribute scrolls landing on 27% of kills was a mechanical accident: they are
+INDEPENDENT drop rolls, so they take the global ×3 that the guaranteed groups are exempt from — authored
+0.09, delivered 0.27.
+
+Three changes: `SellPriceOverride: 0` on every buff potion, buff scroll and Dash potion (Value stays — it
+is still the buy price, and player trade is untouched); the enchant scroll's share of a scroll rung cut
+from 0.5 to **0.15** with its level floors moved from 1/20/45 to **10/30/55**; and the attribute scrolls
+cut ~5× and spread across the band they serve instead of all arriving at 40 (floors now 40/52/61/76/80/84).
+
+| level | enchant | attribute | buff gold/kill |
+|---|---|---|---|
+| 33 | 30 % → **9 %** | — | 155 → **2** |
+| 40 | 30 % → **9 %** | 27 % → **3.6 %** | 155 → **2** |
+| 85 | 35 % → **10.5 %** | 39.9 % → **9.6 %** | 747 → **1** |
+
+BalanceMatrix gained a SCROLLS section that reports per-kill frequency by family, because for these items
+frequency — not gold — is the thing being tuned. The reference farm now totals **1,038,115 (1.04× target)**,
+split gear 65 % / coin 34 % / consumables 1 %.
+
 ## 2026-08-03 — Playtest-17: the whole backlog played in one pass (no code)
 
 Six versions of unplayed work went through in a single sitting on the 0.45.0 APK: §36 mob regen, §38 the
