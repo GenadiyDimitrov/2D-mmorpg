@@ -688,7 +688,473 @@ Console.WriteLine("  (debug \"learn all skills\" now grants NO swaps — a swap 
 Console.WriteLine("   choice, and the greedy legal pick lands on four -ATK swaps = -20 ATK.)");
 Console.WriteLine();
 
+// =====================================================================================================
+//  MOB-AS-PLAYER FEASIBILITY (playtest-18 G3, owner 2026-08-05). MEASURE ONLY — nothing is built and
+//  no server code moves on the back of this section. His question, verbatim:
+//
+//    "before we do and start to build i would like to check if a player vs mob-player where the player
+//     is a normal character with balance matrix gear and a mob-player is just an entity that works
+//     exactly as a normal player can be done — where the mob-pl have items of lower grade and enchanted
+//     + passives for hp etc. Will we be able to manage something like everything-is-a-player logic
+//     (just different equipment and skill kits)?"
+//
+//  So: build the mob as a REAL Kind=Player Entity through the REAL RecomputeDerived, dress it in
+//  lower-grade / lower-quality / enchanted gear, and measure how far it lands from the authored
+//  MobBaseStats curve the whole game is currently tuned against. Every ratio printed below is
+//  "what a type PASSIVE would have to supply to reconcile the two" — x1.00 means gear alone did it.
+//
+//  What this deliberately does NOT do: invent a mob archetype table, add an HP passive skill, or touch
+//  MobCatalog. The point of a feasibility check is to learn the SHAPE of the problem before authoring.
+// =====================================================================================================
+Console.WriteLine("#####################################################################################");
+Console.WriteLine("###  G3 MOB-AS-PLAYER FEASIBILITY — measurement only, nothing built                ###");
+Console.WriteLine("#####################################################################################");
+Console.WriteLine();
+
+int[] g3Levels = { 20, 40, 60, 80 };
+var g3Archs = new[] { Archetype.Tank, Archetype.Warrior, Archetype.Rogue, Archetype.Nuker };
+
+// -----------------------------------------------------------------------------------------------
+// 1. WHERE THE PLAYER PIPELINE LANDS. One representative loadout (one grade DOWN, Common quality,
+//    +0) on every archetype, against the mob curve of the same level. This is the "just put gear on
+//    it" answer with no passives at all.
+// -----------------------------------------------------------------------------------------------
+Console.WriteLine("=== G3.1: a Kind=Player mob in ONE-GRADE-DOWN Common +0 gear vs the authored mob curve ===");
+Console.WriteLine("  ratios are mob-player / MobBaseStats — x1.00 = gear alone reproduces today's mob.");
+Console.WriteLine("  'HP x' is the multiplier an HP-type PASSIVE would have to supply (gear grants no HP).");
+Console.WriteLine($"{"Lvl",4} {"archetype",9} {"gear",14} | {"HP",7} {"HP x",7} {"P.Def",7} {"x",6} " +
+                  $"{"M.Def",7} {"x",6} {"P.Atk",7} {"x",6} {"M.Atk",8} {"x",6}");
+foreach (int L in g3Levels)
+{
+    foreach (var arch in g3Archs)
+    {
+        var mp = BuildMobPlayer(L, arch, tierDrop: 1, ItemRarity.Common, enchant: 0, kit: false);
+        Console.WriteLine($"{L,4} {arch,9} {G3GearLabel(L, 1, ItemRarity.Common, 0),14} | " +
+            $"{mp.MaxHp,7} {Ratio(mp.MaxHp, MobBaseStats.Hp(L)),7} " +
+            $"{(int)mp.EffectiveDefence,7} {Ratio(mp.EffectiveDefence, MobBaseStats.PDef(L)),6} " +
+            $"{(int)mp.EffectiveMagicDefence,7} {Ratio(mp.EffectiveMagicDefence, MobBaseStats.MDef(L)),6} " +
+            $"{(int)mp.EffectiveAttack,7} {Ratio(mp.EffectiveAttack, MobBaseStats.PAtk(L)),6} " +
+            $"{(int)mp.EffectiveMagicAttack,8} {Ratio(mp.EffectiveMagicAttack, MobBaseStats.MAtk(L)),6}");
+    }
+}
+Console.WriteLine();
+
+// -----------------------------------------------------------------------------------------------
+// 2. THE GEAR SEARCH. If this migration is a GEAR-AUTHORING job (his hope), then for each level and
+//    archetype there exists some (grade, quality, enchant) whose defences and attack all land near
+//    x1.00 at once. Sweep the real ladder and report the best — and how far off it still is.
+//
+//    HP is reported separately and NOT scored, because no tier armor carries HpBonus: a mob-player's
+//    HP is fixed by archetype + level + CON, so it is exactly the thing that has to become a passive.
+// -----------------------------------------------------------------------------------------------
+Console.WriteLine("=== G3.2: can GEAR ALONE land on the mob curve? (sweep grade x quality x enchant) ===");
+Console.WriteLine("  scored on P.Def / M.Def / attack together — 'worst off' is the biggest single miss.");
+Console.WriteLine($"{"Lvl",4} {"archetype",9} {"best loadout",22} | {"P.Def x",8} {"M.Def x",8} {"atk x",7} " +
+                  $"{"worst off",10} | {"HP x needed",12}");
+var g3Qualities = new[] { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare,
+                          ItemRarity.Epic, ItemRarity.Legendary, ItemRarity.Mythic };
+foreach (int L in g3Levels)
+{
+    foreach (var arch in g3Archs)
+    {
+        bool caster = arch is Archetype.Nuker or Archetype.Healer;
+        (string Label, double PDef, double MDef, double Atk, double Score, int Hp) best =
+            ("-", 0, 0, 0, double.MaxValue, 0);
+
+        foreach (int drop in new[] { 0, 1, 2, 3 })
+            foreach (var q in g3Qualities)
+            {
+                // The S tier carries only Epic/Legendary/Mythic (ItemCatalog.IsTopHalfOnly), so a
+                // low-quality S loadout resolves to NOTHING and would measure a half-naked entity —
+                // which scores well by accident. Skip any combination the catalogue cannot dress.
+                if (!G3LoadoutExists(G3Tier(L, drop), q)) continue;
+
+                foreach (int ench in new[] { 0, 3, 6, 10, 16 })
+                {
+                    var e = BuildMobPlayer(L, arch, drop, q, ench, kit: false);
+                    double pd = e.EffectiveDefence / (double)MobBaseStats.PDef(L);
+                    double md = e.EffectiveMagicDefence / (double)MobBaseStats.MDef(L);
+                    double at = caster
+                        ? e.EffectiveMagicAttack / (double)MobBaseStats.MAtk(L)
+                        : e.EffectiveAttack / (double)MobBaseStats.PAtk(L);
+                    // Score = the WORST of the three, in log space, so x2 and x0.5 are equally wrong.
+                    double score = Math.Max(Math.Abs(Math.Log(Math.Max(1e-6, pd))),
+                                   Math.Max(Math.Abs(Math.Log(Math.Max(1e-6, md))),
+                                            Math.Abs(Math.Log(Math.Max(1e-6, at)))));
+                    if (score < best.Score)
+                        best = (G3GearLabel(L, drop, q, ench), pd, md, at, score, e.MaxHp);
+                }
+            }
+
+        Console.WriteLine($"{L,4} {arch,9} {best.Label,22} | {"x" + best.PDef.ToString("0.00"),8} " +
+            $"{"x" + best.MDef.ToString("0.00"),8} {"x" + best.Atk.ToString("0.00"),7} " +
+            $"{(Math.Exp(best.Score) - 1).ToString("P0"),10} | " +
+            $"{Ratio(MobBaseStats.Hp(L), best.Hp),12}");
+    }
+}
+Console.WriteLine("  'HP x needed' = MobBaseStats.Hp / the mob-player's own HP — the HP passive's job.");
+Console.WriteLine();
+
+// -----------------------------------------------------------------------------------------------
+// 3. THE ZONE-LEVEL PROBLEM, measured. "Zone assigns the level" means ONE template spawns at 20 and
+//    at 60. Freeze a single authored loadout and walk it up the levels: if the ratios collapse, a
+//    per-template loadout cannot exist and the design needs a level -> grade function.
+// -----------------------------------------------------------------------------------------------
+Console.WriteLine("=== G3.3: ONE frozen loadout across the zone bands (why a per-template kit can't work) ===");
+Console.WriteLine("  the same E-grade Common +0 warrior kit, spawned at every level, vs that level's mob curve.");
+Console.WriteLine($"{"spawn",6} {"HP",7} {"HP x",7} {"P.Def",7} {"x",7} {"P.Atk",7} {"x",7}");
+foreach (int L in new[] { 20, 30, 40, 52, 61, 76, 85 })
+{
+    // tierDrop is computed from level 20 deliberately: the loadout is FIXED at E grade (t20) whatever
+    // the spawn level is — that is what "one template, many zones" means today.
+    var mp = BuildMobPlayerFixedTier(L, Archetype.Warrior, tier: 20, ItemRarity.Common, enchant: 0);
+    Console.WriteLine($"{L,6} {mp.MaxHp,7} {Ratio(mp.MaxHp, MobBaseStats.Hp(L)),7} " +
+        $"{(int)mp.EffectiveDefence,7} {Ratio(mp.EffectiveDefence, MobBaseStats.PDef(L)),7} " +
+        $"{(int)mp.EffectiveAttack,7} {Ratio(mp.EffectiveAttack, MobBaseStats.PAtk(L)),7}");
+}
+Console.WriteLine("  (HP tracks because HP comes from LEVEL, not from the frozen gear — only defence and");
+Console.WriteLine("   attack rot, and they are exactly the two the gear was supposed to supply.)");
+Console.WriteLine();
+
+// -----------------------------------------------------------------------------------------------
+// 4. THE FIGHT. The only measure that decides whether the swap is playable: time to kill, both
+//    directions, a REAL geared player (rune buff on, best-for-tier, the state he plays in) against
+//    today's mob and against the mob-player. Crit is folded in as an expected multiplier and the
+//    miss chance comes from the real accuracy/evasion resolver.
+//
+//    ⚠ BLOCK IS NOT MODELLED (it needs a roll), so a SHIELDED mob-player survives longer than the
+//    numbers below say — and a Tank mob-player carries a shield. Read its column as a ceiling.
+// -----------------------------------------------------------------------------------------------
+Console.WriteLine("=== G3.4: TIME TO KILL, both directions — geared player vs today's mob vs a mob-player ===");
+Console.WriteLine("  'player' = BuildPlayer Champion, best gear for tier, War Rune on (the real play state).");
+Console.WriteLine($"{"Lvl",4} {"opponent",22} {"opp HP",8} {"plr dps",8} {"plr TTK",8} | " +
+                  $"{"opp dps",8} {"plr TTK'd",10} {"miss->opp",10} {"miss->plr",10}");
+foreach (int L in g3Levels)
+{
+    var player = BuildPlayer(Race.Human, BaseClass.Fighter, L, warrior: true);
+
+    var opponents = new List<(string Label, Entity E)> { ("today's mob (Kind=Mob)", BuildMobEntity(L)) };
+    foreach (var arch in g3Archs)
+        opponents.Add(($"mob-player {arch}", BuildMobPlayer(L, arch, tierDrop: 1, ItemRarity.Common, 0, kit: true)));
+
+    foreach (var (label, opp) in opponents)
+    {
+        float pDps = Dps(player, opp);
+        float oDps = Dps(opp, player);
+        Console.WriteLine($"{L,4} {label,22} {opp.MaxHp,8} {pDps,8:F0} " +
+            $"{opp.MaxHp / Math.Max(0.01f, pDps),7:F1}s | {oDps,8:F0} " +
+            $"{player.MaxHp / Math.Max(0.01f, oDps),9:F1}s " +
+            $"{Pct(Miss(player, opp)),10} {Pct(Miss(opp, player)),10}");
+    }
+    Console.WriteLine();
+}
+
+// -----------------------------------------------------------------------------------------------
+// 5. THE DIVERGENCES that flipping Kind would cause, each one MEASURED rather than asserted. These
+//    are the things "just make it a player" changes by side effect — the reason this is an audit and
+//    not a one-line flag flip.
+// -----------------------------------------------------------------------------------------------
+Console.WriteLine("=== G3.5: what flipping Kind actually changes (measured side effects) ===");
+{
+    const int L = 60;
+    var oldMob = BuildMobEntity(L);
+    var newMob = BuildMobPlayer(L, Archetype.Warrior, tierDrop: 1, ItemRarity.Common, 0, kit: false);
+
+    // (a) SWING RATE. The attack interval is keyed off Kind in ResolveAttack, so a mob that becomes a
+    //     player swings on the PLAYER clock — a silent DPS uplift nobody authored.
+    float oldSwing = Math.Max(2, (int)(GameConstants.MobAttackIntervalTicks * oldMob.EffectiveAttackSpeedMultiplier))
+                     * GameConstants.TickSeconds;
+    float newSwing = Math.Max(2, (int)(GameConstants.PlayerAttackIntervalTicks * newMob.EffectiveAttackSpeedMultiplier))
+                     * GameConstants.TickSeconds;
+    Console.WriteLine($"  swing interval   Kind=Mob {oldSwing:F2}s -> Kind=Player {newSwing:F2}s "
+        + $"(x{oldSwing / newSwing:0.00} swings/sec, unauthored)");
+
+    // (b) THE NEUTRAL-OPPONENT BENCHMARK. Mob DEX is flat 30 on purpose (owner 2026-08-02) so a
+    //     same-level pair sits at the 5% floor both ways, and MobDexReference IS the human-fighter
+    //     base — so a fighter-shaped mob-player inherits the same number by construction. The mage
+    //     archetypes are the ones to watch: their class base DEX is not the reference.
+    var refPlayer = BuildPlayer(Race.Human, BaseClass.Fighter, L, warrior: true);
+    Console.WriteLine($"  DEX benchmark    MobStats DEX is flat {StatCalculator.MobDexReference} "
+        + $"(Kind=Mob: acc {oldMob.Accuracy} eva {(int)oldMob.EffectiveEvasion}); a geared player misses it "
+        + $"{Pct(Miss(refPlayer, oldMob))}");
+    foreach (var arch in g3Archs)
+    {
+        var a = BuildMobPlayer(L, arch, 1, ItemRarity.Common, 0, kit: false);
+        Console.WriteLine($"                     {arch,-8} DEX {a.Dex,3} acc {a.Accuracy,4} eva {(int)a.EffectiveEvasion,4}"
+            + $"  player misses it {Pct(Miss(refPlayer, a)),4}, it misses the player {Pct(Miss(a, refPlayer)),4}"
+            + $"{(a.Dex == StatCalculator.MobDexReference ? "" : "   << OFF THE BENCHMARK")}");
+    }
+
+    // (c) GRADE PENALTY. Player-only, and it only bites gear ABOVE your grade — so lower-grade mob
+    //     gear is inert here. Prove it rather than assume it.
+    int worstGap = 0;
+    foreach (var it in newMob.Inventory)
+        if (it.Equipped && ItemCatalog.Get(it.DefId) is ItemDef d)
+            worstGap = Math.Max(worstGap, GradePenalty.Gap(d, L));
+    Console.WriteLine($"  grade penalty    worst gap across the mob-player's kit = {worstGap} "
+        + $"(x{GradePenalty.FactorForGap(worstGap):0.00}) — lower-grade gear is inert, as designed");
+
+    // (d) THE HP SOURCE. This is the twin of the 0.42.3 mob-regen bug: the player HP curve is
+    //     exponential in CON and gated by an archetype modifier mobs do not have.
+    Console.WriteLine($"  HP source        Kind=Mob reads MobBaseStats.Hp({L}) = {MobBaseStats.Hp(L)} DIRECT;");
+    Console.WriteLine($"                   mob-player runs StatCalculator.MaxHp(CON {newMob.Con}, "
+        + $"classMod {StatCalculator.HpClassLevelModifier(BaseClass.Fighter, Archetype.Warrior):0.00}) = {newMob.MaxHp}");
+    foreach (var arch in g3Archs)
+        Console.WriteLine($"                     {arch,-8} = "
+            + $"{BuildMobPlayer(L, arch, 1, ItemRarity.Common, 0, kit: false).MaxHp,6}"
+            + $"  (needs an HP passive of {Ratio(MobBaseStats.Hp(L), BuildMobPlayer(L, arch, 1, ItemRarity.Common, 0, kit: false).MaxHp)})");
+
+    // (e) THE SKILL KIT. "Different skill kits" is not free — the class tables carry MASTERIES, and a
+    //     mob-player that learns them gets stat floors no mob was ever meant to have.
+    var bare = BuildMobPlayer(L, Archetype.Warrior, 1, ItemRarity.Common, 0, kit: false);
+    var kitted = BuildMobPlayer(L, Archetype.Warrior, 1, ItemRarity.Common, 0, kit: true);
+    Console.WriteLine($"  learned kit      Warrior L{L}: {kitted.LearnedSkills.Count} skills learned changes "
+        + $"P.Atk {(int)bare.EffectiveAttack} -> {(int)kitted.EffectiveAttack} "
+        + $"({Ratio(kitted.EffectiveAttack, bare.EffectiveAttack)}), "
+        + $"P.Def {(int)bare.EffectiveDefence} -> {(int)kitted.EffectiveDefence} "
+        + $"({Ratio(kitted.EffectiveDefence, bare.EffectiveDefence)})");
+    Console.WriteLine("                   -> a mob kit must be an AUTHORED list, never ClassSkills.Cumulative.");
+
+    // (f) WHERE THE ATTACK GAP COMES FROM. The first thing anyone asks about G3.1/G3.6 is why a fully
+    //     geared mob-player only reaches a fifth of the mob's authored P.Atk. Half of it is the RUNE:
+    //     a player's expected play state includes the War Rune (+100% P.Atk), and a mob holds no runes.
+    //     Measure the split so the weapon-type passive is authored against the right number.
+    var runed = BuildMobPlayer(L, Archetype.Warrior, 1, ItemRarity.Common, 0, kit: false);
+    if (SkillCatalog.Get(SkillCatalog.WarRuneBuff) is SkillDef rune)
+    {
+        runed.Buffs.Add(new Game.Server.Simulation.BuffInstance
+        {
+            Effect = rune.Effect, Magnitudes = rune.Magnitudes,
+            TicksRemaining = int.MaxValue, Name = rune.Name, Key = rune.BuffKey,
+        });
+        runed.RecomputeDerived();
+    }
+    Console.WriteLine($"  attack gap       Warrior L{L} P.Atk {(int)newMob.EffectiveAttack} bare, "
+        + $"{(int)runed.EffectiveAttack} with a War Rune, vs MobBaseStats.PAtk({L}) = {MobBaseStats.PAtk(L)}");
+    Console.WriteLine($"                   -> the rune alone closes {Ratio(runed.EffectiveAttack, newMob.EffectiveAttack)} "
+        + $"of the {Ratio(MobBaseStats.PAtk(L), newMob.EffectiveAttack)} needed; the rest is the "
+        + "weapon-type passive's job.");
+
+    // (g) EXP / DROPS. Both are level-driven, not stat-driven — so the migration does NOT re-roll them
+    //     by itself. Worth stating, because it is the one place this is cheaper than it looks.
+    Console.WriteLine($"  exp / gold       StatCalculator.MobExpReward({L}) = {StatCalculator.MobExpReward(L):N0}"
+        + $" — level-driven, UNAFFECTED by which pipeline made the stats");
+}
+Console.WriteLine();
+
+// -----------------------------------------------------------------------------------------------
+// 6. THE PASSIVE TABLE THE DESIGN WOULD HAVE TO AUTHOR. G3.2 shows no gear combination closes all
+//    three gaps at once, so the type passives are not a garnish — they carry the reconciliation.
+//    The question that decides the whole migration is therefore: is the multiplier each passive must
+//    supply CONSTANT across levels?
+//
+//      constant  -> one flat passive per type. His five families are enough, and this is authoring.
+//      drifting  -> the passive itself needs a per-level table, i.e. the mob curve re-authored in a
+//                   second place. That is new machinery, and it is where "everything is a player"
+//                   stops being free.
+//
+//    Held on ONE loadout (one grade down, Common, +0) so the drift measured is the PIPELINE's, not a
+//    gear choice's. 'spread' = max/min of the multiplier across the four levels: 1.0 = perfectly flat.
+// -----------------------------------------------------------------------------------------------
+Console.WriteLine("=== G3.6: the multiplier each TYPE PASSIVE must supply, and whether it holds across levels ===");
+Console.WriteLine($"{"archetype",9} {"stat",7} | {"L20",7} {"L40",7} {"L60",7} {"L80",7} | {"spread",7}  verdict");
+foreach (var arch in g3Archs)
+{
+    bool caster = arch is Archetype.Nuker or Archetype.Healer;
+    var stats = new (string Name, Func<Entity, int, double> Need)[]
+    {
+        ("HP",    (e, L) => MobBaseStats.Hp(L)   / (double)e.MaxHp),
+        ("P.Def", (e, L) => MobBaseStats.PDef(L) / (double)e.EffectiveDefence),
+        ("M.Def", (e, L) => MobBaseStats.MDef(L) / (double)e.EffectiveMagicDefence),
+        (caster ? "M.Atk" : "P.Atk",
+                  (e, L) => (caster ? MobBaseStats.MAtk(L) : MobBaseStats.PAtk(L))
+                            / (double)(caster ? e.EffectiveMagicAttack : e.EffectiveAttack)),
+    };
+
+    foreach (var (name, need) in stats)
+    {
+        var vals = g3Levels
+            .Select(L => need(BuildMobPlayer(L, arch, 1, ItemRarity.Common, 0, kit: false), L))
+            .ToArray();
+        double spread = vals.Max() / Math.Max(1e-6, vals.Min());
+        string verdict = spread < 1.25 ? "FLAT — one authored number does it"
+                       : spread < 2.0  ? "drifts — needs a per-band table"
+                                       : "DRIFTS HARD — a second mob curve in disguise";
+        Console.WriteLine($"{arch,9} {name,7} | " + string.Join(" ", vals.Select(v => $"x{v,-6:0.00}"))
+            + $"| {spread,6:0.00}x  {verdict}");
+    }
+    Console.WriteLine();
+}
+
+Console.WriteLine("=== G3: VERDICT INPUTS (read the tables, not this line) ===");
+Console.WriteLine("  * NO gear combination closes all three gaps at once (G3.2): the player pipeline is the");
+Console.WriteLine("    MIRROR of the mob curve — armor over-delivers P.Def/M.Def while the weapon under-delivers");
+Console.WriteLine("    attack by 2-5x, at every level and every grade. Today's mob is a glass cannon; a");
+Console.WriteLine("    player-shaped entity of the same level is the opposite. Gear cannot flip that sign.");
+Console.WriteLine("  * so the TYPE PASSIVES carry the reconciliation, not the gear — and G3.6 says the");
+Console.WriteLine("    multipliers they must supply DRIFT with level, so each passive needs a per-band table.");
+Console.WriteLine("    That is his 'levelled passive with a name per level' — the design already assumes it.");
+Console.WriteLine("  * HP is the cleanest case: archetype + level alone lands within x0.96-x1.16 for Tank and");
+Console.WriteLine("    Warrior. Rogue (x1.4) and especially Nuker (x3.3) need real HP passives.");
+Console.WriteLine("  * a FROZEN per-template loadout rots across zone bands (G3.3) — a level->grade function is");
+Console.WriteLine("    mandatory, not optional, if 'the zone assigns the level' survives.");
+Console.WriteLine("  * the FIGHTS are already playable (G3.4): mob-player TTKs land 4-16s against today's 2-16s.");
+Console.WriteLine("    Their damage OUT is the weak side — at L80 a mob-player deals 13-33 dps where today's mob");
+Console.WriteLine("    deals 46, which is the same attack gap seen in G3.1/G3.2 showing up in the fight.");
+Console.WriteLine("  * flipping Kind moves the SWING CLOCK by side effect (G3.5a). The DEX benchmark survives for");
+Console.WriteLine("    fighter archetypes by construction — MobDexReference IS the human-fighter base.");
+Console.WriteLine();
+
 static string NameOf(string id) => SkillCatalog.Get(id)?.Name ?? id;
+
+// ----- G3 helpers -----------------------------------------------------------------------------
+
+/// <summary>The authored gear-grade ladder, in item-level terms (F, E, D, C, B, A, S).</summary>
+static int[] G3GearLadder() => new[] { ItemCatalog.FGradeLevel, 20, 40, 52, 61, 76, ItemCatalog.SGradeLevel };
+
+/// <summary>The tier a mob-player of this level wears: the tier its LEVEL earns, dropped
+/// <paramref name="tierDrop"/> grades — "items of lower grade", his words.</summary>
+static int G3Tier(int level, int tierDrop)
+{
+    var ladder = G3GearLadder();
+    int idx = 0;
+    for (int i = 0; i < ladder.Length; i++) if (level >= ladder[i]) idx = i;
+    return ladder[Math.Max(0, idx - tierDrop)];
+}
+
+static string G3GearLabel(int level, int tierDrop, ItemRarity q, int enchant) =>
+    $"t{G3Tier(level, tierDrop)} {q}{(enchant > 0 ? " +" + enchant : "")}";
+
+/// <summary>Item-id quality suffix. The AUTHORED piece is the Mythic one (bare id); every lesser
+/// quality is a generated copy suffixed with its rarity name — see ItemCatalog's DropTiers.</summary>
+static string G3Quality(ItemRarity q) =>
+    q == ItemRarity.Mythic ? "" : "_" + q.ToString().ToLowerInvariant();
+
+/// <summary>True when the catalogue can actually dress a mob-player in this tier+quality. Not every
+/// rung exists: the S grade is Epic-and-up only (<see cref="ItemCatalog.IsTopHalfOnly"/>), so asking
+/// for "t80 Common" silently equips nothing at all — and a naked entity flatters any ratio search.
+/// Checks one piece of each shape (body / weapon / accessory / jewel) rather than trusting one id.</summary>
+static bool G3LoadoutExists(int tier, ItemRarity q)
+{
+    string s = G3Quality(q);
+    foreach (var id in new[] { $"heavy_t{tier}{s}", $"robe_t{tier}{s}", $"sword1h_t{tier}{s}",
+                               $"staff_t{tier}{s}", $"helm_t{tier}{s}", $"ring_t{tier}{s}" })
+        if (ItemCatalog.Get(id) is null) return false;
+    return true;
+}
+
+/// <summary>A MOB built entirely through the PLAYER pipeline — Kind=Player, real base stats, a real
+/// 2nd class (so it has an Archetype and therefore an HP/MP class modifier), and a real equipped
+/// loadout run through the same RecomputeDerived the server runs. NO rune buff: a mob holds no runes,
+/// and handing it the player's +100% P.Atk would measure a state that can never exist.</summary>
+static Entity BuildMobPlayer(int level, Archetype arch, int tierDrop, ItemRarity quality, int enchant, bool kit) =>
+    BuildMobPlayerFixedTier(level, arch, G3Tier(level, tierDrop), quality, enchant, kit);
+
+/// <summary>As <see cref="BuildMobPlayer"/>, but with the gear tier pinned instead of derived from the
+/// level — this is what lets G3.3 spawn ONE authored loadout across every zone band.</summary>
+static Entity BuildMobPlayerFixedTier(int level, Archetype arch, int tier, ItemRarity quality,
+                                      int enchant, bool kit = false)
+{
+    var (race, cls, secondId) = arch switch
+    {
+        Archetype.Tank    => (Race.Human, BaseClass.Fighter, 13),
+        Archetype.Warrior => (Race.Human, BaseClass.Fighter, 14),
+        Archetype.Rogue   => (Race.Human, BaseClass.Fighter, 15),
+        Archetype.Healer  => (Race.Human, BaseClass.Mage,    17),
+        _                 => (Race.Human, BaseClass.Mage,    18),   // Nuker
+    };
+
+    var s = StatCalculator.GetBaseStats(race, cls);
+    var e = new Entity { Name = "mob-player", Kind = EntityKind.Player, Race = race, BaseClass = cls, Level = level };
+    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Dex = s.Dex; e.Spt = s.Spt;
+    if (level >= 20) e.SecondClass = secondId;
+
+    // The class table is the WRONG source for a mob kit (it drags in masteries) — G3.5(e) measures
+    // exactly that. It is offered here only so the cost of getting it wrong is visible.
+    if (kit)
+    {
+        foreach (var cs in ClassSkills.ForClass(race, cls, null, null))
+            if (cs.LearnLevel <= level)
+                e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
+        foreach (var cs in ClassSkills.Cumulative(race, cls, e.Archetype, e.Discipline))
+            if (cs.LearnLevel <= level)
+                e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
+        foreach (var id in e.LearnedSkills.Keys.ToList())
+            if (SkillCatalog.Get(id)?.Replaces is { } replaced)
+                foreach (var r in replaced) e.LearnedSkills.Remove(r);
+    }
+
+    bool caster = arch is Archetype.Nuker or Archetype.Healer;
+    string q = G3Quality(quality);
+    string body = caster ? "robe" : arch == Archetype.Rogue ? "light" : "heavy";
+    string weapon = caster ? "staff" : arch == Archetype.Warrior ? "sword2h" : "sword1h";
+
+    EquipEnchanted(e, $"{weapon}_t{tier}{q}", enchant);
+    EquipEnchanted(e, $"{body}_t{tier}{q}", enchant);
+    if (arch == Archetype.Tank) EquipEnchanted(e, $"shield_t{tier}{q}", enchant);
+    foreach (var acc in new[] { "helm", "gloves", "boots" }) EquipEnchanted(e, $"{acc}_t{tier}{q}", enchant);
+    EquipEnchanted(e, $"necklace_t{tier}{q}", enchant);
+    EquipEnchanted(e, $"ring_t{tier}{q}", enchant);    EquipEnchanted(e, $"ring_t{tier}{q}", enchant);
+    EquipEnchanted(e, $"earring_t{tier}{q}", enchant); EquipEnchanted(e, $"earring_t{tier}{q}", enchant);
+
+    e.RecomputeDerived();
+    return e;
+}
+
+static void EquipEnchanted(Entity e, string defId, int enchant)
+{
+    if (ItemCatalog.Get(defId) is null) { Console.Error.WriteLine($"  !! missing item {defId}"); return; }
+    e.Inventory.Add(new InventoryItem { DefId = defId, Equipped = true, Enchant = enchant });
+}
+
+static string Ratio(double value, double reference) =>
+    reference <= 0 ? "  -  " : "x" + (value / reference).ToString("0.00");
+
+/// <summary>Sustained PHYSICAL dps of `atk` against `def`, through the real resolvers: the best
+/// physical skill on its own cycle, autoattacks filling whatever the cast leaves free, crit folded in
+/// as an expected multiplier, and the miss chance the accuracy/evasion resolver actually returns.
+/// The swing interval is taken from the attacker's KIND, exactly as ResolveAttack does — which is the
+/// whole point of G3.5(a). Block is NOT modelled (it needs a roll), so a shielded defender lives
+/// longer than this says.</summary>
+static float PhysDps(Entity atk, Entity def)
+{
+    float hit = 1f - Miss(atk, def);
+    int pDef = Math.Max(1, (int)def.EffectiveDefence);
+    float critF = CritFactor(atk.CritChance, StatCalculator.PhysicalCritMult(atk.CritDamageBonus));
+
+    int autoHit = StatCalculator.PhysicalDamage((int)atk.EffectiveBasicAttack, 0, pDef, atk.Level);
+    int baseInterval = atk.Kind == EntityKind.Player
+        ? GameConstants.PlayerAttackIntervalTicks : GameConstants.MobAttackIntervalTicks;
+    float autoEvery = Math.Max(2, (int)(baseInterval * atk.EffectiveAttackSpeedMultiplier))
+                      * GameConstants.TickSeconds;
+    float autoDps = autoHit * critF * hit / autoEvery;
+
+    var (skill, lvl) = TopSkill(atk, SkillEffect.PhysicalDamage);
+    if (skill is null) return autoDps;
+
+    float cycle = SkillCycleSeconds(atk, skill);
+    float castSecs = Math.Max(2, (int)(skill.CastTicks * atk.EffectiveAttackSpeedMultiplier))
+                     * GameConstants.TickSeconds;
+    int skillHit = StatCalculator.PhysicalDamage((int)atk.EffectiveAttack, skill.PowerAt(lvl), pDef, atk.Level);
+    float autoShare = Math.Max(0f, (cycle - castSecs) / cycle);
+    return skillHit * critF * hit / cycle + autoDps * autoShare;
+}
+
+/// <summary>Sustained MAGIC dps: the best nuke on its cycle. Spells are not evaded (they can only
+/// "fail", which is a separate roll not modelled here), so no hit term.</summary>
+static float MagicDps(Entity atk, Entity def)
+{
+    var (skill, lvl) = TopSkill(atk, SkillEffect.MagicDamage);
+    if (skill is null) return 0f;
+    float critF = CritFactor(atk.MagicCritChance, StatCalculator.MagicCritMult(atk.CritDamageBonus));
+    int hitDmg = StatCalculator.MagicDamage((int)atk.EffectiveMagicAttack, skill.PowerAt(lvl),
+        Math.Max(1, (int)def.EffectiveMagicDefence), atk.Level);
+    return hitDmg * critF / SkillCycleSeconds(atk, skill);
+}
+
+/// <summary>Whichever channel this entity actually fights with — the better of its two. A mob with no
+/// skills at all falls through to its autoattack, which is what today's mobs do.</summary>
+static float Dps(Entity atk, Entity def) => Math.Max(PhysDps(atk, def), MagicDps(atk, def));
 
 // ---------------------------------------------------------------------------
 
