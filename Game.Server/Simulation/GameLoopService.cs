@@ -1991,6 +1991,17 @@ public class GameLoopService : BackgroundService
         var item = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
         if (item is null) return;
 
+        // QUEST ITEMS NEVER LEAVE THE BAG (playtest-17 B4, and §39e is the bug it closes): a token
+        // parked in here stopped counting toward its quest step, yet Complete still took it — so the
+        // step silently stalled and the only cure was remembering you had banked it. The private bank
+        // was the last disposal path that still accepted one; sell, trade, the bin and the account
+        // bank all already refuse.
+        if (ItemCatalog.Get(item.DefId) is ItemDef questDef && ItemCatalog.IsQuestItem(questDef))
+        {
+            SendSystemToEntity(player, $"{questDef.Name} belongs in your quest bag — it can't be stored.");
+            return;
+        }
+
         // Can't stash an item that's in a live trade offer.
         if (_world.ActiveTrades.TryGetValue(player.Id, out var trade) &&
             trade.Offers(player, item.InstanceId))
@@ -10214,7 +10225,11 @@ var effect = def.Effect;
             var step = def.Steps[state.StepIndex];
             if (step.Type == QuestStepType.TalkTo && step.TargetId == npcId)
                 turnable.Add(summary);
-            else
+            // C5: otherwise it is only THIS NPC's business if this NPC is the one who gave it. The
+            // list used to be every active quest you were carrying, at every NPC in the world — the
+            // owner's "today every NPC shows three". The quest LOG is where you read your own quests;
+            // an NPC window answers "what can I do with YOU".
+            else if (def.OfferNpcId == npcId)
                 inProgress.Add(summary);
         }
 

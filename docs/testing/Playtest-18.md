@@ -70,7 +70,9 @@ E1/E2/E4/E5 (Common 15 / Uncommon 30 / Rare 45 / Mythic 60) and Sprint owns E3 (
 machinery (`ApplyBuff`) — a stronger rung replaces a weaker one and a weaker one is refused — so it is
 an authoring change, not new code.
 
-**G6. The warehouse must show slots used / total.**
+**G6. ✅ BUILT 2026-08-05. The warehouse must show slots used / total.**
+> Top-right of the window, per bank (private vs account have different caps), and it turns **red** once
+> there is no room left — until now a full warehouse announced itself only as a refusal in the chat log.
 > in the warehouse need to see spots taken/all - now i try to deposit and cant .. only after opening chat
 > i saw that warehouse is full
 

@@ -222,6 +222,12 @@ namespace Game.Client
                 // produce a tap that silently does nothing.
                 if (item.Equipped) continue;
 
+                // Same rule for BOUND items and quest tokens (B4): the server drops them from the
+                // offer, so a row here is one you can tap, watch vanish off the table, and never learn
+                // why. Never offer what cannot be given.
+                var bagDef = ItemCatalog.Get(item.DefId);
+                if (bagDef != null && (!bagDef.Tradable || ItemCatalog.IsQuestItem(bagDef))) continue;
+
                 int offered = _tradeOffer.TryGetValue(item.InstanceId, out var o) ? o : 0;
                 var id = item.InstanceId;
                 var it = item;

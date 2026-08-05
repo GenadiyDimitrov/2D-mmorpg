@@ -1925,14 +1925,27 @@ public static class ItemCatalog
     };
 
     /// <summary>How strong a worn jewel is, for deciding which one a new one displaces and which
-    /// end of a PAIR it sits in. RARITY is the owner's stated ordering (empty &lt; common &lt;
-    /// uncommon &lt; … &lt; mythic); enchant only breaks a rarity tie, so a +3 common outranks a +0
-    /// common instead of the choice falling to an arbitrary slot.
+    /// end of a PAIR it sits in.
+    ///
+    /// It is the MAGIC DEFENCE THE JEWEL ACTUALLY DELIVERS — enchant included, exactly as
+    /// <c>RecomputeDerived</c> adds it — with MP and HP breaking a tie. This replaces ranking by
+    /// RARITY alone (playtest-17 C10), which ignored grade and so answered the wrong question: a
+    /// **Mythic F** band gives 9 M.Def, an **Uncommon E** band gives 12, yet the old key called the
+    /// Mythic F stronger purely because Mythic &gt; Uncommon, and equipping a third ring threw away
+    /// the better piece. Rarity is only ever a fraction of a GRADE's ceiling, so it cannot order two
+    /// grades against each other; the delivered number can, and it is the owner's own fallback
+    /// suggestion ("or simply the defence value").
+    ///
+    /// Enchant is inside the number rather than a tie-break for the same reason — a +6 band really
+    /// is worth more M.Def than a +0 one of the same piece.
     ///
     /// Deliberately NOT persisted: which physical slot a jewel occupies is a pure function of what
     /// you are wearing (strongest first — see JewelSlotOrder), so it survives a relog with no extra
     /// column and can never drift out of sync with the items themselves.</summary>
-    public static long JewelStrength(ItemDef def, int enchant) => (long)def.Rarity * 1000 + enchant;
+    public static long JewelStrength(ItemDef def, int enchant)
+        => (long)EnchantRules.BonusAt(def.MDefBonus, enchant) * 1_000_000L
+         + (long)EnchantRules.BonusAt(def.MpBonus, enchant) * 1_000L
+         + EnchantRules.BonusAt(def.HpBonus, enchant);
 
     /// <summary>Sort key placing worn jewels of one sub-type into their designated slots: the
     /// STRONGER of a pair takes slot 1. DefId breaks a full tie so the order is stable across

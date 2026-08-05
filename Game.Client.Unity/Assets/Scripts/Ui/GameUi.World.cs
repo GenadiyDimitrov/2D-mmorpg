@@ -108,9 +108,10 @@ namespace Game.Client
         // bag / debug
         private RectTransform _bagPanel, _bagContent, _debugPanel;
         private int _bagRevision = -1;
-        private int _bagTab = 1;             // FILTER value shown: 1 Items (everything unequipped), 2 Quest
+        private ItemCategory _bagTab = ItemCategory.All;   // which C8 category the list is filtered to
         private Button[] _bagTabButtons;
-        private int[] _bagTabFilters;        // the BagTabOf value each tab button shows
+        private static readonly ItemCategory[] BagTabs =
+            { ItemCategory.All, ItemCategory.Gear, ItemCategory.Use, ItemCategory.Mats, ItemCategory.Quest };
         private Button _bagDelToggle;
         private bool _bagFastDel;            // when on, each row shows a no-confirm Del button
         private Button _bagEquipToggle;      // expands the paper-doll column (worn gear) beside the list
@@ -799,32 +800,23 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_bagSlotsLabel.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(252f, -chrome - 8f), new Vector2(182f, 22f));
 
-            // Row: Items / Quest tabs, then the Equip TOGGLE (expands the paper-doll column), then the
-            // Fast-Del toggle. Del's per-row buttons are hidden until it's on (owner) so a stray tap can't
-            // bin an item. Tabs hold FILTER values (BagTabOf), not indices — there is no "Equip" list tab
-            // any more; worn gear lives on the paper-doll.
-            // EQUIP goes FIRST (owner) — it is the one that changes the window's shape, and the thing you
-            // reach for most, so it leads the row rather than sitting third.
+            // TWO rows now (C8). Row 1 keeps the two TOGGLES — Equip (expands the paper-doll column) and
+            // Fast-Del, whose per-row buttons stay hidden until it's on (owner) so a stray tap can't bin
+            // an item. EQUIP goes first: it is the one that changes the window's shape and the thing you
+            // reach for most. Row 2 is the category FILTER, five tabs wide, which is why it needed a row
+            // of its own — "Items | Quest" fitted beside the toggles, "All | Gear | Use | Mats | Quest"
+            // does not. Worn gear is still not a tab: it lives on the paper-doll.
             _bagEquipToggle = UiKit.TextButton(inner, "Equip", ToggleBagEquip, 14f);
             UiKit.Place(UiKit.Rect(_bagEquipToggle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(16f, -chrome - 36f), new Vector2(92f, 32f));
 
-            _bagTabButtons = new Button[2];
-            _bagTabFilters = new[] { 1, 2 };
-            string[] tabs = { "Items", "Quest" };
-            for (int i = 0; i < tabs.Length; i++)
-            {
-                int filter = _bagTabFilters[i];
-                var button = UiKit.TextButton(inner, tabs[i], () => { _bagTab = filter; _bagRevision = -1; }, 15f);
-                UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                            new Vector2(112f + i * 96f, -chrome - 36f), new Vector2(92f, 32f));
-                _bagTabButtons[i] = button;
-            }
-
             _bagDelToggle = UiKit.TextButton(inner, "Del: off",
                 () => { _bagFastDel = !_bagFastDel; _bagRevision = -1; }, 14f);
             UiKit.Place(UiKit.Rect(_bagDelToggle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(304f, -chrome - 36f), new Vector2(92f, 32f));
+                        new Vector2(112f, -chrome - 36f), new Vector2(92f, 32f));
+
+            _bagTabButtons = BuildCategoryTabs(inner, BagTabs, new Vector2(16f, -chrome - 72f), 80f,
+                                               cat => { _bagTab = cat; _bagRevision = -1; });
 
             // The item list is a FIXED-width column, so widening the window for the equip column never
             // stretches it — it just slides.
@@ -832,12 +824,12 @@ namespace Game.Client
             _bagContent = UiKit.ScrollArea(inner, out scroll, 3f);
             _bagListRect = UiKit.Rect(scroll.transform.gameObject);
             UiKit.Place(_bagListRect, new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(BagListX, -chrome - 74f), new Vector2(418f, BagHeight - chrome - 90f));
+                        new Vector2(BagListX, -chrome - 110f), new Vector2(418f, BagHeight - chrome - 126f));
 
             // The paper-doll column (hidden until the Equip toggle) opens on the LEFT (owner), so it
             // appears where the window grows rather than pushing the list off toward the far edge. The
             // list slides right by exactly the column's width when it opens; see ToggleBagEquip.
-            BuildEquipColumn(inner, new Vector2(BagListX, -chrome - 74f));   // below the header row, aligned with the list (was -8, which put the Head slot over the tabs)
+            BuildEquipColumn(inner, new Vector2(BagListX, -chrome - 110f));   // below the header rows, aligned with the list (was -8, which put the Head slot over the tabs)
 
             _bagPanel.gameObject.SetActive(false);
         }
@@ -859,15 +851,11 @@ namespace Game.Client
             _equipRevision = -1;   // force the paper-doll to repaint on next refresh
         }
 
-        /// <summary>Which bag tab an item belongs to: 0 Equip = what you're WEARING; 2 Quest; 1 Items =
-        /// everything else, INCLUDING unequipped gear (owner: an unequipped item lives in the Items bag,
-        /// not the Equipment bag).</summary>
-        private static int BagTabOf(InventoryItemDto item, ItemDef def)
-        {
-            if (item.Equipped) return 0;
-            if (def != null && def.Slot == EquipSlot.QuestItem) return 2;
-            return 1;
-        }
+        /// <summary>Does this bag row belong under the current tab? WORN gear is in no tab at all —
+        /// it lives on the paper-doll column (owner: an unequipped item lives in the Items bag, not the
+        /// Equipment bag), which is why this is not simply <see cref="InCategory"/>.</summary>
+        private static bool InBagTab(ItemCategory tab, InventoryItemDto item, ItemDef def)
+            => !item.Equipped && InCategory(tab, def);
 
         // BuildDebugPanel and everything it needs now live in GameUi.Debug.cs — it grew from four
         // buttons to the full WPF-parity tool (five tabs + live tuning) and had no business sharing a
@@ -1520,7 +1508,7 @@ namespace Game.Client
             int used = 0;
             foreach (var it in items) if (!it.Equipped) used++;   // worn gear doesn't take a slot
 
-            int revision = items.Length * 17 + _bagTab * 7919 + (_bagFastDel ? 104729 : 0) + (int)(Boot.Gold % 1_000_000);
+            int revision = items.Length * 17 + (int)_bagTab * 7919 + (_bagFastDel ? 104729 : 0) + (int)(Boot.Gold % 1_000_000);
             foreach (var item in items)
                 revision = revision * 31 + item.InstanceId.GetHashCode()
                          + (item.Equipped ? 1 : 0) + item.Quantity * 7 + item.Enchant;
@@ -1529,8 +1517,7 @@ namespace Game.Client
 
             _bagGoldLabel.text = "Gold: " + Boot.Gold.ToString("N0");
             _bagSlotsLabel.text = "Slots " + used + " / " + GameConstants.InventorySize;
-            for (int i = 0; i < _bagTabButtons.Length; i++)
-                _bagTabButtons[i].targetGraphic.color = _bagTabFilters[i] == _bagTab ? UiKit.TabActive : UiKit.PanelLight;
+            PaintCategoryTabs(_bagTabButtons, BagTabs, _bagTab);
             UiKit.SetButtonText(_bagDelToggle, _bagFastDel ? "Del: ON" : "Del: off");
             _bagDelToggle.targetGraphic.color = _bagFastDel ? new Color(0.42f, 0.20f, 0.20f, 0.95f) : UiKit.PanelLight;
 
@@ -1538,10 +1525,10 @@ namespace Game.Client
                 Destroy(_bagContent.GetChild(i).gameObject);
 
             bool anyInTab = false;
-            foreach (var item in items)
+            foreach (var item in ByName(items))          // C8: name order, same as the vendor and the keeper
             {
                 var def = ItemCatalog.Get(item.DefId);
-                if (BagTabOf(item, def) != _bagTab) continue;
+                if (!InBagTab(_bagTab, item, def)) continue;
                 anyInTab = true;
                 var row = UiKit.Box(_bagContent, "Item", UiKit.PanelLight);
                 row.gameObject.AddComponent<LayoutElement>().minHeight = 46f;
@@ -1612,9 +1599,14 @@ namespace Game.Client
 
             if (!anyInTab)
             {
-                var empty = UiKit.Label(_bagContent,
-                    _bagTab == 0 ? "No equipment." : _bagTab == 2 ? "No quest items." : "No items.",
-                    17f, UiKit.TextDim);
+                var empty = UiKit.Label(_bagContent, _bagTab switch
+                {
+                    ItemCategory.Gear  => "No gear in the bag.",
+                    ItemCategory.Use   => "No potions, scrolls or boxes.",
+                    ItemCategory.Mats  => "No materials.",
+                    ItemCategory.Quest => "No quest items.",
+                    _                  => "No items.",
+                }, 17f, UiKit.TextDim);
                 empty.gameObject.AddComponent<LayoutElement>().minHeight = 34f;
             }
         }

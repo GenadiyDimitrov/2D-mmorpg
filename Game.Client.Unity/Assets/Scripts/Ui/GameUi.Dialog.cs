@@ -23,6 +23,10 @@ namespace Game.Client
         private RectTransform _dialogPanel, _dialogContent;
         private TextMeshProUGUI _dialogTitle;
         private int _dialogStamp = -1;
+        /// <summary>C7: which half of a gatekeeper's list is showing — false = the local hunting-field
+        /// gates, true = the roads to other cities. Not reset per NPC on purpose: whichever errand you
+        /// were on last is usually the one you are still on.</summary>
+        private bool _gateCities;
 
         private void BuildDialogWindow()
         {
@@ -56,7 +60,9 @@ namespace Game.Client
             if (d != null && !_dialogPanel.gameObject.activeSelf) OpenWindow(_dialogPanel);
             if (d == null || !_dialogPanel.gameObject.activeSelf) return;
 
-            int stamp = d.GetHashCode();
+            // The gatekeeper tab is part of what is on screen, so it belongs in the stamp — otherwise
+            // tapping Zones/Cities changes nothing until the server happens to push a new dialog.
+            int stamp = d.GetHashCode() * 31 + (_gateCities ? 1 : 0);
             if (stamp == _dialogStamp) return;
             _dialogStamp = stamp;
 
@@ -84,17 +90,21 @@ namespace Game.Client
             {
                 anything = true;
                 string id = quest.Id;
-                DialogRow("[New]  " + quest.Name
-                          + (string.IsNullOrWhiteSpace(quest.Location) ? "" : "\n" + quest.Location),
-                          "Details", () => ShowQuestDetail(id), UiKit.Text);
+                // C6: the NAME, nothing else. The location line went with the step text — the detail
+                // window carries every word of it, and this row exists to get you there.
+                DialogRow("[New]  " + quest.Name, "Details", () => ShowQuestDetail(id), UiKit.Text);
             }
 
             foreach (var quest in d.InProgress ?? new QuestSummary[0])
             {
                 anything = true;
+                // C6 again: name and the COUNT (a number, not quest text). The step text lived here and
+                // now lives only in Details — which the row gained a button for, since a row that says
+                // less has to lead somewhere.
+                string id2 = quest.Id;
                 string progress = quest.CounterNeeded > 0
                     ? "   " + quest.Counter + " / " + quest.CounterNeeded : "";
-                DialogRow(quest.Name + progress + "\n" + quest.CurrentStepText, null, null, UiKit.TextDim);
+                DialogRow(quest.Name + progress, "Details", () => ShowQuestDetail(id2), UiKit.TextDim);
             }
 
             // ----- class change -------------------------------------------------------------------
@@ -147,17 +157,31 @@ namespace Game.Client
             if (d.Teleport != null && d.Teleport.Destinations != null)
             {
                 anything = true;
-                // A gatekeeper now offers this city's own hunting-field GATES (named, one per camp) before
-                // the roads to the other cities. Grouped under the field they belong to: fifteen flat rows
+                // A gatekeeper offers this city's own hunting-field GATES (named, one per camp) and the
+                // roads to the other cities. Those are two different errands, so they are two TABS now
+                // (C7) rather than one list you scroll past half of: the server marks a city with an
+                // empty Group and a field gate with the field's name.
+                //
+                // Within Zones the gates stay grouped under the field they belong to — fifteen flat rows
                 // of "<place> <compass>" is unreadable on a phone, and the field is the thing you are
-                // actually choosing. The server sends the local gates first, cities last (empty Group).
+                // actually choosing.
+                bool anyZones = false;
+                foreach (var dest in d.Teleport.Destinations)
+                    if (!string.IsNullOrEmpty(dest.Group)) { anyZones = true; break; }
+                // A gatekeeper with no local fields must not open on an empty tab.
+                bool cities = _gateCities || !anyZones;
+
+                Header("Travel");
+                GateTabs(cities, anyZones);
+
                 string group = null;
                 foreach (var dest in d.Teleport.Destinations)
                 {
-                    if (dest.Group != group)
+                    if (string.IsNullOrEmpty(dest.Group) != cities) continue;
+                    if (!cities && dest.Group != group)
                     {
                         group = dest.Group;
-                        Header(string.IsNullOrEmpty(group) ? "Travel — other cities" : group);
+                        Header(group);
                     }
 
                     string zone = dest.DestId;
@@ -229,6 +253,29 @@ namespace Game.Client
         {
             var label = UiKit.Label(_dialogContent, text, 16f, UiKit.TextDim);
             label.gameObject.AddComponent<LayoutElement>().minHeight = 30f;
+        }
+
+        /// <summary>The gatekeeper's Zones / Cities switch, drawn as a row in the dialog's own list so it
+        /// scrolls with the destinations it filters. <paramref name="anyZones"/> false greys Zones out
+        /// rather than hiding it — a missing tab reads as a broken window, a dead one reads as "this
+        /// gatekeeper has no fields of its own".</summary>
+        private void GateTabs(bool cities, bool anyZones)
+        {
+            var row = UiKit.Box(_dialogContent, "GateTabs", new Color(0, 0, 0, 0), blocksInput: false);
+            row.gameObject.AddComponent<LayoutElement>().minHeight = 40f;
+
+            var zones = UiKit.TextButton(row.transform, "Zones",
+                                         () => { _gateCities = false; _dialogStamp = -1; }, 15f);
+            zones.interactable = anyZones;
+            UiKit.Place(UiKit.Rect(zones.gameObject), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+                        new Vector2(12f, 0f), new Vector2(140f, 34f));
+            zones.targetGraphic.color = !cities ? UiKit.TabActive : UiKit.PanelLight;
+
+            var towns = UiKit.TextButton(row.transform, "Cities",
+                                         () => { _gateCities = true; _dialogStamp = -1; }, 15f);
+            UiKit.Place(UiKit.Rect(towns.gameObject), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+                        new Vector2(158f, 0f), new Vector2(140f, 34f));
+            towns.targetGraphic.color = cities ? UiKit.TabActive : UiKit.PanelLight;
         }
 
         private void DialogRow(string text, string buttonText, System.Action onClick, Color colour)

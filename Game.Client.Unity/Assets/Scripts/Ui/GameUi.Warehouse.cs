@@ -20,12 +20,18 @@ namespace Game.Client
     public partial class GameUi : MonoBehaviour
     {
         private RectTransform _warehousePanel, _warehouseList;
-        private TextMeshProUGUI _warehouseTitle;
+        private TextMeshProUGUI _warehouseTitle, _warehouseSlotsLabel;
         private Button _warehouseDepositTab, _warehouseWithdrawTab;
         private Button _warehousePrivateTab, _warehouseAccountTab;
         private bool _warehouseWithdraw;
         private bool _warehouseAccount;
         private int _warehouseRevision = -1;
+        /// <summary>C8's category filter, the third window it lands on. Quest is not a tab here —
+        /// a token can't be banked at all (B4), so the category would only ever be empty.</summary>
+        private ItemCategory _warehouseTab = ItemCategory.All;
+        private Button[] _warehouseTabButtons;
+        private static readonly ItemCategory[] WarehouseTabs =
+            { ItemCategory.All, ItemCategory.Gear, ItemCategory.Use, ItemCategory.Mats };
 
         private void BuildWarehouseWindow()
         {
@@ -37,7 +43,12 @@ namespace Game.Client
 
             _warehouseTitle = UiKit.Label(inner, "", 17f, UiKit.TextDim, TextAlignmentOptions.TopLeft);
             UiKit.Place(UiKit.Rect(_warehouseTitle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(18f, -chrome - 6f), new Vector2(500f, 22f));
+                        new Vector2(18f, -chrome - 6f), new Vector2(470f, 22f));
+
+            // Slot usage, top-RIGHT, beside the mode line (G6).
+            _warehouseSlotsLabel = UiKit.Label(inner, "", 15f, UiKit.TextDim, TextAlignmentOptions.Right);
+            UiKit.Place(UiKit.Rect(_warehouseSlotsLabel.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
+                        new Vector2(-18f, -chrome - 6f), new Vector2(150f, 22f));
 
             _warehouseDepositTab = UiKit.TextButton(inner, "Deposit", () => SetWarehouseMode(false), 15f);
             UiKit.Place(UiKit.Rect(_warehouseDepositTab.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
@@ -52,6 +63,12 @@ namespace Game.Client
             _warehouseAccountTab = UiKit.TextButton(inner, "Account", () => SetWarehouseBank(true), 15f);
             UiKit.Place(UiKit.Rect(_warehouseAccountTab.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(154f, -chrome - 66f), new Vector2(130f, 30f));
+
+            // The category strip shares the Private/Account row rather than taking a fourth one — the
+            // window is 660 wide and those two buttons use only its left half, so a row of its own would
+            // cost list height for nothing.
+            _warehouseTabButtons = BuildCategoryTabs(inner, WarehouseTabs, new Vector2(296f, -chrome - 66f), 80f,
+                                                     cat => { _warehouseTab = cat; _warehouseRevision = -1; });
 
             ScrollRect scroll;
             _warehouseList = UiKit.ScrollArea(inner, out scroll, 3f);
@@ -93,7 +110,8 @@ namespace Game.Client
             var bag = Boot.Inventory ?? Array.Empty<InventoryItemDto>();
             var bank = (_warehouseAccount ? Boot.AccountWarehouse : Boot.Warehouse)
                        ?? Array.Empty<InventoryItemDto>();
-            int revision = (_warehouseWithdraw ? 1 : 0) * 92821 + (_warehouseAccount ? 1 : 0) * 51787;
+            int revision = (_warehouseWithdraw ? 1 : 0) * 92821 + (_warehouseAccount ? 1 : 0) * 51787
+                         + (int)_warehouseTab * 104729;
             foreach (var it in bag) revision = revision * 31 + it.InstanceId.GetHashCode() + it.Quantity + (it.Equipped ? 7 : 0);
             foreach (var it in bank) revision = revision * 31 + it.InstanceId.GetHashCode() * 7 + it.Quantity;
             if (revision == _warehouseRevision) return;
@@ -106,10 +124,19 @@ namespace Game.Client
                     ? "Deposit — tradable items only, " + GameConstants.AccountWarehouseSlotFee.ToString("N0")
                       + " " + GameConstants.CurrencyName + " per new slot"
                     : "Deposit — tap a bag item to store it (town only)");
+
+            // G6: how full the bank is, on the window itself. Until now a full warehouse announced
+            // itself only as a refusal in the chat log — you tapped, nothing visibly happened, and the
+            // reason was in a window you weren't looking at. RED once there is no room left.
+            int slotCap = _warehouseAccount ? GameConstants.AccountWarehouseSize : GameConstants.WarehouseSize;
+            bool full = bank.Length >= slotCap;
+            _warehouseSlotsLabel.text = "Slots " + bank.Length + " / " + slotCap;
+            _warehouseSlotsLabel.color = full ? UiKit.Bad : UiKit.TextDim;
             _warehouseDepositTab.targetGraphic.color = _warehouseWithdraw ? UiKit.PanelLight : UiKit.TabActive;
             _warehouseWithdrawTab.targetGraphic.color = _warehouseWithdraw ? UiKit.TabActive : UiKit.PanelLight;
             _warehousePrivateTab.targetGraphic.color = _warehouseAccount ? UiKit.PanelLight : UiKit.TabActive;
             _warehouseAccountTab.targetGraphic.color = _warehouseAccount ? UiKit.TabActive : UiKit.PanelLight;
+            PaintCategoryTabs(_warehouseTabButtons, WarehouseTabs, _warehouseTab);
 
             for (int i = _warehouseList.childCount - 1; i >= 0; i--)
                 Destroy(_warehouseList.GetChild(i).gameObject);
@@ -120,16 +147,19 @@ namespace Game.Client
         private void BuildWarehouseList(InventoryItemDto[] items, bool withdraw, bool account)
         {
             bool any = false;
-            foreach (var item in items)
+            foreach (var item in ByName(items))          // C8: name order, same as the bag and the vendor
             {
                 if (!withdraw && item.Equipped) continue;   // worn gear isn't stashable (unequip it first)
                 var def = ItemCatalog.Get(item.DefId);
-                if (def == null) continue;
+                if (def == null || !InCategory(_warehouseTab, def)) continue;
 
                 // The account bank takes tradable items only, so a bound item is dropped from the
                 // DEPOSIT list rather than listed and then refused — a row you can tap and be told no
                 // is worse than a row that was never offered.
-                if (!withdraw && account && (!def.Tradable || ItemCatalog.IsQuestItem(def))) continue;
+                if (!withdraw && account && !def.Tradable) continue;
+                // Quest items are refused by BOTH banks (B4): banking a token stalled its quest step
+                // while Complete still took it. Same rule as above — never offer the row.
+                if (!withdraw && ItemCatalog.IsQuestItem(def)) continue;
                 any = true;
 
                 string label = Coloured(def.Name, def.Rarity) + (item.Quantity > 1 ? "   x" + item.Quantity : "");
@@ -141,9 +171,11 @@ namespace Game.Client
                 });
             }
             if (!any)
-                WarehouseNote(withdraw
-                    ? (account ? "Your account warehouse is empty." : "Your warehouse is empty.")
-                    : (account ? "Nothing tradable in your bag to store." : "Nothing in your bag to store."));
+                WarehouseNote(_warehouseTab != ItemCategory.All
+                    ? "Nothing in this category — try All."
+                    : withdraw
+                        ? (account ? "Your account warehouse is empty." : "Your warehouse is empty.")
+                        : (account ? "Nothing tradable in your bag to store." : "Nothing in your bag to store."));
         }
 
         private void WarehouseNote(string text)

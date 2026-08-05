@@ -47,13 +47,18 @@ compare against — see also C10, the same swap logic is picking the wrong jewel
 ⏭ **Deliverable back to him: a list of every skill in the catalog that is NOT in his class CSVs**, so
 he can mark the ones to delete. Do not delete anything before he answers.
 
-**B4. Quest items appear in vendor sell lists and the warehouse.**
+**B4. ✅ BUILT 2026-08-05. Quest items appear in vendor sell lists and the warehouse.**
 > Quest items must not be shown in the selling vendor list or in the keeper. quest items are in their
 > own bag, unless is specifcally told that this quest item is tradable/sellable and it will go inside
 > the normal inventory not the quest bag
 
 Pairs with §39e: tokens parked in the warehouse stop counting toward the quest step but are still taken
 on hand-in. **A quest item must be refusable by every disposal path** (sell, both banks, trade, bin).
+
+> **Built:** sell and the account bank already refused one; the holes were the **private** bank (server
+> `HandleWarehouseDeposit` now refuses, and neither bank lists the row), the **trade** table (the server
+> dropped it silently — the client no longer offers it) and the item window's **Bin** button (the server
+> refused, the button was still drawn). Every path now refuses it *before* the tap.
 
 **B5. ✅ BUILT 2026-08-05 — and it was NOT a display bug. Relogging resets the auto-farm/offline TIMER.**
 > Reloging make my auto farm timer to reset - server did not reset just the timer .. farmed for 15 mins
@@ -115,29 +120,59 @@ over 1d, **yellow** over 1h, **red** until it disappears.
 **C4. Buff potions and scrolls get auto-on on the hotbar**, the same as buffs — "they act as a buff,
 they should be threaded as one".
 
-**C5. An NPC's window must list only the quests THAT NPC deals with.** Today every NPC shows three.
+**C5. ✅ BUILT 2026-08-05. An NPC's window must list only the quests THAT NPC deals with.** Today every
+NPC shows three.
+> The OFFER list was already per-NPC. The `InProgress` list was not: it was every active quest you were
+> carrying, rendered at every NPC in the world. It is now the ones **this** NPC gave you (`OfferNpcId`),
+> plus the ones turnable here, which was always NPC-specific. The quest LOG is where you read your own.
 
-**C6. Quest text only inside Details.** Everywhere else (NPC window, lists) shows the NAME only.
+**C6. ✅ BUILT 2026-08-05. Quest text only inside Details.** Everywhere else (NPC window, lists) shows
+the NAME only.
+> The NPC window's offer rows dropped their Location line and the in-progress rows dropped
+> `CurrentStepText`. ⚠ Two deliberate reads of "name only": the in-progress row **keeps its `3 / 10`
+> counter** (a number, not quest text — without it the row says nothing), and it **gained a Details
+> button**, because a row that says less has to lead somewhere. Say if you want either changed.
 
-**C7. Gatekeepers need tabs: Zones / Cities.** One flat list today.
+**C7. ✅ BUILT 2026-08-05. Gatekeepers need tabs: Zones / Cities.** One flat list today.
+> Two tabs inside the dialog, filtering on what the server already sends: a city has an empty `Group`,
+> a hunting-field gate carries its field's name. Zones keeps the per-field headers. A gatekeeper with no
+> local fields greys **Zones** out and opens on Cities rather than showing an empty tab.
 
-**C8. Bag → Items needs tabs or a filter — Equip / Consumables / Mats — ordered by name.** The same
-filter goes on **sell vendors and the warehouse keeper**.
+**C8. ✅ BUILT 2026-08-05. Bag → Items needs tabs or a filter — Equip / Consumables / Mats — ordered by
+name.** The same filter goes on **sell vendors and the warehouse keeper**.
+> ONE classifier (`CategoryOf`) and one name ordering, shared by all three windows — three windows
+> filtering three different ways would not have delivered the navigability that was the point.
+> **All / Gear / Use / Mats** (+ **Quest** in the bag only, since a token can't be sold or banked at
+> all). Gear = anything worn, runes included; Use = potions, scrolls **and boxes**; Mats = the rest.
+> The bag traded its "Items | Quest" pair for the five, on a second row — five tabs don't fit beside
+> the Equip and Del toggles. The vendor strip filters the **buy** list too: same window, one strip, and
+> a filter that went dead on the Buy tab would read as a bug.
 
 **C9. NPCs get a [Speak] button** where a monster's [Attack] button sits: it walks you into range and
 opens the dialog.
 
-**C10. Jewel swap picks the wrong piece.** Mythic F ring + Uncommon E ring, equipping another E ring
-replaces the *Uncommon E*, not the F. **Swap must weigh grade AND rarity (or simply the defence value),
-not rarity alone.**
+**C10. ✅ BUILT 2026-08-05. Jewel swap picks the wrong piece.** Mythic F ring + Uncommon E ring,
+equipping another E ring replaces the *Uncommon E*, not the F. **Swap must weigh grade AND rarity (or
+simply the defence value), not rarity alone.**
+> Took your fallback: `JewelStrength` is now the **M.Def the jewel actually delivers**, enchant
+> included, with MP then HP breaking a tie. Rarity is only ever a fraction of a *grade's* ceiling, so it
+> can never order two grades against each other — Mythic F gives 9 M.Def, Uncommon E gives 12, and the
+> old key called the Mythic stronger. Also fixed the item window printing M.Def **un**-enchanted, which
+> is the line you would have checked this against.
 
-**C11. Compare and details are ONE window, not two.**
+**C11. ✅ BUILT 2026-08-05. Compare and details are ONE window, not two.** (Takes **B2** with it — a
+pendant opening a ring's window can't outlive it when there is only one window.)
 > They must be as one (like the equipment panel in the bag) - You click compare and it extends to left
 > and shows the equiped item details. The equiped item part dont have the bin/unequip buttons - its a
 > comparison part/column/side - only item details for equiped. If I select item from inventory then
 > click compare - it will show left side the equiped details (nothing more) and on the right the
 > selected item details + [bin][equip] buttons. If I select item from equipped panel then click compare
 > - left side the equiped details, right side the same item details + [bin][unequip] buttons.
+
+Built exactly that: one panel that **grows a second column to the left** (the shape the bag's paper-doll
+already uses), selected on the right with its buttons, worn on the left with none. Compare **toggles** —
+it says "Hide" once open — and the window always reopens collapsed, so the shape is a decision you make
+per item rather than one it remembers.
 
 **C12. `/offline` command + an [Offline] button.** He cannot start offline farming at all any more —
 the WPF client had a button, and leaving to character select is refused while in combat. The character

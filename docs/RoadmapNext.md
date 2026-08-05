@@ -55,12 +55,15 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
       *was* being handed back (a per-ACCOUNT daily balance now, not a session stopwatch) · `B7` an
       out-of-range party member can be targeted, with the frame drawn from the roster · `C18` **undo a
       bin-delete for free**, from Menu → Restore, never behind a vendor. **Needs an APK + a play pass.**
-   2. 🟠 **Inventory hygiene** — `B4` quest items must be refused by every disposal path (sell, both
-      banks, trade, bin) and must stop counting only when they are in the quest bag (pairs with §39e:
-      warehousing a token silently stalls the quest step, then Complete takes it anyway) · `C8` filters
-      Equip/Consum/Mats on bag + vendor + keeper, name-ordered · `C7` gatekeeper tabs · `C5`/`C6` an NPC
-      shows only ITS quests and only names · `C11` compare + details as one two-column window (`B2` a
-      pendant opening a ring's window dies with it) · `C10` jewel swap must weigh grade, not rarity.
+   2. ✅ **Inventory hygiene — ALL DONE 2026-08-05, unplayed.** `B4` every disposal path now refuses a
+      quest token *before* the tap (the holes were the private bank, the trade table and the Bin button)
+      · `C8` **one** classifier + name ordering shared by bag, vendor and keeper — All/Gear/Use/Mats,
+      plus Quest in the bag · `C7` gatekeeper Zones/Cities tabs off the `Group` the server already sends
+      · `C5` an NPC lists only the quests IT gave (the in-progress list was every quest you carried, at
+      every NPC) · `C6` names only, `C11` compare + details as one window that grows a second column
+      (`B2` dies with it) · `C10` jewels rank by **delivered M.Def**, enchant included, not rarity.
+      **Needs an APK + a play pass**, together with the 🔴 batch above. Also picked up `G6` from
+      playtest-18 (warehouse slots used/total, red when full).
    3. 🟡 **The faucet + the scroll economy** — `E1`/`E2` (÷20 return scrolls, ÷10 heal potions, rarity
       bands by level) are one-line rate changes and he measured them himself, so do them first; `E3` is
       the real work (**no buff-scroll drops at all**, potions sell at 0, two rarities, one max-rung

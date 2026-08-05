@@ -23,10 +23,11 @@ namespace Game.Client
     /// </summary>
     public partial class GameUi : MonoBehaviour
     {
-        // A details window and its controls, so the main window and the compare window share one builder.
+        // One COLUMN of the item window — heading, scrollable stat body, and (on the selected side
+        // only) an action row. The window owns two of these; see BuildItemWindows.
         private class DetailView
         {
-            public RectTransform Panel;
+            public RectTransform Column;
             public TextMeshProUGUI Emark, Title, Body;
             public RectTransform Buttons;
             /// <summary>Kept so the body can be scrolled back to the TOP and its layout rebuilt when
@@ -34,7 +35,102 @@ namespace Game.Client
             public ScrollRect Scroll;
         }
 
+        // C11: compare and details are ONE window, not two. It used to be two independent panels, the
+        // compare one hard-offset 360px left — which meant two title bars, two ✕s, two things to drag
+        // apart when they overlapped, and no relationship on screen between the piece you are holding
+        // and the piece you are wearing. Now the window GROWS a second column to the left, the same
+        // shape the bag uses for its paper-doll (ToggleBagEquip). The left column is comparison only:
+        // it carries no Bin, no Equip/Unequip — acting on the worn piece is not what Compare is for.
+        private RectTransform _itemPanel;
         private DetailView _itemView, _cmpView;
+        private bool _itemCompareOpen;
+
+        private const float ItemColumnWidth = 528f;
+        private const float ItemPanelCollapsed = ItemColumnWidth + 32f;      // one column + margins
+        private const float ItemPanelExpanded = ItemPanelCollapsed + ItemColumnWidth;
+        private const float ItemPanelHeight = 470f;
+        private const float ItemColumnX = 16f;
+
+        // ----- C8: one item FILTER, shared by every list of your own bag ---------------------------
+        //
+        // The bag, the sell vendor and the warehouse keeper all show the same inventory and all three
+        // were an unordered dump of it. They now share these categories AND the name ordering, so the
+        // piece you are hunting sits in the same place whichever window you opened — the point of the
+        // ask was navigability, and three windows filtering three different ways would not deliver it.
+        //
+        // Gear = anything you can WEAR (runes included: you hold them). Use = anything you consume,
+        // scrolls and boxes with it — a box is a tap-to-spend, not a material. Mats = the rest, which
+        // is what "everything else" honestly is. Quest is a category so the bag can keep its own tab
+        // for it; the vendor and the keeper never show it at all (B4).
+        internal enum ItemCategory { All = 0, Gear = 1, Use = 2, Mats = 3, Quest = 4 }
+
+        private static ItemCategory CategoryOf(ItemDef def) => def == null ? ItemCategory.Mats : def.Slot switch
+        {
+            EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield
+                or EquipSlot.Jewel or EquipSlot.Rune          => ItemCategory.Gear,
+            EquipSlot.Consumable or EquipSlot.Scroll
+                or EquipSlot.Box                              => ItemCategory.Use,
+            EquipSlot.QuestItem                               => ItemCategory.Quest,
+            _                                                 => ItemCategory.Mats,
+        };
+
+        /// <summary>Does this item belong under the given tab? <see cref="ItemCategory.All"/> means
+        /// everything EXCEPT quest tokens, which are only ever reachable through their own tab.</summary>
+        private static bool InCategory(ItemCategory tab, ItemDef def)
+        {
+            var c = CategoryOf(def);
+            return tab == ItemCategory.All ? c != ItemCategory.Quest : c == tab;
+        }
+
+        /// <summary>The C8 ordering: by NAME, with a stable tie-break so two rows of the same piece at
+        /// different enchants never swap places between refreshes.</summary>
+        private static List<InventoryItemDto> ByName(IEnumerable<InventoryItemDto> items)
+        {
+            var list = new List<InventoryItemDto>(items);
+            list.Sort((a, b) =>
+            {
+                var da = ItemCatalog.Get(a.DefId);
+                var db = ItemCatalog.Get(b.DefId);
+                int c = string.Compare(da != null ? da.Name : a.DefId,
+                                       db != null ? db.Name : b.DefId, StringComparison.OrdinalIgnoreCase);
+                if (c != 0) return c;
+                c = b.Enchant.CompareTo(a.Enchant);            // stronger first
+                return c != 0 ? c : a.InstanceId.CompareTo(b.InstanceId);
+            });
+            return list;
+        }
+
+        /// <summary>Lay out a row of category tabs and hand back the buttons, so the bag, the vendor and
+        /// the keeper build an identical filter strip instead of each rolling its own.</summary>
+        private Button[] BuildCategoryTabs(Transform parent, ItemCategory[] cats, Vector2 topLeft,
+                                           float width, Action<ItemCategory> pick)
+        {
+            var buttons = new Button[cats.Length];
+            for (int i = 0; i < cats.Length; i++)
+            {
+                var cat = cats[i];
+                var b = UiKit.TextButton(parent, CategoryLabel(cat), () => pick(cat), 14f);
+                UiKit.Place(UiKit.Rect(b.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                            new Vector2(topLeft.x + i * (width + 2f), topLeft.y), new Vector2(width, 32f));
+                buttons[i] = b;
+            }
+            return buttons;
+        }
+
+        private static string CategoryLabel(ItemCategory c) => c switch
+        {
+            ItemCategory.All => "All",
+            ItemCategory.Gear => "Gear",
+            ItemCategory.Use => "Use",
+            ItemCategory.Mats => "Mats",
+            _ => "Quest",
+        };
+
+        private static void PaintCategoryTabs(Button[] buttons, ItemCategory[] cats, ItemCategory active)
+        {
+            for (int i = 0; i < buttons.Length; i++)
+                buttons[i].targetGraphic.color = cats[i] == active ? UiKit.TabActive : UiKit.PanelLight;
+        }
 
         // reusable selection popup
         private RectTransform _selectPopup, _selectOptions;
@@ -42,48 +138,74 @@ namespace Game.Client
 
         private void BuildItemWindows()
         {
-            _itemView = BuildDetailView("ItemDetails", new Vector2(0.5f, 0.5f), new Vector2(0f, 0f));
-            // The compare window opens offset to the LEFT so both are on screen at once.
-            _cmpView = BuildDetailView("ItemCompare", new Vector2(0.5f, 0.5f), new Vector2(-360f, 0f));
+            _itemPanel = UiKit.PanelBox(_worldRoot, "ItemDetails");
+            UiKit.Place(_itemPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                        Vector2.zero, new Vector2(ItemPanelCollapsed, ItemPanelHeight));
+            var inner = _itemPanel.GetChild(0);
+            float chrome = UiKit.WindowChrome(_itemPanel, "Item", CloseAllItemViews);
+
+            // Both columns are built at the SAME x. The selected column slides right by exactly one
+            // column width when compare opens, so the window grows into the space on the left rather
+            // than the list jumping under your thumb.
+            _cmpView = BuildDetailColumn(inner, "Compare", chrome);
+            _itemView = BuildDetailColumn(inner, "Selected", chrome);
+            _cmpView.Column.gameObject.SetActive(false);
+
             BuildSelectionPopup();
+            _itemPanel.gameObject.SetActive(false);
         }
 
-        private DetailView BuildDetailView(string name, Vector2 anchor, Vector2 offset)
+        private DetailView BuildDetailColumn(Transform inner, string name, float chrome)
         {
             var v = new DetailView();
-            v.Panel = UiKit.PanelBox(_worldRoot, name);
-            UiKit.Place(v.Panel, anchor, new Vector2(0.5f, 0.5f), offset, new Vector2(560f, 470f));
-            var inner = v.Panel.GetChild(0);
-            float chrome = UiKit.WindowChrome(v.Panel, "Item", () => CloseWindow(v.Panel));
+            var box = UiKit.Box(inner, name, new Color(0, 0, 0, 0), blocksInput: false);
+            v.Column = UiKit.Rect(box.gameObject);
+            UiKit.Place(v.Column, new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(ItemColumnX, -chrome - 6f),
+                        new Vector2(ItemColumnWidth, ItemPanelHeight - chrome - 18f));
 
             // Orange "E" top-left = "this is the piece you are wearing", per the owner's compare spec.
-            v.Emark = UiKit.Label(inner, "E", 22f, new Color(1f, 0.6f, 0.15f), TextAlignmentOptions.Center);
+            v.Emark = UiKit.Label(v.Column, "E", 22f, new Color(1f, 0.6f, 0.15f), TextAlignmentOptions.Center);
             UiKit.Place(UiKit.Rect(v.Emark.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(12f, -chrome - 4f), new Vector2(26f, 26f));
+                        new Vector2(0f, -2f), new Vector2(26f, 26f));
 
-            v.Title = UiKit.Label(inner, "", 18f, UiKit.Accent, TextAlignmentOptions.TopLeft);
+            v.Title = UiKit.Label(v.Column, "", 18f, UiKit.Accent, TextAlignmentOptions.TopLeft);
             UiKit.Place(UiKit.Rect(v.Title.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(44f, -chrome - 6f), new Vector2(490f, 26f));
+                        new Vector2(32f, -4f), new Vector2(ItemColumnWidth - 40f, 26f));
 
-            // Body starts well BELOW the title (was chrome+38, only ~8px under it — the first stat line
-            // "Attack +0" crammed under the name). chrome+66 gives a clear gap.
+            // Body starts well BELOW the title (it used to sit ~8px under it, which crammed the first
+            // stat line under the name).
             ScrollRect scroll;
-            var content = UiKit.ScrollArea(inner, out scroll, 2f);
-            UiKit.Stretch((RectTransform)scroll.transform, 16f, chrome + 66f, 16f, 70f);
+            var content = UiKit.ScrollArea(v.Column, out scroll, 2f);
+            UiKit.Stretch((RectTransform)scroll.transform, 0f, 40f, 0f, 56f);
             v.Scroll = scroll;
             v.Body = UiKit.Label(content, "", 15f, UiKit.Text, TextAlignmentOptions.TopLeft);
             v.Body.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            // The action row is rebuilt per open (a consumable's buttons differ from a weapon's).
-            v.Buttons = UiKit.Rect(UiKit.Box(inner, "Buttons", new Color(0, 0, 0, 0), blocksInput: false).gameObject);
+            // The action row is rebuilt per open (a consumable's buttons differ from a weapon's), and
+            // stays EMPTY on the compare column.
+            v.Buttons = UiKit.Rect(UiKit.Box(v.Column, "Buttons", new Color(0, 0, 0, 0), blocksInput: false).gameObject);
             v.Buttons.anchorMin = new Vector2(0f, 0f);
             v.Buttons.anchorMax = new Vector2(1f, 0f);
             v.Buttons.pivot = new Vector2(0.5f, 0f);
-            v.Buttons.offsetMin = new Vector2(12f, 12f);
-            v.Buttons.offsetMax = new Vector2(-12f, 60f);
+            v.Buttons.offsetMin = new Vector2(0f, 4f);
+            v.Buttons.offsetMax = new Vector2(0f, 48f);
 
-            v.Panel.gameObject.SetActive(false);
             return v;
+        }
+
+        /// <summary>Grow/shrink the window's compare column. Mirrors ToggleBagEquip: the panel widens
+        /// and the SELECTED column slides right by the column width, so the piece you tapped stays
+        /// where your eye already is and the worn piece appears beside it.</summary>
+        private void SetItemCompare(bool open)
+        {
+            _itemCompareOpen = open;
+            _cmpView.Column.gameObject.SetActive(open);
+            _itemPanel.sizeDelta = new Vector2(open ? ItemPanelExpanded : ItemPanelCollapsed, ItemPanelHeight);
+
+            var p = _itemView.Column.anchoredPosition;
+            p.x = open ? ItemColumnX + ItemColumnWidth : ItemColumnX;
+            _itemView.Column.anchoredPosition = p;
         }
 
         private void BuildSelectionPopup()
@@ -152,7 +274,14 @@ namespace Game.Client
 
         // ----- item details ----------------------------------------------------------------------
 
-        public void OpenItemDetails(InventoryItemDto item) => ShowItem(_itemView, item, allowCompare: true);
+        /// <summary>Open the item window on a bag/paper-doll row. Always opens COLLAPSED — compare is a
+        /// deliberate second tap, not a shape the window remembers from the last item you looked at.</summary>
+        public void OpenItemDetails(InventoryItemDto item)
+        {
+            SetItemCompare(false);
+            ShowItem(_itemView, item, actions: true);
+            OpenWindow(_itemPanel);
+        }
 
         /// <summary>Force the body's layout to reflect the text just assigned, and scroll to the top.
         /// Both halves matter: without the rebuild the ContentSizeFitter has not resized the label yet,
@@ -168,7 +297,9 @@ namespace Game.Client
             }
         }
 
-        private void ShowItem(DetailView v, InventoryItemDto item, bool allowCompare)
+        /// <summary><paramref name="actions"/> false = the COMPARE column: stats only, no buttons at
+        /// all (owner, C11 — "the equiped item part dont have the bin/unequip buttons").</summary>
+        private void ShowItem(DetailView v, InventoryItemDto item, bool actions)
         {
             var def = ItemCatalog.Get(item.DefId);
             if (def == null) return;
@@ -186,35 +317,44 @@ namespace Game.Client
             for (int i = v.Buttons.childCount - 1; i >= 0; i--)
                 Destroy(v.Buttons.GetChild(i).gameObject);
 
+            // The compare column is READ-ONLY: it shows the worn piece and stops there.
+            if (!actions) return;
+
             var id = item.InstanceId;
-            string name = def.Name;
-            var actions = new List<(string Label, Action Click)>();
+            var buttons = new List<(string Label, Action Click)>();
 
             if (def.Slot == EquipSlot.Consumable)
             {
-                actions.Add(("Use", () => { Boot.UsePotion(id); CloseWindow(v.Panel); }));
+                buttons.Add(("Use", () => { Boot.UsePotion(id); CloseAllItemViews(); }));
                 // Quick-use bar: put "item:<defId>" on the skill bar (any stack of it satisfies the slot).
                 // Reuses the skill-assign flow — tap a slot next to place it.
-                actions.Add(("To bar", () =>
+                buttons.Add(("To bar", () =>
                 {
                     BeginAssign(GameConstants.ItemSlotToken(def.Id));
                     ClientLog.Info("Tap a skill-bar slot to place " + def.Name + ".");
-                    CloseWindow(v.Panel);
+                    CloseAllItemViews();
                 }));
             }
             else if (IsWearable(def))
             {
-                actions.Add((item.Equipped ? "Unequip" : "Equip",
-                             () => { Boot.EquipItem(id); CloseWindow(v.Panel); }));
+                buttons.Add((item.Equipped ? "Unequip" : "Equip",
+                             () => { Boot.EquipItem(id); CloseAllItemViews(); }));
                 // Compare only makes sense for an inventory piece with a worn counterpart of its slot.
-                if (allowCompare && !item.Equipped && FindEquippedCounterpart(def) is InventoryItemDto worn)
-                    actions.Add(("Compare", () => ShowItem(_cmpView, worn, allowCompare: false)));
+                // It TOGGLES the second column: re-showing the same item relabels this button, so the
+                // window that grew has a way back that isn't "close it and find the row again".
+                if (!item.Equipped && FindEquippedCounterpart(def) is InventoryItemDto worn)
+                    buttons.Add((_itemCompareOpen ? "Hide" : "Compare", () =>
+                    {
+                        SetItemCompare(!_itemCompareOpen);
+                        if (_itemCompareOpen) ShowItem(_cmpView, worn, actions: false);
+                        ShowItem(v, item, actions: true);   // relabel Compare/Hide
+                    }));
             }
             else if (def.Slot == EquipSlot.Box)
             {
                 // Open a box: a random box grants its loot; a selection box replies with a chooser
                 // (ShowBoxSelection). This is how rune boxes → runes on the phone.
-                actions.Add(("Open", () => { Boot.OpenBox(id); CloseWindow(v.Panel); }));
+                buttons.Add(("Open", () => { Boot.OpenBox(id); CloseAllItemViews(); }));
             }
             else if (ItemCatalog.IsEnchantScroll(def) || ItemCatalog.IsAttributeScroll(def))
             {
@@ -222,15 +362,15 @@ namespace Game.Client
                 // tap Use, pick which of your items to burn it on, confirm. Until 0.45.0 neither
                 // had ANY phone UI at all — the commands existed on the server and nothing sent
                 // them, so scrolls were dead weight in the bag.
-                actions.Add(("Use", () => BeginScrollUse(item, def)));
+                buttons.Add(("Use", () => BeginScrollUse(item, def)));
             }
 
-            // Runes can't be binned (server refuses too) — don't offer it.
-            if (!def.IsRune)
-                actions.Add(("Bin", () => ConfirmBin(item, def)));
+            // Runes and QUEST ITEMS can't be binned (the server refuses both) — don't offer it. B4:
+            // every disposal path refuses a token, so none of them may show the button that starts it.
+            if (!def.IsRune && !ItemCatalog.IsQuestItem(def))
+                buttons.Add(("Bin", () => ConfirmBin(item, def)));
 
-            LayoutButtons(v.Buttons, actions);
-            OpenWindow(v.Panel);
+            LayoutButtons(v.Buttons, buttons);
         }
 
         // ----- scrolls: enchant + attribute -------------------------------------------------------
@@ -371,10 +511,12 @@ namespace Game.Client
             }
         }
 
+        /// <summary>One window now, so closing is one call — but the compare column is collapsed on the
+        /// way out so the next item opens at the narrow shape.</summary>
         private void CloseAllItemViews()
         {
-            CloseWindow(_cmpView.Panel);
-            CloseWindow(_itemView.Panel);
+            SetItemCompare(false);
+            CloseWindow(_itemPanel);
         }
 
         private static bool IsWearable(ItemDef def) =>
@@ -475,7 +617,10 @@ namespace Game.Client
             if (def.AtkBonus > 0)  Line("Attack  +" + EnchantRules.BonusAt(def.AtkBonus, item.Enchant));
             if (def.MAtkBonus > 0) Line("M.Atk  +" + EnchantRules.BonusAt(def.MAtkBonus, item.Enchant));
             if (def.DefBonus > 0)  Line("Defence  +" + EnchantRules.BonusAt(def.DefBonus, item.Enchant));
-            if (def.MDefBonus > 0) Line("M.Def  +" + def.MDefBonus);
+            // M.Def IS enchant-scaled on the server (RecomputeDerived runs it through BonusAt like
+            // every other bonus); this line was the one that printed the raw base, so an enchanted
+            // pendant under-reported itself — and C10 now RANKS jewels by this number.
+            if (def.MDefBonus > 0) Line("M.Def  +" + EnchantRules.BonusAt(def.MDefBonus, item.Enchant));
             if (def.HpBonus > 0)   Line("Max HP  +" + EnchantRules.BonusAt(def.HpBonus, item.Enchant));
             if (def.MpBonus > 0)   Line("Max MP  +" + EnchantRules.BonusAt(def.MpBonus, item.Enchant));
             if (def.EvaBonus > 0)  Line("Evasion  +" + EnchantRules.BonusAt(def.EvaBonus, item.Enchant));

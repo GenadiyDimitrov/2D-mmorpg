@@ -35,6 +35,14 @@ namespace Game.Client
         /// vendors because it is a preference, not a per-shop mode.</summary>
         private bool _vendorDetailed = true;
         private int _vendorRevision = -1;
+        /// <summary>C8's category filter. It sits on BOTH lists, not just the sell side he named: the
+        /// two share one window and one strip of tabs, and a filter row that went dead every time you
+        /// tapped Buy would read as a bug. A vendor stocks gear, potions and mats together, so the
+        /// buy side wants it for the same reason the bag did.</summary>
+        private ItemCategory _vendorTab = ItemCategory.All;
+        private Button[] _vendorTabButtons;
+        private static readonly ItemCategory[] VendorTabs =
+            { ItemCategory.All, ItemCategory.Gear, ItemCategory.Use, ItemCategory.Mats };
 
         // numpad
         private RectTransform _numpadPanel;
@@ -74,9 +82,12 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_vendorViewTab.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
                         new Vector2(-18f, -chrome - 32f), new Vector2(120f, 30f));
 
+            _vendorTabButtons = BuildCategoryTabs(inner, VendorTabs, new Vector2(18f, -chrome - 66f), 88f,
+                                                  cat => { _vendorTab = cat; _vendorRevision = -1; });
+
             ScrollRect scroll;
             _vendorList = UiKit.ScrollArea(inner, out scroll, 3f);
-            UiKit.Stretch((RectTransform)scroll.transform, 16f, chrome + 68f, 16f, 16f);
+            UiKit.Stretch((RectTransform)scroll.transform, 16f, chrome + 104f, 16f, 16f);
 
             _vendorPanel.gameObject.SetActive(false);
 
@@ -111,7 +122,7 @@ namespace Game.Client
 
             var items = Boot.Inventory ?? Array.Empty<InventoryItemDto>();
             int revision = (_vendorSell ? 1 : 0) * 92821 + (_vendorDetailed ? 7919 : 0)
-                         + (int)(Boot.Gold % 1_000_000);
+                         + (int)_vendorTab * 104729 + (int)(Boot.Gold % 1_000_000);
             revision = revision * 31 + (Boot.Dialog?.Shop?.Items?.Length ?? 0);
             // Identity, not just quantity — same reason as the bag stamp: an item swapped for another
             // of the same count would otherwise leave the sell list showing what you no longer own.
@@ -126,6 +137,7 @@ namespace Game.Client
             _vendorSellTab.targetGraphic.color = _vendorSell ? UiKit.TabActive : UiKit.PanelLight;
             UiKit.SetButtonText(_vendorViewTab, _vendorDetailed ? "Compact" : "Detail");
             _vendorViewTab.targetGraphic.color = _vendorDetailed ? UiKit.TabActive : UiKit.PanelLight;
+            PaintCategoryTabs(_vendorTabButtons, VendorTabs, _vendorTab);
 
             for (int i = _vendorList.childCount - 1; i >= 0; i--)
                 Destroy(_vendorList.GetChild(i).gameObject);
@@ -143,10 +155,12 @@ namespace Game.Client
                 return;
             }
 
+            bool anyInTab = false;
             foreach (var ware in shop.Items)
             {
                 var def = ItemCatalog.Get(ware.DefId);
-                if (def == null) continue;
+                if (def == null || !InCategory(_vendorTab, def)) continue;
+                anyInTab = true;
                 long unit = ware.BuyPrice;
                 bool afford = Boot.Gold >= unit;
                 string defId = ware.DefId;
@@ -166,15 +180,17 @@ namespace Game.Client
                 VendorRow(label, afford ? UiKit.Text : UiKit.TextDim,
                           () => BuyTap(defId, name, def, unit), _vendorDetailed ? 56f : 38f);
             }
+            if (!anyInTab) VendorNote("Nothing in this category here — try All.");
         }
 
         private void BuildSellList(InventoryItemDto[] items)
         {
             bool any = false;
-            foreach (var item in items)
+            foreach (var item in ByName(items))          // C8: name order and the category tabs
             {
                 var def = ItemCatalog.Get(item.DefId);
                 if (def == null || item.Equipped || !ItemCatalog.IsSellable(def)) continue;
+                if (!InCategory(_vendorTab, def)) continue;
                 any = true;
 
                 long unit = ItemCatalog.SellPrice(def);
@@ -189,7 +205,9 @@ namespace Game.Client
                 VendorRow(label, UiKit.Text, () => SellTap(captured, def, unit),
                           _vendorDetailed ? 56f : 44f);
             }
-            if (!any) VendorNote("Nothing here can be sold (equipped or bound items can't).");
+            if (!any) VendorNote(_vendorTab == ItemCategory.All
+                ? "Nothing here can be sold (equipped or bound items can't)."
+                : "Nothing sellable in this category — try All.");
         }
 
         // ONE confirmation per purchase (owner, playtest-16). 32d put a details dialog in FRONT of the
