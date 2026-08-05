@@ -43,12 +43,45 @@ Combat Stance, Antidote, Resurrection, Restore Mana.
 
 ## 3. In the catalog but granted to NOBODY (dead weight — safe to delete)
 
+> ## 🔴 CORRECTION, 2026-08-05 — READ THIS BEFORE ACTING ON YOUR G1 ANSWER
+>
+> **Five lines of the list below were WRONG, and you answered "delete" on the strength of them.**
+> Checked against the code before deleting anything (`GameLoopService.AutoLearnCoreSkills`, line ~1174):
+>
+> | I said | actually |
+> |---|---|
+> | `evade_mastery` "granted to nobody" | ❌ **auto-granted to EVERY rogue** at 20/40/76 (`FloorPassiveFor`) |
+> | `precision` | ❌ **auto-granted to every warrior** at 20/40/76 |
+> | `anti_magic` | ❌ **auto-granted to every tank** at 20/40/76 |
+> | `class_balance_*` (8) | ❌ **auto-granted to EVERY character alive**, line 1179 |
+> | `reflexes` | ✅ correct — dead, but only because `Archetype.Archer` no longer exists after the merge |
+>
+> These are not dead weight: they are the **class identity floors** — the rogue's sure-dodge, the
+> warrior's sure-hit, the tank's magic-fizzle resist — and they feed live stats (`EvadeFloor`,
+> `HitFloor`, `MagicFailFloor`, set in `Entity.RecomputeDerived`). They are documented as the design in
+> [design/CombatResolution.md](../design/CombatResolution.md) §"Class floors". Deleting them silently
+> removes a combat floor from every rogue, warrior and tank you have.
+>
+> They are absent from your CSVs because they are **auto-granted rather than learned** — they never
+> needed a CSV row. That is a different thing from "nobody has them", and the diff that produced this
+> list could not tell the two apart.
+>
+> **So G1 splits in two.** Genuinely dead and safe to delete: `reflexes`, `archer_armor_mastery`,
+> `archer_weapon_mastery`, `dispel_magic`, and the Heavy Draw **grant** (never the definition).
+> Live and load-bearing: `evade_mastery`, `precision`, `anti_magic`, `class_balance_*`. **Nothing has
+> been deleted; your call on the second group.**
+
 - `evade_mastery`, `reflexes`, `precision`, `anti_magic` — the four "identity floor" passives.
-- `class_balance_*` (8) — Class Balance passives.
-- `archer_armor_mastery`, `archer_weapon_mastery` — orphaned by the archer→rogue merge.
-- `dispel_magic`.
+  ⚠ **three of these four are LIVE — see the correction above.**
+- `class_balance_*` (8) — Class Balance passives. ⚠ **auto-granted to everyone — see above.**
+- `archer_armor_mastery`, `archer_weapon_mastery` — orphaned by the archer→rogue merge. ✅ truly dead.
+- `dispel_magic`. ✅ truly dead.
 - Lightbringer (8, `lb_*`) and Warchanter per-race (12, `wc_*`) — **see the answer below.**
 - `hp_boost`, `greater_heal` — god-only, and the god table is never registered.
+  ⚠ But `Race.God` itself is **your debug race** and `ItemRarity.God` / `god_judgment` / `god_robes` are
+  the debug gear your own admin menu hands out. "God class + skills" reads to me as the two SKILLS plus
+  `Classes.God.cs`'s learn table — **not** the race enum or the debug item tier, which would take your
+  testing rig with them. Confirm before I widen it.
 
 ### ❓ You asked what `lb_*` and `wc_*` are (playtest-18 G2)
 
