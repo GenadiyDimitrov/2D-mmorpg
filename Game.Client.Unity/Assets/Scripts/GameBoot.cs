@@ -119,6 +119,16 @@ namespace Game.Client
         public PartyMemberDto[] Party { get; private set; } = new PartyMemberDto[0];
         public LootMode PartyLoot { get; private set; } = LootMode.Random;
 
+        /// <summary>The roster row for an entity id, or null. This is the ONLY thing that still knows an
+        /// ally who has walked out of interest range — the world snapshot has dropped them (B7).</summary>
+        public PartyMemberDto FindPartyMember(Guid id)
+        {
+            if (Party != null)
+                foreach (var m in Party)
+                    if (m != null && m.Id == id) return m;
+            return null;
+        }
+
         /// <summary>A pending party invitation, or null.</summary>
         public PartyInviteDto PendingInvite { get; private set; }
 
@@ -775,13 +785,13 @@ namespace Game.Client
                 if (c == null) return;
                 AutoConfig = c;                 // the authoritative, already-clamped config
                 AutoHunting = c.Enabled;
-                // Sync the per-slot Auto marks to the server's truth — but only once it actually carries
-                // skills, so a fresh character keeps the client's default (basic attack on).
-                if (c.Skills != null && c.Skills.Length > 0)
-                {
-                    AutoSkills.Clear();
+                // The server's list is the truth, INCLUDING when it is empty (playtest-17 B1). This used
+                // to be guarded by `c.Skills.Length > 0` to protect a client-side default of "basic
+                // attack on" — a default that no longer exists (see AutoSkills), so all the guard did was
+                // let one character's marks survive into the next one's session.
+                AutoSkills.Clear();
+                if (c.Skills != null)
                     foreach (var s in c.Skills) if (s.Enabled) AutoSkills.Add(s.SkillId);
-                }
             });
             _net.AutoHuntStatusReceived += st => Main(() =>
             {
@@ -1140,6 +1150,13 @@ namespace Game.Client
             _mobCasts.Clear();
             Cooldowns.Clear();   // same conditional-push reason as Buffs: reuse is per CHARACTER
             SkillPoints = 0;   // its own field now, so it no longer clears with Stats
+            // 🔴 The auto-hunt marks are per CHARACTER, and this set is a singleton that outlives the
+            // character (playtest-17 B1). Leaving them behind is what made a freshly created character
+            // arrive with the deleted one's actions already auto-on and firing — the flag looked like it
+            // was stored "per account" because nothing on the client ever forgot it.
+            AutoSkills.Clear();
+            AutoHunting = false;
+            AutoConfig = new AutoHuntConfigDto(false, 60, 40, false, new AutoSkillDto[0], new string[0]);
         }
 
         public async void LeaveWorld()
@@ -1283,7 +1300,13 @@ namespace Game.Client
                 Entities.ApplyDelta(delta);
                 AcquireCamera();
                 // A despawned target is no longer a target — otherwise the HUD shows a ghost.
-                if (TargetId.HasValue && !Entities.States.ContainsKey(TargetId.Value)) TargetId = null;
+                // 🔴 Except a PARTY MEMBER (playtest-17 B7). Interest management stops sending an ally
+                // who walks out of view, so this cleared the target ~10× a second and made assist, heal,
+                // buff, kick and change-leader unreachable at exactly the range they matter. They are not
+                // a ghost — the roster still carries them, and the target frame draws from it.
+                if (TargetId.HasValue && !Entities.States.ContainsKey(TargetId.Value)
+                    && !IsPartyMember(TargetId.Value))
+                    TargetId = null;
             });
         }
 
@@ -1696,12 +1719,57 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Auto config: " + ex.Message); }
         }
 
-        /// <summary>Mark/unmark a skill for auto-use, and push the change if auto-hunt is running.</summary>
+        /// <summary>Mark/unmark a skill for auto-use and push it.
+        ///
+        /// <para>The push is unconditional. It used to happen only while auto-hunt was RUNNING, which
+        /// left a mark made with auto-hunt off living nowhere but this client — and the marks are per
+        /// CHARACTER, so the server has to be the one holding them (playtest-17 B1).</para></summary>
         public void ToggleAutoSkill(string skillId)
         {
             if (string.IsNullOrEmpty(skillId)) return;
             if (!AutoSkills.Remove(skillId)) AutoSkills.Add(skillId);
-            if (AutoHunting) PushAutoConfig(BuildAutoConfig(true));
+            PushAutoConfig(BuildAutoConfig(AutoHunting));
+        }
+
+        /// <summary>The auto-hunt id a BAR TOKEN maps to, or null when the autopilot cannot repeat it.
+        ///
+        /// <para>A skill is its own id. The BASIC ATTACK is the exception: it is an action token on the
+        /// bar but the server knows it as the pseudo-skill <see cref="AutoHuntIds.BasicAttack"/>, the
+        /// entry that decides whether the autopilot melees at all.</para>
+        ///
+        /// <para>It lives here rather than in the UI because the BAR owns the mark: a token that leaves
+        /// the bar has to take its auto flag with it, and <see cref="AssignSlot"/> is where that
+        /// happens.</para></summary>
+        public static string AutoIdFor(string token)
+        {
+            if (string.IsNullOrEmpty(token)) return null;
+
+            var action = ActionCatalog.FromToken(token);
+            if (action != null)
+                return action.Id == GameConstants.ActionBasicAttack ? AutoHuntIds.BasicAttack : null;
+
+            var def = SkillCatalog.Get(token);
+            if (def == null) return null;
+            return def.Passive != null || def.Category == SkillCategory.Passive ? null : token;
+        }
+
+        /// <summary>Drop the auto mark of a token that has just left the bar, and tell the server.
+        /// His rule (playtest-17 B1): *"removing something from the bar automatically disables the
+        /// auto-on ... when u put it back u need to reactivate it."* Without this the autopilot goes on
+        /// firing an action the bar no longer shows, which is unexplainable from the screen.</summary>
+        private void ClearAutoMarkFor(string token, string[] barAfter)
+        {
+            var autoId = AutoIdFor(token);
+            if (autoId == null || !AutoSkills.Contains(autoId)) return;
+
+            // Only if it is gone from the bar ENTIRELY — the same skill may sit in a second slot, and
+            // moving a token between slots must not disarm it.
+            if (barAfter != null)
+                foreach (var t in barAfter)
+                    if (AutoIdFor(t) == autoId) return;
+
+            AutoSkills.Remove(autoId);
+            PushAutoConfig(BuildAutoConfig(AutoHunting));
         }
 
         public bool CounterAttack { get; private set; }
@@ -1748,8 +1816,10 @@ namespace Game.Client
             if (SkillBar == null || index < 0 || index >= SkillBar.Length) return;
 
             var slots = (string[])SkillBar.Clone();
+            var displaced = slots[index];   // Remove (token == null) or an overwrite — either way it left
             slots[index] = token;
             SkillBar = slots;               // optimistic: the server echoes the bar back anyway
+            ClearAutoMarkFor(displaced, slots);   // playtest-17 B1: off the bar = auto off
             try { await _net.SetSkillBarAsync(slots); }
             catch (Exception ex) { ClientLog.Warn("SkillBar: " + ex.Message); }
         }

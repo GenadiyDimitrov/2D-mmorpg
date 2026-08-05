@@ -14,7 +14,7 @@ the scroll/enchant economy, crafting, and a text-box bug that affects every inpu
 
 ## 🔴 BUGS — these are defects, not opinions
 
-**B1. Auto-farm actions are stored per ACCOUNT, not per CHARACTER.**
+**B1. ✅ BUILT 2026-08-05. Auto-farm actions are stored per ACCOUNT, not per CHARACTER.**
 > with the 1st character In the acc I put basic attack action on the bar and made it auto on ...(then
 > delete that char) then entered with the newly created second char and when I put the action ot the bar
 > it was already on.... When I removed it from the bar it still acted in a auto-farm. The actions should
@@ -24,6 +24,17 @@ the scroll/enchant economy, crafting, and a text-box bug that affects every inpu
 Two faults in one: the auto-on flag survives a character DELETE (so it is keyed on the account), and
 removing a slot from the bar does not clear its auto flag — the autopilot keeps firing an action that
 is no longer on the bar. Rule: **auto-on belongs to the character, and un-slotting always clears it.**
+
+✅ Neither fault was on the server, where the marks have always been a per-character column. `AutoSkills`
+is a client-side `HashSet` on the singleton `GameBoot`, and **nothing ever cleared it** — not on leaving
+the world, and not when the server pushed an EMPTY list, because that push was guarded by
+`c.Skills.Length > 0` to protect a "basic attack on by default" that had already been removed. So the
+marks simply walked from one character into the next one's session. Three changes: the guard is gone
+(the server's list is the truth, including when it is empty), `ResetWorldTransients` clears the set with
+the rest of the per-character state, and `AssignSlot` now clears the auto mark of whatever token it
+displaced — unless the same token still sits in another slot, so *moving* a skill never disarms it.
+`ToggleAutoSkill` also pushes unconditionally now; it used to push only while auto-hunt was running,
+which left a mark made with auto-hunt off living nowhere but the client.
 
 **B2. Compare on a pendant opens a RING's detail window.** Wrong slot resolved when picking what to
 compare against — see also C10, the same swap logic is picking the wrong jewel.
@@ -44,12 +55,20 @@ he can mark the ones to delete. Do not delete anything before he answers.
 Pairs with §39e: tokens parked in the warehouse stop counting toward the quest step but are still taken
 on hand-in. **A quest item must be refusable by every disposal path** (sell, both banks, trade, bin).
 
-**B5. Relogging resets the auto-farm/offline TIMER.**
+**B5. ✅ BUILT 2026-08-05 — and it was NOT a display bug. Relogging resets the auto-farm/offline TIMER.**
 > Reloging make my auto farm timer to reset - server did not reset just the timer .. farmed for 15 mins
 > went to town reloged then came back start to auto farm and timer from 7h44 to 7h59
 
-The server kept the real budget (7h44 was right); the displayed remaining time jumped back up to 7h59.
-A display/session-start bug, not a grant bug — but it reads as free time.
+~~The server kept the real budget (7h44 was right); the displayed remaining time jumped back up to 7h59.
+A display/session-start bug, not a grant bug — but it reads as free time.~~
+
+🔴 **That reading was wrong: the time really was being given back.** The caps were per-SESSION elapsed
+counters on the CHARACTER, zeroed on every `EnterWorld` *and* again in `BeginOfflineFarm`, and never
+persisted — so 7h59 was the honest display of a budget that had genuinely just refilled. His 14h
+three-character farm (playtest-18) made it undeniable: per-entity counters meant three characters farmed
+6h per 2h of wall clock. The allowance is now a **per-ACCOUNT daily balance** (8h online / 2h offline
+free, 12h/4h premium) that is spent one tick per farming character per tick and refills at a fixed
+server midnight. See the CHANGELOG and `docs/design/AutoHunt.md`. ⚠ schema change — db reset.
 
 **B6. Every text box WIPES its pre-filled value on the first keystroke instead of editing it.** (§42k,
 §42m)
@@ -61,8 +80,14 @@ A display/session-start bug, not a grant bug — but it reads as free time.
 **One fix, whole client**: focus must place the caret, not select-all-and-replace. This kills Reply,
 the Whisper action and re-editing the server IP.
 
-**B7. A party member out of range cannot be TARGETED at all.** (§17-24) — so assist / heal / buff /
-kick / change-leader are unreachable exactly when they matter.
+**B7. ✅ BUILT 2026-08-05. A party member out of range cannot be TARGETED at all.** (§17-24) — so assist
+/ heal / buff / kick / change-leader are unreachable exactly when they matter.
+
+✅ Tapping the roster row *did* set the target; the next world delta then threw it away. Interest
+management stops sending an ally who walks out of view, and `GameBoot` cleared any target missing from
+the snapshot — ~10 times a second — as a ghost guard. Party members are now exempt from that clear, and
+the target frame falls back to the ROSTER row (name, level, class, both bars, `(out of sight)`), which
+keeps arriving at any distance. The mob-only fast buttons stay hidden.
 
 **B8. Soulcrystal-tier gear still prints A grade in item details** while the attribute scroll it accepts
 is Mythic. (§43n) The display path and `AttributeSystem` read different grades.

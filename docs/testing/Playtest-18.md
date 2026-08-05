@@ -74,12 +74,17 @@ an authoring change, not new code.
 > in the warehouse need to see spots taken/all - now i try to deposit and cant .. only after opening chat
 > i saw that warehouse is full
 
-**G7. 🔴 A hotbar consumable slot at 0 count must not be DISABLED.**
+**G7. ✅ BUILT 2026-08-05. A hotbar consumable slot at 0 count must not be DISABLED.**
 > Disableing hotbar potion/consumable slot when I have 0 - means i cannot remove it from the bar.. make
 > it like always in 100% cooldown - it looks the same just is not disabled.
 
 The slot going dead also kills the drag/long-press that would remove it — the bar traps a slot you can
 never clear. Draw it as a full cooldown sweep instead: same look, still interactive.
+
+✅ Exactly that. `PressAndHold.Enabled` is wired to the button's `interactable`, so an out-of-stock item
+slot lost the one gesture that opens Move/Remove/Auto. Such a slot now stays interactable and draws the
+reuse sheet at full height with no countdown text (there is no timer, only an empty bag), and `FireSlot`
+returns early so the tap is inert rather than earning a refusal from the server.
 
 **G8. The rogue's Weapon Mastery has its crit damage swapped between 24 and 28** — *"i fixed it in the
 rogue-csv"*. Already the second bullet of RoadmapNext 🔴 3.

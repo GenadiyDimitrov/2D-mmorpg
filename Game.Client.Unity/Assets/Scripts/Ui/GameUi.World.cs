@@ -1016,6 +1016,16 @@ namespace Game.Client
             if (Boot.TargetId.HasValue && Boot.Entities != null)
                 Boot.Entities.TryGetState(Boot.TargetId.Value, out target);
 
+            // 🔴 playtest-17 B7: an ally out of interest range is not in the world snapshot at all, so
+            // the frame had nothing to draw. The ROSTER still knows them — name, level, class and both
+            // bars — so draw from that instead of showing an empty screen where assist/heal/kick live.
+            if (target == null && Boot.TargetId.HasValue &&
+                Boot.FindPartyMember(Boot.TargetId.Value) is PartyMemberDto away)
+            {
+                DrawDistantPartyTarget(away);
+                return;
+            }
+
             _targetPanel.gameObject.SetActive(target != null);
             if (target == null) return;
 
@@ -1055,6 +1065,39 @@ namespace Game.Client
             if (_targetInfoButton != null) _targetInfoButton.gameObject.SetActive(mob);
         }
 
+        /// <summary>The target frame for a party member the world snapshot no longer carries (they
+        /// walked out of interest range). Everything here comes from the roster push, which keeps
+        /// running at any distance — so the frame stays up and the actions that name a target by id
+        /// (assist, heal, buff, kick, change leader) remain reachable. The fast buttons are all
+        /// mob-only anyway, so none of them appear.</summary>
+        private void DrawDistantPartyTarget(PartyMemberDto m)
+        {
+            _targetPanel.gameObject.SetActive(true);
+            _targetName.text = m.Name + "  Lv " + m.Level;
+
+            UiKit.SetBar(_targetHp, m.Hp, m.MaxHp);
+            _targetHpText.text = m.MaxHp > 0
+                ? m.Hp.ToString("N0") + " / " + m.MaxHp.ToString("N0") : "";
+
+            if (_targetMpRow != null) _targetMpRow.gameObject.SetActive(m.MaxMp > 0);
+            if (m.MaxMp > 0)
+            {
+                UiKit.SetBar(_targetMp, m.Mp, m.MaxMp);
+                _targetMpText.text = m.Mp.ToString("N0") + " / " + m.MaxMp.ToString("N0");
+            }
+
+            // Say WHY the frame looks different, or an out-of-sight ally reads as a rendering fault.
+            _targetDetail.text = (string.IsNullOrEmpty(m.ClassName) ? "Party" : m.ClassName)
+                               + "   (out of sight)";
+
+            if (_targetPartyButton != null) _targetPartyButton.gameObject.SetActive(false);
+            if (_targetTradeButton != null) _targetTradeButton.gameObject.SetActive(false);
+            if (_targetFollowButton != null) _targetFollowButton.gameObject.SetActive(false);
+            if (_targetAssistButton != null) _targetAssistButton.gameObject.SetActive(false);
+            if (_targetAttackButton != null) _targetAttackButton.gameObject.SetActive(false);
+            if (_targetInfoButton != null) _targetInfoButton.gameObject.SetActive(false);
+        }
+
         private void RefreshSkillBar()
         {
             _pageLabel.text = (_barPage + 1) + " / " + BarPages;
@@ -1069,16 +1112,6 @@ namespace Game.Client
                 bool usable;
                 _slotFaces[i].text = SlotFace(token, out usable);
 
-                // An EMPTY slot is a disabled button — which made it impossible to place anything,
-                // because the only target for a pending skill is an empty slot. While an assignment or
-                // a move is waiting, every slot has to be pressable.
-                _slotButtons[i].interactable = usable || _pendingAssign != null || _pendingMoveFrom >= 0;
-
-                // Thin green frame + a corner "A" = the auto-hunt will use this one.
-                bool auto = !string.IsNullOrEmpty(token) && Boot.AutoSkills.Contains(AutoIdFor(token));
-                _slotBorders[i].enabled = auto;
-                _slotAutoMarks[i].gameObject.SetActive(auto);
-
                 // How many of this consumable remain (32n) — 1…99 then "99+", so a full stack of 300
                 // potions cannot push the digits across the face of the square.
                 bool isItem = !string.IsNullOrEmpty(token) && GameConstants.IsItemSlot(token);
@@ -1086,11 +1119,29 @@ namespace Game.Client
                 _slotCounts[i].gameObject.SetActive(isItem);
                 if (isItem) _slotCounts[i].text = have > 99 ? "99+" : have.ToString();
 
+                // 🔴 playtest-18 G7: a consumable slot you have run OUT of stays PRESSABLE. It used to
+                // go non-interactable, and PressAndHold is gated on `interactable` — so the very gesture
+                // that opens the slot menu died with it and the empty slot could never be taken off the
+                // bar. It is drawn as a permanent FULL cooldown instead (his call): that says "not now"
+                // without disabling the only way to remove it. The TAP is inert (see FireSlot).
+                bool outOfStock = isItem && have <= 0;
+
+                // An EMPTY slot is a disabled button — which made it impossible to place anything,
+                // because the only target for a pending skill is an empty slot. While an assignment or
+                // a move is waiting, every slot has to be pressable.
+                _slotButtons[i].interactable =
+                    usable || outOfStock || _pendingAssign != null || _pendingMoveFrom >= 0;
+
+                // Thin green frame + a corner "A" = the auto-hunt will use this one.
+                bool auto = !string.IsNullOrEmpty(token) && Boot.AutoSkills.Contains(AutoIdFor(token));
+                _slotBorders[i].enabled = auto;
+                _slotAutoMarks[i].gameObject.SetActive(auto);
+
                 // The reuse sheet + its countdown. Driven from the client's own clock (the server sends
                 // one message when the timer starts, not one per tick), so this animates at frame rate.
                 float left, fraction;
                 bool cooling = Boot.ReuseOf(token, out left, out fraction);
-                _slotReuse[i].gameObject.SetActive(cooling);
+                _slotReuse[i].gameObject.SetActive(cooling || outOfStock);
                 _slotReuseText[i].gameObject.SetActive(cooling);
                 if (cooling)
                 {
@@ -1101,6 +1152,13 @@ namespace Game.Client
                     // reason to look; a bare "1" for anything under two seconds hides it.
                     _slotReuseText[i].text = left >= 10f ? Mathf.CeilToInt(left).ToString()
                                                          : left.ToString("0.0");
+                }
+                else if (outOfStock)
+                {
+                    // No countdown text — there is no timer to run out, only an empty bag.
+                    var size = _slotReuseRects[i].sizeDelta;
+                    size.y = SlotSize;
+                    _slotReuseRects[i].sizeDelta = size;
                 }
 
                 // X over the slot whose skill is being cast right now, so cancelling is where your
@@ -1184,7 +1242,17 @@ namespace Game.Client
             if (TryPlacePending(index)) return;
 
             var bar = Boot.SkillBar;
-            if (bar != null && index < bar.Length) Boot.UseSlot(bar[index]);
+            if (bar == null || index >= bar.Length) return;
+
+            // A consumable slot at 0 is drawn as a permanent full cooldown and stays pressable so it can
+            // still be held and removed (playtest-18 G7) — but the TAP does nothing. Firing it would only
+            // earn a refusal from the server for something the slot already says you cannot do.
+            string fired = bar[index];
+            if (!string.IsNullOrEmpty(fired) && GameConstants.IsItemSlot(fired) &&
+                Boot.BagCount(fired.Substring(GameConstants.SkillBarItemPrefix.Length)) <= 0)
+                return;
+
+            Boot.UseSlot(fired);
         }
 
         /// <summary>
@@ -1266,16 +1334,9 @@ namespace Game.Client
         /// attack slot was the one thing on the bar with no Auto toggle — the owner asked why, and the
         /// answer was simply that the client never joined the two names up.
         /// </summary>
-        private static string AutoIdFor(string token)
-        {
-            if (string.IsNullOrEmpty(token)) return null;
-
-            var action = ActionCatalog.FromToken(token);
-            if (action != null)
-                return action.Id == GameConstants.ActionBasicAttack ? AutoHuntIds.BasicAttack : null;
-
-            return SkillCatalog.Get(token) != null && !IsPassive(token) ? token : null;
-        }
+        /// <remarks>The implementation moved to <see cref="GameBoot.AutoIdFor"/> — the BAR owns the
+        /// mark, so <c>AssignSlot</c> needs the same mapping to clear it when a token leaves.</remarks>
+        private static string AutoIdFor(string token) => GameBoot.AutoIdFor(token);
 
         private string TokenAt(int slotOnPage)
         {
