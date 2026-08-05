@@ -77,6 +77,7 @@ public class GameLoopService : BackgroundService
             UsePotionCmd c => c.ConnectionId,
             EquipCmd c => c.ConnectionId,
             RemoveItemCmd c => c.ConnectionId,
+            RestoreItemCmd c => c.ConnectionId,
             OpenBoxCmd c => c.ConnectionId,
             SelectBoxItemsCmd c => c.ConnectionId,
             EnchantCmd c => c.ConnectionId,
@@ -183,6 +184,7 @@ public class GameLoopService : BackgroundService
                 case EnchantCmd c: HandleEnchant(c); break;
                 case RerollAttributesCmd c: HandleRerollAttributes(c); break;
                 case RemoveItemCmd c: HandleRemoveItem(c); break;
+                case RestoreItemCmd c: HandleRestoreItem(c); break;
                 case BuyBackCmd c: HandleBuyBack(c); break;
                 case OpenWarehouseCmd c: HandleOpenWarehouse(c); break;
                 case WarehouseDepositCmd c: HandleWarehouseDeposit(c); break;
@@ -289,6 +291,7 @@ public class GameLoopService : BackgroundService
         AutoLearnCoreSkills(entity);
         RestorePersistedBuffs(entity);   // before SendStats — the buffs change the numbers it sends
         SendInventory(entity);
+        SendRestorable(entity);  // empty on a fresh login, but the window must not show a stale list
         SendWarehouse(entity);   // the bank travels with login so the client can show it without a town trip
         SendAccountWarehouse(entity);
         SendStats(entity);
@@ -1880,20 +1883,84 @@ public class GameLoopService : BackgroundService
             return;
 
         bool wasEquipped = item.Equipped;
+        int destroyed;   // how many units actually went in the bin — what an undo has to put back
 
         if (cmd.Quantity > 0 && cmd.Quantity < item.Quantity)
+        {
+            destroyed = cmd.Quantity;
             item.Quantity -= cmd.Quantity;   // bin numpad: drop exactly N of the stack
+        }
         else if (item.Quantity > 1 && !cmd.All && cmd.Quantity == 0)
+        {
+            destroyed = 1;
             item.Quantity--;                 // drop ONE from the stack
+        }
         else
+        {
+            destroyed = item.Quantity;
             player.Inventory.Remove(item);   // whole stack (or a single item)
+        }
+
+        // C18: remember it so the bin can be UNDONE. Free, because nothing was paid for it. This is the
+        // half of the buy-back design he actually needed — the accident happens in the field, with a
+        // [Del] button, not at a vendor.
+        player.Restorable.Add(new BuyBackEntry
+        {
+            DefId = item.DefId, Quantity = destroyed, Enchant = item.Enchant,
+            Attributes = new List<ItemAttribute>(item.Attributes),
+            UnitPrice = 0,
+        });
+        while (player.Restorable.Count > GameConstants.RestoreSlots) player.Restorable.RemoveAt(0);
 
         if (wasEquipped)
             player.RecomputeDerived();
 
         SendInventory(player);
+        SendRestorable(player);
         if (wasEquipped)
             SendStats(player);
+    }
+
+    private void SendRestorable(Entity player) =>
+        SendTo(player, "Restore", new RestoreUpdate(
+            player.Restorable.Select((e, i) => new BuyBackEntryDto(
+                i, e.DefId, ItemCatalog.Get(e.DefId)?.Name ?? e.DefId, e.Quantity, e.Enchant, 0))
+                .ToArray()));
+
+    /// <summary>Undo a bin-delete. FREE and with no vendor in sight — see <see cref="RestoreItemCmd"/>.
+    /// The entry is consumed either way it succeeds, so an undo can't be used twice.</summary>
+    private void HandleRestoreItem(RestoreItemCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        if (cmd.Index < 0 || cmd.Index >= player.Restorable.Count) return;
+
+        var entry = player.Restorable[cmd.Index];
+        if (ItemCatalog.Get(entry.DefId) is not ItemDef def)
+        {
+            // The def left the catalog (a rename) — drop the dead row rather than resurrect junk.
+            player.Restorable.RemoveAt(cmd.Index);
+            SendRestorable(player);
+            return;
+        }
+
+        if (player.Inventory.Count(i => !i.Equipped) >= GameConstants.InventorySize)
+        {
+            SendSystemToEntity(player, "Inventory full.");
+            return;
+        }
+
+        player.Inventory.Add(new InventoryItem
+        {
+            DefId = entry.DefId, Quantity = entry.Quantity, Enchant = entry.Enchant,
+            Attributes = new List<ItemAttribute>(entry.Attributes),
+        });
+        player.Restorable.RemoveAt(cmd.Index);
+
+        SendInventory(player);
+        SendRestorable(player);
+        SendSystemToEntity(player,
+            $"Restored {def.Name}{(entry.Quantity > 1 ? $" x{entry.Quantity}" : "")}.");
+        SaveEntity(player);
     }
 
     private void SendWarehouse(Entity player) =>

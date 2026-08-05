@@ -261,6 +261,10 @@ public record RerollAttributesCmd(string ConnectionId, Guid ScrollInstanceId,
 // stack) / single-unit. All still wins for a non-stackable.
 public record RemoveItemCmd(string ConnectionId, Guid InstanceId, bool All = false, int Quantity = 0) : IGameCommand;
 
+/// <summary>Undo a bin-delete: put a recently destroyed item back, for free. Deliberately carries NO
+/// npc id — you bin things in the field, so the undo must work there (playtest-17 C18).</summary>
+public record RestoreItemCmd(string ConnectionId, int Index) : IGameCommand;
+
 /// <summary>Open the private warehouse (fetch its contents). Gated to safe zones.</summary>
 public record OpenWarehouseCmd(string ConnectionId) : IGameCommand;
 /// <summary>Move a whole item instance bag → warehouse.</summary>

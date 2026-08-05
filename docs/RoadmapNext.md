@@ -49,15 +49,12 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
    makes it testable without a bot now).
 2. **The playtest-17 batch, in this order** — it splits cleanly into four passes and they are ordered by
    how much of his play time they give back:
-   1. 🔴 **The four defects that block play**: `B6` every text box wipes its pre-filled value on the
-      first keystroke (ONE fix, whole client — it breaks Reply, Whisper and re-editing the server IP) ·
-      `C12` there is **no way to start offline farming at all** any more (the WPF `[Offline]` button
-      went with the harness; leaving to character select is refused in combat) — `/offline` + a button +
-      the remaining time on the character-select row · `B1` auto-farm auto-on is stored per ACCOUNT and
-      survives a character delete, and un-slotting must clear it · `B7` an out-of-range party member
-      cannot be targeted, so assist/heal/buff/kick are unreachable · `C18` **buy-back for DELETED items,
-      restored for 0** — designed since 2026-07-24, never built, and it has now cost him an item he
-      binned by mistake. Undoing an accident belongs with the other four; the shop half can wait.
+   1. ✅ **The defects that block play — ALL DONE, 0.46.0, unplayed.** `B6` text boxes edit instead of
+      wiping · `C12` `/offline` + a Menu button + the remaining time on the character-select row ·
+      `B1` the auto-on marks are per CHARACTER and un-slotting clears them · `B5` the farm timer really
+      *was* being handed back (a per-ACCOUNT daily balance now, not a session stopwatch) · `B7` an
+      out-of-range party member can be targeted, with the frame drawn from the roster · `C18` **undo a
+      bin-delete for free**, from Menu → Restore, never behind a vendor. **Needs an APK + a play pass.**
    2. 🟠 **Inventory hygiene** — `B4` quest items must be refused by every disposal path (sell, both
       banks, trade, bin) and must stop counting only when they are in the quest bag (pairs with §39e:
       warehousing a token silently stalls the quest step, then Complete takes it anyway) · `C8` filters

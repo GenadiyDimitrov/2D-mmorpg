@@ -158,7 +158,7 @@ different font from the name.
 
 **C17. Admins and moderators get their own titles.**
 
-**C18. 🔴 Buy-back must cover DELETED items, restored for 0 gold.** (Added 2026-08-03, after the
+**C18. ✅ BUILT 2026-08-05. Buy-back must cover DELETED items, restored for 0 gold.** (Added 2026-08-03, after the
 checklist went in — and it is not theoretical, it has already cost him an item.)
 > buy back should work for deleted items as well .. u delete -> can buyback for 0 ... now i delete by
 > mistake and cannot restore it (or buyback for shops last 10-20 items and restore last 5 items if they
@@ -170,6 +170,16 @@ built; **the DELETE half is the half he actually needs.** His own fallback if on
 NOT live behind a vendor window — you bin things in the field, which is exactly where the accident
 happens. Restoring a binned item is free; a sold item still costs what it sold for (a sold-for-0 item is
 free, same as a binned one).
+
+✅ Built as **his fallback shape, two separate lists** — which is the better one: a shared list would let
+a selling spree push the single thing you meant to undo off the end, and the two accidents have
+different prices anyway. `Entity.Restorable` holds the last `GameConstants.RestoreSlots` = **5** binned
+items (enchant and rolled attributes included, so a +6 sword comes back a +6 sword), `HandleRemoveItem`
+records the exact quantity destroyed, and `RestoreItemCmd` carries **no npc id at all** — that is what
+makes it work in the field. It opens from **Menu → Restore**, newest row first, and costs nothing.
+Protocol **12** (new `RestoreUpdate` push); `MinAcceptedProtocol` stays 8, so an installed 0.45.x APK
+still connects, it just has no Restore window. The vendor half of the design (a longer sold list) is
+still open and still not urgent.
 
 ---
 

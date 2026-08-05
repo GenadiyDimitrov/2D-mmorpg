@@ -226,6 +226,7 @@ namespace Game.Client
             BuildVendorWindow();
             BuildWarehouseWindow();
             BuildBuyBackWindow();
+            BuildRestoreWindow();
             BuildRankWindow();
             BuildRegionUi();
             BuildSlotMenu();
@@ -645,6 +646,9 @@ namespace Game.Client
                 ("Auto Pots", () => { CloseWindow(_menuPanel); OpenAutoPotions(); }, false),
                 ("Auto Farm", () => { CloseWindow(_menuPanel); OpenAutoFarm(); }, false),
                 ("Quests", () => { CloseWindow(_menuPanel); ToggleWindow(_questPanel); }, false),
+                // Restore lives on the MENU, not at a vendor (C18): binning is a field accident, and an
+                // undo you can only reach in town is no undo at all.
+                ("Restore", () => { CloseWindow(_menuPanel); OpenRestoreWindow(); }, false),
                 ("Rank",   () => { CloseWindow(_menuPanel); OpenRank(); }, false),
                 ("Setup",  () => { CloseWindow(_menuPanel); ToggleWindow(_settingsPanel); }, false),
                 // The admin toolbox. It was labelled "Debug" while its commands were compiled out of
@@ -920,6 +924,7 @@ namespace Game.Client
             RefreshVendorWindow();
             RefreshWarehouseWindow();
             RefreshBuyBackWindow();
+            RefreshRestoreWindow();
             RefreshEquipmentWindow();
             RefreshRegionUi();
             RefreshFarmRing();

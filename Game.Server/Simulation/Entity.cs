@@ -315,6 +315,13 @@ public class Entity
     /// to restore the item faithfully (enchant + rolled attributes).</summary>
     public List<BuyBackEntry> BuyBack { get; } = new();
 
+    /// <summary>Recently BINNED items, restorable for FREE (playtest-17 C18 — it had already cost him a
+    /// real item). Same shape and same in-memory lifetime as <see cref="BuyBack"/>, but a SEPARATE list:
+    /// selling and binning are different accidents with different prices, and a shared list would let a
+    /// spree of sales push the one thing you meant to undo off the end. Capped at
+    /// <see cref="GameConstants.RestoreSlots"/>, newest last. <c>UnitPrice</c> is always 0.</summary>
+    public List<BuyBackEntry> Restorable { get; } = new();
+
     // ----- Charisma (reputation). Two values, neither below 0 (see GameConstants). -----
     /// <summary>The 0–<see cref="GameConstants.CharismaPoolCap"/> bonus POOL — drives the exp/sp bonus.</summary>
     public int Charisma { get; set; }

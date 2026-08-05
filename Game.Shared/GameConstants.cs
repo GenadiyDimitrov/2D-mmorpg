@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.45.0";
+    public const string GameVersion = "0.46.0";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -43,7 +43,7 @@ public static class GameConstants
     /// actually happens most: **client-only work, where the CLIENT is ahead of the server.** A version
     /// number that describes the contract instead of the build makes that case a non-event.
     /// </summary>
-    public const int ProtocolVersion = 11;
+    public const int ProtocolVersion = 12;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
@@ -291,6 +291,13 @@ public static class GameConstants
     /// <summary>How many recently-sold items the buy-back list keeps (per character, in-memory). Selling
     /// past this drops the oldest entry.</summary>
     public const int BuyBackSlots = 24;
+
+    /// <summary>How many recently BINNED items can be undone (per character, in-memory). His own number
+    /// (playtest-17 C18): the sold list and the deleted list are separate, "shops last 10-20 items and
+    /// restore last 5". Restoring a binned item is FREE — you were never paid for it.
+    /// ⚠ Deliberately NOT behind a vendor: you bin things in the field, which is where the accident
+    /// happens, so the undo has to be reachable there too.</summary>
+    public const int RestoreSlots = 5;
 
     // ----- Charisma (reputation) -----
     /// <summary>Likes a player may GIVE per day (a budget, freely distributed; resets at UTC midnight).</summary>

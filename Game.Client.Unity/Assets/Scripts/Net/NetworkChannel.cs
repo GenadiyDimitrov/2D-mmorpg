@@ -32,6 +32,7 @@ namespace Game.Client
         public event Action<WarehouseUpdate> WarehouseReceived;
         public event Action<AccountWarehouseUpdate> AccountWarehouseReceived;
         public event Action<BuyBackUpdate> BuyBackReceived;
+        public event Action<RestoreUpdate> RestoreReceived;
         public event Action<StatsUpdate> StatsReceived;
         public event Action<BuffUpdate> BuffsReceived;
         public event Action<GoldUpdate> GoldReceived;
@@ -126,6 +127,7 @@ namespace Game.Client
             _connection.On<WarehouseUpdate>("Warehouse", w => WarehouseReceived?.Invoke(w));
             _connection.On<AccountWarehouseUpdate>("AccountWarehouse", w => AccountWarehouseReceived?.Invoke(w));
             _connection.On<BuyBackUpdate>("BuyBack", b => BuyBackReceived?.Invoke(b));
+            _connection.On<RestoreUpdate>("Restore", r => RestoreReceived?.Invoke(r));
             _connection.On<StatsUpdate>("Stats", st => StatsReceived?.Invoke(st));
             _connection.On<LearnedSkills>("Learned", l => LearnedReceived?.Invoke(l));
             _connection.On<SkillBarDto>("SkillBar", b => SkillBarReceived?.Invoke(b));
@@ -369,6 +371,8 @@ namespace Game.Client
 
         public Task RemoveItemAsync(Guid instanceId, bool all, int quantity = 0) =>
             _connection.SendAsync("RemoveItem", instanceId, all, quantity);
+
+        public Task RestoreItemAsync(int index) => _connection.SendAsync("RestoreItem", index);
 
         // ----- debug (server re-checks admin rights on every one of these) ------------------------
         public Task DebugLevelAsync(int delta) => _connection.SendAsync("DebugLevel", delta);

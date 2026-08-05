@@ -12,6 +12,49 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 0.46.0 — 2026-08-05 — Four playtest defects: auto marks, distant party targets, empty slots, undo
+
+⚠ **Protocol 12** (`MinAcceptedProtocol` stays 8, so an installed 0.45.x APK still connects — it simply
+has no Restore window). ⚠ **Schema change from the account-budget entry below — delete `game.db`.**
+
+**`B1` — the auto-on flag "stored per account".** It was never on the server, where the marks have
+always been a per-character column. `AutoSkills` is a `HashSet` on the singleton `GameBoot` and
+**nothing ever cleared it**: not on leaving the world, and not when the server pushed an EMPTY list,
+because that push was guarded by `c.Skills.Length > 0` to protect a "basic attack on by default" that
+had already been removed. So one character's marks walked into the next one's session, and a freshly
+created character arrived already auto-farming an action it had never been given. The guard is gone (the
+server's list is the truth, including when it is empty), `ResetWorldTransients` clears the set with the
+rest of the per-character state, and `AssignSlot` clears the auto mark of whatever token it displaced —
+unless the same token still sits in another slot, so *moving* a skill never disarms it. That is the
+second half of his report: *"removing something from the bar automatically disables the auto-on."*
+`ToggleAutoSkill` also pushes unconditionally now; it used to push only while auto-hunt was running,
+which left a mark made with auto-hunt off living nowhere but the client.
+
+**`B7` — a party member out of range could not be targeted.** Tapping the roster row *did* set the
+target; the next world delta threw it away. Interest management stops sending an ally who walks out of
+view, and `GameBoot` cleared any target missing from the snapshot — ten times a second — as a ghost
+guard. Party members are exempt from that clear now, and the target frame falls back to the ROSTER row
+(name, level, class, both bars, `(out of sight)`), which keeps arriving at any distance. So assist,
+heal, buff, kick and change-leader are reachable at exactly the range they matter.
+
+**`G7` — a hotbar consumable at 0 count was disabled**, and `PressAndHold.Enabled` is wired to the
+button's `interactable` — so the slot also lost the only gesture that could remove it, and the bar
+trapped a square you could never clear. It stays interactable now and draws the reuse sheet at FULL
+height with no countdown text (there is no timer, only an empty bag), which is exactly what he asked
+for: *"make it like always in 100% cooldown - it looks the same just is not disabled."* The tap is inert
+rather than earning a refusal from the server.
+
+**`C18` — undo a bin-delete, for free.** Designed since 2026-07-24, never built, and it had already cost
+him an item he binned by mistake. Built as **his own fallback shape, two separate lists**, which is the
+better one: a shared list would let a selling spree push the single thing you meant to undo off the end,
+and the two accidents have different prices anyway. `Entity.Restorable` keeps the last
+`GameConstants.RestoreSlots` = **5** binned items with their enchant and rolled attributes, so a +6
+sword comes back a +6 sword; `HandleRemoveItem` records the exact quantity destroyed (the bin numpad can
+take part of a stack). `RestoreItemCmd` carries **no npc id at all** — that is the whole point, and it is
+why the window opens from **Menu → Restore** and not from a vendor: you bin things in the field, which
+is where the accident happens, so an undo you can only reach in town is no undo. Newest row first. The
+vendor half of the old design (a longer sold list) is still open and still not urgent.
+
 ## 2026-08-05 — The farm allowance belongs to the ACCOUNT, and it is a balance, not a stopwatch
 
 ⚠ **Schema change — delete `Game.Server/game.db` (+ `-shm`/`-wal`).**

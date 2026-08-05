@@ -115,6 +115,11 @@ namespace Game.Client
         public InventoryItemDto[] AccountWarehouse { get; private set; } = new InventoryItemDto[0];
         public BuyBackEntryDto[] BuyBack { get; private set; } = new BuyBackEntryDto[0];
 
+        /// <summary>Recently BINNED items, restorable for free (C18). Separate from BuyBack, and pushed
+        /// on login and on every delete rather than when a vendor opens — the undo has to work where the
+        /// accident happens, which is in the field.</summary>
+        public BuyBackEntryDto[] Restorable { get; private set; } = new BuyBackEntryDto[0];
+
         /// <summary>Party roster (empty when you are not in one) and the agreed loot rule.</summary>
         public PartyMemberDto[] Party { get; private set; } = new PartyMemberDto[0];
         public LootMode PartyLoot { get; private set; } = LootMode.Random;
@@ -404,6 +409,15 @@ namespace Game.Client
             if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;
             try { await _net.BuyBackAsync(DialogNpcId, index); }
             catch (Exception ex) { ClientLog.Warn("BuyBack: " + ex.Message); }
+        }
+
+        /// <summary>Undo a bin-delete (C18). No NPC check — unlike buy-back, this one has to work in
+        /// the field, because that is where you bin things by mistake.</summary>
+        public async void RestoreItem(int index)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.RestoreItemAsync(index); }
+            catch (Exception ex) { ClientLog.Warn("Restore: " + ex.Message); }
         }
 
         public async void OpenWarehouse()
@@ -830,6 +844,8 @@ namespace Game.Client
                 AccountWarehouse = w?.Items ?? new InventoryItemDto[0]);
             _net.BuyBackReceived += b => Main(() =>
                 BuyBack = b?.Items ?? new BuyBackEntryDto[0]);
+            _net.RestoreReceived += r => Main(() =>
+                Restorable = r?.Items ?? new BuyBackEntryDto[0]);
             _net.LearnedReceived += l => Main(() =>
             {
                 Learned.Clear();
@@ -1145,6 +1161,7 @@ namespace Game.Client
             // push happened to replace them (using a potion "fixed" it). Same for the sold-items list.
             Buffs = new BuffDto[0];
             BuyBack = new BuyBackEntryDto[0];
+            Restorable = new BuyBackEntryDto[0];   // per CHARACTER, like the sold list
             // Nobody in the world you are LEAVING is still casting at you. Entity ids are per-session,
             // so a leftover entry could otherwise land a bar on an unrelated mob after a relog.
             _mobCasts.Clear();

@@ -573,6 +573,11 @@ public record BuyBackEntryDto(int Index, string DefId, string Name, int Quantity
 /// every sell / buy-back. In-memory only — it does not survive logout.</summary>
 public record BuyBackUpdate(BuyBackEntryDto[] Items);
 
+/// <summary>Server -> one player: the recently BINNED items, restorable for free (C18). Same row shape
+/// as the buy-back list — <c>UnitPrice</c> is always 0 — but its own message, because it is its own
+/// list with its own cap and it is reachable in the FIELD rather than at a vendor.</summary>
+public record RestoreUpdate(BuyBackEntryDto[] Items);
+
 /// <summary>One teleport destination offered by a gatekeeper.
 ///
 /// <paramref name="DestId"/> is EITHER a city's safe-zone id OR a named field gate's id

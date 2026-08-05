@@ -402,6 +402,13 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>Undo a bin-delete (C18). No npc id: the accident happens in the field.</summary>
+    public Task RestoreItem(int index)
+    {
+        _world.Commands.Enqueue(new RestoreItemCmd(Context.ConnectionId, index));
+        return Task.CompletedTask;
+    }
+
     public Task PartyInvite(Guid targetId)
     {
         _world.Commands.Enqueue(new PartyInviteCmd(Context.ConnectionId, targetId));
