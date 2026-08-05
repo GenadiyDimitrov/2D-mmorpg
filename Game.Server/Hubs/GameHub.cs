@@ -152,9 +152,15 @@ public class GameHub : Hub
         // discards it if that account already has a live list (see EnterWorldCommand).
         var accountBank = await _db.LoadAccountWarehouseAsync(auth.AccountId);
 
+        // Same story for the daily farm allowance — an async read here, adopted by the loop only if
+        // that account has no live balance yet (one of its characters may be offline-farming and
+        // spending it right now).
+        var accountBudget = await _db.LoadAccountBudgetAsync(auth.AccountId);
+
         var tcs = new TaskCompletionSource<LoginResult>(
             TaskCreationOptions.RunContinuationsAsynchronously);
-        _world.Commands.Enqueue(new EnterWorldCommand(Context.ConnectionId, entity, tcs, accountBank));
+        _world.Commands.Enqueue(new EnterWorldCommand(
+            Context.ConnectionId, entity, tcs, accountBank, accountBudget));
 
         var timeout = Task.Delay(TimeSpan.FromSeconds(5));
         var finished = await Task.WhenAny(tcs.Task, timeout);

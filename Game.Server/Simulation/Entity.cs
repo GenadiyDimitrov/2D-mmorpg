@@ -1095,12 +1095,9 @@ public class Entity
     public int ConsecutivePk { get; set; }
     /// <summary>Cached name-flag for the snapshot DTO (recomputed each tick from Karma + flag window).</summary>
     public PvpFlag FlagState { get; set; }
-    /// <summary>A cap (idle/offline time) was reached: auto-hunt can't be re-enabled until re-log.</summary>
-    public bool AutoHuntLocked { get; set; }
-    /// <summary>Ticks auto-hunt has run this session while ONLINE (idle cap).</summary>
-    public long AutoIdleElapsedTicks { get; set; }
-    /// <summary>Ticks auto-hunt has run this session while OFFLINE (offline cap).</summary>
-    public long AutoOfflineElapsedTicks { get; set; }
+    // The old AutoHuntLocked / AutoIdleElapsedTicks / AutoOfflineElapsedTicks lived here and WERE the
+    // defect: per-SESSION counters on the CHARACTER, zeroed at every login. The allowance is a
+    // per-ACCOUNT daily balance now — see AccountFarmBudget and World.AccountBudgets.
     /// <summary>Seconds of offline budget left, stamped by the game loop each tick while offline
     /// farming (-1 = uncapped). It exists so the HUB can show it on the character screen without
     /// computing anything: the loop is still the only writer, the hub only reads the last value.</summary>

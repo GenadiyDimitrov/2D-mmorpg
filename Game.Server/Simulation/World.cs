@@ -105,6 +105,11 @@ public class World
     /// and they must see ONE list, not two copies of it that quietly diverge.</summary>
     public Dictionary<int, List<InventoryItem>> AccountWarehouses { get; } = new();
 
+    /// <summary>accountId -> the shared daily farm allowance. Same lifetime rule as
+    /// <see cref="AccountWarehouses"/>: loaded on the first login of any of the account's characters
+    /// and live from then on, because several of them can be spending it at once.</summary>
+    public Dictionary<int, AccountFarmBudget> AccountBudgets { get; } = new();
+
     /// <summary>Every party MEMBER id maps to the shared <see cref="Party"/> object.</summary>
     public Dictionary<Guid, Party> Parties { get; } = new();
 
@@ -152,12 +157,15 @@ public interface IAdminCommand : IGameCommand
 
 /// <summary><paramref name="AccountBank"/> is the account warehouse as READ FROM THE DB during login.
 /// The loop adopts it only if that account has no live list yet — a list already in memory is newer
-/// than anything on disk (another character of the same account may be standing in it).</summary>
+/// than anything on disk (another character of the same account may be standing in it).
+/// <paramref name="AccountBudget"/> is the daily farm allowance, read on the same async pass and
+/// adopted under exactly the same rule (an offline farmer is already spending the live one).</summary>
 public record EnterWorldCommand(
     string ConnectionId,
     Entity Entity,
     TaskCompletionSource<LoginResult> Result,
-    List<InventoryItem>? AccountBank = null) : IGameCommand;
+    List<InventoryItem>? AccountBank = null,
+    AccountFarmBudget? AccountBudget = null) : IGameCommand;
 
 public record LeaveCommand(string ConnectionId) : IGameCommand;
 

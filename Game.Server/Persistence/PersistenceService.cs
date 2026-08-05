@@ -1123,6 +1123,45 @@ public class PersistenceService
                 new List<ItemAttribute>(i.Attributes), i.ExpiresAtUtc)).ToList();
     }
 
+    // ----- Account farm budget -----------------------------------------------
+
+    /// <summary>Load an account's daily farm allowance. Same lifetime rule as the account bank: read
+    /// once, on the first login of any of the account's characters, then kept live by the loop (two
+    /// characters of one account can be spending it at the same time and must share ONE balance).
+    /// Returns null only if the account row has vanished.</summary>
+    public async Task<AccountFarmBudget?> LoadAccountBudgetAsync(int accountId)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var a = await db.Accounts.FirstOrDefaultAsync(x => x.Id == accountId);
+        if (a is null) return null;
+        return new AccountFarmBudget
+        {
+            AccountId         = accountId,
+            AutoTicksLeft     = a.AutoTicksLeft,
+            OfflineTicksLeft  = a.OfflineTicksLeft,
+            LastResetDate     = a.LastFarmResetDate,
+            AutoCapSeconds    = a.AutoCapSeconds,
+            OfflineCapSeconds = a.OfflineCapSeconds,
+        };
+    }
+
+    /// <summary>Write a budget back. Takes the values rather than the live object: the caller
+    /// snapshots on the tick thread (single-writer rule) and this runs off it.</summary>
+    public async Task SaveAccountBudgetAsync(
+        int accountId, long autoTicks, long offlineTicks, DateOnly lastReset,
+        int autoCapSeconds, int offlineCapSeconds)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var a = await db.Accounts.FirstOrDefaultAsync(x => x.Id == accountId);
+        if (a is null) return;
+        a.AutoTicksLeft     = autoTicks;
+        a.OfflineTicksLeft  = offlineTicks;
+        a.LastFarmResetDate = lastReset;
+        a.AutoCapSeconds    = autoCapSeconds;
+        a.OfflineCapSeconds = offlineCapSeconds;
+        await db.SaveChangesAsync();
+    }
+
     // ----- Boss timers -------------------------------------------------------
 
     public async Task<Dictionary<string, DateTime>> LoadBossTimersAsync()

@@ -277,10 +277,11 @@ public class GameLoopService : BackgroundService
         if (cmd.AccountBank is not null && entity.AccountId != 0)
             _world.AccountWarehouses.TryAdd(entity.AccountId, cmd.AccountBank);
 
-        // Fresh session: refill the runtime budgets and clear any cap lock.
-        entity.AutoIdleElapsedTicks = 0;
-        entity.AutoOfflineElapsedTicks = 0;
-        entity.AutoHuntLocked = false;
+        // Same adoption rule for the daily farm allowance. NOTHING is reset here: this is exactly
+        // where the old per-session counters were zeroed, which is what made "re-log for another 2h"
+        // work. The balance is spent, and only midnight puts it back.
+        if (cmd.AccountBudget is not null && entity.AccountId != 0)
+            _world.AccountBudgets.TryAdd(entity.AccountId, cmd.AccountBudget);
 
         cmd.Result.TrySetResult(
             new LoginResult(true, null, entity.Id, entity.X, entity.Y, GameClock.Epoch, entity.Role));
@@ -347,8 +348,11 @@ public class GameLoopService : BackgroundService
 
         // Offline farm: ONLY genuine offline farming (auto-hunt on & not cap-locked), alive, out of
         // town. This is the state the 2h offline cap governs.
+        // ⚠ The budget check belongs HERE, not only in the tick: without it a drop with an empty
+        // allowance would park the character as an offline farmer and the very next tick would kick it
+        // straight back out ("X keeps hunting while away" / "X stopped hunting", one after the other).
         if (!entity.Dead && !GameConstants.InSafeZone(entity.X, entity.Y) &&
-            entity.AutoHuntEnabled && !entity.AutoHuntLocked)
+            entity.AutoHuntEnabled && HasOfflineBudget(entity))
         {
             BeginOfflineFarm(entity);
             BroadcastSystem($"{entity.Name} keeps hunting while away.");
@@ -373,7 +377,8 @@ public class GameLoopService : BackgroundService
     private void BeginOfflineFarm(Entity entity)
     {
         entity.IsOfflineFarming = true;
-        entity.AutoOfflineElapsedTicks = 0;
+        // NOTHING is reset here either — this was the second half of the old defect, and it is what
+        // made the offline cap refill on top of the login refill.
         entity.OfflineSecondsLeft = AutoOfflineSecondsLeft(entity);   // right from the first second
         CancelTradeFor(entity, notifyPartnerOnly: true);
         _world.PendingTradeRequests.Remove(entity.Id);
@@ -425,6 +430,7 @@ public class GameLoopService : BackgroundService
         // while it is still IN the world (so allies can see and revive it) — leaving is leaving.
         _world.Grid.Remove(entity);
         var saved = SaveEntity(entity);
+        SaveBudgetOf(entity);   // spent allowance must not be handed back by a crash before the autosave
         if (GameConstants.AnnounceWorldEntryExit)
             BroadcastSystem($"{entity.Name} left the world.");
         return saved;
@@ -489,8 +495,14 @@ public class GameLoopService : BackgroundService
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player))
             return;
+        // Refuse rather than start a session that ends on the next tick.
+        if (!HasOfflineBudget(player))
+        {
+            SendSystemToEntity(player,
+                "Your account's offline farming time for today is used up. It refills at midnight.");
+            return;
+        }
         player.AutoHuntEnabled = true;
-        player.AutoHuntLocked = false;
         player.FarmCenterX = player.X; player.FarmCenterY = player.Y;   // anchor the static circle here
         // Tell the client (it returns to the account screen), then drop the connection + go offline.
         // Say how long it will run (32q) — the session ends on a budget you otherwise can't see.
@@ -691,7 +703,9 @@ public class GameLoopService : BackgroundService
             return;
         ApplyDebugConfig(cmd.Config);
         SaveDebugConfig();   // persist between runs
-        SendSystemToEntity(p, "[DEBUG] Tuning applied + saved (debug-config.json).");
+        RefillAllBudgets();  // the caps just moved; the balances in the tank have to follow, or the
+                             // new cap is invisible until tomorrow (see RefillAllBudgets)
+        SendSystemToEntity(p, "[DEBUG] Tuning applied + saved (debug-config.json). Farm allowances refilled.");
         SendTo(p, "DebugConfig", CurrentDebugConfig());   // echo back the clamped values
     }
 
@@ -881,6 +895,38 @@ public class GameLoopService : BackgroundService
 
         if (snaps is { Count: > 0 })
             RunSave(() => _db.SaveCharactersAsync(snaps));
+
+        SaveDirtyBudgets();
+    }
+
+    /// <summary>Write back every account allowance that has been spent since the last save. Snapshots
+    /// the values on THIS thread and hands primitives to the background write, so the live object is
+    /// never read off the tick. The Dirty flag is what stops an idle account rewriting its row every
+    /// minute for nothing.</summary>
+    private void SaveDirtyBudgets()
+    {
+        foreach (var b in _world.AccountBudgets.Values)
+        {
+            if (!b.Dirty) continue;
+            b.Dirty = false;
+            var (id, auto, off, date, ac, oc) =
+                (b.AccountId, b.AutoTicksLeft, b.OfflineTicksLeft, b.LastResetDate,
+                 b.AutoCapSeconds, b.OfflineCapSeconds);
+            RunSave(() => _db.SaveAccountBudgetAsync(id, auto, off, date, ac, oc));
+        }
+    }
+
+    /// <summary>Flush ONE account's allowance immediately — used on the paths where the character is
+    /// leaving for good, so a crash before the next autosave can't hand back time already spent.</summary>
+    private void SaveBudgetOf(Entity p)
+    {
+        if (p.AccountId == 0 || !_world.AccountBudgets.TryGetValue(p.AccountId, out var b) || !b.Dirty)
+            return;
+        b.Dirty = false;
+        var (id, auto, off, date, ac, oc) =
+            (b.AccountId, b.AutoTicksLeft, b.OfflineTicksLeft, b.LastResetDate,
+             b.AutoCapSeconds, b.OfflineCapSeconds);
+        RunSave(() => _db.SaveAccountBudgetAsync(id, auto, off, date, ac, oc));
     }
 
     /// <summary>Fire-and-forget a DB write off the tick thread, logging any failure
@@ -3273,14 +3319,58 @@ public class GameLoopService : BackgroundService
     private const float AutoChaseMargin = 400f;
     private const float AutoReturnEpsilon = 150f;
 
-    // Runtime caps (docs/design/AutoHunt.md): online idle 8h, offline 2h; disconnect grace 180s. Tunable in
-    // seconds via the Debug panel / /testcaps. Purchasable extensions (12h/4h) are a future hook.
+    // Server-default DAILY caps (docs/design/AutoHunt.md): online auto 8h, offline farm 2h; disconnect
+    // grace 180s. Tunable in seconds via the Debug panel / /testcaps. Premium (12h/4h) is the
+    // per-account override on AccountFarmBudget, which wins over these.
     private int _idleCapSeconds = 8 * 3600;
     private int _offlineCapSeconds = 2 * 3600;
     private int _graceSeconds = 180;
+
     // 0 (or less) = UNLIMITED (never caps) — for leaving people farming/levelling to gauge speed.
-    private long AutoIdleCapTicks(Entity p) => _idleCapSeconds <= 0 ? long.MaxValue : (long)_idleCapSeconds * GameConstants.TickRate;
-    private long AutoOfflineCapTicks(Entity p) => _offlineCapSeconds <= 0 ? long.MaxValue : (long)_offlineCapSeconds * GameConstants.TickRate;
+    private int AutoIdleCapSecondsFor(AccountFarmBudget b) => AccountFarmBudget.ResolveCap(b.AutoCapSeconds, _idleCapSeconds);
+    private int AutoOfflineCapSecondsFor(AccountFarmBudget b) => AccountFarmBudget.ResolveCap(b.OfflineCapSeconds, _offlineCapSeconds);
+
+    /// <summary>The account's live daily allowance, refilled if the server date has rolled over.
+    /// Returns null only for an account-less entity (a mob, or a character created before accounts) —
+    /// which is treated as UNLIMITED everywhere, because there is nothing to bill.
+    ///
+    /// <para>Lazily created rather than required: a character can reach the world down paths that never
+    /// went through the login read (the debug seeder, a test harness), and refusing to farm because a
+    /// row wasn't pre-loaded would be a bug, not a policy.</para></summary>
+    private AccountFarmBudget? BudgetOf(Entity p)
+    {
+        if (p.AccountId == 0) return null;
+        if (!_world.AccountBudgets.TryGetValue(p.AccountId, out var b))
+            _world.AccountBudgets[p.AccountId] = b = new AccountFarmBudget { AccountId = p.AccountId };
+        b.EnsureFresh(AutoIdleCapSecondsFor(b), AutoOfflineCapSecondsFor(b), GameConstants.TickRate);
+        return b;
+    }
+
+    /// <summary>Is there ONLINE auto-hunt time left on this account today? (Unlimited → always.)</summary>
+    private bool HasIdleBudget(Entity p)
+        => BudgetOf(p) is not { } b || AutoIdleCapSecondsFor(b) <= 0 || b.AutoTicksLeft > 0;
+
+    /// <summary>Is there OFFLINE farming time left on this account today?</summary>
+    private bool HasOfflineBudget(Entity p)
+        => BudgetOf(p) is not { } b || AutoOfflineCapSecondsFor(b) <= 0 || b.OfflineTicksLeft > 0;
+
+    /// <summary>Top every live balance back up to its current cap, as if midnight had just passed.
+    /// Called ONLY from the two admin paths that change a cap (the Debug panel and /testcaps): with a
+    /// daily balance, lowering the cap to 30s does nothing on its own — the 8h already in the tank is
+    /// what the loop spends, so the tester would sit there for eight hours waiting for the "30s cap".
+    /// It is deliberately NOT called when the debug config is LOADED at startup, or a server restart
+    /// would refill every player's day.</summary>
+    private void RefillAllBudgets()
+    {
+        foreach (var b in _world.AccountBudgets.Values)
+        {
+            b.AutoTicksLeft    = (long)Math.Max(0, AutoIdleCapSecondsFor(b)) * GameConstants.TickRate;
+            b.OfflineTicksLeft = (long)Math.Max(0, AutoOfflineCapSecondsFor(b)) * GameConstants.TickRate;
+            b.LastResetDate    = DateOnly.FromDateTime(DateTime.Now);
+            b.Dirty            = true;
+        }
+        SaveDirtyBudgets();
+    }
 
     // Offline sessions that hit their cap / died this tick — removed after the entity loop so we
     // never mutate _world.Entities while iterating it.
@@ -3306,10 +3396,11 @@ public class GameLoopService : BackgroundService
         if (!TryGetPlayer(cmd.ConnectionId, out var p))
             return;
         var c = cmd.Config;
-        // A cap lock blocks re-enabling until re-log; other settings still save.
-        p.AutoHuntEnabled   = c.Enabled && !p.AutoHuntLocked;
-        if (c.Enabled && p.AutoHuntLocked)
-            SendSystemToEntity(p, "Auto-hunt is locked until you re-log.");
+        // An exhausted daily allowance blocks turning it ON; every other setting still saves.
+        bool haveBudget = HasIdleBudget(p);
+        p.AutoHuntEnabled   = c.Enabled && haveBudget;
+        if (c.Enabled && !haveBudget)
+            SendSystemToEntity(p, "Your account's auto-hunt time for today is used up.");
         p.AutoHpPotionPct   = Math.Clamp(c.HpPotionPct, 0, 100);
         p.AutoMpPotionPct   = Math.Clamp(c.MpPotionPct, 0, 100);
         p.AutoBuffPotions   = c.AutoBuffPotions;
@@ -3340,9 +3431,9 @@ public class GameLoopService : BackgroundService
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var p))
             return;
-        if (cmd.Enabled && p.AutoHuntLocked)
+        if (cmd.Enabled && !HasIdleBudget(p))
         {
-            SendSystemToEntity(p, "Auto-hunt is locked until you re-log.");
+            SendSystemToEntity(p, "Your account's auto-hunt time for today is used up. It refills at midnight.");
             SendAutoHuntConfig(p);
             return;
         }
@@ -3920,15 +4011,18 @@ public class GameLoopService : BackgroundService
                                                  AutoIdleSecondsLeft(p), AutoOfflineSecondsLeft(p)));
     }
 
-    /// <summary>Seconds left on the ONLINE idle budget; -1 when uncapped. The clock only advances
-    /// while auto-hunt is actually running, so this is a genuine "time left", not wall time.</summary>
-    private int AutoIdleSecondsLeft(Entity p) => _idleCapSeconds <= 0 ? -1
-        : Math.Max(0, (int)((AutoIdleCapTicks(p) - p.AutoIdleElapsedTicks) * GameConstants.TickSeconds));
+    /// <summary>Seconds left on the ACCOUNT's online auto-hunt allowance today; -1 when uncapped.
+    /// The balance only drains while auto-hunt is actually running, so this is a genuine "time left",
+    /// not wall time — and it is SHARED, so a second character of the same account sees it fall.</summary>
+    private int AutoIdleSecondsLeft(Entity p)
+        => BudgetOf(p) is not { } b || AutoIdleCapSecondsFor(b) <= 0 ? -1
+         : Math.Max(0, (int)(b.AutoTicksLeft * GameConstants.TickSeconds));
 
-    /// <summary>Seconds left on the OFFLINE budget; -1 when uncapped. Meaningful before you go
-    /// offline too — it is what an offline session started now would get.</summary>
-    private int AutoOfflineSecondsLeft(Entity p) => _offlineCapSeconds <= 0 ? -1
-        : Math.Max(0, (int)((AutoOfflineCapTicks(p) - p.AutoOfflineElapsedTicks) * GameConstants.TickSeconds));
+    /// <summary>Seconds left on the ACCOUNT's offline allowance; -1 when uncapped. Meaningful before
+    /// you go offline too — it is what an offline session started now would get.</summary>
+    private int AutoOfflineSecondsLeft(Entity p)
+        => BudgetOf(p) is not { } b || AutoOfflineCapSecondsFor(b) <= 0 ? -1
+         : Math.Max(0, (int)(b.OfflineTicksLeft * GameConstants.TickSeconds));
 
     /// <summary>Echo the full stored config so the client UI reflects the persisted settings.</summary>
     private void SendSkillBar(Entity p) =>
@@ -3941,29 +4035,47 @@ public class GameLoopService : BackgroundService
             p.AutoFarmRange, p.AutoFarmStatic, p.AutoAttackNormal, p.AutoAttackElite, p.AutoAttackBoss,
             p.AutoHealPotions.ToArray(), p.AutoCyclic, p.AutoHealPct, p.AutoAssistLeader));
 
-    /// <summary>Advance the auto-hunt runtime cap for a player. Online = the idle cap (stop + lock);
-    /// offline = the offline cap (queue a logout). Called each tick while auto-hunt is enabled.</summary>
+    /// <summary>Spend ONE tick of the ACCOUNT's daily allowance for this player. Called each tick per
+    /// farming character, which IS the drain rule: N characters of one account spend N ticks a tick,
+    /// so one gets the full 2h and ten get twelve minutes each, with no special case for the count.
+    /// Online exhaustion stops auto-hunt; offline exhaustion queues the logout.</summary>
     private void TickAutoHuntBudget(Entity p)
     {
+        var b = BudgetOf(p);
+
         if (p.IsOfflineFarming)
         {
-            if (++p.AutoOfflineElapsedTicks >= AutoOfflineCapTicks(p))
-                _endOfflineQueue.Add(p.Id);
+            if (b is not null && AutoOfflineCapSecondsFor(b) > 0)
+            {
+                b.Dirty = true;
+                if (--b.OfflineTicksLeft <= 0)
+                {
+                    b.OfflineTicksLeft = 0;
+                    _endOfflineQueue.Add(p.Id);
+                }
+            }
             p.OfflineSecondsLeft = AutoOfflineSecondsLeft(p);   // read by the character screen
         }
-        else if (++p.AutoIdleElapsedTicks >= AutoIdleCapTicks(p))
+        else if (b is not null && AutoIdleCapSecondsFor(b) > 0)
         {
-            StopAutoHunt(p, "the idle time limit was reached — re-log to hunt again.", locked: true);
+            b.Dirty = true;
+            if (--b.AutoTicksLeft <= 0)
+            {
+                b.AutoTicksLeft = 0;
+                StopAutoHunt(p, "your account's auto-hunt time for today is used up.");
+            }
         }
     }
 
-    /// <summary>Turn auto-hunt off (and disengage). locked=true also blocks re-enabling until the
-    /// next login (cap reached). No-ops the UI pushes automatically for an offline (connectionless)
-    /// entity.</summary>
-    private void StopAutoHunt(Entity p, string reason, bool locked)
+    /// <summary>Turn auto-hunt off (and disengage). No-ops the UI pushes automatically for an offline
+    /// (connectionless) entity.
+    ///
+    /// <para>There is no "locked until re-log" flag any more: the ACCOUNT balance is the gate now, and
+    /// re-logging no longer refills it. The old flag was cleared at login, which is precisely how the
+    /// cap was escaped.</para></summary>
+    private void StopAutoHunt(Entity p, string reason)
     {
         p.AutoHuntEnabled = false;
-        if (locked) p.AutoHuntLocked = true;
         p.Engaged = false;
         p.CombatTargetId = null;
         p.QueuedSkillId = null;
@@ -3985,6 +4097,7 @@ public class GameLoopService : BackgroundService
         _world.Entities.Remove(id, out _);
         _world.Grid.Remove(e);
         SaveEntity(e);
+        SaveBudgetOf(e);   // the allowance it just spent must survive a crash before the next autosave
         BroadcastSystem($"{e.Name} stopped hunting.");
     }
 
@@ -4750,10 +4863,40 @@ public class GameLoopService : BackgroundService
                 bool shortCaps = arg is not ("off" or "0" or "false");
                 (_idleCapSeconds, _offlineCapSeconds, _graceSeconds) = shortCaps
                     ? (30, 20, 15) : (8 * 3600, 2 * 3600, 180);
+                RefillAllBudgets();   // or the balance already in the tank outlives the new cap
                 SendSystemToEntity(admin, shortCaps
-                    ? "[DEBUG] Short caps ON: idle 30s / offline 20s / disconnect grace 15s."
-                    : "[DEBUG] Short caps OFF: idle 8h / offline 2h / grace 180s.");
+                    ? "[DEBUG] Short caps ON: idle 30s / offline 20s / disconnect grace 15s. Allowances refilled."
+                    : "[DEBUG] Short caps OFF: idle 8h / offline 2h / grace 180s. Allowances refilled.");
                 break;
+
+            // The PREMIUM knob, per account: /farmcap <player> <autoHours> <offlineHours>.
+            // -1 = follow the server default, 0 = unlimited. Free is 8/2, premium 12/4.
+            case "farmcap":
+            {
+                var fc = (arg ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (fc.Length < 3 || !float.TryParse(fc[1], out float fcAuto) || !float.TryParse(fc[2], out float fcOff))
+                {
+                    SendSystemToEntity(admin, "Usage: /farmcap <player> <autoHours> <offlineHours>  (-1 = server default, 0 = unlimited)");
+                    break;
+                }
+                if (FindOnlinePlayer(fc[0]) is not Entity fcTarget || BudgetOf(fcTarget) is not { } fcBudget)
+                {
+                    SendSystemToEntity(admin, $"{fc[0]} is not online.");
+                    break;
+                }
+                fcBudget.AutoCapSeconds    = fcAuto < 0 ? -1 : (int)(fcAuto * 3600);
+                fcBudget.OfflineCapSeconds = fcOff  < 0 ? -1 : (int)(fcOff  * 3600);
+                fcBudget.AutoTicksLeft     = (long)Math.Max(0, AutoIdleCapSecondsFor(fcBudget)) * GameConstants.TickRate;
+                fcBudget.OfflineTicksLeft  = (long)Math.Max(0, AutoOfflineCapSecondsFor(fcBudget)) * GameConstants.TickRate;
+                fcBudget.LastResetDate     = DateOnly.FromDateTime(DateTime.Now);
+                fcBudget.Dirty             = true;
+                SaveDirtyBudgets();
+                static string Allowance(int sec) => sec < 0 ? "unlimited" : HumanTime(sec);
+                SendSystemToEntity(admin,
+                    $"[DEBUG] {fcTarget.Name}'s account: auto {Allowance(AutoIdleSecondsLeft(fcTarget))} / offline {Allowance(AutoOfflineSecondsLeft(fcTarget))} per day.");
+                SendAutoHuntStatus(fcTarget);
+                break;
+            }
 
             default:
                 SendSystemToEntity(admin, $"Unknown command: {command}");
@@ -7661,7 +7804,7 @@ var effect = def.Effect;
             else if (victim.IsDisconnected)
                 _endGraceQueue.Add(victim.Id);
             else if (victim.AutoHuntEnabled)
-                StopAutoHunt(victim, "you were defeated.", locked: false);
+                StopAutoHunt(victim, "you were defeated.");
 
             // Auto-resurrect (future tank self-res / healer target-auto-res): the consumed preservation buff
             // stands the player back up at 30% HP/MP in place, no prompt. The death penalty above still

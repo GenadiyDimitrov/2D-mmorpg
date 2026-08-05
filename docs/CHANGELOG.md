@@ -12,6 +12,72 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 2026-08-05 — The farm allowance belongs to the ACCOUNT, and it is a balance, not a stopwatch
+
+⚠ **Schema change — delete `Game.Server/game.db` (+ `-shm`/`-wal`).**
+
+The owner's 14-hour, three-character offline farm turned up something the caps were supposed to prevent
+and never did. *"I get the Timer back"* — he was exactly right, and the code agreed with him twice over.
+
+The idle/offline caps were **per-session elapsed counters on the CHARACTER**, and they were zeroed in
+two separate places: on every `EnterWorld` (*"Fresh session: refill the runtime budgets"*), and again
+inside `BeginOfflineFarm`. Neither counter was ever persisted. So the 2h offline cap worked exactly once
+per login: farm 2h → the session ends → log back in → a fresh 2h, forever. And because the counters were
+per-ENTITY, three characters on one account farmed **six hours per two hours of wall clock**. The 8h
+online cap had the same hole; its `AutoHuntLocked` flag, the thing that was supposed to mean "no more
+until tomorrow", was cleared on the next login.
+
+So the allowance stopped being an elapsed time compared to a cap and became a **balance that is spent**,
+on the **account**:
+
+| | Free | Premium |
+|---|---|---|
+| Online auto-hunt | **8h / day / account** | 12h |
+| Offline farming | **2h / day / account** | 4h |
+
+The drain rule is one line and every property anyone wanted falls out of it: **each tick, every one of
+the account's characters that is farming spends one tick of the balance.** One character gets the full
+2h; ten characters get twelve minutes each; no branch anywhere counts characters. That is deliberate —
+ten characters × 12 min yields exactly the same gold as one × 2h, so the thing being capped is
+**gold/hour/account**, which is the only quantity worth capping.
+
+**Refill is a fixed server midnight**, applied lazily: the row stores a DATE, and the first read of a new
+day tops both balances back up. It therefore accrues correctly across a server restart with no scheduler
+and no catch-up pass. A rolling *"24h since your last refill"* was proposed and **rejected by the owner,
+correctly** — it anchors the reset to whenever you last spent, so it drifts: play at 08:00 and your next
+window is 08:00; miss it, start at 22:00, and the window walks round the clock until it costs you a whole
+day. A daily allowance has to be spendable anywhere in the day. The known consequence — start at 22:00,
+drain 2h, reset at 00:00, drain 2h more — is **accepted on purpose**: it still averages to the cap per
+day, and he named the trick himself and called it player agency.
+
+Continuous regen (a tank that refills at some rate per hour) was considered and dropped, for two reasons
+that are worth keeping: regen *while spending* makes the real drain `1 − rate`, so a "2h" tank silently
+runs 2h40m at 0.25; and regen only while *not* offline-farming is still free money, because the refill
+window is exactly when you are online auto-farming — the other budget. `2h off → 8h auto → 2h off` is an
+ordinary day, and a "2h cap" would really pay 5-6h per 24h. The regen model belongs to **rested XP**
+instead, where the reward is EXP rather than a gold faucet.
+
+The lock is gone with the counters. `AutoHuntLocked` only ever existed to mean "the cap is reached" and
+it was cleared at login, which is how the cap was escaped; the balance itself is the gate now, and it
+refuses the toggle, the config, `/offline` **and** the disconnect-to-offline-farm branch. That last one
+matters: without it, dropping the connection with an empty allowance would park you as an offline farmer
+and eject you on the next tick, printing *"X keeps hunting while away"* and *"X stopped hunting"* one
+after the other.
+
+- New: `Simulation/AccountFarmBudget.cs`, `World.AccountBudgets` (keyed by AccountId, same lifetime rule
+  as `AccountWarehouses`), five columns on `AccountRecord`, and the load/save pair in
+  `PersistenceService`. Saved on the 60s autosave behind a dirty flag, flushed immediately on
+  `NormalLeave` / `EndOfflineSession` so a crash can't hand back time already spent.
+- Premium is the per-account cap override (`-1` = server default, `0` = unlimited, `>0` = explicit), set
+  with the new admin command **`/farmcap <player> <autoHours> <offlineHours>`**.
+- The Debug panel's cap rows and `/testcaps` now call `RefillAllBudgets()`. With a balance model,
+  lowering the cap to 30s does nothing on its own — the 8h already in the tank is what the loop spends,
+  so a tester would have waited eight hours for a "30 second cap".
+- Gold sellers, honestly: account budgets fully kill *"one account, ten characters"*. They do **not**
+  kill *"ten accounts, one character"* — account creation is free, so the farmer's cost goes from
+  invisible to merely linear. Worth having anyway for the designed ceiling, but the V2 economy cut below
+  does more than any detector will.
+
 ## 2026-08-05 — Playtest-18 V2: the gold faucet, cut on the DROP RATE instead of the price
 
 The owner's reported "equipment sells at 0.8" turned out to be his own misread — he sold a Feretite Robe

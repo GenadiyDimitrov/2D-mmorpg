@@ -61,25 +61,66 @@ a total **MP/s** and lists each skill's reuse. Pushed on config change + each re
 Offline is just the online `AutoPilot` running **without a connection** (SendTo already no-ops when
 an entity has no connection, so every UI push is skipped automatically) — no new brain.
 
-- **Disconnect** (`HandleLeave`): if auto-hunt is on, alive, unlocked and out of a safe zone, the
+- **Disconnect** (`HandleLeave`): if auto-hunt is on, alive, out of a safe zone and the account has
+  offline allowance left, the
   character is KEPT in the world (`Entity.IsOfflineFarming = true`) instead of removed; only the
   connection maps are dropped. It stays in the grid, so `BroadcastSnapshotsAsync`/`BroadcastCombat`
   still show it to nearby players and mobs still aggro it (attackable like a normal player; PvP
   retaliation / "no counter-attack vs players" is a future hook — PvP isn't built). It leaves its
   party (`RemoveFromParty`).
 - **Reconnect** (`HandleEnterWorld`): re-attaches to the live offline entity (keeps offline gains)
-  instead of loading a fresh copy; refills the budgets and clears the lock.
-- **Runtime caps** (`TickAutoHuntBudget`, per tick while enabled): **online idle 8h**
-  (`AutoIdleCapTicks`), **offline 2h** (`AutoOfflineCapTicks`). Hitting the idle cap →
-  `StopAutoHunt(locked)` (can't re-enable until re-log). Hitting the offline cap → end the session.
-  Caps are constants now; **purchasable extensions (12h / 4h)** are the obvious hook (swap the
-  constant read for a per-character premium value when a shop item exists).
+  instead of loading a fresh copy. **Nothing is refilled** — see the budget section below.
 - **Death** stops auto-hunt: an offline farmer's session ends (deferred logout); an online idle
   hunter just stops (re-enable after respawn).
 - **Ending a session** (`EndOfflineSession`, deferred out of the entity loop via `_endOfflineQueue`
   so we never mutate the entity dict mid-iteration): turn auto off (so it doesn't auto-re-arm next
-  login), remove + save the character (a normal logout).
-- **Lock** blocks `ToggleAutoHunt`/`SetAutoHuntConfig` from enabling; cleared on the next login.
+  login), remove + save the character (a normal logout), flush the account allowance.
+
+## The budget is a per-ACCOUNT daily BALANCE (reworked 2026-08-05)
+
+The first version got this wrong in a way only a long play session could show. The caps were
+**per-session elapsed counters on the CHARACTER** (`AutoIdleElapsedTicks` / `AutoOfflineElapsedTicks`),
+and they were zeroed in two places: on every `EnterWorld`, and again in `BeginOfflineFarm`. So hitting
+the "2h offline cap" and re-logging handed the whole 2h straight back, forever — and because they were
+per-entity, the owner's three characters farmed **6h per 2h of wall clock**. Neither counter was ever
+persisted, so a restart was another free refill.
+
+The allowance is now a **balance that is spent**, on the **account**:
+
+| | Free | Premium |
+|---|---|---|
+| Online auto | **8h / day / account** | 12h |
+| Offline farm | **2h / day / account** | 4h |
+
+- **State**: `AccountFarmBudget` (`Simulation/AccountFarmBudget.cs`), held live in
+  `World.AccountBudgets` keyed by AccountId — the same lifetime rule as `World.AccountWarehouses`,
+  loaded on the async login path (`GameHub.EnterWorld` → `EnterWorldCommand.AccountBudget`) and adopted
+  by the loop only if that account has no live balance yet. Persisted on `AccountRecord`
+  (`AutoTicksLeft`, `OfflineTicksLeft`, `LastFarmResetDate`, `AutoCapSeconds`, `OfflineCapSeconds`).
+- **Drain rule**: `TickAutoHuntBudget` spends **one tick per farming character per tick**. That IS the
+  account rule — one character gets the full 2h, ten characters get 12 minutes each, no special case
+  for the count. Ten × 12min yields the same gold as one × 2h, which is the point: the ceiling is
+  **gold/hour/ACCOUNT**.
+- **Refill**: a **fixed server midnight**, applied lazily on read (`EnsureFresh` compares a stored
+  DATE against today), so it accrues across a restart for free and needs no scheduler.
+  ⚠ Deliberately **not** a rolling "24h since last refill" — that anchors the reset to whenever you
+  last spent and drifts round the clock, eventually costing a whole day.
+  ⚠ The **midnight double-tank is accepted on purpose**: start at 22:00, drain 2h, reset at 00:00,
+  drain 2h more. It still averages to the cap per day and it is player agency (owner's call). Do not
+  "fix" it.
+- **The lock is gone.** `AutoHuntLocked` was cleared at login, which is exactly how the cap was
+  escaped. The balance itself is the gate now: `HasIdleBudget` / `HasOfflineBudget` refuse
+  `ToggleAutoHunt` / `SetAutoHuntConfig` / `StartOfflineFarm` / the disconnect-to-offline-farm branch.
+- **Premium / testing knobs**: per-account `AutoCapSeconds`/`OfflineCapSeconds` (`-1` = server default,
+  `0` = unlimited, `>0` = explicit) set with `/farmcap <player> <autoHours> <offlineHours>`. The server
+  defaults stay on the Debug panel and `/testcaps`; both call `RefillAllBudgets()` afterwards, because
+  with a balance model a lowered cap is otherwise invisible until tomorrow.
+- **Saved** on the 60s autosave (dirty-flagged, so an idle account never rewrites its row) and flushed
+  immediately on `NormalLeave` / `EndOfflineSession`.
+
+Related and NOT built: **rested XP** is where the continuous-regen model belongs instead — accrue while
+logged out, spend as a POOL of bonus EXP that drains as you earn. Safe because it is EXP: an
+offline-time budget is a gold *faucet*, bonus XP adds no coin.
 
 ## Party integration (2026-07-08)
 - **No inviting AFK players:** `HandlePartyInvite` rejects a target that is auto-hunting

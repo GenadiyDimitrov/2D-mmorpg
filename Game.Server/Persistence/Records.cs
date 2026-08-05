@@ -24,6 +24,30 @@ public class AccountRecord
     /// per-account + timed). null = not time-banned. Checked at Login.</summary>
     public DateTime? BannedUntilUtc { get; set; }
 
+    // ----- Auto/offline farm budget (per ACCOUNT, daily) ----------------------
+    // These used to be per-SESSION counters on the character, which meant a re-log handed the whole
+    // cap back and N characters of one account farmed N× the wall clock. The allowance now belongs to
+    // the ACCOUNT and is a BALANCE that is spent, not an elapsed counter that is compared to a cap.
+    // Stored in TICKS so the drain is lossless (the loop spends one tick at a time).
+
+    /// <summary>Ticks of ONLINE auto-hunt left today, across every character of this account.</summary>
+    public long AutoTicksLeft { get; set; }
+
+    /// <summary>Ticks of OFFLINE farming left today, across every character of this account.</summary>
+    public long OfflineTicksLeft { get; set; }
+
+    /// <summary>Server-local DATE the two balances were last refilled. A DATE, not a timestamp: the
+    /// refill is a fixed server midnight, so it accrues correctly across a restart for free and never
+    /// drifts the way a rolling 24h window from the last spend would (owner's call, 2026-08-05).
+    /// <see cref="DateOnly.MinValue"/> on a new row → the first read refills it.</summary>
+    public DateOnly LastFarmResetDate { get; set; }
+
+    /// <summary>Per-account cap OVERRIDE in seconds — this is the premium knob.
+    /// <c>-1</c> = use the server default · <c>0</c> = UNLIMITED (admin testing) · &gt;0 = explicit.
+    /// Free is 8h online / 2h offline; premium is 12h / 4h.</summary>
+    public int AutoCapSeconds { get; set; } = -1;
+    public int OfflineCapSeconds { get; set; } = -1;
+
     public List<CharacterRecord> Characters { get; set; } = new();
 }
 
