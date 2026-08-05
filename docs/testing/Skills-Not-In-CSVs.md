@@ -47,9 +47,30 @@ Combat Stance, Antidote, Resurrection, Restore Mana.
 - `class_balance_*` (8) — Class Balance passives.
 - `archer_armor_mastery`, `archer_weapon_mastery` — orphaned by the archer→rogue merge.
 - `dispel_magic`.
-- Lightbringer (8, `lb_*`) and Warchanter per-race (12, `wc_*`) — their registration is
-  commented out.
+- Lightbringer (8, `lb_*`) and Warchanter per-race (12, `wc_*`) — **see the answer below.**
 - `hp_boost`, `greater_heal` — god-only, and the god table is never registered.
+
+### ❓ You asked what `lb_*` and `wc_*` are (playtest-18 G2)
+
+**They are the level-40 HEALER disciplines — a written, finished 3rd-class kit that nobody can learn
+yet.** The healer's two branches: **Lightbringer** = the pure healer, **Warchanter** = the buffer.
+The definitions are alive and registered in the catalog; what is commented out is one line in
+`ClassSkillTables.Third.cs` — `// RegisterLightbringer(); RegisterWarchanter();` — the *learn
+assignments*, dropped **pending your level-40 CSVs**. So they are not dead like the four passives are
+dead; they are **parked waiting on you.**
+
+| | Human | Elf | Ork | shared |
+|---|---|---|---|---|
+| **Lightbringer** (8) | Mend @40 (fast strong single heal), Purify @44 (cleanse) | Dawn @40 (AoE heal + cleanse), Warden @44 (root + self de-taunt) | Font @40 (AoE heal), Sap @44 (anti-heal debuff) | Blessing of Light @48 (party +15 % HP/def), Devotion @52 (passive) |
+| **Warchanter** (12) | Bolt @40, Chant @44, Renew @48, Passive @52 | same four | same four | — (the mega party chant is per-race, same magnitudes, different names) |
+
+⚠ **The Warchanter's BUFF layer is a separate thing and it IS live** — `RegisterWarchanterBuffs()` runs,
+which is where every group buff and Harmony you use today comes from. Deleting `wc_*` does **not** touch
+those.
+
+**My recommendation: keep both, delete neither.** They cost nothing (they are unreachable), and they are
+most of a 3rd-class healer kit already written — re-authoring them later is more work than uncommenting
+one line once your 40+ CSVs exist. If you want them gone anyway, say so and they go with the rest.
 
 ## 4. Level 40+ (no CSV exists yet)
 

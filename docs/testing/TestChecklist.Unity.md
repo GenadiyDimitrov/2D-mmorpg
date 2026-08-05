@@ -882,6 +882,36 @@ GRADE, E→S) · D2 `/enchant <value>` + all scrolls in the admin menu · D3 **c
 for anything above Epic · D4 a top-of-family party Frenzy + more Harmonies for 76+ · D5 a [Combat] chat
 tab in its own window.
 
+## 45. 🔴 PLAYTEST-18 QUEUE (2026-08-04) — the second 0.45.0 pass
+
+The full report in his own wording is **`Playtest-18.md`** and it is the authoritative list; this is the
+index. Nothing below is built. **B3 is ANSWERED here** — see G1.
+
+**General** — 🔴 **G1 the skills to DELETE** (`evade_mastery`, `reflexes`, `precision`, `anti_magic`,
+`archer_armor_mastery`, `archer_weapon_mastery`, `dispel_magic`, God class + skills; ⚠ Heavy Draw = drop
+the Rogue **@24 grant** of `power_shot`, never the definition) · ❓ G2 what are the commented-out `lb_*`
+(8) and `wc_*` (12) · ❓ G3 mobs with no inflated STR/CON that carry real GEAR and run the player formulas
+· G4 a save-login checkbox (the password box is always "admin") · G5 the Dash potion and Sprint become ONE
+speed family, rungs E1-E6 (potion E1/E2/E4/E5 = C15/U30/R45/M60, Sprint E3=L1+40, E6=L2+60; all 15s,
+potion CD 60s, Sprint 30s) · G6 the warehouse must show slots used/total · 🔴 **G7 a hotbar consumable at
+0 count is DISABLED, so it can never be removed from the bar — draw a permanent 100 % cooldown instead** ·
+G8 rogue Weapon Mastery crit damage swapped 24↔28 (he fixed the CSV) · G9 `crit dmg` is FLAT — both
+already in RoadmapNext 🔴 3.
+
+**Quest** — 🔴 **Q1 quest tracking is not persistent** (diagnosed: a client-only in-memory list, never
+written anywhere — must be per CHARACTER, server-side with the quest log) · Q2 accepting a quest
+auto-tracks it · Q3 the tracker row shows objectives only · Q4 clicking a tracker row opens that quest's
+DETAIL page · Q5 the Active tab's rows go short, like Available (same rule as C6).
+
+**Farming** — F1 turning auto-farm OFF must not clear the target, close the target window or stop the
+attack; only the autopilot stops.
+
+**Vendors** — V1 a `[QSell On/Off]` toggle mirroring `[Del On/Off]`, so `[Sell]` sells the max in one tap
+· 🔴 **V2 sell price = 0.25 of buy, for everything** ⚠ but his measured "0.8 for equipment" matches no
+code path (gear is buy ÷ 25, generic × 0.30) — **ask which item before changing the constant**, or the
+gear faucet goes UP 6×. Later, with crafting: trash DISASSEMBLES into mats (rarity picks which, grade
+picks how many).
+
 ---
 ## Known gaps (NOT bugs — not built yet in the Unity client)
 

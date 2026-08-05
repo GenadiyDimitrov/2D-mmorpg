@@ -1,6 +1,6 @@
 # Roadmap — compact view (what's left, what depends on what)
 
-A one-screen digest of [Roadmap.md](Roadmap.md). Updated **2026-08-03 (after playtest-17)**.
+A one-screen digest of [Roadmap.md](Roadmap.md). Updated **2026-08-05 (after playtest-18)**.
 Full history: [CHANGELOG.md](CHANGELOG.md). The checklists: [testing/TestChecklist.Unity.md](testing/TestChecklist.Unity.md)
 (the phone) and [testing/TestChecklist.md](testing/TestChecklist.md) (server-side; its client steps
 predate the WPF harness being dropped in 0.42.8 — read them as "on the phone").
@@ -72,10 +72,28 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
    4. 🔵 **The enchant rework** `D1` — three scroll TYPES (breaks / −1 / **safe**) with the RARITY
       choosing the grade E→S, drop bands one grade below the attribute scrolls, safe scrolls from bosses
       only. Plus `D2` `/enchant <value>` and every scroll in the admin menu.
-   ⏭ **Owed to him before anything is deleted:** the list of every skill in the catalog that is NOT in
-   his class CSVs (`B3` — Heavy Draw and Twin Blade are the two he spotted, both learned after 20 and
-   weaker than the CSV skills). He marks it up, then we delete.
-3. 🆕 **Crit damage, blows and `[Double]`** (2026-08-05 ruling, spec:
+   ✅ **`B3` is CLOSED** — the list went to him as [testing/Skills-Not-In-CSVs.md](testing/Skills-Not-In-CSVs.md)
+   and he answered it on 2026-08-04 (playtest-18 `G1`, item 3 below). The deletion is unblocked.
+3. 🆕 **The playtest-18 queue** (2026-08-04, [testing/Playtest-18.md](testing/Playtest-18.md), §45) —
+   his second 0.45.0 pass, and mostly *answers* rather than bugs:
+   - 🔴 **`G1` unblocks the skill deletion** — he named them: the four identity-floor passives,
+     `archer_*_mastery`, `dispel_magic`, and the God class + skills. ⚠ `class_balance_*` he skipped and
+     `lb_*`/`wc_*` he asked about instead (**`G2`, owed back to him**). Heavy Draw = remove the **Rogue
+     @24 grant** of `power_shot`, never the definition — three level-40 discipline skills are renames.
+   - 🔴 Three defects: **`Q1`** quest tracking is a client-only in-memory list and dies with the app
+     (must be per CHARACTER, server-side with the quest log) · **`G7`** a hotbar consumable at 0 count is
+     *disabled*, which also kills the gesture that would remove it — draw a permanent 100 % cooldown ·
+     **`V2`** the sell fraction ⚠ *his 0.8 matches no code path* (gear is buy ÷ 25, generic × 0.30), so
+     ask which item he measured before touching the constant.
+   - `G5` the Dash potion and Sprint become ONE speed family (six rungs, potion E1/E2/E4/E5, Sprint
+     E3/E6) — pure authoring on the existing family+Rank machinery · `Q2`-`Q5` tracker and Active-tab
+     polish (same "full text only in Details" rule as `C6`) · `F1` leaving auto-farm must not drop the
+     target · `V1` a `[QSell On/Off]` toggle · `G4` a save-login checkbox · `G6` warehouse slots
+     used/total.
+   - ❓ `G3` **mobs without inflated STR/CON, carrying real gear and running the PLAYER formulas** — a
+     genuine design change (mobs move off `MobBaseStats` onto `RecomputeDerived` + equipment). Needs a
+     design pass and his go. Filed with crafting: **trash disassembles into mats** instead of gold.
+4. 🆕 **Crit damage, blows and `[Double]`** (2026-08-05 ruling, spec:
    [design/CritBlowAndDouble.md](design/CritBlowAndDouble.md)) — five items, one area, **not started**:
    the rogue armor mastery ignores the CSV's `with all` clause · the rogue weapon mastery's crit damage
    is swapped between levels 24 and 28 · every CSV's `crit dmg +N` was read as a *percentage* and must
@@ -84,10 +102,10 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
    (dropping `max(DEX, ATK)` and the 30% cap) · `[Double]` on a buff/debuff doubles its duration.
    ⚠ This makes the `crit dmg +N` rungs the rogue's whole scaling curve — **BalanceMatrix before and
    after**.
-4. ~~**Regen from gear vs regen from level**~~ — **answered and built in 0.45.0.** Gear regen is a
+5. ~~**Regen from gear vs regen from level**~~ — **answered and built in 0.45.0.** Gear regen is a
    PERCENT roll now (rings, 1-5% by grade) rather than a flat MP/s that dominated the level curve at
    every level. The flat types stay in the enum for pre-0.45 saves and nothing rolls them.
-5. **CRAFTING is now the top content blocker** — his words: *"we need the craft — professions, window,
+6. **CRAFTING is now the top content blocker** — his words: *"we need the craft — professions, window,
    etc .. now even in admin the only mythic are the set, everything else is epic rarity."* Every design
    is written ([design/Crafting.md](design/Crafting.md), [design/GearLadderAndCrafting.md](design/GearLadderAndCrafting.md));
    nothing above Epic can be reached in play without it. It outranks the deferred combat-depth work and
