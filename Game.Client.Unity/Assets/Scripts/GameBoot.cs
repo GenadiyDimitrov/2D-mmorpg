@@ -169,6 +169,14 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Enchant: " + ex.Message); }
         }
 
+        /// <summary>ADMIN: set an item's enchant outright (the `/enchant &lt;value&gt;` picker).</summary>
+        public async void AdminEnchant(Guid instanceId, int value)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.AdminEnchantAsync(instanceId, value); }
+            catch (Exception ex) { ClientLog.Warn("Enchant: " + ex.Message); }
+        }
+
         /// <summary>Use an attribute scroll on a weapon or jewel.</summary>
         public async void RerollAttributes(Guid scrollInstanceId, Guid targetInstanceId)
         {
@@ -2096,6 +2104,20 @@ namespace Game.Client
                 {
                     var id = PartyMemberId(raw.Substring(6).Trim());
                     if (id is Guid g) PartyChangeLeader(g); else ClientLog.Warn("Not a party member.");
+                    return;
+                }
+
+                // ADMIN `/enchant <value>` (D2). Handled here rather than passed through to the server
+                // like the other staff commands because it needs a PICKER, and the picker is a client
+                // window over the bag the client already holds — the same reason /ptinv and /offline
+                // live here. The server still re-checks the staff role on AdminEnchantCmd.
+                if (raw.StartsWith("/enchant", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!IsAdmin) { ClientLog.Warn("Unknown command: " + raw); return; }
+                    var argText = raw.Substring("/enchant".Length).Trim();
+                    if (!int.TryParse(argText, out int value) || value < 0)
+                    { ClientLog.Warn("Usage: /enchant <value>  (e.g. /enchant 16)"); return; }
+                    Ui?.BeginAdminEnchant(value);   // Say() runs on the UI thread, like /offline
                     return;
                 }
 

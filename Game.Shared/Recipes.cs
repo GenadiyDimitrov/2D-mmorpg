@@ -223,8 +223,12 @@ public static class RecipeCatalog
         // now one per buff, top rung, and comes out of the Apothecary's Blessing Box or nowhere; a
         // craftable scroll would be a second faucet on the one consumable he asked to have exactly one.
         // The scribe keeps the enchant + attribute scrolls, which is the trade he actually gates.
-        yield return Scroll(ItemCatalog.ScrollUncommon, ItemRarity.Common, 20, 5);
-        yield return Scroll(ItemCatalog.ScrollRare, ItemRarity.Uncommon, 40, 5);
+        // Enchant scrolls: the scribe makes the NORMAL (item-breaks) scroll of the D and C bands and
+        // nothing else. The craft level is the band's own floor now (0.49.0) — a D scroll works on
+        // level-40 gear, so letting a level-20 scribe stock them served nobody. Greater and Safe are
+        // never craftable: they are the elite/boss reward that makes an enchant worth attempting.
+        yield return Scroll(ItemCatalog.ScrollNormalD, ItemRarity.Common, 40, 5);
+        yield return Scroll(ItemCatalog.ScrollNormalC, ItemRarity.Uncommon, 52, 5);
         // Attribute scrolls: the D-C-B pair is craftable early, the A-grade pair late. The
         // Common (entry) scroll and the S-grade Mythic are deliberately NOT craftable — those
         // stay a drop, so the attribute economy has a faucet the scribe can't flood.

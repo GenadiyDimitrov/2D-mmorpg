@@ -276,10 +276,18 @@ namespace Game.Client
         {
             _debugTitle.text = "Scrolls, potions and reagents";
 
-            DebugHeader("Enchant scrolls (x10)");
-            DebugGive(ItemCatalog.ScrollCommon, "Common Scroll x10", 10);
-            DebugGive(ItemCatalog.ScrollUncommon, "Uncommon Scroll x10", 10);
-            DebugGive(ItemCatalog.ScrollRare, "Rare Scroll x10", 10);
+            // Every one of the 18 (D2: "every scroll in the admin menu"). Generated from the same table
+            // the catalog is built from, so a scroll can never be authored and left unreachable here.
+            // One header per grade — 18 flat rows would be an unreadable wall on a phone.
+            foreach (var (grade, _, _, level, _) in ItemCatalog.EnchantScrollBands)
+            {
+                DebugHeader($"Enchant scrolls — {EnchantRules.GradeName(grade)} grade (item level {level}+)");
+                foreach (var (kind, prefix, _) in ItemCatalog.EnchantScrollTypes)
+                {
+                    string id = ItemCatalog.EnchantScrollKey(kind, grade);
+                    DebugGive(id, prefix + " x10", 10);
+                }
+            }
 
             DebugHeader("Attribute scrolls (x10)");
             DebugGive(ItemCatalog.AttrScrollCommon, "Attr Scroll (Common) x10", 10);

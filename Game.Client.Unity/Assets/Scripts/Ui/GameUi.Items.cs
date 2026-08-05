@@ -494,11 +494,40 @@ namespace Game.Client
                       + " grade weapons and jewels"
                       + (AttributeSystem.NeedsExisting(scrollDef.AttrScroll)
                             ? ", and only ones that already have an attribute." : ".")
-                    : "Nothing to enchant — every piece you own is already at max enchant.");
+                    : "Nothing to use it on: this scroll takes "
+                      + EnchantRules.GradeName(scrollDef.ScrollGrade)
+                      + " grade gear that is not already at max enchant.");
                 return;
             }
 
             ShowSelection(scrollDef.Name, options.ToArray());
+        }
+
+        /// <summary>ADMIN `/enchant &lt;value&gt;` (D2): pick a piece of gear and set it to that enchant
+        /// outright. Unlike the scroll flow this offers EVERY equippable item — no grade band, no max —
+        /// because the command exists precisely to reach what a scroll cannot.</summary>
+        public void BeginAdminEnchant(int value)
+        {
+            var options = new List<(string Label, Action OnPick)>();
+            foreach (var it in Boot.Inventory ?? Array.Empty<InventoryItemDto>())
+            {
+                var d = ItemCatalog.Get(it.DefId);
+                if (d == null || !ItemCatalog.IsEquippable(d)) continue;
+
+                var target = it;
+                string label = Coloured((it.Enchant > 0 ? "+" + it.Enchant + " " : "") + d.Name, d.Rarity)
+                             + (it.Equipped ? "  (worn)" : "")
+                             + "\n<size=13>" + EnchantRules.GradeName(EnchantRules.GradeOf(d))
+                             + " grade  →  +" + value + "</size>";
+                options.Add((label, () =>
+                {
+                    Boot.AdminEnchant(target.InstanceId, value);
+                    CloseAllItemViews();
+                }));
+            }
+
+            if (options.Count == 0) { ClientLog.Warn("No weapons, armor or jewels in your bag."); return; }
+            ShowSelection("Set enchant to +" + value, options.ToArray());
         }
 
         private static bool ScrollCanTarget(ItemDef scrollDef, ItemDef def, InventoryItemDto item, bool attribute)
@@ -513,7 +542,11 @@ namespace Game.Client
                     && (item.Attributes == null || item.Attributes.Length == 0)) return false;
                 return true;
             }
-            return ItemCatalog.IsEquippable(def) && item.Enchant < EnchantRules.MaxEnchant;
+            // The GRADE BAND is checked from EnchantRules — the same code the server validates with, so
+            // the list can never offer a target the server will then refuse.
+            return ItemCatalog.IsEquippable(def)
+                   && item.Enchant < EnchantRules.MaxEnchant
+                   && EnchantRules.Accepts(scrollDef, def);
         }
 
         /// <summary>A target row: the item, plus the one number that decides whether to spend the
@@ -567,12 +600,13 @@ namespace Game.Client
             });
         }
 
+        /// <summary>What a failure costs, coloured. The WORDS come from EnchantRules so the popup and
+        /// the server's own outcome line can never drift apart; only the colour is the client's.</summary>
         private static string EnchantFailureText(ScrollKind kind) => kind switch
         {
-            ScrollKind.Common => "<color=#FF8080>the item is DESTROYED</color>.",
-            ScrollKind.Uncommon => "the enchant resets to +0.",
-            ScrollKind.Rare => "the enchant drops by 1.",
-            _ => "nothing happens."
+            ScrollKind.Normal => "<color=#FF8080>" + EnchantRules.FailureText(kind) + "</color>.",
+            ScrollKind.Safe => "<color=#80FF80>" + EnchantRules.FailureText(kind) + "</color>.",
+            _ => EnchantRules.FailureText(kind) + ".",
         };
 
         /// <summary>Bin-delete: a stack asks one-vs-all through the reusable popup; a single item just

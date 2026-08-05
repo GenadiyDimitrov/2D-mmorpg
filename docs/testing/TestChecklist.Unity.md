@@ -956,6 +956,48 @@ rarer would be a defect.
   offline farm should come back with roughly half the consumable clutter and the same gold.
 
 ---
+## 49. 🔴 0.49.0 — the enchant rework (`D1`/`D2`) — UNPLAYED
+
+Needs a **new APK** (the 18 scrolls ship inside it). No db reset, protocol still 12.
+⚠ **This supersedes §43m**, whose Common/Uncommon/Rare failure behaviours no longer exist.
+
+A scroll now has **two axes**: the **type** says what a failure costs, the **rarity** says which
+**grade** of gear it works on. Three types × six grades = 18 scrolls.
+
+**49a. The three types do what they say.** On a failure: **Scroll of Enchant** DESTROYS the item ·
+**Greater Scroll of Enchant** drops it by 1 · **Safe Scroll of Enchant** leaves the enchant untouched.
+The confirm box states the odds *and* the cost of failure before you commit, and the outcome line
+afterwards agrees with it. A Safe failure must say *"stays at +N"*, never "nothing happened" — and the
+**scroll is still consumed**, which is the price of the safety.
+
+**49b. Rarity picks the grade: Common→E, Uncommon→D, Rare→C, Epic→B, Legendary→A, Mythic→S.**
+Tap **Use** on a scroll and the target list offers **only** gear of that one grade. Not "that grade or
+better" — exactly it.
+
+**49c. F grade cannot be enchanted at all** (there is no F scroll by design). A starter weapon must
+appear in NO scroll's list, and the refusal names both sides — *"…only works on D grade; X is F grade"*.
+
+**49d. The picker can never offer what the server refuses.** Whatever the list shows, using it works;
+if the list is empty the message says which grade the scroll takes, rather than just "nothing".
+
+**49e. Drops are BANDED, not floored.** A rung stops dropping once you are two bands past it, so the
+bag stops filling with scrolls you can't spend. Measured per-kill enchant-scroll chance:
+**0 % below 20 · 6 % at 20-39 · 10.5 % at 40-51 · 7.5 % at 52-60 · 5.3 % at 61-75 · 2.3 % at 76-79 ·
+0 % at 80+.** A level-85 farm must return with **no** enchant scrolls from normal creatures.
+
+**49f. A and S scrolls, and every Greater and Safe, come from ELITES and BOSSES only.** An elite pays
+its own band's Normal (9 %) and Greater (1.8 %); a boss pays its band and the one below (30 % each),
+Greater 9 %, and **Safe at 0.45 %** — the rarest thing in the table. Target-inspect a boss and the drop
+list must show these, at the same numbers the kill actually pays.
+
+**49g. `/enchant <value>`** opens your own bag as a picker and sets the chosen piece to that enchant
+outright — no scroll, no roll, no grade band, no +16 ceiling. `/enchant 999999` on an **F** weapon must
+work, and the stat change must show immediately if the item is worn.
+
+**49h. Every one of the 18 is in the debug menu**, grouped by grade under a header naming the grade
+and the level it opens at.
+
+---
 ## Known gaps (NOT bugs — not built yet in the Unity client)
 
 Don't file these; they're scope, not defects. The Unity client is a viewport, not the WPF harness.

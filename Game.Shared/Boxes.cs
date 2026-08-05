@@ -25,7 +25,7 @@ public static class BoxCatalog
             {
                 new BoxEntry(ItemCatalog.MinorPotion, 1.0f, 5, 5),     // always 5
                 new BoxEntry(ItemCatalog.GreaterPotion, 1.0f, 2, 2),   // always 2
-                new BoxEntry(ItemCatalog.ScrollCommon, 0.50f),         // 50%
+                new BoxEntry(ItemCatalog.ScrollNormalE, 0.50f),         // 50%
             }),
 
             // Newbie armor boxes — the class body + the SHARED accessories (100% each).
@@ -134,8 +134,8 @@ public static class BoxCatalog
             new BoxDef(ItemCatalog.BoxTreasure, new[]
             {
                 new BoxEntry(ItemCatalog.HealingPotion, 1.0f, 3, 3),   // always 3
-                new BoxEntry(ItemCatalog.ScrollUncommon, 0.50f),       // 50%
-                new BoxEntry(ItemCatalog.ScrollRare, 0.10f),           // 10%
+                new BoxEntry(ItemCatalog.ScrollNormalD, 0.50f),       // 50%
+                new BoxEntry(ItemCatalog.ScrollNormalC, 0.10f),           // 10%
                 new BoxEntry(ItemCatalog.AttrScrollRare, 0.05f),       // 5%
                 new BoxEntry(ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.E, ItemRarity.Rare), 0.01f),   // 1%
                 new BoxEntry(ItemCatalog.GodWeapon, 0.000001f),        // 1 in 1,000,000 jackpot

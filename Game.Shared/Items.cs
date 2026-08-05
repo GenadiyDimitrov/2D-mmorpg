@@ -165,10 +165,15 @@ public static class WeaponTypes
     };
 }
 
-/// <summary>Enchant scroll failure behaviour (design doc):
-/// Common -> item breaks on fail; Uncommon -> enchant resets to +0;
-/// Rare -> enchant drops by 1 (never breaks).</summary>
-public enum ScrollKind { None = 0, Common = 1, Uncommon = 2, Rare = 3 }
+/// <summary>Enchant scroll TYPE — what a FAILURE costs (owner, playtest-17 D1). This is now only
+/// HALF of a scroll's identity: the other half is <see cref="ItemDef.ScrollGrade"/>, the grade of
+/// gear it may be spent on, which the scroll's RARITY signals. See <see cref="EnchantRules"/>.
+///
+/// Until 0.49.0 these three values WERE the whole ladder (named Common/Uncommon/Rare after the
+/// rarities they shipped at) and every scroll worked on every item. The numbers are unchanged, so
+/// the three original scroll ids keep their meaning where it matters — the type that breaks the item
+/// is still 1 — but the names now say what they do.</summary>
+public enum ScrollKind { None = 0, Normal = 1, Greater = 2, Safe = 3 }
 
 /// <summary>Attribute scroll tier (0.45.0). Each kind serves ONE grade band and does ONE
 /// thing — see <see cref="AttributeSystem.ActionOf"/> / <see cref="AttributeSystem.Accepts"/>:
@@ -230,6 +235,11 @@ public record ItemDef(
     // one) from a buff potion (doesn't). 0 = no shared cooldown.
     int PotionCooldownTicks = 0,
     ScrollKind ScrollKind = ScrollKind.None,
+    // ----- Enchant scroll GRADE BAND (None = not an enchant scroll). The second axis: ScrollKind
+    //       says what a failure costs, this says WHICH grade of gear the scroll may be spent on.
+    //       Deliberately its own field rather than a re-reading of Grade/ItemLevel — ItemLevel
+    //       drives pricing and the grade PENALTY, and a scroll has no business in either. -----
+    EnchantGrade ScrollGrade = EnchantGrade.None,
     // ----- Fixed (non-rolled) attributes, e.g. for the legendary one-off -----
     ItemAttribute[]? FixedAttributes = null,
     // ----- Jewel stat: magic defence. Jewels are the ONLY source of magic
@@ -430,9 +440,30 @@ public static class ItemCatalog
     public const string DashPotionE = "potion_dash_e";
     public const string DashPotionL = "potion_dash_l";
     public const string DashPotionM = "potion_dash_m";
-    public const string ScrollCommon = "scroll_common";
-    public const string ScrollUncommon = "scroll_uncommon";
-    public const string ScrollRare = "scroll_rare";
+    // ----- ENCHANT SCROLLS: three TYPES x six GRADES = 18 (owner, playtest-17 D1).
+    //       ⚠ The E/D/C Normals KEEP the three original ids. Those three scrolls shipped at
+    //       Common/Uncommon/Rare rarity, and the new rule (rarity picks the grade) maps exactly
+    //       onto that — so re-pointing them costs nothing and every saved bag, box table and
+    //       crafting recipe that already names them stays valid. Only the FAILURE behaviour of
+    //       the D and C ones changes (they used to reset to +0 / drop 1; all Normals now break).
+    public const string ScrollNormalE = "scroll_common";
+    public const string ScrollNormalD = "scroll_uncommon";
+    public const string ScrollNormalC = "scroll_rare";
+    public const string ScrollNormalB = "scroll_enchant_b";
+    public const string ScrollNormalA = "scroll_enchant_a";
+    public const string ScrollNormalS = "scroll_enchant_s";
+    public const string ScrollGreaterE = "scroll_greater_e";
+    public const string ScrollGreaterD = "scroll_greater_d";
+    public const string ScrollGreaterC = "scroll_greater_c";
+    public const string ScrollGreaterB = "scroll_greater_b";
+    public const string ScrollGreaterA = "scroll_greater_a";
+    public const string ScrollGreaterS = "scroll_greater_s";
+    public const string ScrollSafeE = "scroll_safe_e";
+    public const string ScrollSafeD = "scroll_safe_d";
+    public const string ScrollSafeC = "scroll_safe_c";
+    public const string ScrollSafeB = "scroll_safe_b";
+    public const string ScrollSafeA = "scroll_safe_a";
+    public const string ScrollSafeS = "scroll_safe_s";
     public const string ScrollReturn = "scroll_return";
     public const string ScrollReturnUltimate = "scroll_return_ultimate";
     public const string ScrollResurrect = "scroll_resurrect";
@@ -593,6 +624,57 @@ public static class ItemCatalog
     public const string DarkDominionHead = "set_dark_dominion_head";
     public const string DarkDominionGloves = "set_dark_dominion_gloves";
     public const string DarkDominionBoots = "set_dark_dominion_boots";
+
+    // ===================================================================================
+    //  THE ENCHANT SCROLL TABLE — the single source of truth for the 18 scrolls (D1).
+    //  The catalog entries, the drop tables and the admin menu all read it, so a scroll can
+    //  never exist in one and be missing from another.
+    // ===================================================================================
+
+    /// <summary>One grade rung: which RARITY signals it, the ItemGrade the pricing enum should use,
+    /// the character level the band opens at, and the NORMAL scroll's buy price at that grade.
+    /// The pricing enum has no C/D, so E/D/C all sit at F exactly as they did before this rework —
+    /// which is what keeps the three original scrolls at the prices the economy pass just set.</summary>
+    public static readonly (EnchantGrade Grade, ItemRarity Rarity, ItemGrade Priced, int Level, int Value)[]
+        EnchantScrollBands =
+    {
+        (EnchantGrade.E, ItemRarity.Common,    ItemGrade.F, 20,     30),
+        (EnchantGrade.D, ItemRarity.Uncommon,  ItemGrade.F, 40,     60),
+        (EnchantGrade.C, ItemRarity.Rare,      ItemGrade.F, 52,    120),
+        (EnchantGrade.B, ItemRarity.Epic,      ItemGrade.B, 61,    500),
+        (EnchantGrade.A, ItemRarity.Legendary, ItemGrade.A, 76,   2000),
+        (EnchantGrade.S, ItemRarity.Mythic,    ItemGrade.S, 80,  10000),
+    };
+
+    /// <summary>One TYPE: its name prefix and what it multiplies the grade's price by. A Greater is
+    /// worth several Normals and a Safe several Greaters, which is the only place the three types
+    /// differ in value — rarity can't say it, because rarity is spent on signalling the GRADE.</summary>
+    public static readonly (ScrollKind Kind, string Prefix, int PriceMul)[] EnchantScrollTypes =
+    {
+        (ScrollKind.Normal,  "Scroll of Enchant",         1),
+        (ScrollKind.Greater, "Greater Scroll of Enchant", 5),
+        (ScrollKind.Safe,    "Safe Scroll of Enchant",   20),
+    };
+
+    /// <summary>The id of an enchant scroll by TYPE and GRADE. The E/D/C Normals return their
+    /// original ids (see the constants above); everything else is `scroll_{type}_{grade}`.</summary>
+    public static string EnchantScrollKey(ScrollKind kind, EnchantGrade grade)
+    {
+        if (kind == ScrollKind.Normal)
+            switch (grade)
+            {
+                case EnchantGrade.E: return ScrollNormalE;
+                case EnchantGrade.D: return ScrollNormalD;
+                case EnchantGrade.C: return ScrollNormalC;
+            }
+        string type = kind switch
+        {
+            ScrollKind.Greater => "greater",
+            ScrollKind.Safe => "safe",
+            _ => "enchant",
+        };
+        return $"scroll_{type}_{EnchantRules.GradeName(grade).ToLowerInvariant()}";
+    }
 
     public static string WeaponKey(WeaponType type, ItemGrade grade, ItemRarity rarity) =>
         $"{type.ToString().ToLowerInvariant()}_{grade.ToString().ToLowerInvariant()}_{rarity.ToString().ToLowerInvariant()}";
@@ -1145,12 +1227,21 @@ public static class ItemCatalog
         // ===================================================================
         //  ENCHANT SCROLLS
         // ===================================================================
-        list.Add(new ItemDef(ScrollCommon, "Enchant Scroll (Common)", EquipSlot.Scroll,
-            ItemGrade.F, ItemRarity.Common, ScrollKind: ScrollKind.Common));
-        list.Add(new ItemDef(ScrollUncommon, "Enchant Scroll (Uncommon)", EquipSlot.Scroll,
-            ItemGrade.F, ItemRarity.Uncommon, ScrollKind: ScrollKind.Uncommon));
-        list.Add(new ItemDef(ScrollRare, "Enchant Scroll (Rare)", EquipSlot.Scroll,
-            ItemGrade.F, ItemRarity.Rare, ScrollKind: ScrollKind.Rare));
+        // ----- The 18 scrolls (0.49.0, owner's D1 spec). Two axes, generated from the one table so
+        //       a rung can never be authored into the drop table and forgotten here:
+        //         TYPE  = what a FAILURE costs (Normal breaks / Greater −1 / Safe keeps it),
+        //         GRADE = which gear it works on, and the RARITY is how that grade is signalled.
+        //       There is deliberately no F scroll — F is the training tier you leave by 20. -----
+        foreach (var (grade, rarity, priced, level, value) in EnchantScrollBands)
+        {
+            string letter = EnchantRules.GradeName(grade);
+            foreach (var (kind, prefix, priceMul) in EnchantScrollTypes)
+                list.Add(new ItemDef(EnchantScrollKey(kind, grade), $"{prefix} ({letter})",
+                    EquipSlot.Scroll, priced, rarity,
+                    ScrollKind: kind, ScrollGrade: grade, Value: value * priceMul,
+                    Description: $"{letter} grade only (item level {level}+). Raises the enchant by "
+                               + $"one on success. On failure: {EnchantRules.FailureText(kind)}."));
+        }
 
         // ----- Attribute scrolls (0.45.0). A weapon or jewel drops BARE; a scroll is the only
         //       way it ever gains an attribute. Three scrolls cover the D-C-B stretch, a pair
@@ -1947,9 +2038,9 @@ public static class LootTables
     // Scrolls: rarer than everything else, higher-level mobs only.
     private static readonly LootEntry[] SharedScrolls =
     {
-        new(ItemCatalog.ScrollCommon, 0.030f, 5, 30),
-        new(ItemCatalog.ScrollUncommon, 0.015f, 9, 30),
-        new(ItemCatalog.ScrollRare, 0.006f, 13, 30),
+        new(ItemCatalog.ScrollNormalE, 0.030f, 5, 30),
+        new(ItemCatalog.ScrollNormalD, 0.015f, 9, 30),
+        new(ItemCatalog.ScrollNormalC, 0.006f, 13, 30),
     };
 
     private static readonly Dictionary<string, LootEntry[]> Tables = BuildTables();

@@ -611,6 +611,16 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>Admin: set one of MY items to an exact enchant (the /enchant &lt;value&gt; picker).
+    /// The role check is on the game loop, like every other IAdminCommand.</summary>
+    public Task AdminEnchant(Guid instanceId, int value)
+    {
+        if (!Sessions.ContainsKey(Context.ConnectionId))
+            return Task.CompletedTask;
+        _world.Commands.Enqueue(new AdminEnchantCmd(Context.ConnectionId, instanceId, value));
+        return Task.CompletedTask;
+    }
+
     /// <summary>Admin: hand one of my items to another online player (/give picker).</summary>
     public Task AdminGiveItem(string targetName, Guid instanceId, int quantity)
     {

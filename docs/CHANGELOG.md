@@ -12,6 +12,65 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 0.49.0 — 2026-08-05 — The enchant rework (`D1`/`D2`): two axes instead of three scrolls
+
+The last unbuilt pass of the playtest-17 batch. Until now an "enchant scroll" was three items whose
+only difference was what a *failure* cost, and **any** of them worked on **any** item — so the Common
+scroll you found at level 10 was a legitimate tool against endgame gear, and the ladder said nothing.
+
+The owner's `D1` splits that into **two independent axes**, and both now mean something:
+
+| | |
+|---|---|
+| **TYPE** — what a failure costs | **Scroll of Enchant** destroys the item · **Greater** drops it by 1 · **Safe** (new) keeps the enchant |
+| **GRADE** — what it may be spent on, signalled by RARITY | Common→**E** · Uncommon→**D** · Rare→**C** · Epic→**B** · Legendary→**A** · Mythic→**S** |
+
+Three types × six grades = **18 scrolls**, generated from one table (`ItemCatalog.EnchantScrollBands`
+× `EnchantScrollTypes`) that the catalog, the drop layer and the admin menu all read, so a rung cannot
+be authored in one and missing from another. One grade below the attribute-scroll bands, as specified.
+**There is no F scroll** — F is the training tier you leave by 20, which is exactly why `D2` asks for an
+unrestricted admin path.
+
+⚠ **The three original ids are kept and re-pointed** (`scroll_common`/`_uncommon`/`_rare` → the E/D/C
+Normals). Those three shipped at Common/Uncommon/Rare rarity and the new rule maps straight onto that,
+so every saved bag, box table and crafting recipe naming them stays valid — **no db reset**. What
+changes is their failure behaviour: the D and C ones used to reset to +0 / drop 1, and all Normals
+break now.
+
+**The band is enforced in Shared** (`EnchantRules.Accepts`), which is the same code the client filters
+its target list with — so the picker can never offer something the server then refuses, and the
+refusal names *both* sides rather than leaving you to guess which half you got wrong.
+
+**Drops are BANDED, not floored.** A grade-locked scroll that keeps dropping forever is bag clutter by
+construction — a level-80 farm raining E scrolls nobody can spend — so each rung now has a ceiling as
+well as a floor, generous enough (it lives until the band *two* above opens) that you keep finding
+scrolls for gear you are still wearing. Measured per kill: **0 % below 20, 6 % at 20-39, 10.5 % at
+40-51, 7.5 % at 52-60, 5.3 % at 61-75, 2.3 % at 76-79, 0 % at 80+** — against a flat 10.5 % from
+level 55 before. The normal-mob faucet **closes at 80** on purpose: from there the scrolls are an
+elite/boss reward, which is his ladder *and* the first real reason for a level-80 farmer to clear an
+elite camp.
+
+**A/S scrolls and every Greater and Safe are elite/boss only** (`MobCatalog.EnchantScrollDrops`, layered
+at kill time by RANK the way `GearDrops` already was, and added to the target-inspect list in the same
+breath so the number shown stays the number you get). It is keyed off the *band the mob's level sits
+in*, which is why his whole spec falls out with no special cases: an elite at 78 is in the A band, a
+boss at 82 is in S. An elite pays its band's Normal at 9 % and Greater at 1.8 %; a boss pays its band
+**and the one below** at 30 % each, Greater 9 %, and **Safe at 0.45 %** — the rarest line in the game.
+The "dungeon monsters at 90" rung has nowhere to live until instances exist; it is flagged, not faked.
+
+**`D2` — `/enchant <value>`** opens your own bag as a picker and sets the chosen piece outright,
+bypassing the band, the scroll, the success roll and the +16 ceiling, because its job is to reach
+states the ladder cannot (`/enchant 999999` on an F weapon works; the only bound is an anti-overflow
+clamp far above it). Handled client-side like `/offline` and `/ptinv` — it needs a picker, and the
+picker is a window over the bag the client already holds — with the staff role re-checked server-side
+on `AdminEnchantCmd`. **All 18 scrolls are in the debug menu**, grouped by grade.
+
+`tools/BalanceMatrix` grew a **§D1** that prints the 18 (asserting each one's type/grade/rarity axes
+actually landed on the def) and the elite/boss layer at every band, plus an integrity check for the
+rank entries — which live in no template and so never reached the existing drop-table check.
+
+⚠ **Needs a new APK** (the item catalog ships inside it). Protocol unchanged at 12, no db reset.
+
 ## 0.48.0 — 2026-08-05 — A text box you cannot type into, x1 rates, and `E3`
 
 **🔴 The blocker first: every text box in the client was un-editable if it already held a value.**

@@ -281,6 +281,51 @@ public static class MobCatalog
     /// <summary>The GEAR half of a mob's drop table at one level and rank. Normal-rank entries are baked
     /// into the template (below); Elite and Boss are built at KILL time by the drop roll, because rank is
     /// a property of the SPAWN — the zone assigns it — and not of the template.</summary>
+    /// <summary>The ENCHANT-SCROLL half of an elite's or boss's table (0.49.0, owner's D1 spec).
+    /// Like <see cref="GearDrops"/> this is built at KILL time, because rank belongs to the SPAWN;
+    /// unlike it, it ADDS to the normal table rather than replacing it — an elite still rolls the
+    /// ordinary scrolls group, and this is the rarer layer on top.
+    ///
+    /// Everything is keyed off the BAND the mob's level sits in, which is why his ladder falls out
+    /// with no special cases: an elite at 78 is in the A band, so "Legendary from elites at a low
+    /// chance and bosses higher, 76+" is just the band's Normal scroll; a boss at 82 is in S, so
+    /// "Mythic from bosses 80+" is the same line. A boss also pays the band BELOW its own, which is
+    /// how an 80+ boss drops both the S and the A scroll (bosses pay several pieces — see
+    /// <see cref="BossGearRates"/>).
+    ///
+    /// GREATER is the elite reward and SAFE is boss-only, both at the mob's own band — the two types
+    /// that make an enchant worth attempting are exactly the two you cannot farm off a normal mob.
+    ///
+    /// ⚠ These are INDEPENDENT rolls (GroupId 0 = the "other" tuning group), so they take the global
+    /// rate AND that group's x3 — the delivered chances are three times the numbers authored here,
+    /// noted per line. The "dungeon monsters at 90" rung of his spec has nowhere to live until
+    /// instances exist; it is flagged, not faked.</summary>
+    public static IEnumerable<DropEntry> EnchantScrollDrops(int level, MobRank rank)
+    {
+        var band = EnchantRules.GradeOf(level);
+        if (band == EnchantGrade.None || rank == MobRank.Normal)
+            yield break;   // F-band creatures have no scroll at all — there is no F scroll.
+
+        string Normal(EnchantGrade g) => ItemCatalog.EnchantScrollKey(ScrollKind.Normal, g);
+
+        if (rank == MobRank.Elite)
+        {
+            yield return new DropEntry(Normal(band), 0.030f);                                    // 9%
+            yield return new DropEntry(ItemCatalog.EnchantScrollKey(ScrollKind.Greater, band),
+                                       0.006f);                                                  // 1.8%
+            yield break;
+        }
+
+        // BOSS. Its own band and the one below it, so the top of the ladder is reachable at all.
+        yield return new DropEntry(Normal(band), 0.100f);                                        // 30%
+        if (band > EnchantGrade.E)
+            yield return new DropEntry(Normal(band - 1), 0.100f);                                // 30%
+        yield return new DropEntry(ItemCatalog.EnchantScrollKey(ScrollKind.Greater, band),
+                                   0.030f);                                                      // 9%
+        yield return new DropEntry(ItemCatalog.EnchantScrollKey(ScrollKind.Safe, band),
+                                   0.0015f);                                                     // 0.45%
+    }
+
     public static IEnumerable<DropEntry> GearDrops(int level, MobRank rank)
     {
         int tier = GearTier(level);
@@ -350,13 +395,31 @@ public static class MobCatalog
         // roughly one per eleven kills. The buff half is unchanged; the rung simply sums to less, which
         // this group is already designed to do (see the Always-group note below).
         const float EnchantShare = 0.15f;
-        // `enchant: null` = this rung's buff potions drop but its enchant scroll does not yet — that is
-        // the "move them in the levels" half, letting the enchant floor sit ABOVE its rung's floor.
-        void EnchantRung(float weight, string? enchant)
+
+        // ENCHANT SCROLLS ARE BANDED NOW, not floored (0.49.0, D1). A scroll is locked to one grade of
+        // gear, so the old "every rung keeps dropping forever" would rain E-grade scrolls on a level-80
+        // farm that can never spend one — the exact bag clutter the inventory pass was about. Each rung
+        // therefore has a CEILING as well as a floor, and it is deliberately generous: a rung lives
+        // until the band TWO above it opens, so you keep finding scrolls for gear you are still wearing
+        // while levelling past it. Two or three rungs are live at any level, same as before.
+        //
+        // ⚠ Normal mobs stop at the B rung. A and S normal scrolls, and every Greater and Safe, come
+        // from elites and bosses only — see EnchantScrollDrops, which the kill roll layers on by RANK.
+        //
+        // The share is unchanged from playtest-18 V2b (see the note above): weight x 0.15 into the
+        // exclusive scrolls group, so the live rungs sum to roughly what the three old ones did.
+        void EnchantRung(bool live, float weight, string id)
         {
-            if (enchant is not null)
-                drops.Add(new(enchant, weight * EnchantShare, GroupId: GroupScrolls));
+            if (live) drops.Add(new(id, weight * EnchantShare, GroupId: GroupScrolls));
         }
+        EnchantRung(level is >= 20 and < 52, 0.40f, ItemCatalog.ScrollNormalE);
+        EnchantRung(level is >= 40 and < 61, 0.30f, ItemCatalog.ScrollNormalD);
+        EnchantRung(level is >= 52 and < 76, 0.20f, ItemCatalog.ScrollNormalC);
+        EnchantRung(level is >= 61 and < 80, 0.15f, ItemCatalog.ScrollNormalB);
+        // Nothing above B from a normal creature — that is his ladder, not an omission: "Legendary
+        // from elites at a low chance and bosses higher 76+, Mythic from bosses 80+". So the normal-mob
+        // enchant faucet CLOSES at 80, and from there the scrolls are an elite/boss reward. It is also
+        // what finally gives an elite camp a reason to exist for a level-80 farmer.
         // ⚠ The buff half is an explicit PER-ITEM chance, not the rung's share split N ways (which is
         // what it was until playtest-17 E3). With the 17 buff scrolls removed, a split would have
         // handed their entire share to the potions left standing — silently DOUBLING the potion faucet
@@ -377,7 +440,6 @@ public static class MobCatalog
         // Apothecary's Blessing Box and nothing else, which is what gives 250k something to buy. The
         // rung weights are UNCHANGED, so removing 17 ids from the lists does not cut the faucet — it
         // concentrates it on the potions and Dash, which is the intended trade.
-        EnchantRung(0.40f, level >= 10 ? ItemCatalog.ScrollCommon : null);
         BuffRung(0.0105f,
             new[] { ItemCatalog.SpeedPotionC, ItemCatalog.CastPotionC, ItemCatalog.AtkPotionC,
                     ItemCatalog.EvaPotionC, ItemCatalog.DashPotionC,
@@ -385,7 +447,6 @@ public static class MobCatalog
                     ItemCatalog.ForcePotionC, ItemCatalog.WardPotionC, ItemCatalog.AimPotionC });
         if (level >= 20)
         {
-            EnchantRung(0.20f, level >= 30 ? ItemCatalog.ScrollUncommon : null);
             BuffRung(0.0053f,
                 new[] { ItemCatalog.SpeedPotionU, ItemCatalog.CastPotionU, ItemCatalog.AtkPotionU,
                         ItemCatalog.EvaPotionU, ItemCatalog.DashPotionU,
@@ -398,7 +459,6 @@ public static class MobCatalog
         // Dash keeps its own old per-item rate exactly; it is the one consumable he asked to leave alone.
         if (level >= 45)
         {
-            EnchantRung(0.10f, level >= 55 ? ItemCatalog.ScrollRare : null);
             BuffRung(0.0026f, new[] { ItemCatalog.DashPotionR });
         }
         if (level >= 60) BuffRung(0.0033f, new[] { ItemCatalog.DashPotionE });

@@ -549,6 +549,51 @@ Console.WriteLine("  'buff pot' = the non-enchant half of the Scrolls group. Buf
 Console.WriteLine("  any level any more (playtest-17 E3) — they come out of the Blessing Box or nowhere.");
 Console.WriteLine();
 
+// D1: the enchant ladder is now TWO axes (type x grade) and lives in two places — the catalog and the
+// rank drop table. Print both and assert they agree, because a scroll authored in one and missing from
+// the other is exactly the silent hole this file exists to catch.
+Console.WriteLine("=== D1: the 18 enchant scrolls (type x grade) ===");
+Console.WriteLine($"{"grade",6} {"opens",6} | {"Normal (breaks)",-34} {"Greater (-1)",-34} {"Safe (keeps)",-34}");
+int scrollsFound = 0;
+foreach (var (grade, rarity, _, level, _) in ItemCatalog.EnchantScrollBands)
+{
+    var cells = new List<string>();
+    foreach (var (kind, _, _) in ItemCatalog.EnchantScrollTypes)
+    {
+        string id = ItemCatalog.EnchantScrollKey(kind, grade);
+        var def = ItemCatalog.Get(id);
+        if (def is null) { cells.Add($"!! MISSING {id}"); continue; }
+        scrollsFound++;
+        // The two axes must actually be ON the def — the server validates from these fields.
+        string flag = def.ScrollKind == kind && def.ScrollGrade == grade && def.Rarity == rarity
+            ? "" : " !!AXES";
+        cells.Add($"{ItemCatalog.SellPrice(def),8:N0}g {def.Rarity,-9}{flag}");
+    }
+    Console.WriteLine($"{EnchantRules.GradeName(grade),6} {level,6} | {cells[0],-34} {cells[1],-34} {cells[2],-34}");
+}
+Console.WriteLine($"  {scrollsFound} of 18 present. Sell price shown; rarity is how the GRADE is signalled.");
+Console.WriteLine();
+
+Console.WriteLine("=== D1: the elite / boss scroll layer (delivered chance per kill) ===");
+Console.WriteLine($"{"Lvl",4} {"band",5} | {"ELITE",-40} | {"BOSS",-52}");
+foreach (int L in new[] { 15, 25, 45, 55, 65, 78, 82 })
+{
+    string Row(MobRank rank) => string.Join("  ", MobCatalog.EnchantScrollDrops(L, rank)
+        .Select(d => $"{ItemCatalog.Get(d.ItemId)?.Name ?? "!!" + d.ItemId} {MobCatalog.EffectiveChance(d):P1}")
+        .Select(s => s.Replace("Scroll of Enchant ", "")));
+    var band = EnchantRules.GradeOf(L);
+    Console.WriteLine($"{L,4} {EnchantRules.GradeName(band),5} | {Row(MobRank.Elite),-40} | {Row(MobRank.Boss),-52}");
+}
+// A rank entry naming an item that does not exist never reaches the normal integrity check below,
+// because these entries are built at KILL time and are in no template.
+var badRank = new[] { MobRank.Elite, MobRank.Boss }
+    .SelectMany(r => new[] { 15, 25, 45, 55, 65, 78, 82, 90 }
+        .SelectMany(L => MobCatalog.EnchantScrollDrops(L, r)))
+    .Where(d => ItemCatalog.Get(d.ItemId) is null).ToArray();
+Console.WriteLine($"  rank-layer ids that resolve: {(badRank.Length == 0 ? "all" : $"!! {badRank.Length} MISSING")}");
+Console.WriteLine("  F band (below 20) yields nothing at any rank — there is no F scroll by design.");
+Console.WriteLine();
+
 // E3's whole claim is "no buff scroll drops, from anything, ever". That is a property of ~200 drop
 // tables, so assert it rather than trusting a reading: the Blessing Box's own contents ARE the list of
 // the 17, so the box and the guard can never drift apart.

@@ -283,6 +283,12 @@ public record AccountWarehouseWithdrawCmd(string ConnectionId, Guid InstanceId) 
 /// <summary>DEBUG-only: grant an item by def id.</summary>
 public record DebugGiveCmd(string ConnectionId, string DefId) : IAdminCommand;
 
+/// <summary>DEBUG-only: set one item's enchant OUTRIGHT (the `/enchant &lt;value&gt;` picker, D2).
+/// Deliberately unrestricted — no grade band, no scroll, no success roll and no MaxEnchant, because
+/// the whole point is to reach states the scroll ladder cannot (the owner's own example is
+/// `/enchant 999999` on an F weapon, which no scroll may touch at all).</summary>
+public record AdminEnchantCmd(string ConnectionId, Guid InstanceId, int Value) : IAdminCommand;
+
 /// <summary>DEBUG-only: strip an attribute off the EQUIPPED weapon (Index = which; -1 = all).
 /// Lets you test with only the base weapon / a chosen attribute, not the full rolled set.</summary>
 public record DebugCancelAttrCmd(string ConnectionId, int Index) : IAdminCommand;

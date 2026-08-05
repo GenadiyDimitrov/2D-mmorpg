@@ -2,10 +2,29 @@ namespace Game.Shared;
 
 public enum EnchantResult { Success = 0, Broke = 1, Reset = 2, Downgraded = 3, Failed = 4 }
 
+/// <summary>The GRADE BAND an enchant scroll serves — the item grades a scroll may be spent on.
+/// This is the real ladder (<see cref="ItemDef.ItemLevel"/>), NOT the <see cref="ItemGrade"/> enum,
+/// which has no C/D and exists for pricing only. It matches <see cref="AttrTier"/> at D and above and
+/// simply extends one step further down, to E.
+///
+/// <b>There is no F scroll</b> (owner, playtest-17 D1: the ladder is Common→E … Mythic→S). F is the
+/// training tier you leave behind by level 20, so F gear is not scroll-enchantable at all — which is
+/// exactly why he also asked for the unrestricted admin path (`/enchant 999999` on an F weapon).</summary>
+public enum EnchantGrade { None = 0, E = 1, D = 2, C = 3, B = 4, A = 5, S = 6 }
+
 /// <summary>
-/// Enchanting rules (design doc). Success chance falls in bands as the
-/// enchant level climbs; the three scroll kinds differ only in what happens
-/// on failure. Lives in Shared so the client can show odds before committing.
+/// Enchanting rules (owner's spec, playtest-17 D1 — the 0.49.0 rework).
+///
+/// A scroll now has TWO independent axes, and the item ladder finally means something on both:
+///   • <see cref="ScrollKind"/> — what a FAILURE costs (Normal breaks / Greater −1 / Safe keeps).
+///   • <see cref="EnchantGrade"/> — WHICH grade of gear it works on, signalled by the scroll's
+///     RARITY (Common→E, Uncommon→D, Rare→C, Epic→B, Legendary→A, Mythic→S).
+///
+/// Before this the three scrolls were the failure behaviours alone and ANY scroll worked on ANY
+/// item, so a Common scroll found at level 10 was a legitimate tool against endgame gear. Now the
+/// band gates it, one grade below the attribute-scroll bands.
+///
+/// Lives in Shared so the client can show the odds and the cost of failure before committing.
 /// </summary>
 public static class EnchantRules
 {
@@ -33,8 +52,54 @@ public static class EnchantRules
         return baseBonus + (int)(baseBonus * 0.20f * enchantLevel) + enchantLevel;
     }
 
+    // ===================================================================================
+    //  THE GRADE BAND. One scroll, one grade — the same shape as an attribute scroll, so the
+    //  client can filter its target list from the identical code the server validates with.
+    // ===================================================================================
+
+    /// <summary>The band an item level sits in. Below 20 (F, the training tier) there is no band
+    /// and no scroll can touch it. Thresholds are the ladder's own: E 20, D 40, C 52, B 61, A 76,
+    /// S 80 — the same numbers <see cref="GradePenalty.GradeLevels"/> and
+    /// <see cref="AttributeSystem.TierOf"/> already use.</summary>
+    public static EnchantGrade GradeOf(int itemLevel) =>
+        itemLevel >= 80 ? EnchantGrade.S :
+        itemLevel >= 76 ? EnchantGrade.A :
+        itemLevel >= 61 ? EnchantGrade.B :
+        itemLevel >= 52 ? EnchantGrade.C :
+        itemLevel >= 40 ? EnchantGrade.D :
+        itemLevel >= 20 ? EnchantGrade.E : EnchantGrade.None;
+
+    /// <summary>The band an ITEM sits in, taking the def (so legacy items with no ItemLevel fall
+    /// back through <see cref="GradePenalty.ItemGradeLevel"/> exactly as everywhere else).</summary>
+    public static EnchantGrade GradeOf(ItemDef def) => GradeOf(GradePenalty.ItemGradeLevel(def));
+
+    /// <summary>Display letter for a band, for tooltips and refusal messages.</summary>
+    public static string GradeName(EnchantGrade g) => g switch
+    {
+        EnchantGrade.E => "E", EnchantGrade.D => "D", EnchantGrade.C => "C",
+        EnchantGrade.B => "B", EnchantGrade.A => "A", EnchantGrade.S => "S",
+        _ => "F"
+    };
+
+    /// <summary>May this scroll be spent on this item? A scroll serves EXACTLY its own band —
+    /// there is no "or better", which is what stops a cheap scroll reaching endgame gear.</summary>
+    public static bool Accepts(ItemDef scrollDef, ItemDef targetDef) =>
+        scrollDef.ScrollGrade != EnchantGrade.None
+        && scrollDef.ScrollGrade == GradeOf(targetDef);
+
+    /// <summary>What a failure costs, in the player's words. Shared by the client's confirmation
+    /// popup and the server's refusal/outcome messages so the two can never disagree.</summary>
+    public static string FailureText(ScrollKind kind) => kind switch
+    {
+        ScrollKind.Normal => "the item is DESTROYED",
+        ScrollKind.Greater => "the enchant drops by 1",
+        ScrollKind.Safe => "nothing — the enchant is kept",
+        _ => "nothing"
+    };
+
     /// <summary>Resolve one enchant attempt. Returns the outcome and the new
-    /// enchant level. Caller consumes the scroll regardless of outcome.</summary>
+    /// enchant level. Caller consumes the scroll regardless of outcome — including a Safe
+    /// failure, which is the whole price of the safety.</summary>
     public static (EnchantResult Result, int NewLevel) Attempt(
         int currentLevel, ScrollKind kind, Random rng)
     {
@@ -44,12 +109,14 @@ public static class EnchantRules
         if (rng.NextDouble() < SuccessChance(currentLevel))
             return (EnchantResult.Success, currentLevel + 1);
 
-        // Failure path depends on the scroll kind.
+        // Failure path depends on the scroll TYPE. Note that "reset to +0"
+        // (EnchantResult.Reset) is no longer reachable — the owner's three-type ladder has no
+        // scroll that does it. The enum value stays so old outcome-handling code still compiles.
         return kind switch
         {
-            ScrollKind.Common => (EnchantResult.Broke, currentLevel),       // item destroyed
-            ScrollKind.Uncommon => (EnchantResult.Reset, 0),                // back to +0
-            ScrollKind.Rare => (EnchantResult.Downgraded, Math.Max(0, currentLevel - 1)),
+            ScrollKind.Normal => (EnchantResult.Broke, currentLevel),        // item destroyed
+            ScrollKind.Greater => (EnchantResult.Downgraded, Math.Max(0, currentLevel - 1)),
+            ScrollKind.Safe => (EnchantResult.Failed, currentLevel),         // keeps its level
             _ => (EnchantResult.Failed, currentLevel)
         };
     }

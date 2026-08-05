@@ -182,6 +182,7 @@ public class GameLoopService : BackgroundService
                 case UsePotionCmd c: HandleUsePotion(c); break;
                 case ResurrectResponseCmd c: HandleResurrectResponse(c); break;
                 case EnchantCmd c: HandleEnchant(c); break;
+                case AdminEnchantCmd c: HandleAdminEnchant(c); break;
                 case RerollAttributesCmd c: HandleRerollAttributes(c); break;
                 case RemoveItemCmd c: HandleRemoveItem(c); break;
                 case RestoreItemCmd c: HandleRestoreItem(c); break;
@@ -1765,6 +1766,21 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // GRADE BAND (0.49.0, D1). A scroll serves exactly one grade of gear, so this is the check that
+        // makes the ladder mean anything — before it, the Common scroll found at level 10 was a
+        // legitimate tool against endgame gear. Named on BOTH sides, because "wrong grade" alone leaves
+        // the player guessing which of the two they got wrong.
+        if (!EnchantRules.Accepts(scrollDef, targetDef))
+        {
+            var need = EnchantRules.GradeOf(targetDef);
+            SendSystemToEntity(player,
+                $"{scrollDef.Name} only works on {EnchantRules.GradeName(scrollDef.ScrollGrade)} grade; "
+                + $"{targetDef.Name} is {EnchantRules.GradeName(need)} grade"
+                + (need == EnchantGrade.None
+                    ? " — F grade cannot be enchanted at all." : "."));
+            return;
+        }
+
         var (result, newLevel) = EnchantRules.Attempt(target.Enchant, scrollDef.ScrollKind, _rng);
 
         // The scroll is always consumed (one from the stack).
@@ -1790,6 +1806,12 @@ public class GameLoopService : BackgroundService
             case EnchantResult.Downgraded:
                 target.Enchant = newLevel;
                 outcome = $"Enchant failed — {targetDef.Name} dropped to +{newLevel}.";
+                break;
+            case EnchantResult.Failed:
+                // The SAFE scroll's failure. Say what was PRESERVED, not "nothing happened" — the
+                // scroll is gone and that is the whole price, so the player has to be able to see
+                // what they bought with it.
+                outcome = $"Enchant failed — {targetDef.Name} stays at +{target.Enchant}.";
                 break;
             default:
                 outcome = "Nothing happened.";
@@ -2231,6 +2253,41 @@ public class GameLoopService : BackgroundService
         // feedback. The rarely-used debug actions — teleport coordinates, karma, class change — keep
         // theirs, because those genuinely tell you something the UI does not.
         SendInventory(player);
+    }
+
+    /// <summary>DEBUG (`/enchant &lt;value&gt;`, D2): set one item's enchant outright.
+    ///
+    /// This bypasses EVERY rule the scroll path enforces — the grade band, the scroll, the success
+    /// roll and <see cref="EnchantRules.MaxEnchant"/> — on purpose: its job is to reach states no
+    /// scroll can produce so the STAT side of enchanting can be tested in one step instead of forty
+    /// rolls. The only bound is an anti-overflow ceiling, which sits far above the owner's 999999.
+    /// </summary>
+    private void HandleAdminEnchant(AdminEnchantCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player))
+            return;
+        var item = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
+        if (item is null || ItemCatalog.Get(item.DefId) is not ItemDef def)
+        {
+            SendSystemToEntity(player, "No such item.");
+            return;
+        }
+        if (!ItemCatalog.IsEquippable(def))
+        {
+            SendSystemToEntity(player, $"{def.Name} cannot be enchanted.");
+            return;
+        }
+        // EnchantRules.BonusAt multiplies the base bonus by the level; a few million keeps every
+        // derived stat inside int range while still being absurd enough for any test.
+        item.Enchant = Math.Clamp(cmd.Value, 0, 1_000_000);
+        if (item.Equipped)
+        {
+            player.RecomputeDerived();
+            SendStats(player);
+        }
+        SendInventory(player);
+        SaveEntity(player);
+        SendSystemToEntity(player, $"[DEBUG] {def.Name} set to +{item.Enchant}.");
     }
 
     /// <summary>DEBUG: strip an attribute (or all) off the equipped weapon, so you can test with
@@ -7944,6 +8001,9 @@ var effect = def.Effect;
         {
             applicable.RemoveAll(e => MobCatalog.IsGearGroup(e.GroupId));
             applicable.AddRange(MobCatalog.GearDrops(mob.Level, mob.Rank));
+            // The enchant-scroll layer ADDS rather than replaces (0.49.0 D1): an elite still rolls the
+            // ordinary scrolls group, and the Greater/Safe types exist nowhere else.
+            applicable.AddRange(MobCatalog.EnchantScrollDrops(mob.Level, mob.Rank));
         }
 
         // Everyone who received something this kill (refresh their inventory once at the end).
@@ -9305,6 +9365,7 @@ var effect = def.Effect;
             {
                 rows.RemoveAll(d => MobCatalog.IsGearGroup(d.GroupId));
                 rows.AddRange(MobCatalog.GearDrops(t.Level, t.Rank));
+                rows.AddRange(MobCatalog.EnchantScrollDrops(t.Level, t.Rank));
             }
             string ItemLine(DropEntry d)
             {

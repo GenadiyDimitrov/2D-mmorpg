@@ -218,10 +218,16 @@ namespace Game.Client
         public Task SelectBoxItemsAsync(Guid instanceId, string[] itemIds) =>
             _connection.SendAsync("SelectBoxItems", instanceId, itemIds);
 
-        /// <summary>Burn an ENCHANT scroll on a piece of gear (+1 on success; the scroll kind decides
-        /// what a failure costs — break / reset to +0 / −1).</summary>
+        /// <summary>Burn an ENCHANT scroll on a piece of gear (+1 on success; the scroll TYPE decides
+        /// what a failure costs — break / −1 / keep — and the scroll's GRADE decides what it may be
+        /// spent on at all).</summary>
         public Task EnchantAsync(Guid scrollInstanceId, Guid targetInstanceId) =>
             _connection.SendAsync("Enchant", scrollInstanceId, targetInstanceId);
+
+        /// <summary>ADMIN (`/enchant &lt;value&gt;`): set one of my items to an exact enchant, ignoring
+        /// scrolls, grades and the maximum. The server re-checks the staff role.</summary>
+        public Task AdminEnchantAsync(Guid instanceId, int value) =>
+            _connection.SendAsync("AdminEnchant", instanceId, value);
 
         /// <summary>Burn an ATTRIBUTE scroll on a weapon or jewel. The item holds at most one
         /// attribute; the scroll kind decides whether this creates one or re-rolls its value.</summary>

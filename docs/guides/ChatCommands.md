@@ -85,6 +85,7 @@ answers `Moderators can't use /<command>.` **No god mode, no teleporting, no ite
 | `/speed-reset` | Drop all three overrides back to your real stats. | `/speed-reset` |
 | `/bag <name>` | Open an **online player's inventory** — read-only-ish, with a remove button per row. | `/bag Aricel` |
 | `/give <name>` | Open **your own** bag as a picker to hand something to that online player. Ignores tradability on purpose: staff can hand over anything, quest items included. | `/give Aricel` |
+| `/enchant <value>` | Open **your own** bag as a picker and set the chosen weapon/armor/jewel to that exact enchant. Unrestricted on purpose — no grade band, no scroll, no success roll and no +16 ceiling, so it reaches states the scroll ladder cannot. `/enchant 999999` on an F weapon works. | `/enchant 16` |
 | `/givegold <name> <amount>` | Give or **take** gold. `k`/`m`/`b`/`t` suffixes and `1_000_000` both parse; a **negative** amount takes it away and clamps at zero, so you don't need the exact figure to empty someone. | `/givegold Aricel 5m` |
 | `/farmcap <player> <autoHours> <offlineHours>` | The **premium knob**, per account: the daily auto-hunt and offline-farm allowances. `-1` = server default (free is 8/2), `0` = unlimited. | `/farmcap Aricel 12 4` |
 | `/testcaps [off]` | Debug: shrink the farm caps to **30s idle / 20s offline / 15s grace** so you can test them in a minute instead of eight hours. `off` restores 8h/2h/180s. Both refill the allowances. | `/testcaps` |

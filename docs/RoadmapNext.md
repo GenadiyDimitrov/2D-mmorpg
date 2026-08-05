@@ -72,9 +72,14 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
       selection popup grew a pick-many mode to go with it. Gold over the reference farm is unchanged
       (buff potions already sold for 0); what fell is consumables per kill, 33 % → 18.5 %.
       ⚠ **The catalog is inside the APK — this one needs a client build, not just a server zip.**
-   4. 🔵 **The enchant rework** `D1` — three scroll TYPES (breaks / −1 / **safe**) with the RARITY
-      choosing the grade E→S, drop bands one grade below the attribute scrolls, safe scrolls from bosses
-      only. Plus `D2` `/enchant <value>` and every scroll in the admin menu.
+   4. ✅ **The enchant rework — DONE 2026-08-05, unplayed.** `D1` is built: **18 scrolls**, three TYPES
+      (breaks / −1 / **safe**) × six GRADES, with the RARITY choosing the grade E→S, one band below the
+      attribute scrolls. The three original ids are re-pointed at the E/D/C Normals, so **no db reset**.
+      Drops are **banded, not floored** (a rung dies two bands above itself), the normal-mob faucet
+      **closes at 80**, and A/S + every Greater and Safe are an **elite/boss** layer keyed off the band
+      the mob's level sits in. `D2` `/enchant <value>` is a client-side picker + `AdminEnchantCmd`, and
+      all 18 are in the debug menu. `BalanceMatrix` §D1 measures both halves.
+      ⚠ **Needs a client build** — the catalog is in the APK. Checklist §49.
    ✅ **`B3` is CLOSED** — the list went to him as [testing/Skills-Not-In-CSVs.md](testing/Skills-Not-In-CSVs.md)
    and he answered it on 2026-08-04 (playtest-18 `G1`, item 3 below). The deletion is unblocked.
 3. 🆕 **The playtest-18 queue** (2026-08-04, [testing/Playtest-18.md](testing/Playtest-18.md), §45) —
