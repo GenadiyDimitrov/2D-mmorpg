@@ -32,8 +32,11 @@
              Two independent clients cannot come from this block alone (same package, one process,
              launchMode="singleTask"), so a Samsung profile-level clone (Dual Messenger / Secure Folder,
              separate UID + data dir) is likely also involved — and that one is a PHONE SETTING no
-             manifest edit can remove. Check `adb shell pm list users` and `pm list packages --user <id>`
-             with the phone attached before declaring it fixed. -->
+             manifest edit can remove. Check `adb shell pm list users`, then list that user's packages
+             with the phone attached before declaring it fixed.
+             (NB: a doubled hyphen may never appear inside an XML comment. Spelling the adb user flag
+             out here is exactly what broke the 0.47.0 APK build, and Unity fails it at manifest
+             generation — after IL2CPP, ~3 minutes in — so it does not look like a manifest problem.) -->
         <activity android:name="com.unity3d.player.UnityPlayerActivity"
                   android:theme="@style/UnityThemeSelector">
             <intent-filter>
