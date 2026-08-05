@@ -151,7 +151,18 @@ namespace Game.Client
             {
                 if (!withdraw && item.Equipped) continue;   // worn gear isn't stashable (unequip it first)
                 var def = ItemCatalog.Get(item.DefId);
-                if (def == null || !InCategory(_warehouseTab, def)) continue;
+                if (def == null) continue;
+
+                // ⚠ A token already IN the bank must still be listed on the WITHDRAW side. B4 stops
+                // one going in, but the private bank accepted them until B4 shipped, so saves exist
+                // with a token stranded inside — and `InCategory(All, …)` deliberately hides Quest
+                // while this window has no Quest tab of its own. The two together made such a token
+                // permanently unreachable, with its quest step stalled and every tab reading "Your
+                // warehouse is empty". Getting one OUT is precisely what B4 wants to happen, so the
+                // All tab rescues it; Gear/Use/Mats stay clean.
+                bool rescueToken = withdraw && ItemCatalog.IsQuestItem(def)
+                                   && _warehouseTab == ItemCategory.All;
+                if (!rescueToken && !InCategory(_warehouseTab, def)) continue;
 
                 // The account bank takes tradable items only, so a bound item is dropped from the
                 // DEPOSIT list rather than listed and then refused — a row you can tap and be told no

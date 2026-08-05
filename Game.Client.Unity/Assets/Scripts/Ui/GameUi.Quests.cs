@@ -82,11 +82,19 @@ namespace Game.Client
         /// quest's DETAIL page"*) — it used to be a single block of text, which had nothing to click.
         /// A row is the shortest path from "what am I doing" to the whole quest, and it skips the log
         /// window entirely.</summary>
+        // The tracker sizes itself to its pins (see RefreshQuestTracker). Width is fixed, so the text
+        // width a row will get is knowable up front: panel − the list's 8px insets − the label's 6px.
+        private const float TrackerWidth = 300f;
+        private const float TrackerTextWidth = TrackerWidth - 16f - 12f;
+        private const float TrackerMaxHeight = 420f;
+
         private void BuildQuestTracker()
         {
             _trackerPanel = UiKit.PanelBox(_worldRoot, "QuestTracker");
+            // Pivot is the TOP-right corner, so growing the height extends it downward — which is
+            // what lets the panel follow its content without the pins walking up the screen.
             UiKit.Place(_trackerPanel, new Vector2(1f, 1f), new Vector2(1f, 1f),
-                        new Vector2(-12f, -220f), new Vector2(300f, 180f));
+                        new Vector2(-12f, -220f), new Vector2(TrackerWidth, 180f));
             var inner = _trackerPanel.GetChild(0);
 
             // Movable, like the other floating panels — it will inevitably sit over something.
@@ -173,6 +181,7 @@ namespace Game.Client
             for (int i = _trackerList.childCount - 1; i >= 0; i--)
                 Destroy(_trackerList.GetChild(i).gameObject);
 
+            float stacked = 0f;
             for (int p = 0; p < pinIds.Count; p++)
             {
                 string qid = pinIds[p], body = pinRows[p];
@@ -185,13 +194,25 @@ namespace Game.Client
                 string open = qid;
                 button.onClick.AddListener(() => ShowQuestDetail(open));
 
-                int lines = 1;
-                for (int i = 0; i < body.Length; i++) if (body[i] == '\n') lines++;
-                row.gameObject.AddComponent<LayoutElement>().minHeight = lines * 18f + 6f;
-
                 var label = UiKit.Label(row.transform, body, 14f, UiKit.Text, TextAlignmentOptions.TopLeft);
                 UiKit.Stretch(UiKit.Rect(label.gameObject), 6f, 3f, 6f, 3f);
+
+                // ⚠ MEASURE the text, don't count '\n'. Word-wrap is on, and a real objective —
+                // "Hunt in the Bracken fields, then return to Huntmaster Cera" — is ONE newline and
+                // TWO drawn lines, so a line count left every wrapped row short and the label spilled
+                // onto the pin below it. GetPreferredValues asks TMP at the width the row will
+                // actually have, before any layout pass has run.
+                float h = label.GetPreferredValues(body, TrackerTextWidth, 0f).y + 6f;
+                row.gameObject.AddComponent<LayoutElement>().minHeight = h;
+                stacked += h + (p > 0 ? 3f : 0f);   // + the layout group's spacing
             }
+
+            // And GROW THE PANEL to fit them. It was a fixed 180px, which Q2 then made worse by
+            // auto-pinning on accept: five pins of two lines each need well over that, and with no
+            // mask and no scroll the extra ones simply drew outside the panel onto the world. Capped
+            // so a full tracker still can't swallow the screen.
+            _trackerPanel.sizeDelta = new Vector2(TrackerWidth,
+                Mathf.Clamp(stacked + 12f, 60f, TrackerMaxHeight));
 
             bool show = pinIds.Count > 0;
             if (_trackerPanel.gameObject.activeSelf != show) _trackerPanel.gameObject.SetActive(show);

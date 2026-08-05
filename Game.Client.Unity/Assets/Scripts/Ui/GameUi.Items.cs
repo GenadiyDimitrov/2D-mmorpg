@@ -194,14 +194,21 @@ namespace Game.Client
             return v;
         }
 
-        /// <summary>Grow/shrink the window's compare column. Mirrors ToggleBagEquip: the panel widens
-        /// and the SELECTED column slides right by the column width, so the piece you tapped stays
-        /// where your eye already is and the worn piece appears beside it.</summary>
+        /// <summary>Grow/shrink the window's compare column: the panel widens, the compare column
+        /// appears on the LEFT and the selected one slides right by its width, so the piece you tapped
+        /// stays where your eye already is and the worn piece appears beside it.
+        ///
+        /// ⚠ The panel's pivot is its CENTRE, so growing sizeDelta pushes BOTH edges outward — half
+        /// the new width each way. Sliding the selected column right by a full column while its parent
+        /// also moved right by half of one left it a quarter-screen from where you tapped, taking the
+        /// Equip/Bin buttons out from under your thumb. Shifting the PANEL left by half the column
+        /// cancels that exactly, which is what makes the sentence above true rather than aspirational.</summary>
         private void SetItemCompare(bool open)
         {
             _itemCompareOpen = open;
             _cmpView.Column.gameObject.SetActive(open);
             _itemPanel.sizeDelta = new Vector2(open ? ItemPanelExpanded : ItemPanelCollapsed, ItemPanelHeight);
+            _itemPanel.anchoredPosition = new Vector2(open ? -ItemColumnWidth / 2f : 0f, 0f);
 
             var p = _itemView.Column.anchoredPosition;
             p.x = open ? ItemColumnX + ItemColumnWidth : ItemColumnX;

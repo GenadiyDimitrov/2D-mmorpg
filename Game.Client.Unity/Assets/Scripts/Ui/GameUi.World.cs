@@ -117,12 +117,22 @@ namespace Game.Client
         private Button _bagEquipToggle;      // expands the paper-doll column (worn gear) beside the list
         private bool _bagEquipOpen;
         private const float BagWidthCollapsed = 460f, BagWidthExpanded = 792f, BagHeight = 560f;
+        /// <summary>The bag is TALLER with the paper-doll open. C8's second tab row pushed the column
+        /// down 36px, and the column's own content (body squares → jewel row → the three preset rows)
+        /// ends 438px below its top — 50px more than the 388 the window had left under the tabs. With
+        /// no mask on a PanelBox that is not clipping: preset C simply drew outside the window, over
+        /// the world, un-tappable where you expected it. The list keeps its own height either way,
+        /// so only the paper-doll side uses the extra room.</summary>
+        private const float BagHeightExpanded = 620f;
         /// <summary>Left inset of the bag's item list when the equip column is CLOSED.</summary>
         private const float BagListX = 16f;
         /// <summary>How far the list slides right when the equip column opens on its left — exactly the
         /// width the window gains, so the list keeps its position relative to the RIGHT edge.</summary>
         private const float BagEquipColumnWidth = BagWidthExpanded - BagWidthCollapsed;
         private RectTransform _bagListRect;
+        /// <summary>The window chrome height, kept so the toggle can re-derive the list's height when
+        /// the window grows for the paper-doll instead of leaving 60px of dead space under the list.</summary>
+        private float _bagChrome;
         private TextMeshProUGUI _bagGoldLabel, _bagSlotsLabel;
         private static readonly Color GoldColour = new Color(0.95f, 0.82f, 0.35f);
 
@@ -790,6 +800,7 @@ namespace Game.Client
                         Vector2.zero, new Vector2(BagWidthCollapsed, BagHeight));
             var inner = _bagPanel.GetChild(0);
             float chrome = UiKit.WindowChrome(_bagPanel, "Bag", () => CloseWindow(_bagPanel));
+            _bagChrome = chrome;
 
             // Header line over the LEFT (list) region: gold left, slot usage beside it. Left-anchored so
             // they stay put when the window widens to reveal the equip column.
@@ -839,13 +850,18 @@ namespace Game.Client
         {
             _bagEquipOpen = !_bagEquipOpen;
             if (_equipColumn != null) _equipColumn.gameObject.SetActive(_bagEquipOpen);
-            _bagPanel.sizeDelta = new Vector2(_bagEquipOpen ? BagWidthExpanded : BagWidthCollapsed, BagHeight);
-            // Slide the list right so the paper-doll has the left side to itself.
+            _bagPanel.sizeDelta = new Vector2(_bagEquipOpen ? BagWidthExpanded : BagWidthCollapsed,
+                                              _bagEquipOpen ? BagHeightExpanded : BagHeight);
+            // Slide the list right so the paper-doll has the left side to itself, and let it use the
+            // height the window just gained — it is anchored to the top, so without this the extra
+            // 60px would be dead space under a list that could have shown two more rows.
             if (_bagListRect != null)
             {
                 var p = _bagListRect.anchoredPosition;
                 p.x = _bagEquipOpen ? BagListX + BagEquipColumnWidth : BagListX;
                 _bagListRect.anchoredPosition = p;
+                _bagListRect.sizeDelta = new Vector2(_bagListRect.sizeDelta.x,
+                    (_bagEquipOpen ? BagHeightExpanded : BagHeight) - _bagChrome - 126f);
             }
             _bagEquipToggle.targetGraphic.color = _bagEquipOpen ? UiKit.TabActive : UiKit.PanelLight;
             _equipRevision = -1;   // force the paper-doll to repaint on next refresh
