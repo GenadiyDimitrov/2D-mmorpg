@@ -95,6 +95,32 @@ public static class BoxCatalog
                 new BoxEntry(ItemCatalog.BoxSpellRune1h, 1.0f),
             }, PickCount: 1),
 
+            // THE BLESSING BOX — pick 10 of the 17 buff scrolls (playtest-17 E3). This is the first
+            // pick-MANY box in the game; the server already handled it (`Take(box.PickCount)` over the
+            // distinct picks), the client chooser is what had to grow a tally and a Confirm.
+            // Order matches the buff bar's reading order: the speed four, the five stat families, then
+            // the eight that have no potion — so the list you tick reads like the buffer's own list.
+            new BoxDef(ItemCatalog.BoxBuffScrolls, new[]
+            {
+                new BoxEntry(ItemCatalog.SpeedScrollR, 1.0f),
+                new BoxEntry(ItemCatalog.CastScrollR, 1.0f),
+                new BoxEntry(ItemCatalog.AtkScrollR, 1.0f),
+                new BoxEntry(ItemCatalog.EvaScrollR, 1.0f),
+                new BoxEntry(ItemCatalog.MightScrollR, 1.0f),
+                new BoxEntry(ItemCatalog.BulwarkScrollR, 1.0f),
+                new BoxEntry(ItemCatalog.ForceScrollR, 1.0f),
+                new BoxEntry(ItemCatalog.WardScrollR, 1.0f),
+                new BoxEntry(ItemCatalog.AimScrollR, 1.0f),
+                new BoxEntry(ItemCatalog.BodyScrollM, 1.0f),
+                new BoxEntry(ItemCatalog.SoulScrollM, 1.0f),
+                new BoxEntry(ItemCatalog.VigorScrollM, 1.0f),
+                new BoxEntry(ItemCatalog.SerenityScrollM, 1.0f),
+                new BoxEntry(ItemCatalog.FocusScrollM, 1.0f),
+                new BoxEntry(ItemCatalog.FerocityScrollM, 1.0f),
+                new BoxEntry(ItemCatalog.InsightScrollM, 1.0f),
+                new BoxEntry(ItemCatalog.FrenzyScrollM, 1.0f),
+            }, PickCount: 10),
+
             // Newbie jewels box — 2 earrings, 2 rings, 1 necklace (100% each).
             new BoxDef(ItemCatalog.BoxNewbieJewels, new[]
             {

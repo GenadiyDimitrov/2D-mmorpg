@@ -64,11 +64,14 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
       (`B2` dies with it) · `C10` jewels rank by **delivered M.Def**, enchant included, not rarity.
       **Needs an APK + a play pass**, together with the 🔴 batch above. Also picked up `G6` from
       playtest-18 (warehouse slots used/total, red when full).
-   3. 🟡 **The faucet + the scroll economy** — `E1`/`E2` (÷20 return scrolls, ÷10 heal potions, rarity
-      bands by level) are one-line rate changes and he measured them himself, so do them first; `E3` is
-      the real work (**no buff-scroll drops at all**, potions sell at 0, two rarities, one max-rung
-      scroll per buff, and an **Apothecary selection box: 250k for a pick of 10** — deliberately priced
-      so a live buffer stays the better deal).
+   3. ✅ **The faucet + the scroll economy — DONE 2026-08-05, unplayed.** `E1`/`E2` were one-line rate
+      changes and shipped with batch 1. `E3` was the real work and is now built: **17 scrolls** (one
+      per buff, top rung, Rare, bound) against 48 before, **18 potions** (the Rare rung deleted), **no
+      buff-scroll drops from anything**, and the **Blessing Box** — 250k at the Apothecary for a pick
+      of 10, the only source of a scroll in the game and the first real gold sink. The client's
+      selection popup grew a pick-many mode to go with it. Gold over the reference farm is unchanged
+      (buff potions already sold for 0); what fell is consumables per kill, 33 % → 18.5 %.
+      ⚠ **The catalog is inside the APK — this one needs a client build, not just a server zip.**
    4. 🔵 **The enchant rework** `D1` — three scroll TYPES (breaks / −1 / **safe**) with the RARITY
       choosing the grade E→S, drop bands one grade below the attribute scrolls, safe scrolls from bosses
       only. Plus `D2` `/enchant <value>` and every scroll in the admin menu.

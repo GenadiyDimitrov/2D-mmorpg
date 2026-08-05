@@ -291,13 +291,16 @@ namespace Game.Client
 
             DebugHeader("Buff potions & scrolls (x5)");
             DebugGive(ItemCatalog.SpeedPotionC, "Swift Potion (Lesser) x5", 5);
-            DebugGive(ItemCatalog.SpeedPotionR, "Swift Potion (Greater) x5", 5);
-            DebugGive(ItemCatalog.CastPotionR, "Alacrity Potion (Greater) x5", 5);
-            DebugGive(ItemCatalog.AtkPotionR, "Haste Potion (Greater) x5", 5);
-            DebugGive(ItemCatalog.EvaPotionR, "Agility Potion (Greater) x5", 5);
-            DebugGive(ItemCatalog.SpeedScrollR, "Scroll of Swift (Greater) x5", 5);
-            DebugGive(ItemCatalog.CastScrollR, "Scroll of Alacrity (Greater) x5", 5);
+            DebugGive(ItemCatalog.SpeedPotionU, "Swift Potion x5", 5);
+            DebugGive(ItemCatalog.CastPotionU, "Alacrity Potion x5", 5);
+            DebugGive(ItemCatalog.AtkPotionU, "Haste Potion x5", 5);
+            DebugGive(ItemCatalog.EvaPotionU, "Agility Potion x5", 5);
+            DebugGive(ItemCatalog.SpeedScrollR, "Scroll of Swift x5", 5);
+            DebugGive(ItemCatalog.CastScrollR, "Scroll of Alacrity x5", 5);
             DebugGive(ItemCatalog.DashPotionM, "Dash Potion (Supreme) x5", 5);
+            // The Blessing Box is the only source of a buff scroll in play, so it is the one thing here
+            // that has to be reachable to test the pick-10 chooser at all.
+            DebugGive(ItemCatalog.BoxBuffScrolls, "Blessing Box x2", 2);
 
             DebugHeader("Potions (x10)");
             DebugGive(ItemCatalog.MinorPotion, "Minor Potion x10", 10);

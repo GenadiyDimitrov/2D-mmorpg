@@ -66,8 +66,8 @@ public static class ShopCatalog
                 // potion-economy design where the top tier stays out of the shop.
                 ItemCatalog.MinorPotion,
                 ItemCatalog.HealingPotion,
-                // Common buff potions (the weak rung is vendor-stocked; stronger ones drop or are
-                // crafted). Scrolls are NOT sold: the same buff for an hour is a drop/craft reward.
+                // Common buff potions (the weak rung is vendor-stocked; the Uncommon rung drops).
+                // Individual scrolls are NOT sold — see the Blessing Box below.
                 ItemCatalog.SpeedPotionC,
                 ItemCatalog.CastPotionC,
                 ItemCatalog.AtkPotionC,
@@ -77,7 +77,10 @@ public static class ShopCatalog
                 ItemCatalog.ForcePotionC,
                 ItemCatalog.WardPotionC,
                 ItemCatalog.AimPotionC,
-                ItemCatalog.DashPotionC,
+                // The Blessing Box (250k) — buff SCROLLS are sold only as a pick-10 box, and only here
+                // (playtest-17 E3). The Dash potion left this shelf with the same change: it is
+                // drop-and-boss-points only now, deliberately not something gold can top up.
+                ItemCatalog.BoxBuffScrolls,
                 // Scroll of Return (500g) — a faster escape than the free 30s Return skill. The
                 // Ultimate scroll is NOT sold here (special vendor later).
                 ItemCatalog.ScrollReturn,

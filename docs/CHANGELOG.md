@@ -12,6 +12,43 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## Unreleased — `E3`: the buff economy, and the game's first gold sink
+
+**No protocol change, no schema change, no db reset.** But the item catalog lives in `Game.Shared`,
+which ships *inside* the APK — so this needs a **new client build**, not just a server one.
+
+**The shape changed, not just the numbers: a potion is what you FIND, a scroll is what you BUY.** They
+used to mirror each other rung for rung — same buff, 20 minutes vs an hour — which meant the top of
+every ladder fell out of the sky for free and the paid layer had nothing left to sell.
+
+- **17 scrolls, down from 48.** One per buff, at its family's MAX rung, all Rare, all **bound**. A
+  boxed set is literally an NPC buffer's blessing for an hour. The eight scroll-only families keep
+  their rung 6 — which is the first time the **Mythic rung has had any source at all**.
+- **18 potions, down from 27.** Rungs Common and Uncommon; the Rare potion is gone. A family now
+  reads *Lesser (found) → plain (found) → **scroll** (bought)*.
+- **The Blessing Box** — 250k at the Apothecary, **pick 10 of the 17**, and the only source of a buff
+  scroll in the game: no drop, no boss, no craft, no shelf. Two boxes cover all 17 ≈ an hour's
+  farming, deliberately: a live buffer has to stay the better deal. The **box** is tradable and sells
+  at Value ÷ 25; what comes out of it is not.
+- **Dash left the Apothecary** (drop + boss points only, his spec) and keeps its old drop rate exactly.
+- Deleted: 43 item defs, 18 scribe recipes. Their ladder SKILLS stay — generated in bulk, unreferenced,
+  free. A DefId that leaves the catalog is dropped on load, so an old save just loses them.
+
+**⚠ The trap, worth remembering for any weighted group.** A drop rung splits half its weight among
+however many ids are in it, so deleting 17 of a rung's 19 would not have removed those drops — it
+would have handed their share to the surviving potions and **doubled the potion faucet** as a side
+effect of a change meant to cut drops. The buff half is an explicit per-item chance now, set to what
+each item delivered before. Measured: consumables per kill **33 % → 18.5 %** at level 33, and total
+farm gold **unchanged at 1.04× target** — buff potions already sold for 0, so this is a **bag** fix
+and a **sink**, never a gold change. `tools/BalanceMatrix` asserts *0 of 17 in drop tables*, using the
+box's own contents as the list so the guard cannot drift.
+
+**Client — the selection popup learned to pick many.** Rows toggle `[  ] / [x]`, the title tallies
+`3 / 10`, Confirm sends them in one go, and the 11th tap is refused out loud rather than silently
+dropped (the server takes the first `PickCount` it recognises, so a swallowed tap would spend a 250k
+box on a set the player did not choose). The server side already handled it; only the chooser was
+pick-one. ⚠ The tick is ASCII: the TMP atlas is baked, and a checkbox glyph draws as a hollow box.
+
 ## 0.47.0 — 2026-08-05 — The playtest-18 friction tier, and four defects a review caught first
 
 **Protocol stays 12; no schema change, no db reset.** This is the label for everything that landed on

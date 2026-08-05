@@ -352,68 +352,57 @@ public static class MobCatalog
         const float EnchantShare = 0.15f;
         // `enchant: null` = this rung's buff potions drop but its enchant scroll does not yet — that is
         // the "move them in the levels" half, letting the enchant floor sit ABOVE its rung's floor.
-        void ScrollRung(float weight, string? enchant, string[] buffs)
+        void EnchantRung(float weight, string? enchant)
         {
             if (enchant is not null)
                 drops.Add(new(enchant, weight * EnchantShare, GroupId: GroupScrolls));
-            foreach (var b in buffs)
-                drops.Add(new(b, weight * 0.5f / buffs.Length, GroupId: GroupScrolls));
         }
-        // The buff rungs WITHOUT an enchant scroll — used above Rare, where no enchant scroll of
-        // that rarity exists. Same halved weight, so a high-level mob's scroll group is not richer
-        // than a low one's; it just has more to choose between.
-        void BuffRung(float weight, string[] buffs)
+        // ⚠ The buff half is an explicit PER-ITEM chance, not the rung's share split N ways (which is
+        // what it was until playtest-17 E3). With the 17 buff scrolls removed, a split would have
+        // handed their entire share to the potions left standing — silently DOUBLING the potion faucet
+        // as a side effect of a change whose whole point was to remove drops, not move them. The
+        // numbers passed below are exactly what one item delivered under the old split
+        // (rung weight × 0.5 ÷ 19, or ÷ 9 for the two top rungs), so every surviving potion drops at
+        // the rate it always did and the scrolls' share simply leaves the world.
+        void BuffRung(float perItem, string[] buffs)
         {
             foreach (var b in buffs)
-                drops.Add(new(b, weight * 0.5f / buffs.Length, GroupId: GroupScrolls));
+                drops.Add(new(b, perItem, GroupId: GroupScrolls));
         }
-        // Each rung carries that rarity's buff potions, its scrolls (the same buff for an hour) and
-        // the Dash potion. The group's total weight does NOT grow when a rung gains items — it is
-        // split finer. That is the point: more variety at the same faucet.
-        // Mythic (rung 6) buff scrolls have no drop source yet, the way Dash Mythic doesn't: they
-        // wait for the §3 drop-group rework, which wants to roll the ITEM rather than the rarity.
-        ScrollRung(0.40f, level >= 10 ? ItemCatalog.ScrollCommon : null,
+        // Each rung carries that rarity's buff potions and the Dash potion. The group's total weight
+        // does NOT grow when a rung gains items — it is split finer. That is the point: more variety
+        // at the same faucet.
+        // ⚠ NO BUFF SCROLL DROPS AT ALL, at any rung, from any creature, boss included (owner,
+        // playtest-17 E3: *"remove every buff SCROLL from drops, even bosses"*). They come out of the
+        // Apothecary's Blessing Box and nothing else, which is what gives 250k something to buy. The
+        // rung weights are UNCHANGED, so removing 17 ids from the lists does not cut the faucet — it
+        // concentrates it on the potions and Dash, which is the intended trade.
+        EnchantRung(0.40f, level >= 10 ? ItemCatalog.ScrollCommon : null);
+        BuffRung(0.0105f,
             new[] { ItemCatalog.SpeedPotionC, ItemCatalog.CastPotionC, ItemCatalog.AtkPotionC,
                     ItemCatalog.EvaPotionC, ItemCatalog.DashPotionC,
                     ItemCatalog.MightPotionC, ItemCatalog.BulwarkPotionC,
-                    ItemCatalog.ForcePotionC, ItemCatalog.WardPotionC, ItemCatalog.AimPotionC,
-                    ItemCatalog.SpeedScrollC, ItemCatalog.CastScrollC, ItemCatalog.AtkScrollC,
-                    ItemCatalog.EvaScrollC,
-                    ItemCatalog.MightScrollC, ItemCatalog.BulwarkScrollC,
-                    ItemCatalog.ForceScrollC, ItemCatalog.WardScrollC, ItemCatalog.AimScrollC });
+                    ItemCatalog.ForcePotionC, ItemCatalog.WardPotionC, ItemCatalog.AimPotionC });
         if (level >= 20)
-            ScrollRung(0.20f, level >= 30 ? ItemCatalog.ScrollUncommon : null,
+        {
+            EnchantRung(0.20f, level >= 30 ? ItemCatalog.ScrollUncommon : null);
+            BuffRung(0.0053f,
                 new[] { ItemCatalog.SpeedPotionU, ItemCatalog.CastPotionU, ItemCatalog.AtkPotionU,
                         ItemCatalog.EvaPotionU, ItemCatalog.DashPotionU,
                         ItemCatalog.MightPotionU, ItemCatalog.BulwarkPotionU,
-                        ItemCatalog.ForcePotionU, ItemCatalog.WardPotionU, ItemCatalog.AimPotionU,
-                        ItemCatalog.SpeedScrollU, ItemCatalog.CastScrollU, ItemCatalog.AtkScrollU,
-                        ItemCatalog.EvaScrollU,
-                        ItemCatalog.MightScrollU, ItemCatalog.BulwarkScrollU,
-                        ItemCatalog.ForceScrollU, ItemCatalog.WardScrollU, ItemCatalog.AimScrollU });
+                        ItemCatalog.ForcePotionU, ItemCatalog.WardPotionU, ItemCatalog.AimPotionU });
+        }
+        // Rung 3 and up are DASH ONLY now: the Rare buff potion was deleted (it duplicated the scroll's
+        // rung) and the scroll-only families never had a potion at any rarity. So from 45 up this group
+        // is the enchant scroll plus the Dash line — the top of every buff ladder is bought, not found.
+        // Dash keeps its own old per-item rate exactly; it is the one consumable he asked to leave alone.
         if (level >= 45)
-            ScrollRung(0.10f, level >= 55 ? ItemCatalog.ScrollRare : null,
-                new[] { ItemCatalog.SpeedPotionR, ItemCatalog.CastPotionR, ItemCatalog.AtkPotionR,
-                        ItemCatalog.EvaPotionR, ItemCatalog.DashPotionR,
-                        ItemCatalog.MightPotionR, ItemCatalog.BulwarkPotionR,
-                        ItemCatalog.ForcePotionR, ItemCatalog.WardPotionR, ItemCatalog.AimPotionR,
-                        ItemCatalog.SpeedScrollR, ItemCatalog.CastScrollR, ItemCatalog.AtkScrollR,
-                        ItemCatalog.EvaScrollR,
-                        ItemCatalog.MightScrollR, ItemCatalog.BulwarkScrollR,
-                        ItemCatalog.ForceScrollR, ItemCatalog.WardScrollR, ItemCatalog.AimScrollR });
-        // The SCROLL-ONLY families enter here: Epic from 60, Legendary from 76. They have no potion
-        // at any rarity — a scroll is the only way to get Max HP/MP, regeneration, criticals or
-        // Frenzy out of an item — which is why their cheapest rung is Epic in the first place.
-        if (level >= 60)
-            BuffRung(0.06f,
-                new[] { ItemCatalog.BodyScrollE, ItemCatalog.SoulScrollE, ItemCatalog.VigorScrollE,
-                        ItemCatalog.SerenityScrollE, ItemCatalog.FocusScrollE, ItemCatalog.FerocityScrollE,
-                        ItemCatalog.InsightScrollE, ItemCatalog.FrenzyScrollE, ItemCatalog.DashPotionE });
-        if (level >= 76)
-            BuffRung(0.04f,
-                new[] { ItemCatalog.BodyScrollL, ItemCatalog.SoulScrollL, ItemCatalog.VigorScrollL,
-                        ItemCatalog.SerenityScrollL, ItemCatalog.FocusScrollL, ItemCatalog.FerocityScrollL,
-                        ItemCatalog.InsightScrollL, ItemCatalog.FrenzyScrollL, ItemCatalog.DashPotionL });
+        {
+            EnchantRung(0.10f, level >= 55 ? ItemCatalog.ScrollRare : null);
+            BuffRung(0.0026f, new[] { ItemCatalog.DashPotionR });
+        }
+        if (level >= 60) BuffRung(0.0033f, new[] { ItemCatalog.DashPotionE });
+        if (level >= 76) BuffRung(0.0022f, new[] { ItemCatalog.DashPotionL });
 
         // ---- ALWAYS (§4): the consumable group — a healing potion, a return scroll or a resurrection
         //      scroll. The name is now historical: it fired on EVERY kill until playtest-17 cut the

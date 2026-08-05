@@ -226,7 +226,7 @@ I use ~1 per ~250 dropped"*.
 **E2. Healing potion drop rate ÷10.** *"now i have 200C and 120U at lvl 23 .. should have ~20C and 0U
 and if i need them i need to buy them"*. **Uncommon must not drop before 40, Rare before 61.**
 
-**E3. The buff-scroll and buff-potion economy** — his full spec:
+**E3. ✅ BUILT 2026-08-05. The buff-scroll and buff-potion economy** — his full spec:
 - **Remove every buff SCROLL from drops. Even bosses.**
 - **Buff potion sell price = 0.** *"no potions gold farm → they must be buff aid not exploit"* — still
   tradable and sellable so a fighter can pass a mage's potion on, just worth nothing.
@@ -239,6 +239,38 @@ and if i need them i need to buy them"*. **Uncommon must not drop before 40, Rar
   cost two boxes = 500k — affordable in about an hour, so **a real buffer is still the better option**,
   which is the point. **Scrolls out of these boxes are untradable/unsellable; the BOX is tradable and
   sellable at price ÷ 25.**
+
+> Built as specified. **17 scrolls survive** — one per buff, at its family's MAX rung, all Rare, all
+> `Tradable: false` — so a boxed set is literally an NPC buffer's blessing for an hour. The eight
+> scroll-only families keep their rung 6, which is also the first time the **Mythic rung has had any
+> source at all**. Deleted: 43 item defs (the 18 Common/Uncommon buff scrolls, the 16 Epic/Legendary
+> rungs, and the 9 **Rare potions**). Their ladder SKILLS stay — they are generated in bulk by
+> `Ladder(...)`, and an unreferenced wrapper costs nothing.
+>
+> **Two rarities for potions = Common + Uncommon, and that is the load-bearing choice here.** Keeping
+> the Rare potion instead would have left the top of every ladder falling out of the sky for free,
+> and the 250k box with nothing to sell. Now a family reads *Lesser (found) → plain (found) →
+> **scroll** (bought)*, and the thing you pay for is always the thing at the top.
+>
+> ⚠ **The rung split was a trap.** A drop rung divides half its weight among however many ids are in
+> it, so deleting 17 scrolls would have handed their entire share to the surviving potions — silently
+> DOUBLING the potion faucet as a side effect of a change meant to remove drops. The buff half is an
+> explicit per-item chance now (the exact number each item delivered before), so every surviving
+> potion drops at the rate it always did and the scrolls' share simply leaves the world. Measured:
+> consumables per kill **33 % → 18.5 %** at level 33; total farm gold **unchanged at 1.04×** target,
+> because buff potions already sold for 0. This is a **bag** fix and a **gold sink**, not a faucet cut.
+>
+> `tools/BalanceMatrix` grew an assertion for it — the Blessing Box's own contents are the list of 17,
+> so the guard and the box can never drift apart. It reads **0 of 17 in drop tables**.
+>
+> The **Dash potion left the Apothecary's shelf** with the same change (drop + boss points only, his
+> spec) and keeps its own per-item drop rate exactly. Rungs 3-5 of the scroll group are Dash-only now.
+>
+> Client: the selection popup grew a **pick-many mode** — rows toggle `[  ] / [x]`, the title tallies
+> `3 / 10`, Confirm sends them in one go and the 11th tap is refused out loud rather than dropped.
+> (The server already took `Take(PickCount)` over the distinct picks; only the chooser was pick-one.)
+> ⚠ The tick is ASCII on purpose: the TMP atlas is baked, and a checkbox glyph would draw as a hollow
+> box — the same trap that killed the `●` target marker in 0.43.1.
 
 **E4. Attribute-scroll drop bands** — Common from 40, Uncommon 52, Rare 61, Epic 76, Legendary from
 bosses 76+, Mythic from bosses/instance bosses 80+ and dungeon monsters at 90.

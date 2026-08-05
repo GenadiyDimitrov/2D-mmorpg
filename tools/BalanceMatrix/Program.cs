@@ -522,7 +522,7 @@ Console.WriteLine();
 //  the whole of the remaining consumable faucet.
 // =====================================================================================================
 Console.WriteLine("=== SCROLLS: per-kill chance by family, and gold (enchant/attribute sell for 0) ===");
-Console.WriteLine($"{"Lvl",4} {"enchant",9} {"attribute",10} {"buff pot/scr",13} | {"buff gold/kill",15}");
+Console.WriteLine($"{"Lvl",4} {"enchant",9} {"attribute",10} {"buff pot",13} | {"buff gold/kill",15}");
 foreach (int L in new[] { 5, 15, 20, 33, 40, 45, 52, 61, 76, 80, 85 })
 {
     var near = MobsNear(L);
@@ -542,7 +542,21 @@ foreach (int L in new[] { 5, 15, 20, 33, 40, 45, 52, 61, 76, 80, 85 })
         }
     Console.WriteLine($"{L,4} {ench,9:P1} {attr,10:P1} {buff,13:P1} | {buffGold,15:N0}");
 }
-Console.WriteLine("  'buff pot/scr' = the non-enchant half of the Scrolls group (buff potions AND buff scrolls).");
+Console.WriteLine("  'buff pot' = the non-enchant half of the Scrolls group. Buff SCROLLS are not in it at");
+Console.WriteLine("  any level any more (playtest-17 E3) — they come out of the Blessing Box or nowhere.");
+Console.WriteLine();
+
+// E3's whole claim is "no buff scroll drops, from anything, ever". That is a property of ~200 drop
+// tables, so assert it rather than trusting a reading: the Blessing Box's own contents ARE the list of
+// the 17, so the box and the guard can never drift apart.
+var scrollIds = (BoxCatalog.Get(ItemCatalog.BoxBuffScrolls)?.Entries ?? Array.Empty<BoxEntry>())
+    .Select(e => e.ItemId).ToHashSet();
+var leaked = MobCatalog.Templates
+    .SelectMany(m => (m.Drops ?? Array.Empty<DropEntry>()).Select(d => (Mob: m.Id, d.ItemId)))
+    .Where(x => scrollIds.Contains(x.ItemId))
+    .ToArray();
+Console.WriteLine($"=== E3: buff scrolls in drop tables — {leaked.Length} (must be 0 of {scrollIds.Count}) ===");
+foreach (var b in leaked.Take(10)) Console.WriteLine($"    !! {b.Mob} -> {b.ItemId}");
 Console.WriteLine();
 
 // Integrity: a drop entry naming an item that does not exist is a silent hole in the loot table — the

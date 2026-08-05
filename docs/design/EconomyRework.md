@@ -287,6 +287,38 @@ Measured per-kill frequency (`tools/BalanceMatrix`, SCROLLS section):
 The residual 2 gold/kill is Return + Resurrection, which share the `BuffPotion` subtype. **Total over the
 reference farm: 1,038,115 — 1.04× target**, split gear 65 % / coin 34 % / consumables 1 %.
 
+## 4b. The buff-consumable rework — playtest-17 `E3` ✅ BUILT (2026-08-05)
+
+§4a took the GOLD out of buff consumables (`SellPriceOverride: 0`). This takes the **volume** out, and
+adds the game's first real gold SINK. It moves no gold at all: the reference farm still measures
+**1,038,115**, because the things removed were already worth nothing to sell.
+
+| | before | now |
+|---|---|---|
+| buff potions | 27 items, rungs C/U/R | **18** — the Rare rung deleted |
+| buff scrolls | 48 items, C/U/R + E/L, dropped and crafted | **17** — one per buff, top rung, Rare, **bound** |
+| a scroll's source | drop rungs 1-5 + the scribe | **the Blessing Box only**: 250k / pick of 10, Apothecary |
+| Dash potion | Apothecary shelf + drops | **drops + boss points only** (his spec: leave it otherwise alone) |
+| consumables per kill @33 | ~33 % | **18.5 %** |
+| gold over the reference farm | 1,038,115 | **1,038,115** (unchanged, by construction) |
+
+**⚠ The one real trap, and it is general.** A drop rung splits half its weight among however many ids
+sit in it (*"more variety at the same faucet"*). Deleting 17 of a rung's 19 ids therefore does not
+remove those drops — it **redistributes them onto the survivors**, and would have doubled the potion
+faucet as a side effect of a change whose entire purpose was to cut drops. The buff half of a scroll
+rung is now an explicit **per-item chance**, set to exactly what one item delivered under the old
+split (`weight × 0.5 ÷ 19`, or `÷ 9` for the two top rungs). Every surviving potion drops at the rate
+it always did; the scrolls' share leaves the world instead of moving house. **Whenever you delete ids
+from a weighted group, check whether the group's total is fixed — if it is, you have not removed
+anything.**
+
+The sink is the point of the price: 250k per 10, 500k for all 17, ≈ an hour of farming, which is
+deliberately expensive enough that **a live buffer stays the better deal**. Untradable scrolls out of
+a tradable box also means the market that exists is in boxes — one thing to price, not seventeen.
+
+`tools/BalanceMatrix` asserts the drop side: the Blessing Box's own contents *are* the list of 17, so
+the guard cannot drift from the box. It prints **0 of 17 in drop tables**.
+
 ## 5. Buy prices ✅ BUILT
 
 **⚠ The F/E/D numbers are the RARE price, not the Mythic one.** Owner, correcting a first reading of

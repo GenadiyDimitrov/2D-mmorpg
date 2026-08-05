@@ -768,10 +768,10 @@ if (buffPotion is not null)
 //     A DIFFERENT family from 4d's potion (cast speed, not move speed) so the relog assertions
 //     below still measure the potion they were written for.
 // -------------------------------------------------------------------------------------------
-await a.Hub.SendAsync("DebugGive", ItemCatalog.CastScrollC, 2);
+await a.Hub.SendAsync("DebugGive", ItemCatalog.CastScrollR, 2);
 await a.Settle();
-int ScrollsHeld() => a.Inv?.Items.Where(i => i.DefId == ItemCatalog.CastScrollC).Sum(i => i.Quantity) ?? 0;
-var scroll = a.Inv?.Items.FirstOrDefault(i => i.DefId == ItemCatalog.CastScrollC);
+int ScrollsHeld() => a.Inv?.Items.Where(i => i.DefId == ItemCatalog.CastScrollR).Sum(i => i.Quantity) ?? 0;
+var scroll = a.Inv?.Items.FirstOrDefault(i => i.DefId == ItemCatalog.CastScrollR);
 Check("got two buff scrolls", ScrollsHeld() == 2, $"qty {ScrollsHeld()}");
 if (scroll is not null)
 {

@@ -218,26 +218,11 @@ public static class RecipeCatalog
         yield return Potion(ItemCatalog.WardPotionU, ItemRarity.Uncommon, 30, 3);
         yield return Potion(ItemCatalog.AimPotionU, ItemRarity.Uncommon, 30, 3);
         yield return Potion(ItemCatalog.DashPotionU, ItemRarity.Uncommon, 30, 3);
-        // The buff SCROLLS: the same rung as the potion, but an hour instead of 20 minutes, so the
-        // scribe (not the alchemist) makes them and they cost the better material rung.
-        yield return Scroll(ItemCatalog.SpeedScrollC, ItemRarity.Common, 20, 3);
-        yield return Scroll(ItemCatalog.CastScrollC, ItemRarity.Common, 20, 3);
-        yield return Scroll(ItemCatalog.AtkScrollC, ItemRarity.Common, 20, 3);
-        yield return Scroll(ItemCatalog.EvaScrollC, ItemRarity.Common, 20, 3);
-        yield return Scroll(ItemCatalog.MightScrollC, ItemRarity.Common, 20, 3);
-        yield return Scroll(ItemCatalog.BulwarkScrollC, ItemRarity.Common, 20, 3);
-        yield return Scroll(ItemCatalog.ForceScrollC, ItemRarity.Common, 20, 3);
-        yield return Scroll(ItemCatalog.WardScrollC, ItemRarity.Common, 20, 3);
-        yield return Scroll(ItemCatalog.AimScrollC, ItemRarity.Common, 20, 3);
-        yield return Scroll(ItemCatalog.SpeedScrollU, ItemRarity.Uncommon, 40, 3);
-        yield return Scroll(ItemCatalog.CastScrollU, ItemRarity.Uncommon, 40, 3);
-        yield return Scroll(ItemCatalog.AtkScrollU, ItemRarity.Uncommon, 40, 3);
-        yield return Scroll(ItemCatalog.EvaScrollU, ItemRarity.Uncommon, 40, 3);
-        yield return Scroll(ItemCatalog.MightScrollU, ItemRarity.Uncommon, 40, 3);
-        yield return Scroll(ItemCatalog.BulwarkScrollU, ItemRarity.Uncommon, 40, 3);
-        yield return Scroll(ItemCatalog.ForceScrollU, ItemRarity.Uncommon, 40, 3);
-        yield return Scroll(ItemCatalog.WardScrollU, ItemRarity.Uncommon, 40, 3);
-        yield return Scroll(ItemCatalog.AimScrollU, ItemRarity.Uncommon, 40, 3);
+        // ⚠ NO buff-scroll recipes (playtest-17 E3, 2026-08-05). The scribe used to make the Common and
+        // Uncommon rungs of nine families — 18 recipes for items that no longer exist. A buff scroll is
+        // now one per buff, top rung, and comes out of the Apothecary's Blessing Box or nowhere; a
+        // craftable scroll would be a second faucet on the one consumable he asked to have exactly one.
+        // The scribe keeps the enchant + attribute scrolls, which is the trade he actually gates.
         yield return Scroll(ItemCatalog.ScrollUncommon, ItemRarity.Common, 20, 5);
         yield return Scroll(ItemCatalog.ScrollRare, ItemRarity.Uncommon, 40, 5);
         // Attribute scrolls: the D-C-B pair is craftable early, the A-grade pair late. The

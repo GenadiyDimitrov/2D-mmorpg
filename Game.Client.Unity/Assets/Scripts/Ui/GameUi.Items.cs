@@ -135,6 +135,7 @@ namespace Game.Client
         // reusable selection popup
         private RectTransform _selectPopup, _selectOptions;
         private TextMeshProUGUI _selectTitle;
+        private Button _selectCancel, _selectConfirm;
 
         private void BuildItemWindows()
         {
@@ -230,9 +231,17 @@ namespace Game.Client
             _selectOptions = UiKit.ScrollArea(inner, out scroll, 6f);
             UiKit.Stretch((RectTransform)scroll.transform, 16f, 56f, 16f, 66f);
 
-            var cancel = UiKit.TextButton(inner, "Cancel", () => CloseWindow(_selectPopup), 16f);
-            UiKit.Place(UiKit.Rect(cancel.gameObject), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+            // Cancel is always there; Confirm only appears for a PICK-MANY box, where tapping a row can
+            // no longer mean "I have decided". Both are built once and repositioned per mode rather
+            // than rebuilt, so the popup keeps one layout to reason about.
+            _selectCancel = UiKit.TextButton(inner, "Cancel", () => CloseWindow(_selectPopup), 16f);
+            UiKit.Place(UiKit.Rect(_selectCancel.gameObject), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                         new Vector2(0f, 16f), new Vector2(200f, 44f));
+
+            _selectConfirm = UiKit.TextButton(inner, "Confirm", null, 16f);
+            UiKit.Place(UiKit.Rect(_selectConfirm.gameObject), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+                        new Vector2(106f, 16f), new Vector2(188f, 44f));
+            _selectConfirm.gameObject.SetActive(false);
 
             _selectPopup.gameObject.SetActive(false);
         }
@@ -242,6 +251,8 @@ namespace Game.Client
         private void ShowSelection(string title, params (string Label, Action OnPick)[] options)
         {
             _selectTitle.text = title;
+            _selectConfirm.gameObject.SetActive(false);
+            UiKit.Rect(_selectCancel.gameObject).anchoredPosition = new Vector2(0f, 16f);
             for (int i = _selectOptions.childCount - 1; i >= 0; i--)
                 Destroy(_selectOptions.GetChild(i).gameObject);
 
@@ -258,23 +269,93 @@ namespace Game.Client
             OpenWindow(_selectPopup);
         }
 
-        /// <summary>A SELECTION box was opened — turn its options into the chooser. Picking one confirms
-        /// via SelectBoxItems. (All current selection boxes are pick-ONE; a pick-many box would need
-        /// accumulating selection, not built.)</summary>
+        /// <summary>The same popup, but the rows TOGGLE and a Confirm sends them all at once — what a
+        /// pick-many box (the Blessing Box: 10 of 17) needs and a pick-one box must not have.
+        /// ⚠ The tick is `[x]`, not a checkbox glyph: the TMP atlas is baked with ~250 characters and
+        /// anything outside it draws as a hollow box (the same trap that killed the `●` target marker).</summary>
+        private void ShowMultiSelection(string title, int pickCount,
+                                        (string Label, string Id)[] options, Action<List<string>> onConfirm)
+        {
+            var chosen = new List<string>();
+            var buttons = new List<(Button Button, string Id, string Label)>();
+
+            void Redraw()
+            {
+                _selectTitle.text = $"{title} — {chosen.Count} / {pickCount}";
+                foreach (var (button, id, label) in buttons)
+                    UiKit.SetButtonText(button, (chosen.Contains(id) ? "[x] " : "[  ] ") + label);
+                UiKit.SetButtonText(_selectConfirm, chosen.Count == 0 ? "Confirm" : $"Confirm ({chosen.Count})");
+                _selectConfirm.interactable = chosen.Count > 0;
+            }
+
+            for (int i = _selectOptions.childCount - 1; i >= 0; i--)
+                Destroy(_selectOptions.GetChild(i).gameObject);
+            buttons.Clear();
+
+            foreach (var (label, id) in options)
+            {
+                string optId = id, optLabel = label;
+                Button button = null;
+                button = UiKit.TextButton(_selectOptions, label, () =>
+                {
+                    if (!chosen.Remove(optId))
+                    {
+                        // Refuse the 11th rather than silently dropping it: the server takes the first
+                        // PickCount it recognises, so a quietly-ignored tap would spend a 250k box on a
+                        // set the player did not choose.
+                        if (chosen.Count >= pickCount) { ShowToast($"Only {pickCount} may be chosen."); return; }
+                        chosen.Add(optId);
+                    }
+                    Redraw();
+                }, 16f);
+                button.gameObject.AddComponent<LayoutElement>().minHeight = 46f;
+                buttons.Add((button, optId, optLabel));
+            }
+
+            _selectConfirm.onClick.RemoveAllListeners();
+            _selectConfirm.onClick.AddListener(() =>
+            {
+                if (chosen.Count == 0) return;
+                CloseWindow(_selectPopup);
+                onConfirm?.Invoke(chosen);
+            });
+            _selectConfirm.gameObject.SetActive(true);
+            UiKit.Rect(_selectCancel.gameObject).anchoredPosition = new Vector2(-106f, 16f);
+            Redraw();
+            OpenWindow(_selectPopup);
+        }
+
+        /// <summary>A SELECTION box was opened — turn its options into the chooser. Pick-ONE confirms on
+        /// the tap; pick-MANY (PickCount &gt; 1) toggles rows and confirms once, since with ten picks in
+        /// one box "I tapped it" and "I am done" stopped being the same gesture.</summary>
         public void ShowBoxSelection(SelectionOffer offer)
         {
             if (offer?.Options == null || offer.Options.Length == 0) return;
             var boxId = offer.BoxInstanceId;
+
+            string Name(SelectionOption o)
+            {
+                // Quality colour here too: a selection box can offer the same piece at different rungs,
+                // and this is a one-shot irreversible choice.
+                var optDef = ItemCatalog.Get(o.ItemId);
+                return optDef != null ? Coloured(o.Name, optDef.Rarity) : o.Name;
+            }
+
+            if (offer.PickCount > 1)
+            {
+                var many = new (string, string)[offer.Options.Length];
+                for (int i = 0; i < offer.Options.Length; i++)
+                    many[i] = (Name(offer.Options[i]), offer.Options[i].ItemId);
+                ShowMultiSelection(offer.BoxName, offer.PickCount, many,
+                                   picks => Boot.SelectBoxItems(boxId, picks.ToArray()));
+                return;
+            }
+
             var opts = new (string, Action)[offer.Options.Length];
             for (int i = 0; i < offer.Options.Length; i++)
             {
                 string itemId = offer.Options[i].ItemId;
-                // Quality colour here too: a selection box can offer the same piece at different rungs,
-                // and this is a one-shot irreversible choice.
-                var optDef = ItemCatalog.Get(itemId);
-                string optName = optDef != null
-                    ? Coloured(offer.Options[i].Name, optDef.Rarity) : offer.Options[i].Name;
-                opts[i] = (optName, () => Boot.SelectBoxItems(boxId, new[] { itemId }));
+                opts[i] = (Name(offer.Options[i]), () => Boot.SelectBoxItems(boxId, new[] { itemId }));
             }
             ShowSelection(offer.BoxName, opts);
         }

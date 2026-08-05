@@ -57,6 +57,40 @@ mid-fight.
 
 ---
 
+---
+
+## ⚠ REVISED AGAIN (playtest-17 E3, built 2026-08-05) — the potion is FOUND, the scroll is BOUGHT
+
+The ladders below are unchanged as *ladders*. What changed is which rungs an ITEM exists for, and it
+reverses the old "a scroll is the same rung as the potion, for an hour instead of 20 minutes" rule
+that the item names still echoed.
+
+| | before | now |
+|---|---|---|
+| **Buff potions** | 3 rungs (C/U/R) × 9 families = 27 | **2 rungs (C/U)** × 9 = 18. The Rare potion is deleted. |
+| **Buff scrolls** | 48 — every rung of every family | **17 — one per buff**, at the family's MAX rung, all **Rare** |
+| **Where a scroll comes from** | drops (C/U/R rungs, E/L from 60/76) + craft | **the Blessing Box and nothing else.** No drop, no boss, no craft, no shelf |
+| **Trading a scroll** | free | **bound.** The BOX is the tradable thing (sells at Value ÷ 25) |
+| **Rungs 3-6 of a ladder** | potion *and* scroll | **scroll only** — the top of a ladder is bought |
+
+The reasoning, which is worth keeping because it decides future items too: if the top rung of every
+family drops for free, then the paid layer has nothing left to sell and a buffer has nothing left to
+be better than. So the free layer stops one rung short. A full boxed set = 250k per 10 scrolls,
+500k for all 17, deliberately about an hour's farming — *a live buffer still has to be the better
+deal*, which is the same thing Harmony does at the class level.
+
+⚠ **The `Ladder(...)` skills did not change** — every rung still exists as a `SkillDef`, including the
+wrappers for potions and scrolls that no longer have an item. They are generated in bulk, they cost
+nothing unreferenced, and deleting them would fight the one-line-per-family authoring this file's
+step 6 is built on. So *"the rung has no item"* and *"the rung does not exist"* are different
+statements here, and only the first one is true.
+
+Consequence for the tables further down: where they say a scroll sells rung 2/4/6 of a scroll-only
+family, only **rung 6** now has an item; and the C/U/R columns of the potion families are the potion
+at C and U, the scroll at R.
+
+---
+
 ## Naming (owner, 2026-07-31, revised the same day)
 
 A **single** buff is named for its effect and nothing else. A **group** is named for what it hands

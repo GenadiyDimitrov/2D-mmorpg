@@ -913,6 +913,32 @@ gear faucet goes UP 6×. Later, with crafting: trash DISASSEMBLES into mats (rar
 picks how many).
 
 ---
+## 46. 🔴 THE BUFF ECONOMY — playtest-17 `E3` (built 2026-08-05, UNPLAYED)
+
+Needs a **new APK**: the item catalog ships inside it. No db reset. Design: `EconomyRework.md` §4b.
+
+- **46a. The Blessing Box exists and costs 250,000** at the Apothecary, listed under **Use** in the
+  vendor's filter strip. Debug → items gives you two of them without the gold.
+- **46b. Opening it offers 17 scrolls and lets you tick TEN.** Rows show `[  ]` unticked and `[x]`
+  ticked (ASCII, not a checkbox glyph — if you see a hollow box, that is the TMP atlas and it is a
+  bug). The title counts `3 / 10`. Tapping a ticked row unticks it.
+- **46c. The 11th tick is refused with a message**, not silently ignored. ⚠ This is the one that
+  matters: a swallowed tap would spend a 250k box on a set you did not choose.
+- **46d. Confirm grants exactly the ten you ticked** and consumes ONE box. Cancel consumes nothing —
+  reopen and the box is still there.
+- **46e. A scroll out of the box cannot be traded or sold** (no Sell row at a vendor, refused at the
+  trade table), and reads its hour-long buff at the family's MAX rung — the same value an NPC buffer
+  gives you. The BOX itself trades and sells (10,000).
+- **46f. NO buff scroll drops, from anything.** Farm a while at any level, including a boss: not one
+  `Scroll of …` buff scroll in the bag. (Enchant, attribute, Return and Resurrection scrolls still
+  drop — those are different items.)
+- **46g. Buff potions have two rungs only** — *(Lesser)* and plain. There is no "(Greater)" buff
+  potion any more, at a vendor, in a drop or in the debug menu. **Dash** still has all six and still
+  drops; it is no longer on the Apothecary's shelf.
+- **46h. The bag is visibly quieter.** Measured 33 % → 18.5 % consumables per kill at level 33 — an
+  offline farm should come back with roughly half the consumable clutter and the same gold.
+
+---
 ## Known gaps (NOT bugs — not built yet in the Unity client)
 
 Don't file these; they're scope, not defects. The Unity client is a viewport, not the WPF harness.
