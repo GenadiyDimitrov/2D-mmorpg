@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -233,6 +234,25 @@ namespace Game.Client
             // REPLACES a pre-filled value instead of editing it, which killed Reply ("/w name "),
             // the whisper action and re-editing the saved server URL. One switch, whole client.
             field.onFocusSelectAll = false;
+
+            // ⚠ THE OTHER HALF OF THAT SWITCH, and without it the first half is a worse bug (owner,
+            // 0.47.0: *"if there is a 1 I cannot make it 10 — it becomes 01"*, and the saved password
+            // could not be edited at all). Two separate things were wrong:
+            //
+            // 1. `onFocusSelectAll = false` leaves the caret at the field's STORED position, which for
+            //    text set from code is 0. So focusing a pre-filled box put the caret at the FRONT and
+            //    every keystroke PREPENDED. Fixed by CaretToEnd below: focus lands at the end, which is
+            //    what "edit this value" means everywhere else on a phone.
+            // 2. On Android the soft keyboard owned the text buffer, so the caret was the OS's and
+            //    tapping inside the field could not move it — there was no way to reach the character
+            //    you wanted to delete. `shouldHideMobileInput = true` hands the text back to TMP: the
+            //    keyboard only delivers keystrokes, TMP draws and places its own caret, and a tap
+            //    inside the field positions it. (If a device ever refuses to open a keyboard for a
+            //    hidden input, THIS is the line to flip back — the symptom would be "no keyboard at
+            //    all", never "the caret is stuck".)
+            field.shouldHideMobileInput = true;
+            field.gameObject.AddComponent<CaretToEnd>();
+
             field.text = "";
             return field;
         }
@@ -381,6 +401,44 @@ namespace Game.Client
             RaycastHits.Clear();
             events.RaycastAll(new PointerEventData(events) { position = screenPoint }, RaycastHits);
             return RaycastHits.Count > 0;
+        }
+    }
+
+    /// <summary>Puts the caret at the END of whatever a text box already holds, the moment it takes
+    /// focus. Attached to every <see cref="UiKit.InputField"/>.
+    ///
+    /// A box you focus is one you mean to EDIT — the saved password, the rate that says 1, the server
+    /// URL. Landing at the front instead turns every keystroke into a prepend (1 → 01), which is how
+    /// this shipped in 0.47.0 once select-on-focus was turned off for B6.
+    ///
+    /// ⚠ It waits a frame on purpose. `ActivateInputField` and the soft keyboard both finish AFTER
+    /// the select event, and either will overwrite a caret set inside the handler.
+    /// ⚠ It hooks SELECT, not click — so it fires when the box gains focus and never again. Tapping
+    /// inside an already-focused box still repositions the caret normally, which is the whole point of
+    /// having given TMP the caret back.</summary>
+    public sealed class CaretToEnd : MonoBehaviour, ISelectHandler
+    {
+        private TMP_InputField _field;
+
+        private void Awake() => _field = GetComponent<TMP_InputField>();
+
+        public void OnSelect(BaseEventData _)
+        {
+            if (!isActiveAndEnabled) return;
+            StopAllCoroutines();
+            StartCoroutine(PlaceCaret());
+        }
+
+        private IEnumerator PlaceCaret()
+        {
+            yield return null;
+            if (_field == null) yield break;
+            int end = _field.text?.Length ?? 0;
+            _field.caretPosition = end;
+            _field.stringPosition = end;
+            _field.selectionAnchorPosition = end;
+            _field.selectionFocusPosition = end;
+            _field.ForceLabelUpdate();
         }
     }
 }

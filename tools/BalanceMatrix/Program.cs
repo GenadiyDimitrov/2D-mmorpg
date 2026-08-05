@@ -477,16 +477,19 @@ Console.WriteLine($"{"gear x",7} {"sell /",7} | {"gear gold",11} {"trash",8} {"c
 float liveGearMul = RateConfig.DropGroupRate("armor");
 int liveDivisor = GameConstants.GearSellDivisor;
 Console.WriteLine($"  live now: gear groups x{liveGearMul:0.###}, GearSellDivisor {liveDivisor}");
+// ⚠ Every multiplier below was tripled on 2026-08-05, when `DropChanceRate` went 3 → 1 and the x3 was
+// folded into the groups that were taking it. The DELIVERED rates are identical — only the units moved
+// — but a row labelled 0.025 would now mean a third of what it meant when these were first written.
 foreach (var (gearMul, divisor) in new (float, int)[]
          {
-             (1f / 3f, 25),   // the pre-playtest-18 setting, for reference
-             (1f / 3f, 250),  // sell price x0.1, drops untouched
-             (0.05f,   25),   // drops x0.15, price untouched
-             (0.1f,    50),   // both, split evenly
-             (0.025f,  10),   // SHIPPED (playtest-18): 13x rarer, worth 2.5x more
-             (0.025f,  25),
-             (0.05f,   10),
-             (0.0125f, 10),
+             (1f,      25),   // the pre-playtest-18 setting, for reference (was 1/3 under global x3)
+             (1f,      250),  // sell price x0.1, drops untouched
+             (0.15f,   25),   // drops x0.15, price untouched
+             (0.3f,    50),   // both, split evenly
+             (0.075f,  10),   // SHIPPED (playtest-18): 13x rarer, worth 2.5x more
+             (0.075f,  25),
+             (0.15f,   10),
+             (0.0375f, 10),
          })
 {
     double gearGold = farmKills * pk.Gear * (gearMul / liveGearMul) * (liveDivisor / (double)divisor);

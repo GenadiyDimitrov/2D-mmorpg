@@ -10,8 +10,11 @@ namespace Game.Shared;
 /// </summary>
 public static class RateConfig
 {
-    /// <summary>Experience multiplier (x10 = ten times normal exp).</summary>
-    public static float ExpRate = 10f;
+    /// <summary>Experience multiplier (x10 = ten times normal exp).
+    /// ⚠ **x1 is the default now** (owner, 2026-08-05: *"make default x1 exp/drop/sp, I'll tune them if
+    /// I need to"*). It shipped at 10 as a testing convenience and stayed there for a year of builds, so
+    /// every levelling-pace number anyone has quoted from a playtest was a x10 number.</summary>
+    public static float ExpRate = 1f;
 
     /// <summary>Skill-point multiplier. SP still accrues at 1/4 exp; this scales
     /// that result independently so you can tune the SP economy separately.</summary>
@@ -23,8 +26,15 @@ public static class RateConfig
     /// The authored drop tables are the **x1 design** (owner, 2026-07-30): 5% authored means 5% at x1 and
     /// 15% at x3. This is the SERVER's rate knob and it is expected to move — including to absurd values
     /// like x200 for an event — which is exactly why it no longer touches everything (see
-    /// <see cref="DropGroupRates"/>).</summary>
-    public static float DropChanceRate = 3f;
+    /// <see cref="DropGroupRates"/>).
+    ///
+    /// ⚠ **x1 is the default now** (owner, 2026-08-05). It was 3, and the file already warned that
+    /// going back to 1 means RE-MEASURE rather than reflexively resetting the group rates with it. So
+    /// the x3 was FOLDED INTO the groups that were actually taking it — gear 0.025 → 0.075, `other`
+    /// 1 → 3 — and `tools/BalanceMatrix` confirms every delivered number is unchanged: the reference
+    /// farm still totals 1,038,115 and attribute scrolls still land at 3.6 %/kill. The knob reads 1
+    /// and the game plays exactly as it was measured; only the units moved.</summary>
+    public static float DropChanceRate = 1f;
 
     /// <summary>Per-GROUP multipliers, composed on top of <see cref="DropChanceRate"/>. The owner's own
     /// example: *"drop chance x200 and armor group multiplier x0.01 — in reality armor will be x2 drops."*
@@ -59,8 +69,16 @@ public static class RateConfig
             //
             // ⚠ These four are NOT a compensation for DropChanceRate any more. If the global rate ever
             // goes back to 1, RE-MEASURE — don't reflexively set these back to 1 with it.
-            ["armor"] = 0.025f, ["accessory"] = 0.025f, ["weapon"] = 0.025f, ["jewel"] = 0.025f,
-            ["mats"] = 1f, ["scrolls"] = 1f, ["always"] = 1f, ["other"] = 1f,
+            //
+            // 2026-08-05: it DID go back to 1, and this is that re-measure. The four gear groups are
+            // 0.025 x 3 = 0.075 and `other` is 1 x 3 = 3, so both deliver exactly what they delivered
+            // under the global x3 — the gear faucet stays where the three-character farm measurement
+            // put it, and the attribute scrolls stay at the 3.6 %/kill that playtest-18 V2b authored.
+            // ⚠ `other` is the INDEPENDENT rolls (attribute scrolls among them), which take the global
+            // that the guaranteed groups are exempt from; that asymmetry is the whole reason a single
+            // number could not just move to 1 on its own.
+            ["armor"] = 0.075f, ["accessory"] = 0.075f, ["weapon"] = 0.075f, ["jewel"] = 0.075f,
+            ["mats"] = 1f, ["scrolls"] = 1f, ["always"] = 1f, ["other"] = 3f,
         };
 
     /// <summary>A group's own multiplier (1 for anything unknown, so a new group is inert until named).</summary>

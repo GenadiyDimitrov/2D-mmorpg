@@ -12,9 +12,39 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## Unreleased — `E3`: the buff economy, and the game's first gold sink
+## 0.48.0 — 2026-08-05 — A text box you cannot type into, x1 rates, and `E3`
 
-**No protocol change, no schema change, no db reset.** But the item catalog lives in `Game.Shared`,
+**🔴 The blocker first: every text box in the client was un-editable if it already held a value.**
+Owner, on 0.47.0: *"when I try to edit saved login to change the pass I cannot go below the saved part
+… if there is a 1 I cannot make it 10, it becomes 01, 101, 11 — never 10 … cannot edit rates."*
+
+Two faults, and the first one is ours from 0.46.0. `B6` turned **off** select-all-on-focus so that a
+pre-filled box could be edited instead of wiped — correct, and half a fix: with select-all off TMP
+restores the caret to the field's *stored* position, which for text set from code is **0**. So
+focusing a filled box parked the caret at the FRONT and every keystroke prepended. The second fault
+made it unrecoverable: on Android the soft keyboard owned the text buffer, so the TMP caret was not
+TMP's to move and **tapping inside the field could not reposition it** — there was no way to reach
+the character you wanted to delete.
+
+Fixed as the other half of B6: **focus now lands the caret at the END** of whatever the box holds
+(`UiKit.CaretToEnd`, waiting a frame because `ActivateInputField` and the keyboard both finish after
+the select event and would overwrite it), and **`shouldHideMobileInput = true`** hands the text back
+to TMP so the keyboard only delivers keystrokes and a tap inside the field places the caret. One
+builder, so it reaches the login boxes, the debug tuning rows, chat, character creation, trade gold
+and the vendor numpad together. ⚠ If a device ever refuses to open a keyboard for a hidden input,
+that flag is the line to flip back; the symptom would be "no keyboard", never "the caret is stuck".
+
+**Rates default to x1** (owner: *"make default x1 exp/drop/sp, I'll tune them if I need to"*). `ExpRate`
+10 → **1**, `DropChanceRate` 3 → **1**, `SpRate` already 1. ⚠ The drop knob could not simply move:
+gear groups and the independent rolls were taking that x3 and were tuned *through* it. So the x3 was
+folded into them — gear `0.025 → 0.075`, `other → 3` — and `BalanceMatrix` confirms every delivered
+number is unchanged (reference farm still **1,038,115**, attribute scrolls still 3.6 %/kill). The
+knobs read 1 and the game plays exactly as it was measured; only the units moved. **Exp really is 10×
+slower now** — that one is a real change, and the one he asked for.
+
+### `E3`: the buff economy, and the game's first gold sink
+
+**No protocol change (still 12), no schema change, no db reset.** But the item catalog lives in `Game.Shared`,
 which ships *inside* the APK — so this needs a **new client build**, not just a server one.
 
 **The shape changed, not just the numbers: a potion is what you FIND, a scroll is what you BUY.** They
