@@ -913,29 +913,46 @@ gear faucet goes UP 6×. Later, with crafting: trash DISASSEMBLES into mats (rar
 picks how many).
 
 ---
-## 46. 🔴 THE BUFF ECONOMY — playtest-17 `E3` (built 2026-08-05, UNPLAYED)
+## 46 + 47. THE 0.46.0/0.47.0 BATCHES — indexed in the OPEN checklist
 
-Needs a **new APK**: the item catalog ships inside it. No db reset. Design: `EconomyRework.md` §4b.
+Those two builds' items were written straight into the per-build open checklist rather than here, and
+that file is the one he edits on the phone: **`Open-Checklist-0.48.0.md`** (§46 = the 0.46.0 batch +
+inventory hygiene + the quest section, §47 = the friction tier + the review fixes). Their ids are
+`46a…` / `47a…` and this file keeps the numbers reserved so nothing reuses them.
 
-- **46a. The Blessing Box exists and costs 250,000** at the Apothecary, listed under **Use** in the
-  vendor's filter strip. Debug → items gives you two of them without the gold.
-- **46b. Opening it offers 17 scrolls and lets you tick TEN.** Rows show `[  ]` unticked and `[x]`
-  ticked (ASCII, not a checkbox glyph — if you see a hollow box, that is the TMP atlas and it is a
-  bug). The title counts `3 / 10`. Tapping a ticked row unticks it.
-- **46c. The 11th tick is refused with a message**, not silently ignored. ⚠ This is the one that
-  matters: a swallowed tap would spend a 250k box on a set you did not choose.
-- **46d. Confirm grants exactly the ten you ticked** and consumes ONE box. Cancel consumes nothing —
+---
+## 48. 🔴 0.48.0 — the text-box fix, x1 rates, and the buff economy (`E3`) — UNPLAYED
+
+Needs a **new APK** (the item catalog ships inside it). No db reset, protocol still 12.
+Designs: `EconomyRework.md` §4b, `BuffLadders.md`.
+
+**48a. 🔴 A text box that already holds a value can be edited.** Focus one (the saved password, a debug
+rate row, the server URL): the caret lands at the **END**. Typing `0` on a rate reading `1` gives
+**10**, never `01`; backspace deletes the last character. This is the 0.47.0 blocker.
+**48b. The caret can be placed mid-text** by tapping inside an already-focused box. ⚠ If any box now
+fails to open a keyboard at all, that is `shouldHideMobileInput` and it is one line to revert.
+**48c. Rates read x1** for exp/sp/drop in the debug tuning panel, and exp really is ~10× slower.
+**Drops must feel unchanged** — the x3 was folded into the groups on purpose, so gear three times
+rarer would be a defect.
+
+- **48d. NO buff scroll drops, from anything.** Farm at any level, including a boss: not one
+  `Scroll of …` buff scroll. (Enchant, attribute, Return and Resurrection scrolls still drop — those
+  are different items.)
+- **48e. The Blessing Box exists and costs 250,000** at the Apothecary, listed under **Use** in the
+  vendor's filter strip. Debug → items gives you two of them without the gold. Opening it offers 17
+  scrolls and lets you tick **TEN**: rows show `[  ]` / `[x]` (ASCII, not a checkbox glyph — a hollow
+  box means the TMP atlas and is a bug), the title counts `3 / 10`, a ticked row unticks.
+- **48f. The 11th tick is refused with a message**, not silently ignored. ⚠ This is the one that
+  matters: a swallowed tap would spend a 250k box on a set the player did not choose.
+- **48g. Confirm grants exactly the ten ticked** and consumes ONE box. Cancel consumes nothing —
   reopen and the box is still there.
-- **46e. A scroll out of the box cannot be traded or sold** (no Sell row at a vendor, refused at the
+- **48h. A scroll out of the box cannot be traded or sold** (no Sell row at a vendor, refused at the
   trade table), and reads its hour-long buff at the family's MAX rung — the same value an NPC buffer
   gives you. The BOX itself trades and sells (10,000).
-- **46f. NO buff scroll drops, from anything.** Farm a while at any level, including a boss: not one
-  `Scroll of …` buff scroll in the bag. (Enchant, attribute, Return and Resurrection scrolls still
-  drop — those are different items.)
-- **46g. Buff potions have two rungs only** — *(Lesser)* and plain. There is no "(Greater)" buff
-  potion any more, at a vendor, in a drop or in the debug menu. **Dash** still has all six and still
-  drops; it is no longer on the Apothecary's shelf.
-- **46h. The bag is visibly quieter.** Measured 33 % → 18.5 % consumables per kill at level 33 — an
+- **48i. Buff potions have two rungs only** — *(Lesser)* and plain. No "(Greater)" buff potion at a
+  vendor, in a drop or in the debug menu. **Dash** still has all six and still drops; it is no longer
+  on the Apothecary's shelf.
+- **48j. The bag is visibly quieter.** Measured 33 % → 18.5 % consumables per kill at level 33 — an
   offline farm should come back with roughly half the consumable clutter and the same gold.
 
 ---
