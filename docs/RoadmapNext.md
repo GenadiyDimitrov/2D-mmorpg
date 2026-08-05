@@ -41,7 +41,7 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
 | **UI** | cooldown countdown on the bar · passives and masteries state their numbers (`SkillText`, shared by both clients) · character delete · drop tree with per-row % · consumable counts · set effects · one confirmation at a vendor |
 | **Admin** | the debug menu works in release builds · the class change picks a **discipline**, not just the 2nd class · live tuning rows for the two mob-regen rates |
 
-## 🔴 NOW — the next three things
+## 🔴 NOW — the next things
 
 1. ~~**Publish 0.45.0 and play §36 + §40-43**~~ — **DONE, 2026-08-03.** See the paragraph above; the
    queue it produced is [testing/Playtest-17.md](testing/Playtest-17.md) / §44. Still-unreached items
@@ -75,10 +75,19 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
    ⏭ **Owed to him before anything is deleted:** the list of every skill in the catalog that is NOT in
    his class CSVs (`B3` — Heavy Draw and Twin Blade are the two he spotted, both learned after 20 and
    weaker than the CSV skills). He marks it up, then we delete.
-3. ~~**Regen from gear vs regen from level**~~ — **answered and built in 0.45.0.** Gear regen is a
+3. 🆕 **Crit damage, blows and `[Double]`** (2026-08-05 ruling, spec:
+   [design/CritBlowAndDouble.md](design/CritBlowAndDouble.md)) — five items, one area, **not started**:
+   the rogue armor mastery ignores the CSV's `with all` clause · the rogue weapon mastery's crit damage
+   is swapped between levels 24 and 28 · every CSV's `crit dmg +N` was read as a *percentage* and must
+   become **flat attack inside the crit** (rogue **and** warrior) · **blows must scale off crit damage**,
+   which they currently ignore entirely, and `[Double]` becomes a pure **ATK** curve capped at 25%
+   (dropping `max(DEX, ATK)` and the 30% cap) · `[Double]` on a buff/debuff doubles its duration.
+   ⚠ This makes the `crit dmg +N` rungs the rogue's whole scaling curve — **BalanceMatrix before and
+   after**.
+4. ~~**Regen from gear vs regen from level**~~ — **answered and built in 0.45.0.** Gear regen is a
    PERCENT roll now (rings, 1-5% by grade) rather than a flat MP/s that dominated the level curve at
    every level. The flat types stay in the enum for pre-0.45 saves and nothing rolls them.
-4. **CRAFTING is now the top content blocker** — his words: *"we need the craft — professions, window,
+5. **CRAFTING is now the top content blocker** — his words: *"we need the craft — professions, window,
    etc .. now even in admin the only mythic are the set, everything else is epic rarity."* Every design
    is written ([design/Crafting.md](design/Crafting.md), [design/GearLadderAndCrafting.md](design/GearLadderAndCrafting.md));
    nothing above Epic can be reached in play without it. It outranks the deferred combat-depth work and
