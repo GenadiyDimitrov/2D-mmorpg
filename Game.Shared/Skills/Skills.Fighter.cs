@@ -325,13 +325,29 @@ public static partial class SkillCatalog
 
         // ===== Rogue 2nd-class (CSV rogue 20-35) =====
 
-        // Sprint — short, sharp burst of move speed (+40 flat) for 15s.
+        // Sprint — short, sharp burst of move speed for 15s, on a 30s reuse (half the Dash potion's).
+        //
+        // G5 (playtest-18): it is now a ONE-CHILD WRAPPER in the DASH family rather than a buff of
+        // its own, so the potion and the skill are one ladder and the stronger always wins. Two
+        // levels, +40 and +60, and the child carries the rank because Rank cannot vary per level —
+        // see the FamDash block in Skills.Common.cs for the full ordering and why.
+        //
+        // The old "sprint" BuffKey is gone deliberately: while it had a family to itself, drinking a
+        // Dash potion under Sprint gave you BOTH move-speed buffs at once, which is exactly the
+        // overlap he asked to remove.
         new(Sprint, "Sprint", BaseClass.Fighter, SkillEffect.BuffMoveSpeed,
             MpCost: 10, CastTicks: 2, CooldownTicks: 300, Range: 0, Power: 0,
-            DurationTicks: 150, BuffKey: "sprint", Rank: 1,
+            DurationTicks: 150,
+            ChildBuffs: new[] { SkillCatalog.BuffSprint1 },
             Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 3400,
-            Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffMoveSpeed, 40, ModifierMode.Flat) },
-            Description: "A burst of speed: +40 move speed for 15s."),
+            Description: "A burst of speed: +40 move speed for 15s.",
+            Levels: new SkillLevel[]
+            {
+                new(ChildBuffs: new[] { SkillCatalog.BuffSprint1 }, MpCost: 10, SpCost: 3400,
+                    Description: "A burst of speed: +40 move speed for 15s."),
+                new(ChildBuffs: new[] { SkillCatalog.BuffSprint2 }, MpCost: 16, SpCost: 42000,
+                    Description: "A burst of speed: +60 move speed for 15s. Overrides every Dash potion."),
+            }),
 
         // Bow Expertise — long self-buff: +8% bow attack speed (requires a bow) for 20 min.
         new(BowExpertise, "Bow Expertise", BaseClass.Fighter, SkillEffect.BuffAtkSpeed,

@@ -36,6 +36,10 @@ public static class SkillIcons
         ["buff_haste_c"] = "⏩", ["buff_haste_u"] = "⏩", ["buff_haste_r"] = "⏩",
         ["buff_dash_c"] = "🏃", ["buff_dash_u"] = "🏃", ["buff_dash_r"] = "🏃",
         ["buff_dash_e"] = "🏃", ["buff_dash_l"] = "🏃", ["buff_dash_m"] = "🏃",
+        // Sprint shares the Dash family, so it shares the glyph — same effect, different bottle.
+        // The WRAPPER's id is what a one-child buff stamps on the square, so "sprint" is the entry
+        // that actually gets read; the two children are here to match how the dash rungs are listed.
+        ["sprint"] = "🏃", ["buff_sprint_1"] = "🏃", ["buff_sprint_2"] = "🏃",
         ["mage_might"]  = "💪",   // Might — atk/def
         ["holy_speed"]  = "💨",   // the improved Speed group
         ["holy_body"]   = "🌿",   // HP-regen

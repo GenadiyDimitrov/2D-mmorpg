@@ -113,7 +113,26 @@ public static partial class SkillCatalog
 
     // ---- DASH — deliberately OUTSIDE the spd_move family (owner 2026-07-31). A 15-second burst
     //      on a 1-minute reuse, six rarities up to +60 move, no scroll. If it shared spd_move it
-    //      would evict your 1-hour Swift scroll and hand it back fifteen seconds later. ----
+    //      would evict your 1-hour Swift scroll and hand it back fifteen seconds later.
+    //
+    //      G5 (playtest-18): the rogue's SPRINT joins this family — "Dash potion is the same as
+    //      sprint skill just weaker (longer cd and weaker value) … same effects or weaker are
+    //      removed and replaced by the new effect". One ordered ladder by MAGNITUDE, so the two
+    //      lines interleave instead of stacking:
+    //
+    //          rank 1  Dash C      +15      rank 5  Dash E      +50
+    //          rank 2  Dash U      +30      rank 6  Dash L      +55
+    //          rank 3  Sprint L1   +40      rank 7  Dash M      +60
+    //          rank 4  Dash R      +45      rank 8  Sprint L2   +60
+    //
+    //      That gives exactly his two sentences: Sprint L1 replaces Dash C/U (and is refused under
+    //      anything above it), Sprint L2 replaces everything including Sprint L1. Sprint L2 sits
+    //      ABOVE Dash M at the same +60 on purpose — a class skill you levelled must not be
+    //      overridable by a bottle, which is the same rule a group buff follows.
+    //
+    //      ⚠ Sprint's two levels have DIFFERENT ranks, and Rank lives on the SkillDef, not on
+    //      SkillLevel. So Sprint is authored as a one-child WRAPPER whose level picks the child —
+    //      the same machinery a potion uses. The child is what lands and what carries the rank.
     public const string FamDash = "dash";
     public const string BuffDashC = "buff_dash_c";
     public const string BuffDashU = "buff_dash_u";
@@ -127,6 +146,10 @@ public static partial class SkillCatalog
     public const string PotDashE = "pot_dash_e";
     public const string PotDashL = "pot_dash_l";
     public const string PotDashM = "pot_dash_m";
+    // The two rungs the ROGUE's Sprint hands out (G5). Named "Sprint" so the buff square says which
+    // of the two lines put it there, even though they share the family.
+    public const string BuffSprint1 = "buff_sprint_1";
+    public const string BuffSprint2 = "buff_sprint_2";
     // ---- Learnable HP Boost — ONE multi-level skill (3 levels: +5/+15/+35%). ----
     public const string HpBoost = "hp_boost";
     // ============================ TEST ONLY — DELETE ME ============================
@@ -449,18 +472,23 @@ public static partial class SkillCatalog
         Scroll(ScrHasteU, "Scroll of Haste",          BuffHasteU, SkillEffect.BuffAtkSpeed, "+23% Attack Speed"),
         Scroll(ScrHasteR, "Scroll of Haste (Greater)",BuffHasteR, SkillEffect.BuffAtkSpeed, "+33% Attack Speed"),
 
-        // ---- DASH — its own family, so it never touches your Swift buff. 15s, 1 min reuse. ----
+        // ---- DASH — its own family, so it never touches your Swift buff. 15s, 1 min reuse.
+        //      Ranks are the MAGNITUDE order of the whole family, Sprint included (see FamDash). ----
         SingleBuff(BuffDashC, "Dash", FamDash, 1, SkillEffect.BuffMoveSpeed,
             new(SkillEffect.BuffMoveSpeed, 15, ModifierMode.Flat), "+15 Move Speed."),
         SingleBuff(BuffDashU, "Dash", FamDash, 2, SkillEffect.BuffMoveSpeed,
             new(SkillEffect.BuffMoveSpeed, 30, ModifierMode.Flat), "+30 Move Speed."),
-        SingleBuff(BuffDashR, "Dash", FamDash, 3, SkillEffect.BuffMoveSpeed,
+        SingleBuff(BuffSprint1, "Sprint", FamDash, 3, SkillEffect.BuffMoveSpeed,
+            new(SkillEffect.BuffMoveSpeed, 40, ModifierMode.Flat), "+40 Move Speed."),
+        SingleBuff(BuffDashR, "Dash", FamDash, 4, SkillEffect.BuffMoveSpeed,
             new(SkillEffect.BuffMoveSpeed, 45, ModifierMode.Flat), "+45 Move Speed."),
-        SingleBuff(BuffDashE, "Dash", FamDash, 4, SkillEffect.BuffMoveSpeed,
+        SingleBuff(BuffDashE, "Dash", FamDash, 5, SkillEffect.BuffMoveSpeed,
             new(SkillEffect.BuffMoveSpeed, 50, ModifierMode.Flat), "+50 Move Speed."),
-        SingleBuff(BuffDashL, "Dash", FamDash, 5, SkillEffect.BuffMoveSpeed,
+        SingleBuff(BuffDashL, "Dash", FamDash, 6, SkillEffect.BuffMoveSpeed,
             new(SkillEffect.BuffMoveSpeed, 55, ModifierMode.Flat), "+55 Move Speed."),
-        SingleBuff(BuffDashM, "Dash", FamDash, 6, SkillEffect.BuffMoveSpeed,
+        SingleBuff(BuffDashM, "Dash", FamDash, 7, SkillEffect.BuffMoveSpeed,
+            new(SkillEffect.BuffMoveSpeed, 60, ModifierMode.Flat), "+60 Move Speed."),
+        SingleBuff(BuffSprint2, "Sprint", FamDash, 8, SkillEffect.BuffMoveSpeed,
             new(SkillEffect.BuffMoveSpeed, 60, ModifierMode.Flat), "+60 Move Speed."),
 
         DashPotion(PotDashC, "Dash Potion (Lesser)",   BuffDashC, 15),

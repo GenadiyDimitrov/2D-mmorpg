@@ -3546,7 +3546,14 @@ public class GameLoopService : BackgroundService
 
         if (!p.AutoHuntEnabled)
         {
-            PushAutoTarget(p, null);   // the window must not keep showing the autopilot's last pick
+            // F1 (playtest-18): switching to manual HANDS THE TARGET OVER, it does not cancel it.
+            // Turning auto off used to push null, which closed the target window mid-fight and forced
+            // a re-select to finish a mob that the server was in fact still swinging at. Engaged /
+            // AttackCommandTargetId are deliberately left alone here — only the autopilot stops.
+            // The window still clears the moment the target is actually gone (dead / out of the
+            // dictionary), and the paths that genuinely end the fight (StopAutoHunt on death or a
+            // spent budget) clear CombatTargetId themselves, so this pushes null for them.
+            PushAutoTarget(p, LiveTarget(p, p.CombatTargetId));
             return;
         }
         if (p.CastingSkillId is not null || p.QueuedSkillId is not null)
@@ -3647,6 +3654,12 @@ public class GameLoopService : BackgroundService
 
     /// <summary>Tell the client what the autopilot is on, but only when it CHANGES — the loop runs
     /// 10x/s and the target usually does not move between kills.</summary>
+    /// <summary>The id back, but only while it still names something alive and in the world — otherwise
+    /// null. Used by the manual hand-over in <see cref="AutoPilot"/>: keeping a target is only correct
+    /// as long as there IS one.</summary>
+    private Guid? LiveTarget(Entity p, Guid? id) =>
+        id is Guid g && _world.Entities.TryGetValue(g, out var t) && !t.Dead && t.Id != p.Id ? id : null;
+
     private void PushAutoTarget(Entity p, Guid? targetId)
     {
         if (p.SentAutoTargetId == targetId)

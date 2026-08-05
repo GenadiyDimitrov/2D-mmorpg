@@ -553,6 +553,26 @@ namespace Game.Client
 
         private const string PrefUrl = "l2clone.serverUrl";
         private const string PrefUser = "l2clone.username";
+        private const string PrefPass = "l2clone.password";
+        private const string PrefRemember = "l2clone.rememberLogin";
+
+        /// <summary>G4 (playtest-18): does the login screen keep the credentials between launches?
+        /// ON stores username AND password after a login that actually succeeded; OFF stores neither
+        /// and comes up blank. ⚠ PlayerPrefs is not a secret store — on Android it is a plain XML file
+        /// in the app's private data. That is the same guarantee every "remember me" on a phone gives,
+        /// and it is why this is a CHOICE rather than the unconditional behaviour.</summary>
+        public bool RememberLogin { get; private set; } = true;
+
+        /// <summary>Flip the remember-me choice. Turning it OFF wipes what is already stored rather
+        /// than merely stopping future writes — "don't save my login" has to mean the one on disk too,
+        /// or the box is a lie until the next successful login.</summary>
+        public void SetRememberLogin(bool on)
+        {
+            RememberLogin = on;
+            PlayerPrefs.SetInt(PrefRemember, on ? 1 : 0);
+            if (!on) { PlayerPrefs.DeleteKey(PrefUser); PlayerPrefs.DeleteKey(PrefPass); }
+            PlayerPrefs.Save();
+        }
 
         private void Awake()
         {
@@ -576,8 +596,23 @@ namespace Game.Client
             Screen.sleepTimeout = SleepTimeout.NeverSleep;
 
             // Typing an IP and a username on a phone keyboard every launch is its own punishment.
+            // The ADDRESS is remembered either way — it is not a credential, and re-typing an IP is
+            // the punishment this line exists to end. Only the account is governed by the checkbox.
             ServerUrl = PlayerPrefs.GetString(PrefUrl, ServerUrl);
-            Username = PlayerPrefs.GetString(PrefUser, Username);
+            RememberLogin = PlayerPrefs.GetInt(PrefRemember, 1) == 1;
+            if (RememberLogin)
+            {
+                // The inspector values are the FALLBACK, so a fresh install still comes up on the
+                // admin/admin debug seed the testing rig depends on. Once you log in as anyone else,
+                // that is what comes back — which is the whole of his complaint.
+                Username = PlayerPrefs.GetString(PrefUser, Username);
+                Password = PlayerPrefs.GetString(PrefPass, Password);
+            }
+            else
+            {
+                Username = "";
+                Password = "";
+            }
 
             EnsureSceneRefs();
         }
@@ -736,7 +771,13 @@ namespace Game.Client
                 _authUser = username;
                 _authPass = password;
                 PlayerPrefs.SetString(PrefUrl, ServerUrl);
-                PlayerPrefs.SetString(PrefUser, username);
+                // Only credentials that WORKED are stored — storing them on submit would happily
+                // remember a typo and hand it back on every launch.
+                if (RememberLogin)
+                {
+                    PlayerPrefs.SetString(PrefUser, username);
+                    PlayerPrefs.SetString(PrefPass, password);
+                }
                 PlayerPrefs.Save();
 
                 ClientLog.Good((register ? "Registered" : "Logged in") + " as " + username + ".");

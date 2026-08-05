@@ -29,8 +29,14 @@ namespace Game.Client
     {
         private RectTransform _vendorPanel, _vendorList;
         private TextMeshProUGUI _vendorTitle;
-        private Button _vendorBuyTab, _vendorSellTab, _vendorViewTab;
+        private Button _vendorBuyTab, _vendorSellTab, _vendorViewTab, _vendorQSellTab;
         private bool _vendorSell;
+        /// <summary>V1 (playtest-18): quick-sell, the bin's twin. With it ON a row sells the WHOLE
+        /// stack on one tap — no numpad, no confirm — which is what emptying a bag of trash actually
+        /// wants. Off by default and re-armed per session for the same reason the bin is: it removes
+        /// the only step between a mis-tap and a sold item. Sell is at least undoable (the buy-back
+        /// list), which is why this one may skip the confirm where the bin still cannot.</summary>
+        private bool _vendorQuickSell;
         /// <summary>Detail view = two lines per row (name+price, then what it IS). Remembered across
         /// vendors because it is a preference, not a per-shop mode.</summary>
         private bool _vendorDetailed = true;
@@ -74,6 +80,14 @@ namespace Game.Client
             _vendorSellTab = UiKit.TextButton(inner, "Sell", () => SetVendorMode(true), 15f);
             UiKit.Place(UiKit.Rect(_vendorSellTab.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(144f, -chrome - 32f), new Vector2(120f, 30f));
+
+            // QSell sits beside the Sell tab it modifies, and is HIDDEN on the buy side — a toggle that
+            // goes dead when you tap Buy reads as a bug (the same reasoning that put the category
+            // filter on both lists instead of blanking it).
+            _vendorQSellTab = UiKit.TextButton(inner, "QSell: off",
+                () => { _vendorQuickSell = !_vendorQuickSell; _vendorRevision = -1; }, 14f);
+            UiKit.Place(UiKit.Rect(_vendorQSellTab.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(270f, -chrome - 32f), new Vector2(122f, 30f));
 
             // COMPACT vs DETAIL. Compact is one line per item for scrolling a long ladder; detail adds
             // a second line naming the type, grade, quality and the stat that matters (owner asked for
@@ -122,6 +136,7 @@ namespace Game.Client
 
             var items = Boot.Inventory ?? Array.Empty<InventoryItemDto>();
             int revision = (_vendorSell ? 1 : 0) * 92821 + (_vendorDetailed ? 7919 : 0)
+                         + (_vendorQuickSell ? 15485863 : 0)
                          + (int)_vendorTab * 104729 + (int)(Boot.Gold % 1_000_000);
             revision = revision * 31 + (Boot.Dialog?.Shop?.Items?.Length ?? 0);
             // Identity, not just quantity — same reason as the bag stamp: an item swapped for another
@@ -131,12 +146,19 @@ namespace Game.Client
             if (revision == _vendorRevision) return;
             _vendorRevision = revision;
 
-            _vendorTitle.text = _vendorSell ? "Sell — pick an item from your bag"
-                                            : "Buy — you have " + Boot.Gold.ToString("N0") + " " + GameConstants.CurrencyName;
+            _vendorTitle.text = _vendorSell
+                ? _vendorQuickSell ? "Sell — one tap sells the WHOLE stack"
+                                   : "Sell — pick an item from your bag"
+                : "Buy — you have " + Boot.Gold.ToString("N0") + " " + GameConstants.CurrencyName;
             _vendorBuyTab.targetGraphic.color = _vendorSell ? UiKit.PanelLight : UiKit.TabActive;
             _vendorSellTab.targetGraphic.color = _vendorSell ? UiKit.TabActive : UiKit.PanelLight;
             UiKit.SetButtonText(_vendorViewTab, _vendorDetailed ? "Compact" : "Detail");
             _vendorViewTab.targetGraphic.color = _vendorDetailed ? UiKit.TabActive : UiKit.PanelLight;
+            _vendorQSellTab.gameObject.SetActive(_vendorSell);
+            UiKit.SetButtonText(_vendorQSellTab, _vendorQuickSell ? "QSell: ON" : "QSell: off");
+            _vendorQSellTab.targetGraphic.color = _vendorQuickSell
+                ? new Color(0.42f, 0.20f, 0.20f, 0.95f)   // the bin's armed red — it skips the confirm too
+                : UiKit.PanelLight;
             PaintCategoryTabs(_vendorTabButtons, VendorTabs, _vendorTab);
 
             for (int i = _vendorList.childCount - 1; i >= 0; i--)
@@ -234,6 +256,18 @@ namespace Game.Client
         private void SellTap(InventoryItemDto item, ItemDef def, long unit)
         {
             var id = item.InstanceId;
+
+            // QSell (V1): the whole stack, straight out, no question asked. Max is the point — asking
+            // "how many?" for the twelfth pile of trash is the friction he named. It deliberately
+            // covers the non-stacking case too: a single sword is one tap either way, and a toggle
+            // that still popped a dialog for half the rows would not be a quick-sell.
+            if (_vendorQuickSell)
+            {
+                int qty = Mathf.Max(1, item.Quantity);
+                Boot.SellItem(id, qty);
+                return;
+            }
+
             if (!IsStackable(def) || item.Quantity <= 1) { ConfirmSell(id, def.Name, unit, 1); return; }
 
             OpenNumpad("Sell " + def.Name, item.Quantity, "Sell",

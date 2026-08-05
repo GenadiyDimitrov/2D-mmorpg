@@ -52,11 +52,22 @@ A real design change, not a tweak: it would move mobs off `MobBaseStats` onto th
 mob stats readable and reuses one formula set — but it touches every mob, the level-assigns-stats rule
 and probably the drop tables. **Needs a design pass and his go before anything moves.**
 
-**G4. Save-login checkbox on the client.**
+**G4. ✅ BUILT 2026-08-05. Save-login checkbox on the client.**
 > Add a checkbox to the client to save login information or not - now always the password field is
 > "admin"
 
-**G5. The Dash potion and the rogue's Sprint must not overlap — full spec, his:**
+> **Built:** `[x] Save login on this device` under the password field (a full-width button, not a
+> 20px box — the kit has no toggle and a phone wants a tap target; `[x]`/`[ ]` are ASCII because the
+> TMP atlas has no tick glyph). ON stores username **and** password after a login that actually
+> SUCCEEDED — storing on submit would remember a typo forever. OFF stores neither, comes up blank,
+> and **wipes what is already on disk** rather than merely stopping future writes. The server ADDRESS
+> is remembered either way: it is not a credential. Default ON, and with nothing saved yet the
+> inspector's admin/admin still fills in, so the debug rig is untouched — the moment he logs in as
+> anyone else, that is what comes back, which is the whole of the complaint.
+> ⚠ PlayerPrefs is not a secret store (a plain XML file in the app's private data). That is what
+> every phone "remember me" gives, and it is why this is a choice rather than unconditional.
+
+**G5. ✅ BUILT 2026-08-05. The Dash potion and the rogue's Sprint must not overlap — full spec, his:**
 > Dash potion is the same as sprint skill just weaker (longer cd and weaker value)
 > - Both are 15s, Potion CD 1min, Sprint cd 30s
 > - Potion - C15, U30, R45, M60 -> Effect: E1, E2, E4, E5
@@ -69,6 +80,30 @@ E1/E2/E4/E5 (Common 15 / Uncommon 30 / Rare 45 / Mythic 60) and Sprint owns E3 (
 +60). Both last 15s; potion cooldown 60s, Sprint 30s. This is exactly the existing **family + Rank**
 machinery (`ApplyBuff`) — a stronger rung replaces a weaker one and a weaker one is refused — so it is
 an authoring change, not new code.
+
+> **Built:** Sprint joined the `dash` family, and the family is now ranked by MAGNITUDE end to end:
+>
+> | rank | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+> |---|---|---|---|---|---|---|---|---|
+> | | Dash C +15 | Dash U +30 | **Sprint L1 +40** | Dash R +45 | Dash E +50 | Dash L +55 | Dash M +60 | **Sprint L2 +60** |
+>
+> That is his two sentences exactly: Sprint L1 replaces Dash C/U (and is refused under anything
+> stronger), Sprint L2 replaces everything including Sprint L1. **Sprint L2 sits above Dash M at the
+> same +60 on purpose** — a class skill you levelled must not be overridable by a bottle, the same
+> rule a group buff follows. Durations 15s both; reuse Sprint 30s / potion 60s, both already correct.
+>
+> ⚠ Sprint's two levels need DIFFERENT ranks and `Rank` lives on the `SkillDef`, not on `SkillLevel`
+> — so Sprint is authored as a **one-child wrapper** whose level picks the child (`buff_sprint_1` /
+> `buff_sprint_2`), the same machinery a potion uses. Its old private `"sprint"` BuffKey is gone;
+> that key having a family to itself is precisely what let you hold Sprint and a Dash potion at once.
+>
+> **Two things I decided, both one line to reverse:**
+> 1. **The potion keeps all SIX rungs.** He named four (C15 U30 R45 M60); Epic +50 and Legendary +55
+>    also exist, are in the drop tables, and deleting them is a content change, not a stacking fix.
+>    Ranks 5 and 6 are theirs. Say the word if he wants the ladder cut to four.
+> 2. **Sprint level 2 is learned at 40.** He gave the level and the value but not where — and the
+>    authored rogue CSV stops at 36. 40 is the next rung on that block's own 4-level cadence and
+>    where the 3rd-class disciplines already sit. Without a grant, level 2 is unreachable.
 
 **G6. ✅ BUILT 2026-08-05. The warehouse must show slots used / total.**
 > Top-right of the window, per bank (private vs account have different caps), and it turns **red** once
@@ -146,19 +181,41 @@ window's list.
 
 ## Farming
 
-**F1. Turning auto-farm OFF must not drop what you are fighting.**
+**F1. ✅ BUILT 2026-08-05. Turning auto-farm OFF must not drop what you are fighting.**
 > When disablaling auto-farm not to cancel target and close target window and stp attacking - i must
 > reselect mid fight to finish the kill
 
 Switching to manual should leave the target, the target window and the attack running — only the
 autopilot stops.
 
+> **Diagnosed:** the server was still swinging the whole time. `AutoPilot` pushed `AutoTarget(null)`
+> on the first tick after the toggle — "the window must not keep showing the autopilot's last pick" —
+> and the client's `TargetId` follows that push, so the selection vanished while `CombatTargetId`,
+> `Engaged` and `AttackCommandTargetId` were all still set. Re-selecting "to finish the kill" was
+> re-selecting something already being hit.
+>
+> **Built:** switching to manual now **hands the target over** instead of cancelling it — the push
+> re-sends the current target as long as it still names something alive and present, and only then
+> null. Nothing else is touched, so the swing continues and only the autopilot stops. The window
+> still clears the moment the target is genuinely gone, and the paths that really end a fight
+> (`StopAutoHunt` on death or a spent budget) clear `CombatTargetId` themselves, so they push null
+> exactly as before.
+
 ---
 
 ## Vendors
 
-**V1. A quick-sell toggle, mirroring the bin: `[QSell On/Off]`.** With it on, `[Sell]` sells the max
-amount in one tap instead of asking for a quantity — the same shape as the inventory's `[Del On/Off]`.
+**V1. ✅ BUILT 2026-08-05. A quick-sell toggle, mirroring the bin: `[QSell On/Off]`.** With it on,
+`[Sell]` sells the max amount in one tap instead of asking for a quantity — the same shape as the
+inventory's `[Del On/Off]`.
+
+> **Built:** `QSell: off / ON` beside the Sell tab, in the bin's armed red when on, and **hidden on
+> the buy side** — a toggle that goes dead when you tap Buy reads as a bug (the same reasoning that
+> put the category filter on both lists rather than blanking it). With it on a row sells the WHOLE
+> stack on one tap: no numpad, no confirm. It deliberately covers the non-stacking case too — a
+> single sword is one tap either way, and a "quick" sell that still popped a dialog for half the
+> rows would not be one. The window title says so while it is armed. Unlike the bin it may skip the
+> confirmation outright, because a sale is undoable from the buy-back list.
 
 **V2. 🔴 Sell price = 0.25 of the buy price, for EVERYTHING.**
 > All items must be sold for .25 of their price .. now they are sold for .8 (equipment)
@@ -220,3 +277,15 @@ mats for its own. **This belongs to crafting** — file it with [design/Crafting
    skills" means the table as well as `hp_boost` / `greater_heal`.
 3. **V2** — which item he saw selling at 0.8.
 4. **G3** — my design read on item-carrying mobs before he commits to it.
+5. **G5** — two calls I made to ship it: the Dash ladder KEPT all six rungs (he named four — Epic +50
+   and Legendary +55 also exist and are in the drop tables), and **Sprint level 2 is learned at 40**
+   (he gave the value, not the level; the rogue CSV stops at 36). Both are one line to change.
+
+---
+
+## Where the queue stands (2026-08-05)
+
+**Built:** G6 G7 · Q1 Q2 Q3 Q4 Q5 · V2 V2b · **F1 · V1 · G4 · G5**.
+**Not built:** **G1** (the skill deletion — unblocked by his answer, but still needs the two rulings
+above), G2 (answered, awaiting his keep/delete), G3 (design, needs his go), G8 + G9 (already on
+RoadmapNext 🔴 3 / `CritBlowAndDouble.md`).

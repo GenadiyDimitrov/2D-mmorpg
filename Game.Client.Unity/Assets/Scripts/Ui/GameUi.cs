@@ -35,6 +35,7 @@ namespace Game.Client
         // login
         private RectTransform _loginPanel;
         private TMP_InputField _urlField, _userField, _passField;
+        private Button _rememberButton;
         private TextMeshProUGUI _loginStatus;
 
         // character select
@@ -220,7 +221,7 @@ namespace Game.Client
         {
             _loginPanel = UiKit.PanelBox(_root, "LoginPanel");
             UiKit.Place(_loginPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(560f, 400f));
+                        Vector2.zero, new Vector2(560f, 460f));   // +60 for the remember-me row (G4)
 
             var inner = _loginPanel.GetChild(0);
             UiKit.Place(UiKit.Rect(UiKit.Label(inner, "Sign in", 30f).gameObject),
@@ -239,18 +240,46 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_passField.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(24f, -182f), new Vector2(512f, 46f));
 
+            // G4: "save login information or not". A full-width button rather than a real checkbox —
+            // the kit has no toggle, and on a phone a 46px-tall row is a far better tap target than a
+            // 20px box beside a label. [x] / [ ] are plain ASCII on purpose: the TMP atlas is static
+            // and has no tick or ballot-box glyph, so a prettier mark would draw as a hollow square.
+            _rememberButton = UiKit.TextButton(inner, "", ToggleRememberLogin, 17f);
+            UiKit.Place(UiKit.Rect(_rememberButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(24f, -238f), new Vector2(512f, 44f));
+
             var login = UiKit.TextButton(inner, "Login", () => Submit(register: false));
             UiKit.Place(UiKit.Rect(login.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(24f, -242f), new Vector2(248f, 50f));
+                        new Vector2(24f, -294f), new Vector2(248f, 50f));
 
             var register = UiKit.TextButton(inner, "Register", () => Submit(register: true));
             UiKit.Place(UiKit.Rect(register.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(288f, -242f), new Vector2(248f, 50f));
+                        new Vector2(288f, -294f), new Vector2(248f, 50f));
 
             _loginStatus = UiKit.Label(inner, "", 16f, UiKit.TextDim, TextAlignmentOptions.TopLeft);
             UiKit.Place(UiKit.Rect(_loginStatus.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(24f, -304f), new Vector2(512f, 70f));
+                        new Vector2(24f, -356f), new Vector2(512f, 70f));
 
+            PaintRememberLogin();
+        }
+
+        private void ToggleRememberLogin()
+        {
+            if (Boot == null) return;
+            Boot.SetRememberLogin(!Boot.RememberLogin);
+            // Turning it off wipes the stored pair; clear what is on screen too, so the box and the
+            // fields never disagree about whether anything is being kept.
+            if (!Boot.RememberLogin) { _userField.text = ""; _passField.text = ""; }
+            PaintRememberLogin();
+        }
+
+        private void PaintRememberLogin()
+        {
+            if (_rememberButton == null) return;
+            bool on = Boot != null && Boot.RememberLogin;
+            UiKit.SetButtonText(_rememberButton, on ? "[x]  Save login on this device"
+                                                    : "[ ]  Save login on this device");
+            _rememberButton.targetGraphic.color = on ? UiKit.TabActive : UiKit.PanelLight;
         }
 
         private void Submit(bool register)

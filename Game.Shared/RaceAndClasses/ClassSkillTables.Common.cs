@@ -94,6 +94,11 @@ public static partial class ClassSkillTables
                 new ClassSkill(RogueWeaponMastery, 36, SkillLevel: 5),
                 new ClassSkill(PiercingStab, 36, SkillLevel: 5),
                 new ClassSkill(PreciseShot, 36, SkillLevel: 5),
+                // Sprint level 2 (+60) — G5 gave the LEVEL and its value but not where it is learned,
+                // and the authored rogue CSV stops at 36. ⚠ 40 is MY pick: it is the next rung on this
+                // block's own 4-level cadence and the level the 3rd-class disciplines already sit at.
+                // One line to move when his level-40 CSV lands; without it level 2 is unreachable.
+                new ClassSkill(Sprint, 40, SkillLevel: 2),
                 // The ARCHER MERGE (2026-07-29) folded the old Archer 2nd class in here. Its whole
                 // table was these two lines — which is why archers were hollow — while the Rogue block
                 // above already taught BOTH the Stab (dagger) and Shot (bow) ladders. So the merge is
