@@ -103,15 +103,14 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
    - ❓ `G3` **mobs without inflated STR/CON, carrying real gear and running the PLAYER formulas** — a
      genuine design change (mobs move off `MobBaseStats` onto `RecomputeDerived` + equipment). Needs a
      design pass and his go. Filed with crafting: **trash disassembles into mats** instead of gold.
-4. 🆕 **Crit damage, blows and `[Double]`** (2026-08-05 ruling, spec:
-   [design/CritBlowAndDouble.md](design/CritBlowAndDouble.md)) — five items, one area, **not started**:
-   the rogue armor mastery ignores the CSV's `with all` clause · the rogue weapon mastery's crit damage
-   is swapped between levels 24 and 28 · every CSV's `crit dmg +N` was read as a *percentage* and must
-   become **flat attack inside the crit** (rogue **and** warrior) · **blows must scale off crit damage**,
-   which they currently ignore entirely, and `[Double]` becomes a pure **ATK** curve capped at 25%
-   (dropping `max(DEX, ATK)` and the 30% cap) · `[Double]` on a buff/debuff doubles its duration.
-   ⚠ This makes the `crit dmg +N` rungs the rogue's whole scaling curve — **BalanceMatrix before and
-   after**.
+4. ✅ **Crit damage, blows and `[Double]`** — **ALL FIVE BUILT 2026-08-05**, unplayed (spec:
+   [design/CritBlowAndDouble.md](design/CritBlowAndDouble.md), checklist §50, measurements
+   `tools/BalanceMatrix` §C1). `crit dmg +N` is flat attack inside the crit (rogue **and** warrior),
+   blows apply the crit-damage values, `[Double]` is the pure ATK curve capped at 25%, buffs/debuffs
+   double their duration on the same roll, and both authoring bugs (the swapped @24/@28 rungs, the
+   rogue armor mastery ignoring `with all`) are fixed. **No protocol bump, no db reset; needs an APK.**
+   ⚠ Open tuning question for him (§50h): the rogue sits at **0.65× the warrior's DPS at 20-28** — the
+   blow gate is a 9.2% crit until the mastery's crit-rate rung at 32 — then 0.94× at 32 and 1.04× at 36.
 5. ~~**Regen from gear vs regen from level**~~ — **answered and built in 0.45.0.** Gear regen is a
    PERCENT roll now (rings, 1-5% by grade) rather than a flat MP/s that dominated the level curve at
    every level. The flat types stay in the enum for pre-0.45 saves and nothing rolls them.

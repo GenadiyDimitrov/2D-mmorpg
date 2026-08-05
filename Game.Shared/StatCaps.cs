@@ -28,6 +28,10 @@ public static class StatCaps
     /// <summary>Magic crit RATE ceiling (20%, from WIT).</summary>
     public const float MagicCritRate = 0.20f;
 
+    /// <summary>Physical SKILL "[Double]" RATE ceiling (25%, from the ATK stat — owner
+    /// ruling 2026-08-05, docs/design/CritBlowAndDouble.md §1; was 30% off max(DEX,ATK)).</summary>
+    public const float PhysicalDoubleRate = 0.25f;
+
     /// <summary>Physical crit DAMAGE ceiling (x10).</summary>
     public const float PhysicalCritDamage = 10.0f;
 

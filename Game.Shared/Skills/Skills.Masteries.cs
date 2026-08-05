@@ -14,10 +14,15 @@ public static partial class SkillCatalog
     public const string ArcherArmorMastery  = "archer_armor_mastery";
     public const string NukerArmorMastery   = "nuker_armor_mastery";
 
-    /// <summary>Rogue armor level: ALL bonuses apply ONLY in LIGHT armor. Heavy/robe/none are
-    /// inert — a fighter gets NO active penalty, just no bonus (owner ruling 2026-07-01).</summary>
-    private static ArmorMasteryProfile RogueLight(StatMods light) =>
-        new(Robe: default, Light: light, Heavy: default);
+    /// <summary>Rogue armor level. The CSV splits in two, exactly like the warrior's:
+    /// <c>with all</c> (MP regen + flat P.Def, and HP regen on the last rung) applies in EVERY
+    /// weight, and <c>with light</c> (evasion, crit-rate resist, speed) only in LIGHT. Off-weights
+    /// keep the "with all" half and simply miss the light half — still no active penalty for a
+    /// fighter (owner ruling 2026-07-01). Everything used to be gated on light, which left a
+    /// rogue in robe/heavy with no MP regen, no HP regen and no P.Def at all.</summary>
+    private static ArmorMasteryProfile RogueArmor(StatMods all, int lightEva, float lightSpeedPct = 0f) =>
+        new(Robe: all, Heavy: all,
+            Light: all with { Evasion = lightEva, CritRateResist = 0.15f, MoveSpeedPct = lightSpeedPct });
 
     /// <summary>Tank Heavy Armor Mastery level: HEAVY armor grants flat P.Def, ×1.07 P.Def,
     /// 15% crit-damage reduction, ×mpReg MP regen and −2 evasion. Off-weights are inert (tank is
@@ -93,15 +98,16 @@ public static partial class SkillCatalog
                 WarriorArmor(28, 9), WarriorArmor(32, 9),
             }),
 
-        // Rogue — Armor Mastery (CSV rogue 20-35): in LIGHT armor, big evasion, +15% crit-rate
-        // resist, +MP regen and (from L3) move speed; at L5 also +HP regen. Heavy penalises,
-        // robe is inert. 5 levels (@20/24/28/32/36). Replaces the base fighter mastery.
+        // Rogue — Armor Mastery (CSV rogue 20-35): "with all" = ×1.1 MP regen + flat P.Def (at L5
+        // ×1.8 MP regen and ×1.2 HP regen); "with light" adds big evasion, +15% crit-rate resist
+        // and (from L3) move speed. 5 levels (@20/24/28/32/36). Replaces the base fighter mastery.
         new(RogueArmorMastery, "Armor Mastery", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
             Replaces: new[] { FighterArmorMastery },
-            Description: "Passive. In LIGHT armor: greatly increased evasion, resistance to "
-                       + "critical hits, faster MP regen and (at higher levels) speed. Heavy armor hinders you.",
+            Description: "Passive. Improves defence and MP regeneration with any armor weight; "
+                       + "in LIGHT armor it also grants greatly increased evasion, resistance to "
+                       + "critical hits and (at higher levels) speed.",
             Levels: new[]
             {
                 new SkillLevel(SpCost: 1700),
@@ -112,11 +118,11 @@ public static partial class SkillCatalog
             },
             ArmorMasteryLevels: new[]
             {
-                RogueLight(new StatMods(Evasion: 7,  CritRateResist: 0.15f, MpRegenPct: 0.1f, PDef: 16)),
-                RogueLight(new StatMods(Evasion: 11, CritRateResist: 0.15f, MpRegenPct: 0.1f, PDef: 18)),
-                RogueLight(new StatMods(Evasion: 13, CritRateResist: 0.15f, MpRegenPct: 0.1f, MoveSpeedPct: 0.06f, PDef: 20)),
-                RogueLight(new StatMods(Evasion: 13, CritRateResist: 0.15f, MpRegenPct: 0.1f, MoveSpeedPct: 0.06f, PDef: 22)),
-                RogueLight(new StatMods(Evasion: 13, CritRateResist: 0.15f, MpRegenPct: 0.8f, HpRegenPct: 0.2f, MoveSpeedPct: 0.06f, PDef: 25)),
+                RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 16), lightEva: 7),
+                RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 18), lightEva: 11),
+                RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 20), lightEva: 13, lightSpeedPct: 0.06f),
+                RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 22), lightEva: 13, lightSpeedPct: 0.06f),
+                RogueArmor(new StatMods(MpRegenPct: 0.8f, HpRegenPct: 0.2f, PDef: 25), lightEva: 13, lightSpeedPct: 0.06f),
             }),
 
         // Archer — light bonus (crit lean). Heavy/robe/none inert: no fighter penalty, just no bonus.

@@ -547,6 +547,10 @@ public class Entity
     public float HpRegenMult { get; set; } = 1f; // HP-regen multiplier (armor mastery)
     public float MpRegenMult { get; set; } = 1f; // MP-regen multiplier (armor mastery)
     public float CritDamageBonus { get; set; }  // crit-multiplier bonus from gear (e.g. +0.20x)
+    // FLAT crit damage (the CSVs' "crit dmg +80", weapon masteries). Joins ATTACK inside the
+    // damage ratio on a CRIT only, before the multiplier — never a multiplier itself.
+    // See docs/design/CritBlowAndDouble.md §3 and StatCalculator.CritFlatFactor.
+    public float CritDamageFlat { get; set; }
     // ----- Healer buff/effect layer (folded from buffs + passives in RecomputeDerived) -----
     public float CooldownReduction { get; set; } // spell reuse-delay reduction (0..cap)
     public float CritRateResist { get; set; }    // reduces an attacker's physical crit CHANCE vs you
@@ -1503,6 +1507,7 @@ public class Entity
         if (hpRegPct != 0f) HpRegenMult *= 1f + hpRegPct / 100f;
         if (mpRegPct != 0f) MpRegenMult *= 1f + mpRegPct / 100f;
         CritDamageBonus = critDmgPct / 100f;   // e.g. 20 -> +0.20x crit multiplier
+        CritDamageFlat = 0f;                   // FLAT crit damage comes from passives only (below)
 
         // ----- Flat class bonuses (class identity; additive over gear) -----
         if (Kind == EntityKind.Player && SecondClass > 0
@@ -1730,6 +1735,7 @@ public class Entity
                 Accuracy += pe.Accuracy;
                 if (pe.CritRate != 0f) CritChance = Math.Clamp(CritChance + pe.CritRate, 0f, 0.75f);
                 CritDamageBonus += pe.CritDamage;
+                CritDamageFlat += pe.CritDamageFlat;
                 if (pe.MagicCritRate != 0f) MagicCritChance = Math.Clamp(MagicCritChance + pe.MagicCritRate, 0f, 0.5f);
                 HpRegenBonus += pe.HpRegen;
                 MpRegenBonus += pe.MpRegen;
@@ -1943,6 +1949,7 @@ public class Entity
             CritChance *= weapon;
             MagicCritChance *= weapon;
             CritDamageBonus *= weapon;
+            CritDamageFlat *= weapon;
             Accuracy = (int)(Accuracy * weapon);
         }
     }

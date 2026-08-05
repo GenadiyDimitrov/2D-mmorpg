@@ -417,6 +417,10 @@ public readonly record struct PassiveEffect(
     float PhysAtkPct = 0f, float MagAtkPct = 0f,  // percent, channel-specific
     int Evasion = 0, int Accuracy = 0,
     float CritRate = 0f, float CritDamage = 0f, float MagicCritRate = 0f,
+    // FLAT crit damage — the class CSVs' "crit dmg +80". NOT a multiplier: it joins ATTACK
+    // inside the damage ratio on a crit only, K·((atk + flat)·… )/def, then the crit multiplier
+    // scales the result. Off a crit it does nothing. See docs/design/CritBlowAndDouble.md §3.
+    float CritDamageFlat = 0f,
     float HpRegen = 0f, float MpRegen = 0f,            // FLAT regen per tick
     float HpRegenPct = 0f, float MpRegenPct = 0f,      // regen MULTIPLIER (additive: 0.20 = +20%)
     float AtkSpeedPct = 0f, float CastSpeedPct = 0f, float MoveSpeedPct = 0f,

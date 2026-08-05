@@ -84,6 +84,10 @@ namespace Game.Client
             t.AppendLine(Row2("P.Atk", s.AttackPower.ToString(), "M.Atk", s.MagicAttack.ToString()));
             t.AppendLine(Row2("Accuracy", s.Accuracy.ToString(), "Crit", Pct(s.CritChance)));
             t.AppendLine(Row2("Magic crit", Pct(s.MagicCritChance), "Crit dmg", "+" + Pct(s.CritDamage)));
+            // Flat crit damage is ATTACK added inside a crit (weapon masteries), so it reads as a
+            // number, not a percent. [Double] is a pure ATK curve — the client can derive it itself.
+            t.AppendLine(Row2("Crit dmg flat", "+" + s.CritDamageFlat.ToString("0"),
+                              "[Double]", Pct(StatCalculator.PhysicalDoubleChance(s.Atk))));
             t.AppendLine(Row2("Atk speed", SpeedStat(s.AttackSpeedMult, StatCaps.AttackSpeed),
                               "Cast speed", SpeedStat(s.CastSpeedMult, StatCaps.CastSpeed)));
             t.AppendLine();

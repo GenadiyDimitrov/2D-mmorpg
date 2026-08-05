@@ -998,6 +998,51 @@ work, and the stat change must show immediately if the item is worn.
 and the level it opens at.
 
 ---
+## 50. 🔴 0.49.0 — crit damage, BLOWS and `[Double]` — UNPLAYED
+
+Needs a **new APK** (the stats row and the mastery numbers ship inside it). No db reset, protocol
+still 12. The design is `docs/design/CritBlowAndDouble.md`; the measurements are
+`tools/BalanceMatrix` §C1.
+
+**50a. `Crit dmg flat` is a new row in the stats window**, under `Magic crit / Crit dmg`, next to a
+`[Double]` percentage. On a **rogue with daggers** it must read **+35 / +64 / +80 / +140 / +165** at
+levels 20 / 24 / 28 / 32 / 36 — that is the CSV, and the @24 and @28 rungs used to be swapped.
+Unequip the daggers and the number must fall to 0 (it is a WEAPON mastery).
+
+**50b. A warrior with a TWO-HANDED sword** shows **+35 / +48 / +64 / +84 / +106** on the same rungs.
+With a 1H sword or a shield equipped it must read **0** — the mastery is two-hand only.
+
+**50c. `[Double]` is now a pure ATK curve, 2.5 % at ATK 30 rising to 25 % at ATK 60**, capped there.
+It no longer reads DEX at all. The stats window computes it from your ATK, so it must move when a
+stat-swap passive or a buff changes ATK, and must NOT move when you swap to a better weapon.
+
+**50d. A dagger blow finally scales with crit damage.** Hit the same mob with Piercing Stab before
+and after learning the next mastery rung: a landed blow (the big number, ~9 % of the time until 32)
+must grow with the rung. Measured expected damage per blow at 20→36: **148 · 157 · 167 · 324 · 354**,
+against **90 · 93 · 99 · 161 · 178** before this build. A blow that does NOT land still deals its
+soft 10 % floor and must not grow at all.
+
+**50e. A rogue is no longer punished for taking off light armour.** In robe or heavy, Armor Mastery
+must still give its **MP regen and P.Def** (the CSV's `with all`); only evasion, crit-rate resist and
+speed are light-only. Check the stats window in light, then in heavy: P.Def and MP regen keep the
+mastery's contribution, evasion drops.
+
+**50f. `[Double]` on a BUFF doubles its duration.** Cast a buff repeatedly (a cleric's Might, or any
+self-buff): now and then the floating text reads **`Name [Double]`** and the buff bar shows **twice
+the usual time**. Same for a debuff you land on a mob. ⚠ Potions, scrolls and the NPC buffer never
+double — only a skill you cast yourself. If a doubled buff shows the normal duration on the bar, that
+is a bug.
+
+**50g. Nothing else moved.** A basic attack's damage is unchanged to within ~1 % (the flat add and
+the old wrong multiplier happen to be worth about the same), and a `[Double]` skill like Smash still
+never applies crit damage — it is a flat ×2 by design.
+
+**50h. ⚖ TUNING QUESTION, answer if you feel it:** a rogue now sits at **0.65× a warrior's DPS at
+20-28**, then **0.94× at 32** and **1.04× at 36** when the mastery's crit-rate rung lands. That early
+gap is the blow gate — full damage only on a crit, and crit is 9.2 % until 32. Is that the intended
+shape, or should the early rungs carry crit RATE too? -> 
+
+---
 ## Known gaps (NOT bugs — not built yet in the Unity client)
 
 Don't file these; they're scope, not defects. The Unity client is a viewport, not the WPF harness.

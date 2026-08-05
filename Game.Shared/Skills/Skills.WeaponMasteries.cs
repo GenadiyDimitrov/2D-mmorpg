@@ -41,8 +41,8 @@ public static partial class SkillCatalog
     /// plus each weapon's own flat P.Atk, and +200 range for the bow. (crit-rate ×1.2 is
     /// approximated as +critRate flat.)</summary>
     private static WeaponMasteryProfile RogueWM(float critDmg, int acc, float critRate, float atkSpd, int dualAtk, int bowAtk) =>
-        new(Dual: new PassiveEffect(PhysAtkPct: 0.085f, CritDamage: critDmg, Accuracy: acc, CritRate: critRate, AtkSpeedPct: atkSpd, PhysAtk: dualAtk),
-            Bow:  new PassiveEffect(PhysAtkPct: 0.085f, CritDamage: critDmg, Accuracy: acc, CritRate: critRate, AtkSpeedPct: atkSpd, PhysAtk: bowAtk, BowRange: 200f));
+        new(Dual: new PassiveEffect(PhysAtkPct: 0.085f, CritDamageFlat: critDmg, Accuracy: acc, CritRate: critRate, AtkSpeedPct: atkSpd, PhysAtk: dualAtk),
+            Bow:  new PassiveEffect(PhysAtkPct: 0.085f, CritDamageFlat: critDmg, Accuracy: acc, CritRate: critRate, AtkSpeedPct: atkSpd, PhysAtk: bowAtk, BowRange: 200f));
 
     private static SkillDef WeaponMasteryPassive(string id, string name, BaseClass cls,
         string desc, WeaponMasteryProfile profile) =>
@@ -72,11 +72,13 @@ public static partial class SkillCatalog
             },
             WeaponMasteryLevels: new[]
             {
-                TwoHand(new PassiveEffect(PhysAtkPct: 0.30f, PhysAtk: 13, CritDamage: 0.35f, Accuracy: 3, Evasion: -3, DefencePct: -0.20f)),
-                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 15, CritDamage: 0.48f, Accuracy: 6, Evasion: -3, DefencePct: -0.20f)),
-                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 17, CritDamage: 0.64f, Accuracy: 6, Evasion: -3, DefencePct: -0.20f)),
-                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 20, CritDamage: 0.84f, Accuracy: 6, Evasion: -3, DefencePct: -0.20f)),
-                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 20, CritDamage: 1.06f, Accuracy: 6, Evasion: -3, DefencePct: -0.20f)),
+                // crit dmg is the CSV's FLAT +35/+48/+64/+84/+106 (attack added inside the crit),
+                // not a multiplier — it used to be read as ×2.35 … ×3.06. See CritBlowAndDouble.md §3.
+                TwoHand(new PassiveEffect(PhysAtkPct: 0.30f, PhysAtk: 13, CritDamageFlat: 35f,  Accuracy: 3, Evasion: -3, DefencePct: -0.20f)),
+                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 15, CritDamageFlat: 48f,  Accuracy: 6, Evasion: -3, DefencePct: -0.20f)),
+                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 17, CritDamageFlat: 64f,  Accuracy: 6, Evasion: -3, DefencePct: -0.20f)),
+                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 20, CritDamageFlat: 84f,  Accuracy: 6, Evasion: -3, DefencePct: -0.20f)),
+                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 20, CritDamageFlat: 106f, Accuracy: 6, Evasion: -3, DefencePct: -0.20f)),
             }),
 
         // Rogue — Weapon Mastery (CSV rogue 20-35): DUAL and BOW both gain +8.5% P.Atk plus
@@ -97,18 +99,20 @@ public static partial class SkillCatalog
             },
             WeaponMasteryLevels: new[]
             {
-                RogueWM(critDmg: 0.35f, acc: 0, critRate: 0f,    atkSpd: 0f,    dualAtk: 8,  bowAtk: 30),
-                RogueWM(critDmg: 0.80f, acc: 3, critRate: 0f,    atkSpd: 0f,    dualAtk: 11, bowAtk: 42),
-                RogueWM(critDmg: 0.64f, acc: 3, critRate: 0f,    atkSpd: 0f,    dualAtk: 14, bowAtk: 56),
-                RogueWM(critDmg: 1.40f, acc: 3, critRate: 0.10f, atkSpd: 0f,    dualAtk: 17, bowAtk: 74),
-                RogueWM(critDmg: 1.65f, acc: 3, critRate: 0.10f, atkSpd: 0.05f, dualAtk: 21, bowAtk: 96),
+                // crit dmg = the CSV's FLAT +35/+64/+80/+140/+165. The @24 and @28 rungs used to be
+                // SWAPPED (80 before 64) as well as read as a multiplier. See CritBlowAndDouble.md §3.
+                RogueWM(critDmg: 35f,  acc: 0, critRate: 0f,    atkSpd: 0f,    dualAtk: 8,  bowAtk: 30),
+                RogueWM(critDmg: 64f,  acc: 3, critRate: 0f,    atkSpd: 0f,    dualAtk: 11, bowAtk: 42),
+                RogueWM(critDmg: 80f,  acc: 3, critRate: 0f,    atkSpd: 0f,    dualAtk: 14, bowAtk: 56),
+                RogueWM(critDmg: 140f, acc: 3, critRate: 0.10f, atkSpd: 0f,    dualAtk: 17, bowAtk: 74),
+                RogueWM(critDmg: 165f, acc: 3, critRate: 0.10f, atkSpd: 0.05f, dualAtk: 21, bowAtk: 96),
             }),
 
         // Archer — bow: crit-damage + accuracy lean.
         WeaponMasteryPassive(ArcherWeaponMastery, "Bow Mastery", BaseClass.Fighter,
             "Increases attack power, critical damage and accuracy while wielding a bow.",
             new WeaponMasteryProfile(
-                Bow: new PassiveEffect(PhysAtkPct: 0.12f, CritDamage: 0.20f, Accuracy: 5))),
+                Bow: new PassiveEffect(PhysAtkPct: 0.12f, CritDamageFlat: 20f, Accuracy: 5))),
 
         // Tank — Weapon Mastery (CSV tank 20-35): flat + 8.5% attack power with ANY weapon.
         // 5 levels (@20/24/28/32/36). Replaces the base fighter weapon mastery.

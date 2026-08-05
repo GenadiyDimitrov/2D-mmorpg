@@ -12,6 +12,49 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 0.49.0 — 2026-08-05 — Crit damage is FLAT, blows scale off it, `[Double]` is an ATK curve
+
+His 2026-08-05 ruling, built in one pass. Design: [design/CritBlowAndDouble.md](design/CritBlowAndDouble.md);
+measurements: `tools/BalanceMatrix` §C1.
+
+**The misreading.** Every class CSV writes crit damage as a `+` — rogue `+35/+64/+80/+140/+165`,
+warrior 2H `+35/+48/+64/+84/+106`. The catalog divided each by 100 and fed it to `PhysicalCritMult`
+(`2.0 + bonus`), so "crit dmg +80" quietly meant "crit multiplier ×2.8". It is a **flat number**, and
+it joins **attack** inside the ratio on a crit only:
+
+```
+crit damage = K · ((atk + flatCritDmg)·… + power) / def  ×  critMult
+```
+
+so it is divided by defence like everything else and off a crit it does nothing. New field all the way
+down: `PassiveEffect.CritDamageFlat` → `Entity.CritDamageFlat` → `StatCalculator.CritFlatFactor`, which
+expresses the term as a factor on the finished hit — exact, because everything after the ratio
+(variance, weapon coef, the damage-out pipeline) is a linear multiplier.
+
+**Blows.** A landed blow returned `baseDamage` **unmodified**, so a dagger's whole crit-damage ladder
+did nothing to Stab. `ResolveBlow` now applies the crit-damage values to a landed blow — flat add, then
+the multiplier — before the `[Double]` roll on top. Expected damage per blow at the five rungs roughly
+doubles: **90 → 148** at level 20, **178 → 354** at 36. That is the rogue's entire scaling ladder
+switched on; measure before touching those five numbers.
+
+**`[Double]`.** Ours *is* L2's physical skill crit — a flat ×2 that never touches crit damage, which is
+the whole reason for the name. Its chance is now a pure **ATK** curve, `min(25, 2.5 + 0.75·(ATK−30))`,
+capped by `StatCaps.PhysicalDoubleRate`; it no longer reads DEX at all. **DEX makes a blow land, ATK
+makes it double** — paying the ×2 off DEX too would pay the rogue twice for one stat and give the
+warrior nothing from the mechanic. And `[Double]` on a **buff or debuff doubles its duration** (L2's
+level-76 Skill Mastery): one roll per cast, player casts only, shown as `Name [Double]`.
+
+**Two authoring bugs fixed with it.** The rogue weapon mastery's @24 and @28 rungs were **swapped**
+(80 before 64). The rogue ARMOR mastery gated *everything* on light armour, while the CSV puts MP
+regen, HP regen and P.Def under **`with all`** — so a rogue in robe or heavy got nothing at all from it.
+The warrior's identical CSV grammar was already implemented correctly, which is what proved it a slip.
+
+**Client:** the stats window gained `Crit dmg flat +N` / `[Double] N%` (the second derived client-side
+from the ATK stat). `StatsUpdate.CritDamageFlat` is a trailing optional field — **no protocol bump, no
+db reset**. **BalanceMatrix** gained §C1 (the curve old-vs-new, both mastery ladders, rogue-vs-warrior
+DPS), a `BuildRogue` that actually wears daggers and light armour, and `TopSkill` now honours the
+weapon gate the server enforces — without it a sword-and-shield tank was being measured on Stab.
+
 ## 0.49.0 — 2026-08-05 — The enchant rework (`D1`/`D2`): two axes instead of three scrolls
 
 The last unbuilt pass of the playtest-17 batch. Until now an "enchant scroll" was three items whose

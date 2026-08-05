@@ -6822,17 +6822,23 @@ var effect = def.Effect;
                     if (target.Kind == EntityKind.Player) { PushBuffs(target); SendStats(target); }
                 }
 
-                // BLOW skills (dagger Stab) land full damage only on a crit/double, else a soft
-                // 10% floor. "[Double]" skills roll a ×2 from the higher of DEX/ATK (cap 30%);
-                // ordinary skills keep the basic crit path (unchanged).
+                // FLAT crit damage joins pAtk inside the ratio, on a crit only — as a factor here
+                // because everything after the ratio is linear (see StatCalculator.CritFlatFactor).
+                float critFlat = StatCalculator.CritFlatFactor(
+                    caster.EffectiveAttack, caster.CritDamageFlat, pFlat, pMod);
+
+                // BLOW skills (dagger Stab) land full damage only on a crit, and a landed one is
+                // computed with the crit-damage values, else a soft 10% floor. "[Double]" skills
+                // roll a flat ×2 off the caster's ATK (2.5-25%); ordinary skills keep the basic
+                // crit path. docs/design/CritBlowAndDouble.md.
                 var (finalDmg, outcome) = def.BlowOnCrit
-                    ? ResolveBlow(caster, target, damage, def)
+                    ? ResolveBlow(caster, target, damage, def, critFlat)
                     : def.CanDouble
                         ? ResolvePhysicalDouble(caster, target, damage,
-                            StatCalculator.PhysicalDoubleChance(Math.Max((int)caster.EffectiveDex, caster.AtkStat)),
+                            StatCalculator.PhysicalDoubleChance(caster.AtkStat),
                             def.BlockAccuracy)
                         : ResolvePhysicalCritAndBlock(
-                            caster, target, damage, caster.CritChance, def.BlockAccuracy);
+                            caster, target, damage, caster.CritChance, def.BlockAccuracy, critFlat);
                 damage = finalDmg;
                 BroadcastCombat(caster, target, damage, outcome, castName);
                 ApplyDamage(target, damage, caster);
@@ -6947,6 +6953,15 @@ var effect = def.Effect;
         // ---- Crowd control + DoT (Slow/Stun/Fear/Root, Bleed/Poison/Venom) — lands via the
         //      contest (docs/design/Disciplines.md), NOT the fizzle model. Bosses are immune. The
         //      attacker stat is DEX for bleed/venom, ATK otherwise; defender CON (phys) / WIT (magic). ----
+        // ---- [Double] on a BUFF or DEBUFF = DOUBLE DURATION (docs/design/CritBlowAndDouble.md §4,
+        //      L2's level-76 Skill Mastery). The SAME ATK roll the damage side uses, rolled ONCE per
+        //      cast — an area blessing doubles for everyone or for no one — and only for a PLAYER's
+        //      own cast: potions, scrolls and the NPC buffer come through other paths and never roll.
+        //      -1 = no override, i.e. the skill's authored duration. ----
+        bool durationDoubled = def.DurationTicks > 0 && caster.Kind == EntityKind.Player
+            && _rng.NextDouble() < StatCalculator.PhysicalDoubleChance(caster.AtkStat);
+        int doubledTicks = durationDoubled ? def.DurationTicks * 2 : -1;
+
         if ((effect & SkillEffect.ContestCc) != 0)
         {
             offensive = true;
@@ -6960,8 +6975,9 @@ var effect = def.Effect;
                 if ((effect & SkillEffect.AnyDot) != 0)
                     ApplyDotStack(caster, target, def, lvl);   // stacking DoT (refresh on reapply)
                 else
-                    ApplyBuff(target, def, lvl);               // single CC buff
-                BroadcastCombat(caster, target, 0, CombatOutcome.Buff, castName);
+                    ApplyBuff(target, def, lvl, durationOverride: doubledTicks);   // single CC buff
+                BroadcastCombat(caster, target, 0, CombatOutcome.Buff,
+                    durationDoubled ? castName + " [Double]" : castName);
             }
             else
             {
@@ -6986,8 +7002,9 @@ var effect = def.Effect;
             }
             else
             {
-                ApplyBuff(target, def, lvl);
-                BroadcastCombat(caster, target, 0, CombatOutcome.Buff, castName);
+                ApplyBuff(target, def, lvl, durationOverride: doubledTicks);
+                BroadcastCombat(caster, target, 0, CombatOutcome.Buff,
+                    durationDoubled ? castName + " [Double]" : castName);
             }
         }
 
@@ -7024,21 +7041,23 @@ var effect = def.Effect;
             // cleric's Wind Walk shows as "Holy Speed" wherever it lands.
             string buffName = ClassSkills.DisplayName(
                 def.Id, caster.Race, caster.BaseClass, caster.Archetype, caster.Discipline);
+            // A doubled duration is announced on the floating text, or it is invisible.
+            string shownName = durationDoubled ? buffName + " [Double]" : buffName;
 
             if (def.TargetMode == TargetMode.AlliesInRadius)
             {
                 // Buff the caster + every nearby player character in range.
                 foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
                 {
-                    ApplyBuff(ally, def, lvl, buffName);
-                    BroadcastCombat(caster, ally, 0, CombatOutcome.Buff, buffName);
+                    ApplyBuff(ally, def, lvl, buffName, durationOverride: doubledTicks);
+                    BroadcastCombat(caster, ally, 0, CombatOutcome.Buff, shownName);
                 }
             }
             else
             {
                 var buffTarget = def.TargetMode == TargetMode.SelfOnly ? caster : target;
-                ApplyBuff(buffTarget, def, lvl, buffName);
-                BroadcastCombat(caster, buffTarget, 0, CombatOutcome.Buff, buffName);
+                ApplyBuff(buffTarget, def, lvl, buffName, durationOverride: doubledTicks);
+                BroadcastCombat(caster, buffTarget, 0, CombatOutcome.Buff, shownName);
             }
         }
 
@@ -7712,8 +7731,10 @@ var effect = def.Effect;
             damage = (int)(damage * StatCalculator.WeaponVariance(attacker.WeaponType, _rng));
             damage = FinalizeDamage(attacker, target, damage, DamageKind.Basic, null);
 
+            // A basic attack is K·pAtk/def, so the flat crit-damage add is simply (pAtk+flat)/pAtk.
             var (finalDmg, outcome) = ResolvePhysicalCritAndBlock(
-                attacker, target, damage, attacker.CritChance, 0f);
+                attacker, target, damage, attacker.CritChance, 0f,
+                StatCalculator.CritFlatFactor(attacker.EffectiveBasicAttack, attacker.CritDamageFlat));
             damage = finalDmg;
             BroadcastCombat(attacker, target, damage, outcome);
             ApplyDamage(target, damage, attacker);
@@ -9098,7 +9119,8 @@ var effect = def.Effect;
             p.MagicFailResist, p.MagicFailFloor,
             p.CritRateResist, p.CritDmgResist, p.BowResist,
             p.InterruptResist, (int)p.EffectiveMagicAttack,   // MagicAttackInternal: the cosmic L2-reference value
-            p.HealPowerFlat, p.HealPowerMod, p.HealReceivedFlat, p.HealReceivedMod));
+            p.HealPowerFlat, p.HealPowerMod, p.HealReceivedFlat, p.HealReceivedMod,
+            p.CritDamageFlat));
     }
 
     /// <summary>The player's baseline HP/MP regen per second at the RUNNING stance (×1.0) and outside
@@ -9441,9 +9463,13 @@ var effect = def.Effect;
     /// full (crits ignore the shield). If it doesn't crit, roll block — on a
     /// block, apply the shield's flat % damage reduction. blockAccuracy (from a
     /// skill) lowers the effective block chance (most phys skills bypass blocks).
+    /// <paramref name="critFlatFactor"/> carries the attacker's FLAT crit damage (the CSVs'
+    /// "crit dmg +80", already turned into a factor by StatCalculator.CritFlatFactor because it
+    /// joins pAtk INSIDE the ratio) — it applies on a crit only, before the crit multiplier.
     /// Returns the final damage and the outcome (Crit / Block / Hit).</summary>
     private (int damage, CombatOutcome outcome) ResolvePhysicalCritAndBlock(
-        Entity attacker, Entity target, int baseDamage, float critChance, float blockAccuracy)
+        Entity attacker, Entity target, int baseDamage, float critChance, float blockAccuracy,
+        float critFlatFactor = 1f)
     {
         // Bow/arrow resistance lowers all damage from a bow attacker (hit/crit/block alike).
         if (attacker.WeaponType == WeaponType.Bow && target.BowResist > 0f)
@@ -9457,9 +9483,11 @@ var effect = def.Effect;
 
         if (_rng.NextDouble() < effCrit)
         {
-            // Crit-damage resist trims the EXTRA (above-normal) crit damage.
+            // Crit-damage resist trims the EXTRA (above-normal) crit damage. The flat
+            // crit-damage term is inside critFlatFactor, so the above-normal part of the
+            // crit is (factor × mult − 1): flat first (it is attack), multiplier on top.
             float mult = StatCalculator.PhysicalCritMult(attacker.CritDamageBonus);
-            float extra = (mult - 1f) * (1f - target.CritDmgResist);
+            float extra = (critFlatFactor * mult - 1f) * (1f - target.CritDmgResist);
             int crit = Math.Max(1, (int)(baseDamage * (1f + extra)));
             return (crit, CombatOutcome.Crit);   // crit ignores the shield
         }
@@ -9478,10 +9506,12 @@ var effect = def.Effect;
         return (baseDamage, CombatOutcome.Hit);
     }
 
-    /// <summary>Resolution for a "[Double]" physical SKILL: a ×2 chance from the higher of
-    /// the caster's DEX/ATK (cap 30%), lowered by shield/crit-rate resist and ignoring the
-    /// block on a double (like a crit); otherwise a normal block roll. Skills without the
-    /// [Double] flag never reach here (they use the basic crit path, unchanged).</summary>
+    /// <summary>Resolution for a "[Double]" physical SKILL — our name for L2's physical skill
+    /// crit: a flat ×2 and NOTHING else (it never touches crit-damage values, which is the whole
+    /// point of the name). Chance is the caster's ATK curve (2.5-25%, StatCalculator.
+    /// PhysicalDoubleChance), lowered by shield/crit-rate resist and ignoring the block on a
+    /// double (like a crit); otherwise a normal block roll. Skills without the [Double] flag
+    /// never reach here (they use the basic crit path, unchanged).</summary>
     private (int damage, CombatOutcome outcome) ResolvePhysicalDouble(
         Entity attacker, Entity target, int baseDamage, float doubleChance, float blockAccuracy)
     {
@@ -9508,14 +9538,16 @@ var effect = def.Effect;
         return (baseDamage, CombatOutcome.Hit);
     }
 
-    /// <summary>Resolution for a BLOW skill (dagger Stab). CRIT is the gate: the blow deals
-    /// its FULL "actual" damage only if it crits (dagger crit chance, lowered by shield/crit
-    /// resist). ONLY after a landed crit does it roll a DOUBLE (chance from the higher of
-    /// DEX/ATK) that multiplies the actual damage ×2. A blow that FAILS to crit deals a flat
-    /// BlowFailFraction of its damage — that floor can neither crit nor double (a soft floor,
-    /// not L2's 0-damage whiff). Blows bypass shields, so the floor isn't blocked.</summary>
+    /// <summary>Resolution for a BLOW skill (dagger Stab) — docs/design/CritBlowAndDouble.md §2.
+    /// CRIT is the gate: the blow deals its full damage only if it crits (dagger crit chance,
+    /// lowered by shield/crit resist). A landed blow is then computed WITH THE CRIT-DAMAGE VALUES
+    /// — the flat crit-damage add (critFlatFactor) and the crit multiplier — because a blow scales
+    /// off crit damage, not off p.Atk (7-11k of skill power against under 1k of p.Atk). ONLY after
+    /// that does it roll a DOUBLE (the caster's ATK curve) for a further ×2. A blow that FAILS to
+    /// crit deals a flat BlowFailFraction of its damage — that floor can neither crit nor double
+    /// (a soft floor, not L2's 0-damage whiff). Blows bypass shields, so the floor isn't blocked.</summary>
     private (int damage, CombatOutcome outcome) ResolveBlow(
-        Entity attacker, Entity target, int baseDamage, SkillDef def)
+        Entity attacker, Entity target, int baseDamage, SkillDef def, float critFlatFactor = 1f)
     {
         float effCrit = Math.Clamp(attacker.CritChance
             - (target.HasShield ? target.ShieldCritDefense : 0f)
@@ -9525,12 +9557,17 @@ var effect = def.Effect;
             // Missed the crit: soft floor only — cannot crit or double.
             return (Math.Max(1, (int)(baseDamage * def.BlowFailFraction)), CombatOutcome.Hit);
 
-        // Crit landed → deal the full actual damage, THEN roll a separate double on top.
-        int damage = baseDamage;
+        // Crit landed → apply the crit-damage values (flat add inside the ratio, then the
+        // multiplier), trimmed by the target's crit-damage resist exactly as a normal crit is.
+        float mult = StatCalculator.PhysicalCritMult(attacker.CritDamageBonus);
+        float extra = (critFlatFactor * mult - 1f) * (1f - target.CritDmgResist);
+        int damage = Math.Max(1, (int)(baseDamage * (1f + extra)));
+
+        // THEN roll a separate double on top (ATK, never DEX — DEX already bought the crit above).
         if (def.CanDouble)
         {
             float dbl = Math.Clamp(
-                StatCalculator.PhysicalDoubleChance(Math.Max((int)attacker.EffectiveDex, attacker.AtkStat))
+                StatCalculator.PhysicalDoubleChance(attacker.AtkStat)
                 - (target.HasShield ? target.ShieldCritDefense : 0f)
                 - target.CritRateResist, 0f, 1f);
             if (_rng.NextDouble() < dbl)

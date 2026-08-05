@@ -554,15 +554,34 @@ public static class StatCalculator
     public static float MagicCritChance(int wit) =>
         Math.Clamp(wit * 0.001f, 0f, StatCaps.MagicCritRate);
 
-    /// <summary>Physical SKILL "[Double]" chance (×2 damage): same scaling as magic crit
-    /// but driven by the HIGHER of DEX/ATK, capped at 30% (per docs/design/Disciplines.md). Only
-    /// skills flagged [Double] roll this; ordinary skills don't double.</summary>
-    public static float PhysicalDoubleChance(int dexOrAtk) =>
-        Math.Clamp(dexOrAtk * 0.001f, 0f, 0.30f);
+    /// <summary>Physical SKILL "[Double]" chance (×2 damage) — a pure ATK curve
+    /// (owner ruling 2026-08-05, docs/design/CritBlowAndDouble.md §1):
+    /// <code>Double% = min(25, 2.5 + max(0, 0.75·(ATK − 30)))</code>
+    /// so ATK 30 → 2.5%, 40 → 10%, 50 → 17.5%, 60+ → 25% (capped).
+    /// <paramref name="atkStat"/> is the ATK **stat** (the 30-60 band), never EffectiveAtk /
+    /// p.Atk: a better weapon must not buy Double chance, only the build does. DEX makes a blow
+    /// LAND; ATK makes it double. Only skills flagged [Double] roll this.</summary>
+    public static float PhysicalDoubleChance(int atkStat) =>
+        Math.Clamp(0.025f + 0.0075f * Math.Max(0, atkStat - 30), 0.025f, StatCaps.PhysicalDoubleRate);
 
     /// <summary>Physical crit DAMAGE multiplier, capped x10.</summary>
     public static float PhysicalCritMult(float bonus = 0f) =>
         Math.Min(2.0f + bonus, StatCaps.PhysicalCritDamage);
+
+    /// <summary>The FLAT crit-damage term, expressed as a factor on an already-computed hit.
+    /// Crit damage in the class CSVs is a flat "+80" that joins ATTACK inside the ratio, on a
+    /// crit only: <c>K·(flat + mod·(pAtk + critFlat))/def</c>. Because everything downstream of
+    /// the ratio (variance, weapon coef, the damage-out pipeline) is a linear multiplier, the
+    /// whole term reduces to this ratio of the two raw damages — so the caller can apply it to
+    /// the finished number and get exactly the same result. Returns 1 with no flat bonus.
+    /// A basic attack passes (flat: 0, mod: 1), i.e. the plain (pAtk+critFlat)/pAtk.</summary>
+    public static float CritFlatFactor(float pAtk, float critFlat, int flat = 0, float mod = 1f)
+    {
+        if (critFlat <= 0f) return 1f;
+        float normal = flat + mod * pAtk;
+        if (normal <= 0f) return 1f;
+        return (flat + mod * (pAtk + critFlat)) / normal;
+    }
 
     /// <summary>Magic crit DAMAGE multiplier, capped x3.</summary>
     public static float MagicCritMult(float bonus = 0f) =>

@@ -68,6 +68,7 @@ public static class SkillText
 
         Pct(o, "Crit rate", p.CritRate);
         Pct(o, "Crit damage", p.CritDamage);
+        Flat(o, "Crit damage", p.CritDamageFlat);
         Pct(o, "Magic crit", p.MagicCritRate);
 
         // Regen: the flat fields are PER TICK on the server (10/sec), which is meaningless

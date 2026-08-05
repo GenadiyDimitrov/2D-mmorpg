@@ -189,7 +189,10 @@ public record StatsUpdate(
     // Heal stats (no M.Atk): output = (HealPowerFlat + skillPower)·HealPowerMod; received = (HealReceivedFlat
     // + output)·HealReceivedMod. Default 0/×1.
     int HealPowerFlat = 0, float HealPowerMod = 1f,
-    int HealReceivedFlat = 0, float HealReceivedMod = 1f);
+    int HealReceivedFlat = 0, float HealReceivedMod = 1f,
+    // FLAT crit damage (the CSVs' "crit dmg +80"): attack added INSIDE the ratio on a crit only,
+    // before the multiplier. Separate line from CritDamage, which is the multiplier bonus.
+    float CritDamageFlat = 0f);
 
 /// <summary>Server -> owning client: a potion cooldown started (seconds),
 /// or an active potion effect changed. Cooldown 0 = ready.</summary>

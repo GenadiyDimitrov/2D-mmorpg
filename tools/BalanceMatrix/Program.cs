@@ -123,8 +123,11 @@ Console.WriteLine();
     var champ = BuildPlayer(Race.Human, BaseClass.Fighter, refLevel, warrior: true);
     ApplyNpcBuffs(champ);
     int cAtk = (int)champ.EffectiveAttack;
-    float critF = CritFactor(champ.CritChance, StatCalculator.PhysicalCritMult(champ.CritDamageBonus));
-    float dblF  = CritFactor(StatCalculator.PhysicalDoubleChance(Math.Max(champ.Dex, champ.AtkStat)), 2f);
+    // Crit folds in the FLAT crit damage (it joins P.Atk inside the ratio on a crit); [Double] is the
+    // ATK curve and is a flat x2 that never touches crit damage. docs/design/CritBlowAndDouble.md.
+    float critF = CritFactor(champ.CritChance, StatCalculator.PhysicalCritMult(champ.CritDamageBonus)
+        * StatCalculator.CritFlatFactor(champ.EffectiveAttack, champ.CritDamageFlat, refPower));
+    float dblF  = CritFactor(StatCalculator.PhysicalDoubleChance(champ.AtkStat), 2f);
 
     int crushHit = StatCalculator.PhysicalDamage(cAtk, refPower, mobPDef, refLevel);
     // A PHYSICAL skill's cast time is shortened by ATTACK speed, exactly as a spell's is by cast speed
@@ -1067,7 +1070,170 @@ Console.WriteLine("  * flipping Kind moves the SWING CLOCK by side effect (G3.5a
 Console.WriteLine("    fighter archetypes by construction — MobDexReference IS the human-fighter base.");
 Console.WriteLine();
 
+// =====================================================================================================
+//  C1 — CRIT DAMAGE (flat), BLOWS and [Double]                    docs/design/CritBlowAndDouble.md
+//
+//  Three changes measured against what they replaced, because all three moved at once (2026-08-05):
+//    * crit damage "+80" in the CSVs is FLAT ATTACK added inside the ratio on a crit, not "x2.8";
+//    * a landed BLOW is now computed WITH the crit-damage values (it used to return base damage,
+//      so a dagger's whole crit-damage ladder did nothing at all);
+//    * [Double] chance is a pure ATK curve capped 25%, not max(DEX,ATK)/1000 capped 30%.
+//  OLD columns re-create the previous arithmetic here so the magnitude of the swing is visible.
+// =====================================================================================================
+Console.WriteLine("=== C1: [Double] chance — ATK curve (new) vs max(DEX,ATK)/1000 cap 30% (old) ===");
+{
+    int[] atks = { 30, 35, 40, 45, 50, 55, 60, 70 };
+    Console.Write("  ATK stat ");   foreach (int a in atks) Console.Write($"{a,8}");
+    Console.WriteLine();
+    Console.Write("  new      ");
+    foreach (int a in atks) Console.Write($"{StatCalculator.PhysicalDoubleChance(a) * 100,7:F1}%");
+    Console.WriteLine();
+    Console.Write("  old      ");
+    foreach (int a in atks) Console.Write($"{Math.Clamp(a * 0.001f, 0f, 0.30f) * 100,7:F1}%");
+    Console.WriteLine("     (old ALSO read DEX, so a rogue sat far higher than this row)");
+    Console.WriteLine("  his anchors: 30 -> 2.5%, 40 -> 10%, 60+ -> 25% (he wrote 50 -> 15%; the formula gives 17.5%)");
+}
+Console.WriteLine();
+
+Console.WriteLine("=== C1: ROGUE — the five crit-damage rungs (duals + light, best gear, vs a same-level mob) ===");
+{
+    Console.WriteLine("  lvl | P.Atk  crit%  ATK | critFlat |  basic hit  avg OLD  avg NEW |   blow hit  avg OLD  avg NEW");
+    foreach (int lvl in new[] { 20, 24, 28, 32, 36 })
+    {
+        var r = BuildRogue(lvl);
+        var mob = BuildMobEntity(lvl);
+        int pDef = Math.Max(1, (int)mob.EffectiveDefence);
+        float csvFlat = r.CritDamageFlat;                       // = the CSV's "+N" for this rung
+        float oldMult = 2f + csvFlat / 100f;                    // what the code used to do with it
+
+        int basicHit = StatCalculator.PhysicalDamage((int)r.EffectiveBasicAttack, 0, pDef, lvl);
+        float basicNew = CritFactor(r.CritChance, 2f *
+            StatCalculator.CritFlatFactor(r.EffectiveBasicAttack, csvFlat));
+        float basicOld = CritFactor(r.CritChance, oldMult);
+
+        var (blow, blvl) = TopSkill(r, SkillEffect.PhysicalDamage);
+        float blowHit = 0f, blowOld = 0f, blowNew = 0f;
+        if (blow is not null)
+        {
+            int power = blow.PowerAt(blvl);
+            blowHit = StatCalculator.PhysicalDamage((int)r.EffectiveAttack, power, pDef, lvl);
+            blowNew = SkillHitFactor(r, blow, power, 2f);
+            // OLD: a landed blow returned base damage untouched, then doubled off max(DEX,ATK).
+            float oldDbl = Math.Clamp(Math.Max(r.EffectiveDex, r.AtkStat) * 0.001f, 0f, 0.30f);
+            blowOld = blow.BlowOnCrit
+                ? r.CritChance * (1f + oldDbl) + (1f - r.CritChance) * blow.BlowFailFraction
+                : CritFactor(r.CritChance, oldMult);
+        }
+        Console.WriteLine($"  {lvl,3} | {(int)r.EffectiveAttack,5} {r.CritChance * 100,5:F1}% {r.AtkStat,4} |"
+            + $" {csvFlat,8:F0} | {basicHit,10} {basicHit * basicOld,8:F0} {basicHit * basicNew,8:F0} |"
+            + $" {blowHit,10:F0} {blowHit * blowOld,8:F0} {blowHit * blowNew,8:F0}"
+            + (blow is null ? "  (no skill)" : $"  ({NameOf(blow.Id)} {blvl})"));
+    }
+    Console.WriteLine("  avg = expected damage per hit with crit / blow / [Double] folded in.");
+}
+Console.WriteLine();
+
+Console.WriteLine("=== C1: WARRIOR 2H — same rungs (crit dmg +35/+48/+64/+84/+106), no blow ===");
+{
+    Console.WriteLine("  lvl | P.Atk  crit% | critFlat | basic hit  avg OLD  avg NEW | skill hit  avg OLD  avg NEW");
+    foreach (int lvl in new[] { 20, 24, 28, 32, 36 })
+    {
+        // BuildPlayer dresses a fighter in a 1H sword + shield — which grants the 2H mastery
+        // NOTHING (its profile is gated on WeaponType.TwoHanded). Swap to the greatsword, or this
+        // table measures a warrior who isn't wearing the thing being measured.
+        var w = BuildPlayer(Race.Human, BaseClass.Fighter, lvl, warrior: true);
+        w.Inventory.RemoveAll(i => i.DefId.StartsWith("sword1h") || i.DefId.StartsWith("shield"));
+        Equip(w, $"sword2h_t{GearTier(lvl)}");
+        w.RecomputeDerived();
+        var mob = BuildMobEntity(lvl);
+        int pDef = Math.Max(1, (int)mob.EffectiveDefence);
+        float csvFlat = w.CritDamageFlat;
+        float oldMult = 2f + csvFlat / 100f;
+
+        int basicHit = StatCalculator.PhysicalDamage((int)w.EffectiveBasicAttack, 0, pDef, lvl);
+        float basicNew = CritFactor(w.CritChance, 2f *
+            StatCalculator.CritFlatFactor(w.EffectiveBasicAttack, csvFlat));
+        float basicOld = CritFactor(w.CritChance, oldMult);
+
+        var (sk, sl) = TopSkill(w, SkillEffect.PhysicalDamage);
+        float skHit = 0f, skOld = 0f, skNew = 0f;
+        if (sk is not null)
+        {
+            int power = sk.PowerAt(sl);
+            skHit = StatCalculator.PhysicalDamage((int)w.EffectiveAttack, power, pDef, lvl);
+            skNew = SkillHitFactor(w, sk, power, 2f);
+            skOld = sk.CanDouble
+                ? CritFactor(Math.Clamp(Math.Max(w.EffectiveDex, w.AtkStat) * 0.001f, 0f, 0.30f), 2f)
+                : CritFactor(w.CritChance, oldMult);
+        }
+        Console.WriteLine($"  {lvl,3} | {(int)w.EffectiveAttack,5} {w.CritChance * 100,5:F1}% | {csvFlat,8:F0} |"
+            + $" {basicHit,9} {basicHit * basicOld,8:F0} {basicHit * basicNew,8:F0} |"
+            + $" {skHit,9:F0} {skHit * skOld,8:F0} {skHit * skNew,8:F0}"
+            + (sk is null ? "" : $"  ({NameOf(sk.Id)} {sl})"));
+    }
+    Console.WriteLine("  a [Double] skill never took crit damage in EITHER model — it is a flat x2 by design.");
+}
+Console.WriteLine();
+
+Console.WriteLine("=== C1: sustained DPS after the change — ROGUE (duals) vs WARRIOR (2H), same-level mob ===");
+{
+    Console.WriteLine("  the rogue's whole ladder is now these crit-damage rungs, so this is the row to watch.");
+    Console.WriteLine("  lvl | rogue dps | warrior dps | rogue/warrior | mob HP | rogue TTK | warrior TTK");
+    foreach (int lvl in new[] { 20, 24, 28, 32, 36 })
+    {
+        var r = BuildRogue(lvl);
+        var w = BuildPlayer(Race.Human, BaseClass.Fighter, lvl, warrior: true);
+        w.Inventory.RemoveAll(i => i.DefId.StartsWith("sword1h") || i.DefId.StartsWith("shield"));
+        Equip(w, $"sword2h_t{GearTier(lvl)}");
+        w.RecomputeDerived();
+        var mob = BuildMobEntity(lvl);
+        float rd = PhysDps(r, mob), wd = PhysDps(w, mob);
+        int hp = MobBaseStats.Hp(lvl);
+        Console.WriteLine($"  {lvl,3} | {rd,9:F1} | {wd,11:F1} | {rd / Math.Max(1f, wd),13:F2}x |"
+            + $" {hp,6} | {hp / Math.Max(1f, rd),8:F1}s | {hp / Math.Max(1f, wd),10:F1}s");
+    }
+}
+Console.WriteLine();
+
 static string NameOf(string id) => SkillCatalog.Get(id)?.Name ?? id;
+
+/// <summary>A Human ASSASSIN (rogue) of this level in the best duals + LIGHT armor for its tier —
+/// the class the crit-damage rungs actually belong to. BuildPlayer only knows tank/warrior/nuker
+/// and dresses them in a sword and heavy, which would measure the wrong masteries entirely.</summary>
+static Entity BuildRogue(int level)
+{
+    var s = StatCalculator.GetBaseStats(Race.Human, BaseClass.Fighter);
+    var e = new Entity { Name = "rogue", Kind = EntityKind.Player, Race = Race.Human, BaseClass = BaseClass.Fighter, Level = level };
+    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Dex = s.Dex; e.Spt = s.Spt;
+    if (level >= 20) e.SecondClass = 15;   // Human Assassin
+
+    foreach (var cs in ClassSkills.ForClass(Race.Human, BaseClass.Fighter, null, null))
+        if (cs.LearnLevel <= level) e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
+    foreach (var cs in ClassSkills.Cumulative(Race.Human, BaseClass.Fighter, e.Archetype, e.Discipline))
+        if (cs.LearnLevel <= level) e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
+    foreach (var id in e.LearnedSkills.Keys.ToList())
+        if (SkillCatalog.Get(id)?.Replaces is { } replaced)
+            foreach (var r in replaced) e.LearnedSkills.Remove(r);
+
+    var rune = SkillCatalog.Get(SkillCatalog.WarRuneBuff);
+    if (rune != null)
+        e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+        {
+            Effect = rune.Effect, Magnitudes = rune.Magnitudes,
+            TicksRemaining = int.MaxValue, Name = rune.Name, Key = rune.BuffKey,
+        });
+
+    int t = GearTier(level);
+    Equip(e, $"duals_t{t}");
+    Equip(e, $"light_t{t}");
+    foreach (var acc in new[] { "helm", "gloves", "boots" }) Equip(e, $"{acc}_t{t}");
+    Equip(e, $"necklace_t{t}");
+    Equip(e, $"ring_t{t}"); Equip(e, $"ring_t{t}");
+    Equip(e, $"earring_t{t}"); Equip(e, $"earring_t{t}");
+
+    e.RecomputeDerived();
+    return e;
+}
 
 // ----- G3 helpers -----------------------------------------------------------------------------
 
@@ -1182,7 +1348,11 @@ static float PhysDps(Entity atk, Entity def)
 {
     float hit = 1f - Miss(atk, def);
     int pDef = Math.Max(1, (int)def.EffectiveDefence);
-    float critF = CritFactor(atk.CritChance, StatCalculator.PhysicalCritMult(atk.CritDamageBonus));
+    float critMult = StatCalculator.PhysicalCritMult(atk.CritDamageBonus);
+    // The FLAT crit-damage add is a bigger factor on a BASIC attack (small P.Atk, no skill power)
+    // than on a skill, so the two hits carry their own crit factors.
+    float critF = CritFactor(atk.CritChance,
+        critMult * StatCalculator.CritFlatFactor(atk.EffectiveBasicAttack, atk.CritDamageFlat));
 
     int autoHit = StatCalculator.PhysicalDamage((int)atk.EffectiveBasicAttack, 0, pDef, atk.Level);
     int baseInterval = atk.Kind == EntityKind.Player
@@ -1198,8 +1368,9 @@ static float PhysDps(Entity atk, Entity def)
     float castSecs = Math.Max(2, (int)(skill.CastTicks * atk.EffectiveAttackSpeedMultiplier))
                      * GameConstants.TickSeconds;
     int skillHit = StatCalculator.PhysicalDamage((int)atk.EffectiveAttack, skill.PowerAt(lvl), pDef, atk.Level);
+    float skillF = SkillHitFactor(atk, skill, skill.PowerAt(lvl), critMult);
     float autoShare = Math.Max(0f, (cycle - castSecs) / cycle);
-    return skillHit * critF * hit / cycle + autoDps * autoShare;
+    return skillHit * skillF * hit / cycle + autoDps * autoShare;
 }
 
 /// <summary>Sustained MAGIC dps: the best nuke on its cycle. Spells are not evaded (they can only
@@ -1297,6 +1468,25 @@ static void ApplyNpcBuffs(Entity e)
 /// <summary>Expected damage multiplier from crit: 1 + chance × (mult − 1).</summary>
 static float CritFactor(float chance, float mult) => 1f + chance * (mult - 1f);
 
+/// <summary>Expected damage multiplier on ONE hit of a physical SKILL, running the same three
+/// resolutions GameLoopService does (docs/design/CritBlowAndDouble.md):
+/// a BLOW crits or falls to its BlowFailFraction floor, and a landed blow takes the crit-damage
+/// values and may then [Double]; a [Double] skill is a flat x2 on the ATK curve and nothing else;
+/// anything else is the ordinary crit, with the flat crit damage inside it.</summary>
+static float SkillHitFactor(Entity atk, SkillDef skill, int power, float critMult)
+{
+    float flatF = StatCalculator.CritFlatFactor(atk.EffectiveAttack, atk.CritDamageFlat, power);
+    float dbl = StatCalculator.PhysicalDoubleChance(atk.AtkStat);
+
+    if (skill.BlowOnCrit)
+    {
+        float landed = flatF * critMult * (skill.CanDouble ? 1f + dbl : 1f);
+        return atk.CritChance * landed + (1f - atk.CritChance) * skill.BlowFailFraction;
+    }
+    if (skill.CanDouble) return CritFactor(dbl, 2f);
+    return CritFactor(atk.CritChance, critMult * flatF);
+}
+
 /// <summary>Seconds between autoattacks, exactly as CombatTick computes the cooldown.</summary>
 static float AutoAttackSeconds(Entity e) =>
     Math.Max(2, (int)(GameConstants.PlayerAttackIntervalTicks * e.EffectiveAttackSpeedMultiplier))
@@ -1323,6 +1513,10 @@ static (SkillDef? Def, int Level) TopSkill(Entity e, SkillEffect channel)
         var def = SkillCatalog.Get(id);
         if (def is null || (def.Effect & channel) == 0) continue;
         if (!string.IsNullOrEmpty(def.ConsumableId)) continue;
+        // The WEAPON gate the server enforces on every cast (GameLoopService: "you need a …").
+        // Without it a sword-and-shield tank was measured on Stab — a DUAL-only blow it can never
+        // cast — which the blow resolution (full damage only on a crit) makes badly wrong.
+        if (def.RequiredWeapon != WeaponType.None && (def.RequiredWeapon & e.WeaponType) == 0) continue;
         if (best is null || def.PowerAt(lvl) > best.PowerAt(bestLvl)) { best = def; bestLvl = lvl; }
     }
     return (best, bestLvl);

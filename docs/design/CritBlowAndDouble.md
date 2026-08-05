@@ -93,12 +93,35 @@ The rogue's damage curve becomes almost entirely the five `crit dmg +N` rungs, w
 bonus on top. Mistune those five numbers and the class is mistuned with nothing else compensating.
 **Measure with `tools/BalanceMatrix` before and after** — do not ship this hand-derived.
 
-## Work items
+## Work items — ALL BUILT 2026-08-05
 
-1. Rogue **armor** mastery — honour `with all` vs `with light` (mpReg / hpReg / p.Def are `with all`).
-2. Rogue **weapon** mastery — swap the crit-damage values at levels 24 and 28 (the CSV is fixed).
-3. Crit damage `+N` as flat attack inside the crit — rogue **and** warrior.
-4. Blows apply crit damage (§2 step 2); Double becomes the ATK curve with a 25% cap (§1).
-5. `[Double]` doubles buff/debuff duration (§4).
+1. ✅ Rogue **armor** mastery — honours `with all` vs `with light`. `SkillCatalog.RogueArmor`
+   (`Skills.Masteries.cs`) puts MP regen + flat P.Def (and the L5 HP regen) on **every** weight and
+   keeps evasion / crit-rate resist / speed light-only, exactly as the warrior's already did.
+2. ✅ Rogue **weapon** mastery — the @24 and @28 rungs were swapped; now +35/+64/+80/+140/+165.
+3. ✅ Crit damage `+N` is flat attack inside the crit — `PassiveEffect.CritDamageFlat` →
+   `Entity.CritDamageFlat` → `StatCalculator.CritFlatFactor`, on rogue, warrior and archer masteries.
+   It rides as a FACTOR on the finished hit, which is exact: everything after the ratio is linear.
+4. ✅ Blows apply the crit-damage values (`ResolveBlow`); `[Double]` is the ATK curve capped at
+   `StatCaps.PhysicalDoubleRate` = 25%, and never reads DEX any more.
+5. ✅ `[Double]` doubles buff/debuff duration — one roll per cast in the skill-cast path, PLAYER
+   casts only (potions, scrolls and the NPC buffer come through other paths and never roll), shown
+   as `Name [Double]` on the floating text.
 
-Items 3 and 4 are effectively one change: 4 is what makes 3 matter to a dagger.
+Measured, not derived: `tools/BalanceMatrix` §C1 prints the Double curve old-vs-new, both mastery
+ladders as OLD (multiplier) vs NEW (flat) expected damage, and rogue-vs-warrior sustained DPS.
+The headline numbers at the five rungs (20/24/28/32/36):
+
+- the **blow** roughly doubles in expected damage (90→148 … 178→354): the crit-damage ladder used
+  to do literally nothing to it;
+- a **basic attack** is unchanged to within ~1% — the flat add and the old bogus multiplier happen
+  to be worth about the same on a small P.Atk, which is why this never looked broken;
+- the rogue lands at **0.65× the warrior's DPS at 20-28**, then **0.94× at 32 and 1.04× at 36**
+  when the mastery's crit-rate rung arrives. The early gap is the open tuning question: a blow
+  lands full damage only on a crit, and that is 9.2% until level 32.
+
+## Client
+
+The stats window gained a `Crit dmg flat +N` / `[Double] N%` row (the Double figure is derived
+client-side from the ATK stat, so it costs no protocol). `StatsUpdate.CritDamageFlat` is a trailing
+optional field — no protocol bump, no db reset.
