@@ -80,17 +80,18 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
      `archer_*_mastery`, `dispel_magic`, and the God class + skills. ⚠ `class_balance_*` he skipped and
      `lb_*`/`wc_*` he asked about instead (**`G2`, owed back to him**). Heavy Draw = remove the **Rogue
      @24 grant** of `power_shot`, never the definition — three level-40 discipline skills are renames.
-   - 🔴 Three defects: **`Q1`** quest tracking is a client-only in-memory list and dies with the app
-     (must be per CHARACTER, server-side with the quest log) · **`G7`** a hotbar consumable at 0 count is
-     *disabled*, which also kills the gesture that would remove it — draw a permanent 100 % cooldown ·
-     ~~**`V2`** the sell fraction~~ ✅ **DONE 2026-08-05** — his 0.8 was a misread (he sold a Robe, not
-     the gloves). Real fix from his three-character farm: gear drop groups ×1/3 → **×0.025** and
-     `GearSellDivisor` 25 → **10**. 4.06kk → 1.23kk over the same farm. See `EconomyRework.md` §4a.
+   - ✅ **The three defects are all closed.** ~~**`Q1`**~~ **DONE 2026-08-05** — the pin is a `Tracked`
+     flag on `CharacterQuestState`, so it rides the quest state that is already persisted per character;
+     no schema change, no db reset. ~~**`G7`**~~ done in 0.46.0. ~~**`V2`** the sell fraction~~ ✅ **DONE
+     2026-08-05** — his 0.8 was a misread (he sold a Robe, not the gloves). Real fix from his
+     three-character farm: gear drop groups ×1/3 → **×0.025** and `GearSellDivisor` 25 → **10**.
+     4.06kk → 1.23kk over the same farm. See `EconomyRework.md` §4a.
+   - ✅ **The whole QUEST section is closed 2026-08-05** (`Q1`-`Q5`, unplayed): the pins persist and the
+     server owns them, accepting pins the quest, the tracker shows objectives only and each pinned row
+     opens its own Details, and an Active row is as short as an Available one.
    - `G5` the Dash potion and Sprint become ONE speed family (six rungs, potion E1/E2/E4/E5, Sprint
-     E3/E6) — pure authoring on the existing family+Rank machinery · `Q2`-`Q5` tracker and Active-tab
-     polish (same "full text only in Details" rule as `C6`) · `F1` leaving auto-farm must not drop the
-     target · `V1` a `[QSell On/Off]` toggle · `G4` a save-login checkbox · `G6` warehouse slots
-     used/total.
+     E3/E6) — pure authoring on the existing family+Rank machinery · `F1` leaving auto-farm must not
+     drop the target · `V1` a `[QSell On/Off]` toggle · `G4` a save-login checkbox · ~~`G6`~~ done.
    - ❓ `G3` **mobs without inflated STR/CON, carrying real gear and running the PLAYER formulas** — a
      genuine design change (mobs move off `MobBaseStats` onto `RecomputeDerived` + equipment). Needs a
      design pass and his go. Filed with crafting: **trash disassembles into mats** instead of gold.

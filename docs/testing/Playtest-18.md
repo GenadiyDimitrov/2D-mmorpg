@@ -99,7 +99,7 @@ formula should have it -> added to base atack before the critical dmg % increase
 
 ## Quest
 
-**Q1. 🔴 Quest tracking is not persistent.**
+**Q1. ✅ BUILT 2026-08-05. 🔴 Quest tracking is not persistent.**
 > Quest tracking is not persistant. - I restarted the server and dont know if is because of logout or
 > just not peristant per character
 
@@ -108,16 +108,37 @@ formula should have it -> added to base atack before the critical dmg % increase
 server, not even to PlayerPrefs. So it dies with the app, and it is per-INSTALL rather than per
 character. It must be stored per character; server-side alongside the quest log is the honest place.
 
-**Q2. Accepting a quest auto-tracks it.**
+> **Built:** the pin is a `Tracked` flag on `CharacterQuestState` — the per-character quest progress
+> that is already persisted (`ActiveQuestsJson`), so it survives a relog and follows the character to
+> another phone. **No schema change and no db reset:** an old save simply reads `Tracked = false`.
+> The client no longer owns the list at all; it reads `QuestEntry.Tracked` and asks the server to
+> toggle, which is the same rule the skill bar taught — the client never authors state it did not
+> receive. The cap (5) moved to `GameConstants.MaxTrackedQuests` so both halves agree on it.
 
-**Q3. The tracker row shows only the objectives** (items / kills), not the full description.
+**Q2. ✅ BUILT 2026-08-05. Accepting a quest auto-tracks it.**
+> Pinned by the SERVER on accept, so it is true however you took the quest. It **yields** at the cap
+> rather than evicting: an automatic pin has no business pushing off one you chose. (An explicit
+> Track past the cap still evicts — you asked for that one.)
 
-**Q4. Clicking a tracker row opens that quest's DETAIL page**, not the quest window's list.
+**Q3. ✅ BUILT 2026-08-05. The tracker row shows only the objectives** (items / kills), not the full
+description.
+> It reads the structured steps now instead of the dialog's pre-formatted step sentence: a gathering
+> contract lists `item  held`, a kill step puts its `3 / 10` on the same line as the objective, and
+> the description, the location and the story are gone.
 
-**Q5. The Active tab's rows must be short, like the Available rows** — name plus "Ready to hand in",
-level range, the give/return NPC, steps. Not the full text.
+**Q4. ✅ BUILT 2026-08-05. Clicking a tracker row opens that quest's DETAIL page**, not the quest
+window's list.
+> The tracker was one block of text with nothing to click; it is now one tappable row per pinned
+> quest, each opening its own Details. Dragging the panel still works — a drag cancels the tap.
+
+**Q5. ✅ BUILT 2026-08-05. The Active tab's rows must be short, like the Available rows** — name plus
+"Ready to hand in", level range, the give/return NPC, steps. Not the full text.
 > Quest window in the Accepted tab the row must be only the Name and some short info -- like the
 > Available rows --> "Ready To hand in", lvl range, return/taken npc, steps -- not full details
+
+> **Built:** an Active row is now name + step `2 / 3` + level band, the status line, the progress
+> NUMBER (and the gathered count for a contract), and **From: <npc> — <town>**, which every tab now
+> carries. The step text, "Where:" and the mob name are gone to Details.
 
 (Q3 and Q5 are the same rule as C6: full text lives in Details and nowhere else.)
 

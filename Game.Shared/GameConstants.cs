@@ -299,6 +299,12 @@ public static class GameConstants
     /// happens, so the undo has to be reachable there too.</summary>
     public const int RestoreSlots = 5;
 
+    /// <summary>How many quests may be pinned to the on-screen tracker at once. The tracker earns its
+    /// place by being readable at a glance while you fight; a dozen pinned quests is just the log
+    /// again, in the way of the game (owner asked for 3-5). Shared, because the SERVER owns the pins
+    /// now (playtest-18 Q1) and a client with a different idea of the cap would draw a lie.</summary>
+    public const int MaxTrackedQuests = 5;
+
     // ----- Charisma (reputation) -----
     /// <summary>Likes a player may GIVE per day (a budget, freely distributed; resets at UTC midnight).</summary>
     public const int DailyLikeBudget = 20;

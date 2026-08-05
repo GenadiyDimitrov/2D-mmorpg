@@ -33,14 +33,12 @@ namespace Game.Client
         private int _questStamp = -1;
 
         // ----- quest TRACKER -------------------------------------------------------------------
-        /// <summary>How many quests may be pinned at once. The tracker earns its place by being
-        /// readable at a glance while you fight; a dozen pinned quests is just the log again, in the
-        /// way of the game (owner asked for a 3-5 limit).</summary>
-        private const int MaxTrackedQuests = 5;
-
-        private readonly List<string> _trackedQuests = new List<string>();
-        private RectTransform _trackerPanel;
-        private TextMeshProUGUI _trackerText;
+        // The pins are SERVER state (playtest-18 Q1). This client used to keep them in a
+        // List<string> that nothing ever wrote anywhere, so they died with the app and belonged to the
+        // install rather than to the character. It now reads QuestEntry.Tracked and asks the server to
+        // toggle — the same rule as the skill bar: the client never authors state it did not receive.
+        // The cap lives in GameConstants.MaxTrackedQuests, where both halves can see it.
+        private RectTransform _trackerPanel, _trackerList;
         private string _trackerStamp = "";
 
         private void BuildQuestWindow()
@@ -78,7 +76,12 @@ namespace Game.Client
 
         /// <summary>The always-on-screen tracker: a small draggable panel listing the pinned quests and
         /// their current objective. Hidden entirely when nothing is pinned, so it costs nothing to the
-        /// player who does not want it.</summary>
+        /// player who does not want it.
+        ///
+        /// One tappable ROW per pinned quest since playtest-18 Q4 (*"clicking a tracker row opens that
+        /// quest's DETAIL page"*) — it used to be a single block of text, which had nothing to click.
+        /// A row is the shortest path from "what am I doing" to the whole quest, and it skips the log
+        /// window entirely.</summary>
         private void BuildQuestTracker()
         {
             _trackerPanel = UiKit.PanelBox(_worldRoot, "QuestTracker");
@@ -89,59 +92,109 @@ namespace Game.Client
             // Movable, like the other floating panels — it will inevitably sit over something.
             _trackerPanel.gameObject.AddComponent<DragMove>();
 
-            _trackerText = UiKit.Label(inner, "", 14f, UiKit.Text, TextAlignmentOptions.TopLeft);
-            UiKit.Stretch(UiKit.Rect(_trackerText.gameObject), 10f, 8f, 10f, 8f);
-            var fitter = _trackerText.gameObject.AddComponent<ContentSizeFitter>();
-            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            var listGo = new GameObject("Pins", typeof(RectTransform));
+            listGo.transform.SetParent(inner, false);
+            _trackerList = (RectTransform)listGo.transform;
+            UiKit.Stretch(_trackerList, 8f, 6f, 8f, 6f);
+
+            var layout = listGo.AddComponent<VerticalLayoutGroup>();
+            layout.spacing = 3f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            layout.childAlignment = TextAnchor.UpperLeft;
 
             _trackerPanel.gameObject.SetActive(false);
         }
 
-        /// <summary>Pin/unpin a quest. Pinning past the cap drops the OLDEST pin rather than refusing:
-        /// the player asked for this one, and silently doing nothing reads as a broken button.</summary>
+        /// <summary>Pin/unpin a quest. The server decides — it holds the pins and the cap, and pushes a
+        /// fresh log back, which is what redraws both this window's Track/Untrack labels and the
+        /// tracker itself.</summary>
         private void ToggleTrackedQuest(string questId)
         {
-            if (_trackedQuests.Remove(questId)) { _questStamp = -1; return; }
-            _trackedQuests.Add(questId);
-            while (_trackedQuests.Count > MaxTrackedQuests) _trackedQuests.RemoveAt(0);
-            _questStamp = -1;   // force the log to redraw its Track/Untrack labels
+            Boot.QuestAction("track", questId);
         }
 
         /// <summary>Redraw the tracker. Called from the UI tick; rebuilds only when the text changes,
-        /// since quest progress moves on kills, not frames.</summary>
+        /// since quest progress moves on kills, not frames.
+        ///
+        /// OBJECTIVES ONLY (playtest-18 Q3: *"the tracker row shows only the objectives (items /
+        /// kills), not the full description"*). It reads the structured steps rather than the
+        /// pre-formatted step sentence the dialog uses, so a gathering contract shows what you carry
+        /// and a kill step shows its count on the same line — and nothing shows the story.</summary>
         private void RefreshQuestTracker()
         {
             if (_trackerPanel == null) return;
 
             var log = Boot.Quests;
-            var text = new StringBuilder();
-            if (log != null)
+            var entries = log == null || log.Entries == null ? new QuestEntry[0] : log.Entries;
+
+            var pinIds = new List<string>();
+            var pinRows = new List<string>();
+            foreach (var q in entries)
             {
-                foreach (var q in log.Active)
+                if (!q.Tracked || q.State != QuestAvailability.Active) continue;
+
+                var text = new StringBuilder();
+                text.Append("<b>").Append(q.Name).Append("</b>");
+                if (q.CanComplete) text.Append("   <color=#7CE07C>READY</color>");
+
+                // A gathering contract's objective IS what you are carrying; it has no step worth
+                // reading ("come back when you're done").
+                var gathers = q.Gathers ?? new QuestGatherDto[0];
+                if (gathers.Length > 0)
                 {
-                    if (!_trackedQuests.Contains(q.Id)) continue;
-                    text.Append("<b>").Append(q.Name).Append("</b>");
-                    if (q.CanComplete) text.Append("   <color=#7CE07C>READY</color>");
-                    text.AppendLine();
-                    if (!string.IsNullOrWhiteSpace(q.CurrentStepText))
-                        text.Append("  ").AppendLine(q.CurrentStepText);
-                    if (q.CounterNeeded > 0)
-                        text.Append("  ").Append(q.Counter).Append(" / ").Append(q.CounterNeeded).AppendLine();
+                    foreach (var g in gathers)
+                        text.AppendLine().Append("  ").Append(g.ItemName).Append("  ").Append(g.Held);
                 }
+                else
+                {
+                    var step = CurrentStep(q);
+                    if (step != null)
+                    {
+                        if (!string.IsNullOrWhiteSpace(step.Text))
+                            text.AppendLine().Append("  ").Append(step.Text);
+                        if (step.Needed > 1)
+                            text.Append("   ").Append(step.Counter).Append(" / ").Append(step.Needed);
+                    }
+                }
+                pinIds.Add(q.Id);
+                pinRows.Add(text.ToString());
             }
 
-            // Drop pins for quests that are no longer active (handed in or abandoned) so the list does
-            // not silently fill with dead entries.
-            if (log != null && _trackedQuests.Count > 0)
-                _trackedQuests.RemoveAll(id => !log.Active.Any(a => a.Id == id));
+            // Rebuild only when a pinned quest, its order or its objective text changes — progress
+            // moves on kills, not frames, and these rows are GameObjects now.
+            string stamp = string.Join("|", pinIds.ToArray()) + "\n"
+                         + string.Join("\n", pinRows.ToArray());
+            if (stamp == _trackerStamp) return;
+            _trackerStamp = stamp;
 
-            string body = text.ToString().TrimEnd();
-            if (body == _trackerStamp) return;
-            _trackerStamp = body;
+            for (int i = _trackerList.childCount - 1; i >= 0; i--)
+                Destroy(_trackerList.GetChild(i).gameObject);
 
-            bool show = body.Length > 0;
+            for (int p = 0; p < pinIds.Count; p++)
+            {
+                string qid = pinIds[p], body = pinRows[p];
+
+                // The row IS the button (Q4). Its own faint fill both says "tappable" and separates one
+                // pinned quest from the next, which a single text block never did.
+                var row = UiKit.Box(_trackerList, "Pin", new Color(0.17f, 0.20f, 0.24f, 0.55f));
+                var button = row.gameObject.AddComponent<Button>();
+                button.targetGraphic = row;
+                string open = qid;
+                button.onClick.AddListener(() => ShowQuestDetail(open));
+
+                int lines = 1;
+                for (int i = 0; i < body.Length; i++) if (body[i] == '\n') lines++;
+                row.gameObject.AddComponent<LayoutElement>().minHeight = lines * 18f + 6f;
+
+                var label = UiKit.Label(row.transform, body, 14f, UiKit.Text, TextAlignmentOptions.TopLeft);
+                UiKit.Stretch(UiKit.Rect(label.gameObject), 6f, 3f, 6f, 3f);
+            }
+
+            bool show = pinIds.Count > 0;
             if (_trackerPanel.gameObject.activeSelf != show) _trackerPanel.gameObject.SetActive(show);
-            if (show) _trackerText.text = body;
         }
 
         /// <summary>The entries for one tab. Active is its own tab; AVAILABLE holds both the takeable
@@ -169,9 +222,10 @@ namespace Game.Client
             var entries = log == null || log.Entries == null
                         ? new QuestEntry[0] : log.Entries;
 
-            int stamp = _questTab * 7919 + entries.Length * 31 + _trackedQuests.Count;
+            int stamp = _questTab * 7919 + entries.Length * 31;
             foreach (var e in entries)
-                stamp = stamp * 31 + (int)e.State * 7 + e.StepIndex * 3 + StepCounter(e);
+                stamp = stamp * 31 + (int)e.State * 7 + e.StepIndex * 3 + StepCounter(e)
+                      + (e.Tracked ? 1013 : 0);
             if (stamp == _questStamp) return;
             _questStamp = stamp;
 
@@ -223,20 +277,21 @@ namespace Game.Client
             if (!string.IsNullOrEmpty(entry.Status))
                 text.AppendLine(entry.Status);
 
+            // SHORT, on every tab (playtest-18 Q5, the same rule as C6): name, level band, the one-line
+            // status, the progress NUMBER and who to see. The step text, where to find it and the story
+            // live in Details and nowhere else — an Active row used to print all of it and was four
+            // times the height of an Available one.
             if (entry.State == QuestAvailability.Active)
             {
                 var step = CurrentStep(entry);
-                if (step != null)
-                {
-                    if (!string.IsNullOrWhiteSpace(step.Text)) text.AppendLine(step.Text);
-                    if (step.Needed > 1) text.AppendLine("Progress: " + step.Counter + " / " + step.Needed);
-                    if (!string.IsNullOrWhiteSpace(step.Location)) text.AppendLine("Where: " + step.Location);
-                }
+                if (step != null && step.Needed > 1)
+                    text.AppendLine("Progress: " + step.Counter + " / " + step.Needed);
                 // A gathering contract has no step worth reading — what you carry IS the progress.
                 foreach (var g in entry.Gathers ?? new QuestGatherDto[0])
-                    text.AppendLine("Gathered: " + g.ItemName + "  " + g.Held + "   (" + g.MobName + ")");
+                    text.AppendLine("Gathered: " + g.ItemName + "  " + g.Held);
             }
-            else if (!string.IsNullOrEmpty(entry.GiverName))
+
+            if (!string.IsNullOrEmpty(entry.GiverName))
             {
                 text.AppendLine("From: " + entry.GiverName
                                 + (string.IsNullOrEmpty(entry.GiverLocation) ? "" : " — " + entry.GiverLocation));
@@ -266,8 +321,9 @@ namespace Game.Client
 
             // TRACK — pin this quest to the on-screen tracker so you can read the objective while
             // fighting, instead of opening the log every time (owner, playtest-13). Capped at
-            // MaxTrackedQuests: the point is a glance, and a wall of pinned text is not one.
-            bool tracked = _trackedQuests.Contains(qid);
+            // GameConstants.MaxTrackedQuests: the point is a glance, and a wall of pinned text is not
+            // one. The flag comes from the server, which owns the pins.
+            bool tracked = entry.Tracked;
             var track = UiKit.TextButton(row.transform, tracked ? "Untrack" : "Track",
                 () => ToggleTrackedQuest(qid), 14f);
             UiKit.Place(UiKit.Rect(track.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),

@@ -91,8 +91,15 @@ public record QuestDef(
 }
 
 /// <summary>Per-character progress on a quest (persisted). StepIndex = current
-/// step; Counter = kills/collected for that step; Completed when fully done.</summary>
-public record CharacterQuestState(string QuestId, int StepIndex, int Counter, bool Completed);
+/// step; Counter = kills/collected for that step; Completed when fully done.
+///
+/// <paramref name="Tracked"/> = pinned to the on-screen tracker. It lives HERE, on the state that is
+/// already persisted per character, rather than in a list of its own: the pin has no meaning without
+/// the quest it pins, so a quest handed in or abandoned takes its pin with it and nothing has to
+/// prune anything (playtest-18 Q1 — the tracker used to be a client-side list that nothing ever
+/// wrote anywhere, so it died with the app and was per-INSTALL rather than per character).</summary>
+public record CharacterQuestState(string QuestId, int StepIndex, int Counter, bool Completed,
+                                  bool Tracked = false);
 
 /// <summary>
 /// THE place to manage all quests. Per-quest content is authored in the

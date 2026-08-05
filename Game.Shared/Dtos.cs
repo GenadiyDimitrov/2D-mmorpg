@@ -552,7 +552,7 @@ public record QuestActionRequest(string Action, string Id, Guid NpcEntityId);
 /// or "Grey Wolf — near Brackenford (Lv 1-10)"); "" when there's nothing useful to say.</summary>
 public record QuestSummary(string Id, string Name, string Description, string CurrentStepText,
     int StepIndex, int StepCount, int Counter, int CounterNeeded, bool Completed, bool CanComplete,
-    string Location = "");
+    string Location = "", bool Tracked = false);
 
 /// <summary>A class-change option shown by a class-change NPC. Description is a
 /// "what this class does" blurb so the player can choose before committing.</summary>
@@ -661,7 +661,8 @@ public record QuestEntry(
     int StepIndex,
     QuestStepDto[] Steps,
     QuestGatherDto[] Gathers,
-    string RewardText);
+    string RewardText,
+    bool Tracked = false);
 
 /// <summary>Server -> client: the full quest log. <paramref name="Active"/> and
 /// <paramref name="Completed"/> stay as they were (the on-screen tracker reads them);

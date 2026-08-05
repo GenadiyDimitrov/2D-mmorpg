@@ -10344,7 +10344,7 @@ var effect = def.Effect;
             && def.Steps[^1].Type == QuestStepType.TalkTo;
         return new QuestSummary(def.Id, def.Name, def.Description, GatherText(player, def, state, step.Text),
             stepIndex, def.Steps.Length, counter, needed,
-            state?.Completed ?? false, canComplete, StepLocation(step));
+            state?.Completed ?? false, canComplete, StepLocation(step), state?.Tracked ?? false);
     }
 
     /// <summary>The step line for a GATHERING contract, which has no step of its own worth reading —
@@ -10397,6 +10397,7 @@ var effect = def.Effect;
         {
             case "accept": AcceptQuest(player, cmd.Id, cmd.NpcEntityId); break;
             case "abandon": AbandonQuest(player, cmd.Id); break;
+            case "track": ToggleQuestTracked(player, cmd.Id); break;
             case "complete": CompleteQuestAtNpc(player, cmd.Id, cmd.NpcEntityId); break;
             case "changeclass": DoQuestClassChange(player, cmd.Id, cmd.NpcEntityId); break;
         }
@@ -10426,7 +10427,11 @@ var effect = def.Effect;
         }
         if (def.RequiresQuestId is not null && !player.CompletedQuests.Contains(def.RequiresQuestId)) return;
 
-        player.ActiveQuests[questId] = new CharacterQuestState(questId, 0, 0, false);
+        // Taking a quest PINS it (playtest-18 Q2): you accepted it because you mean to do it now, and
+        // the alternative is a tracker that is empty exactly when it would be most useful. It YIELDS at
+        // the cap instead of evicting — an automatic pin has no business pushing off one you chose.
+        bool autoTrack = player.ActiveQuests.Values.Count(s => s.Tracked) < GameConstants.MaxTrackedQuests;
+        player.ActiveQuests[questId] = new CharacterQuestState(questId, 0, 0, false, autoTrack);
         SendSystemToEntity(player, $"Quest accepted: {def.Name}");
         // A quest can OPEN on a "reach level N" step the player already satisfies (they took it late),
         // and nothing else would ever re-check it — level-ups are the only other trigger.
@@ -10471,6 +10476,35 @@ var effect = def.Effect;
             }
             if (tookAny) { SendInventory(player); SendSystemToEntity(player, "Your gathered trophies are discarded."); }
         }
+        SendQuestLog(player);
+        SaveEntity(player);
+    }
+
+    /// <summary>Pin / unpin a quest on the on-screen tracker.
+    ///
+    /// The pin is CHARACTER state and the server owns it (playtest-18 Q1: *"Quest tracking is not
+    /// persistant"*). It was a client-side <c>List&lt;string&gt;</c> that nothing ever wrote anywhere —
+    /// not to the server, not even to PlayerPrefs — so it died with the app and belonged to the INSTALL
+    /// rather than to the character. It now rides <see cref="CharacterQuestState"/>, which is already
+    /// persisted, so it survives a relog and follows the character to another phone.
+    ///
+    /// Pinning past the cap drops a pin rather than refusing: the player asked for THIS one, and a
+    /// button that silently does nothing reads as broken.</summary>
+    private void ToggleQuestTracked(Entity player, string questId)
+    {
+        if (!player.ActiveQuests.TryGetValue(questId, out var state)) return;
+
+        if (!state.Tracked)
+        {
+            // Oldest-first is only as good as the dictionary's order, which is insertion order in
+            // practice — good enough to decide which of five pins yields, and always leaves room.
+            var pins = player.ActiveQuests.Where(kv => kv.Value.Tracked && kv.Key != questId)
+                             .Select(kv => kv.Key).ToList();
+            for (int i = 0; pins.Count - i >= GameConstants.MaxTrackedQuests; i++)
+                player.ActiveQuests[pins[i]] = player.ActiveQuests[pins[i]] with { Tracked = false };
+        }
+
+        player.ActiveQuests[questId] = state with { Tracked = !state.Tracked };
         SendQuestLog(player);
         SaveEntity(player);
     }
@@ -10950,7 +10984,7 @@ var effect = def.Effect;
             def.Id, def.Name, def.Description, availability, status,
             giver?.Name ?? "", giver is null ? "" : WorldMap.NearestSafeZone(giver.X, giver.Y).Name,
             def.MinLevel, def.MaxLevel, def.Repeatable, def.Daily, canComplete,
-            state?.StepIndex ?? 0, steps, gathers, RewardText(def.Reward));
+            state?.StepIndex ?? 0, steps, gathers, RewardText(def.Reward), state?.Tracked ?? false);
     }
 
     /// <summary>The reward, as one line. Zero-valued parts are left out entirely — "SP: 0" is not
