@@ -145,7 +145,7 @@ public static class SkillText
         // Crit rate is a MULTIPLIER now (0.05 = ×1.05), so it reads as a percent, not a flat add.
         Pct(o, "Crit rate", m.CritRate);       Pct(o, "Crit rate", m.CritRatePct);
         Flat(o, "Crit damage", m.CritDamage);  Pct(o, "Crit damage", m.CritDamagePct);
-        Flat(o, "Magic crit", m.MagicCritRate);
+        Pct(o, "Magic crit", m.MagicCritRate);   // a MULTIPLIER like CritRate above, not a flat add
         Pct(o, "Atk speed", m.AtkSpeedPct);
         Pct(o, "Cast speed", m.CastSpeedPct);
         Flat(o, "Move speed", m.MoveSpeed);    Pct(o, "Move speed", m.MoveSpeedPct);

@@ -297,9 +297,23 @@ dominant 1 point = 1%.
 5. ✅ **`flat` lives outside every multiplier** — `Entity.CritRateFlat`, folded in at the end as
    `base x mult + flat`.
 
-⚠ **Magic crit was deliberately NOT converted.** His ruling named "dagger/bow"; a mage's base is a 4%
-WIT figure where a x1.05 is worth nothing and the ladder has no magic equivalent. Magic passives stay
-additive; only the clamp changed. Say so if he wants it converted too.
+✅ **Magic crit WAS converted, in 0.51.0** (owner ruling 2026-08-06) — this section used to say it was
+deliberately left additive because "a mage's base is a 4% WIT figure where a x1.05 is worth nothing".
+That base was the actual defect: `WIT x 0.001` put a human mage at **2.0%**, so the x2 Insight buff was
+worth **+3 points** and the 200 cap needed **WIT 200**. Magic now runs the same chain:
+
+```
+magicCrit = ( 50 x witMod x passives x buffs  +  flat ) x debuffs      clamp 0 .. 200 (20%)
+```
+
+with **no weapon term** (rate is WIT + buffs only) and `witMod` **asymmetric** — `+0.10`/point above
+the WIT-20 anchor, `+0.05`/point below, clamped at 0. The lower slope is load-bearing: a symmetric
+0.10 zeroes the stat at WIT 10, and both the ork fighter (10) and every mob (5) live down there.
+
+Magic crit **damage** is a flat **x3** taking no bonus. It used to read `CritDamageBonus` — the single
+crit-damage field shared with physical — so Ferocity and the crit-damage attribute, both fighter
+buffs, paid a mage too. Rate and damage are both their own channel now. See `CHANGELOG.md` 0.51.0 and
+the `=== MAGIC CRIT ===` section of `tools/BalanceMatrix`.
 
 ### What it MEASURED (`tools/BalanceMatrix` §C2 / §C3) — read this before retuning anything
 

@@ -25,7 +25,9 @@ public static class StatCaps
     /// <summary>Physical crit RATE ceiling (50%, from DEX).</summary>
     public const float PhysicalCritRate = 0.50f;
 
-    /// <summary>Magic crit RATE ceiling (20%, from WIT).</summary>
+    /// <summary>Magic crit RATE ceiling (20% = his 200 on the 0-1000 scale). A fully-kitted elf
+    /// mage (WIT 30 → ×2.00) with the ×2 Insight buff lands on it exactly, by design — the 76+
+    /// buff that raises this per-entity to 250 is deferred with the 4th-class CSVs.</summary>
     public const float MagicCritRate = 0.20f;
 
     /// <summary>Physical SKILL "[Double]" RATE ceiling (25%, from the ATK stat — owner
@@ -35,7 +37,9 @@ public static class StatCaps
     /// <summary>Physical crit DAMAGE ceiling (x10).</summary>
     public const float PhysicalCritDamage = 10.0f;
 
-    /// <summary>Magic crit DAMAGE ceiling (x3).</summary>
+    /// <summary>Magic crit DAMAGE — a flat x3, not a ceiling: nothing adds to it (owner ruling
+    /// 2026-08-06, see StatCalculator.MagicCritMult). Physical's x10 IS a ceiling because the
+    /// class CSVs' flat crit-damage rungs climb toward it; magic has no such ladder.</summary>
     public const float MagicCritDamage = 3.0f;
 
     /// <summary>Magic-fail absolute floor (a spell can always fizzle ≥1%).</summary>

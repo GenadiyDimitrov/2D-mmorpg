@@ -12,6 +12,51 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 0.51.0 — 2026-08-07 — MAGIC crit is its own channel: WIT is a multiplier, damage is a flat ×3
+
+The magic twin of 0.50.0, and the same diagnosis: the rate was authored as `WIT × 0.001` — **2.0%**
+for a human mage — so the ×2 Insight buff bought **+3 percentage points** and the 20% cap needed
+**WIT 200** to reach. It was decorative. Measurements: `tools/BalanceMatrix` **=== MAGIC CRIT ===**
+(the formula sweep next to the same numbers measured off real `Entity` objects).
+
+**The formula**, deliberately the same shape as physical:
+
+```
+magicCrit = ( 50 × witMod × passives × buffs  +  flat ) × debuffs
+            clamped ONCE at StatCaps.MagicCritRate = 200 (20%)
+```
+
+- **Base 50** (5%) — a character constant, `StatCalculator.MagicCharacterCritBase`. There is **no
+  weapon term**: magic crit is WIT and buffs only (owner: "it's not weapon based").
+- **witMod is a multiplier and ASYMMETRIC** — `+0.10`/point above WIT 20, `+0.05`/point below,
+  clamped at 0. The anchor is the **human mage's 20** (×1.00), so a fully-kitted elf (23 base + 2 set
+  + 5 swap = 30) reaches **×2.00** and lands on the cap exactly with the ×2 Insight buff.
+  ⚠ The two slopes are not an oversight — see the guardrail on `StatCalculator.CritWitMod`. A
+  symmetric 0.10 zeroes the stat at WIT 10, which is *inside* the real range (ork fighter 10, every
+  mob 5), and would have made mob magic crit a dead mechanic.
+- **Crit DAMAGE is a flat ×3 that takes no bonus.** It was `2.0 + CritDamageBonus` — the *one*
+  crit-damage field, shared with physical — so Ferocity and the crit-damage item attribute, both
+  authored for fighters, silently paid a mage too. Magic is a separate channel on both counts now.
+- **Mid-chain clamps removed.** The rate was clamped to the cap at the gear step *and* the passive
+  step, i.e. before the buff multiplied it. That is the mechanical reason a ×2 was worth +3 points.
+
+**What moved.** Warchanter's **Resonance** was `+5 flat points` — on a 2% base that was 2.5× the
+entire rate and the biggest magic-crit source in the game; it is now **×1.2**, the same multiplier
+convention `PassiveEffect.CritRate` already used. `StatMods.MagicCritRate` (armour sets) was
+**never read at all** and is now wired as a multiplier; the `MagicCritRate` item attribute is wired
+as flat but **still nothing rolls it** — deliberate, per the 0.50.0 "no flat crit gear" ruling.
+
+**Measured consequence — read this before tuning.** At level 74 in best gear with the NPC buff set,
+the nuker's expected magic-crit factor goes **×1.06 → ×1.24**, and `CHAMPION/NUKER` moves
+**0.98× → 0.84×**: the nuker now out-damages the champion by ~19% where they were at parity. That
+is the honest price of the rework and it is a balance decision, not a bug — the levers are the base
+50 and the flat ×3, both owner-set.
+
+**Still open:** physical crit damage (base ×2.0) is **unchanged and under research** — the question
+is not only 1.5-vs-2.0 but *what the multiplier multiplies*, since ours scales skill power too where
+L2's scales the attack term. The 76+ "×1.3 rate, +5% cap" buff is deferred with the 4th-class CSVs;
+it needs `StatCaps.MagicCritRate` to become per-entity raisable, like the move-speed cap.
+
 ## 0.50.0 — 2026-08-06 — Crit RATE is his L2 model; `Can Crit`/`Can Double` are exclusive
 
 Playtest-19 **M8 + M9**, closing the crit-rate/crit-damage thread. Spec:

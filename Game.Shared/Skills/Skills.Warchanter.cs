@@ -75,8 +75,12 @@ public static partial class SkillCatalog
         new(WcHumanPass, "Resonance", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: 500,
-            Passive: new PassiveEffect(MaxMpPct: 0.10f, MpRegen: 2f, MagicCritRate: 0.05f),
-            Description: "Passive. +10% max MP, +MP regen, +5% magic crit."),
+            // MagicCritRate is a MULTIPLIER (0.20 = ×1.2), not +20 points — the same convention
+            // PassiveEffect.CritRate uses. It was +5 flat POINTS, which on the old 2% WIT base was
+            // 2.5× the entire rate and made a human Warchanter the biggest magic-crit source in
+            // the game; as a ×1.2 it is a buffer's nudge, which is all it was ever meant to be.
+            Passive: new PassiveEffect(MaxMpPct: 0.10f, MpRegen: 2f, MagicCritRate: 0.20f),
+            Description: "Passive. +10% max MP, +MP regen, ×1.2 magic crit rate."),
         new(WcElfPass, "Harmony", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive, SpCost: 500,

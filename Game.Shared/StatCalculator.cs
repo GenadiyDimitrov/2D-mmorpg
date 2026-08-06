@@ -572,9 +572,39 @@ public static class StatCalculator
     public static float PhysicalCritBase(int dex, WeaponType weapon) =>
         CharacterCritBase * WeaponCritFactor(weapon) * CritDexMod(dex);
 
-    /// <summary>Magic crit RATE from WIT. Cap 20% (WIT 200 ≈ cap).</summary>
-    public static float MagicCritChance(int wit) =>
-        Math.Clamp(wit * 0.001f, 0f, StatCaps.MagicCritRate);
+    /// <summary>Character MAGIC crit-rate BASE — his "50" on L2's 0-1000 scale, i.e. 5%.
+    /// (owner ruling 2026-08-06; the magic twin of <see cref="CharacterCritBase"/>.)</summary>
+    public const float MagicCharacterCritBase = 0.050f;
+
+    /// <summary>The WIT that sits at exactly ×1.00 — the HUMAN MAGE base, so an ordinary
+    /// caster is the neutral reference and every point of spread comes from race, the robe
+    /// set and the level-40 stat swap, where it is earned. (The physical twin is
+    /// <see cref="MobDexReference"/>, which anchors on the mob instead because a physical
+    /// crit is a CONTEST; magic crit has no defender term, so it anchors on the archetype.)</summary>
+    public const int MagicCritWitReference = 20;
+
+    /// <summary>WIT's contribution to magic crit rate: a MULTIPLIER, and ASYMMETRIC by design
+    /// (owner ruling 2026-08-06).
+    /// <code>above 20: ×(1 + 0.10·(WIT−20))   →  WIT 30 = ×2.00, the fully-kitted elf
+    /// below 20: ×(1 + 0.05·(WIT−20))   →  WIT 10 = ×0.50, WIT 5 (a mob) = ×0.25</code>
+    /// 🛑 The two slopes are NOT an oversight. A symmetric 0.10 would double you over the ten
+    /// points above the anchor and ANNIHILATE you over the ten below it — and real WIT values
+    /// live down there (ork fighter 10, every mob 5), so the stat would hit a hard 0 well
+    /// inside its own range. The gentler lower slope keeps "below 20 hinders you" true without
+    /// a dead zone, and is what leaves a caster mob at a live 1.25%. Clamped at 0 all the same,
+    /// so a future WIT debuff cannot drive the rate negative.</summary>
+    public static float CritWitMod(int wit) =>
+        wit >= MagicCritWitReference
+            ? 1f + (wit - MagicCritWitReference) * 0.10f
+            : Math.Max(0f, 1f + (wit - MagicCritWitReference) * 0.05f);
+
+    /// <summary>The BASE magic crit rate — the <c>50 × witMod</c> head of the chain
+    /// <code>magicCrit = (50 × witMod × buffs × passives + flat) × debuffs</code>
+    /// the exact shape <see cref="PhysicalCritBase"/> feeds on the physical side. There is NO
+    /// weapon term: magic crit is WIT and buffs only (owner: "it's not weapon based").
+    /// ⚠ Deliberately NOT clamped — the single clamp belongs at the END of the chain
+    /// (Entity.RecomputeDerived), or a mid-chain clamp silently eats the buffs.</summary>
+    public static float MagicCritBase(int wit) => MagicCharacterCritBase * CritWitMod(wit);
 
     /// <summary>Physical SKILL "[Double]" chance (×2 damage) — a pure ATK curve
     /// (owner ruling 2026-08-05, docs/design/CritBlowAndDouble.md §1):
@@ -605,9 +635,15 @@ public static class StatCalculator
         return (flat + mod * (pAtk + critFlat)) / normal;
     }
 
-    /// <summary>Magic crit DAMAGE multiplier, capped x3.</summary>
-    public static float MagicCritMult(float bonus = 0f) =>
-        Math.Min(2.0f + bonus, StatCaps.MagicCritDamage);
+    /// <summary>Magic crit DAMAGE multiplier — a FLAT ×3, taking no bonus at all
+    /// (owner ruling 2026-08-06).
+    /// 🛑 It used to be <c>2.0 + CritDamageBonus</c>, sharing the ONE crit-damage field with
+    /// physical — so Ferocity and the crit-damage item attribute, both authored for fighters,
+    /// silently paid a mage too. Magic crit is a SEPARATE CHANNEL on both counts now: its own
+    /// rate (WIT, not DEX) and its own damage (this constant, not the fighters' buffs). If a
+    /// magic crit-damage buff is ever wanted, it needs its OWN field — do not re-point this at
+    /// CritDamageBonus.</summary>
+    public static float MagicCritMult() => StatCaps.MagicCritDamage;
 
     // Magic fail now flows through the unified ResolveAvoidChance (magic channel):
     // same-level magic sits at the 5% base, the anti-magic floor (ArchetypeMagicFailFloor)

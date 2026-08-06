@@ -76,6 +76,43 @@ foreach (int L in levels)
 }
 
 Console.WriteLine();
+Console.WriteLine("=== MAGIC CRIT (0.50.1 rework: base 50 x witMod x buffs x passives + flat) ===");
+Console.WriteLine("  Rate is WIT-only — no weapon term. Crit damage is a FLAT x3 and takes no buff:");
+Console.WriteLine($"  Ferocity and the crit-damage attribute are the PHYSICAL channel now. Cap {StatCaps.MagicCritRate:P0}.");
+Console.WriteLine();
+Console.WriteLine($"  {"WIT",4} {"witMod",7} {"base",6} {"x1.2 Res",9} {"x2 Insight",11} {"both",7}  who");
+foreach ((int wit, string who) in new[]
+{
+    (5,  "every MOB (flat WIT 5 at all levels)"),
+    (10, "ork fighter"),
+    (15, "human fighter"),
+    (19, "ork mage, bare"),
+    (20, "HUMAN MAGE, bare  <- the x1.00 anchor"),
+    (23, "elf mage, bare"),
+    (26, "ork mage + set +2 + swap +5"),
+    (27, "human mage + set +2 + swap +5"),
+    (30, "ELF MAGE + set +2 + swap +5  <- tests the cap"),
+})
+{
+    float witMod = StatCalculator.CritWitMod(wit);
+    float b = StatCalculator.MagicCritBase(wit);
+    // The chain as RecomputeDerived folds it: base x every multiplier, then the single clamp.
+    float res = Math.Min(b * 1.2f, StatCaps.MagicCritRate);
+    float ins = Math.Min(b * 2.0f, StatCaps.MagicCritRate);
+    float both = Math.Min(b * 2.0f * 1.2f, StatCaps.MagicCritRate);
+    Console.WriteLine($"  {wit,4} {witMod,7:F2} {b,6:P1} {res,9:P1} {ins,11:P1} {both,7:P1}  {who}");
+}
+Console.WriteLine();
+Console.WriteLine("  MEASURED off real Entities (level 74, best gear) — the chain, not the formula:");
+Console.WriteLine($"  {"race",6} {"WIT",4} {"unbuffed",9} {"+Insight x2",12}   (no swap/attribute: BuildPlayer has neither)");
+foreach (Race r in new[] { Race.Human, Race.Elf, Race.Ork })
+{
+    var bare = BuildPlayer(r, BaseClass.Mage, 74);
+    var buffed = BuildPlayer(r, BaseClass.Mage, 74);
+    ApplyOneBuff(buffed, SkillCatalog.NpcInsight);
+    Console.WriteLine($"  {r,6} {(int)bare.EffectiveWit,4} {bare.MagicCritChance,9:P2} {buffed.MagicCritChance,12:P2}");
+}
+Console.WriteLine();
 Console.WriteLine("=== TANK / FIGHTER (Human Fighter, best gear for tier) ===");
 Console.WriteLine("  'basic' = autoattack; 'skill' = best physical skill. Compare SKILL against the mage's");
 Console.WriteLine("  nuke — the basic column is not the fighter's damage, it is its filler.");
@@ -169,7 +206,7 @@ Console.WriteLine();
     var nuker = BuildPlayer(Race.Human, BaseClass.Mage, refLevel);
     ApplyNpcBuffs(nuker);
     int mAtk = (int)nuker.EffectiveMagicAttack;
-    float mCritF = CritFactor(nuker.MagicCritChance, StatCalculator.MagicCritMult(nuker.CritDamageBonus));
+    float mCritF = CritFactor(nuker.MagicCritChance, StatCalculator.MagicCritMult());
 
     int nukeHit = StatCalculator.MagicDamage(mAtk, nukePower, mobMDef, refLevel);
     // Cast time scales with CAST speed exactly as SkillReuseTicks does; reuse does not.
@@ -1481,7 +1518,7 @@ static float MagicDps(Entity atk, Entity def)
 {
     var (skill, lvl) = TopSkill(atk, SkillEffect.MagicDamage);
     if (skill is null) return 0f;
-    float critF = CritFactor(atk.MagicCritChance, StatCalculator.MagicCritMult(atk.CritDamageBonus));
+    float critF = CritFactor(atk.MagicCritChance, StatCalculator.MagicCritMult());
     int hitDmg = StatCalculator.MagicDamage((int)atk.EffectiveMagicAttack, skill.PowerAt(lvl),
         Math.Max(1, (int)def.EffectiveMagicDefence), atk.Level);
     return hitDmg * critF / SkillCycleSeconds(atk, skill);
@@ -1564,6 +1601,31 @@ static void ApplyNpcBuffs(Entity e)
     foreach (var id in SkillCatalog.NewbieBuffSet)
         if (SkillCatalog.Get(id) is SkillDef def)
             Add(def);
+    e.RecomputeDerived();
+}
+
+/// <summary>Apply ONE buff skill and recompute — same child-wrapper unwrapping as ApplyNpcBuffs
+/// (a wrapper carries no magnitudes of its own, so reading them off it measures nothing).</summary>
+static void ApplyOneBuff(Entity e, string skillId)
+{
+    void Add(SkillDef def)
+    {
+        var kids = def.ChildBuffsAt(1);
+        if (kids is { Length: > 0 })
+        {
+            foreach (var kid in kids)
+                if (SkillCatalog.Get(kid) is SkillDef child) Add(child);
+            return;
+        }
+        e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+        {
+            Effect = def.Effect,
+            Magnitudes = def.MagnitudesAt(1) ?? Array.Empty<EffectMagnitude>(),
+            TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey, Level = 1,
+        });
+    }
+
+    if (SkillCatalog.Get(skillId) is SkillDef def) Add(def);
     e.RecomputeDerived();
 }
 

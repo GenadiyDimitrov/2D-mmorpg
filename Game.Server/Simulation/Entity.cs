@@ -558,6 +558,11 @@ public class Entity
     // Accumulated through RecomputeDerived, then folded into CritChance — read CritChance, not these.
     public float CritRateMult { get; set; } = 1f;
     public float CritRateFlat { get; set; }
+    // The MAGIC twins of the two above — same rule, its own channel (owner ruling 2026-08-06).
+    // Magic crit shares NOTHING with physical any more: not the rate (WIT, not DEX), not the
+    // damage (a flat x3, not CritDamageBonus). Fold into MagicCritChance, read that.
+    public float MagicCritRateMult { get; set; } = 1f;
+    public float MagicCritRateFlat { get; set; }
     // ----- Healer buff/effect layer (folded from buffs + passives in RecomputeDerived) -----
     public float CooldownReduction { get; set; } // spell reuse-delay reduction (0..cap)
     public float CritRateResist { get; set; }    // reduces an attacker's physical crit CHANCE vs you
@@ -1293,6 +1298,8 @@ public class Entity
         CritRateResist = 0f;
         CritRateMult = 1f;
         CritRateFlat = 0f;
+        MagicCritRateMult = 1f;
+        MagicCritRateFlat = 0f;
         CritDmgResist = 0f;
         BowResist = 0f;
         CcResist = 0f;
@@ -1317,7 +1324,9 @@ public class Entity
         Evasion = StatCalculator.Evasion(EffectiveDex, Level);
         // Physical crit is set at the WEAPON step below (it multiplies the character base), not here.
         CritChance = 0f;
-        MagicCritChance = StatCalculator.MagicCritChance(EffectiveWit);
+        // Magic crit has no weapon step (it is WIT + buffs only), so unlike CritChance it can be
+        // seeded here. The mult/flat accumulators above then carry it to the single fold at the end.
+        MagicCritChance = StatCalculator.MagicCritBase((int)EffectiveWit);
         InterruptResist = StatCalculator.InterruptResist(EffectiveWit, Level);
         MagicInterruptBonus = StatCalculator.MagicInterruptPower(EffectiveWit);
         BasicAttackInterruptPower = 0;   // rogue "cancel on basic" is now a 3rd-class discipline passive (anti-magic rogue), not a base-rogue trait
@@ -1497,7 +1506,11 @@ public class Entity
         MaxMp += (int)(MaxMp * mpPct / 100f);
         AttackPower += (int)(AttackPower * (atkPct + pAtkPct) / 100f);
         MagicAttack += (int)(MagicAttack * (atkPct + mAtkPct) / 100f);
-        if (magicCritPct != 0f) MagicCritChance = Math.Clamp(MagicCritChance + magicCritPct / 100f, 0f, StatCaps.MagicCritRate);
+        // GEAR crit is FLAT and lands outside every multiplier — the magic twin of CritRateFlat
+        // below. (No item rolls AttributeType.MagicCritRate today; this is the live hook if one
+        // ever should.) The old mid-chain clamp here is GONE: it capped the rate before the
+        // Insight buff had multiplied it, which is precisely how a x2 buff bought +3 points.
+        MagicCritRateFlat += magicCritPct / 100f;
         Evasion += (int)(Evasion * evaPct / 100f);
         Defence += (int)(Defence * defPct / 100f);
         if (Kind == EntityKind.Player)
@@ -1715,6 +1728,7 @@ public class Entity
             if (sm.MDefPct != 0f) MagicDefence = (int)(MagicDefence * (1f + sm.MDefPct));
             InterruptResist += (int)sm.InterruptResist;
             if (sm.CritRate != 0f) CritRateMult *= 1f + sm.CritRate;   // ×1.2, not +20 points
+            if (sm.MagicCritRate != 0f) MagicCritRateMult *= 1f + sm.MagicCritRate;   // ditto, magic channel
             CritDamageBonus += sm.CritDamage;
             CritDmgResist += sm.CritDmgResist;
             CritRateResist += sm.CritRateResist;
@@ -1751,9 +1765,11 @@ public class Entity
                 if (pe.CritRate != 0f) CritRateMult *= 1f + pe.CritRate;   // ×1.2, not +20 points
                 CritDamageBonus += pe.CritDamage;
                 CritDamageFlat += pe.CritDamageFlat;
-                // Magic crit stays ADDITIVE — his multiplicative ruling was explicitly about
-                // "dagger/bow", and a mage's base is a 4% WIT figure where a ×1.05 is nothing.
-                if (pe.MagicCritRate != 0f) MagicCritChance = Math.Clamp(MagicCritChance + pe.MagicCritRate, 0f, StatCaps.MagicCritRate);
+                // Magic crit is MULTIPLICATIVE too now (owner ruling 2026-08-06). The old comment
+                // here said it stayed additive because "a mage's base is a 4% WIT figure where a
+                // ×1.05 is nothing" — that base is exactly what the rework fixed, and an additive
+                // passive on top of it was the single biggest magic-crit source in the game.
+                if (pe.MagicCritRate != 0f) MagicCritRateMult *= 1f + pe.MagicCritRate;   // ×1.2, not +20 points
                 HpRegenBonus += pe.HpRegen;
                 MpRegenBonus += pe.MpRegen;
                 if (pe.HpRegenPct != 0f) HpRegenMult *= 1f + pe.HpRegenPct;
@@ -1882,7 +1898,10 @@ public class Entity
                 CritRateFlat += buff.Flat(SkillEffect.BuffCritRate);
             }
             if (buff.Has(SkillEffect.BuffMagicCritRate))
-                MagicCritChance = (MagicCritChance + buff.Flat(SkillEffect.BuffMagicCritRate)) * (1f + buff.Percent(SkillEffect.BuffMagicCritRate));
+            {
+                MagicCritRateMult *= 1f + buff.Percent(SkillEffect.BuffMagicCritRate);
+                MagicCritRateFlat += buff.Flat(SkillEffect.BuffMagicCritRate);
+            }
             if (buff.Has(SkillEffect.BuffCritDamage))
                 CritDamageBonus += buff.Flat(SkillEffect.BuffCritDamage) + buff.Percent(SkillEffect.BuffCritDamage);
             if (buff.Has(SkillEffect.BuffCritRateResist)) CritRateResist += buff.Flat(SkillEffect.BuffCritRateResist) + buff.Percent(SkillEffect.BuffCritRateResist);
@@ -1913,7 +1932,7 @@ public class Entity
         // scale. (The three 0.75 clamps that used to sit along the chain are gone: they clamped
         // intermediate values and contradicted the cap the design has always stated.)
         CritChance = Math.Clamp(CritChance * CritRateMult + CritRateFlat, 0f, StatCaps.PhysicalCritRate);
-        MagicCritChance = Math.Clamp(MagicCritChance, 0f, StatCaps.MagicCritRate);
+        MagicCritChance = Math.Clamp(MagicCritChance * MagicCritRateMult + MagicCritRateFlat, 0f, StatCaps.MagicCritRate);
         CritRateResist = Math.Clamp(CritRateResist, 0f, 1f);
         CritDmgResist = Math.Clamp(CritDmgResist, 0f, 0.9f);
         BowResist = Math.Clamp(BowResist, 0f, 0.9f);

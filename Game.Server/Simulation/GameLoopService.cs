@@ -6886,7 +6886,10 @@ var effect = def.Effect;
             {
                 if (_rng.NextDouble() < caster.MagicCritChance)
                 {
-                    damage = (int)(damage * StatCalculator.MagicCritMult(caster.CritDamageBonus));
+                    // Flat x3 — NOT caster.CritDamageBonus. That field is Ferocity + the crit-damage
+                    // item attribute, both authored for fighters; feeding it here made a mage's crit
+                    // ride on buffs bought for the physical channel. Separate channels now.
+                    damage = (int)(damage * StatCalculator.MagicCritMult());
                     BroadcastCombat(caster, target, damage, CombatOutcome.Crit, castName);
                 }
                 else
