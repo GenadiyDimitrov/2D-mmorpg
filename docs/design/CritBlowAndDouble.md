@@ -225,9 +225,27 @@ So his *"an elf with 36 and +5 maxes it over 40"* is the **Elf fighter at 35**, 
 x1.10. Reachable: the light `Nightleaf` sets carry `Dex +3` and `+1`. ⚠ And the other direction —
 **heavy sets carry `Dex -2` / `-1`**, so a heavy warrior sits BELOW neutral (30 - 2 = 28 -> x0.98).
 
-⚖ **One question left:** does `dexMod` continue linearly past his table (45 -> x1.15, 15 -> x0.85) or
-clamp at +-10%? Recommendation: **linear, uncapped** — the 500 ceiling already contains the top and a
-clamp adds a cliff for nothing.
+✅ **`dexMod` is LINEAR AND UNCAPPED** (his ruling, 2026-08-06):
+> Leave it uncapped - a full dex archer with dex set with stat swap with whatever can reach cap ... And
+> a warrior sacrificing dex for atk and con hinders his rate (low hinder but still a hinder)
+
+**How far it actually reaches, measured against what exists today:**
+
+| build | DEX | `dexMod` | bow ladder `132 x1.3 x1.2 x2 = 411.8` |
+|---|---|---|---|
+| Elf rogue, base | 35 | x1.05 | 432 = 43.2% |
+| + light `Nightleaf` set (`Dex +3`) | 38 | x1.08 | 445 = 44.5% |
+| + `swap_dex_atk` / `swap_dex_con` maxed (**+5**, 5 levels of +1) | **43** | **x1.13** | **465 = 46.5%** |
+| *the cap* | *51.4* | *x1.214* | *500 = 50%* |
+
+🔑 **So the cap is currently ~35 points out of reach even for a fully committed elf archer** — it needs
+another DEX source, which is what the future **dye / tattoo layer** is for. That is the right shape: the
+ceiling is aspirational rather than something a level-40 elf bumps into by accident, and it matches his
+own reaction to 45.3% — *"still not max."*
+
+**And the warrior's side of it, exactly as he described:** human fighter 30, heavy set `Dex -2`,
+`swap_atk_dex` maxed `-5` -> **DEX 23 -> x0.93**. A max-ATK warrior pays 7% of his crit rate — sword
+`88 -> 81.8`. Real, and small enough to be a trade rather than a trap.
 
 ### What this changes in the code
 1. 🔴 **Passives become MULTIPLIERS.** Today `CritChance + pe.CritRate` (additive points) at
