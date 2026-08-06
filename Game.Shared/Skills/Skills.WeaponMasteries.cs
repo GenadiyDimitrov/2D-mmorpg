@@ -38,8 +38,8 @@ public static partial class SkillCatalog
         new(Sword: pe, Blunt: pe, RequiredWeapon: WeaponType.TwoHanded);
 
     /// <summary>A rogue Weapon Mastery level: shared crit/acc/atk-speed on both dual and bow,
-    /// plus each weapon's own flat P.Atk, and +200 range for the bow. (crit-rate ×1.2 is
-    /// approximated as +critRate flat.)</summary>
+    /// plus each weapon's own flat P.Atk, and +200 range for the bow. <paramref name="critRate"/>
+    /// is a MULTIPLIER on the weapon's crit base (0.20 = ×1.20) — his one rogue crit passive.</summary>
     private static WeaponMasteryProfile RogueWM(float critDmg, int acc, float critRate, float atkSpd, int dualAtk, int bowAtk) =>
         new(Dual: new PassiveEffect(PhysAtkPct: 0.085f, CritDamageFlat: critDmg, Accuracy: acc, CritRate: critRate, AtkSpeedPct: atkSpd, PhysAtk: dualAtk),
             Bow:  new PassiveEffect(PhysAtkPct: 0.085f, CritDamageFlat: critDmg, Accuracy: acc, CritRate: critRate, AtkSpeedPct: atkSpd, PhysAtk: bowAtk, BowRange: 200f));
@@ -101,11 +101,15 @@ public static partial class SkillCatalog
             {
                 // crit dmg = the CSV's FLAT +35/+64/+80/+140/+165. The @24 and @28 rungs used to be
                 // SWAPPED (80 before 64) as well as read as a multiplier. See CritBlowAndDouble.md §3.
-                RogueWM(critDmg: 35f,  acc: 0, critRate: 0f,    atkSpd: 0f,    dualAtk: 8,  bowAtk: 30),
-                RogueWM(critDmg: 64f,  acc: 3, critRate: 0f,    atkSpd: 0f,    dualAtk: 11, bowAtk: 42),
-                RogueWM(critDmg: 80f,  acc: 3, critRate: 0f,    atkSpd: 0f,    dualAtk: 14, bowAtk: 56),
-                RogueWM(critDmg: 140f, acc: 3, critRate: 0.10f, atkSpd: 0f,    dualAtk: 17, bowAtk: 74),
-                RogueWM(critDmg: 165f, acc: 3, critRate: 0.10f, atkSpd: 0.05f, dualAtk: 21, bowAtk: 96),
+                // crit rate is ×1.20 on EVERY rung, i.e. from level 20 (playtest-19 M9): it used to
+                // arrive as +10/+10 points at 32/36, which is exactly the "each blow lands with the
+                // 64+% chance" spike he wanted gone AND the 9.2%-until-32 blow gate of §50h. One
+                // multiplier, early, matching his ladder's single ×1.2 rogue passive — bows included.
+                RogueWM(critDmg: 35f,  acc: 0, critRate: 0.20f, atkSpd: 0f,    dualAtk: 8,  bowAtk: 30),
+                RogueWM(critDmg: 64f,  acc: 3, critRate: 0.20f, atkSpd: 0f,    dualAtk: 11, bowAtk: 42),
+                RogueWM(critDmg: 80f,  acc: 3, critRate: 0.20f, atkSpd: 0f,    dualAtk: 14, bowAtk: 56),
+                RogueWM(critDmg: 140f, acc: 3, critRate: 0.20f, atkSpd: 0f,    dualAtk: 17, bowAtk: 74),
+                RogueWM(critDmg: 165f, acc: 3, critRate: 0.20f, atkSpd: 0.05f, dualAtk: 21, bowAtk: 96),
             }),
 
         // Archer — bow: crit-damage + accuracy lean.

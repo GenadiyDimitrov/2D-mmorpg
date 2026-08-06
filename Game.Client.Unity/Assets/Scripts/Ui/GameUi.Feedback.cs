@@ -548,6 +548,8 @@ namespace Game.Client
                     text = "miss"; colour = UiKit.TextDim; break;
                 case CombatOutcome.Crit:
                     text = e.Damage.ToString() + "!"; colour = new Color(1f, 0.85f, 0.30f); size = 26f; break;
+                case CombatOutcome.Double:               // a [Double] skill: flat x2, NOT a crit
+                    text = e.Damage.ToString() + " x2"; colour = new Color(1f, 0.55f, 0.20f); size = 26f; break;
                 case CombatOutcome.Heal:                 // +N green, over whoever was healed (incl. party)
                     if (e.Damage <= 0) return;
                     // A heal-over-time tick (a potion, Renew) gets its own tint and a small "hot" marker.

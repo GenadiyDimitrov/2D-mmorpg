@@ -89,9 +89,15 @@ public record SkillDef(
     // For contested crowd-control (Slow, later Stun/Root/Fear): which stat the LAND
     // chance contests against — Physical = ATK vs CON, Magical = ATK vs WIT.
     DebuffSchool DebuffSchool = DebuffSchool.None,
-    // "[Double]" physical skills: can deal ×2 damage on a chance from the higher of
-    // DEX/ATK (cap 30%). Ordinary physical skills never double. Magic skills use magic crit.
+    // "[Double]" physical skills: a flat ×2 on the caster's ATK curve (2.5-25%). Ordinary
+    // physical skills never double. Magic skills use magic crit.
     bool CanDouble = false,
+    // "Can Crit" — a physical skill may roll the caster's CRIT rate. Owner ruling (playtest-19
+    // M8): "if a skill is not described as Can Crit or Can Double it doesn't do it." These two
+    // are EXCLUSIVE and both OPT-IN: a [Double] skill must never also crit, and a skill with
+    // neither flag lands flat (it can still miss and still be blocked). BlowOnCrit implies the
+    // crit roll — that IS the blow's landing gate — so a blow does not set this.
+    bool CanCrit = false,
     // Weapon requirement: an ACTIVE skill only casts while the equipped weapon's type is in
     // this [Flags] MASK (e.g. Strike = Sword|Blunt, Stab = Dual, Shot = Bow). Checked at
     // cast-start with one bitwise-AND. None = usable with any weapon. Passives ignore this.
@@ -101,6 +107,13 @@ public record SkillDef(
     // floor, not L2's 0-damage whiff. Only meaningful with a physical-damage effect.
     bool BlowOnCrit = false,
     float BlowFailFraction = 0.10f,
+    // A per-SKILL crit-rate modifier, multiplying the caster's own crit chance for THIS skill's
+    // roll only (1.0 = exactly the character's rate). This is L2's rule that a blow's landing
+    // chance was never the raw crit rate — Mortal/Deadly Blow carried a bonus of their own — and
+    // it is the knob the crit-rate rework is paid for with: it lifts the dagger's BLOW without
+    // touching his basic-attack crit, his buffs, or anyone else's numbers. Only read where a crit
+    // is actually rolled: BlowOnCrit and CanCrit. Deliberately NOT capped by StatCaps.
+    float CritRateMod = 1f,
     // HP-gated activation (warrior Battle Presence/Defence): the skill can only be USED while
     // the caster's HP is at or below this fraction of max (0.6 = ≤60%). Once active the buff
     // persists its full duration even if HP recovers (checked only at cast-start). 0 = no gate.

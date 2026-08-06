@@ -38,6 +38,23 @@ stat buffs).
 
 This **replaces** the previous `max(DEX, ATK)` input and the previous 30% cap.
 
+### `Can Crit` and `Can Double` are EXCLUSIVE, OPT-IN flags (owner ruling, playtest-19 M8)
+
+> "If a skill is not described as `Can Crit` or `Can Double` it doesnt do it."
+
+- `CanDouble` -> rolls the ATK curve, **never** a crit.
+- `CanCrit` -> rolls the caster's crit rate (times the skill's own `CritRateMod`), **never** a double.
+- `BlowOnCrit` -> the crit IS the landing gate; it may then double if it also has `CanDouble`.
+- **Neither flag -> the skill lands flat.** It can still miss and can still be blocked.
+
+This is a hard flag check, not a probability. It was prompted by a double-only Strike producing more
+big hits than the blow it is meant to be worse than — and by a `[Double]` **reporting itself as a
+crit**, which is exactly the confusion the `[Double]` naming exists to avoid. A double now returns
+`CombatOutcome.Double` and the client draws it as `N x2` in its own colour.
+
+`tools/BalanceMatrix` **§C3** audits every physical-damage skill's flags against its own description;
+a row where they disagree is an authoring bug, not a formula bug.
+
 ### Why ATK and not DEX
 
 DEX already buys the blow's landing roll. Paying the ×2 off DEX as well would pay the rogue **twice
@@ -128,7 +145,7 @@ optional field — no protocol bump, no db reset.
 
 ---
 
-## 5. CRIT **RATE** — the L2 model (owner spec, 2026-08-06, playtest-19 M9). NOT BUILT.
+## 5. CRIT **RATE** — the L2 model (owner spec, 2026-08-06, playtest-19 M9). ✅ BUILT 2026-08-06 (0.50.0).
 
 His formula, on L2's 0-1000 scale (**1000 = 100%**, so the classic cap **500 = 50%**):
 
@@ -267,27 +284,67 @@ what stops DEX becoming the one stat everyone stacks.
 the same 30 as `dexMod`. Attack speed and crit read the same way; accuracy and evasion are the flat,
 dominant 1 point = 1%.
 
-### What this changes in the code
-1. 🔴 **Passives become MULTIPLIERS.** Today `CritChance + pe.CritRate` (additive points) at
-   `Entity.cs:1702` and `:1736`. His model wants `x1.2` / `x1.5`, not `+20 points`.
-2. 🔴 **`CritRateResist` becomes a MULTIPLIER, not a subtraction.** Today the resolver does
-   `chance - target.CritRateResist` (`GameLoopService.cs:9481, 9523, 9554, 9572`). Subtraction annihilates
-   low-crit builds — a 11.4% blunt warrior against a 0.15-resist rogue crits **0%**; as a multiplier he
-   keeps 9.7%. Same reasoning as the flat term above.
-3. ✅ **Every clamp drops to the StatCaps constant.** Three physical clamps read **0.75** today
-   (`Entity.cs:1702, 1736, 1890`) even though `StatCaps.PhysicalCritRate` already says 0.50 — it only
-   clamped the DEX step. Magic clamps at `:1739` and `:1891` read 0.5 against
-   `StatCaps.MagicCritRate = 0.20`. Make them all read the constants.
-4. ✅ **DEX becomes a multiplier, not the base.** `PhysicalCritChance(dex) = 0.05 + dex x 0.0009` is
-   replaced by `110 x weaponFactor x dexMod`. 🔑 **Side effect worth knowing: this RAISES everyone's
-   early crit.** A human fighter with a dagger goes `7.7% x 1.2 = 9.2%` -> **13.2%**, and 9.2% is exactly
-   the number §50h blamed for the rogue's early blow gate — so the base change pays back part of what
-   going multiplicative costs.
-5. ⚠ **`flat` moves outside the buff multiplier** (`Entity.cs:1861`): `(crit + flat) x (1 + pct)` must
-   become `crit x (1 + pct) + flat`.
+### What this changed in the code — ALL BUILT 2026-08-06 (0.50.0)
+1. ✅ **Passives are MULTIPLIERS.** `Entity.CritRateMult` accumulates every `StatMods.CritRate` and
+   `PassiveEffect.CritRate` as `x (1 + v)`; the authored numbers already read as percentages, so the
+   conversion is mechanical (`CritRate: 0.20f` was `+20 points`, it is now `x1.20`).
+2. ✅ **`CritRateResist` is a MULTIPLIER.** All four resolution sites now do
+   `(chance - shieldCritDefense) x (1 - CritRateResist)`.
+3. ✅ **Every clamp reads the StatCaps constant**, and there is now only ONE, at the end of the chain.
+   The three stray `0.75`s are gone; magic clamps at `StatCaps.MagicCritRate` (0.20).
+4. ✅ **DEX is a multiplier, not the base** — `StatCalculator.PhysicalCritBase(dex, weapon)` =
+   `110 x weaponFactor x dexMod`, and `CritDexMod` is the linear uncapped `1 + (dex - 30) x 0.01`.
+5. ✅ **`flat` lives outside every multiplier** — `Entity.CritRateFlat`, folded in at the end as
+   `base x mult + flat`.
 
-⚠ **Measure the 20-40 rogue curve in `tools/BalanceMatrix` before AND after** — see §50h. Multiplicative
-alone *lowers* rogue DPS at low level (x1.2 on a 13.2% base is +2.6 points, where the old additive +20%
-was +20). His ladder only reaches 50% once Harmony and the 50+ x1.5 passive exist, so the early game
-must be re-checked, and the price may have to be paid in the blow's own modifier (L2 gave Mortal/Deadly
-Blow ~+20% of their own).
+⚠ **Magic crit was deliberately NOT converted.** His ruling named "dagger/bow"; a mage's base is a 4%
+WIT figure where a x1.05 is worth nothing and the ladder has no magic equivalent. Magic passives stay
+additive; only the clamp changed. Say so if he wants it converted too.
+
+### What it MEASURED (`tools/BalanceMatrix` §C2 / §C3) — read this before retuning anything
+
+🔑 **§50h ("the rogue is at 0.65x warrior DPS, gated by a 9.2% crit") was a MEASURING ERROR.**
+`BalanceMatrix` built its characters from the class tables only, and the archetype identity passive
+(`SkillCatalog.FloorPassiveFor` -> Evasion Mastery / Reflexes / Precision / Anti-Magic) is **auto-granted
+by `AutoLearnCoreSkills`, not in those tables**. So it measured a rogue with **no Evasion Mastery** —
+and Evasion Mastery was where the old `+20 crit points` lived. With it in the model, the numbers before
+this change were:
+
+| lvl | rogue crit | rogue/warrior DPS |
+|---|---|---|
+| 20 | 29.2% | **0.99x** |
+| 28 | 29.2% | 1.08x |
+| 32 | 39.2% | **1.46x** |
+| 36 | 39.2% | **1.63x** |
+
+i.e. the rogue was at parity early and **running away exactly at the level-32 spike he predicted**
+("the balance will shift at lvl 32 when each blow lands with the 64+% chance"). His instinct was right;
+the tool was wrong. Both builders grant the floor passive now — never measure a character without it.
+
+**After**, with the blow modifier paying for the change: 0.92x / 0.95x / 1.00x / 1.10x / 1.22x at
+20/24/28/32/36. The spike is gone and the curve is smooth.
+
+### 6. `SkillDef.CritRateMod` — the per-SKILL crit rate (the price of going multiplicative)
+
+Multiplicative crit alone drops the rogue to a flat **0.75x** the warrior at every level: `x1.2` on a
+13.2% base is +2.6 points where the old additive `+20%` was +20. The design note anticipated paying for
+that "in the blow's own modifier (L2 gave Mortal/Deadly Blow ~+20% of their own)", and that is what
+`CritRateMod` is: a multiplier on the caster's crit rate **for that skill's roll only**.
+
+**Stab and Piercing Stab carry `CritRateMod: 2.0`**, so a 15.8% rogue's blow lands at 31.6% — almost
+exactly the 29.2% it landed at before. This is the right knob because it moves the dagger's blow and
+*nothing else*: not his basic attacks, not his buffs, not another class. **It is also the one number to
+retune if the rogue is off** — one float, one class, measured in §C1.
+
+⚠ The skill modifier is deliberately **not** capped by `StatCaps.PhysicalCritRate`: 50% is the cap on a
+*character's* crit rate, and a fully-buffed rogue (36%) will land blows at ~72%. That is the L2 shape —
+a buffed dagger lands most of its blows — and the `BlowFailFraction` floor is what the rest becomes.
+
+### ⚠ The one authoring gap this exposed
+
+**The flat term has no gear source worth the name.** His model leans on a flat "elegia heavy set +127"
+to carry the classes that cannot multiply their way anywhere. In our catalog flat crit rate exists only
+as a **random weapon attribute**, and only on **sword / dual / bow** — the weapons with the highest base
+already. A 2H-blunt warrior therefore sits at **4.4%** with nothing that can raise it, and §C2 prints
+`flat = 0` on every row to keep that visible. Adding a flat crit-rate line to the heavy sets is the
+natural fix and is his call, not mine.

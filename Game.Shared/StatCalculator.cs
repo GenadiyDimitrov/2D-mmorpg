@@ -546,9 +546,31 @@ public static class StatCalculator
 
     // ----- Crit (split: physical vs magic, each capped) --------------------
 
-    /// <summary>Physical crit RATE from DEX. Cap 50% (DEX 500 ≈ cap).</summary>
-    public static float PhysicalCritChance(int dex) =>
-        Math.Clamp(0.05f + dex * 0.0009f, 0f, StatCaps.PhysicalCritRate);
+    /// <summary>Character crit-rate BASE — his "110" on L2's 0-1000 scale, i.e. 11%.
+    /// (docs/design/CritBlowAndDouble.md §5.)</summary>
+    public const float CharacterCritBase = 0.110f;
+
+    /// <summary>DEX's contribution to crit rate: a MULTIPLIER of 1% per point, centred on
+    /// <see cref="MobDexReference"/> (30) so a normal mob sits at exactly ×1.00 — the neutral
+    /// opponent. LINEAR AND UNCAPPED (owner ruling 2026-08-06): a full-DEX elf archer with a
+    /// light set and a stat swap can climb toward the cap, and a max-ATK warrior at DEX 23 pays
+    /// ×0.93 — "a low hinder but still a hinder".
+    /// 🛑 GUARDRAIL: this is deliberately the SMALLEST of DEX's four jobs. One DEX point is
+    /// worth +1.0 percentage point of accuracy and of evasion, ×1.0105 of attack speed, but
+    /// only +0.13pp of a dagger's crit. If it ever looks "too weak", that ratio IS the design —
+    /// it is what stops DEX becoming the one stat everybody stacks. Do not inflate it.</summary>
+    public static float CritDexMod(int dex) => Math.Max(0f, 1f + (dex - MobDexReference) * 0.01f);
+
+    /// <summary>The BASE physical crit rate: the <c>110 × weaponFactor × dexMod</c> head of his
+    /// L2 model (docs/design/CritBlowAndDouble.md §5)
+    /// <code>crit = (110 × weaponFactor × dexMod × buffs × passives + flat) × debuffs × enemyLightArmor</code>
+    /// The WEAPON multiplies the character base — dagger/bow ×1.2 → 13.2%, sword ×0.8 → 8.8%,
+    /// blunt ×0.4 → 4.4% — and DEX is a mild multiplier ON that. DEX is NOT the base any more
+    /// (it used to be <c>0.05 + dex × 0.0009</c>, which made the weapon a rounding error).
+    /// ⚠ Deliberately NOT clamped: passives and buffs multiply this and flat bonuses add to it,
+    /// so the single clamp belongs at the END of the chain (Entity.RecomputeDerived).</summary>
+    public static float PhysicalCritBase(int dex, WeaponType weapon) =>
+        CharacterCritBase * WeaponCritFactor(weapon) * CritDexMod(dex);
 
     /// <summary>Magic crit RATE from WIT. Cap 20% (WIT 200 ≈ cap).</summary>
     public static float MagicCritChance(int wit) =>

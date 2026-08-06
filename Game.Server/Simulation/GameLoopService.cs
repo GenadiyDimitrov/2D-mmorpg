@@ -6829,8 +6829,11 @@ var effect = def.Effect;
 
                 // BLOW skills (dagger Stab) land full damage only on a crit, and a landed one is
                 // computed with the crit-damage values, else a soft 10% floor. "[Double]" skills
-                // roll a flat ×2 off the caster's ATK (2.5-25%); ordinary skills keep the basic
-                // crit path. docs/design/CritBlowAndDouble.md.
+                // roll a flat ×2 off the caster's ATK (2.5-25%). Everything else lands FLAT:
+                // Can Crit and Can Double are exclusive OPT-IN flags (playtest-19 M8 — "if a skill
+                // is not described as Can Crit or Can Double it doesn't do it"), which is why a
+                // crit-less skill still goes through ResolvePhysicalCritAndBlock but with a zero
+                // crit chance — it must keep the block roll. docs/design/CritBlowAndDouble.md.
                 var (finalDmg, outcome) = def.BlowOnCrit
                     ? ResolveBlow(caster, target, damage, def, critFlat)
                     : def.CanDouble
@@ -6838,7 +6841,8 @@ var effect = def.Effect;
                             StatCalculator.PhysicalDoubleChance(caster.AtkStat),
                             def.BlockAccuracy)
                         : ResolvePhysicalCritAndBlock(
-                            caster, target, damage, caster.CritChance, def.BlockAccuracy, critFlat);
+                            caster, target, damage, def.CanCrit ? caster.CritChance * def.CritRateMod : 0f,
+                            def.BlockAccuracy, critFlat);
                 damage = finalDmg;
                 BroadcastCombat(caster, target, damage, outcome, castName);
                 ApplyDamage(target, damage, caster);
@@ -9475,11 +9479,13 @@ var effect = def.Effect;
         if (attacker.WeaponType == WeaponType.Bow && target.BowResist > 0f)
             baseDamage = Math.Max(1, (int)(baseDamage * (1f - target.BowResist)));
 
-        // Shield AND the target's crit-rate resist lower the attacker's crit CHANCE.
-        float effCrit = critChance
-            - (target.HasShield ? target.ShieldCritDefense : 0f)
-            - target.CritRateResist;
-        effCrit = Math.Clamp(effCrit, 0f, 1f);
+        // Shield AND the target's crit-rate resist lower the attacker's crit CHANCE. The resist is
+        // his `enemy_light_armor_mastery` and is a MULTIPLIER, never a subtraction: subtracting a
+        // rogue's 0.15 annihilated every low-crit build (an 11.4% blunt warrior critted 0.0%);
+        // as a multiplier he keeps 9.7%. Same reasoning as the flat term in the crit-rate model.
+        float effCrit = Math.Clamp(
+            (critChance - (target.HasShield ? target.ShieldCritDefense : 0f))
+            * (1f - target.CritRateResist), 0f, 1f);
 
         if (_rng.NextDouble() < effCrit)
         {
@@ -9518,14 +9524,14 @@ var effect = def.Effect;
         if (attacker.WeaponType == WeaponType.Bow && target.BowResist > 0f)
             baseDamage = Math.Max(1, (int)(baseDamage * (1f - target.BowResist)));
 
-        float eff = Math.Clamp(doubleChance
-            - (target.HasShield ? target.ShieldCritDefense : 0f)
-            - target.CritRateResist, 0f, 1f);
+        float eff = Math.Clamp(
+            (doubleChance - (target.HasShield ? target.ShieldCritDefense : 0f))
+            * (1f - target.CritRateResist), 0f, 1f);
         if (doubleChance > 0f && _rng.NextDouble() < eff)
         {
             // ×2 = +100% over normal, trimmed by the target's crit-damage resist.
             float extra = 1f * (1f - target.CritDmgResist);
-            return (Math.Max(1, (int)(baseDamage * (1f + extra))), CombatOutcome.Crit);
+            return (Math.Max(1, (int)(baseDamage * (1f + extra))), CombatOutcome.Double);
         }
 
         if (target.HasShield)
@@ -9549,9 +9555,11 @@ var effect = def.Effect;
     private (int damage, CombatOutcome outcome) ResolveBlow(
         Entity attacker, Entity target, int baseDamage, SkillDef def, float critFlatFactor = 1f)
     {
-        float effCrit = Math.Clamp(attacker.CritChance
-            - (target.HasShield ? target.ShieldCritDefense : 0f)
-            - target.CritRateResist, 0f, 1f);
+        // The blow's OWN crit modifier rides on the character's rate (L2: a blow never landed on
+        // the raw crit rate). It is what pays for crit going multiplicative — see CritRateMod.
+        float effCrit = Math.Clamp(
+            (attacker.CritChance * def.CritRateMod - (target.HasShield ? target.ShieldCritDefense : 0f))
+            * (1f - target.CritRateResist), 0f, 1f);
 
         if (_rng.NextDouble() >= effCrit)
             // Missed the crit: soft floor only — cannot crit or double.
@@ -9567,11 +9575,13 @@ var effect = def.Effect;
         if (def.CanDouble)
         {
             float dbl = Math.Clamp(
-                StatCalculator.PhysicalDoubleChance(attacker.AtkStat)
-                - (target.HasShield ? target.ShieldCritDefense : 0f)
-                - target.CritRateResist, 0f, 1f);
+                (StatCalculator.PhysicalDoubleChance(attacker.AtkStat)
+                 - (target.HasShield ? target.ShieldCritDefense : 0f))
+                * (1f - target.CritRateResist), 0f, 1f);
             if (_rng.NextDouble() < dbl)
-                damage = Math.Max(1, (int)(damage * (1f + (1f - target.CritDmgResist))));  // ×2, trimmed by crit-dmg resist
+                // ×2, trimmed by crit-dmg resist. Reported as Double so the player can tell the
+                // two mechanics apart — a doubled blow is visibly not "just a bigger crit".
+                return (Math.Max(1, (int)(damage * (1f + (1f - target.CritDmgResist)))), CombatOutcome.Double);
         }
         return (damage, CombatOutcome.Crit);
     }

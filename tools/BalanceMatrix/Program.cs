@@ -1195,11 +1195,112 @@ Console.WriteLine("=== C1: sustained DPS after the change — ROGUE (duals) vs W
 }
 Console.WriteLine();
 
+Console.WriteLine("=== C2: CRIT RATE — his L2 model, decomposed (docs/design/CritBlowAndDouble.md §5) ===");
+{
+    Console.WriteLine("  crit = (110 x weaponFactor x dexMod  x  passives x buffs  +  flat) x debuffs x enemyLightArmor");
+    Console.WriteLine("  numbers on HIS 0-1000 scale (1000 = 100%), cap 500. mult = every passive AND buff folded.");
+    Console.WriteLine("  build                     lvl | DEX dexMod | weapon    base | mult  | flat | FINAL      %");
+    void CritRow(string label, int lvl, Entity e)
+    {
+        int dex = (int)e.EffectiveDex;
+        Console.WriteLine($"  {label,-25} {lvl,3} | {dex,3} x{StatCalculator.CritDexMod(dex),4:F2} |"
+            + $" {e.WeaponType.Base(),-8} {StatCalculator.PhysicalCritBase(dex, e.WeaponType) * 1000f,4:F0} |"
+            + $" x{e.CritRateMult,4:F2} | {e.CritRateFlat * 1000f,4:F0} | {e.CritChance * 1000f,5:F0} {e.CritChance * 100f,6:F1}%");
+    }
+    // Re-arm a build with a different weapon: the crit base IS the weapon, so a rogue's bow and his
+    // duals are different rows, and the warrior's blunt is the case the flat term has to carry.
+    Entity Rearm(Entity e, string weaponId)
+    {
+        e.Inventory.RemoveAll(i => ItemCatalog.Get(i.DefId)?.Slot == EquipSlot.Weapon);
+        Equip(e, weaponId);
+        e.RecomputeDerived();
+        return e;
+    }
+    // Add the top crit-rate BUFFS: Focus rung 6 (x1.30 — his own x1.3) and Harmony of the Warrior
+    // (x1.75, where his ladder assumed x2). The NPC-buffer "Focus" is only a wrapper whose ChildBuffs
+    // point at the ladder rung, so the rung is what carries the magnitudes — buff the rung, not it.
+    Entity Buffed(Entity e)
+    {
+        foreach (var id in new[] { SkillCatalog.Rung(SkillCatalog.FamCritRate, 6), SkillCatalog.NpcHarmonyWarrior })
+            if (SkillCatalog.Get(id) is { Magnitudes: not null } def)
+                e.Buffs.Add(new Game.Server.Simulation.BuffInstance
+                {
+                    Effect = def.Effect, Magnitudes = def.Magnitudes,
+                    TicksRemaining = int.MaxValue, Name = def.Name, Key = def.BuffKey,
+                });
+        e.RecomputeDerived();
+        return e;
+    }
+    Entity Warrior(int lvl) => BuildPlayer(Race.Human, BaseClass.Fighter, lvl, warrior: true);
+    foreach (int lvl in new[] { 20, 28, 36, 44 })
+    {
+        int t = GearTier(lvl);
+        CritRow("rogue, duals", lvl, BuildRogue(lvl));
+        CritRow("rogue, bow", lvl, Rearm(BuildRogue(lvl), $"bow_t{t}"));
+        CritRow("warrior, 2H sword", lvl, Rearm(Warrior(lvl), $"sword2h_t{t}"));
+        CritRow("warrior, 2H blunt", lvl, Rearm(Warrior(lvl), $"blunt2h_t{t}"));
+        Console.WriteLine("   ...the same four, fully BUFFED (Focus x1.30 + Harmony x1.75):");
+        CritRow("rogue, duals +buffs", lvl, Buffed(BuildRogue(lvl)));
+        CritRow("rogue, bow +buffs", lvl, Buffed(Rearm(BuildRogue(lvl), $"bow_t{t}")));
+        CritRow("warrior, sword +buffs", lvl, Buffed(Rearm(Warrior(lvl), $"sword2h_t{t}")));
+        CritRow("warrior, blunt +buffs", lvl, Buffed(Rearm(Warrior(lvl), $"blunt2h_t{t}")));
+        Console.WriteLine();
+    }
+    Console.WriteLine("  cap is StatCaps.PhysicalCritRate = 500 (50%). Two things to read here:");
+    Console.WriteLine("   - flat is 0 on every row: our only flat crit-rate source is a RANDOM WEAPON ATTRIBUTE");
+    Console.WriteLine("     (sword/dual/bow only). His model's flat 'heavy set +127' — the term that is supposed");
+    Console.WriteLine("     to carry the BLUNT warrior, who cannot multiply his way anywhere — does not exist yet.");
+    Console.WriteLine("   - DEX is 30 on every row because DEX is per RACE+BASE CLASS: only an ELF fighter (35)");
+    Console.WriteLine("     moves it, and no armor set in these tiers carries a Dex line. See the elf row below.");
+    // The one build that actually exercises dexMod today.
+    var elf = BuildRogue(36);
+    elf.Dex = StatCalculator.GetBaseStats(Race.Elf, BaseClass.Fighter).Dex;
+    elf.RecomputeDerived();
+    CritRow("ELF rogue, duals", 36, elf);
+    CritRow("ELF rogue +buffs", 36, Buffed(elf));
+}
+Console.WriteLine();
+
+Console.WriteLine("=== C3: M8 audit — every physical-damage skill and what it is ALLOWED to roll ===");
+{
+    Console.WriteLine("  \"If a skill is not described as Can Crit or Can Double it doesn't do it.\" Both flags are");
+    Console.WriteLine("  OPT-IN and exclusive; a blow's crit gate is BlowOnCrit. Anything showing '-  -  -' lands FLAT");
+    Console.WriteLine("  (it can still miss and still be blocked) — check that against the skill's own description.");
+    Console.WriteLine("  skill                     | blow | crit | dbl | critMod | description says...");
+    foreach (var def in SkillCatalog.AllSkills
+                 .Where(d => d.Effect.HasFlag(SkillEffect.PhysicalDamage))
+                 .OrderBy(d => d.Name))
+    {
+        string desc = def.Description ?? "";
+        bool saysCrit = desc.Contains("critical", StringComparison.OrdinalIgnoreCase);
+        bool saysDouble = desc.Contains("DOUBLE", StringComparison.Ordinal)
+                       || desc.Contains("[Double]", StringComparison.Ordinal);
+        string claim = (saysCrit ? "crit " : "") + (saysDouble ? "double" : "");
+        Console.WriteLine($"  {def.Name,-25} |  {(def.BlowOnCrit ? "Y" : "-"),-3} |  {(def.CanCrit ? "Y" : "-"),-3} |"
+            + $"  {(def.CanDouble ? "Y" : "-"),-2} | {(def.CritRateMod == 1f ? "-" : "x" + def.CritRateMod.ToString("0.0")),-7} |"
+            + $" {(claim.Length == 0 ? "(neither)" : claim)}");
+    }
+    Console.WriteLine("  a row whose flags and description disagree is an AUTHORING bug, not a formula bug.");
+}
+Console.WriteLine();
+
 static string NameOf(string id) => SkillCatalog.Get(id)?.Name ?? id;
 
 /// <summary>A Human ASSASSIN (rogue) of this level in the best duals + LIGHT armor for its tier —
 /// the class the crit-damage rungs actually belong to. BuildPlayer only knows tank/warrior/nuker
 /// and dresses them in a sword and heavy, which would measure the wrong masteries entirely.</summary>
+// The archetype IDENTITY floor passive (Evasion Mastery / Reflexes / Precision / Anti-Magic) is
+// AUTO-granted in game by AutoLearnCoreSkills — it is not in the class tables, so a synthetic
+// character built from those tables alone was missing it entirely. That is why §50h measured the
+// rogue's blow gate at a 9.2% crit: his own Evasion Mastery (then worth +20 crit POINTS) was absent
+// from the MODEL, not from the game. Never measure a character without it.
+static void GrantFloorPassive(Entity e, int level)
+{
+    if (SkillCatalog.FloorPassiveFor(e.Archetype, level) is { } fp)
+        e.LearnedSkills[fp.Id] = Math.Max(e.SkillLevelOf(fp.Id), fp.Level);
+    e.RecomputeDerived();
+}
+
 static Entity BuildRogue(int level)
 {
     var s = StatCalculator.GetBaseStats(Race.Human, BaseClass.Fighter);
@@ -1214,6 +1315,7 @@ static Entity BuildRogue(int level)
     foreach (var id in e.LearnedSkills.Keys.ToList())
         if (SkillCatalog.Get(id)?.Replaces is { } replaced)
             foreach (var r in replaced) e.LearnedSkills.Remove(r);
+    GrantFloorPassive(e, level);
 
     var rune = SkillCatalog.Get(SkillCatalog.WarRuneBuff);
     if (rune != null)
@@ -1478,13 +1580,18 @@ static float SkillHitFactor(Entity atk, SkillDef skill, int power, float critMul
     float flatF = StatCalculator.CritFlatFactor(atk.EffectiveAttack, atk.CritDamageFlat, power);
     float dbl = StatCalculator.PhysicalDoubleChance(atk.AtkStat);
 
+    // A skill's crit roll is the character's rate times the SKILL's own modifier (CritRateMod).
+    float skillCrit = Math.Clamp(atk.CritChance * skill.CritRateMod, 0f, 1f);
+
     if (skill.BlowOnCrit)
     {
         float landed = flatF * critMult * (skill.CanDouble ? 1f + dbl : 1f);
-        return atk.CritChance * landed + (1f - atk.CritChance) * skill.BlowFailFraction;
+        return skillCrit * landed + (1f - skillCrit) * skill.BlowFailFraction;
     }
     if (skill.CanDouble) return CritFactor(dbl, 2f);
-    return CritFactor(atk.CritChance, critMult * flatF);
+    // Can Crit and Can Double are exclusive OPT-IN flags now (M8): a skill with neither lands flat.
+    if (!skill.CanCrit) return 1f;
+    return CritFactor(skillCrit, critMult * flatF);
 }
 
 /// <summary>Seconds between autoattacks, exactly as CombatTick computes the cooldown.</summary>
@@ -1586,6 +1693,7 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
     foreach (var id in e.LearnedSkills.Keys.ToList())
         if (SkillCatalog.Get(id)?.Replaces is { } replaced)
             foreach (var r in replaced) e.LearnedSkills.Remove(r);
+    GrantFloorPassive(e, level);
 
     // Shots (2026-07-24): the old training passive is gone — soul/spell runes are now held RUNE items that
     // grant this buff. Apply it directly here so the matrix reflects the EXPECTED play state (runes ON).

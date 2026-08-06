@@ -64,17 +64,23 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
         floors and the 5/95 band are active at every gap. `LevelGap()` is untouched. His reason holds —
         `ExpCurve.GapZero = 13` already pays **zero exp and zero drops** seven levels earlier.
         `CombatResolution.md` is already rewritten. ⚠ Nothing is unhittable any more, by design.
-      - **`M9` the rogue identity rework** — Evasion Mastery becomes floor-ONLY (strip +20 % crit and
-        +20 evasion), the crit rung moves from Armor Mastery @32 down to **20**, and **crit rate becomes
-        MULTIPLICATIVE on the weapon base**. His answer to §50h. ⚠ Research says L2 went multiplicative
-        (C1-C2) → **additive + a hard 500/50 % cap** (C3); on a 12 % dagger base his version gives 14.4 %
-        where additive gives 32 %, so it *lowers* rogue DPS and barely delivers "higher crit early".
-        **Measure the 20-40 curve in BalanceMatrix first**, and expect to pay for it in the dagger base
-        or the blow's own modifier (which is how L2 pays for it).
+      - ✅ **`M9` the rogue identity rework — BUILT 2026-08-06 (0.50.0), unplayed.** Crit rate is his
+        full L2 model (`110 × weapon × dexMod × passives × buffs + flat`, one clamp at 50 %),
+        `CritRateResist` is a multiplier, Evasion Mastery is floor-ONLY, and the rogue's ×1.20 crit
+        passive sits on Weapon Mastery from level **20**. Paid for with the new per-skill
+        **`SkillDef.CritRateMod`** (Stab / Piercing Stab ×2.0), which is L2's own rule that a blow never
+        landed on the raw crit rate. 🔑 **§50h was a MEASURING error** — BalanceMatrix never granted the
+        auto-granted identity passive, so it measured a rogue with no Evasion Mastery. The real *old*
+        numbers were 0.99× / 1.08× / **1.46×** / **1.63×** the warrior at 20/28/32/36 — parity early and
+        a runaway at exactly the 32 spike he predicted. Now 0.92× / 1.00× / 1.10× / 1.22×.
+        ⚠ **Open, his call:** there is no flat crit-rate GEAR source (his "elegia heavy set +127"), so a
+        2H-blunt warrior is stuck at 4.4 %. See `docs/design/CritBlowAndDouble.md` §5.
       - **`M10` `Two-Hand Mastery` `DefencePct` −0.20 → −0.10**, all five rungs
         (`Skills.WeaponMasteries.cs:77-81`) — a 2H warrior in heavy must not sit under a robed mage.
-      With them: **`M8`** `Can Crit` / `Can Double` as an exclusive flag check (a `[Double]` Strike is
-      critting today), and **`M7`** Heavy Draw's @24 grant plus the 40+ discipline placement.
+      ✅ **`M8` BUILT** — `CanCrit` / `CanDouble` are exclusive opt-in flags, a `[Double]` reports itself
+      as `CombatOutcome.Double` (`N x2`) instead of a crit, and BalanceMatrix §C3 audits all 20
+      physical skills' flags against their descriptions. Still open with these: **`M7`** Heavy Draw's
+      @24 grant plus the 40+ discipline placement.
    3. **The deletion, now correctly scoped (`0a`/`0b`).** Delete `reflexes`, `archer_armor_mastery`,
       `archer_weapon_mastery`, `dispel_magic`, the Heavy Draw @24 grant — **and the whole God layer**,
       `Race.God` / `ItemRarity.God` / `god_judgment` / `god_robes` included. His rule: *"nothing that

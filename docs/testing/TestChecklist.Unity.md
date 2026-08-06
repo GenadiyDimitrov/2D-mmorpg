@@ -1042,7 +1042,58 @@ never applies crit damage — it is a flat ×2 by design.
 gap is the blow gate — full damage only on a crit, and crit is 9.2 % until 32. Is that the intended
 shape, or should the early rungs carry crit RATE too? -> **ANSWERED, playtest-19 M9** — move the +20 %
 crit rate from Armor Mastery @32 down to 20, strip crit/evasion off Evasion Mastery, and make crit rate
-MULTIPLICATIVE on the weapon base.
+MULTIPLICATIVE on the weapon base. ⚠ **AND THE QUESTION ITSELF WAS WRONG** — see §52: those numbers came
+from a BalanceMatrix that never granted the rogue his auto-granted Evasion Mastery. The real rogue was
+at 0.99× / 1.08× / **1.46×** / **1.63×**. Built in 0.50.0.
+
+---
+## 52. 🔴 0.50.0 — crit RATE, `Can Crit`/`Can Double`, per-skill crit — UNPLAYED
+
+Needs a **new APK** (`CombatOutcome.Double` and the floater). No db reset, protocol still 12. Design:
+`docs/design/CritBlowAndDouble.md` §1 + §5 + §6; measurements: `tools/BalanceMatrix` **§C2** (the crit
+chain decomposed, per build) and **§C3** (the flag audit).
+
+**52a. The stats window's crit % now comes from the WEAPON, not from DEX.** On the same character,
+swapping weapons must move it to roughly: **duals or bow 15.8 %**, **1H/2H sword 8.8 %**, **1H/2H blunt
+4.4 %** (a rogue's are the 13.2 % base × his ×1.20 mastery; a warrior has no crit passive). Bare-handed
+sits at 11 %. Levelling must NOT change it — the base has no level term.
+
+**52b. The level-32 crit jump is gone.** A rogue's crit % must read the **same at 20, 24, 28, 32 and
+36**. Before this build it stepped 29.2 % → 39.2 % at 32; that spike was the whole of M9.
+
+**52c. Evasion Mastery is the dodge floor and nothing else.** Its skill description must read only
+"Dodge floor 10/20/30%" — no crit, no evasion. Learning it (or its next tier at 40) must not move the
+crit % or the evasion number in the stats window at all.
+
+**52d. Crit-rate BUFFS multiply now.** Take Focus from the buffer on a rogue: 15.8 % → **20.5 %**
+(×1.30), not "+30 points". Add Harmony of the Warrior on top → **36 %**. On a 2H-blunt warrior the same
+two buffs give 4.4 % → **10 %** — a multiplier is worth ~3.6× more to the dagger, which is the model.
+
+**52e. A low-crit build is no longer zeroed by a rogue.** Attack a light-armoured rogue with a **blunt**
+weapon: you must still crit occasionally. `CritRateResist` used to be SUBTRACTED, which took an 8.8 %
+sword or a 4.4 % blunt straight to 0 % against a rogue's 0.15.
+
+**52f. 🔴 `[Double]` no longer says "crit".** A Strike / Smash / Shot that doubles must show **`N x2`**
+in an ORANGE floater, distinct from the yellow `N!` crit. And it must never *also* crit — the big
+number is exactly ×2 the normal one, never more.
+
+**52g. 🔴 A skill that doesn't claim a crit must not crit.** Brutal Strike, Mighty Blow, Twin Slash,
+Heavy Draw, Disrupt, Devastating Slam, Repelling Shot and Snare Trap now land FLAT — same number every
+time (they can still miss, and still be blocked). If any of them produces an occasional double-size
+hit, the flag check is broken. ⚠ If you *want* one of them to crit, say which: it is one `CanCrit: true`.
+
+**52h. Blows land about twice as often as your crit %.** Piercing Stab has its own **×2.0** crit
+modifier, so a 15.8 % rogue's blow lands ~**31.6 %** of the time — the rest deal the soft 10 % floor.
+Count roughly 1 in 3 big hits unbuffed. Fully buffed (36 % crit) it should land most of the time.
+
+**52i. ⚖ THE TUNING NUMBERS, measured.** rogue-vs-warrior DPS at 20/24/28/32/36 is now
+**0.92× / 0.95× / 1.00× / 1.10× / 1.22×** (it was 0.99/1.03/1.08/**1.46**/**1.63** before). If the rogue
+feels wrong, the single knob is `CritRateMod` on Stab / Piercing Stab — one float, nothing else moves.
+
+**52j. ⚖ ANSWER NEEDED — flat crit rate has no gear source.** Your model's flat term (the "elegia heavy
+set +127") is what is supposed to carry a **blunt** warrior, who cannot multiply his way anywhere. We
+have none: flat crit rate exists only as a random enchant attribute, and only on sword/dual/bow. So a
+2H-blunt warrior is stuck at 4.4 % (10 % fully buffed). Add a flat crit-rate line to the heavy sets?
 
 ---
 ## 51. 🔴 PLAYTEST-19 QUEUE (2026-08-06) — the 0.48.0 pass

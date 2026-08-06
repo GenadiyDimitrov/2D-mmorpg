@@ -104,7 +104,7 @@ public static partial class SkillCatalog
         // Stab — dagger (dual) BLOW: full power only on a critical/double, else a soft 10%.
         new(Stab, "Stab", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: 10, CastTicks: 10, CooldownTicks: 30, Range: 40, Power: 88,
-            Category: SkillCategory.Physical, CanDouble: true, BlowOnCrit: true,
+            Category: SkillCategory.Physical, CanDouble: true, BlowOnCrit: true, CritRateMod: 2.0f,
             RequiredWeapon: WeaponType.Dual,
             Description: "A dagger blow (duals). Lands for FULL power only on a critical or double — a soft 10% otherwise.",
             Levels: new[]
@@ -176,7 +176,7 @@ public static partial class SkillCatalog
         // 5 levels @20/24/28/32/36.
         new(PiercingStab, "Piercing Stab", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: 18, CastTicks: 10, CooldownTicks: 30, Range: 40, Power: 314,
-            Category: SkillCategory.Physical, CanDouble: true, BlowOnCrit: true,
+            Category: SkillCategory.Physical, CanDouble: true, BlowOnCrit: true, CritRateMod: 2.0f,
             RequiredWeapon: WeaponType.Dual,
             Replaces: new[] { Stab, Strike },
             Description: "A precise dagger blow — the rogue's Stab upgrade. Full power only on a "

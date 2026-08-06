@@ -588,16 +588,24 @@ public static partial class SkillCatalog
         //       RUNE item (WarRuneBuff / SpellRuneBuff above), not an auto-granted passive. =====
 
         // ===== Class identity "sure" floor passives (auto-granted at 20/40/76 = lvl 1/2/3) =====
-        // Rogue identity now DATA: the evade floor + the archetype crit/evasion LEANS (+20% crit,
-        // +20 eva) migrated here from StatCalculator's hardcoded Archetype switches (stats-via-skills).
+        // Evasion Mastery is the evade FLOOR AND NOTHING ELSE (owner ruling, playtest-19 M9): the
+        // +20% crit and the +20 evasion are GONE. The crit moved to the rogue Weapon Mastery at
+        // level 20 (he wants the high crit rate EARLY, not a spike at 32), and the evasion budget
+        // is already closed at ~18 by authoring — 14 from armor mastery + 4 from the buff. More
+        // than that and "everything else will make him untouchable". The floor is an anti-ACCURACY
+        // tool only: it exists for fighting the classes that stack accuracy, not as a stat lean.
         LeveledPassive(EvadeMastery, "Evasion Mastery", BaseClass.Fighter,
-            "Passive. Dodge floor 10/20/30%, +20% crit chance, +20 evasion.",
-            new PassiveEffect(EvadeFloor: 0.10f, CritRate: 0.20f, Evasion: 20),
-            new PassiveEffect(EvadeFloor: 0.20f, CritRate: 0.20f, Evasion: 20),
-            new PassiveEffect(EvadeFloor: 0.30f, CritRate: 0.20f, Evasion: 20)),
-        // Archer identity now DATA: evade floor + +15% crit / +10 eva leans.
+            "Passive. Dodge floor 10/20/30%.",
+            new PassiveEffect(EvadeFloor: 0.10f),
+            new PassiveEffect(EvadeFloor: 0.20f),
+            new PassiveEffect(EvadeFloor: 0.30f)),
+        // Archer identity: evade floor + a ×1.15 crit / +10 eva lean. ⚠ Left in place when the
+        // rogue's twin lean was stripped above — he named only the ROGUE's Evasion Mastery, and
+        // this one is smaller (15/10 vs 20/20). Now that CritRate is a multiplier it is worth
+        // ~+2pp, not +15pp, so it no longer stacks into anything alarming. Flag it if he wants
+        // the archer held to exactly the ×1.2 of his ladder.
         LeveledPassive(Reflexes, "Reflexes", BaseClass.Fighter,
-            "Passive. Dodge floor 5/10/15%, +15% crit chance, +10 evasion.",
+            "Passive. Dodge floor 5/10/15%, ×1.15 crit rate, +10 evasion.",
             new PassiveEffect(EvadeFloor: 0.05f, CritRate: 0.15f, Evasion: 10),
             new PassiveEffect(EvadeFloor: 0.10f, CritRate: 0.15f, Evasion: 10),
             new PassiveEffect(EvadeFloor: 0.15f, CritRate: 0.15f, Evasion: 10)),

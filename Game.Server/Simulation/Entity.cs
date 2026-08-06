@@ -551,6 +551,13 @@ public class Entity
     // damage ratio on a CRIT only, before the multiplier — never a multiplier itself.
     // See docs/design/CritBlowAndDouble.md §3 and StatCalculator.CritFlatFactor.
     public float CritDamageFlat { get; set; }
+    // ----- Crit-RATE chain (his L2 model, docs/design/CritBlowAndDouble.md §5) -----
+    // crit = (base × MULT + FLAT), clamped once at the end of RecomputeDerived. Every passive
+    // and buff MULTIPLIES (×1.2, ×1.3), so a big base is what a multiplier rewards; every gear
+    // and flat source ADDS outside all of them, which is what carries the low-crit weapons.
+    // Accumulated through RecomputeDerived, then folded into CritChance — read CritChance, not these.
+    public float CritRateMult { get; set; } = 1f;
+    public float CritRateFlat { get; set; }
     // ----- Healer buff/effect layer (folded from buffs + passives in RecomputeDerived) -----
     public float CooldownReduction { get; set; } // spell reuse-delay reduction (0..cap)
     public float CritRateResist { get; set; }    // reduces an attacker's physical crit CHANCE vs you
@@ -1284,6 +1291,8 @@ public class Entity
         Immune = false;
         CooldownReduction = 0f;
         CritRateResist = 0f;
+        CritRateMult = 1f;
+        CritRateFlat = 0f;
         CritDmgResist = 0f;
         BowResist = 0f;
         CcResist = 0f;
@@ -1306,7 +1315,8 @@ public class Entity
         CancelResist = 0f;
         Accuracy = StatCalculator.Accuracy(EffectiveDex, Level);
         Evasion = StatCalculator.Evasion(EffectiveDex, Level);
-        CritChance = StatCalculator.PhysicalCritChance(EffectiveDex);
+        // Physical crit is set at the WEAPON step below (it multiplies the character base), not here.
+        CritChance = 0f;
         MagicCritChance = StatCalculator.MagicCritChance(EffectiveWit);
         InterruptResist = StatCalculator.InterruptResist(EffectiveWit, Level);
         MagicInterruptBonus = StatCalculator.MagicInterruptPower(EffectiveWit);
@@ -1610,11 +1620,16 @@ public class Entity
         // leans likewise ride the rogue/archer floor passives (stats-via-skills).
         var arch = Archetype;
         BasicAttackPower = Math.Max(1, AttackPower);
-        // Weapon shapes crit: blunt low, dual/bow high (WeaponType known post-equip). The factor
-        // scales the DEX crit; GEAR crit-rate adds on top (unscaled). Passive crit leans add + re-clamp.
-        CritChance = Math.Clamp(
-            CritChance * StatCalculator.WeaponCritFactor(WeaponType)
-            + critRatePct / 100f, 0f, 0.75f);
+        // Crit RATE — his L2 model (docs/design/CritBlowAndDouble.md §5):
+        //     crit = (110 × weaponFactor × dexMod × buffs × passives + flat) × debuffs × enemyLightArmor
+        // The WEAPON multiplies the character base (dagger/bow 13.2%, sword 8.8%, blunt 4.4%) and DEX
+        // is a mild multiplier on top — DEX is no longer the base. Passives and buffs multiply this
+        // (CritRateMult); GEAR crit-rate is FLAT and lands OUTSIDE every multiplier (CritRateFlat),
+        // which is the whole point of the model: multipliers only reward whoever already has a big
+        // base, so the flat term is what carries a blunt warrior. The chain is folded and clamped
+        // ONCE, at the end of this method — nothing in between may clamp it.
+        CritChance = StatCalculator.PhysicalCritBase(EffectiveDex, WeaponType);
+        CritRateFlat += critRatePct / 100f;
         Accuracy += StatCalculator.WeaponAccuracyBonus(WeaponType);
 
         // Skill-buff Max HP/MP (e.g. HP Boost line, Frenzy): flat add and/or % of max.
@@ -1699,7 +1714,7 @@ public class Entity
             if (sm.PDefPct != 0f) Defence = (int)(Defence * (1f + sm.PDefPct));
             if (sm.MDefPct != 0f) MagicDefence = (int)(MagicDefence * (1f + sm.MDefPct));
             InterruptResist += (int)sm.InterruptResist;
-            if (sm.CritRate != 0f) CritChance = Math.Clamp(CritChance + sm.CritRate, 0f, 0.75f);
+            if (sm.CritRate != 0f) CritRateMult *= 1f + sm.CritRate;   // ×1.2, not +20 points
             CritDamageBonus += sm.CritDamage;
             CritDmgResist += sm.CritDmgResist;
             CritRateResist += sm.CritRateResist;
@@ -1733,10 +1748,12 @@ public class Entity
                 MagicAttack += pe.Attack + (int)(MagicAttack * magPassivePct) + pe.MagAtk;
                 Evasion += pe.Evasion;
                 Accuracy += pe.Accuracy;
-                if (pe.CritRate != 0f) CritChance = Math.Clamp(CritChance + pe.CritRate, 0f, 0.75f);
+                if (pe.CritRate != 0f) CritRateMult *= 1f + pe.CritRate;   // ×1.2, not +20 points
                 CritDamageBonus += pe.CritDamage;
                 CritDamageFlat += pe.CritDamageFlat;
-                if (pe.MagicCritRate != 0f) MagicCritChance = Math.Clamp(MagicCritChance + pe.MagicCritRate, 0f, 0.5f);
+                // Magic crit stays ADDITIVE — his multiplicative ruling was explicitly about
+                // "dagger/bow", and a mage's base is a 4% WIT figure where a ×1.05 is nothing.
+                if (pe.MagicCritRate != 0f) MagicCritChance = Math.Clamp(MagicCritChance + pe.MagicCritRate, 0f, StatCaps.MagicCritRate);
                 HpRegenBonus += pe.HpRegen;
                 MpRegenBonus += pe.MpRegen;
                 if (pe.HpRegenPct != 0f) HpRegenMult *= 1f + pe.HpRegenPct;
@@ -1857,8 +1874,13 @@ public class Entity
         foreach (var buff in Buffs)
         {
             if (buff.Has(SkillEffect.BuffAccuracy)) Accuracy += (int)buff.Flat(SkillEffect.BuffAccuracy);
+            // A crit-rate buff's PERCENT multiplies (Focus ×1.30, Harmony ×1.75); its FLAT part
+            // lands outside every multiplier — "a flat 30 is flat 3%, not increased by buffs".
             if (buff.Has(SkillEffect.BuffCritRate))
-                CritChance = (CritChance + buff.Flat(SkillEffect.BuffCritRate)) * (1f + buff.Percent(SkillEffect.BuffCritRate));
+            {
+                CritRateMult *= 1f + buff.Percent(SkillEffect.BuffCritRate);
+                CritRateFlat += buff.Flat(SkillEffect.BuffCritRate);
+            }
             if (buff.Has(SkillEffect.BuffMagicCritRate))
                 MagicCritChance = (MagicCritChance + buff.Flat(SkillEffect.BuffMagicCritRate)) * (1f + buff.Percent(SkillEffect.BuffMagicCritRate));
             if (buff.Has(SkillEffect.BuffCritDamage))
@@ -1886,9 +1908,12 @@ public class Entity
             if (buff.Has(SkillEffect.BuffMagicFailFloor))
                 MagicFailFloor = Math.Max(MagicFailFloor, buff.Flat(SkillEffect.BuffMagicFailFloor) + buff.Percent(SkillEffect.BuffMagicFailFloor));
         }
-        // Clamp the buff-touched fractions to sane ranges.
-        CritChance = Math.Clamp(CritChance, 0f, 0.75f);
-        MagicCritChance = Math.Clamp(MagicCritChance, 0f, 0.5f);
+        // Fold the crit-RATE chain exactly once: base × (every passive/buff multiplier) + (every
+        // flat source), then the single cap — StatCaps.PhysicalCritRate = his 500 on the 0-1000
+        // scale. (The three 0.75 clamps that used to sit along the chain are gone: they clamped
+        // intermediate values and contradicted the cap the design has always stated.)
+        CritChance = Math.Clamp(CritChance * CritRateMult + CritRateFlat, 0f, StatCaps.PhysicalCritRate);
+        MagicCritChance = Math.Clamp(MagicCritChance, 0f, StatCaps.MagicCritRate);
         CritRateResist = Math.Clamp(CritRateResist, 0f, 1f);
         CritDmgResist = Math.Clamp(CritDmgResist, 0f, 0.9f);
         BowResist = Math.Clamp(BowResist, 0f, 0.9f);

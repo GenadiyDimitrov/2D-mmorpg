@@ -12,6 +12,68 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 0.50.0 — 2026-08-06 — Crit RATE is his L2 model; `Can Crit`/`Can Double` are exclusive
+
+Playtest-19 **M8 + M9**, closing the crit-rate/crit-damage thread. Spec:
+[design/CritBlowAndDouble.md §5](design/CritBlowAndDouble.md); measurements: `tools/BalanceMatrix`
+**§C2** (the crit chain decomposed) and **§C3** (the M8 flag audit).
+
+**The formula.** Crit rate is now his L2 model end to end:
+
+```
+crit = ( 110 × weaponFactor × dexMod × passives × buffs  +  flat ) × debuffs × enemyLightArmorMastery
+       clamped once at StatCaps.PhysicalCritRate = 500 (50%)
+```
+
+- **The weapon multiplies a character base of 110** (11%) instead of DEX being the base. The existing
+  `WeaponCritFactor` (1.2 / 0.8 / 0.4) already carried his 3:2:1, so dagger/bow land on **132**, sword
+  **88**, blunt **44** with no new table.
+- **DEX is a mild multiplier**, `1 + (DEX − 30) × 0.01`, linear and uncapped, centred on
+  `MobDexReference` so a normal mob is exactly ×1.00. It is deliberately the smallest of DEX's four
+  jobs — a DEX point is worth +1.0pp of accuracy but +0.13pp of a dagger's crit.
+- **Passives and buffs MULTIPLY** (`Entity.CritRateMult`); they used to add points.
+- **Flat sources land outside every multiplier** (`Entity.CritRateFlat`) — "a flat 30 is flat 3%, not
+  increased by buffs". Buff code did the opposite, `(crit + flat) × (1 + pct)`.
+- **`CritRateResist` became a multiplier.** As a subtraction it annihilated low-crit builds: an 11.4%
+  blunt warrior against a rogue's 0.15 light-armor resist critted **0.0%**; he now keeps 9.7%.
+- The three stray **0.75** clamps along the chain are gone — there is one clamp, and it reads
+  `StatCaps`. Magic crit likewise now clamps at its real `StatCaps.MagicCritRate` (0.20), not 0.5.
+  ⚠ Magic crit stays **additive**: his ruling named "dagger/bow", and a mage's base is a 4% WIT figure
+  where a ×1.05 would be nothing. Flagged, not silently changed.
+
+**M9 authoring.** `evade_mastery` is the **evade floor and nothing else** — the `+20% crit` and `+20
+evasion` are gone (the evasion budget was already closed at ~18 by armor + buff). Its crit moved to the
+rogue **Weapon Mastery at level 20**, as ×1.20 on all five rungs: he wanted the high crit rate early,
+not the spike at 32 that the old `+10/+10` at 32/36 produced.
+
+**M8 — `Can Crit` / `Can Double` are exclusive, opt-in flags.** New `SkillDef.CanCrit`. A physical skill
+now rolls a crit only if it says so; a `[Double]` skill never also crits; a skill with neither lands flat
+(it can still miss and still be blocked). A `[Double]` also stopped **reporting itself as a crit** —
+new `CombatOutcome.Double`, shown as `N x2` in its own colour, which is the whole point of the `[Double]`
+naming. §C3 audits every physical skill's flags against its own description; all 20 agree.
+
+**New: `SkillDef.CritRateMod`** — a per-skill crit-rate multiplier, L2's rule that a blow's landing
+chance was never the raw crit rate. Stab and Piercing Stab carry **×2.0**. This is the knob the rework
+is *paid* for with: it lifts the dagger's blow without touching basic-attack crit, buffs, or any other
+class.
+
+**🔑 §50h was a measuring error, not a balance finding.** `BalanceMatrix` never granted the archetype
+identity floor passive (`FloorPassiveFor`, auto-granted in game by `AutoLearnCoreSkills`), so it
+measured a rogue with **no Evasion Mastery** — hence "9.2% crit, 0.65× warrior DPS". With the passive
+in the model the *old* rogue was at **29.2% crit and 0.99× / 1.08× / 1.46× / 1.63×** the warrior at
+20/28/32/36: already at parity, then running away exactly at the level-32 spike he predicted. Both
+builders now grant it.
+
+Measured rogue-vs-warrior DPS, old → new: **0.99 → 0.92** (20), 1.08 → 1.00 (28), **1.46 → 1.10** (32),
+**1.63 → 1.22** (36). The 32+ spike is gone and the curve is smooth.
+
+⚠ **One authoring gap this exposes.** The flat term is the part of his model that carries the classes
+that cannot multiply — his "elegia heavy set +127". We have **no such source**: flat crit rate exists
+only as a random weapon attribute, and only on sword/dual/bow. So a 2H-blunt warrior sits at 4.4% with
+nothing to raise it. §C2 prints `flat = 0` on every row to keep this visible.
+
+No protocol bump (`CombatOutcome.Double` is an appended enum value), no db reset. Needs an APK.
+
 ## 0.49.0 — 2026-08-05 — Crit damage is FLAT, blows scale off it, `[Double]` is an ATK curve
 
 His 2026-08-05 ruling, built in one pass. Design: [design/CritBlowAndDouble.md](design/CritBlowAndDouble.md);

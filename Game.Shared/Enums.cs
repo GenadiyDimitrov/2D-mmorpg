@@ -39,7 +39,12 @@ public enum CombatOutcome
     Fail = 5,    // spells don't miss — they fail (level difference)
     Buff = 6,    // a buff/debuff was applied (Skill carries the name)
     Block = 7,   // physical hit was blocked by a shield (reduced damage)
-    ManaHeal = 8 // MP was restored (shown as +N MP, distinct from HP heal)
+    ManaHeal = 8, // MP was restored (shown as +N MP, distinct from HP heal)
+    // A "[Double]" physical SKILL fired (flat ×2, our name for L2's physical skill crit). It was
+    // reported as Crit until playtest-19 M8, which made a doubling Strike indistinguishable from
+    // a critting one — the whole point of the [Double] naming is that you can tell them apart.
+    // Appended, so an older client just falls through to the plain-Hit branch.
+    Double = 9
 }
 
 /// <summary>
