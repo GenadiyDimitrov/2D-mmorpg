@@ -247,6 +247,26 @@ own reaction to 45.3% — *"still not max."*
 `swap_atk_dex` maxed `-5` -> **DEX 23 -> x0.93**. A max-ATK warrior pays 7% of his crit rate — sword
 `88 -> 81.8`. Real, and small enough to be a trade rather than a trap.
 
+### 🛑 GUARDRAIL — do not inflate the DEX crit term
+> "dex main priority is not the crit rate as much as evasion and acc stats" (owner, 2026-08-06)
+
+DEX has FOUR jobs and crit is deliberately the smallest. One point of DEX is worth, to a dagger user:
+
+| DEX +1 | worth |
+|---|---|
+| **accuracy** | **+1.0 percentage point** of hit chance (`StatCaps.AvoidStatSlope` = 0.01) |
+| **evasion** | **+1.0 percentage point** of avoid |
+| attack speed | x1.0105, compounding (`AttackDexModifier`) |
+| **crit rate** | `dexMod +0.01` -> `132 x 0.01` = **+0.13 percentage points** |
+
+**A DEX point is ~7.5x more valuable to accuracy than to crit on a dagger, ~11x on a sword** — that
+ratio IS the design. If crit-from-DEX ever looks "too weak", it is not a bug; the mild multiplier is
+what stops DEX becoming the one stat everyone stacks.
+
+🔑 Consistency worth keeping: `AttackDexModifier` is `1.0105^(DEX-30)` — the same ~1%/point centred on
+the same 30 as `dexMod`. Attack speed and crit read the same way; accuracy and evasion are the flat,
+dominant 1 point = 1%.
+
 ### What this changes in the code
 1. 🔴 **Passives become MULTIPLIERS.** Today `CritChance + pe.CritRate` (additive points) at
    `Entity.cs:1702` and `:1736`. His model wants `x1.2` / `x1.5`, not `+20 points`.
