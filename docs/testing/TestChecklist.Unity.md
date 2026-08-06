@@ -1040,7 +1040,50 @@ never applies crit damage — it is a flat ×2 by design.
 **50h. ⚖ TUNING QUESTION, answer if you feel it:** a rogue now sits at **0.65× a warrior's DPS at
 20-28**, then **0.94× at 32** and **1.04× at 36** when the mastery's crit-rate rung lands. That early
 gap is the blow gate — full damage only on a crit, and crit is 9.2 % until 32. Is that the intended
-shape, or should the early rungs carry crit RATE too? -> 
+shape, or should the early rungs carry crit RATE too? -> **ANSWERED, playtest-19 M9** — move the +20 %
+crit rate from Armor Mastery @32 down to 20, strip crit/evasion off Evasion Mastery, and make crit rate
+MULTIPLICATIVE on the weapon base.
+
+---
+## 51. 🔴 PLAYTEST-19 QUEUE (2026-08-06) — the 0.48.0 pass
+
+The full report in his own wording is **`Playtest-19.md`** (transcribed from his answered
+`Open-Checklist-0.48.0.md`) and that is the authoritative list; this is the index. **Sections 46, 47 and
+48 are PLAYED AND GREEN** — five builds' worth — with four defects, below. Nothing in **M1-M14** is built.
+
+**Defects out of the play pass** — 🔴 **48g the Blessing Box consumes the box on a PARTIAL pick** (7 of
+10 ticked ⇒ box gone, 3 picks lost; `HandleSelectBoxItems` refuses only an EMPTY selection — require
+exactly `PickCount` on both ends) · 🔴 **46d `/ptinv` can't invite an out-of-sight player** ("no player x
+nearby") — B7 fixed the target frame, not the invite lookup · 🟠 **46m compare on a PENDANT opens a
+stud** (wrong worn-slot lookup; B2 is not closed) · 🟡 46o raise BOTH warehouse caps to max now, with a
+note to lower them when expansion lands · 🟡 46u the gear cut reads as only 3× harder to gear up —
+direction of travel is "eventually L2 rates"; the real fix is the coin CURVE.
+
+**Decisions** — 0a `evade_mastery`/`precision`/`anti_magic` all **STAY** (delete only `reflexes`,
+`archer_*_mastery`, `dispel_magic`, the Heavy Draw @24 grant) · 🔴 0b **delete the whole God layer**,
+`Race.God` / `ItemRarity.God` / `god_judgment` / `god_robes` included — *"nothing that can't be acquired
+in game"*; the debug rig becomes `/enchant <value>` + `/speed` · 0c keep all six Dash rungs · 0d Sprint
+L2 @40 is right · 0e `lb_*`/`wc_*` **still unanswered** · 0f G3 = **document + BalanceMatrix tables
+first**, then 2-5 real mobs as an experiment — not a migration.
+
+**My Finds** — 🔴 **M1 the ±20 lockout is REMOVED by his ruling** — the class floors and the 5/95 band
+must be active at every gap (a level-20 rogue still dodges his 10 % in a level-90 field), because
+`ExpCurve.GapZero = 13` already pays zero exp and zero drops seven levels earlier. Swap steps 2/3 of
+`ResolveAvoidChance`; `CombatResolution.md` rewritten · M2 `/block`, `/block <name>`, `/block-w`, `/block-g`, `/decline-t`, `/decline-p` + the **Options
+window** that doesn't exist (= B11) · 🔴 **M3 a live tick crash** — "Collection was modified" in
+`Simulate()`'s `foreach (var entity in _world.Entities.Values)`, still raw at `GameLoopService.cs:5665`
+· 🔴 M4 a dead character can still move client-side (rubber-banded), can't be party-invited (should be
+allowed), can't be traded (correct, needs a message) · M5 **the tutorial chain "Welcome To The `<Game>`
+World"** — 15 steps, meet every NPC, newbie gear at Dolan, bound consumables at the end; wraps the three
+class quests without gating them · 🔴 M6 newbie gear untradable/unsellable/**30-day timed** (= C2) ·
+🔴 M7 **Heavy Draw still granted @24** and must go above 40 too; after 40 the melee rogue keeps only
+Evasion Mastery and the archer gets none · 🔴 **M8 `Can Crit` / `Can Double` must be exclusive** — a
+`[Double]` Strike is critting · 🔴 **M9 the rogue identity rework**: Evasion Mastery becomes floor-ONLY,
+the +20 % crit moves to 20, **crit rate becomes MULTIPLICATIVE**, evasion budget stays at ~18 ·
+M10 ✅ the "-20 % P.Def passive" is **`Two-Hand Mastery`** (`Skills.WeaponMasteries.cs:77-81`) → **-10 %**;
+mage MP empties in 2-3 minutes (re-open the MP-potion hold) · M11 one DAILY Apothecary quest offered/turned in at every
+town · M12 a GK jump lands you **beside** the destination GK (+150/+150) · M13 the **[Talk]** button, and
+movement LOCKED while an NPC window is open (= C9) · M14 cap buyback at 10-15 items.
 
 ---
 ## Known gaps (NOT bugs — not built yet in the Unity client)

@@ -1,11 +1,19 @@
 # Roadmap — compact view (what's left, what depends on what)
 
-A one-screen digest of [Roadmap.md](Roadmap.md). Updated **2026-08-05 (after playtest-18)**.
+A one-screen digest of [Roadmap.md](Roadmap.md). Updated **2026-08-06 (after playtest-19)**.
 Full history: [CHANGELOG.md](CHANGELOG.md). The checklists: [testing/TestChecklist.Unity.md](testing/TestChecklist.Unity.md)
 (the phone) and [testing/TestChecklist.md](testing/TestChecklist.md) (server-side; its client steps
 predate the WPF harness being dropped in 0.42.8 — read them as "on the phone").
 
 ## Where things stand
+
+🆕 **Playtest-19 (2026-08-06, 0.48.0) cleared FIVE builds in one pass.** 0.46.0, 0.47.0 and 0.48.0 had
+never been played at all; §46, §47 and §48 are now green, along with every carried-forward item that was
+still blank in §37/36/34/33/32. **Four defects** came out of it — the Blessing Box eats a partial pick
+(48g), `/ptinv` still can't invite out of sight (46d), compare on a pendant opens a stud (46m), and a
+"Collection was modified" crash in the tick loop that is **still live**. Everything else he sent back is
+*design*: the God layer goes entirely, the rogue's crit/evasion identity is rewritten, and there is a
+tutorial-quest spec. Full queue: [testing/Playtest-19.md](testing/Playtest-19.md) / §51.
 
 **Playtest-17 (2026-08-03, server 0.45.0) cleared the backlog.** Six versions of unplayed work — §36
 mob regen, §38 the account warehouse, §39 repeatable quests, §40 the quest window, §41 the mob cast bar,
@@ -43,6 +51,44 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
 
 ## 🔴 NOW — the next things
 
+0. 🆕 **The playtest-19 queue** ([testing/Playtest-19.md](testing/Playtest-19.md), §51) — this is the
+   live one and it outranks everything below it:
+   1. **The four defects.** 48g (a 250k box spent on a partial pick — `HandleSelectBoxItems` refuses
+      only an EMPTY selection; require exactly `PickCount` server- and client-side) · 46d the party
+      INVITE path still does a proximity lookup · 46m the worn-slot lookup picks a stud for a pendant ·
+      **the tick crash**: `foreach (var entity in _world.Entities.Values)` in `Simulate()` is still raw
+      at `GameLoopService.cs:5665` (and `:895`) and something mutates the dict inside the loop.
+   2. 🔴 **The combat rulings** — three of them, all decided 2026-08-06:
+      - **`M1` the ±20 lockout goes.** Swap steps 2 and 3 of `StatCalculator.ResolveAvoidChance`: level
+        gap first, then clamp into `[max(.05, evadeFloor), min(.95, 1 − hitFloor)]` **last**, so the
+        floors and the 5/95 band are active at every gap. `LevelGap()` is untouched. His reason holds —
+        `ExpCurve.GapZero = 13` already pays **zero exp and zero drops** seven levels earlier.
+        `CombatResolution.md` is already rewritten. ⚠ Nothing is unhittable any more, by design.
+      - **`M9` the rogue identity rework** — Evasion Mastery becomes floor-ONLY (strip +20 % crit and
+        +20 evasion), the crit rung moves from Armor Mastery @32 down to **20**, and **crit rate becomes
+        MULTIPLICATIVE on the weapon base**. His answer to §50h. ⚠ Research says L2 went multiplicative
+        (C1-C2) → **additive + a hard 500/50 % cap** (C3); on a 12 % dagger base his version gives 14.4 %
+        where additive gives 32 %, so it *lowers* rogue DPS and barely delivers "higher crit early".
+        **Measure the 20-40 curve in BalanceMatrix first**, and expect to pay for it in the dagger base
+        or the blow's own modifier (which is how L2 pays for it).
+      - **`M10` `Two-Hand Mastery` `DefencePct` −0.20 → −0.10**, all five rungs
+        (`Skills.WeaponMasteries.cs:77-81`) — a 2H warrior in heavy must not sit under a robed mage.
+      With them: **`M8`** `Can Crit` / `Can Double` as an exclusive flag check (a `[Double]` Strike is
+      critting today), and **`M7`** Heavy Draw's @24 grant plus the 40+ discipline placement.
+   3. **The deletion, now correctly scoped (`0a`/`0b`).** Delete `reflexes`, `archer_armor_mastery`,
+      `archer_weapon_mastery`, `dispel_magic`, the Heavy Draw @24 grant — **and the whole God layer**,
+      `Race.God` / `ItemRarity.God` / `god_judgment` / `god_robes` included. His rule: *"nothing that
+      can't be acquired in game"*; the debug rig becomes `/enchant <value>` + `/speed`, so sweep the
+      admin menu first. `evade_mastery` / `precision` / `anti_magic` / `class_balance_*` all **stay**.
+   4. **The friction list** — `M13` the [Talk] button + movement locked while an NPC window is open
+      (C9) · `M12` a GK jump lands beside the destination GK · `M11` one daily Apothecary quest offered
+      by every town · `M14` buyback capped · `M4` a dead character can't move client-side, *can* be
+      party-invited, still can't trade · `M2` `/block*` + `/decline-*` and the **Options window** they
+      belong in (B11) · `46o` both warehouse caps to max now.
+   5. **Answers owed him** — `M1` the ±20 level lockout is working as designed (keep it, but make the
+      client say why?) · `M10` there is **no** −20 % P.Def Champion passive in the code, ask what he is
+      reading · `0e` `lb_*`/`wc_*` he never answered · `M5`/`M6` the tutorial chain + 30-day bound
+      newbie gear are a scoped quest project (C2/C13), not a quick fix.
 1. ~~**Publish 0.45.0 and play §36 + §40-43**~~ — **DONE, 2026-08-03.** See the paragraph above; the
    queue it produced is [testing/Playtest-17.md](testing/Playtest-17.md) / §44. Still-unreached items
    are listed at the bottom of that file (§37 partial-stack trading is top of them — the duo-icon rig
