@@ -125,3 +125,75 @@ The headline numbers at the five rungs (20/24/28/32/36):
 The stats window gained a `Crit dmg flat +N` / `[Double] N%` row (the Double figure is derived
 client-side from the ATK stat, so it costs no protocol). `StatsUpdate.CritDamageFlat` is a trailing
 optional field — no protocol bump, no db reset.
+
+---
+
+## 5. CRIT **RATE** — the L2 model (owner spec, 2026-08-06, playtest-19 M9). NOT BUILT.
+
+His formula, on L2's 0-1000 scale (**1000 = 100%**, so the classic cap **500 = 50%**):
+
+```
+crit = (base_weapon_rate x buffs x passives + flat_bonuses) x debuffs x enemy_light_armor_mastery
+```
+
+**Weapon bases** — his own derivation `44 x weapon_crit / 4`, i.e. `11 x weapon_crit`:
+
+| weapon | L2 `weapon_crit` | base (1000 scale) | = % |
+|---|---|---|---|
+| blunt / fist | 4 | 44 | 4.4 |
+| sword / dual | 8 | 88 | 8.8 |
+| dagger / bow | 12 | 132 | 13.2 |
+
+**His worked ladder** (every number below reproduces from the formula):
+
+| build | chain | result |
+|---|---|---|
+| dagger, 1 buff | 132 x1.3 | 171 |
+| + rogue passive x1.2 | | 205 — *where bows stop* |
+| melee rogue 50+, x1.5 passive instead | 132 x1.3 x1.5 | 257 |
+| + Harmony x2 | | **514 -> capped 500 = 50%** |
+| bow + Harmony | 205 x2 | **410 = 41%** |
+| sword warrior + buff + Harmony | 88 x1.3 x2 | 228 |
+| + "elegia heavy set" **flat +127** | | **355 = 35.5%** |
+| blunt warrior + buff + Harmony | 44 x1.3 x2 | 114 |
+| + flat +127 | | **241 = 24.1%** |
+
+🔑 **Why the flat term exists, and it is the whole point of the model:** multipliers reward whoever
+already has a big base, so a blunt warrior can never multiply his way to a usable crit rate. The heavy
+set's **flat** +127 is what carries the classes that do not live on crits — and it is worth ~3x more to
+the blunt than to the dagger. Keep a flat gear source of crit rate; do not "simplify" it into a
+percentage.
+
+### What our code already matches
+- **The weapon ratios are ALREADY his.** `StatCalculator.WeaponCritFactor` is dual/bow **1.20**, sword
+  **0.80**, blunt **0.40** — the same 3 : 2 : 1 as 132 : 88 : 44. Nothing to change.
+- **Buffs already have a multiplicative path.** `Entity.RecomputeDerived` does
+  `CritChance = (CritChance + flat) x (1 + percent)` for `BuffCritRate` — flat-then-percent, exactly the
+  shape of his formula.
+- A **flat** gear source exists: `AttributeType.CritRate`.
+- A defender-side term exists: `CritRateResist`, already carried by the rogue's LIGHT armor mastery
+  (0.15) = his `enemy_light_armor_mastery`.
+
+### What has to change
+1. 🔴 **Passives become MULTIPLIERS.** Today `CritChance + pe.CritRate` (additive points) at
+   `Entity.cs:1702` and `:1736`. His model wants `x1.2` / `x1.5`, not `+20 points`.
+2. 🔴 **`CritRateResist` becomes a MULTIPLIER, not a subtraction.** Today the resolver does
+   `chance - target.CritRateResist` (`GameLoopService.cs:9481, 9523, 9554, 9572`). Subtraction annihilates
+   low-crit builds — a 11.4% blunt warrior against a 0.15-resist rogue crits **0%**; as a multiplier he
+   keeps 9.7%. This is the same reasoning as the flat term above.
+3. ⚖ **The cap: ours is 0.75, his model assumes 0.50.** `StatCaps.PhysicalCritRate` is 0.50 but it only
+   clamps the DEX step; passives, buffs and the final clamp all use **0.75** (`Entity.cs:1702, 1736,
+   1890`). His ladder is authored against a 500 cap — a maxed dagger lands at 514 and is *supposed* to
+   be capped. **Needs his call.** Recommendation: go to 0.50 with him, or the top of his ladder loses
+   its ceiling and the dagger keeps climbing.
+4. ⚖ **Where DEX goes.** Today the base *is* DEX: `PhysicalCritChance(dex) = 0.05 + dex x 0.0009`, then
+   `x WeaponCritFactor`. His formula starts from a flat weapon base and never mentions DEX. L2 keeps a
+   DEX modifier as a **multiplier on the weapon base**, which is also the smallest change here:
+   `base_weapon x dexMod x buffs x passives + flat`. **Needs his call**, but that is my recommendation —
+   dropping DEX from crit entirely would strip the rogue's main stat of its identity.
+
+⚠ **Measure the 20-40 rogue curve in `tools/BalanceMatrix` before AND after** — see §50h. Multiplicative
+alone *lowers* rogue DPS at low level (x1.2 on a 13.2% base is +2.6 points, where the old additive +20%
+was +20). His ladder only reaches 50% once Harmony and the 50+ x1.5 passive exist, so the early game
+must be re-checked, and the price may have to be paid in the blow's own modifier (L2 gave Mortal/Deadly
+Blow ~+20% of their own).
