@@ -174,23 +174,79 @@ percentage.
 - A defender-side term exists: `CritRateResist`, already carried by the rogue's LIGHT armor mastery
   (0.15) = his `enemy_light_armor_mastery`.
 
-### What has to change
+### THE SPEC — his final numbers, 2026-08-06
+
+```
+crit = ( 110 x weaponFactor x dexMod x buffs x passives + flat ) x debuffs x enemyLightArmorMastery
+       clamp 0 .. 500 (50%).   Magic crit clamps at 200 (20%).
+```
+
+**1. `CHARACTER_BASE = 110` (11%), and the WEAPON multiplies it** — his *"character crit rate base is
+110"*. `WeaponCritFactor` already carries the right multipliers, so this falls out with no new table:
+
+| weapon | factor (existing) | 110 x factor | = % |
+|---|---|---|---|
+| dagger / bow (`Dual`, `Bow`) | 1.20 | **132** | 13.2 |
+| sword / 2H sword (`Sword`) | 0.80 | **88** | 8.8 |
+| blunt / 2H blunt (`Blunt`) | 0.40 | **44** | 4.4 |
+
+(`WeaponType.Base()` folds `TwoHandedSword -> Sword`, `TwoHandedBlunt -> Blunt`, so a 2H gets its 1H
+factor. Daggers ARE `Dual` in this codebase.)
+
+**2. `dexMod` = 1% per point, centred on 30** — his table `20 = -10%, 25 = -5%, 30 = 0, 35 = +5%,
+40 = +10%`, i.e. **`dexMod = 1 + (EffectiveDex - 30) x 0.01`**. He rejected the old "5% + 1% per 10" as
+too heavy: *"the dex alters most stats than any other mainStat - as, crt, acc, Eva."*
+🔑 **30 is also `MobDexReference`**, so a normal mob sits at exactly x1.00 — the neutral opponent.
+
+**3. `flat` lands OUTSIDE every multiplier** — *"a flat 30 is flat 3%, not increased by buffs."*
+⚠ Our buff code does the opposite today (`(crit + flat) x (1 + pct)`, `Entity.cs:1861`).
+
+**4. The cap is 500 = 50% physical, 200 = 20% magic.** His call.
+
+**His worked archer:** Elf rogue with a bow, DEX 40 -> `132 x 1.1 x 1.3 x 2 x 1.2 = 453` (**45.3%**) vs
+`411` (41.1%) with no DEX bonus — *"a good 4.2%, still not max."*
+
+### The DEX table he asked for (`StatCalculator.GetBaseStats`)
+
+⚠ **DEX is per RACE + BASE CLASS only — there is no archetype split.** A Human Knight, Champion and
+Assassin all sit at DEX 30; a rogue gets nothing for being a rogue. **The only DEX identity is being an
+ELF.**
+
+| race + base class | DEX | `dexMod` |
+|---|---|---|
+| **Elf fighter** | **35** | x1.05 |
+| **Human fighter** | **30** | x1.00 *(= the mob reference)* |
+| **Ork fighter** | **26** | x0.96 |
+| Elf mage | 24 | x0.94 |
+| Human mage | 21 | x0.91 |
+| Ork mage | 20 | x0.90 |
+
+So his *"an elf with 36 and +5 maxes it over 40"* is the **Elf fighter at 35**, +5 from gear -> 40 ->
+x1.10. Reachable: the light `Nightleaf` sets carry `Dex +3` and `+1`. ⚠ And the other direction —
+**heavy sets carry `Dex -2` / `-1`**, so a heavy warrior sits BELOW neutral (30 - 2 = 28 -> x0.98).
+
+⚖ **One question left:** does `dexMod` continue linearly past his table (45 -> x1.15, 15 -> x0.85) or
+clamp at +-10%? Recommendation: **linear, uncapped** — the 500 ceiling already contains the top and a
+clamp adds a cliff for nothing.
+
+### What this changes in the code
 1. 🔴 **Passives become MULTIPLIERS.** Today `CritChance + pe.CritRate` (additive points) at
    `Entity.cs:1702` and `:1736`. His model wants `x1.2` / `x1.5`, not `+20 points`.
 2. 🔴 **`CritRateResist` becomes a MULTIPLIER, not a subtraction.** Today the resolver does
    `chance - target.CritRateResist` (`GameLoopService.cs:9481, 9523, 9554, 9572`). Subtraction annihilates
    low-crit builds — a 11.4% blunt warrior against a 0.15-resist rogue crits **0%**; as a multiplier he
-   keeps 9.7%. This is the same reasoning as the flat term above.
-3. ⚖ **The cap: ours is 0.75, his model assumes 0.50.** `StatCaps.PhysicalCritRate` is 0.50 but it only
-   clamps the DEX step; passives, buffs and the final clamp all use **0.75** (`Entity.cs:1702, 1736,
-   1890`). His ladder is authored against a 500 cap — a maxed dagger lands at 514 and is *supposed* to
-   be capped. **Needs his call.** Recommendation: go to 0.50 with him, or the top of his ladder loses
-   its ceiling and the dagger keeps climbing.
-4. ⚖ **Where DEX goes.** Today the base *is* DEX: `PhysicalCritChance(dex) = 0.05 + dex x 0.0009`, then
-   `x WeaponCritFactor`. His formula starts from a flat weapon base and never mentions DEX. L2 keeps a
-   DEX modifier as a **multiplier on the weapon base**, which is also the smallest change here:
-   `base_weapon x dexMod x buffs x passives + flat`. **Needs his call**, but that is my recommendation —
-   dropping DEX from crit entirely would strip the rogue's main stat of its identity.
+   keeps 9.7%. Same reasoning as the flat term above.
+3. ✅ **Every clamp drops to the StatCaps constant.** Three physical clamps read **0.75** today
+   (`Entity.cs:1702, 1736, 1890`) even though `StatCaps.PhysicalCritRate` already says 0.50 — it only
+   clamped the DEX step. Magic clamps at `:1739` and `:1891` read 0.5 against
+   `StatCaps.MagicCritRate = 0.20`. Make them all read the constants.
+4. ✅ **DEX becomes a multiplier, not the base.** `PhysicalCritChance(dex) = 0.05 + dex x 0.0009` is
+   replaced by `110 x weaponFactor x dexMod`. 🔑 **Side effect worth knowing: this RAISES everyone's
+   early crit.** A human fighter with a dagger goes `7.7% x 1.2 = 9.2%` -> **13.2%**, and 9.2% is exactly
+   the number §50h blamed for the rogue's early blow gate — so the base change pays back part of what
+   going multiplicative costs.
+5. ⚠ **`flat` moves outside the buff multiplier** (`Entity.cs:1861`): `(crit + flat) x (1 + pct)` must
+   become `crit x (1 + pct) + flat`.
 
 ⚠ **Measure the 20-40 rogue curve in `tools/BalanceMatrix` before AND after** — see §50h. Multiplicative
 alone *lowers* rogue DPS at low level (x1.2 on a 13.2% base is +2.6 points, where the old additive +20%
