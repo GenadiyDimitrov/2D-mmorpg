@@ -40,8 +40,7 @@ public static partial class ClassSkillTables
                 new ClassSkill(Strike, 15, SkillLevel: 3),
                 new ClassSkill(Stab,   15, SkillLevel: 3),
                 new ClassSkill(Shot,   15, SkillLevel: 3));
-        ClassSkills.Register(Race.God, BaseClass.Fighter, null,
-            new ClassSkill(PowerStrike, 1), new ClassSkill(WarCry, 1));
+        // (The God base-fighter line was deleted 2026-08-07 with the rest of the God layer.)
 
         // --- Base Mage --- (1st-class path, levels 1/7/14). Magic Bolt Lv.1 and Robe
         // Mastery Lv.1 are auto-granted; everything below is learned with SP.
@@ -63,8 +62,7 @@ public static partial class ClassSkillTables
                 new ClassSkill(SelfHeal, 14, SkillLevel: 3),         // self heal power 107
                 new ClassSkill(MasteryRobe, 14, SkillLevel: 3),      // +9 P.Def
                 new ClassSkill(WeaponMastery, 14));                  // +4 M.Atk / +2 P.Atk
-        ClassSkills.Register(Race.God, BaseClass.Mage, null,
-            new ClassSkill(MagicBolt, 1), new ClassSkill(Weakness, 1), new ClassSkill(Heal, 1));
+        // (The God base-mage line was deleted 2026-08-07 with the rest of the God layer.)
 
         // Second-class kits live in the per-line partial files (RegisterXxx()).
         RegisterSecondClasses();

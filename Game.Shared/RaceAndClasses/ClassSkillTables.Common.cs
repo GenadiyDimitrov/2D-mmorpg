@@ -14,7 +14,7 @@ public static partial class ClassSkillTables
     // static ctor; here we provide the body.
     static partial void RegisterSecondClasses()
     {
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork, Race.God })
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
         {
             // Fighter archetypes — 2nd-class learn cadence: 20, 24, 28, 32, 36.
             // Tank (CSV tank 20-35): Heavy Armor + Shield Mastery, Tank Anti-Magic, any-weapon
@@ -98,7 +98,7 @@ public static partial class ClassSkillTables
                 // and the authored rogue CSV stops at 36. ⚠ 40 is MY pick: it is the next rung on this
                 // block's own 4-level cadence and the level the 3rd-class disciplines already sit at.
                 // One line to move when his level-40 CSV lands; without it level 2 is unreachable.
-                new ClassSkill(Sprint, 40, SkillLevel: 2),
+                //
                 // The ARCHER MERGE (2026-07-29) folded the old Archer 2nd class in here. Its whole
                 // table was these two lines — which is why archers were hollow — while the Rogue block
                 // above already taught BOTH the Stab (dagger) and Shot (bow) ladders. So the merge is
@@ -111,7 +111,13 @@ public static partial class ClassSkillTables
                 // catalog: five 3rd-class disciplines still grant it under their own names
                 // (Shadowstep, Creeping Toxin, Steady Aim, Nullstep, Blood Draw), so deleting the
                 // definition would hollow out those disciplines instead.
-                new ClassSkill(PowerShot, 24));
+                //
+                // 🔴 Heavy Draw (`PowerShot`) @24 was the LAST survivor of that pair and is GONE as of
+                // 2026-08-07 (playtest-19 M7): *"I continue to get Heavy Draw on a rogue 24lvl -
+                // remove it - remove it from after 40lvl as well"*. Same reasoning as Battle Fury —
+                // never in the authored rogue CSV, inherited wholesale from the dead Archer table.
+                // ⚠ The SkillDef STAYS in the catalog (Skills.Fighter.cs); see the note there.
+                new ClassSkill(Sprint, 40, SkillLevel: 2));
 
             // Nuker (CSV nuker 20-35): Elemental Bolt (replaces Magic Bolt), Quick Bolt,
             // Vampiric Bolt (continues, lvls 2-5), Restore Spirit, Mage Armor Mastery,
@@ -159,8 +165,7 @@ public static partial class ClassSkillTables
             }
         }
 
-        // Healer (cleric) 2nd-class kit — authored separately because Holy Bolt takes a
-        // per-race NAME and God is intentionally excluded (not a playable race/class).
+        // Healer (cleric) 2nd-class kit — authored separately because Holy Bolt takes a per-race NAME.
         RegisterHealers();
 
         // Per-line extras / overrides (authored in their own files).
@@ -168,8 +173,7 @@ public static partial class ClassSkillTables
     }
 
     /// <summary>2nd-class Healer kit (lvls 20/25/30/35), shared by Human/Elf/Ork. Holy
-    /// Bolt is ONE skill with a per-race DISPLAY NAME (Holy/Moonlight/Spirit Bolt). God
-    /// is skipped on purpose — it's a test-only dummy, not a playable race/class. Force,
+    /// Bolt is ONE skill with a per-race DISPLAY NAME (Holy/Moonlight/Spirit Bolt). Force,
     /// Focus, Frenzy, Might lvl 4 (vampirism) and the data-driven Armor Mastery arrive in
     /// later increments.</summary>
     private static void RegisterHealers()

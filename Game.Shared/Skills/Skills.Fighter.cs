@@ -590,6 +590,12 @@ public static partial class SkillCatalog
             Category: SkillCategory.Physical,
             Description: "Two rapid dagger slashes. Short cast and cooldown."),
 
+        // ⚠ ORPHANED ON PURPOSE since 2026-08-07 (playtest-19 M7). Heavy Draw has NO learn
+        // assignment anywhere: the rogue's @24 grant and the three ranged-discipline renames
+        // ("Piercing Shot" / "Snare Shot" / "Rending Shot") were all removed on his ruling —
+        // *"remove it - remove it from after 40lvl as well"*. The DEFINITION stays: he ruled on the
+        // GRANTS, not the skill, and the level-40 bow CSV is the natural place for it to come back.
+        // Do not "clean this up" as dead code without asking him.
         new(PowerShot, "Heavy Draw", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: 16, CastTicks: 8, CooldownTicks: 40, Range: 900, Power: 70,
             Category: SkillCategory.Physical,

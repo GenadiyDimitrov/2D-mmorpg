@@ -11,7 +11,8 @@ public static partial class SkillCatalog
     public const string TankArmorMastery    = "tank_armor_mastery";
     public const string WarriorArmorMastery = "warrior_armor_mastery";
     public const string RogueArmorMastery   = "rogue_armor_mastery";
-    public const string ArcherArmorMastery  = "archer_armor_mastery";
+    // (`archer_armor_mastery` — deleted 2026-08-07, playtest-19 `0a`/G1. Orphaned by the
+    //  archer→rogue merge; a bow character wears the ROGUE light mastery. Don't re-add it.)
     public const string NukerArmorMastery   = "nuker_armor_mastery";
 
     /// <summary>Rogue armor level. The CSV splits in two, exactly like the warrior's:
@@ -125,14 +126,8 @@ public static partial class SkillCatalog
                 RogueArmor(new StatMods(MpRegenPct: 0.8f, HpRegenPct: 0.2f, PDef: 25), lightEva: 13, lightSpeedPct: 0.06f),
             }),
 
-        // Archer — light bonus (crit lean). Heavy/robe/none inert: no fighter penalty, just no bonus.
-        ArmorMasteryPassive(ArcherArmorMastery, BaseClass.Fighter, new ArmorMasteryProfile(
-            Robe:  default,
-            // NOTE: the old profile used DefPerLevel: 0.5f (per-CHARACTER-level def); StatMods has
-            // no per-level field, so it's baked to a flat PDef here (~mid of the archer band). Archer
-            // mastery numbers are placeholders — retune with the rest. See docs/design/StatMods.md.
-            Light: new StatMods(AtkSpeedPct: 0.3f, CritRate: 0.05f, CritDamage: 0.2f, Evasion: 4, Accuracy: 4, PDef: 15),
-            Heavy: default)),
+        // (Archer Armor Mastery DELETED 2026-08-07 with its id — the rogue light mastery above is
+        //  what a bow character wears since the merge.)
 
         // Nuker — Mage Armor Mastery (CSV nuker 20-35): in ROBE, +MP regen, +P.Def, +max MP
         // and a "mpWhenRestored" bonus (extra MP each time Restore Spirit lands). Light/Heavy

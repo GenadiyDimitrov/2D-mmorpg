@@ -43,7 +43,8 @@ public static partial class SkillCatalog
     //      (auto-granted at the class-change milestone, level = tier 1/2/3). The floor
     //      VALUES live in the SkillDef Levels, not in code. See FloorPassiveFor. ----
     public const string EvadeMastery = "evade_mastery"; // Rogue   10/20/30%
-    public const string Reflexes     = "reflexes";      // Archer    5/10/15%
+    // (`reflexes` — the Archer floor — deleted 2026-08-07: no class carries Archetype.Archer after
+    //  the archer→rogue merge, so it was granted to nobody. See the CommonSkills() note.)
     public const string Precision    = "precision";     // Warrior 10/20/30% hit floor
     public const string AntiMagic    = "anti_magic";    // Tank    10/15/20% magic fizzle
     // ---- HEALING-potion skills. The potion ITEM names one of these; the SKILL does the
@@ -150,8 +151,7 @@ public static partial class SkillCatalog
     // of the two lines put it there, even though they share the family.
     public const string BuffSprint1 = "buff_sprint_1";
     public const string BuffSprint2 = "buff_sprint_2";
-    // ---- Learnable HP Boost — ONE multi-level skill (3 levels: +5/+15/+35%). ----
-    public const string HpBoost = "hp_boost";
+    // (`hp_boost` — deleted 2026-08-07 with the God layer, playtest-19 `0b`.)
     // ============================ TEST ONLY — DELETE ME ============================
     // A 1000-power heal, auto-granted to EVERY character at level 76, purely to calibrate the heal
     // formula against the owner's target (a 1000-power heal should land ~2000 for a healer at 76).
@@ -278,8 +278,19 @@ public static partial class SkillCatalog
         _ => cls == BaseClass.Mage ? BalanceMage : BalanceFighter,   // base class, pre-2nd
     };
 
+    /// <summary>Every Class Balance id. ⚠ While the hook is commented out (owner, 2026-08-07) this
+    /// is the CLEANUP list: AutoLearnCoreSkills strips these from anyone who was granted one before
+    /// the ruling, because a learned id with no <see cref="SkillDef"/> behind it has nothing to
+    /// render. Uncommenting the defs in CommonSkills() and the grant makes it a no-op again.</summary>
+    public static readonly string[] ClassBalanceIds =
+    {
+        BalanceTank, BalanceWarrior, BalanceRogue, BalanceArcher,
+        BalanceNuker, BalanceHealer, BalanceFighter, BalanceMage,
+    };
+
     /// <summary>A Class Balance passive: one level, an all-zero <see cref="PassiveEffect"/>.
-    /// Fill in fields here (PveBasicDamagePct, PvpMagicDamagePct, AttackPct, …) to tune a class.</summary>
+    /// Fill in fields here (PveBasicDamagePct, PvpMagicDamagePct, AttackPct, …) to tune a class.
+    /// ⚠ Currently unreferenced on purpose — see the commented block in CommonSkills().</summary>
     private static SkillDef BalancePassive(string id, string name, BaseClass cls) => new(
         id, name, cls, SkillEffect.None,
         MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
@@ -289,17 +300,27 @@ public static partial class SkillCatalog
 
     /// <summary>The identity floor passive an archetype receives at its current class
     /// tier (milestones 20/40/76) — as (skill id, skill LEVEL), or null. Granted in
-    /// AutoLearnCoreSkills. The floor VALUES live in the SkillDef Levels, not in code.</summary>
-    public static (string Id, int Level)? FloorPassiveFor(Archetype? archetype, int level)
+    /// AutoLearnCoreSkills. The floor VALUES live in the SkillDef Levels, not in code.
+    ///
+    /// ⚠ <paramref name="discipline"/> matters for the ROGUE only (playtest-19 M7, owner:
+    /// *"rogue leave only the evasion mastery to the melee disciplines after 40 .. the archer
+    /// should not have evasion mastery after 40 .. the 10% are ok"*). Since the archer→rogue
+    /// merge one 2nd class covers both weapons, so the bow/dagger split IS the discipline: a
+    /// RANGED rogue discipline is capped at tier 1 (the 10% floor it already had at 20) and
+    /// never sees tier 2 @40 or tier 3 @76; a melee rogue discipline keeps the full ladder.</summary>
+    public static (string Id, int Level)? FloorPassiveFor(Archetype? archetype, int level,
+        Discipline? discipline = null)
     {
         int tier = level >= 76 ? 3 : level >= 40 ? 2 : level >= 20 ? 1 : 0;
         if (tier == 0) return null;
         return archetype switch
         {
-            Archetype.Rogue   => (EvadeMastery, tier),
-            Archetype.Archer  => (Reflexes, tier),
+            Archetype.Rogue   => (EvadeMastery,
+                discipline is { } d && Disciplines.IsRanged(d) ? 1 : tier),
             Archetype.Warrior => (Precision, tier),
             Archetype.Tank    => (AntiMagic, tier),
+            // Archetype.Archer gets nothing: `reflexes` is deleted and no 2nd class carries
+            // Archer any more. A bow character is a Rogue whose discipline is ranged (above).
             // Mages get NO auto magic-fail floor — it comes from their LEARNED Anti-Magic
             // (anti_magic_mage), available to every mage class.
             _ => null
@@ -498,24 +519,8 @@ public static partial class SkillCatalog
         DashPotion(PotDashL, "Dash Potion (Grand)",    BuffDashL, 55),
         DashPotion(PotDashM, "Dash Potion (Supreme)",  BuffDashM, 60),
 
-        // ---- Learnable HP Boost — ONE skill, 3 levels (+5 / +15 / +35% Max HP) ----
-        new(HpBoost, "HP Boost", BaseClass.Mage, SkillEffect.BuffHp,
-            MpCost: 25, CastTicks: 10, CooldownTicks: 5, Range: 0, Power: 0,
-            DurationTicks: 6000, BuffKey: "hp_boost", Rank: 1,
-            Category: SkillCategory.Buff,
-            Description: "Raises your Max HP for a time.",
-            Levels: new[]
-            {
-                new SkillLevel(MpCost: 25, SpCost: 1000,
-                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffHp, 0.05f) },
-                    Description: "Raises Max HP by 5%."),
-                new SkillLevel(MpCost: 35, SpCost: 3000,
-                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffHp, 0.15f) },
-                    Description: "Raises Max HP by 15%."),
-                new SkillLevel(MpCost: 45, SpCost: 8000,
-                    Magnitudes: new EffectMagnitude[] { new(SkillEffect.BuffHp, 0.35f) },
-                    Description: "Raises Max HP by 35%."),
-            }),
+        // (HP Boost DELETED 2026-08-07 with the God layer, playtest-19 `0b` — its only learn table
+        //  was the God one. The Max-HP buff family the players actually use is `Body` / FamMaxHp.)
 
         // ---- Robe Mastery — base MAGE armor mastery (PASSIVE, per-level StatMods data).
         //      Levels 1/2/3 at char 1/7/14; the nuker/healer 2nd-class masteries REPLACE it.
@@ -575,14 +580,20 @@ public static partial class SkillCatalog
                        + "when you die. This grace fades once you reach that level."),
 
         // ===== Class Balance — the per-class tuning hook (auto-granted, currently no-ops) =====
-        BalancePassive(BalanceTank,    "Class Balance (Tank)",    BaseClass.Fighter),
-        BalancePassive(BalanceWarrior, "Class Balance (Warrior)", BaseClass.Fighter),
-        BalancePassive(BalanceRogue,   "Class Balance (Rogue)",   BaseClass.Fighter),
-        BalancePassive(BalanceArcher,  "Class Balance (Archer)",  BaseClass.Fighter),
-        BalancePassive(BalanceFighter, "Class Balance",           BaseClass.Fighter),
-        BalancePassive(BalanceNuker,   "Class Balance (Nuker)",   BaseClass.Mage),
-        BalancePassive(BalanceHealer,  "Class Balance (Healer)",  BaseClass.Mage),
-        BalancePassive(BalanceMage,    "Class Balance",           BaseClass.Mage),
+        // ⚠ COMMENTED OUT 2026-08-07, owner's ruling (playtest-19 `0a`): *"class_balance should be
+        // commented for now"*. NOT DELETED — the ids, the consts, ClassBalanceFor() and
+        // BalancePassive() all stay, so restoring the hook is uncommenting these eight lines and the
+        // grant in GameLoopService.AutoLearnCoreSkills. Every level here was an ALL-ZERO
+        // PassiveEffect, so removing them changes no number; they only cluttered the skill window.
+        // Characters that already learned one are cleaned up on their next AutoLearnCoreSkills.
+        // BalancePassive(BalanceTank,    "Class Balance (Tank)",    BaseClass.Fighter),
+        // BalancePassive(BalanceWarrior, "Class Balance (Warrior)", BaseClass.Fighter),
+        // BalancePassive(BalanceRogue,   "Class Balance (Rogue)",   BaseClass.Fighter),
+        // BalancePassive(BalanceArcher,  "Class Balance (Archer)",  BaseClass.Fighter),
+        // BalancePassive(BalanceFighter, "Class Balance",           BaseClass.Fighter),
+        // BalancePassive(BalanceNuker,   "Class Balance (Nuker)",   BaseClass.Mage),
+        // BalancePassive(BalanceHealer,  "Class Balance (Healer)",  BaseClass.Mage),
+        // BalancePassive(BalanceMage,    "Class Balance",           BaseClass.Mage),
 
         // ===== (Combat training passives REMOVED 2026-07-24) — the soul/spell rune bonus is now a held
         //       RUNE item (WarRuneBuff / SpellRuneBuff above), not an auto-granted passive. =====
@@ -599,16 +610,10 @@ public static partial class SkillCatalog
             new PassiveEffect(EvadeFloor: 0.10f),
             new PassiveEffect(EvadeFloor: 0.20f),
             new PassiveEffect(EvadeFloor: 0.30f)),
-        // Archer identity: evade floor + a ×1.15 crit / +10 eva lean. ⚠ Left in place when the
-        // rogue's twin lean was stripped above — he named only the ROGUE's Evasion Mastery, and
-        // this one is smaller (15/10 vs 20/20). Now that CritRate is a multiplier it is worth
-        // ~+2pp, not +15pp, so it no longer stacks into anything alarming. Flag it if he wants
-        // the archer held to exactly the ×1.2 of his ladder.
-        LeveledPassive(Reflexes, "Reflexes", BaseClass.Fighter,
-            "Passive. Dodge floor 5/10/15%, ×1.15 crit rate, +10 evasion.",
-            new PassiveEffect(EvadeFloor: 0.05f, CritRate: 0.15f, Evasion: 10),
-            new PassiveEffect(EvadeFloor: 0.10f, CritRate: 0.15f, Evasion: 10),
-            new PassiveEffect(EvadeFloor: 0.15f, CritRate: 0.15f, Evasion: 10)),
+        // (Reflexes — the ARCHER floor passive — DELETED 2026-08-07, playtest-19 `0a`/G1. It was the
+        //  one genuinely dead line on that list: no 2nd class has carried Archetype.Archer since the
+        //  archer→rogue merge, so nothing could ever be granted it. Don't re-add it; a ranged rogue's
+        //  floor comes from Evasion Mastery, and after 40 the ranged DISCIPLINES get none — see M7.)
         LeveledPassive(Precision, "Precision", BaseClass.Fighter,
             "Passive. Your physical attacks always land at least 10/20/30% of the time.",
             new PassiveEffect(HitFloor: 0.10f), new PassiveEffect(HitFloor: 0.20f), new PassiveEffect(HitFloor: 0.30f)),

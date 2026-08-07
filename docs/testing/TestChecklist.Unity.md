@@ -1167,6 +1167,53 @@ against a same-level mage's. ⚠ **Not measured**: BalanceMatrix does not build 
 the tool shows no delta — the effect is the defence multiplier moving 0.80 → 0.90.
 
 ---
+## 54. 🔴 0.53.0 — the DELETIONS, `M7` Heavy Draw, and `M1` the ±20 lockout — UNPLAYED
+
+⚠ Needs a **new APK** (the item/skill catalogs and two enums are compiled into it). ⚠ **Delete
+`Game.Server/game.db`** if it wasn't already deleted for §53 — any old character carrying `Race = 99`
+or a God item is now referencing an id that no longer exists. Protocol is unchanged. Source:
+[Playtest-19.md](Playtest-19.md) `0a` / `0b` / `M1` / `M7`.
+
+**54a. M1 — nothing is unhittable any more.** This is the whole point of the change and it is the one
+thing BalanceMatrix cannot show you. Reproduce his own test: admin, accuracy 9999, a bow, and a **level
+20 vs a level 40/80 dummy**.
+- He must now **land roughly 5%** of swings at any gap — where before it was *zero, forever*.
+- With **Precision** L1 (a level-20+ warrior) the floor is **10%**; L2 (40+) is **20%**.
+- The other way round: a level-20 **rogue** in a level-90 field must **dodge ~10%** (his Evasion
+  Mastery floor), not 0%.
+- ⚠ Sanity-check the ordinary case has NOT moved: a same-level fight is still ~5%/95%, and a 10-15
+  level gap still feels punishing. Only |Δ| ≳ 19 behaves differently.
+- Exp and drops are unchanged and still pay **zero from a 13-level gap** — killing far above you must
+  remain pointless, just no longer impossible.
+
+**54b. M7 — Heavy Draw is gone from the rogue, at every level.** Level a rogue past 24: **"Heavy Draw"
+must not appear** in Skills → Learn, or on the bar. Then take a **ranged** discipline at 40
+(Sharpshooter / Trapper / Hunter): "Piercing Shot", "Snare Shot" and "Rending Shot" must be gone too.
+⚠ The skill DEFINITION still exists on purpose — you should not find it anywhere in the UI, but it is
+not deleted from the catalog.
+
+**54c. M7 — Evasion Mastery stops at rung 1 for a bow discipline.** A **melee** rogue discipline
+(Phantom / Venomweaver / Nullblade) keeps the ladder: Evasion Mastery **Lv2 at 40**, Lv3 at 76. A
+**ranged** one stays at **Lv1 (the 10% floor) forever** — *"the archer should not have evasion mastery
+after 40 .. the 10% are ok"*. ⚠ Worth checking the downgrade path too: hit 40 as a rogue with no
+discipline (you get Lv2), then pick a bow discipline — it must drop back to **Lv1**.
+
+**54d. The deletions — nothing broken by their absence.** Open Skills, Skills → Learn and the skill
+bar on a rogue, warrior, tank and mage: no **Reflexes**, no **Bow Mastery** (`archer_weapon_mastery`),
+no archer **Armor Mastery**, no **Dispel Magic**, no **HP Boost**, no **Greater Heal**, and no
+**"Class Balance"** rows. Everything else must still be there — in particular `evade_mastery`,
+`precision` and `anti_magic` all **STAY** and still grant at 20/40/76.
+
+**54e. The God layer is gone, and the debug rig still works.** Character creation offers Human / Elf /
+Ork only. The debug menu's **Boxes** page no longer has the "Legendary" God's Judgment / God's Robes
+rows. ⚠ **The replacements are now load-bearing — test them**: `/enchant <value>` and `/speed` must
+still do what they did, because they are the ONLY way to get cosmic stats now.
+
+**54f. The Treasure Chest still opens.** Its 1-in-a-million jackpot was the God sword and is now the
+**S-grade Mythic 1H blade**. You will not roll it — the point of the check is that the box catalog
+still loads and the chest still pays out its staples.
+
+---
 ## 51. 🔴 PLAYTEST-19 QUEUE (2026-08-06) — the 0.48.0 pass
 
 The full report in his own wording is **`Playtest-19.md`** (transcribed from his answered
@@ -1181,25 +1228,27 @@ stud** (wrong worn-slot lookup; B2 is not closed) · 🟡 46o raise BOTH warehou
 note to lower them when expansion lands · 🟡 46u the gear cut reads as only 3× harder to gear up —
 direction of travel is "eventually L2 rates"; the real fix is the coin CURVE.
 
-**Decisions** — 0a `evade_mastery`/`precision`/`anti_magic` all **STAY** (delete only `reflexes`,
-`archer_*_mastery`, `dispel_magic`, the Heavy Draw @24 grant) · 🔴 0b **delete the whole God layer**,
-`Race.God` / `ItemRarity.God` / `god_judgment` / `god_robes` included — *"nothing that can't be acquired
-in game"*; the debug rig becomes `/enchant <value>` + `/speed` · 0c keep all six Dash rungs · 0d Sprint
+**Decisions** — ✅ 0a/0b **BUILT 0.53.0, see §54**: `evade_mastery`/`precision`/`anti_magic` **STAY**,
+`class_balance_*` is **commented out not deleted** (his 2026-08-07 ruling), and `reflexes`,
+`archer_*_mastery`, `dispel_magic`, the Heavy Draw @24 grant **and the whole God layer** (`Race.God` /
+`ItemRarity.God` / `god_judgment` / `god_robes` / `hp_boost` / `greater_heal` / the God table) are
+gone — *"nothing that can't be acquired in game"*; the debug rig is now `/enchant <value>` + `/speed`
+and must not regress · 0c keep all six Dash rungs · 0d Sprint
 L2 @40 is right · 0e `lb_*`/`wc_*` **still unanswered** · 0f G3 = **document + BalanceMatrix tables
 first**, then 2-5 real mobs as an experiment — not a migration.
 
-**My Finds** — 🔴 **M1 the ±20 lockout is REMOVED by his ruling** — the class floors and the 5/95 band
-must be active at every gap (a level-20 rogue still dodges his 10 % in a level-90 field), because
-`ExpCurve.GapZero = 13` already pays zero exp and zero drops seven levels earlier. Swap steps 2/3 of
-`ResolveAvoidChance`; `CombatResolution.md` rewritten · M2 `/block`, `/block <name>`, `/block-w`, `/block-g`, `/decline-t`, `/decline-p` + the **Options
+**My Finds** — ✅ **M1 the ±20 lockout is REMOVED — BUILT 0.53.0, see §54a.** The class floors and the
+5/95 band are active at every gap (a level-20 rogue still dodges his 10 % in a level-90 field), because
+`ExpCurve.GapZero = 13` already pays zero exp and zero drops seven levels earlier. Steps 2/3 of
+`ResolveAvoidChance` swapped; `CombatResolution.md` rewritten · M2 `/block`, `/block <name>`, `/block-w`, `/block-g`, `/decline-t`, `/decline-p` + the **Options
 window** that doesn't exist (= B11) · 🔴 **M3 a live tick crash** — "Collection was modified" in
 `Simulate()`'s `foreach (var entity in _world.Entities.Values)`, still raw at `GameLoopService.cs:5665`
 · 🔴 M4 a dead character can still move client-side (rubber-banded), can't be party-invited (should be
 allowed), can't be traded (correct, needs a message) · M5 **the tutorial chain "Welcome To The `<Game>`
 World"** — 15 steps, meet every NPC, newbie gear at Dolan, bound consumables at the end; wraps the three
 class quests without gating them · 🔴 M6 newbie gear untradable/unsellable/**30-day timed** (= C2) ·
-🔴 M7 **Heavy Draw still granted @24** and must go above 40 too; after 40 the melee rogue keeps only
-Evasion Mastery and the archer gets none · 🔴 **M8 `Can Crit` / `Can Double` must be exclusive** — a
+✅ **M7 BUILT 0.53.0, see §54b/§54c** — the @24 grant and all three 40+ discipline renames are gone,
+and a ranged rogue discipline is capped at Evasion Mastery rung 1 · 🔴 **M8 `Can Crit` / `Can Double` must be exclusive** — a
 `[Double]` Strike is critting · 🔴 **M9 the rogue identity rework**: Evasion Mastery becomes floor-ONLY,
 the +20 % crit moves to 20, **crit rate becomes MULTIPLICATIVE**, evasion budget stays at ~18 ·
 M10 ✅ the "-20 % P.Def passive" is **`Two-Hand Mastery`** (`Skills.WeaponMasteries.cs:77-81`) → **-10 %**;

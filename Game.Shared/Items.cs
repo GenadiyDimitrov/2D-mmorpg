@@ -80,8 +80,9 @@ public static class GradePenalty
 /// buying identity — which is what makes the ladder readable.
 ///
 /// Mythic is APPENDED (5), never inserted: these values are persisted on every saved item.
-/// God (99) is the untouchable debug tier and is not part of the ladder.</summary>
-public enum ItemRarity { Common = 0, Uncommon = 1, Rare = 2, Epic = 3, Legendary = 4, Mythic = 5, God = 99 }
+/// (God = 99, the untouchable debug tier, was DELETED 2026-08-07 with the rest of the God layer —
+/// playtest-19 `0b`, *"nothing that can't be acquired in game"*. 99 stays retired.)</summary>
+public enum ItemRarity { Common = 0, Uncommon = 1, Rare = 2, Epic = 3, Legendary = 4, Mythic = 5 }
 
 // Jewel = the magic-defence slot. Five DESIGNATED slots: 2 rings, 2 earrings, 1 necklace
 // (see MaxOfJewelType). Equipping into a full pair displaces one rather than refusing —
@@ -516,8 +517,7 @@ public static class ItemCatalog
         (TokenRadiantPlume,   "Radiant Plume"),
         (TokenSplinterChitin, "Splinter Chitin"),
     };
-    public const string GodWeapon = "god_judgment";
-    public const string GodArmor = "god_robes";
+    // (`god_judgment` / `god_robes` — deleted 2026-08-07 with the God layer, playtest-19 `0b`.)
     public const string WoodenShield = "shield_wooden";
     public const string IronShield = "shield_iron";
     public const string BrassAmulet = "jewel_brass_amulet";
@@ -1290,36 +1290,10 @@ public static class ItemCatalog
                            + "Huntmaster who asked for it."));
 
         // ===================================================================
-        //  GOD-TIER one-offs (debug). Every attribute maxed at 100%.
-        // ===================================================================
-        list.Add(new ItemDef(GodWeapon, "God's Judgment", EquipSlot.Weapon,
-            ItemGrade.S, ItemRarity.God, WeaponType: WeaponType.Sword,
-            AtkBonus: 1000, WeaponRange: 1000,
-            FixedAttributes: new ItemAttribute[]
-            {
-                new(AttributeType.AttackPercent, 100),
-                new(AttributeType.AttackSpeedPercent, 100),
-                new(AttributeType.CastSpeedPercent, 100),
-                new(AttributeType.SpeedPercent, 100),
-                new(AttributeType.HealthPercent, 100),
-                new(AttributeType.ManaPercent, 100),
-                new(AttributeType.EvasionPercent, 100),
-                new(AttributeType.DefencePercent, 100),
-            }));
-
-        list.Add(new ItemDef(GodArmor, "God's Robes", EquipSlot.Armor,
-            ItemGrade.S, ItemRarity.God, Weight: ArmorWeight.Robe, ArmorSlot: ArmorSlot.Body,
-            DefBonus: 1000, HpBonus: 1000, MpBonus: 1000, EvaBonus: 1000,
-            FixedAttributes: new ItemAttribute[]
-            {
-                new(AttributeType.HealthPercent, 100),
-                new(AttributeType.ManaPercent, 100),
-                new(AttributeType.DefencePercent, 100),
-                new(AttributeType.EvasionPercent, 100),
-                new(AttributeType.SpeedPercent, 100),
-                new(AttributeType.CastSpeedPercent, 100),
-            }));
-
+        //  (The two GOD-TIER debug one-offs — God's Judgment / God's Robes — were DELETED
+        //   2026-08-07 along with ItemRarity.God, playtest-19 `0b`. The owner's rule: *"nothing
+        //   that can't be acquired in game"*. Their job — cosmic stats for testing — is done by
+        //   `/enchant <value>` plus `/speed`, so those two commands are load-bearing now.)
         // ===================================================================
         //  CLASS-CHANGE PROOFS — two non-tradeable quest items per playable second
         //  class, awarded by its quest chain and consumed at the class change.
@@ -1410,7 +1384,7 @@ public static class ItemCatalog
 
     /// <summary>Does this quality carry set bonuses and rolled attributes? The 70% split: Rare and Epic
     /// have the same raw stats, and THIS is the difference between them.</summary>
-    public static bool HasIdentity(ItemRarity r) => r >= ItemRarity.Epic && r != ItemRarity.God;
+    public static bool HasIdentity(ItemRarity r) => r >= ItemRarity.Epic;
 
     /// <summary>Stat multiplier relative to the AUTHORED numbers.
     ///
@@ -1834,7 +1808,7 @@ public static class ItemCatalog
 
     public static int DefaultValue(ItemDef def)
     {
-        if (def.Slot == EquipSlot.QuestItem || def.Rarity == ItemRarity.God)
+        if (def.Slot == EquipSlot.QuestItem)
             return 0;
 
         if (TieredGearPrice(def) is int tiered) return tiered;

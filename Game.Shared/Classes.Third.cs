@@ -57,7 +57,7 @@ public static class Disciplines
         {
             Race.Ork => (Discipline.Venomweaver, Discipline.Hunter),
             Race.Elf => (Discipline.Phantom, Discipline.Trapper),
-            _        => (Discipline.Nullblade, Discipline.Sharpshooter),   // Human (and the God dummy)
+            _        => (Discipline.Nullblade, Discipline.Sharpshooter),   // Human
         },
         // No 2nd class carries Archer any more (see ClassCatalog's ARCHER MERGE note); kept so an old
         // persisted value still resolves to something sane rather than falling through to Bulwark.
@@ -89,6 +89,14 @@ public static class Disciplines
         _ => ""
     };
 
+    /// <summary>Is this one of the three RANGED (bow) rogue disciplines? The archer merge made
+    /// bow-vs-dagger a level-40 choice, so the discipline — not the archetype — is what tells a
+    /// bow character from a dagger one. Used by <see cref="SkillCatalog.FloorPassiveFor"/>: after
+    /// 40 the ranged branches stop taking Evasion Mastery rungs (playtest-19 M7, *"the archer
+    /// should not have evasion mastery after 40 .. the 10% are ok"*).</summary>
+    public static bool IsRanged(Discipline d) =>
+        d is Discipline.Sharpshooter or Discipline.Trapper or Discipline.Hunter;
+
     /// <summary>The parent archetype a discipline evolves from.</summary>
     public static Archetype Parent(Discipline d) => d switch
     {
@@ -115,7 +123,7 @@ public record ThirdClassDef(int Id, string Name, Race Race, int ParentSecondClas
 /// <summary>
 /// The 36 third classes, generated over <see cref="ClassCatalog.Playable"/>:
 /// each playable 2nd class yields its two disciplines. Ids live at 101-136 so
-/// they never collide with 2nd-class ids (1-18) or the God debug ids.
+/// they never collide with 2nd-class ids (1-18) or the retired God ids (98/99).
 /// </summary>
 public static class ThirdClassCatalog
 {

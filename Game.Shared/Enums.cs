@@ -4,8 +4,12 @@ public enum Race
 {
     Human = 0,
     Elf = 1,
-    Ork = 2,
-    God = 99   // debug-only race (creatable in DEBUG builds; usable once made)
+    Ork = 2
+    // (God = 99, the debug race, was DELETED 2026-08-07 — owner's ruling, playtest-19 `0b`:
+    //  *"I want them deleted. Nothing that can't be acquired in game. If I need cosmic stats I can
+    //  /enchant 9999999 and do /speed."* The whole layer went with it: the God learn table, the two
+    //  God classes (98/99), ItemRarity.God, god_judgment, god_robes, hp_boost, greater_heal.
+    //  ⚠ `/enchant <value>` and `/speed` are the replacement debug rig and are load-bearing now.)
 }
 
 public enum BaseClass

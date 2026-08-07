@@ -74,11 +74,15 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
       delete `Game.Server/game.db`.** ⚠ M10 is **unmeasured**: BalanceMatrix builds no 2H-mastery
       warrior, so it shows no delta (the multiplier moves 0.80 → 0.90) — extending the tool is owed.
    2. 🔴 **The combat rulings** — three of them, all decided 2026-08-06:
-      - **`M1` the ±20 lockout goes.** Swap steps 2 and 3 of `StatCalculator.ResolveAvoidChance`: level
-        gap first, then clamp into `[max(.05, evadeFloor), min(.95, 1 − hitFloor)]` **last**, so the
-        floors and the 5/95 band are active at every gap. `LevelGap()` is untouched. His reason holds —
-        `ExpCurve.GapZero = 13` already pays **zero exp and zero drops** seven levels earlier.
-        `CombatResolution.md` is already rewritten. ⚠ Nothing is unhittable any more, by design.
+      - ✅ **`M1` the ±20 lockout is GONE — BUILT 2026-08-07 (0.53.0), unplayed.** Steps 2 and 3 of
+        `StatCalculator.ResolveAvoidChance` are swapped: level gap first, then the clamp into
+        `[max(.05, evadeFloor), min(.95, 1 − hitFloor)]` **last**, so the floors and the 5/95 band are
+        active at every gap. `LevelGap()` is untouched — `G = 1.0` now means "pinned to the edge of the
+        band", not "lockout". His reason holds: `ExpCurve.GapZero = 13` already pays **zero exp and
+        zero drops** seven levels earlier. ⚠ Nothing is unhittable any more, by design (an L1 connects
+        with a raid boss 5 % of the time, for nothing, and dies). ⚠ Not visible in BalanceMatrix —
+        the two orders are arithmetically identical below |Δ| ≈ 19, which is why its output is
+        byte-identical before and after. Test it the way he found it: a dummy 20+ levels away.
       - ✅ **`M9` the rogue identity rework — BUILT 2026-08-06 (0.50.0), unplayed.** Crit rate is his
         full L2 model (`110 × weapon × dexMod × passives × buffs + flat`, one clamp at 50 %),
         `CritRateResist` is a multiplier, Evasion Mastery is floor-ONLY, and the rogue's ×1.20 crit
@@ -94,19 +98,33 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
         (`Skills.WeaponMasteries.cs:77-81`) — a 2H warrior in heavy must not sit under a robed mage.
       ✅ **`M8` BUILT** — `CanCrit` / `CanDouble` are exclusive opt-in flags, a `[Double]` reports itself
       as `CombatOutcome.Double` (`N x2`) instead of a crit, and BalanceMatrix §C3 audits all 20
-      physical skills' flags against their descriptions. Still open with these: **`M7`** Heavy Draw's
-      @24 grant plus the 40+ discipline placement.
-   3. **The deletion, now correctly scoped (`0a`/`0b`).** Delete `reflexes`, `archer_armor_mastery`,
-      `archer_weapon_mastery`, `dispel_magic`, the Heavy Draw @24 grant — **and the whole God layer**,
-      `Race.God` / `ItemRarity.God` / `god_judgment` / `god_robes` included. His rule: *"nothing that
-      can't be acquired in game"*; the debug rig becomes `/enchant <value>` + `/speed`, so sweep the
-      admin menu first. `evade_mastery` / `precision` / `anti_magic` / `class_balance_*` all **stay**.
+      physical skills' flags against their descriptions.
+      ✅ **`M7` BUILT 2026-08-07 (0.53.0), unplayed.** Heavy Draw's rogue @24 grant is gone AND its
+      three 40+ discipline renames ("Piercing Shot" / "Snare Shot" / "Rending Shot") with it, so
+      `power_shot` now has **no learn assignment anywhere** — ⚠ its SkillDef deliberately STAYS, with
+      a comment saying why. The other half of M7: `SkillCatalog.FloorPassiveFor` takes a
+      `Discipline?`, and a RANGED rogue discipline (Sharpshooter / Trapper / Hunter) is capped at
+      Evasion Mastery **rung 1** forever — *"the archer should not have evasion mastery after 40 ..
+      the 10% are ok"* — while the melee branches keep the full 20/40/76 ladder. New helper
+      `Disciplines.IsRanged`.
+   3. ✅ **The deletion — DONE 2026-08-07 (0.53.0), correctly scoped (`0a`/`0b`).** `reflexes`,
+      `archer_armor_mastery`, `archer_weapon_mastery`, `dispel_magic` and the Heavy Draw @24 grant
+      are gone, and so is **the whole God layer**: `Race.God`, `ItemRarity.God`, `god_judgment`,
+      `god_robes`, `hp_boost`, `greater_heal`, `Classes.God.cs`, both God 2nd classes (98/99), the
+      God speed row, the client's God-gear debug rows and its `Race.God` skip. ⚠ The Treasure
+      Chest's 1-in-a-million jackpot was the God sword — it is now the **S-grade Mythic 1H blade**
+      (`sword1h_t80`), i.e. something the game actually contains. `evade_mastery` / `precision` /
+      `anti_magic` **stay**; `class_balance_*` is **commented out, NOT deleted** (his 2026-08-07
+      ruling) — the ids, `ClassBalanceFor()` and `BalancePassive()` remain, and
+      `AutoLearnCoreSkills` strips the ids from characters that already carry one.
+      ⚠ **The debug rig is now `/enchant <value>` + `/speed` only — do not regress those.**
    4. ~~**The friction list**~~ — ✅ **DONE 2026-08-07, see 1b above.** All seven (`M13` `M12` `M11`
       `M14` `M4` `M2`+Options window, `46o`), plus `M10`.
-   5. **Answers owed him** — `M1` the ±20 level lockout is working as designed (keep it, but make the
-      client say why?) · `M10` there is **no** −20 % P.Def Champion passive in the code, ask what he is
-      reading · `0e` `lb_*`/`wc_*` he never answered · `M5`/`M6` the tutorial chain + 30-day bound
-      newbie gear are a scoped quest project (C2/C13), not a quick fix.
+   5. **Answers owed him** — `0e` `lb_*`/`wc_*` he never answered (my rec: keep, one commented line
+      from learnable when the 40+ CSVs land) · `M5`/`M6` the tutorial chain + 30-day bound newbie gear
+      are a scoped quest project (C2/C13) and are **the next session** · nice-to-have with `M1`: the
+      client should say *"far above your level"* rather than showing a silent miss.
+      (`M1` and `M10` are answered and built; struck from this list 2026-08-07.)
 1. ~~**Publish 0.45.0 and play §36 + §40-43**~~ — **DONE, 2026-08-03.** See the paragraph above; the
    queue it produced is [testing/Playtest-17.md](testing/Playtest-17.md) / §44. Still-unreached items
    are listed at the bottom of that file (§37 partial-stack trading is top of them — the duo-icon rig
@@ -148,10 +166,8 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
    and he answered it on 2026-08-04 (playtest-18 `G1`, item 3 below). The deletion is unblocked.
 3. 🆕 **The playtest-18 queue** (2026-08-04, [testing/Playtest-18.md](testing/Playtest-18.md), §45) —
    his second 0.45.0 pass, and mostly *answers* rather than bugs:
-   - 🔴 **`G1` unblocks the skill deletion** — he named them: the four identity-floor passives,
-     `archer_*_mastery`, `dispel_magic`, and the God class + skills. ⚠ `class_balance_*` he skipped and
-     `lb_*`/`wc_*` he asked about instead (**`G2`, owed back to him**). Heavy Draw = remove the **Rogue
-     @24 grant** of `power_shot`, never the definition — three level-40 discipline skills are renames.
+   - ✅ **`G1` the skill deletion — DONE 2026-08-07 (0.53.0).** See item 0.3 above for what actually
+     went and what stayed. ⚠ Only `lb_*`/`wc_*` (**`G2`**) is still owed back to him.
    - ✅ **The three defects are all closed.** ~~**`Q1`**~~ **DONE 2026-08-05** — the pin is a `Tracked`
      flag on `CharacterQuestState`, so it rides the quest state that is already persisted per character;
      no schema change, no db reset. ~~**`G7`**~~ done in 0.46.0. ~~**`V2`** the sell fraction~~ ✅ **DONE

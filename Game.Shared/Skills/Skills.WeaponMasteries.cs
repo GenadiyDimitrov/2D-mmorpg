@@ -19,7 +19,9 @@ public static partial class SkillCatalog
     public const string TankWeaponMastery    = "tank_weapon_mastery";
     public const string WarriorWeaponMastery = "warrior_weapon_mastery";
     public const string RogueWeaponMastery   = "rogue_weapon_mastery";
-    public const string ArcherWeaponMastery  = "archer_weapon_mastery";
+    // (`archer_weapon_mastery` — deleted 2026-08-07, playtest-19 `0a`/G1. Orphaned by the
+    //  archer→rogue merge: Rogue Weapon Mastery already carries the BOW rungs, so this was a
+    //  second bow passive nobody could be granted. Don't re-add it.)
 
     /// <summary>A caster weapon-mastery level: the given <paramref name="bonus"/> (M/P.Atk,
     /// reuse, cast/regen) applies ONLY with the wizard's weapon — a SWORD or BLUNT (1H/2H).
@@ -117,11 +119,8 @@ public static partial class SkillCatalog
                 RogueWM(critDmg: 165f, acc: 3, critRate: 0.20f, atkSpd: 0.05f, dualAtk: 21, bowAtk: 96),
             }),
 
-        // Archer — bow: crit-damage + accuracy lean.
-        WeaponMasteryPassive(ArcherWeaponMastery, "Bow Mastery", BaseClass.Fighter,
-            "Increases attack power, critical damage and accuracy while wielding a bow.",
-            new WeaponMasteryProfile(
-                Bow: new PassiveEffect(PhysAtkPct: 0.12f, CritDamageFlat: 20f, Accuracy: 5))),
+        // (Archer "Bow Mastery" DELETED 2026-08-07 with its id — the rogue mastery above carries
+        //  the bow profile since the merge.)
 
         // Tank — Weapon Mastery (CSV tank 20-35): flat + 8.5% attack power with ANY weapon.
         // 5 levels (@20/24/28/32/36). Replaces the base fighter weapon mastery.

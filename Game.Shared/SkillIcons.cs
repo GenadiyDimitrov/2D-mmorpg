@@ -60,7 +60,6 @@ public static class SkillIcons
         ["frost_bind"]      = "❄️",
         ["entangling_roots"] = "🪢",
         ["creeping_frost"]  = "🌨",
-        ["dispel_magic"]    = "🌫",
         ["mana_barrier"]    = "🔮",
         ["phase_shift"]     = "🌌",
         ["weakness"]        = "📉",
@@ -70,7 +69,6 @@ public static class SkillIcons
         // ---- HEALER ----
         ["self_heal"]    = "💗",
         ["heal"]         = "💚",
-        ["greater_heal"] = "💖",
         ["quick_heal"]   = "💛",
         ["party_heal"]   = "💞",
         ["restore_mana"] = "🔋",

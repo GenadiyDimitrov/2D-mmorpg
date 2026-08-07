@@ -8,8 +8,8 @@
 ## The principle
 Every "sure to X" guarantee is a **clamp on one number** — the avoid probability
 (miss for physical, fail for magic). They don't fight over a single cap; they
-*bracket* the result. The everyday stat math lives inside a soft 5–95% band; true
-`0`/`100%` are reached only by the level lockout and by Sure-Hit / Immunity flags.
+*bracket* the result. The everyday stat math lives inside a 5–95% band that is applied **last**;
+true `0`/`100%` are reached only by the Sure-Hit / Immunity flags.
 
 ## The resolver (per directed attack A → D → avoid probability)
 

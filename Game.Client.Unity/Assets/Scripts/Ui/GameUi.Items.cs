@@ -710,7 +710,7 @@ namespace Game.Client
             ItemRarity.Epic      => new Color(0.72f, 0.45f, 1.00f),   // violet — the 70% split: identity starts here
             ItemRarity.Legendary => new Color(1.00f, 0.50f, 0.15f),   // orange
             ItemRarity.Mythic    => new Color(1.00f, 0.30f, 0.35f),   // red
-            ItemRarity.God       => new Color(0.60f, 1.00f, 0.60f),   // debug tier
+            // (ItemRarity.God's green was deleted 2026-08-07 with the God layer.)
             _                    => new Color(0.85f, 0.85f, 0.85f),   // Common — plain
         };
 

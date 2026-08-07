@@ -1181,12 +1181,23 @@ public class GameLoopService : BackgroundService
         // held RUNE items that grant the same buff, see ReconcileRuneBuffs / SkillCatalog.WarRuneBuff.)
 
         // Class identity "sure" floor passive for the current class tier (level = tier).
-        if (SkillCatalog.FloorPassiveFor(player.Archetype, player.Level) is { } floor)
+        // ⚠ The DISCIPLINE is passed because a rogue's ladder now depends on it (playtest-19 M7):
+        // a ranged branch stays at rung 1 forever. Plain assignment, so picking a bow discipline
+        // at 40 DOWNGRADES an already-granted rung 2 back to 1 — that is intended.
+        if (SkillCatalog.FloorPassiveFor(player.Archetype, player.Level, player.Discipline) is { } floor)
             player.LearnedSkills[floor.Id] = floor.Level;
 
-        // Class Balance passive — the per-class tuning hook. No effect today; it's where a
-        // class's damage gets nudged later instead of hardcoding a coefficient.
-        player.LearnedSkills[SkillCatalog.ClassBalanceFor(player.Archetype, player.BaseClass)] = 1;
+        // Class Balance passive — the per-class tuning hook. ⚠ COMMENTED OUT 2026-08-07 on the
+        // owner's ruling (*"class_balance should be commented for now"*, playtest-19 `0a`): the defs
+        // and this grant come out of the live path but stay in the file, ready to come back. They
+        // were all-zero PassiveEffects, so nothing changes numerically. DO NOT DELETE.
+        // player.LearnedSkills[SkillCatalog.ClassBalanceFor(player.Archetype, player.BaseClass)] = 1;
+        // …and strip the ones already persisted on existing characters — the defs are gone from the
+        // catalog, so a leftover entry is a learned id nothing can render. Delete this loop when the
+        // hook comes back.
+        // (No such cleanup is needed for `reflexes` / `archer_*_mastery`, deleted in the same pass:
+        //  nothing has ever carried Archetype.Archer since the merge, so nobody was granted them.)
+        foreach (var id in SkillCatalog.ClassBalanceIds) player.LearnedSkills.Remove(id);
 
         // Novice's Grace — display-only newbie protection, shown below the death-penalty level and removed at it.
         if (player.Level < GameConstants.DeathExpPenaltyMinLevel)

@@ -78,16 +78,17 @@ public static class ClassCatalog
         new(17, "Cleric",      Race.Human, BaseClass.Mage,    Archetype.Healer,
             Bonus: new ClassFlatBonus(MaxMp: 60, MaxHp: 30, Defence: 10)),
         new(18, "Sorcerer",    Race.Human, BaseClass.Mage,    Archetype.Nuker),
-        // God race (debug-only): one fighter path + one mage path.
-        new(98, "Demigod",     Race.God,   BaseClass.Fighter, Archetype.Warrior),
-        new(99, "Ascendant",   Race.God,   BaseClass.Mage,    Archetype.Nuker),
+        // (The God race's two classes — 98 Demigod / 99 Ascendant — were deleted 2026-08-07 with the
+        //  rest of the God layer, playtest-19 `0b`. Ids 98/99 stay retired; never reuse them.)
     }.ToDictionary(c => c.Id);
 
     public static SecondClassDef? Get(int id) => All.GetValueOrDefault(id);
 
-    /// <summary>All real (non-debug) second classes — the ones with quest chains.</summary>
+    /// <summary>All second classes — the ones with quest chains. Kept as its own member (rather
+    /// than folded into <c>All</c>) because it used to filter out the God debug race; every class
+    /// is playable now, and this is still the name the rest of the code asks for.</summary>
     public static IEnumerable<SecondClassDef> Playable =>
-        All.Values.Where(c => c.Race != Race.God).OrderBy(c => c.Id);
+        All.Values.OrderBy(c => c.Id);
 
     public static IEnumerable<SecondClassDef> OptionsFor(Race race, BaseClass baseClass) =>
         All.Values.Where(c => c.Race == race && c.Base == baseClass).OrderBy(c => c.Id);

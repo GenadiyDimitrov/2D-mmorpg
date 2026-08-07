@@ -24,7 +24,7 @@ namespace Game.Shared;
 
 /// <summary>
 /// A skill definition. Id is now a STABLE STRING KEY (e.g. "magic_bolt",
-/// "greater_heal"). Timings are in server ticks (10/s). Effect is a [Flags]
+/// "flame_bolt"). Timings are in server ticks (10/s). Effect is a [Flags]
 /// value; per-effect magnitudes live in Magnitudes with flat/percent modes.
 /// Buff identity/stacking: BuffKey + Rank + Replaces (see ApplyBuff).
 /// </summary>

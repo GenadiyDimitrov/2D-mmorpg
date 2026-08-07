@@ -1326,11 +1326,14 @@ static string NameOf(string id) => SkillCatalog.Get(id)?.Name ?? id;
 /// <summary>A Human ASSASSIN (rogue) of this level in the best duals + LIGHT armor for its tier —
 /// the class the crit-damage rungs actually belong to. BuildPlayer only knows tank/warrior/nuker
 /// and dresses them in a sword and heavy, which would measure the wrong masteries entirely.</summary>
-// The archetype IDENTITY floor passive (Evasion Mastery / Reflexes / Precision / Anti-Magic) is
+// The archetype IDENTITY floor passive (Evasion Mastery / Precision / Anti-Magic) is
 // AUTO-granted in game by AutoLearnCoreSkills — it is not in the class tables, so a synthetic
 // character built from those tables alone was missing it entirely. That is why §50h measured the
 // rogue's blow gate at a 9.2% crit: his own Evasion Mastery (then worth +20 crit POINTS) was absent
 // from the MODEL, not from the game. Never measure a character without it.
+// ⚠ No DISCIPLINE is passed, so a rogue here is measured as a MELEE rogue (the full 20/40/76 evade
+// ladder). A ranged discipline is capped at rung 1 in game since 2026-08-07 (playtest-19 M7) — if a
+// bow rogue at 40+ is ever measured, pass its discipline or the model will over-state its dodge.
 static void GrantFloorPassive(Entity e, int level)
 {
     if (SkillCatalog.FloorPassiveFor(e.Archetype, level) is { } fp)

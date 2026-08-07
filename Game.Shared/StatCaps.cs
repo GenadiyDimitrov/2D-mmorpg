@@ -50,15 +50,16 @@ public static class StatCaps
 
     // ----- Unified hit resolution (see docs/design/CombatResolution.md) -----
     // One resolver decides land-vs-avoid for BOTH channels (physical miss, magic fail).
-    // The stat roll lives inside a soft [AvoidBase, AvoidSoftCeil] band; true 0/100% are
-    // reached only by the level-gap lockout and by Sure-Hit / Immunity flags.
+    // The roll lives inside the [AvoidBase, AvoidSoftCeil] band, which is applied LAST (after the
+    // level gap, since 2026-08-07 / playtest-19 M1); true 0/100% are reached only by the
+    // Sure-Hit / Immunity flags.
 
     /// <summary>Avoid (miss/fail) chance at equal stats — the universal base.
-    /// Symmetric guarantee: never below 5% to land, never above 95% from stats alone.</summary>
+    /// Symmetric guarantee: never below 5% to land, never above 95% — at ANY level gap.</summary>
     public const float AvoidBase = 0.05f;
 
-    /// <summary>Soft ceiling on the stat-roll portion (95% land floor lives at 1−this).
-    /// The level-gap term and Immunity can still push the final avoid to 100%.</summary>
+    /// <summary>Soft ceiling on the roll (the 95% land floor lives at 1−this). Only Immunity
+    /// can still push the final avoid to 100%; the level gap can no longer (M1).</summary>
     public const float AvoidSoftCeil = 0.95f;
 
     /// <summary>Avoid chance moved per point of (defenderAvoidStat − attackerHitStat).
@@ -120,7 +121,7 @@ public static class SpeedTable
         (Race.Ork,   BaseClass.Mage)    => 138f,
         (Race.Human, BaseClass.Fighter) => 148f,
         (Race.Human, BaseClass.Mage)    => 130f,
-        (Race.God,   _)                 => 200f,   // debug race: fast
+        // (The God debug race's 200 was deleted 2026-08-07 with the layer — `/speed` replaces it.)
         _ => 140f
     };
 }

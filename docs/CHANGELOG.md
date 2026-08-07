@@ -7,10 +7,100 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.45.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.53.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 0.53.0 — 2026-08-07 — the deletions, Heavy Draw off the rogue, and the ±20 lockout removed
+
+Three items off the playtest-19 queue (`0a`, `0b`, `M7`, `M1`). Nothing here adds a system; two of
+the three *remove* one, which is the point.
+
+### `M1` — a 20-level gap is no longer a 100% miss lockout
+
+`StatCalculator.ResolveAvoidChance` applied the class floors and *then* the level gap, so the gap
+**overrode** them — and `LevelGap()` returns 1.0 at |Δ| ≥ 20. An admin with accuracy 9999 and a bow,
+level 20 against a level-40 dummy, could not land a single hit, and no `precision` rung changed it.
+That was the documented design; the owner overruled it, and the code backs him harder than he put it:
+`ExpCurve.LevelGapMultiplier` already pays **zero exp AND zero drops from a 13-level gap**
+(`GapZero = 13`), symmetric — seven levels *before* the lockout starts. The lockout protected nothing
+and only produced "I swing forever and never connect".
+
+**The change is the two steps swapped**: gap first, then the clamp into
+`[max(0.05, defenderFloor), min(0.95, 1 − attackerHitFloor)]` **last**. `LevelGap()` itself is
+untouched; `G = 1.0` stops meaning "lockout" and starts meaning "pinned to the edge of the band".
+New precedence: `Immunity > SureHit > floors + the 5/95 band > level gap > stat roll`.
+
+- level-20 rogue in a level-90 field: dodges **10%** (his Evasion Mastery floor), was 0%.
+- level-20 warrior with Precision L1: lands **10%**, was never.
+- no floor either side: **5%** each way, the universal band.
+
+⚠ **The accepted consequence: nothing is unhittable.** A level-1 connects with a raid boss 5% of the
+time — for no exp, no drop, and a swift death.
+
+⚠ **`tools/BalanceMatrix` output is byte-identical before and after**, and that is correct, not a
+missing measurement: the two orderings are arithmetically the same until `G` exceeds the floor window,
+which needs |Δ| ≈ 19+. The tool builds same-level fights. This one has to be tested the way he found
+it — a dummy 20+ levels away.
+
+### `M7` — Heavy Draw is off the rogue at every level
+
+The @24 grant was the last survivor of the dead Archer table that the 2026-07-29 merge folded into the
+rogue wholesale (Battle Fury @20 went in 0.42.x for the same reason). It is gone, and so are its three
+level-40 discipline renames — "Piercing Shot" (Sharpshooter), "Snare Shot" (Trapper), "Rending Shot"
+(Hunter) — because he asked for both halves: *"remove it - remove it from after 40lvl as well"*.
+⚠ **The `power_shot` SkillDef STAYS**, now with no learn assignment anywhere and a comment saying why:
+he ruled on the grants, not the skill, and the level-40 bow CSV is where it comes back.
+
+The other half of M7 is the evade ladder. `SkillCatalog.FloorPassiveFor` now takes a `Discipline?`,
+and a **ranged** rogue discipline is capped at Evasion Mastery **rung 1** — *"the archer should not
+have evasion mastery after 40 .. the 10% are ok"* — while Phantom / Venomweaver / Nullblade keep the
+full 20/40/76 ladder. New helper `Disciplines.IsRanged`. Since the merge made bow-vs-dagger a level-40
+choice, the DISCIPLINE is the only thing that can tell the two apart. The grant is a plain assignment,
+so picking a bow discipline at 40 downgrades an already-granted rung 2 back to 1 — intended.
+
+### `0a` / `0b` — the deletions, correctly scoped this time
+
+Deleted: `reflexes`, `archer_armor_mastery`, `archer_weapon_mastery`, `dispel_magic`, and the whole
+**God layer** — `Race.God`, `ItemRarity.God`, `god_judgment`, `god_robes`, `hp_boost`, `greater_heal`,
+`Classes.God.cs`, both God 2nd classes (98/99, ids retired), the God speed row, and the client's
+God-gear debug rows and `Race.God` skips. His rule underneath it is the interesting part: **nothing
+exists in the game that cannot be acquired in the game.**
+
+⚠ **`/enchant <value>` and `/speed` are the replacement debug rig and are load-bearing now.**
+⚠ The Treasure Chest's 1-in-a-million jackpot *was* the God sword; it is now the S-grade Mythic 1H
+blade (`sword1h_t80`) — still a jackpot, but something the game contains.
+
+Kept, on his rulings: `evade_mastery`, `precision`, `anti_magic` (the live class floors — the
+2026-08-05 correction stands), and `class_balance_*`, which is **commented out, NOT deleted**
+(*"class_balance should be commented for now"*). The eight ids, `ClassBalanceFor()` and
+`BalancePassive()` all remain in the file; restoring the hook is uncommenting two blocks. Because the
+defs left the catalog, `AutoLearnCoreSkills` strips the ids from characters that already carry one —
+they were all-zero `PassiveEffect`s, so no number moves.
+
+## 0.52.0 — 2026-08-07 — the four playtest-19 defects + the whole friction tier
+
+*(Entry written retroactively on 2026-08-07 from `docs/RoadmapNext.md` and the session notes.)*
+
+**The four defects.** `48g` the 250k Blessing Box is no longer consumed on a partial pick — the server
+requires exactly `PickCount` and the client's Confirm reads *"Choose N more"* until the tally is full ·
+`46d` `/ptinv` reaches an out-of-sight player: the proximity lookup turned out to be in the CLIENT, so
+a new `PartyInviteByName` hub method resolves the name server-side · `46m` `FindEquippedCounterpart`
+matches `JewelType`, not just `EquipSlot.Jewel`, and picks the weaker of a worn pair · `M3` the live
+tick crash — the main `Simulate()` sweep iterates a reused snapshot and skips anything removed
+mid-tick.
+
+**The friction tier.** `M13` the [Talk] button, walk-to-then-talk, and movement locked while an NPC
+window is open · `M12` a gatekeeper jump lands *beside* the destination GK (fee still charged
+centre-to-centre) · `M11` one daily Apothecary quest offered by and returned to every town
+(`QuestDef.AnyTownNpc`) · `M14` buyback 24 → 12 · `M4` a dead character cannot move but **can** be
+party-invited and **can** trade (his reversal: death must not block what undoes death) · `M2` five
+`SocialOptions` flags, their commands, and a real Options window · `46o` both warehouse caps → 200 ·
+`M10` `Two-Hand Mastery` `DefencePct` −0.20 → −0.10 (⚠ unmeasured — BalanceMatrix builds no
+2H-mastery warrior).
+
+⚠ Schema change (`SocialOptions`): **delete `Game.Server/game.db`**.
 
 ## 0.51.0 — 2026-08-07 — MAGIC crit is its own channel: WIT is a multiplier, damage is a flat ×3
 

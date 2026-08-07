@@ -138,7 +138,11 @@ public static class BoxCatalog
                 new BoxEntry(ItemCatalog.ScrollNormalC, 0.10f),           // 10%
                 new BoxEntry(ItemCatalog.AttrScrollRare, 0.05f),       // 5%
                 new BoxEntry(ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.E, ItemRarity.Rare), 0.01f),   // 1%
-                new BoxEntry(ItemCatalog.GodWeapon, 0.000001f),        // 1 in 1,000,000 jackpot
+                // The jackpot was the God-tier debug sword until 2026-08-07 (playtest-19 `0b`,
+                // *"nothing that can't be acquired in game"*). It is now the S-grade Mythic 1H blade —
+                // the real top of the sword line, so the 1-in-a-million slot still demonstrates the
+                // full chance range but pays out something the game already contains.
+                new BoxEntry($"sword1h_t{ItemCatalog.SGradeLevel}", 0.000001f),   // 1 in 1,000,000 jackpot
             }),
         };
 

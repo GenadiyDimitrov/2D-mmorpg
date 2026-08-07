@@ -22,7 +22,7 @@ public static class Crafting
         _ => Profession.None
     };
 
-    // Material rarities used (Legendary is the top; ItemRarity.God is not a material).
+    // Material rarities used (Legendary is the top).
     public static readonly ItemRarity[] MaterialRarities =
         { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare, ItemRarity.Epic, ItemRarity.Legendary };
 

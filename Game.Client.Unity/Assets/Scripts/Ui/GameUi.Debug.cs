@@ -216,9 +216,10 @@ namespace Game.Client
                 DebugGive(ItemCatalog.BoxNewbieJewels, "Newbie Jewels Box");
                 DebugGive(ItemCatalog.BoxNewbieWeapons, "Newbie Weapons Box (select)");
 
-                DebugHeader("Legendary");
-                DebugGive(ItemCatalog.GodWeapon, "God's Judgment");
-                DebugGive(ItemCatalog.GodArmor, "God's Robes");
+                // (The "Legendary" row handed out the two GOD-tier debug pieces. Both items and
+                //  ItemRarity.God were deleted 2026-08-07 — playtest-19 `0b`, *"nothing that can't
+                //  be acquired in game"*. The replacement rig is `/enchant <value>` + `/speed`, plus
+                //  the ordinary tiered gear the Weapons/Armor/Jewels pages above already give.)
                 return;
             }
 
@@ -497,9 +498,10 @@ namespace Game.Client
             DebugAction("+ Add a class (discipline) >", () => { _debugAddDiscView = true; RefreshDebugPanel(); });
 
             DebugHeader("Reset character (re-roll, same char)");
+            // (The Race.God skip is gone — the debug race was deleted 2026-08-07; every race in the
+            //  enum is playable now.)
             foreach (var race in Enum.GetValues(typeof(Race)).Cast<Race>())
             {
-                if (race == Race.God) continue;   // not playable — see the god-not-playable rule
                 foreach (var bc in Enum.GetValues(typeof(BaseClass)).Cast<BaseClass>())
                 {
                     Race r = race; BaseClass b = bc;

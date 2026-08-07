@@ -211,7 +211,8 @@ public static class StatCalculator
     /// a ~16-minute wall, and that sentence stays true at every level and every HP total.
     ///
     /// It is NOT the anti-underlevelled mechanic; the level-gap table already is (75% avoid at 19
-    /// levels, a total lockout at 20+). This only catches the in-range chipper that gap misses.</summary>
+    /// levels, and pinned to the 5% band edge at 20+). This only catches the in-range chipper that
+    /// gap misses.</summary>
     public static float MobHpRegenPctCombat = 0.001f;
 
     /// <summary>Fraction of its own pool a mob regenerates per second while NOT engaged: 5%/s, so
@@ -233,13 +234,24 @@ public static class StatCalculator
     // ----- Unified hit resolution (see docs/design/CombatResolution.md) -----------
     // Both channels (physical miss, magic fail) call ResolveAvoidChance. It returns
     // the probability the attack is AVOIDED (missed/fizzled). Order of operations:
-    //   1. stat roll  → 2. class floors → 3. level gap (favors higher level) → 4. flags
-    // Precedence top-down: Immunity > SureHit > level gap > class floors > stat roll.
+    //   1. stat roll  → 2. level gap (favors higher level) → 3. class floors + the 5/95 band → 4. flags
+    // Precedence top-down: Immunity > SureHit > floors + the 5/95 band > level gap > stat roll.
+    //
+    // ⚠ Steps 2 and 3 were the other way round until 2026-08-07 (playtest-19 M1), which made a
+    // |Δ| ≥ 20 gap a HARD 100% lockout that overrode every floor: an admin with accuracy 9999 and a
+    // bow could not land a single hit on a dummy 20 levels above him, and no `precision` rung changed
+    // it. The owner overruled that design, and the code backs him — ExpCurve.LevelGapMultiplier
+    // already pays ZERO exp AND zero drops from a 13-level gap (GapZero), seven levels before the
+    // lockout even started, so the lockout protected nothing and only read as broken. Clamping LAST
+    // means G = 1.0 no longer means "lockout"; it means "pinned to the edge of the band".
+    // ⚠ The accepted consequence: nothing is unhittable any more. A level-1 connects with a raid boss
+    // 5% of the time — for no exp, no drop, and a swift death.
 
     /// <summary>Level-gap penalty G(|Δ|): the avoid magnitude conferred on the
     /// HIGHER-level combatant (added to their hit AND their evade vs the lower).
     /// Piecewise-linear: white ≤5; +2.5%/lvl to 10%@9; +3%/lvl to 25%@14;
-    /// +10%/lvl to 75%@19; 100% lockout at ≥20 (only Sure-Hit lands).</summary>
+    /// +10%/lvl to 75%@19; 100% at ≥20 — which the floors/band then pull back to
+    /// the edge of [5%, 95%] (or to a class floor), so it is a ceiling, not a lockout.</summary>
     public static float LevelGap(int levelDiff)
     {
         int d = Math.Abs(levelDiff);
@@ -247,14 +259,15 @@ public static class StatCalculator
         if (d <= 9) return 0.025f * (d - 5);            // 6–9   → 2.5,5,7.5,10
         if (d <= 14) return 0.10f + 0.03f * (d - 9);    // 10–14 → 13,16,19,22,25
         if (d <= 19) return 0.25f + 0.10f * (d - 14);   // 15–19 → 35,45,55,65,75
-        return 1.0f;                                    // 20+   → lockout
+        return 1.0f;                                    // 20+   → the band's edge (NOT a lockout)
     }
 
     /// <summary>The one resolver. Returns avoid (miss/fail) probability for A→D.
     /// <paramref name="defenderFloor"/> = min avoid vs the defender (rogue evade /
     /// anti-magic). <paramref name="attackerHitFloor"/> = the attacker's min hit
-    /// (warrior); caps avoid at 1−floor. Level favors the higher combatant and
-    /// overrides class floors. Flags override everything.</summary>
+    /// (warrior); caps avoid at 1−floor. Level favors the higher combatant, but the
+    /// class floors and the 5/95 band are applied AFTER it and therefore win.
+    /// Flags override everything.</summary>
     public static float ResolveAvoidChance(
         int attackerHitStat, int defenderAvoidStat,
         float defenderFloor, float attackerHitFloor,
@@ -274,17 +287,22 @@ public static class StatCalculator
         float m = baseAvoid + (defenderAvoidStat - attackerHitStat) * StatCaps.AvoidStatSlope;
         m = Math.Clamp(m, baseAvoid, StatCaps.AvoidSoftCeil);
 
-        // 2: class floors form an interior window [defenderFloor, 1 − attackerHitFloor].
-        float lo = Math.Max(baseAvoid, defenderFloor);
-        float hi = Math.Min(StatCaps.AvoidSoftCeil, 1f - attackerHitFloor);
-        if (lo > hi) lo = hi = (lo + hi) * 0.5f;   // safety if floors ever sum >100%
-        m = Math.Clamp(m, lo, hi);
-
-        // 3: level gap overrides the class floors in favour of the higher level.
+        // 2: level gap pushes the roll toward the higher-level combatant.
         int diff = attackerLevel - defenderLevel;
         float g = LevelGap(diff);
         if (diff > 0) m = Math.Min(m, 1f - g);     // attacker higher → cap defender avoid
         else if (diff < 0) m = Math.Max(m, g);     // defender higher → force attacker to avoid
+
+        // 3 (LAST, so it wins): class floors form an interior window
+        // [defenderFloor, 1 − attackerHitFloor], intersected with the universal 5/95 band.
+        // Because this clamp runs after the gap, a 20+ level gap is pinned to the edge of the
+        // band instead of locking the fight out: an L20 rogue in an L90 field still dodges its
+        // 10% evade floor, an L20 warrior with Precision L1 still lands 10%, and with no floor
+        // at all both sides still get the universal 5%.
+        float lo = Math.Max(baseAvoid, defenderFloor);
+        float hi = Math.Min(StatCaps.AvoidSoftCeil, 1f - attackerHitFloor);
+        if (lo > hi) lo = hi = (lo + hi) * 0.5f;   // safety if floors ever sum >100%
+        m = Math.Clamp(m, lo, hi);
 
         return Math.Clamp(m, 0f, 1f);
     }
@@ -647,7 +665,8 @@ public static class StatCalculator
 
     // Magic fail now flows through the unified ResolveAvoidChance (magic channel):
     // same-level magic sits at the 5% base, the anti-magic floor (ArchetypeMagicFailFloor)
-    // raises it, and the level-gap curve provides the "can't farm far above you" lockout.
+    // raises it, and the level-gap curve provides the "can't farm far above you" pressure (up to
+    // the band edge — it stops short of a lockout since M1).
 
     /// <summary>Offensive MAGIC interrupt power from WIT. Mirrors the WIT scale in
     /// InterruptResist (wit*2) so a WIT-mage out-interrupts an equal-level ATK-mage
@@ -807,8 +826,9 @@ public static class StatCalculator
     // nudges belong in the "Class Balance" passive (SkillCatalog.ClassBalanceFor), which is
     // data, not code.
 
-    // Archetype crit/evasion LEANS moved to the rogue/archer floor passives (Evasion Mastery /
-    // Reflexes) per the stats-via-skills rule — no longer hardcoded here.
+    // Archetype crit/evasion LEANS moved to the rogue's floor passive (Evasion Mastery) and its
+    // masteries, per the stats-via-skills rule — no longer hardcoded here. (The archer's `reflexes`
+    // twin was deleted 2026-08-07: the merge left one rogue line, so there is one floor passive.)
 
     /// <summary>Per-weapon crit-rate FACTOR (multiplies the base/DEX crit chance).
     /// From the weapon table's crit_modifier: Sword 0.80, Dual/Bow 1.20, Blunt 0.40.
@@ -831,8 +851,8 @@ public static class StatCalculator
     };
 
     // NOTE: every per-archetype IDENTITY stat modifier is now data (learned passives), not a switch
-    // table here. Evade/hit/anti-magic FLOORS + the rogue/archer crit & evasion leans → the floor
-    // passives (SkillCatalog.FloorPassiveFor / Evasion Mastery / Reflexes). The tank's old level/2
+    // table here. Evade/hit/anti-magic FLOORS + the rogue's crit & evasion leans → the floor
+    // passives (SkillCatalog.FloorPassiveFor / Evasion Mastery / Precision / Anti-Magic). The tank's old level/2
     // magic-def bonus was REMOVED (his Anti-Magic passive is his magic identity). The rogue's
     // basic-attack interrupt was REMOVED from the base archetype — it becomes a 3rd-class discipline
     // passive (the anti-magic rogue). Only base stats + level-growth CURVES stay hardcoded (allowed).

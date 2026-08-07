@@ -45,7 +45,7 @@ namespace Game.Client
         private TMP_InputField _nameField;
         private Button _raceButton, _classButton;
         private int _raceIndex, _classIndex;
-        private static readonly Race[] Races = { Race.Human, Race.Elf, Race.Ork };   // God is debug-only
+        private static readonly Race[] Races = { Race.Human, Race.Elf, Race.Ork };   // all of them since 0.53.0
         private static readonly BaseClass[] Classes = { BaseClass.Fighter, BaseClass.Mage };
 
         private float _renderFps;

@@ -23,15 +23,21 @@ public static partial class ClassSkillTables
             [Discipline.Warlord]      = new[] { (GreaterWarCry, "Rally"), (MightyBlow, "Cleave") },
             [Discipline.Phantom]      = new[] { (BattleFury, "Shadowstep"), (TwinSlash, "Ambush") },
             [Discipline.Venomweaver]  = new[] { (TwinSlash, "Venom Strike"), (BattleFury, "Creeping Toxin") },
-            [Discipline.Sharpshooter] = new[] { (PowerShot, "Piercing Shot"), (BattleFury, "Steady Aim") },
-            [Discipline.Trapper]      = new[] { (PowerShot, "Snare Shot"), (Disrupt, "Net Trap") },
+            // 🔴 The three RANGED rogue disciplines each opened with a rename of Heavy Draw
+            // (`PowerShot`) — "Piercing Shot", "Snare Shot", "Rending Shot". All three were removed
+            // 2026-08-07 (playtest-19 M7): *"remove it from after 40lvl as well"*. He is done with
+            // that skill on the rogue line at every level, not just the @24 grant.
+            // ⚠ The `PowerShot` SkillDef itself STAYS — deleting it is what the old warnings were
+            // about, and it now has no learn assignment at all until the level-40 bow CSV lands.
+            [Discipline.Sharpshooter] = new[] { (BattleFury, "Steady Aim") },
+            [Discipline.Trapper]      = new[] { (Disrupt, "Net Trap") },
             // The two disciplines the ARCHER MERGE added. Nullblade is the HUMAN melee rogue —
             // docs/design/Disciplines.md already wrote that kit as "Phantom, Human flavour: anti
             // magic", so it inherits the stealth/ambush shape; Phantom itself went to the Elf, whose
             // authored flavour ("anti phys", evasion) is what the name has always described.
             // Hunter is the ORK bow, from that doc's "Sharpshooter, Ork flavour: dmg focus".
             [Discipline.Nullblade]    = new[] { (BattleFury, "Nullstep"), (TwinSlash, "Silencing Cut") },
-            [Discipline.Hunter]       = new[] { (PowerShot, "Rending Shot"), (BattleFury, "Blood Draw") },
+            [Discipline.Hunter]       = new[] { (BattleFury, "Blood Draw") },
             // Lightbringer + Warchanter are fully authored per race below.
             [Discipline.Magus]        = new[] { (FlameBolt, "Annihilate"), (GreaterWeakness, "Mana Burn") },
             [Discipline.Tempest]      = new[] { (FlameBolt, "Chain Lightning"), (GreaterWeakness, "Maelstrom") },
@@ -105,7 +111,7 @@ public static partial class ClassSkillTables
                     ClassSkills.RegisterThird(race, Discipline.Venomweaver,
                         new ClassSkill(Envenom, 40), new ClassSkill(VenomBurst, 44));
                     break;
-                default:   // Human (+ God): bleed
+                default:   // Human: bleed
                     ClassSkills.RegisterThird(race, Discipline.Venomweaver,
                         new ClassSkill(Rupture, 40), new ClassSkill(DetonateWounds, 44));
                     break;

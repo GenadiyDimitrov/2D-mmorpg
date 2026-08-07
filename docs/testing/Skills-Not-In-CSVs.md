@@ -43,6 +43,21 @@ Combat Stance, Antidote, Resurrection, Restore Mana.
 
 ## 3. In the catalog but granted to NOBODY (dead weight — safe to delete)
 
+> ## ✅ RESOLVED AND BUILT, 2026-08-07 (0.53.0). This section is now HISTORY.
+>
+> What actually went: **`reflexes`, `archer_armor_mastery`, `archer_weapon_mastery`, `dispel_magic`,
+> the Heavy Draw @24 grant (and its three 40+ discipline renames — you asked for both halves), and
+> the WHOLE God layer** (`Race.God`, `ItemRarity.God`, `god_judgment`, `god_robes`, `hp_boost`,
+> `greater_heal`, `Classes.God.cs`, the two God classes 98/99).
+>
+> What STAYED, on your rulings: **`evade_mastery`, `precision`, `anti_magic`** (live class floors) and
+> **`class_balance_*`, which is COMMENTED OUT, not deleted** — *"class_balance should be commented for
+> now"*. The `power_shot` **definition** also stays; only its grants are gone.
+>
+> ⚠ **Your debug rig is now `/enchant <value>` + `/speed` and nothing else** — the God gear rows are
+> off the debug menu. Everything below is the reasoning that got here; keep it for the trap it
+> documents (§"Why the list lied").
+
 > ## 🔴 CORRECTION, 2026-08-05 — READ THIS BEFORE ACTING ON YOUR G1 ANSWER
 >
 > **Five lines of the list below were WRONG, and you answered "delete" on the strength of them.**

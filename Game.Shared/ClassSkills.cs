@@ -130,10 +130,9 @@ public static class ClassSkills
                 yield return new ClassSkill(SkillCatalog.RogueArmorMastery, second);
                 yield return new ClassSkill(SkillCatalog.RogueWeaponMastery, second);
                 break;
-            case Archetype.Archer:
-                yield return new ClassSkill(SkillCatalog.ArcherArmorMastery, second);
-                yield return new ClassSkill(SkillCatalog.ArcherWeaponMastery, second);
-                break;
+            // (Archetype.Archer had its own pair here until 2026-08-07. Both ids were deleted with
+            //  playtest-19 `0a`/G1: no 2nd class has carried Archer since the archer→rogue merge, and
+            //  a bow character takes the ROGUE masteries above — they already hold the bow profiles.)
             case Archetype.Nuker:
                 // Mages get NO weapon-type mastery — armor mastery + the flat atk passive
                 // carry their identity; weapon type is irrelevant for casters.

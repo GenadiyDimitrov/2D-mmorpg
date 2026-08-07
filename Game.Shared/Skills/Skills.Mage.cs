@@ -14,7 +14,7 @@ public static partial class SkillCatalog
     public const string WeaponMastery = "weapon_mastery";
     public const string Weakness = "weakness";
     public const string GreaterWeakness = "greater_weakness";
-    public const string GreaterHeal = "greater_heal";
+    // (`greater_heal` — deleted 2026-08-07 with the God layer, playtest-19 `0b`.)
     public const string FlameBolt = "flame_bolt";
     public const string HolyStrike = "holy_strike";
     public const string ElementalBurst = "elemental_burst";   // nuker 3rd-class ultimate (consumes Elemental Stones)
@@ -22,7 +22,8 @@ public static partial class SkillCatalog
     public const string EntanglingRoots = "entangling_roots"; // nuker CC — magical Root (contested)
     public const string GlacialSpike = "glacial_spike";       // nuke with +dmg vs slowed/rooted
     public const string CreepingFrost = "creeping_frost";     // stacking slow (10/20/30% over 3)
-    public const string DispelMagic = "dispel_magic";         // cancel: strips enemy buffs
+    // (`dispel_magic` — deleted 2026-08-07, playtest-19 `0a`/G1: on no class table, learnable by
+    //  nobody. SkillEffect.Cancel / DispelCount remain in the engine for a future authored skill.)
     public const string ManaBarrier = "mana_barrier";         // mana shield (damage→MP)
     public const string PhaseShift = "phase_shift";           // blink away from target (escape)
     // --- Nuker 2nd-class (CSV nuker 20-35) ---
@@ -233,11 +234,9 @@ public static partial class SkillCatalog
             Description: "Passive. With a sword or blunt: +4 M.Atk and +2 P.Atk. Casting with "
                        + "anything else (bow, dagger, or bare-handed) is half speed."),
 
-        // Dispel Magic — CANCEL: strips up to 2 random beneficial effects from an enemy.
-        new(DispelMagic, "Dispel Magic", BaseClass.Mage, SkillEffect.Cancel,
-            MpCost: 24, CastTicks: 15, CooldownTicks: 60, Range: 600, Power: 0,
-            Category: SkillCategory.Debuff, InitialMpCost: 5, DispelCount: 2,
-            Description: "Strips up to 2 random beneficial effects from an enemy."),
+        // (Dispel Magic DELETED 2026-08-07, playtest-19 `0a`/G1 — it was on no class table, so it
+        //  was in the catalog and learnable by nobody. The Cancel EFFECT and DispelCount stay in the
+        //  engine; a real cancel skill can be authored onto a class list whenever one is wanted.)
 
         // Mana Barrier — MANA SHIELD: while up, 70% of incoming damage is paid from MP instead
         // of HP, at 0.5 MP per 1 damage (until MP runs out). Self, 30s.
@@ -266,11 +265,8 @@ public static partial class SkillCatalog
             Category: SkillCategory.Debuff, SureHit: true,
             Description: "Curses the target: -30% Defence for 15s (instant cast, never fizzles)."),
 
-        new(GreaterHeal, "Greater Heal", BaseClass.Mage, SkillEffect.Heal,
-            MpCost: 35, CastTicks: 35, CooldownTicks: 15, Range: 600, Power: 150,
-            Replaces: new[] { Heal },   // upgrades (replaces) the basic heal
-            Category: SkillCategory.Heal,
-            Description: "A powerful heal that can target an ally at range (replaces Heal)."),
+        // (Greater Heal DELETED 2026-08-07 with the God layer, playtest-19 `0b` — it was on the God
+        //  learn table and nothing else. The cleric's heal ladder is authored on its own class list.)
 
         new(FlameBolt, "Flamebolt", BaseClass.Mage, SkillEffect.MagicDamage,
             MpCost: 24, CastTicks: 40, CooldownTicks: 10, Range: 900, Power: 95,
