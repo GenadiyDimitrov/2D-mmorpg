@@ -515,6 +515,21 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>`/title &lt;text&gt;` — write your own title and wear it; "" clears it. Needs the
+    /// granted right, and the text is validated on the tick thread, never here.</summary>
+    public Task SetCustomTitle(string text)
+    {
+        _world.Commands.Enqueue(new SetCustomTitleCmd(Context.ConnectionId, text ?? ""));
+        return Task.CompletedTask;
+    }
+
+    /// <summary>`/titlecolor &lt;name&gt;` — recolour the title you wrote, from the shared palette.</summary>
+    public Task SetTitleColor(string color)
+    {
+        _world.Commands.Enqueue(new SetTitleColorCmd(Context.ConnectionId, color ?? ""));
+        return Task.CompletedTask;
+    }
+
     public Task ToggleCounterAttack(bool enabled)
     {
         _world.Commands.Enqueue(new ToggleCounterAttackCmd(Context.ConnectionId, enabled));

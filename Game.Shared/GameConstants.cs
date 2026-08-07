@@ -58,11 +58,10 @@ public static class GameConstants
     /// rebuilt. So an installed 0.42.x-0.44.x APK still plays against this server; it simply shows no
     /// titles, no chat tabs and no scroll windows.
     ///
-    /// 13 (0.55.0) is the first bump that changes the MEANING of an existing field rather than adding
-    /// one: EntityDto.Title now carries a TitleCatalog ID, not display text, so a pre-13 client draws
-    /// "gold" over a head instead of "Wealthy". Held at 8 anyway — that is a cosmetic wrong word on a
-    /// line only the six board leaders and the staff ever show, and locking every installed APK out of
-    /// the game to avoid it is the worse trade.
+    /// 13 (0.55.0) adds EntityDto.TitleColor and two hub methods (SetCustomTitle / SetTitleColor) for
+    /// player-written titles. Pure additions again: an older client ignores the colour and draws every
+    /// title in its own default gold, and never calls what it does not know about. NPCs will read as a
+    /// bare "Marius" on it, since the role now travels on the title field it does not know to draw.
     /// </summary>
     public const int MinAcceptedProtocol = 8;
 

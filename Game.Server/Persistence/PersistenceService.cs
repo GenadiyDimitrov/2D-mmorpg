@@ -383,10 +383,10 @@ public class PersistenceService
         };
 
         var entries = rows
-            // The title travels as its ID, like everywhere else, so the board can draw it in its own
-            // colour (C16) instead of as one more grey word on the row.
+            // Display TEXT, like every other title on the wire. The board's own colour is not sent with
+            // it: a row already knows which category it is looking at, so the client colours from that.
             .Select((c, i) => new LeaderboardEntry(i + 1, c.Name, c.Level, Value(c),
-                                                   i == 0 ? category : ""))
+                                                   i == 0 ? TitleCatalog.Text(category) : ""))
             .ToList();
         return new LeaderboardDto(category, entries);
     }
@@ -666,6 +666,9 @@ public class PersistenceService
         // The CHOICE comes back; whether it is still HELD is decided by the loop's title refresh, which
         // is what fills entity.Title. A choice for a board you have since lost simply draws nothing.
         entity.TitleCategory = rec.TitleCategory ?? "";
+        entity.CustomTitle = rec.CustomTitle ?? "";
+        entity.CustomTitleColor = rec.CustomTitleColor ?? "";
+        entity.MayWriteTitle = rec.MayWriteTitle;
 
         if (!string.IsNullOrEmpty(rec.ActiveQuestsJson))
         {
@@ -837,7 +840,8 @@ public class PersistenceService
         int Karma, int PkCount, int PvpCount, int ConsecutivePk, bool DiedWhileAway,
         DateTime? JailedUntilUtc, DateTime? ChatBannedUntilUtc, long TotalOnlineSeconds,
         int Charisma, long CharismaLifetime, int LikesRemainingToday, string LikeBudgetDay,
-        string TitleCategory, int SocialOptions,
+        string TitleCategory, string CustomTitle, string CustomTitleColor, bool MayWriteTitle,
+        int SocialOptions,
         IReadOnlyList<ItemSnapshot> Items)
     {
         /// <summary>Capture a character. MUST be called on the tick thread. Returns
@@ -878,7 +882,8 @@ public class PersistenceService
                 e.Karma, e.PkCount, e.PvpCount, e.ConsecutivePk, e.DiedWhileAway,
                 e.JailedUntil, e.ChatBannedUntil, e.TotalOnlineSeconds,
                 e.Charisma, e.CharismaLifetime, e.LikesRemainingToday, e.LikeBudgetDay,
-                e.TitleCategory, (int)e.Social,
+                e.TitleCategory, e.CustomTitle, e.CustomTitleColor, e.MayWriteTitle,
+                (int)e.Social,
                 items);
         }
     }
@@ -1001,6 +1006,9 @@ public class PersistenceService
         rec.LikesRemainingToday = snap.LikesRemainingToday;
         rec.LikeBudgetDay = snap.LikeBudgetDay;
         rec.TitleCategory = snap.TitleCategory;
+        rec.CustomTitle = snap.CustomTitle;
+        rec.CustomTitleColor = snap.CustomTitleColor;
+        rec.MayWriteTitle = snap.MayWriteTitle;
         rec.AutoHuntJson = snap.AutoHuntJson;
         rec.EquipPresetsJson = snap.EquipPresetsJson;
         rec.BuffsJson = snap.BuffsJson;

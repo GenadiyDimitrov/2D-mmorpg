@@ -47,12 +47,13 @@ public record EntityDto(
     // what to tiptoe around BEFORE it decides for you. Cached on the entity at spawn, so this costs a
     // bool per snapshot and no catalog lookups.
     bool Aggressive = false,
-    // The title this player is WEARING, as a TitleCatalog ID ("gold", "staff_admin") — NOT display
-    // text. The client resolves both the words and the COLOUR from the id (C16); a pre-resolved
-    // string would have told it nothing about which board the title came from, and the colour is
-    // half of what the title says. Empty for everyone not wearing one, which is nearly everyone, so
-    // it costs an empty string per snapshot.
-    string Title = "");
+    // THE TITLE LINE over this entity's head: the words, and the colour to draw them in (RRGGBB, no
+    // '#'; "" = TitleCatalog.DefaultHex). TEXT, not an id — a title may be granted by a board, by a
+    // staff role, or written by its owner with `/title`, and the plate must not have to know which.
+    // For an NPC this is the ROLE half of its name ("Elder" over "Marius").
+    // Empty for everyone not wearing one, so it costs an empty string per snapshot.
+    string Title = "",
+    string TitleColor = "");
 
 /// <summary>What to draw over an NPC's head about quests. Sent per player, because availability is
 /// personal — level, race, class and what you have already done all decide it.</summary>
@@ -356,9 +357,10 @@ public record AutoPotionDto(string ItemId, bool Enabled, int ThresholdPct);
 public record RegionNotice(string Name, int MinLevel, int MaxLevel);
 
 /// <summary>One row of a leaderboard: rank position, character, the ranked metric value, and the reward
-/// title the #1 in that category wears as a <see cref="TitleCatalog"/> ID (empty for everyone else —
-/// resolve it with <see cref="TitleCatalog.Text"/>/<see cref="TitleCatalog.ColorHex"/>). Value's meaning
-/// depends on the category (gold, kills, seconds online, or level).</summary>
+/// title the #1 in that category wears, as display text (empty for everyone else). Its colour is not
+/// sent — the row knows its own category, so the client reads it from
+/// <see cref="TitleCatalog.ColorHex"/>. Value's meaning depends on the category (gold, kills, seconds
+/// online, or level).</summary>
 public record LeaderboardEntry(int Rank, string Name, int Level, long Value, string Title);
 
 /// <summary>Server -> client (request/response): a ranked board for one <see cref="Leaderboards"/>
@@ -403,17 +405,21 @@ public static class Leaderboards
 }
 
 /// <summary>
-/// Every title a character can WEAR, and the colour it wears in — leaderboard titles plus the STAFF
-/// ones (C17).
+/// Titles: the words, the colours, and the rules about who may write their own.
 ///
-/// A title travels as an ID, never as display text: <see cref="EntityDto.Title"/>, the persisted
-/// choice, and the picker all carry the same string, and both text and colour are resolved here. That
-/// is what lets a title be coloured at all (a resolved string tells the client nothing about which
-/// board it came from), and it means re-wording or re-colouring one changes it for everybody at once.
+/// ⚠ **A title on the wire is TEXT plus a COLOUR, never an id** (owner, 2026-08-07). The ids below
+/// exist only for the GRANTS a character holds — "you top the Wealth board", "you are staff" — and are
+/// resolved to text+colour the moment one is worn. That split is the whole point: a granted title and a
+/// player-written one (`/title asdf`) arrive at the nameplate as exactly the same pair of fields, so
+/// the drawing code does not know or care which is which, and free titles needed no new plumbing.
 ///
-/// The staff ids are NOT <see cref="Leaderboards.Categories"/> — there is no board to top. They are
-/// held by ACCOUNT ROLE, so they cannot be lost to a rival, and unlike a board title they are the one
-/// thing on a plate a player should be able to trust.
+/// What the ids are still for:
+///   • the picker lists what you HOLD, and holding is a live fact (rank 1 of a board, or a staff role);
+///   • losing the board has to take the title back off, which needs to know where it came from.
+///
+/// The words granted by the ranking and staff systems are RESERVED — <see cref="IsReserved"/> — so a
+/// player with writing rights cannot simply type "Warlord" and wear a rank he never earned. That is the
+/// one rule that makes an earned title mean anything once free text exists.
 /// </summary>
 public static class TitleCatalog
 {
@@ -421,6 +427,10 @@ public static class TitleCatalog
     public const string Admin = "staff_admin";
     /// <summary>Held by <see cref="AccountRole.Moderator"/>.</summary>
     public const string Moderator = "staff_mod";
+
+    /// <summary>The pseudo-id a CUSTOM title is worn under. Never appears in a picker — it is what
+    /// <see cref="TitlesDto.Worn"/> reads when the worn title is one the player wrote.</summary>
+    public const string Custom = "custom";
 
     /// <summary>The title ids this account role holds unconditionally (empty for a player).</summary>
     public static string[] ForRole(AccountRole role) => role switch
@@ -432,11 +442,11 @@ public static class TitleCatalog
 
     public static bool IsStaffTitle(string id) => id == Admin || id == Moderator;
 
-    /// <summary>True if this id is a title at all — a board category or a staff title. The server
+    /// <summary>True if this id names a GRANTED title — a board category or a staff title. The server
     /// validates a wear request against this, so an unknown id can never reach a plate.</summary>
     public static bool IsTitle(string? id) => Leaderboards.IsCategory(id) || (id is not null && IsStaffTitle(id));
 
-    /// <summary>Display text for a title id.</summary>
+    /// <summary>Display text for a granted title id.</summary>
     public static string Text(string id) => id switch
     {
         Admin     => "Game Master",
@@ -454,14 +464,12 @@ public static class TitleCatalog
     };
 
     /// <summary>
-    /// The title's colour, as an RRGGBB hex with no '#'. Lives in Shared so the nameplate, the rank
-    /// board and the picker cannot drift apart.
+    /// The colour a GRANTED title is worn in, as an RRGGBB hex with no '#'.
     ///
-    /// The owner's palette (C16): gold board golden, time-played green, PvP purplish, PK dark red.
-    /// The PvP purple is deliberately DEEPER than the PvP-flag name colour (#CC80FF) — a flagged
-    /// player's name is already purple, and matching it would turn the two-line plate into one purple
-    /// blob that says nothing. Level and Charisma were not named: sky (the ladder everyone climbs)
-    /// and rose (the social board).
+    /// The owner's palette: gold board golden, time-played green, PvP purplish, PK dark red. The PvP
+    /// purple is deliberately DEEPER than the PvP-flag name colour (#CC80FF) — a flagged player's name
+    /// is already purple, and matching it would turn a two-line plate into one purple blob. Level and
+    /// Charisma were not named: sky (the ladder everyone climbs) and rose (the social board).
     /// </summary>
     public static string ColorHex(string id) => id switch
     {
@@ -473,8 +481,103 @@ public static class TitleCatalog
         "charisma" => "FF8FC4",   // rose
         Admin      => "FF5555",   // staff, loud on purpose
         Moderator  => "4FC3F7",
-        _          => "FFFFFF",
+        _          => DefaultHex,
     };
+
+    /// <summary>What a title with no colour of its own is drawn in — and the colour a custom title
+    /// starts at before its owner picks one.</summary>
+    public const string DefaultHex = "F2D473";
+
+    /// <summary>An NPC's ROLE line ("Elder" over Marius). Deliberately a cool grey-blue and NOT one of
+    /// the player-title colours: an NPC's role is furniture you read once, not an achievement, and it
+    /// must not compete with the six board colours standing next to it in a busy town square.</summary>
+    public const string NpcHex = "9FB6C9";
+
+    // ----- custom titles -------------------------------------------------------------------------
+
+    /// <summary>Colours a player may choose for a title they wrote. A NAMED palette rather than free
+    /// hex: it keeps garbage off the wire, and it stops a custom title from being typed in the exact
+    /// dark red the PK board uses — the reserved WORDS would be protected while the look was not.</summary>
+    public static readonly (string Name, string Hex)[] Palette =
+    {
+        ("white",  "FFFFFF"), ("gold",   DefaultHex), ("amber",  "FFA94D"),
+        ("green",  "7BD97B"), ("teal",   "4FD1C5"),   ("sky",    "6FC9FF"),
+        ("blue",   "7C9CFF"), ("violet", "B98CFF"),   ("rose",   "FF9BC4"),
+        ("crimson","FF6B6B"), ("silver", "C9D1D9"),
+    };
+
+    /// <summary>Resolve a palette NAME to its hex. Returns false for anything not in the palette —
+    /// including raw hex, deliberately.</summary>
+    public static bool TryPaletteColor(string? name, out string hex)
+    {
+        hex = DefaultHex;
+        if (string.IsNullOrWhiteSpace(name)) return false;
+        foreach (var (n, h) in Palette)
+            if (string.Equals(n, name.Trim(), StringComparison.OrdinalIgnoreCase)) { hex = h; return true; }
+        return false;
+    }
+
+    public static string PaletteNames() => string.Join(", ", Array.ConvertAll(Palette, p => p.Name));
+
+    /// <summary>The longest a player-written title may be. A nameplate line is ~200px on a phone; past
+    /// this the title starts painting over the neighbouring plates it is supposed to sit above.</summary>
+    public const int MaxCustomLength = 20;
+
+    /// <summary>Words the ranking and staff systems own. A custom title may not BE one of these, or the
+    /// boards stop meaning anything — the entire value of "Warlord" is that it cannot be typed.</summary>
+    public static bool IsReserved(string text)
+    {
+        string t = (text ?? "").Trim();
+        if (t.Length == 0) return false;
+        foreach (var cat in Leaderboards.Categories)
+            if (string.Equals(Leaderboards.TopTitle(cat), t, StringComparison.OrdinalIgnoreCase)) return true;
+        return string.Equals(Text(Admin), t, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(Text(Moderator), t, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Validate a player-written title. <paramref name="reason"/> is a sentence to show the
+    /// player when it fails. The server is the authority; the client calls this only to fail fast.</summary>
+    public static bool IsValidCustom(string? text, out string reason)
+    {
+        string t = (text ?? "").Trim();
+        if (t.Length == 0)         { reason = "A title needs some text."; return false; }
+        if (t.Length > MaxCustomLength)
+        { reason = $"Too long — {MaxCustomLength} characters at most."; return false; }
+        if (IsReserved(t))
+        { reason = $"\"{t}\" is a rank title — it is earned on a board, not written."; return false; }
+
+        foreach (char c in t)
+        {
+            // Letters, digits, space, apostrophe and hyphen. Everything else is refused: rich-text
+            // markup would let a title recolour or resize itself past every rule here (TMP reads
+            // "<color=...>" out of any label), and control characters break the plate's one line.
+            if (char.IsLetterOrDigit(c) || c == ' ' || c == '\'' || c == '-') continue;
+            reason = "Letters, numbers, spaces, ' and - only.";
+            return false;
+        }
+        reason = "";
+        return true;
+    }
+
+    // ----- NPC role lines ------------------------------------------------------------------------
+
+    /// <summary>
+    /// Split an NPC's authored name into its ROLE and its personal name: "Elder Marius" → ("Elder",
+    /// "Marius"), so the plate can read `Elder` over `Marius` instead of one long run-on (owner).
+    ///
+    /// Splits at the LAST space, not the first: the roles in this world are not all one word ("High
+    /// Priest Oren", "Spirit Helper Nyra", "Class Master Vael"), while the personal names all are. A
+    /// name with no space has no role and is returned whole.
+    ///
+    /// ⚠ NPCs only. A MOB's name is not "&lt;role&gt; &lt;name&gt;" — splitting "Ridgeback Pup" would
+    /// invent a creature called Pup.
+    /// </summary>
+    public static (string Role, string Name) SplitNpcName(string fullName)
+    {
+        string full = (fullName ?? "").Trim();
+        int space = full.LastIndexOf(' ');
+        return space <= 0 ? ("", full) : (full.Substring(0, space), full.Substring(space + 1));
+    }
 }
 
 /// <summary>
@@ -485,12 +588,19 @@ public static class TitleCatalog
 /// Wealthy" that stays on a player who has since been out-earned says the opposite of what the board
 /// says, and the whole point of the thing is to advertise the board.
 ///
-/// <paramref name="Held"/> and <paramref name="Worn"/> are TITLE ids (append-only, like skill ids) —
-/// board categories, plus the STAFF titles a role grants (C17) — not display text: the words and the
-/// colour both come from <see cref="TitleCatalog"/>, so re-wording or re-colouring one does it for
-/// everyone. Worn = "" means none.
+/// <paramref name="Held"/> and <paramref name="Worn"/> are GRANT ids (append-only, like skill ids) —
+/// board categories, plus the STAFF titles a role grants. They name what you may wear, not what is
+/// drawn: the words and the colour that actually reach a plate travel on <see cref="EntityDto"/> as
+/// text. Worn = "" means none, and <see cref="TitleCatalog.Custom"/> means the worn one is written.
+///
+/// <paramref name="MayWrite"/> is the per-character right to set a title of your own (`/title`), off
+/// by default and granted by staff — the hook the owner asked for, so that "do something, earn the
+/// right to name yourself" has somewhere to land. <paramref name="CustomText"/> /
+/// <paramref name="CustomColor"/> carry what they last wrote, so the picker can offer it back after
+/// they try a board title and want their own name again.
 /// </summary>
-public record TitlesDto(string[] Held, string Worn);
+public record TitlesDto(string[] Held, string Worn,
+                        bool MayWrite = false, string CustomText = "", string CustomColor = "");
 
 /// <summary>The pseudo skill-id for "basic attack" as an opt-in auto action: put it in
 /// <see cref="AutoHuntConfigDto.Skills"/> (enabled) and the auto-hunt will melee when no real skill

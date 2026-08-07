@@ -12,7 +12,7 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## 0.55.0 — 2026-08-07 — the QoL five: chat, timers, the off hand, and titles with a voice
+## 0.55.0 — 2026-08-07 — the QoL five, titles you can write, and NPCs that wear their role
 
 Playtest-19 **C1 · C3 · C14 · C16 · C17** — the rest of the QoL six he picked (C15 shipped inside
 0.54.0). Server + Unity client both type-check; **no db reset**.
@@ -50,18 +50,43 @@ so the square cannot disagree with the rule that actually refused the shield.
   ONE TMP font asset with a static atlas, so a second typeface would have to be baked; TMP's
   synthesised styling on the font already there gets the effect he asked for.
 
-⚠ **This changes what `EntityDto.Title` MEANS.** It now carries a `TitleCatalog` **id**, not display
-text — a resolved string tells the client nothing about which board a title came from, and the colour
-is half of what the title says. Words *and* hex both resolve from the new `TitleCatalog` in
-`Game.Shared`, so the nameplate, the rank board and the picker cannot drift apart.
-`ProtocolVersion` **12 → 13**; `MinAcceptedProtocol` stays at 8, because the only cost to an older
-APK is one wrong word on a line that six board leaders ever show.
+**A title on the wire is TEXT plus a COLOUR** — `EntityDto.Title` + the new `EntityDto.TitleColor`
+(RRGGBB, no `#`). Not an id: a title can be granted by a board, granted by a staff role, written by
+its owner, or belong to an NPC, and the plate must not have to know which. That is what made the two
+features below cost almost nothing to add. `ProtocolVersion` **12 → 13** (a field and two hub methods,
+both pure additions); `MinAcceptedProtocol` stays at 8.
 
 **C17 — admins and moderators hold their own titles**: *Game Master* and *Moderator*, held by
 **account role** rather than by topping a board, so they cannot be lost to a rival. They arrive in the
 same picker as every other title and are worn the same way — deliberately **opt-in**, like the board
 titles, so staff can still walk around as a normal player. `/role` refreshes them live, so a
 promotion offers the title and a demotion strips a worn one without waiting for a relog.
+
+**Player-written titles.** `/title <text>` (**20 characters**) sets and wears a title of your own;
+`/titlecolor <colour>` recolours it from a named palette. Gated on a per-character right — off by
+default, granted with `/titleright <name> on` — which is the hook for "do something in the game, earn
+the right to name yourself"; the admin command is the placeholder that grant will replace. The
+**ranking and staff words are RESERVED**: nobody can type `Warlord` and wear a rank they never earned,
+which is the one rule that keeps an earned title worth earning. The palette is named colours rather
+than free hex, so a written title also cannot be dressed in the PK board's dark red. Text is validated
+server-side (letters, digits, space, `'`, `-` — rich-text markup would let a title recolour itself
+past every rule here). What you wrote is kept while a board title is worn, so you can switch back
+without retyping.
+
+**NPCs wear their role as a title.** `Elder Marius` now plates as `Elder` over `Marius` (owner). Split
+at the **last** space, because the roles are not all one word — *High Priest Oren*, *Spirit Helper
+Nyra*, *Class Master Vael* — while the personal names all are. NPCs only: splitting a mob's name would
+invent a creature called *Pup*. The catalog keeps the full authored name, so quest hints and dialog
+headers still read "Elder Marius", and the target frame shows the whole person on its one row.
+
+**`/target <name>`** selects by name instead of by finger — the case being a crowd around the
+gatekeeper whose plate sits behind three other players'. Matches either half of an NPC's name or a
+prefix of either (`/target Pell`, `/target Gatekeeper`), exact beating prefix and nearest winning
+within each, so a Pell and a Pellon in the same square resolve the way you meant. Client-side, because
+targeting is client-side — the server only ever hears a target id when you act on it.
+
+⚠ **DELETE `Game.Server/game.db`** — three new columns (`CustomTitle`, `CustomTitleColor`,
+`MayWriteTitle`) and `EnsureCreated()` does not migrate.
 
 ## 0.54.0 — 2026-08-07 — the tutorial chain, and the Newbie kit becomes a 30-day loaner
 

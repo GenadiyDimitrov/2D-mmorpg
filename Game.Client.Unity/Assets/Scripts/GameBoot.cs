@@ -344,6 +344,70 @@ namespace Game.Client
             return null;
         }
 
+        /// <summary>True if <paramref name="raw"/> is exactly this command, or this command followed by
+        /// its argument. A bare StartsWith would make `/title` swallow `/titleright`.</summary>
+        private static bool IsCommand(string raw, string command) =>
+            raw.Equals(command, StringComparison.OrdinalIgnoreCase) ||
+            raw.StartsWith(command + " ", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// `/target &lt;name&gt;` — select whoever is nearest with that name.
+        ///
+        /// The case this exists for (owner): a crowd around the gatekeeper, whose plate is behind three
+        /// other players', and no finger can reach it. Matching is deliberately generous — an NPC's
+        /// authored name is "Gatekeeper Pell" but its plate now reads `Gatekeeper` over `Pell`, so both
+        /// halves, and a prefix of either, have to work or the command would need you to know which
+        /// half the server kept as the name.
+        ///
+        /// EXACT matches win over prefix ones, and nearest wins within each: with a Pell and a Pellon
+        /// in the square, "/target Pell" must mean Pell.
+        /// </summary>
+        public void TargetByName(string name)
+        {
+            if (Phase != ClientPhase.InWorld || Entities == null) return;
+            string needle = (name ?? "").Trim();
+            if (needle.Length == 0) { ClientLog.Warn("Usage: /target <name>"); return; }
+            if (!Entities.TryGetState(SelfId, out var self)) return;
+
+            Guid bestId = Guid.Empty; float bestDistSq = float.MaxValue; bool bestExact = false;
+            foreach (var kv in Entities.States)
+            {
+                var e = kv.Value;
+                if (e.Id == SelfId) continue;
+
+                // The title line counts as part of the name for matching only — "Gatekeeper" finds Pell.
+                bool exact = Matches(e.Name, needle) || Matches(e.Title, needle)
+                          || Matches((e.Title + " " + e.Name).Trim(), needle);
+                bool prefix = !exact && (StartsWith(e.Name, needle) || StartsWith(e.Title, needle));
+                if (!exact && !prefix) continue;
+
+                float dx = e.X - self.X, dy = e.Y - self.Y;
+                float d2 = dx * dx + dy * dy;
+                // An exact match always beats a prefix one, however far away it is.
+                if (bestExact && !exact) continue;
+                if (exact && !bestExact) { bestId = e.Id; bestDistSq = d2; bestExact = true; continue; }
+                if (d2 < bestDistSq) { bestId = e.Id; bestDistSq = d2; bestExact = exact; }
+            }
+
+            if (bestId == Guid.Empty)
+            {
+                // "in sight" is the honest limit: this searches what the server has told us about, and
+                // that is only ever what is in view range.
+                ClientLog.Warn("No one called \"" + needle + "\" in sight.");
+                return;
+            }
+
+            TargetId = bestId;
+            if (Entities.TryGetState(bestId, out var picked))
+                ClientLog.Info("Targeting " + (string.IsNullOrEmpty(picked.Title)
+                                               ? picked.Name : picked.Title + " " + picked.Name) + ".");
+
+            static bool Matches(string have, string want) =>
+                !string.IsNullOrEmpty(have) && have.Equals(want, StringComparison.OrdinalIgnoreCase);
+            static bool StartsWith(string have, string want) =>
+                !string.IsNullOrEmpty(have) && have.StartsWith(want, StringComparison.OrdinalIgnoreCase);
+        }
+
         /// <summary>Select the nearest living enemy (mob) within range; pressing again steps to the
         /// next-nearest, so you can flick between the ones in front of you.</summary>
         public void TargetClosest()
@@ -920,6 +984,9 @@ namespace Game.Client
             {
                 HeldTitles = t?.Held ?? new string[0];
                 WornTitle = t?.Worn ?? "";
+                MayWriteTitle = t?.MayWrite ?? false;
+                CustomTitle = t?.CustomText ?? "";
+                CustomTitleColor = t?.CustomColor ?? "";
                 TitlesRevision++;
             });
             _net.QuestLogReceived += q => Main(() => Quests = q);
@@ -1800,11 +1867,42 @@ namespace Game.Client
         /// <summary>Bumped on every Titles push so the Rank window redraws only when something changed.</summary>
         public int TitlesRevision { get; private set; }
 
+        /// <summary>Has this character been granted the right to write its own title? The picker's
+        /// custom row and the `/title` hint are shown only when it has — offering either to someone who
+        /// cannot use them is an advertisement, not a feature.</summary>
+        public bool MayWriteTitle { get; private set; }
+
+        /// <summary>What this character last wrote for itself, and in what colour ("" = never wrote
+        /// one). Kept by the server even while a board title is worn, so the picker can offer it back.</summary>
+        public string CustomTitle { get; private set; } = "";
+        public string CustomTitleColor { get; private set; } = "";
+
         public async void SetTitle(string category)
         {
             if (Phase != ClientPhase.InWorld) return;
             try { await _net.SetTitleAsync(category ?? ""); }
             catch (Exception ex) { ClientLog.Warn("Title: " + ex.Message); }
+        }
+
+        /// <summary>`/title &lt;text&gt;` — write your own title and wear it; "" clears it. The text is
+        /// checked HERE only to save a round trip on an obvious mistake; the server validates it again
+        /// and is the authority (a hand-rolled client could skip this entirely).</summary>
+        public async void SetCustomTitle(string text)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            text = (text ?? "").Trim();
+            if (text.Length > 0 && !TitleCatalog.IsValidCustom(text, out string reason))
+            { ClientLog.Warn(reason); return; }
+            try { await _net.SetCustomTitleAsync(text); }
+            catch (Exception ex) { ClientLog.Warn("Title: " + ex.Message); }
+        }
+
+        /// <summary>`/titlecolor &lt;name&gt;` — recolour the title you wrote.</summary>
+        public async void SetTitleColor(string color)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.SetTitleColorAsync(color ?? ""); }
+            catch (Exception ex) { ClientLog.Warn("Title colour: " + ex.Message); }
         }
 
         public async void TogglePvp()
@@ -2230,6 +2328,24 @@ namespace Game.Client
                 // reaches the admin branch is refused for a non-staff character.
                 if (raw.Equals("/offline", StringComparison.OrdinalIgnoreCase))
                 { StartOfflineFarm(); return; }
+
+                // Write your own title, if you have been granted the right. Player commands, so they
+                // must sit ABOVE the admin passthrough or a non-staff character would be told
+                // "unknown command" for the one thing the grant exists to let them do.
+                // ⚠ Matched on "exact, or followed by a space" rather than a bare StartsWith: the ADMIN
+                // command is `/titleright`, and a prefix match would have swallowed it and tried to
+                // wear "right Bob on" as a title.
+                if (IsCommand(raw, "/titlecolor"))
+                { SetTitleColor(raw.Substring("/titlecolor".Length).Trim()); return; }
+                if (IsCommand(raw, "/title"))
+                { SetCustomTitle(raw.Substring("/title".Length).Trim()); return; }
+
+                // `/target <name>` — select by NAME instead of by tapping (owner): in a crowd around the
+                // gatekeeper the NPC you want is behind three other players' plates and simply cannot be
+                // hit with a finger. Client-side, because targeting IS client-side — the server is only
+                // ever told a target id when you act on it.
+                if (raw.StartsWith("/target ", StringComparison.OrdinalIgnoreCase))
+                { TargetByName(raw.Substring(8).Trim()); return; }
 
                 // Party target-commands (leader-only ones are re-checked server-side). Every one has an
                 // action button too (target frame / party window); these are the typed equivalents.

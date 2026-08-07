@@ -120,10 +120,23 @@ public class CharacterRecord
     public int LikesRemainingToday { get; set; } = GameConstants.DailyLikeBudget;
     public string LikeBudgetDay { get; set; } = "";
 
-    /// <summary>The leaderboard category whose title this character wears ("" = none). The CATEGORY id,
-    /// not the text — a title is only drawn while the character still holds that board.
-    /// (Schema change — delete game.db to recreate.)</summary>
+    /// <summary>WHERE the worn title comes from: a leaderboard category, a staff title id,
+    /// <see cref="TitleCatalog.Custom"/>, or "" for none. The SOURCE, not the words — a granted title is
+    /// only drawn while the character still holds it. (Schema change — delete game.db to recreate.)</summary>
     public string TitleCategory { get; set; } = "";
+
+    /// <summary>The title this character WROTE for itself, kept even while a granted one is worn so it
+    /// can be switched back to without retyping. "" = never wrote one.
+    /// (Schema change 0.55.0 — delete game.db to recreate.)</summary>
+    public string CustomTitle { get; set; } = "";
+
+    /// <summary>Colour of <see cref="CustomTitle"/>, RRGGBB with no '#'. "" = the default.
+    /// (Schema change 0.55.0 — delete game.db to recreate.)</summary>
+    public string CustomTitleColor { get; set; } = "";
+
+    /// <summary>Has this character been granted the right to write its own title? Off by default.
+    /// (Schema change 0.55.0 — delete game.db to recreate.)</summary>
+    public bool MayWriteTitle { get; set; }
 
     /// <summary>Active quests as JSON list of CharacterQuestState.</summary>
     public string ActiveQuestsJson { get; set; } = "";

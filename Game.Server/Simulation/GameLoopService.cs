@@ -242,6 +242,8 @@ public class GameLoopService : BackgroundService
                 case StartOfflineFarmCmd c: HandleStartOfflineFarm(c); break;
                 case TogglePvpCmd c: HandleTogglePvp(c); break;
                 case SetTitleCmd c: HandleSetTitle(c); break;
+                case SetCustomTitleCmd c: HandleSetCustomTitle(c); break;
+                case SetTitleColorCmd c: HandleSetTitleColor(c); break;
                 case TitleHoldersCmd c: ApplyTitleHolders(c); break;
                 case ToggleCounterAttackCmd c: HandleToggleCounterAttack(c); break;
                 case RequestDebugConfigCmd c: HandleRequestDebugConfig(c); break;
@@ -636,18 +638,38 @@ public class GameLoopService : BackgroundService
 
     /// <summary>Recompute what this player's plate should read and tell their client. Called on every
     /// board refresh, on login, and when they pick a different one.</summary>
+    /// <summary>
+    /// Resolve the CHOICE (<see cref="Entity.TitleCategory"/>) into the text + colour that actually go
+    /// over the head. Three shapes end up in the same two fields, which is the point: a board title, a
+    /// staff title and one the player wrote are indistinguishable to everything downstream.
+    /// </summary>
     private void RefreshTitle(Entity p, bool notifyLoss = true)
     {
         string was = p.Title;
-        // Entity.Title is the title ID, not its words — the client resolves text AND colour from it
-        // (C16). It is still "" when nothing is worn, so every `Title.Length > 0` test still reads
-        // "is this player wearing one".
-        p.Title = HoldsTitle(p, p.TitleCategory) ? p.TitleCategory : "";
+
+        if (p.TitleCategory == TitleCatalog.Custom)
+        {
+            // A written title survives losing a board — there is no board. It IS revoked if the right
+            // to write one is taken away, or the whole grant would be pointless to withdraw.
+            bool ok = p.CanWriteTitle && p.CustomTitle.Length > 0;
+            p.Title = ok ? p.CustomTitle : "";
+            p.TitleColor = ok ? p.CustomTitleColor : "";
+        }
+        else if (HoldsTitle(p, p.TitleCategory))
+        {
+            p.Title = TitleCatalog.Text(p.TitleCategory);
+            p.TitleColor = TitleCatalog.ColorHex(p.TitleCategory);
+        }
+        else
+        {
+            p.Title = "";
+            p.TitleColor = "";
+        }
 
         // The CHOICE is deliberately left alone when the board is lost — regain it and the title comes
         // straight back on, with nothing to re-pick.
         if (notifyLoss && was.Length > 0 && p.Title.Length == 0)
-            SendSystemToEntity(p, $"\"{TitleCatalog.Text(was)}\" is no longer yours — someone else tops that board.");
+            SendSystemToEntity(p, $"\"{was}\" is no longer yours — someone else tops that board.");
 
         SendTitles(p);
     }
@@ -675,13 +697,31 @@ public class GameLoopService : BackgroundService
     private void SendTitles(Entity p) =>
         SendTo(p, "Titles", new TitlesDto(
             HeldTitles(p),
-            p.Title.Length > 0 ? p.TitleCategory : ""));
+            p.Title.Length > 0 ? p.TitleCategory : "",
+            p.CanWriteTitle, p.CustomTitle, p.CustomTitleColor));
 
     private void HandleSetTitle(SetTitleCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var p)) return;
 
         string cat = cmd.Category ?? "";
+
+        // Switching BACK to the title you wrote. It is not "held" (nothing grants it but the right),
+        // so it takes its own branch rather than one more special case inside HoldsTitle.
+        if (cat == TitleCatalog.Custom)
+        {
+            if (!p.CanWriteTitle || p.CustomTitle.Length == 0)
+            {
+                SendSystemToEntity(p, "You have no title of your own to wear.");
+                SendTitles(p);
+                return;
+            }
+            p.TitleCategory = cat;
+            RefreshTitle(p, notifyLoss: false);
+            SendSystemToEntity(p, $"You are wearing \"{p.Title}\".");
+            return;
+        }
+
         if (cat.Length > 0 && !TitleCatalog.IsTitle(cat)) return;
 
         if (cat.Length > 0 && !HoldsTitle(p, cat))
@@ -696,6 +736,72 @@ public class GameLoopService : BackgroundService
         SendSystemToEntity(p, cat.Length == 0
             ? "Title removed."
             : $"You are wearing \"{TitleCatalog.Text(cat)}\".");
+    }
+
+    /// <summary>
+    /// `/title &lt;text&gt;` — write your own title, if you have been granted the right.
+    ///
+    /// Setting it also WEARS it: typing a title and then having to go and select it in a window is a
+    /// step with no decision in it. `/title` with no text takes the written one off (and forgets it),
+    /// which is the only way back to a bare name without opening the Rank window.
+    /// </summary>
+    private void HandleSetCustomTitle(SetCustomTitleCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var p)) return;
+
+        if (!p.CanWriteTitle)
+        {
+            SendSystemToEntity(p, "You have not been granted the right to name yourself.");
+            return;
+        }
+
+        string text = (cmd.Text ?? "").Trim();
+        if (text.Length == 0)
+        {
+            p.CustomTitle = "";
+            if (p.TitleCategory == TitleCatalog.Custom) p.TitleCategory = "";
+            RefreshTitle(p, notifyLoss: false);
+            SendSystemToEntity(p, "Your own title is cleared.");
+            return;
+        }
+
+        // The SERVER is the authority on this, not the client that also checks it — the client check
+        // only saves a round trip, and a hand-rolled client could skip it entirely.
+        if (!TitleCatalog.IsValidCustom(text, out string reason))
+        {
+            SendSystemToEntity(p, reason);
+            return;
+        }
+
+        p.CustomTitle = text;
+        if (p.CustomTitleColor.Length == 0) p.CustomTitleColor = TitleCatalog.DefaultHex;
+        p.TitleCategory = TitleCatalog.Custom;
+        RefreshTitle(p, notifyLoss: false);
+        SendSystemToEntity(p, $"You are wearing \"{text}\".  (/titlecolor <colour> to recolour it)");
+    }
+
+    /// <summary>`/titlecolor &lt;name&gt;` — recolour the title you wrote. A named palette only, so a
+    /// written title cannot be dressed up in the PK board's dark red.</summary>
+    private void HandleSetTitleColor(SetTitleColorCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var p)) return;
+
+        if (!p.CanWriteTitle)
+        {
+            SendSystemToEntity(p, "You have not been granted the right to name yourself.");
+            return;
+        }
+        if (!TitleCatalog.TryPaletteColor(cmd.Color, out string hex))
+        {
+            SendSystemToEntity(p, "Colours: " + TitleCatalog.PaletteNames());
+            return;
+        }
+
+        p.CustomTitleColor = hex;
+        RefreshTitle(p, notifyLoss: false);   // a no-op unless the written title is the one being worn
+        SendSystemToEntity(p, p.TitleCategory == TitleCatalog.Custom
+            ? "Title recoloured."
+            : "Colour saved — it applies when you wear your own title.");
     }
 
     /// <summary>
@@ -4777,7 +4883,8 @@ public class GameLoopService : BackgroundService
                     : "Admin: /jail, /unjail, /kick, /ban, /unban, /chatban, /unchatban, /jailed, " +
                       "/role <name> <player|moderator|admin>, /tp <name>, /where <name>, /god, " +
                       "/spd <m|a|c> <v> (bare /spd resets), /bag <name>, /give <name>, " +
-                      "/givegold <name> <amount>, /droprate [group|gear|global|item <id>] [mult]");
+                      "/givegold <name> <amount>, /droprate [group|gear|global|item <id>] [mult], " +
+                      "/titleright <name> <on|off>");
                 break;
 
             case "god":
@@ -4785,6 +4892,49 @@ public class GameLoopService : BackgroundService
                 SendSystemToEntity(admin, $"God mode {(admin.GodMode ? "ON" : "OFF")}.");
                 SendAdminState(admin);   // persistent on-screen indicator, not just this one line
                 break;
+
+            case "titleright":
+            {
+                // Grant/revoke the right to WRITE your own title (`/title`). The owner's intent is that
+                // this is eventually earned by doing something in the game; until that exists, staff
+                // hand it out, and this command is the hook it will replace.
+                //
+                // ⚠ ONLINE characters only, unlike /role. /role has a DB path because a staff promotion
+                // has to stick to someone who is not playing; this one is cosmetic, and an offline path
+                // would mean a second write route to keep in step for no benefit yet.
+                int rsp = arg.LastIndexOf(' ');
+                if (rsp <= 0)
+                {
+                    SendSystemToEntity(admin, "Usage: /titleright <name> <on|off>   (online characters)");
+                    break;
+                }
+                string rightTarget = arg[..rsp].Trim();
+                string onOff = arg[(rsp + 1)..].Trim().ToLowerInvariant();
+                bool? grant = onOff switch
+                {
+                    "on" or "yes" or "1" => true,
+                    "off" or "no" or "0" => false,
+                    _ => null,
+                };
+                if (grant is null) { SendSystemToEntity(admin, "Usage: /titleright <name> <on|off>"); break; }
+
+                if (FindOnlinePlayer(rightTarget) is not Entity subject)
+                {
+                    SendSystemToEntity(admin, $"'{rightTarget}' is not online.");
+                    break;
+                }
+
+                subject.MayWriteTitle = grant.Value;
+                // Revoking has to take a written title straight off — RefreshTitle re-resolves the
+                // choice, and a custom one with no right resolves to nothing.
+                RefreshTitle(subject, notifyLoss: false);
+                SendSystemToEntity(subject, grant.Value
+                    ? $"You may name yourself: /title <text> ({TitleCatalog.MaxCustomLength} characters), "
+                      + "/titlecolor <colour>."
+                    : "Your right to name yourself has been withdrawn.");
+                SendSystemToEntity(admin, $"{subject.Name}: title right {(grant.Value ? "granted" : "withdrawn")}.");
+                break;
+            }
 
             case "role":
             {
@@ -10052,9 +10202,17 @@ var effect = def.Effect;
     {
         foreach (var npc in WorldMap.Npcs)
         {
+            // "Elder Marius" is drawn as `Elder` over `Marius` (owner) — the role goes on the TITLE
+            // line every plate already has, and the name line holds a name. One long run-on was what
+            // made a row of NPCs in a town square unreadable, and it is also what made them hard to
+            // pick out by name. ⚠ The catalog keeps the FULL authored name: quest hints, the dialog
+            // header and every doc still say "Elder Marius".
+            var (role, personal) = TitleCatalog.SplitNpcName(npc.Name);
             var entity = new Entity
             {
-                Name = npc.Name,
+                Name = personal,
+                Title = role,
+                TitleColor = role.Length > 0 ? TitleCatalog.NpcHex : "",
                 Kind = EntityKind.Npc,
                 X = npc.X,
                 Y = npc.Y,

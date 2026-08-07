@@ -416,9 +416,19 @@ public record LogoutCmd(string ConnectionId) : IGameCommand;
 public record StartOfflineFarmCmd(string ConnectionId) : IGameCommand;
 public record TogglePvpCmd(string ConnectionId, bool Enabled) : IGameCommand;
 public record ToggleCounterAttackCmd(string ConnectionId, bool Enabled) : IGameCommand;
-/// <summary>Client -> server: wear the title of this leaderboard category, or "" for none. Refused
-/// (silently, with a system line) if the character does not currently hold that board.</summary>
+/// <summary>Client -> server: wear the title of this leaderboard category, "" for none, or
+/// <see cref="TitleCatalog.Custom"/> for the one you wrote. Refused (with a system line) if the
+/// character does not currently hold that board.</summary>
 public record SetTitleCmd(string ConnectionId, string Category) : IGameCommand;
+
+/// <summary>Client -> server: `/title &lt;text&gt;` — write your own title and wear it. Empty text
+/// clears it. Refused unless the character has been granted the right; the text is validated
+/// server-side (<see cref="TitleCatalog.IsValidCustom"/>), never on the client's say-so.</summary>
+public record SetCustomTitleCmd(string ConnectionId, string Text) : IGameCommand;
+
+/// <summary>Client -> server: `/titlecolor &lt;name&gt;` — recolour the title you wrote, from
+/// <see cref="TitleCatalog.Palette"/>.</summary>
+public record SetTitleColorCmd(string ConnectionId, string Color) : IGameCommand;
 
 /// <summary>Worker thread -> the single writer: the boards were just re-read, and these characters
 /// hold these title categories (by NAME). Carries the whole answer rather than a "go look" signal so

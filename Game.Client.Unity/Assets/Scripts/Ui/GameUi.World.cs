@@ -1067,7 +1067,15 @@ namespace Game.Client
             if (target == null) return;
 
             string level = target.Kind == EntityKind.Player && target.Level <= 0 ? "" : "  Lv " + target.Level;
-            _targetName.text = target.Name + level + (target.Dead ? "   (dead)" : "");
+            // The title rides in front of the name here rather than on its own line: this frame is one
+            // row, and an NPC that now plates as `Elder` over `Marius` must still read as a whole
+            // person in the window you opened to talk to them.
+            string worn = string.IsNullOrEmpty(target.Title)
+                        ? ""
+                        : "<color=#" + (string.IsNullOrEmpty(target.TitleColor)
+                                        ? TitleCatalog.DefaultHex : target.TitleColor) + ">"
+                          + target.Title + "</color> ";
+            _targetName.text = worn + target.Name + level + (target.Dead ? "   (dead)" : "");
             bool self = Boot.Entities != null && Boot.TargetId == Boot.Entities.SelfId;
             bool player = target.Kind == EntityKind.Player && !self;
             bool mob = target.Kind == EntityKind.Mob;
@@ -1675,21 +1683,19 @@ namespace Game.Client
             public TextMeshProUGUI TitleLabel;
         }
 
-        /// <summary>The fallback colour for a title id the client does not recognise (an id from a newer
-        /// build). Real titles are coloured per board — see <see cref="TitleColourOf"/>.</summary>
+        /// <summary>What a title with no colour of its own is drawn in, and the fallback for a hex this
+        /// build cannot parse.</summary>
         private static readonly Color TitleColour = new Color(0.95f, 0.83f, 0.45f, 1f);
 
         /// <summary>
-        /// A title's colour, from the SHARED palette (C16) — golden for the gold board, green for time
-        /// played, a deep purple for PvP, dark red for PK, loud red for a Game Master.
-        ///
-        /// The hex lives in <see cref="TitleCatalog"/> rather than here because the nameplate is not the
-        /// only place a title is drawn: the rank board and the picker read the same string, and three
-        /// copies of a palette is three chances for the gold board's title to be gold in one window and
-        /// grey in another.
+        /// Turn the RRGGBB the server sent into a colour. The hex is chosen server-side — by the board
+        /// a title came from, by the palette its owner picked, or by the NPC role line — so this is a
+        /// parse, not a lookup: the client is deliberately not a second place that decides what colour
+        /// a title is.
         /// </summary>
-        private static Color TitleColourOf(string titleId) =>
-            ColorUtility.TryParseHtmlString("#" + TitleCatalog.ColorHex(titleId), out var c) ? c : TitleColour;
+        private static Color TitleColourOf(string hex) =>
+            !string.IsNullOrEmpty(hex) && ColorUtility.TryParseHtmlString("#" + hex, out var c)
+                ? c : TitleColour;
 
         /// <summary>Height of the title line, and how far the cast bar is pushed up when one is showing.</summary>
         private const float TitleLineHeight = 17f;
@@ -1753,19 +1759,18 @@ namespace Game.Client
                     ? UiKit.Good
                     : NameColour(e, myLevel);
 
-                // THE WORN TITLE, on its own line above the name. The server has already decided whether
-                // it is still held — an unheld one arrives as "" — so there is nothing to check here
-                // beyond "is there an id".
-                //
-                // It arrives as a TitleCatalog ID, and the COLOUR is half of what it says (C16): the
-                // gold board's title is golden, PK's is dark red, a Game Master's is loud. Resolving
-                // both from Shared is what keeps this plate, the rank board and the picker agreeing.
+                // THE TITLE LINE, above the name. It arrives as TEXT plus a COLOUR and this draws both
+                // — deliberately without knowing where either came from. A board title, a staff title,
+                // one the player wrote with `/title`, and an NPC's role ("Elder" over "Marius") are all
+                // the same two fields by the time they reach here, which is why free titles needed no
+                // new drawing code. The server has already decided whether a granted one is still held;
+                // an unheld one arrives as "".
                 bool hasTitle = !string.IsNullOrEmpty(e.Title);
                 plate.TitleLabel.gameObject.SetActive(hasTitle);
                 if (hasTitle)
                 {
-                    plate.TitleLabel.text = TitleCatalog.Text(e.Title);
-                    plate.TitleLabel.color = TitleColourOf(e.Title);
+                    plate.TitleLabel.text = e.Title;
+                    plate.TitleLabel.color = TitleColourOf(e.TitleColor);
                 }
 
                 // The cast bar shares the space above the plate, so it steps up over a title rather than

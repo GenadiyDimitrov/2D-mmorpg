@@ -213,6 +213,13 @@ namespace Game.Client
         /// you hold it and answers with a fresh Titles push either way.</summary>
         public Task SetTitleAsync(string category) => _connection.SendAsync("SetTitle", category ?? "");
 
+        /// <summary>`/title &lt;text&gt;` — write your own title and wear it; "" clears it. Refused
+        /// unless the character holds the granted right, and the text is validated server-side.</summary>
+        public Task SetCustomTitleAsync(string text) => _connection.SendAsync("SetCustomTitle", text ?? "");
+
+        /// <summary>`/titlecolor &lt;name&gt;` — recolour the title you wrote, from the shared palette.</summary>
+        public Task SetTitleColorAsync(string color) => _connection.SendAsync("SetTitleColor", color ?? "");
+
         /// <summary>Open a box/chest from the inventory. A random box grants its loot immediately; a
         /// SELECTION box replies with a "Selection" push for the player to choose from.</summary>
         public Task OpenBoxAsync(Guid instanceId) => _connection.SendAsync("OpenBox", instanceId);

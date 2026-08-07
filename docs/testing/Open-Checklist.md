@@ -16,17 +16,17 @@ section number referenced here.
 
 ## ⚠ BEFORE YOU START
 
-**Install the 0.55.0 APK and unzip the 0.55.0 server.** Protocol went **12 → 13** at 0.55.0, and this
-one actually matters: `EntityDto.Title` now carries a title *id* rather than its words, so a 0.53.2
-APK against a 0.55.0 server would draw `gold` over a head instead of `Wealthy`. The server still
-accepts old clients (the floor stays at 8) — but install **both** sides of 0.55.0 and the question
-never comes up. The catalogs and skill tables are compiled into each side anyway.
+**Install the 0.55.0 APK and unzip the 0.55.0 server.** Protocol went **12 → 13** (a title-colour
+field and two hub methods, all additions — the server still accepts older clients). Install **both**
+sides anyway: an older APK draws every NPC as a bare "Marius" and every title in plain gold, and the
+catalogs and skill tables are compiled into each side.
 
-🔴 **DELETE `Game.Server/game.db` + `-shm` + `-wal`.** Not optional this time. Three separate reasons
+🔴 **DELETE `Game.Server/game.db` + `-shm` + `-wal`.** Not optional this time. Four separate reasons
 stack up: 0.52.0 changed columns, 0.53.0 removed the God layer (an old character carrying `Race = 99`
-or a God item references an id that no longer exists), and the mastery restructure clamps
-`mastery_robe` from 3 rungs to 2 on login. ⚠ Delete the one in `Game.Server/`, **not** the stale copy
-in `bin/Debug/` — that one is a decoy and deleting it will fool you into thinking you reset.
+or a God item references an id that no longer exists), the mastery restructure clamps `mastery_robe`
+from 3 rungs to 2 on login, and 0.55.0 adds three title columns. ⚠ Delete the one in `Game.Server/`,
+**not** the stale copy in `bin/Debug/` — that one is a decoy and deleting it will fool you into
+thinking you reset.
 
 🔴 **EIGHT BUILDS ARE UNPLAYED.** 0.49.0, 0.50.0, 0.51.0, 0.52.0, 0.53.0/0.53.1, 0.53.2, **0.54.0**
 and **0.55.0** — by a distance the longest unplayed run this project has had. Two of them (0.51.0 and
@@ -324,9 +324,10 @@ title.** ->
 
 ---
 
-## 59. 0.55.0 — the QoL five (C1 · C3 · C14 · C16 · C17)
+## 59. 0.55.0 — the QoL five (C1 · C3 · C14 · C16 · C17) + written titles + NPC roles
 
-No section in `TestChecklist.Unity.md` — the detail is here. **No db reset needed.**
+No section in `TestChecklist.Unity.md` — the detail is here. 🔴 **DELETE `game.db`** — three new
+columns (`CustomTitle`, `CustomTitleColor`, `MayWriteTitle`).
 
 `59a` [] - **C1 — chat resets per character.** Talk in Local/World, leave to character select, enter
 on a *different* character: the chat tabs are **empty**. Delete a character and make a new one — the
@@ -356,8 +357,33 @@ title (nothing is worn until you pick it) — tell me if you would rather staff 
 automatically. -> 
 `59i` [] - **C17 — `/role` takes effect live.** Promote a logged-in character to moderator: the title
 appears in their picker without a relog. Demote them while they wear it: it comes straight off. -> 
-`59j` [] - ⚠ **Protocol is 13.** The 0.55.0 APK against the 0.55.0 server should show titles as
-words. (A 0.53.2 APK would show `gold` — that is expected, not a bug.) -> 
+
+### The titles you asked for on 2026-08-07 (after the queue was built)
+
+`59k` [] - **NPCs wear their role.** `Elder Marius` plates as **`Elder`** over **`Marius`**. Check the
+multi-word ones too — **High Priest Oren**, **Spirit Helper Nyra**, **Class Master Vael**,
+**Grandmaster Thorne** — they split at the LAST space, so only the personal name should be on the name
+line. ⚠ **A MOB must NOT split**: "Ridgeback Pup" stays one name. -> 
+`59l` [] - **The full name survives everywhere it should**: quest text, the dialog header and the
+target frame still read the whole "Elder Marius". -> 
+`59m` [] - 🔴 **`/target Pell` works in a crowd** — the thing you actually asked for. Also try
+`/target Gatekeeper` (the role half) and `/target Pel` (a prefix). It only finds what is IN SIGHT. -> 
+`59n` [] - **`/title` is refused without the right**: a normal character gets "you have not been
+granted the right to name yourself". -> 
+`59o` [] - **Grant it** with `/titleright <name> on` (⚠ **online characters only**), then `/title
+Bonecrusher` sets AND wears it in one step. `/titlecolor violet` recolours it. `/title` with no text
+clears it. -> 
+`59p` [] - 🔴 **The reserved words hold**: `/title Warlord`, `/title wealthy`, `/title Game Master`
+are all refused. This is the rule that keeps a board title worth earning — if any of them gets
+through, that is a bug, not a nitpick. -> 
+`59q` [] - **20 characters max**, and letters/digits/space/`'`/`-` only. Try `/title <color=#FF0000>x`
+— it must be refused, or a title could recolour itself past the palette. -> 
+`59r` [] - **It survives a relog**, and the picker offers it back as **«your title» — your own** after
+you switch to a board title and want it again. -> 
+`59s` [] - **Revoking works**: `/titleright <name> off` takes a worn written title straight off the
+head. -> 
+`59t` [] - ⚠ **Protocol is 13.** Install the 0.55.0 APK *and* server. (An older APK draws NPCs as a
+bare "Marius" and every title in plain gold — expected, not a bug.) -> 
 
 ---
 

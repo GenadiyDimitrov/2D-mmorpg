@@ -343,16 +343,38 @@ public class Entity
     /// <summary>UTC date (yyyy-MM-dd) the like budget was last granted; a new day refills it to the budget.</summary>
     public string LikeBudgetDay { get; set; } = "";
 
-    // ----- Wearable leaderboard title -----
-    /// <summary>The leaderboard CATEGORY whose title this player chose to wear ("" = none). Persisted.
-    /// The category id is stored rather than the text so re-wording a title re-words everyone's, and so
-    /// a title that is no longer HELD can be recognised and simply not drawn.</summary>
+    // ----- Wearable title -----
+    /// <summary>WHERE the worn title comes from: a leaderboard category, a staff title id,
+    /// <see cref="TitleCatalog.Custom"/> for one the player wrote, or "" for none. Persisted.
+    /// The source is stored rather than only the text so re-wording a granted title re-words
+    /// everyone's, and so a title that is no longer HELD can be recognised and taken back off.</summary>
     public string TitleCategory { get; set; } = "";
 
-    /// <summary>The title's display text, or "" when nothing is worn OR the worn one is no longer held.
+    /// <summary>The title's display TEXT, or "" when nothing is worn OR the worn one is no longer held.
     /// Recomputed on the tick thread whenever the title holders are re-read; the snapshot only ever
-    /// copies it, so no DB or catalog work happens on the broadcast path.</summary>
+    /// copies it, so no DB or catalog work happens on the broadcast path. For an NPC this is the ROLE
+    /// half of its authored name ("Elder" over "Marius"), set once at spawn.</summary>
     public string Title { get; set; } = "";
+
+    /// <summary>The colour the title is drawn in — RRGGBB, no '#'. "" means
+    /// <see cref="TitleCatalog.DefaultHex"/>. Travels with the text because a written title's colour is
+    /// its owner's choice and cannot be derived from anything.</summary>
+    public string TitleColor { get; set; } = "";
+
+    /// <summary>What the player last WROTE for themselves, kept even while a board title is worn so
+    /// they can switch back to it without retyping. Persisted, and independent of
+    /// <see cref="TitleCategory"/>.</summary>
+    public string CustomTitle { get; set; } = "";
+    /// <summary>The colour chosen for <see cref="CustomTitle"/> (RRGGBB, "" = default). Persisted.</summary>
+    public string CustomTitleColor { get; set; } = "";
+
+    /// <summary>May this character write its own title (`/title`)? Off by default and granted by staff
+    /// — the owner's hook for "do something, earn the right to name yourself". Admins always may.
+    /// Persisted per character.</summary>
+    public bool MayWriteTitle { get; set; }
+
+    /// <summary>The effective right: an admin never has to grant it to themselves.</summary>
+    public bool CanWriteTitle => MayWriteTitle || IsAdmin;
 
     /// <summary>NPC id this entity represents (NPCs only).</summary>
     public string? NpcId { get; set; }
@@ -2061,7 +2083,7 @@ public class Entity
     public EntityDto ToDto() =>
         new(Id, Name, Kind, Race, BaseClass, X, Y, Speed, Level,
             Hp, MaxHp, Mp, MaxMp, SecondClass, ThirdClass, Dead, IsDisconnected, FlagState,
-            Kind == EntityKind.Mob && Aggressive, Title);
+            Kind == EntityKind.Mob && Aggressive, Title, TitleColor);
 
     /// <summary>The tick-to-tick DYNAMIC fields only (see EntityLean) — position, vitals, dead/dc/flag.
     /// Sent while an entity is already in view; the static fields ride the full spawn DTO.</summary>
@@ -2080,7 +2102,7 @@ public class Entity
         a.Name == b.Name && a.Kind == b.Kind && a.Race == b.Race && a.BaseClass == b.BaseClass &&
         a.Level == b.Level && a.MaxHp == b.MaxHp && a.MaxMp == b.MaxMp &&
         a.SecondClass == b.SecondClass && a.ThirdClass == b.ThirdClass && a.Aggressive == b.Aggressive &&
-        // Title is static too: changing it (or losing the board) must force a full DTO, or the new
-        // title would only reach the people who walked into view after it changed.
-        a.Title == b.Title;
+        // Title is static too: changing it (or losing the board, or recolouring it) must force a full
+        // DTO, or the new title would only reach the people who walked into view after it changed.
+        a.Title == b.Title && a.TitleColor == b.TitleColor;
 }

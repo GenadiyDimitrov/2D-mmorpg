@@ -97,20 +97,39 @@ namespace Game.Client
 
             TitleRow("No title", worn.Length == 0, () => Boot.SetTitle(""));
 
-            // Each row in the title's OWN colour (C16), so the picker previews what will actually sit
-            // over your head. Staff titles (C17) come through here too — Source() is what tells them
-            // apart, since "top of ..." would be a lie for one held by role.
+            // Each row in the title's OWN colour, so the picker previews what will actually sit over
+            // your head. Staff titles come through here too — Source() is what tells them apart, since
+            // "top of ..." would be a lie for one held by role.
             foreach (var cat in held)
                 TitleRow("<color=#" + TitleCatalog.ColorHex(cat) + ">«" + TitleCatalog.Text(cat)
                          + "»</color>   — " + TitleCatalog.Source(cat),
                          cat == worn, () => Boot.SetTitle(cat));
 
-            if (held.Length == 0)
+            // THE ONE YOU WROTE. Only shown to a character granted the right — for everyone else the
+            // row would be an advertisement for something they cannot do anything about.
+            if (Boot.MayWriteTitle && !string.IsNullOrEmpty(Boot.CustomTitle))
+            {
+                string hex = string.IsNullOrEmpty(Boot.CustomTitleColor)
+                           ? TitleCatalog.DefaultHex : Boot.CustomTitleColor;
+                TitleRow("<color=#" + hex + ">«" + Boot.CustomTitle + "»</color>   — your own",
+                         worn == TitleCatalog.Custom, () => Boot.SetTitle(TitleCatalog.Custom));
+            }
+
+            if (held.Length == 0 && string.IsNullOrEmpty(Boot.CustomTitle))
             {
                 var note = UiKit.Label(_rankList,
                     "You hold no titles yet. Reach #1 on any board and its title becomes yours to wear "
                     + "— for as long as you hold the top spot.", 15f, UiKit.TextDim);
                 note.gameObject.AddComponent<LayoutElement>().minHeight = 60f;
+            }
+
+            if (Boot.MayWriteTitle)
+            {
+                var note = UiKit.Label(_rankList,
+                    "You may name yourself:  /title <text>   (" + TitleCatalog.MaxCustomLength
+                    + " characters)\n/titlecolor <colour>  —  " + TitleCatalog.PaletteNames()
+                    + "\nRank titles are earned, not written.", 14f, UiKit.TextDim);
+                note.gameObject.AddComponent<LayoutElement>().minHeight = 76f;
             }
         }
 
@@ -148,12 +167,12 @@ namespace Game.Client
 
             foreach (var e in dto.Entries)
             {
-                // The #1's title, in its own colour (C16). Title arrives as an id; the words and the
-                // hex both come from Shared.
+                // The #1's title, in its board's colour. The text is sent; the colour comes from the
+                // category this list IS, so no extra field has to ride every row to say it.
                 string title = string.IsNullOrEmpty(e.Title)
                              ? ""
-                             : "   <color=#" + TitleCatalog.ColorHex(e.Title) + ">«"
-                               + TitleCatalog.Text(e.Title) + "»</color>";
+                             : "   <color=#" + TitleCatalog.ColorHex(_rankCategory) + ">«"
+                               + e.Title + "»</color>";
                 string text = "#" + e.Rank + "   " + e.Name + "   Lv " + e.Level
                             + "   " + FormatRankValue(_rankCategory, e.Value) + title;
                 var label = UiKit.Label(_rankList, text, 16f,
