@@ -9,7 +9,7 @@ public static partial class QuestCatalog
 {
     static partial void RegisterAll()
     {
-        RegisterStarterChain();           // lvl 10/12 — earns the Newbie kit (was given at creation)
+        RegisterTutorialChain();          // lvl 1-20 — "meet the town", and it earns the Newbie kit
         RegisterClassChangeChains();      // 2nd class (lvl 18/20)
         RegisterThirdClassChains();       // 3rd class (lvl 40, longer + harder)
         RegisterDailyQuests();            // repeatable once per server day
@@ -17,8 +17,8 @@ public static partial class QuestCatalog
         // Add more (non-class-change) chains here.
     }
 
-    // Implemented in Quests.Starter.cs.
-    static partial void RegisterStarterChain();
+    // Implemented in Quests.Tutorial.cs (playtest-19 M5; it replaced Quests.Starter.cs).
+    static partial void RegisterTutorialChain();
     // Implemented in Quests.ClassChangeChains.cs.
     static partial void RegisterClassChangeChains();
     static partial void RegisterThirdClassChains();

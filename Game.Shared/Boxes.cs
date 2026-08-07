@@ -29,30 +29,35 @@ public static class BoxCatalog
             }),
 
             // Newbie armor boxes — the class body + the SHARED accessories (100% each).
+            // ⚠ These grant the BOUND copies (playtest-19 M6): the Newbie kit is a 30-day loaner,
+            // untradable and unsellable. The un-suffixed ids are real Ferrite Mythic ladder gear and
+            // must stay ordinary items — see ItemCatalog.BoundCopies.
             new BoxDef(ItemCatalog.BoxNewbieArmorLight, new[]
             {
-                new BoxEntry(ItemCatalog.NewbieLightBody, 1.0f),
-                new BoxEntry(ItemCatalog.NewbieHelm, 1.0f),
-                new BoxEntry(ItemCatalog.NewbieGloves, 1.0f),
-                new BoxEntry(ItemCatalog.NewbieBoots, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieLightBodyBound, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieHelmBound, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieGlovesBound, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieBootsBound, 1.0f),
             }),
             new BoxDef(ItemCatalog.BoxNewbieArmorRobe, new[]
             {
-                new BoxEntry(ItemCatalog.NewbieRobeBody, 1.0f),
-                new BoxEntry(ItemCatalog.NewbieHelm, 1.0f),
-                new BoxEntry(ItemCatalog.NewbieGloves, 1.0f),
-                new BoxEntry(ItemCatalog.NewbieBoots, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieRobeBodyBound, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieHelmBound, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieGlovesBound, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieBootsBound, 1.0f),
             }),
 
             // Newbie WEAPONS SELECTION box — pick ONE starter weapon (the STAFF is in here now, so a mage
             // picks it from the same box as everyone else — the starter reward is class-agnostic).
+            // The WAND is here too (checklist C15): a one-handed caster had no starter option at all.
             new BoxDef(ItemCatalog.BoxNewbieWeapons, new[]
             {
-                new BoxEntry(ItemCatalog.NewbieSword1H, 1.0f),
-                new BoxEntry(ItemCatalog.NewbieDaggers, 1.0f),
-                new BoxEntry(ItemCatalog.NewbieSword2H, 1.0f),
-                new BoxEntry(ItemCatalog.NewbieBow, 1.0f),
-                new BoxEntry(ItemCatalog.NewbieStaff, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieSword1HBound, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieDaggersBound, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieSword2HBound, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieBowBound, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieStaffBound, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieWandBound, 1.0f),
             }, PickCount: 1),
 
             // TRAINING weapons — pick ONE of the five. This is the character-creation weapon box now;
@@ -124,9 +129,9 @@ public static class BoxCatalog
             // Newbie jewels box — 2 earrings, 2 rings, 1 necklace (100% each).
             new BoxDef(ItemCatalog.BoxNewbieJewels, new[]
             {
-                new BoxEntry(ItemCatalog.NewbieEarring, 1.0f, 2, 2),
-                new BoxEntry(ItemCatalog.NewbieRing, 1.0f, 2, 2),
-                new BoxEntry(ItemCatalog.NewbieNecklace, 1.0f),
+                new BoxEntry(ItemCatalog.NewbieEarringBound, 1.0f, 2, 2),
+                new BoxEntry(ItemCatalog.NewbieRingBound, 1.0f, 2, 2),
+                new BoxEntry(ItemCatalog.NewbieNecklaceBound, 1.0f),
             }),
 
             // Treasure Chest — staples always, rarer rewards scaling down to a

@@ -121,10 +121,14 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
       ⚠ **The debug rig is now `/enchant <value>` + `/speed` only — do not regress those.**
    4. ~~**The friction list**~~ — ✅ **DONE 2026-08-07, see 1b above.** All seven (`M13` `M12` `M11`
       `M14` `M4` `M2`+Options window, `46o`), plus `M10`.
-   5. **Answers owed him** — `0e` `lb_*`/`wc_*` he never answered (my rec: keep, one commented line
-      from learnable when the 40+ CSVs land) · `M5`/`M6` the tutorial chain + 30-day bound newbie gear
-      are a scoped quest project (C2/C13) and are **the next session** · nice-to-have with `M1`: the
-      client should say *"far above your level"* rather than showing a silent miss.
+   5. **Answers owed him** — `0e` `lb_*`/`wc_*` **CLOSED 2026-08-07: leave them** (placeholders for
+      40+, commented, no harm) · ~~`M5`/`M6` the tutorial chain + 30-day bound newbie gear~~ ✅ **BUILT
+      0.54.0, UNPLAYED** — five quests 1→20 in `Quests.Tutorial.cs` (it replaced `Quests.Starter.cs`),
+      the kit is a bound 30-day loaner via `ItemCatalog.BoundCopies`, and `ItemDef.LifetimeSeconds`
+      makes timed items a general feature instead of a rune-only one. `C15` (Ferrite Wand in the
+      newbie box) rode along. **Next in the queue: the QoL six — `C1` `C3` `C14` `C16` `C17`.** ·
+      nice-to-have with `M1`: the client should say *"far above your level"* rather than showing a
+      silent miss.
       (`M1` and `M10` are answered and built; struck from this list 2026-08-07.)
 1. ~~**Publish 0.45.0 and play §36 + §40-43**~~ — **DONE, 2026-08-03.** See the paragraph above; the
    queue it produced is [testing/Playtest-Archive.md#playtest-17](testing/Playtest-Archive.md#playtest-17) / §44. Still-unreached items

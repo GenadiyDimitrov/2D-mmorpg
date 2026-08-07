@@ -7,10 +7,61 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.53.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.54.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 0.54.0 — 2026-08-07 — the tutorial chain, and the Newbie kit becomes a 30-day loaner
+
+Playtest-19 **M5** and **M6**, the first two items of the build queue he set on 2026-08-07.
+
+**The tutorial chain — five quests, levels 1→20 (`Game.Shared/Quests/Quests.Tutorial.cs`).** His
+15-beat outline, whose point is *meeting every NPC in town* rather than the kills: Gatekeeper Pell
+(free teleports to 40) → 5 pups → 3 → Huntmaster Cera (repeatable contracts) → 5 foxes → 6 → Spirit
+Helper Nyra (she buffs 6-75) → Apothecary Miren (the free daily Rune) → 10 goblin scouts → 10 →
+Armsmaster Dolan and the **Newbie kit** → 15 → Dolan again for the jewels + 1-day rune → 18 Elder
+Marius → 19 High Priest Oren → 20 Class Master Vael.
+
+It is five `QuestDef`s rather than one 15-step quest because a `QuestReward` pays on completion and
+his outline pays three times along the way; they chain on `RequiresQuestId`, so the order still holds.
+
+⚠ **It wraps the three class quests without gating them**, which is the rule he stated: *"U just can
+lvl up to 20 go do the 3 quests and done.. / The chain is for the newebie equipment an the end
+reward."* Part 5's steps are plain `TalkTo`s at Marius / Oren / Vael — the chain points at them and
+at Cera's contracts and Miren's daily rune, and nothing in it is a prerequisite of anything they give.
+
+**It REPLACES the old starter chain** (`starter_kit` / `starter_blooded`, `Quests.Starter.cs` deleted).
+Those two were the same errand, and keeping both would have paid a new character two full kits. Parts
+3 and 4 *are* those quests — same giver, same levels, same rewards, same verified pacing (12 000 exp
+≈ 52% of level 10; 30 000 ≈ 39% of level 15), with the NPC beats built around them.
+
+**Completion kit**, all bound: 1 Ultimate Scroll of Return ("of Escape"), 1 Ultimate Scroll of
+Resurrection, 5 Dash Potion (Supreme), 5 Instant Healing Potion, plus 90 000 exp / 5 SP / 20 000 gold.
+
+**M6 — the Newbie kit is a LOANER: bound, unsellable, 30-day timed, destroyable.** The "Newbie" ids
+have been aliases onto the F tier's **Mythic** rung since 0.30-ish, and that is real ladder gear — it
+drops, it is crafted, it is bought — so stamping *those* untradable and timed would have timed out
+every Ferrite Mythic in the game. The quest boxes now hand out **bound copies** instead
+(`ItemCatalog.BoundCopies`): cloned from the generated piece with `d with { … }`, so not one number is
+authored and the gear CSV stays the only source of the kit's stats. Only the id (`_bound`), the name
+(`Newbie …`), tradability, the prices and the 30-day clock differ. `SetId` is deliberately kept, so a
+loaner body still completes its set — with loaner or with real accessories.
+
+**Timed items are no longer a rune-only feature.** New `ItemDef.LifetimeSeconds` stamps
+`ExpiresAtUtc` on the instance at ACQUIRE time (wall-clock, so it runs while offline), and the
+expiry sweep — renamed `ReconcileRuneBuffs` → **`ReconcileTimedItems`** — now deletes *any* expired
+item from bag, warehouse and account bank. Previously every one of those loops was gated on
+`IsRune`, so a non-rune timed item would have sat there forever with a dead clock. A **worn** piece
+expires too, and recomputes stats on the way out; otherwise the loaner armour would keep paying its
+defence for as long as you never unequipped it.
+
+Also folded in, since it is one line of the same box: **C15** — the **Ferrite Wand** is in the newbie
+weapon selection box. A one-handed caster had no starter option at all.
+
+⚠ **No db reset needed** (item defs are looked up live by DefId; the retired `starter_*` quest ids in
+`CompletedQuests` are simply ignored). Characters that already hold un-bound `_t1` gear keep it — the
+loaner only arrives via the quest.
 
 ## 0.53.2 — 2026-08-07 — Restore Spirit gets levels, the bow's accuracy roll goes flat 5
 

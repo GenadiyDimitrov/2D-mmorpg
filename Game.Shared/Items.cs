@@ -288,6 +288,13 @@ public record ItemDef(
     // ----- BOX that grants a RUNE: seconds the granted rune lasts, stamped as ExpiresAtUtc at OPEN time
     // (so buying the sealed box doesn't start the clock). 0 = not a rune box. -----
     int GrantsRuneSeconds = 0,
+    // ----- TIMED item: seconds this item survives from the moment it is ACQUIRED (0 = it never
+    // expires). Stamped as ExpiresAtUtc on the INSTANCE by AddItem, so the clock is wall-clock and
+    // runs while offline, and the expiry sweep deletes it wherever it sits (bag, warehouse, account
+    // bank) — even while it is worn. This is the generic version of GrantsRuneSeconds, which stays
+    // because a rune BOX overrides its rune's default duration at open time; a timed item has no
+    // such second source. Used by the bound Newbie loaner kit (30 days). -----
+    int LifetimeSeconds = 0,
     // ----- Optional blunt flavour/warning text shown in item details ("" = none; consumables fall back to
     // their use-skill's description). Used to spell out e.g. "War Runes boost PHYSICAL damage only". -----
     string Description = "")
@@ -589,6 +596,48 @@ public static class ItemCatalog
     public const string NewbieEarring     = "earring_t1";
     public const string NewbieRing        = "ring_t1";
     public const string NewbieNecklace    = "necklace_t1";
+
+    // ===== THE NEWBIE KIT IS A LOANER: BOUND + 30-DAY TIMED (owner, playtest-19 M6) ==============
+    // "I want the newbie equipment to be unsellable and untradable and timelimited for 30d (can be
+    //  destroied) - from the dolans quest"
+    //
+    // The pieces above are ALIASES onto the F tier's Mythic rung, which is real ladder gear: it
+    // drops, it is crafted, it is bought. Stamping them untradable and timed would time out every
+    // Ferrite Mythic in the game. So the tutorial chain hands out BOUND COPIES instead — same def,
+    // same numbers, same SetId (so a loaner body still completes its set, with loaner or with real
+    // accessories), differing only in id, name, tradability and the 30-day clock.
+    //
+    // Nothing is authored here: BoundCopies clones the generated piece, so the gear CSV stays the
+    // single source of the numbers.
+    public const int NewbieKitLifetimeSeconds = 30 * 24 * 3600;
+
+    /// <summary>The id of an item's bound copy (see <see cref="BoundCopies"/>).</summary>
+    public static string BoundId(string baseId) => baseId + "_bound";
+
+    public const string NewbieSword1HBound  = "sword1h_t1_bound";
+    public const string NewbieDaggersBound  = "duals_t1_bound";
+    public const string NewbieSword2HBound  = "sword2h_t1_bound";
+    public const string NewbieBowBound      = "bow_t1_bound";
+    public const string NewbieStaffBound    = "staff_t1_bound";
+    public const string NewbieWandBound     = "wand_t1_bound";
+    public const string NewbieLightBodyBound = "light_t1_bound";
+    public const string NewbieRobeBodyBound  = "robe_t1_bound";
+    public const string NewbieHelmBound      = "helm_t1_bound";
+    public const string NewbieGlovesBound    = "gloves_t1_bound";
+    public const string NewbieBootsBound     = "boots_t1_bound";
+    public const string NewbieEarringBound   = "earring_t1_bound";
+    public const string NewbieRingBound      = "ring_t1_bound";
+    public const string NewbieNecklaceBound  = "necklace_t1_bound";
+
+    // The tutorial chain's COMPLETION kit (owner, M5): "x1 Ultimate Scroll of Escape, x1 Ultimate
+    // Scroll of Resurrection, x5 Mythic Dash Potion, x5 Instant Health Potion — every one
+    // untradable/unsellable". Bound copies again, but with NO timer: the reward for finishing is
+    // yours to spend whenever, it just cannot be sold or handed to an alt.
+    // ("Scroll of Escape" is this game's Scroll of Return — teleport out to town.)
+    public const string ScrollReturnUltimateBound   = "scroll_return_ultimate_bound";
+    public const string ScrollResurrectUltimateBound = "scroll_resurrect_ultimate_bound";
+    public const string DashPotionMBound            = "potion_dash_m_bound";
+    public const string InstantPotionBound          = "potion_instant_bound";
     // RUNES + their sealed boxes (open → rune, wall-clock expiry set on open).
     public const string WarRune      = "rune_war";
     public const string SpellRune    = "rune_spell";
@@ -1325,6 +1374,10 @@ public static class ItemCatalog
         list.AddRange(ScaledDropItems(tieredGear));
         list.AddRange(Materials());
         list.AddRange(RecipeBooks(tieredGear));
+        // The tutorial chain's BOUND copies — the 30-day Newbie loaner kit and the completion
+        // consumables. Generated last, off the finished list, so a clone always mirrors the real
+        // item (see BoundCopies).
+        list.AddRange(BoundCopies(list));
 
         // ----- Duplicate-key guard + value fill: any item left at Value 0 gets the
         //       formula price (quest items / god one-offs stay 0 = not for trade). -----
@@ -1452,6 +1505,64 @@ public static class ItemCatalog
                 EquipSlot.Box, ItemGrade.A, ItemRarity.Epic,
                 TeachesRecipeId: recipeId);
         }
+    }
+
+    /// <summary>The BOUND copies (playtest-19 M6 + M5's completion kit): the 30-day Newbie loaner
+    /// gear and the untradable finishing consumables.
+    ///
+    /// <para>Every one is a CLONE of the real item — <c>d with { … }</c> — so not one number is
+    /// authored here and the gear CSV stays the only source of the kit's stats. What changes is the
+    /// id, the name, tradability, the prices, and (gear only) the 30-day <see
+    /// cref="ItemDef.LifetimeSeconds"/>. The <c>SetId</c> is deliberately KEPT: a loaner body must
+    /// still complete its armour set, and mixing a loaner piece with a real Ferrite one should work
+    /// too — this is a starter kit, not a separate item line.</para>
+    ///
+    /// <para>Returns a materialized list: the caller feeds it the very list it is appending to.</para>
+    /// </summary>
+    private static List<ItemDef> BoundCopies(List<ItemDef> all)
+    {
+        var by = all.GroupBy(d => d.Id).ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
+        var made = new List<ItemDef>();
+
+        // The loaner GEAR: bound, worthless, unbuyable, and it evaporates after 30 days.
+        string[] kit =
+        {
+            NewbieSword1H, NewbieDaggers, NewbieSword2H, NewbieBow, NewbieStaff, "wand_t1",
+            NewbieLightBody, NewbieRobeBody, NewbieHelm, NewbieGloves, NewbieBoots,
+            NewbieEarring, NewbieRing, NewbieNecklace,
+        };
+        foreach (var baseId in kit)
+        {
+            if (!by.TryGetValue(baseId, out var d)) continue;
+            made.Add(d with
+            {
+                Id = BoundId(baseId),
+                Name = $"Newbie {d.Name}",
+                Tradable = false,
+                BuyPriceOverride = -1,
+                SellPriceOverride = 0,
+                LifetimeSeconds = NewbieKitLifetimeSeconds,
+            });
+        }
+
+        // The COMPLETION kit: bound, but no clock — finishing the chain earns them outright.
+        string[] finishers = { ScrollReturnUltimate, ScrollResurrectUltimate, DashPotionM, InstantPotion };
+        foreach (var baseId in finishers)
+        {
+            if (!by.TryGetValue(baseId, out var d)) continue;
+            made.Add(d with
+            {
+                Id = BoundId(baseId),
+                // Suffixed rather than left identical: a player can hold both, and two stacks under
+                // one name with different rules is the kind of thing that reads as a bug.
+                Name = $"{d.Name} (Bound)",
+                Tradable = false,
+                BuyPriceOverride = -1,
+                SellPriceOverride = 0,
+            });
+        }
+
+        return made;
     }
 
     private static IEnumerable<ItemDef> ScaledDropItems(IEnumerable<ItemDef> tiered)

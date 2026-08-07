@@ -2085,7 +2085,7 @@ public class GameLoopService : BackgroundService
         if (mergeInto is not null) mergeInto.Quantity += item.Quantity;
         else player.Warehouse.Add(item);
 
-        ReconcileRuneBuffs(player);            // a deposited rune stops applying its buff (no longer in the bag)
+        ReconcileTimedItems(player);            // a deposited rune stops applying its buff (no longer in the bag)
         player.RecomputeDerived();             // reflect the un-equip
         SendInventory(player);
         SendWarehouse(player);
@@ -2117,7 +2117,7 @@ public class GameLoopService : BackgroundService
         if (mergeInto is not null) mergeInto.Quantity += item.Quantity;
         else player.Inventory.Add(item);
 
-        ReconcileRuneBuffs(player);            // a withdrawn rune re-applies its buff (back in the bag)
+        ReconcileTimedItems(player);            // a withdrawn rune re-applies its buff (back in the bag)
         player.RecomputeDerived();
         SendInventory(player);
         SendWarehouse(player);
@@ -2220,7 +2220,7 @@ public class GameLoopService : BackgroundService
         if (mergeInto is not null) mergeInto.Quantity += item.Quantity;
         else bank.Add(item);
 
-        ReconcileRuneBuffs(player);            // a deposited rune stops applying its buff
+        ReconcileTimedItems(player);            // a deposited rune stops applying its buff
         player.RecomputeDerived();
         SendInventory(player);
         SendStats(player);
@@ -2254,7 +2254,7 @@ public class GameLoopService : BackgroundService
         if (mergeInto is not null) mergeInto.Quantity += item.Quantity;
         else player.Inventory.Add(item);
 
-        ReconcileRuneBuffs(player);            // a withdrawn rune re-applies its buff (back in the bag)
+        ReconcileTimedItems(player);            // a withdrawn rune re-applies its buff (back in the bag)
         player.RecomputeDerived();
         SendInventory(player);
         SendStats(player);
@@ -5918,7 +5918,7 @@ public class GameLoopService : BackgroundService
                 TickRegionNotice(entity);
                 TickOnlineTime(entity);
                 EnforceDungeonWalls(entity);
-                if (_tick % GameConstants.TickRate == 0) ReconcileRuneBuffs(entity);   // runes, ~1/s
+                if (_tick % GameConstants.TickRate == 0) ReconcileTimedItems(entity);   // runes, ~1/s
             }
 
             TickSkillCooldowns(entity);
@@ -6231,10 +6231,12 @@ public class GameLoopService : BackgroundService
 
     private static readonly string[] RuneBuffKeys = { SkillCatalog.WarRuneBuff, SkillCatalog.SpellRuneBuff };
 
-    /// <summary>Keep each rune's buff in sync with the MAIN inventory: purge expired runes (wall-clock),
-    /// apply/keep the buff for any held unexpired rune (driving its remaining from the item's ExpiresAtUtc),
-    /// and drop a rune buff whose rune is gone (expired, or moved to the warehouse — a rune only applies
-    /// from the main bag). Cheap; runs ~1/s + on box-open + on login.</summary>
+    /// <summary>Delete every item whose wall-clock has run out — bag, warehouse and account bank, worn
+    /// or not — and keep each rune's buff in sync with the MAIN inventory: apply/keep the buff for any
+    /// held unexpired rune (driving its remaining from the item's ExpiresAtUtc), and drop a rune buff
+    /// whose rune is gone (expired, or moved to the warehouse — a rune only applies from the main bag).
+    /// Runes were the first timed item, not the only one: the 30-day Newbie loaner kit expires here too.
+    /// Cheap; runs ~1/s + on box-open + on login.</summary>
     /// <summary>Re-apply the buffs this character was carrying when it last left the world.
     ///
     /// Buffs used to die on every logout purely because nothing saved them, which the owner called out
@@ -6289,22 +6291,27 @@ public class GameLoopService : BackgroundService
         PushBuffs(p);   // the periodic push is ~1/s; don't make the bar appear a second late
     }
 
-    private void ReconcileRuneBuffs(Entity p)
+    private void ReconcileTimedItems(Entity p)
     {
         if (p.Kind != EntityKind.Player) return;
         var now = DateTime.UtcNow;
         bool invChanged = false, statsChanged = false;
 
-        // 1. Purge expired runes.
+        // 1. Purge every EXPIRED item, not just runes (playtest-19 M6: the Newbie kit is a 30-day
+        //    loaner). The gate used to be `IsRune`, which meant any other timed item would sit in the
+        //    bag forever with a dead clock — the item model has carried a per-instance ExpiresAtUtc
+        //    since the runes, and only the sweep was rune-shaped.
+        //    A WORN piece expires too: it is removed from the bag and the stats recomputed, otherwise
+        //    the loaner armour would keep paying its defence for as long as you never unequipped it.
         for (int i = p.Inventory.Count - 1; i >= 0; i--)
         {
             var it = p.Inventory[i];
-            if (it.ExpiresAtUtc is DateTime exp && exp <= now && ItemCatalog.Get(it.DefId) is { IsRune: true } d)
-            {
-                p.Inventory.RemoveAt(i);
-                invChanged = true;
-                SendSystemToEntity(p, $"{d.Name} has expired.");
-            }
+            if (it.ExpiresAtUtc is not DateTime exp || exp > now) continue;
+            if (ItemCatalog.Get(it.DefId) is not ItemDef d) continue;
+            if (it.Equipped) statsChanged = true;
+            p.Inventory.RemoveAt(i);
+            invChanged = true;
+            SendSystemToEntity(p, $"{d.Name} has expired.");
         }
 
         // 2. Which rune buffs SHOULD be up, and until when (latest expiry among that type's held runes)?
@@ -6339,12 +6346,13 @@ public class GameLoopService : BackgroundService
                 statsChanged = true;
             }
 
-        // Warehoused runes don't apply a buff, but they STILL expire (bank = space, not a time-pause).
+        // Warehoused items don't apply a rune buff, but they STILL expire (bank = space, not a
+        // time-pause). Same widening as the bag sweep above: any timed item, not only a rune.
         bool whChanged = false;
         for (int i = p.Warehouse.Count - 1; i >= 0; i--)
         {
             var it = p.Warehouse[i];
-            if (it.ExpiresAtUtc is DateTime wexp && wexp <= now && ItemCatalog.Get(it.DefId) is { IsRune: true } wd)
+            if (it.ExpiresAtUtc is DateTime wexp && wexp <= now && ItemCatalog.Get(it.DefId) is ItemDef wd)
             {
                 p.Warehouse.RemoveAt(i);
                 whChanged = true;
@@ -6359,7 +6367,7 @@ public class GameLoopService : BackgroundService
             for (int i = acctBank.Count - 1; i >= 0; i--)
             {
                 var it = acctBank[i];
-                if (it.ExpiresAtUtc is DateTime aexp && aexp <= now && ItemCatalog.Get(it.DefId) is { IsRune: true } ad)
+                if (it.ExpiresAtUtc is DateTime aexp && aexp <= now && ItemCatalog.Get(it.DefId) is ItemDef ad)
                 {
                     acctBank.RemoveAt(i);
                     acctChanged = true;
@@ -9115,6 +9123,11 @@ var effect = def.Effect;
         // with its own duration. So every rune, from any source, always carries an expiry.
         if (def.IsRune && def.GrantsRuneSeconds > 0)
             newItem.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(def.GrantsRuneSeconds);
+        // A TIMED item (the 30-day Newbie loaner kit) gets the same treatment from its own
+        // LifetimeSeconds. Non-stackable by nature — the stack merge above returns before here, so two
+        // acquisitions can never end up sharing one expiry.
+        else if (def.LifetimeSeconds > 0)
+            newItem.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(def.LifetimeSeconds);
 
         player.Inventory.Add(newItem);
         return true;
@@ -9506,7 +9519,7 @@ var effect = def.Effect;
             // OVERRIDE the default with the BOX's duration (1h/2h/24h/30d) on the rune just added.
             var rune = player.Inventory.FirstOrDefault(i => i.DefId == runeDef.Id && !before.Contains(i.InstanceId));
             if (rune != null) rune.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(def.GrantsRuneSeconds);
-            ReconcileRuneBuffs(player);   // apply its buff immediately
+            ReconcileTimedItems(player);   // apply its buff immediately
             SendInventory(player);
             SaveEntity(player);
             SendSystemToEntity(player, $"{def.Name} opened — {runeDef.Name} is now active.");
