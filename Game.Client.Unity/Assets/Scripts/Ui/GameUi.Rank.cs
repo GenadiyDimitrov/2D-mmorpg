@@ -97,8 +97,12 @@ namespace Game.Client
 
             TitleRow("No title", worn.Length == 0, () => Boot.SetTitle(""));
 
+            // Each row in the title's OWN colour (C16), so the picker previews what will actually sit
+            // over your head. Staff titles (C17) come through here too — Source() is what tells them
+            // apart, since "top of ..." would be a lie for one held by role.
             foreach (var cat in held)
-                TitleRow("«" + Leaderboards.TopTitle(cat) + "»   — top of " + Leaderboards.Label(cat),
+                TitleRow("<color=#" + TitleCatalog.ColorHex(cat) + ">«" + TitleCatalog.Text(cat)
+                         + "»</color>   — " + TitleCatalog.Source(cat),
                          cat == worn, () => Boot.SetTitle(cat));
 
             if (held.Length == 0)
@@ -144,7 +148,12 @@ namespace Game.Client
 
             foreach (var e in dto.Entries)
             {
-                string title = string.IsNullOrEmpty(e.Title) ? "" : "   «" + e.Title + "»";
+                // The #1's title, in its own colour (C16). Title arrives as an id; the words and the
+                // hex both come from Shared.
+                string title = string.IsNullOrEmpty(e.Title)
+                             ? ""
+                             : "   <color=#" + TitleCatalog.ColorHex(e.Title) + ">«"
+                               + TitleCatalog.Text(e.Title) + "»</color>";
                 string text = "#" + e.Rank + "   " + e.Name + "   Lv " + e.Level
                             + "   " + FormatRankValue(_rankCategory, e.Value) + title;
                 var label = UiKit.Label(_rankList, text, 16f,

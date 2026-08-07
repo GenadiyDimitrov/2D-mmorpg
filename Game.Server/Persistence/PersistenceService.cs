@@ -383,8 +383,10 @@ public class PersistenceService
         };
 
         var entries = rows
+            // The title travels as its ID, like everywhere else, so the board can draw it in its own
+            // colour (C16) instead of as one more grey word on the row.
             .Select((c, i) => new LeaderboardEntry(i + 1, c.Name, c.Level, Value(c),
-                                                   i == 0 ? Leaderboards.TopTitle(category) : ""))
+                                                   i == 0 ? category : ""))
             .ToList();
         return new LeaderboardDto(category, entries);
     }

@@ -1675,10 +1675,21 @@ namespace Game.Client
             public TextMeshProUGUI TitleLabel;
         }
 
-        /// <summary>A worn title is gold and smaller than the name — it must read as a decoration on the
-        /// character, not as part of who they are. The name keeps its own colour, which already means
-        /// something (level gap, PvP flag), so the title cannot borrow it.</summary>
+        /// <summary>The fallback colour for a title id the client does not recognise (an id from a newer
+        /// build). Real titles are coloured per board — see <see cref="TitleColourOf"/>.</summary>
         private static readonly Color TitleColour = new Color(0.95f, 0.83f, 0.45f, 1f);
+
+        /// <summary>
+        /// A title's colour, from the SHARED palette (C16) — golden for the gold board, green for time
+        /// played, a deep purple for PvP, dark red for PK, loud red for a Game Master.
+        ///
+        /// The hex lives in <see cref="TitleCatalog"/> rather than here because the nameplate is not the
+        /// only place a title is drawn: the rank board and the picker read the same string, and three
+        /// copies of a palette is three chances for the gold board's title to be gold in one window and
+        /// grey in another.
+        /// </summary>
+        private static Color TitleColourOf(string titleId) =>
+            ColorUtility.TryParseHtmlString("#" + TitleCatalog.ColorHex(titleId), out var c) ? c : TitleColour;
 
         /// <summary>Height of the title line, and how far the cast bar is pushed up when one is showing.</summary>
         private const float TitleLineHeight = 17f;
@@ -1742,12 +1753,20 @@ namespace Game.Client
                     ? UiKit.Good
                     : NameColour(e, myLevel);
 
-                // THE WORN TITLE, on its own gold line above the name. The server has already decided
-                // whether it is still held — an unheld one arrives as "" — so there is nothing to check
-                // here beyond "is there text".
+                // THE WORN TITLE, on its own line above the name. The server has already decided whether
+                // it is still held — an unheld one arrives as "" — so there is nothing to check here
+                // beyond "is there an id".
+                //
+                // It arrives as a TitleCatalog ID, and the COLOUR is half of what it says (C16): the
+                // gold board's title is golden, PK's is dark red, a Game Master's is loud. Resolving
+                // both from Shared is what keeps this plate, the rank board and the picker agreeing.
                 bool hasTitle = !string.IsNullOrEmpty(e.Title);
                 plate.TitleLabel.gameObject.SetActive(hasTitle);
-                if (hasTitle) plate.TitleLabel.text = e.Title;
+                if (hasTitle)
+                {
+                    plate.TitleLabel.text = TitleCatalog.Text(e.Title);
+                    plate.TitleLabel.color = TitleColourOf(e.Title);
+                }
 
                 // The cast bar shares the space above the plate, so it steps up over a title rather than
                 // drawing through it.
@@ -2003,6 +2022,13 @@ namespace Game.Client
                 var titleLabel = UiKit.Label(root, "", 12f, TitleColour, TextAlignmentOptions.Bottom);
                 UiKit.Place(UiKit.Rect(titleLabel.gameObject), new Vector2(0.5f, 1f), new Vector2(0.5f, 0f),
                             new Vector2(0f, 0f), new Vector2(200f, TitleLineHeight));
+                // "A different font from the name" (owner, C16). The client ships ONE TMP font asset with
+                // a STATIC atlas, so a second typeface is not available without baking one — italic +
+                // small caps is TMP's synthesised styling on the font we already have, and it is the
+                // difference he was after: the title stops looking like a second name and starts looking
+                // like an inscription. Letter spacing widens it a touch so the caps do not crowd.
+                titleLabel.fontStyle = FontStyles.Italic | FontStyles.SmallCaps;
+                titleLabel.characterSpacing = 4f;
                 titleLabel.outlineColor = new Color32(0, 0, 0, 210);
                 titleLabel.outlineWidth = 0.22f;
                 titleLabel.enableWordWrapping = false;

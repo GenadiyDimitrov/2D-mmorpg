@@ -139,9 +139,18 @@ namespace Game.Client
                     byKey[family.Keys[i]] = worn[i].Item;
             }
 
+            // C14: which weapon, if any, is eating the off hand. `OccupiesOffHand` is the SHARED
+            // predicate the server equips by (ItemDef), so the square can never disagree with the rule
+            // that actually refused your shield.
+            ItemDef twoHander = null;
+            if (byKey.TryGetValue("weapon", out var wep)
+                && ItemCatalog.Get(wep.DefId) is ItemDef wepDef && wepDef.OccupiesOffHand)
+                twoHander = wepDef;
+
             foreach (var (key, name, face, btn) in _equipSquares)
             {
                 btn.onClick.RemoveAllListeners();
+                btn.interactable = true;
                 if (byKey.TryGetValue(key, out var item))
                 {
                     var def = ItemCatalog.Get(item.DefId);
@@ -152,6 +161,17 @@ namespace Game.Client
                     face.color = def != null ? RarityColour(def.Rarity) : UiKit.Good;
                     var captured = item;
                     btn.onClick.AddListener(() => OpenItemDetails(captured));
+                }
+                else if (key == "shield" && twoHander != null)
+                {
+                    // The two-hander's own abbreviation, dimmed, and the square goes DEAD (owner, C14
+                    // — "it should show something, the same icon greyed"). An empty "Shld" square here
+                    // reads as a free slot, which is the one thing it is not: the weapon is holding it.
+                    // Not clickable, because there is no second item to open — it is the same weapon
+                    // already sitting in the square next to it.
+                    face.text = Abbreviations.For(twoHander.Name);
+                    face.color = Color.Lerp(RarityColour(twoHander.Rarity), UiKit.TextDim, 0.6f);
+                    btn.interactable = false;
                 }
                 else
                 {

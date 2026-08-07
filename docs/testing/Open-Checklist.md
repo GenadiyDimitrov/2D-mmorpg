@@ -1,4 +1,4 @@
-# OPEN CHECKLIST — everything untested as of **0.53.2** (2026-08-07)
+# OPEN CHECKLIST — everything untested as of **0.55.0** (2026-08-07)
 
 > **This file is now UNVERSIONED and ROLLING.** It replaces the three per-version
 > `Open-Checklist-0.45.0 / -0.47.0 / -0.48.0` files, which are gone — every item of theirs that was still open is carried
@@ -16,8 +16,11 @@ section number referenced here.
 
 ## ⚠ BEFORE YOU START
 
-**Install the 0.53.2 APK and unzip the 0.53.2 server.** Protocol is **12**, unchanged since 0.46.0 —
-but install both anyway, the catalogs and skill tables are compiled into each side.
+**Install the 0.55.0 APK and unzip the 0.55.0 server.** Protocol went **12 → 13** at 0.55.0, and this
+one actually matters: `EntityDto.Title` now carries a title *id* rather than its words, so a 0.53.2
+APK against a 0.55.0 server would draw `gold` over a head instead of `Wealthy`. The server still
+accepts old clients (the floor stays at 8) — but install **both** sides of 0.55.0 and the question
+never comes up. The catalogs and skill tables are compiled into each side anyway.
 
 🔴 **DELETE `Game.Server/game.db` + `-shm` + `-wal`.** Not optional this time. Three separate reasons
 stack up: 0.52.0 changed columns, 0.53.0 removed the God layer (an old character carrying `Race = 99`
@@ -25,11 +28,12 @@ or a God item references an id that no longer exists), and the mastery restructu
 `mastery_robe` from 3 rungs to 2 on login. ⚠ Delete the one in `Game.Server/`, **not** the stale copy
 in `bin/Debug/` — that one is a decoy and deleting it will fool you into thinking you reset.
 
-🔴 **SIX BUILDS ARE UNPLAYED.** 0.49.0, 0.50.0, 0.51.0, 0.52.0, 0.53.0/0.53.1 and 0.53.2 — the
-longest unplayed run this project has had. Two of them (0.51.0 and the mastery restructure) had **no
-checklist section at all** until today. That is the actual risk here: not any single change, but that
-six builds' worth of combat-maths reworks have never met a player. **A play pass is worth more right
-now than anything else I could build.**
+🔴 **EIGHT BUILDS ARE UNPLAYED.** 0.49.0, 0.50.0, 0.51.0, 0.52.0, 0.53.0/0.53.1, 0.53.2, **0.54.0**
+and **0.55.0** — by a distance the longest unplayed run this project has had. Two of them (0.51.0 and
+the mastery restructure) had **no checklist section at all** until recently. That is the actual risk
+here: not any single change, but that eight builds' worth of combat-maths reworks, a replaced starter
+quest chain and a protocol bump have never met a player. **A play pass is worth more right now than
+anything else I could build**, and it has been worth more for four builds running.
 
 🔴 **PRE-FLIGHT I OWE YOU AND HAVE NOT DONE: `tools/SmokeTest` has not been run** since the mastery
 restructure, which changed **`AutoLearnCoreSkills` — the login sequence**, which is the exact thing
@@ -83,7 +87,7 @@ or is an archer simply not supposed to beat a rogue's dodge? ->
   nothing. ⚠ The bigger point: step 1 clamps at 5%, so accuracy **beyond** the defender's evasion is
   wasted against *everything*, not just rogues — accuracy is a catch-up stat, never a scaling one.
   🔴 **Still yours to rule:** may accuracy eat INTO the floor? I recommend **no** — the floor is
-  authored as an anti-accuracy tool, so letting accuracy pierce it deletes the passive's purpose. ->
+  authored as an anti-accuracy tool, so letting accuracy pierce it deletes the passive's purpose. -> Yes the floors and ceiling cannot be touched (they are there for a reason)
 
 
 `0c` [X] - **Physical crit damage base ×2.0 — still under research, still unchanged.** You think L2 is
@@ -115,7 +119,9 @@ did you mean? -> In l2 the weapons do a flat increase in crit (+64, +90, + 109 @
   the same +30 is worth far more to the weapon with the smaller base. It now multiplies — which is
   what the tooltip has always said.
   ⚠ **This is a large dagger/bow NERF at max roll (43.2% → 17.2%).** It is the number you wrote
-  yourself, so I built it, but nobody has played it. Watch rogue damage in the pass. -> 
+  yourself, so I built it, but nobody has played it. Watch rogue damage in the pass. -> why u count it as a nerf .. the 430 with jsut a weapon attri was just way to OP .. the 400 we must get only after getting fully buffed
+  Archer - 132x1.2(passive) = 158x1.3(single buff) = 206 => here if we add the x1.3 attri we get 267 which is 6% and without the attri do a x2 harmony we get 411 ... but if we want we can then add the attri end get to the cap 535
+  Fighter - 88x1.3(buff) = 114x1.9(attri) = 217 ~same as dagger without atri then the x2 harmony here u go on a single sword 434 near the cap
 
 `0e` [!] - **`light` body armor at 52 (202 P.Def) is WEAKER than at 40 (218).** Authored that way in
 your CSV and shipped that way, so the C body is a downgrade for anyone who already has the D one.
@@ -289,6 +295,72 @@ made unrollable, so no db reset was needed. ->
 
 ---
 
+## 58. 0.54.0 — the tutorial chain (M5) + the newbie kit as a 30-day loaner (M6)
+
+No section in `TestChecklist.Unity.md` — the detail is here. **No db reset needed.** ⚠ Test this on a
+**brand-new character**: the chain starts at level 1 and it **replaced** the old starter quests.
+
+`58a` [] - **A fresh character is offered `Welcome, Traveller` by Huntmaster Cera at level 1**, and
+the five parts chain in order: Welcome (1) → Blessings and Bottles (3) → Properly Armed (6) → Blooded
+(10) → A Trade to Learn (15). Each one only offers after the one before it is handed in. -> 
+`58b` [] - **The old starter quests are GONE** — no `starter_kit` / `starter_blooded` anywhere, and
+you are never paid two newbie kits. -> 
+`58c` [] - **The chain does not GATE the three class quests** (Marius / Oren / Vael). Part 5 points at
+them; you can still level to 20 and do them having ignored the chain entirely. -> 
+`58d` [] - 🔴 **The kit is a 30-day LOANER**: every piece reads **"Newbie …"**, is **untradable**,
+cannot be sold, and carries a clock. ⚠ The real ladder gear it was cloned from (`sword1h_t1` etc.)
+must be **untouched** — a Ferrite Mythic you drop or craft has no clock and sells normally. -> 
+`58e` [] - **The completion consumables are bound too** (Ultimate Scroll of Return / Resurrection,
+Dash and Instant Healing potions) but carry **no clock**. -> 
+`58f` [] - **The loaner is a SET**: wearing the bound body + the accessories still completes the
+armour set and pays its bonus. -> 
+`58g` [] - ⚠ **A WORN loaner that expires is removed and your stats drop with it.** Easiest check:
+`/spd`-style debug is no help here, so trust `58h` instead unless you want to wait 30 days. -> 
+`58h` [] - **The pacing still holds**: part 4 ends ≈ level 10 and part 5 ≈ level 15 without grinding
+between them. If it strands you, say where. -> 
+`58i` [] - 🔴 **He never named the game.** The parts are called "Welcome, Traveller" etc. because
+"Welcome To The `<Game>` World" needed a world name. **Give me one and I will use his literal
+title.** -> 
+
+---
+
+## 59. 0.55.0 — the QoL five (C1 · C3 · C14 · C16 · C17)
+
+No section in `TestChecklist.Unity.md` — the detail is here. **No db reset needed.**
+
+`59a` [] - **C1 — chat resets per character.** Talk in Local/World, leave to character select, enter
+on a *different* character: the chat tabs are **empty**. Delete a character and make a new one — the
+new one must not inherit its chat. ⚠ The **System tab is deliberately KEPT** (it is the crash trail);
+if you want that wiped too, say so. -> 
+`59b` [] - **C1 — the buffer holds ~1000 lines**, not 200. Spam a fight and scroll back further than
+you could before. Watch for lag — the window still only *draws* 120 rows, so it should feel the same.
+-> 
+`59c` [] - **C3 — a timed item says how long it has left**, in item details, colour-graded: **green**
+over 7d, **white** over 1d, **yellow** over 1h, **red** under. Check it on a **newbie kit piece**
+(≈30d, green) and on a **1-day rune** (white/yellow). -> 
+`59d` [] - **C14 — a two-handed weapon greys the off-hand square.** Equip a 2H sword/staff/bow: the
+Shld square shows the *weapon's* abbreviation, dimmed, and **does not open anything** when tapped.
+Equip a 1H + shield and the square goes back to normal. -> 
+`59e` [] - **C16 — no more "the".** Titles read `Wealthy`, `Devoted`, `Warlord`, `Feared`,
+`Ascended`, `Beloved`. -> 
+`59f` [] - **C16 — each title has its own colour**, over the head *and* on the Rank board *and* in the
+picker: gold=golden, time-played=green, PvP=purple, PK=dark red, level=sky, charisma=rose. ⚠ The PvP
+title purple is **deeper than a flagged player's purple name** on purpose — tell me if they still read
+as the same colour on the phone. -> 
+`59g` [] - **C16 — the title's face differs from the name**: italic small caps with a little tracking.
+The client has ONE font asset, so this is TMP's synthesised styling rather than a second typeface —
+**if it still reads as "just the name again", say so and I will bake a real font.** -> 
+`59h` [] - **C17 — staff titles.** On an admin account the Rank window's Titles tab offers **«Game
+Master» — staff**; a moderator gets **«Moderator» — staff**. They are **opt-in** like every other
+title (nothing is worn until you pick it) — tell me if you would rather staff wore theirs
+automatically. -> 
+`59i` [] - **C17 — `/role` takes effect live.** Promote a logged-in character to moderator: the title
+appears in their picker without a relog. Demote them while they wear it: it comes straight off. -> 
+`59j` [] - ⚠ **Protocol is 13.** The 0.55.0 APK against the 0.55.0 server should show titles as
+words. (A 0.53.2 APK would show `gold` — that is expected, not a bug.) -> 
+
+---
+
 ## CARRIED FORWARD — never reached in any playtest, needs a deliberate setup
 
 These have survived several checklists untouched because none of them happens by accident. If you
@@ -315,8 +387,10 @@ Tracked, ruled on, or deliberately queued. Listed so you don't re-report them.
 - **`B8` soulcrystal-tier gear prints A grade** in details while accepting a Mythic attribute scroll.
   Queued.
 - **`D5` the [Combat] chat tab in its own window.** Queued.
-- **`M5`/`M6` the tutorial chain + bound 30-day newbie gear.** Next up, and it is a quest project.
-- **`C1` `C3` `C14` `C15` `C16` `C17`** — the QoL six you picked. Queued behind M5/M6.
+- ~~**`M5`/`M6` the tutorial chain + bound 30-day newbie gear.**~~ ✅ **BUILT 0.54.0** — test at §58.
+- ~~**`C1` `C3` `C14` `C15` `C16` `C17`** — the QoL six you picked.~~ ✅ **ALL BUILT** — `C15` rode
+  along in 0.54.0, the other five are 0.55.0. Test at §59. The queue is now down to **`D5`, `B8`,
+  `B9`, `B10`** (listed above) — and, ahead of any of them, **a play pass**.
 - **`C4`** auto-on for buff potions/scrolls — **your ruling: comes later, with the AutoPot tabs.**
 - **`G2` / `0e` `lb_*` + `wc_*`** — **CLOSED by your ruling: leave them.** Placeholders for 40+,
   commented out, harmless. I will stop asking.

@@ -740,6 +740,38 @@ namespace Game.Client
             return def.Slot.ToString();
         }
 
+        /// <summary>
+        /// "Expires in 29d 4h", colour-graded (C3): green over 7d, white over 1d, yellow over 1h, red
+        /// under it — so a loaner kit or a rune tells you how much of it is left without doing date
+        /// arithmetic, and goes loud only when it is actually about to go.
+        ///
+        /// Driven by <see cref="InventoryItemDto.ExpiresAtUtc"/>, which is stamped at ACQUIRE time and
+        /// runs on the WALL clock (it keeps ticking while you are offline), so this is a plain
+        /// UtcNow difference and not something the client counts down itself. Empty for the
+        /// overwhelming majority of items, which carry no clock at all.
+        /// </summary>
+        private static string TimedLine(InventoryItemDto item)
+        {
+            if (item.ExpiresAtUtc == null) return "";
+
+            var span = item.ExpiresAtUtc.Value - System.DateTime.UtcNow;
+            // Already past, but the server has not swept it yet (the purge runs on its own cadence).
+            // Say so rather than printing a negative — it is gone on the next reconcile either way.
+            if (span.TotalSeconds <= 0) return "<color=#FF6060>Expired</color>";
+
+            string hex = span.TotalDays  > 7f ? "#66E066"    // green  — plenty of time
+                       : span.TotalDays  > 1f ? "#E6E6E6"    // white  — days left
+                       : span.TotalHours > 1f ? "#FFD44D"    // yellow — hours left
+                       :                        "#FF6060";   // red    — going within the hour
+
+            string left = span.TotalDays  >= 1f ? (int)span.TotalDays + "d " + span.Hours + "h"
+                        : span.TotalHours >= 1f ? span.Hours + "h " + span.Minutes + "m"
+                        : span.Minutes    >= 1  ? span.Minutes + "m " + span.Seconds + "s"
+                        :                         span.Seconds + "s";
+
+            return "<color=" + hex + ">Expires in " + left + "</color>";
+        }
+
         /// <summary>The item's stats, enchant-scaled where enchant applies — the same lines the WPF
         /// tooltip shows, so the two clients describe an item identically.</summary>
         private static string ItemStatsText(ItemDef def, InventoryItemDto item)
@@ -755,6 +787,8 @@ namespace Game.Client
                  + "   (" + ItemCatalog.RarityPercent(def.Rarity) + "% power)");
             Line("Type:  " + TypeLine(def));
             if (!def.Tradable) Line("<color=#FF8080>Untradable</color>");
+            string timed = TimedLine(item);
+            if (timed.Length > 0) Line(timed);
             Line("");
 
             if (def.AtkBonus > 0)  Line("Attack  +" + EnchantRules.BonusAt(def.AtkBonus, item.Enchant));

@@ -40,7 +40,11 @@ namespace Game.Client
 
         private static long _seq;
 
-        private const int Capacity = 200;
+        /// <summary>How many lines the buffer keeps. 1000 (owner, C1) rather than the old 200: the
+        /// console only ever DRAWS <c>ConsoleDisplayRows</c> of them, so the cost of a deeper buffer is
+        /// a few hundred strings, not rows — and 200 lines is under a minute of combat, which meant a
+        /// death you wanted to read back was already gone by the time you opened the window.</summary>
+        private const int Capacity = 1000;
         private static readonly List<Line> _lines = new List<Line>(Capacity);
         private static bool _hooked;
 
@@ -114,6 +118,29 @@ namespace Game.Client
         public static void Clear()
         {
             lock (_lines) { _lines.Clear(); Revision++; ClearGeneration++; }
+        }
+
+        /// <summary>
+        /// Drop the PLAYER-CHAT lines and keep the System tab (C1).
+        ///
+        /// Called when you leave the world, so the next character never opens onto the last one's
+        /// conversation — a deleted character's chat log showing up under a freshly created one is
+        /// what got this reported. The System tab is deliberately spared: it is the crash trail this
+        /// whole buffer exists for (an exception in a SignalR callback, a refused connection), it is
+        /// not per-character, and wiping it on every relog would throw away the diagnostics for the
+        /// relog itself — which is exactly when they are wanted.
+        /// </summary>
+        public static void ClearChat()
+        {
+            lock (_lines)
+            {
+                int removed = _lines.RemoveAll(l => l.Where != Tab.System);
+                if (removed == 0) return;
+                // ClearGeneration, not just Revision: the console draws APPEND-ONLY and only a
+                // generation bump makes it throw its rows away and redraw from the buffer. Bumping
+                // Revision alone would leave the removed lines on screen until the next Clear.
+                Revision++; ClearGeneration++;
+            }
         }
     }
 }

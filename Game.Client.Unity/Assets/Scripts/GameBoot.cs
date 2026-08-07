@@ -1324,6 +1324,11 @@ namespace Game.Client
             AutoSkills.Clear();
             AutoHunting = false;
             AutoConfig = new AutoHuntConfigDto(false, 60, 40, false, new AutoSkillDto[0], new string[0]);
+            // C1: the chat log is per CHARACTER too. A new character inherited the DELETED one's chat
+            // (owner) for the same reason the auto-hunt marks above did — the buffer is a singleton
+            // that outlives whoever was talking. Only the chat channels go; the System tab is the
+            // diagnostics trail and is not per-character (see ClientLog.ClearChat).
+            ClientLog.ClearChat();
         }
 
         public async void LeaveWorld()

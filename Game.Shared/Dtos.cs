@@ -47,9 +47,11 @@ public record EntityDto(
     // what to tiptoe around BEFORE it decides for you. Cached on the entity at spawn, so this costs a
     // bool per snapshot and no catalog lookups.
     bool Aggressive = false,
-    // The leaderboard title this player is WEARING, already resolved to its display text ("the
-    // Wealthy") — clients draw it over the head and never have to know the category ids. Empty for
-    // everyone not wearing one, which is nearly everyone, so it costs an empty string per snapshot.
+    // The title this player is WEARING, as a TitleCatalog ID ("gold", "staff_admin") — NOT display
+    // text. The client resolves both the words and the COLOUR from the id (C16); a pre-resolved
+    // string would have told it nothing about which board the title came from, and the colour is
+    // half of what the title says. Empty for everyone not wearing one, which is nearly everyone, so
+    // it costs an empty string per snapshot.
     string Title = "");
 
 /// <summary>What to draw over an NPC's head about quests. Sent per player, because availability is
@@ -354,8 +356,9 @@ public record AutoPotionDto(string ItemId, bool Enabled, int ThresholdPct);
 public record RegionNotice(string Name, int MinLevel, int MaxLevel);
 
 /// <summary>One row of a leaderboard: rank position, character, the ranked metric value, and the reward
-/// title the #1 in that category wears (empty for everyone else). Value's meaning depends on the
-/// category (gold, kills, seconds online, or level).</summary>
+/// title the #1 in that category wears as a <see cref="TitleCatalog"/> ID (empty for everyone else —
+/// resolve it with <see cref="TitleCatalog.Text"/>/<see cref="TitleCatalog.ColorHex"/>). Value's meaning
+/// depends on the category (gold, kills, seconds online, or level).</summary>
 public record LeaderboardEntry(int Rank, string Name, int Level, long Value, string Title);
 
 /// <summary>Server -> client (request/response): a ranked board for one <see cref="Leaderboards"/>
@@ -382,16 +385,95 @@ public static class Leaderboards
     public static bool IsCategory(string? cat) =>
         cat is not null && Array.IndexOf(Categories, cat) >= 0;
 
-    /// <summary>The honorary title the rank-1 character in this category earns.</summary>
+    /// <summary>The honorary title the rank-1 character in this category earns.
+    ///
+    /// ⚠ No leading "the" (owner, C16 — "not <i>the Devouted</i>"). A title is drawn on its own line
+    /// above the name, not read as a sentence after it, so the article was doing nothing but making the
+    /// short ones ("the Feared") sit off-centre and read as a caption.</summary>
     public static string TopTitle(string cat) => cat switch
     {
-        "level"  => "the Ascended",
-        "gold"   => "the Wealthy",
-        "pvp"    => "the Warlord",
-        "pk"     => "the Feared",
-        "online" => "the Devoted",
-        "charisma" => "the Beloved",
+        "level"  => "Ascended",
+        "gold"   => "Wealthy",
+        "pvp"    => "Warlord",
+        "pk"     => "Feared",
+        "online" => "Devoted",
+        "charisma" => "Beloved",
         _        => "",
+    };
+}
+
+/// <summary>
+/// Every title a character can WEAR, and the colour it wears in — leaderboard titles plus the STAFF
+/// ones (C17).
+///
+/// A title travels as an ID, never as display text: <see cref="EntityDto.Title"/>, the persisted
+/// choice, and the picker all carry the same string, and both text and colour are resolved here. That
+/// is what lets a title be coloured at all (a resolved string tells the client nothing about which
+/// board it came from), and it means re-wording or re-colouring one changes it for everybody at once.
+///
+/// The staff ids are NOT <see cref="Leaderboards.Categories"/> — there is no board to top. They are
+/// held by ACCOUNT ROLE, so they cannot be lost to a rival, and unlike a board title they are the one
+/// thing on a plate a player should be able to trust.
+/// </summary>
+public static class TitleCatalog
+{
+    /// <summary>Held by <see cref="AccountRole.Admin"/>. Append-only string, like a skill id.</summary>
+    public const string Admin = "staff_admin";
+    /// <summary>Held by <see cref="AccountRole.Moderator"/>.</summary>
+    public const string Moderator = "staff_mod";
+
+    /// <summary>The title ids this account role holds unconditionally (empty for a player).</summary>
+    public static string[] ForRole(AccountRole role) => role switch
+    {
+        AccountRole.Admin     => new[] { Admin },
+        AccountRole.Moderator => new[] { Moderator },
+        _                     => Array.Empty<string>(),
+    };
+
+    public static bool IsStaffTitle(string id) => id == Admin || id == Moderator;
+
+    /// <summary>True if this id is a title at all — a board category or a staff title. The server
+    /// validates a wear request against this, so an unknown id can never reach a plate.</summary>
+    public static bool IsTitle(string? id) => Leaderboards.IsCategory(id) || (id is not null && IsStaffTitle(id));
+
+    /// <summary>Display text for a title id.</summary>
+    public static string Text(string id) => id switch
+    {
+        Admin     => "Game Master",
+        Moderator => "Moderator",
+        _         => Leaderboards.TopTitle(id ?? ""),
+    };
+
+    /// <summary>Where the title came from, in words — the picker's "— top of Wealth" line, and the
+    /// only place a staff title has to explain that no board is involved.</summary>
+    public static string Source(string id) => id switch
+    {
+        Admin     => "staff",
+        Moderator => "staff",
+        _         => "top of " + Leaderboards.Label(id ?? ""),
+    };
+
+    /// <summary>
+    /// The title's colour, as an RRGGBB hex with no '#'. Lives in Shared so the nameplate, the rank
+    /// board and the picker cannot drift apart.
+    ///
+    /// The owner's palette (C16): gold board golden, time-played green, PvP purplish, PK dark red.
+    /// The PvP purple is deliberately DEEPER than the PvP-flag name colour (#CC80FF) — a flagged
+    /// player's name is already purple, and matching it would turn the two-line plate into one purple
+    /// blob that says nothing. Level and Charisma were not named: sky (the ladder everyone climbs)
+    /// and rose (the social board).
+    /// </summary>
+    public static string ColorHex(string id) => id switch
+    {
+        "gold"     => "FFCC33",   // golden
+        "online"   => "5FD65F",   // green
+        "pvp"      => "8A4DD6",   // purplish, NOT the flag's #CC80FF
+        "pk"       => "8C1F26",   // dark red
+        "level"    => "5FC8FF",   // sky
+        "charisma" => "FF8FC4",   // rose
+        Admin      => "FF5555",   // staff, loud on purpose
+        Moderator  => "4FC3F7",
+        _          => "FFFFFF",
     };
 }
 
@@ -403,9 +485,10 @@ public static class Leaderboards
 /// Wealthy" that stays on a player who has since been out-earned says the opposite of what the board
 /// says, and the whole point of the thing is to advertise the board.
 ///
-/// <paramref name="Held"/> and <paramref name="Worn"/> are CATEGORY ids (append-only, like skill ids),
-/// not display text: the text comes from <see cref="Leaderboards.TopTitle"/>, so re-wording a title
-/// re-words everyone's. Worn = "" means none.
+/// <paramref name="Held"/> and <paramref name="Worn"/> are TITLE ids (append-only, like skill ids) —
+/// board categories, plus the STAFF titles a role grants (C17) — not display text: the words and the
+/// colour both come from <see cref="TitleCatalog"/>, so re-wording or re-colouring one does it for
+/// everyone. Worn = "" means none.
 /// </summary>
 public record TitlesDto(string[] Held, string Worn);
 

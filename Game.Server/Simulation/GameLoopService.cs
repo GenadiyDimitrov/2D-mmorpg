@@ -628,7 +628,7 @@ public class GameLoopService : BackgroundService
                     if (had is null || !had.Contains(cat))
                         SendSystemToEntity(p,
                             $"You now top the {Leaderboards.Label(cat)} board — the title "
-                            + $"\"{Leaderboards.TopTitle(cat)}\" is yours to wear (Rank window).");
+                            + $"\"{TitleCatalog.Text(cat)}\" is yours to wear (Rank window).");
 
             RefreshTitle(p);
         }
@@ -639,25 +639,42 @@ public class GameLoopService : BackgroundService
     private void RefreshTitle(Entity p, bool notifyLoss = true)
     {
         string was = p.Title;
-        p.Title = HoldsTitle(p, p.TitleCategory) ? Leaderboards.TopTitle(p.TitleCategory) : "";
+        // Entity.Title is the title ID, not its words — the client resolves text AND colour from it
+        // (C16). It is still "" when nothing is worn, so every `Title.Length > 0` test still reads
+        // "is this player wearing one".
+        p.Title = HoldsTitle(p, p.TitleCategory) ? p.TitleCategory : "";
 
         // The CHOICE is deliberately left alone when the board is lost — regain it and the title comes
         // straight back on, with nothing to re-pick.
         if (notifyLoss && was.Length > 0 && p.Title.Length == 0)
-            SendSystemToEntity(p, $"\"{was}\" is no longer yours — someone else tops that board.");
+            SendSystemToEntity(p, $"\"{TitleCatalog.Text(was)}\" is no longer yours — someone else tops that board.");
 
         SendTitles(p);
     }
 
-    private bool HoldsTitle(Entity p, string category) =>
-        category.Length > 0 &&
-        _titleHolders.TryGetValue(p.Name, out var cats) && cats.Contains(category);
+    /// <summary>What this character may wear: the boards they top, plus their STAFF title if any (C17).
+    /// The staff one is held by ROLE, so it is not in the board holder map and cannot be taken.</summary>
+    private string[] HeldTitles(Entity p)
+    {
+        var staff = TitleCatalog.ForRole(p.Role);
+        if (!_titleHolders.TryGetValue(p.Name, out var cats) || cats.Count == 0) return staff;
+        if (staff.Length == 0) return cats.ToArray();
+
+        var all = new List<string>(staff);
+        all.AddRange(cats);
+        return all.ToArray();
+    }
+
+    private bool HoldsTitle(Entity p, string title) =>
+        title.Length > 0 &&
+        (Array.IndexOf(TitleCatalog.ForRole(p.Role), title) >= 0
+         || (_titleHolders.TryGetValue(p.Name, out var cats) && cats.Contains(title)));
 
     /// <summary>Worn is reported as "" when the chosen title is not currently held, so the picker shows
     /// the truth (nothing worn) even though the choice itself is still remembered.</summary>
     private void SendTitles(Entity p) =>
         SendTo(p, "Titles", new TitlesDto(
-            _titleHolders.TryGetValue(p.Name, out var cats) ? cats.ToArray() : Array.Empty<string>(),
+            HeldTitles(p),
             p.Title.Length > 0 ? p.TitleCategory : ""));
 
     private void HandleSetTitle(SetTitleCmd cmd)
@@ -665,7 +682,7 @@ public class GameLoopService : BackgroundService
         if (!TryGetPlayer(cmd.ConnectionId, out var p)) return;
 
         string cat = cmd.Category ?? "";
-        if (cat.Length > 0 && !Leaderboards.IsCategory(cat)) return;
+        if (cat.Length > 0 && !TitleCatalog.IsTitle(cat)) return;
 
         if (cat.Length > 0 && !HoldsTitle(p, cat))
         {
@@ -678,7 +695,7 @@ public class GameLoopService : BackgroundService
         RefreshTitle(p, notifyLoss: false);   // taking it OFF is not losing it
         SendSystemToEntity(p, cat.Length == 0
             ? "Title removed."
-            : $"You are wearing \"{Leaderboards.TopTitle(cat)}\".");
+            : $"You are wearing \"{TitleCatalog.Text(cat)}\".");
     }
 
     /// <summary>
@@ -4817,6 +4834,10 @@ public class GameLoopService : BackgroundService
                         live.Role = newRole.Value;
                         if (newRole.Value != AccountRole.Admin) live.GodMode = false;
                         SendAdminState(live);
+                        // The staff TITLE is held by role (C17), so a demotion has to strip a worn one
+                        // here and a promotion has to offer it — without this the picker (and the
+                        // plate) would keep the old role's title until the next relog.
+                        RefreshTitle(live);
                         SendSystemToEntity(live, $"Your role is now {newRole.Value}.");
                     }
                     SendSystemToEntity(admin, $"{canonical} is now {newRole.Value}.");

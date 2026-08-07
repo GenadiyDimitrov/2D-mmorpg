@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.54.0";
+    public const string GameVersion = "0.55.0";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -43,7 +43,7 @@ public static class GameConstants
     /// actually happens most: **client-only work, where the CLIENT is ahead of the server.** A version
     /// number that describes the contract instead of the build makes that case a non-event.
     /// </summary>
-    public const int ProtocolVersion = 12;
+    public const int ProtocolVersion = 13;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
@@ -57,6 +57,12 @@ public static class GameConstants
     /// attribute scrolls had no phone UI at all until this build, which is exactly why the system was
     /// rebuilt. So an installed 0.42.x-0.44.x APK still plays against this server; it simply shows no
     /// titles, no chat tabs and no scroll windows.
+    ///
+    /// 13 (0.55.0) is the first bump that changes the MEANING of an existing field rather than adding
+    /// one: EntityDto.Title now carries a TitleCatalog ID, not display text, so a pre-13 client draws
+    /// "gold" over a head instead of "Wealthy". Held at 8 anyway — that is a cosmetic wrong word on a
+    /// line only the six board leaders and the staff ever show, and locking every installed APK out of
+    /// the game to avoid it is the worse trade.
     /// </summary>
     public const int MinAcceptedProtocol = 8;
 

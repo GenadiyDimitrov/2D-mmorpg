@@ -7,10 +7,61 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.54.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.55.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 0.55.0 — 2026-08-07 — the QoL five: chat, timers, the off hand, and titles with a voice
+
+Playtest-19 **C1 · C3 · C14 · C16 · C17** — the rest of the QoL six he picked (C15 shipped inside
+0.54.0). Server + Unity client both type-check; **no db reset**.
+
+**C1 — the chat log is per CHARACTER.** A newly created character opened onto the *deleted*
+character's conversation, for the same reason the auto-hunt marks did in playtest-17: the buffer is a
+singleton that outlives whoever was talking. `ClientLog.ClearChat()` now runs from
+`ResetWorldTransients`, so it clears on leaving the world, on offline-farm, and on logout. It drops
+the **chat channels only** — the System tab is the crash trail the buffer exists for (a refused
+connection, an exception in a SignalR callback), it is not per-character, and wiping it on every
+relog would throw away the diagnostics for the relog itself. The buffer also goes **200 → 1000 lines**
+(his cap): the console only ever *draws* `ConsoleDisplayRows` of them, so a deeper buffer costs
+strings, not rows, and 200 lines was under a minute of combat.
+
+**C3 — timed items say how long they have left**, in the details panel, colour-graded: green over 7
+days, white over 1 day, yellow over 1 hour, red under it. Reads `InventoryItemDto.ExpiresAtUtc`,
+which 0.54.0 already sent — it is a wall clock stamped at acquire time, so it is a plain `UtcNow`
+difference and nothing the client counts down. Covers the 30-day loaner kit and every rune.
+
+**C14 — a two-handed weapon greys the off-hand square** instead of leaving it empty. An empty "Shld"
+square reads as *you could still put a shield on*, which is the one thing it is not. The square now
+shows the two-hander's own abbreviation, dimmed toward grey, and goes non-interactive (there is no
+second item to open). Gated on `ItemDef.OccupiesOffHand` — the same predicate the server equips by,
+so the square cannot disagree with the rule that actually refused the shield.
+
+**C16 — titles get a voice.** Three changes:
+
+- **No more "the".** `the Devoted` → `Devoted`. A title is drawn on its own line above the name, not
+  read as a sentence after it, so the article only made the short ones sit off-centre.
+- **A colour per title,** his palette: gold board golden, time-played green, PvP purplish, PK dark
+  red — plus sky for Level and rose for Charisma, which he did not name. The PvP purple is
+  deliberately **deeper than the PvP-flag name colour** (`#CC80FF`): a flagged player's name is
+  already purple, and matching it would turn a two-line plate into one purple blob.
+- **A different face from the name** — italic + small caps with a little tracking. The client ships
+  ONE TMP font asset with a static atlas, so a second typeface would have to be baked; TMP's
+  synthesised styling on the font already there gets the effect he asked for.
+
+⚠ **This changes what `EntityDto.Title` MEANS.** It now carries a `TitleCatalog` **id**, not display
+text — a resolved string tells the client nothing about which board a title came from, and the colour
+is half of what the title says. Words *and* hex both resolve from the new `TitleCatalog` in
+`Game.Shared`, so the nameplate, the rank board and the picker cannot drift apart.
+`ProtocolVersion` **12 → 13**; `MinAcceptedProtocol` stays at 8, because the only cost to an older
+APK is one wrong word on a line that six board leaders ever show.
+
+**C17 — admins and moderators hold their own titles**: *Game Master* and *Moderator*, held by
+**account role** rather than by topping a board, so they cannot be lost to a rival. They arrive in the
+same picker as every other title and are worn the same way — deliberately **opt-in**, like the board
+titles, so staff can still walk around as a normal player. `/role` refreshes them live, so a
+promotion offers the title and a demotion strips a worn one without waiting for a relog.
 
 ## 0.54.0 — 2026-08-07 — the tutorial chain, and the Newbie kit becomes a 30-day loaner
 
