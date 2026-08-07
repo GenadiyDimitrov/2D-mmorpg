@@ -1620,7 +1620,7 @@ public static class ItemCatalog
         var bodies = new (string Key, string Noun, ArmorWeight W, int[] Def, int[] Mp)[]
         {
             ("heavy", "Bulwark",       ArmorWeight.Heavy, WithS(115, new[]{167,240,270,293,332}), WithS(0, new[]{0,0,0,0,0})),
-            ("light", "Leathers",      ArmorWeight.Light, WithS(86, new[]{125,218,202,220,249}), WithS(0, new[]{0,0,0,0,0})),
+            ("light", "Leathers",      ArmorWeight.Light, WithS(86, new[]{125,179,202,220,249}), WithS(0, new[]{0,0,0,0,0})),
             ("robe",  "Robe",          ArmorWeight.Robe,  WithS(49, new[]{84,110,135,147,166}),  WithS(109, new[]{274,508,613,718,866})),
         };
         foreach (var b in bodies)
@@ -1638,9 +1638,9 @@ public static class ItemCatalog
             // Noun carries the ROLE (dmg=Warplate/Warhide, tank/def=Guardhide, etc.); "{GradeTheme} {Noun}".
             ("heavy_t52_dmg",  ArmorWeight.Heavy, "Warplate",  52, 270, 0,   "Assault"),
             ("heavy_t61_dmg",  ArmorWeight.Heavy, "Warplate",  61, 293, 0,   "Assault"),
-            ("light_t40_pdef", ArmorWeight.Light, "Guardhide", 40, 218, 0,   "Bulwark"),
-            ("light_t40_mdef", ArmorWeight.Light, "Wardhide",  40, 218, 0,   "Warded"),
-            ("light_t40_str",  ArmorWeight.Light, "Brawlhide", 40, 218, 0,   "Brawler"),
+            ("light_t40_pdef", ArmorWeight.Light, "Guardhide", 40, 179, 0,   "Bulwark"),
+            ("light_t40_mdef", ArmorWeight.Light, "Wardhide",  40, 179, 0,   "Warded"),
+            ("light_t40_str",  ArmorWeight.Light, "Brawlhide", 40, 179, 0,   "Brawler"),
             ("light_t52_sup",  ArmorWeight.Light, "Sagehide",  52, 202, 0,   "Sage"),
             ("light_t61_dmg",  ArmorWeight.Light, "Warhide",   61, 220, 0,   "Assault"),
             ("robe_t40_sup",   ArmorWeight.Robe,  "Raiment",   40, 110, 508, "Warden"),

@@ -118,10 +118,22 @@ public static class AttributeSystem
         Line(AttributeType.ManaPercent, RampWide, 30),
     };
 
+    // The SWORD's crit ramp — 3x RampWide, ceiling 90 (owner, 2026-08-07, checklist `0d`).
+    // CritRate is a MULTIPLIER on the weapon's own crit base, and that base is per-weapon
+    // (StatCalculator.WeaponCritFactor: sword 0.80 -> 88, dual/bow 1.20 -> 132). The same
+    // PERCENT is therefore worth less absolute crit on the low-base weapon, which is exactly
+    // the objection to L2's flat +64/+90/+109: *"if we do a dagger with 30% and a sword with
+    // the same, sword wont benifit the same"*. Rather than making crit the one flat stat in a
+    // percent-based game, the sword's CEILING is raised until a max roll lands both weapons in
+    // the same place: sword 88 x 1.9 = 167, dagger 132 x 1.3 = 172. A sword that spends its one
+    // roll on crit buys its way to dagger parity — and gives up the attack-speed and HP lines
+    // to do it, which is his *"pure playstile choice"*.
+    private static readonly int[] RampSwordCrit = { 3, 15, 30, 60, 90 }; // -> cap 90 (sword only)
+
     private static readonly AttrRange[] SwordWeapon =
     {
         Line(AttributeType.AttackSpeedPercent, RampFast, 15),
-        Line(AttributeType.CritRate, RampWide, 30),
+        Line(AttributeType.CritRate, RampSwordCrit, 90),
         Line(AttributeType.HealthPercent, RampHp, 25),
     };
 

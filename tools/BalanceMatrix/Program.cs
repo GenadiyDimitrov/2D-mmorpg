@@ -1672,9 +1672,14 @@ Console.WriteLine("=== C2: CRIT RATE — his L2 model, decomposed (docs/design/C
         Console.WriteLine();
     }
     Console.WriteLine("  cap is StatCaps.PhysicalCritRate = 500 (50%). Two things to read here:");
-    Console.WriteLine("   - flat is 0 on every row: our only flat crit-rate source is a RANDOM WEAPON ATTRIBUTE");
-    Console.WriteLine("     (sword/dual/bow only). His model's flat 'heavy set +127' — the term that is supposed");
-    Console.WriteLine("     to carry the BLUNT warrior, who cannot multiply his way anywhere — does not exist yet.");
+    Console.WriteLine("   - flat is 0 on every row, and NOTHING in the game fills it any more. The weapon's");
+    Console.WriteLine("     crit-rate ATTRIBUTE moved into 'mult' on 2026-08-07 (checklist 0d): it was landing");
+    Console.WriteLine("     here as value/100, i.e. a maxed roll was +30 PERCENTAGE POINTS (+300 on this scale,");
+    Console.WriteLine("     vs L2's +109 at S) and, being flat, it flattened the 3:2:1 weapon identity below.");
+    Console.WriteLine("     These rows roll no attributes, so they show the BASE model only — to see the roll,");
+    Console.WriteLine("     multiply: sword x1.90 at its new 90 ceiling, dual/bow x1.30 at 30.");
+    Console.WriteLine("     His model's flat 'heavy set +127' — the term that is supposed to carry the BLUNT");
+    Console.WriteLine("     warrior, who cannot multiply his way anywhere — still does not exist.");
     Console.WriteLine("   - DEX is 30 on every row because DEX is per RACE+BASE CLASS: only an ELF fighter (35)");
     Console.WriteLine("     moves it, and no armor set in these tiers carries a Dex line. See the elf row below.");
     // The one build that actually exercises dexMod today.

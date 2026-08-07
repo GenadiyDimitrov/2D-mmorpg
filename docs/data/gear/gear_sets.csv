@@ -75,10 +75,10 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 #      because it makes the C body a downgrade for anyone who already has the D one. Owner's call.
 1,Armor,Fighter,1,Light,86,,[BUILT] F rung
 20,Armor,Fighter,20,Light,125,eva +2; MP + 92,[BUILT]
-40,Armor,Fighter,40,Light,218,eva +4,[BUILT]
-401,Armor,Fighter,40,Light,218,p.def x1.05,[BUILT] set_light_t40_pdef
-402,Armor,Fighter,40,Light,218,m.def x1.05,[BUILT] set_light_t40_mdef
-403,Armor,Fighter,40,Light,218,STR +4; CON -1,[BUILT] set_light_t40_str
+40,Armor,Fighter,40,Light,179,eva +4,[BUILT]
+401,Armor,Fighter,40,Light,179,p.def x1.05,[BUILT] set_light_t40_pdef
+402,Armor,Fighter,40,Light,179,m.def x1.05,[BUILT] set_light_t40_mdef
+403,Armor,Fighter,40,Light,179,STR +4; CON -1,[BUILT] set_light_t40_str
 52,Armor,Fighter,52,Light,202,P.atk x1.02; DEX +3; CON -2; STR -1;,[BUILT] dmg oriented
 521,Armor,Fighter,52,Light,202,Cast x1.15; WIT -1; INT -1; MaxMP +120; SPT +1;,[BUILT] supports oriented (set_light_t52_sup); authored MpReg/m.def became SPT +1
 61,Armor,Fighter,61,Light,220,Vamp 5%; DEX +1; CON -1; CC Resist 0.4;,[BUILT] for mele fighters/rogues oriented

@@ -36,7 +36,11 @@ restructure, which changed **`AutoLearnCoreSkills` — the login sequence**, whi
 the smoke test exists to catch. Its bugs are invisible to a human playtest (the client renders what
 it was *sent*, so a bar can look perfect on screen and already be destroyed on the server). It needs
 the server running, and I don't launch that unprompted. **Say "run the smoke test" and I will, before
-you start.** -> 
+you start.** -> ✅ **DONE 2026-08-07, ALL CHECKS PASSED** (~150 assertions, server log clean, no
+exceptions). The login sequence is intact after the mastery restructure: a level-81 Bulwark learned
+its kit and correctly skipped the 6 stat-swap passives; the main bar survived a subclass swap AND a
+relog byte-for-byte; `item:`/`preset:` tokens kept; per-class levels did not leak. **This pre-flight
+is closed — nothing blocks the play pass.**
 
 ---
 
@@ -45,31 +49,81 @@ you start.** ->
 `0a` [] - **The nuker now beats the champion by ~19%** where they were at parity, because magic crit
 became a real channel (§56). Measured, not derived: CHAMPION/NUKER went **0.98× → 0.84×** at level 74
 in best gear with NPC buffs. The levers are the **base 50** and the **flat ×3 crit damage**, both your
-numbers. Is the nuker's lead earned, or do I trim it? -> 
+numbers. Is the nuker's lead earned, or do I trim it? -> This need to be tested. When I leave the chars to play alone all measure.
 
-`0b` [] - **Accuracy cannot beat an evasion FLOOR, and +5 accuracy therefore buys an archer nothing**
+  ✅ **Understood — deferred, no code change.** You will judge it from an auto-farm run, not the
+  matrix. ⚠ One flag: that makes **auto-farm the measuring instrument**, and `32z` (auto-farm skill
+  chains + surviving a relog) has never been tested in any playtest. If the chains misbehave the
+  measurement lies. Worth doing `32z` in the same sitting.
+
+`0b` [?] - **Accuracy cannot beat an evasion FLOOR, and +5 accuracy therefore buys an archer nothing**
 against a rogue (§55e). `miss = clamp(5% + (eva − acc), floor, 95%)` — evasion is additive from its
 first point, accuracy only claws back what sits above *both* the 5% base and the defender's floor.
 Against a rogue's 10% floor, +5 accuracy is worth **zero** until you already out-evade him by 10+.
 The +5 is the right size; the **floor** is the problem. Do you want accuracy to eat into the floor,
 or is an archer simply not supposed to beat a rogue's dodge? -> 
+  - Explain to me this one.
+    > dagger have floor of 10%,\
+    > all the passives,buffs and dex he have let say difference of 20 with a normal class/mob\
+    > archer have a selfbuff that give him 10 acc then the weapon mastery +4 acc and 2 more normal buffs +4 => 10+4+4+4 = 22 + Acc\
+    > clam(0.05 - 0.02 (20-22), 0.1,0.95) => so archer hits the floor of a dagger\
+    > until the difference is +5 and up in faveour of evasion the floor is met\
+    > is that what u ment by +5 acc dosnt give you nothing .. well if dagger invest in +10dex/-5atk/-5con and +5 eva on weapon\
+    > then the difference become free +15 => clam(5% + (35-22=13),10floor) => miss = 18% -> but archer inves in +5 acc miss becomes 13% and also add a 5 dex here you go floor again\
+    > Am i calculating right
 
-`0c` [] - **Physical crit damage base ×2.0 — still under research, still unchanged.** You think L2 is
+  **YES — all four of your cases are exactly right**, I checked each against
+  `StatCalculator.ResolveAvoidChance`. And **my framing was wrong**, not yours. The order is:
+  `m = clamp(5% + (eva − acc)·1%, 5%, 95%)` → level gap → `clamp(m, max(5%, floor), …)`.
+  Your cases: `(eva−acc) = −2` → 3% → floored to **10%** ✅ · lead 13 → **18%** ✅ · +5 acc → **13%** ✅
+  · +5 DEX → 8% → floored to **10%** ✅.
+  So accuracy pays **full value while his evasion lead is more than 5 points**, and nothing once the
+  lead is 5 or less (the floor has taken over). The dead zone is the **last** 5 points, not the first
+  10 — I had it backwards. Your +5 acc case is 18% → 13% miss = **+6.1% landed hits**, which is not
+  nothing. ⚠ The bigger point: step 1 clamps at 5%, so accuracy **beyond** the defender's evasion is
+  wasted against *everything*, not just rogues — accuracy is a catch-up stat, never a scaling one.
+  🔴 **Still yours to rule:** may accuracy eat INTO the floor? I recommend **no** — the floor is
+  authored as an anti-accuracy tool, so letting accuracy pierce it deletes the passive's purpose. ->
+
+
+`0c` [X] - **Physical crit damage base ×2.0 — still under research, still unchanged.** You think L2 is
 ×1.5 and neither of us can source it. The real question is *what the multiplier multiplies*: ours
 scales the **whole ratio including skill power**, L2's scales the **attack term only** — so "should
 be 1.5" may be the same ×2 on a smaller base. **A** = lower to 1.5. **B** = keep ×2 but apply it to
 the attack term only (touches `CritFlatFactor` and every call site). ⚠ Rogue damage now rides almost
-entirely on crit damage, so this is a big lever. -> 
+entirely on crit damage, so this is a big lever. -> When you land a critical hit or use specialized dagger Blow skills, critical power multipliers inflate the numerator:
+\(\text{Critical\ Damage}=\frac{77\times \text{P.\ Atk}\times 2\times \text{Crit\ Power\ Multipliers}}{\text{P.\ Def}}\) -> so you were right the base as i cen decifer the formula its 2 times then the mutlipliers(buffs passives)
 
-`0d` [] - **The gear CSV's attribute ceiling.** I found while updating `docs/data/gear/gear_sets.csv`
+  ✅ **CLOSED, nothing changes** — ×2.0 stays, neither A nor B. Your source settles it. (One residual
+  I am *not* re-raising: your formula puts the ×2 on the attack term, ours scales the whole ratio
+  including skill power. It only diverges on high-power skills; say the word if you ever want it.)
+
+`0d` [~] - **The gear CSV's attribute ceiling.** I found while updating `docs/data/gear/gear_sets.csv`
 that the shipped roll system is the **inverse** of what that file described: **the MAX is flat across
 all five grades and the MINIMUM is what ramps**. A D-grade sword and an S-grade sword both cap at
 +30% crit rate; the grade only removes bad luck. Your file said the ceiling climbs per grade. Which
-did you mean? -> 
+did you mean? -> In l2 the weapons do a flat increase in crit (+64, +90, + 109 @SGrade) a % increase depend on the base crit value - so if we do a dagger with 30% and a sword with the same sword wont benifit the same, but if we do a flat 90 its as 9% increase after all the buffs/passives and is 9% across all. But yet the only one to do flat crit rate is a bit off ... everithing is % then crit to be flat .. why ? .. we need to alter the sword to 90% crit rate ... so unbuffed sword wielder to have 88x1.9 -> 167 and a dagger 132x1.3 = 171 -> then the max a tank investing in critical sword will not have 25% hp or 15% as but 43.5% crit rate (thats pure playstile choice)
 
-`0e` [] - **`light` body armor at 52 (202 P.Def) is WEAKER than at 40 (218).** Authored that way in
+  ✅ **BUILT** — sword ceiling 30 → **90** (`RampSwordCrit = 3/15/30/60/90`). Your two numbers land
+  exactly: sword `88 × 1.9 = 167`, dagger `132 × 1.3 = 172`.
+  🔴 **But building it found a real defect, bigger than the question you asked.** The roll was not a
+  multiplier at all — `Entity.RecomputeDerived` put it in `CritRateFlat` as `value / 100`, so a maxed
+  roll was **+30 PERCENTAGE POINTS**: sword 8.8% → **38.8%**, dagger 13.2% → **43.2%**, both nearly
+  at the 50% cap off one roll. That is **+300 on your 0-1000 scale** vs L2's +109 at S grade, and 10×
+  your own rule for that channel (*"a flat 30 is flat 3%"* — the divisor should have been 1000).
+  Worse, being FLAT it **collapsed the 3:2:1 weapon identity** the crit model exists to create, since
+  the same +30 is worth far more to the weapon with the smaller base. It now multiplies — which is
+  what the tooltip has always said.
+  ⚠ **This is a large dagger/bow NERF at max roll (43.2% → 17.2%).** It is the number you wrote
+  yourself, so I built it, but nobody has played it. Watch rogue damage in the pass. -> 
+
+`0e` [!] - **`light` body armor at 52 (202 P.Def) is WEAKER than at 40 (218).** Authored that way in
 your CSV and shipped that way, so the C body is a downgrade for anyone who already has the D one.
-Typo, or deliberate (the 52 line trades defence for its DEX/P.Atk set bonus)? -> 
+Typo, or deliberate (the 52 line trades defence for its DEX/P.Atk set bonus)? -> My bad. When i did the csv i added to the 40 sets a boots pdef as well -> 179 (fixed the csv)
+
+  ✅ **BUILT** — synced `Items.cs` to your CSV edit: the light body array and all three
+  `light_t40_*` variants 218 → **179**. Light P.Def is monotonic again: 86 / 125 / **179** / 202 /
+  220 / 249, so the C body is an upgrade over the D one. -> 
 
 ---
 

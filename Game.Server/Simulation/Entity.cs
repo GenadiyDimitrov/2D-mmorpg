@@ -1659,7 +1659,19 @@ public class Entity
         // base, so the flat term is what carries a blunt warrior. The chain is folded and clamped
         // ONCE, at the end of this method — nothing in between may clamp it.
         CritChance = StatCalculator.PhysicalCritBase(EffectiveDex, WeaponType);
-        CritRateFlat += critRatePct / 100f;
+        // The WEAPON's crit-rate roll MULTIPLIES the weapon's own crit base (owner, 2026-08-07,
+        // checklist `0d`) — "Crit Rate +30%" now means x1.30, which is what the tooltip has always
+        // said and what AttributeSystem.ToStatMods already assumed.
+        // ⚠ It used to land in CritRateFlat as `value / 100`, i.e. a maxed roll was +30 PERCENTAGE
+        // POINTS — +300 on his 0-1000 scale, against L2's +109 at S grade and against his own rule
+        // for the flat channel, *"a flat 30 is flat 3%"* (the divisor should have been 1000). It
+        // took a sword from 8.8% to 38.8% and a dagger from 13.2% to 43.2%, which did not just
+        // overpay: being FLAT it collapsed the 3:2:1 weapon identity the crit model exists to
+        // create, since the same +30 is worth far more to the weapon with the smaller base.
+        // Only weapons roll CritRate (AttributeSystem.PoolFor — armor identity is its SET), so
+        // this multiplier is contained to the hand. Armor/buff FLAT crit sources are untouched
+        // and still add outside every multiplier, which is what carries the blunt warrior.
+        if (critRatePct != 0f) CritRateMult *= 1f + critRatePct / 100f;
         Accuracy += StatCalculator.WeaponAccuracyBonus(WeaponType);
 
         // Skill-buff Max HP/MP (e.g. HP Boost line, Frenzy): flat add and/or % of max.
