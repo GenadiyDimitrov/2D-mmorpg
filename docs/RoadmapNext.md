@@ -1,9 +1,10 @@
 # Roadmap — compact view (what's left, what depends on what)
 
 A one-screen digest of [Roadmap.md](Roadmap.md). Updated **2026-08-06 (after playtest-19)**.
-Full history: [CHANGELOG.md](CHANGELOG.md). The checklists: [testing/TestChecklist.Unity.md](testing/TestChecklist.Unity.md)
-(the phone) and [testing/TestChecklist.md](testing/TestChecklist.md) (server-side; its client steps
-predate the WPF harness being dropped in 0.42.8 — read them as "on the phone").
+Full history: [CHANGELOG.md](CHANGELOG.md). The checklists: [testing/Open-Checklist.md](testing/Open-Checklist.md)
+(🔴 what he edits on the phone — rolling, unversioned) and
+[testing/TestChecklist.Unity.md](testing/TestChecklist.Unity.md) (the per-section detail behind its ids).
+Closed passes: [testing/Playtest-Archive.md](testing/Playtest-Archive.md).
 
 ## Where things stand
 
@@ -13,13 +14,13 @@ still blank in §37/36/34/33/32. **Four defects** came out of it — the Blessin
 (48g), `/ptinv` still can't invite out of sight (46d), compare on a pendant opens a stud (46m), and a
 "Collection was modified" crash in the tick loop that is **still live**. Everything else he sent back is
 *design*: the God layer goes entirely, the rogue's crit/evasion identity is rewritten, and there is a
-tutorial-quest spec. Full queue: [testing/Playtest-19.md](testing/Playtest-19.md) / §51.
+tutorial-quest spec. Full queue: [testing/Playtest-Archive.md#playtest-19](testing/Playtest-Archive.md#playtest-19) / §51.
 
 **Playtest-17 (2026-08-03, server 0.45.0) cleared the backlog.** Six versions of unplayed work — §36
 mob regen, §38 the account warehouse, §39 repeatable quests, §40 the quest window, §41 the mob cast bar,
 §42 titles + chat tabs, §43 accuracy + attributes + the scroll windows — went through in **one** pass.
 **84 items verified, plus 22 of the playtest-11 findings finally closed.** Not one of them was a broken
-system; the four `[~]`s and the handful of `[!]`s are edge cases (see [testing/Playtest-17.md](testing/Playtest-17.md)
+system; the four `[~]`s and the handful of `[!]`s are edge cases (see [testing/Playtest-Archive.md#playtest-17](testing/Playtest-Archive.md#playtest-17)
 and §44 of the Unity checklist).
 
 **So the machinery is done arguing and the game is now what's missing.** What he sent back is not a bug
@@ -51,7 +52,7 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
 
 ## 🔴 NOW — the next things
 
-0. 🆕 **The playtest-19 queue** ([testing/Playtest-19.md](testing/Playtest-19.md), §51) — this is the
+0. 🆕 **The playtest-19 queue** ([testing/Playtest-Archive.md#playtest-19](testing/Playtest-Archive.md#playtest-19), §51) — this is the
    live one and it outranks everything below it:
    1. ✅ **The four defects — ALL FIXED 2026-08-07 (0.52.0), unplayed.** 48g: the server requires
       EXACTLY `PickCount` and the client's Confirm reads "Choose N more" until the tally is full · 46d:
@@ -126,7 +127,7 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
       client should say *"far above your level"* rather than showing a silent miss.
       (`M1` and `M10` are answered and built; struck from this list 2026-08-07.)
 1. ~~**Publish 0.45.0 and play §36 + §40-43**~~ — **DONE, 2026-08-03.** See the paragraph above; the
-   queue it produced is [testing/Playtest-17.md](testing/Playtest-17.md) / §44. Still-unreached items
+   queue it produced is [testing/Playtest-Archive.md#playtest-17](testing/Playtest-Archive.md#playtest-17) / §44. Still-unreached items
    are listed at the bottom of that file (§37 partial-stack trading is top of them — the duo-icon rig
    makes it testable without a bot now).
 2. **The playtest-17 batch, in this order** — it splits cleanly into four passes and they are ordered by
@@ -162,9 +163,9 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
       the mob's level sits in. `D2` `/enchant <value>` is a client-side picker + `AdminEnchantCmd`, and
       all 18 are in the debug menu. `BalanceMatrix` §D1 measures both halves.
       ⚠ **Needs a client build** — the catalog is in the APK. Checklist §49.
-   ✅ **`B3` is CLOSED** — the list went to him as [testing/Skills-Not-In-CSVs.md](testing/Skills-Not-In-CSVs.md)
+   ✅ **`B3` is CLOSED** — the list went to him as [testing/Playtest-Archive.md#skills-not-in-csvs](testing/Playtest-Archive.md#skills-not-in-csvs)
    and he answered it on 2026-08-04 (playtest-18 `G1`, item 3 below). The deletion is unblocked.
-3. 🆕 **The playtest-18 queue** (2026-08-04, [testing/Playtest-18.md](testing/Playtest-18.md), §45) —
+3. 🆕 **The playtest-18 queue** (2026-08-04, [testing/Playtest-Archive.md#playtest-18](testing/Playtest-Archive.md#playtest-18), §45) —
    his second 0.45.0 pass, and mostly *answers* rather than bugs:
    - ✅ **`G1` the skill deletion — DONE 2026-08-07 (0.53.0).** See item 0.3 above for what actually
      went and what stayed. ⚠ Only `lb_*`/`wc_*` (**`G2`**) is still owed back to him.
@@ -238,7 +239,7 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
 
 **UI / conveniences**
 - 🆕 **The playtest-17 UI queue** (2026-08-03) — the whole C-list in
-  [testing/Playtest-17.md](testing/Playtest-17.md): bag/vendor/keeper filters, gatekeeper tabs, NPC quest
+  [testing/Playtest-Archive.md#playtest-17](testing/Playtest-Archive.md#playtest-17): bag/vendor/keeper filters, gatekeeper tabs, NPC quest
   scoping, the merged compare+details window, a [Speak] button on NPCs, timed-item countdowns with
   colour, auto-on for buff potions/scrolls, a **[Combat] chat tab in its own window**, title colours and
   fonts, admin/moderator titles. Individually small, collectively the difference between a systems demo

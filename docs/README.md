@@ -15,12 +15,21 @@ Index of everything under `docs/`.
 - [unity/EditorSetup.md](unity/EditorSetup.md) — one-time Unity editor / Android SDK setup.
 
 ## `testing/` — what to verify
-- [TestChecklist.md](testing/TestChecklist.md) — the running WPF / server playtest checklist.
-- [TestChecklist.Unity.md](testing/TestChecklist.Unity.md) — the Unity client checklist (the live one).
-- Playtest reports, verbatim: [Playtest-16.md](testing/Playtest-16.md) ·
-  [Playtest-15.md](testing/Playtest-15.md) ·
-  [Playtest-14.md](testing/Playtest-14.md) · [Playtest-13.md](testing/Playtest-13.md) ·
-  [Playtest-0.28.76.md](testing/Playtest-0.28.76.md).
+
+**Three files, and that is the whole folder** (consolidated 2026-08-07 from fourteen):
+
+- [Open-Checklist.md](testing/Open-Checklist.md) — 🔴 **the one he edits on the phone.** Unversioned
+  and rolling: everything still untested, rewritten against each new build.
+- [TestChecklist.Unity.md](testing/TestChecklist.Unity.md) — the live per-section detail. Section
+  numbers here are what the open checklist's ids refer to.
+- [Playtest-Archive.md](testing/Playtest-Archive.md) — every **closed** playtest, verbatim, newest
+  first ([19](testing/Playtest-Archive.md#playtest-19) · [18](testing/Playtest-Archive.md#playtest-18) ·
+  [17](testing/Playtest-Archive.md#playtest-17) · [16](testing/Playtest-Archive.md#playtest-16) ·
+  [15](testing/Playtest-Archive.md#playtest-15) · [14](testing/Playtest-Archive.md#playtest-14) ·
+  [13](testing/Playtest-Archive.md#playtest-13) · [0.28.76](testing/Playtest-Archive.md#playtest-02876)),
+  plus the [pre-Unity server checklist](testing/Playtest-Archive.md#legacy-testchecklist) and the
+  [skills-not-in-CSVs audit](testing/Playtest-Archive.md#skills-not-in-csvs). Read for rationale;
+  don't work from it.
 
 ## `design/` — how systems are meant to work
 - [CombatResolution.md](design/CombatResolution.md) — the unified hit/evade/fail resolver.

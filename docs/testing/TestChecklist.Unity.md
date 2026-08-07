@@ -1,16 +1,20 @@
 # Test Checklist — Unity client (Android / Editor)
 
-Companion to `TestChecklist.md` (which covers the WPF client + server behaviour). Same
-conventions: **`[ ]` = not tested, `[x]` = verified, `[~]` = tested, needs a change/tuning.**
+**This is the live checklist and the only one kept current.** The list the owner actually edits on
+the phone is [Open-Checklist.md](Open-Checklist.md); its ids point at the section numbers here.
+Closed passes live in [Playtest-Archive.md](Playtest-Archive.md) — including the
+[pre-Unity server checklist](Playtest-Archive.md#legacy-testchecklist), which this file superseded
+when the WPF harness was dropped in 0.42.8. Conventions: **`[ ]` = not tested, `[x]` = verified,
+`[~]` = tested, needs a change/tuning.**
 
 The Unity client is a **thin view over the same server** — it shares `Game.Shared` and speaks the
 real protocol through `NetworkChannel`. So most items here test the CLIENT, not the game: if a
-number is wrong in both clients it's a server bug and belongs in `TestChecklist.md`.
+number is wrong in both clients it's a server bug, not a client one.
 
 > **PLAYTEST-17, 2026-08-03 (server 0.45.0)** — the largest catch-up pass so far: §36 and §38-§43, six
 > versions of unplayed work, went through in one sitting. **84 items verified (marked `P17`)** plus 22 of
 > the ancient playtest-11 findings closed. What came back is edge-case bugs and a long "make it a game"
-> queue, not broken systems — see **§44** and `Playtest-17.md`.
+> queue, not broken systems — see **§44** and `Playtest-Archive.md#playtest-17`.
 
 **Test in this order.** Every section depends on the one above it — a failure at step 2 makes
 everything below it meaningless, so stop and report at the first ✗ rather than ticking on.
@@ -270,7 +274,7 @@ and the displayed rate matching what he observed. **Still open** → §32.
 while an enemy interrupt does not, consumables carry their own timers, no stale timer survives a relog,
 and the Learn confirmation shows its numbers. **31e is right but unreadable** → §32.
 
---- 32. 🔴 PLAYTEST-15 (2026-07-31, server 0.34.3) — full report: `Playtest-15.md`. ---
+--- 32. 🔴 PLAYTEST-15 (2026-07-31, server 0.34.3) — full report: `Playtest-Archive.md#playtest-15`. ---
 **BUILT IN 0.35.0 — test these:** 32a · 32b · 32h · 32i · 32j · 32k · 32l · **32m** · 32o · 32p · 32s · 32v.
 (32m and 32s came out of the SAME line — see 32s. 32m was scheduled for the Unity batch and arrived early.)
 **BUILT IN 0.37.0 — test these:** 32c · 32d · 32e · 32f · 32g · 32n · 32q · 32r, plus **32w** (the NPC
@@ -851,7 +855,7 @@ QUALITY no longer matters: a Common sword can roll the same maximum as a Mythic 
 ---
 ## 44. 🔴 PLAYTEST-17 QUEUE (2026-08-03) — the work that came OUT of the 0.45.0 pass
 
-The full report in his own wording is **`Playtest-17.md`** and it is the authoritative list; this is the
+The full report in his own wording is **`Playtest-Archive.md#playtest-17`** and it is the authoritative list; this is the
 index. Nothing below is built.
 
 **Bugs** — B1 auto-farm actions are per-ACCOUNT not per-character (and un-slotting must clear auto-on) ·
@@ -884,7 +888,7 @@ tab in its own window.
 
 ## 45. 🔴 PLAYTEST-18 QUEUE (2026-08-04) — the second 0.45.0 pass
 
-The full report in his own wording is **`Playtest-18.md`** and it is the authoritative list; this is the
+The full report in his own wording is **`Playtest-Archive.md#playtest-18`** and it is the authoritative list; this is the
 index. Nothing below is built. **B3 is ANSWERED here** — see G1.
 
 **General** — 🔴 **G1 the skills to DELETE** (`evade_mastery`, `reflexes`, `precision`, `anti_magic`,
@@ -916,7 +920,7 @@ picks how many).
 ## 46 + 47. THE 0.46.0/0.47.0 BATCHES — indexed in the OPEN checklist
 
 Those two builds' items were written straight into the per-build open checklist rather than here, and
-that file is the one he edits on the phone: **`Open-Checklist-0.48.0.md`** (§46 = the 0.46.0 batch +
+that file is the one he edits on the phone: **`Open-Checklist.md`** (§46 = the 0.46.0 batch +
 inventory hygiene + the quest section, §47 = the friction tier + the review fixes). Their ids are
 `46a…` / `47a…` and this file keeps the numbers reserved so nothing reuses them.
 
@@ -1101,7 +1105,7 @@ have none: flat crit rate exists only as a random enchant attribute, and only on
 ⚠ **DELETE `Game.Server/game.db`** — one new column (`SocialOptions`). ⚠ Needs a **new APK** (the
 Options window, the [Talk] button, the movement locks). Protocol: one new hub method
 (`PartyInviteByName`) and one new push (`SocialOptions`) — additive, so `MinAcceptedProtocol` is
-unchanged. Source: [Playtest-19.md](Playtest-19.md).
+unchanged. Source: [Playtest-Archive.md#playtest-19](Playtest-Archive.md#playtest-19).
 
 ### The four defects
 
@@ -1172,7 +1176,7 @@ the tool shows no delta — the effect is the defence multiplier moving 0.80 →
 ⚠ Needs a **new APK** (the item/skill catalogs and two enums are compiled into it). ⚠ **Delete
 `Game.Server/game.db`** if it wasn't already deleted for §53 — any old character carrying `Race = 99`
 or a God item is now referencing an id that no longer exists. Protocol is unchanged. Source:
-[Playtest-19.md](Playtest-19.md) `0a` / `0b` / `M1` / `M7`.
+[Playtest-Archive.md#playtest-19](Playtest-Archive.md#playtest-19) `0a` / `0b` / `M1` / `M7`.
 
 **54a. M1 — nothing is unhittable any more.** This is the whole point of the change and it is the one
 thing BalanceMatrix cannot show you. Reproduce his own test: admin, accuracy 9999, a bow, and a **level
@@ -1234,10 +1238,138 @@ relog** without jumping (it is computed from the server's epoch, sent at login).
 title bar only because the framerate is; they move out when the title bar does.
 
 ---
+## 56. 🔴 0.51.0 — magic crit becomes its OWN channel — UNPLAYED
+
+The magic twin of §52. ⚠ Needs a **new APK**. No db reset for this section alone. **Nothing here was
+ever indexed in a checklist before 0.53.2** — it was built and went straight past a play pass.
+
+**56a. Magic crit rate is no longer decorative.** It was `WIT × 0.001` → a human mage sat at **2.0%**,
+the ×2 Insight buff bought **+3 points**, and the 20% cap needed WIT 200. Now:
+`magicCrit = (50 × witMod × passives × buffs + flat) × debuffs`, clamped **once** at 20%.
+- ⚠ The old code clamped **mid-chain** (at the gear step and again at the passive step), *before* the
+  buff multiplied — which is the mechanical reason ×2 Insight was worth nothing. Cast with and
+  without Insight and confirm the buff now roughly **doubles** the observed magic-crit frequency.
+- Target to check: an **elf mage in the full kit** (WIT 23 +2 set +5 swap = 30) → 10%, and ×2 Insight
+  puts him at **20%, the cap exactly**. That is his authored endpoint.
+- A **human mage at WIT 20 is the ×1.00 anchor**. Below 20 the slope is gentler (+0.05/pt) than above
+  it (+0.10/pt) *on purpose* — symmetric slopes zero out at WIT 10, and ork fighters and **every mob
+  (flat WIT 5)** live down there. A mob should land near **1.25%**: rare, not impossible.
+
+**56b. Magic crit damage is a flat ×3 and takes NO bonus.** It used to share the one
+`CritDamageBonus` field with physical, so **Ferocity and the crit-damage item attribute — both
+authored for fighters — were silently paying mages**. Equip a crit-damage weapon attribute on a
+staff: the magic crit multiplier must **not** move. (×3 is the whole number.)
+
+**56c. 🔴 THE UNRULED CONSEQUENCE — this is the one I need your verdict on.** Measured on real
+entities at level 74 with best gear + NPC buffs, the magic crit factor went **×1.06 → ×1.24**, and
+**CHAMPION/NUKER moved 0.98× → 0.84×**: the nuker now out-damages the champion by ~19% where they
+used to be at parity. That is the honest price of the rework, not a bug. The levers are the **base
+50** and the **flat ×3**, both your numbers. Play both and tell me whether the nuker's lead is
+earned or wants trimming. -> 
+
+**56d. Resonance changed units.** `wc_human_pass` was `+0.05 flat points` (2.5× the entire old rate);
+it is now `0.20` = **×1.2 multiplier**, matching the physical convention. Check it reads as a
+percentage in the skill text, not a flat number.
+
+---
+## 57. 🔴 The MAGE MASTERY RESTRUCTURE — masteries now STACK — UNPLAYED
+
+⚠ **Delete `Game.Server/game.db`.** ⚠ Needs a **new APK**. 🔴 **`tools/SmokeTest` has NOT been run
+against this** — it changed `AutoLearnCoreSkills`, i.e. the **login sequence**, which is precisely
+what the smoke test exists to guard. Say the word and I'll run it before you start; see the
+pre-flight note at the top of the OPEN checklist.
+
+**57a. The structural change: armor masteries STACK.** `RecomputeDerived` used to take the FIRST
+armor mastery and `break` — so which one won was decided by **dictionary order**. Every
+non-superseded mastery now applies, and percentages compose **multiplicatively, never summed**.
+- A nuker's Mage Armor Mastery ×1.2 MP-regen now multiplies Spellcaster Mastery's ×1.2. Check the
+  robe MP regen is visibly better than either alone.
+
+**57b. Spellcaster Mastery owns the whole caster rule.** New skill, **auto-granted at 1, never
+replaced**. Robe Mastery becomes **"Robe Armor Mastery"** — robe P.Def only, **2 rungs @7/14**,
+**bought with SP, no longer auto-granted**. `weapon_proficiency` is **retired**.
+- ⚠ **The migration is the risk.** `mastery_robe` went 3 rungs → 2, so a saved level-3 character is
+  **clamped**. A mage that logs in and silently has **no robe P.Def at all** is the failure mode.
+  Deleting the db avoids it entirely — do that.
+- Check Skills → Learn actually offers Robe Armor Mastery for SP at 7 and 14, and that no character
+  still shows "Weapon Proficiency".
+
+**57c. The wrong-weapon penalty stopped being a collapse.** A mage holding a bow/dagger/nothing was
+on a **×0.05** magic multiplier — an annihilation, not a penalty. Your ruling made it **×0.5**:
+cast ×0.5, M.Atk ×0.5, magic accuracy ×0.5. Sword/blunt keeps cast ×1 with M.Atk ×0.6; wand/staff is
+×1/×1. Hold each in turn and confirm the numbers degrade in that order.
+- ⚠ The magic-accuracy half is halved **after** buffs, so **a bow caster cannot buff his way out of
+  it**. Buff up holding a bow and confirm the penalty survives.
+
+**57d. The cleric's light armor cancels the penalty exactly.** Light is authored to compose back to
+**cast ×1.00 / attack speed ×1.00**, versus **×1.05 in a robe** — your "−5% from a robe". A nuker in
+light stays punished (×0.53 / ×0.50). ⚠ These are derived constants, not free ones: if Spellcaster's
+×0.5 ever moves they must be re-derived. Verify with `BalanceMatrix E3b` (`--- E3b: the MASTERY
+STACK`) — it prints every weight × both mage classes and is the only check that this math is right.
+
+**57e. The dual's evasion roll is FLAT +5** (the twin of §55d, ruled first). Roll a dagger: the line
+must read **Evasion +1..+5 flat**, never a percentage. Measured mob-miss against the rogue: **no roll
+16-18%, new max roll 21-23% — where the OLD max roll gave 33-42%.** You said 16% is fine, so
+`evade_mastery` was deliberately **not** touched. Old items keep `EvasionPercent` and still resolve.
+
+---
+## 55. 🔴 0.53.2 — Restore Spirit gets LEVELS, the bow's accuracy roll goes FLAT 5 — UNPLAYED
+
+⚠ Needs a **new APK** (skill levels and the attribute enum are compiled into it). ⚠ **No db reset
+needed for this section** — `AccuracyPercent` stays in the enum, unrollable, so a bow rolled before
+today still resolves. (If you have not yet reset for §53/§54, do it for those.) Protocol unchanged.
+Both items are owner rulings from 2026-08-07 in the band that has **no CSV**.
+
+**55a. Restore Spirit is a ladder now, not one level for life.** It had ONE rung forever — 20 MP for
+65 HP, learned at 25 — while the bolt ladder grew 30 → 116, so by 40 it slowed the drain instead of
+sustaining a rotation. **Ten rungs**, learned at 25/40/45/50/55/60/65/70/75/80:
+
+| learned at | 25 | 40 | 45 | 50 | 55 | 60 | 65 | 70 | 75 | 80 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| MP restored | 20 | 45 | 55 | 65 | 75 | 85 | 95 | 105 | 113 | **120** |
+| HP burned | 65 | 90 | 105 | 118 | 131 | 144 | 157 | 170 | 185 | **200** |
+
+- Level a mage past 40 and check the rungs actually **appear in Skills → Learn** at those levels and
+  cost the SP shown there. The rung-1 numbers (20/65 @25) are the **CSV** and must not have moved.
+- ⚠ The **item card / skill tooltip must show the HP price**, not just the MP gain — `SkillLevel.HpCost`
+  is new plumbing (`HpCostAt`), and a skill that silently eats 200 HP is the kind of thing that reads
+  as a bug the first time it kills you.
+- Cast it at **low HP**: it must refuse (or not kill you) rather than burning HP you don't have.
+
+**55b. Mage Armor Mastery gains rungs 5-8 @40/50/60/70.** Only `mpWhenRestored` grows — **50 / 60 /
+70 / 80** — on top of the CSV's 25/30/35/40 at 20/25/30/35. P.Def (+35) and max MP (+30) are **frozen
+at the rung-4 values on purpose**; if you see those climbing, that is a defect.
+- The check that matters is the **sum**: at 80, in a ROBE, Restore Spirit should deliver
+  **120 + 80 = 200 MP for 200 HP** — his "+200 MP for −200 HP" endpoint, ~1.00 MP per HP.
+- Out of a robe the mastery contributes nothing, so the same cast delivers only the base 120.
+
+**55c. The mage's MP clock — this is the reason for both of the above.** His playtest-19 finding was
+*"mages run out of MP in 2-3 minutes"*. Farm a mage for **10+ unbroken minutes** at 40+ and say
+whether the rotation now sustains. It is not meant to be free — the design is "farm 30-40 min, rest a
+bit". If it is still 2-3 minutes, the ladder is not the fix and I need to know.
+
+**55d. The bow's accuracy roll is FLAT +5, not +30%.** Roll/reroll a bow at D through S:
+the attribute line must read **Accuracy +1..+5 flat**, never a percentage. It is the exact mirror of
+the dual's Evasion roll (§53), and for the same reason: a *multiplier* on a stat that already
+contains DEX and level grew without bound.
+- ⚠ **An old bow you already own keeps its `AccuracyPercent` roll and must still work** — the enum
+  entry was kept, just made unrollable. Check one from before today still shows its line and still
+  equips. It should read "Accuracy" on the card.
+- The grade still buys the FLOOR, not the ceiling: D rolls 1..5, S rolls 5..5.
+
+**55e. 🔴 The honest part — expect +5 accuracy to feel like NOTHING, and tell me if it does.**
+BalanceMatrix `E1b` says accuracy and evasion are **not symmetric**: `miss = clamp(5% + (eva − acc),
+floor, 95%)`. Evasion is additive against the 5% base from its first point; accuracy can only claw
+back what sits above *both* that base and the defender's own evade **floor**. So against a rogue's
+10% floor, +5 accuracy buys nothing until you already out-evade him by 10+ — and against mobs an
+archer is pinned at the 95% hit cap bare anyway. **The +5 is the right size; the floor is what makes
+it worth zero.** This needs a design ruling from you, not a code fix from me.
+
+---
 ## 51. 🔴 PLAYTEST-19 QUEUE (2026-08-06) — the 0.48.0 pass
 
-The full report in his own wording is **`Playtest-19.md`** (transcribed from his answered
-`Open-Checklist-0.48.0.md`) and that is the authoritative list; this is the index. **Sections 46, 47 and
+The full report in his own wording is **`Playtest-Archive.md#playtest-19`** (transcribed from his answered
+`Open-Checklist.md`) and that is the authoritative list; this is the index. **Sections 46, 47 and
 48 are PLAYED AND GREEN** — five builds' worth — with four defects, below. Nothing in **M1-M14** is built.
 
 **Defects out of the play pass** — 🔴 **48g the Blessing Box consumes the box on a PARTIAL pick** (7 of

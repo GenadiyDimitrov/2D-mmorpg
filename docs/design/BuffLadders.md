@@ -2,7 +2,7 @@
 
 **Status: ALL SIX STEPS BUILT.** Steps 1-4 (mechanism + speed group) in 0.36.0, step 5 (client
 grouping) in 0.37.0, **step 6 (every other family, their potions and scrolls) in 0.40.0**.
-Supersedes the buff half of playtest-15 §2 (`docs/testing/Playtest-15.md`).
+Supersedes the buff half of playtest-15 §2 (`docs/testing/Playtest-Archive.md#playtest-15`).
 Still open beyond this doc: **Harmony as party buffs**, and Harmony's own split into children.
 
 ---

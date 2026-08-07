@@ -1,138 +1,295 @@
+# ==================================================================================================
+# gear_sets.csv — the authored level-tier gear ladder. Updated 2026-08-07 (was 2026-07-03).
+#
+# WHAT CHANGED IN THIS PASS: nothing the owner authored was retuned. Every P.Def / P_ATK / M_ATK /
+# M.Def / +MaxMP number below at levels 20/40/52/61/76 is byte-identical to the 2026-07-03 file.
+# What was ADDED is the part that had drifted out of the doc while it shipped in code:
+#   1. The F (level 1) and S (level 80) rungs, which exist in game and were missing here entirely.
+#      F is AUTHORED; S is DERIVED as A x 1.60 (ItemCatalog.SGradeOverA) — one knob, not a column.
+#   2. A [BUILT] / [NOT BUILT] marker in the Comment column, so the doc stops implying that the
+#      whole file is live. Set bonuses ARE live now (they were "deferred" when this was written).
+#   3. The attributes block rewritten to what the roll system actually does — see ATTRIBUTES below.
+#      This is the one place the old file was not just incomplete but WRONG, and it needs a ruling.
+#
+# WHERE THE CODE IS: ItemCatalog.TieredWeapons/TieredArmor (Game.Shared/Items.cs) hold the stat
+# tables; ArmorSets.TieredSets (Game.Shared/ArmorSets.cs) holds the set bonuses; AttributeCatalog
+# (Game.Shared/Attributes.cs) holds the roll pools. Item ids are "<key>_t<level>", set ids
+# "set_<weight>_t<level>". Every one of those is generated FROM this table — keep them in step.
+#
+# COLUMNS
+#   GroupId/SetId  the set line. A trailing digit = a VARIANT body of that tier (521 = the second
+#                  level-52 line). Blank on weapons/jewels, which are not set pieces.
+#   Category       Armor | Weapon | Jewel
+#   Class          Fighter | Mage | blank (shared) | "-" (jewels, worn by anyone)
+#   Level          the item level = the grade band. F=1, D=20, C=40... see GRADE BANDS below.
+#   SlotOrType     Heavy/Light/Robe/Shield/Gloves/Boots/Helmet, the weapon type, or the jewel slot.
+#   Stat           armor -> P.Def | weapon -> P_ATK/M_ATK | jewel -> M.Def
+#   SetBonus       what wearing the full 4 slots grants. "Shield: <x>" = an EXTRA on top, granted
+#                  only if that set's own shield is also equipped. The shield is NEVER required to
+#                  complete the set.
+#   Comment        [BUILT]/[NOT BUILT] + the owner's original note.
+#   +MaxMP         robes and the 61+/76+ jewels carry inherent MP.
+#   attributes []  see the ATTRIBUTES block at the bottom of this file.
+#
+# GRADE BANDS (ItemCatalog.TierLetter / TierGrade). The level IS the grade:
+#   1 = F "Ferrite" | 20 = D "Ironforge/Nightleaf/Arcanum" | 40 = C | 52 = C | 61 = B | 76 = A | 80 = S
+#   A set is completed by Head + Body + Gloves + Boots (ArmorSets.DefaultSlots). The accessory line
+#   (gloves/boots/helm) is SHARED across all three weights of a tier — set_acc_t<level>.
+#
+# STANDING RULES (owner)
+#   - Set bonus is active only with all 4 of the group, plus the shield for the additional bonus.
+#   - Armors roll NO attributes. Armor identity is its SET. (Revisit after a balance pass.)
+# ==================================================================================================
 GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon); MDef(Jewels),SetBonus,Comment,+MaxMP(robes),attributes []
-# Set bonus active only with all 4 of group (as now) and shield for additional bonus if available
-# armors can not have attributes at the moment - after balance/check ill think of adding to them
-20,Armor,Fighter,20,Heavy,167,p.def x1.05; HP + 135 Shield: shield.p.def x1.1;,
-40,Armor,Fighter,40,Heavy,240,HP + 270; Shield: p.def x1.05;, if shield is equiped(same set) => Shield: <bonus>;
-52,Armor,Fighter,52,Heavy,270,CON +3; STR +3; Shield: shield.p.def x1.25;,def oriented
-521,Armor,Fighter,52,Heavy,270,Speed +7; HpReg x1.05; STR +3; CON -2; DEX -1;,dmg oriented
-61,Armor,Fighter,61,Heavy,293,p.Atk x1.04; CON +2; DEX -2; Sleep/Hold/Poison/Bleed Resist x1.7; Shield: Reflect 5% of mele basic atack dmg (like caunter to vamp);,def oriented
-611,Armor,Fighter,61,Heavy,293,p.Atk x1.04; STR +2; CON -2; Acc +4; Stun/Fear Resist x1.7;,dmg oriented
-76,Armor,Fighter,76,Heavy,332,STR +2; CON +2; DEX -2;HP +455; Sleep/Hold/Poison/Bleed/Fear/Stun Resist x1.7; Shield: (p.def x1.05; m.def x1.05; shield.p.def x1.25; reflect 5%);,
 
-20,Armor,Fighter,20,Shield,143,
-40,Armor,Fighter,40,Shield,203,,
-52,Armor,Fighter,52,Shield,230,,
-61,Armor,Fighter,61,Shield,256,,
-76,Armor,Fighter,76,Shield,299,,
+# ---- HEAVY bodies — set family "Ironforge". The def-oriented line; these are the sets that carry
+#      a shield-conditional extra. CcResist is ONE number in code (StatMods.CcResist 0.4), not the
+#      per-type Sleep/Hold/Poison/Bleed split written below — the split needs a per-type mechanic.
+1,Armor,Fighter,1,Heavy,115,,[BUILT] F rung; no set bonus authored
+20,Armor,Fighter,20,Heavy,167,p.def x1.05; HP + 135; Shield: shield.p.def x1.1;,[BUILT]
+40,Armor,Fighter,40,Heavy,240,HP + 270; Shield: p.def x1.05;,[BUILT] if shield is equiped(same set) => Shield: <bonus>;
+52,Armor,Fighter,52,Heavy,270,CON +3; STR +3; Shield: shield.p.def x1.25;,[BUILT] def oriented
+521,Armor,Fighter,52,Heavy,270,Speed +7; HpReg x1.05; STR +3; CON -2; DEX -1;,[BUILT] dmg oriented (set_heavy_t52_dmg); no shield extra
+61,Armor,Fighter,61,Heavy,293,p.Atk x1.04; CON +2; DEX -2; CC Resist 0.4; Shield: Reflect 5% of mele basic atack dmg (like caunter to vamp);,[BUILT] def oriented
+611,Armor,Fighter,61,Heavy,293,p.Atk x1.04; STR +2; CON -2; Acc +4; CC Resist 0.4;,[BUILT] dmg oriented (set_heavy_t61_dmg); Stun/Fear split folded into CcResist
+76,Armor,Fighter,76,Heavy,332,STR +2; CON +2; DEX -2; HP +455; CC Resist 0.4; Shield: (p.def x1.05; m.def x1.05; shield.p.def x1.25; reflect 5%);,[BUILT]
+80,Armor,Fighter,80,Heavy,531,,[BUILT] S = A x1.60 derived; set bonus NOT authored yet
 
-20,Armor,Fighter,20,Light,125,eva +2; MP + 92,
-40,Armor,Fighter,40,Light,218,eva +4,
-401,Armor,Fighter,40,Light,218,p.def x1.05,
-402,Armor,Fighter,40,Light,218,m.def x1.05,
-403,Armor,Fighter,40,Light,218,STR +4; CON -1,
-52,Armor,Fighter,52,Light,202,P.atk x1.02; DEX +3; CON -2; STR-1;,dmg oriented
-521,Armor,Fighter,52,Light,202,Cast x1.15; WIT -1; INT -1; MaxMP +120; MpReg 1.05; m.def x1.05;,supports oriented
-61,Armor,Fighter,61,Light,220,Vamp 5%; DEX +1; CON -1; Sleep/Hold/Poison/Bleed Resist x1.7;,for mele fighters/rogues oriented
-611,Armor,Fighter,61,Light,220,p.Atk x1.08; DEX +1; CON -1; Stun/Fear Resist x1.7;,dmg oriented
-76,Armor,Fighter,76,Light,249,p.atk x1.04; as x1.04; DEX +1; STR +1; CON -2; MaxMP +220; MpReg 1.05; m.def x1.05; Sleep/Hold/Poison/Bleed/Fear/Stun Resist x1.7;,
+# ---- SHIELDS. P.Def below is ShieldDefense. The block profile is extrapolated Wooden->Iron and is
+#      tunable in Items.cs (shBlock/shReduce/shCrit/shEvaPen), not authored here:
+#        BlockChance   .15 .22 .24 .26 .28 .30 .32   (F 20 40 52 61 76 S)
+#        BlockReduce   .34 .37 .39 .41 .43 .45 .47
+#        CritDefense   .08 .10 .11 .12 .13 .15 .16
+#        EvasionPen      5   7   7   8   8   9   9
+#      A shield belongs to its tier's HEAVY set id but does not count toward the 4-slot requirement.
+1,Armor,Fighter,1,Shield,90,,[BUILT] raised 40->90 2026-07-31: at 40 the Mythic F shield tied the starter Wooden Shield and the whole F rarity ladder was worthless
+20,Armor,Fighter,20,Shield,143,,[BUILT]
+40,Armor,Fighter,40,Shield,203,,[BUILT]
+52,Armor,Fighter,52,Shield,230,,[BUILT]
+61,Armor,Fighter,61,Shield,256,,[BUILT]
+76,Armor,Fighter,76,Shield,299,,[BUILT]
+80,Armor,Fighter,80,Shield,478,,[BUILT] S derived
 
-20,Armor,Mage,20,Robe,84,WIT +1; Speed +7,,274
-40,Armor,Mage,40,Robe,110,Cast x1.15,cast oriented,508
-41,Armor,Mage,40,Robe,110,p.def x1.05; WIT +1,support oriented,508
-42,Armor,Mage,40,Robe,110,INT +4; WIT -1,nuke oriented,508
-52,Armor,Mage,52,Robe,135,Cast x1.15; p.def 1.05; m.def x1.05,,613
-61,Armor,Mage,61,Robe,147,WIT +2; Speed +7; Cast x1.15; p.Def x1.08; m.def/mpReg x0.95; Sleep/Hold/Poison/Bleed Resist x1.7;,,718
-611,Armor,Mage,61,Robe,147,WIT +2; INT -1; Speed +7; m.def x1.05; mpReg x1.13; Stun/Fear Resist x1.7;,,718
-76,Armor,Mage,76,Robe,166,WIT +2; INT +1; M.Atk x1.17; Speed +7; Cast x1.15; Sleep/Hold/Poison/Bleed/Fear/Stun Resist x1.7;,,866
+# ---- LIGHT bodies — set family "Nightleaf".
+#      NOTE: 52 (202) is LOWER than 40 (218). That is what was authored and what ships; flagging it
+#      because it makes the C body a downgrade for anyone who already has the D one. Owner's call.
+1,Armor,Fighter,1,Light,86,,[BUILT] F rung
+20,Armor,Fighter,20,Light,125,eva +2; MP + 92,[BUILT]
+40,Armor,Fighter,40,Light,218,eva +4,[BUILT]
+401,Armor,Fighter,40,Light,218,p.def x1.05,[BUILT] set_light_t40_pdef
+402,Armor,Fighter,40,Light,218,m.def x1.05,[BUILT] set_light_t40_mdef
+403,Armor,Fighter,40,Light,218,STR +4; CON -1,[BUILT] set_light_t40_str
+52,Armor,Fighter,52,Light,202,P.atk x1.02; DEX +3; CON -2; STR -1;,[BUILT] dmg oriented
+521,Armor,Fighter,52,Light,202,Cast x1.15; WIT -1; INT -1; MaxMP +120; SPT +1;,[BUILT] supports oriented (set_light_t52_sup); authored MpReg/m.def became SPT +1
+61,Armor,Fighter,61,Light,220,Vamp 5%; DEX +1; CON -1; CC Resist 0.4;,[BUILT] for mele fighters/rogues oriented
+611,Armor,Fighter,61,Light,220,p.Atk x1.08; DEX +1; CON -1; CC Resist 0.4;,[BUILT] dmg oriented (set_light_t61_dmg)
+76,Armor,Fighter,76,Light,249,p.atk x1.04; as x1.04; DEX +1; STR +1; CON -2; MaxMP +220; SPT +1; CC Resist 0.4;,[BUILT] authored MpReg x1.05 / m.def x1.05 became SPT +1
+80,Armor,Fighter,80,Light,398,,[BUILT] S derived; set bonus NOT authored yet
 
-20,Armor,,20,Gloves,29,,
-40,Armor,,40,Gloves,39,,
-401,Armor,,40,Gloves,39,,
-402,Armor,,40,Gloves,39,,
-403,Armor,,40,Gloves,39,,
-52,Armor,,52,Gloves,44,,
-521,Armor,,52,Gloves,44,,
-61,Armor,,61,Gloves,49,,
-611,Armor,,61,Gloves,49,,
-76,Armor,,76,Gloves,55,,
+# ---- ROBE bodies — set family "Arcanum". Robes carry inherent +MaxMP (last column).
+1,Armor,Mage,1,Robe,49,,[BUILT] F rung,109
+20,Armor,Mage,20,Robe,84,WIT +1; Speed +7,[BUILT],274
+40,Armor,Mage,40,Robe,110,Cast x1.15,[BUILT] cast oriented,508
+41,Armor,Mage,40,Robe,110,p.def x1.05; WIT +1,[BUILT] support oriented (set_robe_t40_sup),508
+42,Armor,Mage,40,Robe,110,INT +4; WIT -1,[BUILT] nuke oriented (set_robe_t40_nuke),508
+52,Armor,Mage,52,Robe,135,Cast x1.15; p.def x1.05; m.def x1.05,[BUILT],613
+61,Armor,Mage,61,Robe,147,WIT +2; Speed +7; Cast x1.15; p.Def x1.08; SPT -1; CC Resist 0.4;,[BUILT] authored m.def/mpReg x0.95 became SPT -1,718
+611,Armor,Mage,61,Robe,147,WIT +2; INT -1; Speed +7; m.def x1.05; mpReg x1.13; Stun/Fear Resist x1.7;,[NOT BUILT] the only authored body with no item — no set_robe_t61_* variant exists,718
+76,Armor,Mage,76,Robe,166,WIT +2; INT +1; M.Atk x1.17; Speed +7; Cast x1.15; CC Resist 0.4;,[BUILT],866
+80,Armor,Mage,80,Robe,266,,[BUILT] S derived; set bonus NOT authored yet,1386
 
-20,Armor,,20,Boots,29,,
-40,Armor,,40,Boots,39,,
-401,Armor,,40,Boots,39,,
-402,Armor,,40,Boots,39,,
-403,Armor,,40,Boots,39,,
-52,Armor,,52,Boots,44,,
-521,Armor,,52,Boots,44,,
-61,Armor,,61,Boots,49,,
-611,Armor,,61,Boots,49,,
-76,Armor,,76,Boots,55,,
+# ---- WEIGHTLESS ACCESSORIES. One line per TIER, shared by all three weights (set_acc_t<level>):
+#      the same Gauntlets/Greaves/Helm complete a Heavy, Light or Robe set. The per-variant rows of
+#      the old file (401/402/403/521/611) were duplicates of the tier row and are collapsed here.
+,Armor,,1,Gloves,15,,[BUILT] F rung
+,Armor,,20,Gloves,29,,[BUILT]
+,Armor,,40,Gloves,39,,[BUILT]
+,Armor,,52,Gloves,44,,[BUILT]
+,Armor,,61,Gloves,49,,[BUILT]
+,Armor,,76,Gloves,55,,[BUILT]
+,Armor,,80,Gloves,88,,[BUILT] S derived
 
-20,Armor,,20,Helmet,41,,
-40,Armor,,40,Helmet,58,,
-401,Armor,,40,Helmet,58,,
-402,Armor,,40,Helmet,58,,
-403,Armor,,40,Helmet,58,,
-52,Armor,,52,Helmet,66,,
-521,Armor,,52,Helmet,66,,
-61,Armor,,61,Helmet,73,,
-611,Armor,,61,Helmet,73,,
-76,Armor,,76,Helmet,83,,
+,Armor,,1,Boots,15,,[BUILT] F rung
+,Armor,,20,Boots,29,,[BUILT]
+,Armor,,40,Boots,39,,[BUILT]
+,Armor,,52,Boots,44,,[BUILT]
+,Armor,,61,Boots,49,,[BUILT]
+,Armor,,76,Boots,55,,[BUILT]
+,Armor,,80,Boots,88,,[BUILT] S derived
 
-# Weapons
-,Weapon,Fighter,20,Sword,92/54,,no attri - we need to rework a bit the attri system .. not grade increases the count ... but one attribute each time and only increases max .. but thats later for testing
-,Weapon,Fighter,40,Sword,156/83,,,,crit rate: max 5%; as: max 5%; hp: max 10%
-,Weapon,Fighter,52,Sword,194/99,,,,crit rate: max 10%; as: max 7%; hp: max 15%
-,Weapon,Fighter,61,Sword,232/114,,,,crit rate: max 15%; as: max 10%; hp: max 20%
-,Weapon,Fighter,76,Sword,281/132,,,,crit rate: max 20%; as: max 15%; hp: max 25%
+,Armor,,1,Helmet,21,,[BUILT] F rung
+,Armor,,20,Helmet,41,,[BUILT]
+,Armor,,40,Helmet,58,,[BUILT]
+,Armor,,52,Helmet,66,,[BUILT]
+,Armor,,61,Helmet,73,,[BUILT]
+,Armor,,76,Helmet,83,,[BUILT]
+,Armor,,80,Helmet,133,,[BUILT] S derived
 
-,Weapon,Fighter,20,Sword2h,112/54,,,,
-,Weapon,Fighter,40,Sword2h,190/83,,,,crit rate: max 5%; as: max 5%; hp: max 10%
-,Weapon,Fighter,52,Sword2h,236/99,,,,crit rate: max 10%; as: max 7%; hp: max 15%
-,Weapon,Fighter,61,Sword2h,282/114,,,,crit rate: max 15%; as: max 10%; hp: max 20%
-,Weapon,Fighter,76,Sword2h,342/132,,,,crit rate: max 20%; as: max 15%; hp: max 25%
+# ==================================================================================================
+# WEAPONS. BOTH numbers of the pair are authored and BOTH ship: P -> AtkBonus, M -> MAtkBonus.
+# One power stat (ATK) feeds both channels; the WEAPON decides the split. The old OffChannelFactor
+# that reconstructed the discarded half is gone (1.0 both ways) — "a caster swinging a mace should
+# not cast like a caster holding a wand" is a property of the CLASS, so it lives in a passive.
+# Attack speed is blank = the type's default; only bows author one (they are the slow line).
+# ==================================================================================================
+,Weapon,Fighter,1,Sword,24/14,,[BUILT] F rung
+,Weapon,Fighter,20,Sword,92/54,,[BUILT] no attributes below level 40
+,Weapon,Fighter,40,Sword,156/83,,[BUILT],,see ATTRIBUTES: SWORD
+,Weapon,Fighter,52,Sword,194/99,,[BUILT],,see ATTRIBUTES: SWORD
+,Weapon,Fighter,61,Sword,232/114,,[BUILT],,see ATTRIBUTES: SWORD
+,Weapon,Fighter,76,Sword,281/132,,[BUILT],,see ATTRIBUTES: SWORD
+,Weapon,Fighter,80,Sword,450/211,,[BUILT] S derived,,see ATTRIBUTES: SWORD
 
-,Weapon,Fighter,20,Blunt,92/54,,no attri
-,Weapon,Fighter,40,Blunt,156/83,,,,crit dmg: max 15%; hp: max 20%
-,Weapon,Fighter,52,Blunt,194/99,,,,crit dmg: max 20%; hp: max 25%
-,Weapon,Fighter,61,Blunt,232/114,,,,crit dmg: max 25%; hp: max 30%
-,Weapon,Fighter,76,Blunt,281/132,,,,crit dmg: max 30%; hp: max 35%
+,Weapon,Fighter,1,Sword2h,29/14,,[BUILT] F rung
+,Weapon,Fighter,20,Sword2h,112/54,,[BUILT]
+,Weapon,Fighter,40,Sword2h,190/83,,[BUILT],,see ATTRIBUTES: SWORD
+,Weapon,Fighter,52,Sword2h,236/99,,[BUILT],,see ATTRIBUTES: SWORD
+,Weapon,Fighter,61,Sword2h,282/114,,[BUILT],,see ATTRIBUTES: SWORD
+,Weapon,Fighter,76,Sword2h,342/132,,[BUILT],,see ATTRIBUTES: SWORD
+,Weapon,Fighter,80,Sword2h,547/211,,[BUILT] S derived,,see ATTRIBUTES: SWORD
 
-,Weapon,Fighter,20,Blunt2h,112/54,,no attri
-,Weapon,Fighter,40,Blunt2h,190/83,,,,crit dmg: max 15%; hp: max 20%
-,Weapon,Fighter,52,Blunt2h,236/99,,,,crit dmg: max 20%; hp: max 25%
-,Weapon,Fighter,61,Blunt2h,282/114,,,,crit dmg: max 25%; hp: max 30%
-,Weapon,Fighter,76,Blunt2h,342/132,,,,crit dmg: max 30%; hp: max 35%
+,Weapon,Fighter,1,Blunt,24/14,,[BUILT] F rung
+,Weapon,Fighter,20,Blunt,92/54,,[BUILT] no attri
+,Weapon,Fighter,40,Blunt,156/83,,[BUILT],,see ATTRIBUTES: BLUNT
+,Weapon,Fighter,52,Blunt,194/99,,[BUILT],,see ATTRIBUTES: BLUNT
+,Weapon,Fighter,61,Blunt,232/114,,[BUILT],,see ATTRIBUTES: BLUNT
+,Weapon,Fighter,76,Blunt,281/132,,[BUILT],,see ATTRIBUTES: BLUNT
+,Weapon,Fighter,80,Blunt,450/211,,[BUILT] S derived,,see ATTRIBUTES: BLUNT
 
-,Weapon,Fighter,20,Duals,80/54,,no attri
-,Weapon,Fighter,40,Duals,136/83,,,,crit dmg: max 20%; crit rate: max 10%; as: 5%;
-,Weapon,Fighter,52,Duals,170/99,,,,crit dmg: max 25%; crit rate: max 15%; as: 10%;
-,Weapon,Fighter,61,Duals,203/114,,,,crit dmg: max 30%; crit rate: max 20%; as: 15%;
-,Weapon,Fighter,76,Duals,271/132,,,,crit dmg: max 35%; crit rate: max 25%; as: 20%;
+,Weapon,Fighter,1,Blunt2h,29/14,,[BUILT] F rung
+,Weapon,Fighter,20,Blunt2h,112/54,,[BUILT] no attri
+,Weapon,Fighter,40,Blunt2h,190/83,,[BUILT],,see ATTRIBUTES: BLUNT
+,Weapon,Fighter,52,Blunt2h,236/99,,[BUILT],,see ATTRIBUTES: BLUNT
+,Weapon,Fighter,61,Blunt2h,282/114,,[BUILT],,see ATTRIBUTES: BLUNT
+,Weapon,Fighter,76,Blunt2h,342/132,,[BUILT],,see ATTRIBUTES: BLUNT
+,Weapon,Fighter,80,Blunt2h,547/211,,[BUILT] S derived,,see ATTRIBUTES: BLUNT
 
-,Weapon,Fighter,20,Bow,191/55,,slow => as:293; no attri
-,Weapon,Fighter,40,Bow,316/84,,slow => as:293;,,crit dmg: max 20%; crit rate: max 10%; patk: 5%;
-,Weapon,Fighter,40,Bow,323/84,,very slow => as:227;,,crit dmg: max 20%; crit rate: max 10%; patk: 5%;
-,Weapon,Fighter,52,Bow,400/99,,slow => as:293;,,crit dmg: max 25%; crit rate: max 15%; patk: 6%;
-,Weapon,Fighter,61,Bow,528/114,,very slow => as:227;,,crit dmg: max 30%; crit rate: max 20%; patk: 8%;
-,Weapon,Fighter,76,Bow,581/132,,slow => as:293;,,crit dmg: max 35%; crit rate: max 25%; patk: 10%;
+# Daggers are DUALs (WeaponType.Dual) — fast, lower per-hit.
+,Weapon,Fighter,1,Duals,21/14,,[BUILT] F rung
+,Weapon,Fighter,20,Duals,80/54,,[BUILT] no attri
+,Weapon,Fighter,40,Duals,136/83,,[BUILT],,see ATTRIBUTES: DUAL
+,Weapon,Fighter,52,Duals,170/99,,[BUILT],,see ATTRIBUTES: DUAL
+,Weapon,Fighter,61,Duals,203/114,,[BUILT],,see ATTRIBUTES: DUAL
+,Weapon,Fighter,76,Duals,271/132,,[BUILT],,see ATTRIBUTES: DUAL
+,Weapon,Fighter,80,Duals,434/211,,[BUILT] S derived,,see ATTRIBUTES: DUAL
 
-,Weapon,Mage,20,Wand (1h sword/blunt),74/72,,no attri - they are one handed and have less mAtk than the two handed .. on 76+ all mages get an offhand support passive skill (nukes get +mAtk to compansate; healer +heal power; supports +mp/mpregen) and the offhand gives +p.def(as arnor not like shield)/+hp/-eva - but we will get to there
-,Weapon,Mage,40,Wand (1h sword/blunt),111/101,,,,cast: max 15%; matk: max 5%; mcrit rate: max 5%
-,Weapon,Mage,52,Wand (1h sword/blunt),140/122,,,,cast: max 15%; matk: max 7%; mcrit rate: max 6%
-,Weapon,Mage,61,Wand (1h sword/blunt),186/152,,,,cast: max 15%; matk: max 10%; mcrit rate: max 8%
-,Weapon,Mage,76,Wand (1h sword/blunt),225/175,,,,cast: max 15%; matk: max 15%; mcrit rate: max 10%
+# Bows are the only weapon with a basic-attack RANGE (400 base) and the only one authoring an
+# attack speed. slow = 293, very slow = 227. Only ONE bow per tier ships: the authored second
+# level-40 bow (323/84 very slow) was never built, and 61 is the very-slow rung instead.
+,Weapon,Fighter,1,Bow,50/14,,[BUILT] F rung; slow => as:293
+,Weapon,Fighter,20,Bow,191/55,,[BUILT] slow => as:293; no attri
+,Weapon,Fighter,40,Bow,316/84,,[BUILT] slow => as:293;,,see ATTRIBUTES: BOW
+,Weapon,Fighter,40,Bow,323/84,,[NOT BUILT] very slow => as:227; the alternate 40 bow — no item exists,,see ATTRIBUTES: BOW
+,Weapon,Fighter,52,Bow,400/99,,[BUILT] slow => as:293;,,see ATTRIBUTES: BOW
+,Weapon,Fighter,61,Bow,528/114,,[BUILT] very slow => as:227;,,see ATTRIBUTES: BOW
+,Weapon,Fighter,76,Bow,581/132,,[BUILT] slow => as:293;,,see ATTRIBUTES: BOW
+,Weapon,Fighter,80,Bow,930/211,,[BUILT] S derived; slow => as:293,,see ATTRIBUTES: BOW
 
-,Weapon,Mage,20,Staff (2h blunt),90/79,, no attri
-,Weapon,Mage,40,Staff (2h blunt),135/111,,,,cast: max 15%; matk: max 5%; mcrit rate: max 5%
-,Weapon,Mage,52,Staff (2h blunt),189/145,,,,cast: max 15%; matk: max 7%; mcrit rate: max 6%
-,Weapon,Mage,61,Staff (2h blunt),226/167,,,,cast: max 15%; matk: max 10%; mcrit rate: max 8%
-,Weapon,Mage,76,Staff (2h blunt),274/193,,,,cast: max 15%; matk: max 15%; mcrit rate: max 10%
+# Magic weapons carry NO weapon range (melee basic, tiny basic damage — the power is in spells).
+# IsMagicWeapon, not WeaponType, is what makes an entity a caster: a wand is Blunt and a staff is
+# TwoHandedBlunt, so the type alone cannot tell a wand from a mace.
+,Weapon,Mage,1,Wand (1h sword/blunt),20/19,,[BUILT] F rung
+,Weapon,Mage,20,Wand (1h sword/blunt),74/72,,[BUILT] one handed and less mAtk than two handed; the 76+ offhand support passive is NOT BUILT
+,Weapon,Mage,40,Wand (1h sword/blunt),111/101,,[BUILT],,see ATTRIBUTES: MAGIC
+,Weapon,Mage,52,Wand (1h sword/blunt),140/122,,[BUILT],,see ATTRIBUTES: MAGIC
+,Weapon,Mage,61,Wand (1h sword/blunt),186/152,,[BUILT],,see ATTRIBUTES: MAGIC
+,Weapon,Mage,76,Wand (1h sword/blunt),225/175,,[BUILT],,see ATTRIBUTES: MAGIC
+,Weapon,Mage,80,Wand (1h sword/blunt),360/280,,[BUILT] S derived,,see ATTRIBUTES: MAGIC
 
-# Jewels
-,Jewel,-,20,Necklace,45,,,0,
-,Jewel,-,40,Necklace,64,,,0,
-,Jewel,-,52,Necklace,72,,,0,
-,Jewel,-,61,Necklace,85,,,33,
-,Jewel,-,76,Necklace,95,,,42,
+,Weapon,Mage,1,Staff (2h blunt),24/21,,[BUILT] F rung
+,Weapon,Mage,20,Staff (2h blunt),90/79,,[BUILT] no attri
+,Weapon,Mage,40,Staff (2h blunt),135/111,,[BUILT],,see ATTRIBUTES: MAGIC
+,Weapon,Mage,52,Staff (2h blunt),189/145,,[BUILT],,see ATTRIBUTES: MAGIC
+,Weapon,Mage,61,Staff (2h blunt),226/167,,[BUILT],,see ATTRIBUTES: MAGIC
+,Weapon,Mage,76,Staff (2h blunt),274/193,,[BUILT],,see ATTRIBUTES: MAGIC
+,Weapon,Mage,80,Staff (2h blunt),438/309,,[BUILT] S derived,,see ATTRIBUTES: MAGIC
 
-,Jewel,-,20,Ring,22,,,0,
-,Jewel,-,40,Ring,32,,,0,
-,Jewel,-,52,Ring,36,,,0,
-,Jewel,-,61,Ring,42,,,17,
-,Jewel,-,76,Ring,48,,,21,
+# ==================================================================================================
+# JEWELS. M.Def is the stat; jewels are the ONLY source of magic defence. Inherent +MP from 61.
+# L2 layout: 1 necklace / 2 rings / 2 earrings. Jewels ROLL attributes (see ATTRIBUTES: JEWELS) —
+# the old file left that column empty, which read as "jewels have none". They do.
+# ==================================================================================================
+,Jewel,-,1,Necklace,18,,[BUILT] F rung,0
+,Jewel,-,20,Necklace,45,,[BUILT],0
+,Jewel,-,40,Necklace,64,,[BUILT],0,see ATTRIBUTES: NECKLACE
+,Jewel,-,52,Necklace,72,,[BUILT],0,see ATTRIBUTES: NECKLACE
+,Jewel,-,61,Necklace,85,,[BUILT],33,see ATTRIBUTES: NECKLACE
+,Jewel,-,76,Necklace,95,,[BUILT],42,see ATTRIBUTES: NECKLACE
+,Jewel,-,80,Necklace,152,,[BUILT] S derived,67,see ATTRIBUTES: NECKLACE
 
-,Jewel,-,20,Earring,34,,,0,
-,Jewel,-,40,Earring,45,,,0,
-,Jewel,-,52,Earring,54,,,0,
-,Jewel,-,61,Earring,63,,,25,
-,Jewel,-,76,Earring,71,,,31,
+,Jewel,-,1,Ring,9,,[BUILT] F rung,0
+,Jewel,-,20,Ring,22,,[BUILT],0
+,Jewel,-,40,Ring,32,,[BUILT],0,see ATTRIBUTES: RING
+,Jewel,-,52,Ring,36,,[BUILT],0,see ATTRIBUTES: RING
+,Jewel,-,61,Ring,42,,[BUILT],17,see ATTRIBUTES: RING
+,Jewel,-,76,Ring,48,,[BUILT],21,see ATTRIBUTES: RING
+,Jewel,-,80,Ring,77,,[BUILT] S derived,34,see ATTRIBUTES: RING
+
+,Jewel,-,1,Earring,13,,[BUILT] F rung,0
+,Jewel,-,20,Earring,34,,[BUILT],0
+,Jewel,-,40,Earring,45,,[BUILT],0,see ATTRIBUTES: EARRING
+,Jewel,-,52,Earring,54,,[BUILT],0,see ATTRIBUTES: EARRING
+,Jewel,-,61,Earring,63,,[BUILT],25,see ATTRIBUTES: EARRING
+,Jewel,-,76,Earring,71,,[BUILT],31,see ATTRIBUTES: EARRING
+,Jewel,-,80,Earring,114,,[BUILT] S derived,50,see ATTRIBUTES: EARRING
+
+# ==================================================================================================
+# ATTRIBUTES — 🔴 THIS SECTION IS THE ONE REAL CORRECTION IN THIS PASS. READ IT.
+#
+# The old file wrote a RISING MAX per tier ("crit rate: max 5% at 40, max 10% at 52, max 15% at 61,
+# max 20% at 76"). That is NOT what shipped, and it never was. What shipped is the inverse shape:
+#
+#     THE MAX IS FLAT ACROSS ALL FIVE TIERS. THE MINIMUM IS WHAT RAMPS.
+#
+# A D-grade sword and an S-grade sword can both roll +30% crit rate. What the grade buys is the
+# FLOOR: at D the roll is 1..30, at S it is 30..30. So the grade removes bad luck rather than
+# raising the ceiling. (AttributeCatalog.Line sets one max for all five entries; the ramp arrays
+# RampFast/RampWide/... are the per-tier MINIMUM.) The owner may well have wanted the ceiling to
+# climb — that is a design call, not a bug, and it is written down here so it can be made.
+#
+# Grade -> attribute tier: <40 = none at all | 40 = D | 52 = C | 61 = B | 76 = A | 80 = S.
+# Armor rolls nothing at any grade. The MIN ramps, by name:
+#     RampFast   1  5  7 10 15     (speeds)
+#     RampWide   1  5 10 20 30
+#     RampMAtk   1  3  5  7 10
+#     RampHp     1  5 10 15 25     (note: A is 15, not 20)
+#     RampCrit   1  5 10 20 35
+#     RampJewel  1  2  3  4  5
+#     RampFlat5  1  2  3  4  5     FLAT POINTS, not percent — accuracy/evasion only
+#
+# Line,Rolls,Min ramp D/C/B/A/S,Max (all tiers),Note
+ATTRIBUTES: SWORD,Attack Speed %,1/5/7/10/15,15,
+ATTRIBUTES: SWORD,Crit Rate %,1/5/10/20/30,30,
+ATTRIBUTES: SWORD,Max HP %,1/5/10/15/25,25,
+ATTRIBUTES: BLUNT,Attack Speed %,1/5/7/10/15,15,not in the old spec — blunt gained the speed line
+ATTRIBUTES: BLUNT,Crit Damage %,1/5/10/20/35,35,
+ATTRIBUTES: BLUNT,Max HP %,1/5/10/15/25,25,
+ATTRIBUTES: DUAL,Evasion,1/2/3/4/5,5,FLAT POINTS. Was EvasionPercent cap 30 until 2026-08-07
+ATTRIBUTES: DUAL,Crit Rate %,1/5/10/20/30,30,
+ATTRIBUTES: DUAL,Crit Damage %,1/5/10/20/35,35,
+ATTRIBUTES: BOW,Accuracy,1/2/3/4/5,5,FLAT POINTS. Was AccuracyPercent cap 30 until 2026-08-07 (0.53.2)
+ATTRIBUTES: BOW,Crit Rate %,1/5/10/20/30,30,
+ATTRIBUTES: BOW,Crit Damage %,1/5/10/20/35,35,
+ATTRIBUTES: MAGIC,Cast Speed %,1/5/7/10/15,15,wand AND staff — the pool is keyed on IsMagicWeapon
+ATTRIBUTES: MAGIC,M.Atk %,1/3/5/7/10,10,
+ATTRIBUTES: MAGIC,Max MP %,1/5/10/20/30,30,the old spec said "mcrit rate" here — mcrit is NOT rollable
+ATTRIBUTES: RING,HP Regen %,1/2/3/4/5,5,
+ATTRIBUTES: RING,MP Regen %,1/2/3/4/5,5,
+ATTRIBUTES: EARRING,Max HP %,1/2/3/4/5,5,
+ATTRIBUTES: EARRING,Max MP %,1/2/3/4/5,5,
+ATTRIBUTES: NECKLACE,P.Atk %,1/2/3/4/5,5,
+ATTRIBUTES: NECKLACE,M.Atk %,1/2/3/4/5,5,
+#
+# 🔴 OPEN, NEEDS A RULING — accuracy and evasion are NOT symmetric, even now that both roll flat 5.
+#    miss = clamp(5% + (eva - acc), floor, 95%). Evasion is additive against the 5% base from its
+#    very first point. Accuracy can only claw back what sits above BOTH that base and the
+#    defender's own evade FLOOR — so against a rogue's 10% floor, +5 accuracy buys literally
+#    nothing until you already out-evade him by 10+, and against mobs a rogue is pinned at the 95%
+#    hit cap bare anyway. The +5 is the right SIZE; the floor is what makes it worth zero.
+#    (BalanceMatrix E1b measures this. Same finding as the 0.53.2 changelog entry.)
+#
+# 🔴 STILL OPEN from the owner's original note (2026-07-03), unchanged:
+#    "we need to rework a bit the attri system .. not grade increases the count ... but one
+#     attribute each time and only increases max .. but thats later for testing"
+#    Today an item rolls its lines from the pool by grade band; the count is not per-grade.
+# ==================================================================================================

@@ -1,7 +1,7 @@
 # Roadmap — L2Clone (branch Gena)
 
 Development TODO for game systems / in-game functions, bucketed by time horizon.
-This is the "what to build" list (the "what to verify" list is `docs/testing/TestChecklist.md`).
+This is the "what to build" list (the "what to verify" list is `docs/testing/Open-Checklist.md`).
 Claude keeps this updated as work moves between buckets.
 
 > **For a one-screen digest** — what's left, what's deferred, what depends on what, and what's next —
@@ -25,7 +25,7 @@ record what was asked for and why. Read `RoadmapNext.md` first; it is the curren
 
 **Superseded 2026-08-03 by playtest-17** (played on 0.45.0): the §36 batch below was played and passed,
 0.42.3 was published long since, and the flat gear MP-regen roll was answered in 0.45.0 (it is a PERCENT
-roll now). The live queue is `RoadmapNext.md` + `testing/Playtest-17.md`. Kept for the record:
+roll now). The live queue is `RoadmapNext.md` + `testing/Playtest-Archive.md#playtest-17`. Kept for the record:
 
 The three live items, as of 0.42.3 (after playtest-16, played on 0.42.0):
 
@@ -51,7 +51,7 @@ Three sessions (elf mage ~15 · marksman 24 · champion 28), one of them with th
 the phone** (Termux + proot-ubuntu, .NET 10). Verdict: *"it was fun playing… still plain (no sounds,
 a bit woody, no good visuals) but a game that I enjoyed."*
 
-The raw report is [testing/Playtest-13.md](testing/Playtest-13.md); the ordered queue with the
+The raw report is [testing/Playtest-Archive.md#playtest-13](testing/Playtest-Archive.md#playtest-13); the ordered queue with the
 reasoning is [RoadmapNext.md](RoadmapNext.md). In short:
 
 - **Tier 1 (8 bugs)** — buffs wiped by relog/class-change · SP stale after buying a skill ·
@@ -232,7 +232,7 @@ Owner tested the death-penalty + resurrection + Angel's Protection batch. ⚠ **
 started before `3da3d79`**, so every Angel's observation is against the OLD build (20-min, free, no
 Skill-Stone cost, no preservation BuffKey/Rank).
 
-**Every item below is now built** — see docs/testing/TestChecklist.md "PLAYTEST-4 FIX BATCH" for what to verify.
+**Every item below is now built** — see docs/testing/Playtest-Archive.md#legacy-testchecklist "PLAYTEST-4 FIX BATCH" for what to verify.
 Three were not the shallow bugs they looked like:
 - **Clicking a skill bar slot could never cast.** The panel's `PreviewMouseLeftButtonUp` TUNNELS
   (root→source), so it cleared `_dragFromIndex` before the slot's bubbling click handler read it — that
@@ -282,7 +282,7 @@ click-to-target · debug menu reorg.
 
 ### Playtest-3 queue (2026-07-15) — from the owner's test pass, NOT yet built
 
-Almost everything from the 07-13/07-14 queues VERIFIED (see docs/testing/TestChecklist.md). These are the
+Almost everything from the 07-13/07-14 queues VERIFIED (see docs/testing/Playtest-Archive.md#legacy-testchecklist). These are the
 changes and new features that came out of the play session:
 
 **Corrections (small, well-specified):**
@@ -614,7 +614,7 @@ changes and new features that came out of the play session:
   damage/skill testing. Reach via debug Teleport → Zones.
 
 - [~] **Tune placeholder numbers** after the next playtest: fighter weapon masteries, armor
-  masteries, healer powers, mob modifiers, caster bow penalty. (See `docs/testing/TestChecklist.md`.)
+  masteries, healer powers, mob modifiers, caster bow penalty. (See `docs/testing/Playtest-Archive.md#legacy-testchecklist`.)
 - ~~Low-level **physical mob damage** so mobs don't ~one-shot players~~ — **NOT A REAL ISSUE
   (owner, 2026-07-14): "mobs don't one hit players".** This entry was stale; the mob-curve rework
   already moved these numbers. Don't act on it.

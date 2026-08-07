@@ -7,10 +7,33 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.53.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.53.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 0.53.2 — 2026-08-07 — Restore Spirit gets levels, the bow's accuracy roll goes flat 5
+
+Two owner rulings in the band that has no CSV.
+
+**The bow's accuracy roll is a MIRROR of the dual's evasion roll** — and carried the same defect,
+inverted. `AccuracyPercent` (RampWide, cap 30) was a *multiplier* on a stat that already contains DEX
+and level, so a maxed roll grew forever. It becomes `AttributeType.Accuracy`, **flat, cap 5**;
+`RampEva` is renamed `RampFlat5` now that both flat lines share it. `AccuracyPercent` stays in the
+enum, unrollable, so bows rolled before today still resolve — **no db reset needed**.
+
+New `BalanceMatrix E1b` measures it and turns up a gap worth ruling on: accuracy and evasion are
+**not symmetric**. `miss = clamp(5% + (eva − acc), floor, 95%)`, so evasion is additive against the
+5% base from its first point, while accuracy can only claw back what sits above *both* the base and
+the defender's evade floor. Against a rogue's 10% floor, +5 accuracy buys nothing until you already
+out-evade him by 10+; against mobs a rogue is pinned at the 95% hit cap bare anyway — which is also
+why deleting the old +30% cost nothing.
+
+**Restore Spirit gets levels.** It had ONE level for life (20 MP for 65 HP @25) while the bolt ladder
+grew 30 → 116, so it slowed the drain instead of sustaining a rotation. Ten levels now; level 10 @80
+is **120 MP for 200 HP** — L2's Body to Mind (+120 MP / −360 HP) halved for our HP pools and rounded
+to 200. Mage Armor Mastery gains rungs 5–8 @40/50/60/70 carrying `mpWhenRestored` 50/60/70/80. New
+`SkillLevel.HpCost` / `HpCostAt` back the per-level HP price.
 
 ## 0.53.1 — 2026-08-07 — the rogue's evade ladder, `/spd`, and two clocks
 
@@ -478,7 +501,7 @@ its lines were wrong — `evade_mastery`, `precision` and `anti_magic` are **aut
 warrior / tank** at 20/40/76 by `AutoLearnCoreSkills`, and `class_balance_*` to every character alive.
 They feed `EvadeFloor` / `HitFloor` / `MagicFailFloor` and are the class identity floors documented in
 `design/CombatResolution.md`; they are absent from the CSVs only because they are auto-granted rather
-than learned. See the red block in `testing/Skills-Not-In-CSVs.md` §3. Nothing was deleted.
+than learned. See the red block in `testing/Playtest-Archive.md#skills-not-in-csvs` §3. Nothing was deleted.
 
 ## 0.46.0 — 2026-08-05 — Four playtest defects: auto marks, distant party targets, empty slots, undo
 
@@ -685,7 +708,7 @@ potions ÷10), a fully-specified buff-scroll economy (no scroll drops at all, an
 at 250k for ten), a three-type enchant rework (breaks / −1 / **safe**, with the scroll's rarity choosing
 the GRADE), and **crafting, which is now the single blocker for anything above Epic rarity.**
 
-Report: [testing/Playtest-17.md](testing/Playtest-17.md) (his own wording) · index: §44 of
+Report: [testing/Playtest-Archive.md#playtest-17](testing/Playtest-Archive.md#playtest-17) (his own wording) · index: §44 of
 [testing/TestChecklist.Unity.md](testing/TestChecklist.Unity.md) · queue:
 [RoadmapNext.md](RoadmapNext.md).
 
@@ -2378,7 +2401,7 @@ than showing the character list while the server still holds the entity.
 
 ## 2026-07-29 — Buffs survive logout (0.28.94) — ⚠ DELETE `game.db`
 
-The last tier-1 item from [testing/Playtest-13.md](testing/Playtest-13.md). Buffs died on every logout
+The last tier-1 item from [testing/Playtest-Archive.md#playtest-13](testing/Playtest-Archive.md#playtest-13). Buffs died on every logout
 for the plain reason that nothing saved them. The owner's rule: a buff ends when it EXPIRES, is
 dispelled/cancelled, or the subclass changes — not because you closed the game.
 
@@ -2405,7 +2428,7 @@ dispelled/cancelled, or the subclass changes — not because you closed the game
 
 ## 2026-07-29 — Playtest-13 tier 1: seven bug fixes (0.28.93) — protocol 3
 
-The first batch off [testing/Playtest-13.md](testing/Playtest-13.md). Seven of the eight tier-1 items;
+The first batch off [testing/Playtest-Archive.md#playtest-13](testing/Playtest-Archive.md#playtest-13). Seven of the eight tier-1 items;
 each root cause is noted at the fix site.
 
 - **Crafting materials stack properly.** `ItemDef.IsStackable` is now ONE shared predicate. The client's

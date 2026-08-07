@@ -1,6 +1,6 @@
 # Economy rework — drops, grades, prices (playtest-14, owner-specified 2026-07-30)
 
-The spec for **batch 2**. Source: playtest-14 (`docs/testing/Playtest-14.md`) plus the owner's answers
+The spec for **batch 2**. Source: playtest-14 (`docs/testing/Playtest-Archive.md#playtest-14`) plus the owner's answers
 to the two questions it raised. Nothing here is built yet.
 
 **The problem being solved:** level 25 with **3kk gold from selling trash alone** — Common gear dropping
