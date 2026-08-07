@@ -81,8 +81,24 @@ public record QuestDef(
     // ----- GATHERING lines: creatures that drop this quest's tokens while it is active, each with its
     //       own QuestItemRewardModifier. A quest with Gathers is the "endless" kind — its only step is
     //       normally a TalkTo back at the giver, so you hand in whenever you have farmed enough.
-    QuestGather[]? Gathers = null)
+    QuestGather[]? Gathers = null,
+    // ----- ANY TOWN: every town's copy of the offering NPC gives this quest, and any of them takes it
+    //       back (owner, playtest-19 M11: "i have no way to go back to the 1st town just to take it").
+    //       ONE quest id, so it still cannot be run twice in a day — what widens is only WHERE.
+    //       OfferNpcId stays the starter town's id; WorldMap.IsSameService matches the rest.
+    bool AnyTownNpc = false)
 {
+    /// <summary>Does <paramref name="npcId"/> count as this quest's giver / turn-in NPC?
+    /// Exact id normally; any town's copy of that service when <see cref="AnyTownNpc"/> is set.</summary>
+    public bool GivenBy(string npcId) =>
+        AnyTownNpc ? WorldMap.IsSameService(OfferNpcId, npcId) : OfferNpcId == npcId;
+
+    /// <summary>Does a TalkTo step aimed at <paramref name="stepTargetId"/> accept this NPC? Same rule
+    /// as <see cref="GivenBy"/> — a quest you can take anywhere must be handed in anywhere.</summary>
+    public bool StepTargetMatches(string? stepTargetId, string npcId) =>
+        stepTargetId is not null
+        && (AnyTownNpc ? WorldMap.IsSameService(stepTargetId, npcId) : stepTargetId == npcId);
+
     /// <summary>Can a character of this level ACCEPT the quest? (Being mid-quest is unaffected.)</summary>
     public bool LevelInRange(int level) => level >= MinLevel && (MaxLevel <= 0 || level <= MaxLevel);
 
@@ -238,7 +254,7 @@ public static partial class QuestCatalog
     {
         foreach (var q in AllQuests)
         {
-            if (q.OfferNpcId != npcId) continue;
+            if (!q.GivenBy(npcId)) continue;
             // LEVEL RANGE, not just a floor (owner): a quest you have outgrown stops being offered
             // rather than sitting in the list for a level-60 to farm. Class quests set no ceiling.
             if (!q.LevelInRange(level)) continue;

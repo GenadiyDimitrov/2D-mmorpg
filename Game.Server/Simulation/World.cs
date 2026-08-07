@@ -373,6 +373,9 @@ public record AssistCmd(string ConnectionId, Guid TargetId) : IGameCommand;
 
 // ----- Party / grouping -----
 public record PartyInviteCmd(string ConnectionId, Guid TargetId) : IGameCommand;
+/// <summary>`/ptinv &lt;name&gt;` — the name is resolved SERVER-side over every online player, so an
+/// invite reaches someone out of view (playtest-19 46d).</summary>
+public record PartyInviteByNameCmd(string ConnectionId, string Name) : IGameCommand;
 public record PartyRespondCmd(string ConnectionId, bool Accept) : IGameCommand;
 public record PartyLeaveCmd(string ConnectionId) : IGameCommand;
 public record PartyKickCmd(string ConnectionId, Guid TargetId) : IGameCommand;

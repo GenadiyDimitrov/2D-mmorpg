@@ -210,3 +210,29 @@ public enum ModifierMode { Percent = 0, Flat = 1 }
 /// twice: one Flat, one Percent).</summary>
 public readonly record struct EffectMagnitude(
     SkillEffect Effect, float Value, ModifierMode Mode = ModifierMode.Percent);
+
+/// <summary>Per-character SOCIAL options — what you refuse to receive (owner, playtest-19 M2).
+///
+/// These are the toggles behind `/block`, `/block-w`, `/block-g`, `/decline-t` and `/decline-p`, and
+/// they are the first content of the Options window that does not exist yet (B11). Flags rather than
+/// five columns: one int persists the lot, and a sixth toggle costs no schema change.
+///
+/// ⚠ NONE of them may silence STAFF. An admin or moderator has to be able to reach every player —
+/// enforced at the delivery sites, not here (a flag cannot know who sent the message).
+///
+/// Named per-CHANNEL blocks are separate: <c>/block &lt;name&gt;</c> keeps using the block LIST.</summary>
+[Flags]
+public enum SocialOptions
+{
+    None = 0,
+    /// <summary>`/block` with no name — every other player's chat, on every channel.</summary>
+    BlockAllChat = 1,
+    /// <summary>`/block-w` — whispers only.</summary>
+    BlockWhispers = 2,
+    /// <summary>`/block-g` — the WORLD channel only. Local still reaches you.</summary>
+    BlockGlobal = 4,
+    /// <summary>`/decline-t` — trade requests are refused before they reach the screen.</summary>
+    DeclineTrades = 8,
+    /// <summary>`/decline-p` — party invitations are refused before they reach the screen.</summary>
+    DeclineParty = 16,
+}

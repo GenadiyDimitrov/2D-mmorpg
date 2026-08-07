@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.51.0";
+    public const string GameVersion = "0.52.0";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -272,15 +272,21 @@ public static class GameConstants
     // (30 was far too low once every gear piece and material stacked up).
     public const int InventorySize = 250;
 
-    /// <summary>Private-warehouse slot cap (per character). Base 50 (owner spec); expandable later with
-    /// gold/premium tickets (deferred). Like the bag, a slot is one unequipped item; the warehouse never
-    /// holds equipped gear. A timed rune stored here still expires but does NOT apply its buff — that's
-    /// how you switch a rune off.</summary>
-    public const int WarehouseSize = 50;
+    /// <summary>Private-warehouse slot cap (per character). Like the bag, a slot is one unequipped item;
+    /// the warehouse never holds equipped gear. A timed rune stored here still expires but does NOT
+    /// apply its buff — that's how you switch a rune off.
+    ///
+    /// ⚠ Raised 50 → 200 for playtest-19 (owner, 46o): the cap was in the way and the expansion system
+    /// that is supposed to sell the space does not exist yet. **When the expandable warehouse lands,
+    /// pull this back to the BASE (his figure: ~150 private / ~100 account) and let tickets buy the
+    /// rest** — otherwise there is nothing left to sell.</summary>
+    public const int WarehouseSize = 200;
 
     /// <summary>ACCOUNT-warehouse slot cap — shared by every character on the account, which is what
-    /// makes it the way to move gear between your own characters.</summary>
-    public const int AccountWarehouseSize = 50;
+    /// makes it the way to move gear between your own characters.
+    /// ⚠ Same story as <see cref="WarehouseSize"/>: raised for 46o, lower it to base when the
+    /// expandable system lands.</summary>
+    public const int AccountWarehouseSize = 200;
 
     /// <summary>Gold charged for each SLOT the account bank has to open (owner: 10k). Merging into a
     /// stack that is already in there is free — the fee buys the slot, not the deposit. The private
@@ -289,8 +295,9 @@ public static class GameConstants
     public const long AccountWarehouseSlotFee = 10_000;
 
     /// <summary>How many recently-sold items the buy-back list keeps (per character, in-memory). Selling
-    /// past this drops the oldest entry.</summary>
-    public const int BuyBackSlots = 24;
+    /// past this drops the oldest entry. 24 was long enough to scroll (owner, playtest-19 M14) — the
+    /// list exists to undo the sale you just regretted, not to be a second inventory.</summary>
+    public const int BuyBackSlots = 12;
 
     /// <summary>How many recently BINNED items can be undone (per character, in-memory). His own number
     /// (playtest-17 C18): the sold list and the deleted list are separate, "shops last 10-20 items and

@@ -15,7 +15,9 @@ namespace Game.Shared;
 /// </summary>
 public static partial class QuestCatalog
 {
-    /// <summary>Apothecary Miren — she already sells the runes, so she is who you would ask.</summary>
+    /// <summary>Apothecary Miren — she already sells the runes, so she is who you would ask. With
+    /// <c>AnyTownNpc</c> this is the starter town's id AND the stem every other town's Apothecary is
+    /// named from (`merchant_potions_stonewatch`, …), so EVERY Apothecary offers and takes it.</summary>
     private const string DailyRuneGiver = "merchant_potions";
 
     public const string QuestDailyRunes = "daily_runes";
@@ -25,16 +27,20 @@ public static partial class QuestCatalog
         Register(new QuestDef(
             Id: QuestDailyRunes,
             Name: "The Apothecary's Favour",
-            Description: "Miren keeps a box of runes behind the counter for those still finding "
-                       + "their feet. Ask, and she will part with one — once a day, and only while you "
-                       + "still look like you need it.",
+            Description: "Every Apothecary keeps a box of runes behind the counter for those still "
+                       + "finding their feet. Ask, and one will part with it — once a day, and only "
+                       + "while you still look like you need it.",
             OfferNpcId: DailyRuneGiver,
             MinLevel: 6,
             MaxLevel: 75,
             Daily: true,
+            // ONE id, offered by and returned to EVERY town's Apothecary (owner, playtest-19 M11): at
+            // 40+ the trip back to the starter town costs a gatekeeper fare, which is more than the
+            // favour is worth. Still one per day — what widens is where, not how often.
+            AnyTownNpc: true,
             Steps: new[]
             {
-                new QuestStep(QuestStepType.TalkTo, "Ask Apothecary Miren for a rune box",
+                new QuestStep(QuestStepType.TalkTo, "Ask any Apothecary for a rune box",
                               TargetId: DailyRuneGiver),
             },
             Reward: new QuestReward(ItemIds: new[] { ItemCatalog.BoxDailyRuneChoice })));

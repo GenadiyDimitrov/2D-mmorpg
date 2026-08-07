@@ -22,6 +22,12 @@ public class GameLoopService : BackgroundService
     private readonly Random _rng = new();
     private long _tick;
 
+    /// <summary>The main entity sweep iterates THIS, not `_world.Entities.Values` directly. The loop
+    /// body spawns, despawns, teleports and releases from jail, and any one of those structurally
+    /// modifies the dictionary — which took the whole tick down with "Collection was modified"
+    /// (playtest-19 M3, live since 0.45.0). Reused across ticks so the snapshot costs no allocation.</summary>
+    private readonly List<Entity> _tickBuffer = new();
+
     /// <summary>Per-zone spawner runtime (population + respawn scheduling).</summary>
     private readonly List<ZoneRuntime> _zones = new();
     private DayPhase _lastPhase = DayPhase.Day;
@@ -100,6 +106,7 @@ public class GameLoopService : BackgroundService
             TradeGoldCmd c => c.ConnectionId,
             TradeReadyCmd c => c.ConnectionId,
             PartyInviteCmd c => c.ConnectionId,
+            PartyInviteByNameCmd c => c.ConnectionId,
             PartyRespondCmd c => c.ConnectionId,
             FollowCmd c => c.ConnectionId,
             AssistCmd c => c.ConnectionId,
@@ -217,6 +224,7 @@ public class GameLoopService : BackgroundService
                 case TradeReadyCmd c: HandleTradeReady(c); break;
                 case TradeCancelCmd c: HandleTradeCancel(c); break;
                 case PartyInviteCmd c: HandlePartyInvite(c); break;
+                case PartyInviteByNameCmd c: HandlePartyInviteByName(c); break;
                 case PartyRespondCmd c: HandlePartyRespond(c); break;
                 case PartyLeaveCmd c: HandlePartyLeave(c); break;
                 case PartyChangeLeaderCmd c: HandlePartyChangeLeader(c); break;
@@ -303,6 +311,7 @@ public class GameLoopService : BackgroundService
         SendGold(entity);
         SendAutoHuntConfig(entity);   // restore the saved auto-hunt settings in the client UI
         SendAutoHuntStatus(entity);
+        SendSocialOptions(entity);    // the Options window's switches (M2)
         SendPvpState(entity);
         RefreshTitle(entity);         // resolves the saved title choice against the boards, and pushes it
         SendProgress(entity);         // see SendProgress: without this the EXP bar starts EMPTY
@@ -3033,17 +3042,34 @@ public class GameLoopService : BackgroundService
 
     private void HandleTradeRequest(TradeRequestCmd cmd)
     {
-        if (!TryGetPlayer(cmd.ConnectionId, out var requester) || requester.Dead)
-            return;
+        if (!TryGetPlayer(cmd.ConnectionId, out var requester)) return;
+
+        // DEATH does not bar a trade, on either side (owner, 2026-08-07 — this REVERSES the first
+        // reading of M4). His case decides it: you die, your friend has no resurrection scroll, and the
+        // scroll is in YOUR bag — refusing the trade puts the one item that could fix the situation out
+        // of reach. Nothing is dodged by allowing it: whatever a death costs is already spent by the
+        // time there is a corpse to trade with, and the PK/flagged ban below is what stops gear being
+        // laundered. Party invite is allowed for the same reason — being dead is when you need people.
 
         if (_world.ActiveTrades.ContainsKey(requester.Id))
             return;
 
         if (!_world.Entities.TryGetValue(cmd.TargetId, out var target) ||
-            target.Kind != EntityKind.Player || target.Dead ||
-            _world.ActiveTrades.ContainsKey(target.Id))
+            target.Kind != EntityKind.Player)
         {
             SendSystemToEntity(requester, "That player cannot trade right now.");
+            return;
+        }
+        // `/decline-t` (M2): refused before it ever reaches their screen. The requester is told, so a
+        // request that went nowhere doesn't read as a lost packet.
+        if (target.Refuses(SocialOptions.DeclineTrades, requester))
+        {
+            SendSystemToEntity(requester, $"{target.Name} is not accepting trades.");
+            return;
+        }
+        if (_world.ActiveTrades.ContainsKey(target.Id))
+        {
+            SendSystemToEntity(requester, $"{target.Name} is already trading.");
             return;
         }
 
@@ -3083,7 +3109,8 @@ public class GameLoopService : BackgroundService
         if (!_world.PendingTradeRequests.Remove(responder.Id, out var requesterId))
             return;
 
-        if (!_world.Entities.TryGetValue(requesterId, out var requester) || requester.Dead)
+        // Dead is fine on both sides — see HandleTradeRequest. Only "gone from the world" refuses.
+        if (!_world.Entities.TryGetValue(requesterId, out var requester))
             return;
 
         if (!cmd.Accept)
@@ -3213,10 +3240,45 @@ public class GameLoopService : BackgroundService
 
     private void HandlePartyInvite(PartyInviteCmd cmd)
     {
-        if (!TryGetPlayer(cmd.ConnectionId, out var inviter) || inviter.Dead)
+        if (!TryGetPlayer(cmd.ConnectionId, out var inviter))
             return;
-        if (!_world.Entities.TryGetValue(cmd.TargetId, out var target) ||
-            target.Kind != EntityKind.Player || target.Dead || target.Id == inviter.Id)
+        if (!_world.Entities.TryGetValue(cmd.TargetId, out var target))
+        {
+            SendSystemToEntity(inviter, "You can't invite that player.");
+            return;
+        }
+        DoPartyInvite(inviter, target);
+    }
+
+    /// <summary>Invite BY NAME (`/ptinv <name>`). The client used to resolve the name itself out of
+    /// the entities it could see, so an invite failed with "no player x nearby" for anyone out of
+    /// view — while the same party worked fine once you walked away (playtest-19 46d). A name is
+    /// resolved here instead, against every player in the world.</summary>
+    private void HandlePartyInviteByName(PartyInviteByNameCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var inviter))
+            return;
+        string name = (cmd.Name ?? "").Trim();
+        if (name.Length == 0) return;
+
+        var target = _world.Entities.Values.FirstOrDefault(e =>
+            e.Kind == EntityKind.Player &&
+            e.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        if (target is null)
+        {
+            SendSystemToEntity(inviter, $"No player named '{name}' is online.");
+            return;
+        }
+        DoPartyInvite(inviter, target);
+    }
+
+    /// <summary>The shared invite rules, once the target has been resolved by id or by name.
+    ///
+    /// DEATH is deliberately not a bar, on either side (owner, playtest-19 M4): being dead is exactly
+    /// when you want to be pulled into a party, because that is where the resurrection comes from.</summary>
+    private void DoPartyInvite(Entity inviter, Entity target)
+    {
+        if (target.Kind != EntityKind.Player || target.Id == inviter.Id)
         {
             SendSystemToEntity(inviter, "You can't invite that player.");
             return;
@@ -3244,6 +3306,12 @@ public class GameLoopService : BackgroundService
         if (_world.Parties.ContainsKey(target.Id))
         {
             SendSystemToEntity(inviter, $"{target.Name} is already in a party.");
+            return;
+        }
+        // `/decline-p` (M2) — same shape as the trade refusal, and equally not applicable to staff.
+        if (target.Refuses(SocialOptions.DeclineParty, inviter))
+        {
+            SendSystemToEntity(inviter, $"{target.Name} is not accepting party invitations.");
             return;
         }
         if (_world.PendingPartyInvites.ContainsKey(target.Id))
@@ -5310,12 +5378,56 @@ public class GameLoopService : BackgroundService
                 break;
 
             case "list":
-                if (p.Blocked.Count == 0) { SendSystemToEntity(p, "Your block list is empty."); return; }
-                SendSystemToEntity(p, $"Blocked ({p.Blocked.Count}):");
-                foreach (var b in p.Blocked.OrderBy(x => x))
-                    SendSystemToEntity(p, $"  {b}");
+                if (p.Blocked.Count == 0) SendSystemToEntity(p, "Your block list is empty.");
+                else
+                {
+                    SendSystemToEntity(p, $"Blocked ({p.Blocked.Count}):");
+                    foreach (var b in p.Blocked.OrderBy(x => x))
+                        SendSystemToEntity(p, $"  {b}");
+                }
+                // The blanket toggles belong in the same answer — "who can reach me" is one question.
+                SendSystemToEntity(p, "Options: " + DescribeSocial(p.Social));
                 break;
+
+            // The blanket toggles (M2). Each is its own command and each simply FLIPS, so the same
+            // word both sets and clears it — there is no /unblock-w to remember.
+            case "all":       ToggleSocial(p, SocialOptions.BlockAllChat,  "All player chat"); break;
+            case "whispers":  ToggleSocial(p, SocialOptions.BlockWhispers, "Whispers"); break;
+            case "global":    ToggleSocial(p, SocialOptions.BlockGlobal,   "World chat"); break;
+            case "trades":    ToggleSocial(p, SocialOptions.DeclineTrades, "Trade requests"); break;
+            case "party":     ToggleSocial(p, SocialOptions.DeclineParty,  "Party invitations"); break;
         }
+    }
+
+    /// <summary>Flip one social toggle, persist it, and say which way it went. ⚠ Staff are exempt from
+    /// every one of these at the delivery site — see <see cref="Entity.Refuses"/>.</summary>
+    private void ToggleSocial(Entity p, SocialOptions option, string label)
+    {
+        bool on = (p.Social & option) != 0;
+        p.Social = on ? p.Social & ~option : p.Social | option;
+        SaveEntity(p);
+        SendSocialOptions(p);
+        SendSystemToEntity(p, on
+            ? $"{label}: allowed again."
+            : $"{label}: blocked. Staff can still reach you.");
+    }
+
+    /// <summary>Push the social toggles so the Options window draws the SERVER's answer. The window
+    /// must never render its own optimistic guess — a toggle the server refused would sit there lying.</summary>
+    private void SendSocialOptions(Entity player) =>
+        SendTo(player, "SocialOptions", new SocialOptionsUpdate((int)player.Social));
+
+    /// <summary>The social toggles as one readable line ("nothing blocked" when clear).</summary>
+    private static string DescribeSocial(SocialOptions s)
+    {
+        if (s == SocialOptions.None) return "nothing blocked.";
+        var parts = new List<string>();
+        if ((s & SocialOptions.BlockAllChat) != 0) parts.Add("all chat");
+        if ((s & SocialOptions.BlockWhispers) != 0) parts.Add("whispers");
+        if ((s & SocialOptions.BlockGlobal) != 0) parts.Add("world chat");
+        if ((s & SocialOptions.DeclineTrades) != 0) parts.Add("trades");
+        if ((s & SocialOptions.DeclineParty) != 0) parts.Add("party invites");
+        return string.Join(", ", parts) + " blocked.";
     }
 
     // ----- Charisma (reputation) -----
@@ -5600,8 +5712,11 @@ public class GameLoopService : BackgroundService
             }
 
             // Blocked: the recipient ignores your whisper. Told to the sender (a dead-end whisper that
-            // silently vanished would read as a bug), never to the recipient.
-            if (target.Blocked.Contains(sender.Name))
+            // silently vanished would read as a bug), never to the recipient. `/block` and `/block-w`
+            // (M2) refuse the whole channel; neither can shut out STAFF.
+            if (target.Refuses(SocialOptions.BlockWhispers, sender)
+                || target.Refuses(SocialOptions.BlockAllChat, sender)
+                || target.Blocked.Contains(sender.Name))
             {
                 SendSystemTo(chat.ConnectionId, $"{target.Name} is not accepting your messages.");
                 return;
@@ -5630,16 +5745,23 @@ public class GameLoopService : BackgroundService
 
         if (channel == ChatChannel.World)
         {
-            // Deliver to every online player EXCEPT those who have blocked the sender.
+            // Deliver to every online player EXCEPT those who have blocked the sender — by name, or by
+            // refusing world chat (`/block-g`) or all chat (`/block`) wholesale. Staff are never filtered.
             foreach (var (entId, conn) in _world.EntityToConnection)
-                if (!(_world.Entities.TryGetValue(entId, out var e) && e.Blocked.Contains(sender.Name)))
-                    _ = _hub.Clients.Client(conn).SendAsync("Chat", message);
+            {
+                if (!_world.Entities.TryGetValue(entId, out var e)) continue;
+                if (e.Blocked.Contains(sender.Name)) continue;
+                if (e.Refuses(SocialOptions.BlockGlobal, sender)) continue;
+                if (e.Refuses(SocialOptions.BlockAllChat, sender)) continue;
+                _ = _hub.Clients.Client(conn).SendAsync("Chat", message);
+            }
             return;
         }
 
         foreach (var nearby in _world.Grid.Nearby(sender))
         {
             if (nearby.Blocked.Contains(sender.Name)) continue;   // they've ignored you
+            if (nearby.Refuses(SocialOptions.BlockAllChat, sender)) continue;   // …or everyone (M2)
             if (_world.EntityToConnection.TryGetValue(nearby.Id, out var conn))
                 _ = _hub.Clients.Client(conn).SendAsync("Chat", message);
         }
@@ -5662,8 +5784,17 @@ public class GameLoopService : BackgroundService
 
         UpdateZones();
 
-        foreach (var entity in _world.Entities.Values)
+        // SNAPSHOT, not the live dictionary — see _tickBuffer. Anything in this body may spawn or
+        // despawn an entity, and enumerating a Dictionary through that throws and kills the tick.
+        _tickBuffer.Clear();
+        _tickBuffer.AddRange(_world.Entities.Values);
+
+        foreach (var entity in _tickBuffer)
         {
+            // Removed by an earlier iteration of THIS sweep (killed, despawned, logged out) — the
+            // snapshot still holds the object, so re-check before ticking it.
+            if (!_world.Entities.ContainsKey(entity.Id)) continue;
+
             if (entity.AttackCooldown > 0)
                 entity.AttackCooldown--;
             if (entity.StealthTicks > 0)
@@ -9309,7 +9440,9 @@ var effect = def.Effect;
     }
 
     /// <summary>Player confirmed their picks from a SELECTION box: validate the chosen
-    /// ids against the box's options (up to PickCount), consume the box, grant them.</summary>
+    /// ids against the box's options, consume the box, grant them. The selection must be
+    /// EXACTLY the box's pick count — a partial pick used to consume the whole box and
+    /// silently forfeit the unspent picks (playtest-19 48g: 7 of 10 from a 250k box).</summary>
     private void HandleSelectBoxItems(SelectBoxItemsCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
@@ -9319,10 +9452,13 @@ var effect = def.Effect;
         if (BoxCatalog.Get(item.DefId) is not BoxDef box || box.PickCount <= 0) return;
 
         var optionIds = box.Entries.Select(e => e.ItemId).ToHashSet();
-        var chosen = cmd.ItemIds.Distinct().Where(optionIds.Contains).Take(box.PickCount).ToList();
-        if (chosen.Count == 0)
+        var chosen = cmd.ItemIds.Distinct().Where(optionIds.Contains).ToList();
+
+        // A box can never demand more picks than it offers distinct options.
+        int required = Math.Min(box.PickCount, optionIds.Count);
+        if (chosen.Count != required)
         {
-            SendSystemToEntity(player, "Select at least one item.");
+            SendSystemToEntity(player, $"Select exactly {required} item{(required == 1 ? "" : "s")} — you have {chosen.Count}.");
             return;
         }
 
@@ -10091,9 +10227,18 @@ var effect = def.Effect;
         }
 
         player.Gold -= fee;
+
+        // Land BESIDE the destination town's own gatekeeper rather than on the town CENTRE (owner,
+        // playtest-19 M12): travelling on used to mean landing, then walking across town to the next
+        // gatekeeper. The FEE is still measured centre-to-centre — it is what the menu quoted, and the
+        // landing spot must not silently change the price. Field gates keep their own arrival point.
+        float landX = tx, landY = ty;
+        if (town is not null && town.Id != home.Id && WorldMap.GatekeeperIn(town) is NpcDef destGk)
+            (landX, landY) = (destGk.X + 150f, destGk.Y + 150f);
+
         // Small scatter so a party arriving together doesn't stack on one pixel.
-        player.X = Math.Clamp(tx + _rng.Next(-150, 150), GameConstants.WorldMinX, GameConstants.ZoneWidth);
-        player.Y = Math.Clamp(ty + _rng.Next(-150, 150), GameConstants.WorldMinY, GameConstants.ZoneHeight);
+        player.X = Math.Clamp(landX + _rng.Next(-150, 150), GameConstants.WorldMinX, GameConstants.ZoneWidth);
+        player.Y = Math.Clamp(landY + _rng.Next(-150, 150), GameConstants.WorldMinY, GameConstants.ZoneHeight);
         player.TargetX = null;
         player.TargetY = null;
         _world.Grid.UpdatePosition(player);
@@ -10347,13 +10492,13 @@ var effect = def.Effect;
 
             // If current step is a TalkTo this npc, advancing happens on talk.
             var step = def.Steps[state.StepIndex];
-            if (step.Type == QuestStepType.TalkTo && step.TargetId == npcId)
+            if (step.Type == QuestStepType.TalkTo && def.StepTargetMatches(step.TargetId, npcId))
                 turnable.Add(summary);
             // C5: otherwise it is only THIS NPC's business if this NPC is the one who gave it. The
             // list used to be every active quest you were carrying, at every NPC in the world — the
             // owner's "today every NPC shows three". The quest LOG is where you read your own quests;
             // an NPC window answers "what can I do with YOU".
-            else if (def.OfferNpcId == npcId)
+            else if (def.GivenBy(npcId))
                 inProgress.Add(summary);
         }
 
@@ -10468,7 +10613,7 @@ var effect = def.Effect;
             && def.Steps[^1].Type == QuestStepType.TalkTo;
         return new QuestSummary(def.Id, def.Name, def.Description, GatherText(player, def, state, step.Text),
             stepIndex, def.Steps.Length, counter, needed,
-            state?.Completed ?? false, canComplete, StepLocation(step), state?.Tracked ?? false);
+            state?.Completed ?? false, canComplete, StepLocation(def, step), state?.Tracked ?? false);
     }
 
     /// <summary>The step line for a GATHERING contract, which has no step of its own worth reading —
@@ -10497,13 +10642,25 @@ var effect = def.Effect;
 
     /// <summary>A "who/where" hint for a quest step: the NPC + town to talk to, or
     /// the mob + nearest hunting ground (with its level band). "" when not useful.</summary>
-    private static string StepLocation(QuestStep step) => step.Type switch
+    private static string StepLocation(QuestDef def, QuestStep step) => step.Type switch
     {
+        // An any-town errand must NOT name one town's NPC — that is the trip the player was trying to
+        // avoid (M11). Name the service instead, since every town has one.
+        QuestStepType.TalkTo when def.AnyTownNpc && WorldMap.NpcById(step.TargetId) is NpcDef any =>
+            $"{ServiceNoun(any.Name)} — any town",
         QuestStepType.TalkTo when WorldMap.NpcById(step.TargetId) is NpcDef npc =>
             $"{npc.Name} — {WorldMap.NearestSafeZone(npc.X, npc.Y).Name}",
         QuestStepType.KillMobs => MobLocationHint(step),
         _ => ""
     };
+
+    /// <summary>"Apothecary Miren" → "Apothecary". Service NPCs are named "&lt;Title&gt; &lt;Name&gt;",
+    /// and for an any-town quest the TITLE is the useful half — every town has one of those.</summary>
+    private static string ServiceNoun(string npcName)
+    {
+        int space = npcName.IndexOf(' ');
+        return space > 0 ? npcName.Substring(0, space) : npcName;
+    }
 
     private static string MobLocationHint(QuestStep step)
     {
@@ -10672,7 +10829,7 @@ var effect = def.Effect;
             if (def is null || state.Completed) continue;
 
             var step = def.Steps[state.StepIndex];
-            if (step.Type == QuestStepType.TalkTo && step.TargetId == npcId)
+            if (step.Type == QuestStepType.TalkTo && def.StepTargetMatches(step.TargetId, npcId))
             {
                 // Final step talk = ready to complete (handled by Complete button);
                 // mid-chain talk = advance to next step now.
@@ -10698,7 +10855,8 @@ var effect = def.Effect;
         if (state.StepIndex != def.Steps.Length - 1) return;
         var finalStep = def.Steps[^1];
         if (finalStep.Type != QuestStepType.TalkTo) return;
-        if (!_world.Entities.TryGetValue(npcEntityId, out var npc) || npc.NpcId != finalStep.TargetId) return;
+        if (!_world.Entities.TryGetValue(npcEntityId, out var npc)
+            || !def.StepTargetMatches(finalStep.TargetId, npc.NpcId ?? "")) return;
 
         // Grant rewards. The gathered tokens are cashed FIRST so their exp joins the quest's own in one
         // levelling pass rather than two.
@@ -11089,7 +11247,7 @@ var effect = def.Effect;
             // A step BEFORE the one you are on is done; the current one carries the live counter. On a
             // quest you have not taken, nothing is done and nothing is current — it reads as a plan.
             bool done = state is not null && (state.Completed || state.StepIndex > i);
-            steps[i] = new QuestStepDto(step.Text, StepLocation(step),
+            steps[i] = new QuestStepDto(step.Text, StepLocation(def, step),
                                         current ? state!.Counter : done ? needed : 0,
                                         needed, done, current);
         }
@@ -11103,10 +11261,16 @@ var effect = def.Effect;
             .ToArray();
 
         var giver = WorldMap.NpcById(def.OfferNpcId);
+        // An any-town quest names the SERVICE and "any town" — naming one town's NPC would send the
+        // player on exactly the journey the flag exists to spare them (M11).
+        string giverName = giver is null ? ""
+                         : def.AnyTownNpc ? ServiceNoun(giver.Name) : giver.Name;
+        string giverTown = giver is null ? ""
+                         : def.AnyTownNpc ? "any town" : WorldMap.NearestSafeZone(giver.X, giver.Y).Name;
 
         return new QuestEntry(
             def.Id, def.Name, def.Description, availability, status,
-            giver?.Name ?? "", giver is null ? "" : WorldMap.NearestSafeZone(giver.X, giver.Y).Name,
+            giverName, giverTown,
             def.MinLevel, def.MaxLevel, def.Repeatable, def.Daily, canComplete,
             state?.StepIndex ?? 0, steps, gathers, RewardText(def.Reward), state?.Tracked ?? false);
     }
@@ -11145,9 +11309,11 @@ var effect = def.Effect;
                 if (QuestCatalog.Get(st.QuestId) is not QuestDef d) continue;
                 bool handIn = st.Completed || st.StepIndex >= d.Steps.Length - 1;
                 var step = st.StepIndex >= 0 && st.StepIndex < d.Steps.Length ? d.Steps[st.StepIndex] : null;
-                bool talkHere = step is { Type: QuestStepType.TalkTo } && step.TargetId == npc.NpcId;
-                if (d.OfferNpcId == npc.NpcId || talkHere)
-                    state = (handIn && talkHere) || (d.OfferNpcId == npc.NpcId && st.Completed)
+                bool talkHere = step is { Type: QuestStepType.TalkTo }
+                                && d.StepTargetMatches(step.TargetId, npc.NpcId);
+                bool givenHere = d.GivenBy(npc.NpcId);
+                if (givenHere || talkHere)
+                    state = (handIn && talkHere) || (givenHere && st.Completed)
                         ? QuestMarkState.ReadyToHandIn
                         : state == QuestMarkState.ReadyToHandIn ? state : QuestMarkState.InProgress;
             }

@@ -109,6 +109,11 @@ public class CharacterRecord
     /// game.db to recreate.)</summary>
     public string BlockedCsv { get; set; } = "";
 
+    /// <summary>The character's SOCIAL options as a <see cref="SocialOptions"/> flag set — the blanket
+    /// chat blocks and the trade/party auto-declines (playtest-19 M2). One int so a new toggle costs no
+    /// further schema change. (Schema change — delete game.db to recreate.)</summary>
+    public int SocialOptions { get; set; }
+
     // ----- Charisma (reputation). Schema change — delete game.db to recreate. -----
     public int Charisma { get; set; }
     public long CharismaLifetime { get; set; }

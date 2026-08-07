@@ -656,6 +656,7 @@ public class PersistenceService
             entity.Friends.Add(fn);
         foreach (var bn in rec.BlockedCsv.Split(',', StringSplitOptions.RemoveEmptyEntries))
             entity.Blocked.Add(bn);
+        entity.Social = (SocialOptions)rec.SocialOptions;
         entity.Charisma = rec.Charisma;
         entity.CharismaLifetime = rec.CharismaLifetime;
         entity.LikesRemainingToday = rec.LikesRemainingToday;
@@ -834,7 +835,7 @@ public class PersistenceService
         int Karma, int PkCount, int PvpCount, int ConsecutivePk, bool DiedWhileAway,
         DateTime? JailedUntilUtc, DateTime? ChatBannedUntilUtc, long TotalOnlineSeconds,
         int Charisma, long CharismaLifetime, int LikesRemainingToday, string LikeBudgetDay,
-        string TitleCategory,
+        string TitleCategory, int SocialOptions,
         IReadOnlyList<ItemSnapshot> Items)
     {
         /// <summary>Capture a character. MUST be called on the tick thread. Returns
@@ -875,7 +876,7 @@ public class PersistenceService
                 e.Karma, e.PkCount, e.PvpCount, e.ConsecutivePk, e.DiedWhileAway,
                 e.JailedUntil, e.ChatBannedUntil, e.TotalOnlineSeconds,
                 e.Charisma, e.CharismaLifetime, e.LikesRemainingToday, e.LikeBudgetDay,
-                e.TitleCategory,
+                e.TitleCategory, (int)e.Social,
                 items);
         }
     }
@@ -992,6 +993,7 @@ public class PersistenceService
         rec.KnownRecipesCsv = snap.KnownRecipesCsv;
         rec.FriendsCsv = snap.FriendsCsv;
         rec.BlockedCsv = snap.BlockedCsv;
+        rec.SocialOptions = snap.SocialOptions;
         rec.Charisma = snap.Charisma;
         rec.CharismaLifetime = snap.CharismaLifetime;
         rec.LikesRemainingToday = snap.LikesRemainingToday;

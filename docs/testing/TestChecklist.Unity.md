@@ -1096,6 +1096,77 @@ have none: flat crit rate exists only as a random enchant attribute, and only on
 2H-blunt warrior is stuck at 4.4 % (10 % fully buffed). Add a flat crit-rate line to the heavy sets?
 
 ---
+## 53. 🔴 0.52.0 — the playtest-19 DEFECTS + the FRICTION tier — UNPLAYED
+
+⚠ **DELETE `Game.Server/game.db`** — one new column (`SocialOptions`). ⚠ Needs a **new APK** (the
+Options window, the [Talk] button, the movement locks). Protocol: one new hub method
+(`PartyInviteByName`) and one new push (`SocialOptions`) — additive, so `MinAcceptedProtocol` is
+unchanged. Source: [Playtest-19.md](Playtest-19.md).
+
+### The four defects
+
+**53a. 48g — a partial pick can no longer eat the box.** Buy a 250k Blessing Box, open it, tick **7 of
+10**: Confirm must be DEAD and read *"Choose 3 more"*. At 10/10 it enables. The box must still be there
+if you close the window instead. (Server-side too: the command is refused unless the count is exact.)
+
+**53b. 46d — `/ptinv <name>` reaches a player you cannot see.** Walk out of sight of the other client
+(different town is fine) and `/ptinv <their name>` — the invite must arrive. A wrong name must answer
+*"No player named 'x' is online."*, not *"nearby"*. The name is resolved on the SERVER now.
+
+**53c. 46m — compare on a PENDANT opens a pendant.** Carry a spare necklace and a spare ring/earring,
+wear one of each, tap Compare on each: the second column must show the SAME jewel type. With two rings
+worn, comparing a third must stack it against the **weaker** of the two (the one an equip would displace).
+
+**53d. M3 — the tick crash.** No *"Collection was modified"* in the server log through a session with
+deaths, respawns, teleports and jail releases. The main sweep iterates a snapshot now; an entity removed
+mid-tick is skipped rather than ticked.
+
+### The friction tier
+
+**53e. M13 — the [Talk] button and walk-to-talk.** First tap on an NPC only TARGETS (frame + **Talk**
+button). Second tap, or Talk, **walks you to them and opens the window on arrival** — from across the
+square, with no "too far". A ground tap mid-walk cancels the errand and no window opens.
+
+**53f. M13 — movement is locked while an NPC window is open.** With the gatekeeper (or a vendor,
+keeper, or learn window) open, tapping the ground must refuse with *"Close the window first…"*. This is
+the *"Too far"* he kept hitting: a queued ground tap used to drag him out of range mid-dialog.
+
+**53g. M12 — a GK jump lands beside the destination GK.** Teleport to another town: you must arrive
+next to THAT town's gatekeeper (+150/+150, scattered), not on the town centre. ⚠ The **fee is still
+quoted and charged centre-to-centre** — the price on the menu must equal the price you pay.
+
+**53h. M11 — one daily Apothecary quest, every town.** "The Apothecary's Favour" must be offered by
+EVERY town's Apothecary and hand in at ANY of them. Its quest window must say **"Apothecary — any
+town"**, not "Miren — Brackenford". Still **once per day per character**: take it in Frostmere and the
+Brackenford one must not offer it again the same day.
+
+**53i. M14 — buyback capped at 12.** Sell 15 items; the vendor's buy-back list holds the newest **12**.
+
+**53j. M4 — a dead character.** Dead, you **cannot move** (own screen included — the tap is refused,
+not rubber-banded). Everything else a dead player needs in order to STOP being dead still works:
+you **CAN be invited to a party**, and you **CAN trade** — both directions.
+
+⚠ **The trade rule was reversed on 2026-08-07**, after his case: *you die, your friend has no
+resurrection scroll, and the scroll is in your bag.* Refusing the trade puts the one item that could fix
+it out of reach. **Test it exactly that way**: die, trade a Scroll of Resurrection to a living friend
+standing over you, have them use it on you. The PK/flagged ban is untouched — that is what stops gear
+being laundered, and it still refuses on both sides.
+
+**53k. 46o — both warehouse caps are 200.** Private and account, used/total both read /200. ⚠ A note in
+`GameConstants` says to pull them back to base when the expandable system lands.
+
+**53l. M2 — the Options window + the block commands.** Menu → **Options** lists five switches: all
+player chat, whispers, world chat, trade requests, party invitations. Each toggles from the window OR
+its command (`/block`, `/block-w`, `/block-g`, `/decline-t`, `/decline-p`) and the window must show
+the SERVER's state, including after a relog. `/block <name>` and `/blist` still work as before.
+⚠ **An admin must reach you through every one of them** — test with the admin account.
+
+**53m. M10 — a 2H warrior in heavy no longer sits under a robed mage.** `Two-Hand Mastery`'s defence
+penalty is **−10%**, not −20%, on all five rungs. Compare a 2H Champion's P.Def in the stats window
+against a same-level mage's. ⚠ **Not measured**: BalanceMatrix does not build a 2H-mastery warrior, so
+the tool shows no delta — the effect is the defence multiplier moving 0.80 → 0.90.
+
+---
 ## 51. 🔴 PLAYTEST-19 QUEUE (2026-08-06) — the 0.48.0 pass
 
 The full report in his own wording is **`Playtest-19.md`** (transcribed from his answered

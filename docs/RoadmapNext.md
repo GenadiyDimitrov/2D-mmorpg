@@ -53,11 +53,26 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
 
 0. 🆕 **The playtest-19 queue** ([testing/Playtest-19.md](testing/Playtest-19.md), §51) — this is the
    live one and it outranks everything below it:
-   1. **The four defects.** 48g (a 250k box spent on a partial pick — `HandleSelectBoxItems` refuses
-      only an EMPTY selection; require exactly `PickCount` server- and client-side) · 46d the party
-      INVITE path still does a proximity lookup · 46m the worn-slot lookup picks a stud for a pendant ·
-      **the tick crash**: `foreach (var entity in _world.Entities.Values)` in `Simulate()` is still raw
-      at `GameLoopService.cs:5665` (and `:895`) and something mutates the dict inside the loop.
+   1. ✅ **The four defects — ALL FIXED 2026-08-07 (0.52.0), unplayed.** 48g: the server requires
+      EXACTLY `PickCount` and the client's Confirm reads "Choose N more" until the tally is full · 46d:
+      a new `PartyInviteByName` hub method resolves the name SERVER-side over every online player (the
+      proximity lookup was in the CLIENT — it only knew what was on screen) · 46m:
+      `FindEquippedCounterpart` now matches `JewelType` too, and picks the WEAKER of a worn pair ·
+      **the tick crash**: the main sweep iterates a reused snapshot (`_tickBuffer`) and skips anything
+      removed mid-tick. Checklist **§53**. ⚠ needs an APK; ⚠ **delete `game.db`** (see below).
+   1b. ✅ **The friction tier — ALL BUILT 2026-08-07 (0.52.0), unplayed.** `M13` the [Talk] button,
+      walk-to-then-talk, and movement LOCKED while an NPC window is open · `M12` a GK jump lands beside
+      the destination gatekeeper (fee still charged centre-to-centre, so the quote can't drift) ·
+      `M11` the daily Apothecary quest is `AnyTownNpc` — ONE id, offered by and returned to every
+      town's Apothecary, still once per day · `M14` buyback 24 → **12** · `M4` a dead character can't
+      move client-side but **can be party-invited AND can trade** (⚠ his 2026-08-07 reversal: the res
+      scroll may be in the dead player's own bag — death must not block what undoes death) · `M2` the five
+      social toggles + **a real Options window** on the Menu (Menu → Options; `SocialOptions` is a
+      flags column on the character, pushed to the client, and ⚠ **staff are exempt from all five**) ·
+      `46o` both warehouse caps 50 → **200**, with the note to lower them when expansion lands ·
+      `M10` `Two-Hand Mastery` `DefencePct` −0.20 → **−0.10**. ⚠ **Schema change (`SocialOptions`) —
+      delete `Game.Server/game.db`.** ⚠ M10 is **unmeasured**: BalanceMatrix builds no 2H-mastery
+      warrior, so it shows no delta (the multiplier moves 0.80 → 0.90) — extending the tool is owed.
    2. 🔴 **The combat rulings** — three of them, all decided 2026-08-06:
       - **`M1` the ±20 lockout goes.** Swap steps 2 and 3 of `StatCalculator.ResolveAvoidChance`: level
         gap first, then clamp into `[max(.05, evadeFloor), min(.95, 1 − hitFloor)]` **last**, so the
@@ -86,11 +101,8 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
       `Race.God` / `ItemRarity.God` / `god_judgment` / `god_robes` included. His rule: *"nothing that
       can't be acquired in game"*; the debug rig becomes `/enchant <value>` + `/speed`, so sweep the
       admin menu first. `evade_mastery` / `precision` / `anti_magic` / `class_balance_*` all **stay**.
-   4. **The friction list** — `M13` the [Talk] button + movement locked while an NPC window is open
-      (C9) · `M12` a GK jump lands beside the destination GK · `M11` one daily Apothecary quest offered
-      by every town · `M14` buyback capped · `M4` a dead character can't move client-side, *can* be
-      party-invited, still can't trade · `M2` `/block*` + `/decline-*` and the **Options window** they
-      belong in (B11) · `46o` both warehouse caps to max now.
+   4. ~~**The friction list**~~ — ✅ **DONE 2026-08-07, see 1b above.** All seven (`M13` `M12` `M11`
+      `M14` `M4` `M2`+Options window, `46o`), plus `M10`.
    5. **Answers owed him** — `M1` the ±20 level lockout is working as designed (keep it, but make the
       client say why?) · `M10` there is **no** −20 % P.Def Champion passive in the code, ask what he is
       reading · `0e` `lb_*`/`wc_*` he never answered · `M5`/`M6` the tutorial chain + 30-day bound

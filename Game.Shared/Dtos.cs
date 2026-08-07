@@ -671,3 +671,8 @@ public record QuestEntry(
 /// <paramref name="Completed"/> stay as they were (the on-screen tracker reads them);
 /// <paramref name="Entries"/> is every quest this character can see, in every state.</summary>
 public record QuestLog(QuestSummary[] Active, string[] Completed, QuestEntry[] Entries);
+
+/// <summary>Server -&gt; client: this character's SOCIAL options (playtest-19 M2), as a
+/// <see cref="SocialOptions"/> flag set. Pushed on login and after every change, so the Options
+/// window draws the server's answer rather than a guess it made when you tapped.</summary>
+public record SocialOptionsUpdate(int Options);

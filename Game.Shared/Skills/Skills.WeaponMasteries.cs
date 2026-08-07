@@ -74,11 +74,16 @@ public static partial class SkillCatalog
             {
                 // crit dmg is the CSV's FLAT +35/+48/+64/+84/+106 (attack added inside the crit),
                 // not a multiplier — it used to be read as ×2.35 … ×3.06. See CritBlowAndDouble.md §3.
-                TwoHand(new PassiveEffect(PhysAtkPct: 0.30f, PhysAtk: 13, CritDamageFlat: 35f,  Accuracy: 3, Evasion: -3, DefencePct: -0.20f)),
-                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 15, CritDamageFlat: 48f,  Accuracy: 6, Evasion: -3, DefencePct: -0.20f)),
-                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 17, CritDamageFlat: 64f,  Accuracy: 6, Evasion: -3, DefencePct: -0.20f)),
-                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 20, CritDamageFlat: 84f,  Accuracy: 6, Evasion: -3, DefencePct: -0.20f)),
-                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 20, CritDamageFlat: 106f, Accuracy: 6, Evasion: -3, DefencePct: -0.20f)),
+                //
+                // ⚠ DefencePct is -0.10, NOT -0.20 (owner, playtest-19 M10): "I want a warrior in a
+                // heavy not to have lower defence than a mage...it's not logical". At -20% a 2H
+                // Champion in heavy armour sat UNDER a robed mage, and the trade only got better with
+                // level anyway — attack climbs 0.30 → 0.50 while the penalty stayed flat.
+                TwoHand(new PassiveEffect(PhysAtkPct: 0.30f, PhysAtk: 13, CritDamageFlat: 35f,  Accuracy: 3, Evasion: -3, DefencePct: -0.10f)),
+                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 15, CritDamageFlat: 48f,  Accuracy: 6, Evasion: -3, DefencePct: -0.10f)),
+                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 17, CritDamageFlat: 64f,  Accuracy: 6, Evasion: -3, DefencePct: -0.10f)),
+                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 20, CritDamageFlat: 84f,  Accuracy: 6, Evasion: -3, DefencePct: -0.10f)),
+                TwoHand(new PassiveEffect(PhysAtkPct: 0.50f, PhysAtk: 20, CritDamageFlat: 106f, Accuracy: 6, Evasion: -3, DefencePct: -0.10f)),
             }),
 
         // Rogue — Weapon Mastery (CSV rogue 20-35): DUAL and BOW both gain +8.5% P.Atk plus

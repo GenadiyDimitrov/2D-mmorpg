@@ -144,6 +144,20 @@ namespace Game.Client
         /// </summary>
         private readonly List<RectTransform> _windows = new List<RectTransform>();
 
+        /// <summary>Is a window that belongs to an NPC CONVERSATION open? Movement is locked while one
+        /// is (owner, playtest-19 M13): a ground tap queued before opening the gatekeeper walked you out
+        /// of range, and the teleport you then chose answered "Too far" — the server re-checks the
+        /// distance on every dialog action, so any of these windows is only valid where you stand.
+        ///
+        /// Deliberately NOT keyed on `Boot.DialogNpcId`: that stays set until CloseDialog, and the
+        /// vendor/keeper/gatekeeper panels close by their own ✕ without clearing it — which would leave
+        /// the player unable to move with nothing on screen to explain it.</summary>
+        public bool NpcWindowOpen =>
+            IsOpen(_dialogPanel) || IsOpen(_vendorPanel) || IsOpen(_buyBackPanel)
+            || IsOpen(_warehousePanel) || IsOpen(_learnPanel);
+
+        private static bool IsOpen(RectTransform panel) => panel != null && panel.gameObject.activeSelf;
+
         private void OpenWindow(RectTransform panel)
         {
             if (panel == null) return;
@@ -190,7 +204,7 @@ namespace Game.Client
         }
 
         private Button _pvpButton, _autoButton, _respawnButton;
-        private Button _targetPartyButton, _targetTradeButton, _targetInfoButton;
+        private Button _targetPartyButton, _targetTradeButton, _targetInfoButton, _targetTalkButton;
         private Button _targetAttackButton, _targetFollowButton, _targetAssistButton;
         private RectTransform _menuPanel;
 
@@ -229,6 +243,7 @@ namespace Game.Client
             BuildStatsWindow();
             BuildTargetWindow();
             BuildSettingsWindow();
+            BuildOptionsWindow();
             BuildQuestWindow();
             BuildDialogWindow();
             BuildPartyWindow();
@@ -380,6 +395,16 @@ namespace Game.Client
             _targetInfoButton = UiKit.TextButton(inner, "Info", OpenTargetDetails, 14f);
             UiKit.Place(UiKit.Rect(_targetInfoButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(bx2, 8f), new Vector2(bw, 28f));
+
+            // NPCs only (C9 / M13). It shares the Info slot — the two never show together, since Info is
+            // a mob's stats-and-drops window and an NPC has neither.
+            _targetTalkButton = UiKit.TextButton(inner, "Talk", () =>
+            {
+                if (Boot.TargetId.HasValue) Boot.ApproachAndTalk(Boot.TargetId.Value);
+            }, 14f);
+            UiKit.Place(UiKit.Rect(_targetTalkButton.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                        new Vector2(bx2, 8f), new Vector2(bw, 28f));
+            _targetTalkButton.gameObject.SetActive(false);
         }
 
         /// <summary>
@@ -662,6 +687,9 @@ namespace Game.Client
                 ("Restore", () => { CloseWindow(_menuPanel); OpenRestoreWindow(); }, false),
                 ("Rank",   () => { CloseWindow(_menuPanel); OpenRank(); }, false),
                 ("Setup",  () => { CloseWindow(_menuPanel); ToggleWindow(_settingsPanel); }, false),
+                // Options ≠ Setup: Setup is how the game LOOKS (local, PlayerPrefs), Options is what
+                // other players may do to you (server-side, per character) — M2/B11.
+                ("Options", () => { CloseWindow(_menuPanel); ToggleWindow(_optionsPanel); }, false),
                 // The admin toolbox. It was labelled "Debug" while its commands were compiled out of
                 // release builds; they ship now and are gated on the account role, server-side.
                 ("Admin",  () => { CloseWindow(_menuPanel); ToggleWindow(_debugPanel); }, true),
@@ -1072,6 +1100,10 @@ namespace Game.Client
             // Attack stays for MOBS — killing things is the core loop and one tap for it is not clutter.
             if (_targetAttackButton != null) _targetAttackButton.gameObject.SetActive(mob && !target.Dead);
             if (_targetInfoButton != null) _targetInfoButton.gameObject.SetActive(mob);
+            // …and Talk for NPCs (M13), which is the whole reason an NPC gets a frame at all now that
+            // the first tap no longer opens the conversation.
+            if (_targetTalkButton != null)
+                _targetTalkButton.gameObject.SetActive(target.Kind == EntityKind.Npc);
         }
 
         /// <summary>The target frame for a party member the world snapshot no longer carries (they
@@ -1105,6 +1137,7 @@ namespace Game.Client
             if (_targetAssistButton != null) _targetAssistButton.gameObject.SetActive(false);
             if (_targetAttackButton != null) _targetAttackButton.gameObject.SetActive(false);
             if (_targetInfoButton != null) _targetInfoButton.gameObject.SetActive(false);
+            if (_targetTalkButton != null) _targetTalkButton.gameObject.SetActive(false);
         }
 
         private void RefreshSkillBar()

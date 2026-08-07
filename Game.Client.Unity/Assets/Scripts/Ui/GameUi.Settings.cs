@@ -1,3 +1,4 @@
+using Game.Shared;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -197,5 +198,77 @@ namespace Game.Client
                         new Vector2(18f, y), new Vector2(580f, 26f));
             y -= 40f;
         }
+
+        // ----- OPTIONS (playtest-19 M2 / B11) --------------------------------------------------
+        //
+        // A SEPARATE window from Setup on purpose: everything above is LOOK and lives in PlayerPrefs,
+        // while these are RULES — they travel to the server, persist on the character, and decide what
+        // other players can do to you. Mixing them would put "camera angle" and "refuse all trades" in
+        // one list.
+        //
+        // It shares this FILE only because a brand-new .cs is invisible to Unity's generated csproj
+        // until the Editor regenerates it, which would take this window out of the headless type-check.
+
+        private RectTransform _optionsPanel;
+        private Button _optAllChat, _optWhispers, _optGlobal, _optTrades, _optParty;
+
+        private void BuildOptionsWindow()
+        {
+            _optionsPanel = UiKit.PanelBox(_worldRoot, "Options");
+            UiKit.Place(_optionsPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                        Vector2.zero, new Vector2(560f, 400f));
+            var inner = _optionsPanel.GetChild(0);
+            float chrome = UiKit.WindowChrome(_optionsPanel, "Options", () => CloseWindow(_optionsPanel));
+
+            float y = -chrome - 10f;
+
+            var note = UiKit.Label(inner,
+                "What you refuse to receive. Staff can always reach you.", 14f, UiKit.TextDim);
+            UiKit.Place(UiKit.Rect(note.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(18f, y), new Vector2(500f, 22f));
+            y -= 34f;
+
+            // Each button sends the SAME command as its slash twin, so there is exactly one code path
+            // per toggle and the window can never drift from `/block-w`.
+            _optAllChat  = OptionRow(inner, ref y, "all",      "All player chat");
+            _optWhispers = OptionRow(inner, ref y, "whispers", "Whispers");
+            _optGlobal   = OptionRow(inner, ref y, "global",   "World chat");
+            _optTrades   = OptionRow(inner, ref y, "trades",   "Trade requests");
+            _optParty    = OptionRow(inner, ref y, "party",    "Party invitations");
+
+            var list = UiKit.TextButton(inner, "Block list", () => Boot.BlockCommand("list", ""), 15f);
+            UiKit.Place(UiKit.Rect(list.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                        new Vector2(18f, 16f), new Vector2(200f, 40f));
+
+            RefreshOptionsWindow();
+            _optionsPanel.gameObject.SetActive(false);
+        }
+
+        private Button OptionRow(Transform inner, ref float y, string action, string label)
+        {
+            var button = UiKit.TextButton(inner, label, () => Boot.BlockCommand(action, ""), 15f);
+            UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(18f, y), new Vector2(500f, 40f));
+            y -= 50f;
+            return button;
+        }
+
+        /// <summary>Redraw the switches from <see cref="GameBoot.Social"/> — i.e. from the server's
+        /// last word, never from what the player just tapped. Called on every push.</summary>
+        public void RefreshOptionsWindow()
+        {
+            if (_optAllChat == null || Boot == null) return;
+            var s = Boot.Social;
+            Switch(_optAllChat,  "All player chat",    (s & SocialOptions.BlockAllChat) != 0);
+            Switch(_optWhispers, "Whispers",           (s & SocialOptions.BlockWhispers) != 0);
+            Switch(_optGlobal,   "World chat",         (s & SocialOptions.BlockGlobal) != 0);
+            Switch(_optTrades,   "Trade requests",     (s & SocialOptions.DeclineTrades) != 0);
+            Switch(_optParty,    "Party invitations",  (s & SocialOptions.DeclineParty) != 0);
+        }
+
+        /// <summary>"&lt;label&gt;: BLOCKED / allowed". Words, not a tick glyph — the TMP atlas is baked
+        /// with ~250 characters and anything outside it draws as a hollow box.</summary>
+        private static void Switch(Button button, string label, bool blocked) =>
+            UiKit.SetButtonText(button, label + (blocked ? ":  BLOCKED" : ":  allowed"));
     }
 }

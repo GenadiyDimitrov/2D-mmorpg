@@ -73,9 +73,11 @@ namespace Game.Client
                 if (view != null && !view.IsSelf)
                 {
                     // Tapping SELECTS. What happens next depends on WHAT it is:
-                    //   NPC           → TALK, on the first tap. Every service in the game — quests,
-                    //                   class change, vendors, gatekeepers, buffers — is behind a
-                    //                   conversation, so the tap that selects an NPC starts one.
+                    //   NPC           → the FIRST tap only targets, and the frame grows a [Talk]
+                    //                   button; a SECOND tap (or Talk) WALKS you there and opens the
+                    //                   conversation on arrival (owner, playtest-19 M13). Talking on
+                    //                   the first tap meant every NPC you tapped from across the
+                    //                   square answered "too far away" and you tapped twice anyway.
                     //   mob / player  → the FIRST tap only opens the target window; a SECOND tap on the
                     //                   SAME target acts. Tapping a DIFFERENT one just re-targets.
                     //   PARTY member  → that second tap FOLLOWS instead of attacking.
@@ -91,7 +93,10 @@ namespace Game.Client
                     Boot.TargetId = view.Id;
                     if (Boot.Entities != null && Boot.Entities.TryGetState(view.Id, out var dto) && !dto.Dead)
                     {
-                        if (dto.Kind == EntityKind.Npc) Boot.TalkToNpc(view.Id);
+                        if (dto.Kind == EntityKind.Npc)
+                        {
+                            if (previous == view.Id) Boot.ApproachAndTalk(view.Id);
+                        }
                         else if (previous == view.Id &&
                                  (dto.Kind == EntityKind.Mob || dto.Kind == EntityKind.Player))
                             Boot.AttackOrFollow(view.Id);
@@ -100,12 +105,15 @@ namespace Game.Client
                 }
             }
 
-            // 2) the ground → move there
+            // 2) the ground → move there. A ground tap also ABANDONS a pending walk-to-talk: you have
+            // just told the character to go somewhere else, and arriving at the NPC afterwards and
+            // opening its window anyway would be the game overriding your last order.
             var ground = new Plane(Vector3.up, Vector3.zero);
             if (ground.Raycast(ray, out float dist))
             {
                 var point = ray.GetPoint(dist);
                 var server = WorldMapper.ToServer(point);
+                Boot.CancelWalkToTalk();
                 Boot.Move(server.x, server.y);
             }
         }

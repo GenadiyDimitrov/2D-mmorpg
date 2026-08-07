@@ -310,6 +310,16 @@ public class Entity
     /// is not delivered to you. Persisted as a CSV, like the friend list.</summary>
     public HashSet<string> Blocked { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>What this character refuses to receive: blanket chat blocks and auto-declines
+    /// (owner, playtest-19 M2). Persisted as one int. See <see cref="SocialOptions"/> — and note that
+    /// none of them apply to STAFF, which is checked where the message is delivered.</summary>
+    public SocialOptions Social { get; set; } = SocialOptions.None;
+
+    /// <summary>Does this character refuse <paramref name="option"/>? Always FALSE when the other party
+    /// is staff — an admin or moderator must be able to reach and act on anyone.</summary>
+    public bool Refuses(SocialOptions option, Entity? from = null) =>
+        (from is null || !from.IsStaff) && (Social & option) != 0;
+
     /// <summary>Recently-SOLD items, re-buyable at any vendor for the sell price you got. In-memory only
     /// (cleared on logout), newest last, capped at <see cref="GameConstants.BuyBackSlots"/>. Stores enough
     /// to restore the item faithfully (enchant + rolled attributes).</summary>

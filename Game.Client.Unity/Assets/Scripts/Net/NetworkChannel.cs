@@ -89,6 +89,8 @@ namespace Game.Client
         /// <summary>Live auto-hunt HUD: whether it is running + MP/s. Also the authority on the on/off
         /// state, which the server can flip on its own (idle-time lock, death).</summary>
         public event Action<AutoHuntStatus> AutoHuntStatusReceived;
+        /// <summary>The social toggles behind the Options window (playtest-19 M2).</summary>
+        public event Action<SocialOptionsUpdate> SocialOptionsReceived;
 
         /// <summary>You crossed into a named region — shown as transient centre-screen text.</summary>
         public event Action<RegionNotice> RegionReceived;
@@ -141,6 +143,7 @@ namespace Game.Client
             _connection.On<QuestMarks>("QuestMarks", m => QuestMarksReceived?.Invoke(m));
             _connection.On<AutoHuntConfigDto>("AutoConfig", c => AutoConfigReceived?.Invoke(c));
             _connection.On<AutoHuntStatus>("AutoHunt", s => AutoHuntStatusReceived?.Invoke(s));
+            _connection.On<SocialOptionsUpdate>("SocialOptions", s => SocialOptionsReceived?.Invoke(s));
             _connection.On<RegionNotice>("Region", r => RegionReceived?.Invoke(r));
             _connection.On<string>("Notice", m => NoticeReceived?.Invoke(m));
             _connection.On<SelectionOffer>("Selection", o => SelectionReceived?.Invoke(o));
@@ -323,6 +326,7 @@ namespace Game.Client
 
         // ----- party ------------------------------------------------------------------------------
         public Task PartyInviteAsync(Guid targetId) => _connection.SendAsync("PartyInvite", targetId);
+        public Task PartyInviteByNameAsync(string name) => _connection.SendAsync("PartyInviteByName", name);
         public Task PartyRespondAsync(bool accept) => _connection.SendAsync("PartyRespond", accept);
         public Task PartyLeaveAsync() => _connection.SendAsync("PartyLeave");
         public Task PartyKickAsync(Guid targetId) => _connection.SendAsync("PartyKick", targetId);

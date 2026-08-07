@@ -279,13 +279,19 @@ namespace Game.Client
             var chosen = new List<string>();
             var buttons = new List<(Button Button, string Id, string Label)>();
 
+            // The box is spent whole, so a PARTIAL pick forfeits the rest (playtest-19 48g: 7 of 10
+            // from a 250k box). Confirm stays dead until every pick is spent; the server enforces the
+            // same count, this end only makes the rule visible before the tap.
+            int required = Mathf.Min(pickCount, options.Length);
+
             void Redraw()
             {
-                _selectTitle.text = $"{title} — {chosen.Count} / {pickCount}";
+                _selectTitle.text = $"{title} — {chosen.Count} / {required}";
                 foreach (var (button, id, label) in buttons)
                     UiKit.SetButtonText(button, (chosen.Contains(id) ? "[x] " : "[  ] ") + label);
-                UiKit.SetButtonText(_selectConfirm, chosen.Count == 0 ? "Confirm" : $"Confirm ({chosen.Count})");
-                _selectConfirm.interactable = chosen.Count > 0;
+                UiKit.SetButtonText(_selectConfirm,
+                    chosen.Count == required ? "Confirm" : $"Choose {required - chosen.Count} more");
+                _selectConfirm.interactable = chosen.Count == required;
             }
 
             for (int i = _selectOptions.childCount - 1; i >= 0; i--)
@@ -303,7 +309,7 @@ namespace Game.Client
                         // Refuse the 11th rather than silently dropping it: the server takes the first
                         // PickCount it recognises, so a quietly-ignored tap would spend a 250k box on a
                         // set the player did not choose.
-                        if (chosen.Count >= pickCount) { ShowToast($"Only {pickCount} may be chosen."); return; }
+                        if (chosen.Count >= required) { ShowToast($"Only {required} may be chosen."); return; }
                         chosen.Add(optId);
                     }
                     Redraw();
@@ -315,7 +321,7 @@ namespace Game.Client
             _selectConfirm.onClick.RemoveAllListeners();
             _selectConfirm.onClick.AddListener(() =>
             {
-                if (chosen.Count == 0) return;
+                if (chosen.Count != required) return;
                 CloseWindow(_selectPopup);
                 onConfirm?.Invoke(chosen);
             });
@@ -645,19 +651,34 @@ namespace Game.Client
             def.Slot == EquipSlot.Weapon || def.Slot == EquipSlot.Armor ||
             def.Slot == EquipSlot.Shield || def.Slot == EquipSlot.Jewel;
 
-        /// <summary>The worn item that shares this one's slot (and, for armor, its body part) — the
-        /// piece Compare stacks against. Null when nothing of that slot is equipped.</summary>
+        /// <summary>The worn item that shares this one's slot (and, for armor, its body part; for a
+        /// jewel, its JewelType) — the piece Compare stacks against. Null when nothing of that slot is
+        /// equipped.
+        /// ⚠ `EquipSlot.Jewel` covers rings, earrings AND necklaces, so matching on the slot alone
+        /// compared a pendant against whichever jewel sat first in the bag — a stud (playtest-19 46m).
+        /// Rings and earrings are worn in PAIRS, and equipping into a full pair displaces the WEAKER
+        /// one, so that is the piece the comparison has to be against.</summary>
         private InventoryItemDto FindEquippedCounterpart(ItemDef def)
         {
+            InventoryItemDto weakestJewel = null;
+            long weakestStrength = long.MaxValue;
+
             foreach (var it in Boot.Inventory ?? Array.Empty<InventoryItemDto>())
             {
                 if (!it.Equipped) continue;
                 var d = ItemCatalog.Get(it.DefId);
                 if (d == null || d.Slot != def.Slot) continue;
                 if (def.Slot == EquipSlot.Armor && d.ArmorSlot != def.ArmorSlot) continue;
+                if (def.Slot == EquipSlot.Jewel)
+                {
+                    if (d.JewelType != def.JewelType) continue;
+                    long strength = ItemCatalog.JewelStrength(d, it.Enchant);
+                    if (strength < weakestStrength) { weakestStrength = strength; weakestJewel = it; }
+                    continue;
+                }
                 return it;
             }
-            return null;
+            return weakestJewel;
         }
 
         private void LayoutButtons(RectTransform row, List<(string Label, Action Click)> actions)

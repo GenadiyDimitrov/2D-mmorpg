@@ -415,6 +415,14 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>Invite by NAME. The client must not resolve this itself — it only knows the entities
+    /// in view, which is why `/ptinv` said "no player x nearby" for anyone out of sight (46d).</summary>
+    public Task PartyInviteByName(string name)
+    {
+        _world.Commands.Enqueue(new PartyInviteByNameCmd(Context.ConnectionId, name));
+        return Task.CompletedTask;
+    }
+
     public Task PartyRespond(bool accept)
     {
         _world.Commands.Enqueue(new PartyRespondCmd(Context.ConnectionId, accept));

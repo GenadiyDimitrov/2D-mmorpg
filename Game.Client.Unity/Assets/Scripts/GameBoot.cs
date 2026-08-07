@@ -144,6 +144,16 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Invite: " + ex.Message); }
         }
 
+        /// <summary>Invite by NAME — the SERVER resolves it, over every online player. We must not look
+        /// the name up here: the client only holds the entities in view, which is what made `/ptinv`
+        /// answer "no player x nearby" for a party member who had walked off screen (46d).</summary>
+        public async void PartyInviteByName(string name)
+        {
+            if (Phase != ClientPhase.InWorld || string.IsNullOrWhiteSpace(name)) return;
+            try { await _net.PartyInviteByNameAsync(name.Trim()); }
+            catch (Exception ex) { ClientLog.Warn("Invite: " + ex.Message); }
+        }
+
         /// <summary>Open a box/chest from the inventory (random grants loot; a selection box replies with
         /// a "Selection" push that the UI turns into a chooser).</summary>
         public async void OpenBox(Guid instanceId)
@@ -301,6 +311,10 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Block: " + ex.Message); }
         }
 
+        /// <summary>This character's social toggles, as the SERVER last stated them (playtest-19 M2).
+        /// Never written optimistically on a tap — the window redraws when the push comes back.</summary>
+        public SocialOptions Social { get; private set; } = SocialOptions.None;
+
         public async void Like(string name)
         {
             try { await _net.LikeAsync(name); }
@@ -317,7 +331,9 @@ namespace Game.Client
                    && e.Kind == EntityKind.Player ? e.Name : null;
         }
 
-        /// <summary>A nearby PLAYER entity by name (for /ptinv). Null if not in view.</summary>
+        /// <summary>A PLAYER entity IN VIEW, by name. ⚠ Never use this to address a player — it can
+        /// only see what is on screen, which is exactly the 46d bug. It is kept for UI that is already
+        /// talking about something visible.</summary>
         public Guid? FindPlayerByName(string name)
         {
             if (Entities == null || string.IsNullOrWhiteSpace(name)) return null;
@@ -372,6 +388,70 @@ namespace Game.Client
             try { await _net.TalkToNpcAsync(npcEntityId); }
             catch (Exception ex) { ClientLog.Warn("Talk: " + ex.Message); }
         }
+
+        /// <summary>An NPC we are walking TOWARDS in order to talk, or empty (owner, playtest-19 M13).
+        /// The server refuses a Talk outside <see cref="GameConstants.TalkRange"/>, so "tap the NPC,
+        /// get told you are too far, walk, tap again" was the whole interaction — the second tap now
+        /// walks you there and opens the conversation on arrival.</summary>
+        private Guid _walkToTalk;
+
+        /// <summary>Walk to an NPC and talk when you get there. Talks immediately if already in range,
+        /// so the near case costs nothing.</summary>
+        public void ApproachAndTalk(Guid npcEntityId)
+        {
+            if (Phase != ClientPhase.InWorld || Entities == null) return;
+            if (!Entities.TryGetState(npcEntityId, out var npc) || npc.Kind != EntityKind.Npc) return;
+
+            if (WithinTalkRange(npc))
+            {
+                _walkToTalk = Guid.Empty;
+                TalkToNpc(npcEntityId);
+                return;
+            }
+
+            _walkToTalk = npcEntityId;
+            // Stop SHORT of the NPC — walking onto their exact spot leaves you standing inside them.
+            MoveTowards(npc.X, npc.Y, GameConstants.TalkRange * 0.6f);
+        }
+
+        /// <summary>Am I close enough to the NPC for the server to accept a Talk?</summary>
+        private bool WithinTalkRange(EntityDto npc)
+        {
+            if (Entities == null || !Entities.TryGetState(SelfId, out var me)) return false;
+            float dx = npc.X - me.X, dy = npc.Y - me.Y;
+            return dx * dx + dy * dy <= GameConstants.TalkRange * GameConstants.TalkRange;
+        }
+
+        /// <summary>Move to a point <paramref name="stopShort"/> units before (x, y).</summary>
+        private void MoveTowards(float x, float y, float stopShort)
+        {
+            if (Entities == null || !Entities.TryGetState(SelfId, out var me)) return;
+            float dx = x - me.X, dy = y - me.Y;
+            float dist = Mathf.Sqrt(dx * dx + dy * dy);
+            if (dist <= stopShort) { Move(x, y); return; }
+            float f = (dist - stopShort) / dist;
+            Move(me.X + dx * f, me.Y + dy * f);
+        }
+
+        /// <summary>Drive a pending walk-to-talk: talk the moment we are in range, and give up if the
+        /// NPC vanishes or the player takes a different action (which clears _walkToTalk).</summary>
+        private void TickWalkToTalk()
+        {
+            if (_walkToTalk == Guid.Empty) return;
+            if (Entities == null || !Entities.TryGetState(_walkToTalk, out var npc))
+            {
+                _walkToTalk = Guid.Empty;
+                return;
+            }
+            if (!WithinTalkRange(npc)) return;
+
+            var npcId = _walkToTalk;
+            _walkToTalk = Guid.Empty;
+            TalkToNpc(npcId);
+        }
+
+        /// <summary>Abandon a pending walk-to-talk — the player did something else.</summary>
+        public void CancelWalkToTalk() => _walkToTalk = Guid.Empty;
 
         public void CloseDialog() { Dialog = null; DialogNpcId = Guid.Empty; }
 
@@ -697,6 +777,8 @@ namespace Game.Client
 
             if (_mobCasts.Count > 0) PruneMobCasts();
 
+            if (Phase == ClientPhase.InWorld) TickWalkToTalk();
+
             // Frames/sec over a rolling second: 10/s means a healthy server tick reaching us.
             if (Time.realtimeSinceStartup - _fpsWindowStart >= 1f)
             {
@@ -864,6 +946,12 @@ namespace Game.Client
                 AutoIdleSecondsLeft = st.IdleSecondsLeft;
                 AutoOfflineSecondsLeft = st.OfflineSecondsLeft;
                 _autoBudgetStamp = Time.unscaledTime;
+            });
+            _net.SocialOptionsReceived += s => Main(() =>
+            {
+                if (s == null) return;
+                Social = (SocialOptions)s.Options;
+                Ui?.RefreshOptionsWindow();
             });
             _net.RegionReceived += r => Main(() => Ui?.ShowRegionNotice(r));
             _net.NoticeReceived += m => Main(() => Ui?.ShowToast(m));
@@ -1488,6 +1576,25 @@ namespace Game.Client
                 return;
             }
 
+            // An NPC conversation PINS you where you stand (owner, playtest-19 M13). Every dialog action
+            // — teleport, buy, deposit, learn — is re-checked against the distance to that NPC, so a
+            // ground tap made just before opening the window walked you out of range and the teleport
+            // you then chose answered "Too far". The walk-to-talk below is the sanctioned way in.
+            if (Ui != null && Ui.NpcWindowOpen)
+            {
+                ClientLog.Warn("Close the window first — you can't walk away mid-conversation.");
+                return;
+            }
+
+            // DEAD is not a movement state, it is the absence of one (owner, playtest-19 M4). The server
+            // already refuses and rubber-bands you back, but that is the safety net, not the fix: the
+            // corpse slid around on your own screen while standing still on everyone else's.
+            if (Entities != null && Entities.TryGetState(SelfId, out var deadCheck) && deadCheck.Dead)
+            {
+                ClientLog.Warn("You are dead — you can't move.");
+                return;
+            }
+
             // Don't predict a walk the server will DROP — that mismatch is what rubber-bands you. It
             // drops one while you're SITTING, and whenever your effective speed is 0 (stun / root): the
             // last delta's self-speed is that number, so a 0 there means "you can't move right now".
@@ -2078,6 +2185,28 @@ namespace Game.Client
                 if (raw.Equals("/flist", StringComparison.OrdinalIgnoreCase))
                 { await _net.FriendCommandAsync("list", ""); return; }
 
+                // Social filters (owner, playtest-19 M2). `/block <name>` is the per-person list that
+                // already existed; the rest are blanket TOGGLES — the same word turns each back off, so
+                // there is no second command to remember. ⚠ None of them can silence staff (server-side).
+                // These belong in an Options window, which is still to build (B11) — the commands are
+                // the interim, and will stay as the typed twins of those switches.
+                if (raw.StartsWith("/block ", StringComparison.OrdinalIgnoreCase))
+                { await _net.BlockCommandAsync("block", raw.Substring(7).Trim()); return; }
+                if (raw.StartsWith("/unblock ", StringComparison.OrdinalIgnoreCase))
+                { await _net.BlockCommandAsync("unblock", raw.Substring(9).Trim()); return; }
+                if (raw.Equals("/blist", StringComparison.OrdinalIgnoreCase))
+                { await _net.BlockCommandAsync("list", ""); return; }
+                if (raw.Equals("/block", StringComparison.OrdinalIgnoreCase))
+                { await _net.BlockCommandAsync("all", ""); return; }
+                if (raw.Equals("/block-w", StringComparison.OrdinalIgnoreCase))
+                { await _net.BlockCommandAsync("whispers", ""); return; }
+                if (raw.Equals("/block-g", StringComparison.OrdinalIgnoreCase))
+                { await _net.BlockCommandAsync("global", ""); return; }
+                if (raw.Equals("/decline-t", StringComparison.OrdinalIgnoreCase))
+                { await _net.BlockCommandAsync("trades", ""); return; }
+                if (raw.Equals("/decline-p", StringComparison.OrdinalIgnoreCase))
+                { await _net.BlockCommandAsync("party", ""); return; }
+
                 // The typed twin of the Menu's [Offline] button. It has to be here rather than in the
                 // admin passthrough below: offline farming is a PLAYER command, and everything that
                 // reaches the admin branch is refused for a non-staff character.
@@ -2090,8 +2219,9 @@ namespace Game.Client
                 { PartyLeave(); return; }
                 if (raw.StartsWith("/ptinv ", StringComparison.OrdinalIgnoreCase))
                 {
-                    var id = FindPlayerByName(raw.Substring(7).Trim());
-                    if (id is Guid g) PartyInvite(g); else ClientLog.Warn("No player '" + raw.Substring(7).Trim() + "' nearby.");
+                    // Straight to the server — see PartyInviteByName. Resolving the name here limited
+                    // the invite to whoever happened to be on screen (46d).
+                    PartyInviteByName(raw.Substring(7).Trim());
                     return;
                 }
                 if (raw.StartsWith("/ptkick ", StringComparison.OrdinalIgnoreCase))

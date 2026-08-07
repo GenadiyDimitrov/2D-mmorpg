@@ -138,6 +138,35 @@ public static class WorldMap
         return null;
     }
 
+    /// <summary>Is <paramref name="npcId"/> the SAME SERVICE as <paramref name="baseId"/> — that is,
+    /// the starter town's NPC or any ring town's copy of it? Every town's service NPC is named
+    /// `{baseId}_{townKey}` (see <see cref="RingTownServices"/>), so this is the one place that rule is
+    /// read rather than re-derived.
+    ///
+    /// Used by quests marked <see cref="QuestDef.AnyTownNpc"/>: a level-40 should not have to pay a
+    /// gatekeeper to walk back to town 1 for a daily errand every town's Apothecary could hand out
+    /// (owner, playtest-19 M11).</summary>
+    public static bool IsSameService(string baseId, string npcId) =>
+        !string.IsNullOrEmpty(baseId) && !string.IsNullOrEmpty(npcId)
+        && (npcId == baseId || npcId.StartsWith(baseId + "_", StringComparison.Ordinal));
+
+    /// <summary>The TELEPORTER standing in a safe zone, or null if it has none.
+    ///
+    /// A jump used to land you on the destination town's centre point, which is nowhere near its
+    /// gatekeeper — so travelling on meant landing, then walking across town to the next gatekeeper
+    /// (owner, playtest-19 M12). Arriving beside the gatekeeper makes the chain one tap.</summary>
+    public static NpcDef? GatekeeperIn(SafeZone zone)
+    {
+        foreach (var n in Npcs)
+        {
+            if (n.Role != NpcRole.Teleporter) continue;
+            float dx = n.X - zone.X, dy = n.Y - zone.Y;
+            if (dx * dx + dy * dy <= zone.Radius * zone.Radius)
+                return n;
+        }
+        return null;
+    }
+
     /// <summary>Per-gatekeeper teleport menus: gatekeeper NPC id -> the ORDERED town
     /// ids it offers. A gatekeeper not listed here falls back to "all other towns".
     /// This is the seam for curating each gatekeeper's own collection (and, on a large

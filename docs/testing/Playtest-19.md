@@ -24,8 +24,8 @@ they were missing from his CSVs.
 
 So the deletion is **only** the genuinely dead set: `reflexes`, `archer_armor_mastery`,
 `archer_weapon_mastery`, `dispel_magic`, and the **Heavy Draw @24 grant** (see M7 — he wants it gone
-above 40 too). `evade_mastery` stays but is **rewritten** by M9. ⚠ He still has not ruled on
-`class_balance_*` (8, auto-granted, currently no-ops) — assume keep.
+above 40 too). `evade_mastery` stays but is **rewritten** by M9. ✅ **`class_balance_*` ruled 2026-08-07: "class_balance should be commented for now"** — the 8 defs and
+their auto-grant come out of the live path but stay in the file. **Commented, NOT deleted.**
 
 **0b. 🔴 The God layer goes — ALL of it.** Wider than I proposed.
 > I want them deleted. Nothing that can't be acquired in game. If I need cosmic stats I can /enchant
