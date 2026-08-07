@@ -1367,8 +1367,28 @@ public class GameLoopService : BackgroundService
 
         // Angel's Protection (noblesse) — every class learns it at 76 for now. LATER it becomes a long
         // subclass quest reward (see the death/res design note); this auto-grant is the stopgap.
+        //
+        // The right to WRITE YOUR OWN TITLE rides on exactly the same gate (owner, 2026-08-07): the two
+        // are meant to be rewards of the SAME quest once that quest exists. Granting both from ONE
+        // place now means that quest replaces a single condition later, instead of hunting down two
+        // that have quietly drifted apart — which is the whole reason he asked for them together.
         if (player.Level >= 76)
+        {
             player.LearnedSkills.TryAdd(SkillCatalog.AngelsProtection, 1);
+
+            // Announced and pushed only on the EDGE, so it lands once — the moment you hit 76, or on
+            // the first login of a character who was already past it. This runs from OnLevelUp as well
+            // as from login, and nothing else would tell the client the Rank window has grown a new
+            // row: SendTitles is the only push that carries the right.
+            if (!player.MayWriteTitle)
+            {
+                player.MayWriteTitle = true;
+                SendSystemToEntity(player,
+                    $"You may name yourself: /title <text> ({TitleCatalog.MaxCustomLength} characters), "
+                    + "/titlecolor <colour>.");
+                SendTitles(player);
+            }
+        }
     }
 
     /// <summary>True if the player has learned a skill that REPLACES the given id

@@ -368,21 +368,26 @@ line. ⚠ **A MOB must NOT split**: "Ridgeback Pup" stays one name. ->
 target frame still read the whole "Elder Marius". -> 
 `59m` [] - 🔴 **`/target Pell` works in a crowd** — the thing you actually asked for. Also try
 `/target Gatekeeper` (the role half) and `/target Pel` (a prefix). It only finds what is IN SIGHT. -> 
-`59n` [] - **`/title` is refused without the right**: a normal character gets "you have not been
-granted the right to name yourself". -> 
-`59o` [] - **Grant it** with `/titleright <name> on` (⚠ **online characters only**), then `/title
-Bonecrusher` sets AND wears it in one step. `/titlecolor violet` recolours it. `/title` with no text
-clears it. -> 
-`59p` [] - 🔴 **The reserved words hold**: `/title Warlord`, `/title wealthy`, `/title Game Master`
+`59n` [] - **`/title` is refused below 76**: a low character gets "you have not been granted the right
+to name yourself". -> 
+`59o` [] - 🔑 **The right arrives at level 76, with Angel's Protection** — your ask. Level a character
+to 76 (or log in one already past it): **one** system line offers `/title`, and the Rank window grows
+the hint. It must NOT repeat on every login. ⚠ Both grants now come from one place, so **the future
+quest replaces one condition, not two**. -> 
+`59p` [] - **Then it works**: `/title Bonecrusher` sets AND wears it in one step, `/titlecolor violet`
+recolours it, `/title` with no text clears it. `/titleright <name> on|off` is the manual override
+(⚠ **online characters only**). -> 
+`59q` [] - 🔴 **The reserved words hold**: `/title Warlord`, `/title wealthy`, `/title Game Master`
 are all refused. This is the rule that keeps a board title worth earning — if any of them gets
 through, that is a bug, not a nitpick. -> 
-`59q` [] - **20 characters max**, and letters/digits/space/`'`/`-` only. Try `/title <color=#FF0000>x`
+`59r` [] - **20 characters max**, and letters/digits/space/`'`/`-` only. Try `/title <color=#FF0000>x`
 — it must be refused, or a title could recolour itself past the palette. -> 
-`59r` [] - **It survives a relog**, and the picker offers it back as **«your title» — your own** after
+`59s` [] - **It survives a relog**, and the picker offers it back as **«your title» — your own** after
 you switch to a board title and want it again. -> 
-`59s` [] - **Revoking works**: `/titleright <name> off` takes a worn written title straight off the
-head. -> 
-`59t` [] - ⚠ **Protocol is 13.** Install the 0.55.0 APK *and* server. (An older APK draws NPCs as a
+`59t` [] - **Revoking works**: `/titleright <name> off` takes a worn written title straight off the
+head. ⚠ **On a 76+ character it comes BACK on the next login** — the level gate re-grants it. Say if
+you want a revoke to stick; it costs one more column. -> 
+`59u` [] - ⚠ **Protocol is 13.** Install the 0.55.0 APK *and* server. (An older APK draws NPCs as a
 bare "Marius" and every title in plain gold — expected, not a bug.) -> 
 
 ---

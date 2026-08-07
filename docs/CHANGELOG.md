@@ -63,9 +63,13 @@ titles, so staff can still walk around as a normal player. `/role` refreshes the
 promotion offers the title and a demotion strips a worn one without waiting for a relog.
 
 **Player-written titles.** `/title <text>` (**20 characters**) sets and wears a title of your own;
-`/titlecolor <colour>` recolours it from a named palette. Gated on a per-character right — off by
-default, granted with `/titleright <name> on` — which is the hook for "do something in the game, earn
-the right to name yourself"; the admin command is the placeholder that grant will replace. The
+`/titlecolor <colour>` recolours it from a named palette. Gated on a per-character right, **granted at
+level 76 from the same gate as Angel's Protection** (owner: *"grant title right to character on same
+place as angels blessing, they both be later same quest"*) — the two are meant to be rewards of one
+quest once that quest exists, and auto-granting them from a single place means that quest replaces one
+condition rather than two that have quietly drifted apart. `/titleright <name> on|off` is the manual
+override on top. The right is announced and pushed on the EDGE only, so it lands once: the moment you
+reach 76, or on the first login of a character already past it. The
 **ranking and staff words are RESERVED**: nobody can type `Warlord` and wear a rank they never earned,
 which is the one rule that keeps an earned title worth earning. The palette is named colours rather
 than free hex, so a written title also cannot be dressed in the PK board's dark red. Text is validated

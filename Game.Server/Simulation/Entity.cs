@@ -368,9 +368,13 @@ public class Entity
     /// <summary>The colour chosen for <see cref="CustomTitle"/> (RRGGBB, "" = default). Persisted.</summary>
     public string CustomTitleColor { get; set; } = "";
 
-    /// <summary>May this character write its own title (`/title`)? Off by default and granted by staff
-    /// — the owner's hook for "do something, earn the right to name yourself". Admins always may.
-    /// Persisted per character.</summary>
+    /// <summary>
+    /// May this character write its own title (`/title`)? Persisted per character. Admins always may.
+    ///
+    /// Granted at **level 76, from the same gate as Angel's Protection** (owner, 2026-08-07): the two
+    /// are meant to become rewards of the SAME quest, so they are auto-granted from one place until
+    /// that quest exists. `/titleright` is the manual override on top.
+    /// </summary>
     public bool MayWriteTitle { get; set; }
 
     /// <summary>The effective right: an admin never has to grant it to themselves.</summary>
