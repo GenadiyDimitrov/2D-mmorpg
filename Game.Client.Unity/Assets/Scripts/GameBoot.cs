@@ -1607,15 +1607,29 @@ namespace Game.Client
             foreach (var id in _mobCastsDone) _mobCasts.Remove(id);
         }
 
+        /// <summary>The COMBAT feed's colours (D5). Damage you DEAL is green and damage dealt to YOU is
+        /// red, so the direction of a fight reads off the colour alone — a wall of one colour was the
+        /// state before, and on a phone you are not reading the words mid-fight. Deliberately a deeper
+        /// green than <see cref="ClientLog.Good"/>'s lime (owner: "green, not lime"), which stays the
+        /// System tab's "that worked" colour and should not be confused with it.</summary>
+        private static readonly Color DealtColour  = new Color(0.36f, 0.85f, 0.45f);
+        private static readonly Color TakenColour  = new Color(1f, 0.42f, 0.42f);
+        private static readonly Color LootColour   = new Color(0.95f, 0.82f, 0.35f);
+        private static readonly Color RewardColour = new Color(0.60f, 0.78f, 1f);
+
         private void OnCombat(CombatEvent e)
         {
             Main(() =>
             {
                 if (e.AttackerId != _selfId && e.TargetId != _selfId) return;
                 if (CombatHappened != null) CombatHappened(e);
-                string verb = e.AttackerId == _selfId ? "You → " + e.TargetName : e.AttackerName + " → you";
-                ClientLog.Info(verb + "  " + e.Outcome + (e.Damage != 0 ? " " + e.Damage : "")
-                               + (string.IsNullOrEmpty(e.Skill) ? "" : " (" + e.Skill + ")"));
+                bool mine = e.AttackerId == _selfId;
+                string verb = mine ? "You → " + e.TargetName : e.AttackerName + " → you";
+                // Tab.Combat, not System (D5): one fight writes a line per swing, which is what buried
+                // every whisper and every refusal in the one console this used to share.
+                ClientLog.Chat(verb + "  " + e.Outcome + (e.Damage != 0 ? " " + e.Damage : "")
+                               + (string.IsNullOrEmpty(e.Skill) ? "" : " (" + e.Skill + ")"),
+                               mine ? DealtColour : TakenColour, ClientLog.Tab.Combat);
             });
         }
 
@@ -2433,6 +2447,13 @@ namespace Game.Client
                     // Through Good() rather than Chat(): a server system line is also a diagnostic
                     // ("you can't do that here", a refusal, a ban notice), and logcat should keep it.
                     ClientLog.Good(m.From + ": " + m.Text);
+                    break;
+                case ChatChannel.Combat:
+                    // D5. From is a colour TAG here, not a speaker, so it is not printed: loot gold,
+                    // the kill's Exp/SP/Gold line a calmer blue. Not through Good() — this feed is
+                    // several lines per kill and mirroring it into logcat is pure noise.
+                    ClientLog.Chat(m.Text, m.From == "LOOT" ? LootColour : RewardColour,
+                                   ClientLog.Tab.Combat);
                     break;
                 default:
                     ClientLog.Chat(m.From + ": " + m.Text,

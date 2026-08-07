@@ -5996,7 +5996,11 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        var channel = chat.Channel == ChatChannel.System ? ChatChannel.Local : chat.Channel;
+        // A player may only speak on Local / World / Whisper. System and Combat (D5) are server->client
+        // FEEDS, so a message arriving on either is demoted to Local rather than trusted — otherwise
+        // anyone could post a convincing fake "You looted:" line into someone else's combat window.
+        var channel = chat.Channel is ChatChannel.System or ChatChannel.Combat
+            ? ChatChannel.Local : chat.Channel;
 
         if (channel == ChatChannel.Whisper)
         {
@@ -8494,12 +8498,12 @@ var effect = def.Effect;
                 return;
             }
             string qtyLabel = qty > 1 ? $" x{qty}" : "";
-            SendSystemToEntity(to, $"You looted: {def.Name}{qtyLabel} [{def.Grade}/{def.Rarity}]");
+            SendCombatToEntity(to, "LOOT", $"You looted: {def.Name}{qtyLabel} [{def.Grade}/{def.Rarity}]");
             // Let the rest of the in-range party see where it went.
             if (eligible.Count > 1)
                 foreach (var m in eligible)
                     if (m.Id != to.Id)
-                        SendSystemToEntity(m, $"{to.Name} looted {def.Name}{qtyLabel}.");
+                        SendCombatToEntity(m, "LOOT", $"{to.Name} looted {def.Name}{qtyLabel}.");
             touched.Add(to);
         }
 
@@ -8907,7 +8911,7 @@ var effect = def.Effect;
         foreach (var (p, t) in _killTally)
         {
             if (t.Exp <= 0 && t.Sp <= 0 && t.Gold <= 0) continue;
-            SendSystemToEntity(p,
+            SendCombatToEntity(p, "EXP",
                 $"Exp: +{t.Exp:N0}, SP: +{t.Sp:N0}, {GameConstants.CurrencyName}: +{t.Gold:N0}");
         }
         _killTally = null;
@@ -9272,6 +9276,23 @@ var effect = def.Effect;
     {
         if (_world.EntityToConnection.TryGetValue(entity.Id, out var conn))
             SendSystemTo(conn, text);
+    }
+
+    /// <summary>
+    /// A line for the COMBAT feed (D5) — loot and the per-kill reward line — rather than the System
+    /// tab it used to share with refusals, learn notices and diagnostics. Killing one mob writes two
+    /// to four of these, so a minute of hunting buried every whisper and every "you can't do that
+    /// here" under it; on its own channel the client can park them in a window of their own.
+    ///
+    /// <paramref name="kind"/> ("LOOT" / "EXP") rides in the message's From field, which on this
+    /// channel is a colour tag the client does not print. A dedicated DTO field would be tidier, but
+    /// From is already a routing tag here ("SYSTEM"), and doing it this way keeps the change to one
+    /// enum value — an older client falls through to its Local case and still READS the line.
+    /// </summary>
+    private void SendCombatToEntity(Entity entity, string kind, string text)
+    {
+        if (_world.EntityToConnection.TryGetValue(entity.Id, out var conn))
+            _ = _hub.Clients.Client(conn).SendAsync("Chat", new ChatMessage(kind, text, ChatChannel.Combat));
     }
 
     private void SendTo(Entity entity, string method, object payload)

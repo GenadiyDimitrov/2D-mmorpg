@@ -719,7 +719,7 @@ was a deliberate call), so `admin/admin` can never hold a title. Any `test1..9` 
         ABOVE the title line, not through it.
 
 **Chat tabs** (the oldest open item in the roadmap — colours + tabs + tags, §9/§28)
-42h.[~] ⚠ P17 — TABS WORK, wants a 6th: **Combat**, in its OWN window, holding the damage / loot / exp lines pulled OUT of System (`You → Enemy <dmg>`, `You looted:`, `Exp/Sp/Gold`); YOUR damage green (not lime), the enemy's red. Original: **The button is "Chat" now**, and the window is titled Chat. Five tabs: **All / Local / World /
+42h.[x] ✅ **BUILT 0.56.0 (D5) — test at Open-Checklist §60.** The 6th button, **Combat**, opens a WINDOW of its own holding the damage / loot / exp lines pulled OUT of System (`You → Enemy <dmg>`, `You looted:`, `Exp/Sp/Gold`); YOUR damage green (not lime), the enemy's red. It is excluded from **All** on purpose. Original: **The button is "Chat" now**, and the window is titled Chat. Five tabs: **All / Local / World /
         PM / System**. The old console is the *System* tab — everything that used to be in the Log is
         still there, nothing was hidden.
 42i.[x] ✅ P17 **Colours and tags.** Say something plain → white, *Local* tab. `!hello` → **gold**, tagged

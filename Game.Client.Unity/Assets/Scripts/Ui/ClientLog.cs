@@ -23,10 +23,15 @@ namespace Game.Client
         /// between channels intact — two buffers merged for display would have to be re-sorted, and
         /// the Seq that lets the console append instead of rebuild would stop being monotonic per tab.
         ///
-        /// Everything that is not player chat (errors, warnings, combat notes, server system lines)
-        /// is <see cref="Tab.System"/> — the old, single-list console, now one tab of five.
+        /// Everything that is not player chat (errors, warnings, server system lines) is
+        /// <see cref="Tab.System"/> — the old, single-list console, now one tab of five.
+        ///
+        /// <see cref="Tab.Combat"/> (D5) is the exception that is NOT a tab of the chat window: the
+        /// damage / loot / exp feed drowns everything else during a fight, which is the whole reason
+        /// it was pulled out of System. It gets a window of its own and is excluded from "All", so
+        /// the chat window can stay open next to it and still be readable.
         /// </summary>
-        public enum Tab { System = 0, Local = 1, World = 2, Whisper = 3 }
+        public enum Tab { System = 0, Local = 1, World = 2, Whisper = 3, Combat = 4 }
 
         public struct Line
         {
@@ -118,6 +123,20 @@ namespace Game.Client
         public static void Clear()
         {
             lock (_lines) { _lines.Clear(); Revision++; ClearGeneration++; }
+        }
+
+        /// <summary>Drop one tab's lines and leave the rest alone — the Combat window's Clear (D5).
+        /// Its own Clear must not take the chat with it, and the chat window's Clear is still the
+        /// full <see cref="Clear"/>.</summary>
+        public static void ClearTab(Tab tab)
+        {
+            lock (_lines)
+            {
+                if (_lines.RemoveAll(l => l.Where == tab) == 0) return;
+                // Same reasoning as ClearChat: only a GENERATION bump makes an append-only view throw
+                // its drawn rows away, so a Revision bump alone would leave them on screen.
+                Revision++; ClearGeneration++;
+            }
         }
 
         /// <summary>

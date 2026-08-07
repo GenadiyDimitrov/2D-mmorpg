@@ -31,7 +31,12 @@ public enum ChatChannel
     Local = 0,    // visible within ViewRange
     World = 1,    // everyone; sent with '!message'
     System = 2,   // server / admin messages (own panel on top)
-    Whisper = 3   // private: /w CharName message
+    Whisper = 3,  // private: /w CharName message
+    /// <summary>The COMBAT feed (D5): loot lines and the per-kill Exp/SP/Gold line, pulled OUT of
+    /// System so the client can give them a window of their own. Server -&gt; client only — a client
+    /// never SENDS on this channel. The message's From field carries the sub-kind ("LOOT" / "EXP")
+    /// the client colours on; unlike System's "SYSTEM", it is not printed.</summary>
+    Combat = 4
 }
 
 public enum CombatOutcome

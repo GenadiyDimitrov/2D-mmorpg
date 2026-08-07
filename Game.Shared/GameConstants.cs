@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.55.0";
+    public const string GameVersion = "0.56.0";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -43,7 +43,7 @@ public static class GameConstants
     /// actually happens most: **client-only work, where the CLIENT is ahead of the server.** A version
     /// number that describes the contract instead of the build makes that case a non-event.
     /// </summary>
-    public const int ProtocolVersion = 13;
+    public const int ProtocolVersion = 14;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
@@ -62,6 +62,10 @@ public static class GameConstants
     /// player-written titles. Pure additions again: an older client ignores the colour and draws every
     /// title in its own default gold, and never calls what it does not know about. NPCs will read as a
     /// bare "Marius" on it, since the role now travels on the title field it does not know to draw.
+    ///
+    /// 14 (0.56.0) adds ChatChannel.Combat — loot and the per-kill reward line moved off System onto
+    /// their own channel (D5). An older client has no case for it and falls through to its Local
+    /// default, which prints the line uncoloured on the Local tab: noisier than before, never lost.
     /// </summary>
     public const int MinAcceptedProtocol = 8;
 

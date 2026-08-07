@@ -392,6 +392,37 @@ bare "Marius" and every title in plain gold — expected, not a bug.) ->
 
 ---
 
+## 60. 0.56.0 — D5, the Combat feed in its own window
+
+No section in `TestChecklist.Unity.md` — the detail is here. **No schema change; `game.db` is fine.**
+⚠ **Protocol is 14** — server and APK together. (An older APK has no case for the new channel and
+prints loot/exp as plain Local chat: noisy, never lost.)
+
+`60a` [] - **The System tab is quiet now.** Kill something with the Chat window open on *System*: no
+damage lines, no `You looted:`, no `Exp: +…`. Only real system lines (refusals, learn notices) land
+there. -> 
+`60b` [] - **The 6th button opens a WINDOW, not a tab.** Chat → **Combat**: a second window appears
+(bottom-right) and the Chat window stays open and usable beside it. The button stays lit while it is
+open, and goes dark when you close either one. -> 
+`60c` [] - **Colours.** Your own damage is **green**, the mob's damage to you is **red**, loot is
+gold, the `Exp/SP/Gold` line is blue. ⚠ The green is deliberately *deeper than lime* (your words) —
+say if it now reads too close to the System tab's green. -> 
+`60d` [] - **All stays readable.** Fight for a minute with the Chat window on **All**: combat is
+**not** in it. That is on purpose — All would otherwise be the exact wall of damage the window was
+built to get away from. **Tell me if you would rather All showed everything.** -> 
+`60e` [] - **Two Clears, two scopes.** Combat's **Clear** empties only the combat window; the Chat
+window's **Clear** still empties everything (including combat). Say if you want Chat's Clear to
+spare the combat feed too. -> 
+`60f` [] - **Party loot still names the taker.** In a party, `X looted Y.` lands in the *combat*
+window of the members who did not get it. -> 
+`60g` [] - **No lag spike.** Spam a fight with **both** windows open — the rewrite that made the
+console append-only now serves two views, so this is the one that would show a regression: rows
+drawing over each other, a freeze, or the phone heating. -> 
+`60h` [] - **It resets per character.** Leave to character select and enter on another: the combat
+window is empty (it follows the C1 chat reset, not the System tab). -> 
+
+---
+
 ## CARRIED FORWARD — never reached in any playtest, needs a deliberate setup
 
 These have survived several checklists untouched because none of them happens by accident. If you
@@ -417,11 +448,11 @@ Tracked, ruled on, or deliberately queued. Listed so you don't re-report them.
 - **`B10` client-side collision does not exist** — only the server rubber-band. Queued.
 - **`B8` soulcrystal-tier gear prints A grade** in details while accepting a Mythic attribute scroll.
   Queued.
-- **`D5` the [Combat] chat tab in its own window.** Queued.
+- ~~**`D5` the [Combat] chat tab in its own window.**~~ ✅ **BUILT 0.56.0** — test at §60.
 - ~~**`M5`/`M6` the tutorial chain + bound 30-day newbie gear.**~~ ✅ **BUILT 0.54.0** — test at §58.
 - ~~**`C1` `C3` `C14` `C15` `C16` `C17`** — the QoL six you picked.~~ ✅ **ALL BUILT** — `C15` rode
-  along in 0.54.0, the other five are 0.55.0. Test at §59. The queue is now down to **`D5`, `B8`,
-  `B9`, `B10`** (listed above) — and, ahead of any of them, **a play pass**.
+  along in 0.54.0, the other five are 0.55.0. Test at §59. The queue is now down to **`B8`, `B9`,
+  `B10`** (listed above) — and, ahead of any of them, **a play pass**.
 - **`C4`** auto-on for buff potions/scrolls — **your ruling: comes later, with the AutoPot tabs.**
 - **`G2` / `0e` `lb_*` + `wc_*`** — **CLOSED by your ruling: leave them.** Placeholders for 40+,
   commented out, harmless. I will stop asking.

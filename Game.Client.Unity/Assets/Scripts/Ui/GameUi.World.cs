@@ -85,11 +85,28 @@ namespace Game.Client
         private float _swipeStartX;
 
         // console / chat
-        private RectTransform _consolePanel, _consoleContent;
-        private ScrollRect _consoleScroll;
-        private int _seenLogRevision = -1;
-        private long _renderedLogSeq = -1;   // highest ClientLog.Line.Seq already drawn as a row
-        private int _seenClearGen = -1;      // last ClientLog.ClearGeneration we rebuilt for
+        /// <summary>
+        /// One append-only VIEW of the <see cref="ClientLog"/> buffer: a scroll area plus the
+        /// bookkeeping that lets it draw only the lines it has not drawn yet.
+        ///
+        /// There are two of them since D5 — the Chat window and the Combat window — over the ONE
+        /// buffer, which is what keeps every line's arrival order intact and costs one list. It is a
+        /// type rather than two sets of fields because the append/trim/clear-generation dance below is
+        /// subtle (see <see cref="RefreshLogView"/>: a `while (childCount > cap)` loop froze the
+        /// phone), and a copy-pasted second one would eventually drift back into the slow path.
+        /// </summary>
+        private sealed class LogView
+        {
+            public RectTransform Panel, Content;
+            public ScrollRect Scroll;
+            /// <summary>Which lines this view draws.</summary>
+            public Func<ClientLog.Tab, bool> Accepts;
+            public int SeenRevision = -1;
+            public long RenderedSeq = -1;   // highest ClientLog.Line.Seq already drawn as a row
+            public int SeenClearGen = -1;   // last ClientLog.ClearGeneration we rebuilt for
+        }
+
+        private LogView _chatView, _combatView;
 
         /// <summary>Which chat tab is showing. -1 is ALL (no filter); otherwise the
         /// <see cref="ClientLog.Tab"/> being shown on its own.</summary>
@@ -101,6 +118,9 @@ namespace Game.Client
             (int)ClientLog.Tab.Whisper, (int)ClientLog.Tab.System,
         };
         private Button _chatReplyButton;
+        /// <summary>The Chat window's 6th button. It is NOT a tab — it toggles the Combat window (D5),
+        /// and lights up while that window is open.</summary>
+        private Button _combatTabButton;
         /// <summary>Cap on console ROWS kept alive. Plenty of scrollback, but bounded so the window can
         /// never accumulate hundreds of live labels — see RefreshConsole for why that mattered.</summary>
         private const int ConsoleDisplayRows = 120;
@@ -545,7 +565,7 @@ namespace Game.Client
                         new Vector2(640f, bottom), new Vector2(96f, 46f));
 
             // "Chat", not "Log": it is the chat window now — the diagnostics live on its System tab.
-            var log = UiKit.TextButton(_worldRoot, "Chat", () => ToggleWindow(_consolePanel), 17f);
+            var log = UiKit.TextButton(_worldRoot, "Chat", () => ToggleWindow(_chatView.Panel), 17f);
             UiKit.Place(UiKit.Rect(log.gameObject), new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(744f, bottom), new Vector2(90f, 46f));
 
@@ -751,14 +771,15 @@ namespace Game.Client
         /// </summary>
         private void BuildConsole()
         {
-            _consolePanel = UiKit.PanelBox(_worldRoot, "Console");
-            UiKit.Place(_consolePanel, new Vector2(0f, 0f), new Vector2(0f, 0f),
+            var panel = UiKit.PanelBox(_worldRoot, "Console");
+            UiKit.Place(panel, new Vector2(0f, 0f), new Vector2(0f, 0f),
                         new Vector2(12f, 132f), new Vector2(760f, 320f));
-            var inner = _consolePanel.GetChild(0);
-            float chrome = UiKit.WindowChrome(_consolePanel, "Chat", () => CloseWindow(_consolePanel));
+            var inner = panel.GetChild(0);
+            float chrome = UiKit.WindowChrome(panel, "Chat", () => CloseWindow(panel));
 
             // Tabs. "PM" rather than "Whisper": the row has five buttons across 760px on a phone, and
-            // every MMO player already reads PM.
+            // every MMO player already reads PM. The SIXTH, Combat, is not one of them — it opens the
+            // combat window (D5) and sits in the row because that is where you would look for it.
             string[] names = { "All", "Local", "World", "PM", "System" };
             _chatTabButtons = new Button[names.Length];
             for (int i = 0; i < names.Length; i++)
@@ -770,9 +791,13 @@ namespace Game.Client
                 _chatTabButtons[i] = button;
             }
 
+            _combatTabButton = UiKit.TextButton(inner, "Combat",
+                                                () => { ToggleWindow(_combatView.Panel); HighlightChatTabs(); }, 15f);
+            UiKit.Place(UiKit.Rect(_combatTabButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(12f + names.Length * 100f, -chrome - 4f), new Vector2(96f, 32f));
+
             ScrollRect scroll;
-            _consoleContent = UiKit.ScrollArea(inner, out scroll, 1f);
-            _consoleScroll = scroll;
+            var content = UiKit.ScrollArea(inner, out scroll, 1f);
             UiKit.Stretch((RectTransform)scroll.transform, 10f, chrome + 40f, 10f, 46f);
 
             var clear = UiKit.TextButton(inner, "Clear", () => ClientLog.Clear(), 16f);
@@ -786,8 +811,51 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_chatReplyButton.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
                         new Vector2(-118f, 8f), new Vector2(100f, 34f));
 
+            _chatView = new LogView
+            {
+                Panel = panel, Content = content, Scroll = scroll, Accepts = ChatTabAccepts,
+            };
+            panel.gameObject.SetActive(false);
+
+            BuildCombatWindow();
             HighlightChatTabs();
-            _consolePanel.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// The COMBAT window (D5): the damage / loot / exp feed, pulled out of the System tab.
+        ///
+        /// A window of its own rather than a sixth tab, because the point is to read it AT THE SAME
+        /// TIME as chat — one fight writes a line per swing plus a loot line plus a reward line, and
+        /// as a tab of the same window it would only have moved the problem: you would still have to
+        /// choose between watching your damage and seeing that someone whispered you.
+        ///
+        /// It sits bottom-RIGHT so it and the chat window (bottom-left, 760 wide) can both be open
+        /// without overlapping on a 1280-wide reference canvas. Both are draggable from there.
+        /// </summary>
+        private void BuildCombatWindow()
+        {
+            var panel = UiKit.PanelBox(_worldRoot, "CombatLog");
+            UiKit.Place(panel, new Vector2(1f, 0f), new Vector2(1f, 0f),
+                        new Vector2(-12f, 132f), new Vector2(480f, 320f));
+            var inner = panel.GetChild(0);
+            float chrome = UiKit.WindowChrome(panel, "Combat",
+                                              () => { CloseWindow(panel); HighlightChatTabs(); });
+
+            ScrollRect scroll;
+            var content = UiKit.ScrollArea(inner, out scroll, 1f);
+            UiKit.Stretch((RectTransform)scroll.transform, 10f, chrome + 6f, 10f, 46f);
+
+            // ClearTab, not Clear: this window's Clear must not take the conversation with it.
+            var clear = UiKit.TextButton(inner, "Clear", () => ClientLog.ClearTab(ClientLog.Tab.Combat), 16f);
+            UiKit.Place(UiKit.Rect(clear.gameObject), new Vector2(1f, 0f), new Vector2(1f, 0f),
+                        new Vector2(-10f, 8f), new Vector2(100f, 34f));
+
+            _combatView = new LogView
+            {
+                Panel = panel, Content = content, Scroll = scroll,
+                Accepts = where => where == ClientLog.Tab.Combat,
+            };
+            panel.gameObject.SetActive(false);
         }
 
         /// <summary>Switch tab: the rows are a FILTERED projection of one buffer, so changing the filter
@@ -797,7 +865,7 @@ namespace Game.Client
         {
             if (_chatTab == tab) return;
             _chatTab = tab;
-            RebuildConsoleRows();
+            RebuildLogRows(_chatView);
             HighlightChatTabs();
         }
 
@@ -807,19 +875,26 @@ namespace Game.Client
             for (int i = 0; i < _chatTabButtons.Length; i++)
                 _chatTabButtons[i].targetGraphic.color =
                     _chatTabValues[i] == _chatTab ? UiKit.TabActive : UiKit.PanelLight;
+            // The Combat button is a toggle, so it reports the WINDOW's state, not a selected tab.
+            if (_combatTabButton != null)
+                _combatTabButton.targetGraphic.color =
+                    IsOpen(_combatView?.Panel) ? UiKit.TabActive : UiKit.PanelLight;
         }
 
         /// <summary>Drop every drawn row and let the next refresh redraw the ones the filter accepts.</summary>
-        private void RebuildConsoleRows()
+        private void RebuildLogRows(LogView view)
         {
-            for (int i = _consoleContent.childCount - 1; i >= 0; i--)
-                Destroy(_consoleContent.GetChild(i).gameObject);
-            _renderedLogSeq = -1;
-            _seenLogRevision = -1;   // force RefreshConsole to run even if no new line has arrived
+            for (int i = view.Content.childCount - 1; i >= 0; i--)
+                Destroy(view.Content.GetChild(i).gameObject);
+            view.RenderedSeq = -1;
+            view.SeenRevision = -1;   // force RefreshLogView to run even if no new line has arrived
         }
 
-        /// <summary>True if a line belongs in the tab being shown. All (-1) accepts everything.</summary>
-        private bool ChatTabAccepts(ClientLog.Tab where) => _chatTab < 0 || (int)where == _chatTab;
+        /// <summary>True if a line belongs in the chat tab being shown. All (-1) accepts everything
+        /// EXCEPT the combat feed — that one has its own window, and letting it back into All would
+        /// undo the separation the window was built for.</summary>
+        private bool ChatTabAccepts(ClientLog.Tab where) =>
+            _chatTab < 0 ? where != ClientLog.Tab.Combat : (int)where == _chatTab;
 
         private void BuildBag()
         {
@@ -1492,8 +1567,15 @@ namespace Game.Client
 
         private void RefreshConsole()
         {
-            if (!_consolePanel.gameObject.activeSelf || _seenLogRevision == ClientLog.Revision) return;
-            _seenLogRevision = ClientLog.Revision;
+            RefreshLogView(_chatView);
+            RefreshLogView(_combatView);
+        }
+
+        private void RefreshLogView(LogView view)
+        {
+            if (view == null || !view.Panel.gameObject.activeSelf
+                || view.SeenRevision == ClientLog.Revision) return;
+            view.SeenRevision = ClientLog.Revision;
 
             var lines = ClientLog.Lines;
 
@@ -1507,26 +1589,26 @@ namespace Game.Client
 
             // A Clear wipes the rows once; everything else just appends. ClearGeneration is bumped only
             // by ClientLog.Clear, so this is unambiguous — no guessing from buffer indices.
-            if (_seenClearGen != ClientLog.ClearGeneration)
+            if (view.SeenClearGen != ClientLog.ClearGeneration)
             {
-                _seenClearGen = ClientLog.ClearGeneration;
-                RebuildConsoleRows();
+                view.SeenClearGen = ClientLog.ClearGeneration;
+                RebuildLogRows(view);
             }
 
             int appended = 0;
             for (int i = 0; i < lines.Count; i++)
             {
-                if (lines[i].Seq <= _renderedLogSeq) continue;   // already drawn
-                // A line the current tab does not want is SKIPPED, not remembered: _renderedLogSeq only
-                // advances past lines that were actually drawn, so switching tabs (which resets it to
-                // -1) redraws the buffer from the start with the new filter.
-                if (!ChatTabAccepts(lines[i].Where)) continue;
-                var label = UiKit.Label(_consoleContent, lines[i].Text, 15f, lines[i].Color);
+                if (lines[i].Seq <= view.RenderedSeq) continue;   // already drawn
+                // A line this view does not want is SKIPPED, not remembered: RenderedSeq only advances
+                // past lines that were actually drawn, so switching tabs (which resets it to -1)
+                // redraws the buffer from the start with the new filter.
+                if (!view.Accepts(lines[i].Where)) continue;
+                var label = UiKit.Label(view.Content, lines[i].Text, 15f, lines[i].Color);
                 // Rows GROW with wrapped text instead of a fixed height. A fixed row is what made
                 // long messages draw over each other in the IMGUI console.
                 var fitter = label.gameObject.AddComponent<ContentSizeFitter>();
                 fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-                _renderedLogSeq = lines[i].Seq;
+                view.RenderedSeq = lines[i].Seq;
                 appended++;
             }
 
@@ -1536,14 +1618,14 @@ namespace Game.Client
             // the loop — the condition stays true and GetChild(0) keeps returning the same (already
             // marked) object forever. That infinite loop is what locked the phone in 0.28.77; this is
             // the real fix on top of the append rewrite.
-            int excess = _consoleContent.childCount - ConsoleDisplayRows;
+            int excess = view.Content.childCount - ConsoleDisplayRows;
             for (int i = 0; i < excess; i++)
-                Destroy(_consoleContent.GetChild(i).gameObject);
+                Destroy(view.Content.GetChild(i).gameObject);
 
             if (appended > 0)
             {
                 Canvas.ForceUpdateCanvases();
-                _consoleScroll.verticalNormalizedPosition = 0f;   // newest line
+                view.Scroll.verticalNormalizedPosition = 0f;   // newest line
             }
         }
 

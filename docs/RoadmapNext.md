@@ -245,7 +245,9 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
 - 🆕 **The playtest-17 UI queue** (2026-08-03) — the whole C-list in
   [testing/Playtest-Archive.md#playtest-17](testing/Playtest-Archive.md#playtest-17): bag/vendor/keeper filters, gatekeeper tabs, NPC quest
   scoping, the merged compare+details window, a [Speak] button on NPCs, timed-item countdowns with
-  colour, auto-on for buff potions/scrolls, a **[Combat] chat tab in its own window**, title colours and
+  colour, auto-on for buff potions/scrolls, ~~a **[Combat] chat tab in its own window**~~ (`D5`,
+  **built 0.56.0** — damage/loot/exp on their own `ChatChannel.Combat`, a window of its own,
+  excluded from All), title colours and
   fonts, admin/moderator titles. Individually small, collectively the difference between a systems demo
   and a game — and the text-box focus bug (`B6`) is a prerequisite for two of them.
 - ~~Chat tabs~~ — **built 0.44.0**, and with them the colours and tags: the phone's Log window is now a
