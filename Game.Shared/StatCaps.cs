@@ -121,7 +121,7 @@ public static class SpeedTable
         (Race.Ork,   BaseClass.Mage)    => 138f,
         (Race.Human, BaseClass.Fighter) => 148f,
         (Race.Human, BaseClass.Mage)    => 130f,
-        // (The God debug race's 200 was deleted 2026-08-07 with the layer — `/speed` replaces it.)
+        // (The God debug race's 200 was deleted 2026-08-07 with the layer — `/spd m <v>` replaces it.)
         _ => 140f
     };
 }

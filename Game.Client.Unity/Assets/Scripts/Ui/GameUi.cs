@@ -207,6 +207,18 @@ namespace Game.Client
             {
                 text += "  ·  net " + Boot.FramesPerSecond.ToString("0.0") + "/s"
                       + "  ·  " + Mathf.RoundToInt(_renderFps) + " fps";
+                // TWO clocks, right after the framerate (owner, 2026-08-07). They answer different
+                // questions and both get asked constantly: the GAME clock is what day/night, spawns
+                // and timed content run on (GameClock.TimeScale = 6, so a game day is 4 real hours),
+                // and the WALL clock is the phone's own time — "how long have I been playing".
+                // Game time is computed from the SHARED GameClock off the server's epoch, which
+                // GameBoot stores at login, so it cannot drift from what the server believes.
+                // ⚠ Plain text only — the TMP atlas is static and every clock/emoji glyph draws as a
+                // hollow box (see the tmp-font-atlas-is-static note).
+                // ⚠ TEMPORARY HOME: these live in the title bar because that is where the framerate
+                // is. When the title bar goes, both move out with it — keep them together.
+                text += "  ·  game " + GameClock.Format(GameClock.HourOfDay(DateTime.UtcNow))
+                      + "  ·  " + DateTime.Now.ToString("HH:mm:ss");
                 if (Boot.Entities != null) text += "  ·  entities " + Boot.Entities.Count;
                 // A connected socket that has gone quiet looks identical to a healthy one unless we
                 // say so out loud. This is the line that made the empty-world bug visible.

@@ -1263,6 +1263,19 @@ namespace Game.Client
                 _selfId = result.EntityId;
                 _lastCharacterId = characterId;
                 Role = result.Role;
+
+                // The server has always SENT its clock epoch on login and the client has always
+                // thrown it away. Keeping it lets the status bar show in-game time off the SHARED
+                // GameClock formula rather than a second copy of it — one epoch, one TimeScale, no
+                // way for the two sides to disagree about what time it is.
+                // ⚠ Normalise the Kind: over the wire this can come back Unspecified, and
+                // `DateTime.UtcNow - Unspecified` would silently be out by the timezone offset.
+                if (result.ServerEpochUtc != default)
+                    GameClock.Epoch = result.ServerEpochUtc.Kind == DateTimeKind.Utc
+                        ? result.ServerEpochUtc
+                        : result.ServerEpochUtc.Kind == DateTimeKind.Local
+                            ? result.ServerEpochUtc.ToUniversalTime()
+                            : DateTime.SpecifyKind(result.ServerEpochUtc, DateTimeKind.Utc);
                 Main(() =>
                 {
                     if (Entities != null) Entities.SetSelf(_selfId);   // re-tints anything already spawned

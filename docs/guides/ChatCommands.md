@@ -79,10 +79,13 @@ answers `Moderators can't use /<command>.` **No god mode, no teleporting, no ite
 | `/god` | Toggle **god mode** — you take no damage. Shows a permanent on-screen indicator, not just one chat line. | `/god` |
 | `/tp <name>` | **Teleport yourself** to an online player (lands a few metres off, cancels your move order). | `/tp Aricel` |
 | `/tpme <name>` | The reverse — **summon** an online player to you. They are told who did it. | `/tpme Aricel` |
-| `/speed-cast <value>` | Force your **cast speed** stat. | `/speed-cast 1500` |
-| `/speed-attack <value>` | Force your **attack speed** stat. `/speed-atack` also works (the misspelling is deliberate — it was in the original list). | `/speed-attack 1200` |
-| `/speed-move <value>` | Force your **move speed**. | `/speed-move 250` |
-| `/speed-reset` | Drop all three overrides back to your real stats. | `/speed-reset` |
+| `/spd <m\|a\|c> <value>` | Force one speed stat outright — **m** = move, **a** = attack, **c** = cast. Uncapped on purpose: it replaces the computed stat, ignoring formula, gear, buffs and the ceiling, so you can see what a silly number does. Runtime only, never saved. | `/spd m 250` · `/spd c 1500` |
+| `/spd` | With **no argument**, drop all three overrides back to your real stats. | `/spd` |
+
+> ⚠ **Renamed 2026-08-07.** This was four commands — `/speed-cast`, `/speed-attack` (and `/speed-atack`),
+> `/speed-move`, `/speed-reset` — and **none of them work any more.** One verb, a one-letter channel, and
+> the bare command is the reset. Together with `/enchant <value>` this is the whole debug rig now: the
+> God-tier gear it replaced was deleted in 0.53.0 (*"nothing that can't be acquired in game"*).
 | `/bag <name>` | Open an **online player's inventory** — read-only-ish, with a remove button per row. | `/bag Aricel` |
 | `/give <name>` | Open **your own** bag as a picker to hand something to that online player. Ignores tradability on purpose: staff can hand over anything, quest items included. | `/give Aricel` |
 | `/enchant <value>` | Open **your own** bag as a picker and set the chosen weapon/armor/jewel to that exact enchant. Unrestricted on purpose — no grade band, no scroll, no success roll and no +16 ceiling, so it reaches states the scroll ladder cannot. `/enchant 999999` on an F weapon works. | `/enchant 16` |

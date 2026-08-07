@@ -372,10 +372,11 @@ public class Entity
     /// <summary>God mode: takes no damage (admin only).</summary>
     public bool GodMode { get; set; }
 
-    // ----- Admin speed overrides (/speed-cast, /speed-atack, /speed-move, /speed-reset) ---------
+    // ----- Admin speed overrides (`/spd m|a|c <value>`) ----------------------------------------
     // Testing aids: when set, they REPLACE the computed stat outright — no caps, no buffs, no gear —
     // so an admin can dial in an exact number and watch what it does. Runtime only (never persisted);
-    // /speed-reset clears them and the normal formulas resume.
+    // a bare `/spd` clears all three and the normal formulas resume.
+    // (Renamed 2026-08-07 from the four `/speed-*` commands — one verb, one letter, bare = reset.)
 
     /// <summary>Raw cast-speed stat override (333 = 1.0x). null = use the real formula.</summary>
     public float? AdminCastSpeed { get; set; }
@@ -386,7 +387,7 @@ public class Entity
     /// <summary>Move-speed override in world units/sec. null = use the real formula.</summary>
     public float? AdminMoveSpeed { get; set; }
 
-    /// <summary>True if any admin speed override is in force (shown in the /speed readout).</summary>
+    /// <summary>True if any admin speed override is in force (shown in the /spd readout).</summary>
     public bool HasSpeedOverride =>
         AdminCastSpeed is not null || AdminAttackSpeed is not null || AdminMoveSpeed is not null;
 
@@ -850,7 +851,7 @@ public class Entity
         {
             if (IsRooted || IsStunned) return 0f;   // held in place by Root or Stun
 
-            if (AdminMoveSpeed is float adminSpeed) return adminSpeed;   // /speed-move: uncapped
+            if (AdminMoveSpeed is float adminSpeed) return adminSpeed;   // /spd m: uncapped
 
             if (Kind == EntityKind.Mob)
             {
@@ -908,7 +909,7 @@ public class Entity
     {
         get
         {
-            // /speed-cast: an exact stat, bypassing formula and cap alike.
+            // /spd c: an exact stat, bypassing formula and cap alike.
             if (AdminCastSpeed is float adminCast)
                 return StatCalculator.SpeedBaseline / Math.Max(1f, adminCast);
 
@@ -943,7 +944,7 @@ public class Entity
     {
         get
         {
-            // /speed-atack: an exact stat, bypassing formula and cap alike.
+            // /spd a: an exact stat, bypassing formula and cap alike.
             if (AdminAttackSpeed is float adminAtk)
                 return StatCalculator.SpeedBaseline / Math.Max(1f, adminAtk);
 
@@ -2017,7 +2018,7 @@ public class Entity
     /// Sent while an entity is already in view; the static fields ride the full spawn DTO.</summary>
     public EntityLean ToLean() =>
         // EffectiveSpeed, NOT the raw base Speed: the client PREDICTS self-movement at this value, and
-        // the server MOVES at EffectiveSpeed (walk state, slows, stun/sit = 0, the /speed-move admin
+        // the server MOVES at EffectiveSpeed (walk state, slows, stun/sit = 0, the /spd m admin
         // override). Sending raw Speed made the client predict ~150 while the server moved at 1 (or at
         // half while walking, or at all while stunned) — which is exactly the "set speed to 1 and it
         // rubber-bands" report. Now the two run the same number.

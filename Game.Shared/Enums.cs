@@ -9,7 +9,8 @@ public enum Race
     //  *"I want them deleted. Nothing that can't be acquired in game. If I need cosmic stats I can
     //  /enchant 9999999 and do /speed."* The whole layer went with it: the God learn table, the two
     //  God classes (98/99), ItemRarity.God, god_judgment, god_robes, hp_boost, greater_heal.
-    //  ⚠ `/enchant <value>` and `/speed` are the replacement debug rig and are load-bearing now.)
+    //  ⚠ `/enchant <value>` and `/spd <m|a|c> <v>` (his "/speed", renamed the same day) are the
+    //  replacement debug rig and are load-bearing now.)
 }
 
 public enum BaseClass

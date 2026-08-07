@@ -218,7 +218,7 @@ namespace Game.Client
 
                 // (The "Legendary" row handed out the two GOD-tier debug pieces. Both items and
                 //  ItemRarity.God were deleted 2026-08-07 — playtest-19 `0b`, *"nothing that can't
-                //  be acquired in game"*. The replacement rig is `/enchant <value>` + `/speed`, plus
+                //  be acquired in game"*. The replacement rig is `/enchant <value>` + `/spd`, plus
                 //  the ordinary tiered gear the Weapons/Armor/Jewels pages above already give.)
                 return;
             }

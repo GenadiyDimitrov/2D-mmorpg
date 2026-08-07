@@ -1192,11 +1192,18 @@ must not appear** in Skills → Learn, or on the bar. Then take a **ranged** dis
 ⚠ The skill DEFINITION still exists on purpose — you should not find it anywhere in the UI, but it is
 not deleted from the catalog.
 
-**54c. M7 — Evasion Mastery stops at rung 1 for a bow discipline.** A **melee** rogue discipline
-(Phantom / Venomweaver / Nullblade) keeps the ladder: Evasion Mastery **Lv2 at 40**, Lv3 at 76. A
-**ranged** one stays at **Lv1 (the 10% floor) forever** — *"the archer should not have evasion mastery
-after 40 .. the 10% are ok"*. ⚠ Worth checking the downgrade path too: hit 40 as a rogue with no
-discipline (you get Lv2), then pick a bow discipline — it must drop back to **Lv1**.
+**54c. M7 — Evasion Mastery follows the CLASS CHANGE, not the level.** His refinement, 2026-08-07:
+- **Lv1 at 20** — every rogue, on the 2nd class change.
+- **Lv2 at 40 only on taking a MELEE discipline** (Phantom / Venomweaver / Nullblade). ⚠ A rogue who
+  is level 40, 50 or 90 but has **not chosen a discipline yet stays at Lv1** — that is the change; it
+  used to arrive on the level alone.
+- A **ranged** discipline (Sharpshooter / Trapper / Hunter) stays at **Lv1 forever** — *"the archer
+  should not have evasion mastery after 40 .. the 10% are ok"*.
+- **Lv3 is granted to NOBODY.** Its milestone is the **4th class change, which does not exist yet**;
+  76 is only a level. ⚠ Check a level-76+ rogue does NOT have it.
+- ⚠ Check the downgrade path: reach 40 with a melee discipline (Lv2), then look at a bow character —
+  and note that `precision` / `anti_magic` still DO grant a Lv3 at 76, because he ruled on the
+  rogue's ladder only. Say the word if they should follow it.
 
 **54d. The deletions — nothing broken by their absence.** Open Skills, Skills → Learn and the skill
 bar on a rogue, warrior, tank and mage: no **Reflexes**, no **Bow Mastery** (`archer_weapon_mastery`),
@@ -1212,6 +1219,19 @@ still do what they did, because they are the ONLY way to get cosmic stats now.
 **54f. The Treasure Chest still opens.** Its 1-in-a-million jackpot was the God sword and is now the
 **S-grade Mythic 1H blade**. You will not roll it — the point of the check is that the box catalog
 still loads and the chest still pays out its staples.
+
+**54g. `/spd` replaces the four `/speed-*` commands.** `/spd m 250`, `/spd a 1200`, `/spd c 1500` each
+force one stat (uncapped, runtime only, and the admin-state indicator must light up). **`/spd` with no
+argument resets all three.** A bad form — `/spd x 5`, `/spd m`, `/spd m 0` — must print the usage line,
+not silently do nothing. ⚠ The old `/speed-cast|attack|atack|move|reset` are **gone**; typing one must
+fall through to the unknown-command path.
+
+**54h. Two clocks in the title bar.** After the framerate, the status line reads
+`… · 60 fps · game 14:32 · 09:47:12` — **game time** (the day/night clock, `TimeScale = 6`, so it moves
+6× faster than the wall clock and a full day takes 4 real hours) and the **phone's own time**, ticking
+every second. ⚠ Watch the game clock for a minute: it must advance ~6 minutes, and it must **survive a
+relog** without jumping (it is computed from the server's epoch, sent at login). ⚠ Both are in the
+title bar only because the framerate is; they move out when the title bar does.
 
 ---
 ## 51. 🔴 PLAYTEST-19 QUEUE (2026-08-06) — the 0.48.0 pass

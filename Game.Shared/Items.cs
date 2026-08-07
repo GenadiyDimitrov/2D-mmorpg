@@ -1293,7 +1293,7 @@ public static class ItemCatalog
         //  (The two GOD-TIER debug one-offs — God's Judgment / God's Robes — were DELETED
         //   2026-08-07 along with ItemRarity.God, playtest-19 `0b`. The owner's rule: *"nothing
         //   that can't be acquired in game"*. Their job — cosmic stats for testing — is done by
-        //   `/enchant <value>` plus `/speed`, so those two commands are load-bearing now.)
+        //   `/enchant <value>` plus `/spd <m|a|c> <v>`, so those two commands are load-bearing now.)
         // ===================================================================
         //  CLASS-CHANGE PROOFS — two non-tradeable quest items per playable second
         //  class, awarded by its quest chain and consumed at the class change.

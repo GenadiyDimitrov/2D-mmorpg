@@ -7,10 +7,16 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.53.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.53.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 0.53.1 — 2026-08-07 — the rogue's evade ladder, `/spd`, and two clocks
+
+See the three sections at the end of 0.53.0 below — they shipped in the same day's second pass:
+the rogue's Evasion Mastery keyed to the class change rather than the level, the `/speed-*` family
+collapsed into `/spd`, and game time + wall clock added to the status line.
 
 ## 0.53.0 — 2026-08-07 — the deletions, Heavy Draw off the rogue, and the ±20 lockout removed
 
@@ -43,6 +49,25 @@ time — for no exp, no drop, and a swift death.
 missing measurement: the two orderings are arithmetically the same until `G` exceeds the floor window,
 which needs |Δ| ≈ 19+. The tool builds same-level fights. This one has to be tested the way he found
 it — a dummy 20+ levels away.
+
+### The rogue's evade ladder follows the CLASS CHANGE, not the level
+
+A same-day refinement of M7, and the more interesting half of it. `FloorPassiveFor` used a flat
+`level >= 76 ? 3 : level >= 40 ? 2 : level >= 20 ? 1 : 0` for all four identity floors. For the rogue
+that is now:
+
+- **Lv1 at 20** — every rogue, on the 2nd class change.
+- **Lv2 at 40 only on taking a MELEE discipline** (Phantom / Venomweaver / Nullblade). A rogue sitting
+  at level 40+ with no discipline chosen keeps Lv1; a RANGED discipline keeps Lv1 forever.
+- **Lv3 to nobody.** Its milestone is the **4th class change, which does not exist yet** — 76 is only
+  a level, and granting a rung there hands out a 3rd-class-sized bonus for no class change at all. The
+  rung stays authored; when the 4th tier lands, gate it on *holding* that class, not on `level >= 76`.
+
+The owner's framing is the useful part: the floor rungs are **class-change rewards**, and using a
+level number as a proxy only worked while every milestone happened to have a class change on it.
+⚠ `precision` and `anti_magic` still use the plain 20/40/76 curve and so still grant a Lv3 at 76 — the
+same argument applies to them, but he ruled on the rogue's, and that call is owed back to him before
+the warrior and tank quietly lose a floor.
 
 ### `M7` — Heavy Draw is off the rogue at every level
 
@@ -78,6 +103,21 @@ Kept, on his rulings: `evade_mastery`, `precision`, `anti_magic` (the live class
 `BalancePassive()` all remain in the file; restoring the hook is uncommenting two blocks. Because the
 defs left the catalog, `AutoLearnCoreSkills` strips the ids from characters that already carry one —
 they were all-zero `PassiveEffect`s, so no number moves.
+
+### Two smaller things
+
+**`/spd` replaces the four `/speed-*` commands.** `/spd <m|a|c> <value>` forces one speed stat
+(uncapped, runtime only, exactly as before) and a **bare `/spd` resets all three** — one verb, a
+one-letter channel, and no fifth command name for the reset. The old `/speed-cast`, `/speed-attack`,
+`/speed-atack`, `/speed-move` and `/speed-reset` are **gone**, not aliased. Purely server-side: the
+client already forwards any unrecognised `/word rest` to `AdminCommand`.
+
+**Two clocks in the title bar**, right after the framerate: in-game time and the phone's wall clock.
+The server has always sent `LoginResult.ServerEpochUtc` and the client has always discarded it —
+storing it lets the status line read game time off the **shared** `GameClock` rather than a second
+copy of the formula, so the two sides cannot disagree about what time it is. (The `DateTimeKind` is
+normalised on arrival; `Unspecified` over the wire would have put the clock out by the timezone
+offset.) ⚠ They are in the title bar because the framerate is; when that bar goes, both move with it.
 
 ## 0.52.0 — 2026-08-07 — the four playtest-19 defects + the whole friction tier
 

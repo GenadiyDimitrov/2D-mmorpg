@@ -302,12 +302,25 @@ public static partial class SkillCatalog
     /// tier (milestones 20/40/76) — as (skill id, skill LEVEL), or null. Granted in
     /// AutoLearnCoreSkills. The floor VALUES live in the SkillDef Levels, not in code.
     ///
-    /// ⚠ <paramref name="discipline"/> matters for the ROGUE only (playtest-19 M7, owner:
-    /// *"rogue leave only the evasion mastery to the melee disciplines after 40 .. the archer
-    /// should not have evasion mastery after 40 .. the 10% are ok"*). Since the archer→rogue
-    /// merge one 2nd class covers both weapons, so the bow/dagger split IS the discipline: a
-    /// RANGED rogue discipline is capped at tier 1 (the 10% floor it already had at 20) and
-    /// never sees tier 2 @40 or tier 3 @76; a melee rogue discipline keeps the full ladder.</summary>
+    /// ⚠ The ROGUE's ladder is NOT the plain 20/40/76 the others use (owner, 2026-08-07, refining
+    /// playtest-19 M7). It is tied to the CLASS CHANGE, not to the level number:
+    ///
+    ///   Lv1 @20 — every rogue, on the 2nd class change. The 10% floor.
+    ///   Lv2 @40 — <b>only on taking a MELEE discipline</b> (Phantom / Venomweaver / Nullblade).
+    ///             A rogue who is level 40+ but has not chosen yet stays at Lv1, and a RANGED
+    ///             discipline (Sharpshooter / Trapper / Hunter) stays at Lv1 forever —
+    ///             *"the archer should not have evasion mastery after 40 .. the 10% are ok"*.
+    ///   Lv3     — 🔴 NOBODY, and that is deliberate: its milestone is the <b>4th class change,
+    ///             WHICH DOES NOT EXIST YET</b>. 76 is only a level; granting a rung there would
+    ///             hand out a 3rd-class-sized bonus for no class change at all. When the 4th tier
+    ///             lands, gate Lv3 on holding it — not on <c>level >= 76</c>.
+    ///
+    /// Since the archer→rogue merge, ONE 2nd class covers bow and dagger, so the discipline is the
+    /// only thing that can tell a bow rogue from a dagger one — hence the parameter.
+    ///
+    /// ⚠ Warrior/Tank still use the plain 20/40/76 curve, so `precision` and `anti_magic` DO still
+    /// grant a Lv3 at 76. The owner ruled on the rogue's; the same "76 is not a class change"
+    /// argument applies to those two and is <b>owed back to him</b> before changing them.</summary>
     public static (string Id, int Level)? FloorPassiveFor(Archetype? archetype, int level,
         Discipline? discipline = null)
     {
@@ -315,8 +328,10 @@ public static partial class SkillCatalog
         if (tier == 0) return null;
         return archetype switch
         {
+            // The rogue's own ladder — see the block above. Lv2 needs a MELEE discipline in hand;
+            // everything else about being level 40, 76 or 90 is irrelevant to it.
             Archetype.Rogue   => (EvadeMastery,
-                discipline is { } d && Disciplines.IsRanged(d) ? 1 : tier),
+                level >= 40 && discipline is { } d && !Disciplines.IsRanged(d) ? 2 : 1),
             Archetype.Warrior => (Precision, tier),
             Archetype.Tank    => (AntiMagic, tier),
             // Archetype.Archer gets nothing: `reflexes` is deleted and no 2nd class carries
@@ -605,6 +620,10 @@ public static partial class SkillCatalog
         // is already closed at ~18 by authoring — 14 from armor mastery + 4 from the buff. More
         // than that and "everything else will make him untouchable". The floor is an anti-ACCURACY
         // tool only: it exists for fighting the classes that stack accuracy, not as a stat lean.
+        // ⚠ Lv3 is authored but UNREACHABLE on purpose (owner, 2026-08-07): its milestone is the 4th
+        // class change, which does not exist yet, and 76 is only a level. `FloorPassiveFor` grants
+        // Lv1 at the 2nd class and Lv2 only to a MELEE discipline. Leave the rung here — when the 4th
+        // tier lands it is already written, and gating it is one condition in FloorPassiveFor.
         LeveledPassive(EvadeMastery, "Evasion Mastery", BaseClass.Fighter,
             "Passive. Dodge floor 10/20/30%.",
             new PassiveEffect(EvadeFloor: 0.10f),

@@ -62,7 +62,8 @@ Server-side behaviour is SmokeTest-verified; everything visual needs your eyes.
       ordinary ones. (Ban stays per-account; jail/kick/chatban are per-character.)
 - [ ] `/role <name> <player|moderator|admin>` — admin-only grant/revoke, works on offline characters.
 - [ ] `/chatban <name> [min]` — blocks chat only (same block as jail's).
-- [ ] `/speed-cast <v>` · `/speed-atack <v>` · `/speed-move <v>` (admin, uncapped) · `/speed-reset`.
+- [ ] `/spd <m|a|c> <v>` (admin, uncapped) · bare `/spd` resets all three. ⚠ Renamed 2026-08-07 from
+      `/speed-cast|atack|move|reset`, which no longer exist.
 - [ ] `/bag <name>` — admin views a player's inventory and can remove items.
 - [ ] `/give <name>` — admin picks from own inventory, transfers with quantity + enchant; ignores tradability.
 - [ ] `/givegold <name> <amount>` — negative subtracts; `k`/`m`/`b`/`t` suffixes and `1_002_003_004_005`

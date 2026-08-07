@@ -1181,9 +1181,11 @@ public class GameLoopService : BackgroundService
         // held RUNE items that grant the same buff, see ReconcileRuneBuffs / SkillCatalog.WarRuneBuff.)
 
         // Class identity "sure" floor passive for the current class tier (level = tier).
-        // ⚠ The DISCIPLINE is passed because a rogue's ladder now depends on it (playtest-19 M7):
-        // a ranged branch stays at rung 1 forever. Plain assignment, so picking a bow discipline
-        // at 40 DOWNGRADES an already-granted rung 2 back to 1 — that is intended.
+        // ⚠ The DISCIPLINE is passed because the rogue's ladder is tied to the CLASS CHANGE, not to
+        // the level (owner, 2026-08-07): Lv1 at the 2nd class, Lv2 only on taking a MELEE discipline,
+        // and Lv3 never — its milestone is the 4th class change, which does not exist yet. Plain
+        // assignment, so picking a bow discipline at 40 DOWNGRADES a granted Lv2 back to Lv1, and a
+        // rogue who hits 76 no longer silently gains a Lv3. Both are intended. See FloorPassiveFor.
         if (SkillCatalog.FloorPassiveFor(player.Archetype, player.Level, player.Discipline) is { } floor)
             player.LearnedSkills[floor.Id] = floor.Level;
 
@@ -4671,7 +4673,7 @@ public class GameLoopService : BackgroundService
                       "/chatban <name> [min], /unchatban <name>, /jailed, /where <name>"
                     : "Admin: /jail, /unjail, /kick, /ban, /unban, /chatban, /unchatban, /jailed, " +
                       "/role <name> <player|moderator|admin>, /tp <name>, /where <name>, /god, " +
-                      "/speed-cast|atack|move <v>, /speed-reset, /bag <name>, /give <name>, " +
+                      "/spd <m|a|c> <v> (bare /spd resets), /bag <name>, /give <name>, " +
                       "/givegold <name> <amount>, /droprate [group|gear|global|item <id>] [mult]");
                 break;
 
@@ -4888,34 +4890,47 @@ public class GameLoopService : BackgroundService
                 else SendSystemToEntity(admin, $"{arg} is not online.");
                 break;
 
-            case "speed-cast":
-            case "speed-atack":
-            case "speed-attack":
-            case "speed-move":
+            // `/spd <m|a|c> <value>` forces one speed stat; `/spd` on its own resets all three.
+            // RENAMED 2026-08-07 from the four-command `/speed-move|atack|cast|reset` family (owner) —
+            // one verb, a one-letter channel, and the reset is the bare command instead of a fifth
+            // name to remember. ⚠ This is half the debug rig that replaced the deleted God gear (the
+            // other half is `/enchant <value>`), so it is load-bearing: don't let it regress.
+            case "spd":
             {
-                if (!float.TryParse(arg, NumberStyles.Float, CultureInfo.InvariantCulture, out float v) || v <= 0)
+                if (arg.Length == 0)
                 {
-                    SendSystemToEntity(admin, $"Usage: /{command} <value>  (e.g. /{command} 1234)");
+                    admin.AdminCastSpeed = null;
+                    admin.AdminAttackSpeed = null;
+                    admin.AdminMoveSpeed = null;
+                    SendSystemToEntity(admin, "Speeds back to normal.");
+                    SendStats(admin);
+                    SendAdminState(admin);
                     break;
                 }
+
+                int ssp = arg.IndexOf(' ');
+                string which = (ssp < 0 ? arg : arg[..ssp]).ToLowerInvariant();
+                string valueText = ssp < 0 ? "" : arg[(ssp + 1)..].Trim();
+                bool known = which is "m" or "a" or "c";
+                if (!known ||
+                    !float.TryParse(valueText, NumberStyles.Float, CultureInfo.InvariantCulture, out float v) || v <= 0)
+                {
+                    SendSystemToEntity(admin,
+                        "Usage: /spd <m|a|c> <value>  (m = move, a = attack, c = cast; e.g. /spd m 250). "
+                      + "/spd on its own resets all three.");
+                    break;
+                }
+
                 // Deliberately UNCAPPED (owner) — the point is to see what a silly number does.
-                if (command == "speed-move") admin.AdminMoveSpeed = v;
-                else if (command == "speed-cast") admin.AdminCastSpeed = v;
-                else admin.AdminAttackSpeed = v;
-                SendSystemToEntity(admin, $"{command[6..]} speed forced to {v:0.##}.");
+                string label;
+                if (which == "m") { admin.AdminMoveSpeed = v;   label = "move"; }
+                else if (which == "c") { admin.AdminCastSpeed = v; label = "cast"; }
+                else { admin.AdminAttackSpeed = v; label = "attack"; }
+                SendSystemToEntity(admin, $"{label} speed forced to {v:0.##}.");
                 SendStats(admin);
                 SendAdminState(admin);
                 break;
             }
-
-            case "speed-reset":
-                admin.AdminCastSpeed = null;
-                admin.AdminAttackSpeed = null;
-                admin.AdminMoveSpeed = null;
-                SendSystemToEntity(admin, "Speeds back to normal.");
-                SendStats(admin);
-                SendAdminState(admin);
-                break;
 
             case "givegold":
             {
