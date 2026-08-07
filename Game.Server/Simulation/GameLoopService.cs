@@ -1155,14 +1155,29 @@ public class GameLoopService : BackgroundService
             && !IsSuperseded(player, SkillCatalog.MagicBolt))
             player.LearnedSkills[SkillCatalog.MagicBolt] = 1;
 
-        // Base MAGE gets Robe Mastery free at level 1; fighters learn their Armor Mastery
-        // from the class table at level 5 (no level-1 armor mastery).
-        if (player.BaseClass == BaseClass.Mage && !player.HasSkill(SkillCatalog.MasteryRobe))
-            player.LearnedSkills[SkillCatalog.MasteryRobe] = 1;
-
-        // Weapon Proficiency — every mage learns it at level 1 (untrained-weapon cast-speed penalty).
+        // Spellcaster Mastery — every mage has it from level 1 and NOTHING replaces it: it is the one
+        // place the "robe or nothing / wand or nothing" rule lives, so a 2nd-class mastery can be pure
+        // bonus (2026-08-07 restructure). It supersedes the retired Weapon Proficiency, which is
+        // stripped here so an existing character stops carrying a dead skill in their window.
         if (player.BaseClass == BaseClass.Mage)
-            player.LearnedSkills.TryAdd(SkillCatalog.WeaponProficiency, 1);
+        {
+            player.LearnedSkills.TryAdd(SkillCatalog.SpellcasterMastery, 1);
+            player.LearnedSkills.Remove(SkillCatalog.WeaponProficiency);
+        }
+
+        // ⚠ Robe Armor Mastery is NOT auto-granted any more — it is a bonus-only skill bought off the
+        // class table at 7/14. It is also the one a nuker/cleric mastery Replaces, and re-granting it
+        // was the bug that erased their +max MP, +P.Def and the whole mpWhenRestored bonus: the pick
+        // in RecomputeDerived went by dictionary order and the re-added level-1 skill won.
+        //
+        // MIGRATION: it dropped from 3 levels to 2 in the same pass. A saved character sitting on
+        // level 3 would ask for a rung that no longer exists — ArmorMasteryAt is bounds-safe and
+        // returns null, so the mage would quietly lose his robe P.Def entirely rather than crash.
+        // Clamp instead. Harmless once no character carries the old level.
+        if (player.SkillLevelOf(SkillCatalog.MasteryRobe) is int robeLv && robeLv > 0
+            && SkillCatalog.Get(SkillCatalog.MasteryRobe)?.ArmorMasteryLevels is { Length: > 0 } robeRungs
+            && robeLv > robeRungs.Length)
+            player.LearnedSkills[SkillCatalog.MasteryRobe] = robeRungs.Length;
 
         // Divine Focus — the Healer 2nd class learns Lv1 at 20; the Warchanter discipline upgrades to Lv2 at
         // 40 (softer heal penalty in fighter gear). Never downgrade a Warchanter back to Lv1.
@@ -4044,6 +4059,12 @@ public class GameLoopService : BackgroundService
         var e = def.Effect;
         if ((e & (SkillEffect.PhysicalDamage | SkillEffect.MagicDamage)) != 0) return AutoSkillKind.Attack;
         if ((e & SkillEffect.Heal) != 0) return AutoSkillKind.Heal;
+        // An MP-restore rides in the HEAL group — it is support and it must resolve before the
+        // attacks that spend the mana. It used to fall through to Other, which is the "never
+        // auto-cast" bucket, so Restore Spirit could not be autopiloted at ANY heal threshold
+        // (owner, 2026-08-07: the nuker sat out of mana on an unlimited offline farm). Its WANT
+        // test is MP, not HP — see AutoManaWanted / AutoManaTarget.
+        if ((e & SkillEffect.RestoreMp) != 0) return AutoSkillKind.Heal;
         if (def.Category == SkillCategory.Buff || (e & SkillEffect.AnyBuff) != 0) return AutoSkillKind.Buff;
         if ((e & SkillEffect.ContestCc) != 0 || def.DebuffSchool != DebuffSchool.None) return AutoSkillKind.Debuff;
         return AutoSkillKind.Other;
@@ -4109,7 +4130,7 @@ public class GameLoopService : BackgroundService
     /// <see cref="Entity.AutoCyclic"/> decides where the scan starts. Returns true if one was queued.</summary>
     private bool TryAutoSkill(Entity p, Entity? target)
     {
-        if (AutoHealWanted(p) && TryAutoChain(p, target, AutoSkillKind.Heal)) return true;
+        if ((AutoHealWanted(p) || AutoManaWanted(p)) && TryAutoChain(p, target, AutoSkillKind.Heal)) return true;
         if (TryAutoChain(p, target, AutoSkillKind.Buff)) return true;
         if (TryAutoChain(p, target, AutoSkillKind.Debuff)) return true;
         return TryAutoChain(p, target, AutoSkillKind.Attack);
@@ -4120,6 +4141,24 @@ public class GameLoopService : BackgroundService
     /// ("if the healer sets his threshold to 100% he always heals on cooldown"). 0 = never.</summary>
     private static bool AutoHealWanted(Entity p) =>
         p.AutoHealPct > 0 && (p.AutoHealPct >= 100 || (p.MaxHp > 0 && p.Hp * 100f / p.MaxHp < p.AutoHealPct));
+
+    /// <summary>Below this much MP the autopilot starts topping up with an MP-restore skill. It is a
+    /// CONSTANT, not a knob: the heal slider means HP and giving the player a second slider for a
+    /// skill only one class owns is UI for nothing. 60% is chosen so a nuker refills between packs
+    /// rather than at zero — Restore Spirit pays for well under one nuke, so waiting for empty means
+    /// standing still for a dozen casts (measured: BalanceMatrix E3).</summary>
+    private const int AutoManaThresholdPct = 60;
+
+    /// <summary>And above this much HP, because the restore is PAID IN HP. Without it the autopilot
+    /// would happily burn a mage down to the 1-HP floor to buy mana it then dies holding.</summary>
+    private const int AutoManaMinHpPct = 60;
+
+    /// <summary>Is the MP-restore half of the heal chain armed? Independent of the heal slider — the
+    /// mage the owner farmed with was at FULL HP and empty MP, which is exactly the state the HP
+    /// threshold cannot see.</summary>
+    private static bool AutoManaWanted(Entity p) =>
+        p.MaxMp > 0 && p.Mp * 100f / p.MaxMp < AutoManaThresholdPct
+        && p.MaxHp > 0 && p.Hp * 100f / p.MaxHp >= AutoManaMinHpPct;
 
     /// <summary>One priority group's turn: walk the auto-skill list from the group's cursor (cyclic) or
     /// from the top (first-available) and queue the first entry that can fire.
@@ -4147,6 +4186,9 @@ public class GameLoopService : BackgroundService
             int lvl = Math.Max(1, p.SkillLevelOf(def.Id));
             int mpNeed = (int)((def.InitialMpAt(lvl) + def.FinishMpAt(lvl)) * MpCostFactor(p, def));
             if (p.Mp < mpNeed) continue;
+            // A skill PAID IN HP (Restore Spirit) must keep a margin — the cost floors at 1 HP, so
+            // an unguarded autopilot would trade a mage's whole bar away one cast at a time.
+            if (def.HpCost > 0 && p.Hp <= def.HpCost * 2) continue;
 
             Guid tgtId;
             switch (kind)
@@ -4155,6 +4197,13 @@ public class GameLoopService : BackgroundService
                     if (AutoBuffUpToDate(p, def, lvl)) continue;
                     tgtId = p.Id; break;
                 case AutoSkillKind.Heal:
+                    // The heal GROUP holds both channels; each entry is tested on its own resource.
+                    if (IsManaRestore(def))
+                    {
+                        if (AutoManaTarget(p, def) is not Entity mt) continue;
+                        tgtId = mt.Id; break;
+                    }
+                    if (!AutoHealWanted(p)) continue;
                     if (AutoHealTarget(p, def) is not Entity ht) continue;
                     tgtId = ht.Id; break;
                 case AutoSkillKind.Debuff:
@@ -4176,6 +4225,43 @@ public class GameLoopService : BackgroundService
             return true;
         }
         return false;
+    }
+
+    /// <summary>An MP-restore rather than an HP heal — a skill that restores mana and does NOT also
+    /// heal (a hybrid is treated as a heal, because HP is the resource you die without).</summary>
+    private static bool IsManaRestore(SkillDef def) =>
+        (def.Effect & SkillEffect.RestoreMp) != 0 && (def.Effect & SkillEffect.Heal) == 0;
+
+    /// <summary>Who this MP-restore should land on: the emptiest party member (or yourself) under the
+    /// mana threshold and in range. Mirrors AutoHealTarget on the OTHER bar, and honours the same
+    /// "not on a mana-restorer" rule the manual cast enforces, so the autopilot never queues a cast
+    /// the command handler is going to refuse.</summary>
+    private Entity? AutoManaTarget(Entity p, SkillDef def)
+    {
+        Entity? best = null;
+        float bestPct = float.MaxValue;
+        bool Wants(Entity e) => e.MaxMp > 0 && e.Mp * 100f / e.MaxMp < AutoManaThresholdPct
+                             && !e.HasSkill(SkillCatalog.RestoreMana);
+
+        // The HP price is the caster's, so the caster's own HP gates every target, not just self.
+        if (p.MaxHp <= 0 || p.Hp * 100f / p.MaxHp < AutoManaMinHpPct) return null;
+
+        if (Wants(p)) { best = p; bestPct = p.Mp * 100f / p.MaxMp; }
+
+        if (IsAllyTargetable(def) && def.TargetMode != TargetMode.SelfOnly
+            && _world.Parties.TryGetValue(p.Id, out var party))
+        {
+            float range = SkillMath.EffectiveRange(def, p.Archetype, p.BasicAttackRange, p.Level);
+            foreach (var id in party.Members)
+            {
+                if (id == p.Id) continue;
+                if (!_world.Entities.TryGetValue(id, out var m) || m.Dead || !Wants(m)) continue;
+                if (DistanceSq(p, m) > range * range) continue;
+                float pct = m.Mp * 100f / m.MaxMp;
+                if (pct < bestPct) { bestPct = pct; best = m; }
+            }
+        }
+        return best;
     }
 
     /// <summary>Who this heal should land on: the most injured party member under the threshold and in

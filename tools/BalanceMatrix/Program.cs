@@ -52,6 +52,330 @@ foreach (int L in Enumerable.Range(1, 90).Where(l => l == 1 || l % 10 == 0))
                       $"{Pct(Miss(geared, mob)),6} {Pct(Miss(mob, geared)),9}");
 }
 
+// -----------------------------------------------------------------------------------------------
+// E1-E3: the playtest-20 "unlimited farm" board. Three characters ran an uncapped offline farm and
+// only the ROGUE never died: the mob simply cannot hit him. E1 measures that, E2 measures the
+// champion's complaint (defence "on par with the robe", evasion below the mob's accuracy) and E3
+// measures the nuker's MP economy (why he sits out of mana). All three are the same question asked
+// of three sheets, so they share one roster.
+// -----------------------------------------------------------------------------------------------
+
+/// <summary>The six sheets the offline farm actually puts in a field, at one level. Built once and
+/// reused by E1/E2 so a row can never mean a different character in two tables.</summary>
+static (string Name, Entity E)[] FarmRoster(int level)
+{
+    int t = GearTier(level);
+    var rogueBow = BuildRogue(level);
+    rogueBow.Inventory.RemoveAll(i => ItemCatalog.Get(i.DefId)?.Slot == EquipSlot.Weapon);
+    Equip(rogueBow, $"bow_t{t}");
+    rogueBow.RecomputeDerived();
+
+    // The champion is measured TWO-HANDED. BuildPlayer dresses every fighter in 1H + shield, which
+    // for a warrior measures a character who never pays — and never collects — his Two-Hand Weapon
+    // Mastery: the +30/50% P.Atk, the crit-damage flat, and the DefencePct −0.10 / Evasion −3 the
+    // owner is asking about are ALL gated on WeaponType.TwoHanded. A 1H champion is not a champion.
+    var champ = BuildPlayer(Race.Human, BaseClass.Fighter, level, warrior: true);
+    champ.Inventory.RemoveAll(i => ItemCatalog.Get(i.DefId) is { } d
+        && (d.Slot == EquipSlot.Weapon || d.Slot == EquipSlot.Shield));
+    Equip(champ, $"sword2h_t{t}");
+    champ.RecomputeDerived();
+
+    return new (string, Entity)[]
+    {
+        ("mob (same level)",   BuildMobEntity(level)),
+        ("tank  1H+shield",    BuildPlayer(Race.Human, BaseClass.Fighter, level)),
+        ("champion 2H sword",  champ),
+        ("rogue duals+light",  BuildRogue(level)),
+        ("rogue bow+light",    rogueBow),
+        ("nuker robe",         BuildPlayer(Race.Human, BaseClass.Mage, level)),
+    };
+}
+
+/// <summary>The same roster with the NEWBIE BUFFER's one-hour set on every player (the state the
+/// owner actually farms in). The mob row is left bare — mobs get no buffer.</summary>
+static (string Name, Entity E)[] FarmRosterBuffed(int level)
+{
+    var r = FarmRoster(level);
+    foreach (var (_, e) in r) if (e.Kind == EntityKind.Player) ApplyNpcBuffs(e);
+    return r;
+}
+
+Console.WriteLine();
+Console.WriteLine("=== E1: ACCURACY vs EVASION — the whole board (why only the rogue never dies) ===");
+{
+    Console.WriteLine("  The resolver is one line: miss = 5% + (defender EVASION − attacker ACCURACY) x 1%, clamped");
+    Console.WriteLine("  to [5%, 95%], and only THEN the class floors. So the spread is the entire mechanic, and the");
+    Console.WriteLine("  rogue's EvadeFloor (10/20/30%) never binds while the spread alone already beats it.");
+    Console.Write($"  {"spread",-10}");
+    for (int d = -10; d <= 60; d += 5) Console.Write($"{d,6}");
+    Console.WriteLine();
+    Console.Write($"  {"-> miss",-10}");
+    for (int d = -10; d <= 60; d += 5)
+        Console.Write($"{Pct(Math.Clamp(StatCaps.AvoidBase + d * StatCaps.AvoidStatSlope,
+            StatCaps.AvoidBase, StatCaps.AvoidSoftCeil)),6}");
+    Console.WriteLine();
+    Console.WriteLine();
+
+    Console.WriteLine("  --- A. the sheets: ACC / EVA, bare and with the newbie buffer's 1h set ---");
+    Console.WriteLine($"  {"Lvl",3} {"who",-20} {"acc",5} {"eva",5} | {"acc+B",6} {"eva+B",6} | {"floor",6}");
+    foreach (int L in new[] { 20, 28, 36, 44, 52 })
+    {
+        var bare = FarmRoster(L);
+        var buff = FarmRosterBuffed(L);
+        for (int i = 0; i < bare.Length; i++)
+            Console.WriteLine($"  {L,3} {bare[i].Name,-20} {bare[i].E.Accuracy,5} {(int)bare[i].E.EffectiveEvasion,5} | " +
+                $"{buff[i].E.Accuracy,6} {(int)buff[i].E.EffectiveEvasion,6} | {Pct(bare[i].E.EvadeFloor),6}");
+        Console.WriteLine();
+    }
+
+    Console.WriteLine("  --- B. what a SAME-LEVEL MOB does to each sheet (the offline-farm question) ---");
+    Console.WriteLine("  'mob miss' is how often the mob's swing is dodged. 'player miss' is the other direction.");
+    Console.WriteLine($"  {"Lvl",3} {"who",-20} {"spread",7} {"mob miss",9} | {"spread'",8} {"plr miss",9}");
+    foreach (int L in new[] { 20, 28, 36, 44, 52 })
+    {
+        var r = FarmRosterBuffed(L);
+        var mob = r[0].E;
+        foreach (var (name, e) in r.Skip(1))
+            Console.WriteLine($"  {L,3} {name,-20} {(int)e.EffectiveEvasion - mob.Accuracy,7} {Pct(Miss(mob, e)),9} | " +
+                $"{(int)mob.EffectiveEvasion - e.Accuracy,8} {Pct(Miss(e, mob)),9}");
+        Console.WriteLine();
+    }
+
+    Console.WriteLine("  --- C. the full cross matrix at level 36 (BUFFED), attacker row -> defender column ---");
+    {
+        var r = FarmRosterBuffed(36);
+        Console.Write($"  {"attacker \\ defender",-20}");
+        foreach (var (n, _) in r) Console.Write($"{n.Split(' ')[0],9}");
+        Console.WriteLine();
+        foreach (var (an, a) in r)
+        {
+            Console.Write($"  {an,-20}");
+            foreach (var (_, d) in r) Console.Write($"{Pct(Miss(a, d)),9}");
+            Console.WriteLine();
+        }
+    }
+    Console.WriteLine();
+
+    Console.WriteLine("  --- D. THE TUNING KNOB: take N evasion points off the melee rogue, what does the mob hit? ---");
+    Console.WriteLine("  The rogue's evasion above the base DEX+level comes from ONE place worth cutting: the light");
+    Console.WriteLine("  armor mastery (Skills.Masteries.cs RogueArmor lightEva = 7/11/13/13/13 at 20/24/28/32/36),");
+    Console.WriteLine("  plus the base fighter light mastery (+3) and the Agility buff (+4, buffer/potion/scroll).");
+    Console.WriteLine($"  {"Lvl",3} {"eva",5} {"base",5} {"extra",6} |" +
+        $" {"cut 0",7} {"cut 3",7} {"cut 6",7} {"cut 9",7} {"cut 12",7} {"cut 15",7}");
+    foreach (int L in new[] { 20, 28, 36, 44, 52 })
+    {
+        var r = FarmRosterBuffed(L);
+        var mob = r[0].E; var rogue = r[3].E;
+        int eva = (int)rogue.EffectiveEvasion;
+        int bas = StatCalculator.Evasion((int)rogue.EffectiveDex, L);
+        Console.Write($"  {L,3} {eva,5} {bas,5} {eva - bas,6} |");
+        foreach (int cut in new[] { 0, 3, 6, 9, 12, 15 })
+            Console.Write($" {Pct(StatCalculator.ResolveAvoidChance(mob.Accuracy, eva - cut,
+                rogue.EvadeFloor, 0f, L, L)),6}");
+        Console.WriteLine();
+    }
+    Console.WriteLine("  (a cut of N is worth exactly N% until the 5% floor or the EvadeFloor catches it — so the");
+    Console.WriteLine("   floor is what the last few points are worth, and cutting past it buys nothing.)");
+    Console.WriteLine();
+
+    Console.WriteLine("  --- E. THE ROLLED ATTRIBUTE — fixed 2026-08-07, this is the before/after ---");
+    Console.WriteLine("  A DUAL weapon used to roll AttributeType.EvasionPercent (RampWide, cap 30), applied as");
+    Console.WriteLine("  `Evasion += Evasion * pct/100` — a MULTIPLIER on the whole stat, base DEX+level included.");
+    Console.WriteLine("  It alone tripled the rogue's evasion budget and grew with level forever. It is now");
+    Console.WriteLine("  AttributeType.Evasion: FLAT, RampEva, cap 5 — the owner's \"5 roll is a flat 5% increase\".");
+    Console.WriteLine("  (⚠ The bow's mirror, AccuracyPercent RampWide cap 30, is UNCHANGED — his ruling was about");
+    Console.WriteLine("   evasion. Same shape, same defect, inverted; it needs the same call.)");
+    Console.WriteLine($"  {"Lvl",3} {"mob acc",8} | {"no roll",8} {"miss",6} |" +
+        $" {"NEW max +5",11} {"spread",7} {"miss",6} | {"OLD max 30%",12} {"spread",7} {"miss",6}");
+    foreach (int L in new[] { 20, 28, 36, 44, 52 })
+    {
+        var mob = BuildMobEntity(L);
+        var bare = BuildRogue(L); ApplyNpcBuffs(bare);
+
+        var now = BuildRogue(L);
+        foreach (var it in now.Inventory.Where(i => ItemCatalog.Get(i.DefId)?.Slot == EquipSlot.Weapon))
+            it.Attributes.Add(new ItemAttribute(AttributeType.Evasion, 5));
+        ApplyNpcBuffs(now);
+
+        var old = BuildRogue(L);
+        foreach (var it in old.Inventory.Where(i => ItemCatalog.Get(i.DefId)?.Slot == EquipSlot.Weapon))
+            it.Attributes.Add(new ItemAttribute(AttributeType.EvasionPercent, 30));
+        ApplyNpcBuffs(old);
+
+        int eN = (int)now.EffectiveEvasion, eO = (int)old.EffectiveEvasion;
+        Console.WriteLine($"  {L,3} {mob.Accuracy,8} | {(int)bare.EffectiveEvasion,8} {Pct(Miss(mob, bare)),6} |" +
+            $" {eN,11} {eN - mob.Accuracy,7} {Pct(Miss(mob, now)),6} |" +
+            $" {eO,12} {eO - mob.Accuracy,7} {Pct(Miss(mob, old)),6}");
+    }
+    Console.WriteLine("  The OLD column is the character he measured in game (level ~35, mob acc 65, dagger eva 95).");
+    Console.WriteLine("  The NEW roll costs a flat 5 points = a flat 5% at every level, and the rogue's total dodge");
+    Console.WriteLine("  vs a same-level mob lands where he said he wants it.");
+}
+Console.WriteLine();
+
+Console.WriteLine("=== E2: DEFENCE & SURVIVAL — the champion's complaint, measured ===");
+{
+    Console.WriteLine("  'P.Def on par with the robe' and 'dies when the buffs run out'. Both are one table: what a");
+    Console.WriteLine("  same-level mob does per second to each sheet, and how many seconds the sheet lasts.");
+    Console.WriteLine($"  {"Lvl",3} {"who",-20} {"P.Def",6} {"MaxHP",6} {"mob dps",8} {"survives",9} |" +
+        $" {"P.Def+B",8} {"HP+B",6} {"dps+B",7} {"survives+B",11}");
+    foreach (int L in new[] { 20, 28, 36, 44, 52 })
+    {
+        var bare = FarmRoster(L);
+        var buff = FarmRosterBuffed(L);
+        var mobBare = bare[0].E;
+        var mobBuff = buff[0].E;
+        for (int i = 1; i < bare.Length; i++)
+        {
+            var b = bare[i].E; var f = buff[i].E;
+            float dpsBare = Dps(mobBare, b), dpsBuff = Dps(mobBuff, f);
+            Console.WriteLine($"  {L,3} {bare[i].Name,-20} {(int)b.EffectiveDefence,6} {b.MaxHp,6} {dpsBare,8:F0} " +
+                $"{b.MaxHp / Math.Max(0.01f, dpsBare),8:F0}s | {(int)f.EffectiveDefence,8} {f.MaxHp,6} " +
+                $"{dpsBuff,7:F0} {f.MaxHp / Math.Max(0.01f, dpsBuff),10:F0}s");
+        }
+        Console.WriteLine();
+    }
+    Console.WriteLine("  The champion's 2H Weapon Mastery (Skills.WeaponMasteries.cs) carries DefencePct −0.10 and");
+    Console.WriteLine("  Evasion −3 on EVERY rung — but it is gated to WeaponType.TwoHanded, so the roster above");
+    Console.WriteLine("  (1H + shield, what BuildPlayer dresses him in) does NOT pay it. The 2H row:");
+    Console.WriteLine($"  {"Lvl",3} {"weapon",-20} {"P.Def",6} {"eva",5} {"mob miss",9} {"mob dps",8} {"survives",9}");
+    foreach (int L in new[] { 20, 28, 36, 44, 52 })
+    {
+        int t = GearTier(L);
+        var mob = BuildMobEntity(L);
+        foreach (var (label, weapon) in new[] { ("1H sword + shield", (string?)null), ("2H sword (mastery on)", $"sword2h_t{t}") })
+        {
+            var c = BuildPlayer(Race.Human, BaseClass.Fighter, L, warrior: true);
+            if (weapon is not null)
+            {
+                c.Inventory.RemoveAll(i => ItemCatalog.Get(i.DefId) is { } d
+                    && (d.Slot == EquipSlot.Weapon || d.Slot == EquipSlot.Shield));
+                Equip(c, weapon);
+            }
+            ApplyNpcBuffs(c);
+            float dps = Dps(mob, c);
+            Console.WriteLine($"  {L,3} {label,-20} {(int)c.EffectiveDefence,6} {(int)c.EffectiveEvasion,5} " +
+                $"{Pct(Miss(mob, c)),9} {dps,8:F0} {c.MaxHp / Math.Max(0.01f, dps),8:F0}s");
+        }
+        Console.WriteLine();
+    }
+}
+Console.WriteLine();
+
+Console.WriteLine("=== E3: THE NUKER'S MP ECONOMY — why he sits out of mana ===");
+{
+    var rs = SkillCatalog.Get(SkillCatalog.RestoreSpirit)!;
+    Console.WriteLine($"  Restore Spirit today: {rs.HpCost} HP -> {rs.PowerAt(1)} MP flat, +RestoreMpBonus from the");
+    Console.WriteLine("  nuker ROBE mastery (25/30/35/40 at mastery lv 1-4 = character 20/25/30/35). Cast "
+        + $"{rs.CastTicks / 10f:F1}s, reuse {rs.CooldownTicks / 10f:F1}s.");
+    Console.WriteLine($"  {"Lvl",3} {"MaxMP",6} {"MaxHP",6} {"mpReg/s",8} {"nuke MP",8} {"nukes",6} |" +
+        $" {"restore",8} {"HP cost",8} {"HP/MP",7} {"MP/s",6} {"nukes/cast",11}");
+    foreach (int L in new[] { 25, 30, 36, 44, 52 })
+    {
+        var m = BuildPlayer(Race.Human, BaseClass.Mage, L);
+        ApplyNpcBuffs(m);
+        var (nuke, nl) = TopSkill(m, SkillEffect.MagicDamage);
+        int nukeMp = nuke is null ? 0 : nuke.InitialMpAt(nl) + nuke.FinishMpAt(nl);
+        int restored = rs.PowerAt(1) + m.RestoreMpBonus;
+        float cycle = (rs.CastTicks + rs.CooldownTicks) / 10f;
+        float mpPct = m.Buffs.Where(b => b.Has(SkillEffect.BuffMpRegen))
+                            .Sum(b => b.Percent(SkillEffect.BuffMpRegen));
+        float mpReg = (StatCalculator.MpRegenPerSecond(m.EffectiveSpt, m.Level) + m.MpRegenBonus)
+                      * m.MpRegenMult * (1f + mpPct);
+        Console.WriteLine($"  {L,3} {m.MaxMp,6} {m.MaxHp,6} {mpReg,8:F1} {nukeMp,8} " +
+            $"{(nukeMp > 0 ? m.MaxMp / (float)nukeMp : 0),6:F1} | {restored,8} {rs.HpCost,8} " +
+            $"{(restored > 0 ? rs.HpCost / (float)restored : 0),7:F1} {restored / cycle,6:F1} " +
+            $"{(nukeMp > 0 ? restored / (float)nukeMp : 0),11:F2}");
+    }
+    Console.WriteLine("  'nukes' = a full mana bar in top-nuke casts. 'nukes/cast' = how many nukes ONE Restore");
+    Console.WriteLine("  Spirit pays for. Below ~1.0 the skill cannot sustain a rotation at any HP price.");
+    Console.WriteLine();
+
+    Console.WriteLine("  --- E3b: the MASTERY STACK (2026-08-07 restructure) — every weight, both mage classes ---");
+    Console.WriteLine("  Armor masteries STACK now, composing percentages multiplicatively. Spellcaster Mastery owns");
+    Console.WriteLine("  the wrong-weight penalty (light/heavy/none = cast x0.5, atkSpd x0.5); the class mastery is");
+    Console.WriteLine("  pure bonus. The CLERIC's light row is authored to CANCEL that penalty — cast x1.90 and");
+    Console.WriteLine("  atkSpd x2.00 — so the numbers to check are the COMPOSED ones: light cast should read ~x0.95");
+    Console.WriteLine("  and light attack speed ~x1.00 for the cleric, and x0.50 for the nuker.");
+    Console.WriteLine($"  {"who",-22} {"weight",7} {"cast x",7} {"atkSpd x",9} {"mpReg x",8} {"P.Def",6} {"MaxMP",6} {"restore",8}");
+    // 18 = Human Sorcerer (Nuker), 17 = Human Cleric (Healer). BuildPlayer hardwires the Sorcerer for
+    // every mage, so the cleric has to be re-classed and re-taught from HIS table — otherwise both
+    // rows measure the nuker and the cancellation this table exists to check is never exercised.
+    foreach (var (who, arch) in new[] { ("nuker (Sorcerer)", 18), ("cleric (Cleric)", 17) })
+    {
+        foreach (var (label, body) in new[] { ("robe", "robe_t40"), ("light", "light_t40"), ("heavy", "heavy_t40"), ("none", (string?)null) })
+        {
+            var e = BuildPlayer(Race.Human, BaseClass.Mage, 40);
+            // Drop the Sorcerer kit before teaching the target class's, so a leftover Mage Armor
+            // Mastery cannot stack on top of the cleric's own.
+            foreach (var cs in ClassSkills.Cumulative(Race.Human, BaseClass.Mage, Archetype.Nuker, null))
+                e.LearnedSkills.Remove(cs.SkillId);
+            e.SecondClass = arch;
+            foreach (var cs in ClassSkills.Cumulative(Race.Human, BaseClass.Mage, e.Archetype, e.Discipline))
+                if (cs.LearnLevel <= 40) e.LearnedSkills[cs.SkillId] = Math.Max(e.SkillLevelOf(cs.SkillId), cs.SkillLevel);
+            foreach (var id in e.LearnedSkills.Keys.ToList())
+                if (SkillCatalog.Get(id)?.Replaces is { } rep)
+                    foreach (var r in rep) e.LearnedSkills.Remove(r);
+            e.Inventory.RemoveAll(i => ItemCatalog.Get(i.DefId)?.Slot == EquipSlot.Armor);
+            if (body is not null) Equip(e, body);
+            e.RecomputeDerived();
+            Console.WriteLine($"  {who,-22} {label,7} {1f / e.CastSpeedMultiplier,7:F2} " +
+                $"{1f / e.AttackSpeedMultiplier,9:F2} {e.MpRegenMult,8:F2} {(int)e.EffectiveDefence,6} " +
+                $"{e.MaxMp,6} {e.RestoreMpBonus,8}");
+        }
+        Console.WriteLine();
+    }
+    Console.WriteLine("  (cast/atkSpd are shown as SPEED multipliers — 1/the internal time multiplier — so >1 is");
+    Console.WriteLine("   faster. A robe row must show x1.00 cast: the robe is the caster's weight, not a bonus.)");
+}
+Console.WriteLine();
+
+Console.WriteLine("=== E4: THE FARM LOOP — cost per KILL, which is what an offline farm actually spends ===");
+{
+    Console.WriteLine("  'survives Ns' (E2) is the wrong clock for a farm: nobody stands still being hit. What decides");
+    Console.WriteLine("  whether an unattended character lives is how much HP and MP ONE kill costs, against what");
+    Console.WriteLine("  regenerates in the same seconds. A sheet whose net HP per kill is positive never dies.");
+    Console.WriteLine($"  {"Lvl",3} {"who",-20} {"TTK",6} {"HP/kill",8} {"regen",7} {"net HP",7} {"kills",6} |" +
+        $" {"MP/kill",8} {"MPregen",8} {"net MP",7} {"kills",6}");
+    foreach (int L in new[] { 20, 28, 36, 44, 52 })
+    {
+        var r = FarmRosterBuffed(L);
+        var mob = r[0].E;
+        foreach (var (name, e) in r.Skip(1))
+        {
+            float phys = PhysDps(e, mob), magic = MagicDps(e, mob);
+            bool caster = magic > phys;
+            float dps = Math.Max(0.01f, Math.Max(phys, magic));
+            float ttk = mob.MaxHp / dps;
+
+            var (skill, sl) = TopSkill(e, caster ? SkillEffect.MagicDamage : SkillEffect.PhysicalDamage);
+            float mpPerKill = 0f;
+            if (skill is not null)
+            {
+                float cycle = Math.Max(0.1f, SkillCycleSeconds(e, skill));
+                mpPerKill = ttk / cycle * (skill.InitialMpAt(sl) + skill.FinishMpAt(sl));
+            }
+
+            float hpLost = Dps(mob, e) * ttk;
+            float hpRegen = (StatCalculator.HpRegenPerSecond(e.Con, e.Level) + e.HpRegenBonus) * e.HpRegenMult * ttk;
+            float mpPct = e.Buffs.Where(b => b.Has(SkillEffect.BuffMpRegen)).Sum(b => b.Percent(SkillEffect.BuffMpRegen));
+            float mpRegen = (StatCalculator.MpRegenPerSecond(e.EffectiveSpt, e.Level) + e.MpRegenBonus)
+                            * e.MpRegenMult * (1f + mpPct) * ttk;
+            float netHp = hpRegen - hpLost, netMp = mpRegen - mpPerKill;
+
+            Console.WriteLine($"  {L,3} {name,-20} {ttk,5:F1}s {hpLost,8:F0} {hpRegen,7:F0} {netHp,7:F0} " +
+                $"{(netHp >= 0 ? "  never" : (e.MaxHp / -netHp).ToString("F0")),6} | " +
+                $"{mpPerKill,8:F0} {mpRegen,8:F0} {netMp,7:F0} " +
+                $"{(netMp >= 0 ? "  never" : (e.MaxMp / -netMp).ToString("F0")),6}");
+        }
+        Console.WriteLine();
+    }
+    Console.WriteLine("  'kills' = kills until the bar is empty ('never' = it refills faster than it drains). The HP");
+    Console.WriteLine("  column is the death question and the MP column is the STANDING-STILL question — a sheet that");
+    Console.WriteLine("  runs dry stops killing, takes hits for free, and only then starts dying.");
+}
+Console.WriteLine();
+
 Console.WriteLine();
 Console.WriteLine("=== MAGE (Human Mage / Nuker, best gear for tier) ===");
 Console.WriteLine($"{"Lvl",4} {"Gear",5} {"M.Atk",7} {"MaxHP",7} {"M.Def",7} | {"nuke",5} {"dmg",7} {"mobHP",7} {"casts",6} | {"vs TANK",8}");
@@ -1771,8 +2095,13 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
             Effect = shot.Effect, Magnitudes = shot.Magnitudes,
             TicksRemaining = int.MaxValue, Name = shot.Name, Key = shot.BuffKey,
         });
+    // Mirror AutoLearnCoreSkills: SPELLCASTER MASTERY is the auto-granted one (2026-08-07 restructure)
+    // and nothing replaces it — it carries the wrong-weight / wrong-weapon rule for every mage. Robe
+    // Armor Mastery is bought off the class table at 7/14 and is already in LearnedSkills above; it
+    // must NOT be re-added here, which is exactly the bug that made the level-1 base mastery beat the
+    // nuker's own and zeroed his mpWhenRestored.
     if (cls == BaseClass.Mage)
-        e.LearnedSkills[SkillCatalog.MasteryRobe] = 1;
+        e.LearnedSkills[SkillCatalog.SpellcasterMastery] = 1;
 
     // QUALITY suffix. The tiered tables are authored as the EPIC piece, and the six-quality ladder
     // (0.29.1) derives everything else from it — so the bare id IS the Epic, and "_mythic" is the new

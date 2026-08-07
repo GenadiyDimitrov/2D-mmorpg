@@ -13,7 +13,8 @@ public static partial class SkillCatalog
     // ---- Weapon Proficiency: all mages auto-learn this at level 1. While NOT wielding a mage-trained
     //      weapon (sword or blunt — incl. wand/staff), casting speed is halved. Handled in Entity by
     //      weapon type, not a StatMod. ----
-    public const string WeaponProficiency = "weapon_proficiency";
+    public const string WeaponProficiency = "weapon_proficiency";   // RETIRED — see SpellcasterMastery
+    public const string SpellcasterMastery = "spellcaster_mastery";  // armor weight + weapon type, one rule
     // ---- Divine Focus: clerics (Healer 2nd class) auto-learn Lv1 at 20; the Warchanter discipline
     //      upgrades to Lv2 at 40. While NO magic weapon is equipped, healing OUTPUT is scaled: Lv1 ×0.5
     //      (pure healers must wield a magic weapon), Lv2 ×0.75 (buffers stay relevant in fighter gear). ----
@@ -342,27 +343,33 @@ public static partial class SkillCatalog
         };
     }
 
-    // Base MAGE robe mastery per level (char 1/7/14, mage CSV). ROBE: +20% MP regen and P.Def
-    // (no cast change). Any non-robe body — light/heavy AND no armor at all — penalises: attack
-    // speed ×0.8 and cast speed ×0.5. Penalty literals are inlined (not shared fields) to avoid
-    // static-init ordering across partials. The nuker/healer masteries REPLACE this from level 20.
+    // ⚠ RESTRUCTURED 2026-08-07 (owner). The old Robe Mastery did TWO jobs at once — it granted the
+    // robe's P.Def AND carried the wrong-weight casting penalty — which is why every 2nd-class mage
+    // mastery had to re-declare that same penalty, and why replacing it silently deleted the penalty
+    // along with the bonus. Split in two:
+    //   • ROBE ARMOR MASTERY (this table, id `mastery_robe`) = the BONUS only. No penalties at all.
+    //   • SPELLCASTER MASTERY (below) = the PENALTY only, and it is never replaced, so it applies to
+    //     every mage at every level. His words: *"Robe mastery is only to cut wrong armor weights."*
+    // A robed mage now collects BOTH (armor masteries stack — see Entity.RecomputeDerived).
     private static readonly ArmorMasteryProfile[] MageRobeLevels = new[]
     {
+        new ArmorMasteryProfile(Robe: new StatMods(PDef: 7)),
+        new ArmorMasteryProfile(Robe: new StatMods(PDef: 9)),
+    };
+
+    /// <summary>SPELLCASTER MASTERY, the armor half: a ROBE is the caster's weight (+20% MP regen);
+    /// light, heavy and NOTHING all halve casting and attack speed. Auto-granted at level 1 and
+    /// NEVER replaced — it is the one place the wrong-weight penalty lives, so a 2nd-class mastery
+    /// can be pure bonus. The cleric's light-armor row is authored to cancel this exact ×0.50.
+    /// (The WEAPON half is not data: it drives MagicWeaponPenaltyMult / CastSpeedPenaltyMult /
+    /// MagicFailResist, which have no StatMods field — it stays in Entity.RecomputeDerived.)</summary>
+    private static readonly ArmorMasteryProfile[] SpellcasterLevels = new[]
+    {
         new ArmorMasteryProfile(
-            Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 0),
-            Light: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
-            Heavy: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
-            None:  new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f)),
-        new ArmorMasteryProfile(
-            Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 7),
-            Light: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
-            Heavy: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
-            None:  new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f)),
-        new ArmorMasteryProfile(
-            Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 9),
-            Light: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
-            Heavy: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
-            None:  new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f)),
+            Robe:  new StatMods(MpRegenPct: 0.2f),
+            Light: new StatMods(AtkSpeedPct: -0.5f, CastSpeedPct: -0.5f),
+            Heavy: new StatMods(AtkSpeedPct: -0.5f, CastSpeedPct: -0.5f),
+            None:  new StatMods(AtkSpeedPct: -0.5f, CastSpeedPct: -0.5f)),
     };
 
     private static SkillDef[] CommonSkills() => new SkillDef[]
@@ -537,40 +544,52 @@ public static partial class SkillCatalog
         // (HP Boost DELETED 2026-08-07 with the God layer, playtest-19 `0b` — its only learn table
         //  was the God one. The Max-HP buff family the players actually use is `Body` / FamMaxHp.)
 
-        // ---- Robe Mastery — base MAGE armor mastery (PASSIVE, per-level StatMods data).
-        //      Levels 1/2/3 at char 1/7/14; the nuker/healer 2nd-class masteries REPLACE it.
-        //      Robe = caster lean; light/heavy hinder casting. Applied in RecomputeDerived
-        //      by the worn body weight. Numbers are placeholders (carried over from the old
-        //      formula) pending the real mage table. ----
-        new(MasteryRobe, "Robe Mastery", BaseClass.Mage, SkillEffect.None,
+        // ---- Robe Armor Mastery — the BONUS half of the old Robe Mastery: robe P.Def, nothing else.
+        //      2 levels at char 7 / 14 (owner's table: +7, +9). No penalties of any kind live here any
+        //      more, which is what lets the 2nd-class masteries REPLACE it without deleting the
+        //      wrong-weight rule along with it — that now belongs to Spellcaster Mastery, which is
+        //      never replaced. Id kept (`mastery_robe`): same skill, narrowed job. ----
+        new(MasteryRobe, "Robe Armor Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
-            Description: "Passive. While wearing a ROBE: faster casting, more MP and MP regen, "
-                       + "and defence (rising with level). Light/heavy armor slows your casting.",
+            Description: "Passive. While wearing a ROBE: extra physical defence (rising with level).",
             Levels: new[]
             {
-                new SkillLevel(SpCost: 0),
-                new SkillLevel(SpCost: 480,  Description: "Robe Mastery Lv.2 (+P.Def)."),
-                new SkillLevel(SpCost: 2200, Description: "Robe Mastery Lv.3 (+P.Def)."),
+                new SkillLevel(SpCost: 480,  Description: "Robe Armor Mastery Lv.1 (+7 P.Def in a robe)."),
+                new SkillLevel(SpCost: 2200, Description: "Robe Armor Mastery Lv.2 (+9 P.Def in a robe)."),
             },
             ArmorMasteryLevels: MageRobeLevels),
 
-        // ---- Weapon Proficiency — all mages auto-learn at level 1. Two SEPARATE gates, because they ask
-        //      different questions (both in Entity.RecomputeDerived):
-        //        • CAST SPEED keys on the trained TYPE — sword/blunt, which includes wands and staves.
-        //          Bow / dual / bare hands => x0.5 cast speed and magic collapses to 5%.
-        //        • M.ATK keys on the weapon actually being a MAGIC weapon (IsMagicWeapon), which the type
-        //          cannot answer: a wand and a mace are both Blunt. A caster swinging a mace keeps
-        //          NonMagicWeaponMagicMult of their magic.
-        //      That second gate replaced MAtkFactor on the item — same effect, but stated in a passive the
-        //      player can read instead of an invisible per-item multiplier. ----
+        // ---- Spellcaster Mastery — REPLACES Weapon Proficiency (2026-08-07 restructure). One skill
+        //      now states the whole "what a caster may wear and hold" rule, and it is auto-granted at
+        //      level 1 and never superseded, so no 2nd-class mastery has to restate it.
+        //
+        //      ARMOR (data, SpellcasterLevels): robe = +20% MP regen · light/heavy/none = cast ×0.5,
+        //      attack speed ×0.5.
+        //      WEAPON (Entity.RecomputeDerived — these three have no StatMods field):
+        //        • wand/staff  → cast ×1, M.Atk ×1                      (the trained weapon)
+        //        • sword/blunt → cast ×1, M.Atk ×NonMagicWeaponMagicMult (a mace casts, but weakly)
+        //        • bow/dagger/bare → cast ×0.5, M.Atk ×0.5, magic accuracy ×0.5
+        //      ⚠ The wrong-weapon magic penalty was a COLLAPSE to ×0.05 before this; the owner set it
+        //      to ×0.5. "magic accuracy" maps to MagicFailResist, the only spell-landing stat we have.
+        new(SpellcasterMastery, "Spellcaster Mastery", BaseClass.Mage, SkillEffect.None,
+            MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
+            Category: SkillCategory.Passive,
+            Replaces: new[] { WeaponProficiency },
+            Description: "Passive. A ROBE is a caster's armor: +20% MP regeneration. Light or heavy "
+                       + "armor — or none — halves your casting and attack speed. A wand or staff is "
+                       + "your trained weapon; a sword or mace still casts at full speed but for much "
+                       + "less magic attack; a bow, dual blades or bare hands halve your casting speed, "
+                       + "magic attack and magic accuracy.",
+            ArmorMasteryLevels: SpellcasterLevels),
+
+        // ---- Weapon Proficiency — RETIRED 2026-08-07, replaced by Spellcaster Mastery above. The def
+        //      stays so an existing character's learned id still resolves (and is then superseded); the
+        //      class tables and AutoLearnCoreSkills grant Spellcaster Mastery instead. Don't re-home it. ----
         new(WeaponProficiency, "Weapon Proficiency", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
-            Description: "Passive. A wand or staff is your trained weapon: full casting speed and full "
-                       + "magic attack. A sword or mace still lets you cast at full speed, but your magic "
-                       + "attack drops sharply — it is not a caster's weapon. With a bow, dual blades, or "
-                       + "bare hands your casting speed is halved and your magic attack collapses."),
+            Description: "Passive. Superseded by Spellcaster Mastery."),
 
         // ---- Divine Focus — clerics (Healer 2nd class) auto-learn Lv1 at 20; the Warchanter discipline
         //      upgrades to Lv2 at 40. EFFECT: with NO magic weapon equipped, healing OUTPUT is scaled down

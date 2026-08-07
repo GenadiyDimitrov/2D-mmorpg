@@ -28,11 +28,13 @@ public static partial class SkillCatalog
     /// ANYTHING ELSE — bow, dual, or an EMPTY HAND — gets NO bonus and halves cast speed
     /// (CastSpeedPct -1 ⇒ ×2 cast time). Stacked with the robe mastery's non-robe cast ×0.5,
     /// a bare-handed unarmoured mage casts at ×0.25. "Not using your optimal gear = penalty."</summary>
-    internal static WeaponMasteryProfile CasterMastery(PassiveEffect bonus)
-    {
-        var penalty = new PassiveEffect(CastSpeedPct: -1.0f);
-        return new(Sword: bonus, Blunt: bonus, Dual: penalty, Bow: penalty, Other: penalty);
-    }
+    /// ⚠ 2026-08-07: the wrong-weapon PENALTY is gone from here (it was `CastSpeedPct: -1.0f` on
+    /// dual/bow/other). Spellcaster Mastery owns every weapon penalty now — owner: *"no other weapon
+    /// penalties, they come from spellcaster"* — and stacking a −100% cast on top of Spellcaster's
+    /// ×0.5 was double-charging the same rule. A caster mastery is now purely "sword or blunt earns
+    /// this bonus; anything else earns nothing", which is how every OTHER weapon mastery already reads.
+    internal static WeaponMasteryProfile CasterMastery(PassiveEffect bonus) =>
+        new(Sword: bonus, Blunt: bonus);
 
     /// <summary>A two-handed sword/blunt profile carrying the same PassiveEffect for both
     /// (the warrior 2H mastery doesn't distinguish sword vs blunt), gated to TwoHand.</summary>

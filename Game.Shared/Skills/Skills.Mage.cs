@@ -217,13 +217,17 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 93, MpCost: 84, InitialMpCost: 17, SpCost: 340000, Description: "Magic damage, power 93."),   // 80
             }),
 
-        // Restore Spirit — trades 130 HP for 20 MP (self; boosted by "mpWhenRestored"). Costs
-        // HP, not MP. Single level @25.
+        // Restore Spirit — trades 65 HP for 20 MP (self; boosted by the nuker robe mastery's
+        // "mpWhenRestored", +25/30/35/40). Costs HP, not MP. Single level @25.
+        // ⚠ The HP price was 130 until 2026-08-07 (owner: "lower its hp consumption to half"). It was
+        // priced against a bonus that was never landing — the base Robe Mastery was silently winning
+        // the armor-mastery pick, so the skill really did return a flat 20 MP for 130 HP. With the
+        // pick fixed it returns 45-60, and at 65 HP the trade is ~1.2 HP per MP instead of 6.5.
         new(RestoreSpirit, "Restore Spirit", BaseClass.Mage, SkillEffect.RestoreMp,
             MpCost: 0, CastTicks: 40, CooldownTicks: 50, Range: 0, Power: 20,
             Category: SkillCategory.Heal, TargetMode: TargetMode.SelfOnly, SpCost: 6400,
-            HpCost: 130,
-            Description: "Burns 130 HP to restore 20 MP to yourself (more with robe mastery)."),
+            HpCost: 65,
+            Description: "Burns 65 HP to restore 20 MP to yourself (much more with robe mastery)."),
 
         // Weapon Mastery — flat attack passive (asymmetric: more M.Atk than P.Atk).
         // Also carries the caster bow penalty (half cast speed while wielding a bow).

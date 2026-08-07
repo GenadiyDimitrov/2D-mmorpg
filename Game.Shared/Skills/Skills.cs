@@ -330,10 +330,14 @@ public record SkillDef(
 /// (one entry per skill level). The worn BODY weight selects which StatMods applies in
 /// Entity.RecomputeDerived — pure per-level DATA, no character-level/class formula (the same
 /// pattern future classes reuse for weapon-type-conditional passives).</summary>
+/// <remarks>Every weight defaults to INERT (2026-08-07). Since masteries STACK and the wrong-weight
+/// penalty lives in exactly one skill (Spellcaster Mastery), a class mastery normally states only the
+/// weights it REWARDS — an omitted weight means "this skill has nothing to say about it", not "no
+/// penalty applies". Before, `Light`/`Heavy` were required, which quietly pushed every author into
+/// re-declaring the same penalty on every mastery.</remarks>
 public readonly record struct ArmorMasteryProfile(
-    StatMods Robe, StatMods Light, StatMods Heavy,
-    // No BODY armor equipped. Defaults inert; a caster mastery sets it so wearing NOTHING
-    // is penalised like the wrong weight (can't dodge the robe requirement by going naked).
+    StatMods Robe = default, StatMods Light = default, StatMods Heavy = default,
+    // No BODY armor equipped — the "can't dodge the robe requirement by going naked" slot.
     StatMods None = default);
 
 /// <summary>Per-equipped-WEAPON-TYPE stat profile for a weapon-mastery PASSIVE (one entry

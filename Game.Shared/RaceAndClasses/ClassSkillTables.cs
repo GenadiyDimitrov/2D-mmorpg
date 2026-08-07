@@ -42,13 +42,16 @@ public static partial class ClassSkillTables
                 new ClassSkill(Shot,   15, SkillLevel: 3));
         // (The God base-fighter line was deleted 2026-08-07 with the rest of the God layer.)
 
-        // --- Base Mage --- (1st-class path, levels 1/7/14). Magic Bolt Lv.1 and Robe
-        // Mastery Lv.1 are auto-granted; everything below is learned with SP.
+        // --- Base Mage --- (1st-class path, levels 1/7/14). Magic Bolt Lv.1 and Spellcaster
+        // Mastery are auto-granted; everything below is learned with SP.
+        // ⚠ 2026-08-07: `MasteryRobe` is ROBE ARMOR MASTERY now — a 2-level, bonus-only skill first
+        // learned at 7. It is no longer auto-granted at 1 and no longer carries any penalty; the
+        // wrong-weight/wrong-weapon rule moved to Spellcaster Mastery (auto-granted, never replaced).
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
             ClassSkills.Register(race, BaseClass.Mage, null,
                 new ClassSkill(SelfHeal, 1),                         // Lv1 self heal (power 42)
                 new ClassSkill(MagicBolt, 7, SkillLevel: 2),
-                new ClassSkill(MasteryRobe, 7, SkillLevel: 2),       // +7 P.Def
+                new ClassSkill(MasteryRobe, 7, SkillLevel: 1),       // Robe Armor Mastery +7 P.Def
                 new ClassSkill(SelfHeal, 7, SkillLevel: 2),          // self heal power 67
                 // The base mage's first buffs. These used to be ONE skill (the group "Might") —
                 // it is the Warchanter's now, so the base mage learns the two singles instead
@@ -60,7 +63,7 @@ public static partial class ClassSkillTables
                 new ClassSkill(VampiricBolt, 14),
                 new ClassSkill(MageAntiMagic, 14, SkillLevel: 2),    // +16 M.Def + 5% fizzle
                 new ClassSkill(SelfHeal, 14, SkillLevel: 3),         // self heal power 107
-                new ClassSkill(MasteryRobe, 14, SkillLevel: 3),      // +9 P.Def
+                new ClassSkill(MasteryRobe, 14, SkillLevel: 2),      // Robe Armor Mastery +9 P.Def
                 new ClassSkill(WeaponMastery, 14));                  // +4 M.Atk / +2 P.Atk
         // (The God base-mage line was deleted 2026-08-07 with the rest of the God layer.)
 

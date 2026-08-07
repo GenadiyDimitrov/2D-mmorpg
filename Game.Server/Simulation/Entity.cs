@@ -588,6 +588,7 @@ public class Entity
     public float BowDefCoef { get; set; } = 1f;    // vs bow
     public int RestoreMpBonus { get; set; }      // bonus MP when an MP-restore lands on you (nuker mastery)
     public float MagicFailResist { get; set; }   // reduces YOUR spells' own fail chance
+    public bool UntrainedCasterWeapon { get; set; }  // Spellcaster Mastery: bow/dual/bare → magic accuracy x0.5
     public float MeleeVamp { get; set; }         // basic (melee) attack lifesteal fraction
     public float SpellVamp { get; set; }         // damage-spell lifesteal fraction
     public float MeleeReflect { get; set; }      // fraction of taken MELEE-basic damage returned to the attacker
@@ -1319,6 +1320,7 @@ public class Entity
         BowDefCoef = 1f;
         RestoreMpBonus = 0;
         MagicFailResist = 0f;
+        UntrainedCasterWeapon = false;
         MeleeVamp = 0f;
         SpellVamp = 0f;
         MeleeReflect = 0f;
@@ -1479,7 +1481,7 @@ public class Entity
         // ----- Item attributes (0.45.0: at most one per item, put there by an attribute
         //       scroll — items no longer drop with any. The flat Accuracy/HpRegen/MpRegen
         //       cases only fire for items rolled before the change. -----
-        float hpPct = 0, mpPct = 0, speedPct = 0, castPct = 0, atkSpeedPct = 0, atkPct = 0, evaPct = 0, defPct = 0;
+        float hpPct = 0, mpPct = 0, speedPct = 0, castPct = 0, atkSpeedPct = 0, atkPct = 0, evaPct = 0, evaFlat = 0, defPct = 0;
         float accFlat = 0, hpRegFlat = 0, mpRegFlat = 0, critRatePct = 0, critDmgPct = 0;
         float mAtkPct = 0, magicCritPct = 0;
         float accPct = 0, hpRegPct = 0, mpRegPct = 0, pAtkPct = 0;
@@ -1496,7 +1498,8 @@ public class Entity
                     case AttributeType.CastSpeedPercent: castPct += attr.Value; break;
                     case AttributeType.AttackSpeedPercent: atkSpeedPct += attr.Value; break;
                     case AttributeType.AttackPercent: atkPct += attr.Value; break;
-                    case AttributeType.EvasionPercent: evaPct += attr.Value; break;
+                    case AttributeType.EvasionPercent: evaPct += attr.Value; break;   // LEGACY rolls only
+                    case AttributeType.Evasion: evaFlat += attr.Value; break;         // dual/dagger, cap 5
                     case AttributeType.DefencePercent: defPct += attr.Value; break;
                     case AttributeType.Accuracy: accFlat += attr.Value; break;
                     case AttributeType.HpRegen: hpRegFlat += attr.Value; break;
@@ -1522,6 +1525,9 @@ public class Entity
         // ever should.) The old mid-chain clamp here is GONE: it capped the rate before the
         // Insight buff had multiplied it, which is precisely how a x2 buff bought +3 points.
         MagicCritRateFlat += magicCritPct / 100f;
+        // Flat FIRST, then the legacy percent — same order as accuracy below. A flat point is a flat
+        // 1% miss at every level, which is the whole reason the dual roll became flat.
+        Evasion += (int)evaFlat;
         Evasion += (int)(Evasion * evaPct / 100f);
         Defence += (int)(Defence * defPct / 100f);
         if (Kind == EntityKind.Player)
@@ -1700,51 +1706,73 @@ public class Entity
         // penalty). See docs/design/StatMods.md. ---
         if (Kind == EntityKind.Player)
         {
-            StatMods sm = default;
+            // ⚠ Armor masteries STACK (owner, 2026-08-07). This loop used to take the FIRST match
+            // and break, so the winner was decided by dictionary ORDER — a nuker whose base Robe
+            // Mastery had been removed and re-granted by AutoLearnCoreSkills sat in the freed
+            // (earlier) slot, and the level-1 base mastery silently beat Mage Armor Mastery: no
+            // +max MP, no P.Def and no mpWhenRestored at all (measured: BalanceMatrix E3 read
+            // RestoreMpBonus 0 at every level). It is now a SUM, which is also what the mage
+            // restructure needs: Spellcaster Mastery owns the wrong-weight PENALTY and the class
+            // mastery owns the BONUS, and a robed nuker must collect both.
+            //
+            // Percentages compose MULTIPLICATIVELY, one profile at a time — never summed. That is
+            // load-bearing for the cleric's light-armor row, which is authored to CANCEL the
+            // Spellcaster penalty (cast ×1.90 against ×0.50 = ×0.95): summed they would give
+            // 1 + 0.90 − 0.50 = ×1.40, which is not the number he authored.
+            // `Replaces` still wins: a superseded base mastery contributes nothing.
+            var supersededMasteries = new HashSet<string>();
+            foreach (var (skillId, _) in LearnedSkills)
+                if (SkillCatalog.Get(skillId)?.Replaces is { } rep)
+                    foreach (var r in rep) supersededMasteries.Add(r);
+
             bool dataMastery = false;
             foreach (var (skillId, skillLevel) in LearnedSkills)
             {
+                if (supersededMasteries.Contains(skillId)) continue;
                 if (SkillCatalog.Get(skillId)?.ArmorMasteryAt(skillLevel) is not ArmorMasteryProfile prof)
                     continue;
-                sm = bodyWeight switch
+                dataMastery = true;
+                ApplyArmorMastery(bodyWeight switch
                 {
                     ArmorWeight.Robe  => prof.Robe,
                     ArmorWeight.Light => prof.Light,
                     ArmorWeight.Heavy => prof.Heavy,
                     _ => prof.None,   // no body armor equipped
-                };
-                dataMastery = true;
-                break;
+                });
             }
             ArmorMasteryLabel = dataMastery
                 ? (bodyWeight == ArmorWeight.None ? "Armor Mastery" : $"Armor Mastery ({bodyWeight})")
                 : "";
 
-            // Apply the resolved armor-mastery StatMods: speed pcts DIVIDE the time multiplier
-            // so >0 = faster; regen pct ASSIGNS the mult; flat def/eva add before the def % factor.
-            AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier / (1f + sm.AtkSpeedPct), 0.4f, 2.5f);
-            CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier / (1f + sm.CastSpeedPct), 0.4f, 2.5f);
-            RunSpeed *= 1f + sm.MoveSpeedPct;
-            WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor;
-            Speed = RunSpeed;
-            HpRegenMult = 1f + sm.HpRegenPct;
-            MpRegenMult = 1f + sm.MpRegenPct;
-            MaxHp = (int)((MaxHp + sm.MaxHp) * (1f + sm.MaxHpPct));
-            MaxMp = (int)((MaxMp + sm.MaxMp) * (1f + sm.MaxMpPct));
-            Evasion += (int)sm.Evasion;
-            Accuracy += (int)sm.Accuracy;
-            Defence += (int)sm.PDef;
-            MagicDefence += (int)sm.MDef;
-            if (sm.PDefPct != 0f) Defence = (int)(Defence * (1f + sm.PDefPct));
-            if (sm.MDefPct != 0f) MagicDefence = (int)(MagicDefence * (1f + sm.MDefPct));
-            InterruptResist += (int)sm.InterruptResist;
-            if (sm.CritRate != 0f) CritRateMult *= 1f + sm.CritRate;   // ×1.2, not +20 points
-            if (sm.MagicCritRate != 0f) MagicCritRateMult *= 1f + sm.MagicCritRate;   // ditto, magic channel
-            CritDamageBonus += sm.CritDamage;
-            CritDmgResist += sm.CritDmgResist;
-            CritRateResist += sm.CritRateResist;
-            BowResist += sm.BowResist;
-            RestoreMpBonus += (int)sm.RestoreMpBonus;
+            // One armor-mastery StatMods folded in: speed pcts DIVIDE the time multiplier so >0 =
+            // faster; regen pcts MULTIPLY the running mult (they used to assign, which silently made
+            // the last mastery win); flat def/eva add before the def % factor.
+            void ApplyArmorMastery(StatMods sm)
+            {
+                AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier / (1f + sm.AtkSpeedPct), 0.4f, 2.5f);
+                CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier / (1f + sm.CastSpeedPct), 0.4f, 2.5f);
+                RunSpeed *= 1f + sm.MoveSpeedPct;
+                WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor;
+                Speed = RunSpeed;
+                HpRegenMult *= 1f + sm.HpRegenPct;
+                MpRegenMult *= 1f + sm.MpRegenPct;
+                MaxHp = (int)((MaxHp + sm.MaxHp) * (1f + sm.MaxHpPct));
+                MaxMp = (int)((MaxMp + sm.MaxMp) * (1f + sm.MaxMpPct));
+                Evasion += (int)sm.Evasion;
+                Accuracy += (int)sm.Accuracy;
+                Defence += (int)sm.PDef;
+                MagicDefence += (int)sm.MDef;
+                if (sm.PDefPct != 0f) Defence = (int)(Defence * (1f + sm.PDefPct));
+                if (sm.MDefPct != 0f) MagicDefence = (int)(MagicDefence * (1f + sm.MDefPct));
+                InterruptResist += (int)sm.InterruptResist;
+                if (sm.CritRate != 0f) CritRateMult *= 1f + sm.CritRate;   // ×1.2, not +20 points
+                if (sm.MagicCritRate != 0f) MagicCritRateMult *= 1f + sm.MagicCritRate;   // ditto, magic channel
+                CritDamageBonus += sm.CritDamage;
+                CritDmgResist += sm.CritDmgResist;
+                CritRateResist += sm.CritRateResist;
+                BowResist += sm.BowResist;
+                RestoreMpBonus += (int)sm.RestoreMpBonus;
+            }
 
             // A learned skill can SUPERSEDE another's passive via Replaces[] (e.g. Spell
             // Mastery replaces Weapon Mastery): collect those ids so the base passive
@@ -1848,10 +1876,16 @@ public class Entity
             //    Lv2 ×0.75 for Warchanters, so buffers stay useful in fighter gear).
             // CAST SPEED is gated on the trained TYPE (sword/blunt — a wand and a mace are both Blunt),
             // and collapses on anything else: bow, dagger, bare hands.
-            if (HasSkill(SkillCatalog.WeaponProficiency) && !IsMageTrainedWeapon(WeaponType))
+            // ⚠ 2026-08-07: the gate is SPELLCASTER MASTERY now (Weapon Proficiency is retired and
+            // superseded by it), and the untrained-weapon magic penalty is the owner's ×0.5 — it was
+            // a ×0.05 COLLAPSE. Magic accuracy ×0.5 maps to MagicFailResist, our only spell-landing
+            // stat; it is halved below rather than zeroed so a bow caster is hindered, not disarmed.
+            bool spellcaster = HasSkill(SkillCatalog.SpellcasterMastery) || HasSkill(SkillCatalog.WeaponProficiency);
+            if (spellcaster && !IsMageTrainedWeapon(WeaponType))
             {
                 CastSpeedPenaltyMult = 0.5f;
-                MagicWeaponPenaltyMult = 0.05f;   // untrained weapon → magic collapses (damage + heals + shown M.Atk)
+                MagicWeaponPenaltyMult = 0.5f;    // bow / dual / bare hands → half magic, not a collapse
+                UntrainedCasterWeapon = true;     // ...and half magic accuracy, applied after the buffs
             }
             // M.ATK is gated on the weapon being an actual MAGIC weapon, which the type cannot tell you:
             // a wand and a mace are both Blunt, so the old type check waved a mace-swinging caster
@@ -1860,7 +1894,7 @@ public class Entity
             // M.Atk 60%?". The weapon now just carries its authored M.Atk, and the CLASS's own passive
             // states the rule instead: train with a magic weapon or lose most of your magic. Same
             // outcome, but it is data a player can read rather than a constant they cannot.
-            else if (HasSkill(SkillCatalog.WeaponProficiency) && !HasMagicWeapon)
+            else if (spellcaster && !HasMagicWeapon)
                 MagicWeaponPenaltyMult = NonMagicWeaponMagicMult;
             int divineFocus = SkillLevelOf(SkillCatalog.DivineFocus);
             if (divineFocus > 0 && !HasMagicWeapon)
@@ -1947,6 +1981,9 @@ public class Entity
         CritRateResist = Math.Clamp(CritRateResist, 0f, 1f);
         CritDmgResist = Math.Clamp(CritDmgResist, 0f, 0.9f);
         BowResist = Math.Clamp(BowResist, 0f, 0.9f);
+        // Spellcaster Mastery's "magic accuracy ×0.5" — applied HERE, after every passive and buff
+        // has contributed, so a buffed bow caster is halved too rather than buffing his way out of it.
+        if (UntrainedCasterWeapon) MagicFailResist *= 0.5f;
         MagicFailResist = Math.Clamp(MagicFailResist, 0f, 0.9f);
         CooldownReduction = Math.Clamp(CooldownReduction, 0f, 0.8f);
         MeleeReflect = Math.Clamp(MeleeReflect, 0f, 0.5f);   // never reflect more than half

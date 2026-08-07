@@ -22,26 +22,30 @@ public static partial class SkillCatalog
     public const string Resurrection = "resurrection";          // revive a fallen ally (4 levels)
 
     /// <summary>Healer Armor Mastery per-weight data (lvls 20/25/30/35). Robe = caster lean
-    /// (+MP regen / def / max MP); Light = stay-casting + sturdier (+def, slight cast cost,
-    /// +eva at L4); Heavy = penalty (slower casts/attacks). StatMods: pct &gt;0 = faster/more.</summary>
+    /// (+MP regen / def / max MP); LIGHT is the cleric's identity: he is the one caster who can
+    /// wear it and keep working.
+    ///
+    /// ⚠ RESTRUCTURED 2026-08-07 (owner). The heavy/none penalty is GONE — it comes from Spellcaster
+    /// Mastery now, and leaving a copy here would apply it twice once armor masteries began stacking.
+    /// The LIGHT row is authored to CANCEL that penalty rather than to state a final number, which is
+    /// why the multipliers look strange in isolation:
+    ///   cast ×1.90 × Spellcaster ×0.50 = <b>×0.95</b> (his "−5% from a robe")
+    ///   atkSpd ×2.00 × Spellcaster ×0.50 = <b>×1.00</b> (no attack-speed loss at all)
+    ///   mpRegen ×1.20, and light does NOT get the robe's own ×1.20 — so he regenerates less than in
+    ///   a robe but is not cut off, exactly as specified.
+    /// Read every light number as "what it takes to land on the intended value AFTER Spellcaster".
+    /// If Spellcaster's ×0.50 ever changes, these two must be re-derived — they are not free
+    /// constants. (StatMods pct: >0 = faster/more, so ×1.90 is CastSpeedPct 0.90.)</summary>
     private static readonly ArmorMasteryProfile[] HealerArmorMastery =
     {
         new(Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 20, MaxMp: 20),
-            Light: new StatMods(MpRegenPct: 0.2f, PDef: 20, CastSpeedPct: -0.05f),
-            Heavy: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
-            None:  new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f)),
+            Light: new StatMods(MpRegenPct: 0.2f, PDef: 20, CastSpeedPct: 0.90f, AtkSpeedPct: 1.00f)),
         new(Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 25, MaxMp: 20),
-            Light: new StatMods(MpRegenPct: 0.2f, PDef: 25, CastSpeedPct: -0.05f),
-            Heavy: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
-            None:  new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f)),
+            Light: new StatMods(MpRegenPct: 0.2f, PDef: 25, CastSpeedPct: 0.90f, AtkSpeedPct: 1.00f)),
         new(Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 30, MaxMp: 30),
-            Light: new StatMods(MpRegenPct: 0.2f, PDef: 30, CastSpeedPct: -0.05f),
-            Heavy: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
-            None:  new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f)),
+            Light: new StatMods(MpRegenPct: 0.2f, PDef: 30, CastSpeedPct: 0.90f, AtkSpeedPct: 1.00f)),
         new(Robe:  new StatMods(MpRegenPct: 0.2f, PDef: 35, MaxMp: 30),
-            Light: new StatMods(MpRegenPct: 0.2f, PDef: 35, CastSpeedPct: -0.05f, Evasion: 2),
-            Heavy: new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f),
-            None:  new StatMods(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f)),
+            Light: new StatMods(MpRegenPct: 0.2f, PDef: 35, CastSpeedPct: 0.90f, AtkSpeedPct: 1.00f, Evasion: 2)),
     };
 
     private static SkillDef[] HealerSkills() => new SkillDef[]

@@ -37,6 +37,14 @@ public enum AttributeType
     HpRegenPercent = 16,
     MpRegenPercent = 17,
     PhysicalAttackPercent = 18, // P.Atk only (the necklace roll; AttackPercent hits both)
+    // 2026-08-07 — FLAT evasion points, and the dual weapon's roll from now on. EvasionPercent (6)
+    // multiplied the WHOLE stat, DEX + level included, so a maxed roll grew forever and handed a
+    // rogue ~30 points at level 36 — three times the entire authored evasion budget, and the reason
+    // a same-level mob missed him 35% of the time. Owner's ruling: *"the max for an evasion roll on
+    // a weapon should be 5% at max, our evasion is not like L2's so 5 roll is a flat 5% increase."*
+    // Since 1 evasion point IS 1% miss (StatCaps.AvoidStatSlope), a flat +5 IS his "5% at max".
+    // EvasionPercent stays in the enum, unrollable, so items already carrying it still resolve.
+    Evasion = 19,
 }
 
 /// <summary>The GRADE band an item's attribute table is read at. This is the real ladder
@@ -120,9 +128,15 @@ public static class AttributeSystem
         Line(AttributeType.HealthPercent, RampHp, 25),
     };
 
+    // The dagger/dual pool. ⚠ Evasion is FLAT and capped at 5 (owner, 2026-08-07) — it was
+    // EvasionPercent on RampWide/30, a multiplier on a stat that already contains DEX + level, and
+    // it alone tripled the rogue's evasion budget. RampEva is its own ramp: no other line may share
+    // it, because every other line here is a percentage where 30 is a sane ceiling.
+    private static readonly int[] RampEva = { 1, 2, 3, 4, 5 };     // → cap 5 (FLAT evasion points)
+
     private static readonly AttrRange[] DualWeapon =
     {
-        Line(AttributeType.EvasionPercent, RampWide, 30),
+        Line(AttributeType.Evasion, RampEva, 5),
         Line(AttributeType.CritRate, RampWide, 30),
         Line(AttributeType.CritDamage, RampCrit, 35),
     };
@@ -299,17 +313,20 @@ public static class AttributeSystem
         max <= min ? max : rng.Next(min, max + 1);
 
     private static string Describe(ItemDef def, AttributeType type, int value) =>
-        $"{def.Name}: {DisplayName(type)} +{value}%.";
+        $"{def.Name}: {DisplayName(type)} +{value}{(IsPercent(type) ? "%" : "")}.";
 
     // ===================================================================================
     //  Rendering + application
     // ===================================================================================
 
-    /// <summary>Every rollable attribute is a PERCENT now. The three legacy FLAT types are kept
-    /// only so items rolled before 0.45.0 still render correctly.</summary>
+    /// <summary>Almost every rollable attribute is a PERCENT. The three legacy FLAT types are kept
+    /// only so items rolled before 0.45.0 still render correctly — and <see cref="AttributeType.Evasion"/>
+    /// is FLAT on purpose (2026-08-07): one evasion point already IS one percent of miss chance, so
+    /// the roll is authored in points and must not render a second "%" on top.</summary>
     public static bool IsPercent(AttributeType type) => type switch
     {
-        AttributeType.Accuracy or AttributeType.HpRegen or AttributeType.MpRegen => false,
+        AttributeType.Accuracy or AttributeType.HpRegen or AttributeType.MpRegen
+            or AttributeType.Evasion => false,
         _ => true
     };
 
@@ -329,7 +346,8 @@ public static class AttributeSystem
             AttributeType.CastSpeedPercent   => new StatMods(CastSpeedPct: f),
             AttributeType.AttackSpeedPercent => new StatMods(AtkSpeedPct: f),
             AttributeType.AttackPercent      => new StatMods(PAtkPct: f, MAtkPct: f),
-            AttributeType.EvasionPercent     => new StatMods(EvasionPct: f),
+            AttributeType.EvasionPercent     => new StatMods(EvasionPct: f),   // LEGACY, no longer rollable
+            AttributeType.Evasion            => new StatMods(Evasion: v),
             AttributeType.DefencePercent     => new StatMods(PDefPct: f),
             AttributeType.Accuracy           => new StatMods(Accuracy: v),
             AttributeType.HpRegen            => new StatMods(HpRegen: v),
@@ -355,6 +373,7 @@ public static class AttributeSystem
         AttributeType.AttackSpeedPercent => "Attack Speed",
         AttributeType.AttackPercent => "Attack",
         AttributeType.EvasionPercent => "Evasion",
+        AttributeType.Evasion => "Evasion",
         AttributeType.DefencePercent => "Defence",
         AttributeType.Accuracy => "Accuracy",
         AttributeType.HpRegen => "HP Regen",
@@ -381,9 +400,10 @@ public static class AttributeSystem
         {
             var (min, max) = line.At(tier);
             if (max <= 0) continue;
+            string unit = IsPercent(line.Type) ? "%" : "";
             yield return min >= max
-                ? $"{DisplayName(line.Type)} {max}%"
-                : $"{DisplayName(line.Type)} {min}~{max}%";
+                ? $"{DisplayName(line.Type)} {max}{unit}"
+                : $"{DisplayName(line.Type)} {min}~{max}{unit}";
         }
     }
 }

@@ -154,16 +154,13 @@ public static partial class SkillCatalog
             }),
     };
 
-    // Off-weight caster penalty (factor→pct: ×0.8 → −0.2 attack, ×0.5 → −0.5 cast).
-    private static readonly StatMods NukerArmorPenalty =
-        new(AtkSpeedPct: -0.2f, CastSpeedPct: -0.5f);
-
     /// <summary>Nuker robe-mastery level: ROBE gets +MP regen, flat P.Def, flat max MP and the
-    /// mpWhenRestored bonus; light/heavy penalise casting. (CSV nuker "Robe: mpReg x1.2, pDef +N,
-    /// maxMP +M, mpWhenRestored +R; Light/Heavy: as x0.8, cast x0.5".)</summary>
+    /// mpWhenRestored bonus. (CSV nuker "Robe: mpReg x1.2, pDef +N, maxMP +M, mpWhenRestored +R".)
+    /// ⚠ 2026-08-07: the off-weight cast/attack penalty is GONE from here. It belongs to Spellcaster
+    /// Mastery, which is never replaced — so this skill is pure bonus and the two now STACK (its
+    /// ×1.2 MP regen multiplies the Spellcaster robe ×1.2, which is the owner's intent: *"giving
+    /// him x1.2 mp regen (now stacks with the SpellcasterMastery)"*). Duplicating the penalty here
+    /// would have applied it TWICE once masteries began stacking.</summary>
     private static ArmorMasteryProfile NukerRobe(int pDef, int maxMp, int restore) => new(
-        Robe:  new StatMods(MpRegenPct: 0.2f, PDef: pDef, MaxMp: maxMp, RestoreMpBonus: restore),
-        Light: NukerArmorPenalty,
-        Heavy: NukerArmorPenalty,
-        None:  NukerArmorPenalty);
+        Robe: new StatMods(MpRegenPct: 0.2f, PDef: pDef, MaxMp: maxMp, RestoreMpBonus: restore));
 }
