@@ -182,9 +182,10 @@ Console.WriteLine("=== E1: ACCURACY vs EVASION — the whole board (why only the
     Console.WriteLine("  A DUAL weapon used to roll AttributeType.EvasionPercent (RampWide, cap 30), applied as");
     Console.WriteLine("  `Evasion += Evasion * pct/100` — a MULTIPLIER on the whole stat, base DEX+level included.");
     Console.WriteLine("  It alone tripled the rogue's evasion budget and grew with level forever. It is now");
-    Console.WriteLine("  AttributeType.Evasion: FLAT, RampEva, cap 5 — the owner's \"5 roll is a flat 5% increase\".");
-    Console.WriteLine("  (⚠ The bow's mirror, AccuracyPercent RampWide cap 30, is UNCHANGED — his ruling was about");
-    Console.WriteLine("   evasion. Same shape, same defect, inverted; it needs the same call.)");
+    Console.WriteLine("  AttributeType.Evasion: FLAT, RampFlat5, cap 5 — the owner's \"5 roll is a flat 5% increase\".");
+    Console.WriteLine("  ✅ The BOW's mirror is now fixed the same way (2026-08-07b): AccuracyPercent RampWide cap 30");
+    Console.WriteLine("  -> AttributeType.Accuracy FLAT cap 5. His ruling: \"the AccuracyPercent is a mirror of the");
+    Console.WriteLine("  evasion so +5 roll — the archers will have acc buffs/passives\". The bow row is below.");
     Console.WriteLine($"  {"Lvl",3} {"mob acc",8} | {"no roll",8} {"miss",6} |" +
         $" {"NEW max +5",11} {"spread",7} {"miss",6} | {"OLD max 30%",12} {"spread",7} {"miss",6}");
     foreach (int L in new[] { 20, 28, 36, 44, 52 })
@@ -210,6 +211,57 @@ Console.WriteLine("=== E1: ACCURACY vs EVASION — the whole board (why only the
     Console.WriteLine("  The OLD column is the character he measured in game (level ~35, mob acc 65, dagger eva 95).");
     Console.WriteLine("  The NEW roll costs a flat 5 points = a flat 5% at every level, and the rogue's total dodge");
     Console.WriteLine("  vs a same-level mob lands where he said he wants it.");
+    Console.WriteLine();
+
+    Console.WriteLine("  --- E1b: THE BOW'S MIRROR — AccuracyPercent 30 -> Accuracy flat 5 ---");
+    Console.WriteLine("  Same defect inverted: the old roll multiplied an accuracy that already contains DEX + level,");
+    Console.WriteLine("  so it grew forever. What a roll is WORTH, though, is not symmetric with evasion, because");
+    Console.WriteLine("  miss = clamp(5% + (eva - acc), defenderFloor, 95%): accuracy can only claw back the part of");
+    Console.WriteLine("  the gap that is ABOVE both the universal 5% and the defender's own evade FLOOR.");
+    Console.WriteLine($"  {"eva-acc gap",12} {"miss @0",8} {"miss +5",8} {"bought",7} |" +
+        $" {"vs a 10% evade floor:",22} {"miss @0",8} {"miss +5",8} {"bought",7}");
+    foreach (int gap in new[] { 0, 3, 5, 10, 15, 20, 30 })
+    {
+        // Level-matched, so the gap term is the ONLY thing moving. 40 is an arbitrary anchor.
+        float M(int acc, float floor) => StatCalculator.ResolveAvoidChance(acc, 100 + gap, floor, 0f, 40, 40);
+        float n0 = M(100, 0f), n5 = M(105, 0f), f0 = M(100, 0.10f), f5 = M(105, 0.10f);
+        Console.WriteLine($"  {gap,12} {Pct(n0),8} {Pct(n5),8} {Pct(n0 - n5),7} |" +
+            $" {"",22} {Pct(f0),8} {Pct(f5),8} {Pct(f0 - f5),7}");
+    }
+    Console.WriteLine("  🔴 READ THIS: +5 accuracy buys the full 5% only once the defender out-evades you by 10+.");
+    Console.WriteLine("  Against a ROGUE it buys NOTHING at any gap under 10, because his 10% evade floor is a hard");
+    Console.WriteLine("  lower bound on miss that no amount of accuracy can go under. His \"the archers will have acc");
+    Console.WriteLine("  buffs/passives\" therefore needs an answer: accuracy is currently a stat that does nothing");
+    Console.WriteLine("  against the one target class it is meant to counter. (Evasion has no such problem — it is");
+    Console.WriteLine("  additive against the 5% base from the first point.) Not a bug in this change; a design gap.");
+    Console.WriteLine();
+    Console.WriteLine("  And the live rogue-vs-mob numbers, which is where a bow actually shoots:");
+    Console.WriteLine($"  {"Lvl",3} {"mob eva",8} | {"no roll",8} {"hit",6} |" +
+        $" {"NEW acc +5",11} {"hit",6} | {"OLD acc +30%",13} {"hit",6}");
+    foreach (int L in new[] { 20, 28, 36, 44, 52 })
+    {
+        var mob = BuildMobEntity(L);
+
+        var bare = BuildRogue(L); ApplyNpcBuffs(bare);
+        var now = BuildRogue(L);
+        foreach (var it in now.Inventory.Where(i => ItemCatalog.Get(i.DefId)?.Slot == EquipSlot.Weapon))
+            it.Attributes.Add(new ItemAttribute(AttributeType.Accuracy, 5));
+        ApplyNpcBuffs(now);
+        var old = BuildRogue(L);
+        foreach (var it in old.Inventory.Where(i => ItemCatalog.Get(i.DefId)?.Slot == EquipSlot.Weapon))
+            it.Attributes.Add(new ItemAttribute(AttributeType.AccuracyPercent, 30));
+        ApplyNpcBuffs(old);
+
+        // The rogue ATTACKING: his accuracy vs the mob's evasion (same call the tick loop makes).
+        float HitPct(Entity a) => 1f - StatCalculator.ResolveAvoidChance(
+            a.Accuracy, (int)mob.EffectiveEvasion, mob.EvadeFloor, 0f, a.Level, mob.Level);
+        Console.WriteLine($"  {L,3} {(int)mob.EffectiveEvasion,8} | {bare.Accuracy,8} {Pct(HitPct(bare)),6} |" +
+            $" {now.Accuracy,11} {Pct(HitPct(now)),6} |" +
+            $" {old.Accuracy,13} {Pct(HitPct(old)),6}");
+    }
+    Console.WriteLine("  Already pinned at the 95% cap with no roll at all — so against MOBS the old +30% was buying");
+    Console.WriteLine("  literally nothing, and the flat +5 that replaces it loses nothing. The whole roll is a PvP");
+    Console.WriteLine("  stat, which is exactly why capping it at 5 costs the archer no farming speed.");
 }
 Console.WriteLine();
 
@@ -265,30 +317,42 @@ Console.WriteLine();
 Console.WriteLine("=== E3: THE NUKER'S MP ECONOMY — why he sits out of mana ===");
 {
     var rs = SkillCatalog.Get(SkillCatalog.RestoreSpirit)!;
-    Console.WriteLine($"  Restore Spirit today: {rs.HpCost} HP -> {rs.PowerAt(1)} MP flat, +RestoreMpBonus from the");
-    Console.WriteLine("  nuker ROBE mastery (25/30/35/40 at mastery lv 1-4 = character 20/25/30/35). Cast "
+    Console.WriteLine("  ⚠ REBUILT 2026-08-07b. Restore Spirit had ONE level for life (20 MP for 65 HP, learned at");
+    Console.WriteLine("  25) while the bolt ladder grew 30 -> 116, so it slowed the drain instead of sustaining a");
+    Console.WriteLine("  rotation. It now has TEN levels: level 1 @25 is the AUTHORED CSV and is untouched, and");
+    Console.WriteLine("  levels 2-10 arrive @40 then every 5 to 80, ending at 120 MP for 200 HP. The ROBE mastery");
+    Console.WriteLine("  keeps its CSV rungs 25/30/35/40 (@20/25/30/35) and gains rungs 5-8 @40/50/60/70 carrying");
+    Console.WriteLine("  mpWhenRestored 50/60/70/80 — both halves of his \"+200 MP for -200 HP\" are 40+ content,");
+    Console.WriteLine("  which is the only band with no CSV. Cast "
         + $"{rs.CastTicks / 10f:F1}s, reuse {rs.CooldownTicks / 10f:F1}s.");
-    Console.WriteLine($"  {"Lvl",3} {"MaxMP",6} {"MaxHP",6} {"mpReg/s",8} {"nuke MP",8} {"nukes",6} |" +
-        $" {"restore",8} {"HP cost",8} {"HP/MP",7} {"MP/s",6} {"nukes/cast",11}");
-    foreach (int L in new[] { 25, 30, 36, 44, 52 })
+    Console.WriteLine($"  {"Lvl",3} {"sk",3} {"MaxMP",6} {"MaxHP",6} {"mpReg/s",8} {"nuke MP",8} {"nukes",6} |" +
+        $" {"base",5} {"+mast",6} {"restore",8} {"HP cost",8} {"MP/HP",7} {"%bar",6} {"%HP",5} {"MP/s",6} {"nukes/cast",11}");
+    foreach (int L in new[] { 25, 30, 36, 44, 52, 60, 70, 80 })
     {
         var m = BuildPlayer(Race.Human, BaseClass.Mage, L);
         ApplyNpcBuffs(m);
         var (nuke, nl) = TopSkill(m, SkillEffect.MagicDamage);
         int nukeMp = nuke is null ? 0 : nuke.InitialMpAt(nl) + nuke.FinishMpAt(nl);
-        int restored = rs.PowerAt(1) + m.RestoreMpBonus;
+        // The LEARNED level of Restore Spirit is what he actually casts — reading level 1 for a
+        // level-80 mage is exactly the measuring error the old table made.
+        int rl = Math.Max(1, m.SkillLevelOf(rs.Id));
+        int baseMp = rs.PowerAt(rl), hpCost = rs.HpCostAt(rl);
+        int restored = baseMp + m.RestoreMpBonus;
         float cycle = (rs.CastTicks + rs.CooldownTicks) / 10f;
         float mpPct = m.Buffs.Where(b => b.Has(SkillEffect.BuffMpRegen))
                             .Sum(b => b.Percent(SkillEffect.BuffMpRegen));
         float mpReg = (StatCalculator.MpRegenPerSecond(m.EffectiveSpt, m.Level) + m.MpRegenBonus)
                       * m.MpRegenMult * (1f + mpPct);
-        Console.WriteLine($"  {L,3} {m.MaxMp,6} {m.MaxHp,6} {mpReg,8:F1} {nukeMp,8} " +
-            $"{(nukeMp > 0 ? m.MaxMp / (float)nukeMp : 0),6:F1} | {restored,8} {rs.HpCost,8} " +
-            $"{(restored > 0 ? rs.HpCost / (float)restored : 0),7:F1} {restored / cycle,6:F1} " +
-            $"{(nukeMp > 0 ? restored / (float)nukeMp : 0),11:F2}");
+        Console.WriteLine($"  {L,3} {rl,3} {m.MaxMp,6} {m.MaxHp,6} {mpReg,8:F1} {nukeMp,8} " +
+            $"{(nukeMp > 0 ? m.MaxMp / (float)nukeMp : 0),6:F1} | {baseMp,5} {m.RestoreMpBonus,6} {restored,8} {hpCost,8} " +
+            $"{(hpCost > 0 ? restored / (float)hpCost : 0),7:F2} " +
+            $"{(m.MaxMp > 0 ? restored * 100f / m.MaxMp : 0),5:F0}% {(m.MaxHp > 0 ? hpCost * 100f / m.MaxHp : 0),4:F0}% " +
+            $"{restored / cycle,6:F1} {(nukeMp > 0 ? restored / (float)nukeMp : 0),11:F2}");
     }
     Console.WriteLine("  'nukes' = a full mana bar in top-nuke casts. 'nukes/cast' = how many nukes ONE Restore");
     Console.WriteLine("  Spirit pays for. Below ~1.0 the skill cannot sustain a rotation at any HP price.");
+    Console.WriteLine("  'MP/HP' is the DELIVERED trade and is authored to fall 1.18 -> 1.00 across 25 -> 80.");
+    Console.WriteLine("  '%bar'/'%HP' are the real cost of a cast: what fraction of each pool one press moves.");
     Console.WriteLine();
 
     Console.WriteLine("  --- E3b: the MASTERY STACK (2026-08-07 restructure) — every weight, both mage classes ---");

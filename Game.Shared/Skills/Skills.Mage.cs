@@ -217,17 +217,49 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 93, MpCost: 84, InitialMpCost: 17, SpCost: 340000, Description: "Magic damage, power 93."),   // 80
             }),
 
-        // Restore Spirit — trades 65 HP for 20 MP (self; boosted by the nuker robe mastery's
-        // "mpWhenRestored", +25/30/35/40). Costs HP, not MP. Single level @25.
-        // ⚠ The HP price was 130 until 2026-08-07 (owner: "lower its hp consumption to half"). It was
-        // priced against a bonus that was never landing — the base Robe Mastery was silently winning
-        // the armor-mastery pick, so the skill really did return a flat 20 MP for 130 HP. With the
-        // pick fixed it returns 45-60, and at 65 HP the trade is ~1.2 HP per MP instead of 6.5.
+        // Restore Spirit — trades HP for MP (self). Costs HP, not MP.
+        //
+        // ⚠ LEVEL 1 IS THE AUTHORED CSV and must stay verbatim: `nuker 20-35.csv` line 14 says
+        // "exchanges HP (-65) for MP (+20)", SP 6400, learned at 25. Nothing in the 20-35 band may be
+        // retuned here — that file is the owner's source of truth for it.
+        //
+        // Levels 2-10 (@40 then every 5 to 80) are OURS, in the band that has no CSV, exactly like
+        // the bolt ladder. They exist because ONE level for life was the real defect: 20 MP is most
+        // of a nuke at 25 and a rounding error at 60, so the skill slowed the drain instead of
+        // sustaining a rotation the moment the bolt ladder passed it. (Owner, 2026-08-07, confirming
+        // the diagnosis: it "needs levels, not a bigger HP trade".)
+        //
+        // The ENDPOINT is his: L2's Body to Mind is +120 MP for −360 HP; our HP pools are about half
+        // of L2's, so the like-for-like price is 180 and he rounded it to **200 to balance**. Level
+        // 10 is therefore 120 MP for 200 HP, and with the robe mastery's late +80 that is his
+        // "**+200 MP, −200 HP** is a good late-levels balance" exactly.
+        //
+        // The HP prices are authored so DELIVERED MP (base + the mastery's mpWhenRestored) per HP
+        // spent sits at ~1.00-1.09 from 40 up, landing on exactly 1.00 at 80. The CSV band below it
+        // is stingier (0.77 → 0.92) and stays that way. That is the design he stated: a mage's mana
+        // management gets *easier* than a healer's but never free — "farm 30~40 mins, rest a bit, or
+        // get a restorer with you".
+        //
+        // ⚠ A nuker in LIGHT or HEAVY earns no mastery bonus and pays full price for the base number
+        // alone (3.25 → 1.67 HP per MP). That is the robe's identity, not a bug.
         new(RestoreSpirit, "Restore Spirit", BaseClass.Mage, SkillEffect.RestoreMp,
             MpCost: 0, CastTicks: 40, CooldownTicks: 50, Range: 0, Power: 20,
             Category: SkillCategory.Heal, TargetMode: TargetMode.SelfOnly, SpCost: 6400,
             HpCost: 65,
-            Description: "Burns 65 HP to restore 20 MP to yourself (much more with robe mastery)."),
+            Description: "Burns HP to restore MP to yourself (much more with robe mastery).",
+            Levels: new[]
+            {
+                new SkillLevel(Power: 20,  HpCost: 65,  SpCost: 6400,   Description: "Burns 65 HP to restore 20 MP."),   // 25  ← CSV
+                new SkillLevel(Power: 45,  HpCost: 90,  SpCost: 26000,  Description: "Burns 90 HP to restore 45 MP."),   // 40
+                new SkillLevel(Power: 55,  HpCost: 105, SpCost: 40000,  Description: "Burns 105 HP to restore 55 MP."),  // 45
+                new SkillLevel(Power: 65,  HpCost: 118, SpCost: 56000,  Description: "Burns 118 HP to restore 65 MP."),  // 50
+                new SkillLevel(Power: 75,  HpCost: 131, SpCost: 75000,  Description: "Burns 131 HP to restore 75 MP."),  // 55
+                new SkillLevel(Power: 85,  HpCost: 144, SpCost: 98000,  Description: "Burns 144 HP to restore 85 MP."),  // 60
+                new SkillLevel(Power: 95,  HpCost: 157, SpCost: 124000, Description: "Burns 157 HP to restore 95 MP."),  // 65
+                new SkillLevel(Power: 105, HpCost: 170, SpCost: 153000, Description: "Burns 170 HP to restore 105 MP."), // 70
+                new SkillLevel(Power: 113, HpCost: 185, SpCost: 185000, Description: "Burns 185 HP to restore 113 MP."), // 75
+                new SkillLevel(Power: 120, HpCost: 200, SpCost: 220000, Description: "Burns 200 HP to restore 120 MP."), // 80
+            }),
 
         // Weapon Mastery — flat attack passive (asymmetric: more M.Atk than P.Atk).
         // Also carries the caster bow penalty (half cast speed while wielding a bow).

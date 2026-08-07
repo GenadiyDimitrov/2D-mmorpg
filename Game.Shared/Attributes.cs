@@ -23,7 +23,9 @@ public enum AttributeType
     EvasionPercent = 6,
     DefencePercent = 7,
     // Phase 14 additions — APPEND-ONLY (stored by int in saves; never reorder).
-    Accuracy = 8,    // LEGACY flat accuracy points — no longer rollable, kept for old saves
+    // Flat accuracy points. Was legacy-only from 0.45.0; ROLLABLE AGAIN from 2026-08-07 as the BOW's
+    // line (cap 5), replacing AccuracyPercent — the mirror of the Evasion ruling below.
+    Accuracy = 8,
     HpRegen = 9,     // LEGACY flat HP per second — ditto
     MpRegen = 10,    // LEGACY flat MP per second — ditto
     CritRate = 11,   // physical crit-rate points (percent)
@@ -33,6 +35,8 @@ public enum AttributeType
     MagicCritRate = 14,      // magic crit-rate points (percent)
     // 0.45.0 — the scroll-only set. Accuracy/regen became PERCENT because their base stats
     // now grow with level (accuracy = DEX + level), so a flat roll would decay to nothing.
+    // ⚠ AccuracyPercent is UNROLLABLE from 2026-08-07 — it stays in the enum so bows rolled before
+    // then still resolve. The bow's line is AttributeType.Accuracy (flat, cap 5); see Evasion.
     AccuracyPercent = 15,
     HpRegenPercent = 16,
     MpRegenPercent = 17,
@@ -128,22 +132,27 @@ public static class AttributeSystem
         Line(AttributeType.HealthPercent, RampHp, 25),
     };
 
-    // The dagger/dual pool. ⚠ Evasion is FLAT and capped at 5 (owner, 2026-08-07) — it was
-    // EvasionPercent on RampWide/30, a multiplier on a stat that already contains DEX + level, and
-    // it alone tripled the rogue's evasion budget. RampEva is its own ramp: no other line may share
-    // it, because every other line here is a percentage where 30 is a sane ceiling.
-    private static readonly int[] RampEva = { 1, 2, 3, 4, 5 };     // → cap 5 (FLAT evasion points)
+    // The HIT/AVOID ramp. ⚠ Evasion and Accuracy are FLAT and capped at 5 (owner, 2026-08-07 and
+    // 2026-08-07b) — they were EvasionPercent/AccuracyPercent on RampWide/30, multipliers on stats
+    // that already contain DEX + level, so a maxed roll grew forever: the dual's handed a rogue ~30
+    // evasion points at 36, three times his entire authored budget, and the bow's is the identical
+    // defect inverted. Since one point of either IS one percent of hit/miss
+    // (StatCaps.AvoidStatSlope), a flat +5 IS his "5% at max" — and the two sides stay symmetric,
+    // which is the point: *"the AccuracyPercent is a mirror of the evasion so +5 roll — the archers
+    // will have acc buffs/passives"*. Only these two flat lines may share this ramp; every other
+    // line in this file is a percentage where 30 is a sane ceiling.
+    private static readonly int[] RampFlat5 = { 1, 2, 3, 4, 5 };   // → cap 5 (FLAT hit/avoid points)
 
     private static readonly AttrRange[] DualWeapon =
     {
-        Line(AttributeType.Evasion, RampEva, 5),
+        Line(AttributeType.Evasion, RampFlat5, 5),
         Line(AttributeType.CritRate, RampWide, 30),
         Line(AttributeType.CritDamage, RampCrit, 35),
     };
 
     private static readonly AttrRange[] BowWeapon =
     {
-        Line(AttributeType.AccuracyPercent, RampWide, 30),
+        Line(AttributeType.Accuracy, RampFlat5, 5),
         Line(AttributeType.CritRate, RampWide, 30),
         Line(AttributeType.CritDamage, RampCrit, 35),
     };

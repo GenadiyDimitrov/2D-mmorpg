@@ -144,13 +144,32 @@ public static partial class SkillCatalog
                 new SkillLevel(SpCost: 12800),
                 new SkillLevel(SpCost: 12800),
                 new SkillLevel(SpCost: 25000),
+                // Rungs 5-8 (@40/50/60/70) — see the note below.
+                new SkillLevel(SpCost: 48000),
+                new SkillLevel(SpCost: 90000),
+                new SkillLevel(SpCost: 145000),
+                new SkillLevel(SpCost: 210000),
             },
             ArmorMasteryLevels: new[]
             {
+                // ⚠ RUNGS 1-4 ARE THE AUTHORED CSV (`docs/data/classes_skills_csv/nuker 20-35.csv`)
+                // — mpWhenRestored 25/30/35/40 at character 20/25/30/35. DO NOT RETUNE THEM HERE;
+                // that file is the owner's source of truth for the whole 20-35 band.
                 NukerRobe(pDef: 20, maxMp: 20, restore: 25),
                 NukerRobe(pDef: 25, maxMp: 20, restore: 30),
                 NukerRobe(pDef: 30, maxMp: 30, restore: 35),
                 NukerRobe(pDef: 35, maxMp: 30, restore: 40),
+                // Rungs 5-8 (@40/50/60/70) are OURS, in the band that has no CSV yet — the same
+                // precedent as the bolt ladder above 35 (ClassSkillTables.Common.cs). They carry his
+                // 2026-08-07 ruling "mpRestore to a +80", which is a LATE-LEVEL number: it is the
+                // other half of "+200 MP for −200 HP", against Restore Spirit's own 120 at 80.
+                // ⚠ Only the RESTORE value grows. pDef and maxMp stay frozen at the rung-4 values on
+                // purpose — inventing defensive growth he never authored would quietly re-balance the
+                // robe. When the 40+ nuker CSV lands, these four rungs are the ones to replace.
+                NukerRobe(pDef: 35, maxMp: 30, restore: 50),
+                NukerRobe(pDef: 35, maxMp: 30, restore: 60),
+                NukerRobe(pDef: 35, maxMp: 30, restore: 70),
+                NukerRobe(pDef: 35, maxMp: 30, restore: 80),
             }),
     };
 

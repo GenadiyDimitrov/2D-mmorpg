@@ -292,6 +292,13 @@ public record SkillDef(
     /// are pure child references (see SkillDef.ChildBuffs). Null/empty = an ordinary single buff.</summary>
     public string[]? ChildBuffsAt(int level) => Lvl(level)?.ChildBuffs ?? ChildBuffs;
     public int MpCostAt(int level) => Lvl(level)?.MpCost ?? MpCost;
+    /// <summary>HP price at a level (Restore Spirit). A level's -1 falls back to the SkillDef's
+    /// HpCost, so a single-level HP skill needs no per-level entry at all.</summary>
+    public int HpCostAt(int level)
+    {
+        int hp = Lvl(level) is { } sl ? sl.HpCost : HpCost;
+        return hp < 0 ? HpCost : hp;
+    }
     public int SpCostAt(int level) => Lvl(level)?.SpCost ?? SpCost;
     /// <summary>GOLD price of a level (0 = not bought with gold).</summary>
     public int GoldCostAt(int level) => Lvl(level)?.GoldCost ?? 0;
@@ -398,7 +405,11 @@ public record SkillLevel(
     // IMPROVED (group) buff: the CHILD buff ids this LEVEL applies (see SkillDef.ChildBuffs).
     // A group buff's levels are pure child references — level N simply names a stronger rung of
     // each family's ladder. null = inherit the SkillDef's ChildBuffs.
-    string[]? ChildBuffs = null);
+    string[]? ChildBuffs = null,
+    // HP price of THIS level (-1 = inherit the SkillDef's HpCost). Restore Spirit is the only
+    // skill paid in HP, and it is the reason this exists: a fixed HP price on a skill whose MP
+    // return grows for 55 levels is either free at 80 or unpayable at 25.
+    int HpCost = -1);
 
 /// <summary>Skill window grouping. Passive = a learned, always-on effect (armor
 /// masteries, discipline passives) — never cast and never placed on the action bar.</summary>

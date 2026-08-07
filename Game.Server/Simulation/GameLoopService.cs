@@ -4188,7 +4188,7 @@ public class GameLoopService : BackgroundService
             if (p.Mp < mpNeed) continue;
             // A skill PAID IN HP (Restore Spirit) must keep a margin — the cost floors at 1 HP, so
             // an unguarded autopilot would trade a mage's whole bar away one cast at a time.
-            if (def.HpCost > 0 && p.Hp <= def.HpCost * 2) continue;
+            if (def.HpCostAt(lvl) > 0 && p.Hp <= def.HpCostAt(lvl) * 2) continue;
 
             Guid tgtId;
             switch (kind)
@@ -6962,7 +6962,9 @@ public class GameLoopService : BackgroundService
         // Cast already committed at start — no range re-check here; the spell
         // lands even if the target moved. Charge the remaining MP and start CD.
         caster.Mp -= finishMp;
-        if (def.HpCost > 0) caster.Hp = Math.Max(1, caster.Hp - def.HpCost);   // Restore Spirit: HP→MP
+        // Restore Spirit: HP→MP. The price is PER LEVEL (55 @25 … 200 @80), so it must be read
+        // through HpCostAt — def.HpCost is only level 1's.
+        if (def.HpCostAt(lvl) > 0) caster.Hp = Math.Max(1, caster.Hp - def.HpCostAt(lvl));
         caster.CastInitialMpPaid = 0;
         // Reuse-delay reduction (Spell Mastery / buffs) shortens the cooldown — unless the skill
         // has a FIXED cooldown (Return, ultimates).

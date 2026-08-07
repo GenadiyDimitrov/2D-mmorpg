@@ -155,14 +155,30 @@ public static partial class ClassSkillTables
             // Levels 5-13 of each bolt, learned every 5 levels from 40 to 80 (power 63 -> 116;
             // 108 @ 74 is L2's anchor). See Skills.Mage.cs for the ladder itself.
             // Vampiric Bolt is one level ahead of the other two (it starts at 14, not 20).
+            //
+            // Restore Spirit rides the SAME cadence above 35, and for the same reason (2026-08-07):
+            // one level for life meant the mage's only mana tool was worth 20 MP forever while his
+            // bolt grew from 30 to 116, so it slowed the drain instead of sustaining a rotation.
+            // ⚠ Its level 1 @25 is the AUTHORED CSV and stays exactly where it is, above; levels
+            // 2-10 arrive 40 → 80, reaching the owner's 120-MP / 200-HP endpoint at 80.
+            //
+            // Mage Armor Mastery gets rungs 5-8 here too (@40/50/60/70), carrying his "mpRestore to
+            // a +80" — a LATE-level number, so it cannot live inside the 20-35 CSV rungs. Only the
+            // restore bonus grows on those rungs; see Skills.Masteries.cs.
             for (int i = 0; i < 9; i++)
             {
                 int learnLevel = 40 + i * 5;
                 ClassSkills.Register(race, BaseClass.Mage, Archetype.Nuker,
                     new ClassSkill(ElementalBolt, learnLevel, SkillLevel: 5 + i),
                     new ClassSkill(QuickBolt,     learnLevel, SkillLevel: 5 + i),
-                    new ClassSkill(VampiricBolt,  learnLevel, SkillLevel: 6 + i));
+                    new ClassSkill(VampiricBolt,  learnLevel, SkillLevel: 6 + i),
+                    new ClassSkill(RestoreSpirit, learnLevel, SkillLevel: 2 + i));
             }
+            ClassSkills.Register(race, BaseClass.Mage, Archetype.Nuker,
+                new ClassSkill(NukerArmorMastery, 40, SkillLevel: 5),
+                new ClassSkill(NukerArmorMastery, 50, SkillLevel: 6),
+                new ClassSkill(NukerArmorMastery, 60, SkillLevel: 7),
+                new ClassSkill(NukerArmorMastery, 70, SkillLevel: 8));
         }
 
         // Healer (cleric) 2nd-class kit — authored separately because Holy Bolt takes a per-race NAME.
