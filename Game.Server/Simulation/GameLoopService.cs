@@ -10780,9 +10780,13 @@ var effect = def.Effect;
         string npcId = npc.NpcId ?? "";
 
         // Buffer: open a dialog with the three paid options (full-buff / single buff / restore).
+        // ⚠ This branch returns BEFORE the AdvanceTalkStep at the bottom of the method, so it must
+        // advance the talk step itself — the tutorial chain's "visit Nyra" beat is a plain TalkTo at
+        // a Buffer, and without this it could never be completed by anyone (playtest, 0.57.0).
         if (npc.NpcRole == NpcRole.Buffer)
         {
             SendBufferDialog(player, npc);
+            AdvanceTalkStep(player, npcId);
             return;
         }
 
