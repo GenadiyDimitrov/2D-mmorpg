@@ -1,12 +1,22 @@
 # Roadmap — compact view (what's left, what depends on what)
 
-A one-screen digest of [Roadmap.md](Roadmap.md). Updated **2026-08-06 (after playtest-19)**.
+A one-screen digest of [Roadmap.md](Roadmap.md). Updated **2026-08-08 (after 0.57.0)**.
 Full history: [CHANGELOG.md](CHANGELOG.md). The checklists: [testing/Open-Checklist.md](testing/Open-Checklist.md)
 (🔴 what he edits on the phone — rolling, unversioned) and
 [testing/TestChecklist.Unity.md](testing/TestChecklist.Unity.md) (the per-section detail behind its ids).
 Closed passes: [testing/Playtest-Archive.md](testing/Playtest-Archive.md).
 
 ## Where things stand
+
+🔴🆕 **The build queue he set on 2026-08-07 is EMPTY as of 0.57.0.** M5/M6 (0.54.0), the QoL six
+(0.54.0 + 0.55.0), `D5` (0.56.0) and finally `B8`/`B9`/`B10` (0.57.0) are all built. **NINE builds —
+0.49.0 through 0.57.0 — have never been played.** An APK and a play pass is now worth more than any
+line of code below this point; nothing is queued to write.
+
+0.57.0 also closed the oldest architecture debt in the client: **collision is client-side now**
+(`Game.Shared/WorldDomain.cs` is the one definition of a world's bounds, read by both halves), so the
+server's rubber-band is finally just the anti-cheat backstop the owner designed it to be, and the jail
+has a wall you can see.
 
 🆕 **Playtest-19 (2026-08-06, 0.48.0) cleared FIVE builds in one pass.** 0.46.0, 0.47.0 and 0.48.0 had
 never been played at all; §46, §47 and §48 are now green, along with every carried-forward item that was

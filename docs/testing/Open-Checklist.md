@@ -1,4 +1,4 @@
-# OPEN CHECKLIST — everything untested as of **0.55.0** (2026-08-07)
+# OPEN CHECKLIST — everything untested as of **0.57.0** (2026-08-08)
 
 > **This file is now UNVERSIONED and ROLLING.** It replaces the three per-version
 > `Open-Checklist-0.45.0 / -0.47.0 / -0.48.0` files, which are gone — every item of theirs that was still open is carried
@@ -16,39 +16,45 @@ section number referenced here.
 
 ## ⚠ BEFORE YOU START
 
-**Install the 0.55.0 APK and unzip the 0.55.0 server.** Protocol went **12 → 13** (a title-colour
-field and two hub methods, all additions — the server still accepts older clients). Install **both**
-sides anyway: an older APK draws every NPC as a bare "Marius" and every title in plain gold, and the
-catalogs and skill tables are compiled into each side.
+**Install `L2Clone-0.57.0.apk` and unzip `Game.Server-0.57.0.zip`** (both in `builds/`). Protocol is
+**14** — it moved at 0.56.0, for the combat channel. Install **both** sides: the catalogs, skill
+tables and world bounds are compiled into each, so a mismatched pair disagrees quietly rather than
+refusing.
 
-🔴 **DELETE `Game.Server/game.db` + `-shm` + `-wal`.** Not optional this time. Four separate reasons
-stack up: 0.52.0 changed columns, 0.53.0 removed the God layer (an old character carrying `Race = 99`
-or a God item references an id that no longer exists), the mastery restructure clamps `mastery_robe`
-from 3 rungs to 2 on login, and 0.55.0 adds three title columns. ⚠ Delete the one in `Game.Server/`,
-**not** the stale copy in `bin/Debug/` — that one is a decoy and deleting it will fool you into
-thinking you reset.
+🔴 **DELETE `Game.Server/game.db` + `-shm` + `-wal`.** Not optional. Four reasons stack up from builds
+you have not played yet: 0.52.0 changed columns, 0.53.0 removed the God layer (an old character
+carrying `Race = 99` or a God item references an id that no longer exists), the mastery restructure
+clamps `mastery_robe` from 3 rungs to 2 on login, and 0.55.0 adds three title columns. (0.56.0 and
+0.57.0 add nothing — but the earlier four still apply.) ⚠ Delete the one in `Game.Server/`, **not**
+the stale copy in `bin/Debug/` — that one is a decoy and deleting it will fool you into thinking you
+reset.
 
-🔴 **EIGHT BUILDS ARE UNPLAYED.** 0.49.0, 0.50.0, 0.51.0, 0.52.0, 0.53.0/0.53.1, 0.53.2, **0.54.0**
-and **0.55.0** — by a distance the longest unplayed run this project has had. Two of them (0.51.0 and
-the mastery restructure) had **no checklist section at all** until recently. That is the actual risk
-here: not any single change, but that eight builds' worth of combat-maths reworks, a replaced starter
-quest chain and a protocol bump have never met a player. **A play pass is worth more right now than
-anything else I could build**, and it has been worth more for four builds running.
+🔴 **TEN BUILDS ARE UNPLAYED.** 0.49.0, 0.50.0, 0.51.0, 0.52.0, 0.53.0/0.53.1, 0.53.2, 0.54.0,
+0.55.0, **0.56.0** and **0.57.0** — by a distance the longest unplayed run this project has had. The
+risk is not any single change; it is that ten builds' worth of combat-maths reworks, a replaced
+starter quest chain, a protocol bump and now a change to how *movement itself* is enforced have never
+met a player. **And the build queue you set on 2026-08-07 is now empty** — there is nothing left
+queued for me to write, so this pass is the only thing that moves the project.
 
-🔴 **PRE-FLIGHT I OWE YOU AND HAVE NOT DONE: `tools/SmokeTest` has not been run** since the mastery
-restructure, which changed **`AutoLearnCoreSkills` — the login sequence**, which is the exact thing
-the smoke test exists to catch. Its bugs are invisible to a human playtest (the client renders what
-it was *sent*, so a bar can look perfect on screen and already be destroyed on the server). It needs
-the server running, and I don't launch that unprompted. **Say "run the smoke test" and I will, before
-you start.** -> ✅ **DONE 2026-08-07, ALL CHECKS PASSED** (~150 assertions, server log clean, no
-exceptions). The login sequence is intact after the mastery restructure: a level-81 Bulwark learned
-its kit and correctly skipped the 6 stat-swap passives; the main bar survived a subclass swap AND a
-relog byte-for-byte; `item:`/`preset:` tokens kept; per-class levels did not leak. **This pre-flight
-is closed — nothing blocks the play pass.**
+✅ **Pre-flight is clear.** `tools/SmokeTest` ran 2026-08-07, all ~150 assertions passed, server log
+clean. Nothing since (0.56.0 chat, 0.57.0 movement/grades) touches persistence, the skill bar,
+subclasses or the login sequence, so it still stands. Say the word if you want it re-run anyway.
+
+## Where to spend the pass, if you don't do all of it
+Ten sections is a lot. If you get tired, these are the ones where a defect would be **expensive to
+find later**, in order: **§61** (movement — the client can now edit your destination; a wrong bound
+shows up as taps that quietly go somewhere else), **§53/§55/§57** (the combat-maths reworks — every
+number below them assumes these are right), **§58** (the tutorial chain replaced the old starter
+quests, so a new character's first hour is untested), then everything else.
 
 ---
 
-## 🔴 0. DECISIONS I NEED FROM YOU (these block work — answer first)
+## ✅ 0. DECISIONS — ALL ANSWERED, nothing here blocks the pass (skim or skip)
+
+Kept for the record only. `0a` is deferred to an auto-farm run (your call), `0b` `0c` `0d` `0e` are
+closed. **The one live thing in this section is a warning, not a question:** `0a` makes auto-farm the
+measuring instrument, and `32z` — auto-farm skill chains surviving a relog — has never been tested.
+If the chains misbehave, the measurement lies. Worth doing `32z` in the same sitting.
 
 `0a` [] - **The nuker now beats the champion by ~19%** where they were at parity, because magic crit
 became a real channel (§56). Measured, not derived: CHAMPION/NUKER went **0.98× → 0.84×** at level 74
@@ -89,6 +95,11 @@ or is an archer simply not supposed to beat a rogue's dodge? ->
   🔴 **Still yours to rule:** may accuracy eat INTO the floor? I recommend **no** — the floor is
   authored as an anti-accuracy tool, so letting accuracy pierce it deletes the passive's purpose. -> Yes the floors and ceiling cannot be touched (they are there for a reason)
 
+  ✅ **CLOSED, no code change — the floors and ceilings stay untouchable.** Recorded as a standing
+  rule, not a one-off answer: accuracy is a catch-up stat that pays full value only while the
+  defender's evasion lead is more than 5 points, and never pierces the floor. **§0 is now fully
+  answered — nothing in it blocks the pass.**
+
 
 `0c` [X] - **Physical crit damage base ×2.0 — still under research, still unchanged.** You think L2 is
 ×1.5 and neither of us can source it. The real question is *what the multiplier multiplies*: ours
@@ -122,6 +133,13 @@ did you mean? -> In l2 the weapons do a flat increase in crit (+64, +90, + 109 @
   yourself, so I built it, but nobody has played it. Watch rogue damage in the pass. -> why u count it as a nerf .. the 430 with jsut a weapon attri was just way to OP .. the 400 we must get only after getting fully buffed
   Archer - 132x1.2(passive) = 158x1.3(single buff) = 206 => here if we add the x1.3 attri we get 267 which is 6% and without the attri do a x2 harmony we get 411 ... but if we want we can then add the attri end get to the cap 535
   Fighter - 88x1.3(buff) = 114x1.9(attri) = 217 ~same as dagger without atri then the x2 harmony here u go on a single sword 434 near the cap
+
+  ✅ **CLOSED — you are right and "nerf" was the wrong word.** I checked all four of your chains and
+  they land: archer `132×1.2×1.3 = 206`, `×2 harmony = 412`, `+attri = 535`; fighter
+  `88×1.3×1.9 = 217`, `×2 harmony = 434`. Both reach the **500 (50%) cap only when FULLY buffed**,
+  which is the design — the old build handed you 430 off a weapon roll alone. No change; I was
+  measuring the max roll in isolation instead of against the buff stack it is supposed to need.
+  Still worth **watching rogue damage** in the pass, but as an observation, not a suspected regression. -> 
 
 `0e` [!] - **`light` body armor at 52 (202 P.Def) is WEAKER than at 40 (218).** Authored that way in
 your CSV and shipped that way, so the C body is a downgrade for anyone who already has the D one.
@@ -387,8 +405,8 @@ you switch to a board title and want it again. ->
 `59t` [] - **Revoking works**: `/titleright <name> off` takes a worn written title straight off the
 head. ⚠ **On a 76+ character it comes BACK on the next login** — the level gate re-grants it. Say if
 you want a revoke to stick; it costs one more column. -> 
-`59u` [] - ⚠ **Protocol is 13.** Install the 0.55.0 APK *and* server. (An older APK draws NPCs as a
-bare "Marius" and every title in plain gold — expected, not a bug.) -> 
+`59u` [x] - ~~⚠ Protocol is 13, install the 0.55.0 APK *and* server.~~ **Superseded — the pass ships as
+0.57.0 at protocol 14; see BEFORE YOU START at the top. Nothing to check here.** -> 
 
 ---
 
@@ -423,6 +441,44 @@ window is empty (it follows the C1 chat reset, not the System tab). ->
 
 ---
 
+## 61. 0.57.0 — the last three of the queue: `B8` the S grade, `B9` the jail wall, `B10` client collision
+
+**No schema change; `game.db` is fine. Protocol stays 14** — nothing on the wire moved. Server and
+APK should still go together, because the client now reads the world's bounds out of `Game.Shared`.
+
+**`B8` — the S grade exists in words now.**
+`61a` [] - Debug → Equip → **Level 80**: the menu says **(S-Grade)**, not (A-Grade). Open any piece's
+details: **`Grade: S`**. Before, a Soulcrystal item called itself A while the only scroll that fits it
+says "S grade only" — the two finally agree. -> 
+`61b` [] - Same item in the **vendor** list: "Mythic **S**-grade …". -> 
+`61c` [] - ⚠ **The one behaviour change, tell me if you hate it.** S gear now sits on the grade
+ladder like every other tier, so a character **below 80** wearing level-80 gear takes the normal
+one-step **×0.5** grade penalty (it was ×1.00 — S was the only tier with no gate, while its own
+details already said *Requires level 80*). At 80+ nothing changes. -> 
+
+**`B9` — the jail has a wall you can see.**
+`61d` [] - `/jail <name>` then `/tp <name>`: you arrive **in the jail**, and an **orange dashed
+circle** is drawn around the cell. Walk at it — you stop on the line instead of being snapped back. -> 
+`61e` [] - The ring is **not** on the map-overlay toggle; it appears because you are standing in the
+cell and disappears when you leave. -> 
+`61f` [] - Same for the inmate: a jailed character sees the same ring and can pace the cell. -> 
+
+**`B10` — the client has collision now.** (The server clamp is untouched — it is the anti-cheat
+backstop, and this is the half that was missing.)
+`61g` [] - **Walk into the world edge.** Tap past the border in the overworld: you walk to the edge
+and **stop there**. No rubber-band, no snap-back — the destination ring lands on the edge, which is
+the tell that the client refused to ask for the impossible. -> 
+`61h` [] - **Same at a dungeon wall.** In the Hollow Crypt, tap outside the dungeon: you stop at the
+boundary. -> 
+`61i` [] - **Crossing worlds on foot is refused out loud.** If you can get a tap to land in a
+different world than the one you are in, nothing moves and the log says *"You can't walk to … — only
+a teleport goes there."* (Hard to reach on purpose; if you never see it, that is fine — say so.) -> 
+`61j` [] - **Nothing normal changed.** An ordinary hunting session: no stutter, no move that gets
+eaten, no tap that lands short. This is the risk of the change — the client is now allowed to edit
+your destination, so a wrong bound would show up as taps that quietly go somewhere else. -> 
+
+---
+
 ## CARRIED FORWARD — never reached in any playtest, needs a deliberate setup
 
 These have survived several checklists untouched because none of them happens by accident. If you
@@ -444,15 +500,13 @@ ranks, assist-leader — and all of it **survives a relog**. ->
 
 Tracked, ruled on, or deliberately queued. Listed so you don't re-report them.
 
-- **`B9` the jail has no border** — an admin teleported inside is clamped back to the dungeon. Queued.
-- **`B10` client-side collision does not exist** — only the server rubber-band. Queued.
-- **`B8` soulcrystal-tier gear prints A grade** in details while accepting a Mythic attribute scroll.
-  Queued.
+- ~~**`B8` `B9` `B10`**~~ ✅ **ALL BUILT 0.57.0** — test at §61. **The build queue you set on
+  2026-08-07 is now EMPTY.** Nothing is queued; the next move is yours — and the highest-value one is
+  still an APK and a play pass over nine unplayed builds, not more code.
 - ~~**`D5` the [Combat] chat tab in its own window.**~~ ✅ **BUILT 0.56.0** — test at §60.
 - ~~**`M5`/`M6` the tutorial chain + bound 30-day newbie gear.**~~ ✅ **BUILT 0.54.0** — test at §58.
 - ~~**`C1` `C3` `C14` `C15` `C16` `C17`** — the QoL six you picked.~~ ✅ **ALL BUILT** — `C15` rode
-  along in 0.54.0, the other five are 0.55.0. Test at §59. The queue is now down to **`B8`, `B9`,
-  `B10`** (listed above) — and, ahead of any of them, **a play pass**.
+  along in 0.54.0, the other five are 0.55.0. Test at §59.
 - **`C4`** auto-on for buff potions/scrolls — **your ruling: comes later, with the AutoPot tabs.**
 - **`G2` / `0e` `lb_*` + `wc_*`** — **CLOSED by your ruling: leave them.** Placeholders for 40+,
   commented out, harmless. I will stop asking.

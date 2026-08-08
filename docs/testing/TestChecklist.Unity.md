@@ -178,8 +178,12 @@ Full authoritative list with the owner's own wording lives in memory `playtest-1
 of these once fixed. Nothing here has been built yet.
 
 **Bugs**
-1. [~] ⚠ P17 — STILL OPEN, and now understood: **the jail has no border of its own**, so an admin teleported into it is re-clamped into the dungeon the moment he moves. Original: `/jail test1` then `/tp test1` teleports to the **dungeon, not the jail** (position clamping —
-       both live in the negative quadrant).
+1. [x] ✅ **BUILT 0.57.0 (`B9`) — retest at §61d-f.** The server half (the jail is its own domain, so a
+       visiting admin is confined to the cell rather than dragged to the nearest dungeon) has been in
+       since 0.28.67; what was missing was any way to SEE the cell, so the clamp read as a yank. The
+       jail now draws an orange dashed ring, on while you stand in it. Original: `/jail test1` then
+       `/tp test1` teleports to the **dungeon, not the jail** (position clamping — both live in the
+       negative quadrant).
 2. [x] ✅ P17 **Mobs don't attack inside the dungeon** when you're displaced/teleported in from the debug
        menu — no aggro, no retaliation.
 3. [x] ✅ P17 **Mobs are clamped together** in the crypt (bunched on one spot).
@@ -218,10 +222,13 @@ of these once fixed. Nothing here has been built yet.
 22. [x] ✅ P17 **World border** — an orange dashed line like the jail's. It is the **fallback for where there is
         no physical collision marker**: something that says "this is the end, you cannot go further".
         Not a substitute for the collision in item 23. (Mountains/ocean later.)
-23. [~] ⚠ P17 — the SERVER half is confirmed working (it rubber-bands you); **the client half still does not exist** — nothing stops you at the surface. Original: **Real impassable WALLS — a CLIENT/SERVER split** (clarified 2026-07-24).
+23. [x] ✅ **BUILT 0.57.0 (`B10`) — retest at §61g-j.** The client half exists now: `GameBoot.Move()`
+        clamps a destination onto the world you are standing in (stop at the surface) and refuses
+        outright a tap that lands inside a DIFFERENT world. Both halves read the same geometry —
+        `Game.Shared/WorldDomain.cs` — so they cannot disagree. Original: **Real impassable WALLS — a CLIENT/SERVER split** (clarified 2026-07-24).
         **Client = collision:** you press against a wall and **stop at the surface**; the client never
         emits out-of-world coordinates, and a **tap outside your current world is rejected before it
-        becomes a move order**. *This half doesn't exist yet — it is the work.*
+        becomes a move order**.
         **Server = prevention:** the existing rubber-band (`ConfineToDomain`, `GameLoopService.cs:712`)
         **stays as the anti-cheat backstop** — do NOT weaken it. Today's snap-back is the symptom of the
         missing client half, not a bug in the clamp.
@@ -863,7 +870,7 @@ B2 compare on a pendant opens a RING · B3 skills exist outside his CSVs (⏭ ow
 items show in vendor sell + warehouse · B5 relog resets the offline-farm TIMER display · B6 **every text
 box wipes its pre-filled value on the first keystroke** (one fix, whole client) · B7 an out-of-range
 party member cannot be targeted · B8 Soulcrystal details print A while the scroll it takes is Mythic ·
-B9 the jail has no border · B10 no client-side collision · B11 `/block` + `/like` have no chat commands
+~~B8~~ ~~B9~~ ~~B10~~ **all built 0.57.0, retest at Open-Checklist §61** · B11 `/block` + `/like` have no chat commands
 or Actions rows, and an admin/moderator must not be blockable.
 
 **Changes** — C1 chat clears on relog (cap ~1000) · C2 newbie gear untradable + 30-day timer · C3 timed

@@ -5,8 +5,8 @@ public enum ItemGrade { F = 0, E = 1, B = 2, A = 3, S = 4 }
 /// <summary>L2-style GRADE PENALTY (owner 2026-07-16, redesigned 2026-07-17).
 ///
 /// The penalty is driven by the GAP between YOUR grade and the ITEM's grade — not by the item's grade
-/// alone. Both sides sit on the same ladder of six steps (<see cref="GradeLevels"/>): F=1, E=20, D=40,
-/// C=52, B=61, A=76 — the very tiers <see cref="ItemCatalog.TierLetter"/> already names. So a level-1
+/// alone. Both sides sit on the same ladder of seven steps (<see cref="GradeLevels"/>): F=1, E=20, D=40,
+/// C=52, B=61, A=76, S=80 — the very tiers <see cref="ItemCatalog.TierLetter"/> already names. So a level-1
 /// character (step 0 = F) in E gear (step 1) is ONE step over and keeps x0.5; the same character in A gear
 /// (step 5) is FIVE steps over and keeps x0.1. Level up and the gap closes on its own.
 ///
@@ -18,14 +18,22 @@ public enum ItemGrade { F = 0, E = 1, B = 2, A = 3, S = 4 }
 /// stop a level-1 twink swinging A-grade.</summary>
 public static class GradePenalty
 {
-    /// <summary>Character level at which each grade STEP becomes "yours" (F, E, D, C, B, A).</summary>
-    public static readonly int[] GradeLevels = { 1, 20, 40, 52, 61, 76 };
+    /// <summary>Character level at which each grade STEP becomes "yours" (F, E, D, C, B, A, S).
+    ///
+    /// <para>⚠ The S step (80) was missing until 0.57.0, which meant S-grade gear was the ONE tier with
+    /// no grade gate: a level-76 character in a Soulcrystal set took no penalty at all, while its item
+    /// details said "Requires level 80". <see cref="EnchantRules.GradeOf(int)"/> already cited this array
+    /// as the source of "E 20, D 40, C 52, B 61, A 76, S 80" — it just wasn't true here yet.</para></summary>
+    public static readonly int[] GradeLevels = { 1, 20, 40, 52, 61, 76, 80 };
 
-    /// <summary>Display letter per step, so UI never re-derives the ladder.</summary>
-    public static readonly string[] GradeNames = { "F", "E", "D", "C", "B", "A" };
+    /// <summary>Display letter per step, so UI never re-derives the ladder. Parallel to
+    /// <see cref="GradeLevels"/> — the two are indexed by the same step and must stay the same length.</summary>
+    public static readonly string[] GradeNames = { "F", "E", "D", "C", "B", "A", "S" };
 
     /// <summary>What each GAP (steps over your grade) leaves of the affected stats. Index = gap, so
-    /// index 0 (at or above your grade) is the no-op x1.</summary>
+    /// index 0 (at or above your grade) is the no-op x1. Deliberately SHORTER than the ladder: with the
+    /// S step the largest possible gap is 6 (a level-1 character in S gear), which clamps to the same
+    /// x0.1 floor as gap 5 — five steps under is already inert, and a sixth rung would be theatre.</summary>
     private static readonly float[] GapFactors = { 1f, 0.5f, 0.4f, 0.3f, 0.2f, 0.1f };
 
     /// <summary>The grade STEP (0..5) a character level sits at.</summary>
@@ -1613,10 +1621,18 @@ public static class ItemCatalog
         }
     }
 
-    /// <summary>Display letter for a gear LEVEL tier (20/40/52/61/76 → E/D/C/B/A). Cosmetic —
-    /// the item's <see cref="ItemDef.ItemLevel"/> drives the mechanics, not the letter.</summary>
+    /// <summary>Display letter for a gear LEVEL tier (20/40/52/61/76/80 → E/D/C/B/A/S). Cosmetic —
+    /// the item's <see cref="ItemDef.ItemLevel"/> drives the mechanics, not the letter.
+    ///
+    /// <para>⚠ The S rung is not decoration. Without it a level-80 Soulcrystal piece printed "Grade: A"
+    /// in item details while every banded SYSTEM — <see cref="AttributeSystem.TierOf"/>,
+    /// <see cref="EnchantRules.GradeOf(int)"/>, <see cref="GradePenalty"/> — already called it S, so the
+    /// details window and the scroll that fits it named two different grades (playtest-17 `B8`).
+    /// It deliberately stops at "S": there is no S*/S** here, because no banded system has those rungs
+    /// and inventing a letter no scroll answers to is the very bug this fixes.
+    /// <see cref="GradeTheme"/>'s Starstone/Seraphite are NAME themes, not grades.</para></summary>
     public static string TierLetter(int level) =>
-        level >= 76 ? "A" : level >= 61 ? "B" : level >= 52 ? "C" : level >= 40 ? "D"
+        level >= 80 ? "S" : level >= 76 ? "A" : level >= 61 ? "B" : level >= 52 ? "C" : level >= 40 ? "D"
         : level >= 20 ? "E" : "F";
 
     /// <summary>The grade's MATERIAL name — the display prefix that signals grade at a glance (owner

@@ -7,10 +7,75 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.55.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.57.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 0.57.0 — 2026-08-08 — the last three of the queue: the S grade, the jail's wall, client collision
+
+Playtest-11/17 **`B8` · `B9` · `B10`** — the three items left in the owner's build queue, which is now
+empty. Server + Unity client both type-check; **no db reset, protocol stays 14** (nothing on the wire
+moved).
+
+**`B8` — S grade existed everywhere except in words.** `ItemCatalog.TierLetter` stopped at "A" for
+level ≥ 76, so a level-80 Soulcrystal piece printed **`Grade: A`** in its details while the only scroll
+that fits it says *"S grade only"* — the display path and every banded system named different grades.
+`TierLetter` now returns "S" at 80. It deliberately does **not** grow S\*/S\*\* rungs for the 83/85
+name themes: no banded system has those, and a letter no scroll answers to is the very bug being
+fixed.
+
+The same hole was in the grade PENALTY ladder — `GradePenalty.GradeLevels` ran `{1,20,40,52,61,76}`
+while `EnchantRules.GradeOf` cited it as the source of *"E 20, D 40, C 52, B 61, A 76, **S 80**"*. So S
+was the one tier with no grade gate: a level-76 character in a Soulcrystal set took **×1.00** while the
+item's own details said *Requires level 80*. The ladder gains its seventh step, which makes that the
+normal one-step **×0.5**. ⚠ **This is the one behaviour change in the release** — flagged for his
+ruling as `61c`. `GapFactors` stays six long on purpose: the largest gap is now 6 and clamps to the
+same ×0.1 floor.
+
+**`B9` + `B10` — the client half of walls, which never existed.** The owner's 2026-07-24 architecture
+call was a split: **the client stops you at the surface and never emits an out-of-world coordinate;
+the server keeps its rubber-band as the anti-cheat backstop.** Only the backstop was ever built, so
+the everyday experience of a wall was being yanked back through it.
+
+Two halves may only enforce the same rule if they cannot disagree, so the geometry moved into
+**`Game.Shared/WorldDomain.cs`** — one value type answering *which world is this point in* (Overworld
+/ Dungeon / Jail / Void), *does it contain that point*, and *clamp it back onto me*. `ConfineToDomain`
+is now four lines over it and `InJail`/`ClampToJail` are one-line delegations; the server behaves
+exactly as before, by construction.
+
+`GameBoot.Move()` — the single chokepoint every move order passes through — now answers two different
+mistakes differently. A tap **past the edge of your own world** is clamped: you walk to the wall and
+stop, the destination ring lands on the wall, and the server has nothing to correct. A tap that lands
+**inside a different world** is not sent at all and says *"You can't walk to … — only a teleport goes
+there"* — crossing is teleport-only, so quietly walking you to the nearest wall would be a lie. Note
+the order matters for the jail: a tap outside the cell is *clamped* (you pace the cell), not refused,
+because empty ground is not another world.
+
+**And the jail is drawn.** The cell has been enforced since 0.28.67 — for the inmate and for the admin
+who teleports in to talk to one — but nothing on screen said where it ended, which is why the clamp
+read as "the game keeps yanking me" (`B9`). It gets the same orange dashed language as the world
+border, as a ~18-dash circle that renders **only while you stand inside it**. Deliberately *not* on
+the map-overlay toggle: the world rectangle is 24000 units of reference you look up once, this is a
+260-unit wall you are pressed against. Dungeon boxes get no ring — a bounding box is not the polygon
+the map already draws, and a rectangle there would contradict the coloured outline instead of
+explaining it. The dash emitter is now one shared method (the 0.28.78 render-warning flood was a
+material *per dash*; it still takes its material from the caller).
+
+## 0.56.0 — 2026-08-07 — `D5`: the combat feed gets its own channel and its own window
+
+*(Backfilled 2026-08-08 — 0.56.0 shipped without a changelog entry.)* Damage, loot and the per-kill
+`Exp/SP/Gold` line left the System tab for **`ChatChannel.Combat`** and a **second window** (bottom-
+right, beside the chat window). Server → client only: `HandleChat` demotes an inbound Combat *or*
+System message to Local, so nobody can inject a fake loot line. The line's KIND ("LOOT"/"EXP") rides
+in `ChatMessage.From` — on this channel From is a colour tag the client never prints — which kept the
+wire change to one enum value. Protocol 13 → **14**, no schema change.
+
+Client-side, `GameUi.World.cs` grew a private `LogView` type: two views (`_chatView`, `_combatView`)
+over the **one** `ClientLog` buffer, rather than a copy-paste of the append/trim logic — that is the
+code that used to freeze the phone. The Chat window's 6th button, **Combat**, is not a tab; it toggles
+the window and stays lit while it is open. Two calls left for the owner (§60): combat is excluded from
+`All`, and Chat's Clear still wipes everything.
 
 ## 0.55.0 — 2026-08-07 — the QoL five, titles you can write, and NPCs that wear their role
 

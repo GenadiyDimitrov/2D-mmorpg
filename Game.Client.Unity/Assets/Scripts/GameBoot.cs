@@ -1707,6 +1707,33 @@ namespace Game.Client
                 return;
             }
 
+            // CLIENT-SIDE WALLS (playtest-11 item 23 / `B10`, the owner's 2026-07-24 architecture call).
+            // The client is the half that must STOP YOU AT THE SURFACE and never emit an out-of-world
+            // coordinate; the server's ConfineToDomain stays as the anti-cheat backstop. Until now only
+            // the backstop existed, so the everyday experience of a wall was a rubber-band — you walked
+            // through it and were yanked. Both halves read the SAME geometry (WorldDomain, Game.Shared),
+            // which is the only reason it is safe for the client to decide anything here.
+            //
+            // Two different answers, because they are two different mistakes:
+            //   • tapping PAST the edge of the world you're in → walk to the edge and stop (clamp);
+            //   • tapping INSIDE another world → don't issue the order at all, and say why. Crossing is
+            //     teleport-only, so silently walking you to the nearest wall would be a lie.
+            if (Entities != null && Entities.TryGetState(SelfId, out var hereState))
+            {
+                var domain = WorldDomain.At(hereState.X, hereState.Y);
+                if (!domain.Contains(serverX, serverY))
+                {
+                    var tapped = WorldDomain.At(serverX, serverY);
+                    if (tapped != domain && tapped.Contains(serverX, serverY))
+                    {
+                        ClientLog.Warn("You can't walk to " + tapped.Name + " — only a teleport goes there.");
+                        return;
+                    }
+                    var stop = domain.Clamp(serverX, serverY);
+                    serverX = stop.X; serverY = stop.Y;
+                }
+            }
+
             // Drop the destination ring here rather than in TouchInput, so EVERY move order shows one
             // — including any future ones that don't come from a tap.
             if (Marker != null) Marker.ShowAt(WorldMapper.ToUnity(serverX, serverY));

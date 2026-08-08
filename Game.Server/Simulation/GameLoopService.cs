@@ -1116,29 +1116,18 @@ public class GameLoopService : BackgroundService
     }
 
     /// <summary>Clamp a move destination to the domain the player is CURRENTLY in: the positive overworld
-    /// [0,Zone], or — when they're in the negative quadrant — the bounding box of the dungeon they're in
-    /// (or nearest to). This is the "wall". Teleport/PlaceEntity do NOT go through here, so they alone can
-    /// move a player across a domain boundary. Jailed players are confined by ClampToJail instead.</summary>
+    /// [0,Zone], the jail circle, or — when they're in the negative quadrant — the bounding box of the
+    /// dungeon they're in (or nearest to). This is the "wall". Teleport/PlaceEntity do NOT go through
+    /// here, so they alone can move a player across a domain boundary. Jailed players are confined by
+    /// ClampToJail instead.
+    ///
+    /// <para>The geometry itself lives in <see cref="WorldDomain"/> (Game.Shared) because the CLIENT now
+    /// enforces the same wall before it ever sends a move (0.57.0, B10) — this clamp is the anti-cheat
+    /// backstop, not the everyday mechanism, and the two halves must not be able to disagree.</para></summary>
     private static (float, float) ConfineToDomain(Entity e, float tx, float ty)
     {
         if (e.Jailed) return (tx, ty);
-
-        // The JAIL is its own domain, not a dungeon. Anyone STANDING in it — including an admin who
-        // teleported there to talk to an inmate — is confined to the cell, not dragged to the nearest
-        // dungeon. Without this a non-jailed visitor fell through to the dungeon branch below.
-        if (InJail(e.X, e.Y)) return ClampToJail(tx, ty);
-
-        if (e.X >= 0 && e.Y >= 0)   // overworld — sealed into the positive quadrant
-            return (Math.Clamp(tx, 0f, GameConstants.ZoneWidth),
-                    Math.Clamp(ty, 0f, GameConstants.ZoneHeight));
-
-        // Negative quadrant: confine to the dungeon you're in / nearest to.
-        var d = RegionMap.DungeonAt(e.X, e.Y) ?? RegionMap.NearestDungeon(e.X, e.Y);
-        if (d != null)
-            return (Math.Clamp(tx, d.MinX, d.MaxX), Math.Clamp(ty, d.MinY, d.MaxY));
-
-        // No dungeons at all — at least keep them out of the positive overworld.
-        return (Math.Clamp(tx, GameConstants.WorldMinX, 0f), Math.Clamp(ty, GameConstants.WorldMinY, 0f));
+        return WorldDomain.At(e.X, e.Y).Clamp(tx, ty);
     }
 
     /// <summary>Safety net for broken geodata / a prediction slip: if a (non-jailed) player has ended up
@@ -1173,21 +1162,10 @@ public class GameLoopService : BackgroundService
     /// <summary>Is this point inside the jail cell? The jail is its own DOMAIN (like the overworld or a
     /// dungeon), so both the movement wall and the ward have to recognise it — otherwise a non-jailed
     /// visitor standing there looks like someone loose in the negative quadrant.</summary>
-    private static bool InJail(float x, float y)
-    {
-        float dx = x - GameConstants.JailX, dy = y - GameConstants.JailY;
-        return dx * dx + dy * dy <= GameConstants.JailRadius * GameConstants.JailRadius;
-    }
+    private static bool InJail(float x, float y) => WorldDomain.Jail.Contains(x, y);
 
     /// <summary>Pull a point back inside the jail cell, keeping its direction from the centre.</summary>
-    private static (float X, float Y) ClampToJail(float x, float y)
-    {
-        float dx = x - GameConstants.JailX, dy = y - GameConstants.JailY;
-        float dist = MathF.Sqrt(dx * dx + dy * dy);
-        if (dist <= GameConstants.JailRadius) return (x, y);
-        float k = GameConstants.JailRadius / dist;
-        return (GameConstants.JailX + dx * k, GameConstants.JailY + dy * k);
-    }
+    private static (float X, float Y) ClampToJail(float x, float y) => WorldDomain.Jail.Clamp(x, y);
 
     private void HandleSetMoveState(SetMoveStateCmd cmd)
     {

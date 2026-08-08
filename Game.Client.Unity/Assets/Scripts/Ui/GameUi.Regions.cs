@@ -42,9 +42,11 @@ namespace Game.Client
 
             BuildRegionOutlines();
             BuildWorldBorder();
+            BuildJailBorder();
         }
 
         private GameObject _worldBorder;
+        private GameObject _jailBorder;
 
         /// <summary>The edge of the world, as an orange DASHED rectangle on the ground (owner: "like the
         /// jail's orange dashed line — just for reference").
@@ -66,28 +68,8 @@ namespace Game.Client
             var sharedMat = new Material(UnlitMaterials.Shader) { color = colour };   // ONE material, not one-per-dash
             float w = GameConstants.ZoneWidth, h = GameConstants.ZoneHeight;
 
-            void Edge(float x0, float z0, float x1, float z1)
-            {
-                float len = Mathf.Sqrt((x1 - x0) * (x1 - x0) + (z1 - z0) * (z1 - z0));
-                if (len <= 0f) return;
-                float dx = (x1 - x0) / len, dz = (z1 - z0) / len;
-                for (float t = 0f; t < len; t += dash + gap)
-                {
-                    float e = Mathf.Min(t + dash, len);
-                    var go = new GameObject("Dash");
-                    go.transform.SetParent(_worldBorder.transform, false);
-                    var lr = go.AddComponent<LineRenderer>();
-                    lr.useWorldSpace = true;
-                    lr.widthMultiplier = 8f;      // wide: this is read from a long way off, not up close
-                    lr.sharedMaterial = sharedMat;
-                    lr.startColor = lr.endColor = colour;
-                    lr.positionCount = 2;
-                    var a = WorldMapper.ToUnity(x0 + dx * t, z0 + dz * t); a.y = y;
-                    var b = WorldMapper.ToUnity(x0 + dx * e, z0 + dz * e); b.y = y;
-                    lr.SetPosition(0, a);
-                    lr.SetPosition(1, b);
-                }
-            }
+            void Edge(float x0, float z0, float x1, float z1) =>
+                DashedEdge(_worldBorder, sharedMat, colour, 8f, dash, gap, y, x0, z0, x1, z1);
 
             Edge(0f, 0f, w,  0f);
             Edge(w,  0f, w,  h);
@@ -95,6 +77,72 @@ namespace Game.Client
             Edge(0f, h,  0f, 0f);
 
             _worldBorder.SetActive(false);   // off until the zone-colours toggle turns it on
+        }
+
+        /// <summary>One dashed straight segment on the ground, as a run of 2-point LineRenderers sharing
+        /// ONE material. Shared by the world border and the jail ring — the 0.28.78 device playtest's
+        /// per-frame render-warning flood was a material PER DASH, so there is exactly one place that
+        /// creates these and it always takes the material from its caller.</summary>
+        private static void DashedEdge(GameObject parent, Material mat, Color colour, float width,
+                                       float dash, float gap, float y,
+                                       float x0, float z0, float x1, float z1)
+        {
+            float len = Mathf.Sqrt((x1 - x0) * (x1 - x0) + (z1 - z0) * (z1 - z0));
+            if (len <= 0f) return;
+            float dx = (x1 - x0) / len, dz = (z1 - z0) / len;
+            for (float t = 0f; t < len; t += dash + gap)
+            {
+                float e = Mathf.Min(t + dash, len);
+                var go = new GameObject("Dash");
+                go.transform.SetParent(parent.transform, false);
+                var lr = go.AddComponent<LineRenderer>();
+                lr.useWorldSpace = true;
+                lr.widthMultiplier = width;
+                lr.sharedMaterial = mat;
+                lr.startColor = lr.endColor = colour;
+                lr.positionCount = 2;
+                var a = WorldMapper.ToUnity(x0 + dx * t, z0 + dz * t); a.y = y;
+                var b = WorldMapper.ToUnity(x0 + dx * e, z0 + dz * e); b.y = y;
+                lr.SetPosition(0, a);
+                lr.SetPosition(1, b);
+            }
+        }
+
+        /// <summary>The JAIL's wall, drawn (playtest-11 item 1 / `B9`).
+        ///
+        /// <para>The cell has always been enforced — a jailed player, and an admin visiting one, are both
+        /// clamped to <see cref="WorldDomain.Jail"/> — but nothing on screen said where it ended, so the
+        /// clamp read as "the game keeps yanking me". Same orange dashed language as the world border,
+        /// because it means the same thing: this is the end, you cannot go further.</para>
+        ///
+        /// <para>Unlike the world border this is NOT on the map-overlay toggle. The world rectangle is
+        /// 24000 units of reference you look up once; this is a 260-unit wall you are standing against,
+        /// and it is only ever built into ~18 dashes that render only while you are inside it — which is
+        /// also why it cannot bring back the 0.28.78 renderer flood. Dungeon boxes deliberately get no
+        /// ring: their bounding box is not the polygon the map already draws, so a rectangle there would
+        /// contradict the coloured outline rather than explain it.</para></summary>
+        private void BuildJailBorder()
+        {
+            const float y = 0.09f;
+            var colour = new Color(0.95f, 0.55f, 0.15f, 0.85f);
+            var jail = WorldDomain.Jail;
+
+            _jailBorder = new GameObject("JailBorder");
+            var sharedMat = new Material(UnlitMaterials.Shader) { color = colour };
+
+            // 36 arc segments, every other one drawn: a dashed circle without arc-length arithmetic.
+            const int segments = 36;
+            for (int i = 0; i < segments; i += 2)
+            {
+                float a0 = i * Mathf.PI * 2f / segments, a1 = (i + 1) * Mathf.PI * 2f / segments;
+                // dash longer than any chord + no gap = "draw this segment whole"; the GAP is the
+                // segment we skip by stepping i by two.
+                DashedEdge(_jailBorder, sharedMat, colour, 4f, jail.Radius * 2f, 0f, y,
+                           jail.CentreX + Mathf.Cos(a0) * jail.Radius, jail.CentreY + Mathf.Sin(a0) * jail.Radius,
+                           jail.CentreX + Mathf.Cos(a1) * jail.Radius, jail.CentreY + Mathf.Sin(a1) * jail.Radius);
+            }
+
+            _jailBorder.SetActive(false);   // shown only while you are actually in the cell
         }
 
         /// <summary>Show the transient region banner. Called from the server's Region push.</summary>
@@ -147,6 +195,18 @@ namespace Game.Client
                 bool show = Boot.Zones != null && Boot.Zones.gameObject.activeSelf
                             && Boot.Phase == ClientPhase.InWorld;
                 if (_worldBorder.activeSelf != show) _worldBorder.SetActive(show);
+            }
+
+            // The jail ring shows itself: it is on exactly while you STAND in the cell — serving a
+            // sentence, or an admin who teleported in to talk to an inmate. No toggle, because a wall
+            // you are pressed against is not map reference, it is the thing stopping you.
+            if (_jailBorder != null)
+            {
+                bool show = Boot.Phase == ClientPhase.InWorld
+                            && Boot.Entities != null
+                            && Boot.Entities.TryGetState(Boot.SelfId, out var self)
+                            && WorldDomain.Jail.Contains(self.X, self.Y);
+                if (_jailBorder.activeSelf != show) _jailBorder.SetActive(show);
             }
         }
 
