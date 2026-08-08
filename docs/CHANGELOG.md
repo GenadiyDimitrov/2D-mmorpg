@@ -7,10 +7,30 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.57.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.57.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 0.57.1 — 2026-08-09 — a buffer's window swallowed the quest step behind it
+
+Found mid-playtest, the first bug of the 0.57.0 play pass: the tutorial chain stalls at level 6, on
+the beat that sends you to Spirit Helper Nyra.
+
+`GameLoopService.SendDialog()` **returns early** for an `NpcRole.Buffer` so it can send the buff
+window instead of the usual quest dialog — but `AdvanceTalkStep()`, which advances a `TalkTo` step
+when you speak to its target, is called at the **bottom** of that same method. Talking to a buffer
+therefore opened her window and never touched the quest. Buffer is the only role in `SendDialog` with
+an early return (Warehouse and SkillReset ride through on the normal path as flags), which is why
+every other stop in the chain — Pell, Cera, Miren, Dolan — worked and only this one didn't.
+
+The branch now advances the step itself before returning. This is a class of bug the tutorial chain
+invites by design: `M5` is built out of `TalkTo` steps pointed at *service* NPCs, so any future role
+that short-circuits `SendDialog` reproduces it.
+
+**Server-only** — no DTO, **protocol stays 14**, no schema change, and a character already stranded
+on the step advances on the next talk (quest state lives in `ActiveQuestsJson` and survives). No new
+APK: a 0.57.0 client is unchanged on the wire.
 
 ## 0.57.0 — 2026-08-08 — the last three of the queue: the S grade, the jail's wall, client collision
 
