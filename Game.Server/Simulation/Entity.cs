@@ -1209,6 +1209,24 @@ public class Entity
     public string? SpawnerMobId { get; set; }
     /// <summary>Training dummy: immortal (GodMode), stationary, never attacks/aggroes.</summary>
     public bool TrainingDummy { get; set; }
+    /// <summary>The dummy's flat pool and regen. It takes damage so you can read the numbers, and
+    /// never dies (ApplyDamage floors it at 1 HP); the regen tops it back up between tests.</summary>
+    public const int TrainingDummyHp = 1_000_000;
+    public const float TrainingDummyRegen = 10_000f;   // ~10k HP/sec — it is never "engaged", so regen runs
+
+    /// <summary>The mob's PERMANENT stat multipliers — the zone rank and its MobMod passives, composed
+    /// at spawn and re-applied at the end of every RecomputeDerived by ApplyMobScale. 1 = no change.
+    ///
+    /// ⚠ These live on the entity rather than being applied once at spawn precisely because
+    /// RecomputeDerived rebuilds a mob's stats from the level curve alone: any buff, debuff or mod
+    /// change re-ran it and erased a rank that had been multiplied in afterwards (playtest-20 #7).
+    /// Set them in BuildMob and never multiply a mob's MaxHp/attack/defence in place again.</summary>
+    public float MobHpScale { get; set; } = 1f;
+    public float MobPAtkScale { get; set; } = 1f;
+    public float MobMAtkScale { get; set; } = 1f;
+    /// <summary>Rank accuracy is FLAT and lands after the template's Accuracy multiplier, so a boss
+    /// gets its +20 whole rather than scaled by whatever passive the template happens to carry.</summary>
+    public int MobAccFlat { get; set; }
     /// <summary>Caster mob (Mage role): no basic attack — casts the mob spells gated on MP;
     /// out of MP it stands helpless. Set at spawn from MobType.Role.</summary>
     public bool CasterMob { get; set; }
@@ -2036,8 +2054,98 @@ public class Entity
 
         ApplyGradePenalty();
 
+        ApplyMobScale();
+
         Hp = Math.Min(Hp, MaxHp);
         Mp = Math.Min(Mp, MaxMp);
+    }
+
+    /// <summary>The zone-rank, MobMod and training-dummy multipliers, re-applied on TOP of the freshly
+    /// recomputed base curve — the mob equivalent of the grade penalty above, and for the same reason:
+    /// it must run last so nothing can wash it out.
+    ///
+    /// ⚠ playtest-20 #7 — *"Frost bind collapses a training dummy's HP, 1kk → 5k, and elites lose their
+    /// bonus too."* These multipliers used to be applied ONCE, in BuildMob, on top of whatever
+    /// RecomputeDerived had just produced (the note by the mob base curve still described that as the
+    /// design). RecomputeDerived runs again on every buff, debuff and gear change, and it rebuilds
+    /// MaxHp/MaxMp/attack/defence from the level curve alone — so the first debuff that landed on a
+    /// ranked mob silently deleted its rank. Frost Bind on a dummy is only the loudest case: a 1,000,000
+    /// HP pool fell back to the level curve's ~5k. It was never specific to Frost Bind, or to dummies.
+    ///
+    /// Keeping the factors ON the entity makes the recompute idempotent, which is the actual fix: run it
+    /// a hundred times and a champion is still a champion.</summary>
+    private void ApplyMobScale()
+    {
+        if (Kind != EntityKind.Mob) return;
+
+        // 1. The ZONE's rank multipliers (champion/elite/boss).
+        MaxHp = Math.Max(1, (int)(MaxHp * MobHpScale));
+        AttackPower = Math.Max(1, (int)(AttackPower * MobPAtkScale));
+        MagicAttack = Math.Max(1, (int)(MagicAttack * MobMAtkScale));
+        BasicAttackPower = Math.Max(1, (int)(BasicAttackPower * MobPAtkScale));
+
+        var mobType = MobTypeId is { } id ? MobCatalog.Get(id) : null;
+
+        // 2. The TEMPLATE's "passive skills" — magic monster, armored brute, boss, …
+        if (mobType?.Mod is MobMod mod)
+        {
+            MaxHp = Math.Max(1, (int)(MaxHp * mod.Hp));
+            MaxMp = Math.Max(1, (int)(MaxMp * mod.MaxMp));
+            Defence = Math.Max(1, (int)(Defence * mod.PDef));
+            MagicDefence = Math.Max(1, (int)(MagicDefence * mod.MDef));
+            AttackPower = Math.Max(1, (int)(AttackPower * mod.PAtk));
+            MagicAttack = Math.Max(1, (int)(MagicAttack * mod.MAtk));
+            BasicAttackPower = Math.Max(1, (int)(BasicAttackPower * mod.PAtk));
+            Evasion = (int)(Evasion * mod.Evasion) + mod.EvaFlat;
+            Accuracy = (int)(Accuracy * mod.Accuracy);
+            // Leveled-mastery extras: attack speed (>1 = faster → shorter interval), HP/MP regen.
+            if (mod.AtkSpeed != 1f) AttackSpeedMultiplier /= mod.AtkSpeed;
+            if (mod.HpRegen != 1f) HpRegenMult *= mod.HpRegen;
+            if (mod.MpRegen != 1f) MpRegenMult *= mod.MpRegen;
+            BowResist = Math.Clamp(mod.BowResist, 0f, 0.9f);
+            CritRateResist = Math.Clamp(mod.CritResist, 0f, 1f);
+            // Weapon-type resistance coefficients (P.Def route; applied per-hit by attacker weapon).
+            PierceDefCoef = mod.PierceResist;
+            BluntDefCoef = mod.BluntResist;
+            BowDefCoef = mod.BowDefResist;
+            if (mod.Boss)   // raid-boss passive: resists crits + arrows
+            {
+                CritRateResist = Math.Max(CritRateResist, 0.3f);
+                BowResist = Math.Max(BowResist, 0.3f);
+            }
+        }
+
+        if (MobAccFlat != 0) Accuracy += MobAccFlat;
+
+        // 3. The mob's ROLE — ranged/caster archetypes on top of base + passives.
+        switch (mobType?.Role)
+        {
+            case MobRole.Archer:
+                // Fires from ~450 range with a bow; higher P.Atk but light armor (less P.Def, a
+                // little more evasion). Uses the normal auto-attack — just at longer range.
+                BasicAttackRange = 450f;
+                AttackPower = Math.Max(1, (int)(AttackPower * 2f));
+                BasicAttackPower = Math.Max(1, (int)(BasicAttackPower * 2f));
+                Defence = Math.Max(1, (int)(Defence * 0.85f));
+                Evasion += 8;
+                break;
+            case MobRole.Mage:
+                // No basic attack — casts the mob spells gated on MP; out of MP it stands helpless.
+                MagicAttack = Math.Max(1, (int)(MagicAttack * 1.5f));
+                AttackPower = Math.Max(1, (int)(AttackPower * 0.5f));
+                BasicAttackPower = 1;
+                Defence = Math.Max(1, (int)(Defence * 0.7f));
+                BasicAttackRange = 0f;
+                break;
+        }
+
+        // 4. The dummy's pool is a flat override, not a factor: it must read the same 1,000,000 at
+        // every level, because it exists to be hit for ten seconds and show you the numbers.
+        if (TrainingDummy)
+        {
+            MaxHp = TrainingDummyHp;
+            HpRegenBonus = TrainingDummyRegen;
+        }
     }
 
     /// <summary>GRADE PENALTY — the LAST layer of RecomputeDerived (owner, 2026-07-17).

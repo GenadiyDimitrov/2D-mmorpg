@@ -11833,79 +11833,27 @@ var effect = def.Effect;
             InnateWeaponType = mobWeapon,
             MobTypeId = mobId
         };
-        mob.RecomputeDerived();
-        // RecomputeDerived leaves mob RunSpeed/WalkSpeed as set above (player-only
-        // override), so Speed stays the catalog run speed. HP/atk get the zone-rank
-        // multipliers here; the base curve (incl. M.Def) already came from RecomputeDerived.
-        mob.MaxHp = (int)(mob.MaxHp * hpMul);
-        if (atkMul != 1f)
-        {
-            mob.AttackPower = (int)(mob.AttackPower * atkMul);
-            mob.MagicAttack = (int)(mob.MagicAttack * atkMul);
-            mob.BasicAttackPower = (int)(mob.BasicAttackPower * atkMul);
-        }
+        // ⚠ The zone-rank and MobMod stat multipliers are RECORDED on the entity, not multiplied in
+        // here (playtest-20 #7). RecomputeDerived rebuilds a mob's HP/attack/defence from the level
+        // curve alone and runs again on every buff, debuff and mod change — so a factor applied once
+        // at spawn was silently erased by the first debuff that landed. ApplyMobScale re-applies
+        // these at the end of every recompute instead. The base curve (incl. M.Def) comes from
+        // RecomputeDerived; RunSpeed/WalkSpeed it leaves alone (player-only override), so Speed
+        // stays the catalog run speed.
+        mob.MobHpScale = hpMul;
+        mob.MobPAtkScale = atkMul;
+        mob.MobMAtkScale = atkMul;
+        mob.MobAccFlat = accFlat;
 
-        // Template "passive skills": per-mob stat modifiers (magic monster, armored
-        // brute, boss, …) applied on top of the level-derived + rank stats.
-        if (mobType.Mod is MobMod mod)
+        // The template's MobMod and its ROLE stat lean are read straight off the catalog by
+        // ApplyMobScale (via MobTypeId), so nothing about them needs copying here. What DOES belong
+        // here is anything a recompute cannot re-derive: learned skills and the spawn-time flags.
+        if (mobType.Role == MobRole.Mage)
         {
-            mob.MaxHp = Math.Max(1, (int)(mob.MaxHp * mod.Hp));
-            mob.MaxMp = Math.Max(1, (int)(mob.MaxMp * mod.MaxMp));
-            mob.Defence = Math.Max(1, (int)(mob.Defence * mod.PDef));
-            mob.MagicDefence = Math.Max(1, (int)(mob.MagicDefence * mod.MDef));
-            mob.AttackPower = Math.Max(1, (int)(mob.AttackPower * mod.PAtk));
-            mob.MagicAttack = Math.Max(1, (int)(mob.MagicAttack * mod.MAtk));
-            mob.BasicAttackPower = Math.Max(1, (int)(mob.BasicAttackPower * mod.PAtk));
-            mob.Evasion = (int)(mob.Evasion * mod.Evasion) + mod.EvaFlat;
-            mob.Accuracy = (int)(mob.Accuracy * mod.Accuracy);
-            // Leveled-mastery extras: attack speed (>1 = faster → shorter interval), HP/MP regen.
-            if (mod.AtkSpeed != 1f) mob.AttackSpeedMultiplier /= mod.AtkSpeed;
-            if (mod.HpRegen != 1f) mob.HpRegenMult *= mod.HpRegen;
-            if (mod.MpRegen != 1f) mob.MpRegenMult *= mod.MpRegen;
-            mob.BowResist = Math.Clamp(mod.BowResist, 0f, 0.9f);
-            mob.CritRateResist = Math.Clamp(mod.CritResist, 0f, 1f);
-            // Weapon-type resistance coefficients (P.Def route; applied per-hit by attacker weapon).
-            mob.PierceDefCoef = mod.PierceResist;
-            mob.BluntDefCoef = mod.BluntResist;
-            mob.BowDefCoef = mod.BowDefResist;
-            if (mod.Boss)   // raid-boss passive: resists crits + arrows
-            {
-                mob.CritRateResist = Math.Max(mob.CritRateResist, 0.3f);
-                mob.BowResist = Math.Max(mob.BowResist, 0.3f);
-            }
-        }
-
-        // Rank accuracy is FLAT and lands after the template's Accuracy multiplier, so a boss gets
-        // its +20 whole rather than scaled by whatever passive the template happens to carry.
-        if (accFlat != 0) mob.Accuracy += accFlat;
-
-        // Mob ROLE: ranged/caster archetypes on top of the base+passive stats.
-        switch (mobType.Role)
-        {
-            case MobRole.Archer:
-                // Fires from ~450 range with a bow; higher P.Atk but light armor (less P.Def,
-                // a little more evasion). Uses the normal auto-attack — just at longer range.
-                // (WeaponType is set in the initializer above, before RecomputeDerived — assigning
-                // it here was too late to reach WeaponAttackBase.)
-                mob.BasicAttackRange = 450f;
-                mob.AttackPower = Math.Max(1, (int)(mob.AttackPower * 2f));
-                mob.BasicAttackPower = Math.Max(1, (int)(mob.BasicAttackPower * 2f));
-                mob.Defence = Math.Max(1, (int)(mob.Defence * 0.85f));
-                mob.Evasion += 8;
-                break;
-            case MobRole.Mage:
-                // No basic attack — casts the mob spells (learned at the level its own maps to).
-                // Higher M.Atk, lower P.Atk / P.Def; MP-gated (out of MP → helpless).
-                mob.CasterMob = true;
-                mob.MagicAttack = Math.Max(1, (int)(mob.MagicAttack * 1.5f));
-                mob.AttackPower = Math.Max(1, (int)(mob.AttackPower * 0.5f));
-                mob.BasicAttackPower = 1;
-                mob.Defence = Math.Max(1, (int)(mob.Defence * 0.7f));
-                mob.BasicAttackRange = 0f;
-                int spellLevel = SkillCatalog.MobSpellLevel(level);
-                mob.LearnedSkills[SkillCatalog.MobNukeSkill] = spellLevel;
-                mob.LearnedSkills[SkillCatalog.MobBoltSkill] = spellLevel;
-                break;
+            mob.CasterMob = true;
+            int spellLevel = SkillCatalog.MobSpellLevel(level);
+            mob.LearnedSkills[SkillCatalog.MobNukeSkill] = spellLevel;
+            mob.LearnedSkills[SkillCatalog.MobBoltSkill] = spellLevel;
         }
 
         // Boss rank: learn its unique skill kit (BossCatalog) if it has one, else the generic
@@ -11920,24 +11868,27 @@ var effect = def.Effect;
                 mob.LearnedSkills[SkillCatalog.BossSlamSkill] = 1;
         }
 
+        // Training dummy: TAKES damage (so you see the numbers) but never dies — a huge HP pool +
+        // big regen (both applied by ApplyMobScale, so a debuff can't strip them), plus a
+        // death-floor in ApplyDamage. Stationary, never attacks.
+        if (mobType.Dummy)
+        {
+            mob.TrainingDummy = true;
+            mob.Aggressive = false;
+            mob.WalkSpeed = 0; mob.RunSpeed = 0; mob.Speed = 0;
+        }
+
+        // Second pass, now that the scales and the dummy/caster flags are set: this is the recompute
+        // that actually produces the mob's final stats. Every one of them is re-derivable from here
+        // on, which is the point — RecomputeDerived is idempotent for mobs now.
+        mob.RecomputeDerived();
+
         mob.Hp = mob.MaxHp;
         mob.Mp = mob.MaxMp;
         mob.HomeX = mob.X;
         mob.HomeY = mob.Y;
         mob.DamageLog.Clear();
         mob.LastHitterId = null;
-
-        // Training dummy: TAKES damage (so you see the numbers) but never dies — a huge HP
-        // pool + big regen, plus a death-floor in ApplyDamage. Stationary, never attacks.
-        if (mobType.Dummy)
-        {
-            mob.TrainingDummy = true;
-            mob.Aggressive = false;
-            mob.WalkSpeed = 0; mob.RunSpeed = 0; mob.Speed = 0;
-            mob.MaxHp = 1_000_000;
-            mob.Hp = mob.MaxHp;
-            mob.HpRegenBonus = 10_000;   // ~10k HP/sec (it's never "engaged", so regen runs)
-        }
 
         _world.Entities[mob.Id] = mob;
         _world.Grid.Add(mob);
