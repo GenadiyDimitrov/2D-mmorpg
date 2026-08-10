@@ -269,61 +269,101 @@ namespace Game.Client
             OpenWindow(_selectPopup);
         }
 
-        /// <summary>The same popup, but the rows TOGGLE and a Confirm sends them all at once — what a
+        /// <summary>The same popup, but each row is a QUANTITY and one Confirm sends them all — what a
         /// pick-many box (the Blessing Box: 10 of 17) needs and a pick-one box must not have.
-        /// ⚠ The tick is `[x]`, not a checkbox glyph: the TMP atlas is baked with ~250 characters and
-        /// anything outside it draws as a hollow box (the same trap that killed the `●` target marker).</summary>
+        ///
+        /// <para>The rows used to be ticks, so ten picks meant ten DIFFERENT scrolls and "five of this
+        /// one" could not be said at all — the owner hit the refusal that came out of that (playtest-20
+        /// `53a`) and named the shape he wants: 5 + 3 + 2. Picks are a budget now. Tap a row to spend one
+        /// on it; the row's own `-` gives one back.</para>
+        ///
+        /// ⚠ The counter is `[2]` and the minus is `-`, not a stepper glyph: the TMP atlas is baked with
+        /// ~250 characters and anything outside it draws as a hollow box (the same trap that killed the
+        /// `●` target marker).</summary>
         private void ShowMultiSelection(string title, int pickCount,
                                         (string Label, string Id)[] options, Action<List<string>> onConfirm)
         {
-            var chosen = new List<string>();
-            var buttons = new List<(Button Button, string Id, string Label)>();
+            var counts = new Dictionary<string, int>();
+            var rows = new List<(Button Add, Button Minus, string Id, string Label)>();
 
             // The box is spent whole, so a PARTIAL pick forfeits the rest (playtest-19 48g: 7 of 10
             // from a 250k box). Confirm stays dead until every pick is spent; the server enforces the
             // same count, this end only makes the rule visible before the tap.
-            int required = Mathf.Min(pickCount, options.Length);
+            int required = pickCount;
+            int Spent() { int n = 0; foreach (var c in counts.Values) n += c; return n; }
 
             void Redraw()
             {
-                _selectTitle.text = $"{title} — {chosen.Count} / {required}";
-                foreach (var (button, id, label) in buttons)
-                    UiKit.SetButtonText(button, (chosen.Contains(id) ? "[x] " : "[  ] ") + label);
+                int spent = Spent();
+                _selectTitle.text = $"{title} — {spent} / {required}";
+                foreach (var (add, minus, id, label) in rows)
+                {
+                    counts.TryGetValue(id, out int n);
+                    UiKit.SetButtonText(add, (n > 0 ? $"[{n}] " : "[  ] ") + label);
+                    minus.gameObject.SetActive(n > 0);
+                }
                 UiKit.SetButtonText(_selectConfirm,
-                    chosen.Count == required ? "Confirm" : $"Choose {required - chosen.Count} more");
-                _selectConfirm.interactable = chosen.Count == required;
+                    spent == required ? "Confirm" : $"Choose {required - spent} more");
+                _selectConfirm.interactable = spent == required;
             }
 
             for (int i = _selectOptions.childCount - 1; i >= 0; i--)
                 Destroy(_selectOptions.GetChild(i).gameObject);
-            buttons.Clear();
+            rows.Clear();
 
             foreach (var (label, id) in options)
             {
                 string optId = id, optLabel = label;
-                Button button = null;
-                button = UiKit.TextButton(_selectOptions, label, () =>
+
+                // One row = the option (takes the width) + a minus that appears once you've spent on it.
+                var row = new GameObject("Option", typeof(RectTransform));
+                row.transform.SetParent(_selectOptions, false);
+                var group = row.AddComponent<HorizontalLayoutGroup>();
+                group.spacing = 6f;
+                group.childForceExpandWidth = false;
+                group.childForceExpandHeight = true;
+                group.childControlWidth = true;
+                group.childControlHeight = true;
+                row.AddComponent<LayoutElement>().minHeight = 46f;
+
+                var add = UiKit.TextButton(row.transform, label, () =>
                 {
-                    if (!chosen.Remove(optId))
-                    {
-                        // Refuse the 11th rather than silently dropping it: the server takes the first
-                        // PickCount it recognises, so a quietly-ignored tap would spend a 250k box on a
-                        // set the player did not choose.
-                        if (chosen.Count >= required) { ShowToast($"Only {required} may be chosen."); return; }
-                        chosen.Add(optId);
-                    }
+                    // Refuse the 11th rather than silently dropping it: the server takes exactly
+                    // PickCount, so a quietly-ignored tap would spend a 250k box on a set the player
+                    // did not choose.
+                    if (Spent() >= required) { ShowToast($"Only {required} may be chosen."); return; }
+                    counts.TryGetValue(optId, out int n);
+                    counts[optId] = n + 1;
                     Redraw();
                 }, 16f);
-                button.gameObject.AddComponent<LayoutElement>().minHeight = 46f;
-                buttons.Add((button, optId, optLabel));
+                var addLayout = add.gameObject.AddComponent<LayoutElement>();
+                addLayout.flexibleWidth = 1f;
+                addLayout.minHeight = 46f;
+
+                var minus = UiKit.TextButton(row.transform, "-", () =>
+                {
+                    if (!counts.TryGetValue(optId, out int n) || n <= 0) return;
+                    if (n == 1) counts.Remove(optId); else counts[optId] = n - 1;
+                    Redraw();
+                }, 16f);
+                var minusLayout = minus.gameObject.AddComponent<LayoutElement>();
+                minusLayout.minWidth = minusLayout.preferredWidth = 52f;
+                minusLayout.minHeight = 46f;
+
+                rows.Add((add, minus, optId, optLabel));
             }
 
             _selectConfirm.onClick.RemoveAllListeners();
             _selectConfirm.onClick.AddListener(() =>
             {
-                if (chosen.Count != required) return;
+                if (Spent() != required) return;
+                // Repeats ARE the quantity — the server counts them (HandleSelectBoxItems).
+                var picks = new List<string>();
+                foreach (var (_, _, id, _) in rows)
+                    if (counts.TryGetValue(id, out int n))
+                        for (int k = 0; k < n; k++) picks.Add(id);
                 CloseWindow(_selectPopup);
-                onConfirm?.Invoke(chosen);
+                onConfirm?.Invoke(picks);
             });
             _selectConfirm.gameObject.SetActive(true);
             UiKit.Rect(_selectCancel.gameObject).anchoredPosition = new Vector2(-106f, 16f);

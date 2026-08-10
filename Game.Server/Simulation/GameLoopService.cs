@@ -9793,9 +9793,15 @@ var effect = def.Effect;
     }
 
     /// <summary>Player confirmed their picks from a SELECTION box: validate the chosen
-    /// ids against the box's options, consume the box, grant them. The selection must be
-    /// EXACTLY the box's pick count — a partial pick used to consume the whole box and
-    /// silently forfeit the unspent picks (playtest-19 48g: 7 of 10 from a 250k box).</summary>
+    /// ids against the box's options, consume the box, grant them. The selection must SPEND
+    /// exactly the box's pick count — a partial pick used to consume the whole box and
+    /// silently forfeit the unspent picks (playtest-19 48g: 7 of 10 from a 250k box).
+    ///
+    /// <para>Picks are a BUDGET, not a set of ticks: the same option may be taken several times, so a
+    /// pick-of-10 can be 5 + 3 + 2 (owner, playtest-20 `53a` — he named that shape). It used to
+    /// <c>Distinct()</c> the request and demand that many DIFFERENT items, which is the over-correction
+    /// he hit: wanting five of one scroll was not expressible, so the box refused the pick. Repeats in
+    /// <see cref="SelectBoxItemsCmd.ItemIds"/> ARE the quantity; nothing else had to change to say it.</para></summary>
     private void HandleSelectBoxItems(SelectBoxItemsCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
@@ -9805,25 +9811,33 @@ var effect = def.Effect;
         if (BoxCatalog.Get(item.DefId) is not BoxDef box || box.PickCount <= 0) return;
 
         var optionIds = box.Entries.Select(e => e.ItemId).ToHashSet();
-        var chosen = cmd.ItemIds.Distinct().Where(optionIds.Contains).ToList();
+        var chosen = cmd.ItemIds.Where(optionIds.Contains).ToList();
 
-        // A box can never demand more picks than it offers distinct options.
-        int required = Math.Min(box.PickCount, optionIds.Count);
+        // Every pick must be spent, and no more — the box is consumed whole either way.
+        int required = box.PickCount;
         if (chosen.Count != required)
         {
             SendSystemToEntity(player, $"Select exactly {required} item{(required == 1 ? "" : "s")} — you have {chosen.Count}.");
             return;
         }
 
-        // Consume one box, then grant the chosen items.
+        // Consume one box, then grant the chosen items — counted, so five of one scroll is one
+        // stack operation and one line of feedback rather than five.
         if (item.Quantity > 1) item.Quantity--; else player.Inventory.Remove(item);
 
         var got = new List<string>();
-        foreach (var id in chosen)
+        foreach (var group in chosen.GroupBy(id => id))
         {
-            if (AddItem(player, id, 1, rollAttributes: true))
-                got.Add(ItemCatalog.Get(id)?.Name ?? id);
-            else { SendSystemToEntity(player, "Your inventory is full — some picks were lost."); break; }
+            int qty = group.Count();
+            string name = ItemCatalog.Get(group.Key)?.Name ?? group.Key;
+            int added = 0;
+            for (int k = 0; k < qty; k++)
+            {
+                if (!AddItem(player, group.Key, 1, rollAttributes: true)) break;
+                added++;
+            }
+            if (added > 0) got.Add(added > 1 ? $"{name} x{added}" : name);
+            if (added < qty) { SendSystemToEntity(player, "Your inventory is full — some picks were lost."); break; }
         }
         SendInventory(player);
         SaveEntity(player);
