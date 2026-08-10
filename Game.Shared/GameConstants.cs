@@ -453,6 +453,11 @@ public static class GameConstants
     /// <summary>Both characters must be this close to start a trade.</summary>
     public const float TradeRange = 300f;
 
+    /// <summary>How close you must stand to a dummy that HITS BACK for it to reach you (owner,
+    /// playtest-20 `56c`: *"lvl 80, 50 range, 1 magic dmg every 0.1s"*). Deliberately shorter than any
+    /// weapon: you have to choose to stand in it, and one step out ends the test.</summary>
+    public const float DummyStrikeRange = 50f;
+
     // ----- Admin / jail (Phase 5) ----------------------------------------------
 
     /// <summary>Jail sits in the NEGATIVE quadrant (owner: dungeons + jail live at minus coordinates,

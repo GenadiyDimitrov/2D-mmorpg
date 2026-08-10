@@ -95,6 +95,14 @@ namespace Game.Client
                 if (power > 0) text.AppendLine(Line("Power", power.ToString()));
                 if (def.DurationTicks > 0) text.AppendLine(Line("Duration", Seconds(def.DurationTicks)));
                 text.AppendLine(Line("Target", def.TargetMode.ToString()));
+
+                // The owner's rule is "if a skill is not described as Can Crit or Can Double it doesn't
+                // do it" (playtest-19 M8) — but "described" meant the authored PROSE, which drifted:
+                // skills carrying the flag never said so, and Piercing Stab's line still described
+                // behaviour it no longer had (playtest-20 `52b`). Read the FLAGS, like every other row
+                // on this card, so what you are told and what the resolver does cannot disagree.
+                string roll = CritLine(def);
+                if (roll != null) text.AppendLine(Line("On hit", roll));
             }
 
             if (!string.IsNullOrEmpty(def.BuffKey))
@@ -117,6 +125,30 @@ namespace Game.Client
         {
             if (lines == null || lines.Count == 0) return;
             text.AppendLine(Line(label, string.Join(", ", lines)));
+        }
+
+        /// <summary>How this skill's damage ROLLS, straight from the flags — the `52b` line. Null for
+        /// anything that deals no damage (a buff has nothing to crit).
+        ///
+        /// <para>The four cases are the resolver's, in its order: a BLOW is gated on the crit roll, a
+        /// [Double] is a flat ×2 and never crits, Can Crit rolls the caster's rate, and a physical
+        /// skill with none of them lands flat. Magic is separate — it always rolls magic crit, which is
+        /// why no magic skill carries these flags and why saying nothing there would be a lie of
+        /// omission rather than a saved line.</para></summary>
+        private static string CritLine(SkillDef def)
+        {
+            bool physical = (def.Effect & SkillEffect.PhysicalDamage) != 0;
+            bool magic = (def.Effect & SkillEffect.MagicDamage) != 0;
+            if (!physical && !magic) return null;
+
+            string rate = def.CritRateMod == 1f ? "" : "  (crit rate x" + def.CritRateMod.ToString("0.#") + ")";
+            if (def.BlowOnCrit)
+                return "Blow — full power only on a crit, otherwise "
+                       + Mathf.RoundToInt(def.BlowFailFraction * 100f) + "%" + rate;
+            if (def.CanDouble) return "Can Double — x2 when it doubles" + rate;
+            if (def.CanCrit) return "Can Crit" + rate;
+            if (magic) return "Magic crit";
+            return "Lands flat — no crit, no double";
         }
 
         private static string Line(string label, string value) => label.PadRight(11) + value;

@@ -47,6 +47,14 @@ public static class WorldMap
         new(X: 25500, Y: 4000, Radius: 200, MinLevel: 80, MaxLevel: 80,
             MobTypes: new[] { "training_dummy" }, MaxCount: 1, RespawnSeconds: 5),
 
+        // The two dummies that hit BACK, level 80 (owner, `56c`). Same row, past the level-80 target,
+        // so the training ground reads left-to-right as "things you hit" then "things that hit you".
+        // Stand within GameConstants.DummyStrikeRange and each lands one hit per tick.
+        new(X: 26500, Y: 4000, Radius: 200, MinLevel: 80, MaxLevel: 80,
+            MobTypes: new[] { "dummy_magic" }, MaxCount: 1, RespawnSeconds: 5),
+        new(X: 27500, Y: 4000, Radius: 200, MinLevel: 80, MaxLevel: 80,
+            MobTypes: new[] { "dummy_physical" }, MaxCount: 1, RespawnSeconds: 5),
+
         // ===== Boss placeholders (more bosses/instances later) =====
         // The lone emberwyrm ELITE that used to roam here is GONE: every Frostmere field now generates its
         // own elite camp at its band cap (80 / 84 / 90), placed 1500 out from the field's top camp — so a

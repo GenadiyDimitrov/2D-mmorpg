@@ -81,6 +81,8 @@ answers `Moderators can't use /<command>.` **No god mode, no teleporting, no ite
 | `/tpme <name>` | The reverse — **summon** an online player to you. They are told who did it. | `/tpme Aricel` |
 | `/spd <m\|a\|c> <value>` | Force one speed stat outright — **m** = move, **a** = attack, **c** = cast. Uncapped on purpose: it replaces the computed stat, ignoring formula, gear, buffs and the ceiling, so you can see what a silly number does. Runtime only, never saved. | `/spd m 250` · `/spd c 1500` |
 | `/spd` | With **no argument**, drop all three overrides back to your real stats. | `/spd` |
+| `/stat <name> <value>` | The same thing for **every stat**, not just the speeds — `acc` `eva` `patk` `matk` `pdef` `mdef` `crate` `cdmg` `cdflat` `mcrate` `hp` `mp`, plus `m` `a` `c` for the three speeds. Applied **after** caps, passives, gear and the mob scale, so the number you type is the number the game uses. A bad name prints the whole list. Runtime only, never saved. | `/stat acc 999999` · `/stat crate 1000` |
+| `/stat` | With **no argument**, clear **every** override — stats and speeds alike. | `/stat` |
 
 > ⚠ **Renamed 2026-08-07.** This was four commands — `/speed-cast`, `/speed-attack` (and `/speed-atack`),
 > `/speed-move`, `/speed-reset` — and **none of them work any more.** One verb, a one-letter channel, and

@@ -103,6 +103,16 @@ public enum MobCategory
 /// mob spells gated on MP (out of MP → helpless). Applied at spawn in GameLoopService.</summary>
 public enum MobRole { Melee, Archer, Mage }
 
+/// <summary>What a TRAINING DUMMY hits back with. The owner asked for a dummy that attacks YOU
+/// (playtest-20 `56c`): *"a magic training dummy (lvl 80, 50 range, 1 magic dmg every 0.1s) so 10s =
+/// 100 hits and mob magic crit can actually be observed. Same idea for a physical-skill dummy."*
+///
+/// <para>A plain dummy is a target you hit; these are the mirror — something that hits you, at a
+/// known rate, for a known amount, so an OUTCOME (crit / fail / miss / block) can be counted over a
+/// hundred samples instead of guessed at over five. The damage is deliberately 1: the point is the
+/// resolution, not the number, and 1 damage never kills anyone standing there counting.</para></summary>
+public enum DummyAttack { None, Magic, Physical }
+
 public record MobType(
     string Id,
     string Name,
@@ -114,7 +124,8 @@ public record MobType(
     bool Dummy = false,      // training dummy: immortal, immobile, never attacks
     int Level = 0,           // natural level (0 = let the zone assign it)
     MobCategory Category = MobCategory.Humanoid,
-    MobRole Role = MobRole.Melee);   // how it fights (melee chaser / ranged archer / caster mage)
+    MobRole Role = MobRole.Melee,    // how it fights (melee chaser / ranged archer / caster mage)
+    DummyAttack Strikes = DummyAttack.None);   // a DUMMY that hits back, for counting outcomes
 
 /// <summary>
 /// THE place to manage mobs. Each entry is a creature template with its own drop
@@ -698,6 +709,15 @@ public static class MobCatalog
             // Training dummy: immortal, stationary, deals no damage. The ZONE sets its level
             // (20/40/60/80 training grounds). No drops. For testing damage/skills.
             new MobType("training_dummy", "Training Dummy", 0f, 0f, Dummy: true),
+
+            // The two dummies that HIT BACK (owner, `56c`). Immortal and stationary like the plain
+            // one, but each strikes for 1 damage every tick at GameConstants.DummyStrikeRange — one
+            // through the magic resolution (fail / crit), one through the physical (miss / crit /
+            // block). Ten seconds of standing next to one is a hundred samples of that outcome.
+            new MobType("dummy_magic", "Magic Training Dummy", 0f, 0f,
+                Dummy: true, Strikes: DummyAttack.Magic),
+            new MobType("dummy_physical", "Striking Training Dummy", 0f, 0f,
+                Dummy: true, Strikes: DummyAttack.Physical),
         };
         var dict = new Dictionary<string, MobType>(StringComparer.OrdinalIgnoreCase);
         foreach (var m in list)

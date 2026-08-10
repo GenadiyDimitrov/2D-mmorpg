@@ -5212,6 +5212,65 @@ public class GameLoopService : BackgroundService
                 break;
             }
 
+            // `/stat <name> <value>` forces ONE stat outright; `/stat` on its own clears every override.
+            // The owner's `54e`: *"an admin-only stat override for every stat — acc 999999, eva, crit
+            // dmg, crit rate… one command, overriding all"*. It is the general form of `/spd`, and it
+            // accepts the three speed channels too (m/a/c) so there is ONE command to remember; `/spd`
+            // still works and still resets the speeds, because it is load-bearing debug rig.
+            //
+            // Deliberately UNCAPPED and applied AFTER caps, passives, gear and the mob scale — the whole
+            // point is to type a silly number and watch what the game does with it.
+            case "stat":
+            {
+                if (arg.Length == 0)
+                {
+                    admin.AdminStats = null;
+                    admin.AdminCastSpeed = null;
+                    admin.AdminAttackSpeed = null;
+                    admin.AdminMoveSpeed = null;
+                    admin.RecomputeDerived();
+                    SendSystemToEntity(admin, "All stat overrides cleared.");
+                    SendStats(admin);
+                    SendAdminState(admin);
+                    break;
+                }
+
+                int stsp = arg.IndexOf(' ');
+                string statKey = (stsp < 0 ? arg : arg[..stsp]).Trim().ToLowerInvariant();
+                string statValue = stsp < 0 ? "" : arg[(stsp + 1)..].Trim();
+                bool knownStat = Array.Exists(Entity.AdminStatKeys, k => k.Key == statKey);
+
+                if (!knownStat ||
+                    !float.TryParse(statValue, NumberStyles.Float, CultureInfo.InvariantCulture, out float statV))
+                {
+                    // The list is generated from the table, so it can never drift from what is accepted.
+                    SendSystemToEntity(admin, "Usage: /stat <name> <value>   (/stat alone clears all)");
+                    foreach (var (key, what) in Entity.AdminStatKeys)
+                        SendSystemToEntity(admin, $"   {key,-7} {what}");
+                    break;
+                }
+
+                // The speed channels already have somewhere to live — route them there rather than
+                // giving the same three numbers two homes that can disagree.
+                switch (statKey)
+                {
+                    case "m": admin.AdminMoveSpeed = statV; break;
+                    case "a": admin.AdminAttackSpeed = statV; break;
+                    case "c": admin.AdminCastSpeed = statV; break;
+                    default:
+                        admin.AdminStats ??= new Dictionary<string, float>();
+                        admin.AdminStats[statKey] = statV;
+                        admin.RecomputeDerived();
+                        break;
+                }
+
+                string statWhat = Array.Find(Entity.AdminStatKeys, k => k.Key == statKey).What;
+                SendSystemToEntity(admin, $"{statWhat} forced to {statV:0.##}.");
+                SendStats(admin);
+                SendAdminState(admin);
+                break;
+            }
+
             case "givegold":
             {
                 int gsp = arg.LastIndexOf(' ');
@@ -6140,6 +6199,12 @@ public class GameLoopService : BackgroundService
             if (entity.Kind == EntityKind.Mob)
                 MobAi(entity);
 
+            // A dummy that hits BACK, once per tick = his "1 damage every 0.1s" (`56c`). Outside MobAi
+            // deliberately: MobAi returns immediately for any dummy, and these must stay stationary,
+            // unaggressive and threat-free — they are a metronome, not a fight.
+            if (entity.TrainingDummy && entity.DummyStrikes != DummyAttack.None)
+                StrikeFromDummy(entity);
+
             if (entity.JailedUntil is not null)
             {
                 if (!entity.Jailed)
@@ -6635,6 +6700,77 @@ public class GameLoopService : BackgroundService
     }
 
     // ----- Mob AI --------------------------------------------------------------
+
+    /// <summary>One tick of a dummy that hits back — 1 damage to every player standing inside
+    /// <see cref="GameConstants.DummyStrikeRange"/>, through the REAL resolution for its channel
+    /// (owner, playtest-20 `56c`).
+    ///
+    /// <para>The damage is fixed at 1 and the rate is one per tick, so ten seconds is a hundred
+    /// samples and the thing being measured is the OUTCOME, not the number: the magic dummy shows
+    /// fail / hit / crit, the physical one miss / hit / crit / block, each labelled in the combat feed.
+    /// That is the whole point — the owner could not observe mob magic crit because a real fight gives
+    /// you five hits and a dead mob.</para>
+    ///
+    /// <para>It reuses the same resolvers combat uses rather than approximating them; a measuring
+    /// instrument that disagrees with the thing it measures is worse than none. No threat, no
+    /// retaliation, no interrupt and no kill check: a dummy is not in a fight, and 1 damage against a
+    /// level-80 pool cannot kill the person counting. God mode still stops it, via ApplyDamage.</para></summary>
+    private void StrikeFromDummy(Entity dummy)
+    {
+        float range = GameConstants.DummyStrikeRange;
+        foreach (var target in _world.Grid.Nearby(dummy))
+        {
+            if (target.Kind != EntityKind.Player || target.Dead) continue;
+            float dx = target.X - dummy.X, dy = target.Y - dummy.Y;
+            if (dx * dx + dy * dy > range * range) continue;
+
+            if (dummy.DummyStrikes == DummyAttack.Magic)
+            {
+                // Mirrors the magic branch of ExecuteSkill: fail is reduced damage (not zero), crit is
+                // the flat x3 of the magic channel — never CritDamageBonus, which is the fighters'.
+                float fail = StatCalculator.ResolveAvoidChance(
+                    0, 0, target.MagicFailFloor, 0f,
+                    dummy.Level, target.Level,
+                    sureHit: false, defenderImmune: target.Immune);
+                if (_rng.NextDouble() < fail)
+                {
+                    int dmg = Math.Max(1, 1 / 3);
+                    ApplyDamage(target, dmg, dummy);
+                    BroadcastCombat(dummy, target, dmg, CombatOutcome.Fail, "Practice Bolt");
+                }
+                else if (_rng.NextDouble() < dummy.MagicCritChance)
+                {
+                    int dmg = (int)(1 * StatCalculator.MagicCritMult());
+                    ApplyDamage(target, dmg, dummy);
+                    BroadcastCombat(dummy, target, dmg, CombatOutcome.Crit, "Practice Bolt");
+                }
+                else
+                {
+                    ApplyDamage(target, 1, dummy);
+                    BroadcastCombat(dummy, target, 1, CombatOutcome.Hit, "Practice Bolt");
+                }
+            }
+            else
+            {
+                // Mirrors ResolveBasicAttack's contest, minus the damage formula: miss, then the shared
+                // crit-and-block resolver, so evasion, the evade floor, block chance and crit rate are
+                // all the numbers the real thing uses.
+                float missChance = StatCalculator.ResolveAvoidChance(
+                    dummy.Accuracy, (int)target.EffectiveEvasion,
+                    target.EvadeFloor, dummy.HitFloor,
+                    dummy.Level, target.Level,
+                    sureHit: false, defenderImmune: target.Immune);
+                if (_rng.NextDouble() < missChance)
+                {
+                    BroadcastCombat(dummy, target, 0, CombatOutcome.Miss, "Practice Strike");
+                    continue;
+                }
+                var (dmg, outcome) = ResolvePhysicalCritAndBlock(dummy, target, 1, dummy.CritChance, 0f, 1f);
+                ApplyDamage(target, dmg, dummy);
+                BroadcastCombat(dummy, target, dmg, outcome, "Practice Strike");
+            }
+        }
+    }
 
     private void MobAi(Entity mob)
     {
@@ -11908,6 +12044,9 @@ var effect = def.Effect;
             mob.TrainingDummy = true;
             mob.Aggressive = false;
             mob.WalkSpeed = 0; mob.RunSpeed = 0; mob.Speed = 0;
+            // ...except the two that hit BACK (`56c`). Still immortal and still rooted — they simply
+            // strike once per tick at anyone standing in range. See StrikeFromDummy.
+            mob.DummyStrikes = mobType.Strikes;
         }
 
         // Second pass, now that the scales and the dummy/caster flags are set: this is the recompute

@@ -417,6 +417,65 @@ public class Entity
     public bool HasSpeedOverride =>
         AdminCastSpeed is not null || AdminAttackSpeed is not null || AdminMoveSpeed is not null;
 
+    // ----- Admin STAT overrides (`/stat <name> <value>`) ---------------------------------------
+    // The owner asked for the same thing /spd does, for EVERY stat (playtest-20 `54e`: *"an
+    // admin-only stat override for every stat — acc 999999, eva, crit dmg, crit rate… one command,
+    // overriding all"*). /spd is kept as the speed shorthand; this is the general form and it
+    // covers the speeds too, so there is one command to remember and nothing regressed.
+    //
+    // ⚠ These REPLACE the finished number, not a base one — the point of "overriding all" is that a
+    // buff, a passive, gear and the caps cannot claw it back. That is why the stats which layer
+    // their buffs at READ time (evasion, defence, attack) check the override inside their getter
+    // rather than in RecomputeDerived: writing the field there would leave the buff to be added on
+    // top, and the number the admin typed would not be the number the game used.
+    //
+    // Runtime only — never persisted, exactly like the speed overrides.
+
+    /// <summary>Forced stat values by key, or null when nothing is forced. See AdminStatKeys.</summary>
+    public Dictionary<string, float>? AdminStats { get; set; }
+
+    /// <summary>The forced value for a stat, or null to use the real formula.</summary>
+    public float? AdminStat(string key) =>
+        AdminStats is not null && AdminStats.TryGetValue(key, out float v) ? v : null;
+
+    public bool HasStatOverride => AdminStats is { Count: > 0 };
+
+    /// <summary>Every stat <c>/stat</c> accepts, and what each one forces. The command's help text is
+    /// generated from this, so a new stat is one entry rather than three edits that can disagree.</summary>
+    public static readonly (string Key, string What)[] AdminStatKeys =
+    {
+        ("acc",    "accuracy"),
+        ("eva",    "evasion"),
+        ("patk",   "physical attack"),
+        ("matk",   "magic attack"),
+        ("pdef",   "physical defence"),
+        ("mdef",   "magic defence"),
+        ("crate",  "physical crit rate (0-1000 scale)"),
+        ("cdmg",   "crit damage bonus (0.2 = +0.2x)"),
+        ("cdflat", "flat crit damage"),
+        ("mcrate", "magic crit rate"),
+        ("hp",     "max HP"),
+        ("mp",     "max MP"),
+        ("m",      "move speed"),
+        ("a",      "attack speed (333 = 1.0x)"),
+        ("c",      "cast speed (333 = 1.0x)"),
+    };
+
+    /// <summary>Overrides for the stats that are plain FIELDS — applied at the very end of
+    /// RecomputeDerived so no cap, passive or mob multiplier can wash them out. The ones that layer
+    /// buffs at read time are handled in their own getters instead.</summary>
+    private void ApplyAdminStatOverrides()
+    {
+        if (!HasStatOverride) return;
+        if (AdminStat("acc") is float acc) Accuracy = (int)acc;
+        if (AdminStat("crate") is float cr) CritChance = cr;
+        if (AdminStat("mcrate") is float mcr) MagicCritChance = mcr;
+        if (AdminStat("cdmg") is float cd) CritDamageBonus = cd;
+        if (AdminStat("cdflat") is float cdf) CritDamageFlat = cdf;
+        if (AdminStat("hp") is float hp) MaxHp = Math.Max(1, (int)hp);
+        if (AdminStat("mp") is float mp) MaxMp = Math.Max(0, (int)mp);
+    }
+
     /// <summary>Jailed players are confined to the jail cell and can't chat/whisper/act until this UTC
     /// time. Loaded from the character row so jail SURVIVES a relog (owner). null = free.</summary>
     public DateTime? JailedUntil { get; set; }
@@ -809,7 +868,8 @@ public class Entity
         return Math.Max(0f, (baseValue + flat) * (1f + percent));
     }
 
-    public float EffectiveAttack => AtkDebuffed(ModifiedStatDual(AttackPower, SkillEffect.BuffAtk, SkillEffect.BuffPhysAtk));
+    public float EffectiveAttack =>
+        AdminStat("patk") ?? AtkDebuffed(ModifiedStatDual(AttackPower, SkillEffect.BuffAtk, SkillEffect.BuffPhysAtk));
 
     /// <summary>Buffed magic attack (mAtk), the INTERNAL value — feeds the √ magic-damage/heal formulas
     /// (unchanged; mobs share the same formulas). Magic buffs (shared BuffAtk + magic-only BuffMagAtk) are
@@ -820,6 +880,9 @@ public class Entity
     {
         get
         {
+            // `/stat matk` forces the INTERNAL value, which is the one the √ formulas read — forcing the
+            // shown number instead would move the display and leave the damage alone.
+            if (AdminStat("matk") is float forced) return forced;
             // Magic reads ONLY magic-only buffs (BuffMagAtk), applied SQUARED so the stored % is the HONEST
             // effective % (the square cancels the √ in the damage formula). The shared BuffAtk is PHYSICAL-
             // ONLY now — a buff that should boost magic must carry an explicit BuffMagAtk. Only the base
@@ -926,15 +989,15 @@ public class Entity
 
     /// <summary>Defence including BuffDef (adds) and DebuffDef (subtracts).</summary>
     public float EffectiveDefence =>
-        ModifiedStat(Defence + ShieldDefense, SkillEffect.BuffDef, SkillEffect.DebuffDef);
+        AdminStat("pdef") ?? ModifiedStat(Defence + ShieldDefense, SkillEffect.BuffDef, SkillEffect.DebuffDef);
 
     /// <summary>Magic defence — the divisor for incoming magic damage. Separate
     /// channel from physical defence; sourced from level base + jewels + the Tank
     /// "Anti Magic" passive, plus any BuffMagicDef (e.g. Warchanter's chant).</summary>
-    public float EffectiveMagicDefence => ModifiedStat(MagicDefence, SkillEffect.BuffMagicDef);
+    public float EffectiveMagicDefence => AdminStat("mdef") ?? ModifiedStat(MagicDefence, SkillEffect.BuffMagicDef);
 
     /// <summary>Evasion including evasion buffs (flat + percent).</summary>
-    public float EffectiveEvasion => ModifiedStat(Evasion, SkillEffect.BuffEvasion);
+    public float EffectiveEvasion => AdminStat("eva") ?? ModifiedStat(Evasion, SkillEffect.BuffEvasion);
 
     /// <summary>Weapon's base attack speed stat (333 = normal). Set from the equipped
     /// weapon type in RecomputeDerived. (Cast speed uses class base × weapon factor
@@ -1209,6 +1272,10 @@ public class Entity
     public string? SpawnerMobId { get; set; }
     /// <summary>Training dummy: immortal (GodMode), stationary, never attacks/aggroes.</summary>
     public bool TrainingDummy { get; set; }
+
+    /// <summary>What this dummy hits BACK with, if anything (owner, playtest-20 `56c`). None for the
+    /// ordinary target dummies, which stay silent. See GameLoopService.StrikeFromDummy.</summary>
+    public DummyAttack DummyStrikes { get; set; } = DummyAttack.None;
     /// <summary>The dummy's flat pool and regen. It takes damage so you can read the numbers, and
     /// never dies (ApplyDamage floors it at 1 HP); the regen tops it back up between tests.</summary>
     public const int TrainingDummyHp = 1_000_000;
@@ -2055,6 +2122,10 @@ public class Entity
         ApplyGradePenalty();
 
         ApplyMobScale();
+
+        // LAST, on purpose — `/stat` means "this is the number", so it runs after the caps, the grade
+        // penalty and the mob scale have all had their say (playtest-20 `54e`).
+        ApplyAdminStatOverrides();
 
         Hp = Math.Min(Hp, MaxHp);
         Mp = Math.Min(Mp, MaxMp);

@@ -61,6 +61,30 @@ namespace Game.Client
         /// <summary>How far the drawn position currently leads the server's. Self only; decays to zero.</summary>
         private Vector3 _selfError;
 
+        /// <summary>
+        /// ARRIVAL HOLD — the overshoot-and-snap on STOP (owner, playtest-20 `53e`/`61j`: *"arriving at
+        /// the destination overshoots with inertia and snaps back"*).
+        ///
+        /// The decaying error is right for a walk that is INTERRUPTED and wrong for one that ENDS. At
+        /// the moment we arrive, the server's stream still lags by one sample interval, so the error we
+        /// leave behind points FORWARD — from the server's position to the destination. The frames that
+        /// follow draw <c>basePos + error</c> while basePos is itself still advancing toward that same
+        /// destination, so the two additions carry the character straight PAST it, and the ease-back is
+        /// the error finally decaying. Nothing was wrong with either half; the sum was.
+        ///
+        /// So an arrival holds AT the destination instead, and simply waits for the server to reach it —
+        /// the error is then measured, not decayed, and lands on zero by itself. The hold gives up if it
+        /// stops closing or outlives <see cref="ArrivalHoldSeconds"/>, which is what keeps a disagreement
+        /// (the server stopped you somewhere else) from freezing the character on a point it never
+        /// reached; from there the ordinary decay takes over exactly as before.
+        /// </summary>
+        private bool _arrived;
+        private Vector3 _arrivedTarget;
+        private float _arrivedSince;
+        private float _arrivedDist;
+        private const float ArrivalHoldSeconds = 0.75f;
+        private const float ArrivalSettled = 0.02f;
+
         /// <summary>Distance from the SERVER's last position to our predicted destination, and whether
         /// we have one yet. Used to notice that the server is no longer heading where we predicted.</summary>
         private float _serverDist;
@@ -208,6 +232,7 @@ namespace Game.Client
             // server's point would put that error back on screen as a jump at the first step.
             _predictPos = transform.position;
             _predicting = true;
+            _arrived = false;   // a new walk cancels any hold left by the last one's arrival
             // A fresh destination: the previous walk's distance tells us nothing about this one, and
             // carrying it over would read as "the server is going elsewhere" on the very first sample.
             _hasServerDist = false;
@@ -236,6 +261,9 @@ namespace Game.Client
         private void EndPrediction()
         {
             _predicting = false;
+            // Handing over is not arriving: a reconcile or a cancel drops any arrival hold, and the
+            // ordinary decay resumes. The arrival path sets _arrived AFTER calling this, deliberately.
+            _arrived = false;
         }
 
         /// <summary>Put the entity AT a position with no interpolation — for spawns, teleports and
@@ -250,6 +278,7 @@ namespace Game.Client
             // and any accumulated error are wrong by definition — drop both rather than let them drag
             // the character back off the point we were just told to be at.
             _predicting = false;
+            _arrived = false;
             _selfError = Vector3.zero;
             transform.position = at;
         }
@@ -343,7 +372,14 @@ namespace Game.Client
                 if (to.sqrMagnitude <= step * step)
                 {
                     _predictPos = _predictTarget;
-                    EndPrediction();          // arrived; the error simply starts decaying
+                    EndPrediction();
+                    // ARRIVED, as opposed to handed over. Hold here while the server catches up rather
+                    // than leaving a forward-pointing error to be added to an advancing base — see the
+                    // _arrived field for why that sum overshoots.
+                    _arrived = true;
+                    _arrivedTarget = _predictTarget;
+                    _arrivedSince = Time.time;
+                    _arrivedDist = float.MaxValue;
                 }
                 else
                 {
@@ -353,6 +389,22 @@ namespace Game.Client
                 _selfError = _predictPos - basePos;
                 transform.position = _predictPos;
                 return;
+            }
+
+            if (_arrived)
+            {
+                float d = (_arrivedTarget - basePos).magnitude;
+                // Keep holding only while the server is genuinely still closing on the same point. If it
+                // stops closing it is taking us somewhere else, and standing still would be its own bug.
+                if (d > ArrivalSettled && d <= _arrivedDist + 0.001f
+                    && Time.time - _arrivedSince < ArrivalHoldSeconds)
+                {
+                    _arrivedDist = d;
+                    _selfError = _arrivedTarget - basePos;   // measured, not decayed
+                    transform.position = _arrivedTarget;
+                    return;
+                }
+                _arrived = false;
             }
 
             // Frame-rate independent decay. Using deltaTime as a blend factor directly is the bug that
