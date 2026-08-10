@@ -774,19 +774,12 @@ public static class StatCalculator
         _                          => 300,  // weaponless
     };
 
-    /// <summary>A bare-handed MOB's attack-speed base. Deliberately NOT the weaponless 300 above.
-    ///
-    /// His weapon-speed table set weaponless to 300, down from the 433 the branch used to return —
-    /// but almost every mob in the game carries WeaponType.None, so applying 300 to them made the
-    /// whole bestiary attack ~31% slower. BalanceMatrix E2 caught it: a level-20 champion's survival
-    /// time went 126s -> 189s and the tank's 190s -> 279s, purely from this. That is a game-wide mob
-    /// DPS nerf he never asked for, and it points the wrong way — the same playtest ruled raid
-    /// bosses far too WEAK. Mobs therefore keep 433 and their damage is unchanged.
-    ///
-    /// Claws are fast, so 433 is defensible on its own terms; but the real reason it is pinned is
-    /// that mob damage is tuned through MobBaseStats and the rank multipliers, and it must not
-    /// drift as a side effect of a PLAYER weapon table. One number to change if he wants them on 300.</summary>
-    public const int MobBareHandAttackSpeed = 433;
+    // (MobBareHandAttackSpeed — added and removed the same day, 2026-08-10. It pinned mobs to 433
+    //  because his weaponless 300 would otherwise have slowed the WHOLE bestiary by 31%, every mob
+    //  being WeaponType.None. He then ruled the real fix: *"most mobs must have a weapon ... so
+    //  weaponless won't be for many mobs"* — see MobCatalog.DefaultWeaponFor. With claws modelled as
+    //  Dual (433) the animals never move at all, and the few genuinely weaponless creatures (plants,
+    //  magic creatures) correctly take the 300. The pin had no reason left to exist. Don't re-add it.)
 
     // ----- Progression -------------------------------------------------------
 

@@ -2203,10 +2203,20 @@ static void Equip(Entity e, string defId)
 
 /// <summary>A mob exactly as GameLoopService.BuildMob makes one, stat-wise: MobStats(level)
 /// through the same RecomputeDerived. No MobMod — that is the "assume every monster is x1" rule.</summary>
-static Entity BuildMobEntity(int level)
+static Entity BuildMobEntity(int level, MobCategory category = MobCategory.Animal)
 {
     var s = StatCalculator.MobStats(level);
-    var e = new Entity { Name = "mob", Kind = EntityKind.Mob, Level = level };
+    var e = new Entity
+    {
+        Name = "mob", Kind = EntityKind.Mob, Level = level,
+        // A mob HOLDS a weapon, and that weapon sets its basic-attack SPEED (owner, 2026-08-10).
+        // BuildMob resolves it from the Archer role / the MobMod.Weapon passive / the category
+        // default; this tool has no template, so it takes the category default the same way.
+        // Leaving it None modelled a bare-handed creature at the WEAPONLESS 300 and understated
+        // every mob's DPS by ~30% — the tool would have reported a mob nerf that does not exist.
+        // Animal is the default because it is the commonest farm category (claws = Dual, 433).
+        InnateWeaponType = MobCatalog.DefaultWeaponFor(category),
+    };
     e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Dex = s.Dex; e.Spt = s.Spt;
     e.RecomputeDerived();
     return e;

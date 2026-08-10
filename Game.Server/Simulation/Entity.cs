@@ -570,6 +570,17 @@ public class Entity
     public int Accuracy { get; set; }
     public int Evasion { get; set; }
     public WeaponType WeaponType { get; set; } = WeaponType.None;   // encodes hands + type
+    /// <summary>The weapon a MOB innately fights with — claws, a club, a blade, a bow. Players leave
+    /// this None and get their WeaponType from the equipped item instead.
+    ///
+    /// It has to be its own field because <see cref="RecomputeDerived"/> resets
+    /// <see cref="WeaponType"/> to None and rebuilds it from the equipped weapon, so a mob (which
+    /// has no inventory) loses anything assigned directly and would silently fall back to the
+    /// weaponless speed on the very next recompute. That is exactly why the Archer role used to
+    /// assign WeaponType *after* RecomputeDerived — a workaround that left archer mobs swinging at
+    /// bare-hand speed anyway, because WeaponAttackBase had already been derived.
+    /// Set once at spawn (GameLoopService.BuildMob); survives every recompute after that.</summary>
+    public WeaponType InnateWeaponType { get; set; } = WeaponType.None;
     public float CritChance { get; set; }       // physical crit rate
     public float MagicCritChance { get; set; }  // magic crit rate (from WIT)
     public int InterruptResist { get; set; }    // resist casting interruption (from WIT)
@@ -1370,7 +1381,9 @@ public class Entity
         MagicInterruptBonus = StatCalculator.MagicInterruptPower(EffectiveWit);
         BasicAttackInterruptPower = 0;   // rogue "cancel on basic" is now a 3rd-class discipline passive (anti-magic rogue), not a base-rogue trait
         BasicAttackRange = GameConstants.MeleeRange;
-        WeaponType = WeaponType.None;
+        // A mob's innate weapon (claws/club/blade/bow) seeds this; an equipped weapon overwrites it
+        // below. Players have InnateWeaponType None, so their behaviour is unchanged.
+        WeaponType = InnateWeaponType;
         // Base run speed: players from race+class table, mobs from their spawn-set
         // RunSpeed. Gear/buffs raise it below; EffectiveSpeed clamps to the cap.
         if (Kind == EntityKind.Player)
@@ -1710,14 +1723,13 @@ public class Entity
         MaxHp = (int)((MaxHp + buffHpFlat) * (1f + buffHpPct));
         MaxMp = (int)((MaxMp + buffMpFlat) * (1f + buffMpPct));
 
-        // A bare-handed MOB uses its own base, not the player weaponless one — see
-        // StatCalculator.MobBareHandAttackSpeed for why (his 300 would have slowed every mob in the
-        // game by ~31%). An armed mob (an Archer role holds a Bow) goes through the normal table.
+        // Mobs go through the SAME weapon-speed table as players — their WeaponType is resolved at
+        // spawn (GameLoopService.BuildMob) from the Archer role, the template's MobMod.Weapon
+        // passive, or the category default. A mob that is genuinely weaponless (plant, magic
+        // creature) correctly lands on the weaponless base.
         WeaponAttackBase = weaponAsBase > 0
             ? weaponAsBase
-            : Kind == EntityKind.Mob && WeaponType == WeaponType.None
-                ? StatCalculator.MobBareHandAttackSpeed
-                : StatCalculator.WeaponAttackBaseSpeed(WeaponType);
+            : StatCalculator.WeaponAttackBaseSpeed(WeaponType);
 
         // ----- Shield Mastery buffs (tank passives) scale the shield values.
         //  Percent magnitudes add fractionally; flat add directly. Only matter

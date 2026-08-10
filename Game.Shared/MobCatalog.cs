@@ -49,6 +49,13 @@ public readonly record struct MobMod(
     float MaxMp = 1f, float AtkSpeed = 1f, float HpRegen = 1f, float MpRegen = 1f,
     int EvaFlat = 0,
     bool Boss = false,       // raid-boss passive (adds crit/bow resistance on spawn)
+    // WEAPON TYPE passive (owner, 2026-08-10). Which weapon the creature "holds" — it drives the
+    // basic-attack SPEED through StatCalculator.WeaponAttackBaseSpeed, exactly as a player's does.
+    // None = fall through to MobCatalog.DefaultWeaponFor(category). His rule: *"most mobs must have
+    // a weapon ... a fast attacking mob with claws needs the mob passive that says mob weapon type,
+    // so a fast attacking mob can be knives type, goblins use a club so 1h blunt, knights/skeletons
+    // use swords ... so weaponless won't be for many mobs."*
+    WeaponType Weapon = WeaponType.None,
     string Name = "")        // display label for the inspect/target window
 {
     /// <summary>Human-readable passive lines for the target-inspect window.</summary>
@@ -70,6 +77,7 @@ public readonly record struct MobMod(
         if (HpRegen != 1f) yield return $"HP Regen {Sign(HpRegen)}";
         if (MpRegen != 1f) yield return $"MP Regen {Sign(MpRegen)}";
         if (EvaFlat != 0)  yield return $"Evasion {(EvaFlat > 0 ? "+" : "")}{EvaFlat}";
+        if (Weapon != WeaponType.None) yield return $"Wields: {MobCatalog.WeaponWord(Weapon)}";
         // Bow/Crit resist are rendered from the numeric DTO fields (uniform for mobs
         // and players), so they're not repeated here.
         if (Boss) yield return "Raid Boss";
@@ -135,6 +143,51 @@ public static class MobCatalog
         float run, bool aggressive, MobMod? mod = null, MobRole role = MobRole.Melee) =>
         new(id, name, run * 0.55f, run, Aggressive: aggressive,
             Drops: StandardDrops(level, cat), Mod: mod, Level: level, Category: cat, Role: role);
+
+    // ===================================================================================
+    //  MOB WEAPON TYPE (owner, 2026-08-10). A mob's basic-attack SPEED comes from the weapon it
+    //  holds, through the same StatCalculator.WeaponAttackBaseSpeed a player uses. Until now every
+    //  mob was WeaponType.None — "weaponless" — which he ruled wrong: *"most mobs must have a
+    //  weapon ... so weaponless won't be for many mobs."*
+    //
+    //  Resolution order at spawn (GameLoopService.BuildMob):
+    //    1. MobRole.Archer            -> Bow (a bow IS the role)
+    //    2. the template's MobMod.Weapon passive, if it set one
+    //    3. DefaultWeaponFor(category) below
+    //  So a whole family gets a sensible weapon for free and any single template can override it
+    //  with one passive, which is what keeps this from being 80 hand-edits.
+    // ===================================================================================
+
+    /// <summary>The weapon a creature FAMILY fights with when its template says nothing.
+    ///
+    /// Claws and fangs are <see cref="WeaponType.Dual"/> — that is already how the game models
+    /// "fast, low per-hit" (daggers are Duals), so a wolf and a rogue share one speed rule instead
+    /// of inventing a claw type. Humanoids club (1H Blunt, his goblin example); the armed dead and
+    /// demons carry blades (1H Sword, his knight/skeleton example). Plants and magic creatures stay
+    /// genuinely weaponless — a treant has no weapon to hold, and that is what None is FOR.</summary>
+    public static WeaponType DefaultWeaponFor(MobCategory cat) => cat switch
+    {
+        MobCategory.Animal   => WeaponType.Dual,   // claws/fangs: fast, low per-hit
+        MobCategory.Insect   => WeaponType.Dual,   // mandibles/pincers: same shape
+        MobCategory.Dragon   => WeaponType.Dual,   // claws — the size is in its stats, not its speed
+        MobCategory.Humanoid => WeaponType.Blunt,  // clubs (goblins); override to Sword for soldiery
+        MobCategory.Undead   => WeaponType.Sword,  // skeletons carry blades
+        MobCategory.Demon    => WeaponType.Sword,
+        MobCategory.Angel    => WeaponType.Blunt,  // maces/staves
+        _ => WeaponType.None,                      // Plant, MagicCreature: nothing to hold
+    };
+
+    /// <summary>Player-facing noun for a mob's weapon, for the target-inspect passive list.</summary>
+    public static string WeaponWord(WeaponType w) => w switch
+    {
+        WeaponType.Dual => "claws (very fast)",
+        WeaponType.Sword => "a blade (fast)",
+        WeaponType.Blunt => "a club (fast)",
+        WeaponType.TwoHandedSword => "a greatblade (normal)",
+        WeaponType.TwoHandedBlunt => "a maul (normal)",
+        WeaponType.Bow => "a bow (slow)",
+        _ => "nothing",
+    };
 
     /// <summary>Nearest gear TIER (1/20/40/52/61/76) a mob's level drops — the level-appropriate set.
     /// The bottom rung is the F tier at level 1: it used to FLOOR at 20, which is why gear drops had to

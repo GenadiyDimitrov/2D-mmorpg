@@ -11752,6 +11752,19 @@ var effect = def.Effect;
         // Flat accuracy by rank — a boss must be able to land on a dodge build.
         int accFlat = rank switch { MobRank.Boss => 20, _ => 0 };
 
+        // The weapon the creature fights with — it must be known BEFORE RecomputeDerived, because
+        // that is where WeaponAttackBase is derived from it. Archer role wins (a bow IS the role),
+        // then the template's own MobMod.Weapon passive, then the category default.
+        //
+        // 🔴 This also fixes a bug that predates the weapon passive: the Archer case below used to
+        // assign mob.WeaponType AFTER RecomputeDerived had already run, so WeaponAttackBase kept the
+        // bare-hand value and archer mobs never actually swung at the bow's 293. Setting it here is
+        // what makes the role's own weapon count.
+        WeaponType mobWeapon =
+            mobType.Role == MobRole.Archer ? WeaponType.Bow
+            : mobType.Mod is MobMod wm && wm.Weapon != WeaponType.None ? wm.Weapon
+            : MobCatalog.DefaultWeaponFor(mobType.Category);
+
         string displayName = mobType.Dummy ? $"Training Dummy (Lv {level})" : rank switch
         {
             MobRank.Elite => $"Elite {mobType.Name}",
@@ -11779,6 +11792,7 @@ var effect = def.Effect;
             Aggressive = ResolveAggression(mobId, mobType, rank, zoneId),
             ZoneId = zoneId,
             Rank = rank,
+            InnateWeaponType = mobWeapon,
             MobTypeId = mobId
         };
         mob.RecomputeDerived();
@@ -11833,7 +11847,8 @@ var effect = def.Effect;
             case MobRole.Archer:
                 // Fires from ~450 range with a bow; higher P.Atk but light armor (less P.Def,
                 // a little more evasion). Uses the normal auto-attack — just at longer range.
-                mob.WeaponType = WeaponType.Bow;
+                // (WeaponType is set in the initializer above, before RecomputeDerived — assigning
+                // it here was too late to reach WeaponAttackBase.)
                 mob.BasicAttackRange = 450f;
                 mob.AttackPower = Math.Max(1, (int)(mob.AttackPower * 2f));
                 mob.BasicAttackPower = Math.Max(1, (int)(mob.BasicAttackPower * 2f));
