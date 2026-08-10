@@ -110,10 +110,18 @@ public static class ClassSkills
         switch (archetype)
         {
             case null:   // base class, before the level-20 change
-                // Base MAGE gets Robe Mastery free at level 1; base FIGHTER learns its
-                // Armor Mastery via the class table from level 5 (no level-1 mastery).
-                if (baseClass == BaseClass.Mage)
-                    yield return new ClassSkill(SkillCatalog.MasteryRobe, 1);
+                // Nothing. Neither base class has a level-1 mastery: the fighter learns its Armor
+                // Mastery from the class table at 5, the mage his Robe Armor Mastery at 7.
+                //
+                // ⚠ `MasteryRobe` used to be yielded here at level 1 — the leftover that caused
+                // playtest-20 `57b`: Robe Armor Mastery L1 appeared in BOTH the level-1 and the
+                // level-7 learn groups, and buying either made the other vanish while the level-14
+                // rung appeared. The 2026-08-07 mastery restructure made it a bonus-only skill
+                // bought off the class table at 7/14 and stopped auto-granting it server-side
+                // (see the note above the robe clamp in GameLoopService.AutoLearnCoreSkills), but
+                // this line kept advertising it at 1. Don't re-add it: it is also the skill a
+                // nuker/cleric mastery `Replaces`, and a stray level-1 copy wins the pick in
+                // RecomputeDerived by dictionary order and erases their bonuses.
                 break;
             // 2nd classes use DATA-DRIVEN per-archetype Armor Mastery skills (one skill,
             // its effect depends on the worn weight; replaces the old split masteries) PLUS

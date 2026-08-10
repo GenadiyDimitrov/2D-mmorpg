@@ -54,7 +54,13 @@ namespace Game.Client
             _detailTitle.text = def.Name + (def.MaxLevel > 1 ? "   Lv." + level : "");
 
             var text = new StringBuilder();
-            if (!string.IsNullOrWhiteSpace(def.Description)) text.AppendLine(def.Description).AppendLine();
+            // ⚠ DescriptionAt, not Description — the card claimed to describe THIS level (see the
+            // summary above) while printing level 1's prose. Restore Spirit is where it showed:
+            // its generic line is "Burns HP to restore MP", and every per-level line carries the
+            // real pair ("Burns 200 HP to restore 120 MP"), so the price was invisible at every
+            // level (playtest-20 `55b`). The same slip ran through MP / Power below.
+            string desc = def.DescriptionAt(level);
+            if (!string.IsNullOrWhiteSpace(desc)) text.AppendLine(desc).AppendLine();
 
             bool passive = def.Passive != null || def.Category == SkillCategory.Passive;
             text.AppendLine(Line("Type", def.Category + (passive ? "  (passive)" : "")));
@@ -75,13 +81,18 @@ namespace Game.Client
             {
                 // Ticks are the server's unit (10/sec); seconds are the player's. Convert here rather
                 // than showing "CastTicks 20", which means nothing to anyone reading it.
-                if (def.MpCost > 0) text.AppendLine(Line("MP", def.MpCost.ToString()));
+                int mp = def.MpCostAt(level), hp = def.HpCostAt(level), power = def.PowerAt(level);
+                if (mp > 0) text.AppendLine(Line("MP", mp.ToString()));
+                // An HP price is a cost like any other and was never printed at all — the other half
+                // of `55b`. It is also refused now when you cannot afford it (`55c`), so the number
+                // has to be visible or the refusal looks arbitrary.
+                if (hp > 0) text.AppendLine(Line("HP", hp.ToString()));
                 text.AppendLine(Line("Cast", Seconds(def.CastTicks)));
                 text.AppendLine(Line("Cooldown", Seconds(def.CooldownTicks)));
 
                 if (def.Range > 0) text.AppendLine(Line("Range", ((int)def.Range).ToString()));
                 if (def.AreaRadius > 0) text.AppendLine(Line("Area", ((int)def.AreaRadius).ToString()));
-                if (def.Power > 0) text.AppendLine(Line("Power", def.Power.ToString()));
+                if (power > 0) text.AppendLine(Line("Power", power.ToString()));
                 if (def.DurationTicks > 0) text.AppendLine(Line("Duration", Seconds(def.DurationTicks)));
                 text.AppendLine(Line("Target", def.TargetMode.ToString()));
             }

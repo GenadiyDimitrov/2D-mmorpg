@@ -1531,6 +1531,17 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // An HP price is refused exactly like an MP one (owner, playtest-20 `55c` — a standing rule,
+        // not just Restore Spirit). STRICTLY greater, not >=: ExecuteSkill clamps the payment with
+        // Math.Max(1, …), so casting at exactly the cost used to survive on 1 HP instead of being
+        // refused, and casting below it was a discount. Refusing here makes the price real.
+        int hpPrice = def.HpCostAt(caster.SkillLevelOf(def.Id));
+        if (hpPrice > 0 && caster.Hp <= hpPrice)
+        {
+            SendSystemToEntity(caster, "Not enough HP.");
+            return;
+        }
+
         // Reagent gate: skills with a ConsumableId need that item to cast. Checked up
         // front for feedback; actually consumed when the cast completes (in ExecuteSkill).
         if (!string.IsNullOrEmpty(def.ConsumableId) &&
@@ -3827,7 +3838,18 @@ public class GameLoopService : BackgroundService
             // The window still clears the moment the target is actually gone (dead / out of the
             // dictionary), and the paths that genuinely end the fight (StopAutoHunt on death or a
             // spent budget) clear CombatTargetId themselves, so this pushes null for them.
-            PushAutoTarget(p, LiveTarget(p, p.CombatTargetId));
+            //
+            // ⚠ playtest-20 #8 — "casting Stab drops your target for the cast duration, then it
+            // returns". This line runs every tick in MANUAL play too, and starting a cast clears
+            // CombatTargetId on purpose (see HandleUseSkill: casting cancels the auto-attack chase).
+            // So the next tick pushed null, the client assigns AutoTarget straight to TargetId, and
+            // the target frame vanished for the length of the cast — then came back because a
+            // FIGHTER's offensive skill re-engages in AfterOffensiveSkill. On a mage it would simply
+            // have stayed gone. A dropped CHASE is not a dropped SELECTION: while a cast or a queued
+            // skill is in flight with no chase, push nothing and leave the player's own target alone.
+            // The genuinely-ended-fight paths still push their null, because they are not casting.
+            if (p.CombatTargetId is not null || (p.CastingSkillId is null && p.QueuedSkillId is null))
+                PushAutoTarget(p, LiveTarget(p, p.CombatTargetId));
             return;
         }
         if (p.CastingSkillId is not null || p.QueuedSkillId is not null)
@@ -7092,6 +7114,16 @@ public class GameLoopService : BackgroundService
         if (caster.Mp < finishMp)
         {
             SendSystemToEntity(caster, "Not enough MP.");
+            CancelCast(caster);
+            return;
+        }
+
+        // The same HP gate as at cast START (`55c`) — re-checked here because a cast roots you and
+        // you can be beaten below the price while it runs. Without this the payment below would
+        // still clamp you to 1 HP and land the skill for free.
+        if (def.HpCostAt(lvl) is int hpPrice && hpPrice > 0 && caster.Hp <= hpPrice)
+        {
+            SendSystemToEntity(caster, "Not enough HP.");
             CancelCast(caster);
             return;
         }
@@ -10790,24 +10822,7 @@ var effect = def.Effect;
             return;
         }
 
-        bool Completed(string qid) => QuestClosed(player, qid);
-        bool Active(string qid) => player.ActiveQuests.ContainsKey(qid);
-
-        // Class choice is irreversible: once you've taken (active OR completed) any
-        // class-change chain quest, only that class's chain stays on offer.
-        int committed2 = CommittedClassChain(player, 2);
-        int committed3 = CommittedClassChain(player, 3);
-
-        var offered = QuestCatalog
-            .OfferedBy(npcId, player.Level, player.Race, player.BaseClass, player.SecondClass, player.ThirdClass, Completed, Active)
-            .Where(q =>
-            {
-                var (cid, tier) = QuestCatalog.ClassChainOf(q.Id);
-                if (tier == 2 && committed2 != 0 && cid != committed2) return false;
-                if (tier == 3 && committed3 != 0 && cid != committed3) return false;
-                return true;
-            })
-            .Select(q => Summarize(player, q, null)).ToArray();
+        var offered = OfferedQuests(player, npcId).Select(q => Summarize(player, q, null)).ToArray();
 
         // Active quests whose CURRENT step is "talk to THIS npc" and it's the
         // final step (turn-in) OR a mid-chain talk.
@@ -11655,15 +11670,38 @@ var effect = def.Effect;
         SendTo(player, "QuestMarks", new QuestMarks(marks.ToArray()));
     }
 
-    /// <summary>How many quests this NPC would offer the player right now (level range, race/class
-    /// gating, prerequisites and the daily's day-stamp all applied).</summary>
-    private int OfferedQuestCount(Entity player, string npcId)
+    /// <summary>Exactly the quests this NPC would hand over if you talked to them right now — level
+    /// range, race/class gating, prerequisites and the daily's day-stamp (all inside
+    /// <see cref="QuestCatalog.OfferedBy"/>), PLUS the class-chain commitment: class choice is
+    /// irreversible, so once you have taken (active OR completed) any chain quest of a tier, only
+    /// that class's chain stays on offer.
+    ///
+    /// ⚠ ONE method on purpose, playtest-20 #10: *"Elder Marius shows a `!` with no quest to give
+    /// after the first 2nd-class quest is done."* The dialog applied the commitment filter and the
+    /// quest MARK did not, so every rival class chain Marius still nominally offers kept lighting
+    /// his head up while the window he opened was empty. A marker that disagrees with the window is
+    /// worse than no marker — keep both readings on this one method.</summary>
+    private IEnumerable<QuestDef> OfferedQuests(Entity player, string npcId)
     {
         bool Completed(string qid) => QuestClosed(player, qid);
         bool Active(string qid) => player.ActiveQuests.ContainsKey(qid);
-        return QuestCatalog.OfferedBy(npcId, player.Level, player.Race, player.BaseClass,
-                                      player.SecondClass, player.ThirdClass, Completed, Active).Count();
+        int committed2 = CommittedClassChain(player, 2);
+        int committed3 = CommittedClassChain(player, 3);
+
+        return QuestCatalog
+            .OfferedBy(npcId, player.Level, player.Race, player.BaseClass,
+                       player.SecondClass, player.ThirdClass, Completed, Active)
+            .Where(q =>
+            {
+                var (cid, tier) = QuestCatalog.ClassChainOf(q.Id);
+                if (tier == 2 && committed2 != 0 && cid != committed2) return false;
+                if (tier == 3 && committed3 != 0 && cid != committed3) return false;
+                return true;
+            });
     }
+
+    /// <summary>How many quests this NPC would offer the player right now. See <see cref="OfferedQuests"/>.</summary>
+    private int OfferedQuestCount(Entity player, string npcId) => OfferedQuests(player, npcId).Count();
 
     /// <summary>Place one mob in a zone. <paramref name="dedicatedMobId"/> names the template when the
     /// spawn comes from one of the zone's per-template spawners; null means the mixed pool, which rolls
