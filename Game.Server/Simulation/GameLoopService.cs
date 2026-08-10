@@ -774,14 +774,23 @@ public class GameLoopService : BackgroundService
         }
 
         p.CustomTitle = text;
-        if (p.CustomTitleColor.Length == 0) p.CustomTitleColor = TitleCatalog.DefaultHex;
+        // WHITE, not the board titles' gold (`59r`). Colour is what the rune buys; a title anyone can
+        // type must not arrive already wearing the colour an earned one falls back to.
+        if (p.CustomTitleColor.Length == 0) p.CustomTitleColor = TitleCatalog.CustomDefaultHex;
         p.TitleCategory = TitleCatalog.Custom;
         RefreshTitle(p, notifyLoss: false);
-        SendSystemToEntity(p, $"You are wearing \"{text}\".  (/titlecolor <colour> to recolour it)");
+        SendSystemToEntity(p, $"You are wearing \"{text}\".  (use a {ItemCatalog.TitleRuneName} to recolour it)");
     }
 
-    /// <summary>`/titlecolor &lt;name&gt;` — recolour the title you wrote. A named palette only, so a
-    /// written title cannot be dressed up in the PK board's dark red.</summary>
+    /// <summary>Recolour the title you wrote — a named palette only, so a written title cannot be
+    /// dressed up in the PK board's dark red.
+    ///
+    /// <para>⚠ It requires a <see cref="ItemCatalog.TitleColorRune"/> in the bag (owner, playtest-20
+    /// `59r`: *"the /titlecolor to be a item like a rune that give you the right to use the /titlecolor
+    /// + clicking on the title color rune item to open the colors as a list"*). HOLDING it is the
+    /// right — it is deliberately NOT consumed, because his second clause has you clicking the same
+    /// rune to open the list, which a one-shot item could not survive. The chat command still works and
+    /// is simply the typed form of the same gate; the rune's click sends this exact command.</para></summary>
     private void HandleSetTitleColor(SetTitleColorCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var p)) return;
@@ -794,6 +803,12 @@ public class GameLoopService : BackgroundService
         if (!TitleCatalog.TryPaletteColor(cmd.Color, out string hex))
         {
             SendSystemToEntity(p, "Colours: " + TitleCatalog.PaletteNames());
+            return;
+        }
+
+        if (!p.Inventory.Any(i => i.DefId == ItemCatalog.TitleColorRune))
+        {
+            SendSystemToEntity(p, $"You need a {ItemCatalog.TitleRuneName} to colour your title.");
             return;
         }
 
@@ -1850,6 +1865,7 @@ public class GameLoopService : BackgroundService
             }
 
             item.Equipped = true;
+            AdvanceActionQuests(player, QuestActions.EquipItem);   // the tutorial's equip beat (`58a`)
         }
 
         player.RecomputeDerived();
@@ -3018,8 +3034,23 @@ public class GameLoopService : BackgroundService
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
             return;
         var item = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
-        if (item is not null)
-            UsePotion(player, item, cmd.TargetId);
+        if (item is null) return;
+
+        // The Rune of Tincture has no use-skill: it opens the palette (`59r`). Answered by
+        // SetTitleColor, which is the command that consumes it — opening a list costs nothing.
+        if (item.DefId == ItemCatalog.TitleColorRune)
+        {
+            if (!player.CanWriteTitle)
+            {
+                SendSystemToEntity(player, "You have not been granted the right to name yourself.");
+                return;
+            }
+            SendTo(player, "TitleColors", new TitleColorOffer(
+                Array.ConvertAll(TitleCatalog.Palette, c => c.Name)));
+            return;
+        }
+
+        UsePotion(player, item, cmd.TargetId);
     }
 
     /// <summary>A dead player answered a resurrection offer. Accept → revive (restoring the offered exp);
@@ -3804,7 +3835,11 @@ public class GameLoopService : BackgroundService
             return;
         }
         p.AutoHuntEnabled = cmd.Enabled;
-        if (p.AutoHuntEnabled) { p.FarmCenterX = p.X; p.FarmCenterY = p.Y; }   // anchor the static circle here
+        if (p.AutoHuntEnabled)
+        {
+            p.FarmCenterX = p.X; p.FarmCenterY = p.Y;   // anchor the static circle here
+            AdvanceActionQuests(p, QuestActions.AutoHunt);   // the tutorial's auto-farm beat (`58a`)
+        }
         SendAutoHuntConfig(p);
         SendAutoHuntStatus(p);
         if (_world.Parties.TryGetValue(p.Id, out var pty))
@@ -7268,6 +7303,10 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // The tutorial's "use a skill" beat (`58a`). Here rather than at cast START: a cast that was
+        // interrupted or cancelled is not a skill you used, and past this point the MP is paid.
+        AdvanceActionQuests(caster, QuestActions.UseSkill);
+
         bool selfTargeted = caster.CastTargetId == caster.Id;
         Entity? target = selfTargeted ? caster
             : caster.CastTargetId is Guid tid ? _world.Entities.GetValueOrDefault(tid) : null;
@@ -9926,6 +9965,7 @@ var effect = def.Effect;
         SendSystemToEntity(player, got.Count > 0
             ? $"{def.Name}: {string.Join(", ", got)}."
             : $"{def.Name}: nothing this time.");
+        AdvanceActionQuests(player, QuestActions.OpenBox);   // the tutorial's box beat (`58a`)
     }
 
     /// <summary>Player confirmed their picks from a SELECTION box: validate the chosen
@@ -9980,6 +10020,7 @@ var effect = def.Effect;
         SendSystemToEntity(player, got.Count > 0
             ? $"{def.Name}: {string.Join(", ", got)}."
             : $"{def.Name}: nothing chosen.");
+        AdvanceActionQuests(player, QuestActions.OpenBox);   // the tutorial's box beat (`58a`)
     }
 
     /// <summary>Player manually dropped a buff (double-click). Debuffs can't be removed
@@ -11594,6 +11635,48 @@ var effect = def.Effect;
     /// no quest used it, so nothing noticed. A quest that reached such a step would simply stall
     /// forever. Called on every level-up AND when a quest is accepted, because a player may already be
     /// past the required level when they take the quest (or when the step becomes current).</summary>
+    /// <summary>Credit one <see cref="QuestStepType.DoAction"/> step — the tutorial's "now actually do
+    /// it" beats (owner, playtest-20 `58a`). Called from the handlers that already process the action,
+    /// so there is no new client message and no way to claim an action you did not perform.
+    ///
+    /// <para>Counts up like a kill step rather than completing on the first one, so "use a skill three
+    /// times" is expressible. Silent when nothing is waiting on that action, which is almost always.</para></summary>
+    private void AdvanceActionQuests(Entity player, string action)
+    {
+        if (player.Kind != EntityKind.Player || player.ActiveQuests.Count == 0) return;
+
+        bool changed = false;
+        foreach (var qid in player.ActiveQuests.Keys.ToList())
+        {
+            var def = QuestCatalog.Get(qid);
+            var state = player.ActiveQuests[qid];
+            if (def is null || state.Completed) continue;
+
+            var step = def.Steps[state.StepIndex];
+            if (step.Type != QuestStepType.DoAction || step.TargetId != action) continue;
+
+            int counter = state.Counter + 1;
+            int need = Math.Max(1, step.Count);
+            if (counter < need)
+            {
+                player.ActiveQuests[qid] = state with { Counter = counter };
+                SendSystemToEntity(player, $"{def.Name}: {step.Text}  ({counter}/{need})");
+            }
+            else if (state.StepIndex < def.Steps.Length - 1)
+            {
+                player.ActiveQuests[qid] = state with { StepIndex = state.StepIndex + 1, Counter = 0 };
+                SendSystemToEntity(player, $"{def.Name}: {def.Steps[state.StepIndex + 1].Text}");
+            }
+            else
+            {
+                // Last step: park the counter at its target, the shape a finished kill step ends in.
+                player.ActiveQuests[qid] = state with { Counter = need };
+            }
+            changed = true;
+        }
+        if (changed) SendQuestLog(player);
+    }
+
     private void AdvanceLevelQuests(Entity player)
     {
         bool changed = false;
@@ -11738,7 +11821,8 @@ var effect = def.Effect;
             var step = def.Steps[i];
             int needed = step.Type switch
             {
-                QuestStepType.KillMobs or QuestStepType.CollectItem => Math.Max(1, step.Count),
+                QuestStepType.KillMobs or QuestStepType.CollectItem
+                    or QuestStepType.DoAction => Math.Max(1, step.Count),
                 _ => 1,
             };
             bool current = state is not null && state.StepIndex == i && !state.Completed;

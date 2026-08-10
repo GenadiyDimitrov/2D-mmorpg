@@ -6,7 +6,28 @@ public enum QuestStepType
     TalkTo = 0,      // talk to NPC (TargetId = npc id)
     KillMobs = 1,    // kill N mobs of a type within a level band
     CollectItem = 2, // gather N of an item (TargetId = item key)
-    ReachLevel = 3   // reach a character level (Count = level)
+    ReachLevel = 3,  // reach a character level (Count = level)
+    DoAction = 4     // perform an interface action N times (TargetId = a QuestActions key)
+}
+
+/// <summary>The actions a <see cref="QuestStepType.DoAction"/> step can wait for.
+///
+/// <para>The tutorial *"teaches nothing before the pigs"* (owner, playtest-20 `58a`) — it introduces
+/// every NPC and never once says how to open a bag, open a box, put the contents on, swing at
+/// something, or turn auto-farm on. A step that TELLS you is a tooltip; a step that waits until you
+/// have actually done it is a tutorial, so each of these is something the server already sees a player
+/// do. Nothing here is a new client message — the equip, the box, the cast and the auto-hunt toggle are
+/// all commands the server was already handling.</para>
+///
+/// <para>Deliberately NOT here: "open your inventory". Opening a window is a client-only gesture the
+/// server cannot observe, and a step that completes on a timer or on trust is exactly the tooltip this
+/// is meant not to be. The bag is taught in the TEXT of the step whose proof is equipping from it.</para></summary>
+public static class QuestActions
+{
+    public const string OpenBox = "open_box";
+    public const string EquipItem = "equip_item";
+    public const string UseSkill = "use_skill";
+    public const string AutoHunt = "auto_hunt";
 }
 
 /// <summary>One ordered step of a quest.</summary>

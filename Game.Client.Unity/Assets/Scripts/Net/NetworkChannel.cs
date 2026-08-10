@@ -100,6 +100,9 @@ namespace Game.Client
 
         /// <summary>A SELECTION box was opened — the server offers choices; the client shows a chooser.</summary>
         public event Action<SelectionOffer> SelectionReceived;
+
+        /// <summary>A Rune of Tincture was used — show the title palette (`59r`).</summary>
+        public event Action<TitleColorOffer> TitleColorsReceived;
         public event Action<string> Disconnected;
         public event Action<string> ForceDisconnected;
         // WithAutomaticReconnect silently gives us a NEW connection id on a transport blip, and the
@@ -147,6 +150,7 @@ namespace Game.Client
             _connection.On<RegionNotice>("Region", r => RegionReceived?.Invoke(r));
             _connection.On<string>("Notice", m => NoticeReceived?.Invoke(m));
             _connection.On<SelectionOffer>("Selection", o => SelectionReceived?.Invoke(o));
+            _connection.On<TitleColorOffer>("TitleColors", o => TitleColorsReceived?.Invoke(o));
             _connection.On<BuffUpdate>("Buffs", b => BuffsReceived?.Invoke(b));
             _connection.On<GoldUpdate>("Gold", g => GoldReceived?.Invoke(g));
             _connection.On<CooldownUpdate>("Cooldowns", c => CooldownsReceived?.Invoke(c));

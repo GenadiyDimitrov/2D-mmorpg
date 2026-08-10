@@ -44,6 +44,18 @@ namespace Game.Shared;
 /// <para><b>M6 — the Newbie kit is a LOANER.</b> Parts 3 and 4 hand out the BOUND, 30-day copies
 /// (<c>ItemCatalog.BoundCopies</c>), not the ladder gear: unsellable, untradable, destroyable,
 /// gone after 30 days.</para>
+///
+/// <para><b>`58a` — it now TEACHES as well as introduces.</b> The owner's complaint after playing it
+/// was that the chain met every NPC in town and *"teaches nothing before the pigs"*: nothing said how
+/// to open a bag, open a box, put the contents on, swing at something, or turn auto-farm on. Part 1
+/// gains three <see cref="QuestStepType.DoAction"/> beats — open a box, equip twice, use a skill — and
+/// part 5 gains the auto-farm one, at the *"reach 18"* slot he picked for it. Each is proved by DOING
+/// it, using commands the server already handles, so none of them is a tooltip that ticks itself.
+///
+/// ⚠ A DoAction step is a GATE, which is why the box beat asks for ONE box and the rune explanation
+/// stayed prose: asking for two boxes would strand a player who opened their creation boxes before
+/// walking to Cera, and an "open Miren's rune box" step would gate the chain on her DAILY quest —
+/// exactly what the structural rule above forbids.</para>
 /// </summary>
 public static partial class QuestCatalog
 {
@@ -86,6 +98,24 @@ public static partial class QuestCatalog
                 new QuestStep(QuestStepType.TalkTo,
                     "Speak with Gatekeeper Pell — he teleports you between towns, free until level 40",
                     TargetId: NpcGatekeeper),
+                // ---- `58a`: TEACH, before the pigs. ------------------------------------------------
+                // The chain introduced every NPC in town and never once said how to open a bag, open a
+                // box, put the contents on, or swing at anything (owner, playtest-20: *"teaches nothing
+                // before the pigs"*). These three beats are the missing half, and each is proved by
+                // DOING it — the server sees every one of them already.
+                // ONE box, not both. A DoAction step is a gate, and a player who opened their creation
+                // boxes before walking to Cera cannot conjure a second one — asking for two would strand
+                // exactly the eager player this is written for. One still teaches the gesture, and a
+                // fresh character always has two.
+                new QuestStep(QuestStepType.DoAction,
+                    "Open your bag and open a box from it — tap the box to open it",
+                    TargetId: QuestActions.OpenBox),
+                new QuestStep(QuestStepType.DoAction,
+                    "Put your gear on — tap a weapon or an armor piece in the bag to equip it",
+                    TargetId: QuestActions.EquipItem, Count: 2),
+                new QuestStep(QuestStepType.DoAction,
+                    "Try a skill from the bar at the bottom — tapping a creature attacks it, a skill uses that",
+                    TargetId: QuestActions.UseSkill),
                 new QuestStep(QuestStepType.KillMobs, "Slay 5 Ridgeback Pups",
                     TargetId: "ridgeback_pup", Count: 5),
                 new QuestStep(QuestStepType.ReachLevel, "Reach level 3", Count: 3),
@@ -116,8 +146,14 @@ public static partial class QuestCatalog
                 new QuestStep(QuestStepType.TalkTo,
                     "Visit Spirit Helper Nyra and take her blessing — she buffs levels 6 to 75, free",
                     TargetId: NpcBuffer),
+                // "what the rune does (after Miren)" — his `58a` list. Said in the TEXT, not made into a
+                // step you must perform. ⚠ The rune comes from Miren's DAILY quest, and the structural
+                // rule at the top of this file is that the chain points at the daily and must never gate
+                // it; an "open her rune box" action step would have done exactly that to anyone who
+                // skipped the daily.
                 new QuestStep(QuestStepType.TalkTo,
-                    "Visit Apothecary Miren — potions, scrolls, and a free Rune once a day. Take today's",
+                    "Visit Apothecary Miren — potions, scrolls, and a free Rune daily. A rune is worn like "
+                  + "a jewel and raises your damage until it expires; take today's",
                     TargetId: NpcApothecary),
             },
             // ~50% of a level at 6 (level 6->7 costs 5 249).
@@ -196,6 +232,12 @@ public static partial class QuestCatalog
             RequiresQuestId: QuestTutorialBlooded,
             Steps: new[]
             {
+                // The auto-pot / auto-farm beat goes HERE — his `58a` words: *"the 'reach 18' part after
+                // Dorian is the right slot for those"*. It is: by 18 you own potions, a full bar and a
+                // reason to leave the phone alone for a while.
+                new QuestStep(QuestStepType.DoAction,
+                    "Open Auto and switch auto-farm on — it fights and drinks for you while you are away",
+                    TargetId: QuestActions.AutoHunt),
                 new QuestStep(QuestStepType.ReachLevel, "Reach level 18", Count: 18),
                 new QuestStep(QuestStepType.TalkTo,
                     "Speak with Elder Marius — he sets the first trial of your profession",

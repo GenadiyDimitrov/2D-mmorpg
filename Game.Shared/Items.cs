@@ -666,6 +666,13 @@ public static class ItemCatalog
     // and the only source of a buff scroll in the game. At 76+ the full set is two boxes = 500k, which
     // is deliberately about an hour of farming: a live buffer still has to be the better deal.
     public const string BoxBuffScrolls    = "box_buff_scrolls";
+    /// <summary>The Rune of Tincture — what makes a title's COLOUR something you spend rather than
+    /// something you type (owner, playtest-20 `59r`: *"/titlecolor should be gated behind a rune item
+    /// that opens a colour list when clicked, not a free command"*). Using one opens the palette; the
+    /// rune is consumed when a colour is actually chosen, never merely by opening the list.</summary>
+    public const string TitleColorRune    = "rune_title_colour";
+    public const string TitleRuneName     = "Rune of Tincture";
+
     // Boxes/chests — opened from the inventory; roll their BoxCatalog loot table.
     public const string BoxNewbie         = "box_newbie";
     public const string BoxTreasure       = "box_treasure";
@@ -973,6 +980,14 @@ public static class ItemCatalog
             Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0,
             Description: "Choose ONE: a 1-hour War Rune (physical) or Spell Rune (magic) rune box. "
                        + "Untradable — the Apothecary gives these out, she does not sell them."));
+
+        // The Rune of Tincture — the RIGHT to colour a title you wrote, made into a thing you own
+        // (`59r`). Not consumed: he asked to click the rune to open the colour list, which a one-shot
+        // item could not do twice, so holding it IS the right and the click is the menu. Tradable —
+        // a cosmetic you can hand to a friend is a better cosmetic.
+        list.Add(new ItemDef(TitleColorRune, TitleRuneName, EquipSlot.Consumable, ItemGrade.F, ItemRarity.Uncommon,
+            Value: 40000, NoAttributes: true,
+            Description: "Keep it to earn the right to colour the title you wrote, and use it to pick the colour."));
 
         // Return scrolls: same mechanism, but their skill has a CAST time, so double-clicking one
         // channels it. The skills are NOT learned — the ITEM is what grants them.

@@ -371,6 +371,21 @@ namespace Game.Client
             OpenWindow(_selectPopup);
         }
 
+        /// <summary>A Rune of Tincture was used — the colour list it opens (owner, playtest-20 `59r`).
+        /// Reuses the pick-ONE popup: choosing sends the ordinary SetTitleColor command, which is where
+        /// the server spends the rune, so closing this list costs nothing.</summary>
+        public void ShowTitleColorPicker(TitleColorOffer offer)
+        {
+            if (offer?.Colors == null || offer.Colors.Length == 0) return;
+            var opts = new (string, Action)[offer.Colors.Length];
+            for (int i = 0; i < offer.Colors.Length; i++)
+            {
+                string colour = offer.Colors[i];
+                opts[i] = (colour, () => Boot.SetTitleColor(colour));
+            }
+            ShowSelection("Rune of Tincture", opts);
+        }
+
         /// <summary>A SELECTION box was opened — turn its options into the chooser. Pick-ONE confirms on
         /// the tap; pick-MANY (PickCount &gt; 1) toggles rows and confirms once, since with ten picks in
         /// one box "I tapped it" and "I am done" stopped being the same gesture.</summary>

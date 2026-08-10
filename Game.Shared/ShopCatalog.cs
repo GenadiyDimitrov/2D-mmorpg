@@ -96,6 +96,10 @@ public static class ShopCatalog
                 ItemCatalog.BoxWarRune2h,
                 ItemCatalog.BoxSpellRune1h,
                 ItemCatalog.BoxSpellRune2h,
+                // The Rune of Tincture — the only source of a title COLOUR since `59r` made it a thing
+                // you spend rather than a free command. Sold rather than dropped: it is pure cosmetic,
+                // so a gold sink is exactly what it should be.
+                ItemCatalog.TitleColorRune,
                 // NOTE: enchant + attribute scrolls are intentionally DROP-ONLY (not sold).
             }),
             // WEAPONS. The LEGACY generated grid ("Worn Sword" at P.Atk 6, the Fine/Masterwork

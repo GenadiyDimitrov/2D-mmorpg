@@ -1023,6 +1023,7 @@ namespace Game.Client
             _net.RegionReceived += r => Main(() => Ui?.ShowRegionNotice(r));
             _net.NoticeReceived += m => Main(() => Ui?.ShowToast(m));
             _net.SelectionReceived += o => Main(() => Ui?.ShowBoxSelection(o));
+            _net.TitleColorsReceived += o => Main(() => Ui?.ShowTitleColorPicker(o));
             _net.PartyReceived += p => Main(() =>
             {
                 Party = p?.Members ?? new PartyMemberDto[0];

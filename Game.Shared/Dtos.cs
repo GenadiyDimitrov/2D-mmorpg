@@ -244,6 +244,12 @@ public record BuffUpdate(BuffDto[] Buffs);
 public record SelectionOffer(Guid BoxInstanceId, string BoxName, SelectionOption[] Options, int PickCount);
 public record SelectionOption(string ItemId, string Name);
 
+/// <summary>Server -> owning client: a Rune of Tincture was used — show the palette (owner,
+/// playtest-20 `59r`). The client answers with the ordinary SetTitleColor command, which is where the
+/// rune is actually spent; opening the list costs nothing. Names only, because the server is the
+/// authority on which colours exist and what hex each one is.</summary>
+public record TitleColorOffer(string[] Colors);
+
 /// <summary>Server -> owning client: the expanded target window (L2-style inspect) —
 /// the target's detailed stats and, for a mob, its passive modifier lines.</summary>
 public record TargetDetails(
@@ -484,9 +490,13 @@ public static class TitleCatalog
         _          => DefaultHex,
     };
 
-    /// <summary>What a title with no colour of its own is drawn in — and the colour a custom title
-    /// starts at before its owner picks one.</summary>
+    /// <summary>What a title with no colour of its own is drawn in — the BOARD titles' fallback.</summary>
     public const string DefaultHex = "F2D473";
+
+    /// <summary>What a title you WROTE starts as. White, not gold (owner, playtest-20 `59r`: *"/title
+    /// must default to white"*) — gold is the fallback the earned board titles wear, so a title anyone
+    /// can type must not arrive already dressed in it. Colour is the thing the rune buys.</summary>
+    public const string CustomDefaultHex = "FFFFFF";
 
     /// <summary>An NPC's ROLE line ("Elder" over Marius). Deliberately a cool grey-blue and NOT one of
     /// the player-title colours: an NPC's role is furniture you read once, not an achievement, and it
