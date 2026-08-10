@@ -64,6 +64,7 @@ public static partial class SkillCatalog
     // --- Rogue 2nd-class (CSV rogue 20-35) ---
     public const string Sprint = "sprint";                         // burst move-speed buff
     public const string BowExpertise = "bow_expertise";            // bow attack-speed buff
+    public const string EvasionBoost = "evasion_boost";            // the rogue's ultimate: +evasion, 30s
 
     // Base-fighter armor mastery per level (@5/10/15): flat P.Def + MP-regen for ALL weights;
     // at level 3 light armor also aids evasion. No off-weight penalty (fighters adapt).
@@ -290,12 +291,14 @@ public static partial class SkillCatalog
             }),
 
         // Defensive Wall — the tank's panic button: enormous P.Def & M.Def (flat + ×2), high
-        // cancel resistance, but move speed halved, for 60s (long reuse). All channels are
+        // cancel resistance, but move speed halved, for 30s (long reuse). All channels are
         // ordinary buff magnitudes (BuffDef/BuffMagicDef accept flat AND percent).
+        // ⚠ 30s, not 60: he corrected `tank 20-35.csv` during playtest-20 ("Tanks Ultimate is 30s
+        // not 60"). 900s reuse for 30s of near-immunity is the intended ratio.
         new(DefensiveWall, "Defensive Wall", BaseClass.Fighter,
             SkillEffect.BuffDef | SkillEffect.BuffMagicDef | SkillEffect.BuffCancelResist | SkillEffect.BuffMoveSpeed,
             MpCost: 20, CastTicks: 5, CooldownTicks: 9000, Range: 0, Power: 0,
-            DurationTicks: 600, BuffKey: "defensive_wall", Rank: 1,
+            DurationTicks: 300, BuffKey: "defensive_wall", Rank: 1,
             Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 3400,
             Magnitudes: new EffectMagnitude[]
             {
@@ -306,7 +309,7 @@ public static partial class SkillCatalog
                 new(SkillEffect.BuffCancelResist, 0.80f, ModifierMode.Percent),
                 new(SkillEffect.BuffMoveSpeed, -0.50f, ModifierMode.Percent),
             },
-            Description: "Raise an impregnable guard for 60s: massively higher physical & magic "
+            Description: "Raise an impregnable guard for 30s: massively higher physical & magic "
                        + "defence and cancel resistance, but your movement is halved."),
 
         // Shield Stun — contested STUN for 9s (physical, ATK-vs-CON; bosses immune).
@@ -348,6 +351,35 @@ public static partial class SkillCatalog
                 new(ChildBuffs: new[] { SkillCatalog.BuffSprint2 }, MpCost: 16, SpCost: 42000,
                     Description: "A burst of speed: +60 move speed for 15s. Overrides every Dash potion."),
             }),
+
+        // Evasion Boost — the ROGUE's ultimate, the mirror of the tank's Defensive Wall: 30s of
+        // greatly raised evasion on a 900s reuse (CSV `rogue 20-35.csv`, added by him in
+        // playtest-20). This is the burst his evasion design depends on: with the discipline's
+        // stray +32 gone (see Classes.Third.cs), a rogue's resting evasion lead over an equal
+        // attacker is ~10-20 points and THIS is what briefly takes it to ~40-50 — *"later all
+        // rogues will have an ultimate that increases the evasion with 20-30 ... but for 30 sec"*.
+        //
+        // 🔴 TWO CSV CHANNELS ARE NOT BUILT: "skill evasion x1.25" and "magic evasion x1.1". The
+        // game has exactly ONE evasion channel (SkillEffect.BuffEvasion, consumed by
+        // StatCalculator.ResolveAvoidChance) — dodging a physical SKILL separately from a basic
+        // attack, and dodging MAGIC at all, are new resolution mechanics, not new numbers. They are
+        // deliberately omitted rather than approximated: folding them into the flat +20 would
+        // silently make this stronger than authored. Add the channels first, then these two lines.
+        //
+        // No buff FAMILY on purpose (same as Defensive Wall): an ultimate must stack on top of the
+        // Agility ladder, not evict a potion or be evicted by one.
+        new(EvasionBoost, "Evasion Boost", BaseClass.Fighter,
+            SkillEffect.BuffEvasion | SkillEffect.BuffCancelResist,
+            MpCost: 20, CastTicks: 5, CooldownTicks: 9000, Range: 0, Power: 0,
+            DurationTicks: 300, BuffKey: "evasion_boost", Rank: 1,
+            Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 3400,
+            Magnitudes: new EffectMagnitude[]
+            {
+                new(SkillEffect.BuffEvasion, 20, ModifierMode.Flat),
+                new(SkillEffect.BuffCancelResist, 0.80f, ModifierMode.Percent),
+            },
+            Description: "Slip every blow for 30s: +20 Evasion and your buffs strongly resist "
+                       + "being cancelled."),
 
         // Bow Expertise — long self-buff: +8% bow attack speed (requires a bow) for 20 min.
         new(BowExpertise, "Bow Expertise", BaseClass.Fighter, SkillEffect.BuffAtkSpeed,

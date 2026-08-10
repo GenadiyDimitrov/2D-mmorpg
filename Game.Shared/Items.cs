@@ -1678,12 +1678,24 @@ public static class ItemCatalog
             // power — so the newbie kit is the top of F grade instead of a parallel item line.
             ("sword1h", "Blade",      WeaponType.Sword,          false, 0,
                 new[] { (1,24,14,0),(20,92,54,0),(40,156,83,0),(52,194,99,0),(61,232,114,0),(76,281,132,0) }),
+            // ⚠ 2H P.Atk raised ×1.166 on 2026-08-10 (his instruction, playtest-20). The multiplier is
+            // exactly 379/325 — the inverse of the swing-rate a 2H lost when the speed table stopped
+            // folding TwoHandedSword down to Sword (see StatCalculator.WeaponAttackBaseSpeed). It is
+            // NOT a buff: it restores the 2H's pre-change DPS so his speed ruling is a change of FEEL
+            // (slower, heavier hits) and not of balance.
+            //
+            // It also fixes a latent bug in the MAUL. The Greatsword was the outlier at 379; the Maul
+            // has always swung at 325, so at the old +21.7% P.Atk it did just 4.4% more DPS than a
+            // one-hander while giving up the shield entirely. Nobody caught it because BalanceMatrix
+            // only measures the champion's 2H SWORD. Both now sit at +21.7% DPS over a 1H, which is
+            // what the lost off-hand is worth. M.Atk is deliberately untouched.
+            // Was: 29 / 112 / 190 / 236 / 282 / 342.
             ("sword2h", "Greatsword", WeaponType.TwoHandedSword, false, 0,
-                new[] { (1,29,14,0),(20,112,54,0),(40,190,83,0),(52,236,99,0),(61,282,114,0),(76,342,132,0) }),
+                new[] { (1,34,14,0),(20,131,54,0),(40,222,83,0),(52,275,99,0),(61,329,114,0),(76,399,132,0) }),
             ("blunt1h", "Mace",       WeaponType.Blunt,          false, 0,
                 new[] { (1,24,14,0),(20,92,54,0),(40,156,83,0),(52,194,99,0),(61,232,114,0),(76,281,132,0) }),
             ("blunt2h", "Maul",       WeaponType.TwoHandedBlunt, false, 0,
-                new[] { (1,29,14,0),(20,112,54,0),(40,190,83,0),(52,236,99,0),(61,282,114,0),(76,342,132,0) }),
+                new[] { (1,34,14,0),(20,131,54,0),(40,222,83,0),(52,275,99,0),(61,329,114,0),(76,399,132,0) }),
             ("duals",   "Fangs",      WeaponType.Dual,           false, 0,
                 new[] { (1,21,14,0),(20,80,54,0),(40,136,83,0),(52,170,99,0),(61,203,114,0),(76,271,132,0) }),
             ("bow",     "Longbow",    WeaponType.Bow,            false, 400,

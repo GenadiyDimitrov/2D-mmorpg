@@ -140,13 +140,13 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 ,Weapon,Fighter,76,Sword,281/132,,[BUILT],,see ATTRIBUTES: SWORD
 ,Weapon,Fighter,80,Sword,450/211,,[BUILT] S derived,,see ATTRIBUTES: SWORD
 
-,Weapon,Fighter,1,Sword2h,29/14,,[BUILT] F rung
-,Weapon,Fighter,20,Sword2h,112/54,,[BUILT]
-,Weapon,Fighter,40,Sword2h,190/83,,[BUILT],,see ATTRIBUTES: SWORD
-,Weapon,Fighter,52,Sword2h,236/99,,[BUILT],,see ATTRIBUTES: SWORD
-,Weapon,Fighter,61,Sword2h,282/114,,[BUILT],,see ATTRIBUTES: SWORD
-,Weapon,Fighter,76,Sword2h,342/132,,[BUILT],,see ATTRIBUTES: SWORD
-,Weapon,Fighter,80,Sword2h,547/211,,[BUILT] S derived,,see ATTRIBUTES: SWORD
+,Weapon,Fighter,1,Sword2h,34/14,,[BUILT] F rung
+,Weapon,Fighter,20,Sword2h,131/54,,[BUILT]
+,Weapon,Fighter,40,Sword2h,222/83,,[BUILT],,see ATTRIBUTES: SWORD
+,Weapon,Fighter,52,Sword2h,275/99,,[BUILT],,see ATTRIBUTES: SWORD
+,Weapon,Fighter,61,Sword2h,329/114,,[BUILT],,see ATTRIBUTES: SWORD
+,Weapon,Fighter,76,Sword2h,399/132,,[BUILT],,see ATTRIBUTES: SWORD
+,Weapon,Fighter,80,Sword2h,638/211,,[BUILT] S derived,,see ATTRIBUTES: SWORD
 
 ,Weapon,Fighter,1,Blunt,24/14,,[BUILT] F rung
 ,Weapon,Fighter,20,Blunt,92/54,,[BUILT] no attri
@@ -156,13 +156,13 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 ,Weapon,Fighter,76,Blunt,281/132,,[BUILT],,see ATTRIBUTES: BLUNT
 ,Weapon,Fighter,80,Blunt,450/211,,[BUILT] S derived,,see ATTRIBUTES: BLUNT
 
-,Weapon,Fighter,1,Blunt2h,29/14,,[BUILT] F rung
-,Weapon,Fighter,20,Blunt2h,112/54,,[BUILT] no attri
-,Weapon,Fighter,40,Blunt2h,190/83,,[BUILT],,see ATTRIBUTES: BLUNT
-,Weapon,Fighter,52,Blunt2h,236/99,,[BUILT],,see ATTRIBUTES: BLUNT
-,Weapon,Fighter,61,Blunt2h,282/114,,[BUILT],,see ATTRIBUTES: BLUNT
-,Weapon,Fighter,76,Blunt2h,342/132,,[BUILT],,see ATTRIBUTES: BLUNT
-,Weapon,Fighter,80,Blunt2h,547/211,,[BUILT] S derived,,see ATTRIBUTES: BLUNT
+,Weapon,Fighter,1,Blunt2h,34/14,,[BUILT] F rung
+,Weapon,Fighter,20,Blunt2h,131/54,,[BUILT] no attri
+,Weapon,Fighter,40,Blunt2h,222/83,,[BUILT],,see ATTRIBUTES: BLUNT
+,Weapon,Fighter,52,Blunt2h,275/99,,[BUILT],,see ATTRIBUTES: BLUNT
+,Weapon,Fighter,61,Blunt2h,329/114,,[BUILT],,see ATTRIBUTES: BLUNT
+,Weapon,Fighter,76,Blunt2h,399/132,,[BUILT],,see ATTRIBUTES: BLUNT
+,Weapon,Fighter,80,Blunt2h,638/211,,[BUILT] S derived,,see ATTRIBUTES: BLUNT
 
 # Daggers are DUALs (WeaponType.Dual) — fast, lower per-hit.
 ,Weapon,Fighter,1,Duals,21/14,,[BUILT] F rung

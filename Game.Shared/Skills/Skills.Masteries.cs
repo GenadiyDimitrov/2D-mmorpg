@@ -21,9 +21,13 @@ public static partial class SkillCatalog
     /// keep the "with all" half and simply miss the light half — still no active penalty for a
     /// fighter (owner ruling 2026-07-01). Everything used to be gated on light, which left a
     /// rogue in robe/heavy with no MP regen, no HP regen and no P.Def at all.</summary>
-    private static ArmorMasteryProfile RogueArmor(StatMods all, int lightEva, float lightSpeedPct = 0f) =>
+    /// ⚠ <paramref name="lightSpeed"/> is FLAT run speed, not a percentage — the CSV reads
+    /// "speed +7" and he corrected it explicitly in playtest-20 ("Also speed is +7 flat not
+    /// x1.07"). It was authored as MoveSpeedPct 0.06, which is a different number at every base
+    /// speed and drifts as the SpeedTable changes.
+    private static ArmorMasteryProfile RogueArmor(StatMods all, int lightEva, float lightSpeed = 0f) =>
         new(Robe: all, Heavy: all,
-            Light: all with { Evasion = lightEva, CritRateResist = 0.15f, MoveSpeedPct = lightSpeedPct });
+            Light: all with { Evasion = lightEva, CritRateResist = 0.15f, MoveSpeed = lightSpeed });
 
     /// <summary>Tank Heavy Armor Mastery level: HEAVY armor grants flat P.Def, ×1.07 P.Def,
     /// 15% crit-damage reduction, ×mpReg MP regen and −2 evasion. Off-weights are inert (tank is
@@ -121,9 +125,9 @@ public static partial class SkillCatalog
             {
                 RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 16), lightEva: 7),
                 RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 18), lightEva: 11),
-                RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 20), lightEva: 13, lightSpeedPct: 0.06f),
-                RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 22), lightEva: 13, lightSpeedPct: 0.06f),
-                RogueArmor(new StatMods(MpRegenPct: 0.8f, HpRegenPct: 0.2f, PDef: 25), lightEva: 13, lightSpeedPct: 0.06f),
+                RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 20), lightEva: 13, lightSpeed: 7f),
+                RogueArmor(new StatMods(MpRegenPct: 0.1f, PDef: 22), lightEva: 13, lightSpeed: 7f),
+                RogueArmor(new StatMods(MpRegenPct: 0.8f, HpRegenPct: 0.2f, PDef: 25), lightEva: 13, lightSpeed: 7f),
             }),
 
         // (Archer Armor Mastery DELETED 2026-08-07 with its id — the rogue light mastery above is

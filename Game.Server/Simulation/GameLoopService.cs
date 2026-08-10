@@ -11733,8 +11733,24 @@ var effect = def.Effect;
         var stats = StatCalculator.MobStats(level);
 
         // Elites/bosses are tougher versions of the base mob.
-        float hpMul = rank switch { MobRank.Elite => 4f, MobRank.Boss => 20f, _ => 1f };
-        float atkMul = rank switch { MobRank.Elite => 1.5f, MobRank.Boss => 2.5f, _ => 1f };
+        //
+        // ⚠ 2026-08-10 (playtest-20, his find #6): the BOSS rungs were raised hard. He soloed a raid
+        // boss on an Elf dagger with nothing but common potions and the NPC buffer — 58k HP fell to
+        // 1400-2000 per stab — and ruled the whole rank underweight: *"HP from x20 -> x100 (from
+        // 50-60k to 250-300k), Acc +20, PAtk from x5 -> x20. MAtk seems ok."*
+        //
+        // HP is his number exactly (x20 -> x100). Accuracy is new: the rank had none, which is why a
+        // dodge build could stand in front of a boss and simply not be hit.
+        //
+        // 🔴 P.Atk is the ONE place I did not take his number literally, and it is worth knowing why:
+        // he quoted the boss as being at "x5" today, but the rank multiplier here has always been
+        // x2.5 — there is no x5 anywhere in the boss path. Taking "x20" literally would be an 8x
+        // damage jump, not the 4x his own before/after describes, so this applies his RATIO (x4) to
+        // the real base: 2.5 -> 10. If he meant a literal x20, this is a one-number change.
+        float hpMul = rank switch { MobRank.Elite => 4f, MobRank.Boss => 100f, _ => 1f };
+        float atkMul = rank switch { MobRank.Elite => 1.5f, MobRank.Boss => 10f, _ => 1f };
+        // Flat accuracy by rank — a boss must be able to land on a dodge build.
+        int accFlat = rank switch { MobRank.Boss => 20, _ => 0 };
 
         string displayName = mobType.Dummy ? $"Training Dummy (Lv {level})" : rank switch
         {
@@ -11806,6 +11822,10 @@ var effect = def.Effect;
                 mob.BowResist = Math.Max(mob.BowResist, 0.3f);
             }
         }
+
+        // Rank accuracy is FLAT and lands after the template's Accuracy multiplier, so a boss gets
+        // its +20 whole rather than scaled by whatever passive the template happens to carry.
+        if (accFlat != 0) mob.Accuracy += accFlat;
 
         // Mob ROLE: ranged/caster archetypes on top of the base+passive stats.
         switch (mobType.Role)

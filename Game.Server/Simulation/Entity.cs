@@ -1710,9 +1710,14 @@ public class Entity
         MaxHp = (int)((MaxHp + buffHpFlat) * (1f + buffHpPct));
         MaxMp = (int)((MaxMp + buffMpFlat) * (1f + buffMpPct));
 
+        // A bare-handed MOB uses its own base, not the player weaponless one — see
+        // StatCalculator.MobBareHandAttackSpeed for why (his 300 would have slowed every mob in the
+        // game by ~31%). An armed mob (an Archer role holds a Bow) goes through the normal table.
         WeaponAttackBase = weaponAsBase > 0
             ? weaponAsBase
-            : StatCalculator.WeaponAttackBaseSpeed(WeaponType);
+            : Kind == EntityKind.Mob && WeaponType == WeaponType.None
+                ? StatCalculator.MobBareHandAttackSpeed
+                : StatCalculator.WeaponAttackBaseSpeed(WeaponType);
 
         // ----- Shield Mastery buffs (tank passives) scale the shield values.
         //  Percent magnitudes add fractionally; flat add directly. Only matter
@@ -1789,7 +1794,12 @@ public class Entity
             {
                 AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier / (1f + sm.AtkSpeedPct), 0.4f, 2.5f);
                 CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier / (1f + sm.CastSpeedPct), 0.4f, 2.5f);
-                RunSpeed *= 1f + sm.MoveSpeedPct;
+                // Flat move speed lands BEFORE the percent, so "speed +7" is 7 points of run speed
+                // and not 7 points scaled by whatever else is on. StatMods.MoveSpeed already
+                // existed here but nothing read it — the rogue light mastery's CSV "speed +7" was
+                // being authored as MoveSpeedPct 0.06 (×1.06) instead, which he corrected in
+                // `rogue 20-35.csv` during playtest-20 ("Also speed is +7 flat not x1.07").
+                RunSpeed = (RunSpeed + sm.MoveSpeed) * (1f + sm.MoveSpeedPct);
                 WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor;
                 Speed = RunSpeed;
                 HpRegenMult *= 1f + sm.HpRegenPct;

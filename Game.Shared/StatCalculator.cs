@@ -741,24 +741,52 @@ public static class StatCalculator
     public static float CastWitModifier(int wit) =>
         Math.Clamp(MathF.Pow(1.63f, (wit - 20) / 10f), 0.4f, 8f);
 
-    /// <summary>Weapon cast factor: staves/maces are full casters; bladed/bow weapons
-    /// cast clumsily. Multiplicative on the cast stat.</summary>
-    public static float WeaponCastFactor(WeaponType w) => w.Base() switch
+    /// <summary>Weapon cast factor — ×1.0 for EVERY weapon type. Owner's ruling, 2026-08-10:
+    /// *"All weapons should have the same cast speed ×1 (no weapon changes cast speed for a
+    /// weapon type, only passives)."*
+    ///
+    /// It used to be Blunt ×1.0 and everything else ×0.8, which was the WRONG place for that rule
+    /// twice over. (1) It double-charged: the wrong-weapon penalty is owned by Spellcaster Mastery
+    /// (CasterMastery grants its bonus only with a sword/blunt, and the robe/armor masteries carry
+    /// the cast multipliers) — a bare weapon factor taxed the same choice again. (2) It contradicted
+    /// the authored profile: sword/blunt is documented as cast ×1, but a SWORD silently took the
+    /// ×0.8 branch. Kept as a function rather than deleted so the assembly in
+    /// Entity.EffectiveCastSpeedMultiplier keeps its shape and a future per-weapon rule has a home.</summary>
+    public static float WeaponCastFactor(WeaponType w) => 1.0f;
+
+    /// <summary>Weapon base attack speed (baseline 333 = 1.0×). Owner's table, 2026-08-10.
+    ///
+    /// ⚠ Switches on the RAW WeaponType, NOT w.Base(). Folding to the base type was the bug he
+    /// found: TwoHandedSword→Sword and TwoHandedBlunt→Blunt meant a 2H swung exactly as fast as a
+    /// 1H, and 1H blunt inherited the staff's slow 325 — so blunt and sword disagreed where they
+    /// should have matched, and 1H and 2H matched where they should have disagreed.
+    ///
+    /// A single bow item can override this via ItemDef.AttackSpeedBase (227 = "very slow"), which
+    /// Entity.RecomputeDerived prefers when non-zero — that is how two bows differ.</summary>
+    public static int WeaponAttackBaseSpeed(WeaponType w) => w switch
     {
-        WeaponType.Blunt => 1.0f,   // staff/mace: caster weapon
-        _ => 0.8f                   // bladed/bow: clumsy caster
+        WeaponType.Dual            => 433,  // knives/dual: very fast
+        WeaponType.Sword           => 379,  // 1H sword: fast
+        WeaponType.Blunt           => 379,  // 1H blunt: fast (same as the 1H sword)
+        WeaponType.TwoHandedSword  => 325,  // 2H sword: normal
+        WeaponType.TwoHandedBlunt  => 325,  // 2H blunt / staff: normal
+        WeaponType.Bow             => 293,  // bow: slow (a "very slow" 227 bow sets AttackSpeedBase)
+        _                          => 300,  // weaponless
     };
 
-    /// <summary>Weapon base attack speed (authentic L2 bases; baseline 333 = 1.0×).
-    /// Daggers/fists fastest, 2H/bow slowest.</summary>
-    public static int WeaponAttackBaseSpeed(WeaponType w) => w.Base() switch
-    {
-        WeaponType.Dual => 433,     // daggers/dual: fastest
-        WeaponType.Sword => 379,    // sword (1H or 2H)
-        WeaponType.Bow => 293,      // bow: slow (but long range)
-        WeaponType.Blunt => 325,    // staff/mace: slow
-        _ => 433                    // fists (weaponless): fast
-    };
+    /// <summary>A bare-handed MOB's attack-speed base. Deliberately NOT the weaponless 300 above.
+    ///
+    /// His weapon-speed table set weaponless to 300, down from the 433 the branch used to return —
+    /// but almost every mob in the game carries WeaponType.None, so applying 300 to them made the
+    /// whole bestiary attack ~31% slower. BalanceMatrix E2 caught it: a level-20 champion's survival
+    /// time went 126s -> 189s and the tank's 190s -> 279s, purely from this. That is a game-wide mob
+    /// DPS nerf he never asked for, and it points the wrong way — the same playtest ruled raid
+    /// bosses far too WEAK. Mobs therefore keep 433 and their damage is unchanged.
+    ///
+    /// Claws are fast, so 433 is defensible on its own terms; but the real reason it is pinned is
+    /// that mob damage is tuned through MobBaseStats and the rank multipliers, and it must not
+    /// drift as a side effect of a PLAYER weapon table. One number to change if he wants them on 300.</summary>
+    public const int MobBareHandAttackSpeed = 433;
 
     // ----- Progression -------------------------------------------------------
 

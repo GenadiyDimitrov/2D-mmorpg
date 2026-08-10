@@ -159,17 +159,31 @@ public static class ThirdClassCatalog
         All.Values.Where(c => c.ParentSecondClassId == secondClassId).OrderBy(c => c.Id);
 
     /// <summary>Placeholder flat stat lean per discipline (real identity will come
-    /// from skills in the content slices). Applied additively in RecomputeDerived.</summary>
+    /// from skills in the content slices). Applied additively in RecomputeDerived.
+    ///
+    /// ⚠ 2026-08-10 — NO DISCIPLINE MAY GRANT FLAT EVASION. Phantom carried `Evasion: 32` and
+    /// Trapper `Evasion: 12`, written here before the evasion budget was ever set. The budget is
+    /// ~18 points TOTAL (13 from armor mastery + 4 from the Agility buff, see the note at
+    /// Skills.Common.cs' evade_mastery), so Phantom alone was nearly twice the whole allowance —
+    /// and since 1 evasion point = 1% miss (StatCaps.AvoidStatSlope), it was a flat +32% dodge.
+    /// It is what made a level-60 Elf Phantom read 140 evasion where the owner expected 108
+    /// (60 level + 35 DEX + 13 mastery), and why evasion visibly JUMPED at the discipline change.
+    /// Both are now 0 and their budget moved to MaxHp — the same survivability role, in a channel
+    /// that does not touch the accuracy-vs-evasion contest or any damage number.
+    /// `Dex` is NOT a substitute: it feeds evasion 1:1 and would reintroduce the bug.
+    ///
+    /// The rule this enforces: evasion comes from armor mastery, buffs and DEX. `evade_mastery`
+    /// raises the FLOOR only and grants no evasion — a class must not smuggle points in here.</summary>
     private static ClassFlatBonus FlatFor(Discipline d) => d switch
     {
         Discipline.Bulwark      => new ClassFlatBonus(MaxHp: 220, Defence: 45),
         Discipline.Vanguard     => new ClassFlatBonus(MaxHp: 130, Defence: 22, Attack: 18),
         Discipline.Ravager      => new ClassFlatBonus(Attack: 45, MaxHp: 40),
         Discipline.Warlord      => new ClassFlatBonus(Attack: 26, MaxHp: 90),
-        Discipline.Phantom      => new ClassFlatBonus(Evasion: 32, Attack: 16),
+        Discipline.Phantom      => new ClassFlatBonus(Attack: 16, MaxHp: 120),
         Discipline.Venomweaver  => new ClassFlatBonus(Attack: 22, Accuracy: 10),
         Discipline.Sharpshooter => new ClassFlatBonus(Attack: 32, Accuracy: 16),
-        Discipline.Trapper      => new ClassFlatBonus(Attack: 16, Accuracy: 12, Evasion: 12),
+        Discipline.Trapper      => new ClassFlatBonus(Attack: 16, Accuracy: 12, MaxHp: 45),
         Discipline.Lightbringer => new ClassFlatBonus(MaxMp: 200, Defence: 18, MaxHp: 40),
         Discipline.Warchanter   => new ClassFlatBonus(MaxMp: 150, MaxHp: 90),
         Discipline.Magus        => new ClassFlatBonus(MaxMp: 170, Attack: 28),

@@ -30,15 +30,25 @@ public static class EnchantRules
 {
     public const int MaxEnchant = 16;
 
-    /// <summary>Chance the NEXT enchant (current -> current+1) succeeds.
-    /// +1..+3 = 100%, +4..+6 = 66%, +7..+9 = 40%, +10..+16 = 20%.</summary>
+    /// <summary>Chance the NEXT enchant (current -> current+1) succeeds. Owner's table,
+    /// playtest-20 `49a`: <b>+1..+3 = 100% (safe), +4..+9 = 66%, +10..+15 = 33%, +16 = 5%.</b>
+    ///
+    /// It was four bands (100/66/40/20) split at 3/6/9. His is four bands split at 3/9/15, which
+    /// makes the ladder read as the four things a player actually experiences: a free run to +3, a
+    /// long two-thirds stretch, a grinding third, and a single 1-in-20 wall at the top.
+    ///
+    /// The budget this is authored to hit, with SAFE scrolls (a failure costs the scroll, never the
+    /// item), is his own: 3/1.00 + 6/0.66 + 6/0.33 + 1/0.05 = 3 + 9.1 + 18.2 + 20 =
+    /// <b>~50 scrolls for +0 -> +16</b>. With Greater scrolls a failure also costs a level, so the
+    /// same climb runs to the high hundreds (~823 by his estimate) — that gap IS the price of the
+    /// safe scroll, and it is why the bands must not be tuned without re-checking both numbers.</summary>
     public static float SuccessChance(int currentLevel) => currentLevel switch
     {
-        < 3 => 1.00f,       // going to +1, +2, +3
-        < 6 => 0.66f,       // +4, +5, +6
-        < 9 => 0.40f,       // +7, +8, +9
-        < MaxEnchant => 0.20f,
-        _ => 0f             // already maxed
+        < 3 => 1.00f,            // going to +1, +2, +3 — safe
+        < 9 => 0.66f,            // going to +4 .. +9
+        < 15 => 0.33f,           // going to +10 .. +15
+        < MaxEnchant => 0.05f,   // going to +16 — the wall
+        _ => 0f                  // already maxed
     };
 
     /// <summary>Each enchant level adds this fraction of the item's base
