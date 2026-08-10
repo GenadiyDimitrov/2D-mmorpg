@@ -456,14 +456,31 @@ public static class GameConstants
     // ----- Admin / jail (Phase 5) ----------------------------------------------
 
     /// <summary>Jail sits in the NEGATIVE quadrant (owner: dungeons + jail live at minus coordinates,
-    /// away from the overworld). Jailed players are pinned to this circle.</summary>
+    /// away from the overworld). It is the CENTRE of the jail yard, not where inmates stand.</summary>
     public const float JailX = -4000f;
     public const float JailY = -4000f;
 
-    /// <summary>How far a jailed player may wander from the jail centre. Serving a sentence should feel
-    /// like a CELL, not paralysis — they can walk around inside it; everything else (chat, skills, items,
-    /// escape) stays blocked.</summary>
-    public const float JailRadius = 260f;
+    /// <summary>The jail YARD — one shared room, <see cref="JailWidth"/> × <see cref="JailHeight"/>
+    /// (owner, playtest-20 `61d`: *"the jail cell is 1px × 1px … one shared jail, not a cell per
+    /// player"*). It was already a 260-unit circle you could pace, but every sentence and every relog
+    /// placed the inmate on the exact centre COORDINATE, so any number of inmates stood in one spot and
+    /// the room read as a point. The shape is his 300 × 500 and arrivals are spread across it
+    /// (<see cref="JailArrival"/>). Serving a sentence should feel like a room, not paralysis — walking
+    /// is all you may do; chat, skills, items and escape stay blocked.</summary>
+    public const float JailWidth = 300f;
+    public const float JailHeight = 500f;
+
+    /// <summary>How far from the wall an arriving inmate is placed, so nobody spawns standing in it.</summary>
+    public const float JailArrivalMargin = 30f;
+
+    /// <summary>Somewhere to stand in the yard. Spread, so two inmates are two people in a room rather
+    /// than one avatar drawn twice.</summary>
+    public static (float X, float Y) JailArrival(System.Random rng)
+    {
+        float hw = JailWidth / 2f - JailArrivalMargin, hh = JailHeight / 2f - JailArrivalMargin;
+        return (JailX + (float)(rng.NextDouble() * 2 - 1) * hw,
+                JailY + (float)(rng.NextDouble() * 2 - 1) * hh);
+    }
 
     /// <summary>Broadcast "X entered/left the world." to EVERY player. **Off** (owner): presence is
     /// private — you should not learn that someone logged in, nor should they learn that you did,

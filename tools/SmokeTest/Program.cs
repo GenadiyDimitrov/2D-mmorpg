@@ -943,7 +943,9 @@ await v.Settle();
 v.MyX = 0; v.MyY = 0;
 await gm.Hub.SendAsync("AdminCommand", "jail", $"{victimName} 60");
 await v.Settle();
-bool atJail = Math.Abs(v.MyX - GameConstants.JailX) < 50 && Math.Abs(v.MyY - GameConstants.JailY) < 50;
+// "In the YARD", not "on the jail coordinate": arrivals are spread across the 300x500 room now
+// (owner, playtest-20 `61d`), so an exact-centre assertion would fail for the right reason.
+bool atJail = WorldDomain.Jail.Contains(v.MyX, v.MyY);
 Check("jailing a player teleports them to jail (live)", atJail, $"at ({v.MyX:0},{v.MyY:0})");
 
 // The 60-min jail also DRAINED the player's charisma (−200) below the +1 they'd been liked for → off the board.
@@ -964,18 +966,19 @@ Check("a jail drained the player's charisma (dropped off the board)",
       boardAfterJail.Entries.All(e => e.Name != victimName),
       string.Join(",", boardAfterJail.Entries.Select(e => e.Name)));
 
-// Jailed → may pace around inside the CELL, but can never leave it (owner, 2026-07-20: serving a
-// sentence should feel like a cell, not paralysis). Walk hard at the wall and confirm we end up
-// clamped to the jail radius rather than either frozen on the spot or out in the world.
+// Jailed → may pace around inside the YARD, but can never leave it (owner, 2026-07-20: serving a
+// sentence should feel like a room, not paralysis). Walk hard at the wall and confirm we end up
+// clamped inside the room rather than either frozen on the spot or out in the world.
+double startX = v.MyX, startY = v.MyY;
 await v.Hub.SendAsync("Move", new MoveCommand(GameConstants.JailX + 3000, GameConstants.JailY));
 for (int i = 0; i < 12; i++) await v.Settle();   // give the walk time to run into the wall
-double fromJail = Math.Sqrt(
-    Math.Pow(v.MyX - GameConstants.JailX, 2) + Math.Pow(v.MyY - GameConstants.JailY, 2));
-Check("a jailed player can MOVE inside the cell",
-      fromJail > 20, $"{fromJail:0} units from the jail centre");
-Check("a jailed player can NOT walk out of the cell",
-      fromJail <= GameConstants.JailRadius + 40,
-      $"{fromJail:0} units out, cell radius is {GameConstants.JailRadius:0}");
+double walked = Math.Sqrt(Math.Pow(v.MyX - startX, 2) + Math.Pow(v.MyY - startY, 2));
+Check("a jailed player can MOVE inside the yard",
+      walked > 20, $"walked {walked:0} units from ({startX:0},{startY:0})");
+Check("a jailed player can NOT walk out of the yard",
+      WorldDomain.Jail.Contains(v.MyX, v.MyY),
+      $"ended at ({v.MyX:0},{v.MyY:0}); the yard is x[{WorldDomain.Jail.MinX:0},{WorldDomain.Jail.MaxX:0}] " +
+      $"y[{WorldDomain.Jail.MinY:0},{WorldDomain.Jail.MaxY:0}]");
 
 // JAIL PERSISTS across a relog: leave, come back, still in jail.
 await v.Hub.SendAsync("LeaveWorld");
@@ -986,7 +989,7 @@ var enteredC = await c.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorld
 c.MyId = enteredC.EntityId;
 await c.Settle();
 Check("jail SURVIVES a relog (spawns back in jail)",
-      Math.Abs(c.MyX - GameConstants.JailX) < 50 && Math.Abs(c.MyY - GameConstants.JailY) < 50,
+      WorldDomain.Jail.Contains(c.MyX, c.MyY),
       $"spawned at ({c.MyX:0},{c.MyY:0})");
 
 // RELEASE sends you to the STARTING town, never the nearest one — the jail's location has to stay

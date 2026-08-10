@@ -116,11 +116,14 @@ namespace Game.Client
         /// because it means the same thing: this is the end, you cannot go further.</para>
         ///
         /// <para>Unlike the world border this is NOT on the map-overlay toggle. The world rectangle is
-        /// 24000 units of reference you look up once; this is a 260-unit wall you are standing against,
-        /// and it is only ever built into ~18 dashes that render only while you are inside it — which is
-        /// also why it cannot bring back the 0.28.78 renderer flood. Dungeon boxes deliberately get no
-        /// ring: their bounding box is not the polygon the map already draws, so a rectangle there would
-        /// contradict the coloured outline rather than explain it.</para></summary>
+        /// 24000 units of reference you look up once; this is a wall you are standing against, and it is
+        /// only ever four dashed edges that render while you are inside — which is also why it cannot
+        /// bring back the 0.28.78 renderer flood. Dungeon boxes deliberately get no ring: their bounding
+        /// box is not the polygon the map already draws, so a rectangle there would contradict the
+        /// coloured outline rather than explain it.</para>
+        ///
+        /// <para>It was a dashed CIRCLE until the owner asked for a room (playtest-20 `61d`); the jail is
+        /// now a 300 × 500 box domain, and the wall is drawn as the four walls it actually is.</para></summary>
         private void BuildJailBorder()
         {
             const float y = 0.09f;
@@ -130,19 +133,14 @@ namespace Game.Client
             _jailBorder = new GameObject("JailBorder");
             var sharedMat = new Material(UnlitMaterials.Shader) { color = colour };
 
-            // 36 arc segments, every other one drawn: a dashed circle without arc-length arithmetic.
-            const int segments = 36;
-            for (int i = 0; i < segments; i += 2)
-            {
-                float a0 = i * Mathf.PI * 2f / segments, a1 = (i + 1) * Mathf.PI * 2f / segments;
-                // dash longer than any chord + no gap = "draw this segment whole"; the GAP is the
-                // segment we skip by stepping i by two.
-                DashedEdge(_jailBorder, sharedMat, colour, 4f, jail.Radius * 2f, 0f, y,
-                           jail.CentreX + Mathf.Cos(a0) * jail.Radius, jail.CentreY + Mathf.Sin(a0) * jail.Radius,
-                           jail.CentreX + Mathf.Cos(a1) * jail.Radius, jail.CentreY + Mathf.Sin(a1) * jail.Radius);
-            }
+            // The four walls of the yard, each dashed along its own length.
+            const float dash = 40f, gap = 26f;
+            DashedEdge(_jailBorder, sharedMat, colour, 4f, dash, gap, y, jail.MinX, jail.MinY, jail.MaxX, jail.MinY);
+            DashedEdge(_jailBorder, sharedMat, colour, 4f, dash, gap, y, jail.MaxX, jail.MinY, jail.MaxX, jail.MaxY);
+            DashedEdge(_jailBorder, sharedMat, colour, 4f, dash, gap, y, jail.MaxX, jail.MaxY, jail.MinX, jail.MaxY);
+            DashedEdge(_jailBorder, sharedMat, colour, 4f, dash, gap, y, jail.MinX, jail.MaxY, jail.MinX, jail.MinY);
 
-            _jailBorder.SetActive(false);   // shown only while you are actually in the cell
+            _jailBorder.SetActive(false);   // shown only while you are actually in the yard
         }
 
         /// <summary>Show the transient region banner. Called from the server's Region push.</summary>

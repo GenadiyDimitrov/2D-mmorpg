@@ -798,8 +798,9 @@ public class PersistenceService
         entity.JailedUntil = rec.JailedUntilUtc;
         if (entity.Jailed)
         {
-            entity.X = GameConstants.JailX;
-            entity.Y = GameConstants.JailY;
+            // Spread across the yard like any other arrival — see GameConstants.JailArrival. Relogging
+            // used to put you back on the exact centre coordinate with everyone else.
+            (entity.X, entity.Y) = GameConstants.JailArrival(Random.Shared);
         }
         entity.ChatBannedUntil = rec.ChatBannedUntilUtc;
         entity.Role = rec.Role;   // staff role is per CHARACTER, not per account (owner)

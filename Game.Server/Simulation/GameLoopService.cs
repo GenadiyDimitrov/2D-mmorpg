@@ -1144,10 +1144,13 @@ public class GameLoopService : BackgroundService
         // "/jail test1 then /tp test1 puts me in the dungeon, not the jail".
         if (InJail(p.X, p.Y)) return;
 
+        // Measured against each dungeon's real WORLD — outline plus entrance — not its bounding box.
+        // The box was 45% ground that is not the Hollow Crypt (playtest-20 `61h`), so the ward read
+        // "safely inside" for a player standing well outside the dungeon he could see.
         Region? nearest = null; float best = float.MaxValue;
         foreach (var d in RegionMap.Dungeons)
         {
-            float outside = RegionMap.DistanceOutsideBox(d, p.X, p.Y);
+            float outside = WorldDomain.OfDungeon(d).DistanceOutside(p.X, p.Y);
             if (outside <= WallTolerance) return;   // inside, or within the tolerance band at the wall
             if (outside < best) { best = outside; nearest = d; }
         }
@@ -5920,8 +5923,9 @@ public class GameLoopService : BackgroundService
     private void JailNow(Entity target, DateTime until)
     {
         target.JailedUntil = until;
-        target.X = GameConstants.JailX;
-        target.Y = GameConstants.JailY;
+        // Somewhere in the YARD, not on its centre point. Stacking every inmate on one coordinate is
+        // what made a 300x500 room read as "1px x 1px" (owner, playtest-20 `61d`).
+        (target.X, target.Y) = GameConstants.JailArrival(_rng);
         target.TargetX = null;
         target.TargetY = null;
         target.Engaged = false;
@@ -11627,8 +11631,22 @@ var effect = def.Effect;
         if (reward.Exp > 0) parts.Add($"{reward.Exp:N0} exp");
         if (reward.SkillPoints > 0) parts.Add($"{reward.SkillPoints:N0} SP");
         if (reward.Gold > 0) parts.Add($"{reward.Gold:N0} {GameConstants.CurrencyName}");
+        // Items are authored as a FLAT list with repeats — five Dash Potions are five entries — so they
+        // are counted here rather than printed one row each (owner, playtest-20 #11). First-seen order
+        // is kept so the authored order still reads as written. Plain "x5", not "×5": the client's TMP
+        // atlas is static and draws unknown glyphs hollow.
+        var counts = new Dictionary<string, int>();
+        var order = new List<string>();
         foreach (var id in reward.ItemIds ?? Array.Empty<string>())
-            parts.Add(ItemCatalog.Get(id)?.Name ?? id);
+        {
+            if (!counts.TryGetValue(id, out int n)) order.Add(id);
+            counts[id] = n + 1;
+        }
+        foreach (var id in order)
+        {
+            string name = ItemCatalog.Get(id)?.Name ?? id;
+            parts.Add(counts[id] > 1 ? $"{name} x{counts[id]}" : name);
+        }
         return string.Join(" · ", parts);
     }
 
