@@ -103,7 +103,7 @@ public static class SkillText
         Pct(o, "Crit rate resist", p.CritRateResist);
         Pct(o, "Crit dmg resist", p.CritDmgResist);
         Pct(o, "Bow resist", p.BowResist);
-        Pct(o, "Magic fail resist", p.MagicFailResist);
+        Pct(o, "Magic resist", p.MagicResist);
         Pct(o, "Cancel resist", p.CancelResistPct);
 
         // Lifesteal
@@ -121,7 +121,8 @@ public static class SkillText
         // Guaranteed floors — worded as the guarantee they are, not as a bonus.
         Pct(o, "Min evade chance", p.EvadeFloor);
         Pct(o, "Min hit chance", p.HitFloor);
-        Pct(o, "Min magic fail vs you", p.MagicFailFloor);
+        // Magic has no floor — a MULTIPLIER on the enemy's fail chance instead.
+        if (p.MagicFailMod > 1f) o.Add($"Enemy spells fizzle ×{p.MagicFailMod:0.##}");
 
         // Healing
         Flat(o, "Heal power", p.HealPowerFlat);       Pct(o, "Heal power", p.HealPowerPct);
@@ -282,8 +283,7 @@ public static class SkillText
         SkillEffect.BuffCritDmgResist => "Crit dmg resist",
         SkillEffect.BuffCritRateResist => "Crit rate resist",
         SkillEffect.BuffBowResist => "Bow resist",
-        SkillEffect.BuffMagicFailFloor => "Anti-magic",
-        SkillEffect.BuffMagicFailResist => "Spell focus",
+        SkillEffect.BuffMagicResist => "Magic resist",
         SkillEffect.BuffInterruptPower => "Cancel power",
         SkillEffect.BuffInterruptResist => "Cancel resist",
         SkillEffect.BuffMeleeVamp => "Vampiric",

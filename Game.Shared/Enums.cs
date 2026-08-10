@@ -102,8 +102,10 @@ public enum SkillEffect : long
     BuffCritDmgResist  = 1L << 28,  // reduce incoming physical crit EXTRA damage (%)
     BuffCritRateResist = 1L << 29,  // reduce attacker physical crit CHANCE vs you (flat)
     BuffBowResist      = 1L << 30,  // reduce damage taken from BOW attacks (%)
-    BuffMagicFailFloor = 1L << 31,  // raise the chance enemy spells fail vs you (floor)
-    BuffMagicFailResist= 1L << 32,  // your own spells fail LESS (flat reduction to your fail chance)
+    BuffMagicResist    = 1L << 31,  // reduce MAGIC damage taken (%) — the "mRes" of the CSVs
+    // 1L << 32 is FREE. It was BuffMagicFailResist ("your own spells fail less"), deleted
+    // 2026-08-10 with the magic-landing rework: the owner's model has no caster-side accuracy
+    // stat at all (level formula × tank modifier × weapon modifier, nothing else). Reuse the bit.
     BuffInterruptPower = 1L << 33,  // "magic cancel": +your offensive interrupt power
     BuffInterruptResist= 1L << 34,  // "magic cancel resist": +your interrupt resistance
     BuffMeleeVamp      = 1L << 35,  // basic (melee) attacks heal you for % of damage
@@ -153,7 +155,7 @@ public enum SkillEffect : long
               | BuffMagicDef | BuffHpRegen | BuffMpRegen | HealOverTime
               | BuffPhysAtk | BuffMagAtk | BuffAccuracy | BuffCritRate | BuffMagicCritRate
               | BuffCritDamage | BuffCritDmgResist | BuffCritRateResist | BuffBowResist
-              | BuffMagicFailFloor | BuffMagicFailResist | BuffInterruptPower
+              | BuffMagicResist | BuffInterruptPower
               | BuffInterruptResist | BuffMeleeVamp | BuffSpellVamp | BuffCooldown
               | BuffPveSkillDamage | BuffPveMagicDamage | BuffPveBasicDamage
               | BuffPvpSkillDamage | BuffPvpMagicDamage | BuffPvpBasicDamage

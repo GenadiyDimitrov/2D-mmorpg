@@ -184,7 +184,9 @@ public record StatsUpdate(
     // Extended debug stats (regens per second + the buff/effect layer).
     float HpRegen = 0f, float MpRegen = 0f, float CritDamage = 0f,
     float MeleeVamp = 0f, float SpellVamp = 0f, float CooldownReduction = 0f,
-    float MagicFailResist = 0f, float MagicFailFloor = 0f,
+    // Magic landing (2026-08-10): resistance is DAMAGE reduction, the modifier is the tank's
+    // ×N on the enemy's fizzle roll. Neither is a caster-side accuracy stat — there isn't one.
+    float MagicResist = 0f, float MagicFailMod = 1f,
     float CritRateResist = 0f, float CritDmgResist = 0f, float BowResist = 0f,
     int InterruptResist = 0,
     // DEBUG / L2-reference: the OLD-style internal M.Atk (base·levelMod²·buffs²) the shrunk display hides.
@@ -274,7 +276,7 @@ public record TargetDetails(
     float MagicCritChance = 0f, float CritDamage = 0f,
     float MeleeVamp = 0f, float SpellVamp = 0f, float CooldownReduction = 0f,
     float HpRegen = 0f, float MpRegen = 0f,
-    int InterruptResist = 0, float CritDmgResist = 0f, float MagicFailResist = 0f,
+    int InterruptResist = 0, float CritDmgResist = 0f, float MagicResist = 0f,
     string Rank = "");
 
 /// <summary>Server -> owning client: the result of an enchant attempt.</summary>

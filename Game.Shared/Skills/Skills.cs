@@ -455,7 +455,12 @@ public readonly record struct PassiveEffect(
     float CooldownPct = 0f,       // spell reuse-delay reduction (0.10 = -10%)
     // Defensive resists (fractions). MeleeVamp/SpellVamp = lifesteal fractions.
     float CritRateResist = 0f, float CritDmgResist = 0f, float BowResist = 0f,
-    float MagicFailResist = 0f,
+    // MAGIC RESISTANCE — a DAMAGE REDUCTION, not a fizzle chance (owner ruling 2026-08-10, `57d`).
+    // Authored the way the CSVs write it: "mRes +5%" = 0.05f. Sums across passives/buffs and lands
+    // as a divisor inside M.Def, so +25% total is the mob ladder's 1.25 → ×0.8 magic damage taken.
+    // ⚠ These used to be built as MagicFailFloor (a fizzle chance) ONLY because there was no magic
+    // damage-reduction stat to put them in. There is one now. Don't route mRes back into fail.
+    float MagicResist = 0f,
     // Shield passive (Tank Shield Mastery): scale the equipped shield's block chance and
     // shield defence (fractions; only matter with a shield equipped). Re-clamped after passives.
     float BlockChancePct = 0f, float ShieldDefPct = 0f,
@@ -473,7 +478,10 @@ public readonly record struct PassiveEffect(
     // GUARANTEES (the resolver takes the MAX across passives, not a sum):
     float EvadeFloor = 0f,        // min chance to dodge physical (rogue/archer)
     float HitFloor = 0f,          // min chance THIS entity lands a physical hit (warrior)
-    float MagicFailFloor = 0f,    // min chance a spell fizzles vs this entity (tank/mage anti-magic)
+    // MAGIC has no floor — it is not resolved by ResolveAvoidChance at all since 2026-08-10. The
+    // defender's only lever is this MULTIPLIER on the fail formula (the tank's Anti-Magic = 2).
+    // The resolver takes the MAX across passives, like the floors above, never a product.
+    float MagicFailMod = 0f,
     // FLAT addition to the casting-speed STAT (not a percent). This is how L2's spirit-
     // the spell rune works: +40 flat on top of the multiplicative chain, so it matters a lot at low
     // cast speed and barely at high — unlike a percent, which compounds and runs away.

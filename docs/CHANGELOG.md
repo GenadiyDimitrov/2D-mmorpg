@@ -7,10 +7,68 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.57.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.58.2**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 0.58.2 — 2026-08-11 — magic gets its own landing formula, and "mRes" becomes what it always said
+
+Playtest-20 `57d`, clarified: *"I don't see my magic failing with a bow more than with a wand"* — level
+60 vs a level-60 dummy, several skills cast. **He was right, and the code agreed with him: the fail
+chance was bit-for-bit identical.**
+
+**The bug.** Spellcaster Mastery promises a bow caster three penalties — cast speed ×0.5, M.Atk ×0.5,
+and "magic accuracy ×0.5". The first two worked. The third was `MagicFailResist *= 0.5f`, and
+`MagicFailResist` is **0** unless a spell-focus buff is running (no skill in the game grants one). Half
+of zero is zero. It was also pointing the wrong way: at the roll the stat could only ever *subtract*
+from fail, so no term anywhere could raise a fizzle because of the weapon. Against a mob the base was
+1% and both stat terms were hard-coded `0` — wand and bow alike, ~1 fizzle per 100 casts.
+
+**The replacement (owner's model, in percentage POINTS):**
+
+```
+fail% = round( 1.3^(defenderLvl − attackerLvl) × defenderMod × weaponMod )   clamp [0, 95]
+```
+
+Parity with every modifier at 1 is `round(1) = 1` — **same level is 1% fail, 99% success**, his number.
+`defenderMod` is 1 for everyone and **2** with the tank's Anti-Magic passive. `weaponMod` is 1 with a
+trained caster weapon and **25** with a bow / dual / bare hands. Magic no longer touches
+`ResolveAvoidChance` at all; the physical channel keeps it unchanged.
+
+| Δ lvl (def − atk) | 0 | +3 | +5 | +10 | +14 | +18 |
+|---|---|---|---|---|---|---|
+| wand | 99% | 98% | 96% | 86% | 61% | 5% |
+| wand vs a tank (×2) | 98% | 96% | 93% | 72% | 21% | 5% |
+| **bow** (×25) | **75%** | **45%** | **7%** | 5% | 5% | 5% |
+
+Fail clamps at 95%, not 100% — the playtest-19 `M1` ruling ("nothing is unhittable any more") holds in
+this channel too, and a gap that big already pays zero exp and zero drops.
+
+**"mRes" is a damage reduction, and always was.** The owner: *"the anti-magic passives where it says
+1.25 magic resist — it's actually endMagicDmg × 0.75, so it's actually a dmg reduction rather than fail
+chance… the problem was we didn't have a mdmg reduction, that's why we converted them to a floor."*
+Exactly right — `healer/nuker 20-35.csv` says **"magic def +20, mRes +5%"** and it was built as a
+fizzle floor because no magic damage-reduction stat existed. There is one now: `Entity.MagicResist`
+sums the CSVs' percentages and lands as a divisor **inside M.Def**, the same shape as
+`PierceDefCoef`/`BluntDefCoef`/`BowDefCoef`. One correction he accepted: the mob ladder's values
+(`1.11 / 1.25 / 1.43 / 1.67 / 2`) are exact reciprocals of `0.9 … 0.5`, so **1.25 → ×0.8**, not ×0.75 —
+a divisor is what keeps his own ladder symmetric.
+
+**Deleted, don't reinstate:**
+- `MagicFailResist` — the caster-side accuracy stat. His model has none: level, tank ×2, weapon,
+  nothing else. It was zero on every character and it is what made `57d` invisible.
+- `MagicFailFloor` and the whole fizzle-floor concept, including `SkillEffect.BuffMagicFailFloor`.
+  The tank's Anti-Magic is the ×2 modifier now; the mage/healer/nuker Anti-Magic line is resistance.
+  (`1L << 32` is a free `SkillEffect` bit again — there were only two left.)
+
+⚠ The tank's Anti-Magic reads *smaller* at parity (2% vs the old 10% floor) but it multiplies the
+level term, so it is worth more where it matters: vs a caster 10 levels up it turns 14% fail into 28%.
+⚠ Anti-Magic Lv2/Lv3 (×2.5 / ×3) are **extrapolated, not authored** — the 40+ CSVs overwrite them.
+⚠ The bow penalty is multiplicative, so it fades when punching down: at Δ−10 a bow caster is back to
+~98% success. Inherent to the formula, flagged rather than patched.
+
+`tools/BalanceMatrix` grew a **MAGIC LANDING** section printing both tables off the real code.
 
 ## 0.58.0 — 2026-08-10 — a class grants no stats, and the invented level-40+ kits are gone
 

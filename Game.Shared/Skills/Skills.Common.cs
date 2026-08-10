@@ -47,7 +47,7 @@ public static partial class SkillCatalog
     // (`reflexes` — the Archer floor — deleted 2026-08-07: no class carries Archetype.Archer after
     //  the archer→rogue merge, so it was granted to nobody. See the CommonSkills() note.)
     public const string Precision    = "precision";     // Warrior 10/20/30% hit floor
-    public const string AntiMagic    = "anti_magic";    // Tank    10/15/20% magic fizzle
+    public const string AntiMagic    = "anti_magic";    // Tank    x2/2.5/3 on enemy magic fizzle
     // ---- HEALING-potion skills. The potion ITEM names one of these; the SKILL does the
     //      healing and consumes the item (its ConsumableId). Everything is a skill — only
     //      what GRANTS it differs. The HoT ones are ordinary buffs, so they show on the buff
@@ -369,8 +369,9 @@ public static partial class SkillCatalog
     /// light, heavy and NOTHING all halve casting and attack speed. Auto-granted at level 1 and
     /// NEVER replaced — it is the one place the wrong-weight penalty lives, so a 2nd-class mastery
     /// can be pure bonus. The cleric's light-armor row is authored to cancel this exact ×0.50.
-    /// (The WEAPON half is not data: it drives MagicWeaponPenaltyMult / CastSpeedPenaltyMult /
-    /// MagicFailResist, which have no StatMods field — it stays in Entity.RecomputeDerived.)</summary>
+    /// (The WEAPON half is not data: it drives MagicWeaponPenaltyMult / CastSpeedPenaltyMult and the
+    /// UntrainedCasterWeapon flag, none of which have a StatMods field — it stays in
+    /// Entity.RecomputeDerived, and the flag is read at the magic roll itself.)</summary>
     private static readonly ArmorMasteryProfile[] SpellcasterLevels = new[]
     {
         new ArmorMasteryProfile(
@@ -577,9 +578,12 @@ public static partial class SkillCatalog
         //      WEAPON (Entity.RecomputeDerived — these three have no StatMods field):
         //        • wand/staff  → cast ×1, M.Atk ×1                      (the trained weapon)
         //        • sword/blunt → cast ×1, M.Atk ×NonMagicWeaponMagicMult (a mace casts, but weakly)
-        //        • bow/dagger/bare → cast ×0.5, M.Atk ×0.5, magic accuracy ×0.5
+        //        • bow/dagger/bare → cast ×0.5, M.Atk ×0.5, and ×25 MAGIC FAIL
         //      ⚠ The wrong-weapon magic penalty was a COLLAPSE to ×0.05 before this; the owner set it
-        //      to ×0.5. "magic accuracy" maps to MagicFailResist, the only spell-landing stat we have.
+        //      to ×0.5. ⚠⚠ The third clause was DEAD until 2026-08-10 (playtest-20 `57d`): "magic
+        //      accuracy ×0.5" was built as `MagicFailResist *= 0.5`, and MagicFailResist is 0 on every
+        //      character alive, so a bow and a wand fizzled at exactly the same rate. It is now a ×25
+        //      multiplier on the fail formula — StatCaps.UntrainedWeaponMagicFailMod, the one number.
         new(SpellcasterMastery, "Spellcaster Mastery", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
@@ -587,8 +591,8 @@ public static partial class SkillCatalog
             Description: "Passive. A ROBE is a caster's armor: +20% MP regeneration. Light or heavy "
                        + "armor — or none — halves your casting and attack speed. A wand or staff is "
                        + "your trained weapon; a sword or mace still casts at full speed but for much "
-                       + "less magic attack; a bow, dual blades or bare hands halve your casting speed, "
-                       + "magic attack and magic accuracy.",
+                       + "less magic attack; a bow, dual blades or bare hands halve your casting speed "
+                       + "and magic attack, and make your spells 25x more likely to fizzle.",
             ArmorMasteryLevels: SpellcasterLevels),
 
         // ---- Weapon Proficiency — RETIRED 2026-08-07, replaced by Spellcaster Mastery above. The def
@@ -663,9 +667,16 @@ public static partial class SkillCatalog
         LeveledPassive(Precision, "Precision", BaseClass.Fighter,
             "Passive. Your physical attacks always land at least 10/20/30% of the time.",
             new PassiveEffect(HitFloor: 0.10f), new PassiveEffect(HitFloor: 0.20f), new PassiveEffect(HitFloor: 0.30f)),
+        // The TANK's Anti-Magic. It was a flat magic-fail FLOOR (10/15/20%); the owner's 2026-08-10
+        // magic-landing rework replaced floors with a MULTIPLIER on the fail formula — "tanks will
+        // have a defender modifier x2 as a passive". ×2 is his number for Lv1. It reads smaller at
+        // parity (2% vs the old 10%) but it multiplies the level term, so it is worth far more in
+        // the fight that matters: vs a caster 10 levels up it turns 14% fail into 28%.
+        // ⚠ Lv2 (at 40) and Lv3 (4th class, still unreachable) are MY extrapolation of his ladder,
+        // not authored — the 40+ CSVs are owed and these two numbers are the first thing to overwrite.
         LeveledPassive(AntiMagic, "Anti-Magic", BaseClass.Fighter,
-            "Passive. Spells fizzle on you at least 10/15/20% of the time.",
-            new PassiveEffect(MagicFailFloor: 0.10f), new PassiveEffect(MagicFailFloor: 0.15f), new PassiveEffect(MagicFailFloor: 0.20f)),
+            "Passive. Hostile spells are 2/2.5/3× more likely to fizzle on you.",
+            new PassiveEffect(MagicFailMod: 2f), new PassiveEffect(MagicFailMod: 2.5f), new PassiveEffect(MagicFailMod: 3f)),
 
         // (Wind Walk / Mass Wind Walk DELETED 2026-07-31 — the buff-ladder pass. They were a second,
         //  unranked source of move speed sitting outside every family; the improved Speed buff and

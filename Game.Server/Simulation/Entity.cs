@@ -645,7 +645,17 @@ public class Entity
     public int InterruptResist { get; set; }    // resist casting interruption (from WIT)
     public int MagicInterruptBonus { get; set; } // OFFENSIVE magic interrupt power (from WIT)
     public int BasicAttackInterruptPower { get; set; } // interrupt power carried by basic attacks (rogues)
-    public float MagicFailFloor { get; set; }   // anti-magic floor: min magic-fail chance attackers have vs this entity
+    // Defender's MULTIPLIER on the magic-fail formula (StatCalculator.MagicFailChance). 1 = normal,
+    // 2 = the tank's Anti-Magic passive. It replaced a flat fizzle FLOOR on 2026-08-10 — see the
+    // header comment on MagicFailChance for why a floor was the wrong shape.
+    public float MagicFailMod { get; set; } = 1f;
+    // MAGIC RESISTANCE. Stored the way the CSVs author it ("mRes +5%" = 0.05f) and summed across
+    // passives/buffs; MagicDefCoef turns it into the defence DIVISOR, the exact shape of
+    // PierceDefCoef/BluntDefCoef/BowDefCoef. 0.25 → coef 1.25 → takes ×0.8 magic damage, which is
+    // exactly the mob resistance ladder in docs/data/mobs/mobs_passives.csv. It rides inside M.Def,
+    // so a defence-ignoring effect bypasses it too. NOT a fizzle chance — see MagicFailMod.
+    public float MagicResist { get; set; }
+    public float MagicDefCoef => Math.Max(0.01f, 1f + MagicResist);
     public float EvadeFloor { get; set; }        // rogue: guaranteed min chance to dodge physical attacks
     public float HitFloor { get; set; }          // warrior: guaranteed min chance THIS entity lands a physical attack
     public bool Immune { get; set; }             // ultimate total-avoid (future buff); attacks always miss/fail
@@ -683,7 +693,8 @@ public class Entity
     public float BluntDefCoef { get; set; } = 1f;  // vs blunt
     public float BowDefCoef { get; set; } = 1f;    // vs bow
     public int RestoreMpBonus { get; set; }      // bonus MP when an MP-restore lands on you (nuker mastery)
-    public float MagicFailResist { get; set; }   // reduces YOUR spells' own fail chance
+    // (MagicFailResist DELETED 2026-08-10 — the owner's magic-landing model has no caster-side
+    //  accuracy stat. It was also the field the bow penalty halved, which is why `57d` was invisible.)
     public bool UntrainedCasterWeapon { get; set; }  // Spellcaster Mastery: bow/dual/bare → magic accuracy x0.5
     public float MeleeVamp { get; set; }         // basic (melee) attack lifesteal fraction
     public float SpellVamp { get; set; }         // damage-spell lifesteal fraction
@@ -1421,10 +1432,11 @@ public class Entity
         MagicDefence = Kind == EntityKind.Player
             ? StatCalculator.MagicDefenceBase(Level)   // tank magic identity = his Anti-Magic passive, not a level/2 mDef bonus
             : MobBaseStats.MDef(Level);
-        // Resolution "sure" floors come from learned passives (Evasion Mastery / Precision /
-        // Anti-Magic / Spell Ward), applied in the passive loop below. Base 0 — the
-        // universal 5% land/avoid floor lives in the resolver, not here.
-        MagicFailFloor = 0f;
+        // Resolution "sure" floors come from learned passives (Evasion Mastery / Precision),
+        // applied in the passive loop below. Base 0 — the universal 5% land/avoid floor lives in
+        // the resolver, not here. Magic has no floor: its defender lever is the ×MULTIPLIER below,
+        // whose neutral value is 1, not 0.
+        MagicFailMod = 1f;
         EvadeFloor = 0f;
         HitFloor = 0f;
         Immune = false;
@@ -1441,7 +1453,7 @@ public class Entity
         BluntDefCoef = 1f;
         BowDefCoef = 1f;
         RestoreMpBonus = 0;
-        MagicFailResist = 0f;
+        MagicResist = 0f;
         UntrainedCasterWeapon = false;
         MeleeVamp = 0f;
         SpellVamp = 0f;
@@ -1960,7 +1972,7 @@ public class Entity
                         BlockReduction += pe.ShieldDefPct * 0.2f;
                     }
                 }
-                MagicFailResist += pe.MagicFailResist;
+                MagicResist += pe.MagicResist;
                 MagicInterruptBonus += pe.InterruptPower;
                 InterruptResist += pe.InterruptResist;
                 MeleeVamp += pe.MeleeVamp;
@@ -1972,10 +1984,11 @@ public class Entity
                 PvpMagicDamageBonus += pe.PvpMagicDamagePct;
                 PvpBasicDamageBonus += pe.PvpBasicDamagePct;
                 CancelResist += pe.CancelResistPct;
-                // Resolution floors are GUARANTEES — take the strongest (max), never sum.
+                // Resolution floors are GUARANTEES — take the strongest (max), never sum. The magic
+                // MULTIPLIER follows the same rule: two anti-magic sources don't compound to ×4.
                 EvadeFloor = Math.Max(EvadeFloor, pe.EvadeFloor);
                 HitFloor = Math.Max(HitFloor, pe.HitFloor);
-                MagicFailFloor = Math.Max(MagicFailFloor, pe.MagicFailFloor);
+                MagicFailMod = Math.Max(MagicFailMod, pe.MagicFailMod);
                 // Heal power (output) + heal received (target). No M.Atk in the heal formula.
                 HealPowerFlat += pe.HealPowerFlat;
                 if (pe.HealPowerPct != 0f) HealPowerMod *= 1f + pe.HealPowerPct;
@@ -2004,8 +2017,9 @@ public class Entity
             // and collapses on anything else: bow, dagger, bare hands.
             // ⚠ 2026-08-07: the gate is SPELLCASTER MASTERY now (Weapon Proficiency is retired and
             // superseded by it), and the untrained-weapon magic penalty is the owner's ×0.5 — it was
-            // a ×0.05 COLLAPSE. Magic accuracy ×0.5 maps to MagicFailResist, our only spell-landing
-            // stat; it is halved below rather than zeroed so a bow caster is hindered, not disarmed.
+            // a ×0.05 COLLAPSE. ⚠ 2026-08-10: the "magic accuracy" clause is a ×25 on the FAIL roll
+            // (UntrainedCasterWeapon → StatCalculator.MagicWeaponFailMod), not a halving of a
+            // caster stat — the old form halved MagicFailResist, which is 0 on every character.
             bool spellcaster = HasSkill(SkillCatalog.SpellcasterMastery) || HasSkill(SkillCatalog.WeaponProficiency);
             if (spellcaster && !IsMageTrainedWeapon(WeaponType))
             {
@@ -2078,7 +2092,7 @@ public class Entity
             if (buff.Has(SkillEffect.BuffCritRateResist)) CritRateResist += buff.Flat(SkillEffect.BuffCritRateResist) + buff.Percent(SkillEffect.BuffCritRateResist);
             if (buff.Has(SkillEffect.BuffCritDmgResist)) CritDmgResist += buff.Flat(SkillEffect.BuffCritDmgResist) + buff.Percent(SkillEffect.BuffCritDmgResist);
             if (buff.Has(SkillEffect.BuffBowResist)) BowResist += buff.Flat(SkillEffect.BuffBowResist) + buff.Percent(SkillEffect.BuffBowResist);
-            if (buff.Has(SkillEffect.BuffMagicFailResist)) MagicFailResist += buff.Flat(SkillEffect.BuffMagicFailResist) + buff.Percent(SkillEffect.BuffMagicFailResist);
+            if (buff.Has(SkillEffect.BuffMagicResist)) MagicResist += buff.Flat(SkillEffect.BuffMagicResist) + buff.Percent(SkillEffect.BuffMagicResist);
             if (buff.Has(SkillEffect.BuffMeleeVamp)) MeleeVamp += buff.Flat(SkillEffect.BuffMeleeVamp) + buff.Percent(SkillEffect.BuffMeleeVamp);
             if (buff.Has(SkillEffect.BuffSpellVamp)) SpellVamp += buff.Flat(SkillEffect.BuffSpellVamp) + buff.Percent(SkillEffect.BuffSpellVamp);
             if (buff.Has(SkillEffect.BuffReflect)) MeleeReflect += buff.Flat(SkillEffect.BuffReflect) + buff.Percent(SkillEffect.BuffReflect);
@@ -2095,8 +2109,6 @@ public class Entity
             if (buff.Has(SkillEffect.BuffCancelResist)) CancelResist += buff.Flat(SkillEffect.BuffCancelResist) + buff.Percent(SkillEffect.BuffCancelResist);
             if (buff.Has(SkillEffect.BuffInterruptPower)) MagicInterruptBonus += (int)buff.Flat(SkillEffect.BuffInterruptPower);
             if (buff.Has(SkillEffect.BuffInterruptResist)) InterruptResist += (int)buff.Flat(SkillEffect.BuffInterruptResist);
-            if (buff.Has(SkillEffect.BuffMagicFailFloor))
-                MagicFailFloor = Math.Max(MagicFailFloor, buff.Flat(SkillEffect.BuffMagicFailFloor) + buff.Percent(SkillEffect.BuffMagicFailFloor));
         }
         // Fold the crit-RATE chain exactly once: base × (every passive/buff multiplier) + (every
         // flat source), then the single cap — StatCaps.PhysicalCritRate = his 500 on the 0-1000
@@ -2107,10 +2119,12 @@ public class Entity
         CritRateResist = Math.Clamp(CritRateResist, 0f, 1f);
         CritDmgResist = Math.Clamp(CritDmgResist, 0f, 0.9f);
         BowResist = Math.Clamp(BowResist, 0f, 0.9f);
-        // Spellcaster Mastery's "magic accuracy ×0.5" — applied HERE, after every passive and buff
-        // has contributed, so a buffed bow caster is halved too rather than buffing his way out of it.
-        if (UntrainedCasterWeapon) MagicFailResist *= 0.5f;
-        MagicFailResist = Math.Clamp(MagicFailResist, 0f, 0.9f);
+        // (Spellcaster Mastery's untrained-weapon magic penalty is NOT folded in here any more.
+        //  It was `MagicFailResist *= 0.5f` — inert, because MagicFailResist was 0 on everyone.
+        //  The bow now multiplies the FAIL side at the roll: UntrainedCasterWeapon feeds
+        //  StatCalculator.MagicWeaponFailMod at each of the three magic call sites.)
+        MagicResist = Math.Clamp(MagicResist, -0.9f, 0.9f);   // negative = a magic WEAKNESS
+        MagicFailMod = Math.Max(1f, MagicFailMod);            // never below neutral
         CooldownReduction = Math.Clamp(CooldownReduction, 0f, 0.8f);
         MeleeReflect = Math.Clamp(MeleeReflect, 0f, 0.5f);   // never reflect more than half
         CcResist = Math.Clamp(CcResist, 0f, 0.8f);           // never fully CC-immune from gear

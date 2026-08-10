@@ -42,11 +42,30 @@ public static class StatCaps
     /// class CSVs' flat crit-damage rungs climb toward it; magic has no such ladder.</summary>
     public const float MagicCritDamage = 3.0f;
 
-    /// <summary>Magic-fail absolute floor (a spell can always fizzle ≥1%).</summary>
-    public const float MagicFailFloor = 0.01f;
+    // ----- Magic landing (owner ruling 2026-08-10, playtest-20 `57d`) ------------------
+    // Magic does NOT go through the physical resolver. Its own formula, in percentage POINTS:
+    //     fail% = round( LevelBase^(defenderLvl − attackerLvl) × defenderMod × weaponMod )
+    // At parity with every modifier at 1 that is round(1) = 1 → a 1% fizzle, 99% success.
+    // See StatCalculator.MagicFailChance.
 
-    /// <summary>Magic-fail ceiling (level gap can push fail up to 90%).</summary>
-    public const float MagicFailMax = 0.90f;
+    /// <summary>The level term's base. 1.3^Δ — casting UP is punished hard (Δ+10 ≈ 14% fail,
+    /// Δ+16 ≈ 67%), casting DOWN rounds to zero fail from Δ−2 on.</summary>
+    public const float MagicLevelBase = 1.3f;
+
+    /// <summary>Fail in percentage POINTS at parity with all modifiers at 1. The whole formula
+    /// is scaled off this, so "no level difference = 1% fail" is this constant.</summary>
+    public const float MagicFailParityPoints = 1.0f;
+
+    /// <summary>Magic-fail ceiling: 95%, so a spell ALWAYS keeps a 5% roll to land. Deliberately
+    /// mirrors AvoidSoftCeil — the owner's playtest-19 `M1` ruling ("nothing is unhittable any
+    /// more") applies to the magic channel too, and without this clamp 1.3^Δ makes Δ+18 a hard
+    /// lockout. The gap still pays zero exp and zero drops long before that; see ExpCurve.</summary>
+    public const float MagicFailMax = 0.95f;
+
+    /// <summary>Magic-fail multiplier for an UNTRAINED caster weapon (bow / dual / bare hands) —
+    /// owner ruling 2026-08-10, `57d`. ×25 on the fail points: 25% fail at parity, ~55% at Δ+3,
+    /// pinned to the 95% ceiling from Δ+6. Hindered, not disarmed.</summary>
+    public const float UntrainedWeaponMagicFailMod = 25f;
 
     // ----- Unified hit resolution (see docs/design/CombatResolution.md) -----
     // One resolver decides land-vs-avoid for BOTH channels (physical miss, magic fail).

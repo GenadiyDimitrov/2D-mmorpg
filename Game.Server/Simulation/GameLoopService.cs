@@ -6422,7 +6422,8 @@ public class GameLoopService : BackgroundService
         {
             var (mFlat, mMod) = def.MagicDamageAt(lvl);
             int dmg = StatCalculator.MagicDamageFM(
-                (int)attacker.EffectiveMagicAttack, mFlat, mMod, (int)victim.EffectiveMagicDefence);
+                (int)attacker.EffectiveMagicAttack, mFlat, mMod, (int)victim.EffectiveMagicDefence,
+                victim.MagicDefCoef);   // magic resistance, mirroring WeaponDefenceCoef above
             dmg = FinalizeDamage(attacker, victim, dmg, DamageKind.SkillMagic, def);
             BroadcastCombat(attacker, victim, dmg, CombatOutcome.Hit, name);
             ApplyDamage(victim, dmg, attacker);
@@ -6773,10 +6774,8 @@ public class GameLoopService : BackgroundService
             {
                 // Mirrors the magic branch of ExecuteSkill: fail is reduced damage (not zero), crit is
                 // the flat x3 of the magic channel — never CritDamageBonus, which is the fighters'.
-                float fail = StatCalculator.ResolveAvoidChance(
-                    0, 0, target.MagicFailFloor, 0f,
-                    dummy.Level, target.Level,
-                    sureHit: false, defenderImmune: target.Immune);
+                float fail = target.Immune ? 1f
+                           : StatCalculator.MagicFailChance(dummy.Level, target.Level, target.MagicFailMod);
                 if (_rng.NextDouble() < fail)
                 {
                     int dmg = Math.Max(1, 1 / 3);
@@ -7505,7 +7504,8 @@ var effect = def.Effect;
                 ? (_testSkillPower, _testSkillMod) : def.MagicDamageAt(lvl);   // test skill: live debug Flat/Mod
             int damage = StatCalculator.MagicDamageFM(
                 (int)caster.EffectiveMagicAttack, mFlat, mMod,
-                (int)target.EffectiveMagicDefence);   // magic channel: divides by mDef
+                (int)target.EffectiveMagicDefence,    // magic channel: divides by mDef
+                target.MagicDefCoef);                 // ...times his MAGIC RESISTANCE (1.25 → ×0.8)
             damage = (int)(damage * StatCalculator.WeaponVariance(caster.WeaponType, _rng));
             damage = FinalizeDamage(caster, target, damage, DamageKind.SkillMagic, def);
 
@@ -7513,15 +7513,14 @@ var effect = def.Effect;
             // skill's flat InterruptPower (Disrupt's 99999 still dominates).
             int magicInterrupt = def.InterruptPower + caster.MagicInterruptBonus;
 
-            // Magic "fail" = reduced damage (not zero). Unified resolver: stat term is
-            // 0 (no magic pen/resist race yet) so same-level magic sits at the 5% base;
-            // the anti-magic floor raises it and the level-gap curve locks out farming up.
-            float fail = StatCalculator.ResolveAvoidChance(
-                0, 0, target.MagicFailFloor, 0f,
-                caster.Level, target.Level,
-                sureHit: def.SureHit, defenderImmune: target.Immune,
-                baseAvoid: target.Kind == EntityKind.Mob ? 0.01f : -1f);
-            if (caster.MagicFailResist > 0f) fail = Math.Max(0f, fail - caster.MagicFailResist);
+            // Magic "fail" = reduced damage (not zero). Magic has its OWN formula, not the physical
+            // resolver: 1.3^levelGap × the defender's anti-magic modifier × the caster's weapon
+            // modifier (×25 with a bow). See StatCalculator.MagicFailChance.
+            float fail = def.SureHit ? 0f
+                       : target.Immune ? 1f
+                       : StatCalculator.MagicFailChance(caster.Level, target.Level,
+                             target.MagicFailMod,
+                             StatCalculator.MagicWeaponFailMod(caster.UntrainedCasterWeapon));
             if (_rng.NextDouble() < fail)
             {
                 damage = Math.Max(1, damage / 3);
@@ -7644,12 +7643,11 @@ var effect = def.Effect;
         if ((effect & SkillEffect.AnyDebuff & ~SkillEffect.ContestCc) != 0)
         {
             offensive = true;
-            float fail = StatCalculator.ResolveAvoidChance(
-                0, 0, target.MagicFailFloor, 0f,
-                caster.Level, target.Level,
-                sureHit: def.SureHit, defenderImmune: target.Immune,
-                baseAvoid: target.Kind == EntityKind.Mob ? 0.01f : -1f);
-            if (caster.MagicFailResist > 0f) fail = Math.Max(0f, fail - caster.MagicFailResist);
+            float fail = def.SureHit ? 0f
+                       : target.Immune ? 1f
+                       : StatCalculator.MagicFailChance(caster.Level, target.Level,
+                             target.MagicFailMod,
+                             StatCalculator.MagicWeaponFailMod(caster.UntrainedCasterWeapon));
             if (_rng.NextDouble() < fail)
             {
                 BroadcastCombat(caster, target, 0, CombatOutcome.Fail, castName);
@@ -9792,7 +9790,7 @@ var effect = def.Effect;
             p.ActiveArmorSet, p.ArmorMasteryLabel,
             hpReg, mpReg, p.CritDamageBonus,
             p.MeleeVamp, p.SpellVamp, p.CooldownReduction,
-            p.MagicFailResist, p.MagicFailFloor,
+            p.MagicResist, p.MagicFailMod,
             p.CritRateResist, p.CritDmgResist, p.BowResist,
             p.InterruptResist, (int)p.EffectiveMagicAttack,   // MagicAttackInternal: the cosmic L2-reference value
             p.HealPowerFlat, p.HealPowerMod, p.HealReceivedFlat, p.HealReceivedMod,
@@ -10147,7 +10145,7 @@ var effect = def.Effect;
             MagicCritChance: t.MagicCritChance, CritDamage: t.CritDamageBonus,
             MeleeVamp: t.MeleeVamp, SpellVamp: t.SpellVamp, CooldownReduction: t.CooldownReduction,
             HpRegen: hpReg, MpRegen: mpReg,
-            InterruptResist: t.InterruptResist, CritDmgResist: t.CritDmgResist, MagicFailResist: t.MagicFailResist,
+            InterruptResist: t.InterruptResist, CritDmgResist: t.CritDmgResist, MagicResist: t.MagicResist,
             Rank: isMob ? t.Rank.ToString() : ""));
     }
 

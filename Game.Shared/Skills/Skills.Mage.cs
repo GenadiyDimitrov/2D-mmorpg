@@ -116,9 +116,13 @@ public static partial class SkillCatalog
                     Description: "+15% P.Atk, +15% P.Def, 9% melee vampirism, +4 Accuracy."),
             }),
 
-        // Anti-Magic — learnable mage passive: +M.Def and a magic-fail (fizzle) floor.
-        // Lvls 1-2 = base mage; the Healer CONTINUES it at lvls 3-6 (20/25/30/35). The
-        // CSV "mRes %" is modelled as the fizzle floor (the resolver takes the max floor).
+        // Anti-Magic — learnable mage passive: +M.Def and MAGIC RESISTANCE (damage reduction).
+        // Lvls 1-2 = base mage; the Healer/Nuker CONTINUE it at lvls 3-6 (20/25/30/35).
+        // ⚠ The CSVs' "mRes +5%" WAS built here as a fizzle floor, purely because no magic
+        // damage-reduction stat existed (owner, 2026-08-10: *"the problem was we didn't have a mdmg
+        // reduction, that's why we converted them to a floor"*). It is a damage reduction now, and
+        // the mage@14 rung's old "5% chance for spells to fizzle on you" wording went with it.
+        // The numbers are straight from healer/nuker 20-35.csv — don't retune them here.
         new(MageAntiMagic, "Anti-Magic", BaseClass.Mage, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
@@ -126,16 +130,16 @@ public static partial class SkillCatalog
             Levels: new[]
             {
                 new SkillLevel(SpCost: 480,   Passive: new PassiveEffect(MagicDefence: 12), Description: "+12 magic defence."),
-                new SkillLevel(SpCost: 2200,  Passive: new PassiveEffect(MagicDefence: 16, MagicFailFloor: 0.05f),
-                    Description: "+16 magic defence and a 5% chance for spells to fizzle on you."),
-                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(MagicDefence: 20, MagicFailFloor: 0.05f),
-                    Description: "+20 magic defence; spells fizzle on you at least 5% of the time."),
-                new SkillLevel(SpCost: 6400,  Passive: new PassiveEffect(MagicDefence: 25, MagicFailFloor: 0.05f),
-                    Description: "+25 magic defence; spells fizzle on you at least 5% of the time."),
-                new SkillLevel(SpCost: 12800, Passive: new PassiveEffect(MagicDefence: 30, MagicFailFloor: 0.10f),
-                    Description: "+30 magic defence; spells fizzle on you at least 10% of the time."),
-                new SkillLevel(SpCost: 25000, Passive: new PassiveEffect(MagicDefence: 36, MagicFailFloor: 0.10f),
-                    Description: "+36 magic defence; spells fizzle on you at least 10% of the time."),
+                new SkillLevel(SpCost: 2200,  Passive: new PassiveEffect(MagicDefence: 16, MagicResist: 0.05f),
+                    Description: "+16 magic defence and 5% magic resistance."),
+                new SkillLevel(SpCost: 3200,  Passive: new PassiveEffect(MagicDefence: 20, MagicResist: 0.05f),
+                    Description: "+20 magic defence and 5% magic resistance."),
+                new SkillLevel(SpCost: 6400,  Passive: new PassiveEffect(MagicDefence: 25, MagicResist: 0.05f),
+                    Description: "+25 magic defence and 5% magic resistance."),
+                new SkillLevel(SpCost: 12800, Passive: new PassiveEffect(MagicDefence: 30, MagicResist: 0.10f),
+                    Description: "+30 magic defence and 10% magic resistance."),
+                new SkillLevel(SpCost: 25000, Passive: new PassiveEffect(MagicDefence: 36, MagicResist: 0.10f),
+                    Description: "+36 magic defence and 10% magic resistance."),
             }),
 
         // Vampiric Bolt — magic nuke that heals the caster for 40% of damage dealt. Level 1 is

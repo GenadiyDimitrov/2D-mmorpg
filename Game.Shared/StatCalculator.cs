@@ -526,10 +526,14 @@ public static class StatCalculator
     /// <summary>Magic ratio damage (L2 model): K·skillPower·√mAtk/mDef. The SQUARE ROOT
     /// of M.Atk means stacking raw M.Atk gives diminishing returns. 'power' is the
     /// spell's base power. Divides by MAGIC defence (separate channel). Crit / fail /
-    /// blessed-spell rune are applied by the caller. Defence floored at 1.</summary>
-    public static int MagicDamage(int mAtk, int power, int mDef, int casterLevel)
+    /// blessed-spell rune are applied by the caller. Defence floored at 1.
+    /// <para><paramref name="defenceCoef"/> is the defender's MAGIC RESISTANCE, the same shape as the
+    /// weapon-type resists on the physical side (<see cref="WeaponDefenceCoef"/>): it rides INSIDE
+    /// mDef, so >1 = resistant (1.25 → ×0.8 damage), &lt;1 = weak, and a defence-ignoring effect
+    /// bypasses it too.</para></summary>
+    public static int MagicDamage(int mAtk, int power, int mDef, int casterLevel, float defenceCoef = 1f)
     {
-        float def = Math.Max(1, mDef);
+        float def = Math.Max(1, mDef * defenceCoef);
         // mAtk here is the INTERNAL value (base·levelMod²·buffs²). The √ stays — it is what self-balances
         // magic across levels. The DISPLAY shrinks this to P.Atk size elsewhere (EffectiveMagicAttackShown);
         // this formula is unchanged so mob casters + heals keep working. See Path B in docs/design/DamageModel.md.
@@ -539,10 +543,11 @@ public static class StatCalculator
 
     /// <summary>{Flat, Mod} MAGIC skill damage: K·(Flat + Mod·√mAtk)/mDef. Mod replaces the old scalar
     /// power (Flat is usually 0 for magic). Legacy skills reach this via (Flat=0, Mod=Power), reproducing
-    /// K·Power·√mAtk/mDef exactly. See docs/design/DamageModel.md.</summary>
-    public static int MagicDamageFM(int mAtk, int flat, float mod, int mDef)
+    /// K·Power·√mAtk/mDef exactly. <paramref name="defenceCoef"/> = the defender's magic resistance,
+    /// riding inside mDef (see <see cref="MagicDamage"/>). See docs/design/DamageModel.md.</summary>
+    public static int MagicDamageFM(int mAtk, int flat, float mod, int mDef, float defenceCoef = 1f)
     {
-        float def = Math.Max(1, mDef);
+        float def = Math.Max(1, mDef * defenceCoef);
         float dmg = MagicK * (flat + mod * MathF.Sqrt(Math.Max(0, mAtk))) / def;
         return Math.Max(1, (int)dmg);
     }
@@ -663,10 +668,46 @@ public static class StatCalculator
     /// CritDamageBonus.</summary>
     public static float MagicCritMult() => StatCaps.MagicCritDamage;
 
-    // Magic fail now flows through the unified ResolveAvoidChance (magic channel):
-    // same-level magic sits at the 5% base, the anti-magic floor (ArchetypeMagicFailFloor)
-    // raises it, and the level-gap curve provides the "can't farm far above you" pressure (up to
-    // the band edge — it stops short of a lockout since M1).
+    // ----- Magic landing: its OWN formula, not the physical resolver ---------------------------
+    //
+    // Owner ruling 2026-08-10 (playtest-20 `57d`). Magic used to call ResolveAvoidChance with
+    // `0, 0` for both stat terms — i.e. NO stat race at all — so every caster in the game sat on
+    // the same 1% base vs a mob and the weapon in your hands changed nothing. The replacement is
+    // an explicit multiplicative formula in percentage POINTS:
+    //
+    //     fail% = round( 1.3^(defenderLvl − attackerLvl) × defenderMod × weaponMod )
+    //
+    //   • level  — 1.3^Δ. Parity = ×1, and round(1 × 1 × 1) = 1, so SAME LEVEL IS 1% FAIL.
+    //              Casting DOWN rounds to 0 fail from Δ−2. Casting UP is brutal: Δ+10 ≈ 14%,
+    //              Δ+16 ≈ 67%, and from Δ+18 it is pinned to the ceiling.
+    //   • defender — 1 for everyone; a TANK's Anti-Magic passive makes it 2 (so 2% at parity and,
+    //              because it multiplies, a much bigger share of the level term as the gap grows).
+    //   • weapon — 1 with a trained caster weapon, 25 with a bow/dual/bare hands.
+    //
+    // ⚠ There is deliberately NO caster-side "magic accuracy" stat. The owner's model is the level
+    // formula, the occasional tank ×2, and the weapon multiplier — nothing else. Don't reinstate
+    // MagicFailResist: it was our only spell-landing stat, it was zero on every character in the
+    // game, and halving zero for a bow is exactly what made `57d` invisible.
+
+    /// <summary>Probability a spell FIZZLES on the defender (fail = reduced damage / a debuff that
+    /// doesn't land — never zero damage). See the block above for the formula.</summary>
+    /// <param name="defenderMod">Defender's magic-fail modifier: 1 normally, 2 with the tank's
+    /// Anti-Magic passive.</param>
+    /// <param name="weaponMod">Caster's weapon modifier: 1 trained,
+    /// <see cref="StatCaps.UntrainedWeaponMagicFailMod"/> with a bow/dual/bare hands.</param>
+    public static float MagicFailChance(int attackerLevel, int defenderLevel,
+                                        float defenderMod = 1f, float weaponMod = 1f)
+    {
+        float levelMod = MathF.Pow(StatCaps.MagicLevelBase, defenderLevel - attackerLevel);
+        float points = MathF.Round(StatCaps.MagicFailParityPoints * levelMod
+                                   * Math.Max(0f, defenderMod) * Math.Max(0f, weaponMod));
+        return Math.Clamp(points / 100f, 0f, StatCaps.MagicFailMax);
+    }
+
+    /// <summary>The caster's weapon multiplier for <see cref="MagicFailChance"/>. Untrained =
+    /// bow / dual / bare hands, as decided by Spellcaster Mastery in Entity.RecomputeDerived.</summary>
+    public static float MagicWeaponFailMod(bool untrainedWeapon) =>
+        untrainedWeapon ? StatCaps.UntrainedWeaponMagicFailMod : 1f;
 
     /// <summary>Offensive MAGIC interrupt power from WIT. Mirrors the WIT scale in
     /// InterruptResist (wit*2) so a WIT-mage out-interrupts an equal-level ATK-mage

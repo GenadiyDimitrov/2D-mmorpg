@@ -501,6 +501,33 @@ foreach (Race r in new[] { Race.Human, Race.Elf, Race.Ork })
     Console.WriteLine($"  {r,6} {(int)bare.EffectiveWit,4} {bare.MagicCritChance,9:P2} {buffed.MagicCritChance,12:P2}");
 }
 Console.WriteLine();
+Console.WriteLine("=== MAGIC LANDING (owner's formula, playtest-20 `57d`) ===");
+Console.WriteLine("  fail% = round( 1.3^(defLvl - atkLvl) x defenderMod x weaponMod ),  clamped to [0, 95].");
+Console.WriteLine("  Parity with every mod at 1 is round(1) = 1, so SAME LEVEL = 1% fail. There is no");
+Console.WriteLine("  caster-side accuracy stat: the levers are the level gap, the tank's x2 passive, and");
+Console.WriteLine($"  the untrained weapon (bow/dual/bare = x{StatCaps.UntrainedWeaponMagicFailMod:0}).");
+Console.WriteLine();
+Console.WriteLine($"  {"dLvl",5} {"wand",8} {"vs tank",9} {"BOW",8} {"bow+tank",9}   (SUCCESS %, caster level 60)");
+foreach (int d in new[] { -10, -5, -2, 0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20 })
+{
+    float bow = StatCaps.UntrainedWeaponMagicFailMod;
+    float w  = 1f - StatCalculator.MagicFailChance(60, 60 + d, 1f, 1f);
+    float t  = 1f - StatCalculator.MagicFailChance(60, 60 + d, 2f, 1f);
+    float b  = 1f - StatCalculator.MagicFailChance(60, 60 + d, 1f, bow);
+    float bt = 1f - StatCalculator.MagicFailChance(60, 60 + d, 2f, bow);
+    string note = d == 0 ? "  <- parity" : d == 3 ? "  <- bow+tank hits the 5% floor" : "";
+    Console.WriteLine($"  {d,+5} {w,8:P0} {t,9:P0} {b,8:P0} {bt,9:P0}{note}");
+}
+Console.WriteLine();
+Console.WriteLine("  ! The bow penalty is MULTIPLICATIVE, so it fades when punching DOWN: at dLvl -10 a bow");
+Console.WriteLine("    caster is back to ~98% success. That is inherent to the formula, not a bug — but it");
+Console.WriteLine("    does mean a bow caster can farm well below his level almost unpunished.");
+Console.WriteLine();
+Console.WriteLine("  MAGIC RESISTANCE is a DAMAGE reduction, not a fizzle (mRes rides inside M.Def):");
+Console.WriteLine($"  {"mRes",6} {"coef",6} {"dmg taken",10}   (the mob ladder's 1.25 is exactly mRes +25%)");
+foreach (float r in new[] { 0f, 0.05f, 0.10f, 0.15f, 0.25f, 0.5f, 1.0f })
+    Console.WriteLine($"  {r,6:P0} {1f + r,6:F2} {1f / (1f + r),10:F3}");
+Console.WriteLine();
 Console.WriteLine("=== TANK / FIGHTER (Human Fighter, best gear for tier) ===");
 Console.WriteLine("  'basic' = autoattack; 'skill' = best physical skill. Compare SKILL against the mage's");
 Console.WriteLine("  nuke — the basic column is not the fighter's damage, it is its filler.");
