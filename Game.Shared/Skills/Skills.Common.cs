@@ -321,7 +321,15 @@ public static partial class SkillCatalog
     ///
     /// ⚠ Warrior/Tank still use the plain 20/40/76 curve, so `precision` and `anti_magic` DO still
     /// grant a Lv3 at 76. The owner ruled on the rogue's; the same "76 is not a class change"
-    /// argument applies to those two and is <b>owed back to him</b> before changing them.</summary>
+    /// argument applies to those two and is <b>owed back to him</b> before changing them.
+    ///
+    /// ⚠ 2026-08-10 — ALL THREE ARE NOW AUTHORED IN THE CSVs (owner: *"Put evasion mastery/anymagic/
+    /// precision inside the csv for the warrior/tank/rogue"*), as a level-20 row in
+    /// `docs/data/classes_skills_csv/{rogue,tank,warrior} 20-35.csv`. The CSV is the AUTHORITY on
+    /// their numbers — change a floor there first, then mirror it into the Levels below. They stay
+    /// auto-granted from here (SP 0) rather than bought, which is why the CSV rows carry SP 0.
+    /// ⚠ The tank's CSV also has a *different* skill called "Tank Anti-Magic" (m.def +25/+45) —
+    /// do not conflate the two: that one is a stat, this one is the fizzle floor.</summary>
     public static (string Id, int Level)? FloorPassiveFor(Archetype? archetype, int level,
         Discipline? discipline = null)
     {

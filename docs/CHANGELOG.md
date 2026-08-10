@@ -12,6 +12,51 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 0.58.0 — 2026-08-10 — a class grants no stats, and the invented level-40+ kits are gone
+
+*(The third slice of 0.58.0; the evasion root cause and the mob weapon table shipped in the two
+commits before it and are not yet written up here.)*
+
+**Identity is the kit, not the stats.** The owner's ruling: *"There is no identity. The identity is
+just skills/passives kit … the magus and the tempest have same stats, just one has more dmg skills
+while the other more debuffs … no more u change your class and get bonus."* Every class runs the same
+stat formulas; what separates two disciplines of one archetype is what their skills *do*.
+
+So the whole class-bonus layer is deleted — `ThirdClassCatalog.FlatFor` (the twelve per-discipline
+leans: Bulwark +220 HP/+45 Def, Ravager +45 Atk, …), the Cleric's stray `+60 MP/+30 HP/+10 Def` (the
+only one of eighteen 2nd classes that had one), the `Bonus` field on both class-def records, and the
+two apply-blocks in `Entity.RecomputeDerived`. `ClassFlatBonus` the *record* survives as an
+**armor-set** type; gear is not class.
+
+The proposal to re-home the same numbers as discipline passives was rejected too — *"Remove them,
+don't add them as passives. W8 on the 40+ csvs."* This table was where `Discipline.Phantom` hid an
+`Evasion: 32` against a whole-game evasion budget of ~18 points, unnoticed until the 0.58.0 hunt: a
+bonus nobody can see is a bonus nobody can tune.
+
+**The 40+ purge.** *"Anything that's not inside the csv should not exist except the class balance."*
+Every level-40+ skill grant was invented ahead of the CSVs, so `ClassSkillTables.Third.cs` loses the
+placeholder rename kit for all ten fighter disciplines, the warrior demos (Cleaving Strike, Hamstring,
+War Focus), the tank kit (Shield Bash, Provoke, Aegis, Last Stand, Indomitable), Terrifying Roar, the
+Venomweaver DoT trio, and the rogue primitives (Shadowstep, Vanish, Repelling Shot, Snare Trap).
+Kept by his exception list: everything nuker — Elemental Burst, Frost Bind, Entangling Roots, Glacial
+Spike, Creeping Frost, Phase Shift, Mana Barrier, the Magus/Tempest kit — and the Warchanter's buff
+ladder, which has a CSV behind it.
+
+⚠ Only the **learn assignments** are gone; every `SkillDef` stays in the catalog. Anything already
+learned keeps working (`LearnedSkills` persists ids, not table entries), and those defs are the raw
+material for the level-40+ CSVs. Don't re-grant them, and don't invent replacements.
+
+**The three floor passives move into the CSVs** — Evasion Mastery (rogue), Precision (warrior) and
+Anti-Magic (tank) each get a level-20 row in `docs/data/classes_skills_csv/`, SP 0 because they are
+auto-granted rather than bought. They still work at every tier via `FloorPassiveFor`; the CSV is now
+the authority on their numbers. ⚠ The tank CSV separately contains a *different* skill called "Tank
+Anti-Magic" (m.def +25/+45) — a stat, not the fizzle floor.
+
+**Server + shared only** — no DTO, protocol unchanged, no schema change, `game.db` untouched. The
+in-game effect is at 40+, where every discipline loses its lean (Bulwark's −220 HP/−45 Def is the
+largest), and on the Human Cleric from level 20. Not visible in BalanceMatrix, which assigns a 3rd
+class in only one section — **unmeasured and unplayed.**
+
 ## 0.57.1 — 2026-08-09 — a buffer's window swallowed the quest step behind it
 
 Found mid-playtest, the first bug of the 0.57.0 play pass: the tutorial chain stalls at level 6, on

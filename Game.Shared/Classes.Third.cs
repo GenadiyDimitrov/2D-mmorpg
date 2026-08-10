@@ -114,11 +114,11 @@ public static class Disciplines
 }
 
 /// <summary>A 3rd class. It evolves a specific 2nd class (ParentSecondClassId,
-/// which the character must already hold) along one Discipline. Bonus is the
-/// placeholder stat lean that gives each discipline some feel until the real
-/// per-(race,discipline) skill sets land in the content slices.</summary>
+/// which the character must already hold) along one Discipline. It carries NO stats —
+/// a discipline is its skill kit and nothing else (owner, 2026-08-10; see the note on
+/// the deleted `FlatFor` below).</summary>
 public record ThirdClassDef(int Id, string Name, Race Race, int ParentSecondClassId,
-    Discipline Discipline, ClassFlatBonus? Bonus = null);
+    Discipline Discipline);
 
 /// <summary>
 /// The 36 third classes, generated over <see cref="ClassCatalog.Playable"/>:
@@ -144,8 +144,8 @@ public static class ThirdClassCatalog
         {
             var (a, b) = Disciplines.Of(sc.Race, sc.Archetype);
             int baseId = 100 + (sc.Id - 1) * 2;   // 2nd id 1 -> 101/102 ... 18 -> 135/136
-            d[baseId + 1] = new ThirdClassDef(baseId + 1, a.ToString(), sc.Race, sc.Id, a, FlatFor(a));
-            d[baseId + 2] = new ThirdClassDef(baseId + 2, b.ToString(), sc.Race, sc.Id, b, FlatFor(b));
+            d[baseId + 1] = new ThirdClassDef(baseId + 1, a.ToString(), sc.Race, sc.Id, a);
+            d[baseId + 2] = new ThirdClassDef(baseId + 2, b.ToString(), sc.Race, sc.Id, b);
         }
         return d;
     }
@@ -158,36 +158,23 @@ public static class ThirdClassCatalog
     public static IEnumerable<ThirdClassDef> ForParent(int secondClassId) =>
         All.Values.Where(c => c.ParentSecondClassId == secondClassId).OrderBy(c => c.Id);
 
-    /// <summary>Placeholder flat stat lean per discipline (real identity will come
-    /// from skills in the content slices). Applied additively in RecomputeDerived.
-    ///
-    /// ⚠ 2026-08-10 — NO DISCIPLINE MAY GRANT FLAT EVASION. Phantom carried `Evasion: 32` and
-    /// Trapper `Evasion: 12`, written here before the evasion budget was ever set. The budget is
-    /// ~18 points TOTAL (13 from armor mastery + 4 from the Agility buff, see the note at
-    /// Skills.Common.cs' evade_mastery), so Phantom alone was nearly twice the whole allowance —
-    /// and since 1 evasion point = 1% miss (StatCaps.AvoidStatSlope), it was a flat +32% dodge.
-    /// It is what made a level-60 Elf Phantom read 140 evasion where the owner expected 108
-    /// (60 level + 35 DEX + 13 mastery), and why evasion visibly JUMPED at the discipline change.
-    /// Both are now 0 and their budget moved to MaxHp — the same survivability role, in a channel
-    /// that does not touch the accuracy-vs-evasion contest or any damage number.
-    /// `Dex` is NOT a substitute: it feeds evasion 1:1 and would reintroduce the bug.
-    ///
-    /// The rule this enforces: evasion comes from armor mastery, buffs and DEX. `evade_mastery`
-    /// raises the FLOOR only and grants no evasion — a class must not smuggle points in here.</summary>
-    private static ClassFlatBonus FlatFor(Discipline d) => d switch
-    {
-        Discipline.Bulwark      => new ClassFlatBonus(MaxHp: 220, Defence: 45),
-        Discipline.Vanguard     => new ClassFlatBonus(MaxHp: 130, Defence: 22, Attack: 18),
-        Discipline.Ravager      => new ClassFlatBonus(Attack: 45, MaxHp: 40),
-        Discipline.Warlord      => new ClassFlatBonus(Attack: 26, MaxHp: 90),
-        Discipline.Phantom      => new ClassFlatBonus(Attack: 16, MaxHp: 120),
-        Discipline.Venomweaver  => new ClassFlatBonus(Attack: 22, Accuracy: 10),
-        Discipline.Sharpshooter => new ClassFlatBonus(Attack: 32, Accuracy: 16),
-        Discipline.Trapper      => new ClassFlatBonus(Attack: 16, Accuracy: 12, MaxHp: 45),
-        Discipline.Lightbringer => new ClassFlatBonus(MaxMp: 200, Defence: 18, MaxHp: 40),
-        Discipline.Warchanter   => new ClassFlatBonus(MaxMp: 150, MaxHp: 90),
-        Discipline.Magus        => new ClassFlatBonus(MaxMp: 170, Attack: 28),
-        Discipline.Tempest      => new ClassFlatBonus(MaxMp: 130, MaxHp: 70, Attack: 16),
-        _ => new ClassFlatBonus(),
-    };
+    // ⚠ `FlatFor` — the per-discipline flat stat lean (Bulwark +220 HP/+45 Def, Ravager +45 Atk, …)
+    //   — was DELETED 2026-08-10 on the owner's ruling: *"There is no identity. The identity is just
+    //   the skills/passives kit … the magus and the tempest have same stats, just one has more dmg
+    //   skills while the other more debuffs … no more u change your class and get bonus."*
+    //
+    //   Do NOT reinstate it, and do NOT re-home the same numbers as invented passives — he ruled on
+    //   that too: *"Remove them, don't add them as passives. W8 on the 40+ csvs."* The lean comes
+    //   back only when the level-40+ class CSVs land, authored inside the discipline's own kit.
+    //
+    //   The bug that killed it, worth remembering: this table was where `Discipline.Phantom` hid an
+    //   `Evasion: 32` (and Trapper `Evasion: 12`) — nearly twice the entire ~18-point evasion budget
+    //   (13 armor mastery + 4 Agility), and since 1 point = 1% miss (StatCaps.AvoidStatSlope) it was
+    //   a silent flat +32% dodge. It is why a level-60 Elf Phantom read 140 evasion against the
+    //   expected 108, and why evasion visibly JUMPED at the discipline change. An invisible bonus on
+    //   a class def is unreadable and untunable — that is the whole case for the ruling.
+    //
+    //   The standing rule regardless of where stats are authored: evasion comes from armor mastery,
+    //   buffs and DEX. `evade_mastery` raises the FLOOR only and grants no evasion; `Dex` is not a
+    //   back door (it feeds evasion 1:1). See the note at Skills.Common.cs' evade_mastery.
 }

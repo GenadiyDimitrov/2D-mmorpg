@@ -5,6 +5,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FIN
 20,Weapon Mastery,passive,0,self,0,0,0,with any weapon: p.Atk x1.085 and p.Atk +6,0,0,3400,[]
 20,Defencive Wall,pfysical buff,0,self,0.5,900,30,increase p.def +1800; p.def x2; m.def +1600; mdef x2; buff cancel resist x1.8; ms x0.5,20,0,3400,[]
 20,Taunt,physical active,400,enemy,1,10,0,Agro enemy,10,0,3400,[]
+20,Anti-Magic,passive,0,self,0,0,0,magic-fail FLOOR 10% - spells fizzle on you at least 1 cast in 10 no matter the caster - NOT the same skill as Tank Anti-Magic above (that one grants m.def; this one is the floor) - auto-granted at the class change so SP is 0 - lvl2 (15%) at 40 - lvl3 (20%) is written but unreachable until the 4th class exists,0,0,0,[]
 24,Heavy Armor Mastery,passive,0,self,0,0,0,with heavy: mpReg x1.1 and p.def +47 and p.def x1.07 and crit dmg reduction 15% and eva -2,0,0,3200,[Armor Mastery]
 24,Shield Mastery,passive,0,slef,0,0,0,shiled defence x1.3; shield defence rate x1.5; bow resistance 16%,0,0,3200,[]
 34,Tank Anti-Magic,passive,0,self,0,0,0,increase m.def +30,0,0,3200,[]

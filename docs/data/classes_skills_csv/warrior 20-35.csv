@@ -3,6 +3,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FIN
 20,Body Mastery,passive,0,slef,0,0,0,max hp + 60;,0,0,1700,[]
 20,Two Handed Mastery,passive,0,self,0,0,0,with 2h sword/blunt: acc +3 eva -3; crit dmg +35; p.atk x1.3; p.atk +13; p.def x0.9,0,0,3400,[Weapon Mastery]
 20,Strike,physical active,40,enemy,1,3,0,dmg with 105 power  - can double - require blunt/sword,20,0,3400,[]
+20,Precision,passive,0,self,0,0,0,hit FLOOR 10% - your physical attacks land at least 1 swing in 10 no matter how much evasion the target stacks - grants NO accuracy points - auto-granted at the class change so SP is 0 - lvl2 (20%) at 40 - lvl3 (30%) is written but unreachable until the 4th class exists,0,0,0,[]
 24,Armor Mastery,passive,0,self,0,0,0,with light:  eva +8; with all mp x1.1 and p.def +21,0,0,3200,[]
 24,Body Mastery,passive,0,slef,0,0,0,max hp + 60; hpReg x1.1,0,0,3200,[]
 24,Two Handed Mastery,passive,0,self,0,0,0,with 2h sword/blunt: acc +6 eva -3; crit dmg +48; p.atk x1.5 p.atk +15;; p.def x0.9,0,0,6400,[Weapon Mastery]

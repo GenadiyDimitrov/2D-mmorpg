@@ -149,10 +149,15 @@ from L2 references.
   Magic weapons have NO weapon range (melee basic, tiny basic damage — power is in
   spells). Only bows have basic range (400 base).
 - **Daggers are treated as DUALs** (`WeaponType.Dual`) — fast, lower per-hit.
-- **Class change** grants flat secondary bonuses (`ClassFlatBonus` on
-  `SecondClassDef`) for class identity (e.g. tank flat +Def/+HP) — primary stats are
-  reserved for the future dye/tattoo/set layer. Item-gated via
-  `ClassChangeRequirements` (consumes quest items at a class-change NPC).
+- **A class grants NO stats — identity is the SKILL/PASSIVE KIT** (owner, 2026-08-10). Every class
+  runs the same stat formulas; two disciplines of one archetype (Magus vs Tempest) have *identical*
+  stats and differ only in what their skills do. A class change gives you skills and nothing else.
+  The 2nd/3rd-class `ClassFlatBonus` fields were deleted — **don't reinstate them, and don't re-home
+  the same numbers as invented passives** ("*w8 on the 40+ csvs*"): the per-discipline lean is
+  authored in the level-40+ class CSVs, inside the kit. `ClassFlatBonus` survives as an **armor-set**
+  type only. Class change is still item-gated via `ClassChangeRequirements` (consumes quest items at
+  a class-change NPC). What legitimately still varies by class: the per-archetype **HP/MP growth
+  curves** and `BasicAttackMultiplier` — those are base curves, not identity bonuses.
 
 ## Validation without a compiler (chat-sandbox technique; Claude Code can just build)
 The chat sandbox validated by stripping string-literals + `//` comments, then

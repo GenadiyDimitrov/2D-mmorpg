@@ -1588,31 +1588,12 @@ public class Entity
         CritDamageBonus = critDmgPct / 100f;   // e.g. 20 -> +0.20x crit multiplier
         CritDamageFlat = 0f;                   // FLAT crit damage comes from passives only (below)
 
-        // ----- Flat class bonuses (class identity; additive over gear) -----
-        if (Kind == EntityKind.Player && SecondClass > 0
-            && ClassCatalog.Get(SecondClass)?.Bonus is ClassFlatBonus b)
-        {
-            MaxHp += b.MaxHp;
-            MaxMp += b.MaxMp;
-            Defence += b.Defence;
-            AttackPower += b.Attack;
-            Evasion += b.Evasion;
-            Accuracy += b.Accuracy;
-            // Primary deltas feed nothing further here (derived already computed),
-            // but are exposed for future systems; applied as flat secondary above.
-        }
-
-        // 3rd-class discipline lean (stacks on top of the 2nd-class bonus).
-        if (Kind == EntityKind.Player && ThirdClass > 0
-            && ThirdClassCatalog.Get(ThirdClass)?.Bonus is ClassFlatBonus tb)
-        {
-            MaxHp += tb.MaxHp;
-            MaxMp += tb.MaxMp;
-            Defence += tb.Defence;
-            AttackPower += tb.Attack;
-            Evasion += tb.Evasion;
-            Accuracy += tb.Accuracy;
-        }
+        // ----- (Flat class bonuses were applied here — DELETED 2026-08-10, owner ruling.) -----
+        // "There is no identity. The identity is just the skills/passives kit … no more u change
+        // your class and get bonus." A 2nd/3rd class change now grants NOTHING but its skills, so
+        // there is nothing to add here. The lean between disciplines returns with the level-40+
+        // class CSVs, authored as passives in the discipline's kit — never as a class-def field.
+        // See docs/design/Disciplines.md; the deleted table is in git (Classes.Third.cs FlatFor).
 
         // ----- Armor set bonus (BODY-DRIVEN): the worn BODY's set grants the bonus when
         // Head/Gloves/Boots are filled with that set's accessory line. This lets the

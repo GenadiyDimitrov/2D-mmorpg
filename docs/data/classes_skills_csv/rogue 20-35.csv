@@ -4,6 +4,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FIN
 20,Stab,physical active,40,enemy,1,3,0,power 314 - only when skill does critical - otherwise 31 - can crit/double - require duals,18,0,1700,[]
 20,Shot,physical active,700,enemy,3,6,0,power 279 -can double - require a bow,40,0,1700,[]
 20,Sprint,pfysical buff,0,self,0.1,30,15,increase speed +40,10,0,3400,[]
+20,Evasion Mastery,passive,0,self,0,0,0,dodge FLOOR 10% - you evade at least 1 attack in 10 no matter how much accuracy the attacker stacks - grants NO evasion points (the evasion budget is armor mastery + the Agility buff + DEX) - auto-granted at the class change so SP is 0 - lvl2 (20%) at 40 and only for a MELEE discipline - lvl3 (30%) is written but unreachable until the 4th class exists,0,0,0,[]
 24,Rogue Armor Mastery,passive,0,self,0,0,0,with light:  eva +11 and crit rate resist + 15% ; with all mpReg x1.1 and p.def +18,0,0,3200,[Armor Mastery]
 24,Rogue Weapon Mastery,passive,0,self,0,0,0,with bow: p.Atk +42 and range +200; with dual: p.atk +11 ;With all: p.atk x1.085 and crit dmg +64 and acc +3 and crit rate x1.2;,0,0,6400,[Weapon Mastery]
 24,Stab,physical active,40,enemy,1,3,0,power 427 - only when skill does critical - otherwise 43 - can crit/double - require duals,21,0,3200,[]

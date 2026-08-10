@@ -14,44 +14,40 @@ public static partial class ClassSkillTables
 {
     static partial void RegisterThirdClasses()
     {
-        // (skillId, displayName) placeholders per discipline.
+        // ⚠⚠ 2026-08-10 — THE 40+ PURGE (owner). Everything a 3rd class taught was invented here
+        // with no CSV behind it, so he cut it to the bone: *"Anything that's not inside the csv
+        // should not exist except the class balance."* His four points, verbatim in effect:
+        //   1. leave the mage (Tempest and Magus)          → the nuker blocks below survive
+        //   2. leave the Warchanter buffs, he has a CSV    → RegisterWarchanterBuffs() survives
+        //   3. evade_mastery / anti_magic / precision go INTO the 20-35 CSVs (rogue/tank/warrior)
+        //   4. remove every other 40+ skill, and every class-change hidden bonus
+        // DELETED here accordingly: the placeholder RENAME kit for all ten fighter disciplines, the
+        // warrior demos (Cleaving Strike / Hamstring / War Focus), the tank kit (Shield Bash,
+        // Provoke, Aegis, Last Stand, Indomitable), Terrifying Roar, the Venomweaver DoT trio, and
+        // the rogue primitives (Shadowstep, Vanish, Repelling Shot, Snare Trap) for Phantom,
+        // Trapper, Nullblade and Hunter.
+        //
+        // ⚠ Their SkillDefs all STAY in the catalog — only the learn assignments are gone, exactly
+        // as with `PowerShot` (deleting a def is what the old warnings were about, and anything a
+        // character already learned keeps working; LearnedSkills persists ids, not table entries).
+        // They are the obvious raw material when the level-40+ CSVs arrive — do NOT re-grant them
+        // before then, and do NOT invent replacements.
+        //
+        // (For the record, the ranged rogue's three `PowerShot` renames had already gone on
+        //  2026-08-07, playtest-19 M7: *"remove it from after 40lvl as well"*.)
+
+        // (skillId, displayName) placeholders — the two NUKER disciplines only, per his point 1.
         var kit = new Dictionary<Discipline, (string Skill, string Name)[]>
         {
-            [Discipline.Bulwark]      = new[] { (Fortify, "Aegis Wall"), (ShieldMastery, "Bulwark Stance") },
-            [Discipline.Vanguard]     = new[] { (MightyBlow, "Punisher"), (Fortify, "Iron Guard") },
-            [Discipline.Ravager]      = new[] { (MightyBlow, "Rend"), (GreaterWarCry, "Bloodlust") },
-            [Discipline.Warlord]      = new[] { (GreaterWarCry, "Rally"), (MightyBlow, "Cleave") },
-            [Discipline.Phantom]      = new[] { (BattleFury, "Shadowstep"), (TwinSlash, "Ambush") },
-            [Discipline.Venomweaver]  = new[] { (TwinSlash, "Venom Strike"), (BattleFury, "Creeping Toxin") },
-            // 🔴 The three RANGED rogue disciplines each opened with a rename of Heavy Draw
-            // (`PowerShot`) — "Piercing Shot", "Snare Shot", "Rending Shot". All three were removed
-            // 2026-08-07 (playtest-19 M7): *"remove it from after 40lvl as well"*. He is done with
-            // that skill on the rogue line at every level, not just the @24 grant.
-            // ⚠ The `PowerShot` SkillDef itself STAYS — deleting it is what the old warnings were
-            // about, and it now has no learn assignment at all until the level-40 bow CSV lands.
-            [Discipline.Sharpshooter] = new[] { (BattleFury, "Steady Aim") },
-            [Discipline.Trapper]      = new[] { (Disrupt, "Net Trap") },
-            // The two disciplines the ARCHER MERGE added. Nullblade is the HUMAN melee rogue —
-            // docs/design/Disciplines.md already wrote that kit as "Phantom, Human flavour: anti
-            // magic", so it inherits the stealth/ambush shape; Phantom itself went to the Elf, whose
-            // authored flavour ("anti phys", evasion) is what the name has always described.
-            // Hunter is the ORK bow, from that doc's "Sharpshooter, Ork flavour: dmg focus".
-            [Discipline.Nullblade]    = new[] { (BattleFury, "Nullstep"), (TwinSlash, "Silencing Cut") },
-            [Discipline.Hunter]       = new[] { (BattleFury, "Blood Draw") },
-            // Lightbringer + Warchanter are fully authored per race below.
             [Discipline.Magus]        = new[] { (FlameBolt, "Annihilate"), (GreaterWeakness, "Mana Burn") },
             [Discipline.Tempest]      = new[] { (FlameBolt, "Chain Lightning"), (GreaterWeakness, "Maelstrom") },
         };
 
-        // 3rd-class learn cadence starts at 40: fighter disciplines step every 3
-        // (40,43,46,…), mage disciplines every 4 (40,44,48,…).
+        // Mage 3rd-class learn cadence: 40, 44, 48, … (step 4).
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
             foreach (var (discipline, skills) in kit)
-            {
-                int step = discipline is Discipline.Magus or Discipline.Tempest ? 4 : 3;
                 ClassSkills.RegisterThird(race, discipline,
-                    skills.Select((s, i) => new ClassSkill(s.Skill, 40 + i * step, s.Name)).ToArray());
-            }
+                    skills.Select((s, i) => new ClassSkill(s.Skill, 40 + i * 4, s.Name)).ToArray());
 
         // Nuker ULTIMATE — Elemental Burst (consumes 10 Elemental Stones). 10 levels at
         // char 40/44/48/…/72/75 (step 4, last capped at 75), power 150 → 250. Shared by
@@ -76,61 +72,10 @@ public static partial class ClassSkillTables
             ClassSkills.RegisterThird(race, Discipline.Tempest,
                 new ClassSkill(CreepingFrost, 44), new ClassSkill(PhaseShift, 48));
 
-        // Warrior 3rd-class kit demos: [Double] burst, physical Slow, +skill-damage buff.
+        // Mana Barrier — Magus. The last survivor of the old shared fighter/mage block; every
+        // tank, warrior and rogue grant that stood here went in the 40+ purge (see the top).
         foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
-            foreach (var disc in new[] { Discipline.Ravager, Discipline.Warlord })
-                ClassSkills.RegisterThird(race, disc,
-                    new ClassSkill(CleavingStrike, 40), new ClassSkill(Hamstring, 40),
-                    new ClassSkill(WarFocus, 40));
-
-        // Contested CC demos: Vanguard (tank) gets the Stun; warriors get the Fear.
-        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
-        {
-            ClassSkills.RegisterThird(race, Discipline.Vanguard, new ClassSkill(ShieldBash, 40));
-            // Provoke — taunt — both tank disciplines.
-            ClassSkills.RegisterThird(race, Discipline.Bulwark, new ClassSkill(Provoke, 40));
-            ClassSkills.RegisterThird(race, Discipline.Vanguard, new ClassSkill(Provoke, 40));
-            // Aegis — self absorb-shield — both tank disciplines.
-            ClassSkills.RegisterThird(race, Discipline.Bulwark, new ClassSkill(Aegis, 40));
-            ClassSkills.RegisterThird(race, Discipline.Vanguard, new ClassSkill(Aegis, 40));
-            // Last Stand (lethal save) + Indomitable (cancel resist) — Bulwark; Mana Barrier — Magus.
-            ClassSkills.RegisterThird(race, Discipline.Bulwark, new ClassSkill(LastStand, 44));
-            ClassSkills.RegisterThird(race, Discipline.Bulwark, new ClassSkill(Indomitable, 48));
             ClassSkills.RegisterThird(race, Discipline.Magus, new ClassSkill(ManaBarrier, 44));
-            foreach (var disc in new[] { Discipline.Ravager, Discipline.Warlord })
-                ClassSkills.RegisterThird(race, disc, new ClassSkill(TerrifyingRoar, 40));
-            // Venomweaver — per-race DoT trio: Human bleed (−MS), Elf poison (−AS/cast),
-            // Ork venom (−atk/def). Each: a stacking DoT applier @40 + a burst @44.
-            switch (race)
-            {
-                case Race.Elf:
-                    ClassSkills.RegisterThird(race, Discipline.Venomweaver,
-                        new ClassSkill(ToxicSting, 40), new ClassSkill(ToxicBurst, 44));
-                    break;
-                case Race.Ork:
-                    ClassSkills.RegisterThird(race, Discipline.Venomweaver,
-                        new ClassSkill(Envenom, 40), new ClassSkill(VenomBurst, 44));
-                    break;
-                default:   // Human: bleed
-                    ClassSkills.RegisterThird(race, Discipline.Venomweaver,
-                        new ClassSkill(Rupture, 40), new ClassSkill(DetonateWounds, 44));
-                    break;
-            }
-            // Movement + primitives: Phantom blink (Shadowstep) + stealth (Vanish); Trapper
-            // knockback (Repelling Shot) + a rooting damage trap (Snare Trap).
-            ClassSkills.RegisterThird(race, Discipline.Phantom,
-                new ClassSkill(Shadowstep, 40), new ClassSkill(Vanish, 44));
-            ClassSkills.RegisterThird(race, Discipline.Trapper,
-                new ClassSkill(RepellingShot, 40), new ClassSkill(SnareTrap, 44));
-            // Nullblade shares Phantom's primitives (it IS the human Phantom kit under its own name):
-            // blink in from stealth, then vanish again.
-            ClassSkills.RegisterThird(race, Discipline.Nullblade,
-                new ClassSkill(Shadowstep, 40), new ClassSkill(Vanish, 44));
-            // Hunter shares Sharpshooter's ranged primitive — the knockback shot that buys an ork the
-            // distance its bow wants.
-            ClassSkills.RegisterThird(race, Discipline.Hunter,
-                new ClassSkill(RepellingShot, 40));
-        }
 
         // Healer disciplines (Lightbringer = healer, Warchanter = buffer) are dropped
         // pending the new lvl-40 CSVs. Their skill DEFS remain in the catalog; only the

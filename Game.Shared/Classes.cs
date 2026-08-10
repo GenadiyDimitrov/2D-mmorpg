@@ -16,10 +16,11 @@ public enum Archetype
 /// <summary>A second class. RequiredQuestId is groundwork for class-change
 /// quests — null means level-gated only (current behaviour); when the quest
 /// system lands, a non-null id will require that quest be completed first.</summary>
-/// <summary>Flat stat bonuses granted on becoming a class — applied additively
-/// in RecomputeDerived, on top of gear. Lets a class have IDENTITY (a tank gets
-/// flat +Def/+HP) without inflating primary stats, which are reserved for the
-/// dye/tattoo/set gear layer. Both primary and secondary deltas are supported.</summary>
+/// <summary>A bundle of flat stat deltas. ⚠ Despite the name it is an ARMOR-SET type now
+/// (<see cref="ArmorSetDef"/>) — <b>no class grants stats any more</b>. Both the 2nd-class and the
+/// 3rd-class `Bonus` fields were deleted 2026-08-10 on the owner's ruling that class identity is the
+/// skill/passive kit alone; see the note on the deleted `FlatFor` in Classes.Third.cs. Do not add a
+/// `Bonus` back to a class def. Both primary and secondary deltas are supported.</summary>
 public record ClassFlatBonus(
     int Con = 0, int Atk = 0, int Wit = 0, int Dex = 0,        // primary
     int MaxHp = 0, int MaxMp = 0, int Defence = 0, int Attack = 0, // secondary
@@ -36,7 +37,7 @@ public record ClassFlatBonus(
 }
 
 public record SecondClassDef(int Id, string Name, Race Race, BaseClass Base, Archetype Archetype,
-    string? RequiredQuestId = null, ClassFlatBonus? Bonus = null);
+    string? RequiredQuestId = null);
 
 public static class ClassCatalog
 {
@@ -75,8 +76,10 @@ public static class ClassCatalog
         new(14, "Champion",    Race.Human, BaseClass.Fighter, Archetype.Warrior),
         new(15, "Assassin",    Race.Human, BaseClass.Fighter, Archetype.Rogue),
         // (id 16 was Marksman, the Human archer — merged into Assassin; see the ARCHER MERGE note.)
-        new(17, "Cleric",      Race.Human, BaseClass.Mage,    Archetype.Healer,
-            Bonus: new ClassFlatBonus(MaxMp: 60, MaxHp: 30, Defence: 10)),
+        // (Cleric was the ONE 2nd class of eighteen carrying a stat bonus — +60 MP/+30 HP/+10 Def,
+        //  never mirrored on the other seventeen. Deleted 2026-08-10 with the whole class-bonus
+        //  layer; see the ClassFlatBonus note above.)
+        new(17, "Cleric",      Race.Human, BaseClass.Mage,    Archetype.Healer),
         new(18, "Sorcerer",    Race.Human, BaseClass.Mage,    Archetype.Nuker),
         // (The God race's two classes — 98 Demigod / 99 Ascendant — were deleted 2026-08-07 with the
         //  rest of the God layer, playtest-19 `0b`. Ids 98/99 stay retired; never reuse them.)
