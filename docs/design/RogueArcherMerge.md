@@ -89,7 +89,7 @@ flavour that race already had. Nothing has to be invented:
 |---|---|---|
 | `Nullblade` (Human melee) | **Phantom-Human** (stealth + anti-magic + crit) merged with **Venomweaver-Human** (bleed + anti-magic) | both authored on paper; the bleed half (`Rupture` / `DetonateWounds`) is **already coded** |
 | `Phantom` (Elf melee) | **Phantom-Elf** (anti-phys stealth) unchanged | authored; `Shadowstep` / `Vanish` coded |
-| `Venomweaver` (Ork melee) | **Venomweaver-Ork** (venom: DEX-vs-CON, −atk/def) unchanged | authored + coded (`Envenom` / `VenomBurst`) |
+| `Venomweaver` (Ork melee) | **Venomweaver-Ork** (venom: AGI-vs-CON, −atk/def) unchanged | authored + coded (`Envenom` / `VenomBurst`) |
 | `Sharpshooter` (Human ranged) | **Sharpshooter-Human** (crit focus) unchanged | authored, placeholder skills only |
 | `Hunter` (Ork ranged) | **Sharpshooter-Ork** (damage focus, party atk / skill-dmg buff) | authored; renamed to its own discipline |
 | `Trapper` (Elf ranged) | **Trapper-Elf** (root flavour) unchanged | authored; `RepellingShot` / `SnareTrap` coded |

@@ -48,7 +48,7 @@
 Max HP        = [((Base_HP_At_Level  * CON_Modifier) * Passives) * Buffs] + Flat_HP
 Max MP        = [((Base_MP_At_Level  * MEN_Modifier) * Passives) * Buffs] + Flat_MP
 M.Atk.Speed   = Base_Casting_Speed * WIT_Modifier * Mastery * ArmorSet * WeaponSA * Buffs
-P.Atk.Speed   = Weapon_Base_Speed  * DEX_Modifier * Mastery * ArmorSet * WeaponSA * Buffs
+P.Atk.Speed   = Weapon_Base_Speed  * AGI_Modifier * Mastery * ArmorSet * WeaponSA * Buffs
 P.Def         = [((Σ armor pDef + Level_Mod) + Flat_Passives) * Mastery] * Buffs
 M.Def         = [((Σ jewel mDef + Level_Mod) + Flat_Passives) * MEN_Modifier] * Buffs
 Magic Damage  = ((91 * Skill_Power * √M_Atk) / M_Def) * Shot * Element
@@ -65,7 +65,7 @@ Base dmg lvl-mult = (Level + 89) / 100   [listed, but NOT used in the dmg formul
 - **CON_Modifier:** 20→0.79 · 30→1.00 · 36→1.12 · 40→1.35 · 43→1.48 · 45→1.57 · 47→1.67 · 50→1.83
 - **MEN_Modifier:** 20→1.16 · 26→1.28 · 30→1.35 · 31→1.36 · 37→1.44 · 40→1.49 · 45→1.57 · 50→1.65
 - **WIT_Modifier:** 20→1.00 · 23→1.18 · 25→1.30 · 30→1.63 · 35→2.06 · 40→2.65 · 45→3.39 · 50→4.32
-- **DEX_Modifier:** 20→0.90 · 25→0.95 · 30→1.00 · 35→1.05 · 40→1.11 · 45→1.17 · 50→1.23
+- **AGI_Modifier:** 20→0.90 · 25→0.95 · 30→1.00 · 35→1.05 · 40→1.11 · 45→1.17 · 50→1.23
 - **Shots:** War Rune ×2.00 · Spell Rune ×1.414 · Blessed Spell Rune ×1.414 (+40% cast-bar cut)
 
 ---
@@ -74,10 +74,10 @@ Base dmg lvl-mult = (Level + 89) / 100   [listed, but NOT used in the dmg formul
 
 | Piece | Status | Notes |
 |---|---|---|
-| **Attack speed** | ✅ matches | Weapon bases (433/379/325/293) + DEX modifier `1.0105^(DEX−30)` — tracks the table closely. |
+| **Attack speed** | ✅ matches | Weapon bases (433/379/325/293) + AGI modifier `1.0105^(AGI−30)` — tracks the table closely. |
 | **Cast speed** | ✅ matches | Class base 166/150 + WIT modifier `1.63^((WIT−20)/10)` — tracks the table (20→1.0, 40→2.65, 50→4.32). |
 | **WIT modifier** | ✅ matches | exponential ≈ reference at all points. |
-| **DEX modifier** | ✅ matches | exponential ≈ reference at all points. |
+| **AGI modifier** | ✅ matches | exponential ≈ reference at all points. |
 | **Physical damage** | ✅ structure | `77·(pAtk+power)/pDef`, no lvl term. Matches `77·pAtk/pDef`. |
 | **Magic damage** | ✅ structure, ⚠ constant | `K·power·√mAtk/mDef`. **K=8, not 91** — deliberate: our mAtk (~120, √≈11) is ~10× smaller than L2's, so 91 would over-damage. Scale choice, not a bug. |
 | **HP** | ✅ **fixed** | tiers hit Melee/Rogue/Wizard/Healer; **Tank class-mod bumped 0.96→1.02 → L75 raw ≈ 3100** (the L2 tank track). |

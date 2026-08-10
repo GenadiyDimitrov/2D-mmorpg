@@ -36,7 +36,7 @@ Double%  = min(25, 2.5 + ATK_Diff)
 the hundreds. A better weapon must not buy Double chance — only the build does (base stat, dyes,
 stat buffs).
 
-This **replaces** the previous `max(DEX, ATK)` input and the previous 30% cap.
+This **replaces** the previous `max(AGI, ATK)` input and the previous 30% cap.
 
 ### `Can Crit` and `Can Double` are EXCLUSIVE, OPT-IN flags (owner ruling, playtest-19 M8)
 
@@ -55,12 +55,12 @@ crit**, which is exactly the confusion the `[Double]` naming exists to avoid. A 
 `tools/BalanceMatrix` **§C3** audits every physical-damage skill's flags against its own description;
 a row where they disagree is an authoring bug, not a formula bug.
 
-### Why ATK and not DEX
+### Why ATK and not AGI
 
-DEX already buys the blow's landing roll. Paying the ×2 off DEX as well would pay the rogue **twice
+AGI already buys the blow's landing roll. Paying the ×2 off AGI as well would pay the rogue **twice
 for one stat**, and would give the warrior — whose stat *is* ATK — nothing from the mechanic at all.
 
-- **DEX makes the blow land. ATK makes it double.**
+- **AGI makes the blow land. ATK makes it double.**
 - A rogue who wants doubles must give up ATK, or dump CON and play a ~2k-HP glass cannon that dies
   to any blow or shot in return. Everything is a choice.
 
@@ -71,7 +71,7 @@ p.Atk — and what actually grows a dagger's damage is **crit damage**. We repro
 
 Sequence for a blow (`BlowOnCrit`):
 
-1. **Land on a crit.** Roll the attacker's crit chance (DEX-driven), reduced by the target's
+1. **Land on a crit.** Roll the attacker's crit chance (AGI-driven), reduced by the target's
    `ShieldCritDefense` + `CritRateResist`. A blow that fails to crit deals a flat
    `BlowFailFraction` floor (~10%) which can neither crit nor double. Blows bypass shields, so the
    floor is not blocked.
@@ -120,7 +120,7 @@ bonus on top. Mistune those five numbers and the class is mistuned with nothing 
    `Entity.CritDamageFlat` → `StatCalculator.CritFlatFactor`, on rogue, warrior and archer masteries.
    It rides as a FACTOR on the finished hit, which is exact: everything after the ratio is linear.
 4. ✅ Blows apply the crit-damage values (`ResolveBlow`); `[Double]` is the ATK curve capped at
-   `StatCaps.PhysicalDoubleRate` = 25%, and never reads DEX any more.
+   `StatCaps.PhysicalDoubleRate` = 25%, and never reads AGI any more.
 5. ✅ `[Double]` doubles buff/debuff duration — one roll per cast in the skill-cast path, PLAYER
    casts only (potions, scrolls and the NPC buffer come through other paths and never roll), shown
    as `Name [Double]` on the floating text.
@@ -211,25 +211,25 @@ crit = ( 110 x weaponFactor x dexMod x buffs x passives + flat ) x debuffs x ene
 factor. Daggers ARE `Dual` in this codebase.)
 
 **2. `dexMod` = 1% per point, centred on 30** — his table `20 = -10%, 25 = -5%, 30 = 0, 35 = +5%,
-40 = +10%`, i.e. **`dexMod = 1 + (EffectiveDex - 30) x 0.01`**. He rejected the old "5% + 1% per 10" as
+40 = +10%`, i.e. **`dexMod = 1 + (EffectiveAgi - 30) x 0.01`**. He rejected the old "5% + 1% per 10" as
 too heavy: *"the dex alters most stats than any other mainStat - as, crt, acc, Eva."*
-🔑 **30 is also `MobDexReference`**, so a normal mob sits at exactly x1.00 — the neutral opponent.
+🔑 **30 is also `MobAgiReference`**, so a normal mob sits at exactly x1.00 — the neutral opponent.
 
 **3. `flat` lands OUTSIDE every multiplier** — *"a flat 30 is flat 3%, not increased by buffs."*
 ⚠ Our buff code does the opposite today (`(crit + flat) x (1 + pct)`, `Entity.cs:1861`).
 
 **4. The cap is 500 = 50% physical, 200 = 20% magic.** His call.
 
-**His worked archer:** Elf rogue with a bow, DEX 40 -> `132 x 1.1 x 1.3 x 2 x 1.2 = 453` (**45.3%**) vs
-`411` (41.1%) with no DEX bonus — *"a good 4.2%, still not max."*
+**His worked archer:** Elf rogue with a bow, AGI 40 -> `132 x 1.1 x 1.3 x 2 x 1.2 = 453` (**45.3%**) vs
+`411` (41.1%) with no AGI bonus — *"a good 4.2%, still not max."*
 
-### The DEX table he asked for (`StatCalculator.GetBaseStats`)
+### The AGI table he asked for (`StatCalculator.GetBaseStats`)
 
-⚠ **DEX is per RACE + BASE CLASS only — there is no archetype split.** A Human Knight, Champion and
-Assassin all sit at DEX 30; a rogue gets nothing for being a rogue. **The only DEX identity is being an
+⚠ **AGI is per RACE + BASE CLASS only — there is no archetype split.** A Human Knight, Champion and
+Assassin all sit at AGI 30; a rogue gets nothing for being a rogue. **The only AGI identity is being an
 ELF.**
 
-| race + base class | DEX | `dexMod` |
+| race + base class | AGI | `dexMod` |
 |---|---|---|
 | **Elf fighter** | **35** | x1.05 |
 | **Human fighter** | **30** | x1.00 *(= the mob reference)* |
@@ -239,8 +239,8 @@ ELF.**
 | Ork mage | 20 | x0.90 |
 
 So his *"an elf with 36 and +5 maxes it over 40"* is the **Elf fighter at 35**, +5 from gear -> 40 ->
-x1.10. Reachable: the light `Nightleaf` sets carry `Dex +3` and `+1`. ⚠ And the other direction —
-**heavy sets carry `Dex -2` / `-1`**, so a heavy warrior sits BELOW neutral (30 - 2 = 28 -> x0.98).
+x1.10. Reachable: the light `Nightleaf` sets carry `Agi +3` and `+1`. ⚠ And the other direction —
+**heavy sets carry `Agi -2` / `-1`**, so a heavy warrior sits BELOW neutral (30 - 2 = 28 -> x0.98).
 
 ✅ **`dexMod` is LINEAR AND UNCAPPED** (his ruling, 2026-08-06):
 > Leave it uncapped - a full dex archer with dex set with stat swap with whatever can reach cap ... And
@@ -248,39 +248,39 @@ x1.10. Reachable: the light `Nightleaf` sets carry `Dex +3` and `+1`. ⚠ And th
 
 **How far it actually reaches, measured against what exists today:**
 
-| build | DEX | `dexMod` | bow ladder `132 x1.3 x1.2 x2 = 411.8` |
+| build | AGI | `dexMod` | bow ladder `132 x1.3 x1.2 x2 = 411.8` |
 |---|---|---|---|
 | Elf rogue, base | 35 | x1.05 | 432 = 43.2% |
-| + light `Nightleaf` set (`Dex +3`) | 38 | x1.08 | 445 = 44.5% |
+| + light `Nightleaf` set (`Agi +3`) | 38 | x1.08 | 445 = 44.5% |
 | + `swap_dex_atk` / `swap_dex_con` maxed (**+5**, 5 levels of +1) | **43** | **x1.13** | **465 = 46.5%** |
 | *the cap* | *51.4* | *x1.214* | *500 = 50%* |
 
 🔑 **So the cap is currently ~35 points out of reach even for a fully committed elf archer** — it needs
-another DEX source, which is what the future **dye / tattoo layer** is for. That is the right shape: the
+another AGI source, which is what the future **dye / tattoo layer** is for. That is the right shape: the
 ceiling is aspirational rather than something a level-40 elf bumps into by accident, and it matches his
 own reaction to 45.3% — *"still not max."*
 
-**And the warrior's side of it, exactly as he described:** human fighter 30, heavy set `Dex -2`,
-`swap_atk_dex` maxed `-5` -> **DEX 23 -> x0.93**. A max-ATK warrior pays 7% of his crit rate — sword
+**And the warrior's side of it, exactly as he described:** human fighter 30, heavy set `Agi -2`,
+`swap_atk_dex` maxed `-5` -> **AGI 23 -> x0.93**. A max-ATK warrior pays 7% of his crit rate — sword
 `88 -> 81.8`. Real, and small enough to be a trade rather than a trap.
 
-### 🛑 GUARDRAIL — do not inflate the DEX crit term
+### 🛑 GUARDRAIL — do not inflate the AGI crit term
 > "dex main priority is not the crit rate as much as evasion and acc stats" (owner, 2026-08-06)
 
-DEX has FOUR jobs and crit is deliberately the smallest. One point of DEX is worth, to a dagger user:
+AGI has FOUR jobs and crit is deliberately the smallest. One point of AGI is worth, to a dagger user:
 
-| DEX +1 | worth |
+| AGI +1 | worth |
 |---|---|
 | **accuracy** | **+1.0 percentage point** of hit chance (`StatCaps.AvoidStatSlope` = 0.01) |
 | **evasion** | **+1.0 percentage point** of avoid |
-| attack speed | x1.0105, compounding (`AttackDexModifier`) |
+| attack speed | x1.0105, compounding (`AttackAgiModifier`) |
 | **crit rate** | `dexMod +0.01` -> `132 x 0.01` = **+0.13 percentage points** |
 
-**A DEX point is ~7.5x more valuable to accuracy than to crit on a dagger, ~11x on a sword** — that
-ratio IS the design. If crit-from-DEX ever looks "too weak", it is not a bug; the mild multiplier is
-what stops DEX becoming the one stat everyone stacks.
+**A AGI point is ~7.5x more valuable to accuracy than to crit on a dagger, ~11x on a sword** — that
+ratio IS the design. If crit-from-AGI ever looks "too weak", it is not a bug; the mild multiplier is
+what stops AGI becoming the one stat everyone stacks.
 
-🔑 Consistency worth keeping: `AttackDexModifier` is `1.0105^(DEX-30)` — the same ~1%/point centred on
+🔑 Consistency worth keeping: `AttackAgiModifier` is `1.0105^(AGI-30)` — the same ~1%/point centred on
 the same 30 as `dexMod`. Attack speed and crit read the same way; accuracy and evasion are the flat,
 dominant 1 point = 1%.
 
@@ -292,8 +292,8 @@ dominant 1 point = 1%.
    `(chance - shieldCritDefense) x (1 - CritRateResist)`.
 3. ✅ **Every clamp reads the StatCaps constant**, and there is now only ONE, at the end of the chain.
    The three stray `0.75`s are gone; magic clamps at `StatCaps.MagicCritRate` (0.20).
-4. ✅ **DEX is a multiplier, not the base** — `StatCalculator.PhysicalCritBase(dex, weapon)` =
-   `110 x weaponFactor x dexMod`, and `CritDexMod` is the linear uncapped `1 + (dex - 30) x 0.01`.
+4. ✅ **AGI is a multiplier, not the base** — `StatCalculator.PhysicalCritBase(dex, weapon)` =
+   `110 x weaponFactor x dexMod`, and `CritAgiMod` is the linear uncapped `1 + (dex - 30) x 0.01`.
 5. ✅ **`flat` lives outside every multiplier** — `Entity.CritRateFlat`, folded in at the end as
    `base x mult + flat`.
 

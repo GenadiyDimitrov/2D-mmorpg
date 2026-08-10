@@ -34,7 +34,7 @@ public enum AttributeType
     MagicAttackPercent = 13, // +% M.Atk
     MagicCritRate = 14,      // magic crit-rate points (percent)
     // 0.45.0 — the scroll-only set. Accuracy/regen became PERCENT because their base stats
-    // now grow with level (accuracy = DEX + level), so a flat roll would decay to nothing.
+    // now grow with level (accuracy = AGI + level), so a flat roll would decay to nothing.
     // ⚠ AccuracyPercent is UNROLLABLE from 2026-08-07 — it stays in the enum so bows rolled before
     // then still resolve. The bow's line is AttributeType.Accuracy (flat, cap 5); see Evasion.
     AccuracyPercent = 15,
@@ -42,7 +42,7 @@ public enum AttributeType
     MpRegenPercent = 17,
     PhysicalAttackPercent = 18, // P.Atk only (the necklace roll; AttackPercent hits both)
     // 2026-08-07 — FLAT evasion points, and the dual weapon's roll from now on. EvasionPercent (6)
-    // multiplied the WHOLE stat, DEX + level included, so a maxed roll grew forever and handed a
+    // multiplied the WHOLE stat, AGI + level included, so a maxed roll grew forever and handed a
     // rogue ~30 points at level 36 — three times the entire authored evasion budget, and the reason
     // a same-level mob missed him 35% of the time. Owner's ruling: *"the max for an evasion roll on
     // a weapon should be 5% at max, our evasion is not like L2's so 5 roll is a flat 5% increase."*
@@ -146,7 +146,7 @@ public static class AttributeSystem
 
     // The HIT/AVOID ramp. ⚠ Evasion and Accuracy are FLAT and capped at 5 (owner, 2026-08-07 and
     // 2026-08-07b) — they were EvasionPercent/AccuracyPercent on RampWide/30, multipliers on stats
-    // that already contain DEX + level, so a maxed roll grew forever: the dual's handed a rogue ~30
+    // that already contain AGI + level, so a maxed roll grew forever: the dual's handed a rogue ~30
     // evasion points at 36, three times his entire authored budget, and the bow's is the identical
     // defect inverted. Since one point of either IS one percent of hit/miss
     // (StatCaps.AvoidStatSlope), a flat +5 IS his "5% at max" — and the two sides stay symmetric,

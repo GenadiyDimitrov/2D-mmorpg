@@ -88,7 +88,7 @@ public static class SkillText
         // Primary stats (the level-40 swap passives)
         Flat(o, "ATK", p.Atk);
         Flat(o, "CON", p.Con);
-        Flat(o, "DEX", p.Dex);
+        Flat(o, "AGI", p.Agi);
         Flat(o, "WIT", p.Wit);
         Flat(o, "SPT", p.Spt);
 
@@ -160,7 +160,7 @@ public static class SkillText
         Pct(o, "CC resist", m.CcResist);
         Flat(o, "MP restored", m.RestoreMpBonus);
         Flat(o, "STR", m.Str);
-        Flat(o, "DEX", m.Dex);
+        Flat(o, "AGI", m.Agi);
         Flat(o, "CON", m.Con);
         Flat(o, "INT", m.Int);
         Flat(o, "WIT", m.Wit);

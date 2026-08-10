@@ -541,7 +541,7 @@ public class Entity
     public float WalkSpeed { get; set; }
     public float RunSpeed { get; set; }
 
-    // ----- Core stats (CON/ATK/WIT/DEX) --------------------------------------
+    // ----- Core stats (CON/ATK/WIT/AGI) --------------------------------------
     // PER CLASS: they are derived from (Race, BaseClass), so swapping a fighter for a mage must swap
     // these too. Mobs use the same fields (they have one implicit subclass) — see Subclass.cs.
 
@@ -560,10 +560,10 @@ public class Entity
         get => ActiveSubclass.Wit;
         set => ActiveSubclass.Wit = value;
     }
-    public int Dex
+    public int Agi
     {
-        get => ActiveSubclass.Dex;
-        set => ActiveSubclass.Dex = value;
+        get => ActiveSubclass.Agi;
+        set => ActiveSubclass.Agi = value;
     }
     /// <summary>SPT (Spirit) — Max MP, MP regen and M.Def. The retired MEN, now a full stat.</summary>
     public int Spt
@@ -573,14 +573,14 @@ public class Entity
     }
 
     // Primary-stat DELTAS from armor sets (and later dyes/tattoos). Set in RecomputeDerived's
-    // pre-pass BEFORE the derived stats are computed, so a set's "CON +3" raises HP, "DEX +1"
+    // pre-pass BEFORE the derived stats are computed, so a set's "CON +3" raises HP, "AGI +1"
     // raises eva/acc/crit, etc. Included in the Effective* getters so live speed getters see them too.
     public int BonusStr { get; set; }
     /// <summary>Delta on the single power stat (ATK), from the level-40 stat-swap passives. ATK
     /// feeds BOTH channels — the WEAPON decides whether it lands as P.Atk or M.Atk — which is what
     /// lets one +ATK skill serve a fighter and a caster alike.</summary>
     public int BonusAtk { get; set; }
-    public int BonusDex { get; set; }
+    public int BonusAgi { get; set; }
     public int BonusCon { get; set; }
     public int BonusInt { get; set; }
     public int BonusWit { get; set; }
@@ -605,9 +605,9 @@ public class Entity
     /// actually lands in.</summary>
     public int EffectiveAtk => AtkStat + BonusAtk;
 
-    /// <summary>DEX used for ALL gameplay math (attack speed, crit, evasion, accuracy).
+    /// <summary>AGI used for ALL gameplay math (attack speed, crit, evasion, accuracy).
     /// Same rule as <see cref="EffectiveWit"/>: born-with base + the stat-swap passives.</summary>
-    public int EffectiveDex => Dex + BonusDex;
+    public int EffectiveAgi => Agi + BonusAgi;
 
     // ----- Derived stats (recomputed on level-up / equip / class change) -------
 
@@ -666,7 +666,7 @@ public class Entity
     public float CritRateMult { get; set; } = 1f;
     public float CritRateFlat { get; set; }
     // The MAGIC twins of the two above — same rule, its own channel (owner ruling 2026-08-06).
-    // Magic crit shares NOTHING with physical any more: not the rate (WIT, not DEX), not the
+    // Magic crit shares NOTHING with physical any more: not the rate (WIT, not AGI), not the
     // damage (a flat x3, not CritDamageBonus). Fold into MagicCritChance, read that.
     public float MagicCritRateMult { get; set; } = 1f;
     public float MagicCritRateFlat { get; set; }
@@ -1039,7 +1039,7 @@ public class Entity
         }
     }
 
-    /// <summary>Attack-interval multiplier (lower = faster). DEX-driven stat,
+    /// <summary>Attack-interval multiplier (lower = faster). AGI-driven stat,
     /// then attack-speed buffs shorten it further.</summary>
     public float EffectiveAttackSpeedMultiplier
     {
@@ -1049,10 +1049,10 @@ public class Entity
             if (AdminAttackSpeed is float adminAtk)
                 return StatCalculator.SpeedBaseline / Math.Max(1f, adminAtk);
 
-            // Authentic L2: atkSpd = weaponBase × dexModifier × gearFactor × ∏(1+buff%),
-            // cap 1500. dexModifier is EXPONENTIAL (baseline 30 DEX = 1.0). Buffs stack
+            // Authentic L2: atkSpd = weaponBase × agiModifier × gearFactor × ∏(1+buff%),
+            // cap 1500. agiModifier is EXPONENTIAL (baseline 30 AGI = 1.0). Buffs stack
             // multiplicatively (matching cast speed).
-            float dexFactor = StatCalculator.AttackDexModifier(EffectiveDex);
+            float agiFactor = StatCalculator.AttackAgiModifier(EffectiveAgi);
             float gearFactor = 1f / Math.Max(0.05f, AttackSpeedMultiplier);
             float buffMult = 1f;
             foreach (var buff in Buffs)
@@ -1061,7 +1061,7 @@ public class Entity
                 if (buff.Has(SkillEffect.DebuffAtkSpeed)) buffMult *= 1f - buff.Percent(SkillEffect.DebuffAtkSpeed);
             }
 
-            float atkSpd = WeaponAttackBase * dexFactor * gearFactor * buffMult;
+            float atkSpd = WeaponAttackBase * agiFactor * gearFactor * buffMult;
             atkSpd = Math.Clamp(atkSpd, 30f, StatCaps.AttackSpeed);
             return StatCalculator.SpeedBaseline / atkSpd;    // time multiplier (lower = faster)
         }
@@ -1363,16 +1363,16 @@ public class Entity
     public void RecomputeDerived()
     {
         // ----- Primary-stat PRE-PASS: fold main-stat deltas into the Bonus* stats BEFORE deriving
-        // HP/MP/atk/eva/acc/crit, so "CON +3" actually raises HP, "DEX +1" actually raises
+        // HP/MP/atk/eva/acc/crit, so "CON +3" actually raises HP, "AGI +1" actually raises
         // eva/acc/crit, and "ATK +5" actually raises P.Atk/M.Atk — not just the stat window.
         // TWO sources: the active armor set, and the level-40 STAT-SWAP passives. This has to run
         // here, not in the passive loop below, because that loop happens AFTER everything is derived.
-        BonusStr = BonusDex = BonusCon = BonusInt = BonusWit = BonusSpt = BonusAtk = 0;
+        BonusStr = BonusAgi = BonusCon = BonusInt = BonusWit = BonusSpt = BonusAtk = 0;
         var activeSet = Kind == EntityKind.Player ? DetectActiveSet() : null;
         if (activeSet is not null)
         {
             var pm = activeSet.Mods;
-            BonusStr = (int)pm.Str; BonusDex = (int)pm.Dex; BonusCon = (int)pm.Con;
+            BonusStr = (int)pm.Str; BonusAgi = (int)pm.Agi; BonusCon = (int)pm.Con;
             BonusInt = (int)pm.Int; BonusWit = (int)pm.Wit; BonusSpt = (int)pm.Spt;
         }
         if (Kind == EntityKind.Player)
@@ -1380,7 +1380,7 @@ public class Entity
             foreach (var (skillId, skillLevel) in LearnedSkills)
             {
                 if (SkillCatalog.Get(skillId)?.PassiveAt(skillLevel) is not PassiveEffect pe) continue;
-                BonusCon += pe.Con; BonusDex += pe.Dex; BonusAtk += pe.Atk; BonusWit += pe.Wit; BonusSpt += pe.Spt;
+                BonusCon += pe.Con; BonusAgi += pe.Agi; BonusAtk += pe.Atk; BonusWit += pe.Wit; BonusSpt += pe.Spt;
             }
         }
 
@@ -1455,8 +1455,8 @@ public class Entity
         PvpMagicDamageBonus = 0f;
         PvpBasicDamageBonus = 0f;
         CancelResist = 0f;
-        Accuracy = StatCalculator.Accuracy(EffectiveDex, Level);
-        Evasion = StatCalculator.Evasion(EffectiveDex, Level);
+        Accuracy = StatCalculator.Accuracy(EffectiveAgi, Level);
+        Evasion = StatCalculator.Evasion(EffectiveAgi, Level);
         // Physical crit is set at the WEAPON step below (it multiplies the character base), not here.
         CritChance = 0f;
         // Magic crit has no weapon step (it is WIT + buffs only), so unlike CritChance it can be
@@ -1663,7 +1663,7 @@ public class Entity
         CastSpeedMultiplier = Math.Max(0.4f, 1f - castPct / 100f);
         AttackSpeedMultiplier = Math.Max(0.4f, 1f - atkSpeedPct / 100f);
         // Flat first, then the percent — the percent roll multiplies the finished
-        // (DEX + level + flats) accuracy, so it keeps pace as you level.
+        // (AGI + level + flats) accuracy, so it keeps pace as you level.
         Accuracy += (int)accFlat;
         if (accPct != 0f) Accuracy += (int)(Accuracy * accPct / 100f);
         HpRegenBonus = hpRegFlat;
@@ -1756,14 +1756,14 @@ public class Entity
         var arch = Archetype;
         BasicAttackPower = Math.Max(1, AttackPower);
         // Crit RATE — his L2 model (docs/design/CritBlowAndDouble.md §5):
-        //     crit = (110 × weaponFactor × dexMod × buffs × passives + flat) × debuffs × enemyLightArmor
-        // The WEAPON multiplies the character base (dagger/bow 13.2%, sword 8.8%, blunt 4.4%) and DEX
-        // is a mild multiplier on top — DEX is no longer the base. Passives and buffs multiply this
+        //     crit = (110 × weaponFactor × agiMod × buffs × passives + flat) × debuffs × enemyLightArmor
+        // The WEAPON multiplies the character base (dagger/bow 13.2%, sword 8.8%, blunt 4.4%) and AGI
+        // is a mild multiplier on top — AGI is no longer the base. Passives and buffs multiply this
         // (CritRateMult); GEAR crit-rate is FLAT and lands OUTSIDE every multiplier (CritRateFlat),
         // which is the whole point of the model: multipliers only reward whoever already has a big
         // base, so the flat term is what carries a blunt warrior. The chain is folded and clamped
         // ONCE, at the end of this method — nothing in between may clamp it.
-        CritChance = StatCalculator.PhysicalCritBase(EffectiveDex, WeaponType);
+        CritChance = StatCalculator.PhysicalCritBase(EffectiveAgi, WeaponType);
         // The WEAPON's crit-rate roll MULTIPLIES the weapon's own crit base (owner, 2026-08-07,
         // checklist `0d`) — "Crit Rate +30%" now means x1.30, which is what the tooltip has always
         // said and what AttributeSystem.ToStatMods already assumed.

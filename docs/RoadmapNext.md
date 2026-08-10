@@ -214,8 +214,8 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
    is written ([design/Crafting.md](design/Crafting.md), [design/GearLadderAndCrafting.md](design/GearLadderAndCrafting.md));
    nothing above Epic can be reached in play without it. It outranks the deferred combat-depth work and
    is second only to the 3rd/4th class kits, which are still blocked on his CSVs.
-   ~~**Watch endgame mob crit after the DEX change.**~~ — checked in playtest-17 (§43d) and mobs do
-   **not** feel like paper; the flat-30 DEX stays. If a specific creature should be nasty it gets a
+   ~~**Watch endgame mob crit after the AGI change.**~~ — checked in playtest-17 (§43d) and mobs do
+   **not** feel like paper; the flat-30 AGI stays. If a specific creature should be nasty it gets a
    MobMod passive, not the old `10 + level` curve back.
 
 ## 🟡 OPEN — carried forward, nothing blocking them

@@ -15,7 +15,7 @@ namespace Game.Server.Simulation;
 ///   CLIENT-level (client-settings.json) window position/size, and nothing else
 ///
 /// The core stats live HERE, not on the character, because they are derived from (Race, BaseClass) —
-/// swap from a fighter to a mage and CON/ATK/WIT/DEX must swap with it. Race is shared: one body,
+/// swap from a fighter to a mage and CON/ATK/WIT/AGI must swap with it. Race is shared: one body,
 /// several trainings.
 ///
 /// <see cref="Entity"/> PROXIES its Level / BaseClass / LearnedSkills / … straight into the active
@@ -50,7 +50,7 @@ public class Subclass
     public int Con { get; set; }
     public int Atk { get; set; }
     public int Wit { get; set; }
-    public int Dex { get; set; }
+    public int Agi { get; set; }
     public int Spt { get; set; }
 
     /// <summary>Learned skills → the level of each.</summary>
@@ -64,6 +64,6 @@ public class Subclass
     public void RollBaseStats()
     {
         var s = StatCalculator.GetBaseStats(Race, BaseClass);
-        Con = s.Con; Atk = s.Atk; Wit = s.Wit; Dex = s.Dex; Spt = s.Spt;
+        Con = s.Con; Atk = s.Atk; Wit = s.Wit; Agi = s.Agi; Spt = s.Spt;
     }
 }

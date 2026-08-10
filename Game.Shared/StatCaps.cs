@@ -15,14 +15,14 @@ public static class StatCaps
     public const float MoveSpeed = 250f;
 
     /// <summary>Attack-speed stat ceiling (L2-style: 1500 ≈ x4.5 attacks/sec).
-    /// Enforced once the DEX→attack-speed formula lands (casting round).</summary>
+    /// Enforced once the AGI→attack-speed formula lands (casting round).</summary>
     public const int AttackSpeed = 1500;
 
     /// <summary>Cast-speed stat ceiling (1999 ≈ x6 faster). Enforced when the
     /// WIT→cast-speed formula lands (casting round).</summary>
     public const int CastSpeed = 1999;
 
-    /// <summary>Physical crit RATE ceiling (50%, from DEX).</summary>
+    /// <summary>Physical crit RATE ceiling (50%, from AGI).</summary>
     public const float PhysicalCritRate = 0.50f;
 
     /// <summary>Magic crit RATE ceiling (20% = his 200 on the 0-1000 scale). A fully-kitted elf
@@ -31,7 +31,7 @@ public static class StatCaps
     public const float MagicCritRate = 0.20f;
 
     /// <summary>Physical SKILL "[Double]" RATE ceiling (25%, from the ATK stat — owner
-    /// ruling 2026-08-05, docs/design/CritBlowAndDouble.md §1; was 30% off max(DEX,ATK)).</summary>
+    /// ruling 2026-08-05, docs/design/CritBlowAndDouble.md §1; was 30% off max(AGI,ATK)).</summary>
     public const float PhysicalDoubleRate = 0.25f;
 
     /// <summary>Physical crit DAMAGE ceiling (x10).</summary>

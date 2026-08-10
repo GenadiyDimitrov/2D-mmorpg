@@ -186,7 +186,7 @@ namespace Game.Client
             t.AppendLine();
             t.AppendLine("<b>Attributes</b>");
             t.AppendLine(Pair("Power (ATK)", d.Atk.ToString(), "CON", d.Con.ToString()));
-            t.AppendLine(Pair("DEX", d.Dex.ToString(), "WIT", d.Wit.ToString()));
+            t.AppendLine(Pair("AGI", d.Agi.ToString(), "WIT", d.Wit.ToString()));
             t.AppendLine(Pair("SPT", d.Spt.ToString(), "", ""));
 
             t.AppendLine();

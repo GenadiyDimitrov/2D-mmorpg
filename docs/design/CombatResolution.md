@@ -19,7 +19,7 @@ active at ALL times**, so there is no 100% lockout any more:
 
 ```
 1. STAT ROLL    m = 0.05 + (defAvoidStat − atkHitStat) · slope        clamp [0.05, 0.95]
-                  physical: evasion (DEX + gear + buffs, NO level)  vs  accuracy
+                  physical: evasion (AGI + gear + buffs, NO level)  vs  accuracy
                   magic:    magicResist (≈0)                        vs  magicPen (≈0)
                             → same-level magic sits at the 5% base; floor + level do the rest
 

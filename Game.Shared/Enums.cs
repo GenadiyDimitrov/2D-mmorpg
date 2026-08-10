@@ -127,9 +127,9 @@ public enum SkillEffect : long
     // ----- Damage-over-time with stacks (Venomweaver). Land via the contest; tick each
     // second for DotPower×Stacks; a burst skill consumes the stacks. Each carries its own
     // secondary debuff as ordinary magnitudes (bleed→Slow, poison→−AS/cast, venom→−atk/def). -----
-    Bleed              = 1L << 48,  // physical DoT (DEX-vs-CON); secondary: slows move speed
+    Bleed              = 1L << 48,  // physical DoT (AGI-vs-CON); secondary: slows move speed
     Poison             = 1L << 49,  // magical DoT (ATK-vs-WIT); secondary: slows attack/cast
-    Venom              = 1L << 50,  // physical DoT (DEX-vs-CON); secondary: lowers atk/def
+    Venom              = 1L << 50,  // physical DoT (AGI-vs-CON); secondary: lowers atk/def
     Cancel             = 1L << 51,  // offensive: strip POSITIVE buffs from an enemy (dispel)
     Shield             = 1L << 52,  // damage-absorb pool (flat Power + % of max HP) soaked before HP
     ManaShield         = 1L << 53,  // divert a % of damage to MP (Flat = MP per 1 damage)

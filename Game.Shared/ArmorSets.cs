@@ -12,7 +12,7 @@ namespace Game.Shared;
 public record ArmorSetDef(string Id, string Name, ClassFlatBonus Bonus,
     // Full StatMods bonus (the tiered gear sets use this). SECONDARY stats (pDef%/mDef%/pAtk%/
     // cast%/as%/HP/MP/eva/regen/vamp/reflect) are applied in RecomputeDerived's set block.
-    // PRIMARY-stat deltas (Str/Dex/Con/…) are STORED but NOT yet applied — they need a derivation
+    // PRIMARY-stat deltas (Str/Agi/Con/…) are STORED but NOT yet applied — they need a derivation
     // pre-pass (so "CON +3" raises HP); wire that as a separate, tested pass.
     StatMods Mods = default,
     // Optional PERCENT set bonuses (the flat ClassFlatBonus can't express these):
@@ -136,17 +136,17 @@ public static class ArmorSetCatalog
             shieldBonus: new StatMods(PDefPct: 0.05f)),                          // p.def x1.05
         GearSet("heavy", 52, "Ironforge", new StatMods(Con: 3, Str: 3),
             shieldBonus: new StatMods(ShieldDefPct: 0.25f)),                     // shield.p.def x1.25
-        GearSet("heavy", 61, "Ironforge", new StatMods(PAtkPct: 0.04f, Con: 2, Dex: -2, CcResist: 0.4f),
+        GearSet("heavy", 61, "Ironforge", new StatMods(PAtkPct: 0.04f, Con: 2, Agi: -2, CcResist: 0.4f),
             shieldBonus: new StatMods(Reflect: 0.05f)),                          // reflect 5% of melee basic
-        GearSet("heavy", 76, "Ironforge", new StatMods(MaxHp: 455, Str: 2, Con: 2, Dex: -2, CcResist: 0.4f),
+        GearSet("heavy", 76, "Ironforge", new StatMods(MaxHp: 455, Str: 2, Con: 2, Agi: -2, CcResist: 0.4f),
             shieldBonus: new StatMods(PDefPct: 0.05f, MDefPct: 0.05f, ShieldDefPct: 0.25f, Reflect: 0.05f)),
         // Light — "Nightleaf"
         GearSet("light", 20, "Nightleaf", new StatMods(Evasion: 2, MaxMp: 92)),
         GearSet("light", 40, "Nightleaf", new StatMods(Evasion: 4)),
-        GearSet("light", 52, "Nightleaf", new StatMods(PAtkPct: 0.02f, Dex: 3, Con: -2, Str: -1)),
-        GearSet("light", 61, "Nightleaf", new StatMods(MeleeVamp: 0.05f, Dex: 1, Con: -1, CcResist: 0.4f)),
+        GearSet("light", 52, "Nightleaf", new StatMods(PAtkPct: 0.02f, Agi: 3, Con: -2, Str: -1)),
+        GearSet("light", 61, "Nightleaf", new StatMods(MeleeVamp: 0.05f, Agi: 1, Con: -1, CcResist: 0.4f)),
         GearSet("light", 76, "Nightleaf", new StatMods(PAtkPct: 0.04f, AtkSpeedPct: 0.04f, MaxMp: 220,
-            Spt: 1, Dex: 1, Str: 1, Con: -2, CcResist: 0.4f)),
+            Spt: 1, Agi: 1, Str: 1, Con: -2, CcResist: 0.4f)),
         // Robe — "Arcanum"
         GearSet("robe", 20, "Arcanum", new StatMods(Wit: 1, MoveSpeed: 7)),
         GearSet("robe", 40, "Arcanum", new StatMods(CastSpeedPct: 0.15f)),
@@ -159,7 +159,7 @@ public static class ArmorSetCatalog
         // Body VARIANTS (dmg/support/nuke lines). Same accessory line as the tier's base set.
         // Stun/Fear-resist lines on the *_dmg variants are deferred (need the CC-resist mechanic).
         GearVariant("set_heavy_t52_dmg", 52, "Ironforge C (Assault)",
-            new StatMods(MoveSpeed: 7, HpRegenPct: 0.05f, Str: 3, Con: -2, Dex: -1)),
+            new StatMods(MoveSpeed: 7, HpRegenPct: 0.05f, Str: 3, Con: -2, Agi: -1)),
         GearVariant("set_heavy_t61_dmg", 61, "Ironforge B (Assault)",
             new StatMods(PAtkPct: 0.04f, Accuracy: 4, Str: 2, Con: -2, CcResist: 0.4f)),
         GearVariant("set_light_t40_pdef", 40, "Nightleaf D (Bulwark)", new StatMods(PDefPct: 0.05f)),
@@ -168,7 +168,7 @@ public static class ArmorSetCatalog
         GearVariant("set_light_t52_sup", 52, "Nightleaf C (Sage)",
             new StatMods(CastSpeedPct: 0.15f, MaxMp: 120, Spt: 1, Wit: -1, Int: -1)),
         GearVariant("set_light_t61_dmg", 61, "Nightleaf B (Assault)",
-            new StatMods(PAtkPct: 0.08f, Dex: 1, Con: -1, CcResist: 0.4f)),
+            new StatMods(PAtkPct: 0.08f, Agi: 1, Con: -1, CcResist: 0.4f)),
         GearVariant("set_robe_t40_sup", 40, "Arcanum D (Warden)", new StatMods(PDefPct: 0.05f, Wit: 1)),
         GearVariant("set_robe_t40_nuke", 40, "Arcanum D (Destroyer)", new StatMods(Int: 4, Wit: -1)),
     };

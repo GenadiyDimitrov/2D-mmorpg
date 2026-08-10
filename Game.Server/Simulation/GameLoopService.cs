@@ -1774,7 +1774,7 @@ public class GameLoopService : BackgroundService
         // (No archetype-uniqueness check: you may own several classes of the same 2nd class, as long as
         // they branch into different 3rd-class DISCIPLINES — that check lives on the 3rd-class change.)
 
-        // NOTE: the class change no longer raises main stats. You keep the CON/ATK/WIT/DEX you
+        // NOTE: the class change no longer raises main stats. You keep the CON/ATK/WIT/AGI you
         // were born with; the level-40 stat-swap passives are the only way to move them.
         player.SecondClass = def.Id;
         AutoLearnCoreSkills(player);
@@ -7242,7 +7242,7 @@ public class GameLoopService : BackgroundService
         caster.CastingSkillId = def.Id;
         caster.CastTargetId = targetId;
         // Cast time = base ticks scaled by the speed model (lower multiplier = faster).
-        // PHYSICAL skills scale by ATTACK speed (DEX + weapon), not cast speed — a fighter
+        // PHYSICAL skills scale by ATTACK speed (AGI + weapon), not cast speed — a fighter
         // has poor WIT-driven cast speed, so making a melee strike depend on it made
         // physical skills feel sluggish. Magic/buff/heal skills still use cast speed.
         // Mobs cast at the skill's AUTHORED time (their low-WIT cast multiplier would otherwise
@@ -7596,7 +7596,7 @@ var effect = def.Effect;
 
         // ---- Crowd control + DoT (Slow/Stun/Fear/Root, Bleed/Poison/Venom) — lands via the
         //      contest (docs/design/Disciplines.md), NOT the fizzle model. Bosses are immune. The
-        //      attacker stat is DEX for bleed/venom, ATK otherwise; defender CON (phys) / WIT (magic). ----
+        //      attacker stat is AGI for bleed/venom, ATK otherwise; defender CON (phys) / WIT (magic). ----
         // ---- [Double] on a BUFF or DEBUFF = DOUBLE DURATION (docs/design/CritBlowAndDouble.md §4,
         //      L2's level-76 Skill Mastery). The SAME ATK roll the damage side uses, rolled ONCE per
         //      cast — an area blessing doubles for everyone or for no one — and only for a PLAYER's
@@ -7609,8 +7609,8 @@ var effect = def.Effect;
         if ((effect & SkillEffect.ContestCc) != 0)
         {
             offensive = true;
-            bool dexBased = (effect & (SkillEffect.Bleed | SkillEffect.Venom)) != 0;
-            int atkStat = dexBased ? (int)caster.EffectiveDex : caster.AtkStat;
+            bool agiBased = (effect & (SkillEffect.Bleed | SkillEffect.Venom)) != 0;
+            int atkStat = agiBased ? (int)caster.EffectiveAgi : caster.AtkStat;
             int defStat = def.DebuffSchool == DebuffSchool.Magical ? (int)target.EffectiveWit : target.Con;
             float land = target.Immune ? 0f : StatCalculator.DebuffLandChance(atkStat, defStat);
             land *= 1f - target.CcResist;   // gear/buff CC resistance lowers the land chance
@@ -9774,7 +9774,7 @@ var effect = def.Effect;
     {
         var (hpReg, mpReg) = StandingRegen(p);
         SendTo(p, "Stats", new StatsUpdate(
-            p.Con, p.AtkStat, p.EffectiveWit, p.EffectiveDex, p.EffectiveSpt,
+            p.Con, p.AtkStat, p.EffectiveWit, p.EffectiveAgi, p.EffectiveSpt,
             p.MaxHp, p.MaxMp, (int)p.EffectiveAttack, (int)p.EffectiveDefence,
             p.Accuracy, (int)p.EffectiveEvasion, p.CritChance, p.BasicAttackRange, p.SecondClass,
             p.EffectiveSpeed, SkillMath.CastModifier(p.Wit), p.EffectiveCastSpeedMultiplier, p.EffectiveAttackSpeedMultiplier, p.SkillPoints, p.MoveState, (int)p.EffectiveMagicAttackShown, p.MagicCritChance,
@@ -10131,7 +10131,7 @@ var effect = def.Effect;
             t.BowResist, t.CritRateResist,
             passives, effects, drops,
             // Extended: same fields the character sheet reads, off the target Entity's own getters.
-            Con: t.Con, Atk: t.AtkStat, Wit: (int)t.EffectiveWit, Dex: (int)t.EffectiveDex, Spt: (int)t.EffectiveSpt,
+            Con: t.Con, Atk: t.AtkStat, Wit: (int)t.EffectiveWit, Agi: (int)t.EffectiveAgi, Spt: (int)t.EffectiveSpt,
             MoveSpeed: t.EffectiveSpeed, AttackSpeedMult: t.EffectiveAttackSpeedMultiplier,
             CastSpeedMult: t.EffectiveCastSpeedMultiplier, AttackRange: t.BasicAttackRange,
             MagicCritChance: t.MagicCritChance, CritDamage: t.CritDamageBonus,
@@ -10254,7 +10254,7 @@ var effect = def.Effect;
         float extra = (critFlatFactor * mult - 1f) * (1f - target.CritDmgResist);
         int damage = Math.Max(1, (int)(baseDamage * (1f + extra)));
 
-        // THEN roll a separate double on top (ATK, never DEX — DEX already bought the crit above).
+        // THEN roll a separate double on top (ATK, never AGI — AGI already bought the crit above).
         if (def.CanDouble)
         {
             float dbl = Math.Clamp(
@@ -12075,7 +12075,7 @@ var effect = def.Effect;
             Con = stats.Con,
             AtkStat = stats.Atk,   // eva/acc/crit only; mob P/M.Atk comes from the base curve
             Wit = stats.Wit,
-            Dex = stats.Dex,
+            Agi = stats.Agi,
             // ELITES attack on sight; BOSSES do not (owner). A raid/field boss sits in its lair and is
             // fought when you choose to pull it — making it aggressive turned every approach into an
             // ambush and put a "*" on the Treant. Boss difficulty comes from its kit, not from jumping you.

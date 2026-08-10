@@ -173,7 +173,7 @@ public record TradeStateUpdate(
 /// <summary>Server -> owning client: full derived stats for the Stats window.
 /// Sent whenever stats change (level, equip, class change).</summary>
 public record StatsUpdate(
-    int Con, int Atk, int Wit, int Dex, int Spt,
+    int Con, int Atk, int Wit, int Agi, int Spt,
     int MaxHp, int MaxMp, int AttackPower, int Defence,
     int Accuracy, int Evasion, float CritChance, float BasicAttackRange,
     int SecondClass, float MoveSpeed, float CastModifier,
@@ -269,7 +269,7 @@ public record TargetDetails(
     // the character sheet — base attributes, speeds, and the whole combat layer — because "better to
     // have the info and not need it than not have it" (owner). Rank = "Normal"/"Elite"/"Boss", "" for
     // a player.
-    int Con = 0, int Atk = 0, int Wit = 0, int Dex = 0, int Spt = 0,
+    int Con = 0, int Atk = 0, int Wit = 0, int Agi = 0, int Spt = 0,
     float MoveSpeed = 0f, float AttackSpeedMult = 1f, float CastSpeedMult = 1f, float AttackRange = 0f,
     float MagicCritChance = 0f, float CritDamage = 0f,
     float MeleeVamp = 0f, float SpellVamp = 0f, float CooldownReduction = 0f,

@@ -28,7 +28,7 @@ public readonly record struct StatMods(
     float PAtk = 0f, float PAtkPct = 0f,
     float MAtk = 0f, float MAtkPct = 0f,
     // Accuracy / evasion. Both have a flat and a percent form; the percent multiplies the
-    // finished stat (DEX + level + flats), which is what a bow's "Accuracy +30%" rolls.
+    // finished stat (AGI + level + flats), which is what a bow's "Accuracy +30%" rolls.
     float Accuracy = 0f, float AccuracyPct = 0f,
     float Evasion = 0f, float EvasionPct = 0f,
     // Crit (physical rate/damage, magic rate)
@@ -48,9 +48,9 @@ public readonly record struct StatMods(
     float CcResist = 0f,   // reduces the LAND chance of contested CC (stun/fear/root/slow/DoT) vs you
     float RestoreMpBonus = 0f,
     // Primary-stat deltas (flat, SUMMED). Applied to the entity's core stats BEFORE the derived
-    // stats are computed, so a set's "CON +3" actually raises HP, "DEX +1" raises eva/acc/crit, etc.
+    // stats are computed, so a set's "CON +3" actually raises HP, "AGI +1" raises eva/acc/crit, etc.
     // (item/set sources — the "formula counts for them" per owner).
-    float Str = 0f, float Dex = 0f, float Con = 0f, float Int = 0f, float Wit = 0f, float Spt = 0f,
+    float Str = 0f, float Agi = 0f, float Con = 0f, float Int = 0f, float Wit = 0f, float Spt = 0f,
     // Lifesteal + reflect fractions (from gear/sets). Reflect returns a fraction of taken MELEE
     // damage to the attacker (bows excluded, never re-reflects) — live in ApplyDamage; capped at 50%.
     float MeleeVamp = 0f, float SpellVamp = 0f, float Reflect = 0f,
@@ -76,7 +76,7 @@ public readonly record struct StatMods(
         InterruptResist * f,
         CritDmgResist * f, CritRateResist * f, BowResist * f,
         CcResist * f, RestoreMpBonus * f,
-        Str * f, Dex * f, Con * f, Int * f, Wit * f, Spt * f,
+        Str * f, Agi * f, Con * f, Int * f, Wit * f, Spt * f,
         MeleeVamp * f, SpellVamp * f, Reflect * f,
         ShieldDefPct * f);
 
@@ -114,7 +114,7 @@ public readonly record struct StatTotals(
     float CritDmgResist = 0f, float CritRateResist = 0f, float BowResist = 0f,
     float CcResist = 0f,
     float RestoreMpBonus = 0f,
-    float Str = 0f, float Dex = 0f, float Con = 0f, float Int = 0f, float Wit = 0f, float Spt = 0f,
+    float Str = 0f, float Agi = 0f, float Con = 0f, float Int = 0f, float Wit = 0f, float Spt = 0f,
     float MeleeVamp = 0f, float SpellVamp = 0f, float Reflect = 0f,
     float ShieldDefPct = 0f)
 {
@@ -141,7 +141,7 @@ public readonly record struct StatTotals(
         CritDmgResist + s.CritDmgResist, CritRateResist + s.CritRateResist, BowResist + s.BowResist,
         CcResist + s.CcResist,
         RestoreMpBonus + s.RestoreMpBonus,
-        Str + s.Str, Dex + s.Dex, Con + s.Con, Int + s.Int, Wit + s.Wit, Spt + s.Spt,
+        Str + s.Str, Agi + s.Agi, Con + s.Con, Int + s.Int, Wit + s.Wit, Spt + s.Spt,
         MeleeVamp + s.MeleeVamp, SpellVamp + s.SpellVamp, Reflect + s.Reflect,
         Mul(ShieldDefPct, s.ShieldDefPct));
 

@@ -1,5 +1,5 @@
 
-   * physical skills can do double dmg - same logic as magic crit chance just dependent on DEX/ATK (whichever is higher is used) - maximum 30% to do x2 dmg -> not all can crit -> [Double] added behind skills that can double
+   * physical skills can do double dmg - same logic as magic crit chance just dependent on AGI/ATK (whichever is higher is used) - maximum 30% to do x2 dmg -> not all can crit -> [Double] added behind skills that can double
    * magic skills crit - the max 20% magic critical chance x3 dmg
    * there should be difference between physical debuff - ATK vs CON, and magical debuff - ATK vs WIT
    * stun/pull are always physical
@@ -137,9 +137,9 @@
    * apply stacks skills - debuff stays 30sec, skill cd 3 sec .. max 10 stacks- (hititng again refreshes duration)
    * burst dmg skill + 1xNumerOfStacks - x10 dmg at full stacks
    * Venomweavers must see stacks on enemy to know when to burst
-   * bleed - DEX vs CON - does DOT - decreases target - MS
+   * bleed - AGI vs CON - does DOT - decreases target - MS
    * poison - ATK vs WIT - does DOT -  decreases target - AS/CAST
-   * venom - DEX vs CON - does DOT - decreases target - Atk/def
+   * venom - AGI vs CON - does DOT - decreases target - Atk/def
    
    
 # Archers

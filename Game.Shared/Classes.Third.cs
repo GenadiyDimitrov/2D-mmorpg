@@ -175,6 +175,6 @@ public static class ThirdClassCatalog
     //   a class def is unreadable and untunable — that is the whole case for the ruling.
     //
     //   The standing rule regardless of where stats are authored: evasion comes from armor mastery,
-    //   buffs and DEX. `evade_mastery` raises the FLOOR only and grants no evasion; `Dex` is not a
+    //   buffs and AGI. `evade_mastery` raises the FLOOR only and grants no evasion; `Agi` is not a
     //   back door (it feeds evasion 1:1). See the note at Skills.Common.cs' evade_mastery.
 }

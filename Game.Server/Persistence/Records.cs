@@ -161,7 +161,7 @@ public class CharacterRecord
     /// XP, skill points, 2nd/3rd class, core stats, learned skills, skill bar.
     ///
     /// ⚠ The matching columns ON THIS ROW (BaseClass / SecondClass / ThirdClass / Level / Exp /
-    /// SkillPoints / Con / Atk / Wit / Dex / LearnedSkillsCsv) are a **mirror of the ACTIVE subclass**,
+    /// SkillPoints / Con / Atk / Wit / Agi / LearnedSkillsCsv) are a **mirror of the ACTIVE subclass**,
     /// rewritten from it on every save. They exist so the character-SELECT screen can list a character
     /// without loading its subclasses. Never read them for gameplay — read the subclass.</summary>
     public List<SubclassRecord> Subclasses { get; set; } = new();
@@ -185,7 +185,7 @@ public class CharacterRecord
     public int Con { get; set; }
     public int Atk { get; set; }
     public int Wit { get; set; }
-    public int Dex { get; set; }
+    public int Agi { get; set; }
     public int Spt { get; set; }
 
     // Last known position so you log back in where you left off.
@@ -222,11 +222,11 @@ public class SubclassRecord
     public int SkillPoints { get; set; }
 
     // Core stats: from (Race, BaseClass), then moved only by the level-40 stat swaps. Per class,
-    // because swapping a fighter for a mage must swap CON/ATK/WIT/DEX with it.
+    // because swapping a fighter for a mage must swap CON/ATK/WIT/AGI with it.
     public int Con { get; set; }
     public int Atk { get; set; }
     public int Wit { get; set; }
-    public int Dex { get; set; }
+    public int Agi { get; set; }
     public int Spt { get; set; }
 
     /// <summary>Learned skills as "id:level" pairs, comma-separated.</summary>

@@ -396,7 +396,7 @@ public static partial class SkillCatalog
             Description: "A forceful melee blow. Bonus accuracy, but can still miss."),
 
         // Cleaving Strike — first "[Double]" skill (P1 primitive demo). A big single-target
-        // slash that can deal ×2 damage on a chance from the higher of DEX/ATK (cap 30%).
+        // slash that can deal ×2 damage on a chance from the higher of AGI/ATK (cap 30%).
         new(CleavingStrike, "Cleaving Strike", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: 20, CastTicks: 5, CooldownTicks: 60, Range: 0, Power: 70,
             Category: SkillCategory.Physical, CanDouble: true,
@@ -445,14 +445,14 @@ public static partial class SkillCatalog
 
         // Rupture — applies BLEED (physical DoT): stacks up to 10 (reapply refreshes 30s),
         // ticks DotPower×stacks/sec, and slows the target 15% (bleed's secondary). Lands on
-        // DEX-vs-CON. The Venomweaver's stack builder; pair with Detonate Wounds.
+        // AGI-vs-CON. The Venomweaver's stack builder; pair with Detonate Wounds.
         new(Rupture, "Rupture", BaseClass.Fighter, SkillEffect.Bleed | SkillEffect.Slow,
             MpCost: 12, CastTicks: 5, CooldownTicks: 30, Range: 0, Power: 5,
             DurationTicks: 300, BuffKey: "bleed", Rank: 1, DebuffSchool: DebuffSchool.Physical,
             StackKey: "venom_bleed", MaxStacks: 10,   // per-skill counter (share id to pool stacks)
             Magnitudes: new EffectMagnitude[] { new(SkillEffect.Slow, 0.15f) },
             Description: "Opens a bleeding wound — a flat physical DoT (+15% slow) plus a stack "
-                       + "that builds toward a burst. Lands on a DEX-vs-CON contest."),
+                       + "that builds toward a burst. Lands on a AGI-vs-CON contest."),
 
         // Detonate Wounds — BURST: consumes THIS line's bleed stacks (venom_bleed), multiplying
         // damage by the stack count (×10 at full), and can [Double]. Leaves the bleed DoT.
@@ -481,7 +481,7 @@ public static partial class SkillCatalog
             Category: SkillCategory.Physical, CanDouble: true, ConsumeStackKey: "venom_poison",
             Description: "Detonates the target's poison stacks for damage ×(stacks) [Double]."),
 
-        // Envenom — VENOM (physical DoT, DEX-vs-CON): per-tick damage + lowers the target's
+        // Envenom — VENOM (physical DoT, AGI-vs-CON): per-tick damage + lowers the target's
         // attack 15% and defence 15% (venom's secondary). Stacks; Venom Burst spends them.
         new(Envenom, "Envenom", BaseClass.Fighter,
             SkillEffect.Venom | SkillEffect.DebuffAtk | SkillEffect.DebuffDef,
@@ -493,7 +493,7 @@ public static partial class SkillCatalog
                 new(SkillEffect.DebuffAtk, 0.15f), new(SkillEffect.DebuffDef, 0.15f),
             },
             Description: "Envenoms the target — a physical DoT that also lowers its attack & "
-                       + "defence 15%. Lands on DEX-vs-CON; builds stacks for Venom Burst."),
+                       + "defence 15%. Lands on AGI-vs-CON; builds stacks for Venom Burst."),
 
         new(VenomBurst, "Venom Burst", BaseClass.Fighter, SkillEffect.PhysicalDamage,
             MpCost: 25, CastTicks: 5, CooldownTicks: 60, Range: 0, Power: 12,

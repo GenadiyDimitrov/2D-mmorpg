@@ -210,7 +210,7 @@ public class PersistenceService
         character.Con = stats.Con;
         character.Atk = stats.Atk;
         character.Wit = stats.Wit;
-        character.Dex = stats.Dex;
+        character.Agi = stats.Agi;
         character.Spt = stats.Spt;
 
         // ---- Skills: every class skill whose learn-gate this level meets ----
@@ -249,7 +249,7 @@ public class PersistenceService
             slot0.Con = stats.Con;
             slot0.Atk = stats.Atk;
             slot0.Wit = stats.Wit;
-            slot0.Dex = stats.Dex;
+            slot0.Agi = stats.Agi;
             slot0.Spt = stats.Spt;
             slot0.LearnedSkillsCsv = learnedCsv;
             slot0.SkillBarJson = "";   // empty bar — the player arranges it themselves
@@ -495,7 +495,7 @@ public class PersistenceService
             Con = stats.Con,
             Atk = stats.Atk,
             Wit = stats.Wit,
-            Dex = stats.Dex,
+            Agi = stats.Agi,
             Spt = stats.Spt,
             X = GameConstants.ZoneWidth / 2,
             Y = GameConstants.ZoneHeight / 2,
@@ -513,7 +513,7 @@ public class PersistenceService
             Con = stats.Con,
             Atk = stats.Atk,
             Wit = stats.Wit,
-            Dex = stats.Dex,
+            Agi = stats.Agi,
             Spt = stats.Spt,
             // The bar starts EMPTY (owner). Nothing is auto-placed — the player builds it from the
             // skills window's Skills and Actions tabs.
@@ -573,7 +573,7 @@ public class PersistenceService
             Level = r.Level,
             Exp = r.Exp,
             SkillPoints = r.SkillPoints,
-            Con = r.Con, Atk = r.Atk, Wit = r.Wit, Dex = r.Dex, Spt = r.Spt,
+            Con = r.Con, Atk = r.Atk, Wit = r.Wit, Agi = r.Agi, Spt = r.Spt,
         };
         ParseLearnedSkills(r.LearnedSkillsCsv, sc.LearnedSkills);
         if (!string.IsNullOrEmpty(r.SkillBarJson))
@@ -641,7 +641,7 @@ public class PersistenceService
                 Level = rec.Level,
                 Exp = rec.Exp,
                 SkillPoints = rec.SkillPoints,
-                Con = rec.Con, Atk = rec.Atk, Wit = rec.Wit, Dex = rec.Dex, Spt = rec.Spt,
+                Con = rec.Con, Atk = rec.Atk, Wit = rec.Wit, Agi = rec.Agi, Spt = rec.Spt,
             };
             ParseLearnedSkills(rec.LearnedSkillsCsv, main.LearnedSkills);
             entity.Subclasses.Add(main);
@@ -815,25 +815,25 @@ public class PersistenceService
     public sealed record SubclassSnapshot(
         int Slot, Race Race, BaseClass BaseClass, int SecondClass, int ThirdClass,
         int Level, long Exp, int SkillPoints,
-        int Con, int Atk, int Wit, int Dex, int Spt,
+        int Con, int Atk, int Wit, int Agi, int Spt,
         string LearnedSkillsCsv, string SkillBarJson)
     {
         public static SubclassSnapshot From(Subclass s) => new(
             s.Slot, s.Race, s.BaseClass, s.SecondClass, s.ThirdClass,
             s.Level, s.Exp, s.SkillPoints,
-            s.Con, s.Atk, s.Wit, s.Dex, s.Spt,
+            s.Con, s.Atk, s.Wit, s.Agi, s.Spt,
             string.Join(',', s.LearnedSkills.Select(kv => $"{kv.Key}:{kv.Value}")),
             JsonSerializer.Serialize(s.SkillBar));
     }
 
-    /// <summary>The BaseClass / Level / Exp / SkillPoints / Con..Dex / LearnedSkillsCsv fields here are
+    /// <summary>The BaseClass / Level / Exp / SkillPoints / Con..Agi / LearnedSkillsCsv fields here are
     /// the ACTIVE subclass's values. They are written back to the character row as a MIRROR so the
     /// character-select screen can list a character without loading its classes — the real per-class
     /// state travels in <see cref="Subclasses"/>, which is the source of truth.</summary>
     public sealed record CharacterSnapshot(
         int CharacterId, Race Race, BaseClass BaseClass, int Level, long Exp, long Gold,
         int SecondClass, int ThirdClass, int SkillPoints, int Profession,
-        int Con, int Atk, int Wit, int Dex, int Spt, float X, float Y,
+        int Con, int Atk, int Wit, int Agi, int Spt, float X, float Y,
         string LearnedSkillsCsv, string CompletedQuestsCsv, string ActiveQuestsJson,
         string KnownRecipesCsv, string FriendsCsv, string BlockedCsv, string AutoHuntJson, string EquipPresetsJson,
         string BuffsJson,
@@ -865,7 +865,7 @@ public class PersistenceService
             return new CharacterSnapshot(
                 id, e.Race, e.BaseClass, e.Level, e.Exp, e.Gold,
                 e.SecondClass, e.ThirdClass, e.SkillPoints, (int)e.Profession,
-                e.Con, e.AtkStat, e.Wit, e.Dex, e.Spt, e.X, e.Y,
+                e.Con, e.AtkStat, e.Wit, e.Agi, e.Spt, e.X, e.Y,
                 string.Join(',', e.LearnedSkills.Select(kv => $"{kv.Key}:{kv.Value}")),
                 string.Join(',', e.CompletedQuests),
                 JsonSerializer.Serialize(e.ActiveQuests.Values.ToList()),
@@ -1038,7 +1038,7 @@ public class PersistenceService
         rec.Con = snap.Con;
         rec.Atk = snap.Atk;
         rec.Wit = snap.Wit;
-        rec.Dex = snap.Dex;
+        rec.Agi = snap.Agi;
         rec.Spt = snap.Spt;
 
         // ---- CLASS-level: the real per-class state. Rebuilt wholesale, like the items.
@@ -1054,7 +1054,7 @@ public class PersistenceService
             Level = s.Level,
             Exp = s.Exp,
             SkillPoints = s.SkillPoints,
-            Con = s.Con, Atk = s.Atk, Wit = s.Wit, Dex = s.Dex, Spt = s.Spt,
+            Con = s.Con, Atk = s.Atk, Wit = s.Wit, Agi = s.Agi, Spt = s.Spt,
             LearnedSkillsCsv = s.LearnedSkillsCsv,
             SkillBarJson = s.SkillBarJson,
         }).ToList();

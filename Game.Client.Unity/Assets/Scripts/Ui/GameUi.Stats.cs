@@ -69,7 +69,7 @@ namespace Game.Client
 
             t.AppendLine(Head("Primary"));
             t.AppendLine(Row2("CON", s.Con.ToString(), "ATK", s.Atk.ToString()));
-            t.AppendLine(Row2("WIT", s.Wit.ToString(), "DEX", s.Dex.ToString()));
+            t.AppendLine(Row2("WIT", s.Wit.ToString(), "AGI", s.Agi.ToString()));
             t.AppendLine(Row2("SPT", s.Spt.ToString(), "SP", s.SkillPoints.ToString()));
             t.AppendLine();
 

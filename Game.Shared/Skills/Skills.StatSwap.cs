@@ -3,7 +3,7 @@ namespace Game.Shared;
 /// <summary>
 /// The level-40 STAT-SWAP passives — the only thing in the game that moves your main stats.
 ///
-/// You are born with your CON/ATK/WIT/DEX and nothing raises them for free any more (the old
+/// You are born with your CON/ATK/WIT/AGI and nothing raises them for free any more (the old
 /// LevelStatBonus and the class-change stat grants are both gone). At 40 you may buy ONE trade-off
 /// per group: each level gives <b>+1 to one stat and −1 to another</b>, up to +5/−5 at level 5.
 /// They cost GOLD, not SP — 1kk / 2kk / 3kk / 4kk / 5kk (15kk to max a single skill).
@@ -21,12 +21,12 @@ namespace Game.Shared;
 /// skill in the ring always tries to raise a stat the first one already sold.
 ///
 /// Worked example (fighter): take <c>+ATK −MEN</c>, then <c>+WIT −MEN</c> (MEN stacks to −10). The
-/// only pair still open is <c>+CON −DEX</c> / <c>+DEX −CON</c> — pick one and you land on
-/// +5 ATK, +5 WIT, +5 CON, −5 DEX, −10 MEN. Every other swap is banned by one of the three clauses.
+/// only pair still open is <c>+CON −AGI</c> / <c>+AGI −CON</c> — pick one and you land on
+/// +5 ATK, +5 WIT, +5 CON, −5 AGI, −10 MEN. Every other swap is banned by one of the three clauses.
 ///
 /// The ATK group is gated by class, because ATK is our single power stat (it feeds P.Atk for a
 /// fighter and M.Atk for a caster — the WEAPON decides which):
-///   • fighters pay in CON or DEX     • mages pay in WIT or MEN
+///   • fighters pay in CON or AGI     • mages pay in WIT or MEN
 ///   • BUFFERS may take all four — deliberately strong, since they can pay in a stat they don't
 ///     use. If that proves too good, switch them to a dual-cost form (+ATK −a −b).
 ///
@@ -39,17 +39,23 @@ public static partial class SkillCatalog
 {
     // ---- Group ids (mutually exclusive within a group) ----
     public const string GroupSwapCon = "swap_con";
-    public const string GroupSwapDex = "swap_dex";
+    public const string GroupSwapAgi = "swap_agi";
     public const string GroupSwapAtk = "swap_atk";
     public const string GroupSwapWit = "swap_wit";
     public const string GroupSwapMen = "swap_men";
 
     // ---- Skill ids: swap_<raised>_<sacrificed> ----
+    // ⚠ The four AGI ids still SPELL "dex", and must keep spelling it. A skill id is a persisted key
+    // (LearnedSkills stores the string) and the project rule is that ids are append-only — renaming
+    // these would silently delete a 15kk purchase from every character that owns one. The stat was
+    // renamed DEX -> AGI everywhere a player can see it; this is the one place the old spelling is
+    // load-bearing rather than cosmetic. Same reasoning that keeps `swap_men*` spelling MEN after
+    // Spirit replaced it.
     public const string SwapConAtk = "swap_con_atk";   // +CON −ATK
-    public const string SwapConDex = "swap_con_dex";   // +CON −DEX
-    public const string SwapDexAtk = "swap_dex_atk";   // +DEX −ATK
-    public const string SwapDexCon = "swap_dex_con";   // +DEX −CON
-    public const string SwapAtkDex = "swap_atk_dex";   // +ATK −DEX   (fighter)
+    public const string SwapConAgi = "swap_con_dex";   // +CON −AGI
+    public const string SwapAgiAtk = "swap_dex_atk";   // +AGI −ATK
+    public const string SwapAgiCon = "swap_dex_con";   // +AGI −CON
+    public const string SwapAtkAgi = "swap_atk_dex";   // +ATK −AGI   (fighter)
     public const string SwapAtkCon = "swap_atk_con";   // +ATK −CON   (fighter)
     public const string SwapAtkWit = "swap_atk_wit";   // +ATK −WIT   (mage)
     public const string SwapAtkMen = "swap_atk_men";   // +ATK −MEN   (mage)
@@ -83,8 +89,8 @@ public static partial class SkillCatalog
             .ToArray());
 
     /// <summary>±Spirit — now simply ±SPT, the stat.</summary>
-    private static PassiveEffect MenSwap(int sptDelta, int con = 0, int dex = 0, int atk = 0, int wit = 0) =>
-        new(Con: con, Dex: dex, Atk: atk, Wit: wit, Spt: sptDelta);
+    private static PassiveEffect MenSwap(int sptDelta, int con = 0, int agi = 0, int atk = 0, int wit = 0) =>
+        new(Con: con, Agi: agi, Atk: atk, Wit: wit, Spt: sptDelta);
 
     private static string Swap2(int n, string up, string down) =>
         $"Passive. +{n} {up}, −{n} {down}. (Level {n} of 5.)";
@@ -97,7 +103,7 @@ public static partial class SkillCatalog
 
     /// <summary>A stat a swap can move. MEN is not a real stat any more (it IS its modifiers — see
     /// <see cref="MenSwap"/>), but for the DIRECTION rule it commits exactly like the others.</summary>
-    public enum SwapStat { Con, Dex, Atk, Wit, Men }
+    public enum SwapStat { Con, Agi, Atk, Wit, Men }
 
     /// <summary>THE source of truth for the swaps: id, display name, the stat it RAISES and the stat
     /// it LOWERS. Everything else — the exclusive group, the PassiveEffect, the description and the
@@ -106,13 +112,13 @@ public static partial class SkillCatalog
     private static readonly (string Id, string Name, SwapStat Up, SwapStat Down)[] SwapTable =
     {
         (SwapConAtk, "Fortitude (Power)",   SwapStat.Con, SwapStat.Atk),
-        (SwapConDex, "Fortitude (Agility)", SwapStat.Con, SwapStat.Dex),
+        (SwapConAgi, "Fortitude (Agility)", SwapStat.Con, SwapStat.Agi),
 
-        (SwapDexAtk, "Agility (Power)",     SwapStat.Dex, SwapStat.Atk),
-        (SwapDexCon, "Agility (Vigour)",    SwapStat.Dex, SwapStat.Con),
+        (SwapAgiAtk, "Agility (Power)",     SwapStat.Agi, SwapStat.Atk),
+        (SwapAgiCon, "Agility (Vigour)",    SwapStat.Agi, SwapStat.Con),
 
         // ATK group is class-gated (buffers may take all four) — see StatSwapsFor.
-        (SwapAtkDex, "Power (Agility)",     SwapStat.Atk, SwapStat.Dex),
+        (SwapAtkAgi, "Power (Agility)",     SwapStat.Atk, SwapStat.Agi),
         (SwapAtkCon, "Power (Vigour)",      SwapStat.Atk, SwapStat.Con),
         (SwapAtkWit, "Power (Insight)",     SwapStat.Atk, SwapStat.Wit),
         (SwapAtkMen, "Power (Spirit)",      SwapStat.Atk, SwapStat.Men),
@@ -133,13 +139,13 @@ public static partial class SkillCatalog
     /// −l to the sacrificed one. MEN is expressed as its modifiers rather than as a stat.</summary>
     private static PassiveEffect SwapEffect(SwapStat up, SwapStat down, int l)
     {
-        int con = 0, dex = 0, atk = 0, wit = 0, men = 0;
+        int con = 0, agi = 0, atk = 0, wit = 0, men = 0;
         void Move(SwapStat s, int d)
         {
             switch (s)
             {
                 case SwapStat.Con: con += d; break;
-                case SwapStat.Dex: dex += d; break;
+                case SwapStat.Agi: agi += d; break;
                 case SwapStat.Atk: atk += d; break;
                 case SwapStat.Wit: wit += d; break;
                 case SwapStat.Men: men += d; break;
@@ -148,8 +154,8 @@ public static partial class SkillCatalog
         Move(up, l);
         Move(down, -l);
         return men == 0
-            ? new PassiveEffect(Con: con, Dex: dex, Atk: atk, Wit: wit)
-            : MenSwap(men, con: con, dex: dex, atk: atk, wit: wit);
+            ? new PassiveEffect(Con: con, Agi: agi, Atk: atk, Wit: wit)
+            : MenSwap(men, con: con, agi: agi, atk: atk, wit: wit);
     }
 
     private static string SwapDescription(SwapStat up, SwapStat down, int l) =>
@@ -213,8 +219,8 @@ public static partial class SkillCatalog
 
     /// <summary>The stat swaps a class may buy. EVERY group is class-gated (owner, 2026-07-15), not
     /// just the ATK group — a class only ever trades among the stats it actually uses:
-    ///   • FIGHTER: only CON / DEX / ATK (the physical stats) — CON↔DEX, ATK↔CON, ATK↔DEX.
-    ///   • MAGE:    CON↔DEX, ATK↔WIT, ATK↔MEN, WIT↔MEN (never the DEX-for-ATK physical trades).
+    ///   • FIGHTER: only CON / AGI / ATK (the physical stats) — CON↔AGI, ATK↔CON, ATK↔AGI.
+    ///   • MAGE:    CON↔AGI, ATK↔WIT, ATK↔MEN, WIT↔MEN (never the AGI-for-ATK physical trades).
     /// "X↔Y" = both directions (+X−Y and +Y−X); the DIRECTION rule then stops you owning both.
     /// The BUFFER (Warchanter) keeps ALL of them on purpose — he can pay in a stat he barely uses;
     /// if that proves too strong, move him to a dual-cost (+ATK −a −b) form instead.</summary>
@@ -222,14 +228,14 @@ public static partial class SkillCatalog
     {
         bool buffer = discipline == Discipline.Warchanter;
 
-        // CON↔DEX is shared by both classes (both care about CON and DEX).
-        yield return SwapConDex; yield return SwapDexCon;
+        // CON↔AGI is shared by both classes (both care about CON and AGI).
+        yield return SwapConAgi; yield return SwapAgiCon;
 
         if (buffer || baseClass == BaseClass.Fighter)
         {
-            // ATK↔CON, ATK↔DEX — the fighter juggles only physical stats.
+            // ATK↔CON, ATK↔AGI — the fighter juggles only physical stats.
             yield return SwapAtkCon; yield return SwapConAtk;
-            yield return SwapAtkDex; yield return SwapDexAtk;
+            yield return SwapAtkAgi; yield return SwapAgiAtk;
         }
 
         if (buffer || baseClass == BaseClass.Mage)

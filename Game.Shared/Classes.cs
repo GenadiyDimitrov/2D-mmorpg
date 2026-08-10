@@ -22,7 +22,7 @@ public enum Archetype
 /// skill/passive kit alone; see the note on the deleted `FlatFor` in Classes.Third.cs. Do not add a
 /// `Bonus` back to a class def. Both primary and secondary deltas are supported.</summary>
 public record ClassFlatBonus(
-    int Con = 0, int Atk = 0, int Wit = 0, int Dex = 0,        // primary
+    int Con = 0, int Atk = 0, int Wit = 0, int Agi = 0,        // primary
     int MaxHp = 0, int MaxMp = 0, int Defence = 0, int Attack = 0, // secondary
     int Evasion = 0, int Accuracy = 0)
 {
@@ -30,7 +30,7 @@ public record ClassFlatBonus(
     /// authored (Mythic) one. See StatMods.Scaled.</summary>
     public ClassFlatBonus Scaled(float f) => new(
         (int)MathF.Round(Con * f), (int)MathF.Round(Atk * f),
-        (int)MathF.Round(Wit * f), (int)MathF.Round(Dex * f),
+        (int)MathF.Round(Wit * f), (int)MathF.Round(Agi * f),
         (int)MathF.Round(MaxHp * f), (int)MathF.Round(MaxMp * f),
         (int)MathF.Round(Defence * f), (int)MathF.Round(Attack * f),
         (int)MathF.Round(Evasion * f), (int)MathF.Round(Accuracy * f));

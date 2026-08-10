@@ -32,9 +32,9 @@ foreach (int L in Enumerable.Range(1, 85).Where(l => l == 1 || l % 10 == 0 || l 
                       $"{MobBaseStats.PAtk(L),7} {MobBaseStats.MAtk(L),7}");
 
 Console.WriteLine();
-Console.WriteLine("=== HIT / MISS vs a SAME-LEVEL mob (accuracy = DEX + level, 1 point = 1%) ===");
+Console.WriteLine("=== HIT / MISS vs a SAME-LEVEL mob (accuracy = AGI + level, 1 point = 1%) ===");
 Console.WriteLine("  'naked' = base stats only, no gear and no passives. 'geared' = best gear for tier + kit.");
-Console.WriteLine("  A same-DEX, same-level pair must sit at the 5% base BOTH ways — that is the whole point of");
+Console.WriteLine("  A same-AGI, same-level pair must sit at the 5% base BOTH ways — that is the whole point of");
 Console.WriteLine("  the level term. Before it, a player's accuracy was flat for life while the mob's grew +1/level:");
 Console.WriteLine("  they crossed at 20 and a naked level-90 fighter missed 75% while the mob never missed at all.");
 Console.WriteLine($"{"Lvl",4} {"mob A/E",8} | {"naked",6} {"nk miss",8} {"mob miss",9} | " +
@@ -157,7 +157,7 @@ Console.WriteLine("=== E1: ACCURACY vs EVASION — the whole board (why only the
     Console.WriteLine();
 
     Console.WriteLine("  --- D. THE TUNING KNOB: take N evasion points off the melee rogue, what does the mob hit? ---");
-    Console.WriteLine("  The rogue's evasion above the base DEX+level comes from ONE place worth cutting: the light");
+    Console.WriteLine("  The rogue's evasion above the base AGI+level comes from ONE place worth cutting: the light");
     Console.WriteLine("  armor mastery (Skills.Masteries.cs RogueArmor lightEva = 7/11/13/13/13 at 20/24/28/32/36),");
     Console.WriteLine("  plus the base fighter light mastery (+3) and the Agility buff (+4, buffer/potion/scroll).");
     Console.WriteLine($"  {"Lvl",3} {"eva",5} {"base",5} {"extra",6} |" +
@@ -167,7 +167,7 @@ Console.WriteLine("=== E1: ACCURACY vs EVASION — the whole board (why only the
         var r = FarmRosterBuffed(L);
         var mob = r[0].E; var rogue = r[3].E;
         int eva = (int)rogue.EffectiveEvasion;
-        int bas = StatCalculator.Evasion((int)rogue.EffectiveDex, L);
+        int bas = StatCalculator.Evasion((int)rogue.EffectiveAgi, L);
         Console.Write($"  {L,3} {eva,5} {bas,5} {eva - bas,6} |");
         foreach (int cut in new[] { 0, 3, 6, 9, 12, 15 })
             Console.Write($" {Pct(StatCalculator.ResolveAvoidChance(mob.Accuracy, eva - cut,
@@ -180,7 +180,7 @@ Console.WriteLine("=== E1: ACCURACY vs EVASION — the whole board (why only the
 
     Console.WriteLine("  --- E. THE ROLLED ATTRIBUTE — fixed 2026-08-07, this is the before/after ---");
     Console.WriteLine("  A DUAL weapon used to roll AttributeType.EvasionPercent (RampWide, cap 30), applied as");
-    Console.WriteLine("  `Evasion += Evasion * pct/100` — a MULTIPLIER on the whole stat, base DEX+level included.");
+    Console.WriteLine("  `Evasion += Evasion * pct/100` — a MULTIPLIER on the whole stat, base AGI+level included.");
     Console.WriteLine("  It alone tripled the rogue's evasion budget and grew with level forever. It is now");
     Console.WriteLine("  AttributeType.Evasion: FLAT, RampFlat5, cap 5 — the owner's \"5 roll is a flat 5% increase\".");
     Console.WriteLine("  ✅ The BOW's mirror is now fixed the same way (2026-08-07b): AccuracyPercent RampWide cap 30");
@@ -214,7 +214,7 @@ Console.WriteLine("=== E1: ACCURACY vs EVASION — the whole board (why only the
     Console.WriteLine();
 
     Console.WriteLine("  --- E1b: THE BOW'S MIRROR — AccuracyPercent 30 -> Accuracy flat 5 ---");
-    Console.WriteLine("  Same defect inverted: the old roll multiplied an accuracy that already contains DEX + level,");
+    Console.WriteLine("  Same defect inverted: the old roll multiplied an accuracy that already contains AGI + level,");
     Console.WriteLine("  so it grew forever. What a roll is WORTH, though, is not symmetric with evasion, because");
     Console.WriteLine("  miss = clamp(5% + (eva - acc), defenderFloor, 95%): accuracy can only claw back the part of");
     Console.WriteLine("  the gap that is ABOVE both the universal 5% and the defender's own evade FLOOR.");
@@ -663,7 +663,7 @@ foreach (int L in new[] { 1, 4, 8, 20 })
         var e = new Entity { Name = "naked", Kind = EntityKind.Player };
         e.Race = Race.Human; e.BaseClass = cls; e.Level = L;
         var s = StatCalculator.GetBaseStats(Race.Human, cls);
-        e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Dex = s.Dex;
+        e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Agi = s.Agi;
         e.RecomputeDerived();   // NO gear equipped
         int pAtk = (int)e.EffectiveAttack;
         int mobPDef = MobBaseStats.PDef(L);
@@ -1149,7 +1149,7 @@ Console.WriteLine();
 Console.WriteLine("=== STAT-SWAP DIRECTION RULE ===");
 
 // The owner's worked example: a fighter takes +ATK-MEN, then +WIT-MEN. Every other swap should
-// then be banned except the +CON-DEX / +DEX-CON pair, and MEN should stack to -10.
+// then be banned except the +CON-AGI / +AGI-CON pair, and MEN should stack to -10.
 var held = new List<string> { SkillCatalog.SwapAtkMen, SkillCatalog.SwapWitMen };
 Console.WriteLine($"  Fighter holds: {string.Join(" + ", held.Select(NameOf))}");
 foreach (var id in SkillCatalog.StatSwapsFor(BaseClass.Fighter, null))
@@ -1161,10 +1161,10 @@ foreach (var id in SkillCatalog.StatSwapsFor(BaseClass.Fighter, null))
         : $"    banned {NameOf(id),-22} — {clash}");
 }
 
-// The net-zero ring the rule exists to kill: +CON-DEX, +DEX-ATK, +ATK-CON nets to +0 for 45kk.
+// The net-zero ring the rule exists to kill: +CON-AGI, +AGI-ATK, +ATK-CON nets to +0 for 45kk.
 Console.WriteLine();
-Console.WriteLine("  Net-zero ring (+CON-DEX, +DEX-ATK, +ATK-CON) — must be unreachable:");
-var ring = new[] { SkillCatalog.SwapConDex, SkillCatalog.SwapDexAtk, SkillCatalog.SwapAtkCon };
+Console.WriteLine("  Net-zero ring (+CON-AGI, +AGI-ATK, +ATK-CON) — must be unreachable:");
+var ring = new[] { SkillCatalog.SwapConAgi, SkillCatalog.SwapAgiAtk, SkillCatalog.SwapAtkCon };
 var ringHeld = new List<string>();
 foreach (var id in ring)
 {
@@ -1359,20 +1359,20 @@ Console.WriteLine("=== G3.5: what flipping Kind actually changes (measured side 
     Console.WriteLine($"  swing interval   Kind=Mob {oldSwing:F2}s -> Kind=Player {newSwing:F2}s "
         + $"(x{oldSwing / newSwing:0.00} swings/sec, unauthored)");
 
-    // (b) THE NEUTRAL-OPPONENT BENCHMARK. Mob DEX is flat 30 on purpose (owner 2026-08-02) so a
-    //     same-level pair sits at the 5% floor both ways, and MobDexReference IS the human-fighter
+    // (b) THE NEUTRAL-OPPONENT BENCHMARK. Mob AGI is flat 30 on purpose (owner 2026-08-02) so a
+    //     same-level pair sits at the 5% floor both ways, and MobAgiReference IS the human-fighter
     //     base — so a fighter-shaped mob-player inherits the same number by construction. The mage
-    //     archetypes are the ones to watch: their class base DEX is not the reference.
+    //     archetypes are the ones to watch: their class base AGI is not the reference.
     var refPlayer = BuildPlayer(Race.Human, BaseClass.Fighter, L, warrior: true);
-    Console.WriteLine($"  DEX benchmark    MobStats DEX is flat {StatCalculator.MobDexReference} "
+    Console.WriteLine($"  AGI benchmark    MobStats AGI is flat {StatCalculator.MobAgiReference} "
         + $"(Kind=Mob: acc {oldMob.Accuracy} eva {(int)oldMob.EffectiveEvasion}); a geared player misses it "
         + $"{Pct(Miss(refPlayer, oldMob))}");
     foreach (var arch in g3Archs)
     {
         var a = BuildMobPlayer(L, arch, 1, ItemRarity.Common, 0, kit: false);
-        Console.WriteLine($"                     {arch,-8} DEX {a.Dex,3} acc {a.Accuracy,4} eva {(int)a.EffectiveEvasion,4}"
+        Console.WriteLine($"                     {arch,-8} AGI {a.Agi,3} acc {a.Accuracy,4} eva {(int)a.EffectiveEvasion,4}"
             + $"  player misses it {Pct(Miss(refPlayer, a)),4}, it misses the player {Pct(Miss(a, refPlayer)),4}"
-            + $"{(a.Dex == StatCalculator.MobDexReference ? "" : "   << OFF THE BENCHMARK")}");
+            + $"{(a.Agi == StatCalculator.MobAgiReference ? "" : "   << OFF THE BENCHMARK")}");
     }
 
     // (c) GRADE PENALTY. Player-only, and it only bites gear ABOVE your grade — so lower-grade mob
@@ -1491,8 +1491,8 @@ Console.WriteLine("    mandatory, not optional, if 'the zone assigns the level' 
 Console.WriteLine("  * the FIGHTS are already playable (G3.4): mob-player TTKs land 4-16s against today's 2-16s.");
 Console.WriteLine("    Their damage OUT is the weak side — at L80 a mob-player deals 13-33 dps where today's mob");
 Console.WriteLine("    deals 46, which is the same attack gap seen in G3.1/G3.2 showing up in the fight.");
-Console.WriteLine("  * flipping Kind moves the SWING CLOCK by side effect (G3.5a). The DEX benchmark survives for");
-Console.WriteLine("    fighter archetypes by construction — MobDexReference IS the human-fighter base.");
+Console.WriteLine("  * flipping Kind moves the SWING CLOCK by side effect (G3.5a). The AGI benchmark survives for");
+Console.WriteLine("    fighter archetypes by construction — MobAgiReference IS the human-fighter base.");
 Console.WriteLine();
 
 // =====================================================================================================
@@ -1502,10 +1502,10 @@ Console.WriteLine();
 //    * crit damage "+80" in the CSVs is FLAT ATTACK added inside the ratio on a crit, not "x2.8";
 //    * a landed BLOW is now computed WITH the crit-damage values (it used to return base damage,
 //      so a dagger's whole crit-damage ladder did nothing at all);
-//    * [Double] chance is a pure ATK curve capped 25%, not max(DEX,ATK)/1000 capped 30%.
+//    * [Double] chance is a pure ATK curve capped 25%, not max(AGI,ATK)/1000 capped 30%.
 //  OLD columns re-create the previous arithmetic here so the magnitude of the swing is visible.
 // =====================================================================================================
-Console.WriteLine("=== C1: [Double] chance — ATK curve (new) vs max(DEX,ATK)/1000 cap 30% (old) ===");
+Console.WriteLine("=== C1: [Double] chance — ATK curve (new) vs max(AGI,ATK)/1000 cap 30% (old) ===");
 {
     int[] atks = { 30, 35, 40, 45, 50, 55, 60, 70 };
     Console.Write("  ATK stat ");   foreach (int a in atks) Console.Write($"{a,8}");
@@ -1515,7 +1515,7 @@ Console.WriteLine("=== C1: [Double] chance — ATK curve (new) vs max(DEX,ATK)/1
     Console.WriteLine();
     Console.Write("  old      ");
     foreach (int a in atks) Console.Write($"{Math.Clamp(a * 0.001f, 0f, 0.30f) * 100,7:F1}%");
-    Console.WriteLine("     (old ALSO read DEX, so a rogue sat far higher than this row)");
+    Console.WriteLine("     (old ALSO read AGI, so a rogue sat far higher than this row)");
     Console.WriteLine("  his anchors: 30 -> 2.5%, 40 -> 10%, 60+ -> 25% (he wrote 50 -> 15%; the formula gives 17.5%)");
 }
 Console.WriteLine();
@@ -1543,8 +1543,8 @@ Console.WriteLine("=== C1: ROGUE — the five crit-damage rungs (duals + light, 
             int power = blow.PowerAt(blvl);
             blowHit = StatCalculator.PhysicalDamage((int)r.EffectiveAttack, power, pDef, lvl);
             blowNew = SkillHitFactor(r, blow, power, 2f);
-            // OLD: a landed blow returned base damage untouched, then doubled off max(DEX,ATK).
-            float oldDbl = Math.Clamp(Math.Max(r.EffectiveDex, r.AtkStat) * 0.001f, 0f, 0.30f);
+            // OLD: a landed blow returned base damage untouched, then doubled off max(AGI,ATK).
+            float oldDbl = Math.Clamp(Math.Max(r.EffectiveAgi, r.AtkStat) * 0.001f, 0f, 0.30f);
             blowOld = blow.BlowOnCrit
                 ? r.CritChance * (1f + oldDbl) + (1f - r.CritChance) * blow.BlowFailFraction
                 : CritFactor(r.CritChance, oldMult);
@@ -1588,7 +1588,7 @@ Console.WriteLine("=== C1: WARRIOR 2H — same rungs (crit dmg +35/+48/+64/+84/+
             skHit = StatCalculator.PhysicalDamage((int)w.EffectiveAttack, power, pDef, lvl);
             skNew = SkillHitFactor(w, sk, power, 2f);
             skOld = sk.CanDouble
-                ? CritFactor(Math.Clamp(Math.Max(w.EffectiveDex, w.AtkStat) * 0.001f, 0f, 0.30f), 2f)
+                ? CritFactor(Math.Clamp(Math.Max(w.EffectiveAgi, w.AtkStat) * 0.001f, 0f, 0.30f), 2f)
                 : CritFactor(w.CritChance, oldMult);
         }
         Console.WriteLine($"  {lvl,3} | {(int)w.EffectiveAttack,5} {w.CritChance * 100,5:F1}% | {csvFlat,8:F0} |"
@@ -1622,14 +1622,14 @@ Console.WriteLine();
 
 Console.WriteLine("=== C2: CRIT RATE — his L2 model, decomposed (docs/design/CritBlowAndDouble.md §5) ===");
 {
-    Console.WriteLine("  crit = (110 x weaponFactor x dexMod  x  passives x buffs  +  flat) x debuffs x enemyLightArmor");
+    Console.WriteLine("  crit = (110 x weaponFactor x agiMod  x  passives x buffs  +  flat) x debuffs x enemyLightArmor");
     Console.WriteLine("  numbers on HIS 0-1000 scale (1000 = 100%), cap 500. mult = every passive AND buff folded.");
-    Console.WriteLine("  build                     lvl | DEX dexMod | weapon    base | mult  | flat | FINAL      %");
+    Console.WriteLine("  build                     lvl | AGI agiMod | weapon    base | mult  | flat | FINAL      %");
     void CritRow(string label, int lvl, Entity e)
     {
-        int dex = (int)e.EffectiveDex;
-        Console.WriteLine($"  {label,-25} {lvl,3} | {dex,3} x{StatCalculator.CritDexMod(dex),4:F2} |"
-            + $" {e.WeaponType.Base(),-8} {StatCalculator.PhysicalCritBase(dex, e.WeaponType) * 1000f,4:F0} |"
+        int agi = (int)e.EffectiveAgi;
+        Console.WriteLine($"  {label,-25} {lvl,3} | {agi,3} x{StatCalculator.CritAgiMod(agi),4:F2} |"
+            + $" {e.WeaponType.Base(),-8} {StatCalculator.PhysicalCritBase(agi, e.WeaponType) * 1000f,4:F0} |"
             + $" x{e.CritRateMult,4:F2} | {e.CritRateFlat * 1000f,4:F0} | {e.CritChance * 1000f,5:F0} {e.CritChance * 100f,6:F1}%");
     }
     // Re-arm a build with a different weapon: the crit base IS the weapon, so a rogue's bow and his
@@ -1680,11 +1680,11 @@ Console.WriteLine("=== C2: CRIT RATE — his L2 model, decomposed (docs/design/C
     Console.WriteLine("     multiply: sword x1.90 at its new 90 ceiling, dual/bow x1.30 at 30.");
     Console.WriteLine("     His model's flat 'heavy set +127' — the term that is supposed to carry the BLUNT");
     Console.WriteLine("     warrior, who cannot multiply his way anywhere — still does not exist.");
-    Console.WriteLine("   - DEX is 30 on every row because DEX is per RACE+BASE CLASS: only an ELF fighter (35)");
-    Console.WriteLine("     moves it, and no armor set in these tiers carries a Dex line. See the elf row below.");
-    // The one build that actually exercises dexMod today.
+    Console.WriteLine("   - AGI is 30 on every row because AGI is per RACE+BASE CLASS: only an ELF fighter (35)");
+    Console.WriteLine("     moves it, and no armor set in these tiers carries a Agi line. See the elf row below.");
+    // The one build that actually exercises agiMod today.
     var elf = BuildRogue(36);
-    elf.Dex = StatCalculator.GetBaseStats(Race.Elf, BaseClass.Fighter).Dex;
+    elf.Agi = StatCalculator.GetBaseStats(Race.Elf, BaseClass.Fighter).Agi;
     elf.RecomputeDerived();
     CritRow("ELF rogue, duals", 36, elf);
     CritRow("ELF rogue +buffs", 36, Buffed(elf));
@@ -1738,7 +1738,7 @@ static Entity BuildRogue(int level)
 {
     var s = StatCalculator.GetBaseStats(Race.Human, BaseClass.Fighter);
     var e = new Entity { Name = "rogue", Kind = EntityKind.Player, Race = Race.Human, BaseClass = BaseClass.Fighter, Level = level };
-    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Dex = s.Dex; e.Spt = s.Spt;
+    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Agi = s.Agi; e.Spt = s.Spt;
     if (level >= 20) e.SecondClass = 15;   // Human Assassin
 
     foreach (var cs in ClassSkills.ForClass(Race.Human, BaseClass.Fighter, null, null))
@@ -1829,7 +1829,7 @@ static Entity BuildMobPlayerFixedTier(int level, Archetype arch, int tier, ItemR
 
     var s = StatCalculator.GetBaseStats(race, cls);
     var e = new Entity { Name = "mob-player", Kind = EntityKind.Player, Race = race, BaseClass = cls, Level = level };
-    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Dex = s.Dex; e.Spt = s.Spt;
+    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Agi = s.Agi; e.Spt = s.Spt;
     if (level >= 20) e.SecondClass = secondId;
 
     // The class table is the WRONG source for a mob kit (it drags in masteries) — G3.5(e) measures
@@ -2122,7 +2122,7 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
     e.Race = race;
     e.BaseClass = cls;
     e.Level = level;
-    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Dex = s.Dex;
+    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Agi = s.Agi;
 
     // Second class at 20 (Human Sorcerer / Human Knight) so the archetype kits apply.
     // 18 = Sorcerer (nuker), 13 = Knight (tank), 14 = Champion (warrior).
@@ -2217,7 +2217,7 @@ static Entity BuildMobEntity(int level, MobCategory category = MobCategory.Anima
         // Animal is the default because it is the commonest farm category (claws = Dual, 433).
         InnateWeaponType = MobCatalog.DefaultWeaponFor(category),
     };
-    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Dex = s.Dex; e.Spt = s.Spt;
+    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Agi = s.Agi; e.Spt = s.Spt;
     e.RecomputeDerived();
     return e;
 }
@@ -2228,7 +2228,7 @@ static Entity BuildNaked(Race race, BaseClass cls, int level)
 {
     var s = StatCalculator.GetBaseStats(race, cls);
     var e = new Entity { Name = "naked", Kind = EntityKind.Player, Race = race, BaseClass = cls, Level = level };
-    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Dex = s.Dex; e.Spt = s.Spt;
+    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Agi = s.Agi; e.Spt = s.Spt;
     e.RecomputeDerived();
     return e;
 }
@@ -2244,7 +2244,7 @@ static Entity BuildStarter(BaseClass cls, int level)
 {
     var s = StatCalculator.GetBaseStats(Race.Human, cls);
     var e = new Entity { Name = "starter", Kind = EntityKind.Player, Race = Race.Human, BaseClass = cls, Level = level };
-    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Dex = s.Dex;
+    e.Con = s.Con; e.AtkStat = s.Atk; e.Wit = s.Wit; e.Agi = s.Agi;
 
     foreach (var cs in ClassSkills.Cumulative(Race.Human, cls, e.Archetype, e.Discipline))
         if (cs.LearnLevel <= level)
