@@ -70,6 +70,24 @@ level term, so it is worth more where it matters: vs a caster 10 levels up it tu
 
 `tools/BalanceMatrix` grew a **MAGIC LANDING** section printing both tables off the real code.
 
+### 🔴 And the server did not boot — found by trying to run the smoke test
+
+`0.58.1` shipped a **server that refuses to start**. The two striking training dummies added for `56c`
+sit at x=26500 and x=27500; the Training Grounds field's east edge was x=26500, so both were outside
+every field and `RegionMap.ValidateSpawnersInFields` threw at startup — by design, that guard is
+meant to catch exactly this. Nothing had run since. The field is extended 1400u east (nothing else is
+within 5000u; the quadrant east of the outpost is empty).
+
+Two **stale smoke-test assertions** were failing on shipped features, not on bugs:
+- *"a level-1 character has no quest markers"* — untrue since **0.54.0**, when the tutorial chain
+  landed and deliberately opens at level 1. It now asserts exactly one marker, the tutorial.
+- *"the Brackenford gatekeeper is visible"* — it matched the catalog name `"Gatekeeper Pell"`, but
+  since **0.55.0** ("NPCs wear their role") the server splits that into `Name="Pell"` +
+  `Title="Gatekeeper"`. The mismatch then threw at a `First(...)` and took **the whole rest of the
+  run** with it, so the gate-travel section had never executed. It matches the personal name now.
+
+`tools/SmokeTest` reports **ALL CHECKS PASSED** end to end.
+
 ## 0.58.0 — 2026-08-10 — a class grants no stats, and the invented level-40+ kits are gone
 
 *(The third slice of 0.58.0; the evasion root cause and the mob weapon table shipped in the two

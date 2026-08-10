@@ -129,10 +129,14 @@ public static class RegionMap
         // ONE field per city wrapping every band it owned, which is why a gatekeeper could only offer
         // "Bracken Reach" and drop you anywhere inside it.
 
-        // Training Grounds — wraps the Training Outpost + all four dummies (band 20-80)
+        // Training Grounds — wraps the Training Outpost + all SIX dummies (band 20-80).
+        // ⚠ The east edge was x=26500 and the two STRIKING dummies added for `56c` sit at x=26500 and
+        // 27500 — both outside it, which made ValidateSpawnersInFields throw and the server refuse to
+        // boot at all. Extended 1400u east (nothing else is within 5000u of here; the whole quadrant
+        // east of the outpost is empty). Move a dummy east again and this edge has to follow it.
         new("field_training", "Training Grounds", RegionKind.Field,
-            new[] { new Vec2(21500, 3500), new Vec2(21900, 3100), new Vec2(26100, 3100), new Vec2(26500, 3500), new Vec2(26500, 4050), new Vec2(26200, 4450), new Vec2(24350, 5900), new Vec2(23650, 5900), new Vec2(21800, 4450), new Vec2(21500, 4050) },
-            new[] { Gate("field_training#0", "Training Grounds", "Immortal dummies at Lv 20 / 40 / 60 / 80", 22500, 4000) }),
+            new[] { new Vec2(21500, 3500), new Vec2(21900, 3100), new Vec2(27500, 3100), new Vec2(27900, 3500), new Vec2(27900, 4050), new Vec2(27600, 4450), new Vec2(24350, 5900), new Vec2(23650, 5900), new Vec2(21800, 4450), new Vec2(21500, 4050) },
+            new[] { Gate("field_training#0", "Training Grounds", "Immortal dummies at Lv 20 / 40 / 60 / 80, then two that hit back", 22500, 4000) }),
 
         // Sunken Vale — the valley-treant BOSS field (band 58-60). The boss sits alone in the centre;
         // its two trash spawners are >3500u away on the flanks, so you reach the boss without aggro.

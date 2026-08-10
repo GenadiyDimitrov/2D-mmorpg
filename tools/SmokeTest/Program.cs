@@ -344,11 +344,13 @@ Check("server pushed the warehouse on login", a.Ware is not null);
 }
 
 Check("server pushed quest markers on login", a.Marks is not null);
-// A level-1 character legitimately has NO markers: the starter chain opens at 10 and the class
-// chains at 18. Asserting "> 0" here would be asserting a bug. The real check is after the level-up
-// below — markers must APPEAR once the character is old enough to be offered something.
-Check("a level-1 character has no quest markers yet (nothing opens before level 10)",
-      a.Marks is not null && a.Marks.Marks.Length == 0,
+// ⚠ This used to assert ZERO markers at level 1 — "the starter chain opens at 10, the class chains
+// at 18, so asserting > 0 would be asserting a bug". That stopped being true in 0.54.0, when the
+// TUTORIAL chain landed and deliberately opens at level 1: the assertion then asserted the ABSENCE
+// of a shipped feature and failed every run. A brand-new character must now be offered exactly the
+// tutorial, and nothing else.
+Check("a level-1 character is offered the TUTORIAL and only the tutorial",
+      a.Marks is not null && a.Marks.Marks.Length == 1,
       $"{a.Marks?.Marks.Length ?? 0} marks");
 
 // -------------------------------------------------------------------------------------------
@@ -1054,8 +1056,13 @@ await c.DisposeAsync();
     await gm.Hub.SendAsync("DebugGold", 200_000L);
     await gm.Settle();
 
-    var pellId = gm.EntityNames.FirstOrDefault(kv => kv.Value == pell.Name).Key;
-    Check("the Brackenford gatekeeper is visible after teleporting to him", pellId != Guid.Empty, pell.Name);
+    // ⚠ Match on the PERSONAL name, not the catalog name. Since 0.55.0 ("NPCs wear their role") the
+    // server splits "Gatekeeper Pell" into Name="Pell" + Title="Gatekeeper", so a comparison against
+    // the full catalog name never matched and this section failed — then threw at the `First` below
+    // and took the whole rest of the run with it. The catalog deliberately keeps the full name.
+    var (_, pellPersonal) = TitleCatalog.SplitNpcName(pell.Name);
+    var pellId = gm.EntityNames.FirstOrDefault(kv => kv.Value == pellPersonal).Key;
+    Check("the Brackenford gatekeeper is visible after teleporting to him", pellId != Guid.Empty, pellPersonal);
 
     gm.Dialog = null;
     await gm.Hub.SendAsync("TalkToNpc", pellId);
