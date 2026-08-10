@@ -1146,36 +1146,60 @@ Console.WriteLine("=== CLASS UNIQUENESS ACROSS SUBCLASSES ===");
 }
 Console.WriteLine();
 
-Console.WriteLine("=== STAT-SWAP DIRECTION RULE ===");
+Console.WriteLine("=== STAT SWAPS: +5 PER STAT, 9 RUNGS, 35kk ===");
+Console.WriteLine("  (the DIRECTION rule is gone — owner, playtest-20 #4. Two numeric limits only.)");
+Console.WriteLine();
 
-// The owner's worked example: a fighter takes +ATK-MEN, then +WIT-MEN. Every other swap should
-// then be banned except the +CON-AGI / +AGI-CON pair, and MEN should stack to -10.
-var held = new List<string> { SkillCatalog.SwapAtkMen, SkillCatalog.SwapWitMen };
-Console.WriteLine($"  Fighter holds: {string.Join(" + ", held.Select(NameOf))}");
-foreach (var id in SkillCatalog.StatSwapsFor(BaseClass.Fighter, null))
+// Walk a shopping list rung by rung the way the server does, printing the running bill.
+static void BuySwaps(string who, params (string Id, int Level)[] wants)
 {
-    if (held.Contains(id)) continue;
-    string? clash = SkillCatalog.StatSwapConflict(id, held);
-    Console.WriteLine(clash is null
-        ? $"    OPEN   {NameOf(id),-22} ({id})"
-        : $"    banned {NameOf(id),-22} — {clash}");
+    var owned = new Dictionary<string, int>();
+    long bill = 0;
+    Console.WriteLine($"  {who}");
+    foreach (var (id, level) in wants)
+    {
+        int have = owned.TryGetValue(id, out int h) ? h : 0;
+        string? clash = SkillCatalog.StatSwapConflict(id, level, owned);
+        if (clash is not null)
+        {
+            Console.WriteLine($"    REFUSED  {NameOf(id),-22} -> Lv{level}   {clash}");
+            continue;
+        }
+        int rungs = SkillCatalog.StatSwapRungsOwned(owned);
+        long price = SkillCatalog.StatSwapPriceRange(rungs, rungs + (level - have));
+        bill += price;
+        owned[id] = level;
+        Console.WriteLine($"    bought   {NameOf(id),-22} -> Lv{level}   {price / 1_000_000.0,5:0.#}kk"
+                        + $"   (rungs {SkillCatalog.StatSwapRungsOwned(owned)}/{SkillCatalog.StatSwapMaxTotal},"
+                        + $" bill {bill / 1_000_000.0:0.#}kk)");
+    }
+    Console.WriteLine();
 }
 
-// The net-zero ring the rule exists to kill: +CON-AGI, +AGI-ATK, +ATK-CON nets to +0 for 45kk.
-Console.WriteLine();
-Console.WriteLine("  Net-zero ring (+CON-AGI, +AGI-ATK, +ATK-CON) — must be unreachable:");
-var ring = new[] { SkillCatalog.SwapConAgi, SkillCatalog.SwapAgiAtk, SkillCatalog.SwapAtkCon };
-var ringHeld = new List<string>();
-foreach (var id in ring)
-{
-    string? clash = SkillCatalog.StatSwapConflict(id, ringHeld);
-    Console.WriteLine(clash is null ? $"    taken  {NameOf(id)}" : $"    BLOCKED {NameOf(id)} — {clash}");
-    if (clash is null) ringHeld.Add(id);
-}
+// HIS worked examples, verbatim from the 2026-08-10 answer.
+BuySwaps("his example 1: +5 AGI -5 CON, then +4 ATK -4 CON  (= +5/+4/-9, must cost 35kk)",
+    (SkillCatalog.SwapAgiCon, 5), (SkillCatalog.SwapAtkCon, 4));
+
+BuySwaps("his example 2: +5 ATK -5 SPT, +2 WIT -2 SPT, +2 CON -2 AGI",
+    (SkillCatalog.SwapAtkMen, 5), (SkillCatalog.SwapWitMen, 2), (SkillCatalog.SwapConAgi, 2));
+
+BuySwaps("\"cannot have +9 AGI -9 CON\" — the per-stat ceiling must refuse it",
+    (SkillCatalog.SwapAgiCon, 9));
+
+BuySwaps("the budget must refuse a 10th rung",
+    (SkillCatalog.SwapAgiCon, 5), (SkillCatalog.SwapAtkCon, 5));
+
+BuySwaps("cancelling yourself is LEGAL now (nets +1 AGI -1 CON for 15kk)",
+    (SkillCatalog.SwapAgiCon, 5), (SkillCatalog.SwapConAgi, 4));
+
+Console.WriteLine("  Who may buy what:");
+foreach (var (label, bc, disc) in new (string, BaseClass, Discipline?)[]
+         { ("FIGHTER", BaseClass.Fighter, null), ("MAGE", BaseClass.Mage, null),
+           ("BUFFER ", BaseClass.Fighter, Discipline.Warchanter) })
+    Console.WriteLine($"    {label}  {string.Join(", ", SkillCatalog.StatSwapsFor(bc, disc).Select(NameOf))}");
 
 Console.WriteLine();
-Console.WriteLine("  (debug \"learn all skills\" now grants NO swaps — a swap is a permanent build");
-Console.WriteLine("   choice, and the greedy legal pick lands on four -ATK swaps = -20 ATK.)");
+Console.WriteLine("  (debug \"learn all skills\" still grants NO swaps — a swap is a build choice.)");
 Console.WriteLine();
 
 // =====================================================================================================

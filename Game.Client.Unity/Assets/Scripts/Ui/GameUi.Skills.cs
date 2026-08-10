@@ -115,7 +115,7 @@ namespace Game.Client
 
         /// <summary>Why this row can't be bought yet, in the player's terms. Checked in the same order
         /// the server checks them, so the message matches what a Learn would actually be refused for.</summary>
-        private string LearnBlockedReason(SkillDef def, int levelGate, bool levelMet, int sp, int gold)
+        private string LearnBlockedReason(SkillDef def, int levelGate, bool levelMet, int sp, long gold)
         {
             if (!levelMet)
                 return def.Name + " requires level " + levelGate + " — you are " + (Boot.ActiveClass?.Level ?? 0) + ".";
@@ -130,7 +130,7 @@ namespace Game.Client
         /// <summary>The owner's §7: never spend SP blind. Show what the purchase changes — for an
         /// UPGRADE the before→after of the numbers that move (power, MP), for a brand-new skill what it
         /// does — plus the cost, behind a Confirm.</summary>
-        private void ConfirmLearn(SkillDef def, int newLevel, int sp, int gold)
+        private void ConfirmLearn(SkillDef def, int newLevel, int sp, long gold)
         {
             _learnTitle.text = def.Name + (def.MaxLevel > 1 ? "   Lv." + newLevel : "");
 
@@ -306,7 +306,15 @@ namespace Game.Client
                     if (def == null) continue;
 
                     int sp = def.SpCostAt(cs.SkillLevel);
-                    int gold = def.GoldCostAt(cs.SkillLevel);   // stat-swap passives are bought with GOLD
+                    // Stat swaps are bought with GOLD, and priced by how many rungs you already own
+                    // rather than per level — the same computation the server charges, so the shelf
+                    // price and the bill agree. Everything else uses its own authored per-level cost.
+                    long gold = SkillCatalog.StatSwapOf(cs.SkillId) is not null
+                        ? SkillCatalog.StatSwapPriceRange(
+                              SkillCatalog.StatSwapRungsOwned(Boot.Learned),
+                              SkillCatalog.StatSwapRungsOwned(Boot.Learned)
+                                  + (cs.SkillLevel - (Boot.Learned.TryGetValue(cs.SkillId, out int have) ? have : 0)))
+                        : def.GoldCostAt(cs.SkillLevel);
                     bool canLearn = levelMet && Boot.SkillPoints >= sp && (gold == 0 || Boot.Gold >= gold);
 
                     string levelTag = def.MaxLevel > 1 ? "  Lv." + cs.SkillLevel : "";
@@ -374,7 +382,10 @@ namespace Game.Client
             var def = SkillCatalog.Get(skillId);
             if (def == null) return false;
 
-            if (!string.IsNullOrEmpty(def.ExclusiveGroup) && !Boot.Learned.ContainsKey(skillId))
+            // Stat swaps are exempt from the exclusive-group block — their limits are numeric now
+            // (+5 per stat, 9 rungs), and a stat may legitimately be raised by two different pairs.
+            bool isSwap = SkillCatalog.StatSwapOf(skillId) is not null;
+            if (!isSwap && !string.IsNullOrEmpty(def.ExclusiveGroup) && !Boot.Learned.ContainsKey(skillId))
             {
                 foreach (var known in Boot.Learned.Keys)
                 {
@@ -382,7 +393,8 @@ namespace Game.Client
                     if (other != null && other.ExclusiveGroup == def.ExclusiveGroup) return true;
                 }
             }
-            return SkillCatalog.StatSwapConflict(skillId, new List<string>(Boot.Learned.Keys)) != null;
+            int want = (Boot.Learned.TryGetValue(skillId, out int lvl) ? lvl : 0) + 1;
+            return SkillCatalog.StatSwapConflict(skillId, want, Boot.Learned) != null;
         }
 
         /// <summary>Cheap stamp of what is ON the bar, so the "• on bar" marks refresh the moment a

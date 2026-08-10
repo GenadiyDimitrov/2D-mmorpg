@@ -1441,7 +1441,13 @@ public class GameLoopService : BackgroundService
 
         // Mutually-exclusive group: you may hold ONE skill per group, and the choice is permanent.
         // Only blocks the FIRST level — levelling the one you already picked is fine.
-        if (cur == 0 && !string.IsNullOrEmpty(def.ExclusiveGroup))
+        //
+        // ⚠ STAT SWAPS ARE EXEMPT since 2026-08-10. Their limits are numeric now (+5 per stat, 9 rungs
+        // total) and a stat may legitimately be raised by two different pairs, so "one per group" would
+        // contradict the rule below. They keep an ExclusiveGroup only so the reset NPC can still find
+        // them — see SkillCatalog.StatSwapConflict and ResettableSkillsOf.
+        bool isStatSwap = SkillCatalog.StatSwapOf(def.Id) is not null;
+        if (cur == 0 && !isStatSwap && !string.IsNullOrEmpty(def.ExclusiveGroup))
         {
             foreach (var (learnedId, _) in player.LearnedSkills)
             {
@@ -1454,11 +1460,9 @@ public class GameLoopService : BackgroundService
             }
         }
 
-        // THE DIRECTION RULE (stat swaps): every stat you touch commits to one direction. You may not
-        // raise a stat you have sold, nor sell a stat you have bought. Without this you could buy a
-        // circular +A−B, +B−C, +C−A ring that nets to +0 for 45kk of gold. Stacking a second skill
-        // that also LOWERS the same stat is still allowed. See SkillCatalog.StatSwapConflict.
-        if (cur == 0 && SkillCatalog.StatSwapConflict(def.Id, player.LearnedSkills.Keys) is { } clash)
+        // THE STAT-SWAP LIMITS: at most +5 on any one stat, and 9 rungs in total across every swap.
+        // Checked at EVERY level, not just the first — each level is another rung against the budget.
+        if (SkillCatalog.StatSwapConflict(def.Id, target, player.LearnedSkills) is { } clash)
         {
             SendSystemToEntity(player, clash);
             return;
@@ -1471,8 +1475,14 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        // GOLD price (the stat-swap passives cost gold, not SP: 1kk…5kk per level).
-        int gold = def.GoldCostAt(target);
+        // GOLD price. A stat swap is priced PER RUNG by how many rungs the character already owns
+        // (1/2/3/4/5/5/5/5/5 kk), so the same nine cost 35kk however they are spread; everything else
+        // uses its own authored per-level cost.
+        long gold = isStatSwap
+            ? SkillCatalog.StatSwapPriceRange(
+                  SkillCatalog.StatSwapRungsOwned(player.LearnedSkills),
+                  SkillCatalog.StatSwapRungsOwned(player.LearnedSkills) + (target - cur))
+            : def.GoldCostAt(target);
         if (gold > 0 && player.Gold < gold)
         {
             SendSystemToEntity(player,
@@ -10679,13 +10689,27 @@ var effect = def.Effect;
     /// into it, so the player can see exactly what he's writing off.</summary>
     private static IEnumerable<ResettableSkill> ResettableSkillsOf(Entity player)
     {
+        // A swap rung is priced by its POSITION in the character's nine, not by which pair it belongs
+        // to, so "what did this skill cost" has no per-skill answer any more. What IS exact, and is the
+        // number that matters when you are deciding whether to forget it, is what forgetting it writes
+        // off: its rungs are the TOPMOST positions you hold, so removing them frees the dearest ones.
+        int rungs = SkillCatalog.StatSwapRungsOwned(player.LearnedSkills);
+
         foreach (var (id, level) in player.LearnedSkills)
         {
             if (SkillCatalog.Get(id) is not SkillDef def || string.IsNullOrEmpty(def.ExclusiveGroup))
                 continue;
+            long spent = SkillCatalog.StatSwapOf(id) is not null
+                ? SkillCatalog.StatSwapPriceRange(rungs - level, rungs)
+                : SumGold(def, level);
+            yield return new ResettableSkill(id, def.Name, level, (int)spent);
+        }
+
+        static int SumGold(SkillDef def, int level)
+        {
             int spent = 0;
             for (int l = 1; l <= level; l++) spent += def.GoldCostAt(l);
-            yield return new ResettableSkill(id, def.Name, level, spent);
+            return spent;
         }
     }
 
