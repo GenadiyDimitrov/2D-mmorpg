@@ -270,6 +270,7 @@ namespace Game.Client
             BuildAutoHuntWindows();
             BuildItemWindows();
             BuildVendorWindow();
+            BuildCraftingWindow();
             BuildWarehouseWindow();
             BuildBuyBackWindow();
             BuildRestoreWindow();
@@ -702,6 +703,10 @@ namespace Game.Client
                 ("Auto Pots", () => { CloseWindow(_menuPanel); OpenAutoPotions(); }, false),
                 ("Auto Farm", () => { CloseWindow(_menuPanel); OpenAutoFarm(); }, false),
                 ("Quests", () => { CloseWindow(_menuPanel); ToggleWindow(_questPanel); }, false),
+                // Craft is on the MENU rather than at an NPC: a profession is a property of the
+                // character, every rarity of material drops in the field, and the one thing you do
+                // after a farm run is refine what you picked up — none of which wants a trip to town.
+                ("Craft",  () => { CloseWindow(_menuPanel); OpenCraftingWindow(); }, false),
                 // Restore lives on the MENU, not at a vendor (C18): binning is a field accident, and an
                 // undo you can only reach in town is no undo at all.
                 ("Restore", () => { CloseWindow(_menuPanel); OpenRestoreWindow(); }, false),
@@ -1029,6 +1034,7 @@ namespace Game.Client
             RefreshDialogWindow();
             RefreshPartyWindow();
             RefreshVendorWindow();
+            RefreshCraftingList();
             RefreshWarehouseWindow();
             RefreshBuyBackWindow();
             RefreshRestoreWindow();

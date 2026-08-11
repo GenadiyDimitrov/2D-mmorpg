@@ -12,6 +12,7 @@ original file's content, unchanged, under its own marker. The reason for the mer
 
 | pass | date | what it was |
 |---|---|---|
+| [Playtest-20](#playtest-20) | 2026-08-10 | the ten-build pass (0.49.0→0.57.0). 12 free-form finds; the dagger-evasion and weapon-speed roots |
 | [Playtest-19](#playtest-19) | 2026-08-06 | the 0.48.0 pass. §46/47/48 green; four defects + M1-M14 |
 | [Playtest-18](#playtest-18) | 2026-08-04 | the second 0.45.0 pass — quests Q1-Q5, the friction tier |
 | [Playtest-17](#playtest-17) | 2026-08-03 | the 0.45.0 pass — crafting named the top content blocker |
@@ -26,6 +27,207 @@ Answered checklists that fed these passes (`Open-Checklist-0.45.0/-0.47.0/-0.48.
 transcribed into the playtest files at the time and are in git history.
 
 
+
+---
+
+<a id="playtest-20"></a>
+
+# ══ Playtest-20 ══
+
+# Playtest-20 — the ten-build pass, 0.49.0 → 0.57.0 (owner, 2026-08-10)
+
+The longest unplayed run the project had: ten builds met a player at once. He answered most of
+§49-§61 and added **12 free-form finds**, two of which (dagger evasion, the weapon speed table) were
+root-cause bugs rather than tuning. Everything below is his file verbatim; his text is after each
+`->`. Fixes shipped as **0.58.0 / 0.58.1 / 0.58.2 / 0.58.3**.
+
+## He ruled the checklist row FORMAT (asked in-pass)
+
+> I lean to .2 because its same just with a single dash infront - not so much change (we have
+> [],[!], [?], [x] so the md viewer cannot destinguish them as checkbox unless its [ ] or [x] so no
+> point in changi it to .1)
+
+So the row shape is `- \`99zz\` [] - @Description -> @my_Comment`, with a blank line after each.
+
+## His 12 free-form finds (verbatim)
+
+- [!] - Tanks Ultimate is 30s not 60 => fixed the csv
+
+- [!] - Why the dagger evasion is so high ?
+  - acc 98- elf 35dex lvl 60 => 35+60 = 95 + 3(passive) 98 ok ...
+  - evasion is 140 ?!? -> @60 + 35DEX = 95 evasion + 13 eva passive = 108 -> I have 140 (only light armor - no set, no weapon attri, no buffs.. only 35 DEX and Phantom class) where the other 32 come from ?
+    - the evasion_mastery should only increase the floor ..
+    - once i turned rogue my evasion jumps alot (and it shuldnt)
+    - now this 32% difference is 32% on a 20 floor, if its was 98 vs 108 its the 10 differecen and its a 20% floor hit all the time
+    - while the archer will stay at 10% difference on a 10% floor
+    - later all rogues will have an ultimate that increases the evasion with 20-30 so it will jump from 10-20 difference to ~40-50% to evade ... but for 30 sec ..
+  - evasion 182 @90 -> easy (slow, but easy) Elite farm (only common pots) -> 90+40DEX+13EVa+4Buff = 147 at lvl 90 not 182 -> +35 evasion from unknown source -> vs 120 ACC - 62% evasion .. else it will be 30% floor for mele and 27%  for archer on 10% floor (mytic light armor - no set, no weapon attry)
+  - CSV fix
+    - I updated the CSV - rogue - at lvl 26 there is an L1 ultimate skill (L2-@55 -> eva +30, pys skil eva x1.4, mskill eva x1.2; mp cost 50 - everithing else the same (cd,duration,80% cancel resist))
+    - Also speed is +7 flat not x1.07
+    - The Bow expertice was with the 36 lvl skills but it was lvl 28 so i fixed it as well
+
+- [~] - Can we rename `DEX` to `AGI` - everywhere
+
+- [~] - We need to change the Stat swap passives with something else
+  -  Now +5 dex +5  atk - 10 con
+  -  and I need +2 Dex -2 Atk , +3 Dex - 3con
+  -  We need to make it
+     -   +1 physical stat to -1 physical stat (atk,con,dex)
+     -   +1 magycal stat to -1 magycal stat (atk,wit,men)
+     -   to a max +5 for a single stat
+     -   and maximum +9 -9 for all stats combined
+         -   can be +5+4-9,+1/5/3-1/5/3,
+  - for example: +5dex - 5con, +4 atk -4con
+    - we will remove the "stupidity check" where you can cancel yourself
+    - +5 dex -5 con , +4 con - 4dex => +1dex -1 con
+  -  It still can be passives but buyable from mindwriter
+     - fighters can increase ATK-DEX, ATK-CON, DEX-CON, DEX-ATK, CON-ATK, CON-DEX, SPT-ATK
+     - mages can increase ATK-WIT, ATK-SPT, WIT-ATK, WIT-SPT, SPT-ATK, SPT-WIT, CON-DEX, DEX-CON
+     - clerics are the same as mage - we have a passive to balance the increase in matak with mele weapon
+  - Prices:
+    - 1~9 items now we have 1,2,3,4,5 = 15kk for 1 - can have 3 (mage) so 45kk for all 15 stats (3kk per stat)
+    - now we will have 9 stat -> +1 ~ +9 => gold [1,2,3,4,5,5,5,5,5]kk/lvl => 35kk for all, first 15kk are the same - the last 4 stats for 5kk ea
+
+- [~] - Need to rework the Evasion vs Acc
+  - Elf dagger @60 - 147 eva (143 unbuffed, 140 without set) vs Treant 90 acc ...
+  - With occasional rare potions and NPC buffer soloed the Boss
+  - Dmg is ok (the boss is weak) 1400-2000+ stabs for 58k hp ...
+
+- [~] - Raid bosses need a
+  - Boss passive
+    -  HP from x20 -> x100 (from 50-60k to 250-300k)
+    -  Acc +20
+    -  PAtk from x5 -> x20
+    -  MAtk seems ok
+  - Hp boost passive x2 hp (250-300k to 500-600k)
+
+- [!] - `Frost bind` magus skill makes training dummies go from 1kk hp to 5k and same for elites .. they lose their hp bonus
+  Dont know if its only for this debuff or no. But need investigation
+
+- [!] - When casting skill (stab) my target is lost for the duration of the cast ..then Back again (only physical "stab" haven't tested with others yet)
+
+- [!] - Few resurrect/oarty things ...
+   - ultimate resuractions are untradable... They should be tradable atleast the one that drop and from the admin menu
+   - cannot resurrect a party member when flagged ... (if I'm not pvp flag I can resurrect party member even if he is pk) and I become pvp flag - same for healing)
+   - need to be able to invite pk/pvpflag players to party and trade with pvp (pk cannot trade) ...
+
+- [!] - Elder Marius after completing the 1st quest (2nd class) gets an "!" symbol and no quest to give.
+
+- [!] - Quest reward in details is listed as single items .. X5 Dash potions are 5 rows ..not a single with "x5".
+
+- [!] - a 2h wepon have the same atack/speed as 1h. And blunt and sword have different cast/atack speed - they shouldnt.
+  > - All wepon should have the same cast speed x1 (no weapon changes cast speed for a weapon type, only passives)...
+  > - Atack speed differs:
+  >   - Knives are fastest (433 - Very fast)
+  >   - 1h sword and 1h blunt (379 base attack speed - Fast)
+  >   - 2h sword and blunts are default (325 - Normal)
+  >   - bows are slowest (293 - slow | 227 - Very slow)
+  >   - Weaponless (300)
+
+## Section answers (his comments verbatim, after the `->`)
+
+`0a` [ ] - The nuker beats the champion by ~19% where they were at parity (0.98× → 0.84×). Is the
+nuker's lead earned, or do I trim it? -> This need to be tested. When I leave the chars to play alone all measure.
+
+`0` (accuracy vs the evade FLOOR) -> then the difference become free +15 => clam(5% + (35-22=13),10floor) => miss = 18% -> but archer inves in +5 acc miss becomes 13% and also add a 5 dex here you go floor again
+
+`0` (may accuracy pierce the floor?) -> Yes the floors and ceiling cannot be touched (they are there for a reason)
+
+`0` (crit damage base) -> When you land a critical hit or use specialized dagger Blow skills, critical power multipliers inflate the numerator:
+\(\text{Critical\ Damage}=\frac{77\times \text{P.\ Atk}\times 2\times \text{Crit\ Power\ Multipliers}}{\text{P.\ Def}}\) -> so you were right the base as i cen decifer the formula its 2 times then the mutlipliers(buffs passives)
+
+`0` (flat vs % weapon crit rate) -> In l2 the weapons do a flat increase in crit (+64, +90, + 109 @SGrade) a % increase depend on the base crit value - so if we do a dagger with 30% and a sword with the same sword wont benifit the same, but if we do a flat 90 its as 9% increase after all the buffs/passives and is 9% across all. But yet the only one to do flat crit rate is a bit off ... everithing is % then crit to be flat .. why ? .. we need to alter the sword to 90% crit rate ... so unbuffed sword wielder to have 88x1.9 -> 167 and a dagger 132x1.3 = 171 -> then the max a tank investing in critical sword will not have 25% hp or 15% as but 43.5% crit rate (thats pure playstile choice)
+
+`0` (the rogue "nerf") -> why u count it as a nerf .. the 430 with jsut a weapon attri was just way to OP .. the 400 we must get only after getting fully buffed
+
+`0` (the 52-set boots P.Def typo) -> My bad. When i did the csv i added to the 40 sets a boots pdef as well -> 179 (fixed the csv)
+
+`49a` [~] - Three scroll types behave differently: one breaks the item, one drops it −1, one is safe. -> the enchant scrolls work. Need to change the enchant rates.
+   > +1~3 - safe (3 enchants, to enchant avg-3 scrolls)\
+   > +4~9 - 66% (6 enchants, avg-9 scrolls)\
+   > +10~15 - 33% (6 ench, avg-18 scrolls\
+   > +16 - 5% (1 ench, avg-20 scrolls\
+   > so a weapon +0~16 need ~51 scrolls, and that's if they are the safe one. (~823 when is greater)
+
+`50c` [x] - `Can Crit` and `Can Double` must be EXCLUSIVE (your `M8`). -> a piercing blow can crit and double so it does.
+
+`52b` [~] - `Can Crit` / `Can Double` render per skill in the skill window. -> not all skills. Piercing stab the description is outdated
+
+`53a` [!] - The Blessing Box no longer eats itself on a partial pick. -> Now it forbids me to select 1 and aquire it.\
+  Make it so to be able to (or)
+  - use x amount of a single item (5 of item1, 3 of item2, 2 of item3)
+  - take 1, then open it 9 more times and take the same item  (open and take item1 -> 9 times)
+
+`53e` [!] - The friction tier as a whole — does the game feel less fiddly? -> well there is a bit of rubber banding when stopping. I click move and when it arrive at the destination it stops with inertia and comes back .. A small but it's there
+
+`54e` [~] - The God layer is gone and the debug rig still works. -> I think we need to do the same commands and for other stats ...one statMod that is Admins only that overrides all stats - so I can do a acc 999999 or Eva 99999 or crit dmg or rate etc...
+
+`56a` [x] - Magic crit rate is no longer decorative. -> 17% on human mage without the second double crit rate buff so it's OK.
+
+`56c` [~] - A mob still crits occasionally (~1.25%), not never. -> make a magic training dummy 80 lvl with magic (50 range) that does 1 mdmg each 0.1s so for 10 s to hit me 100 times and see it i got atleast 1 crit dmg (can do the same for with a phys skill dummy)
+
+`56e` [?] - Resonance reads as a percentage (×1.2), not a flat number. -> What is this Resonance?
+
+`57b` [!] - Robe Armor Mastery is bought with SP at 7 and 14. -> the L1 is shown inside lvl-1 and lvl-7 learning groups. Learning one makes the other disappear and a the one at lvl-14 shows
+
+`57d` [!] - A bow caster cannot BUFF his way out of the magic-accuracy penalty. -> I dont see my magic
+  *(truncated in his file; clarified in chat 2026-08-10: "I don't see my magic FAILING with a bow more
+  than with a wand", level 60 vs a level-60 dummy, several skills cast.)*
+
+`55b` [!] - The skill card shows the HP price, not just the MP gain. -> it's not showing in the description what it takes to gain what ..-200hp +120mp ..is never written
+
+`55c` [!] - Casting it at low HP refuses, or at least does not kill you. -> it should not allow you to use the skill wham hp is less than required health. It goes for every skill that take hp as well ... It should act as mp ..I cannot cast a skill whne my mp is low ..so I cannot cast skill when hp is low ..
+
+`58a` [~] - A fresh character is offered `Welcome, Traveller` at level 1 and the five parts chain in order. ->
+   - We fixed the Nyra part where she didn't accepted my talking
+   - Works (after the fix) but we need to tell the fresh traveler before he fights the pigs ->
+      - how to open his bag
+      - how to open boxes
+      - which armor/weapon to select...
+      - how to equip/use skills/spells/attacks.. (if I'm new I will stand near the pigs naked and bear hands not knowing what to do) ...
+      - After the Miren (aphotecatry) how to use the rune and what it does
+      - Also there should be how to use auto potions and auto farm -> "reach lvl 18"  part looks OK for this (after the Dorian-jewels)
+
+`58d` [~] - The kit is a 30-day LOANER. -> it's like that,but can we make it so every item have timer,is Tradable, is Sellable (-1 sell price). Meaning the item is not a clone (for Newibie equip is OK to be like that) but let say I want to give some1 a Soulcrystal item and that item to be timed,unsellable,untradable - not to make server side a new item, just take a real Soulcrystal item add sell price -1, add time x[s|m|h|d] (1m == 1min),flags it untradable => and the item reads as "Soulcrystal (temporary, bound)" =>
+   - sellable + tradable == no tag/flag (normal)
+   - unsellable + untradable == bound
+   - sellable + untradable == private (or something smarter/better)
+   - timed + normal/bound/private == temporary, (blank)/bound/private
+   - it's real item just with tags. I later want to be able with command:
+      - /give <name> sword1h_t10 -1 0 1d "Admin Sword" 5 -> and I get a "Admin Sword +5 (temporary bound)" a blade +5 enchanted for 1 day unsellable and untradable
+      - (/give <name> <itemId> <sell price: -1 unsellable/0 - default/1[k/m/b...we have it]> <tradable: true/false or 1/0> <timed: 0 normal, 1d == 1 day..> <newItemName: "some new name limit to 20 symbols in quotes spaces to work" and "" empty quotes for default name> <enchant value>)
+      - that way I can reach mytic no need for craft atm and can give anyone anything
+
+`58g` [~] - A WORN loaner that expires is removed and your stats drop with it. -> if I have 58d then I'll test it
+
+`58i` [~] - He never named the game. -> thats ok but on that note.. We need to rename everitying that says l2(as the game not the level),l2 clone project etc every comment to refer from l2 to the (inspiration game) or `IG` or other tag
+
+`59c` [~] - A timed item says how long it has left, colour-graded. -> will test it with 58d
+
+`59r` [~] - 20 characters max, letters/digits/space/`'`/`-` only. -> it works, but i want the title color to be default white for /title. And the /titlecolor to be a item like a rune that give you the right to use the /titlecolor + clicking on the title color rune item to open the colors as a list
+
+`61b` [?] - Same item in the vendor list: "Mythic S-grade …". -> which vendor .. we have no vendor taht sells more than D (yet)
+
+`61c` [X] - S gear now takes the normal one-step ×0.5 grade penalty below 80. -> ofc it needs penalty as max lvl penalty even more if youd like .. to balance the dmg of a lvl1 with F grade and S grade
+
+`61d` [!] - `/jail` then `/tp`: you arrive in the jail with an orange dashed circle around the cell. ->
+  - The jail cell is 1px x 1px ... make the jail like an dungeon .. with size 300x500 or something .. the jailed person to move inside ...
+  - make a jail .. not a cell per player ..
+
+`61h` [!] - Same at a dungeon wall — in the Hollow Crypt, tap outside the dungeon. -> it dont have walls and i can go out of the creep (get rubber in but still no collision)
+
+`61j` [~] - Nothing normal changed. -> only the inertia stop that i explained in `53e`
+
+## What PASSED (marked `x`, no comment)
+
+§49 b/c/d · §50 a/b · §52 a/c/d · §53 b/c/d · §54 a-d, f-h · §56 b/d · §57 a/c/e/f · §55 a/d/e/g ·
+§58 b/c/e/f/h · §59 a/b/d-q/s/t · §60 **all eight** (the combat window is clean) · §61 a/e/f/g/i.
+
+## Never reached in this pass
+
+`55f` (the 10-minute mage MP farm — the real question of §55), `0a` (nuker vs champion, deferred to an
+auto-farm run), `37d`, `37e`, `36e`, `32z`, `25b`, `13a`.
 
 ---
 

@@ -309,6 +309,7 @@ public class GameLoopService : BackgroundService
         SendLearned(entity);   // sends the skill BAR with it, in the right order — see SendLearned
         SendCooldowns(entity); // after the bar: the overlay has nothing to sit on before it exists
         SendSubclasses(entity);
+        SendCrafting(entity);  // profession + unlocked blueprints; the craft window is empty without it
         SendQuestLog(entity);
         SendGold(entity);
         SendAutoHuntConfig(entity);   // restore the saved auto-hunt settings in the client UI
@@ -2607,6 +2608,10 @@ public class GameLoopService : BackgroundService
         }
         player.Profession = (Profession)cmd.Profession;
         SendSystemToEntity(player, $"You are now a {player.Profession}. (Recipes unlock as you level.)");
+        SendCrafting(player);
+        // A profession is PERMANENT and lives on the character record — save it now rather than trusting
+        // the 60s autosave to outlive a crash, because there is no way to pick again.
+        SaveEntity(player);
     }
 
     private void HandleDebugSetProfession(DebugSetProfessionCmd cmd)
@@ -2615,6 +2620,7 @@ public class GameLoopService : BackgroundService
             return;
         player.Profession = (Profession)Math.Clamp(cmd.Profession, 0, (int)Profession.ScrollScribe);
         SendSystemToEntity(player, $"[DEBUG] Crafting profession set to {player.Profession}.");
+        SendCrafting(player);
     }
 
     /// <summary>Debug: become a 2nd CLASS on the spot, skipping the quest and level gates the NPC path
@@ -2787,6 +2793,12 @@ public class GameLoopService : BackgroundService
             ?? $"[DEBUG] Now playing class #{slot}: {player.BaseClass} (level {player.Level}).");
         SaveEntity(player);
     }
+
+    /// <summary>The crafting window's whole server-side input: the one permanent profession and the
+    /// blueprints this character has unlocked. Everything else it draws comes from the shared
+    /// RecipeCatalog, so this is deliberately two fields — see <see cref="CraftingUpdate"/>.</summary>
+    private void SendCrafting(Entity p) =>
+        SendTo(p, "Crafting", new CraftingUpdate((int)p.Profession, p.KnownRecipes.ToArray()));
 
     private void SendSubclasses(Entity p) =>
         SendTo(p, "Subclasses", new SubclassListDto(p.Subclasses
@@ -9880,6 +9892,7 @@ var effect = def.Effect;
             $"Unlocked the blueprint for {outName}. Each craft consumes another blueprint" +
             (recipe.Profession != Profession.None ? $" and needs the {recipe.Profession} profession." : "."));
         SendInventory(player);
+        SendCrafting(player);   // the craft window lists a DropOnly recipe only once it is known
         SaveEntity(player);
     }
 

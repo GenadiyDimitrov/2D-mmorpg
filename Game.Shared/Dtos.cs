@@ -886,3 +886,14 @@ public record QuestLog(QuestSummary[] Active, string[] Completed, QuestEntry[] E
 /// <see cref="SocialOptions"/> flag set. Pushed on login and after every change, so the Options
 /// window draws the server's answer rather than a guess it made when you tapped.</summary>
 public record SocialOptionsUpdate(int Options);
+
+/// <summary>Server -&gt; owning client: this character's CRAFTING state. Deliberately TINY — the
+/// recipes themselves live in <see cref="RecipeCatalog"/>, which is compiled into the client, so the
+/// only things that have to travel are the two the SERVER owns: the one permanent
+/// <see cref="Profession"/> (0 = not chosen yet) and the <c>DropOnly</c> recipes this character has
+/// unlocked from a blueprint. Everything else the crafting window shows — inputs, costs, level gates,
+/// success chance — it computes locally from the same catalog the server crafts from, so the two can
+/// never disagree about what a recipe costs.
+///
+/// Pushed on login and after every change (choose profession, learn a recipe, the admin override).</summary>
+public record CraftingUpdate(int Profession, string[] KnownRecipes);

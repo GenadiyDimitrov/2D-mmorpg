@@ -46,6 +46,7 @@ namespace Game.Client
         private string _debugEquipCat = "";  // "" = root, else armor/weapon/jewel
         private int _debugEquipLevel;      // 0 = still choosing
         private int _debugTpView;          // 0 root, 1 npcs, 2 zones, 3 cities
+        private int _debugItemsView;       // 0 root, 1 crafting materials, 2 blueprints
         private bool _debugAddDiscView;
 
         private readonly Dictionary<string, TMP_InputField> _tuneFields = new();
@@ -114,6 +115,7 @@ namespace Game.Client
             _debugEquipCat = "";
             _debugEquipLevel = 0;
             _debugTpView = 0;
+            _debugItemsView = 0;
             _debugAddDiscView = false;
             if (tab == 5) Boot.Debug(n => n.RequestDebugConfigAsync(), "tuning");
             RefreshDebugPanel();
@@ -182,13 +184,22 @@ namespace Game.Client
         // ---- Equip -------------------------------------------------------------------------------
 
         /// <summary>The gear LEVELS present in the catalog — discovered, never hardcoded, so new tiers
-        /// appear here the day they are added to the CSV.</summary>
+        /// appear here the day they are added to the CSV.
+        ///
+        /// 🔑 Filtered on MYTHIC, which is THE AUTHORED PIECE. It used to say Epic, and that was right
+        /// until the rarity ladder was re-anchored (the authored tier tables became the 100% Mythic rung
+        /// and every lesser quality became a derived copy of it). After that, this list quietly handed
+        /// out the **Epic copy at 70% of the real stats** — it still looked full, so nothing pointed at
+        /// it, while every balance number taken off admin-issued gear was 30% light. The identical stale
+        /// filter had already produced ZERO craftable recipes in RecipeCatalog.FinishedItemRecipes; this
+        /// was the same bug, in the place it is hardest to notice. If a new rarity is ever appended,
+        /// what belongs here is "the authored one", never a literal rung.</summary>
         private static IEnumerable<int> GearLevels() => ItemCatalog.AllItems
-            .Where(d => d.ItemLevel > 0 && d.Rarity == ItemRarity.Epic)
+            .Where(d => d.ItemLevel > 0 && d.Rarity == ItemRarity.Mythic)
             .Select(d => d.ItemLevel).Distinct().OrderBy(l => l);
 
         private static IEnumerable<ItemDef> GearAt(string cat, int level) => ItemCatalog.AllItems
-            .Where(d => d.ItemLevel == level && d.Rarity == ItemRarity.Epic)
+            .Where(d => d.ItemLevel == level && d.Rarity == ItemRarity.Mythic)
             .Where(d => cat switch
             {
                 "armor" => d.Slot is EquipSlot.Armor or EquipSlot.Shield,
@@ -275,7 +286,16 @@ namespace Game.Client
 
         private void BuildDebugConsumables()
         {
+            if (_debugItemsView == 1) { BuildDebugMaterials(); return; }
+            if (_debugItemsView == 2) { BuildDebugBlueprints(); return; }
+
             _debugTitle.text = "Scrolls, potions and reagents";
+
+            // Crafting needs a LOT of one thing (an E-grade body is 100 commons + 50 uncommons), so the
+            // materials live behind their own page with bulk buttons rather than as 25 more rows here.
+            DebugHeader("Crafting");
+            DebugAction("Crafting materials >", () => { _debugItemsView = 1; RefreshDebugPanel(); });
+            DebugAction("Blueprints (A/S recipes) >", () => { _debugItemsView = 2; RefreshDebugPanel(); });
 
             // Every one of the 18 (D2: "every scroll in the admin menu"). Generated from the same table
             // the catalog is built from, so a scroll can never be authored and left unreachable here.
@@ -327,6 +347,75 @@ namespace Game.Client
             DebugGive(ItemCatalog.ScrollReturnUltimate, "ULT Scroll of Return x5", 5);
             DebugGive(ItemCatalog.ScrollResurrect, "Scroll of Resurrection x5", 5);
             DebugGive(ItemCatalog.ScrollResurrectUltimate, "ULT Scroll of Resurrection x5", 5);
+        }
+
+        // ---- Crafting materials + blueprints -------------------------------------------------------
+
+        /// <summary>The 25 crafting materials (5 types x 5 rarities), generated from the shared
+        /// <see cref="Crafting"/> tables rather than listed — a new material type or rarity appears here
+        /// the day it is added. Quantities are sized to what a craft actually costs: a single E-grade
+        /// body is 100 common + 50 uncommon, so a "x10" button would be theatre.</summary>
+        private void BuildDebugMaterials()
+        {
+            _debugTitle.text = "Crafting materials — sized for a real craft, not a taste";
+            DebugAction("< Back", () => { _debugItemsView = 0; RefreshDebugPanel(); });
+
+            // The one button that actually gets used: enough of everything to craft anything and still
+            // have room to fail a few 80% rolls.
+            DebugAction("* GIVE ALL — every material x500", () =>
+            {
+                foreach (var type in Crafting.MaterialTypes)
+                    foreach (var rarity in Crafting.MaterialRarities)
+                    {
+                        string id = Crafting.MaterialId(type, rarity);
+                        if (ItemCatalog.Get(id) is null) continue;
+                        Boot.Debug(n => n.DebugGiveAsync(id, 500), "give");
+                    }
+            });
+
+            foreach (var type in Crafting.MaterialTypes)
+            {
+                DebugHeader($"{type} — refined by {Crafting.RefinerOf(type)}");
+                foreach (var rarity in Crafting.MaterialRarities)
+                {
+                    string id = Crafting.MaterialId(type, rarity);
+                    if (ItemCatalog.Get(id) is null) continue;
+                    DebugGive(id, $"{Crafting.MaterialName(type, rarity)} x200", 200);
+                }
+            }
+        }
+
+        /// <summary>Every recipe BOOK in the catalog. A blueprint is the only way to reach a DropOnly
+        /// (A/S-grade set) recipe, and it is spent again on every craft — so testing one needs several,
+        /// which is why these come in fives.</summary>
+        private void BuildDebugBlueprints()
+        {
+            _debugTitle.text = "Blueprints — 1 to unlock the recipe, then 1 more per craft";
+            DebugAction("< Back", () => { _debugItemsView = 0; RefreshDebugPanel(); });
+
+            var books = ItemCatalog.AllItems
+                .Where(ItemCatalog.IsRecipeBook)
+                .OrderBy(d => d.Name, StringComparer.Ordinal)
+                .ToList();
+
+            if (books.Count == 0)
+            {
+                DebugNote("No recipe books in the catalog.");
+                return;
+            }
+
+            DebugAction($"* GIVE ALL — every blueprint x5 ({books.Count} kinds)", () =>
+            {
+                foreach (var book in books)
+                {
+                    string id = book.Id;
+                    Boot.Debug(n => n.DebugGiveAsync(id, 5), "give");
+                }
+            });
+
+            DebugHeader("Individual blueprints (x5)");
+            foreach (var book in books)
+                DebugGive(book.Id, book.Name + " x5", 5);
         }
 
         // ---- Functions ---------------------------------------------------------------------------

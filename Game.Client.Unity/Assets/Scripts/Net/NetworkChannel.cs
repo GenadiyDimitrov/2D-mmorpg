@@ -92,6 +92,10 @@ namespace Game.Client
         /// <summary>The social toggles behind the Options window (playtest-19 M2).</summary>
         public event Action<SocialOptionsUpdate> SocialOptionsReceived;
 
+        /// <summary>The character's crafting profession + unlocked blueprints. The recipes themselves
+        /// are read out of the shared RecipeCatalog, so this is the only crafting state on the wire.</summary>
+        public event Action<CraftingUpdate> CraftingReceived;
+
         /// <summary>You crossed into a named region — shown as transient centre-screen text.</summary>
         public event Action<RegionNotice> RegionReceived;
 
@@ -147,6 +151,7 @@ namespace Game.Client
             _connection.On<AutoHuntConfigDto>("AutoConfig", c => AutoConfigReceived?.Invoke(c));
             _connection.On<AutoHuntStatus>("AutoHunt", s => AutoHuntStatusReceived?.Invoke(s));
             _connection.On<SocialOptionsUpdate>("SocialOptions", s => SocialOptionsReceived?.Invoke(s));
+            _connection.On<CraftingUpdate>("Crafting", c => CraftingReceived?.Invoke(c));
             _connection.On<RegionNotice>("Region", r => RegionReceived?.Invoke(r));
             _connection.On<string>("Notice", m => NoticeReceived?.Invoke(m));
             _connection.On<SelectionOffer>("Selection", o => SelectionReceived?.Invoke(o));
@@ -394,6 +399,15 @@ namespace Game.Client
             _connection.SendAsync("RemoveItem", instanceId, all, quantity);
 
         public Task RestoreItemAsync(int index) => _connection.SendAsync("RestoreItem", index);
+
+        // ----- crafting ---------------------------------------------------------------------------
+        /// <summary>Craft one unit of a recipe. The server re-checks profession, level, blueprint and
+        /// every input, so a client that offers a row it should not simply gets a refusal line.</summary>
+        public Task CraftAsync(string recipeId) => _connection.SendAsync("Craft", recipeId);
+
+        /// <summary>Pick the character's ONE PERMANENT crafting profession. Refused if already set.</summary>
+        public Task ChooseProfessionAsync(int profession) =>
+            _connection.SendAsync("ChooseProfession", profession);
 
         // ----- debug (server re-checks admin rights on every one of these) ------------------------
         public Task DebugLevelAsync(int delta) => _connection.SendAsync("DebugLevel", delta);

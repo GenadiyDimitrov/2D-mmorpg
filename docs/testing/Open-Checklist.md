@@ -1,14 +1,13 @@
-# OPEN CHECKLIST — everything untested as of **0.57.0** (2026-08-08)
+# OPEN CHECKLIST — everything untested as of **0.59.0** (2026-08-11)
 
-> **This file is now UNVERSIONED and ROLLING.** It replaces the three per-version
-> `Open-Checklist-0.45.0 / -0.47.0 / -0.48.0` files, which are gone — every item of theirs that was still open is carried
-> forward below, and everything they answered is preserved verbatim in
-> [Playtest-Archive.md](Playtest-Archive.md). When you finish a pass, I transcribe your answers into
-> the archive and rewrite this file against the next build. One open checklist, always.
+> **Rolling and unversioned.** Playtest-20 (your 2026-08-10 pass over ten builds) is closed and
+> transcribed verbatim into [Playtest-Archive.md](Playtest-Archive.md#playtest-20) — this file has been
+> rewritten against the four builds that came out of it. Every answer you gave is preserved there;
+> everything you left open is carried forward below.
 
-Edit this on the phone: write your comment after the `->`. Put `x` in the `[ ]` if it passed with
-nothing to say, `~` if it works but wants a change, `!` if it is a bug or priority, `?` for a
-question. `[ ]` with no id in front is a free line for that section — add as many as you like.
+Rows are the format you picked (option 2): write your comment after the `->`. Put `x` in the `[]` if
+it passed with nothing to say, `~` if it works but wants a change, `!` if it is a bug or priority,
+`?` for a question. A `-` row with no id is a free line for that section — add as many as you like.
 Ids match [TestChecklist.Unity.md](TestChecklist.Unity.md), which carries the full detail for every
 section number referenced here.
 
@@ -16,709 +15,441 @@ section number referenced here.
 
 ## ⚠ BEFORE YOU START
 
-**Install `L2Clone-0.57.0.apk` and unzip `Game.Server-0.57.0.zip`** (both in `builds/`). Protocol is
-**14** — it moved at 0.56.0, for the combat channel. Install **both** sides: the catalogs, skill
-tables and world bounds are compiled into each, so a mismatched pair disagrees quietly rather than
+**Install `L2Clone-0.59.0.apk` and unzip `Game.Server-0.59.0.zip`.** Protocol is **16** — it moved at
+0.59.0 for the crafting push, and at 0.58.1 before that. Both sides together: the catalogs, skill
+tables and world outlines are compiled into each, so a mismatched pair disagrees quietly instead of
 refusing.
 
-🔴 **DELETE `Game.Server/game.db` + `-shm` + `-wal`.** Not optional. Four reasons stack up from builds
-you have not played yet: 0.52.0 changed columns, 0.53.0 removed the God layer (an old character
-carrying `Race = 99` or a God item references an id that no longer exists), the mastery restructure
-clamps `mastery_robe` from 3 rungs to 2 on login, and 0.55.0 adds three title columns. (0.56.0 and
-0.57.0 add nothing — but the earlier four still apply.) ⚠ Delete the one in `Game.Server/`, **not**
-the stale copy in `bin/Debug/` — that one is a decoy and deleting it will fool you into thinking you
-reset.
+🔴 **Move `Game.Server/game.db` out (+ `-shm` + `-wal`).** 0.58.1 renamed the DEX column to AGI and
+`EnsureCreated` cannot migrate a rename — an old character would load with a missing stat. Everything
+older still applies too (0.52.0 columns, the 0.53.0 God removal, the mastery clamp, 0.55.0's three
+title columns).
 
-🔴 **TEN BUILDS ARE UNPLAYED.** 0.49.0, 0.50.0, 0.51.0, 0.52.0, 0.53.0/0.53.1, 0.53.2, 0.54.0,
-0.55.0, **0.56.0** and **0.57.0** — by a distance the longest unplayed run this project has had. The
-risk is not any single change; it is that ten builds' worth of combat-maths reworks, a replaced
-starter quest chain, a protocol bump and now a change to how *movement itself* is enforced have never
-met a player. **And the build queue you set on 2026-08-07 is now empty** — there is nothing left
-queued for me to write, so this pass is the only thing that moves the project.
+🔴 **FIVE BUILDS ARE UNPLAYED — 0.58.0, 0.58.1, 0.58.2, 0.58.3, 0.59.0.** The four 0.58.x builds came
+out of your own playtest-20 finds, so most of this pass is *"did he fix what I reported"*. Two of them
+changed combat maths that everything else sits on: **the weapon speed table** (§62) and **how magic
+lands** (§64). **0.59.0 is CRAFTING** (§66) — new ground, and the only section here that is a feature
+rather than a fix.
 
-✅ **Pre-flight is clear.** `tools/SmokeTest` ran 2026-08-07, all ~150 assertions passed, server log
-clean. Nothing since (0.56.0 chat, 0.57.0 movement/grades) touches persistence, the skill bar,
-subclasses or the login sequence, so it still stands. Say the word if you want it re-run anyway.
+✅ **Pre-flight is clear.** `tools/SmokeTest` was re-run against the **0.59.0** server — **ALL CHECKS
+PASSED**, including its blueprint-craft assertions. The server was boot-checked too (it starts, every
+world validator runs, log clean). 0.59.0 touches the login sequence, which is exactly what the smoke
+test exists to guard.
+
+🟡 **You said you are re-authoring the weapon CSV.** Every row below marked **⏸ CSV** is a number that
+your new CSV will move — skip those rows this pass, they will only be worth testing after your file
+lands.
 
 ## Where to spend the pass, if you don't do all of it
-Ten sections is a lot. If you get tired, these are the ones where a defect would be **expensive to
-find later**, in order: **§61** (movement — the client can now edit your destination; a wrong bound
-shows up as taps that quietly go somewhere else), **§53/§55/§57** (the combat-maths reworks — every
-number below them assumes these are right), **§58** (the tutorial chain replaced the old starter
-quests, so a new character's first hour is untested), then everything else.
+
+In order of how expensive a defect would be to find later:
+
+1. **§62 the weapon speed table** — every DPS number in the game moved. A 2H now swings slower than a
+   1H, which is correct but makes the champion the worst melee until your CSV raises 2H P.Atk.
+2. **§64 magic landing** — a brand-new formula replaced a stat that did nothing. If the parity number
+   is not ~1% fail, everything above it is wrong.
+3. **§66 crafting** — the only new feature here, and the one thing with no prior play at all.
+4. **§63 the four bug fixes** — the dungeon wall and the jail were rebuilt, not patched.
+5. **§62 evasion** — your biggest find. Confirm the +32 is gone at the exact character you measured.
+6. Everything else.
 
 ---
 
-## ✅ 0. DECISIONS — ALL ANSWERED, nothing here blocks the pass (skim or skip)
+## 0. ANSWERS I OWE YOU — read, don't test
 
-Kept for the record only. `0a` is deferred to an auto-farm run (your call), `0b` `0c` `0d` `0e` are
-closed. **The one live thing in this section is a warning, not a question:** `0a` makes auto-farm the
-measuring instrument, and `32z` — auto-farm skill chains surviving a relog — has never been tested.
-If the chains misbehave, the measurement lies. Worth doing `32z` in the same sitting.
+- `56e` - **"What is this Resonance?"** It is the **human Warchanter racial passive** (`wc_human_pass`):
+  +10% max MP, extra MP regen, and ×1.2 magic crit. You met it on the admin level-90 Warchanter seed —
+  it is not a general mechanic, it is that one class/race combination's passive.
 
-`0a` [ ] - **The nuker now beats the champion by ~19%** where they were at parity, because magic crit
-became a real channel (§56). Measured, not derived: CHAMPION/NUKER went **0.98× → 0.84×** at level 74
-in best gear with NPC buffs. The levers are the **base 50** and the **flat ×3 crit damage**, both your
-numbers. Is the nuker's lead earned, or do I trim it? -> This need to be tested. When I leave the chars to play alone all measure.
+- `61b` - **"Which vendor?"** You are right: **no vendor sells above D grade**, so the "Mythic S-grade"
+  string in a vendor list is unreachable today. Not a defect, nothing to test.
 
-  ✅ **Understood — deferred, no code change.** You will judge it from an auto-farm run, not the
-  matrix. ⚠ One flag: that makes **auto-farm the measuring instrument**, and `32z` (auto-farm skill
-  chains + surviving a relog) has never been tested in any playtest. If the chains misbehave the
-  measurement lies. Worth doing `32z` in the same sitting.
+- 🔴 **Piercing Stab's level-32 MP cost is 58**, sitting between level 24's and level 30's smaller
+  numbers. `rogue 20-35.csv` line 19 says 58, so the code is faithful to your file. **I did not touch
+  it — it looks like a typo in the CSV and it is yours to rule on.**
 
-`0b` [?] - **Accuracy cannot beat an evasion FLOOR, and +5 accuracy therefore buys an archer nothing**
-against a rogue (§55e). `miss = clamp(5% + (eva − acc), floor, 95%)` — evasion is additive from its
-first point, accuracy only claws back what sits above *both* the 5% base and the defender's floor.
-Against a rogue's 10% floor, +5 accuracy is worth **zero** until you already out-evade him by 10+.
-The +5 is the right size; the **floor** is the problem. Do you want accuracy to eat into the floor,
-or is an archer simply not supposed to beat a rogue's dodge? -> 
-  - Explain to me this one.
-    > dagger have floor of 10%,\
-    > all the passives,buffs and dex he have let say difference of 20 with a normal class/mob\
-    > archer have a selfbuff that give him 10 acc then the weapon mastery +4 acc and 2 more normal buffs +4 => 10+4+4+4 = 22 + Acc\
-    > clam(0.05 - 0.02 (20-22), 0.1,0.95) => so archer hits the floor of a dagger\
-    > until the difference is +5 and up in faveour of evasion the floor is met\
-    > is that what u ment by +5 acc dosnt give you nothing .. well if dagger invest in +10dex/-5atk/-5con and +5 eva on weapon\
-    > then the difference become free +15 => clam(5% + (35-22=13),10floor) => miss = 18% -> but archer inves in +5 acc miss becomes 13% and also add a 5 dex here you go floor again\
-    > Am i calculating right
+- 🔴 **Your 2H S-row disagrees with the 1H's.** You authored the 2H S row as **532/192**, but the 1H
+  line derives **211** M.Atk at S — which breaks your own "2H M.Atk = 1H M.Atk" rule at exactly that
+  one rung. Your new CSV can settle it; flagging so it does not get lost.
 
-  **YES — all four of your cases are exactly right**, I checked each against
-  `StatCalculator.ResolveAvoidChance`. And **my framing was wrong**, not yours. The order is:
-  `m = clamp(5% + (eva − acc)·1%, 5%, 95%)` → level gap → `clamp(m, max(5%, floor), …)`.
-  Your cases: `(eva−acc) = −2` → 3% → floored to **10%** ✅ · lead 13 → **18%** ✅ · +5 acc → **13%** ✅
-  · +5 DEX → 8% → floored to **10%** ✅.
-  So accuracy pays **full value while his evasion lead is more than 5 points**, and nothing once the
-  lead is 5 or less (the floor has taken over). The dead zone is the **last** 5 points, not the first
-  10 — I had it backwards. Your +5 acc case is 18% → 13% miss = **+6.1% landed hits**, which is not
-  nothing. ⚠ The bigger point: step 1 clamps at 5%, so accuracy **beyond** the defender's evasion is
-  wasted against *everything*, not just rogues — accuracy is a catch-up stat, never a scaling one.
-  🔴 **Still yours to rule:** may accuracy eat INTO the floor? I recommend **no** — the floor is
-  authored as an anti-accuracy tool, so letting accuracy pierce it deletes the passive's purpose. -> Yes the floors and ceiling cannot be touched (they are there for a reason)
-
-  ✅ **CLOSED, no code change — the floors and ceilings stay untouchable.** Recorded as a standing
-  rule, not a one-off answer: accuracy is a catch-up stat that pays full value only while the
-  defender's evasion lead is more than 5 points, and never pierces the floor. **§0 is now fully
-  answered — nothing in it blocks the pass.**
-
-
-`0c` [X] - **Physical crit damage base ×2.0 — still under research, still unchanged.** You think L2 is
-×1.5 and neither of us can source it. The real question is *what the multiplier multiplies*: ours
-scales the **whole ratio including skill power**, L2's scales the **attack term only** — so "should
-be 1.5" may be the same ×2 on a smaller base. **A** = lower to 1.5. **B** = keep ×2 but apply it to
-the attack term only (touches `CritFlatFactor` and every call site). ⚠ Rogue damage now rides almost
-entirely on crit damage, so this is a big lever. -> When you land a critical hit or use specialized dagger Blow skills, critical power multipliers inflate the numerator:
-\(\text{Critical\ Damage}=\frac{77\times \text{P.\ Atk}\times 2\times \text{Crit\ Power\ Multipliers}}{\text{P.\ Def}}\) -> so you were right the base as i cen decifer the formula its 2 times then the mutlipliers(buffs passives)
-
-  ✅ **CLOSED, nothing changes** — ×2.0 stays, neither A nor B. Your source settles it. (One residual
-  I am *not* re-raising: your formula puts the ×2 on the attack term, ours scales the whole ratio
-  including skill power. It only diverges on high-power skills; say the word if you ever want it.)
-
-`0d` [~] - **The gear CSV's attribute ceiling.** I found while updating `docs/data/gear/gear_sets.csv`
-that the shipped roll system is the **inverse** of what that file described: **the MAX is flat across
-all five grades and the MINIMUM is what ramps**. A D-grade sword and an S-grade sword both cap at
-+30% crit rate; the grade only removes bad luck. Your file said the ceiling climbs per grade. Which
-did you mean? -> In l2 the weapons do a flat increase in crit (+64, +90, + 109 @SGrade) a % increase depend on the base crit value - so if we do a dagger with 30% and a sword with the same sword wont benifit the same, but if we do a flat 90 its as 9% increase after all the buffs/passives and is 9% across all. But yet the only one to do flat crit rate is a bit off ... everithing is % then crit to be flat .. why ? .. we need to alter the sword to 90% crit rate ... so unbuffed sword wielder to have 88x1.9 -> 167 and a dagger 132x1.3 = 171 -> then the max a tank investing in critical sword will not have 25% hp or 15% as but 43.5% crit rate (thats pure playstile choice)
-
-  ✅ **BUILT** — sword ceiling 30 → **90** (`RampSwordCrit = 3/15/30/60/90`). Your two numbers land
-  exactly: sword `88 × 1.9 = 167`, dagger `132 × 1.3 = 172`.
-  🔴 **But building it found a real defect, bigger than the question you asked.** The roll was not a
-  multiplier at all — `Entity.RecomputeDerived` put it in `CritRateFlat` as `value / 100`, so a maxed
-  roll was **+30 PERCENTAGE POINTS**: sword 8.8% → **38.8%**, dagger 13.2% → **43.2%**, both nearly
-  at the 50% cap off one roll. That is **+300 on your 0-1000 scale** vs L2's +109 at S grade, and 10×
-  your own rule for that channel (*"a flat 30 is flat 3%"* — the divisor should have been 1000).
-  Worse, being FLAT it **collapsed the 3:2:1 weapon identity** the crit model exists to create, since
-  the same +30 is worth far more to the weapon with the smaller base. It now multiplies — which is
-  what the tooltip has always said.
-  ⚠ **This is a large dagger/bow NERF at max roll (43.2% → 17.2%).** It is the number you wrote
-  yourself, so I built it, but nobody has played it. Watch rogue damage in the pass. -> why u count it as a nerf .. the 430 with jsut a weapon attri was just way to OP .. the 400 we must get only after getting fully buffed
-  Archer - 132x1.2(passive) = 158x1.3(single buff) = 206 => here if we add the x1.3 attri we get 267 which is 6% and without the attri do a x2 harmony we get 411 ... but if we want we can then add the attri end get to the cap 535
-  Fighter - 88x1.3(buff) = 114x1.9(attri) = 217 ~same as dagger without atri then the x2 harmony here u go on a single sword 434 near the cap
-
-  ✅ **CLOSED — you are right and "nerf" was the wrong word.** I checked all four of your chains and
-  they land: archer `132×1.2×1.3 = 206`, `×2 harmony = 412`, `+attri = 535`; fighter
-  `88×1.3×1.9 = 217`, `×2 harmony = 434`. Both reach the **500 (50%) cap only when FULLY buffed**,
-  which is the design — the old build handed you 430 off a weapon roll alone. No change; I was
-  measuring the max roll in isolation instead of against the buff stack it is supposed to need.
-  Still worth **watching rogue damage** in the pass, but as an observation, not a suspected regression. -> 
-
-`0e` [!] - **`light` body armor at 52 (202 P.Def) is WEAKER than at 40 (218).** Authored that way in
-your CSV and shipped that way, so the C body is a downgrade for anyone who already has the D one.
-Typo, or deliberate (the 52 line trades defence for its DEX/P.Atk set bonus)? -> My bad. When i did the csv i added to the 40 sets a boots pdef as well -> 179 (fixed the csv)
-
-  ✅ **BUILT** — synced `Items.cs` to your CSV edit: the light body array and all three
-  `light_t40_*` variants 218 → **179**. Light P.Def is monotonic again: 86 / 125 / **179** / 202 /
-  220 / 249, so the C body is an upgrade over the D one. -> 
+- 🔴 **The champion test is still owed by you.** Reverting the 2H P.Atk raise puts champion/nuker back
+  at **0.84×** — the nuker is ~19% ahead. `0a` below is that measurement.
 
 ---
 
-## Open-Checklist.md rows format change
+## 62. 0.58.0 — the evasion root cause + your four number rulings
 
-When writing the OpenChecklist file can the checks be one of the two:
+Full detail: none in `TestChecklist.Unity.md`, it is here. **Your finds #2, #6, #12 and `49a`.**
 
-- 1.
-  > "- [ ] - `99zz` - @Description -> @my_Comment" \
-  > and after the -> for my comment to have a empty row\
+**The evasion root cause (your find #2 — the +32).**
 
-  >[!Tip]
-  > - [x] - `56b` - An **elf mage in the full kit** hits 10%, and ×2 Insight puts him at **20% — the cap
-exactly**. -> 
-  > - [ ] - `56c` - A **mob** still crits occasionally (~1.25%), not never. -> 
+- `62a` [] - 🔴 **The +32 is gone.** Build the exact character you measured: **Elf Phantom, level 60,
+  35 AGI, light armour, no set, no weapon attribute, no buffs.** Evasion must read **108**
+  (60 + 35 + 13), not 140. The cause was `Discipline.Phantom` carrying a flat `Evasion: 32` (and
+  Trapper +12) from a placeholder table written before the evasion budget existed. ->
 
-  >[!Note]
-  > The .md-Viewer [ ] is a empty checkbox and [x] is checked and '-' is new unordered list and is easier to read
+- `62b` [] - **At level 90 the same build reads ~147**, not 182 — your second data point. ->
 
-- 2.
+- `62c` [] - **Evasion no longer jumps at the DISCIPLINE change (40).** That jump was the bug's
+  signature. Take a discipline and watch the number: it must not move. ->
 
-  > "- `99zz` [] - @Description -> @my_Comment" \
+- `62d` [] - ⚠ **Phantom and Trapper did not just lose the budget — it moved to MaxHp** (Phantom +120,
+  Trapper +45). Same survivability role, but through a channel that touches neither the accuracy
+  contest nor any damage number. Say if you would rather it went somewhere else. ->
 
-  >[!Tip]
-  > - `56b` [] - An **elf mage in the full kit** hits 10%, and ×2 Insight puts him at **20% — the cap
-exactly**. -> 
-  > - `56c` []- A **mob** still crits occasionally (~1.25%), not never. ->
+- `62e` [] - **The new rogue ultimate `Evasion Boost` exists at 28** — +20 Evasion, cancel-resist ×1.8,
+  30s, 900s reuse, 20 MP. ⚠ Two channels in your CSV were **NOT built**: "skill evasion ×1.25" and
+  "magic evasion ×1.1". The game has exactly one evasion channel; dodging a physical *skill*
+  separately, and dodging *magic* at all, are new mechanics — I left them out rather than fake them.
+  **Tell me if you want them as real mechanics and I will build them.** ->
 
-  >[!Note]
-  > The .md-Viewer '-' is new unordered list and is esier to read\
-  > This '2.' is the same as your writing just with a dash infront each checkId
+**The weapon speed table (your find #12).**
 
-I lean to .2 because its same just with a single dash infront - not so much change (we have [],[!], [?], [x] so the md viewer cannot destinguish them as checkbox unless its [ ] or [x] so no point in changi it to .1)
+- `62f` [] - 🔴 **A 2H is now slower than a 1H.** Attack speed base by type: **Dual 433 · 1H sword 379 ·
+  1H blunt 379 · 2H sword 325 · 2H blunt 325 · bow 293 (very slow bow 227) · weaponless 300** — your
+  numbers exactly. The bug was that the code folded 2H into 1H before reading the table. ->
 
-## My Finds
+- `62g` [] - **Cast speed is ×1 for every weapon type.** It was blunt 1.0 / everything else 0.8, which
+  double-charged the wrong-weapon rule (Spellcaster Mastery owns that) and contradicted your profile.
+  Hold a sword, a blunt, a staff: cast speed must differ only by your passives. ->
 
-- [!] - Tanks Ultimate is 30s not 60 => fixed the csv
+- `62h` [] - 🔴 **THE CONSEQUENCE, and it needs your ruling.** Rogue duals vs champion 2H, same-level
+  mob: rogue/warrior went **0.92× → 1.05×** at level 20 and **1.22× → 1.37×** at 36. The rogue's DPS
+  did not change — the champion's fell ~14%, purely from 325. **The rogue now out-damages the champion
+  at every level 20-36.** In the inspiration game a 2H compensates with much higher P.Atk; ours does
+  not. ⏸ **CSV** — your new weapon file is the fix, but confirm you agree that is where it belongs. ->
 
-- [!] - Why the dagger evasion is so high ? 
-  - acc 98- elf 35dex lvl 60 => 35+60 = 95 + 3(passive) 98 ok ... 
-  - evasion is 140 ?!? -> @60 + 35DEX = 95 evasion + 13 eva passive = 108 -> I have 140 (only light armor - no set, no weapon attri, no buffs.. only 35 DEX and Phantom class) where the other 32 come from ? 
-    - the evasion_mastery should only increase the floor .. 
-    - once i turned rogue my evasion jumps alot (and it shuldnt)
-    - now this 32% difference is 32% on a 20 floor, if its was 98 vs 108 its the 10 differecen and its a 20% floor hit all the time 
-    - while the archer will stay at 10% difference on a 10% floor 
-    - later all rogues will have an ultimate that increases the evasion with 20-30 so it will jump from 10-20 difference to ~40-50% to evade ... but for 30 sec ..
-  - evasion 182 @90 -> easy (slow, but easy) Elite farm (only common pots) -> 90+40DEX+13EVa+4Buff = 147 at lvl 90 not 182 -> +35 evasion from unknown source -> vs 120 ACC - 62% evasion .. else it will be 30% floor for mele and 27%  for archer on 10% floor (mytic light armor - no set, no weapon attry)  
-  - CSV fix
-    - I updated the CSV - rogue - at lvl 26 there is an L1 ultimate skill (L2-@55 -> eva +30, pys skil eva x1.4, mskill eva x1.2; mp cost 50 - everithing else the same (cd,duration,80% cancel resist))
-    - Also speed is +7 flat not x1.07
-    - The Bow expertice was with the 36 lvl skills but it was lvl 28 so i fixed it as well
+- `62i` [] - ⚠ **Mobs were pinned to 433, deliberately.** Almost every mob is weaponless, so your
+  "weaponless 300" would have slowed **the entire bestiary by 31%** (BalanceMatrix: a level-20
+  champion's survival time went 126s → 189s). Mobs kept 433. One constant to change if you want the
+  bestiary on 300 — but check how the game feels first. ->
 
-- [~] - Can we rename `DEX` to `AGI` - everywhere
-    
-- [~] - We need to change the Stat swap passives with something else
-  -  Now +5 dex +5  atk - 10 con 
-  -  and I need +2 Dex -2 Atk , +3 Dex - 3con 
-  -  We need to make it
-     -   +1 physical stat to -1 physical stat (atk,con,dex)
-     -   +1 magycal stat to -1 magycal stat (atk,wit,men)
-     -   to a max +5 for a single stat
-     -   and maximum +9 -9 for all stats combined
-         -   can be +5+4-9,+1/5/3-1/5/3, 
-  - for example: +5dex - 5con, +4 atk -4con
-    - we will remove the "stupidity check" where you can cancel yourself
-    - +5 dex -5 con , +4 con - 4dex => +1dex -1 con
-  -  It still can be passives but buyable from mindwriter
-     - fighters can increase ATK-DEX, ATK-CON, DEX-CON, DEX-ATK, CON-ATK, CON-DEX, SPT-ATK
-     - mages can increase ATK-WIT, ATK-SPT, WIT-ATK, WIT-SPT, SPT-ATK, SPT-WIT, CON-DEX, DEX-CON
-     - clerics are the same as mage - we have a passive to balance the increase in matak with mele weapon 
-  - Prices:
-    - 1~9 items now we have 1,2,3,4,5 = 15kk for 1 - can have 3 (mage) so 45kk for all 15 stats (3kk per stat)
-    - now we will have 9 stat -> +1 ~ +9 => gold [1,2,3,4,5,5,5,5,5]kk/lvl => 35kk for all, first 15kk are the same - the last 4 stats for 5kk ea
+**Enchant rates (`49a`).**
 
-- [~] - Need to rework the Evasion vs Acc
-  - Elf dagger @60 - 147 eva (143 unbuffed, 140 without set) vs Treant 90 acc ... 
-  - With occasional rare potions and NPC buffer soloed the Boss
-  - Dmg is ok (the boss is weak) 1400-2000+ stabs for 58k hp ...
+- `62j` [] - **The new rates: +1..+3 safe (100%), +4..+9 66%, +10..+15 33%, +16 5%.** Your budget said
+  ~51 safe scrolls for +0→+16; the formula gives 3 + 6/0.66 + 6/0.33 + 1/0.05 ≈ **50**. Enchant
+  something a long way and see if the pace matches what you pictured. ->
 
-- [~] - Raid bosses need a 
-  - Boss passive
-    -  HP from x20 -> x100 (from 50-60k to 250-300k)
-    -  Acc +20
-    -  PAtk from x5 -> x20
-    -  MAtk seems ok
-  - Hp boost passive x2 hp (250-300k to 500-600k)
+**Raid bosses (your find #6).**
 
-- [!] - `Frost bind` magus skill makes training dummies go from 1kk hp to 5k and same for elites .. they lose their hp bonus
-  Dont know if its only for this debuff or no. But need investigation
+- `62k` [] - **Boss HP ×20 → ×100** and a new flat **Accuracy +20** by rank. A dodge build should no
+  longer be able to stand in front of a boss untouched — that was the missing accuracy. ->
 
-- [!] - When casting skill (stab) my target is lost for the duration of the cast ..then Back again (only physical "stab" haven't tested with others yet)
+- `62l` [] - 🔴 **One number was NOT taken literally, and you should check it.** You said "PAtk from x5
+  → x20", but the boss rank multiplier has always been **×2.5** — there is no ×5 in the boss path.
+  Taking ×20 literally would be an 8× jump, not the 4× your own before/after describes, so I applied
+  your **ratio**: **2.5 → 10**. Kill something and tell me if it hits as hard as you meant. ->
 
-- [!] - Few resurrect/oarty things ...
-   - ultimate resuractions are untradable... They should be tradable atleast the one that drop and from the admin menu
-   - cannot resurrect a party member when flagged ... (if I'm not pvp flag I can resurrect party member even if he is pk) and I become pvp flag - same for healing)
-   - need to be able to invite pk/pvpflag players to party and trade with pvp (pk cannot trade) ...
+- `62m` [] - **The "HP boost passive ×2" needs no new code** — `MobMod.Hp` already multiplies and the
+  Max HP Mod table reaches ×2 at rung 11. Put that mod on a boss and you get your 500-600k. ->
 
-- [!] - Elder Marius after completing the 1st quest (2nd class) gets an "!" symbol and no quest to give.
+**Your CSV syncs.**
 
-- [!] - Quest reward in details is listed as single items .. X5 Dash potions are 5 rows ..not a single with "x5".
+- `62n` [] - **Tank Defencive Wall is 30s**, not 60. ->
 
-- [!] - a 2h wepon have the same atack/speed as 1h. And blunt and sword have different cast/atack speed - they shouldnt.
-  > - All wepon should have the same cast speed x1 (no weapon changes cast speed for a weapon type, only passives)... 
-  > - Atack speed differs:
-  >   - Knives are fastest (433 - Very fast)
-  >   - 1h sword and 1h blunt (379 base attack speed - Fast)
-  >   - 2h sword and blunts are default (325 - Normal)
-  >   - bows are slowest (293 - slow | 227 - Very slow)
-  >   - Weaponless (300)
+- `62o` [] - **Rogue light-armour mastery speed is flat +7**, not ×1.07. ⚠ `StatMods.MoveSpeed` existed
+  but **nothing read it** — it is consumed now, flat before percent, rungs 3/4/5 at 28/32/36. ->
 
+- `62p` [] - **Bow Expertise moved 28 → 36.** ->
 
 ---
 
-## 49. 0.49.0 — the enchant rework (`D1`/`D2`)
+## 63. 0.58.1 — the last four bugs, the QoL six, AGI, and the stat-swap rework
 
-Full detail: §49. Three scroll TYPES × six grade bands = 18 scrolls.
+⚠ **This is the build that needs the db moved and a new APK (protocol 15).**
 
-`49a` [~] - Three scroll types behave differently: one **breaks** the item, one drops it **−1**, one is
-**safe**. -> the enchant scrolls work. Need to change the enchant rates.
-   > +1~3 - safe (3 enchants, to enchant avg-3 scrolls)\
-   > +4~9 - 66% (6 enchants, avg-9 scrolls)\
-   > +10~15 - 33% (6 ench, avg-18 scrolls\
-   > +16 - 5% (1 ench, avg-20 scrolls\
-   > so a weapon +0~16 need ~51 scrolls, and that's if they are the safe one. (~823 when is greater)
+**The four bugs.**
 
-`49b` [x] - Rarity picks the grade band E→S; a scroll refuses an item outside its band. -> 
+- `63a` [] - **`#11` quest reward details stack.** 5 Dash Potions render as one row reading `x5`. The
+  grant path was always right; this was display only. ->
 
-`49c` [x] - `/enchant <value>` with the item picker still works, unrestricted (an F weapon to +999999).
-⚠ **This is now load-bearing** — with the God layer deleted it is one of only two ways to get cosmic
-stats for testing. -> 
+- `63b` [] - 🔴 **`61h` the Hollow Crypt has walls now.** The root cause was worse than reported: a
+  dungeon's world was its outline's **BOUNDING BOX**, and the crypt is a diagonal band — **only 55% of
+  that box is actually floor**. The world now carries the real outline. Walk at every edge of the
+  crypt, including the diagonals. ⚠ Its **entrance is annexed** (the arrival safe zone sits outside
+  even the old box — that was the rubber-band you felt). ⚠ Known limit: a straight walk can cut a
+  concave corner (0.76% of pairs, ≤129 units) — there is no pathfinding, and both halves draw the same
+  line, so it should never rubber-band. ->
 
-`49d` [x] - Enchant scrolls drop from the right sources per type, and the drop rate reads sane. -> 
+- `63c` [] - **`61d` the jail is a room.** Your 300×500 box, **one shared jail, not a cell per player**,
+  and arrivals are spread instead of every inmate landing on the same coordinate — that coordinate
+  was the "1px". Jail two characters and confirm they arrive apart and can pace. ->
 
----
+- `63d` [] - **`53a` box picks are a BUDGET.** They were a set of ticks, so 10 picks meant 10
+  *different* scrolls and "5 of one" was inexpressible. Now: open the Blessing Box, use the `-`/`+`
+  steppers, take **5 of one + 3 of another + 2 of a third**, or 10 of the same. Both of your shapes
+  should work. ->
 
-## 50. 0.49.0 — crit damage, BLOWS and `[Double]`
+**The QoL six.**
 
-Full detail: §50. ⚠ Its 0.65× figure is **debunked** — see §52, which supersedes it.
+- `63e` [] - **`52b` the skill card reads the FLAGS, not the prose.** It printed the authored
+  description, which is why Piercing Stab's was stale. It now prints blow / double / crit / flat /
+  magic-crit in the resolver's own order, for every skill. ->
 
-`50a` [?] - A **blow** lands from behind/stealth and reads as a blow, not a crit. -> 
+- `63f` [] - 🔑 **`53e`+`61j` the rubber-band on STOP — root cause found.** The decaying error is right
+  for a walk that is **interrupted** and wrong for one that **ends**: at arrival the server stream lags
+  one sample, so the leftover error points *forward* while the base position is still advancing on the
+  same point — the sum walks past the destination and the ease-back is the decay. An arrival now
+  **holds** at the destination. Walk somewhere and stop, many times. ->
 
-`50b` [x] - `[Double]` shows in the combat text when a skill doubles. -> 
+- `63g` [] - **`54e` `/stat <name> <value>`** — your admin override, every stat. `/stat acc 999999`,
+  `/stat eva 99999`, crit damage, crit rate, 12 stats in all, plus `m`/`a`/`c` routed into the
+  existing `/spd` fields so it is one command. **`/stat` alone clears everything.** ⚠ `/spd` is not
+  regressed — check it still works. ->
 
-`50c` [x] - 🔴 **`Can Crit` and `Can Double` must be EXCLUSIVE** (your `M8`). A `[Double]` Strike was
-**critting** — 80 → 162 on a skill described as double-only. Confirm one skill can no longer do both. -> a piercing blow can crit and double so it does.
+- `63h` [] - **`56c` the training dummies.** `dummy_magic` and `dummy_physical`, level 80, on the
+  training row at x≈26500/27500. 1 damage per tick within 50 units, through the **real** resolvers.
+  Stand there 10s = ~100 hits. 🔑 **A mob's WIT is a flat 5 at every level, so its magic crit is
+  1.25%** — that is the number you were trying to observe, so expect roughly one crit per 80 hits. ->
 
----
+- `63i` [] - **`59r` `/title` defaults to WHITE**, and colour is gated on a **Rune of Tincture**
+  (Apothecary, 40k) — click the rune to open the colour list. ⚠ **The rune is NOT consumed**: your
+  words made *possession* the right, and a one-shot item could not be clicked twice. Say if you meant
+  it to burn. ->
 
-## 52. 0.50.0 — crit RATE on your L2 model
+- `63j` [] - **`58a` the tutorial teaches before the pigs.** A new step type waits until you actually
+  *did* the thing, credited from the handlers that already run: part 1 now asks you to open a box,
+  equip twice, and use a skill; part 5 has auto-farm at your "reach 18" slot. ⚠ Two of your asks did
+  **not** become steps: it asks **one** box (a player who opened both creation boxes could not conjure
+  another), and the rune explanation stayed **prose** (an "open Miren's rune box" step would gate the
+  whole chain on her daily). Run a brand-new character and tell me if it now teaches enough. ->
 
-Full detail: §52. This closed the crit thread; §50h was a **measuring error** on my side, not a defect.
+**DEX → AGI (your find #3).**
 
-`52a` [x] - Crit rate follows the L2 model (base × DEX mod × passives × buffs, clamped once at the end). -> 
+- `63k` [] - **Every player-facing DEX now reads AGI** — stat sheet, skill text, tooltips, docs. ⚠ **The
+  four stat-swap skill IDs still spell `dex` on purpose**: an id is a persisted key, and renaming one
+  would delete a 15kk purchase. Nothing you can see should say DEX. ->
 
-`52b` [~] - `Can Crit` / `Can Double` render per skill in the skill window. -> not all skills. Piercing stab the description is outdated
+**The stat-swap rework (your find #4).**
 
-`52c` [x] - Per-skill crit modifiers apply — a skill authored to crit more actually does. -> 
+- `63l` [] - **A rung is +1/−1, and you have NINE of them, character-wide.** A skill is one pair, and
+  its level is how many rungs you put in that pair. **Raise cap +5 per stat** (so a pair caps at level
+  5); no cap on selling beyond the nine. ->
 
-`52d` [x] - ⚠ The one you flagged: **a sword at 8% crit was out-critting knives at 12%.** Confirm that
-is gone. -> 
+- `63m` [] - 🔑 **The direction rule is DELETED.** `+5 AGI −5 CON` then `+4 CON −4 AGI` is legal and
+  nets `+1 AGI −1 CON` — your worked example. Self-cancelling is allowed on purpose. ->
 
----
+- `63n` [] - 🔑 **Price is per RUNG and global: `1/2/3/4/5/5/5/5/5` kk by rungs already owned = 35kk for
+  all nine, however you spread them.** Buy them in a few different orders and confirm the total is
+  always 35kk. ⚠ That could not live in the per-skill gold field, so the charge is computed at
+  purchase and **the client runs the identical computation** — if the two ever disagree you will see a
+  price change when you tap. ->
 
-## 53. 0.52.0 — the playtest-19 DEFECTS + the FRICTION tier
+- `63o` [] - **The tenth rung is refused, and so is `+9` into one stat** (the +5 cap). ->
 
-Full detail: §53. ⚠ **delete `game.db`**.
+- `63p` [] - **The reset NPC reports what forgetting a skill FREES**, not what it cost — under
+  position-based pricing there is no per-skill answer. Say if that reads wrong. ->
 
-`53a` [!] - 🔴 **`48g` the Blessing Box no longer eats itself on a partial pick.** Tick **7 of 10** and
-confirm: either it refuses until you pick exactly 10, or it gives 7 and keeps the box. Last time the
-box vanished and the 3 unused picks were lost. -> 
-  Now it forbids me to select 1 and aquire it.\
-  Make it so to be able to (or)
-  - use x amount of a single item (5 of item1, 3 of item2, 2 of item3)
-  - take 1, then open it 9 more times and take the same item  (open and take item1 -> 9 times)
-
-`53b` [x] - 🔴 **`46d` `/ptinv` can invite an out-of-sight player.** "no player x nearby" was the bug;
-the earlier fix corrected the target frame, not the invite lookup. -> 
-
-`53c` [x] - 🟠 **`46m` compare on a PENDANT opens a PENDANT**, not a stud. -> 
-
-`53d` [x] - 🟡 `46o` both warehouse caps raised to max, with the note to lower them when expansion
-lands. -> 
-
-`53e` [!] - The friction tier as a whole — does the game feel less fiddly, or did I just move the
-friction somewhere else? -> well there is a bit of rubber banding when stopping. I click move and when it arrive at the destination it stops with inertia and comes back .. A small but it's there
-
----
-
-## 54. 0.53.0 + 0.53.1 — the DELETIONS, `M7`, `M1`, `/spd`, two clocks
-
-Full detail: §54. ⚠ **delete `game.db`**.
-
-`54a` [x] - 🔴 **`M1` — nothing is unhittable any more. Do your own test first**: admin, accuracy 9999,
-a bow, **level 20 vs a level 40/80 dummy**. You must now land **~5%** where it was *zero, forever*.
-With **Precision** L1 the floor is **10%**, L2 (40+) **20%**. The other way: a level-20 rogue in a
-level-90 field must **dodge ~10%**. ⚠ Sanity-check the ordinary case did NOT move — same-level is
-still ~5%/95%, a 10-15 level gap still hurts. Exp and drops still pay **zero from a 13-level gap**;
-killing far above you stays pointless, just no longer impossible. -> 
-
-`54b` [x] - **`M7` Heavy Draw is gone from the rogue at every level** — not at 24, and not as
-Piercing/Snare/Rending Shot on a 40 ranged discipline. -> 
-
-`54c` [x] - **Evasion Mastery follows the CLASS CHANGE, not the level.** Lv1 at 20 for every rogue;
-Lv2 at 40 **only on taking a MELEE discipline**; a ranged discipline stays Lv1 forever; **Lv3 goes to
-nobody** (its milestone is the 4th class change, which doesn't exist). ⚠ Check a level-40+ rogue with
-**no discipline chosen yet stays at Lv1** — that is the actual change. -> 
-
-`54d` [x] - **The deletions broke nothing by their absence**: no Reflexes, Bow Mastery, archer Armor
-Mastery, Dispel Magic, HP Boost, Greater Heal or "Class Balance" rows — but `evade_mastery`,
-`precision` and `anti_magic` all **stay** and still grant at 20/40/76. -> 
-
-`54e` [~] - **The God layer is gone and the debug rig still works.** Creation offers Human/Elf/Ork
-only; no God's Judgment / God's Robes in Boxes. ⚠ `/enchant` and `/spd` are now the **only** route to
-cosmic stats — test them like they matter, because they do. -> I think we need to do the same commands and for other stats ...one statMod that is Admins only that overrides all stats - so I can do a acc 999999 or Eva 99999 or crit dmg or rate etc...
-
-`54f` [x] - The Treasure Chest still opens and pays its staples (its jackpot is now the S-grade Mythic
-1H blade). -> 
-
-`54g` [x] - **`/spd` replaces the four `/speed-*` commands.** `/spd m 250`, `/spd a 1200`, `/spd c
-1500`; **bare `/spd` resets all three**; a bad form prints usage. ⚠ The old `/speed-*` must fall
-through to unknown-command. -> 
-
-`54h` [x] - **Two clocks in the title bar** — `game 14:32 · 09:47:12`. Watch for a minute: game time
-must advance ~6 minutes, and **survive a relog** without jumping. -> 
+- `63q` [] - **The class lists are yours**: fighter ATK↔AGI, ATK↔CON, AGI↔CON + one-way **+SPT −ATK**;
+  mage ATK↔WIT, ATK↔SPT, WIT↔SPT, AGI↔CON; **cleric = mage**; buffer keeps all. ->
 
 ---
 
-## 56. 0.51.0 — magic crit becomes its OWN channel
+## 64. 0.58.2 — magic gets its own landing formula, and mRes becomes damage reduction
 
-Full detail: §56. **Never indexed in a checklist before today.**
+Full detail: `docs/design/CombatResolution.md`. **This is your `57d`, and it was a real bug.**
 
-`56a` [x] - Magic crit rate is no longer decorative — a human mage was stuck at **2.0%** and the 20%
-cap needed WIT 200. Cast with and without **Insight**: the buff must now roughly **double** observed
-crit frequency (it used to be clamped away mid-chain and bought +3 points). -> 17% on human mage without the second double crit rate buff so it's OK.
+- `64a` [] - 🔴 **The bug you found: the fail chance was bit-for-bit identical with a bow and a wand.**
+  Spellcaster Mastery's "magic accuracy ×0.5" halved a stat (`MagicFailResist`) that is **0 on
+  everyone**, because no skill in the game grants it. Half of zero is zero. It was also pointing the
+  wrong way — the stat could only ever *subtract* from fail, so nothing could raise a fizzle. ->
 
-`56b` [x] - An **elf mage in the full kit** hits 10%, and ×2 Insight puts him at **20% — the cap
-exactly**. -> 
+- `64b` [] - **The new formula is yours**: `fail% = round(1.3^(defLvl − atkLvl) × defMod × weaponMod)`,
+  clamped to 95%. **Parity = 1% fail / 99% success**, your anchor. Cast a lot at a same-level dummy. ->
 
-`56c` [~] - A **mob** still crits occasionally (~1.25%), not never. -> make a magic training dummy 80 lvl with magic (50 range) that does 1 mdmg each 0.1s so for 10 s to hit me 100 times and see it i got atleast 1 crit dmg (can do the same for with a phys skill dummy)
+- `64c` [] - 🔴 **Now a bow caster actually fails.** `weaponMod` is **25** for bow/dual/bare-handed (you
+  offered 25 or 50; 25 is your own worked example). Expected success — **wand: 99 / 96 / 86 / 61 / 5%**
+  at Δlevel 0 / +5 / +10 / +14 / +18. **Bow: 75 / 45 / 7 / 5%** at Δ 0 / +3 / +5 / +6. Hold a bow at
+  parity and you should fail about **one cast in four**. ->
 
-`56d` [x] - **Ferocity and the crit-damage weapon attribute no longer pay mages.** Both are authored
-for fighters and used to leak through a shared field. Put a crit-damage attribute on a staff: the
-magic crit multiplier must **not** move — it is a flat ×3. -> 
+- `64d` [] - **The clamp is 95%, not 100** — your playtest-19 "nothing is unhittable" ruling applies in
+  this channel too. Even at a hopeless level gap, 5% of casts land. ->
 
-`56e` [?] - **Resonance** reads as a percentage (×1.2), not a flat number. -> What is this Resonance?
+- `64e` [] - ⚠ **The bow penalty FADES when you punch down.** The formula is multiplicative, so at
+  Δ−10 a bow caster is back to ~98% success. That is inherent to your model — flagged, not patched.
+  Tell me if you want a floor under it. ->
 
----
+- `64f` [] - 🔑 **mRes was never a fizzle chance — it is DAMAGE REDUCTION now.** Your words: *"the
+  problem was we didn't have a mdmg reduction, that's why we converted them to a floor."*
+  `healer/nuker 20-35.csv` says "magic def +20, mRes +5%", so it is now a divisor inside M.Def, the
+  same shape as pierce defence. ⚠ You wrote "1.25 → ×0.75"; I pushed back and you took the divisor, so
+  **1.25 → ×0.8** — that keeps the mob ladder (1.11/1.25/1.43/1.67/2) exact reciprocals of 0.9…0.5. ->
 
-## 57. The MAGE MASTERY RESTRUCTURE — masteries now STACK
+- `64g` [] - 🛑 **Deleted, do not expect to find them**: `MagicFailResist`, `MagicFailFloor`, and the
+  whole fizzle-FLOOR concept. Magic no longer calls the physical avoid roll at all. Physical is
+  unchanged — sanity-check that a melee miss still behaves exactly as before. ->
 
-Full detail: §57. ⚠ **delete `game.db`**. 🔴 **SmokeTest not run — see the pre-flight above.**
+- `64h` [] - **The tank's Anti-Magic is the `defMod` ×2**, and you already ruled the tank is fine
+  (25% magic damage reduction vs the mage line's 30%). Lv2/Lv3 stay at 43/76 as ×2.5/×3 until your 40+
+  kits land. **Nothing to decide — this row is here so you don't re-report it.** ->
 
-`57a` [x] - **Armor masteries stack.** Which one applied used to be decided by **dictionary order**.
-A nuker's robe MP-regen ×1.2 now multiplies Spellcaster Mastery's ×1.2 — visibly better than either
-alone. -> 
-
-`57b` [!] - **Robe Armor Mastery is bought with SP at 7 and 14** (2 rungs, no longer auto-granted,
-no longer 3 rungs), and **"Weapon Proficiency" appears on nobody**. ⚠ The migration clamp is the risk:
-a mage with **no robe P.Def at all** is the failure mode. Deleting the db avoids it — do that. -> the L1 is shown inside lvl-1 and lvl-7 learning groups. Learning one makes the other disappear and a the one at lvl-14 shows
-
-`57c` [x] - **The wrong-weapon penalty is a penalty, not an execution.** It was ×0.05 — annihilation.
-Now ×0.5. Hold in turn: wand/staff (×1), sword/blunt (cast ×1, M.Atk ×0.6), bow/dagger/bare (×0.5
-across the board). The order must degrade as listed. -> 
-
-`57d` [!] - ⚠ **A bow caster cannot BUFF his way out of the magic-accuracy penalty** — it is applied
-after buffs, on purpose. Buff up holding a bow and confirm it survives. -> I dont see my magic 
-
-`57e` [x] - **A cleric in light armor composes back to cast ×1.00 / attack ×1.00**, vs ×1.05 in a robe
-— your "−5% from a robe". A **nuker** in light stays punished. -> 
-
-`57f` [x] - **The dual's evasion roll is FLAT +5**, never a percentage. Mob-miss against the rogue
-should read **21-23%** at max roll — it was **33-42%**. You said 16% bare is fine, so `evade_mastery`
-was deliberately left alone. -> 
+- `64i` [] - ⚠ **No gear grants mRes yet, and no mob has a magic-resist entry** — the ladder exists in
+  `mobs_passives.csv` but nothing feeds it. Expected gap, not a bug. ->
 
 ---
 
-## 55. 0.53.2 — Restore Spirit gets LEVELS, the bow's accuracy roll goes FLAT 5
+## 65. 0.58.3 — your weapon numbers + the bestiary tab
 
-Full detail: §55. No db reset needed for this section alone.
+**Your queue item (1).** No schema change; **protocol stays 15** (the new field is additive).
 
-`55a` [x] - **Restore Spirit is a ten-rung ladder** (25/40/45/50/55/60/65/70/75/80), ending at
-**120 MP for 200 HP**. It had ONE rung for life while the bolt ladder grew 30 → 116. Rung 1 (20 MP /
-65 HP @25) is the **CSV** and must not have moved. -> 
+**The weapon half — ⏸ CSV, you are re-authoring this. Skim only.**
 
-`55b` [!] - ⚠ **The skill card shows the HP price**, not just the MP gain. A skill that silently eats
-200 HP reads as a bug the first time it kills you. -> it's not showing in the description what it takes to gain what ..-200hp +120mp ..is never written
+- `65a` [] - **The ×1.166 2H P.Atk raise is REVERTED** — you ratified nothing, so it went back. ->
 
-`55c` [!] - Casting it at **low HP** refuses, or at least does not kill you. -> it should not allow you to use the skill wham hp is less than required health. It goes for every skill that take hp as well ... It should act as mp ..I cannot cast a skill whne my mp is low ..so I cannot cast skill when hp is low .. 
+- `65b` [] - **The F rung of all 8 weapon lines is re-authored** from your file, and a caster's M.Atk
+  now sits **above** its P.Atk at F. ->
 
-`55d` [x] - **Mage Armor Mastery rungs 5-8 @40/50/60/70** carry mpWhenRestored **50/60/70/80**. ⚠ P.Def
-and max MP are **frozen** at the rung-4 values deliberately — if those climb, that's a defect. -> 
+- `65c` [] - **`training_bow` is deleted.** Nothing should reference it. ->
 
-`55e` [x] - **The sum at 80, in a robe: 200 MP for 200 HP** — your "+200 MP for −200 HP" endpoint. Out
-of a robe the same cast delivers only 120. -> 
+**The bestiary — your two UI asks from playtest-20.**
 
-`55f` [ ] - 🔴 **The actual question: farm a mage 10+ unbroken minutes at 40+.** Your playtest-19
-finding was *"mages run out of MP in 2-3 minutes"*. Does the rotation sustain now? It is not meant to
-be free — the design is "farm 30-40 min, rest a bit". **If it is still 2-3 minutes, the ladder is not
-the fix and I need to know.** -> 
+- `65d` [] - 🔴 **The target window no longer blanks when you retarget.** Tap Info on a mob, then let
+  auto-farm pick a new one: the sheet **stays on the mob you opened**. It used to key off the current
+  target, so the drop table you were mid-read of vanished. ->
 
-`55g` [x] - **The bow's accuracy roll reads Accuracy +1..+5 FLAT**, never a percentage, at every grade.
-⚠ **An old bow keeps its `AccuracyPercent` roll and must still work** — the enum entry was kept and
-made unrollable, so no db reset was needed. -> 
+- `65e` [] - **The title says `[pinned]`** once the sheet stops describing what you are actually
+  fighting — so a held-open window can never quietly show the wrong creature's numbers. ->
 
----
+- `65f` [] - **A third tab: Skills** (mob-only, like Drops), showing the creature's **actives and
+  passives together** — the passives **moved here** from the Stats tab. Effects stayed in Stats,
+  because those are what is on it right now. ->
 
-## 58. 0.54.0 — the tutorial chain (M5) + the newbie kit as a 30-day loaner (M6)
+- `65g` [] - **A mob with no kit says "None — this creature only attacks"**, and that is correct, not
+  missing data: only casters and bosses are given skills at all. ->
 
-No section in `TestChecklist.Unity.md` — the detail is here. **No db reset needed.** ⚠ Test this on a
-**brand-new character**: the chain starts at level 1 and it **replaced** the old starter quests.
-
-`58a` [~] - **A fresh character is offered `Welcome, Traveller` by Huntmaster Cera at level 1**, and
-the five parts chain in order: Welcome (1) → Blessings and Bottles (3) → Properly Armed (6) → Blooded
-(10) → A Trade to Learn (15). Each one only offers after the one before it is handed in. -> 
-   - We fixed the Nyra part where she didn't accepted my talking
-   - Works (after the fix) but we need to tell the fresh traveler before he fights the pigs -> 
-      - how to open his bag 
-      - how to open boxes 
-      - which armor/weapon to select... 
-      - how to equip/use skills/spells/attacks.. (if I'm new I will stand near the pigs naked and bear hands not knowing what to do) ... 
-      - After the Miren (aphotecatry) how to use the rune and what it does
-      - Also there should be how to use auto potions and auto farm -> "reach lvl 18"  part looks OK for this (after the Dorian-jewels)
-
-`58b` [x] - **The old starter quests are GONE** — no `starter_kit` / `starter_blooded` anywhere, and
-you are never paid two newbie kits. -> 
-
-`58c` [x] - **The chain does not GATE the three class quests** (Marius / Oren / Vael). Part 5 points at
-them; you can still level to 20 and do them having ignored the chain entirely. -> 
-
-`58d` [~] - 🔴 **The kit is a 30-day LOANER**: every piece reads **"Newbie …"**, is **untradable**,
-cannot be sold, and carries a clock. ⚠ The real ladder gear it was cloned from (`sword1h_t1` etc.)
-must be **untouched** — a Ferrite Mythic you drop or craft has no clock and sells normally. -> it's like that,but can we make it so every item have timer,is Tradable, is Sellable (-1 sell price). Meaning the item is not a clone (for Newibie equip is OK to be like that) but let say I want to give some1 a Soulcrystal item and that item to be timed,unsellable,untradable - not to make server side a new item, just take a real Soulcrystal item add sell price -1, add time x[s|m|h|d] (1m == 1min),flags it untradable => and the item reads as "Soulcrystal (temporary, bound)" =>
-   - sellable + tradable == no tag/flag (normal)
-   - unsellable + untradable == bound
-   - sellable + untradable == private (or something smarter/better)
-   - timed + normal/bound/private == temporary, (blank)/bound/private 
-   - it's real item just with tags. I later want to be able with command: 
-      - /give <name> sword1h_t10 -1 0 1d "Admin Sword" 5 -> and I get a "Admin Sword +5 (temporary bound)" a blade +5 enchanted for 1 day unsellable and untradable 
-      - (/give <name> <itemId> <sell price: -1 unsellable/0 - default/1[k/m/b...we have it]> <tradable: true/false or 1/0> <timed: 0 normal, 1d == 1 day..> <newItemName: "some new name limit to 20 symbols in quotes spaces to work" and "" empty quotes for default name> <enchant value>)
-      - that way I can reach mytic no need for craft atm and can give anyone anything
-
-`58e` [x] - **The completion consumables are bound too** (Ultimate Scroll of Return / Resurrection,
-Dash and Instant Healing potions) but carry **no clock**. -> 
-
-`58f` [x] - **The loaner is a SET**: wearing the bound body + the accessories still completes the
-armour set and pays its bonus. -> 
-
-`58g` [~] - ⚠ **A WORN loaner that expires is removed and your stats drop with it.** Easiest check:
-`/spd`-style debug is no help here, so trust `58h` instead unless you want to wait 30 days. -> if I have 58d then I'll test it
-
-`58h` [x] - **The pacing still holds**: part 4 ends ≈ level 10 and part 5 ≈ level 15 without grinding
-between them. If it strands you, say where. -> 
-
-`58i` [~] - 🔴 **He never named the game.** The parts are called "Welcome, Traveller" etc. because
-"Welcome To The `<Game>` World" needed a world name. **Give me one and I will use his literal
-title.** -> thats ok but on that note.. We need to rename everitying that says l2(as the game not the level),l2 clone project etc every comment to refer from l2 to the (inspiration game) or `IG` or other tag
+- `65h` [] - **The numbers are level-resolved** — the server formats these lines, so the same spell id
+  reads as a different power on a level-20 and a level-70 caster. Check the same mob at two zone
+  levels. ->
 
 ---
 
-## 59. 0.55.0 — the QoL five (C1 · C3 · C14 · C16 · C17) + written titles + NPC roles
+## 66. 0.59.0 — CRAFTING is reachable at last (+ the admin gear list was lying)
 
-No section in `TestChecklist.Unity.md` — the detail is here. 🔴 **DELETE `game.db`** — three new
-columns (`CustomTitle`, `CustomTitleColor`, `MayWriteTitle`).
+⚠ **New APK — protocol 16.** No schema change; `game.db` is fine for this build alone (the AGI reset
+from 0.58.1 still applies if you have not done it yet).
 
-`59a` [x] - **C1 — chat resets per character.** Talk in Local/World, leave to character select, enter
-on a *different* character: the chat tabs are **empty**. Delete a character and make a new one — the
-new one must not inherit its chat. ⚠ The **System tab is deliberately KEPT** (it is the crash trail);
-if you want that wiped too, say so. -> 
+🔑 **Nothing about crafting is new except the window.** Professions, refinement, recipes, blueprints and
+mats-primary drops shipped 2026-07-06 — the phone simply had no way to reach any of it. So if a NUMBER
+here feels wrong, that number is old and unplayed, not something I just invented.
 
-`59b` [x] - **C1 — the buffer holds ~1000 lines**, not 200. Spam a fight and scroll back further than
-you could before. Watch for lag — the window still only *draws* 120 rows, so it should feel the same.
--> 
+**Getting started.**
 
-`59c` [~] - **C3 — a timed item says how long it has left**, in item details, colour-graded: **green**
-over 7d, **white** over 1d, **yellow** over 1h, **red** under. Check it on a **newbie kit piece**
-(≈30d, green) and on a **1-day rune** (white/yellow). -> will test it with 58d
+- `66a` [] - **Menu → Craft** opens the window, and with no profession yet it shows the five choices,
+  each saying what it refines and what it makes. It is on the MENU and not at an NPC on purpose: every
+  material rarity drops in the field and refining what you just picked up should not need a trip to
+  town. Say if you would rather it lived at a craft NPC. ->
 
-`59d` [x] - **C14 — a two-handed weapon greys the off-hand square.** Equip a 2H sword/staff/bow: the
-Shld square shows the *weapon's* abbreviation, dimmed, and **does not open anything** when tapped.
-Equip a 1H + shield and the square goes back to normal. -> 
+- `66b` [] - 🔴 **Choosing is PERMANENT and the confirm says so.** Pick one; the window switches to that
+  profession's pages, and the choice **survives a relog** (it saves immediately now rather than waiting
+  on the 60s autosave). Try to pick again — it must refuse. ->
 
-`59e` [x] - **C16 — no more "the".** Titles read `Wealthy`, `Devoted`, `Warlord`, `Feared`,
-`Ascended`, `Beloved`. -> 
+- `66c` [] - **Admin → Class still sets the profession directly** and the craft window follows it
+  without reopening. That is your bypass for testing all five. ->
 
-`59f` [x] - **C16 — each title has its own colour**, over the head *and* on the Rank board *and* in the
-picker: gold=golden, time-played=green, PvP=purple, PK=dark red, level=sky, charisma=rose. ⚠ The PvP
-title purple is **deeper than a flagged player's purple name** on purpose — tell me if they still read
-as the same colour on the phone. -> 
+**The pages.**
 
-`59g` [x] - **C16 — the title's face differs from the name**: italic small caps with a little tracking.
-The client has ONE font asset, so this is TMP's synthesised styling rather than a second typeface —
-**if it still reads as "just the name again", say so and I will bake a real font.** -> 
+- `66d` [] - **Refine** — 5 of the same type + 2 cross-profession, one rarity up, guaranteed. This is
+  the trade engine: your own type is the only one you can refine, so the 2 cross mats have to come from
+  a drop or another player. First rung unlocks at **level 20**, then 40 / 61 / 76. ->
 
-`59h` [x] - **C17 — staff titles.** On an admin account the Rank window's Titles tab offers **«Game
-Master» — staff**; a moderator gets **«Moderator» — staff**. They are **opt-in** like every other
-title (nothing is worn until you pick it) — tell me if you would rather staff wore theirs
-automatically. -> 
+- `66e` [] - **Gear** — every set piece your profession makes. ⚠ A Weapon Smith has **62** of these and
+  an Armour Smith **63**, ordered by level, most of them dimmed. Tell me if that is too long a scroll on
+  the phone and I will add a grade filter. ->
 
-`59i` [x] - **C17 — `/role` takes effect live.** Promote a logged-in character to moderator: the title
-appears in their picker without a relog. Demote them while they wear it: it comes straight off. -> 
+- `66f` [] - **Goods** — a Potion Master's 12 potions, a Scroll Scribe's 6 scrolls (the D and C enchant
+  scrolls plus the attribute pair). A smith's Goods page and a scribe's Gear page are correctly empty
+  and say so. ->
 
-### The titles you asked for on 2026-08-07 (after the queue was built)
+- `66g` [] - **Mats** — every material with what you hold, laid out type by type, your own type marked
+  `(yours)`. Ones you have none of are still listed on purpose: the thing you are short of is exactly
+  what you would hide by listing only the bag. ->
 
-`59k` [x] - **NPCs wear their role.** `Elder Marius` plates as **`Elder`** over **`Marius`**. Check the
-multi-word ones too — **High Priest Oren**, **Spirit Helper Nyra**, **Class Master Vael**,
-**Grandmaster Thorne** — they split at the LAST space, so only the personal name should be on the name
-line. ⚠ **A MOB must NOT split**: "Ridgeback Pup" stays one name. -> 
-`59l` [x] - **The full name survives everywhere it should**: quest text, the dialog header and the
-target frame still read the whole "Elder Marius". -> 
+**A craft.**
 
-`59m` [x] - 🔴 **`/target Pell` works in a crowd** — the thing you actually asked for. Also try
-`/target Gatekeeper` (the role half) and `/target Pel` (a prefix). It only finds what is IN SIGHT. -> 
+- `66h` [] - 🔴 **The ingredient that is stopping you is RED.** Open any recipe you cannot afford: each
+  input reads `have/need`, green when you have enough. This is the whole point of the row — say if the
+  numbers are hard to read at that size. ->
 
-`59n` [x] - **`/title` is refused below 76**: a low character gets "you have not been granted the right
-to name yourself". -> 
+- `66i` [] - **A guaranteed craft goes straight through; a risky one asks first** and names the odds,
+  because a failure still eats the materials. Potions are 90%, scrolls 80%, everything else 100%. ->
 
-`59o` [x] - 🔑 **The right arrives at level 76, with Angel's Protection** — your ask. Level a character
-to 76 (or log in one already past it): **one** system line offers `/title`, and the Rank window grows
-the hint. It must NOT repeat on every login. ⚠ Both grants now come from one place, so **the future
-quest replaces one condition, not two**. -> 
+- `66j` [] - **A locked recipe is dimmed, not hidden**, and says which of the three reasons it is:
+  *Needs level N*, *Blueprint not learned*, or simply red ingredients. ->
 
-`59p` [x] - **Then it works**: `/title Bonecrusher` sets AND wears it in one step, `/titlecolor violet`
-recolours it, `/title` with no text clears it. `/titleright <name> on|off` is the manual override
-(⚠ **online characters only**). -> 
+- `66k` [] - **Blueprints.** An A/S-grade set piece needs one blueprint to UNLOCK and **one more every
+  craft** — so the first costs two. The blueprint is listed as an ingredient in the row, not just as a
+  gate. Admin → Items → Blueprints gives you all 36. ->
 
-`59q` [x] - 🔴 **The reserved words hold**: `/title Warlord`, `/title wealthy`, `/title Game Master`
-are all refused. This is the rule that keeps a board title worth earning — if any of them gets
-through, that is a bug, not a nitpick. -> 
+- `66l` [] - ⚠ **Two professions can craft NOTHING until level 20** — Potion Master and Scroll Scribe
+  have no level-1 recipe at all, so a fresh character who picks one gets an empty window. The three
+  smiths have 6-14 recipes at level 1. Authored, not a bug, but it reads as broken — tell me if you want
+  a cheap level-1 recipe for those two. ->
 
-`59r` [~] - **20 characters max**, and letters/digits/space/`'`/`-` only. Try `/title <color=#FF0000>x`
-— it must be refused, or a title could recolour itself past the palette. -> 
-  it works, but i want the title color to be default white for /title. And the /titlecolor to be a item like a rune that give you the right to use the /titlecolor + clicking on the title color rune item to open the colors as a list
+**The admin bug this build found.**
 
-`59s` [x] - **It survives a relog**, and the picker offers it back as **«your title» — your own** after
-you switch to a board title and want it again. -> 
+- `66m` [] - 🔴 **The admin Equip tab has been giving you 70% gear.** It filtered on `Epic`, which was
+  right until the rarity ladder was re-anchored and the authored tables became the **Mythic** rung with
+  every lesser quality a derived copy of it. "Level 76 → Adamantine Blade" handed you the *Epic copy*:
+  **P.Atk 196 where the real item is 281.** It never looked broken because the Epic list carries the
+  same levels 1/20/40/52/61/76/80. **Every balance number you took off admin gear since the re-anchor
+  was ~30% light** — worth knowing before you re-measure anything. Fixed; check a level-76 weapon's
+  details now read the authored number. ->
 
-`59t` [x] - **Revoking works**: `/titleright <name> off` takes a worn written title straight off the
-head. ⚠ **On a 76+ character it comes BACK on the next login** — the level gate re-grants it. Say if
-you want a revoke to stick; it costs one more column. -> 
-
-`59u` [x] - ~~⚠ Protocol is 13, install the 0.55.0 APK *and* server.~~ **Superseded — the pass ships as
-0.57.0 at protocol 14; see BEFORE YOU START at the top. Nothing to check here.** -> 
-
----
-
-## 60. 0.56.0 — D5, the Combat feed in its own window
-
-No section in `TestChecklist.Unity.md` — the detail is here. **No schema change; `game.db` is fine.**
-⚠ **Protocol is 14** — server and APK together. (An older APK has no case for the new channel and
-prints loot/exp as plain Local chat: noisy, never lost.)
-
-`60a` [x] - **The System tab is quiet now.** Kill something with the Chat window open on *System*: no
-damage lines, no `You looted:`, no `Exp: +…`. Only real system lines (refusals, learn notices) land
-there. -> 
-
-`60b` [x] - **The 6th button opens a WINDOW, not a tab.** Chat → **Combat**: a second window appears
-(bottom-right) and the Chat window stays open and usable beside it. The button stays lit while it is
-open, and goes dark when you close either one. -> 
-
-`60c` [x] - **Colours.** Your own damage is **green**, the mob's damage to you is **red**, loot is
-gold, the `Exp/SP/Gold` line is blue. ⚠ The green is deliberately *deeper than lime* (your words) —
-say if it now reads too close to the System tab's green. -> 
-
-`60d` [x] - **All stays readable.** Fight for a minute with the Chat window on **All**: combat is
-**not** in it. That is on purpose — All would otherwise be the exact wall of damage the window was
-built to get away from. **Tell me if you would rather All showed everything.** -> 
-
-`60e` [x] - **Two Clears, two scopes.** Combat's **Clear** empties only the combat window; the Chat
-window's **Clear** still empties everything (including combat). Say if you want Chat's Clear to
-spare the combat feed too. -> 
-
-`60f` [x] - **Party loot still names the taker.** In a party, `X looted Y.` lands in the *combat*
-window of the members who did not get it. -> 
-
-`60g` [x] - **No lag spike.** Spam a fight with **both** windows open — the rewrite that made the
-console append-only now serves two views, so this is the one that would show a regression: rows
-drawing over each other, a freeze, or the phone heating. -> 
-
-`60h` [x] - **It resets per character.** Leave to character select and enter on another: the combat
-window is empty (it follows the C1 chat reset, not the System tab). -> 
-
----
-
-## 61. 0.57.0 — the last three of the queue: `B8` the S grade, `B9` the jail wall, `B10` client collision
-
-**No schema change; `game.db` is fine. Protocol stays 14** — nothing on the wire moved. Server and
-APK should still go together, because the client now reads the world's bounds out of `Game.Shared`.
-
-**`B8` — the S grade exists in words now.**
-`61a` [x] - Debug → Equip → **Level 80**: the menu says **(S-Grade)**, not (A-Grade). Open any piece's
-details: **`Grade: S`**. Before, a Soulcrystal item called itself A while the only scroll that fits it
-says "S grade only" — the two finally agree. -> 
-
-`61b` [?] - Same item in the **vendor** list: "Mythic **S**-grade …". -> which vendor .. we have no vendor taht sells more than D (yet)
-
-`61c` [X] - ⚠ **The one behaviour change, tell me if you hate it.** S gear now sits on the grade
-ladder like every other tier, so a character **below 80** wearing level-80 gear takes the normal
-one-step **×0.5** grade penalty (it was ×1.00 — S was the only tier with no gate, while its own
-details already said *Requires level 80*). At 80+ nothing changes. -> ofc it needs penalty as max lvl penalty even more if youd like .. to balance the dmg of a lvl1 with F grade and S grade
-
-**`B9` — the jail has a wall you can see.**
-
-`61d` [!] - `/jail <name>` then `/tp <name>`: you arrive **in the jail**, and an **orange dashed
-circle** is drawn around the cell. Walk at it — you stop on the line instead of being snapped back. -> 
-  - The jail cell is 1px x 1px ... make the jail like an dungeon .. with size 300x500 or something .. the jailed person to move inside ...
-  - make a jail .. not a cell per player ..
-
-`61e` [x] - The ring is **not** on the map-overlay toggle; it appears because you are standing in the
-cell and disappears when you leave. -> 
-
-`61f` [x] - Same for the inmate: a jailed character sees the same ring and can pace the cell. -> 
-
-**`B10` — the client has collision now.** (The server clamp is untouched — it is the anti-cheat
-backstop, and this is the half that was missing.)
-
-`61g` [x] - **Walk into the world edge.** Tap past the border in the overworld: you walk to the edge
-and **stop there**. No rubber-band, no snap-back — the destination ring lands on the edge, which is
-the tell that the client refused to ask for the impossible. -> 
-
-`61h` [!] - **Same at a dungeon wall.** In the Hollow Crypt, tap outside the dungeon: you stop at the
-boundary. -> it dont have walls and i can go out of the creep (get rubber in but still no collision)
-
-`61i` [x] - **Crossing worlds on foot is refused out loud.** If you can get a tap to land in a
-different world than the one you are in, nothing moves and the log says *"You can't walk to … — only
-a teleport goes there."* (Hard to reach on purpose; if you never see it, that is fine — say so.) -> 
-
-`61j` [~] - **Nothing normal changed.** An ordinary hunting session: no stutter, no move that gets
-eaten, no tap that lands short. This is the risk of the change — the client is now allowed to edit
-your destination, so a wrong bound would show up as taps that quietly go somewhere else. -> only the inertia stop that i explained in `53e`
+- `66n` [] - **Admin → Items → Crafting materials**: all 25 at x200, plus **give-everything x500**.
+  Sized for a real craft — one E-grade body is 100 commons and 50 uncommons, so a x10 button would be
+  theatre. ->
 
 ---
 
 ## CARRIED FORWARD — never reached in any playtest, needs a deliberate setup
 
-These have survived several checklists untouched because none of them happens by accident. If you
-want them closed, they need a session aimed at them.
+None of these happens by accident; each needs a session aimed at it.
 
-`37d` [ ] - A trade **shortfall aborts the whole trade** with nothing moved. -> 
+- `55f` [] - 🔴 **The big one, and still unanswered after two passes: farm a mage 10+ unbroken minutes
+  at level 40+.** Your playtest-19 finding was *"mages run out of MP in 2-3 minutes"*. The Restore
+  Spirit ladder was built to fix it. The design is "farm 30-40 min, rest a bit" — not free. **If it is
+  still 2-3 minutes, the ladder is not the fix and I need to know.** ->
 
-`37e` [ ] - **Full-bag judging** on a trade: merges into an existing stack succeed, brand-new items are
-refused. -> 
+- `0a` [] - **Nuker vs champion.** They were at parity and the nuker is now ~19% ahead (0.98× → 0.84×).
+  You said this needs an auto-farm run to measure — *"when I leave the chars to play alone all
+  measure"*. ⚠ If you do it, do `32z` in the same sitting: auto-farm skill chains surviving a relog
+  have **never** been tested, and if the chains misbehave the measurement lies. ->
 
-`36e` [ ] - A **re-pulled wounded boss continues its phase script** instead of replaying it from the
-top. -> 
+- `32z` [] - **Auto-farm skill chains**: cyclic order, heal/buff/attack priority, thresholds, debuff
+  ranks, assist-leader — and all of it **survives a relog**. ->
 
-`32z` [ ] - **Auto-farm skill chains**: cyclic order, heal/buff/attack priority, thresholds, debuff
-ranks, assist-leader — and all of it **survives a relog**. -> 
+- `37d` [] - A trade **shortfall aborts the whole trade** with nothing moved. ->
 
-`25b` [ ] - **No combat-logging out of a DoT** — char select and `/exit` both refuse while it ticks. -> 
+- `37e` [] - **Full-bag judging** on a trade: merges into an existing stack succeed, brand-new items
+  are refused. ->
 
-`13a` [ ] - The **~3h "take a break" banner** (needs 3 hours of continuous play to see). -> 
+- `36e` [] - A **re-pulled wounded boss continues its phase script** instead of replaying it from the
+  top. ->
+
+- `25b` [] - **No combat-logging out of a DoT** — char select and `/exit` both refuse while it ticks. ->
+
+- `13a` [] - The **~3h "take a break" banner** (needs 3 hours of continuous play to see). ->
 
 ---
 
 ## KNOWN OPEN — not defects, don't spend the pass on them
 
-Tracked, ruled on, or deliberately queued. Listed so you don't re-report them.
-
-- ~~**`B8` `B9` `B10`**~~ ✅ **ALL BUILT 0.57.0** — test at §61. **The build queue you set on
-  2026-08-07 is now EMPTY.** Nothing is queued; the next move is yours — and the highest-value one is
-  still an APK and a play pass over nine unplayed builds, not more code.
-- ~~**`D5` the [Combat] chat tab in its own window.**~~ ✅ **BUILT 0.56.0** — test at §60.
-- ~~**`M5`/`M6` the tutorial chain + bound 30-day newbie gear.**~~ ✅ **BUILT 0.54.0** — test at §58.
-- ~~**`C1` `C3` `C14` `C15` `C16` `C17`** — the QoL six you picked.~~ ✅ **ALL BUILT** — `C15` rode
-  along in 0.54.0, the other five are 0.55.0. Test at §59.
-- **`C4`** auto-on for buff potions/scrolls — **your ruling: comes later, with the AutoPot tabs.**
-- **`G2` / `0e` `lb_*` + `wc_*`** — **CLOSED by your ruling: leave them.** Placeholders for 40+,
-  commented out, harmless. I will stop asking.
-- **`D4` `G5` `F1` `V1` `G4`** — **done and tested at 0.49.0.** Older docs still list some as open;
-  they are stale on this point.
-- **Crafting (`D3`)** — designed, unbuilt, and still the top content blocker. **3rd/4th class kits**
-  — blocked on your 40+ CSVs. **`G3` mobs-as-players** — needs the document + BalanceMatrix tables
-  first, then 2-5 real mobs as an experiment, per your ruling. **Instances** — you are holding.
-- **The champion's −10% P.Def** (was −20%) — owed by **you**, on a re-test.
+- ✅ ~~**CRAFTING**~~ — your queue item (3). **BUILT 0.59.0, test at §66.** The server half already
+  existed; what was missing was the client, and the admin materials/recipes you asked for came with it.
+- **`58d` item TAGS + `/give`** — your design (timed / bound / private as tags on a **real** item
+  instance, never a cloned def, plus the full `/give` command). **Not built.** It blocks `58g` and
+  `59c`, which you deferred until it exists. It is also your route to Mythic gear without crafting —
+  say the word and it jumps the queue.
+- **`58i` purge the inspiration game's name** from comments and docs (`l2` as the game → `IG`; the
+  *level* meaning stays). **Not built**, mechanical, no risk — I will fold it into a quiet build.
+- **Your find #9 — resurrect / party / flag rules.** Ultimate Resurrection should be tradable (at
+  least the dropped and admin copies); you cannot res a party member while **you** are flagged, though
+  you can res or heal a PK while unflagged and it flags you (inconsistent); you must be able to invite
+  and trade with PvP-flagged players, with PK staying trade-blocked. **Not built — queued.**
+- **3rd/4th class kits** — still blocked on your 40+ CSVs. Nothing invented in the meantime.
+- **`G3` mobs-as-players** — needs the document and BalanceMatrix tables first, then 2-5 real mobs as
+  an experiment, per your ruling.
+- **Instances** — you are holding.
+- **`C4`** auto-on for buff potions/scrolls — your ruling: comes later, with the AutoPot tabs.
+- **`G2` / `0e` `lb_*` + `wc_*`** — closed by your ruling: leave them. Placeholders for 40+, commented
+  out, harmless.

@@ -7,10 +7,56 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.58.3**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.59.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 0.59.0 — 2026-08-11 — CRAFTING becomes reachable, and the admin gear list stops lying
+
+**Crafting was never missing — it was unreachable.** Professions, refinement, finished-item and
+consumable recipes, blueprints and a mats-primary drop table all shipped on 2026-07-06. Nothing since
+could touch any of it, because the phone had no window: the only thing in the client that ever named a
+profession was a row of debug buttons. That is why "crafting" has sat at the top of the content-blocker
+list through four playtests while being, in code, already built. This build is the window.
+
+**The client computes the recipes; the server owns two facts.** The new `Crafting` push
+(`CraftingUpdate`) carries exactly the profession and the unlocked blueprints — the things only the
+server knows. Everything else the window draws (inputs, quantities, level gates, success chances) it
+reads out of `RecipeCatalog`, which is compiled into the client from `Game.Shared`, so it is the same
+data the server crafts from and the two cannot drift. No recipe list travels on the wire.
+
+The window is four pages: **Refine** (5 same-type + 2 cross, the trade engine), **Gear**, **Goods**
+(potions and scrolls) and **Mats** — every material with what you hold, because "how many Rare Ingots
+do I have" is a question asked away from any one recipe. A row is *what it makes* over *what it costs
+and what you have*, ingredient by ingredient, green when you have enough and **red on the one that is
+stopping you**. A locked recipe is dimmed rather than hidden — knowing what is three levels ahead is
+most of what a crafting list is for. A risky craft names its odds before it spends anything.
+
+**Choosing a profession is in-game at last**, behind a confirm that says PERMANENT, and it now saves
+immediately instead of waiting on the 60-second autosave — there is no way to pick again.
+
+🔴 **The admin Equip tab has been handing out 70% gear.** It filtered on `ItemRarity.Epic`, which was
+right until the rarity ladder was re-anchored and the authored tier tables became the **Mythic** rung
+with every lesser quality a derived copy. After that, "Level 76 → Adamantine Blade" gave the *Epic
+copy*: **P.Atk 196 where the real item is 281**. It never looked broken, because the Epic list carries
+the same levels 1/20/40/52/61/76/80 as the Mythic one. Every balance number taken off admin-issued gear
+since the re-anchor was ~30% light. The same stale filter had already produced *zero* craftable recipes
+in `RecipeCatalog.FinishedItemRecipes` and was fixed there; this was the same bug in the place it is
+hardest to see.
+
+**Admin gains the materials and the blueprints** he asked for: a Crafting page under Items with all 25
+materials (generated from the shared tables, not listed) at x200 each plus a **give-everything x500**
+button, and all 36 blueprints at x5 plus a give-all — sized for what a craft actually costs, since one
+E-grade body is 100 commons and 50 uncommons.
+
+**Protocol 15 → 16.** The direction of risk is the unusual one: an old client simply has no window, but
+a *new* client on an *old* server would open a crafting window that is never told its profession and
+would sit there offering nothing while the server crafted happily. The bump makes that pair refuse.
+
+Verified against the real `Game.Shared`: 187 recipes build, every output and input resolves, all 36
+DropOnly recipes have their blueprint item, and `craft_heavy_t20` still reproduces his E-body anchor
+exactly (100 common 50/20/20/10 + 50 uncommon 25/10/10/5).
 
 ## 0.58.3 — 2026-08-11 — his weapon numbers, and the mob-info window becomes a bestiary page
 

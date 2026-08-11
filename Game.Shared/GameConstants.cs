@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.58.3";
+    public const string GameVersion = "0.59.0";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -43,7 +43,7 @@ public static class GameConstants
     /// actually happens most: **client-only work, where the CLIENT is ahead of the server.** A version
     /// number that describes the contract instead of the build makes that case a non-event.
     /// </summary>
-    public const int ProtocolVersion = 15;
+    public const int ProtocolVersion = 16;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
@@ -66,6 +66,13 @@ public static class GameConstants
     /// 14 (0.56.0) adds ChatChannel.Combat — loot and the per-kill reward line moved off System onto
     /// their own channel (D5). An older client has no case for it and falls through to its Local
     /// default, which prints the line uncoloured on the Local tab: noisier than before, never lost.
+    ///
+    /// 16 (0.59.0) adds the "Crafting" push (<see cref="CraftingUpdate"/>) that carries the character's
+    /// profession and unlocked blueprints. It is what the crafting WINDOW is filled from, and the
+    /// direction of the risk is the reverse of the usual one: an old client simply has no window, but a
+    /// NEW client on an OLD server would open a crafting window that is never told the profession and
+    /// would therefore offer nothing while the server happily crafts. Bumped so that pair refuses
+    /// instead — the "client is NEWER than the server" branch above is exactly this case.
     /// </summary>
     public const int MinAcceptedProtocol = 8;
 

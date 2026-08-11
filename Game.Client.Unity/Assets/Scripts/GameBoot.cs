@@ -315,6 +315,29 @@ namespace Game.Client
         /// Never written optimistically on a tap — the window redraws when the push comes back.</summary>
         public SocialOptions Social { get; private set; } = SocialOptions.None;
 
+        /// <summary>The character's ONE permanent crafting profession, as the server states it.
+        /// <see cref="Profession.None"/> until it has been picked.</summary>
+        public Profession CraftProfession { get; private set; } = Profession.None;
+
+        /// <summary>The DropOnly recipes unlocked from a blueprint. Auto-known recipes are NOT in here —
+        /// those are gated on character level and the window works that out from the catalog.</summary>
+        public HashSet<string> KnownRecipes { get; private set; } = new HashSet<string>();
+
+        /// <summary>Craft one unit. Same rule as every other action: nothing is applied locally — the
+        /// inventory push that follows is what tells us it happened.</summary>
+        public async void Craft(string recipeId)
+        {
+            try { await _net.CraftAsync(recipeId); }
+            catch (Exception ex) { ClientLog.Warn("Craft: " + ex.Message); }
+        }
+
+        /// <summary>Pick the permanent profession. The server refuses a second call.</summary>
+        public async void ChooseProfession(Profession profession)
+        {
+            try { await _net.ChooseProfessionAsync((int)profession); }
+            catch (Exception ex) { ClientLog.Warn("Profession: " + ex.Message); }
+        }
+
         public async void Like(string name)
         {
             try { await _net.LikeAsync(name); }
@@ -1019,6 +1042,13 @@ namespace Game.Client
                 if (s == null) return;
                 Social = (SocialOptions)s.Options;
                 Ui?.RefreshOptionsWindow();
+            });
+            _net.CraftingReceived += c => Main(() =>
+            {
+                if (c == null) return;
+                CraftProfession = (Profession)c.Profession;
+                KnownRecipes = new HashSet<string>(c.KnownRecipes ?? new string[0]);
+                Ui?.RefreshCraftingWindow();
             });
             _net.RegionReceived += r => Main(() => Ui?.ShowRegionNotice(r));
             _net.NoticeReceived += m => Main(() => Ui?.ShowToast(m));
