@@ -140,6 +140,18 @@ public static class ArmorSetCatalog
             shieldBonus: new StatMods(Reflect: 0.05f)),                          // reflect 5% of melee basic
         GearSet("heavy", 76, "Ironforge", new StatMods(MaxHp: 455, Str: 2, Con: 2, Agi: -2, CcResist: 0.4f),
             shieldBonus: new StatMods(PDefPct: 0.05f, MDefPct: 0.05f, ShieldDefPct: 0.25f, Reflect: 0.05f)),
+        // ===== S (level 80) — AUTHORED BY HIM 2026-08-11. The S row was "set bonus NOT authored yet"
+        // in the CSV until now, so all three of these sets are NEW: an S body + S accessories completed
+        // nothing at all before, which made the top grade the only one with no set identity. =====
+        //
+        // Heavy S is the tank line taken to its endgame shape: it is the FIRST set to carry crit rate
+        // (+100 = +10 points flat, outside every multiplier), magic damage reduction, melee vamp and a
+        // PvP damage-taken cut. Its shield clause repeats the PvP cut, so shield-up is ×0.95 × ×0.95.
+        GearSet("heavy", 80, "Ironforge", new StatMods(Str: 3, Con: 2, Agi: -2, MaxHp: 550,
+            CritRateFlat: 0.10f, CcResist: 0.4f, MagicResist: 0.02f, MeleeVamp: 0.02f,
+            PvpDamageTakenPct: -0.05f),
+            shieldBonus: new StatMods(PDefPct: 0.06f, MDefPct: 0.06f, ShieldDefPct: 0.30f, Reflect: 0.05f,
+                PvpDamageTakenPct: -0.05f)),
         // Light — "Nightleaf"
         GearSet("light", 20, "Nightleaf", new StatMods(Evasion: 2, MaxMp: 92)),
         GearSet("light", 40, "Nightleaf", new StatMods(Evasion: 4)),
@@ -147,13 +159,28 @@ public static class ArmorSetCatalog
         GearSet("light", 61, "Nightleaf", new StatMods(MeleeVamp: 0.05f, Agi: 1, Con: -1, CcResist: 0.4f)),
         GearSet("light", 76, "Nightleaf", new StatMods(PAtkPct: 0.04f, AtkSpeedPct: 0.04f, MaxMp: 220,
             Spt: 1, Agi: 1, Str: 1, Con: -2, CcResist: 0.4f)),
+        // Light S — the A set's shape with everything nudged up, plus four channels light never had:
+        // move speed ×1.03, flat crit rate +30 (= +3 points), flat crit DAMAGE +200 and evasion +3.
+        // ⚠ The +200 crit damage is the largest single source in the game — 2H Weapon Mastery at level 5
+        // is +106 — so a rogue in S Nightleaf roughly triples his flat crit-damage term. It is what he
+        // authored; it is also the one number here most worth a BalanceMatrix pass before it ships.
+        GearSet("light", 80, "Nightleaf", new StatMods(PAtkPct: 0.05f, AtkSpeedPct: 0.05f, MaxMp: 300,
+            Spt: 1, Agi: 2, Str: 2, Con: -2, CcResist: 0.4f, MoveSpeedPct: 0.03f,
+            CritRateFlat: 0.03f, CritDamageFlat: 200f, Evasion: 3, PvpDamageTakenPct: -0.05f)),
         // Robe — "Arcanum"
         GearSet("robe", 20, "Arcanum", new StatMods(Wit: 1, MoveSpeed: 7)),
         GearSet("robe", 40, "Arcanum", new StatMods(CastSpeedPct: 0.15f)),
         GearSet("robe", 52, "Arcanum", new StatMods(CastSpeedPct: 0.15f, PDefPct: 0.05f, MDefPct: 0.05f)),
         GearSet("robe", 61, "Arcanum", new StatMods(Wit: 2, MoveSpeed: 7, CastSpeedPct: 0.15f,
             PDefPct: 0.08f, Spt: -1, CcResist: 0.4f)),
-        GearSet("robe", 76, "Arcanum", new StatMods(Wit: 2, Int: 1, MAtkPct: 0.17f, MoveSpeed: 7,
+        // ⚠ A (76) was RE-AUTHORED 2026-08-11: M.Atk ×1.17 -> ×1.10, and SPT −1 added. Both pull the
+        // nuke set back — less magic damage AND less MP/regen — which is consistent with the F-rung
+        // caster re-author from the same pass rather than a slip.
+        GearSet("robe", 76, "Arcanum", new StatMods(Wit: 2, Int: 1, Spt: -1, MAtkPct: 0.10f, MoveSpeed: 7,
+            CastSpeedPct: 0.15f, CcResist: 0.4f)),
+        // Robe S — the A set with the ×1.17 M.Atk restored and INT +2 (A is +1). So the caster's magic
+        // damage step from A to S is in the SET, not just the staff.
+        GearSet("robe", 80, "Arcanum", new StatMods(Wit: 2, Int: 2, Spt: -1, MAtkPct: 0.17f, MoveSpeed: 7,
             CastSpeedPct: 0.15f, CcResist: 0.4f)),
 
         // Body VARIANTS (dmg/support/nuke lines). Same accessory line as the tier's base set.

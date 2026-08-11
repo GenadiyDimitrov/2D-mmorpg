@@ -53,14 +53,21 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 61,Armor,Fighter,61,Heavy,293,p.Atk x1.04; CON +2; DEX -2; CC Resist 0.4; Shield: Reflect 5% of mele basic atack dmg (like caunter to vamp);,[BUILT] def oriented
 611,Armor,Fighter,61,Heavy,293,p.Atk x1.04; STR +2; CON -2; Acc +4; CC Resist 0.4;,[BUILT] dmg oriented (set_heavy_t61_dmg); Stun/Fear split folded into CcResist
 76,Armor,Fighter,76,Heavy,332,STR +2; CON +2; DEX -2; HP +455; CC Resist 0.4; Shield: (p.def x1.05; m.def x1.05; shield.p.def x1.25; reflect 5%);,[BUILT]
-80,Armor,Fighter,80,Heavy,531,,[BUILT] S = A x1.60 derived; set bonus NOT authored yet
+80,Armor,Fighter,80,Heavy,442,STR +3; CON +2; DEX -2; HP +550; CritRate +100; CC Resist 0.4; mReduction x1.02; Mele Vamp x1.02; PVP Dmg Received x0.95 (5% pvp dmg reduction); Shield: (p.def x1.06; m.def x1.06; shield.p.def x1.3; reflect 5%; PVP Dmg Received x0.95);,[BUILT] S P.Def AND the set bonus are now AUTHORED by him (was A x1.60 with no set at all). CritRate +100 read as +10 points flat (your 0-1000 scale) outside all multipliers. mReduction x1.02 = mRes 0.02 (it IS a divisor already: 1/1.02). ✅ Mele Vamp x1.02 = 2% vamp FLAT — CONFIRMED by him 2026-08-11 ("i write percents as x1.23 .. that vamp is additive not multiplicative - yes 2% flat increase"). NOTE HIS CONVENTION: xN.NN in this file is how he writes a PERCENT, not necessarily a multiply — read each one against what the stat can do. Set + shield both cut PvP taken, so shield-up = x0.9025
 
 # ---- SHIELDS. P.Def below is ShieldDefense. The block profile is extrapolated Wooden->Iron and is
-#      tunable in Items.cs (shBlock/shReduce/shCrit/shEvaPen), not authored here:
-#        BlockChance   .15 .22 .24 .26 .28 .30 .32   (F 20 40 52 61 76 S)
-#        BlockReduce   .34 .37 .39 .41 .43 .45 .47
-#        CritDefense   .08 .10 .11 .12 .13 .15 .16
-#        EvasionPen      5   7   7   8   8   9   9
+#      tunable in Items.cs (shBlock/shReduce/shCrit/shEvaPen), not authored here: 
+# To much dmg reduction on top of the additional pdef when sucsessifull blocked 
+# Mage should not be immortal even with a shield it helps a bit but not 47% dmg reduction with 33% chance thats average 15% - Eddited by him 2026-08-11
+# 
+#        BlockChance   .10 .15 .15 .20 .20 .25 .25   (F 20 40 52 61 76 S)
+#        BlockReduce   .10 .10 .15 .15 .20 .20 .25
+#        CritDefense   .03 .05 .05 .07 .07 .10 .10
+#        EvasionPen      3   5   5   7   7  10  10
+#      [BUILT] all four rows above are live. Average mitigation from BLOCKING alone is now 1.0% at F
+#      and 6.3% at S (was 5.1% / 15.0%). The flat ShieldDefense is untouched — it was always on every
+#      hit, which is the double-dip he named. Shield MASTERY is also untouched, so a mastery tank at S
+#      still reaches ~14% average: the nerf lands on the shield-only wearer, i.e. the mage.
 #      A shield belongs to its tier's HEAVY set id but does not count toward the 4-slot requirement.
 1,Armor,Fighter,1,Shield,90,,[BUILT] raised 40->90 2026-07-31: at 40 the Mythic F shield tied the starter Wooden Shield and the whole F rarity ladder was worthless
 20,Armor,Fighter,20,Shield,143,,[BUILT]
@@ -68,7 +75,8 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 52,Armor,Fighter,52,Shield,230,,[BUILT]
 61,Armor,Fighter,61,Shield,256,,[BUILT]
 76,Armor,Fighter,76,Shield,299,,[BUILT]
-80,Armor,Fighter,80,Shield,478,,[BUILT] S derived
+80,Armor,Fighter,80,Shield,413,,[BUILT] S AUTHORED by him (no longer A x1.60)
+
 
 # ---- LIGHT bodies — set family "Nightleaf".
 #      NOTE: 52 (202) is LOWER than 40 (218). That is what was authored and what ships; flagging it
@@ -84,7 +92,7 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 61,Armor,Fighter,61,Light,220,Vamp 5%; DEX +1; CON -1; CC Resist 0.4;,[BUILT] for mele fighters/rogues oriented
 611,Armor,Fighter,61,Light,220,p.Atk x1.08; DEX +1; CON -1; CC Resist 0.4;,[BUILT] dmg oriented (set_light_t61_dmg)
 76,Armor,Fighter,76,Light,249,p.atk x1.04; as x1.04; DEX +1; STR +1; CON -2; MaxMP +220; SPT +1; CC Resist 0.4;,[BUILT] authored MpReg x1.05 / m.def x1.05 became SPT +1
-80,Armor,Fighter,80,Light,398,,[BUILT] S derived; set bonus NOT authored yet
+80,Armor,Fighter,80,Light,332,p.atk x1.05; as x1.05; DEX +2; STR +2; CON -2; MaxMP +300; SPT +1; CC Resist 0.4; move speed x1.03; crit rate +30; critdmg +200; evasion +3; PVP Dmg Received x0.95;,[BUILT] S P.Def AND the set bonus are now AUTHORED by him (was A x1.60 with no set at all). crit rate +30 = +3 points flat. ✅ critdmg +200 RATIFIED by him 2026-08-11: the 35 kit is +100 and a 40+ kit will be +600, so this rung is deliberate and only looks large because no 40+ kit exists yet. Do not retune it when the 40+ CSVs land — re-read it against them.
 
 # ---- ROBE bodies — set family "Arcanum". Robes carry inherent +MaxMP (last column).
 1,Armor,Mage,1,Robe,49,,[BUILT] F rung,109
@@ -93,10 +101,10 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 41,Armor,Mage,40,Robe,110,p.def x1.05; WIT +1,[BUILT] support oriented (set_robe_t40_sup),508
 42,Armor,Mage,40,Robe,110,INT +4; WIT -1,[BUILT] nuke oriented (set_robe_t40_nuke),508
 52,Armor,Mage,52,Robe,135,Cast x1.15; p.def x1.05; m.def x1.05,[BUILT],613
-61,Armor,Mage,61,Robe,147,WIT +2; Speed +7; Cast x1.15; p.Def x1.08; SPT -1; CC Resist 0.4;,[BUILT] authored m.def/mpReg x0.95 became SPT -1,718
-611,Armor,Mage,61,Robe,147,WIT +2; INT -1; Speed +7; m.def x1.05; mpReg x1.13; Stun/Fear Resist x1.7;,[NOT BUILT] the only authored body with no item — no set_robe_t61_* variant exists,718
-76,Armor,Mage,76,Robe,166,WIT +2; INT +1; M.Atk x1.17; Speed +7; Cast x1.15; CC Resist 0.4;,[BUILT],866
-80,Armor,Mage,80,Robe,266,,[BUILT] S derived; set bonus NOT authored yet,1386
+61,Armor,Mage,61,Robe,147,WIT +2; SPT -1; Speed +7; Cast x1.15; p.Def x1.08; CC Resist 0.4;,[BUILT] authored m.def/mpReg x0.95 became SPT -1,718
+611,Armor,Mage,61,Robe,147,WIT +2; INT -2; SPT +2 Speed +7; Stun/Fear Resist x1.7;,[NOT BUILT] the only authored body with no item — no set_robe_t61_* variant exists - Eddited by him 2026-08-11,718
+76,Armor,Mage,76,Robe,166,WIT +2; INT +1; SPT -1; M.Atk x1.10; Speed +7; Cast x1.15; CC Resist 0.4;,[BUILT] your x1.17 -> x1.10 + SPT -1 is live; measured -5.6% M.Atk and -2.8% nuke damage at 76,866
+80,Armor,Mage,80,Robe,221,WIT +2; INT +2; SPT -1; M.Atk x1.17; Speed +7; Cast x1.15; CC Resist 0.4;,[BUILT] S P.Def AND the set bonus are now AUTHORED by him (was A x1.60 with no set at all),1100
 
 # ---- WEIGHTLESS ACCESSORIES. One line per TIER, shared by all three weights (set_acc_t<level>):
 #      the same Gauntlets/Greaves/Helm complete a Heavy, Light or Robe set. The per-variant rows of
@@ -107,7 +115,7 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 ,Armor,,52,Gloves,44,,[BUILT]
 ,Armor,,61,Gloves,49,,[BUILT]
 ,Armor,,76,Gloves,55,,[BUILT]
-,Armor,,80,Gloves,88,,[BUILT] S derived
+,Armor,,80,Gloves,74,,[BUILT] S AUTHORED by him (no longer A x1.60)
 
 ,Armor,,1,Boots,15,,[BUILT] F rung
 ,Armor,,20,Boots,29,,[BUILT]
@@ -115,7 +123,7 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 ,Armor,,52,Boots,44,,[BUILT]
 ,Armor,,61,Boots,49,,[BUILT]
 ,Armor,,76,Boots,55,,[BUILT]
-,Armor,,80,Boots,88,,[BUILT] S derived
+,Armor,,80,Boots,74,,[BUILT] S AUTHORED by him (no longer A x1.60)
 
 ,Armor,,1,Helmet,21,,[BUILT] F rung
 ,Armor,,20,Helmet,41,,[BUILT]
@@ -123,7 +131,7 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 ,Armor,,52,Helmet,66,,[BUILT]
 ,Armor,,61,Helmet,73,,[BUILT]
 ,Armor,,76,Helmet,83,,[BUILT]
-,Armor,,80,Helmet,133,,[BUILT] S derived
+,Armor,,80,Helmet,110,,[BUILT] S AUTHORED by him (no longer A x1.60)
 
 # ==================================================================================================
 # WEAPONS. BOTH numbers of the pair are authored and BOTH ship: P -> AtkBonus, M -> MAtkBonus.
@@ -132,13 +140,14 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 # not cast like a caster holding a wand" is a property of the CLASS, so it lives in a passive.
 # Attack speed is blank = the type's default; only bows author one (they are the slow line).
 # ==================================================================================================
+,Weapon,Fighter,1,Sword,6/5,,Traning Sword - Eddited by him 2026-08-11
 ,Weapon,Fighter,1,Sword,24/17,,[BUILT] F rung — F re-authored by him 2026-08-11
 ,Weapon,Fighter,20,Sword,92/54,,[BUILT] no attributes below level 40
 ,Weapon,Fighter,40,Sword,156/83,,[BUILT],,see ATTRIBUTES: SWORD
 ,Weapon,Fighter,52,Sword,194/99,,[BUILT],,see ATTRIBUTES: SWORD
 ,Weapon,Fighter,61,Sword,232/114,,[BUILT],,see ATTRIBUTES: SWORD
 ,Weapon,Fighter,76,Sword,281/132,,[BUILT],,see ATTRIBUTES: SWORD
-,Weapon,Fighter,80,Sword,450/211,,[BUILT] S derived,,see ATTRIBUTES: SWORD
+,Weapon,Fighter,80,Sword,437/192,,[BUILT] S AUTHORED by him (no longer A x1.60),,see ATTRIBUTES: SWORD
 
 # 2H: he re-gave this whole line by grade on 2026-08-11 and it RATIFIES NOTHING I did — the x1.166
 # P.Atk raise of 2026-08-10 is REVERTED to his original numbers, and S is now AUTHORED (532/192),
@@ -151,13 +160,14 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 ,Weapon,Fighter,76,Sword2h,342/132,,[BUILT],,see ATTRIBUTES: SWORD
 ,Weapon,Fighter,80,Sword2h,532/192,,[BUILT] S AUTHORED (not derived),,see ATTRIBUTES: SWORD
 
+,Weapon,Fighter,1,Blunt,6/5,,Traning Club - Eddited by him 2026-08-11
 ,Weapon,Fighter,1,Blunt,24/17,,[BUILT] F rung — F re-authored by him 2026-08-11
 ,Weapon,Fighter,20,Blunt,92/54,,[BUILT] no attri
 ,Weapon,Fighter,40,Blunt,156/83,,[BUILT],,see ATTRIBUTES: BLUNT
 ,Weapon,Fighter,52,Blunt,194/99,,[BUILT],,see ATTRIBUTES: BLUNT
 ,Weapon,Fighter,61,Blunt,232/114,,[BUILT],,see ATTRIBUTES: BLUNT
 ,Weapon,Fighter,76,Blunt,281/132,,[BUILT],,see ATTRIBUTES: BLUNT
-,Weapon,Fighter,80,Blunt,450/211,,[BUILT] S derived,,see ATTRIBUTES: BLUNT
+,Weapon,Fighter,80,Blunt,437/192,,[BUILT] S AUTHORED by him (no longer A x1.60),,see ATTRIBUTES: BLUNT
 
 ,Weapon,Fighter,1,Blunt2h,29/17,,[BUILT] F rung
 ,Weapon,Fighter,20,Blunt2h,112/54,,[BUILT] no attri
@@ -168,36 +178,40 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 ,Weapon,Fighter,80,Blunt2h,532/192,,[BUILT] S AUTHORED (not derived),,see ATTRIBUTES: BLUNT
 
 # Daggers are DUALs (WeaponType.Dual) — fast, lower per-hit.
+,Weapon,Fighter,1,Duals,5/5,,Traning knives - Eddited by him 2026-08-11
 ,Weapon,Fighter,1,Duals,21/17,,[BUILT] F rung — F re-authored by him 2026-08-11
 ,Weapon,Fighter,20,Duals,80/54,,[BUILT] no attri
 ,Weapon,Fighter,40,Duals,136/83,,[BUILT],,see ATTRIBUTES: DUAL
 ,Weapon,Fighter,52,Duals,170/99,,[BUILT],,see ATTRIBUTES: DUAL
 ,Weapon,Fighter,61,Duals,203/114,,[BUILT],,see ATTRIBUTES: DUAL
-,Weapon,Fighter,76,Duals,271/132,,[BUILT],,see ATTRIBUTES: DUAL
-,Weapon,Fighter,80,Duals,434/211,,[BUILT] S derived,,see ATTRIBUTES: DUAL
+,Weapon,Fighter,76,Duals,246/132,,[BUILT],,see ATTRIBUTES: DUAL
+,Weapon,Fighter,80,Duals,382/192,,[BUILT] S AUTHORED by him (no longer A x1.60),,see ATTRIBUTES: DUAL
 
 # Bows are the only weapon with a basic-attack RANGE (400 base) and the only one authoring an
 # attack speed. slow = 293, very slow = 227. Only ONE bow per tier ships: the authored second
-# level-40 bow (323/84 very slow) was never built, and 61 is the very-slow rung instead.
+# level-40 bow was swapped on his 2026-08-11 pass: the 316/84 row is DELETED and 323/84 ships at
+# as:293. (His note called 316 "the very slow bow" — it was actually the slow/293 one that shipped
+# and 323 was the very-slow/227 one that never did. Same outcome either way: one bow, 323/84 @293.)
+# 61 is still the very-slow rung.
 ,Weapon,Fighter,1,Bow,49/17,,[BUILT] F rung — F re-authored by him 2026-08-11; slow => as:293
 ,Weapon,Fighter,20,Bow,191/55,,[BUILT] slow => as:293; no attri
-,Weapon,Fighter,40,Bow,316/84,,[BUILT] slow => as:293;,,see ATTRIBUTES: BOW
-,Weapon,Fighter,40,Bow,323/84,,[NOT BUILT] very slow => as:227; the alternate 40 bow — no item exists,,see ATTRIBUTES: BOW
+,Weapon,Fighter,40,Bow,323/84,,[BUILT] slow => as:293; his 2026-08-11 swap: the old 316 row was REMOVED and this one built,,see ATTRIBUTES: BOW
 ,Weapon,Fighter,52,Bow,400/99,,[BUILT] slow => as:293;,,see ATTRIBUTES: BOW
 ,Weapon,Fighter,61,Bow,528/114,,[BUILT] very slow => as:227;,,see ATTRIBUTES: BOW
 ,Weapon,Fighter,76,Bow,581/132,,[BUILT] slow => as:293;,,see ATTRIBUTES: BOW
-,Weapon,Fighter,80,Bow,930/211,,[BUILT] S derived; slow => as:293,,see ATTRIBUTES: BOW
+,Weapon,Fighter,80,Bow,794/192,,[BUILT] S AUTHORED by him (no longer A x1.60); slow => as:293,,see ATTRIBUTES: BOW
 
 # Magic weapons carry NO weapon range (melee basic, tiny basic damage — the power is in spells).
 # IsMagicWeapon, not WeaponType, is what makes an entity a caster: a wand is Blunt and a staff is
 # TwoHandedBlunt, so the type alone cannot tell a wand from a mace.
-,Weapon,Mage,1,Wand (1h sword/blunt),22/23,,[BUILT] F rung — F re-authored by him 2026-08-11; M.Atk now ABOVE P.Atk
+,Weapon,Fighter,1,Wand (1h sword/blunt),5/7,,Traning wand - Eddited by him 2026-08-11
+,Weapon,Mage,1,Wand (1h sword/blunt),19/22,,[BUILT] F rung — F re-authored by him 2026-08-11; M.Atk now ABOVE P.Atk - Eddited by him 2026-08-11
 ,Weapon,Mage,20,Wand (1h sword/blunt),74/72,,[BUILT] one handed and less mAtk than two handed; the 76+ offhand support passive is NOT BUILT
 ,Weapon,Mage,40,Wand (1h sword/blunt),111/101,,[BUILT],,see ATTRIBUTES: MAGIC
-,Weapon,Mage,52,Wand (1h sword/blunt),140/122,,[BUILT],,see ATTRIBUTES: MAGIC
+,Weapon,Mage,52,Wand (1h sword/blunt),155/132,,[BUILT] - Eddited by him 2026-08-11,,see ATTRIBUTES: MAGIC
 ,Weapon,Mage,61,Wand (1h sword/blunt),186/152,,[BUILT],,see ATTRIBUTES: MAGIC
 ,Weapon,Mage,76,Wand (1h sword/blunt),225/175,,[BUILT],,see ATTRIBUTES: MAGIC
-,Weapon,Mage,80,Wand (1h sword/blunt),360/280,,[BUILT] S derived,,see ATTRIBUTES: MAGIC
+,Weapon,Mage,80,Wand (1h sword/blunt),360/256,,[BUILT] S AUTHORED by him (no longer A x1.60),,see ATTRIBUTES: MAGIC
 
 ,Weapon,Mage,1,Staff (2h blunt),23/24,,[BUILT] F rung — F re-authored by him 2026-08-11; M.Atk now ABOVE P.Atk
 ,Weapon,Mage,20,Staff (2h blunt),90/79,,[BUILT] no attri
@@ -205,36 +219,36 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 ,Weapon,Mage,52,Staff (2h blunt),189/145,,[BUILT],,see ATTRIBUTES: MAGIC
 ,Weapon,Mage,61,Staff (2h blunt),226/167,,[BUILT],,see ATTRIBUTES: MAGIC
 ,Weapon,Mage,76,Staff (2h blunt),274/193,,[BUILT],,see ATTRIBUTES: MAGIC
-,Weapon,Mage,80,Staff (2h blunt),438/309,,[BUILT] S derived,,see ATTRIBUTES: MAGIC
+,Weapon,Mage,80,Staff (2h blunt),426/281,,[BUILT] S AUTHORED by him (no longer A x1.60),,see ATTRIBUTES: MAGIC
 
 # ==================================================================================================
 # JEWELS. M.Def is the stat; jewels are the ONLY source of magic defence. Inherent +MP from 61.
 # L2 layout: 1 necklace / 2 rings / 2 earrings. Jewels ROLL attributes (see ATTRIBUTES: JEWELS) —
 # the old file left that column empty, which read as "jewels have none". They do.
 # ==================================================================================================
-,Jewel,-,1,Necklace,18,,[BUILT] F rung,0
+,Jewel,-,1,Necklace,25,,[BUILT] F rung - Eddited by him 2026-08-11,0
 ,Jewel,-,20,Necklace,45,,[BUILT],0
 ,Jewel,-,40,Necklace,64,,[BUILT],0,see ATTRIBUTES: NECKLACE
 ,Jewel,-,52,Necklace,72,,[BUILT],0,see ATTRIBUTES: NECKLACE
 ,Jewel,-,61,Necklace,85,,[BUILT],33,see ATTRIBUTES: NECKLACE
 ,Jewel,-,76,Necklace,95,,[BUILT],42,see ATTRIBUTES: NECKLACE
-,Jewel,-,80,Necklace,152,,[BUILT] S derived,67,see ATTRIBUTES: NECKLACE
+,Jewel,-,80,Necklace,138,,[BUILT] S AUTHORED by him (no longer A x1.60),52,see ATTRIBUTES: NECKLACE
 
-,Jewel,-,1,Ring,9,,[BUILT] F rung,0
+,Jewel,-,1,Ring,12,,[BUILT] F rung - Eddited by him 2026-08-11,0
 ,Jewel,-,20,Ring,22,,[BUILT],0
 ,Jewel,-,40,Ring,32,,[BUILT],0,see ATTRIBUTES: RING
 ,Jewel,-,52,Ring,36,,[BUILT],0,see ATTRIBUTES: RING
 ,Jewel,-,61,Ring,42,,[BUILT],17,see ATTRIBUTES: RING
 ,Jewel,-,76,Ring,48,,[BUILT],21,see ATTRIBUTES: RING
-,Jewel,-,80,Ring,77,,[BUILT] S derived,34,see ATTRIBUTES: RING
+,Jewel,-,80,Ring,69,,[BUILT] S AUTHORED by him (no longer A x1.60),27,see ATTRIBUTES: RING
 
-,Jewel,-,1,Earring,13,,[BUILT] F rung,0
+,Jewel,-,1,Earring,16,,[BUILT] F rung - Eddited by him 2026-08-11,0
 ,Jewel,-,20,Earring,34,,[BUILT],0
 ,Jewel,-,40,Earring,45,,[BUILT],0,see ATTRIBUTES: EARRING
 ,Jewel,-,52,Earring,54,,[BUILT],0,see ATTRIBUTES: EARRING
 ,Jewel,-,61,Earring,63,,[BUILT],25,see ATTRIBUTES: EARRING
 ,Jewel,-,76,Earring,71,,[BUILT],31,see ATTRIBUTES: EARRING
-,Jewel,-,80,Earring,114,,[BUILT] S derived,50,see ATTRIBUTES: EARRING
+,Jewel,-,80,Earring,104,,[BUILT] S AUTHORED by him (no longer A x1.60),39,see ATTRIBUTES: EARRING
 
 # ==================================================================================================
 # ATTRIBUTES — 🔴 THIS SECTION IS THE ONE REAL CORRECTION IN THIS PASS. READ IT.
@@ -282,6 +296,15 @@ ATTRIBUTES: EARRING,Max HP %,1/2/3/4/5,5,
 ATTRIBUTES: EARRING,Max MP %,1/2/3/4/5,5,
 ATTRIBUTES: NECKLACE,P.Atk %,1/2/3/4/5,5,
 ATTRIBUTES: NECKLACE,M.Atk %,1/2/3/4/5,5,
+
+ALL WEAPONS - GRADES A(76) and S(80) - HAVE INCREASED PVP DMG x1.05 - Additionally on their selected Attribute - Eddited by him 2026-08-11
+# [BUILT] a property of the GRADE, separate from the rolled attribute — and RULED by him 2026-08-11:
+# it must be EARNED. An equipped weapon of grade A(76)/S(80) enchanted to **+4 or more** adds +5% to all
+# three PvP damage channels (basic / physical skill / magic skill), "as a price that u risked to break a
+# weapon". Below +4 it adds nothing. PvP-only, so it changes no PvE number.
+# The armour half of the same rule is the -5% PVP Dmg Received on the S sets: that one is SET-ONLY (it
+# lives in the set bonus, so it needs the full set), while this weapon bonus pays on every hit.
+
 #
 # 🔴 OPEN, NEEDS A RULING — accuracy and evasion are NOT symmetric, even now that both roll flat 5.
 #    miss = clamp(5% + (eva - acc), floor, 95%). Evasion is additive against the 5% base from its

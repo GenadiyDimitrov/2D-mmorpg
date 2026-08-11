@@ -709,6 +709,12 @@ public class Entity
     public float PvpSkillDamageBonus { get; set; }   // +% physical-skill damage vs players
     public float PvpMagicDamageBonus { get; set; }   // +% magic-skill damage vs players
     public float PvpBasicDamageBonus { get; set; }   // +% basic-attack damage vs players
+    /// <summary>The RECEIVING half of the PvP matrix — a MULTIPLIER on damage this entity takes from
+    /// another player (1 = neutral, 0.95 = the S heavy/light sets' "PVP Dmg Received x0.95"). The three
+    /// bonuses above are all attacker-side; nothing could express "I take less in PvP" until the S set
+    /// bonuses needed it (him, gear_sets.csv 2026-08-11). Applied in FinalizeDamage, the one place the
+    /// PvP/PvE matrix is read, and never on a mob's hit — this is player-vs-player only.</summary>
+    public float PvpDamageTaken { get; set; } = 1f;
     public float CancelResist { get; set; }          // chance each buff resists an enemy cancel
     public string ActiveArmorSet { get; set; } = ""; // name of the completed armor set bonus, "" if none
     public string ArmorMasteryLabel { get; set; } = ""; // armor-weight mastery status for the UI
@@ -1466,6 +1472,7 @@ public class Entity
         PvpSkillDamageBonus = 0f;
         PvpMagicDamageBonus = 0f;
         PvpBasicDamageBonus = 0f;
+        PvpDamageTaken = 1f;
         CancelResist = 0f;
         Accuracy = StatCalculator.Accuracy(EffectiveAgi, Level);
         Evasion = StatCalculator.Evasion(EffectiveAgi, Level);
@@ -1563,6 +1570,20 @@ public class Entity
                 weaponPFactor = def.PAtkFactor;
                 weaponMFactor = def.MAtkFactor;
                 HasMagicWeapon = def.IsMagicWeapon;    // wand/staff → Divine Focus is satisfied
+                // ---- A/S WEAPONS HIT HARDER IN PvP (him, gear_sets.csv 2026-08-11, ruled 2026-08-11):
+                // "A/S weapons have increase in pvp dmg 5% ... its separate from the attributes ... if a
+                // weapon is enchanted to +4 or more and its A or S to add the 5% pvp bonus, as a price
+                // that u risked to break a weapon." So the premium is EARNED, not owned: grade A(76)/S(80)
+                // AND +4. It is separate from the weapon's rolled attribute, and applies to all three
+                // channels (the note says weapons, not skills). The armour half of the same rule is the
+                // −5% PVP damage TAKEN, which lives only in the S set bonuses — set-only, by his design,
+                // whereas this one pays on every hit.
+                if (def.ItemLevel >= 76 && item.Enchant >= 4)
+                {
+                    PvpBasicDamageBonus += 0.05f;
+                    PvpSkillDamageBonus += 0.05f;
+                    PvpMagicDamageBonus += 0.05f;
+                }
             }
 
             if (def.Slot == EquipSlot.Shield)
@@ -1683,7 +1704,7 @@ public class Entity
         if (hpRegPct != 0f) HpRegenMult *= 1f + hpRegPct / 100f;
         if (mpRegPct != 0f) MpRegenMult *= 1f + mpRegPct / 100f;
         CritDamageBonus = critDmgPct / 100f;   // e.g. 20 -> +0.20x crit multiplier
-        CritDamageFlat = 0f;                   // FLAT crit damage comes from passives only (below)
+        CritDamageFlat = 0f;                   // FLAT crit damage: passives (below) + the S light SET
 
         // ----- (Flat class bonuses were applied here — DELETED 2026-08-10, owner ruling.) -----
         // "There is no identity. The identity is just the skills/passives kit … no more u change
@@ -1728,9 +1749,11 @@ public class Entity
                 CastSpeedMultiplier = Math.Clamp(CastSpeedMultiplier / (1f + m.CastSpeedPct), 0.4f, 2.5f);
             if (m.AtkSpeedPct != 0f)
                 AttackSpeedMultiplier = Math.Clamp(AttackSpeedMultiplier / (1f + m.AtkSpeedPct), 0.4f, 2.5f);
-            if (m.MoveSpeed != 0f)
+            // Flat then percent, so the light-S set's "Speed +7"-style flat and its "move speed x1.03"
+            // compose the way the passive path already does (RunSpeed + flat) × (1 + pct).
+            if (m.MoveSpeed != 0f || m.MoveSpeedPct != 0f)
             {
-                RunSpeed += m.MoveSpeed;
+                RunSpeed = (RunSpeed + m.MoveSpeed) * (1f + m.MoveSpeedPct);
                 WalkSpeed = RunSpeed * MovementTuning.WalkSpeedFactor;
                 Speed = RunSpeed;
             }
@@ -1739,6 +1762,13 @@ public class Entity
             MeleeVamp += m.MeleeVamp;
             MeleeReflect += m.Reflect;
             CcResist += m.CcResist;
+            // The four channels the S sets introduced. Crit rate/damage are the FLAT ones on purpose —
+            // gear crit lands outside every multiplier (see the crit-model note further down), and the
+            // single fold + clamp of CritChance still happens at the end of this method.
+            CritRateFlat += m.CritRateFlat;
+            CritDamageFlat += m.CritDamageFlat;
+            MagicResist += m.MagicResist;
+            if (m.PvpDamageTakenPct != 0f) PvpDamageTaken *= 1f + m.PvpDamageTakenPct;
             ActiveArmorSet = set.Name;
 
             // ---- SHIELD-conditional extra: an ADDITIONAL bonus when the set's own shield is also
@@ -1757,6 +1787,9 @@ public class Entity
                 ShieldDefense = (int)(ShieldDefense * (1f + sb.ShieldDefPct));
                 MeleeReflect += sb.Reflect;
                 CcResist += sb.CcResist;
+                // Heavy S repeats "PVP Dmg Received x0.95" in its shield clause, so shield-up compounds
+                // with the set's own: ×0.95 × ×0.95 = ×0.9025. That is what the CSV writes.
+                if (sb.PvpDamageTakenPct != 0f) PvpDamageTaken *= 1f + sb.PvpDamageTakenPct;
                 ActiveArmorSet = set.Name + " + Shield";
             }
         }

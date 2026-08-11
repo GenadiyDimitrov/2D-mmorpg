@@ -7,10 +7,44 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.59.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.59.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 0.59.1 — 2026-08-11 — the S grade is AUTHORED, and it finally has set bonuses
+
+**The top grade stops being a formula.** `SGradeOverA` (a flat ×1.60 over the A row) is deleted:
+every weapon, body, shield, accessory and jewel now carries its own authored level-80 row. Almost
+everywhere that is a *cut* against the old derivation, and it is deliberately uneven — armour came down
+harder (bodies and accessories ≈ ×1.33 over A) than weapons (≈ ×1.55), so offence outruns defence at S
+by about 17%. The bow lost the most (930 → 794), which was a derivation artefact compounding an already
+large A-grade P.Atk; and every fighter weapon now shares an S M.Atk of 192, which closes the one rung
+where "a 2H's M.Atk equals a 1H's" had broken.
+
+**S has set bonuses for the first time** — Ironforge, Nightleaf and Arcanum at 80. Until now an S body
+with S accessories completed *nothing*: the best gear in the game was the only tier with no set identity,
+and the orphan report in BalanceMatrix listed 21 pieces belonging to sets that did not exist. It is now
+0. Heavy S is the tank line at its endgame shape (the first set to carry crit rate, magic damage
+reduction, melee vamp and a PvP damage-taken cut, and its shield clause repeats the PvP cut so shield-up
+compounds to ×0.9025); light S adds move speed, flat crit rate and **+200 flat crit damage**; robe S is
+the M.Atk set. Measured at level 85: a fighter gains +16% MaxHP and loses a little attack, a mage gains
++6% M.Atk *despite* his staff being cut, because the new robe set more than pays for it.
+
+**Shields no longer double-dip.** A shield's `ShieldDefense` is folded into physical defence
+permanently — it is already paid on every single hit — and a successful block then removed another
+34–47% on top. Block chance, block reduction and shield crit-defence are all cut hard: average
+mitigation from *blocking alone* falls from 5.1% to 1.0% at F, and from 15.0% to 6.3% at S. **Shield
+Mastery is untouched**, so a mastery tank at S still reaches ~14%; the nerf lands exactly where it was
+aimed, on the shield-only wearer — the mage who was becoming unkillable by holding one.
+
+**PvP damage *received* now exists.** All three PvP modifiers were attacker-side; the S sets needed the
+other half, so `PvpDamageTaken` is read in the damage pipeline. Its counterpart is the weapon rule, and
+that one has to be **earned**: an A- or S-grade weapon adds +5% to all three PvP damage channels only
+when it is enchanted to **+4 or more** — the price is the risk of breaking it. The armour half (−5%
+damage taken) is set-only; the weapon half pays on every hit. Both are PvP-only, so no PvE number moves.
+
+Nothing on the wire changed: **protocol stays 16 and `game.db` survives.**
 
 ## 0.59.0 — 2026-08-11 — CRAFTING becomes reachable, and the admin gear list stops lying
 

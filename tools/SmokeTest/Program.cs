@@ -142,17 +142,19 @@ Check("server pushed the warehouse on login", a.Ware is not null);
 
 // -------------------------------------------------------------------------------------------
 // 1a-1b. THE GEAR LADDER'S SHAPE. The authored tier tables are the MYTHIC piece and every lesser
-//     quality is derived from it; S grade is derived from A. All of that is arithmetic nobody sees
-//     until an item is in hand, so assert it on the catalogue directly.
+//     quality is derived from it. All of that is arithmetic nobody sees until an item is in hand,
+//     so assert it on the catalogue directly.
 // -------------------------------------------------------------------------------------------
 {
     var aSword = ItemCatalog.Get("sword1h_t76");
     var sSword = ItemCatalog.Get($"sword1h_t{ItemCatalog.SGradeLevel}");
     Check("A-grade sword is MYTHIC (the authored number is the ceiling, not a 70% anchor)",
           aSword is { Rarity: ItemRarity.Mythic }, $"{aSword?.Rarity}");
-    Check("S grade exists and is ~60% above A",
-          sSword is not null && aSword is not null
-            && sSword.AtkBonus == (int)Math.Round(aSword.AtkBonus * ItemCatalog.SGradeOverA),
+    // ⚠ This USED to assert S == A × SGradeOverA (1.60). He authored the whole level-80 column by hand
+    // on 2026-08-11 and the constant is gone, so the only invariant left is "S exists and beats A" —
+    // the exact numbers are data he owns, and re-deriving them here would just re-create the constant.
+    Check("S grade exists and is authored ABOVE A (no longer a ×1.60 derivation)",
+          sSword is not null && aSword is not null && sSword.AtkBonus > aSword.AtkBonus,
           $"A {aSword?.AtkBonus} -> S {sSword?.AtkBonus}");
 
     var aEpic = ItemCatalog.Get("sword1h_t76_epic");

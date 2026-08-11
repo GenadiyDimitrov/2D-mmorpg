@@ -10352,7 +10352,11 @@ var effect = def.Effect;
         // Raid ±10 rule: a player's damage to a BOSS is scaled by the level gap (anti-cheese).
         float raidMult = (target.Rank == MobRank.Boss && attacker.Kind == EntityKind.Player)
             ? StatCalculator.RaidLevelGapMult(attacker.Level, target.Level) : 1f;
-        float result = dmg * (1f + bonus) * (1f + condBonus) * skillMult * raidMult;
+        // The RECEIVING side of the PvP matrix: the target's own gear can cut what it takes from another
+        // player (the S heavy/light sets' "PVP Dmg Received x0.95"). PvP only — `pvp` already means
+        // player-hits-player, so a mob's swing is never reduced by it. Defaults to 1.
+        float takenMult = pvp ? target.PvpDamageTaken : 1f;
+        float result = dmg * (1f + bonus) * (1f + condBonus) * skillMult * raidMult * takenMult;
         // A skill explicitly multiplied to 0 in this context deals 0 (e.g. a mob-only nuke
         // vs a player); otherwise a real hit is at least 1.
         return skillMult <= 0f ? 0 : Math.Max(1, (int)result);

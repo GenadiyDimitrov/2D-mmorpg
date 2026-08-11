@@ -56,7 +56,27 @@ public readonly record struct StatMods(
     float MeleeVamp = 0f, float SpellVamp = 0f, float Reflect = 0f,
     // Shield defence multiplier (the CSV's "shield.p.def x1.25"). Only bites while a shield is
     // equipped — used by the heavy sets' SHIELD-conditional bonus.
-    float ShieldDefPct = 0f)
+    float ShieldDefPct = 0f,
+    // ===== The S-grade set bonuses (gear_sets.csv, him 2026-08-11) needed four more channels. =======
+    // ⚠ APPENDED AT THE END ON PURPOSE. Scaled() and StatTotals.Add() build a new value POSITIONALLY,
+    // so inserting a field in the middle of this list silently misaligns every field after it — the
+    // compiler cannot catch it, they are all floats. New fields go here.
+    //
+    // FLAT crit rate on his 0-1000 scale, as the CSV writes it ("CritRate +100" = +10 points = +0.10
+    // chance). It is deliberately NOT `CritRate` above, which is a MULTIPLIER (×1.2): gear crit-rate is
+    // flat and lands OUTSIDE every multiplier, which is the whole point of the crit model — multipliers
+    // only reward whoever already has a big base, so the flat term is what carries a blunt warrior.
+    float CritRateFlat = 0f,
+    // FLAT crit damage — the class CSVs' "crit dmg +80" / this set's "critdmg +200". Joins ATTACK inside
+    // the damage ratio on a crit only; does nothing off a crit. NOT the `CritDamage` field above, which
+    // is a multiplier bonus on top of the ×2 base.
+    float CritDamageFlat = 0f,
+    // MAGIC damage reduction, authored as the CSVs write it: "mReduction x1.02" = 0.02f. Lands as a
+    // DIVISOR inside M.Def (1 + total), so 0.02 is literally ×1/1.02 magic damage taken — his notation
+    // and the mechanic are the same number. Not a fizzle chance (ruling `57d`, 2026-08-10).
+    float MagicResist = 0f,
+    // PvP damage RECEIVED, as a delta: −0.05 = "PVP Dmg Received x0.95". Only bites player-vs-player.
+    float PvpDamageTakenPct = 0f)
 {
     // NOTE: cooldown, interrupt POWER, the PvE/PvP×skill/magic/basic matrix, shield BLOCK CHANCE, bow
     // range and the combat FLOORS are added as the passive/buff sources migrate (docs/design/StatMods.md).
@@ -78,7 +98,8 @@ public readonly record struct StatMods(
         CcResist * f, RestoreMpBonus * f,
         Str * f, Agi * f, Con * f, Int * f, Wit * f, Spt * f,
         MeleeVamp * f, SpellVamp * f, Reflect * f,
-        ShieldDefPct * f);
+        ShieldDefPct * f,
+        CritRateFlat * f, CritDamageFlat * f, MagicResist * f, PvpDamageTakenPct * f);
 
     /// <summary>Fold a set of source mods into running totals (flats SUM, percents COMPOUND
     /// — see docs/design/StatMods.md: final = (base + Σflat) × ∏(1+pct%)).</summary>
@@ -116,7 +137,9 @@ public readonly record struct StatTotals(
     float RestoreMpBonus = 0f,
     float Str = 0f, float Agi = 0f, float Con = 0f, float Int = 0f, float Wit = 0f, float Spt = 0f,
     float MeleeVamp = 0f, float SpellVamp = 0f, float Reflect = 0f,
-    float ShieldDefPct = 0f)
+    float ShieldDefPct = 0f,
+    float CritRateFlat = 0f, float CritDamageFlat = 0f, float MagicResist = 0f,
+    float PvpDamageTakenPct = 0f)
 {
     /// <summary>Compound two percents: ∏(1+p)−1, so combining is multiplicative and 0 = inert.</summary>
     private static float Mul(float a, float b) => (1f + a) * (1f + b) - 1f;
@@ -143,7 +166,13 @@ public readonly record struct StatTotals(
         RestoreMpBonus + s.RestoreMpBonus,
         Str + s.Str, Agi + s.Agi, Con + s.Con, Int + s.Int, Wit + s.Wit, Spt + s.Spt,
         MeleeVamp + s.MeleeVamp, SpellVamp + s.SpellVamp, Reflect + s.Reflect,
-        Mul(ShieldDefPct, s.ShieldDefPct));
+        Mul(ShieldDefPct, s.ShieldDefPct),
+        // All four SUM here (this is the mastery/Combine path, which is additive by design). NOTE the
+        // armor-SET path in Entity.RecomputeDerived compounds PvpDamageTakenPct instead, because the
+        // heavy-S set carries the clause twice — once on the set, once on its shield extra — and the CSV
+        // means ×0.95 × ×0.95, not −10%.
+        CritRateFlat + s.CritRateFlat, CritDamageFlat + s.CritDamageFlat,
+        MagicResist + s.MagicResist, PvpDamageTakenPct + s.PvpDamageTakenPct);
 
     /// <summary>Apply a (flat, pct) pair to a base value: `(base + flat) × (1 + pct)`,
     /// floored at 0. The single place the combine convention is defined.</summary>

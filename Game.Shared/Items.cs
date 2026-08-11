@@ -1479,9 +1479,10 @@ public static class ItemCatalog
     /// already about right for level 85.</summary>
     public static float RarityScale(ItemRarity r) => RarityPercent(r) / 100f;
 
-    /// <summary>How much stronger the S grade is than A. ONE number, because S is DERIVED from the
-    /// A row rather than authored (owner: "not so much authoring") — retune the grade by moving this.</summary>
-    public const float SGradeOverA = 1.60f;
+    // (`SGradeOverA` = 1.60 — DELETED 2026-08-11. S was derived from A by this one number; he has now
+    //  authored the whole level-80 column by hand for weapons, armor, shields, accessories and jewels,
+    //  and the authored numbers are a CUT against the derivation everywhere. A constant claiming S is
+    //  A × 1.6 would now be a lie, and a lie a future retune would act on.)
 
     /// <summary>The level S gear is built for: 80+, sitting above A's 76-80 window.</summary>
     public const int SGradeLevel = 80;
@@ -1704,8 +1705,11 @@ public static class ItemCatalog
             // (it was a flat 14), which is the same "one M.Atk column for the whole grade" the E-A rows
             // already have; and the two CASTER weapons crossed over — a wand/staff's M.Atk is now
             // ABOVE its P.Atk (22/23 and 23/24), where before the F rung had them below it.
+            //
+            // ⚠ THE WHOLE S ROW IS NOW AUTHORED TOO (him, 2026-08-11, gear_sets.csv). Every table below
+            // carries its own level-80 row and nothing is derived any more — see the loop's note.
             ("sword1h", "Blade",      WeaponType.Sword,          false, 0,
-                new[] { (1,24,17,0),(20,92,54,0),(40,156,83,0),(52,194,99,0),(61,232,114,0),(76,281,132,0) }),
+                new[] { (1,24,17,0),(20,92,54,0),(40,156,83,0),(52,194,99,0),(61,232,114,0),(76,281,132,0),(80,437,192,0) }),
             // ⚠ THE ×1.166 2H P.ATK RAISE IS REVERTED (his ratification, 2026-08-11). I raised these on
             // 2026-08-10 to hold the 2H's pre-speed-ruling DPS, and wrote the result into HIS gear CSV —
             // which is why it was owed a yes/no. The answer is no: he re-gave the line by grade,
@@ -1721,17 +1725,25 @@ public static class ItemCatalog
             ("sword2h", "Greatsword", WeaponType.TwoHandedSword, false, 0,
                 new[] { (1,29,17,0),(20,112,54,0),(40,190,83,0),(52,236,99,0),(61,282,114,0),(76,342,132,0),(80,532,192,0) }),
             ("blunt1h", "Mace",       WeaponType.Blunt,          false, 0,
-                new[] { (1,24,17,0),(20,92,54,0),(40,156,83,0),(52,194,99,0),(61,232,114,0),(76,281,132,0) }),
+                new[] { (1,24,17,0),(20,92,54,0),(40,156,83,0),(52,194,99,0),(61,232,114,0),(76,281,132,0),(80,437,192,0) }),
             ("blunt2h", "Maul",       WeaponType.TwoHandedBlunt, false, 0,
                 new[] { (1,29,17,0),(20,112,54,0),(40,190,83,0),(52,236,99,0),(61,282,114,0),(76,342,132,0),(80,532,192,0) }),
+            // ⚠ The A rung dropped 271 -> 246 (him, 2026-08-11). Duals were the ONE fighter line whose A
+            // P.Atk did not sit on the shared 1H/2H shape; 246 puts it back below the sword's 281 by the
+            // same margin the lower rungs use.
             ("duals",   "Fangs",      WeaponType.Dual,           false, 0,
-                new[] { (1,21,17,0),(20,80,54,0),(40,136,83,0),(52,170,99,0),(61,203,114,0),(76,271,132,0) }),
+                new[] { (1,21,17,0),(20,80,54,0),(40,136,83,0),(52,170,99,0),(61,203,114,0),(76,246,132,0),(80,382,192,0) }),
+            // The level-40 bow is ONE item again: he deleted the 316 row and told the 323 row to ship at
+            // as:293 (him, 2026-08-11 — "Remove (this was the very slow bow)" / "Build this => as:293").
+            // ⚠ His parenthetical has the two the wrong way round: 316 was the SLOW (293) rung that
+            // shipped and 323 was the very-slow (227) one that never did. The instruction is unambiguous
+            // either way, and its outcome is the same in both readings: 323/84 at as:293.
             ("bow",     "Longbow",    WeaponType.Bow,            false, 400,
-                new[] { (1,49,17,293),(20,191,55,293),(40,316,84,293),(52,400,99,293),(61,528,114,227),(76,581,132,293) }),
+                new[] { (1,49,17,293),(20,191,55,293),(40,323,84,293),(52,400,99,293),(61,528,114,227),(76,581,132,293),(80,794,192,293) }),
             ("wand",    "Wand",       WeaponType.Blunt,          true,  0,
-                new[] { (1,22,23,0),(20,74,72,0),(40,111,101,0),(52,140,122,0),(61,186,152,0),(76,225,175,0) }),
+                new[] { (1,19,22,0),(20,74,72,0),(40,111,101,0),(52,155,132,0),(61,186,152,0),(76,225,175,0),(80,360,256,0) }),
             ("staff",   "Battlestaff",WeaponType.TwoHandedBlunt, true,  0,
-                new[] { (1,23,24,0),(20,90,79,0),(40,135,111,0),(52,189,145,0),(61,226,167,0),(76,274,193,0) }),
+                new[] { (1,23,24,0),(20,90,79,0),(40,135,111,0),(52,189,145,0),(61,226,167,0),(76,274,193,0),(80,426,281,0) }),
         };
         // BOTH CSV numbers are authored now (owner, 2026-07-24): P -> AtkBonus, M -> MAtkBonus. Until
         // this, only ONE of the pair survived — a fighter weapon kept P and threw M away, a magic weapon
@@ -1747,21 +1759,20 @@ public static class ItemCatalog
         // actually distinguishes a wand from a mace (both are Blunt).
         foreach (var w in weapons)
         {
-            // The S row is DERIVED from A × SGradeOverA rather than authored, so the whole grade is one
-            // number to retune (owner: "not so much authoring"). Attack speed carries over unchanged —
-            // S is stronger, not faster.
+            // ===== S IS AUTHORED, NOT DERIVED (him, 2026-08-11) =========================================
+            // The S row used to be A × SGradeOverA (1.60), so the whole grade was one number to retune
+            // ("not so much authoring"). He has now given the level-80 column by hand for every weapon,
+            // and it is a CUT against the derivation on all but one cell:
+            //     1H  450/211 -> 437/192     duals 434/211 -> 382/192     bow 930/211 -> 794/192
+            //     wand 360/280 -> 360/256    staff 438/309 -> 426/281     2H stays at his 532/192
+            // Two shapes fall out of it. Every FIGHTER weapon now shares S M.Atk 192, which CLOSES the
+            // "1H M.Atk ≠ 2H M.Atk" disagreement the derived 211 created — the two lines agree again.
+            // And the bow lost the most (-15%): derivation compounded the bow's already-outsized A P.Atk,
+            // which is exactly the kind of artefact authoring the column exists to stop.
             //
-            // A table MAY author its own S row instead, and the 2H line now does (owner, 2026-08-11:
-            // 532/192). Derivation would have given 547/211, so his S is a deliberate cut in BOTH
-            // channels, not a rounding difference. ⚠ It also breaks the "2H M.Atk = 1H M.Atk" rule he
-            // stated in the same message — the 1H's DERIVED S M.Atk is 211 — so the S grade is the one
-            // rung where the two lines disagree, pending his S column for the other weapons.
-            var a = w.Rows[w.Rows.Length - 1];
-            var rows = a.L == SGradeLevel
-                ? w.Rows.AsEnumerable()
-                : w.Rows.Append((SGradeLevel, Scale(a.P), Scale(a.M), a.As));
-
-            foreach (var (L, P, M, As) in rows)
+            // Nothing derives now, so `Scale`/`SGradeOverA` are gone. A table missing its 80 row simply
+            // has no S item — that is a visible hole, not a silently invented number.
+            foreach (var (L, P, M, As) in w.Rows)
                 yield return new ItemDef($"{w.Key}_t{L}", $"{GradeTheme(L)} {w.Noun}",
                     EquipSlot.Weapon, TierGrade(L), ItemRarity.Mythic,
                     WeaponType: w.Type,
@@ -1772,11 +1783,6 @@ public static class ItemCatalog
         }
     }
 
-    /// <summary>A-grade stat → S-grade stat. Zero stays zero so a weapon with no M.Atk does not
-    /// suddenly gain one.</summary>
-    private static int Scale(int aValue) =>
-        aValue == 0 ? 0 : Math.Max(1, (int)Math.Round(aValue * SGradeOverA));
-
     /// <summary>The level-tier ARMOR from docs/data/gear/gear_sets.csv — base bodies (Heavy/Light/Robe),
     /// shields, weightless accessories (Gloves/Boots/Helm) and jewels (Necklace/Ring/Earring). Each
     /// carries only its own base stat (P.Def / M.Def / +MP), via the existing equip path — SET BONUSES
@@ -1784,18 +1790,23 @@ public static class ItemCatalog
     /// Armors roll NO attributes for now (owner). Ids: "<key>_t<level>".</summary>
     private static IEnumerable<ItemDef> TieredArmor()
     {
-        // …plus the derived S tier. Every table below is authored A-last, so appending SGradeLevel and
-        // scaling the final entry gives the whole grade without another column of hand numbers.
         int[] lv = { FGradeLevel, 20, 40, 52, 61, 76, SGradeLevel };
 
-        static int[] WithS(int fVal, int[] a) => a.Prepend(fVal).Append(Scale(a[a.Length - 1])).ToArray();
+        // (F, [E..A], S) → the full seven-rung column. BOTH ends are authored now: the S rung used to be
+        // A × 1.60 and he re-gave the whole level-80 column by hand on 2026-08-11 (see TieredWeapons).
+        // ⚠ ARMOR was cut HARDER than weapons: bodies/accessories land on ~×1.33 over A where the
+        // weapons kept ~×1.55, so offence outruns defence at S by roughly 17%. That is a real TTK change
+        // at endgame, not a rounding pass — measure it with tools/BalanceMatrix before tuning anything
+        // else on top of it.
+        static int[] Column(int fVal, int[] mid, int sVal) =>
+            mid.Prepend(fVal).Append(sVal).ToArray();
 
-        // ---- Bodies: (key, noun, weight, pDef[5], mp[5]) — robe carries inherent +MaxMP. ----
+        // ---- Bodies: (key, noun, weight, pDef[7], mp[7]) — robe carries inherent +MaxMP. ----
         var bodies = new (string Key, string Noun, ArmorWeight W, int[] Def, int[] Mp)[]
         {
-            ("heavy", "Bulwark",       ArmorWeight.Heavy, WithS(115, new[]{167,240,270,293,332}), WithS(0, new[]{0,0,0,0,0})),
-            ("light", "Leathers",      ArmorWeight.Light, WithS(86, new[]{125,179,202,220,249}), WithS(0, new[]{0,0,0,0,0})),
-            ("robe",  "Robe",          ArmorWeight.Robe,  WithS(49, new[]{84,110,135,147,166}),  WithS(109, new[]{274,508,613,718,866})),
+            ("heavy", "Bulwark",       ArmorWeight.Heavy, Column(115, new[]{167,240,270,293,332}, 442), Column(0, new[]{0,0,0,0,0}, 0)),
+            ("light", "Leathers",      ArmorWeight.Light, Column(86, new[]{125,179,202,220,249}, 332), Column(0, new[]{0,0,0,0,0}, 0)),
+            ("robe",  "Robe",          ArmorWeight.Robe,  Column(49, new[]{84,110,135,147,166}, 221),  Column(109, new[]{274,508,613,718,866}, 1100)),
         };
         foreach (var b in bodies)
             for (int i = 0; i < lv.Length; i++)
@@ -1829,9 +1840,9 @@ public static class ItemCatalog
         // ---- Weightless accessories (shared across weights). ----
         var acc = new (string Key, string Noun, ArmorSlot Slot, int[] Def)[]
         {
-            ("gloves", "Gauntlets", ArmorSlot.Gloves, WithS(15, new[]{29,39,44,49,55})),
-            ("boots",  "Greaves",   ArmorSlot.Boots,  WithS(15, new[]{29,39,44,49,55})),
-            ("helm",   "Helm",      ArmorSlot.Head,   WithS(21, new[]{41,58,66,73,83})),
+            ("gloves", "Gauntlets", ArmorSlot.Gloves, Column(15, new[]{29,39,44,49,55}, 74)),
+            ("boots",  "Greaves",   ArmorSlot.Boots,  Column(15, new[]{29,39,44,49,55}, 74)),
+            ("helm",   "Helm",      ArmorSlot.Head,   Column(21, new[]{41,58,66,73,83}, 110)),
         };
         foreach (var a in acc)
             for (int i = 0; i < lv.Length; i++)
@@ -1844,11 +1855,35 @@ public static class ItemCatalog
         // F rung 40 -> 90 (owner, 2026-07-31): the Ferrite Aegis at MYTHIC used to match the starter
         // Wooden Shield exactly, so the entire F shield rarity ladder was worthless. 90 puts the Mythic
         // F shield where the ladder expects it, and its Common rung (45%) still lands above the 35 starter.
-        int[] shDef = WithS(90, new[]{ 143, 203, 230, 256, 299 });
-        float[] shBlock = { 0.15f, 0.22f, 0.24f, 0.26f, 0.28f, 0.30f, 0.32f };
-        float[] shReduce = { 0.34f, 0.37f, 0.39f, 0.41f, 0.43f, 0.45f, 0.47f };
-        float[] shCrit = { 0.08f, 0.10f, 0.11f, 0.12f, 0.13f, 0.15f, 0.16f };
-        int[] shEvaPen = { 5, 7, 7, 8, 8, 9, 9 };
+        int[] shDef = Column(90, new[]{ 143, 203, 230, 256, 299 }, 413);
+        // ===== HE RE-GAVE THE WHOLE BLOCK PROFILE (2026-08-11) ======================================
+        // "To much dmg reduction on top of the additional pdef when sucsessifull blocked. Mage should
+        //  not be immortal even with a shield — it helps a bit but not 47% dmg reduction with 33%
+        //  chance, that's average 15%."
+        //
+        // He is right about the double-dip, and it is not obvious from this table: a shield's
+        // ShieldDefense is added into EffectivePhysicalDefence *permanently* (Entity, `pdef`), so it is
+        // already paying out on every single hit — and then a block used to remove another 34-47% on top.
+        // The new profile keeps the flat defence untouched and cuts only the block half:
+        //     chance  .15 .22 .24 .26 .28 .30 .32  ->  .10 .15 .15 .20 .20 .25 .25
+        //     reduce  .34 .37 .39 .41 .43 .45 .47  ->  .10 .10 .15 .15 .20 .20 .25
+        // Average mitigation from blocking alone therefore goes 5.1% -> 1.0% at F and 15.0% -> 6.3% at S.
+        //
+        // ⚠ Two knock-ons worth knowing before this is retuned again:
+        //  * Shield MASTERY is untouched (BlockChancePct up to ×1.7, and ShieldDefPct ×0.4 adds +0.08
+        //    BlockReduction), so it is now a much larger share of a tank's blocking than the shield is —
+        //    which reads as intended, since the complaint was specifically about the SHIELD alone
+        //    carrying a mage. A mastery tank at S lands ~.425 × .33 ≈ 14% average, close to the old
+        //    shield-only number.
+        //  * The crit-defence column moved with it (.08-.16 -> .03-.10). Block resolution runs crit
+        //    FIRST — the shield lowers crit CHANCE, and a crit that still lands ignores the block — so
+        //    this is the other half of the same nerf, not a separate one.
+        float[] shBlock = { 0.10f, 0.15f, 0.15f, 0.20f, 0.20f, 0.25f, 0.25f };
+        float[] shReduce = { 0.10f, 0.10f, 0.15f, 0.15f, 0.20f, 0.20f, 0.25f };
+        float[] shCrit = { 0.03f, 0.05f, 0.05f, 0.07f, 0.07f, 0.10f, 0.10f };
+        // Evasion penalty is the one column that got HARSHER at the top: 5..9 -> 3..10, so a low-grade
+        // shield costs a light-armor class less and an S shield costs it slightly more.
+        int[] shEvaPen = { 3, 5, 5, 7, 7, 10, 10 };
         // The shield belongs to its tier's HEAVY set (the CSV puts shields in the same GroupId).
         // It is NOT required to complete the set — wearing it just adds the set's ShieldBonus.
         for (int i = 0; i < lv.Length; i++)
@@ -1862,9 +1897,13 @@ public static class ItemCatalog
         // ---- Jewels (M.Def + inherent +MP at 61/76). L2 layout = 1 necklace / 2 rings / 2 earrings. ----
         var jewels = new (string Key, string Noun, JewelType T, int[] MDef, int[] Mp)[]
         {
-            ("necklace", "Pendant",  JewelType.Necklace, WithS(18, new[]{45,64,72,85,95}), WithS(0, new[]{0,0,0,33,42})),
-            ("ring",     "Band",     JewelType.Ring,     WithS(9, new[]{22,32,36,42,48}), WithS(0, new[]{0,0,0,17,21})),
-            ("earring",  "Stud",     JewelType.Earring,  WithS(13, new[]{34,45,54,63,71}), WithS(0, new[]{0,0,0,25,31})),
+            // BOTH ends moved on 2026-08-11: the F rung was raised (18/9/13 -> 25/12/16) and the S rung
+            // authored below the old ×1.60 derivation (152/77/114 -> 138/69/104, +MP 67/34/50 -> 52/27/39).
+            // Jewels are the ONLY source of M.Def, so the F raise is what stops a level-1 caster from
+            // having effectively none.
+            ("necklace", "Pendant",  JewelType.Necklace, Column(25, new[]{45,64,72,85,95}, 138), Column(0, new[]{0,0,0,33,42}, 52)),
+            ("ring",     "Band",     JewelType.Ring,     Column(12, new[]{22,32,36,42,48}, 69), Column(0, new[]{0,0,0,17,21}, 27)),
+            ("earring",  "Stud",     JewelType.Earring,  Column(16, new[]{34,45,54,63,71}, 104), Column(0, new[]{0,0,0,25,31}, 39)),
         };
         foreach (var j in jewels)
             for (int i = 0; i < lv.Length; i++)
