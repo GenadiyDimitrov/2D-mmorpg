@@ -52,10 +52,14 @@ namespace Game.Shared;
 /// part 5 gains the auto-farm one, at the *"reach 18"* slot he picked for it. Each is proved by DOING
 /// it, using commands the server already handles, so none of them is a tooltip that ticks itself.
 ///
-/// ⚠ A DoAction step is a GATE, which is why the box beat asks for ONE box and the rune explanation
-/// stayed prose: asking for two boxes would strand a player who opened their creation boxes before
-/// walking to Cera, and an "open Miren's rune box" step would gate the chain on her DAILY quest —
-/// exactly what the structural rule above forbids.</para>
+/// ⚠ A DoAction step is a GATE, which is why the rune explanation stayed prose: an "open Miren's rune
+/// box" step would gate the chain on her DAILY quest — exactly what the structural rule above forbids.
+///
+/// 🔴 <b>And a gate must SUPPLY its own prop (owner, 2026-08-11).</b> Asking for one box instead of two
+/// was the wrong mitigation of the right worry: he opened both creation boxes before taking the quest,
+/// and the box beat became a dead end mid-chain with nothing left to open. Part 1's steps now carry
+/// <see cref="QuestStep.SupplyItemIds"/> — the two training boxes, handed over when Cera gives the
+/// quest and re-handed whenever the bag holds none — so no order of play can strand it.</para>
 /// </summary>
 public static partial class QuestCatalog
 {
@@ -68,6 +72,14 @@ public static partial class QuestCatalog
     private const string NpcElder      = "elder_marius";             // Elder Marius
     private const string NpcPriest     = "priest_oren";              // High Priest Oren
     private const string NpcClassMaster = "master_class";            // Class Master Vael
+
+    /// <summary>The props part 1 hands over: the two boxes a character is created with. Re-supplied
+    /// only when the bag holds none — see <see cref="QuestStep.SupplyItemIds"/>. Both, not just the
+    /// weapon box, because the beat after the box asks you to EQUIP twice and the armour box is where
+    /// a body comes from. Untradable, sell price 0, training tier: worthless on purpose, which is what
+    /// makes an unlimited re-supply safe.</summary>
+    private static readonly string[] TutorialBoxes =
+        { ItemCatalog.BoxTrainingWeapons, ItemCatalog.BoxTrainingArmorChoice };
 
     public const string QuestTutorialWelcome = "tutorial_welcome";
     public const string QuestTutorialBlessing = "tutorial_blessing";
@@ -95,21 +107,28 @@ public static partial class QuestCatalog
             MaxLevel: 20,
             Steps: new[]
             {
+                // Accepting from Cera HANDS OVER the two training boxes (owner, 2026-08-11) — see the
+                // box beat below for why. Step 0 carries them as well as the box step so they arrive
+                // when he takes the quest, not one NPC later.
                 new QuestStep(QuestStepType.TalkTo,
                     "Speak with Gatekeeper Pell — he teleports you between towns, free until level 40",
-                    TargetId: NpcGatekeeper),
+                    TargetId: NpcGatekeeper,
+                    SupplyItemIds: TutorialBoxes),
                 // ---- `58a`: TEACH, before the pigs. ------------------------------------------------
                 // The chain introduced every NPC in town and never once said how to open a bag, open a
                 // box, put the contents on, or swing at anything (owner, playtest-20: *"teaches nothing
                 // before the pigs"*). These three beats are the missing half, and each is proved by
                 // DOING it — the server sees every one of them already.
-                // ONE box, not both. A DoAction step is a gate, and a player who opened their creation
-                // boxes before walking to Cera cannot conjure a second one — asking for two would strand
-                // exactly the eager player this is written for. One still teaches the gesture, and a
-                // fresh character always has two.
+                // 🔴 THE QUEST SUPPLIES THE BOX. Asking for ONE box was not enough: a player who opened
+                // BOTH creation boxes before walking to Cera had nothing left to open, and the gate was
+                // a DEAD END — the owner hit it on his very first find of the 0.60.x pass, mid-chain,
+                // with no way to continue. The rule now is that a step requiring an object hands that
+                // object over (`QuestStep.SupplyItemIds`), so this beat is unreachable-proof no matter
+                // what the player did before taking the quest.
                 new QuestStep(QuestStepType.DoAction,
                     "Open your bag and open a box from it — tap the box to open it",
-                    TargetId: QuestActions.OpenBox),
+                    TargetId: QuestActions.OpenBox,
+                    SupplyItemIds: TutorialBoxes),
                 new QuestStep(QuestStepType.DoAction,
                     "Put your gear on — tap a weapon or an armor piece in the bag to equip it",
                     TargetId: QuestActions.EquipItem, Count: 2),

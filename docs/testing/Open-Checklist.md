@@ -1,9 +1,9 @@
-# OPEN CHECKLIST — everything untested as of **0.59.0** (2026-08-11)
+# OPEN CHECKLIST — everything untested as of **0.60.1** (2026-08-11)
 
 > **Rolling and unversioned.** Playtest-20 (your 2026-08-10 pass over ten builds) is closed and
 > transcribed verbatim into [Playtest-Archive.md](Playtest-Archive.md#playtest-20) — this file has been
-> rewritten against the four builds that came out of it. Every answer you gave is preserved there;
-> everything you left open is carried forward below.
+> rewritten against the six builds that came out of it (§62-§67). Every answer you gave is preserved
+> there; everything you left open is carried forward below.
 
 Rows are the format you picked (option 2): write your comment after the `->`. Put `x` in the `[]` if
 it passed with nothing to say, `~` if it works but wants a change, `!` if it is a bug or priority,
@@ -15,43 +15,52 @@ section number referenced here.
 
 ## ⚠ BEFORE YOU START
 
-**Install `L2Clone-0.59.0.apk` and unzip `Game.Server-0.59.0.zip`.** Protocol is **16** — it moved at
-0.59.0 for the crafting push, and at 0.58.1 before that. Both sides together: the catalogs, skill
-tables and world outlines are compiled into each, so a mismatched pair disagrees quietly instead of
-refusing.
+**Install `L2Clone-0.60.1.apk` and unzip `Game.Server-0.60.1.zip`.** Protocol is **16** — it moved at
+0.59.0 for the crafting push, and at 0.58.1 before that; **nothing since has moved it** (no DTO
+changed). Both sides together anyway: the catalogs, skill tables and world outlines are compiled into
+each, so a mismatched pair disagrees quietly instead of refusing — 0.59.1 is *entirely* a catalog
+change, so an older client would show you the old S numbers and no set bonus while looking healthy.
 
 🔴 **Move `Game.Server/game.db` out (+ `-shm` + `-wal`).** 0.58.1 renamed the DEX column to AGI and
 `EnsureCreated` cannot migrate a rename — an old character would load with a missing stat. Everything
 older still applies too (0.52.0 columns, the 0.53.0 God removal, the mastery clamp, 0.55.0's three
 title columns).
 
-🔴 **FIVE BUILDS ARE UNPLAYED — 0.58.0, 0.58.1, 0.58.2, 0.58.3, 0.59.0.** The four 0.58.x builds came
-out of your own playtest-20 finds, so most of this pass is *"did he fix what I reported"*. Two of them
-changed combat maths that everything else sits on: **the weapon speed table** (§62) and **how magic
-lands** (§64). **0.59.0 is CRAFTING** (§66) — new ground, and the only section here that is a feature
-rather than a fix.
+🔴 **EIGHT BUILDS ARE UNPLAYED — 0.58.0 … 0.60.1.** The four 0.58.x builds came out of your own
+playtest-20 finds, so much of this pass is *"did he fix what I reported"*. Two of them changed combat
+maths that everything else sits on: **the weapon speed table** (§62) and **how magic lands** (§64).
+**0.59.0 is CRAFTING** (§66) — new ground, the only feature rather than a fix. **0.59.1 is your own
+S-grade CSV** (§67). **0.60.0 is the enchant rework** (§68) — every enchanted number in the game moved.
+**0.60.1 (§69) is the tutorial dead-end you hit today**, plus the magic evasion you ruled on.
 
-✅ **Pre-flight is clear.** `tools/SmokeTest` was re-run against the **0.59.0** server — **ALL CHECKS
+✅ **Pre-flight is clear.** `tools/SmokeTest` was re-run against the **0.60.1** server — **ALL CHECKS
 PASSED**, including its blueprint-craft assertions. The server was boot-checked too (it starts, every
 world validator runs, log clean). 0.59.0 touches the login sequence, which is exactly what the smoke
 test exists to guard.
 
-🟡 **You said you are re-authoring the weapon CSV.** Every row below marked **⏸ CSV** is a number that
-your new CSV will move — skip those rows this pass, they will only be worth testing after your file
-lands.
+🟢 **The weapon CSV landed — the ⏸ CSV rows are LIVE again.** You said you were re-authoring it, and you
+did, twice on 2026-08-11: the weapon pass (shipped in 0.58.3) and the S-grade pass (0.59.1). Rows still
+marked **⏸ CSV** below were written before that; they are now testable, and §67 says what each of them
+became.
 
 ## Where to spend the pass, if you don't do all of it
 
 In order of how expensive a defect would be to find later:
 
-1. **§62 the weapon speed table** — every DPS number in the game moved. A 2H now swings slower than a
+1. **§68 the enchant rework** — every enchanted item in the game changed at once, and it is the newest
+   thing here. `68a` (what a +16 weapon is now worth) and `68d` (a +16 armour set) are the two numbers
+   the whole build stands on.
+2. **§62 the weapon speed table** — every DPS number in the game moved. A 2H now swings slower than a
    1H, which is correct but makes the champion the worst melee until your CSV raises 2H P.Atk.
-2. **§64 magic landing** — a brand-new formula replaced a stat that did nothing. If the parity number
+3. **§64 magic landing** — a brand-new formula replaced a stat that did nothing. If the parity number
    is not ~1% fail, everything above it is wrong.
-3. **§66 crafting** — the only new feature here, and the one thing with no prior play at all.
-4. **§63 the four bug fixes** — the dungeon wall and the jail were rebuilt, not patched.
-5. **§62 evasion** — your biggest find. Confirm the +32 is gone at the exact character you measured.
-6. Everything else.
+4. **§66 crafting** — the only new feature here, and the one thing with no prior play at all.
+5. **§67 the S grade** — your own numbers, but 21 pieces that completed no set now complete three, and
+   **`67f` the light-S +200 flat crit damage** is the single biggest number you have ever authored in
+   that channel. If one thing in §67 is going to be wrong, it is that.
+6. **§63 the four bug fixes** — the dungeon wall and the jail were rebuilt, not patched.
+7. **§62 evasion** — your biggest find. Confirm the +32 is gone at the exact character you measured.
+8. Everything else.
 
 ---
 
@@ -64,16 +73,27 @@ In order of how expensive a defect would be to find later:
 - `61b` - **"Which vendor?"** You are right: **no vendor sells above D grade**, so the "Mythic S-grade"
   string in a vendor list is unreachable today. Not a defect, nothing to test.
 
-- 🔴 **Piercing Stab's level-32 MP cost is 58**, sitting between level 24's and level 30's smaller
-  numbers. `rogue 20-35.csv` line 19 says 58, so the code is faithful to your file. **I did not touch
-  it — it looks like a typo in the CSV and it is yours to rule on.**
+- ✅ ~~**Piercing Stab's level-32 MP cost is 58.**~~ **CLOSED — you ruled it a typo** (*"should be 28..
+  a typeo"*) and fixed the CSV yourself. **Built in 0.60.1**: level 4 costs **28**, so the line now runs
+  18 / 21 / 24 / 28 / 30 with no spike. Nothing to test beyond glancing at the skill card.
 
-- 🔴 **Your 2H S-row disagrees with the 1H's.** You authored the 2H S row as **532/192**, but the 1H
-  line derives **211** M.Atk at S — which breaks your own "2H M.Atk = 1H M.Atk" rule at exactly that
-  one rung. Your new CSV can settle it; flagging so it does not get lost.
+- ✅ ~~**Your 2H S-row disagrees with the 1H's.**~~ **CLOSED by your own 0.59.1 CSV.** You authored the
+  whole level-80 column, and every fighter weapon now shares **S M.Atk 192** — the 1H's derived 211 is
+  gone with the derivation. The two lines agree again; nothing owed.
 
 - 🔴 **The champion test is still owed by you.** Reverting the 2H P.Atk raise puts champion/nuker back
-  at **0.84×** — the nuker is ~19% ahead. `0a` below is that measurement.
+  at **0.84×** — the nuker is ~19% ahead. `0a` below is that measurement. ⚠ 0.59.1 did **not** settle
+  this: at S the 2H kept 532 while the 1H was cut to 437, but that is the *top* rung only — the 20-36
+  band `62h` complains about is untouched.
+
+- 🔑 **"i write percents as x1.23" — noted, and applied.** Your `xN.NN` is how you write **a percent**,
+  not necessarily a multiply, so "Mele Vamp x1.02" was built as **2% flat vamp**, per your
+  *"my mistake that vamp is additive not multiplicative"*. I will read every future `xN.NN` against
+  what the stat can actually do rather than multiplying blindly.
+
+- **`Robe 611` is still `[NOT BUILT]`.** It is the only authored body in `gear_sets.csv` with no item
+  behind it (`WIT +2; INT −2; SPT +2`), and you edited its row again on 2026-08-11 without asking for
+  the item — so I left it alone a second time. Say the word if you want it real.
 
 ---
 
@@ -97,11 +117,13 @@ Full detail: none in `TestChecklist.Unity.md`, it is here. **Your finds #2, #6, 
   Trapper +45). Same survivability role, but through a channel that touches neither the accuracy
   contest nor any damage number. Say if you would rather it went somewhere else. ->
 
-- `62e` [] - **The new rogue ultimate `Evasion Boost` exists at 28** — +20 Evasion, cancel-resist ×1.8,
+- `62e` [~] - **The new rogue ultimate `Evasion Boost` exists at 28** — +20 Evasion, cancel-resist ×1.8,
   30s, 900s reuse, 20 MP. ⚠ Two channels in your CSV were **NOT built**: "skill evasion ×1.25" and
   "magic evasion ×1.1". The game has exactly one evasion channel; dodging a physical *skill*
   separately, and dodging *magic* at all, are new mechanics — I left them out rather than fake them.
-  **Tell me if you want them as real mechanics and I will build them.** ->
+  **Tell me if you want them as real mechanics and I will build them.** -> the magic evasion should be magic fail chance like 3-4
+  **✅ BUILT in 0.60.1 — see `69d`.** Not an evasion roll: **+4 points of fail on spells cast at you**
+  (the top of your 3-4). "Skill evasion ×1.25" is still open — say the word.
 
 **The weapon speed table (your find #12).**
 
@@ -117,7 +139,13 @@ Full detail: none in `TestChecklist.Unity.md`, it is here. **Your finds #2, #6, 
   mob: rogue/warrior went **0.92× → 1.05×** at level 20 and **1.22× → 1.37×** at 36. The rogue's DPS
   did not change — the champion's fell ~14%, purely from 325. **The rogue now out-damages the champion
   at every level 20-36.** In the inspiration game a 2H compensates with much higher P.Atk; ours does
-  not. ⏸ **CSV** — your new weapon file is the fix, but confirm you agree that is where it belongs. ->
+  not. ⚠ **Your CSV has since landed and did NOT fix this** — 0.59.1 raised the 2H only at S (532 vs the
+  1H's 437). The 20-36 band is exactly as described. Still yours to rule on. -> the champion have enough Patk boosts skills/passives while dagger rely purley on blows
+  **✅ RULED, NOTHING CHANGED.** Your answer is that the comparison was the wrong one: the champion's
+  P.Atk comes from his KIT (masteries + buffs), the dagger's damage comes from blows landing, so a raw
+  weapon-speed DPS ratio does not describe either. **No retune** — the 325 stands, the 2H P.Atk stays as
+  authored, and I will not raise either "to fix the champion". ⚠ The one thing still owed here is
+  `0a`/`62l`'s **auto-farm measurement**, which measures the kits rather than the weapons.
 
 - `62i` [] - ⚠ **Mobs were pinned to 433, deliberately.** Almost every mob is weaponless, so your
   "weaponless 300" would have slowed **the entire bestiary by 31%** (BalanceMatrix: a level-20
@@ -292,12 +320,13 @@ Full detail: `docs/design/CombatResolution.md`. **This is your `57d`, and it was
 
 **Your queue item (1).** No schema change; **protocol stays 15** (the new field is additive).
 
-**The weapon half — ⏸ CSV, you are re-authoring this. Skim only.**
+**The weapon half — this was your first CSV pass of 2026-08-11; the second one is §67.**
 
 - `65a` [] - **The ×1.166 2H P.Atk raise is REVERTED** — you ratified nothing, so it went back. ->
 
 - `65b` [] - **The F rung of all 8 weapon lines is re-authored** from your file, and a caster's M.Atk
-  now sits **above** its P.Atk at F. ->
+  now sits **above** its P.Atk at F. ⚠ 0.59.1 moved the **wand** again — F is **19/22** (was 22/23) and
+  its level-52 rung is **155/132** (was 140/122). ->
 
 - `65c` [] - **`training_bow` is deleted.** Nothing should reference it. ->
 
@@ -401,6 +430,209 @@ here feels wrong, that number is old and unplayed, not something I just invented
 
 ---
 
+## 67. 0.59.1 — the S grade is AUTHORED, and it finally has set bonuses
+
+⚠ **New APK, but protocol stays 16** — no DTO changed, and **`game.db` survives this build**. Install
+both halves anyway: 0.59.1 is *only* catalog numbers, so a mismatched pair shows you the old S grade
+and no set bonus while looking perfectly healthy.
+
+🔑 **This is your second `gear_sets.csv` pass of 2026-08-11, marked "Eddited by him" per row.** Almost
+everything here is your own number coming back to you — what is worth your time is whether the *shape*
+feels right in play, not whether the digits match your file.
+
+**The structural change: nothing is derived any more.**
+
+- `67a` [] - 🔴 **`SGradeOverA` (a flat ×1.60 over the A row) is DELETED.** Every weapon, body, shield,
+  accessory and jewel now carries its own authored level-80 row. Your numbers are a **cut** against the
+  old derivation almost everywhere — so if S feels weaker than you remember, that is you, not a bug. ⚠
+  A table with no 80 row now simply has **no S item**, which is a visible hole rather than a silently
+  invented number. ->
+
+- `67b` [] - ⚠ **Armour was cut harder than weapons, and it is a real TTK change.** Bodies and
+  accessories land ~×1.33 over A; weapons ~×1.55; jewels ~×1.45. **Offence outruns defence at S by
+  ~17%.** Fight something at 80+ and say whether endgame now kills too fast. ->
+
+- `67c` [] - **The weapon S column, as authored** (old derived → yours): 1H **450/211 → 437/192** ·
+  duals **434/211 → 382/192** · bow **930/211 → 794/192** · wand **360/280 → 360/256** · staff
+  **438/309 → 426/281** · 2H stays at your **532/192**. The bow lost the most (−15%) because derivation
+  was compounding its already-outsized A P.Atk. ->
+
+- `67d` [] - **Two rungs below S moved too.** The **duals A P.Atk 271 → 246** (duals were the one
+  fighter line whose A did not sit on the shared shape), and the **level-40 bow is one item again** —
+  the 316 row is deleted and the 323 row ships at `as:293`, per *"Remove (this was the very slow bow)"*
+  / *"Build this => as:293"*. ->
+
+- `67e` [] - **The F jewel rung was RAISED** (necklace/ring/earring 18/9/13 → **25/12/16**), and it
+  fixed a real drift: the M.Def band ratio went 1.80× → **1.51×**. Jewels are the only source of M.Def,
+  so low levels were genuinely under-supplied. A level-1 caster should stop feeling like paper. ->
+
+**The S set bonuses — brand new, three of them.**
+
+- `67f` [] - 🔴 **THE ONE TO WATCH: light S carries flat crit damage +200.** For scale, 2H Weapon
+  Mastery at level 5 is **+106** — so a rogue in S Nightleaf roughly **triples** his flat crit-damage
+  term. You already ruled it stands (*"the 35 kit is 100 .. a 40+ kit have a 600 .. so its not of a
+  concern while no 40+ kits yet"*), so this row is not asking you to re-decide — it is asking you to
+  **hit something with it and see**. ⚠ When your 40+ kits land, re-read it against them; do not let me
+  quietly retune it. ->
+
+- `67g` [] - **21 orphaned pieces → 0.** Before this, an S body plus S accessories completed **nothing**
+  — the top grade was the only one with no set identity. Wear a full S set of each weight and confirm
+  the set name appears in the stat sheet. ->
+
+- `67h` [] - **Heavy S "Ironforge"** — STR +3, CON +2, AGI −2, MaxHP +550, **crit rate +10 points**,
+  magic resist 2%, melee vamp 2%, CC resist, **PvP damage taken ×0.95**. It is the first set in the game
+  to carry crit rate at all. With its shield: P.Def/M.Def +6%, ShieldDef +30%, reflect 5%, and a
+  **second** ×0.95 PvP — your CSV repeats it in the shield clause, so shield-up is **×0.9025**. Say if
+  you meant it to compound. ->
+
+- `67i` [] - **Light S "Nightleaf"** — P.Atk +5%, attack speed +5%, MaxMP +300, AGI/STR +2, CON −2, and
+  four channels light never had: **move speed ×1.03**, crit rate +3 points, the +200 crit damage above,
+  evasion +3, PvP taken ×0.95. ⚠ Move speed is applied **flat then percent**, matching the passive path.
+  Check the speed number is not over cap. ->
+
+- `67j` [] - **Robe S "Arcanum"** — the A set with **M.Atk ×1.17 restored** and INT +2. So the caster's
+  magic-damage step from A to S lives in the **set**, not the staff. ->
+
+- `67k` [] - 🔴 **A (76) robe was RE-AUTHORED DOWNWARD and this one you WILL feel below 80:** M.Atk
+  ×1.17 → **×1.10**, plus **SPT −1**. Measured at level 76 that is **−5.6% M.Atk and −2.8% nuke damage**,
+  and less MP/regen on top. Consistent with your F-rung caster re-author, but it is a nerf to the
+  76-79 window — confirm you meant it. ->
+
+- `67l` [] - **Measured at level 85, S gear** (BalanceMatrix, before → after): **fighter** MaxHP
+  5832 → **6737 (+16%)**, P.Atk 1738 → 1690, P.Def 1792 → 1777, skill 421 → 410 — tankier, slightly
+  softer. **Mage** M.Atk 2039 → **2165 (+6%)** *even though the staff was cut*, because the new robe set
+  more than pays for it; M.Def 1336 → 1235, MaxMP 4665 → 4243, nukes-per-bar 27.8 → 25.3. ->
+
+**Shields stop double-dipping — your complaint, built.**
+
+- `67m` [] - 🔴 **You were right about the double-dip.** *"To much dmg reduction on top of the additional
+  pdef when sucsessifull blocked. Mage should not be immortal even with a shield."* A shield's
+  `ShieldDefense` is folded into physical defence **permanently** — it already pays on every hit — and a
+  block then removed another 34-47% on top. Only the block half was cut; the flat defence is untouched.
+  **Average mitigation from blocking alone: 5.1% → 1.0% at F, 15.0% → 6.3% at S.** ->
+
+- `67n` [] - **The new profile, F→S:** block chance `.15 .22 .24 .26 .28 .30 .32` → **`.10 .15 .15 .20
+  .20 .25 .25`**; reduction `.34…​.47` → **`.10 .10 .15 .15 .20 .20 .25`**; crit defence `.08…​.16` →
+  **`.03…​.10`**. ⚠ The crit-defence column is the **other half of the same nerf**, not a separate one:
+  block resolution runs crit FIRST (the shield lowers crit *chance*; a crit that still lands ignores the
+  block). ->
+
+- `67o` [] - 🔑 **Shield MASTERY is untouched, on purpose.** A mastery tank at S still reaches ~14%
+  average mitigation — about the old shield-only number — so the nerf lands exactly on the **shield-only
+  wearer, i.e. the mage**, which is what you asked for. Play a shielded mage and a shielded tank back to
+  back and confirm the gap now feels like a class difference. ->
+
+- `67p` [] - ⚠ **The shield evasion penalty got HARSHER at the top:** `5 7 7 8 8 9 9` → **`3 5 5 7 7 10
+  10`**. A low-grade shield now costs a light-armour class less; an S shield costs it slightly more. ->
+
+**PvP damage RECEIVED — the one genuinely new mechanic.**
+
+- `67q` [] - **The receiving half of the PvP matrix exists now.** All three existing PvP modifiers were
+  attacker-side; nothing could express *"I take less in PvP"* until your S sets needed it. It is
+  **PvP-only** — no PvE number moved anywhere in this build. ->
+
+- `67r` [] - 🔴 **The weapon's +5% PvP is ENCHANT-GATED, per your ruling:** *"if a weapon is enchanted to
+  +4 or more and its A or S to add the 5% pvp bonus .. as a price that u risked to break a weapon."*
+  Built as grade **A(76) or S(80) AND enchant ≥ +4** → +5% to all three PvP channels (basic, skill,
+  magic). Below +4 the weapon adds **nothing**. It is separate from the weapon's rolled attribute.
+  Duel someone with a +3 and a +4 and confirm the step. ->
+
+- `67s` [] - **The armour half (−5% PvP damage taken) is SET-ONLY** — it lives in the S set bonuses and
+  nowhere else, by your design. The weapon half pays on every hit; the armour half needs the whole set.
+  ->
+
+**Housekeeping from the same CSV.**
+
+- `67t` [] - **Your four training-weapon rows are documentation, not a change** (sword 6/5, club 6/5,
+  knives 5/5, wand 5/7) — they describe what already ships. No training bow or staff, consistent with
+  `training_bow`'s deletion in 0.58.3. ->
+
+---
+
+## 68. 0.60.0 — ENCHANTING STOPS BEING A PERCENTAGE
+
+⚠ **Protocol stays 16, `game.db` survives** — the bonus is recomputed from the stored enchant level, so
+your saved items simply get the new numbers. New APK anyway: the maths lives in `Game.Shared`.
+
+🔑 **Every enchanted item in the game changed at once.** The old rule ran EVERY bonus on EVERY slot
+through `base + 0.20·base·level + level` — **×4.2 at +16** — which against the 0.59.1 ladder made a +16
+S blade hit for 1851 and a +16 S set quarter incoming damage. Enchanting was worth two and a half
+grades in both directions, so PvP was a count of scrolls. It is now your flat per-level table.
+
+- `68a` [] - 🔴 **A weapon's enchant is FLAT per level**: 1H sword/blunt/wand/**duals** +6 P.Atk, 2H
+  greatsword/maul/**staff** +8, **bow by grade** (E10 · D12 · C14 · B16 · A18 · **S20**), and **+6 M.Atk
+  for any weapon**. Enchant one and watch the item details climb by exactly that each scroll. ->
+
+- `68b` [] - **The bow row is the one deliberate outlier** — 2.5× a greatsword at S — *"as archer they
+  rely on basic attack and acc so a more P.Atk jump is better, while the others should rely more on
+  crit/skills"*. Measured, it CLOSES the archer's gap to the dagger (324 vs 333 dps at S) instead of
+  opening one. Play an enchanted bow and say whether that reads right in the hand. ->
+
+- `68c` [] - **A shield's defence is TRIPLE an armour piece's: +9 per enchant, not +3.** Same logic
+  inverted — a shield's reduction only pays on a block, so its enchant pays in flat defence instead.
+  ⚠ It rides on `ShieldDefense`, a different accumulator from armour's P.Def, so the two never
+  double-count. ->
+
+- `68d` [] - 🔴 **Armour: +3 P.Def per enchant, plus Max HP BY GRADE** (E0 · D0 · C15 · B20 · A25 ·
+  **S30**). A full +16 S set is **+1920 HP**. Jewels mirror it: +3 M.Def and MP by grade (C1 · B2 · A3 ·
+  S5). Enchant a set and check the HP number moves by the right amount per piece. ->
+
+- `68e` [] - 🔑 **THE OFFSET IS THE SAME FOR EVERY CLASS — your ruling, don't re-report it.** That +1920
+  HP is +37% for a tank and +130% for a healer. I offered weight-scaling and body-only; you refused
+  both: *"an enchant is just an offset of the norm, same for all"*. This row exists so it does not look
+  like a bug when you meet a very tanky enchanted healer. ->
+
+- `68f` [] - **By GRADE, not rarity.** A Common S body and a Mythic S body gain the same 30 HP per
+  enchant — enchanting cheap gear of a high grade is deliberately worth it. ->
+
+- `68g` [] - ⚠ **Everything you did not name STOPPED SCALING**: Evasion, the robe's inherent +MP, a
+  weapon's +MP, armour M.Def. If you expected one of those to grow with +16 and it does not, that is
+  this decision, not a defect — but tell me and I will author a row for it. ->
+
+- `68h` [] - **The item card now prints the enchanted TOTAL even on stats the piece does not natively
+  carry** — every tiered armour has HP 0, so a +16 S body owed +480 HP that the old display hid
+  completely. There is also a grey **"Per enchant +N …"** line saying what the next scroll buys. ->
+
+- `68i` [] - **Measured end to end** (`BalanceMatrix` §E, full tier loadout at +0 vs +16, real
+  resolvers). At S: **tank +21% dps · warrior +21% · dagger +16% · mage +15% · archer +34%**, and
+  defence moves further than offence for everyone (the mage's time-to-kill goes 12.9s → 38.1s). The
+  question for you: does a fully enchanted character feel about a *third* stronger, or more? ->
+
+- `68j` [] - ⚠ **The enchant RATES did not change** (`62j`'s +1..3 safe / 66% / 33% / 5% at +16). What
+  changed is only what a level is worth. ->
+
+---
+
+## 69. 0.60.1 — the tutorial dead-end you hit today
+
+**Your first find of this pass, fixed the same hour.**
+
+- `69a` [] - 🔴 **THE BUG: the tutorial could not be finished if you opened your boxes early.** *"u
+  added the open a box in the travellers quest ... but i opened it before i got the quest now i cant
+  continue."* A DoAction step is a gate, and a gate whose prop you already consumed is a wall. ->
+
+- `69b` [] - 🔑 **Your fix, built as the general rule**: *"update the quest to give you the boxes after u
+  speak with cera"*. A step can now declare the items it needs, and while that step is current anything
+  you do not hold is handed over. Part 1 carries the two **training** boxes both on its first step (so
+  they arrive when Cera gives you the quest) and on the box beat itself. ->
+
+- `69c` [] - 🔴 **YOUR STRANDED CHARACTER REPAIRS ITSELF ON LOGIN** — no admin grant needed. The supply
+  runs from the one call every quest change already passes through, and login is one of them. **Log in
+  with the character that is stuck, look in your bag, open the box, and the chain should continue.**
+  ⚠ If it does not, that is the first thing to tell me. ->
+
+- `69d` [] - **Magic evasion, your `62e` ruling** (*"should be magic fail chance like 3-4"*): Evasion
+  Boost now adds **+4 percentage points** to the fail chance of spells cast at you, for its 30s. At
+  parity a caster goes from 99% success to 95%; against one punching up it stacks on a fail chance that
+  is already climbing. Flat and additive on purpose — multiplying would be worth nothing at parity and
+  enormous at a level gap. **Stand in front of `dummy_magic` with the buff up and without it.** ->
+
+- `69e` [] - ⚠ **"Skill evasion ×1.25" is STILL not built** — the other unbuilt channel from the same
+  CSV row. Dodging a physical *skill* separately from a basic attack is a new resolution mechanic and
+  you have not ruled on it. Say the word. ->
+
+---
+
 ## CARRIED FORWARD — never reached in any playtest, needs a deliberate setup
 
 None of these happens by accident; each needs a session aimed at it.
@@ -436,6 +668,11 @@ None of these happens by accident; each needs a session aimed at it.
 
 - ✅ ~~**CRAFTING**~~ — your queue item (3). **BUILT 0.59.0, test at §66.** The server half already
   existed; what was missing was the client, and the admin materials/recipes you asked for came with it.
+- ✅ ~~**THE S GRADE WAS DERIVED, NOT AUTHORED**~~ — your queue item (4). **BUILT 0.59.1, test at §67.**
+  The whole level-80 column is your own hand numbers now, and S has set bonuses for the first time.
+- **ENCHANTS — you said you want to DISCUSS them**, not that you want them built. Nothing was invented
+  in the meantime; the only enchant change since is `62j`'s rate table and `67r`'s +4 PvP gate. Bring it
+  up when you are ready and we design it before any code.
 - **`58d` item TAGS + `/give`** — your design (timed / bound / private as tags on a **real** item
   instance, never a cloned def, plus the full `/give` command). **Not built.** It blocks `58g` and
   `59c`, which you deferred until it exists. It is also your route to Mythic gear without crafting —

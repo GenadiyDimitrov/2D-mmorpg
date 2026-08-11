@@ -187,7 +187,10 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 314, MpCost: 18, InitialMpCost: 18, SpCost: 1700,  Description: "Piercing Stab — blow power 314."),
                 new SkillLevel(Power: 427, MpCost: 21, InitialMpCost: 21, SpCost: 3200,  Description: "Piercing Stab — blow power 427."),
                 new SkillLevel(Power: 571, MpCost: 24, InitialMpCost: 24, SpCost: 6000,  Description: "Piercing Stab — blow power 571."),
-                new SkillLevel(Power: 752, MpCost: 58, InitialMpCost: 58, SpCost: 11000, Description: "Piercing Stab — blow power 752."),
+                // 28, not the CSV's original 58: he ruled it a typo on 2026-08-11 (*"should be 28.. a
+                // typeo"*) and edited `rogue 20-35.csv` line 19 himself. It had sat between level 3's
+                // 24 and level 5's 30 as the one spike in the line.
+                new SkillLevel(Power: 752, MpCost: 28, InitialMpCost: 28, SpCost: 11000, Description: "Piercing Stab — blow power 752."),
                 new SkillLevel(Power: 977, MpCost: 30, InitialMpCost: 30, SpCost: 20000, Description: "Piercing Stab — blow power 977."),
             }),
 
@@ -359,17 +362,22 @@ public static partial class SkillCatalog
         // attacker is ~10-20 points and THIS is what briefly takes it to ~40-50 — *"later all
         // rogues will have an ultimate that increases the evasion with 20-30 ... but for 30 sec"*.
         //
-        // 🔴 TWO CSV CHANNELS ARE NOT BUILT: "skill evasion x1.25" and "magic evasion x1.1". The
-        // game has exactly ONE evasion channel (SkillEffect.BuffEvasion, consumed by
-        // StatCalculator.ResolveAvoidChance) — dodging a physical SKILL separately from a basic
-        // attack, and dodging MAGIC at all, are new resolution mechanics, not new numbers. They are
-        // deliberately omitted rather than approximated: folding them into the flat +20 would
-        // silently make this stronger than authored. Add the channels first, then these two lines.
+        // ✅ MAGIC EVASION IS BUILT (owner ruling 2026-08-11, `62e`). His CSV said "magic evasion
+        // x1.1", which the game had no channel for; asked what he meant, he answered *"the magic
+        // evasion should be magic fail chance like 3-4"* — so it is not an evasion roll at all, it
+        // is +4 percentage POINTS on the fail chance of spells cast AT you (SkillEffect
+        // .BuffMagicEvasion → Entity.MagicFailBonus → StatCalculator.MagicFailChance). At parity
+        // that turns a caster's 99% success into 95%; against a caster punching UP it stacks on top
+        // of a fail chance that is already climbing. 4, the top of his "3-4" — a 900s ultimate.
+        //
+        // 🔴 STILL NOT BUILT: "skill evasion x1.25". Dodging a physical SKILL separately from a basic
+        // attack is a new resolution mechanic, not a new number, and he has not ruled on it. Left out
+        // rather than folded into the flat +20, which would silently make this stronger than authored.
         //
         // No buff FAMILY on purpose (same as Defensive Wall): an ultimate must stack on top of the
         // Agility ladder, not evict a potion or be evicted by one.
         new(EvasionBoost, "Evasion Boost", BaseClass.Fighter,
-            SkillEffect.BuffEvasion | SkillEffect.BuffCancelResist,
+            SkillEffect.BuffEvasion | SkillEffect.BuffCancelResist | SkillEffect.BuffMagicEvasion,
             MpCost: 20, CastTicks: 5, CooldownTicks: 9000, Range: 0, Power: 0,
             DurationTicks: 300, BuffKey: "evasion_boost", Rank: 1,
             Category: SkillCategory.Buff, TargetMode: TargetMode.SelfOnly, SpCost: 3400,
@@ -377,9 +385,10 @@ public static partial class SkillCatalog
             {
                 new(SkillEffect.BuffEvasion, 20, ModifierMode.Flat),
                 new(SkillEffect.BuffCancelResist, 0.80f, ModifierMode.Percent),
+                new(SkillEffect.BuffMagicEvasion, 4, ModifierMode.Flat),
             },
-            Description: "Slip every blow for 30s: +20 Evasion and your buffs strongly resist "
-                       + "being cancelled."),
+            Description: "Slip every blow for 30s: +20 Evasion, spells cast at you are 4% more "
+                       + "likely to fail, and your buffs strongly resist being cancelled."),
 
         // Bow Expertise — long self-buff: +8% bow attack speed (requires a bow) for 20 min.
         new(BowExpertise, "Bow Expertise", BaseClass.Fighter, SkillEffect.BuffAtkSpeed,

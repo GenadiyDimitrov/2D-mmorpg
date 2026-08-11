@@ -37,7 +37,22 @@ public record QuestStep(
     string TargetId = "",       // npc id / mob type / item key, per Type
     int Count = 1,              // how many (kills, items, or the level)
     int MinLevel = 0,
-    int MaxLevel = 0);
+    int MaxLevel = 0,
+    // ----- The step's PROPS: items handed over while this step is the current one, and only if the
+    //       bag holds none of them (owner, 2026-08-11: *"update the quest to give you the boxes after
+    //       u speak with cera"*).
+    //
+    //       This exists because a DoAction step is a GATE, and a gate whose prop the player already
+    //       consumed is a DEAD END: he opened both creation boxes before walking to Cera, so
+    //       "open a box" could never be credited and the tutorial could not continue. Anticipating
+    //       that in a comment (see Quests.Tutorial.cs) was not the same as fixing it — the rule now
+    //       is that a step which requires an object SUPPLIES that object.
+    //
+    //       Granting is idempotent by construction: "you hold none of it" is the only condition, so
+    //       re-entering the step, relogging, or talking to the giver again can never hand over a
+    //       second one. Props must therefore be worthless — the tutorial's are untradable and sell
+    //       for 0 — because a player can always destroy one to be given another.
+    string[]? SupplyItemIds = null);
 
 /// <summary>What the player gets on completion. ItemIds grants quest items.</summary>
 public record QuestReward(int Exp = 0, int SkillPoints = 0, string[]? ItemIds = null, int Gold = 0);

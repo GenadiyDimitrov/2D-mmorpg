@@ -116,6 +116,64 @@ Check("server pushed a skill bar", a.Bar is not null);
 Check("server pushed the warehouse on login", a.Ware is not null);
 
 // -------------------------------------------------------------------------------------------
+// 1a-0. THE TUTORIAL CANNOT DEAD-END (0.60.1). The owner opened BOTH creation boxes before Cera gave
+//     him the quest, so its "open a box" beat had nothing to open and the chain could not continue —
+//     a DoAction step is a gate, and a gate whose prop is already consumed is a wall. The fix is that
+//     a step SUPPLIES its own props (QuestStep.SupplyItemIds), granted whenever the bag holds none.
+//
+//     This is asserted here rather than played because the whole failure is invisible on screen: the
+//     quest log renders a perfectly good objective either way, and the only difference is whether the
+//     server put a box back in the bag. It must also stay IDEMPOTENT — a second push must not hand
+//     over a second box — which is likewise invisible until someone has ten of them.
+//
+//     ⚠ Runs FIRST, while the protagonist is still level 1: the tutorial has a level CEILING of 20 and
+//     the sections below level this character to 81.
+// -------------------------------------------------------------------------------------------
+{
+    int Boxes(string defId) => a.Inv?.Items.Where(i => i.DefId == defId).Sum(i => i.Quantity) ?? 0;
+
+    Check("a fresh character starts with both training boxes",
+          Boxes(ItemCatalog.BoxTrainingWeapons) == 1 && Boxes(ItemCatalog.BoxTrainingArmorChoice) == 1,
+          $"weapons {Boxes(ItemCatalog.BoxTrainingWeapons)}, armor {Boxes(ItemCatalog.BoxTrainingArmorChoice)}");
+
+    // Open both, BEFORE taking the quest — his exact order of play.
+    foreach (var boxId in new[] { ItemCatalog.BoxTrainingWeapons, ItemCatalog.BoxTrainingArmorChoice })
+    {
+        var inBag = a.Inv!.Items.FirstOrDefault(i => i.DefId == boxId);
+        if (inBag is null) continue;
+        await a.Hub.SendAsync("OpenBox", inBag.InstanceId);
+        await a.Settle();
+        // Both are PICK-ONE boxes: OpenBox offers, SelectBoxItems takes the pick.
+        string pick = BoxCatalog.Get(boxId)!.Entries[0].ItemId;
+        await a.Hub.SendAsync("SelectBoxItems", inBag.InstanceId, new[] { pick });
+        await a.Settle();
+    }
+    Check("both boxes were opened before the quest (the bag has none left)",
+          Boxes(ItemCatalog.BoxTrainingWeapons) == 0 && Boxes(ItemCatalog.BoxTrainingArmorChoice) == 0,
+          $"weapons {Boxes(ItemCatalog.BoxTrainingWeapons)}, armor {Boxes(ItemCatalog.BoxTrainingArmorChoice)}");
+
+    // Taking the quest must hand the props over. No NPC id needed: accepting is not proximity-checked.
+    await a.Hub.SendAsync("QuestAction", "accept", QuestCatalog.QuestTutorialWelcome, Guid.Empty);
+    await a.Settle();
+    Check("accepting the tutorial RE-SUPPLIES the boxes (the dead end is gone)",
+          Boxes(ItemCatalog.BoxTrainingWeapons) == 1 && Boxes(ItemCatalog.BoxTrainingArmorChoice) == 1,
+          $"weapons {Boxes(ItemCatalog.BoxTrainingWeapons)}, armor {Boxes(ItemCatalog.BoxTrainingArmorChoice)}");
+
+    // A second quest-log push (tracking toggles one) must NOT hand over a second set.
+    await a.Hub.SendAsync("QuestAction", "track", QuestCatalog.QuestTutorialWelcome, Guid.Empty);
+    await a.Settle();
+    await a.Hub.SendAsync("QuestAction", "track", QuestCatalog.QuestTutorialWelcome, Guid.Empty);
+    await a.Settle();
+    Check("the supply is IDEMPOTENT — more pushes do not stack up boxes",
+          Boxes(ItemCatalog.BoxTrainingWeapons) == 1 && Boxes(ItemCatalog.BoxTrainingArmorChoice) == 1,
+          $"weapons {Boxes(ItemCatalog.BoxTrainingWeapons)}, armor {Boxes(ItemCatalog.BoxTrainingArmorChoice)}");
+
+    // Leave nothing behind for the sections below: this character goes on to be levelled and geared.
+    await a.Hub.SendAsync("QuestAction", "abandon", QuestCatalog.QuestTutorialWelcome, Guid.Empty);
+    await a.Settle();
+}
+
+// -------------------------------------------------------------------------------------------
 // 1a-2. QUEST MARKERS. The "!" over an NPC's head is per-PLAYER (level, race, class and what you
 //     have already done all decide it), so it is computed server-side and pushed with the quest log.
 //     A marker that is right in the client while the server thinks otherwise is exactly the class of

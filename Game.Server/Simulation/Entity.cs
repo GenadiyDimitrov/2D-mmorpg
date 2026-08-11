@@ -649,6 +649,11 @@ public class Entity
     // 2 = the tank's Anti-Magic passive. It replaced a flat fizzle FLOOR on 2026-08-10 — see the
     // header comment on MagicFailChance for why a floor was the wrong shape.
     public float MagicFailMod { get; set; } = 1f;
+    // "MAGIC EVASION" — flat percentage POINTS added to the fail chance of spells cast AT this entity,
+    // after MagicFailMod has multiplied (owner ruling 2026-08-11, `62e`: *"the magic evasion should be
+    // magic fail chance like 3-4"*). It is NOT an evasion roll: magic never calls the physical avoid
+    // resolver. Only source today is the rogue's Evasion Boost (+4 for 30s).
+    public float MagicFailBonus { get; set; }
     // MAGIC RESISTANCE. Stored the way the CSVs author it ("mRes +5%" = 0.05f) and summed across
     // passives/buffs; MagicDefCoef turns it into the defence DIVISOR, the exact shape of
     // PierceDefCoef/BluntDefCoef/BowDefCoef. 0.25 → coef 1.25 → takes ×0.8 magic damage, which is
@@ -1443,6 +1448,7 @@ public class Entity
         // the resolver, not here. Magic has no floor: its defender lever is the ×MULTIPLIER below,
         // whose neutral value is 1, not 0.
         MagicFailMod = 1f;
+        MagicFailBonus = 0f;   // "magic evasion" points, buffs only (see the field)
         EvadeFloor = 0f;
         HitFloor = 0f;
         Immune = false;
@@ -2133,6 +2139,7 @@ public class Entity
             if (buff.Has(SkillEffect.BuffCritDmgResist)) CritDmgResist += buff.Flat(SkillEffect.BuffCritDmgResist) + buff.Percent(SkillEffect.BuffCritDmgResist);
             if (buff.Has(SkillEffect.BuffBowResist)) BowResist += buff.Flat(SkillEffect.BuffBowResist) + buff.Percent(SkillEffect.BuffBowResist);
             if (buff.Has(SkillEffect.BuffMagicResist)) MagicResist += buff.Flat(SkillEffect.BuffMagicResist) + buff.Percent(SkillEffect.BuffMagicResist);
+            if (buff.Has(SkillEffect.BuffMagicEvasion)) MagicFailBonus += buff.Flat(SkillEffect.BuffMagicEvasion);
             if (buff.Has(SkillEffect.BuffMeleeVamp)) MeleeVamp += buff.Flat(SkillEffect.BuffMeleeVamp) + buff.Percent(SkillEffect.BuffMeleeVamp);
             if (buff.Has(SkillEffect.BuffSpellVamp)) SpellVamp += buff.Flat(SkillEffect.BuffSpellVamp) + buff.Percent(SkillEffect.BuffSpellVamp);
             if (buff.Has(SkillEffect.BuffReflect)) MeleeReflect += buff.Flat(SkillEffect.BuffReflect) + buff.Percent(SkillEffect.BuffReflect);

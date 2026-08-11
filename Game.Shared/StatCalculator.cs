@@ -695,12 +695,19 @@ public static class StatCalculator
     /// Anti-Magic passive.</param>
     /// <param name="weaponMod">Caster's weapon modifier: 1 trained,
     /// <see cref="StatCaps.UntrainedWeaponMagicFailMod"/> with a bow/dual/bare hands.</param>
+    /// <param name="defenderFlatPoints">Defender's MAGIC EVASION in percentage points, added after
+    /// the multiplicative part (owner ruling 2026-08-11, `62e`: *"the magic evasion should be magic
+    /// fail chance like 3-4"*). FLAT and additive on purpose: multiplying it would make a 4-point
+    /// dodge worth almost nothing at parity (1% × 1.04) and enormous at a level gap, which is the
+    /// opposite of a defensive burst. The only source today is the rogue's Evasion Boost.</param>
     public static float MagicFailChance(int attackerLevel, int defenderLevel,
-                                        float defenderMod = 1f, float weaponMod = 1f)
+                                        float defenderMod = 1f, float weaponMod = 1f,
+                                        float defenderFlatPoints = 0f)
     {
         float levelMod = MathF.Pow(StatCaps.MagicLevelBase, defenderLevel - attackerLevel);
         float points = MathF.Round(StatCaps.MagicFailParityPoints * levelMod
-                                   * Math.Max(0f, defenderMod) * Math.Max(0f, weaponMod));
+                                   * Math.Max(0f, defenderMod) * Math.Max(0f, weaponMod))
+                     + Math.Max(0f, defenderFlatPoints);
         return Math.Clamp(points / 100f, 0f, StatCaps.MagicFailMax);
     }
 

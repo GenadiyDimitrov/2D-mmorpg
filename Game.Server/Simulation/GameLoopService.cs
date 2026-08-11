@@ -6787,7 +6787,8 @@ public class GameLoopService : BackgroundService
                 // Mirrors the magic branch of ExecuteSkill: fail is reduced damage (not zero), crit is
                 // the flat x3 of the magic channel — never CritDamageBonus, which is the fighters'.
                 float fail = target.Immune ? 1f
-                           : StatCalculator.MagicFailChance(dummy.Level, target.Level, target.MagicFailMod);
+                           : StatCalculator.MagicFailChance(dummy.Level, target.Level, target.MagicFailMod,
+                                                            1f, target.MagicFailBonus);
                 if (_rng.NextDouble() < fail)
                 {
                     int dmg = Math.Max(1, 1 / 3);
@@ -7532,7 +7533,8 @@ var effect = def.Effect;
                        : target.Immune ? 1f
                        : StatCalculator.MagicFailChance(caster.Level, target.Level,
                              target.MagicFailMod,
-                             StatCalculator.MagicWeaponFailMod(caster.UntrainedCasterWeapon));
+                             StatCalculator.MagicWeaponFailMod(caster.UntrainedCasterWeapon),
+                             target.MagicFailBonus);
             if (_rng.NextDouble() < fail)
             {
                 damage = Math.Max(1, damage / 3);
@@ -7659,7 +7661,8 @@ var effect = def.Effect;
                        : target.Immune ? 1f
                        : StatCalculator.MagicFailChance(caster.Level, target.Level,
                              target.MagicFailMod,
-                             StatCalculator.MagicWeaponFailMod(caster.UntrainedCasterWeapon));
+                             StatCalculator.MagicWeaponFailMod(caster.UntrainedCasterWeapon),
+                             target.MagicFailBonus);
             if (_rng.NextDouble() < fail)
             {
                 BroadcastCombat(caster, target, 0, CombatOutcome.Fail, castName);
@@ -11785,8 +11788,46 @@ var effect = def.Effect;
     /// not fine per mob kill — which is what a gathering contract, always active while you farm, would
     /// otherwise make it. A token dropping cannot change any marker: the contract was already
     /// hand-in-able the moment it was taken.</summary>
+    /// <summary>Hand over the props of every active quest's CURRENT step (<see
+    /// cref="QuestStep.SupplyItemIds"/>), for anything the bag does not already hold.
+    ///
+    /// <para>Owner, 2026-08-11: *"update the quest to give you the boxes after u speak with cera"*. He
+    /// opened both creation boxes before taking the tutorial, so its "open a box" beat had nothing to
+    /// open and the chain dead-ended — a DoAction step is a gate, and a gate whose prop is gone is a
+    /// wall. A step that requires an object now supplies that object.</para>
+    ///
+    /// <para>It runs from <see cref="SendQuestLog"/> on purpose: that is the ONE call every quest-state
+    /// change already funnels through (accept, each of the four advance paths, and login), so a future
+    /// step type cannot forget to supply itself, and a character ALREADY stranded — his live one — is
+    /// repaired the moment he logs in rather than needing a manual grant. It is a no-op for every quest
+    /// in the game but this one: only a step that declares props does anything at all.</para></summary>
+    private void SupplyStepItems(Entity player)
+    {
+        bool granted = false;
+        foreach (var state in player.ActiveQuests.Values)
+        {
+            if (state.Completed) continue;
+            var def = QuestCatalog.Get(state.QuestId);
+            if (def is null || state.StepIndex < 0 || state.StepIndex >= def.Steps.Length) continue;
+            var supplies = def.Steps[state.StepIndex].SupplyItemIds;
+            if (supplies is null) continue;
+            foreach (var itemId in supplies)
+            {
+                // "Holds none" is the whole guard, which is what makes this idempotent — see the field's
+                // comment for why the props must be worthless for that to be safe.
+                if (CountItem(player, itemId) > 0) continue;
+                if (!AddItem(player, itemId)) continue;   // full bag: try again on the next push
+                granted = true;
+                SendSystemToEntity(player,
+                    $"{def.Name}: {ItemCatalog.Get(itemId)?.Name ?? itemId} added to your bag.");
+            }
+        }
+        if (granted) { SendInventory(player); SaveEntity(player); }
+    }
+
     private void SendQuestLog(Entity player, bool withMarks = true)
     {
+        SupplyStepItems(player);
         var active = player.ActiveQuests.Values
             .Select(st => { var d = QuestCatalog.Get(st.QuestId); return d is null ? null : Summarize(player, d, st); })
             .Where(x => x is not null).Select(x => x!).ToArray();

@@ -284,6 +284,7 @@ public static class SkillText
         SkillEffect.BuffCritRateResist => "Crit rate resist",
         SkillEffect.BuffBowResist => "Bow resist",
         SkillEffect.BuffMagicResist => "Magic resist",
+        SkillEffect.BuffMagicEvasion => "Magic evasion (enemy fail %)",
         SkillEffect.BuffInterruptPower => "Cancel power",
         SkillEffect.BuffInterruptResist => "Cancel resist",
         SkillEffect.BuffMeleeVamp => "Vampiric",

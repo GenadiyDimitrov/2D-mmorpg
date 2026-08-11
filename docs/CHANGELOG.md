@@ -7,10 +7,51 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.59.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.60.1**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 0.60.1 — 2026-08-11 — a quest step supplies its own props; magic evasion is a fail chance
+
+**The tutorial could dead-end, and he walked straight into it.** `63j` gave part 1 three "prove you did
+it" beats, the first being *open a box*. He opened both creation boxes **before** Huntmaster Cera handed
+him the quest, so the step had nothing left to open and the chain could not continue — a DoAction step
+is a gate, and a gate whose prop is already consumed is a wall. The file even predicted the shape of
+this (it asks for ONE box, not two, for exactly this reason); asking for less was the wrong mitigation
+of the right worry.
+
+His fix, and it is the general one: **a step that requires an object hands that object over.**
+`QuestStep.SupplyItemIds` lists a step's props; while that step is current, anything the bag does not
+hold is granted. Part 1 carries the two **training** boxes on its first step (so they arrive when Cera
+gives the quest) and again on the box beat. Granting is idempotent by construction — "you hold none of
+it" is the only condition — so re-entering the step, relogging or talking to Cera again can never hand
+over a second one. That also means the props must be worthless, and these are: untradable, sell price
+0, the weakest tier in the game.
+
+It runs from `SendQuestLog`, the one call every quest-state change already funnels through (accept, all
+four advance paths, login). Two consequences worth stating: a future step type cannot forget to supply
+itself, and **a character already stranded is repaired on his next login** rather than needing a manual
+grant.
+
+**Magic evasion is built, and it is not an evasion roll** (`62e`). His rogue CSV asked for "magic
+evasion x1.1", which the game had no channel for; asked what he meant, he ruled *"the magic evasion
+should be magic fail chance like 3-4"*. So **Evasion Boost now adds +4 percentage points to the fail
+chance of spells cast at you** for its 30s — a caster at parity drops from 99% success to 95%, and
+against one punching up it stacks on a fail chance that is already climbing. Flat and additive on
+purpose: multiplying would make it worth nothing at parity and enormous at a level gap, the opposite of
+a defensive burst. `SkillEffect.BuffMagicEvasion` (bit 32, reusing the one freed when
+`BuffMagicFailResist` was deleted) → `Entity.MagicFailBonus` → the new `defenderFlatPoints` argument of
+`StatCalculator.MagicFailChance`. Its sibling channel, "skill evasion x1.25", is **still not built** —
+dodging a physical skill separately from a basic attack is a new resolution mechanic and he has not
+ruled on it.
+
+**Piercing Stab level 4 costs 28 MP, not 58** — he ruled the CSV row a typo (*"should be 28.. a
+typeo"*) and edited `rogue 20-35.csv` himself. It was the one spike in a line that runs 18 / 21 / 24 /
+**28** / 30.
+
+Protocol stays **16** and `game.db` survives — no wire or schema change. The client needs rebuilding
+only for the version label; nothing above is client code.
 
 ## 0.60.0 — 2026-08-11 — enchanting stops being a percentage
 

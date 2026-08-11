@@ -16,7 +16,7 @@ LEARN @ LVL, NAME,TYPE,RANGE,TARGET, CAST s,CD s,DURRATION s, DESCR, INIT MP,FIN
 28,Shot,physical active,700,enemy,3,6,0,power 507 -can double - require a bow,53,0,6000,[]
 32,Rogue Armor Mastery,passive,0,self,0,0,0,with light:  eva +13 and crit rate resist + 15% and speed +7; with all mpReg x1.1 and p.def +22,0,0,11000,[Armor Mastery]
 32,Rogue Weapon Mastery,passive,0,self,0,0,0,with bow: p.Atk +74 and range +200; with dual: p.atk +17 ;With all: p.atk x1.085 and crit dmg +140 and acc +3 and crit rate x1.2;,0,0,22000,[Weapon Mastery]
-32,Stab,physical active,40,enemy,1,3,0,power 752 - only when skill does critical - otherwise 75 - can crit/double - require duals,58,0,11000,[]
+32,Stab,physical active,40,enemy,1,3,0,power 752 - only when skill does critical - otherwise 75 - can crit/double - require duals,28,0,11000,[]
 32,Shot,physical active,700,enemy,3,6,0,power 669 -can double - require a bow,34,0,11000,[]
 36,Bow Expretise,pfysical buff,0,self,3,2,1200,increase bow attack speed x1.08; requires a bow,5,20,22000,[]
 36,Rogue Armor Mastery,passive,0,self,0,0,0,with light:  eva +13 and crit rate resist + 15% and speed +7; with all mpReg x1.8 and hpReg x1.2 and p.def +25,0,0,20000,[Armor Mastery]
