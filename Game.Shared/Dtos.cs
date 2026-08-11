@@ -277,7 +277,12 @@ public record TargetDetails(
     float MeleeVamp = 0f, float SpellVamp = 0f, float CooldownReduction = 0f,
     float HpRegen = 0f, float MpRegen = 0f,
     int InterruptResist = 0, float CritDmgResist = 0f, float MagicResist = 0f,
-    string Rank = "");
+    string Rank = "",
+    // For a MOB only: its ACTIVE kit, pre-formatted for the client's Skills tab — one title line per
+    // skill followed by indented detail lines, the same shape Drops uses. Empty for a plain melee
+    // creature (which is the useful answer, not a missing section) and for players: a mob's kit is
+    // bestiary knowledge, another player's is not.
+    string[]? Skills = null);
 
 /// <summary>Server -> owning client: the result of an enchant attempt.</summary>
 public record EnchantResultDto(string ItemName, int NewEnchant, string Outcome, bool Destroyed);

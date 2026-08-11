@@ -113,7 +113,6 @@ public static class ShopCatalog
                 ItemCatalog.TrainingSword,
                 ItemCatalog.TrainingClub,
                 ItemCatalog.TrainingKnives,
-                ItemCatalog.TrainingBow,
                 ItemCatalog.TrainingWand,
             }.Concat(WeaponsOf(ladderGear)).ToArray()),
 

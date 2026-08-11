@@ -10057,6 +10057,40 @@ var effect = def.Effect;
                 ? mod.Describe().ToArray()
                 : Array.Empty<string>();
 
+        // A mob's ACTIVE kit — the Skills tab (playtest-20: "a new tab for the mob's skills, actives
+        // and passives"). `LearnedSkills` is the WHOLE truth about what a mob can throw at you:
+        // BuildMob parks the Mage role's two spells there and a Boss's BossCatalog kit (or the generic
+        // slam) — nothing else grants a mob a skill. So an empty list is not missing data, it is the
+        // answer "this one only swings", and the client says exactly that.
+        //
+        // Formatted HERE rather than shipping ids for the client to resolve, because that is what the
+        // other two lists in this window already do (Passives, Drops) and because the numbers are
+        // level-resolved: the same spell id is a different power on a level-20 and a level-70 caster.
+        string[] skills = Array.Empty<string>();
+        if (isMob && t.LearnedSkills.Count > 0)
+        {
+            var lines = new List<string>();
+            foreach (var kv in t.LearnedSkills.OrderBy(kv => SkillCatalog.Get(kv.Key)?.Name ?? kv.Key))
+            {
+                if (SkillCatalog.Get(kv.Key) is not SkillDef def) continue;
+                lines.Add(def.MaxLevel > 1 ? $"{def.Name}  (Lv {kv.Value})" : def.Name);
+
+                var facts = new List<string> { def.Category.ToString() };
+                if (def.Range > 0f) facts.Add($"{def.Range:0} range");
+                if (def.AreaRadius > 0f) facts.Add($"{def.AreaRadius:0} radius");
+                facts.Add($"{def.CastTicks / 10f:0.#}s cast");
+                facts.Add($"{def.CooldownTicks / 10f:0.#}s reuse");
+                lines.Add("   " + string.Join(" · ", facts));
+
+                var cost = new List<string>();
+                if (def.PowerAt(kv.Value) > 0) cost.Add($"power {def.PowerAt(kv.Value)}");
+                if (def.MpCostAt(kv.Value) > 0) cost.Add($"{def.MpCostAt(kv.Value)} MP");
+                if (cost.Count > 0) lines.Add("   " + string.Join(" · ", cost));
+                if (!string.IsNullOrEmpty(def.Description)) lines.Add("   " + def.Description);
+            }
+            skills = lines.ToArray();
+        }
+
         // Active temporary effects on the target — including DoT stack counters (so the
         // attacker can read "Bleed x5" on the enemy and time a burst).
         var effects = t.Buffs
@@ -10146,7 +10180,8 @@ var effect = def.Effect;
             MeleeVamp: t.MeleeVamp, SpellVamp: t.SpellVamp, CooldownReduction: t.CooldownReduction,
             HpRegen: hpReg, MpRegen: mpReg,
             InterruptResist: t.InterruptResist, CritDmgResist: t.CritDmgResist, MagicResist: t.MagicResist,
-            Rank: isMob ? t.Rank.ToString() : ""));
+            Rank: isMob ? t.Rank.ToString() : "",
+            Skills: skills));
     }
 
     /// <summary>Roll to interrupt a cast when the caster is hit. Resist = caster

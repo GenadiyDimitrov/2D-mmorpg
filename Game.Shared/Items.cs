@@ -559,7 +559,7 @@ public static class ItemCatalog
     public const string TrainingSword   = "training_sword";
     public const string TrainingClub    = "training_club";
     public const string TrainingKnives  = "training_knives";
-    public const string TrainingBow     = "training_bow";
+    // (`training_bow` — deleted 2026-08-11, owner: no training bow/staff/2h. See TieredWeapons' note.)
     public const string TrainingWand    = "training_wand";
     public const string TrainingLeather = "training_leather_armor";
     public const string TrainingRobe    = "training_robe";
@@ -1175,7 +1175,7 @@ public static class ItemCatalog
         //  Buyable at 400g; untradeable and attribute-less like the rest of the starter kit.
         //
         //  The owner authored these as "P.Atk / M.Atk" pairs: sword 6/5, club 6/5, knives 5/5,
-        //  bow 11/5, wand 6/7 — and as of 2026-07-31 (playtest-15) BOTH numbers are authored, exactly
+        //  wand 5/7 — and as of 2026-07-31 (playtest-15) BOTH numbers are authored, exactly
         //  as the level-tier ladder below already does (P -> AtkBonus, M -> MAtkBonus, factors 1.0).
         //
         //  This tier was simply left behind by the 2026-07-24 migration: it still carried one power
@@ -1200,16 +1200,22 @@ public static class ItemCatalog
             AtkBonus: 5, MAtkBonus: 5,
             Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
             Description: "Dulled practice knives. Fast, and barely dangerous."));
-        list.Add(new ItemDef(TrainingBow, "Training Bow", EquipSlot.Weapon,
-            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Bow,
-            AtkBonus: 11, MAtkBonus: 5, WeaponRange: 400,
-            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
-            Description: "A short practice bow. Hits harder than the melee training gear, from a distance."));
+        // ⚠ THE TRAINING BOW IS GONE (owner, 2026-08-11): "no staff, no 2h, no bow … the 'no' training
+        // items can be removed. You don't need them to start playing." The training tier is deliberately
+        // NOT one weapon per playstyle — it is the cheap kit that carries anyone to level 10, where the
+        // real choice (the Newbie/Ferrite box) is made. An archer starts on knives and picks his bow up
+        // at the level-10 quest. `training_bow` also carried the tier's one outlier number (11/5, twice
+        // the melee P.Atk, at range), so it was the training weapon a new player was punished for not
+        // taking. Removing the DEF is safe: PersistenceService drops bag rows whose def no longer
+        // resolves, so a save holding one just loses it.
+        //
         // The wand's +6 MaxMP is GONE (owner, 2026-07-31): the training tier is meant to be the weakest
         // gear in the game, and a stat no other training weapon carried made it the default pick.
+        // Its P.Atk is 5, not 6 (owner, 2026-08-11 — and docs/Roadmap.md said 5/7 all along; the 6 was
+        // never his number).
         list.Add(new ItemDef(TrainingWand, "Training Wand", EquipSlot.Weapon,
             ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Blunt,
-            AtkBonus: 6, MAtkBonus: 7,
+            AtkBonus: 5, MAtkBonus: 7,
             Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
             Description: "An apprentice's wand. Poor in the hand, but it carries a spell."));
 
@@ -1691,34 +1697,41 @@ public static class ItemCatalog
         {
             // The FIRST row of each is the F tier (level 1), whose Mythic rung is the old Newbie gear's
             // power — so the newbie kit is the top of F grade instead of a parallel item line.
-            ("sword1h", "Blade",      WeaponType.Sword,          false, 0,
-                new[] { (1,24,14,0),(20,92,54,0),(40,156,83,0),(52,194,99,0),(61,232,114,0),(76,281,132,0) }),
-            // ⚠ 2H P.Atk raised ×1.166 on 2026-08-10 (his instruction, playtest-20). The multiplier is
-            // exactly 379/325 — the inverse of the swing-rate a 2H lost when the speed table stopped
-            // folding TwoHandedSword down to Sword (see StatCalculator.WeaponAttackBaseSpeed). It is
-            // NOT a buff: it restores the 2H's pre-change DPS so his speed ruling is a change of FEEL
-            // (slower, heavier hits) and not of balance.
             //
-            // It also fixes a latent bug in the MAUL. The Greatsword was the outlier at 379; the Maul
-            // has always swung at 325, so at the old +21.7% P.Atk it did just 4.4% more DPS than a
-            // one-hander while giving up the shield entirely. Nobody caught it because BalanceMatrix
-            // only measures the champion's 2H SWORD. Both now sit at +21.7% DPS over a 1H, which is
-            // what the lost off-hand is worth. M.Atk is deliberately untouched.
-            // Was: 29 / 112 / 190 / 236 / 282 / 342.
+            // ⚠ THE WHOLE F ROW WAS RE-AUTHORED BY HIM on 2026-08-11 (playtest-20). He gave the six
+            // pairs outright: "staff 23/24, wand 22/23, 2h 29/17, 1h 24/17, bow 49/17, dagg 21/17".
+            // Two things changed shape, not just value: every FIGHTER weapon now shares M.Atk 17 at F
+            // (it was a flat 14), which is the same "one M.Atk column for the whole grade" the E-A rows
+            // already have; and the two CASTER weapons crossed over — a wand/staff's M.Atk is now
+            // ABOVE its P.Atk (22/23 and 23/24), where before the F rung had them below it.
+            ("sword1h", "Blade",      WeaponType.Sword,          false, 0,
+                new[] { (1,24,17,0),(20,92,54,0),(40,156,83,0),(52,194,99,0),(61,232,114,0),(76,281,132,0) }),
+            // ⚠ THE ×1.166 2H P.ATK RAISE IS REVERTED (his ratification, 2026-08-11). I raised these on
+            // 2026-08-10 to hold the 2H's pre-speed-ruling DPS, and wrote the result into HIS gear CSV —
+            // which is why it was owed a yes/no. The answer is no: he re-gave the line by grade,
+            // "38/21, 112/54, 190/83, 236/99, 282/114, 342/132, 532/192", and every P.Atk in it is the
+            // ORIGINAL number. So the speed ruling keeps its cost: a 2H really is ~14% less DPS than it
+            // was, and the Maul really does sit only ~4% above a one-hander. That is now a stated
+            // outcome rather than an accident — do NOT "restore" it again without asking.
+            //
+            // (The 38/21 F row he opened that table with is superseded by the per-weapon F list above:
+            // 2h = 29/17. The two messages are the same pass, the second is the specific one.)
+            //
+            // The S row here is AUTHORED, not derived — see the loop below.
             ("sword2h", "Greatsword", WeaponType.TwoHandedSword, false, 0,
-                new[] { (1,34,14,0),(20,131,54,0),(40,222,83,0),(52,275,99,0),(61,329,114,0),(76,399,132,0) }),
+                new[] { (1,29,17,0),(20,112,54,0),(40,190,83,0),(52,236,99,0),(61,282,114,0),(76,342,132,0),(80,532,192,0) }),
             ("blunt1h", "Mace",       WeaponType.Blunt,          false, 0,
-                new[] { (1,24,14,0),(20,92,54,0),(40,156,83,0),(52,194,99,0),(61,232,114,0),(76,281,132,0) }),
+                new[] { (1,24,17,0),(20,92,54,0),(40,156,83,0),(52,194,99,0),(61,232,114,0),(76,281,132,0) }),
             ("blunt2h", "Maul",       WeaponType.TwoHandedBlunt, false, 0,
-                new[] { (1,34,14,0),(20,131,54,0),(40,222,83,0),(52,275,99,0),(61,329,114,0),(76,399,132,0) }),
+                new[] { (1,29,17,0),(20,112,54,0),(40,190,83,0),(52,236,99,0),(61,282,114,0),(76,342,132,0),(80,532,192,0) }),
             ("duals",   "Fangs",      WeaponType.Dual,           false, 0,
-                new[] { (1,21,14,0),(20,80,54,0),(40,136,83,0),(52,170,99,0),(61,203,114,0),(76,271,132,0) }),
+                new[] { (1,21,17,0),(20,80,54,0),(40,136,83,0),(52,170,99,0),(61,203,114,0),(76,271,132,0) }),
             ("bow",     "Longbow",    WeaponType.Bow,            false, 400,
-                new[] { (1,50,14,293),(20,191,55,293),(40,316,84,293),(52,400,99,293),(61,528,114,227),(76,581,132,293) }),
+                new[] { (1,49,17,293),(20,191,55,293),(40,316,84,293),(52,400,99,293),(61,528,114,227),(76,581,132,293) }),
             ("wand",    "Wand",       WeaponType.Blunt,          true,  0,
-                new[] { (1,20,19,0),(20,74,72,0),(40,111,101,0),(52,140,122,0),(61,186,152,0),(76,225,175,0) }),
+                new[] { (1,22,23,0),(20,74,72,0),(40,111,101,0),(52,140,122,0),(61,186,152,0),(76,225,175,0) }),
             ("staff",   "Battlestaff",WeaponType.TwoHandedBlunt, true,  0,
-                new[] { (1,24,21,0),(20,90,79,0),(40,135,111,0),(52,189,145,0),(61,226,167,0),(76,274,193,0) }),
+                new[] { (1,23,24,0),(20,90,79,0),(40,135,111,0),(52,189,145,0),(61,226,167,0),(76,274,193,0) }),
         };
         // BOTH CSV numbers are authored now (owner, 2026-07-24): P -> AtkBonus, M -> MAtkBonus. Until
         // this, only ONE of the pair survived — a fighter weapon kept P and threw M away, a magic weapon
@@ -1737,9 +1750,16 @@ public static class ItemCatalog
             // The S row is DERIVED from A × SGradeOverA rather than authored, so the whole grade is one
             // number to retune (owner: "not so much authoring"). Attack speed carries over unchanged —
             // S is stronger, not faster.
+            //
+            // A table MAY author its own S row instead, and the 2H line now does (owner, 2026-08-11:
+            // 532/192). Derivation would have given 547/211, so his S is a deliberate cut in BOTH
+            // channels, not a rounding difference. ⚠ It also breaks the "2H M.Atk = 1H M.Atk" rule he
+            // stated in the same message — the 1H's DERIVED S M.Atk is 211 — so the S grade is the one
+            // rung where the two lines disagree, pending his S column for the other weapons.
             var a = w.Rows[w.Rows.Length - 1];
-            var rows = w.Rows.Append(
-                (SGradeLevel, Scale(a.P), Scale(a.M), a.As));
+            var rows = a.L == SGradeLevel
+                ? w.Rows.AsEnumerable()
+                : w.Rows.Append((SGradeLevel, Scale(a.P), Scale(a.M), a.As));
 
             foreach (var (L, P, M, As) in rows)
                 yield return new ItemDef($"{w.Key}_t{L}", $"{GradeTheme(L)} {w.Noun}",

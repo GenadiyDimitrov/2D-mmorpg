@@ -7,10 +7,53 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.58.2**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.58.3**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 0.58.3 — 2026-08-11 — his weapon numbers, and the mob-info window becomes a bestiary page
+
+**The ×1.166 two-handed P.Atk raise is REVERTED.** On 2026-08-10 the 2H line was raised by exactly
+379/325 — the swing rate a two-hander lost when the speed table stopped folding it down to Sword — and
+the new numbers were written into `docs/data/gear/gear_sets.csv`, which is his file. That edit was owed
+a yes or no. The answer is **no**: he re-gave the whole line by grade and every P.Atk in it is the
+original number. So the speed ruling keeps its price — a 2H is ~14% less DPS than it was, and the Maul
+sits only ~4% above a one-hander while giving up the shield. That is now a stated outcome rather than
+an accident. BalanceMatrix C1 is back to rogue/warrior 1.05× at 20 and 1.37× at 36.
+
+| grade | F | E | D | C | B | A | S |
+|---|---|---|---|---|---|---|---|
+| 2H P.Atk / M.Atk | 29/17 | 112/54 | 190/83 | 236/99 | 282/114 | 342/132 | **532/192** |
+
+The **S row is authored**, not derived: A × `SGradeOverA` would give 547/211. The generator now skips
+its own S derivation whenever a table already ends on the S level.
+
+**The whole F rung was re-authored** — staff 23/24 · wand 22/23 · 2H 29/17 · 1H 24/17 · bow 49/17 ·
+daggers 21/17. Two shape changes, not just values: every fighter weapon now shares **M.Atk 17** at F
+(it was a flat 14), matching the one-M.Atk-column-per-grade shape the E–A rows already had; and the two
+caster weapons **crossed over**, so a wand or staff now carries more M.Atk than P.Atk at F, as it does
+at every grade above it.
+
+**The training bow is gone**, with no training staff or 2H to keep it company: *"you don't need them to
+start playing."* The creation box and the vendor now offer four training weapons; an archer starts on
+knives and picks up a bow from the level-10 quest box. The training wand's P.Atk is **5**, not 6 —
+`docs/Roadmap.md` has said 5/7 since the tier was authored.
+
+**The target window holds what you opened.** It rendered the inspect response only while it still
+matched the *current* target, so the moment auto-farm switched mobs the drop table he was reading
+blanked to "Select a target and tap Info." It is now pinned to the entity Info was tapped on, and says
+`[pinned]` in the title once that stops being what you are fighting.
+
+**A Skills tab**, mob-only, beside Stats and Drops: every skill the creature can cast — category,
+range, cast and reuse time, power and MP, at the level it actually has them — and its passives, which
+moved here from the Stats sheet. A plain melee creature reads "None — this creature only attacks",
+because that is a real answer about a mob and a blank section is not.
+
+**Rulings recorded, no code needed.** Accuracy cannot eat the evade floor and evasion cannot eat the
+hit floor — already true: `ResolveAvoidChance` applies the floor window last, after the level gap. The
+tank's magic defence is fine as shipped (25% damage reduction against the mage line's 30%), and
+Anti-Magic Lv2/Lv3 stay at levels 43/76 until the 40+ class kits land.
 
 ## 0.58.2 — 2026-08-11 — magic gets its own landing formula, and "mRes" becomes what it always said
 

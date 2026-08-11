@@ -18,14 +18,24 @@ namespace Game.Client
     {
         private RectTransform _detailsPanel;
         private TextMeshProUGUI _detailsBody, _detailsTitle;
-        private Button _statsTabButton, _dropsTabButton;
+        private Button _statsTabButton, _dropsTabButton, _skillsTabButton;
+
+        private enum TargetTab { Stats, Drops, Skills }
 
         /// <summary>Which tab is showing, and whether the drop table has already been ASKED for during
         /// THIS window-open. Both are the owner's rule: stats come on the Info tap; the drop table is a
         /// separate, heavier ask that fires the first time the Drops tab is opened and NOT AGAIN until
-        /// the window is reopened — switching back and forth between the two tabs re-requests nothing.</summary>
-        private bool _dropsTab;
+        /// the window is reopened — switching between tabs re-requests nothing. The Skills tab needs no
+        /// ask at all: the kit rides along with the stats response.</summary>
+        private TargetTab _targetTab;
         private bool _dropsRequested;
+
+        /// <summary>THE ENTITY THIS WINDOW IS PINNED TO — set when Info is tapped, and NOT changed by
+        /// retargeting. The window used to render `Boot.Details` only while it still matched
+        /// `Boot.TargetId`, so the moment auto-farm picked a new mob the sheet he was reading blanked
+        /// to "Select a target and tap Info" (his playtest-20 ask). A bestiary page you cannot finish
+        /// reading is not a bestiary page. Tapping Info again re-pins to whatever is targeted then.</summary>
+        private System.Guid? _detailsPinned;
 
         private ScrollRect _detailsScroll;
 
@@ -44,14 +54,19 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_detailsTitle.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(16f, -chrome - 6f), new Vector2(500f, 24f));
 
-            // Two tabs. Stats is just a re-render of data we already hold; Drops is a lazy ask (below).
-            _statsTabButton = UiKit.TextButton(inner, "Stats", () => { _dropsTab = false; }, 15f);
+            // Three tabs. Stats and Skills are re-renders of data we already hold; Drops is a lazy ask
+            // (below). Skills and Drops are both mob-only — a player target shows Stats alone.
+            _statsTabButton = UiKit.TextButton(inner, "Stats", () => _targetTab = TargetTab.Stats, 15f);
             UiKit.Place(UiKit.Rect(_statsTabButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(16f, -chrome - 34f), new Vector2(110f, 30f));
 
+            _skillsTabButton = UiKit.TextButton(inner, "Skills", () => _targetTab = TargetTab.Skills, 15f);
+            UiKit.Place(UiKit.Rect(_skillsTabButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                        new Vector2(132f, -chrome - 34f), new Vector2(110f, 30f));
+
             _dropsTabButton = UiKit.TextButton(inner, "Drops", ShowDropsTab, 15f);
             UiKit.Place(UiKit.Rect(_dropsTabButton.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                        new Vector2(132f, -chrome - 34f), new Vector2(110f, 30f));
+                        new Vector2(248f, -chrome - 34f), new Vector2(110f, 30f));
 
             ScrollRect scroll;
             var content = UiKit.ScrollArea(inner, out scroll, 2f);
@@ -72,15 +87,16 @@ namespace Game.Client
         public void OpenTargetDetails()
         {
             if (!Boot.TargetId.HasValue) return;
-            _dropsTab = false;
+            _targetTab = TargetTab.Stats;
             _dropsRequested = false;
+            _detailsPinned = Boot.TargetId.Value;   // pin HERE — retargeting must not move it
             Boot.InspectTarget(Boot.TargetId.Value, false);
             OpenWindow(_detailsPanel);
         }
 
         // Just switch tabs — the actual drop-table request is driven from the refresh loop, so it still
         // fires (once) even if the tab was tapped before the stats response had arrived.
-        private void ShowDropsTab() => _dropsTab = true;
+        private void ShowDropsTab() => _targetTab = TargetTab.Drops;
 
         /// <summary>
         /// The resurrect prompt sits on the ROOT canvas, not inside the world layer.
@@ -125,44 +141,57 @@ namespace Game.Client
 
             if (!_detailsPanel.gameObject.activeSelf) return;
 
+            // Keyed on the PINNED entity, never on the live target — see _detailsPinned.
             var d = Boot.Details;
-            if (d == null || (Boot.TargetId.HasValue && d.Id != Boot.TargetId.Value))
+            if (d == null || _detailsPinned == null || d.Id != _detailsPinned.Value)
             {
                 _detailsBody.text = "Select a target and tap Info.";
                 _detailsTitle.text = "";
                 _statsTabButton.gameObject.SetActive(false);
                 _dropsTabButton.gameObject.SetActive(false);
+                _skillsTabButton.gameObject.SetActive(false);
                 return;
             }
 
             // Rank only reads on a mob (players send ""); Normal is left unmarked to keep the common
-            // case clean, so the tag only appears when it means something.
+            // case clean, so the tag only appears when it means something. The [pinned] tag appears
+            // once the sheet stops describing what you are actually fighting — without it, holding the
+            // window open through a retarget silently shows the wrong creature's numbers.
             string rank = !string.IsNullOrEmpty(d.Rank) && d.Rank != "Normal" ? "   [" + d.Rank + "]" : "";
-            _detailsTitle.text = d.Name + "   Lv " + d.Level + rank;
+            bool stale = Boot.TargetId.HasValue && Boot.TargetId.Value != d.Id;
+            _detailsTitle.text = d.Name + "   Lv " + d.Level + rank
+                               + (stale ? "   <color=#8A8F98><size=15>[pinned]</size></color>" : "");
 
-            // Only mobs have a Drops tab; a player target forces Stats.
+            // Only mobs have Drops and Skills; a player target forces Stats.
             _statsTabButton.gameObject.SetActive(true);
             _dropsTabButton.gameObject.SetActive(d.IsMob);
-            if (_dropsTab && !d.IsMob) _dropsTab = false;
+            _skillsTabButton.gameObject.SetActive(d.IsMob);
+            if (!d.IsMob) _targetTab = TargetTab.Stats;
 
             // The one drop-table ask, per window-open: fire the first frame the Drops tab is showing a
             // mob we haven't yet fetched drops for. Driven here (not on the button) so it survives the
             // tab being tapped before the stats response landed.
-            if (_dropsTab && d.IsMob && !_dropsRequested)
+            if (_targetTab == TargetTab.Drops && d.IsMob && !_dropsRequested)
             {
                 Boot.InspectTarget(d.Id, true);
                 _dropsRequested = true;
             }
 
-            // Active tab gets the accent; the other stays neutral.
-            _statsTabButton.targetGraphic.color = _dropsTab ? UiKit.PanelLight : UiKit.TabActive;
-            _dropsTabButton.targetGraphic.color = _dropsTab ? UiKit.TabActive : UiKit.PanelLight;
+            // Active tab gets the accent; the others stay neutral.
+            _statsTabButton.targetGraphic.color = _targetTab == TargetTab.Stats ? UiKit.TabActive : UiKit.PanelLight;
+            _skillsTabButton.targetGraphic.color = _targetTab == TargetTab.Skills ? UiKit.TabActive : UiKit.PanelLight;
+            _dropsTabButton.targetGraphic.color = _targetTab == TargetTab.Drops ? UiKit.TabActive : UiKit.PanelLight;
 
             // Only touch the label when the text actually changes: this runs every frame the window is
             // open, and a forced layout rebuild per frame would be wasteful. The rebuild + scroll reset
             // is what stops the body being laid out against its PREVIOUS size — which showed as the mob
             // sheet rendering with its top rows above the visible area (playtest-13).
-            string body = _dropsTab ? DropsText(d) : StatsText(d);
+            string body = _targetTab switch
+            {
+                TargetTab.Drops  => DropsText(d),
+                TargetTab.Skills => SkillsText(d),
+                _                => StatsText(d),
+            };
             if (_detailsBody.text != body)
             {
                 _detailsBody.text = body;
@@ -218,12 +247,31 @@ namespace Game.Client
                 foreach (var effect in d.Effects) t.AppendLine("  " + effect);
             }
 
-            if (d.Passives != null && d.Passives.Length > 0)
-            {
-                t.AppendLine();
-                t.AppendLine("<b>Traits</b>");
+            // Traits/passives are NOT here any more — they moved to the Skills tab, which is where he
+            // asked for "actives and passives" together. Effects stay: they are what is on the target
+            // right now, which belongs with its current numbers.
+            return t.ToString().TrimEnd();
+        }
+
+        /// <summary>The bestiary page for a creature's KIT: what it can cast, and what it permanently
+        /// is. Both halves are always titled, including when empty — "this one only swings" is a real
+        /// answer about a mob, and a blank section reads as a bug instead.</summary>
+        private static string SkillsText(TargetDetails d)
+        {
+            var t = new StringBuilder();
+
+            t.AppendLine("<b>Skills</b>");
+            if (d.Skills == null || d.Skills.Length == 0)
+                t.AppendLine("  None — this creature only attacks.");
+            else
+                foreach (var line in d.Skills) t.AppendLine("  " + line);
+
+            t.AppendLine();
+            t.AppendLine("<b>Passives</b>");
+            if (d.Passives == null || d.Passives.Length == 0)
+                t.AppendLine("  None.");
+            else
                 foreach (var passive in d.Passives) t.AppendLine("  " + passive);
-            }
 
             return t.ToString().TrimEnd();
         }

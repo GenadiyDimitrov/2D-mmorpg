@@ -132,7 +132,7 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 # not cast like a caster holding a wand" is a property of the CLASS, so it lives in a passive.
 # Attack speed is blank = the type's default; only bows author one (they are the slow line).
 # ==================================================================================================
-,Weapon,Fighter,1,Sword,24/14,,[BUILT] F rung
+,Weapon,Fighter,1,Sword,24/17,,[BUILT] F rung — F re-authored by him 2026-08-11
 ,Weapon,Fighter,20,Sword,92/54,,[BUILT] no attributes below level 40
 ,Weapon,Fighter,40,Sword,156/83,,[BUILT],,see ATTRIBUTES: SWORD
 ,Weapon,Fighter,52,Sword,194/99,,[BUILT],,see ATTRIBUTES: SWORD
@@ -140,15 +140,18 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 ,Weapon,Fighter,76,Sword,281/132,,[BUILT],,see ATTRIBUTES: SWORD
 ,Weapon,Fighter,80,Sword,450/211,,[BUILT] S derived,,see ATTRIBUTES: SWORD
 
-,Weapon,Fighter,1,Sword2h,34/14,,[BUILT] F rung
-,Weapon,Fighter,20,Sword2h,131/54,,[BUILT]
-,Weapon,Fighter,40,Sword2h,222/83,,[BUILT],,see ATTRIBUTES: SWORD
-,Weapon,Fighter,52,Sword2h,275/99,,[BUILT],,see ATTRIBUTES: SWORD
-,Weapon,Fighter,61,Sword2h,329/114,,[BUILT],,see ATTRIBUTES: SWORD
-,Weapon,Fighter,76,Sword2h,399/132,,[BUILT],,see ATTRIBUTES: SWORD
-,Weapon,Fighter,80,Sword2h,638/211,,[BUILT] S derived,,see ATTRIBUTES: SWORD
+# 2H: he re-gave this whole line by grade on 2026-08-11 and it RATIFIES NOTHING I did — the x1.166
+# P.Atk raise of 2026-08-10 is REVERTED to his original numbers, and S is now AUTHORED (532/192),
+# not derived from A x1.6 (which would be 547/211).
+,Weapon,Fighter,1,Sword2h,29/17,,[BUILT] F rung
+,Weapon,Fighter,20,Sword2h,112/54,,[BUILT]
+,Weapon,Fighter,40,Sword2h,190/83,,[BUILT],,see ATTRIBUTES: SWORD
+,Weapon,Fighter,52,Sword2h,236/99,,[BUILT],,see ATTRIBUTES: SWORD
+,Weapon,Fighter,61,Sword2h,282/114,,[BUILT],,see ATTRIBUTES: SWORD
+,Weapon,Fighter,76,Sword2h,342/132,,[BUILT],,see ATTRIBUTES: SWORD
+,Weapon,Fighter,80,Sword2h,532/192,,[BUILT] S AUTHORED (not derived),,see ATTRIBUTES: SWORD
 
-,Weapon,Fighter,1,Blunt,24/14,,[BUILT] F rung
+,Weapon,Fighter,1,Blunt,24/17,,[BUILT] F rung — F re-authored by him 2026-08-11
 ,Weapon,Fighter,20,Blunt,92/54,,[BUILT] no attri
 ,Weapon,Fighter,40,Blunt,156/83,,[BUILT],,see ATTRIBUTES: BLUNT
 ,Weapon,Fighter,52,Blunt,194/99,,[BUILT],,see ATTRIBUTES: BLUNT
@@ -156,16 +159,16 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 ,Weapon,Fighter,76,Blunt,281/132,,[BUILT],,see ATTRIBUTES: BLUNT
 ,Weapon,Fighter,80,Blunt,450/211,,[BUILT] S derived,,see ATTRIBUTES: BLUNT
 
-,Weapon,Fighter,1,Blunt2h,34/14,,[BUILT] F rung
-,Weapon,Fighter,20,Blunt2h,131/54,,[BUILT] no attri
-,Weapon,Fighter,40,Blunt2h,222/83,,[BUILT],,see ATTRIBUTES: BLUNT
-,Weapon,Fighter,52,Blunt2h,275/99,,[BUILT],,see ATTRIBUTES: BLUNT
-,Weapon,Fighter,61,Blunt2h,329/114,,[BUILT],,see ATTRIBUTES: BLUNT
-,Weapon,Fighter,76,Blunt2h,399/132,,[BUILT],,see ATTRIBUTES: BLUNT
-,Weapon,Fighter,80,Blunt2h,638/211,,[BUILT] S derived,,see ATTRIBUTES: BLUNT
+,Weapon,Fighter,1,Blunt2h,29/17,,[BUILT] F rung
+,Weapon,Fighter,20,Blunt2h,112/54,,[BUILT] no attri
+,Weapon,Fighter,40,Blunt2h,190/83,,[BUILT],,see ATTRIBUTES: BLUNT
+,Weapon,Fighter,52,Blunt2h,236/99,,[BUILT],,see ATTRIBUTES: BLUNT
+,Weapon,Fighter,61,Blunt2h,282/114,,[BUILT],,see ATTRIBUTES: BLUNT
+,Weapon,Fighter,76,Blunt2h,342/132,,[BUILT],,see ATTRIBUTES: BLUNT
+,Weapon,Fighter,80,Blunt2h,532/192,,[BUILT] S AUTHORED (not derived),,see ATTRIBUTES: BLUNT
 
 # Daggers are DUALs (WeaponType.Dual) — fast, lower per-hit.
-,Weapon,Fighter,1,Duals,21/14,,[BUILT] F rung
+,Weapon,Fighter,1,Duals,21/17,,[BUILT] F rung — F re-authored by him 2026-08-11
 ,Weapon,Fighter,20,Duals,80/54,,[BUILT] no attri
 ,Weapon,Fighter,40,Duals,136/83,,[BUILT],,see ATTRIBUTES: DUAL
 ,Weapon,Fighter,52,Duals,170/99,,[BUILT],,see ATTRIBUTES: DUAL
@@ -176,7 +179,7 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 # Bows are the only weapon with a basic-attack RANGE (400 base) and the only one authoring an
 # attack speed. slow = 293, very slow = 227. Only ONE bow per tier ships: the authored second
 # level-40 bow (323/84 very slow) was never built, and 61 is the very-slow rung instead.
-,Weapon,Fighter,1,Bow,50/14,,[BUILT] F rung; slow => as:293
+,Weapon,Fighter,1,Bow,49/17,,[BUILT] F rung — F re-authored by him 2026-08-11; slow => as:293
 ,Weapon,Fighter,20,Bow,191/55,,[BUILT] slow => as:293; no attri
 ,Weapon,Fighter,40,Bow,316/84,,[BUILT] slow => as:293;,,see ATTRIBUTES: BOW
 ,Weapon,Fighter,40,Bow,323/84,,[NOT BUILT] very slow => as:227; the alternate 40 bow — no item exists,,see ATTRIBUTES: BOW
@@ -188,7 +191,7 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 # Magic weapons carry NO weapon range (melee basic, tiny basic damage — the power is in spells).
 # IsMagicWeapon, not WeaponType, is what makes an entity a caster: a wand is Blunt and a staff is
 # TwoHandedBlunt, so the type alone cannot tell a wand from a mace.
-,Weapon,Mage,1,Wand (1h sword/blunt),20/19,,[BUILT] F rung
+,Weapon,Mage,1,Wand (1h sword/blunt),22/23,,[BUILT] F rung — F re-authored by him 2026-08-11; M.Atk now ABOVE P.Atk
 ,Weapon,Mage,20,Wand (1h sword/blunt),74/72,,[BUILT] one handed and less mAtk than two handed; the 76+ offhand support passive is NOT BUILT
 ,Weapon,Mage,40,Wand (1h sword/blunt),111/101,,[BUILT],,see ATTRIBUTES: MAGIC
 ,Weapon,Mage,52,Wand (1h sword/blunt),140/122,,[BUILT],,see ATTRIBUTES: MAGIC
@@ -196,7 +199,7 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 ,Weapon,Mage,76,Wand (1h sword/blunt),225/175,,[BUILT],,see ATTRIBUTES: MAGIC
 ,Weapon,Mage,80,Wand (1h sword/blunt),360/280,,[BUILT] S derived,,see ATTRIBUTES: MAGIC
 
-,Weapon,Mage,1,Staff (2h blunt),24/21,,[BUILT] F rung
+,Weapon,Mage,1,Staff (2h blunt),23/24,,[BUILT] F rung — F re-authored by him 2026-08-11; M.Atk now ABOVE P.Atk
 ,Weapon,Mage,20,Staff (2h blunt),90/79,,[BUILT] no attri
 ,Weapon,Mage,40,Staff (2h blunt),135/111,,[BUILT],,see ATTRIBUTES: MAGIC
 ,Weapon,Mage,52,Staff (2h blunt),189/145,,[BUILT],,see ATTRIBUTES: MAGIC

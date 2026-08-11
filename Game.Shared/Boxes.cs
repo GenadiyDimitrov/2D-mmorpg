@@ -60,14 +60,15 @@ public static class BoxCatalog
                 new BoxEntry(ItemCatalog.NewbieWandBound, 1.0f),
             }, PickCount: 1),
 
-            // TRAINING weapons — pick ONE of the five. This is the character-creation weapon box now;
-            // the Newbie one moved to the level-10 quest.
+            // TRAINING weapons — pick ONE of the four. This is the character-creation weapon box now;
+            // the Newbie one moved to the level-10 quest. The BOW left this box on 2026-08-11 (owner:
+            // there is no training bow) — an archer starts on knives and gets his bow from the
+            // level-10 quest box above, which does stock one.
             new BoxDef(ItemCatalog.BoxTrainingWeapons, new[]
             {
                 new BoxEntry(ItemCatalog.TrainingSword, 1.0f),
                 new BoxEntry(ItemCatalog.TrainingClub, 1.0f),
                 new BoxEntry(ItemCatalog.TrainingKnives, 1.0f),
-                new BoxEntry(ItemCatalog.TrainingBow, 1.0f),
                 new BoxEntry(ItemCatalog.TrainingWand, 1.0f),
             }, PickCount: 1),
 
