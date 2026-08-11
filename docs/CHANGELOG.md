@@ -12,6 +12,50 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 0.60.0 — 2026-08-11 — enchanting stops being a percentage
+
+**The enchant payout is now a flat, authored number per level — his table.** Until today every
+enchanted stat ran through one formula, `base + 0.20·base·level + level`, applied to *every* bonus on
+*every* slot. That is **×4.2 at +16**, against a ladder whose best weapon is 437 P.Atk: a +16 S blade
+hit for 1,851, and a +16 S armour set quartered incoming damage. Enchanting was worth about two and a
+half grades in both directions at once, which made PvP a count of scrolls rather than of gear. The
+formula was written when the whole game was F-tier and items carried 5–30 points; it never got re-cut
+when the ladder grew.
+
+What replaces it, per enchant level:
+
+| slot | per enchant | at +16 |
+|---|---|---|
+| Armour | +3 P.Def, +Max HP by grade (E 0 · D 0 · C 15 · B 20 · A 25 · S 30) | +48 P.Def, +240…480 HP |
+| Shield | **+9** defence (triple), same HP row as armour | +144 defence, +480 HP at S |
+| Jewel | +3 M.Def, +Max MP by grade (E 0 · D 0 · C 1 · B 2 · A 3 · S 5) | +48 M.Def, +16…80 MP |
+| Weapon 1H (sword, blunt, wand, duals) | +6 P.Atk | +96 P.Atk |
+| Weapon 2H (greatsword, maul, staff) | +8 P.Atk | +128 P.Atk |
+| Bow | +P.Atk by grade (E 10 · D 12 · C 14 · B 16 · A 18 · S 20) | +160…320 P.Atk |
+| Any weapon | +6 M.Atk | +96 M.Atk |
+
+Three rulings inside that, so they don't get "fixed" later. **The offset is the same for every class** —
+a full +16 armour set is +1,920 Max HP at S whether a tank or a healer wears it, which is +37% for the
+tank and +130% for the caster: *"a healer spends gold/farm to enchant gear to +16, he gets the full
+bonus — he will be stronger than just a warrior."* **It is by grade, not rarity**, so enchanting a cheap
+piece is relatively better value. And **the shield's defence is tripled** because its damage reduction
+only pays on a successful block (25% of hits at S since the block re-cut), so its enchant has to pay in
+the flat defence that applies to every hit. Everything he did not name **stopped scaling entirely**:
+Evasion, a robe's inherent +MP, a weapon's +MP, an armour piece's M.Def.
+
+**Measured, not derived** — `BalanceMatrix` grew a **§E** section that dresses each playstyle in a full
+tier loadout at +0 and again at +16 and runs the real resolvers. At S: tank +21% dps, warrior +21%,
+dagger +16%, mage +15%, **archer +34%** — the bow's grade-scaled row is worth 2.5× a greatsword's, and
+the measurement shows it *closing* the archer's gap to the dagger (324 vs 333 dps at +16) rather than
+opening a new one, which is what he asked for it to do. The defensive half moves further than the
+offensive one everywhere, most of all for the mage (ttk 12.9s → 38.1s).
+
+The item card now shows the enchanted total on stats a piece does not natively carry (every tiered
+armour has HpBonus 0, so a +16 S body owed +480 HP that the old "print only if the base is non-zero"
+test hid completely), and adds a **"Per enchant"** line saying what the next scroll buys. No DB reset —
+the bonus is recomputed from the stored enchant level, so existing saves simply get the new numbers.
+Protocol unchanged at 16; the client needs a rebuild because the math lives in `Game.Shared`.
+
 ## 0.59.1 — 2026-08-11 — the S grade is AUTHORED, and it finally has set bonuses
 
 **The top grade stops being a formula.** `SGradeOverA` (a flat ×1.60 over the A row) is deleted:

@@ -51,16 +51,124 @@ public static class EnchantRules
         _ => 0f                  // already maxed
     };
 
-    /// <summary>Each enchant level adds this fraction of the item's base
-    /// bonus, so a +10 weapon is meaningfully stronger. Flat per-level on top
-    /// keeps low-bonus items relevant.</summary>
-    public static int BonusAt(int baseBonus, int enchantLevel)
-    {
-        if (enchantLevel <= 0 || baseBonus <= 0)
-            return baseBonus;
-        // +20% of base per level, plus 1 flat per level.
-        return baseBonus + (int)(baseBonus * 0.20f * enchantLevel) + enchantLevel;
-    }
+    // ===================================================================================
+    //  WHAT AN ENCHANT IS WORTH — his table, 2026-08-11 (0.60.0)
+    // ===================================================================================
+    //
+    // ⚠ THIS REPLACED A PERCENTAGE. Until 0.60.0 every enchanted stat ran through one formula,
+    // `base + 0.20*base*level + level`, applied to EVERY bonus on EVERY slot. That is ×4.2 at +16,
+    // against a ladder whose top weapon is 437 P.Atk — so a +16 S blade hit for 1851 and a +16 S
+    // armour set quartered incoming damage. Enchanting was worth about two and a half grades in
+    // both directions at once, which made PvP a count of scrolls rather than of gear.
+    //
+    // His replacement is FLAT PER ENCHANT, per slot, with a grade table only where the ladder is
+    // meant to show through (armour HP, jewel MP, bow P.Atk). Three consequences he ruled on
+    // explicitly, so don't "fix" them later:
+    //
+    //  * It is the SAME OFFSET FOR EVERY CLASS. A full +16 armour set is +1920 Max HP at S whether
+    //    it is worn by a tank or a healer — which is +36% for the tank and +129% for the healer.
+    //    That is deliberate: *"a healer spends gold/farm to enchant gear to +16, he gets the full
+    //    bonus — he will be stronger than just a warrior."* An enchant is an offset from the norm,
+    //    identical for all; it is not scaled by armour weight, by class, or by which piece it is on.
+    //  * It is by GRADE, not by RARITY. A Common S body and a Mythic S body both gain 30 HP per
+    //    enchant, so enchanting a cheap piece is relatively better value than enchanting a top one.
+    //  * The BOW is the one weapon whose per-enchant value climbs with grade (10 -> 20), on top of
+    //    already having the highest base P.Atk: *"as archer they rely on basic attack and acc so a
+    //    more P.Atk jump is better, while the others should rely more on crit/skills."*
+    //
+    // Everything NOT in his table stopped scaling with enchant at 0.60.0: Evasion, a robe's inherent
+    // +MP, a weapon's +MP, an armour piece's M.Def. They pay their authored number and nothing more.
+    // Measure any change here with tools/BalanceMatrix §E (the +0 vs +16 DPS/EHP table).
+
+    /// <summary>P.Def a single ARMOUR piece gains per enchant level.</summary>
+    public const int ArmorDefPerEnchant = 3;
+
+    /// <summary>Defence a SHIELD gains per enchant level — <b>TRIPLE</b> an armour piece's, so +16 is
+    /// +144 (him, 2026-08-11: *"shield should get triple the def because S grade only 30% chance to
+    /// block"*). The shield's own damage reduction only pays out on a successful block — 25% of hits
+    /// at S since the 2026-08-11 block re-cut — so its enchant has to pay in the flat defence that
+    /// applies to every hit, or enchanting a shield would be the worst scroll in the game. Its Max HP
+    /// is the ordinary armour row (480 at S), not tripled.</summary>
+    public const int ShieldDefPerEnchant = ArmorDefPerEnchant * 3;
+
+    /// <summary>M.Def a single JEWEL gains per enchant level.</summary>
+    public const int JewelMDefPerEnchant = 3;
+
+    /// <summary>M.Atk ANY weapon gains per enchant level — sword and wand alike (him: *"all weapon —
+    /// sword and wand get the same +16 M.Atk … so if I want a magic fighter later on it can be
+    /// done"*). A caster still out-casts a fighter through cast speed and the class kit, not through
+    /// a bigger enchant.</summary>
+    public const int WeaponMAtkPerEnchant = 6;
+
+    /// <summary>P.Atk a ONE-HANDED weapon gains per enchant level — sword, blunt, wand and duals.
+    /// (Duals are one-handed for this purpose even though they occupy both hands.)</summary>
+    public const int WeaponAtkPerEnchant1H = 6;
+
+    /// <summary>P.Atk a TWO-HANDED weapon gains per enchant level — greatsword, maul and staff.</summary>
+    public const int WeaponAtkPerEnchant2H = 8;
+
+    // Indexed by (int)EnchantGrade: None, E, D, C, B, A, S. None takes E's value for the flat rows
+    // (F gear is not scroll-enchantable, but `/enchant` reaches it and must still do something) and
+    // zero for the rows that only open at C.
+
+    /// <summary>P.Atk a BOW gains per enchant level, by grade: E 10 … S 20.</summary>
+    private static readonly int[] BowAtkPerEnchant = { 10, 10, 12, 14, 16, 18, 20 };
+
+    /// <summary>Max HP an ARMOUR piece — or a SHIELD — gains per enchant level, by grade: nothing at
+    /// E/D, then C 15 / B 20 / A 25 / S 30, so at +16 a piece is worth 240/320/400/480 HP. The shield
+    /// takes this row untouched (*"but same HP … 480HP and 144 shield defense"*); only its DEFENCE
+    /// is tripled.</summary>
+    private static readonly int[] ArmorHpPerEnchant = { 0, 0, 0, 15, 20, 25, 30 };
+
+    /// <summary>Max MP a JEWEL gains per enchant level, by grade: nothing at E/D, then
+    /// C 1 / B 2 / A 3 / S 5 — so at +16 a jewel is worth 16/32/48/80 MP.</summary>
+    private static readonly int[] JewelMpPerEnchant = { 0, 0, 0, 1, 2, 3, 5 };
+
+    /// <summary>P.Atk this weapon gains per enchant level (bow by grade, 2H 8, everything else 6).
+    /// Public so the item card and BalanceMatrix can print "+N per enchant" without re-deriving it.</summary>
+    public static int AtkPerEnchant(ItemDef def) =>
+        def.Slot != EquipSlot.Weapon ? 0 :
+        def.WeaponType == WeaponType.Bow ? BowAtkPerEnchant[(int)GradeOf(def)] :
+        def.WeaponType is WeaponType.TwoHandedSword or WeaponType.TwoHandedBlunt ? WeaponAtkPerEnchant2H :
+        WeaponAtkPerEnchant1H;
+
+    /// <summary>Total P.Atk an enchant level adds to this item (0 for anything but a weapon).</summary>
+    public static int AtkDelta(ItemDef def, int enchant) =>
+        enchant <= 0 ? 0 : AtkPerEnchant(def) * enchant;
+
+    /// <summary>Total M.Atk an enchant level adds to this item (0 for anything but a weapon).</summary>
+    public static int MAtkDelta(ItemDef def, int enchant) =>
+        enchant <= 0 || def.Slot != EquipSlot.Weapon ? 0 : WeaponMAtkPerEnchant * enchant;
+
+    /// <summary>Total P.Def an enchant level adds to an ARMOUR piece.</summary>
+    public static int DefDelta(ItemDef def, int enchant) =>
+        enchant <= 0 || def.Slot != EquipSlot.Armor ? 0 : ArmorDefPerEnchant * enchant;
+
+    /// <summary>Total shield defence an enchant level adds (9/level — see
+    /// <see cref="ShieldDefPerEnchant"/>). A SEPARATE method because a shield's defence is
+    /// <see cref="ItemDef.ShieldDefense"/>, a different field on a different accumulator; folding the
+    /// two together would double-count. Block chance / reduction / crit-defence do NOT scale.</summary>
+    public static int ShieldDefDelta(ItemDef def, int enchant) =>
+        enchant <= 0 || def.Slot != EquipSlot.Shield ? 0 : ShieldDefPerEnchant * enchant;
+
+    /// <summary>Total M.Def an enchant level adds. Jewels are the only source of M.Def, and the only
+    /// slot this pays out on — an armour piece's authored M.Def does not scale.</summary>
+    public static int MDefDelta(ItemDef def, int enchant) =>
+        enchant <= 0 || def.Slot != EquipSlot.Jewel ? 0 : JewelMDefPerEnchant * enchant;
+
+    /// <summary>Total Max HP an enchant level adds — ARMOUR and SHIELDS, by grade (nothing below C).
+    /// A shield is a worn defensive piece and pays the same HP row; it is only its DEFENCE that is
+    /// tripled. So a tank enchanting five pieces (body + 3 accessories + shield) is buying five
+    /// helpings of it, and is the one build that can.</summary>
+    public static int HpDelta(ItemDef def, int enchant) =>
+        enchant <= 0 || def.Slot is not (EquipSlot.Armor or EquipSlot.Shield)
+            ? 0 : ArmorHpPerEnchant[(int)GradeOf(def)] * enchant;
+
+    /// <summary>Total Max MP an enchant level adds — JEWELS only, by grade (nothing below C). A
+    /// robe's own large +MP is NOT enchant-scaled; the mana an enchant buys comes from jewellery.</summary>
+    public static int MpDelta(ItemDef def, int enchant) =>
+        enchant <= 0 || def.Slot != EquipSlot.Jewel
+            ? 0 : JewelMpPerEnchant[(int)GradeOf(def)] * enchant;
 
     // ===================================================================================
     //  THE GRADE BAND. One scroll, one grade — the same shape as an attribute scroll, so the

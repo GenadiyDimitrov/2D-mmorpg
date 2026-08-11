@@ -2145,9 +2145,9 @@ public static class ItemCatalog
     /// you are wearing (strongest first — see JewelSlotOrder), so it survives a relog with no extra
     /// column and can never drift out of sync with the items themselves.</summary>
     public static long JewelStrength(ItemDef def, int enchant)
-        => (long)EnchantRules.BonusAt(def.MDefBonus, enchant) * 1_000_000L
-         + (long)EnchantRules.BonusAt(def.MpBonus, enchant) * 1_000L
-         + EnchantRules.BonusAt(def.HpBonus, enchant);
+        => (long)(def.MDefBonus + EnchantRules.MDefDelta(def, enchant)) * 1_000_000L
+         + (long)(def.MpBonus + EnchantRules.MpDelta(def, enchant)) * 1_000L
+         + def.HpBonus;   // jewels carry no enchant-scaled HP (his table: M.Def + MP only)
 
     /// <summary>Sort key placing worn jewels of one sub-type into their designated slots: the
     /// STRONGER of a pair takes slot 1. DefId breaks a full tie so the order is stable across

@@ -2476,8 +2476,8 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(player, $"{def.Name} cannot be enchanted.");
             return;
         }
-        // EnchantRules.BonusAt multiplies the base bonus by the level; a few million keeps every
-        // derived stat inside int range while still being absurd enough for any test.
+        // The enchant deltas are FLAT PER LEVEL (up to 30/level for armour HP), so a few million keeps
+        // every derived stat inside int range while still being absurd enough for any test.
         item.Enchant = Math.Clamp(cmd.Value, 0, 1_000_000);
         if (item.Equipped)
         {

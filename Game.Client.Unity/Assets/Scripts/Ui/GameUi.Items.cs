@@ -846,24 +846,54 @@ namespace Game.Client
             if (timed.Length > 0) Line(timed);
             Line("");
 
-            if (def.AtkBonus > 0)  Line("Attack  +" + EnchantRules.BonusAt(def.AtkBonus, item.Enchant));
-            if (def.MAtkBonus > 0) Line("M.Atk  +" + EnchantRules.BonusAt(def.MAtkBonus, item.Enchant));
-            if (def.DefBonus > 0)  Line("Defence  +" + EnchantRules.BonusAt(def.DefBonus, item.Enchant));
-            // M.Def IS enchant-scaled on the server (RecomputeDerived runs it through BonusAt like
-            // every other bonus); this line was the one that printed the raw base, so an enchanted
-            // pendant under-reported itself — and C10 now RANKS jewels by this number.
-            if (def.MDefBonus > 0) Line("M.Def  +" + EnchantRules.BonusAt(def.MDefBonus, item.Enchant));
-            if (def.HpBonus > 0)   Line("Max HP  +" + EnchantRules.BonusAt(def.HpBonus, item.Enchant));
-            if (def.MpBonus > 0)   Line("Max MP  +" + EnchantRules.BonusAt(def.MpBonus, item.Enchant));
-            if (def.EvaBonus > 0)  Line("Evasion  +" + EnchantRules.BonusAt(def.EvaBonus, item.Enchant));
+            // ⚠ The TOTAL decides whether a line is printed, not the authored base. Since 0.60.0 an
+            // enchant adds a FLAT amount to stats a piece may not carry at all — every tiered armour
+            // has HpBonus 0, so a +16 S body owes +480 Max HP that the old `def.HpBonus > 0` test
+            // would have hidden completely. Same server math (EnchantRules), same numbers on the card.
+            int cAtk  = def.AtkBonus   + EnchantRules.AtkDelta(def, item.Enchant);
+            int cMAtk = def.MAtkBonus  + EnchantRules.MAtkDelta(def, item.Enchant);
+            int cDef  = def.DefBonus   + EnchantRules.DefDelta(def, item.Enchant);
+            int cMDef = def.MDefBonus  + EnchantRules.MDefDelta(def, item.Enchant);
+            int cHp   = def.HpBonus    + EnchantRules.HpDelta(def, item.Enchant);
+            int cMp   = def.MpBonus    + EnchantRules.MpDelta(def, item.Enchant);
+            if (cAtk > 0)  Line("Attack  +" + cAtk);
+            if (cMAtk > 0) Line("M.Atk  +" + cMAtk);
+            if (cDef > 0)  Line("Defence  +" + cDef);
+            if (cMDef > 0) Line("M.Def  +" + cMDef);
+            if (cHp > 0)   Line("Max HP  +" + cHp);
+            if (cMp > 0)   Line("Max MP  +" + cMp);
+            if (def.EvaBonus > 0) Line("Evasion  +" + def.EvaBonus);   // evasion does not enchant
             if (def.WeaponRange > 0) Line("Range  " + def.WeaponRange.ToString("0"));
+
+            // What one more enchant would buy, on the pieces where it buys anything. This is the
+            // number the player is deciding to spend a scroll on, so it belongs on the card.
+            if (item.Enchant < EnchantRules.MaxEnchant)
+            {
+                string per = def.Slot switch
+                {
+                    EquipSlot.Weapon => "+" + EnchantRules.AtkPerEnchant(def) + " Atk, +"
+                                        + EnchantRules.WeaponMAtkPerEnchant + " M.Atk",
+                    EquipSlot.Armor  => "+" + EnchantRules.ArmorDefPerEnchant + " Def"
+                                        + (EnchantRules.HpDelta(def, 1) > 0
+                                           ? ", +" + EnchantRules.HpDelta(def, 1) + " HP" : ""),
+                    EquipSlot.Shield => "+" + EnchantRules.ShieldDefPerEnchant + " shield defence"
+                                        + (EnchantRules.HpDelta(def, 1) > 0
+                                           ? ", +" + EnchantRules.HpDelta(def, 1) + " HP" : ""),
+                    EquipSlot.Jewel  => "+" + EnchantRules.JewelMDefPerEnchant + " M.Def"
+                                        + (EnchantRules.MpDelta(def, 1) > 0
+                                           ? ", +" + EnchantRules.MpDelta(def, 1) + " MP" : ""),
+                    _ => ""
+                };
+                if (per.Length > 0) Line("<color=#9090A0>Per enchant  " + per + "</color>");
+            }
 
             // Shield block stats.
             if (def.Slot == EquipSlot.Shield)
             {
                 if (def.BlockChance > 0f)    Line("Block chance  " + (def.BlockChance * 100f).ToString("0.#") + "%");
                 if (def.BlockReduction > 0f) Line("Block reduction  " + (def.BlockReduction * 100f).ToString("0.#") + "%");
-                if (def.ShieldDefense > 0)   Line("Shield defence  +" + def.ShieldDefense);
+                if (def.ShieldDefense > 0)
+                    Line("Shield defence  +" + (def.ShieldDefense + EnchantRules.ShieldDefDelta(def, item.Enchant)));
             }
 
             if (item.Attributes != null && item.Attributes.Length > 0)

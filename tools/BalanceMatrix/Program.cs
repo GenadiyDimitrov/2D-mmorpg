@@ -1765,6 +1765,75 @@ Console.WriteLine("=== C3: M8 audit — every physical-damage skill and what it 
 }
 Console.WriteLine();
 
+// =====================================================================================================
+//  E: ENCHANT — the +0 vs +16 jump, per playstyle (him, 2026-08-11)
+// =====================================================================================================
+// He asked for this by name when he gave the flat enchant table: "that needs testing — the dps of a
+// non-enchanted warrior/dagger/tank/mage/bow vs fully enchanted, to see the dmg jump". It is the
+// measurement that decides whether the bow's grade-scaled row (10..20 per enchant, against a flat 6/8
+// for everything else) is the archer identity he wants or simply the best weapon in the game:
+// "as archer they rely on basic attack and acc so a more P.Atk jump is better, while the others should
+// rely more on crit/skills".
+//
+// Every subject wears the FULL loadout of its tier at Mythic quality, first at +0 and then with every
+// piece at +16 — which is the honest comparison, because his table pays per ITEM and a player enchants
+// a set, not a weapon.
+Console.WriteLine("=== E: ENCHANT — what a full +16 set is worth, per playstyle (his flat table) ===");
+{
+    Console.WriteLine("  Full loadout at Mythic quality: weapon, body, 3 accessories, 5 jewels (+shield for the");
+    Console.WriteLine("  tank), at +0 then all at +16. 'atk' is P.Atk, or M.Atk for the mage. 'dps' is the real");
+    Console.WriteLine("  resolver vs a same-level mob. 'ttk' = seconds a +0 warrior of the same level needs to");
+    Console.WriteLine("  kill the subject — the defensive half of the table (HP and defence move together).");
+
+    (string Label, Archetype Arch, string? Weapon, bool Caster)[] roster =
+    {
+        ("tank 1H+shield",  Archetype.Tank,    null,    false),
+        ("warrior 2H",      Archetype.Warrior, null,    false),
+        ("dagger duals",    Archetype.Rogue,   "duals", false),
+        ("archer bow",      Archetype.Rogue,   "bow",   false),
+        ("mage staff",      Archetype.Nuker,   null,    true),
+    };
+
+    static string Jump(double a, double b, string fmt = "0") =>
+        $"{a.ToString(fmt),6} ->{b.ToString(fmt),7} ({(a <= 0 ? "  -  " : (b / a - 1).ToString("+0%;-0%"))})";
+
+    foreach (int lvl in new[] { 52, 80 })
+    {
+        int tier = GearTier(lvl);
+        var mob = BuildMobEntity(lvl);
+        // The reference killer never changes between the two columns, so any movement in ttk is the
+        // subject's own defence, not a stronger attacker.
+        var killer = BuildMobPlayerFixedTier(lvl, Archetype.Warrior, tier, ItemRarity.Mythic, 0, kit: true);
+
+        Console.WriteLine();
+        Console.WriteLine($"  --- level {lvl}, t{tier} = {EnchantRules.GradeName(EnchantRules.GradeOf(tier))} grade "
+            + $"(armour +{EnchantRules.ArmorDefPerEnchant}/ench P.Def, "
+            + $"+{EnchantRules.HpDelta(ItemCatalog.Get($"heavy_t{tier}")!, 1)}/ench HP) ---");
+        Console.WriteLine($"  {"",-15} | {"atk",-22} | {"dps vs mob",-22} | {"Max HP",-22} | {"ttk (s)",-22}");
+        foreach (var (label, arch, weapon, caster) in roster)
+        {
+            var a = BuildMobPlayerFixedTier(lvl, arch, tier, ItemRarity.Mythic, 0, kit: true, weaponOverride: weapon);
+            var b = BuildMobPlayerFixedTier(lvl, arch, tier, ItemRarity.Mythic,
+                                            EnchantRules.MaxEnchant, kit: true, weaponOverride: weapon);
+            double atk0 = caster ? a.EffectiveMagicAttack : a.EffectiveAttack;
+            double atk1 = caster ? b.EffectiveMagicAttack : b.EffectiveAttack;
+            double ttk0 = a.MaxHp / Math.Max(0.01f, Dps(killer, a));
+            double ttk1 = b.MaxHp / Math.Max(0.01f, Dps(killer, b));
+            Console.WriteLine($"  {label,-15} | {Jump(atk0, atk1)} | {Jump(Dps(a, mob), Dps(b, mob))} "
+                + $"| {Jump(a.MaxHp, b.MaxHp)} | {Jump(ttk0, ttk1, "0.0")}");
+        }
+    }
+    Console.WriteLine();
+    Console.WriteLine("  Read it as: does the archer's dps column pull away from the other four? His bow row is");
+    Console.WriteLine("  worth 2.5x a greatsword's per enchant at S (+320 vs +128), on top of the bow already");
+    Console.WriteLine("  carrying the highest base P.Atk — that is deliberate, but this is where it shows up.");
+    Console.WriteLine("  ttk moves for everyone because the HP row is FLAT and class-blind: the same +1920 at S");
+    Console.WriteLine("  (five pieces for a tank, who also wears a shield) doubles a caster's pool and adds a");
+    Console.WriteLine("  third to a tank's. That is his ruling, not a bug: 'an enchant is just an offset of the");
+    Console.WriteLine("  norm — same for all'.");
+}
+Console.WriteLine();
+
 static string NameOf(string id) => SkillCatalog.Get(id)?.Name ?? id;
 
 /// <summary>A Human ASSASSIN (rogue) of this level in the best duals + LIGHT armor for its tier —
@@ -1867,7 +1936,7 @@ static Entity BuildMobPlayer(int level, Archetype arch, int tierDrop, ItemRarity
 /// <summary>As <see cref="BuildMobPlayer"/>, but with the gear tier pinned instead of derived from the
 /// level — this is what lets G3.3 spawn ONE authored loadout across every zone band.</summary>
 static Entity BuildMobPlayerFixedTier(int level, Archetype arch, int tier, ItemRarity quality,
-                                      int enchant, bool kit = false)
+                                      int enchant, bool kit = false, string? weaponOverride = null)
 {
     var (race, cls, secondId) = arch switch
     {
@@ -1901,7 +1970,8 @@ static Entity BuildMobPlayerFixedTier(int level, Archetype arch, int tier, ItemR
     bool caster = arch is Archetype.Nuker or Archetype.Healer;
     string q = G3Quality(quality);
     string body = caster ? "robe" : arch == Archetype.Rogue ? "light" : "heavy";
-    string weapon = caster ? "staff" : arch == Archetype.Warrior ? "sword2h" : "sword1h";
+    string weapon = weaponOverride
+                    ?? (caster ? "staff" : arch == Archetype.Warrior ? "sword2h" : "sword1h");
 
     EquipEnchanted(e, $"{weapon}_t{tier}{q}", enchant);
     EquipEnchanted(e, $"{body}_t{tier}{q}", enchant);

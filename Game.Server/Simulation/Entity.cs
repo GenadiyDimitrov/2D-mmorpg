@@ -1546,22 +1546,29 @@ public class Entity
                 }
             }
 
-            int atkBonus = EnchantRules.BonusAt(def.AtkBonus, item.Enchant);
+            // ENCHANT IS A FLAT PER-LEVEL OFFSET, PER SLOT (his table, 0.60.0 — see EnchantRules).
+            // It used to be +20% of each base bonus per level, applied to every stat on every slot;
+            // the deltas below are authored numbers instead, and only the stats he named scale at all
+            // (weapon P.Atk/M.Atk, armour P.Def + Max HP, jewel M.Def + Max MP, shield defence).
+            int atkBonus = def.AtkBonus + EnchantRules.AtkDelta(def, item.Enchant);
             AttackPower += atkBonus;
             // Every piece — weapons included — now contributes its OWN authored M.Atk. A weapon used to
             // contribute its single power number to both channels and let the channel factors split it,
             // which meant the CSV's second column never reached the game and the item card never showed
             // an M.Atk line. Weapons that predate the migration have MAtkBonus 0, so they fall back to
             // the old shared-number behaviour and nothing rebalances under them.
-            int mAtkBonus = EnchantRules.BonusAt(def.MAtkBonus, item.Enchant);
-            MagicAttack += def.Slot == EquipSlot.Weapon && mAtkBonus == 0
+            // ⚠ The fallback tests the AUTHORED number, not the enchanted one: an enchant now adds M.Atk
+            // to a weapon whose base M.Atk is 0, so testing the total would take a +1 legacy weapon off
+            // the legacy path and halve its M.Atk.
+            int mAtkBonus = def.MAtkBonus + EnchantRules.MAtkDelta(def, item.Enchant);
+            MagicAttack += def.Slot == EquipSlot.Weapon && def.MAtkBonus == 0
                 ? atkBonus
                 : mAtkBonus;
-            Defence += EnchantRules.BonusAt(def.DefBonus, item.Enchant);
-            MagicDefence += EnchantRules.BonusAt(def.MDefBonus, item.Enchant);  // jewels
-            MaxHp += EnchantRules.BonusAt(def.HpBonus, item.Enchant);
-            MaxMp += EnchantRules.BonusAt(def.MpBonus, item.Enchant);
-            Evasion += EnchantRules.BonusAt(def.EvaBonus, item.Enchant);
+            Defence += def.DefBonus + EnchantRules.DefDelta(def, item.Enchant);
+            MagicDefence += def.MDefBonus + EnchantRules.MDefDelta(def, item.Enchant);  // jewels
+            MaxHp += def.HpBonus + EnchantRules.HpDelta(def, item.Enchant);
+            MaxMp += def.MpBonus + EnchantRules.MpDelta(def, item.Enchant);
+            Evasion += def.EvaBonus;   // evasion no longer scales with enchant
 
             if (def.Slot == EquipSlot.Weapon)
             {
@@ -1591,7 +1598,7 @@ public class Entity
                 HasShield = true;
                 BlockChance = def.BlockChance;
                 BlockReduction = def.BlockReduction;
-                ShieldDefense += def.ShieldDefense;
+                ShieldDefense += def.ShieldDefense + EnchantRules.ShieldDefDelta(def, item.Enchant);
                 ShieldCritDefense = def.ShieldCritDefense;
                 Evasion -= def.ShieldEvasionPenalty;   // shield lowers evasion
             }
