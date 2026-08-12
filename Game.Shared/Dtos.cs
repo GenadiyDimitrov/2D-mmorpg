@@ -510,6 +510,19 @@ public static class TitleCatalog
     /// must not compete with the six board colours standing next to it in a busy town square.</summary>
     public const string NpcHex = "9FB6C9";
 
+    /// <summary>The RANK line over a creature (owner, 2026-08-12): elites and bosses wear what they are
+    /// on the title line instead of carrying it inside the name — *"put on the valley treant `Field
+    /// Boss` [Aqua] and on the dungeon one `Dungeon Boss` [Orange] and on elite mobs `Elite` [red] and
+    /// remove the Elite part of their names"*.
+    ///
+    /// <para>These are the one place a title's colour means DANGER rather than identity, so they are
+    /// loud where <see cref="NpcHex"/> is deliberately quiet — you should read "Dungeon Boss" from
+    /// across a room. They are kept out of the custom <see cref="Palette"/> for the same reason the
+    /// board colours are: a player must not be able to type themselves a name that reads as a boss.</para></summary>
+    public const string EliteHex       = "FF6B6B";   // red
+    public const string FieldBossHex   = "4FE0E8";   // aqua
+    public const string DungeonBossHex = "FFA94D";   // orange
+
     // ----- custom titles -------------------------------------------------------------------------
 
     /// <summary>Colours a player may choose for a title they wrote. A NAMED palette rather than free

@@ -3948,8 +3948,21 @@ public class GameLoopService : BackgroundService
             // have stayed gone. A dropped CHASE is not a dropped SELECTION: while a cast or a queued
             // skill is in flight with no chase, push nothing and leave the player's own target alone.
             // The genuinely-ended-fight paths still push their null, because they are not casting.
+            //
+            // 🔴 playtest-21 `65d` — this pushed a NULL as well, and a null is a REVOCATION of a
+            // selection the server never made. His case: attack A, manually tap B while A still
+            // lives, A dies → CombatTargetId goes stale → this pushed null → the client assigned it
+            // straight over B. *"the 1st dies and closes my second so i need to retarget."*
+            // In manual play the server may HAND a target over; it may not take one away, because it
+            // does not know what the player has selected — only the client does, and the client now
+            // drops its own target when THAT target dies (his rule: `target == current target`).
+            // Forgetting the sent id without sending keeps the dedupe honest, so re-acquiring the
+            // same mob later still pushes.
             if (p.CombatTargetId is not null || (p.CastingSkillId is null && p.QueuedSkillId is null))
-                PushAutoTarget(p, LiveTarget(p, p.CombatTargetId));
+            {
+                if (LiveTarget(p, p.CombatTargetId) is Guid live) PushAutoTarget(p, live);
+                else p.SentAutoTargetId = null;
+            }
             return;
         }
         if (p.CastingSkillId is not null || p.QueuedSkillId is not null)
@@ -12235,16 +12248,47 @@ var effect = def.Effect;
             : mobType.Mod is MobMod wm && wm.Weapon != WeaponType.None ? wm.Weapon
             : MobCatalog.DefaultWeaponFor(mobType.Category);
 
-        string displayName = mobType.Dummy ? $"Training Dummy (Lv {level})" : rank switch
+        // ⚠ A dummy used to be hard-named "Training Dummy (Lv N)", which threw away the template's own
+        // name — so the plain dummy, the magic one and the striking one were three IDENTICAL plates in
+        // a row (owner, `63h`: *"both dummies act as the old"*). The authored name carries the
+        // distinction; the level suffix is what a dummy is for.
+        // ⚠ An ELITE no longer carries "Elite " in its NAME (owner, 2026-08-12) — the rank moved to the
+        // title line below, where it is coloured and cannot be mistaken for part of the creature's
+        // name. A boss keeps its "Lord" suffix: that is a name, not a rank marker.
+        string displayName = mobType.Dummy ? $"{mobType.Name} (Lv {level})" : rank switch
         {
-            MobRank.Elite => $"Elite {mobType.Name}",
             MobRank.Boss => $"{mobType.Name} Lord",
             _ => mobType.Name
         };
 
+        // THE TITLE LINE. An authored one (the training dummies) wins; otherwise the RANK writes it.
+        // Dungeon vs field is read from the coordinates, which is already how this codebase identifies
+        // a dungeon (SpawnZone.AllAggressive: "dungeons are the negative quadrant by construction, so
+        // that is what identifies one — no extra flag to keep in sync"). Reusing the rule rather than
+        // adding a second one keeps them from drifting apart.
+        string title = mobType.Title;
+        string titleHex = TitleCatalog.NpcHex;
+        if (title.Length == 0)
+        {
+            bool inDungeon = x < 0f || y < 0f;
+            (title, titleHex) = rank switch
+            {
+                MobRank.Elite => ("Elite", TitleCatalog.EliteHex),
+                MobRank.Boss when inDungeon => ("Dungeon Boss", TitleCatalog.DungeonBossHex),
+                MobRank.Boss => ("Field Boss", TitleCatalog.FieldBossHex),
+                _ => ("", TitleCatalog.NpcHex),
+            };
+        }
+
         var mob = new Entity
         {
             Name = displayName,
+            // The title line, drawn above the name exactly like an NPC's role — see above for where it
+            // comes from. The training dummies author theirs (`Normal` / `Physical` / `Magic`) and wear
+            // the NPC grey-blue for the same reason NPCs do: a label to read once, not an achievement.
+            // Elites and bosses get theirs from the rank, in colours that are meant to be loud.
+            Title = title,
+            TitleColor = title.Length > 0 ? titleHex : "",
             Kind = EntityKind.Mob,
             X = x,
             Y = y,

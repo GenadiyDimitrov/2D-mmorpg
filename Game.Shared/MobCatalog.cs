@@ -125,7 +125,8 @@ public record MobType(
     int Level = 0,           // natural level (0 = let the zone assign it)
     MobCategory Category = MobCategory.Humanoid,
     MobRole Role = MobRole.Melee,    // how it fights (melee chaser / ranged archer / caster mage)
-    DummyAttack Strikes = DummyAttack.None);   // a DUMMY that hits back, for counting outcomes
+    DummyAttack Strikes = DummyAttack.None,    // a DUMMY that hits back, for counting outcomes
+    string Title = "");      // the line drawn ABOVE the name, like an NPC's role ("Elder" over "Marius")
 
 /// <summary>
 /// THE place to manage mobs. Each entry is a creature template with its own drop
@@ -458,7 +459,19 @@ public static class MobCatalog
         // Value and sells for 0) but it floods the BAG and makes enchanting feel free. At 0.15 it is
         // roughly one per eleven kills. The buff half is unchanged; the rung simply sums to less, which
         // this group is already designed to do (see the Always-group note below).
-        const float EnchantShare = 0.15f;
+        //
+        // 🔴 0.15 WAS STILL A FLOOD (owner, playtest-21 `62j`): *"I got 80 scroll by lvl 28 .. I need
+        // like 2-3 .. enchant scrolls must be for over farm not a casual one"*. His measurement pins
+        // the arithmetic exactly — the E rung was 0.40 x 0.15 = 6% of every kill and is the only rung
+        // live below 40, so 80 scrolls is ~1330 kills across 20→28, which is what that stretch takes.
+        // 2-3 over the same 1330 kills is 0.2% per kill, so the E rung wants 0.002 and the share wants
+        // 0.005 — a 30x cut. The RUNG WEIGHTS are untouched: the ladder's shape (E richer than B) was
+        // never the complaint, only its height. Resulting marginal chances per kill:
+        // E 0.20% · D 0.15% · C 0.10% · B 0.075%.
+        //
+        // ⚠ This is a faucet, not a supply: the Apothecary's boxes, elites and bosses (EnchantScrollDrops)
+        // are unchanged, so "over farm" still pays — a normal-mob kill simply stops being the source.
+        const float EnchantShare = 0.005f;
 
         // ENCHANT SCROLLS ARE BANDED NOW, not floored (0.49.0, D1). A scroll is locked to one grade of
         // gear, so the old "every rung keeps dropping forever" would rain E-grade scrolls on a level-80
@@ -708,16 +721,21 @@ public static class MobCatalog
 
             // Training dummy: immortal, stationary, deals no damage. The ZONE sets its level
             // (20/40/60/80 training grounds). No drops. For testing damage/skills.
-            new MobType("training_dummy", "Training Dummy", 0f, 0f, Dummy: true),
+            new MobType("training_dummy", "Training Dummy", 0f, 0f, Dummy: true,
+                Title: "Normal"),
 
             // The two dummies that HIT BACK (owner, `56c`). Immortal and stationary like the plain
             // one, but each strikes for 1 damage every tick at GameConstants.DummyStrikeRange — one
             // through the magic resolution (fail / crit), one through the physical (miss / crit /
             // block). Ten seconds of standing next to one is a hundred samples of that outcome.
+            //
+            // The TITLES are the owner's `63h`: three dummies in a row were indistinguishable on
+            // screen, so the one line that says which is which goes where every plate already draws
+            // one. Without it you cannot report "the magic dummy does nothing" and be believed.
             new MobType("dummy_magic", "Magic Training Dummy", 0f, 0f,
-                Dummy: true, Strikes: DummyAttack.Magic),
+                Dummy: true, Strikes: DummyAttack.Magic, Title: "Magic"),
             new MobType("dummy_physical", "Striking Training Dummy", 0f, 0f,
-                Dummy: true, Strikes: DummyAttack.Physical),
+                Dummy: true, Strikes: DummyAttack.Physical, Title: "Physical"),
         };
         var dict = new Dictionary<string, MobType>(StringComparer.OrdinalIgnoreCase);
         foreach (var m in list)

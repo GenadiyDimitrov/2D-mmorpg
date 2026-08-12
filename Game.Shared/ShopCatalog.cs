@@ -96,10 +96,11 @@ public static class ShopCatalog
                 ItemCatalog.BoxWarRune2h,
                 ItemCatalog.BoxSpellRune1h,
                 ItemCatalog.BoxSpellRune2h,
-                // The Rune of Tincture — the only source of a title COLOUR since `59r` made it a thing
-                // you spend rather than a free command. Sold rather than dropped: it is pure cosmetic,
-                // so a gold sink is exactly what it should be.
-                ItemCatalog.TitleColorRune,
+                // ⚠ THE RUNE OF TINCTURE IS NO LONGER SOLD HERE (owner, playtest-21 `63i`: *"remove the
+                // Rune of Tincture from the Apothecary — it will be only event/premium bought"*). It
+                // stays a real item with a real use; what changed is that gold is not how you get one,
+                // so the title colour is a thing given out, not a thing farmed for. Admin `/give` is
+                // the only in-game source until the event/premium shop exists.
                 // NOTE: enchant + attribute scrolls are intentionally DROP-ONLY (not sold).
             }),
             // WEAPONS. The LEGACY generated grid ("Worn Sword" at P.Atk 6, the Fine/Masterwork

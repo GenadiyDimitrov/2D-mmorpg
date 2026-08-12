@@ -141,7 +141,7 @@ public static class SkillText
         Flat(o, "M.Def", m.MDef);              Pct(o, "M.Def", m.MDefPct);
         Flat(o, "P.Atk", m.PAtk);              Pct(o, "P.Atk", m.PAtkPct);
         Flat(o, "M.Atk", m.MAtk);              Pct(o, "M.Atk", m.MAtkPct);
-        Flat(o, "Accuracy", m.Accuracy);
+        Flat(o, "Accuracy", m.Accuracy);       Pct(o, "Accuracy", m.AccuracyPct);
         Flat(o, "Evasion", m.Evasion);         Pct(o, "Evasion", m.EvasionPct);
         // Crit rate is a MULTIPLIER now (0.05 = ×1.05), so it reads as a percent, not a flat add.
         Pct(o, "Crit rate", m.CritRate);       Pct(o, "Crit rate", m.CritRatePct);
@@ -170,6 +170,21 @@ public static class SkillText
         Pct(o, "Spell vamp", m.SpellVamp);
         Pct(o, "Reflect", m.Reflect);
         Pct(o, "Shield def", m.ShieldDefPct);
+        // 🔴 THE FOUR S-GRADE CHANNELS (playtest-21 `67i`). He read the light-S set's flat +200 crit
+        // damage on his stat sheet and then could not find it on the Leather armour card: these four
+        // were APPENDED to StatMods for the 0.59.1 S sets and never given a line here, so every set
+        // that carries one described itself with the number silently missing — not just Nightleaf's
+        // crit damage, but Ironforge's flat crit rate, both S sets' magic resist, and the PvP-taken
+        // reduction on all of them. The labels match the stat sheet's own wording on purpose ("Crit dmg
+        // flat"), because comparing the two is exactly what he was doing when he found this.
+        //
+        // ⚠ Whenever a field is appended to StatMods, it needs a line here in the same commit — the
+        // formatter is the only thing that makes an authored number visible, and nothing fails loudly
+        // when it is missing.
+        Pct(o, "Crit rate flat", m.CritRateFlat);
+        Flat(o, "Crit dmg flat", m.CritDamageFlat);
+        Pct(o, "Magic resist", m.MagicResist);
+        Pct(o, "PvP damage taken", m.PvpDamageTakenPct);
         return o;
     }
 

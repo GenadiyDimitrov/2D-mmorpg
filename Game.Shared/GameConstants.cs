@@ -461,9 +461,15 @@ public static class GameConstants
     public const float TradeRange = 300f;
 
     /// <summary>How close you must stand to a dummy that HITS BACK for it to reach you (owner,
-    /// playtest-20 `56c`: *"lvl 80, 50 range, 1 magic dmg every 0.1s"*). Deliberately shorter than any
-    /// weapon: you have to choose to stand in it, and one step out ends the test.</summary>
-    public const float DummyStrikeRange = 50f;
+    /// playtest-20 `56c`: *"lvl 80, 50 range, 1 magic dmg every 0.1s"*).
+    ///
+    /// <para>🔴 It WAS his literal 50, and that is why both dummies "act as the old" (`63h`): a melee
+    /// attacker is walked to <see cref="MeleeRange"/> = 80 and stops there, so the closest anyone ever
+    /// stood by playing normally was 30 units OUTSIDE the strike radius, and a caster stands at 600.
+    /// The dummy struck nobody, ever. 150 is the smallest value that a melee stop-distance fits inside
+    /// with room to spare while still excluding anyone casting from range — you must walk up to it, and
+    /// a few steps back still ends the test, which was the whole intent of a short radius.</para></summary>
+    public const float DummyStrikeRange = 150f;
 
     // ----- Admin / jail (Phase 5) ----------------------------------------------
 

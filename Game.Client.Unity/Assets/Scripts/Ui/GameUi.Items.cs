@@ -865,9 +865,20 @@ namespace Game.Client
             if (def.EvaBonus > 0) Line("Evasion  +" + def.EvaBonus);   // evasion does not enchant
             if (def.WeaponRange > 0) Line("Range  " + def.WeaponRange.ToString("0"));
 
+            // F GRADE HAS NO BAND, so no scroll can ever touch it (EnchantRules.GradeOf → None) — and
+            // printing "Per enchant +N" on a piece you cannot enchant advertises a purchase that does
+            // not exist (owner, playtest-21 `68h`: *"F grade should say unenchantable or atleast remove
+            // the + bonus - u cannot get it"*). Say so once, on the gear slots where the question even
+            // arises; a potion or a material simply prints nothing, as before.
+            bool enchantSlot = def.Slot is EquipSlot.Weapon or EquipSlot.Armor
+                                        or EquipSlot.Shield or EquipSlot.Jewel;
+            if (enchantSlot && EnchantRules.GradeOf(def) == EnchantGrade.None)
+            {
+                Line("<color=#9090A0>Unenchantable</color>");
+            }
             // What one more enchant would buy, on the pieces where it buys anything. This is the
             // number the player is deciding to spend a scroll on, so it belongs on the card.
-            if (item.Enchant < EnchantRules.MaxEnchant)
+            else if (item.Enchant < EnchantRules.MaxEnchant)
             {
                 string per = def.Slot switch
                 {

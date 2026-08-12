@@ -60,6 +60,11 @@ namespace Game.Client
         public Guid SelfId => _selfId;
         public Guid? TargetId { get; set; }
 
+        /// <summary>The target we have observed ALIVE — the only one whose death clears the selection
+        /// (owner, playtest-21 `65d`). See OnDelta; it is what makes the rule a transition rather than
+        /// a state, so deliberately selecting a corpse sticks.</summary>
+        private Guid? _targetSeenAlive;
+
         /// <summary>Server frames received, and when the last one landed — the honest answer to
         /// "is the connection alive?", which a connected-but-silent socket would otherwise fake.</summary>
         public int FramesReceived { get; private set; }
@@ -1395,6 +1400,7 @@ namespace Game.Client
         private void ResetWorldTransients()
         {
             TargetId = null;
+            _targetSeenAlive = null;
             Party = new PartyMemberDto[0];
             PendingInvite = null;
             PendingResurrect = null;
@@ -1577,6 +1583,22 @@ namespace Game.Client
                 if (TargetId.HasValue && !Entities.States.ContainsKey(TargetId.Value)
                     && !IsPartyMember(TargetId.Value))
                     TargetId = null;
+
+                // MY target DIED — drop it (owner, playtest-21 `65d`:
+                // *"if(target == current target && current target dies){ closes }"*). This lives here,
+                // client-side, because only the client knows what is selected: the server used to do it
+                // by pushing a null AutoTarget when ITS combat target went stale, which wiped a manual
+                // selection made while the old one was still alive.
+                //
+                // ⚠ It is the alive→dead TRANSITION, not the dead STATE — his *"'DIES' not 'DEAD'"*.
+                // Hence _targetSeenAlive: only a target we have actually watched breathing gets
+                // dropped when it stops. Tapping a corpse on purpose (a necromancer will want to)
+                // selects something already dead, was never watched, and so stays selected.
+                if (TargetId.HasValue && Entities.TryGetState(TargetId.Value, out var tgt))
+                {
+                    if (!tgt.Dead) _targetSeenAlive = TargetId;
+                    else if (_targetSeenAlive == TargetId) { TargetId = null; _targetSeenAlive = null; }
+                }
             });
         }
 

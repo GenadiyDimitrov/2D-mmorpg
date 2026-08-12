@@ -1178,6 +1178,86 @@ await c.DisposeAsync();
           $"at ({gm.MyX:0},{gm.MyY:0}), gold {gm.Gold}");
 }
 
+// -------------------------------------------------------------------------------------------
+// 8. THE TRAINING DUMMIES THAT HIT BACK (`56c` / `63h`) — do they actually strike?
+// -------------------------------------------------------------------------------------------
+// They shipped in 0.58.x and did NOTHING for two builds, and the owner could only report *"both
+// dummies act as the old"* — which is exactly the shape of bug this tool exists for. Two causes, both
+// invisible without standing there: the strike radius was 50 while a melee attacker is walked to
+// MeleeRange (80) and STOPS, so nobody was ever inside it; and every dummy was hard-named "Training
+// Dummy (Lv N)", so the three of them were indistinguishable plates in a row.
+//
+// So: teleport ONTO the magic dummy, hold still, and count the combat events on the wire. A dummy
+// that does not reach you produces zero, which is precisely what could not be seen before.
+{
+    var magicZone = WorldMap.SpawnZones.First(z => z.MobTypes.Contains("dummy_magic"));
+    var physZone  = WorldMap.SpawnZones.First(z => z.MobTypes.Contains("dummy_physical"));
+
+    await gm.Hub.SendAsync("DebugTeleport", magicZone.X, magicZone.Y);
+    await gm.Settle();
+
+    var magic = gm.EntityNames.FirstOrDefault(kv => kv.Value.StartsWith("Magic Training Dummy"));
+    Check("the MAGIC dummy keeps its own name (not the generic 'Training Dummy')",
+          magic.Key != Guid.Empty, string.Join(" / ", gm.EntityNames.Values.Where(n => n.Contains("Dummy"))));
+    if (magic.Key != Guid.Empty)
+        Check("...and wears the title 'Magic' (`63h`)", gm.EntityTitles[magic.Key] == "Magic",
+              $"title '{gm.EntityTitles.GetValueOrDefault(magic.Key)}'");
+
+    // Stand still inside the strike radius for a couple of seconds: 10 ticks/s, one strike per tick.
+    // ⚠ Teleport onto the DUMMY, not the zone centre — a zone places its mob anywhere inside its
+    // 200-unit radius, which is wider than the strike radius on purpose.
+    if (magic.Key != Guid.Empty)
+    {
+        var at = gm.EntityPos[magic.Key];
+        await gm.Hub.SendAsync("DebugTeleport", at.X, at.Y);
+        await gm.Settle();
+    }
+    gm.Combat.Clear();
+    await Task.Delay(2000);
+    var onMe = gm.Combat.Where(c => c.TargetId == gm.MyId && c.Skill == "Practice Bolt").ToList();
+    Check("the MAGIC dummy actually strikes someone standing on it (`63h`)", onMe.Count > 5,
+          $"{onMe.Count} strikes in 2s (expected ~20)");
+    // The whole point of the instrument: the OUTCOME is resolved, not a flat number. Over ~20 samples
+    // a fail or a crit may or may not appear, so only assert that a real outcome came through.
+    Check("...through the real magic resolution (Hit / Fail / Crit, never Miss)",
+          onMe.Count == 0 || onMe.All(c => c.Outcome != CombatOutcome.Miss),
+          string.Join(",", onMe.Select(c => c.Outcome).Distinct()));
+
+    // The physical one is a separate template, a separate resolver and a separate title.
+    await gm.Hub.SendAsync("DebugTeleport", physZone.X, physZone.Y);
+    await gm.Settle();
+    var phys = gm.EntityNames.FirstOrDefault(kv => kv.Value.StartsWith("Striking Training Dummy"));
+    Check("the PHYSICAL dummy is its own creature, titled 'Physical' (`63h`)",
+          phys.Key != Guid.Empty && gm.EntityTitles.GetValueOrDefault(phys.Key) == "Physical",
+          $"'{phys.Value}' title '{gm.EntityTitles.GetValueOrDefault(phys.Key)}'");
+
+    if (phys.Key != Guid.Empty)
+    {
+        var at = gm.EntityPos[phys.Key];
+        await gm.Hub.SendAsync("DebugTeleport", at.X, at.Y);
+        await gm.Settle();
+    }
+    gm.Combat.Clear();
+    await Task.Delay(2000);
+    int hits = gm.Combat.Count(c => c.TargetId == gm.MyId && c.Skill == "Practice Strike");
+    Check("the PHYSICAL dummy actually strikes back", hits > 5, $"{hits} strikes in 2s");
+
+    // And a step OUT ends it — the short radius is the design ("you have to choose to stand in it"),
+    // and a dummy that reaches across the training ground would be its own bug.
+    await gm.Hub.SendAsync("DebugTeleport", physZone.X + 1200f, physZone.Y);
+    await gm.Settle();
+    gm.Combat.Clear();
+    await Task.Delay(1000);
+    Check("...and stops the moment you step out of range",
+          gm.Combat.Count(c => c.TargetId == gm.MyId) == 0,
+          $"{gm.Combat.Count(c => c.TargetId == gm.MyId)} strikes at 1200 units");
+
+    // ⚠ Standing in a dummy sets the combat flag, which decays over 30s (CombatDecayTicks), so the
+    // LeaveWorld below prints "You can't leave while in combat" and the run ends on a disconnect
+    // instead. That is CORRECT behaviour being observed, not a failure — and waiting it out would add
+    // half a minute to every smoke run for nothing. Every character here is a fresh throwaway.
+}
+
 // (No cleanup needed — every run creates a fresh Smoke<timestamp> character, so the jailed/kicked
 //  throwaway char is never reused.)
 await gm.Hub.SendAsync("LeaveWorld");
@@ -1234,6 +1314,19 @@ sealed class Session : IAsyncDisposable
     /// its runtime Guid, and a test that wants "the Brackenford gatekeeper" has nothing else to go on.</summary>
     public readonly Dictionary<Guid, string> EntityNames = new();
 
+    /// <summary>Entity id → its TITLE line ("Gatekeeper", "Elite", "Field Boss", …), from full spawns.
+    /// A title is a STATIC field of the spawn DTO, so it only ever arrives on a full spawn.</summary>
+    public readonly Dictionary<Guid, string> EntityTitles = new();
+
+    /// <summary>Entity id → where it spawned. A zone places its mob anywhere inside its radius, so
+    /// "teleport to the zone centre" is not the same as "stand next to the thing".</summary>
+    public readonly Dictionary<Guid, (float X, float Y)> EntityPos = new();
+
+    /// <summary>Every combat event the server sent us. The training dummies are the only thing in the
+    /// game whose entire purpose is to PRODUCE these at a known rate, and "it does nothing" was
+    /// invisible in a playtest for two builds — so counting them on the wire is the only honest test.</summary>
+    public readonly List<CombatEvent> Combat = new();
+
     /// <summary>The last "Dialog" push — what an NPC offered when talked to.</summary>
     public NpcDialog? Dialog;
 
@@ -1271,7 +1364,7 @@ sealed class Session : IAsyncDisposable
         Hub.On<SnapshotDelta>("SnapshotDelta", d =>
         {
             DeltaCount++;
-            foreach (var s in d.Spawns) { Spawned.Add(s.Id); EntityNames[s.Id] = s.Name; if (s.Id == MyId) { MyX = s.X; MyY = s.Y; } }
+            foreach (var s in d.Spawns) { Spawned.Add(s.Id); EntityNames[s.Id] = s.Name; EntityTitles[s.Id] = s.Title ?? ""; EntityPos[s.Id] = (s.X, s.Y); if (s.Id == MyId) { MyX = s.X; MyY = s.Y; } }
             foreach (var u in d.Updates) { Updated.Add(u.Id); if (u.Id == MyId) { MyX = u.X; MyY = u.Y; } }
             foreach (var id in d.Despawns) Despawned.Add(id);
         });
@@ -1280,6 +1373,7 @@ sealed class Session : IAsyncDisposable
         Hub.On<QuestMarks>("QuestMarks", m => Marks = m);
         Hub.On<NpcDialog>("Dialog", d => Dialog = d);
         Hub.On<GoldUpdate>("Gold", g => Gold = g.Gold);
+        Hub.On<CombatEvent>("Combat", c => Combat.Add(c));
         Hub.On<ChatMessage>("Chat", m => { AllChat.Add(m); if (m.Channel == ChatChannel.System) { SystemChat.Add(m.Text); Console.WriteLine($"        [SYSTEM] {m.Text}"); } });
         await Hub.StartAsync();
     }
