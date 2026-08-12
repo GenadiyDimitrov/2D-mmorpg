@@ -27,15 +27,13 @@ decision, a CSV, a measurement) · ⏸ you put it on hold.
 
 ## ★ The five you have named most recently
 
-- `BL-01` 🔴 **Premium reward runes.** Exp · SP · Exp+SP · Gold (amount) · Drop (chance), at **+5%
-  then 0.1 steps to +100%**. Plus **Rune of Sinister** (exp/sp gain stopped, gold and drop
-  untouched — the grinder's rune) and **Rune of Sinners** (*"a timed rune given by the Gods to
-  punish those who sinned"* — all four zeroed, cannot be sold, traded, discarded or banked).
-  Rides the existing rune machinery: one item def + one buff skill each, so the buff bar shows it
-  for free. ⚠ `SkillEffect` has **3 bits left** — spend ONE (`BuffRewardRate`) and carry the four
-  magnitudes as `SkillDef` fields. ⚠ the drop multiplier must be passed **into**
-  `MobCatalog.EffectiveRate`, never applied at a call site, or the inspect screen lies to a player
-  wearing a Drop rune. *(2026-08-12; `/give` and item tags — its blocker — shipped in `ed75bac`.)*
+- `BL-01` — ✅ **BUILT 2026-08-12.** All five ladders (Exp · SP · Exp+SP · Gold · Drop, +5% then
+  tenths to +100%) plus Sinister and Sinners. See `CHANGELOG.md`. Kept here for one entry only
+  because two of its notes turned out to be wrong and the correction is worth reading: `SkillEffect`
+  had **no** bits left, not three (`1L << 62` was already the last), so the payload rides as a
+  `RewardRates` field; and one thing it needs that this entry never mentioned — a def-level
+  `SoulBound`, because *untradable alone did not bar the private keeper*, which takes anything by
+  default, so Sinners could have been parked there until it expired. Delete this entry next pass.
 
 - `BL-02` 🔵 **The 40+ class kits (3rd and 4th tier).** Blocked on your skill CSVs —
   `docs/data/classes_skills_csv/` holds nothing above level 35. Still the single biggest content

@@ -2227,7 +2227,9 @@ public class GameLoopService : BackgroundService
         // warehouse had no such gate at all — it takes anything that is not a quest item — which is
         // exactly the hole the Rune of Sinners would have escaped through: *"Keeper cannot accept this
         // item ... as its bound to your soul for the time it has left."*
-        if (!item.StorablePrivate() && ItemCatalog.Get(item.DefId) is ItemDef boundDef)
+        // A SoulBound DEF (the Rune of Sinners) refuses it too, so the punishment does not depend on
+        // whoever handed it out remembering the right flags.
+        if (ItemCatalog.Get(item.DefId) is ItemDef boundDef && !item.StorablePrivate(boundDef))
         {
             SendSystemToEntity(player, $"The keeper will not accept {item.Name(boundDef)}.");
             return;
@@ -6787,7 +6789,8 @@ public class GameLoopService : BackgroundService
             SendTo(entity, "Notice", "You've been playing for an extended period — please take a break.");
     }
 
-    private static readonly string[] RuneBuffKeys = { SkillCatalog.WarRuneBuff, SkillCatalog.SpellRuneBuff };
+    // (The old RuneBuffKeys array is gone: SkillCatalog.IsRuneBuff answers the same question from the
+    //  catalog, so a new reward rune cannot be forgotten in a second list and linger after its item.)
 
     /// <summary>Delete every item whose wall-clock has run out — bag, warehouse and account bank, worn
     /// or not — and keep each rune's buff in sync with the MAIN inventory: apply/keep the buff for any
@@ -6872,33 +6875,51 @@ public class GameLoopService : BackgroundService
             SendSystemToEntity(p, $"{d.Name} has expired.");
         }
 
-        // 2. Which rune buffs SHOULD be up, and until when (latest expiry among that type's held runes)?
-        var wantUntil = new Dictionary<string, DateTime>(StringComparer.Ordinal);
+        // 2. Which rune buffs SHOULD be up, at which LEVEL, and until when?
+        //    A reward-rune ladder is ONE skill with a rung per level, so several held runes can name
+        //    the same buff: the STRONGEST rung wins, and among equal rungs the latest expiry. When the
+        //    +100% rune runs out the +20% one in the bag takes over on the next pass, all by itself.
+        var wantUntil = new Dictionary<string, (int Level, DateTime Until, string Name)>(StringComparer.Ordinal);
         foreach (var it in p.Inventory)
         {
             if (it.ExpiresAtUtc is not DateTime exp || exp <= now) continue;
             if (ItemCatalog.Get(it.DefId) is not { IsRune: true } d || string.IsNullOrEmpty(d.RuneBuffSkillId)) continue;
-            if (!wantUntil.TryGetValue(d.RuneBuffSkillId, out var cur) || exp > cur) wantUntil[d.RuneBuffSkillId] = exp;
+            int level = Math.Max(1, d.RuneBuffLevel);
+            if (!wantUntil.TryGetValue(d.RuneBuffSkillId, out var cur)
+                || level > cur.Level
+                || (level == cur.Level && exp > cur.Until))
+                wantUntil[d.RuneBuffSkillId] = (level, exp, d.Name);
         }
 
         // 3. Apply/keep wanted buffs; drive their remaining from the wall-clock (survives offline on login).
-        foreach (var kv in wantUntil)
+        foreach (var (skillId, want) in wantUntil)
         {
-            if (SkillCatalog.Get(kv.Key) is not SkillDef skill) continue;
-            var existing = p.Buffs.FirstOrDefault(b => b.Key == kv.Key);
+            if (SkillCatalog.Get(skillId) is not SkillDef skill) continue;
+            var existing = p.Buffs.FirstOrDefault(b => b.Key == skillId);
+            // A running buff at the WRONG rung has to go before the right one can land: every rung
+            // shares the family key at the same Rank, so ApplyBuff's equal-rank rule would keep
+            // whichever had longer left — and a +5% rune with an hour on it would hold off the +100%.
+            if (existing != null && existing.Level != want.Level)
+            {
+                p.Buffs.Remove(existing);
+                existing = null;
+                statsChanged = true;
+            }
             if (existing == null)
             {
-                ApplyBuff(p, skill);
-                existing = p.Buffs.FirstOrDefault(b => b.Key == kv.Key);
+                // The bar square is named after the ITEM, so a rung is visible on it: "Rune of
+                // Experience (50%)" rather than a bare "Rune of Experience" that every rung shares.
+                ApplyBuff(p, skill, want.Level, displayName: want.Name);
+                existing = p.Buffs.FirstOrDefault(b => b.Key == skillId);
                 statsChanged = true;
             }
             if (existing != null)
-                existing.TicksRemaining = (int)Math.Clamp((kv.Value - now).TotalSeconds * GameConstants.TickRate, 1, int.MaxValue);
+                existing.TicksRemaining = (int)Math.Clamp((want.Until - now).TotalSeconds * GameConstants.TickRate, 1, int.MaxValue);
         }
 
         // 4. Remove rune buffs whose rune is gone.
         for (int i = p.Buffs.Count - 1; i >= 0; i--)
-            if (Array.IndexOf(RuneBuffKeys, p.Buffs[i].Key) >= 0 && !wantUntil.ContainsKey(p.Buffs[i].Key))
+            if (SkillCatalog.IsRuneBuff(p.Buffs[i].Key) && !wantUntil.ContainsKey(p.Buffs[i].Key))
             {
                 p.Buffs.RemoveAt(i);
                 statsChanged = true;
@@ -8181,11 +8202,17 @@ var effect = def.Effect;
             Replaces = def.Replaces ?? Array.Empty<string>(),
             PhysMpCostPct = def.PhysMpCostPct,
             MagicMpCostPct = def.MagicMpCostPct,
+            // Reward-rune payload, at the LEVEL that landed: a Rune of Experience (20%) is level 3 of
+            // one ladder skill, so reading the def's own field here would hand out the +5% rung.
+            Rewards = def.RewardsAt(level),
             KeepsBuffsOnDeath = def.KeepsBuffsOnDeath,
             AutoResurrect = def.AutoResurrect,
-            // A group's numbers live on its LEVEL, so the bar's tap popup must read the level's text
-            // ("Move +33, Cast +30%, Evasion +4, Attack Speed +33%"), not the skill's generic blurb.
-            Description = isGroup ? def.DescriptionAt(level) : SkillCatalog.DescriptionOf(def.Id)
+            // The bar's tap popup reads the LEVEL's text whenever a level authored one — a group's
+            // numbers live there ("Move +33, Cast +30%, Evasion +4, Attack Speed +33%"), and so do a
+            // reward rune's ("+50% experience"), where the skill's own blurb is only the first rung.
+            // DescriptionAt falls back to the skill's own text, so a level that authored none is
+            // unchanged from when this read DescriptionOf(def.Id).
+            Description = def.DescriptionAt(level)
         });
 
         // Re-bake derived stats (Max HP/MP, shield, atk/def) and refresh the owner's
@@ -8964,10 +8991,15 @@ var effect = def.Effect;
             touched.Add(to);
         }
 
+        // The KILLER's Rune of Drop scales every roll on this kill, the same entity whose level gap
+        // already scales them. It is passed INTO EffectiveChance so the inspect screen (which asks the
+        // same function with the same player) shows exactly the chance that is rolled here.
+        float dropMult = killer.DropRateMult;
+
         // Independent entries (GroupId == 0): each its own rate-scaled roll.
         foreach (var entry in applicable.Where(e => e.GroupId == 0))
         {
-            float chance = Math.Min(1f, MobCatalog.EffectiveChance(entry) * dropGap);
+            float chance = Math.Min(1f, MobCatalog.EffectiveChance(entry, dropMult) * dropGap);
             if (_rng.NextDouble() <= chance)
                 Award(entry);
         }
@@ -8978,7 +9010,7 @@ var effect = def.Effect;
         foreach (var group in applicable.Where(e => e.GroupId != 0).GroupBy(e => e.GroupId))
         {
             var members = group.ToList();
-            float total = Math.Min(1f, members.Sum(MobCatalog.EffectiveChance) * dropGap);
+            float total = Math.Min(1f, members.Sum(e => MobCatalog.EffectiveChance(e, dropMult)) * dropGap);
             if (_rng.NextDouble() > total)
                 continue;
             // Weighted pick within the group. The weight is the PER-ITEM-TUNED chance, the same
@@ -9004,25 +9036,31 @@ var effect = def.Effect;
     }
 
     /// <summary>Split gold evenly among in-range members; the killer keeps the remainder. Solo (or a
-    /// single eligible member) = the killer takes it all. Gold ignores the party's item loot mode.</summary>
+    /// single eligible member) = the killer takes it all. Gold ignores the party's item loot mode.
+    ///
+    /// <para>A Rune of Gold is applied to the RECIPIENT's own share, exactly as an Exp rune applies to
+    /// the recipient's own exp — never to the pot before it is split. Scaling the pot would pay a party
+    /// of five for one member's premium rune, and would let the killer's Rune of Sinners zero everyone
+    /// else's coin.</para></summary>
     private void AwardGold(Entity killer, List<Entity> eligible, int gold)
     {
+        void Pay(Entity m, int share)
+        {
+            int paid = (int)(share * m.GoldRateMult);
+            m.Gold += paid;
+            TallyReward(m, 0, 0, paid);
+            SendGold(m);
+        }
+
         if (eligible.Count <= 1)
         {
-            killer.Gold += gold;
-            TallyReward(killer, 0, 0, gold);
-            SendGold(killer);
+            Pay(killer, gold);
             return;
         }
         int each = gold / eligible.Count;
         int remainder = gold - each * eligible.Count;
         foreach (var m in eligible)
-        {
-            int share = each + (m.Id == killer.Id ? remainder : 0);
-            m.Gold += share;
-            TallyReward(m, 0, 0, share);
-            SendGold(m);
-        }
+            Pay(m, each + (m.Id == killer.Id ? remainder : 0));
     }
 
     /// <summary>Pick who receives one loot item, per the party's <see cref="LootMode"/>. Solo, no
@@ -9379,13 +9417,16 @@ var effect = def.Effect;
     /// (quest rewards, which carry no mob level of their own).</summary>
     private void AwardExp(Entity player, long amount, long spAmount = -1)
     {
-        // Server rates scale progression (x10 exp for testing, etc.).
-        long expGained = (long)(amount * RateConfig.ExpRate);
+        // Server rates scale progression (x10 exp for testing, etc.), then the player's OWN reward
+        // multipliers — the premium Exp/SP runes, and the two zeroing runes which make these 0. This is
+        // where the Rune of Sinister does its work: *"stops the exp gain (so a grinder can grind and no
+        // lvl up)"*. Both channels are read here because this is the one place both are scaled.
+        long expGained = (long)(amount * RateConfig.ExpRate * player.ExpRateMult);
         player.Exp += expGained;
 
         long sp = spAmount >= 0
-            ? (long)(spAmount * RateConfig.SpRate)
-            : (long)(amount * GameConstants.SkillPointRatio * RateConfig.SpRate);
+            ? (long)(spAmount * RateConfig.SpRate * player.SpRateMult)
+            : (long)(amount * GameConstants.SkillPointRatio * RateConfig.SpRate * player.SpRateMult);
         // SkillPoints SATURATES at int.MaxValue — deliberate (owner, 2026-07-24), not a stopgap. A full
         // 1->85 earns ~1.5e9 SP at x1, so the ceiling is genuinely reachable at higher SP rates, but the
         // planned sink makes that fine: SP EXTRACTION will convert 1 000 000 000 SP into one "SP bottle"
@@ -9393,7 +9434,11 @@ var effect = def.Effect;
         // bottles instead of piling up forever, the counter never needs to be a long. Roadmapped as
         // deferred — see docs/Roadmap.md. What must NEVER happen is silent wrapping to negative.
         int spBefore = player.SkillPoints;
-        player.SkillPoints = (int)Math.Min(int.MaxValue, player.SkillPoints + Math.Max(1L, sp));
+        // The 1-SP floor exists so a tiny reward never rounds to nothing — but a ZEROED channel must
+        // stay zero, or the Rune of Sinister would still hand out a skill point per kill and read as
+        // broken. A rune that says "no SP" is not a rounding case.
+        long spBanked = player.SpRateMult <= 0f ? 0L : Math.Max(1L, sp);
+        player.SkillPoints = (int)Math.Min(int.MaxValue, player.SkillPoints + spBanked);
         // Report what was actually BANKED, not what was computed — at the saturation ceiling those
         // differ, and a line claiming SP you did not receive is worse than no line.
         TallyReward(player, expGained, player.SkillPoints - spBefore, 0);
@@ -10401,16 +10446,21 @@ var effect = def.Effect;
                     ? $"{head} · {(ItemRarity)((groupId - 10) % 10)}" : head;
             }
 
+            // The chances are shown as THIS player would roll them, so a Rune of Drop moves the numbers
+            // on the screen it moves in the kill roll. Reading the def's rate here instead would make the
+            // inspect list quietly lie to every player wearing one.
+            float lookMult = player.DropRateMult;
+
             var lines = new List<string>();
             // GroupId 0 rolls independently, so each entry is its own row carrying its own chance.
             foreach (var d in rows.Where(d => d.GroupId == 0))
-                lines.Add($"{ItemLine(d)}  ({Math.Min(1f, MobCatalog.EffectiveChance(d)) * 100:0.##}%)");
+                lines.Add($"{ItemLine(d)}  ({Math.Min(1f, MobCatalog.EffectiveChance(d, lookMult)) * 100:0.##}%)");
             // A GROUP is ONE roll shared by its members, so it reads as a TREE (32f): a title line with
             // the group's own chance, then the items it can land on indented beneath. As flat rows a
             // single 5% group looked like five separate 5% drops, which is five times the truth.
             foreach (var g in rows.Where(d => d.GroupId != 0).GroupBy(d => d.GroupId))
             {
-                float chance = Math.Min(1f, g.Sum(MobCatalog.EffectiveChance));
+                float chance = Math.Min(1f, g.Sum(d => MobCatalog.EffectiveChance(d, lookMult)));
                 lines.Add($"{GroupTitle(g.Key)}  ({chance * 100:0.##}%)");
                 // EVERY member prints its own chance (owner, playtest-16: "add the rows also individual
                 // %"). It used to print one only when a per-item override had been set, so an untouched

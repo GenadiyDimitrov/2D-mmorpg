@@ -273,6 +273,13 @@ public record ItemDef(
     // NoAttributes=true: never rolls a random attribute and can't be given one
     // (newbie/starter gear). Enforced in AttributeSystem.Roll.
     bool NoAttributes = false,
+    // SoulBound=true: this DEF may not be stored ANYWHERE — not the private keeper, not the account
+    // one — on top of whatever Tradable says. Authored for the Rune of Sinners: *"Keeper cannot accept
+    // this item ... as its bound to your soul for the time it has left."* Untradable alone was not
+    // enough, because the PRIVATE keeper takes anything by default (it is just a bigger bag), which
+    // would have let the punished player park the rune until it expired. Runes are already
+    // delete-protected, so with this the rune has nowhere to go but with you.
+    bool SoulBound = false,
     // Jewel sub-type (only when Slot == Jewel) — gates how many can be worn.
     JewelType JewelType = JewelType.None,
     // Gear TIER by character level (0 = legacy grade/rarity gear). The level tiers
@@ -293,6 +300,10 @@ public record ItemDef(
     // buff is the named skill. Delete-protected (see the bin handler). Not equipped, not consumed. -----
     bool IsRune = false,
     string RuneBuffSkillId = "",
+    // Which LEVEL of RuneBuffSkillId this rune grants — the rung of a reward-rune ladder (a
+    // Rune of Experience (20%) is level 3 of `rune_exp`). One skill, many items: that is what lets
+    // a stronger rung evict a weaker one instead of stacking with it. 1 for every other rune.
+    int RuneBuffLevel = 1,
     // ----- BOX that grants a RUNE: seconds the granted rune lasts, stamped as ExpiresAtUtc at OPEN time
     // (so buying the sealed box doesn't start the clock). 0 = not a rune box. -----
     int GrantsRuneSeconds = 0,
@@ -677,6 +688,15 @@ public static class ItemCatalog
     public const string TitleColorRune    = "rune_title_colour";
     public const string TitleRuneName     = "Rune of Tincture";
 
+    // ----- PREMIUM REWARD RUNES (2026-08-12). One ITEM per channel per rung, every one pointing at
+    //       the ONE ladder skill for its channel. The ids and the wording live in RewardRunes.cs;
+    //       these two are aliased here because they are named directly (by `/give`, by the tests). -----
+    /// <summary>Rune of Sinister — the grinder's rune: no exp, no SP, gold and drops untouched.</summary>
+    public const string SinisterRune = RewardRunes.SinisterId;
+    /// <summary>Rune of Sinners — all four rewards zeroed, and bound to the soul: unsellable,
+    /// untradable, refused by BOTH keepers and undeletable for as long as it has time left.</summary>
+    public const string SinnersRune  = RewardRunes.SinnersId;
+
     // Boxes/chests — opened from the inventory; roll their BoxCatalog loot table.
     public const string BoxNewbie         = "box_newbie";
     public const string BoxTreasure       = "box_treasure";
@@ -970,6 +990,36 @@ public static class ItemCatalog
         RuneBox(BoxSpellRune2h,  "Spell Rune Box (2h)",  2 * H, 280000, true,  "Opens to a Spell Rune lasting 2 hours. Spell Runes boost MAGIC (spells) only — useless for melee/bow.");
         RuneBox(BoxSpellRune24h, "Spell Rune Box (1d)",  1 * D, -1,  false,  "Opens to a Spell Rune lasting 24 hours. Spell Runes boost MAGIC (spells) only — useless for melee/bow.");
         RuneBox(BoxSpellRune30d, "Spell Rune Box (30d)", 30 * D, -1, false,  "Opens to a Spell Rune lasting 30 days. Spell Runes boost MAGIC (spells) only — useless for melee/bow.");
+
+        // ----- PREMIUM REWARD RUNES: one item per channel per rung (5 × 11), plus Sinister and
+        // Sinners. Same held-rune machinery as the War/Spell runes above — the difference is entirely
+        // in the buff, which carries a RewardRates package instead of a combat stat.
+        //
+        // Not buyable and not tradable: these are the premium/shop currency of the future store, and
+        // until that exists `/give` is how they reach a player. Unsellable too (SellPriceOverride 0),
+        // so a rune can never be laundered into gold.
+        void RewardRune(string id, string name, string skillId, int buffLevel, string desc,
+                        bool soulBound = false) =>
+            list.Add(new ItemDef(id, name, EquipSlot.Rune, ItemGrade.F, ItemRarity.Epic,
+                IsRune: true, RuneBuffSkillId: skillId, RuneBuffLevel: buffLevel,
+                GrantsRuneSeconds: RewardRunes.DefaultSeconds,
+                Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0, Value: 0,
+                NoAttributes: true, SoulBound: soulBound, Description: desc));
+
+        foreach (var ch in RewardRunes.All)
+            for (int rung = 0; rung < RewardRunes.Ladder.Length; rung++)
+            {
+                int pct = RewardRunes.Percent(rung);
+                RewardRune(ch.ItemId(pct), ch.NameAt(pct), ch.SkillId, rung + 1, ch.Line(pct));
+            }
+        RewardRune(RewardRunes.SinisterId, RewardRunes.SinisterName,
+            RewardRunes.SinisterId, 1, RewardRunes.SinisterLine);
+        // Sinners is BOUND on the DEF as well as by whatever `/give` writes on the instance: an
+        // authored punishment must not depend on the admin remembering the right flags. The per-
+        // instance overrides (`58d`) are what let him hand out a HARSHER one — a shorter clock, a
+        // custom name — not what makes this one bound.
+        RewardRune(RewardRunes.SinnersId, RewardRunes.SinnersName,
+            RewardRunes.SinnersId, 1, RewardRunes.SinnersLine, soulBound: true);
 
         // Newbie CHOICE selection-boxes (untradable): armor set (fighter vs mage) and a 1-day rune
         // (soul vs spirit). Each is a PickCount:1 box whose OPTIONS are other boxes — pick one, open it.
@@ -2183,6 +2233,55 @@ public static class ItemCatalog
         => (-JewelStrength(def, enchant), def.Id);
 
     public static ItemDef? Get(string id) => id is null ? null : All.GetValueOrDefault(id);
+
+    /// <summary>Fail STARTUP if any rune names a buff that does not exist, or a LEVEL its buff does not
+    /// have. Both mistakes produce a rune that looks perfect in the bag and does nothing at all — the
+    /// reconciliation loop simply skips a skill it cannot resolve, silently — and a reward rune ladder is
+    /// 55 items generated from a table, which is exactly the shape that goes wrong once and everywhere.
+    ///
+    /// <para>Also checks the two catalogs agree on the SPAN of a ladder: a rung added to the items but
+    /// not to the skill is the same invisible dud.</para></summary>
+    public static void ValidateRunes()
+    {
+        var bad = new List<string>();
+        foreach (var def in All.Values.Where(d => d.IsRune))
+        {
+            if (string.IsNullOrEmpty(def.RuneBuffSkillId))
+            {
+                bad.Add($"{def.Id}: a rune with no RuneBuffSkillId grants nothing.");
+                continue;
+            }
+            if (SkillCatalog.Get(def.RuneBuffSkillId) is not SkillDef skill)
+            {
+                bad.Add($"{def.Id}: names unknown buff skill '{def.RuneBuffSkillId}'.");
+                continue;
+            }
+            if (def.RuneBuffLevel < 1 || def.RuneBuffLevel > skill.MaxLevel)
+                bad.Add($"{def.Id}: RuneBuffLevel {def.RuneBuffLevel} is outside "
+                      + $"'{skill.Id}' (levels 1..{skill.MaxLevel}).");
+        }
+
+        // Every rung of every reward channel must exist as an item AND as a level of its skill.
+        foreach (var ch in RewardRunes.All)
+        {
+            if (SkillCatalog.Get(ch.SkillId) is not SkillDef skill)
+            {
+                bad.Add($"reward channel '{ch.Key}': no skill '{ch.SkillId}'.");
+                continue;
+            }
+            if (skill.MaxLevel != RewardRunes.Ladder.Length)
+                bad.Add($"'{ch.SkillId}' has {skill.MaxLevel} rungs, the ladder has "
+                      + $"{RewardRunes.Ladder.Length} — the two must match.");
+            for (int rung = 0; rung < RewardRunes.Ladder.Length; rung++)
+            {
+                string itemId = ch.ItemId(RewardRunes.Percent(rung));
+                if (!All.ContainsKey(itemId)) bad.Add($"reward rune item '{itemId}' is missing.");
+            }
+        }
+
+        if (bad.Count > 0)
+            throw new InvalidOperationException("Rune catalog is broken:\n  " + string.Join("\n  ", bad));
+    }
 
     /// <summary>All catalog items of a top-level category (e.g. every OffHand).</summary>
     public static IEnumerable<ItemDef> OfType(ItemType type) => All.Values.Where(d => d.Type == type);

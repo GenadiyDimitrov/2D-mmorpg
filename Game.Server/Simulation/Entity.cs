@@ -94,6 +94,11 @@ public class BuffInstance
     public float PhysMpCostPct { get; init; }
     public float MagicMpCostPct { get; init; }
 
+    /// <summary>What this buff does to a monster's payout — the premium reward runes' whole payload
+    /// (see <see cref="RewardRates"/>). Default = neutral, which every other buff in the game is.
+    /// Rides as a field, like the two above, because the SkillEffect flag enum has no bits left.</summary>
+    public RewardRates Rewards { get; init; }
+
     /// <summary>Angel's Protection / noblesse marker: while a buff with this set is present, DEATH removes
     /// only the protection buff(s) and keeps every other buff (see Kill). No stat effect of its own.</summary>
     public bool KeepsBuffsOnDeath { get; init; }
@@ -184,8 +189,8 @@ public class InventoryItem
     /// or null to keep the def's. It renames only this copy — the catalog is untouched.</summary>
     public string? CustomName { get; set; }
 
-    /// <summary>May this instance be put in the character's PRIVATE warehouse? null = yes (today's rule:
-    /// the private bank is just a bigger bag and takes anything).</summary>
+    /// <summary>May this instance be put in the character's PRIVATE warehouse? null = ask the DEF, whose
+    /// answer is yes unless it is SoulBound (the private bank is otherwise just a bigger bag).</summary>
     public bool? CanStorePrivate { get; set; }
 
     /// <summary>May this instance be put in the ACCOUNT warehouse? null = follow the standing rule, which
@@ -197,11 +202,13 @@ public class InventoryItem
     /// from BOTH while an ordinary bound item is barred only from the account one.</para></summary>
     public bool? CanStoreAccount { get; set; }
 
-    /// <summary>May this instance go into the private warehouse?</summary>
-    public bool StorablePrivate() => CanStorePrivate ?? true;
+    /// <summary>May this instance go into the private warehouse? (Delegates to <see cref="ItemTag"/>,
+    /// like every other instance rule, so the client's card cannot disagree with the keeper.)</summary>
+    public bool StorablePrivate(ItemDef def) => ItemTag.StorablePrivate(def, CanStorePrivate);
 
     /// <summary>May this instance go into the account warehouse? Falls back to the tradable rule.</summary>
-    public bool StorableAccount(ItemDef def) => CanStoreAccount ?? Tradable(def);
+    public bool StorableAccount(ItemDef def) =>
+        ItemTag.StorableAccount(def, CanStoreAccount, TradableOverride);
 
     /// <summary>What a vendor pays for THIS instance. Mirrors <see cref="ItemCatalog.SellPrice"/> unless
     /// this copy was given its own price; <c>-1</c> survives as a negative so it reads as unsellable.</summary>
@@ -780,6 +787,21 @@ public class Entity
     /// PvP/PvE matrix is read, and never on a mob's hit — this is player-vs-player only.</summary>
     public float PvpDamageTaken { get; set; } = 1f;
     public float CancelResist { get; set; }          // chance each buff resists an enemy cancel
+
+    // ----- REWARD RATES: what a MONSTER pays this character, as MULTIPLIERS (1 = untouched). Fed by
+    //       the premium reward runes (RewardRunes.cs) and by nothing else today. 0 means "no reward at
+    //       all" — the Rune of Sinister zeroes the first two, the Rune of Sinners all four. -----
+    /// <summary>Multiplier on experience gained from a kill (AwardExp).</summary>
+    public float ExpRateMult { get; set; } = 1f;
+    /// <summary>Multiplier on SP gained from a kill (AwardExp).</summary>
+    public float SpRateMult { get; set; } = 1f;
+    /// <summary>Multiplier on the gold a kill pays THIS character (their share, in AwardGold).</summary>
+    public float GoldRateMult { get; set; } = 1f;
+    /// <summary>Multiplier on every drop CHANCE rolled for this character's kills. Fed INTO
+    /// <see cref="MobCatalog.EffectiveRate"/> rather than applied at the roll, so the kill roll, the
+    /// target-inspect list and BalanceMatrix all keep reading one number (see CLAUDE.md).</summary>
+    public float DropRateMult { get; set; } = 1f;
+
     public string ActiveArmorSet { get; set; } = ""; // name of the completed armor set bonus, "" if none
     public string ArmorMasteryLabel { get; set; } = ""; // armor-weight mastery status for the UI
 
@@ -2188,8 +2210,25 @@ public class Entity
         // atk/def/speed read buffs live in their Effective* getters instead). Re-folded on
         // every buff apply/expire because both ApplyBuff and TickBuffs call this. Fraction
         // effects accept either Flat or Percent magnitudes (summed as a fraction). -----
+        // REWARD rates are folded by MAX, not by sum: holding a +50% and a +20% Exp rune gives +50%.
+        // Summing them would make "one rune per channel" a lie — a player would carry the whole ladder.
+        // The two zeroing runes are HARD OVERRIDES applied after the max, below, so no pile of bonus
+        // runes can dilute a punishment.
+        float bestExp = 0f, bestSp = 0f, bestGold = 0f, bestDrop = 0f;
+        bool stopExpSp = false, stopGoldDrop = false;
+
         foreach (var buff in Buffs)
         {
+            if (!buff.Rewards.IsNeutral)
+            {
+                var r = buff.Rewards;
+                bestExp = MathF.Max(bestExp, r.Exp);
+                bestSp = MathF.Max(bestSp, r.Sp);
+                bestGold = MathF.Max(bestGold, r.Gold);
+                bestDrop = MathF.Max(bestDrop, r.Drop);
+                stopExpSp |= r.StopsExpSp;
+                stopGoldDrop |= r.StopsGoldDrop;
+            }
             if (buff.Has(SkillEffect.BuffAccuracy)) Accuracy += (int)buff.Flat(SkillEffect.BuffAccuracy);
             // A crit-rate buff's PERCENT multiplies (Focus ×1.30, Harmony ×1.75); its FLAT part
             // lands outside every multiplier — "a flat 30 is flat 3%, not increased by buffs".
@@ -2227,6 +2266,13 @@ public class Entity
             if (buff.Has(SkillEffect.BuffInterruptPower)) MagicInterruptBonus += (int)buff.Flat(SkillEffect.BuffInterruptPower);
             if (buff.Has(SkillEffect.BuffInterruptResist)) InterruptResist += (int)buff.Flat(SkillEffect.BuffInterruptResist);
         }
+
+        // The reward multipliers, from the best rune held in each channel. A STOP wins outright: it is
+        // the point of the Rune of Sinister ("no lvl up") and of the Rune of Sinners (nothing at all).
+        ExpRateMult  = stopExpSp ? 0f : 1f + bestExp;
+        SpRateMult   = stopExpSp ? 0f : 1f + bestSp;
+        GoldRateMult = stopGoldDrop ? 0f : 1f + bestGold;
+        DropRateMult = stopGoldDrop ? 0f : 1f + bestDrop;
         // Fold the crit-RATE chain exactly once: base × (every passive/buff multiplier) + (every
         // flat source), then the single cap — StatCaps.PhysicalCritRate = his 500 on the 0-1000
         // scale. (The three 0.75 clamps that used to sit along the chain are gone: they clamped

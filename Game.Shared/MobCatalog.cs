@@ -263,12 +263,25 @@ public static class MobCatalog
     };
 
     /// <summary>THE rate a drop entry actually rolls at: the global rate (unless the group is guaranteed)
-    /// times the group's own multiplier. Everything that shows or rolls a drop chance must go through
-    /// here — the kill roll, the target-inspect list and tools/BalanceMatrix — or the number on screen
-    /// stops being the number you get, which is the one bug this whole system exists to avoid.</summary>
-    public static float EffectiveRate(int groupId) =>
+    /// times the group's own multiplier, times the PLAYER's own drop multiplier. Everything that shows or
+    /// rolls a drop chance must go through here — the kill roll, the target-inspect list and
+    /// tools/BalanceMatrix — or the number on screen stops being the number you get, which is the one bug
+    /// this whole system exists to avoid.</summary>
+    /// <param name="playerMult">The looking/killing player's own drop multiplier — a premium Rune of Drop
+    /// (1.2 = +20%), or 0 for a Rune of Sinners. It is a PARAMETER rather than arithmetic at the call site
+    /// precisely because of the rule above: a player wearing a Drop rune must be shown the chance they
+    /// actually roll, and the only way to keep three readers agreeing is to give them one function.
+    /// Defaults to 1 for every caller with no player in hand (BalanceMatrix, catalog audits).
+    ///
+    /// <para>Unlike the global rate it applies to the GUARANTEED groups too. That exemption protects his
+    /// authored absolutes from a server-wide rate ("at x10 or x200 I still want the group chances at their
+    /// current ones"); a rune is one player's own purchase, and a Rune of Drop that visibly skipped the
+    /// scroll group would read as broken. The 100% groups are unaffected in practice — they are already at
+    /// the clamp.</para></param>
+    public static float EffectiveRate(int groupId, float playerMult = 1f) =>
         (IsGuaranteedGroup(groupId) ? 1f : RateConfig.DropChanceRate)
-        * RateConfig.DropGroupRate(GroupName(groupId));
+        * RateConfig.DropGroupRate(GroupName(groupId))
+        * Math.Max(0f, playerMult);
 
     /// <summary>An entry's authored chance with its PER-ITEM multiplier applied, but NOT the group or
     /// global rate. This is the number that acts as a WEIGHT inside an exclusive group, so the weighted
@@ -276,10 +289,11 @@ public static class MobCatalog
     public static float ItemWeight(DropEntry e) => e.Chance * RateConfig.DropItemRate(e.ItemId);
 
     /// <summary>THE chance one drop entry actually rolls at, before the level-gap penalty: the authored
-    /// chance times all three knobs (per-item x per-group x global). Everything that rolls or DISPLAYS a
-    /// drop chance goes through here — the kill roll, the target-inspect list and tools/BalanceMatrix —
-    /// so the number on screen stays the number you get.</summary>
-    public static float EffectiveChance(DropEntry e) => ItemWeight(e) * EffectiveRate(e.GroupId);
+    /// chance times all FOUR knobs (per-item x per-group x global x the player's own rune). Everything
+    /// that rolls or DISPLAYS a drop chance goes through here — the kill roll, the target-inspect list and
+    /// tools/BalanceMatrix — so the number on screen stays the number you get.</summary>
+    public static float EffectiveChance(DropEntry e, float playerMult = 1f) =>
+        ItemWeight(e) * EffectiveRate(e.GroupId, playerMult);
 
     // The tables below are PROPERTIES, not static readonly fields, and that is load-bearing: `All =
     // Build()` is declared at the top of this class and C# runs static field initializers in declaration

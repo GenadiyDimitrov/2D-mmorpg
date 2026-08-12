@@ -227,7 +227,13 @@ public record SkillDef(
     // AutoResurrect: a preservation buff that ALSO auto-revives you on death (30% HP/MP, no prompt) instead
     // of leaving you dead — the future tank self-res / healer target-auto-res. Angel's Protection does NOT
     // set this (it only preserves buffs; you still need a manual res). Groundwork: no shipped skill uses it yet.
-    bool AutoResurrect = false)
+    bool AutoResurrect = false,
+    // REWARD RATES — what this buff does to the four things a monster pays (exp / sp / gold / drop
+    // chance). This is the premium REWARD RUNE family; see RewardRates. A multi-level rune puts its
+    // rung here per LEVEL (SkillLevel.Rewards) — read it with RewardsAt(level), never this field
+    // directly. Rides as a field rather than a SkillEffect flag because the flag enum is FULL:
+    // 1L << 62 was the last bit, and four channels would want four of them.
+    RewardRates Rewards = default)
 {
     /// <summary>Hash on the ID alone — and this override MUST stay.
     ///
@@ -304,6 +310,9 @@ public record SkillDef(
     public int GoldCostAt(int level) => Lvl(level)?.GoldCost ?? 0;
     public PassiveEffect? PassiveAt(int level) => Lvl(level)?.Passive ?? Passive;
     public string DescriptionAt(int level) => Lvl(level)?.Description ?? Description;
+    /// <summary>The reward-rate package at a LEVEL — a rune ladder's rung. Falls back to the
+    /// SkillDef's own for a single-level reward buff (Sinister / Sinners).</summary>
+    public RewardRates RewardsAt(int level) => Lvl(level)?.Rewards ?? Rewards;
 
     public float MagnitudeOf(SkillEffect effect, ModifierMode mode, int level = 1)
     {
@@ -409,7 +418,40 @@ public record SkillLevel(
     // HP price of THIS level (-1 = inherit the SkillDef's HpCost). Restore Spirit is the only
     // skill paid in HP, and it is the reason this exists: a fixed HP price on a skill whose MP
     // return grows for 55 levels is either free at 80 or unpayable at 25.
-    int HpCost = -1);
+    int HpCost = -1,
+    // REWARD RATES for THIS rung of a reward-rune ladder (null = inherit the SkillDef's).
+    RewardRates? Rewards = null);
+
+/// <summary>What a buff does to the four things a MONSTER pays out: experience, skill points, the
+/// gold it drops and the CHANCE its table rolls. The premium rune family (Rune of Experience /
+/// Skillpoints / Exp-SP / Gold / Drop, and the two zeroing runes) is nothing but this record plus an
+/// item to carry it.
+///
+/// <para>The four bonuses are FRACTIONS ADDED to a neutral 1 (0.25 = +25%). They are combined by
+/// MAX, never summed (see Entity.RecomputeDerived): holding a +50% and a +20% Exp rune gives +50%,
+/// not +70%, so an Exp/SP rune and a plain Exp rune can sit in the same bag without multiplying each
+/// other. The whole point of one rune per channel is that the best one wins.</para>
+///
+/// <para><b>StopsExpSp</b> is the Rune of Sinister — the grinder's rune: farm items and gold with the
+/// levelling switched OFF. <b>StopsGoldDrop</b> joins it on the Rune of Sinners, which zeroes all
+/// four. A stop is a HARD OVERRIDE applied after the max, so no pile of bonus runes can dilute a
+/// punishment.</para>
+///
+/// <para>These are MONSTER rewards. Quest rewards are authored numbers and are deliberately left
+/// alone — his three phrasings ("exp/sp gain from monsters", "gold DROP amount", "drop CHANCE") are
+/// all kill-side, and a rune that inflated hand-authored quest exp would need every quest retuned.</para></summary>
+public readonly record struct RewardRates(
+    float Exp = 0f,
+    float Sp = 0f,
+    float Gold = 0f,
+    float Drop = 0f,
+    bool StopsExpSp = false,
+    bool StopsGoldDrop = false)
+{
+    /// <summary>Does this package do nothing at all? (Almost every skill in the game.)</summary>
+    public bool IsNeutral => Exp == 0f && Sp == 0f && Gold == 0f && Drop == 0f
+                             && !StopsExpSp && !StopsGoldDrop;
+}
 
 /// <summary>Skill window grouping. Passive = a learned, always-on effect (armor
 /// masteries, discipline passives) — never cast and never placed on the action bar.</summary>
@@ -550,6 +592,7 @@ public static partial class SkillCatalog
         list.AddRange(LightbringerSkills());  // Skills.Lightbringer.cs
         list.AddRange(WarchanterSkills());    // Skills.Warchanter.cs
         list.AddRange(MobSpellSkills());      // Skills.MobSpells.cs (caster-mob nuke + jab)
+        list.AddRange(RewardRuneSkills());    // Skills.RewardRunes.cs (exp/sp/gold/drop runes + Sinister/Sinners)
 
         var dict = new Dictionary<string, SkillDef>();
         foreach (var sk in list)

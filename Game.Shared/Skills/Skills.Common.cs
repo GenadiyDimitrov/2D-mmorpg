@@ -34,12 +34,21 @@ public static partial class SkillCatalog
     //      effective M.Atk (×1.414 magic) + a flat +40 cast, exactly the old passive's numbers. ----
     public const string WarRuneBuff   = "rune_war";
     public const string SpellRuneBuff = "rune_spell";
+    // ---- PREMIUM REWARD runes (see RewardRunes.cs + Skills.RewardRunes.cs). Same machinery, a
+    //      different payload: instead of a combat stat they carry a RewardRates package, so what they
+    //      change is what a MONSTER pays. The channel table owns the ids; these are here only so the
+    //      rune-buff test below can name them. ----
 
     /// <summary>Is this buff granted by a held RUNE rather than cast? Such buffs are owned by the
     /// reconciliation loop, which re-derives them from the rune item (and its expiry) — so they must
-    /// never be saved/restored as ordinary buffs, or login would apply them a second time.</summary>
+    /// never be saved/restored as ordinary buffs, or login would apply them a second time.
+    ///
+    /// <para>⚠ Asks the QUESTION rather than matching a list: any skill carrying a reward package is
+    /// a rune buff by construction, so a new reward rune can never be forgotten here and come back
+    /// duplicated on login.</para></summary>
     public static bool IsRuneBuff(string skillId) =>
-        skillId == WarRuneBuff || skillId == SpellRuneBuff;
+        skillId == WarRuneBuff || skillId == SpellRuneBuff
+        || (Get(skillId) is SkillDef d && !d.RewardsAt(1).IsNeutral);
     // ---- Class identity "sure" floor passives — now ONE multi-level skill each
     //      (auto-granted at the class-change milestone, level = tier 1/2/3). The floor
     //      VALUES live in the SkillDef Levels, not in code. See FloorPassiveFor. ----

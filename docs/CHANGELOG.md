@@ -12,6 +12,56 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## Unreleased — 2026-08-12 — premium reward runes (`BL-01`)
+
+**Five ladders and two punishments, all on the machinery that already existed.** A rune has been an
+item that grants a buff while it sits in your bag since the War/Spell runes; the only new thing here is
+the *payload*. `RewardRates` — exp, SP, gold, drop chance, plus two "stop" flags — rides as a field on
+`SkillDef` and on `BuffInstance`, and `Entity.RecomputeDerived` folds it into four multipliers.
+
+- **Rune of Experience / Skillpoints / Exp-SP / Gold / Drop**, each ONE skill whose **levels are the
+  rungs**: his +5%, then tenths to +100% (`RewardRunes.Ladder`). One item per rung (55 of them),
+  generated from the same table, with the percentage in the id (`rune_exp_20`) — an id that states its
+  own number cannot come to mean another one.
+- **Rune of Sinister** — no exp, no SP, gold and drops untouched. *"So a grinder can grind and no lvl
+  up."* **Rune of Sinners** — all four zeroed, bound to the soul.
+- **Rungs never stack, the best one wins.** They share a family key, so the reconciliation applies the
+  strongest rung you hold and evicts a weaker one that is already running; when the +100% expires the
+  +20% in your bag takes over by itself on the next pass. The rates are folded by **MAX**, not summed,
+  so an Exp rune next to an Exp/SP rune is +50%, never +70%. A **stop** is a hard override applied
+  after the max: no pile of bonus runes can dilute a punishment.
+
+**Two things the plan for this had wrong, both found while building it:**
+
+- `SkillEffect` did not have "3 bits left" — `1L << 62` was already the last one (63 is the sign). So
+  there is no `BuffRewardRate` flag; the package is a field, like `PhysMpCostPct` and the crit fields
+  before it. Nothing about a reward channel wanted a bit anyway.
+- **Untradable was not enough to bar the keeper.** The private warehouse takes anything that is not a
+  quest item — it is deliberately just a bigger bag — so a Rune of Sinners could have been parked there
+  until it expired, which is the one thing it must not allow. New def-level **`SoulBound`**: refused by
+  *both* keepers regardless of instance flags, so the punishment does not depend on whoever handed it
+  out remembering the right `/give` arguments. Runes were already delete-protected, so it now has
+  nowhere to go but with you.
+
+**The drop multiplier is a PARAMETER of `MobCatalog.EffectiveRate`, not arithmetic at a call site.**
+That is the rates rule in CLAUDE.md doing its job: the kill roll and the target-inspect list ask the
+same function with the same player, so a player wearing a Drop rune is *shown* the chance they roll.
+Doing it anywhere else makes the inspect screen lie, silently, to exactly the players who paid.
+
+Two display fixes fell out of it: a leveled buff's bar popup now reads **its own level's** text
+(`DescriptionAt`) instead of the skill's generic blurb — every rung used to describe itself as +5% —
+and a rune's square is named after the **item**, so it reads "Rune of Experience (50%)".
+
+Also: **`ItemCatalog.ValidateRunes()`** fails startup if any rune names a missing buff skill or a rung
+its ladder does not have. A rune pointing at nothing sits in the bag looking perfect and pays nothing.
+
+**Measured, not derived** — new BalanceMatrix **§R**: a +100% Exp rune halves the climb to 60 (18,737
+→ 9,368 kills) and *lowers* lifetime trash gold to 0.50× with it; a +100% Drop rune is ×1.90 on total
+sold value while a +100% Gold rune is only ×1.10, because coin is a small share of what a kill is worth.
+**SmokeTest §9** covers the three failures a playtest cannot see: two rungs both applying, the inspect
+list showing the server's rate while the kill rolls the player's, and a rune buff coming back twice
+after a relog. No protocol change and no DB change.
+
 ## 0.60.1 — 2026-08-11 — a quest step supplies its own props; magic evasion is a fail chance
 
 **The tutorial could dead-end, and he walked straight into it.** `63j` gave part 1 three "prove you did

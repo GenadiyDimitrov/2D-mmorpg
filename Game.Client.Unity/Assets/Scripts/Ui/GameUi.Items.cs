@@ -848,8 +848,16 @@ namespace Game.Client
                  + "   (" + ItemCatalog.RarityPercent(def.Rarity) + "% power)");
             Line("Type:  " + TypeLine(def));
             if (!ItemTag.Tradable(def, item.TradableOverride)) Line("<color=#FF8080>Untradable</color>");
-            if (item.CanStorePrivate == false) Line("<color=#FF8080>The keeper will not accept this</color>");
-            else if (item.CanStoreAccount == false) Line("<color=#FF8080>Cannot go in the account warehouse</color>");
+            // Ask the SHARED predicates, not the raw overrides: a SoulBound def (the Rune of Sinners)
+            // is refused by both keepers without any instance flag set at all, and a card that read
+            // "storable" while the keeper refused it is exactly the `67i` class of bug.
+            if (!ItemTag.StorablePrivate(def, item.CanStorePrivate))
+                Line("<color=#FF8080>The keeper will not accept this</color>");
+            // Only worth saying when it is NOT already implied: an untradable item is barred from the
+            // account bank by the standing rule, and the line above has just said untradable.
+            else if (ItemTag.Tradable(def, item.TradableOverride)
+                     && !ItemTag.StorableAccount(def, item.CanStoreAccount, item.TradableOverride))
+                Line("<color=#FF8080>Cannot go in the account warehouse</color>");
             string timed = TimedLine(item);
             if (timed.Length > 0) Line(timed);
             Line("");

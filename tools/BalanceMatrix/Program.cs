@@ -789,7 +789,9 @@ static IEnumerable<(DropEntry Entry, float Chance)> Marginals(IEnumerable<DropEn
         // Weights are the PER-ITEM-TUNED chances (MobCatalog.ItemWeight), matching RollDrop exactly —
         // this tool's whole job is to be the same arithmetic, so it reads the same two helpers.
         float sum = g.Sum(MobCatalog.ItemWeight);
-        float trigger = Math.Min(1f, g.Sum(MobCatalog.EffectiveChance));
+        // (Lambda, not a method group: EffectiveChance now takes the PLAYER's drop multiplier as an
+        //  optional second argument — this tool has no player, so it measures the bare server rates.)
+        float trigger = Math.Min(1f, g.Sum(e => MobCatalog.EffectiveChance(e)));
         foreach (var e in g)
             yield return (e, sum <= 0 ? 0 : trigger * (MobCatalog.ItemWeight(e) / sum));
     }
@@ -891,6 +893,86 @@ foreach (float mul in new[] { 1f, 0.5f, 0.34f, 0.25f, 0.1f })
 for (int i = 0; i < saved.Length; i++)
     RateConfig.DropGroupRates[new[] { "armor", "accessory", "weapon", "jewel" }[i]] = saved[i];
 Console.WriteLine("  'effective' = the global DropChanceRate x this multiplier — what a gear group really rolls at.");
+Console.WriteLine();
+
+// =====================================================================================================
+//  §R: PREMIUM REWARD RUNES (`BL-01`) — what a rung is actually WORTH.
+//
+//  He asked for a ladder (+5%, then tenths to +100%) without pricing it, and a percentage on an item
+//  card tells nobody what they are buying. So price it in the two currencies a player feels: HOURS off
+//  the climb, and gold per hour of farm. Both are read from the same curves the server uses, and the
+//  runes are applied the way the server applies them — one multiplier per channel, best rune wins.
+//
+//  The Sinister row is the one to read twice: it is the grinder's rune, so its exp column is not a loss
+//  to be minimised, it is the POINT (level 34 forever, farming a level-34 field). What it must not do is
+//  cost gold, and that is what the table proves.
+// =====================================================================================================
+Console.WriteLine("#####################################################################################");
+Console.WriteLine("###  R: PREMIUM REWARD RUNES — what each rung buys                                 ###");
+Console.WriteLine("#####################################################################################");
+Console.WriteLine();
+
+// Kills and gold to climb 1 -> 60 at the LIVE rates, as the baseline every rune is measured against.
+(double Kills, double Gold) Climb(int toLevel, float expMult, float goldMult, float dropMult)
+{
+    double kills = 0, gold = 0;
+    for (int L = 1; L < toLevel; L++)
+    {
+        long exp = StatCalculator.MobExpReward(L);
+        long next = ExpCurve.ExpToNext(L);
+        if (next <= 0 || exp <= 0) continue;
+        double k = next / (double)exp / Math.Max(0.01f, RateConfig.ExpRate * expMult);
+        kills += k;
+        // A kill pays coin (the Gold rune) and a table (the Drop rune). Only the gear/mats/consumable
+        // half scales with drop chance — the coin is not a drop roll.
+        var kv = MobsNear(L).Select(m => KillValue(m, L)).ToList();
+        double coin = kv.Average(x => x.Gold);
+        double table = kv.Average(x => x.Gear + x.Mats + x.Consumables);
+        gold += k * (coin * goldMult + table * dropMult);
+    }
+    return (kills, gold);
+}
+
+var baseline = Climb(60, 1f, 1f, 1f);
+Console.WriteLine("=== R1: the climb to 60 under one rune at a time (live rates) ===");
+Console.WriteLine($"{"rune",34} {"kills 1->60",12} {"vs base",9} {"gold sold",14} {"vs base",9}");
+Console.WriteLine($"{"(none)",34} {baseline.Kills,12:N0} {"1.00x",9} {baseline.Gold,14:N0} {"1.00x",9}");
+
+void RuneRow(string label, float expMult, float goldMult, float dropMult)
+{
+    var r = Climb(60, expMult, goldMult, dropMult);
+    Console.WriteLine($"{label,34} {r.Kills,12:N0} {r.Kills / baseline.Kills,8:0.00}x {r.Gold,14:N0} "
+        + $"{r.Gold / baseline.Gold,8:0.00}x");
+}
+
+foreach (int rung in new[] { 0, 1, 2, 5, 10 })   // +5%, +10%, +20%, +50%, +100%
+{
+    int pct = RewardRunes.Percent(rung);
+    float m = 1f + RewardRunes.Ladder[rung];
+    RuneRow($"Rune of Experience ({pct}%)", m, 1f, 1f);
+}
+foreach (int rung in new[] { 2, 10 })
+{
+    int pct = RewardRunes.Percent(rung);
+    float m = 1f + RewardRunes.Ladder[rung];
+    RuneRow($"Rune of Gold ({pct}%)", 1f, m, 1f);
+    RuneRow($"Rune of Drop ({pct}%)", 1f, 1f, m);
+}
+Console.WriteLine("  ^ 'gold sold' is coin + everything vendored. An EXP rune lowers it: fewer kills for");
+Console.WriteLine("    the same level means less trash — the same inversion the economy section warns about.");
+Console.WriteLine();
+
+// The grinder's rune, measured where it is actually used: parked at one level, farming that field.
+Console.WriteLine("=== R2: Rune of Sinister — the grinder's rune, 1000 kills at a parked level ===");
+Console.WriteLine($"{"level",6} {"exp gained",14} {"levels gained",14} {"gold + loot",14}");
+foreach (int L in new[] { 34, 50, 70 })
+{
+    var v = MobsNear(L).Select(m => KillValue(m, L)).Average(x => x.Gold + x.Gear + x.Mats + x.Consumables);
+    // Sinister: ExpRateMult and SpRateMult are 0, everything else untouched.
+    Console.WriteLine($"{L,6} {0,14:N0} {0,14:N0} {1000 * v,14:N0}");
+}
+Console.WriteLine("  ^ zero exp by design (*\"so a grinder can grind and no lvl up\"*) and the full loot of");
+Console.WriteLine("    1000 kills. The Rune of Sinners is this row with the last column zeroed too.");
 Console.WriteLine();
 
 // =====================================================================================================
@@ -1098,7 +1180,7 @@ var hotGroups = MobCatalog.Templates
     .SelectMany(m => (m.Drops ?? Array.Empty<DropEntry>())
         .Where(d => d.GroupId != 0)
         .GroupBy(d => d.GroupId)
-        .Select(g => (Mob: m.Id, Group: g.Key, Sum: g.Sum(MobCatalog.EffectiveChance))))
+        .Select(g => (Mob: m.Id, Group: g.Key, Sum: g.Sum(e => MobCatalog.EffectiveChance(e)))))
     .Where(x => x.Sum > 1.0001f)
     .ToArray();
 Console.WriteLine($"  {hotGroups.Length} group(s) clamped at 100% (weights inside would be preserved anyway,"

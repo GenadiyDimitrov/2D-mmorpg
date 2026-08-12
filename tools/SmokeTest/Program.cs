@@ -1240,7 +1240,171 @@ await c.DisposeAsync();
 }
 
 // -------------------------------------------------------------------------------------------
-// 9. THE TRAINING DUMMIES THAT HIT BACK (`56c` / `63h`) — do they actually strike?
+// 9. THE PREMIUM REWARD RUNES (`BL-01`) — the best rung wins, and the screen tells the truth.
+// -------------------------------------------------------------------------------------------
+// Three failures live here, and NONE of them is visible in a playtest:
+//   (1) Two rungs of one channel both applying. The buff bar would show one square either way (the
+//       family key is shared), and the exp would quietly be +105% instead of +100%.
+//   (2) The drop list showing the SERVER's rate while the kill rolls the PLAYER's. That is the exact
+//       bug CLAUDE.md's rates rule exists to prevent, and a wrong percentage on a popup looks like a
+//       percentage.
+//   (3) A rune buff saved as an ordinary buff, so login re-applies it on top of the reconciled one —
+//       the same shape as the buff double-apply §4d guards, but now driven by a catalog lookup
+//       instead of a hardcoded pair of ids.
+{
+    var expChannel = RewardRunes.All.First(c => c.Key == RewardRunes.KeyExp);
+    var dropChannel = RewardRunes.All.First(c => c.Key == RewardRunes.KeyDrop);
+    string gmName = gmChars.Characters[0].Name;
+
+    // ⚠ START FROM A KNOWN BAG. This is the one section that runs on the ADMIN's persistent character
+    // rather than a fresh Smoke<timestamp> one, and a reward rune lives for 24 HOURS — so the runes the
+    // last run handed out are still there, and "the weak rung goes up first" silently became "the 100%
+    // rune from an hour ago is still winning". A test that is not idempotent lies to you.
+    // (AdminRemoveItem is the only path that can take a rune: the bin refuses one by design.)
+    foreach (var stale in (gm.Inv?.Items ?? Array.Empty<InventoryItemDto>())
+             .Where(i => ItemCatalog.Get(i.DefId) is { IsRune: true } d
+                         && SkillCatalog.Get(d.RuneBuffSkillId) is SkillDef s && !s.RewardsAt(1).IsNeutral)
+             .ToList())
+        await gm.Hub.SendAsync("AdminRemoveItem", gmName, stale.InstanceId);
+    await gm.Settle();
+    await Task.Delay(1200);   // the buff goes with the item on the next reconcile pass (~1/s)
+    Check("the admin's bag starts with no reward rune from a previous run",
+          (gm.Buffs?.Buffs ?? Array.Empty<BuffDto>()).All(b => !SkillCatalog.IsRuneBuff(b.Key)
+              || b.Key == SkillCatalog.WarRuneBuff || b.Key == SkillCatalog.SpellRuneBuff),
+          string.Join(",", (gm.Buffs?.Buffs ?? Array.Empty<BuffDto>()).Select(b => b.Key)));
+
+    // The WEAK rung first, so the strong one has to evict something that is already running.
+    await gm.Hub.SendAsync("AdminCommand", "give", $"{gmName} {expChannel.ItemId(5)}");
+    await gm.Settle();
+    var weak = gm.Buffs?.Buffs.FirstOrDefault(b => b.Key == expChannel.SkillId);
+    Check("a held Rune of Experience puts its buff up (`BL-01`)", weak is not null,
+          string.Join(",", (gm.Buffs?.Buffs ?? Array.Empty<BuffDto>()).Select(b => b.Key)));
+    Check("...named after the RUNG, so the bar says which one it is",
+          weak?.Name == expChannel.NameAt(5), weak?.Name);
+    Check("...and its popup states that rung's own number, not the ladder's first",
+          weak?.Description.Contains("+5%") == true, weak?.Description);
+
+    await gm.Hub.SendAsync("AdminCommand", "give", $"{gmName} {expChannel.ItemId(100)}");
+    await gm.Settle();
+    var expBuffs = (gm.Buffs?.Buffs ?? Array.Empty<BuffDto>()).Where(b => b.Key == expChannel.SkillId).ToList();
+    Check("🔑 holding TWO rungs runs exactly ONE buff (they never stack into +105%)",
+          expBuffs.Count == 1, $"{expBuffs.Count} copies of '{expChannel.SkillId}'");
+    Check("...and it is the STRONGER rung, even though the weaker one was already up",
+          expBuffs.Count == 1 && expBuffs[0].Name == expChannel.NameAt(100),
+          expBuffs.FirstOrDefault()?.Name);
+
+    // (2) The drop list must move with the rune. Read a mob's table before and after.
+    // ⚠ Pick a creature that HAS a drop table, by name, from the catalog — "the first entity that isn't
+    // me" is a gatekeeper or another player as often as not, and an empty list would make this pass by
+    // measuring nothing.
+    var dropping = MobCatalog.Templates
+        .Where(m => m.Drops is { Length: > 0 })
+        .Select(m => m.Name).ToHashSet(StringComparer.Ordinal);
+    var withMobs = WorldMap.SpawnZones.First(z => z.MobTypes.Any(t =>
+        MobCatalog.Get(t).Drops is { Length: > 0 }));
+    await gm.Hub.SendAsync("DebugTeleport", withMobs.X, withMobs.Y);
+    await gm.Settle();
+    var mob = gm.EntityNames.FirstOrDefault(kv => kv.Key != gm.MyId && dropping.Contains(kv.Value)).Key;
+    Check("a creature with a drop table is standing here to inspect", mob != Guid.Empty,
+          string.Join(" / ", gm.EntityNames.Values.Take(6)));
+    if (mob != Guid.Empty)
+    {
+        await gm.Hub.SendAsync("InspectTarget", mob, true);
+        await gm.Settle();
+        var before = gm.Details?.Drops;
+
+        await gm.Hub.SendAsync("AdminCommand", "give", $"{gmName} {dropChannel.ItemId(100)}");
+        await gm.Settle();
+        await gm.Hub.SendAsync("InspectTarget", mob, true);
+        await gm.Settle();
+        var after = gm.Details?.Drops;
+
+        // Compare the PERCENTAGES row by row, keyed on the row's label ("Mats", "Armor · Rare",
+        // "   Fox Pelt"). The value is everything inside the trailing parentheses.
+        static Dictionary<string, double> Rows(string[]? lines)
+        {
+            var d = new Dictionary<string, double>(StringComparer.Ordinal);
+            foreach (var l in lines ?? Array.Empty<string>())
+            {
+                int i = l.LastIndexOf('(');
+                if (i < 0) continue;
+                if (double.TryParse(l.Substring(i + 1).TrimEnd(')', '%', ' '),
+                        System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out var v))
+                    d[l.Substring(0, i).TrimEnd()] = v;
+            }
+            return d;
+        }
+
+        var rowsBefore = Rows(before);
+        var rowsAfter = Rows(after);
+        // ⚠ Only the rows well BELOW the clamp can show a doubling at all: a group already firing at 70%
+        // or 100% is pinned there, and its members move by a fraction. Measuring the biggest row — the
+        // first thing this test did — measured exactly the row that cannot move, and read as a failure
+        // while the rune was working. So: sum the small rows, where the arithmetic is still linear.
+        // The MEDIAN ratio across them, not the sum: a handful still belong to a group whose total hits
+        // the clamp, and averaging lets those few pull an otherwise perfect x2 down to x1.7. The median
+        // says what happened to a TYPICAL row, which is the claim being tested.
+        var ratios = rowsBefore
+            .Where(kv => kv.Value > 0 && kv.Value < 5 && rowsAfter.ContainsKey(kv.Key))
+            .Select(kv => rowsAfter[kv.Key] / kv.Value)
+            .OrderBy(r => r).ToList();
+        double median = ratios.Count == 0 ? 0 : ratios[ratios.Count / 2];
+
+        Check("the mob's drop list arrived at all", before is { Length: > 0 },
+              $"{before?.Length ?? 0} rows");
+        Check("🔑 a Rune of Drop moves the numbers ON THE INSPECT SCREEN, not just the kill roll",
+              ratios.Count >= 3 && median > 1.9,
+              $"a typical unclamped row went x{median:0.##} on a +100% rune ({ratios.Count} rows compared)");
+    }
+
+    // (3) Sinister and Sinners: both are ordinary held runes, and Sinners can go nowhere.
+    await gm.Hub.SendAsync("AdminCommand", "give", $"{gmName} {ItemCatalog.SinnersRune}");
+    await gm.Settle();
+    Check("the Rune of Sinners applies its own buff",
+          gm.Buffs?.Buffs.Any(b => b.Key == RewardRunes.SinnersId) == true,
+          string.Join(",", (gm.Buffs?.Buffs ?? Array.Empty<BuffDto>()).Select(b => b.Key)));
+
+    var sinners = (gm.Inv?.Items ?? Array.Empty<InventoryItemDto>())
+        .FirstOrDefault(i => i.DefId == ItemCatalog.SinnersRune);
+    if (sinners is not null)
+    {
+        // ⚠ Back to a TOWN first: the keeper is only reachable in one, and out in the field the refusal
+        // would come from "you can only reach your warehouse in a town" — a pass that proves nothing.
+        var town = WorldMap.NpcById("gatekeeper_brackenford")!;
+        await gm.Hub.SendAsync("DebugTeleport", town.X, town.Y - 40f);
+        await gm.Settle();
+        await gm.Hub.SendAsync("WarehouseDeposit", sinners.InstanceId);
+        await gm.Settle();
+        Check("🔑 no keeper will accept the Rune of Sinners — it is bound to the soul, not to a flag",
+              (gm.Inv?.Items ?? Array.Empty<InventoryItemDto>()).Any(i => i.InstanceId == sinners.InstanceId),
+              "the private keeper took it, so the punishment can be parked");
+        await gm.Hub.SendAsync("RemoveItem", sinners.InstanceId, true, 1);
+        await gm.Settle();
+        Check("...and it cannot be thrown away either",
+              (gm.Inv?.Items ?? Array.Empty<InventoryItemDto>()).Any(i => i.InstanceId == sinners.InstanceId),
+              "it was destroyed");
+    }
+
+    // (3), the half that only a relog can show.
+    var runeCharId = gmChars.Characters[0].Id;
+    await gm.Hub.InvokeAsync<string?>("LeaveWorld");
+    await gm.DisposeAsync();
+    gm = await ConnectAsync("admin", "admin");
+    var runeBack = await gm.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(runeCharId));
+    gm.MyId = runeBack.EntityId;
+    await gm.Settle();
+
+    var afterRelog = (gm.Buffs?.Buffs ?? Array.Empty<BuffDto>()).Where(b => b.Key == expChannel.SkillId).ToList();
+    Check("🔑 the rune buff comes back exactly ONCE after a relog (reconciled, never restored)",
+          afterRelog.Count == 1, $"{afterRelog.Count} copies");
+    Check("...still at the stronger rung the bag justifies",
+          afterRelog.Count == 1 && afterRelog[0].Name == expChannel.NameAt(100),
+          afterRelog.FirstOrDefault()?.Name);
+}
+
+// -------------------------------------------------------------------------------------------
+// 10. THE TRAINING DUMMIES THAT HIT BACK (`56c` / `63h`) — do they actually strike?
 // -------------------------------------------------------------------------------------------
 // They shipped in 0.58.x and did NOTHING for two builds, and the owner could only report *"both
 // dummies act as the old"* — which is exactly the shape of bug this tool exists for. Two causes, both
@@ -1414,6 +1578,12 @@ sealed class Session : IAsyncDisposable
     /// <summary>The last "QuestMarks" push — which NPCs have a marker for this character.</summary>
     public QuestMarks? Marks;
 
+    /// <summary>The last "TargetDetails" push — the expanded target window, including a mob's DROP
+    /// list. The drop percentages are computed per LOOKER (a Rune of Drop moves them), and the whole
+    /// point of that rule is that the shown number is the rolled number — which can only be checked
+    /// where the number is actually sent.</summary>
+    public TargetDetails? Details;
+
     public async Task OpenAsync(string url)
     {
         Hub = new HubConnectionBuilder().WithUrl(url).Build();
@@ -1432,6 +1602,7 @@ sealed class Session : IAsyncDisposable
         Hub.On<ProgressUpdate>("Progress", p => Progress = p);
         Hub.On<BuffUpdate>("Buffs", b => Buffs = b);
         Hub.On<QuestMarks>("QuestMarks", m => Marks = m);
+        Hub.On<TargetDetails>("TargetDetails", d => Details = d);
         Hub.On<NpcDialog>("Dialog", d => Dialog = d);
         Hub.On<GoldUpdate>("Gold", g => Gold = g.Gold);
         Hub.On<CombatEvent>("Combat", c => Combat.Add(c));

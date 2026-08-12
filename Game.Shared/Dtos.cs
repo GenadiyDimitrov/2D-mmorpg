@@ -169,6 +169,18 @@ public static class ItemTag
         Tradable(def, tradeOverride) && def.Slot != EquipSlot.QuestItem
         && SellPrice(def, sellOverride) > 0;
 
+    /// <summary>May this instance go into the character's PRIVATE keeper? The instance's own opinion
+    /// wins; otherwise the def's — normally yes (that bank is just a bigger bag), but never for a
+    /// SoulBound def like the Rune of Sinners.</summary>
+    public static bool StorablePrivate(ItemDef def, bool? storeOverride) =>
+        storeOverride ?? !def.SoulBound;
+
+    /// <summary>May this instance go into the ACCOUNT keeper? The instance's own opinion wins;
+    /// otherwise the standing rule — TRADABLE only, since that bank is a door between characters —
+    /// and never for a SoulBound def.</summary>
+    public static bool StorableAccount(ItemDef def, bool? storeOverride, bool? tradeOverride) =>
+        storeOverride ?? (!def.SoulBound && Tradable(def, tradeOverride));
+
     /// <summary>The name THIS copy goes by — the def's unless one was written for the instance.</summary>
     public static string Name(ItemDef def, InventoryItemDto i) =>
         string.IsNullOrEmpty(i.CustomName) ? def.Name : i.CustomName!;
