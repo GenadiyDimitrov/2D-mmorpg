@@ -7,12 +7,162 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.60.1**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.61.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## Unreleased — 2026-08-12 — premium reward runes (`BL-01`)
+## 0.61.0 — 2026-08-12 — the playtest-21 batch: shields stop carrying the mage, the tutorial stops dead-ending, an item carries its own tags, and a rune can pay you
+
+**One release, four commits, and the whole of playtest 21 answered.** The pass is closed and
+transcribed into [testing/Playtest-Archive.md](testing/Playtest-Archive.md#playtest-21); everything he
+asked to be *built* rather than fixed now has a permanent id in [Backlog.md](Backlog.md).
+⚠ **Schema change — `game.db` must be moved.** Protocol stays **16**.
+
+### Shields stop double-dipping — his option 3
+
+He found it himself and it was real: a shield's `ShieldDefense` was folded into physical defence
+**permanently**, so it already paid on every hit, and a block then removed another 34-47% on top.
+*"Thats why the tank/cleric felt immortal ... Mage should not be immortal even with a shield."*
+
+Of his three ways out he picked the third: **cut the flat defence 5× and give the tank it back through
+his kit.** Shield defence goes `90 143 203 230 256 299 413` → **`18 29 41 46 51 60 83`** (his own worked
+number, 51, lands on the 61 rung), and **Shield Mastery's passive is raised 5×** (`ShieldDefPct`
+0.30/0.30/0.40/0.40 → **1.50/1.50/2.00/2.00**). The nerf therefore lands on the wearer with no mastery
+— the mage — which is exactly what he asked for.
+
+🔑 **He ruled that the mastery passive is the ONLY thing that scales**: *"arrow defence and other
+passives, sets and buffs that increase the shieldPdef/chance etc are kept as is."* So the Mastery buff,
+`BlockChancePct`, `BowResist` and the sets' `shield.p.def x1.25` keep their numbers and buy a fifth of
+the absolute defence they used to, on purpose. That ruling is written into all three places it lives so
+it cannot drift back.
+
+**Block behaviour is bit-identical to 0.59.1** — the coupling was rescaled to match
+(`BlockReduction += ShieldDefPct * 0.2f` → `* 0.04f`, so 0.04 × 2.00 is the same +0.08 as 0.2 × 0.40).
+Only flat defence moved: a 1H+shield tank's P.Def goes L20 625 → **498**, L52 1031 → **801**, about
+−19% throughout. The `Shield def:` row is gone from the stat sheet, because the number is simply part of
+P.Def now. A shield's enchant drops **+9 → +3** per level, the same as armour — *"i was considering that
+it worked only in block state."*
+
+**And `67m` was a genuine miss, not a tuning complaint.** The Wooden and Iron Shields are hand-authored,
+so 0.59.1's block re-cut — which walked the generated rungs — never touched either of them. That is why
+the wood shield still carried 30% reduction after a build that supposedly halved it. Both are on the
+tier profile now (defence 35 → 7 and 90 → 18), and `shield_iron` is deleted per *"Iron sheld can go."*
+
+### The start quest, re-specced end to end — and it could dead-end two more ways
+
+0.60.1 fixed the dead-end he hit; playing past it found two more, and both were worse.
+
+**A fighter had nothing to cast.** The "use a skill" beat was credited only from a *completed cast*, and
+a level-1 fighter has no spell — *"I had to use TestSkill to continue with quest."* A **basic attack**
+credits it now.
+
+**The Auto button had stopped calling the handler that credits the auto-farm beat.** When it was changed
+to push the whole config, `ToggleAutoHunt` lost its last caller — so no button on the screen could
+credit the step, and *"nothing works to allow me to continue"* was literally true. The config handler
+credits it now, which also explains `63a`: the reward rendered and the quest never finished.
+
+The rest is his order, built as written. **Creation grants no boxes** (that was the source of his three
+weapons and three armours); the two training boxes are **plain, not selections**, and **class-conditional**
+via a new `BoxEntry.ForClass` — fighter gets sword + leather, mage gets wand + robe — with the filter
+applied in the random path, the selection *offer* and the selection *confirm*, the confirm being the
+authoritative one. Part 1's beats are now: talk → open a box → equip ×2 → **travel with Pell's list** →
+**put something on the bar** → target and use it → kill 5 pups → level 3 → back to Cera. The last two of
+those are new step types (`Teleport`, `AssignBar`); `AssignBar` is credited only from a **player** edit
+of the bar, so the skill-bar rule holds. `training_club` and `training_knives` are deleted —
+*"the others are useless."*
+
+### The training tier is written down
+
+Broken jewels beat **F Common in all three slots and F Uncommon in two**, so the starter reward
+outranked the first thing you buy. They are his 9 / 5 / 3 now (were 15 / 11 / 7).
+
+🔑 **But the numbers are not the fix.** That rung has now drifted above the ladder **four times** —
+training armor, the Wooden Shield, its block profile, and now the jewels — because it is the one tier
+that is hand-authored instead of generated from a column. So `gear_sets.csv` grew a **TRAINING TIER
+block**, every starter piece on its own row **directly above its F row**: *when you raise an F rung, the
+thing that used to silently outrank it is now the line above your cursor.*
+
+### The training dummies were inert for three reasons, not one
+
+*"Both dummies act as the old - they dont do nothing different."*
+
+🔑 **Nobody was ever inside the strike radius.** `DummyStrikeRange` was his literal **50**, but a melee
+attacker is walked to `MeleeRange` = **80** and stops there, and a caster stands at 600. Now **150**.
+*A reach authored from a design note must be checked against the stop-distance the movement code
+actually produces* — the number was right in the note and wrong in the world.
+
+Second, the spawner hard-coded `"Training Dummy (Lv N)"` for **every** dummy, so all three wore the same
+plate. Third, they had no titles: `Normal` / `Physical` / `Magic`, via a new `MobType.Title`. No client
+change was needed — the nameplate already draws a title for any entity. **`69d` magic evasion is finally
+testable**, because the magic dummy feeds the fail-chance channel it was waiting on.
+
+**Rank titles** came with it (his ask mid-session): elites wear **`Elite`** in red and lost the `Elite `
+prefix from their *name*; the valley treant is **`Field Boss`**, the grave lich **`Dungeon Boss`**.
+🔑 Field vs dungeon is read from the **coordinates**, reusing the existing "dungeons are the negative
+quadrant" rule — a second flag would be a second thing to drift.
+
+### `65d`, and why a client fix would not have worked
+
+*"I select a target and select my next target manually before the first dies -> then the 1st dies and
+closes my second."* The root cause was **server-side**: in manual play the autopilot pushed a live-target
+message every tick, **and a null push is a revocation of a selection the server never made.** Kill A
+while B is manually selected → null → B is wiped. Manual play may now only ever *hand a target over*,
+never take one away. The client drops its own target on the **alive→dead transition** — his *"'DIES' not
+'DEAD'"* — so tapping a corpse still sticks.
+
+### `67i` was bigger than the line he saw
+
+He reported that the leather armour description omitted its +200 crit damage. In fact **five** channels
+had no formatter line at all — `CritRateFlat`, `CritDamageFlat`, `MagicResist`, `PvpDamageTakenPct` and
+`AccuracyPct` — so **every S set in the game described itself with numbers missing** since 0.59.1.
+🔑 *Appending a field to `StatMods` requires a text line in the same commit; nothing fails loudly when
+the formatter is missing one.*
+
+### The rest of the batch
+
+**`66n` the x500 mats freeze, root cause**: the admin give enqueued **one command per unit** — 25
+materials × 500 = **12,500 commands**, each granting one item and re-serialising the whole inventory.
+Quantity rides on the command now (a stackable is a single add, only real gear loops), one inventory
+push at the end, clamped to 10,000. **Auto-farm ignored a skill's weapon requirement** — it checked
+cooldown, MP and HP but never `RequiredWeapon`, so it cast Stab off a mace while manual play refused;
+both gates are checked now, as a *skip*, so the cursor moves to a skill that can fire. **`68h`** F-grade
+gear prints `Unenchantable` instead of a per-enchant line. **`63i`** the Rune of Tincture leaves the
+Apothecary shelf for admin/event only.
+
+**`62j` the enchant-scroll drop rate, ratified and cut 30×.** His data pinned it exactly: the E scroll
+was `0.40 × EnchantShare(0.15)` = **6% of every kill**, and the only rung live below level 40 — which is
+how he had 80 scrolls by level 28. `EnchantShare` 0.15 → **0.005**: E **0.20%** · D 0.15% · C 0.10% ·
+B **0.075%**. Rung shape, boxes, elites and bosses untouched. ⚠ B may be too thin; flagged to him.
+
+### `58d` — an item carries its own tags, and `/give` can write them
+
+His playtest-20 design: *"it is a REAL item with tags — never a new server-side def."* An instance now
+carries five properties of its own, each `null` meaning *no opinion, use the catalog*: **sell price**
+(−1 = unsellable), **tradable**, **custom name**, **can store private**, **can store account**. The last
+two are new — the private keeper had no instance gate at all.
+
+**The displayed tag is DERIVED, never stored**, so it cannot disagree with the behaviour: sellable +
+tradable reads as nothing, neither reads as **bound**, sellable but untradable reads as **private**, and
+a timer composes on top → **"(temporary, bound)"**. The three predicates live in `Game.Shared` and are
+called by the server *and* the item card — because a display that quietly disagrees with the rule it
+describes is exactly how `67i` happened.
+
+```
+/give <player> <itemId> [sellPrice] [tradable] [timed] ["name"] [enchant]
+                        [canStorePrivate] [canStoreAccount]
+```
+
+Everything after the item id is optional and positional, `-` means no opinion, and **`1m` is one
+MINUTE** (his rule). A tagged instance is **always a fresh bag row**, never merged into a stack — the
+tag belongs to that copy. `/give <player>` alone still opens the admin's own bag as a picker.
+Enforcement reads the **instance**, not the def, at the vendor, the trade offer and both keepers.
+
+**The five fields persist**, which is the schema change. *A bound item that comes back ordinary looks
+perfectly right until the moment it can be sold* — so SmokeTest §8 asserts the round-trip through SQLite
+rather than just the grant.
+
+### Premium reward runes (`BL-01`)
 
 **Five ladders and two punishments, all on the machinery that already existed.** A rune has been an
 item that grants a buff while it sits in your bag since the War/Spell runes; the only new thing here is
@@ -60,7 +210,8 @@ its ladder does not have. A rune pointing at nothing sits in the bag looking per
 sold value while a +100% Gold rune is only ×1.10, because coin is a small share of what a kill is worth.
 **SmokeTest §9** covers the three failures a playtest cannot see: two rungs both applying, the inspect
 list showing the server's rate while the kill rolls the player's, and a rune buff coming back twice
-after a relog. No protocol change and no DB change.
+after a relog. The runes themselves needed no protocol change and no new column — **the db reset this
+release asks for is `58d`'s**, above.
 
 ## 0.60.1 — 2026-08-11 — a quest step supplies its own props; magic evasion is a fail chance
 
