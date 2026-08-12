@@ -1,4 +1,4 @@
-# OPEN CHECKLIST — everything untested as of **0.61.0** (2026-08-12)
+# OPEN CHECKLIST — everything untested as of **0.62.0** (2026-08-12)
 
 > **Rolling and unversioned.** Playtest-21 (your 2026-08-11/12 pass over eight builds) is closed and
 > transcribed verbatim into [Playtest-Archive.md](Playtest-Archive.md#playtest-21) — this file has been
@@ -20,27 +20,28 @@ the thing is known, written down and queued, and you do not have to report it ag
 
 ## ⚠ BEFORE YOU START
 
-**Install `L2Clone-0.61.0.apk` and unzip `Game.Server-0.61.0.zip`.** Protocol is still **16** — it
-last moved at 0.59.0 and nothing since has changed the wire shape; the new fields are all additive.
-Install both halves together anyway: the catalogs, skill tables and world outlines are compiled into
-each side, so a mismatched pair disagrees *quietly* instead of refusing. This build is mostly catalog
-numbers (the shield cut) plus **55 new items**, which an old client would simply not know about.
+**Install `L2Clone-0.62.0.apk` and unzip `Game.Server-0.62.0.zip`.** 🔴 **Protocol moved 16 → 17**, so
+this pair MUST be installed together — a 0.61.0 client is refused at login rather than left to speak
+the old shape. (It moved for one new hub method and one new config field; nothing else on the wire
+changed.)
 
-🔴 **MOVE `Game.Server/game.db` OUT (+ `-shm` + `-wal`) — this build needs it.** `58d` added five
-per-instance columns to the item table (sell price, tradable, custom name, and the two warehouse
-flags) and `EnsureCreated` does not add columns to an existing DB. An old file loads with the columns
-missing, which is exactly the failure `58d` was built to prevent: a bound item comes back ordinary and
-looks perfectly right until the moment you can sell it.
+🔴 **`game.db`: needed a reset at 0.61.0, needs NOTHING at 0.62.0.** If you never actually launched
+0.61.0, move `Game.Server/game.db` out now (+ `-shm` + `-wal`) — `58d` added five per-instance columns
+to the item table and `EnsureCreated` does not add columns to an existing DB, so a bound item comes
+back ordinary and looks perfectly right until the moment you can sell it. If you already reset for
+0.61.0, **do nothing** — 0.62.0's own new setting rides in an existing JSON column.
 
-⚠ **ONE BUILD IS UNPLAYED, but it is a wide one.** 0.61.0 is the whole playtest-21 fix batch —
-**every shield in the game changed**, the **start quest was re-specced end to end**, the training tier
-was re-authored, and enchant scrolls dropped 30× less often. On top of that sit two features you asked
-for by name: **item tags + `/give`** (§75) and the **premium reward runes** (§76).
+⚠ **TWO BUILDS ARE UNPLAYED.** 0.61.0 is the whole playtest-21 fix batch — **every shield in the game
+changed**, the **start quest was re-specced end to end**, the training tier was re-authored, and
+enchant scrolls dropped 30× less often — plus **item tags + `/give`** (§75) and the **premium reward
+runes** (§76). 0.62.0 on top of it is the **two tabs you asked for** (§77, §78) and nothing else, so if
+something feels wrong outside those two windows it came from 0.61.0.
 
-✅ **Pre-flight is clear.** `tools/SmokeTest` was re-run against the **0.61.0** server — **ALL CHECKS
-PASSED**, including its new §8 item-tag round-trip and §9 reward-rune assertions. The server was
-boot-checked too (it starts, every world validator runs — including the new `ValidateRunes` — log
-clean).
+✅ **Pre-flight is clear.** `tools/SmokeTest` was re-run against the **0.62.0** server — **ALL CHECKS
+PASSED**, including its new §4f stat-swap basket assertions (the exact 35,000,000 charge, a refused
+basket costing nothing, and all nine rungs surviving a relog at their levels) on top of the §8 item-tag
+and §9 reward-rune sections. The server was boot-checked too (it starts, every world validator runs,
+log clean).
 
 ## Where to spend the pass, if you don't do all of it
 
@@ -57,10 +58,16 @@ In order of how expensive a defect would be to find later:
    silently pays double is not visible from inside the game.
 4. **§75 item tags + `/give`.** This is your route to handing out anything, so the tag has to survive
    a relog. `75f` is that row.
-5. **§72 the training tier** — small, but it is the rung that has drifted above the ladder four times.
-6. **§73 the dummies**, which have never once worked. They are now the only way to measure a hit rate
+5. **§77 the Stat-Swap tab** — `77f`/`77g` specifically. It spends **35,000,000** in one press and the
+   result cannot be undone anywhere but the Mindwriter, a pair at a time. A tab that shows one total
+   and charges another is not visible from inside the game. `77d` also carries **the one question I
+   had to answer for you** — read it.
+6. **§78 the auto buff tab** — `78b` (rarity, then scroll > potion) and `78c` (it never spends a bottle
+   it cannot improve on). Cheap to test, and the failure mode is your stock quietly draining.
+7. **§72 the training tier** — small, but it is the rung that has drifted above the ladder four times.
+8. **§73 the dummies**, which have never once worked. They are now the only way to measure a hit rate
    without a real fight.
-7. **§74** the five small ones, and everything else.
+9. **§74** the five small ones, and everything else.
 
 ---
 
@@ -380,6 +387,95 @@ War and Spell runes; the only new thing is the **payload**.
 - `76i` [] - **Startup refuses a broken rune.** A rune naming a missing buff skill, or a rung its ladder
   does not have, used to sit in the bag looking perfect and pay nothing; the server now fails to start.
   Nothing for you to do — this row exists so you know the failure mode is covered. ->
+
+---
+
+## 77. THE STAT-SWAP TAB — `BL-03`, your layout
+
+*"its a bit chaotic .. need a new place -- may be a new tab where u see what stats u selected and
+before u confirm a selection to show what u are changing."* It is the **Stats** tab, fourth in the
+Skills window, next to Known / Learn / Actions. Needs a level-**40** character with gold — the fastest
+route is `/lvl` up an admin char and `/gold`.
+
+- `77a` [] - **The layout you specified**, top to bottom: a `Rungs n / 9 committed` row · a
+  `Next price` row · one row per pair on your class's shelf, each `[-] count [+]` · the running
+  **`Added:  WIT +5  |  ATK +3  |  SPT -8`** line · the Confirm. Check it reads as a plan rather than a
+  price list — that was the complaint. ->
+
+- `77b` [] - **The count reads `2 (+1)`** — what you have PAID for, then what you are about to add,
+  deliberately not merged into one number. Stage a rung on a pair you already own some of and confirm
+  you can still tell the two apart. ->
+
+- `77c` [] - 🔑 **Staging is free; the bill is at the end.** `[+]` only ever checks the two caps, never
+  your gold — so you can plan a full nine-rung build while broke and only be told at Confirm. Try it:
+  the Confirm button should refuse with *how much you need and how much you have*, not silently. ->
+
+- `77d` [] - 🔑 **`[-]` takes back a SELECTION, never a paid rung.** Once a rung is bought, `[-]` on
+  that pair goes dead — un-committing is the Mindwriter's job, it is free there, and it drops the
+  **whole pair** at once. The tab says so in a footer line. ⚠ **This is the one place I had to
+  interpret you**: *"[+] greys after a paid rung, so you can only step back down and re-spend"* could
+  also mean the tab should let you walk a paid rung back down. It cannot today — the server has no such
+  command, only the NPC's forget-the-lot. **If you meant the other thing, say so and it is a new
+  entry.** ->
+
+- `77e` [] - **`[+]` greys at the caps**: at `+5` on the stat that pair RAISES (counted across every
+  pair that raises it, not just this one), and at 9 rungs total. Push one stat to +5 two different ways
+  and check the second pair locks too. ->
+
+- `77f` [] - 🔴 **The price is a LADDER, not a multiple.** A rung costs 1/2/3/4/5/5/5/5/5 kk *by how
+  many you already own*, so the full nine is **35,000,000 however you spread it** — and NOT nine times
+  the `Next price`. **Confirm the number the tab shows is the number you are charged.** (The smoke test
+  asserts exactly 35,000,000, but the tab's own total is what you read.) ->
+
+- `77g` [] - 🔴 **The purchase is all-or-nothing.** A basket that breaks a cap or that you cannot afford
+  must apply **nothing** and cost **nothing** — not its first few lines. That matters because a partial
+  build can only be undone at the Mindwriter, a pair at a time. Try to buy a 10th rung and check your
+  gold did not move. ->
+
+- `77h` [] - **The rungs survive a relog** at their bought levels, and your stat sheet shows the moved
+  numbers immediately after Confirm (a swap moves CON, so Max HP moves with it). ->
+
+- `77i` [] - `BL-39`, riding along: **the Mindwriter now says `losing 25,000,000 spent`**, not
+  `(cost 25,000,000)` under a header that says free. *"i think it will cost me 25kk to remove them even
+  though upper say its free."* ->
+
+---
+
+## 78. THE AUTO BUFF POTION/SCROLL TAB — `BL-04`, your layout
+
+*"One row per buff family: `Bulwark [potion ☒][scroll ☐][max rarity: rare]`."* It is the **Buffs** tab
+in the **Auto Potions** window (Menu → Auto Potions), beside the heal-potion tab. It **absorbs `C4`**,
+the auto-on you deferred into it. Give yourself a few potions and a Blessing Box to test with.
+
+- `78a` [] - **Seventeen rows, one per family** — Swift · Alacrity · Haste · Agility · Might · Bulwark
+  · Force · Ward · Aim, then the scroll-only eight (Body · Soul · Vigor · Serenity · Focus · Ferocity
+  · Insight · Frenzy). The scroll-only ones show a **dead "no potion" button** rather than a blank, so
+  the column still lines up. ->
+
+- `78b` [] - 🔴 **The priority is yours: rarity first, then scroll > potion.** Hold both a Scroll of
+  Bulwark and a Bulwark Potion with both armed — the **scroll** goes first. Then lower that row's
+  **max rarity to Uncommon** and check it now spends the potion and leaves the scroll alone. That cap
+  is the whole reason a family is the unit and not an item. ->
+
+- `78c` [] - 🔑 **It never spends a bottle it cannot improve on.** With a buff already up, the row must
+  do nothing at all — not fall through to a weaker rung and waste it. **Drink a Scroll of Bulwark by
+  hand, then arm the row and watch your potion stack stay put.** ->
+
+- `78d` [] - **It works with auto-farm OFF.** These are two separate switches on purpose; the buff
+  keeper runs every tick regardless of whether the autopilot is hunting. Test it standing still in
+  town with Auto off. ->
+
+- `78e` [] - **Dash is deliberately absent from the list.** It is a 15-second sprint on a 1-minute
+  reuse, so an autopilot would empty the stack a bottle a minute for nothing. If you *want* it
+  automated, that is a new entry, not a bug. ->
+
+- `78f` [] - **Save writes the whole tab**, armed rows and unarmed alike, and survives a relog.
+  ⚠ Once you save this tab even with everything OFF, it **replaces** the old always-on keep-every-buff-
+  potion-up behaviour — that is intended (the tab is the truth now), but it means "all off" really
+  means all off. ->
+
+- `78g` [] - **One window, one Save; Reset touches only the tab you are looking at.** Set up both tabs,
+  hit Save once, and check neither half was dropped. ->
 
 ---
 

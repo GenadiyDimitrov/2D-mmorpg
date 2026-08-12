@@ -7,12 +7,12 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.61.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.62.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
-## Unreleased — 2026-08-12 — two tabs: a place to execute the systems we already had
+## 0.62.0 — 2026-08-12 — two tabs: a place to execute the systems we already had
 
 **`BL-03` and `BL-04`.** Both features existed and neither had anywhere to be used from: stat swaps
 were twelve pair-shaped rows scattered through the Learn tab, and the auto-buff switch had no UI at
