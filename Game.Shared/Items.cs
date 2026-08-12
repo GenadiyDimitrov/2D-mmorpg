@@ -534,7 +534,9 @@ public static class ItemCatalog
     };
     // (`god_judgment` / `god_robes` — deleted 2026-08-07 with the God layer, playtest-19 `0b`.)
     public const string WoodenShield = "shield_wooden";
-    public const string IronShield = "shield_iron";
+    // (`shield_iron` — deleted 2026-08-12, him: *"Iron sheld can go .. wooden is a training gear"*. It
+    //  was an E-grade hand-authored one-off that nothing sold, dropped or boxed, sitting between the
+    //  Wooden Shield and the generated tier ladder for no reason. The training tier is ONE shield.)
     public const string BrassAmulet = "jewel_brass_amulet";
     public const string SilverTalisman = "jewel_silver_talisman";
     public const string IronMace = "blunt_1h_iron_mace";        // 1H physical blunt (shield-ok)
@@ -1138,22 +1140,25 @@ public static class ItemCatalog
         //  tanks make them matter via Shield Mastery passives. Base values are
         //  modest; passives/buffs scale them. Block = flat % damage reduction.
         // ===================================================================
-        // The Wooden Shield is STARTER kit, so it sits below the F ladder the same way the training
-        // armor does (owner, 2026-07-31): 40 -> 35. At 40 it equalled the F-tier Ferrite Aegis, so the
-        // first shield you could loot was never an upgrade — the identical bug the training armor had.
-        // ⚠ THESE TWO ARE HAND-AUTHORED AND WERE MISSED BY THE 0.59.1 BLOCK RE-CUT (his 67m: "the wood
-        // shield still caries 30% dmg reduction should be 10%"). They now sit ON the tier profile
-        // (shBlock/shReduce/shCrit/shEvaPen further down) at their own grade — Wooden on the F column,
-        // Iron on the E column — so a hand-written starter can never again out-mitigate the ladder.
-        // Their ShieldDefense took the same 5x cut as the ladder (35 -> 7, 90 -> 18).
+        // The Wooden Shield is TRAINING kit — the same tier as the training leather and the broken
+        // jewels, and authored in `docs/data/gear/gear_sets.csv` alongside them (him, 2026-08-12). It
+        // sits BELOW the F ladder on every column, which is the rule the 2026-07-31 pass restored: you
+        // start in gear that is worse than what drops. At its old 40 defence it equalled the F-tier
+        // Ferrite Aegis and the first shield you could loot was never an upgrade.
+        // ⚠ It was HAND-authored and the 0.59.1 block re-cut missed it — that is his 67m, "the wood
+        // shield still caries 30% dmg reduction should be 10%". It is on the F column of the tier
+        // profile now (shBlock/shReduce/shCrit/shEvaPen further down), so a hand-written starter can
+        // never again out-mitigate the ladder, and its defence took the same 5x cut (35 -> 7).
+        // ⚠ The Iron Shield is DELETED with the same ruling ("Iron sheld can go"): an E-grade one-off
+        // that nothing sold, dropped or boxed. Between the training shield and the ladder there is
+        // nothing to author.
         list.Add(new ItemDef(WoodenShield, "Wooden Shield", EquipSlot.Shield,
             ItemGrade.F, ItemRarity.Common,
             BlockChance: 0.10f, BlockReduction: 0.10f, ShieldDefense: 7,
-            ShieldCritDefense: 0.03f, ShieldEvasionPenalty: 3));
-        list.Add(new ItemDef(IronShield, "Iron Shield", EquipSlot.Shield,
-            ItemGrade.E, ItemRarity.Uncommon,
-            BlockChance: 0.15f, BlockReduction: 0.10f, ShieldDefense: 18,
-            ShieldCritDefense: 0.05f, ShieldEvasionPenalty: 5));
+            ShieldCritDefense: 0.03f, ShieldEvasionPenalty: 3,
+            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice,
+            NoAttributes: true,
+            Description: "A strapped plank. It stops about as much as you would expect."));
 
         // ===================================================================
         //  1H BLUNTS — maces/wands. Blunt = higher accuracy, lower crit. One hand,
@@ -1245,18 +1250,27 @@ public static class ItemCatalog
             Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
             Description: "A rough apprentice's robe."));
 
-        // BROKEN jewels — the level 1-5 drop line. TRADABLE on purpose: these are the first thing a new
-        // player owns that is worth anything, and selling them is the first bit of economy they touch.
-        // The owner's "40g / 30g / 60g" is the SHOP price, so it goes on BuyPriceOverride; the sell-back
-        // value falls out of the normal Value formula, as it does for every other tradable item.
+        // BROKEN jewels — the TRAINING rung of the jewel line, authored in `docs/data/gear/gear_sets.csv`
+        // with the Wooden Shield (him, 2026-08-12: *"wooden is a training gear same as broken jewels
+        // (put them inside the csv)"*). TRADABLE on purpose: these are the first thing a new player owns
+        // that is worth anything, and selling them is the first bit of economy they touch. The owner's
+        // "40g / 30g / 60g" is the SHOP price, so it goes on BuyPriceOverride; the sell-back value falls
+        // out of the normal Value formula, as it does for every other tradable item.
+        //
+        // 🔴 M.Def CUT to his numbers: necklace 15 -> 9, earring 11 -> 5, ring 7 -> 3. They were sitting
+        // ABOVE the F ladder they are supposed to sit below — F common/uncommon/rare runs necklace
+        // 11/13/17, earring 7/8/11, ring 5/6/8, so broken beat F COMMON in every slot and beat F
+        // UNCOMMON in two: *"Broken jewels (they are like 'train' gear) now have more than uncommon F
+        // gear."* Same bug the training armor and the Wooden Shield had, in the one slot line that had
+        // never been checked for it.
         list.Add(new ItemDef(BrokenEarring, "Broken Earring", EquipSlot.Jewel, ItemGrade.F, ItemRarity.Common,
-            MDefBonus: 11, JewelType: JewelType.Earring, Value: 40, BuyPriceOverride: 40, NoAttributes: true,
+            MDefBonus: 5, JewelType: JewelType.Earring, Value: 40, BuyPriceOverride: 40, NoAttributes: true,
             Description: "Cracked, but it still turns a little magic."));
         list.Add(new ItemDef(BrokenRing, "Broken Ring", EquipSlot.Jewel, ItemGrade.F, ItemRarity.Common,
-            MDefBonus: 7, JewelType: JewelType.Ring, Value: 30, BuyPriceOverride: 30, NoAttributes: true,
+            MDefBonus: 3, JewelType: JewelType.Ring, Value: 30, BuyPriceOverride: 30, NoAttributes: true,
             Description: "Bent out of shape, and worth a few coins."));
         list.Add(new ItemDef(BrokenNecklace, "Broken Necklace", EquipSlot.Jewel, ItemGrade.F, ItemRarity.Common,
-            MDefBonus: 15, JewelType: JewelType.Necklace, Value: 60, BuyPriceOverride: 60, NoAttributes: true,
+            MDefBonus: 9, JewelType: JewelType.Necklace, Value: 60, BuyPriceOverride: 60, NoAttributes: true,
             Description: "The chain is mended with wire."));
 
         // ===================================================================

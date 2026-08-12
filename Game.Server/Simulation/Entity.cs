@@ -1873,10 +1873,11 @@ public class Entity
                     ShieldDefense = (int)(ShieldDefense * (1f + buff.Percent(SkillEffect.BuffShieldDef)));
                     BlockReduction += buff.Percent(SkillEffect.BuffShieldDef) * 0.2f;
                 }
-                // ⚠ The BUFF side deliberately kept its old magnitude and its old 0.2 coefficient when
-                // the item's flat defence was cut 5x on 2026-08-12. Only the PASSIVE was scaled up: his
-                // worked number ("51 -> 153") is base x (1 + 2.00) with nothing else in it, and putting
-                // x5 on both multipliers would land back on the old 537 exactly — i.e. no change at all.
+                // 🔑 The BUFF side keeps its old magnitude and its old 0.2 coefficient — HIS RULING,
+                // 2026-08-12: "sheild_mastery.Shield_PDef will be the only part that will increase 5
+                // times ... other passives, sets and buffs that increase the shieldPdef/chance etc are
+                // kept as is." (It is also the only answer that changes anything: x5 on both this and
+                // the passive lands back on the old 537 exactly.)
             }
             BlockChance = Math.Clamp(BlockChance, 0f, StatCaps.BlockChance);
             BlockReduction = Math.Clamp(BlockReduction, 0f, StatCaps.BlockReduction);

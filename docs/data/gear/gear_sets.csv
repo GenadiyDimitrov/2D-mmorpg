@@ -84,8 +84,11 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 #      defence is already in P.Def on every hit. The stat sheet's separate "Shield def" row is gone
 #      for the same reason ("this way we can remove the `Shield def:` row in stats").
 #      ⚠ The shield ENCHANT dropped with it: +9/level -> +3/level, the ordinary armour row (68c "NO!").
-#      The shield-conditional SET extras below ("shield.p.def x1.25") are unchanged percentages, so
-#      they are worth a fifth of what they were in absolute defence. Say if you want those raised too.
+#      🔑 NOTHING ELSE SCALED, and this is a ruling, not an oversight: "sheild_mastery.Shield_PDef will
+#      be the only part that will increase 5 times the sheild chance, arrow defence and other passives,
+#      sets and buffs that increase the shieldPdef/chance etc are kept as is." So the shield-conditional
+#      SET extras above ("shield.p.def x1.10/x1.25/x1.30") keep their percentages and are therefore
+#      worth a fifth of what they were in absolute defence — deliberately.
 #      A shield belongs to its tier's HEAVY set id but does not count toward the 4-slot requirement.
 1,Armor,Fighter,1,Shield,18,,[BUILT] was 90 (cut 5x 2026-08-12)
 20,Armor,Fighter,20,Shield,29,,[BUILT] was 143
@@ -267,6 +270,38 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 ,Jewel,-,61,Earring,63,,[BUILT],25,see ATTRIBUTES: EARRING
 ,Jewel,-,76,Earring,71,,[BUILT],31,see ATTRIBUTES: EARRING
 ,Jewel,-,80,Earring,104,,[BUILT] S AUTHORED by him (no longer A x1.60),39,see ATTRIBUTES: EARRING
+
+# ==================================================================================================
+# TRAINING TIER — level 0, BELOW F. Added 2026-08-12 on his ruling: "Iron sheld can go .. wooden is a
+# training gear same as broken jewels (put them inside the csv)".
+#
+# WHY IT IS HERE AT ALL. This rung is not generated from a column like the rest of the file — every
+# piece is hand-written in ItemCatalog — and that is exactly why it kept drifting ABOVE the ladder it
+# is supposed to sit under. It has now happened four separate times:
+#   * the training armor beat the F Common body (fixed 2026-07-24),
+#   * the Wooden Shield equalled the F-tier Ferrite Aegis, so the first shield you could loot was a
+#     sidegrade (fixed 2026-07-31),
+#   * the Wooden Shield kept the OLD block profile when 0.59.1 re-cut every other shield — 30% damage
+#     reduction where F is now 10% (his 67m, fixed 2026-08-12),
+#   * the BROKEN jewels beat F Common in all three slots and F Uncommon in two: "Broken jewels (they
+#     are like 'train' gear) now have more than uncommon F gear" (his numbers, applied below).
+# Writing the rung down is the fix for the CLASS of bug: the F row is directly above each line, so
+# "training must be lower than F" is now something you can SEE rather than something you have to
+# remember. When you raise an F rung, look at the row above it.
+#
+# THE RULE: you start in gear that is worse than anything that drops, and you gear up by playing.
+# Every piece is untradable, sells for 0, and is bought back for 400g at the starter vendors.
+# Two weapons only, one per BASE CLASS (training_club / training_knives / training_bow are deleted):
+# the real weapon choice is the Newbie box at the level-10 quest, which stocks all six.
+# ==================================================================================================
+,Weapon,Fighter,0,Sword,6/5,,[BUILT] Training Sword — the fighter's box item
+,Weapon,Mage,0,Wand,5/7,,[BUILT] Training Wand — the mage's box item; M.Atk above P.Atk as at F
+,Armor,Fighter,0,Light,35,,[BUILT] Training Leather Armor (F Common light body is higher)
+,Armor,Mage,0,Robe,20,,[BUILT] Training Robe,29
+,Armor,-,0,Shield,7,,[BUILT] Wooden Shield — block .10 / reduce .10 / crit def .03 / eva pen 3 = the F column of the shield profile. Def 7 is the 5x cut applied to its old 35. Iron Shield DELETED.
+,Jewel,-,0,Necklace,9,,[BUILT] Broken Necklace — was 15 (above F common 11 AND F rare 17's band),0
+,Jewel,-,0,Ring,3,,[BUILT] Broken Ring — was 7 (F common is 5),0
+,Jewel,-,0,Earring,5,,[BUILT] Broken Earring — was 11 (F common is 7),0
 
 # ==================================================================================================
 # ATTRIBUTES — 🔴 THIS SECTION IS THE ONE REAL CORRECTION IN THIS PASS. READ IT.

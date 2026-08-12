@@ -266,14 +266,22 @@ public static partial class SkillCatalog
 
         // Shield Mastery — PASSIVE (4 levels @20/24/28/32): scales the equipped shield's
         // block chance and defence, and adds bow resistance. Inert without a shield.
-        // ⚠ ShieldDefPct went x5 (0.30/0.40 -> 1.50/2.00) on 2026-08-12 and that is NOT a buff — it is
+        // 🔑 ShieldDefPct went x5 (0.30/0.40 -> 1.50/2.00) on 2026-08-12 and that is NOT a buff — it is
         // the other half of cutting every shield's flat defence 5x (Items.cs shDef). His words:
         // "same as .2 just to increase the shield Defence increase skills/passives — 40% tanks to become
         //  200% ... 51 -> 153 ... which is good now for 61lvl without the 3rd class kits". The point of
-        // the pair is WHO keeps the defence: a shielded mage/cleric drops to the item's own small number
-        // ("just a help for a cleric -15% received dmg -> not immortality") while the tank, who paid SP
-        // for the passive, keeps a meaningful one. Multiply BOTH or neither — scaling only this side
-        // hands the old immortality straight back.
+        // the PAIR (the item cut and this raise) is WHO keeps the defence: a shielded mage/cleric drops
+        // to the item's own small number ("just a help for a cleric -15% received dmg -> not
+        // immortality") while the tank, who paid SP for it, keeps a meaningful one. Never move one of
+        // the two without the other.
+        //
+        // 🔑 AND THIS LINE IS THE *ONLY* THING THAT SCALED — his ruling, 2026-08-12, do not extend it:
+        //     "sheild_mastery.Shield_PDef will be the only part that will increase 5 times the sheild
+        //      chance, arrow defence and other passives, sets and buffs that increase the shieldPdef/
+        //      chance etc are kept as is."
+        // So BlockChancePct and BowResist below are untouched, the Shield Mastery BUFF keeps its +50%,
+        // and the heavy sets' "shield.p.def x1.25" clauses keep theirs. Those are all percentages of a
+        // number that is now a fifth of what it was, and he wants them that way.
         new(TankShieldMastery, "Shield Mastery", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
