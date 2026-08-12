@@ -860,6 +860,60 @@ if (scroll is not null)
 }
 
 // -------------------------------------------------------------------------------------------
+// 4f. THE STAT-SWAP BASKET (`BL-03`, the Stats tab). Three failures live here and NOT ONE of them
+//     is visible on the screen that causes them:
+//       (1) The wrong TOTAL. The price of a rung depends on how many you already own (1/2/3/4/5kk),
+//           so a basket of four is not four times the "next rung" price. A tab that summed it the
+//           obvious way would show a plausible number and charge a different one.
+//       (2) A PARTIAL basket. If the caps were re-checked per line against the SAVED levels instead
+//           of the running ones, an over-budget basket would apply its first lines and refuse the
+//           rest — committing a build the player never picked, and one only the Mindwriter undoes,
+//           a whole pair at a time.
+//       (3) Gold taken for a refused basket. The refusal is a chat line; the balance is a number in
+//           a corner. Nobody reconciles those by eye.
+//     So: assert the exact charge, and assert that a refusal moves NOTHING.
+// -------------------------------------------------------------------------------------------
+{
+    // AGI<->CON is on every class's shelf, so this section does not depend on what `a` rolled.
+    string up = SkillCatalog.SwapAgiCon, down = SkillCatalog.SwapConAgi;
+    int LevelOf(string id) => a.Learned?.Skills.FirstOrDefault(s => s.Id == id)?.Level ?? 0;
+
+    await a.Hub.SendAsync("DebugGold", 100_000_000L);
+    await a.Settle();
+    long goldBefore = a.Gold;
+    Check("the swap shelf offers +AGI -CON to this class",
+          SkillCatalog.StatSwapsFor(BaseClass.Fighter, null).Contains(up));
+    Check("no stat rungs owned yet (a fresh character)",
+          SkillCatalog.StatSwapRungsOwned(a.Learned!.Skills.ToDictionary(s => s.Id, s => s.Level)) == 0);
+
+    // An ILLEGAL basket first, so the "nothing moved" assertion cannot pass just because the legal
+    // one happened to run later: 6 rungs into one pair is one past the +5-per-stat ceiling.
+    await a.Hub.SendAsync("BuyStatSwaps", new[] { new StatSwapPurchaseDto(up, 6) });
+    await a.Settle();
+    Check("a basket over the +5 ceiling is refused ENTIRELY", LevelOf(up) == 0, $"level {LevelOf(up)}");
+    Check("...and a refused basket costs nothing", a.Gold == goldBefore, $"{goldBefore} -> {a.Gold}");
+
+    // The legal one: 5 + 4 = his own nine-rung example, which the design says is 35kk however spread.
+    await a.Hub.SendAsync("BuyStatSwaps",
+        new[] { new StatSwapPurchaseDto(up, 5), new StatSwapPurchaseDto(down, 4) });
+    await a.Settle();
+    Check("a legal basket applies EVERY line", LevelOf(up) == 5 && LevelOf(down) == 4,
+          $"{up}={LevelOf(up)}, {down}={LevelOf(down)}");
+    Check("...charged the LADDER total, not 9x the next-rung price",
+          goldBefore - a.Gold == 35_000_000L, $"charged {goldBefore - a.Gold:N0}");
+    Check("...and that spends the whole 9-rung budget",
+          SkillCatalog.StatSwapRungsOwned(a.Learned!.Skills.ToDictionary(s => s.Id, s => s.Level))
+              == SkillCatalog.StatSwapMaxTotal);
+
+    // A tenth rung has nowhere to go, and must be refused without taking anything.
+    long afterBuy = a.Gold;
+    await a.Hub.SendAsync("BuyStatSwaps", new[] { new StatSwapPurchaseDto(SkillCatalog.SwapAgiAtk, 1) });
+    await a.Settle();
+    Check("a 10th rung is refused, free of charge",
+          LevelOf(SkillCatalog.SwapAgiAtk) == 0 && a.Gold == afterBuy);
+}
+
+// -------------------------------------------------------------------------------------------
 // 5. THE REAL TEST: log out completely and log back in on a NEW connection. Everything above
 //    could still be alive purely in server memory. Only a relog proves it reached the DB.
 //
@@ -892,6 +946,16 @@ Check("the block list survived the relog (BlockedCsv persisted)",
       b.SystemChat.Any(s => s.Contains("Test2")));
 Check("MAIN class's bar survived the relog",
       b.Bar is not null && b.Bar.Slots.SequenceEqual(mainBar));
+// The stat rungs are a 35kk purchase with no refund. They are stored as skill LEVELS, so a bug that
+// saved only the presence of a skill would lose four of the nine and be invisible until someone
+// recounted their stats.
+Check("all nine stat rungs survived the relog at their bought LEVELS (`BL-03`)",
+      b.Learned is not null
+      && SkillCatalog.StatSwapRungsOwned(b.Learned.Skills.ToDictionary(s => s.Id, s => s.Level))
+             == SkillCatalog.StatSwapMaxTotal,
+      b.Learned is null ? "no Learned push" :
+      string.Join(",", b.Learned.Skills.Where(s => SkillCatalog.StatSwapOf(s.Id) is not null)
+                                       .Select(s => $"{s.Id}={s.Level}")));
 Check("the ITEM slot survived the relog (SyncSkillBar kept the item: token, not wiped as a skill)",
       b.Bar is not null && b.Bar.Slots.Contains(itemToken));
 Check("the PRESET slot survived the relog (SyncSkillBar kept the preset: token, not wiped as a skill)",

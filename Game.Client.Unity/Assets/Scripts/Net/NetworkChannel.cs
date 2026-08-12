@@ -327,6 +327,9 @@ namespace Game.Client
         public Task LearnSkillAsync(string skillId) =>
             _connection.SendAsync("LearnSkill", skillId);
 
+        public Task BuyStatSwapsAsync(StatSwapPurchaseDto[] picks) =>
+            _connection.SendAsync("BuyStatSwaps", picks);
+
         /// <summary>Write the bar back. Legitimate ONLY when the PLAYER moved something — never as a
         /// reaction to a server push. See GameBoot.SkillBar.</summary>
         public Task SetSkillBarAsync(string[] slots) =>

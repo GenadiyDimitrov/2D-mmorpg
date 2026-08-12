@@ -270,6 +270,73 @@ public static partial class SkillCatalog
         return null;
     }
 
+    // ---- THE BASKET (BL-03, the Stats tab) ---------------------------------------------------
+
+    /// <summary>Where every stat stands after a set of swaps: the NET of what each pair raises and
+    /// lowers. This is the "Added: WIT +5 | ATK +3 | SPT −8" line, and it is the number that actually
+    /// matters to a player — a build is not "four pairs", it is what its stats end up being.</summary>
+    public static Dictionary<SwapStat, int> StatSwapNet(IEnumerable<KeyValuePair<string, int>> learned)
+    {
+        var net = new Dictionary<SwapStat, int>();
+        void Add(SwapStat s, int d)
+        {
+            net.TryGetValue(s, out int had);
+            net[s] = had + d;
+        }
+        foreach (var (id, level) in learned)
+            if (StatSwapOf(id) is { } pair && level > 0)
+            {
+                Add(pair.Up, level);
+                Add(pair.Down, -level);
+            }
+        return net;
+    }
+
+    /// <summary>Validate and price a WHOLE basket of rungs against what the character already owns.
+    /// Returns the message to show the player, or null when the basket is legal — and in that case
+    /// <paramref name="gold"/> is the total, priced in the order the rungs would be bought (the price
+    /// climbs 1/2/3/4/5kk with each rung OWNED, so the basket costs the same however it is spread but
+    /// not the same as the sum of nine "next rung" prices).
+    ///
+    /// <para>All-or-nothing on purpose. The tab lets you plan a nine-rung build before paying for any
+    /// of it; buying line by line until the gold ran out would commit a partial build that only the
+    /// Mindwriter can undo, and it un-does a whole pair at a time.</para>
+    ///
+    /// <para>Validation is INCREMENTAL — each line is checked against the running total of the ones
+    /// before it, using the same <see cref="StatSwapConflict"/> the single-rung purchase uses. There is
+    /// no second copy of the +5 / 9-rung rules here, and there must not be.</para></summary>
+    public static string? StatSwapBasketConflict(IEnumerable<KeyValuePair<string, int>> learned,
+                                                 IEnumerable<(string SkillId, int Rungs)> basket,
+                                                 out long gold)
+    {
+        gold = 0;
+        var running = new Dictionary<string, int>();
+        foreach (var (id, level) in learned) running[id] = level;
+
+        int owned = StatSwapRungsOwned(running);
+        int bought = 0;
+
+        foreach (var (skillId, rungs) in basket)
+        {
+            if (rungs <= 0) continue;
+            if (StatSwapOf(skillId) is null) return "That is not a stat swap.";
+
+            running.TryGetValue(skillId, out int have);
+            // One rung at a time, so the message names the exact rung that broke the rule rather than
+            // failing the whole basket with a limit the FIRST line already satisfied.
+            for (int i = 1; i <= rungs; i++)
+            {
+                if (StatSwapConflict(skillId, have + i, running) is { } clash) return clash;
+                running[skillId] = have + i;
+            }
+            bought += rungs;
+        }
+
+        if (bought == 0) return "Nothing selected.";
+        gold = StatSwapPriceRange(owned, owned + bought);
+        return null;
+    }
+
     // NOTE: there is deliberately NO "auto-pick a legal subset" helper. It is tempting (debug
     // "learn all skills" wants one) but any subset is an arbitrary BUILD decision, and the obvious
     // greedy pick — take each in turn, skip what it bans — lands on four swaps that all sacrifice

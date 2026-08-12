@@ -176,6 +176,7 @@ public class GameLoopService : BackgroundService
                 case SellItemCmd c: HandleSell(c); break;
                 case TeleportCmd c: HandleTeleport(c); break;
                 case ForgetSkillCmd c: HandleForgetSkill(c); break;
+                case BuyStatSwapsCmd c: HandleBuyStatSwaps(c); break;
                 case BufferActionCmd c: HandleBufferAction(c); break;
                 case SetMoveStateCmd c: HandleSetMoveState(c); break;
                 case CancelCastCmd c: HandleCancelCast(c); break;
@@ -3887,6 +3888,10 @@ public class GameLoopService : BackgroundService
         p.AutoHealPotions.Clear();
         foreach (var hp in c.HealPotions ?? Array.Empty<AutoPotionDto>())
             p.AutoHealPotions.Add(new AutoPotionDto(hp.ItemId, hp.Enabled, Math.Clamp(hp.ThresholdPct, 0, 100)));
+        p.AutoBuffs.Clear();
+        foreach (var b in c.Buffs ?? Array.Empty<AutoBuffDto>())
+            if (!string.IsNullOrEmpty(b.Family))
+                p.AutoBuffs.Add(b);
         p.AutoFarmRange   = Math.Clamp(c.FarmRange, 200, 2000);
         p.AutoFarmStatic  = c.StaticSpot;
         p.AutoAttackNormal = c.AttackNormal;
@@ -4237,6 +4242,14 @@ public class GameLoopService : BackgroundService
             BestManaPotion(p) is InventoryItem mpPot)
             UsePotion(p, mpPot);
 
+        // The BUFFS tab (BL-04) takes over the moment it has been configured. It is per-FAMILY, which
+        // the old per-ITEM list could not be, so it is a replacement rather than a filter on top.
+        if (p.AutoBuffs.Count > 0)
+        {
+            AutoBuffFamilies(p);
+            return;
+        }
+
         // Buff potions: keep the configured ones up — or, if none are listed, every buff potion in
         // the bag (a "keep all buffs up" convenience). Iterate a snapshot since UsePotion mutates.
         if (p.AutoBuffPotions)
@@ -4261,6 +4274,44 @@ public class GameLoopService : BackgroundService
                 if (BuffAlreadyUp(p, bd, 1))
                     continue;
                 UsePotion(p, item);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Keep the armed buff FAMILIES up (BL-04). One line per family, and inside a family the owner's
+    /// order: <i>"rarity first, then scroll &gt; potion — uncommon scroll → uncommon potion → common
+    /// scroll → common potion"</i>, capped at the rarity the line allows.
+    ///
+    /// <para>The walk STOPS at the first candidate whose buff is already up, rather than carrying on
+    /// down the list. That is the whole safety property: without it, a character holding a Rare scroll's
+    /// blessing would fall through to the Uncommon potion, which <c>ApplyBuff</c> would refuse — but
+    /// only after the bottle was gone. The loop must never reach a rung it cannot improve on.</para>
+    ///
+    /// <para>Everything the tab can arm is a real item in the bag; a family with nothing to spend
+    /// simply does nothing, silently, which is what an idle farm wants.</para>
+    /// </summary>
+    private void AutoBuffFamilies(Entity p)
+    {
+        foreach (var line in p.AutoBuffs)
+        {
+            if (!line.Potion && !line.Scroll) continue;
+
+            foreach (var candidate in BuffConsumables.PickOrder(line.Family, line.Potion, line.Scroll,
+                                                               line.MaxRarity))
+            {
+                if (ItemCatalog.Get(candidate.ItemId) is not ItemDef d
+                    || SkillCatalog.Get(d.UseSkillId) is not SkillDef wrapper)
+                    continue;
+
+                // Asked BEFORE the bag, not after: whether the family is covered has nothing to do with
+                // what you are carrying, and asking it first means an already-buffed character costs one
+                // cheap Buffs scan per tick instead of an inventory walk per rung.
+                if (BuffAlreadyUp(p, wrapper, 1)) break;
+
+                if (p.Inventory.FirstOrDefault(i => i.DefId == candidate.ItemId && !i.Equipped)
+                        is InventoryItem item && UsePotion(p, item))
+                    break;
             }
         }
     }
@@ -11073,6 +11124,86 @@ var effect = def.Effect;
     /// <summary>Un-learn a permanent, mutually-exclusive skill so its group is free to commit to
     /// again. Removing costs NOTHING — but the gold already spent is NOT refunded. That's the whole
     /// deal: you may change your mind, you may not undo the price of being wrong.</summary>
+    /// <summary>Buy a planned set of stat-swap rungs in ONE charge (the Stats tab, BL-03).
+    ///
+    /// <para>Every rule is the same one <see cref="HandleLearnSkill"/> enforces — the class shelf, the
+    /// level gate, +5 per stat, 9 rungs total, the price ladder — because they are asked through the
+    /// same shared helpers. What this adds is the ATOMICITY: nothing is charged and nothing is learned
+    /// until the whole basket has passed, so a player who plans nine rungs and can only afford seven is
+    /// told so and keeps their gold, instead of being left holding seven rungs of a build that only the
+    /// Mindwriter can undo — and it undoes a whole pair at a time.</para></summary>
+    private void HandleBuyStatSwaps(BuyStatSwapsCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;
+
+        // Fold duplicate lines: the client sends one per pair, but a malformed basket that named the
+        // same pair twice would otherwise be validated as two independent runs and undercount the caps.
+        var basket = new List<(string SkillId, int Rungs)>();
+        foreach (var pick in cmd.Picks ?? Array.Empty<StatSwapPurchaseDto>())
+        {
+            if (pick is null || pick.Rungs <= 0 || string.IsNullOrEmpty(pick.SkillId)) continue;
+            int at = basket.FindIndex(b => b.SkillId == pick.SkillId);
+            if (at >= 0) basket[at] = (pick.SkillId, basket[at].Rungs + pick.Rungs);
+            else basket.Add((pick.SkillId, pick.Rungs));
+        }
+        if (basket.Count == 0) return;
+
+        // The class shelf and the level gate, per LINE — StatSwapBasketConflict polices the numeric
+        // caps but knows nothing about who may buy what.
+        foreach (var (skillId, rungs) in basket)
+        {
+            if (SkillCatalog.Get(skillId) is not SkillDef def)
+                return;
+            int target = player.SkillLevelOf(def.Id) + rungs;
+            int gate = ClassSkills.LearnLevelOf(def.Id, target, player.Race, player.BaseClass,
+                                                player.Archetype, player.Discipline);
+            if (gate == 0)
+            {
+                SendSystemToEntity(player, $"Your class cannot trade {def.Name}.");
+                return;
+            }
+            if (player.Level < gate)
+            {
+                SendSystemToEntity(player, $"{def.Name} requires level {gate}.");
+                return;
+            }
+        }
+
+        if (SkillCatalog.StatSwapBasketConflict(player.LearnedSkills, basket, out long gold) is { } clash)
+        {
+            SendSystemToEntity(player, clash);
+            return;
+        }
+        if (gold > 0 && player.Gold < gold)
+        {
+            SendSystemToEntity(player,
+                $"That costs {gold:N0} {GameConstants.CurrencyName} — you have {player.Gold:N0}.");
+            return;
+        }
+
+        if (gold > 0) player.Gold -= gold;
+        int rungsBought = 0;
+        foreach (var (skillId, rungs) in basket)
+        {
+            player.LearnedSkills[skillId] = player.SkillLevelOf(skillId) + rungs;
+            rungsBought += rungs;
+        }
+
+        // A swap moves CON, so the pools move with it. Clamping after is the same care HandleForgetSkill
+        // takes: losing CON can lower Max HP under the current value.
+        player.RecomputeDerived();
+        player.Hp = Math.Min(player.Hp, player.MaxHp);
+        player.Mp = Math.Min(player.Mp, player.MaxMp);
+
+        SendSystemToEntity(player, rungsBought == 1
+            ? $"1 stat rung committed for {gold:N0} {GameConstants.CurrencyName}."
+            : $"{rungsBought} stat rungs committed for {gold:N0} {GameConstants.CurrencyName}.");
+        SendStats(player);
+        SendLearned(player);
+        SendGold(player);
+        SaveEntity(player);
+    }
+
     private void HandleForgetSkill(ForgetSkillCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead) return;

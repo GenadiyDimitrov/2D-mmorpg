@@ -207,6 +207,12 @@ public record TeleportCmd(string ConnectionId, Guid NpcEntityId, string ZoneId) 
 /// gold already spent is NOT refunded.</summary>
 public record ForgetSkillCmd(string ConnectionId, Guid NpcEntityId, string SkillId) : IGameCommand;
 
+/// <summary>Buy a whole BASKET of stat-swap rungs in one charge (the Stats tab, BL-03). All-or-nothing:
+/// the tab exists so a nine-rung build can be planned and priced before any of it is paid for, and a
+/// basket that fails halfway would commit a build the player never chose — one only the Mindwriter can
+/// undo, a whole pair at a time. Rungs may still be bought one at a time via LearnSkill.</summary>
+public record BuyStatSwapsCmd(string ConnectionId, StatSwapPurchaseDto[] Picks) : IGameCommand;
+
 /// <summary>Change movement state (run / walk / sit).</summary>
 public record SetMoveStateCmd(string ConnectionId, MoveState State) : IGameCommand;
 

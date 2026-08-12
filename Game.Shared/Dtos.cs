@@ -422,11 +422,31 @@ public record AutoHuntConfigDto(
     int HealThresholdPct = 70,
     // Only ever attack what the party leader is attacking; with no leader target, wait rather than
     // pick your own. (Ignored when you are not in a party, or you ARE the leader.)
-    bool AssistPartyLeader = false);
+    bool AssistPartyLeader = false,
+    // ----- the auto-buff BUFFS tab (BL-04) -----
+    // One line per buff FAMILY. Null/empty = this character has never opened the tab, and the server
+    // falls back to the old AutoBuffPotions + BuffPotionIds behaviour so an existing save keeps
+    // working. A non-empty array REPLACES both of them.
+    AutoBuffDto[]? Buffs = null);
 
 /// <summary>One line in the auto-potions Potions tab: which potion item, whether it's armed, and the
 /// HP (or MP) percent below which to drink it.</summary>
 public record AutoPotionDto(string ItemId, bool Enabled, int ThresholdPct);
+
+/// <summary>One line in the auto-potions BUFFS tab: a buff FAMILY, which shapes of it may be spent,
+/// and the most expensive rarity the autopilot is allowed to open.
+///
+/// <para>A family, not an item, is the unit because a family is what can be UP — the whole ladder
+/// applies one buff under one key, so "keep Bulwark up" is a single question with a list of possible
+/// answers. Listing items instead (the old <c>BuffPotionIds</c>) could not express "use the cheap one
+/// unless I say otherwise", which is the entire point of the cap.</para></summary>
+public record AutoBuffDto(string Family, bool Potion, bool Scroll, ItemRarity MaxRarity);
+
+/// <summary>Client -> server: one line of a stat-swap basket — a pair and how many further rungs to
+/// buy into it. Sent as a whole basket so the purchase is all-or-nothing (see BuyStatSwapsCmd): the
+/// Stats tab prices nine rungs at once, and a half-charged basket would leave a build the player never
+/// chose and cannot undo without a trip to the Mindwriter.</summary>
+public record StatSwapPurchaseDto(string SkillId, int Rungs);
 
 /// <summary>Server -> owning client: you just crossed into a named region. Shown as transient
 /// centre-screen text that fades. MinLevel/MaxLevel are the derived band (0/0 = a peaceful area or a

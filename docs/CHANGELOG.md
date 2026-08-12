@@ -12,6 +12,82 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## Unreleased — 2026-08-12 — two tabs: a place to execute the systems we already had
+
+**`BL-03` and `BL-04`.** Both features existed and neither had anywhere to be used from: stat swaps
+were twelve pair-shaped rows scattered through the Learn tab, and the auto-buff switch had no UI at
+all — it was a config field nothing could set. Protocol **16 → 17** (one new hub method, one new DTO
+field). ⚠ **No schema change** — the auto-hunt config already rides in a JSON column, so `game.db`
+survives this one.
+
+### `BL-03` — the Stats tab: see the build before you pay for it
+
+*"its a bit chaotic .. need a new place -- may be a new tab where u see what stats u selected and
+before u confirm a selection to show what u are changing."*
+
+A fourth tab in the Skills window, built round the two numbers the Learn tab never showed:
+
+- **`[-] n [+]` per pair**, and the count reads `2 (+1)` — what you own kept apart from what you are
+  about to add, because one merged number hides which half is already paid for.
+- **`Added:  WIT +5  |  ATK +3  |  SPT -8`** — the running NET per stat, his own line verbatim. A build
+  is not "four pairs", it is where the stats land.
+- **`Next price`** and a **`Rungs n / 9 committed`** row, then a Confirm that states the basket total.
+
+🔑 **Staging is free; the bill is at the end.** `[+]` respects only the two rung caps (+5 per stat, 9
+total) — gold is asked once, at Confirm. That is why `[-]` can never take back a rung you have already
+*paid* for: un-committing is the Mindwriter's job, it is free there, and it drops a **whole pair** at a
+time, which is not something a `[-]` button should imply. The tab says so in a footer line.
+
+🔑 **The purchase is ATOMIC** — a new `BuyStatSwaps` hub method, not nine `LearnSkill` calls. Buying
+line by line until the gold ran out would commit a partial build the player never chose. It re-validates
+through the *same* `StatSwapConflict` the single-rung path uses (`StatSwapBasketConflict` walks the
+basket one rung at a time against a running total), so there is no second copy of the caps to drift.
+
+🔑 **The price is a LADDER, not a multiple.** A rung costs 1/2/3/4/5/5/5/5/5 kk *by how many you already
+own*, so a basket of nine is 35kk however it is spread — and is **not** nine times the "next rung"
+price. The tab and the server both read it from `StatSwapPriceRange`; the smoke test asserts the exact
+charge, because a tab that summed it the obvious way would show a plausible number and bill a different
+one.
+
+### `BL-04` — the Buffs tab: one row per buff family
+
+*"One row per buff family: `Bulwark [potion ☒][scroll ☐][max rarity: rare]`."* Now a second tab in the
+Auto Potions window (which absorbs `C4` — the auto-on he deferred *into* this tab). Works with auto-farm
+**off**: `AutoPotions` has always run every tick regardless.
+
+🔑 **A FAMILY is the unit, not an item.** Every rung of Bulwark — potion, scroll, a cleric's blessing —
+is the same buff under one key, so "keep Bulwark up" is one question with a list of possible answers.
+The old `BuffPotionIds` was a list of items and could not express *"use the cheap one unless I say
+otherwise"*, which is the entire point of the cap.
+
+**The pick order is his**: rarity first, then **scroll > potion**, capped at the row's max rarity. Rank
+is only the tiebreak, never the lead — it agrees with rarity everywhere in today's ladder, but the cap
+is spelled in *rarity*, so a cap of "uncommon" must never be undercut by a rung that sorts higher.
+
+🔑 **The walk STOPS at the first candidate already up** rather than falling through. Without that, a
+character under a Rare scroll's blessing would drop to the Uncommon potion, which `ApplyBuff` refuses —
+but only after the bottle is gone.
+
+**Nothing is authored twice.** `BuffConsumables` reads the whole table back out of the catalogs: an
+item's `UseSkillId` is a wrapper whose one child is the family rung, and the child carries the key, the
+rank and the name. Adding a potion in `Items.cs` is enough for it to appear in the tab. The **bursts
+fall out for free** — Dash's wrapper is 150 ticks, neither the potion (12000) nor the scroll (36000)
+duration, so `SkillCatalog.ConsumableBuffForm` calls it `None` and the autopilot can never empty a stack
+of sprints for 15 seconds each. Measured: **17 families, 35 items**; the nine paired families offer
+Common/Uncommon/Rare, the eight scroll-only ones a single Rare, and their potion toggle is a *dead*
+button rather than a missing one so the column still lines up.
+
+**Back-compat:** an empty `Buffs` array means "never opened", and the old `AutoBuffPotions` behaviour
+stands. A save writes **all 17 rows**, armed or not — otherwise "I turned them all off" would be
+indistinguishable from "I never opened it" and the old behaviour would quietly come back.
+
+### Smoke test
+
+New `4f`: the illegal basket is refused **entirely and free of charge**, the legal one applies every
+line and charges exactly 35,000,000, a 10th rung is refused free, and all nine rungs come back at their
+bought **levels** after a relog. Three of those failures are invisible on the screen that causes them —
+a wrong total, a half-applied basket, and gold taken for a refusal.
+
 ## 0.61.0 — 2026-08-12 — the playtest-21 batch: shields stop carrying the mage, the tutorial stops dead-ending, an item carries its own tags, and a rune can pay you
 
 **One release, four commits, and the whole of playtest 21 answered.** The pass is closed and

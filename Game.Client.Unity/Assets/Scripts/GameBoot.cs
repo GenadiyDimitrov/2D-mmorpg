@@ -2185,6 +2185,16 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Learn: " + ex.Message); }
         }
 
+        /// <summary>Commit a planned set of stat-swap rungs in one charge (the Stats tab). The server
+        /// re-validates and re-prices the whole basket — the tab's own totals are a PREVIEW, never the
+        /// bill — and answers with the usual Stats/Learned/Gold pushes.</summary>
+        public async void BuyStatSwaps(StatSwapPurchaseDto[] picks)
+        {
+            if (Phase != ClientPhase.InWorld || picks == null || picks.Length == 0) return;
+            try { await _net.BuyStatSwapsAsync(picks); }
+            catch (Exception ex) { ClientLog.Warn("BuyStatSwaps: " + ex.Message); }
+        }
+
         /// <summary>
         /// Put a token in a bar slot and send the WHOLE bar back.
         ///

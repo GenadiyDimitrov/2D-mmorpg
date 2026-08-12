@@ -302,6 +302,13 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    public Task BuyStatSwaps(StatSwapPurchaseDto[] picks)
+    {
+        _world.Commands.Enqueue(new BuyStatSwapsCmd(Context.ConnectionId,
+                                                    picks ?? Array.Empty<StatSwapPurchaseDto>()));
+        return Task.CompletedTask;
+    }
+
     public Task BufferAction(Guid npcEntityId, string action, string skillId)
     {
         _world.Commands.Enqueue(new BufferActionCmd(Context.ConnectionId, npcEntityId, action, skillId ?? ""));

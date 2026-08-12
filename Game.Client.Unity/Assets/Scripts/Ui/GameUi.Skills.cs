@@ -25,9 +25,14 @@ namespace Game.Client
     {
         private RectTransform _skillsPanel, _skillsContent;
         private TextMeshProUGUI _skillsHeader, _assignHint;
-        private int _skillsTab;                 // 0 known, 1 learn, 2 actions
+        private int _skillsTab;                 // 0 known, 1 learn, 2 actions, 3 stats
         private Button[] _skillsTabButtons;
         private int _skillsRevision = -1;
+
+        /// <summary>Rungs STAGED on the Stats tab but not yet paid for: pair skill id -> how many more.
+        /// The tab is a planning pad — nothing here has cost anything until Confirm, which is the point
+        /// of it ("before u confirm a selection to show what u are changing").</summary>
+        private readonly Dictionary<string, int> _swapStage = new Dictionary<string, int>();
 
         /// <summary>The token waiting for a bar slot, or null. While set, tapping a slot ASSIGNS
         /// instead of casting — the hint bar says so, because a mode you cannot see is a trap.</summary>
@@ -45,8 +50,8 @@ namespace Game.Client
             UiKit.Place(UiKit.Rect(_skillsHeader.gameObject), new Vector2(1f, 1f), new Vector2(1f, 1f),
                         new Vector2(-70f, -14f), new Vector2(300f, 28f));
 
-            _skillsTabButtons = new Button[3];
-            string[] names = { "Known", "Learn", "Actions" };
+            _skillsTabButtons = new Button[4];
+            string[] names = { "Known", "Learn", "Actions", "Stats" };
             for (int i = 0; i < names.Length; i++)
             {
                 int tab = i;
@@ -203,7 +208,7 @@ namespace Game.Client
             int revision = _skillsTab * 7919 + Boot.Learned.Count * 31 + Boot.SkillPoints
                          + (Boot.ActiveClass != null ? Boot.ActiveClass.Level * 13 : 0)
                          + (_pendingAssign != null ? _pendingAssign.GetHashCode() : 0)
-                         + BarStamp();
+                         + BarStamp() + SwapStageStamp();
             if (revision == _skillsRevision) return;
             _skillsRevision = revision;
 
@@ -212,7 +217,18 @@ namespace Game.Client
 
             if (_skillsTab == 0) BuildKnownTab();
             else if (_skillsTab == 1) BuildLearnTab();
-            else BuildActionsTab();
+            else if (_skillsTab == 2) BuildActionsTab();
+            else BuildStatsTab();
+        }
+
+        /// <summary>Cheap stamp of the staged basket, so a [+] redraws the row, the price and the
+        /// "Added:" line on the same frame it is pressed. Levels alone would not do it — the LEARNED
+        /// levels are untouched until Confirm.</summary>
+        private int SwapStageStamp()
+        {
+            int stamp = 23;
+            foreach (var kv in _swapStage) stamp += kv.Key.Length * 131 + kv.Value * 7919;
+            return stamp;
         }
 
         private void BuildKnownTab()
@@ -359,6 +375,180 @@ namespace Game.Client
                             "Use", () => Boot.UseSlot(token),
                             "To bar", () => BeginAssign(token));
             }
+        }
+
+        // ----- the STATS tab (BL-03) ---------------------------------------------------------------
+
+        /// <summary>How a swap stat is spelled on screen. MEN is the one that does not spell itself:
+        /// the id still says "men" because it is persisted and append-only, but Spirit replaced it and
+        /// SPT is what the player's stat sheet calls it (his own line reads "SPT -8").</summary>
+        private static string SwapLabel(SkillCatalog.SwapStat s) =>
+            s == SkillCatalog.SwapStat.Men ? "SPT" : s.ToString().ToUpperInvariant();
+
+        /// <summary>
+        /// The Stats tab: buy the level-40 stat swaps as a BASKET you can see before you pay for it.
+        ///
+        /// <para>His complaint was that the Learn tab made this "a bit chaotic" — twelve pair-shaped
+        /// skill rows, each priced separately, with the thing you actually care about (where your stats
+        /// end up) written nowhere. So this tab is built round the two numbers that matter: the running
+        /// "Added:" line, and the total the basket will cost.</para>
+        ///
+        /// <para>Staging is FREE. [+] and [-] only ever move the plan, and the only limits on them are
+        /// the two rung caps — gold is asked once, at Confirm. That is why [-] can never take back a
+        /// rung you have already paid for: un-committing is the Mindwriter's job, it is free there, and
+        /// it drops a whole pair at once, which is not something a [-] button should imply.</para>
+        /// </summary>
+        private void BuildStatsTab()
+        {
+            var active = Boot.ActiveClass;
+            if (active == null) { Note("Waiting for your class ..."); return; }
+
+            var discipline = active.ThirdClass > 0 ? ThirdClassCatalog.Get(active.ThirdClass)?.Discipline : null;
+            var shelf = SkillCatalog.StatSwapsFor(active.BaseClass, discipline).ToList();
+
+            if (active.Level < SkillCatalog.StatSwapLearnLevel)
+            {
+                Note("Stat swaps unlock at level " + SkillCatalog.StatSwapLearnLevel
+                     + " — you are " + active.Level + ".");
+                Note("Each rung moves +1 into one stat and -1 out of another. "
+                     + SkillCatalog.StatSwapMaxTotal + " rungs, at most +"
+                     + SkillCatalog.StatSwapMaxPerStat + " on any one stat.");
+                return;
+            }
+
+            // What the character WOULD have if the basket were bought. Every cap question below is
+            // asked of this, not of Boot.Learned — a staged rung has to count against the budget or the
+            // tab would happily plan a build the server must then refuse.
+            var projected = new Dictionary<string, int>(Boot.Learned);
+            foreach (var kv in _swapStage)
+                projected[kv.Key] = Boot.Learned.GetValueOrDefault(kv.Key) + kv.Value;
+
+            int owned = SkillCatalog.StatSwapRungsOwned(Boot.Learned);
+            int staged = 0;
+            foreach (var kv in _swapStage) staged += kv.Value;
+            long total = SkillCatalog.StatSwapPriceRange(owned, owned + staged);
+
+            Note("Rungs   " + owned + " / " + SkillCatalog.StatSwapMaxTotal + " committed"
+                 + (staged > 0 ? "     + " + staged + " selected" : ""));
+            Note(owned + staged >= SkillCatalog.StatSwapMaxTotal
+                ? "Next price   -   all " + SkillCatalog.StatSwapMaxTotal + " rungs are spoken for."
+                : "Next price   " + SkillCatalog.StatSwapRungPrice(owned + staged).ToString("N0")
+                  + " " + GameConstants.CurrencyName);
+
+            foreach (var id in shelf)
+            {
+                var def = SkillCatalog.Get(id);
+                if (def == null || SkillCatalog.StatSwapOf(id) is not { } pair) continue;
+
+                int paid = Boot.Learned.GetValueOrDefault(id);
+                int plan = _swapStage.GetValueOrDefault(id);
+                int at = paid + plan;
+
+                // The pair, spelled as the two numbers it moves — which is what the row is FOR. A pair
+                // sitting at zero still shows "+1 / -1" so the shelf reads as a menu of trades.
+                string moves = at > 0
+                    ? SwapLabel(pair.Up) + " +" + at + "   " + SwapLabel(pair.Down) + " -" + at
+                    : SwapLabel(pair.Up) + " +1   " + SwapLabel(pair.Down) + " -1";
+
+                bool canAdd = SkillCatalog.StatSwapConflict(id, at + 1, projected) == null;
+                string capturedId = id;
+
+                SwapRow(def.Name + "      " + moves,
+                        plan > 0 ? UiKit.Accent : at > 0 ? UiKit.Text : UiKit.TextDim,
+                        id, Mathf.Max(1, at),
+                        paid, plan,
+                        plan > 0 ? (System.Action)(() => StageSwap(capturedId, -1)) : null,
+                        canAdd ? (System.Action)(() => StageSwap(capturedId, +1)) : null);
+            }
+
+            // The running line he asked for by name: "Added: WIT +5 | ATK +3 | SPT -8". Raises first,
+            // then the sacrifices — read top to bottom it is the build, not the receipt.
+            var net = SkillCatalog.StatSwapNet(projected);
+            var moved = net.Where(kv => kv.Value != 0).OrderByDescending(kv => kv.Value).ToList();
+            Note(moved.Count == 0
+                ? "Added:   nothing yet."
+                : "Added:   " + string.Join("  |  ",
+                      moved.Select(kv => SwapLabel(kv.Key) + " " + (kv.Value > 0 ? "+" : "") + kv.Value)));
+
+            if (staged == 0)
+            {
+                Note("Pick rungs with [+]. Nothing is charged until you confirm.");
+                return;
+            }
+
+            bool affordable = Boot.Gold >= total;
+            Row2Buttons("Confirm " + staged + (staged == 1 ? " rung" : " rungs") + "   "
+                        + total.ToString("N0") + " " + GameConstants.CurrencyName,
+                        "Clear", () => { _swapStage.Clear(); _skillsRevision = -1; },
+                        "Confirm",
+                        affordable
+                            ? (System.Action)ConfirmSwapBasket
+                            : () => ClientLog.Warn("That costs " + total.ToString("N0") + " "
+                                    + GameConstants.CurrencyName + " — you have " + Boot.Gold.ToString("N0") + "."));
+
+            Note("[-] only takes back a selection. A rung you have PAID for is undone at the "
+                 + "Mindwriter, free, a whole pair at a time.");
+        }
+
+        private void StageSwap(string skillId, int delta)
+        {
+            int now = _swapStage.GetValueOrDefault(skillId) + delta;
+            if (now <= 0) _swapStage.Remove(skillId);
+            else _swapStage[skillId] = now;
+            _skillsRevision = -1;
+        }
+
+        /// <summary>Send the basket. Cleared optimistically: the affordability and both caps have
+        /// already been checked against the same shared helpers the server uses, so a refusal here means
+        /// the world moved under us — and the server says so in chat, with nothing spent.</summary>
+        private void ConfirmSwapBasket()
+        {
+            var picks = _swapStage.Select(kv => new StatSwapPurchaseDto(kv.Key, kv.Value)).ToArray();
+            if (picks.Length == 0) return;
+            Boot.BuyStatSwaps(picks);
+            _swapStage.Clear();
+            _skillsRevision = -1;
+        }
+
+        /// <summary>A row with a [-] COUNT [+] stepper on the right. Its own helper rather than a third
+        /// parameter set on <see cref="Row2Buttons"/>: the middle is a LABEL, not a button, and a
+        /// stepper that looked like two more buttons in a row of buttons is exactly the "chaotic"
+        /// reading this tab exists to fix.</summary>
+        private void SwapRow(string text, Color colour, string detailSkill, int detailLevel,
+                             int paid, int planned, System.Action onMinus, System.Action onPlus)
+        {
+            var row = UiKit.Box(_skillsContent, "SwapRow", UiKit.PanelLight);
+            row.gameObject.AddComponent<LayoutElement>().minHeight = 46f;
+
+            if (detailSkill != null)
+            {
+                var open = row.gameObject.AddComponent<Button>();
+                open.targetGraphic = row;
+                string id = detailSkill;
+                int level = detailLevel;
+                open.onClick.AddListener(() => ShowSkillDetail(id, level));
+            }
+
+            var label = UiKit.Label(row.transform, text, 16f, colour, TextAlignmentOptions.Left);
+            UiKit.Stretch(UiKit.Rect(label.gameObject), 12f, 0f, 210f, 0f);
+
+            var plus = UiKit.TextButton(row.transform, "+", onPlus, 18f);
+            plus.interactable = onPlus != null;
+            UiKit.Place(UiKit.Rect(plus.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                        new Vector2(-8f, 0f), new Vector2(56f, 36f));
+
+            // "2 (+1)" — what you own, and what you are about to add, kept apart. One merged number
+            // would hide which part of the build is already paid for and which is still a plan.
+            var count = UiKit.Label(row.transform,
+                planned > 0 ? paid + " (+" + planned + ")" : paid.ToString(),
+                15f, planned > 0 ? UiKit.Accent : UiKit.TextDim, TextAlignmentOptions.Center);
+            UiKit.Place(UiKit.Rect(count.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                        new Vector2(-68f, 0f), new Vector2(76f, 30f));
+
+            var minus = UiKit.TextButton(row.transform, "-", onMinus, 18f);
+            minus.interactable = onMinus != null;
+            UiKit.Place(UiKit.Rect(minus.gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                        new Vector2(-146f, 0f), new Vector2(56f, 36f));
         }
 
         /// <summary>True when a skill you already know REPLACES this one (Magic Bolt → Flame Bolt), so

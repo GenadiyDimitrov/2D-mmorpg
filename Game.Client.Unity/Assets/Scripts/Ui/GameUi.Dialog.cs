@@ -231,8 +231,12 @@ namespace Game.Client
                 foreach (var skill in d.SkillReset.Skills)
                 {
                     string skillId = skill.SkillId;
+                    // "losing", not "(cost …)" — `BL-39`. The number is what forgetting THROWS AWAY, and
+                    // reading it as a price is the obvious reading: *"i think it will cost me 25kk to
+                    // remove them even though upper say its free"*. A header saying "free" directly above
+                    // a row saying "cost" makes the header look like the lie.
                     DialogRow(skill.Name + (skill.Level > 1 ? "  Lv." + skill.Level : "")
-                              + (skill.GoldSpent > 0 ? "   (cost " + skill.GoldSpent.ToString("N0") + ")" : ""),
+                              + (skill.GoldSpent > 0 ? "   losing " + skill.GoldSpent.ToString("N0") + " spent" : ""),
                               "Forget", () => Boot.ForgetSkill(skillId), UiKit.Text);
                 }
             }

@@ -25,32 +25,15 @@ decision, a CSV, a measurement) · ⏸ you put it on hold.
 
 ---
 
-## ★ The five you have named most recently
+## ★ The ones you have named most recently
 
-- `BL-01` — ✅ **BUILT 2026-08-12.** All five ladders (Exp · SP · Exp+SP · Gold · Drop, +5% then
-  tenths to +100%) plus Sinister and Sinners. See `CHANGELOG.md`. Kept here for one entry only
-  because two of its notes turned out to be wrong and the correction is worth reading: `SkillEffect`
-  had **no** bits left, not three (`1L << 62` was already the last), so the payload rides as a
-  `RewardRates` field; and one thing it needs that this entry never mentioned — a def-level
-  `SoulBound`, because *untradable alone did not bar the private keeper*, which takes anything by
-  default, so Sinners could have been parked there until it expired. Delete this entry next pass.
+Three of the original five are **built and deleted** (2026-08-12): `BL-01` the premium reward runes,
+`BL-03` the Stat-Swap tab and `BL-04` the auto buff potion/scroll tab — the last two took `BL-39`
+(the Mindwriter's misleading `(cost …)`) out with them. See `CHANGELOG.md`. Two are left.
 
 - `BL-02` 🔵 **The 40+ class kits (3rd and 4th tier).** Blocked on your skill CSVs —
   `docs/data/classes_skills_csv/` holds nothing above level 35. Still the single biggest content
   unlock in the project; nothing is invented in the meantime, by your own rule.
-
-- `BL-03` 🔴 **A Stat-Swap tab.** *"its a bit chaotic .. need a new place -- may be a new tab where u
-  see what stats u selected and before u confirm a selection to show what u are changing."* Your
-  layout: `Next Price` · a committed-count row · `[+]`/`[-]` per pair · the increase/decrease pair
-  per column · a running `Added: WIT +5 | ATK +3 | SPT −8` line. `[+]` greys at the +5 cap and after
-  a paid rung, so you can only step back down and re-spend. Also kills `63m`
-  (*"now with list of skill is visually hard to understand"*). *(playtest-21 `63l`/`63m`.)*
-
-- `BL-04` 🔴 **The auto buff potion/scroll tab.** One row per buff family:
-  `Bulwark [potion ☒][scroll ☐][max rarity: rare]`. When the buff drops off, priority is **rarity
-  first, then scroll > potion** — uncommon scroll → uncommon potion → common scroll → common potion.
-  **Absorbs `C4`** (auto-on for buff potions/scrolls), which you deferred *into* this tab.
-  *(playtest-21, "My Finds".)*
 
 - `BL-05` 🔴 **Crafting moves to NPC masters, and a profession is quittable.** *"better at NPC — and
   craft happens with their respected masters … u compleate the quest and u can take his
@@ -201,11 +184,6 @@ decision, a CSV, a measurement) · ⏸ you put it on hold.
 ---
 
 ## UI & client
-
-- `BL-39` 🔴 **The Mindwriter must stop printing `(cost 25,000,000)` when forgetting is free.**
-  *"i think it will cost me 25kk to remove them even though upper say its free -> make it `(losing
-  25,000,000)` or something or remove the () as whole."* *(playtest-21 `63l`/`63p`; ships with
-  `BL-03`.)*
 
 - `BL-40` 🔴 **Crafting output is absurd, and it is a UI-adjacent economy bug.** A level-30 Potion
   Crafter had made **450 uncommon potions** (~100k saved, ~34k resale) out of ~15 uncommon wood; a

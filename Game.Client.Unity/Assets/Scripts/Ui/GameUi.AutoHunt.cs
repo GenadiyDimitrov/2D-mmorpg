@@ -1,5 +1,6 @@
 using System;
 using Game.Shared;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -131,13 +132,44 @@ namespace Game.Client
         {
             _autoPotionsPanel = UiKit.PanelBox(_worldRoot, "AutoPotions");
             UiKit.Place(_autoPotionsPanel, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-                        Vector2.zero, new Vector2(680f, 430f));
+                        Vector2.zero, new Vector2(760f, 520f));
             var inner = _autoPotionsPanel.GetChild(0);
             float chrome = UiKit.WindowChrome(_autoPotionsPanel, "Auto Potions",
                                               () => CloseWindow(_autoPotionsPanel));
 
-            float y = -chrome - 12f;
-            UiKit.Place(UiKit.Rect(UiKit.Label(inner, "Heal potions — drink when HP drops below the %:", 13f, UiKit.Accent).gameObject),
+            // Two tabs, same window: heal potions answer "how do I stay alive", buff potions and
+            // scrolls answer "what do I keep up". Both are things you set once and forget, both are
+            // spent by the same per-tick loop, and neither needs auto-farm to be on.
+            _autoPotTabButtons = new Button[2];
+            string[] tabNames = { "Potions", "Buffs" };
+            for (int i = 0; i < tabNames.Length; i++)
+            {
+                int tab = i;
+                var button = UiKit.TextButton(inner, tabNames[i], () => { _autoPotTab = tab; ShowAutoPotTab(); }, 17f);
+                UiKit.Place(UiKit.Rect(button.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                            new Vector2(18f, -chrome - 6f), new Vector2(144f, 38f));
+                UiKit.Rect(button.gameObject).anchoredPosition = new Vector2(18f + i * 150f, -chrome - 6f);
+                _autoPotTabButtons[i] = button;
+            }
+
+            float top = chrome + 50f;
+            _potionsTabRoot = UiKit.Rect(UiKit.Box(inner, "PotionsTab", new Color(0f, 0f, 0f, 0f), false).gameObject);
+            UiKit.Stretch(_potionsTabRoot, 0f, top, 0f, 76f);
+            _buffsTabRoot = UiKit.Rect(UiKit.Box(inner, "BuffsTab", new Color(0f, 0f, 0f, 0f), false).gameObject);
+            UiKit.Stretch(_buffsTabRoot, 0f, top, 0f, 76f);
+
+            BuildPotionsTab();
+            BuildBuffsTab();
+
+            BottomButtons(inner, ResetAutoPotions, SaveAutoPotions, () => CloseWindow(_autoPotionsPanel));
+
+            _autoPotionsPanel.gameObject.SetActive(false);
+        }
+
+        private void BuildPotionsTab()
+        {
+            float y = -12f;
+            UiKit.Place(UiKit.Rect(UiKit.Label(_potionsTabRoot, "Heal potions — drink when HP drops below the %:", 13f, UiKit.Accent).gameObject),
                         new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, y), new Vector2(620f, 20f));
             y -= 26f;
 
@@ -147,26 +179,144 @@ namespace Game.Client
             for (int i = 0; i < HealPotRows.Length; i++)
             {
                 int idx = i;
-                _potToggles[i] = ToggleButton(inner, new Vector2(18f, y),
+                _potToggles[i] = ToggleButton(_potionsTabRoot, new Vector2(18f, y),
                     () => { _potOn[idx] = !_potOn[idx]; RefreshAutoLabels(); }, 84f);
-                _potSliders[i] = UiKit.SliderRow(inner, HealPotRows[i].Name, 5f, 95f, DefaultPotThreshold[i], "0", null);
+                _potSliders[i] = UiKit.SliderRow(_potionsTabRoot, HealPotRows[i].Name, 5f, 95f, DefaultPotThreshold[i], "0", null);
                 UiKit.Place(UiKit.Rect(_potSliders[i].transform.parent.gameObject),
-                            new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(112f, y - 6f), new Vector2(556f, 26f));
+                            new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(112f, y - 6f), new Vector2(620f, 26f));
                 y -= 46f;
             }
 
             y -= 6f;
-            UiKit.Place(UiKit.Rect(UiKit.Label(inner, "Mana potion (MP potions arrive with the 3rd-class kits):", 13f, UiKit.TextDim).gameObject),
+            UiKit.Place(UiKit.Rect(UiKit.Label(_potionsTabRoot, "Mana potion (MP potions arrive with the 3rd-class kits):", 13f, UiKit.TextDim).gameObject),
                         new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, y), new Vector2(620f, 20f));
             y -= 26f;
-            _autoMpToggle = ToggleButton(inner, new Vector2(18f, y), () => { _autoMpOn = !_autoMpOn; RefreshAutoLabels(); }, 84f);
-            _autoMpSlider = UiKit.SliderRow(inner, "MP", 5f, 95f, 40f, "0", null);
+            _autoMpToggle = ToggleButton(_potionsTabRoot, new Vector2(18f, y), () => { _autoMpOn = !_autoMpOn; RefreshAutoLabels(); }, 84f);
+            _autoMpSlider = UiKit.SliderRow(_potionsTabRoot, "MP", 5f, 95f, 40f, "0", null);
             UiKit.Place(UiKit.Rect(_autoMpSlider.transform.parent.gameObject),
-                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(112f, y - 6f), new Vector2(556f, 26f));
+                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(112f, y - 6f), new Vector2(620f, 26f));
+        }
 
-            BottomButtons(inner, ResetAutoPotions, SaveAutoPotions, () => CloseWindow(_autoPotionsPanel));
+        // ----- the BUFFS tab (BL-04) ---------------------------------------------------------------
 
-            _autoPotionsPanel.gameObject.SetActive(false);
+        private RectTransform _potionsTabRoot, _buffsTabRoot;
+        private Button[] _autoPotTabButtons;
+        private int _autoPotTab;
+
+        private string[] _buffFamilies = Array.Empty<string>();
+        private bool[] _buffPotOn = Array.Empty<bool>();
+        private bool[] _buffScrOn = Array.Empty<bool>();
+        private ItemRarity[] _buffMax = Array.Empty<ItemRarity>();
+        private Button[] _buffPotBtn, _buffScrBtn, _buffRarBtn;
+
+        /// <summary>
+        /// One row per buff FAMILY, exactly as he drew it: <c>Bulwark [potion x][scroll ][max rarity:
+        /// rare]</c>. A family is the unit because a family is what can be UP — every rung of Bulwark,
+        /// potion or scroll or a cleric's blessing, is the same buff under one key, so "keep Bulwark
+        /// up" is one question. The old per-ITEM list could not ask it, and could not express the cap.
+        ///
+        /// <para>The rows are built ONCE: the family list comes from the catalog and cannot change while
+        /// the game runs. Only the labels and colours refresh.</para>
+        /// </summary>
+        private void BuildBuffsTab()
+        {
+            UiKit.Place(UiKit.Rect(UiKit.Label(_buffsTabRoot,
+                    "Keep these up automatically. At equal rarity a SCROLL is spent before a potion; "
+                    + "the cap is the dearest one it may open.", 13f, UiKit.Accent).gameObject),
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(18f, -8f), new Vector2(700f, 36f));
+
+            ScrollRect scroll;
+            var content = UiKit.ScrollArea(_buffsTabRoot, out scroll, 3f);
+            UiKit.Stretch((RectTransform)scroll.transform, 14f, 46f, 14f, 4f);
+
+            var families = BuffConsumables.Families;
+            int n = families.Count;
+            _buffFamilies = new string[n];
+            _buffPotOn = new bool[n];
+            _buffScrOn = new bool[n];
+            _buffMax = new ItemRarity[n];
+            _buffPotBtn = new Button[n];
+            _buffScrBtn = new Button[n];
+            _buffRarBtn = new Button[n];
+
+            for (int i = 0; i < n; i++)
+            {
+                int idx = i;
+                string family = families[i].Family;
+                _buffFamilies[i] = family;
+
+                var rarities = BuffConsumables.RaritiesOf(family);
+                _buffMax[i] = rarities.Count > 0 ? rarities[rarities.Count - 1] : ItemRarity.Common;
+
+                bool hasPot = BuffConsumables.HasForm(family, BuffForm.Potion);
+                bool hasScr = BuffConsumables.HasForm(family, BuffForm.Scroll);
+
+                var row = UiKit.Box(content, "BuffRow", UiKit.PanelLight);
+                row.gameObject.AddComponent<LayoutElement>().minHeight = 46f;
+
+                var name = UiKit.Label(row.transform, families[i].Name, 16f, UiKit.Text, TextAlignmentOptions.Left);
+                UiKit.Stretch(UiKit.Rect(name.gameObject), 12f, 0f, 468f, 0f);
+
+                // A family with no potion (the scroll-only eight) gets a DEAD button, not a missing one:
+                // the column has to line up down the list, and an absent control reads as a bug.
+                _buffPotBtn[i] = UiKit.TextButton(row.transform, "",
+                    hasPot ? (Action)(() => { _buffPotOn[idx] = !_buffPotOn[idx]; RefreshBuffRows(); }) : null, 14f);
+                _buffPotBtn[i].interactable = hasPot;
+                UiKit.Place(UiKit.Rect(_buffPotBtn[i].gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                            new Vector2(-334f, 0f), new Vector2(118f, 36f));
+
+                _buffScrBtn[i] = UiKit.TextButton(row.transform, "",
+                    hasScr ? (Action)(() => { _buffScrOn[idx] = !_buffScrOn[idx]; RefreshBuffRows(); }) : null, 14f);
+                _buffScrBtn[i].interactable = hasScr;
+                UiKit.Place(UiKit.Rect(_buffScrBtn[i].gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                            new Vector2(-210f, 0f), new Vector2(118f, 36f));
+
+                _buffRarBtn[i] = UiKit.TextButton(row.transform, "",
+                    rarities.Count > 1 ? (Action)(() => CycleBuffRarity(idx)) : null, 14f);
+                _buffRarBtn[i].interactable = rarities.Count > 1;
+                UiKit.Place(UiKit.Rect(_buffRarBtn[i].gameObject), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                            new Vector2(-8f, 0f), new Vector2(196f, 36f));
+            }
+
+            RefreshBuffRows();
+        }
+
+        /// <summary>Step the cap to the next rarity this family actually sells, wrapping. Only the
+        /// rarities that EXIST are offered — a cap of Epic on a family whose best is Rare would be a
+        /// setting that cannot be told from any other.</summary>
+        private void CycleBuffRarity(int idx)
+        {
+            var rarities = BuffConsumables.RaritiesOf(_buffFamilies[idx]);
+            if (rarities.Count == 0) return;
+            int at = rarities.IndexOf(_buffMax[idx]);
+            _buffMax[idx] = rarities[(at + 1) % rarities.Count];
+            RefreshBuffRows();
+        }
+
+        private void RefreshBuffRows()
+        {
+            if (_buffPotBtn == null) return;
+            for (int i = 0; i < _buffPotBtn.Length; i++)
+            {
+                bool hasPot = _buffPotBtn[i].interactable;
+                bool hasScr = _buffScrBtn[i].interactable;
+                UiKit.SetButtonText(_buffPotBtn[i], hasPot ? (_buffPotOn[i] ? "Potion  ON" : "Potion  off") : "no potion");
+                UiKit.SetButtonText(_buffScrBtn[i], hasScr ? (_buffScrOn[i] ? "Scroll  ON" : "Scroll  off") : "no scroll");
+                UiKit.SetButtonText(_buffRarBtn[i], "max rarity:  " + _buffMax[i]);
+                if (_buffPotBtn[i].targetGraphic != null)
+                    _buffPotBtn[i].targetGraphic.color = hasPot && _buffPotOn[i] ? AutoOnCol : AutoOffCol;
+                if (_buffScrBtn[i].targetGraphic != null)
+                    _buffScrBtn[i].targetGraphic.color = hasScr && _buffScrOn[i] ? AutoOnCol : AutoOffCol;
+            }
+        }
+
+        private void ShowAutoPotTab()
+        {
+            if (_potionsTabRoot != null) _potionsTabRoot.gameObject.SetActive(_autoPotTab == 0);
+            if (_buffsTabRoot != null) _buffsTabRoot.gameObject.SetActive(_autoPotTab == 1);
+            if (_autoPotTabButtons != null)
+                for (int i = 0; i < _autoPotTabButtons.Length; i++)
+                    _autoPotTabButtons[i].targetGraphic.color = i == _autoPotTab ? UiKit.TabActive : UiKit.PanelLight;
         }
 
         /// <summary>Find the saved line for a potion id in the config (null if none/unset).</summary>
@@ -190,23 +340,78 @@ namespace Game.Client
             }
             _autoMpOn = c.MpPotionPct > 0;
             _autoMpSlider.value = _autoMpOn ? Mathf.Clamp(c.MpPotionPct, 5, 95) : 40f;
+
+            // The buff rows fill from the saved lines; a family the config has never mentioned stays
+            // off with its cap at the best rarity that family sells — the cap is there to be lowered
+            // deliberately, so its default is "no cap".
+            for (int i = 0; i < _buffFamilies.Length; i++)
+            {
+                var rarities = BuffConsumables.RaritiesOf(_buffFamilies[i]);
+                var line = FindBuffLine(c.Buffs, _buffFamilies[i]);
+                _buffPotOn[i] = line != null && line.Potion;
+                _buffScrOn[i] = line != null && line.Scroll;
+                _buffMax[i] = line != null && rarities.Contains(line.MaxRarity)
+                    ? line.MaxRarity
+                    : rarities.Count > 0 ? rarities[rarities.Count - 1] : ItemRarity.Common;
+            }
+
             RefreshAutoLabels();
+            RefreshBuffRows();
+            ShowAutoPotTab();
             OpenWindow(_autoPotionsPanel);
         }
 
+        private static AutoBuffDto FindBuffLine(AutoBuffDto[] lines, string family)
+        {
+            if (lines != null)
+                foreach (var l in lines)
+                    if (l.Family == family) return l;
+            return null;
+        }
+
+        /// <summary>Save BOTH tabs — one window, one Save. They are two halves of one config record,
+        /// and a Save that only wrote the tab you happened to be looking at would silently drop the
+        /// other half of the same edit.</summary>
         private void SaveAutoPotions()
         {
             var lines = new AutoPotionDto[HealPotRows.Length];
             for (int i = 0; i < HealPotRows.Length; i++)
                 lines[i] = new AutoPotionDto(HealPotRows[i].Id, _potOn[i], Mathf.RoundToInt(_potSliders[i].value));
             int mp = _autoMpOn ? Mathf.RoundToInt(_autoMpSlider.value) : 0;
+
+            // EVERY family goes, armed or not. A non-empty array is what tells the server the tab is in
+            // charge now (it replaces the old keep-every-buff-potion-up switch), so sending only the
+            // armed ones would make "I turned them all off" indistinguishable from "I never opened it",
+            // and the old behaviour would quietly come back.
+            var buffs = new AutoBuffDto[_buffFamilies.Length];
+            for (int i = 0; i < _buffFamilies.Length; i++)
+                buffs[i] = new AutoBuffDto(_buffFamilies[i], _buffPotOn[i], _buffScrOn[i], _buffMax[i]);
+
             // HpPotionPct 0 → the server uses the per-potion HealPotions list, not the old single line.
-            Boot.PushAutoConfig(Boot.AutoConfig with { HealPotions = lines, HpPotionPct = 0, MpPotionPct = mp });
+            Boot.PushAutoConfig(Boot.AutoConfig with
+            {
+                HealPotions = lines, HpPotionPct = 0, MpPotionPct = mp, Buffs = buffs,
+            });
             ClientLog.Info("Auto-potions saved.");
         }
 
+        /// <summary>Reset the tab you are LOOKING at. Wiping the other one — which you cannot see, and
+        /// may have just spent a minute setting up — is not what a Reset button means.</summary>
         private void ResetAutoPotions()
         {
+            if (_autoPotTab == 1)
+            {
+                for (int i = 0; i < _buffFamilies.Length; i++)
+                {
+                    var rarities = BuffConsumables.RaritiesOf(_buffFamilies[i]);
+                    _buffPotOn[i] = false;
+                    _buffScrOn[i] = false;
+                    _buffMax[i] = rarities.Count > 0 ? rarities[rarities.Count - 1] : ItemRarity.Common;
+                }
+                RefreshBuffRows();
+                return;
+            }
+
             for (int i = 0; i < HealPotRows.Length; i++)
             {
                 _potOn[i] = i == 0;   // Common armed by default

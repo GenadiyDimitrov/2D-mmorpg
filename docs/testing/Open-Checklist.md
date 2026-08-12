@@ -424,8 +424,7 @@ The ones from playtest-21 you will most likely reach for:
 
 | you said | id |
 |---|---|
-| the Stat-Swap tab, and the Mindwriter's misleading `(cost 25kk)` | `BL-03`, `BL-39` |
-| the auto buff potion/scroll tab | `BL-04` |
+| ~~the Stat-Swap tab, the auto buff tab, the misleading `(cost 25kk)`~~ | ✅ **built** — `BL-03`, `BL-04`, `BL-39`. Test them, don't re-ask for them. |
 | crafting at NPC masters, quittable professions, and the absurd output | `BL-05`, `BL-40` |
 | skill evasion — *"normaly no1 can evade a physical skill"* | `BL-06` |
 | physical-skill reflect and debuff reflect | `BL-07`, `BL-08` |

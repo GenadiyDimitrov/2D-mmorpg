@@ -229,6 +229,18 @@ public static partial class SkillCatalog
         ConsumableBuff(id, name, child, effect, ScrollBuffTicks, castTicks: 10, cooldownTicks: 10,
             desc: $"{what} for 1 hour.");
 
+    /// <summary>Potion or scroll — the DURATION is what tells them apart, and it is the only thing that
+    /// ever did (see <see cref="Potion"/> / <see cref="Scroll"/>: same child, same rung, different
+    /// clock). Kept here, beside the two factories that stamp it, so a duration cannot be changed
+    /// without this line being in the same screen.
+    ///
+    /// <para>Anything else — a burst like Dash (150 ticks), a heal potion, a teleport scroll — is
+    /// <see cref="BuffForm.None"/>, which is what keeps them out of the auto-buff tab.</para></summary>
+    public static BuffForm ConsumableBuffForm(SkillDef wrapper) =>
+        wrapper.DurationTicks == ScrollBuffTicks ? BuffForm.Scroll
+      : wrapper.DurationTicks == PotionBuffTicks ? BuffForm.Potion
+      : BuffForm.None;
+
     /// <summary>Dash: a 15-second sprint on a 1-minute reuse, on its OWN family — it must never
     /// join spd_move, or it would evict an hour-long Swift scroll and give it back 15s later.</summary>
     private static SkillDef DashPotion(string id, string name, string child, int move) =>
