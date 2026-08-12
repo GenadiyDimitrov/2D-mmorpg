@@ -266,6 +266,14 @@ public static partial class SkillCatalog
 
         // Shield Mastery — PASSIVE (4 levels @20/24/28/32): scales the equipped shield's
         // block chance and defence, and adds bow resistance. Inert without a shield.
+        // ⚠ ShieldDefPct went x5 (0.30/0.40 -> 1.50/2.00) on 2026-08-12 and that is NOT a buff — it is
+        // the other half of cutting every shield's flat defence 5x (Items.cs shDef). His words:
+        // "same as .2 just to increase the shield Defence increase skills/passives — 40% tanks to become
+        //  200% ... 51 -> 153 ... which is good now for 61lvl without the 3rd class kits". The point of
+        // the pair is WHO keeps the defence: a shielded mage/cleric drops to the item's own small number
+        // ("just a help for a cleric -15% received dmg -> not immortality") while the tank, who paid SP
+        // for the passive, keeps a meaningful one. Multiply BOTH or neither — scaling only this side
+        // hands the old immortality straight back.
         new(TankShieldMastery, "Shield Mastery", BaseClass.Fighter, SkillEffect.None,
             MpCost: 0, CastTicks: 0, CooldownTicks: 0, Range: 0, Power: 0,
             Category: SkillCategory.Passive,
@@ -273,10 +281,10 @@ public static partial class SkillCatalog
                        + "reduces damage from bows (only while a shield is equipped).",
             Levels: new[]
             {
-                new SkillLevel(SpCost: 1700, Passive: new PassiveEffect(ShieldDefPct: 0.30f, BlockChancePct: 0.50f)),
-                new SkillLevel(SpCost: 3200, Passive: new PassiveEffect(ShieldDefPct: 0.30f, BlockChancePct: 0.50f, BowResist: 0.16f)),
-                new SkillLevel(SpCost: 6000, Passive: new PassiveEffect(ShieldDefPct: 0.40f, BlockChancePct: 0.70f, BowResist: 0.16f)),
-                new SkillLevel(SpCost: 11000, Passive: new PassiveEffect(ShieldDefPct: 0.40f, BlockChancePct: 0.70f, BowResist: 0.24f)),
+                new SkillLevel(SpCost: 1700, Passive: new PassiveEffect(ShieldDefPct: 1.50f, BlockChancePct: 0.50f)),
+                new SkillLevel(SpCost: 3200, Passive: new PassiveEffect(ShieldDefPct: 1.50f, BlockChancePct: 0.50f, BowResist: 0.16f)),
+                new SkillLevel(SpCost: 6000, Passive: new PassiveEffect(ShieldDefPct: 2.00f, BlockChancePct: 0.70f, BowResist: 0.16f)),
+                new SkillLevel(SpCost: 11000, Passive: new PassiveEffect(ShieldDefPct: 2.00f, BlockChancePct: 0.70f, BowResist: 0.24f)),
             }),
 
         // Tank Anti-Magic — passive flat magic defence (5 levels @20/24/28/32/36).

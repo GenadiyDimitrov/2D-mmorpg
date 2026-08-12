@@ -111,8 +111,6 @@ public static class ShopCatalog
                 // TRAINING tier (400g each) — the level 1-10 gear. Stocked so a new player who picked the
                 // wrong weapon, or lost one, can just buy another instead of being stuck with it.
                 ItemCatalog.TrainingSword,
-                ItemCatalog.TrainingClub,
-                ItemCatalog.TrainingKnives,
                 ItemCatalog.TrainingWand,
             }.Concat(WeaponsOf(ladderGear)).ToArray()),
 

@@ -58,8 +58,24 @@ namespace Game.Shared;
 /// 🔴 <b>And a gate must SUPPLY its own prop (owner, 2026-08-11).</b> Asking for one box instead of two
 /// was the wrong mitigation of the right worry: he opened both creation boxes before taking the quest,
 /// and the box beat became a dead end mid-chain with nothing left to open. Part 1's steps now carry
-/// <see cref="QuestStep.SupplyItemIds"/> — the two training boxes, handed over when Cera gives the
-/// quest and re-handed whenever the bag holds none — so no order of play can strand it.</para>
+/// <see cref="QuestStep.SupplyItemIds"/> — the two training boxes, re-handed whenever the bag holds
+/// none — so no order of play can strand it.</para>
+///
+/// <para><b>63j — HE PLAYED IT AND RE-SPEC'D THE OPENING (2026-08-12).</b> Three findings, all built:
+/// <list type="bullet">
+/// <item>He finished part 1 with <b>three weapons and three armours</b>, because creation, the quest
+/// offer and the box step each handed over a set. <b>Creation now grants none</b> — the box step is the
+/// single source: *"Then so I get the boxes exactly before I need to open them."*</item>
+/// <item>The teaching beats were in the wrong ORDER — it asked you to use a skill while you stood in an
+/// empty square with an empty bar. His order is travel → bar → target-and-use → kill, each beat a
+/// prerequisite of the next, and it is what part 1 runs now.</item>
+/// <item>The chain was <b>unfinishable as a fighter</b> ("Fighter dont have a skill (I had to use
+/// TestSkill)"), because the use-it beat was credited only from a completed CAST. A basic attack
+/// credits it too.</item>
+/// </list>
+/// The training boxes stopped being selection boxes in the same pass: base class decides, no picker
+/// (*"armor box -> mage gets robe, fighter gets light; weapon box -> mage gets wand, fighter gets
+/// sword"*), and the training club and knives were deleted outright.</para>
 /// </summary>
 public static partial class QuestCatalog
 {
@@ -73,11 +89,14 @@ public static partial class QuestCatalog
     private const string NpcPriest     = "priest_oren";              // High Priest Oren
     private const string NpcClassMaster = "master_class";            // Class Master Vael
 
-    /// <summary>The props part 1 hands over: the two boxes a character is created with. Re-supplied
-    /// only when the bag holds none — see <see cref="QuestStep.SupplyItemIds"/>. Both, not just the
-    /// weapon box, because the beat after the box asks you to EQUIP twice and the armour box is where
-    /// a body comes from. Untradable, sell price 0, training tier: worthless on purpose, which is what
-    /// makes an unlimited re-supply safe.</summary>
+    /// <summary>The props part 1 hands over: the two training boxes. Re-supplied only when the bag
+    /// holds none — see <see cref="QuestStep.SupplyItemIds"/>. Both, not just the weapon box, because
+    /// the beat after asks you to EQUIP twice and the armour box is where a body comes from.
+    /// Untradable, sell price 0, training tier: worthless on purpose, which is what makes an unlimited
+    /// re-supply safe.
+    /// <para>⚠ These are now the ONLY source of the training kit — a character is created holding
+    /// nothing but potions (him, 63j). They arrive when the OPEN-A-BOX step becomes current, i.e. after
+    /// Cera's quest and after Pell: *"Then so I get the boxes exactly before I need to open them."*</para></summary>
     private static readonly string[] TutorialBoxes =
         { ItemCatalog.BoxTrainingWeapons, ItemCatalog.BoxTrainingArmorChoice };
 
@@ -107,33 +126,55 @@ public static partial class QuestCatalog
             MaxLevel: 20,
             Steps: new[]
             {
-                // Accepting from Cera HANDS OVER the two training boxes (owner, 2026-08-11) — see the
-                // box beat below for why. Step 0 carries them as well as the box step so they arrive
-                // when he takes the quest, not one NPC later.
-                new QuestStep(QuestStepType.TalkTo,
-                    "Speak with Gatekeeper Pell — he teleports you between towns, free until level 40",
-                    TargetId: NpcGatekeeper,
-                    SupplyItemIds: TutorialBoxes),
-                // ---- `58a`: TEACH, before the pigs. ------------------------------------------------
+                // ---- `58a` + 63j: TEACH, before the pigs, IN HIS ORDER. ----------------------------
                 // The chain introduced every NPC in town and never once said how to open a bag, open a
                 // box, put the contents on, or swing at anything (owner, playtest-20: *"teaches nothing
-                // before the pigs"*). These three beats are the missing half, and each is proved by
-                // DOING it — the server sees every one of them already.
-                // 🔴 THE QUEST SUPPLIES THE BOX. Asking for ONE box was not enough: a player who opened
-                // BOTH creation boxes before walking to Cera had nothing left to open, and the gate was
-                // a DEAD END — the owner hit it on his very first find of the 0.60.x pass, mid-chain,
-                // with no way to continue. The rule now is that a step requiring an object hands that
-                // object over (`QuestStep.SupplyItemIds`), so this beat is unreachable-proof no matter
-                // what the player did before taking the quest.
+                // before the pigs"*). 0.60.1 added the doing-beats; playing them showed the ORDER was
+                // still wrong — it asked you to use a skill while you stood in an empty town square
+                // with an empty bar. His re-spec, verbatim:
+                //     "Use Pell to go to the pigs" (i need to see a target not standing in town)
+                //     then "open skills -> put atkAction or bolt to bar" (need to have something on bar)
+                //     then "target a pig - use skill/atkAction" (need to know how to target and use)
+                //     then "kill 5 pigs on your own"
+                // Read as a whole it is one lesson per beat, each one a prerequisite of the next, and
+                // each proved by DOING it — the server already sees every one of these.
+                new QuestStep(QuestStepType.TalkTo,
+                    "Speak with Gatekeeper Pell — he teleports you between towns, free until level 40",
+                    TargetId: NpcGatekeeper),
+                // 🔴 THE BOXES ARRIVE HERE, AND ONLY HERE (63j). They used to come from character
+                // creation AND from the quest offer AND from this step, so a player finished part 1
+                // holding three weapons and three armours: "Make no inital boxes. After Ceras talk and
+                // after I talk to Pell then to get my boxes -> Then so I get the boxes exactly before I
+                // need to open them." Creation grants nothing now; the step that asks you to open a box
+                // is the one that hands it over, which is also what keeps this gate from ever becoming
+                // the dead end he hit in 0.60.1 (a gate whose prop you already spent is a wall).
+                // ⚠ They are SELECTION-free now too: tap the box, wear what falls out, decided by your
+                // base class (see BoxCatalog). A four-way weapon quiz at level 1 taught nothing.
+                // ⚠ Count STAYS 1 even though two boxes arrive. SupplyStepItems' only guard is "the bag
+                // holds none of this id", so a step that is still current after the first box would
+                // hand out a replacement for it — an endless supply of training weapons. One box
+                // credits the beat; the second is opened for the armour the very next step needs.
                 new QuestStep(QuestStepType.DoAction,
-                    "Open your bag and open a box from it — tap the box to open it",
+                    "Open your bag and open the boxes Cera gave you — tap a box to open it",
                     TargetId: QuestActions.OpenBox,
                     SupplyItemIds: TutorialBoxes),
                 new QuestStep(QuestStepType.DoAction,
-                    "Put your gear on — tap a weapon or an armor piece in the bag to equip it",
+                    "Put your gear on — tap the weapon and the armor in your bag to equip them",
                     TargetId: QuestActions.EquipItem, Count: 2),
+                // "i need to see a target not standing in town" — Pell's own list, used rather than
+                // merely opened. Brackenford's first field gate is the level-1 band, i.e. the pups.
                 new QuestStep(QuestStepType.DoAction,
-                    "Try a skill from the bar at the bottom — tapping a creature attacks it, a skill uses that",
+                    "Ask Pell for the hunting grounds and travel there — the pups are outside town",
+                    TargetId: QuestActions.Teleport),
+                // A fresh character's bar is EMPTY on purpose (the server never auto-places for you), so
+                // "use a skill" was being asked of someone with no buttons.
+                new QuestStep(QuestStepType.DoAction,
+                    "Open Skills and put an attack on your bar — the Actions tab holds your basic attack",
+                    TargetId: QuestActions.AssignBar),
+                // ⚠ Credited by a BASIC ATTACK as well as a cast (63j: "Fighter dont have a skill (I had
+                // to use TestSkill) to continue with quest"). A level-1 fighter has nothing to cast.
+                new QuestStep(QuestStepType.DoAction,
+                    "Tap a pup to target it, then use your attack or a skill on it",
                     TargetId: QuestActions.UseSkill),
                 new QuestStep(QuestStepType.KillMobs, "Slay 5 Ridgeback Pups",
                     TargetId: "ridgeback_pup", Count: 5),

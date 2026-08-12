@@ -83,13 +83,15 @@ public static class EnchantRules
     /// <summary>P.Def a single ARMOUR piece gains per enchant level.</summary>
     public const int ArmorDefPerEnchant = 3;
 
-    /// <summary>Defence a SHIELD gains per enchant level — <b>TRIPLE</b> an armour piece's, so +16 is
-    /// +144 (him, 2026-08-11: *"shield should get triple the def because S grade only 30% chance to
-    /// block"*). The shield's own damage reduction only pays out on a successful block — 25% of hits
-    /// at S since the 2026-08-11 block re-cut — so its enchant has to pay in the flat defence that
-    /// applies to every hit, or enchanting a shield would be the worst scroll in the game. Its Max HP
-    /// is the ordinary armour row (480 at S), not tripled.</summary>
-    public const int ShieldDefPerEnchant = ArmorDefPerEnchant * 3;
+    /// <summary>Defence a SHIELD gains per enchant level — the <b>ordinary armour row</b>.
+    /// <para>It shipped at TRIPLE in 0.60.0 on the reasoning that a shield's reduction only pays on a
+    /// block, so its enchant should pay in flat defence instead. He rejected that outright (68c, "NO!
+    /// the shield change" / *"the shield enchant should become an armor +3 not +9 (i was considering
+    /// that it worked only in block state)"*) — the premise was wrong, because a shield's flat defence
+    /// was ALREADY paying on every hit. Once that flat defence was cut 5x the same day, an enchant
+    /// worth 9 a level would have been worth more than the shield itself by about +6.</para>
+    /// Its Max HP is the ordinary armour row too (480 at S).</summary>
+    public const int ShieldDefPerEnchant = ArmorDefPerEnchant;
 
     /// <summary>M.Def a single JEWEL gains per enchant level.</summary>
     public const int JewelMDefPerEnchant = 3;

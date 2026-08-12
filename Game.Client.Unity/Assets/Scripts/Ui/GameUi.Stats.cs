@@ -95,11 +95,13 @@ namespace Game.Client
             t.AppendLine(Head("Defence"));
             t.AppendLine(Row2("P.Def", s.Defence.ToString(), "M.Def", s.MagicDefence.ToString()));
             t.AppendLine(Row2("Evasion", s.Evasion.ToString(), "Speed", s.MoveSpeed.ToString("0")));
+            // ⚠ No "Shield def" row on purpose (him, 2026-08-12: "this way we can remove the
+            // `Shield def:` row in stats"). A shield's flat defence is folded into the P.Def above and
+            // pays on every hit, so printing it separately invited exactly the double-dip he found —
+            // reading it as a second, block-time pool. Block chance and reduction ARE conditional, so
+            // they stay. StatsUpdate still carries ShieldDefense; only the display is gone.
             if (s.HasShield)
-            {
                 t.AppendLine(Row2("Block", Pct(s.BlockChance), "Block red.", Pct(s.BlockReduction)));
-                t.AppendLine(Row2("Shield def", s.ShieldDefense.ToString(), "", ""));
-            }
             t.AppendLine();
 
             t.AppendLine(Head("Gear"));

@@ -281,7 +281,11 @@ public record AccountWarehouseDepositCmd(string ConnectionId, Guid InstanceId) :
 public record AccountWarehouseWithdrawCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
 
 /// <summary>DEBUG-only: grant an item by def id.</summary>
-public record DebugGiveCmd(string ConnectionId, string DefId) : IAdminCommand;
+/// <summary>Admin grant. <b>Quantity is ON the command</b> (66n): the hub used to enqueue one command
+/// per UNIT, so "every material x500" became 12 500 commands, each granting one item and serialising
+/// the WHOLE inventory afterwards — *"i see each sinlge item increasing 1 by 1 500 times and going to
+/// the next ... now the game is Stalled (had to restart)"*. One command, one push.</summary>
+public record DebugGiveCmd(string ConnectionId, string DefId, int Quantity = 1) : IAdminCommand;
 
 /// <summary>DEBUG-only: set one item's enchant OUTRIGHT (the `/enchant &lt;value&gt;` picker, D2).
 /// Deliberately unrestricted — no grade band, no scroll, no success roll and no MaxEnchant, because

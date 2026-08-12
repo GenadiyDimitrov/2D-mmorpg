@@ -28,6 +28,18 @@ public static class QuestActions
     public const string EquipItem = "equip_item";
     public const string UseSkill = "use_skill";
     public const string AutoHunt = "auto_hunt";
+
+    /// <summary>Travelled with a gatekeeper. His 63j re-spec opens the teaching run with *"Use Pell to
+    /// go to the pigs (i need to see a target not standing in town)"* — the old beat only asked you to
+    /// TALK to Pell, which taught his menu existed and left you standing in the square.</summary>
+    public const string Teleport = "teleport";
+
+    /// <summary>Put something on the action bar. *"open skills -> put atkAction or bolt to bar (need to
+    /// have something on bar)"* — the missing first half of "use a skill", since a fresh character's bar
+    /// is EMPTY by design and nothing before this ever said where the buttons come from.
+    /// <para>⚠ Credited from <c>SetSkillBar</c>, which the client sends ONLY when the player edits the
+    /// bar — see the skill-bar rule in CLAUDE.md. A server-authored bar push can never credit it.</para></summary>
+    public const string AssignBar = "assign_bar";
 }
 
 /// <summary>One ordered step of a quest.</summary>

@@ -1873,6 +1873,10 @@ public class Entity
                     ShieldDefense = (int)(ShieldDefense * (1f + buff.Percent(SkillEffect.BuffShieldDef)));
                     BlockReduction += buff.Percent(SkillEffect.BuffShieldDef) * 0.2f;
                 }
+                // ⚠ The BUFF side deliberately kept its old magnitude and its old 0.2 coefficient when
+                // the item's flat defence was cut 5x on 2026-08-12. Only the PASSIVE was scaled up: his
+                // worked number ("51 -> 153") is base x (1 + 2.00) with nothing else in it, and putting
+                // x5 on both multipliers would land back on the old 537 exactly — i.e. no change at all.
             }
             BlockChance = Math.Clamp(BlockChance, 0f, StatCaps.BlockChance);
             BlockReduction = Math.Clamp(BlockReduction, 0f, StatCaps.BlockReduction);
@@ -2015,7 +2019,13 @@ public class Entity
                     if (pe.ShieldDefPct != 0f)
                     {
                         ShieldDefense = (int)(ShieldDefense * (1f + pe.ShieldDefPct));
-                        BlockReduction += pe.ShieldDefPct * 0.2f;
+                        // A shield-defence passive also thickens the block itself, but only a little.
+                        // ⚠ The coefficient is 0.2/5, not 0.2: ShieldDefPct went x5 on 2026-08-12 to
+                        // pay back the 5x cut to every shield's flat defence, and that rescaling must
+                        // NOT leak into the block channel — at the new 2.00 a plain 0.2 would hand the
+                        // tank +0.40 BlockReduction and undo the whole 0.59.1 block nerf. 0.04 x 2.00
+                        // is the same +0.08 the old 0.2 x 0.40 gave. Block behaviour is unchanged.
+                        BlockReduction += pe.ShieldDefPct * 0.04f;
                     }
                 }
                 MagicResist += pe.MagicResist;

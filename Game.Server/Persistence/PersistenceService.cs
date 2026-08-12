@@ -519,16 +519,17 @@ public class PersistenceService
             // skills window's Skills and Actions tabs.
         });
 
-        // Starter gear — TRAINING tier, the weakest in the game (owner, 2026-07-24). The Newbie set used
-        // to be handed out here, and it was strong enough to one-shot everything in the first zones; it
-        // is now the reward for the level-10 starter quest, so the opening ten levels are actually
-        // played. Still class-agnostic: one weapon choice box covering all five weapons, one armor
-        // choice box covering light/robe.
+        // 🔴 NO STARTER BOXES AT CREATION (him, 63j). A new character used to be born holding the two
+        // training boxes, and Cera's quest handed them over again, and Pell's step a third time — he
+        // finished part 1 with THREE armours and THREE weapons: "Make no inital boxes. After Ceras talk
+        // and after I talk to Pell then to get my boxes -> Then so I get the boxes exactly before I need
+        // to open them." The tutorial's box step supplies its own props (QuestStep.SupplyItemIds), so
+        // creation handing out a set as well was the duplicate, not the quest.
+        // ⚠ This also retires the dead end of 0.60.1 at its source: with nothing to open before the
+        // quest asks, "open a box" cannot be spent early.
         //
         // Explicitly NO runes and NO jewels at creation (owner). Jewels are earned — the broken line
         // drops from level 1-5 mobs and is sold in the shop — and runes come with the quest.
-        record.Items.Add(NewItem(ItemCatalog.BoxTrainingWeapons));
-        record.Items.Add(NewItem(ItemCatalog.BoxTrainingArmorChoice));
         record.Items.Add(NewItem(ItemCatalog.MinorPotion, 5));
         record.Items.Add(NewItem(ItemCatalog.GreaterPotion, 2));
 

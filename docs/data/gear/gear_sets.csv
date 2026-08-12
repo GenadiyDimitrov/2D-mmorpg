@@ -65,17 +65,35 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 #        CritDefense   .03 .05 .05 .07 .07 .10 .10
 #        EvasionPen      3   5   5   7   7  10  10
 #      [BUILT] all four rows above are live. Average mitigation from BLOCKING alone is now 1.0% at F
-#      and 6.3% at S (was 5.1% / 15.0%). The flat ShieldDefense is untouched — it was always on every
-#      hit, which is the double-dip he named. Shield MASTERY is also untouched, so a mastery tank at S
-#      still reaches ~14% average: the nerf lands on the shield-only wearer, i.e. the mage.
+#      and 6.3% at S (was 5.1% / 15.0%).
+#
+# ---- THE P.Def COLUMN WAS CUT 5x — HIS OPTION 3, 2026-08-12 -------------------------------------
+#      "I just noticed that the sheild Pdef is added to the whole Pdef (armor + helmet + gloves +
+#       boots + shield) ... thats why the tank/cleric felt immortal." A 61 tank read 683 set P.Def +
+#       358 shield = +50% defence BEFORE a single block was rolled, so the shield paid twice.
+#      He offered three ways out and chose 3: keep the flat defence PERMANENT (so it is visible, and
+#      so a free off-hand is a real defensive choice) but scale it to what a 20%-block item is worth:
+#          "the inspiration uses .1 - and is considered default 20% to block - so the defence is about
+#           5 times more than if it was permenent ... 256 Bloodsteel Aegis -> 51 Pdef"
+#      ...and pay the difference back to the TANK ONLY, through the shield passive: "same as .2 just
+#      to increase the shield Defence increase skills/passives - 40% tanks to become 200%". So the
+#      Shield Mastery PASSIVE went x5 (0.30/0.40 -> 1.50/2.00) in Skills.Fighter.cs and the wearer
+#      with no passive simply keeps the smaller number. Result at 61: mage/cleric shield 51 (~+7%
+#      P.Def), tank 229 (~+33%) — "just a help for a cleric -15% received dmg -> not immortality".
+#      ⚠ There is NO extra defence applied at block time. A block is the reduction % only; the flat
+#      defence is already in P.Def on every hit. The stat sheet's separate "Shield def" row is gone
+#      for the same reason ("this way we can remove the `Shield def:` row in stats").
+#      ⚠ The shield ENCHANT dropped with it: +9/level -> +3/level, the ordinary armour row (68c "NO!").
+#      The shield-conditional SET extras below ("shield.p.def x1.25") are unchanged percentages, so
+#      they are worth a fifth of what they were in absolute defence. Say if you want those raised too.
 #      A shield belongs to its tier's HEAVY set id but does not count toward the 4-slot requirement.
-1,Armor,Fighter,1,Shield,90,,[BUILT] raised 40->90 2026-07-31: at 40 the Mythic F shield tied the starter Wooden Shield and the whole F rarity ladder was worthless
-20,Armor,Fighter,20,Shield,143,,[BUILT]
-40,Armor,Fighter,40,Shield,203,,[BUILT]
-52,Armor,Fighter,52,Shield,230,,[BUILT]
-61,Armor,Fighter,61,Shield,256,,[BUILT]
-76,Armor,Fighter,76,Shield,299,,[BUILT]
-80,Armor,Fighter,80,Shield,413,,[BUILT] S AUTHORED by him (no longer A x1.60)
+1,Armor,Fighter,1,Shield,18,,[BUILT] was 90 (cut 5x 2026-08-12)
+20,Armor,Fighter,20,Shield,29,,[BUILT] was 143
+40,Armor,Fighter,40,Shield,41,,[BUILT] was 203
+52,Armor,Fighter,52,Shield,46,,[BUILT] was 230
+61,Armor,Fighter,61,Shield,51,,[BUILT] was 256 — HIS OWN worked number for the Bloodsteel Aegis
+76,Armor,Fighter,76,Shield,60,,[BUILT] was 299
+80,Armor,Fighter,80,Shield,83,,[BUILT] was 413. S AUTHORED by him (no longer A x1.60)
 
 
 # ---- LIGHT bodies — set family "Nightleaf".

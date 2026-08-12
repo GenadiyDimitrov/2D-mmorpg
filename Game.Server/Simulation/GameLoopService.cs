@@ -2442,15 +2442,39 @@ public class GameLoopService : BackgroundService
             return;
         if (ItemCatalog.Get(cmd.DefId) is not ItemDef def)
             return;
-        if (!AddItem(player, def.Id))
+
+        // 🔴 ONE COMMAND, ONE PUSH (66n). The quantity used to live in the HUB, which enqueued a
+        // separate command per unit — so "every material x500" was 12 500 commands, each granting one
+        // material and then serialising the entire inventory: *"i see each sinlge item increasing 1 by
+        // 1 500 times and going to the next ... now the game is Stalled (had to restart)"*, and it
+        // finished mid-grant, which is why one material sat at ~6800 while the rest were short.
+        // A stackable is now a SINGLE AddItem; only genuinely non-stackable gear still loops, and that
+        // is bounded by the bag's slot count rather than by the number he typed.
+        int want = Math.Clamp(cmd.Quantity, 1, 10_000);
+        int added = 0;
+        if (def.IsStackable)
+        {
+            if (AddItem(player, def.Id, want)) added = want;
+        }
+        else
+        {
+            for (int i = 0; i < want; i++)
+            {
+                if (!AddItem(player, def.Id)) break;
+                added++;
+            }
+        }
+        if (added == 0)
         {
             SendSystemToEntity(player, "Inventory full.");
             return;
         }
-        // No chat line: the debug menu's item buttons are the most-pressed thing in it, and taking ten
-        // potions filled the log with ten identical rows (owner). The inventory refresh below IS the
-        // feedback. The rarely-used debug actions — teleport coordinates, karma, class change — keep
-        // theirs, because those genuinely tell you something the UI does not.
+        if (added < want)
+            SendSystemToEntity(player, $"Inventory full — {added} of {want} {def.Name} added.");
+        // No chat line on success: the debug menu's item buttons are the most-pressed thing in it, and
+        // taking ten potions filled the log with ten identical rows (owner). The inventory refresh below
+        // IS the feedback. The rarely-used debug actions — teleport coordinates, karma, class change —
+        // keep theirs, because those genuinely tell you something the UI does not.
         SendInventory(player);
     }
 
@@ -3040,12 +3064,11 @@ public class GameLoopService : BackgroundService
             AddItem(player, defId, qty);
         }
 
-        // TRAINING tier, matching CreateCharacterAsync (owner, 2026-07-24). Class-agnostic: both boxes
-        // are selection boxes covering every option, so there is no fighter/mage branch to keep in sync.
-        // No jewels and no runes at creation — jewels are earned from level 1-5 mobs or bought, and
-        // the rune arrives with the level-10 starter quest along with the Newbie set.
-        Give(ItemCatalog.BoxTrainingWeapons);
-        Give(ItemCatalog.BoxTrainingArmorChoice);
+        // Matches CreateCharacterAsync: potions only. The two training boxes left creation on
+        // 2026-08-12 (him, 63j) — the tutorial's own steps supply them at the moment they are needed,
+        // and handing them out here as well is what gave him three of everything.
+        // No jewels and no runes at creation either — jewels are earned from level 1-5 mobs or bought,
+        // and the rune arrives with the level-10 starter quest along with the Newbie set.
         Give(ItemCatalog.MinorPotion, 5);
         Give(ItemCatalog.GreaterPotion, 2);
     }
@@ -3807,6 +3830,11 @@ public class GameLoopService : BackgroundService
         if (!TryGetPlayer(cmd.ConnectionId, out var p))
             return;
         p.ActiveSkillBar = cmd.Slots ?? Array.Empty<string>();   // the bar belongs to the class you're playing
+        // The tutorial's "put something on your bar" beat (63j). This command is the ONLY one the client
+        // sends on a player edit — the server's own pushes never come back through here — so a bar that
+        // arrives with anything in it is a bar the player just built.
+        if (p.ActiveSkillBar.Any(s => !string.IsNullOrEmpty(s)))
+            AdvanceActionQuests(p, QuestActions.AssignBar);
         SaveEntity(p);
     }
 
@@ -3820,6 +3848,18 @@ public class GameLoopService : BackgroundService
         p.AutoHuntEnabled   = c.Enabled && haveBudget;
         if (c.Enabled && !haveBudget)
             SendSystemToEntity(p, "Your account's auto-hunt time for today is used up.");
+        // 🔴 THE TUTORIAL'S AUTO-FARM BEAT IS CREDITED HERE, NOT ONLY IN HandleToggleAutoHunt (63j:
+        // "Cannot complete the Auto-on part of the quest ... clicked auto-on on skills clicked
+        //  auto-farm clicked offline...nothing works to allow me to continue"). The Auto button stopped
+        // sending ToggleAutoHunt when it was changed to push the WHOLE config — the actions have to
+        // travel with the enable or the autopilot just wanders — and ToggleAutoHuntAsync now has no
+        // caller at all, so the only path that credited the step was dead code. The hub method is kept
+        // for the protocol; both paths credit.
+        // ⚠ Deliberately NOT gated on a false->true transition: re-saving the auto window with the
+        // switch already on credits too, which is the gesture he actually described. Re-crediting is
+        // free — AdvanceActionQuests only matches while that step is the current one.
+        if (p.AutoHuntEnabled)
+            AdvanceActionQuests(p, QuestActions.AutoHunt);
         p.AutoHpPotionPct   = Math.Clamp(c.HpPotionPct, 0, 100);
         p.AutoMpPotionPct   = Math.Clamp(c.MpPotionPct, 0, 100);
         p.AutoBuffPotions   = c.AutoBuffPotions;
@@ -4385,6 +4425,14 @@ public class GameLoopService : BackgroundService
             if (!p.HasSkill(def.Id)) continue;
             if (p.SkillCooldowns.ContainsKey(def.Id)) continue;
             if (_tick < p.AutoReadyTick.GetValueOrDefault(def.Id)) continue;
+            // 🔴 THE AUTOPILOT MUST HONOUR THE SAME GATES AS A TAP (him, 2026-08-12): *"in auto farm the
+            // char uses stab and strike with blunt or knives .. while in manual use it's declined because
+            // of required weapon"*. HandleUseSkill checks these; this chain only ever checked cooldown
+            // and cost, so auto-farm was casting a dual-only blow off a mace. The gate belongs HERE
+            // rather than downstream: an unusable entry has to be SKIPPED so the cursor moves on to a
+            // skill that can fire, not merely refused and the turn wasted.
+            if (def.RequiredWeapon != WeaponType.None && (def.RequiredWeapon & p.WeaponType) == 0) continue;
+            if (def.RequireHpBelowFraction > 0f && p.Hp > p.MaxHp * def.RequireHpBelowFraction) continue;
 
             int lvl = Math.Max(1, p.SkillLevelOf(def.Id));
             int mpNeed = (int)((def.InitialMpAt(lvl) + def.FinishMpAt(lvl)) * MpCostFactor(p, def));
@@ -8379,6 +8427,15 @@ var effect = def.Effect;
     {
         attacker.StealthTicks = 0;   // attacking breaks stealth
 
+        // 🔴 A BASIC ATTACK CREDITS THE TUTORIAL'S "use it on something" BEAT TOO (him, 63j: "Fighter
+        // dont have a skill (I had to use TestSkill) to continue with quest"). The beat used to be
+        // credited only from the cast-completed path, and a level-1 fighter has no castable skill at
+        // all — so the step that teaches you to attack was unreachable by the class that attacks.
+        // His own re-spec spells the pair out ("put atkAction or bolt to bar", "use skill/atkAction"),
+        // so the basic attack is a first-class answer here, not a fallback.
+        if (attacker.Kind == EntityKind.Player)
+            AdvanceActionQuests(attacker, QuestActions.UseSkill);
+
         float missChance = StatCalculator.ResolveAvoidChance(
             attacker.Accuracy, (int)target.EffectiveEvasion,
             target.EvadeFloor, attacker.HitFloor,
@@ -9923,6 +9980,7 @@ var effect = def.Effect;
         if (box.PickCount > 0)
         {
             var options = box.Entries
+                .Where(e => e.ForClass is not BaseClass only || player.BaseClass == only)
                 .Select(e => new SelectionOption(e.ItemId, ItemCatalog.Get(e.ItemId)?.Name ?? e.ItemId))
                 .ToArray();
             SendTo(player, "Selection", new SelectionOffer(item.InstanceId, def.Name, options, box.PickCount));
@@ -9958,6 +10016,8 @@ var effect = def.Effect;
         bool full = false;
         foreach (var entry in box.Entries)
         {
+            // A class-conditional entry (the training boxes) is invisible to the other base class.
+            if (entry.ForClass is BaseClass only && player.BaseClass != only) continue;
             if (_rng.NextDouble() >= entry.Chance) continue;
             int qty = entry.MaxQty > entry.MinQty
                 ? _rng.Next(entry.MinQty, entry.MaxQty + 1)
@@ -10010,7 +10070,11 @@ var effect = def.Effect;
         if (ItemCatalog.Get(item.DefId) is not ItemDef def || def.Slot != EquipSlot.Box) return;
         if (BoxCatalog.Get(item.DefId) is not BoxDef box || box.PickCount <= 0) return;
 
-        var optionIds = box.Entries.Select(e => e.ItemId).ToHashSet();
+        // The same class filter the offer was built with, re-applied on the way back in: the offer is
+        // advisory, the confirm is authoritative.
+        var optionIds = box.Entries
+            .Where(e => e.ForClass is not BaseClass only || player.BaseClass == only)
+            .Select(e => e.ItemId).ToHashSet();
         var chosen = cmd.ItemIds.Where(optionIds.Contains).ToList();
 
         // Every pick must be spent, and no more — the box is consumed whole either way.
@@ -10875,6 +10939,7 @@ var effect = def.Effect;
         SendGold(player);
         SendSystemToEntity(player,
             $"Teleported to {destName} for {fee:N0} {GameConstants.CurrencyName}.");
+        AdvanceActionQuests(player, QuestActions.Teleport);   // the tutorial's "use Pell" beat (63j)
     }
 
     private void HandleTalk(TalkCmd cmd)

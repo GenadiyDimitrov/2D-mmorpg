@@ -676,13 +676,12 @@ public class GameHub : Hub
     // and two tools buys no behaviour and fails SILENTLY when one is missed — a fire-and-forget SignalR
     // call to a method that no longer exists does exactly what the #if DEBUG bug did.
 
-    /// <summary>Admin: grant an item by def id (quantity = extra copies, for stackables).</summary>
+    /// <summary>Admin: grant an item by def id. ONE command carrying the quantity — it used to enqueue
+    /// one command per unit, which is what stalled the server on the x500 materials button (66n).</summary>
     public Task DebugGive(string defId, int quantity)
     {
         if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
-        _world.Commands.Enqueue(new DebugGiveCmd(Context.ConnectionId, defId));
-        for (int i = 1; i < Math.Max(1, quantity); i++)
-            _world.Commands.Enqueue(new DebugGiveCmd(Context.ConnectionId, defId));
+        _world.Commands.Enqueue(new DebugGiveCmd(Context.ConnectionId, defId, Math.Max(1, quantity)));
         return Task.CompletedTask;
     }
 

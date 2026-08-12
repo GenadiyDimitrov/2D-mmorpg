@@ -2,8 +2,16 @@ namespace Game.Shared;
 
 /// <summary>One possible reward in a box: an item id, an independent drop CHANCE
 /// (0..1; 1 = always, down to 0.000001 = 1-in-a-million), and a quantity range.
-/// Each entry rolls on its own, so a box can yield several items, one, or none.</summary>
-public record BoxEntry(string ItemId, float Chance, int MinQty = 1, int MaxQty = 1);
+/// Each entry rolls on its own, so a box can yield several items, one, or none.
+///
+/// <para><paramref name="ForClass"/> makes the entry CLASS-CONDITIONAL: null (the default) is for
+/// everyone, otherwise only that base class ever sees it. It exists so the training boxes could stop
+/// being selection boxes — *"I think the Training gear should be with normal boxes not selection:
+/// armor box -> mage gets robe, fighter gets light; weapon box -> mage gets wand, fighter gets
+/// sword"* (him, 63j). Asking a brand-new player to choose between four weapons they cannot yet tell
+/// apart is a decision that teaches nothing, and the wrong pick is a worse first hour.</para></summary>
+public record BoxEntry(string ItemId, float Chance, int MinQty = 1, int MaxQty = 1,
+    BaseClass? ForClass = null);
 
 /// <summary>A box/chest loot table, keyed by the box's item id. PickCount = 0 means a
 /// RANDOM box (each entry rolls its Chance). PickCount &gt; 0 makes it a SELECTION box:
@@ -60,25 +68,28 @@ public static class BoxCatalog
                 new BoxEntry(ItemCatalog.NewbieWandBound, 1.0f),
             }, PickCount: 1),
 
-            // TRAINING weapons — pick ONE of the four. This is the character-creation weapon box now;
-            // the Newbie one moved to the level-10 quest. The BOW left this box on 2026-08-11 (owner:
-            // there is no training bow) — an archer starts on knives and gets his bow from the
-            // level-10 quest box above, which does stock one.
+            // ---- THE TWO TRAINING BOXES ARE NO LONGER SELECTIONS (him, 63j) ----------------------
+            // "Also I think the Training gear should be with normal boxes not selection ... Any fighter
+            //  cen get trough with a sword. Other training Club and training knives can be deleted."
+            // They are handed out by the tutorial's first steps, to a player who has never seen the
+            // game — a four-way choice there is a quiz, not a decision, and the wrong answer is a bad
+            // first hour. So: no picker, no dialog, tap the box and wear what falls out. The BASE CLASS
+            // decides, which is the only thing the game knows about you at level 1.
+            // ⚠ The club and the knives are gone with the picker (their defs are deleted too) — the
+            // real weapon choice is the Newbie box at the level-10 quest, which stocks all six.
             new BoxDef(ItemCatalog.BoxTrainingWeapons, new[]
             {
-                new BoxEntry(ItemCatalog.TrainingSword, 1.0f),
-                new BoxEntry(ItemCatalog.TrainingClub, 1.0f),
-                new BoxEntry(ItemCatalog.TrainingKnives, 1.0f),
-                new BoxEntry(ItemCatalog.TrainingWand, 1.0f),
-            }, PickCount: 1),
+                new BoxEntry(ItemCatalog.TrainingSword, 1.0f, ForClass: BaseClass.Fighter),
+                new BoxEntry(ItemCatalog.TrainingWand, 1.0f, ForClass: BaseClass.Mage),
+            }),
 
-            // TRAINING armor — pick leather (fighter) or robe (mage). No accessories: the helm/gloves/
+            // TRAINING armor — leather for a fighter, robe for a mage. No accessories: the helm/gloves/
             // boots line starts at the Newbie tier, i.e. at the level-10 quest.
             new BoxDef(ItemCatalog.BoxTrainingArmorChoice, new[]
             {
-                new BoxEntry(ItemCatalog.TrainingLeather, 1.0f),
-                new BoxEntry(ItemCatalog.TrainingRobe, 1.0f),
-            }, PickCount: 1),
+                new BoxEntry(ItemCatalog.TrainingLeather, 1.0f, ForClass: BaseClass.Fighter),
+                new BoxEntry(ItemCatalog.TrainingRobe, 1.0f, ForClass: BaseClass.Mage),
+            }),
 
             // Newbie ARMOR-SET choice — pick ONE of the two armor boxes (fighter light / mage robe).
             new BoxDef(ItemCatalog.BoxNewbieArmorChoice, new[]

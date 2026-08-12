@@ -132,41 +132,49 @@ Check("server pushed the warehouse on login", a.Ware is not null);
 {
     int Boxes(string defId) => a.Inv?.Items.Where(i => i.DefId == defId).Sum(i => i.Quantity) ?? 0;
 
-    Check("a fresh character starts with both training boxes",
-          Boxes(ItemCatalog.BoxTrainingWeapons) == 1 && Boxes(ItemCatalog.BoxTrainingArmorChoice) == 1,
-          $"weapons {Boxes(ItemCatalog.BoxTrainingWeapons)}, armor {Boxes(ItemCatalog.BoxTrainingArmorChoice)}");
-
-    // Open both, BEFORE taking the quest — his exact order of play.
-    foreach (var boxId in new[] { ItemCatalog.BoxTrainingWeapons, ItemCatalog.BoxTrainingArmorChoice })
-    {
-        var inBag = a.Inv!.Items.FirstOrDefault(i => i.DefId == boxId);
-        if (inBag is null) continue;
-        await a.Hub.SendAsync("OpenBox", inBag.InstanceId);
-        await a.Settle();
-        // Both are PICK-ONE boxes: OpenBox offers, SelectBoxItems takes the pick.
-        string pick = BoxCatalog.Get(boxId)!.Entries[0].ItemId;
-        await a.Hub.SendAsync("SelectBoxItems", inBag.InstanceId, new[] { pick });
-        await a.Settle();
-    }
-    Check("both boxes were opened before the quest (the bag has none left)",
+    // 63j (2026-08-12): creation grants NO boxes any more. He was getting a set at creation, a set with
+    // the quest and a set at the step — three weapons and three armours by the end of part 1.
+    Check("a fresh character starts with NO training boxes",
           Boxes(ItemCatalog.BoxTrainingWeapons) == 0 && Boxes(ItemCatalog.BoxTrainingArmorChoice) == 0,
           $"weapons {Boxes(ItemCatalog.BoxTrainingWeapons)}, armor {Boxes(ItemCatalog.BoxTrainingArmorChoice)}");
 
-    // Taking the quest must hand the props over. No NPC id needed: accepting is not proximity-checked.
+    // ...and neither does ACCEPTING it. The props belong to the open-a-box step, which is reached only
+    // after Pell: "Then so I get the boxes exactly before I need to open them."
     await a.Hub.SendAsync("QuestAction", "accept", QuestCatalog.QuestTutorialWelcome, Guid.Empty);
     await a.Settle();
-    Check("accepting the tutorial RE-SUPPLIES the boxes (the dead end is gone)",
-          Boxes(ItemCatalog.BoxTrainingWeapons) == 1 && Boxes(ItemCatalog.BoxTrainingArmorChoice) == 1,
+    Check("accepting the tutorial does NOT hand over a kit up front",
+          Boxes(ItemCatalog.BoxTrainingWeapons) == 0 && Boxes(ItemCatalog.BoxTrainingArmorChoice) == 0,
           $"weapons {Boxes(ItemCatalog.BoxTrainingWeapons)}, armor {Boxes(ItemCatalog.BoxTrainingArmorChoice)}");
 
-    // A second quest-log push (tracking toggles one) must NOT hand over a second set.
-    await a.Hub.SendAsync("QuestAction", "track", QuestCatalog.QuestTutorialWelcome, Guid.Empty);
-    await a.Settle();
-    await a.Hub.SendAsync("QuestAction", "track", QuestCatalog.QuestTutorialWelcome, Guid.Empty);
-    await a.Settle();
-    Check("the supply is IDEMPOTENT — more pushes do not stack up boxes",
-          Boxes(ItemCatalog.BoxTrainingWeapons) == 1 && Boxes(ItemCatalog.BoxTrainingArmorChoice) == 1,
-          $"weapons {Boxes(ItemCatalog.BoxTrainingWeapons)}, armor {Boxes(ItemCatalog.BoxTrainingArmorChoice)}");
+    // The dead-end guard itself is now a CATALOG invariant rather than something this test can play:
+    // reaching the box step needs a walk to Pell and a talk, which a headless client cannot do without
+    // faking positions. What must never regress is the pairing — creation grants nothing, so if the
+    // step ever stops declaring its props the training kit becomes unreachable for everyone, not just
+    // for a player who opened a box early.
+    var welcome = QuestCatalog.Get(QuestCatalog.QuestTutorialWelcome);
+    var boxStep = welcome?.Steps.FirstOrDefault(s => s.Type == QuestStepType.DoAction
+                                                  && s.TargetId == QuestActions.OpenBox);
+    Check("the tutorial's open-a-box step SUPPLIES both training boxes",
+          boxStep?.SupplyItemIds is { } props
+              && props.Contains(ItemCatalog.BoxTrainingWeapons)
+              && props.Contains(ItemCatalog.BoxTrainingArmorChoice),
+          boxStep is null ? "no open-box step found"
+                          : $"supplies [{string.Join(", ", boxStep.SupplyItemIds ?? Array.Empty<string>())}]");
+
+    // Both training boxes are PLAIN now (no picker) and class-conditional: a fighter must see exactly
+    // one option in each, and it must not be the mage's.
+    foreach (var (boxId, want) in new[]
+             {
+                 (ItemCatalog.BoxTrainingWeapons, ItemCatalog.TrainingSword),
+                 (ItemCatalog.BoxTrainingArmorChoice, ItemCatalog.TrainingLeather),
+             })
+    {
+        var box = BoxCatalog.Get(boxId);
+        var forFighter = box?.Entries.Where(e => e.ForClass is null or BaseClass.Fighter).ToArray();
+        Check($"{boxId} is a plain box with one fighter entry ({want})",
+              box is { PickCount: 0 } && forFighter is { Length: 1 } && forFighter[0].ItemId == want,
+              $"pick {box?.PickCount}, fighter entries [{string.Join(", ", forFighter?.Select(e => e.ItemId) ?? Array.Empty<string>())}]");
+    }
 
     // Leave nothing behind for the sections below: this character goes on to be levelled and geared.
     await a.Hub.SendAsync("QuestAction", "abandon", QuestCatalog.QuestTutorialWelcome, Guid.Empty);

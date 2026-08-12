@@ -557,9 +557,11 @@ public static class ItemCatalog
     // is recoverable. Untradeable and attribute-less like all starter gear; unlike the Newbie tier
     // these DO have a buy price, because being able to replace them is the point.
     public const string TrainingSword   = "training_sword";
-    public const string TrainingClub    = "training_club";
-    public const string TrainingKnives  = "training_knives";
     // (`training_bow` — deleted 2026-08-11, owner: no training bow/staff/2h. See TieredWeapons' note.)
+    // (`training_club` + `training_knives` — deleted 2026-08-12, him: *"Any fighter cen get trough with
+    //  a sword. Other training Club and training knives can be deleted."* The training tier is now
+    //  exactly two items, one per BASE CLASS, because that is all the boxes hand out — see Boxes.cs.
+    //  A save holding one just loses it: PersistenceService drops bag rows whose def no longer resolves.)
     public const string TrainingWand    = "training_wand";
     public const string TrainingLeather = "training_leather_armor";
     public const string TrainingRobe    = "training_robe";
@@ -1139,14 +1141,19 @@ public static class ItemCatalog
         // The Wooden Shield is STARTER kit, so it sits below the F ladder the same way the training
         // armor does (owner, 2026-07-31): 40 -> 35. At 40 it equalled the F-tier Ferrite Aegis, so the
         // first shield you could loot was never an upgrade — the identical bug the training armor had.
+        // ⚠ THESE TWO ARE HAND-AUTHORED AND WERE MISSED BY THE 0.59.1 BLOCK RE-CUT (his 67m: "the wood
+        // shield still caries 30% dmg reduction should be 10%"). They now sit ON the tier profile
+        // (shBlock/shReduce/shCrit/shEvaPen further down) at their own grade — Wooden on the F column,
+        // Iron on the E column — so a hand-written starter can never again out-mitigate the ladder.
+        // Their ShieldDefense took the same 5x cut as the ladder (35 -> 7, 90 -> 18).
         list.Add(new ItemDef(WoodenShield, "Wooden Shield", EquipSlot.Shield,
             ItemGrade.F, ItemRarity.Common,
-            BlockChance: 0.15f, BlockReduction: 0.30f, ShieldDefense: 35,
-            ShieldCritDefense: 0.05f, ShieldEvasionPenalty: 4));
+            BlockChance: 0.10f, BlockReduction: 0.10f, ShieldDefense: 7,
+            ShieldCritDefense: 0.03f, ShieldEvasionPenalty: 3));
         list.Add(new ItemDef(IronShield, "Iron Shield", EquipSlot.Shield,
             ItemGrade.E, ItemRarity.Uncommon,
-            BlockChance: 0.20f, BlockReduction: 0.35f, ShieldDefense: 90,
-            ShieldCritDefense: 0.08f, ShieldEvasionPenalty: 6));
+            BlockChance: 0.15f, BlockReduction: 0.10f, ShieldDefense: 18,
+            ShieldCritDefense: 0.05f, ShieldEvasionPenalty: 5));
 
         // ===================================================================
         //  1H BLUNTS — maces/wands. Blunt = higher accuracy, lower crit. One hand,
@@ -1190,16 +1197,11 @@ public static class ItemCatalog
             AtkBonus: 6, MAtkBonus: 5,
             Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
             Description: "Blunt-edged practice sword. The weakest blade there is — replace it as soon as you can."));
-        list.Add(new ItemDef(TrainingClub, "Training Club", EquipSlot.Weapon,
-            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Blunt,
-            AtkBonus: 6, MAtkBonus: 5,
-            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
-            Description: "A weighted stick. It hits about as well as you would expect."));
-        list.Add(new ItemDef(TrainingKnives, "Training Knives", EquipSlot.Weapon,
-            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Dual,
-            AtkBonus: 5, MAtkBonus: 5,
-            Tradable: false, SellPriceOverride: 0, BuyPriceOverride: TrainingGearPrice, NoAttributes: true,
-            Description: "Dulled practice knives. Fast, and barely dangerous."));
+        // ⚠ THE TRAINING CLUB AND KNIVES ARE GONE (him, 2026-08-12, 63j/67t) — the same reasoning that
+        // deleted the bow, applied to the rest: "Any fighter cen get trough with a sword. Other training
+        // Club and training knives can be deleted." The training tier is the cheap kit that carries
+        // anyone to level 10, not one weapon per playstyle; the real choice is the Newbie box at the
+        // level-10 quest, which stocks all six. Two items now, one per base class.
         // ⚠ THE TRAINING BOW IS GONE (owner, 2026-08-11): "no staff, no 2h, no bow … the 'no' training
         // items can be removed. You don't need them to start playing." The training tier is deliberately
         // NOT one weapon per playstyle — it is the cheap kit that carries anyone to level 10, where the
@@ -1852,10 +1854,21 @@ public static class ItemCatalog
                     SetId: $"set_acc_t{lv[i]}");   // shared accessory line per tier (all weights)
 
         // ---- Shields (ShieldDefense from the CSV P.Def; block stats extrapolate Wooden→Iron, tunable). ----
-        // F rung 40 -> 90 (owner, 2026-07-31): the Ferrite Aegis at MYTHIC used to match the starter
-        // Wooden Shield exactly, so the entire F shield rarity ladder was worthless. 90 puts the Mythic
-        // F shield where the ladder expects it, and its Common rung (45%) still lands above the 35 starter.
-        int[] shDef = Column(90, new[]{ 143, 203, 230, 256, 299 }, 413);
+        // ===== THE P.Def COLUMN WAS CUT 5x — HIS OPTION 3 (2026-08-12) ==============================
+        // "I just noticed that the sheild Pdef is added to the whole Pdef (armor + helmet + gloves +
+        //  boots + shield) ... thats why the tank/cleric felt immortal." He is right and it is the same
+        // double-dip as the block profile below, one layer down: a 61 tank read 683 set P.Def + 358
+        // shield = +50% defence on EVERY hit, before a block was ever rolled.
+        //
+        // He chose to keep the flat defence permanent (so an empty off-hand is a real trade) and scale
+        // it to what a ~20%-block item is actually worth: "the inspiration uses .1 ... so the defence is
+        // about 5 times more than if it was permenent — 256 Bloodsteel Aegis -> 51 Pdef". The tank gets
+        // the difference back through his PASSIVE, not through the item (Skills.Fighter Shield Mastery
+        // passive went x5, 0.40 -> 2.00), which is exactly the split he asked for: at 61 a shielded mage
+        // now carries 51 (~+7% P.Def) and a mastery tank 229 (~+33%).
+        // ⚠ Nothing is added at block time. A block is its reduction % and nothing else — the flat
+        // defence already paid on the hit. Do not "re-add the shield on a block": that IS the bug.
+        int[] shDef = Column(18, new[]{ 29, 41, 46, 51, 60 }, 83);
         // ===== HE RE-GAVE THE WHOLE BLOCK PROFILE (2026-08-11) ======================================
         // "To much dmg reduction on top of the additional pdef when sucsessifull blocked. Mage should
         //  not be immortal even with a shield — it helps a bit but not 47% dmg reduction with 33%
