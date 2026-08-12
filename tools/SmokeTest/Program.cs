@@ -1179,7 +1179,68 @@ await c.DisposeAsync();
 }
 
 // -------------------------------------------------------------------------------------------
-// 8. THE TRAINING DUMMIES THAT HIT BACK (`56c` / `63h`) — do they actually strike?
+// 8. `/give` AND THE PER-INSTANCE TAGS (`58d`) — a REAL item carrying tags, not a cloned def.
+// -------------------------------------------------------------------------------------------
+// The failure this guards is invisible in play: a bound item that persists as an ORDINARY one looks
+// perfectly right until the next login, when it can suddenly be sold or banked. That is the same shape
+// as the skill-bar corruption this tool was built for, so the relog is the assertion that matters — and
+// the Rune of Sinners, whose entire point is that you cannot get rid of it, rides on exactly this.
+{
+    var gmCharId = gmChars.Characters[0].Id;
+
+    // His own worked example, with both storage flags: unsellable, untradable, one day, renamed, +5.
+    await gm.Hub.SendAsync("AdminCommand", "give",
+        $"{gmChars.Characters[0].Name} {ItemCatalog.WarRune} -1 0 1d \"Soulbound Rune\" 5 0 0");
+    await gm.Settle();
+
+    var tagged = (gm.Inv?.Items ?? Array.Empty<InventoryItemDto>())
+        .FirstOrDefault(i => i.CustomName == "Soulbound Rune");
+    Check("/give spawned a tagged instance with the written name (`58d`)", tagged is not null,
+          string.Join(",", (gm.Inv?.Items ?? Array.Empty<InventoryItemDto>()).Select(i => i.CustomName ?? i.DefId)));
+
+    if (tagged is not null)
+    {
+        Check("...carrying its own sell price, tradability and storage rules",
+              tagged.SellPriceOverride == -1 && tagged.TradableOverride == false
+              && tagged.CanStorePrivate == false && tagged.CanStoreAccount == false,
+              $"sell {tagged.SellPriceOverride} trade {tagged.TradableOverride} priv {tagged.CanStorePrivate} acct {tagged.CanStoreAccount}");
+        Check("...and the enchant and the clock it was given", tagged.Enchant == 5 && tagged.ExpiresAtUtc is not null,
+              $"+{tagged.Enchant}, expires {tagged.ExpiresAtUtc}");
+
+        var def = ItemCatalog.Get(tagged.DefId)!;
+        Check("...so it reads as (temporary, bound)", ItemTag.For(def, tagged) == "(temporary, bound)",
+              ItemTag.For(def, tagged));
+
+        // The keeper must refuse it — the private warehouse had NO instance gate before `58d`.
+        await gm.Hub.SendAsync("WarehouseDeposit", tagged.InstanceId);
+        await gm.Settle();
+        Check("the private keeper refuses an item bound to your soul",
+              (gm.Inv?.Items ?? Array.Empty<InventoryItemDto>()).Any(i => i.InstanceId == tagged.InstanceId),
+              "it went into the bank anyway");
+    }
+
+    // THE ONE THAT MATTERS: does the tag survive being written to SQLite and read back?
+    var gmLeave = await gm.Hub.InvokeAsync<string?>("LeaveWorld");
+    Check("the admin left cleanly (so the save is awaited, not raced)", gmLeave is null, gmLeave);
+    await gm.DisposeAsync();
+
+    gm = await ConnectAsync("admin", "admin");
+    var gmBack = await gm.Hub.InvokeAsync<LoginResult>("EnterWorld", new EnterWorldRequest(gmCharId));
+    Check("the admin re-entered the world", gmBack.Success, gmBack.Error);
+    gm.MyId = gmBack.EntityId;
+    await gm.Settle();
+
+    var after = (gm.Inv?.Items ?? Array.Empty<InventoryItemDto>())
+        .FirstOrDefault(i => i.CustomName == "Soulbound Rune");
+    Check("🔑 the per-instance tags SURVIVED THE RELOG (`58d` persists)",
+          after is not null && after.SellPriceOverride == -1 && after.TradableOverride == false
+          && after.CanStorePrivate == false && after.CanStoreAccount == false && after.Enchant == 5,
+          after is null ? "the item came back untagged or not at all"
+                        : $"sell {after.SellPriceOverride} trade {after.TradableOverride} priv {after.CanStorePrivate} acct {after.CanStoreAccount} +{after.Enchant}");
+}
+
+// -------------------------------------------------------------------------------------------
+// 9. THE TRAINING DUMMIES THAT HIT BACK (`56c` / `63h`) — do they actually strike?
 // -------------------------------------------------------------------------------------------
 // They shipped in 0.58.x and did NOTHING for two builds, and the owner could only report *"both
 // dummies act as the old"* — which is exactly the shape of bug this tool exists for. Two causes, both

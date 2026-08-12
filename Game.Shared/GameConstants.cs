@@ -455,6 +455,11 @@ public static class GameConstants
     public const float ArcherRangeBonus = 500f;
     public const float MaxBasicAttackRange = 1100f;
 
+    /// <summary>Longest name an admin may write onto ONE item instance with `/give` (owner, `58d`:
+    /// *"newItemName: quoted, max 20 chars, spaces allowed"*). Short on purpose — it shares the plate
+    /// and the inventory row with the enchant and the tag, and a long one pushes those off the line.</summary>
+    public const int CustomItemNameMax = 20;
+
     public const int TradeMaxOfferSlots = 10;
 
     /// <summary>Both characters must be this close to start a trade.</summary>

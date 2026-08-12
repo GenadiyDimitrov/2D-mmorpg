@@ -261,6 +261,27 @@ public class ItemRecord
     /// <summary>True = this item lives in the character's private WAREHOUSE, not the bag. Routes the item
     /// to the right list on load. (Schema change — delete game.db to recreate.)</summary>
     public bool InWarehouse { get; set; }
+
+    // ----- Per-instance overrides (`58d`) — MUST persist ------------------------------------------
+    // Without these a given item silently reverts to an ordinary catalog copy on the next login: the
+    // bound Soulcrystal becomes tradable, the renamed sword loses its name, and the Rune of Sinners —
+    // whose entire point is that you cannot get rid of it — could be sold after a relog.
+    // (Schema change — delete game.db to recreate.)
+
+    /// <summary>Instance sell price; -1 = unsellable, null = use the def.</summary>
+    public long? SellPriceOverride { get; set; }
+
+    /// <summary>Instance tradability, null = use the def. False is what BINDS an item to its owner.</summary>
+    public bool? TradableOverride { get; set; }
+
+    /// <summary>A name written for this copy only, null = the def's name.</summary>
+    public string? CustomName { get; set; }
+
+    /// <summary>May this instance enter the private warehouse? null = yes.</summary>
+    public bool? CanStorePrivate { get; set; }
+
+    /// <summary>May this instance enter the ACCOUNT warehouse? null = the tradable rule.</summary>
+    public bool? CanStoreAccount { get; set; }
 }
 
 

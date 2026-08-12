@@ -774,6 +774,11 @@ public class PersistenceService
                 Attributes = item.Attributes.ToList(),
                 PersistentInstanceId = item.InstanceId,
                 ExpiresAtUtc = item.ExpiresAtUtc,
+                SellPriceOverride = item.SellPriceOverride,
+                TradableOverride = item.TradableOverride,
+                CustomName = item.CustomName,
+                CanStorePrivate = item.CanStorePrivate,
+                CanStoreAccount = item.CanStoreAccount,
             });
         }
 
@@ -855,11 +860,17 @@ public class PersistenceService
             foreach (var i in e.Inventory)
                 items.Add(new ItemSnapshot(
                     i.PersistentInstanceId ?? Guid.NewGuid(), i.DefId, i.Equipped,
-                    i.Enchant, i.Quantity, new List<ItemAttribute>(i.Attributes), i.ExpiresAtUtc));
+                    i.Enchant, i.Quantity, new List<ItemAttribute>(i.Attributes), i.ExpiresAtUtc,
+                    SellPriceOverride: i.SellPriceOverride, TradableOverride: i.TradableOverride,
+                    CustomName: i.CustomName, CanStorePrivate: i.CanStorePrivate,
+                    CanStoreAccount: i.CanStoreAccount));
             foreach (var i in e.Warehouse)
                 items.Add(new ItemSnapshot(
                     i.PersistentInstanceId ?? Guid.NewGuid(), i.DefId, false,   // never equipped in the bank
-                    i.Enchant, i.Quantity, new List<ItemAttribute>(i.Attributes), i.ExpiresAtUtc, InWarehouse: true));
+                    i.Enchant, i.Quantity, new List<ItemAttribute>(i.Attributes), i.ExpiresAtUtc, InWarehouse: true,
+                    SellPriceOverride: i.SellPriceOverride, TradableOverride: i.TradableOverride,
+                    CustomName: i.CustomName, CanStorePrivate: i.CanStorePrivate,
+                    CanStoreAccount: i.CanStoreAccount));
 
             var subs = e.Subclasses.Select(SubclassSnapshot.From).ToList();
 
@@ -892,7 +903,9 @@ public class PersistenceService
 
     public sealed record ItemSnapshot(
         Guid InstanceId, string DefId, bool Equipped, int Enchant, int Quantity,
-        List<ItemAttribute> Attributes, DateTime? ExpiresAtUtc = null, bool InWarehouse = false);
+        List<ItemAttribute> Attributes, DateTime? ExpiresAtUtc = null, bool InWarehouse = false,
+        long? SellPriceOverride = null, bool? TradableOverride = null, string? CustomName = null,
+        bool? CanStorePrivate = null, bool? CanStoreAccount = null);
 
     /// <summary>One saved buff. Deliberately MINIMAL — the skill id plus the level it was cast at is
     /// enough to rebuild everything else (effect flags, magnitudes, DoT power, shield size) through the
@@ -1072,6 +1085,11 @@ public class PersistenceService
             Attributes = i.Attributes.ToList(),
             ExpiresAtUtc = i.ExpiresAtUtc,
             InWarehouse = i.InWarehouse,
+            SellPriceOverride = i.SellPriceOverride,
+            TradableOverride = i.TradableOverride,
+            CustomName = i.CustomName,
+            CanStorePrivate = i.CanStorePrivate,
+            CanStoreAccount = i.CanStoreAccount,
         }).ToList();
     }
 

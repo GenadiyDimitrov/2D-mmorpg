@@ -160,8 +160,67 @@ public class InventoryItem
     /// null = never expires (everything that isn't a rune).</summary>
     public DateTime? ExpiresAtUtc { get; set; }
 
+    // ===== PER-INSTANCE OVERRIDES (owner, playtest-20 `58d`) ==========================================
+    // His rule: *"it is a REAL item with tags — never a new server-side def."* He wants to hand someone a
+    // genuine Soulcrystal that happens to be timed and bound, without inventing `soulcrystal_bound`. The
+    // 0.54.0 newbie kit was built as cloned `_bound` defs; he accepts that clone but not as the mechanism.
+    //
+    // Three INDEPENDENT properties, each null = "use the def". The displayed tag is DERIVED from them
+    // rather than stored, so there is one truth: sellable+tradable = no tag, neither = `bound`, sellable
+    // but not tradable = `private`. A timer composes on top → `(temporary, bound)`.
+
+    /// <summary>Gold this instance sells for, overriding the def. <c>-1</c> = unsellable, any positive
+    /// number = that price, <b>null = use the def</b>. His command spells "default" as `0`, which the
+    /// parser turns into null here — 0 is not stored, because a stored 0 would mean "worth nothing",
+    /// which is a different statement from "no opinion". Independent of <see cref="TradableOverride"/>:
+    /// the two together spell the tag.</summary>
+    public long? SellPriceOverride { get; set; }
+
+    /// <summary>May THIS instance be traded / warehoused / mailed, overriding the def. null = the def's
+    /// own rule. False is what makes an item bound to the character it was given to.</summary>
+    public bool? TradableOverride { get; set; }
+
+    /// <summary>A name written for this instance (max <see cref="GameConstants.CustomItemNameMax"/>),
+    /// or null to keep the def's. It renames only this copy — the catalog is untouched.</summary>
+    public string? CustomName { get; set; }
+
+    /// <summary>May this instance be put in the character's PRIVATE warehouse? null = yes (today's rule:
+    /// the private bank is just a bigger bag and takes anything).</summary>
+    public bool? CanStorePrivate { get; set; }
+
+    /// <summary>May this instance be put in the ACCOUNT warehouse? null = follow the standing rule, which
+    /// is TRADABLE-ONLY — that bank is a door between your characters, so an item bound to the character
+    /// that earned it may not walk through it.
+    ///
+    /// <para>⚠ Deliberately SEPARATE from <see cref="CanStorePrivate"/> (owner, 2026-08-12) rather than one
+    /// "storable" flag: the two banks answer different questions, and the Rune of Sinners has to be barred
+    /// from BOTH while an ordinary bound item is barred only from the account one.</para></summary>
+    public bool? CanStoreAccount { get; set; }
+
+    /// <summary>May this instance go into the private warehouse?</summary>
+    public bool StorablePrivate() => CanStorePrivate ?? true;
+
+    /// <summary>May this instance go into the account warehouse? Falls back to the tradable rule.</summary>
+    public bool StorableAccount(ItemDef def) => CanStoreAccount ?? Tradable(def);
+
+    /// <summary>What a vendor pays for THIS instance. Mirrors <see cref="ItemCatalog.SellPrice"/> unless
+    /// this copy was given its own price; <c>-1</c> survives as a negative so it reads as unsellable.</summary>
+    /// <summary>What a vendor pays for THIS instance. Delegates to <see cref="ItemTag"/> so the server
+    /// and the client card can never drift apart on the rule.</summary>
+    public long SellPrice(ItemDef def) => ItemTag.SellPrice(def, SellPriceOverride);
+
+    /// <summary>May this instance leave the character (trade / warehouse / mail)?</summary>
+    public bool Tradable(ItemDef def) => ItemTag.Tradable(def, TradableOverride);
+
+    /// <summary>May a vendor buy this instance?</summary>
+    public bool Sellable(ItemDef def) => ItemTag.Sellable(def, SellPriceOverride, TradableOverride);
+
+    /// <summary>What this instance is called. The def's name unless one was written for this copy.</summary>
+    public string Name(ItemDef def) => string.IsNullOrEmpty(CustomName) ? def.Name : CustomName!;
+
     public InventoryItemDto ToDto() =>
-        new(InstanceId, DefId, Equipped, Enchant, Quantity, Attributes.ToArray(), ExpiresAtUtc);
+        new(InstanceId, DefId, Equipped, Enchant, Quantity, Attributes.ToArray(), ExpiresAtUtc,
+            SellPriceOverride, TradableOverride, CustomName, CanStorePrivate, CanStoreAccount);
 }
 
 /// <summary>

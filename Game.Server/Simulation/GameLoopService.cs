@@ -2223,6 +2223,16 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // ...and since `58d`, an INSTANCE may refuse the private bank on its own account. The private
+        // warehouse had no such gate at all — it takes anything that is not a quest item — which is
+        // exactly the hole the Rune of Sinners would have escaped through: *"Keeper cannot accept this
+        // item ... as its bound to your soul for the time it has left."*
+        if (!item.StorablePrivate() && ItemCatalog.Get(item.DefId) is ItemDef boundDef)
+        {
+            SendSystemToEntity(player, $"The keeper will not accept {item.Name(boundDef)}.");
+            return;
+        }
+
         // Can't stash an item that's in a live trade offer.
         if (_world.ActiveTrades.TryGetValue(player.Id, out var trade) &&
             trade.Offers(player, item.InstanceId))
@@ -2349,9 +2359,12 @@ public class GameLoopService : BackgroundService
 
         var def = ItemCatalog.Get(item.DefId);
         if (def is null) return;
-        if (!def.Tradable || ItemCatalog.IsQuestItem(def))
+        // ⚠ Read through the INSTANCE (`58d`), not the def: a given item carries its own storage rules,
+        // and `CanStoreAccount` falls back to the standing tradable-only rule when it has no opinion.
+        // That is what lets the Rune of Sinners be refused by a keeper the def alone would have allowed.
+        if (!item.StorableAccount(def) || ItemCatalog.IsQuestItem(def))
         {
-            SendSystemToEntity(player, $"{def.Name} is bound to this character — it can't go in the account warehouse.");
+            SendSystemToEntity(player, $"{item.Name(def)} is bound to this character — it can't go in the account warehouse.");
             return;
         }
 
@@ -3394,8 +3407,8 @@ public class GameLoopService : BackgroundService
             var item = player.Inventory.FirstOrDefault(i => i.InstanceId == entry.InstanceId);
             if (item is null || item.Equipped) continue;
             var d = ItemCatalog.Get(item.DefId);
-            if (d is not null && (!d.Tradable || ItemCatalog.IsQuestItem(d)))
-                continue;   // untradeable / quest items can't be traded
+            if (d is not null && (!item.Tradable(d) || ItemCatalog.IsQuestItem(d)))
+                continue;   // untradeable / quest items can't be traded (per INSTANCE since `58d`)
 
             // Clamp the count here rather than trusting the client: only a stackable can be split,
             // and never past what is actually in the stack.
@@ -4949,6 +4962,61 @@ public class GameLoopService : BackgroundService
         return (arg, defaultMinutes);
     }
 
+    /// <summary>Split a command tail into tokens, keeping a "quoted run" together as ONE token —
+    /// `/give` needs it for <c>"Admin Sword"</c>, and an EMPTY pair of quotes has to survive as an empty
+    /// token, because that is how the owner spells "keep the default name" in a positional argument
+    /// list. A plain Split would drop it and shift every argument after it by one.</summary>
+    private static string[] SplitArgs(string text)
+    {
+        var outp = new List<string>();
+        var cur = new System.Text.StringBuilder();
+        bool inQuote = false, started = false;
+        void Flush() { if (started) { outp.Add(cur.ToString()); cur.Clear(); started = false; } }
+        foreach (char c in text ?? "")
+        {
+            if (c == '"') { inQuote = !inQuote; started = true; continue; }
+            if (!inQuote && char.IsWhiteSpace(c)) { Flush(); continue; }
+            cur.Append(c);
+            started = true;
+        }
+        Flush();
+        return outp.ToArray();
+    }
+
+    /// <summary>Parse a duration for `/give`: <c>0</c> = no clock, else a number with a unit —
+    /// <c>s</c>/<c>m</c>/<c>h</c>/<c>d</c>/<c>w</c>. ⚠ <c>m</c> is MINUTES, not months (owner, `58d`:
+    /// *"1m means one MINUTE, 1d one day"*), which is the one reading a reader is likely to get wrong.
+    /// A bare number is taken as minutes.</summary>
+    private static bool TryParseDuration(string text, out int seconds)
+    {
+        seconds = 0;
+        text = (text ?? "").Trim().ToLowerInvariant();
+        if (text.Length == 0) return false;
+        if (text is "0" or "-") return true;                 // explicitly no clock
+
+        char unit = text[^1];
+        bool hasUnit = char.IsLetter(unit);
+        string number = hasUnit ? text[..^1] : text;
+        if (!double.TryParse(number, NumberStyles.Number, CultureInfo.InvariantCulture, out double n) || n < 0)
+            return false;
+
+        int mult = !hasUnit ? 60 : unit switch
+        {
+            's' => 1, 'm' => 60, 'h' => 3600, 'd' => 86_400, 'w' => 604_800, _ => -1,
+        };
+        if (mult < 0) return false;
+        seconds = (int)Math.Round(n * mult);
+        return true;
+    }
+
+    /// <summary>true/false/1/0/yes/no, or null when the token means "no opinion, use the def" (`-`).</summary>
+    private static bool? ParseTriState(string text) => (text ?? "").Trim().ToLowerInvariant() switch
+    {
+        "1" or "true" or "yes" or "y" => true,
+        "0" or "false" or "no" or "n" => false,
+        _ => null,
+    };
+
     /// <summary>Parse a gold amount: optional sign, underscore separators, and a k/m/b/t suffix
     /// (10^3 / 10^6 / 10^9 / 10^12). "-10m", "1_002_003_004_005" and "500" all parse. Returns false on
     /// anything else so a typo can't silently become a fortune.</summary>
@@ -5544,17 +5612,124 @@ public class GameLoopService : BackgroundService
 
             case "give":
             {
-                // Opens the admin's OWN inventory as a picker; the transfer itself arrives later as an
-                // AdminGiveItemCmd. Deliberately ignores tradability (owner) — staff can hand over
-                // anything, including untradeable and quest items.
-                if (FindOnlinePlayer(arg) is not Entity giveTarget)
+                // TWO forms, told apart by the argument count (owner's `58d` design, playtest-20):
+                //
+                //   /give <player>
+                //       opens the admin's OWN inventory as a picker; the transfer arrives later as an
+                //       AdminGiveItemCmd. Deliberately ignores tradability — staff can hand over
+                //       anything, including untradeable and quest items.
+                //
+                //   /give <player> <itemId> [sellPrice] [tradable] [timed] ["name"] [enchant]
+                //                           [canStorePrivate] [canStoreAccount]
+                //       SPAWNS a tagged instance. His example:
+                //         /give Gena sword1h_t10 -1 0 1d "Admin Sword" 5   ->  Admin Sword +5 (temporary bound)
+                //       Everything after the item id is optional and positional; `-` means "no opinion,
+                //       use the def" in any slot. This is the only route to Mythic-tier gear for testing
+                //       and, since 2026-08-12, the only way to hand out a Rune of Sinners.
+                var g = SplitArgs(arg);
+                if (g.Length == 0)
                 {
-                    SendSystemToEntity(admin, $"{arg} is not online.");
+                    SendSystemToEntity(admin,
+                        "Usage: /give <player>  |  /give <player> <itemId> [sellPrice] [tradable] [timed] [\"name\"] [enchant] [canStorePrivate] [canStoreAccount]");
                     break;
                 }
-                SendTo(admin, "AdminGivePicker",
-                    new AdminBagDto(giveTarget.Name, giveTarget.Gold,
-                        admin.Inventory.Select(i => i.ToDto()).ToArray()));
+                if (FindOnlinePlayer(g[0]) is not Entity giveTarget)
+                {
+                    SendSystemToEntity(admin, $"{g[0]} is not online.");
+                    break;
+                }
+                if (g.Length == 1)
+                {
+                    SendTo(admin, "AdminGivePicker",
+                        new AdminBagDto(giveTarget.Name, giveTarget.Gold,
+                            admin.Inventory.Select(i => i.ToDto()).ToArray()));
+                    break;
+                }
+
+                if (ItemCatalog.Get(g[1]) is not ItemDef giveDef)
+                {
+                    SendSystemToEntity(admin, $"No item with id '{g[1]}'.");
+                    break;
+                }
+
+                string Arg(int i) => i < g.Length ? g[i] : "-";
+
+                long? sellOverride = null;
+                if (Arg(2) is var sellText && sellText != "-" && sellText.Length > 0)
+                {
+                    if (sellText.Trim() == "-1") sellOverride = -1;                      // unsellable
+                    else if (TryParseGold(sellText, out long sv) && sv != 0) sellOverride = sv;
+                    // 0 (and anything unparseable) deliberately leaves it null = "use the def", which is
+                    // his stated meaning of 0. A stored 0 would mean "worth nothing" — a different claim.
+                }
+
+                bool? tradeOverride = ParseTriState(Arg(3));
+
+                int timedSeconds = 0;
+                if (Arg(4) != "-" && !TryParseDuration(Arg(4), out timedSeconds))
+                {
+                    SendSystemToEntity(admin, $"'{Arg(4)}' is not a duration. Use 0, or a number with s/m/h/d/w (1m = one MINUTE).");
+                    break;
+                }
+
+                string? customName = null;
+                if (5 < g.Length && g[5].Length > 0 && g[5] != "-")
+                    customName = g[5].Length > GameConstants.CustomItemNameMax
+                        ? g[5][..GameConstants.CustomItemNameMax] : g[5];
+
+                int giveEnchant = 0;
+                if (Arg(6) != "-") int.TryParse(Arg(6), out giveEnchant);
+
+                bool? storePriv = ParseTriState(Arg(7));
+                bool? storeAcct = ParseTriState(Arg(8));
+
+                // ⚠ ALWAYS A FRESH ROW, never a merge into an existing stack. A tagged instance carries
+                // properties the stack it would join does not, and merging would either silently spread
+                // them across items the admin did not mean to touch or silently drop them — and the
+                // whole point of `58d` is that the tag belongs to THIS copy.
+                if (giveTarget.Inventory.Count(i => !i.Equipped) >= GameConstants.InventorySize)
+                {
+                    SendSystemToEntity(admin, $"{giveTarget.Name}'s inventory is full.");
+                    break;
+                }
+
+                var given = new InventoryItem
+                {
+                    DefId = giveDef.Id,
+                    Quantity = 1,
+                    Enchant = Math.Max(0, giveEnchant),
+                    SellPriceOverride = sellOverride,
+                    TradableOverride = tradeOverride,
+                    CustomName = customName,
+                    CanStorePrivate = storePriv,
+                    CanStoreAccount = storeAcct,
+                };
+                if (giveDef.FixedAttributes is { Length: > 0 } giveAttrs)
+                    given.Attributes = giveAttrs.ToList();
+
+                // An explicit duration wins; otherwise a rune/loaner still gets its own default clock,
+                // exactly as AddItem would have stamped it.
+                if (timedSeconds > 0)
+                    given.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(timedSeconds);
+                else if (giveDef.IsRune && giveDef.GrantsRuneSeconds > 0)
+                    given.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(giveDef.GrantsRuneSeconds);
+                else if (giveDef.LifetimeSeconds > 0)
+                    given.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(giveDef.LifetimeSeconds);
+
+                giveTarget.Inventory.Add(given);
+                ReconcileTimedItems(giveTarget);   // a granted RUNE must start applying its buff at once
+                giveTarget.RecomputeDerived();
+                SendInventory(giveTarget);
+                SendStats(giveTarget);
+                SaveEntity(giveTarget);
+
+                string tag = ItemTag.Of(given.Sellable(giveDef), given.Tradable(giveDef),
+                                        given.ExpiresAtUtc is not null);
+                string label = given.Name(giveDef) + (given.Enchant > 0 ? $" +{given.Enchant}" : "")
+                             + (tag.Length > 0 ? " " + tag : "");
+                SendSystemToEntity(admin, $"[DEBUG] Gave {giveTarget.Name}: {label}.");
+                if (giveTarget.Id != admin.Id)
+                    SendSystemToEntity(giveTarget, $"You received {label}.");
                 break;
             }
 
@@ -10726,7 +10901,9 @@ var effect = def.Effect;
             SendSystemToEntity(player, "Unequip it before selling.");
             return;
         }
-        if (!ItemCatalog.IsSellable(def))
+        // Per INSTANCE since `58d`: a copy handed out with sellPrice -1 is refused even though the
+        // catalog would happily buy the ordinary version of it.
+        if (!item.Sellable(def))
         {
             SendSystemToEntity(player, "That can't be sold.");
             return;
@@ -10734,7 +10911,7 @@ var effect = def.Effect;
 
         bool stackable = def.Slot is EquipSlot.Consumable or EquipSlot.Scroll;
         int qty = stackable ? Math.Clamp(cmd.Quantity, 1, item.Quantity) : 1;
-        long total = (long)ItemCatalog.SellPrice(def) * qty;
+        long total = item.SellPrice(def) * qty;
 
         if (stackable)
         {

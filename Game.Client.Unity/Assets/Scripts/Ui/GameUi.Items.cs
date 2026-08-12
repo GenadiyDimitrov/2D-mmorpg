@@ -614,7 +614,7 @@ namespace Game.Client
         /// scroll on it — its current attribute, or the odds this enchant survives.</summary>
         private static string ScrollTargetLabel(ItemDef def, InventoryItemDto item, bool attribute)
         {
-            string name = Coloured((item.Enchant > 0 ? "+" + item.Enchant + " " : "") + def.Name, def.Rarity);
+            string name = Coloured((item.Enchant > 0 ? "+" + item.Enchant + " " : "") + ItemTag.Name(def, item), def.Rarity);
             if (item.Equipped) name += "  (worn)";
 
             if (attribute)
@@ -778,8 +778,11 @@ namespace Game.Client
 
         private static string DetailTitle(ItemDef def, InventoryItemDto item)
         {
-            string name = item.Enchant > 0 ? "+" + item.Enchant + " " + def.Name : def.Name;
-            return Coloured(name, def.Rarity);   // grade/rarity moved into the description block below
+            string baseName = ItemTag.Name(def, item);   // the instance's own name if it was given one
+            string name = item.Enchant > 0 ? "+" + item.Enchant + " " + baseName : baseName;
+            string tag = ItemTag.For(def, item);
+            return Coloured(name, def.Rarity)            // grade/rarity moved into the description block below
+                 + (tag.Length > 0 ? " <size=13><color=#9090A0>" + tag + "</color></size>" : "");
         }
 
         /// <summary>Human-readable "what IS this" line: weapon type + hands, armour weight + slot,
@@ -836,12 +839,17 @@ namespace Game.Client
 
             // The identity block the owner asked for: Name / Grade / Rarity / Type, then the stats.
             // Quality lives HERE and in the name's colour — never in the name itself.
-            Line("Name:  " + def.Name);
+            // The INSTANCE's name and tag (`58d`) — a renamed or bound copy must not read as an
+            // ordinary one, which is the whole point of handing it out with tags.
+            string tag58d = ItemTag.For(def, item);
+            Line("Name:  " + ItemTag.Name(def, item) + (tag58d.Length > 0 ? "  " + tag58d : ""));
             Line("Grade:  " + (def.ItemLevel > 0 ? ItemCatalog.TierLetter(def.ItemLevel) : def.Grade.ToString()));
             Line("Rarity:  " + Coloured(def.Rarity.ToString(), def.Rarity)
                  + "   (" + ItemCatalog.RarityPercent(def.Rarity) + "% power)");
             Line("Type:  " + TypeLine(def));
-            if (!def.Tradable) Line("<color=#FF8080>Untradable</color>");
+            if (!ItemTag.Tradable(def, item.TradableOverride)) Line("<color=#FF8080>Untradable</color>");
+            if (item.CanStorePrivate == false) Line("<color=#FF8080>The keeper will not accept this</color>");
+            else if (item.CanStoreAccount == false) Line("<color=#FF8080>Cannot go in the account warehouse</color>");
             string timed = TimedLine(item);
             if (timed.Length > 0) Line(timed);
             Line("");

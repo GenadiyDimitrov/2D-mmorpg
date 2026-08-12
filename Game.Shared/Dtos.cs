@@ -135,7 +135,60 @@ public record MobCastInfo(Guid CasterId, string SkillName, float Seconds);
 
 
 /// <summary>One item instance in a player's inventory.</summary>
-public record InventoryItemDto(Guid InstanceId, string DefId, bool Equipped, int Enchant, int Quantity, ItemAttribute[] Attributes, DateTime? ExpiresAtUtc = null);
+/// <summary>One item instance on the wire. The last three are the PER-INSTANCE overrides of `58d`
+/// (owner, playtest-20): a real item carrying tags, never a cloned `_bound` def. Each is null when the
+/// instance has no opinion and the catalog's own value applies. See <see cref="ItemTag"/>.</summary>
+public record InventoryItemDto(Guid InstanceId, string DefId, bool Equipped, int Enchant, int Quantity,
+    ItemAttribute[] Attributes, DateTime? ExpiresAtUtc = null,
+    long? SellPriceOverride = null, bool? TradableOverride = null, string? CustomName = null,
+    bool? CanStorePrivate = null, bool? CanStoreAccount = null);
+
+/// <summary>The tag an item instance DISPLAYS, derived from its three properties rather than stored —
+/// so there is exactly one truth and a tag can never disagree with the behaviour (owner, `58d`).
+///
+/// <para>His table: sellable+tradable reads as nothing at all; neither reads as <b>bound</b>; sellable
+/// but not tradable reads as <b>private</b> (his word, and he said the name is open). A TIMER composes
+/// on top rather than replacing it, so a bound timed Soulcrystal is `Soulcrystal (temporary, bound)`.
+/// The fourth combination — tradable but worthless — is left untagged: it describes half the drop
+/// table, and a tag that appears on everything tells you nothing.</para></summary>
+public static class ItemTag
+{
+    // ⚠ The three predicates live HERE, taking primitives, so the server's InventoryItem and the
+    // client's item card read ONE implementation. Duplicating them was how `67i` happened — a display
+    // that quietly disagreed with the rule it was describing, with nothing to fail loudly.
+
+    /// <summary>What a vendor pays for an instance: its own price if it has one, else the def's.</summary>
+    public static long SellPrice(ItemDef def, long? sellOverride) =>
+        sellOverride ?? ItemCatalog.SellPrice(def);
+
+    /// <summary>May this instance leave the character?</summary>
+    public static bool Tradable(ItemDef def, bool? tradeOverride) => tradeOverride ?? def.Tradable;
+
+    /// <summary>May a vendor buy it? Same three conditions as <see cref="ItemCatalog.IsSellable"/>.</summary>
+    public static bool Sellable(ItemDef def, long? sellOverride, bool? tradeOverride) =>
+        Tradable(def, tradeOverride) && def.Slot != EquipSlot.QuestItem
+        && SellPrice(def, sellOverride) > 0;
+
+    /// <summary>The name THIS copy goes by — the def's unless one was written for the instance.</summary>
+    public static string Name(ItemDef def, InventoryItemDto i) =>
+        string.IsNullOrEmpty(i.CustomName) ? def.Name : i.CustomName!;
+
+    /// <summary>The tag for one instance on the wire.</summary>
+    public static string For(ItemDef def, InventoryItemDto i) =>
+        Of(Sellable(def, i.SellPriceOverride, i.TradableOverride),
+           Tradable(def, i.TradableOverride),
+           i.ExpiresAtUtc.HasValue);
+
+    public static string Of(bool sellable, bool tradable, bool timed)
+    {
+        string bond = !tradable ? (sellable ? "private" : "bound") : "";
+        string[] parts = timed && bond.Length > 0 ? new[] { "temporary", bond }
+                       : timed                    ? new[] { "temporary" }
+                       : bond.Length > 0          ? new[] { bond }
+                       : System.Array.Empty<string>();
+        return parts.Length == 0 ? "" : "(" + string.Join(", ", parts) + ")";
+    }
+}
 
 /// <summary>Server -> owning client: full inventory sync (sent on change).</summary>
 public record InventoryUpdate(InventoryItemDto[] Items);
