@@ -173,8 +173,11 @@ generic fantasy names (current towns: Brackenford, Stonewatch, Emberfall, Greyma
 Ironreach, Duskvale, Frostmere). Stat *formulas* are not copyrightable; *names* are.
 
 ## Roadmap (not yet built)
-**The live list is `docs/RoadmapNext.md`** — one screen, kept current; `docs/Roadmap.md` is the full
-detail and the archive of past playtest queues. Built since this file's list was first written: the
+**The live list is `docs/Backlog.md`** — every feature/change still owed, one flat list, permanent
+`BL-nn` ids, newest ruling wins (the replaced one moves to `docs/BacklogArchive.md`), built = deleted.
+**Bugs never go in it** — those live in `docs/testing/`. `docs/RoadmapNext.md` is the older
+version-shaped digest (goes stale between passes); `docs/Roadmap.md` is the full detail and the
+archive of past playtest queues. Built since this file's list was first written: the
 gold wallet, NPC vendors, teleport-for-fee, the buff ladder (potions + scrolls), party/grouping with
 loot modes, boss mechanics (±10-level rule, phases, adds, enrage), PvP/karma, auto-hunt, crafting, the
 generated level 1-90 world, the Unity client, and repeatable quests. Still to do: 3rd/4th class kits (blocked on the

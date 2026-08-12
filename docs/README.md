@@ -3,8 +3,13 @@
 Index of everything under `docs/`.
 
 ## Start here
+- [**Backlog.md**](Backlog.md) — 🔴 **every feature and change still owed, in one flat list.** Bugs are
+  not in it (they live in `testing/`). Ids are permanent (`BL-nn`), newest ruling wins, built means
+  deleted. **This is the "what do we build next" file.**
+- [**BacklogArchive.md**](BacklogArchive.md) — the rulings those entries replaced, and designs that
+  were built and then reversed. Read when you wonder *why* something looks the way it does.
 - [**RoadmapNext.md**](RoadmapNext.md) — the one-screen current state: what's live, what's next, what's
-  blocked. **Read this first.**
+  blocked. ⚠ Narrative and version-shaped; the backlog above is the authoritative list of what is owed.
 - [**CHANGELOG.md**](CHANGELOG.md) — what has been built, newest first.
 - [**Roadmap.md**](Roadmap.md) — the full detail behind the digest, plus the archive of past playtest
   queues (Now / Next / Later / Eventually / Blocked / Dropped).
@@ -63,4 +68,10 @@ Index of everything under `docs/`.
 
 New file? Put it where it belongs: a how-to in `guides/`, a what-to-check in `testing/`, a
 system spec in `design/`, balance work in `balance/`, source tables in `data/`. Keep this index and
-project-level docs (`CHANGELOG.md`, `Roadmap.md`, `RoadmapNext.md`) at the `docs/` root.
+project-level docs (`Backlog.md`, `BacklogArchive.md`, `CHANGELOG.md`, `Roadmap.md`,
+`RoadmapNext.md`) at the `docs/` root.
+
+**Where a new ask goes.** A feature or a change he asks for → a `BL-nn` entry in `Backlog.md`.
+A bug or a "does this work" → `testing/Open-Checklist.md`. A ruling that replaces an earlier one →
+rewrite the backlog entry, move the old text to `BacklogArchive.md`. Something shipped →
+`CHANGELOG.md`, and delete it from the backlog.

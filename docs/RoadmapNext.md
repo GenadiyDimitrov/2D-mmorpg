@@ -1,5 +1,10 @@
 # Roadmap — compact view (what's left, what depends on what)
 
+> 🔴 **For "what do we build next", read [Backlog.md](Backlog.md), not this file.** Created
+> 2026-08-12: one flat list of every feature and change still owed, gathered from playtests 4-21,
+> with permanent ids and no version narrative. This file is now history and dependency chains —
+> it is written per-version and goes stale between passes (it still says 0.57.0 while 0.60.1 ships).
+
 A one-screen digest of [Roadmap.md](Roadmap.md). Updated **2026-08-08 (after 0.57.0)**.
 Full history: [CHANGELOG.md](CHANGELOG.md). The checklists: [testing/Open-Checklist.md](testing/Open-Checklist.md)
 (🔴 what he edits on the phone — rolling, unversioned) and
