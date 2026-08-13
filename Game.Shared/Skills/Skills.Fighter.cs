@@ -30,6 +30,7 @@ public static partial class SkillCatalog
     public const string LastStand = "last_stand";             // survive one fatal blow (lethal save)
     public const string Indomitable = "indomitable";          // tank ult: +cancel resist
     public const string Provoke = "provoke";                  // taunt: force a mob onto the tank
+    public const string Lure = "lure";                        // rogue: MOB-ONLY taunt, pulls one out of a camp
     public const string Shadowstep = "shadowstep";            // blink behind target + hit
     public const string RepellingShot = "repelling_shot";     // ranged hit + knockback
     public const string Vanish = "vanish";                    // Phantom: stealth (invisible to mobs)
@@ -586,6 +587,37 @@ public static partial class SkillCatalog
                     Description: "Forces a monster to attack you: puts you at the top of its aggro and locks it on you for 3s, then leaves you 5,100 aggro ahead."),
             },
             Description: "Forces a monster to attack you — puts you at the top of its aggro list and locks it onto you briefly."),
+
+        // Lure — the ROGUE's taunt, and the tactic mob clans exist to make possible (BL-70). His
+        // picture: a rogue crossing an elite field, pulling the one creature the party wants and
+        // walking it back to safety while the rest of the settlement never learns it happened.
+        //
+        // Three things make that work, and all three are deliberate:
+        //   • it does NO DAMAGE, and damage is the only thing that raises a clan (MobCatalog.Clan) —
+        //     so a lure takes exactly one mob out of a camp;
+        //   • it is MOB-ONLY. A taunt aimed at a person means nothing, so it says no rather than
+        //     fizzling;
+        //   • its LADDER IS REACH — 200 / 400 / 600, his numbers. How far away you can start a pull
+        //     IS the skill, which is why this is the one place SkillLevel.Range earns its keep.
+        //     Level 3 out-ranges a mob's own 400 aggro, so a level-36 rogue can pull without ever
+        //     stepping into the camp's notice.
+        //
+        // Power 500 is his figure, and it is deliberately far below the tank's Provoke: a lure is
+        // how you START a fight, not how you keep a mob off the party.
+        new(Lure, "Lure", BaseClass.Fighter, SkillEffect.Taunt,
+            MpCost: 12, CastTicks: 0, CooldownTicks: 100, Range: 200, Power: 0,
+            DurationTicks: 30, Category: SkillCategory.Debuff,
+            TauntPower: 500, MobTargetOnly: true,
+            Levels: new SkillLevel[]
+            {
+                new(MpCost: 12, SpCost: 3400,  TauntPower: 500, Range: 200f,
+                    Description: "Pulls ONE monster onto you from 200 range. No damage, so its clan never answers."),
+                new(MpCost: 16, SpCost: 12000, TauntPower: 500, Range: 400f,
+                    Description: "Pulls ONE monster onto you from 400 range. No damage, so its clan never answers."),
+                new(MpCost: 20, SpCost: 40000, TauntPower: 500, Range: 600f,
+                    Description: "Pulls ONE monster onto you from 600 range — beyond a monster's own aggro range. No damage, so its clan never answers."),
+            },
+            Description: "Pulls a single monster onto you without hurting it, so its clan has nothing to answer."),
 
         // Shadowstep — BLINK behind the target, then strike ([Double]). Rogue gap-closer.
         new(Shadowstep, "Shadowstep", BaseClass.Fighter, SkillEffect.PhysicalDamage | SkillEffect.Blink,

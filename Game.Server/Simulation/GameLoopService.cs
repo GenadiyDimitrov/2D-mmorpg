@@ -1649,6 +1649,13 @@ public class GameLoopService : BackgroundService
                 SendSystemToEntity(caster, "You can't attack " + target.Name + ".");
                 return;
             }
+            // MOB-ONLY skills (the rogue's Lure) refuse a person out loud. The taunt handler would
+            // ignore a player target anyway, but a skill that silently does nothing is a bug report.
+            if (def.MobTargetOnly && target.Kind != EntityKind.Mob)
+            {
+                SendSystemToEntity(caster, $"{def.Name} only works on monsters.");
+                return;
+            }
             if (target.Kind == EntityKind.Player && !CanPvpHit(caster, target))
             {
                 SendSystemToEntity(caster, PvpRefusalReason(caster, target));
@@ -4866,7 +4873,7 @@ public class GameLoopService : BackgroundService
         if (IsAllyTargetable(def) && def.TargetMode != TargetMode.SelfOnly
             && _world.Parties.TryGetValue(p.Id, out var party))
         {
-            float range = SkillMath.EffectiveRange(def, p.Archetype, p.BasicAttackRange, p.Level);
+            float range = SkillMath.EffectiveRange(def, p.Archetype, p.BasicAttackRange, p.Level, p.SkillLevelOf(def.Id));
             foreach (var id in party.Members)
             {
                 if (id == p.Id) continue;
@@ -4892,7 +4899,7 @@ public class GameLoopService : BackgroundService
 
         if (IsAllyTargetable(def) && _world.Parties.TryGetValue(p.Id, out var party))
         {
-            float range = SkillMath.EffectiveRange(def, p.Archetype, p.BasicAttackRange, p.Level);
+            float range = SkillMath.EffectiveRange(def, p.Archetype, p.BasicAttackRange, p.Level, p.SkillLevelOf(def.Id));
             foreach (var id in party.Members)
             {
                 if (id == p.Id) continue;
@@ -7577,6 +7584,7 @@ public class GameLoopService : BackgroundService
         mob.Buffs.Clear();
         mob.Threat.Clear();
         mob.TauntLockTicks = 0;
+        mob.CriedForHelp = false;   // the pull is over — the camp will answer the next one (BL-70)
         mob.TargetX = mob.HomeX;
         mob.TargetY = mob.HomeY;
         mob.CombatTicks = 0;
@@ -7885,7 +7893,7 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        float range = SkillMath.EffectiveRange(def, caster.Archetype, caster.BasicAttackRange, caster.Level);
+        float range = SkillMath.EffectiveRange(def, caster.Archetype, caster.BasicAttackRange, caster.Level, caster.SkillLevelOf(def.Id));
 
         if (!selfTargeted && DistanceSq(caster, target) > range * range)
         {
@@ -9024,6 +9032,41 @@ var effect = def.Effect;
         }
     }
 
+    /// <summary>A wounded mob calls its social clan (BL-70): every clanmate within
+    /// <see cref="GameConstants.MobClanCallRadius"/> that is not already in a fight joins this one.
+    ///
+    /// Three deliberate limits, each of which is the difference between a camp and a zone-wide riot:
+    ///   • it fires on DAMAGE only, and only ONCE per fight (<see cref="Entity.CriedForHelp"/>);
+    ///   • a clanmate already fighting somebody is left alone — it does not switch victims;
+    ///   • an answering mob is seeded with the same threat a pull is worth, so the person who
+    ///     started it owns the whole camp rather than whoever happens to hit each one first.
+    ///
+    /// The answering mobs do NOT cry in turn. A chain would take a settlement apart in one pull, and
+    /// the radius is the fight's size — not a fuse.</summary>
+    private void CryForHelp(Entity mob, Entity attacker)
+    {
+        if (mob.CriedForHelp || mob.TrainingDummy || attacker.Kind != EntityKind.Player) return;
+        string clan = MobCatalog.Get(mob.MobTypeId).Clan;
+        if (string.IsNullOrEmpty(clan)) return;
+
+        mob.CriedForHelp = true;
+        float r2 = GameConstants.MobClanCallRadius * GameConstants.MobClanCallRadius;
+        foreach (var friend in _world.Grid.Nearby(mob))
+        {
+            if (friend.Kind != EntityKind.Mob || friend.Dead || friend.Id == mob.Id) continue;
+            if (friend.TrainingDummy || friend.Engaged) continue;
+            if (!string.Equals(MobCatalog.Get(friend.MobTypeId).Clan, clan, StringComparison.Ordinal))
+                continue;
+            if (DistanceSq(mob, friend) > r2) continue;
+            if (GameConstants.InSafeZone(friend.X, friend.Y)) continue;
+
+            friend.CriedForHelp = true;   // it came to a cry; it does not raise one of its own
+            AddThreat(friend, attacker, friend.MaxHp * GameConstants.ThreatAggroPullFraction);
+            friend.CombatTargetId = attacker.Id;
+            friend.Engaged = true;
+        }
+    }
+
     /// <summary>Point the mob at its highest-threat living target (stale/dead entries skipped).</summary>
     private void RetargetByThreat(Entity mob)
     {
@@ -9194,6 +9237,12 @@ var effect = def.Effect;
         if (attacker is not null && target.Kind == EntityKind.Mob && damage > 0)
         {
             AddThreat(target, attacker, damage);
+
+            // …and the SOCIAL CLAN cry (BL-70). Right here, in the damage path, is the whole rule:
+            // his ruling is that a mob calls its camp when it *starts to take damage* and at no other
+            // moment — not on a taunt, not on a debuff, not on walking into aggro range. Putting the
+            // call anywhere else would break the lure, which is the tactic this exists to enable.
+            CryForHelp(target, attacker);
 
             // …and the DAMAGE ledger, which is what rewards are actually paid on. Threat can't serve
             // that role: taunt and detaunt move it around by design, so it answers "who is the mob

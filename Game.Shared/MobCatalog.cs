@@ -126,7 +126,16 @@ public record MobType(
     MobCategory Category = MobCategory.Humanoid,
     MobRole Role = MobRole.Melee,    // how it fights (melee chaser / ranged archer / caster mage)
     DummyAttack Strikes = DummyAttack.None,    // a DUMMY that hits back, for counting outcomes
-    string Title = "");      // the line drawn ABOVE the name, like an NPC's role ("Elder" over "Marius")
+    string Title = "",       // the line drawn ABOVE the name, like an NPC's role ("Elder" over "Marius")
+    // SOCIAL CLAN (BL-70). A named group — "orc", "mantis", "redhorn". Damage one member and every
+    // clanmate within MobClanCallRadius joins the fight. "" = a loner, which is most animals and
+    // every solitary creature: a bear does not have a warband.
+    //
+    // 🔑 The trigger is DAMAGE and NOTHING else (owner): not a taunt, not a debuff, not walking into
+    // aggro range. That single rule is what makes a LURE the intended way to pull one member out of
+    // a camp — his picture is a rogue crossing an elite field, taunting the one mob the party wants
+    // and walking it back, with the rest of the settlement never learning it happened.
+    string Clan = "");
 
 /// <summary>
 /// THE place to manage mobs. Each entry is a creature template with its own drop
@@ -152,9 +161,35 @@ public static class MobCatalog
     /// the mob's natural level + family. Base stats come from the level curve (MobBaseStats)
     /// at spawn — the template only carries identity, movement, level, family and passives.</summary>
     private static MobType Mob(string id, string name, int level, MobCategory cat,
-        float run, bool aggressive, MobMod? mod = null, MobRole role = MobRole.Melee) =>
+        float run, bool aggressive, MobMod? mod = null, MobRole role = MobRole.Melee,
+        string clan = "") =>
         new(id, name, run * 0.55f, run, Aggressive: aggressive,
-            Drops: StandardDrops(level, cat), Mod: mod, Level: level, Category: cat, Role: role);
+            Drops: StandardDrops(level, cat), Mod: mod, Level: level, Category: cat, Role: role,
+            Clan: clan);
+
+    // ===================================================================================
+    //  SOCIAL CLANS (BL-70). Which creatures answer each other's cry for help.
+    //
+    //  Authored on the families that already READ as a warband or a nest — the ones sharing a name
+    //  root, which is the same grouping his "ork settlement" picture describes (BL-21). Everything
+    //  else is deliberately clanless: a bear, a treant, a wisp and a lone medusa have nobody to call.
+    //
+    //  A clan name may span levels because a clan is only ever LOCAL — the cry reaches 450 units and
+    //  a level-16 Orc Archer and a level-76 Sunland Orc Commander never stand in the same field. The
+    //  name is the family, the radius is the fight.
+    // ===================================================================================
+    private const string ClanOrc      = "orc";
+    private const string ClanLizard   = "lizardman";
+    private const string ClanMarauder = "marauder";
+    private const string ClanMantis   = "mantis";
+    private const string ClanSkeleton = "skeleton";
+    private const string ClanDread    = "dread";
+    private const string ClanMirror   = "mirror";
+    private const string ClanWildhorn = "wildhorn";
+    private const string ClanRedhorn  = "redhorn";
+    private const string ClanRadiant  = "radiant";
+    private const string ClanDrake    = "drake";
+    private const string ClanWolf     = "wolf";
 
     // ===================================================================================
     //  MOB WEAPON TYPE (owner, 2026-08-10). A mob's basic-attack SPEED comes from the weapon it
@@ -723,91 +758,91 @@ public static class MobCatalog
             Mob("ridgeback_pup", "Ridgeback Pup", 1, MobCategory.Animal, 120f, false),
             Mob("fox", "Fox", 4, MobCategory.Animal, 125f, false),
             Mob("goblin_scout", "Goblin Scout", 8, MobCategory.Humanoid, 132f, false),
-            Mob("ashen_wolf", "Ashen Wolf", 10, MobCategory.Animal, 140f, true),
-            Mob("werewolf", "Werewolf", 12, MobCategory.Humanoid, 132f, true),
+            Mob("ashen_wolf", "Ashen Wolf", 10, MobCategory.Animal, 140f, true, clan: ClanWolf),
+            Mob("werewolf", "Werewolf", 12, MobCategory.Humanoid, 132f, true, clan: ClanWolf),
             Mob("hook_spider", "Hook Spider", 14, MobCategory.Insect, 130f, true),
-            Mob("orc_archer", "Orc Archer", 16, MobCategory.Humanoid, 132f, true, role: MobRole.Archer),
-            Mob("skeleton_grunt", "Skeleton Grunt", 18, MobCategory.Undead, 120f, true),
-            Mob("shield_skeleton", "Shield Skeleton", 20, MobCategory.Undead, 115f, true),
+            Mob("orc_archer", "Orc Archer", 16, MobCategory.Humanoid, 132f, true, role: MobRole.Archer, clan: ClanOrc),
+            Mob("skeleton_grunt", "Skeleton Grunt", 18, MobCategory.Undead, 120f, true, clan: ClanSkeleton),
+            Mob("shield_skeleton", "Shield Skeleton", 20, MobCategory.Undead, 115f, true, clan: ClanSkeleton),
             Mob("grizzly_bear", "Grizzly Bear", 22, MobCategory.Animal, 135f, true),
             Mob("cinder_imp", "Cinder Imp", 24, MobCategory.Demon, 142f, true),
             // MAGIC monster: high M.Def / low P.Def — hard for mages, easy for fighters.
             // Also a CASTER (Mage role): no basic attack, nukes from range, sits helpless at 0 MP.
             Mob("watcher_eye", "Watcher Eye", 26, MobCategory.MagicCreature, 130f, true,
                 new MobMod(MDef: 2f, PDef: 0.5f, Name: "Magic Monster"), MobRole.Mage),
-            Mob("lizardman_warrior", "Lizardman Warrior", 28, MobCategory.Humanoid, 132f, true),
-            Mob("marauder_recruit", "Marauder Recruit", 30, MobCategory.Humanoid, 132f, true),
-            Mob("mantis_worker", "Mantis Worker", 32, MobCategory.Insect, 140f, true),
+            Mob("lizardman_warrior", "Lizardman Warrior", 28, MobCategory.Humanoid, 132f, true, clan: ClanLizard),
+            Mob("marauder_recruit", "Marauder Recruit", 30, MobCategory.Humanoid, 132f, true, clan: ClanMarauder),
+            Mob("mantis_worker", "Mantis Worker", 32, MobCategory.Insect, 140f, true, clan: ClanMantis),
             Mob("grave_robber_fighter", "Grave Robber Fighter", 32, MobCategory.Humanoid, 132f, true),
             Mob("medusa", "Medusa", 34, MobCategory.Humanoid, 132f, true),
             Mob("plunder_beetle", "Plunder Beetle", 34, MobCategory.Insect, 140f, true),
-            Mob("wyrm", "Wyrm", 35, MobCategory.Dragon, 150f, true),
-            Mob("marsh_mantis_soldier", "Marsh Mantis Soldier", 37, MobCategory.Insect, 140f, true),
-            Mob("fen_lizardman_archer", "Fen Lizardman Archer", 39, MobCategory.Humanoid, 132f, true, role: MobRole.Archer),
+            Mob("wyrm", "Wyrm", 35, MobCategory.Dragon, 150f, true, clan: ClanDrake),
+            Mob("marsh_mantis_soldier", "Marsh Mantis Soldier", 37, MobCategory.Insect, 140f, true, clan: ClanMantis),
+            Mob("fen_lizardman_archer", "Fen Lizardman Archer", 39, MobCategory.Humanoid, 132f, true, role: MobRole.Archer, clan: ClanLizard),
             // CHAMPION outlier: the same L40 curve × a big HP/P.Def passive (≈3.5×/2.2×). Caster.
             Mob("rift_portling", "Rift Portling", 40, MobCategory.MagicCreature, 110f, true,
                 new MobMod(Hp: 3.56f, PDef: 2.2f, MDef: 1.27f, Name: "Rift Champion"), MobRole.Mage),
-            Mob("dune_orc_archer", "Dune Orc Archer", 40, MobCategory.Humanoid, 132f, true, role: MobRole.Archer),
-            Mob("ridge_orc_overlord", "Ridge Orc Overlord", 42, MobCategory.Humanoid, 132f, true),
+            Mob("dune_orc_archer", "Dune Orc Archer", 40, MobCategory.Humanoid, 132f, true, role: MobRole.Archer, clan: ClanOrc),
+            Mob("ridge_orc_overlord", "Ridge Orc Overlord", 42, MobCategory.Humanoid, 132f, true, clan: ClanOrc),
             Mob("harpy", "Harpy", 42, MobCategory.Humanoid, 138f, true),
             Mob("grave_lich", "Grave Lich", 44, MobCategory.Undead, 120f, true),
             Mob("fomor_brute", "Fomor Brute", 45, MobCategory.Humanoid, 132f, true),
-            Mob("marsh_marauder", "Marsh Marauder", 46, MobCategory.Humanoid, 132f, true),
-            Mob("warped_drake", "Warped Drake", 47, MobCategory.Dragon, 150f, true),
-            Mob("wildhorn_grunt", "Wildhorn Grunt", 48, MobCategory.Humanoid, 132f, true),
+            Mob("marsh_marauder", "Marsh Marauder", 46, MobCategory.Humanoid, 132f, true, clan: ClanMarauder),
+            Mob("warped_drake", "Warped Drake", 47, MobCategory.Dragon, 150f, true, clan: ClanDrake),
+            Mob("wildhorn_grunt", "Wildhorn Grunt", 48, MobCategory.Humanoid, 132f, true, clan: ClanWildhorn),
             Mob("amber_basilisk", "Amber Basilisk", 48, MobCategory.Animal, 120f, true),
             Mob("ravener", "Ravener", 50, MobCategory.Demon, 145f, true),
-            Mob("mantis_follower", "Mantis Follower", 50, MobCategory.Insect, 140f, true),
-            Mob("marauder_warrior", "Marauder Warrior", 51, MobCategory.Humanoid, 132f, true),
+            Mob("mantis_follower", "Mantis Follower", 50, MobCategory.Insect, 140f, true, clan: ClanMantis),
+            Mob("marauder_warrior", "Marauder Warrior", 51, MobCategory.Humanoid, 132f, true, clan: ClanMarauder),
             Mob("fallen_angel", "Fallen Angel", 52, MobCategory.Demon, 135f, true),
             Mob("thornback", "Thornback", 53, MobCategory.Animal, 135f, true),
-            Mob("gaze_hound", "Gaze Hound", 54, MobCategory.Animal, 140f, true),
-            Mob("ash_orc_soldier", "Ash Orc Soldier", 55, MobCategory.Humanoid, 132f, true),
-            Mob("mirror_wraith", "Hall of Mirrors Wraith", 56, MobCategory.Undead, 125f, true),
-            Mob("mirror_ghost", "Mirror Ghost", 56, MobCategory.Undead, 125f, true),
-            Mob("dune_orc_porter", "Dune Orc Porter", 57, MobCategory.Humanoid, 132f, false),
+            Mob("gaze_hound", "Gaze Hound", 54, MobCategory.Animal, 140f, true, clan: ClanWolf),
+            Mob("ash_orc_soldier", "Ash Orc Soldier", 55, MobCategory.Humanoid, 132f, true, clan: ClanOrc),
+            Mob("mirror_wraith", "Hall of Mirrors Wraith", 56, MobCategory.Undead, 125f, true, clan: ClanMirror),
+            Mob("mirror_ghost", "Mirror Ghost", 56, MobCategory.Undead, 125f, true, clan: ClanMirror),
+            Mob("dune_orc_porter", "Dune Orc Porter", 57, MobCategory.Humanoid, 132f, false, clan: ClanOrc),
             Mob("aether_wisp", "Aether Wisp", 58, MobCategory.MagicCreature, 115f, true, role: MobRole.Mage),
             Mob("hollow_one", "Hollow One", 58, MobCategory.Humanoid, 132f, true),
             Mob("valley_treant", "Valley Treant", 60, MobCategory.Plant, 90f, false),
             Mob("sand_ratman", "Sand Ratman", 60, MobCategory.Humanoid, 132f, true),
             Mob("cursed_blade", "Cursed Blade", 61, MobCategory.Undead, 130f, true),
             Mob("bogwood", "Bogwood", 62, MobCategory.Plant, 90f, false),
-            Mob("fen_lizardman", "Fen Lizardman", 62, MobCategory.Humanoid, 132f, true),
+            Mob("fen_lizardman", "Fen Lizardman", 62, MobCategory.Humanoid, 132f, true, clan: ClanLizard),
             // Golem-type stone/obsidian body, authored via the leveled MASTERY table: Piercing
             // Resistance L10 (×1.43 P.Def vs sword/dual), Bow Resistance L12 (×2), Blunt Resistance
             // IG (×0.5 = weak). Same effect as a hand MobMod, but "picks a level" like a class.
             Mob("obsidian_knight", "Obsidian Knight", 63, MobCategory.Humanoid, 132f, true,
                 MobMasteries.Build(pierce: 10, bow: 12, blunt: 2, name: "Stoneplate")),
-            Mob("crimson_drake", "Crimson Drake", 64, MobCategory.Dragon, 150f, true),
-            Mob("wildhorn_scout", "Wildhorn Scout", 64, MobCategory.Humanoid, 138f, true),
-            Mob("dread_knight", "Dread Knight", 65, MobCategory.Undead, 135f, true),
-            Mob("wildhorn_elder", "Wildhorn Elder", 66, MobCategory.Humanoid, 132f, true),
+            Mob("crimson_drake", "Crimson Drake", 64, MobCategory.Dragon, 150f, true, clan: ClanDrake),
+            Mob("wildhorn_scout", "Wildhorn Scout", 64, MobCategory.Humanoid, 138f, true, clan: ClanWildhorn),
+            Mob("dread_knight", "Dread Knight", 65, MobCategory.Undead, 135f, true, clan: ClanDread),
+            Mob("wildhorn_elder", "Wildhorn Elder", 66, MobCategory.Humanoid, 132f, true, clan: ClanWildhorn),
             Mob("spiteful_ghost", "Spiteful Ghost", 66, MobCategory.Undead, 125f, true),
             Mob("highland_kookaburra", "Highland Kookaburra", 67, MobCategory.Animal, 135f, false),
             Mob("highland_buffalo", "Highland Buffalo", 68, MobCategory.Animal, 130f, false),
             Mob("highland_buffalo_tamed", "Highland Buffalo (Tamed)", 68, MobCategory.Animal, 130f, false),
-            Mob("dread_archer", "Dread Archer", 69, MobCategory.Undead, 132f, true, role: MobRole.Archer),
-            Mob("dire_beast", "Dire Beast", 70, MobCategory.Animal, 140f, true),
+            Mob("dread_archer", "Dread Archer", 69, MobCategory.Undead, 132f, true, role: MobRole.Archer, clan: ClanDread),
+            Mob("dire_beast", "Dire Beast", 70, MobCategory.Animal, 140f, true, clan: ClanWolf),
             Mob("revenant_minion", "Revenant Minion", 71, MobCategory.Demon, 145f, true),
-            Mob("redhorn_footman", "Redhorn Footman", 72, MobCategory.Humanoid, 132f, true),
-            Mob("sunland_orc_scout", "Sunland Orc Scout", 73, MobCategory.Humanoid, 138f, true),
-            Mob("redhorn_elite", "Redhorn Elite", 73, MobCategory.Humanoid, 132f, true),
-            Mob("redhorn_recruit", "Redhorn Recruit", 74, MobCategory.Humanoid, 132f, true),
-            Mob("sunland_orc_warrior", "Sunland Orc Warrior", 75, MobCategory.Humanoid, 132f, true),
-            Mob("redhorn_soldier", "Redhorn Soldier", 76, MobCategory.Humanoid, 132f, true),
-            Mob("sunland_orc_commander", "Sunland Orc Commander", 76, MobCategory.Humanoid, 132f, true),
-            Mob("sunland_orc_captain", "Sunland Orc Captain", 77, MobCategory.Humanoid, 132f, true),
-            Mob("redhorn_general", "Redhorn General", 78, MobCategory.Humanoid, 132f, true),
-            Mob("emberwyrm_drake", "Emberwyrm Drake", 79, MobCategory.Dragon, 155f, true),
+            Mob("redhorn_footman", "Redhorn Footman", 72, MobCategory.Humanoid, 132f, true, clan: ClanRedhorn),
+            Mob("sunland_orc_scout", "Sunland Orc Scout", 73, MobCategory.Humanoid, 138f, true, clan: ClanOrc),
+            Mob("redhorn_elite", "Redhorn Elite", 73, MobCategory.Humanoid, 132f, true, clan: ClanRedhorn),
+            Mob("redhorn_recruit", "Redhorn Recruit", 74, MobCategory.Humanoid, 132f, true, clan: ClanRedhorn),
+            Mob("sunland_orc_warrior", "Sunland Orc Warrior", 75, MobCategory.Humanoid, 132f, true, clan: ClanOrc),
+            Mob("redhorn_soldier", "Redhorn Soldier", 76, MobCategory.Humanoid, 132f, true, clan: ClanRedhorn),
+            Mob("sunland_orc_commander", "Sunland Orc Commander", 76, MobCategory.Humanoid, 132f, true, clan: ClanOrc),
+            Mob("sunland_orc_captain", "Sunland Orc Captain", 77, MobCategory.Humanoid, 132f, true, clan: ClanOrc),
+            Mob("redhorn_general", "Redhorn General", 78, MobCategory.Humanoid, 132f, true, clan: ClanRedhorn),
+            Mob("emberwyrm_drake", "Emberwyrm Drake", 79, MobCategory.Dragon, 155f, true, clan: ClanDrake),
             Mob("wrathborn_demon", "Wrathborn Demon", 80, MobCategory.Demon, 145f, true),
-            Mob("scarlet_mantis", "Scarlet Mantis", 80, MobCategory.Insect, 142f, true),
-            Mob("radiant_scout", "Radiant Scout", 81, MobCategory.Angel, 140f, true),
-            Mob("radiant_berserker", "Radiant Berserker", 82, MobCategory.Angel, 135f, true),
-            Mob("radiant_mage", "Radiant Mage", 82, MobCategory.Angel, 132f, true, role: MobRole.Mage),
-            Mob("splinter_mantis_drone", "Splinter Mantis Drone", 83, MobCategory.Insect, 142f, true),
-            Mob("needle_mantis_overseer", "Needle Mantis Overseer", 84, MobCategory.Insect, 140f, true),
-            Mob("splinter_mantis_walker", "Splinter Mantis Walker", 84, MobCategory.Insect, 142f, true),
-            Mob("drake_leader", "Drake Leader", 85, MobCategory.Dragon, 150f, true),
+            Mob("scarlet_mantis", "Scarlet Mantis", 80, MobCategory.Insect, 142f, true, clan: ClanMantis),
+            Mob("radiant_scout", "Radiant Scout", 81, MobCategory.Angel, 140f, true, clan: ClanRadiant),
+            Mob("radiant_berserker", "Radiant Berserker", 82, MobCategory.Angel, 135f, true, clan: ClanRadiant),
+            Mob("radiant_mage", "Radiant Mage", 82, MobCategory.Angel, 132f, true, role: MobRole.Mage, clan: ClanRadiant),
+            Mob("splinter_mantis_drone", "Splinter Mantis Drone", 83, MobCategory.Insect, 142f, true, clan: ClanMantis),
+            Mob("needle_mantis_overseer", "Needle Mantis Overseer", 84, MobCategory.Insect, 140f, true, clan: ClanMantis),
+            Mob("splinter_mantis_walker", "Splinter Mantis Walker", 84, MobCategory.Insect, 142f, true, clan: ClanMantis),
+            Mob("drake_leader", "Drake Leader", 85, MobCategory.Dragon, 150f, true, clan: ClanDrake),
             Mob("disciple_of_the_dawn", "Disciple of the Dawn", 85, MobCategory.Humanoid, 132f, true),
 
             // Training dummy: immortal, stationary, deals no damage. The ZONE sets its level

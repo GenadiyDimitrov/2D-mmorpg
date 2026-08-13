@@ -279,15 +279,11 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   each existing band becomes four parallel fields at the same levels — the point is somewhere else to
   farm at your level, not a longer ladder. Interacts with `BL-52`.
 
-- `BL-70` 🔵 **Mob clans — a social circle that answers a cry for help.** Written as the COUNTER to
-  `BL-69`: *"when we include the rogues hide, a rogue can have an easy farm in an elite zone and kill
-  a single mob without getting disturbed"* (playtest-22). Mobs join a named group (`Ork`) with a
-  **400-500 radius**; hitting one turns the rest of its group on you.
-  🔑 **The trigger is DAMAGE and nothing else** — *"social circle only works if a mob is hit, not when
-  taunted/debuffed/aggroed/etc.. only if the mob start to take dmg he 'cries' for help."* That rule is
-  what makes a **`lure`** (a rogue's mob-only taunt, no player targets) the intended way to pull one
-  out: his IG picture is a rogue walking between aggressive mobs, luring the one the party wants and
-  running it back to safety. Needs `BL-71` for the taunt power a lure carries.
+- `BL-70` ✅ **BUILT 2026-08-13 (0.64.0)** — mob clans + the rogue's `Lure`. Twelve clans authored on
+  the name-root families, a 450 radius, damage-only trigger, and a no-damage mob-only taunt at
+  20/28/36 whose ladder is reach (200/400/600). See `CHANGELOG.md`. Delete at the next sweep.
+  ⚠ **Untested against a real camp** — it needs a playtest in an orc/mantis field to say whether 450
+  and "the answering mobs don't cry in turn" give the fight the size you pictured.
 
 - `BL-52` 🔵 **World expansion toward 1kk+.** The 0.33.0 re-layout was the first step and nothing
   followed it. `BL-21` is queued behind this one.

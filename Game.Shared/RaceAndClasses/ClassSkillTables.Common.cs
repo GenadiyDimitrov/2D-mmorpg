@@ -84,6 +84,9 @@ public static partial class ClassSkillTables
                 new ClassSkill(PiercingStab, 20, SkillLevel: 1),
                 new ClassSkill(PreciseShot, 20, SkillLevel: 1),
                 new ClassSkill(Sprint, 20, SkillLevel: 1),
+                // Lure (BL-70) on the rogue's own 20/28/36 rungs — its ladder is REACH (200/400/600),
+                // so the three levels are the three ranges and nothing else changes.
+                new ClassSkill(Lure, 20, SkillLevel: 1),
                 new ClassSkill(RogueArmorMastery, 24, SkillLevel: 2),
                 new ClassSkill(RogueWeaponMastery, 24, SkillLevel: 2),
                 new ClassSkill(PiercingStab, 24, SkillLevel: 2),
@@ -94,6 +97,7 @@ public static partial class ClassSkillTables
                 new ClassSkill(PreciseShot, 28, SkillLevel: 3),
                 // Evasion Boost — the rogue's ultimate (CSV rogue 20-35, added playtest-20).
                 new ClassSkill(EvasionBoost, 28, SkillLevel: 1),
+                new ClassSkill(Lure, 28, SkillLevel: 2),
                 new ClassSkill(RogueArmorMastery, 32, SkillLevel: 4),
                 new ClassSkill(RogueWeaponMastery, 32, SkillLevel: 4),
                 new ClassSkill(PiercingStab, 32, SkillLevel: 4),
@@ -105,6 +109,7 @@ public static partial class ClassSkillTables
                 // Bow Expertise moved 28 -> 36: he corrected the CSV in playtest-20 ("The Bow
                 // expertice was with the 36 lvl skills but it was lvl 28 so i fixed it as well").
                 new ClassSkill(BowExpertise, 36, SkillLevel: 1),
+                new ClassSkill(Lure, 36, SkillLevel: 3),
                 // Sprint level 2 (+60) — G5 gave the LEVEL and its value but not where it is learned,
                 // and the authored rogue CSV stops at 36. ⚠ 40 is MY pick: it is the next rung on this
                 // block's own 4-level cadence and the level the 3rd-class disciplines already sit at.

@@ -16,6 +16,34 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
 Protocol stays **19** — nothing here changes the wire. No DB reset.
 
+### `BL-70` — mobs have a social circle, and the rogue has a way around it
+
+A creature can now belong to a named **clan** (`MobType.Clan`) — `orc`, `mantis`, `redhorn`,
+`wildhorn`, `radiant`, `drake`, `skeleton`, `dread`, `mirror`, `lizardman`, `marauder`, `wolf`.
+Damage one of them and every clanmate within **450** joins the fight, seeded with the same threat a
+pull is worth so the person who started it owns the whole camp instead of whoever hits each mob
+first. The radius is deliberately **wider than a mob's own 400 aggro range**: a camp that answers
+only as far as it can already see you is not a camp, it is four independent mobs.
+
+Clans are authored on the families that already read as a warband or a nest — the ones sharing a name
+root, the same grouping his "ork settlement" picture describes (`BL-21`). Everything else stays
+clanless on purpose: a bear, a treant and a lone medusa have nobody to call.
+
+🔑 **The trigger is DAMAGE and nothing else**, which is his ruling and is the whole design rather
+than an implementation detail: *"social circle only works if a mob is hit, not when
+taunted/debuffed/aggroed/etc."* Two further limits keep a camp from becoming a zone-wide riot — a
+clanmate already fighting somebody is left alone, and the mobs that answer a cry do not cry in turn.
+
+**The rogue gets `Lure`** (20/28/36), which is what the damage-only rule exists to permit: a taunt
+that does no damage, so a camp never learns it happened. Power **500** — far below the tank's Provoke,
+because a lure is how you *start* a fight, not how you keep a mob off the party. Its ladder is pure
+**reach: 200 / 400 / 600**, his numbers, and level 3 out-ranges a mob's own aggro so a level-36 rogue
+can pull without stepping into the camp's notice. It is **mob-only** and refuses a person out loud —
+the taunt handler would ignore a player target anyway, and a skill that silently does nothing is a
+bug report.
+
+(New plumbing: `SkillLevel.Range` for the one ladder that is reach, and `SkillDef.MobTargetOnly`.)
+
 ### `BL-71` — the threat model gets numbers, and a pull is finally worth something
 
 The answer that opened this was that **most of it already existed**: `Entity.Threat` is a real

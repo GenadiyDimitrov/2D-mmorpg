@@ -288,6 +288,13 @@ public static class GameConstants
     /// formula is allowed to see.</summary>
     public const float ThreatMinCastSeconds = 1f;
 
+    /// <summary>How far a wounded mob's cry for help carries to its social clan (BL-70). His figure
+    /// was "400-500"; 450 is the middle of it.
+    ///
+    /// Note this is LARGER than <see cref="MobAggroRange"/> (400) on purpose: a camp that answers only
+    /// as far as it can already see you is not a camp, it is four independent mobs.</summary>
+    public const float MobClanCallRadius = 450f;
+
     /// <summary>Default hard-commit window after a taunt lands, when the skill doesn't author its
     /// own (DurationTicks). During it the mob will not retarget away from the taunter even if
     /// someone out-threats them — the taunt's guarantee, distinct from its POWER, which is what

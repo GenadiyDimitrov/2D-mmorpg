@@ -1232,6 +1232,13 @@ public class Entity
     /// targets the highest-threat entity. Taunt spikes it; detaunt drops it.</summary>
     public Dictionary<Guid, float> Threat { get; } = new();
 
+    /// <summary>Has this mob already called its social clan in for this fight (BL-70)?
+    ///
+    /// The cry fires ONCE, on the first damage it takes, and not again — otherwise every tick of a
+    /// DoT would re-scan the grid for clanmates. Cleared when the pull is over (ResetMob) and on
+    /// respawn, so the same camp answers the next player who starts something. Runtime only.</summary>
+    public bool CriedForHelp { get; set; }
+
     /// <summary>DAMAGE ledger (mobs): attacker entity id → total damage actually dealt to this mob.
     ///
     /// Deliberately SEPARATE from <see cref="Threat"/>. Threat is a targeting signal that taunt and

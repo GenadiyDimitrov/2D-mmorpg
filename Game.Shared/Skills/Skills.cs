@@ -243,7 +243,12 @@ public record SkillDef(
     //
     // Per-level on SkillLevel.TauntPower; read it with TauntPowerAt(level), never this field.
     // Rides as a field rather than reusing Power because a taunt may ALSO do damage.
-    int TauntPower = 0)
+    int TauntPower = 0,
+    // MOB-ONLY targeting (BL-70). The skill refuses a player target outright rather than fizzling
+    // on one. The rogue's Lure is what this is for: it is a taunt, and a taunt aimed at a person is
+    // meaningless — but without an explicit refusal it would look like a working PvP skill that
+    // silently does nothing, which is worse than a skill that says no.
+    bool MobTargetOnly = false)
 {
     /// <summary>Hash on the ID alone — and this override MUST stay.
     ///
@@ -330,6 +335,14 @@ public record SkillDef(
     {
         int t = Lvl(level)?.TauntPower ?? 0;
         return t > 0 ? t : TauntPower;
+    }
+
+    /// <summary>Authored range at a LEVEL. A level's 0 means "inherit", so every skill whose reach
+    /// does not change with its level needs no per-level entry (see SkillLevel.Range).</summary>
+    public float RangeAt(int level)
+    {
+        float r = Lvl(level)?.Range ?? 0f;
+        return r > 0f ? r : Range;
     }
 
     /// <summary>Threat a SUPPORT cast is worth to every monster fighting the people it helped —
@@ -452,7 +465,12 @@ public record SkillLevel(
     // REWARD RATES for THIS rung of a reward-rune ladder (null = inherit the SkillDef's).
     RewardRates? Rewards = null,
     // TAUNT POWER at THIS level (0 = inherit the SkillDef's). See SkillDef.TauntPower.
-    int TauntPower = 0);
+    int TauntPower = 0,
+    // RANGE at THIS level (0 = inherit the SkillDef's). Almost no skill needs this — range is a
+    // property of the spell, not of how far up its ladder you are — but the rogue's LURE is exactly
+    // the exception: its whole ladder IS reach (200/400/600), because how far away you can start a
+    // pull is the skill.
+    float Range = 0f);
 
 /// <summary>What a buff does to the four things a MONSTER pays out: experience, skill points, the
 /// gold it drops and the CHANCE its table rolls. The premium rune family (Rune of Experience /
@@ -666,9 +684,14 @@ public static class SkillMath
     /// 750, a nuker's 900, by how each spell is authored). The ONE exception kept is BOW
     /// skills, whose reach still grows with the archer's bow tier (350/600/900), matching
     /// the bow basic-attack range scaling.</summary>
-    public static float EffectiveRange(SkillDef def, Archetype? archetype, float basicAttackRange, int level)
+    /// <param name="level">The CHARACTER's level — it selects the bow tier, nothing else.</param>
+    /// <param name="skillLevel">The learned level of this skill, for the rare ladder whose rungs are
+    /// reach (the rogue's Lure). Defaults to 1, which is what every single-level skill has.</param>
+    public static float EffectiveRange(SkillDef def, Archetype? archetype, float basicAttackRange,
+        int level, int skillLevel = 1)
     {
-        if (def.Range <= 0)
+        float authored = def.RangeAt(skillLevel < 1 ? 1 : skillLevel);
+        if (authored <= 0)
             return basicAttackRange;
 
         // Bow skills: ranged physical attacks still scale by bow tier. ROGUE counts since the archer
@@ -677,11 +700,11 @@ public static class SkillMath
         // The `Range >= 300` test is what separates a bow skill from a dagger one, so a rogue's melee
         // skills are unaffected by being in the same class.
         bool isBowSkill = def.Effect.HasFlag(SkillEffect.PhysicalDamage)
-            && archetype is Archetype.Archer or Archetype.Rogue && def.Range >= 300;
+            && archetype is Archetype.Archer or Archetype.Rogue && authored >= 300;
         if (isBowSkill)
             return RangeTier(level) switch { 3 => 900f, 2 => 600f, _ => 350f };
 
-        return def.Range;   // the spell's authored range
+        return authored;   // the spell's authored range
     }
 
     // Backwards-compatible overload (assumes tier 1) for any caller without level.
