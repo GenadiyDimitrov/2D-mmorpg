@@ -121,17 +121,21 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   (hook reserved) · PvP and PvE damage multipliers (both hooks exist and are 1.0). *"the combat
   depth I don't want it build for now defer it."* Not dropped — do not build unasked.
 
-- `BL-71` 🔵 **The aggro / taunt model — BUILT in 0.64.0 except ONE number you never gave.**
-  Taunt POWER is an authored per-level field, Provoke is a 5-rung ladder (1500 → 5100 across
-  20/24/28/32/36), threat decays 1%/s, heals generate `healPower / castSeconds × 10` against the mobs
-  fighting whoever was healed, and the proximity-pull defect is fixed (a pull now seeds 5% of the
-  mob's own max HP). See `CHANGELOG.md`.
-  - 🔵 **What a BUFF is worth is still open.** You asked for "healer/buffer threat" and gave the
-    formula for the heal half only, so buffs generate nothing. The plumbing is one call
-    (`AddSupportThreat`) — it is a number away, not a build.
-  - The remaining 20-30k rungs are levels 6-10 of the same ×1.36 ladder and belong to the 3rd/4th
-    class kits — blocked on `BL-02`, like every other 40+ number.
-  - `lure` itself ships with `BL-70`, which is what makes it worth having.
+- `BL-71` ✅ **BUILT 2026-08-13/14 (0.64.0)** — the whole aggro/taunt model. Taunt POWER is an authored
+  per-level field, Provoke is a 5-rung ladder (1500 → 5100 across 20/24/28/32/36), threat decays 1%/s,
+  heals generate `healPower / castSeconds × 10`, **buffs generate `grantLevel × 20 × people`** (your
+  2026-08-14 ruling — the LEARNED level, so a buff taken at 50 is worth less than one taken at 70),
+  and the proximity-pull defect is fixed (a pull seeds 5% of the mob's own max HP). See `CHANGELOG.md`.
+  Delete at the next sweep.
+  - ⚠ **Your buff:heal ratio does not hold yet, and the buff side is not the reason.** You sized it
+    against "a quick heal with ~1500 power at that lvl"; the cleric's heal ladder actually stops at
+    skill level 4 — learned at 35, power 301 — so a group buff currently out-threatens a heal by ~8×
+    instead of ~1.3×. That is **`BL-16`** (heal powers "sit at ~151-301 against a scale that has moved
+    to ~1000"), and it is the half that has to move.
+  - A full party is **9**, not the 7 in your example, so a level-70 group buff tops out at **12,600** —
+    which is the intent (*"Full buffing a full party should take the agro from mobs for awhile"*).
+  - The remaining 20-30k taunt rungs are levels 6-10 of the same ×1.36 ladder and belong to the
+    3rd/4th class kits — blocked on `BL-02`, like every other 40+ number.
   - Not built and not asked for: a client-visible aggro list.
 
 ---
@@ -198,9 +202,11 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   ways — `Prowl` (rogue toggle at 20, 1 MP/s) and `Shrouding Hymn` (cleric party version at 30:
   1 min / 30s / 300 MP). `/invis` is absolute and manual-only. See `CHANGELOG.md`. Delete at the
   next sweep.
-  - 🔵 **One decision for you.** A full hide is transparent to your own **party** and to staff — your
-    "nobody renders it" read narrowly, because a hidden party member no healer can see, target or
-    resurrect is a bug report rather than a mechanic. Say the word and it is one line.
+  - ✅ **Closed 2026-08-14: hidden is hidden from EVERYONE**, party and staff included. You are still
+    in the party and still listed (status `Hidden`), you are simply not renderable, clickable or
+    heal-targetable — skipped by party heals/buffs, both auto-target pickers and the manual ally cast.
+    Death clears a hide, so a corpse stays resurrectable. Staff keep `/tp`, `/tpme`, `/jail`, `/where`
+    (they resolve by NAME, never by sight). No protocol change.
 
 - `BL-38` 🔵 **Pets and summons** — immovable totems, class pets, the mage summoner. Designed, never
   scheduled, never re-raised by you.

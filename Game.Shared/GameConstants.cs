@@ -283,6 +283,21 @@ public static class GameConstants
     /// spammed small one.</summary>
     public const float ThreatHealFactor = 10f;
 
+    /// <summary>Buff threat per LEVEL per person affected (owner, 2026-08-14). A buff has no power to
+    /// read, so its worth is its LEVEL and its REACH: <c>grantLevel × 20 × peopleAffected</c>.
+    ///
+    /// His worked example, and it lands exactly on shipped data: a group buff learned at 70 is
+    /// 70 × 20 = 1400 a head, and across a full party of 7 that is <b>9,800</b> — against a quick heal
+    /// of 1500 power over 2s, which is 7,500. So a self-buff or a single-target buff is worth well
+    /// under one heal, and blanketing a party is worth rather more than one. That asymmetry IS the
+    /// rule: *"if it affect only the caster or a single target won't be as much as a value but a
+    /// whole party ..."*
+    ///
+    /// 🔑 It is the level the buff was LEARNED at, not the caster's — *"If I learn a buff at 50 and
+    /// another at 70 the 50 one should have less aggro value."* The caster's own level is only the
+    /// fallback for a buff no class list owns (a scroll).</summary>
+    public const float ThreatBuffPerLevel = 20f;
+
     /// <summary>Floor on the cast time in that formula. An instant heal would otherwise divide by
     /// zero (or, at one tick, by 0.1 — a ×100 blow-up). One second is the shortest cast the
     /// formula is allowed to see.</summary>

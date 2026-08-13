@@ -1676,11 +1676,15 @@ public class GameLoopService : BackgroundService
             }
             targetId = tid;
         }
+        // A HIDDEN ally is not a support target (BL-69): *"The healer targeting u from the party
+        // window won't see u as healable target until u reveal yourself."* Failing this test falls
+        // through to the self-cast below rather than erroring, which is precisely how an out-of-range
+        // party member already behaves — "act as u r not nearby", in his words.
         else if (IsAllyTargetable(def) &&
                  def.TargetMode != TargetMode.SelfOnly && def.Range > 0 &&
                  cmd.TargetId is Guid allyId &&
                  _world.Entities.TryGetValue(allyId, out var ally) &&
-                 ally.Kind == EntityKind.Player && !ally.Dead &&
+                 ally.Kind == EntityKind.Player && !ally.Dead && !ally.Hidden &&
                  SameParty(caster, ally))
         {
             targetId = allyId; // ranged heal / cleanse / buff on a PARTY member
@@ -4895,6 +4899,7 @@ public class GameLoopService : BackgroundService
             {
                 if (id == p.Id) continue;
                 if (!_world.Entities.TryGetValue(id, out var m) || m.Dead || !Wants(m)) continue;
+                if (m.Hidden) continue;   // hidden = not here (BL-69)
                 if (DistanceSq(p, m) > range * range) continue;
                 float pct = m.Mp * 100f / m.MaxMp;
                 if (pct < bestPct) { bestPct = pct; best = m; }
@@ -4921,6 +4926,7 @@ public class GameLoopService : BackgroundService
             {
                 if (id == p.Id) continue;
                 if (!_world.Entities.TryGetValue(id, out var m) || m.Dead || !Wants(m)) continue;
+                if (m.Hidden) continue;   // hidden = not here, so not a heal target (BL-69)
                 if (DistanceSq(p, m) > range * range) continue;
                 float pct = m.Hp * 100f / m.MaxHp;
                 if (pct < bestPct) { bestPct = pct; best = m; }
@@ -5122,7 +5128,11 @@ public class GameLoopService : BackgroundService
                     .Select(b => b.Name).Distinct().ToArray();
                 members.Add(new PartyMemberDto(m.Id, m.Name, m.Level, PartyClassLabel(m),
                     (int)m.Hp, m.MaxHp, (int)m.Mp, m.MaxMp, mid == party.LeaderId,
+                    // Offline first (a disconnected member cannot be reached for a different and more
+                    // basic reason), then HIDDEN — which is the one the healer needs, because it is
+                    // the only status that means "still here, still yours, and still untargetable".
                     m.IsOfflineFarming || m.IsDisconnected ? PartyMemberStatus.Offline
+                        : m.Hidden ? PartyMemberStatus.Hidden
                         : m.AutoHuntEnabled ? PartyMemberStatus.Auto
                         : PartyMemberStatus.Online,
                     debuffs.Length > 0 ? debuffs : null,
@@ -8446,6 +8456,7 @@ var effect = def.Effect;
             // A doubled duration is announced on the floating text, or it is invisible.
             string shownName = durationDoubled ? buffName + " [Double]" : buffName;
 
+            var blessed = new HashSet<Guid>();
             if (def.TargetMode == TargetMode.AlliesInRadius)
             {
                 // Buff the caster + every nearby player character in range.
@@ -8453,6 +8464,7 @@ var effect = def.Effect;
                 {
                     ApplyBuff(ally, def, lvl, buffName, durationOverride: doubledTicks);
                     BroadcastCombat(caster, ally, 0, CombatOutcome.Buff, shownName);
+                    blessed.Add(ally.Id);
                 }
             }
             else
@@ -8460,7 +8472,23 @@ var effect = def.Effect;
                 var buffTarget = def.TargetMode == TargetMode.SelfOnly ? caster : target;
                 ApplyBuff(buffTarget, def, lvl, buffName, durationOverride: doubledTicks);
                 BroadcastCombat(caster, buffTarget, 0, CombatOutcome.Buff, shownName);
+                blessed.Add(buffTarget.Id);
             }
+
+            // A BUFF IS AGGRO TOO (BL-71, his 2026-08-14 ruling). Priced on the level the class learns
+            // this rung at — not the caster's — because that is the difference he asked for: *"If I
+            // learn a buff at 50 and another at 70 the 50 one should have less aggro value."* A skill
+            // no class list owns (a buff scroll) has no such level, and only then does the caster's
+            // own stand in.
+            //
+            // ⚠ A buff cast BEFORE the pull is worth nothing, and that is not an oversight: threat is
+            // only handed to mobs already fighting somebody the cast helped. A buffer draws aggro for
+            // re-buffing MID-FIGHT, which is exactly when he should. His own note that buffs run
+            // "20 or so minutes" is what makes the big number safe.
+            int grantLevel = ClassSkills.LearnLevelOf(def.Id, lvl, caster.Race, caster.BaseClass,
+                                                      caster.Archetype, caster.Discipline);
+            if (grantLevel <= 0) grantLevel = caster.Level;
+            AddSupportThreat(caster, blessed, SkillDef.BuffThreat(grantLevel, blessed.Count));
         }
 
         if (offensive)
@@ -9032,17 +9060,22 @@ var effect = def.Effect;
     /// <summary>Can this viewer see that entity at all? The one gate the world snapshot and every
     /// "pick a target" path share, so a thing nobody renders is also a thing nobody can click.
     ///
-    /// A full HIDE is transparent to the hider's own PARTY and to staff. That is the one place the
-    /// owner's "a buff nobody renders" is read narrowly, and on purpose: a hidden party member no
-    /// healer can see, target or resurrect is a bug report, not a stealth mechanic. Admin
-    /// invisibility takes him at his word — it hides from everyone, staff included.</summary>
-    private bool CanSee(Entity viewer, Entity e)
-    {
-        if (e.Id == viewer.Id) return true;
-        if (e.AdminInvisible) return false;
-        if (e.HideTicks <= 0) return true;
-        return viewer.IsStaff || SameParty(viewer, e);
-    }
+    /// HIDDEN MEANS HIDDEN FROM EVERYONE — party and staff included (owner, 2026-08-14: *"yes a hide
+    /// hides you from all ... Also it hides you from the staff as well"*). This was built the narrow
+    /// way first, exempting the hider's own party and staff on the reasoning that a party member no
+    /// healer can reach is a bug report; he overruled it, and his answer covers the objection: you
+    /// cannot die hidden, because taking or dealing damage reveals you first.
+    ///
+    /// 🔑 You are NOT removed from the party or from anything else — you simply *"act as u r not
+    /// nearby"*. So the roster still lists you; what goes is being renderable, clickable and
+    /// heal-targetable until you come back.
+    ///
+    /// Staff lose sight, not control: <c>/tp</c>, <c>/tpme</c>, <c>/jail</c> and <c>/where</c> all
+    /// resolve a character by NAME and never consult this, which is deliberate — *"they still can
+    /// teleport them self on you or you on them or can jail you ... for the 30 sec you are hidden
+    /// they will live with it."*</summary>
+    private static bool CanSee(Entity viewer, Entity e) =>
+        e.Id == viewer.Id || !e.Hidden;
 
     /// <summary>The archer's answer to a rogue who is simply not there (BL-69): end every HIDE in
     /// radius and stamp those it caught so they cannot hide again for a while. The second half is
@@ -9479,6 +9512,10 @@ var effect = def.Effect;
     {
         victim.Hp = 0;
         victim.Dead = true;
+        // Death ends a hide (BL-69). Damage already reveals you before it lands, so his *"there
+        // should be no way u die In a hidden state"* holds by construction — this is the belt to that
+        // brace, and it is what keeps a CORPSE findable and resurrectable by the party.
+        victim.HideTicks = 0;
         victim.Engaged = false;
         victim.CombatTargetId = null;
         victim.AttackCommandTargetId = null;
@@ -10594,6 +10631,11 @@ var effect = def.Effect;
                 continue;
             if (!party.Contains(e.Id))
                 continue;   // party members only
+            // A HIDDEN party member is not here (BL-69). His rule is "act as u r not nearby", and a
+            // party heal that silently found someone nobody can see would be exactly the leak that
+            // makes a hide worth nothing — you would be locatable by watching a healer's numbers.
+            if (e.Hidden)
+                continue;
             float dx = e.X - caster.X, dy = e.Y - caster.Y;
             if (dx * dx + dy * dy <= r2)
                 yield return e;

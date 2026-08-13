@@ -375,6 +375,21 @@ public record SkillDef(
         return power / seconds * GameConstants.ThreatHealFactor;
     }
 
+    /// <summary>Threat a BUFF is worth (owner, 2026-08-14): <c>grantLevel × 20 × peopleAffected</c>.
+    ///
+    /// A buff has no power to read, which is the whole reason this is a different formula rather than
+    /// the heal one with a substitution — so it is priced on the two things it does have, the level it
+    /// was learned at and how many people it lands on. See <see cref="GameConstants.ThreatBuffPerLevel"/>.
+    ///
+    /// <paramref name="grantLevel"/> is the CHARACTER level the class learns this rung at, so two buffs
+    /// on one caster are worth different amounts. Callers pass the caster's own level only when no
+    /// class list owns the skill.</summary>
+    public static float BuffThreat(int grantLevel, int targets)
+    {
+        if (grantLevel <= 0 || targets <= 0) return 0f;
+        return grantLevel * GameConstants.ThreatBuffPerLevel * targets;
+    }
+
     public float MagnitudeOf(SkillEffect effect, ModifierMode mode, int level = 1)
     {
         var mags = Lvl(level)?.Magnitudes ?? Magnitudes;

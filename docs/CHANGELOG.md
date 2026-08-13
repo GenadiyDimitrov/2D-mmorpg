@@ -129,10 +129,24 @@ to fall out of step.
 the flare, and it hides him from other staff too. It goes off when the command is typed again. He is
 still *hittable* by area damage — `/god` is the separate switch, which is his own distinction.
 
-⚠ **One place his words were read narrowly, deliberately:** a full hide is transparent to the hider's
-own **party** and to staff. "Nobody renders it" taken literally gives you a hidden party member no
-healer can see, target or resurrect — a bug report rather than a stealth mechanic. Say the word and
-it is one line.
+**Hidden means hidden from EVERYONE** — party and staff included (his ruling, 2026-08-14: *"yes a hide
+hides you from all ... Also it hides you from the staff as well"*). This shipped the narrow way first,
+exempting the hider's party and staff on the reasoning that a party member no healer can reach is a
+bug report; he overruled it, and his answer disposes of the objection: **you cannot die hidden**,
+because taking or dealing damage reveals you before it lands. Death clears a hide too, so a corpse
+stays findable and resurrectable.
+
+🔑 **You are not removed from the party or from anything else** — you *"act as u r not nearby"*. The
+roster still lists you; what goes is being renderable, clickable and heal-targetable. So a hidden
+member is skipped by `PlayersInRadius` (party heals and party buffs), by both auto-heal/auto-mana
+target pickers, and by the manual ranged-ally cast, which falls through to a self-cast exactly as an
+out-of-range member already does. The party window shows them as **`Hidden`** — the roster already
+dims any non-Online row and prints the status, so this is one enum value and **no protocol change**:
+the wire shape is untouched, and a client built before this prints the number instead of the word.
+
+**Staff lose sight, not control.** `/tp`, `/tpme`, `/jail` and `/where` resolve a character by NAME
+and never consult visibility, which is deliberate — *"they still can teleport them self on you or you
+on them or can jail you ... for the 30 sec you are hidden they will live with it."*
 
 ### `BL-70` — mobs have a social circle, and the rogue has a way around it
 
@@ -204,9 +218,33 @@ kill. A pull is now seeded at **5% of the mob's own max HP**: a fraction rather 
 because threat is damage, and "out-damage the puller by 5% of this creature" reads the same at level
 20 and at level 85.
 
-⚠ **Still owed, and deliberately not invented:** what a *buff* is worth. He asked for
-"healer/buffer threat" and gave the formula for the heal half only. The plumbing is one call
-(`AddSupportThreat`), so it is a number away — but a buffer still generates no threat today.
+**Buff threat closed the same day** (his ruling, 2026-08-14). A buff has no power to read, which is
+why it is a different formula rather than the heal one with a substitution — it is priced on the two
+things it *does* have: `grantLevel × 20 × peopleAffected`.
+
+🔑 **It is the level the buff is LEARNED at, not the caster's** — *"If I learn a buff at 50 and
+another at 70 the 50 one should have less aggro value."* `ClassSkills.LearnLevelOf` already knew this
+per race/class/discipline. A skill no class list owns (a buff scroll) falls back to the caster's level.
+
+His worked example lands exactly on shipped data: `HolyForce` is learned at **70**, so 70 × 20 = 1400
+a head. That asymmetry is the rule — a self-buff or single-target buff is worth well under one heal,
+blanketing a party is worth rather more than one: *"if it affect only the caster or a single target
+won't be as much as a value but a whole party ..."*
+
+⚠ **A buff cast before the pull is worth nothing**, and that is not an oversight — support threat only
+reaches mobs already fighting somebody the cast helped. A buffer draws aggro for re-buffing
+**mid-fight**, which is exactly when he should, and his own note that buffs run "20 or so minutes" is
+what makes the big number safe.
+
+A full party is **9**, not the 7 in his example, so a level-70 group buff tops out at **12,600**. That
+is the intent, not an overshoot — *"Full buffing a full party should take the agro from mobs for
+awhile."*
+
+⚠ **The one number that is off is the heal, not the buff.** His comparison assumed a quick heal of
+~1500 power at level 70, but the cleric's heal ladder stops at skill level **4** — learned at 35,
+power **301** — because everything above it is blocked on `BL-02`. So today a group buff out-threatens
+a heal by ~8× rather than the ~1.3× he sized it against. The buff formula is right; **`BL-16`** (heal
+powers "sit at ~151-301 against a scale that has moved to ~1000") is the half that has not caught up.
 
 ## 0.63.0 — 2026-08-13 — `BL-05`: crafting is a PROFESSION with six levels, five masters and a mat economy
 

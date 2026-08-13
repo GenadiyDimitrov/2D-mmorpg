@@ -189,7 +189,16 @@ public enum AccountRole { Player = 0, Moderator = 1, Admin = 2 }
 
 /// <summary>A party member's presence, for the roster's AFK indicator. Auto = online but
 /// auto-hunting (AFK-ish); Offline = disconnected but still offline-farming in the world.</summary>
-public enum PartyMemberStatus { Online = 0, Auto = 1, Offline = 2 }
+/// <summary>How a party member appears in the roster. <c>Hidden</c> (BL-69) is the one that is not
+/// about their connection: they are HIDING, so they are still in the party and still listed, but
+/// nobody can see, target or heal them until they reveal themselves — *"The healer targeting u from
+/// the party window won't see u as healable target until u reveal yourself."*
+///
+/// It rides on this enum rather than a new DTO field on purpose: the party window already dims any
+/// row that is not <c>Online</c> and prints the status beside the name, so the whole UX is one value.
+/// The wire SHAPE is unchanged, which is why the protocol number does not move — a client built
+/// before this simply prints the number instead of the word.</summary>
+public enum PartyMemberStatus { Online = 0, Auto = 1, Offline = 2, Hidden = 3 }
 
 /// <summary>How a party distributes ITEM loot from a kill. Gold is ALWAYS split among in-range
 /// members regardless of this setting. Solo players always behave as FindersKeepers.</summary>
