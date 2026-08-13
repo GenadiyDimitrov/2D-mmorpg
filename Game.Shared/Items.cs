@@ -1487,9 +1487,12 @@ public static class ItemCatalog
         return dict;
     }
 
-    /// <summary>Crafting MATERIALS: 5 types × 5 rarities (docs/design/Crafting.md). Tradable + stackable,
-    /// no attributes; rarity drives the value. Each type is refined by its owning profession
-    /// (Crafting.RefinerOf) but every rarity also drops from mobs.</summary>
+    /// <summary>Crafting MATERIALS: 5 types × **6** rarities (docs/design/Crafting.md). Tradable +
+    /// stackable, no attributes; rarity drives the value. Each type is refined by its owning profession
+    /// (Crafting.RefinerOf) but every rarity also drops from mobs.
+    ///
+    /// ⚠ The Mythic rung was added 2026-08-12 with `BL-05` — see Crafting.MaterialRarities for why. The
+    /// count comes from that array, so this loop needed no change; <see cref="MaterialValue"/> DID.</summary>
     private static IEnumerable<ItemDef> Materials()
     {
         foreach (var type in Crafting.MaterialTypes)
@@ -1500,6 +1503,10 @@ public static class ItemCatalog
                     Value: MaterialValue(rarity), NoAttributes: true);
     }
 
+    /// <summary>Roughly ×5 a rung, which is the shape of the refine cost (7 mats in, 1 out) plus a margin.
+    /// ⚠ Mythic is NOT a fall-through: before `BL-05` added the rung the `_` arm returned 5, which would
+    /// have priced the rarest material in the game below a Common one — and the sell price is derived from
+    /// Value, so it would have been visible in a shop the day a Mythic mat first dropped.</summary>
     private static int MaterialValue(ItemRarity rarity) => rarity switch
     {
         ItemRarity.Common => 5,
@@ -1507,6 +1514,7 @@ public static class ItemCatalog
         ItemRarity.Rare => 120,
         ItemRarity.Epic => 600,
         ItemRarity.Legendary => 3000,
+        ItemRarity.Mythic => 15000,
         _ => 5
     };
 
