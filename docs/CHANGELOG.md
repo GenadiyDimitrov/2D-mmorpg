@@ -12,6 +12,62 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## Unreleased — 2026-08-13 — `BL-67`: MpHeal is its own rung, and the MP threshold is a knob
+
+Protocol still **18** (unreleased, so the new config field rides along rather than bumping again).
+**No schema change** — the auto-hunt config is JSON in one column, so the new field needs no DB reset.
+
+### The bug was a hardcoded 60 that no screen could show you
+
+*"`Restore Spirit` → now it doesnt work anyway as a heal type - nor as cyclic nor as 100% hp
+treshold (self heal fires while restore_spirit no)."* Two constants sat behind the mana chain: it
+fired below **60% MP**, and only while above **60% HP**. Neither was on any screen, so from the
+outside the skill simply did nothing at settings where a heal plainly worked. The HP floor is the
+one that broke his own worked case — *"50% MP_treshold + 30% HP_treshold ... `Restore Spirit` to be
+used (MP <= 50%) and if it lowers me (HP <= 30%) to use the `Vampiric Bolt` to heal me"* — because
+spending HP down to 30 is the entire plan and a floor of 60 stopped it at 60.
+
+The floor is now **his heal threshold**, so the two chains hand off at exactly the line he set,
+clamped `[15, 60]` for the two settings a threshold cannot express: 0 ("never heal") must not mean
+"spend all your HP", and 100 ("heal on cooldown") must not mean "never restore mana below full".
+
+### MpHeal is a priority group, not a special case inside Heal
+
+*"below the `Heal` as priority but above all other (need mp to cast/buff)."* The chain is now
+**heal → MP → buffs → debuffs → attacks**. It used to share the Heal group and be told apart inside
+it by `IsManaRestore`, which is why one threshold armed two different resources. Each rung is now
+armed by its own bar. 🔑 `AutoChainCursor` is sized to that enum — a new group means widening it.
+
+**`Restore` and `Restore Spirit` needed no new flag**: `SkillEffect.RestoreMp` already marked exactly
+those two, and the enum has had **zero bits left** since `1L << 62`. `MpHeal` is the *group*, not a
+new effect.
+
+### Vampiric Bolt answers the heal chain without leaving the attack chain
+
+*"any skill that restores HP as a `Heal` skill (only vamp bolt is left)."* It is the only skill in the
+game with `Lifesteal`, and it is a nuke — so making it a heal outright would have deleted it from a
+nuker's rotation. It now has **two homes**: below the HP threshold the heal group casts it (at the
+**enemy**, since it heals by dealing damage), and otherwise it nukes as before.
+🔑 The marker is `Lifesteal`, deliberately **not** the `SkillEffect.Heal` flag — that flag routes
+through the heal pipeline, which lands on the skill's *target*, so a lifesteal nuke would have healed
+the mob it was shooting.
+
+### The threshold slider, and the field that four sites have to learn
+
+`AutoHuntConfigDto` gains `MpThresholdPct`, defaulting to **60, not 0** — 60 is the constant it
+replaces, so a save written before the field existed keeps the behaviour it had instead of silently
+losing its mana chain. All four sites were updated together, including the echo that fails silently
+(the `78f` lesson from the batch below, applied the same day it was written).
+
+⚠ The Auto Farm panel is a fixed 600 tall against a 720 reference, so **Normal and Elite now share a
+row** to pay for the new slider. Nothing was dropped.
+
+⚠ **Known flaky, NOT a regression**: `tools/SmokeTest`'s two rune-buff-after-relog checks fail on some
+runs and pass on others — reproduced identically at `f49e192`, *before* today's work. The rune tests
+run on the seeded **admin** account rather than a fresh character, so state parked in the private
+keeper by one run changes the next. That is the project's own *"a test that is not idempotent lies to
+you"* rule catching the one place SmokeTest breaks it. Worth fixing in the harness, not in the game.
+
 ## Unreleased — 2026-08-13 — the playtest-22 fix batch
 
 Protocol unchanged (**18**), no schema change. Everything here answers something he wrote in his

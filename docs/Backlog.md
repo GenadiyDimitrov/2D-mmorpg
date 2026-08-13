@@ -48,6 +48,14 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   76**, and crafting exp **freezes at 100%** until you take the next class. Quitting at your master
   wipes your levels and you start over elsewhere: *"i know i told you that is final, but now i
   changed my mind."* ⚠ Ships with `BL-40` (output is absurd today). *(playtest-21 `66a`.)*
+  🆕 ✅ **UNBLOCKED 2026-08-13** — the two questions that held the server half are answered (§5c/§5d of
+  `docs/design/CraftingProfessions.md`): **gear is GRADE-based and F is uncraftable**, so L1=E · L2=D ·
+  L3=C · L4=B · L5=A · L6=S with nothing shared; **only Legendary and Mythic gear is craftable** and a
+  craft is **not 100%** (E 50/40/10 → S 5/20/75, and a fail eats the mats); and both consumable ladders
+  are authored. The `Game.Shared` foundation is committed (`f49e192`). Still owed *inside* this entry:
+  the number inside each of his mat ranges (a **measurement**, not a choice), the Scribe/Potion mats
+  (*"the mats consumed i have no idea how much and what"*), where elemental + skill stones sit, and the
+  chest / rune-box / exp-box sketch (**explicitly not this build**).
 
 ---
 
@@ -190,20 +198,6 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 - `BL-36` 🔴 **Subclass swapping restricted to a safe zone, with a 5-minute delay.** The machinery
   swaps fine; the player-facing rules were never built.
-
-- `BL-67` 🔴 **An `MpHeal` skill type, and an MP threshold in auto-farm.** *"We need to change few
-  skills and add `MpHeal` type"* (playtest-22). Four parts:
-  1. **`vampiric bolt` becomes a `Heal`** so the HP threshold can fire it — *"any skill that restores
-     HP as a `Heal` skill (only vamp bolt is left)"*.
-  2. **`Restore` and `Restore Spirit` become `MpHeal`.**
-  3. **`MpHeal` slots between Heal and everything else** in the auto-farm chain: *"below the `Heal` as
-     priority but above all other (need mp to cast/buff)"*.
-  4. **An MP bar threshold beside the HP one** in the auto-farm settings.
-  His worked case: *"50% MP_treshold + 30% HP_treshold ... `Restore Spirit` to be used (MP <= 50%)
-  and if it lowers me (HP <= 30%) to use the `Vampiric Bolt` to heal me."*
-  ⚠ **Carries a live BUG**: *"`Restore Spirit` → now it doesnt work anyway as a heal type - nor as
-  cyclic nor as 100% hp treshold (self heal fires while restore_spirit no)"* — it fires from nothing
-  today. Find that before building the type, since it may be the same defect.
 
 - `BL-69` 🔵 **Invisibility, in three separate kinds.** His full spec (playtest-22). They share a
   word and nothing else, so they are three builds:
@@ -348,6 +342,11 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 - `BL-57` 🔴 **A cheap level-1 recipe for the Potion Master and the Scroll Scribe.** Offered to you;
   your reply was *"and my luck i picked exactly those :)"* and nothing was built.
+  ✅ **Both L1 rungs are now RULED (2026-08-13)** and neither needs an invented recipe: the Potion
+  Master's is a Common HP pot (`potion_minor`), and the Scribe's L1 is deliberately **not gear-related**
+  — Common resurrection scrolls + scrolls of return, which sidesteps both `attrscroll_common`
+  (drop-only) and `scroll_common` (`62j` cut it 30×). Ships inside `BL-05`; see
+  `docs/design/CraftingProfessions.md` §5d.
 
 ---
 

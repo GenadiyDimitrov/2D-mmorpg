@@ -52,6 +52,11 @@ namespace Game.Client
         private Button _autoCyclicToggle, _autoAssistToggle, _autoHealToggle;
         private Slider _autoHealSlider;
         private bool _autoCyclic, _autoAssist, _autoHealOn;
+        // The MpHeal chain's threshold (BL-67). Named ...MpHeal... and not ...Mp...: _autoMpToggle /
+        // _autoMpSlider above are the auto-POTION MP row, a different window and a different resource path.
+        private Button _autoMpHealToggle;
+        private Slider _autoMpHealSlider;
+        private bool _autoMpHealOn;
 
         // farming-range ring drawn in the world (a border-only circle showing the farm radius)
         private LineRenderer _farmRing;
@@ -462,7 +467,7 @@ namespace Game.Client
             // Shares its row with the Show-range toggle at x=330, so this label stops short of it.
             // ASCII arrows/dots on purpose: no visible UI string in this client uses "→" or "…" yet, and
             // a glyph the TMP atlas doesn't carry renders as a box on the phone.
-            var chain = UiKit.Label(inner, "Skill chain — heals, then buffs, then attacks:", 14f, UiKit.Accent);
+            var chain = UiKit.Label(inner, "Skill chain — heals, MP, buffs, then attacks:", 14f, UiKit.Accent);
             UiKit.Place(UiKit.Rect(chain.gameObject), new Vector2(0f, 1f), new Vector2(0f, 1f),
                         new Vector2(18f, y), new Vector2(300f, 22f));
             y -= 34f;
@@ -486,6 +491,15 @@ namespace Game.Client
                         new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(112f, y - 6f), new Vector2(526f, 26f));
             y -= 48f;
 
+            // The MpHeal chain's threshold (BL-67), the HP row's sibling. Restore / Restore Spirit fire
+            // below this, at a priority just under the heals. Kept a separate slider because the two
+            // chains arm on different bars: his case is "50% MP + 30% HP", which one number cannot say.
+            _autoMpHealToggle = ToggleButton(inner, new Vector2(18f, y), () => { _autoMpHealOn = !_autoMpHealOn; RefreshAutoLabels(); }, 84f);
+            _autoMpHealSlider = UiKit.SliderRow(inner, "restore below MP%", 10f, 100f, 60f, "0", null);
+            UiKit.Place(UiKit.Rect(_autoMpHealSlider.transform.parent.gameObject),
+                        new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(112f, y - 6f), new Vector2(526f, 26f));
+            y -= 48f;
+
             _autoAssistToggle = ToggleButton(inner, new Vector2(18f, y), () => { _autoAssist = !_autoAssist; RefreshAutoLabels(); }, 300f);
             var assistNote = UiKit.Label(inner, "only attack the party leader's target; idle if he has none",
                                          12f, UiKit.TextDim);
@@ -498,9 +512,10 @@ namespace Game.Client
                         new Vector2(18f, y), new Vector2(400f, 22f));
             y -= 30f;
 
+            // Normal and Elite share a row so the new MP-threshold slider fits without growing the panel:
+            // it is a fixed 600 tall against a 720 reference, so there is no vertical room left to take.
             _autoNormalToggle = ToggleButton(inner, new Vector2(18f, y),  () => { _autoNormal = !_autoNormal; RefreshAutoLabels(); }, 300f);
-            y -= 46f;
-            _autoEliteToggle  = ToggleButton(inner, new Vector2(18f, y),  () => { _autoElite  = !_autoElite;  RefreshAutoLabels(); }, 300f);
+            _autoEliteToggle  = ToggleButton(inner, new Vector2(330f, y), () => { _autoElite  = !_autoElite;  RefreshAutoLabels(); }, 300f);
             y -= 46f;
             _autoBossToggle   = ToggleButton(inner, new Vector2(18f, y),  () => { _autoBoss   = !_autoBoss;   RefreshAutoLabels(); }, 300f);
 
@@ -521,6 +536,8 @@ namespace Game.Client
             _autoAssist = c.AssistPartyLeader;
             _autoHealOn = c.HealThresholdPct > 0;             // 0 = the heal chain is off
             _autoHealSlider.value = _autoHealOn ? Mathf.Clamp(c.HealThresholdPct, 10, 100) : 70f;
+            _autoMpHealOn = c.MpThresholdPct > 0;             // 0 = the MpHeal chain is off
+            _autoMpHealSlider.value = _autoMpHealOn ? Mathf.Clamp(c.MpThresholdPct, 10, 100) : 60f;
             RefreshAutoLabels();
             OpenWindow(_autoFarmPanel);
         }
@@ -536,6 +553,7 @@ namespace Game.Client
                 AttackBoss   = _autoBoss,
                 CyclicOrder  = _autoCyclic,
                 HealThresholdPct = _autoHealOn ? Mathf.RoundToInt(_autoHealSlider.value) : 0,
+                MpThresholdPct = _autoMpHealOn ? Mathf.RoundToInt(_autoMpHealSlider.value) : 0,
                 AssistPartyLeader = _autoAssist,
             });
             ClientLog.Info("Auto-farm settings saved.");
@@ -552,6 +570,8 @@ namespace Game.Client
             _autoAssist = false;
             _autoHealOn = true;
             _autoHealSlider.value = 70f;
+            _autoMpHealOn = true;
+            _autoMpHealSlider.value = 60f;
             RefreshAutoLabels();
         }
 
@@ -571,6 +591,7 @@ namespace Game.Client
             SetToggle(_autoCyclicToggle, _autoCyclic, "Cyclic order");
             SetToggle(_autoAssistToggle, _autoAssist, "Assist party leader");
             SetToggleOnOff(_autoHealToggle, _autoHealOn);
+            SetToggleOnOff(_autoMpHealToggle, _autoMpHealOn);
         }
 
         private static void SetToggle(Button button, bool on, string name)

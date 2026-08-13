@@ -1285,11 +1285,17 @@ public class Entity
     public bool AutoCyclic { get; set; }
     /// <summary>HP% under which the auto-HEAL chain runs (0 = never, 100 = heal on cooldown).</summary>
     public int AutoHealPct { get; set; } = 70;
+    /// <summary>MP% under which the auto-MPHEAL chain runs (0 = never). The sibling of
+    /// <see cref="AutoHealPct"/> and the knob half of <c>BL-67</c>: it used to be a hardcoded 60,
+    /// on the argument that a second slider for a one-class skill was UI for nothing. He asked for
+    /// the slider (*"an MP bar threshold beside the HP one"*), so 60 survives only as the default.</summary>
+    public int AutoMpPct { get; set; } = 60;
     /// <summary>Assist-only: attack what the party leader attacks, and nothing else.</summary>
     public bool AutoAssistLeader { get; set; }
     /// <summary>Cyclic cursor per priority group (index into AutoSkills of the LAST one cast, +1).
-    /// Indexed by <c>(int)AutoSkillKind</c>; reset whenever the config changes.</summary>
-    public int[] AutoChainCursor { get; } = new int[5];
+    /// Indexed by <c>(int)AutoSkillKind</c>; reset whenever the config changes.
+    /// ⚠ Sized to the enum — <c>MpHeal</c> (BL-67) made it 6.</summary>
+    public int[] AutoChainCursor { get; } = new int[6];
     /// <summary>Disconnected but still auto-hunting in the world (no connection = no UI pushes).</summary>
     public bool IsOfflineFarming { get; set; }
     /// <summary>Link-dead grace: connection lost while out of combat + not auto-farming. Frozen in

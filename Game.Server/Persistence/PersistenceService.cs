@@ -731,6 +731,7 @@ public class PersistenceService
                     entity.AutoAttackBoss = cfg.AttackBoss;
                     entity.AutoCyclic = cfg.CyclicOrder;
                     entity.AutoHealPct = Math.Clamp(cfg.HealThresholdPct, 0, 100);
+                    entity.AutoMpPct = Math.Clamp(cfg.MpThresholdPct, 0, 100);
                     entity.AutoAssistLeader = cfg.AssistPartyLeader;
                 }
             }
@@ -900,7 +901,7 @@ public class PersistenceService
                     e.AutoSkills.ToArray(), e.AutoBuffPotionIds.ToArray(),
                     e.AutoFarmRange, e.AutoFarmStatic, e.AutoAttackNormal, e.AutoAttackElite, e.AutoAttackBoss,
                     e.AutoHealPotions.ToArray(), e.AutoCyclic, e.AutoHealPct, e.AutoAssistLeader,
-                    e.AutoBuffs.ToArray())),
+                    e.AutoBuffs.ToArray(), e.AutoMpPct)),
                 JsonSerializer.Serialize(e.EquipPresets),
                 JsonSerializer.Serialize(BuffSnapshot.CaptureAll(e)),
                 e.ActiveSubclass.Slot, subs,

@@ -3906,6 +3906,7 @@ public class GameLoopService : BackgroundService
         p.AutoAttackBoss  = c.AttackBoss;
         p.AutoCyclic      = c.CyclicOrder;
         p.AutoHealPct     = Math.Clamp(c.HealThresholdPct, 0, 100);
+        p.AutoMpPct       = Math.Clamp(c.MpThresholdPct, 0, 100);
         p.AutoAssistLeader = c.AssistPartyLeader;
         p.AutoReadyTick.Clear();
         Array.Clear(p.AutoChainCursor);   // the bar changed under the cursors; start the cycle over
@@ -4381,23 +4382,38 @@ public class GameLoopService : BackgroundService
         return best;
     }
 
-    private enum AutoSkillKind { Attack, Debuff, Buff, Heal, Other }
+    // ⚠ AutoChainCursor is sized to this enum — adding a member means widening that array too.
+    private enum AutoSkillKind { Attack, Debuff, Buff, Heal, MpHeal, Other }
 
     private static AutoSkillKind ClassifyAuto(SkillDef def)
     {
         var e = def.Effect;
         if ((e & (SkillEffect.PhysicalDamage | SkillEffect.MagicDamage)) != 0) return AutoSkillKind.Attack;
         if ((e & SkillEffect.Heal) != 0) return AutoSkillKind.Heal;
-        // An MP-restore rides in the HEAL group — it is support and it must resolve before the
-        // attacks that spend the mana. It used to fall through to Other, which is the "never
-        // auto-cast" bucket, so Restore Spirit could not be autopiloted at ANY heal threshold
-        // (owner, 2026-08-07: the nuker sat out of mana on an unlimited offline farm). Its WANT
-        // test is MP, not HP — see AutoManaWanted / AutoManaTarget.
-        if ((e & SkillEffect.RestoreMp) != 0) return AutoSkillKind.Heal;
+        // An MP-restore is its OWN priority group (BL-67), sitting directly under Heal: him,
+        // *"below the Heal as priority but above all other (need mp to cast/buff)"*. It used to share
+        // the Heal group and be told apart inside it by IsManaRestore, which worked but meant one
+        // threshold armed two different resources — the reason Restore Spirit looked dead at a 100%
+        // heal threshold. Before THAT it fell through to Other, the never-auto-cast bucket.
+        if (IsManaRestore(def)) return AutoSkillKind.MpHeal;
         if (def.Category == SkillCategory.Buff || (e & SkillEffect.AnyBuff) != 0) return AutoSkillKind.Buff;
         if ((e & SkillEffect.ContestCc) != 0 || def.DebuffSchool != DebuffSchool.None) return AutoSkillKind.Debuff;
         return AutoSkillKind.Other;
     }
+
+    /// <summary>Does this skill act in <paramref name="kind"/>'s turn? Almost always just its
+    /// classification — but a LIFESTEAL attack has TWO homes, and that is `BL-67` part 1.
+    ///
+    /// <para>He asked for *"any skill that restores HP as a Heal skill (only vamp bolt is left)"* so the
+    /// HP threshold can fire it. It cannot simply BE a heal: it is a nuke, and a nuker's rotation would
+    /// lose it entirely if the heal threshold were the only thing that let it cast. So it stays an
+    /// Attack and additionally answers the heal group's call — low on HP it drains, otherwise it nukes.</para>
+    ///
+    /// <para>🔑 The marker is <c>Lifesteal</c>, deliberately NOT the <c>SkillEffect.Heal</c> flag. Adding
+    /// that flag would put it through the heal pipeline, which lands on the skill's TARGET — and a
+    /// lifesteal nuke's target is the mob, so it would have healed what it was shooting.</para></summary>
+    private static bool InAutoGroup(SkillDef def, AutoSkillKind kind) =>
+        ClassifyAuto(def) == kind || (kind == AutoSkillKind.Heal && def.Lifesteal > 0f);
 
     /// <summary>Is this buff already running on the entity, so the autopilot should skip it?
     ///
@@ -4459,7 +4475,11 @@ public class GameLoopService : BackgroundService
     /// <see cref="Entity.AutoCyclic"/> decides where the scan starts. Returns true if one was queued.</summary>
     private bool TryAutoSkill(Entity p, Entity? target)
     {
-        if ((AutoHealWanted(p) || AutoManaWanted(p)) && TryAutoChain(p, target, AutoSkillKind.Heal)) return true;
+        // BL-67: MpHeal is its own rung between Heal and everything else — *"below the Heal as priority
+        // but above all other (need mp to cast/buff)"*. Each rung is now armed by its OWN resource, so
+        // an HP threshold can no longer decide whether a mana restore is allowed to run.
+        if (AutoHealWanted(p) && TryAutoChain(p, target, AutoSkillKind.Heal)) return true;
+        if (AutoManaWanted(p) && TryAutoChain(p, target, AutoSkillKind.MpHeal)) return true;
         if (TryAutoChain(p, target, AutoSkillKind.Buff)) return true;
         if (TryAutoChain(p, target, AutoSkillKind.Debuff)) return true;
         return TryAutoChain(p, target, AutoSkillKind.Attack);
@@ -4471,23 +4491,28 @@ public class GameLoopService : BackgroundService
     private static bool AutoHealWanted(Entity p) =>
         p.AutoHealPct > 0 && (p.AutoHealPct >= 100 || (p.MaxHp > 0 && p.Hp * 100f / p.MaxHp < p.AutoHealPct));
 
-    /// <summary>Below this much MP the autopilot starts topping up with an MP-restore skill. It is a
-    /// CONSTANT, not a knob: the heal slider means HP and giving the player a second slider for a
-    /// skill only one class owns is UI for nothing. 60% is chosen so a nuker refills between packs
-    /// rather than at zero — Restore Spirit pays for well under one nuke, so waiting for empty means
-    /// standing still for a dozen casts (measured: BalanceMatrix E3).</summary>
-    private const int AutoManaThresholdPct = 60;
+    /// <summary>The HP floor a mana restore must stay above, because the restore is PAID IN HP —
+    /// unguarded, the autopilot would burn a mage to the 1-HP floor to buy mana it then dies holding.
+    ///
+    /// <para>🔴 This WAS a flat 60, and that is the bug he reported: *"Restore Spirit → now it doesnt
+    /// work anyway ... nor as cyclic nor as 100% hp treshold"*. His own worked case is
+    /// *"50% MP_treshold + 30% HP_treshold ... Restore Spirit to be used (MP &lt;= 50%) and if it lowers
+    /// me (HP &lt;= 30%) to use the Vampiric Bolt to heal me"* — he is deliberately spending HP down to
+    /// his heal threshold, and a hardcoded 60 stopped that dead at 60% with no way to see why.</para>
+    ///
+    /// <para>So the floor is now HIS heal threshold: the two chains hand off to each other at exactly the
+    /// line he set. Clamped [15, 60] at both ends for the cases the threshold cannot express — 0 ("never
+    /// heal") must not become "spend all your HP", and 100 ("heal on cooldown") must not become "never
+    /// restore mana below full HP", which would lock a healer out of his own mana chain.</para></summary>
+    private static int AutoManaMinHpPct(Entity p) => Math.Clamp(p.AutoHealPct, 15, 60);
 
-    /// <summary>And above this much HP, because the restore is PAID IN HP. Without it the autopilot
-    /// would happily burn a mage down to the 1-HP floor to buy mana it then dies holding.</summary>
-    private const int AutoManaMinHpPct = 60;
-
-    /// <summary>Is the MP-restore half of the heal chain armed? Independent of the heal slider — the
-    /// mage the owner farmed with was at FULL HP and empty MP, which is exactly the state the HP
-    /// threshold cannot see.</summary>
+    /// <summary>Is the MpHeal chain armed? Independent of the heal slider — the mage the owner farmed
+    /// with was at FULL HP and empty MP, which is exactly the state an HP threshold cannot see.
+    /// The MP line is <see cref="Entity.AutoMpPct"/> (0 = never); it was a hardcoded 60 until BL-67.</summary>
     private static bool AutoManaWanted(Entity p) =>
-        p.MaxMp > 0 && p.Mp * 100f / p.MaxMp < AutoManaThresholdPct
-        && p.MaxHp > 0 && p.Hp * 100f / p.MaxHp >= AutoManaMinHpPct;
+        p.AutoMpPct > 0
+        && p.MaxMp > 0 && p.Mp * 100f / p.MaxMp < p.AutoMpPct
+        && p.MaxHp > 0 && p.Hp * 100f / p.MaxHp >= AutoManaMinHpPct(p);
 
     /// <summary>One priority group's turn: walk the auto-skill list from the group's cursor (cyclic) or
     /// from the top (first-available) and queue the first entry that can fire.
@@ -4507,7 +4532,7 @@ public class GameLoopService : BackgroundService
             int i = (start + k) % n;
             var entry = p.AutoSkills[i];
             if (!entry.Enabled) continue;
-            if (SkillCatalog.Get(entry.SkillId) is not SkillDef def || ClassifyAuto(def) != kind) continue;
+            if (SkillCatalog.Get(entry.SkillId) is not SkillDef def || !InAutoGroup(def, kind)) continue;
             if (!p.HasSkill(def.Id)) continue;
             if (p.SkillCooldowns.ContainsKey(def.Id)) continue;
             if (_tick < p.AutoReadyTick.GetValueOrDefault(def.Id)) continue;
@@ -4534,15 +4559,18 @@ public class GameLoopService : BackgroundService
                     if (AutoBuffUpToDate(p, def, lvl)) continue;
                     tgtId = p.Id; break;
                 case AutoSkillKind.Heal:
-                    // The heal GROUP holds both channels; each entry is tested on its own resource.
-                    if (IsManaRestore(def))
+                    // A LIFESTEAL nuke heals by DEALING DAMAGE, so it wants the ENEMY here, not an ally
+                    // (BL-67 part 1 — see InAutoGroup for why it is in this group at all).
+                    if (def.Lifesteal > 0f)
                     {
-                        if (AutoManaTarget(p, def) is not Entity mt) continue;
-                        tgtId = mt.Id; break;
+                        if (target is null) continue;
+                        tgtId = target.Id; break;
                     }
-                    if (!AutoHealWanted(p)) continue;
                     if (AutoHealTarget(p, def) is not Entity ht) continue;
                     tgtId = ht.Id; break;
+                case AutoSkillKind.MpHeal:
+                    if (AutoManaTarget(p, def) is not Entity mt) continue;
+                    tgtId = mt.Id; break;
                 case AutoSkillKind.Debuff:
                     // Missing or WEAKER on the enemy (owner) — the old test was "any buff with this
                     // key", which let a rank-1 poison block the rank-3 one for its whole duration.
@@ -4577,11 +4605,12 @@ public class GameLoopService : BackgroundService
     {
         Entity? best = null;
         float bestPct = float.MaxValue;
-        bool Wants(Entity e) => e.MaxMp > 0 && e.Mp * 100f / e.MaxMp < AutoManaThresholdPct
+        bool Wants(Entity e) => e.MaxMp > 0 && e.Mp * 100f / e.MaxMp < p.AutoMpPct
                              && !e.HasSkill(SkillCatalog.RestoreMana);
 
         // The HP price is the caster's, so the caster's own HP gates every target, not just self.
-        if (p.MaxHp <= 0 || p.Hp * 100f / p.MaxHp < AutoManaMinHpPct) return null;
+        if (p.AutoMpPct <= 0) return null;
+        if (p.MaxHp <= 0 || p.Hp * 100f / p.MaxHp < AutoManaMinHpPct(p)) return null;
 
         if (Wants(p)) { best = p; bestPct = p.Mp * 100f / p.MaxMp; }
 
@@ -4693,7 +4722,7 @@ public class GameLoopService : BackgroundService
             p.AutoSkills.ToArray(), p.AutoBuffPotionIds.ToArray(),
             p.AutoFarmRange, p.AutoFarmStatic, p.AutoAttackNormal, p.AutoAttackElite, p.AutoAttackBoss,
             p.AutoHealPotions.ToArray(), p.AutoCyclic, p.AutoHealPct, p.AutoAssistLeader,
-            p.AutoBuffs.ToArray()));
+            p.AutoBuffs.ToArray(), p.AutoMpPct));
 
     /// <summary>Spend ONE tick of the ACCOUNT's daily allowance for this player. Called each tick per
     /// farming character, which IS the drain rule: N characters of one account spend N ticks a tick,

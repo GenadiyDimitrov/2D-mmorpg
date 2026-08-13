@@ -203,9 +203,10 @@ problem. Worth closing while the file is open.
 
 ---
 
-## 5b. 🔵 THE ONE THING THAT DOES NOT FIT: gear is graded, not rarity-ranked
+## 5b. ✅ RULED 2026-08-13: gear is GRADE-based, and F is not craftable at all
 
-Found while building, and it needs your ruling before the smiths work at all.
+Found while building; **answered by you on 2026-08-13** — his ruling is §5c below. The diagnosis is
+kept because it is why the question existed.
 
 §0's identity — *crafting level = rarity* — is exactly right for **materials and consumables**, and it
 is how you described them (*"in L2 tab i see only the uncommon mats … and none of the uncomon potions"*).
@@ -229,41 +230,172 @@ the mats-and-goods visibility rule. So the rung is **"the tier of the thing you 
 *rarity* for a material or a consumable and *grade* for a piece of gear.
 
 Gear has **seven** grades (`GradeLevels`: F=1 · E=20 · D=40 · C=52 · B=61 · A=76 · S=80) against six
-crafting levels, so two of them must share a rung. Fitting them to the character-level bands you
-already fixed (L1-2→20 · L3-4→40 · L5-6→76) leaves exactly one sensible arrangement:
+crafting levels. My proposal was to make **C and B share L4**; that is superseded — see §5c.
+
+---
+
+## 5c. ✅ THE GEAR LADDER, as he ruled it (2026-08-13)
+
+> *"Gear is graded -> F gear can be uncraftable .. rly no point to craft F grade ... its mostly to get
+> you to 20 (as u get free mytic @10/15) ... so 7 grades - 1 = 6 .. L1 is E, L2-D, L3-C, L4-B, L5-A,
+> L6-S"*
+>
+> *"just the idea is grade based not as much as rarity based"*
+
+**F is not craftable.** That is what makes the ladder exact — seven grades minus F is six, against six
+rungs, with nothing shared and nothing invented:
 
 | | L1 | L2 | L3 | L4 | L5 | L6 |
 |---|---|---|---|---|---|---|
-| **gear grade** | F (1) | E (20) | D (40) | **C (52) + B (61)** | A (76) | S (80) |
+| **gear grade** | E (20) | D (40) | C (52) | B (61) | A (76) | S (80) |
 | char floor | 20 | 20 | 40 | 40 | 76 | 76 |
-| mats / consumables | Common | Uncommon | Rare | Epic | Legendary | Mythic |
+| mats / consumables *(unchanged, §0)* | Common | Uncommon | Rare | Epic | Legendary | Mythic |
 
-**C and B share L4** because they are the only pair whose item levels (52 and 61) both sit inside the
-same character band (40-75). Every other arrangement puts a grade behind a character gate above its own
-level — B gear is usable at 61, so parking it at L5 would mean a level-61 player could wear it and not
-make it.
+🔑 **His arrangement is strictly better than mine, for a reason worth keeping**: my C+B share put B at
+L5, behind the character-76 gate, so a level-61 player could *wear* B gear and not *make* it. Dropping F
+removes the pair-up entirely and every grade now sits at or below its own character band. The one
+remaining offset is benign: an L2 smith at character 20 can craft **D** gear he cannot wear until 40 —
+that is fine, gear is tradable, and making what you cannot yet use is a normal crafter role.
 
-⚠ **I have NOT built this mapping** — it is one table and five minutes, but it decides what every smith
-can make at every rung, and you have been clear that authored ladders are yours. Say yes and it goes in
-as written.
+### Only Legendary and Mythic are craftable — everything below is drop-only
+
+> *"the only craftable gears should be legend, mytic (others are drop based anyways)"*
+
+This settles the §5b diagnosis from the other end. The doc noted that *every craftable gear recipe
+outputs a Mythic item* and treated that as the awkward part; his ruling makes it the design. A gear
+craft now has **two possible successes and a failure**, rolled per attempt:
+
+### Gear craft is NOT 100% — the success table
+
+> *"the gear is not crafted at 100% ... E - (50% for mytic, 40% for legend, 10% fail); D - 45m, 40l,
+> 15fail; C - 40m, 40l, 20fail; B - 30m, 40l, 30fail; A - 20, 30, 50fail; S - 5m, 20l, 75 fail"*
+
+| rung | grade | → Mythic | → Legendary | fail (mats lost) |
+|---|---|---|---|---|
+| L1 | E | 50% | 40% | 10% |
+| L2 | D | 45% | 40% | 15% |
+| L3 | C | 40% | 40% | 20% |
+| L4 | B | 30% | 40% | 30% |
+| L5 | A | 20% | 30% | 50% |
+| L6 | S | **5%** | 20% | **75%** |
+
+A fail **consumes the materials and produces nothing**. This is the first real sink in the crafting
+economy and it is what makes the mat costs below survivable as a design.
+
+### Material costs, by grade
+
+> *"the E needs common mats(500-1000)+~10 uncommon ... the D needs uncommon(100-200-500)+2~5 rare, C
+> need rare(100-200)+1~2epic, B-epic(100-200)+1~2legend, A-legend(100-200)+1~2mytic, S-legend(1000~2000)
+> +(10~20)mytic ... depending on drop rates/amount"*
+
+| rung | grade | bulk mat | + top-up mat |
+|---|---|---|---|
+| L1 | E | Common ×500-1000 | Uncommon ×~10 |
+| L2 | D | Uncommon ×100-200-500 | Rare ×2-5 |
+| L3 | C | Rare ×100-200 | Epic ×1-2 |
+| L4 | B | Epic ×100-200 | Legendary ×1-2 |
+| L5 | A | Legendary ×100-200 | Mythic ×1-2 |
+| L6 | S | Legendary ×1000-2000 | Mythic ×10-20 |
+
+The shape is consistent: **a pile of your own rung's mat, plus a few of the rung above.** His ranges are
+explicitly "depending on drop rates/amount", so the exact number inside each range is a **measurement,
+not a choice** — pick it against real drop rates with `tools/BalanceMatrix` / `EffectiveRate`, never by
+hand.
+
+⚠ **Two things to raise before authoring the numbers, both about L6.** S combines the largest cost on
+the ladder with a **75% fail**, so the expected spend per *successful* S item is ~4 attempts — on the
+order of **4,000-8,000 Legendary and 40-80 Mythic mats**. And it can still land on Legendary (20%), so
+a *Mythic* S item is one roll in twenty: ~20 attempts, ~20,000-40,000 Legendary mats. That may be
+exactly the intent — it is the counterpart to the 60kk shop price he mentions below — but it is a big
+enough number that it should be measured and shown to him before it ships, not discovered in a playtest.
+
+## 5d. ✅ THE TWO CONSUMABLE PROFESSIONS, as he ruled them (2026-08-13)
+
+Gear-grade parity is the organising idea for these two as well — *"just the idea is grade based not as
+much as rarity based"* — so each rung names **the gear grade it serves**, not only a rarity of output.
+
+### Scroll Scribe — level-gated, and L1 is deliberately not gear-related
+
+> *"scroll scribe is lvl gated .. l1-20lvl can craft common resurection scrols, scrols of return;
+> (nothing gear related) L2- scrol enchant common(D), attri uncommon(D) (he gets gear related for the
+> grade); L3- atri rare, scrolls rare .. anytign for C grade + basic scrolls for buffs; l4 - anything for
+> B grade; L5 - any scrolls (anything) for A grade + other buff scrolls; L6 - S grade stuff + ultimate
+> escape + ultimate resurect"*
+
+| rung | serves grade | can craft |
+|---|---|---|
+| L1 (char 20) | **none** | Common resurrection scrolls · scrolls of return |
+| L2 | D | Common enchant scroll · Uncommon attribute scroll |
+| L3 | C | Rare attribute · Rare scrolls · anything for C · **basic buff scrolls** |
+| L4 | B | anything for B grade |
+| L5 | A | any scrolls for A grade · **other buff scrolls** |
+| L6 | S | S-grade stuff · **Ultimate Escape** · **Ultimate Resurrect** |
+
+🔑 **The Scribe's ladder is offset one rung from the smiths': his gear service starts at D (L2), not E
+(L1).** That is what buys the non-gear L1, and it means five grades (D→S) fill five rungs (L2→L6)
+exactly. No rung is empty and `BL-57` needs no invented recipe.
+
+⚠ **One authoring detail to check against the item defs, not assume**: he writes *"scrol enchant
+common(D)"*, but §6's earlier note describes `scroll_common` as the **E-band** normal enchant scroll. So
+either the id's band and his grade label disagree, or "common" here names the rarity and not the band.
+Read `Items.cs` before wiring the rung — do not guess which.
+
+### Potion Master — HP and buff pots alternate, "dash" climbs every rung
+
+> *"potion master the same idea -> L1 - common hp pots + dash, l2 - common buff pots + unc-dash, l3 -
+> uncommon hp pots + rare-dash, l4 - uncommon buff pots + epic-dash, l5 - rare hp pots + legend-dash,
+> l6 - rare/mythic wahtever is the strongest buff pots + mytic dash --- and somwhere and elemental stones
+> + skill stones"*
+
+| rung | potion line | "dash" rarity |
+|---|---|---|
+| L1 | Common **HP** pots | Common |
+| L2 | Common **buff** pots | Uncommon |
+| L3 | Uncommon **HP** pots | Rare |
+| L4 | Uncommon **buff** pots | Epic |
+| L5 | Rare **HP** pots | Legendary |
+| L6 | Rare/Mythic — the strongest **buff** pots | Mythic |
+
+The pattern is a **two-stride alternation**: HP and buff lines take turns, each advancing a rarity every
+second rung, while *dash* advances every single rung and is the one line that reaches Mythic. This keeps
+`BL-57`'s existing ✅ answer intact — `potion_minor` (Common Healing Potion) is exactly an L1 Common HP
+pot.
+
+**Also owed a home:** *"somewhere ... elemental stones + skill stones"* — he did not pin a rung. Not
+invented here; it needs one line from him, or a proposal measured against where those stones are used.
+
+### Both masters: chests, and tradable temporary boxes
+
+> *"both scroll and pots masters can craft a treasure chests with some random loot of scrolls/ports etc
+> .. to fill up the gap of 60kk for mytic S grade in the shop - may be a potion master can craft runes
+> (tradable temporary - war/spell rune boxes - 1h,2h) while scroll can craft (tradable temporary exp/sp
+> boxes - 5-30%, 1h,2h).. something like that"*
+
+- **Treasure chests** with random scroll/potion loot, craftable by both. Stated purpose: **a gold sink /
+  value faucet to close the 60kk gap to a Mythic S item in the shop.**
+- **Potion Master → War / Spell rune boxes** — tradable, *temporary*, 1h and 2h durations.
+- **Scroll Scribe → EXP / SP boxes** — tradable, temporary, **5-30%**, 1h and 2h.
+
+⚠ His own *"something like that"* marks this as a **sketch, not a spec** — the shape is ruled, the
+numbers are not. It also leans on the held **War Rune / Spell Rune** (the accepted replacement for
+per-hit damage consumables) and on the `BL-01` premium reward runes, so it should be specced against
+those two rather than as a new system. **Do not author it in this build.**
+
+### What is still open on crafting after these rulings
+
+- 🔵 The **exact number inside each mat range** (§5c) — a measurement against drop rates.
+- 🔵 **Mats for the Scribe and the Potion Master**: *"the mats consumed i have no idea how much and
+  what"* — explicitly delegated. Propose, measure, show him.
+- 🔵 Where **elemental + skill stones** sit on the Potion Master's ladder.
+- 🔵 The chest / rune-box / exp-box economy above (sketch only).
 
 ## 6. What else is in the neighbourhood
 
-- **`BL-57`** — Potion Master and Scroll Scribe have **no L1 recipe at all** (*"and my luck i picked
-  exactly those :)"*). Under this design that is worse than before: L1 is now where you earn your way to
-  L2, so those two professions cannot start.
-  - ✅ **Potion Master: done.** `potion_minor` ("Common Healing Potion") is the entry rung of a line he
-    already makes the other two rungs of — no conflict with anything.
-  - 🔵 **Scroll Scribe: YOUR CALL, and it blocks him.** Both candidates collide with a ruling you have
-    already made, so I did not pick one:
-    - `attrscroll_common` — you reserved it as **drop-only on purpose**: *"the attribute economy has a
-      faucet the scribe can't flood."*
-    - `scroll_common`, the **E-band normal enchant scroll** — fits his existing line exactly (he makes
-      the D and C normal scrolls), but it is the very item `62j` cut **30×** for flooding you with 80
-      scrolls by level 28. A craft at ~1 common mat per scroll would undo that from the other end.
-    - My recommendation: **`scroll_common` at `OutputQty` 1, not 5.** Five Common mats for one E scroll
-      is ~3 kills each — far tighter than the pre-`62j` faucet, and it gives the scribe a real L1. But it
-      is a number on top of a ruling you just made, so it is yours.
+- ✅ **`BL-57` — ANSWERED 2026-08-13, and the answer dissolves the conflict.** Both of my candidates
+  collided with a ruling of his (`attrscroll_common` is deliberately drop-only; `scroll_common` is the
+  item `62j` cut 30× for flooding). **He picked neither**: the Scribe's L1 is simply *not gear-related*
+  at all. See §5d — L1 is Common resurrection scrolls and scrolls of return. Both prior rulings survive
+  untouched, which is why this is the better answer and not a compromise.
 - **`BL-41`** — the grade filter on the Gear page (62-63 rows). Still unanswered by you. The crafting
   level now hides most of that list on its own (an L1 smith sees only Common), so this may have solved
   itself; worth looking at before building a filter.

@@ -427,7 +427,14 @@ public record AutoHuntConfigDto(
     // One line per buff FAMILY. Null/empty = this character has never opened the tab, and the server
     // falls back to the old AutoBuffPotions + BuffPotionIds behaviour so an existing save keeps
     // working. A non-empty array REPLACES both of them.
-    AutoBuffDto[]? Buffs = null);
+    AutoBuffDto[]? Buffs = null,
+    // ----- the MP threshold (BL-67) -----
+    // MP% below which the auto-MPHEAL chain (Restore / Restore Spirit) takes over. 0 = never.
+    // His worked case is "50% MP_treshold + 30% HP_treshold": Restore Spirit at MP<=50, and when that
+    // has spent enough HP to cross 30, Vampiric Bolt heals it back.
+    // ⚠ Defaults to 60, NOT 0 — 60 is the constant this replaced, so a save written before the field
+    // existed keeps the exact behaviour it had instead of silently losing its mana chain.
+    int MpThresholdPct = 60);
 
 /// <summary>One line in the auto-potions Potions tab: which potion item, whether it's armed, and the
 /// HP (or MP) percent below which to drink it.</summary>
