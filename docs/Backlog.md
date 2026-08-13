@@ -40,22 +40,20 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   `docs/data/classes_skills_csv/` holds nothing above level 35. Still the single biggest content
   unlock in the project; nothing is invented in the meantime, by your own rule.
 
-- `BL-05` 🔴 **Crafting moves to NPC masters, and a profession is quittable.** *"better at NPC — and
-  craft happens with their respected masters … u compleate the quest and u can take his
-  proffesion."* Six crafting levels L1-L6 at exp marks **0/5/15/30/50/100**; 10 crafts of your own
-  level per level, **×3** a grade below, **×0.8** a grade above, −2 grades pays nothing. Each rung
-  unlocks the next rarity's mats and goods. Character-level gates **L1-2 → 20 · L3-4 → 40 · L5-6 →
-  76**, and crafting exp **freezes at 100%** until you take the next class. Quitting at your master
-  wipes your levels and you start over elsewhere: *"i know i told you that is final, but now i
-  changed my mind."* ⚠ Ships with `BL-40` (output is absurd today). *(playtest-21 `66a`.)*
-  🆕 ✅ **UNBLOCKED 2026-08-13** — the two questions that held the server half are answered (§5c/§5d of
-  `docs/design/CraftingProfessions.md`): **gear is GRADE-based and F is uncraftable**, so L1=E · L2=D ·
-  L3=C · L4=B · L5=A · L6=S with nothing shared; **only Legendary and Mythic gear is craftable** and a
-  craft is **not 100%** (E 50/40/10 → S 5/20/75, and a fail eats the mats); and both consumable ladders
-  are authored. The `Game.Shared` foundation is committed (`f49e192`). Still owed *inside* this entry:
-  the number inside each of his mat ranges (a **measurement**, not a choice), the Scribe/Potion mats
-  (*"the mats consumed i have no idea how much and what"*), where elemental + skill stones sit, and the
-  chest / rune-box / exp-box sketch (**explicitly not this build**).
+- `BL-05` 🔵 **Crafting — the two pieces you did NOT rule.** The system itself SHIPPED in 0.63.0
+  (masters, six levels, the freeze, the grade ladder, the gear roll, the mat costs, quitting). What is
+  still owed is only what you left open:
+  - **Where elemental + skill stones sit on the Potion Master's ladder** — *"somwhere and elemental
+    stones + skill stones"*, no rung named. Not invented.
+  - **The chest / rune-box / exp-box economy**, your own *"something like that"*: both consumable
+    masters craft treasure chests of random scroll/potion loot as a sink against the **60kk gap to a
+    Mythic S item**; Potion Master → tradable temporary War/Spell rune boxes (1h/2h), Scribe →
+    tradable temporary EXP/SP boxes (5-30%, 1h/2h). A sketch, deliberately not built — spec it against
+    the held War/Spell Rune and the `BL-01` premium runes, not as a new system.
+  - **Two numbers to confirm**, both measured and both odd: the **C rung costs 8 Rare mats**, so a C
+    recipe reads cheaper than an E one (the Rare faucet is 0.09/kill against Common's 1.76 while your C
+    target is 5-10h), and a **fully S-geared character is 347 farm hours**. See
+    `docs/balance/CraftingMats.md` §8.
 
 ---
 
@@ -224,11 +222,6 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 ## UI & client
 
-- `BL-40` 🔴 **Crafting output is absurd, and it is a UI-adjacent economy bug.** A level-30 Potion
-  Crafter had made **450 uncommon potions** (~100k saved, ~34k resale) out of ~15 uncommon wood; a
-  Scroll Crafter **690 uncommon attribute scrolls**. The refine→craft chain multiplies far too
-  generously. *(playtest-21 `66`; build with `BL-05`.)*
-
 - `BL-41` 🔵 **A grade filter on the craft Gear page.** 62-63 rows is a long scroll on the phone.
   The question was put to you and never answered.
 
@@ -339,14 +332,6 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   2. **It also invalidates the `0a` measurement itself** (`BL-18`) — a run that ends in a death an
      hour in is not measuring the kits, and the auto-buff tab (§78) is what would keep one alive long
      enough to measure. Read the two together before spending a session on either.
-
-- `BL-57` 🔴 **A cheap level-1 recipe for the Potion Master and the Scroll Scribe.** Offered to you;
-  your reply was *"and my luck i picked exactly those :)"* and nothing was built.
-  ✅ **Both L1 rungs are now RULED (2026-08-13)** and neither needs an invented recipe: the Potion
-  Master's is a Common HP pot (`potion_minor`), and the Scribe's L1 is deliberately **not gear-related**
-  — Common resurrection scrolls + scrolls of return, which sidesteps both `attrscroll_common`
-  (drop-only) and `scroll_common` (`62j` cut it 30×). Ships inside `BL-05`; see
-  `docs/design/CraftingProfessions.md` §5d.
 
 ---
 

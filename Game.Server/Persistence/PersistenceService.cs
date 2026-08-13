@@ -627,7 +627,8 @@ public class PersistenceService
             Gold = rec.Gold,
             PersistentId = rec.Id,
             AccountId = rec.AccountId,
-            Profession = (Profession)rec.Profession
+            Profession = (Profession)rec.Profession,
+            CraftExp = rec.CraftExp
         };
 
         // ---- CLASSES. The subclass rows are the source of truth for anything class-level. A
@@ -850,7 +851,7 @@ public class PersistenceService
     /// state travels in <see cref="Subclasses"/>, which is the source of truth.</summary>
     public sealed record CharacterSnapshot(
         int CharacterId, Race Race, BaseClass BaseClass, int Level, long Exp, long Gold,
-        int SecondClass, int ThirdClass, int SkillPoints, int Profession,
+        int SecondClass, int ThirdClass, int SkillPoints, int Profession, int CraftExp,
         int Con, int Atk, int Wit, int Agi, int Spt, float X, float Y,
         string LearnedSkillsCsv, string CompletedQuestsCsv, string ActiveQuestsJson,
         string KnownRecipesCsv, string FriendsCsv, string BlockedCsv, string AutoHuntJson, string EquipPresetsJson,
@@ -888,7 +889,7 @@ public class PersistenceService
 
             return new CharacterSnapshot(
                 id, e.Race, e.BaseClass, e.Level, e.Exp, e.Gold,
-                e.SecondClass, e.ThirdClass, e.SkillPoints, (int)e.Profession,
+                e.SecondClass, e.ThirdClass, e.SkillPoints, (int)e.Profession, e.CraftExp,
                 e.Con, e.AtkStat, e.Wit, e.Agi, e.Spt, e.X, e.Y,
                 string.Join(',', e.LearnedSkills.Select(kv => $"{kv.Key}:{kv.Value}")),
                 string.Join(',', e.CompletedQuests),
@@ -1023,6 +1024,7 @@ public class PersistenceService
         rec.Race = snap.Race;               // can change via DEBUG character reset
         rec.Gold = snap.Gold;
         rec.Profession = snap.Profession;
+        rec.CraftExp = snap.CraftExp;
         rec.CompletedQuestsCsv = snap.CompletedQuestsCsv;
         rec.ActiveQuestsJson = snap.ActiveQuestsJson;
         rec.KnownRecipesCsv = snap.KnownRecipesCsv;

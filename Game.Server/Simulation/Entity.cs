@@ -656,8 +656,46 @@ public class Entity
     /// bonuses. Same rule as <see cref="EffectiveWit"/>.</summary>
     public int EffectiveSpt => Spt + BonusSpt;
 
-    /// <summary>Crafting profession (one per character). Set by level later; debug-set for now.</summary>
+    /// <summary>Crafting profession (one per character). Granted by that profession's MASTER after his
+    /// joining quest, and quittable at him (`BL-05`).</summary>
     public Profession Profession { get; set; }
+
+    /// <summary>RAW crafting exp — 12 internal points per same-level craft (see
+    /// <see cref="Crafting.CraftExpPerCraft"/> for why 12 and not 1). The crafting LEVEL is not stored:
+    /// it is <see cref="Crafting.EffectiveLevel"/> of this number against the character's own band, so
+    /// there is exactly one source of truth and no way for a stored level to disagree with the exp
+    /// beside it. Zeroed when a profession is quit — *"losing all his levels"*.</summary>
+    public int CraftExp { get; set; }
+
+    /// <summary>The highest crafting rung this character's PROGRESSION currently allows (0 below level
+    /// 20). The freeze the owner asked for lives here: exp accumulates to the top of this band and then
+    /// stops dead — *"my exp freezes until i reach the next class … then the l2@100% becomes l3@0%"*.
+    ///
+    /// 🔑 Read from the BEST subclass, not the active one. <see cref="Level"/> and
+    /// <see cref="ThirdClass"/> both proxy to <see cref="ActiveSubclass"/>, so a level-76 main who swaps
+    /// to a fresh level-20 subclass would otherwise see his band collapse from 6 to 2 — and since the
+    /// freeze CAPS exp rather than banking it, the next craft would have clamped an L6 smith down to
+    /// L2 permanently. A profession belongs to the CHARACTER (one per character, quit at a master), so
+    /// its band does too. The award path never lowers stored exp either; both guards, because this one
+    /// is silent and destroys hours.</summary>
+    public int CraftBandCap
+    {
+        get
+        {
+            int best = 0;
+            foreach (var s in Subclasses)
+                best = Math.Max(best, Crafting.BandCap(s.Level, s.ThirdClass > 0, hasFourthClass: false));
+            return best;
+        }
+    }
+
+    /// <summary>The crafting level actually in force — what the exp is worth, held down to the band.</summary>
+    public int CraftLevel =>
+        Profession == Profession.None ? 0 : Crafting.EffectiveLevel(CraftExp, CraftBandCap);
+
+    /// <summary>Runtime only: is this crafter standing at HIS OWN master right now? The latch behind the
+    /// crafting window's browse-vs-craft mode — see GameLoopService.TickCraftMasterProximity.</summary>
+    public bool AtCraftMaster { get; set; }
 
     /// <summary>WIT used for ALL gameplay math (cast speed, MP, magic crit, interrupt,
     /// heals). Stored <see cref="Wit"/> is the persisted base you were BORN with; the only

@@ -14,6 +14,7 @@ public static partial class QuestCatalog
         RegisterThirdClassChains();       // 3rd class (lvl 40, longer + harder)
         RegisterDailyQuests();            // repeatable once per server day
         RegisterRepeatableQuests();       // the Huntmasters' endless + finite contracts
+        RegisterProfessionQuests();       // the five crafting masters' joining quests (lvl 20)
         // Add more (non-class-change) chains here.
     }
 
@@ -26,6 +27,8 @@ public static partial class QuestCatalog
     static partial void RegisterDailyQuests();
     // Implemented in Quests.Repeatable.cs.
     static partial void RegisterRepeatableQuests();
+    // Implemented in Quests.Professions.cs.
+    static partial void RegisterProfessionQuests();
 }
 
 public static partial class ClassChangeRequirements

@@ -93,7 +93,9 @@ namespace Game.Client
 
             var bag = Boot.Inventory ?? Array.Empty<InventoryItemDto>();
             int revision = (int)_craftTab * 104729 + (int)Boot.CraftProfession * 31513
-                         + Boot.KnownRecipes.Count * 7919 + SelfLevel() * 613;
+                         + Boot.KnownRecipes.Count * 7919 + SelfLevel() * 613
+                         + Boot.CraftLevel * 65537 + Boot.CraftExp * 3
+                         + (Boot.AtCraftMaster ? 1046527 : 0);
             foreach (var it in bag) revision = revision * 31 + it.DefId.GetHashCode() + it.Quantity;
             if (revision == _craftRevision) return;
             _craftRevision = revision;
@@ -111,18 +113,17 @@ namespace Game.Client
             for (int i = _craftList.childCount - 1; i >= 0; i--)
                 Destroy(_craftList.GetChild(i).gameObject);
 
-            if (!chosen) { BuildProfessionChooser(); return; }
+            if (!chosen) { BuildProfessionInvitation(); return; }
 
             var counts = MaterialCounts(bag);
             if (_craftTab == CraftTab.Materials) { BuildMaterialsPage(counts); return; }
 
-            _craftTitle.text = ProfessionName(Boot.CraftProfession) + " — "
-                             + "refines " + MaterialWord(RefinedTypeOf(Boot.CraftProfession))
-                             + ".  A failed craft still spends the materials.";
+            _craftTitle.text = CraftHeader();
 
             var recipes = RecipeCatalog.ForProfession(Boot.CraftProfession)
                 .Where(r => TabOf(r) == _craftTab)
-                .OrderBy(r => r.LearnLevel)
+                .OrderBy(r => r.CraftLevel)
+                .ThenBy(r => r.LearnLevel)
                 .ThenBy(r => OutputName(r), StringComparer.Ordinal)
                 .ToList();
 
@@ -137,13 +138,33 @@ namespace Game.Client
             foreach (var recipe in recipes) BuildRecipeRow(recipe, counts);
         }
 
-        // ---- the profession pick -----------------------------------------------------------------
+        // ---- the header, and the invitation before you have a profession -------------------------
 
-        /// <summary>The one-time, permanent choice. Behind a confirm naming the profession, because
-        /// there is no re-spec: this is the only irreversible button in the window.</summary>
-        private void BuildProfessionChooser()
+        /// <summary>The one line that has to carry three facts at once: who you are, how far up the
+        /// ladder, and whether the buttons below are live.</summary>
+        private string CraftHeader()
         {
-            _craftTitle.text = "Choose a profession — this is PERMANENT and cannot be changed.";
+            int lvl = Boot.CraftLevel;
+            int pct = Mathf.RoundToInt(Crafting.LevelProgress(Boot.CraftExp, Mathf.Max(1, lvl)) * 100f);
+            bool frozen = lvl >= Boot.CraftBandCap && lvl < Crafting.MaxCraftLevel;
+            string where = Boot.AtCraftMaster
+                ? "<color=#8CD98C>at your master — you can craft here</color>"
+                : Tinted("browsing — visit " + ProfessionName(Boot.CraftProfession) + "'s master to craft", false);
+
+            string ladder = "L" + lvl + " " + pct + "%";
+            if (frozen)
+                ladder += Tinted("  (frozen — reach character level "
+                                 + Crafting.CharLevelFor(lvl + 1) + " to go on)", false);
+
+            return ProfessionName(Boot.CraftProfession) + "  " + ladder + "   " + where;
+        }
+
+        /// <summary>No profession yet. There is nothing to CHOOSE here any more (`BL-05`) — a
+        /// profession comes from a master's joining quest, and the whole point of that quest is that he
+        /// makes his pitch before you commit. This page just says where the five of them stand.</summary>
+        private void BuildProfessionInvitation()
+        {
+            _craftTitle.text = "You have no profession — the masters in any town will each take an apprentice.";
 
             foreach (Profession p in new[]
             {
@@ -151,18 +172,16 @@ namespace Game.Client
                 Profession.PotionMaster, Profession.ScrollScribe
             })
             {
-                Profession pick = p;
                 string body = "<size=13><color=#AEB4BE>Refines " + MaterialWord(RefinedTypeOf(p))
                             + ".  Crafts " + MakesWord(p) + ".</color></size>";
-                CraftRow(ProfessionName(p) + "\n" + body, true, () =>
-                    Ask("Become a " + ProfessionName(pick) + "?\n\n<size=15>A profession is PERMANENT — "
-                        + "it cannot be changed or unlearned. You will still be able to trade for what "
-                        + "the other four make.</size>",
-                        "Choose", () => Boot.ChooseProfession(pick)));
+                // Not a button: nothing here commits you. Take his quest at the man himself.
+                CraftNoteRow(ProfessionName(p) + "\n" + body);
             }
 
-            CraftNote("Every profession refines its own material type; a finished item needs several, so "
-                    + "the rest come from drops or trade. Recipes unlock as you level.");
+            CraftNote("Take a master's quest at level " + QuestCatalog.ProfessionJoinLevel
+                    + " and he makes you his apprentice at crafting level 1. You can quit at your own "
+                    + "master later and join another — but every crafting level is lost when you do, and "
+                    + "the new master starts you at 1.");
         }
 
         // ---- a recipe row ------------------------------------------------------------------------
@@ -201,25 +220,46 @@ namespace Game.Client
                 parts.Add(Tinted("Blueprint " + have + "/1", ok));
             }
 
+            // The CRAFTING-LEVEL gate is a second, independent gate from the character one, and it is
+            // the one a player will hit constantly (`BL-05`): everything at or below your rung, plus
+            // exactly one rung above.
+            bool rungLocked = !Crafting.CanCraftAt(recipe.CraftLevel, Boot.CraftLevel);
+            bool isGear = outDef != null && Crafting.IsGearSlot(outDef.Slot);
+            var odds = Crafting.GearCraftOdds(recipe.CraftLevel);
+
             string second = string.Join("   ", parts);
             string status =
-                levelLocked ? Tinted("Needs level " + recipe.LearnLevel, false)
+                rungLocked ? Tinted("Crafting L" + recipe.CraftLevel, false)
+                : levelLocked ? Tinted("Needs level " + recipe.LearnLevel, false)
                 : needsBlueprint ? Tinted("Blueprint not learned", false)
+                // A gear craft is not a success/fail coin — it is Mythic / Legendary / nothing, and the
+                // player is choosing whether to spend hours of materials on those odds. Show all three.
+                : isGear ? Tinted(Mathf.RoundToInt(odds.Mythic * 100f) + "% Mythic  "
+                                  + Mathf.RoundToInt(odds.Legendary * 100f) + "% Legendary  "
+                                  + Mathf.RoundToInt(odds.Fail * 100f) + "% fail", true)
                 : recipe.SuccessChance >= 1f ? Tinted("Guaranteed", true)
                 : Tinted(Mathf.RoundToInt(recipe.SuccessChance * 100f) + "% success", true);
 
-            bool enabled = !levelLocked && !needsBlueprint && haveAll;
+            // ⚠ AWAY FROM THE MASTER every row is dead, and that is the browse mode the owner asked for
+            // — the have/need colouring above is the whole point of being able to read this in the
+            // field, because "what do I still need to farm" is decided out there, not in town.
+            bool enabled = !rungLocked && !levelLocked && !needsBlueprint && haveAll && Boot.AtCraftMaster;
             string label = title + "   <size=13>" + status + "</size>\n<size=13>" + second + "</size>";
 
             string id = recipe.Id;                 // captured per row
             float chance = recipe.SuccessChance;
+            string oddsLine = isGear
+                ? Mathf.RoundToInt(odds.Mythic * 100f) + "% Mythic, "
+                  + Mathf.RoundToInt(odds.Legendary * 100f) + "% Legendary, "
+                  + Mathf.RoundToInt(odds.Fail * 100f) + "% failure"
+                : Mathf.RoundToInt(chance * 100f) + "% chance to succeed";
             CraftRow(label, enabled, () =>
             {
-                // A guaranteed craft goes straight through; a risky one names the odds first, because
-                // failure eats the materials and that is not something to discover by tapping.
-                if (chance >= 1f) { Boot.Craft(id); return; }
-                Ask("Craft " + name + "?\n\n<size=15>" + Mathf.RoundToInt(chance * 100f)
-                    + "% chance to succeed. A failure still consumes the materials.</size>",
+                // A guaranteed craft goes straight through; anything that can fail names the odds first,
+                // because failure eats the materials and that is not something to discover by tapping.
+                if (!isGear && chance >= 1f) { Boot.Craft(id); return; }
+                Ask("Craft " + name + "?\n\n<size=15>" + oddsLine
+                    + ". A failure still consumes the materials.</size>",
                     "Craft", () => Boot.Craft(id));
             });
         }

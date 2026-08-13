@@ -2400,6 +2400,212 @@ Console.WriteLine("     with no travel and no TTK. An elite's own TTK is longer 
 Console.WriteLine("     row as an upper bound on what a faucet there could deliver, not as a farm rate.");
 Console.WriteLine();
 
+// =====================================================================================================
+//  M12: THE AUTHORED RECIPES, PRICED. This is the one that closes `BL-05` — everything above measures
+//  what a faucet YIELDS; this measures what the recipes actually shipped in Recipes.cs COST, in the same
+//  farm hours his target curve is written in, so the two can be compared without arithmetic in between.
+//
+//  🔑 It reads RecipeCatalog, not a table of its own. Change GearBulk / GearAccent / SlotFraction /
+//  EliteMatDrops and re-run — if this section still lands on his curve, the change is fine, and if it
+//  does not, the numbers are wrong and not the tool.
+//
+//  ⚠ It also finally supplies the measurement §7f listed as MISSING: an elite's own TTK, which turns
+//  M11's respawn CEILING into a real farm rate.
+// =====================================================================================================
+Console.WriteLine("#####################################################################################");
+Console.WriteLine("###  M12: the AUTHORED gear recipes, priced against his target curve               ###");
+Console.WriteLine("#####################################################################################");
+Console.WriteLine();
+
+// An ELITE is 4x HP and 1.5x ATK (GameLoopService.SpawnOne), so its TTK is ~4x a normal mob's. At a camp
+// you are not walking between scattered spawns — you are standing in it waiting — so the 40 s loop
+// overhead of a normal farm collapses to a retarget. The rate is then whichever binds first: your own
+// killing speed, or the camp's respawn ceiling from M11.
+const double EliteHpMul = 4.0, EliteCampOverhead = 10.0;
+var eliteZones = WorldMap.SpawnZones.Where(z => z.Rank == MobRank.Elite).ToArray();
+double eliteCeiling = eliteZones.Length == 0 ? 0
+    : eliteZones.Average(z => z.TotalCount) * 3600.0 / Math.Max(1, eliteZones.Average(z => z.RespawnSeconds));
+double EliteKillsPerHour(int level) =>
+    Math.Min(eliteCeiling, 3600.0 / (EliteHpMul * BandTtk(level) + EliteCampOverhead));
+
+Console.WriteLine("=== M12a: the elite farm rate — M11's ceiling, with an elite's own TTK applied ===");
+Console.WriteLine($"{"gr",3} {"levels",8} {"normal TTK",11} {"elite TTK",10} {"elite kills/h",14} "
+    + $"{"ceiling",9} {"vs normal farm",15}");
+foreach (var (name, floor, top) in gradeBands.Where(b => b.Name is "B" or "A" or "S"))
+    Console.WriteLine($"{name,3} {floor + "-" + top,8} {BandTtk(top),10:F1}s {EliteHpMul * BandTtk(top),9:F1}s "
+        + $"{EliteKillsPerHour(top),14:F0} {eliteCeiling,9:F0} {EliteKillsPerHour(top) / KillsPerHour(top),14:P0}");
+Console.WriteLine("  This is the number §7f said was missing. An elite camp is still the better farm at the top —");
+Console.WriteLine("  four times the HP, but no walking — which is what makes it a viable home for the top mats.");
+Console.WriteLine();
+
+// Mats per hour BY TYPE at a band, optionally including the ELITE layer (which is applied at kill time by
+// rank, not baked into the template, so it has to be layered here exactly as the kill roll layers it).
+// ⚠ Averaged over EVERY template in the band, not just the nearest few — same population M10 uses, and
+// for the same reason: mat TYPES are flavored by mob CATEGORY, so a handful of neighbouring templates can
+// show a type as literally undroppable when the band as a whole pays it. A player farms the band.
+static double[,] MatsPerHourByType(int lo, int hi, bool elite, double kph)
+{
+    var res = new double[Crafting.MaterialTypes.Length, Crafting.MaterialRarities.Length];
+    var band = MobCatalog.Templates.Where(m => !m.Dummy && m.Level >= lo && m.Level <= hi).ToArray();
+    if (band.Length == 0) return res;
+    foreach (var mob in band)
+    {
+        var rows = (mob.Drops ?? Array.Empty<DropEntry>()).ToList();
+        if (elite)
+            rows.AddRange(MobCatalog.EliteMatDrops(mob.Level, MobRank.Elite, mob.Category));
+        foreach (var (e, chance) in Marginals(rows, mob.Level))
+            if (ItemCatalog.Get(e.ItemId) is { Slot: EquipSlot.Material } def)
+                for (int t = 0; t < Crafting.MaterialTypes.Length; t++)
+                    if (e.ItemId == Crafting.MaterialId(Crafting.MaterialTypes[t], def.Rarity))
+                        res[t, (int)def.Rarity] +=
+                            chance * ((e.MinQty + e.MaxQty) / 2.0) * RateConfig.DropAmountRate * kph / band.Length;
+    }
+    return res;
+}
+
+// Hours to gather a whole recipe. A farmer collects every type AT ONCE, so the clock is the SLOWEST
+// single ingredient, not the sum — that is the difference between "trade for the rest" and "farm it all",
+// and it is the honest number for a solo crafter. Refining is offered as an alternative source for
+// anything the band does not drop, and the cheaper of the two wins per ingredient.
+// Two numbers, and the difference between them is the whole cross-profession-trade design.
+//
+//  • MAIN  = the hours for the recipe's LARGEST single ingredient — your own profession's material, the
+//            60% of a weapon that is Ingot. This is what the costs are AUTHORED against, because the
+//            composition split exists precisely so the other 40% comes from trade (*"finished items need
+//            several types → cross-profession trade"*, Crafting.cs). Pricing a smith's sword as though he
+//            must personally farm its Wood prices the design out of existence.
+//  • SOLO  = the slowest ingredient of all, i.e. a crafter who trades with nobody. Reported, never
+//            authored against. At E and D it is 3-4x MAIN and it binds on **Wood**, a 20% component,
+//            because mat flavor follows mob CATEGORY and few E-band creatures are Animals or Plants.
+//            That gap is the trade incentive, measured.
+static double RecipeHours(Recipe r, double[,] perHour) => RecipeHoursDetail(r, perHour).Main;
+
+static (double Main, double Solo, string Binds) RecipeHoursDetail(Recipe r, double[,] perHour)
+{
+    double worst = 0, biggestBulk = 0, accents = 0;
+    int biggestQty = -1;
+    string binds = "";
+    var bulkRarity = ItemCatalog.Get(r.Inputs[0].ItemId)?.Rarity ?? ItemRarity.Common;
+    foreach (var inp in r.Inputs)
+    {
+        if (ItemCatalog.Get(inp.ItemId) is not { Slot: EquipSlot.Material } def) continue;
+        int type = Array.IndexOf(Crafting.MaterialTypes,
+            Crafting.MaterialTypes.First(t => Crafting.MaterialId(t, def.Rarity) == inp.ItemId));
+        double rate = perHour[type, (int)def.Rarity];
+        double hours = rate > 0 ? inp.Qty / rate : double.PositiveInfinity;
+        // Refine fallback: 5 of the rung below + 2 cross, all of them farmed at THIS band's rates.
+        if (double.IsInfinity(hours) && def.Rarity > ItemRarity.Common)
+        {
+            var refine = RecipeCatalog.Get($"refine_{Crafting.MaterialTypes[type]}_{def.Rarity}".ToLowerInvariant());
+            if (refine is not null)
+            {
+                double one = 0;
+                foreach (var ri in refine.Inputs)
+                    if (ItemCatalog.Get(ri.ItemId) is { Slot: EquipSlot.Material } rd)
+                    {
+                        int rt = Array.IndexOf(Crafting.MaterialTypes,
+                            Crafting.MaterialTypes.First(t => Crafting.MaterialId(t, rd.Rarity) == ri.ItemId));
+                        double rr = perHour[rt, (int)rd.Rarity];
+                        one += rr > 0 ? ri.Qty / rr : double.PositiveInfinity;
+                    }
+                hours = one * inp.Qty;
+            }
+        }
+        if (hours > worst) { worst = hours; binds = $"{inp.Qty} {def.Rarity} {Crafting.MaterialTypes[type]}"; }
+        // MAIN = the biggest BULK line (your own material) + every ACCENT line. The accent is only a
+        // handful, but it is the rung above and there is no trading around it — nobody has a spare
+        // Mythic. The smaller CROSS-material bulk lines are what MAIN assumes you trade for.
+        if (def.Rarity > bulkRarity) accents = Math.Max(accents, hours);
+        else if (inp.Qty > biggestQty) { biggestQty = inp.Qty; biggestBulk = hours; }
+    }
+    // MAX, not sum, on both models: every ingredient accumulates at the SAME time while you farm, so the
+    // clock is the slowest one, not the total. (Summing them was the first version and it made MAIN
+    // exceed SOLO, which is impossible — MAIN is a subset of the same maximum.)
+    return (Math.Max(biggestBulk, accents), worst, binds);
+}
+
+Console.WriteLine("=== M12b: every authored WEAPON recipe, per rung — attempt, finished, vs his target ===");
+Console.WriteLine($"{"rung",5} {"bulk",22} {"accent",18} | {"per attempt",12} {"attempts",9} "
+    + $"{"per finished",13} {"his target",13}  verdict");
+foreach (var (grade, lo, hi) in hisCurve)
+{
+    int rung = Array.FindIndex(hisCurve, c => c.Grade == grade) + 1;
+    int itemLevel = Crafting.GearItemLevels[rung - 1];
+    bool elite = rung >= 3;                      // C and up: the accent mats only exist at an elite camp
+    var band = gradeBands.First(b => b.Name == grade);
+    double kph = elite ? EliteKillsPerHour(band.Top) : KillsPerHour(band.Top);
+    var perHour = MatsPerHourByType(band.Floor, band.Top, elite, kph);
+
+    // The representative WEAPON of the rung: his curve is authored per weapon and every other slot is a
+    // fraction of it, so pricing one weapon prices the whole rung.
+    var recipe = RecipeCatalog.All
+        .Where(r => r.CraftLevel == rung
+                    && ItemCatalog.Get(r.OutputId) is { Slot: EquipSlot.Weapon } d && d.ItemLevel == itemLevel)
+        .OrderBy(r => r.Id).FirstOrDefault();
+    if (recipe is null) { Console.WriteLine($"{grade,5}  (no weapon recipe at this rung)"); continue; }
+
+    var odds = Crafting.GearCraftOdds(rung);
+    double attempts = 1.0 / Math.Max(0.01f, 1f - odds.Fail);
+    var (perAttempt, soloAttempt, binds) = RecipeHoursDetail(recipe, perHour);
+    double finished = perAttempt * attempts;
+    string bulkTxt = string.Join(" + ", recipe.Inputs.Take(recipe.Inputs.Length - 1)
+        .Select(i => $"{i.Qty}"));
+    var last = recipe.Inputs[^1];
+    string verdict = finished < lo * 0.75 ? "🔴 TOO CHEAP"
+        : finished > hi * 1.25 ? "🔴 TOO DEAR"
+        : finished < lo || finished > hi ? "near (inside 25%)" : "✅ inside his range";
+    Console.WriteLine($"{grade,5} {bulkTxt + " " + ItemCatalog.Get(recipe.Inputs[0].ItemId)?.Rarity,22} "
+        + $"{last.Qty + " " + ItemCatalog.Get(last.ItemId)?.Rarity,18} | {Hrs(perAttempt),12} {attempts,8:0.0}x "
+        + $"{Hrs(finished),13} {$"{lo:0.#}-{hi:0.#}h",13}  {verdict,-18} solo {Hrs(soloAttempt * attempts),8} (binds on {binds})");
+}
+Console.WriteLine("  'per attempt' is the SLOWEST ingredient, not the sum — you farm every material type at once, so");
+Console.WriteLine("  the clock is whichever one the band pays least of. That makes it the SOLO number; a crafter who");
+Console.WriteLine("  trades for his cross-materials beats it, which is the trade the composition split exists to force.");
+Console.WriteLine("  B, A and S are priced at an ELITE camp, because Epic/Legendary/Mythic mats exist nowhere else.");
+Console.WriteLine();
+
+Console.WriteLine("=== M12c: the full character, by slot — his fractions applied to the AUTHORED recipes ===");
+Console.WriteLine($"{"rung",5} {"weapon",10} {"body",9} {"helmet",9} {"shield",9} {"gloves",9} "
+    + $"{"boots",9} {"neck",9} {"ear",9} {"ring",9} | {"FULL",10} {"+shield",9}");
+foreach (var (grade, lo, hi) in hisCurve)
+{
+    int rung = Array.FindIndex(hisCurve, c => c.Grade == grade) + 1;
+    int itemLevel = Crafting.GearItemLevels[rung - 1];
+    bool elite = rung >= 3;
+    var band = gradeBands.First(b => b.Name == grade);
+    double kph = elite ? EliteKillsPerHour(band.Top) : KillsPerHour(band.Top);
+    var perHour = MatsPerHourByType(band.Floor, band.Top, elite, kph);
+    double attempts = 1.0 / Math.Max(0.01f, 1f - Crafting.GearCraftOdds(rung).Fail);
+
+    // One representative recipe per SLOT SHAPE at this grade, priced from what actually shipped.
+    double Slot(Func<ItemDef, bool> pick)
+    {
+        var r = RecipeCatalog.All
+            .Where(x => x.CraftLevel == rung
+                        && ItemCatalog.Get(x.OutputId) is { } d && d.ItemLevel == itemLevel && pick(d))
+            .OrderBy(x => x.Id).FirstOrDefault();
+        return r is null ? 0 : RecipeHours(r, perHour) * attempts;
+    }
+    double weapon = Slot(d => d.Slot == EquipSlot.Weapon);
+    double body   = Slot(d => d.Slot == EquipSlot.Armor && d.ArmorSlot == ArmorSlot.Body);
+    double head   = Slot(d => d.Slot == EquipSlot.Armor && d.ArmorSlot == ArmorSlot.Head);
+    double shield = Slot(d => d.Slot == EquipSlot.Shield);
+    double gloves = Slot(d => d.Slot == EquipSlot.Armor && d.ArmorSlot == ArmorSlot.Gloves);
+    double boots  = Slot(d => d.Slot == EquipSlot.Armor && d.ArmorSlot == ArmorSlot.Boots);
+    double neck   = Slot(d => d.Slot == EquipSlot.Jewel && d.JewelType == JewelType.Necklace);
+    double ear    = Slot(d => d.Slot == EquipSlot.Jewel && d.JewelType == JewelType.Earring);
+    double ring   = Slot(d => d.Slot == EquipSlot.Jewel && d.JewelType == JewelType.Ring);
+    double full = weapon + body + head + gloves + boots + neck + 2 * ear + 2 * ring;
+    Console.WriteLine($"{grade,5} {Hrs(weapon),10} {Hrs(body),9} {Hrs(head),9} {Hrs(shield),9} {Hrs(gloves),9} "
+        + $"{Hrs(boots),9} {Hrs(neck),9} {Hrs(ear),9} {Hrs(ring),9} | {Hrs(full),10} {Hrs(full + shield),9}");
+}
+Console.WriteLine("  🔑 The SHIELD column is his 2026-08-13 ruling — *\"It's armor so make it as a helmet price\"* — so it");
+Console.WriteLine("     should read the same as the helmet column beside it. It is OUTSIDE both of his sums, which is why");
+Console.WriteLine("     'FULL' and '+shield' are printed apart: a shield user's kit is 1.30 weapons of armor, not 1.00.");
+Console.WriteLine("  ⚠ 'FULL' is the number to sanity-check, not the per-item ones — it is what a finished character of");
+Console.WriteLine("     that grade costs in farm hours, and at S it is the real endgame figure.");
+Console.WriteLine();
+
 static string NameOf(string id) => SkillCatalog.Get(id)?.Name ?? id;
 
 /// <summary>A Human ASSASSIN (rogue) of this level in the best duals + LIGHT armor for its tier —

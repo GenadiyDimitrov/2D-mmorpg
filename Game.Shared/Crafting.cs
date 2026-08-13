@@ -167,11 +167,16 @@ public static class Crafting
     /// and <see cref="EffectiveLevel"/> holds the level at 2 there. That pairing is what makes the freeze
     /// read as "L2, 100%" instead of "L2, 99.9%" — and makes lifting the band a pure ceiling change with
     /// no exp to migrate. Stopping one point short would show a bar that never fills.</summary>
-    public static int CapExp(int exp, int charLevel, bool hasThirdClass, bool hasFourthClass)
+    public static int CapExp(int exp, int charLevel, bool hasThirdClass, bool hasFourthClass) =>
+        CapExpToBand(exp, BandCap(charLevel, hasThirdClass, hasFourthClass));
+
+    /// <summary>The same clamp against an ALREADY-COMPUTED band, for callers that derive the band from
+    /// something richer than one character level — the server takes it from the BEST subclass, so that
+    /// swapping to a fresh subclass cannot appear to shrink a crafter's band.</summary>
+    public static int CapExpToBand(int exp, int bandCap)
     {
-        int cap = BandCap(charLevel, hasThirdClass, hasFourthClass);
-        if (cap <= 0) return 0;
-        return System.Math.Min(exp, CraftLevelMarks[System.Math.Min(cap, MaxCraftLevel - 1)]);
+        if (bandCap <= 0) return 0;
+        return System.Math.Min(exp, CraftLevelMarks[System.Math.Min(bandCap, MaxCraftLevel - 1)]);
     }
 
     /// <summary>The rarity of the GOODS a crafting level makes. L1 → Common … L6 → Mythic.</summary>
@@ -186,4 +191,61 @@ public static class Crafting
     /// Legendary into Mythic; L6 has nothing above it and refines nothing.</summary>
     public static ItemRarity? RefineTarget(int craftLevel) =>
         craftLevel >= 1 && craftLevel < MaxCraftLevel ? (ItemRarity)craftLevel : null;
+
+    // =====================================================================================
+    //  GEAR: the ladder is GRADE-based, not rarity-based (owner, 2026-08-13)
+    //  *"just the idea is grade based not as much as rarity based"*
+    //  docs/design/CraftingProfessions.md §5c.
+    // =====================================================================================
+
+    /// <summary>The gear ITEM LEVELS each crafting rung serves, indexed by level-1 — the grade floors
+    /// E 20 · D 40 · C 52 · B 61 · A 76 · S 80.
+    ///
+    /// 🔑 **F is deliberately absent, and that absence is what makes the ladder exact.** The owner:
+    /// *"rly no point to craft F grade … its mostly to get you to 20 (as u get free mytic @10/15) … so
+    /// 7 grades - 1 = 6"*. Seven grades minus F is six, against six crafting rungs, so nothing is shared
+    /// and nothing is invented. It also keeps every grade at or below its own character band, which the
+    /// alternative (C and B sharing a rung) did not — that parked B behind the character-76 gate and let
+    /// a level-61 player WEAR B gear he could not MAKE.</summary>
+    public static readonly int[] GearItemLevels = { 20, 40, 52, 61, 76, 80 };
+
+    /// <summary>The crafting rung that makes gear of this item level, 1-6 — or **0 for F**, which is not
+    /// craftable at all. Anything at or above the S floor is L6; there is no rung above it.</summary>
+    public static int GearCraftLevel(int itemLevel)
+    {
+        int lvl = 0;
+        for (int i = 0; i < GearItemLevels.Length; i++)
+            if (itemLevel >= GearItemLevels[i]) lvl = i + 1;
+        return lvl;
+    }
+
+    /// <summary>The odds of one gear craft attempt. Sums to 1: a craft lands on Mythic, lands on
+    /// Legendary, or FAILS and eats the materials.</summary>
+    public readonly record struct GearOdds(float Mythic, float Legendary, float Fail);
+
+    /// <summary>The owner's success table, verbatim (2026-08-13): *"the gear is not crafted at 100% …
+    /// E - (50% for mytic, 40% for legend, 10% fail); D - 45m, 40l, 15fail; C - 40m, 40l, 20fail;
+    /// B - 30m, 40l, 30fail; A - 20, 30, 50fail; S - 5m, 20l, 75 fail"*.
+    ///
+    /// 🔑 **Only Legendary and Mythic gear is craftable** — *"the only craftable gears should be legend,
+    /// mytic (others are drop based anyways)"* — so there is no third success rung to fall to. A fail
+    /// produces nothing and consumes the mats, and that is the first real sink the crafting economy has.
+    ///
+    /// ⚠ The fail rate and the mat cost are ONE knob, not two: at 75% a successful S item costs four
+    /// attempts, so quadrupling the fail rate is arithmetically the same act as quadrupling the pile.
+    /// Both were solved together in <c>Recipes.GearBulk</c> — move one and the other is wrong.</summary>
+    public static GearOdds GearCraftOdds(int craftLevel) => craftLevel switch
+    {
+        1 => new(0.50f, 0.40f, 0.10f),   // E
+        2 => new(0.45f, 0.40f, 0.15f),   // D
+        3 => new(0.40f, 0.40f, 0.20f),   // C
+        4 => new(0.30f, 0.40f, 0.30f),   // B
+        5 => new(0.20f, 0.30f, 0.50f),   // A
+        _ => new(0.05f, 0.20f, 0.75f),   // S
+    };
+
+    /// <summary>True if this rung's recipes are GEAR (three-way outcome) rather than materials or
+    /// consumables (a plain <see cref="Recipe.SuccessChance"/> roll).</summary>
+    public static bool IsGearSlot(EquipSlot slot) =>
+        slot is EquipSlot.Weapon or EquipSlot.Armor or EquipSlot.Shield or EquipSlot.Jewel;
 }

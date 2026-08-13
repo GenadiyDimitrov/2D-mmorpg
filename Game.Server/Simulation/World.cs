@@ -306,14 +306,24 @@ public record DebugCancelAttrCmd(string ConnectionId, int Index) : IAdminCommand
 /// <summary>Craft a recipe (consume its inputs, roll success, produce the output).</summary>
 public record CraftCmd(string ConnectionId, string RecipeId) : IGameCommand;
 
-/// <summary>Choose the character's ONE crafting profession (permanent — can't be changed).</summary>
-public record ChooseProfessionCmd(string ConnectionId, int Profession) : IGameCommand;
+/// <summary>Take a master's profession WITHOUT re-doing his joining quest — open only to someone who has
+/// completed it once before (`BL-05`). Addressed by the master's live ENTITY id and range-checked, like
+/// every other NPC service: the profession is granted at the man, not from a menu.</summary>
+public record JoinProfessionCmd(string ConnectionId, Guid NpcEntityId) : IGameCommand;
+
+/// <summary>Quit the character's profession at his own master, losing every crafting level (`BL-05`).</summary>
+public record QuitProfessionCmd(string ConnectionId, Guid NpcEntityId) : IGameCommand;
 
 /// <summary>DEBUG-only: set the player's crafting profession (until level-based assignment lands).</summary>
 /// <summary>Set the CRAFTING profession (WeaponSmith … ScrollScribe). Not the class — see
 /// <see cref="DebugSecondClassCmd"/>. The two were confused in the debug UI, which sent a 2nd-class id
 /// (1-18) here, where it was clamped into the 5-value crafting enum and silently became ScrollScribe.</summary>
 public record DebugSetProfessionCmd(string ConnectionId, int Profession) : IAdminCommand;
+
+/// <summary>DEBUG-only: jump straight to a crafting LEVEL (1-6), skipping the exp grind (`BL-05`).
+/// The band freeze still applies — a level-20 character set to L6 reads as L2, which is the point:
+/// this is for testing the ladder, not for stepping over it.</summary>
+public record DebugSetCraftLevelCmd(string ConnectionId, int Level) : IAdminCommand;
 
 /// <summary>Debug: become a 2nd CLASS directly, skipping the quest and level gates the real
 /// class-change path enforces.</summary>

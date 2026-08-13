@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.62.0";
+    public const string GameVersion = "0.63.0";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -48,7 +48,11 @@ public static class GameConstants
     /// 20-field order would write its heal power into `TestSkillPower`. Admin-only, and
     /// `MinAcceptedProtocol` is 8 so such a client is still let in, which is precisely why the number has
     /// to move: the handshake is the only place that difference is written down.
-    public const int ProtocolVersion = 18;
+    /// 18 → 19 (2026-08-13, `BL-05`): `CraftingUpdate` gained `Level`/`Exp`/`BandCap`/`AtMaster`, and
+    /// two new hub methods (`JoinProfession`, `QuitProfession`) replaced the self-pick `ChooseProfession`.
+    /// The DTO fields are pure ADDITIONS with defaults, so an old client just draws no crafting level —
+    /// but it would also still be calling `ChooseProfession`, which now refuses, so the number moves.
+    public const int ProtocolVersion = 19;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means

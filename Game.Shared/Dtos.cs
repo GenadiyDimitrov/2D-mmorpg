@@ -926,7 +926,26 @@ public record NpcDialog(
     TeleportInfo? Teleport = null, // gatekeeper destinations (null for non-gatekeepers)
     SkillResetInfo? SkillReset = null, // un-learnable skills (null for non-reset NPCs)
     BufferInfo? Buffer = null, // buffer options (null for non-buffers)
-    bool Warehouse = false); // true for a Warehouse Keeper — the client shows an "Open Warehouse" button
+    bool Warehouse = false, // true for a Warehouse Keeper — the client shows an "Open Warehouse" button
+    CraftMasterInfo? CraftMaster = null); // crafting master options (null for everyone else)
+
+/// <summary>Server -> client: what a CRAFTING MASTER offers this character right now (`BL-05`).
+///
+/// <para>Four mutually-exclusive states, and the DTO is shaped so the client never has to work out
+/// which: <see cref="CanOpenWorkshop"/> (he is your master — craft here), <see cref="CanRejoin"/> (you
+/// did his quest before, he will take you back at level 1), <see cref="CanQuit"/> (he is your master and
+/// will release you), or none of the three, in which case his joining quest is in the normal Offered
+/// list like any other quest.</para>
+///
+/// <para><see cref="CurrentLevel"/> is the level a quit would DESTROY — sent so the confirmation can
+/// spell the loss out in numbers, the way the Mindwriter and the stat basket do, rather than saying
+/// "are you sure".</para></summary>
+public record CraftMasterInfo(
+    int Profession,
+    bool CanOpenWorkshop,
+    bool CanRejoin,
+    bool CanQuit,
+    int CurrentLevel);
 
 /// <summary>Server -> client: the skills a reset NPC can un-learn — the permanent, mutually-
 /// exclusive picks (the level-40 stat swaps). Removing is FREE, but the gold you spent is NOT
@@ -1001,5 +1020,20 @@ public record SocialOptionsUpdate(int Options);
 /// success chance — it computes locally from the same catalog the server crafts from, so the two can
 /// never disagree about what a recipe costs.
 ///
-/// Pushed on login and after every change (choose profession, learn a recipe, the admin override).</summary>
-public record CraftingUpdate(int Profession, string[] KnownRecipes);
+/// Pushed on login and after every change (join a master, craft, learn a recipe, quit, the admin
+/// override).
+///
+/// <para><see cref="Exp"/> is the RAW internal exp (12 points per same-level craft — see
+/// <see cref="Crafting.CraftExpPerCraft"/>), not the owner's 0/5/15/30/50/100 display scale, and the
+/// client divides. <see cref="BandCap"/> is the highest rung this character's PROGRESSION allows right
+/// now (20 → 2, 40+3rd → 4, 76 → 6): sending it rather than recomputing it client-side is what lets the
+/// window say *"frozen at L2 until level 40"* without the client having to know the third-class rule.
+/// <see cref="Level"/> is already clamped by it, so `Level == BandCap` **is** the frozen state.</para>
+///
+/// <para>⚠ At a master, <see cref="AtMaster"/> is true and the craft buttons go live. Away from one the
+/// same window opens in BROWSE mode — every recipe, every have/need count — with the buttons dead
+/// (owner: *"better at NPC — and craft happens with their respected masters"*, softened by the
+/// have/need colouring being useful precisely where you decide what to farm).</para></summary>
+public record CraftingUpdate(
+    int Profession, string[] KnownRecipes,
+    int Level = 0, int Exp = 0, int BandCap = 0, bool AtMaster = false);

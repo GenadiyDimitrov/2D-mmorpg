@@ -710,17 +710,31 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
-    /// <summary>Craft a recipe by id (consume inputs → roll success → produce output).</summary>
+    /// <summary>Craft a recipe by id (consume inputs → roll the outcome → produce output).
+    /// ⚠ The session check was MISSING here and on the old ChooseProfession, alone among the crafting
+    /// methods — closed 2026-08-13 with `BL-05`. It is not what caused `BL-40` (that was a ratio, not a
+    /// loop), but it is why a craft could be tapped as fast as the phone could send.</summary>
     public Task Craft(string recipeId)
     {
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
         _world.Commands.Enqueue(new CraftCmd(Context.ConnectionId, recipeId));
         return Task.CompletedTask;
     }
 
-    /// <summary>Choose the character's permanent crafting profession (1..5).</summary>
-    public Task ChooseProfession(int profession)
+    /// <summary>Re-take a master's profession you have already been taught (skips his quest, still
+    /// starts at level 1). A FIRST profession comes from finishing his joining quest, not from here.</summary>
+    public Task JoinProfession(Guid npcEntityId)
     {
-        _world.Commands.Enqueue(new ChooseProfessionCmd(Context.ConnectionId, profession));
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
+        _world.Commands.Enqueue(new JoinProfessionCmd(Context.ConnectionId, npcEntityId));
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Quit your profession at your own master, losing every crafting level.</summary>
+    public Task QuitProfession(Guid npcEntityId)
+    {
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
+        _world.Commands.Enqueue(new QuitProfessionCmd(Context.ConnectionId, npcEntityId));
         return Task.CompletedTask;
     }
 
@@ -731,6 +745,15 @@ public class GameHub : Hub
     {
         if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
         _world.Commands.Enqueue(new DebugSetProfessionCmd(Context.ConnectionId, profession));
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Admin: jump to a crafting LEVEL (1-6) without the exp grind. The character-level band
+    /// still clamps it — testing the freeze is most of what this is for.</summary>
+    public Task DebugSetCraftLevel(int level)
+    {
+        if (!Sessions.ContainsKey(Context.ConnectionId)) return Task.CompletedTask;
+        _world.Commands.Enqueue(new DebugSetCraftLevelCmd(Context.ConnectionId, level));
         return Task.CompletedTask;
     }
 

@@ -405,6 +405,83 @@ public static class MobCatalog
                                    0.0015f);                                                     // 0.45%
     }
 
+    /// <summary>The TOP-RUNG material faucet: Epic, Legendary and Mythic crafting mats off ELITES and
+    /// BOSSES, banded by the creature's own grade (`BL-05`, 2026-08-13).
+    ///
+    /// 🔑 **Why this exists at all.** Measured (`tools/BalanceMatrix` §M, docs/balance/CraftingMats.md):
+    /// <c>StandardDrops</c> gates mats at Common 1.76/kill, Uncommon 30+, Rare 60+, Epic 76+ at
+    /// 0.015 — **and then stops**. Legendary and Mythic materials dropped from *nothing in the game*.
+    /// Their only source was refining at 7-in-1-out on top of that 0.015, which put **one Legendary mat at
+    /// 467 kills and one Mythic at 3,267**, and priced the owner's own authored S recipe at
+    /// **3 to 6 YEARS of continuous farming** (15-30 for a Mythic one). His crafting ladder needs its top
+    /// three rungs to be reachable; no target curve can buy a *pile* of a mat that costs 6 farm hours each.
+    ///
+    /// 🔑 **Why ELITES and not bosses.** Also measured (`M11`), and it corrected the estimate that came
+    /// with the proposal: an elite camp runs **110 kills/h — 147% of a normal farm** — because a camp is
+    /// RESPAWN-limited (6 camps, ~3.8 held, 125s timer) where ordinary farming is WALK-limited. A boss is
+    /// **0.09 kills/h** on a ~10.75 h timer, so a boss can gate a one-off and never a quantity. Bosses are
+    /// still the richer roll here; they are simply not the supply.
+    ///
+    /// This is the same move `D1` already made for enchant scrolls when the normal-mob faucet closed at B
+    /// (<see cref="EnchantScrollDrops"/>), and it finally gives an elite camp a reason to exist for a
+    /// level-80 farmer — the same argument that justified it for scrolls.
+    ///
+    /// 🔑 **ALL FIVE material types, and this is the one place mat flavor is deliberately dropped.**
+    /// Everywhere else a creature's materials follow its CATEGORY, which is right and is what forces
+    /// cross-profession trade. It cannot survive at the top, and `M12` is what proved it rather than
+    /// argued it: above level 61 the categories that actually exist do not span the five types, so a
+    /// flavored top faucet leaves whole recipes with an ingredient that **drops from nothing anywhere in
+    /// the band** — the A band priced every weapon, body, helmet and jewel at *never*, because no A-band
+    /// creature is an Animal and a weapon needs Wood. Flavor at the top is not a trade incentive, it is
+    /// an uncraftable recipe. (`M10` had already measured the same thing in its milder form: a **2-3.6×**
+    /// per-type penalty, *"A 2.5/1.6/1.0/1.0 — Ingot-only band"*.)
+    ///
+    /// ⚠ INDEPENDENT rolls in the "other" tuning group, so the delivered chance is **3×** what is
+    /// authored below (same as <see cref="EnchantScrollDrops"/>). Per-kill totals noted per line, and
+    /// those totals are split five ways across the types.</summary>
+    public static IEnumerable<DropEntry> EliteMatDrops(int level, MobRank rank, MobCategory cat)
+    {
+        if (rank == MobRank.Normal) yield break;
+        _ = cat;   // flavor is deliberately NOT applied here — see the 🔑 above
+
+        // A boss is worth ~4 elites per kill. It cannot be the supply (0.09 kills/h), so this is a
+        // reward for the trip, not a rate anyone can farm against.
+        float rankMult = rank == MobRank.Boss ? 4f : 1f;
+        var types = Crafting.MaterialTypes;
+
+        IEnumerable<DropEntry> Rung(ItemRarity rarity, float perKill)
+        {
+            float each = perKill * rankMult / (3f * types.Length);   // /3 = the "other" group's x3
+            foreach (var t in types)
+                yield return new DropEntry(Crafting.MaterialId(t, rarity), each);
+        }
+
+        // C band (52-60) — the first rung whose recipe names a mat its own band cannot drop: an L3 smith's
+        // ACCENT is Epic, and normal creatures pay no Epic until 76. Without this a C weapon is not
+        // expensive, it is impossible.
+        if (level >= 52 && level < 61)
+            foreach (var e in Rung(ItemRarity.Epic, 0.05f)) yield return e;      // 0.05/kill — accent only
+        // B band (61-75) — Epic is now the BULK, so the rate steps up four-fold.
+        else if (level >= 61 && level < 76)
+        {
+            foreach (var e in Rung(ItemRarity.Epic, 0.55f)) yield return e;      // 0.55/kill
+            foreach (var e in Rung(ItemRarity.Legendary, 0.01f)) yield return e; // 0.01/kill — accent only
+        }
+        // A band (76-79) — Epic bulk for the B crafter behind you, Legendary bulk for your own rung.
+        else if (level >= 76 && level < 80)
+        {
+            foreach (var e in Rung(ItemRarity.Epic, 0.60f)) yield return e;      // 0.60/kill
+            foreach (var e in Rung(ItemRarity.Legendary, 0.55f)) yield return e; // 0.55/kill
+            foreach (var e in Rung(ItemRarity.Mythic, 0.012f)) yield return e;   // 0.012/kill — accent only
+        }
+        // S band (80+) — the only place Mythic is a quantity rather than a keepsake.
+        else if (level >= 80)
+        {
+            foreach (var e in Rung(ItemRarity.Legendary, 1.60f)) yield return e; // 1.60/kill
+            foreach (var e in Rung(ItemRarity.Mythic, 0.055f)) yield return e;   // 0.055/kill
+        }
+    }
+
     public static IEnumerable<DropEntry> GearDrops(int level, MobRank rank)
     {
         int tier = GearTier(level);

@@ -409,8 +409,11 @@ namespace Game.Client
         public Task CraftAsync(string recipeId) => _connection.SendAsync("Craft", recipeId);
 
         /// <summary>Pick the character's ONE PERMANENT crafting profession. Refused if already set.</summary>
-        public Task ChooseProfessionAsync(int profession) =>
-            _connection.SendAsync("ChooseProfession", profession);
+        public Task JoinProfessionAsync(Guid npcEntityId) =>
+            _connection.SendAsync("JoinProfession", npcEntityId);
+
+        public Task QuitProfessionAsync(Guid npcEntityId) =>
+            _connection.SendAsync("QuitProfession", npcEntityId);
 
         // ----- debug (server re-checks admin rights on every one of these) ------------------------
         public Task DebugLevelAsync(int delta) => _connection.SendAsync("DebugLevel", delta);

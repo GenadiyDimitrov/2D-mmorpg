@@ -1,6 +1,24 @@
 # Crafting professions — masters, levels, and quitting (`BL-05` + `BL-40`)
 
-**Status: DESIGN, from your playtest-21 `66a` reply. Not built yet.** This supersedes §3 ("Professions")
+> ## ✅ BUILT 2026-08-13, version 0.63.0. Protocol 18 → 19. 🔴 DB RESET REQUIRED.
+>
+> Everything below is now code, with three departures worth reading before anything else:
+>
+> 1. **The mat quantities are SOLVED, not the ranges in §5c.** Where your target curve and your mat
+>    ranges disagreed the CURVE won — the ranges came with *"depending on drop rates/amount"* attached.
+>    E, D and C landed BELOW the ranges you first wrote. The measurement is
+>    `docs/balance/CraftingMats.md` **§8**, printed by `tools/BalanceMatrix` **`M12`**.
+> 2. **Legendary and Mythic mats now drop from ELITES** (`MobCatalog.EliteMatDrops`). Without it they
+>    dropped from nothing at all and your own S recipe priced at 3-6 YEARS. Same move `D1` made for the
+>    top enchant scrolls.
+> 3. **The shield is priced as a helmet** (your ruling, WH/3.33). It is outside both of your slot sums,
+>    so a shield user's armor kit is 1.30 weapons rather than 1.00.
+>
+> 🔵 **Still yours to rule:** the C rung solves to **8 Rare mats**, so a C recipe reads cheaper than an
+> E one — the Rare faucet is 0.09/kill against Common's 1.76 while your C target is only 5-10h
+> (§8b 🔴). And whether **347 farm hours** is the right cost for a fully S-geared character.
+
+**Status: BUILT.** Written as a design from your playtest-21 `66a` reply. This supersedes §3 ("Professions")
 of [Crafting.md](Crafting.md) — everything else in that file (materials, refinement, the mat→item map,
 the drop side) still stands and is built.
 

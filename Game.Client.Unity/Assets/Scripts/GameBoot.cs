@@ -328,6 +328,20 @@ namespace Game.Client
         /// those are gated on character level and the window works that out from the catalog.</summary>
         public HashSet<string> KnownRecipes { get; private set; } = new HashSet<string>();
 
+        /// <summary>The crafting LEVEL in force (1-6, 0 with no profession), the RAW crafting exp behind
+        /// it, and the highest rung this character's progression currently allows (`BL-05`).
+        ///
+        /// <para>All three come from the server and none is recomputed here: the band depends on the
+        /// third class and on every subclass, and a client that worked it out for itself would be a
+        /// second implementation of the freeze rule that could disagree with the one enforcing it.</para></summary>
+        public int CraftLevel { get; private set; }
+        public int CraftExp { get; private set; }
+        public int CraftBandCap { get; private set; }
+
+        /// <summary>Is the character standing at HIS OWN master right now? The craft buttons are live
+        /// only here — away from him the same window is a read-only browse of what to farm.</summary>
+        public bool AtCraftMaster { get; private set; }
+
         /// <summary>Craft one unit. Same rule as every other action: nothing is applied locally — the
         /// inventory push that follows is what tells us it happened.</summary>
         public async void Craft(string recipeId)
@@ -336,11 +350,22 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Craft: " + ex.Message); }
         }
 
-        /// <summary>Pick the permanent profession. The server refuses a second call.</summary>
-        public async void ChooseProfession(Profession profession)
+        /// <summary>Re-take a master's profession you have already been taught (`BL-05`). A FIRST
+        /// profession comes from finishing his joining quest, never from here — the server refuses this
+        /// unless the quest is already in <c>CompletedQuests</c>.</summary>
+        public async void JoinProfession()
         {
-            try { await _net.ChooseProfessionAsync((int)profession); }
-            catch (Exception ex) { ClientLog.Warn("Profession: " + ex.Message); }
+            if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;
+            try { await _net.JoinProfessionAsync(DialogNpcId); }
+            catch (Exception ex) { ClientLog.Warn("JoinProfession: " + ex.Message); }
+        }
+
+        /// <summary>Quit your profession at your own master. Every crafting level is lost.</summary>
+        public async void QuitProfession()
+        {
+            if (Phase != ClientPhase.InWorld || DialogNpcId == Guid.Empty) return;
+            try { await _net.QuitProfessionAsync(DialogNpcId); }
+            catch (Exception ex) { ClientLog.Warn("QuitProfession: " + ex.Message); }
         }
 
         public async void Like(string name)
@@ -1053,6 +1078,10 @@ namespace Game.Client
                 if (c == null) return;
                 CraftProfession = (Profession)c.Profession;
                 KnownRecipes = new HashSet<string>(c.KnownRecipes ?? new string[0]);
+                CraftLevel = c.Level;
+                CraftExp = c.Exp;
+                CraftBandCap = c.BandCap;
+                AtCraftMaster = c.AtMaster;
                 Ui?.RefreshCraftingWindow();
             });
             _net.RegionReceived += r => Main(() => Ui?.ShowRegionNotice(r));

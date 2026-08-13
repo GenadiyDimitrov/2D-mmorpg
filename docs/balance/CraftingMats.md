@@ -365,7 +365,104 @@ crafting anything *but* Ingot recipes has no local source.
   worse once the fail chance counts. The real value of crafting a consumable is **determinism** — you pick
   *which* scroll. Price at parity and let determinism be the reason.
 
-## §7f · Still open
+---
+
+# §8 · BUILT, 2026-08-13 — what shipped, and where §7 was overruled
+
+> ✅ **`M12` is the section that closes this file.** §1-§7 measure what a faucet YIELDS; `M12` prices the
+> recipes that **actually shipped** in `Game.Shared/Recipes.cs`, in the same farm hours his curve is
+> written in. Change `GearBulk` / `GearAccent` / `SlotFraction` / `EliteMatDrops` and re-run — if `M12`
+> still lands inside his ranges the change is fine, and if it does not, the numbers are wrong.
+
+## §8a · The answer to §7f, question 1: **the PRIMARY**, an elite mat faucet
+
+`MobCatalog.EliteMatDrops` — Epic/Legendary/Mythic off elites and bosses, banded by the creature's own
+grade, exactly as `D1` moved the top enchant scrolls when the normal-mob faucet closed. Per kill,
+delivered (the authored numbers are a third of these; the "other" group multiplies by 3):
+
+```
+ band            Epic  Legendary   Mythic     why
+ C  52-60        0.05          -        -     the L3 ACCENT; no C-band creature drops Epic at all
+ B  61-75        0.55       0.01        -     Epic becomes the BULK
+ A  76-79        0.60       0.55    0.012     Legendary bulk for your own rung
+ S  80+             -       1.60    0.055     the only place Mythic is a quantity
+ (a BOSS pays 4x an elite — a reward for the trip, never a supply at 0.09 kills/h)
+```
+
+🔑 **It pays all FIVE material types, and that is the one place mat flavor is deliberately dropped.**
+`M12` proved it rather than argued it: above 61 the mob categories that exist do not span the five types,
+so a flavored top faucet priced every A-band weapon, body, helmet and jewel at **never** — no A-band
+creature is an Animal, and a weapon needs Wood. Flavor at the top is not a trade incentive, it is an
+uncraftable recipe.
+
+## §8b · The costs that shipped — all six rungs inside his curve
+
+Per WEAPON. Bulk is split across the item's material composition; the accent goes entirely on the
+dominant material (splitting it was the old behaviour and turned "1 accent mat" into one PER TYPE):
+
+```
+ rung  authored bulk + accent      per attempt  attempts  per FINISHED  his target   vs his mat range
+    E     90 Common +  1 Uncommon         2.1h      1.1x          2.3h       2-3h   BELOW (he said 500-1000)
+    D     75 Uncommon + 1 Rare            2.8h      1.2x          4.1h       3-5h   BELOW (he said 100-500)
+    C      8 Rare +     1 Epic            6.6h      1.2x          8.2h      5-10h   BELOW (he said 100-200)
+    B    147 Epic +     1 Legendary      12.1h      1.4x         17.3h     12-24h   inside
+    A    154 Legendary + 1 Mythic        11.9h      2.0x         23.7h     12-36h   inside
+    S   1450 Legendary + 14 Mythic       31.5h      4.0x          126h    84-168h   inside
+```
+
+⚠ **Where his two rulings disagreed, the TARGET CURVE won.** The mat ranges came with *"depending on
+drop rates/amount"* attached — they are an estimate awaiting exactly this measurement — and the curve is
+a considered ruling in wall-clock hours. B, A and S land inside both. E, D and C land below the ranges he
+first wrote, because his curve is ~2.5× cheaper there than the §5 proposal and a cheaper target buys a
+smaller pile.
+
+🔴 **C is the ugly one and he should see it.** Its bulk solves to **8 Rare mats**, so a C weapon recipe
+reads *cheaper* than the E one above it. The cause is measured, not arbitrary: the Rare faucet is
+**0.09/kill against Common's 1.76** — a 20× thinning for one rung — while his C target is only 5-10h. The
+options are his: raise the C target, widen the Rare drop, or accept that a C recipe is a few precious
+mats. Nothing else on the ladder has this shape.
+
+## §8c · The full character (`M12c`), and the shield
+
+```
+ rung     weapon      body    helmet    shield    gloves     boots      neck       ear      ring |   FULL  +shield
+    E       2.3h     57.4m     50.2m     41.7m     18.2m     18.2m     23.6m     11.8m      5.4m |   5.7h     6.4h
+    D       4.1h      1.7h      4.5h      1.3h      1.5h      1.5h      5.1h      2.5h      1.4h |  26.3h    27.6h
+    C       8.2h      3.3h      1.6h      1.6h      1.6h      1.6h      2.9h      1.4h      1.4h |  25.0h    26.7h
+    B      17.3h      7.3h      3.5h      5.1h      1.2h      1.2h      6.9h      3.4h      1.8h |  47.7h    52.8h
+    A      23.7h      9.8h      4.6h      7.2h      1.5h      1.5h      9.5h      4.9h      2.3h |  65.3h    72.5h
+    S       126h     52.5h     25.2h     37.8h      2.9h      2.9h     50.5h     25.2h     12.6h |   347h     385h
+```
+
+✅ **§7f question 3 answered by him: the SHIELD is priced as a HELMET** — *"It's armor so make it as a
+helmet price"*, WH/3.33. It sits outside both of his sums, so a shield user's kit is **1.30 weapons** of
+armor rather than 1.00 — intended, not a rounding slip: it is a real extra slot with real stats.
+
+⚠ **A fully S-geared character is 347 farm hours**, against the 378 §7c predicted from his fractions
+alone. The gap is rounding in the per-slot mat quantities, and 347 is the real number now.
+
+## §8d · §7f question 5, and the missing measurement
+
+✅ **The elite's own TTK is measured** (`M12a`), which was the one thing §7f said was still missing. An
+elite is 4× HP and 1.5× ATK, so its TTK is ~4× — but a camp is not walk-limited, so the 40s loop overhead
+of a normal farm collapses to a retarget:
+
+```
+ gr   levels  normal TTK  elite TTK  elite kills/h   ceiling  vs normal farm
+  B    61-75       11.2s      44.6s             66       110            94%
+  A    76-79       10.3s      41.1s             70       110            99%
+  S    80-85        7.9s      31.8s             86       110           115%
+```
+
+So `M11`'s 110 was a ceiling and the real rate is **66-86/h** — still at or above a normal farm at the top,
+which is what makes an elite camp a viable home for the top mats rather than merely a rich one.
+
+🔵 **Still his to rule**: the C rung's shape (§8b 🔴), and whether 347 h is the right cost for a full S
+character.
+
+---
+
+## §7f · Still open (as it stood before §8; 1, 2, 3 and the missing measurement are now answered)
 
 1. **Primary or fallback?** (§7d) — elite mat faucet at 76+, or few-and-precious with reduced fail rates.
 2. **Do recipes name a material TYPE or just a material?** — a 2-3.6× on the whole ladder (§7e 2).

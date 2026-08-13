@@ -336,8 +336,16 @@ public record ItemDef(
     /// hour of farming is 200+ of them. One row per token would fill the bag in twenty minutes and
     /// make the feature unusable. The class-change proofs are quest items as well and are unaffected —
     /// a chain grants exactly one of each, so a stack of one is the row it always was.</para></summary>
+    /// <para>BLUEPRINTS stack, and they are the one <see cref="EquipSlot.Box"/> that does (owner,
+    /// 2026-08-13: *"The blueprints need to be stackable not like a box"*). A loot box is a thing you
+    /// open once and it is gone; a blueprint is CURRENCY — one to learn the recipe and one consumed by
+    /// every craft, so an A-grade smith carries a pile of identical ones and at the top rungs a
+    /// successful item takes several. One row each would bury the bag in the same way a gathering
+    /// quest's tokens would. Both consumers already decrement a quantity rather than dropping the row
+    /// (<c>HandleLearnRecipe</c>, <c>ConsumeItem</c>), so nothing else has to change.</para></summary>
     public bool IsStackable => Slot is EquipSlot.Consumable or EquipSlot.Scroll or EquipSlot.Material
-                                    or EquipSlot.QuestItem;
+                                    or EquipSlot.QuestItem
+                               || TeachesRecipeId.Length > 0;
 
     /// <summary>Unified top-level category (derived from EquipSlot). Weapons are MainHand,
     /// shields OffHand; everything else maps 1:1.</summary>
@@ -1455,6 +1463,20 @@ public static class ItemCatalog
         (ItemRarity.Epic,      RarityScale(ItemRarity.Epic)),
         (ItemRarity.Legendary, RarityScale(ItemRarity.Legendary)),
     };
+
+    /// <summary>The id of a gear piece at another QUALITY, given the AUTHORED (Mythic) piece's id.
+    /// Mythic is the authored item and carries no suffix; every other rung is "{id}_{rarity}".
+    ///
+    /// Used by the crafting three-way roll (`BL-05`): a gear craft lands on Mythic or on Legendary, and
+    /// the recipe only names the Mythic one, so the Legendary sibling has to be derivable. Returns the
+    /// input unchanged if the resulting id is not a real item, so a caller can never hand out a
+    /// phantom.</summary>
+    public static string QualityId(string mythicId, ItemRarity rarity)
+    {
+        if (rarity == ItemRarity.Mythic) return mythicId;
+        string id = $"{mythicId}_{rarity.ToString().ToLowerInvariant()}";
+        return Get(id) is null ? mythicId : id;
+    }
 
     /// <summary>True for a plain base-tier id like "heavy_t52" (the part after the last "_t" is all
     /// digits) — excludes alternate variants like "heavy_t52_dmg".</summary>

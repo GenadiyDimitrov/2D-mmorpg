@@ -12,6 +12,99 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 0.63.0 — 2026-08-13 — `BL-05`: crafting is a PROFESSION with six levels, five masters and a mat economy
+
+Protocol **18 → 19**. 🔴 **DB RESET REQUIRED** — `CharacterRecord.CraftExp` is a new column and
+`EnsureCreated()` does not ALTER an existing table. Delete `Game.Server/game.db` (+ `-shm`/`-wal`).
+
+### The ladder is GRADE-based for gear, and F is not craftable
+
+His organising sentence was *"just the idea is grade based not as much as rarity based"*. Rarity still
+governs materials and consumables; **grade** governs gear, and dropping F makes the ladder exact —
+seven grades minus F is six, against six crafting rungs, with nothing shared and nothing invented:
+**L1 E · L2 D · L3 C · L4 B · L5 A · L6 S**.
+
+This was not cosmetic. Every craftable gear recipe outputs the authored **Mythic** piece, so filing the
+rung by rarity put all 135 of them at L6 — measured, a fresh smith could reach **2 recipes out of 67**.
+
+**Only Legendary and Mythic gear is craftable**, so a gear craft has two successes and a failure, rolled
+per attempt from his table (E 50/40/10 → S 5/20/75). A failure consumes the materials and produces
+nothing: the first real sink the crafting economy has. The blueprint is spent on a **success only** — his
+fail rule names the *materials*, and a blueprint is the recipe, not a material.
+
+### The mat costs are SOLVED, not chosen — and the top of the ladder needed a new faucet
+
+`tools/BalanceMatrix` grew **`M12`**, which prices the recipes that actually shipped against his target
+curve (*"2-3h of farming for E grade per weapon craft … 1d of farming to mean the full 12h"*). All six
+rungs land inside his range: **E 2.3h · D 4.1h · C 8.2h · B 17.3h · A 23.7h · S 126h** per finished
+weapon, and a fully S-geared character is **347 farm hours**.
+
+They only land there because of a second change the measurement forced. **Legendary and Mythic materials
+dropped from nothing in the game** — the only source was refining at 7-in-1-out on top of an Epic mat
+that itself only dropped at 76+ at 0.015/kill, which priced his own authored S recipe at **3 to 6 years**.
+`MobCatalog.EliteMatDrops` gives Epic/Legendary/Mythic a home on **elites**, banded like the enchant
+scrolls `D1` moved the same way for the same reason. Elites, not bosses: `M11` measured an elite camp at
+**110 kills/h** against a boss's **0.09**.
+
+🔑 Two of his numbers moved, and both are worth knowing. **His target curve won over his mat ranges**
+where they disagreed — the ranges came with *"depending on drop rates/amount"* attached and the curve is
+a considered ruling in wall-clock hours. And the elite faucet pays **all five material types**, the one
+place mat flavor is dropped: above 61 the mob categories present do not span the five, so a flavored top
+faucet left whole recipes with an ingredient that dropped from nothing anywhere in the band.
+
+🔑 **The shield is priced** (owner: *"It's armor so make it as a helmet price"*) — WH/3.33. It sits
+outside both of his sums, so a shield user's kit is 1.30 weapons of armor rather than 1.00.
+
+### Five masters, a joining quest each, and quitting
+
+*"U go to the 'Master apothecary Roger' or watever → U accept a quest → he explains what a apothecery can
+craft and other means of aquirering the items … u compleate the quest and u can take his proffesion."*
+
+Five `NpcRole.CraftMaster` NPCs stand in **every town** (the same reason the hunting contracts became
+any-town: *"i have no way to go back to the 1st town just to take it"*), each with a three-beat joining
+quest gated at character level 20. **The quest is remembered forever and the LEVELS are lost every time**
+— his *"Skip the quest if it's once done, but still lose levels if switching"* — so a returning apprentice
+is re-hired on the spot at crafting level 1.
+
+The old self-pick `ChooseProfession` is gone. **Crafting happens at the master**: the window opens
+anywhere in **browse** mode, with every have/need count readable in the field and the buttons dead, and
+goes live when you are standing at your own master.
+
+### Crafting exp, and the freeze
+
+His marks (0/5/15/30/50/100) stored as integers — one same-level craft is 12 internal points, so ⅓ and
+1¼ are exact and his craft counts come out whole (150 same-level, 450 below, 120 above). Exp is paid on
+**every attempt, success or failure**: the materials are spent either way, and the levels are practice.
+
+The freeze is the load-bearing half — *"my exp freezes until i reach the next class … then the l2@100%
+becomes l3@0%"*. Exp is CAPPED at the band's mark, never banked. ⚠ The band is read from the **best
+subclass**, not the active one: `Level` and `ThirdClass` both proxy to the active subclass, so a level-76
+main swapping to a fresh level-20 subclass would otherwise have had an L6 smith clamped to L2 on his next
+craft — permanently.
+
+### The two consumable ladders, and blueprints stack now
+
+The Scroll Scribe's and the Potion Master's rungs are the **only** authored crafting levels in the game;
+everything else derives its rung from what it makes. Both are deliberately offset from rarity — his
+Scribe's L1 is *"nothing gear related"* (return + resurrection scrolls), which pushes his gear service to
+D on L2 and lets five grades fill five rungs exactly; his Potion Master alternates an HP line and a buff
+line on a two-rung stride while *dash* climbs every rung to Mythic. The Scribe gains the **A and S**
+enchant scrolls, which `M11` argues for: the normal-mob faucet closes at 80, so the S band drops **zero**
+enchant scrolls an hour and crafting is the intended supply.
+
+**Blueprints stack** (owner: *"The blueprints need to be stackable not like a box"*) — they are currency,
+one to learn and one per craft, not a box you open once.
+
+### Also
+
+- `GameHub.Craft` had **no session check**, alone among the crafting methods. Closed.
+- `/DebugSetCraftLevel` — jump to a rung without the grind. The band still clamps it, which is most of
+  what it is for.
+- ⚠ **The SmokeTest's rune-relog pair was a coin flip and had simply been winning.** `Settle()` is a flat
+  500 ms; rune buffs are re-applied by a once-a-second reconcile. An unrelated section getting longer
+  shifted the phase and it started failing. `Session.WaitFor` polls instead — three consecutive clean
+  runs, including on a dirty `game.db`, which also retires the "not idempotent" note on that section.
+
 ## Unreleased — 2026-08-13 — `BL-67`: MpHeal is its own rung, and the MP threshold is a knob
 
 Protocol still **18** (unreleased, so the new config field rides along rather than bumping again).

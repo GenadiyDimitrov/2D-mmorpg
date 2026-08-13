@@ -70,6 +70,13 @@ public class CharacterRecord
     public int ThirdClass { get; set; }
     public int Profession { get; set; }   // crafting profession (0 = none)
 
+    /// <summary>RAW crafting exp (`BL-05`), 12 points per same-level craft. The crafting LEVEL is
+    /// derived from this and the character's own band, never stored — one number cannot disagree with
+    /// itself. Zeroed when the profession is quit.
+    /// ⚠ NEW COLUMN 2026-08-13: `EnsureCreated()` does not ALTER an existing table, so this needs the
+    /// usual `Game.Server/game.db` (+ `-shm`/`-wal`) delete-and-recreate.</summary>
+    public int CraftExp { get; set; }
+
     public int Level { get; set; } = 1;
     public long Exp { get; set; }
 

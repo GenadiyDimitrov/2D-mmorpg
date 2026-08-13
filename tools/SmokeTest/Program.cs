@@ -1005,47 +1005,108 @@ Check("SUBCLASS's bar survived the relog too",
 b.MyId = entered2.EntityId;
 
 // -------------------------------------------------------------------------------------------
-// 5b. CRAFTING + BLUEPRINTS. Crafting had NEVER been exercised end-to-end, which hid a static-init crash
-//     (RecipeCatalog threw on first access). This proves it runs, and proves the blueprint economy:
-//     1 blueprint to UNLOCK the recipe + 1 consumed per craft (so the first craft costs 2).
+// 5b. CRAFTING — the master, the level gate, the three-way gear roll and the blueprint (`BL-05`).
+//
+//     Crafting had NEVER been exercised end-to-end, which hid a static-init crash (RecipeCatalog threw
+//     on first access). It is worth more now than it was then, because `BL-05` gave a craft three gates
+//     that a human playtest cannot easily tell apart when one of them silently fails: you must be AT
+//     your master, you must hold the crafting LEVEL, and a gear craft rolls three ways.
+//
+//     ⚠ NOTHING HERE ASSERTS "the item appeared". A gear craft is Mythic / Legendary / FAIL, and at the
+//     A rung it fails half the time — an assertion on the outcome would be a coin flip dressed as a test.
+//     What IS deterministic is the bookkeeping, so that is what is checked:
+//       • mats are consumed on EVERY attempt (his fail rule: *"a fail consumes the materials"*),
+//       • a blueprint is consumed on SUCCESS ONLY, so `items made == blueprints spent`, exactly,
+//       • no blueprint → the craft is refused and the mats are still there,
+//       • away from the master → refused,
+//       • below the rung → refused.
 // -------------------------------------------------------------------------------------------
 {
-    const string recipeId = "craft_sword1h_t76";      // A-grade (DropOnly), success 1.0, deterministic
+    const string recipeId = "craft_sword1h_t76";      // A-grade, DropOnly → exercises the blueprint too
     var recipe = RecipeCatalog.Get(recipeId);
     Check("RecipeCatalog initialises without throwing (the static-init bug is fixed)", recipe is not null);
     if (recipe is not null)
     {
         string bpId = ItemCatalog.RecipeBookId(recipeId);
         int Count(Session s, string defId) => s.Inv?.Items.Where(i => i.DefId == defId).Sum(i => i.Quantity) ?? 0;
+        // Both faces of the coin — the roll lands on the authored Mythic piece or on its Legendary copy.
+        string legendaryId = ItemCatalog.QualityId(recipe.OutputId, ItemRarity.Legendary);
+        int Made(Session s) => Count(s, recipe.OutputId) + Count(s, legendaryId);
 
         await b.Hub.SendAsync("DebugSetProfession", (int)recipe.Profession);
-        await b.Hub.SendAsync("DebugGive", bpId, 2);      // two blueprints: one to learn, one to craft
+        await b.Hub.SendAsync("DebugSetCraftLevel", recipe.CraftLevel);
+        await b.Hub.SendAsync("DebugGive", bpId, 6);     // one to learn, five to spend
         await b.Settle();
-        Check("got two blueprints", Count(b, bpId) == 2, $"have {Count(b, bpId)}");
+        Check("got the blueprints", Count(b, bpId) == 6, $"have {Count(b, bpId)}");
 
-        // UNLOCK: open one blueprint to learn the recipe (consumes it → 1 left).
+        // UNLOCK: open one blueprint to learn the recipe (consumes it → 5 left).
         var oneBp = b.Inv!.Items.First(i => i.DefId == bpId);
         await b.Hub.SendAsync("OpenBox", oneBp.InstanceId);
         await b.Settle();
-        Check("unlocking the recipe consumed ONE blueprint (1 of 2 left)", Count(b, bpId) == 1,
+        Check("unlocking the recipe consumed ONE blueprint (5 of 6 left)", Count(b, bpId) == 5,
               $"have {Count(b, bpId)}");
 
-        // Give the mats, then craft — should succeed and consume the SECOND blueprint.
+        // AWAY FROM THE MASTER the craft must be refused outright — mats and blueprint both untouched.
         foreach (var inp in recipe.Inputs) await b.Hub.SendAsync("DebugGive", inp.ItemId, inp.Qty);
+        await b.Settle();
+        int matsBefore = Count(b, recipe.Inputs[0].ItemId);
+        await b.Hub.SendAsync("Craft", recipeId);
+        await b.Settle();
+        Check("🔑 a craft AWAY FROM THE MASTER is refused, and costs nothing",
+              Made(b) == 0 && Count(b, recipe.Inputs[0].ItemId) == matsBefore && Count(b, bpId) == 5,
+              $"made {Made(b)}, mats {Count(b, recipe.Inputs[0].ItemId)}/{matsBefore}, bp {Count(b, bpId)}");
+
+        // Walk to his master. Every town has one; the starter town's is the one with the bare id.
+        var master = WorldMap.Npcs.First(n => n.Id == WorldMap.CraftMasterId(recipe.Profession));
+        await b.Hub.SendAsync("DebugTeleport", master.X, master.Y);
+        await b.Settle();
+
+        // BELOW THE RUNG: an L1 smith may attempt L2 and no higher (*"L5 should not be available"*).
+        await b.Hub.SendAsync("DebugSetCraftLevel", 1);
         await b.Settle();
         await b.Hub.SendAsync("Craft", recipeId);
         await b.Settle();
-        Check("the craft produced the item", Count(b, recipe.OutputId) == 1, $"have {Count(b, recipe.OutputId)}");
-        Check("the craft consumed the second blueprint (0 left → first craft cost 2)", Count(b, bpId) == 0,
-              $"have {Count(b, bpId)}");
+        Check("🔑 a recipe more than ONE rung above your crafting level is refused",
+              Made(b) == 0 && Count(b, recipe.Inputs[0].ItemId) == matsBefore,
+              $"made {Made(b)}, mats {Count(b, recipe.Inputs[0].ItemId)}/{matsBefore}");
 
-        // With the recipe still LEARNED and mats re-supplied but NO blueprint, the craft must be blocked.
+        // At the master, at the rung: keep attempting until the five blueprints are gone. The COUNT of
+        // attempts is not fixed and cannot be — a blueprint only burns on a success, so at A's 50% it
+        // takes about ten. The cap is a runaway guard, not an expectation.
+        await b.Hub.SendAsync("DebugSetCraftLevel", recipe.CraftLevel);
+        await b.Settle();
+        // ⚠ The two refusal checks above deliberately left their materials in the bag — that WAS the
+        // assertion. So the loop's invariant is "the bag is unchanged", not "the bag is empty": each
+        // pass adds exactly one recipe's worth and each attempt consumes exactly one, pass or fail.
+        int leftover = Count(b, recipe.Inputs[0].ItemId);
+        int attempts = 0;
+        while (Count(b, bpId) > 0 && attempts < 60)
+        {
+            foreach (var inp in recipe.Inputs) await b.Hub.SendAsync("DebugGive", inp.ItemId, inp.Qty);
+            await b.Settle();
+            await b.Hub.SendAsync("Craft", recipeId);
+            await b.Settle();
+            attempts++;
+        }
+        int made = Made(b), bpSpent = 5 - Count(b, bpId);
+        Check("attempts at the master resolve, and every one consumes its materials",
+              attempts > 0 && Count(b, recipe.Inputs[0].ItemId) == leftover,
+              $"{attempts} attempts, {Count(b, recipe.Inputs[0].ItemId)} mats (expected {leftover})");
+        Check("🔑 the blueprint is spent on SUCCESS ONLY — items made == blueprints spent",
+              made == bpSpent && bpSpent == 5, $"made {made}, blueprints spent {bpSpent} of 5, {attempts} attempts");
+        Check("...and crafting EXP was awarded for the attempts", (b.Crafting?.Exp ?? 0) > 0,
+              $"exp {b.Crafting?.Exp ?? -1}");
+
+        // With the recipe still LEARNED and mats re-supplied but NO blueprint left, the craft is blocked.
         foreach (var inp in recipe.Inputs) await b.Hub.SendAsync("DebugGive", inp.ItemId, inp.Qty);
         await b.Settle();
+        int madeBefore = Made(b);
         await b.Hub.SendAsync("Craft", recipeId);
         await b.Settle();
-        Check("a craft with no blueprint is blocked (still just one crafted item)",
-              Count(b, recipe.OutputId) == 1, $"have {Count(b, recipe.OutputId)}");
+        Check("a craft with no blueprint is blocked, and the mats survive",
+              Made(b) == madeBefore && Count(b, recipe.Inputs[0].ItemId) == leftover + recipe.Inputs[0].Qty,
+              $"made {Made(b)}/{madeBefore}, mats {Count(b, recipe.Inputs[0].ItemId)} "
+              + $"(expected {leftover + recipe.Inputs[0].Qty})");
     }
 }
 
@@ -1459,9 +1520,14 @@ await c.DisposeAsync();
     gm.MyId = runeBack.EntityId;
     await gm.Settle();
 
+    // ⚠ POLL for it. The rune buff is re-applied by the once-a-second reconcile, not in reply to
+    // EnterWorld, so a flat Settle() is a race — see Session.WaitFor.
+    await gm.WaitFor(() => (gm.Buffs?.Buffs ?? Array.Empty<BuffDto>()).Any(b => b.Key == expChannel.SkillId));
     var afterRelog = (gm.Buffs?.Buffs ?? Array.Empty<BuffDto>()).Where(b => b.Key == expChannel.SkillId).ToList();
     Check("🔑 the rune buff comes back exactly ONCE after a relog (reconciled, never restored)",
-          afterRelog.Count == 1, $"{afterRelog.Count} copies");
+          afterRelog.Count == 1,
+          $"{afterRelog.Count} copies; all buffs = "
+          + string.Join(",", (gm.Buffs?.Buffs ?? Array.Empty<BuffDto>()).Select(x => x.Key)));
     Check("...still at the stronger rung the bag justifies",
           afterRelog.Count == 1 && afterRelog[0].Name == expChannel.NameAt(100),
           afterRelog.FirstOrDefault()?.Name);
@@ -1639,6 +1705,10 @@ sealed class Session : IAsyncDisposable
     /// while the server holds something else entirely.</summary>
     public BuffUpdate? Buffs;
 
+    /// <summary>The last "Crafting" push — profession, crafting level/exp and whether the character is
+    /// standing at his master. `BL-05` put three gates on a craft and this is where two of them surface.</summary>
+    public CraftingUpdate? Crafting;
+
     /// <summary>The last "QuestMarks" push — which NPCs have a marker for this character.</summary>
     public QuestMarks? Marks;
 
@@ -1665,6 +1735,7 @@ sealed class Session : IAsyncDisposable
         });
         Hub.On<ProgressUpdate>("Progress", p => Progress = p);
         Hub.On<BuffUpdate>("Buffs", b => Buffs = b);
+        Hub.On<CraftingUpdate>("Crafting", c => Crafting = c);
         Hub.On<QuestMarks>("QuestMarks", m => Marks = m);
         Hub.On<TargetDetails>("TargetDetails", d => Details = d);
         Hub.On<NpcDialog>("Dialog", d => Dialog = d);
@@ -1677,6 +1748,27 @@ sealed class Session : IAsyncDisposable
     /// <summary>Let the server tick and its pushes arrive. The game loop runs at 10 Hz and commands
     /// are drained on the tick, so a couple of hundred ms is several ticks' worth of headroom.</summary>
     public Task Settle() => Task.Delay(500);
+
+    /// <summary>Wait until a condition on the captured pushes holds, or give up after
+    /// <paramref name="timeoutMs"/>. Returns whether it held.
+    ///
+    /// 🔑 **Poll, never sleep** — the rule this harness learned once already and then broke again.
+    /// <see cref="Settle"/> is a flat 500 ms, and anything the server does on its OWN clock rather than
+    /// in reply to a message is a coin flip against it. The rune-relog pair was exactly that: rune buffs
+    /// are re-applied by <c>ReconcileTimedItems</c>, which runs ONCE A SECOND, so whether the push landed
+    /// inside the 500 ms depended on nothing but where the tick happened to be. It passed for months and
+    /// then started failing when an unrelated section got longer and shifted the phase — the test was
+    /// always a coin flip, it had simply been winning. A poll makes it a fact.</summary>
+    public async Task<bool> WaitFor(Func<bool> condition, int timeoutMs = 4000)
+    {
+        var until = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        while (DateTime.UtcNow < until)
+        {
+            if (condition()) return true;
+            await Task.Delay(50);
+        }
+        return condition();
+    }
 
     public async ValueTask DisposeAsync() => await Hub.DisposeAsync();
 }

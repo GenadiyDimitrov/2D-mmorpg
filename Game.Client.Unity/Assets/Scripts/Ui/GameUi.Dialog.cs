@@ -153,6 +153,44 @@ namespace Game.Client
                           () => { Boot.OpenWarehouse(); OpenWarehouseWindow(); }, UiKit.Text);
             }
 
+            // ----- crafting master (`BL-05`) --------------------------------------------------------
+            // Three mutually-exclusive states, and the server has already worked out which — the client
+            // never decides whether a profession may be taken, only draws the answer. His joining QUEST,
+            // when he has one to offer, is in the ordinary Offered list above like anyone else's; this
+            // section is only the three things that are not quests.
+            if (d.CraftMaster != null)
+            {
+                var cm = d.CraftMaster;
+                var prof = (Profession)cm.Profession;
+                anything = true;
+                Header(ProfessionName(prof));
+
+                if (cm.CanOpenWorkshop)
+                    DialogRow("Work at his bench — craft, refine and see what you still need",
+                              "Craft", () => OpenCraftingWindow(), UiKit.Text);
+
+                if (cm.CanRejoin)
+                    DialogRow("He has taught you before — he will take you back at crafting level 1",
+                              "Rejoin",
+                              () => Ask("Become a " + ProfessionName(prof) + " again?\n\n<size=15>"
+                                      + "You keep his lessons, so there is no quest to redo — but you "
+                                      + "start again at crafting level 1.</size>",
+                                      "Rejoin", () => Boot.JoinProfession()),
+                              UiKit.Text);
+
+                // ⚠ The one destructive button in the feature, so the confirmation states the loss in
+                // NUMBERS rather than asking "are you sure" — same rule as the Mindwriter and the stat
+                // basket. What is lost is the levels; the quest is remembered forever.
+                if (cm.CanQuit)
+                    DialogRow("Leave his service — every crafting level is lost", "Quit",
+                              () => Ask("Stop being a " + ProfessionName(prof) + "?\n\n<size=15>"
+                                      + "You are crafting level " + cm.CurrentLevel
+                                      + ". Quitting sets this to 0 and it cannot be undone. He will take "
+                                      + "you back later without the quest, but you would start at 1.</size>",
+                                      "Quit", () => Boot.QuitProfession()),
+                              UiKit.TextDim);
+            }
+
             // ----- gatekeeper ---------------------------------------------------------------------
             if (d.Teleport != null && d.Teleport.Destinations != null)
             {
