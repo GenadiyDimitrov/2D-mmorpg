@@ -192,9 +192,13 @@ treatment — a boss/elite drop at 76+ — and then the quantities can stay larg
 
 # §7 · HIS RULING, 2026-08-13 — the target curve, armor/jewel fractions, consumables
 
-> ⚠ **The §7 numbers are HAND-DERIVED**, not printed by the tool. The method reproduces §5's published
-> solve to within 1 % (613 → 609 for E), so it is the same arithmetic — but per this file's own rule
-> nothing here should be authored into `Recipes.cs` until `tools/BalanceMatrix` §M prints it.
+> ✅ **§7 is MEASURED** — `tools/BalanceMatrix` sections **`M8`-`M11`**, added for exactly this ruling.
+> Re-run the tool rather than editing the numbers below.
+>
+> Three of the five open questions §7d first listed came back with answers that **contradicted my
+> estimates**, so read §7e before acting on anything in this file: **elites can carry a faucet after all**,
+> **potion uptime is 3-4× over his target already**, and **the enchant faucet is 3.6-18.6 h and hits ZERO
+> at the S band**.
 
 ## §7a · What he ruled
 
@@ -233,76 +237,148 @@ both sums. Needs a fraction of its own.
 3. *"if they skipp the craft to be able to craft runes at the same speed like the others"* — a crafter who
    forgoes gear crafting should reach runes at the same pace as one who forgoes consumables.
 
-## §7b · What his curve solves to
+## §7b · What his curve solves to (`M8`)
 
 `per-attempt budget = target/success × (1 − fail)`, then the 100 bulk : 1 accent shape priced off §2/§3:
 
 ```
- rung  target/success   /attempt |  bulk solved   accent |  his authored range     §5 solve    verdict
-    E       2 - 3 h   1.8-2.7 h |    244 -  365    2 - 4 |     500-1000 Common          613  BELOW his range
-    D       3 - 5 h   2.6-4.3 h |     73 -  121        1 |    100-500 Uncommon          243  at/below range
-    C      5 - 10 h     4 - 8 h |     26 -   51        1 |        100-200 Rare          103  🔴 shape breaks
-    B     12 - 24 h  8.4-16.8 h |      7 -   14        0 |        100-200 Epic           24  🔴 shape breaks
-    A     12 - 36 h    6 - 18 h |      1 -    3        0 |   100-200 Legendary            6  🔴 shape breaks
-    S    84 - 168 h   21 - 42 h |      3 -    6        0 |  1000-2000 Legendary           6  🔴 shape breaks
+ rung  per finished   per attempt |  1 bulk mat   1 accent |   solved bulk  accent    vs his own range
+    E          2-3h      1.8-2.7h |        0.4m       1.9m |       245-368       4    BELOW his own range
+    D          3-5h      2.6-4.3h |          2m      13.7m |        73-121       1    straddles his range
+    C         5-10h          4-8h |        8.7m       1.0h |         26-51       1  🔴 under 100 — breaks
+    B        12-24h     8.4-16.8h |        1.1h       7.7h |          7-14       0  🔴 under 100 — breaks
+    A        12-36h         6-18h |        6.5h      45.7h |           1-3       0  🔴 under 100 — breaks
+    S       84-168h        21-42h |        6.2h      43.6h |           3-6       0  🔴 under 100 — breaks
 ```
+
+🔑 **Read the `1 bulk mat` column — it is the whole finding.** One Legendary mat is **6.2-6.5 farm hours by
+itself** and one Mythic is **44-46 h**. Once a single unit of the bulk costs hours, no target curve can buy
+a *pile* of them: a 36 h budget buys a handful. The top rungs are not mis-priced, they are **quantised too
+coarsely to price**.
 
 🔑 **His curve is ~2.5× CHEAPER than the §5 proposal at E/D/C and about the same at A/S.** That is the
 opposite of what would help: cutting the target shrinks the pile, so the break in the 100:1 shape moved
 **DOWN a rung, from B to C**. Only E and D still support a bulk pile at all, and both now solve *below* the
 ranges he originally authored.
 
-🔴 **The structural fact, which no target curve can fix:** one Legendary mat costs **6.2-6.5 farm hours by
-itself** (467 kills, forced ×7 refine, no faucet anywhere). A single Legendary mat is worth two whole
-E-grade weapons. At a 36 h target you can afford *three of them*. The top of the ladder is not mis-priced —
-it is **quantised too coarsely to price**.
+## §7c · His slot fractions, priced (`M9`)
 
-## §7c · The recommendation (changed from §6)
+Every cell is the midpoint of his range for that rung. A full character = weapon + armor set + jewel set =
+**3 weapons**, which is the number to read the S row by.
 
-**§6 recommended "both levers, weighted to the faucet". With his cheaper curve, I now recommend the
-opposite: abandon the 100:1 shape above C and let the top rungs be few-and-precious.** An S weapon reads
-`6 Legendary Ore + 1 Mythic Ore`.
+```
+ rung       weapon        body      helmet     gloves      boots       neck     ear x2    ring x2 |  FULL CHAR
+    E         2.5h        1.3h         45m        15m        15m       1.0h        30m        15m |       7.5h
+    D         4.0h        2.0h        1.2h        24m        24m       1.6h        48m        24m |      12.0h
+    C         7.5h        3.8h        2.3h        45m        45m       3.0h       1.5h        45m |      22.5h
+    B        18.0h        9.0h        5.4h       1.8h       1.8h       7.2h       3.6h       1.8h |      54.0h
+    A        24.0h       12.0h        7.2h       2.4h       2.4h       9.6h       4.8h       2.4h |      72.0h
+    S         126h       63.0h       37.8h      12.6h      12.6h      50.4h      25.2h      12.6h |       378h
+```
 
-Why the change:
+✅ Both sets sum to **1.000 weapons** — his fractions are exact, nothing to adjust.
+⚠ **A fully S-geared character is 378 farm hours = 31 of his 12-hour days.** That is the number to sanity-check,
+not the per-item ones; it is the real endgame cost and it is the first time it has been stated.
 
-- It is **honest** — that really is ~150 h, and the recipe can say so.
-- It is **readable**: `6 Legendary Ore` fits a UI row; `1 847 Iron Ore` does not.
-- It needs **no new drop system**, so nothing else has to be re-measured first.
-- Keeping 100:1 at A would need Legendary at **0.08-0.23/kill** against Epic's current **0.015** — i.e. it
-  would make Legendary *more common than Epic*. Nonsense on normal creatures. From elites/bosses the
-  accounting is different, but their encounter rate is not measured yet (see §7d).
+## §7d · The recommendation (changed from §6)
 
-The *"feels like nothing"* objection to a 6-mat recipe is a **presentation** problem — show the recipe with
-its farm-hour estimate — **not a balance one**.
+**The measurement put §6's recommendation back.** I had briefly changed it to "abandon the 100:1 shape and
+let the top be few-and-precious", on the assumption that an elite camp is a trickle. **`M11` refutes that
+assumption** (§7e), so the recommendation is again **§6's: open a faucet at the top, on ELITES.**
 
-🔑 **If the piles go small, the top FAIL RATES must come down.** With a pile of 1 000 mats a fail is a
-setback; with a pile of 6, S's 75 % eats **37 hours in one click** and the whole system reads as a slot
-machine. Either cut the top fail rates, or have a fail **return a fraction of the mats**. Same one-knob
-point as §5 ⚠ — it simply bites much harder now.
+**Primary — an elite mat faucet at 76+, carrying Epic / Legendary / Mythic.** It fixes B, A *and* S in one
+change, it preserves his 100:1 shape everywhere, and it is exactly the shape D1 already used when the
+normal-mob enchant faucet closed at B (`MobCatalog.EnchantScrollDrops`). It also finally gives an elite
+camp a reason to exist for a level-80 farmer, which is the same argument that justified it for scrolls.
 
-## §7d · Open, and each one MOVES the table above
+**Fallback, if he does not want a new drop table — few-and-precious.** An S weapon reads `6 Legendary Ore +
+1 Mythic Ore`. Honest (it really is ~150 h), readable in a UI where `1 847 Iron Ore` is not, and needs
+nothing re-measured. The *"feels like nothing"* objection is then a **presentation** problem — print the
+farm-hour estimate on the recipe — not a balance one.
 
-1. 🔴 **Is a recipe's bulk mat ONE specific type, or any of them?** The mats group splits three ways by mob
-   category (§2 ⚠). If a recipe says `300 Iron Ore` and Iron Ore is a third of the Common faucet, every
-   hour in §7b **triples** unless the player trades. That is a **3× on the entire ladder** and it is settled
-   nowhere.
-2. 🔴 **His consumable premise looks wrong by ~8×.** Reading `MobCatalog`, the normal-mob enchant share is
-   `EnchantShare = 0.005f` split across live rungs by weight (0.40/0.30/0.20/0.15); with two rungs live that
-   is ≈ **0.12 scrolls/hour — one per ~8 h, not one per hour.** Hand-derived, so it needs a §M pass before
-   anything is priced off it.
-3. ⚠ **Craft-at-parity means nobody crafts.** Rule 2 above prices a crafted scroll at exactly the drop's
-   farm time, so crafting is break-even and strictly worse once the fail chance is counted. The real value
-   of crafting a consumable is **determinism** — you choose *which* scroll, where drops are random across
-   rungs and half are for gear you have outgrown. Price at parity and let determinism be the reason.
-4. **The shield's fraction** (§7a 🔴).
-5. **Re-confirm B** — `12-1d` collapses to a point (§7a ⚠).
+🔑 **Under the fallback ONLY, the top FAIL RATES must come down.** With a pile of 1 000 mats a fail is a
+setback; with a pile of 6, S's 75 % eats **37 hours in one click** and the system reads as a slot machine.
+Cut the top fail rates, or have a fail **return a fraction of the mats**. Same one-knob point as §5 ⚠. Under
+the *primary* proposal the piles stay large and the fail table can stay as authored.
 
-**The measurement that unblocks 1-3:** extend `tools/BalanceMatrix` §M to print the **elite/boss encounter
-rate per hour** and the **real scroll/potion faucet per hour**, plus the per-TYPE mat rate rather than the
-five-type total.
+## §7e · What the measurement CHANGED (`M9`-`M11`) — read this before acting
+
+Three of my five open questions came back contradicting the estimate I gave with them.
+
+**1. 🔑 ELITES CAN CARRY A FAUCET — I was wrong that they are a trickle.**
+
+```
+   rank   camps   held    respawn   kills/h per camp   vs a normal farm
+  Elite       6    3.8       125s              110.4            147.2%
+   Boss       2    1.0    38 700s               0.09              0.1%
+```
+
+An elite camp is **respawn**-limited where a normal farm is **walk**-limited, and that turns out to be an
+advantage: several held on a ~2 min timer beats the 70-81 kills/h of ordinary farming outright. ⚠ Both
+figures are **ceilings** — no travel, no TTK, and an elite's own TTK is longer — so treat 110 as an upper
+bound, not a farm rate. Even halved it clears the bar. 🔴 **Bosses cannot**: one spawn on a ~10.75 h timer
+is 0.09 kills/h. A boss can gate a **one-off** (a single Mythic accent per item) and never a quantity.
+
+**2. 🔴 The per-TYPE penalty is 2-3.6×, and it does NOT vanish at the top rarities as I predicted.**
+
+`StandardDrops` splits the guaranteed Common group three ways (mats.A, mats.B, Gem) but authors the higher
+rarities as independent rolls on **A and B only** — so which types exist at all depends on the mob's
+**category**, and the answer differs per band:
+
+```
+ band            Common  Uncommon      Rare      Epic
+ E (20-39)         2.3x      2.4x         -         -
+ C (52-60)         2.2x      3.6x      2.0x         -
+ A (76-79)         2.5x      1.6x      1.0x      1.0x     <- single-type band: Ingot only
+ S (80-85)         2.0x      3.5x      2.5x      2.5x
+```
+
+🔑 **If a recipe names a type (`300 Ingot`) rather than a material, multiply that rung's §7b hours by this**
+— measured against the *best* type in the band, so it is a floor on the penalty, not a worst case. The A
+band is the odd one out at 1.0×: only Ingot drops Rare/Epic there at all, which also means an A-band farmer
+crafting anything *but* Ingot recipes has no local source.
+
+**3. 🔴 Both consumable premises are wrong, in opposite directions.**
+
+```
+ gr   levels  kills/h |  scrolls/h  enchants/h  1 enchant every  potions/h  buff-min/h
+  F     1-19       81 |      0.081       0.081            12.3h     15.313       192.7
+  E    20-39       81 |      0.162       0.162             6.2h     17.445       231.2
+  D    40-51       78 |      3.094       0.274             3.6h     17.086       223.8
+  C    52-60       76 |      4.307       0.191             5.2h     16.876       217.8
+  B    61-75       70 |      4.339       0.123             8.1h     15.077       200.9
+  A    76-79       72 |       6.06       0.054            18.6h     15.498       204.5
+  S    80-85       75 |      7.198           0            never     16.252       214.4
+```
+
+- 🔑 **"1 h of farming should buy 1 h of buffs"**: parity would be 60 buff-min/h. The game already runs
+  **193-231 — 3-4× OVER his target.** Potion uptime is not scarce, and pricing a crafted potion at his rule
+  would make it *cheaper* than it already is. **This rule cuts the potion faucet; it does not raise it.**
+- 🔑 **"1 h of farming = 1 enchant drop"**: it is **3.6-18.6 h**, and it gets *worse* as you climb — the
+  opposite shape to the one the premise assumes. My earlier "~8×" estimate was the right order but the wrong
+  shape. A crafted-scroll price built on "one an hour" would be ~10× too cheap.
+- 🔴 **The S band reads ZERO enchants/h, by design not by bug**: the normal-mob enchant faucet closes at 80
+  (D1), leaving elites and bosses as the only source. So at the exact level the crafting ladder needs its
+  top rung, **the drop it would be priced against does not exist** — which makes crafting the *intended* A/S
+  scroll supply rather than a convenience. That is an argument for pricing it generously.
+- ⚠ **Craft-at-parity still means nobody crafts** (unchanged, and unmeasurable): break-even, and strictly
+  worse once the fail chance counts. The real value of crafting a consumable is **determinism** — you pick
+  *which* scroll. Price at parity and let determinism be the reason.
+
+## §7f · Still open
+
+1. **Primary or fallback?** (§7d) — elite mat faucet at 76+, or few-and-precious with reduced fail rates.
+2. **Do recipes name a material TYPE or just a material?** — a 2-3.6× on the whole ladder (§7e 2).
+3. **The shield's fraction** (§7a 🔴).
+4. **Re-confirm B** — `12-1d` collapses to a point under his own definition of a day (§7a ⚠).
+5. **Is 378 h — 31 of his 12-hour days — the right cost for a fully S-geared character?** (§7c ⚠). It falls
+   out of his own numbers, but it had never been stated as one figure before.
+
+**The one measurement still missing:** an elite's own **TTK and travel time**, which would turn `M11`'s 110
+kills/h ceiling into a real rate. Everything else §7 needs is now printed.
 
 ---
 
-*§1-§6 generated by `tools/BalanceMatrix` §M (`M1`-`M7`); §7 is his ruling plus a hand solve pending §M.
+*§1-§6 from `tools/BalanceMatrix` §M (`M1`-`M7`); §7 is his ruling, measured by `M8`-`M11`.
 Related: `docs/design/CraftingProfessions.md` §5c/§5d, `docs/design/Crafting.md`, the `BL-05` entry in
 `docs/Backlog.md`.*

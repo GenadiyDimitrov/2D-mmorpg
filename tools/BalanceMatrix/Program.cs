@@ -2173,7 +2173,231 @@ Console.WriteLine("     different currency than 'a pile of the rung below'.");
 Console.WriteLine("  ⚠ S solves to the same pile as A despite twice the target: its 75% fail rate eats the entire");
 Console.WriteLine("     doubling on its own. The fail table and the mat cost are one knob, not two.");
 Console.WriteLine("  The target column (5 h doubling to 160 h per finished item) is MY proposal and the one number in");
-Console.WriteLine("  this table to argue with; the rest is the drop table doing arithmetic.");
+Console.WriteLine("  this table to argue with; the rest is the drop table doing arithmetic. M8 replaces it with HIS.");
+Console.WriteLine();
+
+// =====================================================================================================
+//  M8-M11: HIS RULING of 2026-08-13, and the three things it turned out to rest on that M1-M7 never
+//  measured — the per-TYPE mat rate, the consumable faucet, and whether elites/bosses can be a faucet.
+// =====================================================================================================
+
+// 🔑 A "day" is 12 FARM HOURS — his auto+offline allowance — NOT 24. Owner, 2026-08-13: *"2-3h of farming
+// for E grade per weapon craft, 3-5h per D grade, 5-10 C, 12-1d B, 1-3d A, 7-14d S ... 1d of farming to
+// mean the full 12h(auto+offline) -- so a 1-3d A grade to be a wall clock of 12-36h of non stop farming --
+// that seems fair (atleast for now) -- to caft a single weapon"*.
+//
+// These are per FINISHED weapon, i.e. AFTER the fail table — which is why M8 divides by attempts where M4
+// multiplied by them. ⚠ His "12-1d" for B collapses to a POINT under his own definition of a day; it is
+// read here as 1-2 days. Both ends solve into the same pile, so the ambiguity changes no conclusion, but
+// it is the one number in his message to re-confirm before anything is authored.
+const double FarmDay = 12.0;
+var hisCurve = new (string Grade, double Lo, double Hi)[]
+{
+    ("E", 2, 3), ("D", 3, 5), ("C", 5, 10),
+    ("B", FarmDay, 2 * FarmDay), ("A", FarmDay, 3 * FarmDay), ("S", 7 * FarmDay, 14 * FarmDay),
+};
+
+// Span() is built for the multi-year numbers of M4/M5 and floors everything under 10 h to one decimal.
+// The mat columns below run from 20 seconds to 6 hours, so they need their own formatter.
+static string Hrs(double h) =>
+    double.IsInfinity(h) ? "never"
+    : h >= 100 ? $"{h:N0}h"
+    : h >= 1 ? $"{h:0.0}h"
+    : $"{h * 60:0.#}m";
+
+Console.WriteLine("=== M8: HIS target curve — the same 100:1 solve, run against HIS hours ===");
+Console.WriteLine($"{"rung",5} {"per finished",13} {"per attempt",13} | {"1 bulk mat",11} {"1 accent",10} | "
+    + $"{"solved bulk",13} {"accent",7}  {"vs his own range",28}");
+foreach (var (grade, lo, hi) in hisCurve)
+{
+    var rung = craftRungs.First(r => r.Grade == grade);
+    var band = gradeBands.First(b => b.Name == grade);
+    var mk = MatsPerKill(band.Top);
+    double kph = KillsPerHour(band.Top);
+    double attempts = 1.0 / Math.Max(0.01f, 1f - rung.Fail);
+    // Hours to obtain ONE mat of each side of the recipe. This is the column that carries the finding:
+    // once a single bulk mat costs hours, no target curve can buy a PILE of them.
+    double bulkH = KillsPerMat(rung.Bulk, mk) / kph, accH = KillsPerMat(rung.Accent, mk) / kph;
+    double unitH = 100 * bulkH + accH;                       // one "unit" of his 100:1 shape
+    double bLo = 100 * (lo / attempts) / unitH, bHi = 100 * (hi / attempts) / unitH;
+    string verdict =
+        bHi < 100 ? "🔴 under 100 — shape breaks"
+        : bLo >= rung.BulkLo && bHi <= rung.BulkHi ? "inside his range"
+        : bHi < rung.BulkLo ? "BELOW his own range"
+        : "straddles his range";
+    Console.WriteLine($"{grade,5} {$"{lo:0.#}-{hi:0.#}h",13} {$"{lo / attempts:0.#}-{hi / attempts:0.#}h",13} | "
+        + $"{Hrs(bulkH),11} {Hrs(accH),10} | {$"{bLo:N0}-{bHi:N0}",13} "
+        + $"{Math.Round(bHi / 100),7:N0}  {verdict,28}");
+}
+Console.WriteLine("  'per attempt' = his finished-item target x (1-fail): a fail eats the mats, so the budget for ONE");
+Console.WriteLine("  attempt is SMALLER than the price of the item. 'solved bulk' is how many bulk mats that budget buys");
+Console.WriteLine("  while keeping his 100 bulk : 1 accent shape.");
+Console.WriteLine("  🔑 His curve is ~2.5x CHEAPER than M7's at E/D/C, and cutting the target SHRINKS the pile — so the");
+Console.WriteLine("     break in his own 100:1 shape moved DOWN a rung, from B to C. E and D now solve BELOW the ranges");
+Console.WriteLine("     he authored himself.");
+Console.WriteLine("  🔴 Read the '1 bulk mat' column: no target curve can fix the top. When one Legendary mat costs hours");
+Console.WriteLine("     by itself, a 36 h budget buys a HANDFUL, not a pile. The top rungs are not mis-priced — they are");
+Console.WriteLine("     quantised too coarsely to price. Either those mats get a faucet (M11), or the top three rungs are");
+Console.WriteLine("     authored as few-and-precious and the top FAIL rates come down to match.");
+Console.WriteLine();
+
+// His armor/jewel rule (2026-08-13): every non-weapon slot is a FRACTION of the weapon, authored so that a
+// full set of either costs exactly one weapon. *"gloves/boots to cost weapon_hours(WH) divided by 10 for 1
+// item; helmet WH/3.33; body WH/2 ... rings WH/10, ear WH/5, neck WH/2.5"*.
+// ✅ The slot counts are the REAL ones: ArmorSlot = {Head, Body, Gloves, Boots} and JewelType = {Ring,
+//    Earring, Necklace} worn 2/2/1. Both sums land on 1.000.
+// 🔴 EquipSlot.Shield is in NEITHER sum. It is a real slot and his message did not price it.
+var pieces = new (string Name, double Divisor, int Worn, string Set)[]
+{
+    ("weapon", 1.00, 1, "weapon"),
+    ("body", 2.0, 1, "armor"), ("helmet", 3.33, 1, "armor"), ("gloves", 10.0, 1, "armor"), ("boots", 10.0, 1, "armor"),
+    ("necklace", 2.5, 1, "jewel"), ("earring", 5.0, 2, "jewel"), ("ring", 10.0, 2, "jewel"),
+};
+
+Console.WriteLine("=== M9: his slot FRACTIONS — farm hours per piece, and what a full character costs ===");
+Console.WriteLine($"{"rung",5} {"weapon",12} {"body",11} {"helmet",11} {"gloves",10} {"boots",10} "
+    + $"{"neck",10} {"ear x2",10} {"ring x2",10} | {"FULL CHAR",12}");
+foreach (var (grade, lo, hi) in hisCurve)
+{
+    double mid = (lo + hi) / 2.0;
+    string Cell(string name) => Hrs(mid / pieces.First(p => p.Name == name).Divisor);
+    double full = pieces.Sum(p => p.Worn * mid / p.Divisor);
+    Console.WriteLine($"{grade,5} {Cell("weapon"),12} {Cell("body"),11} {Cell("helmet"),11} {Cell("gloves"),10} "
+        + $"{Cell("boots"),10} {Cell("necklace"),10} {Cell("earring"),10} {Cell("ring"),10} | {Hrs(full),12}");
+}
+foreach (string set in new[] { "armor", "jewel" })
+    Console.WriteLine($"  the {set} set sums to {pieces.Where(p => p.Set == set).Sum(p => p.Worn / p.Divisor):0.000} weapons"
+        + " — his fractions are exact.");
+Console.WriteLine("  Each cell is at the MIDPOINT of his range for that rung. A full character = weapon + armor set +");
+Console.WriteLine("  jewel set = 3 weapons, so the S column is the real endgame number: three S weapons of farming.");
+Console.WriteLine("  🔴 The SHIELD has no fraction. It is its own EquipSlot, outside both sums, and needs one.");
+Console.WriteLine();
+
+// The 3x question. M1's caveat says "any one type is about a third of the Common column" — that is true for
+// COMMON and false for everything above it, and the difference decides whether every hour in M8 triples.
+// StandardDrops splits the guaranteed mats group three ways (mats.A, mats.B, Gem) but authors the higher
+// rarities as INDEPENDENT rolls on A and B only: Uncommon A .08 + B .05, Rare A .03, Epic A .005. So Rare
+// and Epic are SINGLE-TYPE per mob — and WHICH type they are is decided by the mob's CATEGORY.
+static double[,] MatsByType(int lo, int hi)
+{
+    var res = new double[Crafting.MaterialTypes.Length, Crafting.MaterialRarities.Length];
+    var band = MobCatalog.Templates.Where(m => !m.Dummy && m.Level >= lo && m.Level <= hi).ToArray();
+    if (band.Length == 0) return res;
+    foreach (var mob in band)
+        foreach (var (e, chance) in Marginals(mob.Drops ?? Array.Empty<DropEntry>(), mob.Level))
+            if (ItemCatalog.Get(e.ItemId) is { Slot: EquipSlot.Material } def)
+                for (int t = 0; t < Crafting.MaterialTypes.Length; t++)
+                    if (e.ItemId == Crafting.MaterialId(Crafting.MaterialTypes[t], def.Rarity))
+                        res[t, (int)def.Rarity] +=
+                            chance * ((e.MinQty + e.MaxQty) / 2.0) * RateConfig.DropAmountRate / band.Length;
+    return res;
+}
+
+Console.WriteLine("=== M10: the per-TYPE penalty — a recipe naming ONE material type, not 'any' ===");
+Console.WriteLine("  (per kill, averaged over every template IN the band, so the category spread is real)");
+foreach (var (name, floor, top) in gradeBands.Where(b => b.Name is "E" or "C" or "A" or "S"))
+{
+    var byType = MatsByType(floor, top);
+    Console.WriteLine($"  --- {name} band ({floor}-{top}) --- {RarityHeader()}");
+    for (int t = 0; t < Crafting.MaterialTypes.Length; t++)
+    {
+        var row = Crafting.MaterialRarities.Select((_, r) => byType[t, r]).ToArray();
+        if (row.All(v => v <= 0)) continue;
+        Console.WriteLine($"  {Crafting.MaterialTypes[t],-10}      {string.Concat(row.Select(v => $"{v,10:0.####}"))}");
+    }
+    Console.WriteLine($"  {"ALL TYPES",-10}      " + string.Concat(
+        Crafting.MaterialRarities.Select((_, r) =>
+            $"{Enumerable.Range(0, Crafting.MaterialTypes.Length).Sum(t => byType[t, r]),10:0.####}")));
+    Console.WriteLine($"  {"x PENALTY",-10}      " + string.Concat(
+        Crafting.MaterialRarities.Select((_, r) =>
+        {
+            double all = Enumerable.Range(0, Crafting.MaterialTypes.Length).Sum(t => byType[t, r]);
+            double best = Enumerable.Range(0, Crafting.MaterialTypes.Length).Max(t => byType[t, r]);
+            return best <= 0 ? $"{"-",10}" : $"{all / best,9:0.0}x";
+        })));
+}
+Console.WriteLine("  'x PENALTY' = how much LONGER a farm takes when the recipe names one specific type, versus the");
+Console.WriteLine("  'all five together' totals every row of M1-M8 is built on. It is measured against the BEST type in");
+Console.WriteLine("  the band — the friendliest possible reading, i.e. a floor on the penalty, not a worst case.");
+Console.WriteLine("  🔑 If a recipe says '300 Ingot' rather than '300 material', multiply that rung's hours by this.");
+Console.WriteLine();
+
+// The consumable half of his message, and the one part of it that rests on a factual claim: *"if for 1h of
+// farming i can get 1 drop of enchant, it should cost me the same to make another one"* and *"1h of farming
+// should buy u 1h of buffs"*. Both are checkable, and the first one decides whether crafted consumables are
+// priced off a real number or an assumed one.
+static (double Scrolls, double Enchants, double Potions, double BuffSeconds) ConsumablesPerKill(int level)
+{
+    double scrolls = 0, ench = 0, pots = 0, buffSec = 0;
+    var near = MobsNear(level);
+    foreach (var mob in near)
+        foreach (var (e, chance) in Marginals(mob.Drops ?? Array.Empty<DropEntry>(), level))
+        {
+            if (ItemCatalog.Get(e.ItemId) is not ItemDef def) continue;
+            double n = chance * ((e.MinQty + e.MaxQty) / 2.0) * RateConfig.DropAmountRate / near.Length;
+            if (def.Slot == EquipSlot.Scroll) { scrolls += n; if (def.ScrollGrade != EnchantGrade.None) ench += n; }
+            else if (def.Slot == EquipSlot.Consumable)
+            {
+                pots += n;
+                // A potion does not implement an effect, it NAMES a skill (see ItemDef.UseSkillId), so the
+                // buff length is the skill's DurationTicks at 10 ticks/sec — never a number authored here.
+                if (SkillCatalog.Get(def.UseSkillId) is { DurationTicks: > 0 } sk) buffSec += n * sk.DurationTicks / 10.0;
+            }
+        }
+    return (scrolls, ench, pots, buffSec);
+}
+
+Console.WriteLine("=== M11: the CONSUMABLE faucet, and whether elites/bosses can be one ===");
+Console.WriteLine($"{"gr",3} {"levels",8} {"kills/h",8} | {"scrolls/h",10} {"enchants/h",11} {"1 enchant every",16} "
+    + $"{"potions/h",10} {"buff-min/h",11}");
+foreach (var (name, floor, top) in gradeBands)
+{
+    var c = ConsumablesPerKill(top);
+    double kph = KillsPerHour(top);
+    double enchPerHour = c.Enchants * kph;
+    Console.WriteLine($"{name,3} {floor + "-" + top,8} {kph,8:F0} | {c.Scrolls * kph,10:0.###} {enchPerHour,11:0.###} "
+        + $"{(enchPerHour > 0 ? Hrs(1 / enchPerHour) : "never"),16} {c.Potions * kph,10:0.###} {c.BuffSeconds * kph / 60,11:0.#}");
+}
+Console.WriteLine("  🔑 'buff-min/h' against his rule *\"1h of farming should buy u 1h of buffs\"*: 60 would be parity, and");
+Console.WriteLine("     the game already runs 3-4x OVER it at every band. Potion uptime is not scarce and pricing a");
+Console.WriteLine("     crafted potion against 'an hour buys an hour' would make it far CHEAPER than it already is.");
+Console.WriteLine("  🔑 '1 enchant every' against his premise *\"if for 1h of farming i can get 1 drop of enchant\"*: it");
+Console.WriteLine("     is nowhere near 1 h, it is 3.6-18.6 h, and it gets WORSE as you climb — the opposite shape to");
+Console.WriteLine("     the one the premise assumes. A crafted-scroll price built on 'one an hour' would be ~10x cheap.");
+Console.WriteLine("  🔴 The S band reads ZERO enchants/h and that is BY DESIGN, not a bug: the normal-mob enchant faucet");
+Console.WriteLine("     closes at 80 (D1), leaving elites and bosses as the only source. So at the exact level where the");
+Console.WriteLine("     crafting ladder needs its top rung, the drop it would be priced against does not exist at all —");
+Console.WriteLine("     which makes CRAFTING the intended A/S scroll supply rather than a convenience.");
+Console.WriteLine();
+
+// Can elites/bosses carry the top mats? That is a SPAWN question, not a drop-table one: a camp that holds
+// two mobs on a 180 s timer has a hard ceiling no drop rate can raise. Read the real zones.
+Console.WriteLine("  --- elite / boss AVAILABILITY (the ceiling a faucet there would run into) ---");
+Console.WriteLine($"  {"rank",6} {"camps",7} {"held",6} {"respawn",10} {"kills/h per camp",18} {"vs a normal farm",18}");
+double normalKph = KillsPerHour(gradeBands[^1].Top);
+foreach (var rank in new[] { MobRank.Elite, MobRank.Boss })
+{
+    var zones = WorldMap.SpawnZones.Where(z => z.Rank == rank).ToArray();
+    if (zones.Length == 0) continue;
+    double held = zones.Average(z => z.TotalCount), resp = zones.Average(z => z.RespawnSeconds);
+    double perCamp = held * 3600.0 / Math.Max(1, resp);
+    Console.WriteLine($"  {rank,6} {zones.Length,7} {held,6:0.#} {resp,9:N0}s {perCamp,18:0.##} "
+        + $"{perCamp / normalKph,17:P1}");
+}
+foreach (var rank in new[] { MobRank.Elite, MobRank.Boss })
+    Console.WriteLine($"  {rank,6} enchant scrolls: {MobCatalog.EnchantScrollDrops(gradeBands[^1].Top, rank).Sum(e => Math.Min(1f, MobCatalog.EffectiveChance(e))),6:0.###} per kill "
+        + $"at level {gradeBands[^1].Top}");
+Console.WriteLine("  This is D1's precedent for the top MATS: when the normal-mob scroll faucet closed at B, the top of");
+Console.WriteLine("  that ladder moved to elites and bosses rather than being deleted. The question M8 leaves open is");
+Console.WriteLine("  whether Legendary/Mythic MATS can do the same, and the answer is in the rate column above.");
+Console.WriteLine("  🔑 ELITES CAN CARRY A FAUCET. An elite camp is RESPAWN-limited rather than walk-limited, and that");
+Console.WriteLine("     turns out to be an ADVANTAGE, not a ceiling — a camp that holds several on a ~2 min timer beats");
+Console.WriteLine("     the walk-limited normal farm outright. A bulk mat could genuinely live there.");
+Console.WriteLine("  🔴 BOSSES CANNOT. A ~10 h respawn on a single spawn is ~0.1 kills/h — a thousandth of a normal");
+Console.WriteLine("     farm. A boss can gate a ONE-OFF (a single Mythic accent per item), never a quantity.");
+Console.WriteLine("  ⚠ Both rate columns are CEILINGS: they assume the camp is killed dry the instant it repopulates,");
+Console.WriteLine("     with no travel and no TTK. An elite's own TTK is longer than a normal mob's, so treat the elite");
+Console.WriteLine("     row as an upper bound on what a faucet there could deliver, not as a farm rate.");
 Console.WriteLine();
 
 static string NameOf(string id) => SkillCatalog.Get(id)?.Name ?? id;
