@@ -257,12 +257,14 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 - `BL-51` 🔵 **Castles + vault.** Needs the siege design first; consumes the reserved
   `VendorBuyTaxRate` hook.
 
-- `BL-65` 🔴 **Dungeons get level bands, and there are three of them.** *"separate the dungeons ...
-  Now a 32 lvl mobs almost next to a 65 lvl which protect the 44 lvl boss ... The mob lvls are all
-  over the place ... put them in the lvl ranges and make 2 more dungeons"* (playtest-22). His layout:
-  **Hollow Creep stays ~40 with its 44 boss**, plus a new **~60 (65 boss)** and a new **~85 (90
-  boss)**. The band, not the boss, is the fix — a dungeon whose mobs span 32-65 has no level at which
-  it is playable.
+- `BL-65` ✅ **BUILT 2026-08-13 (0.64.0)** — Hollow Crypt 39-42 / boss 44, **Sunless Warrens** 58-64 /
+  boss 65, **Ashen Sepulchre** 80-85 / boss 90. Your layout exactly. 🔑 **The cause was real and not
+  cosmetic:** a mob with a NATURAL level brings its own, so the spawner's band was only a label — the
+  crypt was literally spawning 58 / 32 / 65 under a "44-48" sign. Fixed by the roster, not the sign.
+  See `CHANGELOG.md`. Delete at the next sweep.
+  - ⚠ The Sepulchre adds a **second 80-85 elite field**, which feeds the `EliteMatDrops` faucet — the
+    top of the crafting ladder is now less scarce than `docs/balance/CraftingMats.md` measured. Ties
+    into the farm-times decision you deferred under `BL-05`.
 
 - `BL-68` 🔵 **More zones in the 16-40 band, by widening the map west-to-east.** *"Add several new
   zones to duplicate the 16-20, 20-24, 24-28, 28-32, 32-36, 36-40 (all the `Stonewatch` zones)"*

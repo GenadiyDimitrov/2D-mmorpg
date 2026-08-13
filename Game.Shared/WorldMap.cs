@@ -73,22 +73,67 @@ public static class WorldMap
             MobTypes: new[] { "fen_lizardman", "cursed_blade", "wildhorn_scout" }, MaxCount: 7,
             RespawnSeconds: 22, RespawnVariance: 7),
 
-        // ===== DUNGEON: Hollow Crypt — in the NEGATIVE quadrant (owner: dungeons live at minus coords,
-        // reached by teleport, off the overworld). A dungeon is just a SpawnZone cluster + an ENTRANCE
-        // safe zone (below); any gatekeeper teleports you to it. Harder ELITE rooms (level 44-48) that
-        // respawn normally, ending in a boss. Normal drops (unlike an instance). Its field wraps these.
-        new(X: -10800, Y: -11500, Radius: 350, MinLevel: 44, MaxLevel: 44,
-            MobTypes: new[] { "hollow_one" }, MaxCount: 6,
+        // ===== DUNGEONS — in the NEGATIVE quadrant (owner: dungeons live at minus coords, reached by
+        // teleport, off the overworld). A dungeon is just a SpawnZone cluster + an ENTRANCE safe zone;
+        // any gatekeeper teleports you to it. ELITE rooms that respawn normally, ending in a boss.
+        // Normal drops (unlike an instance). A field polygon in Regions.cs wraps each cluster.
+        //
+        // ⚠ THE BAND IS THE WHOLE POINT (BL-65). His report: *"Now a 32 lvl mobs almost next to a 65
+        // lvl which protect the 44 lvl boss ... The mob lvls are all over the place."* Those are the
+        // literal numbers the crypt was spawning, and the cause is one line in SpawnMobFor: a mob with
+        // a NATURAL level brings its own, and the spawner's MinLevel/MaxLevel is then only a label.
+        // The crypt's roster was hollow_one (58), grave_robber_fighter (32) and dread_knight (65) —
+        // three unrelated levels wearing a "44-48" sign.
+        //
+        // So the fix is the ROSTER, not the sign: every room below is stocked with creatures whose
+        // NATURAL level sits in the band, and the band written here now agrees with what spawns. Where
+        // a level has no creature authored for it at all (90), and only there, ForceZoneLevel makes
+        // the zone win — the same deliberate reuse the 85-90 field already runs on.
+
+        // --- Hollow Crypt (~40, boss 44). Stays where it is and keeps its lich, per his layout. ---
+        new(X: -10800, Y: -11500, Radius: 350, MinLevel: 39, MaxLevel: 40,
+            MobTypes: new[] { "fen_lizardman_archer", "dune_orc_archer" }, MaxCount: 6,
             RespawnSeconds: 60, RespawnVariance: 15, Rank: MobRank.Elite),
-        new(X: -9600,  Y: -11000, Radius: 350, MinLevel: 45, MaxLevel: 45,
-            MobTypes: new[] { "grave_robber_fighter" }, MaxCount: 6,
+        new(X: -9600,  Y: -11000, Radius: 350, MinLevel: 42, MaxLevel: 42,
+            MobTypes: new[] { "harpy" }, MaxCount: 6,
             RespawnSeconds: 60, RespawnVariance: 15, Rank: MobRank.Elite),
-        new(X: -8400,  Y: -10500, Radius: 350, MinLevel: 46, MaxLevel: 46,
-            MobTypes: new[] { "dread_knight" }, MaxCount: 5,
+        new(X: -8400,  Y: -10500, Radius: 350, MinLevel: 42, MaxLevel: 42,
+            MobTypes: new[] { "ridge_orc_overlord" }, MaxCount: 5,
             RespawnSeconds: 90, RespawnVariance: 20, Rank: MobRank.Elite),
-        new(X: -7200,  Y: -10000, Radius: 300, MinLevel: 48, MaxLevel: 48,
+        new(X: -7200,  Y: -10000, Radius: 300, MinLevel: 44, MaxLevel: 44,
             MobTypes: new[] { "grave_lich" }, MaxCount: 1,
             RespawnSeconds: 30 * 60, RespawnVariance: 5 * 60, Rank: MobRank.Boss),
+
+        // --- Sunless Warrens (~60, boss 65). NEW (BL-65) — the crypt's layout shifted 10k SW, so the
+        //     three dungeons share a shape and differ only in who lives there. ---
+        new(X: -20800, Y: -21500, Radius: 350, MinLevel: 58, MaxLevel: 60,
+            MobTypes: new[] { "hollow_one", "sand_ratman" }, MaxCount: 6,
+            RespawnSeconds: 60, RespawnVariance: 15, Rank: MobRank.Elite),
+        new(X: -19600, Y: -21000, Radius: 350, MinLevel: 61, MaxLevel: 62,
+            MobTypes: new[] { "cursed_blade", "fen_lizardman" }, MaxCount: 6,
+            RespawnSeconds: 60, RespawnVariance: 15, Rank: MobRank.Elite),
+        new(X: -18400, Y: -20500, Radius: 350, MinLevel: 63, MaxLevel: 64,
+            MobTypes: new[] { "obsidian_knight", "crimson_drake" }, MaxCount: 5,
+            RespawnSeconds: 90, RespawnVariance: 20, Rank: MobRank.Elite),
+        new(X: -17200, Y: -20000, Radius: 300, MinLevel: 65, MaxLevel: 65,
+            MobTypes: new[] { "dread_knight" }, MaxCount: 1,
+            RespawnSeconds: 30 * 60, RespawnVariance: 5 * 60, Rank: MobRank.Boss),
+
+        // --- Ashen Sepulchre (~85, boss 90). NEW (BL-65). The boss is the ONE spawner here that forces
+        //     its level: nothing is authored above 85, and 90 is the number he asked for. ---
+        new(X: -32800, Y: -33500, Radius: 350, MinLevel: 80, MaxLevel: 82,
+            MobTypes: new[] { "wrathborn_demon", "scarlet_mantis", "radiant_berserker" }, MaxCount: 6,
+            RespawnSeconds: 60, RespawnVariance: 15, Rank: MobRank.Elite),
+        new(X: -31600, Y: -33000, Radius: 350, MinLevel: 83, MaxLevel: 84,
+            MobTypes: new[] { "splinter_mantis_walker", "needle_mantis_overseer" }, MaxCount: 6,
+            RespawnSeconds: 60, RespawnVariance: 15, Rank: MobRank.Elite),
+        new(X: -30400, Y: -32500, Radius: 350, MinLevel: 85, MaxLevel: 85,
+            MobTypes: new[] { "drake_leader", "disciple_of_the_dawn" }, MaxCount: 5,
+            RespawnSeconds: 90, RespawnVariance: 20, Rank: MobRank.Elite),
+        new(X: -29200, Y: -32000, Radius: 300, MinLevel: 90, MaxLevel: 90,
+            MobTypes: new[] { "disciple_of_the_dawn" }, MaxCount: 1,
+            RespawnSeconds: 30 * 60, RespawnVariance: 5 * 60, Rank: MobRank.Boss,
+            ForceZoneLevel: true),
     }).ToArray();
 
     /// <summary>Safe zones (cities/castles). AUTHORED IN <see cref="Towns"/> — this forwards, so every

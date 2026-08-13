@@ -16,6 +16,41 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
 Protocol stays **19** — nothing here changes the wire. No DB reset.
 
+### `BL-65` — the dungeons get level bands, and the old one had a real cause
+
+*"Now a 32 lvl mobs almost next to a 65 lvl which protect the 44 lvl boss ... The mob lvls are all
+over the place."* Those were the literal numbers, and the cause was one line in `SpawnMobFor`: **a
+mob with a NATURAL level brings its own**, and a spawner's `MinLevel`/`MaxLevel` is then only a
+label. The crypt's roster was `hollow_one` (58), `grave_robber_fighter` (32) and `dread_knight` (65)
+— three unrelated levels wearing a "44-48" sign.
+
+So the fix is the **roster**, not the sign. Every room is now stocked with creatures whose natural
+level sits in its band, and the band written on the gate agrees with what actually spawns:
+
+| Dungeon | Rooms | Boss | Entrance gated to |
+|---|---|---|---|
+| **Hollow Crypt** (unchanged place) | 39-42 | Grave Lich **44** | Greymarsh |
+| **Sunless Warrens** (new) | 58-64 | Dread Knight **65** | Ironreach Keep |
+| **Ashen Sepulchre** (new) | 80-85 | Disciple of the Dawn **90** | Frostmere |
+
+His layout exactly. The level-90 boss is the one spawner in the game's three dungeons that forces its
+level — nothing is authored above 85 — which is the same deliberate reuse the 85-90 field already
+runs on, not a fallback.
+
+Both new dungeons are the crypt's **outline translated** (10k and 22k south-west). That is on
+purpose: it is a known-good narrow diagonal band that the wall clamp, the entrance annex and the
+straight-line move order have all been measured against (`WorldDomain.OfDungeon`). Three invented
+cave shapes would have bought nothing and re-opened all three of those questions.
+
+Each entrance is gated to the city whose band contains the dungeon's, for the reason the crypt
+already is: a safe zone is otherwise a destination on **every** gatekeeper's list, and a level-1
+should not be offered the level-85 vaults beside his first hunting field.
+
+⚠ Side effect worth knowing: the Sepulchre's rooms are **elites at 80-85**, so they feed the
+`EliteMatDrops` faucet that 0.63.0 added for Epic/Legendary/Mythic crafting materials. That is a
+second high-level elite field, and it makes the top of the crafting ladder measurably less scarce
+than the numbers in `docs/balance/CraftingMats.md` assume.
+
 ### `BL-69` — invisibility, in his three separate kinds
 
 His spec is explicit that these share a word and nothing else, so they are three pieces of state,
