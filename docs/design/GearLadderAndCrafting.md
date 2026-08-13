@@ -75,7 +75,7 @@ Endgame gear needs **mats + a BLUEPRINT (recipe) that unlocks the craft, consume
 
 - **M.Atk is now MULTIPLICATIVE like P.Atk** (`Entity.RecomputeDerived` + `StatCalculator`): weapon M.Atk
   is the base, the ATK stat MULTIPLIES it, no additive stat floor. Fixes the low-level inflation (a lvl-1
-  mage read ~40 / shown ~72; now internal **8**, L2-exact) and the low-level one-shot (lvl-8 nuke 399→154).
+  mage read ~40 / shown ~72; now internal **8**, IG-exact) and the low-level one-shot (lvl-8 nuke 399→154).
 - **Two stat multipliers** (owner's "2 coefficients"): `PAtkStatMult` LINEAR (physical), `MAtkStatMult`
   super-linear `(atk/40)^1.75` (magic = "INT is king"). Measured: the exponent barely moves *geared*
   endgame (ATK doesn't grow much with gear) — its real effect is rewarding ATK stat investment
@@ -85,9 +85,9 @@ Endgame gear needs **mats + a BLUEPRINT (recipe) that unlocks the craft, consume
   endgame will be set by the S-grade staff M.Atk in §1.
 - **M.Atk display** = `min(internal, 20·√internal)`: shows the honest small number low, shrinks only the
   cosmic high end.
-- **Mob M.Def** coefficient 3.0→3.16 (L2 lvl-83 = 262). **Mob SP** = flat 1/20 of exp (was a decaying
+- **Mob M.Def** coefficient 3.0→3.16 (IG lvl-83 = 262). **Mob SP** = flat 1/20 of exp (was a decaying
   curve). *(these two + the display are separate small tweaks in the same batch)*
 
 ### Residual (smaller, after the ladder is set)
-- lvl-8 first-nuke still one-shots a same-level mob (154 vs 91 HP) — partly mob HP being low (91 vs L2's
+- lvl-8 first-nuke still one-shots a same-level mob (154 vs 91 HP) — partly mob HP being low (91 vs IG's
   125); revisit low mob HP + first-nuke power once the ladder is locked.

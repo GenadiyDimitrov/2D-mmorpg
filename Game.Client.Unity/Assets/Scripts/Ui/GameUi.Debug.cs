@@ -67,7 +67,6 @@ namespace Game.Client
             ("idleCap", "Idle cap sec (0=inf)", false),
             ("offlineCap", "Offline cap sec (0=inf)", false),
             ("grace", "Disconnect grace (sec)", false),
-            ("testHealPower", "Test heal power", false),
             ("testSkillPower", "Test skill Flat", false),
             ("testSkillMod", "Test skill Mod x", true),
             ("regenInterval", "Regen tick (sec)", true),
@@ -680,7 +679,6 @@ namespace Game.Client
             Set("idleCap", I(d.IdleCapSeconds));
             Set("offlineCap", I(d.OfflineCapSeconds));
             Set("grace", I(d.GraceSeconds));
-            Set("testHealPower", I(d.TestHealPower));
             Set("testSkillPower", I(d.TestSkillPower));
             Set("testSkillMod", S(d.TestSkillMod));
             Set("regenInterval", S(d.RegenIntervalSeconds));
@@ -702,7 +700,7 @@ namespace Game.Client
                 F("exp"), F("sp"), F("dropChance"), F("dropAmount"), F("gold"),
                 I("karmaBase"), F("karmaConsec"), F("karmaLevel"), I("karmaDeath"), I("karmaMob"),
                 I("idleCap"), I("offlineCap"), I("grace"),
-                I("testHealPower"), I("testSkillPower"), F("testSkillMod"),
+                I("testSkillPower"), F("testSkillMod"),
                 F("regenInterval"), F("conRegen"), F("mobRegen"), F("mobRegenIdle"));
 
             Boot.Debug(n => n.SetDebugConfigAsync(dto), "tuning");

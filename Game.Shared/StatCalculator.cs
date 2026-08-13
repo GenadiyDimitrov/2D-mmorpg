@@ -16,7 +16,7 @@ public static class StatCalculator
     {
         // BaseStats(Con, Atk, Wit, Agi, Spt). Atk = the single power stat: STR for fighters,
         // INT for mages. Fighter WIT kept low (casts little); mage WIT per the dye-
-        // stand-in design (elf 23 / human 20 / ork 19). Authentic-L2-style bases.
+        // stand-in design (elf 23 / human 20 / ork 19). Authentic-IG-style bases.
         //
         // SPT (Spirit) is a FULL stat like the rest — the retired MEN, made visible and investable.
         // FIGHTERS keep their original per-race MEN values (ork 27 > elf 26 > human 25) so the ork
@@ -35,7 +35,7 @@ public static class StatCalculator
     // Per design: levels increase hp/mp (max/regen), evasion, accuracy,
     // defence, attack — nothing else. Tanks get more HP, mages more MP.
 
-    // ----- Max HP (authentic L2 model) -------------------------------------
+    // ----- Max HP (authentic IG model) -------------------------------------
     //  MaxHP = [ ClassLevelMod × (level² + 3·level)/2 + Level1Base ] × ConModifier
     //  (gear/buff/passive % and flat bonuses stack afterwards in RecomputeDerived).
 
@@ -51,13 +51,13 @@ public static class StatCalculator
         _ => 100
     };
 
-    /// <summary>Class HP growth multiplier on the quadratic level term (the L2 "tier").
-    /// Tuned so level-75 raw base HP lands on the L2 tracks: tank ~2.9k, warrior ~2.5k,
+    /// <summary>Class HP growth multiplier on the quadratic level term (the IG "tier").
+    /// Tuned so level-75 raw base HP lands on the IG tracks: tank ~2.9k, warrior ~2.5k,
     /// rogue/archer ~2.0k, nuker ~1.4k, healer ~1.2k. Before 2nd class (no archetype),
     /// a fighter/mage uses a sensible default.</summary>
     public static float HpClassLevelModifier(BaseClass cls, Archetype? arch) => arch switch
     {
-        Archetype.Tank    => 1.02f,   // L75 raw ≈ 3100 (the L2 tank track)
+        Archetype.Tank    => 1.02f,   // L75 raw ≈ 3100 (the IG tank track)
         Archetype.Warrior => 0.83f,
         Archetype.Rogue   => 0.66f,
         Archetype.Archer  => 0.66f,
@@ -66,7 +66,7 @@ public static class StatCalculator
         _ => cls == BaseClass.Mage ? 0.42f : 0.80f   // base class, pre-2nd
     };
 
-    /// <summary>CON → Max-HP multiplier — interpolated from the real L2 table (baseline
+    /// <summary>CON → Max-HP multiplier — interpolated from the real IG table (baseline
     /// 30 = 1.00). The old exponential was ~7% high mid-range (CON 36 → 1.20 vs 1.12);
     /// the table is accurate at every reference point.</summary>
     public static float ConHpModifier(int con) => InterpolateCurve(ConCurve, con);
@@ -89,7 +89,7 @@ public static class StatCalculator
     // the three (a robe mastery's +20% MP regen, a ManaPercent attribute roll) stay percentages —
     // they are ordinary gear, not Spirit.
 
-    /// <summary>SPT → the Max-MP / M.Def / MP-regen multiplier. This is the old L2 MEN curve, a gentle
+    /// <summary>SPT → the Max-MP / M.Def / MP-regen multiplier. This is the old IG MEN curve, a gentle
     /// 1.16→1.65 band (NOT the steep CON curve): every class is &gt;1, fighters just have less. Because
     /// it is flat (~1.6% per point), the per-race SPT bases need WIDE gaps to express a 7% difference.</summary>
     public static float SptModifier(int spt) => InterpolateCurve(SptCurve, spt);
@@ -127,7 +127,7 @@ public static class StatCalculator
     /// exponential CON modifier would explode on mob-scale CON, so mobs use this.</summary>
     public static int MobMaxHp(int con, int level) => 50 + con * 4 + level * 10;
 
-    // ----- Max MP (authentic L2: Base_MP tier curve × Spirit, like HP) --------
+    // ----- Max MP (authentic IG: Base_MP tier curve × Spirit, like HP) --------
     //  MaxMP = (MpClassLevelMod·(L²+3L)/2 + Level1BaseMp) × SpiritModifier
     //  MP scales with SPIRIT (not WIT). Tiers tuned to the L75 raw tracks:
     //  Healer 2000 · Wizard/Nuker 1550 · Buffer 1100 · Fighter/Tank 500.
@@ -153,17 +153,17 @@ public static class StatCalculator
     public static int MobMaxMp(int level) => 40 + level * 6;
 
     // ----- Natural regen -------------------------------------------------------
-    // The stat is the DOMINANT term, as in L2, where regen is
+    // The stat is the DOMINANT term, as in IG, where regen is
     //   base(level) × levelMod × CONbonus[CON],  CONbonus[c] = 1.03^(c − 27.632)
     // — an EXPONENTIAL in the stat. Ours used to be linear (+0.05 per point), which made CON almost
-    // irrelevant: across CON 20→60 our regen moved ×1.33 where L2's moves ×3.25, so a tank and a mage
+    // irrelevant: across CON 20→60 our regen moved ×1.33 where IG's moves ×3.25, so a tank and a mage
     // regenerated at nearly the same rate and CON bought you very little.
     //
     // The curve is re-centred on 40 (`stat - 40`) so the MID-RANGE value is exactly what it was before
     // (old: 1 + 40×0.05 + level×k = 3 + level×k, which is the base below). Nothing shifts for an
     // average-CON character; the change is purely that CON now separates builds.
 
-    /// <summary>Per-point regen multiplier for CON (HP). L2's own 1.03 curve.</summary>
+    /// <summary>Per-point regen multiplier for CON (HP). IG's own 1.03 curve.</summary>
     public static float ConRegenBase = 1.03f;
 
     public static float HpRegenPerSecond(int con, int level) =>
@@ -332,15 +332,15 @@ public static class StatCalculator
     /// in the items phase: weapon + stat + buffs/passives.</summary>
     public static int AttackPower(int atkStat, int level) => atkStat + level * 2;
 
-    // ----- P.Atk (authentic L2 shape) ---------------------------------------------------------
+    // ----- P.Atk (authentic IG shape) ---------------------------------------------------------
     //
-    // L2's P.Atk is MULTIPLICATIVE: `P.Atk = basePAtk(=WEAPON) × STRbonus × levelMod` (L2J FuncPAtkMod).
+    // IG's P.Atk is MULTIPLICATIVE: `P.Atk = basePAtk(=WEAPON) × STRbonus × levelMod` (L2J FuncPAtkMod).
     // The WEAPON is the base; the power stat and level only MULTIPLY it. Unarmed, basePAtk is a tiny
     // FIST value, so you punch for almost nothing — no "if unarmed then penalty" branch is needed, the
     // formula does it. Our old form was additive (`atkStat + level·2 + weapon`), which let the 40-point
     // ATK stat leak through with no weapon (a naked L1 fighter had 42 P.Atk and one-shot trash).
     //
-    // We keep ONE power stat (ATK) rather than L2's separate STR, so the "STR bonus" is a gentle
+    // We keep ONE power stat (ATK) rather than IG's separate STR, so the "STR bonus" is a gentle
     // multiplier off ATK, centred on the fighter base. Only the P channel uses this; M.Atk keeps its
     // own (base × levelMod²) form — that's the signed-off magic balance and it is NOT touched.
 
@@ -353,7 +353,7 @@ public static class StatCalculator
     /// <summary>The power-stat multiplier for P.Atk. ~1.0 at the fighter base, scaling gently with ATK.</summary>
     public static float PAtkStatMult(int atkStat) => Math.Max(0.2f, atkStat / (float)PAtkStatReference);
 
-    /// <summary>L2-shape P.Atk: (fist + weapon) × ATKbonus × levelMod. <paramref name="weaponPAtk"/> is
+    /// <summary>IG-shape P.Atk: (fist + weapon) × ATKbonus × levelMod. <paramref name="weaponPAtk"/> is
     /// the weapon's own P.Atk contribution (its power × the P channel factor); 0 = unarmed.</summary>
     public static int PhysicalAttackPower(int weaponPAtk, int atkStat, int level) =>
         Math.Max(1, (int)((UnarmedFistPAtk + weaponPAtk) * PAtkStatMult(atkStat) * LevelMod(level)));
@@ -362,7 +362,7 @@ public static class StatCalculator
     //
     // M.Atk was the ONLY channel still ADDITIVE: base = (atkStat + level·2 + weaponM), which put the
     // ~41-point power stat in as a flat FLOOR at every level. That floor dominates low levels (a lvl-1
-    // wand mage read ~40 M.Atk where L2 has ~8 → √-damage ~2.2× too high → one-shots) and fades to
+    // wand mage read ~40 M.Atk where IG has ~8 → √-damage ~2.2× too high → one-shots) and fades to
     // nothing by the endgame — exactly the level-dependent divergence the owner measured. The WEAPON is
     // now the base and the stat MULTIPLIES it (a small fist value when unarmed), same as P.Atk, so a
     // small wand base yields a small M.Atk and the staff's big base carries the endgame. The weapon's
@@ -405,7 +405,7 @@ public static class StatCalculator
         return Math.Min(8, (level - 40) / 5 + 1);
     }
 
-    // ----- Defence (authentic L2: armor/jewels + level² /100, no CON) ------
+    // ----- Defence (authentic IG: armor/jewels + level² /100, no CON) ------
     //  P.Def = (naked 68 + level²/100 + Σ armor pDef + flat passives) × masteries/buffs
     //  M.Def = (naked 20 + level²/100 + Σ jewel mDef + flat passives) × MEN × buffs
     //  (armor/jewel/passive/mastery/MEN/buff stacking happens in Entity.RecomputeDerived;
@@ -433,7 +433,7 @@ public static class StatCalculator
 
     public const float CritMultiplier = 2.0f;
 
-    // ===== L2-style ratio damage ===========================================
+    // ===== IG-style ratio damage ===========================================
     //
     // Damage is a RATIO of attack to defence (not a subtraction), so defence
     // gives diminishing returns and never fully blocks. lvlMod scales the whole
@@ -445,7 +445,7 @@ public static class StatCalculator
     /// <summary>Level modifier: (level+89)/100. L1=0.90, L11=1.00, L80=1.69.</summary>
     public static float LevelMod(int level) => (level + 89) / 100f;
 
-    // ----- The magic level-scaling terms (authentic L2; verified against L2J's
+    // ----- The magic level-scaling terms (authentic IG; verified against L2J's
     //       FuncMAtkMod / FuncMDefMod, 2026-07-14) --------------------------------
     //
     //   M.Atk = base × INTbonus² × levelMod²     (BOTH squared)
@@ -462,7 +462,7 @@ public static class StatCalculator
     // off a cliff as the numbers grew: a level-85 mage needed ~79 casts to kill a
     // same-level mob while a level-20 mage one-shot his. Same bug at both ends.
     //
-    // (We have one ATK power stat rather than L2's separate INT, and it already sits in
+    // (We have one ATK power stat rather than IG's separate INT, and it already sits in
     // the base — so only the level term is reproduced here, not INTbonus².)
 
     /// <summary>M.Atk level scaling: levelMod². Squared on purpose — see the note above.</summary>
@@ -471,13 +471,13 @@ public static class StatCalculator
     /// <summary>M.Def level scaling: levelMod (NOT squared — the counterpart to the above).</summary>
     public static float MagicDefenceLevelMod(int level) => LevelMod(level);
 
-    // Damage balance constants — the authentic L2 constants, unmodified.
+    // Damage balance constants — the authentic IG constants, unmodified.
     //  Physical: 77·(pAtk + power)/pDef
     //  Magic:    91·power·√mAtk/mDef
-    // MagicK was previously 8, on the reasoning that our M.Atk is small compared to L2's.
+    // MagicK was previously 8, on the reasoning that our M.Atk is small compared to IG's.
     // That was backwards: because the formula takes √mAtk, a SMALLER M.Atk needs a LARGER
     // K, not a smaller one. The result was magic doing ~1/11th of its intended damage
-    // (a L21 healer hit a same-level tank for 15). Both constants are now L2's own.
+    // (a L21 healer hit a same-level tank for 15). Both constants are now IG's own.
     public const float PhysicalK = 77f;
     public const float MagicK = 91f;
 
@@ -487,7 +487,7 @@ public static class StatCalculator
     /// `91·power·√internal/mDef` exactly). The internal value = (shown/scale)².</summary>
     public const float MagicAttackDisplayScale = 20f;
 
-    /// <summary>Physical ratio damage (L2 model): 77·(pAtk + skillPower)/pDef. No level
+    /// <summary>Physical ratio damage (IG model): 77·(pAtk + skillPower)/pDef. No level
     /// term (level is already baked into pAtk/pDef growth). 'power' is 0 for a basic
     /// attack, the skill's power for a skill. Crit / variance / war rune are applied by
     /// the caller. Defence floored at 1.
@@ -515,7 +515,7 @@ public static class StatCalculator
     /// <summary>Maps an ATTACKER's weapon type to the DEFENDER's matching weapon-type
     /// resistance coefficient (a multiplier on the defender's P.Def, applied only for this
     /// hit). Sword/dual → Pierce, blunt → Blunt, bow → Bow; anything else = neutral (1).
-    /// L2 convention: swords are neutral vs armored mobs — here Sword+Dual share the Pierce
+    /// IG convention: swords are neutral vs armored mobs — here Sword+Dual share the Pierce
     /// track (splittable later without touching callers).</summary>
     public static float WeaponDefenceCoef(WeaponType attacker, float pierce, float blunt, float bow) =>
         (attacker & WeaponType.AnyBlunt) != 0 ? blunt
@@ -523,7 +523,7 @@ public static class StatCalculator
         : (attacker & (WeaponType.AnySword | WeaponType.Dual)) != 0 ? pierce
         : 1f;
 
-    /// <summary>Magic ratio damage (L2 model): K·skillPower·√mAtk/mDef. The SQUARE ROOT
+    /// <summary>Magic ratio damage (IG model): K·skillPower·√mAtk/mDef. The SQUARE ROOT
     /// of M.Atk means stacking raw M.Atk gives diminishing returns. 'power' is the
     /// spell's base power. Divides by MAGIC defence (separate channel). Crit / fail /
     /// blessed-spell rune are applied by the caller. Defence floored at 1.
@@ -569,7 +569,7 @@ public static class StatCalculator
 
     // ----- Crit (split: physical vs magic, each capped) --------------------
 
-    /// <summary>Character crit-rate BASE — his "110" on L2's 0-1000 scale, i.e. 11%.
+    /// <summary>Character crit-rate BASE — his "110" on IG's 0-1000 scale, i.e. 11%.
     /// (docs/design/CritBlowAndDouble.md §5.)</summary>
     public const float CharacterCritBase = 0.110f;
 
@@ -585,7 +585,7 @@ public static class StatCalculator
     public static float CritAgiMod(int agi) => Math.Max(0f, 1f + (agi - MobAgiReference) * 0.01f);
 
     /// <summary>The BASE physical crit rate: the <c>110 × weaponFactor × agiMod</c> head of his
-    /// L2 model (docs/design/CritBlowAndDouble.md §5)
+    /// IG model (docs/design/CritBlowAndDouble.md §5)
     /// <code>crit = (110 × weaponFactor × agiMod × buffs × passives + flat) × debuffs × enemyLightArmor</code>
     /// The WEAPON multiplies the character base — dagger/bow ×1.2 → 13.2%, sword ×0.8 → 8.8%,
     /// blunt ×0.4 → 4.4% — and AGI is a mild multiplier ON that. AGI is NOT the base any more
@@ -595,7 +595,7 @@ public static class StatCalculator
     public static float PhysicalCritBase(int agi, WeaponType weapon) =>
         CharacterCritBase * WeaponCritFactor(weapon) * CritAgiMod(agi);
 
-    /// <summary>Character MAGIC crit-rate BASE — his "50" on L2's 0-1000 scale, i.e. 5%.
+    /// <summary>Character MAGIC crit-rate BASE — his "50" on IG's 0-1000 scale, i.e. 5%.
     /// (owner ruling 2026-08-06; the magic twin of <see cref="CharacterCritBase"/>.)</summary>
     public const float MagicCharacterCritBase = 0.050f;
 
@@ -753,9 +753,9 @@ public static class StatCalculator
         return Math.Clamp(chance, 0.10f, 0.90f);
     }
 
-    // ----- Cast & attack speed (authentic L2 model) ------------------------
+    // ----- Cast & attack speed (authentic IG model) ------------------------
     //
-    // L2: actual cast/attack time = baseTime × 333 / speedStat, where the speed stat
+    // IG: actual cast/attack time = baseTime × 333 / speedStat, where the speed stat
     // is built MULTIPLICATIVELY:
     //   castSpd = ClassBaseCast × WitModifier × weaponFactor × gearFactor × ∏(1+buff%)
     // and capped (cast 1999 = 6× faster than the 333 reference, attack 1500). The full
@@ -777,13 +777,13 @@ public static class StatCalculator
         : race == Race.Ork ? 300
         : 333;
 
-    /// <summary>AGI physical-attack-speed modifier — EXPONENTIAL, matching the L2 table
+    /// <summary>AGI physical-attack-speed modifier — EXPONENTIAL, matching the IG table
     /// (baseline 30 = 1.00: 20→0.90, 35→1.05, 40→1.11, 50→1.23): ~1.05% per AGI
     /// compounded. Clamped so very low AGI can't stall attacks entirely.</summary>
     public static float AttackAgiModifier(int agi) =>
         Math.Clamp(MathF.Pow(1.0105f, agi - 30), 0.4f, 8f);
 
-    /// <summary>WIT casting-speed modifier — EXPONENTIAL, matching the L2 table
+    /// <summary>WIT casting-speed modifier — EXPONENTIAL, matching the IG table
     /// (20→1.00, 30→1.63, 40→2.65, 50→4.32): ×1.63 per +10 WIT. Clamped so very low
     /// WIT can't stall casting entirely.</summary>
     public static float CastWitModifier(int wit) =>

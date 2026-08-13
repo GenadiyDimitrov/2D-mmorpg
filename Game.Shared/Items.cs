@@ -2,7 +2,7 @@ namespace Game.Shared;
 
 public enum ItemGrade { F = 0, E = 1, B = 2, A = 3, S = 4 }
 
-/// <summary>L2-style GRADE PENALTY (owner 2026-07-16, redesigned 2026-07-17).
+/// <summary>IG-style GRADE PENALTY (owner 2026-07-16, redesigned 2026-07-17).
 ///
 /// The penalty is driven by the GAP between YOUR grade and the ITEM's grade — not by the item's grade
 /// alone. Both sides sit on the same ladder of seven steps (<see cref="GradeLevels"/>): F=1, E=20, D=40,
@@ -230,7 +230,7 @@ public record ItemDef(
     float BlockReduction = 0f,     // fraction of damage removed on a block (0..1)
     int ShieldDefense = 0,         // flat defence while shield equipped
     float ShieldCritDefense = 0f,  // reduces attacker crit CHANCE (0..1)
-    int ShieldEvasionPenalty = 0,  // lowers your evasion (the L2 tradeoff)
+    int ShieldEvasionPenalty = 0,  // lowers your evasion (the IG tradeoff)
     // ----- Consumables -----
     // A consumable does NOT implement an effect. It names a SKILL, and the skill does the work
     // (heal, HoT, buff, teleport) — "everything is a skill; only what GRANTS it differs".
@@ -1279,10 +1279,10 @@ public static class ItemCatalog
         // Training ARMOR — light (fighter) and robe (mage). No set bonus: the set line starts at Newbie.
         //
         // ⚠ These were RE-CUT (owner, 2026-07-30): light 53 → 35, robe 27 → 20, +MP unchanged. The old
-        // numbers were the sum of an L2 upper + lower body, taken from the TOP of the no-grade range,
+        // numbers were the sum of an IG upper + lower body, taken from the TOP of the no-grade range,
         // while this ladder's F Common rung is 45 % of a MID no-grade set — so the starter armor sat
         // ABOVE the first armor you could loot and every early armor drop was a DOWNGRADE. The weapons
-        // never had this problem: they were cut from L2's top no-grade weapon, which lines up with the
+        // never had this problem: they were cut from IG's top no-grade weapon, which lines up with the
         // ladder, which is why only the armor moved.
         //
         // The rule this restores: you start in gear that is WORSE than what drops, and gear UP as you
@@ -1541,7 +1541,7 @@ public static class ItemCatalog
     /// Mythic sat 43% above anything the game had ever been balanced for, which was a real ceiling
     /// raise nobody had measured. Anchoring at the top instead makes the authored number the ceiling
     /// again, and the ladder above A becomes authored content (the S grade) rather than a multiplier
-    /// artefact. The owner's reading of it: our A-grade is L2's LOW S-grade, so A at full power is
+    /// artefact. The owner's reading of it: our A-grade is IG's LOW S-grade, so A at full power is
     /// already about right for level 85.</summary>
     public static float RarityScale(ItemRarity r) => RarityPercent(r) / 100f;
 
@@ -1971,7 +1971,7 @@ public static class ItemCatalog
                 SetId: $"set_heavy_t{lv[i]}",
                 ItemLevel: lv[i], NoAttributes: true);
 
-        // ---- Jewels (M.Def + inherent +MP at 61/76). L2 layout = 1 necklace / 2 rings / 2 earrings. ----
+        // ---- Jewels (M.Def + inherent +MP at 61/76). IG layout = 1 necklace / 2 rings / 2 earrings. ----
         var jewels = new (string Key, string Noun, JewelType T, int[] MDef, int[] Mp)[]
         {
             // BOTH ends moved on 2026-08-11: the F rung was raised (18/9/13 -> 25/12/16) and the S rung

@@ -739,7 +739,7 @@ public class Entity
     // damage ratio on a CRIT only, before the multiplier — never a multiplier itself.
     // See docs/design/CritBlowAndDouble.md §3 and StatCalculator.CritFlatFactor.
     public float CritDamageFlat { get; set; }
-    // ----- Crit-RATE chain (his L2 model, docs/design/CritBlowAndDouble.md §5) -----
+    // ----- Crit-RATE chain (his IG model, docs/design/CritBlowAndDouble.md §5) -----
     // crit = (base × MULT + FLAT), clamped once at the end of RecomputeDerived. Every passive
     // and buff MULTIPLIES (×1.2, ×1.3), so a big base is what a multiplier rewards; every gear
     // and flat source ADDS outside all of them, which is what carries the low-crit weapons.
@@ -1107,7 +1107,7 @@ public class Entity
     /// directly in EffectiveCastSpeedMultiplier, so it needs no stored field.)</summary>
     public int WeaponAttackBase { get; set; } = StatCalculator.SpeedBaseline;
 
-    /// <summary>Cast-time multiplier (lower = faster). WIT-driven stat (L2-style
+    /// <summary>Cast-time multiplier (lower = faster). WIT-driven stat (IG-style
     /// 333 = 1.0x), then skill cast-speed buffs shorten it further.</summary>
     public float EffectiveCastSpeedMultiplier
     {
@@ -1117,12 +1117,12 @@ public class Entity
             if (AdminCastSpeed is float adminCast)
                 return StatCalculator.SpeedBaseline / Math.Max(1f, adminCast);
 
-            // Authentic L2: castSpd = classBase × witModifier × weaponFactor
+            // Authentic IG: castSpd = classBase × witModifier × weaponFactor
             //   × gearFactor × ∏(1 + buff%), then time = 333 / castSpd (cap 1999 = 6×).
             // witModifier is EXPONENTIAL (×1.63 per +10 WIT). gearFactor = robe mastery /
             // attributes / passives (CastSpeedMultiplier is their combined TIME multiplier,
             // <1 = faster, so 1/it = speed factor: robe ≈ ×1.4, non-robe ≈ ×0.5). Buffs
-            // STACK MULTIPLICATIVELY, matching L2.
+            // STACK MULTIPLICATIVELY, matching IG.
             float baseCast = StatCalculator.ClassBaseCastSpeed(Race, BaseClass)
                              * StatCalculator.WeaponCastFactor(WeaponType);
             float witMod = StatCalculator.CastWitModifier(EffectiveWit);
@@ -1152,7 +1152,7 @@ public class Entity
             if (AdminAttackSpeed is float adminAtk)
                 return StatCalculator.SpeedBaseline / Math.Max(1f, adminAtk);
 
-            // Authentic L2: atkSpd = weaponBase × agiModifier × gearFactor × ∏(1+buff%),
+            // Authentic IG: atkSpd = weaponBase × agiModifier × gearFactor × ∏(1+buff%),
             // cap 1500. agiModifier is EXPONENTIAL (baseline 30 AGI = 1.0). Buffs stack
             // multiplicatively (matching cast speed).
             float agiFactor = StatCalculator.AttackAgiModifier(EffectiveAgi);
@@ -1504,7 +1504,7 @@ public class Entity
                 StatCalculator.MpClassLevelModifier(BaseClass, Archetype),
                 StatCalculator.Level1BaseMp(BaseClass))
             : MobBaseStats.Mp(Level);
-        // P.Atk is L2-MULTIPLICATIVE now: the WEAPON is the base, the ATK stat + level MULTIPLY it
+        // P.Atk is IG-MULTIPLICATIVE now: the WEAPON is the base, the ATK stat + level MULTIPLY it
         // (StatCalculator.PhysicalAttackPower, applied after the equip loop). So we DON'T seed a stat
         // base here — the weapon's own P.Atk accumulates in the loop, then the multiplier is applied.
         // Unarmed → fist only → feeble, no penalty branch. M.Atk keeps its additive base × levelMod²
@@ -1515,11 +1515,11 @@ public class Entity
         // Player M.Atk is now WEAPON-based like P.Atk: seed 0 (no additive stat floor), let the equipped
         // weapon's M.Atk accumulate below, then multiply by the stat (StatCalculator.MagicAttackStatScaled)
         // and levelMod². The old additive seed (atkStat + level·2 + INT·3) is what made a level-1 mage read
-        // ~40 M.Atk (L2: ~8); removed. INT-via-dye will return as a stat-mult input, not a flat add.
+        // ~40 M.Atk (IG: ~8); removed. INT-via-dye will return as a stat-mult input, not a flat add.
         MagicAttack = Kind == EntityKind.Player
             ? 0
             : MobBaseStats.MAtk(Level);
-        // Defence (authentic L2): players use armor/jewel-driven base + level²/100, no CON
+        // Defence (authentic IG): players use armor/jewel-driven base + level²/100, no CON
         // term. Mobs use their authored base curve (P.Def and M.Def separately).
         Defence = Kind == EntityKind.Player
             ? StatCalculator.PhysicalDefenceBase(Level)
@@ -1714,7 +1714,7 @@ public class Entity
         // The equipped weapon decides how much of its power reaches each channel (PAtkFactor /
         // MAtkFactor) — a staff melees poorly (0.6), a sword casts poorly. Mobs have no weapon (factors 1).
         //
-        // P.Atk (L2 shape): at this point AttackPower holds only the accumulated WEAPON P.Atk bonus (we
+        // P.Atk (IG shape): at this point AttackPower holds only the accumulated WEAPON P.Atk bonus (we
         // didn't seed a stat base). Apply the channel factor to it, then run the multiplicative formula
         // — (fist + weaponP) × ATKbonus × levelMod — so the weapon is the base and the stat/level
         // multiply. Unarmed → weaponP 0 → fist only → feeble, with no penalty branch.
@@ -1897,7 +1897,7 @@ public class Entity
         // leans likewise ride the rogue/archer floor passives (stats-via-skills).
         var arch = Archetype;
         BasicAttackPower = Math.Max(1, AttackPower);
-        // Crit RATE — his L2 model (docs/design/CritBlowAndDouble.md §5):
+        // Crit RATE — his IG model (docs/design/CritBlowAndDouble.md §5):
         //     crit = (110 × weaponFactor × agiMod × buffs × passives + flat) × debuffs × enemyLightArmor
         // The WEAPON multiplies the character base (dagger/bow 13.2%, sword 8.8%, blunt 4.4%) and AGI
         // is a mild multiplier on top — AGI is no longer the base. Passives and buffs multiply this
@@ -1910,7 +1910,7 @@ public class Entity
         // checklist `0d`) — "Crit Rate +30%" now means x1.30, which is what the tooltip has always
         // said and what AttributeSystem.ToStatMods already assumed.
         // ⚠ It used to land in CritRateFlat as `value / 100`, i.e. a maxed roll was +30 PERCENTAGE
-        // POINTS — +300 on his 0-1000 scale, against L2's +109 at S grade and against his own rule
+        // POINTS — +300 on his 0-1000 scale, against IG's +109 at S grade and against his own rule
         // for the flat channel, *"a flat 30 is flat 3%"* (the divisor should have been 1000). It
         // took a sword from 8.8% to 38.8% and a dagger from 13.2% to 43.2%, which did not just
         // overpay: being FLAT it collapsed the 3:2:1 weapon identity the crit model exists to
@@ -2192,7 +2192,7 @@ public class Entity
             }
         }
 
-        // ----- The two MAGIC level-scaling terms (authentic L2; see StatCalculator) -----
+        // ----- The two MAGIC level-scaling terms (authentic IG; see StatCalculator) -----
         //   M.Atk = base × levelMod²   (squared — cancels the √M.Atk in the damage formula,
         //                               so magic grows linearly in level like physical)
         //   M.Def = base × MEN × levelMod

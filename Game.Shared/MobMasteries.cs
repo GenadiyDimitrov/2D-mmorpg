@@ -30,7 +30,7 @@ public static class MobMasteries
         { 0f, 0.15f, 0.18f, 0.22f, 0.27f, 0.32f, 0.39f, 0.47f, 0.57f, 0.69f, 0.83f, 1f, 1.21f, 1.46f, 1.77f, 2.14f, 2.59f, 3.13f, 3.79f, 4.59f, 5.55f, 6.72f, 100f };
     private static readonly float[] PAtkTable =
         { 0f, 0.39f, 0.43f, 0.47f, 0.52f, 0.57f, 0.63f, 0.69f, 0.76f, 0.83f, 0.91f, 1f, 1.1f, 1.21f, 1.33f, 1.46f, 1.61f, 1.77f, 1.94f, 2.14f, 2.35f, 2.59f, 10f };
-    // Max HP / Max MP / Regen share the same table (neutral = L2, value 1). Note the deliberate
+    // Max HP / Max MP / Regen share the same table (neutral = IG, value 1). Note the deliberate
     // non-monotonic dip at L8/9 (0.25/0.5) — tuning slots, not an ordering.
     private static readonly float[] PoolTable =
         { 0f, 1f, 1.1f, 1.21f, 1.33f, 1.46f, 1.61f, 1.77f, 0.25f, 0.5f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f, 10f, 11f, 12f, 999999f };

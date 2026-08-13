@@ -8,16 +8,16 @@ namespace Game.Shared;
 /// P.Def PASSIVE (a MobMod / mastery), never a separate curve — so "assume all monsters are
 /// ×1" reproduces the CSV exactly and outliers layer a passive on top.
 ///
-/// HP / P.Def / M.Def are FORMULAS (see the block below them) — measured off the retail L2
+/// HP / P.Def / M.Def are FORMULAS (see the block below them) — measured off the retail IG
 /// mob table in 2026-07-14 and re-derived, because the old authored columns were the wrong
 /// SHAPE. MP / P.Atk / M.Atk stay a hand-authored table, linearly interpolated between the
-/// listed levels and clamped outside [1, 85]; they were measured to already track L2.
+/// listed levels and clamped outside [1, 85]; they were measured to already track IG.
 ///
 /// The CSV is regenerated to match, so it stays a faithful dump of what the code does.
 /// </summary>
 public static class MobBaseStats
 {
-    // level → (MP, P.Atk, M.Atk). These three were MEASURED against the retail L2 mob table
+    // level → (MP, P.Atk, M.Atk). These three were MEASURED against the retail IG mob table
     // and already track it within ~30%, so they stay hand-authored here. HP / P.Def / M.Def
     // were NOT — they are now formulas below (see the comment block).
     private static readonly (int Lvl, int Mp, int PAtk, int MAtk)[] Curve =
@@ -82,24 +82,24 @@ public static class MobBaseStats
 
     };
 
-    // ---- HP and DEFENCE are FORMULAS, fitted to the retail L2 mob table (2026-07-14) ----
+    // ---- HP and DEFENCE are FORMULAS, fitted to the retail IG mob table (2026-07-14) ----
     //
     // The old authored HP/P.Def/M.Def columns were all QUADRATIC in level. Measured against
-    // real L2 mobs (Keltir L1, Grizzly L17, Ghoul L32, Grandis L40, Invader Shaman L63,
+    // real IG mobs (Keltir L1, Grizzly L17, Ghoul L32, Grandis L40, Invader Shaman L63,
     // Tracker Howl L81) that turned out to be wrong in two different directions at once:
     //
-    //   * DEFENCE in L2 is LINEAR in level (P.Def ≈ 4.2·lvl, M.Def ≈ 3·lvl, floored at L1).
+    //   * DEFENCE in IG is LINEAR in level (P.Def ≈ 4.2·lvl, M.Def ≈ 3·lvl, floored at L1).
     //     A quadratic curve crosses the real one around level 43 — so our low-level mobs were
-    //     paper (M.Def 5 at L1 where L2 has 30: a level-21 mage nuked a level-24 mob for 2k)
-    //     and our high-level mobs were walls (M.Def 448 at L80 where L2 has ~253). One bug,
+    //     paper (M.Def 5 at L1 where IG has 30: a level-21 mage nuked a level-24 mob for 2k)
+    //     and our high-level mobs were walls (M.Def 448 at L80 where IG has ~253). One bug,
     //     both ends.
-    //   * HP was 2.8-4.5x too high above level 45 (15,420 at L80 where L2's Tracker Howl has
+    //   * HP was 2.8-4.5x too high above level 45 (15,420 at L80 where IG's Tracker Howl has
     //     ~5,500), which is what made the endgame grind balloon to ~79 casts a kill.
     //
-    // Mob P.Atk/M.Atk/MP were measured to already track L2 within ~30%, so they stay on the
+    // Mob P.Atk/M.Atk/MP were measured to already track IG within ~30%, so they stay on the
     // authored table above.
     //
-    // Fat mobs are NOT a separate curve: L2 makes a specific mob tanky with an "HP Increase
+    // Fat mobs are NOT a separate curve: IG makes a specific mob tanky with an "HP Increase
     // (2x/3x)" PASSIVE on top of this lean base (a level-85 Drake Warrior = 18.6k base HP x
     // ~2.5). That is exactly our MobMod / MobMasteries layer — so keep the curve lean and let
     // elites and bosses buy their bulk with passives.
@@ -108,12 +108,12 @@ public static class MobBaseStats
     /// elites/bosses multiply this with an HP passive rather than riding a separate curve.</summary>
     public static int Hp(int level) => 40 + (int)(0.8f * level * level);
 
-    /// <summary>Base physical defence — LINEAR in level, as in retail L2 (≈4.2·lvl).</summary>
+    /// <summary>Base physical defence — LINEAR in level, as in retail IG (≈4.2·lvl).</summary>
     public static int PDef(int level) => Math.Max(44, (int)(4.2f * level));
 
-    /// <summary>Base magic defence — LINEAR in level, as in retail L2. Coefficient 3.16 (owner 2026-07-25):
-    /// bumped from 3.0 to land the high end on the real table (L2 lvl-83 mob = 262 M.Def; 3.16·83 = 262,
-    /// and 3.16·80 = 253, matching L2's ~253 at 80). Floored at 30 for the first ~9 levels.</summary>
+    /// <summary>Base magic defence — LINEAR in level, as in retail IG. Coefficient 3.16 (owner 2026-07-25):
+    /// bumped from 3.0 to land the high end on the real table (IG lvl-83 mob = 262 M.Def; 3.16·83 = 262,
+    /// and 3.16·80 = 253, matching IG's ~253 at 80). Floored at 30 for the first ~9 levels.</summary>
     public static int MDef(int level) => Math.Max(30, (int)(3.16f * level));
 
     public static int Mp(int level)   => Interp(level, r => r.Mp);

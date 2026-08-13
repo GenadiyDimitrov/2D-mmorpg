@@ -12,6 +12,69 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## Unreleased — 2026-08-12 — the housekeeping batch, and six entries that were already done
+
+Protocol **17 → 18**. No schema change. `GameVersion` is deliberately still `0.62.0`: the published
+build on the phone is 0.62.0 and **playtest 22 is still owed against it**, so this work sits on the
+branch until the crafting rework lands beside it and they bump together.
+
+### `BL-37` — the test heal is gone
+
+The power-1000 `test_heal`, auto-granted to every character at 76, existed to read two numbers —
+`HealK` (15) and `OffChannelFactor` (0.6). Both were decided long ago, so it had been a debug skill on
+every live character's bar for nothing. Deleted: the const, the `SkillDef`, the auto-grant, the
+`_testHealPower` knob and its Debug-panel row. The two `{Flat, Mod}` damage test skills **stay** — they
+still read live from the panel and nothing has replaced them.
+
+Removing the knob shrank `DebugConfigDto`, which is a positional record — hence the protocol bump.
+
+🔑 **It also surfaced a real bug, which is the part worth keeping.** `PersistenceService.ParseLearnedSkills`
+read a saved `id:level` row back with **no catalog check**, and `SendLearned` pushes the map's keys
+verbatim — so a *retired* skill id survived forever in `LearnedSkillsCsv` and reached the client as a
+`SkillRef` it could not resolve, then got written straight back on the next save. This was not
+theoretical: `hp_boost` went with the God layer and the two archer masteries went with the archer→rogue
+merge, so any character alive across those builds is still carrying them. The parser now **drops ids the
+catalog no longer knows**, at the one seam where stored text becomes runtime state. Deleting a skill is
+a one-file job from now on.
+
+### `BL-58` / `58i` — the inspiration game's name is out of the codebase
+
+*"We need to rename everything that says l2 … every comment to refer from l2 to the (inspiration game)
+or `IG`."* Done: **113 lines across 20 C# files** and **~150 lines across 17 docs**. The tag is `IG`,
+defined at the top of `CLAUDE.md`.
+
+Three deliberate survivors, each for a reason:
+
+- **`L1`/`L2` meaning *skill level*** — he called this out himself (*"as the game, not the level"*).
+  Seven lines keep it: `Sprint L2`, `Might L2 of 3`, `Precision L2`, the Speed-ladder table rows.
+- **`docs/testing/Playtest-Archive.md`** — a verbatim record of his own messages. Rewriting what he
+  wrote would forge the record, including the request `58i` itself.
+- **`L2Clone`, the directory and APK name** — that is a product-identity decision, not a comment. It
+  changes the Android package name and every published filename, so it is **his call, not a sweep**.
+
+⚠ **Left for him, found on the way:** several comments cite the inspiration game's own *mob and skill
+names* as research provenance (`MobBaseStats.cs`, `Skills.Mage.cs`). Those are proper nouns of the same
+kind the naming rule forbids, but they are citations of a source table rather than content we ship, so
+they were not touched unasked.
+
+### Six backlog entries that were already built and never written down
+
+Checked against the code, not the list. Each was fixed in a pass whose commit carried no CHANGELOG
+entry — the exact failure the 0.61.0 note warned about — so they sat in `Backlog.md` as open work:
+
+| Was | Reported | Actually fixed in |
+|---|---|---|
+| `BL-31` a skill card must print the HP price | `55b` | `GameUi.SkillDetail.cs` — prints an `HP` row |
+| `BL-32` an HP-cost skill refused at low HP | `55c` | `GameLoopService` — gated at cast start **and** at finish |
+| `BL-33` Robe Armor Mastery in two learn groups | `57b` | `ClassSkills.cs` — the level-1 yield removed |
+| `BL-53` Elder Marius shows a "!" with no quest | playtest-20 #10 | `OfferedQuests` — one method feeds dialog *and* marker |
+| `BL-63` Frost Bind strips a dummy's HP multiplier | playtest-20 #7 | `Entity.ApplyMobScale` — factors kept on the entity, so the recompute is idempotent |
+| `BL-64` target lost for a physical skill cast | playtest-20 #8 | the manual-play branch of the auto-target push |
+
+All six are deleted from `Backlog.md`. **`BL-63` and `BL-64` were never re-tested by him** — they are
+the two that fell off with no fix and no reply, so they go onto the checklist rather than being called
+closed on my reading of the code alone.
+
 ## 0.62.0 — 2026-08-12 — two tabs: a place to execute the systems we already had
 
 **`BL-03` and `BL-04`.** Both features existed and neither had anywhere to be used from: stat swaps
@@ -853,7 +916,7 @@ why deleting the old +30% cost nothing.
 
 **Restore Spirit gets levels.** It had ONE level for life (20 MP for 65 HP @25) while the bolt ladder
 grew 30 → 116, so it slowed the drain instead of sustaining a rotation. Ten levels now; level 10 @80
-is **120 MP for 200 HP** — L2's Body to Mind (+120 MP / −360 HP) halved for our HP pools and rounded
+is **120 MP for 200 HP** — IG's Body to Mind (+120 MP / −360 HP) halved for our HP pools and rounded
 to 200. Mage Armor Mastery gains rungs 5–8 @40/50/60/70 carrying `mpWhenRestored` 50/60/70/80. New
 `SkillLevel.HpCost` / `HpCostAt` back the per-level HP price.
 
@@ -1029,16 +1092,16 @@ is the honest price of the rework and it is a balance decision, not a bug — th
 
 **Still open:** physical crit damage (base ×2.0) is **unchanged and under research** — the question
 is not only 1.5-vs-2.0 but *what the multiplier multiplies*, since ours scales skill power too where
-L2's scales the attack term. The 76+ "×1.3 rate, +5% cap" buff is deferred with the 4th-class CSVs;
+IG's scales the attack term. The 76+ "×1.3 rate, +5% cap" buff is deferred with the 4th-class CSVs;
 it needs `StatCaps.MagicCritRate` to become per-entity raisable, like the move-speed cap.
 
-## 0.50.0 — 2026-08-06 — Crit RATE is his L2 model; `Can Crit`/`Can Double` are exclusive
+## 0.50.0 — 2026-08-06 — Crit RATE is his IG model; `Can Crit`/`Can Double` are exclusive
 
 Playtest-19 **M8 + M9**, closing the crit-rate/crit-damage thread. Spec:
 [design/CritBlowAndDouble.md §5](design/CritBlowAndDouble.md); measurements: `tools/BalanceMatrix`
 **§C2** (the crit chain decomposed) and **§C3** (the M8 flag audit).
 
-**The formula.** Crit rate is now his L2 model end to end:
+**The formula.** Crit rate is now his IG model end to end:
 
 ```
 crit = ( 110 × weaponFactor × dexMod × passives × buffs  +  flat ) × debuffs × enemyLightArmorMastery
@@ -1072,7 +1135,7 @@ now rolls a crit only if it says so; a `[Double]` skill never also crits; a skil
 new `CombatOutcome.Double`, shown as `N x2` in its own colour, which is the whole point of the `[Double]`
 naming. §C3 audits every physical skill's flags against its own description; all 20 agree.
 
-**New: `SkillDef.CritRateMod`** — a per-skill crit-rate multiplier, L2's rule that a blow's landing
+**New: `SkillDef.CritRateMod`** — a per-skill crit-rate multiplier, IG's rule that a blow's landing
 chance was never the raw crit rate. Stab and Piercing Stab carry **×2.0**. This is the knob the rework
 is *paid* for with: it lifts the dagger's blow without touching basic-attack crit, buffs, or any other
 class.
@@ -1119,11 +1182,11 @@ the multiplier — before the `[Double]` roll on top. Expected damage per blow a
 doubles: **90 → 148** at level 20, **178 → 354** at 36. That is the rogue's entire scaling ladder
 switched on; measure before touching those five numbers.
 
-**`[Double]`.** Ours *is* L2's physical skill crit — a flat ×2 that never touches crit damage, which is
+**`[Double]`.** Ours *is* IG's physical skill crit — a flat ×2 that never touches crit damage, which is
 the whole reason for the name. Its chance is now a pure **ATK** curve, `min(25, 2.5 + 0.75·(ATK−30))`,
 capped by `StatCaps.PhysicalDoubleRate`; it no longer reads DEX at all. **DEX makes a blow land, ATK
 makes it double** — paying the ×2 off DEX too would pay the rogue twice for one stat and give the
-warrior nothing from the mechanic. And `[Double]` on a **buff or debuff doubles its duration** (L2's
+warrior nothing from the mechanic. And `[Double]` on a **buff or debuff doubles its duration** (IG's
 level-76 Skill Mastery): one roll per cast, player casts only, shown as `Name [Double]`.
 
 **Two authoring bugs fixed with it.** The rogue weapon mastery's @24 and @28 rungs were **swapped**
@@ -2880,7 +2943,7 @@ as a non-idempotent one: it trains you to re-run instead of to look.
 
 ## 2026-07-29 — S grade, and the ladder re-anchored to the top (0.31.0) — ⚠ DELETE `game.db`
 
-The owner's reading of the ladder: **our A-grade is L2's LOW S-grade**, so A at full power is already
+The owner's reading of the ladder: **our A-grade is IG's LOW S-grade**, so A at full power is already
 about right for level 85 — the +43% Mythic sitting above it was inflation, not content.
 
 **The authored tier tables are now the MYTHIC piece** (100%), not the Epic (70%) anchor. Every lesser
@@ -3279,8 +3342,8 @@ each root cause is noted at the fix site.
   showing the pre-accept text and you had to close and re-talk to learn the objective.
 - **Combat no longer suppresses regen at all** (owner's call). `Regenerate` used to return early while
   `Engaged` or mid-cast. Auto-farm made that permanent — it re-asserts `Engaged` every tick a target
-  exists — so a farming fighter regenerated nothing until they stopped. The rule was ours, not L2's:
-  L2 modifies regen by STANCE, never by combat, and the stance stack already expresses "resting vs
+  exists — so a farming fighter regenerated nothing until they stopped. The rule was ours, not IG's:
+  IG modifies regen by STANCE, never by combat, and the stance stack already expresses "resting vs
   fighting". Regen is now governed by stance (sitting ×1.8, walking ×1.2, running ×1.0), the safe zone,
   SPT/CON and buffs only. Mages were never affected by the `Engaged` half — `ExecuteSkill` skips it for
   `BaseClass.Mage` — but they were paused mid-cast; that is gone too.
@@ -3407,21 +3470,21 @@ Filled the low-level gear holes and gave every tiered piece a proper name.
 
 ## 2026-07-25 — Magic stat model: weapon-based M.Atk (0.28.81)
 
-Reworked M.Atk to L2's **multiplicative** shape (matching P.Atk, which already worked this way), because
+Reworked M.Atk to IG's **multiplicative** shape (matching P.Atk, which already worked this way), because
 the old **additive** base (`atkStat + level·2 + weaponM`) put the ~41-point power stat in as a flat FLOOR
-— a level-1 mage read ~40 internal M.Atk where L2 has ~8, doing ~2.2× L2's magic damage and one-shotting
+— a level-1 mage read ~40 internal M.Atk where IG has ~8, doing ~2.2× IG's magic damage and one-shotting
 low-level mobs. Now the **weapon M.Atk is the base and the ATK stat multiplies it** (fist value when
 unarmed), so a small wand yields small M.Atk and the staff's big base carries the endgame.
 
 - **Two stat multipliers** (owner's "2 coefficients"): `PAtkStatMult` linear, `MAtkStatMult` super-linear
   `(atk/40)^1.75` ("INT is king" for magic). The exponent mainly rewards ATK *investment* (dyes/swaps) —
   geared endgame is driven by weapon M.Atk + robe `M.Atk ×1.17` + attributes, not the stat.
-- Measured (BalanceMatrix): lvl-1 mage internal M.Atk 40→**8** (L2-exact); lvl-8 nuke 399→154. Endgame now
+- Measured (BalanceMatrix): lvl-1 mage internal M.Atk 40→**8** (IG-exact); lvl-8 nuke 399→154. Endgame now
   lands on the original anchors (414 dmg vs a high-lvl tank [anchor 300-400], ~3.8 casts). Fighter physical
   untouched. Endgame magic will be set by the coming S-grade staff M.Atk, not the stat.
 - **M.Atk display** = `min(internal, 20·√internal)` — honest small number low, shrink only the cosmic high end.
-- **Mob M.Def** coefficient 3.0→3.16 (L2 lvl-83 mob = 262). **Mob SP** = flat **1/20** of exp (was a decaying
-  1.0→0.05 curve; L2 is flat). `ExpCurve.md/.csv` regenerated.
+- **Mob M.Def** coefficient 3.0→3.16 (IG lvl-83 mob = 262). **Mob SP** = flat **1/20** of exp (was a decaying
+  1.0→0.05 curve; IG is flat). `ExpCurve.md/.csv` regenerated.
 - Roadmap added: `docs/design/GearLadderAndCrafting.md` (S/S\*/S\*\* grades, ladder gaps, blueprint crafting).
 
 ## 2026-07-25 — Overnight bug + polish batch (0.28.80)
@@ -3610,7 +3673,7 @@ build (`dotnet build Game.sln` does NOT cover the Unity project — see the chec
   ⚠ This REVERSES the older "another player's exact HP is information you should not have" rule, at the
   owner's request. Level stays private.
 - **Attack/cast speed show the raw stat**: `1234 / 1500  (x3.70)` instead of a bare `x1.10`, in both the
-  Stats window and mob Info. No wire change — the engine uses the L2 model where 333 = 1.0x, so the raw
+  Stats window and mob Info. No wire change — the engine uses the IG model where 333 = 1.0x, so the raw
   value is `mult x 333`, and the caps are the real `StatCaps` ones.
 - **Standing up is INSTANT after a real rest** (seated >= 3s). The recovery exists to stop sit/stand
   spam and now only costs that. Being HIT while seated still pays the full delay — a combat interrupt is
@@ -3730,7 +3793,7 @@ All seven tier-1 bugs are now fixed. The two interesting ones were invisible fro
 
 - **The whole progression curve moved to `Game.Shared/ExpCurve.cs`** — one place for the level curve,
   the mob reward, the SP ratio, the level-difference penalty, the party bonus and the random roll.
-  - **Player curve = the real Lineage 2 table, levels 1-100.** Not a formula: its own shape is a power
+  - **Player curve = the real IG table, levels 1-100.** Not a formula: its own shape is a power
     law (~8.492·L^3.2891) only to level 50, after which SEVEN multiplicative walls at 51/56/61/66/72/77/80
     stack to ~52x by 85. Levels 1-85 from the masterwork source, 86-100 spliced from 4Game (joining at 86
     reads x1.37; joining at 4Game's own 85 would have jumped x8.6 in one level). 4Game publishes levels
@@ -3880,7 +3943,7 @@ window). Deferred to the potion rework: the 3-tab auto-potions expansion. See
   clang's bracket limit) so the Android build compiles.
 - **Level is private** — you see your own level and monsters' levels; other players' levels are not
   sent at all, only shared inside the party window. Enforced server-side.
-- **L2 regen cadence** — health/mana regenerate in larger chunks every 3 seconds rather than a
+- **IG regen cadence** — health/mana regenerate in larger chunks every 3 seconds rather than a
   trickle every second, with CON weighted much harder. Damage-over-time and heal-over-time keep
   their own 1-second tick.
 - **Spirit (SPT) is a full stat** — the fifth core stat (CON/ATK/WIT/DEX/SPT), driving max mana,
@@ -3905,7 +3968,7 @@ window). Deferred to the potion rework: the 3-tab auto-potions expansion. See
 
 ## 2026-07-13 — Damage model, death & resurrection, heals
 
-- **Combat retune** — L2-style damage constants, with the weapon (not the class) deciding the
+- **Combat retune** — IG-style damage constants, with the weapon (not the class) deciding the
   physical/magic split, and hidden per-class stat grants removed.
 - **`{Flat, Mod}` skill damage** — the foundation for physical skills scaling off attack power,
   landed backward-compatibly.
@@ -3923,7 +3986,7 @@ window). Deferred to the potion rework: the 3-tab auto-potions expansion. See
 - **Auto-hunt / idle farming** — the character farms while idle and, time-capped, while offline,
   reusing the same targeting/skill logic; with roaming bounds, a rank filter and a skill-priority
   order.
-- **PvP system** — an L2-style flag / karma / player-kill system with enable and counter-attack
+- **PvP system** — an IG-style flag / karma / player-kill system with enable and counter-attack
   toggles, self-defence gating, karma you grind off on mob kills, and a 15k cap.
 - **Disconnect / exit state machine** — a combat state that gates logout, a disconnect grace window
   vs. offline-farming split, and universal Return skills + scrolls.
@@ -4038,11 +4101,11 @@ later slices; this build proves the pipeline end-to-end with placeholder skills.
 ## Phase 22.2
 
 ### Original town names (IP safety)
-- Renamed every town away from Lineage-2 names to **original, generic** ones:
+- Renamed every town away from IG names to **original, generic** ones:
   **Brackenford** (starter), **Stonewatch**, **Emberfall**, **Greymarsh**, **Ironreach
   Keep**, **Duskvale**, **Frostmere**. Safe-zone ids and gatekeeper ids were renamed to
   match; nothing persisted referenced the old ids, so **no DB reset**.
-- Also scrubbed the L2 currency term ("adena") from the docs — the currency is **Gold**.
+- Also scrubbed the IG currency term ("adena") from the docs — the currency is **Gold**.
 - Policy going forward: never reuse names trademarked by other games (towns, NPCs, items,
   skills, currency). Stat *formulas* aren't copyrightable; *names* are.
 
@@ -4256,7 +4319,7 @@ later slices; this build proves the pipeline end-to-end with placeholder skills.
   stat).
 - **Only JEWELS raise magic defence.** New **`EquipSlot.Jewel`** + an item `MDefBonus`;
   two starter jewels seeded (Brass Amulet, Silver Talisman). One jewel equips for now,
-  built to expand to the L2 five-slot layout later. M.Def shows in the Stats window and
+  built to expand to the IG five-slot layout later. M.Def shows in the Stats window and
   the equip-comparison popup.
 - **Tank "Anti Magic"** (archetype passive) adds extra magic defence on top of the base.
 
@@ -4358,11 +4421,11 @@ later slices; this build proves the pipeline end-to-end with placeholder skills.
   cancel/interrupt you've paid the initial but not the finish — groundwork for
   toggle skills (initial cost + per-second upkeep) later.
 
-### Cast & attack speed (L2-style 333 = 100%)
+### Cast & attack speed (IG-style 333 = 100%)
 - New speed model: a stat where **333 = 1.0×**, higher = faster. **WIT drives
   cast speed**, **DEX drives attack speed**, with **per-class weights** (mage WIT
   ~5%/pt, fighter ~3%/pt) and **weapon base speeds** (dagger fast, bow slow,
-  staff caster-normal). Approximated from the L2 tables — tune in
+  staff caster-normal). Approximated from the IG tables — tune in
   `StatCalculator` (`CastSpeedStat`, `AttackSpeedStat`, weapon base speeds).
 - Capped via `StatCaps` (cast 1999 ≈ 6×, attack 1500 ≈ 4.5×). WIT now makes a
   mage a **faster caster** (and magic-crit-prone), not a bigger nuker.
@@ -4374,7 +4437,7 @@ later slices; this build proves the pipeline end-to-end with placeholder skills.
   level). A drop only rolls when the mob's spawned level is in range — so **one
   creature can drop different loot at different levels** (e.g. `grey_wolf` drops
   common potions at any level but a better armour only at level 15+).
-- This is a **superset** of the L2 approach: you can still author the pure-L2 way
+- This is a **superset** of the IG approach: you can still author the pure-IG way
   (distinct creature per level tier, no bands) AND the flexible way (one creature,
   level-varying loot), and mix them freely. The level check costs a couple of
   integer comparisons per drop entry — negligible next to the network send on a
@@ -4405,7 +4468,7 @@ later slices; this build proves the pipeline end-to-end with placeholder skills.
 - Zones now list **mob ids** instead of generic names. Drop chance/amount are
   scaled by the server rates on top of each entry's own values.
 
-### Skill SP costs rescaled (L2 scarcity)
+### Skill SP costs rescaled (IG scarcity)
 - Learnable skills now cost **hundreds–thousands of SP** (HP Boost 1000/3000/8000,
   Wind Walk 1500, Mass Wind Walk 5000) so the SP economy forces **prioritization**
   — you can't learn everything at once; you farm and choose. The SpRate multiplier
@@ -4420,7 +4483,7 @@ later slices; this build proves the pipeline end-to-end with placeholder skills.
 
 ### Damage is now a ratio, not a subtraction
 - Old model was `max(atk - def, 0)` — a wall once defence ≥ attack. **New model
-  is L2-style ratio damage**: `K · (atk · lvlMod + power) / def`. Defence gives
+  is IG-style ratio damage**: `K · (atk · lvlMod + power) / def`. Defence gives
   **diminishing returns** (never fully blocks), attack always does something, and
   damage **scales smoothly with level** via `lvlMod = (level+89)/100`.
 - **Weapon variance**: each hit rolls a ± band by weapon type (bow/dagger spiky,

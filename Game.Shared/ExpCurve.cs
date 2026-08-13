@@ -7,7 +7,7 @@ namespace Game.Shared;
 /// Reference table + the reasoning behind every number: <c>docs/balance/ExpCurve.md</c> (and its
 /// TAB-separated twin <c>ExpCurve.csv</c>). Regenerate those if you touch anything here.
 ///
-/// **The player curve is the real Lineage 2 table, deliberately.** It is *not* a formula: its own
+/// **The player curve is the real IG table, deliberately.** It is *not* a formula: its own
 /// shape is a power law (~8.492·L^3.2891) only up to level 50, after which SEVEN multiplicative
 /// "walls" at 51/56/61/66/72/77/80 stack to ~52x by level 85. No smooth function reproduces a
 /// x3.57 step from 79 to 80, so the cumulative totals are stored outright. **The walls ARE the
@@ -119,11 +119,11 @@ public static class ExpCurve
 
     // ----- Skill points -------------------------------------------------------------------------
 
-    /// <summary>SP as a CONSTANT fraction of the same kill's EXP — retail L2's shape (owner 2026-07-25).
-    /// L2 mob SP is a flat ~1/20–1/35 of exp at every level (a level-1 keltir pays 35 exp / 1 sp, a
+    /// <summary>SP as a CONSTANT fraction of the same kill's EXP — retail IG's shape (owner 2026-07-25).
+    /// IG mob SP is a flat ~1/20–1/35 of exp at every level (a level-1 keltir pays 35 exp / 1 sp, a
     /// level-8 goblin 285 / 10 — ratios of 0.029 and 0.035), NOT a curve. The earlier decaying anchors
-    /// (~1.0 at start → 0.05 at 85) made a low-level mob pay as much SP as EXP, ~30–70× L2; replaced by
-    /// one number. 1/20 is the round figure the owner named; our own exp sits ~2× L2's, so the ABSOLUTE
+    /// (~1.0 at start → 0.05 at 85) made a low-level mob pay as much SP as EXP, ~30–70× IG; replaced by
+    /// one number. 1/20 is the round figure the owner named; our own exp sits ~2× IG's, so the ABSOLUTE
     /// SP still lands a little above retail, but the RATIO now matches.</summary>
     public const float SpToExpRatio = 1f / 20f;
 
@@ -149,7 +149,7 @@ public static class ExpCurve
     /// what stops someone kill-stealing a level-78 mob with a level-1 bow and gaining twenty levels on
     /// one lucky shot. It is also the anti-powerlevel mechanism: at a 12-level gap you keep ~32%, so
     /// farming far above your level nets about what your own band would pay anyway.
-    /// (Real L2 uses (5/6)^(gap-5) and only penalises downward; ours is deliberately different.)</summary>
+    /// (Real IG uses (5/6)^(gap-5) and only penalises downward; ours is deliberately different.)</summary>
     public static float LevelGapMultiplier(int levelDifference)
     {
         int gap = Math.Abs(levelDifference);

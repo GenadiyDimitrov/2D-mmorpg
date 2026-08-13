@@ -17,7 +17,7 @@ stands. What changed is the **improved (group) buff**, and the change reverses t
 0.36-0.41 made a group a **bag of independent children**: five separate buffs, resolving one by one,
 so a rare potion could take over one part of a blessing. Played, that reads wrong (owner, 2026-08-01):
 
-> *in l2 an improved buff overrides its single parts. It's always max level, so a single buff cannot
+> *in IG an improved buff overrides its single parts. It's always max level, so a single buff cannot
 > override it … if I have windwalk + agility and cast improved movement, it removes the singles and
 > applies improved; if I try a single afterwards it fails.*
 
@@ -51,7 +51,7 @@ also lists is refused by the group that covers it. The client needs **no change*
 already drawn as one square, and now it genuinely is one buff, so the collapse logic degenerates
 harmlessly. Protocol stays **8**; nothing on the wire moved.
 
-The **buff-slot cap** (L2's 24) is the natural follow-up and is not built. When it is, dropping the
+The **buff-slot cap** (IG's 24) is the natural follow-up and is not built. When it is, dropping the
 **oldest** buff beats refusing the new one — a refusal makes the player hunt for something to cancel
 mid-fight.
 

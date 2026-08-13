@@ -38,8 +38,8 @@ Measured off the built catalog, not derived. **No — and it missed in opposite 
 
 The WEAPONS were fine; the **armor was above the first thing you could loot**, so every early armor
 drop was a downgrade. The owner's diagnosis of why (2026-07-30): the training armor was authored as the
-**sum of an L2 upper + lower body**, taken from the **top** of the no-grade range, whereas this
-ladder's F Common rung is 45 % of a **mid** no-grade set. The weapons were cut from L2's **top**
+**sum of an IG upper + lower body**, taken from the **top** of the no-grade range, whereas this
+ladder's F Common rung is 45 % of a **mid** no-grade set. The weapons were cut from IG's **top**
 no-grade weapon, which is why they line up and the armor does not.
 
 **Fix (his call, and the right one): move the STARTER down, not the F rung up** — light 53 → **35**,

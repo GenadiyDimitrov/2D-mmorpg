@@ -27,7 +27,7 @@ that flat is noise:
  20000 |        1154            1212  (+5%)                     2926  (+150%)
 ```
 
-At 20k pAtk a flat +1000 skill is +5% over a basic — which is *exactly* why late-L2 chronicles had to
+At 20k pAtk a flat +1000 skill is +5% over a basic — which is *exactly* why late-IG chronicles had to
 hand archers 24k/32k-power skills. The fix is a **multiplier**, not a bigger flat.
 
 ---
@@ -104,7 +104,7 @@ untouched (an early "store shrunk value + linear damage" cut broke mob casters a
   mob casters are unaffected.
 - **Only the DISPLAY shrinks:** `EffectiveMagicAttackShown = scale·√(internal)` (scale=20), sent to the
   stats window + target frame. 2,954 → **1,087** @L85 (P.Atk size); the cosmic value is also sent as a
-  **debug/L2-reference stat** (`MagicAttackInternal`, shown as "M.Atk (internal / L2-ref)").
+  **debug/IG-reference stat** (`MagicAttackInternal`, shown as "M.Atk (internal / IG-ref)").
 - **Buffs (owner's square-it idea):** in `EffectiveMagicAttack`, a **magic-only** buff (`BuffMagAtk`) is
   applied **squared** — so its authored % is the HONEST effective % (`+32%` → +32% damage AND +32% on the
   shrunk display; the √ cancels the square). A **shared** attack buff (`BuffAtk`) stays **linear/√-dampened**
@@ -114,7 +114,7 @@ untouched (an early "store shrunk value + linear damage" cut broke mob casters a
   change. Unbuffed magic is already identical.
 - Files: `StatCalculator.MagicAttackDisplayScale`, `Entity.EffectiveMagicAttack` (squared magic buff) +
   `EffectiveMagicAttackShown`, `Dtos.StatsUpdate.MagicAttackInternal`, the SendStats + TargetDetails sends,
-  and the client "M.Atk (internal / L2-ref)" row. `MagicDamage`/`HealAmount` reverted to `√` (unchanged).
+  and the client "M.Atk (internal / IG-ref)" row. `MagicDamage`/`HealAmount` reverted to `√` (unchanged).
 
 The `{Flat, Mod}` skill unification (§3) and the "physical skills should scale with pAtk" idea are STILL
 open and being discussed separately for the PHYSICAL side — see the P.Atk discussion. Option A analysis

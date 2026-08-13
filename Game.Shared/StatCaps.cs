@@ -14,7 +14,7 @@ public static class StatCaps
     /// mage. Bases sit well below this so gear/buffs climb toward it.</summary>
     public const float MoveSpeed = 250f;
 
-    /// <summary>Attack-speed stat ceiling (L2-style: 1500 ≈ x4.5 attacks/sec).
+    /// <summary>Attack-speed stat ceiling (IG-style: 1500 ≈ x4.5 attacks/sec).
     /// Enforced once the AGI→attack-speed formula lands (casting round).</summary>
     public const int AttackSpeed = 1500;
 

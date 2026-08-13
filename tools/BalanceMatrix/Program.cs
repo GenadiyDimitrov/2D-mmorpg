@@ -555,7 +555,7 @@ Console.WriteLine();
 //  the one measure that means anything, DAMAGE PER SECOND, before it gets authored.
 //
 //  Note the shape of our formula: power is ADDITIVE with P.Atk and defence DIVIDES the sum, so a big
-//  L2-style power number is tempered rather than explosive — 7600 is not the outlier it looks like next
+//  IG-style power number is tempered rather than explosive — 7600 is not the outlier it looks like next
 //  to a nuke's power 116.
 // =====================================================================================================
 {
@@ -727,8 +727,8 @@ Console.WriteLine();
 
 // -----------------------------------------------------------------------------------------------
 // M.ATK DISPLAY RAMP (owner 2026-07-25): the shown M.Atk = scale·√internal. "now" uses the flat
-// scale 20; "new" ramps scale = min(level, 20) so low levels read close to L2 (a lvl-1 wand mage
-// showed ~72 where L2 shows ~8). DAMAGE is untouched (it uses the internal value, printed too).
+// scale 20; "new" ramps scale = min(level, 20) so low levels read close to IG (a lvl-1 wand mage
+// showed ~72 where IG shows ~8). DAMAGE is untouched (it uses the internal value, printed too).
 // Training gear, no shots — a real new character 1-30.
 // -----------------------------------------------------------------------------------------------
 Console.WriteLine("=== M.ATK DISPLAY: flat-20 (now) vs min(internal, 20·√internal) (new) — best gear ===");
@@ -1753,7 +1753,7 @@ Console.WriteLine("=== C1: sustained DPS after the change — ROGUE (duals) vs W
 }
 Console.WriteLine();
 
-Console.WriteLine("=== C2: CRIT RATE — his L2 model, decomposed (docs/design/CritBlowAndDouble.md §5) ===");
+Console.WriteLine("=== C2: CRIT RATE — his IG model, decomposed (docs/design/CritBlowAndDouble.md §5) ===");
 {
     Console.WriteLine("  crit = (110 x weaponFactor x agiMod  x  passives x buffs  +  flat) x debuffs x enemyLightArmor");
     Console.WriteLine("  numbers on HIS 0-1000 scale (1000 = 100%), cap 500. mult = every passive AND buff folded.");
@@ -1808,7 +1808,7 @@ Console.WriteLine("=== C2: CRIT RATE — his L2 model, decomposed (docs/design/C
     Console.WriteLine("   - flat is 0 on every row, and NOTHING in the game fills it any more. The weapon's");
     Console.WriteLine("     crit-rate ATTRIBUTE moved into 'mult' on 2026-08-07 (checklist 0d): it was landing");
     Console.WriteLine("     here as value/100, i.e. a maxed roll was +30 PERCENTAGE POINTS (+300 on this scale,");
-    Console.WriteLine("     vs L2's +109 at S) and, being flat, it flattened the 3:2:1 weapon identity below.");
+    Console.WriteLine("     vs IG's +109 at S) and, being flat, it flattened the 3:2:1 weapon identity below.");
     Console.WriteLine("     These rows roll no attributes, so they show the BASE model only — to see the roll,");
     Console.WriteLine("     multiply: sword x1.90 at its new 90 ceiling, dual/bow x1.30 at 30.");
     Console.WriteLine("     His model's flat 'heavy set +127' — the term that is supposed to carry the BLUNT");
@@ -2359,7 +2359,7 @@ static Entity BuildPlayer(Race race, BaseClass cls, int level, string? quality =
     // Shots (2026-07-24): the old training passive is gone — soul/spell runes are now held RUNE items that
     // grant this buff. Apply it directly here so the matrix reflects the EXPECTED play state (runes ON).
     // Its numbers are identical to the old max passive (+100% P.Atk / +41% eff. M.Atk / +40 cast), so the
-    // tuned curve is unchanged for a runed player; a rune-LESS player is ~half offence (intended, L2).
+    // tuned curve is unchanged for a runed player; a rune-LESS player is ~half offence (intended, IG).
     var shot = SkillCatalog.Get(cls == BaseClass.Mage ? SkillCatalog.SpellRuneBuff : SkillCatalog.WarRuneBuff);
     if (shot != null)
         e.Buffs.Add(new Game.Server.Simulation.BuffInstance

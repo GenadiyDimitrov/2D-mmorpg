@@ -43,7 +43,12 @@ public static class GameConstants
     /// actually happens most: **client-only work, where the CLIENT is ahead of the server.** A version
     /// number that describes the contract instead of the build makes that case a non-event.
     /// </summary>
-    public const int ProtocolVersion = 17;
+    /// 17 → 18 (2026-08-12, `BL-37`): `DebugConfigDto` lost its `TestHealPower` field with the test heal
+    /// itself. It is a POSITIONAL record, so every field after it shifted — an old client sending the
+    /// 20-field order would write its heal power into `TestSkillPower`. Admin-only, and
+    /// `MinAcceptedProtocol` is 8 so such a client is still let in, which is precisely why the number has
+    /// to move: the handshake is the only place that difference is written down.
+    public const int ProtocolVersion = 18;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
@@ -250,7 +255,7 @@ public static class GameConstants
     public const int SecondIntervalTicks = TickRate;
 
     /// <summary>Out-of-combat natural regen cadence, in ticks. Default 30 = **3 seconds**, matching
-    /// L2's `HP_REGENERATE_PERIOD = 3000`. NOT a const: it's live-editable from the admin Debug Tuning
+    /// IG's `HP_REGENERATE_PERIOD = 3000`. NOT a const: it's live-editable from the admin Debug Tuning
     /// panel so the cadence can be compared in-game. Changing it does NOT change how fast you heal —
     /// <see cref="RegenIntervalSeconds"/> scales the amount — only how chunky the healing is.</summary>
     public static int RegenIntervalTicks = 30;
@@ -431,7 +436,7 @@ public static class GameConstants
 
     public const int ClassChangeLevel = 20;
 
-    /// <summary>Max classes ONE character may own (L2-style: the main class + up to 3 subclasses).
+    /// <summary>Max classes ONE character may own (IG-style: the main class + up to 3 subclasses).
     /// Stops a character stacking pointless duplicate base classes when only a few can reach a unique
     /// 3rd-class discipline. The player-facing swap rules (safe-zone-only, 5-min delay) are separate.</summary>
     public const int MaxSubclasses = 4;

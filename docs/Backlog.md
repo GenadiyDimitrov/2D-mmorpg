@@ -156,15 +156,6 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 ## Classes & skills
 
-- `BL-31` 🔴 **A skill card must print the HP price, not only the MP gain.** *"it's not showing in
-  the description what it takes to gain what .. −200hp +120mp .. is never written."*
-
-- `BL-32` 🔴 **An HP-cost skill must be refused at low HP, the way MP is.** *"I cannot cast a skill
-  when my mp is low .. so I cannot cast skill when hp is low."*
-
-- `BL-33` 🔴 **Robe Armor Mastery is offered in two learn groups** — L1 appears in both the level-1
-  and the level-7 group, and learning one makes the other vanish.
-
 - `BL-34` 🔴 **"Madness" — a party buff at the top of the Frenzy family**, plus the 76+ buff
   expansion: the healer gets all the singles including a single Frenzy, and 76+ wants *"2-3 more
   Harmonies and 1-2 more improved buffs"*.
@@ -174,9 +165,6 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 - `BL-36` 🔴 **Subclass swapping restricted to a safe zone, with a 5-minute delay.** The machinery
   swaps fine; the player-facing rules were never built.
-
-- `BL-37` 🔴 **Delete the `TestHeal` power-1000 debug skill.** Marked removable, flagged for
-  cleanup, never removed.
 
 - `BL-38` 🔵 **Pets and summons** — immovable totems, class pets, the mage summoner. Designed, never
   scheduled, never re-raised by you.
@@ -245,9 +233,6 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 ## Quests
 
-- `BL-53` 🔴 **Elder Marius shows a "!" and has no quest to give.** Reported in playtest-20, appears
-  nowhere else in the repo, never fixed.
-
 - `BL-54` 🔵 **Newbie items through quests** — hand the starter weapon/armor/jewel boxes out at
   levels 6/8/10. Your plan, never scheduled. ⚠ Re-check it against the tutorial as it now ships
   (`267313d` moved every box onto the step that needs it) before building.
@@ -269,9 +254,6 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 ## Housekeeping
 
-- `BL-58` 🔴 **`58i` — purge the inspiration game's name from the codebase.** Mechanical, no risk,
-  written down twice as "I will fold it into a quiet build" and never folded in.
-
 - `BL-59` 🔴 **Resurrect / party / PvP-flag rules (your find #9).** Three parts, none built:
   Ultimate Resurrection scrolls should be tradable (*"atleast the one that drop and from the admin
   menu"*); you cannot res a party member while **you** are flagged, but may res or heal a PK while
@@ -291,21 +273,6 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 ---
 
-## Two bugs that fell off with no fix and no reply
-
-These belong in the checklist, not here — but they were reported in playtest-20, answered nowhere,
-and carried into no pass since. Parked here so they stop vanishing.
-
-- `BL-63` 🔴 **Frost Bind strips a dummy's / an elite's HP multiplier.** *"makes training dummies go
-  from 1kk hp to 5k and same for elites .. they lose their hp bonus. Dont know if its only for this
-  debuff or no. But need investigation."*
-
-- `BL-64` 🔴 **Your target is lost for the duration of a physical skill cast.** *"When casting skill
-  (stab) my target is lost for the duration of the cast .. then back again (only physical 'stab',
-  haven't tested with others yet)."*
-
----
-
 ## What was closed on 2026-08-12 and is deliberately NOT in this file
 
 The playtest-21 batch and `58d` shipped in `267313d` → `ed75bac`: shields option 3 (P.Def ÷5,
@@ -313,3 +280,15 @@ Shield Mastery ×5) · the shield enchant `+9 → +3` · the wood/iron shield bl
 start quest re-spec · training club and knives deleted · the `x500` mats stall · auto-farm ignoring
 `RequiredWeapon` · the training dummies + rank titles · `65d` · `67i` · `68h` · `63i` · `62j` ·
 broken jewels → 9/5/3 · **item tags and the full `/give`**. They live in `CHANGELOG.md`.
+
+**The housekeeping batch, later the same day** took out `BL-37` (the test heal, deleted — and the
+retired-skill-id leak it exposed in the save loader) and `BL-58` (`58i`, the inspiration-game name
+purge; the tag is `IG`).
+
+**Six more were checked out against the CODE, not the list** — every one was already built in a pass
+whose commit carried no changelog entry, which is why they were still sitting here: `BL-31` (`55b`,
+the HP price on a skill card), `BL-32` (`55c`, refusing an HP skill at low HP), `BL-33` (`57b`, the
+duplicated Robe Armor Mastery), `BL-53` (Elder Marius's empty "!"), `BL-63` (Frost Bind stripping a
+mob's HP multiplier) and `BL-64` (the target dropped for a physical cast). The table in
+`CHANGELOG.md` names the code that proves each one. ⚠ `BL-63` and `BL-64` were closed on a **reading
+of the code**, never re-tested by him — they are on the checklist as verifications, not called done.

@@ -254,7 +254,7 @@ public record StatsUpdate(
     float MagicResist = 0f, float MagicFailMod = 1f,
     float CritRateResist = 0f, float CritDmgResist = 0f, float BowResist = 0f,
     int InterruptResist = 0,
-    // DEBUG / L2-reference: the OLD-style internal M.Atk (base·levelMod²·buffs²) the shrunk display hides.
+    // DEBUG / IG-reference: the OLD-style internal M.Atk (base·levelMod²·buffs²) the shrunk display hides.
     int MagicAttackInternal = 0,
     // Heal stats (no M.Atk): output = (HealPowerFlat + skillPower)·HealPowerMod; received = (HealReceivedFlat
     // + output)·HealReceivedMod. Default 0/×1.
@@ -317,7 +317,7 @@ public record SelectionOption(string ItemId, string Name);
 /// authority on which colours exist and what hex each one is.</summary>
 public record TitleColorOffer(string[] Colors);
 
-/// <summary>Server -> owning client: the expanded target window (L2-style inspect) —
+/// <summary>Server -> owning client: the expanded target window (IG-style inspect) —
 /// the target's detailed stats and, for a mob, its passive modifier lines.</summary>
 public record TargetDetails(
     Guid Id, string Name, int Level, bool IsMob,
@@ -376,7 +376,7 @@ public record PartyLootVoteDto(LootMode Mode, string RequestedBy, bool Open = tr
 /// (ticks, ≥0) on top of the skill's own reuse (so auto-reuse is never below the default).</summary>
 public record AutoSkillDto(string SkillId, bool Enabled, int ExtraDelayTicks);
 
-/// <summary>One class a character owns (an L2-style subclass). Server → client, so the UI can list
+/// <summary>One class a character owns (an IG-style subclass). Server → client, so the UI can list
 /// them and let you swap. <paramref name="Active"/> = the one being played right now.</summary>
 public record SubclassDto(
     int Slot, Race Race, BaseClass BaseClass, int SecondClass, int ThirdClass, int Level, bool Active);
@@ -766,11 +766,12 @@ public record DebugConfigDto(
     float ExpRate, float SpRate, float DropChanceRate, float DropAmountRate, float GoldRate,
     int KarmaBase, float KarmaConsecGrowth, float KarmaLevelGrowth, int KarmaLossPerDeath, int KarmaLossPerMob,
     int IdleCapSeconds, int OfflineCapSeconds, int GraceSeconds,
-    // Test skills: the two debug damage skills read Flat=TestSkillPower, Mod=TestSkillMod; testheal heals
-    // TestHealPower. Lets the owner read the {Flat, Mod} damage curve live before authoring real skills.
-    int TestHealPower = 1000, int TestSkillPower = 0, float TestSkillMod = 1f,
-    // Regen: the CADENCE (seconds between natural-regen ticks; 3 = L2's period) and how steeply the
-    // stat weights it (per-point multiplier — 1.03 is L2's CON curve, 1.0 = stat does nothing).
+    // Test skills: the two debug damage skills read Flat=TestSkillPower, Mod=TestSkillMod. Lets the owner
+    // read the {Flat, Mod} damage curve live before authoring real skills. (`TestHealPower` was dropped
+    // with the test heal, 2026-08-12, `BL-37` — a positional record, so the client's send order moved too.)
+    int TestSkillPower = 0, float TestSkillMod = 1f,
+    // Regen: the CADENCE (seconds between natural-regen ticks; 3 = IG's period) and how steeply the
+    // stat weights it (per-point multiplier — 1.03 is IG's CON curve, 1.0 = stat does nothing).
     // Changing the cadence does NOT change healing speed, only its chunkiness.
     float RegenIntervalSeconds = 3f, float ConRegenBase = 1.03f,
     // Mob regen is a FRACTION OF THE MOB'S OWN POOL per second, not the CON curve (see

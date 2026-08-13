@@ -4,7 +4,7 @@ Design source for the 12 disciplines (× 3 races = 36 third classes). I (Claude)
 turn this into real `SkillDef`s + `RegisterThird` kits, one archetype at a time.
 
 **All names here are ORIGINAL PLACEHOLDERS** — generic fantasy, no trademarked
-names from L2 or any other game. Owner will rename later; change anything freely.
+names from IG or any other game. Owner will rename later; change anything freely.
 
 ## Format per race kit (4 skills)
 - **Main 1 / Main 2** — active, each tagged `[DMG]`, `[DEF]`, `[HEAL]`, or `[CC]`.

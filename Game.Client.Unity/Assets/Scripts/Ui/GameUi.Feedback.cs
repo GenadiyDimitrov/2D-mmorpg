@@ -510,7 +510,7 @@ namespace Game.Client
 
 
         /// <summary>
-        /// How dangerous something is RELATIVE to you, L2-style: far above → red, above → orange,
+        /// How dangerous something is RELATIVE to you, IG-style: far above → red, above → orange,
         /// even → white, below → green, trivial → grey. Absolute level means little; the gap is what
         /// decides whether you can take it.
         /// </summary>

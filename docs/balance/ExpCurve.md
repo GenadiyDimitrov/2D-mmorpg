@@ -1,4 +1,4 @@
-# Exp curve - proposed (L2-derived), levels 1-100
+# Exp curve - proposed (IG-derived), levels 1-100
 
 Generated 2026-07-24 from the owner's spec in memory `exp-party-and-drop-design`.
 Implemented in `Game.Shared/ExpCurve.cs`; machine-readable copy:
@@ -14,7 +14,7 @@ preference: no smooth function reproduces a x3.57 step from level 79 to 80, nor 
 |---|---|---|
 | **exp to next level** | **TABLE** (levels 1-101 verbatim) | `ExpCurve.Cumulative[]` |
 | mob exp | FORMULA (power law + 7 low anchors) | `ExpCurve.MobExpReward()` |
-| SP ratio | CONSTANT `1/20` (L2 shape) | `ExpCurve.SpRatio()` |
+| SP ratio | CONSTANT `1/20` (IG shape) | `ExpCurve.SpRatio()` |
 | level-gap penalty | FORMULA `0.85^(gap-5)` | `ExpCurve.LevelGapMultiplier()` |
 | party bonus | FORMULA (two-slope) | `ExpCurve.PartyBonus()` |
 
@@ -25,7 +25,7 @@ to 99% at level 85.
 
 ## Formulas
 ```
-exp_to_next(L) = levels 1-85  : the real Lineage 2 table (masterwork source). Its SHAPE is a power
+exp_to_next(L) = levels 1-85  : the real IG table (masterwork source). Its SHAPE is a power
                                 law 8.492*L^3.2891 up to ~50 (descriptive - see above), then SEVEN
                                 wall multipliers at 51/56/61/66/72/77/80 stacking to ~52x by 85.
                  levels 86-100: 4Game per-level costs spliced on (see the note below).
@@ -37,9 +37,9 @@ mob_exp(L)     = L >= 30 : 0.026314 * L^3.2427    <- fitted to the owner`s L50/L
                  levels, ~20 by level 10, ~120 by level 20. THESE SEVEN NUMBERS ARE THE
                  EARLY-GAME TUNING KNOB; nothing above level 30 is affected by them.
 
-sp_ratio(L)    = 1/20 = 0.05, CONSTANT at every level (owner 2026-07-25). Retail L2 mob SP is a flat
+sp_ratio(L)    = 1/20 = 0.05, CONSTANT at every level (owner 2026-07-25). Retail IG mob SP is a flat
                  ~1/20-1/35 of exp (keltir 35/1, goblin 285/10), NOT a curve; the old decaying anchors
-                 (1.00 -> 0.05) paid a low-level mob as much SP as EXP, ~30-70x L2. One number now.
+                 (1.00 -> 0.05) paid a low-level mob as much SP as EXP, ~30-70x IG. One number now.
 mob_sp(L)      = max(1, round( mob_exp(L) * sp_ratio(L) ))
 mobs_to_level  = ceil( exp_to_next(L) / mob_exp(L) )  -- solo, no party bonus, zero level gap
 ```
@@ -171,7 +171,7 @@ mobs are therefore disproportionately valuable per kill. This is NOT exploitable
 level because the mob exponent (3.2427) almost exactly matches the player curve's (3.2891). Nothing
 needs tuning in that band.
 
-**5. The walls are the entire endgame.** `mobs_to_level` leaves the flat band exactly where the L2 walls
+**5. The walls are the entire endgame.** `mobs_to_level` leaves the flat band exactly where the IG walls
 begin: 632 at 50, 1 290 at 60, 4 014 at 75, then **56 072 at 79** and **125 828 at 85**. Levels 79-85
 alone are ~500 000 of the 631 799 total. Deliberate (x1 server, owner confirmed) — the one knob if the
 endgame ever needs shortening, and it should be turned by softening walls, never by touching either base
@@ -285,12 +285,12 @@ there is no overflow risk on the exp side at any level this curve will ever cove
 different story — see finding 7.)
 
 **What the tail actually costs.** Levels 86-100 add ~135.3 million mobs on top of the 631 799 needed to
-reach 86 — a total of **135 981 911** for 1->100, or ~377 700 hours at 10 s/kill. That is L2's real
+reach 86 — a total of **135 981 911** for 1->100, or ~377 700 hours at 10 s/kill. That is IG's real
 post-85 curve and it is not meant to be reachable by ordinary play; it is here so the ceiling exists.
 
 ## Known quirk: level 80 is 0.03% cheaper than level 79
 
-Real Lineage 2 pins level 80's CUMULATIVE total at exactly **4 200 000 000** — a deliberately round
+Real IG pins level 80's CUMULATIVE total at exactly **4 200 000 000** — a deliberately round
 number — while level 79's is 2 099 275 834. The costs that fall out are 2 100 724 166 for level 79 and
 2 100 000 000 for level 80, so **level 80 costs very slightly less than 79**.
 
@@ -352,7 +352,7 @@ ExpToNext(L) = Table[L] · ExpCurveScale · EndgameSoftness^(walls passed below 
 ```
 
 - `ExpCurveScale` — stretches/compresses the whole curve. One number.
-- `EndgameSoftness` — 1.0 keeps L2 exactly; 0.8 makes each wall 20% gentler and COMPOUNDS, so levels
+- `EndgameSoftness` — 1.0 keeps IG exactly; 0.8 makes each wall 20% gentler and COMPOUNDS, so levels
   79-85 shorten dramatically while 1-50 barely moves. One number.
 
 At defaults (1.0, 1.0) it is bit-for-bit the current table, so everything verified stays verified. That

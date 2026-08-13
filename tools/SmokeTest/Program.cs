@@ -468,7 +468,7 @@ await a.Hub.SendAsync("DebugLevel", -1);   // back to level 1 so the leveling ma
 await a.Settle();
 
 // -------------------------------------------------------------------------------------------
-// 1b-2. THE EXP CURVE ON THE WIRE. The curve moved to the real Lineage 2 table (ExpCurve), where the
+// 1b-2. THE EXP CURVE ON THE WIRE. The curve moved to the real IG table (ExpCurve), where the
 //     shape is a power law only to level 50 and then SEVEN multiplicative walls — so a plain formula
 //     can no longer stand in for it, and an off-by-one in the table shifts every level by one.
 //     That is invisible in play: the bar still fills, just against the wrong denominator. It is only
@@ -490,7 +490,7 @@ Check("the level-79 wall is intact (x3.57 step)", ExpCurve.ExpToNext(79) == 2_10
       $"got {ExpCurve.ExpToNext(79):N0}");
 // Levels 86-100 are spliced from a second source, where rows 88 and 89 were published TRANSPOSED and
 // are swapped back here — so a level costing meaningfully LESS than the one before it means a row is
-// out of order. Tolerance is 1%: real L2 pins level 80's cumulative total at exactly 4 200 000 000, a
+// out of order. Tolerance is 1%: real IG pins level 80's cumulative total at exactly 4 200 000 000, a
 // deliberately round number, which makes level 80 come out 0.03% cheaper than 79. That dip is in the
 // authentic data and is not worth "fixing"; a transposition looks nothing like it (88/89 was 24%).
 int transposedAt = 0;

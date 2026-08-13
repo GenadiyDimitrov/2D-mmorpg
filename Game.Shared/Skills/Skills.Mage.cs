@@ -169,12 +169,12 @@ public static partial class SkillCatalog
         // Elemental Bolt — the Nuker's MAIN nuke (replaces Magic Bolt). 13 levels, learned
         // every 5 levels from 20 to 80.
         //
-        // The power ladder is L2's own nuke curve: linear in character level, anchored at
-        // POWER 108 @ LEVEL 74 (L2's Hurricane / Hydro Blast / Death Spike / Prominence).
+        // The power ladder is IG's own nuke curve: linear in character level, anchored at
+        // POWER 108 @ LEVEL 74 (IG's Hurricane / Hydro Blast / Death Spike / Prominence).
         // It used to stop at 4 levels and power 44 — which is why a level-85 mage still fought
         // with a level-35 spell and needed ~79 casts to kill a same-level mob, and why he hit
         // a tank for ~100 instead of the ~350 he should. This ladder IS the mage's scaling;
-        // don't cap it at the 2nd class (in L2 your main nuke keeps gaining levels for life).
+        // don't cap it at the 2nd class (in IG your main nuke keeps gaining levels for life).
         new(ElementalBolt, "Elemental Bolt", BaseClass.Mage, SkillEffect.MagicDamage,
             MpCost: 27, CastTicks: 40, CooldownTicks: 10, Range: 750, Power: 37,
             Replaces: new[] { MagicBolt },
@@ -233,8 +233,8 @@ public static partial class SkillCatalog
         // sustaining a rotation the moment the bolt ladder passed it. (Owner, 2026-08-07, confirming
         // the diagnosis: it "needs levels, not a bigger HP trade".)
         //
-        // The ENDPOINT is his: L2's Body to Mind is +120 MP for −360 HP; our HP pools are about half
-        // of L2's, so the like-for-like price is 180 and he rounded it to **200 to balance**. Level
+        // The ENDPOINT is his: IG's Body to Mind is +120 MP for −360 HP; our HP pools are about half
+        // of IG's, so the like-for-like price is 180 and he rounded it to **200 to balance**. Level
         // 10 is therefore 120 MP for 200 HP, and with the robe mastery's late +80 that is his
         // "**+200 MP, −200 HP** is a good late-levels balance" exactly.
         //

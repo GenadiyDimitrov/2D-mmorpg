@@ -104,11 +104,11 @@ public record SkillDef(
     WeaponType RequiredWeapon = WeaponType.None,
     // BLOW skill (dagger Stab): lands for FULL Power only if it CRITS (or, with CanDouble,
     // doubles). A blow that fails to crit deals only BlowFailFraction of its damage — a soft
-    // floor, not L2's 0-damage whiff. Only meaningful with a physical-damage effect.
+    // floor, not IG's 0-damage whiff. Only meaningful with a physical-damage effect.
     bool BlowOnCrit = false,
     float BlowFailFraction = 0.10f,
     // A per-SKILL crit-rate modifier, multiplying the caster's own crit chance for THIS skill's
-    // roll only (1.0 = exactly the character's rate). This is L2's rule that a blow's landing
+    // roll only (1.0 = exactly the character's rate). This is IG's rule that a blow's landing
     // chance was never the raw crit rate — Mortal/Deadly Blow carried a bonus of their own — and
     // it is the knob the crit-rate rework is paid for with: it lifts the dagger's BLOW without
     // touching his basic-attack crit, his buffs, or anyone else's numbers. Only read where a crit
@@ -524,7 +524,7 @@ public readonly record struct PassiveEffect(
     // defender's only lever is this MULTIPLIER on the fail formula (the tank's Anti-Magic = 2).
     // The resolver takes the MAX across passives, like the floors above, never a product.
     float MagicFailMod = 0f,
-    // FLAT addition to the casting-speed STAT (not a percent). This is how L2's spirit-
+    // FLAT addition to the casting-speed STAT (not a percent). This is how IG's spirit-
     // the spell rune works: +40 flat on top of the multiplicative chain, so it matters a lot at low
     // cast speed and barely at high — unlike a percent, which compounds and runs away.
     float CastSpeedFlat = 0f,
@@ -677,8 +677,8 @@ public static class SkillMath
     /// <summary>Divisor on the FLAT heal. Solved against the owner's target: a **1000-power heal at
     /// level 76** with a tier-76 staff (M.Atk ≈ 900) should land **~2000**.
     ///   heal = 1000 × √900 / K = 30000 / K  →  K = 15.
-    /// That target came from L2 itself: there `heal = power + √mAtk`, so a 1000-power heal lands
-    /// ~1025-1080 almost regardless of M.Atk (it contributes 3-8%) — and L2's skill ENCHANT roughly
+    /// That target came from IG itself: there `heal = power + √mAtk`, so a 1000-power heal lands
+    /// ~1025-1080 almost regardless of M.Atk (it contributes 3-8%) — and IG's skill ENCHANT roughly
     /// doubles it, giving ~2100. We aim at the enchanted value because we have no enchant system.
     /// (K = 8 gave 3750 at L76 — the "paladin heals 3k" number the owner explicitly rejected.)</summary>
     public const float HealK = 15f;
@@ -688,7 +688,7 @@ public static class SkillMath
     /// fast, and it SUFFERS the moment you trade your caster weapon for a damage one, because the
     /// weapon channel factors suppress M.Atk. "Want to be a fighter? Then you heal less."
     ///
-    /// NOTE this deliberately DIVERGES from L2, which is ADDITIVE — `power + √mAtk` — where M.Atk is
+    /// NOTE this deliberately DIVERGES from IG, which is ADDITIVE — `power + √mAtk` — where M.Atk is
     /// almost irrelevant (16,000 M.Atk buys only +126 HP, and a sword-cleric heals essentially as
     /// well as a staff-cleric). Multiplying instead is what makes gear and weapon choice matter.
     ///

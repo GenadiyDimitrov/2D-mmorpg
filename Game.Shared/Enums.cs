@@ -50,7 +50,7 @@ public enum CombatOutcome
     Buff = 6,    // a buff/debuff was applied (Skill carries the name)
     Block = 7,   // physical hit was blocked by a shield (reduced damage)
     ManaHeal = 8, // MP was restored (shown as +N MP, distinct from HP heal)
-    // A "[Double]" physical SKILL fired (flat ×2, our name for L2's physical skill crit). It was
+    // A "[Double]" physical SKILL fired (flat ×2, our name for IG's physical skill crit). It was
     // reported as Crit until playtest-19 M8, which made a doubling Strike indistinguishable from
     // a critting one — the whole point of the [Double] naming is that you can tell them apart.
     // Appended, so an older client just falls through to the plain-Hit branch.
@@ -176,7 +176,7 @@ public enum SkillEffect : long
 /// None = not a contested debuff (uses the older fizzle/sure-hit path).</summary>
 public enum DebuffSchool { None = 0, Physical = 1, Magical = 2 }
 
-/// <summary>A player's PvP name state (L2-style): Innocent = white, Flagged = purple (recently
+/// <summary>A player's PvP name state (IG-style): Innocent = white, Flagged = purple (recently
 /// attacked another player), Pk = red (has karma from killing innocents).</summary>
 public enum PvpFlag : byte { Innocent = 0, Flagged = 1, Pk = 2 }
 

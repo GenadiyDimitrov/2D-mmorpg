@@ -534,7 +534,7 @@ public class GameLoopService : BackgroundService
         BroadcastSystem($"{player.Name} keeps hunting while away.");
     }
 
-    // ----- PvP / flag / karma (L2-style). Runtime-tunable via the Debug settings panel; the values
+    // ----- PvP / flag / karma (IG-style). Runtime-tunable via the Debug settings panel; the values
     // here are the code DEFAULTS (move final picks back into these initializers). -----
     private const int PvpFlagTicks = 600;   // 60s purple flag after a pvp action
     private int _karmaBase = 200;              // karma for a 1st, same-level innocent kill
@@ -544,8 +544,8 @@ public class GameLoopService : BackgroundService
     private int _karmaLossPerMob = 20;         // karma shed per mob kill (grind it off while farming)
 
     // Debug test skills (admin live-tuning): the two test damage skills use Flat=_testSkillPower,
-    // Mod=_testSkillMod; the test heal restores _testHealPower. For reading the {Flat, Mod} curve live.
-    private int _testHealPower = 1000;
+    // Mod=_testSkillMod. For reading the {Flat, Mod} curve live. (`_testHealPower` went with the test
+    // heal itself, 2026-08-12, `BL-37`.)
     private int _testSkillPower = 0;
     private float _testSkillMod = 1f;
     private const int KarmaMaxPerKill = 15_000; // owner: cap one PK at 10-20k (~750 mob kills to shed)
@@ -840,7 +840,7 @@ public class GameLoopService : BackgroundService
         RateConfig.GoldAmountRate,
         _karmaBase, (float)_karmaConsecGrowth, (float)_karmaLevelGrowth, _karmaLossPerDeath, _karmaLossPerMob,
         _idleCapSeconds, _offlineCapSeconds, _graceSeconds,
-        _testHealPower, _testSkillPower, _testSkillMod,
+        _testSkillPower, _testSkillMod,
         GameConstants.RegenIntervalSeconds, StatCalculator.ConRegenBase,
         StatCalculator.MobHpRegenPctCombat, StatCalculator.MobRegenPctIdle);
 
@@ -877,12 +877,11 @@ public class GameLoopService : BackgroundService
         _idleCapSeconds     = Math.Clamp(c.IdleCapSeconds, 0, 24 * 3600);   // 0 = unlimited
         _offlineCapSeconds  = Math.Clamp(c.OfflineCapSeconds, 0, 24 * 3600);
         _graceSeconds       = Math.Clamp(c.GraceSeconds, 5, 3600);
-        _testHealPower      = Math.Max(0, c.TestHealPower);
         _testSkillPower     = Math.Max(0, c.TestSkillPower);
         _testSkillMod       = Math.Max(0f, c.TestSkillMod);
 
         // Regen cadence: clamped to whole ticks (the loop can't fire between them) and to a sane
-        // 0.1s–60s band. 3s = L2. The stat bases go no lower than 1.0 — below that MORE of the stat
+        // 0.1s–60s band. 3s = IG. The stat bases go no lower than 1.0 — below that MORE of the stat
         // would mean LESS regen, which is never what you want to test.
         GameConstants.RegenIntervalTicks =
             Math.Clamp((int)MathF.Round(c.RegenIntervalSeconds * GameConstants.TickRate), 1, 600);
@@ -1310,7 +1309,7 @@ public class GameLoopService : BackgroundService
         }
 
         // Resurrection is NOT auto-granted (owner, 2026-07-17) — it is bought with SP off the class
-        // tables like any other skill: L1 @20 / L2 @40 on the cleric list (every cleric keeps those
+        // tables like any other skill: L1 @20 / IG @40 on the cleric list (every cleric keeps those
         // through any 3rd class), L3 @52 / L4 @61 on the Lightbringer list. See ClassSkillTables.
 
         // (The old combat-"training" passive that stood in for soul/spell runes is GONE — runes are now
@@ -1344,9 +1343,10 @@ public class GameLoopService : BackgroundService
             player.LearnedSkills.Remove(SkillCatalog.NoviceGrace);
 
         // ==================== TEST ONLY — DELETE ME ====================
-        // A power-1000 heal for EVERY class at 76, so the heal formula can be calibrated (and the
-        // tank-vs-healer gap read directly). Remove this block with the rest — search "TEST ONLY".
-        if (player.Level >= 76) player.LearnedSkills.TryAdd(SkillCatalog.TestHeal, 1);
+        // (The power-1000 test heal was auto-granted here at 76 until 2026-08-12, `BL-37`. Deleted:
+        //  both numbers it existed to read are decided. A character who still carries `test_heal` in a
+        //  saved row loses it on the next load — PersistenceService.ParseLearnedSkills now drops any id
+        //  the catalog no longer knows, which is what makes deleting a skill a one-file job.)
         // Two debug damage skills at ANY level — Flat/Mod come from the Debug panel (TestSkillPower/
         // TestSkillMod), for reading the {Flat, Mod} damage curve live.
         player.LearnedSkills.TryAdd(SkillCatalog.TestPhysSkill, 1);
@@ -2189,7 +2189,7 @@ public class GameLoopService : BackgroundService
         SendTo(player, "Warehouse", new WarehouseUpdate(
             player.Warehouse.Select(i => i.ToDto()).ToArray()));
 
-    /// <summary>The private warehouse is reachable only in a town (safe zone), like L2's warehouse keeper —
+    /// <summary>The private warehouse is reachable only in a town (safe zone), like IG's warehouse keeper —
     /// so you can't stash mid-fight. Sends the reason and returns false when out of town.</summary>
     private bool WarehouseReachable(Entity player)
     {
@@ -7885,8 +7885,7 @@ var effect = def.Effect;
         if (effect.HasFlag(SkillEffect.Heal))
         {
             // Divine Focus: healing OUTPUT scaled down when the healer has no magic weapon (×0.5 / ×0.75).
-            int healPower = def.Id == SkillCatalog.TestHeal ? _testHealPower : def.PowerAt(lvl);   // test heal: live debug power
-            int flat = (int)(SkillMath.HealAmount(healPower, caster.HealPowerFlat, caster.HealPowerMod) * caster.HealOutputMult);
+            int flat = (int)(SkillMath.HealAmount(def.PowerAt(lvl), caster.HealPowerFlat, caster.HealPowerMod) * caster.HealOutputMult);
             float pct = def.MagnitudeOf(SkillEffect.Heal, ModifierMode.Percent, lvl);
             if (def.TargetMode == TargetMode.AlliesInRadius)
                 foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
@@ -7929,7 +7928,7 @@ var effect = def.Effect;
         //      contest (docs/design/Disciplines.md), NOT the fizzle model. Bosses are immune. The
         //      attacker stat is AGI for bleed/venom, ATK otherwise; defender CON (phys) / WIT (magic). ----
         // ---- [Double] on a BUFF or DEBUFF = DOUBLE DURATION (docs/design/CritBlowAndDouble.md §4,
-        //      L2's level-76 Skill Mastery). The SAME ATK roll the damage side uses, rolled ONCE per
+        //      IG's level-76 Skill Mastery). The SAME ATK roll the damage side uses, rolled ONCE per
         //      cast — an area blessing doubles for everyone or for no one — and only for a PLAYER's
         //      own cast: potions, scrolls and the NPC buffer come through other paths and never roll.
         //      -1 = no override, i.e. the skill's authored duration. ----
@@ -8322,7 +8321,7 @@ var effect = def.Effect;
         }
     }
 
-    /// <summary>Apply a damage-over-time. Two SEPARATE statuses (the L2 split): (1) the bleed
+    /// <summary>Apply a damage-over-time. Two SEPARATE statuses (the IG split): (1) the bleed
     /// DAMAGE effect — shared key, overrides by Rank (stronger wins), flat per-tick damage, does
     /// NOT stack, cure/cancel target it by flag+level; (2) a per-skill STACK COUNTER (StackKey,
     /// Internal) that just counts 1..Max and is what a burst consumes — independent of (1), so a
@@ -9220,7 +9219,7 @@ var effect = def.Effect;
     }
 
     /// <summary>EXP for killing one mob: the level curve scaled by how TOUGH this particular
-    /// mob actually is. L2 pays XP by toughness within a level band — a level-85 Drake Warrior
+    /// mob actually is. IG pays XP by toughness within a level band — a level-85 Drake Warrior
     /// carries ~8.5x a normal same-level mob's HP and pays ~7.5x the EXP. We paid purely by
     /// LEVEL, so a boss with 10x the HP gave exactly as much EXP as the trash standing next to
     /// it. Toughness is read straight off the spawned mob (its rank multiplier and MobMod HP
@@ -9550,7 +9549,7 @@ var effect = def.Effect;
     private void Regenerate(Entity entity)
     {
         // NO combat penalty (owner, 2026-07-29). Regen used to stop dead while Engaged or mid-cast;
-        // that rule was ours, not L2's — L2 modifies regen by STANCE, never by being in combat — and it
+        // that rule was ours, not IG's — IG modifies regen by STANCE, never by being in combat — and it
         // is the stance stack below that is meant to express "resting vs fighting". It also broke
         // sustained play outright: auto-farm re-asserts Engaged every tick a target exists, so a farming
         // fighter regenerated nothing at all until they stopped (playtest-13). Regen is now governed by
@@ -10148,7 +10147,7 @@ var effect = def.Effect;
             p.MeleeVamp, p.SpellVamp, p.CooldownReduction,
             p.MagicResist, p.MagicFailMod,
             p.CritRateResist, p.CritDmgResist, p.BowResist,
-            p.InterruptResist, (int)p.EffectiveMagicAttack,   // MagicAttackInternal: the cosmic L2-reference value
+            p.InterruptResist, (int)p.EffectiveMagicAttack,   // MagicAttackInternal: the cosmic IG-reference value
             p.HealPowerFlat, p.HealPowerMod, p.HealReceivedFlat, p.HealReceivedMod,
             p.CritDamageFlat));
     }
@@ -10607,7 +10606,7 @@ var effect = def.Effect;
         return (baseDamage, CombatOutcome.Hit);
     }
 
-    /// <summary>Resolution for a "[Double]" physical SKILL — our name for L2's physical skill
+    /// <summary>Resolution for a "[Double]" physical SKILL — our name for IG's physical skill
     /// crit: a flat ×2 and NOTHING else (it never touches crit-damage values, which is the whole
     /// point of the name). Chance is the caster's ATK curve (2.5-25%, StatCalculator.
     /// PhysicalDoubleChance), lowered by shield/crit-rate resist and ignoring the block on a
@@ -10646,11 +10645,11 @@ var effect = def.Effect;
     /// off crit damage, not off p.Atk (7-11k of skill power against under 1k of p.Atk). ONLY after
     /// that does it roll a DOUBLE (the caster's ATK curve) for a further ×2. A blow that FAILS to
     /// crit deals a flat BlowFailFraction of its damage — that floor can neither crit nor double
-    /// (a soft floor, not L2's 0-damage whiff). Blows bypass shields, so the floor isn't blocked.</summary>
+    /// (a soft floor, not IG's 0-damage whiff). Blows bypass shields, so the floor isn't blocked.</summary>
     private (int damage, CombatOutcome outcome) ResolveBlow(
         Entity attacker, Entity target, int baseDamage, SkillDef def, float critFlatFactor = 1f)
     {
-        // The blow's OWN crit modifier rides on the character's rate (L2: a blow never landed on
+        // The blow's OWN crit modifier rides on the character's rate (IG: a blow never landed on
         // the raw crit rate). It is what pays for crit going multiplicative — see CritRateMod.
         float effCrit = Math.Clamp(
             (attacker.CritChance * def.CritRateMod - (target.HasShield ? target.ShieldCritDefense : 0f))

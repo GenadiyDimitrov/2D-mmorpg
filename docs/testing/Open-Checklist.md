@@ -106,6 +106,21 @@ In order of how expensive a defect would be to find later:
   useless."* Done: `training_club` and `training_knives` are deleted, `training_bow` was already gone.
   Sword and wand are what the boxes now hand out, by base class.
 
+- 🔵 **`58i` is done, but ONE half of it is yours to decide: the project's own name.** Every comment
+  and doc now says `IG` instead of the inspiration game's name — 113 lines of C#, ~150 of docs. What I
+  did **not** touch is **`L2Clone` itself**: the repo directory, the Android package name, and every
+  published filename (`L2Clone-0.62.0.apk`). That is not a comment, it is the product's identity —
+  renaming it reinstalls the app on your phone as a *different* app, losing whatever is local to it, and
+  invalidates every build filename in `builds/`. **Cheapest moment to do it is before a store release,
+  in the same pass as `BL-46`** (the second launcher icon), which is already a store-release item. Say
+  a name and it is a mechanical change; say nothing and it stays `L2Clone` for now.
+
+- ⚠ **Also found while doing it, not actioned:** a few comments cite the inspiration game's own *mob
+  and skill names* as research provenance (in `MobBaseStats.cs` and `Skills.Mage.cs` — "this is the
+  table our mob curve was fitted to"). They are proper nouns of exactly the kind your naming rule bans,
+  but they document where a NUMBER came from rather than naming anything we ship. I left them. Tell me
+  if you want them gone too and I will paraphrase the provenance instead of citing it.
+
 ---
 
 ## My Finds
@@ -541,6 +556,13 @@ Still true and unchanged:
 - **Instances** — you are holding (`BL-48`). ⚠ **Dungeons are the cheap half** and can ship without them.
 - **`G2` / `0e` `lb_*` + `wc_*`** — closed by your ruling: leave them. Placeholders for 40+, commented
   out, harmless.
-- **Two playtest-20 bugs that were never answered or carried**: Frost Bind stripping a dummy's/elite's
-  HP multiplier (`BL-63`), and your target being lost for the duration of a physical skill cast
-  (`BL-64`). ⚠ `BL-63` is worth a minute during §73 — you will be standing at a dummy anyway.
+- **The two playtest-20 bugs — both look FIXED in the code, and neither has been re-tested.** I went
+  looking for them on 2026-08-12 and found the fix already in place for each, with a comment naming
+  your report. They are off `Backlog.md` now, so these two lines are the only thing left holding them:
+  - [ ] **Frost Bind on a training dummy** (`BL-63`). Cast it and watch the HP bar — the dummy must stay
+    at **1,000,000**, not collapse to ~5k. Same for an elite/champion's HP bonus. The fix keeps the rank
+    multipliers *on the entity* so a recompute is idempotent; it was never Frost Bind's fault, it was any
+    debuff at all. ⚠ Worth a minute during §73 — you are standing at a dummy anyway.
+  - [ ] **Cast Stab with a mob targeted** (`BL-64`). The target frame must stay up **for the whole cast**.
+    It came back before only because a fighter re-engages afterwards; on a mage it stayed gone. Try it on
+    a mage skill too, which is the case you never tested.

@@ -14,7 +14,7 @@ public record DropEntry(string ItemId, float Chance, int MinQty = 1, int MaxQty 
         (MinLevel == 0 || level >= MinLevel) && (MaxLevel == 0 || level <= MaxLevel);
 }
 
-// GroupId semantics (L2 drop groups): entries with GroupId == 0 roll INDEPENDENTLY (each its own
+// GroupId semantics (IG drop groups): entries with GroupId == 0 roll INDEPENDENTLY (each its own
 // chance). Entries sharing a GroupId > 0 form a MUTUALLY-EXCLUSIVE group — the group rolls once at
 // the SUM of its members' chances; on a hit, exactly ONE member is picked, weighted by its chance
 // (so a group yields at most one item). Use it for "one of these equips" style loot.
@@ -30,7 +30,7 @@ public record DropEntry(string ItemId, float Chance, int MinQty = 1, int MaxQty 
 /// stats, so a template can be a glass-cannon, a MAGIC monster (high M.Def / low P.Def →
 /// hard for mages, easy for fighters), an armored brute (high P.Def / low M.Def → the
 /// reverse), a bruiser, or a boss. Multipliers default to 1 (no change); resists are
-/// fractions (0 = none). Use <see cref="MobCatalog.MobTier"/> for L2-style leveled
+/// fractions (0 = none). Use <see cref="MobCatalog.MobTier"/> for IG-style leveled
 /// magnitudes (tier 3 = ×1) if you prefer. Null on a template = no modifiers.</summary>
 public readonly record struct MobMod(
     float Hp = 1f, float PDef = 1f, float MDef = 1f,
@@ -141,7 +141,7 @@ public static class MobCatalog
 {
     private static readonly Dictionary<string, MobType> All = Build();
 
-    /// <summary>L2-style monster stat TIER → multiplier (tier 3 = normal ×1; lower = weaker,
+    /// <summary>IG-style monster stat TIER → multiplier (tier 3 = normal ×1; lower = weaker,
     /// higher = stronger). e.g. an "HP Lv4" mob = MobTier(4) = ×2 HP. Tunable.</summary>
     public static float MobTier(int tier) => tier switch
     {
@@ -698,7 +698,7 @@ public static class MobCatalog
             Mob("fen_lizardman", "Fen Lizardman", 62, MobCategory.Humanoid, 132f, true),
             // Golem-type stone/obsidian body, authored via the leveled MASTERY table: Piercing
             // Resistance L10 (×1.43 P.Def vs sword/dual), Bow Resistance L12 (×2), Blunt Resistance
-            // L2 (×0.5 = weak). Same effect as a hand MobMod, but "picks a level" like a class.
+            // IG (×0.5 = weak). Same effect as a hand MobMod, but "picks a level" like a class.
             Mob("obsidian_knight", "Obsidian Knight", 63, MobCategory.Humanoid, 132f, true,
                 MobMasteries.Build(pierce: 10, bow: 12, blunt: 2, name: "Stoneplate")),
             Mob("crimson_drake", "Crimson Drake", 64, MobCategory.Dragon, 150f, true),

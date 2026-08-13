@@ -468,7 +468,7 @@ The one thing to prove above all: **a buff potion no longer stacks with the buff
         replacement is on the skill, not the buff).
 33k.[ ] ⚠ **SUPERSEDED BY 34f** — the admin buff is **9 rows** now, not 27. Read 34f instead.
 
---- 34. 🔴 THE GROUP BUFF IS ONE BUFF (0.42.0) — the L2 rule, replacing the 0.36-0.41 "bag of
+--- 34. 🔴 THE GROUP BUFF IS ONE BUFF (0.42.0) — the IG rule, replacing the 0.36-0.41 "bag of
 parts". Server-side only; no Unity file changed. ⚠ reset `game.db`. ---
 It reverses part of §33: a potion no longer takes over one part of a blessing. **33a is dead** —
 what it describes was the old model. Everything about the potion/scroll LADDER (33b-33j) still holds.
@@ -852,7 +852,7 @@ QUALITY no longer matters: a Common sword can roll the same maximum as a Mythic 
         **level-10 QUEST** (levelling to ~15 along the way); levels 1-10 get the **weakest gear in the
         game** — training weapons at 400g, training armor, **no shots or jewels**; broken jewels drop
         from level 1-5 mobs and sell cheap. Full numbers in memory `playtest-11-queue`.
-34. [ ] 🔴 P17: *"can't test. Need full working game to start playing and test only it's"* — parked until the game is playable end to end. **Levelling curve** — the mob-XP question is answered: it is **neither** the L2 formula nor a
+34. [ ] 🔴 P17: *"can't test. Need full working game to start playing and test only it's"* — parked until the game is playable end to end. **Levelling curve** — the mob-XP question is answered: it is **neither** the IG formula nor a
         per-mob value. `ExpToNext = 25L²` (quadratic) vs `MobExpReward = 40 + 35·L` (linear), with a
         toughness multiplier from the mob's HP as the only per-mob variation. That shape gives **~2 200
         kills for all of 1→80** at `ExpRate 1` (~220 at the current ×10), and only ~56 kills/level at
@@ -1385,7 +1385,7 @@ exactly `PickCount` on both ends) · 🔴 **46d `/ptinv` can't invite an out-of-
 nearby") — B7 fixed the target frame, not the invite lookup · 🟠 **46m compare on a PENDANT opens a
 stud** (wrong worn-slot lookup; B2 is not closed) · 🟡 46o raise BOTH warehouse caps to max now, with a
 note to lower them when expansion lands · 🟡 46u the gear cut reads as only 3× harder to gear up —
-direction of travel is "eventually L2 rates"; the real fix is the coin CURVE.
+direction of travel is "eventually IG rates"; the real fix is the coin CURVE.
 
 **Decisions** — ✅ 0a/0b **BUILT 0.53.0, see §54**: `evade_mastery`/`precision`/`anti_magic` **STAY**,
 `class_balance_*` is **commented out not deleted** (his 2026-08-07 ruling), and `reflexes`,
@@ -1393,7 +1393,7 @@ direction of travel is "eventually L2 rates"; the real fix is the coin CURVE.
 `ItemRarity.God` / `god_judgment` / `god_robes` / `hp_boost` / `greater_heal` / the God table) are
 gone — *"nothing that can't be acquired in game"*; the debug rig is now `/enchant <value>` + `/speed`
 and must not regress · 0c keep all six Dash rungs · 0d Sprint
-L2 @40 is right · 0e `lb_*`/`wc_*` **still unanswered** · 0f G3 = **document + BalanceMatrix tables
+IG @40 is right · 0e `lb_*`/`wc_*` **still unanswered** · 0f G3 = **document + BalanceMatrix tables
 first**, then 2-5 real mobs as an experiment — not a migration.
 
 **My Finds** — ✅ **M1 the ±20 lockout is REMOVED — BUILT 0.53.0, see §54a.** The class floors and the

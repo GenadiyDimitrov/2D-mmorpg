@@ -1720,8 +1720,8 @@ namespace Game.Client
             // away — the character stands still next to a marker promising otherwise. Say why instead.
             //
             // Deliberately NOT queued-until-the-cast-ends: that is rare in the genre (WoW/FFXIV cancel
-            // the cast on move; L2 roots you and ignores the click) and this project's design is the
-            // L2 one — "casting roots you, ESC cancels".
+            // the cast on move; IG roots you and ignores the click) and this project's design is the
+            // IG one — "casting roots you, ESC cancels".
             if (IsCasting)
             {
                 ClientLog.Warn("Can't move while casting — tap the cast bar (or press Back) to cancel.");

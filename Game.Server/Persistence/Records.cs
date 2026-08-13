@@ -196,7 +196,7 @@ public class CharacterRecord
 }
 
 /// <summary>
-/// ONE class a character owns (L2-style subclass). A character has several; it plays one at a time
+/// ONE class a character owns (IG-style subclass). A character has several; it plays one at a time
 /// (<see cref="CharacterRecord.ActiveSubclassSlot"/>).
 ///
 /// Everything CLASS-level lives here. Everything CHARACTER-level (race, inventory, gold, karma,

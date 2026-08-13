@@ -13,7 +13,7 @@
 > What the re-scale changed (see `docs/Roadmap.md` for the full writeup):
 > - **Mob P.Def/M.Def are now LINEAR in level** (~4.2·lvl / ~3·lvl), not quadratic.
 > - **Mob HP is now `40 + 0.8·lvl²`** — a normal L80 mob is ~5.2k, not 15.4k.
-> - **Player M.Atk now scales by `levelMod²`** (L2's rule; the square cancels the `√M.Atk` in
+> - **Player M.Atk now scales by `levelMod²`** (IG's rule; the square cancels the `√M.Atk` in
 >   the damage formula, so magic finally grows linearly in level like physical).
 > - **Nuke ladder extended to level 80** (Elemental Bolt tops out at power 116, was 44 @ 35).
 > - Mob EXP now scales with the mob's HP multiplier.
@@ -43,7 +43,7 @@
 
 ---
 
-## A. Reference formulas (owner's canonical L2-Legacy spec)
+## A. Reference formulas (owner's canonical IG-Legacy spec)
 ```
 Max HP        = [((Base_HP_At_Level  * CON_Modifier) * Passives) * Buffs] + Flat_HP
 Max MP        = [((Base_MP_At_Level  * MEN_Modifier) * Passives) * Buffs] + Flat_MP
@@ -79,8 +79,8 @@ Base dmg lvl-mult = (Level + 89) / 100   [listed, but NOT used in the dmg formul
 | **WIT modifier** | ✅ matches | exponential ≈ reference at all points. |
 | **AGI modifier** | ✅ matches | exponential ≈ reference at all points. |
 | **Physical damage** | ✅ structure | `77·(pAtk+power)/pDef`, no lvl term. Matches `77·pAtk/pDef`. |
-| **Magic damage** | ✅ structure, ⚠ constant | `K·power·√mAtk/mDef`. **K=8, not 91** — deliberate: our mAtk (~120, √≈11) is ~10× smaller than L2's, so 91 would over-damage. Scale choice, not a bug. |
-| **HP** | ✅ **fixed** | tiers hit Melee/Rogue/Wizard/Healer; **Tank class-mod bumped 0.96→1.02 → L75 raw ≈ 3100** (the L2 tank track). |
+| **Magic damage** | ✅ structure, ⚠ constant | `K·power·√mAtk/mDef`. **K=8, not 91** — deliberate: our mAtk (~120, √≈11) is ~10× smaller than IG's, so 91 would over-damage. Scale choice, not a bug. |
+| **HP** | ✅ **fixed** | tiers hit Melee/Rogue/Wizard/Healer; **Tank class-mod bumped 0.96→1.02 → L75 raw ≈ 3100** (the IG tank track). |
 | **P.Def** | ✅ structure | naked 68 + level²/100 + armor. ⚠ mastery is added FLAT, ref wants it as a `×Mastery` multiplier (minor). |
 | **M.Def** | ✅ fixed | 20 + level²/100 + jewels, ×MEN (now the real curve), ×buffs. |
 | **CON modifier** | ✅ **fixed** | now interpolates the real CON table (`ConCurve`, 20→0.79 … 36→1.12 … 50→1.83) — accurate at every reference point (was +7% high at CON 36). |
@@ -158,8 +158,8 @@ Base dmg lvl-mult = (Level + 89) / 100   [listed, but NOT used in the dmg formul
 > Quick Heal 151/195/245/301; Party Heal 121/156/196/241. The chain below is the design
 > shape to keep extending (3rd/4th-class spans); use it when regenerating the matrix.
 
-**Mage single-target nuke chain (L2 reference, pmfun — "okish" per owner):**
-| Tier | L2 name | Char levels | Power span (L2 scale) |
+**Mage single-target nuke chain (IG reference, pmfun — "okish" per owner):**
+| Tier | IG name | Char levels | Power span (IG scale) |
 |---|---|---|---|
 | Base mage | **Wind Strike** | 1–~20 | ~11 → ~45 |
 | 2nd class | **Twister** | 20–35 | ~20 → ~37 |
@@ -167,7 +167,7 @@ Base dmg lvl-mult = (Level + 89) / 100   [listed, but NOT used in the dmg formul
 | 3rd class (buffer/healer) | Hurricane-equiv | 40–74 | **~43 → ~96** (10–15 below nuker; scales slower) |
 
 **Notes for use:**
-- These are L2-scale powers (their formula uses K=91). **Our `MagicK` stays 8** — keep these as the *relative shape* (Wind < Twister < Hurricane; healer ≈ 12% below nuker, slower ramp), feeding our `8·power·√mAtk/mDef`.
+- These are IG-scale powers (their formula uses K=91). **Our `MagicK` stays 8** — keep these as the *relative shape* (Wind < Twister < Hurricane; healer ≈ 12% below nuker, slower ramp), feeding our `8·power·√mAtk/mDef`.
 - Sanity at our scale (L40 trained mage, mAtk 246, vs fighter mDef 46): power 49 → ~134, power 108 → ~295 per hit (before crit/variance/mDef-debuff).
 - Source: pmfun Spellhowler (Hurricane 49→78 @L40–56, extrapolated to ~108 @L74). base.l2j.ru preferred but unreachable (self-signed cert).
 
@@ -242,7 +242,7 @@ buffed defender's higher HP + defence):**
 | Mage → Fighter   | 13 | 16 | 32 | 40 |
 | Mage → Mage      | 5  | 6  | 12 | 16 |
 
-**Action speed** (seconds per action, from the L2 speed model — base attack 15 ticks,
+**Action speed** (seconds per action, from the IG speed model — base attack 15 ticks,
 Flamebolt cast 40 ticks + 1 s reuse): Fighter sword ≈ **0.95 s/hit** (no-buff) → **0.71 s**
 (Speed +33%). Mage Flamebolt cycle ≈ **3.6 s** @40 / **3.3 s** @75 (no-buff) → **3.0 / 2.75 s**
 buffed (robe mastery + Spirit Training + Speed buff). Fighter ≈ 1 hit/s; mage ≈ hits ×3.3.
@@ -373,7 +373,7 @@ L75 → HP 12420 · pDef 490 · mDef 390 · P.Atk 1065 · M.Atk 748.
 - **OFFENSE falls behind at high tiers.** Mob HP + P.Def/M.Def grow faster than weapon atk, so a SOLO grind
   balloons: fighter 13 → **131 hits**, mage 19 → **210 casts** from L40 → L76. That's the real signal.
   - Softeners not modeled that would help: **weapon attributes** (esp. crit-rate/crit-dmg → big DPS), armor
-    set % bonuses, and the L2 assumption of **party play**. But even so the top-tier gap is steep.
+    set % bonuses, and the IG assumption of **party play**. But even so the top-tier gap is steep.
   - **Levers (owner's call):** raise high-tier weapon P/M.Atk, ease the mob HP/def curve at ~61–85, and/or
     lean the design on crit + attributes + party. Also: **add a jewel tier** (mage mDef is unmodeled/low here).
 
@@ -402,7 +402,7 @@ L75 → HP 12420 · pDef 490 · mDef 390 · P.Atk 1065 · M.Atk 748.
 
 **OWNER INTENT (2026-07-03) — this is BY DESIGN, not a bug to "fix":**
 - **Undergeared for a zone SHOULD be much harder** — that's the intended gate.
-- **L76+ solo is MEANT to be harder** (not impossible) — L2's clan/party design. Once the **40+ class
+- **L76+ solo is MEANT to be harder** (not impossible) — IG's clan/party design. Once the **40+ class
   passives**, more **buffs**, and (later) **dances/songs** land, and with a **party**, it balances out.
   Do NOT over-buff weapons or nerf the high-tier mob curve to make solo easy — leave the gap.
 - The stopgap for solo players = a **full-buff NPC buffer up to lvl 75** (see roadmap), until they make an

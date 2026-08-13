@@ -134,7 +134,7 @@ public static partial class SkillCatalog
     //          rank 1  Dash C      +15      rank 5  Dash E      +50
     //          rank 2  Dash U      +30      rank 6  Dash L      +55
     //          rank 3  Sprint L1   +40      rank 7  Dash M      +60
-    //          rank 4  Dash R      +45      rank 8  Sprint L2   +60
+    //          rank 4  Dash R      +45      rank 8  Sprint IG   +60
     //
     //      That gives exactly his two sentences: Sprint L1 replaces Dash C/U (and is refused under
     //      anything above it), Sprint L2 replaces everything including Sprint L1. Sprint L2 sits
@@ -163,14 +163,13 @@ public static partial class SkillCatalog
     public const string BuffSprint2 = "buff_sprint_2";
     // (`hp_boost` — deleted 2026-08-07 with the God layer, playtest-19 `0b`.)
     // ============================ TEST ONLY — DELETE ME ============================
-    // A 1000-power heal, auto-granted to EVERY character at level 76, purely to calibrate the heal
-    // formula against the owner's target (a 1000-power heal should land ~2000 for a healer at 76).
-    // It is deliberately given to fighters too, so the tank-vs-healer gap can be read directly.
-    // REMOVE: this const, TestHealSkill() below, its line in CommonSkills(), and the auto-grant in
-    // GameLoopService.AutoLearnCoreSkills. Search "TEST ONLY" to find all four.
-    public const string TestHeal = "test_heal";
-    // Two debug damage skills: they use Flat=TestSkillPower, Mod=TestSkillMod from the Debug panel, so the
-    // owner can read the {Flat, Mod} curve live. Auto-granted with TestHeal. Search "TEST ONLY" to remove.
+    // (`test_heal` — DELETED 2026-08-12, `BL-37`. It was a power-1000 heal auto-granted to every
+    //  character at 76, and it existed only to read the two numbers it was calibrating: HealK (15)
+    //  and OffChannelFactor (0.6). Both are decided, so it was a debug skill on every live character's
+    //  bar for nothing. Don't reinstate it: `/heal`-shaped calibration belongs in tools/BalanceMatrix,
+    //  which builds real entities and needs no in-game skill at all.)
+    // Two debug damage skills: they use Flat=TestSkillPower, Mod=TestSkillMod from the Debug panel, so
+    // the owner can read the {Flat, Mod} curve live. Search "TEST ONLY" to remove.
     public const string TestPhysSkill  = "test_phys";
     public const string TestMagicSkill = "test_magic";
     // ==============================================================================
@@ -405,17 +404,8 @@ public static partial class SkillCatalog
     private static SkillDef[] CommonSkills() => new SkillDef[]
     {
         // ======================== TEST ONLY — DELETE ME ========================
-        // Power 1000, so the heal formula can be read straight off the screen:
-        //   heal = power × √M.Atk / HealK(15)
-        // Expected at level 76, fully geared: HEALER (t76 staff, M.Atk ~900) ≈ 2000.
-        //                                     TANK  (t76 2H sword)            ≈ 1193 @ OffChannel 0.6
-        //                                                                     ≈  689 @ OffChannel 0.2
-        // Cast/cooldown kept short so it's quick to spam-test. Costs no MP.
-        new(TestHeal, "TestHeal", BaseClass.Fighter, SkillEffect.Heal,
-            MpCost: 0, CastTicks: 20, CooldownTicks: 20, Range: 600, Power: 1000,
-            Category: SkillCategory.Heal,
-            Description: "TEST ONLY. Flat heal, power 1000. Used to calibrate the heal formula "
-                       + "(heal = power × √M.Atk / 15). Remove before release."),
+        // (The power-1000 `TestHeal` def stood here until 2026-08-12, `BL-37`. See the note by the
+        //  deleted const above.)
         // TEST ONLY: two debug damage skills. Power 0 in the def — the server overrides Flat/Mod with the
         // Debug-panel TestSkillPower / TestSkillMod at cast time, so you can read the {Flat, Mod} curve live.
         new(TestMagicSkill, "TestMagic", BaseClass.Mage, SkillEffect.MagicDamage,

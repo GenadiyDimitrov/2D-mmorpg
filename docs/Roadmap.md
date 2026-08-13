@@ -141,7 +141,7 @@ levels 1-10 get the **weakest gear in the game** — training weapons at 400g (`
 level 1-5 mobs and sell cheap (`broken_earring 11/40g`, `broken_ring 7/30g`, `broken_necklace 15/60g`).
 
 ### 🔴 Levelling curve — a finding, not a request (2026-07-24)
-The owner asked whether mob XP follows the L2 formula or a per-mob value. **Neither.**
+The owner asked whether mob XP follows the IG formula or a per-mob value. **Neither.**
 `ExpToNext(level) = 25L²` (`StatCalculator.cs:575`) is a **quadratic** curve; `MobExpReward(level) =
 40 + 35·L` (`StatCalculator.cs:577`) is **linear**, with no authored per-mob value anywhere. The only
 per-mob variation is `MobExpValue()` (`GameLoopService.cs:6297`) scaling by **toughness**
@@ -151,7 +151,7 @@ since paying purely by level made a boss worth the same as the trash beside it.
 **Quadratic ÷ linear makes the whole game short:** ~**2 200 kills for all of 1→80** at `ExpRate 1`, and
 only ~**220** at the current ×10. Level 10 on ×10 needs **0.64 kills per level** — you level more than
 once per kill, exactly what the playtest showed. Endgame sits at ~56 kills/level, trivially fast for an
-MMO (L2's curve is far steeper past 76). **This is not an ×10 artifact — the curve/reward shapes need an
+MMO (IG's curve is far steeper past 76). **This is not an ×10 artifact — the curve/reward shapes need an
 owner decision**, and it should be settled alongside the starter-gear redesign since both target the
 early game. Measure any change with `tools/BalanceMatrix`, never by hand.
 
@@ -314,8 +314,10 @@ changes and new features that came out of the play session:
 - [ ] **Stat-swap + training passives require the 3rd CLASS, not level 40.** They appear at 40 now; owner
   wants them only after the 3rd-class change. Gate the learn-list + the training auto-grant on
   `ThirdClass > 0`.
-- [ ] **Cleanup: remove the TEST-ONLY TestHeal skill** (power-1000 heal on every char @76). Both numbers
-  it existed to read (OffChannelFactor 0.6, HealK 15) are now decided. 3 spots, search `TEST ONLY`.
+- [x] **Cleanup: remove the TEST-ONLY TestHeal skill — DONE 2026-08-12 (`BL-37`).** Both numbers it
+  existed to read (OffChannelFactor 0.6, HealK 15) were decided. It turned out to be five spots, not
+  three (the Debug-panel knob and its DTO field too), and it exposed the retired-skill-id leak in
+  `ParseLearnedSkills`. The two `{Flat, Mod}` damage test skills stay.
 
 **Karma / PK — corrections DONE 2026-07-15:**
 - [x] **Karma per-kill cap 15k (was effectively 1kk / could overflow).** `KarmaMaxPerKill = 15_000`, and
@@ -338,7 +340,7 @@ changes and new features that came out of the play session:
   class" picker lists every discipline you don't already own, across all races, gated at level 76.
 
 **Deferred / needs design:**
-- [x] **Grade penalty (L2-style low-level-in-high-grade gear) — BUILT 2026-07-16.** `GradePenalty`
+- [x] **Grade penalty (IG-style low-level-in-high-grade gear) — BUILT 2026-07-16.** `GradePenalty`
   (Game.Shared/Items.cs): min level F=1/E=20/B=40/A=52/S=61; below it the item's **weapon ATK / armor DEF**
   is multiplied by ×0.5(E)/0.4(B)/0.3(A)/0.2(S). Applied in `Entity.RecomputeDerived` before masteries/sets.
   The **equip level gate was removed** (owner: you may equip any grade at any level and just eat the
@@ -367,7 +369,7 @@ changes and new features that came out of the play session:
   10k·(1−mp/max)`, per-pool cap 10k. Window 6-75 unchanged. Server-authoritative (clamps gold, re-checks
   range). Tunable consts: `BuffCostPerLevel`, `BufferBuffNominalLevel`, `RestoreCostCap`. When multi-level
   buffs land, the nominal 5 becomes the real per-buff level and cost tracks it. ([[buffer-enchanter-design]])
-- [x] **BARE-HANDS — FIXED 2026-07-15** via the L2 multiplicative P.Atk formula (owner chose this over the
+- [x] **BARE-HANDS — FIXED 2026-07-15** via the IG multiplicative P.Atk formula (owner chose this over the
   penalty). See commit `ac8108f` / `docs/design/BareHands.md`. Naked is now feeble by the FORMULA (weapon is the
   base), armed high-level preserved, magic untouched (proven by A/B). Companion investigation for defence:
   `docs/design/Unarmored.md` — conclusion: leave it, no live problem now that naked can't deal damage.
@@ -386,32 +388,32 @@ changes and new features that came out of the play session:
   `FighterArmorLevels` / `MageRobeLevels` / `NewbieBuffSet`, which survived on file-ordering luck.
 
 - [x] **MAGIC RE-SCALE (the big one) — DONE 2026-07-14.** The culprit was **the mob curves**, not the
-  jewels. Researched the retail L2 mob table (Keltir L1, Grizzly L17, Ghoul L32, Grandis L40,
-  Invader Shaman L63, Tracker Howl L81, Drake Warrior L85) plus the L2J stat formulas, then built
+  jewels. Researched the retail IG mob table (Keltir L1, Grizzly L17, Ghoul L32, Grandis L40,
+  Invader Shaman L63, Tracker Howl L81, Drake Warrior L85) plus the IG stat formulas, then built
   `tools/BalanceMatrix` (a console app that constructs REAL geared Entities and prints the matrix)
   so every number below is **measured, not derived**.
 
   **What was actually wrong:**
-  1. **Mob P.Def/M.Def were QUADRATIC; L2's are LINEAR** (~4.2*lvl and ~3*lvl, floored at L1). The
-     two curves cross at ~43 — so our low mobs were paper (M.Def 5 at L1 where L2 has 30: a L21
-     mage nuked a L24 mob for 2k) and our high mobs were walls (448 at L80 vs L2's ~253).
+  1. **Mob P.Def/M.Def were QUADRATIC; IG's are LINEAR** (~4.2*lvl and ~3*lvl, floored at L1). The
+     two curves cross at ~43 — so our low mobs were paper (M.Def 5 at L1 where IG has 30: a L21
+     mage nuked a L24 mob for 2k) and our high mobs were walls (448 at L80 vs IG's ~253).
      **One bug, both ends** — exactly the symptom reported.
-  2. **Mob HP was 2.8-4.5x too high above L45** (15,420 at L80; L2's Tracker Howl is ~5,500). Now
-     `40 + 0.8*lvl^2`. Fat mobs are NOT a fatter curve — L2 makes a specific mob tanky with an
+  2. **Mob HP was 2.8-4.5x too high above L45** (15,420 at L80; IG's Tracker Howl is ~5,500). Now
+     `40 + 0.8*lvl^2`. Fat mobs are NOT a fatter curve — IG makes a specific mob tanky with an
      "HP Increase (2x/3x)" PASSIVE, which is exactly our `MobMod` layer. Keep the curve lean.
-  3. **Player M.Atk was flat in level.** L2: `M.Atk = base x INTbonus^2 x levelMod^2` and
-     `M.Def = base x MENbonus x levelMod` (verified against L2J `FuncMAtkMod`/`FuncMDefMod`). The
+  3. **Player M.Atk was flat in level.** IG: `M.Atk = base x INTbonus^2 x levelMod^2` and
+     `M.Def = base x MENbonus x levelMod` (verified against IG `FuncMAtkMod`/`FuncMDefMod`). The
      **square is the whole trick**: magic damage takes `sqrt(M.Atk)`, so `sqrt(levelMod^2) =
      levelMod` and magic ends up LINEAR in level, like physical. We had neither term. (MEN was
      already wired; only the level terms were missing.)
   4. **The nuke ladder stopped at level 35 / power 44**, so a L85 mage fought with a L35 spell.
      Extended Elemental / Quick / Vampiric Bolt to **13 levels, learned every 5 from 20 to 80**, on
-     L2's linear power curve anchored **108 @ 74** (top = 116 @ 80).
+     IG's linear power curve anchored **108 @ 74** (top = 116 @ 80).
   5. **Mob EXP ignored toughness** — a boss with 10x the HP paid the same EXP as the trash beside it.
-     Now `MobExpValue` = level curve x the mob's actual HP multiple (L2 pays by toughness: a Drake
+     Now `MobExpValue` = level curve x the mob's actual HP multiple (IG pays by toughness: a Drake
      carries ~8.5x a normal mob's HP and pays ~7.5x the EXP).
 
-  **Mob P.Atk / M.Atk / MP measured to already track L2 within ~30% — left alone. Jewels untouched,
+  **Mob P.Atk / M.Atk / MP measured to already track IG within ~30% — left alone. Jewels untouched,
   per owner.**
 
   Measured before -> after (`dotnet run --project tools/BalanceMatrix`):
@@ -435,12 +437,12 @@ changes and new features that came out of the play session:
   balance.
 
   **Still noted, not blocking:**
-  - A level-20 mage still one-shots (0.5 casts). That IS retail L2; the magnitude is at least
+  - A level-20 mage still one-shots (0.5 casts). That IS retail IG; the magnitude is at least
     proportionate now (787 dmg vs a 360-HP mob), and the curve ABOVE it is fixed.
   - **Leveling at 60-85 is now ~3x faster in wall-clock** (same EXP/mob, mobs die 3x sooner). The
     EXP curve is deliberately untouched; `ExpRate` is live-editable in the debug tuning panel.
-  - Our absolute magnitudes stay smaller than retail (mage M.Atk reads ~2.9k, not L2's ~16k). The
-    RATIOS give the asked-for fight; making the numbers *look* like L2's is a cosmetic rescale.
+  - Our absolute magnitudes stay smaller than retail (mage M.Atk reads ~2.9k, not IG's ~16k). The
+    RATIOS give the asked-for fight; making the numbers *look* like IG's is a cosmetic rescale.
 
 - [x] **Stat-swap "direction" rule — DONE 2026-07-14.** Every stat you touch now commits to ONE
   direction: taking `+X -Y` bans every other skill that RAISES X (the old `ExclusiveGroup`, kept —
@@ -658,7 +660,7 @@ changes and new features that came out of the play session:
   decision instead of a constant. **Consequences to think through before building:** every damage number
   in `tools/BalanceMatrix` currently assumes the passive is ON (it is granted automatically), so the
   baseline would shift; and an unbuffed/unshotted character becomes a genuinely different power level,
-  which is exactly what war runes do in L2. See [[stats-via-skills-not-hardcoded]].
+  which is exactly what war runes do in IG. See [[stats-via-skills-not-hardcoded]].
 
 - [ ] **Shot-buff items + passive RUNES** (owner, 2026-07-17 — NEXT, after the death/res playtest). Reframe
   war/spell runes as inventory items that grant a TIMED buff (not per-hit): war rune ≈ +100% pAtk, spell rune
@@ -755,7 +757,7 @@ changes and new features that came out of the play session:
   + **conditional damage** (+% vs slowed/rooted/stunned/feared; `SkillDef.ConditionalOn`/
   `ConditionalDamagePct`; demo "Glacial Spike"). Existing non-contest debuffs left on the
   fizzle model (owner: new-only). **P1 light items DONE.**
-- [~] **P2 heavy systems — STARTED.** **DoT-with-stacks DONE (L2 separated model)**: a DoT
+- [~] **P2 heavy systems — STARTED.** **DoT-with-stacks DONE (IG separated model)**: a DoT
   applies (1) a **damage effect** (flat per-tick, overrides by Rank, cure/cancel by flag+level)
   and (2) a separate **stack counter** (`SkillDef.StackKey`, hidden/`Internal`) that the burst
   consumes (`ConsumeStackKey`) for ×stacks — leaving the DoT. Counters are per-skill and
@@ -841,7 +843,7 @@ changes and new features that came out of the play session:
   from mobs (5 types ↔ 5 professions), refine 5-same+2-cross, finished-item recipes, all 5 professions craft,
   profession persist+choose, boss/elite mat piles. Scaled Common/Unc/Rare DROP gear (Epic set = craft/boss).
   **Polish DONE:** `KnownRecipes` (persisted) unlocks DropOnly A-grade recipes via a dropped recipe BOOK
-  (EquipSlot.Box → open to learn; A-grade bosses drop them); L2 mutually-exclusive drop GROUPS (`DropEntry.GroupId`
+  (EquipSlot.Box → open to learn; A-grade bosses drop them); IG mutually-exclusive drop GROUPS (`DropEntry.GroupId`
   — one weighted pick per group; body/weapon copies grouped in StandardDrops). Numbers retune-later.
 - [x] **Party / grouping system** — COMPLETE. Server + transport: `Party` (leader + members) in World;
   invite/accept-decline/leave/kick commands+hub+handlers; leader reassigns + auto-disband under 2;
@@ -924,7 +926,7 @@ changes and new features that came out of the play session:
   INTENDED — buffs/party close the gap, don't nerf the mob curve.
 - [ ] **Position bonuses** — backstab / flanking damage (hook reserved).
 - [~] **PvP + flag/karma/PK** — BUILT 2026-07-10 ([[pvp-system]]): PvP-enable + counter-attack toggles;
-  **L2 flag system** — attacking flags you purple, killing an innocent → PK (red name + persisted karma,
+  **IG flag system** — attacking flags you purple, killing an innocent → PK (red name + persisted karma,
   `200·1.1^consec·1.2^lvlDiff`), killing a flagged/red → PvP count; each death decays karma (−200) and
   clears the red at 0; red/purple freely attackable, innocent needs the opt-in; safe-zone gated. Client
   colours names (red/purple/white) + shows karma. Damage rides the existing `FinalizeDamage` pvp path.

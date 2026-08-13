@@ -1,14 +1,21 @@
-# CLAUDE.md — L2Clone (Lineage 2-inspired MMORPG, C# .NET 8)
+# CLAUDE.md — L2Clone (IG-inspired MMORPG, C# .NET 8)
 
 This file orients Claude Code on this project. Read it before making changes.
 
 ## What this is
-A server-authoritative, L2-inspired MMORPG built solo for learning. The **Unity
+**`IG` = "the inspiration game"** — the commercial MMO whose stat formulas this project adapts. The
+owner's rule (`58i`, done 2026-08-12 as `BL-58`): its name appears **nowhere** in code comments or
+docs. Write `IG`. The two places it survives on purpose are `docs/testing/Playtest-Archive.md`, which
+is a verbatim record of the owner's own messages and is not ours to rewrite, and the `L2Clone`
+directory/APK name, which is a product-identity decision he has not made yet. `L1`/`L2` still mean
+*skill level* everywhere and were left alone.
+
+A server-authoritative, IG-inspired MMORPG built solo for learning. The **Unity
 Android client is the client** (`Game.Client.Unity/`, outside `Game.sln`) — there
 is no desktop client any more; the WPF test harness was deleted in 0.42.8 once
 Unity reached parity, and lives on only in git history. Names are deliberately
 generic to avoid IP issues; stat *formulas* are not copyrightable and are adapted
-from L2 references.
+from IG references.
 
 ## Build & run
 - Open `Game.sln` in Visual Studio — it holds the server and the shared library
@@ -93,7 +100,7 @@ from L2 references.
   magic can "fail" (reduced damage) + crits up to ×3 (WIT, cap 20%). Magic divides
   by physical defence for now (magic-resist passives/jewels later).
 - **Speed**: 250 is the buffed move CAP (per-entity, raisable). Base run speeds per
-  race+class in `SpeedTable` sit below it. Cast/attack speed use the L2 "333 = 1.0×"
+  race+class in `SpeedTable` sit below it. Cast/attack speed use the IG "333 = 1.0×"
   model (`StatCalculator.CastSpeedStat`/`AttackSpeedStat`, per-class coefficients,
   weapon base speeds). All ceilings in `StatCaps`.
 - **Movement states**: Run / Walk (+20% regen) / Sit (+80% regen, can't move,
@@ -139,7 +146,7 @@ from L2 references.
   weaker → ignore; equal rank keeps the LONGER remaining time); (2) explicit `Replaces[]` removes
   listed buffs. An **improved/group buff is ONE buff** with `GroupRank = 100 + level` carrying every
   child's magnitudes and declaring `CoveredKeys`, so it always outranks and evicts its singles and a
-  potion can never override it (the L2 rule, 0.42.0). ⚠ Authoring rule: a group must be ≥ the best
+  potion can never override it (the IG rule, 0.42.0). ⚠ Authoring rule: a group must be ≥ the best
   single in EVERY family it covers. Per-class flavor = `DisplayName` override on `ClassSkill`.
 - **Spell range is PER-SPELL** (the skill's own `Range`), NOT class-tier-based:
   `SkillMath.EffectiveRange` returns `def.Range` for spells (heals shorter than attack
@@ -167,8 +174,9 @@ false-positive sources when brace-counting raw text: `http://` in `Program.cs`,
 
 ## Naming (IP safety — important)
 Names are deliberately generic to avoid IP issues. **Never use names trademarked by
-other games** — no Lineage/L2 town, NPC, item, skill, or currency names (e.g. the old
-"Giran/Aden/Gludio" towns and "adena" currency were slips, since renamed). Invent original
+other games** — no IG town, NPC, item, skill, or currency names (the old town names and the old
+currency term were slips, since renamed; the offending words are deliberately not repeated here,
+which is the same rule as `BL-58` above). Invent original
 generic fantasy names (current towns: Brackenford, Stonewatch, Emberfall, Greymarsh,
 Ironreach, Duskvale, Frostmere). Stat *formulas* are not copyrightable; *names* are.
 

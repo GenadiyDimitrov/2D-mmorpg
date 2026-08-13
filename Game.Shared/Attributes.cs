@@ -45,7 +45,7 @@ public enum AttributeType
     // multiplied the WHOLE stat, AGI + level included, so a maxed roll grew forever and handed a
     // rogue ~30 points at level 36 — three times the entire authored evasion budget, and the reason
     // a same-level mob missed him 35% of the time. Owner's ruling: *"the max for an evasion roll on
-    // a weapon should be 5% at max, our evasion is not like L2's so 5 roll is a flat 5% increase."*
+    // a weapon should be 5% at max, our evasion is not like IG's so 5 roll is a flat 5% increase."*
     // Since 1 evasion point IS 1% miss (StatCaps.AvoidStatSlope), a flat +5 IS his "5% at max".
     // EvasionPercent stays in the enum, unrollable, so items already carrying it still resolve.
     Evasion = 19,
@@ -122,7 +122,7 @@ public static class AttributeSystem
     // CritRate is a MULTIPLIER on the weapon's own crit base, and that base is per-weapon
     // (StatCalculator.WeaponCritFactor: sword 0.80 -> 88, dual/bow 1.20 -> 132). The same
     // PERCENT is therefore worth less absolute crit on the low-base weapon, which is exactly
-    // the objection to L2's flat +64/+90/+109: *"if we do a dagger with 30% and a sword with
+    // the objection to IG's flat +64/+90/+109: *"if we do a dagger with 30% and a sword with
     // the same, sword wont benifit the same"*. Rather than making crit the one flat stat in a
     // percent-based game, the sword's CEILING is raised until a max roll lands both weapons in
     // the same place: sword 88 x 1.9 = 167, dagger 132 x 1.3 = 172. A sword that spends its one

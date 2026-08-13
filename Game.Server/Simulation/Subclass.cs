@@ -3,7 +3,7 @@ using Game.Shared;
 namespace Game.Server.Simulation;
 
 /// <summary>
-/// ONE class a character owns. A character owns SEVERAL of these (L2-style subclasses) and plays
+/// ONE class a character owns. A character owns SEVERAL of these (IG-style subclasses) and plays
 /// exactly one at a time — <see cref="Entity.ActiveSubclass"/>.
 ///
 /// THE SPLIT (this is the load-bearing part of the design — get it wrong and it has to be redone):

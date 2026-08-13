@@ -1,24 +1,24 @@
 # Crit damage, Blows and `[Double]` (spec)
 
-Owner ruling, **2026-08-05**. This is a deliberate *simplification* of L2, not a copy of it — the
-naming below was chosen because L2's own naming confuses players about where crit damage comes from.
-Do not "restore" the L2 model.
+Owner ruling, **2026-08-05**. This is a deliberate *simplification* of IG, not a copy of it — the
+naming below was chosen because IG's own naming confuses players about where crit damage comes from.
+Do not "restore" the IG model.
 
 ## Vocabulary
 
-| Ours | L2's name for the same thing |
+| Ours | IG's name for the same thing |
 |---|---|
 | **`[Double]`** | physical *skill critical* |
 | **crit** (basic attack) | critical hit |
 | **Blow** | dagger blow (Backstab / Deadly Blow) |
 
-> *"There is no DoubleDmg in L2 — our DoubleDmg **is** L2's physical skill crit."*
+> *"There is no DoubleDmg in IG — our DoubleDmg **is** IG's physical skill crit."*
 
 ## 1. `[Double]` is a flat ×2 and nothing else
 
 A `[Double]` never touches crit-damage values. You hit for 1000; when it doubles you see
 `[Double] 2000`. That is the whole mechanic, and it is why it raises no questions about where crit
-damage went — the confusion in L2 comes from blows applying crit-damage values *and then* critting
+damage went — the confusion in IG comes from blows applying crit-damage values *and then* critting
 for a further ×2.
 
 ### Chance — pure ATK, floor 2.5%, ceiling 25%
@@ -66,7 +66,7 @@ for one stat**, and would give the warrior — whose stat *is* ATK — nothing f
 
 ## 2. Blows scale off CRIT DAMAGE, not attack power
 
-In L2 a blow's p.Atk contribution is almost irrelevant — 7-11k of skill power against under 1k of
+In IG a blow's p.Atk contribution is almost irrelevant — 7-11k of skill power against under 1k of
 p.Atk — and what actually grows a dagger's damage is **crit damage**. We reproduce that.
 
 Sequence for a blow (`BlowOnCrit`):
@@ -101,7 +101,7 @@ does nothing.
 
 ## 4. `[Double]` on buffs and debuffs = double duration
 
-The same roll, applied to a buff or debuff instead of damage, makes it last twice as long. (L2's
+The same roll, applied to a buff or debuff instead of damage, makes it last twice as long. (IG's
 level-76 Skill Mastery: fighters STR, mages INT.) Additive to the above; build it last.
 
 ## Consequence to watch
@@ -145,9 +145,9 @@ optional field — no protocol bump, no db reset.
 
 ---
 
-## 5. CRIT **RATE** — the L2 model (owner spec, 2026-08-06, playtest-19 M9). ✅ BUILT 2026-08-06 (0.50.0).
+## 5. CRIT **RATE** — the IG model (owner spec, 2026-08-06, playtest-19 M9). ✅ BUILT 2026-08-06 (0.50.0).
 
-His formula, on L2's 0-1000 scale (**1000 = 100%**, so the classic cap **500 = 50%**):
+His formula, on IG's 0-1000 scale (**1000 = 100%**, so the classic cap **500 = 50%**):
 
 ```
 crit = (base_weapon_rate x buffs x passives + flat_bonuses) x debuffs x enemy_light_armor_mastery
@@ -155,7 +155,7 @@ crit = (base_weapon_rate x buffs x passives + flat_bonuses) x debuffs x enemy_li
 
 **Weapon bases** — his own derivation `44 x weapon_crit / 4`, i.e. `11 x weapon_crit`:
 
-| weapon | L2 `weapon_crit` | base (1000 scale) | = % |
+| weapon | IG `weapon_crit` | base (1000 scale) | = % |
 |---|---|---|---|
 | blunt / fist | 4 | 44 | 4.4 |
 | sword / dual | 8 | 88 | 8.8 |
@@ -342,7 +342,7 @@ the tool was wrong. Both builders grant the floor passive now — never measure 
 
 Multiplicative crit alone drops the rogue to a flat **0.75x** the warrior at every level: `x1.2` on a
 13.2% base is +2.6 points where the old additive `+20%` was +20. The design note anticipated paying for
-that "in the blow's own modifier (L2 gave Mortal/Deadly Blow ~+20% of their own)", and that is what
+that "in the blow's own modifier (IG gave Mortal/Deadly Blow ~+20% of their own)", and that is what
 `CritRateMod` is: a multiplier on the caster's crit rate **for that skill's roll only**.
 
 **Stab and Piercing Stab carry `CritRateMod: 2.0`**, so a 15.8% rogue's blow lands at 31.6% — almost
@@ -351,7 +351,7 @@ exactly the 29.2% it landed at before. This is the right knob because it moves t
 retune if the rogue is off** — one float, one class, measured in §C1.
 
 ⚠ The skill modifier is deliberately **not** capped by `StatCaps.PhysicalCritRate`: 50% is the cap on a
-*character's* crit rate, and a fully-buffed rogue (36%) will land blows at ~72%. That is the L2 shape —
+*character's* crit rate, and a fully-buffed rogue (36%) will land blows at ~72%. That is the IG shape —
 a buffed dagger lands most of its blows — and the `BlowFailFraction` floor is what the rest becomes.
 
 ### ⚠ The one authoring gap this exposed

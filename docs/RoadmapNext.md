@@ -100,10 +100,10 @@ whole bar back every 5.6 seconds. That is fixed (0.42.3) and has no level term l
         the two orders are arithmetically identical below |Δ| ≈ 19, which is why its output is
         byte-identical before and after. Test it the way he found it: a dummy 20+ levels away.
       - ✅ **`M9` the rogue identity rework — BUILT 2026-08-06 (0.50.0), unplayed.** Crit rate is his
-        full L2 model (`110 × weapon × dexMod × passives × buffs + flat`, one clamp at 50 %),
+        full IG model (`110 × weapon × dexMod × passives × buffs + flat`, one clamp at 50 %),
         `CritRateResist` is a multiplier, Evasion Mastery is floor-ONLY, and the rogue's ×1.20 crit
         passive sits on Weapon Mastery from level **20**. Paid for with the new per-skill
-        **`SkillDef.CritRateMod`** (Stab / Piercing Stab ×2.0), which is L2's own rule that a blow never
+        **`SkillDef.CritRateMod`** (Stab / Piercing Stab ×2.0), which is IG's own rule that a blow never
         landed on the raw crit rate. 🔑 **§50h was a MEASURING error** — BalanceMatrix never granted the
         auto-granted identity passive, so it measured a rogue with no Evasion Mastery. The real *old*
         numbers were 0.99× / 1.08× / **1.46×** / **1.63×** the warrior at 20/28/32/36 — parity early and

@@ -7,20 +7,20 @@ A naked level-1 fighter has **42 P.Atk** and one-shots level-4-8 mobs; you can l
 gear at all. A naked mage has ~43 P.Atk too. Owner: *"I don't think our formulas are wrong, just how
 we manage not being equipped."* — which is exactly right.
 
-## Root cause (confirmed vs L2's own formula)
-L2J's P.Atk is `P.Atk = basePAtk × STRbonus × levelMod × CHAbonus`
-(source: L2J-Mobius `FuncPAtkMod`, same repo we used for the M.Atk/M.Def formulas).
+## Root cause (confirmed vs IG's own formula)
+IG's P.Atk is `P.Atk = basePAtk × STRbonus × levelMod × CHAbonus`
+(source: IG-Mobius `FuncPAtkMod`, same repo we used for the M.Atk/M.Def formulas).
 
 - **`basePAtk` is the WEAPON's Physical Attack.** With no weapon it's a tiny FIST value (~4).
 - **STR is only a MULTIPLIER**, not the base. At ~40 STR the bonus is ~0.9× (below the 49-STR baseline).
-- So an unarmed L2 L1 fighter has P.Atk ≈ `4 × 0.9 × 0.9 ≈ 3` — he punches for almost nothing. The
+- So an unarmed IG L1 fighter has P.Atk ≈ `4 × 0.9 × 0.9 ≈ 3` — he punches for almost nothing. The
   weapon is the *overwhelming* source of P.Atk (a low-grade sword is 20-40, D-grade 80+, and up).
 
 **Ours is inverted.** `StatCalculator.AttackPower(atkStat, level) = atkStat + level·2`, and the weapon's
 `AtkBonus` is ADDED on top (`Entity.RecomputeDerived`). So the character's ATK STAT is the base and the
 weapon is a top-up:
 
-| | our P.Atk | L2's shape |
+| | our P.Atk | IG's shape |
 |---|---|---|
 | Human fighter L1, naked | **42** (40 ATK + 2) | ~3 (fist base × STR × level) |
 | + newbie sword (~24 AtkBonus) | 66 (only +57%) | weapon DOMINATES (base jumps 5-10×) |
@@ -44,7 +44,7 @@ BasicAttackPower = WeaponType == WeaponType.None
     : AttackPower;
 ```
 
-with **`UnarmedFactor ≈ 0.15`** (echoes L2's "fists are almost nothing"; also the value of the old
+with **`UnarmedFactor ≈ 0.15`** (echoes IG's "fists are almost nothing"; also the value of the old
 per-archetype mage basic-attack multiplier we removed). Worked numbers at L1 vs a level-4 mob (52 HP):
 
 | | BasicAttackPower | dmg/hit | hits to kill |
@@ -53,11 +53,11 @@ per-archetype mage basic-attack multiplier we removed). Worked numbers at L1 vs 
 | naked, factor 0.15 | 6 | ~11 | ~5 |
 | newbie sword (armed) | 66 | ~115 | 1 |
 
-So: **naked → ~5 hits (a real chore), armed → snappy.** Exactly the "equip something" pressure L2 has.
+So: **naked → ~5 hits (a real chore), armed → snappy.** Exactly the "equip something" pressure IG has.
 Armed damage, skill damage and the damage formula are all untouched.
 
 ### Open questions for the owner
-1. **`UnarmedFactor` value** — 0.15 (very weak, L2-like) vs 0.25 (weak but usable). Recommend 0.15.
+1. **`UnarmedFactor` value** — 0.15 (very weak, IG-like) vs 0.25 (weak but usable). Recommend 0.15.
 2. **Physical SKILLS while unarmed** — this fix only touches AUTO-attacks (`BasicAttackPower`).
    A naked fighter's physical *skills* still use full `AttackPower`. Most physical skills need a weapon
    anyway, and low-level fighters lean on auto-attacks (the reported problem). Options: leave skills as
@@ -69,6 +69,6 @@ Armed damage, skill damage and the damage formula are all untouched.
    part of this fix.
 
 ### Not recommended: the "authentic" rewrite
-Making the WEAPON the base P.Atk and ATK a pure multiplier (true L2) would touch every weapon value and
+Making the WEAPON the base P.Atk and ATK a pure multiplier (true IG) would touch every weapon value and
 every physical damage number — right after we deliberately tuned them. High risk, no gameplay gain over
 the unarmed-penalty approach. Skip it.

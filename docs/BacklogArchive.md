@@ -63,7 +63,7 @@ nerf at max roll, stated by you and intended — and still never played.
 ### § Evasion Mastery: raised evasion itself → **raises the FLOOR only**
 **Replaced 2026-08-06** (`M9`, 0.50.0). *"Once I turned rogue my evasion jumps a lot, and it
 shouldn't."* The passive was worth ~32 points of raw evasion on top of the floor, which meant the
-floor was always the binding number anyway. Crit rate became your full L2 model in the same pass,
+floor was always the binding number anyway. Crit rate became your full IG model in the same pass,
 and the rogue's ×1.20 crit passive moved onto Weapon Mastery at level 20.
 
 ### § The ±20 level gap: a hard **lockout** → the floors stay live at every gap

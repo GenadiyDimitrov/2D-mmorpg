@@ -274,7 +274,7 @@ public class PersistenceService
 
     /// <summary>The A-grade caster kit, as item ids. A-grade is the top gear tier
     /// (<see cref="ItemCatalog.TierLetter"/> calls level 76+ "A"), and the tiered ids are
-    /// "&lt;key&gt;_t&lt;level&gt;". L2 jewel layout: 1 necklace, 2 rings, 2 earrings.
+    /// "&lt;key&gt;_t&lt;level&gt;". IG jewel layout: 1 necklace, 2 rings, 2 earrings.
     /// Anything the catalog doesn't have is skipped rather than crashing the seed.</summary>
     private static IEnumerable<string> EndgameKitItemIds()
     {
@@ -549,16 +549,25 @@ public class PersistenceService
     }
 
     /// <summary>Learned skills are stored "id:level" (legacy bare "id" = level 1).</summary>
+    /// <summary>Read a saved `id:level,id:level` row back into a learned-skills map, DROPPING any id the
+    /// catalog no longer knows.
+    ///
+    /// The filter is the point (2026-08-12, found while deleting `test_heal` for `BL-37`). Skill ids are
+    /// append-only by convention, but ids do get RETIRED — `hp_boost` went with the God layer, the archer
+    /// masteries went with the archer→rogue merge, and now the test heal. A retired id kept sitting in
+    /// `LearnedSkillsCsv` forever, and `SendLearned` pushes the map's keys verbatim: the client then had a
+    /// `SkillRef` it could not resolve in the catalog. A save wrote it straight back, so it was permanent.
+    /// Filtering HERE — at the one seam where stored text becomes runtime state — means deleting a skill
+    /// is a one-file job from now on, which is what made this worth fixing rather than special-casing.</summary>
     private static void ParseLearnedSkills(string csv, Dictionary<string, int> into)
     {
         foreach (var token in csv.Split(',', StringSplitOptions.RemoveEmptyEntries))
         {
             int colon = token.IndexOf(':');
-            if (colon < 0)
-                into[token] = 1;
-            else
-                into[token[..colon]] =
-                    int.TryParse(token[(colon + 1)..], out int lvl) ? Math.Max(1, lvl) : 1;
+            string id = colon < 0 ? token : token[..colon];
+            if (SkillCatalog.Get(id) is null) continue;   // retired id — let it die on load
+            into[id] = colon < 0 ? 1
+                     : int.TryParse(token[(colon + 1)..], out int lvl) ? Math.Max(1, lvl) : 1;
         }
     }
 

@@ -64,7 +64,7 @@ items, and the profession web forces player coordination. Solo is always possibl
 ## 8. Drops become mats-primary (reshapes what we just built)
 `MobCatalog.StandardDrops` (currently drops finished tiered gear) → drop **materials** as the main loot +
 Common/Unc/Rare finished DROP items + (bosses) the Epic set. The tiered sets stay as the craft/boss output.
-Use L2-style **drop GROUPS** (a group rolls to fire, then each item rolls its own chance).
+Use IG-style **drop GROUPS** (a group rolls to fire, then each item rolls its own chance).
 
 ---
 
