@@ -1916,6 +1916,266 @@ Console.WriteLine("=== E: ENCHANT — what a full +16 set is worth, per playstyl
 }
 Console.WriteLine();
 
+// =====================================================================================================
+//  §M: CRAFTING MATERIALS — the faucet, measured per GRADE GROUP.
+//
+//  Owner, 2026-08-13, and it BLOCKS `BL-05`'s recipe costs: *"make me a balance matrix file with all the
+//  dropped mats for a lvl .. a kills/h + the drops of mats and rarity .. in each grade group .. so we can
+//  decide the mats consumption per item ... now looking at it 1000-2000 legend mats for a single 75%
+//  chance to fail mytiic S is a bit harsh ... ofc depending on the mats drop"*.
+//
+//  GRADE is the right axis because the crafting rungs ARE the grades now (L1=E … L6=S, F uncraftable).
+//  Every number comes from the real drop tables through Marginals/EffectiveChance and from the real refine
+//  recipes in RecipeCatalog — the mat ladder is 5+1+1 today, and if Recipes.cs changes this table moves
+//  with it. Nothing here is hand-multiplied; that is the whole point of pricing it in the tool.
+// =====================================================================================================
+Console.WriteLine("#####################################################################################");
+Console.WriteLine("###  M: CRAFTING MATERIALS — kills/h and mat yield, per GRADE GROUP                ###");
+Console.WriteLine("#####################################################################################");
+Console.WriteLine();
+
+// The grade ladder is GradePenalty's, never re-listed here — a band is [floor, next floor).
+int topMobLevel = MobCatalog.Templates.Where(m => !m.Dummy && m.Level > 0).Max(m => m.Level);
+var gradeBands = GradePenalty.GradeLevels.Select((floor, i) => (
+        Name: GradePenalty.GradeNames[i],
+        Floor: floor,
+        Top: i + 1 < GradePenalty.GradeLevels.Length
+            ? GradePenalty.GradeLevels[i + 1] - 1
+            : Math.Min(ExpCurve.MaxLevel, topMobLevel)))
+    .ToArray();
+
+// Seconds to kill one same-level mob, averaged over the five sheets the offline farm actually fields —
+// E4's clock and E4's roster, so one class can never decide a band's rate on its own.
+static float BandTtk(int level)
+{
+    var r = FarmRosterBuffed(level);
+    var mob = r[0].E;
+    return r.Skip(1).Average(x => mob.MaxHp / Math.Max(0.01f, Dps(x.E, mob)));
+}
+
+// kills/h is NOT 3600/TTK. TTK is one to three seconds at every level, and his measured farm is ~84/h, so
+// the loop is almost entirely walking, respawn and retarget. Calibrate that overhead ONCE against the only
+// empirical anchor there is — the playtest-18 mage, whose 350k of pure coin pins the kill count — and then
+// let TTK move it per band. Same measurement the economy section above calibrates on.
+double coinAtAnchor = PerKill(PlaytestLevel).Coin;
+double anchorKills = CoinObserved / Math.Max(1, coinAtAnchor);
+double anchorKph = anchorKills / 14.5;
+double loopOverhead = Math.Max(0, 3600.0 / Math.Max(1, anchorKph) - BandTtk(PlaytestLevel));
+double KillsPerHour(int level) => 3600.0 / (loopOverhead + BandTtk(level));
+
+// Mats per kill BY RARITY, straight off the real tables through Marginals — which runs the same four
+// knobs the kill roll runs (per-item x per-group x global x rune). Averaged over the templates nearest
+// the level, like every other economy row in this file.
+static double[] MatsPerKill(int level)
+{
+    var byRarity = new double[Crafting.MaterialRarities.Length];
+    var near = MobsNear(level);
+    foreach (var mob in near)
+        foreach (var (e, chance) in Marginals(mob.Drops ?? Array.Empty<DropEntry>(), level))
+            if (ItemCatalog.Get(e.ItemId) is { Slot: EquipSlot.Material } def)
+                byRarity[(int)def.Rarity] +=
+                    chance * ((e.MinQty + e.MaxQty) / 2.0) * RateConfig.DropAmountRate / near.Length;
+    return byRarity;
+}
+
+string RarityHeader() => string.Concat(Crafting.MaterialRarities.Select(r => $"{r,10}"));
+
+Console.WriteLine("=== M1: the farm, per grade band — MATS PER KILL (all five types together) ===");
+Console.WriteLine($"{"gr",3} {"levels",8} {"mob",20} {"TTK",6} {"kills/h",8} | {RarityHeader()}");
+foreach (var (name, floor, top) in gradeBands)
+{
+    var mk = MatsPerKill(top);
+    Console.WriteLine($"{name,3} {floor + "-" + top,8} {MobsNear(top)[0].Name,20} {BandTtk(top),5:F1}s "
+        + $"{KillsPerHour(top),8:F0} | {string.Concat(mk.Select(v => $"{v,10:0.####}"))}");
+}
+Console.WriteLine($"  kills/h = 3600 / (TTK + {loopOverhead:F0}s loop overhead), the overhead calibrated on his own");
+Console.WriteLine($"  14.5 h farm at level {PlaytestLevel + 1} ({anchorKph:F0} kills/h). Combat is NOT the farm's clock — walking is.");
+Console.WriteLine("  ⚠ Each row is the band's TOP level, i.e. its BEST case. The mat rarity gates sit at 30 / 60 / 76");
+Console.WriteLine("    (uncommon / rare / epic), so the bottom of E, of B and of A yield less than the row shows.");
+Console.WriteLine("  ⚠ 'all five types together' — the mats group splits three ways by mob CATEGORY (two flavored");
+Console.WriteLine("    types + Gem), so any ONE type is about a third of the Common column, and a refine's two CROSS");
+Console.WriteLine("    inputs come from a different creature family or from trade.");
+Console.WriteLine();
+
+Console.WriteLine("=== M2: the same thing PER HOUR ===");
+Console.WriteLine($"{"gr",3} {"levels",8} {"kills/h",8} | {RarityHeader()}");
+foreach (var (name, floor, top) in gradeBands)
+{
+    double kph = KillsPerHour(top);
+    Console.WriteLine($"{name,3} {floor + "-" + top,8} {kph,8:F0} | "
+        + string.Concat(MatsPerKill(top).Select(v => $"{v * kph,10:0.##}")));
+}
+Console.WriteLine("  🔴 Legendary and Mythic are ZERO in every band: no mob drops them. The only source is REFINING,");
+Console.WriteLine("     which is what M3 prices — and it is why the top two rungs behave nothing like the bottom four.");
+Console.WriteLine();
+
+// What ONE material COSTS in kills at a level: the cheaper of farming it directly and REFINING it out of
+// the rung below. The refine cost is READ OFF the real recipe (5 of itself + 2 cross today), never a
+// hardcoded 7 — and the recursion is what makes a Mythic mat price itself in Common mats automatically.
+static double KillsPerMat(ItemRarity rarity, double[] perKill)
+{
+    double direct = perKill[(int)rarity] > 0 ? 1.0 / perKill[(int)rarity] : double.PositiveInfinity;
+    var recipe = RecipeCatalog.All.FirstOrDefault(r => r.Id.StartsWith("refine_")
+        && ItemCatalog.Get(r.OutputId) is { Slot: EquipSlot.Material } d && d.Rarity == rarity);
+    double refine = double.PositiveInfinity;
+    if (recipe is not null)
+    {
+        double sum = 0;
+        foreach (var input in recipe.Inputs)
+            if (ItemCatalog.Get(input.ItemId) is { Slot: EquipSlot.Material } m)
+                sum += input.Qty * KillsPerMat(m.Rarity, perKill);
+        refine = sum / Math.Max(1, recipe.OutputQty);
+    }
+    return Math.Min(direct, refine);
+}
+
+static string Span(double hours) =>
+    double.IsInfinity(hours) ? "never"
+    : hours >= 8760 ? $"{hours:N0} h ({hours / 8760:0.0} y)"
+    : hours >= 10 ? $"{hours:N0} h"
+    : $"{hours:0.0} h";
+
+Console.WriteLine("=== M3: what ONE material of each rarity costs, at each band (drop vs refine — cheaper wins) ===");
+Console.WriteLine($"{"gr",3} {"levels",8} | {RarityHeader()}   (kills per 1 mat)");
+foreach (var (name, floor, top) in gradeBands)
+{
+    var mk = MatsPerKill(top);
+    Console.WriteLine($"{name,3} {floor + "-" + top,8} | " + string.Concat(
+        Crafting.MaterialRarities.Select(r =>
+        {
+            double k = KillsPerMat(r, mk);
+            return double.IsInfinity(k) ? $"{"never",10}" : $"{k,10:N0}";
+        })));
+}
+Console.WriteLine("  Refining is NEVER the cheap path for anything that drops: the drop ladder thins by ~4-6x a rung");
+Console.WriteLine("  while a refine costs 7 in for 1 out. Above EPIC nothing drops at all, so Legendary is a forced 7x");
+Console.WriteLine("  and Mythic a forced 49x on the rarest thing in the table.");
+Console.WriteLine();
+
+// His authored ranges (2026-08-13), which are the thing this section exists to PRICE. Deliberately NOT
+// shipped anywhere — no gear recipe carries them yet, because they were given as *"depending on drop
+// rates/amount"*. This table is the measurement that resolves each range.
+var craftRungs = new (string Grade, ItemRarity Bulk, int BulkLo, int BulkHi,
+                      ItemRarity Accent, int AccLo, int AccHi, float Mythic, float Fail)[]
+{
+    ("E", ItemRarity.Common,     500, 1000, ItemRarity.Uncommon,  10, 10, 0.50f, 0.10f),
+    ("D", ItemRarity.Uncommon,   100,  500, ItemRarity.Rare,       2,  5, 0.45f, 0.15f),
+    ("C", ItemRarity.Rare,       100,  200, ItemRarity.Epic,       1,  2, 0.40f, 0.20f),
+    ("B", ItemRarity.Epic,       100,  200, ItemRarity.Legendary,  1,  2, 0.30f, 0.30f),
+    ("A", ItemRarity.Legendary,  100,  200, ItemRarity.Mythic,     1,  2, 0.20f, 0.50f),
+    ("S", ItemRarity.Legendary, 1000, 2000, ItemRarity.Mythic,    10, 20, 0.05f, 0.75f),
+};
+
+// A rung is priced at ITS OWN grade band (where that gear is worn), and again at the TOP of the world —
+// because mat yield only improves with level, the endgame column is the FLOOR of what the rung can cost.
+(double Lo, double Hi) RungHours(
+    (string Grade, ItemRarity Bulk, int BulkLo, int BulkHi,
+     ItemRarity Accent, int AccLo, int AccHi, float Mythic, float Fail) rung, int level)
+{
+    var mk = MatsPerKill(level);
+    double kph = KillsPerHour(level);
+    double bulk = KillsPerMat(rung.Bulk, mk), acc = KillsPerMat(rung.Accent, mk);
+    return ((rung.BulkLo * bulk + rung.AccLo * acc) / kph,
+            (rung.BulkHi * bulk + rung.AccHi * acc) / kph);
+}
+
+int endgame = gradeBands[^1].Top;
+Console.WriteLine("=== M4: HIS authored mat ranges, priced in FARM HOURS per craft ATTEMPT ===");
+Console.WriteLine($"{"rung",5} {"recipe (his ranges)",44} {"hours @ own band",30} {"hours @ " + endgame,24}");
+foreach (var rung in craftRungs)
+{
+    var band = gradeBands.First(b => b.Name == rung.Grade);
+    var own = RungHours(rung, band.Top);
+    var end = RungHours(rung, endgame);
+    string recipe = $"{rung.BulkLo}-{rung.BulkHi} {rung.Bulk} + {rung.AccLo}-{rung.AccHi} {rung.Accent}";
+    Console.WriteLine($"{rung.Grade + " (" + band.Floor + "+)",5} {recipe,44} "
+        + $"{Span(own.Lo) + " - " + Span(own.Hi),30} {Span(end.Lo) + " - " + Span(end.Hi),24}");
+}
+Console.WriteLine("  'own band' = farming the grade you are crafting for. '@ " + endgame + "' = the best MAT YIELD in the game.");
+Console.WriteLine("  Where the endgame column reads HIGHER (the E and D rungs), it is not a worse faucet — those rungs");
+Console.WriteLine("  need nothing that gates late, and the low bands simply kill faster (shorter TTK, same 40s walk).");
+Console.WriteLine();
+
+Console.WriteLine("=== M5: the same rungs AFTER the fail table — hours per SUCCESS and per MYTHIC piece ===");
+Console.WriteLine($"{"rung",5} {"fail",6} {"attempts",9} {"->Mythic",9} | {"per success (own band)",34} {"per MYTHIC (own band)",30}");
+foreach (var rung in craftRungs)
+{
+    var band = gradeBands.First(b => b.Name == rung.Grade);
+    var own = RungHours(rung, band.Top);
+    double attempts = 1.0 / Math.Max(0.01f, 1f - rung.Fail);
+    double toMythic = 1.0 / Math.Max(0.001f, rung.Mythic);
+    Console.WriteLine($"{rung.Grade,5} {rung.Fail * 100,5:F0}% {attempts,8:0.0}x {toMythic,8:0.0}x | "
+        + $"{Span(own.Lo * attempts) + " - " + Span(own.Hi * attempts),34} "
+        + $"{Span(own.Lo * toMythic) + " - " + Span(own.Hi * toMythic),30}");
+}
+Console.WriteLine("  'attempts' = 1/(1-fail) — a fail EATS the mats, so the sticker price is not the price. '->Mythic'");
+Console.WriteLine("  is 1/P(mythic): a craft that succeeds still lands on Legendary most of the time.");
+Console.WriteLine();
+
+// The solve he actually needs to rule on: the top two rungs are unreachable because their mats have no
+// faucet at all. So ask the question backwards — if an A or S craft is to cost a stated number of hours,
+// what would a Legendary / Mythic mat have to drop at? That is a number he can accept or move.
+Console.WriteLine("=== M6: THE SOLVE — what a Legendary/Mythic mat would have to drop at to hit a target ===");
+Console.WriteLine($"  (at level {endgame}, {KillsPerHour(endgame):F0} kills/h, holding his authored quantities)");
+Console.WriteLine($"{"rung",5} {"target/attempt",15} {"kills available",16} {"Legendary/kill",16} {"Mythic/kill",14}");
+foreach (var rung in craftRungs.Where(r => r.Grade is "A" or "S"))
+    foreach (double targetHours in new[] { 20.0, 50.0, 100.0 })
+    {
+        double kills = targetHours * KillsPerHour(endgame);
+        // Split the budget the way the recipe's own value splits it: the bulk mat carries the pile, the
+        // accent the handful. Solve each side for the per-kill rate that spends exactly its share.
+        double bulkShare = 0.75, accShare = 0.25;
+        double legPerKill = rung.BulkHi / (kills * bulkShare);
+        double mythPerKill = rung.AccHi / (kills * accShare);
+        Console.WriteLine($"{rung.Grade,5} {targetHours,14:F0}h {kills,16:N0} {legPerKill,16:0.####} {mythPerKill,14:0.####}");
+    }
+Console.WriteLine("  Read the last two columns as drops per kill; the farm budget is split 75/25 bulk/accent, which is an");
+Console.WriteLine("  assumption of mine, not his. For scale, the CURRENT top of the ladder is the Epic mat at "
+    + $"{MatsPerKill(endgame)[(int)ItemRarity.Epic]:0.####}/kill,");
+Console.WriteLine($"  and Common — the most common thing in the game — runs at {MatsPerKill(endgame)[(int)ItemRarity.Common]:0.##}/kill. An S rung asking a");
+Console.WriteLine("  Legendary mat to drop MORE OFTEN THAN ONCE PER KILL is the arithmetic saying the faucet is not the");
+Console.WriteLine("  lever here. The quantities are — which is M7.");
+Console.WriteLine();
+
+// The counter-proposal, and the reason it can be one: his six ranges all share the SAME SHAPE — 100 bulk
+// to 1 accent, in every rung, top of range and bottom. So the ladder has exactly one free number per rung,
+// and pricing it against a target is a solve rather than a redesign. The target curve below (doubling per
+// rung, from a 5 h E) is MINE and is the one thing here he should overrule if he wants a different feel;
+// everything else falls out of the drop tables.
+Console.WriteLine("=== M7: THE COUNTER-PROPOSAL — his 100:1 shape, re-solved for a target cost per SUCCESS ===");
+Console.WriteLine($"{"rung",5} {"target/success",15} {"his range",22} {"solved",9} {"accent",7}  {"verdict",22}");
+double target = 5;
+foreach (var rung in craftRungs)
+{
+    var band = gradeBands.First(b => b.Name == rung.Grade);
+    var mk = MatsPerKill(band.Top);
+    double kph = KillsPerHour(band.Top);
+    double attempts = 1.0 / Math.Max(0.01f, 1f - rung.Fail);
+    // One "unit" of his shape is 100 bulk + 1 accent. Solve how many units the target budget buys.
+    double unitKills = 100 * KillsPerMat(rung.Bulk, mk) + KillsPerMat(rung.Accent, mk);
+    double bulk = 100 * (target / attempts * kph / unitKills);
+    string verdict =
+        bulk >= rung.BulkLo && bulk <= rung.BulkHi ? "INSIDE his range"
+        : bulk < 100 ? $"{rung.BulkHi / Math.Max(0.01, bulk):N0}x smaller — shape breaks"
+        : $"{rung.BulkHi / Math.Max(0.01, bulk):0.#}x smaller";
+    Console.WriteLine($"{rung.Grade,5} {target,14:F0}h {rung.BulkLo + "-" + rung.BulkHi + " " + rung.Bulk,22} "
+        + $"{bulk,9:N0} {Math.Max(1, Math.Round(bulk / 100)),7:N0}  {verdict,22}");
+    target *= 2;
+}
+Console.WriteLine("  🔑 E, D and C land INSIDE his own authored ranges — the bottom half of his ladder is already right,");
+Console.WriteLine("     and it needs nothing from me except picking the number inside the range he already wrote.");
+Console.WriteLine("  🔴 B, A and S all solve BELOW 100 bulk — at which point his own 100:1 shape stops being expressible,");
+Console.WriteLine("     because there is no longer a pile for the accent mat to accent. That is the finding: the top three");
+Console.WriteLine("     rungs are not mis-numbered, they are un-authorable at the current faucet, and the break starts at");
+Console.WriteLine("     B — one rung EARLIER than the S he flagged. Either Legendary and Mythic mats get a real source (a");
+Console.WriteLine("     boss/elite drop, the way the top enchant scrolls did in D1), or those rungs must be authored in a");
+Console.WriteLine("     different currency than 'a pile of the rung below'.");
+Console.WriteLine("  ⚠ S solves to the same pile as A despite twice the target: its 75% fail rate eats the entire");
+Console.WriteLine("     doubling on its own. The fail table and the mat cost are one knob, not two.");
+Console.WriteLine("  The target column (5 h doubling to 160 h per finished item) is MY proposal and the one number in");
+Console.WriteLine("  this table to argue with; the rest is the drop table doing arithmetic.");
+Console.WriteLine();
+
 static string NameOf(string id) => SkillCatalog.Get(id)?.Name ?? id;
 
 /// <summary>A Human ASSASSIN (rogue) of this level in the best duals + LIGHT armor for its tier —
