@@ -50,10 +50,11 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
     Mythic S item**; Potion Master → tradable temporary War/Spell rune boxes (1h/2h), Scribe →
     tradable temporary EXP/SP boxes (5-30%, 1h/2h). A sketch, deliberately not built — spec it against
     the held War/Spell Rune and the `BL-01` premium runes, not as a new system.
-  - **Two numbers to confirm**, both measured and both odd: the **C rung costs 8 Rare mats**, so a C
-    recipe reads cheaper than an E one (the Rare faucet is 0.09/kill against Common's 1.76 while your C
-    target is 5-10h), and a **fully S-geared character is 347 farm hours**. See
-    `docs/balance/CraftingMats.md` §8.
+  - ⏸ **Two numbers, left as they ship (your call, 2026-08-13):** *"the farm times will work on them
+    leave them as is .. later will decide on them."* Both are measured and both are odd — the **C rung
+    costs 8 Rare mats**, so a C recipe reads cheaper than an E one (the Rare faucet is 0.09/kill against
+    Common's 1.76 while your C target is 5-10h), and a **fully S-geared character is 347 farm hours**.
+    Shipped as-is on purpose; nothing is retuned until you say so. See `docs/balance/CraftingMats.md` §8.
 
 ---
 
