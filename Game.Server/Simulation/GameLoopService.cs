@@ -1250,6 +1250,11 @@ public class GameLoopService : BackgroundService
             return;
         }
 
+        // You cannot swing at what you cannot see (BL-69). Silent, unlike the NPC refusal above: the
+        // whole point of a hide is that there is nothing there to be told about.
+        if (!CanSee(attacker, target))
+            return;
+
         if (target.Kind == EntityKind.Player && !CanPvpHit(attacker, target))
         {
             SendSystemToEntity(attacker, PvpRefusalReason(attacker, target));
@@ -1608,7 +1613,7 @@ public class GameLoopService : BackgroundService
         Guid targetId;
         // A support skill lands on a party member only if IsAllyTargetable says so — see that helper for
         // why the test cannot be Effect-only.
-        if (def.PlacesTrap || def.GrantsStealth)
+        if (def.PlacesTrap || def.GrantsHide)
         {
             // Self-delivered: a trap drops at the caster's feet; stealth cloaks the caster. Even
             // though a trap carries damage/CC flags (its deferred payload), it needs no live target.
@@ -1647,6 +1652,14 @@ public class GameLoopService : BackgroundService
             if (target.Kind == EntityKind.Npc)
             {
                 SendSystemToEntity(caster, "You can't attack " + target.Name + ".");
+                return;
+            }
+            // You cannot aim at what you cannot see (BL-69). The snapshot already withholds a hidden
+            // character, but a target id the client is still holding from a moment ago would sail
+            // straight through — so the server checks rather than trusting the omission.
+            if (!CanSee(caster, target))
+            {
+                SendSystemToEntity(caster, $"{def.Name} needs a target.");
                 return;
             }
             // MOB-ONLY skills (the rogue's Lure) refuse a person out loud. The taunt handler would
@@ -3480,6 +3493,10 @@ public class GameLoopService : BackgroundService
         // TeleportsToTown must be handled HERE as well as on the cast-completion path: the Ultimate
         // Scroll of Return is the escape button, so it has NO cast — and a 0-tick skill never reaches
         // the cast pipeline. Without this it would be eaten for no effect.
+        // Drinking or reading something reveals you (BL-69) — his list is "hitting, a skill, a
+        // potion". Only movement is free.
+        BreakHide(player);
+
         if (skill.TeleportsToTown)
             ReturnToTown(player);
         if ((skill.Effect & SkillEffect.Heal) != 0)
@@ -5443,7 +5460,7 @@ public class GameLoopService : BackgroundService
                     ? "Moderator: /jail <name> [min], /unjail <name>, /kick <name> [min], " +
                       "/chatban <name> [min], /unchatban <name>, /jailed, /where <name>"
                     : "Admin: /jail, /unjail, /kick, /ban, /unban, /chatban, /unchatban, /jailed, " +
-                      "/role <name> <player|moderator|admin>, /tp <name>, /where <name>, /god, " +
+                      "/role <name> <player|moderator|admin>, /tp <name>, /where <name>, /god, /invis, " +
                       "/spd <m|a|c> <v> (bare /spd resets), /bag <name>, /give <name>, " +
                       "/givegold <name> <amount>, /droprate [group|gear|global|item <id>] [mult], " +
                       "/titleright <name> <on|off>");
@@ -5453,6 +5470,20 @@ public class GameLoopService : BackgroundService
                 admin.GodMode = !admin.GodMode;
                 SendSystemToEntity(admin, $"God mode {(admin.GodMode ? "ON" : "OFF")}.");
                 SendAdminState(admin);   // persistent on-screen indicator, not just this one line
+                break;
+
+            // ADMIN INVISIBILITY (BL-69, kind 3) — the absolute one. Nothing in the simulation ends
+            // it: not acting, not an AoE, not the archer's flare, not another staff member. It goes
+            // off when this is typed again and at no other moment.
+            //
+            // It does NOT make him invulnerable, which is his own distinction — an AoE can still land
+            // on a hidden admin, and /god is the separate switch for not caring.
+            case "invis":
+                admin.AdminInvisible = !admin.AdminInvisible;
+                if (admin.AdminInvisible) DropAggroOn(admin);   // shed anything already chasing him
+                SendSystemToEntity(admin, admin.AdminInvisible
+                    ? "Invisible. Nobody can see or target you (you are still hittable — /god for that)."
+                    : "Visible again.");
                 break;
 
             case "titleright":
@@ -6844,11 +6875,14 @@ public class GameLoopService : BackgroundService
 
             if (entity.AttackCooldown > 0)
                 entity.AttackCooldown--;
-            if (entity.StealthTicks > 0)
-                entity.StealthTicks--;
+            if (entity.HideTicks > 0)
+                entity.HideTicks--;
+            if (entity.NoHideTicks > 0)
+                entity.NoHideTicks--;
 
             if (entity.Kind == EntityKind.Player)
             {
+                if (_tick % GameConstants.SecondIntervalTicks == 0) TickToggleUpkeep(entity);
                 TickPotion(entity);
                 TickRegionNotice(entity);
                 TickOnlineTime(entity);
@@ -7976,6 +8010,16 @@ public class GameLoopService : BackgroundService
         // interrupted or cancelled is not a skill you used, and past this point the MP is paid.
         AdvanceActionQuests(caster, QuestActions.UseSkill);
 
+        // A HIDE ends when a skill EXECUTES (BL-69) — not when it is clicked. His rule, and it is
+        // the reason a gap-closer works at all: *"i want to click the skill and im not in range to
+        // start to move towards the target but still invisible once the skill is executed then i
+        // appear."* So the break belongs here, past the point of no return, and the cast-start path
+        // must leave a hide alone. A skill that GRANTS a hide re-applies it further down, after this.
+        //
+        // "a skill" means ANY skill, not just an offensive one — his list is "hitting, a skill, a
+        // potion", with movement as the only exception.
+        BreakHide(caster);
+
         bool selfTargeted = caster.CastTargetId == caster.Id;
         Entity? target = selfTargeted ? caster
             : caster.CastTargetId is Guid tid ? _world.Entities.GetValueOrDefault(tid) : null;
@@ -8072,14 +8116,31 @@ var effect = def.Effect;
             return;
         }
 
-        // ---- Stealth: go invisible to mob AI. Coexists with any self-buff on the same skill;
-        //      broken early by taking an offensive action (see AfterOffensiveSkill / basic attack). ----
-        if (def.GrantsStealth)
+        // ---- REVEAL (BL-69): drag every hidden character in radius back into view and bar them
+        //      from hiding again. Deals nothing, so it never raises a mob clan. ----
+        if (def.RevealsHidden)
+            RevealHidden(caster, def, castName);
+
+        // ---- HIDE (BL-69, kind 1): vanish from everything. Applied here, AFTER the generic
+        //      "a completed cast reveals you" above, so casting the hide does not instantly undo it.
+        //
+        //      The reveal timing is the owner's and it is what makes a gap-closer work: you press a
+        //      skill while out of range, you WALK to the target still invisible, and you appear when
+        //      the skill executes. Nothing on the cast-START path may touch a hide, which is why the
+        //      break lives at cast completion and not in HandleCastSkill. ----
+        if (def.GrantsHide)
         {
-            caster.StealthTicks = Math.Max(1, def.DurationTicks);
-            DropAggroOn(caster);   // vanishing sheds mobs already locked on
-            BroadcastCombat(caster, caster, 0, CombatOutcome.Buff, castName);
-            SendSystemToEntity(caster, "You slip into the shadows.");
+            if (caster.NoHideTicks > 0)
+            {
+                SendSystemToEntity(caster, "You are marked — you cannot hide yet.");
+            }
+            else
+            {
+                caster.HideTicks = Math.Max(1, def.DurationTicks);
+                DropAggroOn(caster);   // vanishing sheds mobs already locked on
+                BroadcastCombat(caster, caster, 0, CombatOutcome.Buff, castName);
+                SendSystemToEntity(caster, "You slip into the shadows.");
+            }
         }
 
         // ---- Offensive AoE (boss slam): hit every hostile in radius, then finish. Uses the
@@ -8374,8 +8435,9 @@ var effect = def.Effect;
         }
         if (effect.HasFlag(SkillEffect.Knockback)) { offensive = true; DoKnockback(caster, target, def.KnockbackRange); }
 
-        // ---- Beneficial buffs (any of the buff flags, or a pure marker buff like Angel's Protection) ----
-        if ((effect & SkillEffect.AnyBuff) != 0 || def.KeepsBuffsOnDeath)
+        // ---- Beneficial buffs (any of the buff flags, or a pure MARKER buff — Angel's Protection,
+        //      the buffer's party stealth — which carries no stat effect at all) ----
+        if ((effect & SkillEffect.AnyBuff) != 0 || def.KeepsBuffsOnDeath || def.GrantsMobStealth)
         {
             // The display name is the CASTER's class label for this skill, so a
             // cleric's Wind Walk shows as "Holy Speed" wherever it lands.
@@ -8595,6 +8657,9 @@ var effect = def.Effect;
             CoveredKeys = covered,
             TicksRemaining = duration,
             Toggle = toggle,
+            // STEALTH (BL-69, kind 2) rides on the buff, so it ends the moment the buff does — by
+            // whichever of the many routes a buff can leave. See BuffInstance.HidesFromMobs.
+            HidesFromMobs = def.GrantsMobStealth,
             // DoT damage effect (bleed/poison/venom): carries its per-tick damage so TickDots
             // hits for DotPower each second. Damage does NOT stack — stacks live on a separate
             // counter (see ApplyDotStack); the burst reads the counter, not this.
@@ -8925,6 +8990,84 @@ var effect = def.Effect;
         PlaceEntity(target, target.X + nx * range, target.Y + ny * range);
     }
 
+    // ===== INVISIBILITY (BL-69) =========================================================
+
+    /// <summary>End a full HIDE (kind 1). Silent and free when there was none, so callers can just
+    /// call it on any action rather than testing first.
+    ///
+    /// Deliberately touches NOTHING else: a stealth buff is not broken by acting (that is the
+    /// difference between the two kinds), and admin invisibility is broken by nothing at all.</summary>
+    private void BreakHide(Entity e)
+    {
+        if (e.HideTicks <= 0) return;
+        e.HideTicks = 0;
+        if (e.Kind == EntityKind.Player)
+            SendSystemToEntity(e, "You step out of the shadows.");
+    }
+
+    /// <summary>Charge the per-second upkeep of any TOGGLE the entity is running (BL-69: Prowl's
+    /// 1 MP/s). A stance nobody can pay for drops itself rather than running free.</summary>
+    private void TickToggleUpkeep(Entity e)
+    {
+        List<BuffInstance>? broke = null;
+        foreach (var b in e.Buffs)
+        {
+            if (!b.Toggle || string.IsNullOrEmpty(b.SkillId)) continue;
+            if (SkillCatalog.Get(b.SkillId) is not SkillDef def || def.MpPerSecond <= 0) continue;
+            if (e.Mp >= def.MpPerSecond) e.Mp -= def.MpPerSecond;
+            else (broke ??= new()).Add(b);
+        }
+        if (broke is null) return;
+
+        foreach (var b in broke)
+        {
+            e.Buffs.Remove(b);
+            SendSystemToEntity(e, $"{b.Name} ends — not enough MP to hold it.");
+        }
+        e.RecomputeDerived();
+        PushBuffs(e);
+        SendStats(e);
+    }
+
+    /// <summary>Can this viewer see that entity at all? The one gate the world snapshot and every
+    /// "pick a target" path share, so a thing nobody renders is also a thing nobody can click.
+    ///
+    /// A full HIDE is transparent to the hider's own PARTY and to staff. That is the one place the
+    /// owner's "a buff nobody renders" is read narrowly, and on purpose: a hidden party member no
+    /// healer can see, target or resurrect is a bug report, not a stealth mechanic. Admin
+    /// invisibility takes him at his word — it hides from everyone, staff included.</summary>
+    private bool CanSee(Entity viewer, Entity e)
+    {
+        if (e.Id == viewer.Id) return true;
+        if (e.AdminInvisible) return false;
+        if (e.HideTicks <= 0) return true;
+        return viewer.IsStaff || SameParty(viewer, e);
+    }
+
+    /// <summary>The archer's answer to a rogue who is simply not there (BL-69): end every HIDE in
+    /// radius and stamp those it caught so they cannot hide again for a while. The second half is
+    /// the part that makes it a counter — a hide you can re-cast a heartbeat later is not countered,
+    /// it is inconvenienced.</summary>
+    private void RevealHidden(Entity caster, SkillDef def, string castName)
+    {
+        int caught = 0;
+        foreach (var e in PlayersInRadius(caster, def.AreaRadius))
+        {
+            if (e.Id == caster.Id || e.AdminInvisible) continue;
+            if (e.HideTicks <= 0 && def.NoHideTicks <= 0) continue;
+            if (e.HideTicks > 0) { BreakHide(e); caught++; }
+            if (def.NoHideTicks > 0)
+            {
+                e.NoHideTicks = Math.Max(e.NoHideTicks, def.NoHideTicks);
+                SendSystemToEntity(e, "The flare marks you — you cannot hide.");
+            }
+        }
+        BroadcastCombat(caster, caster, 0, CombatOutcome.Buff, castName);
+        SendSystemToEntity(caster, caught > 0
+            ? $"Signal flare: {caught} hidden {(caught == 1 ? "enemy" : "enemies")} revealed."
+            : "Signal flare: nobody was hiding.");
+    }
+
     /// <summary>Shed every mob currently aggro'd on an entity (used when it stealths): forget its
     /// threat and, if it's the current target, return the mob to wandering.</summary>
     private void DropAggroOn(Entity entity)
@@ -8943,7 +9086,7 @@ var effect = def.Effect;
 
     private void AfterOffensiveSkill(Entity caster, Entity target)
     {
-        caster.StealthTicks = 0;   // any offensive action breaks stealth
+        BreakHide(caster);   // acting reveals you (BL-69) — a stealth BUFF is untouched by this
 
         // A skill NEVER starts a melee chase. The rule is the owner's and it has no class in it:
         // nothing walks you into melee range unless you explicitly commanded it (owner, playtest-15).
@@ -9074,7 +9217,10 @@ var effect = def.Effect;
         foreach (var (id, v) in mob.Threat)
         {
             if (v <= bestV) continue;
-            if (_world.Entities.TryGetValue(id, out var e) && !e.Dead) { bestV = v; best = id; }
+            // Hidden means hidden from the AI too (BL-69). DropAggroOn already wipes a hider from
+            // every table, so this is the belt to that braces — a threat entry written in the same
+            // tick someone vanished must not hand them the mob back.
+            if (_world.Entities.TryGetValue(id, out var e) && !e.Dead && !e.Hidden) { bestV = v; best = id; }
         }
         if (best is Guid g) mob.CombatTargetId = g;
     }
@@ -9138,7 +9284,7 @@ var effect = def.Effect;
 
     private void ResolveBasicAttack(Entity attacker, Entity target)
     {
-        attacker.StealthTicks = 0;   // attacking breaks stealth
+        BreakHide(attacker);   // attacking reveals you (BL-69)
 
         // 🔴 A BASIC ATTACK CREDITS THE TUTORIAL'S "use it on something" BEAT TOO (him, 63j: "Fighter
         // dont have a skill (I had to use TestSkill) to continue with quest"). The beat used to be
@@ -9232,6 +9378,12 @@ var effect = def.Effect;
             if (FlagOf(target) != PvpFlag.Pk)
                 attacker.PvpFlagUntilTick = _tick + PvpFlagTicks;
         }
+
+        // Taking damage reveals a hidden character (BL-69). This is what makes his "any AoE damage
+        // also reveals" true without a special case in every AoE: an area hit is positional, so it
+        // finds someone who is hidden, and the hit itself is what drags them out.
+        if (damage > 0 && target.HideTicks > 0)
+            BreakHide(target);
 
         // Threat: damage to a mob from a known attacker builds aggro (retargets to top threat).
         if (attacker is not null && target.Kind == EntityKind.Mob && damage > 0)
@@ -10196,6 +10348,12 @@ var effect = def.Effect;
             var current = new Dictionary<Guid, EntityDto>();
             foreach (var e in _world.Grid.Nearby(player))
             {
+                // INVISIBILITY (BL-69) is enforced HERE, by omission, and that is the whole of "a
+                // buff nobody renders, targets or checks as nearby": a hidden character simply never
+                // reaches the viewer, so the client cannot draw them, cannot click them and cannot
+                // hold them in its nearby list. The despawn diff below does the rest — the moment
+                // someone hides, everyone who could see them is told they left.
+                if (!CanSee(player, e)) continue;
                 var dto = e.ToDto();
                 if (e.Kind == EntityKind.Player) dto = dto with { Level = 0 };
                 current[e.Id] = dto;

@@ -65,6 +65,12 @@ public class BuffInstance
     /// skill again, or double-clicks the buff, to end it). TickBuffs skips it.</summary>
     public bool Toggle { get; init; }
 
+    /// <summary>This buff hides its owner from UNAGGROED monsters (BL-69, kind 2). Carried on the
+    /// buff rather than on the entity so that every way a buff can leave — toggled off,
+    /// double-clicked, dispelled, expired, lost on death — ends the stealth without a second
+    /// bookkeeping path to keep in step.</summary>
+    public bool HidesFromMobs { get; init; }
+
     /// <summary>Which buff-bar ROW this belongs in (from the granting skill). A debuff overrides
     /// it — see <see cref="Row"/>.</summary>
     public BuffRow SourceRow { get; init; } = BuffRow.Buff;
@@ -1255,11 +1261,45 @@ public class Entity
     /// <summary>While &gt; 0 a taunt locks the mob onto its taunter (ignores threat retargeting).</summary>
     public int TauntLockTicks { get; set; }
 
-    /// <summary>While &gt; 0 the entity is STEALTHED — invisible to mob AI targeting. Set by a
-    /// GrantsStealth skill; decremented each tick; cleared early when the entity takes an
-    /// offensive action (attack / offensive skill).</summary>
-    public int StealthTicks { get; set; }
-    public bool Stealthed => StealthTicks > 0;
+    // ===== INVISIBILITY, IN THREE KINDS (BL-69) ==========================================
+    //
+    // The owner's spec is explicit that these share a word and nothing else, so they are three
+    // separate pieces of state rather than one flag with modes. The distinctions that matter:
+    //
+    //   HIDE  (HideTicks)      — full. Nobody renders you, nobody can target you, mobs shed their
+    //                            aggro. ANYTHING but movement ends it: a hit, a skill, a potion,
+    //                            damage taken. A rogue's opener.
+    //   STEALTH (a BUFF)       — vs UNAGGROED mobs only. Players still see you and can target you;
+    //                            mobs already chasing keep chasing. It does not break when you act —
+    //                            only when you stop it. *"toggle-on makes the rogues farm in
+    //                            peacefull zones."* Lives on the buff, so removing the buff by any
+    //                            route (toggle off, double-click, dispel, expiry, death) ends it.
+    //   ADMIN (AdminInvisible) — absolute. No reveal, no AoE and no skill use touches it; it goes
+    //                            off only by typing the command again. Not even other staff see it.
+
+    /// <summary>While &gt; 0 the entity is HIDDEN: unrendered, untargetable, and shed by mob aggro.
+    /// Decremented each tick and cleared by any action at all except movement.</summary>
+    public int HideTicks { get; set; }
+
+    /// <summary>While &gt; 0 this entity CANNOT re-hide — the archer's reveal debuff. Independent of
+    /// <see cref="HideTicks"/>: the reveal both ends a hide and bars the next one.</summary>
+    public int NoHideTicks { get; set; }
+
+    /// <summary>Admin <c>/invis</c>. Absolute and manual-only — nothing in the simulation clears it.</summary>
+    public bool AdminInvisible { get; set; }
+
+    /// <summary>Cached "some buff of mine hides me from unaggroed mobs" — recomputed in
+    /// <see cref="RecomputeDerived"/>, which already runs on every buff add, removal and expiry.
+    /// Cached because the mob aggro scan asks this about every candidate it considers.</summary>
+    public bool StealthFromBuffs { get; set; }
+
+    /// <summary>Unseen by players AND mobs — the two absolute kinds.</summary>
+    public bool Hidden => HideTicks > 0 || AdminInvisible;
+
+    /// <summary>Should an UNAGGROED mob decline to start on this entity? True for every kind: a full
+    /// hide implies it. This is the predicate the mob AI's aggro scan reads, and it deliberately says
+    /// nothing about mobs already in the fight — that difference is the whole point of stealth.</summary>
+    public bool Stealthed => Hidden || StealthFromBuffs;
 
     public string? QueuedSkillId { get; set; }
     public Guid? QueuedTargetId { get; set; }
@@ -1519,6 +1559,14 @@ public class Entity
     /// change.</summary>
     public void RecomputeDerived()
     {
+        // STEALTH (BL-69, kind 2) is cached here because this method already runs on every buff add,
+        // removal and expiry — so there is no second place for the flag to get out of step — and
+        // because the mob aggro scan asks about it once per candidate per pass, which is far too
+        // often to walk the buff list for.
+        StealthFromBuffs = false;
+        for (int i = 0; i < Buffs.Count; i++)
+            if (Buffs[i].HidesFromMobs) { StealthFromBuffs = true; break; }
+
         // ----- Primary-stat PRE-PASS: fold main-stat deltas into the Bonus* stats BEFORE deriving
         // HP/MP/atk/eva/acc/crit, so "CON +3" actually raises HP, "AGI +1" actually raises
         // eva/acc/crit, and "ATK +5" actually raises P.Atk/M.Atk — not just the stat window.

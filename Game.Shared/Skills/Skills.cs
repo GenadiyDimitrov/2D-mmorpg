@@ -196,10 +196,28 @@ public record SkillDef(
     // is full, so this rides as explicit fields, not a flag.)
     float PhysMpCostPct = 0f,
     float MagicMpCostPct = 0f,
-    // STEALTH (rogue "Hide"): a self-cast that makes the caster invisible to mob AI for
-    // DurationTicks. Broken early by taking any OFFENSIVE action (attack / offensive skill).
-    // Movement is allowed. (SkillEffect enum is full, so this rides as a flag field.)
-    bool GrantsStealth = false,
+    // HIDE (BL-69, kind 1 — the rogue's full vanish): a self-cast that makes the caster invisible
+    // to EVERYTHING for DurationTicks — unrendered, untargetable, and shed by every mob aggro'd on
+    // them. Broken by any action but movement: a hit, a skill, a potion, damage taken.
+    //
+    // 🔑 The reveal is at EXECUTION, not at the click (his rule, and the reason a gap-closer works):
+    // *"i want to click the skill and im not in range to start to move towards the target but still
+    // invisible once the skill is executed then i appear."* Nothing on the cast-START path may end a
+    // hide. (SkillEffect enum is full, so this rides as a flag field.)
+    bool GrantsHide = false,
+    // STEALTH (BL-69, kind 2): hides the target from UNAGGROED monsters only. Players still see
+    // them, mobs already chasing keep chasing, and it does NOT break when they act — only when the
+    // buff goes. Delivered as an ordinary buff (BuffInstance.HidesFromMobs), so it works both as a
+    // rogue TOGGLE and as a buffer's timed party version with no second code path.
+    bool GrantsMobStealth = false,
+    // MP upkeep for a TOGGLE, charged once a second while it is up. The toggle drops itself when
+    // the caster cannot pay. 0 = no upkeep (every other stance in the game).
+    int MpPerSecond = 0,
+    // REVEAL (BL-69): a non-damaging AoE that ends every HIDE within AreaRadius and stamps those it
+    // caught with NoHideTicks, during which they cannot hide again. The counter to kind 1 — an
+    // archer's answer to a rogue who is simply not there.
+    bool RevealsHidden = false,
+    int NoHideTicks = 0,
     // TRAP (Trapper): instead of hitting now, the cast DROPS a trap at the caster's feet that
     // arms and, when a hostile steps within TrapRadius, delivers THIS skill's damage + any
     // contested CC (Root/Stun/etc.) to that intruder, then vanishes. TrapLifeTicks = how long

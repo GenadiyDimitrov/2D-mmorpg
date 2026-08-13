@@ -191,23 +191,16 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 - `BL-36` 🔴 **Subclass swapping restricted to a safe zone, with a 5-minute delay.** The machinery
   swaps fine; the player-facing rules were never built.
 
-- `BL-69` 🔵 **Invisibility, in three separate kinds.** His full spec (playtest-22). They share a
-  word and nothing else, so they are three builds:
-  1. **Full `hide`** (melee rogue) — a buff nobody renders, targets or checks as nearby; mobs lose
-     aggro, aggressive mobs do not start a chase. **Anything but movement breaks it**: hitting, a
-     skill, a potion. 🔑 His timing rule for a gap-closer: *"i want to click the skill and im not in
-     range to start to move towards the target but still invisible once the skill is executed then i
-     appear"* — the reveal is at execution, not at the click. An **archer AoE non-damage debuff**
-     strips `hide` in a 200-400 radius and applies a **30s no-hide** debuff; any AoE damage also
-     reveals.
-  2. **`stealth` vs aggressive mobs only** — a rogue TOGGLE (1 MP/s) plus a buffer's party version
-     (1 min, 30s cd, 300 MP). Already-aggroed mobs keep chasing and hitting; un-aggroed ones never
-     start. Does **not** drop player targets, does not hide you from players, does not break until
-     you stop it. The point: *"toggle-on makes the rogues farm in peacefull zones."*
-  3. **Admin `/invis`** — absolute. No reveal, no AoE, no skill use breaks it; it toggles off only by
-     typing the command again. He is still hittable unless in god mode.
-  ⚠ Some machinery exists — the mob aggro scan already skips stealthed players, and `DropAggroOn`
-  already wipes one entity's aggro from every mob. Neither of the three buffs does.
+- `BL-69` ✅ **BUILT 2026-08-13 (0.64.0)** — all three kinds. Hide is now withheld from the world
+  snapshot itself (so nobody renders or can click it), broken by anything but movement, revealed at
+  skill EXECUTION not at the click, and countered by `Signal Flare` (rogue/bow 28: reveal in 300 +
+  30s no-hide). Stealth is a buff-carried, action-proof, unaggroed-mobs-only effect delivered two
+  ways — `Prowl` (rogue toggle at 20, 1 MP/s) and `Shrouding Hymn` (cleric party version at 30:
+  1 min / 30s / 300 MP). `/invis` is absolute and manual-only. See `CHANGELOG.md`. Delete at the
+  next sweep.
+  - 🔵 **One decision for you.** A full hide is transparent to your own **party** and to staff — your
+    "nobody renders it" read narrowly, because a hidden party member no healer can see, target or
+    resurrect is a bug report rather than a mechanic. Say the word and it is one line.
 
 - `BL-38` 🔵 **Pets and summons** — immovable totems, class pets, the mage summoner. Designed, never
   scheduled, never re-raised by you.

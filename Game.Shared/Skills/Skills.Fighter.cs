@@ -33,7 +33,9 @@ public static partial class SkillCatalog
     public const string Lure = "lure";                        // rogue: MOB-ONLY taunt, pulls one out of a camp
     public const string Shadowstep = "shadowstep";            // blink behind target + hit
     public const string RepellingShot = "repelling_shot";     // ranged hit + knockback
-    public const string Vanish = "vanish";                    // Phantom: stealth (invisible to mobs)
+    public const string Vanish = "vanish";                    // Phantom: full HIDE (kind 1)
+    public const string Prowl = "prowl";                      // rogue TOGGLE: unaggroed mobs ignore you (kind 2)
+    public const string SignalFlare = "signal_flare";         // archer AoE: strips HIDE + bars re-hiding
     public const string SnareTrap = "snare_trap";             // Trapper: place a rooting damage trap
 
     // --- Base fighter CORE actives (CSV fighter 01-15, continuing into 2nd-class) ---
@@ -637,8 +639,41 @@ public static partial class SkillCatalog
         new(Vanish, "Vanish", BaseClass.Fighter, SkillEffect.None,
             MpCost: 30, CastTicks: 0, CooldownTicks: 300, Range: 0, Power: 0,
             DurationTicks: 200, Category: SkillCategory.Physical,
-            TargetMode: TargetMode.SelfOnly, GrantsStealth: true,
-            Description: "Slip into the shadows — monsters can't see you until you act."),
+            TargetMode: TargetMode.SelfOnly, GrantsHide: true,
+            Description: "Vanish completely for 20s — nobody can see or target you, and every monster " +
+                         "loses you. Anything but walking ends it."),
+
+        // Prowl — STEALTH (BL-69, kind 2). A stance, not an opener, and the difference is the whole
+        // skill: aggressive monsters that have not already noticed you never start, while anything
+        // already chasing keeps chasing and hitting. Players see you normally. It does not break when
+        // you act — only when you switch it off or run dry. His purpose for it, verbatim:
+        // *"toggle-on makes the rogues farm in peacefull zones."*
+        //
+        // The price is 1 MP/s forever rather than a cast cost, so it is a decision about how you
+        // travel rather than a button pressed before each pull.
+        new(Prowl, "Prowl", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 20, CastTicks: 0, CooldownTicks: 20, Range: 0, Power: 0,
+            BuffKey: "prowl", Rank: 1, Category: SkillCategory.Physical,
+            TargetMode: TargetMode.SelfOnly, SpCost: 3400,
+            Toggle: true, GrantsMobStealth: true, MpPerSecond: 1,
+            Description: "Stance: monsters that haven't already noticed you leave you alone. " +
+                         "Anything already chasing you keeps chasing. Costs 1 MP per second."),
+
+        // Signal Flare — the REVEAL, and the counter to a full hide. A non-damaging area debuff:
+        // every hidden character within 300 is dragged back into view AND cannot hide again for 30s.
+        // That second half is the part that matters — stripping a hide the rogue can re-cast a
+        // heartbeat later is not a counter, it is an inconvenience.
+        //
+        // No damage on purpose: it is an ANSWER, not a nuke with a rider, and a damaging version
+        // would also raise a mob clan (BL-70) every time someone swept an area for a rogue.
+        new(SignalFlare, "Signal Flare", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 28, CastTicks: 10, CooldownTicks: 200, Range: 0, Power: 0,
+            Category: SkillCategory.Physical, SpCost: 12000,
+            TargetMode: TargetMode.SelfOnly, AreaRadius: 300f,
+            RequiredWeapon: WeaponType.Bow,
+            RevealsHidden: true, NoHideTicks: 300,
+            Description: "Fires a flare: everyone hidden within 300 is revealed and cannot hide " +
+                         "again for 30s. Deals no damage."),
 
         // Snare Trap — TRAP: drop a hidden trap; the next monster to step on it takes damage and is
         //          ROOTED (contested). The Trapper's control tool. Uses the skill's own Power + Root.

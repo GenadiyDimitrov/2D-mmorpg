@@ -16,6 +16,55 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
 Protocol stays **19** — nothing here changes the wire. No DB reset.
 
+### `BL-69` — invisibility, in his three separate kinds
+
+His spec is explicit that these share a word and nothing else, so they are three pieces of state,
+not one flag with modes.
+
+**1 · Hide** (`Vanish`, the Phantom's) is now actually hidden. It used to mean "invisible to mob AI
+targeting" and nothing more — every other player still saw and could click you. A hidden character
+is now **withheld from the world snapshot itself**, which is the whole of *"a buff nobody renders,
+targets or checks as nearby"*: the client never receives them, so it cannot draw them, click them or
+hold them in its nearby list, and the existing despawn diff means everyone who could see you is told
+you left the instant you hide. The server checks visibility again on both target paths, because a
+target id a client is still holding from a moment ago would otherwise sail straight through.
+
+**Anything but movement ends it** — a hit, any skill, a potion, damage taken. That last one is what
+makes his *"any AoE damage also reveals"* true with no special case in any AoE: an area hit is
+positional, so it finds a hidden character, and the hit itself drags them out.
+
+🔑 **The reveal is at EXECUTION, not at the click**, which is his rule and the reason a gap-closer
+works: *"i want to click the skill and im not in range to start to move towards the target but still
+invisible once the skill is executed then i appear."* So the break sits in `ExecuteSkill`, past the
+point of no return, and nothing on the cast-**start** path is allowed to touch a hide.
+
+The **counter** is `Signal Flare` (rogue/bow, 28): a non-damaging area cast that reveals every hidden
+character within 300 **and bars them from hiding for 30s**. The second half is the part that makes it
+a counter — stripping a hide the rogue re-casts a heartbeat later is an inconvenience, not an answer.
+It deals no damage on purpose, so sweeping an area for a rogue does not also wake a mob clan.
+
+**2 · Stealth** is a different thing and is now built as one: it hides you from **unaggroed monsters
+only**. Players still see and can target you, anything already chasing keeps chasing and hitting, and
+it does **not** break when you act — only when you stop it. Two deliveries, one mechanic:
+- `Prowl` — a rogue **toggle** at 20, **1 MP/s**, no cast. His purpose for it, verbatim: *"toggle-on
+  makes the rogues farm in peacefull zones."* Toggles now support a per-second MP upkeep and drop
+  themselves when the caster runs dry.
+- `Shrouding Hymn` — the buffer's party version at 30: **1 minute, 30s reuse, 300 MP**, his numbers.
+  The price is the point — 300 MP at that level is most of the bar, so it is a journey, not a rotation.
+
+It rides on the **buff** rather than on the entity, so every way a buff can leave — toggled off,
+double-clicked, dispelled, expired, lost on death — ends the stealth, with no second bookkeeping path
+to fall out of step.
+
+**3 · `/invis`** (admin) is absolute: nothing in the simulation ends it, not acting, not an AoE, not
+the flare, and it hides him from other staff too. It goes off when the command is typed again. He is
+still *hittable* by area damage — `/god` is the separate switch, which is his own distinction.
+
+⚠ **One place his words were read narrowly, deliberately:** a full hide is transparent to the hider's
+own **party** and to staff. "Nobody renders it" taken literally gives you a hidden party member no
+healer can see, target or resurrect — a bug report rather than a stealth mechanic. Say the word and
+it is one line.
+
 ### `BL-70` — mobs have a social circle, and the rogue has a way around it
 
 A creature can now belong to a named **clan** (`MobType.Clan`) — `orc`, `mantis`, `redhorn`,

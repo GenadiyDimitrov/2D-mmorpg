@@ -20,6 +20,7 @@ public static partial class SkillCatalog
     public const string CombatStance = "healer_combat_stance";  // TOGGLE: trade M.Atk for P.Atk
     public const string Antidote = "antidote";                  // cure: removes poison/venom
     public const string Resurrection = "resurrection";          // revive a fallen ally (4 levels)
+    public const string ShroudingHymn = "shrouding_hymn";       // party STEALTH: unaggroed mobs ignore the group
 
     /// <summary>Healer Armor Mastery per-weight data (lvls 20/25/30/35). Robe = caster lean
     /// (+MP regen / def / max MP); LIGHT is the cleric's identity: he is the one caster who can
@@ -62,6 +63,22 @@ public static partial class SkillCatalog
                 new SkillLevel(Power: 245, MpCost: 65, InitialMpCost: 13, SpCost: 12800, Description: "Quick heal power 245."),
                 new SkillLevel(Power: 301, MpCost: 67, InitialMpCost: 15, SpCost: 25000, Description: "Quick heal power 301."),
             }),
+
+        // Shrouding Hymn — the BUFFER's half of stealth (BL-69, kind 2). Exactly what the rogue's
+        // Prowl does, handed to the whole party for a minute: monsters that have not already noticed
+        // the group leave it alone, anything already chasing keeps chasing, and it is not broken by
+        // acting. It is how a party crosses a field it has no business fighting through.
+        //
+        // 1 minute / 30s reuse / 300 MP are his numbers, and the price is the point — 300 MP at the
+        // level a cleric learns it is most of the bar, so this is a journey, not a rotation.
+        new(ShroudingHymn, "Shrouding Hymn", BaseClass.Mage, SkillEffect.None,
+            MpCost: 300, CastTicks: 20, CooldownTicks: 300, Range: 600, Power: 0,
+            DurationTicks: 600, BuffKey: "shrouding_hymn", Rank: 1, InitialMpCost: 60,
+            Category: SkillCategory.Buff, SpCost: 12000,
+            TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
+            GrantsMobStealth: true,
+            Description: "For 1 minute, monsters that haven't already noticed you and your nearby " +
+                         "allies leave you alone. Anything already chasing keeps chasing."),
 
         // Party Heal — AoE heal to nearby allies (lower power than single-target).
         new(PartyHeal, "Party Heal", BaseClass.Mage, SkillEffect.Heal,

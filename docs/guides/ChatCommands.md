@@ -77,6 +77,7 @@ answers `Moderators can't use /<command>.` **No god mode, no teleporting, no ite
 | `/unban <name>` | Lift the account ban. | `/unban Cheater` |
 | `/role <name> <player\|moderator\|admin>` | **Grant or revoke a staff role** on a character. Works offline. Dropping someone below admin also turns their god mode off. `mod` and `none` are accepted spellings. | `/role Aricel moderator` |
 | `/god` | Toggle **god mode** — you take no damage. Shows a permanent on-screen indicator, not just one chat line. | `/god` |
+| `/invis` | Toggle **absolute invisibility** — nobody renders you, nobody (staff included) can target you, and every monster already chasing you loses you. **Nothing in the game ends it**: not attacking, not casting, not an AoE, not the archer's Signal Flare. Type it again to come back. You are still *hittable* by area damage — `/god` is the separate switch for that. | `/invis` |
 | `/tp <name>` | **Teleport yourself** to an online player (lands a few metres off, cancels your move order). | `/tp Aricel` |
 | `/tpme <name>` | The reverse — **summon** an online player to you. They are told who did it. | `/tpme Aricel` |
 | `/spd <m\|a\|c> <value>` | Force one speed stat outright — **m** = move, **a** = attack, **c** = cast. Uncapped on purpose: it replaces the computed stat, ignoring formula, gear, buffs and the ceiling, so you can see what a silly number does. Runtime only, never saved. | `/spd m 250` · `/spd c 1500` |

@@ -87,6 +87,10 @@ public static partial class ClassSkillTables
                 // Lure (BL-70) on the rogue's own 20/28/36 rungs — its ladder is REACH (200/400/600),
                 // so the three levels are the three ranges and nothing else changes.
                 new ClassSkill(Lure, 20, SkillLevel: 1),
+                // Prowl (BL-69, kind 2) — the stance that lets a rogue cross a field instead of
+                // fighting it. Learned with the rest of the 20-block: his purpose for it is farming,
+                // and a farming tool that arrives at 40 is a farming tool for someone else.
+                new ClassSkill(Prowl, 20, SkillLevel: 1),
                 new ClassSkill(RogueArmorMastery, 24, SkillLevel: 2),
                 new ClassSkill(RogueWeaponMastery, 24, SkillLevel: 2),
                 new ClassSkill(PiercingStab, 24, SkillLevel: 2),
@@ -98,6 +102,9 @@ public static partial class ClassSkillTables
                 // Evasion Boost — the rogue's ultimate (CSV rogue 20-35, added playtest-20).
                 new ClassSkill(EvasionBoost, 28, SkillLevel: 1),
                 new ClassSkill(Lure, 28, SkillLevel: 2),
+                // Signal Flare (BL-69) — the counter to a full hide, and it belongs to the bow half
+                // of the rogue, which owns the bow until 40 (the archer merge).
+                new ClassSkill(SignalFlare, 28, SkillLevel: 1),
                 new ClassSkill(RogueArmorMastery, 32, SkillLevel: 4),
                 new ClassSkill(RogueWeaponMastery, 32, SkillLevel: 4),
                 new ClassSkill(PiercingStab, 32, SkillLevel: 4),
@@ -237,6 +244,10 @@ public static partial class ClassSkillTables
                 new ClassSkill(QuickHeal, 25, SkillLevel: 2),
                 new ClassSkill(QuickHeal, 30, SkillLevel: 3),
                 new ClassSkill(QuickHeal, 35, SkillLevel: 4),
+
+                // Shrouding Hymn (BL-69, kind 2) — the buffer's party stealth. At 30 rather than 20:
+                // it costs 300 MP, which is unpayable on a level-20 cleric's bar.
+                new ClassSkill(ShroudingHymn, 30, SkillLevel: 1),
 
                 // Party Heal — AoE heal to nearby allies.
                 new ClassSkill(PartyHeal, 20, SkillLevel: 1),
