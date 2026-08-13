@@ -746,6 +746,10 @@ namespace Game.Client
         private void LayoutMenuPanel()
         {
             bool admin = Boot.CanUseAdminTools;
+            // Mirror it for the STATIC card builders (ItemStatsText and friends), which have no Boot.
+            // Set before the early-out: the flag has to be right even on the frames where the menu
+            // layout has nothing to redo.
+            StaffTools = admin;
             if (admin == _menuLaidOutForAdmin) return;
             _menuLaidOutForAdmin = admin;
 

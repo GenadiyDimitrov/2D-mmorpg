@@ -154,7 +154,11 @@ public static class BoxCatalog
                 new BoxEntry(ItemCatalog.ScrollNormalD, 0.50f),       // 50%
                 new BoxEntry(ItemCatalog.ScrollNormalC, 0.10f),           // 10%
                 new BoxEntry(ItemCatalog.AttrScrollRare, 0.05f),       // 5%
-                new BoxEntry(ItemCatalog.WeaponKey(WeaponType.Sword, ItemGrade.E, ItemRarity.Rare), 0.01f),   // 1%
+                // The 1% slot was `sword_e_rare` — "Masterwork Steel Sword", off the legacy grid that
+                // was deleted in playtest-22, and the ONLY live way anyone could ever receive one of
+                // those sixty items. It is the E-grade Rare blade off the real ladder now, which is
+                // what that slot always meant to be.
+                new BoxEntry("sword1h_t20_rare", 0.01f),   // 1%
                 // The jackpot was the God-tier debug sword until 2026-08-07 (playtest-19 `0b`,
                 // *"nothing that can't be acquired in game"*). It is now the S-grade Mythic 1H blade —
                 // the real top of the sword line, so the 1-in-a-million slot still demonstrates the

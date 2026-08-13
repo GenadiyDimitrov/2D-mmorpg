@@ -192,8 +192,13 @@ namespace Game.Client
                                 ? "" : "\n" + dest.Description;
                     // A free ride (under the free-travel level) says so — "0 gold" reads like a bug.
                     string price = dest.Fee <= 0 ? "Free" : dest.Fee.ToString("N0") + " " + GameConstants.CurrencyName;
+                    // Taking a ride CLOSES the gatekeeper. You are no longer standing in front of him,
+                    // so the window is a list of rides offered by an NPC in another city — and pressing
+                    // one of them again is either refused or, worse, sends you somewhere from a shop
+                    // you cannot see (playtest-22: *"After the teleport from the GK the window of the
+                    // old gk need to close automatically"*).
                     DialogRow(dest.Name + band + "   " + price + what,
-                              "Go", () => Boot.TeleportTo(zone),
+                              "Go", () => { Boot.TeleportTo(zone); Boot.CloseDialog(); CloseWindow(_dialogPanel); },
                               Boot.Gold >= dest.Fee ? UiKit.Text : UiKit.TextDim);
                 }
             }

@@ -3888,10 +3888,17 @@ public class GameLoopService : BackgroundService
         p.AutoHealPotions.Clear();
         foreach (var hp in c.HealPotions ?? Array.Empty<AutoPotionDto>())
             p.AutoHealPotions.Add(new AutoPotionDto(hp.ItemId, hp.Enabled, Math.Clamp(hp.ThresholdPct, 0, 100)));
-        p.AutoBuffs.Clear();
-        foreach (var b in c.Buffs ?? Array.Empty<AutoBuffDto>())
-            if (!string.IsNullOrEmpty(b.Family))
-                p.AutoBuffs.Add(b);
+        // null = "no opinion", NOT "clear it". The Buffs tab always sends all 17 families, armed or not,
+        // so an absent array can only come from a caller that does not know the field exists — and the
+        // cost of guessing wrong is a silently emptied tab. Turning every row off is still expressible:
+        // that is 17 rows with both flags false, an array, not a null.
+        if (c.Buffs is not null)
+        {
+            p.AutoBuffs.Clear();
+            foreach (var b in c.Buffs)
+                if (!string.IsNullOrEmpty(b.Family))
+                    p.AutoBuffs.Add(b);
+        }
         p.AutoFarmRange   = Math.Clamp(c.FarmRange, 200, 2000);
         p.AutoFarmStatic  = c.StaticSpot;
         p.AutoAttackNormal = c.AttackNormal;
@@ -4673,12 +4680,20 @@ public class GameLoopService : BackgroundService
     private void SendSkillBar(Entity p) =>
         SendTo(p, "SkillBar", new SkillBarDto(p.ActiveSkillBar));
 
+    // 🔴 EVERY field of the config must be echoed here, or it is DESTROYED on the next push, not merely
+    // mis-drawn. The client keeps this echo as its whole idea of the config and sends `AutoConfig with
+    // { …the bit I edited… }` back, so a field this method omits comes back null and HandleSetAutoHuntConfig
+    // clears it. `Buffs` was omitted when the BUFFS tab was added (BL-04) and that is exactly what happened:
+    // the tab looked empty after a relog AND the first press of the Auto button wiped it on the server.
+    // 🔑 Appending a field to this DTO means touching FOUR sites — the record, the handler, the snapshot
+    // and THIS — and only this one fails silently. (Same shape of miss as `67i`/`74b`.)
     private void SendAutoHuntConfig(Entity p) =>
         SendTo(p, "AutoConfig", new AutoHuntConfigDto(
             p.AutoHuntEnabled, p.AutoHpPotionPct, p.AutoMpPotionPct, p.AutoBuffPotions,
             p.AutoSkills.ToArray(), p.AutoBuffPotionIds.ToArray(),
             p.AutoFarmRange, p.AutoFarmStatic, p.AutoAttackNormal, p.AutoAttackElite, p.AutoAttackBoss,
-            p.AutoHealPotions.ToArray(), p.AutoCyclic, p.AutoHealPct, p.AutoAssistLeader));
+            p.AutoHealPotions.ToArray(), p.AutoCyclic, p.AutoHealPct, p.AutoAssistLeader,
+            p.AutoBuffs.ToArray()));
 
     /// <summary>Spend ONE tick of the ACCOUNT's daily allowance for this player. Called each tick per
     /// farming character, which IS the drain rule: N characters of one account spend N ticks a tick,
@@ -5673,7 +5688,7 @@ public class GameLoopService : BackgroundService
                 //       anything, including untradeable and quest items.
                 //
                 //   /give <player> <itemId> [sellPrice] [tradable] [timed] ["name"] [enchant]
-                //                           [canStorePrivate] [canStoreAccount]
+                //                           [canStorePrivate] [canStoreAccount] [amount]
                 //       SPAWNS a tagged instance. His example:
                 //         /give Gena sword1h_t10 -1 0 1d "Admin Sword" 5   ->  Admin Sword +5 (temporary bound)
                 //       Everything after the item id is optional and positional; `-` means "no opinion,
@@ -5683,7 +5698,8 @@ public class GameLoopService : BackgroundService
                 if (g.Length == 0)
                 {
                     SendSystemToEntity(admin,
-                        "Usage: /give <player>  |  /give <player> <itemId> [sellPrice] [tradable] [timed] [\"name\"] [enchant] [canStorePrivate] [canStoreAccount]");
+                        "Usage: /give <player>  |  /give <player> <itemId> [sellPrice] [tradable] [timed] [\"name\"] [enchant] [canStorePrivate] [canStoreAccount] [amount]  "
+                      + "(`-` = leave a slot alone; e.g. /give Gena mat_iron - - - - - - - 1000)");
                     break;
                 }
                 if (FindOnlinePlayer(g[0]) is not Entity giveTarget)
@@ -5736,51 +5752,81 @@ public class GameLoopService : BackgroundService
                 bool? storePriv = ParseTriState(Arg(7));
                 bool? storeAcct = ParseTriState(Arg(8));
 
+                // [amount], last and usually left alone — *"if i want to get 1000 mats not to have to
+                // write command 1000 times"* (playtest-22). Same clamp as the debug menu's own give
+                // (`74d`/`66n`): 10,000, which is well past any real need and far short of the number
+                // that stalled the loop. `-` or omitted means 1, like every other slot.
+                int giveQty = 1;
+                if (Arg(9) != "-" && !int.TryParse(Arg(9), out giveQty))
+                {
+                    SendSystemToEntity(admin, $"'{Arg(9)}' is not an amount.");
+                    break;
+                }
+                giveQty = Math.Clamp(giveQty, 1, 10_000);
+
                 // ⚠ ALWAYS A FRESH ROW, never a merge into an existing stack. A tagged instance carries
                 // properties the stack it would join does not, and merging would either silently spread
                 // them across items the admin did not mean to touch or silently drop them — and the
                 // whole point of `58d` is that the tag belongs to THIS copy.
-                if (giveTarget.Inventory.Count(i => !i.Equipped) >= GameConstants.InventorySize)
+                //
+                // 🔑 That is also why the amount splits two ways. A STACKABLE is one row carrying the
+                // quantity, so 1000 mats cost one bag slot — the case he asked for. Non-stackable GEAR
+                // has to be N rows, because "ten swords" is ten things that enchant and bind
+                // separately, so it is bounded by the bag rather than by the number he typed.
+                int freeSlots = GameConstants.InventorySize - giveTarget.Inventory.Count(i => !i.Equipped);
+                if (freeSlots <= 0)
                 {
                     SendSystemToEntity(admin, $"{giveTarget.Name}'s inventory is full.");
                     break;
                 }
+                int rows = giveDef.IsStackable ? 1 : Math.Min(giveQty, freeSlots);
 
-                var given = new InventoryItem
+                InventoryItem given = null!;
+                for (int n = 0; n < rows; n++)
                 {
-                    DefId = giveDef.Id,
-                    Quantity = 1,
-                    Enchant = Math.Max(0, giveEnchant),
-                    SellPriceOverride = sellOverride,
-                    TradableOverride = tradeOverride,
-                    CustomName = customName,
-                    CanStorePrivate = storePriv,
-                    CanStoreAccount = storeAcct,
-                };
-                if (giveDef.FixedAttributes is { Length: > 0 } giveAttrs)
-                    given.Attributes = giveAttrs.ToList();
+                    given = new InventoryItem
+                    {
+                        DefId = giveDef.Id,
+                        Quantity = giveDef.IsStackable ? giveQty : 1,
+                        Enchant = Math.Max(0, giveEnchant),
+                        SellPriceOverride = sellOverride,
+                        TradableOverride = tradeOverride,
+                        CustomName = customName,
+                        CanStorePrivate = storePriv,
+                        CanStoreAccount = storeAcct,
+                    };
+                    if (giveDef.FixedAttributes is { Length: > 0 } giveAttrs)
+                        given.Attributes = giveAttrs.ToList();
 
-                // An explicit duration wins; otherwise a rune/loaner still gets its own default clock,
-                // exactly as AddItem would have stamped it.
-                if (timedSeconds > 0)
-                    given.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(timedSeconds);
-                else if (giveDef.IsRune && giveDef.GrantsRuneSeconds > 0)
-                    given.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(giveDef.GrantsRuneSeconds);
-                else if (giveDef.LifetimeSeconds > 0)
-                    given.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(giveDef.LifetimeSeconds);
+                    // An explicit duration wins; otherwise a rune/loaner still gets its own default clock,
+                    // exactly as AddItem would have stamped it.
+                    if (timedSeconds > 0)
+                        given.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(timedSeconds);
+                    else if (giveDef.IsRune && giveDef.GrantsRuneSeconds > 0)
+                        given.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(giveDef.GrantsRuneSeconds);
+                    else if (giveDef.LifetimeSeconds > 0)
+                        given.ExpiresAtUtc = DateTime.UtcNow.AddSeconds(giveDef.LifetimeSeconds);
 
-                giveTarget.Inventory.Add(given);
+                    giveTarget.Inventory.Add(given);
+                }
+
+                // ONE push for the whole grant, not one per row — the lesson of `66n`, where a push per
+                // unit is what stalled the server.
                 ReconcileTimedItems(giveTarget);   // a granted RUNE must start applying its buff at once
                 giveTarget.RecomputeDerived();
                 SendInventory(giveTarget);
                 SendStats(giveTarget);
                 SaveEntity(giveTarget);
 
+                int gaveTotal = giveDef.IsStackable ? giveQty : rows;
                 string tag = ItemTag.Of(given.Sellable(giveDef), given.Tradable(giveDef),
                                         given.ExpiresAtUtc is not null);
                 string label = given.Name(giveDef) + (given.Enchant > 0 ? $" +{given.Enchant}" : "")
+                             + (gaveTotal > 1 ? $" x{gaveTotal}" : "")
                              + (tag.Length > 0 ? " " + tag : "");
                 SendSystemToEntity(admin, $"[DEBUG] Gave {giveTarget.Name}: {label}.");
+                if (gaveTotal < giveQty)
+                    SendSystemToEntity(admin, $"Inventory full — {gaveTotal} of {giveQty} fit.");
                 if (giveTarget.Id != admin.Id)
                     SendSystemToEntity(giveTarget, $"You received {label}.");
                 break;
@@ -10152,9 +10198,16 @@ var effect = def.Effect;
             p.CritDamageFlat));
     }
 
-    /// <summary>The player's baseline HP/MP regen per second at the RUNNING stance (×1.0) and outside
-    /// a safe zone — base + flat bonus, ×mastery mult, ×buff regen% — for the stats window. Walking
-    /// (×1.2) and sitting (×1.8) scale up from this; combat no longer changes it at all.</summary>
+    /// <summary>The player's HP/MP regen per second AS IT IS ACTUALLY PAID right now — base + flat
+    /// bonus, ×mastery mult, ×buff regen%, and then the same stance and safe-zone multipliers
+    /// <see cref="Regenerate"/> applies.
+    ///
+    /// 🔑 It used to report the RUNNING baseline unconditionally, and that is a display that
+    /// contradicts the rule it describes: walking is +20% and sitting +80%, but the stats window read
+    /// the same number in all three stances, so the one place you could check the bonus said it did
+    /// not exist. He caught it in playtest-22 — *"MP regen is unchanged when walking/running - or
+    /// atleast vissually - it seems like its only visually"* — and he was exactly right: the server
+    /// was paying the bonus the whole time. Now the number moves when the stance does.</summary>
     private static (float Hp, float Mp) StandingRegen(Entity p)
     {
         float hpPct = 0f, mpPct = 0f;
@@ -10163,8 +10216,11 @@ var effect = def.Effect;
             if (b.Has(SkillEffect.BuffHpRegen)) hpPct += b.Percent(SkillEffect.BuffHpRegen);
             if (b.Has(SkillEffect.BuffMpRegen)) mpPct += b.Percent(SkillEffect.BuffMpRegen);
         }
-        float hp = (StatCalculator.HpRegenPerSecond(p.Con, p.Level) + p.HpRegenBonus) * p.HpRegenMult * (1f + hpPct);
-        float mp = (StatCalculator.MpRegenPerSecond(p.EffectiveSpt, p.Level) + p.MpRegenBonus) * p.MpRegenMult * (1f + mpPct);
+        // Read off Regenerate, in the same order, so the two cannot drift apart.
+        float stance = MovementTuning.RegenMultiplier(p.MoveState)
+                     * (GameConstants.InSafeZone(p.X, p.Y) ? GameConstants.SafeZoneRegenMultiplier : 1f);
+        float hp = (StatCalculator.HpRegenPerSecond(p.Con, p.Level) + p.HpRegenBonus) * p.HpRegenMult * (1f + hpPct) * stance;
+        float mp = (StatCalculator.MpRegenPerSecond(p.EffectiveSpt, p.Level) + p.MpRegenBonus) * p.MpRegenMult * (1f + mpPct) * stance;
         return (hp, mp);
     }
 
@@ -12097,8 +12153,14 @@ var effect = def.Effect;
                     continue;
                 }
                 any = true;
-                SendSystemToEntity(player,
-                    $"{def.Name}: {ItemCatalog.Get(g.ItemId)?.Name ?? g.ItemId} {CountItem(player, g.ItemId)}");
+                // A gather token IS a drop, so it belongs in the combat log beside every other drop —
+                // not in SYSTEM. It used to announce "<contract>: Bear Pelt 93" there, once per kill,
+                // which drowned the system channel in a channel the player reads for warnings
+                // (playtest-22: *"its a drop item ... now its system chat flood"*). The running count
+                // went with it: the quest window is already refreshed on the same kill and is where a
+                // contract's progress is meant to be read.
+                SendCombatToEntity(player, "LOOT",
+                    $"You looted: {ItemCatalog.Get(g.ItemId)?.Name ?? g.ItemId} [Q]");
             }
         }
         if (any) SendInventory(player);

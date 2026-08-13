@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Dev tool, deliberately NOT in Game.sln (same rule as BalanceMatrix): `dotnet build` on the
+       solution must not build it and the owner's startup project stays untouched.
+
+       It regenerates docs/guides/ItemIds.md, the `/give` reference, straight out of ItemCatalog, so
+       the list can never drift from the catalog the way a hand-written one would. Run it after
+       adding, renaming or deleting any item:
+
+           dotnet run  (from this folder)
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Game.Tools.ItemIds</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Game.Shared\Game.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

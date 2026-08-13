@@ -9,6 +9,11 @@ Assembled 2026-08-12 from playtests 4-21, `Open-Checklist.md`, `Playtest-Archive
 `Roadmap.md` / `RoadmapNext.md` and the design docs. Everything shipped up to `ed75bac`
 (0.60.1 + the playtest-21 batch) has been checked out of it.
 
+**Playtest 22 (2026-08-13) added `BL-65` … `BL-72`** — dungeon level bands, an item-id reference,
+the `MpHeal` type, more 16-40 zones, invisibility ×3, mob social clans, the aggro/taunt model, and
+unbuffed farm survivability. His bug finds from the same pass went to `testing/Open-Checklist.md`,
+not here.
+
 ## The rules this file runs on
 
 1. **Newest ruling wins, and it is the ONLY one shown.** When you re-spec something, its entry is
@@ -109,6 +114,26 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   (hook reserved) · PvP and PvE damage multipliers (both hooks exist and are 1.0). *"the combat
   depth I don't want it build for now defer it."* Not dropped — do not build unasked.
 
+- `BL-71` 🔵 **The aggro / taunt model.** *"So the question is what we have and how taunt works now
+  and what it needs to be implemented"* (playtest-22). **Answered first, because it changes the
+  size of the job:**
+  - **A real per-attacker threat table already exists** — `Entity.Threat` (`Guid → float`), read by
+    `RetargetByThreat`, which picks the maximum on every damage tick. It is not "last who hit me".
+  - **Aggro IS damage today**, exactly as you want it: `AddThreat(target, attacker, damage)`, 1 point
+    per 1 damage. A non-damaging offensive skill adds a flat **1**.
+  - **Taunt exists and works**: `provoke` (Fighter/Tank, level 20) sets your threat to `top × 1.2 +
+    100` and locks the mob onto you for ~3s. **It has no `Power`** — which is precisely the gap you
+    described. There is also a rogue-side **detaunt** (Warding Step) that sheds 90%.
+  - **Missing entirely**: taunt POWER as an authored number (so a lure and a 4th-class taunt differ),
+    a taunt that scales per level, **threat decay**, **healer/buffer threat** (a healer is invisible
+    to every mob in the game today), and any client-visible aggro list.
+  - ⚠ One real defect found while answering: a **proximity pull adds no threat at all**, so the first
+    point of damage from anyone instantly owns a mob that walked to you.
+  **What you asked for on top:** `lure` ~500 power (range 200/400/600 by level), a tank taunt at
+  1000-2000 at L1 rising to **20-30k** so a 7-8k physical skill cannot steal it, and healer threat
+  ≈ `healPower / castSeconds × 10` (your worked example: 300 power / 2s = 1500; 500 power / 5s =
+  1000). Ships with `BL-70`, which is what makes a lure worth having.
+
 ---
 
 ## Items & economy
@@ -165,6 +190,38 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 - `BL-36` 🔴 **Subclass swapping restricted to a safe zone, with a 5-minute delay.** The machinery
   swaps fine; the player-facing rules were never built.
+
+- `BL-67` 🔴 **An `MpHeal` skill type, and an MP threshold in auto-farm.** *"We need to change few
+  skills and add `MpHeal` type"* (playtest-22). Four parts:
+  1. **`vampiric bolt` becomes a `Heal`** so the HP threshold can fire it — *"any skill that restores
+     HP as a `Heal` skill (only vamp bolt is left)"*.
+  2. **`Restore` and `Restore Spirit` become `MpHeal`.**
+  3. **`MpHeal` slots between Heal and everything else** in the auto-farm chain: *"below the `Heal` as
+     priority but above all other (need mp to cast/buff)"*.
+  4. **An MP bar threshold beside the HP one** in the auto-farm settings.
+  His worked case: *"50% MP_treshold + 30% HP_treshold ... `Restore Spirit` to be used (MP <= 50%)
+  and if it lowers me (HP <= 30%) to use the `Vampiric Bolt` to heal me."*
+  ⚠ **Carries a live BUG**: *"`Restore Spirit` → now it doesnt work anyway as a heal type - nor as
+  cyclic nor as 100% hp treshold (self heal fires while restore_spirit no)"* — it fires from nothing
+  today. Find that before building the type, since it may be the same defect.
+
+- `BL-69` 🔵 **Invisibility, in three separate kinds.** His full spec (playtest-22). They share a
+  word and nothing else, so they are three builds:
+  1. **Full `hide`** (melee rogue) — a buff nobody renders, targets or checks as nearby; mobs lose
+     aggro, aggressive mobs do not start a chase. **Anything but movement breaks it**: hitting, a
+     skill, a potion. 🔑 His timing rule for a gap-closer: *"i want to click the skill and im not in
+     range to start to move towards the target but still invisible once the skill is executed then i
+     appear"* — the reveal is at execution, not at the click. An **archer AoE non-damage debuff**
+     strips `hide` in a 200-400 radius and applies a **30s no-hide** debuff; any AoE damage also
+     reveals.
+  2. **`stealth` vs aggressive mobs only** — a rogue TOGGLE (1 MP/s) plus a buffer's party version
+     (1 min, 30s cd, 300 MP). Already-aggroed mobs keep chasing and hitting; un-aggroed ones never
+     start. Does **not** drop player targets, does not hide you from players, does not break until
+     you stop it. The point: *"toggle-on makes the rogues farm in peacefull zones."*
+  3. **Admin `/invis`** — absolute. No reveal, no AoE, no skill use breaks it; it toggles off only by
+     typing the command again. He is still hittable unless in god mode.
+  ⚠ Some machinery exists — the mob aggro scan already skips stealthed players, and `DropAggroOn`
+  already wipes one entity's aggro from every mob. Neither of the three buffs does.
 
 - `BL-38` 🔵 **Pets and summons** — immovable totems, class pets, the mage summoner. Designed, never
   scheduled, never re-raised by you.
@@ -226,6 +283,31 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 - `BL-51` 🔵 **Castles + vault.** Needs the siege design first; consumes the reserved
   `VendorBuyTaxRate` hook.
 
+- `BL-65` 🔴 **Dungeons get level bands, and there are three of them.** *"separate the dungeons ...
+  Now a 32 lvl mobs almost next to a 65 lvl which protect the 44 lvl boss ... The mob lvls are all
+  over the place ... put them in the lvl ranges and make 2 more dungeons"* (playtest-22). His layout:
+  **Hollow Creep stays ~40 with its 44 boss**, plus a new **~60 (65 boss)** and a new **~85 (90
+  boss)**. The band, not the boss, is the fix — a dungeon whose mobs span 32-65 has no level at which
+  it is playable.
+
+- `BL-68` 🔵 **More zones in the 16-40 band, by widening the map west-to-east.** *"Add several new
+  zones to duplicate the 16-20, 20-24, 24-28, 28-32, 32-36, 36-40 (all the `Stonewatch` zones)"*
+  (playtest-22). His method, which is a map change rather than a content one: *"The whole City can
+  move to the right so the bot side fields can be extended ... For example `Greyhollow Moor` -
+  increased ~4 times in width (to the right) and `north` and `south` zones to have 4 of each."* So
+  each existing band becomes four parallel fields at the same levels — the point is somewhere else to
+  farm at your level, not a longer ladder. Interacts with `BL-52`.
+
+- `BL-70` 🔵 **Mob clans — a social circle that answers a cry for help.** Written as the COUNTER to
+  `BL-69`: *"when we include the rogues hide, a rogue can have an easy farm in an elite zone and kill
+  a single mob without getting disturbed"* (playtest-22). Mobs join a named group (`Ork`) with a
+  **400-500 radius**; hitting one turns the rest of its group on you.
+  🔑 **The trigger is DAMAGE and nothing else** — *"social circle only works if a mob is hit, not when
+  taunted/debuffed/aggroed/etc.. only if the mob start to take dmg he 'cries' for help."* That rule is
+  what makes a **`lure`** (a rogue's mob-only taunt, no player targets) the intended way to pull one
+  out: his IG picture is a rogue walking between aggressive mobs, luring the one the party wants and
+  running it back to safety. Needs `BL-71` for the taunt power a lure carries.
+
 - `BL-52` 🔵 **World expansion toward 1kk+.** The 0.33.0 re-layout was the first step and nothing
   followed it. `BL-21` is queued behind this one.
 
@@ -246,6 +328,23 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 - `BL-56` 🔵 **The admin item picker as a selection box.** Either *rarity box → item* or *type box →
   rarity*: *"Pick wichever is easier to implemment."* Never actioned.
+
+- `BL-66` ✅ **BUILT 2026-08-13** — the item-id reference and the staff-only id row. Kept here for one
+  release only because it is the thing that unblocked his own §75/§76 testing; delete at the next
+  sweep. *"Need a grouped list (in a file - like the commands one) with each equip/item ID, and in
+  each items details in game only for admin to see: a row like the enchant info one with the ID."*
+  → `docs/guides/ItemIds.md` (1,078 ids, **generated** by `tools/ItemIds`, never hand-written) and an
+  `id <defId>` line under the enchant line on every item card, staff only.
+
+- `BL-72` 🔵 **Unbuffed auto-farm is not survivable for either damage kit.** His `0a` note
+  (playtest-22): *"they both have hard time to farm without buffs .. when i login in 1-2h after the
+  npcs buffs are gone both are dead and with potion buffs."* Two separate questions inside it, and
+  the second is the real one:
+  1. Is an unbuffed nuker/champion *meant* to survive an unattended hour? The NPC buff ladder is
+     currently load-bearing for auto-farm, which nothing was designed to be.
+  2. **It also invalidates the `0a` measurement itself** (`BL-18`) — a run that ends in a death an
+     hour in is not measuring the kits, and the auto-buff tab (§78) is what would keep one alive long
+     enough to measure. Read the two together before spending a session on either.
 
 - `BL-57` 🔴 **A cheap level-1 recipe for the Potion Master and the Scroll Scribe.** Offered to you;
   your reply was *"and my luck i picked exactly those :)"* and nothing was built.

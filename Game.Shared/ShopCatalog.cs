@@ -104,9 +104,9 @@ public static class ShopCatalog
                 // NOTE: enchant + attribute scrolls are intentionally DROP-ONLY (not sold).
             }),
             // WEAPONS. The LEGACY generated grid ("Worn Sword" at P.Atk 6, the Fine/Masterwork
-            // prefixes) plus Ash Wand and Iron Mace are GONE from the shop (owner, playtest-13): they
-            // predate the gear ladder by a whole generation, so the vendor was showing two unrelated
-            // eras of equipment in one list. The catalogue still defines them so old saves resolve.
+            // prefixes) plus Ash Wand and Iron Mace came off this shelf in playtest-13 and were
+            // DELETED OUTRIGHT in playtest-22 — taking them out of the shop only hid them; a treasure
+            // chest was still handing one out a year later.
             new ShopDef(GearMerchant, "Armsmaster — Weapons", new[]
             {
                 // TRAINING tier (400g each) — the level 1-10 gear. Stocked so a new player who picked the
@@ -126,8 +126,10 @@ public static class ShopCatalog
                 ItemCatalog.BrokenEarring,
                 ItemCatalog.BrokenRing,
                 ItemCatalog.BrokenNecklace,
+                // (Brass Amulet removed 2026-08-13 with the def — *"Brass amulet also need to be gone"*.
+                //  The three Broken jewels ARE the pre-F rung; a second, off-ladder necklace beside them
+                //  was the same drift 72a caught in the jewels themselves.)
                 ItemCatalog.WoodenShield,
-                ItemCatalog.BrassAmulet,
             }.Concat(ArmorOf(ladderGear)).ToArray()),
         };
 

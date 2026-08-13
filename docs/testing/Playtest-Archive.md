@@ -12,6 +12,7 @@ original file's content, unchanged, under its own marker. The reason for the mer
 
 | pass | date | what it was |
 |---|---|---|
+| [Playtest-22](#playtest-22) | 2026-08-13 | the 0.62.0 pass. Five whole sections passed outright; the mage-MP question closed after three passes. Twelve free-form finds, most of them DESIGN — invisibility, mob social clans, the aggro/taunt model |
 | [Playtest-21](#playtest-21) | 2026-08-11/12 | the eight-build pass (0.58.0->0.60.1). Crafting and the enchant rework played for the first time; the shield double-dip, the tutorial dead-end, the inert dummies |
 | [Playtest-20](#playtest-20) | 2026-08-10 | the ten-build pass (0.49.0→0.57.0). 12 free-form finds; the dagger-evasion and weapon-speed roots |
 | [Playtest-19](#playtest-19) | 2026-08-06 | the 0.48.0 pass. §46/47/48 green; four defects + M1-M14 |
@@ -28,6 +29,186 @@ Answered checklists that fed these passes (`Open-Checklist-0.45.0/-0.47.0/-0.48.
 transcribed into the playtest files at the time and are in git history.
 
 
+
+---
+
+<a id="playtest-22"></a>
+
+# ══ Playtest-22 ══
+
+# Playtest-22 — the 0.62.0 pass (owner, 2026-08-13)
+
+His pass over the two unplayed builds (0.61.0's playtest-21 fix batch + 0.62.0's two tabs), written
+directly into `Open-Checklist.md` §70-§78. **Below is his own text, unedited** — the marks he put in
+the boxes, every comment he wrote after a `->`, and the twelve free-form finds in full.
+
+**The shape of it:** five sections passed with nothing to say (§71 the start quest, all eight rows;
+§72 the training tier; §73 the dummies; §74 the five small ones; §77 the Stat-Swap tab, all nine),
+and two questions that had been open for three passes closed on his own data. Most of what he wrote
+this time is **design, not defects** — the invisibility system, mob social clans and the aggro model
+are the longest specs he has written since crafting.
+
+**Marks, section by section:**
+
+| section | his marks |
+|---|---|
+| §70 the shield cut | `70a` `[x]` · `70b` **`[~]`** · `70c` `[x]` · `70d` `[x]` · `70e` `[x]` · `70f` `[x]` · `70g` `[x]` · `70h` `[x]` |
+| §71 the start quest | `71a`-`71h` **all `[x]`** |
+| §72 the training tier | `72a` `72b` `72c` all `[x]` |
+| §73 the dummies | `73a`-`73e` all `[x]` |
+| §74 the five small ones | `74a`-`74f` all `[x]` |
+| §75 item tags + `/give` | `75c` **`[!]`**; `75a` `75b` `75d` `75e` `75f` `75g` left blank (not reached) |
+| §76 reward runes | `76a` `76d` `76g` `76h` `76i` `[x]`; `76b` `76c` `76e` `76f` left blank |
+| §77 the Stat-Swap tab | `77a`-`77i` **all `[x]`** |
+| §78 the auto buff tab | `78a`-`78e` `[x]` · `78f` **`[!]`** · `78g` **`[~]`** |
+| carried | `55f` **`[~]`** · `0a` **`[~]`** |
+
+---
+
+## His comments on marked rows — verbatim
+
+**`70b` `[~]`** (only the Shield Mastery scales):
+
+> what increase the reduction? The shield says 10 but I see 18% ..the shield says 20 I see 28% ..there
+> are.. Shields dmg reduction is never increased by any means ...only chance ...
+
+**`74e` `[x]`** (the enchant drop cut, 30× down):
+
+> to 28 I got 2
+
+**`75c` `[!]`** (the `/give` command):
+
+> `/give <player>` don't opens my bag...
+
+**`78f` `[!]`** (Save writes the whole tab and survives a relog):
+
+> it doesn't survive a relog ...
+
+**`78g` `[~]`** (one window, one Save):
+
+> reset work but save doesn't ...it says that it's saved but relog says otherwise. Or atleast visually
+> the buttons are off
+
+**`55f` `[~]`** (farm a mage 10+ unbroken minutes at 40+ — open for three passes):
+
+> - 22->24 lvl ok .. at 24 1st time the MP depleated (slowly) had to w8 several seconds before going
+>   and lvl up to 25
+> - 25 after `spell mastery` L2(+10% mp regen) and L1 `Elemental bolt` farm was ok ... until I
+>   increased the `Elemental Bolt` to L2
+> - but thats OK (its a nukers choce - stronger spell more mp)
+> - Adding `Restore Spirit` time to time my mp is not going down (~3s cast I get ~24mp restored from
+>   regen +50 from the skill - so a few sec  delay allow me to regen mp)
+> - Addin `Vampiric` in the mix mp going down which is exaclty as intended - its a death prevention
+>   skill
+
+**`0a` `[~]`** (nuker vs champion):
+
+> they both have hard time to farm without buffs .. when i login in 1-2h after the npcs buffs are gone
+> both are dead and with potion buffs
+
+---
+
+## My Finds — verbatim, all twelve
+
+- [!] - Brass amulet also need to be gone. Look for other items that are not from the grade items ot training.
+  - treasure chest just gave me "masterwork iron sword"
+
+- [!] - separate the dungeons ... Now a 32 lvl mobs almost next to a 65 lvl which protect the 44 lvl boss ... The mob lvls are all over the please ...put them in the lvl ranges and make 2 more dungeons ...one for ~85(90 boss) one for ~60(65 boss) and leave hollow kreep for ~40(44 boss)
+
+- [~] - Need a grouped list (in a file - like the commands one) with each equip/item ID, and in each items details in game only for admin to see: a row like the enchant info one with the ID
+    > [!Note]
+    > So I can use the `/give` command\
+    > And I can test better 75 and 76\
+
+- [!] - After the teleport from the GK the window of the old gk need to close autkmatically
+
+- [?] - (/give <player> <itemId> [sellPrice] [tradable] [timed] ["name"] [enchant]
+  [canStorePrivate] [canStoreAccount]`)
+  - /give -> the command
+  - player -> player_name
+  - itemId -> the list I need 
+  - sellPrice -> `-1`: unsellable; `0`,`-`,`null`, `1xxxx` what those do ? 
+
+- [!] - Remove the `SYSTE<: Stonewatch Contract: Bear Pelt 93` .... its a drop item .. u can say in combat `You looted: Bear Pelt [Q]` ... now its system chat flood
+
+- [~] - MP regen is uncahnged when walking/runnin - or atleast vissually - it seems like its only visually
+
+- [~] - We need to change few skills and add `MpHeal` type
+  - we need to add the `vampiric bolt` as a `Heal` skill -> to work if i put a hp below 30% treashold in auto-farm
+  - any skill that restores *HP* as a `Heal` skill (onyly `vamp bolt` is left)
+  - any skill that restores *MP* as a `MpHeal` skill (`Restore` and `Restore Spirit`)
+    - `MpHeal` skill type same logic as heals -> below the `Heal` as priority but above all other (need mp to cast/buff)
+    - `Restore Spirit` -> as `MpHeal` type => now it doesnt work anyway as a heal type - nor as cyclic nor as 100% hp treshold (self heal fires while restore_spirit no5)
+  - We need to add MP bar treashhold same as the Heal one in the auto-farm settings
+  > [!Note]
+  > So I can do *50%* MP_treshold + *30%* HP_treshold\
+  > And `Restore Spirit` to be used (MP <= *50%*) and if it lowers me (HP <= *30%*) to use the `Vampiric Bolt` to heal me
+
+- [~] - Add several new zones to duplicate the 16-20, 20-24, 24-28, 28-32, 32-36, 26-40 (all the `Stonewatch` zones)
+  - The whole City can move to the right so the bot side fields can be extended
+  - For example `Greyhollow Moor` - increased ~4 times in width (to the right) and `north` and `south` zonez to have 4 of each ...
+ 
+- [~] - An invisibility system (we had a `vanish` for a rogue)
+  1. **Full** invisibility
+    - A mele-rogue can become invisible for other players - a buff type(`hide`) skill that hides him (nothing renders him or checks as nearby) - mobs lose aggro, players loose target, aggro mobs dont start to chase
+    - hitting,using skills/buffs, items like a potions ... anything other then movement breaks it 
+      - (after the cast - if i use blink skill that blinks me to the target it reaveals me after the skill is casted .. or atleast right before its casted - not when a click the skill and it moves me in range ... i want to click the skill and im not in range to start to move towards the target but still invisible once the skill is executed then i appear)
+    - An archer can use *AOE* non-damage debuff skill to un-hide a hidden player (cancels `hide` buffs from neary 200-400 range) and apply a 30s debuff to cannot use `hide` skills
+    - Any other form of *AOE* dmg skill can reveal a player
+  2. **Player to Aggressive Mbs** invisibility
+     - Rogues will have a toggle skill (drains mp 1/s when active) and buffers a PartyBuff(1 min - cd-30s - mp 300) that makes them invisible for aggressive mobs only (`stealth`)
+     - Already aggroed mobs stays aggroed and hit
+     - Aggressive mobs that havent been aggroed before the buff dont start to chase
+     - This dont cancel players target, dont makes them invisible to other players, dont break until manually stopped.
+     - if i enter a zone with aggressive mobs with the effect OFF i get chased .. 
+     - If i make it ON - Old mobs that started before continue to chase but new mobs dont aggro me untill i hit them
+     - toggle-on makes the rogues farm in peacefull zones (no aggro mobs for him)
+  3. **Full Ultimate** invisibility for Admins only
+     - Admin new command `/invis` 
+     - switches between invisible and visible to other 
+     - as he dont exists for any one - archers `reveal` also dont work, using skills also dont unhides him
+     - like permanent hide that only can be switched off by the `/invis` command
+     - like the rogues `vanish` but not timed and doesnt break on anything untill disabled again by the `invis` command
+     - no aoe dmg/reaveal or whatever can unhide the admin - he still gets hit if not in god mode
+
+- [~] - Mob clans/social - when we include the rogues hide, a rogue can have an easy farm in an elite zone and kill a single mob without getting disturbed by any other mob, to caunter that we introduce the mobs soccial circle 
+  - Let say we have an Aggressive - Ork champion and non-aggressive Ork shaman, a rogue can go kill any whithout the other noticing
+    - but if we put the two mobs in a social group of `Ork` amd give them a 400-500 aoe social radius - any mob attacked of their group gets the others aggresive thowards the attaker
+    - I attack as rogue the shaman and its near the champion so the champion starts to attack me (i hit his firend) and vice versa 
+    - social circle only works if a mob is hit, not when taunted/debuffed/aggroed/etc.. only if the mob start to take dmg he "cries" for help
+    - if a rogue wants to attack a mob he should `lure` the mob - a rogue taunt-like skill (cannot be used on players like tanks one) that taunts a mob to start hte chase-attack (increases aggro value by a small amount)
+  - in the IG in an elite zone a rouge player in the party goes in between the all agressive mobs -> lures the one they need (drop or some other reason) and start to run and gets to the "safe" zone so his party members can kill taht one mob - if they use the buffers `stealth` they can go unoticed to the mob but if they hit it there they will get attacked by all other "social" mobs and die
+
+- [?] - Taunt questions - after we implement the `lure`
+  -  Tanks taunt should increase the aggresion value of mobs to a amount so it covers(with a bit over) a damage dealer aggro value from pure dmg the taunt should have a power - a daggers skills have a ~300 power a taunt L1 should have 1000-2000 or something to need to be spammed so the mob keeps the aggro on the tank not change to rogue and if a rogue do many doubles back to back to need to slow down (stop attacking) so tank can reaggro again
+  -  Mobs should have a aggro value rank list - who attacks them so the target is the on on the top of the list
+  -  a `lure` should have ~500 (per lvl - later levels increase distance 200,400,600) taunt power - to call the mob but tanks aggro to take on the mob
+  -  a tansk tount last levels should have about 20-30k taunt power so a 7-8k physical skill or a 150mod spell wont aggro the mob - only if  double/crit
+  -  the aggro value should be dmg desided - and tount power simulates that dmg
+  -  a healer healing/buffing a player that the mob is hitting or in the same party increases the aggro value - so a healer that spams quick heals can get aggroed
+     -  something like healPower/(basicCastSpeed) (so basic heal/s) x10 - a quick heal 300power 2s cast = 1500 aggro value while a slow heal 500power /5s cast is 1000 aggro value
+  - So the question is what we have and how taunt works now and what it needs to be implemented
+
+**Follow-up the same day, after the fix batch was written:**
+
+> as u are at it add in the end of the /give command [amount] usually left alone as default 1 .. but
+> if i want to get 1000 mats not to have to write command 1000 times
+
+---
+
+## Where each of these went
+
+Bugs were fixed the same day and are §79 of `Open-Checklist.md`; the CHANGELOG entry is
+*"2026-08-13 — the playtest-22 fix batch"*. The feature asks became **`BL-65` … `BL-72`** in
+`Backlog.md`: dungeon level bands · the item-id file (built) · the `MpHeal` type · more 16-40 zones ·
+invisibility ×3 · mob social clans + `lure` · the aggro/taunt model · unbuffed farm survivability.
+
+Two things worth remembering from the answers, because they were bigger than they looked:
+- **`70b` was a ruling, not a question.** *"Shields dmg reduction is never increased by any means"* —
+  the +8 points he saw was the Shield Mastery passive's `ShieldDefPct × 0.04` coupling, and it was
+  deleted along with the smaller one on the buff.
+- **The "masterwork iron sword" was sixty items.** A whole pre-ladder gear grid, reachable through
+  exactly one treasure-chest line, which is why four gear passes had missed it.
 
 ---
 

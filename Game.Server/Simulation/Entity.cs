@@ -1955,13 +1955,14 @@ public class Entity
                 {
                     ShieldDefense += (int)buff.Flat(SkillEffect.BuffShieldDef);
                     ShieldDefense = (int)(ShieldDefense * (1f + buff.Percent(SkillEffect.BuffShieldDef)));
-                    BlockReduction += buff.Percent(SkillEffect.BuffShieldDef) * 0.2f;
+                    // 🔴 A shield-defence buff does NOT thicken the block. HIS RULING, playtest-22 `70b`:
+                    // *"Shields dmg reduction is never increased by any means ...only chance."* It used
+                    // to add Percent x 0.2 here. See the matching removal in the PASSIVE layer below —
+                    // that one is what he actually caught (a 10% shield reading 18%).
                 }
-                // 🔑 The BUFF side keeps its old magnitude and its old 0.2 coefficient — HIS RULING,
-                // 2026-08-12: "sheild_mastery.Shield_PDef will be the only part that will increase 5
-                // times ... other passives, sets and buffs that increase the shieldPdef/chance etc are
-                // kept as is." (It is also the only answer that changes anything: x5 on both this and
-                // the passive lands back on the old 537 exactly.)
+                // 🔑 The BUFF side keeps its old magnitude — HIS RULING, 2026-08-12:
+                // "sheild_mastery.Shield_PDef will be the only part that will increase 5 times ... other
+                // passives, sets and buffs that increase the shieldPdef/chance etc are kept as is."
             }
             BlockChance = Math.Clamp(BlockChance, 0f, StatCaps.BlockChance);
             BlockReduction = Math.Clamp(BlockReduction, 0f, StatCaps.BlockReduction);
@@ -2101,17 +2102,17 @@ public class Entity
                 if (HasShield)
                 {
                     if (pe.BlockChancePct != 0f) BlockChance *= 1f + pe.BlockChancePct;
+                    // 🔴 A shield-defence passive raises the shield's DEFENCE and nothing else. It used
+                    // to also add `ShieldDefPct * 0.04` to BlockReduction, which at a maxed Shield
+                    // Mastery (2.00) was a flat +8 points — exactly what he caught in playtest-22 `70b`:
+                    // *"The shield says 10 but I see 18% ..the shield says 20 I see 28% ... Shields dmg
+                    // reduction is never increased by any means ...only chance."*
+                    // 🔑 THE RULE NOW: BlockReduction is the SHIELD's own number, full stop. Nothing —
+                    // passive, buff, set or enchant — may raise it; the ladder scales block CHANCE and
+                    // shield DEFENCE instead. That is what makes the item card's "10%" readable as the
+                    // number that will actually be subtracted.
                     if (pe.ShieldDefPct != 0f)
-                    {
                         ShieldDefense = (int)(ShieldDefense * (1f + pe.ShieldDefPct));
-                        // A shield-defence passive also thickens the block itself, but only a little.
-                        // ⚠ The coefficient is 0.2/5, not 0.2: ShieldDefPct went x5 on 2026-08-12 to
-                        // pay back the 5x cut to every shield's flat defence, and that rescaling must
-                        // NOT leak into the block channel — at the new 2.00 a plain 0.2 would hand the
-                        // tank +0.40 BlockReduction and undo the whole 0.59.1 block nerf. 0.04 x 2.00
-                        // is the same +0.08 the old 0.2 x 0.40 gave. Block behaviour is unchanged.
-                        BlockReduction += pe.ShieldDefPct * 0.04f;
-                    }
                 }
                 MagicResist += pe.MagicResist;
                 MagicInterruptBonus += pe.InterruptPower;

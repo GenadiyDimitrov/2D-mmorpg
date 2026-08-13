@@ -548,10 +548,11 @@ public static class ItemCatalog
     // (`shield_iron` — deleted 2026-08-12, him: *"Iron sheld can go .. wooden is a training gear"*. It
     //  was an E-grade hand-authored one-off that nothing sold, dropped or boxed, sitting between the
     //  Wooden Shield and the generated tier ladder for no reason. The training tier is ONE shield.)
-    public const string BrassAmulet = "jewel_brass_amulet";
-    public const string SilverTalisman = "jewel_silver_talisman";
-    public const string IronMace = "blunt_1h_iron_mace";        // 1H physical blunt (shield-ok)
-    public const string AshWand = "blunt_1h_ash_wand";          // 1H magic blunt (mAtk > pAtk)
+    // (`jewel_brass_amulet`, `jewel_silver_talisman`, `blunt_1h_iron_mace`, `blunt_1h_ash_wand` —
+    //  deleted 2026-08-13, playtest-22, with the whole legacy gear grid. Same reason as `shield_iron`
+    //  above: hand-authored one-offs from before the ladder, unbalanced against it, and the Amulet was
+    //  still on a shop shelf. 🔑 The rule is now written down: gear is LADDER (ItemLevel > 0) or
+    //  TRAINING, and nothing else.)
     public const string ElementalStone = "elemental_stone";     // reagent for Elemental Burst
     public const string SkillStone = "skill_stone";             // reagent for skill costs (e.g. Angel's Protection)
     /// <summary>How much of your ATK power a weapon lets through to the channel it does NOT
@@ -764,17 +765,8 @@ public static class ItemCatalog
         return $"scroll_{type}_{EnchantRules.GradeName(grade).ToLowerInvariant()}";
     }
 
-    public static string WeaponKey(WeaponType type, ItemGrade grade, ItemRarity rarity) =>
-        $"{type.ToString().ToLowerInvariant()}_{grade.ToString().ToLowerInvariant()}_{rarity.ToString().ToLowerInvariant()}";
-
-    // 3-arg overload defaults to the Body piece (keeps existing drop/debug callers
-    // giving the main weighted piece; pass a slot for accessories).
-    public static string ArmorKey(ArmorWeight weight, ItemGrade grade, ItemRarity rarity) =>
-        ArmorKey(weight, ArmorSlot.Body, grade, rarity);
-
-    public static string ArmorKey(ArmorWeight weight, ArmorSlot slot, ItemGrade grade, ItemRarity rarity) =>
-        $"{weight.ToString().ToLowerInvariant()}_{slot.ToString().ToLowerInvariant()}_" +
-        $"{grade.ToString().ToLowerInvariant()}_{rarity.ToString().ToLowerInvariant()}";
+    // WeaponKey/ArmorKey went with the legacy grid they addressed (playtest-22). Gear ids are the
+    // ladder's own `<slot>_t<level>[_<rarity>]` now, and there is exactly one way to build one.
 
     private static readonly Dictionary<string, ItemDef> All = BuildCatalog();
 
@@ -783,135 +775,28 @@ public static class ItemCatalog
         var list = new List<ItemDef>();
 
         // ===================================================================
-        //  WEAPONS — every type x grade x rarity. All classes can equip these;
-        //  whether a class's SKILLS work depends on the weapon (design doc).
+        //  🔴 THE LEGACY GEAR GRID IS GONE (playtest-22).
+        //
+        //  Sixty items used to be generated here — 4 weapon types and 3 armour weights
+        //  plus 3 accessory slots, each x F/E grade x Common/Uncommon/Rare — under names
+        //  like "Masterwork Steel Sword" and "Fine Worn Plate Armor". They PREDATE the
+        //  grade ladder (TieredWeapons/TieredArmor below, driven by gear_sets.csv) and
+        //  were never re-cut with it, so every one of them sat off the ladder with
+        //  ItemLevel 0, unbalanced against everything around it. His find:
+        //  *"Brass amulet also need to be gone. Look for other items that are not from
+        //  the grade items or training ... treasure chest just gave me masterwork iron
+        //  sword."* (He was holding `sword_e_rare`; the noun is "Steel", not "Iron".)
+        //
+        //  🔑 The only live way in was ONE Treasure Chest line (Boxes.cs), which is why
+        //  they survived four gear passes: nothing else referenced them, so nothing else
+        //  ever showed them to anyone. That chest line now rolls a ladder item.
+        //
+        //  ⚠ THE RULE THIS LEAVES BEHIND: every piece of gear is either GENERATED from
+        //  the ladder (ItemLevel > 0) or is on the hand-authored TRAINING tier that has
+        //  its own block in gear_sets.csv (72b). There is no third category. A bag row
+        //  naming one of the deleted ids is dropped on load, which is the intended and
+        //  already-handled path for a retired def.
         // ===================================================================
-        // Per-type display names and the base attack at F-common; higher grade
-        // and rarity scale up from there.
-        var weaponInfo = new (WeaponType Type, string Noun, int BaseAtk, float Range, int MpBonus)[]
-        {
-            (WeaponType.Sword, "Sword", 6,  0,   0),
-            (WeaponType.Dual,  "Daggers", 5, 0,  0),   // dual: lower per-hit, faster
-            (WeaponType.Bow,   "Bow",   7,  400, 0),
-            // Generated Blunt line = the 2H caster STAFF (real caster weapon: meaningful
-            // P/M.Atk, gives MP, no weapon range; the mage's tiny BASIC hit comes from the
-            // 0.15 basic-attack multiplier, not the weapon). 1H blunts are hand-added below.
-            (WeaponType.TwoHandedBlunt, "Staff", 23, 0,   20),
-        };
-
-        foreach (var w in weaponInfo)
-        {
-            foreach (var grade in new[] { ItemGrade.F, ItemGrade.E })
-            {
-                // Grade scaling: E roughly doubles F.
-                int gradeAtk = grade == ItemGrade.F ? w.BaseAtk : w.BaseAtk * 2 + 4;
-                int gradeMp = grade == ItemGrade.F ? w.MpBonus : w.MpBonus * 2;
-
-                foreach (var rarity in new[] { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare })
-                {
-                    // Rarity scaling: +40% per tier on top of grade.
-                    int atk = (int)(gradeAtk * (1f + 0.40f * (int)rarity));
-                    int mp = (int)(gradeMp * (1f + 0.20f * (int)rarity));
-
-                    // ONE power number + channel factors (see OffChannelFactor). The generated
-                    // Blunt line IS the 2H caster staff: its power is MAGIC power, and its melee
-                    // is what gets suppressed. Everything else is a physical weapon.
-                    bool magic = w.Type.Base() == WeaponType.Blunt;
-                    int power = magic ? (int)(atk * 1.05f) : atk;
-
-                    string gradeName = grade == ItemGrade.F ? "Worn" : "Steel";
-                    string rarityName = rarity switch
-                    {
-                        ItemRarity.Uncommon => "Fine ",
-                        ItemRarity.Rare => "Masterwork ",
-                        _ => ""
-                    };
-
-                    list.Add(new ItemDef(
-                        WeaponKey(w.Type, grade, rarity),
-                        $"{rarityName}{gradeName} {w.Noun}",
-                        EquipSlot.Weapon, grade, rarity,
-                        WeaponType: w.Type,
-                        AtkBonus: power,
-                        PAtkFactor: magic ? OffChannelFactor : 1f,
-                        MAtkFactor: magic ? 1f : OffChannelFactor,
-                        MpBonus: mp,
-                        IsMagicWeapon: magic,
-                        WeaponRange: w.Range));
-                }
-            }
-        }
-
-        // ===================================================================
-        //  ARMOR — only the BODY piece carries weight (Heavy/Light/Robe) and the
-        //  bulk of the defence; Head/Gloves/Boots are WEIGHTLESS accessories shared
-        //  across builds, valued by their single slot-specific rolled attribute. This
-        //  keeps the item count low (3 body weights + 3 accessories, x grade x rarity).
-        // ===================================================================
-        string GradeName(ItemGrade g) => g == ItemGrade.F ? "Worn" : "Tempered";
-        string RarityName(ItemRarity r) => r switch
-        {
-            ItemRarity.Uncommon => "Fine ",
-            ItemRarity.Rare => "Masterwork ",
-            _ => ""
-        };
-
-        // ----- Weighted BODY armor (full profile + 2 rolled attributes by weight) -----
-        var bodyInfo = new (ArmorWeight Weight, string Noun, int BaseDef, int Hp, int Mp, int Eva)[]
-        {
-            (ArmorWeight.Heavy, "Plate",   6, 30, 0,  0),
-            (ArmorWeight.Light, "Leather", 4, 10, 0,  6),
-            (ArmorWeight.Robe,  "Robe",    2, 0,  30, 0),
-        };
-        foreach (var a in bodyInfo)
-        {
-            foreach (var grade in new[] { ItemGrade.F, ItemGrade.E })
-            {
-                int gd = grade == ItemGrade.F ? a.BaseDef : a.BaseDef * 2 + 3;
-                int ghp = grade == ItemGrade.F ? a.Hp : a.Hp * 2;
-                int gmp = grade == ItemGrade.F ? a.Mp : a.Mp * 2;
-                int gev = grade == ItemGrade.F ? a.Eva : a.Eva * 2;
-
-                foreach (var rarity in new[] { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare })
-                {
-                    float rmul = 1f + 0.35f * (int)rarity;
-                    list.Add(new ItemDef(
-                        ArmorKey(a.Weight, ArmorSlot.Body, grade, rarity),
-                        $"{RarityName(rarity)}{GradeName(grade)} {a.Noun} Armor",
-                        EquipSlot.Armor, grade, rarity,
-                        Weight: a.Weight,
-                        ArmorSlot: ArmorSlot.Body,
-                        DefBonus: (int)(gd * rmul),
-                        HpBonus: (int)(ghp * rmul),
-                        MpBonus: (int)(gmp * rmul),
-                        EvaBonus: (int)(gev * rmul)));
-                }
-            }
-        }
-
-        // ----- Weightless ACCESSORIES (Head/Gloves/Boots): no base stats; their value
-        //       is the single slot-specific attribute rolled on them (value by grade). -----
-        var accessoryInfo = new (ArmorSlot Slot, string Noun)[]
-        {
-            (ArmorSlot.Head,   "Helmet"),
-            (ArmorSlot.Gloves, "Gauntlets"),
-            (ArmorSlot.Boots,  "Boots"),
-        };
-        foreach (var acc in accessoryInfo)
-        {
-            foreach (var grade in new[] { ItemGrade.F, ItemGrade.E })
-            {
-                foreach (var rarity in new[] { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare })
-                {
-                    list.Add(new ItemDef(
-                        ArmorKey(ArmorWeight.None, acc.Slot, grade, rarity),
-                        $"{RarityName(rarity)}{GradeName(grade)} {acc.Noun}",
-                        EquipSlot.Armor, grade, rarity,
-                        Weight: ArmorWeight.None,
-                        ArmorSlot: acc.Slot));
-                }
-            }
-        }
 
         // ===================================================================
         //  NAMED ARMOR SETS — hand-authored. A set tags its pieces with a SetId;
@@ -1210,17 +1095,9 @@ public static class ItemCatalog
             NoAttributes: true,
             Description: "A strapped plank. It stops about as much as you would expect."));
 
-        // ===================================================================
-        //  1H BLUNTS — maces/wands. Blunt = higher accuracy, lower crit. One hand,
-        //  so they CAN pair with a shield. A "magic" blunt simply carries more
-        //  mAtk than pAtk (mages who want a shield use these instead of a staff).
-        // ===================================================================
-        list.Add(new ItemDef(IronMace, "Iron Mace", EquipSlot.Weapon,   // 1H PHYSICAL mace
-            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Blunt,
-            AtkBonus: 7, PAtkFactor: 1f, MAtkFactor: OffChannelFactor));
-        list.Add(new ItemDef(AshWand, "Ash Wand", EquipSlot.Weapon,     // 1H CASTER blunt (weaker than a staff)
-            ItemGrade.F, ItemRarity.Common, WeaponType: WeaponType.Blunt,
-            AtkBonus: 5, PAtkFactor: OffChannelFactor, MAtkFactor: 1f, MpBonus: 10, IsMagicWeapon: true));
+        // 🔴 Iron Mace and Ash Wand DELETED (playtest-22) — two hand-authored F-grade 1H blunts from
+        // before the ladder, off it and unreferenced by any shop, drop or box since the training
+        // weapons replaced them. The ladder's own `mace_t*` / `wand_t*` are the 1H blunt line.
 
         // ===================================================================
         //  NEWBIE STARTER WEAPONS — handed out on character creation. They are
@@ -1363,10 +1240,11 @@ public static class ItemCatalog
         //  JEWELS — the ONLY source of magic defence (beyond the level base).
         //  One jewel equips for now; the slot is built to expand to 5 later.
         // ===================================================================
-        list.Add(new ItemDef(BrassAmulet, "Brass Amulet", EquipSlot.Jewel,
-            ItemGrade.F, ItemRarity.Common, MDefBonus: 30, JewelType: JewelType.Necklace));
-        list.Add(new ItemDef(SilverTalisman, "Silver Talisman", EquipSlot.Jewel,
-            ItemGrade.E, ItemRarity.Uncommon, MDefBonus: 70, MpBonus: 40, JewelType: JewelType.Ring));
+        // 🔴 Brass Amulet and Silver Talisman DELETED — *"Brass amulet also need to be gone"*
+        // (playtest-22). Both were pre-ladder hand-authored jewels: the Amulet was still on the
+        // Outfitter's shelf at a value the F ladder already covers, and the Talisman was referenced by
+        // nothing at all. The ladder supplies necklace/earring/ring at every grade, and the Broken
+        // jewels (72a, 9/5/3) are the rung below F.
 
         // ===================================================================
         //  ENCHANT SCROLLS
@@ -2338,106 +2216,8 @@ public static class ItemCatalog
     }
 }
 
-/// <summary>One possible drop: an item key, its chance, and the mob-level band
-/// it applies to.</summary>
-public record LootEntry(string ItemId, float Chance, int MinLevel, int MaxLevel);
 
-/// <summary>
-/// Per-mob loot tables, keyed by mob name. Each mob drops different gear;
-/// entries are gated by the killed mob's level (low = F, high = E grade).
-/// Every mob also rolls the shared potion + scroll tables.
-/// </summary>
-public static class LootTables
-{
-    private static readonly LootEntry[] SharedPotions =
-    {
-        new(ItemCatalog.MinorPotion, 0.10f, 1, 30),
-        new(ItemCatalog.HealingPotion, 0.04f, 4, 30),
-        new(ItemCatalog.GreaterPotion, 0.01f, 8, 30),
-    };
-
-    // Scrolls: rarer than everything else, higher-level mobs only.
-    private static readonly LootEntry[] SharedScrolls =
-    {
-        new(ItemCatalog.ScrollNormalE, 0.030f, 5, 30),
-        new(ItemCatalog.ScrollNormalD, 0.015f, 9, 30),
-        new(ItemCatalog.ScrollNormalC, 0.006f, 13, 30),
-    };
-
-    private static readonly Dictionary<string, LootEntry[]> Tables = BuildTables();
-
-    private static Dictionary<string, LootEntry[]> BuildTables()
-    {
-        // Helper to roll an F (low level) and E (high level) entry for a key.
-        LootEntry F(WeaponType t, ItemRarity r, float c) =>
-            new(ItemCatalog.WeaponKey(t, ItemGrade.F, r), c, 1, 10);
-        LootEntry E(WeaponType t, ItemRarity r, float c) =>
-            new(ItemCatalog.WeaponKey(t, ItemGrade.E, r), c, 11, 30);
-        LootEntry FA(ArmorWeight w, ItemRarity r, float c) =>
-            new(ItemCatalog.ArmorKey(w, ItemGrade.F, r), c, 1, 10);
-        LootEntry EA(ArmorWeight w, ItemRarity r, float c) =>
-            new(ItemCatalog.ArmorKey(w, ItemGrade.E, r), c, 11, 30);
-
-        return new Dictionary<string, LootEntry[]>
-        {
-            ["Boar"] = new[]
-            {
-                F(WeaponType.TwoHandedBlunt, ItemRarity.Common, 0.16f),
-                F(WeaponType.Sword, ItemRarity.Common, 0.16f),
-                F(WeaponType.TwoHandedBlunt, ItemRarity.Uncommon, 0.06f),
-                E(WeaponType.TwoHandedBlunt, ItemRarity.Common, 0.12f),
-                E(WeaponType.Sword, ItemRarity.Common, 0.12f),
-            },
-            ["Wolf"] = new[]
-            {
-                FA(ArmorWeight.Light, ItemRarity.Common, 0.16f),
-                FA(ArmorWeight.Heavy, ItemRarity.Common, 0.14f),
-                FA(ArmorWeight.Light, ItemRarity.Uncommon, 0.05f),
-                EA(ArmorWeight.Light, ItemRarity.Common, 0.12f),
-                EA(ArmorWeight.Heavy, ItemRarity.Common, 0.10f),
-            },
-            ["Slime"] = new[]
-            {
-                FA(ArmorWeight.Robe, ItemRarity.Common, 0.16f),
-                F(WeaponType.TwoHandedBlunt, ItemRarity.Common, 0.12f),
-                FA(ArmorWeight.Robe, ItemRarity.Rare, 0.05f),
-                EA(ArmorWeight.Robe, ItemRarity.Common, 0.12f),
-            },
-            ["Spider"] = new[]
-            {
-                FA(ArmorWeight.Light, ItemRarity.Common, 0.18f),
-                F(WeaponType.Dual, ItemRarity.Uncommon, 0.10f),
-                F(WeaponType.Bow, ItemRarity.Uncommon, 0.10f),
-                EA(ArmorWeight.Light, ItemRarity.Common, 0.14f),
-                E(WeaponType.Bow, ItemRarity.Common, 0.10f),
-            },
-            ["Bandit"] = new[]
-            {
-                F(WeaponType.Sword, ItemRarity.Common, 0.16f),
-                F(WeaponType.Sword, ItemRarity.Uncommon, 0.10f),
-                F(WeaponType.Sword, ItemRarity.Rare, 0.04f),
-                FA(ArmorWeight.Heavy, ItemRarity.Uncommon, 0.06f),
-                E(WeaponType.Sword, ItemRarity.Common, 0.12f),
-            },
-        };
-    }
-
-    public static List<string> Roll(string mobName, int mobLevel, Random rng)
-    {
-        var drops = new List<string>();
-        if (Tables.TryGetValue(mobName, out var table))
-            RollEntries(table, mobLevel, rng, drops);
-        RollEntries(SharedPotions, mobLevel, rng, drops);
-        RollEntries(SharedScrolls, mobLevel, rng, drops);
-        return drops;
-    }
-
-    private static void RollEntries(LootEntry[] table, int mobLevel, Random rng, List<string> drops)
-    {
-        foreach (var entry in table)
-        {
-            if (mobLevel < entry.MinLevel || mobLevel > entry.MaxLevel) continue;
-            if (rng.NextDouble() < entry.Chance) drops.Add(entry.ItemId);
-        }
-    }
-}
+// 🔴 LootEntry / LootTables DELETED (playtest-22). A per-mob-NAME gear table addressing the legacy
+// grid above — dead since drops moved to MobCatalog.GearDrops + DropEntry: `LootTables.Roll` had no
+// caller anywhere in the solution. It was the last thing keeping the deleted ids compiling, and a
+// dead table that still looks authoritative is how a wrong number gets quoted years later.
