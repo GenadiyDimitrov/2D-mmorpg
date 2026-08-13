@@ -266,13 +266,12 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
     top of the crafting ladder is now less scarce than `docs/balance/CraftingMats.md` measured. Ties
     into the farm-times decision you deferred under `BL-05`.
 
-- `BL-68` 🔵 **More zones in the 16-40 band, by widening the map west-to-east.** *"Add several new
-  zones to duplicate the 16-20, 20-24, 24-28, 28-32, 32-36, 36-40 (all the `Stonewatch` zones)"*
-  (playtest-22). His method, which is a map change rather than a content one: *"The whole City can
-  move to the right so the bot side fields can be extended ... For example `Greyhollow Moor` -
-  increased ~4 times in width (to the right) and `north` and `south` zones to have 4 of each."* So
-  each existing band becomes four parallel fields at the same levels — the point is somewhere else to
-  farm at your level, not a longer ladder. Interacts with `BL-52`.
+- `BL-68` ✅ **BUILT 2026-08-13 (0.64.0)** — nine new Stonewatch fields on a 3×3 grid east of the
+  city, so every 16-40 band now exists **four times**. See `CHANGELOG.md`. Delete at the next sweep.
+  - The **city was not moved**. You offered to; it turned out not to be needed, since the generator
+    places a field by bearing + distance. Not moving it avoids relocating a town every player knows.
+  - ⚠ **Stonewatch's gatekeeper now lists 12 fields.** A long menu on a phone — the same question
+    `BL-41` asks about the craft page, in a different window.
 
 - `BL-70` ✅ **BUILT 2026-08-13 (0.64.0)** — mob clans + the rogue's `Lure`. Twelve clans authored on
   the name-root families, a 450 radius, damage-only trigger, and a no-damage mob-only taunt at

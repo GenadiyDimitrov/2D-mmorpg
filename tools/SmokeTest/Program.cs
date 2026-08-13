@@ -1124,7 +1124,7 @@ await gm.Settle();
 // The moderation victim is the PLAIN character, not the protagonist: the protagonist is an admin (it needs
 // the admin toolbox), and moderation deliberately refuses to act on staff — an admin can neither jail nor
 // re-rank an equal. The protagonist's own session is done with; log the victim in.
-var bLeave = await b.Hub.InvokeAsync<string?>("LeaveWorld");
+var bLeave = await b.LeaveWorldAsync();
 Check("the protagonist left cleanly before the moderation section", bLeave is null, bLeave);
 await b.DisposeAsync();
 
@@ -1345,7 +1345,7 @@ await c.DisposeAsync();
     }
 
     // THE ONE THAT MATTERS: does the tag survive being written to SQLite and read back?
-    var gmLeave = await gm.Hub.InvokeAsync<string?>("LeaveWorld");
+    var gmLeave = await gm.LeaveWorldAsync();
     Check("the admin left cleanly (so the save is awaited, not raced)", gmLeave is null, gmLeave);
     await gm.DisposeAsync();
 
@@ -1768,6 +1768,30 @@ sealed class Session : IAsyncDisposable
             await Task.Delay(50);
         }
         return condition();
+    }
+
+    /// <summary>Leave the world, retrying while the server says "in combat". Returns null on success,
+    /// or the server's last refusal.
+    ///
+    /// 🔑 The SAME lesson as <see cref="WaitFor"/>, found again on a different clock. `LeaveWorld` is
+    /// refused for <c>CombatDecayTicks</c> — THIRTY SECONDS — after the character's last combat tick,
+    /// and that timer runs on the server's clock, not in reply to anything this harness sends. So
+    /// whether a single attempt succeeded depended on how long the sections before it happened to
+    /// take. Measured against the build BEFORE this batch, it failed roughly one run in three: a coin
+    /// flip that had mostly been winning, exactly like the rune pair.
+    ///
+    /// A retry makes it a fact. It costs nothing in the normal case (the first attempt returns null)
+    /// and it turns "the save is raced" from a maybe into a measurement.</summary>
+    public async Task<string?> LeaveWorldAsync(int timeoutMs = 40000)
+    {
+        var until = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        string? last;
+        while (true)
+        {
+            last = await Hub.InvokeAsync<string?>("LeaveWorld");
+            if (last is null || DateTime.UtcNow >= until) return last;
+            await Task.Delay(500);
+        }
     }
 
     public async ValueTask DisposeAsync() => await Hub.DisposeAsync();

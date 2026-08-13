@@ -132,6 +132,56 @@ public static class WorldPlan
         new("town_stonewatch", "field_stone_barrens", "Ashen Barrens", 180f, 4300f,
             new[] { B(32, 36), B(36, 40) }),
 
+        // ── Stonewatch, THE OTHER THREE COLUMNS (BL-68) ───────────────────────────────────────────
+        // *"Add several new zones to duplicate the 16-20, 20-24, 24-28, 28-32, 32-36, 36-40 (all the
+        // Stonewatch zones) ... `north` and `south` zones to have 4 of each."* So every band that
+        // existed once now exists FOUR times. The point is somewhere else to farm at your level, not
+        // a longer ladder — the bands are identical, only the ground is new.
+        //
+        // 🔑 THEY GO EAST, which is his own instruction (*"the bot side fields can be extended ...
+        // increased ~4 times in width (to the right)"*) and also the only direction with room:
+        // Brackenford sits 14000 due SOUTH, Frostmere 13000 to the WEST, and NORTH is the Training
+        // Outpost and its dummy row. East is 22000 of empty map.
+        //
+        // He offered to MOVE the city to make space. It is not moved, and did not need to be: the
+        // generator places a field by bearing + distance, so three more RINGS at 8600 / 12900 / 17200
+        // buy the same ground without relocating a town every player already knows — and without
+        // stranding every saved character standing inside it. Ring 1 keeps its bearings; the outer
+        // rings lean progressively east as the arc they can use narrows around Brackenford.
+        //
+        // ⚠ The geometry is not hand-derived. ValidateLayout fails the BOOT on any camp that touches
+        // a town wall, another camp or another field, and prints the shortfall in units — so these
+        // bearings were converged on by booting, not by trusting arithmetic in a comment.
+        // The nine sit on a 3×3 GRID east of the city — three north-south lanes at x ≈ 31000 / 36000
+        // / 41000, each lane keeping ring 1's own shape (the low band nearest the city, the high band
+        // furthest out). The bearing/distance pairs below are that grid converted to the polar form
+        // the generator takes; the grid is what to read, the numbers are just its address.
+        //
+        // North lane (y ≈ 6500) — above the city, clear of the Training Outpost's dummy row.
+        new("town_stonewatch", "field_stone_moor_2", "Sunward Moor", 333.43f, 7826f,
+            new[] { B(16, 20), B(20, 24) }),
+        new("town_stonewatch", "field_stone_ridge_2", "Highstone Ridge", 343.74f, 12500f,
+            new[] { B(24, 28), B(28, 32) }),
+        new("town_stonewatch", "field_stone_barrens_2", "Emberdust Barrens", 348.37f, 17357f,
+            new[] { B(32, 36), B(36, 40) }),
+
+        // Middle lane (y ≈ 12000) — due east, the straight extension he described.
+        new("town_stonewatch", "field_stone_moor_3", "Thornfen Moor", 15.95f, 7280f,
+            new[] { B(16, 20), B(20, 24) }),
+        new("town_stonewatch", "field_stone_ridge_3", "Ravencrag Ridge", 9.46f, 12166f,
+            new[] { B(24, 28), B(28, 32) }),
+        new("town_stonewatch", "field_stone_barrens_3", "Palewind Barrens", 6.71f, 17117f,
+            new[] { B(32, 36), B(36, 40) }),
+
+        // South lane (y ≈ 17500) — east of Brackenford, which is why it leans out rather than down:
+        // Brackenford's own wall and its east field are what the first attempt at this collided with.
+        new("town_stonewatch", "field_stone_moor_4", "Mistlow Moor", 46.97f, 10259f,
+            new[] { B(16, 20), B(20, 24) }),
+        new("town_stonewatch", "field_stone_ridge_4", "Bleakspur Ridge", 32.01f, 14150f,
+            new[] { B(24, 28), B(28, 32) }),
+        new("town_stonewatch", "field_stone_barrens_4", "Cinderflat Barrens", 23.80f, 18581f,
+            new[] { B(32, 36), B(36, 40) }),
+
         // ── Greymarsh (south-east, 36000/33000, r2000) — levels 40-60 ─────────────────────────────
         new("town_greymarsh", "field_marsh_shallows", "Marsh Shallows", 0f, 4300f,
             new[] { B(40, 44), B(44, 48) }),

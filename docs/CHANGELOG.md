@@ -16,6 +16,40 @@ For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
 Protocol stays **19** — nothing here changes the wire. No DB reset.
 
+### `BL-68` — every 16-40 band now exists four times
+
+*"Add several new zones to duplicate the 16-20, 20-24, 24-28, 28-32, 32-36, 36-40 (all the Stonewatch
+zones) ... `north` and `south` zones to have 4 of each."* Nine new fields, eighteen new camps: the
+bands are identical, only the ground is new. The point is somewhere else to farm at your level, not a
+longer ladder.
+
+**They go east**, which is his instruction (*"the bot side fields can be extended ... increased ~4
+times in width (to the right)"*) and also the only direction with room — Brackenford sits 14000 due
+south of Stonewatch, Frostmere 13000 west, and north is the Training Outpost and its dummy row. East
+is 22000 units of empty map.
+
+They sit on a **3 × 3 grid** at x ≈ 31000 / 36000 / 41000, each north-south lane keeping the original
+field's shape (low band nearest the city, high band furthest out):
+
+| | x ≈ 31000 | x ≈ 36000 | x ≈ 41000 |
+|---|---|---|---|
+| y ≈ 6500 | Sunward Moor 16-24 | Highstone Ridge 24-32 | Emberdust Barrens 32-40 |
+| y ≈ 12000 | Thornfen Moor 16-24 | Ravencrag Ridge 24-32 | Palewind Barrens 32-40 |
+| y ≈ 17500 | Mistlow Moor 16-24 | Bleakspur Ridge 24-32 | Cinderflat Barrens 32-40 |
+
+**The city was not moved.** He offered to (*"The whole City can move to the right"*) and it turned out
+not to be needed: the generator places a field by bearing and distance, so more ground is a matter of
+more distance. Not moving it avoids relocating a town every player already knows and stranding every
+character saved standing inside it.
+
+The geometry is **not hand-derived**. `ValidateLayout` fails the boot on any camp that touches a town
+wall, another camp or another field, and prints the shortfall in units — the first attempt at this put
+two of the outer fields into Brackenford's wall and its east field, the validator said so at boot with
+the exact numbers, and the layout was re-aimed onto the eastern grid.
+
+⚠ Stonewatch's gatekeeper now lists **12 fields**. That is a long menu on a phone, and `BL-41`'s
+question about a grade filter on the craft page is the same question in a different window.
+
 ### `BL-65` — the dungeons get level bands, and the old one had a real cause
 
 *"Now a 32 lvl mobs almost next to a 65 lvl which protect the 44 lvl boss ... The mob lvls are all
