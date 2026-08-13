@@ -118,3 +118,13 @@ stay in the enum for pre-0.45 saves and nothing rolls them.
 **Replaced 2026-08-09** (0.58.1). Every player-facing surface reads AGI. ⚠ The four stat-swap skill
 **ids** still spell `dex` on purpose: an id is a persisted key, and renaming one would delete a
 15kk purchase.
+
+### § `BL-26` The vendor half of the buy-back design — **a longer sold list**
+**Closed 2026-08-14** — not built, superseded by your own later ruling. The entry read: *"The vendor
+half of the buy-back design — a longer sold list. Flagged 'still open, still not urgent' and never
+revisited."* It descended from the ORIGINAL design (`Roadmap.md:126`, *"a buy-back menu — last 10
+deleted/sold; free restore for deleted or sold-for-0"*). Playtest-19's **`M14`** replaced it — *"Cap
+the vendor buyback list at 10-15 items"* — and that shipped as `GameConstants.BuyBackSlots = 12`,
+with the deleted half split off into its own 5-slot `Restorable` list (`C18`, your own two-list
+fallback: a shared list would let a selling spree push the one thing you meant to undo off the end).
+Lengthening the list now would walk back the cap you asked for.

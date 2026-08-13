@@ -74,7 +74,13 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 - `BL-08` 🔴 **Debuff reflect.** *"tanks get 30% chance to reflect a debuff -> u cast on tank he
   reflects u get the debuff."* *(playtest-21, same block.)*
 
-- `BL-09` 🔴 **A floor under the wrong-weapon magic penalty, bought back by Spellcaster Mastery.**
+- `BL-09` 🔵 **A floor under the wrong-weapon magic penalty, bought back by Spellcaster Mastery.**
+  ⚠ **Re-marked 🔵 on 2026-08-14 — it contradicts your own CSV.** This asks for five Mastery rungs
+  walking the penalty 0.5 → 0.05; `docs/data/classes_skills_csv/mage 01-15.csv` authors Spellcaster
+  Mastery as a **single-level, auto-granted, never-replaced** passive carrying the whole rule
+  (*"Bow/Dagger/None: cast x0.5, mAtk x0.5, mAcc x0.5"*), and the code matches it exactly
+  (`Entity.cs:2264-2282`, `StatCaps.UntrainedWeaponMagicFailMod = 25`). Adding rungs re-specs the CSV.
+  Your original words are kept below — say whether the CSV or this note wins.
   *"hitting above the 0 difference is not failing … if we can make a floor … a strong 50% with wrong
   weapon celing((formula),0.5) that is always 50% on the norm … L1 - 0.5 .. L5 ..0.05(the min)."*
   Read as: a wrong-weapon caster is capped at 50% success at parity, and the five Mastery rungs walk
@@ -106,11 +112,24 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   Implied by your rogue ruling and never carried back into either checklist — recorded in the
   changelog as "owed back to him" and then dropped. Confirm and it is a small authoring change.
 
-- `BL-16` 🔴 **Heal powers need re-authoring.** They sit at ~151-301 against a scale that has moved
-  to ~1000. Flagged as "a future tuning pass" and never scheduled.
+- `BL-16` 🔵 **Heal powers need re-authoring — and they are YOUR numbers, so you have to move them.**
+  They sit at ~151-301 against a scale that has moved to ~1000. ⚠ **Re-marked 🔵 on 2026-08-14**: the
+  ladder is authored in `docs/data/classes_skills_csv/healer 20-35.csv` — *"heal with power 151 / 195 /
+  245 / 301"* on Heal and Quick Heal at learn levels 20/25/30/35, and 121/156/196/241 on Party Heal.
+  Raising it in code is a CSV retune, which your own rule forbids, so it was left alone (your call,
+  2026-08-14: *leave the CSVs alone*).
+  🔑 **Measured, so the size of the gap is known:** a group buff learned at 35 is `35 × 20 × 9` =
+  **6,300**; Quick Heal L4 is `301 / 2s × 10 × 1` = **1,505**. That is **~4×**, against the ~1.3× you
+  sized `BL-71` for. **Landing your ratio needs Quick Heal ≈ 970 power** — which is exactly the "~1000
+  scale" this entry names. Two ways out and both are yours: send new 20-35 numbers, or let the 40+
+  rungs (`BL-02`) carry it, since a ~1500-power quick heal is a 40+ rung by your own sizing.
 
-- `BL-17` 🔴 **Re-author `BuffMagAtk`, and give magic-only buffs an explicit magic %.** Open TODO;
-  until it lands those buffs over-perform.
+- `BL-17` 🔵 **Re-author `BuffMagAtk`, and give magic-only buffs an explicit magic %.** ⚠ **Re-marked
+  🔵 on 2026-08-14**, same reason as `BL-16`: the healer CSV authors `Force` at 25 as **M.Atk x1.55**
+  and Frenzy as **mAtk x1.1**, so this is a retune of your own data.
+  ⚠ **And there is a discrepancy to settle first:** your CSV's Force@25 is `x1.55` while the shipped
+  `FamMagAtk` rung is **+25%**. Per your `xN.NN`-is-a-percent convention those may not even be the same
+  claim. Not reconciled by guessing — say which is right.
 
 - `BL-18` 🔵 **The nuker-vs-champion measurement (`0a`).** The nuker beats the champion by 19% in
   the matrix. You deferred the ruling to play: *"This need to be tested. When I leave the chars to
@@ -165,12 +184,16 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   six grades shipped in 0.53-0.60; the conversation you asked for never happened. The 30× drop cut
   (`62j`) is ratified and stays.
 
-- `BL-25` 🔴 **The drop-group simplification.** *"In a way I want to simplify it"* — the inner roll
-  should pick the drop **directly** rather than picking a rarity first, with per-item control (your
-  example: a rarer Scroll of Resurrect inside its own group).
-
-- `BL-26` 🔴 **The vendor half of the buy-back design** — a longer sold list. Flagged "still open,
-  still not urgent" and never revisited.
+- `BL-25` 🔵 **The drop-group simplification — half built, half unquotable.** *"In a way I want to
+  simplify it"* — the inner roll should pick the drop **directly** rather than picking a rarity first,
+  with per-item control (your example: a rarer Scroll of Resurrect inside its own group).
+  ⚠ **Re-marked 🔵 on 2026-08-14.** The **per-item half SHIPPED** — `RateConfig.DropItemRates` plus
+  `/droprate item <id> <mult>`, which is your Scroll-of-Resurrect example working today. The other
+  half has **no surviving verbatim quote anywhere in the repo**, and the current shape is deliberate:
+  the comment at `MobCatalog.cs:262-265` records that one group per (family, rarity) is what lets a
+  BOSS row summing past 100% (E 70 + L 40 + M 2) drop several pieces at once. Collapsing the groups
+  would break boss multi-drops and move a measured economy. **Say it again in your own words and it
+  goes back to 🔴.**
 
 - `BL-27` 🔴 **`Robe 611` has no item behind it.** You re-edited the row on 2026-08-11 without
   asking for the item, so it was left alone a second time. Say whether it should exist.
@@ -358,6 +381,18 @@ broken jewels → 9/5/3 · **item tags and the full `/give`**. They live in `CHA
 **The housekeeping batch, later the same day** took out `BL-37` (the test heal, deleted — and the
 retired-skill-id leak it exposed in the save loader) and `BL-58` (`58i`, the inspiration-game name
 purge; the tag is `IG`).
+
+## Closed on 2026-08-14 by your own later ruling
+
+**`BL-26` (the vendor half of the buy-back design — "a longer sold list") is DELETED, not built.** It
+descended from the *old* design recorded at `Roadmap.md:126` (*"a buy-back menu — last 10
+deleted/sold"*). Your **`M14`** ruling in playtest-19 replaced it — *"cap the vendor buyback list at
+10-15 items"* — and that is what ships: `GameConstants.BuyBackSlots = 12`, alongside a **separate**
+5-slot `Restorable` list for bin-deletes (`C18`), which is the better shape you yourself proposed.
+Newest ruling wins, so lengthening the list now would walk back your own number. Old text in
+[BacklogArchive.md](BacklogArchive.md).
+
+---
 
 **Six more were checked out against the CODE, not the list** — every one was already built in a pass
 whose commit carried no changelog entry, which is why they were still sitting here: `BL-31` (`55b`,
