@@ -42,12 +42,19 @@ armed by its own bar. 🔑 `AutoChainCursor` is sized to that enum — a new gro
 those two, and the enum has had **zero bits left** since `1L << 62`. `MpHeal` is the *group*, not a
 new effect.
 
-### Vampiric Bolt answers the heal chain without leaving the attack chain
+### Vampiric Bolt is a HEAL and nothing else
 
 *"any skill that restores HP as a `Heal` skill (only vamp bolt is left)."* It is the only skill in the
-game with `Lifesteal`, and it is a nuke — so making it a heal outright would have deleted it from a
-nuker's rotation. It now has **two homes**: below the HP threshold the heal group casts it (at the
-**enemy**, since it heals by dealing damage), and otherwise it nukes as before.
+game carrying `Lifesteal`, and the heal group now casts it at the **enemy**, since it heals by dealing
+damage.
+
+It briefly had two homes — heal group when hurt, attack chain otherwise, so a nuker would not lose it
+from his rotation. **He ruled that out before it shipped**: *"I want it only with a treshold .. if I
+want it permanent ill do cycle or 100% treshold."* The threshold IS the control, and a skill that
+fires from two different gates cannot be reasoned about from the settings screen — which is the whole
+complaint behind `BL-67`. So it is off the attack chain entirely: set the HP threshold to 100 (or run
+a cyclic chain) to have it fire on cooldown.
+
 🔑 The marker is `Lifesteal`, deliberately **not** the `SkillEffect.Heal` flag — that flag routes
 through the heal pipeline, which lands on the skill's *target*, so a lifesteal nuke would have healed
 the mob it was shooting.

@@ -4388,6 +4388,16 @@ public class GameLoopService : BackgroundService
     private static AutoSkillKind ClassifyAuto(SkillDef def)
     {
         var e = def.Effect;
+        // 🔑 A LIFESTEAL attack is a HEAL and NOTHING ELSE (him, 2026-08-13): *"I want it only with a
+        // treshold .. if I want it permanent ill do cycle or 100% treshold"*. Checked BEFORE the damage
+        // test, which would otherwise claim it for the attack chain. Vampiric Bolt is the only skill in
+        // the game with Lifesteal, so this is the whole of `BL-67` part 1.
+        //
+        // It briefly had TWO homes — heal group when hurt, attack chain otherwise — so a nuker would not
+        // lose it from his rotation. He ruled that out: the threshold IS the control, and a 100% one (or
+        // a cyclic chain) is how you ask for it permanently. A skill that fires from two different gates
+        // cannot be reasoned about from the settings screen, which is the whole complaint behind BL-67.
+        if (def.Lifesteal > 0f) return AutoSkillKind.Heal;
         if ((e & (SkillEffect.PhysicalDamage | SkillEffect.MagicDamage)) != 0) return AutoSkillKind.Attack;
         if ((e & SkillEffect.Heal) != 0) return AutoSkillKind.Heal;
         // An MP-restore is its OWN priority group (BL-67), sitting directly under Heal: him,
@@ -4401,19 +4411,6 @@ public class GameLoopService : BackgroundService
         return AutoSkillKind.Other;
     }
 
-    /// <summary>Does this skill act in <paramref name="kind"/>'s turn? Almost always just its
-    /// classification — but a LIFESTEAL attack has TWO homes, and that is `BL-67` part 1.
-    ///
-    /// <para>He asked for *"any skill that restores HP as a Heal skill (only vamp bolt is left)"* so the
-    /// HP threshold can fire it. It cannot simply BE a heal: it is a nuke, and a nuker's rotation would
-    /// lose it entirely if the heal threshold were the only thing that let it cast. So it stays an
-    /// Attack and additionally answers the heal group's call — low on HP it drains, otherwise it nukes.</para>
-    ///
-    /// <para>🔑 The marker is <c>Lifesteal</c>, deliberately NOT the <c>SkillEffect.Heal</c> flag. Adding
-    /// that flag would put it through the heal pipeline, which lands on the skill's TARGET — and a
-    /// lifesteal nuke's target is the mob, so it would have healed what it was shooting.</para></summary>
-    private static bool InAutoGroup(SkillDef def, AutoSkillKind kind) =>
-        ClassifyAuto(def) == kind || (kind == AutoSkillKind.Heal && def.Lifesteal > 0f);
 
     /// <summary>Is this buff already running on the entity, so the autopilot should skip it?
     ///
@@ -4532,7 +4529,7 @@ public class GameLoopService : BackgroundService
             int i = (start + k) % n;
             var entry = p.AutoSkills[i];
             if (!entry.Enabled) continue;
-            if (SkillCatalog.Get(entry.SkillId) is not SkillDef def || !InAutoGroup(def, kind)) continue;
+            if (SkillCatalog.Get(entry.SkillId) is not SkillDef def || ClassifyAuto(def) != kind) continue;
             if (!p.HasSkill(def.Id)) continue;
             if (p.SkillCooldowns.ContainsKey(def.Id)) continue;
             if (_tick < p.AutoReadyTick.GetValueOrDefault(def.Id)) continue;
@@ -4559,8 +4556,10 @@ public class GameLoopService : BackgroundService
                     if (AutoBuffUpToDate(p, def, lvl)) continue;
                     tgtId = p.Id; break;
                 case AutoSkillKind.Heal:
-                    // A LIFESTEAL nuke heals by DEALING DAMAGE, so it wants the ENEMY here, not an ally
-                    // (BL-67 part 1 — see InAutoGroup for why it is in this group at all).
+                    // A LIFESTEAL nuke heals by DEALING DAMAGE, so it wants the ENEMY here, not an ally.
+                    // 🔑 This is also why the marker is `Lifesteal` and not the SkillEffect.Heal flag:
+                    // that flag routes a skill through the heal pipeline, which lands on the skill's
+                    // TARGET — and this target is the mob, so it would have healed what it was shooting.
                     if (def.Lifesteal > 0f)
                     {
                         if (target is null) continue;
