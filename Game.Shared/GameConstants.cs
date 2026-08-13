@@ -278,9 +278,11 @@ public static class GameConstants
     public const float ThreatAggroPullFraction = 0.05f;
 
     /// <summary>Support threat conversion (owner, playtest-22): a heal generates
-    /// <c>healPower / castSeconds × 10</c> threat. His worked examples: 300 power over 2s = 1500,
-    /// 500 power over 5s = 1000. The division is what stops a big slow heal out-threatening a
-    /// spammed small one.</summary>
+    /// <c>healPower / castSeconds × 10</c> threat, <b>per person healed</b> (the × people is his
+    /// 2026-08-14 correction — see <see cref="ThreatBuffPerLevel"/>, which a heal now mirrors).
+    /// His worked examples: 300 power over 2s = 1500 on one ally; a 1500-power party heal on a 10s
+    /// cast is 150/s, so 13,500 across a full party of 9. The division is what stops a big slow heal
+    /// out-threatening a spammed small one.</summary>
     public const float ThreatHealFactor = 10f;
 
     /// <summary>Buff threat per LEVEL per person affected (owner, 2026-08-14). A buff has no power to

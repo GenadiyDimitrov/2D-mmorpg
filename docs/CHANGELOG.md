@@ -201,11 +201,17 @@ here. Level 1 keeps the SP price it has always shipped at; the four new rungs ar
 ladder, the tank's neighbour on the same cadence, rather than a scale invented for one skill.
 
 **A healer is no longer invisible to every mob in the game.** A heal generates
-`healPower / castSeconds × 10` threat (his rule and his worked examples: 300 power over 2s = 1500;
-500 over 5s = 1000), given to every engaged mob that is currently fighting somebody the cast helped —
-so a heal in another zone costs nothing, and one cast counts **once** per mob however many of that
-fight's allies it topped up. Computed from the **authored** power and cast time, never from the HP that
-landed: a full-HP target, an anti-heal debuff or the healer's weapon must not change who a monster hits.
+`power / castSeconds × 10 × peopleHealed` threat, given to every engaged mob currently fighting
+somebody the cast helped — so a heal in another zone costs nothing, and one cast counts **once** per
+mob however many of that fight's allies it topped up. Computed from the **authored** power and cast
+time, never from the HP that landed: a full-HP target, an anti-heal debuff or the healer's weapon must
+not change who a monster hits.
+
+The rate is his playtest-22 rule (300 power over 2s = 1500; 500 over 5s = 1000); the **× people** is
+his 2026-08-14 correction, and it puts a heal on exactly the same footing as a buff — a per-head value
+times the heads it reached. His example: a 1500-power party heal on a 10s cast is 150/s, so **13,500**
+across a full party of 9, against 7,500 for the same power thrown at one ally in 2s. Blanketing the
+group is what takes the room's attention.
 
 **Threat decays**, 1%/s on an engaged mob. It is proportional, so it can never re-order the table on
 the tick it runs — what it shrinks is the absolute *gaps*, which is exactly what makes a taunt

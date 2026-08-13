@@ -123,8 +123,9 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 - `BL-71` ✅ **BUILT 2026-08-13/14 (0.64.0)** — the whole aggro/taunt model. Taunt POWER is an authored
   per-level field, Provoke is a 5-rung ladder (1500 → 5100 across 20/24/28/32/36), threat decays 1%/s,
-  heals generate `healPower / castSeconds × 10`, **buffs generate `grantLevel × 20 × people`** (your
-  2026-08-14 ruling — the LEARNED level, so a buff taken at 50 is worth less than one taken at 70),
+  **heals generate `power / castSeconds × 10 × people`** and **buffs `grantLevel × 20 × people`** (your
+  2026-08-14 rulings — for buffs it is the LEARNED level, so one taken at 50 is worth less than one
+  taken at 70; and both scale with how many the cast reached),
   and the proximity-pull defect is fixed (a pull seeds 5% of the mob's own max HP). See `CHANGELOG.md`.
   Delete at the next sweep.
   - ⚠ **Your buff:heal ratio does not hold yet, and the buff side is not the reason.** You sized it

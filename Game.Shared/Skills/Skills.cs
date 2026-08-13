@@ -363,16 +363,23 @@ public record SkillDef(
         return r > 0f ? r : Range;
     }
 
-    /// <summary>Threat a SUPPORT cast is worth to every monster fighting the people it helped —
-    /// the owner's rule, <c>healPower / castSeconds × 10</c> (playtest-22). Nothing about it is
-    /// per-target: one cast produces one number, and each mob that was fighting a healed ally
-    /// receives it once.</summary>
-    public static float SupportThreat(int power, int castTicks)
+    /// <summary>Threat a HEAL is worth to every monster fighting the people it helped:
+    /// <c>power / castSeconds × 10 × peopleHealed</c>.
+    ///
+    /// The rate is his playtest-22 rule; the <b>× people</b> is his 2026-08-14 correction, and it puts
+    /// a heal on exactly the same footing as a buff (<see cref="BuffThreat"/>) — a per-head value times
+    /// the heads it reached. His worked example: a 1500-power party heal on a 10s cast is 150/s, and
+    /// across a full party of 9 that is <b>13,500</b>, against 7,500 for the same power thrown at one
+    /// ally in 2s. Blanketing the group is what takes the room's attention.
+    ///
+    /// One cast still produces ONE number, and each mob fighting any healed ally receives it once —
+    /// the multiplier is the size of the cast, not a per-mob repeat.</summary>
+    public static float SupportThreat(int power, int castTicks, int targets)
     {
-        if (power <= 0) return 0f;
+        if (power <= 0 || targets <= 0) return 0f;
         float seconds = Math.Max(GameConstants.ThreatMinCastSeconds,
                                  castTicks / (float)GameConstants.TickRate);
-        return power / seconds * GameConstants.ThreatHealFactor;
+        return power / seconds * GameConstants.ThreatHealFactor * targets;
     }
 
     /// <summary>Threat a BUFF is worth (owner, 2026-08-14): <c>grantLevel × 20 × peopleAffected</c>.

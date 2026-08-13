@@ -8310,11 +8310,14 @@ var effect = def.Effect;
                 helped.Add(target.Id);
             }
 
-            // A heal is aggro (BL-71). Deliberately computed from the AUTHORED power and cast time,
-            // not from the HP that actually landed: it is a design number, so a full-HP target, a
-            // heal-reduction debuff or the caster's weapon must not change who the monster hits.
+            // A heal is aggro (BL-71), and it scales with HOW MANY it reached — his 2026-08-14 rule,
+            // which puts a heal on the same footing as a buff: a per-head value times the heads.
+            //
+            // Deliberately computed from the AUTHORED power and cast time, not from the HP that
+            // actually landed: it is a design number, so a full-HP target, a heal-reduction debuff or
+            // the caster's weapon must not change who the monster hits.
             AddSupportThreat(caster, helped,
-                SkillDef.SupportThreat(def.PowerAt(lvl), def.CastTicks));
+                SkillDef.SupportThreat(def.PowerAt(lvl), def.CastTicks, helped.Count));
         }
 
         // ---- MP Restore (single ally/self, or AoE) — flat power (+optional % of max MP) ----
