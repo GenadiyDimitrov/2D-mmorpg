@@ -233,7 +233,17 @@ public record SkillDef(
     // rung here per LEVEL (SkillLevel.Rewards) — read it with RewardsAt(level), never this field
     // directly. Rides as a field rather than a SkillEffect flag because the flag enum is FULL:
     // 1L << 62 was the last bit, and four channels would want four of them.
-    RewardRates Rewards = default)
+    RewardRates Rewards = default,
+    // TAUNT POWER (BL-71) — how much threat a SkillEffect.Taunt skill is worth, on the same scale
+    // as damage (1 threat = 1 damage). A taunt first jumps the caster to the TOP of the table and
+    // then adds this on top, so the number reads directly as "how much damage another player must
+    // out-deal me by to steal this back". That is why the owner sized it against a skill hit:
+    // a tank taunt has to be tens of thousands late on, or a single 7-8k physical skill takes the
+    // mob off him. 0 = fall back to a small default (see GameLoopService).
+    //
+    // Per-level on SkillLevel.TauntPower; read it with TauntPowerAt(level), never this field.
+    // Rides as a field rather than reusing Power because a taunt may ALSO do damage.
+    int TauntPower = 0)
 {
     /// <summary>Hash on the ID alone — and this override MUST stay.
     ///
@@ -313,6 +323,26 @@ public record SkillDef(
     /// <summary>The reward-rate package at a LEVEL — a rune ladder's rung. Falls back to the
     /// SkillDef's own for a single-level reward buff (Sinister / Sinners).</summary>
     public RewardRates RewardsAt(int level) => Lvl(level)?.Rewards ?? Rewards;
+
+    /// <summary>Taunt threat at a LEVEL. A level's 0 means "inherit", so a single-level taunt
+    /// needs no per-level entry at all (see SkillDef.TauntPower).</summary>
+    public int TauntPowerAt(int level)
+    {
+        int t = Lvl(level)?.TauntPower ?? 0;
+        return t > 0 ? t : TauntPower;
+    }
+
+    /// <summary>Threat a SUPPORT cast is worth to every monster fighting the people it helped —
+    /// the owner's rule, <c>healPower / castSeconds × 10</c> (playtest-22). Nothing about it is
+    /// per-target: one cast produces one number, and each mob that was fighting a healed ally
+    /// receives it once.</summary>
+    public static float SupportThreat(int power, int castTicks)
+    {
+        if (power <= 0) return 0f;
+        float seconds = Math.Max(GameConstants.ThreatMinCastSeconds,
+                                 castTicks / (float)GameConstants.TickRate);
+        return power / seconds * GameConstants.ThreatHealFactor;
+    }
 
     public float MagnitudeOf(SkillEffect effect, ModifierMode mode, int level = 1)
     {
@@ -420,7 +450,9 @@ public record SkillLevel(
     // return grows for 55 levels is either free at 80 or unpayable at 25.
     int HpCost = -1,
     // REWARD RATES for THIS rung of a reward-rune ladder (null = inherit the SkillDef's).
-    RewardRates? Rewards = null);
+    RewardRates? Rewards = null,
+    // TAUNT POWER at THIS level (0 = inherit the SkillDef's). See SkillDef.TauntPower.
+    int TauntPower = 0);
 
 /// <summary>What a buff does to the four things a MONSTER pays out: experience, skill points, the
 /// gold it drops and the CHANCE its table rolls. The premium rune family (Rune of Experience /

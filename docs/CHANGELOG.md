@@ -7,10 +7,60 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.62.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.64.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 0.64.0 — 2026-08-13 — the playtest-22 batch
+
+Protocol stays **19** — nothing here changes the wire. No DB reset.
+
+### `BL-71` — the threat model gets numbers, and a pull is finally worth something
+
+The answer that opened this was that **most of it already existed**: `Entity.Threat` is a real
+per-attacker table, `RetargetByThreat` picks the maximum on every damage tick, aggro is damage 1:1,
+and `provoke` genuinely taunts. What was missing was everything that makes those facts *authorable*.
+
+**Taunt POWER is now a number on the skill** (`SkillDef.TauntPower`, per-level via `SkillLevel`).
+A taunt does two separate things and they are no longer the same thing: it puts you at the **top** of
+the table and locks the mob there for `DurationTicks` (Provoke: 3s), and *then* adds its power as the
+**cushion** that decides whether you still hold the mob when that window closes. Because threat is
+damage, the number reads literally — a 5,100 taunt means another player must out-damage the tank by
+5,100 to take the mob back.
+
+The old rule was `top × 1.2 + 100`, identical at every level and for every taunt ever written. That is
+not something anyone can author against, and 20% of the top is a rounding error once a DD lands 7-8k a
+skill — which is the complaint this came from.
+
+**Provoke became a ladder** on the tank's existing 20/24/28/32/36 cadence: **1500 · 2000 · 2800 ·
+3800 · 5100**, anchored on his two endpoints (*"1000-2000 at L1"* → *"20-30k"*). It is a ×1.36 step,
+which continues 7000/9500/12900/17500/23900 and lands inside 20-30k at skill level 10 — those five
+rungs belong to the 3rd/4th-class kits and wait on his CSVs (`BL-02`), like every other 40+ number
+here. Level 1 keeps the SP price it has always shipped at; the four new rungs are priced on **Smash's**
+ladder, the tank's neighbour on the same cadence, rather than a scale invented for one skill.
+
+**A healer is no longer invisible to every mob in the game.** A heal generates
+`healPower / castSeconds × 10` threat (his rule and his worked examples: 300 power over 2s = 1500;
+500 over 5s = 1000), given to every engaged mob that is currently fighting somebody the cast helped —
+so a heal in another zone costs nothing, and one cast counts **once** per mob however many of that
+fight's allies it topped up. Computed from the **authored** power and cast time, never from the HP that
+landed: a full-HP target, an anti-heal debuff or the healer's weapon must not change who a monster hits.
+
+**Threat decays**, 1%/s on an engaged mob. It is proportional, so it can never re-order the table on
+the tick it runs — what it shrinks is the absolute *gaps*, which is exactly what makes a taunt
+something you renew instead of something you buy once at the pull.
+
+**And one real defect, found while answering rather than while playing: a proximity pull added no
+threat at all.** A mob that walked to you arrived with an empty table, so the first point of damage
+from anyone — including someone who wandered past afterwards — became the top of it and owned the
+kill. A pull is now seeded at **5% of the mob's own max HP**: a fraction rather than a flat number
+because threat is damage, and "out-damage the puller by 5% of this creature" reads the same at level
+20 and at level 85.
+
+⚠ **Still owed, and deliberately not invented:** what a *buff* is worth. He asked for
+"healer/buffer threat" and gave the formula for the heal half only. The plumbing is one call
+(`AddSupportThreat`), so it is a number away — but a buffer still generates no threat today.
 
 ## 0.63.0 — 2026-08-13 — `BL-05`: crafting is a PROFESSION with six levels, five masters and a mat economy
 

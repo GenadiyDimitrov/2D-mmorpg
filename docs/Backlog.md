@@ -121,25 +121,18 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   (hook reserved) · PvP and PvE damage multipliers (both hooks exist and are 1.0). *"the combat
   depth I don't want it build for now defer it."* Not dropped — do not build unasked.
 
-- `BL-71` 🔵 **The aggro / taunt model.** *"So the question is what we have and how taunt works now
-  and what it needs to be implemented"* (playtest-22). **Answered first, because it changes the
-  size of the job:**
-  - **A real per-attacker threat table already exists** — `Entity.Threat` (`Guid → float`), read by
-    `RetargetByThreat`, which picks the maximum on every damage tick. It is not "last who hit me".
-  - **Aggro IS damage today**, exactly as you want it: `AddThreat(target, attacker, damage)`, 1 point
-    per 1 damage. A non-damaging offensive skill adds a flat **1**.
-  - **Taunt exists and works**: `provoke` (Fighter/Tank, level 20) sets your threat to `top × 1.2 +
-    100` and locks the mob onto you for ~3s. **It has no `Power`** — which is precisely the gap you
-    described. There is also a rogue-side **detaunt** (Warding Step) that sheds 90%.
-  - **Missing entirely**: taunt POWER as an authored number (so a lure and a 4th-class taunt differ),
-    a taunt that scales per level, **threat decay**, **healer/buffer threat** (a healer is invisible
-    to every mob in the game today), and any client-visible aggro list.
-  - ⚠ One real defect found while answering: a **proximity pull adds no threat at all**, so the first
-    point of damage from anyone instantly owns a mob that walked to you.
-  **What you asked for on top:** `lure` ~500 power (range 200/400/600 by level), a tank taunt at
-  1000-2000 at L1 rising to **20-30k** so a 7-8k physical skill cannot steal it, and healer threat
-  ≈ `healPower / castSeconds × 10` (your worked example: 300 power / 2s = 1500; 500 power / 5s =
-  1000). Ships with `BL-70`, which is what makes a lure worth having.
+- `BL-71` 🔵 **The aggro / taunt model — BUILT in 0.64.0 except ONE number you never gave.**
+  Taunt POWER is an authored per-level field, Provoke is a 5-rung ladder (1500 → 5100 across
+  20/24/28/32/36), threat decays 1%/s, heals generate `healPower / castSeconds × 10` against the mobs
+  fighting whoever was healed, and the proximity-pull defect is fixed (a pull now seeds 5% of the
+  mob's own max HP). See `CHANGELOG.md`.
+  - 🔵 **What a BUFF is worth is still open.** You asked for "healer/buffer threat" and gave the
+    formula for the heal half only, so buffs generate nothing. The plumbing is one call
+    (`AddSupportThreat`) — it is a number away, not a build.
+  - The remaining 20-30k rungs are levels 6-10 of the same ×1.36 ladder and belong to the 3rd/4th
+    class kits — blocked on `BL-02`, like every other 40+ number.
+  - `lure` itself ships with `BL-70`, which is what makes it worth having.
+  - Not built and not asked for: a client-visible aggro list.
 
 ---
 

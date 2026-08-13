@@ -7467,6 +7467,7 @@ public class GameLoopService : BackgroundService
         if (mob.TrainingDummy) return;   // stationary, never wanders or aggroes
         if (mob.DetauntTicks > 0) mob.DetauntTicks--;
         if (mob.TauntLockTicks > 0) mob.TauntLockTicks--;
+        if (mob.Engaged && _tick % GameConstants.SecondIntervalTicks == 0) DecayThreat(mob);
 
         if (mob.Engaged)
         {
@@ -7512,6 +7513,11 @@ public class GameLoopService : BackgroundService
                 if (DistanceSq(mob, candidate) <=
                     GameConstants.MobAggroRange * GameConstants.MobAggroRange)
                 {
+                    // A PULL IS WORTH THREAT. It used to be worth nothing: the mob walked over with an
+                    // empty table, so the very first point of damage from ANYONE — including someone
+                    // who wandered past afterwards — became the top of the table and owned it. The
+                    // person it actually came for was not on the list at all.
+                    AddThreat(mob, candidate, mob.MaxHp * GameConstants.ThreatAggroPullFraction);
                     mob.CombatTargetId = candidate.Id;
                     mob.Engaged = true;
                     return;
@@ -8212,11 +8218,24 @@ var effect = def.Effect;
             // Divine Focus: healing OUTPUT scaled down when the healer has no magic weapon (×0.5 / ×0.75).
             int flat = (int)(SkillMath.HealAmount(def.PowerAt(lvl), caster.HealPowerFlat, caster.HealPowerMod) * caster.HealOutputMult);
             float pct = def.MagnitudeOf(SkillEffect.Heal, ModifierMode.Percent, lvl);
+            var helped = new HashSet<Guid>();
             if (def.TargetMode == TargetMode.AlliesInRadius)
                 foreach (var ally in PlayersInRadius(caster, def.AreaRadius))
+                {
                     HealOne(caster, ally, flat, (int)(ally.MaxHp * pct), castName);
+                    helped.Add(ally.Id);
+                }
             else
+            {
                 HealOne(caster, target, flat, (int)(target.MaxHp * pct), castName);
+                helped.Add(target.Id);
+            }
+
+            // A heal is aggro (BL-71). Deliberately computed from the AUTHORED power and cast time,
+            // not from the HP that actually landed: it is a design number, so a full-HP target, a
+            // heal-reduction debuff or the caster's weapon must not change who the monster hits.
+            AddSupportThreat(caster, helped,
+                SkillDef.SupportThreat(def.PowerAt(lvl), def.CastTicks));
         }
 
         // ---- MP Restore (single ally/self, or AoE) — flat power (+optional % of max MP) ----
@@ -8311,16 +8330,30 @@ var effect = def.Effect;
         if (effect.HasFlag(SkillEffect.Detaunt))
             Detaunt(caster);
 
-        // ---- Taunt — force a mob's aggro onto the caster: spike threat above the current
-        //      top and lock it briefly so it commits to the tank. ----
-        if (effect.HasFlag(SkillEffect.Taunt) && target.Kind == EntityKind.Mob)
+        // ---- Taunt — force a mob's aggro onto the caster. TWO guarantees, deliberately separate
+        //      (BL-71): you go to the TOP of the table and are locked there briefly, and then the
+        //      skill's authored TauntPower is the CUSHION that decides whether you still hold it
+        //      afterwards. The old rule was `top × 1.2 + 100` for every taunt at every level, which
+        //      is not a number anyone can author against — 20% of the top is a rounding error once
+        //      a DD is landing 7-8k a skill, which is exactly the complaint this comes from. ----
+        if (effect.HasFlag(SkillEffect.Taunt) && target.Kind == EntityKind.Mob && !target.TrainingDummy)
         {
             offensive = true;
-            float top = target.Threat.Count > 0 ? target.Threat.Values.Max() : 0f;
-            target.Threat[caster.Id] = top * 1.2f + 100f;
+            int power = def.TauntPowerAt(lvl);
+            if (power <= 0) power = 500;   // an unauthored taunt still does something
+
+            // Jump to the top of the table FIRST, then add. Without the jump a taunt would only be
+            // "+power" and could land you second; without the add it would be a 3s inconvenience.
+            float top = 0f;
+            foreach (var (id, v) in target.Threat)
+                if (id != caster.Id && v > top) top = v;
+            float mine = target.Threat.GetValueOrDefault(caster.Id);
+            target.Threat[caster.Id] = Math.Max(mine, top) + power;
+
             target.CombatTargetId = caster.Id;
             target.Engaged = true;
-            target.TauntLockTicks = 30;   // ~3s committed to the taunter
+            target.TauntLockTicks = def.DurationTicks > 0
+                ? def.DurationTicks : GameConstants.TauntLockTicksDefault;
             BroadcastCombat(caster, target, 0, CombatOutcome.Buff, castName);
         }
 
@@ -8942,6 +8975,53 @@ var effect = def.Effect;
         mob.Engaged = true;
         if (mob.TauntLockTicks <= 0 || mob.CombatTargetId is null)
             RetargetByThreat(mob);
+    }
+
+    /// <summary>Bleed an engaged mob's threat table once per second (BL-71).
+    ///
+    /// The decay is PROPORTIONAL, so on its own it can never re-order the table — it changes no
+    /// decision the very tick it runs. What it changes is the size of the ABSOLUTE gaps, and that is
+    /// the point: a taunt's cushion is a flat number, so a tank who taunts once at the pull and then
+    /// stops is overtaken by the party's damage a minute later, exactly as he should be. It is also
+    /// what keeps a healer's contribution recent rather than cumulative over a ten-minute fight.
+    ///
+    /// Entries that fall under the floor are dropped, which is the only pruning the table gets for
+    /// someone who threw one debuff and walked away.</summary>
+    private static void DecayThreat(Entity mob)
+    {
+        if (mob.Threat.Count == 0) return;
+        List<Guid>? drop = null;
+        foreach (var id in mob.Threat.Keys.ToList())
+        {
+            float v = mob.Threat[id] * GameConstants.ThreatDecayPerSecond;
+            if (v < GameConstants.ThreatFloor) (drop ??= new()).Add(id);
+            else mob.Threat[id] = v;
+        }
+        if (drop is not null)
+            foreach (var id in drop) mob.Threat.Remove(id);
+    }
+
+    /// <summary>Support threat (BL-71, owner's rule): a heal is worth <c>power / castSeconds × 10</c>
+    /// to every monster that is currently fighting somebody it helped.
+    ///
+    /// Before this a healer was invisible to every mob in the game — nothing but damage and a
+    /// 1-point poke from an offensive cast ever wrote to a threat table, so the one class whose whole
+    /// job is to undo the party's damage intake contributed nothing to the decision of who gets hit.
+    ///
+    /// "Fighting somebody it helped" is the whole targeting rule: the mobs that care are the ones
+    /// whose current target, or whose threat table, already contains a healed ally. A heal cast in
+    /// another zone therefore costs nothing, and one cast is counted ONCE per mob however many
+    /// allies of that mob's fight it topped up.</summary>
+    private void AddSupportThreat(Entity caster, HashSet<Guid> helped, float amount)
+    {
+        if (amount <= 0f || helped.Count == 0 || caster.Kind != EntityKind.Player) return;
+        foreach (var mob in _world.Grid.Nearby(caster))
+        {
+            if (mob.Kind != EntityKind.Mob || mob.Dead || mob.TrainingDummy || !mob.Engaged) continue;
+            bool fightingOne = (mob.CombatTargetId is Guid t && helped.Contains(t))
+                            || mob.Threat.Keys.Any(helped.Contains);
+            if (fightingOne) AddThreat(mob, caster, amount);
+        }
     }
 
     /// <summary>Point the mob at its highest-threat living target (stale/dead entries skipped).</summary>

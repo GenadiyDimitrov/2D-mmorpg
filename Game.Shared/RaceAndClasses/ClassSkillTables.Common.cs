@@ -25,23 +25,30 @@ public static partial class ClassSkillTables
                 new ClassSkill(TankAntiMagic, 20, SkillLevel: 1),
                 new ClassSkill(TankWeaponMastery, 20, SkillLevel: 1),
                 new ClassSkill(DefensiveWall, 20, SkillLevel: 1),
-                new ClassSkill(Provoke, 20),
+                // Provoke is now a LADDER, not a one-off (BL-71): its taunt POWER is what keeps a mob
+                // on the tank once the 3s lock expires, so it has to grow with the damage the party
+                // behind him is doing. Same 20/24/28/32/36 cadence as every other tank line here.
+                new ClassSkill(Provoke, 20, SkillLevel: 1),
                 new ClassSkill(TankArmorMastery, 24, SkillLevel: 2),
                 new ClassSkill(TankShieldMastery, 24, SkillLevel: 2),
                 new ClassSkill(TankAntiMagic, 24, SkillLevel: 2),
                 new ClassSkill(TankWeaponMastery, 24, SkillLevel: 2),
+                new ClassSkill(Provoke, 24, SkillLevel: 2),
                 new ClassSkill(TankArmorMastery, 28, SkillLevel: 3),
                 new ClassSkill(TankShieldMastery, 28, SkillLevel: 3),
                 new ClassSkill(TankAntiMagic, 28, SkillLevel: 3),
                 new ClassSkill(TankWeaponMastery, 28, SkillLevel: 3),
                 new ClassSkill(TankShieldStun, 28, SkillLevel: 1),
+                new ClassSkill(Provoke, 28, SkillLevel: 3),
                 new ClassSkill(TankArmorMastery, 32, SkillLevel: 4),
                 new ClassSkill(TankShieldMastery, 32, SkillLevel: 4),
                 new ClassSkill(TankAntiMagic, 32, SkillLevel: 4),
                 new ClassSkill(TankWeaponMastery, 32, SkillLevel: 4),
+                new ClassSkill(Provoke, 32, SkillLevel: 4),
                 new ClassSkill(TankArmorMastery, 36, SkillLevel: 5),
                 new ClassSkill(TankAntiMagic, 36, SkillLevel: 5),
                 new ClassSkill(TankWeaponMastery, 36, SkillLevel: 5),
+                new ClassSkill(Provoke, 36, SkillLevel: 5),
                 new ClassSkill(TankStay, 36, SkillLevel: 1));
             // Warrior (CSV warrior 20-35): Two-Hand Mastery + Body Mastery (5 levels each),
             // Strike continues (levels 4-8), and the low-HP Battle stances.

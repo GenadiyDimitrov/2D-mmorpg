@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.63.0";
+    public const string GameVersion = "0.64.0";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -251,6 +251,48 @@ public static class GameConstants
 
     /// <summary>Ticks until a dead mob respawns at its home position (10s).</summary>
     public const int MobRespawnTicks = 100;
+
+    // ----- Threat / aggro (BL-71) -------------------------------------------------------
+    //
+    // Threat IS damage: 1 point per 1 damage dealt (GameLoopService.ApplyDamage). Everything
+    // below is expressed against that one scale, so every number here reads as "worth this
+    // much damage" — which is the only way a taunt, a heal and a pull can be compared at all.
+
+    /// <summary>Per-second multiplier applied to every entry in an engaged mob's threat table.
+    /// Proportional, so it never re-orders the table on its own — what it does is shrink the
+    /// ABSOLUTE gaps, which is what makes a taunt's flat cushion something you have to renew
+    /// rather than something you buy once at the pull. 0.99 halves a lead in ~69s.</summary>
+    public const float ThreatDecayPerSecond = 0.99f;
+
+    /// <summary>Threat entries below this are pruned — decay's floor, so a table doesn't grow
+    /// a long tail of entities that once threw a debuff and left.</summary>
+    public const float ThreatFloor = 1f;
+
+    /// <summary>What a mob that walked to YOU owes you, as a fraction of its own max HP.
+    ///
+    /// Without this a proximity pull seeded NO threat at all, so the mob arrived with an empty
+    /// table and the first point of damage from anyone — including someone who never pulled it —
+    /// instantly owned it. Expressed as a fraction of the mob's HP rather than a flat number
+    /// because threat is damage: 5% of its bar means "another player must out-damage the puller
+    /// by 5% of this creature to take it", which reads the same at level 20 and at level 85.</summary>
+    public const float ThreatAggroPullFraction = 0.05f;
+
+    /// <summary>Support threat conversion (owner, playtest-22): a heal generates
+    /// <c>healPower / castSeconds × 10</c> threat. His worked examples: 300 power over 2s = 1500,
+    /// 500 power over 5s = 1000. The division is what stops a big slow heal out-threatening a
+    /// spammed small one.</summary>
+    public const float ThreatHealFactor = 10f;
+
+    /// <summary>Floor on the cast time in that formula. An instant heal would otherwise divide by
+    /// zero (or, at one tick, by 0.1 — a ×100 blow-up). One second is the shortest cast the
+    /// formula is allowed to see.</summary>
+    public const float ThreatMinCastSeconds = 1f;
+
+    /// <summary>Default hard-commit window after a taunt lands, when the skill doesn't author its
+    /// own (DurationTicks). During it the mob will not retarget away from the taunter even if
+    /// someone out-threats them — the taunt's guarantee, distinct from its POWER, which is what
+    /// decides whether it still holds afterwards.</summary>
+    public const int TauntLockTicksDefault = 30;   // ~3s
 
     /// <summary>The once-per-SECOND housekeeping cadence: damage-over-time, heal-over-time, the buff
     /// push and the party-roster refresh. These are authored "per second" and must stay at 1s no matter
