@@ -65,6 +65,25 @@ namespace Game.Client
         /// a state, so deliberately selecting a corpse sticks.</summary>
         private Guid? _targetSeenAlive;
 
+        /// <summary>Who has hit US recently, and when (<see cref="Time.realtimeSinceStartup"/>). Fed by
+        /// <see cref="OnCombat"/> and read by <see cref="TargetClosest"/> so that a creature actually
+        /// fighting you outranks a nearer one that is not (`BL-43`).
+        ///
+        /// <para>🔑 This is CLIENT-side on purpose and needs no protocol change: the combat feed already
+        /// carries every blow landed on us, with the attacker's id. The server's autopilot has its own,
+        /// separate notion of retaliation (<c>RetaliationTarget</c>) and the two are deliberately not
+        /// shared — the autopilot picks what to FIGHT, this picks what the player is LOOKING at.</para>
+        ///
+        /// <para>Entries are pruned lazily on read, so a mob that has stopped hitting you drops back to
+        /// plain distance order after <see cref="RetaliationMemory"/> seconds rather than sticking to
+        /// the top of the cycle for the rest of the session.</para></summary>
+        private readonly Dictionary<Guid, float> _recentAttackers = new Dictionary<Guid, float>();
+
+        /// <summary>How long (seconds) a blow keeps its author at the front of the target cycle. Long
+        /// enough to span a caster's wind-up between hits, short enough that a mob you walked away from
+        /// stops claiming priority.</summary>
+        private const float RetaliationMemory = 10f;
+
         /// <summary>Server frames received, and when the last one landed — the honest answer to
         /// "is the connection alive?", which a connected-but-silent socket would otherwise fake.</summary>
         public int FramesReceived { get; private set; }
@@ -469,27 +488,64 @@ namespace Game.Client
                 !string.IsNullOrEmpty(have) && have.StartsWith(want, StringComparison.OrdinalIgnoreCase);
         }
 
-        /// <summary>Select the nearest living enemy (mob) within range; pressing again steps to the
-        /// next-nearest, so you can flick between the ones in front of you.</summary>
+        /// <summary>How many enemies the cycle holds. His number: *"targeting closest/retaliate 5 and
+        /// cycling through them"* — a short ring you can tap around blind is the point, and a cycle over
+        /// every mob in a 2500 radius is not one.</summary>
+        private const int TargetRingSize = 5;
+
+        /// <summary>NextTarget (`BL-43`). Select the best living enemy nearby; pressing again steps to
+        /// the next one, wrapping — so you can flick between the handful in front of you without
+        /// looking. Owner, playtest note 5: *"Need NextTarget (targeting closest/retaliate 5 and cycling
+        /// through them)"*, deferred then and built now.
+        ///
+        /// <para>🔑 **Retaliation outranks distance.** Anything that has hit you inside
+        /// <see cref="RetaliationMemory"/> sorts ahead of everything that has not, and only then does
+        /// distance decide. This is the same complaint that produced the AUTOPILOT's retaliate rule
+        /// (playtest note 4, *"I'm getting ganked by orc archers and still kill the nearest"*) — the
+        /// manual selector had the identical hole, one tap instead of one autopilot decision.</para>
+        ///
+        /// <para>The ring is rebuilt on every press rather than cached, so it always reflects where you
+        /// are standing now. That means the ring can change under you as you move or as something new
+        /// starts swinging; that is wanted — a mob that opens up on you should join the front of the
+        /// cycle immediately, not after the ring is exhausted. If the current target has fallen out of
+        /// the ring, <c>FindIndex</c> returns -1 and the press lands on the best entry, which is also
+        /// the right answer.</para></summary>
         public void TargetClosest()
         {
             const float maxRange = 2500f, maxRangeSq = maxRange * maxRange;
             if (Entities == null || !Entities.TryGetState(SelfId, out var self)) return;
 
-            var enemies = new List<(Guid Id, float DistSq)>();
+            // Prune the retaliation memory first, so a stale entry can never win a sort below.
+            float now = Time.realtimeSinceStartup;
+            if (_recentAttackers.Count > 0)
+            {
+                var expired = new List<Guid>();
+                foreach (var kv in _recentAttackers)
+                    if (now - kv.Value > RetaliationMemory) expired.Add(kv.Key);
+                foreach (var id in expired) _recentAttackers.Remove(id);
+            }
+
+            var enemies = new List<(Guid Id, bool Hitting, float DistSq)>();
             foreach (var kv in Entities.States)
             {
                 var e = kv.Value;
                 if (e.Kind != EntityKind.Mob || e.Dead) continue;
                 float dx = e.X - self.X, dy = e.Y - self.Y;
                 float d2 = dx * dx + dy * dy;
-                if (d2 <= maxRangeSq) enemies.Add((kv.Key, d2));
+                if (d2 <= maxRangeSq) enemies.Add((kv.Key, _recentAttackers.ContainsKey(kv.Key), d2));
             }
             if (enemies.Count == 0) { ClientLog.Warn("No enemy in range."); return; }
 
-            enemies.Sort((a, b) => a.DistSq.CompareTo(b.DistSq));
+            // Retaliators first, then nearest. Ties inside each group are broken by distance alone, so
+            // the order is stable between presses as long as nothing moves.
+            enemies.Sort((a, b) => a.Hitting != b.Hitting
+                                   ? (a.Hitting ? -1 : 1)
+                                   : a.DistSq.CompareTo(b.DistSq));
+            if (enemies.Count > TargetRingSize) enemies.RemoveRange(TargetRingSize,
+                                                                    enemies.Count - TargetRingSize);
+
             int idx = TargetId.HasValue ? enemies.FindIndex(x => x.Id == TargetId.Value) : -1;
-            TargetId = enemies[(idx + 1) % enemies.Count].Id;   // -1 → nearest; else the next one out
+            TargetId = enemies[(idx + 1) % enemies.Count].Id;   // -1 → best; else the next one round
         }
 
         public async void PartySetLoot(LootMode mode)
@@ -1438,6 +1494,9 @@ namespace Game.Client
         {
             TargetId = null;
             _targetSeenAlive = null;
+            // `BL-43`: entity ids are per-spawn, so a retaliation entry from the last session can only
+            // ever be dead weight — and on the tiny chance of a reused id, a wrong priority.
+            _recentAttackers.Clear();
             Party = new PartyMemberDto[0];
             PendingInvite = null;
             PendingResurrect = null;
@@ -1712,6 +1771,11 @@ namespace Game.Client
             Main(() =>
             {
                 if (e.AttackerId != _selfId && e.TargetId != _selfId) return;
+                // `BL-43`: remember who is hitting US, so the target cycle can put them first. Stamped
+                // on every inbound blow regardless of outcome — a MISS still tells you something has
+                // decided to fight you, which is exactly what you want to be able to select.
+                if (e.TargetId == _selfId && e.AttackerId != _selfId)
+                    _recentAttackers[e.AttackerId] = Time.realtimeSinceStartup;
                 if (CombatHappened != null) CombatHappened(e);
                 bool mine = e.AttackerId == _selfId;
                 string verb = mine ? "You → " + e.TargetName : e.AttackerName + " → you";

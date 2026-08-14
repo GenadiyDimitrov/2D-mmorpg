@@ -12,6 +12,90 @@ compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
 
+## 0.67.0 — 2026-08-14 — three of the four he ruled on
+
+Crafting is **parked on his instruction** until he can test it properly (*"leave the salvage/mats etc
+craft until I'm able to test it fully… that's a single playtest only for this"*), so this pass is the
+polish he named instead. Protocol stays **20**; **no DB reset**.
+
+### `BL-43` — NextTarget: retaliation outranks distance
+
+His original note, deferred at the time: *"Need NextTarget (targeting closest/retaliate 5 and cycling
+through them)."*
+
+Half of it was already there — `TargetClosest` cycled the nearest living mob within 2500 and stepped
+outward on each press, on the `ActionTargetClosest` hotbar action. What was missing is the half the
+note leads with. Now:
+
+- **Anything that has hit you in the last 10s sorts ahead of everything that has not**, and only then
+  does distance decide.
+- The ring is capped at **5**, his number — a cycle over every mob in a 2500 radius is not something
+  you can tap around without looking.
+
+🔑 This is the *manual* twin of the autopilot fix from the same playtest (*"a mob hitting you is higher
+priority than nearest… I'm getting ganked by orc archers and still kill the nearest"*). That one taught
+the autopilot to retaliate; the tap-to-cycle selector had the identical hole and kept handing you the
+nearest idle mob while something else chewed on you.
+
+🔑 **Client-only, no protocol change.** The combat feed already carries every blow landed on you with
+its attacker's id, so the client can keep its own short retaliation memory. It is deliberately NOT
+shared with the server's `RetaliationTarget`: that one picks what the autopilot will *fight*, this one
+picks what the player is *looking at*.
+
+### `BL-46` — the app is a game now, and the second icon is gone
+
+*"Since my phone updated it didn't appear. Now I'm using Secure Folder so I can have 2 clients side by
+side. Need only to be able to make it as a game — treat it as a game — to enter the game launcher on
+its own and to be able to use the game boost features."*
+
+The dead `UnityPlayerActivity` block is **deleted**. It was kept from 2026-08-02 as the duo-testing
+rig, but that reading was half wrong and the device has now settled it: our Application Entry is
+GameActivity, so that activity merged in disabled while still keeping its LAUNCHER filter — it drew a
+second icon and nothing else. The two independent clients were always **Secure Folder** (a Samsung
+profile clone with its own UID and data dir), exactly as the old comment suspected. Deleting it costs
+no test capability.
+
+🔑 **That deletion is what makes the game-mode hint work**, which is why the two halves shipped
+together: a game launcher classifies an *app*, not an icon, and a package declaring two MAIN/LAUNCHER
+entries is ambiguous to it. `android:appCategory="game"` was already present and inert; it is now joined
+by the older `android:isGame="true"` for the One UI builds that still read it, with exactly one launcher
+activity behind them.
+
+### `BL-49` (part) — a boss pays for the time it costs
+
+*"Bosses should give exp based on how long it takes to kill a normal mob vs boss (x1.2~2) — killing a
+boss gives you twice (or 1.5) the exp for the same time of normal fighting. Something like that, not a
+real formula to calculate it, just a curve to have."*
+
+EXP and SP are now `base × killTimeRatio × rankEfficiency`, where the efficiency is **1.2 elite / 1.5
+boss** — his range, and the one number the whole design reads off: *an hour spent on bosses is worth
+1.5 hours spent on trash.*
+
+🔑 **A time RATIO needs no simulation and no per-boss authoring.** Time-to-kill is `EHP / yourDPS`, and
+this compares two mobs at the same level against the same player — so your DPS cancels completely and
+nothing about the killer enters the number. It is `HP × P.Def` off the spawned entity, so rank
+multipliers, MobMod HP passives and buffs a mob is standing in are all already counted. Only the HP half
+moves today (rank scales HP and P.Atk, not defence); the defence term is there so that the moment a boss
+is given real defence its EXP follows on its own.
+
+🔑 **This fixes a silent five-fold underpayment.** The old rule was HP-only *and clamped at 20×*, while a
+boss carries **100×** HP — so every field boss in the game paid a fifth of what it owed, and paid exactly
+the same as a mob merely 20× bulky. That clamp is what "the elite/boss EXP multiplier wants a look" was
+about. Boss EXP goes **20× → 150×**; elite **4× → 4.8×**.
+
+🔑 **1.5 and not 2.0 for a boss, because a boss is fought by a PARTY.** Five people kill it five times
+faster and split the pot five ways, so the efficiency each of them sees is exactly this constant — the
+party size cancels, and 2.0 would make boss-camping strictly dominant over every other way to level.
+
+⚠ The world boss still has no rank of its own. It lands here as a `Boss` at 1.5 and is paid for its real
+bulk by the ratio, which is the correct behaviour — but it remains the open half of `BL-13`.
+
+**Measured, not derived** (`tools/BalanceMatrix`, new `BL-49` table): `exp/sec ×` reads 1.20 / 1.50 on
+every row at levels 20/40/60/76/85, which is the assertion that the time ratio and the payout have not
+come apart. ⚠ The same table surfaces something for him to look at: one **level-20** field boss is now
+**125% of a level** solo, while a level-85 one is **0.1%**. Both are the same 150 trash kills — that
+spread is the levelling curve, not the boss rule, and it is the part of `BL-49` still open.
+
 ## 0.66.0 — 2026-08-14 — his eight rulings, built
 
 On 2026-08-14 he ruled on **all eight remaining "ready to build" backlog items in one message**.

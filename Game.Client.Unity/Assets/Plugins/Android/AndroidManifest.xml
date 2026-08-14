@@ -11,40 +11,42 @@
          default, and our dev server is http://<pc-ip>:5238 — without this the phone fails to connect
          with a bare "cleartext not permitted" and nothing else to go on.
          DEV ONLY: put the server behind HTTPS for a real release and delete this attribute. -->
-    <!-- android:appCategory="game" tells Android (and Samsung's Game Launcher / Game Booster) that this
-         is a GAME, which is what unlocks the in-game touch-block / "Game tools" overlay, do-not-disturb
-         while playing, etc. Purely a hint; safe on non-Samsung devices. Requires Android 8 (API 26)+. -->
+    <!-- TREAT THIS AS A GAME (`BL-46`, owner 2026-08-14: *"need only to be able to make it as a game -
+         threat it as a game - to enter the game launcher on its own and to be able to use the game boost
+         fetures"*). Two attributes, because the OEM launchers do not all read the same one:
+
+           android:appCategory="game" — the modern signal (API 26+). Samsung's Game Launcher / Game
+             Booster, Android's own game-mode / "Game Dashboard" and the per-app performance profiles
+             all classify on this. It is what unlocks the in-game touch-block overlay, do-not-disturb
+             while playing, the FPS/temperature panel and the performance-vs-battery slider.
+           android:isGame="true" — the older flag (API 21, deprecated by appCategory in 26 but still a
+             valid attribute). Kept because some Samsung One UI builds still heuristically read it, and
+             a deprecated-but-valid attribute costs nothing.
+
+         ⚠ Neither one does anything while the package declares TWO launcher activities: a game
+         launcher classifies an app, not an icon, and an app with two MAIN/LAUNCHER entries is ambiguous
+         to it. That second activity is gone below, which is half of why this now takes effect. -->
     <application android:usesCleartextTraffic="true"
-                 android:appCategory="game">
-        <!--Used when Application Entry is set to Activity, otherwise remove this activity block-->
-        <!-- 🔴 PRODUCTION: DELETE THIS WHOLE <activity> BLOCK BEFORE A STORE RELEASE.
-             Our Application Entry is GameActivity (ProjectSettings androidApplicationEntry: 2), so this
-             activity is merged in with android:enabled="false" — but it KEEPS its LAUNCHER intent-filter,
-             and the phone shows a SECOND app icon. Deleting it is safe: nothing here targets
-             UnityPlayerActivity.
+                 android:appCategory="game"
+                 android:isGame="true">
+        <!-- ✅ `BL-46` CLOSED 2026-08-14. The dead UnityPlayerActivity block that used to sit here is
+             DELETED. History, because the reasoning is not obvious from the absence:
 
-             ✅ KEPT DELIBERATELY, AS A TEST FEATURE (2026-08-02, owner's explicit call). The second entry
-             runs a genuinely INDEPENDENT client: he logged in as admin on one and test1 on the other,
-             both connected, saw each other in the world, and formed a working party. That is how duo /
-             party testing is done now — do not remove it without asking.
+             Our Application Entry is GameActivity (ProjectSettings androidApplicationEntry: 2), so that
+             activity was merged in with android:enabled="false" — yet it KEPT its LAUNCHER intent-filter,
+             and the phone drew a SECOND app icon. It was kept ON PURPOSE from 2026-08-02 as the duo-
+             testing rig, because two icons appeared to give two independent clients.
 
-             ⚠ At store time, VERIFY ON THE DEVICE which mechanism actually produced the second icon.
-             Two independent clients cannot come from this block alone (same package, one process,
-             launchMode="singleTask"), so a Samsung profile-level clone (Dual Messenger / Secure Folder,
-             separate UID + data dir) is likely also involved — and that one is a PHONE SETTING no
-             manifest edit can remove. Check `adb shell pm list users`, then list that user's packages
-             with the phone attached before declaring it fixed.
+             That reading was half wrong, and the device has now settled it. After a phone update the
+             second icon stopped appearing at all, and the owner runs his two side-by-side clients from
+             **Secure Folder** — a Samsung profile clone with its own UID and data dir, which is what was
+             really providing the second client the whole time (as the old comment suspected). So this
+             block was never the rig; deleting it costs no test capability and leaves exactly ONE
+             launcher entry, which is what the game-mode classification above needs.
+
              (NB: a doubled hyphen may never appear inside an XML comment. Spelling the adb user flag
              out here is exactly what broke the 0.47.0 APK build, and Unity fails it at manifest
              generation — after IL2CPP, ~3 minutes in — so it does not look like a manifest problem.) -->
-        <activity android:name="com.unity3d.player.UnityPlayerActivity"
-                  android:theme="@style/UnityThemeSelector">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-            <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
-        </activity>
         <!--Used when Application Entry is set to GameActivity, otherwise remove this activity block-->
         <activity android:name="com.unity3d.player.UnityPlayerGameActivity"
                   android:theme="@style/BaseUnityGameActivityTheme">

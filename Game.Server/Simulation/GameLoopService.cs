@@ -10122,25 +10122,81 @@ var effect = def.Effect;
         return list;
     }
 
-    /// <summary>EXP for killing one mob: the level curve scaled by how TOUGH this particular
-    /// mob actually is. IG pays XP by toughness within a level band — a level-85 Drake Warrior
-    /// carries ~8.5x a normal same-level mob's HP and pays ~7.5x the EXP. We paid purely by
-    /// LEVEL, so a boss with 10x the HP gave exactly as much EXP as the trash standing next to
-    /// it. Toughness is read straight off the spawned mob (its rank multiplier and MobMod HP
-    /// passive are already baked into MaxHp) relative to the level's base curve, so a mob that
-    /// buys bulk with an "HP Increase (2x)" passive automatically pays 2x.</summary>
+    /// <summary>EXP for killing one mob: the level curve scaled by how long this particular mob takes
+    /// to kill, times the rank's efficiency bonus (`BL-49`).
+    ///
+    /// <para>His ruling, 2026-08-14: *"bosses should give exp based on how long it takes to kill a
+    /// normal mob vs boss (x1.2~2) — killing a boss gives you twice (or 1.5) the exp for the same time
+    /// of normal fighting. Not a real formula to calculate it, just a curve to have."*</para>
+    ///
+    /// <para>So the payout is <c>base × killTimeRatio × efficiency</c>, and the whole design reads off
+    /// that: an hour spent on bosses is worth <see cref="RankExpEfficiency"/> hours spent on trash.
+    /// Setting efficiency to 1.0 would make bosses exactly break-even and pointless; the bonus IS the
+    /// reason to fight one.</para>
+    ///
+    /// <para>🔑 **Why a time RATIO is honest and needs no simulation.** Time-to-kill is
+    /// <c>EHP / yourDPS</c>, and this compares two mobs at the SAME level against the SAME player, so
+    /// your DPS cancels out completely. What is left is the mob's own effective bulk, and nothing about
+    /// the killer enters the number — which is what keeps a boss worth the same multiple to a geared
+    /// character and to a naked one. (It also means the 11x absolute-TTK swing across levels found under
+    /// `BL-13` does NOT distort this: that is a property of the boss HP curve, not of the ratio.)</para>
+    ///
+    /// <para>🔑 **This supersedes the old HP-only "toughness", which was silently capped at 20x while a
+    /// boss carries 100x HP** — so every field boss in the game paid a fifth of what it owed, and paid
+    /// the SAME as a mob merely 20x bulky. That cap is why "the elite/boss EXP multiplier wants a look"
+    /// was on the list.</para>
+    ///
+    /// <para>⚠ Derived, not authored: if he re-curves boss HP under `BL-13`, the EXP follows on its own
+    /// and there is no second table to remember to change.</para></summary>
     private static long MobExpValue(Entity mob) =>
-        Math.Max(1L, (long)(StatCalculator.MobExpReward(mob.Level) * MobToughness(mob)));
+        Math.Max(1L, (long)(StatCalculator.MobExpReward(mob.Level)
+                            * MobKillTimeRatio(mob) * RankExpEfficiency(mob.Rank)));
 
-    /// <summary>SP for one kill. Toughness applies here too, so a bulky mob pays its multiple of SP
+    /// <summary>SP for one kill. The same scaling applies, so a bulky mob pays its multiple of SP
     /// exactly as it pays its multiple of EXP; the level-dependent SP:EXP ratio lives in ExpCurve.</summary>
     private static long MobSpValue(Entity mob) =>
-        Math.Max(1L, (long)(StatCalculator.MobSpReward(mob.Level) * MobToughness(mob)));
+        Math.Max(1L, (long)(StatCalculator.MobSpReward(mob.Level)
+                            * MobKillTimeRatio(mob) * RankExpEfficiency(mob.Rank)));
 
-    /// <summary>How tough this spawn is versus the plain curve for its level (rank multipliers and HP
-    /// passives are already baked into MaxHp). Clamped so a freak spawn can't pay 1000x.</summary>
-    private static float MobToughness(Entity mob) =>
-        Math.Clamp(mob.MaxHp / (float)Math.Max(1, MobBaseStats.Hp(mob.Level)), 0.25f, 20f);
+    /// <summary>How much LONGER this spawn takes to kill than a plain mob of its level, as a multiple.
+    ///
+    /// <para>Damage in this game is a RATIO — <c>K·(atk·lvlMod + power)/def</c> — so defence is a
+    /// divisor and time-to-kill is proportional to <c>HP × defence</c>, not to HP alone. Both halves are
+    /// read off the SPAWNED entity, so a rank multiplier, a MobMod HP passive and a buff a mob is
+    /// standing in are all already counted; neither half is re-derived from the template.</para>
+    ///
+    /// <para>Today only the HP half actually moves (rank scales HP and P.Atk, not defence), so this
+    /// reduces to the HP ratio — but the defence term is here because the moment a boss is given real
+    /// defence, its EXP must follow without anyone remembering to come back here.</para>
+    ///
+    /// <para>⚠ The clamp is a sanity rail against a corrupt spawn, NOT a balance knob: it sits above the
+    /// 100x a field boss legitimately carries, which is exactly the mistake the old 20x cap made. The
+    /// floor keeps a deliberately frail mob from paying nothing at all.</para></summary>
+    private static float MobKillTimeRatio(Entity mob)
+    {
+        float hpRatio = mob.MaxHp / (float)Math.Max(1, MobBaseStats.Hp(mob.Level));
+        float defRatio = mob.EffectiveDefence / Math.Max(1f, MobBaseStats.PDef(mob.Level));
+        return Math.Clamp(hpRatio * Math.Max(0.25f, defRatio), 0.25f, 400f);
+    }
+
+    /// <summary>His *"x1.2~2"* — how much better an hour spent on this rank is than an hour spent on
+    /// trash. A curve, in his words, not a formula: normal is break-even by definition, an elite is a
+    /// small premium for a fight you can still take solo, and a boss pays his own "twice (or 1.5)".
+    ///
+    /// <para>1.5 rather than 2.0 for a boss because the ratio it multiplies is already large and a boss
+    /// is fought by a PARTY: five people kill it five times faster and split the pot five ways, so the
+    /// efficiency they each see is exactly this number — the party size cancels, and 2.0 would make
+    /// boss-camping strictly dominant over every other way to level.</para>
+    ///
+    /// <para>A world boss has no rank of its own (it is a <see cref="MobRank.Boss"/> carrying extra HP
+    /// via its template), so it lands here at 1.5 and is paid for its real bulk by the ratio above —
+    /// which is the correct behaviour and the reason nothing here needs a fourth rung.</para></summary>
+    private static float RankExpEfficiency(MobRank rank) => rank switch
+    {
+        MobRank.Elite => 1.2f,
+        MobRank.Boss  => 1.5f,
+        _             => 1.0f,
+    };
 
     /// <summary>Death exp penalty: lose 5% of the level's exp, floored at 0 (no delevel). Stores the lost
     /// amount in LostExp so a resurrection skill/scroll can restore a fraction; a normal town respawn drops it.</summary>

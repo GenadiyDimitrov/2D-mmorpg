@@ -1395,6 +1395,63 @@ foreach (int L in new[] { 20, 40, 60, 76, 85 })
     }
 }
 Console.WriteLine("  'HP x needed' = the rank HP multiplier that would put a 3-DD party at exactly 360s.");
+Console.WriteLine();
+
+// ---------------------------------------------------------------------------------------------
+// BL-49: what a rank now PAYS, and whether that matches his ruling.
+//
+// His rule, 2026-08-14: "bosses should give exp based on how long it takes to kill a normal mob vs
+// boss (x1.2~2) - killing a boss gives you twice (or 1.5) the exp for the same time of normal
+// fighting". So the column that has to come out right is the LAST one: exp-per-second of boss
+// fighting, divided by exp-per-second of trash fighting, at the same level with the same character.
+// If that lands on the rank's efficiency constant, the rule is implemented; the rest is bookkeeping.
+Console.WriteLine("=== BL-49: WHAT A RANK PAYS — is an hour on bosses worth his 1.2-2 hours on trash? ===");
+Console.WriteLine("  exp = MobExpReward(level) x killTimeRatio x rankEfficiency.  killTimeRatio = HP x P.Def,");
+Console.WriteLine("  measured off the spawned mob; your DPS cancels, so this is character-independent.");
+Console.WriteLine($"{"Lvl",4} {"rank",6} {"trash exp",11} {"rank exp",13} {"exp x",8} {"TTK x",8} {"exp/sec x",10} {"was",9} {"% of level",11} {"/ 9-man",9}");
+foreach (int L in new[] { 20, 40, 60, 76, 85 })
+{
+    long trashExp = StatCalculator.MobExpReward(L);
+    foreach (var (rankName, rank, hpMul, atkMul) in new[]
+             { ("Elite", MobRank.Elite, 4f, 1.5f), ("Boss", MobRank.Boss, 100f, 10f) })
+    {
+        var mob = BuildMobEntity(L);
+        mob.MobHpScale = hpMul; mob.MobPAtkScale = atkMul; mob.MobMAtkScale = atkMul;
+        mob.RecomputeDerived();
+
+        // The same two factors the server applies — kept as literals here on purpose: this tool must
+        // be able to DISAGREE with the server, or it cannot catch the server drifting.
+        float hpRatio  = mob.MaxHp / (float)Math.Max(1, MobBaseStats.Hp(L));
+        float defRatio = mob.EffectiveDefence / Math.Max(1f, MobBaseStats.PDef(L));
+        float timeRatio = Math.Clamp(hpRatio * Math.Max(0.25f, defRatio), 0.25f, 400f);
+        float eff = rank == MobRank.Boss ? 1.5f : 1.2f;
+
+        long rankExp = Math.Max(1L, (long)(trashExp * timeRatio * eff));
+        // What the OLD HP-only rule paid, clamp and all — the size of the correction.
+        long oldExp = Math.Max(1L, (long)(trashExp * Math.Clamp(hpRatio, 0.25f, 20f)));
+
+        // The number that decides whether the efficiency constant is SANE rather than merely
+        // self-consistent: one kill as a fraction of the level it happens at, solo and split 9 ways.
+        long next = ExpCurve.ExpToNext(L);
+        double pctSolo = rankExp * 100.0 / Math.Max(1L, next);
+
+        Console.WriteLine($"{L,4} {rankName,6} {trashExp,11:N0} {rankExp,13:N0} "
+            + $"{"x" + (rankExp / (double)trashExp).ToString("0.0"),8} "
+            + $"{"x" + timeRatio.ToString("0.0"),8} "
+            + $"{"x" + (rankExp / (double)trashExp / timeRatio).ToString("0.00"),10} "
+            + $"{"x" + (oldExp / (double)trashExp).ToString("0.0"),9} "
+            + $"{pctSolo.ToString("0.0") + "%",11} {(pctSolo / 9.0).ToString("0.0") + "%",9}");
+    }
+}
+Console.WriteLine("  'exp/sec x' IS his ruling and must read 1.20 / 1.50 on every row — anything else means the");
+Console.WriteLine("     time ratio and the payout have come apart. 'was' is the old HP-only toughness: note it");
+Console.WriteLine("     reads x20.0 for EVERY boss at EVERY level, because the 20x clamp ate the whole rank.");
+Console.WriteLine("  '% of level' is ONE kill against ExpToNext at that level; '/ 9-man' is the same kill split");
+Console.WriteLine("     across a full party, which is how a boss is actually fought. A boss takes ~100x a trash");
+Console.WriteLine("     mob's time, so a large share of a level is CORRECT here — the check is that it is not a");
+Console.WriteLine("     whole level per kill, which would make everything else in the game pointless.");
+Console.WriteLine();
+
 Console.WriteLine("  ⚠ THE WORLD BOSS IS NOT IN THIS TABLE — there is no such rank. MobRank is Normal/Elite/Boss,");
 Console.WriteLine("     and the only thing separating his 21-hour spawn from a 30-minute one is the respawn timer.");
 Console.WriteLine("     ~50 DDs for 3600s is ~16.7x the party and 10x the time = ~167x a field boss's HP, which is a");

@@ -20,10 +20,18 @@ left something behind that is his to answer, and both are flagged on their own e
 **`BL-22`'s farm budget cannot be reached at S** by any tuning, and **`BL-34`'s 76+ buff expansion**
 was not re-ruled.
 
-⚠ That message covered the eight he was SHOWN, not every 🔴 in the file. Five are still ready to
-build and are simply unqueued: `BL-43` (target cycling), `BL-45` (the presentation pass), `BL-46` (the
-second launcher icon), `BL-49` (levelling pace and boss EXP) and `BL-50` (the boss mat pile vs the
-party loot rule).
+⚠ That message covered the eight he was SHOWN, not every 🔴 in the file. Five were still ready to
+build and simply unqueued; he ruled on four of them on **2026-08-14**, and **three shipped as 0.67.0** —
+`BL-43` (target cycling, retaliate-first) and `BL-46` (treat the app as a game; the second icon is
+gone) are **built and deleted**, and `BL-49`'s boss-EXP half is built with the levelling-curve half
+left open on its entry. `BL-45` (the presentation pass) is **his own "separate discussion later on"**.
+
+**⏸ CRAFTING IS PARKED, on his instruction (2026-08-14):** *"leave the salvage/mats etc craft until
+I'm able to test it fully — need to increase the drop rate and exp by 100 so I can make chars
+different professions to farm to see who can craft what — and it's a single playtest only for this."*
+So `BL-05` (the two unruled crafting pieces), `BL-22`'s unreachable S budget and `BL-50` (the boss mat
+pile vs the party loot rule) are **not to be worked on or re-raised** until he opens that playtest.
+Nothing about them is blocked or broken — they are waiting on a test only he can run.
 
 ## The rules this file runs on
 
@@ -314,20 +322,15 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   has been full for years, so every mechanic since has been a plain field, and the card read only flags
   and magnitudes. See `CHANGELOG.md`. Delete at the next sweep.
 
-- `BL-43` 🔴 **`NextTarget` / target cycling.** Deferred once and never raised again.
 
 - `BL-44` 🟡 **"Everything is a skill" — the last two pieces.** Armor sets and weapon specials are
   still `StatMods`, not skills, so **buff-bar row 3 (item effects) is permanently empty**; and the
   set tooltip's **shield row** has nothing to show until shields belong to sets. You called this
   optional at the time.
 
-- `BL-45` 🔴 **The presentation pass.** Your words, still true: *"no sounds, a bit woody, no good
-  visuals."* The loudest remaining gap and not a scheduled item.
-
-- `BL-46` 🔴 **The second launcher icon must be gone before a store release.** Kept on purpose as
-  the duo-testing rig. Half the cause is ours (`AndroidManifest.xml` declares both activities with
-  a LAUNCHER filter); the other half is likely a Samsung profile clone, which no manifest edit
-  removes. Verify on the device at store time.
+- `BL-45` 🔵 **The presentation pass.** Your words, still true: *"no sounds, a bit woody, no good
+  visuals."* The loudest remaining gap. **You have reserved it for its own discussion** (2026-08-14:
+  *"45 is a separate discussion later on"*) — do not start it piecemeal.
 
 ---
 
@@ -345,12 +348,22 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   a dungeon is just a `SpawnZone` outside the town ring plus a teleport entrance, near-zero risk,
   and they can ship without instances.
 
-- `BL-49` 🔴 **Levelling pace and boss EXP, by eye.** Three items never revisited: the 60-85 band
-  runs ~3× faster than the rest, the elite/boss EXP multiplier wants a look, and the fighter
-  kill-speed sanity check was never run.
+- `BL-49` 🔵 **Levelling pace — the boss half is BUILT (0.67.0), two items are left and both need
+  your eye.** The elite/boss EXP multiplier is done and closed: your *"x1.2~2"* is now 1.2 elite /
+  1.5 boss over a measured kill-time ratio, and it fixed a silent 5× underpayment (the old rule was
+  HP-only and clamped at 20× while a boss carries 100× HP). What is still open:
+  - **The absolute value of a boss kill swings 1000× across the game.** One level-**20** field boss
+    is **125% of a level** solo; a level-**85** one is **0.1%**. Both are the same 150 trash kills,
+    so this is the LEVELLING CURVE, not the boss rule — but a low-level boss handing out a level and
+    a quarter per kill is a decision, not an accident, and it is yours. `tools/BalanceMatrix`, the
+    `BL-49` table.
+  - **The 60-85 band and the fighter kill-speed sanity check**, neither ever run. Note the cumulative
+    trash-kill count reaches **631k by level 86** against 21k by level 62 — whatever the old *"60-85
+    runs ~3× faster"* note meant, the measured curve now says the opposite and wants your call.
 
-- `BL-50` 🔴 **A boss/elite crafting-mat pile must obey the party loot rule.** Written as *(not
-  tested)* and never tested.
+- `BL-50` ⏸ **A boss/elite crafting-mat pile must obey the party loot rule.** Written as *(not
+  tested)* and never tested. **PARKED with the rest of crafting** (see the top of this file) — it can
+  only be verified inside the mat-farming playtest you have reserved.
 
 - `BL-51` 🔵 **Castles + vault.** Needs the siege design first; consumes the reserved
   `VendorBuyTaxRate` hook.
