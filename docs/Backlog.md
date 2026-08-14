@@ -14,6 +14,17 @@ the `MpHeal` type, more 16-40 zones, invisibility ×3, mob social clans, the agg
 unbuffed farm survivability. His bug finds from the same pass went to `testing/Open-Checklist.md`,
 not here.
 
+**2026-08-14: he ruled on ALL EIGHT remaining 🔴 items in one message, and all eight are BUILT**
+(0.66.0) — `BL-20` · `BL-22` · `BL-27` · `BL-34` · `BL-35` · `BL-36` · `BL-42` · `BL-59`. Two of them
+left something behind that is his to answer, and both are flagged on their own entries below:
+**`BL-22`'s farm budget cannot be reached at S** by any tuning, and **`BL-34`'s 76+ buff expansion**
+was not re-ruled.
+
+⚠ That message covered the eight he was SHOWN, not every 🔴 in the file. Five are still ready to
+build and are simply unqueued: `BL-43` (target cycling), `BL-45` (the presentation pass), `BL-46` (the
+second launcher icon), `BL-49` (levelling pace and boss EXP) and `BL-50` (the boss mat pile vs the
+party loot rule).
+
 ## The rules this file runs on
 
 1. **Newest ruling wins, and it is the ONLY one shown.** When you re-spec something, its entry is
@@ -197,9 +208,9 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 ## Items & economy
 
-- `BL-20` 🔴 **A partial Blessing Box pick returns a box for the rest.** *"I'll want to be able to
-  pick 5 and I get my 5 scrolls + the box for the other 5."* You filed it as later.
-  *(playtest-21 `63d`.)*
+- `BL-20` ✅ **BUILT 2026-08-14 (0.66.0)** — a partial pick now leaves the box in your bag carrying the
+  picks you didn't spend (`InventoryItem.PicksRemaining`), and it is consumed only when the last one
+  goes. See `CHANGELOG.md`. Delete at the next sweep.
 
 - `BL-21` 🟡 **Per-mob and per-zone drop identity.** *"I would like obe mob to drop let say a sword
   and a 2h sword, the other to drop only main armors, third boots and helmet … to go to a spot and
@@ -207,8 +218,19 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   are 5 different ork types and I go there for lvl up, and several different settlements and zones
   with meanings."* You gated this yourself behind the world-map/positions pass (`BL-45`).
 
-- `BL-22` 🔴 **Trash disassembles into crafting mats** instead of into gold — *"rarity for mats
-  rarity, grade for mats ammount"*. Filed into `Crafting.md` and never built. Pairs with `BL-05`.
+- `BL-22` ✅ **BUILT 2026-08-14 (0.66.0)** — a **Break down** button on any unworn tiered piece: rarity
+  → the material's rarity, grade → the amount, and no gold, because *"u give up gold to get mats"*.
+  See `CHANGELOG.md`. Delete at the next sweep.
+  - 🔴 **YOUR BUDGET IS NOT REACHABLE AT S, AND NO TUNING CHANGES THAT — this needs your ruling.**
+    Measured (new `BalanceMatrix` `M13`): D **−10%**, C **−18%** — inside your 10-20% — but B, A and
+    **S all move 0%**, so a fully S-geared character stays at **347h**. Cause: *"rarity for mats
+    rarity"* means salvage can only pay the rarity of the gear that DROPS, and gear rarity is capped by
+    RANK, not band — a normal mob stops at Epic and **an elite stops at Epic too**; only a BOSS drops
+    Legendary/Mythic gear, at 0.09 kills/h. The A and S recipes bind on **Legendary Ingot**. At a
+    uniform quantity of 20 the early rungs collapse to −24/−39/−72% while A and S *still* move 0.00%.
+    Your three options, none of them invented: **(1)** accept it as a mid-game feature (what ships);
+    **(2)** let elites drop Legendary gear — opens a gear faucet that competes with crafting;
+    **(3)** let a high grade bump the salvaged rarity a rung — contradicts "rarity for rarity".
 
 - `BL-23` 🔵 **The coin curve.** Gear value follows the tier ladder while coin stays linear, so the
   gap drifts to **51×** by level 76. The note in the archive is explicit that *"the real fix is the
@@ -230,8 +252,10 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
   would break boss multi-drops and move a measured economy. **Say it again in your own words and it
   goes back to 🔴.**
 
-- `BL-27` 🔴 **`Robe 611` has no item behind it.** You re-edited the row on 2026-08-11 without
-  asking for the item, so it was left alone a second time. Say whether it should exist.
+- `BL-27` ✅ **BUILT 2026-08-14 (0.66.0)** — `set_robe_t61_sup` / `robe_t61_sup` ("Bloodsteel Raiment"),
+  the tier's SUPPORT robe, straight off your CSV row. *"Stun/Fear Resist x1.7"* folds to `CcResist 0.4`
+  — the same fold already shipped on the heavy and light `611` rows. See `CHANGELOG.md`. Delete at the
+  next sweep.
 
 - `BL-28` ⏸ **MP potions** — held until the 40+ kits decide the MP economy.
 
@@ -244,15 +268,22 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 ## Classes & skills
 
-- `BL-34` 🔴 **"Madness" — a party buff at the top of the Frenzy family**, plus the 76+ buff
-  expansion: the healer gets all the singles including a single Frenzy, and 76+ wants *"2-3 more
-  Harmonies and 1-2 more improved buffs"*.
+- `BL-34` ✅ **BUILT 2026-08-14 (0.66.0)** — **Madness**, a party-cast Frenzy handing out a new **rung 7**
+  of the family, at **76 on the Warchanter** so an admin can party-buff with it. Your deliberate
+  temporary home — *"when the kits land we will move it"*. See `CHANGELOG.md`. Delete at the next sweep.
+  - ⏳ **The 76+ buff EXPANSION half of this entry is still owed and was NOT re-ruled**: *"2-3 more
+    Harmonies and 1-2 more improved buffs"*, plus the healer getting all the singles including a single
+    Frenzy. Blocked behind `BL-02` like every other 40+ authoring.
 
-- `BL-35` 🔴 **Preservation / auto-res as a buff family.** The `AutoResurrect` flag is already in
-  place for it and nothing uses it yet.
+- `BL-35` ✅ **BUILT 2026-08-14 (0.66.0)** — two level-83 skills, both carrying keeps-buffs-on-death **and**
+  the auto-resurrect nothing used until now: **Rite of Preservation** (Lightbringer, on an ally, 100%
+  exp back) and **Undying Will** (Bulwark, self). Ranks 2 and 3 on the existing `buff_preservation`
+  key, exactly as the 2026-07-17 comment reserved them. ⚠ Your *"(not fixed)"* stands on the 1h/1h
+  numbers. See `CHANGELOG.md`. Delete at the next sweep.
 
-- `BL-36` 🔴 **Subclass swapping restricted to a safe zone, with a 5-minute delay.** The machinery
-  swaps fine; the player-facing rules were never built.
+- `BL-36` ✅ **BUILT 2026-08-14 (0.66.0)** — instant in a town or peace zone, a 5-minute wait outside,
+  out of combat either way, and **entering a city neither cancels nor shortcuts a running timer**. See
+  `CHANGELOG.md`. Delete at the next sweep.
 
 - `BL-69` ✅ **BUILT 2026-08-13 (0.64.0)** — all three kinds. Hide is now withheld from the world
   snapshot itself (so nobody renders or can click it), broken by anything but movement, revealed at
@@ -277,9 +308,11 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 - `BL-41` 🔵 **A grade filter on the craft Gear page.** 62-63 rows is a long scroll on the phone.
   The question was put to you and never answered.
 
-- `BL-42` 🔴 **Passives and skills should describe themselves with real NUMBERS, per level** —
-  including the conditional lines (*"light-armour-only"* bonuses and the like). `63e` fixed the
-  flags, not the numeric prose. *"all skills and passive should show the desctiption with numbers."*
+- `BL-42` ✅ **BUILT 2026-08-14 (0.66.0)** — `SkillText.Mechanics` states every FIELD-carried payload with
+  its numbers, per level, on both the skill card and the Learn preview; the conditional lines now carry
+  their condition ("Block chance (with a shield)"). 🔑 The cause was structural: the `SkillEffect` enum
+  has been full for years, so every mechanic since has been a plain field, and the card read only flags
+  and magnitudes. See `CHANGELOG.md`. Delete at the next sweep.
 
 - `BL-43` 🔴 **`NextTarget` / target cycling.** Deferred once and never raised again.
 
@@ -386,10 +419,13 @@ Three of the original five are **built and deleted** (2026-08-12): `BL-01` the p
 
 ## Housekeeping
 
-- `BL-59` 🔴 **Resurrect / party / PvP-flag rules (your find #9).** Three parts, none built:
-  Ultimate Resurrection scrolls should be tradable (*"atleast the one that drop and from the admin
-  menu"*); you cannot res a party member while **you** are flagged, but may res or heal a PK while
-  unflagged; inviting and trading with PvP-flagged players must work, with PK still trade-blocked.
+- `BL-59` ✅ **BUILT 2026-08-14 (0.66.0)** — your TARGET-based re-spec, all three parts. Single-target
+  support of a non-party player is allowed only while they are clean; a pvp/pk player can be supported
+  only from inside their party, and doing it **flags you**; party invites are unrestricted; trade is
+  blocked for **pk only**, not for a purple flag; res in party works for both. The Ultimate Scroll of
+  Resurrection is tradable (the tutorial's copy is the separate `_bound` clone). ⚠ This **opens**
+  something that was shut — support used to be party-only. Old self-based text in
+  [BacklogArchive.md](BacklogArchive.md). See `CHANGELOG.md`. Delete at the next sweep.
 
 - `BL-60` 🔵 **Death penalty, resurrection skills, Angel's Protection.** The 2026-07-17 design —
   death XP penalty, res skills and scrolls, a buff-keep-on-death. Nothing exists in code. Overlaps

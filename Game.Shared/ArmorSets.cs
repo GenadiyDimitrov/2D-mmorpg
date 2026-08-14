@@ -198,6 +198,21 @@ public static class ArmorSetCatalog
             new StatMods(PAtkPct: 0.08f, Agi: 1, Con: -1, CcResist: 0.4f)),
         GearVariant("set_robe_t40_sup", 40, "Arcanum D (Warden)", new StatMods(PDefPct: 0.05f, Wit: 1)),
         GearVariant("set_robe_t40_nuke", 40, "Arcanum D (Destroyer)", new StatMods(Int: 4, Wit: -1)),
+        // `Robe 611` — the last authored body with no item behind it (BL-27). He re-edited the CSV row
+        // on 2026-08-11 and then gave a free hand on the build: *"build as u wish - I haven't gotten to
+        // the part that I need or drop so it's not of a difference yet."* So the row is taken literally
+        // and nothing beyond it is invented: WIT +2, INT −2, SPT +2, Speed +7.
+        //
+        // ⚠ The one clause that needed a reading is *"Stun/Fear Resist x1.7"*, and it is NOT a guess —
+        // it is the same fold he already accepted on the OTHER two 611 rows (heavy and light), both of
+        // which carried that exact wording and both of which ship as `CcResist: 0.4f`. Using anything
+        // else here would make one robe disagree with two armours over one sentence.
+        //
+        // Identity: the base 61 robe is the CASTER line (Cast ×1.15, P.Def ×1.08, SPT −1); INT −2 with
+        // SPT +2 inverts that trade, so this is the tier's SUPPORT robe — the 52 Sage and 40 Warden
+        // line continued at B, which is the one rung that line was missing.
+        GearVariant("set_robe_t61_sup", 61, "Arcanum B (Warden)",
+            new StatMods(Wit: 2, Int: -2, Spt: 2, MoveSpeed: 7, CcResist: 0.4f)),
     };
 
     /// <summary>The classic four-slot requirement used when a set doesn't override it.</summary>

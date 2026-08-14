@@ -76,6 +76,14 @@ namespace Game.Client
                 AppendEffects(text, "Weapon", SkillText.WeaponMastery(weapon));
             AppendEffects(text, def.Category == SkillCategory.Debuff ? "Applies" : "Grants",
                           SkillText.Buff(def, level));
+            // `BL-42` — everything the skill does that rides as a FIELD rather than an effect flag:
+            // resurrection, buff preservation, lifesteal, traps, stealth, threat, reward rates, the
+            // reagent it eats, the weapon it needs. None of it reached this card before, because the
+            // card reads flags and magnitudes and the SkillEffect enum has been full for years. One
+            // line each, on its own row, because several of them are whole sentences rather than
+            // "Label +12%" and they read badly comma-joined.
+            foreach (var mech in SkillText.Mechanics(def, level))
+                text.AppendLine(Line("", mech));
 
             if (def.Passive == null)
             {

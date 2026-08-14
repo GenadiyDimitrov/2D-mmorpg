@@ -286,9 +286,13 @@ namespace Game.Client
             var counts = new Dictionary<string, int>();
             var rows = new List<(Button Add, Button Minus, string Id, string Label)>();
 
-            // The box is spent whole, so a PARTIAL pick forfeits the rest (playtest-19 48g: 7 of 10
-            // from a 250k box). Confirm stays dead until every pick is spent; the server enforces the
-            // same count, this end only makes the rule visible before the tap.
+            // A PARTIAL pick is legal now (`BL-20`): take what you want and the box stays in the bag
+            // holding the rest. So Confirm only needs ONE pick to come alive, and the button says how
+            // many would be left behind rather than how many are still demanded — the count on it is
+            // the consequence of tapping, not a hurdle in front of it.
+            //
+            // ⚠ `pickCount` is what THIS box still owes, not the def's original: a Blessing Box you
+            // already took 5 from arrives here as 5. The server sends the live number.
             int required = pickCount;
             int Spent() { int n = 0; foreach (var c in counts.Values) n += c; return n; }
 
@@ -302,9 +306,12 @@ namespace Game.Client
                     UiKit.SetButtonText(add, (n > 0 ? $"[{n}] " : "[  ] ") + label);
                     minus.gameObject.SetActive(n > 0);
                 }
+                int left = required - spent;
                 UiKit.SetButtonText(_selectConfirm,
-                    spent == required ? "Confirm" : $"Choose {required - spent} more");
-                _selectConfirm.interactable = spent == required;
+                    spent == 0 ? "Choose at least 1"
+                    : left == 0 ? "Confirm"
+                    : $"Take {spent} (keep {left})");
+                _selectConfirm.interactable = spent >= 1;
             }
 
             for (int i = _selectOptions.childCount - 1; i >= 0; i--)
@@ -328,9 +335,8 @@ namespace Game.Client
 
                 var add = UiKit.TextButton(row.transform, label, () =>
                 {
-                    // Refuse the 11th rather than silently dropping it: the server takes exactly
-                    // PickCount, so a quietly-ignored tap would spend a 250k box on a set the player
-                    // did not choose.
+                    // Refuse the 11th rather than silently dropping it — the server refuses an
+                    // overspend outright, so a quietly-ignored tap would send a request that bounces.
                     if (Spent() >= required) { ShowToast($"Only {required} may be chosen."); return; }
                     counts.TryGetValue(optId, out int n);
                     counts[optId] = n + 1;
@@ -356,7 +362,7 @@ namespace Game.Client
             _selectConfirm.onClick.RemoveAllListeners();
             _selectConfirm.onClick.AddListener(() =>
             {
-                if (Spent() != required) return;
+                if (Spent() < 1) return;
                 // Repeats ARE the quantity — the server counts them (HandleSelectBoxItems).
                 var picks = new List<string>();
                 foreach (var (_, _, id, _) in rows)
@@ -513,6 +519,15 @@ namespace Game.Client
                 // them, so scrolls were dead weight in the bag.
                 buttons.Add(("Use", () => BeginScrollUse(item, def)));
             }
+
+            // BREAK DOWN (`BL-22`) — *"rarity for mats rarity, grade for mats ammount"*, and *"u give
+            // up gold to get mats"*. Offered on any unworn piece the server would actually accept, and
+            // the label names what you GET, because that is the decision: this or the vendor's gold,
+            // never both. Crafting.Disassemble is the same call the server makes, so the button cannot
+            // promise a yield the handler then refuses.
+            if (!item.Equipped && Crafting.Disassemble(def) is Crafting.Salvage salv)
+                buttons.Add(($"Break down ({salv.Qty} {salv.Rarity} {salv.Type})",
+                             () => ConfirmDisassemble(item, def, salv)));
 
             // Runes and QUEST ITEMS can't be binned (the server refuses both) — don't offer it. B4:
             // every disposal path refuses a token, so none of them may show the button that starts it.
@@ -692,6 +707,20 @@ namespace Game.Client
             {
                 Ask("Delete " + def.Name + "?", "Delete", () => { Boot.RemoveItem(id, true); CloseAllItemViews(); });
             }
+        }
+
+        /// <summary>Confirm breaking a piece down (`BL-22`). It ASKS, like the bin does, because it is
+        /// equally irreversible — there is no buy-back list for something that was never sold — and the
+        /// prompt states the gold being given up, which is the half of his *"u give up gold to get
+        /// mats"* that the player cannot see from the yield alone.</summary>
+        private void ConfirmDisassemble(InventoryItemDto item, ItemDef def, Crafting.Salvage salv)
+        {
+            var id = item.InstanceId;
+            long gold = ItemTag.SellPrice(def, item.SellPriceOverride);
+            string cost = gold > 0 ? $"  You give up {gold:N0} {GameConstants.CurrencyName}." : "";
+            Ask($"Break {def.Name} into {salv.Qty} x {Crafting.MaterialName(salv.Type, salv.Rarity)}?{cost}",
+                "Break down",
+                () => { Boot.DisassembleItem(id); CloseAllItemViews(); });
         }
 
         /// <summary>One window now, so closing is one call — but the compare column is collapsed on the

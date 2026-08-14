@@ -233,6 +233,11 @@ namespace Game.Client
         /// SELECTION box replies with a "Selection" push for the player to choose from.</summary>
         public Task OpenBoxAsync(Guid instanceId) => _connection.SendAsync("OpenBox", instanceId);
 
+        /// <summary>Break a piece of gear down into crafting materials (`BL-22`). No vendor: it is done
+        /// from the bag, so this takes only the instance.</summary>
+        public Task DisassembleItemAsync(Guid instanceId) =>
+            _connection.SendAsync("DisassembleItem", instanceId);
+
         /// <summary>Confirm the chosen item(s) from a selection box.</summary>
         public Task SelectBoxItemsAsync(Guid instanceId, string[] itemIds) =>
             _connection.SendAsync("SelectBoxItems", instanceId, itemIds);

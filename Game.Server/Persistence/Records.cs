@@ -289,6 +289,12 @@ public class ItemRecord
 
     /// <summary>May this instance enter the ACCOUNT warehouse? null = the tradable rule.</summary>
     public bool? CanStoreAccount { get; set; }
+
+    /// <summary>Picks still owed by a part-spent SELECTION box (`BL-20`); null = the box def's full
+    /// count. MUST persist: the whole point of a partial pick is that you walk away with the box and
+    /// come back to it, and without this column the remaining 5 picks would silently become 10 again
+    /// on the next login — the box would print scrolls. (Schema change — delete game.db to recreate.)</summary>
+    public int? PicksRemaining { get; set; }
 }
 
 

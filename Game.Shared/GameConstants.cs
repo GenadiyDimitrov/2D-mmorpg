@@ -27,7 +27,7 @@ public static class GameConstants
     /// 0.28 = the client UI rebuilt on uGUI + TextMeshPro, and the WPF→Unity parity work that follows
     /// it. That whole port is ONE system, so each panel brought over bumps the BUILD — otherwise ~20
     /// windows would walk the MINOR from 0.28 to 0.48 and say nothing useful about the game.</summary>
-    public const string GameVersion = "0.64.0";
+    public const string GameVersion = "0.66.0";
 
     /// <summary>
     /// The WIRE contract's version, and the ONLY thing compatibility is decided on.
@@ -52,7 +52,12 @@ public static class GameConstants
     /// two new hub methods (`JoinProfession`, `QuitProfession`) replaced the self-pick `ChooseProfession`.
     /// The DTO fields are pure ADDITIONS with defaults, so an old client just draws no crafting level —
     /// but it would also still be calling `ChooseProfession`, which now refuses, so the number moves.
-    public const int ProtocolVersion = 19;
+    /// 19 → 20 (2026-08-14, `BL-22`): one new hub method, `DisassembleItem`. Nothing else on the wire
+    /// changed — no DTO gained or lost a field — so an old client is functionally fine and simply has
+    /// no Break-down button. The number still moves, because the handshake is the only place a client
+    /// that CALLS a method the server does not have gets caught, and this is the direction that breaks:
+    /// a NEW client against an OLD server would throw on the send, not degrade.
+    public const int ProtocolVersion = 20;
 
     /// <summary>
     /// The oldest protocol this server still speaks. Equal to <see cref="ProtocolVersion"/> means
@@ -508,8 +513,18 @@ public static class GameConstants
 
     /// <summary>Max classes ONE character may own (IG-style: the main class + up to 3 subclasses).
     /// Stops a character stacking pointless duplicate base classes when only a few can reach a unique
-    /// 3rd-class discipline. The player-facing swap rules (safe-zone-only, 5-min delay) are separate.</summary>
+    /// 3rd-class discipline. The player-facing swap rules are <see cref="SubclassSwapDelaySeconds"/>.</summary>
     public const int MaxSubclasses = 4;
+
+    /// <summary>How long a class change takes when it is started OUTSIDE a town or peace zone
+    /// (`BL-36`, his 2026-08-14 ruling). Inside one it is instant and this never applies.
+    ///
+    /// <para>His shape, in full: *"Out of a town: a 5-minute wait. In a peace zone/town: INSTANT, no
+    /// cd."* Both cases require being out of combat, and 🔑 *"When changed out if town and 5min start
+    /// to count and enter in town the countdown stays … w8 the 5mins then change (city don't trigger
+    /// the cd) both waits it."* — so walking into a city neither cancels nor shortcuts a timer that is
+    /// already running. The city only means a timer never STARTS.</para></summary>
+    public const int SubclassSwapDelaySeconds = 300;
 
     /// <summary>OBSOLETE (2026-07-24) — no longer read by anything; kept only so the history is legible.
     /// This was the old party EXP band: a member more than this many levels from the KILLER earned

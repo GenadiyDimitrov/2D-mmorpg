@@ -180,6 +180,12 @@ namespace Game.Client
             if (def.ArmorMasteryAt(level) is ArmorMasteryProfile armor) lines.AddRange(SkillText.ArmorMastery(armor));
             if (def.WeaponMasteryAt(level) is WeaponMasteryProfile weapon) lines.AddRange(SkillText.WeaponMastery(weapon));
             lines.AddRange(SkillText.Buff(def, level));
+            // `BL-42` — the field-carried mechanics belong in the BUY preview too, and several of them
+            // are exactly what an upgrade buys: Resurrection's exp return walks 25 → 50 → 75 → 100%,
+            // a taunt's threat climbs 1500 → 5100, a reward rune's percentage is its whole ladder.
+            // Without these, "Now / After" compared two identical blank rows on the skills whose only
+            // difference between levels lives in a field.
+            lines.AddRange(SkillText.Mechanics(def, level));
             if (lines.Count == 0) return;
             t.AppendLine(label + "   " + string.Join(", ", lines));
         }

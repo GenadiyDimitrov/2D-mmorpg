@@ -194,6 +194,9 @@ public static partial class SkillCatalog
     public const string ScrollResurrectSkill    = "use_scroll_resurrect";     // 10s ally-res, 0% exp back
     public const string ScrollResurrectUltSkill = "use_scroll_resurrect_ult"; // 0.5s ally-res, 100% exp back
     public const string AngelsProtection        = "angels_protection";        // noblesse: keep buffs on death
+    // The two level-83 tops of the same family (`BL-35`) — keep buffs on death AND auto-resurrect.
+    public const string RiteOfPreservation      = "rite_of_preservation";     // Lightbringer: on an ALLY
+    public const string UndyingWill             = "undying_will";             // Bulwark: SELF only
 
     // ======================================================================================
     //  BUFF-LADDER factories (docs/design/BuffLadders.md).
@@ -810,5 +813,55 @@ public static partial class SkillCatalog
             ConsumableId: ItemCatalog.SkillStone, ConsumableAmount: 5,
             Description: "Blesses an ally (or yourself) so their other buffs SURVIVE their next death (only "
                        + "this blessing is consumed). Costs 5 Skill Stones. Lasts 60 minutes or until they die."),
+
+        // ===== THE PRESERVATION FAMILY'S TOP TWO RUNGS (`BL-35`) ==================================
+        //
+        // His 2026-08-14 ruling, by name: two skills, BOTH at level 83, both carrying Angel's whole
+        // effect (buffs survive death) PLUS the auto-resurrect that nothing in the game used until now.
+        //   1. a LIGHTBRINGER one — single target, revives the one carrying the effect,
+        //      100% exp return, 1h duration, 1h cooldown;
+        //   2. a BULWARK one — the SELF version.
+        //
+        // ⚠ THIS IS AN EXPLICIT, NAMED EXCEPTION TO `BL-02` ("no 40+ skill until his CSVs land"). He
+        // authorised these two and only these two. Do NOT read it as licence to invent other 40+ kit
+        // skills — the rest of the Lightbringer and Bulwark kits stay unregistered.
+        //
+        // 🔑 The RANKS are not invented either: the Angel's Protection comment directly above has said
+        // since 2026-07-17 that the healer's target auto-res is Rank 2 and the tank's self auto-res is
+        // Rank 3, both above Angel's Rank 1. They share the `buff_preservation` key, so the ladder
+        // resolves itself — a tank wearing his own cannot have it downgraded by a passing healer, and
+        // neither can be replaced by the 76 Angel's Protection everybody has.
+        //
+        // ⚠ HIS OWN NOTE ON THE NUMBERS: *"(not fixed)"* — the 1h duration and 1h cooldown are
+        // provisional and meant to be tuned. Worth reading together, because 1h/1h means near-
+        // permanent uptime on a single target; if that turns out too generous, the cooldown is the
+        // number to move, not the duration.
+        //
+        // ⚠ NOT AUTHORED, deliberately: a consumable cost. Angel's Protection eats 5 Skill Stones,
+        // and these outrank it for free, which makes the stone cost on the weaker skill look odd. He
+        // named no cost, so none was invented — say the word and it is one argument each.
+
+        // The LIGHTBRINGER's: cast on an ALLY (or yourself), and it is the ally who stands back up.
+        new(RiteOfPreservation, "Rite of Preservation", BaseClass.Mage, SkillEffect.None,
+            MpCost: 300, CastTicks: 30, CooldownTicks: 36000, Range: 600, Power: 0,
+            Category: SkillCategory.Buff, SpCost: 100000,
+            DurationTicks: 36000, BuffKey: "buff_preservation", Rank: 2, InitialMpCost: 60,
+            KeepsBuffsOnDeath: true, AutoResurrect: true, ResExpPct: 1f,
+            Description: "Blesses an ally (or yourself): their buffs survive their next death and they "
+                       + "rise again where they fell at 30% HP and MP, losing NO experience. "
+                       + "Lasts 60 minutes or until it saves them. 60 minute reuse."),
+
+        // The BULWARK's: the SELF version. Same effect, no target — a tank's own last stand.
+        // SelfOnly is what makes it "the self version" mechanically; Range 0 alone would not, since a
+        // targetable buff with no range still resolves onto a selected ally.
+        new(UndyingWill, "Undying Will", BaseClass.Fighter, SkillEffect.None,
+            MpCost: 300, CastTicks: 30, CooldownTicks: 36000, Range: 0, Power: 0,
+            Category: SkillCategory.Buff, SpCost: 100000,
+            DurationTicks: 36000, BuffKey: "buff_preservation", Rank: 3, InitialMpCost: 60,
+            TargetMode: TargetMode.SelfOnly,
+            KeepsBuffsOnDeath: true, AutoResurrect: true, ResExpPct: 1f,
+            Description: "Your buffs survive your next death and you rise again where you fell at 30% "
+                       + "HP and MP, losing NO experience. Lasts 60 minutes or until it saves you. "
+                       + "60 minute reuse."),
     };
 }

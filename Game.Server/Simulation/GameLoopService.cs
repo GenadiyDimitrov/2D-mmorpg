@@ -94,6 +94,7 @@ public class GameLoopService : BackgroundService
             BuyItemCmd c => c.ConnectionId,
             SellItemCmd c => c.ConnectionId,
             BuyBackCmd c => c.ConnectionId,
+            DisassembleItemCmd c => c.ConnectionId,   // `BL-22` — a jailed player handles no items
             OpenWarehouseCmd c => c.ConnectionId,
             WarehouseDepositCmd c => c.ConnectionId,
             WarehouseWithdrawCmd c => c.ConnectionId,
@@ -197,6 +198,7 @@ public class GameLoopService : BackgroundService
                 case RemoveItemCmd c: HandleRemoveItem(c); break;
                 case RestoreItemCmd c: HandleRestoreItem(c); break;
                 case BuyBackCmd c: HandleBuyBack(c); break;
+                case DisassembleItemCmd c: HandleDisassembleItem(c); break;
                 case OpenWarehouseCmd c: HandleOpenWarehouse(c); break;
                 case WarehouseDepositCmd c: HandleWarehouseDeposit(c); break;
                 case WarehouseWithdrawCmd c: HandleWarehouseWithdraw(c); break;
@@ -937,6 +939,41 @@ public class GameLoopService : BackgroundService
             && _world.Parties.TryGetValue(b.Id, out var pb)
             && ReferenceEquals(pa, pb));
 
+    /// <summary>May <paramref name="caster"/> land a SINGLE-TARGET support skill — heal, MP restore,
+    /// cleanse, buff or resurrect — on <paramref name="target"/>? (`BL-59`.)
+    ///
+    /// <para>🔑 He RE-SPECCED this on 2026-08-14 and the new rule is TARGET-based. The old one was
+    /// about the caster (*"you cannot res a party member while YOU are flagged"*); that entry is
+    /// superseded. What he wants now:</para>
+    /// <list type="bullet">
+    ///   <item>a NON-party player may be supported <b>only while they are clean</b> (white);</item>
+    ///   <item>a pvp-flagged or PK player may be supported <b>only by their own party</b>;</item>
+    ///   <item>doing it anyway — i.e. from inside their party — <b>flags the supporter</b>
+    ///         (<see cref="FlagForSupporting"/>, which already existed for heals and MP);</item>
+    ///   <item>res inside the party is fine for <b>both</b> pvp and pk.</item>
+    /// </list>
+    ///
+    /// <para>⚠ This OPENS something that used to be shut. Support was party-only: the manual cast
+    /// tested <see cref="SameParty"/> and anything else fell through to a self-cast. Helping a passing
+    /// stranger is now legal, and the flag is what prices it — which is the whole point of moving the
+    /// test from the caster to the target.</para>
+    ///
+    /// <para>⚠ MINE, not his: the duel clause at the end. Falling through to self when the target is
+    /// someone you are actually fighting is a fix he reported himself (*"healing mid-duel healed the
+    /// man you were fighting"*), and opening non-party support would have quietly undone it for the
+    /// window where the person you attacked is still white. Party members are exempt, since two
+    /// party members are not duelling each other.</para></summary>
+    private bool CanSupport(Entity caster, Entity target)
+    {
+        if (caster.Id == target.Id) return true;
+        bool sameParty = SameParty(caster, target);
+        // Flagged or red? Only their own party may help them.
+        if (FlagOf(target) != PvpFlag.Innocent) return sameParty;
+        if (sameParty) return true;
+        // Clean stranger: allowed, unless the two of you are mid-fight.
+        return target.LastPvpAttackerId != caster.Id && caster.LastPvpAttackerId != target.Id;
+    }
+
     /// <summary>May 'attacker' damage 'target'? A mob on either side = always (normal PvE). Player→
     /// player requires out of safe zones, and: a RED/PURPLE target is freely attackable (retaliation
     /// / executing an outlaw), while attacking an INNOCENT (white) needs the PvP opt-in.
@@ -1638,6 +1675,17 @@ public class GameLoopService : BackgroundService
                 SendSystemToEntity(caster, "Resurrection needs a fallen ally as its target.");
                 return;
             }
+            // `BL-59`: an outlaw's corpse is his party's business. Death does not clear karma, so a
+            // dead PK is still red here — which is what makes "res in the same party is allowed for
+            // both pvp and pk" a real permission rather than a technicality. A REFUSAL, not a
+            // fall-through to self: a res has no self-cast meaning, and silently doing nothing over a
+            // body is the kind of thing that reads as a broken skill.
+            if (!CanSupport(caster, corpse))
+            {
+                SendSystemToEntity(caster,
+                    $"{corpse.Name} is an outlaw — only their own party can resurrect them.");
+                return;
+            }
             targetId = rid;
         }
         else if (offensive)
@@ -1686,20 +1734,25 @@ public class GameLoopService : BackgroundService
         // window won't see u as healable target until u reveal yourself."* Failing this test falls
         // through to the self-cast below rather than erroring, which is precisely how an out-of-range
         // party member already behaves — "act as u r not nearby", in his words.
+        //
+        // `BL-59`: the party test that used to stand here is now CanSupport, which lets the cast reach
+        // a clean non-party player as well and shuts the door on a flagged or red one. See that helper
+        // — the permission is the TARGET's flag now, not the caster's.
         else if (IsAllyTargetable(def) &&
                  def.TargetMode != TargetMode.SelfOnly && def.Range > 0 &&
                  cmd.TargetId is Guid allyId &&
                  _world.Entities.TryGetValue(allyId, out var ally) &&
                  ally.Kind == EntityKind.Player && !ally.Dead && !ally.Hidden &&
-                 SameParty(caster, ally))
+                 CanSupport(caster, ally))
         {
-            targetId = allyId; // ranged heal / cleanse / buff on a PARTY member
+            targetId = allyId; // ranged heal / cleanse / buff on a party member OR a clean stranger
         }
         else
         {
             // Self-cast. Crucially this is where a support skill lands when you have an ENEMY
             // targeted: it used to accept ANY player, so healing mid-duel healed the man you were
-            // fighting. A support skill can only ever reach yourself or a party member.
+            // fighting. Falling through rather than refusing is deliberate and predates `BL-59` — an
+            // unreachable support target behaves like an absent one.
             targetId = caster.Id;
         }
 
@@ -3057,19 +3110,106 @@ public class GameLoopService : BackgroundService
         SendInventory(player);
     }
 
-    /// <summary>Switch to a class this character already owns.</summary>
+    /// <summary>Switch to a class this character already owns — under the player-facing rules he
+    /// finally gave on 2026-08-14 (`BL-36`). Until now the swap was a bare debug entry point; the
+    /// comment above has said since it was written that the rules would gate the COMMAND rather than
+    /// the mechanism, and this is that gate. <see cref="ActivateSubclass"/> is untouched.
+    ///
+    /// <para>His three rules:</para>
+    /// <list type="number">
+    ///   <item>Out of combat — required either way.</item>
+    ///   <item>In a town or peace zone: INSTANT, no wait at all.</item>
+    ///   <item>Anywhere else: a <see cref="GameConstants.SubclassSwapDelaySeconds"/> wait.</item>
+    /// </list>
+    ///
+    /// <para>🔑 And the clause that shapes the whole method — *"When changed out if town and 5min
+    /// start to count and enter in town the countdown stays … w8 the 5mins then change (city don't
+    /// trigger the cd) both waits it."* A running timer is NOT shortcut by reaching a town. That is
+    /// why the pending-swap check sits ABOVE the safe-zone fast path and not below it: if the order
+    /// were reversed, walking into the nearest town would skip the wait, which is exactly the thing
+    /// he ruled out. The town rule decides whether a timer STARTS, never whether one finishes.</para>
+    ///
+    /// <para>⚠ MINE, not his — he did not rule on these and each is one line to change: re-asking for
+    /// the same class reports the time left rather than restarting it; asking for a DIFFERENT class
+    /// mid-count is refused rather than silently re-aiming the timer (re-aiming would let you burn one
+    /// wait and then pick any class at the end of it); and a death cancels the change outright.</para></summary>
     private void HandleSwitchSubclass(SwitchSubclassCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player) || player.Dead)
-            return;
-        if (player.ActiveSubclass.Slot == cmd.Slot)
             return;
         if (player.Subclasses.All(s => s.Slot != cmd.Slot))
         {
             SendSystemToEntity(player, "You don't have that class.");
             return;
         }
-        ActivateSubclass(player, cmd.Slot, null);
+
+        // A timer already running wins over everything below, wherever the player is standing.
+        if (player.PendingSubclassSlot >= 0)
+        {
+            int secs = Math.Max(1, player.SubclassSwapTicks / GameConstants.TickRate);
+            SendSystemToEntity(player, player.PendingSubclassSlot == cmd.Slot
+                ? $"You are already changing class — {secs}s left."
+                : $"You are already changing to another class — {secs}s left.");
+            return;
+        }
+
+        if (player.ActiveSubclass.Slot == cmd.Slot)
+            return;
+
+        // Out of combat, in BOTH cases.
+        if (IsInCombat(player))
+        {
+            SendSystemToEntity(player, "You can't change class in combat.");
+            return;
+        }
+
+        // In town / a peace zone: on the spot.
+        if (GameConstants.InSafeZone(player.X, player.Y))
+        {
+            ActivateSubclass(player, cmd.Slot, null);
+            return;
+        }
+
+        // Out in the world: commit now, change in five minutes.
+        player.PendingSubclassSlot = cmd.Slot;
+        player.SubclassSwapTicks = GameConstants.SubclassSwapDelaySeconds * GameConstants.TickRate;
+        SendSystemToEntity(player,
+            $"Changing class in {GameConstants.SubclassSwapDelaySeconds / 60} minutes. "
+            + "Reaching a town will not make it any faster.");
+    }
+
+    /// <summary>Count a pending class change down and fire it (`BL-36`). Called once per tick for a
+    /// living player, from anywhere in the world — a town included, on his explicit ruling.</summary>
+    private void TickSubclassSwap(Entity player)
+    {
+        if (player.PendingSubclassSlot < 0) return;
+
+        // The class you were changing to may have gone (a debug reset, a wipe) — drop it quietly
+        // rather than swapping into a slot that no longer exists.
+        if (player.Subclasses.All(s => s.Slot != player.PendingSubclassSlot))
+        {
+            player.PendingSubclassSlot = -1;
+            player.SubclassSwapTicks = 0;
+            return;
+        }
+
+        if (--player.SubclassSwapTicks > 0)
+        {
+            // One tick-a-second heads-up over the last five seconds, and at each of the last minutes.
+            int left = player.SubclassSwapTicks;
+            if (left % GameConstants.TickRate == 0)
+            {
+                int secs = left / GameConstants.TickRate;
+                if (secs <= 5 || (secs % 60 == 0))
+                    SendSystemToEntity(player, $"Changing class in {secs}s…");
+            }
+            return;
+        }
+
+        int slot = player.PendingSubclassSlot;
+        player.PendingSubclassSlot = -1;
+        player.SubclassSwapTicks = 0;
+        ActivateSubclass(player, slot, "The change is complete.");
     }
 
     /// <summary>Make a class the active one and rebuild everything that hangs off it.
@@ -3612,16 +3752,18 @@ public class GameLoopService : BackgroundService
             return;
         }
 
-        // No trading while a PK (red) or FLAGGED (purple) — on either side (owner). An outlaw can't
-        // launder gear/gold through a trade.
-        if (FlagOf(requester) != PvpFlag.Innocent)
+        // `BL-59` — PK (red) only. His re-spec, verbatim: trade is *"allowed with **pvp**, NOT with
+        // pk"*. It used to refuse BOTH, which made the purple flag a 60-second trading ban that a
+        // player earned simply by defending themselves — and purple is a temporary state, not a
+        // sentence. Karma is the sentence, so karma is what blocks a trade.
+        if (FlagOf(requester) == PvpFlag.Pk)
         {
-            SendSystemToEntity(requester, "You can't trade while flagged or a PK.");
+            SendSystemToEntity(requester, "You can't trade while you are a PK.");
             return;
         }
-        if (FlagOf(target) != PvpFlag.Innocent)
+        if (FlagOf(target) == PvpFlag.Pk)
         {
-            SendSystemToEntity(requester, $"{target.Name} can't trade right now (flagged or a PK).");
+            SendSystemToEntity(requester, $"{target.Name} is a PK and can't trade.");
             return;
         }
 
@@ -3662,11 +3804,11 @@ public class GameLoopService : BackgroundService
             _world.ActiveTrades.ContainsKey(responder.Id))
             return;
 
-        // Re-check flags at accept time (they can change after the request).
-        if (FlagOf(requester) != PvpFlag.Innocent || FlagOf(responder) != PvpFlag.Innocent)
+        // Re-check at accept time (a flag can change after the request) — PK only, per `BL-59`.
+        if (FlagOf(requester) == PvpFlag.Pk || FlagOf(responder) == PvpFlag.Pk)
         {
-            SendSystemToEntity(responder, "You can't trade while either of you is flagged or a PK.");
-            SendSystemToEntity(requester, "You can't trade while either of you is flagged or a PK.");
+            SendSystemToEntity(responder, "You can't trade while either of you is a PK.");
+            SendSystemToEntity(requester, "You can't trade while either of you is a PK.");
             return;
         }
 
@@ -3814,7 +3956,13 @@ public class GameLoopService : BackgroundService
     /// <summary>The shared invite rules, once the target has been resolved by id or by name.
     ///
     /// DEATH is deliberately not a bar, on either side (owner, playtest-19 M4): being dead is exactly
-    /// when you want to be pulled into a party, because that is where the resurrection comes from.</summary>
+    /// when you want to be pulled into a party, because that is where the resurrection comes from.
+    ///
+    /// <para>Neither is a PVP FLAG or KARMA, on either side — *"party invite to a pvp/pk player:
+    /// allowed"* (`BL-59`). There is no flag test below and none is wanted: the party is precisely
+    /// what makes helping an outlaw legal (see <see cref="CanSupport"/>), so barring the invite would
+    /// make that permission unreachable. Recorded here because "no code" is otherwise indistinguishable
+    /// from "nobody thought about it".</para></summary>
     private void DoPartyInvite(Entity inviter, Entity target)
     {
         if (target.Kind != EntityKind.Player || target.Id == inviter.Id)
@@ -6924,6 +7072,11 @@ public class GameLoopService : BackgroundService
                 continue;
             }
 
+            // A pending class change counts down here (`BL-36`) — deliberately AFTER the Dead check,
+            // so a corpse's timer neither runs nor fires. Dying cancels it outright (Kill).
+            if (entity.Kind == EntityKind.Player)
+                TickSubclassSwap(entity);
+
             if (entity.Kind == EntityKind.Mob)
                 MobAi(entity);
 
@@ -8533,6 +8686,7 @@ var effect = def.Effect;
                 {
                     ApplyBuff(ally, def, lvl, buffName, durationOverride: doubledTicks);
                     BroadcastCombat(caster, ally, 0, CombatOutcome.Buff, shownName);
+                    FlagForSupporting(caster, ally);   // `BL-59` — blessing an outlaw flags you
                     blessed.Add(ally.Id);
                 }
             }
@@ -8541,6 +8695,7 @@ var effect = def.Effect;
                 var buffTarget = def.TargetMode == TargetMode.SelfOnly ? caster : target;
                 ApplyBuff(buffTarget, def, lvl, buffName, durationOverride: doubledTicks);
                 BroadcastCombat(caster, buffTarget, 0, CombatOutcome.Buff, shownName);
+                FlagForSupporting(caster, buffTarget);   // `BL-59`
                 blessed.Add(buffTarget.Id);
             }
 
@@ -8786,6 +8941,10 @@ var effect = def.Effect;
             Rewards = def.RewardsAt(level),
             KeepsBuffsOnDeath = def.KeepsBuffsOnDeath,
             AutoResurrect = def.AutoResurrect,
+            // What the auto-res will hand back (`BL-35`). ResExpPctAt, not the def's bare field, for the
+            // same reason Rewards uses RewardsAt just above: if these ever grow levels, the buff must
+            // carry the rung that actually landed.
+            AutoResExpPct = def.ResExpPctAt(level),
             // The bar's tap popup reads the LEVEL's text whenever a level authored one — a group's
             // numbers live there ("Move +33, Cast +30%, Evasion +4, Attack Speed +33%"), and so do a
             // reward rune's ("+50% experience"), where the skill's own blurb is only the first rung.
@@ -9590,6 +9749,16 @@ var effect = def.Effect;
         victim.CombatTargetId = null;
         victim.AttackCommandTargetId = null;
         victim.QueuedSkillId = null;
+        // A class change in progress dies with you (`BL-36`). ⚠ Mine, not his: he ruled on where the
+        // timer runs, not on what interrupts it. Cancelling is the conservative half — the alternative
+        // is standing up as a level-1 subclass you no longer wanted to be, which is a worse surprise
+        // than being told to ask again.
+        if (victim.PendingSubclassSlot >= 0)
+        {
+            victim.PendingSubclassSlot = -1;
+            victim.SubclassSwapTicks = 0;
+            SendSystemToEntity(victim, "Your class change was interrupted by your death.");
+        }
         // Through CancelCast, not a bare `CastingSkillId = null`: cancelling is what PUSHES the cast
         // bar's clear (a mob's to everyone nearby, a player's to themselves). Killing a caster
         // mid-spell left that bar hanging over its corpse until it happened to time out.
@@ -9601,7 +9770,18 @@ var effect = def.Effect;
         // Preservation buffs share BuffKey "buff_preservation" + Rank, so only the strongest is ever held —
         // one is consumed here. A consumed buff flagged AutoResurrect also auto-revives (handled below).
         bool keptBuffs = victim.Buffs.Any(b => b.KeepsBuffsOnDeath);
-        bool autoRes = victim.Buffs.Any(b => b.KeepsBuffsOnDeath && b.AutoResurrect);
+        // The auto-res half (`BL-35`), read BEFORE the buffs are removed just below — the buff is the
+        // only thing that knows how much exp was promised, and it is about to be consumed. Max across
+        // any that are up: the family key keeps one, but if two ever coexist the better promise wins
+        // rather than whichever happened to be first in the list.
+        bool autoRes = false;
+        float autoResExpPct = 0f;
+        foreach (var b in victim.Buffs)
+            if (b.KeepsBuffsOnDeath && b.AutoResurrect)
+            {
+                autoRes = true;
+                autoResExpPct = Math.Max(autoResExpPct, b.AutoResExpPct);
+            }
         if (keptBuffs)
             victim.Buffs.RemoveAll(b => b.KeepsBuffsOnDeath);
         else
@@ -9677,11 +9857,16 @@ var effect = def.Effect;
             else if (victim.AutoHuntEnabled)
                 StopAutoHunt(victim, "you were defeated.");
 
-            // Auto-resurrect (future tank self-res / healer target-auto-res): the consumed preservation buff
-            // stands the player back up at 30% HP/MP in place, no prompt. The death penalty above still
-            // applied ("you die, you have the penalty"). Buffs already survived (keptBuffs).
+            // Auto-resurrect (`BL-35` — the tank self-res and the healer target-auto-res): the consumed
+            // preservation buff stands the player back up at 30% HP/MP in place, no prompt. Buffs
+            // already survived (keptBuffs).
+            //
+            // ⚠ The death penalty above ALREADY APPLIED, and that ordering is deliberate: his rule is
+            // "you die, you have the penalty". The exp comes back through the res, not by skipping the
+            // penalty — so a 100% skill nets to zero while a partial one still costs you, and the two
+            // are the same mechanism the resurrection SKILLS already use.
             if (autoRes)
-                ResurrectTarget(victim, victim, 0f);
+                ResurrectTarget(victim, victim, autoResExpPct);
         }
     }
 
@@ -10052,6 +10237,10 @@ var effect = def.Effect;
             SendSystemToEntity(target, "You have been resurrected.");
         }
         if (target != caster) SendSystemToEntity(caster, "You resurrect a fallen ally.");
+        // `BL-59` — standing an outlaw back up is supporting one, and it flags you like a heal does.
+        // Placed here rather than at the OFFER so it costs nothing when the offer is declined or
+        // expires; and it is a no-op for a self-res or an innocent target (see FlagForSupporting).
+        FlagForSupporting(caster, target);
         if (target.Kind == EntityKind.Player) SendStats(target);
     }
 
@@ -10979,6 +11168,68 @@ var effect = def.Effect;
         SaveEntity(player);
     }
 
+    /// <summary>Break one piece of gear down into crafting materials (`BL-22`).
+    ///
+    /// <para>His spec is two clauses and both are in <see cref="Crafting.Disassemble"/>, not here:
+    /// *"rarity for mats rarity, grade for mats ammount"*. This method is only the transaction —
+    /// what may be broken, and what the player loses by doing it.</para>
+    ///
+    /// <para>🔑 **"U give up gold to get mats."** That is the entire economic design, and it needs no
+    /// code: the item is consumed, and it is the same item that would otherwise have been sold. Nothing
+    /// pays gold here, and nothing should — the moment salvage also paid something, it would stop being
+    /// a choice and become the strictly better option.</para>
+    ///
+    /// <para>⚠ The gates are deliberately the SELLING gates, not new ones. If a vendor would not buy it,
+    /// this will not eat it: an EQUIPPED piece, and anything the instance itself marks unsellable (a
+    /// bound newbie loaner, the Rune of Sinners). Otherwise "unsellable" would have become a loophole
+    /// that launders a bound item into tradable materials, which is the one thing those tags exist to
+    /// prevent. His *"trash"* means gear you were going to vendor.</para></summary>
+    private void HandleDisassembleItem(DisassembleItemCmd cmd)
+    {
+        if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
+        var item = player.Inventory.FirstOrDefault(i => i.InstanceId == cmd.InstanceId);
+        if (item is null) return;
+        if (ItemCatalog.Get(item.DefId) is not ItemDef def) return;
+
+        if (item.Equipped)
+        {
+            SendSystemToEntity(player, "Take it off first.");
+            return;
+        }
+        if (!item.Sellable(def))
+        {
+            SendSystemToEntity(player, $"{item.Name(def)} can't be broken down.");
+            return;
+        }
+        if (Crafting.Disassemble(def) is not Crafting.Salvage salvage)
+        {
+            SendSystemToEntity(player, $"{item.Name(def)} yields no materials.");
+            return;
+        }
+
+        string matId = Crafting.MaterialId(salvage.Type, salvage.Rarity);
+        string matName = Crafting.MaterialName(salvage.Type, salvage.Rarity);
+
+        // Consume ONE first, so the freed slot is available to the materials. Gear is never stackable,
+        // so this is a row removal; the Quantity branch is defensive, matching every other consumer.
+        if (item.Quantity > 1) item.Quantity--; else player.Inventory.Remove(item);
+
+        if (!AddItem(player, matId, salvage.Qty, rollAttributes: false))
+        {
+            // The bag was full even after the piece came out of it — the materials are a different
+            // stack. Put the item back rather than destroying it for nothing.
+            AddItem(player, item.DefId, 1, rollAttributes: false);
+            SendSystemToEntity(player, "Not enough room for the materials.");
+            SendInventory(player);
+            return;
+        }
+
+        SendInventory(player);
+        SaveEntity(player);
+        SendSystemToEntity(player,
+            $"Broke down {item.Name(def)} into {salvage.Qty} x {matName}.");
+    }
+
     private void HandleOpenBox(OpenBoxCmd cmd)
     {
         if (!TryGetPlayer(cmd.ConnectionId, out var player)) return;
@@ -11006,7 +11257,9 @@ var effect = def.Effect;
                 .Where(e => e.ForClass is not BaseClass only || player.BaseClass == only)
                 .Select(e => new SelectionOption(e.ItemId, ItemCatalog.Get(e.ItemId)?.Name ?? e.ItemId))
                 .ToArray();
-            SendTo(player, "Selection", new SelectionOffer(item.InstanceId, def.Name, options, box.PickCount));
+            // The offer carries what THIS box still owes, not what the def started with (`BL-20`):
+            // re-opening a Blessing Box you took 5 from offers 5, and the client's counter reads 0/5.
+            SendTo(player, "Selection", new SelectionOffer(item.InstanceId, def.Name, options, PicksAvailable(item, box)));
             return;
         }
 
@@ -11075,10 +11328,27 @@ var effect = def.Effect;
         AdvanceActionQuests(player, QuestActions.OpenBox);   // the tutorial's box beat (`58a`)
     }
 
+    /// <summary>How many picks a selection box still owes: its own part-spent counter if it has one,
+    /// otherwise the def's full <see cref="BoxDef.PickCount"/> (`BL-20`).</summary>
+    private static int PicksAvailable(InventoryItem item, BoxDef box) =>
+        Math.Clamp(item.PicksRemaining ?? box.PickCount, 0, box.PickCount);
+
     /// <summary>Player confirmed their picks from a SELECTION box: validate the chosen
-    /// ids against the box's options, consume the box, grant them. The selection must SPEND
-    /// exactly the box's pick count — a partial pick used to consume the whole box and
-    /// silently forfeit the unspent picks (playtest-19 48g: 7 of 10 from a 250k box).
+    /// ids against the box's options, grant them, and KEEP the box if picks are left over.
+    ///
+    /// <para>🔑 `BL-20`, his words: *"I'll want to be able to pick 5 and I get my 5 scrolls + the box
+    /// for the other 5."* So a partial pick is now legal and costs nothing — you take what you want,
+    /// and the box stays in the bag carrying the rest (<see cref="InventoryItem.PicksRemaining"/>).
+    /// The box is consumed only when its last pick is spent.</para>
+    ///
+    /// <para>This is the third position this code has held, and the middle one was the bug: originally
+    /// a partial pick CONSUMED the whole box and forfeited the remainder (playtest-19 `48g` — 7 of 10
+    /// from a 250k box), which was then fixed by REFUSING anything but a full spend. That refusal was
+    /// right only as long as there was nowhere to put the leftovers. Now there is.</para>
+    ///
+    /// <para>⚠ Granting happens BEFORE the counter is written down, and the counter is decremented by
+    /// what was actually GRANTED, not by what was asked for — so picks lost to a full inventory stay
+    /// in the box instead of evaporating. That is the same failure `48g` was about, one layer in.</para>
     ///
     /// <para>Picks are a BUDGET, not a set of ticks: the same option may be taken several times, so a
     /// pick-of-10 can be 5 + 3 + 2 (owner, playtest-20 `53a` — he named that shape). It used to
@@ -11100,19 +11370,30 @@ var effect = def.Effect;
             .Select(e => e.ItemId).ToHashSet();
         var chosen = cmd.ItemIds.Where(optionIds.Contains).ToList();
 
-        // Every pick must be spent, and no more — the box is consumed whole either way.
-        int required = box.PickCount;
-        if (chosen.Count != required)
+        // At least one, at most what the box still owes. Overspending is still refused outright —
+        // an 11th pick from a box holding 10 is a client that has lost track, not a choice to honour.
+        int available = PicksAvailable(item, box);
+        if (chosen.Count < 1 || chosen.Count > available)
         {
-            SendSystemToEntity(player, $"Select exactly {required} item{(required == 1 ? "" : "s")} — you have {chosen.Count}.");
+            SendSystemToEntity(player,
+                $"Select between 1 and {available} item{(available == 1 ? "" : "s")} — you have {chosen.Count}.");
             return;
         }
 
-        // Consume one box, then grant the chosen items — counted, so five of one scroll is one
-        // stack operation and one line of feedback rather than five.
-        if (item.Quantity > 1) item.Quantity--; else player.Inventory.Remove(item);
+        // ⚠ A STACKED selection box would share one counter across every copy in the row. No box def is
+        // IsStackable, so this cannot happen today; if one ever becomes stackable, the old all-or-
+        // nothing rule is the safe answer rather than a silently wrong count.
+        if (item.Quantity > 1 && chosen.Count < available)
+        {
+            SendSystemToEntity(player, $"Spend all {available} picks, or hold only one {def.Name} at a time.");
+            return;
+        }
 
+        // Grant the chosen items — counted, so five of one scroll is one stack operation and one line
+        // of feedback rather than five. The box is NOT consumed yet: it still occupies its own slot,
+        // which is what keeps the bag arithmetic honest while the picks come in.
         var got = new List<string>();
+        int granted = 0;
         foreach (var group in chosen.GroupBy(id => id))
         {
             int qty = group.Count();
@@ -11123,15 +11404,35 @@ var effect = def.Effect;
                 if (!AddItem(player, group.Key, 1, rollAttributes: true)) break;
                 added++;
             }
+            granted += added;
             if (added > 0) got.Add(added > 1 ? $"{name} x{added}" : name);
-            if (added < qty) { SendSystemToEntity(player, "Your inventory is full — some picks were lost."); break; }
+            if (added < qty)
+            {
+                SendSystemToEntity(player, "Your inventory is full — the picks you couldn't carry stay in the box.");
+                break;
+            }
         }
+
+        // Spend exactly what was GRANTED. Anything left keeps the box alive at the smaller number;
+        // the last pick is what finally consumes it.
+        int left = available - granted;
+        if (left > 0)
+        {
+            item.PicksRemaining = left;
+        }
+        else
+        {
+            if (item.Quantity > 1) item.Quantity--; else player.Inventory.Remove(item);
+        }
+
         SendInventory(player);
         SaveEntity(player);
         SendSystemToEntity(player, got.Count > 0
             ? $"{def.Name}: {string.Join(", ", got)}."
+              + (left > 0 ? $" {left} pick{(left == 1 ? "" : "s")} left in the box." : "")
             : $"{def.Name}: nothing chosen.");
-        AdvanceActionQuests(player, QuestActions.OpenBox);   // the tutorial's box beat (`58a`)
+        if (granted > 0)
+            AdvanceActionQuests(player, QuestActions.OpenBox);   // the tutorial's box beat (`58a`)
     }
 
     /// <summary>Player manually dropped a buff (double-click). Debuffs can't be removed

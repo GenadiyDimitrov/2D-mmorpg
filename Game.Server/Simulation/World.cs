@@ -199,6 +199,15 @@ public record SellItemCmd(string ConnectionId, Guid NpcEntityId, Guid InstanceId
 /// <summary>Re-buy a recently-sold item (by its index in the buy-back list) at a vendor.</summary>
 public record BuyBackCmd(string ConnectionId, Guid NpcEntityId, int Index) : IGameCommand;
 
+/// <summary>DISASSEMBLE one piece of gear into crafting materials (`BL-22`) — *"rarity for mats
+/// rarity, grade for mats ammount"*, and *"u give up gold to get mats"*.
+///
+/// <para>⚠ Deliberately NOT a vendor command: no <c>NpcEntityId</c>. Selling needs a shop to sell to;
+/// breaking your own sword does not, and requiring a walk to town would make the alternative to
+/// selling strictly worse than selling instead of a genuine choice between them. It is done from the
+/// bag, anywhere, like opening a box.</para></summary>
+public record DisassembleItemCmd(string ConnectionId, Guid InstanceId) : IGameCommand;
+
 /// <summary>Pay a gatekeeper to warp to a safe zone.</summary>
 public record TeleportCmd(string ConnectionId, Guid NpcEntityId, string ZoneId) : IGameCommand;
 

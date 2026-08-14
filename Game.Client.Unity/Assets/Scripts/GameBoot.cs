@@ -168,6 +168,14 @@ namespace Game.Client
             catch (Exception ex) { ClientLog.Warn("Open: " + ex.Message); }
         }
 
+        /// <summary>Break a piece of gear down into crafting materials (`BL-22`).</summary>
+        public async void DisassembleItem(Guid instanceId)
+        {
+            if (Phase != ClientPhase.InWorld) return;
+            try { await _net.DisassembleItemAsync(instanceId); }
+            catch (Exception ex) { ClientLog.Warn("Disassemble: " + ex.Message); }
+        }
+
         /// <summary>Confirm the picked item(s) from a selection box.</summary>
         public async void SelectBoxItems(Guid instanceId, string[] itemIds)
         {

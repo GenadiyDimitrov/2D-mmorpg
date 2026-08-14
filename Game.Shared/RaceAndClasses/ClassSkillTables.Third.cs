@@ -84,6 +84,34 @@ public static partial class ClassSkillTables
         //
         // …with ONE exception: the buffer's two exclusive layers now have somewhere to live.
         RegisterWarchanterBuffs();
+        // …and now a SECOND, equally narrow one: the two level-83 preservation skills he authorised
+        // by name on 2026-08-14 (`BL-35`). Two learn lines, nothing else — the Lightbringer and
+        // Bulwark kits above stay commented out.
+        RegisterPreservation();
+    }
+
+    /// <summary>`BL-35` — the two level-83 auto-resurrect skills, and NOTHING else from either kit.
+    ///
+    /// <para>⚠ Read this next to the 40+ purge at the top of the file. That purge deleted every
+    /// invented 3rd-class learn assignment and its rule still stands: no 40+ skill until his CSVs
+    /// land. These two are here because he named them individually on 2026-08-14 — *"two skills, both
+    /// at level 83"*, one Lightbringer and one Bulwark — which is an EXCEPTION to that rule, not a
+    /// repeal of it. Adding a third skill to either discipline on the strength of this method would
+    /// be exactly the mistake the purge was cleaning up.</para>
+    ///
+    /// <para>Both are shared by all three races: he specified them per DISCIPLINE, and nothing in his
+    /// ruling distinguishes a Human Bulwark from an Ork one.</para></summary>
+    private static void RegisterPreservation()
+    {
+        foreach (var race in new[] { Race.Human, Race.Elf, Race.Ork })
+        {
+            // The healer's: cast on an ally, and it is the ALLY who rises.
+            ClassSkills.RegisterThird(race, Discipline.Lightbringer,
+                new ClassSkill(RiteOfPreservation, 83));
+            // The tank's: the self version.
+            ClassSkills.RegisterThird(race, Discipline.Bulwark,
+                new ClassSkill(UndyingWill, 83));
+        }
     }
 
     /// <summary>The Warchanter's buff kit — the rest of the discipline still waits for its CSV
@@ -152,7 +180,13 @@ public static partial class ClassSkillTables
                 new ClassSkill(Might, 68, SkillLevel: 6),        // Might and Bulwark
                 new ClassSkill(HolyForce, 70, SkillLevel: 6),    // Force and Ward
                 new ClassSkill(HolyFocus, 72, SkillLevel: 6),    // Focus and Ferocity
-                new ClassSkill(HolyBody, 74, SkillLevel: 6));    // Body and Soul
+                new ClassSkill(HolyBody, 74, SkillLevel: 6),     // Body and Soul
+                // ---- 76: MADNESS (`BL-34`) — the party Frenzy at the top of the family. ----
+                // His 2026-08-14 ruling put it here on purpose: *"put it at 76 on the buffer"*, so an
+                // ADMIN (whose seed character is a level-90 Warchanter) can party-buff with it now,
+                // *"and when the kits land we will move it"*. Treat this line as temporary — it is the
+                // first thing the 40+ CSVs should relocate, not a rung to build more on top of.
+                new ClassSkill(Madness, 76));
     }
 
     // The first fully-authored discipline (Phase 24.1): one shared idea (keep the

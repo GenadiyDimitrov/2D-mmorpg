@@ -2515,7 +2515,7 @@ Console.WriteLine();
 // ⚠ Averaged over EVERY template in the band, not just the nearest few — same population M10 uses, and
 // for the same reason: mat TYPES are flavored by mob CATEGORY, so a handful of neighbouring templates can
 // show a type as literally undroppable when the band as a whole pays it. A player farms the band.
-static double[,] MatsPerHourByType(int lo, int hi, bool elite, double kph)
+static double[,] MatsPerHourByType(int lo, int hi, bool elite, double kph, bool salvage = true)
 {
     var res = new double[Crafting.MaterialTypes.Length, Crafting.MaterialRarities.Length];
     var band = MobCatalog.Templates.Where(m => !m.Dummy && m.Level >= lo && m.Level <= hi).ToArray();
@@ -2524,13 +2524,44 @@ static double[,] MatsPerHourByType(int lo, int hi, bool elite, double kph)
     {
         var rows = (mob.Drops ?? Array.Empty<DropEntry>()).ToList();
         if (elite)
+        {
             rows.AddRange(MobCatalog.EliteMatDrops(mob.Level, MobRank.Elite, mob.Category));
+            // The GEAR table is rank-swapped at kill time exactly like the mats above: an elite drops
+            // the elite gear column, not the template's normal one. It has to be layered the same way
+            // here, or salvage at the top would be priced off a table the player never sees.
+            rows.RemoveAll(e => MobCatalog.IsGearGroup(e.GroupId));
+            rows.AddRange(MobCatalog.GearDrops(mob.Level, MobRank.Elite));
+        }
         foreach (var (e, chance) in Marginals(rows, mob.Level))
-            if (ItemCatalog.Get(e.ItemId) is { Slot: EquipSlot.Material } def)
+        {
+            var def = ItemCatalog.Get(e.ItemId);
+            if (def is { Slot: EquipSlot.Material })
+            {
                 for (int t = 0; t < Crafting.MaterialTypes.Length; t++)
                     if (e.ItemId == Crafting.MaterialId(Crafting.MaterialTypes[t], def.Rarity))
                         res[t, (int)def.Rarity] +=
                             chance * ((e.MinQty + e.MaxQty) / 2.0) * RateConfig.DropAmountRate * kph / band.Length;
+                continue;
+            }
+
+            // ---- `BL-22`: DISASSEMBLY. Every piece of GEAR this table drops is also a pile of mats,
+            // because the player can break it down instead of selling it. That makes the gear column a
+            // second mat faucet, and it is the whole reason the feature moves the farm-hours number at
+            // all. Modelled here rather than argued about, because his budget for it is a MEASUREMENT
+            // (*"10~20% decrease in time should be ok"*, from 347h) and hand-derived balance has been
+            // wrong in this file before.
+            //
+            // ⚠ Assumes the player salvages EVERYTHING, which is the generous end: it is the bound the
+            // budget has to survive, and anyone farming for mats will in fact salvage everything.
+            if (salvage && Crafting.Disassemble(def) is Crafting.Salvage s)
+            {
+                int t = Array.IndexOf(Crafting.MaterialTypes, s.Type);
+                if (t >= 0)
+                    res[t, (int)s.Rarity] +=
+                        chance * ((e.MinQty + e.MaxQty) / 2.0) * s.Qty * RateConfig.DropAmountRate
+                        * kph / band.Length;
+            }
+        }
     }
     return res;
 }
@@ -2565,8 +2596,17 @@ static (double Main, double Solo, string Binds) RecipeHoursDetail(Recipe r, doub
             Crafting.MaterialTypes.First(t => Crafting.MaterialId(t, def.Rarity) == inp.ItemId));
         double rate = perHour[type, (int)def.Rarity];
         double hours = rate > 0 ? inp.Qty / rate : double.PositiveInfinity;
-        // Refine fallback: 5 of the rung below + 2 cross, all of them farmed at THIS band's rates.
-        if (double.IsInfinity(hours) && def.Rarity > ItemRarity.Common)
+        // Refine alternative: 5 of the rung below + 2 cross, all farmed at THIS band's rates.
+        //
+        // ⚠ FIXED 2026-08-14 while measuring `BL-22`. This used to be tried ONLY when the direct rate
+        // was exactly zero, which contradicts the header above it ("the cheaper of the two wins per
+        // ingredient") and is not merely pedantic — it made the model NON-MONOTONIC. Adding a trickle
+        // of a material the band previously never dropped replaced a cheap refine path with an
+        // expensive direct one, so a strictly larger faucet came out as a LONGER farm. Disassembly is
+        // exactly such a trickle, and the first M13 run printed D at +286% and C at +52% because of
+        // it — supply going up cannot make a recipe dearer, so the tool was wrong, not the feature.
+        // Both paths are now costed and the MINIMUM wins, which is what a player would actually do.
+        if (def.Rarity > ItemRarity.Common)
         {
             var refine = RecipeCatalog.Get($"refine_{Crafting.MaterialTypes[type]}_{def.Rarity}".ToLowerInvariant());
             if (refine is not null)
@@ -2580,7 +2620,7 @@ static (double Main, double Solo, string Binds) RecipeHoursDetail(Recipe r, doub
                         double rr = perHour[rt, (int)rd.Rarity];
                         one += rr > 0 ? ri.Qty / rr : double.PositiveInfinity;
                     }
-                hours = one * inp.Qty;
+                hours = Math.Min(hours, one * inp.Qty);
             }
         }
         if (hours > worst) { worst = hours; binds = $"{inp.Qty} {def.Rarity} {Crafting.MaterialTypes[type]}"; }
@@ -2676,6 +2716,105 @@ Console.WriteLine("     should read the same as the helmet column beside it. It 
 Console.WriteLine("     'FULL' and '+shield' are printed apart: a shield user's kit is 1.30 weapons of armor, not 1.00.");
 Console.WriteLine("  ⚠ 'FULL' is the number to sanity-check, not the per-item ones — it is what a finished character of");
 Console.WriteLine("     that grade costs in farm hours, and at S it is the real endgame figure.");
+Console.WriteLine();
+
+// =====================================================================================================
+//  M13: DISASSEMBLY (`BL-22`) — the same full-character sum, measured WITH and WITHOUT salvage.
+//
+//  This section exists because his approval of `BL-22` came with a number attached and no other:
+//    *"now as 347h for fully geared if we add the disassembly this should not go to 20h ..
+//      10~20% decrease in time should be ok"*
+//  and *"u give up gold to get mats"*. So the feature is not done when it works — it is done when the
+//  S row of M12c has moved by 10-20% and no further. The one knob is Crafting.SalvageQtyByRung.
+// =====================================================================================================
+Console.WriteLine("########################################################################################");
+Console.WriteLine("###  M13: BL-22 disassembly — the farm budget, with salvage and without               ###");
+Console.WriteLine("########################################################################################");
+Console.WriteLine();
+Console.WriteLine($"  his budget: a fully S-geared character must fall 10-20% from 347h, i.e. to ~278-312h");
+Console.WriteLine($"  the knob:   Crafting.SalvageQtyByRung = [{string.Join(", ", Crafting.SalvageQtyByRung)}]  (F,E,D,C,B,A,S)");
+Console.WriteLine();
+Console.WriteLine($"{"rung",5} {"FULL before",13} {"FULL after",12} {"change",9}  verdict");
+foreach (var (grade, _, _) in hisCurve)
+{
+    int rung = Array.FindIndex(hisCurve, c => c.Grade == grade) + 1;
+    int itemLevel = Crafting.GearItemLevels[rung - 1];
+    bool elite = rung >= 3;
+    var band = gradeBands.First(b => b.Name == grade);
+    double kph = elite ? EliteKillsPerHour(band.Top) : KillsPerHour(band.Top);
+    double attempts = 1.0 / Math.Max(0.01f, 1f - Crafting.GearCraftOdds(rung).Fail);
+
+    double FullAt(bool withSalvage)
+    {
+        var perHour = MatsPerHourByType(band.Floor, band.Top, elite, kph, withSalvage);
+        double Slot(Func<ItemDef, bool> pick)
+        {
+            var r = RecipeCatalog.All
+                .Where(x => x.CraftLevel == rung
+                            && ItemCatalog.Get(x.OutputId) is { } d && d.ItemLevel == itemLevel && pick(d))
+                .OrderBy(x => x.Id).FirstOrDefault();
+            return r is null ? 0 : RecipeHours(r, perHour) * attempts;
+        }
+        return Slot(d => d.Slot == EquipSlot.Weapon)
+             + Slot(d => d.Slot == EquipSlot.Armor && d.ArmorSlot == ArmorSlot.Body)
+             + Slot(d => d.Slot == EquipSlot.Armor && d.ArmorSlot == ArmorSlot.Head)
+             + Slot(d => d.Slot == EquipSlot.Armor && d.ArmorSlot == ArmorSlot.Gloves)
+             + Slot(d => d.Slot == EquipSlot.Armor && d.ArmorSlot == ArmorSlot.Boots)
+             + Slot(d => d.Slot == EquipSlot.Jewel && d.JewelType == JewelType.Necklace)
+             + 2 * Slot(d => d.Slot == EquipSlot.Jewel && d.JewelType == JewelType.Earring)
+             + 2 * Slot(d => d.Slot == EquipSlot.Jewel && d.JewelType == JewelType.Ring);
+    }
+
+    // The diagnostic that matters when a row refuses to move: what is the DEAREST rarity salvage can
+    // pay here, and what does the recipe actually bind on? A 0% change is never a bug in the tuning —
+    // it means salvage's rarity ceiling sits below the bottleneck, which no quantity can fix.
+    var noSalv = MatsPerHourByType(band.Floor, band.Top, elite, kph, false);
+    var withSalv = MatsPerHourByType(band.Floor, band.Top, elite, kph, true);
+    ItemRarity? bestSalvage = null;
+    for (int t = 0; t < Crafting.MaterialTypes.Length; t++)
+        for (int q = 0; q < Crafting.MaterialRarities.Length; q++)
+            if (withSalv[t, q] - noSalv[t, q] > 0.0001)
+                bestSalvage = Crafting.MaterialRarities[q];
+
+    var wpn = RecipeCatalog.All
+        .Where(x => x.CraftLevel == rung
+                    && ItemCatalog.Get(x.OutputId) is { Slot: EquipSlot.Weapon } d && d.ItemLevel == itemLevel)
+        .OrderBy(x => x.Id).FirstOrDefault();
+    string binds = wpn is null ? "?" : RecipeHoursDetail(wpn, withSalv).Binds;
+
+    double before = FullAt(false), after = FullAt(true);
+    double cut = before <= 0 ? 0 : (before - after) / before;
+    // Only the S row carries his budget; the rest are printed so a rung cannot quietly collapse
+    // while S looks healthy.
+    string verdict = grade != "S" ? ""
+        : cut < 0.05 ? "🔴 barely moves — salvage is not worth doing"
+        : cut < 0.10 ? "near (under his 10%)"
+        : cut <= 0.20 ? "✅ inside his 10-20%"
+        : cut <= 0.30 ? "🔴 too generous"
+        : "🔴 COLLAPSE — this is the '20h' he warned about";
+    Console.WriteLine($"{grade,5} {Hrs(before),13} {Hrs(after),12} {-cut,9:P0}  {verdict}");
+    Console.WriteLine($"        binds on {binds,-24} salvage here tops out at "
+        + $"{bestSalvage?.ToString() ?? "nothing"}");
+}
+Console.WriteLine("  ⚠ This assumes the player salvages EVERY piece of gear that drops, which is the GENEROUS bound —");
+Console.WriteLine("     the budget has to hold at the extreme, and a mat farmer really does break down everything.");
+Console.WriteLine("  🔑 'You give up gold to get mats': the same items are the gear-sale income measured in the ECONOMY");
+Console.WriteLine("     section far above, so every hour saved here is gold not earned. The two are alternatives.");
+Console.WriteLine();
+Console.WriteLine("  🔴 FINDING — HIS 10-20% CANNOT REACH S, AND NO AMOUNT OF TUNING CHANGES THAT.");
+Console.WriteLine("     Read the two columns above together. His mapping is *\"rarity for mats rarity\"*, so salvage can");
+Console.WriteLine("     only ever pay the rarity of the gear that DROPS. Gear rarity is capped by rank, not by band:");
+Console.WriteLine("     a normal mob stops at Epic (0.0001) and an ELITE stops at Epic too (MobCatalog.EliteGearRates:");
+Console.WriteLine("     Uncommon .10 / Rare .02 / Epic .002). Only a BOSS drops Legendary or Mythic gear — and a boss is");
+Console.WriteLine("     0.09 kills/h (M11), which is a keepsake, not a faucet.");
+Console.WriteLine("     Meanwhile the A and S recipes bind on LEGENDARY, which salvage therefore never produces.");
+Console.WriteLine("     Measured, not argued: at SalvageQtyByRung = 20 across the board, E/D/C collapse to -24/-39/-72%");
+Console.WriteLine("     while A and S still move 0.00%. The quantity knob is not the binding constraint; the rarity");
+Console.WriteLine("     mapping is. So the honest options are all HIS to pick:");
+Console.WriteLine("       1. accept it — disassembly is a mid-game feature (D/C get his 10-20%), S keeps its 347h;");
+Console.WriteLine("       2. let elites drop LEGENDARY gear, which opens a gear faucet that competes with crafting;");
+Console.WriteLine("       3. let a high GRADE bump the salvaged rarity up a rung, which contradicts \"rarity for rarity\".");
+Console.WriteLine("     Nothing is invented here: option 1 is what ships.");
 Console.WriteLine();
 
 static string NameOf(string id) => SkillCatalog.Get(id)?.Name ?? id;

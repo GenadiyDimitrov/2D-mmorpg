@@ -223,6 +223,21 @@ public static partial class SkillCatalog
         list.Add(FrenzyRung(4, 0.18f, 0.07f, 7));
         list.Add(FrenzyRung(5, 0.14f, 0.07f, 7));
         list.Add(FrenzyRung(6, 0.10f, 0.08f, 8));
+        // Rung 7 — the TOP of the family, and the only thing `Madness` hands out (`BL-34`). Nothing
+        // else in the game reaches it: no potion, no scroll, no NPC buffer, and no single-target
+        // Frenzy. It is the party cast's whole reward for being a level-76 skill.
+        //
+        // ⚠ ONE number here is mine and it is flagged so he can move it in one line. The penalty
+        // stride is HIS and is perfectly regular (−0.04 a rung: .30 .26 .22 .18 .14 .10), so 0.06
+        // is simply the next one. The GAIN is where his ladder is ambiguous — it steps +0.01 on the
+        // EVEN rungs (2→.06, 4→.07, 6→.08), which would leave rung 7 at .08 and make the top rung
+        // differ from the one below it by the penalty alone. For a skill gated at 76 that reads as
+        // no reward at all, so the step is taken here: +9% and +9 move. If he wants the strict even-
+        // rung reading, this line becomes FrenzyRung(7, 0.06f, 0.08f, 8).
+        //
+        // The −8 evasion does NOT move, on his own rule: it is the buff's identity (recklessness),
+        // not a number you buy your way out of.
+        list.Add(FrenzyRung(7, 0.06f, 0.09f, 9));
 
         // ===== The consumables =====
         // Potion + scroll pairs. Same rung, same buff; the scroll just lasts an hour instead of

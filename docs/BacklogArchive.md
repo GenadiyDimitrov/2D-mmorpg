@@ -128,3 +128,19 @@ the vendor buyback list at 10-15 items"* — and that shipped as `GameConstants.
 with the deleted half split off into its own 5-slot `Restorable` list (`C18`, your own two-list
 fallback: a shared list would let a selling spree push the one thing you meant to undo off the end).
 Lengthening the list now would walk back the cap you asked for.
+
+### § `BL-59` Resurrect / party / PvP-flag rules — the **SELF-based** version
+**Replaced 2026-08-14** (0.66.0). He re-specced the whole rule TARGET-based; the new text is in
+`CHANGELOG.md` and the entry is built and deleted from `Backlog.md`. The superseded text read:
+
+> `BL-59` 🔴 **Resurrect / party / PvP-flag rules (your find #9).** Three parts, none built:
+> Ultimate Resurrection scrolls should be tradable (*"atleast the one that drop and from the admin
+> menu"*); you cannot res a party member while **you** are flagged, but may res or heal a PK while
+> unflagged; inviting and trading with PvP-flagged players must work, with PK still trade-blocked.
+
+The load-bearing difference is the middle clause. The old rule asked about the CASTER's flag ("while
+**you** are flagged"); the new one asks about the TARGET's, and adds that supporting a still-flagged
+player flags *you*. Those are different systems, not a rewording — the old one restricted a clean
+player's ability to act, the new one prices helping an outlaw. Trade also moved: it used to be "PK
+still trade-blocked" alongside a flag block, and is now PK-only, so a purple flag no longer bars a
+trade at all.

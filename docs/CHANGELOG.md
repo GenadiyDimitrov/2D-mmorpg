@@ -7,10 +7,176 @@ Phases 1–3 built the foundation (movement, interest management, combat, skills
 safe-zone town, banded hunting grounds); the written phase record runs to **Phase 24.1**
 (2026-06-22). After that the phase numbering was dropped and commits became the record, so entries
 from mid-2026 on are grouped **by date** instead. Later, `GameConstants.GameVersion` (starting
-0.1.0, currently **0.64.0**) began gating the client/server protocol handshake — it tracks wire
+0.1.0, currently **0.66.0**) began gating the client/server protocol handshake — it tracks wire
 compatibility, not this feature history.
 
 For what's *planned* rather than done, see [Roadmap.md](Roadmap.md).
+
+## 0.66.0 — 2026-08-14 — his eight rulings, built
+
+On 2026-08-14 he ruled on **all eight remaining "ready to build" backlog items in one message**.
+This is those eight. Protocol **19 → 20** (one new hub method); **the DB schema changed**, so
+`Game.Server/game.db` (and `-shm`/`-wal`) must be deleted and recreated.
+
+### `BL-20` — a partial Blessing Box pick keeps the box for the rest
+
+*"I'll want to be able to pick 5 and I get my 5 scrolls + the box for the other 5."* — **"is OK"**.
+
+Taking fewer than the full ten used to be **refused outright**. That refusal was itself a fix: before
+it, a partial pick consumed the whole box and silently forfeited the rest (playtest-19 `48g` — 7 of 10
+from a 250k box). It was the right answer only while there was nowhere to put the leftovers.
+
+Now there is. The picks live on the **item instance** (`InventoryItem.PicksRemaining`), so the box
+simply stays in the bag with a smaller number on it and is consumed when its last pick is spent. No
+`box_scrolls_5` family of defs, no second item handed back, and no free inventory slot needed at the
+moment of the split — and the InstanceId never changes. Re-opening the box offers what it still owes,
+and the client's counter reads `0 / 5`.
+
+🔑 The remainder is decremented by what was actually **granted**, not by what was asked for, so picks
+lost to a full inventory stay in the box rather than evaporating — the same failure `48g` was about,
+one layer in.
+
+### `BL-22` — trash disassembles into crafting materials
+
+*"rarity for mats rarity, grade for mats ammount"* and 🔑 *"u give up gold to get mats"*. Any unworn
+piece of tiered gear now has a **Break down** button: the item's **rarity** is the material's rarity,
+its **grade** decides the amount (`Crafting.SalvageQtyByRung`), and its own maker's material decides
+the type — a blade into Ingots, plate into Leather, a robe into Thread, a ring into Gems.
+
+It is an **alternative to selling, never a bonus on top of one**: nothing here pays gold, and the
+gates are deliberately the *selling* gates, so an unsellable bound item cannot be laundered into
+tradable materials.
+
+**🔴 The finding, and it needs his ruling.** His approval came with a budget — *"now as 347h for fully
+geared if we add the disassembly this should not go to 20h .. 10~20% decrease in time should be ok"* —
+and **the S row cannot be moved by this feature at all**, at any tuning:
+
+| rung | before | after | change |
+|---|---|---|---|
+| E | 5.7h | 5.5h | −3% |
+| D | 26.3h | 23.8h | **−10%** |
+| C | 20.1h | 16.5h | **−18%** |
+| B | 47.7h | 47.5h | −0% |
+| A | 65.3h | 65.3h | −0% |
+| S | **347h** | **347h** | **−0%** |
+
+Because *"rarity for mats rarity"* means salvage can only pay the rarity of the gear that **drops**,
+and gear rarity is capped by **rank, not band**: a normal mob stops at Epic and an **elite stops at
+Epic too**; only a BOSS drops Legendary or Mythic gear, at 0.09 kills/h. The A and S recipes bind on
+**Legendary Ingot**, which salvage therefore never produces. Measured, not argued: at a uniform
+quantity of **20** the early rungs collapse to −24/−39/−72% while **A and S still move 0.00%**. The
+quantity knob is not the binding constraint; the rarity mapping is. His three options are printed by
+the new `M13` section; option 1 — accept it as a mid-game feature — is what ships, because the other
+two change things he did not ask to change.
+
+⚠ **A real bug in `tools/BalanceMatrix` was found and fixed while measuring this.** `RecipeHoursDetail`
+only tried the refine path when the direct rate was *exactly zero*, contradicting its own header
+(*"the cheaper of the two wins per ingredient"*) and making the model **non-monotonic** — adding a
+trickle of a material the band never dropped replaced a cheap refine path with an expensive direct
+one, so a strictly larger faucet came out as a *longer* farm. The first run printed D at **+286%**.
+Both paths are costed now and the minimum wins. This also moved C's baseline to 20.1h (was 25.0h).
+
+### `BL-27` — `Robe 611` finally has an item
+
+🔑 *"build as u wish - I haven't gotten to the part that I need or drop so it's not of a difference
+yet."* The last authored gear row with nothing behind it. Taken literally off the CSV — WIT +2,
+INT −2, SPT +2, Speed +7 — as `set_robe_t61_sup` / `robe_t61_sup` ("Bloodsteel Raiment").
+
+⚠ The one clause needing a reading, *"Stun/Fear Resist x1.7"*, is **not** a guess: it is the same fold
+he already accepted on the other two `611` rows (heavy and light), both of which carried that exact
+wording and both of which ship as `CcResist 0.4`. Identity: the base 61 robe is the caster line
+(Cast ×1.15, SPT −1); INT −2 with SPT +2 inverts that trade, so this is the tier's **support** robe —
+the 40 Warden / 52 Sage line continued at B, the one rung it was missing.
+
+### `BL-34` — "Madness", the party Frenzy, at 76 on the buffer
+
+🔑 *"put it at 76 on the buffer"*, explicitly so **an admin can party-buff with it** now — *"and when
+the kits land we will move it"*. A deliberate temporary home at the top of the Warchanter's existing
+40-74 ladder, which is the only 76 slot the game has; the debug admin is a level-90 Warchanter, so it
+is castable the moment the server boots.
+
+A thin party wrapper handing out a **new rung 7** of the Frenzy family, so it outranks and evicts any
+weaker Frenzy the party is wearing and nothing can override it after. ⚠ One number is invented and
+flagged in the source: his penalty stride is perfectly regular (−0.04 a rung → 0.06), but the **gain**
+steps only on even rungs, which would leave the top rung differing from the one below by the penalty
+alone. It takes the step: **−6% Max HP/MP, +9% offence and speed, +9 move, −8 evasion**.
+
+### `BL-35` — the two level-83 preservation skills
+
+Both carry Angel's whole effect (buffs survive death) **plus the auto-resurrect that nothing in the
+game used until now**:
+
+- **Rite of Preservation** (Lightbringer) — cast on an ally; **they** rise where they fell, 100% exp
+  returned, 1h duration, 1h reuse.
+- **Undying Will** (Bulwark) — the **self** version.
+
+🔑 The RANKS are not invented: the Angel's Protection comment has said since 2026-07-17 that the
+healer's target auto-res is **Rank 2** and the tank's self auto-res **Rank 3**, both above Angel's
+Rank 1, all on the shared `buff_preservation` key. The exp return rides on the **buff**
+(`ActiveBuff.AutoResExpPct`), because by the time you die the caster may be across the map or a
+different class; the death penalty still applies first, so a 100% skill nets to zero — his rule is
+*"you die, you have the penalty"*.
+
+⚠ **An explicit, named exception to `BL-02`.** He authorised these two skills and only these two; the
+rest of both kits stay unregistered. ⚠ His own note on the 1h/1h numbers is *"(not fixed)"*.
+
+### `BL-36` — the subclass swap rules
+
+Out of a town: a **5-minute wait**. In a town or peace zone: **instant, no cd**. Both require being
+out of combat. The machinery already swapped fine — the comment above it has said since it was written
+that the rules would gate the *command*, not the mechanism, and this is that gate.
+
+🔑 The clause that shapes the whole method: *"When changed out if town and 5min start to count and
+enter in town the countdown stays … w8 the 5mins then change (city don't trigger the cd) both waits
+it."* So the pending-swap check sits **above** the safe-zone fast path — reversed, walking into the
+nearest town would skip the wait. The town rule decides whether a timer *starts*, never whether one
+finishes. ⚠ Mine, not his, and each is one line: re-asking reports the time left, asking for a
+different class mid-count is refused, and a death cancels the change.
+
+### `BL-42` — skills and passives describe themselves with real numbers
+
+*"all skills and passive should show the desctiption with numbers."* The gap was structural, not
+cosmetic: the `SkillEffect` flag enum has been **full** for years (`1L << 62` was the last bit), so
+every mechanic since has been added as a plain **field** — `Resurrect`, `KeepsBuffsOnDeath`,
+`Lifesteal`, `GrantsHide`, `PlacesTrap`, `Rewards`, `TauntPower`, `BlockAccuracy`, the fixed-timing
+flags. The card reads flags and magnitudes, so **none of it ever appeared**. Angel's Protection is the
+clearest case: its entire payload is one bool, so its card could say nothing at all about what it did.
+
+`SkillText.Mechanics(def, level)` states all of it, per level, and it is wired into both the detail
+card **and** the Learn preview — where several of them are exactly what an upgrade buys (Resurrection
+walks 25 → 50 → 75 → 100%, a taunt 1500 → 5100). The **conditional** lines he asked about now carry
+their condition: "Block chance (with a shield)", "Bow range (with a bow)".
+
+⚠ Same authoring rule as `SkillText.Mods`: a field added to `SkillDef` needs a line here in the same
+commit. Nothing fails loudly when it is missing — the skill just quietly stops describing itself.
+
+### `BL-59` — resurrect / party / PvP-flag rules, re-specced
+
+🔴 He **re-specced this entirely**; the old entry was self-based (*"you cannot res a party member while
+YOU are flagged"*) and is superseded. The new rule is **target-based**:
+
+| situation | rule |
+|---|---|
+| single-target support of a **non-party** player | allowed **if they are not pvp/pk** |
+| target **is** pvp/pk | allowed **only** from inside their party |
+| supporting a still-flagged player | 🔑 **flags you** |
+| party invite to a pvp/pk player | allowed |
+| trade | allowed with **pvp**, **never** with pk |
+| res in the same party | allowed for **both** |
+
+⚠ This **opens** something that used to be shut: support was party-only, and anything else fell
+through to a self-cast. Helping a passing stranger is legal now, and the flag is what prices it —
+which is the whole point of moving the test from the caster to the target. The supporter-flagging that
+already existed for heals and MP now also covers **buffs and resurrects**.
+
+Trade used to refuse **both** purple and red, which made a 60-second flag a trading ban a player
+earned by defending themselves. Karma is the sentence, so karma is what blocks a trade.
+
+The third part of the old entry is built too: the **Ultimate Scroll of Resurrection is tradable** —
+*"atleast the one that drop and from the admin menu"*. It costs the tutorial nothing, because the
+completion kit hands out the separate `_bound` clone. ⚠ Its 15,000 Value is mine: leaving it
+unsellable would recreate the exact "tradable yet refused at the counter" complaint recorded one line
+above it in the catalog. No vendor stocks it, so no faucet opens.
 
 ## 0.65.0 — 2026-08-14 — the buildable-backlog batch
 

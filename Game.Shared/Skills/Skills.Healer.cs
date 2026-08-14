@@ -21,6 +21,7 @@ public static partial class SkillCatalog
     public const string Antidote = "antidote";                  // cure: removes poison/venom
     public const string Resurrection = "resurrection";          // revive a fallen ally (4 levels)
     public const string ShroudingHymn = "shrouding_hymn";       // party STEALTH: unaggroed mobs ignore the group
+    public const string Madness = "madness";                    // party FRENZY at the top of the family (`BL-34`)
 
     /// <summary>Healer Armor Mastery per-weight data (lvls 20/25/30/35). Robe = caster lean
     /// (+MP regen / def / max MP); LIGHT is the cleric's identity: he is the one caster who can
@@ -324,6 +325,44 @@ public static partial class SkillCatalog
                     ChildBuffs: new[] { Rung(FamFrenzy, 6) },
                     Description: "−10% Max HP/MP, +8% offence and speed, +8 move, −8 evasion."),
             }),
+
+        // ===== MADNESS — the top of the Frenzy family, cast on the whole party (`BL-34`) ===========
+        //
+        // His ruling, 2026-08-14: *"put it at 76 on the buffer"*, explicitly so **an admin can buff a
+        // party with it** in the meantime — *"and when the kits land we will move it"*. So this is a
+        // deliberate TEMPORARY home, not the final rung: it sits at the top of the Warchanter's
+        // existing 40-74 buff ladder (which stops at the five improved groups at 74) because that is
+        // the only 76 slot the game currently has, and the debug admin is a level-90 Warchanter, so
+        // putting it there makes it castable the moment the server boots.
+        //
+        // ⚠ It is an EXCEPTION to the 40+ freeze in the same sense the Warchanter's buff kit already
+        // is — he has a CSV for the buffer and named this skill himself. It is NOT licence to invent
+        // other 76 skills.
+        //
+        // Shape: a thin party wrapper, exactly like `HolyFrenzy` one tier down, handing out the new
+        // rung 7 to everyone in radius. It carries NO buff of its own — the child competes on the
+        // `FamFrenzy` key by Rank, so Madness simply outranks and evicts any weaker Frenzy the party
+        // is already wearing (a cleric's, a scroll's, the NPC buffer's), and nothing can override it
+        // afterwards. That is the whole reason it is a rung and not a parallel buff: two Frenzies
+        // stacking is precisely what the family key exists to prevent.
+        //
+        // One level only. A ladder of Madness levels would be inventing 40+ content; the rung it hands
+        // out is the family's top and there is nothing above it to climb to.
+        new(Madness, "Madness", BaseClass.Mage,
+            SkillEffect.BuffHp | SkillEffect.BuffMp | SkillEffect.BuffPhysAtk | SkillEffect.BuffMagAtk
+            | SkillEffect.BuffCastSpeed | SkillEffect.BuffAtkSpeed | SkillEffect.BuffMoveSpeed
+            | SkillEffect.BuffEvasion,
+            // MP sits above the improved groups' 200 — it buffs the party AND it is the family's top.
+            MpCost: 220, CastTicks: 15, CooldownTicks: 10, Range: 600, Power: 0,
+            DurationTicks: 12000, BuffKey: "madness", Rank: 1, InitialMpCost: 44,
+            Category: SkillCategory.Buff, SpCost: 100000,
+            ChildBuffs: new[] { Rung(FamFrenzy, 7) },
+            // Party-targeted for the same reason every improved group is (docs/design/BuffLadders.md):
+            // the autopilot hard-targets SELF for buffs, so a single-target version could never be
+            // handed out by a buffer left on auto-farm — which is the state he tests parties in.
+            TargetMode: TargetMode.AlliesInRadius, AreaRadius: 800f,
+            Description: "Drives you and nearby allies berserk: −6% Max HP/MP, but +9% P.Atk / M.Atk / "
+                       + "attack & cast speed, +9 Move Speed and −8 Evasion for 20 minutes."),
 
         // Combat Stance — TOGGLE. Pours magic into melee: +P.Atk, -M.Atk (weaker heals/
         // spells) while wielding a mace, so a cleric can solo-farm. Click again to end.

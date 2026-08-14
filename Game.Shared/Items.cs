@@ -951,16 +951,28 @@ public static class ItemCatalog
 
         // Resurrection scrolls: used WHILE DEAD to self-revive (their skill channels a cast). Basic
         // restores no exp (1500g vendor); the ultimate restores all lost exp (not shop-stocked).
-        // Sellable too, same rule and same reason as the Scroll of Return (1500 -> 60). The UNTRADABLE
-        // ultimates below keep SellPriceOverride: 0 — the owner's complaint was specifically about
-        // scrolls that are tradable yet still refused at the counter.
+        // Sellable too, same rule and same reason as the Scroll of Return (1500 -> 60).
         list.Add(new ItemDef(ScrollResurrect, "Scroll of Resurrection", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Uncommon,
             UseSkillId: SkillCatalog.ScrollResurrectSkill, Value: 1500));
+        // ===== THE ULTIMATE IS TRADABLE (`BL-59`, the third of his three parts) =====================
+        // *"Ultimate Resurrection scrolls should be tradable — atleast the one that drop and from the
+        // admin menu."* This is that one: the un-suffixed def is what drops and what `/give` hands out.
+        //
+        // 🔑 It costs the tutorial nothing, which is why it can simply be flipped. The completion kit
+        // he wanted untradable is handed out as `ScrollResurrectUltimateBound`, a separate BoundCopies
+        // clone — the same split the Newbie gear uses, where the plain id stays an ordinary item and
+        // the `_bound` twin carries the restriction.
+        //
+        // ⚠ MINE, not his: the 15,000 Value. Tradable-but-refused-at-the-counter is the exact
+        // complaint recorded on the Scroll of Return above, so leaving SellPriceOverride: 0 here would
+        // recreate it one line down. 15,000 is 10x the basic scroll, i.e. 600 gold over the counter
+        // through the /25 consumable rule. BuyPriceOverride stays -1: no vendor STOCKS it, so this
+        // opens no new faucet — it only lets players move the ones they find.
         list.Add(new ItemDef(ScrollResurrectUltimate, "Ultimate Scroll of Resurrection", EquipSlot.Consumable,
             ItemGrade.F, ItemRarity.Rare,
             UseSkillId: SkillCatalog.ScrollResurrectUltSkill,
-            Tradable: false, BuyPriceOverride: -1, SellPriceOverride: 0));
+            BuyPriceOverride: -1, Value: 15000));
 
         // Elemental Stone — a crafting/reagent material (not drinkable). Stacks; consumed
         // by skills that list it as a ConsumableId (nuker's Elemental Burst = 1/cast). Vendor 20k.
@@ -1804,6 +1816,10 @@ public static class ItemCatalog
             ("light_t61_dmg",  ArmorWeight.Light, "Warhide",   61, 220, 0,   "Assault"),
             ("robe_t40_sup",   ArmorWeight.Robe,  "Raiment",   40, 110, 508, "Warden"),
             ("robe_t40_nuke",  ArmorWeight.Robe,  "Vestments", 40, 110, 508, "Destroyer"),
+            // `Robe 611` (BL-27) — P.Def 147 and MaxMP 718 are the tier's own body column, straight off
+            // the CSV row; only the SET bonus differs from the base 61 robe. Same "Raiment" noun as the
+            // 40 Warden, so the support line reads as one line across grades.
+            ("robe_t61_sup",   ArmorWeight.Robe,  "Raiment",   61, 147, 718, "Warden"),
         };
         foreach (var v in variants)
             yield return new ItemDef(v.Key, $"{GradeTheme(v.L)} {v.Noun}",

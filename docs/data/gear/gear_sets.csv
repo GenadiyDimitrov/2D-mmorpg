@@ -123,7 +123,7 @@ GroupId/SetId,Category,Class,Level,SlotOrType,P_Def(armor); P_ATK/M_ATK(Weapon);
 42,Armor,Mage,40,Robe,110,INT +4; WIT -1,[BUILT] nuke oriented (set_robe_t40_nuke),508
 52,Armor,Mage,52,Robe,135,Cast x1.15; p.def x1.05; m.def x1.05,[BUILT],613
 61,Armor,Mage,61,Robe,147,WIT +2; SPT -1; Speed +7; Cast x1.15; p.Def x1.08; CC Resist 0.4;,[BUILT] authored m.def/mpReg x0.95 became SPT -1,718
-611,Armor,Mage,61,Robe,147,WIT +2; INT -2; SPT +2 Speed +7; Stun/Fear Resist x1.7;,[NOT BUILT] the only authored body with no item — no set_robe_t61_* variant exists - Eddited by him 2026-08-11,718
+611,Armor,Mage,61,Robe,147,WIT +2; INT -2; SPT +2 Speed +7; Stun/Fear Resist x1.7;,[BUILT 2026-08-14] support oriented (set_robe_t61_sup); Stun/Fear folded into CcResist 0.4 exactly as on the heavy/light 611 rows,718
 76,Armor,Mage,76,Robe,166,WIT +2; INT +1; SPT -1; M.Atk x1.10; Speed +7; Cast x1.15; CC Resist 0.4;,[BUILT] your x1.17 -> x1.10 + SPT -1 is live; measured -5.6% M.Atk and -2.8% nuke damage at 76,866
 80,Armor,Mage,80,Robe,221,WIT +2; INT +2; SPT -1; M.Atk x1.17; Speed +7; Cast x1.15; CC Resist 0.4;,[BUILT] S P.Def AND the set bonus are now AUTHORED by him (was A x1.60 with no set at all),1100
 

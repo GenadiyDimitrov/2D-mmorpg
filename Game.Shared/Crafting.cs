@@ -219,6 +219,79 @@ public static class Crafting
         return lvl;
     }
 
+    // =====================================================================================
+    //  DISASSEMBLY (`BL-22`) — trash becomes crafting materials instead of gold.
+    // =====================================================================================
+
+    /// <summary>What one item breaks down into, or null if it cannot be broken down at all.</summary>
+    public readonly record struct Salvage(MaterialType Type, ItemRarity Rarity, int Qty);
+
+    /// <summary>How many materials a piece of gear yields, indexed by its crafting rung
+    /// (<see cref="GearCraftLevel"/>): index 0 = F, then E · D · C · B · A · S.
+    ///
+    /// 🔑 This is his *"grade for mats ammount"* half, and it is the ONLY knob that sets how much
+    /// disassembly is worth. The rarity half is free (an item's rarity IS the material's rarity), so
+    /// every question about whether `BL-22` is too generous is a question about this one array.
+    ///
+    /// ⚠ THE BUDGET IS THE CONSTRAINT, not the shape of the curve. His ruling: *"now as 347h for fully
+    /// geared if we add the disassembly this should not go to 20h .. 10~20% decrease in time should be
+    /// ok"*. These numbers were TUNED against `tools/BalanceMatrix` M13, not derived; changing one
+    /// means re-running the matrix, not re-reasoning. As measured (2026-08-14):
+    /// <code>
+    ///   E  -3%   D  -10%   C  -18%   B  -0%   A  -0%   S  -0%
+    /// </code>
+    ///
+    /// <para>🔴 **S DOES NOT MOVE, AND NO VALUE IN THIS ARRAY CAN MAKE IT.** His mapping is "rarity for
+    /// mats rarity", so salvage only ever pays the rarity of the gear that DROPS — and gear rarity is
+    /// capped at **Epic** for both normal mobs and elites (<c>MobCatalog.EliteGearRates</c>); only a
+    /// BOSS drops Legendary or Mythic gear, at 0.09 kills/h. The A and S recipes bind on **Legendary**,
+    /// which salvage therefore never produces. Measured rather than argued: at a uniform 20 here, E/D/C
+    /// collapse to -24/-39/-72% while A and S still move 0.00%. It is the RARITY mapping that binds,
+    /// not the quantity. M13 prints the finding and his three options; option 1 (accept it — a mid-game
+    /// feature) is what ships, because the other two change things he did not ask to change.</para></summary>
+    public static readonly int[] SalvageQtyByRung = { 0, 2, 3, 2, 3, 4, 6 };
+
+    /// <summary>Which material a piece of gear is "made of". Deliberately the same flavor the crafting
+    /// professions already use (<see cref="RefinerOf"/>) rather than a new table: a smith's blade comes
+    /// apart into Ingots, an armourer's plate into Leather, a jeweler's ring into Gems. Taking a thing
+    /// apart should return the stuff its own maker works in.</summary>
+    private static MaterialType? SalvageTypeOf(ItemDef def) => def.Slot switch
+    {
+        EquipSlot.Weapon => MaterialType.Ingot,
+        EquipSlot.Shield => MaterialType.Ingot,
+        EquipSlot.Armor  => def.Weight == ArmorWeight.Robe ? MaterialType.Thread : MaterialType.Leather,
+        EquipSlot.Jewel  => MaterialType.Gem,
+        _ => null,
+    };
+
+    /// <summary>Break one item down into crafting materials (`BL-22`) — *"rarity for mats rarity, grade
+    /// for mats ammount"*. Returns null for anything that cannot be salvaged.
+    ///
+    /// <para>🔑 **You give up gold to get mats.** His words, and the whole shape of the feature: this is
+    /// an ALTERNATIVE to selling, not a bonus on top of one. The item is consumed either way; the
+    /// choice is which currency you take. That is also why nothing here scales with the item's Value —
+    /// pricing salvage against gold would make the better-selling piece also the better salvage, and
+    /// there would be no decision left to make.</para>
+    ///
+    /// <para>The RARITY mapping is one-to-one and needs no table: a Rare sword yields Rare Ingots. It
+    /// is what makes the feature self-balancing at the top — Mythic materials come only from Mythic
+    /// gear, which is exactly as scarce as Mythic gear is.</para>
+    ///
+    /// <para>⚠ F-grade gear (rung 0) yields NOTHING, on the same rule that makes F uncraftable
+    /// (<see cref="GearItemLevels"/>): the newbie kit is not raw material. Untiered gear — anything
+    /// with no ItemLevel, i.e. the quest and debug one-offs — is likewise not salvage.</para></summary>
+    public static Salvage? Disassemble(ItemDef? def)
+    {
+        if (def is null) return null;
+        if (SalvageTypeOf(def) is not MaterialType type) return null;
+        if (def.ItemLevel <= 0) return null;
+        int rung = GearCraftLevel(def.ItemLevel);
+        if (rung <= 0) return null;                       // F is not raw material
+        int qty = SalvageQtyByRung[Math.Clamp(rung, 0, SalvageQtyByRung.Length - 1)];
+        if (qty <= 0) return null;
+        return new Salvage(type, def.Rarity, qty);
+    }
+
     /// <summary>The odds of one gear craft attempt. Sums to 1: a craft lands on Mythic, lands on
     /// Legendary, or FAILS and eats the materials.</summary>
     public readonly record struct GearOdds(float Mythic, float Legendary, float Fail);

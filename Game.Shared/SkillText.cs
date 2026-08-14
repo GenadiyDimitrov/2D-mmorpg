@@ -92,10 +92,15 @@ public static class SkillText
         Flat(o, "WIT", p.Wit);
         Flat(o, "SPT", p.Spt);
 
-        // Shield / bow conditionals
-        Pct(o, "Block chance", p.BlockChancePct);
-        Pct(o, "Shield def", p.ShieldDefPct);
-        Flat(o, "Bow range", p.BowRange);
+        // Shield / bow CONDITIONALS. The condition is part of the number (`BL-42`): a Shield Mastery
+        // that reads "Block chance +200%" on a card is a promise the skill does not keep with an empty
+        // off-hand, and his ask was explicitly for *"the conditional lines"* — the "light-armour-only"
+        // bonuses and their kind — to say what they depend on. The armour and weapon masteries below
+        // already state their condition by being grouped under "Light:" / "Bow:"; these three were the
+        // ones stating a bare number with the condition buried in the prose.
+        Pct(o, "Block chance (with a shield)", p.BlockChancePct);
+        Pct(o, "Shield def (with a shield)", p.ShieldDefPct);
+        Flat(o, "Bow range (with a bow)", p.BowRange);
 
         // Resists + interrupt
         Flat(o, "Interrupt power", p.InterruptPower);
@@ -325,4 +330,151 @@ public static class SkillText
         SkillEffect.HealOverTime => "Heal/tick",
         _ => ""
     };
+
+    // ----- mechanics: the payloads that ride as FIELDS, not as effect flags --------------------
+
+    /// <summary>Everything a skill does that is carried by a FIELD on <see cref="SkillDef"/> rather
+    /// than by a <see cref="SkillEffect"/> flag or a stat magnitude — stated with its real numbers, at
+    /// the given LEVEL (`BL-42`).
+    ///
+    /// <para>🔑 Why this had to exist at all. The <c>SkillEffect</c> flag enum has been FULL for a long
+    /// time (1L &lt;&lt; 62 was the last bit), so for years every new mechanic has been added as a plain
+    /// field on the record: <c>Resurrect</c>, <c>KeepsBuffsOnDeath</c>, <c>AutoResurrect</c>,
+    /// <c>Lifesteal</c>, <c>GrantsHide</c>, <c>PlacesTrap</c>, <c>Rewards</c>, <c>TauntPower</c>,
+    /// <c>BlockAccuracy</c>, the fixed-timing flags, and more. The skill card reads flags and
+    /// magnitudes, so <b>none of those ever appeared on it</b>. That is the gap behind his
+    /// *"all skills and passive should show the desctiption with numbers"*: the numbers existed on the
+    /// def the whole time and nothing formatted them, exactly as with passives before
+    /// <see cref="Passive"/>. Angel's Protection is the clearest case — its entire payload is one bool,
+    /// so its card could say nothing whatsoever about what it does.</para>
+    ///
+    /// <para>⚠ AUTHORING RULE, the same one <see cref="Mods"/> carries: when a field is added to
+    /// SkillDef, give it a line HERE in the same commit. Nothing fails loudly when it is missing — the
+    /// skill just quietly stops describing itself, which is the bug this method is fixing.</para>
+    ///
+    /// <para>Conditions are stated with the effect, never left to the prose: a bonus that only applies
+    /// while slowed, only below 40% HP or only with a bow says so on its own line.</para></summary>
+    public static List<string> Mechanics(SkillDef def, int level = 1)
+    {
+        var o = new List<string>();
+        if (def is null) return o;
+
+        // ---- Resurrection / death ----
+        if (def.Resurrect)
+        {
+            float pct = def.ResExpPctAt(level);
+            o.Add(pct > 0f
+                ? $"Revives a fallen ally at 30% HP/MP and restores {pct * 100f:0.#}% of the exp they lost"
+                : "Revives a fallen ally at 30% HP/MP (restores none of their lost exp)");
+        }
+        if (def.KeepsBuffsOnDeath)
+            o.Add("Your other buffs SURVIVE your next death (only this blessing is consumed)");
+        if (def.AutoResurrect)
+        {
+            float pct = def.ResExpPctAt(level);
+            o.Add(pct > 0f
+                ? $"Revives you where you fell at 30% HP/MP, restoring {pct * 100f:0.#}% of the lost exp"
+                : "Revives you where you fell at 30% HP/MP");
+        }
+
+        // ---- Damage shaping ----
+        if (def.Lifesteal > 0f)
+            o.Add($"Heals you for {def.Lifesteal * 100f:0.#}% of the damage dealt");
+        if (def.ConditionalOn != TargetCondition.None && def.ConditionalDamagePct != 0f)
+            o.Add($"{Sign(def.ConditionalDamagePct)}{def.ConditionalDamagePct * 100f:0.#}% damage "
+                + $"against a {def.ConditionalOn.ToString().ToLowerInvariant()} target");
+        if (def.PveDamageMult != 1f) o.Add($"Damage vs monsters x{def.PveDamageMult:0.##}");
+        if (def.PvpDamageMult != 1f) o.Add($"Damage vs players x{def.PvpDamageMult:0.##}");
+
+        // ---- Hit resolution ----
+        if (def.SureHit) o.Add("Never misses");
+        if (def.BlockAccuracy > 0f)
+            o.Add($"Bypasses shield blocks {def.BlockAccuracy * 100f:0.#}% of the time");
+        if (def.InterruptPower > 0) o.Add($"Interrupt power {def.InterruptPower}");
+        if (def.InterruptDefense > 0) o.Add($"Interrupt resistance while casting +{def.InterruptDefense}");
+        if (def.DebuffSchool != DebuffSchool.None)
+            o.Add($"Landing is contested ({def.DebuffSchool.ToString().ToLowerInvariant()})");
+
+        // ---- Stacking ----
+        int stacks = def.EffectiveMaxStacks;
+        if (stacks > 1) o.Add($"Stacks up to {stacks} times");
+        if (def.ConsumeStackKey.Length > 0)
+            o.Add("Consumes its stacks, multiplying the damage by how many had built up");
+
+        // ---- Dispel ----
+        if ((def.Effect & (SkillEffect.Cleanse | SkillEffect.Cancel)) != 0)
+        {
+            bool cancel = (def.Effect & SkillEffect.Cancel) != 0;
+            string what = cancel ? "enemy buffs" : "debuffs";
+            string many = def.DispelCount > 0 ? $"up to {def.DispelCount}" : "all";
+            string cap = def.DispelMaxLevel > 0 ? $" of rank {def.DispelMaxLevel} or lower" : "";
+            o.Add($"Removes {many} {what}{cap}");
+        }
+        if (!def.Cancellable) o.Add("Cannot be cancelled or cured");
+
+        // ---- Movement ----
+        if (def.BlinkRange > 0f) o.Add($"Teleports you {(int)def.BlinkRange} away from the target");
+        else if ((def.Effect & SkillEffect.Blink) != 0) o.Add("Teleports you behind the target");
+        if (def.KnockbackRange > 0f) o.Add($"Knocks the target back {(int)def.KnockbackRange}");
+        if (def.TeleportsToTown) o.Add("Teleports you to the nearest town");
+
+        // ---- Stealth (BL-69) ----
+        if (def.GrantsHide)
+            o.Add("Makes you invisible — broken by any action except moving");
+        if (def.GrantsMobStealth)
+            o.Add("Monsters that have not already noticed you ignore you (players still see you)");
+        if (def.RevealsHidden)
+            o.Add(def.NoHideTicks > 0
+                ? $"Reveals everyone hidden in the area and stops them re-hiding for {Secs(def.NoHideTicks)}"
+                : "Reveals everyone hidden in the area");
+
+        // ---- Traps ----
+        if (def.PlacesTrap)
+            o.Add($"Drops a trap at your feet: triggers within {(int)def.TrapRadius}, "
+                + $"lasts {Secs(def.TrapLifeTicks)}");
+
+        // ---- Threat (BL-71) ----
+        int taunt = def.TauntPowerAt(level);
+        if (taunt > 0) o.Add($"Threat {taunt:N0}, on top of jumping you to the top of the table");
+
+        // ---- Toggles + MP economy ----
+        if (def.Toggle)
+            o.Add(def.MpPerSecond > 0
+                ? $"Toggle — stays up until switched off, costing {def.MpPerSecond} MP a second"
+                : "Toggle — stays up until switched off");
+        if (def.PhysMpCostPct > 0f) o.Add($"Physical skills cost {def.PhysMpCostPct * 100f:0.#}% less MP");
+        if (def.MagicMpCostPct > 0f) o.Add($"Magic skills cost {def.MagicMpCostPct * 100f:0.#}% less MP");
+
+        // ---- Reward rates (the premium runes) ----
+        var r = def.RewardsAt(level);
+        if (!r.IsNeutral)
+        {
+            Pct(o, "Experience", r.Exp);
+            Pct(o, "Skill points", r.Sp);
+            Pct(o, "Gold from monsters", r.Gold);
+            Pct(o, "Drop chance", r.Drop);
+            if (r.StopsExpSp) o.Add("You gain NO experience or skill points");
+            if (r.StopsGoldDrop) o.Add("Monsters drop NO gold or items for you");
+        }
+
+        // ---- Conditions on USING it ----
+        if (def.RequiredWeapon != WeaponType.None)
+            o.Add("Requires a " + def.RequiredWeapon.ToString().ToLowerInvariant().Replace(",", " or")
+                + " weapon");
+        if (def.RequireHpBelowFraction > 0f)
+            o.Add($"Only usable at or below {def.RequireHpBelowFraction * 100f:0.#}% HP");
+        if (def.ConsumableId.Length > 0)
+            o.Add($"Consumes {def.ConsumableAmount} x {ItemCatalog.Get(def.ConsumableId)?.Name ?? def.ConsumableId}");
+
+        // ---- Timing quirks. Worth stating because they are exactly the promises a player plans
+        //      around: a fixed cast does not reward cast speed, and a fragile one dies to a scratch.
+        if (def.FixedCast) o.Add("Cast time is fixed — cast speed does not shorten it");
+        if (def.FixedCooldown) o.Add("Reuse is fixed — cooldown reduction does not shorten it");
+        if (def.FragileCast) o.Add("ANY damage taken cancels the cast");
+
+        return o;
+    }
+
+    private static string Secs(int ticks) =>
+        (ticks / (float)GameConstants.TickRate).ToString("0.#") + "s";
 }

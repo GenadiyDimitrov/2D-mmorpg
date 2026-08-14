@@ -113,9 +113,18 @@ public class BuffInstance
     /// <summary>Angel's Protection / noblesse marker: while a buff with this set is present, DEATH removes
     /// only the protection buff(s) and keeps every other buff (see Kill). No stat effect of its own.</summary>
     public bool KeepsBuffsOnDeath { get; init; }
-    /// <summary>A preservation buff that ALSO auto-revives the owner on death (30% HP/MP, no prompt). Future
-    /// tank self-res / healer target-auto-res. Angel's Protection leaves this false.</summary>
+    /// <summary>A preservation buff that ALSO auto-revives the owner on death (30% HP/MP, no prompt).
+    /// The tank self-res and the healer target-auto-res (`BL-35`) set it; Angel's Protection does not.</summary>
     public bool AutoResurrect { get; init; }
+
+    /// <summary>How much of the exp lost to the death penalty an <see cref="AutoResurrect"/> gives back
+    /// (0..1), taken from the granting skill's <c>ResExpPct</c> (`BL-35`: his Lightbringer skill is
+    /// *"100% exp return"*).
+    ///
+    /// <para>It has to ride on the BUFF rather than be read at death time, because by then the thing
+    /// that knows the number is gone — the caster may be across the map, offline, or a different class
+    /// since. The buff is the only surviving record of what was promised when it was cast.</para></summary>
+    public float AutoResExpPct { get; init; }
 
     public bool Has(SkillEffect flag) => (Effect & flag) != 0;
 
@@ -199,6 +208,25 @@ public class InventoryItem
     /// <summary>A name written for this instance (max <see cref="GameConstants.CustomItemNameMax"/>),
     /// or null to keep the def's. It renames only this copy — the catalog is untouched.</summary>
     public string? CustomName { get; set; }
+
+    /// <summary>Picks still owed by THIS selection box, or null to use the box def's full
+    /// <see cref="Game.Shared.BoxDef.PickCount"/> (`BL-20`).
+    ///
+    /// <para>His ask: *"I'll want to be able to pick 5 and I get my 5 scrolls + the box for the other
+    /// 5."* Before this, a partial pick was simply refused — the box demanded all ten in one sitting,
+    /// which is the over-correction that came out of playtest-19 `48g` (where a partial pick CONSUMED
+    /// the box and forfeited the rest). Neither end of that is what he wants.</para>
+    ///
+    /// <para>🔑 It is a counter on the INSTANCE, not a family of `box_scrolls_5`/`_3`/`_2` defs, and not
+    /// a new item handed back: the box row simply stays in the bag with a smaller number on it. That
+    /// keeps ONE box id for one box, keeps the InstanceId stable (so a chooser left open over the split
+    /// still refers to the same thing), and needs no free inventory slot at the moment of the split —
+    /// there is nothing to hand back, because nothing was taken away.</para>
+    ///
+    /// <para>⚠ Only meaningful while the def's PickCount &gt; 0, and only sound because a Box is NOT
+    /// <see cref="Game.Shared.ItemDef.IsStackable"/> — one row is one box, so one counter cannot be
+    /// shared by several copies. <c>HandleSelectBoxItems</c> guards the stacked case anyway.</para></summary>
+    public int? PicksRemaining { get; set; }
 
     /// <summary>May this instance be put in the character's PRIVATE warehouse? null = ask the DEF, whose
     /// answer is yes unless it is SoulBound (the private bank is otherwise just a bigger bag).</summary>
@@ -1432,6 +1460,23 @@ public class Entity
     /// <summary>The autopilot target last PUSHED to this player's client, so the push happens on a
     /// change instead of every tick. Runtime-only; never persisted.</summary>
     public Guid? SentAutoTargetId { get; set; }
+
+    // ----- Pending CLASS CHANGE (`BL-36`) --------------------------------------------------------
+    // A swap started outside a town takes GameConstants.SubclassSwapDelaySeconds; one started inside a
+    // town or peace zone happens on the spot and never touches these.
+    //
+    // ⚠ Runtime-only, NOT persisted, and that is deliberate: a class change is a live-session act. If
+    // it survived a logout the character would come back as a class the player never saw themselves
+    // become — and the swap wipes buffs, cast state and target, none of which mean anything across a
+    // relog anyway. Quitting mid-count simply abandons the change; ask again.
+
+    /// <summary>The subclass Slot this character is in the middle of changing to, or -1 for none.</summary>
+    public int PendingSubclassSlot { get; set; } = -1;
+
+    /// <summary>Ticks left before <see cref="PendingSubclassSlot"/> takes effect. 🔑 It keeps counting
+    /// wherever the character walks, INCLUDING into a town: his rule is that the city neither cancels
+    /// nor shortcuts a running timer, only that it never starts one.</summary>
+    public int SubclassSwapTicks { get; set; }
     /// <summary>Purple flag: I recently attacked another player and am freely attackable until this
     /// tick (killing me = a PvP kill, not a PK). Refreshed on each PvP action.</summary>
     public long PvpFlagUntilTick { get; set; }

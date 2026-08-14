@@ -792,6 +792,7 @@ public class PersistenceService
                 CustomName = item.CustomName,
                 CanStorePrivate = item.CanStorePrivate,
                 CanStoreAccount = item.CanStoreAccount,
+                PicksRemaining = item.PicksRemaining,   // a part-spent selection box (`BL-20`)
             });
         }
 
@@ -876,14 +877,14 @@ public class PersistenceService
                     i.Enchant, i.Quantity, new List<ItemAttribute>(i.Attributes), i.ExpiresAtUtc,
                     SellPriceOverride: i.SellPriceOverride, TradableOverride: i.TradableOverride,
                     CustomName: i.CustomName, CanStorePrivate: i.CanStorePrivate,
-                    CanStoreAccount: i.CanStoreAccount));
+                    CanStoreAccount: i.CanStoreAccount, PicksRemaining: i.PicksRemaining));
             foreach (var i in e.Warehouse)
                 items.Add(new ItemSnapshot(
                     i.PersistentInstanceId ?? Guid.NewGuid(), i.DefId, false,   // never equipped in the bank
                     i.Enchant, i.Quantity, new List<ItemAttribute>(i.Attributes), i.ExpiresAtUtc, InWarehouse: true,
                     SellPriceOverride: i.SellPriceOverride, TradableOverride: i.TradableOverride,
                     CustomName: i.CustomName, CanStorePrivate: i.CanStorePrivate,
-                    CanStoreAccount: i.CanStoreAccount));
+                    CanStoreAccount: i.CanStoreAccount, PicksRemaining: i.PicksRemaining));
 
             var subs = e.Subclasses.Select(SubclassSnapshot.From).ToList();
 
@@ -919,7 +920,7 @@ public class PersistenceService
         Guid InstanceId, string DefId, bool Equipped, int Enchant, int Quantity,
         List<ItemAttribute> Attributes, DateTime? ExpiresAtUtc = null, bool InWarehouse = false,
         long? SellPriceOverride = null, bool? TradableOverride = null, string? CustomName = null,
-        bool? CanStorePrivate = null, bool? CanStoreAccount = null);
+        bool? CanStorePrivate = null, bool? CanStoreAccount = null, int? PicksRemaining = null);
 
     /// <summary>One saved buff. Deliberately MINIMAL — the skill id plus the level it was cast at is
     /// enough to rebuild everything else (effect flags, magnitudes, DoT power, shield size) through the
@@ -1105,6 +1106,7 @@ public class PersistenceService
             CustomName = i.CustomName,
             CanStorePrivate = i.CanStorePrivate,
             CanStoreAccount = i.CanStoreAccount,
+            PicksRemaining = i.PicksRemaining,
         }).ToList();
     }
 

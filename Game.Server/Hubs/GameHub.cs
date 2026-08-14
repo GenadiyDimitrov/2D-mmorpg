@@ -254,6 +254,13 @@ public class GameHub : Hub
         return Task.CompletedTask;
     }
 
+    /// <summary>Break a piece of gear down into crafting materials (`BL-22`). No vendor involved.</summary>
+    public Task DisassembleItem(Guid instanceId)
+    {
+        _world.Commands.Enqueue(new DisassembleItemCmd(Context.ConnectionId, instanceId));
+        return Task.CompletedTask;
+    }
+
     public Task OpenWarehouse()
     {
         _world.Commands.Enqueue(new OpenWarehouseCmd(Context.ConnectionId));
